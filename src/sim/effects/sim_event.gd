@@ -10,6 +10,10 @@ const TAG_PROJECTILE := 2
 const TAG_DOT := 4
 const TAG_AREA := 8
 const TAG_CRIT := 16
+## The hit was fully blocked (a shield or guard multiplier of 0).
+const TAG_BLOCKED := 32
+## The hit was reduced by the target's guard.
+const TAG_GUARDED := 64
 
 var seq := 0
 var tick := 0

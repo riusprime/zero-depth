@@ -12,4 +12,5 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.dash_distance_m = def.dash.distance_m
 	t.dash_ticks = maxi(1, SimTick.seconds_to_ticks(def.dash.duration_seconds))
 	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(def.dash.cooldown_seconds)
+	t.dash_iframe_ticks = SimTick.seconds_to_ticks(def.dash.iframes_seconds)
 	return t

@@ -58,6 +58,20 @@ static func angle_of(v: Vector2) -> int:
 	return a & 4095
 
 
+## The shortest absolute difference between two angles, 0..2048.
+static func angle_diff(a: int, b: int) -> int:
+	var d := (a - b) & 4095
+	return 4096 - d if d > 2048 else d
+
+
+## Turns `from` toward `to` by at most `step` units.
+static func turn_toward(from: int, to: int, step: int) -> int:
+	var d := (to - from) & 4095
+	if d > 2048:
+		d -= 4096
+	return (from + clampi(d, -step, step)) & 4095
+
+
 ## Length of a vector using only sqrt.
 static func length(v: Vector2) -> float:
 	return sqrt(float(v.x) * v.x + float(v.y) * v.y)

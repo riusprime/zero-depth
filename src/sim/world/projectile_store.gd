@@ -13,13 +13,26 @@ var radius := PackedFloat32Array()
 var life := PackedInt32Array()
 var root_id := PackedInt32Array()
 var proc_pct := PackedInt32Array()
+## Damage on hit (0 = harmless, as the kernel scenario's dummies) and SimEvent tags.
+var damage := PackedInt32Array()
+var tags := PackedInt32Array()
 
 
 func size() -> int:
 	return ids.size()
 
 
-func add(id: int, p_owner: int, p_team: int, p: Vector2, v: Vector2, r: float, p_life: int) -> void:
+func add(
+	id: int,
+	p_owner: int,
+	p_team: int,
+	p: Vector2,
+	v: Vector2,
+	r: float,
+	p_life: int,
+	p_damage: int = 0,
+	p_tags: int = SimEvent.TAG_PROJECTILE
+) -> void:
 	ids.append(id)
 	owner.append(p_owner)
 	team.append(p_team)
@@ -31,6 +44,8 @@ func add(id: int, p_owner: int, p_team: int, p: Vector2, v: Vector2, r: float, p
 	life.append(p_life)
 	root_id.append(id)
 	proc_pct.append(100)
+	damage.append(p_damage)
+	tags.append(p_tags)
 
 
 ## Removes the entries at the given ascending indices, keeping order.
@@ -50,6 +65,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 	life = _pick_i(life, keep)
 	root_id = _pick_i(root_id, keep)
 	proc_pct = _pick_i(proc_pct, keep)
+	damage = _pick_i(damage, keep)
+	tags = _pick_i(tags, keep)
 	pos_x = _pick_f(pos_x, keep)
 	pos_y = _pick_f(pos_y, keep)
 	vel_x = _pick_f(vel_x, keep)
@@ -69,6 +86,8 @@ func hash_into(h: StateHasher) -> void:
 	h.add_ints(life)
 	h.add_ints(root_id)
 	h.add_ints(proc_pct)
+	h.add_ints(damage)
+	h.add_ints(tags)
 
 
 static func _pick_i(a: PackedInt32Array, keep: PackedInt32Array) -> PackedInt32Array:

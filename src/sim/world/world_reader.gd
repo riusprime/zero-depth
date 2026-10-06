@@ -49,6 +49,38 @@ func actor_radius(i: int) -> float:
 	return _w.actors.radius[i]
 
 
+func actor_kind(i: int) -> int:
+	return _w.actors.kinds[i]
+
+
+func actor_hp(i: int) -> int:
+	return _w.actors.hp[i]
+
+
+func actor_max_hp(i: int) -> int:
+	return _w.actors.max_hp[i]
+
+
+func actor_dead(i: int) -> bool:
+	return _w.actors.dead[i] == 1
+
+
+func actor_facing(i: int) -> int:
+	return _w.actors.facing[i]
+
+
+func actor_invulnerable(i: int) -> bool:
+	return _w.actors.invuln[i] > 0
+
+
+func player_dead() -> bool:
+	return _w.player_dead()
+
+
+func freeze_ticks() -> int:
+	return _w.freeze_ticks
+
+
 func projectile_count() -> int:
 	return _w.projectiles.size()
 

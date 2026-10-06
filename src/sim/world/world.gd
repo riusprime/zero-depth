@@ -43,13 +43,15 @@ var projectile_radius := 0.1
 ## get up to this much random aim error (1/4096 turns, from the ai stream).
 var dummy_keep_distance := 0.0
 var dummy_aim_spread := 0
+## Damage of a dummy's shot: 0 keeps the kernel scenario harmless.
+var dummy_shot_damage := 0
 
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
 var _wall_grid := UniformGrid.new()
 var _actor_grid := UniformGrid.new()
-## Spawns wait until phase 9 of the tick: [kind, team, pos, vel or radius, owner].
+## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags].
 var _pending_projectiles: Array[Array] = []
 
 
@@ -85,8 +87,22 @@ func add_dummy(p: Vector2, radius_m: float, hp: int) -> int:
 	var id := _take_id()
 	var first_shot := dummy_fire_period + (id % maxi(dummy_fire_period, 1))
 	actors.add(id, ActorStore.Kind.DUMMY, ActorStore.TEAM_ENEMY, p, radius_m, hp, first_shot)
-	_emit(SimEvent.Kind.SPAWN, id, id, id, p)
+	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
 	return id
+
+
+## Queues a projectile for phase 9 of this tick.
+func queue_projectile(
+	owner_id: int,
+	team: int,
+	at: Vector2,
+	vel: Vector2,
+	damage: int,
+	radius_m: float,
+	life: int,
+	tags: int
+) -> void:
+	_pending_projectiles.append([owner_id, team, at, vel, damage, radius_m, life, tags])
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
@@ -97,12 +113,15 @@ func step(frame: InputFrame) -> void:
 		_buffer_presses(frame.pressed)
 		tick += 1
 		return
-	# 2. Input.
+	# 2. Input (a dead player's input is ignored).
 	_age_buffer()
+	if player_dead():
+		frame = InputFrame.new()
 	_buffer_presses(frame.pressed)
 	move_intent = frame.move
 	aim_angle = frame.aim_angle
 	aim_dist_cm = frame.aim_dist_cm
+	actors.facing[0] = aim_angle
 	# 3. AI.
 	_run_ai()
 	# 4. Action states.
@@ -113,6 +132,7 @@ func step(frame: InputFrame) -> void:
 	_projectile_hits()
 	# 7. Effect queue and 8. statuses arrive in v0.2.0.
 	# 9. Deaths and spawns.
+	_remove_dead()
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -124,6 +144,24 @@ func add_freeze(ticks: int) -> void:
 
 func player_pos() -> Vector2:
 	return actors.pos(0)
+
+
+func player_dead() -> bool:
+	return actors.dead[0] == 1
+
+
+## The player's guard is up (v0.1.0 Step 3).
+func guarding() -> bool:
+	return false
+
+
+## Compiled numbers for an enemy kind (v0.1.0 Step 4); null for kinds without a table.
+func enemy_table(_kind: int) -> EnemyTable:
+	return null
+
+
+func dash_iframes_active() -> bool:
+	return dash_ticks_left > 0 and player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
 
 
 func is_dashing() -> bool:
@@ -198,7 +236,7 @@ func _take_id() -> int:
 	return id
 
 
-func _emit(kind: SimEvent.Kind, source: int, owner: int, target: int, at: Vector2) -> SimEvent:
+func emit_event(kind: SimEvent.Kind, source: int, owner: int, target: int, at: Vector2) -> SimEvent:
 	_event_seq += 1
 	var e := SimEvent.new()
 	e.seq = _event_seq
@@ -246,12 +284,25 @@ func _run_ai() -> void:
 					shot_angle += rng_ai.range_int(-dummy_aim_spread, dummy_aim_spread)
 				var dir := Kin.dir(shot_angle)
 				var muzzle := from + dir * (actors.radius[i] + projectile_radius + 0.05)
-				_pending_projectiles.append(
-					[id, ActorStore.TEAM_ENEMY, muzzle, dir * projectile_speed]
+				queue_projectile(
+					id,
+					ActorStore.TEAM_ENEMY,
+					muzzle,
+					dir * projectile_speed,
+					dummy_shot_damage,
+					projectile_radius,
+					projectile_life,
+					SimEvent.TAG_PROJECTILE
 				)
 
 
 func _advance_actions() -> void:
+	for i in actors.size():
+		if actors.invuln[i] > 0:
+			actors.invuln[i] -= 1
+	if player_dead():
+		dash_ticks_left = 0
+		return
 	if dash_cooldown_left > 0:
 		dash_cooldown_left -= 1
 	if dash_ticks_left > 0:
@@ -268,7 +319,9 @@ func _advance_actions() -> void:
 func _move_and_collide() -> void:
 	# Player.
 	var p := player_pos()
-	if dash_ticks_left > 0:
+	if player_dead():
+		pass
+	elif dash_ticks_left > 0:
 		p += dash_dir * (player.dash_distance_m / player.dash_ticks)
 	elif move_intent != Vector2i.ZERO:
 		var mv := Vector2(move_intent.x, move_intent.y) / float(SimTick.MOVE_MAX)
@@ -337,7 +390,7 @@ func _projectile_hits() -> void:
 				best_t = t
 				best_actor = -1
 		for k in _actor_grid.query_rect(span):
-			if actors.teams[k] == projectiles.team[i]:
+			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
 				continue
 			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
 			if t >= 0.0 and (t < best_t or (t == best_t and best_actor >= 0 and k < best_actor)):
@@ -345,16 +398,17 @@ func _projectile_hits() -> void:
 				best_actor = k
 		if best_t <= 1.0:
 			if best_actor >= 0:
-				var e := _emit(
-					SimEvent.Kind.HIT,
+				Damage.hit(
+					self,
+					best_actor,
+					projectiles.damage[i],
 					projectiles.ids[i],
 					projectiles.owner[i],
-					actors.ids[best_actor],
+					projectiles.root_id[i],
+					projectiles.tags[i],
+					a,
 					a + v * best_t
 				)
-				e.root_id = projectiles.root_id[i]
-				e.proc_pct = projectiles.proc_pct[i]
-				e.tags = SimEvent.TAG_PROJECTILE
 			dead.append(i)
 			continue
 		projectiles.pos_x[i] = b.x
@@ -365,9 +419,17 @@ func _projectile_hits() -> void:
 	projectiles.remove_sorted(dead)
 
 
+func _remove_dead() -> void:
+	var gone := PackedInt32Array()
+	for i in range(1, actors.size()):
+		if actors.dead[i] == 1:
+			gone.append(i)
+	actors.remove_sorted(gone)
+
+
 func _apply_spawns() -> void:
 	for s in _pending_projectiles:
 		var id := _take_id()
-		projectiles.add(id, s[0], s[1], s[2], s[3], projectile_radius, projectile_life)
-		_emit(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
+		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7])
+		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()

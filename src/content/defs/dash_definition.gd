@@ -5,4 +5,4 @@ extends Resource
 @export var distance_m := 4.0
 @export var duration_seconds := 0.15
 @export var cooldown_seconds := 0.8
-@export var iframes_seconds := 0.0
+@export var iframes_seconds := 0.15
