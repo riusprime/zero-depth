@@ -57,6 +57,10 @@ func projectile_pos(i: int) -> Vector2:
 	return Vector2(_w.projectiles.pos_x[i], _w.projectiles.pos_y[i])
 
 
+func projectile_vel(i: int) -> Vector2:
+	return Vector2(_w.projectiles.vel_x[i], _w.projectiles.vel_y[i])
+
+
 func projectile_id(i: int) -> int:
 	return _w.projectiles.ids[i]
 
