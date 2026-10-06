@@ -216,7 +216,7 @@ class_name PlayerDefinition extends Resource
 @export var hp: int
 @export var radius_m: float
 @export var move_speed_mps: float
-@export var primary: AttackDefinition
+@export var primary: PrimaryDefinition   # swing combo, charge, bolt (v0.1.0; the owner's Q1)
 @export var dash: DashDefinition          # distance_m, duration_seconds, cooldown_seconds, iframes_seconds
 @export var utilities: Array[UtilityDefinition]   # guard and the mobile skill; one is chosen before the run
 ```

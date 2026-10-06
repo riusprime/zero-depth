@@ -1,6 +1,8 @@
+# gdlint: disable=max-public-methods
 class_name WorldReader
 extends RefCounted
 ## The read-only face of World for presentation (EI-07). Presentation may name WorldReader, never World.
+## It is a wide facade on purpose: one read method per thing a view needs.
 
 var _w: World
 
@@ -75,6 +77,43 @@ func actor_invulnerable(i: int) -> bool:
 
 func player_dead() -> bool:
 	return _w.player_dead()
+
+
+func swing_tick() -> int:
+	return _w.swing_t
+
+
+func swing_angle() -> int:
+	return _w.swing_angle
+
+
+func combo_step() -> int:
+	return _w.combo_step
+
+
+## The arc of the current swing, for drawing: [half_arc, reach_m, own_radius_m]. Same numbers PlayerKit hits with.
+func swing_shape() -> Array:
+	return [_w.player.swing_half_arc, _w.player.swing_reach_m, _w.player.radius_m]
+
+
+func swing_ticks() -> int:
+	return _w.player.swing_ticks
+
+
+func charge_permille() -> int:
+	return PlayerKit.charge_permille(_w)
+
+
+func charging() -> bool:
+	return PlayerKit.charging(_w)
+
+
+func projectile_team(i: int) -> int:
+	return _w.projectiles.team[i]
+
+
+func projectile_full_charge(i: int) -> bool:
+	return (_w.projectiles.tags[i] & SimEvent.TAG_FULL_CHARGE) != 0
 
 
 func freeze_ticks() -> int:

@@ -30,6 +30,15 @@ var move_intent := Vector2i.ZERO
 var dash_ticks_left := 0
 var dash_cooldown_left := 0
 var dash_dir := Vector2.ZERO
+## Buttons held this tick (InputFrame bits).
+var held_buttons := 0
+## Primary (PlayerKit): swing tick (0 = none), its locked angle and root, combo step and window, hold ticks.
+var swing_t := 0
+var swing_angle := 0
+var swing_root := 0
+var combo_step := 0
+var combo_window := 0
+var primary_hold := 0
 ## Remaining ticks per button slot (BUTTON_BITS order) for buffered presses.
 var input_buffer := PackedInt32Array([0, 0, 0, 0])
 
@@ -121,6 +130,7 @@ func step(frame: InputFrame) -> void:
 	move_intent = frame.move
 	aim_angle = frame.aim_angle
 	aim_dist_cm = frame.aim_dist_cm
+	held_buttons = frame.held
 	actors.facing[0] = aim_angle
 	# 3. AI.
 	_run_ai()
@@ -203,6 +213,10 @@ func state_hash() -> String:
 	h.add_f32(dash_dir.x)
 	h.add_f32(dash_dir.y)
 	h.add_ints(input_buffer)
+	for v in [
+		held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, primary_hold
+	]:
+		h.add_int(v)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -228,6 +242,11 @@ func snapshot() -> Dictionary:
 		"actors": {"ids": actors.ids, "x": actors.pos_x, "y": actors.pos_y, "hp": actors.hp},
 		"projectiles": {"ids": projectiles.ids, "x": projectiles.pos_x, "y": projectiles.pos_y},
 	}
+
+
+## A fresh root id for a new chain (a player action or an enemy attack).
+func take_root() -> int:
+	return _take_id()
 
 
 func _take_id() -> int:
@@ -302,7 +321,10 @@ func _advance_actions() -> void:
 			actors.invuln[i] -= 1
 	if player_dead():
 		dash_ticks_left = 0
+		swing_t = 0
+		primary_hold = 0
 		return
+	PlayerKit.advance(self)
 	if dash_cooldown_left > 0:
 		dash_cooldown_left -= 1
 	if dash_ticks_left > 0:
@@ -328,7 +350,10 @@ func _move_and_collide() -> void:
 		var len := Kin.length(mv)
 		if len > 1.0:
 			mv /= len
-		p += mv * player.move_speed
+		var speed := player.move_speed
+		if PlayerKit.charging(self):
+			speed = speed * player.charge_move_permille / 1000.0
+		p += mv * speed
 	actors.set_pos(0, p)
 	# Dummies steer toward the player plus their jitter.
 	var target := p

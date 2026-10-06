@@ -6,6 +6,10 @@ extends ContentDef
 @export var radius_m := 0.35
 @export var move_speed_mps := 6.0
 @export var dash: DashDefinition
+@export var primary: PrimaryDefinition
+## After taking a hit: invulnerability and hit-stop.
+@export var hurt_iframes_seconds := 0.5
+@export var hurt_hitstop_seconds := 4.0 / 60.0
 
 
 func category() -> StringName:
@@ -31,4 +35,32 @@ func validate() -> Array[ValidationIssue]:
 					&"not_positive", resource_path, "dash.duration_seconds must be > 0"
 				)
 			)
+	check_duration(issues, "hurt_iframes_seconds", hurt_iframes_seconds)
+	check_duration(issues, "hurt_hitstop_seconds", hurt_hitstop_seconds)
+	if primary == null:
+		issues.append(ValidationIssue.new(&"missing", resource_path, "primary is missing"))
+	else:
+		_check_primary(issues)
 	return issues
+
+
+func _check_primary(issues: Array[ValidationIssue]) -> void:
+	var p := primary
+	check_duration(issues, "primary.swing_duration_seconds", p.swing_duration_seconds)
+	check_duration(issues, "primary.swing_active_seconds", p.swing_active_seconds)
+	check_duration(issues, "primary.charge_start_seconds", p.charge_start_seconds)
+	check_duration(issues, "primary.charge_full_seconds", p.charge_full_seconds)
+	check_positive(issues, "primary.swing_reach_m", p.swing_reach_m)
+	check_positive(issues, "primary.bolt_speed_mps", p.bolt_speed_mps)
+	if p.swing_damage.is_empty():
+		issues.append(
+			ValidationIssue.new(&"missing", resource_path, "primary.swing_damage is empty")
+		)
+	if p.swing_active_seconds > p.swing_duration_seconds:
+		issues.append(
+			ValidationIssue.new(&"order", resource_path, "the swing must hit before it ends")
+		)
+	if p.charge_full_seconds <= p.charge_start_seconds:
+		issues.append(
+			ValidationIssue.new(&"order", resource_path, "full charge must come after charge start")
+		)

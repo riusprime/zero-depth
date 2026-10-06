@@ -2,11 +2,16 @@
 
 [ext_resource type="Script" path="res://src/content/defs/dash_definition.gd" id="1_utv5o"]
 [ext_resource type="Script" path="res://src/content/defs/player_definition.gd" id="2_gn6h3"]
+[ext_resource type="Script" path="res://src/content/defs/primary_definition.gd" id="3_prim1"]
 
 [sub_resource type="Resource" id="Resource_17p3l"]
 script = ExtResource("1_utv5o")
 
+[sub_resource type="Resource" id="Resource_prim1"]
+script = ExtResource("3_prim1")
+
 [resource]
 script = ExtResource("2_gn6h3")
 dash = SubResource("Resource_17p3l")
+primary = SubResource("Resource_prim1")
 id = &"runner"

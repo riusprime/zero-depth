@@ -14,6 +14,8 @@ const TAG_CRIT := 16
 const TAG_BLOCKED := 32
 ## The hit was reduced by the target's guard.
 const TAG_GUARDED := 64
+## A fully charged bolt.
+const TAG_FULL_CHARGE := 128
 
 var seq := 0
 var tick := 0

@@ -52,6 +52,13 @@ func joy_axis(axis: JoyAxis, value: float) -> void:
 	send(ev)
 
 
+func mouse_button(button: MouseButton, pressed: bool) -> void:
+	var ev := InputEventMouseButton.new()
+	ev.button_index = button
+	ev.pressed = pressed
+	send(ev)
+
+
 ## Moves the mouse so the game receives `pos` in viewport coordinates. Headless windows are 0x0, so Godot's
 ## stretch transform rescales injected positions; the scale is measured once and divided out.
 func mouse_to(pos: Vector2) -> void:

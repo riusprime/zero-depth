@@ -31,7 +31,6 @@ func test_compiled_player_matches_the_kernel_starting_values() -> void:
 	var def: PlayerDefinition = ContentRepository.load_all().get_def(&"player", &"runner")
 	var a := ContentCompiler.compile_player(def)
 	var b := PlayerTable.starting_values()
-	assert_eq(
-		[a.hp, a.radius_m, a.move_speed, a.dash_distance_m, a.dash_ticks, a.dash_cooldown_ticks],
-		[b.hp, b.radius_m, b.move_speed, b.dash_distance_m, b.dash_ticks, b.dash_cooldown_ticks]
-	)
+	for prop in a.get_property_list():
+		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE:
+			assert_eq(a.get(prop["name"]), b.get(prop["name"]), prop["name"])
