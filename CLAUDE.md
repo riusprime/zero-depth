@@ -106,7 +106,8 @@ godot --path . -s scripts/shots/tour.gd                                # screens
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
 ```
 
-These scripts are created in v0.0.1; until a step builds one, it doesn't exist yet.
+Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after editing patch notes) and
+`bash scripts/ci/export_smoke.sh` (export + smoke, run from outside the project folder).
 
 ## Toolchain in a cloud session
 

@@ -14,7 +14,7 @@ those copies are built by `godot --headless --path . -s scripts/content/build_pa
 
 | Version | Name | Date |
 |---|---|---|
-| _none yet_ | v0.0.1 "Ground Plane" will be the first | |
+| [v0.0.1](v0.0.1.md) ([es](v0.0.1.es.md)) | Ground Plane | 2026-10-06 |
 
 ## Template
 

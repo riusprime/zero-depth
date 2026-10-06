@@ -4,12 +4,13 @@ A real-time action roguelike in low-poly isometric 3D. Move and aim freely; figh
 skill (guard or a mobile skill) and a dash. Build item **engines** (bleed, guard and more) that change how you
 play. Push through procedural floors across distinct biomes, where danger rises only when you choose it.
 
-**Status:** starter doc kit only; no game code yet. Active version: **v0.0.1 "Ground Plane"**
-([plan](docs/roadmap/v0.0.1/PLAN.md)). Windows, mouse+keyboard and gamepad. English and Spanish.
+**Status:** v0.0.1 "Ground Plane" built: a cube moves, aims and dashes on a test stage, menus in English and
+Spanish, every CI guard live. Waiting on the owner's playtest ([plan](docs/roadmap/v0.0.1/PLAN.md),
+[playtest](docs/roadmap/v0.0.1/PLAYTEST.md)). Windows, mouse+keyboard and gamepad. English and Spanish.
 
 ## Run and test
 
-These commands work once v0.0.1 builds the project ([`CLAUDE.md`](CLAUDE.md) has the full list).
+[`CLAUDE.md`](CLAUDE.md) has the full list of commands.
 
 ```bash
 godot --headless --path . --editor --import --quit   # first import

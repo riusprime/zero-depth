@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="PatchNotesDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/patch_notes_definition.gd" id="1_vjnm7"]
+
+[resource]
+script = ExtResource("1_vjnm7")
+version = "0.0.1"
+body_en = "# {{TITLE}} v0.0.1 — Ground Plane
+_2026-10-06_ · The foundations: a cube you can move, aim and dash on a stage, on keyboard+mouse or gamepad.
+
+## New Features
+### A stage to stand on
+The game boots to a menu and opens a single test stage seen through a fixed isometric camera. You play a cube:
+move, aim and dash. There are no enemies to fight yet; the targets on the stage only stand and shoot so the
+camera, the outlines and the see-through-walls view can be judged.
+- Keyboard+mouse and gamepad from day one: the same moves on both, with aim by mouse or by the right stick.
+- Your key and button bindings are kept in your profile.
+
+### Two languages
+Every menu and label is in English and Spanish, in a font chosen for legibility (Atkinson Hyperlegible).
+
+## User Interface
+- Main menu: Play, Options, Credits and Quit. The version is shown in the corner.
+- Pause menu during play.
+- Options: language, volumes, VSync and a frame-rate cap.
+- Credits: the engine's and the font's licences.
+"
+body_es = "# {{TITLE}} v0.0.1 — Terreno firme
+_2026-10-06_ · Los cimientos: un cubo que puedes mover, apuntar y lanzar en esprint por un escenario, con teclado y
+ratón o con mando.
+
+## Novedades
+### Un escenario donde pisar
+El juego arranca en un menú y abre un único escenario de prueba visto con una cámara isométrica fija. Controlas un
+cubo: te mueves, apuntas y haces un esprint. Todavía no hay enemigos contra los que luchar; los blancos del
+escenario solo se quedan quietos y disparan, para poder juzgar la cámara, los contornos y la vista a través de los
+muros.
+- Teclado y ratón y mando desde el primer día: los mismos movimientos en ambos, apuntando con el ratón o con el
+  stick derecho.
+- Tus asignaciones de teclas y botones se guardan en tu perfil.
+
+### Dos idiomas
+Todos los menús y textos están en inglés y en español, con una fuente pensada para leerse bien (Atkinson
+Hyperlegible).
+
+## Interfaz
+- Menú principal: Jugar, Opciones, Créditos y Salir. La versión aparece en una esquina.
+- Menú de pausa durante la partida.
+- Opciones: idioma, volúmenes, VSync y un límite de fotogramas.
+- Créditos: las licencias del motor y de la fuente.
+"
+id = &"v0_0_1"

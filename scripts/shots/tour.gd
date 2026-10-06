@@ -21,21 +21,39 @@ func _initialize() -> void:
 	ProfileStore.use_shared(profile)
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
-	# [frame, action]
+	# [frame, action]: menu -> credits -> back -> play -> move -> pause -> main menu -> options.
 	_script = [
-		[10, func() -> void: _shot("01_main_menu")],
-		[12, func() -> void: _key(KEY_ENTER, true)],
-		[13, func() -> void: _key(KEY_ENTER, false)],
-		[20, func() -> void: _shot("02_stage")],
-		[21, func() -> void: _key(KEY_D, true)],
-		[61, func() -> void: _key(KEY_D, false)],
-		[62, func() -> void: _key(KEY_W, true)],
-		[92, func() -> void: _key(KEY_W, false)],
-		[100, func() -> void: _shot("03_stage_moved")],
-		[102, func() -> void: _key(KEY_ESCAPE, true)],
-		[103, func() -> void: _key(KEY_ESCAPE, false)],
-		[110, func() -> void: _shot("04_pause")],
-		[112, func() -> void: quit(0)],
+		[10, _shot.bind("01_main_menu")],
+		[12, _key.bind(KEY_DOWN, true)],
+		[13, _key.bind(KEY_DOWN, false)],
+		[14, _key.bind(KEY_DOWN, true)],
+		[15, _key.bind(KEY_DOWN, false)],
+		[16, _key.bind(KEY_ENTER, true)],
+		[17, _key.bind(KEY_ENTER, false)],
+		[24, _shot.bind("02_credits")],
+		[26, _key.bind(KEY_ENTER, true)],
+		[27, _key.bind(KEY_ENTER, false)],
+		[32, _key.bind(KEY_ENTER, true)],
+		[33, _key.bind(KEY_ENTER, false)],
+		[40, _shot.bind("03_stage")],
+		[41, _key.bind(KEY_D, true)],
+		[81, _key.bind(KEY_D, false)],
+		[82, _key.bind(KEY_W, true)],
+		[112, _key.bind(KEY_W, false)],
+		[120, _shot.bind("04_stage_moved")],
+		[122, _key.bind(KEY_ESCAPE, true)],
+		[123, _key.bind(KEY_ESCAPE, false)],
+		[130, _shot.bind("05_pause")],
+		[132, _key.bind(KEY_DOWN, true)],
+		[133, _key.bind(KEY_DOWN, false)],
+		[134, _key.bind(KEY_ENTER, true)],
+		[135, _key.bind(KEY_ENTER, false)],
+		[142, _key.bind(KEY_DOWN, true)],
+		[143, _key.bind(KEY_DOWN, false)],
+		[144, _key.bind(KEY_ENTER, true)],
+		[145, _key.bind(KEY_ENTER, false)],
+		[152, _shot.bind("06_options")],
+		[154, quit.bind(0)],
 	]
 
 
