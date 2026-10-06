@@ -21,11 +21,10 @@ func insert_rect(index: int, rect: Rect2) -> void:
 	for cy in range(c0.y, c1.y + 1):
 		for cx in range(c0.x, c1.x + 1):
 			var key := Vector2i(cx, cy)
-			if not _cells.has(key):
-				_cells[key] = PackedInt32Array()
-			var list: PackedInt32Array = _cells[key]
+			var list: Array = _cells.get(key, [])
+			if list.is_empty():
+				_cells[key] = list
 			list.append(index)
-			_cells[key] = list
 
 
 ## Indices in cells overlapping rect, ascending, without duplicates.
@@ -33,12 +32,14 @@ func query_rect(rect: Rect2) -> PackedInt32Array:
 	var c0 := cell_of(rect.position)
 	var c1 := cell_of(rect.end)
 	var out := PackedInt32Array()
+	var cells_hit := 0
 	for cy in range(c0.y, c1.y + 1):
 		for cx in range(c0.x, c1.x + 1):
-			var key := Vector2i(cx, cy)
-			if _cells.has(key):
-				out.append_array(_cells[key])
-	if out.size() > 1:
+			var list: Array = _cells.get(Vector2i(cx, cy), [])
+			if not list.is_empty():
+				cells_hit += 1
+				out.append_array(PackedInt32Array(list))
+	if cells_hit > 1:
 		out.sort()
 		var dedup := PackedInt32Array()
 		var last := -1

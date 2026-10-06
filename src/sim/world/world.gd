@@ -39,6 +39,10 @@ var dummy_fire_period := 0
 var projectile_speed := 10.0 / SimTick.TICKS_PER_SECOND
 var projectile_life := 120
 var projectile_radius := 0.1
+## Bench knobs (0 = off, the golden's behaviour): movers hold this distance from the player, and shots
+## get up to this much random aim error (1/4096 turns, from the ai stream).
+var dummy_keep_distance := 0.0
+var dummy_aim_spread := 0
 
 var _next_id := 1
 var _event_seq := 0
@@ -237,7 +241,10 @@ func _run_ai() -> void:
 			if actors.fire_cd[i] <= 0:
 				actors.fire_cd[i] = dummy_fire_period
 				var from := actors.pos(i)
-				var dir := Kin.dir(Kin.angle_of(target - from))
+				var shot_angle := Kin.angle_of(target - from)
+				if dummy_aim_spread > 0:
+					shot_angle += rng_ai.range_int(-dummy_aim_spread, dummy_aim_spread)
+				var dir := Kin.dir(shot_angle)
 				var muzzle := from + dir * (actors.radius[i] + projectile_radius + 0.05)
 				_pending_projectiles.append(
 					[id, ActorStore.TEAM_ENEMY, muzzle, dir * projectile_speed]
@@ -275,6 +282,11 @@ func _move_and_collide() -> void:
 	for i in range(1, actors.size()):
 		var at := actors.pos(i)
 		var goal := target + Vector2(actors.jitter_x[i], actors.jitter_y[i])
+		if dummy_keep_distance > 0.0:
+			var away := at - target
+			var away_len := Kin.length(away)
+			if away_len > 0.0:
+				goal += away * (dummy_keep_distance / away_len)
 		var to := goal - at
 		var dist := Kin.length(to)
 		if dist > dummy_speed:
@@ -315,7 +327,8 @@ func _projectile_hits() -> void:
 		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
 		var b := a + v
 		var r := projectiles.radius[i]
-		var span := Rect2(a, Vector2.ZERO).expand(b).grow(r + 1.0)
+		# Walls and actors are inserted with their full extent, so the segment only grows by its own radius.
+		var span := Rect2(a, Vector2.ZERO).expand(b).grow(r)
 		var best_t := 2.0
 		var best_actor := -1
 		for w in _wall_grid.query_rect(span):

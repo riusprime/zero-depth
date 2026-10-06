@@ -55,6 +55,10 @@ jobs:
           diff build/smoke_a.jsonl build/smoke_b.jsonl
           grep -h '"seed":1}' build/smoke_a.jsonl
 
+      - name: Bench (informational, never fails the job)
+        continue-on-error: true
+        run: godot --headless --path . -s scripts/bench/sim_bench.gd
+
       - name: Lint and format
         run: |
           pip install -r requirements-dev.txt
