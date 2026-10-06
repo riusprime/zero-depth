@@ -15,7 +15,8 @@ Numbers marked **starting value** are defaults to tune, usually at a G2 gate or 
   ([`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §G).
 - **Follow:** the camera follows the player with a dead zone and a small look-ahead toward the aim point
   (**starting values**: dead zone 1.5 m, look-ahead 15% of aim distance, capped at 3 m). It is smoothed in
-  `_process` and never affects the sim.
+  `_process` and never affects the sim. Because it moves in `_process`, the camera node sets
+  `physics_interpolation_mode = PHYSICS_INTERPOLATION_MODE_OFF`, so physics interpolation doesn't fight it.
 - **Shake** is presentation only. It uses the `cosmetic` RNG stream, has an Options toggle and intensity slider,
   and is off under reduced motion.
 
@@ -34,13 +35,13 @@ Numbers marked **starting value** are defaults to tune, usually at a G2 gate or 
 ## 3. Readability rules
 
 The reference image ([`../art/ART_DIRECTION.md`](../art/ART_DIRECTION.md) §1) already shows where readability
-breaks. Each problem became a rule:
+breaks. The contrast figures below were computed from colours sampled out of the PNG. Each problem became a rule:
 
 | Problem seen in the image | Rule |
 |---|---|
-| The white player is weak against Frozen Shore snow | Every actor has a **dark contact-shadow ring** under it and a **rim or outline** (the stencil outline mode in `BaseMaterial3D`, proved in the v0.0.1 occlusion gallery). An actor's outline must reach a luminance contrast of at least **3:1** against its biome's ground. |
-| The red enemies are weak against Red Canyon ground | A **team ring decal** sits under every actor: cyan for the player, red for enemies. Team identity never relies on body hue alone. |
-| The red barrels share the enemies' red | Hazard props never use the enemy colour token. They get their own `hazard` token and a distinct silhouette (a cylinder with a band). |
+| The white player against Frozen Shore snow is **1.16:1** | Every actor has a **contact ring** under it and a **rim outline** (the stencil outline mode in `BaseMaterial3D`, to be proved in the v0.0.1 occlusion gallery), both drawn in the biome's `outline` token. Each biome's `outline` must reach at least **3:1** against its `ground`. |
+| The red enemies against Red Canyon ground are **1.21:1** | A **team ring decal** sits under every actor: cyan for the player, red for enemies. Team identity never relies on body hue alone. |
+| The red barrels share the enemies' red in all four biomes | Hazard props never use the enemy colour token. They get their own `hazard` token and a distinct silhouette (a cylinder with a band). |
 | Tall slabs hide actors from the iso view | **Occlusion cutaway** (§5). |
 | Hard, long shadows fall across the floor | Telegraphs and pickups render **unshaded and above shadows**. A shadow can never hide a warning. |
 
@@ -114,7 +115,7 @@ breaks. Each problem became a rule:
 the mode's colour vision on the tokens and asserts:
 - the player, enemy, hostile-projectile and telegraph tokens stay pairwise distinguishable (a minimum
   colour-difference threshold, **starting value** ΔE ≥ 20);
-- every actor outline keeps a contrast of at least 3:1 against every biome's ground token.
+- every biome's `outline` keeps a contrast of at least 3:1 against that biome's `ground`.
 
 ## 9. UI
 
@@ -129,11 +130,20 @@ the mode's colour vision on the tokens and asserts:
 - **Button prompts** show glyphs for the active device.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
+  - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default
+    theme and skip G2.
+  - Each stub goes through G2 when it is designed for real: Options in v0.1.0, the HUD and menus in v0.3.0.
 
 ## 10. Screenshot tour
 
-- `scripts/shots/tour.gd` is committed. It boots the game headless-capable with a fixed seed, walks through every
-  screen and a scripted combat moment, and saves PNGs to `build/shots/<version>/<lang>/` (gitignored).
+- `scripts/shots/tour.gd` is committed. It boots the game with a fixed seed, walks through every screen and a
+  scripted combat moment, and saves PNGs to `build/shots/<version>/<lang>/` (gitignored).
+- **It needs a real renderer:** `--headless` uses a dummy renderer that draws nothing. Run it like this:
+  - **In CI** (ubuntu), under `xvfb-run` with Mesa's software Vulkan (lavapipe) for Forward+, or llvmpipe OpenGL for
+    Compatibility. v0.0.1 Step 7 proves which works and records it. The PNGs are uploaded as a CI artifact.
+  - **Locally,** on any machine with a GPU: `godot --path . -s scripts/shots/tour.gd`.
+- **PNGs the owner decides on** (gallery picks, G2 mockups) are committed under the version's `evidence/shots/`,
+  because they are decision records. Full tours stay as CI artifacts.
 - G2 mockups use the same harness (`scripts/shots/mock_<screen>.gd`).
 - Deathventory's `.shots/` scripts were never committed, so every UI pass rebuilt them from scratch
   ([`../LESSONS.md`](../LESSONS.md) L12).

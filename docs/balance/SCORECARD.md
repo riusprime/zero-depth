@@ -1,7 +1,9 @@
 # Balance scorecard
 
 What "balanced" means for this game, how each part is measured, and how sims may and may not be used. The
-metrics and bands come from the gap analysis (GA §1–3) unless another source is named. Every number here is a
+metrics follow the five pillars and report sections of the audit framework
+([`../design/ROGUELIKE_AUDIT_FRAMEWORK.md`](../design/ROGUELIKE_AUDIT_FRAMEWORK.md)). Bands come from the gap
+analysis report (GA §1–3) unless another source is named. Every number here is a
 **target band**, not a measurement. Measurements live in each version's `evidence/`.
 
 ## 1. Rules for using sims
@@ -11,7 +13,7 @@ simulator mistakes ([`../LESSONS.md`](../LESSONS.md) L20). So:
 
 1. **Sims are for mechanics, exploits and relative strength.** Use them for chain safety, loops, caps, which
    archetype is ahead, which pickup dominates, and whether the generator's offers arrive.
-2. **Sims set numbers, not direction.** They can say "bleed clears Room 4 in 38 s at the p50 skill preset". They
+2. **Sims set numbers, not direction.** They can say "bleed clears Room 4 in <N> s at the average preset". They
    can't say whether that's fun.
 3. **A failed gate goes to the owner.** Never retune blind to pass a band, and never widen a band. Report the
    numbers, propose options, and let the owner decide ([`../process/OWNER_GATES.md`](../process/OWNER_GATES.md)
@@ -35,13 +37,19 @@ simulator mistakes ([`../LESSONS.md`](../LESSONS.md) L20). So:
 | M-DEAD | Dead starters | Each starter's win rate and pick-through rate | No dead starter (GA §1–3) | P0 |
 | M-TTK | Time to kill | Seconds to kill each enemy type, per archetype and floor | GA §1–3 | P1 |
 | M-ENC | Encounter length | Seconds per encounter, median and p90, by floor | GA §1–3 | P1 |
-| M-FLOOR | Floor length | Minutes per floor | 10–15 (v0.3.0 gate) | P1 |
+| M-FLOOR | Floor length | Minutes per floor | 10–15 (v0.3.0 gate) | P0 |
 | M-RUN | Run length | Minutes per run | median 35–45 (PD-03); every full run 30–60 (v0.5.0) | P1 |
 | M-THREAT | Threat trade | Win rate and reward value against the T chosen | Win rate falls as T rises; rewards make choosing T worth it (GA: threat) | P1 |
 | M-CAP | Cap pressure | Requested vs applied heal, barrier and refund amounts | Reported every version; bands from GA: caps | P1 |
 | M-STRESS | Stress matrix | §4 rules hold | All rules | P0 |
-| M-HAZARD | Biome fairness | Difference in a floor's death rate between biomes | ≤ 10 percentage points (v0.7.0 gate) | P1 |
-| M-BENCH | Sim cost | Tick cost in the bench | mean ≤ 2 ms, p99 ≤ 4 ms ([`../architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) §13) | P0 |
+| M-HAZARD | Biome fairness | Difference in a floor's death rate between biomes | ≤ 10 percentage points (v0.7.0 gate) | P0 |
+| M-BENCH | Sim cost | Tick cost in the bench | stress scene: mean ≤ 2 ms, p99 ≤ 4 ms; reference encounter: ≥ 15× real time ([`../architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) §13) | P0 |
+| M-MORT | Floor mortality | Share of deaths per floor and per room index, by archetype (framework §1) | Reported every version; bands from GA §1–3 | P1 |
+| M-POWER | Power curve | Damage per second and effective HP, by room index, per archetype (framework §1, §3) | No plateau longer than GA §3 allows, and no vertical spike | P1 |
+| M-SYNERGY | Synergy density | Share of a build's damage or mitigation that comes from multiplicative item interactions rather than additive stats (framework §2) | Rises with stacks for every engine (GA §2) | P1 |
+| M-LOOP | Degenerate loops | Any resource spend that returns ≥ its cost, found by `exploit:<case>` bots and the chain fuzz (framework §2) | 0 | P0 |
+| M-DIVERGE | Build divergence | First room where each specialist's behaviour (positioning, ability use, picks) separates from the generalist's (framework §3) | By Room 3–4 (framework pillar 3) | P0 |
+| M-GENERALIST | Generalist trap | Win rate of the unbiased `competent` policy compared with the best specialist (framework pillar 3) | The generalist is below the best specialist | P1 |
 
 **P0** cells are exit-gate material: a P0 miss blocks the version's exit gate until the owner decides. **P1** cells
 are reported every version and discussed with the owner when they drift.
@@ -53,6 +61,13 @@ Every cell must be fillable from a reproducible command by v0.5.0 (that is its e
 Bots produce an `InputFrame` per tick, exactly like the player
 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §3), so every bot run can be replayed.
 Policies are adapted from Deathventory's registry (`scripts/balance/sim/policy_registry.gd`).
+
+The framework names four playstyles: Aggro/Burst, Control/Attrition, Combo/Engine and Generalist. The policies
+map onto them like this:
+- `bleed` is Aggro/Burst;
+- `guard` is Control/Attrition;
+- a Combo/Engine specialist arrives with its engine;
+- `competent` is the Generalist.
 
 | Policy | Plays like | Reward choices |
 |---|---|---|
@@ -111,3 +126,23 @@ Use the evidence template ([`../process/TEMPLATES.md`](../process/TEMPLATES.md) 
   - **rewards:** `offers` (`[{room, items, picked}]`), `engine_online_room`, `threat` (`[{room, t}]`).
 - **Sample size:** at least 20 seeds per cell for a direction, and 100 or more before a P0 verdict, unless the
   owner agrees otherwise.
+
+## 6. Gap-analysis reports
+
+At three milestones the lead writes a **Roguelike Gap Analysis Report** for this game, in the audit framework's
+five-section format:
+1. the executive balance and archetype scorecard;
+2. engine health and the item synergy matrix;
+3. progression pacing and build crystallization;
+4. encounter counterplay and stress-testing;
+5. actionable redesign specifications.
+
+The milestones are:
+- v0.3.0, as input to the production decision;
+- v0.6.0, balance alpha;
+- v0.8.0, content beta.
+
+Each report goes in that version's `evidence/GAP_ANALYSIS.md`. Every number in it comes from a reproducible
+command, with the evidence template's honesty rules. Its redesign specifications are proposals: the owner
+approves them row by row, as a G1 audit ([`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §2), before
+anything is built. Deathventory's v0.9.5 gap analysis was written this way.

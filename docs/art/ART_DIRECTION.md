@@ -10,8 +10,8 @@ This file holds the look itself.
 
 ## 1. The reference image
 
-The owner's reference is a 2×2 grid of the same scene in four biomes. It belongs at
-`docs/art/reference/biomes_reference.png` (owner action O2 in the v0.0.1 PLAN). What it shows:
+[`biomes_reference.png`](biomes_reference.png) (1536×1024) is the owner's reference. It is a 2×2 grid of the same
+scene in four biomes:
 
 - **Every panel has:**
   - **Player:** a white cube with glowing **cyan** inset panels on its sides (the "core"). A short white health
@@ -19,7 +19,7 @@ The owner's reference is a 2×2 grid of the same scene in four biomes. It belong
   - **Enemies:** plain **red** cubes about the player's size, each with a short red bar above.
   - **Hostile shots:** **yellow** arrow-like streaks with dashed motion trails, flying from the enemies toward
     the player.
-  - **Hazard prop:** at least one **red cylinder**, a barrel. Its red is close to the enemies' red (§2 rule).
+  - **Hazard prop:** at least one **red cylinder**, a barrel. Its red is close to the enemies' red (§2).
   - **Ground detail:** small dark cubes scattered as rubble, and dry grass tufts.
   - **Floor:** large square tiles in two close tones, aligned to the world grid, so they read as diamonds on
     screen.
@@ -32,41 +32,59 @@ The owner's reference is a 2×2 grid of the same scene in four biomes. It belong
 - **Frozen Shore (bottom right):** white snow. Dark slate blocks. Bare dead trees. The shoreline meets dark blue
   **water** with white **ice floes**.
 
+**What the reference shows about readability.** These figures are WCAG contrast ratios computed from colours
+sampled out of the PNG (§2):
+- Enemy red against Red Canyon ground is **1.21:1**. A colour mask for "enemy red" also selects most of the
+  canyon floor.
+- The white player against Frozen Shore snow is **1.16:1**.
+- The barrels' red matches the enemies' red in all four panels.
+
+Each of these became a rule in [`../architecture/PRESENTATION_CONTRACTS.md`](../architecture/PRESENTATION_CONTRACTS.md)
+§3.
+
 ## 2. Palette tokens
 
-Every `BiomeDefinition.palette` defines these tokens ([`../architecture/CONTENT_SCHEMA.md`](../architecture/CONTENT_SCHEMA.md)
-§6). Values are **approximate eyedrops** from the reference. The owner confirms or adjusts them at the v0.1.0 G2
-gate, and the confirmed values replace these.
+**Biome tokens.** Every `BiomeDefinition.palette` must define exactly these seven keys
+([`../architecture/CONTENT_SCHEMA.md`](../architecture/CONTENT_SCHEMA.md) §6):
+`ground`, `ground_alt`, `cover`, `accent`, `edge`, `ambient`, `outline`.
+
+Values marked *sampled* are medians of the reference PNG's pixels (lit faces where it matters). Values marked
+*proposal* aren't visible in the image. The owner confirms or changes all of them at the v0.1.0 G2 gate.
 
 | Token | Ruins | Night Rocks | Red Canyon | Frozen Shore (later) |
 |---|---|---|---|---|
-| `ground` | sand `#D9C4A0` | `#4A649A` | `#C9553F` | snow `#DCE6F0` |
-| `ground_alt` (tile tone) | `#D2BC96` | `#46609A` | `#C24F3A` | `#D4DFEA` |
-| `cover` | grey slab `#8C8C90` | `#33477A` | `#8E3A2B` | `#3D4F75` |
-| `accent` (grass, props) | dry grass `#B07A3A` | fence wood `#3C3A44` | dry grass `#A0502E` | dead wood `#4A5468` |
-| `void` / `water` | — | void `#1F2842` | dark `#5E241B` | water `#3C6E96` |
-| `ambient` (light tint) | warm `#FFF1DC` | cool `#B8C8F0` | warm red `#FFD2C0` | cool `#E8F0FF` |
+| `ground` | `#CBAD91` sampled | `#486796` sampled | `#C55946` sampled | `#D1DAE4` sampled |
+| `ground_alt` (tile tone) | `#D0B396` sampled | `#50709F` sampled | `#D0614B` sampled | `#C7D3E1` sampled |
+| `cover` | `#8C8C90` eyedrop (lit slab) | `#395077` sampled | `#7A3D36` sampled | `#303C52` sampled |
+| `accent` (grass, props) | `#9D6B4C` sampled (grass) | `#3C3A44` proposal (fence) | `#9D6B4C` proposal (grass) | `#455B77` sampled |
+| `edge` (void, cliff, water) | `#A08A74` proposal (no edge in image) | `#253043` sampled (void) | `#4C3032` sampled (cliff) | `#436C8E` sampled (water) |
+| `ambient` (light tint) | `#FFF1DC` proposal | `#B8C8F0` proposal | `#FFD2C0` proposal | `#E8F0FF` proposal |
+| `outline` (actor rim + contact ring) | `#1A1A22` (8.2:1) | `#EEF2F8` light (5.1:1) | `#1A1A22` (4.0:1) | `#1A1A22` (12.2:1) |
 
-**Fixed actor colours** (the same in every biome; remapped only by colour-blind modes):
+**Why `outline` changes per biome.** A dark outline on Night Rocks' blue reaches only 3.0:1, right at the limit,
+so that biome uses a light rim. The ratio after each value is its contrast against that biome's `ground`. The
+palette test requires at least 3:1.
+
+**Fixed tokens.** These live in `ThemePalette`, not in biomes. They are the same everywhere, and only
+colour-blind modes remap them.
 
 | Token | Value | Use |
 |---|---|---|
-| `player_body` | white `#F2F2F2` | Player cube |
-| `player_core` | cyan `#33D6FF` (emissive) | Core panels, the player's ring, player projectiles |
-| `player_bar` | white `#F2F2F2` | Player health bar |
-| `enemy_body` | red `#D63A2F` | Enemy cubes |
-| `enemy_bar` | red `#D63A2F` | Enemy health bars |
-| `proj_hostile` | yellow `#FFC93C` (emissive) | **Hostile projectiles only** |
-| `telegraph_hostile` | **proposal:** orange-red outline `#FF6A3D`, fill at 30% | Enemy attack areas |
-| `hazard` | **proposal:** orange `#E0892B` with a dark band | Barrels and other hazard props, kept off `enemy_body` |
-| `outline_dark` | `#1A1A22` | Actor outlines and contact rings |
+| `player_body` | `#F2F2F2` (lit in the image: `#EEE8E0` sampled) | Player cube |
+| `player_core` | `#2BC4E2` sampled; emissive | Core panels, the player's ring, player projectiles |
+| `player_bar` | `#F2F2F2` | Player health bar |
+| `enemy_body` | `#E25A4C` sampled (lit faces) | Enemy cubes |
+| `enemy_bar` | `#DF3731` sampled | Enemy health bars |
+| `proj_hostile` | `#FBD07A` sampled; emissive | **Hostile projectiles only** |
+| `telegraph_hostile` | `#FF6A3D` proposal: outline, with fill at 30% | Enemy attack areas |
+| `hazard` | `#E0892B` proposal: orange with a dark band | Barrels and other hazard props |
 
 Rules:
 - `proj_hostile` and `player_core` are reserved for their uses (enforced by the palette test).
-- The reference's red barrels are too close to `enemy_body`. Barrels use `hazard`, whose value is decided at
-  G2.
-- Each biome's `ground` must stay at least 3:1 in luminance contrast against `outline_dark`, so outlines read
-  everywhere.
+- Barrels sample at `#C3503E`–`#E25E4F`, the same as `enemy_body`. So barrels use `hazard`, and its final value is
+  decided at G2.
+- `enemy_body` against Red Canyon `ground` is 1.21:1. Team rings and outlines carry identity there, not hue
+  ([`../architecture/PRESENTATION_CONTRACTS.md`](../architecture/PRESENTATION_CONTRACTS.md) §3).
 
 ## 3. Shapes
 

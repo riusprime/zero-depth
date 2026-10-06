@@ -16,23 +16,33 @@ copies what worked in the owner's previous game, Deathventory ("DV"). The rules 
 3. If there's no PLAN for the active version, you're its lead: do Phase 0 (ROADMAP §0.2), write the PLAN, and
    commit it before any code.
 
-## Authority (higher wins; on a conflict, stop and ask the owner)
+## Authority
 
-1. The owner's explicit instructions in this session, once written into a PLAN or LOCKED_DECISIONS.
+A higher rank wins over a lower one. Stop and ask the owner when:
+- two sources of the same rank disagree;
+- a lower-ranked source looks more right than a higher one.
+
+Never resolve a conflict quietly.
+
+1. The owner's explicit instructions, once written into a PLAN, PROGRESS or LOCKED_DECISIONS.
 2. [`docs/architecture/LOCKED_DECISIONS.md`](docs/architecture/LOCKED_DECISIONS.md) and
-   [`docs/design/GAME_BLUEPRINT.md`](docs/design/GAME_BLUEPRINT.md). The blueprint's numbers come from
-   [`docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md) ("GA").
-3. The contracts:
+   [`docs/design/GAME_BLUEPRINT.md`](docs/design/GAME_BLUEPRINT.md). The blueprint draws on
+   [`docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md) ("GA"; the report is
+   pending) and [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) (the five
+   design pillars).
+3. [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md), the process docs in `docs/process/`, and the contracts:
    - [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md);
    - [`SIM_CONTRACTS.md`](docs/architecture/SIM_CONTRACTS.md);
    - [`CONTENT_SCHEMA.md`](docs/architecture/CONTENT_SCHEMA.md);
    - [`PRESENTATION_CONTRACTS.md`](docs/architecture/PRESENTATION_CONTRACTS.md);
    - [`TEST_MATRIX.md`](docs/architecture/TEST_MATRIX.md);
-   - [`SCORECARD.md`](docs/balance/SCORECARD.md).
-4. The active version's PLAN.
+   - [`SCORECARD.md`](docs/balance/SCORECARD.md);
+   - [`ART_DIRECTION.md`](docs/art/ART_DIRECTION.md).
+4. The active version's PLAN. It refines the ROADMAP scope for its version. It may add stubs ahead of the
+   roadmap, but it drops roadmap scope only with the owner's agreement.
 5. Existing code and tests.
 
-Superseded rules are listed in ROADMAP §3. Never resolve a conflict quietly.
+Superseded rules are listed in ROADMAP §3.
 
 ## Hard rules
 
@@ -68,6 +78,8 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 - **Owner-only fields stay empty for the owner:** playtest answers, "fun", feel, results on their hardware.
   Mark them `OWNER ONLY`.
 - **No placeholder that looks like data:** no fake hashes, timings or counts. Write `—`, or the real value.
+- **Tools never write into tracked evidence.** A script writes to `build/`. Evidence files are edited by hand, from
+  the script's output.
 - **If a target is missed, report the numbers and stop.** Never quietly widen the target, retune blind, or skip
   the check.
 - **Report failures as failures.** Paste the failing output.
@@ -91,11 +103,19 @@ godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule
 godot --headless --path . -s scripts/bench/sim_bench.gd                # bench → paste into evidence
-godot --headless --path . -s scripts/shots/tour.gd                     # screenshot tour → build/shots/
+godot --path . -s scripts/shots/tour.gd                                # screenshot tour (needs a renderer, not --headless) → build/shots/<version>/<lang>/
 gdformat --check src scripts tests && gdlint src scripts tests         # lint (pip install -r requirements-dev.txt)
 ```
 
 These scripts are created in v0.0.1; until a step builds one, it doesn't exist yet.
+
+## Toolchain in a cloud session
+
+- `bash scripts/setup_toolchain.sh` (from v0.0.1 Step 2) installs the pinned Godot `4.7.x`, its export templates
+  and `gdtoolkit`.
+- If the environment's network policy blocks a download, say so, and rely on CI for that check. A check that
+  didn't run locally is reported as "not run locally (reason)", never as passed.
+- The owner may register the setup script as a SessionStart hook, so every session starts ready.
 
 ## Commits and branches
 
@@ -117,13 +137,15 @@ These scripts are created in v0.0.1; until a step builds one, it doesn't exist y
 | Versions, exit gates, release checklist | [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md) |
 | Layers, folders, loop, input, save, Deathventory reuse | [`docs/architecture/ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md) |
 | Tick, `InputFrame`, events, damage, procs, caps, hashing | [`docs/architecture/SIM_CONTRACTS.md`](docs/architecture/SIM_CONTRACTS.md) |
-| Balance metrics, bots, sim rules | [`docs/balance/SCORECARD.md`](docs/balance/SCORECARD.md) |
+| Balance metrics, bots, sim rules, gap-analysis reports | [`docs/balance/SCORECARD.md`](docs/balance/SCORECARD.md) |
+| The five design pillars (the audit framework) | [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) |
 | Palettes, shapes, lighting, art requests | [`docs/art/ART_DIRECTION.md`](docs/art/ART_DIRECTION.md) |
 | PLAN, PROGRESS, evidence, patch-note templates | [`docs/process/TEMPLATES.md`](docs/process/TEMPLATES.md) |
 
 ## Glossary
 
-- **GA:** the gap analysis v0.1, the source of the design numbers. `GA §5` cites a section; `GA: <topic>` cites a
+- **GA:** the gap analysis v0.1 report, the source of the design numbers (pending). Its audit framework is a
+  separate file. `GA §5` cites a section; `GA: <topic>` cites a
   topic resolved through the file's citation map.
 - **EI / PD:** engineering invariant / product default ([`LOCKED_DECISIONS.md`](docs/architecture/LOCKED_DECISIONS.md)).
 - **T:** threat, raised only by the player's choices.

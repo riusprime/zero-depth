@@ -44,7 +44,7 @@ the order is part of the contract:
 
 | # | Phase | Notes |
 |---|---|---|
-| 1 | **Freeze check** | If `world.freeze_ticks > 0`: decrement it, store the frame's `pressed` bits in the input buffer (§3), increment `world.tick`, publish cues and **stop**. Nothing moves and no status ticks during hit-stop. |
+| 1 | **Freeze check** | If `world.freeze_ticks > 0`: decrement it, add the frame's `pressed` bits to the input buffer (§3), increment `world.tick`, publish cues and **stop**. Nothing moves, no status ticks, and **the input buffer doesn't age** during hit-stop. |
 | 2 | **Input** | Apply the `InputFrame` to the player: move intent, aim, held buttons, and new presses into the 6-tick buffer. |
 | 3 | **AI** | Enemies think in ascending entity id. Expensive thinking (path queries, target scoring) is staggered: an enemy with id `n` runs its heavy pass only when `(tick + n) % AI_HEAVY_PERIOD == 0` (**starting value** `AI_HEAVY_PERIOD = 6`). Light steering runs every tick. |
 | 4 | **Action states** | Each actor's current action advances through `WINDUP → ACTIVE → RECOVERY` by tick counts. A buffered press starts a new action only when the current one allows cancelling. |
@@ -69,7 +69,7 @@ replays and tests call `step` directly in a loop, with no scene tree.
 class_name InputFrame extends RefCounted
 var move: Vector2i        # −127..127 per axis, world-plane space, deadzone already applied
 var aim_angle: int        # 0..4095, 1/4096 of a turn
-var aim_dist_cm: int      # distance from the player to the aim point, 0..CLAMP
+var aim_dist_cm: int      # distance from the player to the aim point, 0..AIM_DIST_MAX_CM (starting value 3000)
 var held: int             # bitmask of buttons held this tick
 var pressed: int          # bitmask of buttons pressed since the previous tick
 ```
@@ -79,13 +79,30 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
 - **Latching.** The application layer's `InputLatch` collects device events between ticks. A press and release
   that both happen between two ticks still set the `pressed` bit on the next frame, so a tap shorter than one
   frame is never lost. Each `pressed` bit is delivered exactly once.
-- **Buffer.** The sim keeps each `pressed` bit for 6 ticks (`INPUT_BUFFER_TICKS = 6`). An action that can't start
-  yet (for example, a dash during recovery) starts as soon as it can, if that happens inside the window.
+- **Buffer.** The sim keeps each `pressed` bit for 6 ticks (`INPUT_BUFFER_TICKS = 6`) in the player's state inside
+  `World`. An action that can't start yet (for example, a dash during recovery) starts as soon as it can, if that
+  happens inside the window. Freeze ticks don't count toward the 6.
 - **Quantization.** The latch turns raw input into the frame:
-  - **Move:** the stick or WASD vector is rotated from screen space into the world plane by the camera's fixed
-    yaw, deadzoned, and scaled to −127..127.
-  - **Aim:** a mouse ray hits the ground plane at core height; a stick's direction is used directly. Both become
-    an angle and a distance.
+  - **Move:** the stick or WASD vector is screen-relative. It is rotated into the sim plane by the camera yaw
+    (below), deadzoned, and scaled to −127..127.
+  - **Aim with the stick:** the right stick is screen-relative too, so it is rotated the same way.
+  - **Aim with the mouse:** a ray from the camera hits the ground plane at core height. That gives a world point,
+    which is already in sim coordinates, so no rotation is applied.
+  - Both aims become an angle and a distance.
+- **Rotation convention** (the one place it's defined).
+  - The camera rig has `rotation.y = +45°`. Sim `(x, y)` maps to 3D `(x, 0, −y)`.
+  - So screen input `(sx, sy)`, with `sy` positive for up, rotates **+45°** (counter-clockwise) into the sim:
+    `(sx·c − sy·c, sx·c + sy·c)` with `c = √½`.
+  - **Worked example:**
+
+    | Input | Screen | Sim angle (1/4096 turn) | Sim direction |
+    |---|---|---|---|
+    | W or stick up | up | 1536 (135°) | `(−0.707, 0.707)` |
+    | D or stick right | right | 512 (45°) | `(0.707, 0.707)` |
+    | S | down | 3584 (315°) | `(0.707, −0.707)` |
+    | A | left | 2560 (225°) | `(−0.707, −0.707)` |
+
+    `tests/unit/application/test_input_latch.gd` asserts this table.
   - **Aim assist** (gamepad only, about a 12° cone, GA: input) is applied **before** quantization. The replay log
     stores the final, assisted aim, so replays never re-run assist.
 - **Bots** build `InputFrame`s too. They inject their own aim error and reaction delay (see
@@ -120,8 +137,9 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   happened earlier.
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
-- The `cosmetic` stream lives in presentation (particle jitter, camera shake noise). It never reaches the sim, and
-  the arch lint fails if `src/sim/` mentions it.
+- The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
+  from the run seed by the same `derive_stream_seed(run_seed, "cosmetic")`, so screenshots and replays look the same
+  every time. It never reaches the sim, and the arch lint fails if `src/sim/` mentions it.
 
 ## 6. Kinematics and collision
 
@@ -170,7 +188,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT` (new kinds are appended) |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`. The whole enum is declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -227,14 +245,17 @@ every request with `requested` vs `applied`, so cap pressure shows up in run rec
 - ≤ 512 events per tick.
 
 Hitting any of them stops that chain, emits one `LIMIT` event naming the guard, and continues the tick. Tests and
-sims assert that the `LIMIT` count is 0.
+sims assert that the `LIMIT` count is 0. The fuzz test is deliberately stricter: ≤ 256 events per tick, so normal
+play stays well under the watchdog ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-FUZZ).
 
 ## 9. What presentation receives
 
-- `World.events_since(seq) -> Array[SimEvent]`: read-only, in `seq` order.
-- `World.snapshot() -> Dictionary`: a plain-data copy for the inspector, desync diffs and debug views. It is not
-  used for gameplay.
-- `World` read accessors for positions, HP, statuses, action states and telegraphs. Views use these every frame.
+Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
+([`ARCHITECTURE.md`](ARCHITECTURE.md) §3). It offers:
+- `events_since(seq) -> Array[SimEvent]`: read-only, in `seq` order.
+- `snapshot() -> Dictionary`: a plain-data copy for the inspector, desync diffs and debug views. It is not used
+  for gameplay.
+- Getters for positions, HP, statuses, action states and telegraphs. Views use these every frame.
 - **Cues** are events plus derived presentation hints (for example "hit-stop started"). The `CueBuffer` in
   `src/application/` passes them on **without blocking the sim**. Deathventory's `PresentationGate` let animation
   hold the game; that is gone (see [`ARCHITECTURE.md`](ARCHITECTURE.md) §12).

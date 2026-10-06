@@ -16,23 +16,35 @@ How the game's data is defined, validated, discovered and compiled. The invarian
   must exist in `locale/strings.csv` with both `en` and `es` filled (EI-10).
 - Durations are authored in seconds (`float`) and distances in metres. `ContentCompiler` converts durations to
   ticks once ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §1). The sim never reads a `Resource` directly.
-- Numbers that come from the gap analysis say so in a comment on the export (`## GA §5`), so a reviewer can trace
-  them.
+- **Tracing values.** Where a field's values come from the gap analysis, the `@export` in the definition's `.gd`
+  says so in a doc comment (`## Values: GA §5`). A `.tres` can't carry this: its comments are dropped when the
+  editor re-saves it.
+- **Starting values.** Values that are tuning defaults rather than sourced numbers are listed in
+  [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C, "Starting values in use", with the file, the
+  field and the value.
 - New enum values are appended, never inserted, because saved files store the integer.
 
 ## 1. Discovery and loading
 
-- **One scanner.** `ContentScanner.scan(root: String) -> PackedStringArray` walks a folder with
-  `ResourceLoader.list_directory()` (Godot 4.4+). That call lists resources by their logical names in the
-  editor and in exported packs, where files are remapped. The results are sorted.
+- **One scanner.** `ContentScanner.scan(root: String) -> PackedStringArray` walks a folder tree with
+  `ResourceLoader.list_directory()` (Godot 4.4+).
+  - That call lists resources by their logical names, both in the editor and in exported packs, where files are
+    remapped.
+  - It isn't recursive: entries ending in `/` are folders, and the scanner descends into them itself.
+  - The results are sorted.
 - Deathventory found files with `DirAccess` and `.tres` suffix checks. Every export shipped empty until v0.9.6
   fixed it by stripping `.remap` by hand ([`../LESSONS.md`](../LESSONS.md) L4). Here the engine call does that
   work, and the export smoke proves it.
 - **`ContentRepository`** (adapted from Deathventory) loads every definition type from its folder through the
   scanner, indexes by `id`, runs `validate()` on each, and cross-checks references (an encounter naming an enemy
   that doesn't exist is an `ERROR`).
-- **Content hash.** The repository computes a SHA-256 manifest hash over the sorted `(type, id, resource bytes)`
-  list. Replays and saves record it. The export smoke checks that the exported pack's hash equals the project's.
+- **Content hash.** The repository computes a SHA-256 manifest hash over the sorted list of
+  `(type, id, canonical properties)`.
+  - "Canonical properties" means the `CanonicalValue` encoding of each loaded resource's storage properties.
+  - It is **not** the file bytes. Exports convert text `.tres` to binary by default, so file bytes differ between
+    the project and the pack. Loaded values don't.
+  - Replays and saves record the hash. The export smoke checks that the pack's hash equals the project's
+    (`scripts/content/print_manifest.gd` prints it).
 
 ## 2. Items and effects
 
@@ -172,8 +184,14 @@ class_name BiomeDefinition extends Resource
 
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
-- `palette` must define every token listed in [`../art/ART_DIRECTION.md`](../art/ART_DIRECTION.md) §2. Missing
-  tokens are `ERROR`s.
+- `palette` must define exactly the seven biome tokens listed in
+  [`../art/ART_DIRECTION.md`](../art/ART_DIRECTION.md) §2: `ground`, `ground_alt`, `cover`, `accent`, `edge`,
+  `ambient`, `outline`.
+  - A missing or unknown key is an `ERROR`.
+  - An `outline` below 3:1 contrast against `ground` is an `ERROR`.
+  - Actor colours are fixed `ThemePalette` tokens, not biome tokens.
+- `PropDefinition` (defined in v0.3.0): `id`, a mesh kind (a primitive or a procgen recipe), a size range, whether
+  it blocks movement (only cover blocks), and its placement rule (cover slot, Poisson scatter or edge).
 
 ## 7. Threat and scaling
 
@@ -203,15 +221,20 @@ class_name PlayerDefinition extends Resource
 @export var utilities: Array[UtilityDefinition]   # guard and the mobile skill; one is chosen before the run
 ```
 
-Values come from GA §5 (player kit). Until the gap analysis file is in the repo, v0.0.1 may use values marked
-`## STARTING VALUE` in the `.tres` and in PROGRESS. The owner tunes them during the v0.0.1 Windows check.
+`UtilityDefinition` (defined in v0.1.0): `id`, `name_key`, `kind` (`GUARD` or `MOBILE`), the timings in seconds,
+a cooldown, and `params` checked against the kind's schema.
+
+Values come from GA §5 (player kit). Until the gap analysis report is in the repo, v0.0.1 uses starting values,
+listed in [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C. The owner tunes them during the v0.0.1
+Windows check.
 
 ## 9. Compiled tables
 
 At encounter start, `ContentCompiler` turns the definitions an encounter needs into plain typed arrays and
 dictionaries inside `World`, converting seconds to ticks and resolving ids to indices. `LoadoutCompiler` turns
 the player's items and stacks into a `StatBlock` and trigger bindings, and only recompiles when stacks change.
-The sim reads these compiled tables, never `Resource`s.
+The sim reads these compiled tables, never `Resource`s. In v0.0.1 the compiler handles only `PlayerDefinition`
+(to `PlayerTable`), which the app passes to `World.new()`.
 
 ## 10. Locale
 
@@ -221,4 +244,6 @@ The sim reads these compiled tables, never `Resource`s.
 - `tests/content/test_locale_coverage.gd` fails if:
   - a `*_key` in any definition is missing from the CSV;
   - a CSV row has an empty `en` or `es` cell;
-  - a `tr("…")` literal in `src/` names a key that isn't in the CSV.
+  - a `tr("…")` literal in `src/` names a key that isn't in the CSV;
+  - a `text = "…"` (or `tooltip_text`) property in a `.tscn` under `src/` holds anything other than a key that is
+    in the CSV. Controls auto-translate their `text`, so `.tscn` files hold keys.

@@ -17,8 +17,8 @@ The split exists because Deathventory locked product choices as hard as engineer
 within days ([`../LESSONS.md`](../LESSONS.md) L9). Here, product choices are expected to move.
 
 Authority order for the whole repo is in [`../../CLAUDE.md`](../../CLAUDE.md). This file and
-[`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) share the top rank. If they disagree, stop and ask
-the owner; never pick one quietly.
+[`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) share rank 2, right below the owner's written
+instructions. If they disagree, stop and ask the owner; never pick one quietly.
 
 ---
 
@@ -31,8 +31,8 @@ the owner; never pick one quietly.
 | EI-03 | **One gameplay clock.** The sim advances in fixed ticks at 60 Hz. `World.tick` is the only gameplay clock. Content is authored in seconds and converted to whole ticks once, when content is compiled. Presentation never owns gameplay time: no `Timer`, tween or animation decides an outcome. | [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §2; hitch test (`tests/unit/sim/test_hitch_rules.gd`) |
 | EI-04 | **Input is a per-tick frame.** Player input reaches the sim only as one quantized `InputFrame` per tick. A replay is (sim version, content hash, seed, loadout, `InputFrame` log), and nothing else. | [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §3; replay golden |
 | EI-05 | **Named RNG streams.** Gameplay randomness comes only from the named streams `map`, `loot`, `combat` and `ai`, each a seeded `RngStream`. The `cosmetic` stream exists only in presentation and never feeds the sim. | [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §5; arch lint |
-| EI-06 | **Provenance and bounded chains.** Every damage, heal, barrier and status event carries provenance (`root_id`, `parent_seq`, `depth`, `ancestry`, `proc_pct`). Each item effect activates at most once per root chain. Damage-over-time ticks never proc on-hit effects. A death resolves exactly once. A watchdog caps chain depth and event counts, emits a `LIMIT` event when hit, and tests and sims fail on any `LIMIT`. | [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §7–§9; chain tests; fuzz test |
-| EI-07 | **Presentation is read-only.** Presentation reads `World` snapshots and the event log and never writes sim state. Every forecast (damage numbers, telegraph areas, previews) calls the same sim function that resolves the real outcome. | Arch lint (no `src/presentation` → `src/sim` writes); forecast-parity tests |
+| EI-06 | **Provenance and bounded chains.** Every damage, heal, barrier and status event carries provenance (`root_id`, `parent_seq`, `depth`, `ancestry`, `proc_pct`). Each item effect activates at most once per root chain. Damage-over-time ticks never proc on-hit effects. A death resolves exactly once. A watchdog caps chain depth and event counts, emits a `LIMIT` event when hit, and tests and sims fail on any `LIMIT`. | [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §7–§8; chain tests; fuzz test |
+| EI-07 | **Presentation is read-only.** Presentation reads `World` snapshots and the event log and never writes sim state. Every forecast (damage numbers, telegraph areas, previews) calls the same sim function that resolves the real outcome. | Arch lint: presentation may reference the read-only `WorldReader`, never `World` ([`ARCHITECTURE.md`](ARCHITECTURE.md) §3); forecast-parity tests |
 | EI-08 | **Typed, validated, export-safe content.** Content is typed `.tres` Resources with a `validate()` method, checked at load. Discovery goes through one `ContentScanner` built on `ResourceLoader.list_directory`, which survives export remapping. The CI export smoke proves the exported pack holds the same content as the project. | [`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md); export smoke |
 | EI-09 | **Save format ≠ game version.** Saves carry a `save_version` that is separate from the game version and changes only when the format does. A save that fails to load is kept on disk and reported, never deleted. | [`ARCHITECTURE.md`](ARCHITECTURE.md) §10; save tests |
 | EI-10 | **Every visible string is translated.** Every string a player can see goes through `tr()` with a key in `locale/strings.csv`. English is the source. Spanish is updated in the same version as the English text. | Locale coverage test; release checklist |

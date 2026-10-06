@@ -30,14 +30,14 @@ Evidence files are part of the deliverable, not a substitute for tests
 | T-E2E | Real-input e2e | `tests/e2e/` | Boots `main.tscn` and drives it **only** through `Input.parse_input_event` + `Input.flush_buffered_events()` + `await physics_frame`, under `--fixed-fps 60`. No direct calls into game objects, no writes to private state | CI `verify` |
 | T-CONTENT | Content | `tests/content/` | Every definition validates. References resolve. Pool limits hold. Rooms re-bake identically | CI `verify` |
 | T-LOCALE | Locale coverage | `tests/content/test_locale_coverage.gd` | Every key has `en` and `es`; every `tr()` literal exists | CI `verify` |
-| T-GEN | Generation properties | `tests/gen/` | N seeds per biome produce valid, deterministic floors with no fallback storms | CI (200 per biome), nightly (10,000) |
+| T-GEN | Generation properties | `tests/gen/` | N seeds per biome produce valid, deterministic floors with no fallback storms | CI (200 per biome); `nightly.yml` (10,000 per biome), both from v0.3.0 |
 | T-PARITY | Forecast parity | `tests/unit/presentation/` | Telegraph areas and preview numbers equal the resolved outcome (EI-07) | CI `verify` |
 | T-FUZZ | Chain fuzz | `tests/unit/effects/test_chain_fuzz.gd` | 200 random loadouts of 10–30 stacks: zero `LIMIT` events, ≤ 256 events per tick | CI `verify` (from v0.2.0) |
 | T-SAVE | Save round-trip | `tests/unit/application/` | Save → load → continue gives the same hashes. A bad save is kept and reported | CI `verify` (from v0.4.0) |
-| T-EXPORT | Export smoke | `tests/export/export_smoke.gd` | The exported pack holds the project's content (same manifest hash), loads Spanish, runs a 600-tick encounter, and doesn't ship GUT | CI `verify` |
+| T-EXPORT | Export smoke | `tests/export/export_smoke.gd` | The exported pack holds the project's content (same manifest hash), loads Spanish, runs a 600-tick `World` (an encounter from v0.1.0), and doesn't ship GUT | CI `verify` |
 | T-BENCH | Bench | `scripts/bench/` | Sim tick cost against the budget in [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 | Each version; result in `evidence/` |
 | T-SIM | Balance sims | `scripts/sim/` | Scorecard metrics ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)) | From v0.2.0; evidence |
-| T-SHOTS | Screenshot tour | `scripts/shots/` | Every screen renders in en and es at the tested resolutions | Each release; evidence |
+| T-SHOTS | Screenshot tour | `scripts/shots/` | Every screen renders in en and es at the tested resolutions. It needs a real renderer, never `--headless` | CI `shots` (xvfb) and each release; evidence |
 | T-CI | CI self-checks | `.github/workflows/` | Versions match the pins. The minimum test count holds. No `SCRIPT ERROR` or `Parse Error` in the log | CI |
 
 ## 3. CI guards against a green run that tested nothing
@@ -45,8 +45,9 @@ Evidence files are part of the deliverable, not a substitute for tests
 Deathventory's GUT exits 0 when it can't start (for example when `class_name`s weren't imported). Its CI added a
 `grep "Passing Tests"` guard ([`../LESSONS.md`](../LESSONS.md) L5). Here CI fails when any of these holds:
 - the GUT summary line is missing;
-- the number of passing tests is below `tests/MIN_TEST_COUNT` (a committed integer; the lead raises it at every
-  release to the new count, and never lowers it without an owner-approved reason in PROGRESS);
+- the number of passing tests is below `tests/MIN_TEST_COUNT`. This is a committed integer, seeded in v0.0.1
+  Step 2. The lead raises it at the end of every step and at every release, and never lowers it without an
+  owner-approved reason in PROGRESS;
 - the log contains `SCRIPT ERROR`, `Parse Error` or `Failed to load script`;
 - the import step logs an error (no `|| true`).
 
@@ -58,7 +59,7 @@ Deathventory's GUT exits 0 when it can't start (for example when `class_name`s w
 | A new player-facing feature | At least one T-E2E test that reaches it from the main menu or a dev-panel seed **through real input**. The PLAN step answers "reachable from the real game?" with the test's name |
 | A new item, enemy or boss | T-CONTENT (validates), T-UNIT for its effect or behaviour, an entry in the stress matrix, and a sim row once sims exist |
 | A presentation-only change | T-PARITY if it draws an area or number. T-SHOTS output for the owner. No change under `src/sim/` |
-| A new screen | Gate G2 first ([`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3), then T-SHOTS in en and es |
+| A new screen | Gate G2 first ([`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3), then T-SHOTS in en and es. v0.0.1's functional stubs are exempt until they're designed ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §9) |
 | Content data only (tuning values) | T-CONTENT, plus a sim result if a scorecard metric moves |
 | A save format change | Bump `save_version`, add a migration or a "can't load" path, and T-SAVE |
 | A golden regeneration | Only on purpose. Named in PROGRESS "Goldens changed on purpose" with the reason, the old and new hash, and the commit |

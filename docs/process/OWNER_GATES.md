@@ -71,9 +71,9 @@ The answers go into PLAN ("Owner decisions") the same day, and into `LOCKED_DECI
 
 ## 5. Owner playtests
 
-A version ends with a playtest on a **real Windows export**. CI uploads the build as an artifact. No version may
-follow another without one ([`../roadmap/ROADMAP.md`](../roadmap/ROADMAP.md) §0). Presentation and art work can
-continue while the playtest is pending.
+A minor version ends with a playtest on a **real Windows export**. CI uploads the build as an artifact. No minor
+version starts until the previous one has been playtested ([`../roadmap/ROADMAP.md`](../roadmap/ROADMAP.md)
+§0.3). Presentation and art work can continue while the playtest is pending.
 
 - **Before:** the lead writes `docs/roadmap/vX.Y.Z/PLAYTEST.md`, which holds:
   - how to get the build (the CI artifact link);

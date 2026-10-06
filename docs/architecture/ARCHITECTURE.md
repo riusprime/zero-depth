@@ -28,7 +28,7 @@ app ──► presentation ──► application ──► sim ──► content
 | Layer | Folder | May import | Owns |
 |---|---|---|---|
 | `app` | `src/app/` | everything below | `main.tscn`, composition root, `SimDriver`, boot, window-close handling |
-| `presentation` | `src/presentation/` | `application`, read-only `sim` types, `content/defs` | 3D views, camera, HUD, menus, theme, audio, VFX, device input capture |
+| `presentation` | `src/presentation/` | `application`, `WorldReader` and plain sim value types (`SimEvent`, `InputFrame`), `content/defs` | 3D views, camera, HUD, menus, theme, audio, VFX, device input capture |
 | `application` | `src/application/` | `sim`, `content` | run and encounter sessions, `InputLatch`, aim assist, replay record/play, save and profile stores, settings, input remap, `CueBuffer` |
 | `sim` | `src/sim/` | `content/defs` (compiled tables only) | `World`, kernel, collision, combat, effects, AI, generation, run rules |
 | `content` | `src/content/` | nothing above it | definitions, scanner, repository, validator, compilers |
@@ -37,18 +37,23 @@ app ──► presentation ──► application ──► sim ──► content
 - **Nothing imports `app/` or `debug/`.**
 - `presentation` never writes sim state (EI-07). It calls `application` methods, which turn requests into
   `InputFrame` bits or debug commands applied at a tick boundary.
-- `scripts/` (sims, bench, content tools) may use `application`, `sim` and `content`, never `presentation`.
+- `scripts/` (sims, bench, content tools) may use `application`, `sim` and `content`. Only `scripts/shots/` and
+  `scripts/checks/` boot the app (`main.tscn`), because they test the running game.
 
 ## 3. Architecture lint
 
 `tests/arch/test_layering.gd` and `tests/arch/test_sim_purity.gd` read every `.gd` file and fail on violations.
 
 - **Layering:** a `preload`/`load` path or `class_name` reference that crosses a layer the wrong way fails.
+- **Read-only view (EI-07):** `src/presentation/` may name `WorldReader` (a facade with getters, `events_since()`
+  and `snapshot()`), but never `World` itself. A reference to `World`, `ActorStore` or `ProjectileStore` there
+  fails.
 - **Sim purity:** inside `src/sim/`, these whole-word tokens fail (outside comments and strings):
   - **Scene and engine access:** `Node`, `SceneTree`, `get_tree`, `get_node`, `emit_signal`, `await`, `Tween`,
     `Timer`, `Input`, `Time.`, `OS.`, `Engine.`, `load(`, `preload(` (except the allow-listed kernel tables).
   - **Randomness:** `randi`, `randf`, `randomize`, `RandomNumberGenerator`, `cosmetic`.
-  - **Banned maths:** `sin(`, `cos(`, `tan(`, `atan2(`, `atan(`, `pow(`, `exp(`, `log(`.
+  - **Banned maths:** `sin(`, `cos(`, `tan(`, `atan2(`, `atan(`, `pow(`, `exp(`, `log(`, plus the method forms
+    `.angle(`, `.rotated(`, `from_angle(`, `angle_to(`, `angle_to_point(` and `.slerp(`.
 - This widens Deathventory's purity scan (`tests/unit/dv_330/test_statuses_hazards.gd`). That scan read only one
   folder, matched raw substrings (so `Input` would also flag `InputFrame`), and didn't ban
   `RandomNumberGenerator`. Here the match is word-bounded and recursive.
@@ -67,8 +72,8 @@ app ──► presentation ──► application ──► sim ──► content
 
 - **Catch-up.** After a long frame, Godot runs at most 4 physics steps and drops the rest of the backlog, so the
   game slows down instead of skipping time. Deathventory's `AUDIT_COMBAT` found presentation-owned clocks and
-  hitches that ate game time ([`../LESSONS.md`](../LESSONS.md) L3). This design fixes that by construction, and
-  the hitch test proves it ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-HITCH).
+  hitches that ate game time ([`../LESSONS.md`](../LESSONS.md) L3). This design is meant to rule that out, and
+  T-HITCH must prove it ([`TEST_MATRIX.md`](TEST_MATRIX.md)) before anything builds on it.
 - **One tick, in order:**
   1. The `InputLatch` closes the frame for this tick ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §3).
   2. `World.step(frame)` runs.
@@ -82,8 +87,9 @@ app ──► presentation ──► application ──► sim ──► content
 ```
 src/
   sim/
-    core/        tick constants, RngStream, Kin (+ generated trig_lut.gd), StateHasher, InputFrame, ids
-    world/       World, actor and projectile stores, snapshots
+    core/        tick constants, RngStream (+ ported rng math), CanonicalValue, Kin (+ generated trig_lut.gd),
+                 StateHasher, InputFrame
+    world/       World, WorldReader (read-only facade), actor and projectile stores, snapshots
     collision/   circles, OBBs, swept segments, uniform grid, static wall grid
     combat/      action states, hitboxes, damage pipeline, statuses, CapLedger
     effects/     SimEvent, EffectQueue, RootLedger, LoadoutCompiler, EffectRuntime, watchdog
@@ -101,14 +107,17 @@ src/
     input/       device tracker, mouse ground-plane aim, prompt glyphs
     hud/  menus/  theme/  audio/  vfx/
   app/           main.tscn, main.gd, composition.gd, sim_driver.gd, game_version.gd
-  debug/         dev_panel, event_chain_inspector, debug_event_log, debug_time_controller
+  debug/         dev_panel, event_chain_inspector, debug_event_log, debug_time_controller, galleries/
 scripts/
-  sim/           gen_trig_lut.gd, encounter_sim.gd, run_sim.gd, policies/
+  sim/           gen_trig_lut.gd, kernel_smoke.gd, encounter_sim.gd, run_sim.gd, policies/
   bench/         sim_bench.gd, view_bench.gd
-  content/       bake_rooms.gd
-  shots/         tour.gd, mock_<screen>.gd
+  checks/        hitch_probe.gd
+  content/       print_manifest.gd, build_patch_notes.gd, bake_rooms.gd (from v0.3.0)
+  shots/         galleries.gd, tour.gd, mock_<screen>.gd
+  setup_toolchain.sh, verify.sh, verify.ps1, export_windows.ps1
 data/
   items/ enemies/ encounters/ bosses/ biomes/ threat/ rooms/ rooms_src/ player/ loot_pools/ patch_notes/ credits/
+  audio/cues/
 locale/strings.csv
 tests/
   unit/ arch/ golden/ gen/ content/ e2e/ export/ support/
@@ -118,8 +127,10 @@ docs/ (this kit)
 ## 6. Coordinates
 
 - The sim plane uses metres, with `(x, y)` → 3D `(x, 0, -y)`. Up in the sim is "away" on the 3D ground.
-- The camera's fixed yaw is 45°, so "screen up" on the stick or WASD is the world direction rotated by −45°. The
-  `InputLatch` applies this rotation before quantizing ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §3).
+- The camera rig's yaw is fixed at `rotation.y = +45°`. Screen-relative input (WASD, both sticks) is rotated +45°
+  into the sim plane by the `InputLatch` before quantizing. W maps to sim angle 135°. The convention and a worked
+  table are in [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §3. Mouse aim needs no rotation, because its ray hits the
+  plane in world coordinates.
 - **Core height** is a constant (**starting value** 0.5 m). It is where mouse rays meet the ground plane and where
   projectiles are drawn, so the reticle lines up with the shot.
 
@@ -176,7 +187,7 @@ docs/ (this kit)
   A fallback is logged and counted.
 - **Tests.**
   - CI runs 200 seeds per biome on every PR, checking validity, determinism and no fallback storms.
-  - A nightly job runs 10,000 seeds.
+  - A nightly job (`.github/workflows/nightly.yml`, from v0.3.0) runs 10,000 seeds per biome.
   - v0.4.0 adds 1,000-seed property tests across all floors.
 - **Plan hash.** `FloorPlan` has its own hash, which saves store ([`§10`](#10-save)).
 
@@ -213,27 +224,32 @@ docs/ (this kit)
 - **Localization:** `tr()` keys from `locale/strings.csv` ([`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §10), a
   dynamic TTF font, and a key-coverage test. It replaces Deathventory's regex-based `Loc` (which looked up
   translations from English display text) and its bitmap Spanish fonts.
-- **Renderer:** Forward+.
-  - On Windows it gives stable orthographic shadows, glow for the cyan core and the yellow streaks, and MSAA.
+- **Renderer:** Forward+ is the default until the v0.0.1 gate decides.
+  - It is expected to give stable orthographic shadows, glow for the cyan core and the yellow streaks, and MSAA.
+    The renderer gallery checks that against Compatibility on the lowest-spec Windows PC the owner wants to
+    support, and the owner picks.
   - Materials are `StandardMaterial3D` only, with no custom shaders unless a gallery scene proves the need.
-  - In v0.0.1, the renderer scene is compared against Compatibility on the owner's lowest-spec GPU, and the owner
-    picks.
-- **CI** (built in v0.0.1; full steps in [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 3):
+- **CI.** This is a summary. The exact steps, and the step in which each guard goes live, are in
+  [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 3.
   - **`verify` (ubuntu):**
     1. check the Godot and GUT versions;
     2. import;
     3. run GUT, grepping its summary, writing JUnit XML, asserting a committed minimum test count, and failing on
        `SCRIPT ERROR` or `Parse Error`;
     4. run the real-time hitch probe (`scripts/checks/hitch_probe.gd`), then `gdformat --check` and `gdlint`;
-    5. re-bake rooms and fail on any diff;
+    5. re-bake rooms and fail on any diff (`git diff --exit-code -- data/rooms`; from v0.3.0, when rooms exist);
     6. export the pack and smoke it: content counts, the manifest hash, Spanish loaded, a 600-tick headless
-       encounter inside the pack, and no GUT shipped;
-    7. sim smoke: a 20-run shard, run twice and diffed.
+       `World` run inside the pack (dummy movers in v0.0.1, a real encounter from v0.1.0), and no GUT shipped;
+    7. sim smoke: 20 seeded runs, run twice and diffed;
+    8. the bench, as an informational (non-failing) step whose output feeds evidence.
+  - **`shots`** (ubuntu, under `xvfb-run`): gallery and tour screenshots as an artifact
+    ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §10).
   - **`windows`:**
-    1. run the golden replays (cross-OS determinism, EI-11);
-    2. export the `.exe`;
-    3. audit the zip;
-    4. upload the artifact.
+    1. check the pins and import, with the same guards;
+    2. run the golden replays (cross-OS determinism, EI-11);
+    3. export the release `.exe` and a debug gallery build;
+    4. audit the zip;
+    5. upload both artifacts.
 
 ## 12. Reusing Deathventory
 
@@ -242,7 +258,9 @@ The new repo can read `riusprime/deathventory` only if the owner adds it to the 
 files. Each copied file gets a header comment:
 `# Ported from riusprime/deathventory@<sha>:<path>. Changes: <list>.`
 
-All paths below were verified against Deathventory `main` at `1d697803` (v0.9.7).
+All paths and line numbers below were verified against Deathventory `main` at `1d697803` (v0.9.7). v0.0.1 Step 0
+records the SHA it ports from in `evidence/PORTS.md`. Every later port uses that same SHA, even if Deathventory's
+`main` moves on.
 
 ### PORT (copy, then trim)
 
@@ -294,7 +312,7 @@ All paths below were verified against Deathventory `main` at `1d697803` (v0.9.7)
 
 | # | Risk | Early proof | When |
 |---|---|---|---|
-| 1 | GDScript is too slow for the sim | `scripts/bench/sim_bench.gd` with 60 enemies, 300 projectiles, 40 walls, for 3,600 ticks. **Targets:** mean ≤ 2 ms per tick, p99 ≤ 4 ms, headless ≥ 15× real time | v0.0.1 (dummy movers), v0.1.0 (real enemy AI) |
+| 1 | GDScript is too slow for the sim | `scripts/bench/sim_bench.gd`. **Stress scene:** 60 enemies, 300 projectiles, 40 walls, for 3,600 ticks, at mean ≤ 2 ms per tick and p99 ≤ 4 ms. **Reference encounter** (what sims run): headless ≥ 15× real time, which means a mean ≤ 1.1 ms. The stress scene can't meet both: 2 ms per tick is only 8.3× real time. So the 15× target applies to the reference encounter; the owner confirms this reading in v0.0.1 | v0.0.1 (dummy movers), v0.1.0 (real enemy AI) |
 | 2 | Floats differ between operating systems | Replay golden with the same hash on the ubuntu and windows jobs | v0.0.1 |
 | 3 | The renderer misbehaves | Shadow and streak scene in Forward+ vs. Compatibility on the owner's GPU | v0.0.1 |
 | 4 | Iso occlusion hides the action | Occlusion gallery scene, plus a unit test of the pure occluder-selection function | v0.0.1 |

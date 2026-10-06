@@ -24,7 +24,7 @@ passes, not on a calendar.
   release.
 - **Subagents** are only for read-only investigations (tracing an owner line to code, auditing a family of
   content) and for reviews of a finished diff. They never commit.
-- Deathventory's first phase used a 54-task DAG with exclusive file leases and many worker sessions. It produced
+- Deathventory's first phase used a 54-task DAG (55 after a remediation task) with exclusive file leases and many worker sessions. It produced
   fabricated playtest and smoke evidence (DV-920, DV-930), and its leases left work unwired (the tooltip in
   CX-30). Deathventory moved to a solo lead from v0.2.0, and that's the model here
   ([`../LESSONS.md`](../LESSONS.md) L1, L2).
@@ -108,14 +108,19 @@ CI runs everything on every PR.
 - **The look:** low-poly isometric 3D. A white cube with a cyan core is the player, red cubes are enemies, slabs
   and rocks are cover, and there are four biome palettes ([`../art/ART_DIRECTION.md`](../art/ART_DIRECTION.md)).
 - **Design source:** *Roguelike Gap Analysis & Initial Development Roadmap v0.1*
-  ([`../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md)), organized into
+  ([`../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md); the report is pending)
+  and its audit framework, the five design pillars
+  ([`../design/ROGUELIKE_AUDIT_FRAMEWORK.md`](../design/ROGUELIKE_AUDIT_FRAMEWORK.md)). Both are organized into
   [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md).
 - **Owner decisions:**
   - **Engine:** Godot 4 in 3D with a fixed orthographic iso camera. The sim is a flat 2D plane.
   - **Floors:** procedural. Three biomes ship first; more are added during balancing, before the game is content
     complete.
   - **Platform:** Windows, with mouse+keyboard and twin-stick gamepad parity from day one.
-  - **Kickoff deliverable:** a starter doc kit (this repo's first commit).
+  - **Kickoff deliverable:** a starter doc kit (this repo's first commit). The kit:
+    - copies Deathventory's process that worked;
+    - turns every Deathventory lesson into a rule;
+    - rebuilds the architecture as a deterministic real-time sim behind a 3D view.
 
 ## 2. Versioning and patch notes
 
@@ -156,12 +161,12 @@ M4b. Exit gates name who checks each item:
 | **v0.0.1** | Ground Plane | M0 | Project scaffold and layers. GUT and CI (verify, export smoke, hitch probe, Windows golden and export, lint). Sim kernel: tick, `InputFrame`, entities, collision grid, RNG streams, hasher, event log. `sim_bench`. The player cube moves, aims and dashes with mouse+keyboard and gamepad on an iso stage, with interpolation. Renderer and occlusion proof scenes. `InputMap` and a remap store. Settings store. `tr()` with `strings.csv` en/es and a TTF font. Version single source and patch notes. Credits and license stub. Dev panel stub. `ContentScanner` | CI green, including export smoke (**test**). Replay hash stable over 10k ticks and identical on ubuntu and windows (**test**). Bench within budget (**bench**). Renderer picked (**owner**, on their GPU). The owner moves the cube with both devices on a Windows export (**owner**) | Active |
 | **v0.1.0** | Combat Lab | M1 | One arena. Primary, utility (guard / mobile skill) and dash. Charger, Warden and Needle with telegraphs. Hit feel: hit-stop as sim freeze ticks, flash, shake toggle. Death and restart. Provenance events. Options screen: audio, display, remap, shake, reduced motion, colour-blind modes. Placeholder SFX hooks with captions. e2e real-input tests | No damage without a readable cause (**test** + **owner**). `sim_bench` with real enemy AI stays within budget (**bench**). **Fun without loot (owner)** | — |
 | **v0.2.0** | Engine Kernel | M2 | Effect queue; data-driven triggers, conditions and payoffs. Statuses: bleed, slow, stagger. Barrier and sustain caps, proc coefficients, the ancestry guard. 8–12 items. Dev panel: forced loadouts, exact stacks, seed, event-chain inspector, replay. Run recorder JSONL. Bot policies and encounter sims | The bleed engine and the guard engine both work (**test**). Chain and resource-loop tests pass (**test**). Both engines clear the reference encounters within bands (**sims**) | — |
-| **v0.3.0** | First Floor | M3 | A procedural floor: room graph and templates, Ruins biome. Disruptor, Splitter and Anchor. Boss 1 with stagger. 12 items. The reward schedule. Threat T and an optional branch. HUD and item cards (G2). Pause. Death recap. First-time hints. App icon. Explosive barrel (an optional step) | **Production decision** ([`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §L): a 10–15 min floor; distinct aggro and control wins (**sims** + **owner**). ≥ 90% of seeds offer an engine by Room 4 (**sims**). Testers can explain their build after Room 4 (**humans**) | — |
+| **v0.3.0** | First Floor | M3 | A procedural floor: room graph and templates, Ruins biome. Disruptor, Splitter and Anchor. Boss 1 with stagger. 12 items. The reward schedule. Threat T and an optional branch. HUD and item cards (G2). Pause. Death recap. First-time hints. App icon. Explosive barrel (an optional step). The first gap-analysis report ([`../balance/SCORECARD.md`](../balance/SCORECARD.md) §6) | **Production decision** ([`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §L): a 10–15 min floor (**sims**); distinct aggro and control wins (**sims** + **owner**). ≥ 90% of seeds offer an engine by Room 4 (**sims**). Testers can explain their build after Room 4 (**humans**) | — |
 | v0.3.5 | Feedback pass | — | The owner's feedback on the slice | **Owner** | — |
 | **v0.4.0** | Three Floors | M4a | Floors 2–3 with the Night Rocks and Red Canyon biomes, in random pool order. Bosses 2–3. 12 enemy behaviours. 24 items. Slot-cap prototype behind a flag. Saves at every room entry plus save on close: quitting mid-room resumes at that room's entry. Run end screen | Generation property tests over 1,000 seeds (**test**). Save/resume round trip with equal hashes (**test**). A full run (**owner**) | — |
 | **v0.5.0** | Roads Between | M4b | Shops and events, cursed rewards, salvage, optional routes. A full run of 30–60 minutes. All scorecard data collected | Every scorecard cell can be filled from reproducible commands (**sims** + **test**) | — |
 | v0.5.5 | Feedback pass | — | | **Owner** | — |
-| **v0.6.0** | Balance Alpha | M5 | A paired-seed sim program. 8–12 human sessions run by the owner. Revisions. A 40–50 item candidate pool. The slot-cap decision (PD-08) | No archetype is excluded, no pickup is universally dominant, no starter is dead (**sims** + **humans**) | — |
+| **v0.6.0** | Balance Alpha | M5 | A paired-seed sim program. 8–12 human sessions run by the owner. Revisions. A 40–50 item candidate pool. The slot-cap decision (PD-08). A gap-analysis report ([`../balance/SCORECARD.md`](../balance/SCORECARD.md) §6) | No archetype is excluded, no pickup is universally dominant, no starter is dead (**sims** + **humans**) | — |
 | **v0.7.0** | New Ground | balance | 4th biome, Frozen Shore (water edges and ice props), plus any others the owner picks. Added as balance and variety tests of the generator | No biome shifts a floor's death hazard by more than 10 percentage points (**sims**) | — |
 | **v0.8.0** | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language. Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
 | v0.9.x | Launch line | — | Final credits and licenses, local achievements, an accessibility pass, a Steam build, trailer moments | The owner's launch list (**owner**) | — |
@@ -181,7 +186,8 @@ M4b. Exit gates name who checks each item:
 | Export smoke in CI | v0.0.1 | v0.9.6 |
 | Dev panel | v0.0.1 (stub) | v0.5.5 |
 | Options and remapping | v0.1.0 (store from v0.0.1) | v0.5.7 |
-| Colour-blind modes and reduced motion | v0.1.0 | v0.9.6 |
+| Colour-blind modes | v0.1.0 | v0.9.6 |
+| Reduced motion | v0.1.0 | v0.8.2 |
 | Onboarding hints | v0.3.0 | v0.9.6 |
 | App icon | v0.3.0 | v0.9.6 |
 | Autosave | v0.4.0 | v0.9.6 |

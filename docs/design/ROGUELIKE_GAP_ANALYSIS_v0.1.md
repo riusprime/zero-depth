@@ -6,14 +6,26 @@
 > available to the session that wrote the starter kit. So this file is a placeholder: no part of the document has
 > been reconstructed, summarized or guessed. Paste the original exactly. Don't rewrite or "clean it up".
 > Owner action O1 in [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 0.
+>
+> **2026-10-06:** the owner pasted the **audit framework**: the five pillars and the instructions for the report's
+> five sections. It is committed verbatim as [`ROGUELIKE_AUDIT_FRAMEWORK.md`](ROGUELIKE_AUDIT_FRAMEWORK.md). It
+> contains none of the numbers the kit cites from the report below (run structure, enemies, rewards, player kit,
+> milestones), so **this report is still pending**. If the framework is all there is, the owner says so. The lead
+> then records each cited number as an owner decision in `LOCKED_DECISIONS.md` and retires this file.
 
 ## Citation map (the lead fills this in after the paste)
 
 The other docs cite this file as `GA §n` (a section number from the planning conversation) or `GA: <topic>` (a
 topic still to be resolved). After the paste, the lead:
 1. fills in the **Section** column below;
-2. checks that the planning conversation's two section numbers (§1–3 for the scorecard, §5 for the player kit)
-   point where the docs say, and corrects any that don't;
+2. checks that the planning conversation's two section numbers point where the docs say, and corrects any that
+   don't:
+   - §1–3 are cited for the scorecard;
+   - §5 is cited for the player kit.
+
+   The framework fixes the report's section titles: Section 1 is the scorecard, Section 2 engine health, Section 3
+   pacing, Section 4 encounters and Section 5 redesign specifications. So the player-kit numbers are expected in
+   §5's "archetype tuning" and "exact formula/stat adjustments";
 3. checks the numbers the kit already states against the document;
 4. records any mismatch as an owner question. It never silently fixes one in either direction.
 

@@ -1,8 +1,11 @@
 # Game blueprint
 
 The game's design, organized so it can be built in the order of [`../roadmap/ROADMAP.md`](../roadmap/ROADMAP.md).
-The design source is the owner's *Roguelike Gap Analysis & Initial Development Roadmap v0.1*
-([`ROGUELIKE_GAP_ANALYSIS_v0.1.md`](ROGUELIKE_GAP_ANALYSIS_v0.1.md), "GA").
+The design sources are:
+- the owner's *Roguelike Gap Analysis & Initial Development Roadmap v0.1*
+  ([`ROGUELIKE_GAP_ANALYSIS_v0.1.md`](ROGUELIKE_GAP_ANALYSIS_v0.1.md), "GA"; the report itself is pending);
+- its audit framework, the five design pillars
+  ([`ROGUELIKE_AUDIT_FRAMEWORK.md`](ROGUELIKE_AUDIT_FRAMEWORK.md)), committed verbatim.
 
 - **This file reorganizes the GA; it doesn't restate its numbers.** It cites them as `GA §n`, or as `GA: <topic>`,
   which the GA file's citation map resolves to a section.
@@ -12,8 +15,8 @@ The design source is the owner's *Roguelike Gap Analysis & Initial Development R
 - **Where a section says "from GA",** the version that builds it reads the GA in its Phase 0 and fills the table
   here, in the same commit as its PLAN.
 
-This file shares top authority with LOCKED_DECISIONS. Changing a design rule here goes through the owner, like a
-PD flip.
+This file shares rank 2 of the authority order with LOCKED_DECISIONS ([`../../CLAUDE.md`](../../CLAUDE.md)).
+Changing a design rule here goes through the owner, like a PD flip.
 
 ---
 
@@ -31,6 +34,16 @@ choose it.
    projectile, a field or a status.
 3. **Every archetype finishes the fight.** Each engine (bleed, guard, and the ones that follow) has a renewable,
    scaling payoff from its first item, and no engine is the only way to win.
+
+**How the pillars cover the audit framework's five:**
+
+| Framework pillar | Where this design answers it |
+|---|---|
+| 1. Engine building vs. flat stats | Pillar 1; §D (Trigger → Condition → Payoff, the plain-support limit, no flat per-hit reduction) |
+| 2. Polar archetypes (aggro vs. control) | Pillar 3; §D (bleed vs. guard as the first two engines); scorecard M-GAP |
+| 3. Compressed progression; build identity by Room 3–4; punish the generalist | Pillar 1; §B (reward schedule); scorecard M-DIVERGE, M-ENGINE, M-GENERALIST; run length 30–60 min |
+| 4. Encounters as engine stress tests | Pillar 3; §E (stress matrix); scorecard §4. The framework's "false difficulty" examples are banned by PD-05 (no enrage timers) and pillar 2 (no unavoidable chip damage: M-CAUSE) |
+| 5. Meaningful choice and non-dominance | §D (interaction matrix); scorecard M-PICK, M-DEAD; the G1 audits in [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) |
 
 **Design filter:** *Does this create a more interesting decision in motion? If mostly no, remove it.* This is
 adapted from Deathventory's rule that "the backpack question controls scope" (its hard lock 20). A feature that
@@ -64,6 +77,13 @@ only adds numbers, menus or breadth fails the filter.
 | Primary | The main attack, aimed | GA §5 |
 | Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state. **Or a mobile skill:** a repositioning or engage tool | GA §5 |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
+
+**Starting values in use.** These are tuning defaults that no source has given yet. Each one is replaced by the GA
+value or by an owner decision, and the change is noted here.
+
+| File | Field | Value | Status |
+|---|---|---|---|
+| — | — | — | None yet. v0.0.1 Steps 4 and 6 add the player-kit rows |
 
 **Feel rules** (engineering, [`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §3):
 - a tap shorter than one frame is never lost;
