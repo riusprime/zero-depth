@@ -13,7 +13,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 1 | Damage, health and death in the sim (dash and post-hit invulnerability, hit-stop on being hit) | `d6b67b6` |
 | 2 | The primary: click to swing (3-hit combo), hold to charge, release to fire a bolt | `f7f8c88` |
 | 3 | Pick Guard or Blink before play; hold to guard, press to blink | `26c4601` |
-| 4 | Charger, Warden and Needle fight you, each attack telegraphed on the ground | see `git log` |
+| 4 | Charger, Warden and Needle fight you, each attack telegraphed on the ground | `1574783` |
+| 5 | Three waves; die and see why, or clear the arena; restart; a HUD | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -27,6 +28,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   `ced2e569…dcd51e` → `bb9c2594…e91839`.
 - **Step 4** (the charge/burst lock length is hashed): replay golden final `ff866d29…e654f` → `5044b77b…0b0871`;
   export-smoke hash `bb9c2594…e91839` → `a0bff684…66c972`.
+- **Step 5** (wave, outcome and killer state hashed): replay golden final `5044b77b…0b0871` →
+  `5ee10daf…ba4a14`; export-smoke hash `a0bff684…66c972` → `8cff6cad…d04b0c`.
   The kernel scenario's behaviour is unchanged (its dummies' shots still do 0 damage); the Windows job re-checks
   the new golden cross-OS.
 
@@ -43,6 +46,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - Added a flow field (`NavField`, BFS on a 0.5 m grid, rebuilt every 10 ticks) after a render showed the Warden
   stuck behind a slab. It is derived state (rebuilt from hashed state on fixed ticks), not hashed itself.
 - The Needle won't start a burst inside its flee distance: it backs off first ("backs off when you close in").
+- The "Arena cleared" panel is proved by a sim test (the last wave cleared sets `cleared`) and a panel test, not
+  by an e2e that clears three waves through real input (that needs a scripted fighter; Step 9's bot can do it).
 - `tests/unit/application/test_settings_profile.gd` fails when only `tests/unit` runs (it needs the audio buses
   and the input map that earlier suites set up); it passes in the full suite. Pre-existing; to fix in Step 10.
 
@@ -76,3 +81,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   burst), `EnemyDefinition`/`AttackDefinition` data validated against behaviour schemas (≥ 24-tick telegraphs),
   `TelegraphViews` (outline + filling area), per-behaviour silhouettes, HP bars that drain, `NavField` pathing.
   Telegraph parity tests (drawn area == hit area) pass for all three. 118 tests pass; goldens re-recorded.
+- 2026-10-06 — Step 5: `EncounterDefinition`/`WaveDefinition`/`WaveSpawn` (CONTENT_SCHEMA §4) with
+  `data/encounters/combat_lab.tres`; `WaveDirector` in phase 9 (shuffled slots ≥ 6 m away, delays, cleared);
+  the killer's kind kept for the death screen; `Hud` (HP, dash and utility readiness, wave, enemies left) and
+  `EndPanel` (You died + cause / Arena cleared, Restart with the next seed, Main menu). 123 tests pass;
+  goldens re-recorded.

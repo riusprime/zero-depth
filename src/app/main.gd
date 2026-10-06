@@ -4,6 +4,7 @@ extends Node
 ## stage. Only app/ may wire layers together.
 
 const STAGE_SEED := 20261006
+const END_PANEL_DELAY_TICKS := 45
 
 var profile: ProfileStore
 var driver: SimDriver
@@ -13,6 +14,10 @@ var ui := CanvasLayer.new()
 var _menu: Control
 var _pause: PauseMenu
 var _dev: DevPanel
+var _hud: Hud
+var _end: EndPanel
+## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
+var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
 
 
@@ -46,7 +51,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		toggle_dev_panel()
 		return
-	if driver != null and event.is_action_pressed(&"pause"):
+	if driver != null and _end == null and event.is_action_pressed(&"pause"):
 		get_viewport().set_input_as_handled()
 		if _pause == null:
 			open_pause()
@@ -119,7 +124,13 @@ func start_stage() -> void:
 		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
 	)
 	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
-	var world := StageScenario.build(_stage_seed, table, ContentCompiler.compile_enemies(repo))
+	var encounter: EncounterDefinition = repo.get_def(&"encounters", &"combat_lab")
+	var world := StageScenario.build(
+		_stage_seed,
+		table,
+		ContentCompiler.compile_enemies(repo),
+		ContentCompiler.compile_encounter(encounter, repo)
+	)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -133,6 +144,40 @@ func start_stage() -> void:
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
 	driver.ticked.connect(view.sync)
+	_hud = Hud.new()
+	ui.add_child(_hud)
+	ui.move_child(_hud, 0)
+	_hud.sync(driver.reader)
+	_ended_ticks = 0
+	driver.ticked.connect(_on_tick.bind(driver))
+
+
+func _on_tick(from: SimDriver) -> void:
+	if from != driver or _hud == null:
+		return  # a stage that already ended, ticking once more before it's freed
+	_hud.sync(driver.reader)
+	var outcome := driver.reader.outcome()
+	if outcome == 0 or _end != null:
+		return
+	_ended_ticks += 1
+	if _ended_ticks >= END_PANEL_DELAY_TICKS:
+		show_end_panel(outcome == 1)
+
+
+func show_end_panel(won: bool) -> void:
+	close_pause()
+	_end = EndPanel.new(won, driver.reader.killer_kind())
+	_end.restart_pressed.connect(restart)
+	_end.main_menu_pressed.connect(show_main_menu)
+	ui.add_child(_end)
+	_end.focus_first()
+
+
+## A new fight with the next seed and the same utility.
+func restart() -> void:
+	_stage_seed += 1
+	_end_stage()
+	start_stage()
 
 
 func toggle_dev_panel() -> void:
@@ -186,6 +231,11 @@ func _set_menu(m: Control) -> void:
 
 func _end_stage() -> void:
 	close_pause()
+	for n in [_hud, _end]:
+		if n != null:
+			n.queue_free()
+	_hud = null
+	_end = null
 	if _dev != null:
 		_dev.queue_free()
 		_dev = null

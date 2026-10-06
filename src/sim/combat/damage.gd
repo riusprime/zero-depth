@@ -63,6 +63,10 @@ static func hit(
 		w.add_freeze(w.player.hurt_freeze_ticks)
 	if a.hp[target] <= 0:
 		a.dead[target] = 1
+		if target == 0:
+			var k := a.index_of(owner_id)
+			w.killer_kind = a.kinds[k] if k >= 0 else -1
+			w.killer_tags = tags
 		var k := w.emit_event(SimEvent.Kind.KILL, source_id, owner_id, target_id, at)
 		k.root_id = root_id
 		k.parent_seq = d.seq

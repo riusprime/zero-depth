@@ -39,3 +39,15 @@ UTIL_BLINK_DESC,"Press to teleport toward your aim, up to 5 m. Recharges in 2.5 
 ENEMY_CHARGER,Charger,Embestidor
 ENEMY_WARDEN,Warden,Guardián
 ENEMY_NEEDLE,Needle,Aguja
+HUD_HP,HP %d / %d,PV %d / %d
+HUD_DASH,Dash,Esprint
+HUD_UTILITY,Utility,Habilidad
+HUD_WAVE,Wave %d / %d,Oleada %d / %d
+HUD_ENEMIES,Enemies left: %d,Enemigos restantes: %d
+UI_YOU_DIED,You died,Has muerto
+UI_ARENA_CLEARED,Arena cleared,Arena despejada
+UI_RESTART,RESTART,REINICIAR
+CAUSE_CHARGER,A Charger ran you down.,Un Embestidor te arrolló.
+CAUSE_WARDEN,A Warden's slam crushed you.,El golpe de un Guardián te aplastó.
+CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaron.
+CAUSE_UNKNOWN,Something got you.,Algo te alcanzó.

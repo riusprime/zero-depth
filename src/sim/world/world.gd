@@ -61,6 +61,15 @@ var dummy_shot_damage := 0
 
 ## Compiled enemy kinds (ActorStore.Kind -> EnemyTable), part of the loadout like the player table.
 var enemy_tables := {}
+## The encounter (null in the kernel scenario), its spawn slots, and the run's progress: the last wave spawned
+## (-1 before the first), ticks until the next wave (-1 = waiting for a clear), cleared, and who killed the player.
+var encounter: EncounterTable
+var spawn_points := PackedVector2Array()
+var wave_index := -1
+var wave_timer := -1
+var cleared := false
+var killer_kind := -1
+var killer_tags := 0
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -156,8 +165,9 @@ func step(frame: InputFrame) -> void:
 			EnemyAi.resolve(self, i)
 	_projectile_hits()
 	# 7. Effect queue and 8. statuses arrive in v0.2.0.
-	# 9. Deaths and spawns.
+	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
+	WaveDirector.advance(self)
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -253,6 +263,8 @@ func state_hash() -> String:
 	for v in [
 		held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, primary_hold
 	]:
+		h.add_int(v)
+	for v in [wave_index, wave_timer, 1 if cleared else 0, killer_kind, killer_tags]:
 		h.add_int(v)
 	h.add_int(blink_cd)
 	h.add_int(blink_tick)

@@ -194,6 +194,42 @@ func shield_half_arc(i: int) -> int:
 	return t.shield_half_arc if t != null else 0
 
 
+## 0 while fighting, 1 when the last wave is cleared, 2 when the player is dead.
+func outcome() -> int:
+	if _w.player_dead():
+		return 2
+	return 1 if _w.cleared else 0
+
+
+func wave_number() -> int:
+	return _w.wave_index + 1
+
+
+func wave_count() -> int:
+	return _w.encounter.waves.size() if _w.encounter != null else 0
+
+
+func enemies_alive() -> int:
+	return WaveDirector.enemies_alive(_w)
+
+
+## The kind that killed the player (-1 if unknown) and the hit's SimEvent tags.
+func killer_kind() -> int:
+	return _w.killer_kind
+
+
+func killer_tags() -> int:
+	return _w.killer_tags
+
+
+func player_hp() -> int:
+	return _w.actors.hp[0]
+
+
+func player_max_hp() -> int:
+	return _w.actors.max_hp[0]
+
+
 func freeze_ticks() -> int:
 	return _w.freeze_ticks
 

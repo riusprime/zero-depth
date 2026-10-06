@@ -1,0 +1,66 @@
+[gd_resource type="Resource" script_class="EncounterDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/wave_spawn.gd" id="1_ws"]
+[ext_resource type="Script" path="res://src/content/defs/wave_definition.gd" id="2_wd"]
+[ext_resource type="Script" path="res://src/content/defs/encounter_definition.gd" id="3_ed"]
+
+[sub_resource type="Resource" id="S0_0"]
+script = ExtResource("1_ws")
+enemy_id = &"charger"
+count = 1
+
+[sub_resource type="Resource" id="S0_1"]
+script = ExtResource("1_ws")
+enemy_id = &"needle"
+count = 1
+
+[sub_resource type="Resource" id="W0"]
+script = ExtResource("2_wd")
+spawns = Array[ExtResource("1_ws")]([SubResource("S0_0"), SubResource("S0_1")])
+delay_seconds = 0.5
+
+[sub_resource type="Resource" id="S1_0"]
+script = ExtResource("1_ws")
+enemy_id = &"charger"
+count = 1
+
+[sub_resource type="Resource" id="S1_1"]
+script = ExtResource("1_ws")
+enemy_id = &"warden"
+count = 1
+
+[sub_resource type="Resource" id="S1_2"]
+script = ExtResource("1_ws")
+enemy_id = &"needle"
+count = 1
+
+[sub_resource type="Resource" id="W1"]
+script = ExtResource("2_wd")
+spawns = Array[ExtResource("1_ws")]([SubResource("S1_0"), SubResource("S1_1"), SubResource("S1_2")])
+delay_seconds = 1.0
+
+[sub_resource type="Resource" id="S2_0"]
+script = ExtResource("1_ws")
+enemy_id = &"charger"
+count = 2
+
+[sub_resource type="Resource" id="S2_1"]
+script = ExtResource("1_ws")
+enemy_id = &"warden"
+count = 1
+
+[sub_resource type="Resource" id="S2_2"]
+script = ExtResource("1_ws")
+enemy_id = &"needle"
+count = 2
+
+[sub_resource type="Resource" id="W2"]
+script = ExtResource("2_wd")
+spawns = Array[ExtResource("1_ws")]([SubResource("S2_0"), SubResource("S2_1"), SubResource("S2_2")])
+delay_seconds = 1.0
+
+[resource]
+script = ExtResource("3_ed")
+tags = PackedStringArray("combat_lab")
+waves = Array[ExtResource("2_wd")]([SubResource("W0"), SubResource("W1"), SubResource("W2")])
+id = &"combat_lab"

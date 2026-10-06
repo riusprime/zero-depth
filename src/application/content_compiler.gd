@@ -78,6 +78,22 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	return t
 
 
+## An encounter, its enemy ids resolved to actor kinds through their behaviours.
+static func compile_encounter(def: EncounterDefinition, repo: ContentRepository) -> EncounterTable:
+	var t := EncounterTable.new()
+	t.min_spawn_distance_m = def.min_spawn_distance_m
+	for wv in def.waves:
+		var kinds: Array[int] = []
+		for s in wv.spawns:
+			var e: EnemyDefinition = repo.get_def(&"enemies", s.enemy_id)
+			var kind := compile_enemy(e).kind
+			for n in s.count:
+				kinds.append(kind)
+		t.waves.append(kinds)
+		t.delays.append(SimTick.seconds_to_ticks(wv.delay_seconds))
+	return t
+
+
 ## Every enemy in a repository, compiled.
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
