@@ -1,0 +1,21 @@
+# Godot
+.godot/
+*.translation
+# Build output
+build/
+dist/
+*.log
+# OS / editors
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+__pycache__/
+# Secrets
+.env
+.env.*
+*.pfx
+*.p12
+*.pem
