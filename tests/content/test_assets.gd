@@ -16,7 +16,7 @@ func test_fonts_have_licences() -> void:
 
 
 func test_theme_uses_the_shipped_font_at_readable_size() -> void:
-	var t: Theme = load(ProjectSettings.get_setting("gui/theme/custom"))
+	var t: Theme = load(ThemePalette.UI_THEME)
 	assert_not_null(t.default_font)
 	assert_true(t.default_font.resource_path.begins_with("res://assets/fonts/"))
 	assert_gte(t.default_font_size, 18, "body text is at least 18 px at 1080p")

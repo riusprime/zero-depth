@@ -3,6 +3,9 @@ extends RefCounted
 ## Fixed actor tokens (docs/art/ART_DIRECTION.md §2). Biome tokens live in BiomeDefinition.palette.
 ## Adapted from Deathventory's closed role table: an unknown role is magenta, so it shows up at once.
 
+## The UI theme. Main applies it to the window at boot: as a project setting it would load before a fresh
+## checkout's first import has produced the font, and that import would report errors.
+const UI_THEME := "res://src/presentation/theme/default_theme.tres"
 const ROLES := {
 	&"player_body": Color("#F2F2F2"),
 	&"player_core": Color("#2BC4E2"),

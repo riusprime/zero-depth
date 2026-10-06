@@ -18,6 +18,7 @@ var _stage_seed := STAGE_SEED
 
 func _ready() -> void:
 	get_tree().set_auto_accept_quit(false)
+	get_window().theme = load(ThemePalette.UI_THEME)
 	InputDefaults.apply()
 	profile = ProfileStore.shared()
 	InputRemap.apply(profile)

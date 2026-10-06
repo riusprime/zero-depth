@@ -18,6 +18,6 @@ func test_menu_in_spanish() -> void:
 
 
 func test_spanish_text_renders_in_the_shipped_font() -> void:
-	var t: Theme = load(ProjectSettings.get_setting("gui/theme/custom"))
+	var t: Theme = load(ThemePalette.UI_THEME)
 	for ch in "áéíóúüñ¿¡":
 		assert_true(t.default_font.has_char(ch.unicode_at(0)), "glyph %s" % ch)
