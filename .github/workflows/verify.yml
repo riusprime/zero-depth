@@ -1,0 +1,66 @@
+# Adapted from riusprime/deathventory@1d697803:.github/workflows/verify.yml.
+# Steps and the step each goes live in: docs/roadmap/v0.0.1/PLAN.md Step 3.
+name: Verify
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: GUT version is pinned
+        run: grep -q 'version="9.7.1"' addons/gut/plugin.cfg
+
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          use-dotnet: false
+
+      - name: Godot version is pinned
+        run: |
+          godot --version
+          godot --version | grep -q "^${GODOT_VERSION}.stable"
+
+      - name: Import (fails on import errors)
+        run: |
+          mkdir -p build
+          godot --headless --path . --editor --import --quit 2>&1 | tee build/import.log || true
+          if sed -E 's/\x1B\[[0-9;]*[mK]//g' build/import.log | grep -E -q "^(ERROR|SCRIPT ERROR)"; then
+            echo "Import reported errors"; exit 1
+          fi
+
+      - name: Full GUT suite
+        run: |
+          set -o pipefail
+          godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs \
+            -gjunit_xml_file=build/gut.xml -gexit 2>&1 | tee build/gut.log
+          bash scripts/ci/check_gut_log.sh build/gut.log
+
+      - name: Lint and format
+        run: |
+          pip install -r requirements-dev.txt
+          gdformat --check src scripts tests
+          gdlint src scripts tests
+
+      - name: Export pack and smoke inside it
+        run: bash scripts/ci/export_smoke.sh
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-logs
+          path: |
+            build/*.log
+            build/gut.xml
+            build/check/*.log
+            build/*.jsonl

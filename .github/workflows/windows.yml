@@ -1,0 +1,75 @@
+# Adapted from riusprime/deathventory@1d697803:.github/workflows/windows-export.yml.
+# Cross-OS golden replays (EI-11), the release export and its zip audit. PLAN v0.0.1 Step 3.
+name: Windows
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Godot with export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: ${{ env.GODOT_VERSION }}
+          include-templates: true
+          use-dotnet: false
+
+      - name: Use the console executable (so CLI output is captured)
+        shell: pwsh
+        run: |
+          $ConsoleExe = Get-ChildItem -Path "$env:USERPROFILE\godot" -Filter "*console.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($ConsoleExe) {
+            Copy-Item $ConsoleExe.FullName "$env:USERPROFILE\bin\godot.exe" -Force
+          } elseif ((Test-Path "$env:USERPROFILE\bin\godot") -and -not (Test-Path "$env:USERPROFILE\bin\godot.exe")) {
+            Copy-Item "$env:USERPROFILE\bin\godot" "$env:USERPROFILE\bin\godot.exe" -Force
+          }
+          $v = godot --version
+          Write-Host $v
+          if (-not $v.StartsWith("$env:GODOT_VERSION.stable")) { Write-Error "Godot version is not the pin"; exit 1 }
+
+      - name: Import (fails on import errors)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          godot --headless --path . --editor --import --quit *> build/import.log
+          $errors = Select-String -Path build/import.log -Pattern '^(ERROR|SCRIPT ERROR)'
+          if ($errors) { $errors | Select-Object -First 10; exit 1 }
+
+      - name: Golden replays (cross-OS determinism)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path tests/golden)) { Write-Host "No goldens yet (they arrive in v0.0.1 Step 4)"; exit 0 }
+          pwsh -ExecutionPolicy Bypass -File scripts/verify.ps1 -TestDirectory res://tests/golden
+
+      - name: Export release build
+        shell: pwsh
+        run: pwsh -ExecutionPolicy Bypass -File scripts/export_windows.ps1
+
+      - name: Zip audit
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path "build/windows/game_windows_x86_64.zip"))
+          $entries = $archive.Entries | Select-Object -ExpandProperty FullName
+          $archive.Dispose()
+          $entries | ForEach-Object { Write-Host " - $_" }
+          $forbidden = $entries | Where-Object { $_ -match "tests|docs|scripts|addons/gut|fixtures" }
+          if ($forbidden) { Write-Error "Forbidden paths in archive: $forbidden"; exit 1 }
+
+      - name: Upload the Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: game_windows_x86_64
+          path: |
+            build/windows/game_windows_x86_64.zip
+            build/windows/SHA256SUMS.txt
+          if-no-files-found: error
