@@ -8,6 +8,7 @@ func test_all_data_validates() -> void:
 		fail_test("%s: %s (%s)" % [i.path, i.message, i.code])
 	assert_eq(repo.count(&"player"), 1)
 	assert_eq(repo.count(&"biomes"), 1)
+	assert_eq(repo.count(&"credits"), 1)
 
 
 func test_manifest_hash_is_stable_across_loads() -> void:

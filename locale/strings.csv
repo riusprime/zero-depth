@@ -24,3 +24,5 @@ UI_OPT_60,60,60
 UI_OPT_120,120,120
 UI_OPT_144,144,144
 BIOME_RUINS,Ruins,Ruinas
+CREDITS_OWNER,…,…
+CREDITS_MADE_WITH,Made with Godot Engine,Hecho con Godot Engine

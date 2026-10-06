@@ -17,6 +17,7 @@ func _init(version: String, show_galleries: bool) -> void:
 	add_title("UI_TITLE")
 	add_button("UI_PLAY", func() -> void: play_pressed.emit()).name = "Play"
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"
+	add_button("UI_CREDITS", func() -> void: credits_pressed.emit()).name = "Credits"
 	if show_galleries:
 		add_button("UI_GALLERIES", func() -> void: galleries_pressed.emit()).name = "Galleries"
 	add_button("UI_QUIT", func() -> void: quit_pressed.emit()).name = "Quit"

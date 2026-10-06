@@ -49,6 +49,7 @@ func show_main_menu() -> void:
 	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build())
 	m.play_pressed.connect(start_stage)
 	m.options_pressed.connect(show_options)
+	m.credits_pressed.connect(show_credits)
 	m.galleries_pressed.connect(show_gallery)
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
@@ -60,6 +61,13 @@ func show_options() -> void:
 	var o := OptionsMenu.new(profile)
 	o.back_pressed.connect(show_main_menu)
 	_set_menu(o)
+
+
+func show_credits() -> void:
+	var credits: CreditsDefinition = ContentRepository.load_all().get_def(&"credits", &"main")
+	var c := CreditsView.new(credits)
+	c.back_pressed.connect(show_main_menu)
+	_set_menu(c)
 
 
 func show_gallery() -> void:
