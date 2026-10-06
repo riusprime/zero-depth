@@ -45,6 +45,16 @@ jobs:
             -gjunit_xml_file=build/gut.xml -gexit 2>&1 | tee build/gut.log
           bash scripts/ci/check_gut_log.sh build/gut.log
 
+      - name: Hitch probe (real time, no --fixed-fps)
+        run: godot --headless --path . -s scripts/checks/hitch_probe.gd
+
+      - name: Kernel smoke (20 seeds, run twice, must be identical)
+        run: |
+          godot --headless --path . -s scripts/sim/kernel_smoke.gd -- seeds=1..20 out=build/smoke_a.jsonl
+          godot --headless --path . -s scripts/sim/kernel_smoke.gd -- seeds=1..20 out=build/smoke_b.jsonl
+          diff build/smoke_a.jsonl build/smoke_b.jsonl
+          grep -h '"seed":1}' build/smoke_a.jsonl
+
       - name: Lint and format
         run: |
           pip install -r requirements-dev.txt

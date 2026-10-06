@@ -30,6 +30,7 @@ func _initialize() -> void:
 	if _args.get("expect_pack", "0") == "1":
 		_check(packed, "running inside the exported pack (run from outside the project folder)")
 	_check(ResourceLoader.exists("res://src/app/main.tscn"), "the main scene ships")
+	_check_world_run()
 	if packed:
 		_check(
 			not FileAccess.file_exists("res://addons/gut/plugin.cfg"),
@@ -38,3 +39,18 @@ func _initialize() -> void:
 		_check(not DirAccess.dir_exists_absolute("res://tests"), "tests are not shipped")
 	print("%d miss(es)" % _misses.size())
 	quit(1 if not _misses.is_empty() else 0)
+
+
+## Step 4: a 600-tick headless World run inside the pack reproduces the hash computed in the project.
+func _check_world_run() -> void:
+	var w := KernelScenario.golden(1)
+	var input := ScriptedInput.new(1)
+	for t in 600:
+		w.step(input.frame(t))
+	var got := w.state_hash()
+	var path: String = _args.get("world_hash", "")
+	if path.is_empty():
+		_check(false, "world_hash=<fixture> was passed")
+		return
+	var want := FileAccess.get_file_as_string(path).strip_edges()
+	_check(got == want, "600-tick World run hash %s matches the project's" % got.left(12))
