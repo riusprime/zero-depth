@@ -32,6 +32,7 @@ func _initialize() -> void:
 	_check(ResourceLoader.exists("res://src/app/main.tscn"), "the main scene ships")
 	_check_world_run()
 	_check_content()
+	_check_spanish()
 	if packed:
 		_check(
 			not FileAccess.file_exists("res://addons/gut/plugin.cfg"),
@@ -75,3 +76,13 @@ func _check_content() -> void:
 		repo.manifest_hash == want,
 		"manifest hash %s matches the project's" % repo.manifest_hash.left(12)
 	)
+
+
+## Step 10: Spanish ships inside the pack.
+func _check_spanish() -> void:
+	_check("es" in TranslationServer.get_loaded_locales(), "Spanish translation is loaded")
+	TranslationServer.set_locale("es")
+	var es := TranslationServer.translate("UI_PLAY")
+	TranslationServer.set_locale("en")
+	var en := TranslationServer.translate("UI_PLAY")
+	_check(es != en and es == "JUGAR", "UI_PLAY is %s / %s" % [en, es])

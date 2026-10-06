@@ -1,0 +1,7 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="FontFile" path="res://assets/fonts/AtkinsonHyperlegible-Regular.ttf" id="1_iatbo"]
+
+[resource]
+default_font = ExtResource("1_iatbo")
+default_font_size = 20
