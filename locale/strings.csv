@@ -26,3 +26,8 @@ UI_OPT_144,144,144
 BIOME_RUINS,Ruins,Ruinas
 CREDITS_OWNER,…,…
 CREDITS_MADE_WITH,Made with Godot Engine,Hecho con Godot Engine
+UI_DEV_PANEL,Developer panel,Panel de desarrollo
+UI_DEV_PAUSE,Pause / resume,Pausar / seguir
+UI_DEV_STEP,Step one tick,Avanzar un tick
+UI_DEV_HASH,Hash now,Hash ahora
+UI_DEV_RESEED,Reseed and restart,Nueva semilla y reiniciar

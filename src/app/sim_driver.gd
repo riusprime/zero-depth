@@ -11,6 +11,8 @@ var latch := InputLatch.new()
 ## Sim ticks run since the last rendered frame (the dev panel shows it; the hitch probe checks it).
 var ticks_this_frame := 0
 var paused := false
+## Optional dev-panel commands (debug builds); null in release play.
+var debug: DebugApi
 ## Where input comes from: a Callable returning [move_screen: Vector2, aim_world: Vector2, aim_dist_m: float].
 var input_source: Callable
 
@@ -29,11 +31,15 @@ func _input(event: InputEvent) -> void:
 
 
 func _process(_delta: float) -> void:
+	if debug != null:
+		debug.ticks_last_frame = ticks_this_frame
 	ticks_this_frame = 0
 
 
 func _physics_process(_delta: float) -> void:
 	if world == null or paused:
+		return
+	if debug != null and not debug.should_step():
 		return
 	step_once()
 

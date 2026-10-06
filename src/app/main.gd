@@ -12,6 +12,8 @@ var ui := CanvasLayer.new()
 
 var _menu: Control
 var _pause: PauseMenu
+var _dev: DevPanel
+var _stage_seed := STAGE_SEED
 
 
 func _ready() -> void:
@@ -32,6 +34,17 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (
+		driver != null
+		and event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and event.physical_keycode == KEY_QUOTELEFT
+		and DevPanel.unlocked()
+	):
+		get_viewport().set_input_as_handled()
+		toggle_dev_panel()
+		return
 	if driver != null and event.is_action_pressed(&"pause"):
 		get_viewport().set_input_as_handled()
 		if _pause == null:
@@ -83,7 +96,7 @@ func start_stage() -> void:
 	var repo := ContentRepository.load_all()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", &"ruins")
-	var world := StageScenario.build(STAGE_SEED, ContentCompiler.compile_player(def))
+	var world := StageScenario.build(_stage_seed, ContentCompiler.compile_player(def))
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -97,6 +110,28 @@ func start_stage() -> void:
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
 	driver.ticked.connect(view.sync)
+
+
+func toggle_dev_panel() -> void:
+	if _dev != null:
+		_dev.queue_free()
+		_dev = null
+		driver.debug = null
+		return
+	driver.debug = DebugApi.new(driver.world)
+	driver.debug.reseed_requested.connect(_reseed)
+	_dev = DevPanel.new(driver.debug)
+	ui.add_child(_dev)
+
+
+func is_dev_panel_open() -> bool:
+	return _dev != null
+
+
+func _reseed(seed_value: int) -> void:
+	_stage_seed = seed_value
+	_end_stage()
+	start_stage()
 
 
 func open_pause() -> void:
@@ -128,6 +163,9 @@ func _set_menu(m: Control) -> void:
 
 func _end_stage() -> void:
 	close_pause()
+	if _dev != null:
+		_dev.queue_free()
+		_dev = null
 	for n in [driver, view, get_node_or_null("Gallery")]:
 		if n != null:
 			n.queue_free()
