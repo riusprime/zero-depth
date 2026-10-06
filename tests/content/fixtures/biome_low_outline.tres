@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_m4k8h"]
+
+[resource]
+script = ExtResource("1_m4k8h")
+name_key = &"BIOME_RUINS"
+palette = {
+"accent": Color(0.6156863, 0.41960785, 0.29803923, 1),
+"ambient": Color(1, 0.94509804, 0.8627451, 1),
+"cover": Color(0.54901963, 0.54901963, 0.5647059, 1),
+"edge": Color(0.627451, 0.5411765, 0.45490196, 1),
+"ground": Color(0.79607844, 0.6784314, 0.5686275, 1),
+"ground_alt": Color(0.8156863, 0.7019608, 0.5882353, 1),
+"outline": Color(0.6901961, 0.5647059, 0.4392157, 1)
+}
+template_tags = PackedStringArray("ruins")
+id = &"low_outline"

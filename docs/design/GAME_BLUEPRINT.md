@@ -83,7 +83,15 @@ value or by an owner decision, and the change is noted here.
 
 | File | Field | Value | Status |
 |---|---|---|---|
-| — | — | — | None yet. v0.0.1 Steps 4 and 6 add the player-kit rows |
+| `data/player/runner.tres` | `hp` | 100 | Starting value (v0.0.1); the owner tunes it |
+| `data/player/runner.tres` | `radius_m` | 0.35 m | Starting value (v0.0.1) |
+| `data/player/runner.tres` | `move_speed_mps` | 6.0 m/s | Starting value (v0.0.1); owner Windows check |
+| `src/content/defs/dash_definition.gd` (defaults) | `distance_m` | 4.0 m | Starting value (v0.0.1); owner Windows check |
+| same | `duration_seconds` | 0.15 s (9 ticks) | Starting value (v0.0.1) |
+| same | `cooldown_seconds` | 0.8 s (48 ticks) | Starting value (v0.0.1) |
+| same | `iframes_seconds` | 0 | Starting value; i-frames arrive with damage in v0.1.0 |
+
+`PlayerTable.starting_values()` (the kernel tests' copy) must equal the compiled data; a content test checks this.
 
 **Feel rules** (engineering, [`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §3):
 - a tap shorter than one frame is never lost;

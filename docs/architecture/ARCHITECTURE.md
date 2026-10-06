@@ -97,8 +97,10 @@ src/
     gen/         FloorGenerator, room placement, validator
     run/         RunState, reward schedule, threat T, floor progression
   content/
-    defs/        Resource classes (ItemDefinition, EnemyDefinition, RoomTemplate, …)
-    content_scanner.gd, content_repository.gd, content_validator.gd, content_compiler.gd
+    defs/        Resource classes (ContentDef base, PlayerDefinition, BiomeDefinition, …)
+    content_scanner.gd, content_validator.gd, validation_issue.gd
+    (content_repository.gd and content_compiler.gd live in application/: the manifest hash uses the sim's
+    CanonicalValue and the compiler emits sim tables, and content may not import upward)
   application/   run_session, encounter_session, input_latch, aim_assist, replay, run_save_store,
                  profile_store, game_settings, input_remap, cue_buffer, debug_api
   presentation/

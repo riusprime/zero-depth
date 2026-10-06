@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="PlayerDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/dash_definition.gd" id="1_dat7h"]
+[ext_resource type="Script" path="res://src/content/defs/player_definition.gd" id="2_rfrgg"]
+
+[sub_resource type="Resource" id="Resource_e2da2"]
+script = ExtResource("1_dat7h")
+duration_seconds = 0.005
+
+[resource]
+script = ExtResource("2_rfrgg")
+dash = SubResource("Resource_e2da2")
+id = &"blink"

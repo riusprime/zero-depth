@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PlayerDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/dash_definition.gd" id="1_utv5o"]
+[ext_resource type="Script" path="res://src/content/defs/player_definition.gd" id="2_gn6h3"]
+
+[sub_resource type="Resource" id="Resource_17p3l"]
+script = ExtResource("1_utv5o")
+
+[resource]
+script = ExtResource("2_gn6h3")
+dash = SubResource("Resource_17p3l")
+id = &"runner"

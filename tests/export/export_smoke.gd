@@ -31,6 +31,7 @@ func _initialize() -> void:
 		_check(packed, "running inside the exported pack (run from outside the project folder)")
 	_check(ResourceLoader.exists("res://src/app/main.tscn"), "the main scene ships")
 	_check_world_run()
+	_check_content()
 	if packed:
 		_check(
 			not FileAccess.file_exists("res://addons/gut/plugin.cfg"),
@@ -54,3 +55,23 @@ func _check_world_run() -> void:
 		return
 	var want := FileAccess.get_file_as_string(path).strip_edges()
 	_check(got == want, "600-tick World run hash %s matches the project's" % got.left(12))
+
+
+## Step 6: the pack holds the project's content (counts, and the same manifest hash).
+func _check_content() -> void:
+	var repo := ContentRepository.load_all()
+	_check(repo.count(&"player") > 0, "content player: %d" % repo.count(&"player"))
+	_check(repo.count(&"biomes") > 0, "content biomes: %d" % repo.count(&"biomes"))
+	_check(
+		repo.errors().is_empty(),
+		"content validates inside the pack (%d errors)" % repo.errors().size()
+	)
+	var path: String = _args.get("manifest", "")
+	if path.is_empty():
+		_check(false, "manifest=<file> was passed")
+		return
+	var want := FileAccess.get_file_as_string(path).strip_edges()
+	_check(
+		repo.manifest_hash == want,
+		"manifest hash %s matches the project's" % repo.manifest_hash.left(12)
+	)
