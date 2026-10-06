@@ -61,12 +61,12 @@ if (Test-Path $PckPath) { Remove-Item $PckPath -Force }
 if (Test-Path $ArchivePath) { Remove-Item $ArchivePath -Force }
 if (Test-Path $ChecksumsPath) { Remove-Item $ChecksumsPath -Force }
 
-# 4. Locate Godot binary
-$GodotBin = $null
+# 4. Locate Godot binary (CI sets GODOT_CONSOLE to the console wrapper, called by its own name)
+$GodotBin = $env:GODOT_CONSOLE
 
 # On Windows, prefer the console executable (*console.exe) for full CLI output and logging
 $ConsoleExe = Get-ChildItem -Path "$env:USERPROFILE\godot" -Filter "*console.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($ConsoleExe) {
+if (-not $GodotBin -and $ConsoleExe) {
     $GodotBin = $ConsoleExe.FullName
 }
 

@@ -9,12 +9,14 @@ $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
 Set-Location $RepoRoot
 New-Item -ItemType Directory -Force -Path build | Out-Null
+# On CI the console wrapper is called by full path (it can't be renamed); locally `godot` on PATH works.
+$Godot = if ($env:GODOT_CONSOLE) { $env:GODOT_CONSOLE } else { "godot" }
 
-godot --headless --path . --editor --import --quit *> build/import.log
+& $Godot --headless --path . --editor --import --quit *> build/import.log
 $importErrors = Select-String -Path build/import.log -Pattern '^(ERROR|SCRIPT ERROR)'
 if ($importErrors) { $importErrors | Select-Object -First 10; Write-Error "verify: import reported errors" }
 
-godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd "-gdir=$TestDirectory" -ginclude_subdirs `
+& $Godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd "-gdir=$TestDirectory" -ginclude_subdirs `
     "-gjunit_xml_file=build/gut.xml" -gexit *> build/gut.log
 $gutExit = $LASTEXITCODE
 Get-Content build/gut.log
