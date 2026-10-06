@@ -1,8 +1,8 @@
 # Roadmap
 
-> **Status (2026-10-06):** **v0.0.1 "Ground Plane"** built (Steps 0–12 done, Step 13 release items done); waiting on the owner's gates and Windows
-> playtest ([`v0.0.1/PLAYTEST.md`](v0.0.1/PLAYTEST.md)). The bench's stress scene missed its target (owner call).
-> Plan: [`v0.0.1/PLAN.md`](v0.0.1/PLAN.md).
+> **Status (2026-10-06):** **Active version: v0.1.0 "Combat Lab"** ([plan](v0.1.0/PLAN.md)). v0.0.1 "Ground
+> Plane" was built and played by the owner (too bare to judge: [`v0.0.1/PLAYTEST.md`](v0.0.1/PLAYTEST.md)); its
+> Step 7 gates and the bench's stress miss are still open.
 
 This is the development guide for the game: how a session picks the work up, how versions are numbered and
 released, what each version must prove, and who checks it. Gates replace dates. A version ends when its exit gate
@@ -160,7 +160,7 @@ M4b. Exit gates name who checks each item:
 | Version | Name | Milestone | Scope | Exit gate (who checks) | Status |
 |---|---|---|---|---|---|
 | **v0.0.1** | Ground Plane | M0 | Project scaffold and layers. GUT and CI (verify, export smoke, hitch probe, Windows golden and export, lint). Sim kernel: tick, `InputFrame`, entities, collision grid, RNG streams, hasher, event log. `sim_bench`. The player cube moves, aims and dashes with mouse+keyboard and gamepad on an iso stage, with interpolation. Renderer and occlusion proof scenes. `InputMap` and a remap store. Settings store. `tr()` with `strings.csv` en/es and a TTF font. Version single source and patch notes. Credits and license stub. Dev panel stub. `ContentScanner` | CI green, including export smoke (**test**). Replay hash stable over 10k ticks and identical on ubuntu and windows (**test**). Bench within budget (**bench**). Renderer picked (**owner**, on their GPU). The owner moves the cube with both devices on a Windows export (**owner**) | Built; owner gates pending. CI, replay cross-OS: met. Bench: reference met, stress **missed** |
-| **v0.1.0** | Combat Lab | M1 | One arena. Primary, utility (guard / mobile skill) and dash. Charger, Warden and Needle with telegraphs. Hit feel: hit-stop as sim freeze ticks, flash, shake toggle. Death and restart. Provenance events. Options screen: audio, display, remap, shake, reduced motion, colour-blind modes. Placeholder SFX hooks with captions. e2e real-input tests | No damage without a readable cause (**test** + **owner**). `sim_bench` with real enemy AI stays within budget (**bench**). **Fun without loot (owner)** | — |
+| **v0.1.0** | Combat Lab | M1 | One arena. Primary, utility (guard / mobile skill) and dash. Charger, Warden and Needle with telegraphs. Hit feel: hit-stop as sim freeze ticks, flash, shake toggle. Death and restart. Provenance events. Options screen: audio, display, remap, shake, reduced motion, colour-blind modes. Placeholder SFX hooks with captions. e2e real-input tests | No damage without a readable cause (**test** + **owner**). `sim_bench` with real enemy AI stays within budget (**bench**). **Fun without loot (owner)** | Active |
 | **v0.2.0** | Engine Kernel | M2 | Effect queue; data-driven triggers, conditions and payoffs. Statuses: bleed, slow, stagger. Barrier and sustain caps, proc coefficients, the ancestry guard. 8–12 items. Dev panel: forced loadouts, exact stacks, seed, event-chain inspector, replay. Run recorder JSONL. Bot policies and encounter sims | The bleed engine and the guard engine both work (**test**). Chain and resource-loop tests pass (**test**). Both engines clear the reference encounters within bands (**sims**) | — |
 | **v0.3.0** | First Floor | M3 | A procedural floor: room graph and templates, Ruins biome. Disruptor, Splitter and Anchor. Boss 1 with stagger. 12 items. The reward schedule. Threat T and an optional branch. HUD and item cards (G2). Pause. Death recap. First-time hints. App icon. Explosive barrel (an optional step). The first gap-analysis report ([`../balance/SCORECARD.md`](../balance/SCORECARD.md) §6) | **Production decision** ([`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §L): a 10–15 min floor (**sims**); distinct aggro and control wins (**sims** + **owner**). ≥ 90% of seeds offer an engine by Room 4 (**sims**). Testers can explain their build after Room 4 (**humans**) | — |
 | v0.3.5 | Feedback pass | — | The owner's feedback on the slice | **Owner** | — |
@@ -225,3 +225,5 @@ M4b. Exit gates name who checks each item:
   Bench: reference scene 31.2× real time (met); stress scene mean 3.457 ms / p99 5.988 ms against 2 / 4 ms
   (**missed**, reported, not retuned). Waiting on: the renderer, pitch and occlusion picks, the player-kit values,
   O3 (`main`), O4 (credit line) and the owner's Windows playtest. No PR to `main` until O3.
+- 2026-10-06 — The owner played v0.0.1 (too bare to judge) and answered v0.1.0's design questions. v0.1.0
+  "Combat Lab" is active, fight first.
