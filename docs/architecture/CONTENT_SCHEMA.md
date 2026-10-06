@@ -114,7 +114,8 @@ class_name AttackDefinition extends Resource
 @export var hitstop_ticks: int = 0
 ```
 
-- Each `behaviour_id` has a param schema in code (`src/sim/ai/behaviour_schemas.gd`). Unknown keys and missing
+- Each `behaviour_id` has a param schema in code (`src/content/behaviour_schemas.gd`: content is the lowest
+  layer, so validation can read it; the behaviours themselves are in `src/sim/ai/`). Unknown keys and missing
   required keys are `ERROR`s.
 - **Telegraph minimum.** `telegraph_seconds` must compile to at least `MIN_TELEGRAPH_TICKS` (GA: enemies; a kernel
   constant). An attack with no readable warning fails validation. This is the content side of "no damage without

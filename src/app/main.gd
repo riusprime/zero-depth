@@ -119,7 +119,7 @@ func start_stage() -> void:
 		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
 	)
 	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
-	var world := StageScenario.build(_stage_seed, table)
+	var world := StageScenario.build(_stage_seed, table, ContentCompiler.compile_enemies(repo))
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

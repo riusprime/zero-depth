@@ -35,6 +35,57 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	return t
 
 
+## An enemy's numbers in sim units. The behaviour id picks the actor kind.
+static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
+	var t := EnemyTable.new()
+	t.kind = {
+		&"charger": ActorStore.Kind.CHARGER,
+		&"warden": ActorStore.Kind.WARDEN,
+		&"needle": ActorStore.Kind.NEEDLE,
+	}[def.behaviour_id]
+	t.hp = def.hp
+	t.radius_m = def.radius_m
+	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
+	var bp := def.behaviour_params
+	t.attack_range_m = bp["attack_range_m"]
+	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
+	var atk := def.attacks[0]
+	var sp := atk.shape_params
+	t.windup_ticks = SimTick.seconds_to_ticks(atk.telegraph_seconds)
+	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
+	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
+	t.damage = atk.damage
+	match def.behaviour_id:
+		&"charger":
+			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
+			t.charge_distance_m = sp["length_m"]
+		&"warden":
+			t.shield_half_arc = degrees_to_units(float(bp["shield_arc_degrees"]) * 0.5)
+			t.turn_rate = maxi(
+				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
+			)
+			t.slam_radius_m = sp["radius_m"]
+		&"needle":
+			t.keep_distance_m = bp["keep_distance_m"]
+			t.flee_distance_m = bp["flee_distance_m"]
+			t.burst_count = int(sp["count"])
+			t.burst_gap_ticks = maxi(1, SimTick.seconds_to_ticks(sp["gap_seconds"]))
+			t.bolt_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
+			t.bolt_radius_m = sp["radius_m"]
+			t.bolt_life_ticks = SimTick.seconds_to_ticks(
+				float(sp["range_m"]) / float(sp["speed_mps"])
+			)
+	return t
+
+
+## Every enemy in a repository, compiled.
+static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
+	var out: Array[EnemyTable] = []
+	for def: EnemyDefinition in repo.all_of(&"enemies"):
+		out.append(compile_enemy(def))
+	return out
+
+
 ## The chosen utility, applied to a compiled player table (PD-01: one, chosen before the run).
 static func apply_utility(t: PlayerTable, def: UtilityDefinition) -> PlayerTable:
 	if def == null:

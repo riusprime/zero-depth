@@ -2,8 +2,11 @@ class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
 ## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2).
+## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3): the Charger is a low
+## wedge with a horn, the Warden a tall block behind a shield slab, the Needle a thin pillar.
 
 const CUBE := 0.7
+const BAR_W := 0.55
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
 var technique := &"xray"
@@ -21,10 +24,13 @@ func sync(reader: WorldReader) -> void:
 		var node: Node3D = _actors.get(id)
 		var fresh := node == null
 		if fresh:
-			node = _make_actor(reader.actor_team(i) == 0, reader.actor_radius(i))
+			node = _make_actor(
+				reader.actor_kind(i), reader.actor_team(i) == 0, reader.actor_radius(i)
+			)
 			_actors[id] = node
 			add_child(node)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
+		_update_actor(node, reader, i)
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
@@ -59,6 +65,19 @@ func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
 
 
+func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
+	var facing: Node3D = node.get_meta(&"facing")
+	facing.rotation = Vector3(0, SimPlane.yaw_of(reader.actor_facing(i)), 0)
+	var spawning := reader.actor_spawning(i)
+	facing.visible = not spawning
+	(node.get_meta(&"bar") as Node3D).visible = not spawning
+	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
+	var bar: Node3D = node.get_meta(&"bar")
+	bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
+	if node.has_meta(&"dazed"):
+		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
+
+
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 	for id in nodes.keys():
 		if not alive.has(id):
@@ -73,10 +92,48 @@ func _unshaded(c: Color) -> StandardMaterial3D:
 	return m
 
 
-func _make_actor(is_player: bool, radius: float) -> Node3D:
+func _body_material(c: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = c
+	mat.roughness = 1.0
+	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
+	mat.stencil_color = outline_color
+	mat.stencil_outline_thickness = 0.035
+	return mat
+
+
+func _ghost_material(c: Color, team_c: Color) -> StandardMaterial3D:
+	var gm := StandardMaterial3D.new()
+	gm.albedo_color = c
+	gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
+	gm.stencil_color = Color(team_c, 0.85)
+	return gm
+
+
+## A box body piece (and its X-ray twin): size, centre offset from the actor's feet (in the facing frame).
+func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color) -> void:
+	var body := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = size
+	body.mesh = box
+	body.material_override = _body_material(c)
+	body.position = at
+	parent.add_child(body)
+	if technique == &"xray":
+		var ghost := MeshInstance3D.new()
+		var gbox := BoxMesh.new()
+		gbox.size = size * 0.96
+		ghost.mesh = gbox
+		ghost.material_override = _ghost_material(c, team_c)
+		ghost.position = at
+		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(ghost)
+
+
+func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 	var root := Node3D.new()
 	var body_color := ThemePalette.color(&"player_body" if is_player else &"enemy_body")
-	var size := CUBE if is_player else CUBE * 0.85
+	var team_color := ThemePalette.color(&"player_core" if is_player else &"enemy_body")
 	# Contact ring: a dark disc under the actor.
 	var contact := MeshInstance3D.new()
 	var disc := CylinderMesh.new()
@@ -97,56 +154,73 @@ func _make_actor(is_player: bool, radius: float) -> Node3D:
 	torus.outer_radius = radius + 0.24
 	ring.mesh = torus
 	ring.scale = Vector3(1, 0.08, 1)
-	ring.material_override = _unshaded(
-		ThemePalette.color(&"player_core" if is_player else &"enemy_body")
-	)
+	ring.material_override = _unshaded(team_color)
 	ring.position.y = 0.02
 	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(ring)
-	# Body with a rim outline in the biome's outline token.
-	var body := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(size, size, size)
-	body.mesh = box
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = body_color
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline_color
-	mat.stencil_outline_thickness = 0.035
-	body.material_override = mat
-	body.position.y = size * 0.5
-	root.add_child(body)
-	if technique == &"xray":
-		# A slightly smaller twin that only shows (in team colour) where a wall hides the body.
-		var ghost := MeshInstance3D.new()
-		var gbox := BoxMesh.new()
-		gbox.size = Vector3(size, size, size) * 0.96
-		ghost.mesh = gbox
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = body_color
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(
-			ThemePalette.color(&"player_core" if is_player else &"enemy_body"), 0.85
-		)
-		ghost.material_override = gm
-		ghost.position.y = size * 0.5
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(ghost)
-	if is_player:
-		_add_core_panels(root, size)
-	# Floating health bar, as in the reference.
+	# The body turns with the actor's facing (+X is the front).
+	var facing := Node3D.new()
+	root.add_child(facing)
+	root.set_meta(&"facing", facing)
+	var height := CUBE
+	match kind:
+		WorldReader.KIND_CHARGER:
+			height = 0.5
+			_piece(facing, Vector3(0.85, 0.5, 0.7), Vector3(0, 0.25, 0), body_color, team_color)
+			_piece(facing, Vector3(0.4, 0.18, 0.18), Vector3(0.6, 0.3, 0), body_color, team_color)
+			var dazed := MeshInstance3D.new()
+			var dt := TorusMesh.new()
+			dt.inner_radius = 0.22
+			dt.outer_radius = 0.3
+			dazed.mesh = dt
+			dazed.material_override = _unshaded(ThemePalette.color(&"proj_hostile").lightened(0.3))
+			dazed.position.y = height + 0.35
+			dazed.scale = Vector3(1, 0.15, 1)
+			dazed.visible = false
+			dazed.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(dazed)
+			root.set_meta(&"dazed", dazed)
+		WorldReader.KIND_WARDEN:
+			height = 1.1
+			_piece(facing, Vector3(0.8, 1.1, 0.8), Vector3(0, 0.55, 0), body_color, team_color)
+			var shield_c := body_color.darkened(0.35)
+			_piece(
+				facing,
+				Vector3(0.14, 0.95, 1.25),
+				Vector3(radius + 0.12, 0.5, 0),
+				shield_c,
+				team_color
+			)
+		WorldReader.KIND_NEEDLE:
+			height = 1.25
+			_piece(facing, Vector3(0.3, 1.0, 0.3), Vector3(0, 0.5, 0), body_color, team_color)
+			_piece(facing, Vector3(0.5, 0.25, 0.5), Vector3(0, 1.12, 0), body_color, team_color)
+		_:
+			var size := CUBE if is_player else CUBE * 0.85
+			height = size
+			_piece(
+				facing, Vector3(size, size, size), Vector3(0, size * 0.5, 0), body_color, team_color
+			)
+			if is_player:
+				_add_core_panels(facing, size)
+	# Floating health bar, as in the reference; it shrinks toward its centre as HP drops.
+	var bar_root := Node3D.new()
+	bar_root.position = Vector3(0, height + 0.55, 0)
+	root.add_child(bar_root)
 	var bar := MeshInstance3D.new()
 	var quad := QuadMesh.new()
-	quad.size = Vector2(0.55, 0.07)
+	quad.size = Vector2(BAR_W, 0.07)
 	bar.mesh = quad
 	var bm := _unshaded(ThemePalette.color(&"player_bar" if is_player else &"enemy_bar"))
 	bm.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	bm.billboard_keep_scale = true
 	bm.no_depth_test = true
 	bar.material_override = bm
-	bar.position.y = size + 0.55
 	bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	root.add_child(bar)
+	var pivot := Node3D.new()
+	pivot.add_child(bar)
+	bar_root.add_child(pivot)
+	root.set_meta(&"bar", pivot)
 	return root
 
 

@@ -8,6 +8,7 @@ var stage := StageView.new()
 var actors := ActorViews.new()
 var kit := KitView.new()
 var utility := UtilityView.new()
+var telegraphs := TelegraphViews.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -16,6 +17,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	reader = p_reader
 	actors.outline_color = palette["outline"]
 	add_child(stage)
+	add_child(telegraphs)
 	add_child(actors)
 	add_child(kit)
 	add_child(utility)
@@ -26,6 +28,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 
 
 func sync() -> void:
+	telegraphs.sync(reader)
 	actors.sync(reader)
 	kit.sync(reader)
 	utility.sync(reader)

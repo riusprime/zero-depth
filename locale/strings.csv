@@ -36,3 +36,6 @@ UTIL_GUARD,Guard,Guardia
 UTIL_GUARD_DESC,"Hold to raise a shield toward your aim: hits from the front deal a fifth. You move slowly and can't attack.","Mantén para alzar un escudo hacia donde apuntas: los golpes de frente hacen una quinta parte. Te mueves despacio y no puedes atacar."
 UTIL_BLINK,Blink,Destello
 UTIL_BLINK_DESC,"Press to teleport toward your aim, up to 5 m. Recharges in 2.5 s.","Pulsa para teletransportarte hacia donde apuntas, hasta 5 m. Se recarga en 2,5 s."
+ENEMY_CHARGER,Charger,Embestidor
+ENEMY_WARDEN,Warden,Guardián
+ENEMY_NEEDLE,Needle,Aguja

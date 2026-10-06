@@ -59,6 +59,11 @@ var dummy_aim_spread := 0
 ## Damage of a dummy's shot: 0 keeps the kernel scenario harmless.
 var dummy_shot_damage := 0
 
+## Compiled enemy kinds (ActorStore.Kind -> EnemyTable), part of the loadout like the player table.
+var enemy_tables := {}
+## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
+var nav := NavField.new()
+
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -90,6 +95,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 ## Static walls; call before the first step.
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
+	nav.build(walls)
 	_wall_grid.clear()
 	for i in walls.size():
 		_wall_grid.insert_rect(i, walls[i].bounds())
@@ -136,13 +142,18 @@ func step(frame: InputFrame) -> void:
 	aim_dist_cm = frame.aim_dist_cm
 	held_buttons = frame.held
 	actors.facing[0] = aim_angle
-	# 3. AI.
+	# 3. AI (the flow field refreshes on fixed ticks).
+	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
+		nav.flood(player_pos())
 	_run_ai()
 	# 4. Action states.
 	_advance_actions()
 	# 5. Move and collide.
 	_move_and_collide()
-	# 6. Hits (projectile sweeps).
+	# 6. Hits: enemy attacks, then projectile sweeps.
+	for i in range(1, actors.size()):
+		if EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
+			EnemyAi.resolve(self, i)
 	_projectile_hits()
 	# 7. Effect queue and 8. statuses arrive in v0.2.0.
 	# 9. Deaths and spawns.
@@ -174,9 +185,26 @@ func guarding() -> bool:
 	)
 
 
-## Compiled numbers for an enemy kind (v0.1.0 Step 4); null for kinds without a table.
-func enemy_table(_kind: int) -> EnemyTable:
-	return null
+## Compiled numbers for an enemy kind; null for kinds without a table (the kernel's dummies).
+func enemy_table(kind: int) -> EnemyTable:
+	return enemy_tables.get(kind)
+
+
+func set_enemy_tables(tables: Array[EnemyTable]) -> void:
+	for t in tables:
+		enemy_tables[t.kind] = t
+
+
+## Adds an enemy now (setup, or the wave director in phase 9). It spawns in: no acting, no damage, for
+## SPAWN_IN_TICKS.
+func add_enemy(kind: int, p: Vector2) -> int:
+	var t := enemy_table(kind)
+	var id := _take_id()
+	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
+	actors.invuln[i] = SimTick.SPAWN_IN_TICKS
+	actors.facing[i] = Kin.angle_of(player_pos() - p)
+	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
+	return id
 
 
 func dash_iframes_active() -> bool:
@@ -300,6 +328,9 @@ func _buffer_presses(pressed: int) -> void:
 func _run_ai() -> void:
 	var target := player_pos()
 	for i in range(1, actors.size()):
+		if EnemyAi.is_enemy_kind(actors.kinds[i]):
+			EnemyAi.think(self, i)
+			continue
 		if actors.kinds[i] != ActorStore.Kind.DUMMY:
 			continue
 		var id := actors.ids[i]
@@ -374,6 +405,9 @@ func _move_and_collide() -> void:
 	# Dummies steer toward the player plus their jitter.
 	var target := p
 	for i in range(1, actors.size()):
+		if EnemyAi.is_enemy_kind(actors.kinds[i]):
+			EnemyAi.move(self, i)
+			continue
 		var at := actors.pos(i)
 		var goal := target + Vector2(actors.jitter_x[i], actors.jitter_y[i])
 		if dummy_keep_distance > 0.0:

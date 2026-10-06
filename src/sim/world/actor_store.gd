@@ -23,7 +23,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"fire_cd",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
-	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"jitter_x", &"jitter_y"
+	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
 
 var ids := PackedInt32Array()
@@ -45,6 +45,8 @@ var facing := PackedInt32Array()
 var lock_x := PackedFloat32Array()
 var lock_y := PackedFloat32Array()
 var lock_a := PackedInt32Array()
+## A locked length (a charge's lane, a burst's line), cut short by walls.
+var lock_len := PackedFloat32Array()
 var cd := PackedInt32Array()
 ## Dummy AI: ticks until the next shot, and the target offset picked by the heavy pass.
 var fire_cd := PackedInt32Array()

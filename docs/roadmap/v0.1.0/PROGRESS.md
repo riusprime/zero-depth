@@ -12,7 +12,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 0 | Plan | `8861071`, `a05da60` |
 | 1 | Damage, health and death in the sim (dash and post-hit invulnerability, hit-stop on being hit) | `d6b67b6` |
 | 2 | The primary: click to swing (3-hit combo), hold to charge, release to fire a bolt | `f7f8c88` |
-| 3 | Pick Guard or Blink before play; hold to guard, press to blink | see `git log` |
+| 3 | Pick Guard or Blink before play; hold to guard, press to blink | `26c4601` |
+| 4 | Charger, Warden and Needle fight you, each attack telegraphed on the ground | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -24,6 +25,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   - export-smoke hash `72b32e0d…b065eb` → `ced2e569…dcd51e`.
 - **Step 3** (blink state hashed): replay golden final `0b162e72…5cc2c9` → `ff866d29…e654f`; export-smoke hash
   `ced2e569…dcd51e` → `bb9c2594…e91839`.
+- **Step 4** (the charge/burst lock length is hashed): replay golden final `ff866d29…e654f` → `5044b77b…0b0871`;
+  export-smoke hash `bb9c2594…e91839` → `a0bff684…66c972`.
   The kernel scenario's behaviour is unchanged (its dummies' shots still do 0 damage); the Windows job re-checks
   the new golden cross-OS.
 
@@ -34,6 +37,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   swing. A starting rule for the owner to judge.
 - One `UtilityDefinition` with a `kind` (as CONTENT_SCHEMA §8 already says) instead of the PLAN's separate
   `GuardDefinition` and `BlinkDefinition`; data in `data/utilities/`.
+- Enemies follow CONTENT_SCHEMA §3 (`EnemyDefinition` + `behaviour_id` + schema-checked `behaviour_params` +
+  `AttackDefinition`), not a flat definition. The param schemas and `MIN_TELEGRAPH_TICKS` live in
+  `src/content/behaviour_schemas.gd` (content may not name the sim; the schema doc is updated).
+- Added a flow field (`NavField`, BFS on a 0.5 m grid, rebuilt every 10 ticks) after a render showed the Warden
+  stuck behind a slab. It is derived state (rebuilt from hashed state on fixed ticks), not hashed itself.
+- The Needle won't start a burst inside its flee distance: it backs off first ("backs off when you close in").
 - `tests/unit/application/test_settings_profile.gd` fails when only `tests/unit` runs (it needs the audio buses
   and the input map that earlier suites set up); it passes in the full suite. Pre-existing; to fix in Step 10.
 
@@ -63,3 +72,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   stops before walls, 2.5 s cooldown, 0.1 s invulnerable) in `PlayerKit`; `UtilityDefinition` data; the
   `UtilityPicker` between Play and the arena, remembered in the profile; shield and blink-streak visuals.
   104 tests pass; goldens re-recorded on purpose.
+- 2026-10-06 — Step 4: `EnemyAi` (Charger lane charge + daze, Warden shield + slam, Needle spacing + 3-bolt
+  burst), `EnemyDefinition`/`AttackDefinition` data validated against behaviour schemas (≥ 24-tick telegraphs),
+  `TelegraphViews` (outline + filling area), per-behaviour silhouettes, HP bars that drain, `NavField` pathing.
+  Telegraph parity tests (drawn area == hit area) pass for all three. 118 tests pass; goldens re-recorded.

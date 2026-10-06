@@ -15,6 +15,10 @@ const ANGLE_UNITS := 4096
 const MOVE_MAX := 127
 ## Collision resolution passes per tick (starting value).
 const COLLIDE_ITERS := 2
+## Every enemy attack's windup is at least this long (0.4 s; owner, 2026-10-06).
+const MIN_TELEGRAPH_TICKS := BehaviourSchemas.MIN_TELEGRAPH_TICKS
+## Enemies appear with a marker and can't act or be hurt for this long (starting value, 0.6 s).
+const SPAWN_IN_TICKS := 36
 
 
 ## Converts authored seconds to whole ticks once, at content compile time (round half away from zero).

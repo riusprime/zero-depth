@@ -4,6 +4,11 @@ extends RefCounted
 ## The read-only face of World for presentation (EI-07). Presentation may name WorldReader, never World.
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
+const KIND_PLAYER := ActorStore.Kind.PLAYER
+const KIND_CHARGER := ActorStore.Kind.CHARGER
+const KIND_WARDEN := ActorStore.Kind.WARDEN
+const KIND_NEEDLE := ActorStore.Kind.NEEDLE
+
 var _w: World
 
 
@@ -163,6 +168,30 @@ func dash_cooldown_total() -> int:
 
 func player_radius() -> float:
 	return _w.player.radius_m
+
+
+func actor_state(i: int) -> int:
+	return _w.actors.state[i]
+
+
+## True while the enemy is spawning in, dazed or recovering (presentation cues).
+func actor_spawning(i: int) -> bool:
+	return EnemyAi.is_enemy_kind(_w.actors.kinds[i]) and _w.actors.state[i] == EnemyAi.State.SPAWN
+
+
+func actor_recovering(i: int) -> bool:
+	return EnemyAi.is_enemy_kind(_w.actors.kinds[i]) and _w.actors.state[i] == EnemyAi.State.RECOVER
+
+
+## The enemy's telegraph, from the same function that resolves the attack (EI-07). {} when none.
+func telegraph(i: int) -> Dictionary:
+	return EnemyAi.telegraph(_w, i)
+
+
+## [half_arc] of a Warden's shield, or 0.
+func shield_half_arc(i: int) -> int:
+	var t := _w.enemy_table(_w.actors.kinds[i])
+	return t.shield_half_arc if t != null else 0
 
 
 func freeze_ticks() -> int:

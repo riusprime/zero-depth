@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"slam"
+shape = 0
+shape_params = {
+"radius_m": 2.4
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.6667
+damage = 25
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_WARDEN"
+behaviour_id = &"warden"
+behaviour_params = {
+"attack_range_m": 2.2,
+"cooldown_seconds": 1.5,
+"shield_arc_degrees": 120.0,
+"turn_rate_dps": 130.0
+}
+hp = 100
+radius_m = 0.55
+move_speed_mps = 1.6
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("bleed")
+id = &"warden"

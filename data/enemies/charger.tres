@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"charge"
+shape = 2
+shape_params = {
+"length_m": 7.0,
+"speed_mps": 15.0
+}
+telegraph_seconds = 0.6
+active_seconds = 0.4667
+recovery_seconds = 1.0
+damage = 20
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_CHARGER"
+behaviour_id = &"charger"
+behaviour_params = {
+"attack_range_m": 6.0,
+"cooldown_seconds": 1.0
+}
+hp = 45
+radius_m = 0.4
+move_speed_mps = 3.0
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("guard")
+id = &"charger"
