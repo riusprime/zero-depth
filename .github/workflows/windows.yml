@@ -28,7 +28,13 @@ jobs:
         # name" otherwise; Deathventory's copy-to-godot.exe step hit this without noticing). Call it by full path.
         shell: pwsh
         run: |
-          $ConsoleExe = Get-ChildItem -Path "$env:USERPROFILE\godot" -Recurse -Filter "*console.exe" | Select-Object -First 1
+          # setup-godot's cache can hold only the GUI exe; the official zip ships both executables.
+          $Dir = Join-Path $env:RUNNER_TEMP "godot-console"
+          New-Item -ItemType Directory -Force -Path $Dir | Out-Null
+          $Zip = Join-Path $Dir "godot.zip"
+          Invoke-WebRequest -Uri "https://github.com/godotengine/godot/releases/download/$env:GODOT_VERSION-stable/Godot_v$env:GODOT_VERSION-stable_win64.exe.zip" -OutFile $Zip
+          Expand-Archive -Path $Zip -DestinationPath $Dir -Force
+          $ConsoleExe = Get-ChildItem -Path $Dir -Recurse -Filter "*console.exe" | Select-Object -First 1
           if (-not $ConsoleExe) { Write-Error "No Godot console executable found"; exit 1 }
           "GODOT_CONSOLE=$($ConsoleExe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           $v = (& $ConsoleExe.FullName --version | Select-Object -Last 1).Trim()
