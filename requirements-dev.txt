@@ -1,0 +1,2 @@
+# Lint and format for GDScript (docs/architecture/TEST_MATRIX.md §1). Pinned; bump on purpose.
+gdtoolkit==4.5.0
