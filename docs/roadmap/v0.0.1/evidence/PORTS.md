@@ -39,7 +39,7 @@ for f in <paths below>; do printf "%s %s\n" "$(wc -l < $f)" "$f"; done
 
 | Deathventory path | Lines | New path | Copied in | Trim |
 |---|---|---|---|---|
-| `src/app/game_version.gd` | 50 | `src/app/game_version.gd` | Step 1 | Drop `PatchNoteEntry` helpers if any reference DV content |
+| `src/app/game_version.gd` | 50 | `src/application/game_version.gd` (moved in Step 8) | Step 1 | Drop `PatchNoteEntry` helpers if any reference DV content |
 | `tests/v2/v2_01/test_game_version.gd` | 49 | `tests/unit/app/test_game_version.gd` | Step 1 | Keep lines 14–22 (preset version check); drop patch-note checks (34–49) |
 | `tests/support/test_harness_self_test.gd` | 11 | `tests/support/test_harness_self_test.gd` | Step 2 | — |
 | `scripts/verify.sh`, `scripts/verify.ps1` | 8, 11 | `scripts/` | Step 2 | Add import step and summary guards |

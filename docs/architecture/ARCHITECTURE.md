@@ -101,14 +101,14 @@ src/
     content_scanner.gd, content_validator.gd, validation_issue.gd
     (content_repository.gd and content_compiler.gd live in application/: the manifest hash uses the sim's
     CanonicalValue and the compiler emits sim tables, and content may not import upward)
-  application/   run_session, encounter_session, input_latch, aim_assist, replay, run_save_store,
+  application/   game_version, run_session, encounter_session, input_latch, aim_assist, replay, run_save_store,
                  profile_store, game_settings, input_remap, cue_buffer, debug_api
   presentation/
     world_view/  actor, projectile, wall, prop and telegraph views
     camera/      iso rig, follow, shake, occlusion
     input/       device tracker, mouse ground-plane aim, prompt glyphs
     hud/  menus/  theme/  audio/  vfx/
-  app/           main.tscn, main.gd, composition.gd, sim_driver.gd, game_version.gd
+  app/           main.tscn, main.gd (the composition root), sim_driver.gd, stage_scenario.gd, galleries/
   debug/         dev_panel, event_chain_inspector, debug_event_log, debug_time_controller, galleries/
 scripts/
   sim/           gen_trig_lut.gd, kernel_smoke.gd, encounter_sim.gd, run_sim.gd, policies/

@@ -69,7 +69,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 
   | Deathventory | New path | Copied in |
   |---|---|---|
-  | `src/app/game_version.gd` + `tests/v2/v2_01/test_game_version.gd` (lines 14–22) | `src/app/`, `tests/unit/app/` | Step 1 |
+  | `src/app/game_version.gd` + `tests/v2/v2_01/test_game_version.gd` (lines 14–22) | `src/application/` (moved from `src/app/` in Step 8: the profile store needs it), `tests/unit/app/` | Step 1 |
   | `tests/support/test_harness_self_test.gd`, `scripts/verify.sh`, `scripts/verify.ps1` | `tests/support/`, `scripts/` | Step 2 |
   | `.github/workflows/verify.yml`, `windows-export.yml`, `scripts/export_windows.ps1`, `tests/export/export_smoke.gd` | `.github/workflows/verify.yml`, `windows.yml`, `scripts/`, `tests/export/` | Step 3 |
   | `src/domain/core/deterministic_rng.gd`, `rng_step.gd`, `canonical_value.gd` | `src/sim/core/` | Step 4 |
@@ -85,7 +85,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
   - `project.godot`;
   - `export_presets.cfg`;
   - `src/app/main.tscn` + `main.gd` (an empty shell);
-  - `src/app/game_version.gd`, ported. It reads `application/config/version`; `numeric()` drops a `-dev` suffix;
+  - `src/application/game_version.gd`, ported. It reads `application/config/version`; `numeric()` drops a `-dev` suffix;
     `label()` returns `"v" + string()`.
   - `icon.svg` (a stub; the real app icon is v0.3.0).
 - **`project.godot` settings:**

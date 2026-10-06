@@ -1,0 +1,27 @@
+class_name MainMenu
+extends MenuPanel
+## Play, Options, Credits, Quit, the version label and, in debug builds only, the galleries.
+
+signal play_pressed
+signal options_pressed
+signal credits_pressed
+signal galleries_pressed
+signal quit_pressed
+
+var version_label := Label.new()
+
+
+func _init(version: String, show_galleries: bool) -> void:
+	super()
+	name = "MainMenu"
+	add_title("UI_TITLE")
+	add_button("UI_PLAY", func() -> void: play_pressed.emit()).name = "Play"
+	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"
+	if show_galleries:
+		add_button("UI_GALLERIES", func() -> void: galleries_pressed.emit()).name = "Galleries"
+	add_button("UI_QUIT", func() -> void: quit_pressed.emit()).name = "Quit"
+	version_label.text = version
+	version_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	version_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	version_label.position = Vector2(-140, -44)
+	add_child(version_label)

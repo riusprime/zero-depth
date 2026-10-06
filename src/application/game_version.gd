@@ -1,4 +1,5 @@
-# Ported from riusprime/deathventory@1d697803:src/app/game_version.gd. Changes: none beyond this header.
+# Ported from riusprime/deathventory@1d697803:src/app/game_version.gd.
+# Changes: lives in application/ (the profile store needs it, and nothing may import app/).
 class_name GameVersion extends RefCounted
 ## The game's version (roadmap §2). Source of truth: `application/config/version`
 ## in project.godot, e.g. "0.2.0" or "0.2.0-dev" while a version is in
