@@ -39,6 +39,10 @@ var swing_root := 0
 var combo_step := 0
 var combo_window := 0
 var primary_hold := 0
+## Utility: blink cooldown, and the last blink (tick and start point) for the view.
+var blink_cd := 0
+var blink_tick := -1
+var blink_from := Vector2.ZERO
 ## Remaining ticks per button slot (BUTTON_BITS order) for buffered presses.
 var input_buffer := PackedInt32Array([0, 0, 0, 0])
 
@@ -160,9 +164,14 @@ func player_dead() -> bool:
 	return actors.dead[0] == 1
 
 
-## The player's guard is up (v0.1.0 Step 3).
+## The player's guard is up: guard chosen, the utility button held, not dashing, alive.
 func guarding() -> bool:
-	return false
+	return (
+		player.utility == PlayerTable.Utility.GUARD
+		and (held_buttons & InputFrame.UTILITY) != 0
+		and dash_ticks_left == 0
+		and not player_dead()
+	)
 
 
 ## Compiled numbers for an enemy kind (v0.1.0 Step 4); null for kinds without a table.
@@ -217,6 +226,10 @@ func state_hash() -> String:
 		held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, primary_hold
 	]:
 		h.add_int(v)
+	h.add_int(blink_cd)
+	h.add_int(blink_tick)
+	h.add_f32(blink_from.x)
+	h.add_f32(blink_from.y)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -324,6 +337,7 @@ func _advance_actions() -> void:
 		swing_t = 0
 		primary_hold = 0
 		return
+	PlayerKit.advance_utility(self)
 	PlayerKit.advance(self)
 	if dash_cooldown_left > 0:
 		dash_cooldown_left -= 1
@@ -351,7 +365,9 @@ func _move_and_collide() -> void:
 		if len > 1.0:
 			mv /= len
 		var speed := player.move_speed
-		if PlayerKit.charging(self):
+		if guarding():
+			speed = speed * player.guard_move_permille / 1000.0
+		elif PlayerKit.charging(self):
 			speed = speed * player.charge_move_permille / 1000.0
 		p += mv * speed
 	actors.set_pos(0, p)

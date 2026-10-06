@@ -11,7 +11,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|
 | 0 | Plan | `8861071`, `a05da60` |
 | 1 | Damage, health and death in the sim (dash and post-hit invulnerability, hit-stop on being hit) | `d6b67b6` |
-| 2 | The primary: click to swing (3-hit combo), hold to charge, release to fire a bolt | see `git log` |
+| 2 | The primary: click to swing (3-hit combo), hold to charge, release to fire a bolt | `f7f8c88` |
+| 3 | Pick Guard or Blink before play; hold to guard, press to blink | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -21,6 +22,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - **Step 2** (the primary's state is hashed: held buttons, swing, combo, hold):
   - replay golden final `d242c8af…2edb37` → `0b162e72…5cc2c9`;
   - export-smoke hash `72b32e0d…b065eb` → `ced2e569…dcd51e`.
+- **Step 3** (blink state hashed): replay golden final `0b162e72…5cc2c9` → `ff866d29…e654f`; export-smoke hash
+  `ced2e569…dcd51e` → `bb9c2594…e91839`.
   The kernel scenario's behaviour is unchanged (its dummies' shots still do 0 damage); the Windows job re-checks
   the new golden cross-OS.
 
@@ -29,6 +32,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   updated): the owner's primary is a combo plus a charge, not one attack.
 - The swing starts on the press (no delay); holding past 0.2 s then charges, so every charged bolt starts with a
   swing. A starting rule for the owner to judge.
+- One `UtilityDefinition` with a `kind` (as CONTENT_SCHEMA §8 already says) instead of the PLAN's separate
+  `GuardDefinition` and `BlinkDefinition`; data in `data/utilities/`.
 - `tests/unit/application/test_settings_profile.gd` fails when only `tests/unit` runs (it needs the audio buses
   and the input map that earlier suites set up); it passes in the full suite. Pre-existing; to fix in Step 10.
 
@@ -54,3 +59,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-06 — Step 2: `PlayerKit` (swing arc via `AttackShapes`, combo, charge at 50% speed, bolt 12–36 damage,
   hit-stop 3/5 ticks), `PrimaryDefinition` in `runner.tres`, `KitView` (swing fan from the same numbers, charge
   ring), cyan player bolts. 97 tests pass; goldens re-recorded on purpose.
+- 2026-10-06 — Step 3: guard (front ±60° cut to 20%, 40% speed, no attacks) and blink (≤ 5 m toward the aim,
+  stops before walls, 2.5 s cooldown, 0.1 s invulnerable) in `PlayerKit`; `UtilityDefinition` data; the
+  `UtilityPicker` between Play and the arena, remembered in the profile; shield and blink-streak visuals.
+  104 tests pass; goldens re-recorded on purpose.

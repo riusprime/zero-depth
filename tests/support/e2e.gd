@@ -80,8 +80,11 @@ func _mouse_scale() -> Vector2:
 	return got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
 
 
-## Play from the main menu with the keyboard: the Play button has focus.
+## Play from the main menu with the keyboard: the Play button has focus, then the utility picker's last pick
+## (Guard on a fresh profile) has focus.
 func start_from_menu() -> void:
+	await tap(KEY_ENTER)
+	await frames(2)
 	await tap(KEY_ENTER)
 	await frames(2)
 

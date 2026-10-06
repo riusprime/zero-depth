@@ -4,6 +4,42 @@ extends RefCounted
 ## release = a bolt. Runs in tick phase 4. All numbers come from PlayerTable (starting values).
 
 const PRIMARY_SLOT := 0
+const UTILITY_SLOT := 1
+
+
+## Guard is a held state (World.guarding); Blink spends a buffered press when it's ready.
+static func advance_utility(w: World) -> void:
+	if w.blink_cd > 0:
+		w.blink_cd -= 1
+	var t := w.player
+	if t.utility != PlayerTable.Utility.BLINK:
+		w.input_buffer[UTILITY_SLOT] = 0
+		return
+	if w.input_buffer[UTILITY_SLOT] == 0 or w.blink_cd > 0 or w.is_dashing():
+		return
+	w.input_buffer[UTILITY_SLOT] = 0
+	w.blink_from = w.player_pos()
+	w.actors.set_pos(0, blink_target(w))
+	w.blink_cd = t.blink_cooldown_ticks
+	w.blink_tick = w.tick
+	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
+
+
+## Where a blink lands: toward the aim point, at most blink_range_m, stopping just before the first wall.
+static func blink_target(w: World) -> Vector2:
+	var t := w.player
+	var from := w.player_pos()
+	var dist := minf(w.aim_dist_cm / 100.0, t.blink_range_m)
+	var to := from + Kin.dir(w.aim_angle) * dist
+	var best := 1.0
+	for wall in w.walls:
+		var hit := Collide.sweep_vs_obb(from, to, t.radius_m, wall)
+		if hit >= 0.0 and hit < best:
+			best = hit
+	if best < 1.0:
+		var back := 0.02 / maxf(dist, 0.001)
+		return from + (to - from) * maxf(best - back, 0.0)
+	return to
 
 
 static func advance(w: World) -> void:

@@ -35,6 +35,25 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	return t
 
 
+## The chosen utility, applied to a compiled player table (PD-01: one, chosen before the run).
+static func apply_utility(t: PlayerTable, def: UtilityDefinition) -> PlayerTable:
+	if def == null:
+		t.utility = PlayerTable.Utility.NONE
+		return t
+	match def.kind:
+		UtilityDefinition.Kind.GUARD:
+			t.utility = PlayerTable.Utility.GUARD
+			t.guard_half_arc = degrees_to_units(def.guard_arc_degrees * 0.5)
+			t.guard_mult_permille = int(round(def.guard_multiplier * 1000.0))
+			t.guard_move_permille = int(round(def.guard_move_multiplier * 1000.0))
+		UtilityDefinition.Kind.BLINK:
+			t.utility = PlayerTable.Utility.BLINK
+			t.blink_range_m = def.blink_range_m
+			t.blink_cooldown_ticks = SimTick.seconds_to_ticks(def.blink_cooldown_seconds)
+			t.blink_iframe_ticks = SimTick.seconds_to_ticks(def.blink_iframes_seconds)
+	return t
+
+
 ## Degrees to 1/4096 turns, rounded.
 static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))

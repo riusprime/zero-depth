@@ -116,6 +116,55 @@ func projectile_full_charge(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_FULL_CHARGE) != 0
 
 
+func utility() -> int:
+	return _w.player.utility
+
+
+func has_guard() -> bool:
+	return _w.player.utility == PlayerTable.Utility.GUARD
+
+
+func has_blink() -> bool:
+	return _w.player.utility == PlayerTable.Utility.BLINK
+
+
+func guarding() -> bool:
+	return _w.guarding()
+
+
+## The guard's half arc, the same number Damage checks.
+func guard_half_arc() -> int:
+	return _w.player.guard_half_arc
+
+
+func blink_cooldown() -> int:
+	return _w.blink_cd
+
+
+func blink_cooldown_total() -> int:
+	return _w.player.blink_cooldown_ticks
+
+
+func blink_tick() -> int:
+	return _w.blink_tick
+
+
+func blink_from() -> Vector2:
+	return _w.blink_from
+
+
+func dash_cooldown() -> int:
+	return _w.dash_cooldown_left
+
+
+func dash_cooldown_total() -> int:
+	return _w.player.dash_cooldown_ticks
+
+
+func player_radius() -> float:
+	return _w.player.radius_m
+
+
 func freeze_ticks() -> int:
 	return _w.freeze_ticks
 

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="UtilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/utility_definition.gd" id="1_util"]
+
+[resource]
+script = ExtResource("1_util")
+kind = 1
+name_key = &"UTIL_BLINK"
+desc_key = &"UTIL_BLINK_DESC"
+id = &"blink"

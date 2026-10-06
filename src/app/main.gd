@@ -61,7 +61,7 @@ func is_playing() -> bool:
 func show_main_menu() -> void:
 	_end_stage()
 	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build())
-	m.play_pressed.connect(start_stage)
+	m.play_pressed.connect(show_utility_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
 	m.galleries_pressed.connect(show_gallery)
@@ -69,6 +69,24 @@ func show_main_menu() -> void:
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
 	)
 	_set_menu(m)
+
+
+## Play -> pick the utility -> the arena. The pick is remembered in the profile.
+func show_utility_picker() -> void:
+	var repo := ContentRepository.load_all()
+	var defs := repo.all_of(&"utility")
+	defs.sort_custom(
+		func(a: UtilityDefinition, b: UtilityDefinition) -> bool: return a.kind < b.kind
+	)
+	var last := StringName(profile.section("loadout").get("utility", "guard"))
+	var p := UtilityPicker.new(defs, last)
+	p.picked.connect(
+		func(id: StringName) -> void:
+			profile.section("loadout")["utility"] = String(id)
+			start_stage()
+	)
+	p.back_pressed.connect(show_main_menu)
+	_set_menu(p)
 
 
 func show_options() -> void:
@@ -97,7 +115,11 @@ func start_stage() -> void:
 	var repo := ContentRepository.load_all()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", &"ruins")
-	var world := StageScenario.build(_stage_seed, ContentCompiler.compile_player(def))
+	var utility: UtilityDefinition = repo.get_def(
+		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
+	)
+	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
+	var world := StageScenario.build(_stage_seed, table)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

@@ -3,6 +3,9 @@ extends RefCounted
 ## The player's compiled numbers, in sim units (metres, ticks). Built from PlayerDefinition by the
 ## content compiler (v0.0.1 Step 6); starting_values() is the same data for tests and tools.
 
+## The utility chosen before the run (PD-01).
+enum Utility { NONE, GUARD, BLINK }
+
 var hp := 100
 var radius_m := 0.35
 ## Metres per tick.
@@ -18,6 +21,12 @@ var hurt_freeze_ticks := 4
 ## Guard: half arc (1/4096 turns) and the per-mille multiplier for hits from inside it.
 var guard_half_arc := 683
 var guard_mult_permille := 200
+var utility := Utility.NONE
+var guard_move_permille := 400
+## Blink: range in metres, cooldown and invulnerable ticks.
+var blink_range_m := 5.0
+var blink_cooldown_ticks := 150
+var blink_iframe_ticks := 6
 ## Primary: swing (3-hit combo), charge, bolt. Distances in metres, speeds in metres per tick.
 var swing_ticks := 14
 var swing_active_tick := 2

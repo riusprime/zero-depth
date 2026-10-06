@@ -7,6 +7,7 @@ var reader: WorldReader
 var stage := StageView.new()
 var actors := ActorViews.new()
 var kit := KitView.new()
+var utility := UtilityView.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -17,6 +18,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(stage)
 	add_child(actors)
 	add_child(kit)
+	add_child(utility)
 	add_child(rig)
 	stage.build(reader, palette, arena_half)
 	sync()
@@ -26,6 +28,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 func sync() -> void:
 	actors.sync(reader)
 	kit.sync(reader)
+	utility.sync(reader)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

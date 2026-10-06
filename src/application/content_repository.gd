@@ -36,6 +36,14 @@ func get_def(category: StringName, id: StringName) -> ContentDef:
 	return by_category.get(String(category), {}).get(String(id), null)
 
 
+## Every definition in a category, by id.
+func all_of(category: StringName) -> Array:
+	var cat: Dictionary = by_category.get(String(category), {})
+	var keys := cat.keys()
+	keys.sort()
+	return keys.map(func(k: String) -> ContentDef: return cat[k])
+
+
 func count(category: StringName) -> int:
 	return by_category.get(String(category), {}).size()
 

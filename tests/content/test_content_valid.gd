@@ -9,6 +9,7 @@ func test_all_data_validates() -> void:
 	assert_eq(repo.count(&"player"), 1)
 	assert_eq(repo.count(&"biomes"), 1)
 	assert_eq(repo.count(&"credits"), 1)
+	assert_eq(repo.count(&"utility"), 2, "guard and blink")
 
 
 func test_manifest_hash_is_stable_across_loads() -> void:
