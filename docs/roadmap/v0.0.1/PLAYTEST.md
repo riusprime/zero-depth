@@ -30,8 +30,14 @@ From [`../../design/GAME_BLUEPRINT.md`](../../design/GAME_BLUEPRINT.md) §C. The
 5. What frame rate did you see (dev panel: backtick, in debug builds; otherwise your overlay), on which GPU?
 6. Did anything break, crash or read wrong in Spanish?
 
-## Owner answers (date)
-OWNER ONLY
+## Owner answers (2026-10-06)
+Pasted verbatim from the owner's message:
+
+> the windows version I played was the bare minimun, just the box moving no enemies or no attacking so I could not really try it
+
+Lead's note (not the owner's words): this matches the build. The v0.0.1 stage holds two idle target cubes
+(`src/app/stage_scenario.gd`: `dummy_speed = 0`, `dummy_fire_period = 0`) and the player has no attack; both are
+v0.1.0 scope. The questions above weren't answered, so the Step 7 gates and the starting values stay pending.
 
 ## Free notes
 OWNER ONLY

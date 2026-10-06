@@ -63,7 +63,7 @@ Step 13's own "done when" (PR merged, owner's Windows check recorded) is **not m
 | Bench reading (O5) | 2026-10-06 | 15× applies to the reference scene | 2026-10-06 |
 | Bench stress miss (mean 3.457 ms, p99 5.988 ms vs 2 / 4 ms) | Step 5 ([BENCH](evidence/BENCH.md)) | pending | |
 | Player-kit starting values | with the Step 7 gates; again in PLAYTEST | pending | |
-| Owner Windows check | after Step 13 ([PLAYTEST](PLAYTEST.md)) | pending | |
+| Owner Windows check | after Step 13 ([PLAYTEST](PLAYTEST.md)) | Played: "just the box moving no enemies or no attacking so I could not really try it". Too little to judge; feeds v0.1.0 | 2026-10-06 |
 
 ## Open
 - O3 `main` branch exists (owner). Blocks the PR to `main`.
@@ -80,3 +80,5 @@ Step 13's own "done when" (PR merged, owner's Windows check recorded) is **not m
   their in-game copy, tour en/es, PLAYTEST.md). 83 tests pass from a clean worktree; export smoke 0 misses. CI
   was red on Steps 10–11 (fresh-checkout import errors from the project theme), fixed in `fa455ef`. Next: the
   owner's gates and playtest; then the PR to `main` once O3 is done.
+- 2026-10-06 — The owner played the Windows build: too bare to judge (no enemies, no attack). Recorded verbatim in
+  PLAYTEST.md. Next: v0.1.0 "Combat Lab" Phase 0 (design questions to the owner, then its PLAN).
