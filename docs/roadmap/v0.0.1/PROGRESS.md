@@ -8,6 +8,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch: _not cut yet_ (cut it from `origin/main`; se
   before content complete.
 - **Platform:** Windows, with mouse+keyboard and twin-stick gamepad parity from day one.
 - **Kickoff deliverable:** the starter doc kit.
+- **The audit framework is the only design source** (no gap-analysis report). GA numbers are owner decisions; see
+  `LOCKED_DECISIONS.md`.
+- **Bench:** stress scene mean ≤ 2 ms, p99 ≤ 4 ms; reference encounter ≥ 15× real time.
+- **Start building:** the owner asked to start v0.0.1 now, on `claude/lucid-fermat-9wv2tf` (no `main` yet).
 - **Design sources:** the reference image is in the repo (`docs/art/biomes_reference.png`). The audit framework
   is committed verbatim (`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`).
 
@@ -27,16 +31,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: _not cut yet_ (cut it from `origin/main`; se
 | Renderer pick (Forward+ / Compatibility) | after Step 7 | pending | |
 | Camera pitch (30° / 35.26° / 45°) | after Step 7 | pending | |
 | Occlusion technique (fade / X-ray / both) | after Step 7 | pending | |
-| Bench reading (O5) | with the Step 7 gates | pending | |
+| Bench reading (O5) | 2026-10-06 | 15× applies to the reference scene | 2026-10-06 |
 | Player-kit starting values | with the Step 7 gates | pending | |
 | Owner Windows check | after Step 13 | pending | |
 
 ## Open
-- O1 the gap analysis report for `docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`, or the owner's word that the audit
-  framework is all there is (owner).
 - O3 `main` branch exists (owner).
 - O4 the owner's credit line (owner).
-- O5 the bench reading: which scene the "≥ 15× real time" target applies to (owner).
 - The Godot `4.7.x` pin and the `gdtoolkit` pin, recorded here when chosen.
 
 ## Blockers

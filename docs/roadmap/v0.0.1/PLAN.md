@@ -456,12 +456,11 @@ Adapted from Deathventory's `verify.yml`, `windows-export.yml`, `scripts/export_
 - **Done when:** the PR is merged and the owner's Windows check is recorded in `PLAYTEST.md` by the owner.
 
 ## Open items (what they block)
-- **O1** Gap analysis report: blocks v0.1.0 Phase 0, not this version. Until it exists, Steps 4 and 6 use
-  starting values (BLUEPRINT §C).
+- ~~**O1** Gap analysis report~~ **Resolved 2026-10-06:** the framework is all there is. The player kit uses
+  starting values (BLUEPRINT §C), tuned by the owner.
 - **O3** `main` exists: blocks Step 13's PR.
 - **O4** Credit line: blocks Step 11's final text. A placeholder key, `CREDITS_OWNER`, shows "…" until it arrives.
-- **O5** Bench reading: does "≥ 15× real time" apply to the reference scene (the kit's reading) or to the stress
-  scene (which would need a mean ≤ 1.1 ms)? Ask with the Step 7 gates.
+- ~~**O5** Bench reading~~ **Resolved 2026-10-06:** 15× applies to the reference scene, as the kit read it.
 - **Gates** (renderer, pitch, occlusion technique): after Step 7. **Owner Windows check:** after Step 13.
 - **Godot patch version:** pin the newest `4.7.x` that `setup-godot` supports. Deathventory proved `4.7.2`; prefer
   it unless a newer 4.7 patch fixes something we need. Record the pin in PROGRESS.

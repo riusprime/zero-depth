@@ -27,9 +27,8 @@ Never resolve a conflict quietly.
 1. The owner's explicit instructions, once written into a PLAN, PROGRESS or LOCKED_DECISIONS.
 2. [`docs/architecture/LOCKED_DECISIONS.md`](docs/architecture/LOCKED_DECISIONS.md) and
    [`docs/design/GAME_BLUEPRINT.md`](docs/design/GAME_BLUEPRINT.md). The blueprint draws on
-   [`docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md) ("GA"; the report is
-   pending) and [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) (the five
-   design pillars).
+   [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) (the five design pillars,
+   the only design source).
 3. [`docs/roadmap/ROADMAP.md`](docs/roadmap/ROADMAP.md), the process docs in `docs/process/`, and the contracts:
    - [`ARCHITECTURE.md`](docs/architecture/ARCHITECTURE.md);
    - [`SIM_CONTRACTS.md`](docs/architecture/SIM_CONTRACTS.md);
@@ -144,9 +143,9 @@ These scripts are created in v0.0.1; until a step builds one, it doesn't exist y
 
 ## Glossary
 
-- **GA:** the gap analysis v0.1 report, the source of the design numbers (pending). Its audit framework is a
-  separate file. `GA §5` cites a section; `GA: <topic>` cites a
-  topic resolved through the file's citation map.
+- **GA:** a retired citation. The owner confirmed there is no gap-analysis report; old `GA` citations resolve
+  through `docs/design/ROGUELIKE_GAP_ANALYSIS_v0.1.md` (to an owner decision or an open design question). Don't
+  add new ones.
 - **EI / PD:** engineering invariant / product default ([`LOCKED_DECISIONS.md`](docs/architecture/LOCKED_DECISIONS.md)).
 - **T:** threat, raised only by the player's choices.
 - **G1 / G2:** an audit list approved row by row / mockups the owner picks from.

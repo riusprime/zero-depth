@@ -65,3 +65,5 @@ Every EI change and every PD flip gets a row, newest last. Use the decision-row 
 | Date | Changes | Decision | Why / evidence | Approved by |
 |---|---|---|---|---|
 | 2026-10-06 | EI-01..EI-11, PD-01..PD-12 | Initial set, from the starter doc kit | Deathventory lessons ([`../LESSONS.md`](../LESSONS.md)) and the owner's decisions of 2026-10-06 (engine, procedural floors, 3 biomes first, Windows with KB+M and pad parity) | Owner |
+| 2026-10-06 | PD-03, PD-06, PD-07, PD-08; ROADMAP §4 milestones; pool and enemy-name rules | The audit framework is the whole design source; there is no separate gap-analysis report. Every number the kit attributed to "GA" is an owner decision from the approved kit plan. Topics without numbers are design questions for the version that needs them ([`../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md`](../design/ROGUELIKE_GAP_ANALYSIS_v0.1.md)) | Owner: "the framework is all there is" | Owner |
+| 2026-10-06 | ARCHITECTURE §13 (bench) | Bench: the stress scene must hold mean ≤ 2 ms / p99 ≤ 4 ms per tick; the reference encounter must run ≥ 15× real time headless | Owner confirmed the kit's reading (O5) | Owner |
