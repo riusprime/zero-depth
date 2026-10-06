@@ -74,8 +74,8 @@ only adds numbers, menus or breadth fails the filter.
 |---|---|---|
 | Move | Screen-relative, 8-way on keys and analog on a stick; the sim reads −127..127 per axis | GA §5 |
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
-| Primary | The main attack, aimed | GA §5 |
-| Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state. **Or a mobile skill:** a repositioning or engage tool | GA §5 |
+| Primary | **A melee swing and a charged shot** (owner, 2026-10-06): press = swing (3-hit combo); keep holding = charge; release = a bolt | v0.1.0 PLAN (starting values) |
+| Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state (hits from the front cut to 20%). **Or a mobile skill: Blink**, a short teleport toward the aim | v0.1.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 
 **Starting values in use.** These are tuning defaults that no source has given yet. Each one is replaced by the GA
@@ -89,7 +89,8 @@ value or by an owner decision, and the change is noted here.
 | `src/content/defs/dash_definition.gd` (defaults) | `distance_m` | 4.0 m | Starting value (v0.0.1); owner Windows check |
 | same | `duration_seconds` | 0.15 s (9 ticks) | Starting value (v0.0.1) |
 | same | `cooldown_seconds` | 0.8 s (48 ticks) | Starting value (v0.0.1) |
-| same | `iframes_seconds` | 0 | Starting value; i-frames arrive with damage in v0.1.0 |
+| same | `iframes_seconds` | 0.15 s (the whole dash) | Starting value (v0.1.0) |
+| v0.1.0 primary, guard, blink, enemies | all fields | see [`../roadmap/v0.1.0/PLAN.md`](../roadmap/v0.1.0/PLAN.md) "Design" | Starting values (v0.1.0); the owner tunes them |
 
 `PlayerTable.starting_values()` (the kernel tests' copy) must equal the compiled data; a content test checks this.
 
@@ -132,14 +133,14 @@ value or by an owner decision, and the change is noted here.
 
 ## E. Enemies and the stress matrix
 
-**The six slice behaviours.** The names are fixed; each behaviour's spec is from GA: enemies and is filled in by
-the version that builds it.
+**The six slice behaviours.** The names are fixed; each behaviour's spec is decided by the owner in the Phase 0 of
+the version that builds it. `MIN_TELEGRAPH_TICKS = 24` (0.4 s; owner, 2026-10-06). Numbers: the v0.1.0 PLAN.
 
 | Enemy | First in | Behaviour and attacks | Telegraph |
 |---|---|---|---|
-| Charger | v0.1.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
-| Warden | v0.1.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
-| Needle | v0.1.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
+| Charger | v0.1.0 | Runs at you; locks a straight lane, charges along it, then is dazed (the punish window) | Lane, 0.6 s |
+| Warden | v0.1.0 | Slow and tanky; a front shield blocks your attacks, so you flank it; slams the ground around itself | Circle, 0.8 s |
+| Needle | v0.1.0 | Keeps its distance; fires a 3-bolt burst down a locked aim line; backs off when you close in | Line, 0.5 s |
 | Disruptor | v0.3.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
 | Splitter | v0.3.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
 | Anchor | v0.3.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
