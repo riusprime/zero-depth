@@ -18,7 +18,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 6 | Hits feel like hits: hit-stop, a white flash, camera shake (with an option), shards on a kill | `f0abdbd` |
 | 4 fix | The Warden commits to its slam, so it can be flanked | `306a31f`, lint `0c00cf1` |
 | 7 | A fight build for the owner: version `0.1.0-dev`, the tour shows the fight, [`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md) | `7e68fc8` |
-| 7b | Melee and shooting on separate buttons (hold to shoot), blink follows movement, the pad moves like the keys | see `git log` |
+| 7b | Melee and shooting on separate buttons (hold to shoot), blink follows movement, the pad moves like the keys | `abfdf2e` |
+| 7c | A thin sketch-like ink stroke on every edge, four styles in Options ([OUTLINES](evidence/OUTLINES.md)) | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -115,3 +116,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   hit-stop are gone; `TAG_FULL_CHARGE` stays reserved); blink and dash share `PlayerKit.move_or_aim`; bindings
   LT melee / RT shoot / RB dash / LB utility, left click / right click / Space / Shift; the latch's second dead
   zone removed, full speed from 85% of the remaining travel. 130 tests pass; goldens unchanged.
+- 2026-10-07 — Step 7c: `InkPass` (full-screen depth + normal edge pass, blended under telegraphs and bars;
+  depth-only on Compatibility), Options → Outline style (off / ink / sketch / sketch + paper, default sketch),
+  `scripts/shots/outlines.gd`, `evidence/OUTLINES.md` + strip. 134 tests pass.

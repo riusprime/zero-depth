@@ -10,6 +10,7 @@ var kit := KitView.new()
 var utility := UtilityView.new()
 var telegraphs := TelegraphViews.new()
 var hit_feel: HitFeel
+var ink := InkPass.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -23,6 +24,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(kit)
 	add_child(utility)
 	add_child(rig)
+	rig.camera.add_child(ink)
+	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
 	add_child(hit_feel)
 	stage.build(reader, palette, arena_half)

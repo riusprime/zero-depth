@@ -13,6 +13,7 @@ const DEFAULTS := {
 	"volume_effects": 80,
 	"vsync": "on",
 	"shake": "on",
+	"outline": "sketch",
 	"frame_cap": "off",
 	"language": "en",
 }

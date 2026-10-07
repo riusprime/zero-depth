@@ -140,6 +140,7 @@ func start_stage() -> void:
 	add_child(view)
 	view.setup(driver.reader, biome.palette, StageScenario.ARENA_HALF)
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
+	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
 	var player_input := PlayerInput.new(view.rig, driver.reader)
 	player_input.name = "PlayerInput"
 	view.add_child(player_input)

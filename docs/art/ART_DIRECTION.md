@@ -107,6 +107,12 @@ Rules:
 - **Renderer:** Forward+ unless the v0.0.1 gallery shows Compatibility is needed
   ([`../architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) §11).
 
+**Sketch stroke (owner, 2026-10-07; under evaluation).** The owner wants the look "closer to a hand draw sketch
+… just the feeling": a light, thin black stroke on the borders of things. `InkPass` draws it as a screen-space
+pass over depth and normals; Options offer off / ink / sketch / sketch + paper, default sketch. The owner picks
+one after playing ([`../roadmap/v0.1.0/evidence/OUTLINES.md`](../roadmap/v0.1.0/evidence/OUTLINES.md)); the pick
+then becomes this section's rule.
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator

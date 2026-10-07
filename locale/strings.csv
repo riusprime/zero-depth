@@ -52,3 +52,7 @@ CAUSE_WARDEN,A Warden's slam crushed you.,El golpe de un Guardián te aplastó.
 CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaron.
 CAUSE_UNKNOWN,Something got you.,Algo te alcanzó.
 UI_SHAKE,Screen shake,Vibración de pantalla
+UI_OUTLINE,Outline style,Estilo de contorno
+UI_OPT_INK,Ink,Tinta
+UI_OPT_SKETCH,Sketch,Boceto
+UI_OPT_PAPER,Sketch + paper,Boceto + papel
