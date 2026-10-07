@@ -1035,6 +1035,10 @@ func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
 
 
+func player_build() -> Dictionary:  # v0.3.0 P: PlayerBuild.read (has_blade, has_gun, facing, regenerating, ...).
+	return PlayerBuild.read(_w)
+
+
 func heat_state() -> Dictionary:
 	return Heat.read(_w)  # Overclock heat (v0.3.0 L18): the meter's values (Heat.read); {} without heat.
 

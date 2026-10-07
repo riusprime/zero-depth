@@ -9,4 +9,5 @@ name_key = &"ITEM_LONG_EDGE"
 desc_key = &"ITEM_LONG_EDGE_DESC"
 reach_bonus_permille = 350
 tags = PackedStringArray("blade")
+requires_weapon = &"blade"
 id = &"long_edge"

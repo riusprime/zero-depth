@@ -6,7 +6,9 @@ extends GutTest
 ## the wanderer keeps its shader through all the hits (the flash changes only parameters).
 
 const DEATHS := 2
-const MAX_FRAMES_PER_LIFE := 9000
+## Out-of-combat regen (v0.3.0 L25) heals between the sparse early hits, so a life lasts longer than before (the
+## second life measured 9330 frames with regen, about 7200 without): twice that as the limit.
+const MAX_FRAMES_PER_LIFE := 18000
 
 
 func after_each() -> void:

@@ -66,7 +66,7 @@ pairs two different mechanics and adds one payoff neither item has alone.
 
 | Combo | Items | Effect | Limit |
 |---|---|---|---|
-| **Plasma Arc** | Ember Edge + Static Chain | Shocking a burning enemy arcs to the nearest other within 4 m: 8 damage and 1 burn stack | once per root per enemy |
+| **Plasma Arc** | Ember Edge + Conductor (was Static Chain until v0.3.0 P: a Gun item can't meet a Blade item in one run, L15) | Shocking a burning enemy arcs to the nearest other within 4 m: 8 damage and 1 burn stack | once per root per enemy |
 | **Shatter Dash** | Frost Core + Kinetic Dash | A dash through a frozen enemy shatters it: 30 damage, the freeze ends | once per dash per enemy |
 | **Resonance** | Twin Arc + Overcharge | The echo of an Overcharge swing sends a second shockwave (100% of the first) | once per swing; its wave adds no extra shock (the swing's root already fed it) |
 | **Shrapnel Storm** | Splinter Shot + Ricochet Core | A bolt that bounces bursts into 2 shards (40° fan, 60% damage each) | once per bolt; shards never bounce or burst |
@@ -171,7 +171,7 @@ S = synergy, A = anti-synergy, · = none. Rows and columns use the codes below; 
 - **Kinetic Dash** — none: Melee burn and a damaging dash share no trigger, resource or status.
 - **Overcharge** — synergy: The charged swing applies burn at double damage.
 - **Vampiric Core** — none: Melee burn and kill healing share no trigger, resource or status.
-- **Static Chain** — synergy: **Plasma Arc** (named combo): Shocking a burning enemy arcs to the nearest other within 4 m: 8 damage and 1 burn stack.
+- **Static Chain** — none in one run since v0.3.0 L15 (Ember Edge is Blade-only, Static Chain Gun-only); Plasma Arc now pairs Ember Edge with Conductor.
 - **Momentum** — none: Melee burn and dash-then-swing share no trigger, resource or status.
 - **Frost Core** — none: Melee burn and bolt chill share no trigger, resource or status.
 - **Thorn Mantle** — none: Melee burn and thorns when hurt share no trigger, resource or status.
@@ -180,7 +180,7 @@ S = synergy, A = anti-synergy, · = none. Rows and columns use the codes below; 
 - **Phase Strike** — none: Melee burn and a phase ring share no trigger, resource or status.
 - **Cinder Shot** — synergy: Both feed burn (melee and bolts); one burn pool, capped at 5.
 - **Wildfire** — synergy: Ember Edge lights enemies; Wildfire spreads half their stacks on a kill.
-- **Conductor** — synergy: Swings both burn and shock; with Static Chain, Plasma Arc fires on these.
+- **Conductor** — synergy: **Plasma Arc** (named combo): swings both burn and shock, and shocking a burning enemy arcs to the nearest other within 4 m: 8 damage and 1 burn stack.
 - **Serrated Edge** — synergy: Swings apply burn and bleed: two DoTs, neither procs on-hit effects.
 - **Barbed Bolts** — none: Melee burn and bolt bleed share no trigger, resource or status.
 - **Glacial Edge** — none: Melee burn and melee chill share no trigger, resource or status.
@@ -318,7 +318,7 @@ S = synergy, A = anti-synergy, · = none. Rows and columns use the codes below; 
 - **Executioner** — none: Bolt shocks and jumps and execute damage share no trigger, resource or status.
 - **Swift Feet** — none: Bolt shocks and jumps and speed share no trigger, resource or status.
 - **Phase Strike** — none: Bolt shocks and jumps and a phase ring share no trigger, resource or status.
-- **Cinder Shot** — synergy: Bolts burn and shock: a near-miss of Plasma Arc (needs Ember Edge).
+- **Cinder Shot** — synergy: Bolts burn and shock (no named combo: Plasma Arc is the Blade's, Ember Edge + Conductor).
 - **Wildfire** — none: Bolt shocks and jumps and kill-spread burn share no trigger, resource or status.
 - **Conductor** — synergy: Bolts and swings both feed shock; Conductor's discharges reach 4.
 - **Serrated Edge** — none: Bolt shocks and jumps and melee bleed share no trigger, resource or status.

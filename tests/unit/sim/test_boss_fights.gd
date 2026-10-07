@@ -1,15 +1,15 @@
 extends GutTest
 ## Scripted players kill each boss within a time band (PLAN v0.3.0 C: aim for a 60-120 s fight for a player with a
 ## few items), and since BX (L17) kiting from afar is clearly slower than fighting close. Three bots, none with items,
-## each with its HP raised so it lives to the end (only the time is measured), each using one kind of input only (the
-## Blade and Gun builds of L15 are another workstream's; here a bot simply never presses the other weapon's button):
-## - melee: walks to the boss and keeps pressing the swing (the four-slash combo) from up close;
+## each with its HP raised so it lives to the end (only the time is measured), each playing one starting build (v0.3.0
+## L15/L16: the melee bot is a Blade run at its +15 %, both shooters Gun runs at their -15 %):
+## - melee: walks to the boss and keeps pressing the swing (the four-slash combo) from up close, with a light push
+##   toward the boss so it keeps facing it (melee goes the way the character faces, L29);
 ## - ranged near: holds 4-6 m from the boss's centre and keeps shooting (the C bot);
 ## - ranged far: holds 9.5-10.5 m from the boss's edge (the far end of a bolt's range) and keeps shooting.
 ## A real player keeps up far less than 100% of this (dodging, repositioning), so each time is a floor. The bands are
-## perfect-uptime bands: 25-90 s for the melee bot, 25-120 s for the near shooter (the PLAN's upper end: the Gun
-## build's damage change, L16, lands in another workstream and moves this bot's times), and the far bot must take at
-## least FAR_SLOWER times as long as the melee bot.
+## perfect-uptime bands: 25-90 s for the melee bot, 25-120 s for the near shooter (the PLAN's upper end), and the far
+## bot must take at least FAR_SLOWER times as long as the melee bot.
 
 enum Bot { MELEE, RANGED_NEAR, RANGED_FAR }
 
@@ -26,6 +26,10 @@ const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engin
 ## that landed and how many were deflected (ranged armour) or struck the open weak point.
 static func fight(id: StringName, bot: int, seed_value: int = 5, stats: Dictionary = {}) -> int:
 	var w := BossLab.world(seed_value)
+	var build: BuildDefinition = ContentRepository.load_all().get_def(
+		&"build", &"blade" if bot == Bot.MELEE else &"gun"
+	)
+	ContentCompiler.apply_build(w.player, build)
 	w.actors.hp[0] = 1000000
 	w.actors.max_hp[0] = 1000000
 	var bid := w.spawn_boss(BossLab.table_index(w, id), Vector2(9, 0))
@@ -78,6 +82,8 @@ static func _frame(w: World, i: int, bot: int, t: int) -> InputFrame:
 			mv = Vector2i(roundi(dir.x * 127.0), roundi(dir.y * 127.0))
 		elif dist < near:
 			mv = Vector2i(roundi(-dir.x * 127.0), roundi(-dir.y * 127.0))
+	if bot == Bot.MELEE and mv == Vector2i.ZERO and dist > 0.001:
+		mv = Vector2i(roundi(to.x / dist * 40.0), roundi(to.y / dist * 40.0))  # keep facing the boss (L29)
 	if edge < -50.0:
 		mv = Vector2i.ZERO
 	return InputFrame.make(mv, Kin.angle_of(to), int(dist * 100.0), held, pressed)

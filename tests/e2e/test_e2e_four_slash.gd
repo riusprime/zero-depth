@@ -2,7 +2,7 @@ extends GutTest
 ## The four-slash combo in the real game (v0.3.0 L11), through real input only: the left stick walks the wanderer
 ## up to the nearest enemy, the right stick aims at it, and the left trigger swings again the moment each swing
 ## ends (inside the combo window). Read through WorldReader: four swings in a row are combo steps 0, 1, 2, 3, each
-## lands a melee hit, and the fourth (the spinning finisher) hits for its 24 damage.
+## lands a melee hit, and the fourth (the spinning finisher) hits for its 24 damage (+15 % on the Blade build).
 
 const MAX_FRAMES := 5400
 const CLOSE_M := 1.5
@@ -54,7 +54,8 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 			var to := r.actor_pos(target) - p
 			if k % 20 == 0:
 				nav.flood(r.actor_pos(target))
-			var walk := Vector2.ZERO
+			# v0.3.0 L29: the swing goes the way the wanderer faces, so close in, a light push keeps it facing the enemy.
+			var walk := to.normalized() * 0.4
 			if to.length() > CLOSE_M:
 				walk = to.normalized() if to.length() < 3.0 else nav.direction(p)
 			_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, walk)
@@ -96,10 +97,12 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 		return
 	var four: Array = swings.slice(found, found + 4)
 	assert_eq(four.map(func(s: Array) -> int: return s[0]), [0, 1, 2, 3])
-	assert_eq((four[0][1] as Array).max(), 10, "the slash")
-	assert_eq((four[1][1] as Array).max(), 10, "the backhand")
-	assert_eq((four[2][1] as Array).max(), 12, "the thrust")
-	assert_eq((four[3][1] as Array).max(), 24, "the finisher hits for 24")
+	# The Blade build's +15 % (v0.3.0 L16), its remainder carried hit to hit: 10 -> 11 or 12, 12 -> 13 or 14, 24 -> 27
+	# or 28.
+	assert_between((four[0][1] as Array).max(), 11, 12, "the slash")
+	assert_between((four[1][1] as Array).max(), 11, 12, "the backhand")
+	assert_between((four[2][1] as Array).max(), 13, 14, "the thrust")
+	assert_between((four[3][1] as Array).max(), 27, 28, "the finisher hits for 24 + 15 %")
 	assert_gt(four[3][2], 0, "and its hit took HP off an enemy")
 
 

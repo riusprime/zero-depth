@@ -17,6 +17,10 @@ const MAX_LUNGE_M := 2.0
 ## After taking a hit: invulnerability and hit-stop.
 @export var hurt_iframes_seconds := 0.5
 @export var hurt_hitstop_seconds := 4.0 / 60.0
+## Out-of-combat regen (v0.3.0 L25, starting values): after this long without dealing or taking damage, heal this
+## per mille of max HP each second.
+@export var regen_delay_seconds := 10.0
+@export var regen_permille_per_second := 10
 
 
 func category() -> StringName:
@@ -44,6 +48,11 @@ func validate() -> Array[ValidationIssue]:
 			)
 	check_duration(issues, "hurt_iframes_seconds", hurt_iframes_seconds)
 	check_duration(issues, "hurt_hitstop_seconds", hurt_hitstop_seconds)
+	check_duration(issues, "regen_delay_seconds", regen_delay_seconds)
+	if regen_permille_per_second < 0 or regen_permille_per_second > 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "regen_permille_per_second is 0..1000")
+		)
 	if primary == null:
 		issues.append(ValidationIssue.new(&"missing", resource_path, "primary is missing"))
 	else:

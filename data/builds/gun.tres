@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BuildDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/build_definition.gd" id="1_build"]
+
+[resource]
+script = ExtResource("1_build")
+weapon = 1
+name_key = &"BUILD_GUN"
+desc_key = &"BUILD_GUN_DESC"
+damage_permille = 850
+id = &"gun"

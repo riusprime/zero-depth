@@ -103,7 +103,7 @@ func test_owning_both_items_unlocks_the_combo_once() -> void:
 	var w := _world([K.EMBER_EDGE])
 	assert_eq(w.combos_owned.size(), 0)
 	assert_false(Engines.has_combo(w, E.PLASMA_ARC))
-	w.add_item(_index(K.STATIC_CHAIN))
+	w.add_item(_index(K.CONDUCTOR))
 	var ev := _events(w, SimEvent.Kind.COMBO_UNLOCKED)
 	assert_eq(ev.size(), 1)
 	assert_eq(ev[0].amount, _combo_index(E.PLASMA_ARC))
@@ -113,7 +113,7 @@ func test_owning_both_items_unlocks_the_combo_once() -> void:
 	w.add_item(_index(K.LONG_EDGE))
 	assert_eq(_events(w, SimEvent.Kind.COMBO_UNLOCKED).size(), 1, "no repeat")
 	var r := WorldReader.new(w)
-	assert_eq(r.combo_item_ids(w.combos_owned[0]), [&"ember_edge", &"static_chain"])
+	assert_eq(r.combo_item_ids(w.combos_owned[0]), [&"ember_edge", &"conductor"])
 	assert_eq(r.combo_name_key(w.combos_owned[0]), &"ITEM_COMBO_PLASMA_ARC")
 
 
@@ -144,7 +144,7 @@ func test_all_24_items_own_all_8_combos() -> void:
 # --- Each combo -----------------------------------------------------------------------------------------------
 func test_plasma_arc_shocking_a_burning_enemy_arcs_fire() -> void:
 	var w := _world(
-		[K.EMBER_EDGE, K.STATIC_CHAIN], [Vector2(1.2, 0), Vector2(2.2, 1.5), Vector2(1.2, 6)]
+		[K.EMBER_EDGE, K.CONDUCTOR], [Vector2(1.2, 0), Vector2(2.2, 1.5), Vector2(1.2, 6)]
 	)
 	var a := w.actors
 	a.burn_stacks[1] = 2

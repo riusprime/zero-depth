@@ -171,6 +171,13 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+UI_CHOOSE_BUILD,CHOOSE YOUR BUILD,ELIGE TU ESTILO
+BUILD_BLADE,BLADE,HOJA
+BUILD_BLADE_DESC,A four-slash combo toward where you face. No gun.,Un combo de cuatro tajos hacia donde miras. Sin pistola.
+BUILD_GUN,GUN,PISTOLA
+BUILD_GUN_DESC,Hold to shoot where you aim. No blade.,Mantén para disparar hacia donde apuntas. Sin hoja.
+BUILD_DAMAGE,Damage %s,Daño %s
+BUILD_HINT,Left / Right to choose · Enter or A to start · Esc or B to go back,Izquierda / Derecha para elegir · Intro o A para empezar · Esc o B para volver
 UI_VOLUME_AMBIENCE,Ambience,Ambiente
 CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
 CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]

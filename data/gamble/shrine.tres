@@ -13,6 +13,7 @@ max_stacks = 6
 [sub_resource type="Resource" id="S_melee"]
 script = ExtResource("1_gse")
 stat = &"melee_damage"
+requires_weapon = &"blade"
 amount = 6.0
 weight = 3
 max_stacks = 5
@@ -20,6 +21,7 @@ max_stacks = 5
 [sub_resource type="Resource" id="S_shot"]
 script = ExtResource("1_gse")
 stat = &"shot_damage"
+requires_weapon = &"gun"
 amount = 6.0
 weight = 3
 max_stacks = 5

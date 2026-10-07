@@ -12,7 +12,7 @@ func after_each() -> void:
 func test_kills_earn_shards() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	await e.start_from_menu()
+	await e.start_from_menu(&"gun")  # v0.3.0 L15: shooting is the Gun build's
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_eq(hud.shard_text(), "0", "the counter starts at 0")

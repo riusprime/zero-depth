@@ -134,6 +134,7 @@ static func _apply(
 	var target_id := a.ids[target]
 	var applied := mini(scaled, a.hp[target])
 	a.hp[target] -= applied
+	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)
 	d.root_id = root_id
 	d.parent_seq = parent_seq

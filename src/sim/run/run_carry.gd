@@ -6,7 +6,12 @@ extends RefCounted
 ## is skipped, so the list may run ahead of the code. Values are copied, never shared between worlds.
 
 const FIELDS: Array[StringName] = [
-	&"items_owned", &"combos_owned", &"guard_charges", &"shards", &"gamble_stacks"
+	&"items_owned",
+	&"combos_owned",
+	&"guard_charges",
+	&"shards",
+	&"gamble_stacks",
+	&"regen_bonus_permille",
 ]
 const HP := &"hp"
 

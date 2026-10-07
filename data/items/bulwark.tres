@@ -10,6 +10,7 @@ desc_key = &"ITEM_BULWARK_DESC"
 charge_max = 3
 charge_bonus_permille = 400
 tags = PackedStringArray("guard")
+requires_weapon = &"blade"
 rarity = 1
 requires_utility = &"guard"
 id = &"bulwark"

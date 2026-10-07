@@ -19,3 +19,6 @@ const STATS: Array[StringName] = [
 @export var amount := 1.0
 @export var weight := 1
 @export var max_stacks := 1
+## The weapon the stat feeds (v0.3.0 L15): &"blade", &"gun", or empty for any. A run whose build lacks it never
+## draws the stat.
+@export var requires_weapon: StringName = &""

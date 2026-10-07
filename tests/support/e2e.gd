@@ -87,9 +87,13 @@ func _mouse_scale() -> Vector2:
 	return got / 100.0 if got.x > 0.0 and got.y > 0.0 else Vector2.ONE
 
 
-## Play from the main menu with the keyboard: the Play button has focus, then the utility picker's last pick
-## (Guard on a fresh profile) has focus.
-func start_from_menu() -> void:
+## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
+## a fresh profile; Right moves to Gun), then the utility picker's last pick (Guard on a fresh profile).
+func start_from_menu(build: StringName = &"blade") -> void:
+	await tap(KEY_ENTER)
+	await frames(2)
+	if build == &"gun":
+		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
 	await frames(2)
 	await tap(KEY_ENTER)

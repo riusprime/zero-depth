@@ -38,6 +38,7 @@ var gamble := GambleHud.new()
 var minimap := Minimap.new()
 var _hp_bar := HudBar.new()
 var _hp_text := EchoLabel.new(15, true)
+var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
 var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
 var _wave := EchoLabel.new(26, true)
@@ -139,6 +140,7 @@ func sync(reader: WorldReader) -> void:
 	_hp_bar.warn = low
 	_vignette.active = low
 	_hp_text.add_theme_color_override("font_color", HudStyle.WARN if low else HudStyle.text_color())
+	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.fraction(), _hp_bar.size.y))
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
 		(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
@@ -253,6 +255,7 @@ func _build_corner() -> void:
 	_hp_bar.color = ThemePalette.color(&"player_bar")
 	_hp_bar.custom_minimum_size = BAR
 	col.add_child(_hp_bar)
+	_hp_bar.add_child(_regen)
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 18)
 	pips.add_child(_dash)

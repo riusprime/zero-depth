@@ -100,7 +100,7 @@ func show_main_menu() -> void:
 	_end_stage()
 	audio.set_ambience(&"")
 	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build())
-	m.play_pressed.connect(show_utility_picker)
+	m.play_pressed.connect(show_build_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
 	m.galleries_pressed.connect(show_gallery)
@@ -110,7 +110,22 @@ func show_main_menu() -> void:
 	_set_menu(m)
 
 
-## Play -> pick the utility -> the arena. The pick is remembered in the profile.
+## Play -> pick the build (v0.3.0 L15: Blade or Gun) -> pick the utility -> the run. Both picks are remembered in
+## the profile; the build is the run's (RunState.build_id) and holds on every floor.
+func show_build_picker() -> void:
+	var defs := ContentRepository.load_all().all_of(&"build")
+	var last := StringName(profile.section("loadout").get("build", "blade"))
+	var p := BuildPicker.new(defs, last)
+	p.picked.connect(
+		func(id: StringName) -> void:
+			profile.section("loadout")["build"] = String(id)
+			show_utility_picker()
+	)
+	p.back_pressed.connect(show_main_menu)
+	_set_menu(p)
+
+
+## The utility pick, after the build. The pick is remembered in the profile.
 func show_utility_picker() -> void:
 	var repo := ContentRepository.load_all()
 	var defs := repo.all_of(&"utility")
@@ -124,7 +139,7 @@ func show_utility_picker() -> void:
 			profile.section("loadout")["utility"] = String(id)
 			start_stage()
 	)
-	p.back_pressed.connect(show_main_menu)
+	p.back_pressed.connect(show_build_picker)
 	_set_menu(p)
 
 
@@ -185,7 +200,8 @@ func start_stage() -> void:
 	var repo := ContentRepository.load_all()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
-	run = RunState.start(_stage_seed, ContentCompiler.compile_run(run_def))
+	var build := StringName(profile.section("loadout").get("build", "blade"))
+	run = RunState.start(_stage_seed, ContentCompiler.compile_run(run_def), build)
 	_start_floor(repo)
 
 
@@ -199,6 +215,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
 	)
 	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
+	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
 	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
@@ -320,7 +337,7 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with the next seed and the same utility.
+## A new run with the next seed and the same build and utility.
 func restart() -> void:
 	_stage_seed += 1
 	_end_stage()
