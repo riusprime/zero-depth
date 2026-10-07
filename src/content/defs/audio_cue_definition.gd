@@ -16,12 +16,20 @@ const BUSES: Array[StringName] = [&"sfx", &"ui", &"ambience"]
 @export var pitch_jitter := 0.04
 ## How many copies may sound at once; a play beyond that is dropped.
 @export var max_voices := 3
+## Cues sharing a group share max_voices (v0.3.5 F17: every blade swing is in &"blade_swing", so at most two swing
+## sounds overlap whichever swings they are); empty = the cue counts on its own.
+@export var voice_group: StringName = &""
 ## The shortest gap between two plays of this cue, in seconds (quick repeats are dropped).
 @export var cooldown_s := 0.03
 ## While this cue plays, the sfx bus is ducked (boss telegraphs) so the warning reads.
 @export var duck := false
 ## Shown on the caption line when captions are on; empty = no caption.
 @export var caption_key: StringName = &""
+
+
+## The key the voice limit counts under: the group, or the cue's own id.
+func voice_key() -> StringName:
+	return voice_group if voice_group != &"" else id
 
 
 func category() -> StringName:

@@ -12,7 +12,7 @@ const ICON := 64.0
 var icon := GambleIconView.new(&"", ICON)
 var _title := Label.new()
 var _line := Label.new()
-var _box := StyleBoxFlat.new()
+var _box := CardStyle.box(Vector4(12, 8, 16, 8))
 var _reel: Array[StringName] = []
 var _result := &""
 var _text := ""
@@ -24,16 +24,6 @@ func _init() -> void:
 	name = "GambleCard"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2(340, 84)
-	_box.bg_color = Color(0.03, 0.04, 0.07, 0.86)
-	_box.set_corner_radius_all(10)
-	_box.border_width_left = 6
-	_box.border_width_top = 1
-	_box.border_width_bottom = 1
-	_box.border_width_right = 1
-	_box.content_margin_left = 14
-	_box.content_margin_right = 16
-	_box.content_margin_top = 8
-	_box.content_margin_bottom = 8
 	add_theme_stylebox_override("panel", _box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 14)
@@ -133,7 +123,7 @@ func _land() -> void:
 func _show(id: StringName, landed: bool) -> void:
 	icon.set_stat(id)
 	var c := GambleIcons.color(id)
-	_box.border_color = c if landed else Color(1, 1, 1, 0.25)
+	CardStyle.apply(_box, c, landed)  # v0.3.5 F16: the card's flat square panel, brighter once it lands
 	_line.text = _text if landed else ""
 	_line.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.35))
 	if not landed:

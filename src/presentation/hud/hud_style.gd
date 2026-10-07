@@ -1,85 +1,71 @@
 class_name HudStyle
 extends RefCounted
-## The HUD's look (PLAN v0.3.0 L21, UI): one place for its colours, type and framing, so every HUD piece (and the
-## pick panel, start screen and heat meter when their owners adopt it) reads as one techno/echo system.
+## The HUD's look (v0.3.5 F15, owner: "the HUD is fine but no so cyberpunk let's make it a bit more minimalistic"):
+## one place for its colours, type and framing. The v0.3.0 techno/echo look (ghost copies, glitches, scanlines,
+## brackets, end caps) is gone: plain type, thin lines, few elements, colour only where it carries state.
 ##
-## Three directions were shown to the owner as G2 mockups (docs/roadmap/v0.3.0/evidence/hud_mockups.png):
-##   TERMINAL   - wide-tracked condensed caps, corner brackets, scanlines, a red/cyan chromatic split;
-##   HOLO_ECHO  - cyan holographic panels; text trails fading echo copies of itself (the shipped default);
-##   INDUSTRIAL - chamfered gunmetal plates, slanted heavy caps, segmented bars, a hazard-amber accent.
+## Three calm directions were shown to the owner as G2 mockups (docs/roadmap/v0.3.5/evidence/hud_mockups.png):
+##   LINE  - no plates; each group sits over one hairline (the shipped default);
+##   BARE  - no plates and no lines: type and bars straight on the game;
+##   SLATE - flat, square, translucent dark plates; no lines.
 ## Swapping is one line: DEFAULT below (or set `HudStyle.current` before the HUD is built).
 ##
 ## Shared helpers for other HUD pieces:
-##   HudStyle.style_label(label, size, bold)  - the style's font, tracking, caps and text colour on a Label;
+##   HudStyle.style_label(label, size, bold)  - the style's font, size, colour and soft outline on a Label;
+##   HudStyle.label(size, bold)                - a new Label styled that way (translated text is set by the caller);
 ##   HudStyle.font(bold)                       - the style's FontVariation (built on the bundled Atkinson TTFs);
-##   HudStyle.accent() / text_color() / dim() / panel_bg() / warn_color() - the style's colour tokens;
+##   HudStyle.accent() / text_color() / dim() / panel_bg() / line() / warn_color() - the colour tokens;
 ##   HudStyle.danger_color(heat)               - cool (0) to hot (1), for meters that heat up;
-##   HudFrame.new()                            - a PanelContainer drawn as the style's plate;
-##   HudBar.new()                              - a fill bar drawn in the style, with a damage echo and a warn pulse;
-##   EchoLabel.new(size, bold)                 - a Label with the style's ghost copies and a glitch on change.
+##   HudFrame.new()                            - a PanelContainer drawn as the style's plate (a hairline, or nothing);
+##   HudBar.new()                              - a thin fill bar with a damage echo and a warn pulse.
 ## No outcome depends on any of this (EI-07): it only draws what WorldReader says.
 
-enum Style { TERMINAL, HOLO_ECHO, INDUSTRIAL }
+enum Style { LINE, BARE, SLATE }
 
 ## The shipped style (owner picks from the G2 mockups; one constant to swap).
-const DEFAULT := Style.HOLO_ECHO
+const DEFAULT := Style.LINE
 ## Low-HP warning (L24): below this share of max HP the HP bar pulses red (starting value).
 const LOW_HP_PERCENT := 30
 ## Warning pulses per second (starting value).
 const PULSE_HZ := 2.0
-## A value change makes its label echo/glitch for this long (s).
-const ECHO_S := 0.45
 const FONT_REGULAR := "res://assets/fonts/AtkinsonHyperlegible-Regular.ttf"
 const FONT_BOLD := "res://assets/fonts/AtkinsonHyperlegible-Bold.ttf"
-const WARN := Color("#FF2E3A")
+const WARN := Color("#F0444A")
 ## Out-of-combat regen's pulse on the HP bar (v0.3.0 L25).
 const REGEN := Color("#5BE38A")
-## Cool to hot, for the danger meter: cyan, yellow, orange, red.
-const HEAT := [Color("#3FD8FF"), Color("#FFD24A"), Color("#FF7A2E"), Color("#FF2E3A")]
+## Cool to hot, for the danger meter: a muted steel blue, sand, orange, red.
+const HEAT := [Color("#8FC3D6"), Color("#E8CB72"), Color("#EC8E4C"), Color("#F0444A")]
+const TEXT := Color("#E9EDF0")
+const ACCENT := Color("#9ED9E6")
 
 ## The style the HUD builds with.
 static var current: Style = DEFAULT
-## Calm mode: pulses hold steady and glitches don't move. No options row sets it yet; the options workstream can
-## wire a setting to it (it is read every frame).
+## Calm mode: pulses hold steady. Set from the options (ViewPrefs.reduced_motion); read every frame.
 static var reduced_motion := false
 static var _fonts := {}
 
 
-static func accent(s: Style = current) -> Color:
-	match s:
-		Style.TERMINAL:
-			return Color("#E6F4F1")
-		Style.INDUSTRIAL:
-			return Color("#F2A93B")
-	return Color("#5FE8FF")
+static func accent(_s: Style = current) -> Color:
+	return ACCENT
 
 
-static func text_color(s: Style = current) -> Color:
-	match s:
-		Style.TERMINAL:
-			return Color("#E6F4F1")
-		Style.INDUSTRIAL:
-			return Color("#ECE6DA")
-	return Color("#DFFBFF")
+static func text_color(_s: Style = current) -> Color:
+	return TEXT
 
 
 ## Secondary text and unlit parts.
-static func dim(s: Style = current) -> Color:
-	match s:
-		Style.TERMINAL:
-			return Color(0.75, 0.82, 0.8, 0.32)
-		Style.INDUSTRIAL:
-			return Color(0.55, 0.55, 0.52, 0.55)
-	return Color(0.37, 0.91, 1.0, 0.25)
+static func dim(_s: Style = current) -> Color:
+	return Color(TEXT, 0.3)
 
 
-static func panel_bg(s: Style = current) -> Color:
-	match s:
-		Style.TERMINAL:
-			return Color(0.01, 0.02, 0.03, 0.62)
-		Style.INDUSTRIAL:
-			return Color(0.14, 0.15, 0.17, 0.88)
-	return Color(0.02, 0.12, 0.17, 0.55)
+## A plate's fill (SLATE only draws plates).
+static func panel_bg(_s: Style = current) -> Color:
+	return Color(0.03, 0.035, 0.045, 0.5)
+
+
+## The hairline under a group (LINE) and a bar's track edge.
+static func line(_s: Style = current) -> Color:
+	return Color(TEXT, 0.28)
 
 
 static func warn_color() -> Color:
@@ -105,47 +91,34 @@ static func pulse(t: float) -> float:
 	return 0.5 + 0.5 * cos(t * TAU * PULSE_HZ)
 
 
-## The style's font: the bundled Atkinson Hyperlegible (OFL, assets/fonts/OFL.txt) with tracking and shape.
+## The style's font: the bundled Atkinson Hyperlegible (OFL, assets/fonts/OFL.txt), plain: no tracking, no slant.
 static func font(bold: bool = false, s: Style = current) -> FontVariation:
 	var key := "%d_%s" % [s, bold]
 	if _fonts.has(key):
 		return _fonts[key]
 	var v := FontVariation.new()
 	v.base_font = load(FONT_BOLD if bold else FONT_REGULAR)
-	match s:
-		Style.TERMINAL:
-			v.spacing_glyph = 3
-			v.variation_transform = Transform2D(Vector2(0.86, 0), Vector2(0, 1), Vector2.ZERO)
-		Style.INDUSTRIAL:
-			v.spacing_glyph = 2
-			v.variation_embolden = 0.5 if bold else 0.25
-			v.variation_transform = Transform2D(Vector2(1.04, 0), Vector2(-0.16, 1), Vector2.ZERO)
-		_:
-			v.spacing_glyph = 3
-			v.variation_transform = Transform2D(Vector2(1.06, 0), Vector2(0, 1), Vector2.ZERO)
 	_fonts[key] = v
 	return v
 
 
-## The style's type on a label: font, size, caps, colour and a soft outline for legibility over the floor.
+## The style's type on a label: font, size, colour and a soft outline for legibility over the floor.
 static func style_label(l: Label, size: int, bold: bool = false, s: Style = current) -> void:
 	l.add_theme_font_override("font", font(bold, s))
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", text_color(s))
-	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
-	l.add_theme_constant_override("outline_size", 4 if size < 30 else 8)
-	l.uppercase = true
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.72))
+	l.add_theme_constant_override("outline_size", 4 if size < 30 else 6)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.35))
+	l.add_theme_constant_override("shadow_offset_x", 1)
+	l.add_theme_constant_override("shadow_offset_y", 2)
+	l.uppercase = false
 
 
-## Ghost copies an EchoLabel draws behind its text: [offset, colour] pairs.
-static func ghosts(s: Style = current) -> Array:
-	match s:
-		Style.TERMINAL:
-			return [
-				[Vector2(-1.5, 0), Color(1.0, 0.18, 0.3, 0.55)],
-				[Vector2(1.5, 0), Color(0.2, 0.9, 1.0, 0.55)]
-			]
-		Style.INDUSTRIAL:
-			return [[Vector2(2, 2), Color(0, 0, 0, 0.85)]]
-	var a := accent(s)
-	return [[Vector2(2, 1.5), Color(a, 0.3)], [Vector2(4, 3), Color(a, 0.12)]]
+## A plain HUD label in the style (it shows the text it is given; auto-translation is off, callers pass tr()).
+static func label(size: int, bold: bool = false, s: Style = current) -> Label:
+	var l := Label.new()
+	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_label(l, size, bold, s)
+	return l

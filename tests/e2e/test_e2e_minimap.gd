@@ -1,7 +1,8 @@
 extends GutTest
 ## The minimap through real input (v0.3.0 MM, owner L30): at floor start only the hall is on the map; walking (left
 ## stick) through its exit into the next room reveals that room; holding Tab, or pad Select, shows the full map, and
-## letting go puts the corner map back.
+## letting go puts the corner map back. v0.3.5 F14: on the full map the new room lies the way the game's camera
+## shows it from the hall.
 
 
 func after_each() -> void:
@@ -41,6 +42,18 @@ func test_walking_into_a_room_reveals_it_and_tab_shows_the_full_map() -> void:
 	assert_true(map.full_map_showing(), "holding Tab shows the full map")
 	assert_false(map.corner.visible, "in place of the corner map")
 	assert_gt(map.full_map.draw_count(), 0, "it drew")
+	# v0.3.5 F14: the full map shows the two rooms the way the game's own camera does (no mirror, no turn).
+	var cam := main.view.rig.camera
+	var a := r.floor_room(start).get_center()
+	var b := r.floor_room(room).get_center()
+	var on_screen := (
+		cam.unproject_position(SimPlane.to_3d(b)) - cam.unproject_position(SimPlane.to_3d(a))
+	)
+	var on_map := map.full_map.to_map(b) - map.full_map.to_map(a)
+	gut.p("next room from the hall: screen %s, map %s" % [on_screen, on_map])
+	assert_gt(
+		on_screen.normalized().dot(on_map.normalized()), 0.9, "the map points where the screen does"
+	)
 	e.key(KEY_TAB, false)
 	await e.frames(2)
 	assert_false(map.full_map_showing(), "letting go hides it")

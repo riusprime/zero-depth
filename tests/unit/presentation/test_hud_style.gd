@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.3.0 UI (PLAN L21, L23, L24): the HUD style helper builds every piece in every style; the danger meter maps
-## tiers and progress to lit chevrons and segments with no text; the low-HP warning turns on below 30 % of max HP
-## and off again above it; labels echo when their value changes.
+## tiers and progress to lit marks and progress with no text; the low-HP warning turns on below 30 % of max HP
+## and off again above it. v0.3.5 F15: the calm HUD; plain labels (no ghost copies, no glitch), thin bars.
 
 
 func after_each() -> void:
@@ -117,7 +117,6 @@ func test_every_style_builds_every_piece() -> void:
 		var f := HudStyle.font(true)
 		assert_true(f is FontVariation, "style %d has a font" % s)
 		assert_not_null(f.base_font, "built on the bundled TTF")
-		assert_eq(HudStyle.ghosts().is_empty(), false, "style %d has ghosts" % s)
 		var hud := Hud.new()
 		add_child_autofree(hud)
 		hud.sync(r)
@@ -129,17 +128,21 @@ func test_every_style_builds_every_piece() -> void:
 		assert_true(hud.floor_card_showing())
 
 
-func test_a_label_echoes_when_its_value_changes() -> void:
-	var l := EchoLabel.new(20, true)
-	add_child_autofree(l)
-	l.text = "00:01"
-	l._process(0.01)
-	assert_gt(l.echo_level(), 0.9, "a new value echoes")
-	for k in 60:
-		l._process(1.0 / 60.0)
-	assert_eq(l.echo_level(), 0.0, "and settles")
-	for g in l.get_children():
-		assert_eq((g as Label).text, "00:01", "the ghosts carry the value")
-	l.text = "00:02"
-	l._process(0.01)
-	assert_gt(l.echo_level(), 0.9, "every change echoes")
+func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
+	assert_eq(HudStyle.DEFAULT, HudStyle.Style.LINE, "the shipped calm style")
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	hud.sync(WorldReader.new(_world()))
+	for l in hud.find_children("*", "Label", true, false):
+		assert_eq(
+			l.get_children().filter(func(c: Node) -> bool: return c is Label).size(),
+			0,
+			"%s has no ghost copies" % l.name
+		)
+		assert_false((l as Label).uppercase, "%s is plain type" % l.name)
+	assert_lte(Hud.BAR.y, 10.0, "a thin HP bar")
+	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
+	assert_lte(BossBar.BAR.y, 10.0, "a thin boss bar")
+	var f := HudStyle.font(true)
+	assert_eq(f.spacing_glyph, 0, "no wide tracking")
+	assert_eq(f.variation_transform, Transform2D.IDENTITY, "no slant or stretch")

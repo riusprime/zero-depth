@@ -1,7 +1,8 @@
 extends GutTest
-## The Overclock heat views (v0.3.0 PLAN L18): the HUD meter (its marks, the overheat point, flashes, the VENT
-## prompt, steam), the hero's visor and blade shifting toward orange and white, and the vent ring at the sim's
-## radius. Every change is a material parameter, never a shader (the damage-flash rule).
+## The Overclock heat views (v0.3.0 PLAN L18; the meter a straight bar since v0.3.5 F2): the HUD meter (its ticks and
+## overheat end placed from the sim's heat table, flashes, the VENT prompt, the overheat pulse), the hero's visor and
+## blade shifting toward orange and white, and the vent ring at the sim's radius. Every change is a material parameter,
+## never a shader (the damage-flash rule).
 
 var _repo: ContentRepository
 
@@ -77,21 +78,41 @@ func test_the_meter_fills_flashes_at_thresholds_and_prompts_the_vent() -> void:
 	assert_eq(m.tier_text(), tr("HUD_HEAT_OVERCLOCK"))
 
 
-func test_overheating_vents_steam_from_the_meter() -> void:
+func test_overheating_turns_the_bar_red() -> void:
 	var m := _meter()
 	var w := _world()
 	var r := WorldReader.new(w)
 	m.sync(r)
+	assert_ne(m.fill_color(), HeatLooks.OVERHEAT_MARK, "cool: the heat colour")
 	Heat.add(w, 100 * HeatTable.MILLI)
 	m.sync(r)
 	assert_true(m.stalled())
+	assert_true(m.flashing(), "the overheat flashes")
 	assert_eq(m.tier_text(), tr("HUD_HEAT_OVERHEAT"))
 	assert_eq(m.vent_text(), "", "no vent while overheated")
-	assert_gte(m.steam_count(), HeatMeter.STEAM_BURST, "a burst of steam")
-	var burst := m.steam_count()
-	m._process(0.25)
-	assert_gt(m.steam_count(), 0, "steam keeps venting while stalled")
-	assert_true(m.steam_count() >= burst, "new puffs keep coming")
+	assert_eq(m.fill_color(), HeatLooks.OVERHEAT_MARK, "overheated: the bar is red")
+
+
+## v0.3.5 F2: a straight bar; its ticks and its end sit where the sim's heat table puts Hot, Overclock and max.
+func test_the_straight_bar_places_its_ticks_from_the_sim_table() -> void:
+	var m := _meter()
+	var w := _world()
+	m.sync(WorldReader.new(w))
+	var s := WorldReader.new(w).heat_state()
+	var bar := m.bar_rect()
+	assert_almost_eq(bar.size.y, HeatMeter.BAR_H, 0.01, "a thin bar")
+	assert_gt(bar.size.x, bar.size.y * 40.0, "long and straight")
+	var mx := float(s["max"])
+	for k: Array in m.marks():
+		var want := bar.position.x + bar.size.x * float(k[0]) / mx
+		assert_almost_eq(m.x_of(float(k[0])), want, 0.01, "%s at its sim threshold" % k[1])
+	assert_almost_eq(m.x_of(float(s["hot"])), bar.size.x * 0.4, 0.01, "Hot at 40 of 100")
+	assert_almost_eq(m.x_of(mx), bar.end.x, 0.01, "the overheat point is the bar's end")
+	assert_eq(
+		m.find_children("*", "", true, false).size(),
+		0,
+		"one Control, drawn: no frame or segment nodes"
+	)
 
 
 func test_the_visor_and_blade_heat_up_without_changing_a_shader() -> void:

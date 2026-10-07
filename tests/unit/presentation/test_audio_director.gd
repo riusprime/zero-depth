@@ -42,6 +42,39 @@ func test_the_mixer_limits_voices_and_drops_quick_repeats() -> void:
 	assert_eq(m.active(&"x", 1.05), 1)
 
 
+## v0.3.5 F17 (owner: "sounds from sword are too overwhelming"): the blade swings share one voice group of 2,
+## so alternating swing cues can't stack; they sit 8 dB under their v0.3.0 levels and their files are short.
+func test_blade_swings_share_a_two_voice_limit_and_are_quieter() -> void:
+	var d := _director()
+	var swings: Array[StringName] = [
+		&"blade_slash_1", &"blade_slash_2", &"blade_slash_3", &"blade_thrust", &"blade_spin"
+	]
+	var v030 := {
+		&"blade_slash_1": -4.0,
+		&"blade_slash_2": -4.0,
+		&"blade_slash_3": -4.0,
+		&"blade_thrust": -4.0,
+		&"blade_spin": -2.0,
+		&"enemy_hit": -10.0,
+	}
+	for id: StringName in v030:
+		var cue: AudioCueDefinition = d.cues[id]
+		assert_almost_eq(cue.volume_db, v030[id] - 8.0, 0.01, "%s is 8 dB quieter" % id)
+	for id in swings:
+		var cue: AudioCueDefinition = d.cues[id]
+		assert_eq(cue.voice_group, &"blade_swing", "%s is in the swing group" % id)
+		assert_eq(cue.max_voices, 2, "%s: two swing voices at most" % id)
+		assert_lt(d.stream_for(id).get_length(), 0.45, "%s has a short tail" % id)
+	var allowed := 0
+	for k in 6:
+		if d.play(swings[k % 3]):
+			allowed += 1
+		d.advance(0.031)
+	assert_eq(allowed, 2, "alternating swing cues still stop at two voices")
+	d.advance(0.5)
+	assert_true(d.play(&"blade_slash_1"), "once they end, a swing plays again")
+
+
 func test_the_director_drops_a_play_over_the_voice_limit() -> void:
 	var d := _director()
 	var limit: int = d.cues[&"enemy_hit"].max_voices

@@ -130,6 +130,13 @@ the mode's colour vision on the tokens and asserts:
 - **Strings:** every visible string is `tr("KEY")` (EI-10). Layouts must fit Spanish, which runs about 25%
   longer. The screenshot tour runs in both languages.
 - **Button prompts** show glyphs for the active device.
+- **HUD and card look** (v0.3.5 F15, F16; G2 picks pending, defaults ship): the HUD is calm, plain type, thin
+  bars, one hairline per group, no glow, echo or glitch (`HudStyle`, one constant: `DEFAULT`); every card (pick,
+  item, combo, gamble) is a flat square dark panel with a thin outline, no rounded corners, shadow or coloured side
+  bar, with rarity as a small faceted mark (`CardStyle`, one constant: `DEFAULT`). Overclock heat is a thin straight
+  bar whose ticks come from the sim's heat table (F2). The minimap is oriented like the screen: up, left and right on
+  the map are up, left and right through the iso camera (`MinimapView.turn`, checked against `IsoRig`'s projection
+  in `test_minimap_orientation.gd`, F14).
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

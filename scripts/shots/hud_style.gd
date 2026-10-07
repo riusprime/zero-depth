@@ -1,18 +1,22 @@
 extends SceneTree
-## HUD style shots (v0.3.0 UI, L21, L23, L24): the real main.tscn on a run, posed by a script (a tool, not a test:
-## it sets the run clock, HP, shards and items directly). For each HudStyle (the G2 mockups) a real Hud in that
-## style is built over the same game frame, synced from the run's WorldReader, with floor 1's title card on screen
-## and HP under 30 % (the warning on); then the shipped HUD (the game's own) in play: full HP mid-tier, and low HP.
+## HUD style shots (v0.3.0 UI, L21, L23, L24; the calm HUD of v0.3.5 F15 and the straight heat bar of F2): the real
+## main.tscn on a run, posed by a script (a tool, not a test: it sets the run clock, HP, shards, items and Overclock
+## heat directly). For each HudStyle (the G2 mockups) a real Hud in that style is built over the same game frame,
+## synced from the run's WorldReader, with floor 1's title card on screen and HP under 30 % (the warning on); then
+## the shipped HUD (the game's own) in play: full HP mid-tier, and low HP.
 ## Needs a renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/hud_style.gd
-## Writes each shot, hud_mockups.png (3 columns: the frame, the top plate and the HP corner at 1:1) and
-## hud_style.png (the shipped HUD, 2 frames) to build/shots/v0.3.0/hud_style/. Evidence copies are made by hand.
+## Writes each shot, hud_mockups.png (3 columns: the frame, the top group and the HP corner with the heat bar at
+## 1:1) and hud_style.png (the shipped HUD, 2 frames) to build/shots/v0.3.5/hud_style/. Evidence copies are made by
+## hand.
 
-const OUT := "res://build/shots/v0.3.0/hud_style/"
+const OUT := "res://build/shots/v0.3.5/hud_style/"
+## Overclock heat in the shots: Hot, past its tick (the bar's colour and the VENT prompt show).
+const HEAT := 58
 const SETTLE := 50
 const COL_W := 640
-const STYLE_NAMES := ["terminal", "holo_echo", "industrial"]
+const STYLE_NAMES := ["line", "bare", "slate"]
 
 var main: Main
 var _step := 0
@@ -53,6 +57,12 @@ func _pose(hp: int, run_ticks: int) -> void:
 	w.actors.hp[0] = hp
 	w.run_ticks = run_ticks
 	w.shards = 147
+	if w.heat == null:
+		var repo := ContentRepository.load_all()
+		Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
+	w.heat.milli = HEAT * HeatTable.MILLI
+	w.heat.idle = 0
+	Heat.advance(w)
 	if w.items_owned.is_empty():
 		for k in 3:
 			w.add_item(k)
@@ -128,13 +138,17 @@ func _save_sheets() -> void:
 	var fh := int(h * float(COL_W) / w)
 	var top := Rect2i(w / 2 - COL_W / 2, 0, COL_W, 120)
 	var corner := Rect2i(0, h - 200, COL_W, 200)
-	var sheet := Image.create(COL_W * 3, fh + top.size.y + corner.size.y, false, Image.FORMAT_RGB8)
+	var heat := Rect2i(w / 2 - COL_W / 2, h - 110, COL_W, 110)
+	var rows := fh + top.size.y + corner.size.y + heat.size.y
+	var sheet := Image.create(COL_W * 3, rows, false, Image.FORMAT_RGB8)
 	for i in _mock_shots.size():
 		var full := _mock_shots[i].duplicate() as Image
 		full.resize(COL_W, fh, Image.INTERPOLATE_LANCZOS)
 		sheet.blit_rect(full, Rect2i(0, 0, COL_W, fh), Vector2i(i * COL_W, 0))
 		sheet.blit_rect(_mock_shots[i], top, Vector2i(i * COL_W, fh))
 		sheet.blit_rect(_mock_shots[i], corner, Vector2i(i * COL_W, fh + top.size.y))
+		var y := fh + top.size.y + corner.size.y
+		sheet.blit_rect(_mock_shots[i], heat, Vector2i(i * COL_W, y))
 	sheet.save_png(OUT + "hud_mockups.png")
 	var pw := 960
 	var ph := int(h * float(pw) / w)

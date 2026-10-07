@@ -26,7 +26,7 @@ func _draw() -> void:
 	if tile:
 		var box := StyleBoxFlat.new()
 		box.bg_color = Color(0.03, 0.04, 0.07, 0.8)
-		box.set_corner_radius_all(6)
+		box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
 		box.border_color = Color(c, 0.9)
 		box.set_border_width_all(2)
 		draw_style_box(box, r)
