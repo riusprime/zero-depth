@@ -12,28 +12,31 @@ extends Node3D
 ## Hips (leg pivots) and the chest pivot above them, in metres from the ground.
 const HIP_Y := 0.3
 ## Shoulder pivots, in the chest frame: behind the middle, high, wide.
-const SHOULDER := Vector3(-0.08, 0.56, 0.5)
+const SHOULDER := Vector3(-0.08, 0.52, 0.5)
 ## Walking speed the gait is tuned for (the Warden's 1.6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 1.6
 const STRIDE := 0.95
 ## Faster than this between two ticks is a teleport (a new floor), not motion.
 const TELEPORT_SPEED := 30.0
 ## Shoulder angles (radians about the side axis; + swings the arm forward and up): fists overhead in the windup,
-## down in front of the feet in the slam.
+## down on the ground at the front corners in the slam (the arms also swing out, so the iso camera sees the fists
+## land beside the shell, not under it).
 const ARM_UP := 2.75
-const ARM_SLAM := 0.32
+const ARM_SLAM := 0.4
 ## Recovery is the attack's 0.667 s (data/enemies/warden.tres, a starting value); the fists rise over its end.
 const RECOVER_TICKS := 40
 ## Seconds to rise out of the ground once the spawn-in ends.
 const RISE_SECONDS := 0.45
 const OUTLINE_M := 0.02
 
-## Colours sampled from the reference sheet (lit facets read lighter in game light).
-const ROCK_COLOR := Color("#675C57")
-const FIST_COLOR := Color("#625651")
+## Colours sampled from the reference sheet (lit facets read lighter in game light). Each facet of the shell and the
+## rocks is tinted a little lighter or darker (vertex colours), so the planes stay distinct under any light.
+const FACET_TINT := 0.16
+const ROCK_COLOR := Color("#6E5B53")
+const FIST_COLOR := Color("#68564F")
 const CHEST_COLOR := Color("#2A2D33")
 const LEG_COLOR := Color("#3B383B")
-const FOOT_COLOR := Color("#6A5C56")
+const FOOT_COLOR := Color("#705D55")
 const SHELL_COLOR := Color("#DA4036")
 const VISOR_FRAME_COLOR := Color("#2E2B2E")
 const VISOR_COLOR := Color("#FC2824")
@@ -43,23 +46,28 @@ const CRACK_COLOR := Color("#FF8A3C")
 ## The shell's rings, back to front: x (chest frame), half-width, half-height, centre height. The back is a flat,
 ## lower plate (the weak spot); the shell is longest over the back, as in the sheet's side view.
 const SHELL_RINGS := [
-	[-0.5, 0.28, 0.25, 0.6],
-	[-0.38, 0.33, 0.31, 0.6],
-	[-0.08, 0.36, 0.34, 0.6],
-	[0.22, 0.36, 0.34, 0.6],
-	[0.4, 0.33, 0.31, 0.59],
+	[-0.42, 0.27, 0.22, 0.53],
+	[-0.3, 0.34, 0.27, 0.56],
+	[0.0, 0.37, 0.29, 0.57],
+	[0.24, 0.36, 0.3, 0.58],
+	[0.36, 0.3, 0.3, 0.58],
 ]
+## The front edge is notched up around the visor frame: the bottom pair of the last two rings rises to these
+## heights (unit section y), as on the sheet's front view.
+const SHELL_NOTCH := [-0.8, -0.25]
 
 ## The shell's cross-section as unit points (z, y), round from the top centre through the right: a ridge on top,
-## sloped shoulders, near-vertical sides, and a bottom that narrows in to the visor, as on the sheet's front view.
+## sloped shoulders, near-vertical sides, and a bottom that narrows in to the visor.
 const SHELL_SECTION := [
 	Vector2(0.0, 1.08),
 	Vector2(0.62, 0.84),
 	Vector2(0.98, 0.42),
-	Vector2(0.86, -0.48),
-	Vector2(0.24, -1.0),
-	Vector2(-0.24, -1.0),
-	Vector2(-0.86, -0.48),
+	Vector2(0.9, -0.55),
+	Vector2(0.62, -1.0),
+	Vector2(0.3, -1.0),
+	Vector2(-0.3, -1.0),
+	Vector2(-0.62, -1.0),
+	Vector2(-0.9, -0.55),
 	Vector2(-0.98, 0.42),
 	Vector2(-0.62, 0.84),
 ]
@@ -239,7 +247,7 @@ func _pose(dt: float) -> void:
 	var tremble := sin(_t * 47.0) * 0.012 * _raise * smoothstep(0.6, 1.0, _windup)
 	_chest.position = Vector3(tremble, hip, 0)
 	# The chest leans back to heave the fists up, then pitches forward into the slam.
-	var lean := 0.06 * _walk + _raise * 0.2 - _slam * 0.3 - _shake * 0.05
+	var lean := 0.06 * _walk + _raise * 0.2 - _slam * 0.15 - _shake * 0.05
 	_chest.rotation = Vector3(-s * 0.05 * _walk, cos(_phase) * 0.06 * _walk, lean)
 	_chest.scale = Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
 	_visor_mat.emission_energy_multiplier = 2.4 + 4.0 * _raise + 2.0 * _shake
@@ -249,8 +257,8 @@ func _pose(dt: float) -> void:
 		# Walking: the arms swing against the legs; idle: they hang, a little forward.
 		var hang := 0.12 + side * s * 0.28 * _walk + breath * 0.02
 		var swing := lerpf(lerpf(hang, ARM_UP, _raise), ARM_SLAM, _slam)
-		# Raised, they come in over the head so the fists meet; slammed, they spread a little.
-		var roll := -side * (_raise * 0.42 - _slam * 0.26)
+		# Raised, they come in over the head so the fists meet; slammed, they swing out to the front corners.
+		var roll := -side * (_raise * 0.42 + _slam * 0.4)
 		arms[k].rotation = Vector3(roll, 0, swing)
 		_elbows[k].rotation = Vector3(0, 0, _raise * 0.55 + 0.12 * (1.0 - busy))
 		arms[k].position = SHOULDER * Vector3(1, 1, side) + Vector3(0, breath * 0.01, 0)
@@ -264,8 +272,8 @@ func _build_visor() -> void:
 	_piece(
 		_chest,
 		&"visor_frame",
-		Vector3(0.43, 0.37, 0),
-		Vector3(0.08, 0.25, 0.17),
+		Vector3(0.39, 0.37, 0),
+		Vector3(0.1, 0.28, 0.17),
 		VISOR_FRAME_COLOR,
 		0
 	)
@@ -279,7 +287,7 @@ func _build_visor() -> void:
 	_visor_mat.emission_energy_multiplier = 2.4
 	_write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
-	visor.position = Vector3(0.495, 0.37, 0)
+	visor.position = Vector3(0.445, 0.37, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_chest.add_child(visor)
 
@@ -289,7 +297,7 @@ func _build_weak_spot() -> void:
 	weak_spot = Node3D.new()
 	weak_spot.name = "WeakSpot"
 	weak_spot.position = Vector3(_shell_x(0) - 0.004, _shell_cy(0), 0)
-	weak_spot.scale = Vector3(1, 1.3, 1.3)
+	weak_spot.scale = Vector3(1, 1.15, 1.3)
 	_chest.add_child(weak_spot)
 	_crack_mat.albedo_color = CRACK_COLOR
 	_crack_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -309,16 +317,18 @@ func _build_arm(side: float) -> void:
 	var arm := Node3D.new()
 	arm.name = "Arm_" + tag
 	_chest.add_child(arm)
-	_piece(arm, &"shoulder", Vector3(0, 0, side * 0.01), Vector3(0.34, 0.38, 0.33), ROCK_COLOR, 11)
+	_piece(arm, &"shoulder", Vector3(0, 0, side * 0.01), Vector3(0.36, 0.38, 0.34), ROCK_COLOR, 11)
 	var elbow := Node3D.new()
 	elbow.position = Vector3(0.0, -0.17, side * 0.03)
 	arm.add_child(elbow)
-	_piece(elbow, &"forearm", Vector3(0.12, -0.2, 0), Vector3(0.4, 0.36, 0.44), ROCK_COLOR, 23)
+	_piece(
+		elbow, &"forearm", Vector3(0.1, -0.19, side * 0.04), Vector3(0.46, 0.4, 0.5), ROCK_COLOR, 23
+	)
 	var fist := Node3D.new()
 	fist.name = "Fist_" + tag
-	fist.position = Vector3(0.2, -0.46, -side * 0.02)
+	fist.position = Vector3(0.16, -0.5, -side * 0.01)
 	elbow.add_child(fist)
-	_piece(fist, &"fist", Vector3.ZERO, Vector3(0.32, 0.28, 0.32), FIST_COLOR, 37)
+	_piece(fist, &"fist", Vector3.ZERO, Vector3(0.38, 0.31, 0.4), FIST_COLOR, 37)
 	arms.append(arm)
 	_elbows.append(elbow)
 	fists.append(fist)
@@ -357,6 +367,7 @@ func _piece(
 	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
 	mat.stencil_color = _outline
 	mat.stencil_outline_thickness = OUTLINE_M
+	mat.vertex_color_use_as_albedo = key != &"visor_frame"
 	body.material_override = mat
 	parent.add_child(body)
 	body_materials.append(ActorViews.flashable(mat))
@@ -393,6 +404,8 @@ static func _shell_mesh() -> ArrayMesh:
 		var ring: Array[Vector3] = []
 		for j in SHELL_SECTION.size():
 			var p: Vector2 = SHELL_SECTION[j]
+			if k >= SHELL_RINGS.size() - 2 and (j == 5 or j == 6):
+				p.y = SHELL_NOTCH[k - (SHELL_RINGS.size() - 2)]
 			# A small fixed wobble breaks the rings into uneven facets, as on the sheet.
 			var w := 1.0 + (_noise(k * 31 + j * 7) - 0.5) * 0.08 * float(k > 0 and k < 4)
 			ring.append(Vector3(r[0], r[3] + p.y * r[2] * w, p.x * r[1] * w))
@@ -414,12 +427,12 @@ static func _shell_mesh() -> ArrayMesh:
 	var back: Array[Vector3] = rings[0]
 	var front: Array[Vector3] = rings[rings.size() - 1]
 	var bc := Vector3(SHELL_RINGS[0][0], SHELL_RINGS[0][3], 0)
-	var fc := Vector3(SHELL_RINGS[4][0] + 0.08, SHELL_RINGS[4][3] + 0.1, 0)
+	var fc := Vector3(SHELL_RINGS[4][0] + 0.06, SHELL_RINGS[4][3] + 0.08, 0)
 	for j in n:
 		var j2 := (j + 1) % n
 		tris.append([bc, back[j], back[j2]])
 		tris.append([fc, front[j], front[j2]])
-	return _mesh_from(tris, Vector3(-0.05, 0.6, 0))
+	return _mesh_from(tris, Vector3(-0.03, 0.56, 0), 3)
 
 
 ## A chunky faceted boulder of the given size: a six-sided block with big near-vertical sides and bevelled top and
@@ -464,7 +477,7 @@ static func _rock(size: Vector3, salt: int) -> ArrayMesh:
 		var j2 := (j + 1) % SIDES
 		tris.append([bc, bottom[j], bottom[j2]])
 		tris.append([tc, top[j], top[j2]])
-	return _mesh_from(tris, Vector3.ZERO)
+	return _mesh_from(tris, Vector3.ZERO, salt)
 
 
 static func _box(size: Vector3) -> BoxMesh:
@@ -550,15 +563,25 @@ static func _tri(
 	normals.append_array([n, n, n])
 
 
-static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
+## Flat-shaded triangles facing away from `centre`, each facet tinted by a fixed amount from `salt` (FACET_TINT)
+## and the downward ones shaded, so neighbouring planes read apart as on the sheet.
+static func _mesh_from(tris: Array, centre: Vector3, salt: int) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
-	for t: Array in tris:
+	var colors := PackedColorArray()
+	for k in tris.size():
+		var t: Array = tris[k]
 		_tri(verts, normals, t[0], t[1], t[2], centre)
+		var n := normals[normals.size() - 1]
+		var v := 1.0 + (_noise(salt * 131 + k * 17) - 0.5) * 2.0 * FACET_TINT
+		v *= lerpf(1.0, 0.72, clampf(-n.y, 0.0, 1.0))
+		var c := Color(v, v, v)
+		colors.append_array([c, c, c])
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
