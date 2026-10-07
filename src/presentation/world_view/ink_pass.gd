@@ -94,7 +94,7 @@ float normal_edge(vec2 uv, vec2 o) {
 ## The Compatibility renderer has no normal buffer: silhouettes from depth only.
 const DEPTH_ONLY_FN := "float normal_edge(vec2 uv, vec2 o) { return 0.0; }"
 
-var style := Style.SKETCH
+var style := Style.INK
 var _mat := ShaderMaterial.new()
 
 
@@ -125,4 +125,4 @@ func set_style(s: int) -> void:
 
 
 static func style_from_setting(value: String) -> int:
-	return STYLE_NAMES.get(value, Style.SKETCH)
+	return STYLE_NAMES.get(value, Style.INK)
