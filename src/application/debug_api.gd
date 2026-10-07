@@ -12,9 +12,12 @@ var ticks_last_frame := 0
 var god := false
 ## The boss the panel spawns next (an index into World.boss_tables), and a spawn waiting for the tick boundary.
 var boss_choice := 0
+## v0.3.5 AI: the normal enemy kind the panel spawns next (an index into enemy_kinds()), and a spawn waiting.
+var enemy_choice := 0
 var _kill_boss := false
 var _steps := 0
 var _boss_pending := -1
+var _enemy_pending := -1
 
 
 func _init(p_world: World) -> void:
@@ -72,8 +75,34 @@ func request_boss() -> void:
 		_boss_pending = boss_choice
 
 
+## The normal enemy kinds the world has tables for, in kind order (v0.3.5 AI: the panel's enemy spawn).
+func enemy_kinds() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for k in range(ActorStore.Kind.CHARGER, ActorStore.Kind.size()):
+		if world.enemy_table(k) != null and not BossAi.is_boss_kind(k):
+			out.append(k)
+	return out
+
+
+## Picks the next enemy kind for request_enemy.
+func next_enemy() -> void:
+	var kinds := enemy_kinds()
+	if not kinds.is_empty():
+		enemy_choice = (enemy_choice + 1) % kinds.size()
+
+
+## Queues the chosen enemy to spawn about 6 m from the player at the next tick boundary.
+func request_enemy() -> void:
+	if not enemy_kinds().is_empty():
+		_enemy_pending = enemy_choice % enemy_kinds().size()
+
+
 ## Applies queued commands between ticks. Returns the spawned boss's actor id, or -1.
 func apply_pending() -> int:
+	if _enemy_pending >= 0:
+		var kind := enemy_kinds()[_enemy_pending]
+		_enemy_pending = -1
+		world.add_enemy(kind, boss_spot(world, world.enemy_table(kind).radius_m))
 	if _boss_pending < 0:
 		return -1
 	var k := _boss_pending

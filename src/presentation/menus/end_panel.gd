@@ -12,6 +12,8 @@ const CAUSES := {
 	WorldReader.KIND_WARDEN: "CAUSE_WARDEN",
 	WorldReader.KIND_NEEDLE: "CAUSE_NEEDLE",
 	WorldReader.KIND_HATCHLING: "CAUSE_HATCHLING",
+	WorldReader.KIND_ARC_CASTER: "CAUSE_ARC_CASTER",
+	WorldReader.KIND_BOMB_DRONE: "CAUSE_BOMB_DRONE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

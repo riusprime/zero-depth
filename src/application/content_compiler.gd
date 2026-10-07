@@ -77,7 +77,10 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"warden": ActorStore.Kind.WARDEN,
 		&"needle": ActorStore.Kind.NEEDLE,
 		&"hatchling": ActorStore.Kind.HATCHLING,
+		&"arc_caster": ActorStore.Kind.ARC_CASTER,
+		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
 	}[def.behaviour_id]
+	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
@@ -87,6 +90,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	var atk := def.attacks[0]
 	var sp := atk.shape_params
 	t.windup_ticks = SimTick.seconds_to_ticks(atk.telegraph_seconds)
+	t.windup_max_ticks = maxi(t.windup_ticks, SimTick.seconds_to_ticks(atk.telegraph_max_seconds))
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
@@ -96,6 +100,9 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"charger", &"hatchling":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
+			t.charge_turn = degrees_to_units(
+				float(bp["charge_turn_dps"]) / SimTick.TICKS_PER_SECOND
+			)
 		&"warden":
 			t.front_half_arc = degrees_to_units(float(bp["front_arc_degrees"]) * 0.5)
 			t.front_mult_permille = int(bp["front_mult_permille"])
@@ -115,7 +122,39 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.bolt_life_ticks = SimTick.seconds_to_ticks(
 				float(sp["range_m"]) / float(sp["speed_mps"])
 			)
+			t.burst_spread = degrees_to_units(float(sp["spread_degrees"]))
+		&"arc_caster":
+			_compile_arc_caster(def, t)
+		&"bomb_drone":
+			t.keep_min_m = bp["keep_min_m"]
+			t.keep_distance_m = bp["keep_max_m"]
+			t.slam_radius_m = sp["radius_m"]
 	return t
+
+
+## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune).
+static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
+	var bp := def.behaviour_params
+	t.keep_min_m = bp["keep_min_m"]
+	t.keep_distance_m = bp["keep_max_m"]
+	t.spell_weights = PackedInt32Array(
+		[int(bp["bolt_weight"]), int(bp["spread_weight"]), int(bp["rune_weight"])]
+	)
+	var bolt := def.attacks[0].shape_params
+	t.burst_count = 1
+	t.bolt_speed = float(bolt["speed_mps"]) / SimTick.TICKS_PER_SECOND
+	t.bolt_radius_m = bolt["radius_m"]
+	t.bolt_life_ticks = SimTick.seconds_to_ticks(float(bolt["range_m"]) / float(bolt["speed_mps"]))
+	var spread := def.attacks[1].shape_params
+	t.spread_count = int(spread["count"])
+	t.spread_angle = degrees_to_units(float(spread["spread_degrees"]))
+	t.spread_speed = float(spread["speed_mps"]) / SimTick.TICKS_PER_SECOND
+	t.spread_radius_m = spread["radius_m"]
+	t.spread_life_ticks = SimTick.seconds_to_ticks(
+		float(spread["range_m"]) / float(spread["speed_mps"])
+	)
+	t.rune_radius_m = def.attacks[2].shape_params["radius_m"]
+	t.rune_windup_ticks = SimTick.seconds_to_ticks(def.attacks[2].telegraph_seconds)
 
 
 ## An encounter, its enemy ids resolved to actor kinds through their behaviours.
@@ -454,6 +493,13 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.hazard_damage = def.arena_hazard_damage
 	t.hazard_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_hazard_seconds))
 	t.lead_ticks = SimTick.seconds_to_ticks(def.lead_seconds)
+	t.commit_ticks = SimTick.seconds_to_ticks(def.track_commit_seconds)
+	t.dash_read_ticks = SimTick.seconds_to_ticks(def.dash_read_seconds)
+	t.gap_distance_m = def.gap_close_distance_m
+	t.gap_ticks = SimTick.seconds_to_ticks(def.gap_close_seconds)
+	t.gap_attack = (
+		t.attack_index(def.gap_close_attack) if not String(def.gap_close_attack).is_empty() else -1
+	)
 	for k in def.attacks.size():
 		var a := def.attacks[k]
 		var at := t.attacks[k]

@@ -8,12 +8,16 @@ const EPS := 0.04
 
 
 ## Boss `id` at the origin, its aim locked on `aim_at`; then the player stands at `stand` while it attacks.
-## Returns [hit, telegraph]: the drawn shape at the windup's start (for a burrow: its eruption mark).
+## Returns [hit, telegraph]: the drawn shape at the windup's start, which stays put while the player holds `aim_at`
+## (for a burrow: its eruption mark).
+## v0.3.5 AI: an aimed windup follows the player until it commits, so here the player stays on `aim_at` through the
+## windup and steps to `stand` once it has committed (the shape is then fixed: the drawn shape is the hit).
 func _attack(id: StringName, attack_id: StringName, aim_at: Vector2, stand: Vector2) -> Array:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, id)
 	var aid := w.actors.ids[i]
 	var reader := WorldReader.new(w)
+	var t_b := BossAi.table_of(w, i)
 	w.actors.set_pos(0, aim_at)
 	BossLab.start(w, i, attack_id)
 	var tg := reader.telegraph(i)
@@ -24,7 +28,9 @@ func _attack(id: StringName, attack_id: StringName, aim_at: Vector2, stand: Vect
 		var now := reader.telegraph(j)
 		if tg["shape"] == &"ripple" and not now.is_empty() and now["shape"] == &"disc":
 			tg = now
-		w.actors.set_pos(0, stand)
+		var atk := BossAi.attack_of(w, j)
+		var aiming := atk != null and BossAi.tracking(w, j, t_b, atk)
+		w.actors.set_pos(0, aim_at if aiming else stand)
 		w.step(InputFrame.new())
 	for t in 120:  # bolts still in flight
 		if w.projectiles.size() == 0:

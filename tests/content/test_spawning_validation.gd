@@ -23,10 +23,13 @@ func test_the_shipped_floor_is_valid_and_compiles() -> void:
 	assert_eq(t.interval_step_ticks, 15)
 	assert_eq(t.interval_min_ticks, 48)
 	assert_eq(t.hp_per_tier_permille, 80)
-	assert_eq(t.kinds.size(), 3)
+	assert_eq(t.kinds.size(), 5)
 	var warden := t.kinds.find(ActorStore.Kind.WARDEN)
 	assert_gte(warden, 0)
 	assert_eq(t.unlock_tiers[warden], 1, "Wardens from tier 1")
+	# v0.3.5 AI (owner F5, F6): the Arc Caster from tier 1, the Bomb Drone from tier 2.
+	assert_eq(t.unlock_tiers[t.kinds.find(ActorStore.Kind.ARC_CASTER)], 1)
+	assert_eq(t.unlock_tiers[t.kinds.find(ActorStore.Kind.BOMB_DRONE)], 2)
 
 
 func test_non_positive_values_are_rejected() -> void:

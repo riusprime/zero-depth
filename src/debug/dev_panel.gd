@@ -2,13 +2,14 @@ class_name DevPanel
 extends PanelContainer
 ## Developer panel stub (debug builds only), adapted from Deathventory's release gate: it opens only when
 ## unlocked() is true, toggled by backtick (physical key). Shows seed, tick, FPS and ticks per frame; buttons
-## pause, step one tick, hash now and reseed, and (v0.3.0 C) spawn a chosen boss near the player, all through
-## DebugApi.
+## pause, step one tick, hash now and reseed, (v0.3.0 C) spawn a chosen boss near the player and (v0.3.5 AI) a
+## chosen normal enemy, all through DebugApi.
 
 var api: DebugApi
 var _info := Label.new()
 var _hash := Label.new()
 var _boss := Label.new()
+var _enemy := Label.new()
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -37,6 +38,8 @@ func _init(p_api: DebugApi) -> void:
 		["SpawnBoss", "UI_DEV_SPAWN_BOSS", api.request_boss],
 		["God", "UI_DEV_GOD", api.toggle_god],
 		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
+		["NextEnemy", "UI_DEV_NEXT_ENEMY", api.next_enemy],
+		["SpawnEnemy", "UI_DEV_SPAWN_ENEMY", api.request_enemy],
 	]:
 		var b := Button.new()
 		b.name = spec[0]
@@ -47,6 +50,9 @@ func _init(p_api: DebugApi) -> void:
 	_boss.name = "BossChoice"
 	_boss.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_boss)
+	_enemy.name = "EnemyChoice"
+	_enemy.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_enemy)
 
 
 func _process(_delta: float) -> void:
@@ -66,3 +72,6 @@ func _process(_delta: float) -> void:
 		if api.boss_choice < w.boss_tables.size()
 		else ""
 	)
+	var kinds := api.enemy_kinds()
+	var k := kinds[api.enemy_choice % kinds.size()] if not kinds.is_empty() else -1
+	_enemy.text = tr(w.enemy_table(k).name_key) if k >= 0 else ""

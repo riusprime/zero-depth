@@ -22,6 +22,16 @@ const SPOT_CLEARANCE := 0.45
 
 const S := EnemyAi.State
 const M := BossAttackTable.Move
+## Moves whose windup follows the player until it commits (v0.3.5 AI); the rest lock where they start.
+const TRACKING_MOVES: Array[int] = [
+	BossAttackTable.Move.LANES,
+	BossAttackTable.Move.SWEEP,
+	BossAttackTable.Move.CHARGE,
+	BossAttackTable.Move.LEAP,
+	BossAttackTable.Move.BARRAGE,
+	BossAttackTable.Move.RAIL,
+	BossAttackTable.Move.BOLT_FAN,
+]
 
 
 static func is_boss_kind(kind: int) -> bool:
@@ -81,15 +91,21 @@ static func think(w: World, i: int) -> void:
 				aim if t.turn_rate <= 0 else Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			)
 			var punish := BossChallenge.punish_due(w, b, t)
+			var gap := BossChallenge.gap_close_due(w, b, t)  # v0.3.5 AI (F3): the gap-closer
 			if punish >= 0:
 				start_attack(w, i, punish)
 				bs.far_t[b] = 0
+			elif gap >= 0:
+				start_attack(w, i, gap)
+				bs.gap_t[b] = 0
 			elif not w.player_dead() and a.cd[i] == 0:
 				var k := _choose(w, b, t, Kin.length(to_player))
 				if k >= 0:
 					start_attack(w, i, k)
 		S.WINDUP:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
+			if tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
+				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
 				_enter(a, i, S.ACTIVE)
 				a.fire_cd[i] = 0
@@ -278,6 +294,35 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			bs.span[b] = dir * atk.half_arc * 2
 
 
+## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
+## commit_ticks.
+static func tracking(w: World, i: int, t: BossTable, atk: BossAttackTable) -> bool:
+	if t.commit_ticks <= 0 or w.player_dead() or w.actors.state[i] != S.WINDUP:
+		return false
+	if w.actors.state_t[i] >= atk.windup_ticks - t.commit_ticks:
+		return false
+	return TRACKING_MOVES.has(atk.move)
+
+
+## Re-aims the windup in progress at the player (aim_point), keeping what was drawn at random: a barrage's
+## scatter moves with its centre, a rail keeps its sweep direction.
+static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
+	var a := w.actors
+	var bs := w.bosses
+	match atk.move:
+		M.BARRAGE:
+			var shift := BossChallenge.aim_point(w, b, atk.move) - bs.pt(b, 0)
+			for k in atk.count:
+				bs.set_pt(b, k, bs.pt(b, k) + shift)
+		M.RAIL:
+			var aim := Kin.angle_of(BossChallenge.aim_point(w, b, atk.move) - a.pos(i))
+			var dir := 1 if bs.span[b] > 0 else -1
+			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
+			a.facing[i] = a.lock_a[i]
+		_:
+			_lock(w, i, b, atk)
+
+
 ## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself).
 static func _spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
 	for k in 4:
@@ -388,7 +433,8 @@ static func resolve(w: World, i: int) -> void:
 			if st == 0 and AttackShapes.arc_touches(c[0], c[1], c[2], c[3], c[4], p, pr):
 				_hit_player(w, i, atk, SimEvent.TAG_MELEE, c[0])
 		M.CHARGE:
-			if Kin.length(p - a.pos(i)) <= a.radius[i] + pr:
+			# v0.3.5 AI: within a contact slop, because phase 5 has already pushed the bodies exactly apart.
+			if Kin.length(p - a.pos(i)) <= a.radius[i] + pr + EnemyAi.CONTACT_SLOP_M:
 				_hit_player(w, i, atk, SimEvent.TAG_MELEE, a.pos(i))
 		M.LEAP:
 			var d := leap_disc(w, i)

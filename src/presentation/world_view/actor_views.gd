@@ -5,7 +5,8 @@ extends Node3D
 ## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3), from the enemy sheet
 ## (docs/art/enemies_visual_reference.png): the Charger a red hooded crawler on four clawed legs, the Warden a
 ## hulking rock golem under a red shell (fists in front, a glowing weak spot on its back; no shield), the Needle a
-## legged turret.
+## legged turret; v0.3.5 AI adds the Arc Caster (a robed caster with a staff) and the Bomb Drone (a hovering
+## quad-rotor).
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -277,6 +278,22 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = NeedleAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", needle)
 			root.set_meta(&"mats", needle.body_materials.duplicate())
+		WorldReader.KIND_ARC_CASTER:
+			# The Arc Caster (v0.3.5 AI): a robed caster with a staff, its own node under the facing.
+			var caster := ArcCasterAvatar.new()
+			caster.setup(outline_color, technique)
+			facing.add_child(caster)
+			height = ArcCasterAvatar.HEIGHT
+			root.set_meta(&"enemy_avatar", caster)
+			root.set_meta(&"mats", caster.body_materials.duplicate())
+		WorldReader.KIND_BOMB_DRONE:
+			# The Bomb Drone (v0.3.5 AI): drawn hovering, its shadow on the ground where the sim has it.
+			var drone := BombDroneAvatar.new()
+			drone.setup(outline_color, technique)
+			facing.add_child(drone)
+			height = BombDroneAvatar.HEIGHT
+			root.set_meta(&"enemy_avatar", drone)
+			root.set_meta(&"mats", drone.body_materials.duplicate())
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()

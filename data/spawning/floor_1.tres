@@ -21,6 +21,18 @@ enemy_id = &"warden"
 weight = 2
 unlock_tier = 1
 
+[sub_resource type="Resource" id="M_arc_caster"]
+script = ExtResource("1_mix")
+enemy_id = &"arc_caster"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_bomb_drone"]
+script = ExtResource("1_mix")
+enemy_id = &"bomb_drone"
+weight = 2
+unlock_tier = 2
+
 [resource]
 script = ExtResource("2_sdd")
 id = &"floor_1"
@@ -33,4 +45,4 @@ interval_step_seconds = 0.25
 interval_min_seconds = 0.8
 hp_scale_per_tier = 0.08
 min_distance_m = 8.0
-mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden")])
+mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone")])

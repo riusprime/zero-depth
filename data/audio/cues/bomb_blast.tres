@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AudioCueDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/audio_cue_definition.gd" id="1_cue"]
+
+[resource]
+script = ExtResource("1_cue")
+kind = &"sfx"
+bus = &"sfx"
+volume_db = -5.0
+pitch_jitter = 0.05
+max_voices = 3
+cooldown_s = 0.06
+id = &"bomb_blast"

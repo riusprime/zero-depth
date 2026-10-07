@@ -318,3 +318,9 @@ SKILL_LUNGE_CLEAVE,LUNGE CLEAVE,ESTOCADA TAJANTE
 SKILL_LUNGE_CLEAVE_DESC,"Skill: lunge 3.5 m where you face, then cleave everything in front of you.","Técnica: arremete 3,5 m hacia donde miras y luego tajea todo lo que tengas delante."
 SKILL_SCATTER_BLAST,SCATTER BLAST,RÁFAGA DISPERSA
 SKILL_SCATTER_BLAST_DESC,"Skill: a close-range spray of 7 pellets toward your aim that knocks enemies back.","Técnica: una ráfaga corta de 7 perdigones hacia donde apuntas que empuja a los enemigos."
+ENEMY_ARC_CASTER,Arc Caster,Lanzarrayos
+ENEMY_BOMB_DRONE,Bomb Drone,Dron Bombardero
+CAUSE_ARC_CASTER,An Arc Caster's spell struck you down.,Un hechizo de un Lanzarrayos te abatió.
+CAUSE_BOMB_DRONE,A Bomb Drone's bomb blew you up.,La bomba de un Dron Bombardero te hizo volar.
+UI_DEV_NEXT_ENEMY,Next enemy,Siguiente enemigo
+UI_DEV_SPAWN_ENEMY,Spawn enemy,Invocar enemigo

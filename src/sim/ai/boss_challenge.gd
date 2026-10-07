@@ -75,6 +75,7 @@ static func think(w: World, i: int, b: int, t: BossTable) -> void:
 		bs.far_t[b] = 0
 	if bs.hazard_cd[b] > 0:
 		bs.hazard_cd[b] -= 1
+	_read_player(w, i, b, t)
 	if bs.close_t[b] > 0:
 		bs.close_t[b] += 1
 	elif _closing_starts(w, b, t):
@@ -89,6 +90,37 @@ static func _closing_starts(w: World, b: int, t: BossTable) -> bool:
 	return t.close_after_ticks > 0 and w.bosses.fight_t[b] >= t.close_after_ticks
 
 
+## v0.3.5 AI (F3): the gap-closer's clock (the player out of reach), and the last dash's landing point.
+static func _read_player(w: World, i: int, b: int, t: BossTable) -> void:
+	var bs := w.bosses
+	if t.gap_attack >= 0 and not w.player_dead() and edge_distance(w, i) > t.gap_distance_m:
+		bs.gap_t[b] += 1
+	else:
+		bs.gap_t[b] = 0
+	if t.dash_read_ticks <= 0:
+		return
+	if w.is_dashing() and not w.player_dead():
+		var at := dash_landing(w)
+		bs.dash_x[b] = at.x
+		bs.dash_y[b] = at.y
+		bs.dash_t[b] = t.dash_read_ticks
+	elif bs.dash_t[b] > 0:
+		bs.dash_t[b] -= 1
+
+
+## Where the player's dash in progress ends: the rest of its distance along its direction (walls aside).
+static func dash_landing(w: World) -> Vector2:
+	var step := w.player.dash_distance_m / maxi(1, w.player.dash_ticks)
+	return w.player_pos() + w.dash_dir * (step * w.dash_ticks_left)
+
+
+## The gap-closer's index when it is due now (the player stayed out of reach long enough), else -1.
+static func gap_close_due(w: World, b: int, t: BossTable) -> int:
+	if t.gap_attack < 0 or t.gap_ticks <= 0 or w.player_dead():
+		return -1
+	return t.gap_attack if w.bosses.gap_t[b] >= t.gap_ticks else -1
+
+
 ## The punish attack's index when it is due now (the player stayed far long enough), else -1.
 static func punish_due(w: World, b: int, t: BossTable) -> int:
 	if t.punish_attack < 0 or t.punish_ticks <= 0 or w.player_dead():
@@ -96,11 +128,16 @@ static func punish_due(w: World, b: int, t: BossTable) -> int:
 	return t.punish_attack if w.bosses.far_t[b] >= t.punish_ticks else -1
 
 
-## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves.
+## Where an attack aims: the player, led by the boss's lead time at the player's velocity for aimed moves; for
+## dash_read_ticks after a dash (v0.3.5 AI, F3), aimed moves go at that dash's landing point instead.
 static func aim_point(w: World, b: int, move: int) -> Vector2:
 	var p := w.player_pos()
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
-	if t.lead_ticks <= 0 or not LEADING_MOVES.has(move):
+	if not LEADING_MOVES.has(move):
+		return p
+	if w.bosses.dash_t[b] > 0:
+		return Vector2(w.bosses.dash_x[b], w.bosses.dash_y[b])
+	if t.lead_ticks <= 0:
 		return p
 	return p + w.vel * t.lead_ticks
 

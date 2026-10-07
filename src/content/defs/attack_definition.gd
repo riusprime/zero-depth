@@ -10,6 +10,9 @@ enum Shape { CIRCLE, CONE, LINE, RING, PROJECTILE }
 ## Checked against the behaviour's schema (src/sim/ai/behaviour_schemas.gd).
 @export var shape_params := {}
 @export var telegraph_seconds := 0.5
+## v0.3.5 AI: when above telegraph_seconds, each attack's windup is drawn between the two (0 = always
+## telegraph_seconds).
+@export var telegraph_max_seconds := 0.0
 @export var active_seconds := 1.0 / 60.0
 @export var recovery_seconds := 0.5
 @export var damage := 10

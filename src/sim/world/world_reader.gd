@@ -13,6 +13,9 @@ const KIND_HATCHLING := ActorStore.Kind.HATCHLING
 const KIND_GATEKEEPER := ActorStore.Kind.GATEKEEPER
 const KIND_BROOD_MOTHER := ActorStore.Kind.BROOD_MOTHER
 const KIND_SIEGE_ENGINE := ActorStore.Kind.SIEGE_ENGINE
+## v0.3.5 AI: the Arc Caster and the Bomb Drone.
+const KIND_ARC_CASTER := ActorStore.Kind.ARC_CASTER
+const KIND_BOMB_DRONE := ActorStore.Kind.BOMB_DRONE
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -49,6 +52,10 @@ const STATE_MOVE := EnemyAi.State.MOVE
 const STATE_WINDUP := EnemyAi.State.WINDUP
 const STATE_ACTIVE := EnemyAi.State.ACTIVE
 const STATE_RECOVER := EnemyAi.State.RECOVER
+## The Arc Caster's spells (v0.3.5 AI; EnemyAi.Spell), for actor_spell().
+const SPELL_BOLT := EnemyAi.Spell.BOLT
+const SPELL_SPREAD := EnemyAi.Spell.SPREAD
+const SPELL_RUNE := EnemyAi.Spell.RUNE
 ## Run flow (v0.3.0 B): boss flow states, for views (BossFlow.State is the source).
 const BOSS_WAITING := BossFlow.State.WAITING
 const BOSS_FIGHT := BossFlow.State.FIGHT
@@ -275,6 +282,11 @@ func actor_spawning(i: int) -> bool:
 
 func actor_recovering(i: int) -> bool:
 	return EnemyAi.is_enemy_kind(_w.actors.kinds[i]) and _w.actors.state[i] == EnemyAi.State.RECOVER
+
+
+## The spell an Arc Caster is casting (v0.3.5 AI): SPELL_BOLT, SPELL_SPREAD or SPELL_RUNE (0 for other kinds).
+func actor_spell(i: int) -> int:
+	return _w.actors.pick[i]
 
 
 ## The enemy's telegraph, from the same function that resolves the attack (EI-07). {} when none.

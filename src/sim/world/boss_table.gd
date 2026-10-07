@@ -63,6 +63,14 @@ var hazard_damage := 0
 var hazard_ticks := 30
 ## Harder AI: attacks aim where the player will be in lead_ticks at their current velocity.
 var lead_ticks := 0
+## v0.3.5 AI (owner F3): aimed windups keep tracking the player until their last commit_ticks (0 = they lock at the
+## start); for dash_read_ticks after a dash, aimed attacks go at its landing point (0 = off); beyond
+## gap_distance_m for gap_ticks, it performs gap_attack, its gap-closer (-1 = none).
+var commit_ticks := 0
+var dash_read_ticks := 0
+var gap_distance_m := 0.0
+var gap_ticks := 0
+var gap_attack := -1
 
 
 ## The attack index with this id, or -1.

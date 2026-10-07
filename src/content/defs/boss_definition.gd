@@ -60,6 +60,14 @@ var arena_template := 0
 ## lead_seconds of their current velocity.
 @export var recovery_permille := 1000
 @export var lead_seconds := 0.0
+## v0.3.5 AI (owner F3): aimed windups track the player until their last track_commit_seconds (0 = lock at the start);
+## for dash_read_seconds after a dash, aimed attacks go at its landing point (0 = off); beyond gap_close_distance_m
+## (from the boss's edge) for gap_close_seconds, it performs gap_close_attack (empty = none).
+@export var track_commit_seconds := 0.0
+@export var dash_read_seconds := 0.0
+@export var gap_close_attack: StringName
+@export var gap_close_distance_m := 5.0
+@export var gap_close_seconds := 2.0
 
 
 func category() -> StringName:
@@ -230,6 +238,21 @@ func _check_challenge(issues: Array[ValidationIssue]) -> void:
 		issues.append(ValidationIssue.new(&"challenge", p, "recovery_permille must be 1..2000"))
 	if lead_seconds < 0.0 or lead_seconds > 1.0:
 		issues.append(ValidationIssue.new(&"challenge", p, "lead_seconds must be 0..1"))
+	if track_commit_seconds < 0.0 or dash_read_seconds < 0.0 or dash_read_seconds > 2.0:
+		issues.append(
+			ValidationIssue.new(&"challenge", p, "track_commit >= 0 and dash_read 0..2 s")
+		)
+	if not String(gap_close_attack).is_empty():
+		if attack(gap_close_attack) == null:
+			issues.append(
+				ValidationIssue.new(
+					&"unknown_attack", p, "no gap-close attack %s" % gap_close_attack
+				)
+			)
+		if gap_close_distance_m <= 0.0 or int(round(gap_close_seconds * 60.0)) < 1:
+			issues.append(
+				ValidationIssue.new(&"challenge", p, "gap-close distance and time must be > 0")
+			)
 	for a in attacks:
 		if a == null or String(a.follow_up).is_empty():
 			continue
