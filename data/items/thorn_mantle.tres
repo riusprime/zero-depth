@@ -9,4 +9,5 @@ name_key = &"ITEM_THORN_MANTLE"
 desc_key = &"ITEM_THORN_MANTLE_DESC"
 thorn_bolts = 6
 thorn_damage = 4
+tags = PackedStringArray("guard")
 id = &"thorn_mantle"

@@ -8,4 +8,5 @@ kind = 6
 name_key = &"ITEM_KINETIC_DASH"
 desc_key = &"ITEM_KINETIC_DASH_DESC"
 dash_hit_damage = 12
+tags = PackedStringArray("dash")
 id = &"kinetic_dash"

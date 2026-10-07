@@ -21,6 +21,14 @@ enum Kind {
 	EXECUTIONER,
 	SWIFT_FEET,
 	PHASE_STRIKE,
+	CINDER_SHOT,
+	WILDFIRE,
+	CONDUCTOR,
+	SERRATED_EDGE,
+	BARBED_BOLTS,
+	GLACIAL_EDGE,
+	COLD_SNAP,
+	BULWARK,
 }
 
 var id := &""
@@ -79,3 +87,25 @@ var dash_cooldown_cut_permille := 0
 var phase_damage := 0
 var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
+## Engines (v0.3.0 G; see ItemDefinition for each field). Tags are for views and docs, never for gameplay.
+var tags := PackedStringArray()
+var stacks_per_hit := 0
+var stack_every := 0
+var shock_threshold := 0
+var shock_ticks := 0
+var shock_damage := 0
+var shock_jumps := 0
+var shock_range_m := 0.0
+var bleed_damage := 0
+var bleed_period_ticks := 1
+var bleed_ticks := 0
+var bleed_max_stacks := 0
+var bleed_burst_per_stack := 0
+var frost_threshold := 0
+var frost_ticks := 0
+var freeze_ticks := 0
+var spread_radius_m := 0.0
+var chill_bonus_permille := 0
+var frozen_bonus_permille := 0
+var charge_max := 0
+var charge_bonus_permille := 0

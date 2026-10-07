@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"momentum"
+item_b = &"swift_feet"
+name_key = &"ITEM_COMBO_SLIPSTREAM"
+desc_key = &"ITEM_COMBO_SLIPSTREAM_DESC"
+effect = 6
+window_seconds = 1.5
+id = &"slipstream"

@@ -27,6 +27,19 @@ const INT_FIELDS: Array[StringName] = [
 	&"burn_root",
 	&"slow_t",
 ]
+## Engine statuses (v0.3.0 G), kept apart from INT_FIELDS so worlds without items hash as before: World hashes
+## them (hash_statuses) only when its loadout has items.
+const STATUS_FIELDS: Array[StringName] = [
+	&"shock_stacks",
+	&"shock_t",
+	&"bleed_stacks",
+	&"bleed_t",
+	&"bleed_cd",
+	&"frost_stacks",
+	&"frost_t",
+	&"frozen_t",
+	&"freeze_immune",
+]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
@@ -65,6 +78,18 @@ var burn_cd := PackedInt32Array()
 var burn_root := PackedInt32Array()
 ## Frost Core slow (v0.2.0 J): ticks left (0 = not slowed). EnemyAi.move scales its speed while it runs.
 var slow_t := PackedInt32Array()
+## Engines (v0.3.0 G; Engines): shock stacks and ticks until they fade; bleed stacks, ticks until they fade and to
+## the next DoT tick; frost stacks and ticks until they fade, ticks left frozen; 1 = never frozen (bosses: frost
+## only slows them; set it when the actor is added).
+var shock_stacks := PackedInt32Array()
+var shock_t := PackedInt32Array()
+var bleed_stacks := PackedInt32Array()
+var bleed_t := PackedInt32Array()
+var bleed_cd := PackedInt32Array()
+var frost_stacks := PackedInt32Array()
+var frost_t := PackedInt32Array()
+var frozen_t := PackedInt32Array()
+var freeze_immune := PackedInt32Array()
 
 
 func size() -> int:
@@ -73,7 +98,7 @@ func size() -> int:
 
 func add(id: int, kind: int, team: int, p: Vector2, r: float, p_hp: int, p_fire_cd: int) -> int:
 	# Packed arrays are values: get() returns a copy, so append to it and set it back.
-	for f in INT_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		ai.append(0)
 		set(f, ai)
@@ -118,7 +143,7 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 			j += 1
 		else:
 			keep.append(i)
-	for f in INT_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS:
 		set(f, ProjectileStore._pick_i(get(f), keep))
 	for f in FLOAT_FIELDS:
 		set(f, ProjectileStore._pick_f(get(f), keep))
@@ -129,3 +154,9 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(get(f))
 	for f in FLOAT_FIELDS:
 		h.add_f32s(get(f))
+
+
+## The engine statuses (v0.3.0 G), in STATUS_FIELDS order.
+func hash_statuses(h: StateHasher) -> void:
+	for f in STATUS_FIELDS:
+		h.add_ints(get(f))

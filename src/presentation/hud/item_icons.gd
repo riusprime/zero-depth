@@ -26,6 +26,14 @@ const IDS: Array[StringName] = [
 	&"executioner",
 	&"swift_feet",
 	&"phase_strike",
+	&"cinder_shot",
+	&"wildfire",
+	&"conductor",
+	&"serrated_edge",
+	&"barbed_bolts",
+	&"glacial_edge",
+	&"cold_snap",
+	&"bulwark",
 ]
 
 
@@ -186,6 +194,96 @@ static func shapes(id: StringName) -> Array:
 					Vector2(0.5, 0.5) + Vector2(cos(a), sin(a)) * (0.24 if k % 2 == 0 else 0.09)
 				)
 			return [_circle(Vector2(0.5, 0.5), 0.4, 0.06), _poly(star)]
+	return _engine_shapes(id)
+
+
+## The v0.3.0 G engine items' symbols (the gem for an unknown id).
+static func _engine_shapes(id: StringName) -> Array:
+	match id:
+		&"cinder_shot":
+			return (
+				_dart(Vector2(0.42, 0.58), Vector2(0.9, 0.1)) + [_flame(Vector2(0.26, 0.74), 0.5)]
+			)
+		&"wildfire":
+			return [
+				_flame(Vector2(0.24, 0.66), 0.5),
+				_flame(Vector2(0.5, 0.5), 0.75),
+				_flame(Vector2(0.76, 0.66), 0.5),
+			]
+		&"conductor":
+			return [
+				_line([Vector2(0.14, 0.86), Vector2(0.86, 0.14)], 0.07),
+				_line(
+					[
+						Vector2(0.2, 0.3),
+						Vector2(0.42, 0.42),
+						Vector2(0.36, 0.56),
+						Vector2(0.62, 0.66),
+						Vector2(0.56, 0.8),
+						Vector2(0.84, 0.88),
+					],
+					0.07
+				),
+				_circle(Vector2(0.86, 0.14), 0.09, 0.0),
+			]
+		&"serrated_edge":
+			var saw := [Vector2(0.14, 0.86), Vector2(0.8, 0.08), Vector2(0.9, 0.18)]
+			for k in 5:
+				var t := (4 - k) / 5.0
+				var base := Vector2(0.9, 0.18).lerp(Vector2(0.24, 0.94), 1.0 - t)
+				saw.append(base + Vector2(0.06, 0.08))
+				saw.append(base.lerp(Vector2(0.24, 0.94), 0.12))
+			return [_poly(saw)]
+		&"barbed_bolts":
+			return [
+				_line([Vector2(0.12, 0.88), Vector2(0.72, 0.28)], 0.07),
+				_poly([Vector2(0.92, 0.08), Vector2(0.62, 0.22), Vector2(0.78, 0.38)]),
+				_line([Vector2(0.5, 0.5), Vector2(0.34, 0.42)], 0.06),
+				_line([Vector2(0.5, 0.5), Vector2(0.58, 0.66)], 0.06),
+				_line([Vector2(0.32, 0.68), Vector2(0.16, 0.6)], 0.06),
+				_line([Vector2(0.32, 0.68), Vector2(0.4, 0.84)], 0.06),
+			]
+		&"glacial_edge":
+			return [
+				_poly([Vector2(0.22, 0.7), Vector2(0.3, 0.78), Vector2(0.86, 0.14)]),
+				_line([Vector2(0.14, 0.6), Vector2(0.4, 0.86)], 0.07),
+				_poly(
+					[
+						Vector2(0.72, 0.5),
+						Vector2(0.84, 0.66),
+						Vector2(0.72, 0.9),
+						Vector2(0.6, 0.66),
+					]
+				),
+			]
+		&"cold_snap":
+			var out := [
+				_line([Vector2(0.06, 0.34), Vector2(0.34, 0.34)], 0.06),
+				_line([Vector2(0.02, 0.52), Vector2(0.3, 0.52)], 0.06),
+				_line([Vector2(0.06, 0.7), Vector2(0.34, 0.7)], 0.06),
+			]
+			var c := Vector2(0.64, 0.52)
+			for k in 3:
+				var a := deg_to_rad(60.0 * k + 90.0)
+				var dir := Vector2(cos(a), sin(a)) * 0.3
+				out.append(_line([c - dir, c + dir], 0.07))
+			return out
+		&"bulwark":
+			return [
+				_poly(
+					[
+						Vector2(0.5, 0.06),
+						Vector2(0.86, 0.18),
+						Vector2(0.82, 0.58),
+						Vector2(0.5, 0.94),
+						Vector2(0.18, 0.58),
+						Vector2(0.14, 0.18),
+					]
+				),
+				_circle(Vector2(0.34, 0.4), 0.07, 0.0, true),
+				_circle(Vector2(0.5, 0.4), 0.07, 0.0, true),
+				_circle(Vector2(0.66, 0.4), 0.07, 0.0, true),
+			]
 	return gem()
 
 
@@ -263,6 +361,24 @@ static func _ellipse(c: Vector2, radii: Vector2, rot_deg: float) -> Array:
 		var a := TAU * k / 16.0
 		pts.append(c + (Vector2(cos(a) * radii.x, sin(a) * radii.y)).rotated(deg_to_rad(rot_deg)))
 	return pts
+
+
+## A small flame (a filled teardrop pointing up) centred at `c`, `scale` of the full icon height.
+static func _flame(c: Vector2, scale: float) -> Dictionary:
+	var pts := []
+	for p: Vector2 in [
+		Vector2(0.0, -0.44),
+		Vector2(0.2, -0.16),
+		Vector2(0.28, 0.1),
+		Vector2(0.18, 0.32),
+		Vector2(0.0, 0.42),
+		Vector2(-0.18, 0.32),
+		Vector2(-0.28, 0.1),
+		Vector2(-0.2, -0.12),
+		Vector2(-0.08, 0.0),
+	]:
+		pts.append(c + p * scale)
+	return _poly(pts)
 
 
 ## A dart from `from` to `to`: a shaft and a head.
