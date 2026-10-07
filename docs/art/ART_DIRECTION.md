@@ -98,8 +98,10 @@ Rules:
 
 ## 4. Lighting and rendering
 
-- **One `DirectionalLight3D`** with hard shadows, coming from the upper right in screen terms as in the
-  reference. Its angle is fixed per biome only if the owner asks.
+- **One `DirectionalLight3D`** with crisp, long shadows, coming from the upper right in screen terms as in the
+  reference. Its angle is fixed per biome only if the owner asks. Shadow edges are straight and clean, never
+  stair-stepped (owner, v0.2.0 L2): 8192 directional atlas, high soft-shadow filtering, blur 0.5, iso camera
+  `far` kept short ([`../roadmap/v0.2.0/evidence/SHADOWS.md`](../roadmap/v0.2.0/evidence/SHADOWS.md)).
 - **Ambient:** a `WorldEnvironment` tinted with the biome's `ambient` token. **Glow** is on, for `player_core` and
   `proj_hostile` only.
 - **Materials:** `StandardMaterial3D`, flat-shaded (low-poly normals), no textures except an optional subtle noise
@@ -107,11 +109,12 @@ Rules:
 - **Renderer:** Forward+ unless the v0.0.1 gallery shows Compatibility is needed
   ([`../architecture/ARCHITECTURE.md`](../architecture/ARCHITECTURE.md) §11).
 
-**Sketch stroke (owner, 2026-10-07; under evaluation).** The owner wants the look "closer to a hand draw sketch
-… just the feeling": a light, thin black stroke on the borders of things. `InkPass` draws it as a screen-space
-pass over depth and normals; Options offer off / ink / sketch / sketch + paper, default sketch. The owner picks
-one after playing ([`../roadmap/v0.1.0/evidence/OUTLINES.md`](../roadmap/v0.1.0/evidence/OUTLINES.md)); the pick
-then becomes this section's rule.
+**Ink stroke (owner, 2026-10-07; picked INK).** The owner wanted the look "closer to a hand draw sketch … just
+the feeling": a light, thin black stroke on the borders of things. `InkPass` draws it as a screen-space pass over
+depth and normals. After playing the v0.1.0 build the owner said "the outline I like the most is INK set it as
+default" (v0.2.0 PLAN L4), so the rule is: **the default outline is INK** (clean, one-pixel lines). Options still
+offer off / ink / sketch / sketch + paper, and an unknown saved value falls back to ink
+([`../roadmap/v0.1.0/evidence/OUTLINES.md`](../roadmap/v0.1.0/evidence/OUTLINES.md) shows the four styles).
 
 ## 5. Pipeline
 
