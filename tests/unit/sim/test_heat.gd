@@ -354,3 +354,18 @@ func test_heat_is_deterministic_and_hashed() -> void:
 	var before := a.state_hash()
 	a.heat.milli += 1
 	assert_ne(a.state_hash(), before, "heat is in the hash")
+
+
+func test_gamble_heat_capacity_makes_each_attack_fill_less() -> void:
+	var w := _world()
+	w.gamble_table = ContentCompiler.compile_gamble(
+		ContentRepository.load_all().get_def(&"gamble", &"shrine")
+	)
+	Heat.add(w, 10000)
+	var plain := w.heat.milli
+	w.heat.milli = 0
+	w.gamble_stacks.resize(GambleTable.STAT_COUNT)
+	w.gamble_stacks[GambleTable.Stat.HEAT] = 2  # +8 % each: 1160 per mille of capacity
+	Heat.add(w, 10000)
+	assert_eq(plain, 10000)
+	assert_eq(w.heat.milli, 10000 * 1000 / 1160, "the same attack fills 1/1.16 as much")

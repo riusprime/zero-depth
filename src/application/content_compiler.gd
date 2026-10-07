@@ -448,6 +448,36 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	return t
 
 
+## The gamble shrine (v0.3.0 L19): prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
+## percent otherwise), weight and cap in GambleTable.Stat order. A stat the data leaves out gets weight 0.
+static func compile_gamble(def: GambleDefinition) -> GambleTable:
+	var t := GambleTable.new()
+	if def == null:
+		return t
+	t.base_price = def.base_price
+	t.price_step_permille = int(round(def.price_step * 1000.0))
+	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.interact_radius_m = def.interact_radius_m
+	t.spot_distance_m = def.spot_distance_m
+	t.clear_radius_m = def.clear_radius_m
+	t.amount = PackedInt32Array()
+	t.weight = PackedInt32Array()
+	t.cap = PackedInt32Array()
+	for s in GambleTable.STAT_COUNT:
+		t.amount.append(0)
+		t.weight.append(0)
+		t.cap.append(0)
+	for e in def.stats:
+		var s := GambleTable.STAT_IDS.find(e.stat) if e != null else -1
+		if s < 0:
+			continue
+		var scale := 1.0 if s == GambleTable.Stat.MAX_HP else 10.0
+		t.amount[s] = int(round(e.amount * scale))
+		t.weight[s] = e.weight
+		t.cap[s] = e.max_stacks
+	return t
+
+
 ## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id).
 ## Combos naming an unknown item are left out (the validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:

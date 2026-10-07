@@ -148,6 +148,13 @@ Validation: gains, rates, bonuses and the blast positive; `0 < hot_threshold < o
 the move multiplier in (0, 1]. Heat items (`ItemDefinition` kinds `HEAT_SINK`, `THERMAL_EDGE`, `MELTDOWN`, tag
 `heat`) add `vent_damage_bonus_permille`, `vent_radius_bonus_permille`, `heat_hot_threshold` and
 `meltdown_damage_permille`; they are offered only in runs with heat.
+**Gamble shrine** (v0.3.0 L19, category `gamble`, `data/gamble/shrine.tres`): `GambleDefinition` holds
+`base_price` (floor 1's first use), `price_step` (each use on a floor multiplies the next price by 1 + step, rounded
+half up; the count resets per floor), `floor_price_step` (raises a later floor's base like the chests'),
+`interact_radius_m`, the placement rule's `spot_distance_m` and `clear_radius_m`, and `stats`: an array of
+`GambleStatEntry` (`stat`, one of `GambleStatEntry.STATS`; `amount`, HP for `max_hp`, % for the rest, regen in % of
+max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, amounts, weights and caps positive,
+steps non-negative, every stat known and listed once, the pool not empty.
 
 ## 4. Encounters and bosses
 

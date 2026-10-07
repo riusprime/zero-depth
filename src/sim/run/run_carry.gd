@@ -5,7 +5,9 @@ extends RefCounted
 ## run-long state to World (shards, combos, engine stacks) append its field name to FIELDS; a name the world lacks
 ## is skipped, so the list may run ahead of the code. Values are copied, never shared between worlds.
 
-const FIELDS: Array[StringName] = [&"items_owned", &"combos_owned", &"guard_charges", &"shards"]
+const FIELDS: Array[StringName] = [
+	&"items_owned", &"combos_owned", &"guard_charges", &"shards", &"gamble_stacks"
+]
 const HP := &"hp"
 
 
@@ -27,12 +29,13 @@ static func apply(w: World, carry: Dictionary) -> void:
 	if carry.has(&"items_owned"):
 		w.set_items_owned(carry[&"items_owned"])
 	for field: StringName in carry:
-		if field == HP:
-			w.actors.hp[0] = clampi(int(carry[HP]), 1, w.actors.max_hp[0])
-		elif field == &"items_owned":
+		if field == HP or field == &"items_owned":
 			continue
-		elif field in w:
+		if field in w:
 			w.set(field, _copy(carry[field]))
+	Gamble.after_carry(w)  # the shrine's max HP wins, before the HP is clamped to max
+	if carry.has(HP):
+		w.actors.hp[0] = clampi(int(carry[HP]), 1, w.actors.max_hp[0])
 
 
 static func _copy(v: Variant) -> Variant:

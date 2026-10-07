@@ -156,6 +156,9 @@ static func add(w: World, milli: int, root: int = 0) -> void:
 	var s := w.heat
 	if s == null or s.stall > 0:
 		return
+	# Gamble shrine (v0.3.0 L19): more heat capacity = each attack fills the same meter by less.
+	var cap := 1000 + (Gamble.heat_capacity_bonus_permille(w) if w.gamble_table != null else 0)
+	milli = milli * 1000 / maxi(1000, cap)
 	s.milli = mini(s.milli + milli, s.table.max_milli())
 	s.idle = 0
 	if s.milli >= s.table.max_milli():

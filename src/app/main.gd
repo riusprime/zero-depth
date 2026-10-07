@@ -188,7 +188,8 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		run.floor_index,
 		arena,
 		run,
-		ContentCompiler.compile_combos(repo)  # v0.3.0 G: named combos.
+		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
+		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
@@ -321,6 +322,11 @@ func open_pause() -> void:
 	_pause.resume_pressed.connect(close_pause)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
+	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
+		var stats := GambleStatsPanel.new()
+		_pause.add_child(stats)
+		stats.place_top_right(84)
+		stats.sync(driver.reader)
 	ui.add_child(_pause)
 	_pause.focus_first()
 

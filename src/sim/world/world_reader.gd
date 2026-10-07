@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods, max-file-lines
 class_name WorldReader
 extends RefCounted
 ## The read-only face of World for presentation (EI-07). Presentation may name WorldReader, never World.
@@ -998,3 +998,96 @@ func projectile_is_shard(i: int) -> bool:
 
 func heat_state() -> Dictionary:
 	return Heat.read(_w)  # Overclock heat (v0.3.0 L18): the meter's values (Heat.read); {} without heat.
+
+
+# --- Gamble shrine (v0.3.0 L19) -----------------------------------------------------------------------------
+## The floor has a gamble shrine.
+func has_gamble() -> bool:
+	return Gamble.present(_w)
+
+
+func gamble_id() -> int:
+	return _w.gamble_id
+
+
+func gamble_pos() -> Vector2:
+	return _w.gamble_pos
+
+
+## Shards for the next use (the sim's own price).
+func gamble_price() -> int:
+	return Gamble.price(_w)
+
+
+func gamble_affordable() -> bool:
+	return Gamble.can_afford(_w)
+
+
+## Every stat is at its cap.
+func gamble_exhausted() -> bool:
+	return Gamble.exhausted(_w)
+
+
+## The interact button would use the shrine now: in its reach, and no altar or chest in reach (they go first).
+func gamble_in_reach() -> bool:
+	return Gamble.in_reach(_w) and Rewards.nearest(_w) < 0
+
+
+func gamble_interact_radius_m() -> float:
+	return _w.gamble_table.interact_radius_m
+
+
+## The last win: its tick (-1 = none yet on this floor) and its stat (an index below gamble_stat_count()).
+func gamble_tick() -> int:
+	return _w.gamble_tick
+
+
+func gamble_last_stat() -> int:
+	return _w.gamble_last_stat
+
+
+## The last refused use (too poor, or every stat capped): its tick, -1 when none.
+func gamble_denied_tick() -> int:
+	return _w.gamble_denied_tick
+
+
+func gamble_uses() -> int:
+	return _w.gamble_uses
+
+
+func gamble_stat_count() -> int:
+	return GambleTable.STAT_COUNT
+
+
+## The stat's data name (max_hp, melee_damage ...), for icons and text.
+func gamble_stat_id(stat: int) -> StringName:
+	return GambleTable.STAT_IDS[stat]
+
+
+## Wins of `stat` this run, and its cap.
+func gamble_stacks(stat: int) -> int:
+	return Gamble.stacks(_w, stat)
+
+
+func gamble_cap(stat: int) -> int:
+	return _w.gamble_table.cap[stat]
+
+
+## What one win of `stat` adds: HP for max_hp, per mille otherwise (regen: per mille of max HP per second).
+func gamble_amount(stat: int) -> int:
+	return _w.gamble_table.amount[stat]
+
+
+## What the wins of `stat` add so far, in the same unit.
+func gamble_bonus(stat: int) -> int:
+	return Gamble.bonus(_w, stat)
+
+
+## The stats the shrine can still draw, in stat order (the view's spin shows these).
+func gamble_candidates() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var weights := Gamble.weights(_w)
+	for s in weights.size():
+		if weights[s] > 0:
+			out.append(s)
+	return out
