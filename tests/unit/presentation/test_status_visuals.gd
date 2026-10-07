@@ -99,8 +99,10 @@ func test_combo_card_shows_both_icons_in_a_special_frame() -> void:
 	assert_eq(card.caption_text(), "Combo")
 	assert_eq(card.pair_ids(), [&"ember_edge", &"static_chain"])
 	assert_false(card.icon.visible, "the pair replaces the single icon")
-	assert_eq(card._box.border_color, ItemLooks.combo_color(&"plasma_arc"))
+	assert_eq(card._box.border_color, Color(ItemLooks.combo_color(&"plasma_arc"), 0.9))
 	assert_gt(card._box.border_width_top, 0, "framed on every side")
+	assert_true(CardStyle.is_plain(card._box), "v0.3.5 F16: square, no shadow, no side bar")
+	assert_eq(card._box.border_width_left, card._box.border_width_top, "an even outline")
 	await wait_process_frames(2)
 	assert_eq(
 		card.pair.drawn,

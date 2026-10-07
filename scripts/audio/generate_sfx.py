@@ -26,7 +26,7 @@ import zlib
 
 import numpy as np
 
-GENERATOR_VERSION = 1
+GENERATOR_VERSION = 2
 RATE = 44100
 SFX_PEAK = 10 ** (-1.0 / 20.0)
 AMB_PEAK = 10 ** (-6.0 / 20.0)
@@ -212,41 +212,40 @@ def metal_ping(seconds, freq, ratio=1.41, index=2.5, decay=0.08):
     return fm(freq, ratio, idx, n) * env(n, 0.001, decay)
 
 
-def blade_slash(r, f0, f1, ping):
-    w = whoosh(r, 0.24, f0, f1, 2.5, 0.07)
-    p = metal_ping(0.22, ping, 1.41, 3.0, 0.05) * 0.35
-    return echo(mix(w, at(p, 0.02)), 70, 0.3, 0.25, 4000, 0.18)
+# v0.3.5 F17 (owner: "sounds from sword are too overwhelming"): every blade swing is one layer (the whoosh; the
+# metal ping and the spin's chord and thud are gone), shorter (the whoosh and its echo tail roughly halved), with a
+# single quiet repeat. The -8 dB is in the cues (data/audio/cues/blade_*.tres, enemy_hit.tres), because every file
+# here is peak-normalised.
+def blade_slash(r, f0, f1):
+    w = whoosh(r, 0.15, f0, f1, 2.5, 0.045)
+    return echo(w, 55, 0.2, 0.15, 3500, 0.06)
 
 
 def s_blade_slash_1(r):
-    return blade_slash(r, 5200, 1400, 1850)
+    return blade_slash(r, 5200, 1400)
 
 
 def s_blade_slash_2(r):
-    return blade_slash(r, 1500, 5600, 2150)
+    return blade_slash(r, 1500, 5600)
 
 
 def s_blade_slash_3(r):
-    w = whoosh(r, 0.3, 4200, 900, 2.0, 0.09)
-    p = metal_ping(0.25, 1600, 1.5, 3.5, 0.06) * 0.4
-    return echo(mix(w, at(p, 0.03)), 80, 0.3, 0.28, 3500, 0.2)
+    w = whoosh(r, 0.18, 4200, 900, 2.0, 0.055)
+    return echo(w, 60, 0.2, 0.15, 3200, 0.07)
 
 
 def s_blade_thrust(r):
-    n = n_of(0.16)
-    burst = one_pole_hp(noise(r, n), curve(800, 6000, n)) * env(n, 0.003, 0.04)
-    shink = metal_ping(0.2, 2600, 2.0, 4.0, 0.05) * 0.5
-    return echo(mix(burst, at(shink, 0.012)), 60, 0.3, 0.25, 4500, 0.16)
+    n = n_of(0.12)
+    burst = one_pole_hp(noise(r, n), curve(800, 6000, n)) * env(n, 0.003, 0.035)
+    return echo(burst, 50, 0.2, 0.15, 4000, 0.06)
 
 
 def s_blade_spin(r):
-    n = n_of(0.5)
+    n = n_of(0.32)
     t = np.arange(n) / RATE
     centre = 1800 + 1300 * np.sin(2 * np.pi * 9.0 * t)
-    w = bandpass(noise(r, n), centre, 3.0) * env(n, 0.03, 0.22) * (0.7 + 0.3 * np.sin(2 * np.pi * 14.0 * t))
-    chord = sum(metal_ping(0.45, f, 1.5, 2.5, 0.14) for f in (1320, 990, 660)) * 0.18
-    thud = osc(curve(160, 50, n_of(0.25)), "sine") * env(n_of(0.25), 0.002, 0.07) * 0.6
-    return echo(mix(w, at(chord, 0.18), at(thud, 0.2)), 120, 0.4, 0.35, 3000, 0.4)
+    w = bandpass(noise(r, n), centre, 3.0) * env(n, 0.02, 0.12) * (0.7 + 0.3 * np.sin(2 * np.pi * 14.0 * t))
+    return echo(w, 70, 0.2, 0.15, 3000, 0.08)
 
 
 def s_bolt_fire(r):

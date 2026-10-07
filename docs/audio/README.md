@@ -13,7 +13,7 @@ in this repo. Nothing is sampled or downloaded. The rules for which sounds exist
 | Sound effects | `assets/audio/sfx/<id>.wav` (mono, 44.1 kHz, 16-bit, peak −1 dBFS) |
 | Biome ambience (seamless loops) | `assets/audio/ambience/<biome id>.wav` (10 s, peak −6 dBFS) |
 | The manifest (id, path, sha256, length, peak, generator version, licence) | `assets/audio/manifest.json` |
-| One cue per sound: bus, volume, pitch jitter, voices, cooldown, ducking, caption | `data/audio/cues/<id>.tres` (`AudioCueDefinition`) |
+| One cue per sound: bus, volume, pitch jitter, voices (alone or shared by a `voice_group`), cooldown, ducking, caption | `data/audio/cues/<id>.tres` (`AudioCueDefinition`) |
 | Playback | `src/presentation/audio/` (`AudioDirector`, `AudioEvents`, `SfxMixer`) |
 
 ## Regenerate
@@ -43,6 +43,14 @@ Example: `audio_override/boss_slam.ogg` replaces the slam. Ambience overrides ar
 (`ruins`, `night_rocks`, `red_canyon`) and are looped over their whole length. To make a replacement permanent,
 put the file in `assets/audio/sfx/` (or `ambience/`) under the same name and add its row to the manifest (or
 delete the synthesised one from the generator's list).
+
+## The blade (v0.3.5 F17)
+
+The owner found the sword "too overwhelming". Every swing sound is now one layer (a filtered-noise whoosh; no metal
+ping, chord or thud), about half as long (0.18–0.40 s with its echo), and its cue sits 8 dB under its v0.3.0 level
+(slashes and thrust −12 dB, spin −10 dB; the melee hit `enemy_hit` −18 dB with 2 voices). The five swing cues share
+the voice group `blade_swing` with `max_voices = 2`, so at most two swing sounds overlap whichever swings they are.
+All starting values.
 
 ## Buses and settings
 

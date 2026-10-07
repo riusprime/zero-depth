@@ -5,7 +5,7 @@ extends RefCounted
 ## the boss door, blue for the open portal. Every number here is a starting value.
 
 const PANEL := Color(0.02, 0.04, 0.07, 0.93)
-const PANEL_EDGE := Color(0.30, 0.85, 1.0, 0.35)
+const PANEL_EDGE := Color(0.80, 0.84, 0.88, 0.30)
 const BACKDROP := Color(0.0, 0.01, 0.03, 0.62)
 const ROOM_FILL := Color(0.55, 0.62, 0.70, 0.22)
 const ROOM_EDGE := Color(0.70, 0.78, 0.86, 0.75)
@@ -27,8 +27,8 @@ const TEXT_DIM := Color(0.70, 0.80, 0.88, 0.75)
 ## Line widths in pixels; the glow is the same line drawn this much wider and this transparent beneath it.
 const LINE := 1.5
 const GLOW_WIDTH := 4.0
-const GLOW_ALPHA := 0.22
-const CORNER_RADIUS := 10
+const GLOW_ALPHA := 0.12
+const CORNER_RADIUS := 0
 
 ## The corner map: its size and gap from the screen's top-right corner (under the shard counter), and its scale.
 const CORNER_SIZE := Vector2(300, 300)
@@ -41,9 +41,9 @@ const LEGEND_WIDTH := 400.0
 const FONT_SIZE := 20
 const TITLE_SIZE := 30
 
-## The map turns with the iso camera, so up on the map is up on screen (the camera looks along +X+Y, 45 degrees
-## off the sim's axes), and squashes the vertical a little toward the camera's tilt so rooms look as they do in
-## the world. 1.0 would be a plain diamond; the camera's true squash is about 0.58.
+## The map turns with the iso camera, so up on the map is up on screen (the camera looks along sim (-X, +Y), 45 degrees
+## off the sim's axes; MinimapView.turn), and squashes the vertical a little toward the camera's tilt so rooms look as
+## they do in the world. 1.0 would be a plain diamond; the camera's true squash is about 0.58.
 const SQUASH := 0.72
 ## The stub drawn into an unexplored room, past the doorway (m), and its arrowhead (m).
 const STUB_M := 5.0

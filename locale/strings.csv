@@ -157,8 +157,8 @@ ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
-HUD_FLOOR,Floor %02d // %s,Piso %02d // %s
-HUD_FLOOR_CARD,FLOOR %02d,PISO %02d
+HUD_FLOOR,Floor %d · %s,Piso %d · %s
+HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
 HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
 UI_RESTART_RUN,RESTART RUN,REINICIAR PARTIDA

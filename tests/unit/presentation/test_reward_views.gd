@@ -152,8 +152,12 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	assert_true(p.is_open())
 	assert_eq(p.card_count(), 3)
 	assert_eq(p.title_text(), tr("PICK_TITLE_CHEST") % 40, "the title carries the price")
-	assert_eq(p.slot(0).frame_color(), PickSlot.COMMON)
-	assert_eq(p.slot(1).frame_color(), PickSlot.RARE, "a rare item has the gold frame")
+	assert_eq(p.slot(0).rarity_color(), PickSlot.COMMON)
+	assert_eq(p.slot(1).rarity_color(), PickSlot.RARE, "a rare item has the gold mark")
+	for k in 3:  # v0.3.5 F16: square, no shadow, no coloured side bar; the outline is neutral
+		var box := p.slot(k).panel_box()
+		assert_true(CardStyle.is_plain(box), "card %d is a plain square panel" % k)
+		assert_ne(box.border_color, PickSlot.RARE, "card %d: rarity is the mark, not the frame" % k)
 	assert_eq(p.slot(1).card.title_text(), tr(r.item_name_key(rare)))
 	assert_true(p.slot(0).focused, "the first card has the focus")
 

@@ -17,7 +17,7 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(0.03, 0.04, 0.07, 0.8)
-	box.set_corner_radius_all(10)
+	box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
 	box.border_color = Color(GambleIcons.CORE, 0.6)
 	box.border_width_top = 2
 	box.content_margin_left = 14

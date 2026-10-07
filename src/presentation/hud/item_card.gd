@@ -1,9 +1,9 @@
 class_name ItemCard
 extends PanelContainer
-## A compact item card (PLAN v0.2.0 L13, owner: "more concise, appear in a smaller card and one small sentence …
-## add to the card a symbol"): a dark rounded panel with an item-coloured left edge, the item's icon, its name
-## and one short sentence. It fades and slides in when shown and fades out when hidden. It shows text it is given
-## (already translated); it decides nothing about the game.
+## A compact item card (PLAN v0.2.0 L13, owner: "more concise, appear in a smaller card and one small sentence … add to
+## the card a symbol"): a flat, square, dark CardStyle panel (v0.3.5 F16: no rounded corners, no coloured side bar) with
+## the item's icon, its name in the item's colour and one short sentence. It fades and slides in when shown and fades
+## out when hidden. It shows text it is given (already translated); it decides nothing about the game.
 
 const WIDTH := 330.0
 const MIN_HEIGHT := 72.0
@@ -14,10 +14,15 @@ const SLIDE_PX := 14.0
 var icon := ItemIconView.new()
 ## False inside a container (the 3-card pick): the card fades but leaves its position to the container.
 var slide := true
+## True inside another card (the pick's slot): no panel of its own, so cards never nest frames (v0.3.5 F16).
+var bare := false:
+	set(v):
+		bare = v
+		_dress()
 var _name := Label.new()
 var _caption := Label.new()
 var _desc := Label.new()
-var _box := StyleBoxFlat.new()
+var _box := CardStyle.box(Vector4(12, 8, 12, 8))
 var _showing := false
 ## 0 (hidden) .. 1 (fully shown); eased toward the target in _process.
 var _shown := 0.0
@@ -28,13 +33,6 @@ func _init() -> void:
 	name = "ItemCard"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = Vector2(WIDTH, MIN_HEIGHT)
-	_box.bg_color = Color(0.03, 0.04, 0.07, 0.82)
-	_box.set_corner_radius_all(10)
-	_box.border_width_left = 6
-	_box.content_margin_left = 14
-	_box.content_margin_right = 12
-	_box.content_margin_top = 8
-	_box.content_margin_bottom = 8
 	add_theme_stylebox_override("panel", _box)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 12)
@@ -74,7 +72,7 @@ func _init() -> void:
 ## name (for example "Picked up"), or "".
 func show_item(id: StringName, title: String, sentence: String, c: Color, caption := "") -> void:
 	icon.set_item(id, c)
-	_box.border_color = c
+	_dress(c)
 	_name.text = title
 	_name.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.35))
 	_desc.text = sentence
@@ -85,6 +83,15 @@ func show_item(id: StringName, title: String, sentence: String, c: Color, captio
 		visible = true
 		_shown = 0.0
 		_apply()
+
+
+func _dress(c: Color = CardStyle.EDGE) -> void:
+	CardStyle.apply(_box, c)
+	if bare:
+		_box.bg_color = Color(0, 0, 0, 0)
+		_box.set_border_width_all(0)
+		_box.content_margin_left = 2
+		_box.content_margin_right = 0
 
 
 func hide_card() -> void:

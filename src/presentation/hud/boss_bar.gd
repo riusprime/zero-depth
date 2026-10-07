@@ -5,9 +5,10 @@ extends Control
 ## sim through WorldReader only; hidden when no boss is alive.
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
+## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
 
-const BAR := Vector2(640, 18)
-const STAGGER := Vector2(640, 7)
+const BAR := Vector2(560, 8)
+const STAGGER := Vector2(560, 3)
 
 var _name := Label.new()
 var _hp_back := ColorRect.new()
@@ -22,25 +23,25 @@ var _boss_key := &""
 func _init() -> void:
 	name = "BossBar"
 	set_anchors_preset(Control.PRESET_CENTER_TOP)
-	position = Vector2(-BAR.x * 0.5, 92)
-	custom_minimum_size = Vector2(BAR.x, 64)
+	position = Vector2(-BAR.x * 0.5, 78)
+	custom_minimum_size = Vector2(BAR.x, 44)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name.name = "BossName"
 	_name.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_name.size = Vector2(BAR.x, 28)
-	_name.add_theme_font_size_override("font_size", 24)
+	_name.size = Vector2(BAR.x, 24)
+	HudStyle.style_label(_name, 18)
 	add_child(_name)
-	_hp_back.color = Color(0, 0, 0, 0.6)
-	_hp_back.position = Vector2(0, 32)
+	_hp_back.color = Color(0, 0, 0, 0.42)
+	_hp_back.position = Vector2(0, 26)
 	_hp_back.size = BAR
 	add_child(_hp_back)
 	_hp_fill.name = "Hp"
 	_hp_fill.color = ThemePalette.color(&"enemy_bar")
 	_hp_fill.size = BAR
 	_hp_back.add_child(_hp_fill)
-	_stagger_back.color = Color(0, 0, 0, 0.6)
-	_stagger_back.position = Vector2(0, 32 + BAR.y + 4)
+	_stagger_back.color = Color(0, 0, 0, 0.35)
+	_stagger_back.position = Vector2(0, 26 + BAR.y + 3)
 	_stagger_back.size = STAGGER
 	add_child(_stagger_back)
 	_stagger_fill.name = "Stagger"
@@ -48,8 +49,8 @@ func _init() -> void:
 	_stagger_fill.size = Vector2(0, STAGGER.y)
 	_stagger_back.add_child(_stagger_fill)
 	_stagger_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_stagger_label.position = Vector2(BAR.x + 10, 32 + BAR.y - 6)
-	_stagger_label.add_theme_font_size_override("font_size", 16)
+	_stagger_label.position = Vector2(BAR.x + 10, 26 + BAR.y - 10)
+	HudStyle.style_label(_stagger_label, 14)
 	add_child(_stagger_label)
 	visible = false
 	for c in find_children("*", "Control", true, false):
@@ -96,7 +97,7 @@ func _build_marks(thresholds: PackedInt32Array) -> void:
 	_marks.clear()
 	for k in range(1, thresholds.size()):
 		var m := ColorRect.new()
-		m.color = Color(1, 1, 1, 0.7)
+		m.color = Color(1, 1, 1, 0.55)
 		m.size = Vector2(2, BAR.y)
 		m.position = Vector2(BAR.x * thresholds[k] / 1000.0 - 1.0, 0)
 		m.mouse_filter = Control.MOUSE_FILTER_IGNORE

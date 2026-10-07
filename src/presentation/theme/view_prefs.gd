@@ -9,7 +9,7 @@ static var reduced_motion := false
 
 static func apply_settings(profile: ProfileStore) -> void:
 	reduced_motion = String(GameSettings.get_value(profile, "reduced_motion")) == "on"
-	HudStyle.reduced_motion = reduced_motion  # v0.3.0 UI: steady HUD pulses, no glitch echoes
+	HudStyle.reduced_motion = reduced_motion  # v0.3.0 UI: steady HUD pulses
 	var m := StringName(String(GameSettings.get_value(profile, "colour_mode")))
 	ThemePalette.mode = m if ThemePalette.MODES.has(m) else &"off"
 

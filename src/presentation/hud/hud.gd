@@ -2,11 +2,13 @@ class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health, dash and utility readiness (bottom left), wave and enemies left
 ## (top centre); on a floor, the carried-item icons (bottom right) and the item card (bottom centre). It never
-## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24): drawn in the HudStyle look (techno/echo
-## type, plates and bars; values echo when they change); the top plate shows floor, biome, time and a visual danger
-## meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
+## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
+## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
+## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
 
-const BAR := Vector2(320, 18)
+const BAR := Vector2(300, 8)
+## The dash / utility readiness squares (px).
+const PIP := 12.0
 ## The top plate's width (px).
 const TOP_W := 540.0
 ## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
@@ -37,12 +39,12 @@ var gamble := GambleHud.new()
 ## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
 var minimap := Minimap.new()
 var _hp_bar := HudBar.new()
-var _hp_text := EchoLabel.new(15, true)
+var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
 var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
-var _wave := EchoLabel.new(26, true)
-var _left := EchoLabel.new(13)
+var _wave := HudStyle.label(22, true)
+var _left := HudStyle.label(14)
 var _items := HBoxContainer.new()
 var _card := ItemCard.new()
 var _gate := Label.new()
@@ -65,10 +67,10 @@ var _combo_left := 0.0
 var _combo_pending := -1
 var _combos_shown := -1
 # Run flow (v0.3.0 B).
-var _floor := EchoLabel.new(18, true)
+var _floor := HudStyle.label(16)
 var _floor_card := VBoxContainer.new()
-var _floor_card_title := EchoLabel.new(76, true)
-var _floor_card_biome := EchoLabel.new(28)
+var _floor_card_title := HudStyle.label(56, true)
+var _floor_card_biome := HudStyle.label(22)
 var _floor_card_left := 0.0
 var _biome_key := ""
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
@@ -192,7 +194,6 @@ func _process(delta: float) -> void:
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card.
 func show_floor(floor_index: int, biome_key: String) -> void:
 	_biome_key = biome_key
-	_floor_card_title.text = ""  # a fresh card always echoes in
 	_floor_card_title.text = tr("HUD_FLOOR_CARD") % floor_index
 	_floor_card_biome.text = tr(biome_key)
 	_floor_card_left = FLOOR_CARD_SECONDS
@@ -234,8 +235,7 @@ func vignette() -> LowHpVignette:
 func top_texts() -> PackedStringArray:
 	var out := PackedStringArray()
 	for l in _top_frame.find_children("*", "Label", true, false):
-		if not l.get_parent() is EchoLabel:  # an echo's ghosts repeat its text
-			out.append((l as Label).text)
+		out.append((l as Label).text)
 	return out
 
 
@@ -275,7 +275,6 @@ func _build_top() -> void:
 	_top_frame.add_child(col)
 	_floor.name = "FloorLabel"
 	_floor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_floor.add_theme_color_override("font_color", HudStyle.accent())
 	col.add_child(_floor)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -288,7 +287,7 @@ func _build_top() -> void:
 	row.add_child(_danger)
 	_left.name = "KillsLabel"
 	_left.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.7))
+	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.85))
 	row.add_child(_left)
 
 
@@ -320,7 +319,7 @@ func _build_floor_card() -> void:
 	_floor_card.visible = false
 	add_child(_floor_card)
 	_floor_card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_floor_card_title.add_theme_constant_override("outline_size", 10)
+	_floor_card_title.add_theme_constant_override("outline_size", 6)
 	_floor_card.add_child(_floor_card_title)
 	var plate := HudFrame.new(Vector2(28, 4))
 	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
@@ -359,9 +358,9 @@ func _build_rewards() -> void:
 	plate.offset_right = -28
 	plate.offset_top = 20
 	_shard_box.add_theme_constant_override("separation", 10)
-	_shard_box.add_child(ShardIcon.new(30.0))
+	_shard_box.add_child(ShardIcon.new(22.0))
 	_shards.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	HudStyle.style_label(_shards, 26, true)
+	HudStyle.style_label(_shards, 22, true)
 	_shards.add_theme_color_override("font_color", ShardIcon.LIGHT)
 	_shard_box.add_child(_shards)
 	plate.add_child(_shard_box)
@@ -530,17 +529,17 @@ func _pip(key: String) -> HBoxContainer:
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 8)
 	var sq := ColorRect.new()
-	sq.custom_minimum_size = Vector2(22, 22)
+	sq.custom_minimum_size = Vector2(PIP, PIP)
 	sq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	sq.color = HudStyle.dim()
 	var fill := ColorRect.new()
 	fill.color = ThemePalette.color(&"player_core")
-	fill.size = Vector2(22, 22)
+	fill.size = Vector2(PIP, PIP)
 	sq.add_child(fill)
 	box.add_child(sq)
 	var l := Label.new()
 	l.text = key
-	HudStyle.style_label(l, 14, true)
+	HudStyle.style_label(l, 14)
 	box.add_child(l)
 	return box
 
@@ -548,6 +547,6 @@ func _pip(key: String) -> HBoxContainer:
 func _set_pip(pip: HBoxContainer, left: int, total: int, active: bool = false) -> void:
 	var fill: ColorRect = pip.get_child(0).get_child(0)
 	var ready := 1.0 - clampf(float(left) / maxf(1.0, total), 0.0, 1.0)
-	fill.size = Vector2(22, 22 * ready)
-	fill.position = Vector2(0, 22 * (1.0 - ready))
+	fill.size = Vector2(PIP, PIP * ready)
+	fill.position = Vector2(0, PIP * (1.0 - ready))
 	fill.color = ThemePalette.color(&"player_core").lightened(0.4 if active else 0.0)

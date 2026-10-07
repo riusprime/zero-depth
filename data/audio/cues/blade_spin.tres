@@ -6,8 +6,9 @@
 script = ExtResource("1_cue")
 kind = &"sfx"
 bus = &"sfx"
-volume_db = -2.0
+volume_db = -10.0
 pitch_jitter = 0.03
-max_voices = 1
+max_voices = 2
+voice_group = &"blade_swing"
 cooldown_s = 0.1
 id = &"blade_spin"

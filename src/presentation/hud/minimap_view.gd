@@ -82,8 +82,15 @@ func to_map(p: Vector2) -> Vector2:
 	return _origin + _turn(p - _centre) * _scale
 
 
+## A sim-plane offset turned to the screen's axes, as the iso camera shows it (IsoRig: yaw +45 degrees about +Y,
+## sim (x, y) is 3D (x, -y)): screen right is sim (+1, +1) / sqrt 2 and screen up (away from the camera) is
+## sim (-1, +1) / sqrt 2. v0.3.5 F14: the vertical used to be (y - x), which mirrored the map top to bottom.
+static func turn(v: Vector2) -> Vector2:
+	return Vector2((v.x + v.y) * C45, (v.x - v.y) * C45 * MinimapStyle.SQUASH)
+
+
 func _turn(v: Vector2) -> Vector2:
-	return Vector2((v.x + v.y) * C45, (v.y - v.x) * C45 * MinimapStyle.SQUASH)
+	return turn(v)
 
 
 func _draw() -> void:

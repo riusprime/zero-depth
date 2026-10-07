@@ -1,6 +1,6 @@
 {
   "generator": "scripts/audio/generate_sfx.py",
-  "generator_version": 1,
+  "generator_version": 2,
   "format": "wav mono 44100 Hz 16-bit",
   "licence": "Original work generated for this project by scripts/audio/generate_sfx.py (no third-party audio)",
   "sounds": [
@@ -8,50 +8,50 @@
       "id": "blade_slash_1",
       "kind": "sfx",
       "path": "assets/audio/sfx/blade_slash_1.wav",
-      "sha256": "5ebd8994ef1469539e610ba33a21f02a68c06f01a2564f363c42bcfb044e3c2d",
-      "seconds": 0.42,
+      "sha256": "15cb151986c305ec889abf60581ce6723cc829756a7b1ae10fe11d562e331f22",
+      "seconds": 0.21,
       "peak_dbfs": -1.0,
-      "rms_dbfs": -20.36,
+      "rms_dbfs": -18.86,
       "loop": false
     },
     {
       "id": "blade_slash_2",
       "kind": "sfx",
       "path": "assets/audio/sfx/blade_slash_2.wav",
-      "sha256": "fdfca8beccf56d9572d9b545593821e768d10fd1e303abe4a6b8314485c1ae30",
-      "seconds": 0.42,
+      "sha256": "a04d257d8b90aa963dc3d745b109e3bc07b0589a9facd70d1b16c81cab590057",
+      "seconds": 0.21,
       "peak_dbfs": -1.0,
-      "rms_dbfs": -19.86,
+      "rms_dbfs": -17.45,
       "loop": false
     },
     {
       "id": "blade_slash_3",
       "kind": "sfx",
       "path": "assets/audio/sfx/blade_slash_3.wav",
-      "sha256": "74c948a9e369dedb73a14ec0e2eb91f6620181f9f66ade7e801d902cdc01b005",
-      "seconds": 0.5,
+      "sha256": "9a0b581639330b40c3d2a465c2edf21e64799da539072d2318d3cc77f970752f",
+      "seconds": 0.25,
       "peak_dbfs": -1.0,
-      "rms_dbfs": -19.18,
+      "rms_dbfs": -19.37,
       "loop": false
     },
     {
       "id": "blade_thrust",
       "kind": "sfx",
       "path": "assets/audio/sfx/blade_thrust.wav",
-      "sha256": "dd6a37b9dedb541f52eb760ad06176944cbce1c05935ea696f239e65461fa6ed",
-      "seconds": 0.372,
+      "sha256": "f376d188aa23f1c9f4bd055fcac705eec7c43c31e3d74d657202653c94ed70b2",
+      "seconds": 0.18,
       "peak_dbfs": -1.0,
-      "rms_dbfs": -18.5,
+      "rms_dbfs": -18.45,
       "loop": false
     },
     {
       "id": "blade_spin",
       "kind": "sfx",
       "path": "assets/audio/sfx/blade_spin.wav",
-      "sha256": "cc8aee02f48e6ef9514c59ae4cc1c8faa176ac21579a462dc104b71095f372db",
-      "seconds": 1.03,
+      "sha256": "390a2371404b14bc6c02708862edcb0724379ac85246f4a894f135ca533d45e0",
+      "seconds": 0.4,
       "peak_dbfs": -1.0,
-      "rms_dbfs": -19.8,
+      "rms_dbfs": -22.55,
       "loop": false
     },
     {

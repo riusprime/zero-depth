@@ -1,9 +1,9 @@
 class_name PickPanel
 extends Control
 ## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three compact item
-## cards (PickSlot) with rarity frames, a title (the chest's price) and a hint. It shows what the sim offers and
-## sends the player's choice as input (the `picked` signal → InputLatch.note_pick → InputFrame.pick); it
-## decides nothing itself.
+## cards (PickSlot: flat square panels with a rarity mark since v0.3.5 F16), a title (the chest's price) and a
+## hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
+## InputLatch.note_pick → InputFrame.pick); it decides nothing itself.
 ## - Mouse: hover focuses a card, a click takes it.
 ## - Keyboard: ←/→ (or 1/2/3) moves the focus, Enter takes it, Esc leaves the choice for later.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) takes it, B (Circle) leaves.
@@ -59,8 +59,8 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	cards.add_theme_constant_override("separation", 18)
 	col.add_child(cards)
 	col.add_child(_hint)
-	_title.add_theme_font_size_override("font_size", 30)
-	_hint.add_theme_font_size_override("font_size", 16)
+	HudStyle.style_label(_title, 26, true)  # v0.3.5 F16: the HUD's plain type
+	HudStyle.style_label(_hint, 15)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	for l: Label in [_title, _hint]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
