@@ -306,7 +306,8 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
-	if boss_flow != null and boss_flow.exited():  # Run flow: the floor is over; nothing moves.
+	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
+		boss_flow.advance_transit(self)
 		tick += 1
 		return
 	# 2. Input (a dead player's input is ignored).

@@ -1,6 +1,6 @@
 extends GutTest
-## The portal gate (v0.2.0 PLAN step D, L8; blue since L12): placement on the sim plane, the portal shader, its
-## colour and the sealed state.
+## The portal gate (v0.2.0 PLAN step D, L8; the visor's light blue since v0.3.5 PT): placement on the sim plane,
+## the portal shader, its colour and the sealed state.
 
 const UNIFORMS := [
 	"opening_size",
@@ -64,17 +64,24 @@ func test_portal_shader_has_the_expected_uniforms() -> void:
 	assert_true(g.light is OmniLight3D)
 
 
-func test_the_portal_is_blue_not_green() -> void:
+## v0.3.5 PT (owner F19): the portal is the hero visor's light blue (it replaces L12's deeper blue).
+func test_the_portal_is_the_visors_light_blue() -> void:
 	var g := _gate()
-	var cyan := ThemePalette.color(&"player_core")
-	for key in ["color_deep", "color_mid", "color_light"]:
-		var c: Color = g.portal_material.get_shader_parameter(key)
-		assert_true(c.b > c.g and c.b >= c.r, "%s is blue: %s" % [key, c])
+	var visor := ThemePalette.color(&"player_core")
 	var mid: Color = g.portal_material.get_shader_parameter("color_mid")
-	for c: Color in [mid, g.light.light_color, g.glow_material.get_shader_parameter("glow_color")]:
-		assert_true(c.b > c.g * 1.5 and c.b > c.r * 2.0, "vivid blue, not green: %s" % c)
-		# The player's cyan sits near hue 0.53; the portal is a deeper blue (hue > 0.6).
-		assert_gt(c.h, cyan.h + 0.07, "bluer than the player's cyan: %s" % c)
+	assert_eq(mid, visor, "the swirl's main colour is the visor's")
+	assert_eq(g.light.light_color, visor, "its light")
+	assert_eq(g.glow_material.get_shader_parameter("glow_color"), visor, "its floor glow")
+	var deep: Color = g.portal_material.get_shader_parameter("color_deep")
+	var light: Color = g.portal_material.get_shader_parameter("color_light")
+	assert_lt(deep.v, mid.v, "a deep shade")
+	assert_gt(light.get_luminance(), mid.get_luminance(), "to near white")
+	for c: Color in [deep, mid]:
+		assert_almost_eq(c.h, visor.h, 0.02, "the same hue: %s" % c)
+	var avatar := PlayerAvatar.new()
+	avatar.setup(Color.BLACK)
+	assert_eq(avatar.visor_color(), visor, "the colour the visor glows")
+	avatar.free()
 	for key in ["color_deep", "color_mid", "color_light", "veil_color"]:
 		assert_true(g.portal_material.shader.code.contains(key), key)
 

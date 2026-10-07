@@ -54,6 +54,7 @@ const BOSS_WAITING := BossFlow.State.WAITING
 const BOSS_FIGHT := BossFlow.State.FIGHT
 const BOSS_OPEN := BossFlow.State.OPEN
 const BOSS_EXITED := BossFlow.State.EXITED
+const BOSS_ENTERING := BossFlow.State.ENTERING
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -673,6 +674,20 @@ func portal_active() -> bool:
 ## The tick the portal opened (-1 = not yet).
 func portal_opened_tick() -> int:
 	return _w.boss_flow.opened_tick if _w.boss_flow != null else -1
+
+
+## Portal transit (v0.3.5 PT): 0..1 through the hero's way into the portal and through the arrival on a new floor
+## (-1 when that isn't playing), the portal's centre, and whether the world holds still (input is ignored).
+func portal_enter_progress() -> float:
+	return _w.boss_flow.enter_progress(_w.tick) if _w.boss_flow != null else -1.0
+
+
+func arrival_progress() -> float:
+	return _w.boss_flow.arrive_progress() if _w.boss_flow != null else -1.0
+
+
+func transit_holds() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.holds_world()
 
 
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
