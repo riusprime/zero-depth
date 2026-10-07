@@ -46,3 +46,8 @@ Pasted verbatim from the owner's message:
 
 ## Free notes
 OWNER ONLY
+
+## Owner answers, third build (2026-10-07)
+Pasted verbatim from the owner's message:
+
+> okay we need to add a sword element, not like areal sword but the laser part from a laser sword, and it has a dash tray that follows it that shows as movement, and we replace the cone thingy completely for this new sword, we also need to fix for the shadowing the saw effect, shadows should be a straight line to be smooth, one more thing the menu doesnt really work well for controller you cant press A or X (xbox or ps) and select the buttons from the menu, apart from that we got the main movements right so you should keep working on next steps to develop 1 full floor, if the procedural generation is not ready it'd be one point of working for it, the waves thing was great for the test but as we worked on the "harder as it goes" we should not have waves but continuous controlled spawn of enemies, increasing every 30 seconds a bit, so it gets harder, for this first level let's create some items, it might not be in the plan but as we gather more items there should be modification on how the character attack and its own visuals so it feels like we gathered stuff, now go for that first level full development, we should add the gateway to other levels even if it is not usable now, but it should be a light portal, closer to what a rick and morty portal looks like but in a door shape, like a stone gate with the portal light inside with the rectangle shape, go for it and spawn subagents that develop simultaneously at the same time what is possible so we save time, the outline I like the most is INK set it as default but we can leave the rest as option, go ahead

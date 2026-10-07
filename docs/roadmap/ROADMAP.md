@@ -1,6 +1,7 @@
 # Roadmap
 
-> **Status (2026-10-06):** **Active version: v0.1.0 "Combat Lab"** ([plan](v0.1.0/PLAN.md)). v0.0.1 "Ground
+> **Status (2026-10-07):** **Active version: v0.2.0 "First Floor"** ([plan](v0.2.0/PLAN.md)), by the owner's
+> direction after three fight builds of v0.1.0 "Combat Lab" ([plan](v0.1.0/PLAN.md)). v0.0.1 "Ground
 > Plane" was built and played by the owner (too bare to judge: [`v0.0.1/PLAYTEST.md`](v0.0.1/PLAYTEST.md)); its
 > Step 7 gates and the bench's stress miss are still open.
 

@@ -73,7 +73,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|---|
 | Design questions Q1–Q4 | 2026-10-06 | see Owner decisions | 2026-10-06 |
 | Fight build check ([`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md)) | 2026-10-07 | Answered: blink should follow movement; pad movement felt different; separate attack buttons (triggers = attacks, bumpers = blink and dash); hold to shoot continuously instead of charging; a thin black sketch-like stroke. → PLAN L7–L12, Steps 7b–7d | 2026-10-07 |
-| Outline style (G2, in game) | 2026-10-07 ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | pending | |
+| Outline style (G2, in game) | 2026-10-07 ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | **INK** as default, the rest stay as options | 2026-10-07 |
 | Second fight build check | 2026-10-07 | Answered: blink should teleport through walls; bigger shot hitbox; sketch thinner and 20% less hand-drawn; a sliding slash for the blade; faster, smooth acceleration and stop. → PLAN L13–L17, Step 7e | 2026-10-07 |
 | Options mockups (G2) | Step 10 | pending | |
 | Fun without loot | after Step 12 | pending | |
@@ -134,3 +134,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   radius 0.16 m (drawn dart unchanged); `InkPass` one-sided 1 px edges, wobble and gaps −20%; a slash ribbon
   sweeps the arc in 5 ticks, alternating direction, the finisher wider; player velocity eases (319‰ per tick
   speeding up, 369‰ stopping: 90% in 0.10 s / 0.08 s). 139 tests pass; goldens re-recorded on purpose.
+- 2026-10-07 — The owner played the third build: "we got the main movements right" and directed the next work: a
+  laser-blade melee with a trail (replacing the cone), smooth shadows, pad A/X in menus, INK by default, and then
+  a full first floor (procedural, continuous spawning that ramps every 30 s, items that change attacks and looks,
+  a portal gate). **v0.1.0 stops at Step 7e.** Steps 8–12 (bench with real AI, readable-cause test, Options
+  screen, SFX hooks, release) move to v0.2.0 ([`../v0.2.0/PLAN.md`](../v0.2.0/PLAN.md)), by the owner's
+  direction. The fight's "fun without loot" gate is answered by the owner's go-ahead.
+
