@@ -56,3 +56,5 @@ UI_OUTLINE,Outline style,Estilo de contorno
 UI_OPT_INK,Ink,Tinta
 UI_OPT_SKETCH,Sketch,Boceto
 UI_OPT_PAPER,Sketch + paper,Boceto + papel
+GATE_SEALED,The gate is sealed. The way on isn't open yet.,La puerta está sellada. El camino aún no está abierto.
+GATE_NAME,Gate,Puerta
