@@ -1,19 +1,28 @@
 class_name PlayerAvatar
 extends Node3D
 ## The player's hooded wanderer (owner, 2026-10-07; docs/art/main_character_visual_reference.png): a big faceted
-## off-white hood with a pyramid roof, a dark face plate and a small cyan visor; a wide faceted cloak shaped like
-## a double pyramid; two short dark legs. Presentation only (EI-07): sync() reads the sim through WorldReader
-## once per tick, advance() animates in frame time, and nothing here feeds back into the sim. The cloak's flare
-## and hem rings are damped springs in this node's frame (which never rotates), so they lag behind acceleration
-## and turns, stream back on a dash and settle when the wanderer stops.
+## box hood with a low pyramid roof, a recessed dark face and a small off-centre cyan visor; a tent-shaped cloak
+## (a square frustum, corners on the diagonals, a soft vertical fold down the middle of each side); two short
+## charcoal legs. Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance()
+## animates in frame time, and nothing here feeds back into the sim. The cloak's hem points are damped springs in
+## this node's frame (which never rotates), so they lag behind acceleration and turns, stream back on a dash and
+## settle when the wanderer stops.
 ## +X is the front in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
 
-const HIP_Y := 0.33
-const LEG_LEN := 0.34
-const LEG_GAP := 0.11
-const NECK_Y := 0.9
-const SHOULDER_Y := 0.74
+const HIP_Y := 0.4
+const LEG_LEN := 0.41
+const LEG_GAP := 0.09
+const NECK_Y := 0.95
+const SHOULDER_Y := 0.76
+## Hem points: four corners (on the diagonals) and the four fold points between them.
 const CLOAK_SIDES := 8
+const HEM_Y := 0.4
+const HEM_R := 0.44
+## The hood is a little smaller than its mesh, sits a little forward and tips forward, as in the reference.
+const HOOD_SCALE := 0.92
+const HOOD_TILT := 0.26
+## The avatar's rim is thinner than the other actors' (the reference has a light line, not a heavy one).
+const OUTLINE_M := 0.018
 ## Walking speed the gait is tuned for (the sim's 6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 6.0
 const STRIDE := 1.25
@@ -31,7 +40,8 @@ const TELEPORT_SPEED := 40.0
 const CLOAK_COLOR := Color("#E9E4DA")
 const HOOD_COLOR := Color("#EFEBE3")
 const FACE_COLOR := Color("#121217")
-const LEG_COLOR := Color("#3A3A40")
+const LEG_COLOR := Color("#4A4C56")
+const BOOT_COLOR := Color("#34343B")
 
 ## Parts, read by tests and by ActorViews (flash materials).
 var hood: Node3D
@@ -86,7 +96,8 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(_pelvis)
 	_pelvis.add_child(_head_yaw)
 	hood = Node3D.new()
-	hood.position.y = NECK_Y - HIP_Y
+	hood.position = Vector3(0.015, NECK_Y - HIP_Y, 0)
+	hood.scale = Vector3.ONE * HOOD_SCALE
 	_head_yaw.add_child(hood)
 	var shell := _mesh_piece(hood, _hood_mesh(), HOOD_COLOR, outline_color, team, technique)
 	(shell.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -101,7 +112,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	hood.add_child(face)
 	visor = MeshInstance3D.new()
 	var vb := BoxMesh.new()
-	vb.size = Vector3(0.012, 0.08, 0.062)
+	vb.size = Vector3(0.012, 0.1, 0.08)
 	visor.mesh = vb
 	_visor_mat.albedo_color = team
 	_visor_mat.emission_enabled = true
@@ -109,7 +120,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.emission_energy_multiplier = 2.4
 	_write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
-	visor.position = Vector3(0.157, 0.0, 0.0)
+	visor.position = Vector3(0.178, 0.02, 0.045)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(visor)
 	_build_cloak_rest()
@@ -122,17 +133,17 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		pivot.position = Vector3(0, 0, side * LEG_GAP)
 		_leg_root.add_child(pivot)
 		var leg := BoxMesh.new()
-		leg.size = Vector3(0.1, LEG_LEN - 0.05, 0.1)
+		leg.size = Vector3(0.1, LEG_LEN - 0.05, 0.085)
 		var shin := Node3D.new()
 		shin.position.y = -(LEG_LEN - 0.05) * 0.5
 		pivot.add_child(shin)
 		_mesh_piece(shin, leg, LEG_COLOR, outline_color, team, &"outline")
 		var boot := BoxMesh.new()
-		boot.size = Vector3(0.15, 0.06, 0.11)
+		boot.size = Vector3(0.15, 0.06, 0.095)
 		var foot := Node3D.new()
 		foot.position = Vector3(0.025, -LEG_LEN + 0.03, 0)
 		pivot.add_child(foot)
-		_mesh_piece(foot, boot, LEG_COLOR.darkened(0.15), outline_color, team, &"outline")
+		_mesh_piece(foot, boot, BOOT_COLOR, outline_color, team, &"outline")
 		legs.append(pivot)
 	_pose(0.0)
 	_rebuild_cloak()
@@ -273,7 +284,7 @@ func _pose(dt: float) -> void:
 	var s := sin(_phase)
 	var bob := (1.0 - absf(s)) * 0.035 * _walk
 	var breath := sin(_t * 2.1) * 0.009 * (1.0 - _walk) * (1.0 - _slump)
-	var hip := HIP_Y + bob + breath - _crouch * 0.07 - _slump * 0.15
+	var hip := HIP_Y + bob + breath - _crouch * 0.07 - _slump * 0.22
 	_pelvis.position = Vector3(0, hip, 0)
 	# Lean: into the movement (hard on a dash), forward when guarding or collapsing, a slow idle sway.
 	var face_dir := Vector3(cos(_body_yaw), 0, -sin(_body_yaw))
@@ -281,7 +292,7 @@ func _pose(dt: float) -> void:
 	var side := Vector3(face_dir.z, 0, -face_dir.x)
 	var lean_target := (
 		move_dir * (0.16 * clampf(speed / WALK_SPEED, 0.0, 1.0) * (1.0 - _dash) + 0.32 * _dash)
-		+ face_dir * (_crouch * 0.12 + _slump * 0.6)
+		+ face_dir * (_crouch * 0.12 + _slump * 0.22)
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
@@ -290,34 +301,35 @@ func _pose(dt: float) -> void:
 		b = Basis(Vector3.UP.cross(_lean.normalized()), _lean.length())
 	_pelvis.basis = b
 	_head_yaw.rotation = Vector3(0, _body_yaw + _twist, 0)
-	hood.rotation = Vector3(0, 0, -0.05 - _slump * 0.45 - _crouch * 0.08)
+	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
+	hood.rotation = Vector3(_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08)
 	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump)
-	# Legs: alternate stride, tucked on a dash, splayed when the hips drop below leg length.
+	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
+	# below what the swung leg can reach.
 	_leg_root.position.y = hip
 	_leg_root.rotation = Vector3(0, _leg_yaw, 0)
 	var amp := 0.6 * _walk
-	var splay := acos(clampf(hip / LEG_LEN, -1.0, 1.0))
 	for k in legs.size():
 		var sgn := -1.0 if k == 0 else 1.0
-		var swing := s * amp * sgn + _dash * (0.35 if k == 0 else -0.75) + _slump * 0.5
+		var swing := s * amp * sgn + _dash * (0.35 if k == 0 else -0.75) + _slump * 1.25
+		var reach := LEG_LEN * cos(swing)
+		var splay := acos(clampf(hip / maxf(reach, 0.01), -1.0, 1.0)) if hip < reach else 0.0
 		legs[k].rotation = Vector3(sgn * splay, 0, swing)
 
 
 func _build_cloak_rest() -> void:
-	# Top ring under the hood; a wide flare ring with long and short corners (the folds); a narrower hem below.
-	# Four long corners (front, left, back, right) and four short ones between them: a faceted diamond.
-	var flare_r := [0.41, 0.34, 0.43, 0.35, 0.42, 0.33, 0.43, 0.35]
-	var flare_y := [0.41, 0.48, 0.38, 0.47, 0.4, 0.49, 0.39, 0.47]
+	# Corners on the diagonals (a tent seen corner-on from 3/4 views, as in the reference), and between them a
+	# point a little proud of the straight edge: a soft vertical fold down the middle of each side. The hem is
+	# nearly level, a few centimetres uneven.
+	var drop := [0.0, 0.0, 0.02, 0.0, -0.015, 0.0, 0.01, 0.0]
 	for j in CLOAK_SIDES:
-		var a := TAU * float(j) / CLOAK_SIDES
-		_top_rest.append(Vector3(cos(a) * 0.17, SHOULDER_Y - HIP_Y, -sin(a) * 0.17))
-	for j in CLOAK_SIDES:
-		var a := TAU * float(j) / CLOAK_SIDES
-		_spring_rest.append(Vector3(cos(a) * flare_r[j], flare_y[j] - HIP_Y, -sin(a) * flare_r[j]))
-	for j in CLOAK_SIDES:
-		var a := TAU * (float(j) + 0.5) / CLOAK_SIDES
-		_spring_rest.append(Vector3(cos(a) * 0.17, 0.32 - HIP_Y, -sin(a) * 0.17))
-	for k in _spring_rest.size():
+		var a := TAU * (float(j) + 1.0) / CLOAK_SIDES
+		var corner := j % 2 == 0
+		var top_r := 0.2 if corner else 0.15
+		var hem_r := HEM_R if corner else HEM_R * 0.76
+		_top_rest.append(Vector3(cos(a) * top_r, SHOULDER_Y - HIP_Y, -sin(a) * top_r))
+		var y: float = HEM_Y + (0.0 if corner else 0.025) + drop[j]
+		_spring_rest.append(Vector3(cos(a) * hem_r, y - HIP_Y, -sin(a) * hem_r))
 		_spring_pos.append(Vector3.ZERO)
 		_spring_vel.append(Vector3.ZERO)
 		_spring_target.append(Vector3.ZERO)
@@ -331,12 +343,17 @@ func _cloak_frame() -> Transform3D:
 func _update_targets() -> void:
 	var xf := _cloak_frame()
 	var speed := Vector2(_vel_s.x, _vel_s.z).length()
-	var flare := 1.0 + 0.06 * clampf(speed / WALK_SPEED, 0.0, 1.0) + 0.3 * _dash + 0.08 * _crouch
-	var breathe := 1.0 + sin(_t * 2.1) * 0.012 * (1.0 - _slump)
+	var flare := (
+		1.0
+		+ 0.06 * clampf(speed / WALK_SPEED, 0.0, 1.0)
+		+ 0.3 * _dash
+		+ 0.08 * _crouch
+		+ 0.3 * _slump
+	)
+	var m := flare * (1.0 + sin(_t * 2.1) * 0.012 * (1.0 - _slump))
 	for k in _spring_rest.size():
 		var r := _spring_rest[k]
-		var m := flare * breathe if k < CLOAK_SIDES else 1.0 + (flare - 1.0) * 0.5
-		_spring_target[k] = xf * Vector3(r.x * m, r.y, r.z * m)
+		_spring_target[k] = xf * Vector3(r.x * m, r.y - 0.1 * _slump, r.z * m)
 
 
 func _reset_springs() -> void:
@@ -355,11 +372,9 @@ func _step_springs(dt: float, accel: Vector3) -> void:
 	var push := -accel * INERTIA - _vel_s * AIR_DRAG * (1.0 + _dash)
 	for _i in n:
 		for k in _spring_pos.size():
-			var soft := 1.0 if k < CLOAK_SIDES else 0.7
 			var a := (
-				(_spring_target[k] - _spring_pos[k]) * SPRING_K * soft - _spring_vel[k] * SPRING_C
+				(_spring_target[k] - _spring_pos[k]) * SPRING_K - _spring_vel[k] * SPRING_C + push
 			)
-			a += push * (1.0 if k < CLOAK_SIDES else 1.25)
 			_spring_vel[k] += a * h
 			_spring_pos[k] += _spring_vel[k] * h
 			var off := _spring_pos[k] - _spring_target[k]
@@ -372,7 +387,8 @@ func _rebuild_cloak() -> void:
 	var xf := _cloak_frame()
 	var top: Array[Vector3] = []
 	for r in _top_rest:
-		top.append(xf * r)
+		# Dead, the shoulders sink into the pooled cloak.
+		top.append(xf * Vector3(r.x, r.y * (1.0 - 0.35 * _slump), r.z))
 	var ring: Array[Vector3] = []
 	for k in _spring_pos.size():
 		var p := _spring_pos[k]
@@ -381,19 +397,13 @@ func _rebuild_cloak() -> void:
 		p.y += Vector2(off.x, off.z).length_squared() * 1.6
 		p.y = maxf(p.y, 0.03)
 		ring.append(p)
-	var centre := xf * Vector3(0, (SHOULDER_Y + 0.32) * 0.5 - HIP_Y, 0)
+	var centre := xf * Vector3(0, (SHOULDER_Y + HEM_Y) * 0.5 - HIP_Y, 0)
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
 	for j in CLOAK_SIDES:
 		var j2 := (j + 1) % CLOAK_SIDES
-		var f0 := ring[j]
-		var f1 := ring[j2]
-		var h0 := ring[CLOAK_SIDES + j]
-		var h1 := ring[CLOAK_SIDES + j2]
-		_tri(verts, normals, top[j], top[j2], f0, centre)
-		_tri(verts, normals, top[j2], f1, f0, centre)
-		_tri(verts, normals, f0, f1, h0, centre)
-		_tri(verts, normals, f1, h1, h0, centre)
+		_tri(verts, normals, top[j], top[j2], ring[j], centre)
+		_tri(verts, normals, top[j2], ring[j2], ring[j], centre)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
@@ -436,41 +446,58 @@ static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
 	return m
 
 
-## The hood: a box (slightly wider at the top) under a four-faced roof whose peak sits toward the back.
+## The hood: a box whose lower sides and back taper in (the rounded look of the reference), under a low
+## four-faced roof whose peak sits a little toward the back. The front is open; the dark face sits in it.
 static func _hood_mesh() -> ArrayMesh:
 	var lo := [
-		Vector3(0.17, -0.17, -0.18),
-		Vector3(0.17, -0.17, 0.18),
-		Vector3(-0.17, -0.17, 0.17),
-		Vector3(-0.17, -0.17, -0.17)
+		Vector3(0.2, -0.2, -0.16),
+		Vector3(0.2, -0.2, 0.16),
+		Vector3(-0.15, -0.2, 0.16),
+		Vector3(-0.15, -0.2, -0.16)
+	]
+	var mid := [
+		Vector3(0.2, -0.07, -0.2),
+		Vector3(0.2, -0.07, 0.2),
+		Vector3(-0.2, -0.07, 0.2),
+		Vector3(-0.2, -0.07, -0.2)
 	]
 	var hi := [
-		Vector3(0.18, 0.13, -0.19),
-		Vector3(0.18, 0.13, 0.19),
-		Vector3(-0.17, 0.07, 0.18),
-		Vector3(-0.17, 0.07, -0.18)
+		Vector3(0.2, 0.15, -0.2),
+		Vector3(0.2, 0.15, 0.2),
+		Vector3(-0.19, 0.14, 0.19),
+		Vector3(-0.19, 0.14, -0.19)
 	]
-	var peak := Vector3(-0.08, 0.2, 0.0)
+	var peak := Vector3(-0.09, 0.21, 0.0)
 	var tris := []
 	for k in 4:
 		var k2 := (k + 1) % 4
-		if k != 0:  # the front stays open: the dark face sits in it
-			tris.append([lo[k], lo[k2], hi[k2]])
-			tris.append([lo[k], hi[k2], hi[k]])
+		if k != 0:
+			for pair in [[lo, mid], [mid, hi]]:
+				var a: Array = pair[0]
+				var b: Array = pair[1]
+				tris.append([a[k], a[k2], b[k2]])
+				tris.append([a[k], b[k2], b[k]])
 		tris.append([hi[k], hi[k2], peak])
 	tris.append([lo[0], lo[1], lo[2]])
 	tris.append([lo[0], lo[2], lo[3]])
 	return _mesh_from(tris, Vector3(0, 0, 0))
 
 
-## The dark face: a plate set back inside the hood's open front, so the hood's walls frame it.
+## The dark face: a plate set 3 cm back inside the hood's open front, filling the opening.
 static func _face_mesh() -> ArrayMesh:
-	var x := 0.15
-	var a := Vector3(x, -0.17, -0.18)
-	var b := Vector3(x, -0.17, 0.18)
-	var c := Vector3(x, 0.12, 0.185)
-	var d := Vector3(x, 0.12, -0.185)
-	return _mesh_from([[a, b, c], [a, c, d]], Vector3(0, -0.04, 0))
+	var x := 0.17
+	var pts := [
+		Vector3(x, -0.2, -0.16),
+		Vector3(x, -0.2, 0.16),
+		Vector3(x, -0.07, 0.195),
+		Vector3(x, 0.145, 0.195),
+		Vector3(x, 0.145, -0.195),
+		Vector3(x, -0.07, -0.195)
+	]
+	var tris := []
+	for k in range(1, pts.size() - 1):
+		tris.append([pts[0], pts[k], pts[k + 1]])
+	return _mesh_from(tris, Vector3(0, -0.03, 0))
 
 
 ## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.
@@ -491,7 +518,7 @@ func _mesh_piece(
 	mat.roughness = 1.0
 	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
 	mat.stencil_color = outline
-	mat.stencil_outline_thickness = 0.035
+	mat.stencil_outline_thickness = OUTLINE_M
 	body.material_override = mat
 	parent.add_child(body)
 	body_materials.append(mat)

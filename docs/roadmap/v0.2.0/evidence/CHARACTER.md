@@ -6,10 +6,33 @@ iso camera (`IsoRig`: yaw 45°, pitch 35.26°), next to the owner's reference
 driven by key and mouse events.
 **What it doesn't prove:** whether it looks right or feels good to the owner. Feel and taste are `OWNER ONLY`.
 
-- **Build:** the renders ran on a working tree based on `088a852` with this step's files uncommitted. The code and
-  the shot script were the same as the committed ones; only this doc and the copied PNGs were added after the run.
+- **Build:** the renders ran on a working tree based on `701302f` (the first pass) with this refinement round's
+  changes uncommitted. The code and the shot script were the same as the committed ones; only this doc and the
+  copied PNGs were added after the run.
 - **Machine:** a cloud container, software Vulkan (llvmpipe), under xvfb. This is not the owner's hardware. On this
-  renderer several physics ticks run per rendered frame (about 4), so the frames are far apart in time.
+  renderer about 4 physics ticks run per rendered frame.
+
+## Round 2 (coordinator's refinement list, 2026-10-07)
+
+The coordinator asked for one refinement round toward the reference. I compared each render side by side with the
+reference turnaround while iterating. Changes:
+1. **Cloak:** a square tent (frustum) with its corners on the diagonals, as the reference shows in its 3/4 views. Its
+   four large faces each have a soft vertical fold down the middle. There are no star points. The hem is nearly level
+   (a few cm uneven) at 0.40 m, so the legs show. Face-on, the hem is about 1.7× the hood's width (0.62 m vs 0.37 m).
+   It is now one ring of 8 spring points; the second, lower ring is gone.
+2. **Hood:** a taller box whose lower sides and back taper in, under a low roof that peaks toward the back. The front
+   is open, with the dark face set 3 cm back. The hood sits slightly forward and tips forward about 15°, as in the
+   reference. It is about 0.38 m of the figure's roughly 1.15 m, a third rather than the 40% the coordinator asked for.
+3. **Visor:** smaller relative to the face (about 7 × 9 cm on a 36 cm face, after the hood's 0.92 scale) and set off-centre.
+4. **Legs:** longer (0.41 m), a lighter charcoal (`#4A4C56`) with darker boots, and a gap between them about one leg
+   wide.
+5. **Outline:** the avatar's rim is 0.018 m, about half the other actors' 0.035. The X-ray twins on the hood and the
+   cloak are unchanged.
+6. **Dead pose:** the hips sit down, the cloak pools wider and lower, the hood droops and rolls on top with a dimmed
+   visor, and the boots stick out at the front.
+7. **Swing and dash capture:** around the dash and the swing, the shot script now lets the sim step only once per
+   rendered frame (it toggles `SimDriver.paused`, in the shot script only). The frames land 2 ticks apart. I tried
+   `Engine.time_scale` first, and it didn't change the ticks per frame here.
 
 ## Commands
 
@@ -36,8 +59,8 @@ character: res://build/shots/v0.1.0-dev/character/turnaround.png reference=/home
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 Vulkan 1.4.318 - Forward+ - Using Device #0: Unknown - llvmpipe (LLVM 20.1.2, 256 bits)
 
-character: res://build/shots/v0.1.0-dev/character/motion.png frames=21 full=res://build/shots/v0.1.0-dev/character/motion_full.png
-character: cells (row-major) = idle t24, walk t36, walk t48, walk t60, walk t72, dash t80, dash t84, dash t88, dash t92, dash t96, dash t100, stop t120, stop t132, stop t144, stop t156, swing t172, swing t176, swing t180, swing t184, swing t188, swing t192
+character: res://build/shots/v0.1.0-dev/character/motion.png frames=25 full=res://build/shots/v0.1.0-dev/character/motion_full.png
+character: cells (row-major) = idle t24, walk t36, walk t48, walk t60, walk t72, dash t80, dash t82, dash t84, dash t86, dash t88, dash t90, dash t92, dash t94, stop t111, stop t123, stop t135, stop t147, swing t171, swing t173, swing t175, swing t177, swing t179, swing t181, swing t183, swing t185
 ```
 
 (The build folder says `v0.1.0-dev` because that's what `GameVersion.label()` returns on this branch.) The sheets were
@@ -47,32 +70,38 @@ copied by hand: `turnaround.png` → [`character_turnaround.png`](character_turn
 ## Turnaround sheet ([`character_turnaround.png`](character_turnaround.png))
 
 - **Left, top row:** five avatars on Ruins-coloured ground under the game's light. They face front, 3/4, side, 3/4
-  back and back. The camera is the real `IsoRig`, with its view zoomed to 3.4 m so the figure fills the cell. There's
-  no team ring here, because the ring belongs to `ActorViews`. The motion sheet shows it.
+  back and back. The camera is the real `IsoRig`, with its view zoomed to 3.4 m. There's no team ring here, because
+  the ring belongs to `ActorViews`. The motion sheet shows it.
 - **Left, bottom row:** poses driven through `PlayerAvatar.apply_state` with made-up sim state, not from the game. In
   order: idle; walking in place at 6 m/s; dashing at about 27 m/s; swinging (tick 6 of 14); guarding; dead.
 - **Right:** the owner's reference, scaled to the sheet's height.
 
-**What I see that matches the reference:**
-- The figure is a big, boxy, off-white hood over a wide, faceted, tent-shaped cloak, with two short dark legs under
-  it.
-- The front of the hood is a dark face plate inside a light rim, with a small glowing cyan rectangle in it.
-- The back views show only cloak and hood, and the hood rises to a peak.
-- It's flat-shaded, with lighter and darker facets, and its shading sits close to the reference's beige.
+**What I see that matches the reference now:**
+- **3/4 views:** in the 3/4 front and 3/4 back views (top row, cells 2 and 4), the cloak reads as the reference's
+  tent. A corner points at the viewer, there are big flat facets, and the hem makes a V toward the viewer with
+  corners out to the sides.
+- **Hood:** a forward-tipped box with a dark recessed face and a small off-centre cyan visor.
+- **Legs:** two dark legs with boots, visibly separate in the 3/4 and walking views.
+- **Back:** the back views show only the cloak and the hood.
+- **Outline:** the rim is noticeably lighter than in round 1.
 
 **What still differs (honestly):**
-- Every body piece has the game's black stencil rim outline (PRESENTATION §3). The reference has no outlines, so mine
-  looks heavier and more "inked" at this zoom.
-- The reference hood is a rounder, chamfered box whose top reads as a flat face from the front. Mine is a box under a
-  four-faced roof. From the front views a low pointed roof shows above the face, where the reference shows a flat top.
-- The reference visor is a small rectangle placed a bit off-centre. Mine is centred and somewhat larger relative to
-  the face plate.
-- The reference cloak is a smoother pyramid with fewer, larger facets and a slightly concave hem. Mine is an 8-cornered
-  diamond (four long corners and four short ones), and in the side views it reads as more star-shaped and pointier at
-  the hem.
-- The reference legs read longer and more clearly as two separate legs. In my front views the two legs often merge
-  into one dark block under the hem.
-- The dead pose reads as a pale lump. It's recognisable as collapsed but not as a body.
+- **Face-on views:** the front, side and back views (cells 1, 3 and 5) see a flat side of the square cloak, so the
+  figure reads boxy, almost a rectangle, rather than a tent. The reference shows no face-on views; all five of its
+  views look roughly 3/4. In-game, the camera is fixed at 45° yaw, so face-on happens whenever you aim or walk along
+  a screen diagonal.
+- **Roof:** from the back, the reference hood rises to a clear centred peak. My roof is low with its peak toward the
+  back, so from behind it reads as a slanted top more than a point. From the front it reads closer to the
+  reference's flat top.
+- **Hood seam:** in the 3/4-back view (cell 4) a small dark notch shows between the hood and the cloak's shoulders,
+  because the hood sits slightly forward. The reference has no gap.
+- **Legs face-on:** in the face-on front view the two legs still read as nearly one dark block.
+- **Shape and shading:** the reference is softer, with rounded-looking edges and gentle shading. Mine is hard-faceted,
+  with the game's ink rim.
+- **Dead pose:** it now shows the cloak pooled with the hood lying on top and the boots out in front. It reads as the
+  character collapsed, but the hood looks a little detached from the cloak.
+- **Dash pose:** the cloak streams back into a large flat sheet. That's stronger than "a bit"; tuning it is the
+  owner's call (`OWNER ONLY` for feel).
 
 ## Motion sheet ([`character_motion.png`](character_motion.png))
 
@@ -88,18 +117,16 @@ the output line above (row-major, 6 per row). The crop centre comes from the pla
 
 **What the frames show:**
 - **idle t24:** the wanderer from behind (the starting aim points away), with its cyan ring.
-- **walk t36–t72:** the hood turns toward the lower-left aim, the cyan visor shows, the legs are visibly apart in
-  stride, and the cloak's trailing edge swings out behind the motion.
-- **dash t80–t100:**
-  - In t80 and t84 the player is at the right edge of the crop. The camera and the crop lag the dash, so these two
-    cells are badly framed.
-  - From t88 to t96 the figure leans hard into the dash, its cloak streams far back (to the right) and the legs trail.
-  - By t100 the cloak is coming back in.
-- **stop t120–t156:** the figure stands still by a wall (which the occlusion fade has made see-through). The cloak
-  is back to its rest shape, with no visible jitter between these four frames.
-- **swing t172–t192:** the slash fan draws toward the lower left and the visor faces it. **I can't see a clear body
-  twist in these frames:** the twist is quick, and about 4 ticks pass between grabs. The unit tests don't check the
-  twist either.
+- **walk t36–t72:** the hood turns toward the lower-left aim, the cyan visor shows, the legs are apart in stride, and
+  the cloak's trailing edge swings out behind the motion.
+- **dash t80–t94 (2 ticks apart):** the figure leans into the dash and the cloak streams back into a flat sheet. At
+  t88 it passes a wall edge, and a small cyan triangle shows at its feet. I believe that's another view's dash effect,
+  not the avatar, but I didn't check. By t92–t94 the cloak is coming back in.
+- **stop t111–t147:** the figure stands still by a wall (made see-through by the occlusion fade). The cloak is back to
+  its tent shape, with no visible jitter between these four frames.
+- **swing t171–t185 (2 ticks apart):** at t171 the hood is turned away from the slash (the wind-back). At t173 it is
+  turning. From t175 on, the visor faces the slash toward the lower left. This is the body twist, visible now. The
+  slash fan sweeps across the cells.
 
 **Not shown in the game frames:** guard and death. They appear only as synthetic poses in the turnaround sheet's
 bottom row and in the unit tests. How smooth it is at 30–144 fps on real hardware: `NOT YET RUN` (`OWNER ONLY` for
@@ -107,7 +134,7 @@ feel).
 
 ## Tests
 
-`tests/unit/presentation/test_player_avatar.gd` (8 tests) covers:
+`tests/unit/presentation/test_player_avatar.gd` (8 tests, unchanged in round 2, all passing) covers:
 - the parts (hood, visor, face, cloak, two legs);
 - X-ray twins only with the `xray` technique;
 - the visor facing four aim angles through a real `World` and `WorldReader`;

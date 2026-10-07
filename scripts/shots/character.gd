@@ -7,7 +7,9 @@ extends SceneTree
 ## turnaround: five facings (front, 3/4, side, 3/4 back, back) under the iso camera, then a row of poses driven
 ## through PlayerAvatar.apply_state (idle, walk, dash, swing, guard, dead), next to the owner's reference.
 ## motion: boots main.tscn, picks the utility and enters the floor with Enter, then walks, dashes and swings with
-## real key and mouse events; frames are cropped around the player and grabbed in _process.
+## real key and mouse events; frames are cropped around the player and grabbed in _process. Around the dash and
+## the swing the script lets the sim step only once per rendered frame (SimDriver.paused), so frames land a tick
+## apart; the sim itself is unchanged.
 
 const FACINGS_DEG := [-45.0, 0.0, 45.0, 90.0, 135.0]
 const CELL := 300
@@ -27,7 +29,7 @@ var _shots: Array[Image] = []
 var _main: Main
 var _cells: Array[Image] = []
 var _labels: Array[String] = []
-var _plan := []
+var _step_allowed := true
 
 
 func _initialize() -> void:
@@ -202,6 +204,15 @@ func _write_turnaround() -> void:
 func _physics_process(_delta: float) -> bool:
 	if _mode != "motion" or _main == null or _main.driver == null:
 		return false
+	# Slow motion around the dash and the swing: let the sim step only once per rendered frame (this shot only;
+	# this renderer otherwise runs ~4 ticks per frame).
+	if (_ticks >= 76 and _ticks < 100) or (_ticks >= 166 and _ticks < 196):
+		_main.driver.paused = not _step_allowed
+		if not _step_allowed:
+			return false
+		_step_allowed = false
+	else:
+		_main.driver.paused = false
 	_ticks += 1
 	match _ticks:
 		30:
@@ -229,6 +240,7 @@ func _process(_delta: float) -> bool:
 		_turnaround_process()
 		return false
 	_frame += 1
+	_step_allowed = true
 	if _frame in [8, 14]:
 		_key(KEY_ENTER, true)
 	if _frame in [9, 15]:
@@ -241,8 +253,8 @@ func _process(_delta: float) -> bool:
 	for l in _labels:
 		if l.begins_with(tag):
 			n += 1
-	var want := 6 if tag == "dash" or tag == "swing" else 4
-	var every := 1 if tag == "dash" or tag == "swing" else 3
+	var want := 8 if tag == "dash" or tag == "swing" else 4
+	var every := 2 if tag == "dash" or tag == "swing" else 3
 	if n < want and _frame % every == 0:
 		_cells.append(_crop_player())
 		_labels.append("%s t%d" % [tag, _main.driver.reader.tick()])
