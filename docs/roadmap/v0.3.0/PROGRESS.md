@@ -19,6 +19,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Design questions (run, combos, items, blink walls) | 2026-10-07 | answered (PLAN "Owner answers") | 2026-10-07 |
 | Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
+| Blink vs thick walls | 2026-10-07 | "Thicker room walls" | 2026-10-07 |
 
 ## Open
 - O3 `main`; O4 credit line.
@@ -31,3 +32,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   combos, wall thickness for blink). PLAN committed before code. Workstreams A, B, C, E, G run in parallel.
 - 2026-10-07 — Owner uploaded the boss sheet (`docs/art/first-three-bosses-concept.png`, L10; sent to workstream C as the 1:1 reference) and asked for a 4-slash melee combo with a stronger 4th (L11, workstream N).
 - 2026-10-07 — A and N merged (one comment conflict in PlayerKit). 318 tests pass. A found that from close up a blink (5.0 m range) still crosses walls up to 4.3 m thick, i.e. every wall: asked the owner (shorter range or thicker walls). The PLAN said blink range 4.5 m; the data has 5.0 m since v0.1.0 — the PLAN line was wrong and is corrected.
+- 2026-10-07 — Owner chose "Thicker room walls" (L12). B finished (7cfcaa2) but was built before A: merging gives parse errors (the boss room builder uses the removed `wall_half`). Merge aborted; B is adapting to A's wall model, applying L12 (walls up to 5 m) and sealing the boss room against blink.
