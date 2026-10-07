@@ -36,6 +36,10 @@ func model_id() -> StringName:
 	return &"crawler_queen"
 
 
+func _code_nodes() -> Array[Node]:
+	return [body, sac]
+
+
 func _build() -> void:
 	var p := parts
 	body.name = "Body"

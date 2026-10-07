@@ -78,3 +78,48 @@ The PNGs here are those files, quantised to 256 colours by hand (the compares al
 - Fortress Turret: red box hull, slit eyes, long vented cannon, back mortars with red glow, four heavy legs read.
   Still off: the sheet's hull is longer front to back and its leg armour heavier.
 - Owner's verdict: `OWNER ONLY`.
+
+## C2: the owner's models replace the code-built bodies (PLAN L13)
+
+Build: the working tree on top of the merge of `claude/lucid-fermat-9wv2tf` at `b7fdd9e`, committed as
+`v0.3.0 Step C2`. This file is part of that commit, so its SHA is in the hand-off report rather than here.
+
+- Installed: `assets/models/bosses/stone_sentinel.glb`, `crawler_queen.glb`, `fortress_turret.glb` (`git mv` from
+  the owner's upload), `assets/models/manifest.json` (id, path, sha256), and the `.import` files and extracted
+  textures that the import created at the new path. `tests/content/test_model_manifest.gd` checks the manifest
+  both ways.
+- Orientation, read from renders of the raw models turned 0/90/180/270° (a scratch render under `build/`): all three
+  are Y-up. The Stone Sentinel and the Fortress Turret face +X already (yaw 0); the Crawler Queen faces -Z (yaw
+  -90°).
+- Size: scaled so the height is the code body's (Sentinel 2.95 m, Turret 2.5 m), and 2.4 m for the Queen (2.1 m
+  read small beside the sheet). Feet sit at y = 0, centred in x and z. The meshes are rebuilt once per type in our
+  frame (`BossModels`, cached) and preloaded when the stage is built (`WorldViewRoot.setup`), never on a spawn.
+- Material: the model's own material, duplicated (the albedo texture is kept; the Sentinel also keeps its normal
+  map), made flashable (`ActorViews.flashable`), outlined like the other actors, with shadows on, plus an X-ray
+  twin with the X-ray technique.
+- Motion is whole-body:
+  - breath, and a walk bob and sway;
+  - a windup lean and crouch;
+  - a lunge and squash on the attack, or a recoil for the turret;
+  - a sag in recovery and a wobble when staggered.
+
+  A red additive `material_overlay` glows: its alpha rises in the windup, on the hit, and stays up in the last
+  phase. Nothing changes a shader at run time.
+- Export: `bash scripts/ci/export_smoke.sh` (exit 0) now also checks that each model loads from the pack:
+
+```
+  ok    boss model stone_sentinel loads from the pack
+  ok    boss model crawler_queen loads from the pack
+  ok    boss model fortress_turret loads from the pack
+0 miss(es)
+```
+
+- Suite: `bash scripts/verify.sh` (exit 0) printed `Tests 445`, `Passing Tests 445` and
+  `check_gut_log: ok (445 passing, minimum 436)`. `MIN_TEST_COUNT` is raised to 445.
+- Renders: `scripts/shots/bosses.gd` with `mode=compare` and `mode=sheet` (the same commands as above) →
+  [`boss_models.png`](boss_models.png). It shows each sheet row over the model in the same three views, with the
+  iso inset next to the hero, then the game-camera sheet (idle and two windups for each boss). The file is 478,151
+  bytes: 960 px wide, 192 colours, scaled and quantised by hand.
+- Agent's reading: the models match the sheet far better than the code bodies did, because they are the sheet's
+  designs. The windup glow over the whole body reads strong in the game view, and the owner may want it lower.
+  Verdict: `OWNER ONLY`.

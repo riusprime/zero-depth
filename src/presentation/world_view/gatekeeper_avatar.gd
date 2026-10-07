@@ -41,6 +41,10 @@ func model_id() -> StringName:
 	return &"stone_sentinel"
 
 
+func _code_nodes() -> Array[Node]:
+	return [chest]
+
+
 func _build() -> void:
 	var p := parts
 	chest.name = "Chest"

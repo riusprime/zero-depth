@@ -1,7 +1,8 @@
 extends GutTest
-## The bosses' views (v0.3.0 C): each model builds with flashable, outlined body pieces and its parts, animates its
-## windup and hides when burrowed; ActorViews picks each model (and no floating bar); TelegraphViews draws every new
-## shape; the HUD's boss bar shows the name, HP and stagger only while a boss is alive.
+## The bosses' views (v0.3.0 C): each code-built model (the fallback when no model file is installed) builds with
+## flashable, outlined body pieces and its parts, animates its windup and hides when burrowed; ActorViews picks each
+## model (and no floating bar); TelegraphViews draws every new shape; the HUD's boss bar shows the name, HP and
+## stagger only while a boss is alive.
 
 const DT := 1.0 / 60.0
 var avatars := [GatekeeperAvatar, BroodMotherAvatar, SiegeEngineAvatar]
@@ -19,7 +20,17 @@ func _count_meshes(n: Node) -> int:
 	return n.find_children("*", "MeshInstance3D", true, false).size()
 
 
+func after_each() -> void:
+	BossModels.dir = BossModels.DIR
+
+
+## The code-built bodies (the fallback when no model file is installed).
+func _code_bodies() -> void:
+	BossModels.dir = "res://tests/no_such_models/"
+
+
 func test_each_model_builds_flashable_outlined_pieces() -> void:
+	_code_bodies()
 	for cls in avatars:
 		var a := _avatar(cls)
 		var name: String = a.get_script().get_global_name()
@@ -32,6 +43,7 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 
 
 func test_the_parts_the_sheet_shows() -> void:
+	_code_bodies()
 	var g := _avatar(GatekeeperAvatar) as GatekeeperAvatar
 	assert_eq(g.fists.size(), 2)
 	assert_gte(g.crown.size(), 6, "a crown of crystals")
@@ -101,7 +113,7 @@ func test_actor_views_pick_each_boss_model() -> void:
 		var node := views.actor_node(id)
 		var avatar: Node = node.get_meta(&"enemy_avatar")
 		assert_eq(avatar.get_script().get_global_name(), want[w.actors.kinds[i]])
-		assert_gt((node.get_meta(&"mats") as Array).size(), 15)
+		assert_gt((node.get_meta(&"mats") as Array).size(), 0, "its flashable materials")
 		CombatLab.idle(w, BossAi.INTRO_TICKS + 2)
 		views.sync(reader)
 		assert_false((node.get_meta(&"bar") as Node3D).visible, "no floating bar: the HUD shows it")

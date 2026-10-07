@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_check_world_run()
 	_check_content()
 	_check_spanish()
+	_check_boss_models()
 	if packed:
 		_check(
 			not FileAccess.file_exists("res://addons/gut/plugin.cfg"),
@@ -41,6 +42,13 @@ func _initialize() -> void:
 		_check(not DirAccess.dir_exists_absolute("res://tests"), "tests are not shipped")
 	print("%d miss(es)" % _misses.size())
 	quit(1 if not _misses.is_empty() else 0)
+
+
+## v0.3.0 L13: the owner's boss models ship in the pack and each boss draws its model, not the fallback.
+func _check_boss_models() -> void:
+	BossModels.preload_all()
+	for id: StringName in BossModels.SPECS:
+		_check(not BossModels.get_model(id).is_empty(), "boss model %s loads from the pack" % id)
 
 
 ## Step 4: a 600-tick headless World run inside the pack reproduces the hash computed in the project.

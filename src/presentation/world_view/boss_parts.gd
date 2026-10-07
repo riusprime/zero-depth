@@ -22,6 +22,14 @@ func _init(outline_color: Color, technique: StringName, outline_m: float = 0.03)
 	_outline_m = outline_m
 
 
+func outline_color() -> Color:
+	return _outline
+
+
+func technique() -> StringName:
+	return _technique
+
+
 ## One body piece under `parent`: the mesh at `at` (rotation `rot` in radians, `scl`), outlined and flashable.
 func piece(
 	parent: Node3D,
