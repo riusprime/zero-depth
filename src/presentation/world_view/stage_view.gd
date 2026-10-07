@@ -7,6 +7,9 @@ const TILE_M := 4.0
 const EDGE_WALL_HEIGHT := 1.0
 const SLAB_HEIGHT := 2.4
 const FADED_ALPHA := 0.3
+## Soft-shadow blur: 0.5 straightens the edges; 1.0 and above wiped out the props' small shadows in the test
+## renders (evidence/SHADOWS.md).
+const SHADOW_BLUR := 0.5
 
 var palette := {}
 var wall_specs: Array = []
@@ -51,12 +54,16 @@ func _build_environment() -> void:
 
 func _build_light() -> void:
 	var light := DirectionalLight3D.new()
-	# Hard, long shadows that fall toward the lower left of the screen, as in the reference.
+	# Crisp, long shadows that fall toward the lower left of the screen, as in the reference. Edges are straight
+	# and clean, not stair-stepped (v0.2.0 L2, evidence/SHADOWS.md): one orthogonal split over the whole view
+	# (a 2-split PSSM test was no smoother and striped the wall tops), an 8192 atlas and high soft-shadow
+	# filtering (project.godot), and a small blur that smooths the texel steps without softening the shape.
+	# For an orthographic camera the shadow fits the camera's near..far range, so IsoRig keeps `far` short.
 	light.rotation_degrees = Vector3(-38, 168, 0)
 	light.light_energy = 1.05
 	light.light_color = Color(1, 0.98, 0.95)
 	light.shadow_enabled = true
-	light.shadow_blur = 0.0
+	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	light.directional_shadow_max_distance = 80.0
 	add_child(light)

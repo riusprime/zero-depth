@@ -30,9 +30,16 @@ const BUTTON_BITS := {
 	&"interact": InputFrame.INTERACT,
 }
 const DEADZONE := 0.2
+## Pad buttons added to Godot's built-in UI actions (v0.2.0 PLAN L3). Godot 4.7's default `ui_accept` holds only
+## Enter, Kp Enter and Space, so pad A (Xbox) / Cross (PS), both JOY_BUTTON_A, pressed nothing in the menus. The
+## built-in `ui_up/down/left/right` already hold the d-pad and the left stick, so focus moved but never fired.
+const UI_PAD := {
+	&"ui_accept": [JOY_BUTTON_A],
+}
 
 
-## Registers every action with its default events (replacing any existing events).
+## Registers every action with its default events (replacing any existing events), and adds the pad buttons to
+## the built-in UI actions.
 static func apply() -> void:
 	for action: StringName in ACTIONS:
 		if InputMap.has_action(action):
@@ -41,6 +48,11 @@ static func apply() -> void:
 			InputMap.add_action(action, DEADZONE)
 		for spec: Array in ACTIONS[action]:
 			InputMap.action_add_event(action, make_event(spec))
+	for action: StringName in UI_PAD:
+		for button: int in UI_PAD[action]:
+			var ev := make_event([&"button", button])
+			if not InputMap.action_has_event(action, ev):
+				InputMap.action_add_event(action, ev)
 
 
 static func make_event(spec: Array) -> InputEvent:
