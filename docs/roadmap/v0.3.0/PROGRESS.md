@@ -14,7 +14,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Design questions (run, combos, items, blink walls) | 2026-10-07 | answered (PLAN "Owner answers") | 2026-10-07 |
-| Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | pending | |
+| Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
 
 ## Open
@@ -26,3 +26,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## History
 - 2026-10-07 — Owner closed v0.2.0 and directed a full run (three floors, bosses, economy, pick-1-of-3, engines +
   combos, wall thickness for blink). PLAN committed before code. Workstreams A, B, C, E, G run in parallel.
+- 2026-10-07 — Owner uploaded the boss sheet (`docs/art/first-three-bosses-concept.png`, L10; sent to workstream C as the 1:1 reference) and asked for a 4-slash melee combo with a stronger 4th (L11, workstream N).

@@ -39,6 +39,8 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L7 | "reward would come in two ways, a couple of chests that are open with this economy and a couple of them that are like the ones we have now, every floor should have 2-3 'free' ones and 2-3 chests" | Per floor: 2–3 free item altars and 2–3 chests that cost shards. Both offer a choice (L9) | E |
 | L8 | (Q2) combos: "Both" | Engines (statuses that stack and scale: burn, shock, bleed, frost, guard charges) **and** named combos: owning a specific pair of items unlocks a combo with its own effect, card and look | G |
 | L9 | (Q3) "Pick 1 of 3" | An altar or chest opens a 3-card choice (pause-free in the world, the sim waits for the pick); you take one | E |
+| L10 | (2026-10-07) "aded to docs/art at github the bosses image" (`docs/art/first-three-bosses-concept.png`: Stone Sentinel, Crawler Queen, Fortress Turret, each with an in-game shot and FRONT / RIGHT-FRONT / RIGHT views) | The three bosses' models match that sheet as close to 1:1 as possible (floor 1 = the sentinel golem, floor 2 = the crawler queen, floor 3 = the fortress turret) | C |
+| L11 | "sword should be a 4 moment combo, composed of 4 different kind of slashes the 4th being stronger" | The melee combo becomes 4 distinct slashes, each with its own shape, timing and blade motion: (1) a horizontal slash, (2) a backhand slash the other way, (3) a forward thrust (narrow, longer reach), (4) a heavy spinning finisher (360°, more damage and hit-stop, a longer recovery). Starting damage 10 / 10 / 12 / 24 | N |
 
 ## Design (starting values)
 **Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–3.0 m (map stream); cover slabs and
@@ -106,6 +108,7 @@ pool grows from 16 to 24 so each engine has 3–4 members:
 - **E. Economy and rewards:** shards, altars, chests, the 3-card pick (sim + content + HUD; e2e).
 - **G. Engines and combos:** tags, statuses, 8 more items, 8 named combos, INTERACTIONS.md (sim + content +
   presentation; goldens).
+- **N. Four-slash combo:** melee becomes 4 distinct slashes with their own shapes and blade animation; items that read the combo (Overcharge, Twin Arc, Long Edge) follow (sim + presentation + tests + goldens).
 - **F. Integration:** merges, goldens, a full-run e2e (enter floor 1, beat a boss with the dev panel's help, reach
   floor 2), the tour, a Windows build and a playtest sheet.
 - **Later in v0.3.0 (from v0.1.0/v0.2.0):** Options screen (G2), SFX hooks with captions, the bench with real AI,
