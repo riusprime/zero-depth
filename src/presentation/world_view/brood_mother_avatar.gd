@@ -209,3 +209,37 @@ func _pose(dt: float) -> void:
 			-lift + crouch * 0.25 - tuck * 0.6 + stag * 0.2, base_yaw + swing * side, 0
 		)
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(tuck * 0.8 - crouch * 0.2, 0, 0)
+
+
+## The owner's model, rigged in code (BossRig): eight legs scuttle in alternating sets, the front legs rear up
+## before a leap, the legs tuck in the air, the egg sac swells before a brood, and staggered the legs splay.
+func _pose_rig(_dt: float) -> void:
+	var walk := _walk
+	var windup := _state == WorldReader.STATE_WINDUP
+	var rear := _wind if windup and _move == WorldReader.MOVE_LEAP else 0.0
+	var dig := _wind if windup and _move == WorldReader.MOVE_BURROW else 0.0
+	var swell := 0.0
+	if _move == WorldReader.MOVE_BROOD:
+		swell = _wind if windup else _act_fade()
+	var tuck := sin(PI * _leap) if _airborne else 0.0
+	var stag := _stagger
+	for k in rig.bones.size():
+		var name: String = rig.bones[k][0]
+		if not name.begins_with("leg_"):
+			continue
+		var ang := rig.leg_angle(k)
+		var out := Vector3(cos(ang), 0, sin(ang))
+		var lift_axis := Vector3(-out.z, 0, out.x)
+		var n := int(name.right(1))
+		var side := 1 if name.begins_with("leg_r") else -1
+		var ph := _phase + (PI if (n + (1 if side > 0 else 0)) % 2 == 0 else 0.0)
+		var lift := maxf(0.0, sin(ph)) * 0.32 * walk
+		var swing := cos(ph) * 0.22 * walk
+		var front := clampf(1.0 - absf(ang) / (PI * 0.5), 0.0, 1.0)
+		lift += (
+			rear * front * 0.7 - rear * (1.0 - front) * 0.1 + tuck * 0.55 - stag * 0.18 + dig * 0.15
+		)
+		bone_q(StringName(name), Quaternion(lift_axis, lift) * Quaternion(Vector3.UP, swing * side))
+	bone(&"body", Vector3(0, 0, 1), rear * 0.22 - stag * 0.08 + sin(_t * 11.0) * 0.04 * stag)
+	var pulse := 1.0 + swell * (0.12 + 0.04 * sin(_t * 18.0)) + sin(_t * 2.0) * 0.015
+	bone_q(&"sac", Quaternion.IDENTITY, Vector3.ZERO, pulse)

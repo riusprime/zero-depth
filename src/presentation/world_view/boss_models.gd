@@ -8,7 +8,8 @@ extends RefCounted
 
 const DIR := "res://assets/models/bosses/"
 ## Per model: its front's direction turned to +X (a yaw in radians about Y) and its height in metres (the
-## code-built bodies' heights, which match the sheet's in-game inset against the hero).
+## code-built bodies' heights, which match the sheet's in-game inset against the hero). Each is also rigged here,
+## once per type (BossRig).
 const SPECS := {
 	&"stone_sentinel": {"yaw": 0.0, "height": 2.95},
 	&"crawler_queen": {"yaw": -PI * 0.5, "height": 2.4},
@@ -28,7 +29,7 @@ static func get_model(id: StringName) -> Dictionary:
 		return _cache[path]
 	var out := {}
 	if ResourceLoader.exists(path):
-		out = _convert(load(path) as PackedScene, SPECS.get(id, {"yaw": 0.0, "height": 2.5}))
+		out = _convert(load(path) as PackedScene, SPECS.get(id, {"yaw": 0.0, "height": 2.5}), id)
 	_cache[path] = out
 	return out
 
@@ -52,7 +53,7 @@ static func clear_cache() -> void:
 	_cache.clear()
 
 
-static func _convert(scene: PackedScene, spec: Dictionary) -> Dictionary:
+static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Dictionary:
 	if scene == null:
 		return {}
 	var root := scene.instantiate()
@@ -90,6 +91,18 @@ static func _convert(scene: PackedScene, spec: Dictionary) -> Dictionary:
 			ts[k + 1] = t.y
 			ts[k + 2] = t.z
 		arrays[Mesh.ARRAY_TANGENT] = ts
+	# The rig (v0.3.0 L13): bones and weights from the mesh's geometry, written into the mesh (4 per vertex).
+	var rig := BossRig.build(id, verts)
+	arrays[Mesh.ARRAY_BONES] = rig.bone_ids
+	arrays[Mesh.ARRAY_WEIGHTS] = rig.weights
 	var out := ArrayMesh.new()
 	out.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return {"mesh": out, "material": mat, "aabb": out.get_aabb(), "arrays": arrays}
+	var box := out.get_aabb()
+	# Bones move parts beyond the rest pose's bounds (a raised fist, a leap's tucked legs): never cull them early.
+	out.custom_aabb = box.grow(1.5)
+	var skin := Skin.new()
+	for k in rig.bones.size():
+		skin.add_named_bind(
+			String(rig.bones[k][0]), Transform3D(Basis(), -(rig.bones[k][2] as Vector3))
+		)
+	return {"mesh": out, "material": mat, "aabb": box, "arrays": arrays, "rig": rig, "skin": skin}

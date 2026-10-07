@@ -215,3 +215,55 @@ func _pose(dt: float) -> void:
 		var leg := legs[j]
 		leg.position.y = HULL_Y - 0.5 + lift * 0.4 - squat * 0.3
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(0, 0, cos(_phase) * diag * 0.15 * walk)
+
+
+## The owner's model, rigged in code (BossRig): the four legs step in diagonal pairs, the cannon recoils with
+## each volley and lifts as the rail charges, the mortar tubes tilt up and kick for a barrage, the hull squats to
+## deploy and stays low once planted (the last phase), and staggered it lurches.
+func _pose_rig(_dt: float) -> void:
+	var walk := _walk
+	var windup := _state == WorldReader.STATE_WINDUP
+	var fade := _act_fade()
+	var mortar := 0.0
+	var kick := 0.0
+	var charge := 0.0
+	var squat := _late * 0.6
+	match _move:
+		WorldReader.MOVE_BARRAGE:
+			mortar = _wind if windup else 0.0
+		WorldReader.MOVE_RAIL:
+			charge = _wind if windup else fade
+		WorldReader.MOVE_DEPLOY:
+			squat = maxf(squat, _wind if windup else fade)
+	if not windup and (_move == WorldReader.MOVE_BOLT_FAN or _move == WorldReader.MOVE_RAIL):
+		kick = _hit
+	var tube_kick := _hit if not windup and _move == WorldReader.MOVE_BARRAGE else 0.0
+	var stag := _stagger
+	for fb in [1, -1]:
+		for side in [-1, 1]:
+			var lt := "%s%s" % ["f" if fb > 0 else "b", "l" if side < 0 else "r"]
+			var diag := float(fb * side)
+			var lift := maxf(0.0, sin(_phase) * diag) * 0.3 * walk
+			var stride := cos(_phase) * diag * 0.16 * walk
+			# Squatting: the thighs splay out and the shins bend back under the lowered hull.
+			bone_q(
+				StringName("thigh_" + lt),
+				(
+					Quaternion(Vector3(1, 0, 0), -side * (squat * 0.25 + stag * 0.08))
+					* Quaternion(Vector3(0, 0, 1), stride + lift * 0.6)
+				)
+			)
+			bone(StringName("shin_" + lt), Vector3(0, 0, 1), -lift * 0.9 + side * 0.0)
+	bone_q(
+		&"hull",
+		Quaternion(Vector3(0, 0, 1), -charge * 0.04 + sin(_t * 10.0) * 0.05 * stag),
+		Vector3(0, -squat * 0.28 - charge * 0.05, 0)
+	)
+	bone(&"cannon", Vector3(0, 0, 1), charge * 0.06, Vector3(-kick * 0.4, 0, 0))
+	for side in [-1, 1]:
+		bone(
+			StringName("mortar_" + ("l" if side < 0 else "r")),
+			Vector3(0, 0, 1),
+			-mortar * 0.25,
+			Vector3(tube_kick * -0.15, -tube_kick * 0.12, 0)
+		)

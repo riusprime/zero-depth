@@ -31,6 +31,9 @@ var model := Node3D.new()
 var imported: MeshInstance3D
 var pivot: Node3D
 var glow_overlay: StandardMaterial3D
+## The owner's model's skeleton (v0.3.0 L13: rigged in code, BossRig) and its rig.
+var skeleton: Skeleton3D
+var rig: BossRig
 
 # Sim state from the last sync.
 var _fresh := true
@@ -201,9 +204,23 @@ func _build_imported(m: Dictionary) -> void:
 	pivot = Node3D.new()
 	pivot.name = "Body"
 	model.add_child(pivot)
+	rig = m["rig"]
+	skeleton = Skeleton3D.new()
+	skeleton.name = "Skeleton"
+	for k in rig.bones.size():
+		var b: Array = rig.bones[k]
+		skeleton.add_bone(String(b[0]))
+		var at: Vector3 = b[2]
+		if b[1] >= 0:
+			skeleton.set_bone_parent(k, b[1])
+			at -= rig.bones[b[1]][2]
+		skeleton.set_bone_rest(k, Transform3D(Basis(), at))
+	skeleton.reset_bone_poses()
+	pivot.add_child(skeleton)
 	imported = MeshInstance3D.new()
 	imported.name = "Imported"
 	imported.mesh = m["mesh"]
+	imported.skin = m["skin"]
 	var mat: StandardMaterial3D = (
 		(m["material"] as StandardMaterial3D).duplicate()
 		if m["material"] != null
@@ -216,24 +233,29 @@ func _build_imported(m: Dictionary) -> void:
 	glow_overlay = StandardMaterial3D.new()
 	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	glow_overlay.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	glow_overlay.albedo_color = Color(1.0, 0.16, 0.1, 0.0)
+	glow_overlay.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
+	glow_overlay.albedo_color = Color(1.0, 0.06, 0.03, 0.0)
 	imported.material_overlay = glow_overlay
 	imported.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	pivot.add_child(imported)
+	skeleton.add_child(imported)
+	imported.skeleton = NodePath("..")
 	parts.body_materials.append(mat)
 	if parts.technique() == &"xray":
 		var ghost := MeshInstance3D.new()
 		ghost.name = "XrayTwin"
 		ghost.mesh = m["mesh"]
+		ghost.skin = m["skin"]
 		var gm := StandardMaterial3D.new()
 		gm.albedo_color = Color("#6B5F5B")
 		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
+		# Shrunk along its normals (the skinned twin shares the body's surface, so it would z-fight with it).
+		gm.grow = true
+		gm.grow_amount = -0.04
 		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
 		ghost.material_override = gm
-		ghost.scale = Vector3.ONE * 0.97
 		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		pivot.add_child(ghost)
+		skeleton.add_child(ghost)
+		ghost.skeleton = NodePath("..")
 
 
 ## Nodes the code-built body creates up front (freed when the owner's model is used instead).
@@ -286,9 +308,39 @@ func _pose_imported(dt: float) -> void:
 	var sxz := 1.0 + crouch * 0.03 + squash * 0.5
 	pivot.scale = Vector3(sxz, sy, sxz)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
+	_pose_rig(dt)
 	glow_overlay.albedo_color.a = clampf(
-		0.2 * _wind + 0.15 * _hit + _late * (0.05 + 0.03 * pulse), 0.0, 0.3
+		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse), 0.0, 0.06
 	)
+
+
+## Subclasses move the owner's model's bones (BossRig) from the same inputs as the code-built body.
+func _pose_rig(_dt: float) -> void:
+	pass
+
+
+## Sets a bone's pose: a rotation about `axis` (in the model frame: +X front, Y up) by `angle`, and an offset from
+## its rest position.
+func bone(
+	bone_name: StringName, axis: Vector3, angle: float, offset: Vector3 = Vector3.ZERO
+) -> void:
+	var k := skeleton.find_bone(String(bone_name))
+	if k < 0:
+		return
+	skeleton.set_bone_pose_rotation(k, Quaternion(axis.normalized(), angle))
+	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
+
+
+## Sets a bone's rotation from a full quaternion, its offset and its scale.
+func bone_q(
+	bone_name: StringName, q: Quaternion, offset: Vector3 = Vector3.ZERO, scl: float = 1.0
+) -> void:
+	var k := skeleton.find_bone(String(bone_name))
+	if k < 0:
+		return
+	skeleton.set_bone_pose_rotation(k, q)
+	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
+	skeleton.set_bone_pose_scale(k, Vector3.ONE * scl)
 
 
 ## The glow overlay's strength now (0..1), for tests.
@@ -304,3 +356,12 @@ func _build() -> void:
 ## Subclasses pose their parts.
 func _pose(_dt: float) -> void:
 	pass
+
+
+## 1 in the active frames of an attack, fading through its recovery (0 otherwise).
+func _act_fade() -> float:
+	if _state == WorldReader.STATE_ACTIVE:
+		return 1.0
+	if _state == WorldReader.STATE_RECOVER:
+		return 1.0 - smoothstep(20.0, 60.0, float(_state_ticks))
+	return 0.0

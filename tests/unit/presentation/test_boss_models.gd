@@ -71,7 +71,7 @@ func test_whole_body_motion_and_glow_change_no_shader() -> void:
 			}
 		)
 		a.advance(DT)
-	assert_gt(a.glow_amount(), 0.12, "the windup glows")
+	assert_gt(a.glow_amount(), 0.025, "the windup glows")
 	assert_ne(a.pivot.transform, rest, "and leans")
 	a.apply_state({"tick": 41, "pos": Vector2.ZERO, "state": WorldReader.STATE_ACTIVE, "move": 0})
 	a.advance(DT)
@@ -92,7 +92,7 @@ func test_phase_two_glows_steadily() -> void:
 			{"tick": t + 1, "pos": Vector2.ZERO, "state": WorldReader.STATE_MOVE, "phase": 1}
 		)
 		a.advance(DT)
-	assert_gt(a.glow_amount(), 0.04)
+	assert_gt(a.glow_amount(), 0.01)
 
 
 func test_models_are_read_once_per_type() -> void:
