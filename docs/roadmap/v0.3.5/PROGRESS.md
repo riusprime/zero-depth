@@ -19,7 +19,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|---|
 | G2: HUD (calmer) mockups | — | not yet asked | |
 | G2: pick card mockups | — | not yet asked | |
-| v0.5.0 start before a v0.4.0 playtest (F21 vs ROADMAP §0.3) | 2026-10-07 | pending | |
+| v0.5.0 start before a v0.4.0 playtest (F21 vs ROADMAP §0.3) | 2026-10-07 | "skip the rule, keep going to v0.5.0" | 2026-10-07 |
 
 ## Open
 - O3 `main`; O4 credit line.
@@ -30,3 +30,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## History
 - 2026-10-07 — Owner played the v0.3.0 finishing build and sent F1–F22. v0.3.0 closed as played. PLAN committed
   before code; wave 1 (K, AI, UI, PT) starts; the build-system direction (F7–F11, F13) goes to v0.4.0.
+- 2026-10-07 — Owner: "skip the rule, keep going to v0.5.0". ROADMAP §0.3 waived once: v0.5.0 follows v0.4.0
+  without a v0.4.0 playtest; both are played together afterwards.

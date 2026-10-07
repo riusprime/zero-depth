@@ -18,7 +18,7 @@ merged.
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Q1 Echoes / Core theft / Depth descent in the new direction | 2026-10-07 | pending | |
-| Q2 v0.5.0 before a v0.4.0 playtest | 2026-10-07 | pending | |
+| Q2 v0.5.0 before a v0.4.0 playtest | 2026-10-07 | "skip the rule, keep going to v0.5.0" | 2026-10-07 |
 
 ## Open
 - O3 `main`; O4 credit line.
@@ -28,3 +28,5 @@ merged.
 
 ## History
 - 2026-10-07 — PLAN drafted from the owner's direction while v0.3.5 wave 1 runs.
+- 2026-10-07 — Owner: "skip the rule, keep going to v0.5.0". ROADMAP §0.3 waived once: v0.5.0 follows v0.4.0
+  without a v0.4.0 playtest; both are played together afterwards.

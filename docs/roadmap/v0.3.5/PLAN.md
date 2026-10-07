@@ -40,7 +40,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | F18 | "we need to add a second ability to guns and blades, so you have variety of attacking movements and it is not just spamming the same attack all the time" | A **Skill** button (Q / pad Y, remappable): Blade **Lunge Cleave**, Gun **Scatter Blast** (below) | v0.3.5 K |
 | F19 | "there should be an animation of the character entering a portal (make it lighter blue matching his eye color)" | Entering the portal plays an animation (the hero is drawn in, dissolves into light-blue light matching the visor); the portal turns that light blue | v0.3.5 PT |
 | F20 | "and an animation getting to one of the new rooms" | Arriving on the next floor plays an arrival animation (the hero materialises from the same light); lead's reading: "new rooms" = the next floor's start room | v0.3.5 PT |
-| F21 | "continue onto v0.4.0 if not done then v0.50 … after keep developing the roadmap" | v0.3.5, then v0.4.0. **v0.5.0 needs the owner's playtest of v0.4.0 first** (ROADMAP §0.3, a hard rule in CLAUDE.md): raised with the owner, not resolved quietly | process |
+| F21 | "continue onto v0.4.0 if not done then v0.50 … after keep developing the roadmap" | v0.3.5, then v0.4.0. **v0.5.0 needs the owner's playtest of v0.4.0 first** (ROADMAP §0.3, a hard rule in CLAUDE.md): raised with the owner; answer: "skip the rule, keep going to v0.5.0" (waived once) | process |
 | F22 | "do this spawning 4 agents max at the time, then continue after they are done with the assigned tasks" | Waves of at most 4 agents | process |
 
 ## Design (starting values)
@@ -95,7 +95,7 @@ Each step: tests (unit + the e2e through `main.tscn` with real input where it's 
 `evidence/`, docs touched (SIM_CONTRACTS / CONTENT_SCHEMA / strings en + es), full suite green before the merge.
 
 ## Open items (what they block)
-- **v0.5.0 start** needs the owner's v0.4.0 playtest (F21) — asked.
+- v0.5.0 start without a v0.4.0 playtest: owner waived §0.3 ("skip the rule, keep going to v0.5.0").
 - G2 picks for the HUD and the pick cards (defaults ship meanwhile).
 - O3 `main` (a PR, when the owner asks), O4 credit line (Tripo licence).
 - From the v0.3.0 sheet, unanswered: crash on hit confirmed gone? Blade vs Gun balance, shrine prices, frame rate.

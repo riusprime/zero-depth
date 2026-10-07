@@ -135,7 +135,7 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 ## Open items (what they block)
 - **Q1 (owner):** Echoes, Core theft and Depth descent — still wanted with the new direction, and where? (blocks
   only those systems).
-- **Q2 (owner):** v0.5.0 before a v0.4.0 playtest (F21 vs ROADMAP §0.3) — blocks v0.5.0.
+- **Q2 (owner), answered 2026-10-07:** "skip the rule, keep going to v0.5.0" — v0.5.0 follows without a v0.4.0 playtest.
 - G2 for the ability HUD and the card look (mockups, default ships).
 - O3 `main`; O4 credit line.
 
