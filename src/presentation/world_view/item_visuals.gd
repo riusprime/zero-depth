@@ -5,7 +5,8 @@ extends Node3D
 ## - the laser blade's colour, width and trail (Ember Edge orange, Twin Arc a longer trail, Overcharge a wider,
 ##   brighter blade on the charged swing; Long Edge needs nothing here: the blade already matches the hit reach);
 ## - bolts (Splinter Shot small and green-tinged, Rapid Coil long, Ricochet Core white and brighter);
-## - Twin Arc's echo flash, Overcharge's shockwave ring, Kinetic Dash's afterimages;
+## - Twin Arc's echo flash, Overcharge's shockwave ring, Kinetic Dash's cyan afterimages (drawn over the white
+##   trail every dash leaves, DashTrail);
 ## - burning enemies glow orange.
 
 const FX_FRAMES := 14
@@ -142,7 +143,10 @@ func _afterimage(at: Vector2, c: Color) -> void:
 	box.size = Vector3(0.5, 0.9, 0.5)
 	n.mesh = box
 	n.position = SimPlane.to_3d(at, 0.45)
-	_add_fx(n, _unshaded(c, 0.35), 0.0)
+	# Over the white dash trail every dash leaves (DashTrail draws at priority -1), so the cyan stays readable.
+	var m := _unshaded(c, 0.5)
+	m.render_priority = 1
+	_add_fx(n, m, 0.0)
 
 
 func fx_count() -> int:

@@ -1,9 +1,10 @@
 class_name PortalGate
 extends Node3D
 ## The gateway to the next floor (v0.2.0 PLAN L8, step D): two stacked-stone pillars and a lintel around a
-## 2.4 × 3.2 m rectangle of swirling green light, like a cartoon portal in a door shape. Presentation only: it
-## reads nothing from the sim and decides nothing (EI-07). Sealed (the default for now) slows and dims the swirl
-## under a faint dark veil.
+## 2.4 × 3.2 m rectangle of swirling blue light, like a cartoon portal in a door shape (owner, L12: "the portal
+## should be blue, not green": a deep electric blue with cyan-white highlights, bluer than the player's cyan).
+## Presentation only: it reads nothing from the sim and decides nothing (EI-07). Sealed (the default for now)
+## slows and dims the swirl under a faint dark veil.
 ##
 ## Local frame: the opening spans local Z, the gate faces local +X; setup() turns +X to the sim facing angle.
 
@@ -13,7 +14,12 @@ const PILLAR_W := 0.33
 const DEPTH := 0.72
 const STONE := Color("#6F6A66")
 const STONE_TOP := Color("#8A847E")
-const PORTAL_GREEN := Color("#39E05A")
+const PORTAL_BLUE := Color("#2E62FF")
+## The swirl's colours, dark to light, and the floor glow.
+const SWIRL_DEEP := Color(0.03, 0.08, 0.52)
+const SWIRL_MID := Color(0.13, 0.36, 1.0)
+const SWIRL_LIGHT := Color(0.74, 0.9, 1.0)
+const GLOW := Color(0.16, 0.36, 1.0)
 const LIGHT_ENERGY_OPEN := 2.2
 const LIGHT_ENERGY_SEALED := 1.1
 
@@ -31,10 +37,10 @@ shader_type spatial;
 render_mode unshaded, blend_mix, cull_disabled, depth_prepass_alpha, shadows_disabled, fog_disabled;
 
 uniform vec2 opening_size = vec2(2.4, 3.2);
-uniform vec4 color_deep : source_color = vec4(0.04, 0.50, 0.12, 1.0);
-uniform vec4 color_mid : source_color = vec4(0.30, 1.0, 0.28, 1.0);
-uniform vec4 color_light : source_color = vec4(0.86, 1.0, 0.62, 1.0);
-uniform vec4 veil_color : source_color = vec4(0.02, 0.05, 0.04, 1.0);
+uniform vec4 color_deep : source_color = vec4(0.03, 0.08, 0.52, 1.0);
+uniform vec4 color_mid : source_color = vec4(0.13, 0.36, 1.0, 1.0);
+uniform vec4 color_light : source_color = vec4(0.74, 0.9, 1.0, 1.0);
+uniform vec4 veil_color : source_color = vec4(0.02, 0.03, 0.08, 1.0);
 uniform float swirl_speed = 1.0;
 uniform float energy = 1.6;
 uniform float sealed = 1.0;
@@ -108,7 +114,7 @@ const GLOW_SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
 
-uniform vec4 glow_color : source_color = vec4(0.22, 0.88, 0.3, 1.0);
+uniform vec4 glow_color : source_color = vec4(0.16, 0.36, 1.0, 1.0);
 uniform float strength = 0.55;
 
 void fragment() {
@@ -230,6 +236,9 @@ func _build_portal() -> void:
 	portal_material.shader = Shader.new()
 	portal_material.shader.code = SHADER
 	portal_material.set_shader_parameter("opening_size", Vector2(OPENING_W, OPENING_H))
+	portal_material.set_shader_parameter("color_deep", SWIRL_DEEP)
+	portal_material.set_shader_parameter("color_mid", SWIRL_MID)
+	portal_material.set_shader_parameter("color_light", SWIRL_LIGHT)
 	portal = MeshInstance3D.new()
 	portal.mesh = quad
 	portal.material_override = portal_material
@@ -239,7 +248,7 @@ func _build_portal() -> void:
 	portal.position = Vector3(0, OPENING_H * 0.5, 0)
 	add_child(portal)
 	light = OmniLight3D.new()
-	light.light_color = PORTAL_GREEN
+	light.light_color = PORTAL_BLUE
 	light.omni_range = 5.5
 	light.omni_attenuation = 1.4
 	light.shadow_enabled = false
@@ -253,6 +262,7 @@ func _build_glow() -> void:
 	glow_material = ShaderMaterial.new()
 	glow_material.shader = Shader.new()
 	glow_material.shader.code = GLOW_SHADER
+	glow_material.set_shader_parameter("glow_color", GLOW)
 	var disc := MeshInstance3D.new()
 	disc.mesh = plane
 	disc.material_override = glow_material

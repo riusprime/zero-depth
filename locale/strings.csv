@@ -93,3 +93,4 @@ ITEM_PHASE_STRIKE_DESC,Blinks and guard blocks deal 12 around you.,Destellar o b
 HUD_TIME_TIER,%02d:%02d · Danger %d,%02d:%02d · Peligro %d
 HUD_KILLS,Kills: %d,Bajas: %d
 HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
+HUD_PICKED_UP,Picked up,Recogido

@@ -1,9 +1,16 @@
 class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health, dash and utility readiness (bottom left), wave and enemies left
-## (top centre). It never takes mouse input, so clicks reach the game.
+## (top centre); on a floor, the carried-item icons (bottom right) and the item card (bottom centre). It never
+## takes mouse input, so clicks reach the game.
 
 const BAR := Vector2(320, 22)
+## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
+## preview while you stand by a pedestal), the sealed-gate note.
+const CARD_SECONDS := 3.0
+## Standing this close to a pedestal (m) previews its item.
+const PREVIEW_M := 2.0
+const ROW_ICON := 40.0
 
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
@@ -11,11 +18,13 @@ var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
 var _wave := Label.new()
 var _left := Label.new()
-## Floor (PLAN v0.2.0 F): the items you carry, a toast when you pick one up, the sealed-gate note.
-var _items := VBoxContainer.new()
-var _toast := Label.new()
+var _items := HBoxContainer.new()
+var _card := ItemCard.new()
 var _gate := Label.new()
-var _toast_left := 0.0
+var _card_left := 0.0
+## What the card shows: &"pickup", &"preview" or &"".
+var _card_mode := &""
+var _preview_item := -1
 var _last_seq := 0
 var _items_shown := -1
 
@@ -53,18 +62,26 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		top.add_child(l)
 	_wave.add_theme_font_size_override("font_size", 28)
+	_items.name = "ItemIcons"
+	# Anchored to the bottom-right corner; it grows leftward as items are added.
 	_items.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_items.position = Vector2(-260, -220)
-	_items.custom_minimum_size = Vector2(240, 0)
+	_items.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_items.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_items.alignment = BoxContainer.ALIGNMENT_END
+	_items.add_theme_constant_override("separation", 6)
 	add_child(_items)
-	for l: Label in [_toast, _gate]:
-		l.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.custom_minimum_size = Vector2(900, 0)
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.add_theme_font_size_override("font_size", 24)
-		add_child(l)
-	_toast.position = Vector2(-450, -190)
+	_items.offset_left = -28
+	_items.offset_right = -28
+	_items.offset_top = -28
+	_items.offset_bottom = -28
+	add_child(_card)
+	_card.place_bottom_centre(-196)
+	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gate.custom_minimum_size = Vector2(900, 0)
+	_gate.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_gate.add_theme_font_size_override("font_size", 24)
+	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -95,26 +112,62 @@ func sync(reader: WorldReader) -> void:
 
 
 func _process(delta: float) -> void:
-	if _toast_left > 0.0:
-		_toast_left -= delta
-		if _toast_left <= 0.0:
-			_toast.text = ""
+	if _card_left > 0.0:
+		_card_left -= delta
 
 
-func toast_text() -> String:
-	return _toast.text
+## The item card (tests and shot scripts read it).
+func card() -> ItemCard:
+	return _card
+
+
+## &"pickup" while the card shows an item just taken, &"preview" while it shows a nearby pedestal's, else &"".
+func card_mode() -> StringName:
+	return _card_mode
+
+
+## The number of item icons in the carried row.
+func item_icon_count() -> int:
+	var n := 0
+	for c in _items.get_children():
+		if not c.is_queued_for_deletion():
+			n += 1
+	return n
+
+
+## The pickup whose item to preview: the nearest pedestal within `reach_m` of the player, or -1.
+static func preview_pickup(reader: WorldReader, reach_m: float = PREVIEW_M) -> int:
+	var best := -1
+	var best_d := reach_m
+	var p := reader.player_pos()
+	for i in reader.pickup_count():
+		var d := reader.pickup_pos(i).distance_to(p)
+		if d <= best_d:
+			best = i
+			best_d = d
+	return best
 
 
 func _sync_items(reader: WorldReader) -> void:
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		if e.kind == SimEvent.Kind.PICKUP:
-			var idx := e.amount
-			_toast.text = (
-				tr("HUD_PICKED")
-				% [tr(reader.item_name_key(idx)), tr(String(reader.item_name_key(idx)) + "_DESC")]
-			)
-			_toast_left = 4.0
+			_show_card(reader, e.amount, tr("HUD_PICKED_UP"))
+			_card_mode = &"pickup"
+			_card_left = CARD_SECONDS
+	if _card_mode == &"pickup" and _card_left <= 0.0:
+		_card_mode = &""
+	if _card_mode != &"pickup":
+		var near := preview_pickup(reader)
+		var item := reader.pickup_item(near) if near >= 0 else -1
+		if item >= 0 and (_card_mode != &"preview" or item != _preview_item):
+			_show_card(reader, item, "")
+			_card_mode = &"preview"
+		elif item < 0 and _card_mode == &"preview":
+			_card_mode = &""
+		_preview_item = item
+	if _card_mode == &"":
+		_card.hide_card()
 	var owned := reader.items_owned()
 	if owned.size() == _items_shown:
 		return
@@ -122,11 +175,21 @@ func _sync_items(reader: WorldReader) -> void:
 	for c in _items.get_children():
 		c.queue_free()
 	for idx in owned:
-		var l := Label.new()
-		l.text = String(reader.item_name_key(idx))
-		l.add_theme_color_override("font_color", ItemLooks.color(reader.item_kind(idx)))
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_items.add_child(l)
+		var id := reader.item_id(idx)
+		var icon := ItemIconView.new(id, ItemLooks.color_of_id(id), true)
+		icon.custom_minimum_size = Vector2(ROW_ICON, ROW_ICON)
+		_items.add_child(icon)
+
+
+func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
+	var id := reader.item_id(idx)
+	_card.show_item(
+		id,
+		tr(reader.item_name_key(idx)),
+		tr(reader.item_desc_key(idx)),
+		ItemLooks.color_of_id(id),
+		caption
+	)
 
 
 ## A small square that fills as the cooldown runs out, with a label.
