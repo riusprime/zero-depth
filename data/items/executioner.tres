@@ -9,4 +9,5 @@ name_key = &"ITEM_EXECUTIONER"
 desc_key = &"ITEM_EXECUTIONER_DESC"
 execute_threshold_permille = 300
 execute_bonus_permille = 500
+tags = PackedStringArray("blade")
 id = &"executioner"

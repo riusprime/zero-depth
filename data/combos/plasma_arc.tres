@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"ember_edge"
+item_b = &"static_chain"
+name_key = &"ITEM_COMBO_PLASMA_ARC"
+desc_key = &"ITEM_COMBO_PLASMA_ARC_DESC"
+effect = 0
+damage = 8
+radius_m = 4.0
+stacks = 1
+id = &"plasma_arc"

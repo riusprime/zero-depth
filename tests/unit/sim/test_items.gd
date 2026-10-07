@@ -308,12 +308,12 @@ func test_walking_over_a_pickup_takes_it() -> void:
 
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
-	var all := ItemPool.draw(w, 20)
-	assert_eq(all.size(), 16)
+	var all := ItemPool.draw(w, 30)
+	assert_eq(all.size(), 24, "the v0.3.0 pool of 24")
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 16, "no repeats")
+	assert_eq(seen.size(), 24, "no repeats")
 	var v := _world([], [])
 	v.add_item(0)
 	v.add_pickup(1, Vector2(5, 5))
@@ -322,8 +322,8 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	for i in some:
 		assert_false(i in [0, 1])
 		v.add_pickup(i, Vector2(5, 5))
-	var rest := ItemPool.draw(v, 16)
-	assert_eq(rest.size(), 11, "16 - owned - 4 placed")
+	var rest := ItemPool.draw(v, 24)
+	assert_eq(rest.size(), 19, "24 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in [0, 1])
 

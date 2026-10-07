@@ -187,6 +187,14 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.EXECUTIONER: ItemTable.Kind.EXECUTIONER,
 		ItemDefinition.Kind.SWIFT_FEET: ItemTable.Kind.SWIFT_FEET,
 		ItemDefinition.Kind.PHASE_STRIKE: ItemTable.Kind.PHASE_STRIKE,
+		ItemDefinition.Kind.CINDER_SHOT: ItemTable.Kind.CINDER_SHOT,
+		ItemDefinition.Kind.WILDFIRE: ItemTable.Kind.WILDFIRE,
+		ItemDefinition.Kind.CONDUCTOR: ItemTable.Kind.CONDUCTOR,
+		ItemDefinition.Kind.SERRATED_EDGE: ItemTable.Kind.SERRATED_EDGE,
+		ItemDefinition.Kind.BARBED_BOLTS: ItemTable.Kind.BARBED_BOLTS,
+		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
+		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
+		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -232,6 +240,32 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	t.phase_damage = def.phase_damage
 	t.phase_radius_m = def.phase_radius_m
 	t.phase_guard_window_ticks = SimTick.seconds_to_ticks(def.phase_guard_window_seconds)
+	_compile_item_engines(def, t)
+
+
+## Engines (v0.3.0 G).
+static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
+	t.tags = def.tags.duplicate()
+	t.stacks_per_hit = def.stacks_per_hit
+	t.stack_every = def.stack_every
+	t.shock_threshold = def.shock_threshold
+	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
+	t.shock_damage = def.shock_damage
+	t.shock_jumps = def.shock_jumps
+	t.shock_range_m = def.shock_range_m
+	t.bleed_damage = def.bleed_damage
+	t.bleed_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.bleed_period_seconds))
+	t.bleed_ticks = SimTick.seconds_to_ticks(def.bleed_seconds)
+	t.bleed_max_stacks = def.bleed_max_stacks
+	t.bleed_burst_per_stack = def.bleed_burst_per_stack
+	t.frost_threshold = def.frost_threshold
+	t.frost_ticks = SimTick.seconds_to_ticks(def.frost_seconds)
+	t.freeze_ticks = SimTick.seconds_to_ticks(def.freeze_seconds)
+	t.spread_radius_m = def.spread_radius_m
+	t.chill_bonus_permille = def.chill_bonus_permille
+	t.frozen_bonus_permille = def.frozen_bonus_permille
+	t.charge_max = def.charge_max
+	t.charge_bonus_permille = def.charge_bonus_permille
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
@@ -240,6 +274,36 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
 	for def: ItemDefinition in repo.all_of(&"items"):
 		out.append(compile_item(def))
+	return out
+
+
+## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id).
+## Combos naming an unknown item are left out (the validator reports them).
+static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
+	var index := {}
+	var items := repo.all_of(&"items")
+	for k in items.size():
+		index[(items[k] as ItemDefinition).id] = k
+	var out: Array[ComboTable] = []
+	for def: ComboDefinition in repo.all_of(&"combos"):
+		if not index.has(def.item_a) or not index.has(def.item_b):
+			continue
+		var t := ComboTable.new()
+		t.id = def.id
+		t.effect = int(def.effect)
+		t.item_a = index[def.item_a]
+		t.item_b = index[def.item_b]
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.damage = def.damage
+		t.radius_m = def.radius_m
+		t.stacks = def.stacks
+		t.count = def.count
+		t.spread = degrees_to_units(def.spread_degrees)
+		t.share_permille = def.share_permille
+		t.heal = def.heal
+		t.window_ticks = SimTick.seconds_to_ticks(def.window_seconds)
+		out.append(t)
 	return out
 
 

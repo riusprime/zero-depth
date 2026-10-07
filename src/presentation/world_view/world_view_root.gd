@@ -13,6 +13,8 @@ var hit_feel: HitFeel
 var ink := InkPass.new()
 var pickups := PickupViews.new()
 var item_fx: ItemVisuals
+## v0.3.0 G: engine statuses and combo payoffs.
+var status_fx: StatusVisuals
 var gate: PortalGate
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
@@ -32,6 +34,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(pickups)
 	item_fx = ItemVisuals.new(kit, actors)
 	add_child(item_fx)
+	status_fx = StatusVisuals.new(actors)
+	add_child(status_fx)
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -63,6 +67,7 @@ func sync() -> void:
 	hit_feel.sync(reader)
 	pickups.sync(reader)
 	item_fx.sync(reader)
+	status_fx.sync(reader)
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():

@@ -11,6 +11,9 @@ const CARD_SECONDS := 3.0
 ## Standing this close to a pedestal (m) previews its item.
 const PREVIEW_M := 2.0
 const ROW_ICON := 40.0
+## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
+const COMBO_CARD_SECONDS := 4.0
+const COMBO_BADGE := 44.0
 ## Run flow (v0.3.0 B): the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
 ## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.
 const FLOOR_CARD_SECONDS := 2.6
@@ -32,6 +35,11 @@ var _card_mode := &""
 var _preview_item := -1
 var _last_seq := 0
 var _items_shown := -1
+var _combos := HBoxContainer.new()
+var _combo_card := ComboCard.new()
+var _combo_left := 0.0
+var _combo_pending := -1
+var _combos_shown := -1
 # Run flow (v0.3.0 B).
 var _floor := Label.new()
 var _floor_card := VBoxContainer.new()
@@ -90,6 +98,19 @@ func _init() -> void:
 	_items.offset_bottom = -28
 	add_child(_card)
 	_card.place_bottom_centre(-196)
+	_combos.name = "ComboBadges"
+	_combos.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_combos.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	_combos.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_combos.alignment = BoxContainer.ALIGNMENT_END
+	_combos.add_theme_constant_override("separation", 8)
+	add_child(_combos)
+	_combos.offset_left = -28
+	_combos.offset_right = -28
+	_combos.offset_top = -28 - ROW_ICON - 12
+	_combos.offset_bottom = -28 - ROW_ICON - 12
+	add_child(_combo_card)
+	_combo_card.place_bottom_centre(-300)
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate.custom_minimum_size = Vector2(900, 0)
@@ -120,6 +141,7 @@ func sync(reader: WorldReader) -> void:
 		_wave.text = tr("HUD_TIME_TIER") % [secs / 60, secs % 60, reader.tier() + 1]
 		_left.text = tr("HUD_KILLS") % reader.kills()
 		_sync_items(reader)
+		_sync_combos(reader)
 	else:
 		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
 		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
@@ -132,6 +154,8 @@ func sync(reader: WorldReader) -> void:
 func _process(delta: float) -> void:
 	if _card_left > 0.0:
 		_card_left -= delta
+	if _combo_left > 0.0:
+		_combo_left -= delta
 	if _floor_card_left > 0.0:
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
@@ -237,6 +261,8 @@ func _sync_items(reader: WorldReader) -> void:
 			_show_card(reader, e.amount, tr("HUD_PICKED_UP"))
 			_card_mode = &"pickup"
 			_card_left = CARD_SECONDS
+		elif e.kind == SimEvent.Kind.COMBO_UNLOCKED:
+			_combo_pending = e.amount
 	if _card_mode == &"pickup" and _card_left <= 0.0:
 		_card_mode = &""
 	if _card_mode != &"pickup":
@@ -272,6 +298,52 @@ func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 		ItemLooks.color_of_id(id),
 		caption
 	)
+
+
+## The combo card (tests and shot scripts read it).
+func combo_card() -> ComboCard:
+	return _combo_card
+
+
+## The number of combo badges in the row.
+func combo_badge_count() -> int:
+	var n := 0
+	for c in _combos.get_children():
+		if not c.is_queued_for_deletion():
+			n += 1
+	return n
+
+
+## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
+func _sync_combos(reader: WorldReader) -> void:
+	if _combo_pending >= 0:
+		var c := _combo_pending
+		_combo_pending = -1
+		var pair := reader.combo_item_ids(c)
+		_combo_card.show_combo(
+			reader.combo_id(c),
+			pair[0],
+			pair[1],
+			tr(reader.combo_name_key(c)),
+			tr(reader.combo_desc_key(c)),
+			tr("UI_COMBO_UNLOCKED")
+		)
+		_combo_left = COMBO_CARD_SECONDS
+	if _combo_left <= 0.0 and _combo_card.is_showing():
+		_combo_card.hide_card()
+	var owned := reader.combos_owned()
+	if owned.size() == _combos_shown:
+		return
+	_combos_shown = owned.size()
+	for c in _combos.get_children():
+		c.queue_free()
+	for c in owned:
+		var pair := reader.combo_item_ids(c)
+		var badge := ComboIconView.new(
+			pair[0], pair[1], ItemLooks.combo_color(reader.combo_id(c)), true
+		)
+		badge.custom_minimum_size = Vector2(COMBO_BADGE, COMBO_BADGE)
+		_combos.add_child(badge)
 
 
 ## A small square that fills as the cooldown runs out, with a label.

@@ -41,9 +41,10 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L9 | (Q3) "Pick 1 of 3" | An altar or chest opens a 3-card choice (pause-free in the world, the sim waits for the pick); you take one | E |
 | L10 | (2026-10-07) "aded to docs/art at github the bosses image" (`docs/art/first-three-bosses-concept.png`: Stone Sentinel, Crawler Queen, Fortress Turret, each with an in-game shot and FRONT / RIGHT-FRONT / RIGHT views) | The three bosses' models match that sheet as close to 1:1 as possible (floor 1 = the sentinel golem, floor 2 = the crawler queen, floor 3 = the fortress turret) | C |
 | L11 | "sword should be a 4 moment combo, composed of 4 different kind of slashes the 4th being stronger" | The melee combo becomes 4 distinct slashes, each with its own shape, timing and blade motion: (1) a horizontal slash, (2) a backhand slash the other way, (3) a forward thrust (narrow, longer reach), (4) a heavy spinning finisher (360°, more damage and hit-stop, a longer recovery). Starting damage 10 / 10 / 12 / 24 | N |
+| L12 | (2026-10-07, asked: from point-blank a 5 m blink crosses every 0.6–3 m wall) "Thicker room walls" | Keep the 5 m blink; room walls range 0.6–5.0 m, so the thickest stop a blink even from point-blank and thin ones still let it through. The sealed boss room can't be blinked into or out of | A, B |
 
 ## Design (starting values)
-**Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–3.0 m (map stream); cover slabs and
+**Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–5.0 m (L12; was 0.6–3.0 m) (map stream); cover slabs and
 pillars stay thin (0.5 m). Blink range stays 5.0 m (the v0.1.0 data value; this line first said 4.5 m by mistake): a blink toward a wall crosses it when the free landing spot on
 the far side is within range, else it lands short of the wall. The view draws walls at their real thickness.
 Doors: width 2.2–3.4 m, position anywhere along the shared wall (not only centred). Cell size per floor drawn from

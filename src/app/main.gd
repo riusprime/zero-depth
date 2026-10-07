@@ -168,6 +168,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		null,
 		run
 	)
+	world.set_combo_tables(ContentCompiler.compile_combos(repo))  # v0.3.0 G: named combos.
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

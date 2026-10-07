@@ -30,6 +30,14 @@ const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
 const ITEM_EXECUTIONER := ItemTable.Kind.EXECUTIONER
 const ITEM_SWIFT_FEET := ItemTable.Kind.SWIFT_FEET
 const ITEM_PHASE_STRIKE := ItemTable.Kind.PHASE_STRIKE
+const ITEM_CINDER_SHOT := ItemTable.Kind.CINDER_SHOT
+const ITEM_WILDFIRE := ItemTable.Kind.WILDFIRE
+const ITEM_CONDUCTOR := ItemTable.Kind.CONDUCTOR
+const ITEM_SERRATED_EDGE := ItemTable.Kind.SERRATED_EDGE
+const ITEM_BARBED_BOLTS := ItemTable.Kind.BARBED_BOLTS
+const ITEM_GLACIAL_EDGE := ItemTable.Kind.GLACIAL_EDGE
+const ITEM_COLD_SNAP := ItemTable.Kind.COLD_SNAP
+const ITEM_BULWARK := ItemTable.Kind.BULWARK
 ## Enemy AI states, for actor_state() (presentation animates from them; EnemyAi.State is the source).
 const STATE_SPAWN := EnemyAi.State.SPAWN
 const STATE_MOVE := EnemyAi.State.MOVE
@@ -662,3 +670,143 @@ func floor_ground() -> Array[Rect2]:
 	if _w.floor_layout != null:
 		out.append_array(_w.floor_layout.ground)
 	return out
+
+
+# --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
+## An item's tags (fire, shock, frost, bleed, blade, bolt, dash, guard).
+func item_tags(item_index: int) -> PackedStringArray:
+	return _w.item_tables[item_index].tags
+
+
+## Shock, bleed and frost stacks on actor i, and whether it is frozen.
+func shock_stacks(actor_i: int) -> int:
+	return _w.actors.shock_stacks[actor_i]
+
+
+func bleed_stacks(actor_i: int) -> int:
+	return _w.actors.bleed_stacks[actor_i]
+
+
+func frost_stacks(actor_i: int) -> int:
+	return _w.actors.frost_stacks[actor_i]
+
+
+func actor_frozen(actor_i: int) -> bool:
+	return Engines.frozen(_w, actor_i)
+
+
+## Stacks at which shock discharges and frost freezes (0 = that engine isn't owned).
+func shock_threshold() -> int:
+	return _w.item_mods.shock_threshold
+
+
+func frost_threshold() -> int:
+	return _w.item_mods.frost_threshold
+
+
+## Bulwark: guard charges stored now, and the most it stores.
+func guard_charges() -> int:
+	return _w.guard_charges
+
+
+func guard_charge_max() -> int:
+	return _w.item_mods.charge_max
+
+
+## Owned combos in unlock order, as indices into the combo tables.
+func combos_owned() -> PackedInt32Array:
+	return _w.combos_owned
+
+
+func combo_table_count() -> int:
+	return _w.combo_tables.size()
+
+
+func combo_id(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].id
+
+
+func combo_effect(combo_index: int) -> int:
+	return _w.combo_tables[combo_index].effect
+
+
+## Locale keys (tr() them in the view).
+func combo_name_key(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].name_key
+
+
+func combo_desc_key(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].desc_key
+
+
+## The two item ids a combo needs.
+func combo_item_ids(combo_index: int) -> Array[StringName]:
+	var c := _w.combo_tables[combo_index]
+	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
+
+
+## The last shock discharge: tick (-1 = never), where it went off, and where each jump landed.
+func discharge_tick() -> int:
+	return _w.discharge_tick
+
+
+func discharge_from() -> Vector2:
+	return _w.discharge_from
+
+
+func discharge_to() -> PackedVector2Array:
+	return _w.discharge_to
+
+
+## The last Plasma Arc: tick (-1 = never), from, to.
+func plasma_tick() -> int:
+	return _w.plasma_tick
+
+
+func plasma_from() -> Vector2:
+	return _w.plasma_from
+
+
+func plasma_to() -> Vector2:
+	return _w.plasma_to
+
+
+## The last payoff of each kind: [tick (-1 = never), where]. Kinds: &"shatter", &"burst", &"wildfire", &"harvest".
+func payoff(kind: StringName) -> Array:
+	match kind:
+		&"shatter":
+			return [_w.shatter_tick, _w.shatter_pos]
+		&"burst":
+			return [_w.burst_tick, _w.burst_pos]
+		&"wildfire":
+			return [_w.wildfire_tick, _w.wildfire_pos]
+		&"harvest":
+			return [_w.harvest_tick, _w.harvest_pos]
+	return [-1, Vector2.ZERO]
+
+
+## The tick of the last Resonance wave, Shrapnel Storm burst, Spiked Phase ring, Slipstream refund and Frozen
+## Bastion chill (-1 = never).
+func resonance_tick() -> int:
+	return _w.resonance_tick
+
+
+func shrapnel_tick() -> int:
+	return _w.shrapnel_tick
+
+
+func spiked_tick() -> int:
+	return _w.spiked_tick
+
+
+func slipstream_tick() -> int:
+	return _w.slipstream_tick
+
+
+func bastion_tick() -> int:
+	return _w.bastion_tick
+
+
+## Projectile i is a Shrapnel Storm shard.
+func projectile_is_shard(i: int) -> bool:
+	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0

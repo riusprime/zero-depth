@@ -94,6 +94,7 @@ static func advance(w: World) -> void:
 		w.swing_root = w.take_root()
 		ItemEffects.on_swing_start(w)
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
+		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
@@ -159,9 +160,12 @@ static func _resolve_swing(w: World) -> void:
 	var s := current_step(w)
 	var base := s.damage
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
-	if swing_arc(w, w.swing_angle, dmg, w.swing_root, &""):
+	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
+	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
+	if landed:
 		w.add_freeze(s.hitstop_ticks)
 	ItemEffects.after_swing(w, base, dmg)
+	Engines.after_swing(w, landed)  # Engines: Slipstream.
 
 
 ## Hits every enemy in the arc of combo step `step` (-1 = the current one) at `angle` for `dmg` (melee; Ember Edge

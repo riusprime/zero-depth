@@ -10,4 +10,5 @@ desc_key = &"ITEM_PHASE_STRIKE_DESC"
 phase_damage = 12
 phase_radius_m = 1.5
 phase_guard_window_seconds = 2.0
+tags = PackedStringArray("guard")
 id = &"phase_strike"

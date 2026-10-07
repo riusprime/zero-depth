@@ -9,4 +9,5 @@ name_key = &"ITEM_SWIFT_FEET"
 desc_key = &"ITEM_SWIFT_FEET_DESC"
 move_speed_bonus_permille = 150
 dash_cooldown_cut_permille = 200
+tags = PackedStringArray("dash")
 id = &"swift_feet"
