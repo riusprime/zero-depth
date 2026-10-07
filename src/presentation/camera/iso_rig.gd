@@ -66,9 +66,9 @@ func _process(delta: float) -> void:
 		camera.v_offset = 0.0
 
 
-## Adds shake (0..1). Does nothing when shake is off.
+## Adds shake (0..1). Does nothing when shake is off or reduced motion is on (ViewPrefs, v0.3.0 O).
 func shake(amount: float) -> void:
-	if shake_enabled:
+	if shake_enabled and not ViewPrefs.reduced_motion:
 		_shake = minf(1.0, _shake + amount)
 
 
