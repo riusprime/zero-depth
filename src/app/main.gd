@@ -8,6 +8,8 @@ const END_PANEL_DELAY_TICKS := 45
 ## Run flow (v0.3.0 B): the run's data, and the fade-in from black when a floor starts.
 const RUN_ID := &"three_floors"
 const FADE_SECONDS := 0.45
+## v0.3.5 PT: a floor that opens on the arrival column fades in faster, so the column shows.
+const ARRIVAL_FADE_SECONDS := 0.2
 
 var profile: ProfileStore
 var driver: SimDriver
@@ -31,6 +33,7 @@ var _stage_seed := STAGE_SEED
 var _run_biomes: Array[StringName] = []
 var _fade := ColorRect.new()
 var _fade_left := 0.0
+var _fade_len := FADE_SECONDS
 
 
 func _ready() -> void:
@@ -57,7 +60,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if _fade_left > 0.0:
 		_fade_left = maxf(0.0, _fade_left - delta)
-		_fade.color.a = _fade_left / FADE_SECONDS
+		_fade.color.a = _fade_left / _fade_len
 		_fade.visible = _fade_left > 0.0
 
 
@@ -242,6 +245,8 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
+		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
@@ -272,7 +277,8 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	_hud.show_floor(run.floor_index, String(biome.name_key))
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
-	_fade_left = FADE_SECONDS
+	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
+	_fade_left = _fade_len
 	_fade.color.a = 1.0
 	_fade.visible = true
 	ui.move_child(_fade, ui.get_child_count() - 1)

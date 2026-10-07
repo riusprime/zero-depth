@@ -10,9 +10,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | Plan | this commit |
+| PT | The portal glows the visor's light blue; going in draws, spins and dissolves the hero into light (~1.0 s, sim-held); floor 2+ opens on a light-blue arrival column (~0.8 s, sim-held); reduced motion fades instead. Evidence [`evidence/PORTAL.md`](evidence/PORTAL.md) | `v0.3.5 Step PT` |
 
 ## Goldens changed on purpose
-- none yet
+- none (PT: `BossFlow` now hashes its transit fields, which changes the state hash of generated floors only; no
+  golden fixture runs one)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -30,3 +32,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## History
 - 2026-10-07 — Owner played the v0.3.0 finishing build and sent F1–F22. v0.3.0 closed as played. PLAN committed
   before code; wave 1 (K, AI, UI, PT) starts; the build-system direction (F7–F11, F13) goes to v0.4.0.
+- 2026-10-07 — PT: portal entry and floor arrival animations (F19, F20); `BossFlow.ENTERING` + arrival hold in
+  ticks; the optional room scan reveal not built (minimap is UI's this wave). Suite 674 passing; MIN_TEST_COUNT 674.

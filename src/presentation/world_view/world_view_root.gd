@@ -21,6 +21,8 @@ var status_fx: StatusVisuals
 ## v0.3.0 L18: overclock heat on the hero, vent blasts, steam and embers.
 var heat_fx: HeatVisuals
 var gate: PortalGate
+## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
+var transit := PortalTransitView.new()
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
@@ -69,6 +71,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gamble_shrine = GambleShrineView.new()
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+	add_child(transit)
+	transit.setup(actors, gate)
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -91,6 +95,7 @@ func sync() -> void:
 	item_fx.sync(reader)
 	status_fx.sync(reader)
 	heat_fx.sync(reader)
+	transit.sync(reader)  # after the actors: it poses the hero's model
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

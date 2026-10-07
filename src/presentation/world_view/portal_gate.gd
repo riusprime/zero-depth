@@ -1,8 +1,9 @@
 class_name PortalGate
 extends Node3D
 ## The gateway to the next floor (v0.2.0 PLAN L8, step D): two stacked-stone pillars and a lintel around a
-## 2.4 × 3.2 m rectangle of swirling blue light, like a cartoon portal in a door shape (owner, L12: "the portal
-## should be blue, not green": a deep electric blue with cyan-white highlights, bluer than the player's cyan).
+## 2.4 × 3.2 m rectangle of swirling light, like a cartoon portal in a door shape. v0.3.5 PT (owner, F19): the swirl,
+## its light and its floor glow are the hero visor's light blue (ThemePalette "player_core", the colour the visor
+## glows; it follows the colour-blind mode), a deep shade of it to near white.
 ## Presentation only: it reads nothing from the sim and decides nothing (EI-07). Sealed (the default) slows and dims
 ## the swirl under a dark veil; v0.3.0 B: the view unseals it when the sim's portal opens (the boss is dead), with a
 ## brief flare, and the open swirl runs bright and fast.
@@ -15,12 +16,6 @@ const PILLAR_W := 0.33
 const DEPTH := 0.72
 const STONE := Color("#6F6A66")
 const STONE_TOP := Color("#8A847E")
-const PORTAL_BLUE := Color("#2E62FF")
-## The swirl's colours, dark to light, and the floor glow.
-const SWIRL_DEEP := Color(0.03, 0.08, 0.52)
-const SWIRL_MID := Color(0.13, 0.36, 1.0)
-const SWIRL_LIGHT := Color(0.74, 0.9, 1.0)
-const GLOW := Color(0.16, 0.36, 1.0)
 const LIGHT_ENERGY_OPEN := 2.2
 const LIGHT_ENERGY_SEALED := 0.7
 ## The flare when the portal opens: extra light energy, fading over FLARE_SECONDS.
@@ -139,6 +134,16 @@ var _stone := StandardMaterial3D.new()
 var _stone_top := StandardMaterial3D.new()
 
 
+## The visor's light blue (v0.3.5 PT), and the swirl's shades of it, dark to light.
+static func visor_blue() -> Color:
+	return ThemePalette.color(&"player_core")
+
+
+static func swirl_colors() -> Array[Color]:
+	var c := visor_blue()
+	return [c.darkened(0.78), c, c.lightened(0.78)]
+
+
 func _init() -> void:
 	_stone.albedo_color = STONE
 	_stone.roughness = 1.0
@@ -167,6 +172,11 @@ func set_sealed(sealed: bool) -> void:
 
 func is_sealed() -> bool:
 	return _sealed
+
+
+## A flare of light (the hero going in: PortalTransitView).
+func flare() -> void:
+	_flare = FLARE_SECONDS
 
 
 func _process(delta: float) -> void:
@@ -252,9 +262,10 @@ func _build_portal() -> void:
 	portal_material.shader = Shader.new()
 	portal_material.shader.code = SHADER
 	portal_material.set_shader_parameter("opening_size", Vector2(OPENING_W, OPENING_H))
-	portal_material.set_shader_parameter("color_deep", SWIRL_DEEP)
-	portal_material.set_shader_parameter("color_mid", SWIRL_MID)
-	portal_material.set_shader_parameter("color_light", SWIRL_LIGHT)
+	var shades := swirl_colors()
+	portal_material.set_shader_parameter("color_deep", shades[0])
+	portal_material.set_shader_parameter("color_mid", shades[1])
+	portal_material.set_shader_parameter("color_light", shades[2])
 	portal = MeshInstance3D.new()
 	portal.mesh = quad
 	portal.material_override = portal_material
@@ -264,7 +275,7 @@ func _build_portal() -> void:
 	portal.position = Vector3(0, OPENING_H * 0.5, 0)
 	add_child(portal)
 	light = OmniLight3D.new()
-	light.light_color = PORTAL_BLUE
+	light.light_color = visor_blue()
 	light.omni_range = 5.5
 	light.omni_attenuation = 1.4
 	light.shadow_enabled = false
@@ -278,7 +289,7 @@ func _build_glow() -> void:
 	glow_material = ShaderMaterial.new()
 	glow_material.shader = Shader.new()
 	glow_material.shader.code = GLOW_SHADER
-	glow_material.set_shader_parameter("glow_color", GLOW)
+	glow_material.set_shader_parameter("glow_color", visor_blue())
 	var disc := MeshInstance3D.new()
 	disc.mesh = plane
 	disc.material_override = glow_material
