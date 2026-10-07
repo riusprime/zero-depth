@@ -55,7 +55,7 @@ func test_pause_menu_offers_restart_run() -> void:
 	for c in m.box.get_children():
 		if c is Button:
 			names.append(String(c.name))
-	assert_eq(names, ["Resume", "Restart", "MainMenu"])
+	assert_eq(names, ["Resume", "Restart", "Options", "MainMenu"])  # Options: v0.3.0 O
 	m.free()
 
 

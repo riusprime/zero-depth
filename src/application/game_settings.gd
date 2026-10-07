@@ -10,20 +10,25 @@ const BUSES: Array[String] = ["Master", "Music", "Effects", "Ambience", "SFX", "
 const BUS_SENDS := {
 	"Music": "Master", "Effects": "Master", "Ambience": "Master", "SFX": "Effects", "UI": "Effects"
 }
-## Volume settings (0..100) and the bus each one moves.
-const VOLUME_BUSES := {
-	"volume_master": "Master",
-	"volume_music": "Music",
-	"volume_effects": "Effects",
-	"volume_ambience": "Ambience",
-}
 const FRAME_CAPS: Array[String] = ["30", "60", "120", "144", "off"]
 const LANGUAGES: Array[String] = ["en", "es"]
+## v0.3.0 O + AU: the three volumes the Options screen shows (0-100), applied to these buses when they exist. Sound
+## effects move Effects, which carries both the world sounds (SFX) and the menu/alert sounds (UI).
+const VOLUME_BUSES := {
+	"audio/master": "Master", "audio/sfx": "Effects", "audio/ambience": "Ambience"
+}
+const WINDOW_MODES: Array[String] = ["windowed", "fullscreen"]
+const RENDER_SCALES: Array[String] = ["50", "67", "75", "85", "100"]
+const COLOUR_MODES: Array[String] = ["off", "protanopia", "deuteranopia", "tritanopia"]
+## Starting values (v0.3.0 O); the shipped look stays the default.
 const DEFAULTS := {
-	"volume_master": 80,
-	"volume_music": 70,
-	"volume_effects": 80,
-	"volume_ambience": 70,
+	"audio/master": 80,
+	"audio/sfx": 80,
+	"audio/ambience": 60,
+	"window_mode": "windowed",
+	"render_scale": "100",
+	"reduced_motion": "off",
+	"colour_mode": "off",
 	"captions": "off",
 	"vsync": "on",
 	"shake": "on",
@@ -51,9 +56,25 @@ static func apply_all(profile: ProfileStore) -> void:
 static func apply_one(profile: ProfileStore, key: String) -> void:
 	var v: Variant = get_value(profile, key)
 	match key:
-		"volume_master", "volume_music", "volume_effects", "volume_ambience":
+		"audio/master", "audio/sfx", "audio/ambience":
 			var bus := AudioServer.get_bus_index(VOLUME_BUSES[key])
-			AudioServer.set_bus_volume_db(bus, linear_to_db(clampf(float(v) / 100.0, 0.0001, 1.0)))
+			if bus >= 0:
+				AudioServer.set_bus_volume_db(
+					bus, linear_to_db(clampf(float(v) / 100.0, 0.0001, 1.0))
+				)
+		"render_scale":
+			var tree := Engine.get_main_loop() as SceneTree
+			if tree != null:
+				tree.root.scaling_3d_scale = clampf(float(v) / 100.0, 0.25, 1.0)
+		"window_mode":
+			if DisplayServer.get_name() != "headless":
+				DisplayServer.window_set_mode(
+					(
+						DisplayServer.WINDOW_MODE_FULLSCREEN
+						if String(v) == "fullscreen"
+						else DisplayServer.WINDOW_MODE_WINDOWED
+					)
+				)
 		"language":
 			TranslationServer.set_locale(String(v))
 		"frame_cap":

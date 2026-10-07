@@ -40,10 +40,25 @@ func test_every_key_literal_in_src_exists() -> void:
 
 func test_generated_option_keys_exist() -> void:
 	var table := _table()
-	for opt in GameSettings.LANGUAGES + GameSettings.FRAME_CAPS + ["on", "off"]:
+	var options: Array = (
+		GameSettings.LANGUAGES
+		+ GameSettings.FRAME_CAPS
+		+ GameSettings.WINDOW_MODES
+		+ GameSettings.RENDER_SCALES
+		+ GameSettings.COLOUR_MODES
+		+ ["on", "off", "ink", "sketch", "paper"]
+	)
+	for opt in options:
 		assert_true(table.has("UI_OPT_" + String(opt).to_upper()), "option %s" % opt)
-	for setting in ["volume_master", "volume_music", "volume_effects"]:
-		assert_true(table.has("UI_" + setting.to_upper()), setting)
+	for key: String in OptionsMenu.VOLUMES.values() + OptionsMenu.SECTION_KEYS.values():
+		assert_true(table.has(key), key)
+	for key: String in (
+		InputLabels.MOUSE.values() + InputLabels.BUTTONS.values() + InputLabels.ACTIONS.values()
+	):
+		assert_true(table.has(key), key)
+	for pair: Array in InputLabels.AXES.values():
+		for key: String in pair:
+			assert_true(table.has(key), key)
 
 
 func test_content_name_keys_exist() -> void:

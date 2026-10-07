@@ -20,6 +20,8 @@ var audio := AudioDirector.new()
 
 var _menu: Control
 var _pause: PauseMenu
+## Options opened from the pause menu (v0.3.0 O), over the paused stage.
+var _pause_options: OptionsMenu
 var _dev: DevPanel
 var _hud: Hud
 var _end: EndPanel
@@ -40,6 +42,7 @@ func _ready() -> void:
 	GameSettings.apply_all(profile)
 	audio.setup(profile)
 	add_child(audio)
+	ViewPrefs.apply_settings(profile)  # v0.3.0 O: reduced motion, colour-blind palette
 	ui.name = "UI"
 	add_child(ui)
 	_fade.name = "Fade"
@@ -143,7 +146,37 @@ func show_utility_picker() -> void:
 func show_options() -> void:
 	var o := OptionsMenu.new(profile)
 	o.back_pressed.connect(show_main_menu)
+	o.setting_changed.connect(_on_setting_changed)
 	_set_menu(o)
+
+
+## Options from the pause menu (v0.3.0 O): the pause menu hides under it and comes back on Back.
+func open_pause_options() -> void:
+	if _pause == null or _pause_options != null:
+		return
+	_pause.visible = false
+	_pause_options = OptionsMenu.new(profile, OptionsMenu.Layout.SIDEBAR, true)
+	_pause_options.setting_changed.connect(_on_setting_changed)
+	_pause_options.back_pressed.connect(close_pause_options)
+	ui.add_child(_pause_options)
+	_pause_options.focus_first()
+
+
+func close_pause_options() -> void:
+	if _pause_options != null:
+		_pause_options.queue_free()
+		_pause_options = null
+	if _pause != null:
+		_pause.visible = true
+		(_pause.box.get_node("Options") as Button).grab_focus()
+
+
+## A setting changed in Options: what lives in the view follows at once (GameSettings already applied the engine's).
+func _on_setting_changed(_key: String) -> void:
+	ViewPrefs.apply_settings(profile)
+	if view != null:
+		view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
+		view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
 
 
 func show_credits() -> void:
@@ -337,6 +370,7 @@ func open_pause() -> void:
 	driver.paused = true
 	_pause = PauseMenu.new()
 	_pause.resume_pressed.connect(close_pause)
+	_pause.options_pressed.connect(open_pause_options)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
@@ -349,6 +383,9 @@ func open_pause() -> void:
 
 
 func close_pause() -> void:
+	if _pause_options != null:
+		_pause_options.queue_free()
+		_pause_options = null
 	if _pause != null:
 		_pause.queue_free()
 		_pause = null
