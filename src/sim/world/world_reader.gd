@@ -1134,3 +1134,41 @@ func gamble_candidates() -> PackedInt32Array:
 
 func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
 	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0
+
+
+# --- Minimap (v0.3.0 MM) ------------------------------------------------------------------------------------
+## The room whose interior holds p (-1 inside a wall, a doorway, or without a floor).
+func floor_room_of(p: Vector2) -> int:
+	return _w.floor_layout.room_of(p) if _w.floor_layout != null else -1
+
+
+func floor_start_room() -> int:
+	return _w.floor_layout.start_room if _w.floor_layout != null else -1
+
+
+## The room the portal gate stands in (-1 without a floor).
+func floor_portal_room() -> int:
+	return _w.floor_layout.portal_room if _w.floor_layout != null else -1
+
+
+## Doorways of the floor: door i joins rooms floor_door_rooms(i).x and .y; its passage through the wall; its index
+## of the boss door (-1 when none).
+func floor_door_count() -> int:
+	return _w.floor_layout.door_rooms.size() if _w.floor_layout != null else 0
+
+
+func floor_door_rooms(i: int) -> Vector2i:
+	return _w.floor_layout.door_rooms[i]
+
+
+func floor_door_rect(i: int) -> Rect2:
+	return _w.floor_layout.door_rect(i)
+
+
+## Direction from room .x to room .y through door i (1/4096 turns; a grid axis).
+func floor_door_angle(i: int) -> int:
+	return _w.floor_layout.door_angles[i]
+
+
+func floor_boss_door() -> int:
+	return _w.floor_layout.boss_door_index if _w.floor_layout != null else -1

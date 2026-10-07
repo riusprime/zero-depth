@@ -34,6 +34,8 @@ var boss_bar := BossBar.new()
 var heat_meter := HeatMeter.new()
 ## The gamble shrine's prompt, result card and stats (v0.3.0 L19).
 var gamble := GambleHud.new()
+## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
+var minimap := Minimap.new()
 var _hp_bar := HudBar.new()
 var _hp_text := EchoLabel.new(15, true)
 var _dash := _pip("HUD_DASH")
@@ -120,6 +122,7 @@ func _init() -> void:
 	_build_floor_card()
 	add_child(boss_bar)
 	add_child(heat_meter)
+	add_child(minimap)
 	_build_rewards()
 	add_child(gamble)
 	for c in find_children("*", "Control", true, false):
@@ -161,6 +164,7 @@ func sync(reader: WorldReader) -> void:
 		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
 	boss_bar.sync(reader)
 	heat_meter.sync(reader)
+	minimap.sync(reader)
 	_sync_rewards(reader)
 	gamble.sync(reader)
 
