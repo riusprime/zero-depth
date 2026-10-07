@@ -132,6 +132,7 @@ func start_stage() -> void:
 		ContentCompiler.compile_spawning(spawning, repo),
 		ContentCompiler.compile_items(repo)
 	)
+	world.set_combo_tables(ContentCompiler.compile_combos(repo))  # v0.3.0 G: named combos.
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

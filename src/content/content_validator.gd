@@ -18,6 +18,7 @@ static func validate(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 			)
 		else:
 			seen[key] = d.resource_path
+	issues.append_array(ComboDefinition.cross_check(defs))  # v0.3.0 G: combo pairs.
 	issues.sort_custom(
 		func(a: ValidationIssue, b: ValidationIssue) -> bool:
 			return [a.path, a.code, a.message] < [b.path, b.code, b.message]

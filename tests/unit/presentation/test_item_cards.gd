@@ -13,8 +13,8 @@ const NEW_IDS := [
 ]
 
 
-func test_there_are_sixteen_icons_and_every_one_draws_a_symbol() -> void:
-	assert_eq(ItemIcons.IDS.size(), 16)
+func test_there_are_24_icons_and_every_one_draws_a_symbol() -> void:
+	assert_eq(ItemIcons.IDS.size(), 24, "16 + the v0.3.0 G eight")
 	var gem := str(ItemIcons.gem())
 	var seen := {}
 	for id in ItemIcons.IDS:
@@ -32,7 +32,7 @@ func test_there_are_sixteen_icons_and_every_one_draws_a_symbol() -> void:
 					assert_gt(s["r"], 0.0, "%s circle" % id)
 				_:
 					fail_test("%s: unknown shape %s" % [id, s["t"]])
-	assert_eq(seen.size(), 16, "every symbol is different")
+	assert_eq(seen.size(), 24, "every symbol is different")
 	for id in NEW_IDS:
 		assert_true(ItemIcons.has_icon(id), "%s: an icon before the item exists" % id)
 

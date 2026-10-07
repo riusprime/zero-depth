@@ -8,4 +8,5 @@ kind = 5
 name_key = &"ITEM_RICOCHET_CORE"
 desc_key = &"ITEM_RICOCHET_CORE_DESC"
 bounces = 1
+tags = PackedStringArray("bolt")
 id = &"ricochet_core"

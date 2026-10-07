@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"splinter_shot"
+item_b = &"ricochet_core"
+name_key = &"ITEM_COMBO_SHRAPNEL_STORM"
+desc_key = &"ITEM_COMBO_SHRAPNEL_STORM_DESC"
+effect = 3
+count = 2
+spread_degrees = 40.0
+share_permille = 600
+id = &"shrapnel_storm"

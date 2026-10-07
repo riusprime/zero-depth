@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"bulwark"
+item_b = &"glacial_edge"
+name_key = &"ITEM_COMBO_FROZEN_BASTION"
+desc_key = &"ITEM_COMBO_FROZEN_BASTION_DESC"
+effect = 7
+radius_m = 4.0
+stacks = 2
+id = &"frozen_bastion"

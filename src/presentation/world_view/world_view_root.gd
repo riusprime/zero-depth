@@ -13,6 +13,8 @@ var hit_feel: HitFeel
 var ink := InkPass.new()
 var pickups := PickupViews.new()
 var item_fx: ItemVisuals
+## v0.3.0 G: engine statuses and combo payoffs.
+var status_fx: StatusVisuals
 var gate: PortalGate
 var rig := IsoRig.new()
 var occlusion_enabled := true
@@ -30,6 +32,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(pickups)
 	item_fx = ItemVisuals.new(kit, actors)
 	add_child(item_fx)
+	status_fx = StatusVisuals.new(actors)
+	add_child(status_fx)
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -51,6 +55,7 @@ func sync() -> void:
 	hit_feel.sync(reader)
 	pickups.sync(reader)
 	item_fx.sync(reader)
+	status_fx.sync(reader)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []
