@@ -430,3 +430,14 @@ func portal_angle() -> int:
 ## True while the player stands in the clear square in front of the sealed gate.
 func at_gate() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.portal_front().has_point(_w.player_pos())
+
+
+## What a wall is, for drawing it: 0 a structural wall (the room edges and partitions), 1 a cover slab, 2 not drawn
+## (the gate's footprint, which the gate itself shows). Without a floor: the first 4 walls are edges.
+func wall_class(i: int) -> int:
+	var f := _w.floor_layout
+	if f == null:
+		return 0 if i < 4 else 1
+	if i < f.slab_first:
+		return 0
+	return 1 if i < f.walls.size() else 2

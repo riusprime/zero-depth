@@ -13,10 +13,14 @@ var technique := &"xray"
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
 var outline_color := Color("#1A1A22")
+## The look of new player bolts (ItemVisuals sets it from the items owned).
+var bolt_look := {}
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
 var _flash := {}
+## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
+var _tint := {}
 
 
 func sync(reader: WorldReader) -> void:
@@ -83,14 +87,25 @@ func _process(_delta: float) -> void:
 		if _flash[id] <= 0:
 			_flash.erase(id)
 			if _actors.has(id):
-				_set_flash(_actors[id], false)
+				_set_flash(_actors[id], false, id)
 
 
-func _set_flash(node: Node3D, on: bool) -> void:
+## A steady glow on an actor (energy 0 clears it); a hit flash still wins while it lasts.
+func set_tint(id: int, c: Color, energy: float) -> void:
+	if energy <= 0.0:
+		_tint.erase(id)
+	else:
+		_tint[id] = [c, energy]
+	if _actors.has(id) and not _flash.has(id):
+		_set_flash(_actors[id], false, id)
+
+
+func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
+	var tint: Array = _tint.get(id, [])
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		m.emission_enabled = on
-		m.emission = Color.WHITE
-		m.emission_energy_multiplier = 1.6
+		m.emission_enabled = on or not tint.is_empty()
+		m.emission = Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE)
+		m.emission_energy_multiplier = 1.6 if on else (tint[1] if not tint.is_empty() else 0.0)
 
 
 func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
@@ -283,15 +298,18 @@ func _make_projectile(is_player: bool = false) -> Node3D:
 	var box := BoxMesh.new()
 	box.size = Vector3(0.55, 0.05, 0.08)
 	if is_player:
-		box.size = Vector3(0.38, 0.07, 0.07)
+		box.size = bolt_look.get("size", Vector3(0.38, 0.07, 0.07))
 	n.mesh = box
 	var role := &"player_core" if is_player else &"proj_hostile"
+	var c := ThemePalette.color(role)
+	if is_player:
+		c = bolt_look.get("color", c)
 	var m := StandardMaterial3D.new()
-	m.albedo_color = ThemePalette.color(role)
+	m.albedo_color = c
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.emission_enabled = true
-	m.emission = ThemePalette.color(role)
-	m.emission_energy_multiplier = 2.5
+	m.emission = c
+	m.emission_energy_multiplier = bolt_look.get("energy", 2.5) if is_player else 2.5
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var holder := Node3D.new()

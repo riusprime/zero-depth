@@ -5,7 +5,8 @@ extends Node3D
 
 const TILE_M := 4.0
 const EDGE_WALL_HEIGHT := 1.0
-const SLAB_HEIGHT := 2.4
+## Cover slabs inside rooms. 1.8 m (was 2.4) so slabs hide less of the floor from the iso camera (v0.2.0).
+const SLAB_HEIGHT := 1.8
 const FADED_ALPHA := 0.3
 ## Soft-shadow blur: 0.5 straightens the edges; 1.0 and above wiped out the props' small shadows in the test
 ## renders (evidence/SHADOWS.md).
@@ -91,8 +92,11 @@ func _build_walls(reader: WorldReader) -> void:
 	_wall_faded.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_wall_faded.albedo_color.a = FADED_ALPHA
 	for i in reader.wall_count():
+		var kind := reader.wall_class(i)
+		if kind == 2:
+			continue
 		var w := reader.wall(i)
-		var height := EDGE_WALL_HEIGHT if i < 4 else SLAB_HEIGHT
+		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
 		var box := BoxMesh.new()
 		box.size = Vector3(w.half.x * 2.0, height, w.half.y * 2.0)
 		var node := MeshInstance3D.new()
@@ -110,7 +114,8 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 	rng.seed = seed_value * 7919 + 17  # the cosmetic stream: presentation only
 	var rubble_mat := _mat(Color(palette["cover"]).darkened(0.25))
 	var grass_mat := _mat(palette["accent"])
-	for i in 70:
+	var area_scale := clampf(arena_half * arena_half / 144.0, 1.0, 6.0)
+	for i in int(70 * area_scale):
 		var p := Vector2(
 			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
 		)
@@ -123,7 +128,7 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 		cube.position = SimPlane.to_3d(p, s * 0.4)
 		cube.rotation = Vector3(0, rng.randf() * TAU, 0)
 		add_child(cube)
-	for i in 40:
+	for i in int(40 * area_scale):
 		var p := Vector2(
 			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
 		)

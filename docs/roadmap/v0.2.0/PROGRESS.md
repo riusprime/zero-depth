@@ -52,4 +52,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   button; `InputDefaults.apply()` now adds JOY_BUTTON_A. Shadow saw: mostly the camera's far plane (200 → 100) plus
   an 8192 atlas, high soft-shadow filter, blur 0.5 (lavapipe renders; GPU cost and motion shimmer unverified).
   The blade is hidden when not swinging. 195 tests pass.
+- 2026-10-07 — F part 2: `ItemVisuals` (blade colour/width/trail per item, bolt looks, Twin Arc echo flash,
+  Overcharge shockwave ring, Kinetic Dash afterimages, burning enemies glow orange), `WorldReader.wall_class`
+  (structural walls drawn low, slabs 1.8 m instead of 2.4, the gate's footprint not drawn), props scaled to the
+  floor's area. New e2e walks to the nearest pedestal with the left stick only and takes the item. 200 tests pass.
 
