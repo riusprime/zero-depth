@@ -19,7 +19,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 4 fix | The Warden commits to its slam, so it can be flanked | `306a31f`, lint `0c00cf1` |
 | 7 | A fight build for the owner: version `0.1.0-dev`, the tour shows the fight, [`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md) | `7e68fc8` |
 | 7b | Melee and shooting on separate buttons (hold to shoot), blink follows movement, the pad moves like the keys | `abfdf2e` |
-| 7c | A thin sketch-like ink stroke on every edge, four styles in Options ([OUTLINES](evidence/OUTLINES.md)) | see `git log` |
+| 7c | A thin sketch-like ink stroke on every edge, four styles in Options ([OUTLINES](evidence/OUTLINES.md)) | `c4c45df` |
+| 7d | Second fight build for the owner ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -68,7 +69,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|---|
 | Design questions Q1–Q4 | 2026-10-06 | see Owner decisions | 2026-10-06 |
 | Fight build check ([`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md)) | 2026-10-07 | Answered: blink should follow movement; pad movement felt different; separate attack buttons (triggers = attacks, bumpers = blink and dash); hold to shoot continuously instead of charging; a thin black sketch-like stroke. → PLAN L7–L12, Steps 7b–7d | 2026-10-07 |
-| Outline style (G2, in game) | Step 7d build | pending | |
+| Outline style (G2, in game) | 2026-10-07 ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | pending | |
+| Second fight build check | 2026-10-07 | pending | |
 | Options mockups (G2) | Step 10 | pending | |
 | Fun without loot | after Step 12 | pending | |
 
@@ -119,3 +121,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — Step 7c: `InkPass` (full-screen depth + normal edge pass, blended under telegraphs and bars;
   depth-only on Compatibility), Options → Outline style (off / ink / sketch / sketch + paper, default sketch),
   `scripts/shots/outlines.gd`, `evidence/OUTLINES.md` + strip. 134 tests pass.
+- 2026-10-07 — Step 7d: `PLAYTEST_FIGHT_2.md` (what changed, the new bindings, questions; answers OWNER ONLY);
+  `MIN_TEST_COUNT` 134. Next: the owner plays; meanwhile Step 8 (bench with real AI).
