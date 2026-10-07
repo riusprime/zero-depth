@@ -37,6 +37,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | H | Taking damage no longer stalls: hit flashes and tints change only emission colour/energy (toggling `emission_enabled` recompiled shaders mid-frame), projectile and burst materials are kept per look ([DAMAGE_LAG](evidence/DAMAGE_LAG.md)). The crash was not reproduced here | `fa05fd3`, merge `8574379` |
 | H2 | The H rule on the new work: the three enemy models build flashable materials (test), dash afterimages and item effects keep a template material alive; the soak's leak check counts nodes outside the stage (a restart rolls a different floor) | this commit |
 | L1b | Charger refinement: long flat wedge hood with a layered back flap, talons hooking forward and inward, dark back legs between the front pair, armour-plate leg segments, a lunge that reads from the iso camera; ~21 nodes per Charger (was ~48) ([compare](evidence/enemy_charger_compare.png)) | `253f5db`, merge `72c9dc5` |
+| L3b | Warden refinement: shorter notched hood shell, warmer faceted rocks, bigger stacked forearms and fists, a slam that lands the fists beside the shell ([compare](evidence/enemy_warden_compare.png)) | `67cd70a`, merge `d0e899e` |
 | Character matches the reference | 2026-10-07 | pending (lead's check: 3/4 views close; face-on boxy) | |
 
 ## Open
@@ -105,3 +106,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — L3 (Warden) merged (one-line conflict in the ActorViews class comment). Lead fixes: the stage draws ground per room (`WorldReader.floor_room*`, e2e asserts ground at the start and void between rooms); enemy avatars stay visible during SPAWN so their rise-in plays. 273 tests pass; MIN_TEST_COUNT 273.
 - 2026-10-07 — H merged. On llvmpipe a hit frame went from p50 1248.7 ms to 226.1 ms (agent's probe; ratios only, software renderer). The crash is NOT reproduced: results on the owner's Windows hardware are OWNER ONLY. After merging, the soak's node-count check failed (1132 vs 1348) because restarts now roll a different v2 floor; it now excludes the stage subtree (302 -> 292). 279 tests pass; MIN_TEST_COUNT 279.
 - 2026-10-07 — L1b merged; 279 tests pass.
+- 2026-10-07 — L3b merged; 279 tests pass; export smoke 0 misses; an in-game render shows the three new enemies on the floor. Second floor build sent to the owner with [`PLAYTEST_FLOOR_2.md`](PLAYTEST_FLOOR_2.md).
