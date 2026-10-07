@@ -27,6 +27,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Floor build check ([`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md)) | 2026-10-07 | pending | |
+| M | The Warden no longer blocks: front hits deal 80 %, rear hits 110 %, sides 100 % (data: arcs 120°/120°); grey spark on armour, bright spark on the weak spot. 239 tests; goldens unchanged (the hashed runs have no Warden) | `628f30a`, merge `3ff2d40` |
 | Character matches the reference | 2026-10-07 | pending (lead's check: 3/4 views close; face-on boxy) | |
 
 ## Open
@@ -88,3 +89,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   in en and es. Item indices are alphabetical, so a seed's pedestal draws changed. 231 tests pass; goldens
   re-recorded; export smoke 0 misses.
 - 2026-10-07 — Owner confirmed `docs/art/image.png` is the enemy sheet (renamed `enemies_visual_reference.png`) and asked for 1:1 enemy visuals (L17) and a Warden without the front block: −20 % from the front, +10 % from behind (L18). Workstreams L (three enemy-model agents) and M (Warden armour) started in parallel with H, I, K.
+- 2026-10-07 — M merged: Warden armour per L18. Validation ranges the agent chose (front 1..1000 ‰, rear 1000..3000 ‰, arcs summing ≤ 360°) are starting values. Sparks not yet checked on screen. 239 tests pass; MIN_TEST_COUNT 239.
