@@ -14,4 +14,5 @@ burn_max_stacks = 5
 stacks_per_hit = 1
 stack_every = 3
 tags = PackedStringArray("fire", "bolt")
+requires_weapon = &"gun"
 id = &"cinder_shot"

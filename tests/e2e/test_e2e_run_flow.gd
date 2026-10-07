@@ -129,6 +129,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_eq(w2.floor_index, 2)
 	assert_eq(w2.items_owned, owned, "the items came along, in order")
 	assert_eq(w2.shards, shards, "the shards came along")
+	assert_eq(
+		w2.player.weapons, PlayerTable.WEAPON_BLADE, "the run's build came along (v0.3.0 L15)"
+	)
 	assert_eq(w2.floor_index, 2, "chest prices and boss shards read floor 2")
 	assert_eq(w2.actors.hp[0], mini(100, hp_before + 40), "healed 40 % of max HP")
 	assert_lt(w2.run_ticks, 30, "the danger clock restarts")

@@ -12,6 +12,7 @@ overcharge_mult_permille = 2000
 shockwave_radius_m = 2.0
 shockwave_damage_permille = 500
 tags = PackedStringArray("shock", "blade")
+requires_weapon = &"blade"
 stacks_per_hit = 2
 shock_threshold = 5
 shock_seconds = 3.0

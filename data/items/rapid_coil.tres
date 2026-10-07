@@ -9,4 +9,5 @@ name_key = &"ITEM_RAPID_COIL"
 desc_key = &"ITEM_RAPID_COIL_DESC"
 fire_rate_bonus_permille = 400
 tags = PackedStringArray("bolt")
+requires_weapon = &"gun"
 id = &"rapid_coil"

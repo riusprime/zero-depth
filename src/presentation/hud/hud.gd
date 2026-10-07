@@ -28,6 +28,7 @@ const BOSS_WARN_M := 6.0
 var boss_bar := BossBar.new()
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
+var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse while regenerating.
 var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
 var _wave := Label.new()
@@ -80,6 +81,7 @@ func _init() -> void:
 	_hp_fill.color = ThemePalette.color(&"player_bar")
 	_hp_fill.size = BAR
 	back.add_child(_hp_fill)
+	back.add_child(_regen)
 	var pips := HBoxContainer.new()
 	pips.add_theme_constant_override("separation", 18)
 	pips.add_child(_dash)
@@ -144,6 +146,7 @@ func sync(reader: WorldReader) -> void:
 	var mx := maxi(1, reader.player_max_hp())
 	_hp_fill.size = Vector2(BAR.x * clampf(float(hp) / mx, 0.0, 1.0), BAR.y)
 	_hp_text.text = tr("HUD_HP") % [hp, mx]
+	_regen.sync(reader, _hp_fill.size)
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
 		(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
@@ -191,6 +194,11 @@ func show_floor(floor_index: int, biome_key: String) -> void:
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
+
+
+## The HP bar's regen pulse is on (v0.3.0 L25).
+func regen_pulsing() -> bool:
+	return _regen.is_pulsing()
 
 
 func floor_card_showing() -> bool:

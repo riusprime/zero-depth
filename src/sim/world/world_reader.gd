@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods, max-file-lines
 class_name WorldReader
 extends RefCounted
 ## The read-only face of World for presentation (EI-07). Presentation may name WorldReader, never World.
@@ -994,3 +994,7 @@ func bastion_tick() -> int:
 ## Projectile i is a Shrapnel Storm shard.
 func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
+
+
+func player_build() -> Dictionary:  # v0.3.0 P: PlayerBuild.read (has_blade, has_gun, facing, regenerating, ...).
+	return PlayerBuild.read(_w)

@@ -2,7 +2,8 @@ class_name PlayerKit
 extends RefCounted
 ## The player's attacks and utility (PLAN v0.1.0 Steps 2, 3, 7b). Melee and shooting have separate buttons
 ## (owner, 2026-10-07): PRIMARY = a swing, the next step of the combo (v0.3.0 L11: four distinct slashes, each its
-## own SwingStep); SHOOT held = a bolt every shot_period_ticks.
+## own SwingStep), along the character's facing (L29); SHOOT held = a bolt every shot_period_ticks along the aim.
+## A run's build enables one of the two (PlayerBuild, L15).
 ## Blink teleports the way you're moving, through a wall when the far side is within range. Runs in tick phase 4;
 ## numbers from PlayerTable.
 
@@ -85,12 +86,14 @@ static func advance(w: World) -> void:
 	elif w.combo_window > 0:
 		w.combo_window -= 1
 	# A buffered press starts the next swing as soon as the current one ends.
+	if not PlayerBuild.has_blade(w):
+		w.input_buffer[PRIMARY_SLOT] = 0  # Builds: a Gun run's melee press does nothing (L15).
 	if w.swing_t == 0 and can_attack and w.input_buffer[PRIMARY_SLOT] > 0:
 		w.input_buffer[PRIMARY_SLOT] = 0
 		w.combo_step = next_step(w)
 		w.combo_window = 0
 		w.swing_t = 1
-		w.swing_angle = w.aim_angle
+		w.swing_angle = PlayerBuild.melee_angle(w)  # Builds: along the facing, not the aim (L29).
 		w.swing_root = w.take_root()
 		ItemEffects.on_swing_start(w)
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
@@ -104,8 +107,11 @@ static func advance(w: World) -> void:
 	ItemProcs.advance_momentum(w)
 
 
+## SHOOT is held, alive, and the build has the gun (a Blade run never shoots, L15).
 static func shooting(w: World) -> bool:
-	return (w.held_buttons & InputFrame.SHOOT) != 0 and not w.player_dead()
+	return (
+		(w.held_buttons & InputFrame.SHOOT) != 0 and not w.player_dead() and PlayerBuild.has_gun(w)
+	)
 
 
 ## The step the current (or last) swing is: w.combo_step.
@@ -158,7 +164,7 @@ static func lunge_offset(w: World) -> Vector2:
 
 static func _resolve_swing(w: World) -> void:
 	var s := current_step(w)
-	var base := s.damage
+	var base := PlayerBuild.melee_damage(w, s.damage)  # Builds: the Blade's damage factor (L16).
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
@@ -202,7 +208,7 @@ static func swing_arc(
 ## One shot: a bolt along the aim, or a Splinter fan (ItemEffects.shot_offsets); Ricochet Core adds bounces.
 static func _fire_bolt(w: World) -> void:
 	var t := w.player
-	var dmg := ItemEffects.bolt_damage(w)
+	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
 	for off in ItemEffects.shot_offsets(w):
 		var dir := Kin.dir(w.aim_angle + off)
 		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)

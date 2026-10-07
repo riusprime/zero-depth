@@ -10,4 +10,5 @@ desc_key = &"ITEM_TWIN_ARC_DESC"
 echo_delay_seconds = 0.1
 echo_damage_permille = 500
 tags = PackedStringArray("blade")
+requires_weapon = &"blade"
 id = &"twin_arc"

@@ -11,6 +11,7 @@ chain_every = 3
 chain_range_m = 4.0
 chain_damage = 5
 tags = PackedStringArray("shock", "bolt")
+requires_weapon = &"gun"
 stacks_per_hit = 1
 stack_every = 2
 shock_threshold = 5

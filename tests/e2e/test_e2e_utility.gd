@@ -30,6 +30,8 @@ func test_pick_blink_and_it_follows_movement_and_is_remembered() -> void:
 	var main: Main = await e.boot()
 	await e.tap(KEY_ENTER)  # Play
 	await e.frames(2)
+	await e.tap(KEY_ENTER)  # Blade (the build screen, v0.3.0 L15)
+	await e.frames(2)
 	assert_not_null(main.get_node_or_null("UI/UtilityPicker"), "the picker comes before the arena")
 	await e.tap(KEY_DOWN)  # Guard -> Blink
 	await e.tap(KEY_ENTER)

@@ -10,4 +10,5 @@ desc_key = &"ITEM_MOMENTUM_DESC"
 momentum_window_seconds = 1.0
 momentum_bonus_permille = 600
 tags = PackedStringArray("dash", "blade")
+requires_weapon = &"blade"
 id = &"momentum"

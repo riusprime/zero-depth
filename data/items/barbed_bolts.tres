@@ -15,4 +15,5 @@ bleed_seconds = 4.0
 bleed_max_stacks = 8
 bleed_burst_per_stack = 5
 tags = PackedStringArray("bleed", "bolt")
+requires_weapon = &"gun"
 id = &"barbed_bolts"

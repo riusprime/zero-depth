@@ -6,6 +6,11 @@ extends RefCounted
 ## The utility chosen before the run (PD-01).
 enum Utility { NONE, GUARD, BLINK }
 
+## Weapon bits (v0.3.0 L15): a build enables one; WEAPONS_ALL is the pre-build default.
+const WEAPON_BLADE := 1
+const WEAPON_GUN := 2
+const WEAPONS_ALL := 3
+
 var hp := 100
 var radius_m := 0.35
 ## Metres per tick.
@@ -42,6 +47,15 @@ var bolt_damage := 4
 var bolt_speed := 18.0 / 60.0
 var bolt_radius_m := 0.16
 var bolt_life_ticks := 36
+## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
+## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
+var weapons := WEAPONS_ALL
+var melee_damage_permille := 1000
+var bolt_damage_permille := 1000
+## Out-of-combat regen (v0.3.0 L25; PlayerRegen): after regen_delay_ticks without dealing or taking damage, heal
+## regen_permille of max HP per second (World.regen_bonus_permille adds to it).
+var regen_delay_ticks := 600
+var regen_permille := 10
 
 
 ## The v0.0.1 starting values (docs/design/GAME_BLUEPRINT.md §C): 6 m/s, dash 4 m over 0.15 s, 0.8 s cooldown.

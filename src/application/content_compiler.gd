@@ -37,6 +37,8 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.dash_iframe_ticks = SimTick.seconds_to_ticks(def.dash.iframes_seconds)
 	t.hurt_iframe_ticks = SimTick.seconds_to_ticks(def.hurt_iframes_seconds)
 	t.hurt_freeze_ticks = SimTick.seconds_to_ticks(def.hurt_hitstop_seconds)
+	t.regen_delay_ticks = SimTick.seconds_to_ticks(def.regen_delay_seconds)
+	t.regen_permille = def.regen_permille_per_second
 	var p := def.primary
 	var combo: Array[SwingStep] = []
 	for sd in p.combo:
@@ -178,6 +180,21 @@ static func apply_utility(t: PlayerTable, def: UtilityDefinition) -> PlayerTable
 	return t
 
 
+## The chosen build, applied to a compiled player table (v0.3.0 L15, L16): only its weapon is enabled, and that
+## weapon's damage takes the build's per mille. null keeps both weapons at full damage (the pre-build default).
+static func apply_build(t: PlayerTable, def: BuildDefinition) -> PlayerTable:
+	if def == null:
+		return t
+	match def.weapon:
+		BuildDefinition.Weapon.BLADE:
+			t.weapons = PlayerTable.WEAPON_BLADE
+			t.melee_damage_permille = def.damage_permille
+		BuildDefinition.Weapon.GUN:
+			t.weapons = PlayerTable.WEAPON_GUN
+			t.bolt_damage_permille = def.damage_permille
+	return t
+
+
 ## The per-tick share of the gap that closes 90% of it in `seconds` (exponential easing), in per mille.
 static func ease_permille(seconds: float) -> int:
 	var ticks := maxi(1, SimTick.seconds_to_ticks(seconds))
@@ -224,6 +241,8 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	t.rarity = def.rarity
 	var needs := {&"guard": PlayerTable.Utility.GUARD, &"blink": PlayerTable.Utility.BLINK}
 	t.requires_utility = needs.get(def.requires_utility, -1)
+	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+	t.requires_weapon = weapons.get(def.requires_weapon, 0)
 	t.reach_bonus_permille = def.reach_bonus_permille
 	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
 	t.echo_damage_permille = def.echo_damage_permille

@@ -43,6 +43,9 @@ var desc_key := &""
 var rarity := COMMON
 ## The PlayerTable.Utility the item needs, or -1 for any (rewards never offer it otherwise).
 var requires_utility := -1
+## The PlayerTable.WEAPON_* bit the item feeds (v0.3.0 L15), or 0 for any: a build without that weapon is never
+## offered it.
+var requires_weapon := 0
 ## Long Edge.
 var reach_bonus_permille := 0
 ## Twin Arc.

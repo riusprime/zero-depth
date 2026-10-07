@@ -16,11 +16,15 @@ var carry := {}
 ## Totals of the floors already finished (the current floor's World holds its own).
 var ticks_done := 0
 var kills_done := 0
+## The run's starting build (v0.3.0 L15): a BuildDefinition id chosen on the start screen, the same on every
+## floor. Each floor's PlayerTable is compiled with it (the world hashes its weapons and damage factors).
+var build_id := &""
 
 
-static func start(p_run_seed: int, p_table: RunTable) -> RunState:
+static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
 	var r := RunState.new()
 	r.run_seed = p_run_seed
+	r.build_id = p_build_id
 	r.table = p_table
 	var n := maxi(1, p_table.biome_count)
 	var order := PackedInt32Array()

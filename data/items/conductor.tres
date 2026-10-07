@@ -14,5 +14,6 @@ shock_damage = 12
 shock_jumps = 4
 shock_range_m = 4.0
 tags = PackedStringArray("shock", "blade")
+requires_weapon = &"blade"
 rarity = 1
 id = &"conductor"

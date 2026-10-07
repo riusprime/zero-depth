@@ -11,4 +11,5 @@ split_count = 3
 split_spread_degrees = 12.0
 split_damage_permille = 600
 tags = PackedStringArray("bolt")
+requires_weapon = &"gun"
 id = &"splinter_shot"

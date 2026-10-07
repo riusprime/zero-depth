@@ -44,6 +44,9 @@ const TAGS: Array[StringName] = [
 ## The utility the item needs to do anything (v0.3.0 E): a UtilityDefinition id (&"guard", &"blink"), or empty for
 ## any. Altars and chests never offer an item whose utility you didn't choose.
 @export var requires_utility: StringName = &""
+## The weapon the item feeds (v0.3.0 L15): a BuildDefinition weapon id (&"blade", &"gun"), or empty for any. A run
+## whose build lacks that weapon is never offered it.
+@export var requires_weapon: StringName = &""
 @export var name_key: StringName
 @export var desc_key: StringName
 ## Long Edge: swing reach × (1 + bonus / 1000).
@@ -152,6 +155,10 @@ func validate() -> Array[ValidationIssue]:
 			ValidationIssue.new(
 				&"range", resource_path, "requires_utility is empty, guard or blink"
 			)
+		)
+	if not requires_weapon in [&"", &"blade", &"gun"]:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)
 	_check_tags(issues)
 	match kind:

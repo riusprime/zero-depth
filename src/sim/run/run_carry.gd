@@ -5,7 +5,9 @@ extends RefCounted
 ## run-long state to World (shards, combos, engine stacks) append its field name to FIELDS; a name the world lacks
 ## is skipped, so the list may run ahead of the code. Values are copied, never shared between worlds.
 
-const FIELDS: Array[StringName] = [&"items_owned", &"combos_owned", &"guard_charges", &"shards"]
+const FIELDS: Array[StringName] = [
+	&"items_owned", &"combos_owned", &"guard_charges", &"shards", &"regen_bonus_permille"
+]
 const HP := &"hp"
 
 

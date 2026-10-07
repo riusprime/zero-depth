@@ -208,6 +208,8 @@ var tick_seq0 := 0
 var boss_flow: BossFlow
 var floor_count := 1
 # --- end Run flow ------------------------------------------------------------------------------------------
+var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders, combat and regen (PlayerBuild).
+var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
 
 var _next_id := 1
 var _event_seq := 0
@@ -302,6 +304,7 @@ func step(frame: InputFrame) -> void:
 	aim_dist_cm = frame.aim_dist_cm
 	held_buttons = frame.held
 	actors.facing[0] = aim_angle
+	PlayerBuild.note_facing(self)  # Builds: melee follows the facing (L29).
 	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
 	if Rewards.interact(self):
 		tick += 1
@@ -327,6 +330,7 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
 	Engines.tick_statuses(self)  # Engines: shock, bleed, frost, freezes.
+	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
@@ -644,6 +648,7 @@ func state_hash() -> String:
 		rewards.hash_into(h)
 	if not item_tables.is_empty():
 		_hash_engines(h)
+	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
