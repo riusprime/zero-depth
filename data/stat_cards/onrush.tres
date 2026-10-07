@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"onrush"
+name_key = &"STAT_ONRUSH"
+desc_key = &"STAT_ONRUSH_DESC"
+amounts = PackedFloat32Array(10, 18, 30)
+cap = 90
+weight = 8
+id = &"onrush"

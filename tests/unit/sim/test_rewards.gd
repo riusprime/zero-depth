@@ -79,8 +79,18 @@ func test_the_shipped_data() -> void:
 	rare.sort()
 	assert_eq(
 		rare,
-		["bulwark", "cold_snap", "conductor", "meltdown", "wildfire"],
-		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18)"
+		[
+			"afterimage",
+			"bulwark",
+			"cluster_payload",
+			"cold_snap",
+			"conductor",
+			"meltdown",
+			"overclocked_drone",
+			"razor_orbit",
+			"wildfire"
+		],
+		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP)"
 	)
 
 

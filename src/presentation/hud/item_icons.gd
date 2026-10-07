@@ -37,6 +37,10 @@ const IDS: Array[StringName] = [
 	&"heat_sink",
 	&"thermal_edge",
 	&"meltdown",
+	&"cluster_payload",
+	&"overclocked_drone",
+	&"razor_orbit",
+	&"afterimage",
 ]
 
 
@@ -291,6 +295,8 @@ static func _engine_shapes(id: StringName) -> Array:
 			]
 		&"heat_sink", &"thermal_edge", &"meltdown":
 			return _heat_icon(id)
+	if CardPoolIcons.MOD_COLORS.has(id):
+		return CardPoolIcons.shapes(id)  # v0.5.0 CP: the ability mods
 	return gem()
 
 

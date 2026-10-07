@@ -12,3 +12,7 @@ var desc_key := &""
 var amounts := PackedInt32Array([0, 0, 0])
 var cap := 0
 var weight := 0
+## v0.5.0 CP, the rule cards: the second number per rarity in per mille (Glass Cannon's max HP cut, Hoarder's shard
+## gain) and the limit x 1000 (Glass Cannon's lowest max HP multiplier, Overkill's reach in mm, Hoarder's shards).
+var side := PackedInt32Array([0, 0, 0])
+var limit_permille := 0

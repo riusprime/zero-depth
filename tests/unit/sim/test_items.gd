@@ -317,17 +317,19 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	assert_eq(seen.size(), 24, "no repeats")
 	var v := _world([], [])
 	v.player.utility = PlayerTable.Utility.GUARD
-	v.add_item(0)
-	v.add_pickup(1, Vector2(5, 5))
+	var first := ItemPool.available(v)  # v0.5.0 CP: index 0 may be an ability mod, never drawn here
+	var held := [first[0], first[1]]
+	v.add_item(held[0])
+	v.add_pickup(held[1], Vector2(5, 5))
 	var some := ItemPool.draw(v, 3)
 	assert_eq(some.size(), 3)
 	for i in some:
-		assert_false(i in [0, 1])
+		assert_false(i in held)
 		v.add_pickup(i, Vector2(5, 5))
 	var rest := ItemPool.draw(v, 24)
 	assert_eq(rest.size(), 19, "24 - owned - 4 placed")
 	for i in rest:
-		assert_false(i in some or i in [0, 1])
+		assert_false(i in some or i in held)
 
 
 func test_pool_draws_are_deterministic_by_seed() -> void:

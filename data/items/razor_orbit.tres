@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 29
+name_key = &"ITEM_RAZOR_ORBIT"
+desc_key = &"ITEM_RAZOR_ORBIT_DESC"
+rarity = 1
+requires_ability = &"orbit_blades"
+stacks_per_hit = 1
+bleed_damage = 1
+bleed_period_seconds = 0.5
+bleed_seconds = 4.0
+bleed_max_stacks = 8
+bleed_burst_per_stack = 5
+tags = PackedStringArray("ability", "bleed")
+id = &"razor_orbit"

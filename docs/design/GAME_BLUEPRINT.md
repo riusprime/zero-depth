@@ -137,6 +137,16 @@ value or by an owner decision, and the change is noted here.
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
+- **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
+  card is an ability (new or levelled), a stat-card kind (its three rarities are one card) or a mod. A run's pool is
+  what its build can ever be offered: Blade 50 (9 abilities with the three of step AB, 17 stat kinds, 24 mods), Gun
+  48 (9, 17, 22). The five added stat kinds are **rule cards** that ask for a decision instead of a flat gain:
+  Glass Cannon (+damage, −max HP to a floor), Onrush (+damage while moving), Overkill (a kill's excess damage
+  splashes onto the nearest enemy), Hoarder (+damage per 100 shards held, +shard gain: spend at a chest or keep the
+  power) and Fast Hands (auto abilities' cooldowns only). The four added mods are **ability mods**, offered only
+  while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
+  Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
+  [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
 
 ## E. Enemies and the stress matrix
 

@@ -52,6 +52,10 @@ const ID_COLORS := {
 	&"heat_sink": Color("#FF9A3C"),
 	&"thermal_edge": Color("#FFD27A"),
 	&"meltdown": Color("#FF3D1F"),
+	&"cluster_payload": Color("#FFA05A"),  # v0.5.0 CP: the ability mods (CardPoolIcons.MOD_COLORS)
+	&"overclocked_drone": Color("#FF6A3A"),
+	&"razor_orbit": Color("#E04A5E"),
+	&"afterimage": Color("#D2B8FF"),
 }
 
 ## Engine status colours (v0.3.0 G): the enemy effects, pips and the combo frame use them.

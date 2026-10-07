@@ -197,6 +197,14 @@ ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
 ITEM_THERMAL_EDGE_DESC,You run Hot from 30 heat instead of 40.,Entras en Caliente con 30 de calor en vez de 40.
 ITEM_MELTDOWN,Meltdown,Fusión
 ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
+ITEM_CLUSTER_PAYLOAD,Cluster Payload,Carga de racimo
+ITEM_CLUSTER_PAYLOAD_DESC,Bomb Lobber's bombs split into 3 bomblets (40% damage each).,Las bombas se dividen en 3 bombetas (40% de daño cada una).
+ITEM_OVERCLOCKED_DRONE,Overclocked Drone,Dron sobrealimentado
+ITEM_OVERCLOCKED_DRONE_DESC,Your drones fire 0.8% faster per point of heat.,"Tus drones disparan un 0,8% más rápido por punto de calor."
+ITEM_RAZOR_ORBIT,Razor Orbit,Órbita afilada
+ITEM_RAZOR_ORBIT_DESC,Orbit Blades make enemies bleed (+1 per touch).,Las Cuchillas orbitales hacen sangrar (+1 por toque).
+ITEM_AFTERIMAGE,Afterimage,Imagen residual
+ITEM_AFTERIMAGE_DESC,Blinking leaves an echo that bursts for 18 soon after.,Al teletransportarte dejas un eco que estalla por 18.
 HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
 HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
@@ -362,6 +370,16 @@ STAT_PICKUP_RANGE,Magnet,Imán
 STAT_PICKUP_RANGE_DESC,+%s%% pickup and interact range,+%s %% de alcance para recoger e interactuar
 STAT_ARMOUR,Armour,Armadura
 STAT_ARMOUR_DESC,-%s%% damage taken,-%s %% de daño recibido
+STAT_GLASS_CANNON,Glass Cannon,Cañón de cristal
+STAT_GLASS_CANNON_DESC,"+%s%% damage, -%s%% max HP","+%s %% de daño, -%s %% de vida máxima"
+STAT_ONRUSH,Onrush,Embestida
+STAT_ONRUSH_DESC,+%s%% damage while moving,+%s %% de daño mientras te mueves
+STAT_OVERKILL,Overkill,Remate
+STAT_OVERKILL_DESC,A kill splashes %s%% of its excess damage onto the nearest enemy,Una baja salpica el %s %% de su daño sobrante al enemigo más cercano
+STAT_HOARDER,Hoarder,Acaparador
+STAT_HOARDER_DESC,"+%s%% damage per 100 shards held, +%s%% shards","+%s %% de daño por cada 100 fragmentos guardados, +%s %% de fragmentos"
+STAT_FAST_HANDS,Fast Hands,Manos rápidas
+STAT_FAST_HANDS_DESC,-%s%% auto ability cooldowns,-%s %% de enfriamiento de las habilidades automáticas
 RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d

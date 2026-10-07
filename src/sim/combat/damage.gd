@@ -51,7 +51,8 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
-	if owner_id == a.ids[0] and target != 0:  # v0.4.0 BS: the damage stat, then the crit roll (Stats).
+	var splash := effect_id == Stats.EFFECT_OVERKILL  # v0.5.0 CP: an Overkill splash is already scaled
+	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]
 		tags |= out[1]
@@ -94,6 +95,8 @@ static func hit(
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
+		if a.dead[target] == 1 and not splash:
+			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
 	return got
 
 
