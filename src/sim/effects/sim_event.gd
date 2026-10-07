@@ -7,6 +7,8 @@ extends RefCounted
 ## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
 ## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
 ## index in World.boss_tables, pos = where it fell.
+## v0.3.0 E: PICKUP is also a card taken from an altar or chest (source = the reward's id). SHARDS: a kill paid
+## shards; amount = how many, pos = the body, source = the dead actor's id.
 ## Run flow (v0.3.0 B): BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
 ## active), FLOOR_EXIT (the player walked into the active gate).
 enum Kind {
@@ -22,6 +24,7 @@ enum Kind {
 	PICKUP,
 	COMBO_UNLOCKED,
 	BOSS_DEFEATED,
+	SHARDS,
 	BOSS_ROOM_SEALED,
 	PORTAL_OPENED,
 	FLOOR_EXIT,

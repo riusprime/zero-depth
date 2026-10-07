@@ -10,6 +10,10 @@ extends ContentDef
 @export var move_speed_mps := 3.0
 @export var attacks: Array[AttackDefinition] = []
 @export var stress_tags := PackedStringArray()
+## Economy (v0.3.0 E, L6): shards a kill grants. By default × (1 + 0.25 × danger tier) (RewardsDefinition);
+## with shards_by_floor (bosses) × the floor number instead. 0 = drops none.
+@export var shards := 0
+@export var shards_by_floor := false
 
 
 func category() -> StringName:
@@ -24,6 +28,8 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"not_positive", resource_path, "hp must be > 0"))
 	check_positive(issues, "radius_m", radius_m)
 	check_positive(issues, "move_speed_mps", move_speed_mps)
+	if shards < 0:
+		issues.append(ValidationIssue.new(&"negative", resource_path, "shards is negative"))
 	var schema: Dictionary = BehaviourSchemas.SCHEMAS.get(behaviour_id, {})
 	if schema.is_empty():
 		issues.append(

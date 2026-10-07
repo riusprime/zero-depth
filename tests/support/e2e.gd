@@ -120,3 +120,48 @@ func stick_toward(dir: Vector2) -> void:
 	var c := InputLatch.C45
 	joy_axis(JOY_AXIS_LEFT_X, (dir.x + dir.y) * c)
 	joy_axis(JOY_AXIS_LEFT_Y, -(dir.y - dir.x) * c)
+
+
+## The reward (RewardStore.Kind) nearest the player (v0.3.0 E), or -1. A read, not an action.
+static func nearest_reward(w: World, kind: int) -> int:
+	var best := -1
+	for i in w.rewards.size():
+		if w.rewards.kind[i] != kind:
+			continue
+		if (
+			best < 0
+			or (
+				w.rewards.pos(i).distance_to(w.player_pos())
+				< w.rewards.pos(best).distance_to(w.player_pos())
+			)
+		):
+			best = i
+	return best
+
+
+## Walks with the left stick only (a flow field toward `target`, then straight in) until within `within` m, then
+## lets go and waits for the player to stop. False if it didn't get there (or died).
+func walk_to(target: Vector2, within: float) -> bool:
+	var w := world()
+	var nav := NavField.new()
+	nav.build(w.walls)
+	nav.flood(target)
+	var ok := false
+	for k in 2400:
+		var p := w.player_pos()
+		if (target - p).length() <= within:
+			ok = true
+			break
+		if w.player_dead():
+			break
+		var dir := (target - p).normalized() if (target - p).length() < 1.5 else nav.direction(p)
+		# Sim direction -> screen stick (the inverse of the +45 degree screen-to-sim rotation); stick y is down.
+		var c := InputLatch.C45
+		var screen := Vector2((dir.x + dir.y) * c, (dir.y - dir.x) * c)
+		joy_axis(JOY_AXIS_LEFT_X, screen.x)
+		joy_axis(JOY_AXIS_LEFT_Y, -screen.y)
+		await frames(1)
+	joy_axis(JOY_AXIS_LEFT_X, 0.0)
+	joy_axis(JOY_AXIS_LEFT_Y, 0.0)
+	await frames(12)
+	return ok

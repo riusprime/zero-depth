@@ -14,6 +14,9 @@ var windup_ticks := 24
 var active_ticks := 1
 var recover_ticks := 0
 var damage := 0
+## Economy (v0.3.0 E): shards per kill, scaled by the danger tier, or by the floor number when shards_by_floor.
+var shards := 0
+var shards_by_floor := false
 ## Charger.
 var charge_speed := 0.0
 var charge_distance_m := 0.0

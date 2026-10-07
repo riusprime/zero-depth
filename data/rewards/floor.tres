@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="RewardsDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/rewards_definition.gd" id="1_rew"]
+
+[resource]
+script = ExtResource("1_rew")
+altars_min = 2
+altars_max = 3
+chests_min = 2
+chests_max = 3
+chest_prices = PackedInt32Array(40, 60, 80)
+floor_price_step = 0.5
+rare_weight_chest = 3
+rare_weight_altar = 1
+offer_size = 3
+interact_radius_m = 1.6
+shard_tier_bonus = 0.25
+id = &"floor"

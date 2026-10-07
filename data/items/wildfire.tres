@@ -14,4 +14,5 @@ burn_max_stacks = 5
 stacks_per_hit = 1
 spread_radius_m = 2.5
 tags = PackedStringArray("fire")
+rarity = 1
 id = &"wildfire"

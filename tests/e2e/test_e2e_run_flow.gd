@@ -1,10 +1,10 @@
 extends GutTest
 ## The run through real input only (v0.3.0 PLAN L3-L4, B): floor 1 shows its card and "Floor 1 · <biome>"; the
-## left stick walks to the nearest pedestal (an item to carry), then through the boss door, which seals behind you
-## and starts floor 1's real boss (drawn from its pool, its arena sizing the room); the dev panel (backtick, then
-## mouse clicks: God mode for the long walk, Kill boss) stands in for the fight; the portal opens, the stick walks
-## into it, and floor 2 loads with the items kept, a 40 % heal, its own card and HUD line. Pause: Esc freezes the
-## sim and Enter resumes; Restart run from the pause menu starts a fresh run.
+## left stick walks to the nearest altar (E and Enter take a card: an item to carry), then through the boss door,
+## which seals behind you and starts floor 1's real boss (drawn from its pool, its arena sizing the room); the dev
+## panel (backtick, then mouse clicks: God mode for the long walk, Kill boss) stands in for the fight; the portal
+## opens, the stick walks into it, and floor 2 loads with the items and shards kept, a 40 % heal, its own card and
+## HUD line. Pause: Esc freezes the sim and Enter resumes; Restart run from the pause menu starts a fresh run.
 
 const LEG_FRAMES := 7000
 
@@ -62,19 +62,20 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(main.is_dev_panel_open())
 	await _click(e, main, "God")
 	assert_true(main.driver.debug.god, "a click on God mode turns it on")
-	# Leg 1: the nearest pedestal.
-	var near := 0
-	for i in w.pickups.ids.size():
-		if (
-			w.pickups.pos(i).distance_to(w.player_pos())
-			< w.pickups.pos(near).distance_to(w.player_pos())
-		):
-			near = i
-	var item := w.pickups.item[near]
-	var took: bool = await _walk(
-		e, w.pickups.pos(near), func() -> bool: return w.items_owned.size() > 0
+	# Leg 1: the nearest free altar (v0.3.0 E): walk up, E opens its 3-card pick, Enter takes the focused card.
+	var altar := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
+	assert_gte(altar, 0, "the floor has an altar")
+	var reached: bool = await e.walk_to(
+		w.rewards.pos(altar), w.reward_table.interact_radius_m * 0.6
 	)
-	assert_true(took, "walked onto a pedestal")
+	assert_true(reached, "walked up to an altar")
+	await e.tap(KEY_E)
+	await e.frames(2)
+	assert_gte(w.choosing, 0, "E opened the altar's pick")
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	assert_eq(w.items_owned.size(), 1, "took a card's item")
+	var item := w.items_owned[0] if not w.items_owned.is_empty() else -1
 	# Leg 2: through the boss door.
 	var into := Kin.dir(f.boss_door_angle)
 	var walls_before := w.walls.size()
@@ -109,7 +110,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
 	assert_eq(hud.gate_text(), tr("HUD_PORTAL_OPEN"))
 	var hp_before := w.actors.hp[0]
-	var owned := w.items_owned.duplicate()  # the pedestal's item, and any picked up on the way
+	var owned := w.items_owned.duplicate()
+	var shards := w.shards  # kills on the way and the boss's purse
 	assert_has(owned, item)
 	# Leg 3: into the portal.
 	var gone: bool = await _walk(
@@ -126,6 +128,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_ne(w2, w, "a new floor")
 	assert_eq(w2.floor_index, 2)
 	assert_eq(w2.items_owned, owned, "the items came along, in order")
+	assert_eq(w2.shards, shards, "the shards came along")
+	assert_eq(w2.floor_index, 2, "chest prices and boss shards read floor 2")
 	assert_eq(w2.actors.hp[0], mini(100, hp_before + 40), "healed 40 % of max HP")
 	assert_lt(w2.run_ticks, 30, "the danger clock restarts")
 	assert_eq(w2.seed_value, main.run.floor_seed(2), "with floor 2's seed")

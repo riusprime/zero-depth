@@ -72,7 +72,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		toggle_dev_panel()
 		return
-	if driver != null and _end == null and event.is_action_pressed(&"pause"):
+	if (
+		driver != null
+		and _end == null
+		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and event.is_action_pressed(&"pause")
+	):
 		get_viewport().set_input_as_handled()
 		if _pause == null:
 			open_pause()
@@ -174,6 +179,8 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		enemies,
 		ContentCompiler.compile_spawning(spawning, repo),
 		ContentCompiler.compile_items(repo),
+		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
+		run.floor_index,
 		arena,
 		run,
 		ContentCompiler.compile_combos(repo)  # v0.3.0 G: named combos.
@@ -201,6 +208,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	_hud = Hud.new()
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
+	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.sync(driver.reader)
 	_hud.show_floor(run.floor_index, String(biome.name_key))
 	_ended_ticks = 0

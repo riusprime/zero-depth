@@ -308,6 +308,7 @@ func test_walking_over_a_pickup_takes_it() -> void:
 
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
+	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
 	var all := ItemPool.draw(w, 30)
 	assert_eq(all.size(), 24, "the v0.3.0 pool of 24")
 	var seen := {}
@@ -315,6 +316,7 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 		seen[i] = true
 	assert_eq(seen.size(), 24, "no repeats")
 	var v := _world([], [])
+	v.player.utility = PlayerTable.Utility.GUARD
 	v.add_item(0)
 	v.add_pickup(1, Vector2(5, 5))
 	var some := ItemPool.draw(v, 3)

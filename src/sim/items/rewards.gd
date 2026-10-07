@@ -1,0 +1,154 @@
+class_name Rewards
+extends RefCounted
+## The economy and rewards (v0.3.0 PLAN, E; owner lines L6, L7, L9).
+## - Shards: every enemy kill pays its kind's shards × (1 + bonus × danger tier), rounded half up; a kind marked
+##   shards_by_floor (a boss) pays shards × the floor number instead.
+## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
+##   in the start hall. Their counts and order come from the loot stream.
+## - The interact button within reach opens the nearest one. A chest you can't afford stays shut (the world
+##   records the refusal for the view). Opening rolls the offer once: up to offer_size different items from the
+##   pool (loot stream; chests weight rare items higher). The world then waits for the pick (World.choosing):
+##   every gameplay phase is frozen while the tick count runs on. A pick takes that card (a chest's price is paid
+##   then), consumes the reward and returns the other cards to the pool; a cancel keeps the reward and its
+##   rolled offer for later, so reopening shows the same cards.
+
+
+## Shards a kill of `kind` pays now (0 for kinds without a table or without shards).
+static func shards_for_kill(w: World, kind: int) -> int:
+	if BossAi.is_boss_kind(kind):
+		return w.reward_table.boss_shards * maxi(1, w.floor_index)
+	var t := w.enemy_table(kind)
+	if t == null or t.shards <= 0:
+		return 0
+	if t.shards_by_floor:
+		return t.shards * maxi(1, w.floor_index)
+	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
+	return (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
+
+
+## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
+static func on_kill(w: World, i: int) -> void:
+	var amount := shards_for_kill(w, w.actors.kinds[i])
+	if amount <= 0:
+		return
+	w.shards += amount
+	var me := w.actors.ids[0]
+	var e := w.emit_event(SimEvent.Kind.SHARDS, w.actors.ids[i], me, me, w.actors.pos(i))
+	e.amount = amount
+
+
+## Places the floor's altars and chests on the layout's item spots (setup). Counts and the altar/chest order are
+## drawn from the loot stream; chest prices follow chest order and World.floor_index.
+static func place(w: World, layout: FloorLayout) -> void:
+	var t := w.reward_table
+	var order := spot_order(layout)
+	var kinds := PackedInt32Array()
+	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
+		kinds.append(RewardStore.Kind.ALTAR)
+	for k in w.rng_loot.range_int(t.chests_min, t.chests_max):
+		kinds.append(RewardStore.Kind.CHEST)
+	for k in range(kinds.size() - 1, 0, -1):
+		var j := w.rng_loot.range_int(0, k)
+		var swap := kinds[k]
+		kinds[k] = kinds[j]
+		kinds[j] = swap
+	var chests := 0
+	for k in mini(kinds.size(), order.size()):
+		var price := 0
+		if kinds[k] == RewardStore.Kind.CHEST:
+			price = t.chest_price(chests, w.floor_index)
+			chests += 1
+		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+
+
+## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
+static func spot_order(layout: FloorLayout) -> PackedInt32Array:
+	var first := PackedInt32Array()
+	var second := PackedInt32Array()
+	for i in layout.item_spots.size():
+		if i > 0 and layout.item_rooms[i - 1] == layout.item_rooms[i]:
+			second.append(i)
+		else:
+			first.append(i)
+	first.append_array(second)
+	return first
+
+
+## The reward within interact reach nearest the player (lowest index on a tie), or -1.
+static func nearest(w: World) -> int:
+	var best := -1
+	var best_d := w.reward_table.interact_radius_m
+	var p := w.player_pos()
+	for i in w.rewards.size():
+		var d := Kin.length(w.rewards.pos(i) - p)
+		if d <= best_d and (best < 0 or d < best_d):
+			best = i
+			best_d = d
+	return best
+
+
+static func can_afford(w: World, i: int) -> bool:
+	return w.shards >= w.rewards.price[i]
+
+
+## Tick phase 2b: a buffered interact press next to a reward opens it. True if the world is now choosing.
+static func interact(w: World) -> bool:
+	if w.player_dead() or w.buffered(InputFrame.INTERACT) == 0:
+		return false
+	var i := nearest(w)
+	if i < 0:
+		return false
+	w.consume_buffered(InputFrame.INTERACT)
+	if not can_afford(w, i):
+		_deny(w, i)
+		return false
+	if w.rewards.rolled[i] == 0:
+		var t := w.reward_table
+		var weight := (
+			t.rare_weight_chest
+			if w.rewards.kind[i] == RewardStore.Kind.CHEST
+			else t.rare_weight_altar
+		)
+		w.rewards.set_offer(i, ItemPool.draw_weighted(w, t.offer_size, weight))
+	if w.rewards.offer_of(i).is_empty():
+		_deny(w, i)
+		return false
+	w.choosing = w.rewards.ids[i]
+	return true
+
+
+## While choosing: a pick takes that card, a cancel closes the choice; anything else waits.
+static func choose(w: World, frame: InputFrame) -> void:
+	var i := w.rewards.index_of(w.choosing)
+	if i < 0:
+		_resume(w)
+		return
+	if frame.pick == InputFrame.PICK_CANCEL:
+		_resume(w)
+		return
+	var offer := w.rewards.offer_of(i)
+	var k := frame.pick - 1
+	if k < 0 or k >= offer.size() or not can_afford(w, i):
+		return
+	w.shards -= w.rewards.price[i]
+	var idx := offer[k]
+	var at := w.rewards.pos(i)
+	var e := w.emit_event(
+		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
+	)
+	e.amount = idx
+	w.add_item(idx)
+	w.rewards.remove_at(i)
+	_resume(w)
+
+
+## Back to play: no choice open, and nothing pressed during the choice fires afterwards.
+static func _resume(w: World) -> void:
+	w.choosing = -1
+	for s in w.input_buffer.size():
+		w.input_buffer[s] = 0
+
+
+static func _deny(w: World, i: int) -> void:
+	w.reward_denied_id = w.rewards.ids[i]
+	w.reward_denied_tick = w.tick

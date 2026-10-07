@@ -12,6 +12,9 @@ var telegraphs := TelegraphViews.new()
 var hit_feel: HitFeel
 var ink := InkPass.new()
 var pickups := PickupViews.new()
+## Altars, chests and shard gems (v0.3.0 E).
+var rewards := RewardViews.new()
+var shards := ShardViews.new()
 var item_fx: ItemVisuals
 ## v0.3.0 G: engine statuses and combo payoffs.
 var status_fx: StatusVisuals
@@ -32,6 +35,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(utility)
 	add_child(rig)
 	add_child(pickups)
+	add_child(rewards)
+	add_child(shards)
 	item_fx = ItemVisuals.new(kit, actors)
 	add_child(item_fx)
 	status_fx = StatusVisuals.new(actors)
@@ -66,6 +71,8 @@ func sync() -> void:
 	utility.sync(reader)
 	hit_feel.sync(reader)
 	pickups.sync(reader)
+	rewards.sync(reader)
+	shards.sync(reader)
 	item_fx.sync(reader)
 	status_fx.sync(reader)
 	if boss_door != null:

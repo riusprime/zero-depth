@@ -433,6 +433,7 @@ func test_new_item_state_is_hashed_and_deterministic() -> void:
 
 func test_the_pool_draws_every_item_without_repeats() -> void:
 	var w := _world([K.MOMENTUM], [])
+	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
 	var all := ItemPool.draw(w, 99)
 	assert_eq(all.size(), 23, "everything but the owned one")
 	var seen := {}

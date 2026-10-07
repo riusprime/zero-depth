@@ -26,6 +26,8 @@ func _floor_world(seed_value: int, run: RunState = null) -> World:
 		enemies,
 		ContentCompiler.compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo),
 		ContentCompiler.compile_items(repo),
+		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),
+		run.floor_index if run != null else 1,
 		null,
 		run,
 		ContentCompiler.compile_combos(repo)
@@ -116,6 +118,7 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	w.actors.hp[0] = 10
 	w.run_ticks = 600
 	w.kills = 5
+	w.shards = 30
 	r.finish_floor(w)
 	assert_eq(r.floor_index, 2)
 	assert_eq(r.carry[RunCarry.HP], 10 + 40, "heal 40 % of 100")
@@ -126,11 +129,13 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	assert_true(w2.item_mods.has(w2.item_tables[0].kind), "their modifiers are live")
 	assert_eq(w2.actors.hp[0], 50)
 	assert_eq(w2.floor_index, 2)
+	assert_eq(w2.shards, 30, "shards carry (E)")
 	assert_eq(w2.floor_count, 3)
 	assert_eq(w2.run_ticks, 0, "the danger tier restarts on each floor")
 	assert_eq(WorldReader.new(w2).tier(), 0)
-	for i in w2.pickups.ids.size():
-		assert_false(w2.pickups.item[i] in [0, 3], "a floor never offers an item you hold")
+	for i in w2.rewards.size():
+		for item in w2.rewards.offer_of(i):
+			assert_false(item in [0, 3], "a floor never offers an item you hold")
 	w2.actors.hp[0] = 90
 	assert_eq(RunCarry.take(w2, 400)[RunCarry.HP], 100, "the heal stops at max HP")
 
