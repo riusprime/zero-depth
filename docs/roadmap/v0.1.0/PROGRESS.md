@@ -51,6 +51,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   by an e2e that clears three waves through real input (that needs a scripted fighter; Step 9's bot can do it).
 - CI: Step 1's Verify run failed on gdlint (`WorldReader` over 20 public methods); Step 2 allowed the wide reader
   facade, and every run since is green on Verify, Windows (cross-OS golden) and Shots.
+- **The Warden commits to its slam** (no turning during windup, slam and recovery). Found with a scratch bot
+  (`build/bot.gd`, not evidence): at the starting turn rate (≈ 132°/s) you can't circle it from outside the
+  slam's reach (6 m/s at 2.9 m ≈ 118°/s), so the shield could never be flanked, against the owner-approved
+  design ("you flank it"). With the change, baiting the slam opens its back for ~0.7 s. The bot then cleared
+  2/20 seeds with Guard and 3/20 with Blink (before: 0/40). A tuning call for the owner to judge.
 - `tests/unit/application/test_settings_profile.gd` fails when only `tests/unit` runs (it needs the audio buses
   and the input map that earlier suites set up); it passes in the full suite. Pre-existing; to fix in Step 10.
 
@@ -93,3 +98,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   sparks on blocked/guarded hits, shards on a kill from a cosmetic RNG); `IsoRig.shake` with a "Screen shake"
   option (on by default; off means none). Sim hit-stop unchanged (3 / 5 / 4 ticks). 128 tests pass; goldens
   unchanged.
+- 2026-10-07 — Step 4 fix: the Warden stops turning once it commits to a slam, so it can be flanked (see
+  Deviations). 128 tests pass.

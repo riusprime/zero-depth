@@ -1,6 +1,7 @@
 class_name EnemyAi
 extends RefCounted
-## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. Each enemy is a small state machine in
+## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. A Warden turns only while it walks:
+## once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it). Each enemy is a small state machine in
 ## ActorStore (state, state_t, facing, lock_*, cd, fire_cd). think() runs in tick phase 3, move() in phase 5,
 ## resolve() in phase 6. Every attack's area comes from one function here, which the telegraph view also draws
 ## (EI-07): charge_lane, slam_disc, burst_line.
@@ -38,14 +39,10 @@ static func think(w: World, i: int) -> void:
 			if alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close:
 				_start_windup(w, i, aim)
 		State.WINDUP:
-			if a.kinds[i] == ActorStore.Kind.WARDEN:
-				a.facing[i] = Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			if a.state_t[i] >= t.windup_ticks:
 				_enter(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
-			if a.kinds[i] == ActorStore.Kind.WARDEN:
-				a.facing[i] = Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			var done := false
 			match a.kinds[i]:
 				ActorStore.Kind.CHARGER:
@@ -57,8 +54,6 @@ static func think(w: World, i: int) -> void:
 			if done:
 				_enter(a, i, State.RECOVER)
 		State.RECOVER:
-			if a.kinds[i] == ActorStore.Kind.WARDEN:
-				a.facing[i] = Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			if a.state_t[i] >= t.recover_ticks:
 				_enter(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
