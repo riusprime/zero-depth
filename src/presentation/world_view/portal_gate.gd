@@ -3,8 +3,9 @@ extends Node3D
 ## The gateway to the next floor (v0.2.0 PLAN L8, step D): two stacked-stone pillars and a lintel around a
 ## 2.4 × 3.2 m rectangle of swirling blue light, like a cartoon portal in a door shape (owner, L12: "the portal
 ## should be blue, not green": a deep electric blue with cyan-white highlights, bluer than the player's cyan).
-## Presentation only: it reads nothing from the sim and decides nothing (EI-07). Sealed (the default for now)
-## slows and dims the swirl under a faint dark veil.
+## Presentation only: it reads nothing from the sim and decides nothing (EI-07). Sealed (the default) slows and dims
+## the swirl under a dark veil; v0.3.0 B: the view unseals it when the sim's portal opens (the boss is dead), with a
+## brief flare, and the open swirl runs bright and fast.
 ##
 ## Local frame: the opening spans local Z, the gate faces local +X; setup() turns +X to the sim facing angle.
 
@@ -21,7 +22,10 @@ const SWIRL_MID := Color(0.13, 0.36, 1.0)
 const SWIRL_LIGHT := Color(0.74, 0.9, 1.0)
 const GLOW := Color(0.16, 0.36, 1.0)
 const LIGHT_ENERGY_OPEN := 2.2
-const LIGHT_ENERGY_SEALED := 1.1
+const LIGHT_ENERGY_SEALED := 0.7
+## The flare when the portal opens: extra light energy, fading over FLARE_SECONDS.
+const FLARE_ENERGY := 5.0
+const FLARE_SECONDS := 1.2
 
 ## Stacked blocks of one pillar, bottom to top: [height, width, depth, z offset, y-rotation°, z-roll°].
 ## Hand-picked (not random) so every gate looks the same and the opening stays clear.
@@ -82,7 +86,7 @@ void fragment() {
 	// Radius normalised so the swirl fills the rectangle rather than a circle.
 	vec2 q = p / half_size.x;
 	float r = length(q);
-	float speed = swirl_speed * mix(1.0, 0.3, sealed);
+	float speed = swirl_speed * mix(1.25, 0.15, sealed);
 	float t = TIME * speed;
 	// Two noise layers twisted into a vortex that turns faster near the centre.
 	vec2 s1 = rot(q, t * 1.3 + 1.4 / (r + 0.45));
@@ -100,10 +104,10 @@ void fragment() {
 	col = mix(col, color_light.rgb, core * 0.75);
 	float rim = 1.0 - smoothstep(0.0, 0.3, d_edge + (n2 - 0.5) * 0.12);
 	col = mix(col, color_light.rgb * 1.4, rim * 0.9);
-	float bright = energy * mix(1.0, 0.62, sealed);
+	float bright = energy * mix(1.15, 0.38, sealed);
 	col *= bright;
 	// Sealed: a faint dark veil that drifts over the swirl.
-	float veil = sealed * (0.22 + 0.18 * fbm(p * 1.4 + vec2(t * 0.2, -t * 0.1)));
+	float veil = sealed * (0.45 + 0.2 * fbm(p * 1.4 + vec2(t * 0.2, -t * 0.1)));
 	col = mix(col, veil_color.rgb, veil * (1.0 - rim * 0.6));
 	ALBEDO = col;
 	ALPHA = mix(0.55, 1.0, smoothstep(0.0, 0.07, d_edge));
@@ -130,6 +134,7 @@ var glow_material: ShaderMaterial
 var light: OmniLight3D
 var stone_blocks: Array[MeshInstance3D] = []
 var _sealed := true
+var _flare := 0.0
 var _stone := StandardMaterial3D.new()
 var _stone_top := StandardMaterial3D.new()
 
@@ -152,6 +157,8 @@ func setup(sim_pos: Vector2, facing_angle: int) -> void:
 
 
 func set_sealed(sealed: bool) -> void:
+	if _sealed and not sealed and is_inside_tree():
+		_flare = FLARE_SECONDS
 	_sealed = sealed
 	portal_material.set_shader_parameter("sealed", 1.0 if sealed else 0.0)
 	light.light_energy = LIGHT_ENERGY_SEALED if sealed else LIGHT_ENERGY_OPEN
@@ -160,6 +167,15 @@ func set_sealed(sealed: bool) -> void:
 
 func is_sealed() -> bool:
 	return _sealed
+
+
+func _process(delta: float) -> void:
+	if _flare <= 0.0:
+		return
+	_flare = maxf(0.0, _flare - delta)
+	var k := _flare / FLARE_SECONDS
+	light.light_energy = LIGHT_ENERGY_OPEN + FLARE_ENERGY * k * k
+	glow_material.set_shader_parameter("strength", 0.55 + 0.6 * k)
 
 
 ## Optional: tint the stone from a biome palette's `cover` token (a little darker, so the gate stands apart).

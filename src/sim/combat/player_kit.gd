@@ -41,7 +41,8 @@ static func move_or_aim(w: World) -> Vector2:
 ## beyond the wall lies within that range; otherwise it ends at the last free spot before the wall. A spot is free
 ## when the player's circle touches no wall (the sealed gate's footprint included) and it lies in the NavField
 ## region the player walks in, so a blink never ends inside a wall, in the void outside the floor, or in a pocket
-## you can't walk to; it may end in another room. So thin cover is crossed at almost any distance and a thick wall
+## you can't walk to; it may end in another room, but never across the boss room's boundary except through its
+## open door (v0.3.0 B, World.blink_may_land). So thin cover is crossed at almost any distance and a thick wall
 ## only from close up. Samples every BLINK_STEP_M from the far end back: the farthest free one wins (none: stay).
 static func blink_target(w: World) -> Vector2:
 	var t := w.player
@@ -51,7 +52,11 @@ static func blink_target(w: World) -> Vector2:
 	var steps := int(round(t.blink_range_m / BLINK_STEP_M))
 	for k in range(steps, 0, -1):
 		var at := from + dir * (BLINK_STEP_M * k)
-		if _clear(w, at, t.radius_m) and w.nav.region_near(at) == home:
+		if (
+			_clear(w, at, t.radius_m)
+			and w.nav.region_near(at) == home
+			and w.blink_may_land(from, at)
+		):
 			return at
 	return from
 

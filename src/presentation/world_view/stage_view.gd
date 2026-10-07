@@ -17,6 +17,9 @@ const SHADOW_BLUR := 0.5
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
 
+## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
+## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
+var prop_style := &""
 var palette := {}
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
@@ -171,6 +174,9 @@ func _build_walls(reader: WorldReader) -> void:
 func _build_props(seed_value: int, arena_half: float) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value * 7919 + 17  # the cosmetic stream: presentation only
+	if prop_style == &"night_rocks" or prop_style == &"red_canyon":
+		_build_biome_props(rng, arena_half)
+		return
 	var rubble_mat := _mat(Color(palette["cover"]).darkened(0.25))
 	var grass_mat := _mat(palette["accent"])
 	var area_scale := clampf(arena_half * arena_half / 144.0, 1.0, 6.0)
@@ -212,3 +218,86 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 func apply_occlusion(indices: PackedInt32Array) -> void:
 	for i in _wall_nodes.size():
 		_wall_nodes[i].material_override = _wall_faded if i in indices else _wall_solid
+
+
+## Night Rocks and Red Canyon props (docs/art/ART_DIRECTION.md §1, §3): decoration only, never in the way.
+func _build_biome_props(rng: RandomNumberGenerator, arena_half: float) -> void:
+	var night := prop_style == &"night_rocks"
+	var rock_mat := _mat(Color(palette["cover"]).lightened(0.08 if night else 0.0))
+	var dark_mat := _mat(Color(palette["cover"]).darkened(0.3))
+	var accent_mat := _mat(palette["accent"])
+	var area_scale := clampf(arena_half * arena_half / 144.0, 1.0, 6.0)
+	for i in int(45 * area_scale):
+		var p := Vector2(
+			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
+		)
+		if not covers_ground(p):
+			continue
+		if night:
+			# A faceted boulder: a low-poly sphere, squashed and turned.
+			var s := rng.randf_range(0.18, 0.42)
+			var m := SphereMesh.new()
+			m.radius = s
+			m.height = s * 1.4
+			m.radial_segments = 6
+			m.rings = 3
+			var rock := MeshInstance3D.new()
+			rock.mesh = m
+			rock.material_override = rock_mat if i % 3 else dark_mat
+			rock.position = SimPlane.to_3d(p, s * 0.45)
+			rock.rotation = Vector3(rng.randf_range(-0.3, 0.3), rng.randf() * TAU, 0)
+			add_child(rock)
+		else:
+			# A mesa chunk: two or three flat stacked blocks, each a little smaller.
+			var w := rng.randf_range(0.22, 0.5)
+			var y := 0.0
+			for k in rng.randi_range(2, 3):
+				var b := BoxMesh.new()
+				var h := rng.randf_range(0.08, 0.16)
+				b.size = Vector3(w, h, w * rng.randf_range(0.7, 1.1))
+				var block := MeshInstance3D.new()
+				block.mesh = b
+				block.material_override = rock_mat if k % 2 == 0 else dark_mat
+				block.position = SimPlane.to_3d(p, y + h * 0.5)
+				block.rotation = Vector3(0, rng.randf() * TAU, 0)
+				add_child(block)
+				y += h
+				w *= 0.75
+	for i in int((10 if night else 40) * area_scale):
+		var p := Vector2(
+			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
+		)
+		if not covers_ground(p):
+			continue
+		if night:
+			# A bare dead tree: a leaning trunk and two branches.
+			var trunk_h := rng.randf_range(0.8, 1.3)
+			var tree := Node3D.new()
+			tree.position = SimPlane.to_3d(p)
+			tree.rotation = Vector3(rng.randf_range(-0.12, 0.12), rng.randf() * TAU, 0)
+			add_child(tree)
+			for spec: Array in [
+				[Vector3(0.09, trunk_h, 0.09), Vector3(0, trunk_h * 0.5, 0), 0.0],
+				[Vector3(0.05, 0.45, 0.05), Vector3(0.12, trunk_h * 0.8, 0), -0.7],
+				[Vector3(0.05, 0.35, 0.05), Vector3(-0.1, trunk_h * 0.65, 0), 0.8],
+			]:
+				var b := BoxMesh.new()
+				b.size = spec[0]
+				var part := MeshInstance3D.new()
+				part.mesh = b
+				part.material_override = accent_mat
+				part.position = spec[1]
+				part.rotation = Vector3(0, 0, spec[2])
+				tree.add_child(part)
+		else:
+			for blade in 3:
+				var g := MeshInstance3D.new()
+				var b := BoxMesh.new()
+				b.size = Vector3(0.04, rng.randf_range(0.14, 0.28), 0.04)
+				g.mesh = b
+				g.material_override = accent_mat
+				g.position = SimPlane.to_3d(
+					p + Vector2(rng.randf_range(-0.08, 0.08), rng.randf_range(-0.08, 0.08)), 0.1
+				)
+				g.rotation = Vector3(rng.randf_range(-0.5, 0.5), 0, rng.randf_range(-0.5, 0.5))
+				add_child(g)

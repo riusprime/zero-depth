@@ -8,7 +8,8 @@ Owner lines: L1 ("you can't just blink every single wall", Q4 "By thickness vs r
 
 ## What changed
 
-- **Wall thickness.** Each room side draws its own *half* from 0.3–1.5 m (map stream): how far its face lies inside
+- **Wall thickness.** (Superseded by B2 below: halves now 0.3–2.5 m, walls 0.6–5.0 m.) Each room side draws its
+  own *half* from 0.3–1.5 m (map stream): how far its face lies inside
   its grid line. A partition is the two halves beside it, so 0.6–3.0 m thick; an outer wall is its room's half on
   both sides of the grid line (0.6–3.0 m). Room interiors stay rectangles (each side pulled in by its own half), and
   grid lines lie `cell size + 1.8 m` apart, so a one-cell room's interior averages the cell size. A wall's
@@ -151,3 +152,70 @@ hitch_probe: ticks after a 250 ms stall = 4 (limit 4, max seen 4), dash starts =
 `tests/MIN_TEST_COUNT` 279 → 287.
 
 Owner fields (how blinking through walls feels, whether thick walls read as thick in the game view): OWNER ONLY.
+
+
+## B2: room walls up to 5 m; the boss room follows the thickness model
+
+Owner decision (2026-10-07): **"Thicker room walls"** — keep the 5 m blink; room walls (outer and partitions)
+range 0.6–5.0 m, so the thickest can't be crossed even from point-blank and thin ones still can.
+`FloorParams.wall_half_max` 1.5 → **2.5** (a starting value); `wall_half_min` stays 0.3. Grid pitch is now
+`cell size + 2.8 m`. Built in the commits `v0.3.0 Step B2` … `v0.3.0 Step B3` on the B worktree (after merging A,
+N, G, C and E); numbers from that working tree, same container.
+
+From `bash scripts/verify.sh` (`build/gut.log`, raw):
+
+```
+    floor generation: 50 floors, mean 131.6 ms, max 262.5 ms, 11.14 rooms, 13.60 item spots, 51.4 interior pieces per floor; templates seen: bunkers, centre, colonnade, cross, diagonals, lines, open, pillars, scatter; footprints seen: 9
+    nav field on 5 floors: mean 52007 cells, build 107.8 ms, flood 7.3 ms
+    walls and doorways over 50 floors (576 doorways): wall thickness at doorways 0.74-4.97 m, door width 2.20-3.40 m, 444 doorways more than 1 m off the middle of the shared stretch; cell size x 11.00-13.97 m, y 9.01-10.95 m
+    blink 5.0 m crosses a wall of thickness: 0.5 m: face <= 4.1 m; 0.6 m: face <= 4.0 m; 1.0 m: face <= 3.6 m; 1.5 m: face <= 3.1 m; 2.0 m: face <= 2.6 m; 2.5 m: face <= 2.1 m; 3.0 m: face <= 1.6 m; 3.5 m: face <= 1.1 m; 4.0 m: face <= 0.6 m; 4.5 m: never; 5.0 m: never
+    blinks on floors: 3592, through a room wall 59, through cover only 454, stopped short 1174
+```
+
+- **Point-blank table:** pressed against a wall (face 0.36 m away) the blink crosses walls up to 4.3 m thick; a
+  4.5 m or 5.0 m wall is never crossed. New test `test_the_thickest_room_wall_holds_even_from_point_blank` (a
+  5.0 m wall, face 0.36 m away: the blink stays on this side). The table now runs to 5.0 m.
+- **Generation timing (50 seeds):** mean 131.6 ms, max 262.5 ms (A's step reported 111.7 / 269.6 ms at 0.3–1.5 m
+  halves; same container, other load). NavField: 52 007 cells on average (44 181 before: the floors are larger),
+  build 107.8 ms once per floor, flood 7.3 ms every 10 ticks.
+- `test_fast_nav_field_matches_the_reference` passes (fast build and flood equal the reference).
+- Blinks through a room wall on the floor sweep fell 124 → 59 of 3592 (thicker walls).
+
+**The boss room (B).** `BossRoomBuilder` draws its four halves from the same range (`boss_room` stream). The side
+it shares with the host keeps the host's half, so the host's outer skin becomes its frame and the shared wall is
+twice that half. A side is thickened where a neighbour's skin reaches further into its cells. It adds its frame
+strips and outer skins where no wall stands yet. The door is cut through the full thickness: `door_depths` is face
+to face, and the seal collider fills the whole passage. Its cells and new skins join `FloorLayout.ground`. Tests:
+A's walled-all-round check (just outside each face, and deep in the wall at its half less 2 cm) is applied to the
+host and the boss room over 200 seeds plus 4 arena specs. Also checked: no structural wall inside the boss room or
+its door, halves in range, ground under it. Blink can't enter it except through the open door, and can't leave or
+enter it while it is sealed (`test_run_flow.gd`).
+
+Top-down render (`scripts/shots/floor_map.gd` now attaches the default boss room, outlined in red, its seal in
+orange):
+
+```
+$ godot --headless --path . -s scripts/shots/floor_map.gd -- 1 2 3
+seed 1: cell 13.16 x 10.43 m, 12 rooms, 13 doorways, 96 walls, 61 interior pieces, 148.6 x 124.1 m, portal room 11 (5 hops), 13 item spots, 133 spawn points, generated in 128.2 ms
+  rooms (cells): 3x3, 1x2, 2x1, 1x1, 1x1, 1x1, 2x3, 2x2, 1x1, 1x1, 3x1, 3x3
+  templates: cross, colonnade, lines, diagonals, centre, cross, centre, pillars, pillars, pillars, lines, open
+  doorways (width x wall thickness, m): 3.26 x 2.67, 2.92 x 3.41, 2.35 x 2.71, 2.37 x 1.10, 2.23 x 4.11, 2.63 x 2.13, 2.93 x 3.52, 2.89 x 1.88, 3.38 x 1.62, 2.62 x 3.15, 2.80 x 1.93, 2.42 x 2.21, 3.00 x 3.40
+  boss room 11: 3x3 cells off room 8, halves 0.90/1.70/0.78/0.60 m, door 3.00 x 3.40 m, attached in 1.3 ms
+seed 2: cell 13.05 x 9.29 m, 13 rooms, 13 doorways, 107 walls, 51 interior pieces, 147.7 x 113.8 m, portal room 12 (6 hops), 16 item spots, 133 spawn points, generated in 106.0 ms
+  rooms (cells): 3x3, 1x3, 2x1, 1x1, 2x1, 2x1, 1x1, 1x2, 1x1, 2x1, 2x2, 1x2, 3x3
+  templates: scatter, colonnade, scatter, open, bunkers, pillars, scatter, pillars, diagonals, diagonals, bunkers, centre, open
+  doorways (width x wall thickness, m): 2.42 x 0.95, 2.78 x 3.37, 3.22 x 3.10, 2.54 x 3.27, 2.30 x 2.66, 2.43 x 1.94, 2.26 x 3.48, 3.34 x 1.97, 3.05 x 4.33, 3.31 x 3.38, 2.57 x 4.17, 3.26 x 3.46, 3.00 x 0.66
+  boss room 12: 3x3 cells off room 9, halves 0.82/0.33/0.78/1.65 m, door 3.00 x 0.66 m, attached in 1.4 ms
+seed 3: cell 13.85 x 10.41 m, 11 rooms, 12 doorways, 95 walls, 102 interior pieces, 138.2 x 123.9 m, portal room 10 (5 hops), 12 item spots, 144 spawn points, generated in 457.9 ms
+  rooms (cells): 3x3, 1x2, 3x1, 1x1, 1x1, 1x2, 1x1, 2x1, 1x2, 3x3, 3x3
+  templates: diagonals, diagonals, lines, open, colonnade, colonnade, open, centre, centre, diagonals, open
+  doorways (width x wall thickness, m): 3.22 x 2.46, 2.61 x 4.94, 3.18 x 1.86, 3.34 x 2.50, 3.09 x 2.93, 3.27 x 3.88, 2.73 x 3.29, 3.21 x 2.50, 2.60 x 3.63, 2.20 x 4.10, 2.23 x 4.15, 3.00 x 3.34
+  boss room 10: 3x3 cells off room 5, halves 1.80/0.70/0.82/1.67 m, door 3.00 x 3.34 m, attached in 1.7 ms
+floor tints: open = light grey, scatter = sand, pillars = blue, centre = pink, cross = green, lines = yellow, bunkers = teal, colonnade = salmon, diagonals = lavender
+wrote res://build/floors/floor_layouts.png (3631x1040): OK
+```
+
+`build/floors/floor_layouts.png` copied by hand to [`walls_floor_map.png`](walls_floor_map.png) (replaces A's
+render).
+
+Goldens: unchanged (export smoke `9c324d3d…` regenerated identical; replay final `5171fdad…` passes).

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_pvo31"]
+
+[resource]
+script = ExtResource("1_pvo31")
+name_key = &"BIOME_NIGHT_ROCKS"
+palette = {
+"accent": Color(0.23529412, 0.22745098, 0.26666667, 1),
+"ambient": Color(0.72156863, 0.78431373, 0.94117647, 1),
+"cover": Color(0.22352941, 0.31372549, 0.46666667, 1),
+"edge": Color(0.14509804, 0.18823529, 0.2627451, 1),
+"ground": Color(0.28235294, 0.40392157, 0.58823529, 1),
+"ground_alt": Color(0.31372549, 0.43921569, 0.62352941, 1),
+"outline": Color(0.93333333, 0.94901961, 0.97254902, 1)
+}
+template_tags = PackedStringArray("night_rocks")
+id = &"night_rocks"

@@ -100,6 +100,28 @@ func world() -> World:
 	return main.driver.world if main.driver != null else null
 
 
+## A left click at `pos` in viewport coordinates (move there, press, release), scaled like mouse_to.
+func click_at(pos: Vector2) -> void:
+	var scale := await _mouse_scale()
+	await mouse_to(pos)
+	for pressed in [true, false]:
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_LEFT
+		ev.pressed = pressed
+		ev.position = pos / scale
+		ev.global_position = pos / scale
+		send(ev)
+		await frames(1)
+
+
+## Pushes the left stick toward a sim-plane direction (the inverse of the +45 degree screen-to-sim rotation; stick y
+## is down). ZERO releases it.
+func stick_toward(dir: Vector2) -> void:
+	var c := InputLatch.C45
+	joy_axis(JOY_AXIS_LEFT_X, (dir.x + dir.y) * c)
+	joy_axis(JOY_AXIS_LEFT_Y, -(dir.y - dir.x) * c)
+
+
 ## The reward (RewardStore.Kind) nearest the player (v0.3.0 E), or -1. A read, not an action.
 static func nearest_reward(w: World, kind: int) -> int:
 	var best := -1

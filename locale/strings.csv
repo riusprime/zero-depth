@@ -155,3 +155,19 @@ ITEM_COMBO_SLIPSTREAM_DESC,A Momentum swing that hits recharges your dash.,Un ta
 ITEM_COMBO_FROZEN_BASTION,Frozen Bastion,Bastión Helado
 ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,Bloquear enfría al atacante: 2 cargas de escarcha.
 UI_COMBO_UNLOCKED,Combo,Combo
+BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
+BIOME_RED_CANYON,Red Canyon,Cañón Rojo
+HUD_FLOOR,Floor %d · %s,Piso %d · %s
+HUD_FLOOR_CARD,FLOOR %d,PISO %d
+HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
+HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
+UI_RESTART_RUN,RESTART RUN,REINICIAR PARTIDA
+UI_RUN_COMPLETE,Run complete,Partida completada
+UI_RECAP_FLOOR,Floor reached: %d / %d,Piso alcanzado: %d / %d
+UI_RECAP_TIME,Time: %02d:%02d,Tiempo: %02d:%02d
+UI_RECAP_KILLS,Kills: %d,Bajas: %d
+UI_RECAP_SHARDS,Shards: %d,Fragmentos: %d
+UI_RECAP_ITEMS,Items: %s,Objetos: %s
+UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
+UI_DEV_GOD,God mode,Modo dios
+UI_DEV_KILL_BOSS,Kill boss,Matar jefe
