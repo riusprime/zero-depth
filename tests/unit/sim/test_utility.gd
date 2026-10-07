@@ -37,7 +37,7 @@ func test_blink_follows_movement_not_the_aim() -> void:
 	var w := _world(PlayerTable.Utility.BLINK)
 	# Moving +x while aiming -x (angle 2048): the blink goes +x, its full 5 m.
 	w.step(InputFrame.make(Vector2i(127, 0), 2048, 300, 0, U))
-	assert_almost_eq(w.player_pos().x, 5.0 + w.player.move_speed, 0.01)
+	assert_almost_eq(w.player_pos().x, 5.0, 0.1, "5 m the way you're moving")
 	assert_true(w.actors.invuln[0] > 0, "briefly invulnerable")
 
 
@@ -53,13 +53,31 @@ func test_standing_still_blinks_toward_the_aim_with_a_cooldown() -> void:
 	assert_almost_eq(w.player_pos().x, 10.0, 0.01)
 
 
-func test_blink_stops_before_a_wall() -> void:
+func test_blink_teleports_through_a_wall() -> void:
 	var w := _world(PlayerTable.Utility.BLINK)
 	var walls: Array[Obb] = [Obb.make(Vector2(2.5, 0), Vector2(0.2, 3), 0)]
 	w.set_walls(walls)
 	w.step(_f(0, U, 500))
-	assert_lt(w.player_pos().x, 2.3 - w.player.radius_m + 0.05)
-	assert_gt(w.player_pos().x, 1.5)
+	assert_almost_eq(w.player_pos().x, 5.0, 0.01, "landed on the far side")
+
+
+func test_blink_into_a_wall_lands_just_before_it() -> void:
+	var w := _world(PlayerTable.Utility.BLINK)
+	var walls: Array[Obb] = [Obb.make(Vector2(5.0, 0), Vector2(1.0, 3), 0)]
+	w.set_walls(walls)
+	w.step(_f(0, U, 500))
+	assert_lt(w.player_pos().x, 4.0 - w.player.radius_m + 0.01)
+	assert_gt(w.player_pos().x, 4.0 - w.player.radius_m - 0.15)
+
+
+func test_blink_never_leaves_the_room() -> void:
+	var t := PlayerTable.starting_values()
+	t.utility = PlayerTable.Utility.BLINK
+	var w := StageScenario.build(1, t)
+	w.actors.set_pos(0, Vector2(7.5, 0))
+	w.step(_f(0, U, 500))
+	assert_lt(w.player_pos().x, 9.1 - t.radius_m, "the outer wall stops it")
+	assert_gt(w.player_pos().x, 7.5, "but it still blinked as far as it could")
 
 
 func test_a_guard_player_cannot_blink() -> void:

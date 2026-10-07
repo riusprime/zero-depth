@@ -15,5 +15,6 @@ extends Resource
 @export var shot_period_seconds := 0.12
 @export var bolt_damage := 4
 @export var bolt_speed_mps := 18.0
-@export var bolt_radius_m := 0.1
+## The bolt's hit radius: a little bigger than the drawn dart so shots connect (owner, 2026-10-07).
+@export var bolt_radius_m := 0.16
 @export var bolt_life_seconds := 0.6

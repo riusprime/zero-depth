@@ -40,6 +40,11 @@ that renderer has no normal buffer).
 | Sketch (default) | Ink, plus a slight wobble and small gaps, so lines read as drawn by hand |
 | Sketch + paper | Sketch, plus a faint paper grain over everything |
 
+## Update 2026-10-07 (owner: "a bit thinner, more precise … the hand part … 20% down")
+The edge test is now one-sided (+x, +y), so every line is 1 px; the sketch wobble went 1.3 → 1.04 px and the gaps
+0.45 → 0.36. `outlines_strip.png` was re-rendered with the same command on the Step 7e working tree (raw output
+identical in form: four `outlines:` lines).
+
 ## Interpretation
 - The lines come from a full-screen pass over the depth and normal buffers (`InkPass`), blended under the
   telegraphs and bars, so warnings are never covered.

@@ -10,6 +10,10 @@ var hp := 100
 var radius_m := 0.35
 ## Metres per tick.
 var move_speed := 0.0
+## Movement eases toward the target velocity: this per-mille of the gap closes each tick, speeding up and
+## stopping (owner, 2026-10-07: "a fast smooth curve"). 319 = 90% in 6 ticks (0.10 s); 369 = 90% in 5 ticks.
+var accel_permille := 319
+var decel_permille := 369
 var dash_distance_m := 0.0
 var dash_ticks := 1
 var dash_cooldown_ticks := 0
@@ -39,7 +43,7 @@ var swing_hitstop_ticks := 3
 var shot_period_ticks := 7
 var bolt_damage := 4
 var bolt_speed := 18.0 / 60.0
-var bolt_radius_m := 0.1
+var bolt_radius_m := 0.16
 var bolt_life_ticks := 36
 
 

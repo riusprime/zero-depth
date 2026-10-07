@@ -9,6 +9,8 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.hp = def.hp
 	t.radius_m = def.radius_m
 	t.move_speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
+	t.accel_permille = ease_permille(def.accel_seconds)
+	t.decel_permille = ease_permille(def.stop_seconds)
 	t.dash_distance_m = def.dash.distance_m
 	t.dash_ticks = maxi(1, SimTick.seconds_to_ticks(def.dash.duration_seconds))
 	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(def.dash.cooldown_seconds)
@@ -115,6 +117,12 @@ static func apply_utility(t: PlayerTable, def: UtilityDefinition) -> PlayerTable
 			t.blink_cooldown_ticks = SimTick.seconds_to_ticks(def.blink_cooldown_seconds)
 			t.blink_iframe_ticks = SimTick.seconds_to_ticks(def.blink_iframes_seconds)
 	return t
+
+
+## The per-tick share of the gap that closes 90% of it in `seconds` (exponential easing), in per mille.
+static func ease_permille(seconds: float) -> int:
+	var ticks := maxi(1, SimTick.seconds_to_ticks(seconds))
+	return int(round((1.0 - pow(0.1, 1.0 / ticks)) * 1000.0))
 
 
 ## Degrees to 1/4096 turns, rounded.

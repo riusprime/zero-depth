@@ -23,6 +23,9 @@ var origin := Vector2.ZERO
 var size := Vector2i.ZERO
 var blocked := PackedByteArray()
 var dist := PackedInt32Array()
+## Connected region per free cell (-1 for blocked), labelled once from the static walls. A blink may only land in
+## the region the player stands in, so it never ends outside the room.
+var region := PackedInt32Array()
 
 
 func build(walls: Array[Obb]) -> void:
@@ -46,6 +49,7 @@ func build(walls: Array[Obb]) -> void:
 			blocked[y * size.x + x] = hit
 	dist.resize(size.x * size.y)
 	dist.fill(UNREACHED)
+	_label_regions()
 
 
 func cell_of(p: Vector2) -> Vector2i:
@@ -58,6 +62,45 @@ func center(c: Vector2i) -> Vector2:
 
 func inside(c: Vector2i) -> bool:
 	return c.x >= 0 and c.y >= 0 and c.x < size.x and c.y < size.y
+
+
+func _label_regions() -> void:
+	region.resize(size.x * size.y)
+	region.fill(-1)
+	var next := 0
+	for start in size.x * size.y:
+		if blocked[start] == 1 or region[start] != -1:
+			continue
+		var queue := PackedInt32Array([start])
+		region[start] = next
+		var head := 0
+		while head < queue.size():
+			var k := queue[head]
+			head += 1
+			var c := Vector2i(k % size.x, k / size.x)
+			for s in STEPS:
+				var n := c + s
+				if not inside(n):
+					continue
+				var nk := n.y * size.x + n.x
+				if blocked[nk] == 0 and region[nk] == -1:
+					region[nk] = next
+					queue.append(nk)
+		next += 1
+
+
+## The region of the free cell nearest p (searching up to 2 cells out), or -1. 0 when there's no field.
+func region_near(p: Vector2) -> int:
+	if size == Vector2i.ZERO:
+		return 0
+	var c := cell_of(p)
+	for r in 3:
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var n := c + Vector2i(dx, dy)
+				if inside(n) and region[n.y * size.x + n.x] >= 0:
+					return region[n.y * size.x + n.x]
+	return -1
 
 
 ## Breadth-first distances from the goal's cell (the player). Diagonals don't cut blocked corners.

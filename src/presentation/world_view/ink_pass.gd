@@ -4,7 +4,9 @@ extends MeshInstance3D
 ## closer to a hand draw sketch … just the feeling"). A full-screen quad in front of the camera finds edges in
 ## the depth buffer (and, on Forward+, the normal buffer) and blends ink over them, so telegraphs and bars that
 ## draw later stay on top. Styles: OFF, INK (clean lines), SKETCH (lines wobble and break a little),
-## PAPER (sketch plus a faint paper grain). Static noise: the lines don't flicker.
+## PAPER (sketch plus a faint paper grain). Static noise: the lines don't flicker. Edges are tested one-sided
+## (+x, +y), so a line is one pixel wide; the owner asked for thinner, more precise lines with 20% less
+## hand-drawn wobble and breakup (2026-10-07).
 
 enum Style { OFF, INK, SKETCH, PAPER }
 
@@ -24,8 +26,8 @@ uniform float thickness = 1.0;
 uniform float depth_threshold = 0.12;
 uniform float normal_threshold = 0.35;
 uniform float strength = 0.8;
-uniform float wobble_px = 1.3;
-uniform float breakup = 0.45;
+uniform float wobble_px = 1.04;
+uniform float breakup = 0.36;
 uniform float paper = 0.12;
 
 float hash(vec2 p) {
@@ -62,9 +64,7 @@ void fragment() {
 	float zc = view_z(uv, INV_PROJECTION_MATRIX);
 	float dz = 0.0;
 	dz = max(dz, abs(zc - view_z(uv + vec2(o.x, 0.0), INV_PROJECTION_MATRIX)));
-	dz = max(dz, abs(zc - view_z(uv - vec2(o.x, 0.0), INV_PROJECTION_MATRIX)));
 	dz = max(dz, abs(zc - view_z(uv + vec2(0.0, o.y), INV_PROJECTION_MATRIX)));
-	dz = max(dz, abs(zc - view_z(uv - vec2(0.0, o.y), INV_PROJECTION_MATRIX)));
 	float edge = smoothstep(depth_threshold, depth_threshold * 2.5, dz);
 	edge = max(edge, normal_edge(uv, o));
 	if (style >= 2) {

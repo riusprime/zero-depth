@@ -30,6 +30,8 @@ var move_intent := Vector2i.ZERO
 var dash_ticks_left := 0
 var dash_cooldown_left := 0
 var dash_dir := Vector2.ZERO
+## Player velocity in metres per tick (eases toward the move target).
+var vel := Vector2.ZERO
 ## Buttons held this tick (InputFrame bits).
 var held_buttons := 0
 ## Attacks (PlayerKit): swing tick (0 = none), its locked angle and root, combo step and window, shot cooldown.
@@ -259,6 +261,8 @@ func state_hash() -> String:
 	h.add_int(dash_cooldown_left)
 	h.add_f32(dash_dir.x)
 	h.add_f32(dash_dir.y)
+	h.add_f32(vel.x)
+	h.add_f32(vel.y)
 	h.add_ints(input_buffer)
 	for v in [held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, shot_cd]:
 		h.add_int(v)
@@ -396,18 +400,27 @@ func _move_and_collide() -> void:
 	# Player.
 	var p := player_pos()
 	if player_dead():
-		pass
+		vel = Vector2.ZERO
 	elif dash_ticks_left > 0:
 		p += dash_dir * (player.dash_distance_m / player.dash_ticks)
-	elif move_intent != Vector2i.ZERO:
-		var mv := Vector2(move_intent.x, move_intent.y) / float(SimTick.MOVE_MAX)
-		var len := Kin.length(mv)
-		if len > 1.0:
-			mv /= len
-		var speed := player.move_speed
-		if guarding():
-			speed = speed * player.guard_move_permille / 1000.0
-		p += mv * speed
+	else:
+		var target := Vector2.ZERO
+		if move_intent != Vector2i.ZERO:
+			var mv := Vector2(move_intent.x, move_intent.y) / float(SimTick.MOVE_MAX)
+			var len := Kin.length(mv)
+			if len > 1.0:
+				mv /= len
+			var speed := player.move_speed
+			if guarding():
+				speed = speed * player.guard_move_permille / 1000.0
+			target = mv * speed
+		var k := (
+			player.accel_permille if Kin.length(target) > Kin.length(vel) else player.decel_permille
+		)
+		vel += (target - vel) * (k / 1000.0)
+		if Kin.length(vel - target) < 0.0001:
+			vel = target
+		p += vel
 	actors.set_pos(0, p)
 	# Dummies steer toward the player plus their jitter.
 	var target := p

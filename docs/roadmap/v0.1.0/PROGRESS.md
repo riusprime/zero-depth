@@ -20,7 +20,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 7 | A fight build for the owner: version `0.1.0-dev`, the tour shows the fight, [`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md) | `7e68fc8` |
 | 7b | Melee and shooting on separate buttons (hold to shoot), blink follows movement, the pad moves like the keys | `abfdf2e` |
 | 7c | A thin sketch-like ink stroke on every edge, four styles in Options ([OUTLINES](evidence/OUTLINES.md)) | `c4c45df` |
-| 7d | Second fight build for the owner ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | see `git log` |
+| 7d | Second fight build for the owner ([`PLAYTEST_FIGHT_2.md`](PLAYTEST_FIGHT_2.md)) | `d17fc0c` |
+| 7e | Blink teleports through walls, bigger bolt hitbox, finer sketch lines, a sliding slash, smooth fast acceleration | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -36,6 +37,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   export-smoke hash `bb9c2594…e91839` → `a0bff684…66c972`.
 - **Step 5** (wave, outcome and killer state hashed): replay golden final `5044b77b…0b0871` →
   `5ee10daf…ba4a14`; export-smoke hash `a0bff684…66c972` → `8cff6cad…d04b0c`.
+- **Step 7e** (player velocity hashed; movement now eases): replay golden final `5ee10daf…ba4a14` →
+  `815b1648…91f4e6`; export-smoke hash `8cff6cad…d04b0c` → `39e66d22…d3756c`. The kernel's player now
+  accelerates, so its path changes; enemies are unchanged.
   The kernel scenario's behaviour is unchanged (its dummies' shots still do 0 damage); the Windows job re-checks
   the new golden cross-OS.
 
@@ -125,3 +129,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   `MIN_TEST_COUNT` 134. Next: the owner plays; meanwhile Step 8 (bench with real AI).
 - 2026-10-07 — The owner played the second build (answers in `PLAYTEST_FIGHT_2.md`). PLAN gains L13–L17 and
   Step 7e.
+- 2026-10-07 — Step 7e: blink lands 5 m along the move direction through walls, stepping back 0.1 m at a time
+  until clear and in the same room region (`NavField.region`); a vanish/appear ring instead of a streak; bolt hit
+  radius 0.16 m (drawn dart unchanged); `InkPass` one-sided 1 px edges, wobble and gaps −20%; a slash ribbon
+  sweeps the arc in 5 ticks, alternating direction, the finisher wider; player velocity eases (319‰ per tick
+  speeding up, 369‰ stopping: 90% in 0.10 s / 0.08 s). 139 tests pass; goldens re-recorded on purpose.

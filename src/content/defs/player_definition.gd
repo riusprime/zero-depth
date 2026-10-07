@@ -5,6 +5,9 @@ extends ContentDef
 @export var hp := 100
 @export var radius_m := 0.35
 @export var move_speed_mps := 6.0
+## Time to close 90% of the gap to full speed, and to a stop (owner, 2026-10-07: "a fast smooth curve").
+@export var accel_seconds := 0.1
+@export var stop_seconds := 5.0 / 60.0
 @export var dash: DashDefinition
 @export var primary: PrimaryDefinition
 ## After taking a hit: invulnerability and hit-stop.

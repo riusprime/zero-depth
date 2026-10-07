@@ -2,10 +2,11 @@ class_name PlayerKit
 extends RefCounted
 ## The player's attacks and utility (PLAN v0.1.0 Steps 2, 3, 7b). Melee and shooting have separate buttons
 ## (owner, 2026-10-07): PRIMARY = a swing (a 3-hit combo); SHOOT held = a bolt every shot_period_ticks.
-## Blink goes the way you're moving, like the dash. Runs in tick phase 4; numbers from PlayerTable.
+## Blink teleports the way you're moving, through walls. Runs in tick phase 4; numbers from PlayerTable.
 
 const PRIMARY_SLOT := 0
 const UTILITY_SLOT := 1
+const BLINK_STEP_M := 0.1
 
 
 ## Guard is a held state (World.guarding); Blink spends a buffered press when it's ready.
@@ -32,20 +33,27 @@ static func move_or_aim(w: World) -> Vector2:
 	return Kin.dir(Kin.angle_of(mv)) if mv != Vector2.ZERO else Kin.dir(w.aim_angle)
 
 
-## Where a blink lands: blink_range_m along move_or_aim, stopping just before the first wall.
+## Where a blink lands (owner, 2026-10-07: "a teleport, allowing you to go through walls"): blink_range_m along
+## move_or_aim, through any wall. If that spot overlaps a wall or lies outside the room (another region of the
+## flow field), it steps back toward the start in BLINK_STEP_M increments until it finds a free spot.
 static func blink_target(w: World) -> Vector2:
 	var t := w.player
 	var from := w.player_pos()
-	var to := from + move_or_aim(w) * t.blink_range_m
-	var best := 1.0
+	var dir := move_or_aim(w)
+	var home := w.nav.region_near(from)
+	var steps := int(round(t.blink_range_m / BLINK_STEP_M))
+	for k in range(steps, 0, -1):
+		var at := from + dir * (BLINK_STEP_M * k)
+		if _clear(w, at, t.radius_m) and w.nav.region_near(at) == home:
+			return at
+	return from
+
+
+static func _clear(w: World, at: Vector2, r: float) -> bool:
 	for wall in w.walls:
-		var hit := Collide.sweep_vs_obb(from, to, t.radius_m, wall)
-		if hit >= 0.0 and hit < best:
-			best = hit
-	if best < 1.0:
-		var back := 0.02 / t.blink_range_m
-		return from + (to - from) * maxf(best - back, 0.0)
-	return to
+		if Collide.circle_vs_obb(at, r, wall) != Vector2.ZERO:
+			return false
+	return true
 
 
 static func advance(w: World) -> void:
