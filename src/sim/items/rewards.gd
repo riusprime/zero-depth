@@ -28,7 +28,7 @@ static func shards_for_kill(w: World, kind: int) -> int:
 
 ## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
 static func on_kill(w: World, i: int) -> void:
-	var amount := shards_for_kill(w, w.actors.kinds[i])
+	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
 	if amount <= 0:
 		return
 	w.shards += amount

@@ -171,3 +171,16 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
+UI_GAMBLE_SPENT,The shrine has nothing left to give,El santuario ya no tiene nada que dar
+UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
+UI_GAMBLE_STATS,Shrine stats,Estadísticas del santuario
+UI_GAMBLE_STATS_NONE,No shrine stats yet,Aún no tienes estadísticas del santuario
+UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
+UI_GAMBLE_MELEE_DAMAGE,+%s %% melee damage,+%s %% de daño cuerpo a cuerpo
+UI_GAMBLE_SHOT_DAMAGE,+%s %% shot damage,+%s %% de daño de disparo
+UI_GAMBLE_MOVE_SPEED,+%s %% move speed,+%s %% de velocidad
+UI_GAMBLE_DASH_COOLDOWN,−%s %% dash cooldown,−%s %% de recarga del esprint
+UI_GAMBLE_REGEN,+%s %% HP/s out of combat,+%s %% PV/s fuera de combate
+UI_GAMBLE_HEAT_CAPACITY,+%s %% heat capacity,+%s %% de capacidad de calor
+UI_GAMBLE_SHARD_GAIN,+%s %% shards from kills,+%s %% de fragmentos por baja

@@ -26,6 +26,8 @@ const BOSS_WARN_M := 6.0
 
 ## The boss bar (v0.3.0 C), shown while a boss is alive.
 var boss_bar := BossBar.new()
+## The gamble shrine's prompt, result card and stats (v0.3.0 L19).
+var gamble := GambleHud.new()
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
 var _dash := _pip("HUD_DASH")
@@ -134,6 +136,7 @@ func _init() -> void:
 	_build_floor_card()
 	add_child(boss_bar)
 	_build_rewards()
+	add_child(gamble)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
@@ -167,6 +170,7 @@ func sync(reader: WorldReader) -> void:
 		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
 	boss_bar.sync(reader)
 	_sync_rewards(reader)
+	gamble.sync(reader)
 
 
 func _process(delta: float) -> void:

@@ -161,6 +161,7 @@ static func _resolve_swing(w: World) -> void:
 	var base := s.damage
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
+	dmg = Gamble.melee_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
 	if landed:
 		w.add_freeze(s.hitstop_ticks)
@@ -202,7 +203,7 @@ static func swing_arc(
 ## One shot: a bolt along the aim, or a Splinter fan (ItemEffects.shot_offsets); Ricochet Core adds bounces.
 static func _fire_bolt(w: World) -> void:
 	var t := w.player
-	var dmg := ItemEffects.bolt_damage(w)
+	var dmg := Gamble.shot_damage(w, ItemEffects.bolt_damage(w))  # Gamble shrine (v0.3.0 L19).
 	for off in ItemEffects.shot_offsets(w):
 		var dir := Kin.dir(w.aim_angle + off)
 		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)

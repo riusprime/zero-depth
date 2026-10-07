@@ -228,12 +228,15 @@ static func in_execute_range(w: World, i: int) -> bool:
 # --- Swift Feet ---------------------------------------------------------------------------------------------
 ## The player's top speed in metres per tick (Swift Feet applied).
 static func move_speed(w: World) -> float:
-	return w.player.move_speed * (1000 + w.item_mods.move_speed_bonus_permille) / 1000.0
+	var bonus := w.item_mods.move_speed_bonus_permille + Gamble.move_speed_bonus_permille(w)
+	return w.player.move_speed * (1000 + bonus) / 1000.0
 
 
 ## The dash cooldown in ticks (Swift Feet applied, never under 1).
 static func dash_cooldown_ticks(w: World) -> int:
-	var cut := mini(w.item_mods.dash_cooldown_cut_permille, 900)
+	var cut := mini(
+		w.item_mods.dash_cooldown_cut_permille + Gamble.dash_cooldown_cut_permille(w), 900
+	)
 	return maxi(1, w.player.dash_cooldown_ticks * (1000 - cut) / 1000)
 
 

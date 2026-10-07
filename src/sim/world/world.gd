@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods, max-file-lines
 class_name World
 extends RefCounted
 ## The whole simulation state, mutated in place one tick at a time (SIM_CONTRACTS §2).
@@ -155,6 +155,20 @@ var choosing := -1
 var reward_denied_id := -1
 var reward_denied_tick := -1
 # --- end Rewards --------------------------------------------------------------------------------------------
+# --- Gamble shrine (v0.3.0 L19; Gamble) ---------------------------------------------------------------------
+## The shrine's rules (part of the loadout, like reward_table; not hashed).
+var gamble_table := GambleTable.new()
+## The floor's shrine: its id (-1 = none on this floor) and where it stands.
+var gamble_id := -1
+var gamble_pos := Vector2.ZERO
+## Wins per GambleTable.Stat this run (empty until the first). The run flow carries it between floors.
+var gamble_stacks := PackedInt32Array()
+## Uses on this floor (the price steps up with each; not carried), the last win (stat, tick) and the last refusal.
+var gamble_uses := 0
+var gamble_last_stat := -1
+var gamble_tick := -1
+var gamble_denied_tick := -1
+# --- end Gamble ---------------------------------------------------------------------------------------------
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -306,6 +320,7 @@ func step(frame: InputFrame) -> void:
 	if Rewards.interact(self):
 		tick += 1
 		return
+	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
 		nav.flood(player_pos())
@@ -644,6 +659,12 @@ func state_hash() -> String:
 		rewards.hash_into(h)
 	if not item_tables.is_empty():
 		_hash_engines(h)
+	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
+		h.add_ints(gamble_stacks)
+		for v in [gamble_id, gamble_uses, gamble_last_stat, gamble_tick, gamble_denied_tick]:
+			h.add_int(v)
+		h.add_f32(gamble_pos.x)
+		h.add_f32(gamble_pos.y)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:

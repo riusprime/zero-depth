@@ -21,6 +21,8 @@ var status_fx: StatusVisuals
 var gate: PortalGate
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
+## The gamble shrine (v0.3.0 L19; null on a floor without one).
+var gamble_shrine: GambleShrineView
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -56,6 +58,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 			reader.boss_door_half_thickness(),
 			palette["cover"]
 		)
+	if reader.has_gamble():
+		gamble_shrine = GambleShrineView.new()
+		add_child(gamble_shrine)
+		gamble_shrine.setup(reader.gamble_pos())
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -78,6 +84,8 @@ func sync() -> void:
 	status_fx.sync(reader)
 	if boss_door != null:
 		boss_door.sync(reader)
+	if gamble_shrine != null:
+		gamble_shrine.sync(reader)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
 		gate.set_sealed(not reader.portal_active())
 	rig.target = SimPlane.to_3d(reader.player_pos())
