@@ -138,7 +138,9 @@ static func think(w: World, i: int) -> void:
 			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 				_end_relocation(a, i)
 			# A Needle backs off before it shoots; the others attack as soon as they're in range.
-			var too_close := behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
+			var too_close := (
+				behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
+			)
 			if (
 				alive
 				and a.cd[i] == 0
