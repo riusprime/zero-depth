@@ -77,3 +77,4 @@ ITEM_OVERCHARGE_DESC,Every 4th swing deals double damage and sends out a small s
 HUD_TIME_TIER,%02d:%02d · Danger %d,%02d:%02d · Peligro %d
 HUD_KILLS,Kills: %d,Bajas: %d
 HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
+HUD_PICKED_UP,Picked up,Recogido

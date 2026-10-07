@@ -1,5 +1,6 @@
 extends GutTest
-## The portal gate (v0.2.0 PLAN step D, L8): placement on the sim plane, the portal shader and the sealed state.
+## The portal gate (v0.2.0 PLAN step D, L8; blue since L12): placement on the sim plane, the portal shader, its
+## colour and the sealed state.
 
 const UNIFORMS := [
 	"opening_size",
@@ -61,6 +62,21 @@ func test_portal_shader_has_the_expected_uniforms() -> void:
 	assert_eq(listed, UNIFORMS, "the shader parses and exposes its uniforms")
 	assert_true(g.glow_material.shader.code.contains("blend_add"), "the floor glow adds light")
 	assert_true(g.light is OmniLight3D)
+
+
+func test_the_portal_is_blue_not_green() -> void:
+	var g := _gate()
+	var cyan := ThemePalette.color(&"player_core")
+	for key in ["color_deep", "color_mid", "color_light"]:
+		var c: Color = g.portal_material.get_shader_parameter(key)
+		assert_true(c.b > c.g and c.b >= c.r, "%s is blue: %s" % [key, c])
+	var mid: Color = g.portal_material.get_shader_parameter("color_mid")
+	for c: Color in [mid, g.light.light_color, g.glow_material.get_shader_parameter("glow_color")]:
+		assert_true(c.b > c.g * 1.5 and c.b > c.r * 2.0, "vivid blue, not green: %s" % c)
+		# The player's cyan sits near hue 0.53; the portal is a deeper blue (hue > 0.6).
+		assert_gt(c.h, cyan.h + 0.07, "bluer than the player's cyan: %s" % c)
+	for key in ["color_deep", "color_mid", "color_light", "veil_color"]:
+		assert_true(g.portal_material.shader.code.contains(key), key)
 
 
 func test_sealed_is_the_default_and_toggles_the_uniform() -> void:

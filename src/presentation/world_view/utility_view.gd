@@ -1,17 +1,14 @@
 class_name UtilityView
 extends Node3D
 ## Guard: a cyan shield arc in front of the cube while it's up, as wide as the arc Damage checks. Blink (a
-## teleport): a ring bursts outward where the cube vanished and closes in where it appeared.
+## teleport, PLAN v0.2.0 L12): a blue flash of light (BlinkFlash: a column, sparks and a light) where the wanderer
+## vanished and where it appeared. Dash: a white motion trail (DashTrail) on every dash.
 
-const BLINK_FRAMES := 12
-
+var dash_trail := DashTrail.new()
+var vanish := BlinkFlash.new()
+var appear := BlinkFlash.new()
 var _shield := MeshInstance3D.new()
-var _vanish := MeshInstance3D.new()
-var _appear := MeshInstance3D.new()
-var _vanish_mat := StandardMaterial3D.new()
-var _appear_mat := StandardMaterial3D.new()
 var _last_blink := -1
-var _burst_left := 0
 
 
 func _ready() -> void:
@@ -25,21 +22,9 @@ func _ready() -> void:
 	_shield.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_shield.visible = false
 	add_child(_shield)
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.45
-	torus.outer_radius = 0.55
-	for pair: Array in [[_vanish, _vanish_mat], [_appear, _appear_mat]]:
-		var n: MeshInstance3D = pair[0]
-		var mat: StandardMaterial3D = pair[1]
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		mat.albedo_color = Color(cyan.lightened(0.4), 0.0)
-		n.mesh = torus
-		n.material_override = mat
-		n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-		n.visible = false
-		add_child(n)
+	add_child(dash_trail)
+	add_child(vanish)
+	add_child(appear)
 
 
 func sync(reader: WorldReader) -> void:
@@ -56,22 +41,6 @@ func sync(reader: WorldReader) -> void:
 			_shield.reset_physics_interpolation()
 	if reader.blink_tick() != _last_blink and reader.blink_tick() >= 0:
 		_last_blink = reader.blink_tick()
-		_vanish.position = SimPlane.to_3d(reader.blink_from(), 0.3)
-		_appear.position = SimPlane.to_3d(reader.player_pos(), 0.3)
-		_burst_left = BLINK_FRAMES
-	_vanish.visible = _burst_left > 0
-	_appear.visible = _burst_left > 0
-
-
-func _process(_delta: float) -> void:
-	if _burst_left <= 0:
-		return
-	_burst_left -= 1
-	var p := 1.0 - float(_burst_left) / BLINK_FRAMES
-	_vanish.scale = Vector3.ONE * (0.6 + 1.4 * p) * Vector3(1, 0.15, 1)
-	_vanish_mat.albedo_color.a = 0.8 * (1.0 - p)
-	_appear.scale = Vector3.ONE * (1.8 - 1.2 * p) * Vector3(1, 0.15, 1)
-	_appear_mat.albedo_color.a = 0.8 * (1.0 - p)
-	if _burst_left == 0:
-		_vanish.visible = false
-		_appear.visible = false
+		vanish.play(SimPlane.to_3d(reader.blink_from()))
+		appear.play(SimPlane.to_3d(reader.player_pos()))
+	dash_trail.sync(reader)
