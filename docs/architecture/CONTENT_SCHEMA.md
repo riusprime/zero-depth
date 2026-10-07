@@ -138,6 +138,17 @@ later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_w
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
 and the radius positive.
 
+**Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
+[`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
+gain per landed attack type (`gain_swing`, `gain_finisher`, `gain_bolt`, in heat points), the decay
+(`decay_delay_seconds`, `decay_per_second`), the thresholds (`hot_threshold` with `hot_reach_bonus`,
+`overclock_threshold` with `overclock_damage_bonus` and `overclock_burn_stacks`), the overheat stall
+(`overheat_seconds`, `overheat_move_multiplier`) and the vent blast (`vent_radius_m`, `vent_damage_per_heat`).
+Validation: gains, rates, bonuses and the blast positive; `0 < hot_threshold < overclock_threshold < max_heat`;
+the move multiplier in (0, 1]. Heat items (`ItemDefinition` kinds `HEAT_SINK`, `THERMAL_EDGE`, `MELTDOWN`, tag
+`heat`) add `vent_damage_bonus_permille`, `vent_radius_bonus_permille`, `heat_hot_threshold` and
+`meltdown_damage_permille`; they are offered only in runs with heat.
+
 ## 4. Encounters and bosses
 
 ```gdscript

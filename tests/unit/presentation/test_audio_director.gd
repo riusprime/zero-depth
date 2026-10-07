@@ -224,3 +224,11 @@ static func _tiny_wav(n: int) -> PackedByteArray:
 	zeros.resize(n * 2)
 	b.put_data(zeros)
 	return b.data_array
+
+
+func test_heat_edges_ask_for_their_sounds_once() -> void:
+	var cool := {"tier_tick": -1, "overheat_tick": -1, "vent_tick": -1, "tier": 0}
+	assert_eq(AudioEvents._heat_edges({}), [-1, -1, -1, 0], "no heat: no edges")
+	assert_eq(AudioEvents._heat_edges(cool), [-1, -1, -1, 0])
+	var hot := {"tier_tick": 120, "overheat_tick": -1, "vent_tick": -1, "tier": 1}
+	assert_eq(AudioEvents._heat_edges(hot), [120, -1, -1, 1])

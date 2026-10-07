@@ -79,6 +79,12 @@ var chill_bonus_permille := 0
 var frozen_bonus_permille := 0
 var charge_max := 0
 var charge_bonus_permille := 0
+## Overclock heat (v0.3.0 L18): Heat Sink's vent bonuses add up; Thermal Edge's Hot threshold takes the lowest owned
+## (0 = none); Meltdown's blast share takes the strongest.
+var vent_damage_bonus_permille := 0
+var vent_radius_bonus_permille := 0
+var heat_hot_threshold := 0
+var meltdown_damage_permille := 0
 
 
 static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods:
@@ -111,7 +117,21 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 			_:
 				_build_v2(m, t)
 		_build_engines(m, t)
+		_build_heat(m, t)
 	return m
+
+
+## Overclock heat items (v0.3.0 L18).
+static func _build_heat(m: ItemMods, t: ItemTable) -> void:
+	m.vent_damage_bonus_permille += t.vent_damage_bonus_permille
+	m.vent_radius_bonus_permille += t.vent_radius_bonus_permille
+	if t.heat_hot_threshold > 0:
+		m.heat_hot_threshold = (
+			t.heat_hot_threshold
+			if m.heat_hot_threshold <= 0
+			else mini(m.heat_hot_threshold, t.heat_hot_threshold)
+		)
+	m.meltdown_damage_permille = maxi(m.meltdown_damage_permille, t.meltdown_damage_permille)
 
 
 ## The second eight items (v0.2.0 J): each kind's numbers; Swift Feet's bonuses add up like the others.

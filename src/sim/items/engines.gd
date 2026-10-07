@@ -43,7 +43,9 @@ const PAYOFFS: Array[StringName] = [
 	EFFECT_BLEED_BURST,
 	EFFECT_PLASMA_ARC,
 	EFFECT_SHATTER_DASH,
-	EFFECT_BLOOD_HARVEST
+	EFFECT_BLOOD_HARVEST,
+	&"heat_vent",  # Heat.EFFECT_VENT (v0.3.0 L18)
+	&"meltdown",  # Heat.EFFECT_MELTDOWN
 ]
 
 ## ProcLedger codes (appended, never renumbered: they are hashed). Stack feeds use CODE_FEED + source.

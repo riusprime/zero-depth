@@ -34,6 +34,9 @@ const IDS: Array[StringName] = [
 	&"glacial_edge",
 	&"cold_snap",
 	&"bulwark",
+	&"heat_sink",
+	&"thermal_edge",
+	&"meltdown",
 ]
 
 
@@ -284,7 +287,54 @@ static func _engine_shapes(id: StringName) -> Array:
 				_circle(Vector2(0.5, 0.4), 0.07, 0.0, true),
 				_circle(Vector2(0.66, 0.4), 0.07, 0.0, true),
 			]
+		&"heat_sink", &"thermal_edge", &"meltdown":
+			return _heat_icon(id)
 	return gem()
+
+
+## The Overclock heat items (v0.3.0 L18): radiator fins, a thermometer, a burst.
+static func _heat_icon(id: StringName) -> Array:
+	match id:
+		&"heat_sink":
+			var out := [
+				_poly(
+					[
+						Vector2(0.12, 0.7),
+						Vector2(0.88, 0.7),
+						Vector2(0.88, 0.86),
+						Vector2(0.12, 0.86)
+					]
+				)
+			]
+			for x: float in [0.22, 0.4, 0.6, 0.78]:
+				out.append(_line([Vector2(x, 0.72), Vector2(x, 0.32)], 0.09))
+			out.append(_arc(Vector2(0.5, 0.2), 0.12, 200.0, 340.0, 0.05))
+			return out
+		&"thermal_edge":
+			return [
+				_loop(
+					[
+						Vector2(0.42, 0.62),
+						Vector2(0.42, 0.14),
+						Vector2(0.5, 0.06),
+						Vector2(0.58, 0.14),
+						Vector2(0.58, 0.62),
+					],
+					0.05
+				),
+				_circle(Vector2(0.5, 0.76), 0.15, 0.0),
+				_line([Vector2(0.5, 0.7), Vector2(0.5, 0.3)], 0.08),
+				_line([Vector2(0.66, 0.24), Vector2(0.8, 0.24)], 0.05),
+				_line([Vector2(0.66, 0.38), Vector2(0.76, 0.38)], 0.05),
+				_line([Vector2(0.66, 0.52), Vector2(0.8, 0.52)], 0.05),
+			]
+		_:
+			var star := []
+			for k in 16:
+				var a := TAU * k / 16.0 - PI * 0.5
+				var r := 0.44 if k % 2 == 0 else 0.2
+				star.append(Vector2(0.5, 0.52) + Vector2(cos(a), sin(a)) * r)
+			return [_poly(star), _circle(Vector2(0.5, 0.52), 0.1, 0.0, true)]
 
 
 ## The generic icon: a cut gem.

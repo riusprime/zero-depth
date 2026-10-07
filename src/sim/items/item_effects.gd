@@ -20,7 +20,9 @@ const EFFECT_OVERCHARGE := &"overcharge"
 ## PlayerKit hits with it and WorldReader draws it (EI-07).
 static func swing_reach_m(w: World, step: int = -1) -> float:
 	var s := step if step >= 0 else w.combo_step
-	return w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
+	var reach := w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
+	var hot := Heat.reach_permille(w)  # Heat: Hot reaches farther.
+	return reach if hot == 1000 else reach * hot / 1000.0
 
 
 ## Ticks between bolts while shooting, with Rapid Coil applied (never under 2 ticks once shortened).

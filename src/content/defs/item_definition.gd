@@ -29,14 +29,18 @@ enum Kind {
 	GLACIAL_EDGE,
 	COLD_SNAP,
 	BULWARK,
+	HEAT_SINK,
+	THERMAL_EDGE,
+	MELTDOWN,
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
 enum Rarity { COMMON, RARE }
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
+## v0.3.0 L18: &"heat" marks the Overclock heat items (offered only when the run has heat).
 const TAGS: Array[StringName] = [
-	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard"
+	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard", &"heat"
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -133,6 +137,14 @@ const TAGS: Array[StringName] = [
 ## Bulwark: guard charges stored at most, and the swing bonus per charge spent.
 @export var charge_max := 0
 @export var charge_bonus_permille := 0
+# --- Overclock heat (v0.3.0 L18; Heat).
+## Heat Sink: vent blasts deal × (1 + bonus / 1000) and reach × (1 + radius bonus / 1000).
+@export var vent_damage_bonus_permille := 0
+@export var vent_radius_bonus_permille := 0
+## Thermal Edge: the Hot threshold (heat points) drops to this.
+@export var heat_hot_threshold := 0
+## Meltdown: reaching the overheat point blows up as a full-heat vent blast at this share (per mille), no stall.
+@export var meltdown_damage_permille := 0
 
 
 func category() -> StringName:
@@ -254,6 +266,13 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 		Kind.BULWARK:
 			check_positive(issues, "charge_max", charge_max)
 			check_positive(issues, "charge_bonus_permille", charge_bonus_permille)
+		Kind.HEAT_SINK:
+			check_positive(issues, "vent_damage_bonus_permille", vent_damage_bonus_permille)
+			check_positive(issues, "vent_radius_bonus_permille", vent_radius_bonus_permille)
+		Kind.THERMAL_EDGE:
+			check_positive(issues, "heat_hot_threshold", heat_hot_threshold)
+		Kind.MELTDOWN:
+			check_positive(issues, "meltdown_damage_permille", meltdown_damage_permille)
 
 
 func _check_tags(issues: Array[ValidationIssue]) -> void:

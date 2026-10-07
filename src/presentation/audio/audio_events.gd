@@ -36,6 +36,8 @@ var _blink_tick := -1
 var _choosing := false
 var _denied_tick := -1
 var _heartbeat_left := 0
+## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
+var _heat_ticks := [-1, -1, -1, 0]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -48,6 +50,7 @@ func prime(reader: WorldReader) -> void:
 	_choosing = reader.choosing()
 	_denied_tick = reader.reward_denied_tick()
 	_heartbeat_left = 0
+	_heat_ticks = _heat_edges(reader.heat_state())
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -65,6 +68,7 @@ func collect(reader: WorldReader) -> Array:
 	_scan_projectiles(reader, out)
 	_rewards(reader, out)
 	_low_hp(reader, out)
+	_heat(reader, out)
 	return out
 
 
@@ -240,3 +244,19 @@ func _low_hp(reader: WorldReader, out: Array) -> void:
 	if _heartbeat_left <= 0:
 		out.append([&"low_hp_heartbeat", null, 1.0])
 		_heartbeat_left = HEARTBEAT_TICKS
+
+
+static func _heat_edges(h: Dictionary) -> Array:
+	if h.is_empty():
+		return [-1, -1, -1, 0]
+	return [int(h["tier_tick"]), int(h["overheat_tick"]), int(h["vent_tick"]), int(h["tier"])]
+
+
+func _heat(reader: WorldReader, out: Array) -> void:
+	var now := _heat_edges(reader.heat_state())
+	var cues := [&"heat_threshold", &"heat_overheat", &"heat_vent"]
+	for k in 3:
+		var rising: bool = k != 0 or now[3] > _heat_ticks[3]  # a threshold sounds only on the way up
+		if now[k] != _heat_ticks[k] and now[k] >= 0 and rising:
+			out.append([cues[k], null, 1.0])
+	_heat_ticks = now

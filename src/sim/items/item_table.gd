@@ -29,6 +29,9 @@ enum Kind {
 	GLACIAL_EDGE,
 	COLD_SNAP,
 	BULWARK,
+	HEAT_SINK,
+	THERMAL_EDGE,
+	MELTDOWN,
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E).
@@ -117,3 +120,9 @@ var chill_bonus_permille := 0
 var frozen_bonus_permille := 0
 var charge_max := 0
 var charge_bonus_permille := 0
+## Overclock heat (v0.3.0 L18; see ItemDefinition): the item only works, and is only offered, when the run has heat.
+var requires_heat := false
+var vent_damage_bonus_permille := 0
+var vent_radius_bonus_permille := 0
+var heat_hot_threshold := 0
+var meltdown_damage_permille := 0

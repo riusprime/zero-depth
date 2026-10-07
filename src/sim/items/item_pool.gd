@@ -48,7 +48,10 @@ static func available(w: World) -> PackedInt32Array:
 	return left
 
 
-## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard).
+## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard), and a heat item only in a world
+## with heat (v0.3.0 L18).
 static func _usable(w: World, idx: int) -> bool:
+	if w.item_tables[idx].requires_heat and w.heat == null:
+		return false
 	var need := w.item_tables[idx].requires_utility
 	return need < 0 or need == w.player.utility

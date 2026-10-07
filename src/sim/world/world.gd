@@ -209,6 +209,7 @@ var boss_flow: BossFlow
 var floor_count := 1
 # --- end Run flow ------------------------------------------------------------------------------------------
 
+var heat: HeatState  # Overclock heat (v0.3.0 L18; Heat): null unless the loadout has it (Heat.enable).
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -644,6 +645,7 @@ func state_hash() -> String:
 		rewards.hash_into(h)
 	if not item_tables.is_empty():
 		_hash_engines(h)
+	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
@@ -805,6 +807,7 @@ func _advance_actions() -> void:
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
+		Heat.on_move(self)  # Heat: a dash while Hot vents where it starts.
 
 
 func _move_and_collide() -> void:
@@ -821,7 +824,7 @@ func _move_and_collide() -> void:
 			var len := Kin.length(mv)
 			if len > 1.0:
 				mv /= len
-			var speed := ItemProcs.move_speed(self)  # Items: Swift Feet.
+			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -942,6 +945,8 @@ func _projectile_hits() -> void:
 				)
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
+				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
+					continue
 			elif projectiles.bounces[i] > 0:
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
 				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])

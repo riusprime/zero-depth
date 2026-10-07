@@ -71,7 +71,9 @@ func test_the_shipped_data() -> void:
 		assert_eq(it.requires_utility, need, "%s: utility requirement" % it.id)
 	rare.sort()
 	assert_eq(
-		rare, ["bulwark", "cold_snap", "conductor", "wildfire"], "the rare items (lead, 2026-10-07)"
+		rare,
+		["bulwark", "cold_snap", "conductor", "meltdown", "wildfire"],
+		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18)"
 	)
 
 
