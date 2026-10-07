@@ -590,7 +590,7 @@ func _piece(
 	mat.stencil_outline_thickness = OUTLINE_M
 	mi.material_override = mat
 	parent.add_child(mi)
-	body_materials.append(mat)
+	body_materials.append(ActorViews.flashable(mat))
 	if technique == &"xray":
 		var ghost := MeshInstance3D.new()
 		ghost.mesh = mesh

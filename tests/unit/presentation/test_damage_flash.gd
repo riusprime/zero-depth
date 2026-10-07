@@ -103,3 +103,14 @@ func test_kill_shards_reuse_their_material() -> void:
 	for c in feel.get_children():
 		mats[(c as MeshInstance3D).material_override] = true
 	assert_eq(mats.size(), 1, "a second burst of the same colour shares it")
+
+
+func test_enemy_models_are_built_flashable() -> void:
+	var avatars: Array[Node3D] = [ChargerAvatar.new(), NeedleAvatar.new(), WardenAvatar.new()]
+	for avatar in avatars:
+		var name: String = avatar.get_script().get_global_name()
+		avatar.setup(Color.BLACK, &"xray")
+		assert_gt(avatar.body_materials.size(), 0)
+		for m: StandardMaterial3D in avatar.body_materials:
+			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)
+		avatar.free()

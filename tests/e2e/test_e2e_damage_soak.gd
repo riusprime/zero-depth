@@ -18,7 +18,9 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	await e.frames(5)
-	var start_nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	# The stage (ground tiles, props, walls) differs from floor to floor, and a restart rolls a new floor, so the
+	# leak check counts every node outside the stage.
+	var start_nodes := _nodes_outside_stage(main)
 	var hits := 0
 	var frames := 0
 	var swapped := 0
@@ -59,7 +61,7 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 		await e.tap(KEY_ENTER)  # Restart has focus
 		await e.frames(5)
 		assert_ne(e.world(), w, "life %d: Enter restarted the fight" % life)
-	var nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	var nodes := _nodes_outside_stage(main)
 	gut.p(
 		(
 			"soak: %d deaths, %d hits, %d frames; nodes %d -> %d"
@@ -80,6 +82,18 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 			% [DEATHS, nodes, start_nodes]
 		)
 	)
+
+
+func _nodes_outside_stage(main: Main) -> int:
+	var total := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	return total - _subtree_size(main.view.stage)
+
+
+func _subtree_size(n: Node) -> int:
+	var count := 1
+	for c in n.get_children():
+		count += _subtree_size(c)
+	return count
 
 
 func _nearest_enemy(w: World) -> Vector2:

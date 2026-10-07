@@ -17,6 +17,9 @@ const ROWS := [[0.06, 0.0], [0.45, 0.9], [0.9, 0.65], [1.25, 0.0]]
 var ribbon := MeshInstance3D.new()
 var _mesh := ImmediateMesh.new()
 var _ribbon_mat := StandardMaterial3D.new()
+## Kept for the view's life so the afterimages' shader is compiled once, not on the first dash after a quiet spell
+## (the v0.2.0 H rule: never let a material's shader variant die and recompile mid-fight).
+var _ghost_template := _make_ghost_template()
 var _ghost_mesh: Mesh
 ## [Vector3 ground point, age (s)], oldest first.
 var _points: Array = []
@@ -102,11 +105,8 @@ func _rebuild() -> void:
 
 
 func _ghost(at: Vector3, yaw: float) -> void:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var m := _ghost_template.duplicate() as StandardMaterial3D
 	m.albedo_color = Color(WHITE, 0.6)
-	m.render_priority = -1
 	var n := MeshInstance3D.new()
 	n.mesh = _ghost_mesh
 	n.material_override = m
@@ -136,3 +136,11 @@ static func _silhouette() -> Mesh:
 	hood.rings = 4
 	st.append_from(hood, 0, Transform3D(Basis(), Vector3(0, 1.06, 0)))
 	return st.commit()
+
+
+static func _make_ghost_template() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.render_priority = -1
+	return m
