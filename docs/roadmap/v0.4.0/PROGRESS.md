@@ -25,7 +25,7 @@ merged.
 
 ## Open
 - O3 `main`; O4 credit line.
-- BS: EI-05 still lists four streams (`map`, `loot`, `combat`, `ai`); BS adds `crit` and `ability` as the PLAN says.
+- ~~BS: EI-05 still lists four streams~~ — updated with the owner's OK (2026-10-07).
   An EI text change needs the owner: confirm the two names join the list.
 - BS deferred (PLAN levels table): Aegis L5 "reflects bolts"; Pulse Gun L3 "+1 pierce" shares the Hot bolt's single
   pierce (a Hot L3 bolt still pierces once). Attack speed shortens a swing's recovery and the shot/drone periods, not
@@ -45,3 +45,5 @@ merged.
   without a v0.4.0 playtest; both are played together afterwards.
 - 2026-10-07 — Owner: "okay let's bove the bigger card pool to v0.5 and make it in this current development sprint". The
   40–50 card pool (ROADMAP v0.6.0 → v0.5.0) runs as step CP in wave 3, after BS.
+- 2026-10-07 — Owner on the altar mix (43 % ability cards while a slot is free): "ill test it after"; on EI-05: "change the
+  locked rule yea" → EI-05 lists `crit` and `ability` (and the `ai:enemy` sub-stream).
