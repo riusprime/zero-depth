@@ -219,10 +219,13 @@ func sync(reader: WorldReader) -> void:
 	_core_mat.albedo_color.a = fade
 	_glow_mat.albedo_color.a = 0.35 * fade * (1.25 if finisher else 1.0) * flare
 	_streak = [aim, half, fade * p]
-	if t == 1 or t < _last_t or not was:
+	# A new swing starts the trail over. Not "t == 1": a hit-stop on a swing's first tick (the wanderer hurt then)
+	# syncs tick 1 again, and clearing it with the tick held left an empty trail whose head was read out of bounds,
+	# a crash in release builds (v0.3.0 L28, docs/roadmap/v0.3.0/evidence/CRASH_ON_HIT.md).
+	if t < _last_t or not was:
 		_history.clear()
 		_pivot.reset_physics_interpolation()
-	if t != _last_t:  # hit-stop holds the tick: the trail holds too
+	if t != _last_t or _history.is_empty():  # hit-stop holds the tick: the trail holds too
 		_history.append([at, yaw, fade * (1.3 if finisher else 1.0)])
 		var keep := sweep + 2 if _motion == WorldReader.MOTION_SPIN else trail_count + 1
 		while _history.size() > keep:
@@ -240,6 +243,8 @@ func _process(_delta: float) -> void:
 
 ## The blade as drawn this frame: [centre, yaw, strength], yaw unwrapped next to the newest sample's.
 func _head() -> Array:
+	if _history.is_empty():
+		return []
 	var newest: Array = _history[_history.size() - 1]
 	var xf := _pivot.get_global_transform_interpolated() if is_inside_tree() else _pivot.transform
 	var yaw := atan2(-xf.basis.x.z, xf.basis.x.x)
