@@ -188,7 +188,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`. The whole enum is declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0) and `BOSS_DEFEATED` (v0.3.0: once per boss, after its `KILL`; `amount` = its boss table index). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |

@@ -1,0 +1,141 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_fist_slam"]
+script = ExtResource("1_atk")
+id = &"fist_slam"
+shape = 3
+shape_params = {
+"inner_radius_m": 2.1,
+"radius_m": 4.0
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 22
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 4.5
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_GATEKEEPER_SLAM"
+
+[sub_resource type="Resource" id="A_shock_lanes"]
+script = ExtResource("1_atk")
+id = &"shock_lanes"
+shape = 2
+shape_params = {
+"count": 3,
+"length_m": 16.0,
+"spread_degrees": 20.0,
+"width_m": 1.0
+}
+telegraph_seconds = 0.9
+active_seconds = 0.8
+recovery_seconds = 1.0
+damage = 20
+move = &"lanes"
+min_range_m = 3.0
+max_range_m = 18.0
+weight = 3
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_GATEKEEPER_LANES"
+
+[sub_resource type="Resource" id="A_shock_lanes_5"]
+script = ExtResource("1_atk")
+id = &"shock_lanes_5"
+shape = 2
+shape_params = {
+"count": 5,
+"length_m": 16.0,
+"spread_degrees": 18.0,
+"width_m": 1.0
+}
+telegraph_seconds = 0.9
+active_seconds = 0.8
+recovery_seconds = 1.0
+damage = 20
+move = &"lanes"
+min_range_m = 3.0
+max_range_m = 18.0
+weight = 3
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_GATEKEEPER_LANES"
+
+[sub_resource type="Resource" id="A_sweep"]
+script = ExtResource("1_atk")
+id = &"sweep"
+shape = 1
+shape_params = {
+"arc_degrees": 180.0,
+"reach_m": 2.4
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 18
+move = &"sweep"
+min_range_m = 0.0
+max_range_m = 3.4
+weight = 4
+cooldown_seconds = 0.6
+cause_key = &"CAUSE_GATEKEEPER_SWEEP"
+
+[sub_resource type="Resource" id="A_charge"]
+script = ExtResource("1_atk")
+id = &"charge"
+shape = 2
+shape_params = {
+"length_m": 18.0,
+"speed_mps": 14.0
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.4
+damage = 26
+move = &"charge"
+min_range_m = 5.0
+max_range_m = 20.0
+weight = 2
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_GATEKEEPER_CHARGE"
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("fist_slam", "shock_lanes", "sweep")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("fist_slam", "shock_lanes_5", "sweep", "charge")
+entry_attack = &"charge"
+speed_permille = 1150
+cooldown_permille = 800
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_GATEKEEPER"
+hp = 1400
+radius_m = 1.3
+move_speed_mps = 1.5
+turn_rate_dps = 110.0
+keep_distance_m = 0.0
+front_arc_degrees = 120.0
+front_mult_permille = 800
+rear_arc_degrees = 120.0
+rear_mult_permille = 1100
+stagger_size = 220
+stagger_decay_per_second = 12.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_slam"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_5"), SubResource("A_sweep"), SubResource("A_charge")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+arena_cells = Vector2i(3, 3)
+arena_template = 2
+id = &"gatekeeper"

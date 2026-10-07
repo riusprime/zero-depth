@@ -12,7 +12,7 @@ func _codes(d: EnemyDefinition) -> Array:
 
 func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
-	assert_eq(repo.count(&"enemies"), 3)
+	assert_eq(repo.count(&"enemies"), 4, "charger, warden, needle and the hatchling (v0.3.0 C)")
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		assert_eq(def.validate(), [], String(def.id))
 		var t := ContentCompiler.compile_enemy(def)

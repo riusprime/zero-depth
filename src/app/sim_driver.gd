@@ -57,6 +57,8 @@ func step_once() -> void:
 	else:
 		var v := Input.get_vector(&"move_left", &"move_right", &"move_down", &"move_up")
 		move = v
+	if debug != null:
+		debug.apply_pending()  # dev-panel commands land between ticks
 	world.step(latch.close_frame(move, aim, dist))
 	ticks_this_frame += 1
 	ticked.emit()

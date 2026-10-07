@@ -5,6 +5,8 @@ extends RefCounted
 
 ## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
 ## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
+## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
+## index in World.boss_tables, pos = where it fell.
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -17,6 +19,7 @@ enum Kind {
 	LIMIT,
 	PICKUP,
 	COMBO_UNLOCKED,
+	BOSS_DEFEATED,
 }
 
 const TAG_MELEE := 1

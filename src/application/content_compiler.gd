@@ -3,6 +3,26 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## In v0.0.1 it compiles only the player.
 
+## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves.
+const BOSS_KINDS := {
+	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
+	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
+	&"siege_engine": ActorStore.Kind.SIEGE_ENGINE,
+}
+const BOSS_MOVES := {
+	&"slam_ring": BossAttackTable.Move.SLAM_RING,
+	&"lanes": BossAttackTable.Move.LANES,
+	&"sweep": BossAttackTable.Move.SWEEP,
+	&"charge": BossAttackTable.Move.CHARGE,
+	&"leap": BossAttackTable.Move.LEAP,
+	&"burrow": BossAttackTable.Move.BURROW,
+	&"brood": BossAttackTable.Move.BROOD,
+	&"barrage": BossAttackTable.Move.BARRAGE,
+	&"rail": BossAttackTable.Move.RAIL,
+	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
+	&"deploy": BossAttackTable.Move.DEPLOY,
+}
+
 
 static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	var t := PlayerTable.new()
@@ -53,6 +73,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"charger": ActorStore.Kind.CHARGER,
 		&"warden": ActorStore.Kind.WARDEN,
 		&"needle": ActorStore.Kind.NEEDLE,
+		&"hatchling": ActorStore.Kind.HATCHLING,
 	}[def.behaviour_id]
 	t.hp = def.hp
 	t.radius_m = def.radius_m
@@ -67,7 +88,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
 	match def.behaviour_id:
-		&"charger":
+		&"charger", &"hatchling":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
 		&"warden":
@@ -275,6 +296,115 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	for def: ItemDefinition in repo.all_of(&"items"):
 		out.append(compile_item(def))
 	return out
+
+
+# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+## Every boss in a repository, compiled, in id order (the order of boss indices: World.spawn_boss). Give it to the
+## world with World.set_boss_tables.
+static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
+	var out: Array[BossTable] = []
+	for def: BossDefinition in repo.all_of(&"bosses"):
+		out.append(compile_boss(def, repo))
+	return out
+
+
+## A floor's boss pool as indices into compile_bosses (empty if the floor has no pool).
+static func compile_boss_pool(repo: ContentRepository, floor_index: int) -> PackedInt32Array:
+	var ids: Array = repo.all_of(&"bosses").map(func(d: BossDefinition) -> StringName: return d.id)
+	var out := PackedInt32Array()
+	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
+		if pool.floor_index != floor_index:
+			continue
+		for bid in pool.boss_ids:
+			var k := ids.find(StringName(bid))
+			if k >= 0:
+				out.append(k)
+	return out
+
+
+static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTable:
+	var t := BossTable.new()
+	t.id = def.id
+	t.name_key = def.name_key
+	t.kind = BOSS_KINDS[def.id]
+	t.hp = def.hp
+	t.radius_m = def.radius_m
+	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
+	t.turn_rate = (
+		0
+		if def.turn_rate_dps <= 0.0
+		else maxi(1, degrees_to_units(def.turn_rate_dps / SimTick.TICKS_PER_SECOND))
+	)
+	t.keep_distance_m = def.keep_distance_m
+	t.front_half_arc = degrees_to_units(def.front_arc_degrees * 0.5)
+	t.front_mult_permille = def.front_mult_permille
+	t.rear_half_arc = degrees_to_units(def.rear_arc_degrees * 0.5)
+	t.rear_mult_permille = def.rear_mult_permille
+	t.stagger_size_milli = def.stagger_size * 1000
+	t.stagger_decay_milli = int(
+		round(def.stagger_decay_per_second * 1000.0 / SimTick.TICKS_PER_SECOND)
+	)
+	t.stagger_ticks = maxi(1, SimTick.seconds_to_ticks(def.stagger_seconds))
+	for a in def.attacks:
+		t.attacks.append(compile_boss_attack(a, repo))
+	for ph in def.phases:
+		t.phase_threshold.append(ph.hp_threshold_permille)
+		var ks := PackedInt32Array()
+		for aid in ph.attack_ids:
+			ks.append(t.attack_index(StringName(aid)))
+		t.phase_attacks.append(ks)
+		t.phase_entry.append(
+			t.attack_index(ph.entry_attack) if not String(ph.entry_attack).is_empty() else -1
+		)
+		t.phase_speed_permille.append(ph.speed_permille)
+		t.phase_cd_permille.append(ph.cooldown_permille)
+	t.arena_cells = def.arena_cells
+	t.arena_template = def.arena_template
+	return t
+
+
+static func compile_boss_attack(
+	def: BossAttackDefinition, repo: ContentRepository
+) -> BossAttackTable:
+	var t := BossAttackTable.new()
+	var sp := def.shape_params
+	t.id = def.id
+	t.move = BOSS_MOVES[def.move]
+	t.cause_key = def.cause_key
+	t.windup_ticks = SimTick.seconds_to_ticks(def.telegraph_seconds)
+	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(def.active_seconds))
+	t.recover_ticks = SimTick.seconds_to_ticks(def.recovery_seconds)
+	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
+	t.damage = def.damage
+	t.min_range_m = def.min_range_m
+	t.max_range_m = def.max_range_m
+	t.weight = def.weight
+	t.count = int(sp.get("count", 1))
+	t.chain = int(sp.get("chain", 1))
+	t.volleys = int(sp.get("volleys", 1))
+	t.gap_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("gap_seconds", 0.0))))
+	t.radius_m = float(sp.get("radius_m", 0.0))
+	t.inner_radius_m = float(sp.get("inner_radius_m", 0.0))
+	t.distance_m = float(sp.get("distance_m", 0.0))
+	t.spread_m = float(sp.get("spread_m", 0.0))
+	t.spread = degrees_to_units(float(sp.get("spread_degrees", 0.0)))
+	t.half_arc = degrees_to_units(float(sp.get("arc_degrees", 0.0)) * 0.5)
+	t.length_m = float(sp.get("length_m", sp.get("range_m", 0.0)))
+	t.reach_m = float(sp.get("reach_m", 0.0))
+	t.half_width_m = float(sp.get("width_m", 0.0)) * 0.5
+	t.speed = float(sp.get("speed_mps", 0.0)) / SimTick.TICKS_PER_SECOND
+	if t.move == BossAttackTable.Move.BOLT_FAN and t.speed > 0.0:
+		t.bolt_life_ticks = maxi(
+			1, SimTick.seconds_to_ticks(float(sp["range_m"]) / float(sp["speed_mps"]))
+		)
+	t.track_ticks = SimTick.seconds_to_ticks(float(sp.get("track_seconds", 0.0)))
+	t.erupt_ticks = SimTick.seconds_to_ticks(float(sp.get("erupt_seconds", 0.0)))
+	if sp.has("enemy_id"):
+		var e: EnemyDefinition = repo.get_def(&"enemies", StringName(sp["enemy_id"]))
+		if e != null:
+			t.enemy_kind = compile_enemy(e).kind
+	t.max_alive = int(sp.get("max_alive", 99))
+	return t
 
 
 ## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id).

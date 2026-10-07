@@ -3,7 +3,10 @@ extends RefCounted
 ## Actors as parallel arrays in ascending id order (SIM_CONTRACTS §4). Index 0 is always the player.
 ## Kinds are appended, never renumbered, because they are hashed.
 
-enum Kind { PLAYER, DUMMY, CHARGER, WARDEN, NEEDLE }
+## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi).
+enum Kind {
+	PLAYER, DUMMY, CHARGER, WARDEN, NEEDLE, HATCHLING, GATEKEEPER, BROOD_MOTHER, SIEGE_ENGINE
+}
 
 const TEAM_PLAYER := 0
 const TEAM_ENEMY := 1
