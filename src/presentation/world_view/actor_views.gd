@@ -3,7 +3,7 @@ extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
 ## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2).
 ## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3): the Charger is a low
-## wedge with a horn, the Warden a tall block behind a shield slab, the Needle a thin pillar.
+## wedge with a horn, the Warden a tall block behind a shield slab, the Needle a legged turret.
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -244,9 +244,13 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 				team_color
 			)
 		WorldReader.KIND_NEEDLE:
-			height = 1.25
-			_piece(facing, Vector3(0.3, 1.0, 0.3), Vector3(0, 0.5, 0), body_color, team_color)
-			_piece(facing, Vector3(0.5, 0.25, 0.5), Vector3(0, 1.12, 0), body_color, team_color)
+			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
+			var needle := NeedleAvatar.new()
+			needle.setup(outline_color, technique)
+			facing.add_child(needle)
+			height = NeedleAvatar.HEIGHT
+			root.set_meta(&"enemy_avatar", needle)
+			root.set_meta(&"mats", needle.body_materials.duplicate())
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0
