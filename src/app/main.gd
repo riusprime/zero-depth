@@ -124,12 +124,13 @@ func start_stage() -> void:
 		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
 	)
 	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
-	var encounter: EncounterDefinition = repo.get_def(&"encounters", &"combat_lab")
-	var world := StageScenario.build(
+	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
+	var world := FloorScenario.build(
 		_stage_seed,
 		table,
 		ContentCompiler.compile_enemies(repo),
-		ContentCompiler.compile_encounter(encounter, repo)
+		ContentCompiler.compile_spawning(spawning, repo),
+		ContentCompiler.compile_items(repo)
 	)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
@@ -138,7 +139,8 @@ func start_stage() -> void:
 	view = WorldViewRoot.new()
 	view.name = "WorldView"
 	add_child(view)
-	view.setup(driver.reader, biome.palette, StageScenario.ARENA_HALF)
+	var b := driver.reader.floor_bounds()
+	view.setup(driver.reader, biome.palette, maxf(b.size.x, b.size.y) * 0.5 + 4.0)
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
 	var player_input := PlayerInput.new(view.rig, driver.reader)

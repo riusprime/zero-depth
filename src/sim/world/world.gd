@@ -76,6 +76,8 @@ var killer_tags := 0
 ## Continuous spawning (null = off): the compiled director, run ticks counted while the player lives, ticks
 ## until the next spawn, and enemies killed this run.
 var spawner: SpawnTable
+## The generated floor this world runs on (null in the arena and kernel scenarios). Static: not hashed.
+var floor_layout: FloorLayout
 var run_ticks := 0
 var spawn_cd := 0
 var kills := 0

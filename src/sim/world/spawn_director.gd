@@ -23,13 +23,23 @@ static func advance(w: World) -> void:
 	_spawn_one(w, t, tier)
 
 
-## Spawn points at least min_distance_m from the player, in their stored order.
+## Spawn points at least min_distance_m from the player, in their stored order. On a floor, only in the player's
+## room or a neighbouring one (PLAN v0.2.0 "Spawning"); in a doorway (no room), any room qualifies.
 static func far_points(w: World) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var p := w.player_pos()
+	var near := PackedInt32Array()
+	if w.floor_layout != null:
+		var room := w.floor_layout.room_of(p)
+		if room >= 0:
+			near = w.floor_layout.neighbours(room)
+			near.append(room)
 	for q in w.spawn_points:
-		if Kin.length(q - p) >= w.spawner.min_distance_m:
-			out.append(q)
+		if Kin.length(q - p) < w.spawner.min_distance_m:
+			continue
+		if not near.is_empty() and not near.has(w.floor_layout.room_of(q)):
+			continue
+		out.append(q)
 	return out
 
 

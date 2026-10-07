@@ -408,3 +408,25 @@ func projectile_bounce_tick(i: int) -> int:
 ## Ticks between bolts while shooting (Rapid Coil applied).
 func shot_period_ticks() -> int:
 	return ItemEffects.shot_period_ticks(_w)
+
+
+## The generated floor, for the stage and the gate (PLAN v0.2.0 F). False in the arena and kernel scenarios.
+func has_floor() -> bool:
+	return _w.floor_layout != null
+
+
+func floor_bounds() -> Rect2:
+	return _w.floor_layout.bounds if _w.floor_layout != null else Rect2()
+
+
+func portal_pos() -> Vector2:
+	return _w.floor_layout.portal_pos if _w.floor_layout != null else Vector2.ZERO
+
+
+func portal_angle() -> int:
+	return _w.floor_layout.portal_angle if _w.floor_layout != null else 0
+
+
+## True while the player stands in the clear square in front of the sealed gate.
+func at_gate() -> bool:
+	return _w.floor_layout != null and _w.floor_layout.portal_front().has_point(_w.player_pos())

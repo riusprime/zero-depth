@@ -11,6 +11,8 @@ var utility := UtilityView.new()
 var telegraphs := TelegraphViews.new()
 var hit_feel: HitFeel
 var ink := InkPass.new()
+var pickups := PickupViews.new()
+var gate: PortalGate
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -24,6 +26,11 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(kit)
 	add_child(utility)
 	add_child(rig)
+	add_child(pickups)
+	if reader.has_floor():
+		gate = PortalGate.new()
+		add_child(gate)
+		gate.setup(reader.portal_pos(), reader.portal_angle())
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -39,6 +46,7 @@ func sync() -> void:
 	kit.sync(reader)
 	utility.sync(reader)
 	hit_feel.sync(reader)
+	pickups.sync(reader)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

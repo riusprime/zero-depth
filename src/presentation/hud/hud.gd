@@ -11,6 +11,13 @@ var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
 var _wave := Label.new()
 var _left := Label.new()
+## Floor (PLAN v0.2.0 F): the items you carry, a toast when you pick one up, the sealed-gate note.
+var _items := VBoxContainer.new()
+var _toast := Label.new()
+var _gate := Label.new()
+var _toast_left := 0.0
+var _last_seq := 0
+var _items_shown := -1
 
 
 func _init() -> void:
@@ -46,6 +53,19 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		top.add_child(l)
 	_wave.add_theme_font_size_override("font_size", 28)
+	_items.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	_items.position = Vector2(-260, -220)
+	_items.custom_minimum_size = Vector2(240, 0)
+	add_child(_items)
+	for l: Label in [_toast, _gate]:
+		l.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.custom_minimum_size = Vector2(900, 0)
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.add_theme_font_size_override("font_size", 24)
+		add_child(l)
+	_toast.position = Vector2(-450, -190)
+	_gate.position = Vector2(-450, -150)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -63,8 +83,50 @@ func sync(reader: WorldReader) -> void:
 		(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
 		_set_pip(_util, 0, 1, reader.guarding())
 	_util.visible = reader.has_blink() or reader.has_guard()
-	_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
-	_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
+	if reader.has_floor():
+		var secs := int(reader.run_seconds())
+		_wave.text = tr("HUD_TIME_TIER") % [secs / 60, secs % 60, reader.tier() + 1]
+		_left.text = tr("HUD_KILLS") % reader.kills()
+		_sync_items(reader)
+	else:
+		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
+		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
+	_gate.text = tr("GATE_SEALED") if reader.has_floor() and reader.at_gate() else ""
+
+
+func _process(delta: float) -> void:
+	if _toast_left > 0.0:
+		_toast_left -= delta
+		if _toast_left <= 0.0:
+			_toast.text = ""
+
+
+func toast_text() -> String:
+	return _toast.text
+
+
+func _sync_items(reader: WorldReader) -> void:
+	for e in reader.events_since(_last_seq):
+		_last_seq = e.seq
+		if e.kind == SimEvent.Kind.PICKUP:
+			var idx := e.amount
+			_toast.text = (
+				tr("HUD_PICKED")
+				% [tr(reader.item_name_key(idx)), tr(String(reader.item_name_key(idx)) + "_DESC")]
+			)
+			_toast_left = 4.0
+	var owned := reader.items_owned()
+	if owned.size() == _items_shown:
+		return
+	_items_shown = owned.size()
+	for c in _items.get_children():
+		c.queue_free()
+	for idx in owned:
+		var l := Label.new()
+		l.text = String(reader.item_name_key(idx))
+		l.add_theme_color_override("font_color", ItemLooks.color(reader.item_kind(idx)))
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_items.add_child(l)
 
 
 ## A small square that fills as the cooldown runs out, with a label.

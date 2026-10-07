@@ -74,3 +74,6 @@ ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
 ITEM_KINETIC_DASH_DESC,Dashing through an enemy hits it for 12.,Atravesar a un enemigo con el impulso le hace 12 de daño.
 ITEM_OVERCHARGE,Overcharge,Sobrecarga
 ITEM_OVERCHARGE_DESC,Every 4th swing deals double damage and sends out a small shockwave.,Cada 4.º tajo hace el doble de daño y lanza una pequeña onda expansiva.
+HUD_TIME_TIER,%02d:%02d · Danger %d,%02d:%02d · Peligro %d
+HUD_KILLS,Kills: %d,Bajas: %d
+HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
