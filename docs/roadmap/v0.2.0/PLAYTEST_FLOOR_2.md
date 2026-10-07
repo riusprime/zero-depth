@@ -32,5 +32,9 @@ written by the owner or pasted verbatim from the owner's message.
 6. The Warden without the block: does flanking still feel worth it? Are 80 % / 110 % right?
 7. Frame rate on your PC, anything broken, anything wrong in Spanish.
 
-## Owner answers
-OWNER ONLY
+## Owner answers (2026-10-07)
+Pasted verbatim from the owner's message:
+
+> great great he have something very cool now,  I like the idea of this floor, but now to the generation we need to add the wall thickness factor so you can't just blink every single wall, and we add more randomness to it, lets now keep going for the game development plan, the items combos floors, portals working etc we have to move onto the next actual playable version that has features this is just a demo
+
+Questions 1 and 3–7 were not answered individually.
