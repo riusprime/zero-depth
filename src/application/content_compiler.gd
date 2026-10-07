@@ -163,6 +163,14 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.RICOCHET_CORE: ItemTable.Kind.RICOCHET_CORE,
 		ItemDefinition.Kind.KINETIC_DASH: ItemTable.Kind.KINETIC_DASH,
 		ItemDefinition.Kind.OVERCHARGE: ItemTable.Kind.OVERCHARGE,
+		ItemDefinition.Kind.VAMPIRIC_CORE: ItemTable.Kind.VAMPIRIC_CORE,
+		ItemDefinition.Kind.STATIC_CHAIN: ItemTable.Kind.STATIC_CHAIN,
+		ItemDefinition.Kind.MOMENTUM: ItemTable.Kind.MOMENTUM,
+		ItemDefinition.Kind.FROST_CORE: ItemTable.Kind.FROST_CORE,
+		ItemDefinition.Kind.THORN_MANTLE: ItemTable.Kind.THORN_MANTLE,
+		ItemDefinition.Kind.EXECUTIONER: ItemTable.Kind.EXECUTIONER,
+		ItemDefinition.Kind.SWIFT_FEET: ItemTable.Kind.SWIFT_FEET,
+		ItemDefinition.Kind.PHASE_STRIKE: ItemTable.Kind.PHASE_STRIKE,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -183,7 +191,31 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	t.overcharge_mult_permille = def.overcharge_mult_permille
 	t.shockwave_radius_m = def.shockwave_radius_m
 	t.shockwave_damage_permille = def.shockwave_damage_permille
+	_compile_item_v2(def, t)
 	return t
+
+
+## The second eight items (v0.2.0 J).
+static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
+	t.heal_per_kill = def.heal_per_kill
+	t.heal_cap = def.heal_cap
+	t.heal_window_ticks = SimTick.seconds_to_ticks(def.heal_window_seconds)
+	t.chain_every = def.chain_every
+	t.chain_range_m = def.chain_range_m
+	t.chain_damage = def.chain_damage
+	t.momentum_window_ticks = SimTick.seconds_to_ticks(def.momentum_window_seconds)
+	t.momentum_bonus_permille = def.momentum_bonus_permille
+	t.slow_permille = def.slow_permille if def.slow_permille > 0 else 1000
+	t.slow_ticks = SimTick.seconds_to_ticks(def.slow_seconds)
+	t.thorn_bolts = def.thorn_bolts
+	t.thorn_damage = def.thorn_damage
+	t.execute_threshold_permille = def.execute_threshold_permille
+	t.execute_bonus_permille = def.execute_bonus_permille
+	t.move_speed_bonus_permille = def.move_speed_bonus_permille
+	t.dash_cooldown_cut_permille = def.dash_cooldown_cut_permille
+	t.phase_damage = def.phase_damage
+	t.phase_radius_m = def.phase_radius_m
+	t.phase_guard_window_ticks = SimTick.seconds_to_ticks(def.phase_guard_window_seconds)
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with

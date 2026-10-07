@@ -21,6 +21,26 @@ var overcharge_every := 0
 var overcharge_mult_permille := 1000
 var shockwave_radius_m := 0.0
 var shockwave_damage_permille := 0
+## v0.2.0 J (the second eight; see ItemTable for each field).
+var heal_per_kill := 0
+var heal_cap := 0
+var heal_window_ticks := 0
+var chain_every := 0
+var chain_range_m := 0.0
+var chain_damage := 0
+var momentum_window_ticks := 0
+var momentum_bonus_permille := 0
+var slow_permille := 1000
+var slow_ticks := 0
+var thorn_bolts := 0
+var thorn_damage := 0
+var execute_threshold_permille := 0
+var execute_bonus_permille := 0
+var move_speed_bonus_permille := 0
+var dash_cooldown_cut_permille := 0
+var phase_damage := 0
+var phase_radius_m := 0.0
+var phase_guard_window_ticks := 0
 ## Bit (1 << ItemTable.Kind) per owned kind.
 var kinds_mask := 0
 
@@ -52,7 +72,40 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 				m.overcharge_mult_permille = t.overcharge_mult_permille
 				m.shockwave_radius_m = t.shockwave_radius_m
 				m.shockwave_damage_permille = t.shockwave_damage_permille
+			_:
+				_build_v2(m, t)
 	return m
+
+
+## The second eight items (v0.2.0 J): each kind's numbers; Swift Feet's bonuses add up like the others.
+static func _build_v2(m: ItemMods, t: ItemTable) -> void:
+	m.move_speed_bonus_permille += t.move_speed_bonus_permille
+	m.dash_cooldown_cut_permille += t.dash_cooldown_cut_permille
+	match t.kind:
+		ItemTable.Kind.VAMPIRIC_CORE:
+			m.heal_per_kill = t.heal_per_kill
+			m.heal_cap = t.heal_cap
+			m.heal_window_ticks = t.heal_window_ticks
+		ItemTable.Kind.STATIC_CHAIN:
+			m.chain_every = t.chain_every
+			m.chain_range_m = t.chain_range_m
+			m.chain_damage = t.chain_damage
+		ItemTable.Kind.MOMENTUM:
+			m.momentum_window_ticks = t.momentum_window_ticks
+			m.momentum_bonus_permille = t.momentum_bonus_permille
+		ItemTable.Kind.FROST_CORE:
+			m.slow_permille = t.slow_permille
+			m.slow_ticks = t.slow_ticks
+		ItemTable.Kind.THORN_MANTLE:
+			m.thorn_bolts = t.thorn_bolts
+			m.thorn_damage = t.thorn_damage
+		ItemTable.Kind.EXECUTIONER:
+			m.execute_threshold_permille = t.execute_threshold_permille
+			m.execute_bonus_permille = t.execute_bonus_permille
+		ItemTable.Kind.PHASE_STRIKE:
+			m.phase_damage = t.phase_damage
+			m.phase_radius_m = t.phase_radius_m
+			m.phase_guard_window_ticks = t.phase_guard_window_ticks
 
 
 func has(kind: int) -> bool:

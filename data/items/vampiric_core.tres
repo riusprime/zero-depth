@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 8
+name_key = &"ITEM_VAMPIRIC_CORE"
+desc_key = &"ITEM_VAMPIRIC_CORE_DESC"
+heal_per_kill = 3
+heal_cap = 15
+heal_window_seconds = 5.0
+id = &"vampiric_core"

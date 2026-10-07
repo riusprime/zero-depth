@@ -1,5 +1,6 @@
 extends GutTest
-## v0.2.0 E: the eight items, pickups and the item pool, with the shipped data's numbers. Aim angle 0 = +x.
+## v0.2.0 E: the first eight items (the second eight: test_items_j.gd), pickups and the item pool, with the
+## shipped data's numbers. Aim angle 0 = +x.
 
 const P := InputFrame.PRIMARY
 const K := ItemTable.Kind
@@ -56,12 +57,9 @@ func _swing(w: World, aim: int = 0) -> void:
 	_idle(w, w.player.swing_ticks + 2)
 
 
-func test_the_data_compiles_to_eight_distinct_kinds() -> void:
-	assert_eq(_tables.size(), 8)
-	var kinds := {}
-	for t in _tables:
-		kinds[t.kind] = true
-	assert_eq(kinds.size(), 8)
+func test_the_first_eight_kinds_are_shipped() -> void:
+	for k in range(K.LONG_EDGE, K.OVERCHARGE + 1):
+		assert_ne(_index(k), -1, "kind %d is shipped" % k)
 
 
 func test_long_edge_hits_where_a_plain_swing_misses() -> void:
@@ -289,11 +287,11 @@ func test_walking_over_a_pickup_takes_it() -> void:
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
 	var all := ItemPool.draw(w, 20)
-	assert_eq(all.size(), 8)
+	assert_eq(all.size(), 16)
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 8, "no repeats")
+	assert_eq(seen.size(), 16, "no repeats")
 	var v := _world([], [])
 	v.add_item(0)
 	v.add_pickup(1, Vector2(5, 5))
@@ -302,8 +300,8 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	for i in some:
 		assert_false(i in [0, 1])
 		v.add_pickup(i, Vector2(5, 5))
-	var rest := ItemPool.draw(v, 8)
-	assert_eq(rest.size(), 3, "8 - owned - 4 placed")
+	var rest := ItemPool.draw(v, 16)
+	assert_eq(rest.size(), 11, "16 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in [0, 1])
 

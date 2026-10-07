@@ -25,6 +25,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"burn_t",
 	&"burn_cd",
 	&"burn_root",
+	&"slow_t",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
@@ -62,6 +63,8 @@ var burn_stacks := PackedInt32Array()
 var burn_t := PackedInt32Array()
 var burn_cd := PackedInt32Array()
 var burn_root := PackedInt32Array()
+## Frost Core slow (v0.2.0 J): ticks left (0 = not slowed). EnemyAi.move scales its speed while it runs.
+var slow_t := PackedInt32Array()
 
 
 func size() -> int:

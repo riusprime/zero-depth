@@ -37,6 +37,11 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
+	# Items: Executioner is an attacker multiplier, applied before the target's (SIM_CONTRACTS §8 step 2).
+	var exec := ItemProcs.execute_mult(w, target, owner_id)
+	if exec != 1000:
+		amount = amount * exec / 1000
+		tags |= SimEvent.TAG_EXECUTE
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -48,9 +53,14 @@ static func hit(
 	var m := target_mult(w, target, from)
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
-	if scaled <= 0:
-		return 0
-	return _apply(w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id)
+	var got := 0
+	if scaled > 0:
+		got = _apply(
+			w, target, scaled, source_id, owner_id, root_id, h.tags, at, h.seq, 1, effect_id
+		)
+	if target == 0 and m[1] & SimEvent.TAG_GUARDED:
+		ItemProcs.on_guard_block(w)  # Items: Phase Strike.
+	return got
 
 
 ## A damage-over-time tick (SIM_CONTRACTS §8): DAMAGE with TAG_DOT and proc_pct 0, never a HIT, so it can't
@@ -119,4 +129,8 @@ static func _apply(
 		k.parent_seq = d.seq
 		k.depth = depth + 1
 		k.effect_id = effect_id
+		if target != 0 and owner_id == a.ids[0]:
+			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
+	if target == 0:
+		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 	return applied

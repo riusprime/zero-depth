@@ -17,6 +17,14 @@ const ITEM_RAPID_COIL := ItemTable.Kind.RAPID_COIL
 const ITEM_RICOCHET_CORE := ItemTable.Kind.RICOCHET_CORE
 const ITEM_KINETIC_DASH := ItemTable.Kind.KINETIC_DASH
 const ITEM_OVERCHARGE := ItemTable.Kind.OVERCHARGE
+const ITEM_VAMPIRIC_CORE := ItemTable.Kind.VAMPIRIC_CORE
+const ITEM_STATIC_CHAIN := ItemTable.Kind.STATIC_CHAIN
+const ITEM_MOMENTUM := ItemTable.Kind.MOMENTUM
+const ITEM_FROST_CORE := ItemTable.Kind.FROST_CORE
+const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
+const ITEM_EXECUTIONER := ItemTable.Kind.EXECUTIONER
+const ITEM_SWIFT_FEET := ItemTable.Kind.SWIFT_FEET
+const ITEM_PHASE_STRIKE := ItemTable.Kind.PHASE_STRIKE
 
 var _w: World
 
@@ -163,8 +171,9 @@ func dash_cooldown() -> int:
 	return _w.dash_cooldown_left
 
 
+## The dash cooldown's full length (Swift Feet applied: the same number the dash uses).
 func dash_cooldown_total() -> int:
-	return _w.player.dash_cooldown_ticks
+	return ItemProcs.dash_cooldown_ticks(_w)
 
 
 func player_radius() -> float:
@@ -441,3 +450,68 @@ func wall_class(i: int) -> int:
 	if i < f.slab_first:
 		return 0
 	return 1 if i < f.walls.size() else 2
+
+
+# --- Items, the second eight (v0.2.0 J) ---------------------------------------------------------------------
+## Vampiric Core: the tick it last healed (-1 = never), and HP it can still heal in the current cap window.
+func heal_tick() -> int:
+	return _w.heal_tick
+
+
+func heal_cap_left() -> int:
+	return ItemProcs.heal_cap_left(_w)
+
+
+## Static Chain: the tick of the last jump (-1 = never), its ends, and whether the next landed bolt chains.
+func chain_tick() -> int:
+	return _w.chain_tick
+
+
+func chain_from() -> Vector2:
+	return _w.chain_from
+
+
+func chain_to() -> Vector2:
+	return _w.chain_to
+
+
+func chain_ready() -> bool:
+	return ItemProcs.chain_ready(_w)
+
+
+## Momentum: an empowered swing is waiting, and the current swing is empowered.
+func momentum_ready() -> bool:
+	return _w.momentum_t > 0
+
+
+func swing_momentum() -> bool:
+	return _w.swing_t > 0 and _w.swing_momentum
+
+
+## Frost Core: actor i is slowed.
+func actor_slowed(i: int) -> bool:
+	return _w.actors.slow_t[i] > 0
+
+
+## Thorn Mantle: the tick the last ring was released (-1 = never).
+func thorn_tick() -> int:
+	return _w.thorn_tick
+
+
+## Executioner: actor i is below the threshold, so your hits on it deal extra (false without the item).
+func in_execute_range(i: int) -> bool:
+	return ItemProcs.in_execute_range(_w, i)
+
+
+## Swift Feet: the player's top speed in metres per second.
+func move_speed_mps() -> float:
+	return ItemProcs.move_speed(_w) * SimTick.TICKS_PER_SECOND
+
+
+## Phase Strike: the tick it last discharged (-1 = never), and its ring's radius.
+func phase_tick() -> int:
+	return _w.phase_tick
+
+
+func phase_radius_m() -> float:
+	return _w.item_mods.phase_radius_m

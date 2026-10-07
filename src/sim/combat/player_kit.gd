@@ -25,6 +25,7 @@ static func advance_utility(w: World) -> void:
 	w.blink_cd = t.blink_cooldown_ticks
 	w.blink_tick = w.tick
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
+	ItemProcs.on_blink(w)  # Items: Phase Strike.
 
 
 ## The way a blink (or a dash) goes: the move direction, or the aim when standing still.
@@ -79,12 +80,14 @@ static func advance(w: World) -> void:
 		w.swing_angle = w.aim_angle
 		w.swing_root = w.take_root()
 		ItemEffects.on_swing_start(w)
+		ItemProcs.on_swing_start(w)  # Items: Momentum.
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
 	if shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
 		_fire_bolt(w)
 		w.shot_cd = ItemEffects.shot_period_ticks(w)
+	ItemProcs.advance_momentum(w)
 
 
 static func shooting(w: World) -> bool:
@@ -112,7 +115,7 @@ static func arc_hits(w: World, i: int, angle: int) -> bool:
 
 static func _resolve_swing(w: World) -> void:
 	var base: int = w.player.swing_damage[w.combo_step]
-	var dmg := ItemEffects.swing_damage(w, base)
+	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	if swing_arc(w, w.swing_angle, dmg, w.swing_root, &""):
 		w.add_freeze(w.player.swing_hitstop_ticks)
 	ItemEffects.after_swing(w, base, dmg)
