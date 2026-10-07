@@ -1,6 +1,7 @@
 extends GutTest
-## The floor through real input (PLAN v0.2.0 F): it has 8 pedestals and the sealed gate; walking (left stick
-## only) to the nearest pedestal picks its item up, the HUD names it, and the item list shows it.
+## The floor through real input (PLAN v0.2.0 F, L15): it has a pedestal on every item spot the pool can fill
+## (1-2 per room, none in the start hall) and the sealed gate; walking (left stick only) to the nearest pedestal
+## picks its item up, the HUD names it, and the item list shows it.
 
 
 func after_each() -> void:
@@ -13,8 +14,23 @@ func test_the_floor_has_pedestals_and_a_gate() -> void:
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	assert_not_null(e.world().floor_layout, "the game runs on a generated floor")
-	assert_eq(e.world().pickups.ids.size(), 8, "one pedestal per room but the start")
-	assert_eq(main.view.pickups.count(), 8)
+	var layout := e.world().floor_layout
+	var expected := mini(layout.item_spots.size(), e.world().item_tables.size())
+	assert_gt(expected, 0)
+	assert_eq(
+		e.world().pickups.ids.size(), expected, "a pedestal per item spot while the pool lasts"
+	)
+	assert_eq(main.view.pickups.count(), expected)
+	var rooms := {}
+	for i in e.world().pickups.ids.size():
+		var room := layout.room_of(e.world().pickups.pos(i))
+		assert_ne(room, layout.start_room, "no pedestal in the start hall")
+		rooms[room] = true
+	assert_eq(
+		rooms.size(),
+		mini(expected, layout.room_count() - 1),
+		"each room gets a pedestal before any room gets its second"
+	)
 	assert_not_null(main.view.gate, "the gate is placed")
 	assert_true(main.view.gate.is_sealed())
 

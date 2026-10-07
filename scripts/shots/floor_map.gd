@@ -2,10 +2,11 @@ extends SceneTree
 ## A top-down PNG of generated floors (v0.2.0 B), to eyeball FloorGenerator. Works headless.
 ##   godot --headless --path . -s scripts/shots/floor_map.gd [-- <seed> <seed> ...]
 ## Writes build/floors/floor_layouts.png (floors side by side, in the order given) and prints a line per floor.
-## Key: grey floor, dark walls, brown slabs, green start, yellow items, red spawn points, blue doorways,
-## magenta gate with its clear front square outlined.
+## Key: room floors tinted by interior template (TEMPLATE_TINTS, printed as a legend), dark walls, brown interior
+## pieces, green start, yellow items, red spawn points, blue doorways, magenta gate with its clear front square
+## outlined.
 
-const PX := 10  # pixels per metre
+const PX := 6  # pixels per metre
 const GAP := 16
 const OUT := "res://build/floors/floor_layouts.png"
 const C_BG := Color(0.12, 0.12, 0.14)
@@ -17,6 +18,17 @@ const C_START := Color(0.1, 0.7, 0.2)
 const C_ITEM := Color(0.95, 0.8, 0.1)
 const C_SPAWN := Color(0.85, 0.15, 0.15)
 const C_GATE := Color(0.85, 0.1, 0.85)
+## Floor tint per template, in FloorLayout.Template order: open, scatter, pillars, centre, cross, lines, bunkers.
+const TEMPLATE_TINTS: Array[Color] = [
+	Color(0.85, 0.85, 0.82),
+	Color(0.78, 0.74, 0.66),
+	Color(0.66, 0.74, 0.82),
+	Color(0.80, 0.68, 0.76),
+	Color(0.70, 0.80, 0.68),
+	Color(0.84, 0.80, 0.58),
+	Color(0.62, 0.78, 0.78),
+]
+const TINT_NAMES := ["light grey", "sand", "blue", "pink", "green", "yellow", "teal"]
 
 
 func _initialize() -> void:
@@ -34,18 +46,24 @@ func _initialize() -> void:
 		var spawns := 0
 		for sp in f.spawn_points:
 			spawns += sp.size()
+		var names := PackedStringArray()
+		var shapes := PackedStringArray()
+		for room in f.room_count():
+			names.append(FloorLayout.TEMPLATE_NAMES[f.room_template[room]])
+			shapes.append("%dx%d" % [f.room_cells[room].size.x, f.room_cells[room].size.y])
 		print(
 			(
 				(
-					"seed %d: %d rooms, %d doorways, %d slabs, start room %d, portal room %d (%d hops), %d item spots, "
-					+ "%d spawn points, generated in %.1f ms"
+					"seed %d: %d rooms, %d doorways, %d interior pieces, %.1f x %.1f m, portal room %d (%d hops), "
+					+ "%d item spots, %d spawn points, generated in %.1f ms"
 				)
 				% [
 					s,
 					f.room_count(),
 					f.door_rooms.size(),
 					f.walls.size() - f.slab_first,
-					f.start_room,
+					f.bounds.size.x,
+					f.bounds.size.y,
 					f.portal_room,
 					f.hops[f.portal_room],
 					f.item_spots.size(),
@@ -54,8 +72,17 @@ func _initialize() -> void:
 				]
 			)
 		)
-	var w := int(floors[0].bounds.size.x * PX)
-	var h := int(floors[0].bounds.size.y * PX)
+		print("  rooms (cells): %s" % ", ".join(shapes))
+		print("  templates: %s" % ", ".join(names))
+	var legend := PackedStringArray()
+	for t in FloorLayout.TEMPLATE_COUNT:
+		legend.append("%s = %s" % [FloorLayout.TEMPLATE_NAMES[t], TINT_NAMES[t]])
+	print("floor tints: %s" % ", ".join(legend))
+	var w := 0
+	var h := 0
+	for f in floors:
+		w = maxi(w, int(f.bounds.size.x * PX))
+		h = maxi(h, int(f.bounds.size.y * PX))
 	var img := Image.create(
 		w * floors.size() + GAP * (floors.size() + 1), h + GAP * 2, false, Image.FORMAT_RGB8
 	)
@@ -69,8 +96,8 @@ func _initialize() -> void:
 
 
 func _draw_floor(img: Image, f: FloorLayout, at: Vector2i) -> void:
-	for r in f.rooms:
-		_fill_rect(img, f, at, r, C_FLOOR)
+	for room in f.room_count():
+		_fill_rect(img, f, at, f.rooms[room], TEMPLATE_TINTS[f.room_template[room]])
 	for d in f.door_centers:
 		_fill_rect(img, f, at, Rect2(d - Vector2(1.3, 1.3), Vector2(2.6, 2.6)), C_FLOOR)
 	for i in f.walls.size():

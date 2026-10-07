@@ -5,7 +5,6 @@ extends RefCounted
 ## Walls are rasterised through their bounds only, so a whole floor builds quickly.
 
 const CELL := 0.5
-const STEPS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 var origin := Vector2.ZERO
 var size := Vector2i.ZERO
@@ -62,25 +61,38 @@ func free_cells() -> int:
 
 
 func _label() -> void:
-	region.resize(size.x * size.y)
+	var sx := size.x
+	var sy := size.y
+	region.resize(sx * sy)
 	region.fill(-1)
 	region_count = 0
-	for start in size.x * size.y:
+	var queue := PackedInt32Array()
+	queue.resize(sx * sy)
+	for start in sx * sy:
 		if blocked[start] == 1 or region[start] != -1:
 			continue
-		var queue := PackedInt32Array([start])
+		queue[0] = start
+		var tail := 1
 		region[start] = region_count
 		var head := 0
-		while head < queue.size():
+		while head < tail:
 			var k := queue[head]
 			head += 1
-			var c := Vector2i(k % size.x, k / size.x)
-			for s in STEPS:
-				var n := c + s
-				if not inside(n):
-					continue
-				var nk := n.y * size.x + n.x
-				if blocked[nk] == 0 and region[nk] == -1:
-					region[nk] = region_count
-					queue.append(nk)
+			var cx := k % sx
+			if cx > 0 and blocked[k - 1] == 0 and region[k - 1] == -1:
+				region[k - 1] = region_count
+				queue[tail] = k - 1
+				tail += 1
+			if cx < sx - 1 and blocked[k + 1] == 0 and region[k + 1] == -1:
+				region[k + 1] = region_count
+				queue[tail] = k + 1
+				tail += 1
+			if k >= sx and blocked[k - sx] == 0 and region[k - sx] == -1:
+				region[k - sx] = region_count
+				queue[tail] = k - sx
+				tail += 1
+			if k + sx < sx * sy and blocked[k + sx] == 0 and region[k + sx] == -1:
+				region[k + sx] = region_count
+				queue[tail] = k + sx
+				tail += 1
 		region_count += 1
