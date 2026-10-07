@@ -139,7 +139,7 @@ the version that builds it. `MIN_TELEGRAPH_TICKS = 24` (0.4 s; owner, 2026-10-06
 | Enemy | First in | Behaviour and attacks | Telegraph |
 |---|---|---|---|
 | Charger | v0.1.0 | Runs at you; locks a straight lane, charges along it, then is dazed (the punish window) | Lane, 0.6 s |
-| Warden | v0.1.0 | Slow and tanky; a front shield blocks your attacks, so you flank it; slams the ground around itself | Circle, 0.8 s |
+| Warden | v0.1.0 | Slow and tanky; armoured in front (−20 % damage) and soft behind (+10 %), so flanking pays; slams the ground around itself | Circle, 0.8 s |
 | Needle | v0.1.0 | Keeps its distance; fires a 3-bolt burst down a locked aim line; backs off when you close in | Line, 0.5 s |
 | Disruptor | v0.3.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |
 | Splitter | v0.3.0 | from GA: enemies | ≥ `MIN_TELEGRAPH_TICKS` |

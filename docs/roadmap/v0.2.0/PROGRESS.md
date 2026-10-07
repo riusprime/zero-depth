@@ -87,4 +87,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   Swift Feet, Phase Strike (numbers in the subagent's report and data/items); all 16 descriptions ≤ 60 characters
   in en and es. Item indices are alphabetical, so a seed's pedestal draws changed. 231 tests pass; goldens
   re-recorded; export smoke 0 misses.
-
+- 2026-10-07 — Owner confirmed `docs/art/image.png` is the enemy sheet (renamed `enemies_visual_reference.png`) and asked for 1:1 enemy visuals (L17) and a Warden without the front block: −20 % from the front, +10 % from behind (L18). Workstreams L (three enemy-model agents) and M (Warden armour) started in parallel with H, I, K.

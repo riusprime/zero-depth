@@ -32,6 +32,8 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L14 | "the map … should be bigger, the first 3x3 should be a room and then have connecting rooms, having in total 10-12 … not always 1x1 … 3x1, 3x2 and 3x3 … one randomly selected outer wall of the 3x3 should have a connection to the new room … more variables" | Floor v2: a 3×3-cell start hall; 9–11 more rooms of 1×1, 2×1, 3×1, 2×2, 3×2 or 3×3 cells grown outward through doors (the hall's first exit on a random outer wall); each room gets one of several interior layouts; the portal room is the farthest | I |
 | L15 | "items should be 1-2 items per room, smaller rooms only have 1" | 1×1 rooms: 1 pedestal; bigger rooms: 1–2 (map stream); the start hall: none | I |
 | L16 | "let's add more items from the plan" | 8 more items (16 in all), same Trigger/Condition/Payoff spirit, each with its look; pedestals never repeat an item on a floor | J |
+| L17 | (2026-10-07, with `docs/art/enemies_visual_reference.png`) "yep that's what I meant … try to replicate visuals as close as 1:1 as you can for those enemies" | Charger = the red-hooded crawler on four grey segmented claw legs with bone talons and a red visor; Needle = the red box turret on four mechanical legs with a grey cannon and red slit eyes; Warden = the grey rock golem with huge stone fists, a faceted red cap and a red visor slot. Animated like the hero (idle, move, wind-up, attack, hit, death); silhouettes stay distinct in greyscale | L |
+| L18 | "the tank should lose the blocking from the front feature, he just receives 20% less damage from the front and 10% more damage from the back" | The Warden no longer blocks: hits from its front arc deal 80 %, hits from behind deal 110 %, the sides 100 % (per-mille multipliers in `Damage.target_mult`); the arc sizes are data | M |
 | L9 | v0.1.0 Steps 8–12 (owner moved them here) | Bench with real AI, readable-cause test, Options (G2), SFX hooks, release | later steps |
 
 ## Design (starting values)
@@ -69,6 +71,8 @@ isn't open yet."
 - **D. Portal gate:** presentation (stone gate + portal shader), the sealed message.
 - **E. Items:** content, pickups, effects in the sim, visuals, HUD (after A–C merge).
 - **G. Character rework:** `PlayerAvatar` (model, animation, cloak springs) replaces the player cube.
+- **L. Enemy rework:** Charger, Needle and Warden models and animation to match `enemies_visual_reference.png` (one agent each).
+- **M. Warden armour:** front −20 % / back +10 % replaces the front block (sim, data, tests, goldens).
 - **F. Integration:** `FloorScenario` replaces the arena; HUD time/tier/kills; tour; a build for the owner.
 - **Later in v0.2.0:** v0.1.0's Steps 8–12.
 
