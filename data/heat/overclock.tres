@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="HeatDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/heat_definition.gd" id="1_heat"]
+
+[resource]
+script = ExtResource("1_heat")
+max_heat = 100
+gain_swing = 2.5
+gain_finisher = 5.0
+gain_bolt = 0.9
+decay_delay_seconds = 1.0
+decay_per_second = 15.0
+hot_threshold = 40
+hot_reach_bonus = 0.2
+overclock_threshold = 75
+overclock_damage_bonus = 0.25
+overclock_burn_stacks = 1
+overheat_seconds = 1.2
+overheat_move_multiplier = 0.6
+vent_radius_m = 2.5
+vent_damage_per_heat = 0.5
+id = &"overclock"

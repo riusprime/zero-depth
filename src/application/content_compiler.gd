@@ -218,6 +218,9 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
 		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
 		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
+		ItemDefinition.Kind.HEAT_SINK: ItemTable.Kind.HEAT_SINK,
+		ItemDefinition.Kind.THERMAL_EDGE: ItemTable.Kind.THERMAL_EDGE,
+		ItemDefinition.Kind.MELTDOWN: ItemTable.Kind.MELTDOWN,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -292,6 +295,19 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.frozen_bonus_permille = def.frozen_bonus_permille
 	t.charge_max = def.charge_max
 	t.charge_bonus_permille = def.charge_bonus_permille
+	# Overclock heat (v0.3.0 L18).
+	t.requires_heat = (
+		def.kind
+		in [
+			ItemDefinition.Kind.HEAT_SINK,
+			ItemDefinition.Kind.THERMAL_EDGE,
+			ItemDefinition.Kind.MELTDOWN
+		]
+	)
+	t.vent_damage_bonus_permille = def.vent_damage_bonus_permille
+	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
+	t.heat_hot_threshold = def.heat_hot_threshold
+	t.meltdown_damage_permille = def.meltdown_damage_permille
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
@@ -470,4 +486,29 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.hp_per_floor_permille = int(round(def.enemy_hp_per_floor * 1000.0))
 	t.damage_per_floor_permille = int(round(def.enemy_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	return t
+
+
+## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition
+## (Heat.enable then leaves heat off).
+static func compile_heat(def: HeatDefinition) -> HeatTable:
+	if def == null:
+		return null
+	var t := HeatTable.new()
+	var m := HeatTable.MILLI
+	t.max_heat = def.max_heat
+	t.gain_swing = int(round(def.gain_swing * m))
+	t.gain_finisher = int(round(def.gain_finisher * m))
+	t.gain_bolt = int(round(def.gain_bolt * m))
+	t.decay_delay_ticks = SimTick.seconds_to_ticks(def.decay_delay_seconds)
+	t.decay_per_tick = int(round(def.decay_per_second * m / SimTick.TICKS_PER_SECOND))
+	t.hot_threshold = def.hot_threshold
+	t.hot_reach_permille = int(round(def.hot_reach_bonus * 1000.0))
+	t.overclock_threshold = def.overclock_threshold
+	t.overclock_damage_permille = int(round(def.overclock_damage_bonus * 1000.0))
+	t.overclock_burn_stacks = def.overclock_burn_stacks
+	t.stall_ticks = maxi(1, SimTick.seconds_to_ticks(def.overheat_seconds))
+	t.stall_move_permille = int(round(def.overheat_move_multiplier * 1000.0))
+	t.vent_radius_m = def.vent_radius_m
+	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
 	return t

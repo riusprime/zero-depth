@@ -56,6 +56,9 @@ const TAG_ARMOURED := 4096
 const TAG_WEAK_SPOT := 8192
 ## A Shrapnel Storm shard (v0.3.0 G): it never bursts again.
 const TAG_SHRAPNEL := 16384
+## Overclock heat (v0.3.0 L18): the hit was raised by Overclock; a Hot bolt that still pierces one enemy.
+const TAG_OVERCLOCK := 32768
+const TAG_PIERCE := 65536
 
 var seq := 0
 var tick := 0

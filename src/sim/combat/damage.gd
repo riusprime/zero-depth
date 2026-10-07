@@ -57,6 +57,10 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
+	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
+	if heat != 1000:
+		amount = amount * heat / 1000
+		tags |= SimEvent.TAG_OVERCLOCK
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -80,6 +84,7 @@ static func hit(
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
+		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 	return got
 
 

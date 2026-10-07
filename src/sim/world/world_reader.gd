@@ -994,3 +994,7 @@ func bastion_tick() -> int:
 ## Projectile i is a Shrapnel Storm shard.
 func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
+
+
+func heat_state() -> Dictionary:
+	return Heat.read(_w)  # Overclock heat (v0.3.0 L18): the meter's values (Heat.read); {} without heat.

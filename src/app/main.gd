@@ -186,6 +186,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		ContentCompiler.compile_combos(repo)  # v0.3.0 G: named combos.
 	)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

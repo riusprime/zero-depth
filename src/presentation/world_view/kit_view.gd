@@ -52,6 +52,9 @@ var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
 var width_scale := 1.0
 var trail_count := 6
+## Overclock heat (v0.3.0 L18; HeatVisuals): the blade leans this far (0..1) toward this heat colour.
+var heat_color := Color.WHITE
+var heat_amount := 0.0
 
 var _pivot := Node3D.new()
 var _core := MeshInstance3D.new()
@@ -110,6 +113,27 @@ func _init() -> void:
 	_trail.extra_cull_margin = 16.0
 	add_child(_trail)
 	_apply_look()
+
+
+## Overclock heat: leans the blade's light toward `c` by `amount` (0 = its own colour). Only material parameters
+## change (never the shader).
+func set_heat_tint(c: Color, amount: float) -> void:
+	if c == heat_color and is_equal_approx(amount, heat_amount):
+		return
+	heat_color = c
+	heat_amount = clampf(amount, 0.0, 1.0)
+	_apply_colors()
+
+
+## The blade's light as drawn: its colour, leaned toward the heat colour.
+func hue() -> Color:
+	return color.lerp(heat_color, heat_amount)
+
+
+func _apply_colors() -> void:
+	var c := hue()
+	_core_mat.emission = c.lightened(0.75 * (1.0 - 0.5 * heat_amount))
+	_glow_mat.albedo_color = Color(c.lightened(0.2), _glow_mat.albedo_color.a)
 
 
 ## Restyles the blade (see the class doc). Safe to call at any time; the next sync uses the new look.
@@ -248,8 +272,7 @@ func _head() -> Array:
 
 
 func _apply_look() -> void:
-	_core_mat.emission = color.lightened(0.75)
-	_glow_mat.albedo_color = Color(color.lightened(0.2), _glow_mat.albedo_color.a)
+	_apply_colors()
 	_trail_mat.albedo_color = Color.WHITE
 	_span = blade_span(_shape, length_scale)
 	_size_blade()
@@ -282,7 +305,7 @@ func _build_trail(head: Array) -> void:
 	var n := pts.size()
 	var r_in := lerpf(_span.x, _span.y, TRAIL_INNER)
 	var r_out := _span.y
-	var tip_color := color.lightened(0.15)
+	var tip_color := hue().lightened(0.15)
 	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
 	var sub := SPIN_SUBSTEPS if _motion == WorldReader.MOTION_SPIN else TRAIL_SUBSTEPS
 	var total := (n - 1) * sub
@@ -315,7 +338,7 @@ func _build_streak() -> void:
 	var r_in := lerpf(_span.x, _span.y, TRAIL_INNER)
 	var r_out := _span.y
 	# The blade's own hue, not whitened: the streak lies under a white-hot blade on pale ground.
-	var tip_color := color
+	var tip_color := hue()
 	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
 	var root := centre + Vector3(cos(aim), 0, -sin(aim)) * r_in
 	for k in STREAK_SEGMENTS:

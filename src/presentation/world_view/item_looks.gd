@@ -49,6 +49,9 @@ const ID_COLORS := {
 	&"glacial_edge": Color("#62C6F2"),
 	&"cold_snap": Color("#E4FAFF"),
 	&"bulwark": Color("#F2C14E"),
+	&"heat_sink": Color("#FF9A3C"),
+	&"thermal_edge": Color("#FFD27A"),
+	&"meltdown": Color("#FF3D1F"),
 }
 
 ## Engine status colours (v0.3.0 G): the enemy effects, pips and the combo frame use them.

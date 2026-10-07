@@ -171,3 +171,15 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+ITEM_HEAT_SINK,Heat Sink,Disipador
+ITEM_HEAT_SINK_DESC,Vent blasts deal +50% and reach 30% farther.,Las purgas hacen +50% y llegan un 30% más lejos.
+ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
+ITEM_THERMAL_EDGE_DESC,You run Hot from 30 heat instead of 40.,Entras en Caliente con 30 de calor en vez de 40.
+ITEM_MELTDOWN,Meltdown,Fusión
+ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
+HUD_HEAT,HEAT,CALOR
+HUD_HEAT_HOT,HOT,CALIENTE
+HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
+HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
+HUD_HEAT_VENT,VENT: DASH,PURGA: ESPRINT
+HUD_HEAT_VENT_BLINK,VENT: DASH / BLINK,PURGA: ESPRINT / DESTELLO

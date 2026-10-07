@@ -27,6 +27,7 @@ static func advance_utility(w: World) -> void:
 	w.blink_cd = t.blink_cooldown_ticks
 	w.blink_tick = w.tick
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
+	Heat.on_move(w)  # Heat: a blink while Hot vents where it lands.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
 
 
@@ -69,8 +70,9 @@ static func _clear(w: World, at: Vector2, r: float) -> bool:
 
 
 static func advance(w: World) -> void:
+	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
-	var can_attack := not w.guarding() and not w.is_dashing()
+	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
 	# step: the combo starts over).
@@ -214,6 +216,6 @@ static func _fire_bolt(w: World) -> void:
 			dmg,
 			t.bolt_radius_m,
 			t.bolt_life_ticks,
-			SimEvent.TAG_PROJECTILE,
+			SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w),  # Heat: a Hot bolt pierces
 			w.item_mods.bounces
 		)

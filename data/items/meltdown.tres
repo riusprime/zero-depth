@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 26
+name_key = &"ITEM_MELTDOWN"
+desc_key = &"ITEM_MELTDOWN_DESC"
+meltdown_damage_permille = 1000
+tags = PackedStringArray("heat")
+rarity = 1
+id = &"meltdown"
