@@ -6,6 +6,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | Plan | `39d7b35` |
+| B | A seeded floor: 3×3 rooms joined by doorways, cover slabs, item spots, spawn points, a gate spot ([FLOORS](evidence/FLOORS.md)); placed in the game in F | `40f9936`, `ee24b66`, merge `eb32d61` |
 | D | A stone gate with a swirling green portal, sealed ([PORTAL](evidence/PORTAL.md)); placed in the floor in F | `85e99c7`, merge `c3caa19` |
 | C | Enemies arrive continuously; cap, pace, mix and HP step up every 30 s (sim + data; wired into the floor in F) | `97e3387`, merge `6d85d36` |
 
@@ -29,3 +30,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   export smoke 0 misses. Not yet applied: "spawn in the player's room or a neighbour" (needs B's rooms; in F).
 - 2026-10-07 — D merged (portal gate, 5 tests; renders in evidence/PORTAL.md: reads well facing the camera and
   at ±45°, edge-on only a pillar shows, so the integrator avoids edge-on placement). 159 tests pass locally.
+- 2026-10-07 — B merged (6 tests over 50 seeds: deterministic, every room/spot/spawn/gate reachable; ~33 ms per
+  floor). Notes for F: the gate isn't a wall (add a collider); slabs average ~1.2 per room (a 2.2 m spacing rule
+  removed sealed pockets found in 7/50 seeds); the floor is ~45 × 39 m. 165 tests pass locally.
