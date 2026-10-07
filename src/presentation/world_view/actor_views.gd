@@ -104,6 +104,8 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
 	if node.has_meta(&"dazed"):
 		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
+	if node.has_meta(&"avatar"):
+		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
 
 
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
@@ -227,6 +229,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = 1.25
 			_piece(facing, Vector3(0.3, 1.0, 0.3), Vector3(0, 0.5, 0), body_color, team_color)
 			_piece(facing, Vector3(0.5, 0.25, 0.5), Vector3(0, 1.12, 0), body_color, team_color)
+		_ when kind == WorldReader.KIND_PLAYER and is_player:
+			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
+			height = 1.0
+			var avatar := PlayerAvatar.new()
+			avatar.setup(outline_color, technique)
+			root.add_child(avatar)
+			root.set_meta(&"avatar", avatar)
+			root.set_meta(&"mats", avatar.body_materials.duplicate())
 		_:
 			var size := CUBE if is_player else CUBE * 0.85
 			height = size
