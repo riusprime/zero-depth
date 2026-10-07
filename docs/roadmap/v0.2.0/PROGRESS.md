@@ -72,4 +72,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   over the renders. Lead check: the front view matches closely; side views still differ (the poncho's front corner
   juts forward; the sheet's hangs down and the sides flare lower/wider); from the game camera the hood top is large.
   A G3 round targets those. 210 tests pass.
+- 2026-10-07 — The owner played the floor build (verbatim in `PLAYTEST_FLOOR.md`): it "feels good"; damage
+  sometimes lags or crashes; dash/blink VFX and a blue portal; compact item cards with icons; a bigger, more
+  varied floor (3×3 hall + connecting rooms, 10–12 total); 1–2 items per room; more items. PLAN L11–L16;
+  workstreams H (crash), I (floor v2), J (8 more items), K (VFX + item cards) run in parallel with G3.
 

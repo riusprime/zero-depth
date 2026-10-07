@@ -34,8 +34,11 @@ written by the owner or pasted verbatim from the owner's message.
 7. Controller menus: do A / Cross and the d-pad work everywhere now?
 8. Frame rate on your PC, anything broken, anything wrong in Spanish.
 
-## Owner answers (date)
-OWNER ONLY
+## Owner answers (2026-10-07)
+Pasted verbatim from the owner's message:
+
+> Some feedback of the game, feels good, but when receiving dmg the game sometime lags and even crash
+> Dash and blink should have an animation, like white trail movement for dash and blue blink teleport feel like a blue light at the beggining and end points of the teleport and the portal should be blue, not green, then the way objects display what they do should be more concise, appear in a smaller card and one small sentence should help you understand what it does, maybe we can add to the card a symbol that lets the player know which each item does, the map generation is not what we are looking for, it should be bigger, the first 3x3 should be a room and then have connecting rooms, having in total 10-12, and not always be divided in 1x1 squares but generating different kind maps across the rooms, the 1x1 division will make this feel repetitive, we have to add more variables to the generation, then one randomly selected outer wall of the 3x3 should have a connection to the new room, some rooms could be 3x1, 3x2 and 3x3 for the bigger ones, items should be 1-2 items per room, smaller rooms only have 1, and let's add more items from the plan to the next version, let's work this parallel to the character rework
 
 ## Free notes
 OWNER ONLY
