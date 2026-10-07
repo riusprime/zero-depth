@@ -107,6 +107,7 @@ class_name AttackDefinition extends Resource
 @export var shape: Shape                  # enum: CIRCLE, CONE, LINE, RING, PROJECTILE
 @export var shape_params: Dictionary      # e.g. radius_m, angle_deg, length_m, width_m, speed_mps
 @export var telegraph_seconds: float      # windup; compiled to ticks; >= MIN_TELEGRAPH_TICKS
+@export var telegraph_max_seconds: float  # v0.3.5 AI: > telegraph_seconds -> each windup is drawn in between (0 = fixed)
 @export var active_seconds: float
 @export var recovery_seconds: float
 @export var damage: int
@@ -123,6 +124,19 @@ class_name AttackDefinition extends Resource
 - **Telegraph minimum.** `telegraph_seconds` must compile to at least `MIN_TELEGRAPH_TICKS` (GA: enemies; a kernel
   constant). An attack with no readable warning fails validation. This is the content side of "no damage without
   a readable cause".
+- **Several attacks** (v0.3.5 AI). A behaviour with more than one attack lists them in its schema (`"attacks"`: each
+  an `id`, a `shape` and its `shape_params`); the definition gives exactly those, in that order. An enemy's attacks
+  share one `damage` (RunState scales it per floor); a mismatch is an `ERROR`. `telegraph_max_seconds` below
+  `telegraph_seconds` (and not 0) is an `ERROR` (`telegraph_range`).
+- **v0.3.5 AI behaviours and params.** `charger` and `hatchling` add `charge_turn_dps` (60: a charge's turn rate);
+  `needle`'s burst adds `spread_degrees` (10: the angle between shots); `arc_caster` (`attack_range_m`,
+  `cooldown_seconds`, `keep_min_m`, `keep_max_m`, `bolt_weight`, `spread_weight`, `rune_weight`; attacks `bolt`
+  PROJECTILE `speed_mps`/`radius_m`/`range_m`, `spread` PROJECTILE `count`/`spread_degrees`/`speed_mps`/`radius_m`/
+  `range_m`, `rune` CIRCLE `radius_m`); `bomb_drone` (`attack_range_m`, `cooldown_seconds`, `keep_min_m`,
+  `keep_max_m`; one CIRCLE attack, `radius_m`: the bomb's circle, its telegraph the fuse). **Starting values:** Arc
+  Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
+  4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
+  tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
@@ -209,6 +223,12 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var arena_hazard_seconds: float            # ...every this long
 @export var recovery_permille: int                 # scales every attack's recovery (1..2000)
 @export var lead_seconds: float                    # aimed attacks lead the player's velocity (0..1)
+# v0.3.5 AI (owner F3). Starting values on all three bosses: 0.2, 0.5, the gap-closer after 2.0 s.
+@export var track_commit_seconds: float            # aimed windups track the player until their last this-long (>= 0)
+@export var dash_read_seconds: float               # after a dash, aimed attacks go at its landing point (0..2)
+@export var gap_close_attack: StringName           # an attack id (empty = none), done when out of reach...
+@export var gap_close_distance_m: float            # ...beyond this from the boss's edge...
+@export var gap_close_seconds: float               # ...for this long
 ```
 
 - Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the

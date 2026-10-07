@@ -5,6 +5,9 @@ extends Node3D
 ## from 0 to 100% so the player reads *when* as well as *where*. Unshaded, so no shadow hides it.
 ## The bosses' shapes (v0.3.0 C: ring, lanes, arc, discs, sweep, and the harmless ripple of a burrow) are drawn as
 ## flat triangles rebuilt each tick (ImmediateMesh) from the same dictionary the hit is resolved from.
+## v0.3.5 AI: a telegraph with a "style" gets a mark on top of its shape: an Arc Caster's bolt a bright core line down
+## each lane, its rune an inner ring with turning spokes, a Bomb Drone's bomb a cross-hair and the bomb itself flying
+## from the drone ("from") to the circle's centre as the circle fills.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple"]
@@ -16,6 +19,8 @@ const EDGE := 0.06
 var _nodes := {}
 var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
+var _core_mat := StandardMaterial3D.new()
+var _bomb_mat := StandardMaterial3D.new()
 
 
 func _ready() -> void:
@@ -26,6 +31,13 @@ func _ready() -> void:
 		m.albedo_color = c
 	_fill_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_fill_mat.albedo_color = Color(c, 0.45)
+	_core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_core_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_core_mat.albedo_color = ThemePalette.color(&"proj_hostile")
+	_bomb_mat.albedo_color = Color("#1B1C20")
+	_bomb_mat.emission_enabled = true
+	_bomb_mat.emission = c
+	_bomb_mat.emission_energy_multiplier = 0.6
 
 
 func sync(reader: WorldReader) -> void:
@@ -37,13 +49,16 @@ func sync(reader: WorldReader) -> void:
 		var id := reader.actor_id(i)
 		seen[id] = true
 		var n: Node3D = _nodes.get(id)
-		if n == null or n.get_meta(&"shape") != tg["shape"]:
+		var style: StringName = tg.get("style", &"")
+		if n == null or n.get_meta(&"shape") != tg["shape"] or n.get_meta(&"style") != style:
 			if n != null:
 				n.queue_free()
-			n = _make(tg["shape"])
+			n = _make(tg["shape"], style)
 			_nodes[id] = n
 			add_child(n)
 		_update(n, tg)
+		if style != &"":
+			_update_style(n, tg)
 	for id in _nodes.keys():
 		if not seen.has(id):
 			_nodes[id].queue_free()
@@ -55,7 +70,29 @@ func count() -> int:
 	return _nodes.size()
 
 
-func _make(shape: StringName) -> Node3D:
+func _make(shape: StringName, style: StringName = &"") -> Node3D:
+	var root := _make_shape(shape)
+	root.set_meta(&"style", style)
+	if style == &"":
+		return root
+	var deco := MeshInstance3D.new()
+	deco.name = "Deco"
+	deco.mesh = ImmediateMesh.new()
+	deco.top_level = true
+	deco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(deco)
+	if style == &"bomb":
+		var bomb := MeshInstance3D.new()
+		bomb.name = "Bomb"
+		bomb.mesh = ArcCasterAvatar._octahedron(0.12)
+		bomb.material_override = _bomb_mat
+		bomb.top_level = true
+		bomb.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		root.add_child(bomb)
+	return root
+
+
+func _make_shape(shape: StringName) -> Node3D:
 	var root := Node3D.new()
 	root.set_meta(&"shape", shape)
 	if MESH_SHAPES.has(shape):
@@ -140,6 +177,56 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 	var len := maxf(hx * 2.0 * p, 0.01)
 	fill.scale = Vector3(len, 1, hy * 2.0)
 	fill.position = Vector3(-hx + len * 0.5, 0, 0)
+
+
+# --- styles (v0.3.5 AI) ------------------------------------------------------------------------------------------
+
+
+func _update_style(n: Node3D, tg: Dictionary) -> void:
+	var deco: ImmediateMesh = (n.get_node("Deco") as MeshInstance3D).mesh
+	deco.clear_surfaces()
+	var p := float(tg["progress"]) / 1000.0
+	var pts := []
+	match tg["style"]:
+		&"bolt":
+			var lanes: Array = tg["obbs"] if tg.has("obbs") else [tg["obb"]]
+			for o: Obb in lanes:
+				var u := o.axis_u
+				var side := o.axis_v * 0.035
+				var a := o.center - u * o.half.x
+				var b := o.center + u * o.half.x
+				_quad(pts, a - side, b - side, b + side, a + side)
+		&"rune":
+			var c: Vector2 = tg["center"]
+			var r: float = tg["radius"]
+			_sector(pts, c, r * 0.6 - EDGE * 0.5, r * 0.6, 0.0, TAU)
+			var turn := p * PI * 0.5
+			for k in 6:
+				var ang := turn + TAU * k / 6.0
+				var d := Vector2(cos(ang), sin(ang))
+				var sd := Vector2(-d.y, d.x) * EDGE * 0.4
+				_quad(
+					pts, c + d * r * 0.6 - sd, c + d * r - sd, c + d * r + sd, c + d * r * 0.6 + sd
+				)
+		&"bomb":
+			var c: Vector2 = tg["center"]
+			var r: float = tg["radius"]
+			for d: Vector2 in [Vector2.RIGHT, Vector2.UP]:
+				var sd := Vector2(-d.y, d.x) * EDGE * 0.4
+				_quad(
+					pts,
+					c - d * r * 0.35 - sd,
+					c + d * r * 0.35 - sd,
+					c + d * r * 0.35 + sd,
+					c - d * r * 0.35 + sd
+				)
+			# The bomb flies along an arc from the drone's hover to the circle's centre as the circle fills.
+			var from: Vector2 = tg.get("from", c)
+			var y := BombDroneAvatar.HOVER_Y * (1.0 - p) + 2.4 * p * (1.0 - p) + 0.12
+			var bomb := n.get_node("Bomb") as Node3D
+			bomb.global_position = SimPlane.to_3d(from.lerp(c, p), y)
+			bomb.rotation = Vector3(p * 9.0, p * 5.0, 0)
+	_emit(deco, pts, _core_mat if tg["style"] == &"bolt" else _edge_mat)
 
 
 # --- boss shapes (v0.3.0 C) -------------------------------------------------------------------------------------

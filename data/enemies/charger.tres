@@ -11,7 +11,8 @@ shape_params = {
 "length_m": 7.0,
 "speed_mps": 15.0
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 0.4
+telegraph_max_seconds = 0.6667
 active_seconds = 0.4667
 recovery_seconds = 1.0
 damage = 20
@@ -22,7 +23,8 @@ name_key = &"ENEMY_CHARGER"
 behaviour_id = &"charger"
 behaviour_params = {
 "attack_range_m": 6.0,
-"cooldown_seconds": 1.0
+"cooldown_seconds": 1.0,
+"charge_turn_dps": 60.0
 }
 hp = 45
 radius_m = 0.4

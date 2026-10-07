@@ -90,6 +90,9 @@ func _check(w: World, e: SimEvent) -> void:
 	var attack: int = _attack.get(e.owner_id, -1)
 	var shown := 0
 	var age := -1
+	if e.effect_id == &"arena_band":
+		_arena_hit(e)
+		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
 		age = e.tick - int(b[0])
@@ -135,6 +138,24 @@ func _check(w: World, e: SimEvent) -> void:
 		)
 	)
 	violations.append(v)
+
+
+## The closing arena's band (v0.3.0 BX) hurts as damage over time from the boss, not from its attack in progress: its
+## recap line is the band's, and its warning is the band's own mark (content checks it lasts MIN_TELEGRAPH_TICKS).
+## v0.3.5 AI: before, such a hit was booked to the attack the boss was making, and a death by the band failed the
+## recap match once the faster bosses made that happen.
+func _arena_hit(e: SimEvent) -> void:
+	var key := "CAUSE_BOSS_ARENA"
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	if (
+		not _locale.has(key)
+		or String(_locale[key][0]).is_empty()
+		or String(_locale[key][1]).is_empty()
+	):
+		var v := context.duplicate()
+		v.merge({"tick": e.tick, "cause": key, "problems": "cause %s missing en or es" % key})
+		violations.append(v)
 
 
 func _telegraphed(id: int) -> int:

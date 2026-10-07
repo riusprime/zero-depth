@@ -22,6 +22,8 @@ const DEATHS := {
 	WorldReader.KIND_WARDEN: &"enemy_death_warden",
 	WorldReader.KIND_NEEDLE: &"enemy_death_needle",
 	WorldReader.KIND_HATCHLING: &"enemy_death_hatchling",
+	WorldReader.KIND_ARC_CASTER: &"enemy_death_arc_caster",
+	WorldReader.KIND_BOMB_DRONE: &"enemy_death_bomb_drone",
 }
 
 var _last_seq := 0
@@ -29,6 +31,8 @@ var _kinds := {}
 var _states := {}
 var _phases := {}
 var _projectiles := {}
+## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
+var _targets := {}
 var _dashing := false
 var _swing_t := 0
 var _echo_tick := -1
@@ -55,6 +59,7 @@ func prime(reader: WorldReader) -> void:
 	_states.clear()
 	_phases.clear()
 	_projectiles.clear()
+	_targets.clear()
 	_scan_actors(reader, [])
 	_scan_projectiles(reader, [])
 
@@ -133,8 +138,7 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			continue
 		var at := reader.actor_pos(i)
 		if not boss:
-			if st == WorldReader.STATE_WINDUP:
-				out.append([&"enemy_windup", at, 1.0])
+			_enemy_cue(reader, i, kind, st, at, out)
 			continue
 		if st == WorldReader.STATE_WINDUP:
 			out.append([&"boss_telegraph", null, 1.0])
@@ -147,6 +151,26 @@ func _scan_actors(reader: WorldReader, out: Array) -> void:
 			out.append([&"boss_stagger", null, 1.0])
 		if phase > was_phase:
 			out.append([&"boss_phase", null, 1.0])
+
+
+## A normal enemy's windup; the new kinds' own sounds (v0.3.5 AI): the Bomb Drone's lob and blast (at the circle),
+## the Arc Caster's bolt and rune.
+func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, out: Array) -> void:
+	if st == WorldReader.STATE_WINDUP:
+		out.append(
+			[&"bomb_lob" if kind == WorldReader.KIND_BOMB_DRONE else &"enemy_windup", at, 1.0]
+		)
+		var tg := reader.telegraph(i)
+		if tg.has("center"):
+			_targets[reader.actor_id(i)] = tg["center"]
+	elif st == WorldReader.STATE_ACTIVE:
+		var target: Vector2 = _targets.get(reader.actor_id(i), at)
+		_targets.erase(reader.actor_id(i))
+		if kind == WorldReader.KIND_BOMB_DRONE:
+			out.append([&"bomb_blast", target, 1.0])
+		elif kind == WorldReader.KIND_ARC_CASTER:
+			var rune := reader.actor_spell(i) == WorldReader.SPELL_RUNE
+			out.append([&"rune_erupt" if rune else &"arc_bolt", target if rune else at, 1.0])
 
 
 ## The sound of a boss attack's active phase, by its move.

@@ -10,7 +10,8 @@ shape = 0
 shape_params = {
 "radius_m": 2.4
 }
-telegraph_seconds = 0.8
+telegraph_seconds = 0.4
+telegraph_max_seconds = 0.6667
 active_seconds = 0.0167
 recovery_seconds = 0.6667
 damage = 25

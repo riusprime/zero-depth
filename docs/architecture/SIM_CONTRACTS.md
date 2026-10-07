@@ -136,6 +136,10 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
 - The run seed derives four gameplay streams by name: `map`, `loot`, `combat`, `ai`. Derivation is Deathventory's
   `derive_stream_seed(run_seed, name)`: FNV-1a 32 over the seed's 4 little-endian bytes, `:` and the lowercase
   UTF-8 name.
+- **The enemy sub-stream** (v0.3.5 AI). `World.rng_enemy` is derived as `ai:enemy`, a sub-stream of `ai` like the
+  per-room ones below. Normal enemies draw from it (each attack's windup length, the Arc Caster's spell), so the
+  spawn director's and the bosses' `ai` draws stay where they were. Its state is hashed only in worlds with enemy
+  tables (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier.
@@ -275,12 +279,45 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - floats as their float32 bit patterns;
   - arrays in id order;
   - dictionaries only through sorted keys.
+- Fields added after a golden was recorded are hashed only when the world uses them, so the golden holds:
+  - the enemy AI (v0.3.5 AI): `rng_enemy`'s state and `ActorStore.AI_FIELDS` (`windup`, `pick`), after the bosses'
+    fields, only in worlds with enemy tables;
+  - the bosses' v0.3.5 fields (`BossStore.gap_t`, `dash_t`, `dash_x`, `dash_y`) are part of `BossStore`, hashed only
+    in worlds with boss tables.
 - It runs on demand, not every tick:
   - every 60 ticks in replays and goldens (a checkpoint);
   - at encounter end;
   - in tests.
 - A replay that doesn't match its checkpoint hash reports the first mismatching checkpoint and diffs the two
   `snapshot()`s.
+
+## 10b. Enemy and boss AI (v0.3.5 AI; owner lines F3-F6)
+
+Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data/bosses` the numbers.
+- **No damage without a readable cause** still holds: every windup lasts at least `MIN_TELEGRAPH_TICKS` (24), and
+  the shape the view draws is the shape the hit uses (EI-07). What changed is *when the shape stops moving*.
+- **Windups drawn per attack.** A normal enemy's windup is drawn from `telegraph_seconds..telegraph_max_seconds`
+  (24..40 ticks for the Charger, Warden, Needle and Hatchling) from `rng_enemy`, at the windup's start.
+- **Tracking, then commit.** An aimed windup (the Needle's burst, the Arc Caster's bolt and spread; the bosses'
+  lanes, sweeps, charges, leaps, barrages, rails and bolt fans) re-aims at the player every tick until its last
+  `COMMIT_TICKS` / `track_commit_seconds` (12 ticks), then holds. The telegraph moves with it.
+- **Leading.** Normal shots aim where the player will be after the shot's flight time at its current velocity
+  (capped at 30 ticks); a dashing player is aimed at where the dash ends (`BossChallenge.dash_landing`). A boss's
+  aimed attacks lead by `lead_seconds`, and for `dash_read_seconds` after a dash go at its landing point instead.
+- **Charges bend.** A charge in progress turns toward the player by at most `charge_turn_dps` (60 deg/s); the view
+  keeps drawing the rest of the run (`EnemyAi.running_lane`). A charge hits within `CONTACT_SLOP_M` (0.02 m) of
+  contact, because phase 5 has already pushed the bodies exactly apart.
+- **Spreading.** Walking enemies push off other enemies within 1.6 m, and melee walkers within 2-6 m of the player
+  swing out to the side their id picks, so a pack surrounds instead of stacking.
+- **The gap-closer.** A boss whose player stays beyond `gap_close_distance_m` (from its edge) for
+  `gap_close_seconds` performs `gap_close_attack` (Gatekeeper: charge; Brood Mother: leap; Siege Engine: bolt fan).
+  The punish attack (`punish_*`, BX) keeps its priority.
+- **Arc Caster.** Keeps 6-9 m away and casts by weight: a 22 m/s bolt down a line shown for 30 ticks, a 3-bolt
+  spread (14 deg apart, 16 m/s), or a rune under the player that erupts after 36 ticks. One damage number (12).
+- **Bomb Drone.** A ground-plane body like any other (melee and shots hit it where its shadow is; the view draws it
+  1.8 m up). Keeps 5-8 m away, lobs a bomb at where the player stands: a 1.8 m circle that fills for 48 ticks, then
+  explodes for 16. It keeps drifting while the bomb flies; killing it first defuses the bomb (the bomb is its
+  windup).
 
 ## 11. Scaling and threat
 

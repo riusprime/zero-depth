@@ -55,8 +55,15 @@ func test_the_shipped_data() -> void:
 		by_kind[e.kind] = e.shards
 	assert_eq(
 		by_kind,
-		{KIND.CHARGER: 3, KIND.NEEDLE: 4, KIND.WARDEN: 6, KIND.HATCHLING: 1},
-		"shards per kind (PLAN E; hatchlings 1)"
+		{
+			KIND.CHARGER: 3,
+			KIND.NEEDLE: 4,
+			KIND.WARDEN: 6,
+			KIND.HATCHLING: 1,
+			KIND.ARC_CASTER: 4,
+			KIND.BOMB_DRONE: 4
+		},
+		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4)"
 	)
 	assert_eq(_rewards.chest_prices, PackedInt32Array([40, 60, 80]))
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])

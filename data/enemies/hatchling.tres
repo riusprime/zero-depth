@@ -11,7 +11,8 @@ shape_params = {
 "length_m": 5.0,
 "speed_mps": 13.0
 }
-telegraph_seconds = 0.5
+telegraph_seconds = 0.4
+telegraph_max_seconds = 0.6667
 active_seconds = 0.3833
 recovery_seconds = 0.9
 damage = 8
@@ -22,7 +23,8 @@ name_key = &"ENEMY_HATCHLING"
 behaviour_id = &"hatchling"
 behaviour_params = {
 "attack_range_m": 4.5,
-"cooldown_seconds": 1.2
+"cooldown_seconds": 1.2,
+"charge_turn_dps": 60.0
 }
 hp = 12
 radius_m = 0.28

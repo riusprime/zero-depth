@@ -18,6 +18,9 @@ var rng_map: RngStream
 var rng_loot: RngStream
 var rng_combat: RngStream
 var rng_ai: RngStream
+## Enemy AI (v0.3.5 AI): the normal enemies' own draws (windup lengths, spell picks), a sub-stream of ai
+## (SIM_CONTRACTS §5), so the spawn director's ai draws stay where they were. Hashed only with enemy tables.
+var rng_enemy: RngStream
 
 var player: PlayerTable
 var actors := ActorStore.new()
@@ -246,6 +249,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_loot = RngStream.derive(p_seed, "loot")
 	rng_combat = RngStream.derive(p_seed, "combat")
 	rng_ai = RngStream.derive(p_seed, "ai")
+	rng_enemy = RngStream.derive(p_seed, "ai:enemy")
 	player = p_player
 	var id := _take_id()
 	actors.add(
@@ -649,6 +653,9 @@ func state_hash() -> String:
 		bosses.hash_into(h)
 		h.add_int(killer_attack)
 		h.add_int(boss_id)
+	if not enemy_tables.is_empty():  # Enemy AI (v0.3.5 AI): only worlds with enemies, so the kernel golden holds.
+		h.add_int(rng_enemy.state)
+		actors.hash_ai(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)

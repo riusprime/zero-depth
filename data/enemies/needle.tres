@@ -12,9 +12,11 @@ shape_params = {
 "gap_seconds": 0.1,
 "radius_m": 0.12,
 "range_m": 14.0,
-"speed_mps": 9.0
+"speed_mps": 9.0,
+"spread_degrees": 10.0
 }
-telegraph_seconds = 0.5
+telegraph_seconds = 0.4
+telegraph_max_seconds = 0.6667
 active_seconds = 0.2
 recovery_seconds = 0.2
 damage = 8

@@ -132,6 +132,7 @@ func test_staying_far_starts_the_punish_move_after_four_seconds() -> void:
 		var aid: int = s[2]
 		var t := BossAi.table_of(w, s[1])
 		assert_eq(t.punish_ticks, 240, "4 s")
+		t.gap_attack = -1  # v0.3.5 AI: the gap-closer would come first (2 s); this test is the punish's
 		var b := BossAi.entry_of(w, s[1])
 		var started := -1
 		for k in 400:
@@ -221,14 +222,15 @@ func test_the_siege_engines_shockwave_spares_a_ring_near_it() -> void:
 # --- harder AI ----------------------------------------------------------------------------------------------------
 
 
-func test_recoveries_are_a_fifth_shorter() -> void:
+## v0.3.0 BX cut recoveries by a fifth (800); v0.3.5 AI (F3) by a further quarter (600).
+func test_recoveries_are_forty_percent_shorter() -> void:
 	var repo := ContentRepository.load_all()
 	for def: BossDefinition in repo.all_of(&"bosses"):
-		assert_eq(def.recovery_permille, 800, "%s: -20 %%" % def.id)
+		assert_eq(def.recovery_permille, 600, "%s: -40 %%" % def.id)
 		var t := ContentCompiler.compile_boss(def, repo)
 		for k in def.attacks.size():
 			var full := SimTick.seconds_to_ticks(def.attacks[k].recovery_seconds)
-			assert_eq(t.attacks[k].recover_ticks, full * 800 / 1000, "%s" % def.attacks[k].id)
+			assert_eq(t.attacks[k].recover_ticks, full * 600 / 1000, "%s" % def.attacks[k].id)
 
 
 func test_an_attack_chains_into_its_follow_up_once() -> void:

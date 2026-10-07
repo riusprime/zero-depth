@@ -3,9 +3,20 @@ extends RefCounted
 ## Actors as parallel arrays in ascending id order (SIM_CONTRACTS §4). Index 0 is always the player.
 ## Kinds are appended, never renumbered, because they are hashed.
 
-## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi).
+## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi). The
+## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them.
 enum Kind {
-	PLAYER, DUMMY, CHARGER, WARDEN, NEEDLE, HATCHLING, GATEKEEPER, BROOD_MOTHER, SIEGE_ENGINE
+	PLAYER,
+	DUMMY,
+	CHARGER,
+	WARDEN,
+	NEEDLE,
+	HATCHLING,
+	GATEKEEPER,
+	BROOD_MOTHER,
+	SIEGE_ENGINE,
+	ARC_CASTER,
+	BOMB_DRONE,
 }
 
 const TEAM_PLAYER := 0
@@ -43,6 +54,9 @@ const STATUS_FIELDS: Array[StringName] = [
 	&"frozen_t",
 	&"freeze_immune",
 ]
+## Enemy AI (v0.3.5 AI; EnemyAi), kept apart from INT_FIELDS so worlds without enemy tables (the kernel golden)
+## hash as before: World hashes them (hash_ai) only when its loadout has enemies.
+const AI_FIELDS: Array[StringName] = [&"windup", &"pick"]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
@@ -93,6 +107,10 @@ var frost_stacks := PackedInt32Array()
 var frost_t := PackedInt32Array()
 var frozen_t := PackedInt32Array()
 var freeze_immune := PackedInt32Array()
+## Enemy AI (v0.3.5 AI): the current attack's windup in ticks (drawn per attack), and which attack an enemy with
+## several (the Arc Caster) is winding up.
+var windup := PackedInt32Array()
+var pick := PackedInt32Array()
 
 
 func size() -> int:
@@ -101,7 +119,7 @@ func size() -> int:
 
 func add(id: int, kind: int, team: int, p: Vector2, r: float, p_hp: int, p_fire_cd: int) -> int:
 	# Packed arrays are values: get() returns a copy, so append to it and set it back.
-	for f in INT_FIELDS + STATUS_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		ai.append(0)
 		set(f, ai)
@@ -146,7 +164,7 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 			j += 1
 		else:
 			keep.append(i)
-	for f in INT_FIELDS + STATUS_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS:
 		set(f, ProjectileStore._pick_i(get(f), keep))
 	for f in FLOAT_FIELDS:
 		set(f, ProjectileStore._pick_f(get(f), keep))
@@ -162,4 +180,10 @@ func hash_into(h: StateHasher) -> void:
 ## The engine statuses (v0.3.0 G), in STATUS_FIELDS order.
 func hash_statuses(h: StateHasher) -> void:
 	for f in STATUS_FIELDS:
+		h.add_ints(get(f))
+
+
+## The enemy AI fields (v0.3.5 AI), in AI_FIELDS order.
+func hash_ai(h: StateHasher) -> void:
+	for f in AI_FIELDS:
 		h.add_ints(get(f))

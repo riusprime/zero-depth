@@ -41,22 +41,47 @@ func validate() -> Array[ValidationIssue]:
 	_check_keys(issues, "behaviour_params", behaviour_params, schema["params"])
 	if behaviour_id == &"warden":
 		_check_armour(issues)
-	if attacks.size() != 1:
+	var specs: Array = schema.get("attacks", [{"shape": schema.get("shape"), "shape_params": []}])
+	if attacks.size() != specs.size():
 		issues.append(
-			ValidationIssue.new(&"attacks", resource_path, "this behaviour takes exactly 1 attack")
+			ValidationIssue.new(
+				&"attacks",
+				resource_path,
+				"this behaviour takes exactly %d attack(s)" % specs.size()
+			)
 		)
 		return issues
-	var atk := attacks[0]
-	if atk == null:
-		issues.append(ValidationIssue.new(&"missing", resource_path, "attack is missing"))
-		return issues
-	if atk.shape != schema["shape"]:
+	for k in specs.size():
+		var atk := attacks[k]
+		if atk == null:
+			issues.append(ValidationIssue.new(&"missing", resource_path, "attack is missing"))
+			continue
+		var spec: Dictionary = specs[k]
+		if spec.has("id") and atk.id != spec["id"]:
+			issues.append(
+				ValidationIssue.new(
+					&"attacks", resource_path, "attack %d must be %s" % [k, spec["id"]]
+				)
+			)
+		_check_attack(issues, atk, spec["shape"], schema.get("shape_params", spec["shape_params"]))
+		# v0.3.5 AI: an enemy's attacks share one damage number (RunState scales it per floor).
+		if atk.damage != attacks[0].damage:
+			issues.append(
+				ValidationIssue.new(&"damage", resource_path, "every attack takes the same damage")
+			)
+	return issues
+
+
+func _check_attack(
+	issues: Array[ValidationIssue], atk: AttackDefinition, shape: int, params: Array
+) -> void:
+	if atk.shape != shape:
 		issues.append(
 			ValidationIssue.new(
 				&"shape", resource_path, "%s needs a different shape" % behaviour_id
 			)
 		)
-	_check_keys(issues, "shape_params", atk.shape_params, schema["shape_params"])
+	_check_keys(issues, "shape_params", atk.shape_params, params)
 	if int(round(atk.telegraph_seconds * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
 		issues.append(
 			ValidationIssue.new(
@@ -68,11 +93,18 @@ func validate() -> Array[ValidationIssue]:
 				)
 			)
 		)
+	if atk.telegraph_max_seconds != 0.0 and atk.telegraph_max_seconds < atk.telegraph_seconds:
+		issues.append(
+			ValidationIssue.new(
+				&"telegraph_range",
+				resource_path,
+				"%s telegraph_max_seconds is under telegraph_seconds" % atk.id
+			)
+		)
 	check_duration(issues, "active_seconds", atk.active_seconds)
 	check_duration(issues, "recovery_seconds", atk.recovery_seconds)
 	if atk.damage <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", resource_path, "damage must be > 0"))
-	return issues
 
 
 ## The Warden's armour (owner, 2026-10-07): arcs within 0..360 that don't overlap, a front multiplier that softens

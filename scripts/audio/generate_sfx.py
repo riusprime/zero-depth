@@ -335,6 +335,50 @@ def s_enemy_windup(r):
     return echo(bitcrush(tone, 6, 2) * 0.7, 95, 0.3, 0.3, 2500, 0.2)
 
 
+# v0.3.5 AI: the Arc Caster and the Bomb Drone.
+def s_enemy_death_arc_caster(r):
+    return death(r, 1200, 140, 0.45, 5, ring=880, chirp=True)
+
+
+def s_enemy_death_bomb_drone(r):
+    n = n_of(0.5)
+    whine = osc(curve(1600, 180, n), "saw", n) * env(n, 0.002, 0.3) * 0.4
+    pop = bandpass(noise(r, n), curve(2400, 300, n), 1.0) * env(n, 0.001, 0.12)
+    x = bitcrush(soft_clip(mix(whine, pop), 1.6), 5, 3)
+    return echo(x, 100, 0.3, 0.28, 2400, 0.3)
+
+
+def s_arc_bolt(r):
+    n = n_of(0.22)
+    zap = osc(curve(2600, 500, n), "square", n) * env(n, 0.001, 0.08)
+    crackle = bandpass(noise(r, n), 3800, 2.0) * env(n, 0.001, 0.06)
+    x = bitcrush(mix(zap * 0.5, crackle * 0.6), 6, 2)
+    return echo(x, 80, 0.25, 0.25, 4000, 0.15)
+
+
+def s_rune_erupt(r):
+    n = n_of(0.45)
+    thump = osc(curve(160, 45, n), "sine", n) * env(n, 0.002, 0.2)
+    shimmer = fm(curve(900, 1400, n), 2.01, 3.0, n) * env(n, 0.005, 0.25) * 0.35
+    burst = bandpass(noise(r, n), curve(2500, 600, n), 1.5) * env(n, 0.001, 0.1) * 0.5
+    return echo(soft_clip(mix(thump, shimmer, burst), 1.5), 120, 0.3, 0.3, 2500, 0.3)
+
+
+def s_bomb_lob(r):
+    n = n_of(0.3)
+    whistle = osc(curve(700, 1500, n), "tri", n) * env(n, 0.02, 0.22) * 0.5
+    thunk = osc(curve(220, 90, n_of(0.06)), "square") * env(n_of(0.06), 0.001, 0.03)
+    return echo(bitcrush(mix(whistle, thunk), 7, 2), 90, 0.25, 0.22, 3000, 0.15)
+
+
+def s_bomb_blast(r):
+    n = n_of(0.7)
+    boom = osc(curve(120, 30, n), "sine", n) * env(n, 0.002, 0.35)
+    debris = one_pole_lp(noise(r, n), 1800) * env(n, 0.001, 0.25)
+    x = bitcrush(soft_clip(mix(boom, debris * 0.8), 2.2), 6, 3)
+    return echo(x, 140, 0.35, 0.3, 1800, 0.4)
+
+
 def s_player_death(r):
     n = n_of(1.1)
     fall = osc(curve(520, 40, n), "saw", n)
@@ -591,6 +635,12 @@ SFX = [
     ("enemy_death_needle", s_enemy_death_needle),
     ("enemy_death_hatchling", s_enemy_death_hatchling),
     ("enemy_windup", s_enemy_windup),
+    ("enemy_death_arc_caster", s_enemy_death_arc_caster),
+    ("enemy_death_bomb_drone", s_enemy_death_bomb_drone),
+    ("arc_bolt", s_arc_bolt),
+    ("rune_erupt", s_rune_erupt),
+    ("bomb_lob", s_bomb_lob),
+    ("bomb_blast", s_bomb_blast),
     ("player_death", s_player_death),
     ("dash", s_dash),
     ("blink_out", s_blink_out),

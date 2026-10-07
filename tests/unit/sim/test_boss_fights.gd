@@ -34,9 +34,10 @@ static func fight(id: StringName, bot: int, seed_value: int = 5, stats: Dictiona
 	w.actors.max_hp[0] = 1000000
 	var bid := w.spawn_boss(BossLab.table_index(w, id), Vector2(9, 0))
 	var seq := 0
-	for k in ["hits", "deflected", "exposed", "punished"]:
+	for k in ["hits", "deflected", "exposed", "punished", "gap_closed"]:
 		stats[k] = 0
 	var punish := BossAi.table_of(w, w.actors.index_of(bid)).punish_attack
+	var gap := BossAi.table_of(w, w.actors.index_of(bid)).gap_attack
 	for t in LIMIT_TICKS:
 		var i := w.actors.index_of(bid)
 		if i < 0:
@@ -45,7 +46,16 @@ static func fight(id: StringName, bot: int, seed_value: int = 5, stats: Dictiona
 		if w.actors.state[i] == EnemyAi.State.WINDUP and w.actors.state_t[i] == 1:
 			if w.bosses.attack[b] == punish and w.bosses.step[b] == 0:
 				stats["punished"] += 1
+		# v0.3.5 AI (F3): the gap-closer, due this tick (the player out of reach for its time).
+		var t_b := BossAi.table_of(w, i)
+		var closing: bool = (
+			w.actors.state[i] == EnemyAi.State.MOVE and w.bosses.gap_t[b] >= t_b.gap_ticks - 1
+		)
 		w.step(_frame(w, i, bot, t))
+		i = w.actors.index_of(bid)
+		if closing and i >= 0 and w.actors.state[i] == EnemyAi.State.WINDUP:
+			if w.bosses.attack[BossAi.entry_of(w, i)] == gap:
+				stats["gap_closed"] += 1
 		for e in w.events_since(seq):
 			seq = e.seq
 			if e.kind == SimEvent.Kind.HIT and e.target_id == bid:
@@ -113,12 +123,16 @@ func test_kiting_from_afar_is_clearly_slower_than_fighting_close() -> void:
 		var far := fight(id, Bot.RANGED_FAR, 5, s)
 		print(
 			(
-				"BOSSFIGHT| %s RANGED_FAR ticks=%d seconds=%.1f hits=%d deflected=%d punished=%d"
-				% [id, far, far / 60.0, s.hits, s.deflected, s.punished]
+				(
+					"BOSSFIGHT| %s RANGED_FAR ticks=%d seconds=%.1f hits=%d deflected=%d punished=%d"
+					+ " gap_closed=%d"
+				)
+				% [id, far, far / 60.0, s.hits, s.deflected, s.punished, s.gap_closed]
 			)
 		)
 		assert_true(
 			far < 0 or far >= close * FAR_SLOWER, "%s: far %d vs close %d" % [id, far, close]
 		)
 		assert_gt(s.deflected, 0, "%s: far hits are deflected" % id)
-		assert_gt(s.punished, 0, "%s: staying far is punished" % id)
+		# v0.3.5 AI (F3): the gap-closer (2 s out of reach) now usually answers a kiter before the punish (4 s far).
+		assert_gt(s.punished + s.gap_closed, 0, "%s: staying far is punished" % id)

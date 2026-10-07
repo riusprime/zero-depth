@@ -23,7 +23,9 @@ const INT_FIELDS: Array[StringName] = [
 	&"chained",
 	&"fight_t",
 	&"close_t",
-	&"hazard_cd"
+	&"hazard_cd",
+	&"gap_t",
+	&"dash_t"
 ]
 
 ## The boss's actor id, and its index in World.boss_tables.
@@ -53,6 +55,12 @@ var chained := PackedInt32Array()
 var fight_t := PackedInt32Array()
 var close_t := PackedInt32Array()
 var hazard_cd := PackedInt32Array()
+## v0.3.5 AI (owner F3): ticks the player has stayed out of reach (the gap-closer's clock), and ticks the last dash's
+## landing point (dash_x, dash_y) stays the target of aimed attacks (0 = none).
+var gap_t := PackedInt32Array()
+var dash_t := PackedInt32Array()
+var dash_x := PackedFloat32Array()
+var dash_y := PackedFloat32Array()
 ## The boss room's interior (wall face to wall face) the closing band creeps in from; empty = no closing arena (the
 ## run flow sets it when the door seals).
 var arena := Rect2()
@@ -73,6 +81,8 @@ func add(id: int, table_index: int) -> int:
 	for k in MAX_PTS:
 		pts_x.append(0.0)
 		pts_y.append(0.0)
+	dash_x.append(0.0)
+	dash_y.append(0.0)
 	var b := ids.size() - 1
 	ids[b] = id
 	table[b] = table_index
@@ -104,6 +114,8 @@ func remove(b: int) -> void:
 	for k in MAX_PTS:
 		pts_x.remove_at(b * MAX_PTS)
 		pts_y.remove_at(b * MAX_PTS)
+	dash_x.remove_at(b)
+	dash_y.remove_at(b)
 
 
 func hash_into(h: StateHasher) -> void:
@@ -111,5 +123,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(get(f))
 	h.add_f32s(pts_x)
 	h.add_f32s(pts_y)
+	h.add_f32s(dash_x)
+	h.add_f32s(dash_y)
 	for v in [arena.position.x, arena.position.y, arena.size.x, arena.size.y]:
 		h.add_f32(v)

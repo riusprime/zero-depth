@@ -14,11 +14,15 @@ func _attack(kind: int, at: Vector2) -> Array:
 	var i := w.actors.index_of(id)
 	w.actors.invuln[i] = 0
 	w.actors.set_pos(0, at)
+	w.enemy_tables[kind].charge_turn = 0  # the drawn lane is the windup's; a steered charge has its own test
 	EnemyAi._start_windup(w, i, 0)
 	var tg := EnemyAi.telegraph(w, i)
 	w.actors.state_t[i] = 0
 	for k in 200:
 		w.actors.set_pos(0, at)  # the player stands still
+		var j := w.actors.index_of(id)
+		if j >= 0 and w.actors.state[j] == S.WINDUP:
+			tg = EnemyAi.telegraph(w, j)  # v0.3.5 AI: aimed windups track; the last drawn shape is the hit
 		w.step(InputFrame.new())
 		if w.actors.index_of(id) < 0 or w.actors.state[w.actors.index_of(id)] == S.RECOVER:
 			break
@@ -27,12 +31,16 @@ func _attack(kind: int, at: Vector2) -> Array:
 
 
 func _inside_lane(tg: Dictionary, p: Vector2, r: float) -> bool:
-	return Collide.circle_vs_obb(p, r - 0.0001, tg["obb"]) != Vector2.ZERO
+	var lanes: Array = tg["obbs"] if tg.has("obbs") else [tg["obb"]]
+	for o: Obb in lanes:
+		if Collide.circle_vs_obb(p, r - 0.0001, o) != Vector2.ZERO:
+			return true
+	return false
 
 
 func test_charger_lane() -> void:
 	var pr := PlayerTable.starting_values().radius_m
-	var cr := CombatLab.tables()[0].radius_m
+	var cr := CombatLab.world().enemy_table(ActorStore.Kind.CHARGER).radius_m  # by kind: ids sort A-Z
 	for d in [cr + pr - EPS, cr + pr + EPS, 0.0, 2.0]:
 		var got := _attack(ActorStore.Kind.CHARGER, Vector2(4, d))
 		var drawn := _inside_lane(got[1], Vector2(4, d), pr)

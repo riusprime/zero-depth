@@ -310,3 +310,9 @@ MAP_LEGEND_BOSS,Boss door,Puerta del jefe
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
 MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
+ENEMY_ARC_CASTER,Arc Caster,Lanzarrayos
+ENEMY_BOMB_DRONE,Bomb Drone,Dron Bombardero
+CAUSE_ARC_CASTER,An Arc Caster's spell struck you down.,Un hechizo de un Lanzarrayos te abatió.
+CAUSE_BOMB_DRONE,A Bomb Drone's bomb blew you up.,La bomba de un Dron Bombardero te hizo volar.
+UI_DEV_NEXT_ENEMY,Next enemy,Siguiente enemigo
+UI_DEV_SPAWN_ENEMY,Spawn enemy,Invocar enemigo

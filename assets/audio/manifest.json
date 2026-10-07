@@ -165,6 +165,66 @@
       "loop": false
     },
     {
+      "id": "enemy_death_arc_caster",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_arc_caster.wav",
+      "sha256": "6dae0f79a2a671e38b749f38f22affec46b8fb1e3f53bbd0011600d774c1048b",
+      "seconds": 0.8,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.58,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_bomb_drone",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_bomb_drone.wav",
+      "sha256": "9286c9504b1ca8489c7c239a5d8fc8fac39011121be7c9cb2c800c635af433bb",
+      "seconds": 0.8,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.66,
+      "loop": false
+    },
+    {
+      "id": "arc_bolt",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/arc_bolt.wav",
+      "sha256": "a8f2193c45aea0d2e4e4e69dfd5ebf66a0877dc61a9c787029e458116dcbcf43",
+      "seconds": 0.37,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.26,
+      "loop": false
+    },
+    {
+      "id": "rune_erupt",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/rune_erupt.wav",
+      "sha256": "ca33f9ebb867ac030e7440516159b74a71c9bb4c0b4f6b854523262925c18297",
+      "seconds": 0.75,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.8,
+      "loop": false
+    },
+    {
+      "id": "bomb_lob",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/bomb_lob.wav",
+      "sha256": "545c1ce5624ee0b96f48ae448d5ab4a436e35bedfa6f48b9dfe52dc71d5253a3",
+      "seconds": 0.45,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.25,
+      "loop": false
+    },
+    {
+      "id": "bomb_blast",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/bomb_blast.wav",
+      "sha256": "235236c5cbb04ba1c42106f38da127de13312e1af5536d83105670690ce69985",
+      "seconds": 1.1,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -11.92,
+      "loop": false
+    },
+    {
       "id": "player_death",
       "kind": "sfx",
       "path": "assets/audio/sfx/player_death.wav",

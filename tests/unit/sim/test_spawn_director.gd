@@ -109,7 +109,12 @@ func test_the_mix_only_uses_unlocked_kinds() -> void:
 	var at_zero := SpawnDirector.unlocked(w, t, 0)
 	for k in at_zero:
 		assert_ne(t.kinds[k], ActorStore.Kind.WARDEN, "no Warden at tier 0")
-	assert_eq(SpawnDirector.unlocked(w, t, 1).size(), 3, "all three from tier 1")
+	assert_eq(SpawnDirector.unlocked(w, t, 1).size(), 4, "the first four from tier 1")
+	assert_eq(SpawnDirector.unlocked(w, t, 2).size(), 5, "all five from tier 2 (v0.3.5 AI)")
+	for k in SpawnDirector.unlocked(w, t, 1):
+		assert_ne(t.kinds[k], ActorStore.Kind.BOMB_DRONE, "no Bomb Drone before tier 2")
+	for k in at_zero:
+		assert_ne(t.kinds[k], ActorStore.Kind.ARC_CASTER, "no Arc Caster at tier 0")
 	var early := _run(w, 1790, true)
 	assert_gt(early.size(), 5)
 	for s in early:

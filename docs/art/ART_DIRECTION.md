@@ -128,6 +128,16 @@ lowest, ~2× the hood's width); two chunky, separated charcoal legs with lighter
 
 **Enemies (owner, 2026-10-07).** The reference is [`enemies_visual_reference.png`](enemies_visual_reference.png) (front, right-front and right views of each), to be matched as close to 1:1 as possible (PLAN v0.2.0 L17). Low-poly faceted, red and grey: **Charger** — a red hooded body with a glowing red visor, carried on four grey segmented claw legs with bone talons; **Needle** — a red cube body with red slit eyes on four mechanical legs, a grey cannon barrel forward; **Warden** — a hulking grey rock golem with huge stone fists, a faceted red cap/shell and a red visor slot.
 
+**New enemies (v0.3.5 AI, owner F5/F6; code-built in the same style, no sheet yet).** **Arc Caster** — a tall faceted
+red robe (an octagonal frustum) under grey pauldrons, a dark hood with a red slit visor and a red cowl, a grey staff
+held out with a hostile-yellow arc crystal at its tip, three red rune shards orbiting the hood; the staff rises and
+the crystal brightens through a windup. **Bomb Drone** — a faceted red quad-rotor hull with a red slit eye and a grey
+cap, four grey arms with dark spinning rotors, a dark bomb slung under its belly with a glowing fuse; drawn 1.8 m up
+with a soft bob, over a soft dark shadow and its contact ring on the ground, where the sim has it (melee and shots
+hit it there). Telegraphs: the bolt's line carries a bright core, the rune an inner ring with turning spokes, the
+bomb's circle a cross-hair and the bomb itself arcing down to it as the circle fills. Flash materials come from
+`ActorViews.flashable` (emission on at energy 0; nothing toggles `emission_enabled` at runtime).
+
 **Bosses (owner, 2026-10-07).** The reference is [`first-three-bosses-concept.png`](first-three-bosses-concept.png): **Stone Sentinel** (colossal grey boulder golem, huge stacked stone fists, a spiky faceted red crown and back shell with a red visor slot and glowing red cracks on the back), **Crawler Queen** (a red faceted hood carapace with a red hex visor, a huge red egg sac of glowing spheres with spikes, many grey legs with long bone talons), **Fortress Turret** (a red armoured box hull with red slit eyes, a long grey main cannon with a vented muzzle, two back mortar tubes with red glow, four heavy grey mechanical legs). Matched as close to 1:1 as possible (PLAN v0.3.0 L10).
 
 ## 5. Pipeline
