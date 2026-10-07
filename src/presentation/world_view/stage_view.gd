@@ -11,19 +11,30 @@ const FADED_ALPHA := 0.3
 ## Soft-shadow blur: 0.5 straightens the edges; 1.0 and above wiped out the props' small shadows in the test
 ## renders (evidence/SHADOWS.md).
 const SHADOW_BLUR := 0.5
+## On a generated floor the ground covers each room plus its walls (a wall is 0.8 m thick), not the floor's whole
+## bounding box, so the space between rooms reads as void (v0.2.0 I).
+const ROOM_GROUND_MARGIN := 0.8
 
 var palette := {}
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
+## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
+var _ground_rects: Array[Rect2] = []
 
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
 	palette = p_palette
 	_build_environment()
 	_build_light()
-	_build_ground(arena_half)
+	_ground_rects.clear()
+	for i in reader.floor_room_count():
+		_ground_rects.append(reader.floor_room(i).grow(ROOM_GROUND_MARGIN))
+	if _ground_rects.is_empty():
+		_build_ground(arena_half)
+	else:
+		_build_room_ground()
 	_build_walls(reader)
 	_build_props(reader.seed_value(), arena_half)
 
@@ -86,6 +97,39 @@ func _build_ground(arena_half: float) -> void:
 			add_child(tile)
 
 
+## The same checker as _build_ground, on the global tile grid, clipped to each room's rect.
+func _build_room_ground() -> void:
+	var mats := [_mat(palette["ground"]), _mat(palette["ground_alt"])]
+	for r in _ground_rects:
+		var i0 := int(floor(r.position.x / TILE_M))
+		var i1 := int(floor(r.end.x / TILE_M))
+		var j0 := int(floor(r.position.y / TILE_M))
+		var j1 := int(floor(r.end.y / TILE_M))
+		for i in range(i0, i1 + 1):
+			for j in range(j0, j1 + 1):
+				var cell := Rect2(Vector2(i, j) * TILE_M, Vector2(TILE_M, TILE_M)).intersection(r)
+				if cell.size.x <= 0.001 or cell.size.y <= 0.001:
+					continue
+				var plane := PlaneMesh.new()
+				plane.size = cell.size
+				var tile := MeshInstance3D.new()
+				tile.mesh = plane
+				tile.material_override = mats[posmod(i + j, 2)]
+				tile.position = SimPlane.to_3d(cell.get_center())
+				tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				add_child(tile)
+
+
+## True where the stage draws ground (everywhere in the arena; inside a room or its walls on a floor).
+func covers_ground(p: Vector2) -> bool:
+	if _ground_rects.is_empty():
+		return true
+	for r in _ground_rects:
+		if r.has_point(p):
+			return true
+	return false
+
+
 func _build_walls(reader: WorldReader) -> void:
 	_wall_solid = _mat(palette["cover"])
 	_wall_faded = _mat(palette["cover"])
@@ -120,6 +164,8 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
 		)
 		var s := rng.randf_range(0.12, 0.3)
+		if not covers_ground(p):
+			continue
 		var cube := MeshInstance3D.new()
 		var box := BoxMesh.new()
 		box.size = Vector3(s, s * 0.8, s)
@@ -132,6 +178,8 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 		var p := Vector2(
 			rng.randf_range(-arena_half, arena_half), rng.randf_range(-arena_half, arena_half)
 		)
+		if not covers_ground(p):
+			continue
 		for blade in 3:
 			var g := MeshInstance3D.new()
 			var b := BoxMesh.new()

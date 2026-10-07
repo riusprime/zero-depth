@@ -32,6 +32,17 @@ func test_the_floor_has_pedestals_and_a_gate() -> void:
 		mini(expected, layout.room_count() - 1),
 		"each room gets a pedestal before any room gets its second"
 	)
+	assert_true(main.view.stage.covers_ground(layout.start_pos), "ground under the start")
+	var b := layout.bounds
+	var void_found := false
+	for k in 400:
+		var p := (
+			b.position
+			+ Vector2(b.size.x * float(k % 20) / 20.0, b.size.y * float(k - k % 20) / 400.0)
+		)
+		if layout.room_of(p) == -1 and not main.view.stage.covers_ground(p):
+			void_found = true
+	assert_true(void_found, "the space between rooms has no ground (v0.2.0 I)")
 	assert_not_null(main.view.gate, "the gate is placed")
 	assert_true(main.view.gate.is_sealed())
 

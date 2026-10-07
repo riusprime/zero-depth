@@ -114,7 +114,8 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var facing: Node3D = node.get_meta(&"facing")
 	facing.rotation = Vector3(0, SimPlane.yaw_of(reader.actor_facing(i)), 0)
 	var spawning := reader.actor_spawning(i)
-	facing.visible = not spawning
+	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
+	facing.visible = not spawning or node.has_meta(&"enemy_avatar")
 	(node.get_meta(&"bar") as Node3D).visible = not spawning
 	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 	var bar: Node3D = node.get_meta(&"bar")

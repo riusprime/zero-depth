@@ -434,6 +434,15 @@ func floor_bounds() -> Rect2:
 	return _w.floor_layout.bounds if _w.floor_layout != null else Rect2()
 
 
+## Room interiors of the generated floor (wall face to wall face), for the stage's ground.
+func floor_room_count() -> int:
+	return _w.floor_layout.rooms.size() if _w.floor_layout != null else 0
+
+
+func floor_room(i: int) -> Rect2:
+	return _w.floor_layout.rooms[i]
+
+
 func portal_pos() -> Vector2:
 	return _w.floor_layout.portal_pos if _w.floor_layout != null else Vector2.ZERO
 
