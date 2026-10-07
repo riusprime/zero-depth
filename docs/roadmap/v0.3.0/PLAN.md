@@ -57,6 +57,8 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L25 | "an out of combat HP regen feature, when after 10s after no combat you start to regen a bit of health that can later be increased" | After 10 s without dealing or taking damage, regenerate 1 % max HP per second (starting value); items/gamble can raise it | P |
 | L26 | "bosses felt just a bit easy so incrementing their AI to be a bit harder" | Harder boss AI: shorter recoveries, attack chaining, better targeting/leading, more aggressive phase 2 (starting values, re-checked against the fight-length band) | BX |
 | L27 | "how far can you take the sounds on your own?" + (Q) "I synthesise SFX now" | Procedurally synthesised SFX for every event (robotic/synth/echo style) and an ambient drone per biome, with captions; any file can be replaced by dropping one with the same name | AU |
+| L28 | "Sometimes when taking a hit game crashes" | Reproduce and root-cause the crash on hit (it survived v0.2.0 H's lag fix); a regression test; ask the owner for the Windows log if it isn't reproducible here | X |
+| L29 | "Sword should be used towards where the character is looking, shooting towards the aimed with the other joystick" | Melee swings toward the character's facing (the move direction, or last facing when still); shooting stays on the aim (right stick / mouse) | P |
 
 ## Design (starting values)
 **Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–5.0 m (L12; was 0.6–3.0 m) (map stream); cover slabs and
