@@ -8,6 +8,15 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
+## Item kinds, for views (presentation may not name ItemTable).
+const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
+const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
+const ITEM_EMBER_EDGE := ItemTable.Kind.EMBER_EDGE
+const ITEM_SPLINTER_SHOT := ItemTable.Kind.SPLINTER_SHOT
+const ITEM_RAPID_COIL := ItemTable.Kind.RAPID_COIL
+const ITEM_RICOCHET_CORE := ItemTable.Kind.RICOCHET_CORE
+const ITEM_KINETIC_DASH := ItemTable.Kind.KINETIC_DASH
+const ITEM_OVERCHARGE := ItemTable.Kind.OVERCHARGE
 
 var _w: World
 
@@ -98,7 +107,7 @@ func combo_step() -> int:
 
 ## The arc of the current swing, for drawing: [half_arc, reach_m, own_radius_m]. Same numbers PlayerKit hits with.
 func swing_shape() -> Array:
-	return [_w.player.swing_half_arc, _w.player.swing_reach_m, _w.player.radius_m]
+	return [_w.player.swing_half_arc, swing_reach_m(), _w.player.radius_m]
 
 
 func swing_ticks() -> int:
@@ -264,3 +273,123 @@ func snapshot() -> Dictionary:
 
 func state_hash() -> String:
 	return _w.state_hash()
+
+
+# --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
+## Owned items in pickup order, as indices into the item tables (item_kind / item_name_key read them).
+func items_owned() -> PackedInt32Array:
+	return _w.items_owned
+
+
+func item_count() -> int:
+	return _w.items_owned.size()
+
+
+func has_item_kind(kind: int) -> bool:
+	return _w.item_mods.has(kind)
+
+
+## Number of compiled items (valid item indices are 0..item_table_count() - 1).
+func item_table_count() -> int:
+	return _w.item_tables.size()
+
+
+func item_kind(item_index: int) -> int:
+	return _w.item_tables[item_index].kind
+
+
+func item_id(item_index: int) -> StringName:
+	return _w.item_tables[item_index].id
+
+
+## Locale keys (tr() them in the view).
+func item_name_key(item_index: int) -> StringName:
+	return _w.item_tables[item_index].name_key
+
+
+func item_desc_key(item_index: int) -> StringName:
+	return _w.item_tables[item_index].desc_key
+
+
+func pickup_count() -> int:
+	return _w.pickups.size()
+
+
+func pickup_pos(i: int) -> Vector2:
+	return _w.pickups.pos(i)
+
+
+## The item index a pickup holds.
+func pickup_item(i: int) -> int:
+	return _w.pickups.item[i]
+
+
+func pickup_id(i: int) -> int:
+	return _w.pickups.ids[i]
+
+
+## Walking within this distance of a pickup takes it.
+func pickup_radius_m() -> float:
+	return ItemEffects.PICKUP_RADIUS_M
+
+
+## Ember Edge burn stacks on actor i (0 = not burning).
+func burn_stacks(actor_i: int) -> int:
+	return _w.actors.burn_stacks[actor_i]
+
+
+## The swing's reach with Long Edge applied: the same number PlayerKit hits with (EI-07).
+func swing_reach_m() -> float:
+	return ItemEffects.swing_reach_m(_w)
+
+
+## Overcharge: the next swing will be the Nth (charged) one.
+func overcharge_ready() -> bool:
+	return ItemEffects.overcharge_ready(_w)
+
+
+## Overcharge: the current swing is the charged one.
+func swing_overcharged() -> bool:
+	return _w.swing_t > 0 and _w.swing_overcharged
+
+
+## The tick the last Overcharge shockwave fired (-1 = never), and its radius.
+func overcharge_tick() -> int:
+	return _w.overcharge_tick
+
+
+func shockwave_radius_m() -> float:
+	return _w.item_mods.shockwave_radius_m
+
+
+## Twin Arc: an echo swing is pending, its angle, and the tick the last echo swung (-1 = never). The echo uses
+## swing_shape() with this angle.
+func echo_pending() -> bool:
+	return _w.echo_t > 0
+
+
+func echo_angle() -> int:
+	return _w.echo_angle
+
+
+func echo_tick() -> int:
+	return _w.echo_tick
+
+
+## Kinetic Dash: the tick a dash last hit an enemy (-1 = never).
+func dash_hit_tick() -> int:
+	return _w.dash_hit_tick
+
+
+## Ricochet Core: wall bounces a projectile has left, and the tick of its last bounce (-1 = none).
+func projectile_bounces(i: int) -> int:
+	return _w.projectiles.bounces[i]
+
+
+func projectile_bounce_tick(i: int) -> int:
+	return _w.projectiles.bounce_tick[i]
+
+
+## Ticks between bolts while shooting (Rapid Coil applied).
+func shot_period_ticks() -> int:
+	return ItemEffects.shot_period_ticks(_w)

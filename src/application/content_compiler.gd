@@ -128,3 +128,48 @@ static func ease_permille(seconds: float) -> int:
 ## Degrees to 1/4096 turns, rounded.
 static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
+
+
+## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name.
+static func compile_item(def: ItemDefinition) -> ItemTable:
+	var t := ItemTable.new()
+	t.id = def.id
+	t.kind = {
+		ItemDefinition.Kind.LONG_EDGE: ItemTable.Kind.LONG_EDGE,
+		ItemDefinition.Kind.TWIN_ARC: ItemTable.Kind.TWIN_ARC,
+		ItemDefinition.Kind.EMBER_EDGE: ItemTable.Kind.EMBER_EDGE,
+		ItemDefinition.Kind.SPLINTER_SHOT: ItemTable.Kind.SPLINTER_SHOT,
+		ItemDefinition.Kind.RAPID_COIL: ItemTable.Kind.RAPID_COIL,
+		ItemDefinition.Kind.RICOCHET_CORE: ItemTable.Kind.RICOCHET_CORE,
+		ItemDefinition.Kind.KINETIC_DASH: ItemTable.Kind.KINETIC_DASH,
+		ItemDefinition.Kind.OVERCHARGE: ItemTable.Kind.OVERCHARGE,
+	}[def.kind]
+	t.name_key = def.name_key
+	t.desc_key = def.desc_key
+	t.reach_bonus_permille = def.reach_bonus_permille
+	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
+	t.echo_damage_permille = def.echo_damage_permille
+	t.burn_damage = def.burn_damage
+	t.burn_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.burn_period_seconds))
+	t.burn_duration_ticks = SimTick.seconds_to_ticks(def.burn_duration_seconds)
+	t.burn_max_stacks = def.burn_max_stacks
+	t.split_count = def.split_count
+	t.split_spread = degrees_to_units(def.split_spread_degrees)
+	t.split_damage_permille = def.split_damage_permille
+	t.fire_rate_bonus_permille = def.fire_rate_bonus_permille
+	t.bounces = def.bounces
+	t.dash_hit_damage = def.dash_hit_damage
+	t.overcharge_every = def.overcharge_every
+	t.overcharge_mult_permille = def.overcharge_mult_permille
+	t.shockwave_radius_m = def.shockwave_radius_m
+	t.shockwave_damage_permille = def.shockwave_damage_permille
+	return t
+
+
+## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
+## World.set_item_tables.
+static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
+	var out: Array[ItemTable] = []
+	for def: ItemDefinition in repo.all_of(&"items"):
+		out.append(compile_item(def))
+	return out

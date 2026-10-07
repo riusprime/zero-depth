@@ -59,6 +59,7 @@ static func _clear(w: World, at: Vector2, r: float) -> bool:
 static func advance(w: World) -> void:
 	var t := w.player
 	var can_attack := not w.guarding() and not w.is_dashing()
+	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its active tick, then end and open the combo window.
 	if w.swing_t > 0:
 		if w.swing_t == t.swing_active_tick:
@@ -77,12 +78,13 @@ static func advance(w: World) -> void:
 		w.swing_t = 1
 		w.swing_angle = w.aim_angle
 		w.swing_root = w.take_root()
+		ItemEffects.on_swing_start(w)
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
 	if shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
 		_fire_bolt(w)
-		w.shot_cd = t.shot_period_ticks
+		w.shot_cd = ItemEffects.shot_period_ticks(w)
 
 
 static func shooting(w: World) -> bool:
@@ -90,24 +92,39 @@ static func shooting(w: World) -> bool:
 
 
 static func swing_hits(w: World, i: int) -> bool:
+	return arc_hits(w, i, w.swing_angle)
+
+
+## True if a swing arc at `angle` touches actor i. The reach includes Long Edge (ItemEffects.swing_reach_m), the
+## same number WorldReader.swing_shape draws.
+static func arc_hits(w: World, i: int, angle: int) -> bool:
 	var t := w.player
 	return AttackShapes.arc_touches(
 		w.player_pos(),
 		t.radius_m,
-		w.swing_angle,
+		angle,
 		t.swing_half_arc,
-		t.swing_reach_m,
+		ItemEffects.swing_reach_m(w),
 		w.actors.pos(i),
 		w.actors.radius[i]
 	)
 
 
 static func _resolve_swing(w: World) -> void:
+	var base: int = w.player.swing_damage[w.combo_step]
+	var dmg := ItemEffects.swing_damage(w, base)
+	if swing_arc(w, w.swing_angle, dmg, w.swing_root, &""):
+		w.add_freeze(w.player.swing_hitstop_ticks)
+	ItemEffects.after_swing(w, base, dmg)
+
+
+## Hits every enemy in the swing arc at `angle` for `dmg` (melee; Ember Edge burns on a landed hit). Used by the
+## swing and by the Twin Arc echo. Returns true if any hit landed.
+static func swing_arc(w: World, angle: int, dmg: int, root: int, effect_id: StringName) -> bool:
 	var a := w.actors
-	var dmg: int = w.player.swing_damage[w.combo_step]
 	var landed := false
 	for i in range(1, a.size()):
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1 or not swing_hits(w, i):
+		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1 or not arc_hits(w, i, angle):
 			continue
 		var got := Damage.hit(
 			w,
@@ -115,27 +132,33 @@ static func _resolve_swing(w: World) -> void:
 			dmg,
 			a.ids[0],
 			a.ids[0],
-			w.swing_root,
+			root,
 			SimEvent.TAG_MELEE,
 			w.player_pos(),
-			a.pos(i)
+			a.pos(i),
+			effect_id
 		)
-		landed = landed or got > 0
-	if landed:
-		w.add_freeze(w.player.swing_hitstop_ticks)
+		if got > 0:
+			landed = true
+			ItemEffects.on_melee_hit(w, i, root)
+	return landed
 
 
+## One shot: a bolt along the aim, or a Splinter fan (ItemEffects.shot_offsets); Ricochet Core adds bounces.
 static func _fire_bolt(w: World) -> void:
 	var t := w.player
-	var dir := Kin.dir(w.aim_angle)
-	var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
-	w.queue_projectile(
-		w.actors.ids[0],
-		ActorStore.TEAM_PLAYER,
-		muzzle,
-		dir * t.bolt_speed,
-		t.bolt_damage,
-		t.bolt_radius_m,
-		t.bolt_life_ticks,
-		SimEvent.TAG_PROJECTILE
-	)
+	var dmg := ItemEffects.bolt_damage(w)
+	for off in ItemEffects.shot_offsets(w):
+		var dir := Kin.dir(w.aim_angle + off)
+		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
+		w.queue_projectile(
+			w.actors.ids[0],
+			ActorStore.TEAM_PLAYER,
+			muzzle,
+			dir * t.bolt_speed,
+			dmg,
+			t.bolt_radius_m,
+			t.bolt_life_ticks,
+			SimEvent.TAG_PROJECTILE,
+			w.item_mods.bounces
+		)

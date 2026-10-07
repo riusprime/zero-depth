@@ -3,7 +3,8 @@ extends RefCounted
 ## One gameplay consequence with its provenance (SIM_CONTRACTS §7). The whole Kind enum is declared now;
 ## new kinds are appended, never inserted, because kinds are hashed.
 
-enum Kind { HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT }
+## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
+enum Kind { HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP }
 
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
@@ -16,6 +17,8 @@ const TAG_BLOCKED := 32
 const TAG_GUARDED := 64
 ## A fully charged bolt. Unused since the charged shot was dropped (2026-10-07); kept so bits never renumber.
 const TAG_FULL_CHARGE := 128
+## A Kinetic Dash body hit (v0.2.0 items).
+const TAG_DASH := 256
 
 var seq := 0
 var tick := 0

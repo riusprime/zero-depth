@@ -21,6 +21,10 @@ const INT_FIELDS: Array[StringName] = [
 	&"lock_a",
 	&"cd",
 	&"fire_cd",
+	&"burn_stacks",
+	&"burn_t",
+	&"burn_cd",
+	&"burn_root",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
@@ -52,6 +56,12 @@ var cd := PackedInt32Array()
 var fire_cd := PackedInt32Array()
 var jitter_x := PackedFloat32Array()
 var jitter_y := PackedFloat32Array()
+## Ember Edge burn (v0.2.0 items): stacks, ticks until it runs out, ticks to the next DoT tick, and the root that
+## last added a stack (one stack per root chain).
+var burn_stacks := PackedInt32Array()
+var burn_t := PackedInt32Array()
+var burn_cd := PackedInt32Array()
+var burn_root := PackedInt32Array()
 
 
 func size() -> int:
