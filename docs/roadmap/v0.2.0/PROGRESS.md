@@ -76,4 +76,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   sometimes lags or crashes; dash/blink VFX and a blue portal; compact item cards with icons; a bigger, more
   varied floor (3×3 hall + connecting rooms, 10–12 total); 1–2 items per room; more items. PLAN L11–L16;
   workstreams H (crash), I (floor v2), J (8 more items), K (VFX + item cards) run in parallel with G3.
+- 2026-10-07 — G3 merged (`c99081e`): the poncho hangs under the face (front corner reach 0.40 → 0.32 m), side
+  corners flare wider and lower, the V ends at knee height so legs and boots show, the hood is longer, the neck
+  sliver is gone. Lead check against the sheet: front, right-front and right views now match closely; still
+  differs: the hood's top reads large from the game camera, and the sheet's hood sides flare a little more. 210 tests.
 
