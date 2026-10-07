@@ -1,8 +1,10 @@
 class_name PauseMenu
 extends MenuPanel
-## Resume or return to the main menu. Shown over the stage; the sim is paused while it's open.
+## Resume, restart the run, or return to the main menu (v0.3.0 B). Shown over the stage; the sim is paused (no
+## ticks) while it's open. Keyboard, mouse and pad all work through the focus (MenuPanel).
 
 signal resume_pressed
+signal restart_pressed
 signal main_menu_pressed
 
 
@@ -17,4 +19,5 @@ func _init() -> void:
 	move_child(dim, 0)
 	add_title("UI_PAUSED")
 	add_button("UI_RESUME", func() -> void: resume_pressed.emit()).name = "Resume"
+	add_button("UI_RESTART_RUN", func() -> void: restart_pressed.emit()).name = "Restart"
 	add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"

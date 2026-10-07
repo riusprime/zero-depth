@@ -31,10 +31,11 @@ var max_span := 8
 ## Random placements tried for each room after the hall before giving up on the floor's room count.
 var place_attempts := 400
 ## Wall thickness (v0.3.0 L1). Each room side draws a half from this range: the wall material from its face out to
-## its grid line. A partition is the two rooms' halves (0.6-3.0 m thick); an outer wall is twice its room's half
-## (0.6-3.0 m), half inside the grid line and half outside.
+## its grid line. A partition is the two rooms' halves (0.6-5.0 m thick); an outer wall is twice its room's half
+## (0.6-5.0 m), half inside the grid line and half outside. Owner, 2026-10-07, "Thicker room walls": the blink stays
+## 5 m and the thickest walls can't be crossed even from point-blank (starting value; was 1.5).
 var wall_half_min := 0.3
-var wall_half_max := 1.5
+var wall_half_max := 2.5
 ## Doorway width, drawn per doorway (v0.3.0 L2).
 var door_width_min := 2.2
 var door_width_max := 3.4

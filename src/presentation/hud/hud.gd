@@ -18,6 +18,11 @@ const POOR := Color("#FF5A4D")
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
 const COMBO_BADGE := 44.0
+## Run flow (v0.3.0 B): the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
+## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.
+const FLOOR_CARD_SECONDS := 2.6
+const FLOOR_CARD_FADE := 0.7
+const BOSS_WARN_M := 6.0
 
 ## The boss bar (v0.3.0 C), shown while a boss is alive.
 var boss_bar := BossBar.new()
@@ -48,6 +53,13 @@ var _combo_card := ComboCard.new()
 var _combo_left := 0.0
 var _combo_pending := -1
 var _combos_shown := -1
+# Run flow (v0.3.0 B).
+var _floor := Label.new()
+var _floor_card := VBoxContainer.new()
+var _floor_card_title := Label.new()
+var _floor_card_biome := Label.new()
+var _floor_card_left := 0.0
+var _biome_key := ""
 
 
 func _init() -> void:
@@ -78,7 +90,9 @@ func _init() -> void:
 	top.position = Vector2(-160, 18)
 	top.custom_minimum_size = Vector2(320, 0)
 	add_child(top)
-	for l: Label in [_wave, _left]:
+	_floor.name = "FloorLabel"
+	_floor.add_theme_font_size_override("font_size", 22)
+	for l: Label in [_floor, _wave, _left]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		top.add_child(l)
@@ -117,6 +131,7 @@ func _init() -> void:
 	_gate.add_theme_font_size_override("font_size", 24)
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
+	_build_floor_card()
 	add_child(boss_bar)
 	_build_rewards()
 	for c in find_children("*", "Control", true, false):
@@ -146,7 +161,10 @@ func sync(reader: WorldReader) -> void:
 	else:
 		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
 		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
-	_gate.text = tr("GATE_SEALED") if reader.has_floor() and reader.at_gate() else ""
+	_gate.text = _gate_note(reader)
+	_floor.visible = reader.has_boss_room()
+	if _floor.visible:
+		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
 	boss_bar.sync(reader)
 	_sync_rewards(reader)
 
@@ -156,9 +174,73 @@ func _process(delta: float) -> void:
 		_card_left -= delta
 	if _combo_left > 0.0:
 		_combo_left -= delta
+	if _floor_card_left > 0.0:
+		_floor_card_left -= delta
+		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
+		_floor_card.visible = _floor_card_left > 0.0
 	if _shard_pulse > 0.0:
 		_shard_pulse = maxf(0.0, _shard_pulse - delta)
 	_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
+
+
+## Run flow: names the floor's biome (a locale key) and shows the floor-title card.
+func show_floor(floor_index: int, biome_key: String) -> void:
+	_biome_key = biome_key
+	_floor_card_title.text = tr("HUD_FLOOR_CARD") % floor_index
+	_floor_card_biome.text = tr(biome_key)
+	_floor_card_left = FLOOR_CARD_SECONDS
+	_floor_card.modulate.a = 1.0
+	_floor_card.visible = true
+
+
+func floor_card_showing() -> bool:
+	return _floor_card.visible
+
+
+func floor_card_text() -> String:
+	return "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
+
+
+func floor_text() -> String:
+	return _floor.text
+
+
+func gate_text() -> String:
+	return _gate.text
+
+
+## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal.
+func _gate_note(reader: WorldReader) -> String:
+	if not reader.has_floor():
+		return ""
+	if reader.has_boss_room():
+		if reader.portal_active():
+			return tr("HUD_PORTAL_OPEN")
+		if not reader.boss_door_sealed():
+			var d := reader.boss_door_depth(reader.player_pos())
+			var near := reader.player_pos().distance_to(reader.boss_door_center()) <= BOSS_WARN_M
+			if near and d < 0.0:
+				return tr("HUD_BOSS_AHEAD")
+	return tr("GATE_SEALED") if reader.at_gate() else ""
+
+
+func _build_floor_card() -> void:
+	_floor_card.name = "FloorCard"
+	_floor_card.set_anchors_preset(Control.PRESET_CENTER)
+	_floor_card.custom_minimum_size = Vector2(800, 0)
+	_floor_card.position = Vector2(-400, -190)
+	_floor_card.visible = false
+	add_child(_floor_card)
+	for l: Label in [_floor_card_title, _floor_card_biome]:
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+		l.add_theme_constant_override("outline_size", 10)
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_floor_card.add_child(l)
+	_floor_card_title.add_theme_font_size_override("font_size", 64)
+	_floor_card_biome.add_theme_font_size_override("font_size", 34)
+	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------

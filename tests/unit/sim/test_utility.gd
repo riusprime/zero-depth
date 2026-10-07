@@ -135,7 +135,7 @@ func test_blink_by_thickness_and_distance() -> void:
 	# within range, to the 0.1 m blink step.
 	var t := PlayerTable.starting_values()
 	var lines := PackedStringArray()
-	for thick: float in [0.5, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0]:
+	for thick: float in [0.5, 0.6, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]:
 		var reach := -1.0
 		for g in range(4, 50):
 			var gap := g * 0.1
@@ -149,6 +149,16 @@ func test_blink_by_thickness_and_distance() -> void:
 				reach = gap
 		lines.append("%.1f m: %s" % [thick, "never" if reach < 0.0 else "face <= %.1f m" % reach])
 	gut.p("blink %.1f m crosses a wall of thickness: %s" % [t.blink_range_m, "; ".join(lines)])
+
+
+## Owner, 2026-10-07, "Thicker room walls": room walls reach 5.0 m (2 x FloorParams.wall_half_max), and the
+## thickest can't be crossed with the 5 m blink even pressed against them.
+func test_the_thickest_room_wall_holds_even_from_point_blank() -> void:
+	var thickest := FloorParams.defaults().wall_half_max * 2.0
+	assert_almost_eq(thickest, 5.0, 0.001)
+	var w := _two_rooms(0.36, 0.36 + thickest)
+	w.step(_f(0, U, 500))
+	assert_lt(w.player_pos().x, 0.36, "pressed against a 5 m wall, the blink stays on this side")
 
 
 func test_blink_never_lands_where_you_cannot_walk() -> void:

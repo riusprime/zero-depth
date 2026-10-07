@@ -67,6 +67,19 @@ var spawn_points: Array[PackedVector2Array] = []
 var hops := PackedInt32Array()
 ## A box around the whole floor, centred on the origin: the grid's outer lines grown by the thickest outer half.
 var bounds := Rect2()
+## The boss room (v0.3.0 B; BossRoomBuilder.attach, -1 before it runs). It opens off boss_host_room (the farthest
+## room) through one doorway: its centre on the wall line, boss_door_angle the direction from the host into the boss
+## room, its width, and the collider that seals it once you are inside. The boss appears at boss_spawn.
+var boss_room := -1
+var boss_host_room := -1
+var boss_door_center := Vector2.ZERO
+var boss_door_angle := 0
+var boss_door_width := 0.0
+var boss_door_wall: Obb
+## The boss door's index in the doorway arrays, and the boss room's cells in metres (grid line to grid line).
+var boss_door_index := -1
+var boss_cells_rect := Rect2()
+var boss_spawn := Vector2.ZERO
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []
@@ -125,3 +138,22 @@ func portal_front() -> Rect2:
 ## The middle of the clear area in front of the gate: where the player walks into it from.
 func portal_front_point() -> Vector2:
 	return portal_front().get_center()
+
+
+## How far p is past the boss door's wall line, into the boss room (negative before it; 0 without a boss room).
+func boss_door_depth(p: Vector2) -> float:
+	if boss_room < 0:
+		return 0.0
+	return (p - boss_door_center).dot(Kin.dir(boss_door_angle))
+
+
+## A point `m` metres into the boss room past the boss door's inner face (negative m: back toward the host).
+func boss_door_inside(m: float) -> Vector2:
+	var half := door_depths[boss_door_index] * 0.5 if boss_door_index >= 0 else 0.0
+	return boss_door_center + Kin.dir(boss_door_angle) * (half + m)
+
+
+## A point `m` metres into the host room before the boss door's outer (host) face.
+func boss_door_outside(m: float) -> Vector2:
+	var half := door_depths[boss_door_index] * 0.5 if boss_door_index >= 0 else 0.0
+	return boss_door_center - Kin.dir(boss_door_angle) * (half + m)

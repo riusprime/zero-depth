@@ -75,10 +75,10 @@ func test_shape_of_a_floor() -> void:
 	assert_eq(f.room_cells[0].size, Vector2i(3, 3), "the start hall is 3 x 3 cells")
 	# A tree (n - 1 doorways) plus up to 2 extra.
 	assert_between(f.door_rooms.size(), n - 1, n + 1)
-	# The grid pitch is the drawn cell size plus the mean wall (0.3 + 1.5 m); each room side is pulled in from
+	# The grid pitch is the drawn cell size plus the mean wall (0.3 + 2.5 m); each room side is pulled in from
 	# its grid line by its own drawn half.
 	var p := FloorParams.defaults()
-	var pitch := f.cell_size + Vector2(1.8, 1.8)
+	var pitch := f.cell_size + Vector2(2.8, 2.8)
 	assert_eq(f.cell_pitch, pitch)
 	assert_eq(f.room_halves.size(), n * 4)
 	for room in n:
@@ -449,9 +449,10 @@ func test_fill_order_puts_first_spots_first() -> void:
 	assert_eq(FloorScenario.spot_order(f), PackedInt32Array([0, 2, 3, 1]))
 
 
-## v0.3.0 L1-L2: walls are 0.6-3.0 m thick (a doorway's depth is the wall's thickness there), doorways are
-## 2.2-3.4 m wide and lie anywhere along the stretch both rooms share, clear of their corners, and the cell size
-## is drawn per floor. Across 50 floors every one of these varies over most of its range.
+## v0.3.0 L1-L2 (owner, "Thicker room walls"): walls are 0.6-5.0 m thick (a doorway's depth is the wall's
+## thickness there), doorways are 2.2-3.4 m wide and lie anywhere along the stretch both rooms share, clear of
+## their corners, and the cell size is drawn per floor. Across 50 floors every one of these varies over most of
+## its range.
 func test_walls_and_doorways_vary_within_their_ranges() -> void:
 	var p := FloorParams.defaults()
 	var depth := Vector2(INF, -INF)
@@ -470,7 +471,7 @@ func test_walls_and_doorways_vary_within_their_ranges() -> void:
 		for i in f.door_rooms.size():
 			doors += 1
 			var d := f.door_rooms[i]
-			assert_between(f.door_depths[i], 0.6 - 0.001, 3.0 + 0.001, tag + ": wall thickness")
+			assert_between(f.door_depths[i], 0.6 - 0.001, 5.0 + 0.001, tag + ": wall thickness")
 			assert_between(
 				f.door_widths[i], p.door_width_min, p.door_width_max, tag + ": door width"
 			)

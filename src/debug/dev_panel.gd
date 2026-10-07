@@ -35,6 +35,8 @@ func _init(p_api: DebugApi) -> void:
 		["Reseed", "UI_DEV_RESEED", func() -> void: api.reseed(api.world.seed_value + 1)],
 		["NextBoss", "UI_DEV_NEXT_BOSS", api.next_boss],
 		["SpawnBoss", "UI_DEV_SPAWN_BOSS", api.request_boss],
+		["God", "UI_DEV_GOD", api.toggle_god],
+		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
 	]:
 		var b := Button.new()
 		b.name = spec[0]

@@ -5,7 +5,8 @@ extends SceneTree
 ## Key: the floor's footprint in grey, room floors tinted by interior template (TEMPLATE_TINTS, printed as a
 ## legend), walls at their real thickness (dark), brown interior pieces, green
 ## start, yellow items, red spawn points, blue doorway centres in their passages, magenta gate with its clear front
-## square outlined, and a 5 m scale bar (the blink range) under each floor.
+## square outlined, and a 5 m scale bar (the blink range) under each floor. v0.3.0 B: each floor gets its boss room
+## (BossRoomBuilder, the default 3 x 3 arena), outlined in red, its door's seal in orange.
 
 const PX := 8  # pixels per metre
 const GAP := 16
@@ -20,6 +21,8 @@ const C_START := Color(0.1, 0.7, 0.2)
 const C_ITEM := Color(0.95, 0.8, 0.1)
 const C_SPAWN := Color(0.85, 0.15, 0.15)
 const C_GATE := Color(0.85, 0.1, 0.85)
+const C_BOSS := Color(0.95, 0.15, 0.1)
+const C_SEAL := Color(1.0, 0.55, 0.1)
 ## Floor tint per template, in FloorLayout.Template order: open, scatter, pillars, centre, cross, lines, bunkers,
 ## colonnade, diagonals.
 const TEMPLATE_TINTS: Array[Color] = [
@@ -49,6 +52,9 @@ func _initialize() -> void:
 		var t0 := Time.get_ticks_usec()
 		var f := FloorGenerator.generate(s)
 		var us := Time.get_ticks_usec() - t0
+		var t1 := Time.get_ticks_usec()
+		BossRoomBuilder.attach(f)
+		var boss_us := Time.get_ticks_usec() - t1
 		floors.append(f)
 		var spawns := 0
 		for sp in f.spawn_points:
@@ -88,6 +94,25 @@ func _initialize() -> void:
 		for i in f.door_rooms.size():
 			doors.append("%.2f x %.2f" % [f.door_widths[i], f.door_depths[i]])
 		print("  doorways (width x wall thickness, m): %s" % ", ".join(doors))
+		var bi := f.boss_room
+		print(
+			(
+				"  boss room %d: %dx%d cells off room %d, halves %.2f/%.2f/%.2f/%.2f m, door %.2f x %.2f m, attached in %.1f ms"
+				% [
+					bi,
+					f.room_cells[bi].size.x,
+					f.room_cells[bi].size.y,
+					f.boss_host_room,
+					f.room_halves[bi * 4],
+					f.room_halves[bi * 4 + 1],
+					f.room_halves[bi * 4 + 2],
+					f.room_halves[bi * 4 + 3],
+					f.door_widths[f.boss_door_index],
+					f.door_depths[f.boss_door_index],
+					boss_us / 1000.0
+				]
+			)
+		)
 	var legend := PackedStringArray()
 	for t in FloorLayout.TEMPLATE_COUNT:
 		legend.append("%s = %s" % [FloorLayout.TEMPLATE_NAMES[t], TINT_NAMES[t]])
@@ -124,6 +149,10 @@ func _draw_floor(img: Image, f: FloorLayout, at: Vector2i) -> void:
 		_fill_obb(img, f, at, f.walls[i], C_SLAB if i >= f.slab_first else C_WALL)
 	for d in f.door_centers:
 		_dot(img, f, at, d, 0.3, C_DOOR)
+	if f.boss_room >= 0:
+		_outline(img, f, at, f.rooms[f.boss_room], C_BOSS)
+		_outline(img, f, at, f.rooms[f.boss_room].grow(-0.25), C_BOSS)
+		_outline(img, f, at, f.boss_door_wall.bounds(), C_SEAL)
 	var front := f.portal_front()
 	_outline(img, f, at, front, C_GATE)
 	var n := f.portal_facing()

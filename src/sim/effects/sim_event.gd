@@ -9,6 +9,8 @@ extends RefCounted
 ## index in World.boss_tables, pos = where it fell.
 ## v0.3.0 E: PICKUP is also a card taken from an altar or chest (source = the reward's id). SHARDS: a kill paid
 ## shards; amount = how many, pos = the body, source = the dead actor's id.
+## Run flow (v0.3.0 B): BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
+## active), FLOOR_EXIT (the player walked into the active gate).
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -23,6 +25,9 @@ enum Kind {
 	COMBO_UNLOCKED,
 	BOSS_DEFEATED,
 	SHARDS,
+	BOSS_ROOM_SEALED,
+	PORTAL_OPENED,
+	FLOOR_EXIT,
 }
 
 const TAG_MELEE := 1

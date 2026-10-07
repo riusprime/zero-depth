@@ -460,3 +460,14 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 		t.window_ticks = SimTick.seconds_to_ticks(def.window_seconds)
 		out.append(t)
 	return out
+
+
+## A run's floors, biome count and scaling in per mille (v0.3.0 B).
+static func compile_run(def: RunDefinition) -> RunTable:
+	var t := RunTable.new()
+	t.floors = def.floors
+	t.biome_count = def.biomes.size()
+	t.hp_per_floor_permille = int(round(def.enemy_hp_per_floor * 1000.0))
+	t.damage_per_floor_permille = int(round(def.enemy_damage_per_floor * 1000.0))
+	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	return t
