@@ -84,6 +84,8 @@ var floor_layout: FloorLayout
 var run_ticks := 0
 var spawn_cd := 0
 var kills := 0
+## Mine Layers' mines (v0.4.0 EN; Mines), hashed once one was dropped.
+var mines := MineStore.new()
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -346,6 +348,7 @@ func step(frame: InputFrame) -> void:
 			BossAi.resolve(self, i)  # Bosses (v0.3.0 C).
 		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
+	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	_projectile_hits()
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
@@ -658,6 +661,8 @@ func state_hash() -> String:
 	if not enemy_tables.is_empty():  # Enemy AI (v0.3.5 AI): only worlds with enemies, so the kernel golden holds.
 		h.add_int(rng_enemy.state)
 		actors.hash_ai(h)
+	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
+		mines.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -1014,6 +1019,7 @@ func _remove_dead() -> void:
 			gone.append(i)
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
+				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.
 			var b := bosses.index_of(actors.ids[i])
 			if b >= 0:  # Bosses (v0.3.0 C): defeated, once, as it leaves.
 				var e := emit_event(

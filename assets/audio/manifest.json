@@ -225,6 +225,116 @@
       "loop": false
     },
     {
+      "id": "enemy_death_swarmer",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_swarmer.wav",
+      "sha256": "25c590b28f451584d6d6209c3e20d6226db4da46b2eb79b0e941d54f6d9992a3",
+      "seconds": 0.24,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.77,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_splitter",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_splitter.wav",
+      "sha256": "4ed7f79d40aa17eaaab884780498cf5b80249da365d5d8abd6277a7779b74794",
+      "seconds": 0.65,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.21,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_shield_bearer",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_shield_bearer.wav",
+      "sha256": "12e15de23c29015a9ac13ceff71f990dd371c5f1d063926a00039d76786e256c",
+      "seconds": 0.95,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.15,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_mender",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_mender.wav",
+      "sha256": "4e0828c6537ffd06e240f7e5ee46f00f0c32e6f24edd23d355dd266f28742969",
+      "seconds": 0.8,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.86,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_mine_layer",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_mine_layer.wav",
+      "sha256": "cba83fe0ddb3ba33f48088913ed4e9302ad488bdd14f537dca3194b71fc0d9fc",
+      "seconds": 0.85,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.48,
+      "loop": false
+    },
+    {
+      "id": "enemy_death_sniper",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_sniper.wav",
+      "sha256": "55b9d1557a72cf4a7422670fc7bbeb2de1066067cbf1cc606607ec119ba577c7",
+      "seconds": 0.75,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.88,
+      "loop": false
+    },
+    {
+      "id": "sniper_shot",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/sniper_shot.wav",
+      "sha256": "90f1b93f888a69cbd11bf0ba083bbf30bbb2bf79971e8e6973501d8a34cb1114",
+      "seconds": 0.85,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.16,
+      "loop": false
+    },
+    {
+      "id": "mine_arm",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/mine_arm.wav",
+      "sha256": "4d3a3ffd948b0285d11d7ecd26377dd29d8648a51e8a8f9e492413943cda1f61",
+      "seconds": 0.33,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -13.54,
+      "loop": false
+    },
+    {
+      "id": "mine_blast",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/mine_blast.wav",
+      "sha256": "649e8d2f305490000afafe89d9c39a5a46fa21414e699df5dd99961063c39101",
+      "seconds": 0.95,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -11.85,
+      "loop": false
+    },
+    {
+      "id": "shield_bash",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shield_bash.wav",
+      "sha256": "a0d553f2213badd51250a31051f81b8db43c88985b1117b1d2b2f44491c892d9",
+      "seconds": 0.55,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -19.3,
+      "loop": false
+    },
+    {
+      "id": "mender_heal",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/mender_heal.wav",
+      "sha256": "e9ad5fc46115b3d0266533c03d1e28cbac6940f006bef390fcaf304b75b1114f",
+      "seconds": 0.38,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -14.59,
+      "loop": false
+    },
+    {
       "id": "player_death",
       "kind": "sfx",
       "path": "assets/audio/sfx/player_death.wav",

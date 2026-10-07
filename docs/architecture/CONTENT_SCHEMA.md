@@ -137,6 +137,29 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
+  - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
+    4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
+  - `splitter` (`attack_range_m`, `cooldown_seconds`, `split_count`; one CIRCLE `swipe`, `radius_m`/`reach_m`: a disc
+    `reach_m` ahead of it): HP 50, damage 12, 3 shards; dies into `split_count` (2) `splitling`s (same params without
+    `split_count`; HP 16, damage 6, 1 shard), which never split.
+  - `shield_bearer` (`attack_range_m`, `cooldown_seconds`, `shield_arc_degrees`, `turn_rate_dps`; one LINE `bash`,
+    `length_m`/`half_width_m`): HP 90, damage 18, 6 shards, 1.4 m/s, a 120 deg shield that blocks every hit from its
+    front (multiplier 0, `TAG_BLOCKED`), turning at 80 deg/s; it bashes only a player inside that arc.
+  - `mender` (`keep_min_m`, `keep_max_m`, `heal_amount`, `heal_period_seconds`, `heal_range_m`; **no attacks**, the
+    schema's `"attacks": []`): HP 35, 5 shards, keeps 6-9 m, heals 5 HP every 0.5 s to the most hurt ally within 7 m.
+  - `mine_layer` (`attack_range_m`, `cooldown_seconds`, `keep_min_m`, `keep_max_m`, `drop_seconds`, `max_mines`,
+    `mine_life_seconds`; one CIRCLE `mine`, `radius_m`: the mine's circle, its telegraph the fuse after it arms):
+    HP 40, damage 18, 4 shards, keeps 4-7 m, drops a mine every 2.5 s (0.5 s drop), at most 3, each lasting 20 s;
+    a 1.5 m circle that arms when the player touches it and blows 0.6 s (36 ticks) later.
+  - `sniper` (`attack_range_m`, `cooldown_seconds`, `keep_min_m`, `keep_max_m`; one LINE `shot`, `range_m`/
+    `half_width_m`): HP 30, damage 28, 5 shards, keeps 10-14 m, a 20 m line shown for 1.0 s (60 ticks), then a hit
+    down it; then it walks to a new spot.
+  - Positive params (`split_count`, `max_mines`, `heal_*`, `mine_life_seconds`, `drop_seconds`) <= 0 are an `ERROR`
+    (`not_positive`); `shield_arc_degrees` outside 0..360 is an `ERROR` (`armour`).
+  - The spawner's mix (`data/spawning/floor_1.tres`): Swarmer (weight 3, tier 1, `pack` 8) and Splitter (2, tier 1);
+    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. `SpawnMixEntry.pack` (>= 1,
+    default 1; `mix_entry` `ERROR` below 1) is how many arrive together around one spawn point, never past the cap.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays

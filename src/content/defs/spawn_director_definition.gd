@@ -56,7 +56,13 @@ func validate() -> Array[ValidationIssue]:
 	var opens := false
 	for k in mix.size():
 		var e := mix[k]
-		if e == null or String(e.enemy_id).is_empty() or e.weight <= 0 or e.unlock_tier < 0:
+		if (
+			e == null
+			or String(e.enemy_id).is_empty()
+			or e.weight <= 0
+			or e.unlock_tier < 0
+			or e.pack < 1
+		):
 			issues.append(ValidationIssue.new(&"mix_entry", resource_path, "mix[%d] is bad" % k))
 			continue
 		if e.unlock_tier == 0:

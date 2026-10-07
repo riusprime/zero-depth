@@ -324,3 +324,15 @@ CAUSE_ARC_CASTER,An Arc Caster's spell struck you down.,Un hechizo de un Lanzarr
 CAUSE_BOMB_DRONE,A Bomb Drone's bomb blew you up.,La bomba de un Dron Bombardero te hizo volar.
 UI_DEV_NEXT_ENEMY,Next enemy,Siguiente enemigo
 UI_DEV_SPAWN_ENEMY,Spawn enemy,Invocar enemigo
+ENEMY_SWARMER,Swarmer,Enjambre
+ENEMY_SPLITTER,Splitter,Divisor
+ENEMY_SPLITLING,Splitling,Fragmento
+ENEMY_SHIELD_BEARER,Shield Bearer,Portaescudos
+ENEMY_MENDER,Mender,Sanador
+ENEMY_MINE_LAYER,Mine Layer,Minador
+ENEMY_SNIPER,Sniper,Francotirador
+CAUSE_SWARMER,A Swarmer's bite brought you down.,El mordisco de un Enjambre te derribó.
+CAUSE_SPLITTER,A Splitter's swipe cut you down.,El zarpazo de un Divisor te abatió.
+CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un Portaescudos te aplastó.
+CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
+CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.

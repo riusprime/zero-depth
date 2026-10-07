@@ -10,6 +10,8 @@ const CLOSE_M := 1.5
 ## Stop swinging this far past the Hot threshold, and vent once an enemy is this close.
 const HOT_MARGIN := 8.0
 const VENT_M := 1.7
+## v0.4.0 EN: at most this many Wardens from the dev panel to swing at.
+const WARDENS := 12
 
 
 func after_each() -> void:
@@ -22,13 +24,21 @@ func _nearest_enemy(r: WorldReader) -> int:
 	var best := -1
 	var best_d := INF
 	for i in range(1, r.actor_count()):
-		if r.actor_dead(i):
+		# v0.4.0 EN: a Shield Bearer blocks every swing from its front (no damage, so no heat); the bot leaves it be.
+		if r.actor_dead(i) or r.actor_kind(i) == WorldReader.KIND_SHIELD_BEARER:
 			continue
 		var d := r.actor_pos(i).distance_to(r.player_pos())
 		if d < best_d:
 			best_d = d
 			best = i
 	return best
+
+
+func _has_kind(r: WorldReader, kind: int) -> bool:
+	for i in range(1, r.actor_count()):
+		if not r.actor_dead(i) and r.actor_kind(i) == kind:
+			return true
+	return false
 
 
 func _stick(e: E2e, x_axis: JoyAxis, y_axis: JoyAxis, dir: Vector2) -> void:
@@ -65,6 +75,17 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, "God")
 	assert_true(e.main.driver.debug.god)
+	# v0.4.0 EN: the floor's mix now brings Swarmers that die to one swing and kinds that keep away, so heat (which
+	# needs swings landing without a 1 s gap) is built on Wardens the panel brings in next to the wanderer, a new one
+	# whenever none is left (up to WARDENS).
+	var choice := e.main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
+	for k in 16:
+		if choice.text == tr("ENEMY_WARDEN"):
+			break
+		await _click(e, "NextEnemy")
+		await e.frames(1)
+	assert_eq(choice.text, tr("ENEMY_WARDEN"), "the panel names the Warden")
+	var wardens := 0
 	var nav := NavField.new()
 	nav.build(w.walls)
 	var trigger := false
@@ -72,6 +93,9 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	var ready := false
 	var peak := 0.0
 	for k in MAX_FRAMES:
+		if wardens < WARDENS and charging and not _has_kind(r, WorldReader.KIND_WARDEN):
+			await _click(e, "SpawnEnemy")
+			wardens += 1
 		var target := _nearest_enemy(r)
 		var p := r.player_pos()
 		var s := r.heat_state()

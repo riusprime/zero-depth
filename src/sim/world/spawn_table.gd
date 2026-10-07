@@ -13,10 +13,12 @@ var interval_min_ticks := 48
 ## Enemy HP gains this many per mille of its base per tier.
 var hp_per_tier_permille := 80
 var min_distance_m := 8.0
-## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, and the tier it unlocks at.
+## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, the tier it unlocks at, and its pack size.
 var kinds := PackedInt32Array()
 var weights := PackedInt32Array()
 var unlock_tiers := PackedInt32Array()
+## v0.4.0 EN: how many of the kind arrive together (1 for most; a Swarmer pack).
+var packs := PackedInt32Array()
 
 
 func tier_at(run_ticks: int) -> int:

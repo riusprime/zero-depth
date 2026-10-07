@@ -24,6 +24,13 @@ const DEATHS := {
 	WorldReader.KIND_HATCHLING: &"enemy_death_hatchling",
 	WorldReader.KIND_ARC_CASTER: &"enemy_death_arc_caster",
 	WorldReader.KIND_BOMB_DRONE: &"enemy_death_bomb_drone",
+	WorldReader.KIND_SWARMER: &"enemy_death_swarmer",
+	WorldReader.KIND_SPLITTER: &"enemy_death_splitter",
+	WorldReader.KIND_SPLITLING: &"enemy_death_hatchling",
+	WorldReader.KIND_SHIELD_BEARER: &"enemy_death_shield_bearer",
+	WorldReader.KIND_MENDER: &"enemy_death_mender",
+	WorldReader.KIND_MINE_LAYER: &"enemy_death_mine_layer",
+	WorldReader.KIND_SNIPER: &"enemy_death_sniper",
 }
 
 var _last_seq := 0
@@ -33,6 +40,8 @@ var _phases := {}
 var _projectiles := {}
 ## v0.3.5 AI: where each enemy's area spell (a rune, a bomb) is aimed, from its telegraph at the windup.
 var _targets := {}
+## v0.4.0 EN: each mine's last fuse (-1 idle), so arming and blowing play once.
+var _mines := {}
 var _dashing := false
 var _swing_t := 0
 var _echo_tick := -1
@@ -60,6 +69,8 @@ func prime(reader: WorldReader) -> void:
 	_phases.clear()
 	_projectiles.clear()
 	_targets.clear()
+	_mines.clear()
+	_scan_mines(reader, [])
 	_scan_actors(reader, [])
 	_scan_projectiles(reader, [])
 
@@ -68,6 +79,7 @@ func prime(reader: WorldReader) -> void:
 func collect(reader: WorldReader) -> Array:
 	var out: Array = []
 	_scan_actors(reader, out)
+	_scan_mines(reader, out)
 	_events(reader, out)
 	_player(reader, out)
 	_scan_projectiles(reader, out)
@@ -117,6 +129,26 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([skill_cue(e.amount), e.pos, 1.0])
 			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
 				out.append([&"vent_cold", null, 1.0])
+			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
+				if e.target_id != player_id:
+					out.append([&"mender_heal", e.pos, 1.0])
+
+
+## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
+func _scan_mines(reader: WorldReader, out: Array) -> void:
+	var seen := {}
+	for k in reader.mine_count():
+		var id := reader.mine_id(k)
+		var fuse := reader.mine_fuse(k)
+		seen[id] = true
+		if fuse >= 0 and int(_mines.get(id, [-1])[0]) < 0:
+			out.append([&"mine_arm", reader.mine_pos(k), 1.0])
+		_mines[id] = [fuse, reader.mine_pos(k)]
+	for id in _mines.keys():
+		if not seen.has(id):
+			if int(_mines[id][0]) >= 0:
+				out.append([&"mine_blast", _mines[id][1], 1.0])
+			_mines.erase(id)
 
 
 func _is_boss(actor_id: int) -> bool:
@@ -177,6 +209,10 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 		elif kind == WorldReader.KIND_ARC_CASTER:
 			var rune := reader.actor_spell(i) == WorldReader.SPELL_RUNE
 			out.append([&"rune_erupt" if rune else &"arc_bolt", target if rune else at, 1.0])
+		elif kind == WorldReader.KIND_SNIPER:  # v0.4.0 EN
+			out.append([&"sniper_shot", at, 1.0])
+		elif kind == WorldReader.KIND_SHIELD_BEARER:
+			out.append([&"shield_bash", at, 1.0])
 
 
 ## The sound of a boss attack's active phase, by its move.

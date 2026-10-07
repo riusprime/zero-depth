@@ -76,4 +76,62 @@ const SCHEMAS := {
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},
+	## v0.4.0 EN, the horde kinds. A Swarmer is a tiny Charger whose charge is a short lunge bite.
+	&"swarmer":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "charge_turn_dps"],
+		"shape": 2,
+		"shape_params": ["length_m", "speed_mps"],
+	},
+	## A Splitter swipes a disc reach_m ahead of it and, when it dies, splits into split_count Splitlings.
+	&"splitter":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "split_count"],
+		"shape": 0,
+		"shape_params": ["radius_m", "reach_m"],
+	},
+	&"splitling":
+	{
+		"params": ["attack_range_m", "cooldown_seconds"],
+		"shape": 0,
+		"shape_params": ["radius_m", "reach_m"],
+	},
+	## A Shield Bearer blocks every hit from its front shield_arc_degrees, turns slowly and bashes a short lane.
+	&"shield_bearer":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "shield_arc_degrees", "turn_rate_dps"],
+		"shape": 2,
+		"shape_params": ["length_m", "half_width_m"],
+	},
+	## A Mender keeps away and heals; it has no attack.
+	&"mender":
+	{
+		"params":
+		["keep_min_m", "keep_max_m", "heal_amount", "heal_period_seconds", "heal_range_m"],
+		"attacks": [],
+	},
+	## A Mine Layer drops mines (the drop takes drop_seconds); a mine arms when the player steps into its circle and
+	## blows after its telegraph (the fuse).
+	&"mine_layer":
+	{
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"keep_min_m",
+			"keep_max_m",
+			"drop_seconds",
+			"max_mines",
+			"mine_life_seconds",
+		],
+		"shape": 0,
+		"shape_params": ["radius_m"],
+	},
+	## A Sniper keeps far, draws a long line for its telegraph, shoots down it and walks to a new spot.
+	&"sniper":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "keep_min_m", "keep_max_m"],
+		"shape": 2,
+		"shape_params": ["range_m", "half_width_m"],
+	},
 }

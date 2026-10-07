@@ -5,3 +5,5 @@ extends Resource
 @export var enemy_id: StringName
 @export var weight := 1
 @export var unlock_tier := 0
+## v0.4.0 EN: how many arrive together (a Swarmer pack), around one spawn point, within the alive cap.
+@export var pack := 1

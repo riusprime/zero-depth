@@ -31,6 +31,8 @@ var gamble_shrine: GambleShrineView
 var challenge := BossChallengeView.new()
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
 var skill_fx := SkillVisuals.new()
+## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
+var horde_fx := HordeVisuals.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -56,6 +58,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	heat_fx = HeatVisuals.new(kit, actors)
 	add_child(heat_fx)
 	add_child(skill_fx)  # v0.3.5 K
+	add_child(horde_fx)  # v0.4.0 EN
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -100,6 +103,7 @@ func sync() -> void:
 	heat_fx.sync(reader)
 	transit.sync(reader)  # after the actors: it poses the hero's model
 	skill_fx.sync(reader)  # v0.3.5 K
+	horde_fx.sync(reader)  # v0.4.0 EN
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
