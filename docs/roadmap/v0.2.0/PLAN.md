@@ -37,9 +37,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L9 | v0.1.0 Steps 8–12 (owner moved them here) | Bench with real AI, readable-cause test, Options (G2), SFX hooks, release | later steps |
 
 ## Design (starting values)
-**Floor.** A 3 × 3 grid of rooms (each about 14 × 12 m), connected by a random spanning tree plus one or two extra
-doorways (seeded `map` stream). Each room gets 0–3 interior slabs. The start room is a corner; the portal room is
-the room farthest from it by doorways. Every room is reachable (tested).
+**Floor (v2, L14–L15).** Cells of 12 × 10 m. Room 0 is a 3 × 3-cell start hall with one exit on a random side; 9–11 more rooms (1×1, 2×1, 1×2, 3×1, 1×3, 2×2, 3×2, 2×3, 3×3 cells) grow outward as a tree of doors, plus 1–2 loop doors away from the hall (seeded `map` stream). Each room gets one of 7 interior layouts (open, scatter, pillars, centre, cross, lines, bunkers) that never block a door or split a room. 1×1 rooms get 1 item spot, bigger rooms 1–2, the hall none. The portal room is the farthest by doors. Every room is reachable (tested). (v1 was a 3 × 3 grid of 14 × 12 m rooms.)
 
 **Spawning (PD-05 flipped).** Tier n starts at n × 30 s. Alive cap 3 + 2n (max 14); a spawn every
 max(0.8, 3.0 − 0.25n) s; HP × (1 + 0.08n); the mix starts Charger/Needle and adds Wardens from tier 1. Enemies

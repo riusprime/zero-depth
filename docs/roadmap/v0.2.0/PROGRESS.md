@@ -28,6 +28,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|---|
 | Floor build check ([`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md)) | 2026-10-07 | pending | |
 | M | The Warden no longer blocks: front hits deal 80 %, rear hits 110 %, sides 100 % (data: arcs 120°/120°); grey spark on armour, bright spark on the weak spot. 239 tests; goldens unchanged (the hashed runs have no Warden) | `628f30a`, merge `3ff2d40` |
+| I | Floor v2: a 3×3-cell start hall with one exit on a random side, 9–11 more rooms (1×1 … 3×3 cells) in a tree plus 1–2 loop doors, 7 interior layouts, 1 item spot in 1×1 rooms and 1–2 in bigger ones (none in the hall), portal room farthest ([FLOORS](evidence/FLOORS.md)); NavField build 1.5 s → ~72 ms on these floors, identical results | `c8575b6`, `7a4da9e`, merge `d9313c2` |
 | Character matches the reference | 2026-10-07 | pending (lead's check: 3/4 views close; face-on boxy) | |
 
 ## Open
@@ -90,3 +91,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   re-recorded; export smoke 0 misses.
 - 2026-10-07 — Owner confirmed `docs/art/image.png` is the enemy sheet (renamed `enemies_visual_reference.png`) and asked for 1:1 enemy visuals (L17) and a Warden without the front block: −20 % from the front, +10 % from behind (L18). Workstreams L (three enemy-model agents) and M (Warden armour) started in parallel with H, I, K.
 - 2026-10-07 — M merged: Warden armour per L18. Validation ranges the agent chose (front 1..1000 ‰, rear 1000..3000 ‰, arcs summing ≤ 360°) are starting values. Sparks not yet checked on screen. 239 tests pass; MIN_TEST_COUNT 239.
+- 2026-10-07 — I merged. 241 tests pass; goldens unchanged (the hashed runs use the kernel scenario); export smoke 0 misses; hitch probe ok (4 ticks after a 250 ms stall, limit 4). Open: the ground plane still covers the floor's whole bounding box (unreachable cells look like floor); cell size and weights are starting values.
