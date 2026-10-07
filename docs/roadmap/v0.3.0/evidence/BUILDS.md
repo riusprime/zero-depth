@@ -33,10 +33,12 @@ the character is looking, shooting towards the aimed with the other joystick".
 |---|---|---|
 | Long Edge, Twin Arc, Ember Edge, Overcharge, Momentum, Conductor, Serrated Edge, Glacial Edge, Bulwark (its charges are spent by the next swing; still also needs Guard) | Splinter Shot, Rapid Coil, Ricochet Core, Static Chain, Frost Core, Cinder Shot, Barbed Bolts | Kinetic Dash, Vampiric Core, Thorn Mantle, Executioner, Swift Feet, Phase Strike, Wildfire, Cold Snap |
 
-Combos that follow (owning both items is the only unlock rule, so a combo whose pair can't both be offered never
-unlocks): Blade runs can unlock Resonance, Slipstream, Frozen Bastion, Blood Harvest, Spiked Phase; Gun runs can
-unlock Shrapnel Storm, Shatter Dash, Blood Harvest, Spiked Phase. **Plasma Arc** (Ember Edge + Static Chain) now
-unlocks in neither build.
+Combos that follow (owning both items is the only unlock rule): at Step P, Plasma Arc (Ember Edge + Static Chain)
+could unlock in neither build; Step P2 re-paired it as **Ember Edge + Conductor** (both Blade; Conductor's swings
+shock, so "shocking a burning enemy arcs fire" still reads the same). Every combo is now reachable in at least one
+build (`test_every_combo_is_reachable_in_some_build`): Blade: Plasma Arc, Resonance, Slipstream, Frozen Bastion
+(Guard only, through Bulwark), Blood Harvest, Spiked Phase; Gun: Shrapnel Storm, Shatter Dash, Blood Harvest,
+Spiked Phase.
 
 ### Gun and close range (decision for the owner)
 The Gun's melee input does nothing (L15 as written). Its close-range answers are the dash, the chosen utility (Guard
@@ -105,15 +107,49 @@ melee whenever no swing runs, so it chains the four-slash combo with perfect upt
 attacks (its HP is raised); a real player dodges, so real fights are longer than both bots.
 
 ## Interpretation
-- **Band miss, reported, not retuned:** the Gun at −15 % takes the Brood Mother 90.8 s, just over the 90 s band.
-  The test keeps the band for every other boss and build; this one case only has to die, and prints `BANDMISS` on
-  every run until the owner decides (keep −15 %, soften it, or change the band). BX is making bosses harder in
-  parallel, so these numbers will move again.
+- **Superseded by Step P2 below:** at Step P the Gun took the Brood Mother 90.8 s against the then 30-90 s band.
+  BX has since replaced the bot and its bands; the `KNOWN_MISSES` exception is gone.
 - With perfect uptime the Blade now kills every boss faster than the Gun (46–52 s against 65–91 s). That is the
   direction L16 asked for; whether the gap is right depends on how much uptime melee really gets against the bosses'
   attacks — OWNER ONLY.
 - Goldens unchanged: the replay golden and the export-smoke hash (`9c324d3dbf34`) match. The build and regen state
   joins the hash only once a world has a build, a loadout or regen activity, so the kernel worlds hash as before.
+
+## Step P2: integrated with heat, gamble, the boss challenge and the new HUD
+- **Build:** the working tree of the commit `v0.3.0 Step P2` (on the merge of `2c0be87` into Step P); same Godot and
+  OS as above; 2026-10-07; agent.
+- BX's bots now play the builds: the melee bot is a Blade run (+15 %, with a light push toward the boss so it keeps
+  facing it, L29), the near and far shooters Gun runs (−15 %). Bands are BX's, unchanged: melee 25-90 s, near
+  25-120 s, far ≥ 1.5 × melee.
+- Command: `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/sim/test_player_builds.gd,res://tests/unit/sim/test_player_regen.gd,res://tests/unit/sim/test_combos.gd,res://tests/unit/sim/test_heat.gd,res://tests/unit/sim/test_gamble.gd,res://tests/unit/sim/test_boss_fights.gd -gexit`
+
+```
+    blade: Hot at 4.60 s, Overclock at 8.60 s
+    gun: Hot at 5.17 s, Overclock at 9.72 s
+BOSSFIGHT| gatekeeper MELEE ticks=1975 seconds=32.9 hits=85 deflected=0 exposed=28 punished=0
+BOSSFIGHT| gatekeeper RANGED_NEAR ticks=4215 seconds=70.2 hits=590 deflected=0 exposed=0 punished=0
+BOSSFIGHT| brood_mother MELEE ticks=2317 seconds=38.6 hits=105 deflected=0 exposed=27 punished=0
+BOSSFIGHT| brood_mother RANGED_NEAR ticks=6034 seconds=100.6 hits=735 deflected=0 exposed=10 punished=0
+BOSSFIGHT| siege_engine MELEE ticks=2090 seconds=34.8 hits=89 deflected=0 exposed=27 punished=0
+BOSSFIGHT| siege_engine RANGED_NEAR ticks=3886 seconds=64.8 hits=537 deflected=0 exposed=0 punished=0
+BOSSFIGHT| gatekeeper RANGED_FAR ticks=8022 seconds=133.7 hits=1133 deflected=1015 punished=13
+BOSSFIGHT| brood_mother RANGED_FAR ticks=10034 seconds=167.2 hits=1410 deflected=616 punished=12
+BOSSFIGHT| siege_engine RANGED_FAR ticks=9390 seconds=156.5 hits=1290 deflected=1286 punished=26
+Tests                74
+Passing Tests        74
+```
+
+| Bot (build) | Gatekeeper | Brood Mother | Siege Engine | Band | In band? |
+|---|---|---|---|---|---|
+| Melee (Blade) | 32.9 s | 38.6 s | 34.8 s | 25-90 s | yes |
+| Ranged near (Gun) | 70.2 s | 100.6 s | 64.8 s | 25-120 s | yes |
+| Ranged far (Gun) | 133.7 s | 167.2 s | 156.5 s | ≥ 1.5 × melee | yes (4.1×, 4.3×, 4.5×) |
+
+- Heat: the Gun still reaches Hot at 5.17 s and Overclock at 9.72 s (heat counts landed hits, not damage).
+- Gamble: melee damage is never drawn in a Gun run, shot damage never in a Blade run (`requires_weapon` on the stat
+  entry in `data/gamble/shrine.tres`); the shrine's regen wins add to the regen rate.
+- `test_e2e_damage_soak`: regen heals between the sparse early hits, so the second life took 9330 frames to die
+  (limit 9000); without regen it took about 7200. The limit is now 18000; the test is otherwise unchanged.
 
 ## Start screen
 ![start screen](start_screen.png)

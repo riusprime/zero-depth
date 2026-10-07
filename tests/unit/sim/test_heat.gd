@@ -133,6 +133,8 @@ func test_heat_holds_a_second_then_decays_at_15_per_second() -> void:
 func test_a_sustained_fight_reaches_the_thresholds_in_6_to_10_seconds() -> void:
 	for mode in ["blade", "gun"]:
 		var w := _world([], [Vector2(1.2, 0)])
+		# Each mode is its starting build (v0.3.0 L15/L16): heat counts hits, not damage, so the factors don't move it.
+		ContentCompiler.apply_build(w.player, _repo.get_def(&"build", StringName(mode)))
 		var hot := -1
 		var oc := -1
 		for k in 900:

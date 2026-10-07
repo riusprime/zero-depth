@@ -30,6 +30,8 @@ var clear_radius_m := 0.9
 var amount := PackedInt32Array([8, 60, 60, 40, 60, 5, 80, 50])
 var weight := PackedInt32Array([3, 3, 3, 2, 2, 2, 2, 2])
 var cap := PackedInt32Array([6, 5, 5, 4, 4, 4, 4, 4])
+## The PlayerTable.WEAPON_* bit a stat feeds (v0.3.0 L15), 0 = any: melee damage needs the blade, shot damage the gun.
+var requires_weapon := PackedInt32Array([0, 1, 2, 0, 0, 0, 0, 0])
 
 
 ## The price of the next use after `uses` uses on floor `floor_index` (1-based), integer math: the floor's base

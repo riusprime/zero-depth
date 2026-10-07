@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_combo")
 item_a = &"ember_edge"
-item_b = &"static_chain"
+item_b = &"conductor"
 name_key = &"ITEM_COMBO_PLASMA_ARC"
 desc_key = &"ITEM_COMBO_PLASMA_ARC_DESC"
 effect = 0

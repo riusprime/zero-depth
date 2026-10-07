@@ -518,10 +518,12 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	t.amount = PackedInt32Array()
 	t.weight = PackedInt32Array()
 	t.cap = PackedInt32Array()
+	t.requires_weapon = PackedInt32Array()
 	for s in GambleTable.STAT_COUNT:
 		t.amount.append(0)
 		t.weight.append(0)
 		t.cap.append(0)
+		t.requires_weapon.append(0)
 	for e in def.stats:
 		var s := GambleTable.STAT_IDS.find(e.stat) if e != null else -1
 		if s < 0:
@@ -530,6 +532,10 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 		t.amount[s] = int(round(e.amount * scale))
 		t.weight[s] = e.weight
 		t.cap[s] = e.max_stacks
+		t.requires_weapon[s] = (
+			{&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+			. get(e.requires_weapon, 0)
+		)
 	return t
 
 

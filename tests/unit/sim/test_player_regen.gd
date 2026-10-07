@@ -96,3 +96,40 @@ func test_regen_is_in_the_hash() -> void:
 	b.regen_bonus_permille = 0
 	b.build_state.regen_acc += 1
 	assert_ne(a.state_hash(), b.state_hash(), "the accumulator hashes")
+
+
+func test_the_gamble_shrines_regen_wins_add_to_the_rate() -> void:
+	var w := _hurt_world()
+	w.gamble_table = ContentCompiler.compile_gamble(
+		ContentRepository.load_all().get_def(&"gamble", &"shrine")
+	)
+	Gamble.grant(w, GambleTable.Stat.REGEN)
+	Gamble.grant(w, GambleTable.Stat.REGEN)
+	assert_eq(Gamble.regen_bonus_permille(w), 10, "two wins of 0.5 % a second")
+	assert_eq(PlayerRegen.rate_permille(w), 20, "1 % base + 1 % from the shrine")
+	_idle(w, 600 + 60 * 5)
+	assert_eq(w.actors.hp[0], 50 + 10, "2 % of 100 a second for 5 s")
+
+
+func test_the_gamble_shrine_skips_the_other_weapons_damage() -> void:
+	var repo := ContentRepository.load_all()
+	var table := ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))
+	for build: StringName in [&"blade", &"gun"]:
+		var t := ContentCompiler.apply_build(
+			PlayerTable.starting_values(), repo.get_def(&"build", build)
+		)
+		var w := World.new(3, t)
+		w.gamble_table = table
+		var wt := Gamble.weights(w)
+		var blade := build == &"blade"
+		assert_eq(
+			wt[GambleTable.Stat.MELEE] > 0,
+			blade,
+			"%s: melee damage drawn only by the Blade" % build
+		)
+		assert_eq(
+			wt[GambleTable.Stat.SHOT] > 0,
+			not blade,
+			"%s: shot damage drawn only by the Gun" % build
+		)
+		assert_gt(wt[GambleTable.Stat.REGEN], 0, "%s: regen is for both" % build)

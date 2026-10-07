@@ -32,6 +32,8 @@ const ECHO_S := 0.45
 const FONT_REGULAR := "res://assets/fonts/AtkinsonHyperlegible-Regular.ttf"
 const FONT_BOLD := "res://assets/fonts/AtkinsonHyperlegible-Bold.ttf"
 const WARN := Color("#FF2E3A")
+## Out-of-combat regen's pulse on the HP bar (v0.3.0 L25).
+const REGEN := Color("#5BE38A")
 ## Cool to hot, for the danger meter: cyan, yellow, orange, red.
 const HEAT := [Color("#3FD8FF"), Color("#FFD24A"), Color("#FF7A2E"), Color("#FF2E3A")]
 

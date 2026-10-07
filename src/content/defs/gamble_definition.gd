@@ -59,4 +59,10 @@ func validate() -> Array[ValidationIssue]:
 		check_positive(issues, "stats[%d].amount" % k, e.amount)
 		check_positive(issues, "stats[%d].weight" % k, e.weight)
 		check_positive(issues, "stats[%d].max_stacks" % k, e.max_stacks)
+		if not e.requires_weapon in [&"", &"blade", &"gun"]:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "stats[%d].requires_weapon is empty, blade or gun" % k
+				)
+			)
 	return issues

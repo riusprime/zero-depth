@@ -106,12 +106,15 @@ static func bonus(w: World, stat: int) -> int:
 	return stacks(w, stat) * w.gamble_table.amount[stat]
 
 
-## Draw weights now: a stat at its cap (or without weight) has 0.
+## Draw weights now: a stat at its cap (or without weight) has 0, and so has a stat for the weapon the run's build
+## lacks (v0.3.0 L15: no melee damage in a Gun run, no shot damage in a Blade run).
 static func weights(w: World) -> PackedInt32Array:
 	var t := w.gamble_table
 	var out := PackedInt32Array()
 	for s in GambleTable.STAT_COUNT:
-		out.append(t.weight[s] if stacks(w, s) < t.cap[s] else 0)
+		var need := t.requires_weapon[s] if s < t.requires_weapon.size() else 0
+		var usable := need == 0 or (need & w.player.weapons) != 0
+		out.append(t.weight[s] if stacks(w, s) < t.cap[s] and usable else 0)
 	return out
 
 

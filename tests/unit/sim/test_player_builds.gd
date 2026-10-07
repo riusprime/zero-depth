@@ -252,15 +252,28 @@ func test_a_build_is_never_offered_the_other_weapons_items() -> void:
 				assert_ne(w.item_tables[idx].requires_weapon, other)
 
 
-func test_cross_weapon_combos_never_unlock() -> void:
-	# Plasma Arc pairs Ember Edge (blade) with Static Chain (gun): neither build can be offered both.
+func test_every_combo_is_reachable_in_some_build() -> void:
+	# Both items of every combo can be offered in one run of at least one build and utility (heat on, as in the
+	# game). Plasma Arc was Ember Edge (blade) + Static Chain (gun); it now pairs Ember Edge with Conductor.
+	var repo := ContentRepository.load_all()
+	var heat := ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock"))
+	var reach := {}
 	for build: StringName in [&"blade", &"gun"]:
-		var w := _offer_world(build)
-		var avail := ItemPool.available(w)
-		var ids := []
-		for idx in avail:
-			ids.append(w.item_tables[idx].id)
-		assert_false(&"ember_edge" in ids and &"static_chain" in ids, build)
+		for util in [PlayerTable.Utility.GUARD, PlayerTable.Utility.BLINK]:
+			var w := _offer_world(build)
+			w.player.utility = util
+			Heat.enable(w, heat)
+			var ids := []
+			for idx in ItemPool.available(w):
+				ids.append(w.item_tables[idx].id)
+			for c: ComboDefinition in repo.all_of(&"combos"):
+				if c.item_a in ids and c.item_b in ids:
+					reach[c.id] = reach.get(c.id, []) + ["%s/%d" % [build, util]]
+	for c: ComboDefinition in repo.all_of(&"combos"):
+		assert_true(reach.has(c.id), "%s is reachable in some build" % c.id)
+	var plasma: ComboDefinition = repo.get_def(&"combos", &"plasma_arc")
+	assert_eq([plasma.item_a, plasma.item_b], [&"ember_edge", &"conductor"])
+	gut.p("combo reach: %s" % reach)
 
 
 # --- Run carry and hash of the build -------------------------------------------------------------------------
