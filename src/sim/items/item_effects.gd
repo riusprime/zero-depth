@@ -16,9 +16,11 @@ const EFFECT_KINETIC_DASH := &"kinetic_dash"
 const EFFECT_OVERCHARGE := &"overcharge"
 
 
-## The swing's reach with Long Edge applied. PlayerKit hits with it and WorldReader draws it (EI-07).
-static func swing_reach_m(w: World) -> float:
-	return w.player.swing_reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
+## The reach of combo step `step` (-1 = the current one) with Long Edge applied: every step scales the same way.
+## PlayerKit hits with it and WorldReader draws it (EI-07).
+static func swing_reach_m(w: World, step: int = -1) -> float:
+	var s := step if step >= 0 else w.combo_step
+	return w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
 
 
 ## Ticks between bolts while shooting, with Rapid Coil applied (never under 2 ticks once shortened).
@@ -52,20 +54,27 @@ static func shot_offsets(w: World) -> PackedInt32Array:
 	return out
 
 
-## Called when a swing starts: counts swings toward Overcharge and marks this one if it's the Nth.
+## Called when a swing starts (w.combo_step is already the new step): Overcharge marks every Nth swing of the
+## combo, so with N = 4 and the four-slash combo it is always the finisher (v0.3.0 L11). swing_count still counts
+## the swings started while it is owned.
 static func on_swing_start(w: World) -> void:
 	var every := w.item_mods.overcharge_every
 	if every <= 0:
 		w.swing_overcharged = false
 		return
 	w.swing_count += 1
-	w.swing_overcharged = w.swing_count % every == 0
+	w.swing_overcharged = overcharged_step(w, w.combo_step)
 
 
-## The next swing will be an Overcharge swing.
-static func overcharge_ready(w: World) -> bool:
+## Overcharge charges combo step `step` (0-based): the Nth, 2Nth, ... swing of the combo.
+static func overcharged_step(w: World, step: int) -> bool:
 	var every := w.item_mods.overcharge_every
-	return every > 0 and (w.swing_count + 1) % every == 0
+	return every > 0 and (step + 1) % every == 0
+
+
+## A press now would start an Overcharge swing.
+static func overcharge_ready(w: World) -> bool:
+	return overcharged_step(w, PlayerKit.next_step(w))
 
 
 ## A swing's damage with Overcharge applied.
@@ -104,11 +113,13 @@ static func after_swing(w: World, base: int, dmg: int) -> void:
 	if m.echo_delay_ticks > 0:
 		w.echo_t = m.echo_delay_ticks
 		w.echo_angle = w.swing_angle
+		w.echo_step = w.combo_step
 		w.echo_root = w.swing_root
 		w.echo_damage = maxi(1, dmg * m.echo_damage_permille / 1000)
 
 
-## Phase 4: counts down the pending Twin Arc echo and swings it (same arc, re-tested from where the player is).
+## Phase 4: counts down the pending Twin Arc echo and swings it (the same step's arc, re-tested from where the
+## player is).
 static func advance_echo(w: World) -> void:
 	if w.echo_t <= 0:
 		return
@@ -116,7 +127,7 @@ static func advance_echo(w: World) -> void:
 	if w.echo_t > 0:
 		return
 	w.echo_tick = w.tick
-	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC)
+	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC, w.echo_step)
 
 
 ## A melee hit landed on actor `i`: Ember Edge adds a burn stack, once per root chain per target.

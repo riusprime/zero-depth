@@ -34,7 +34,12 @@ func sync(reader: WorldReader) -> void:
 	if reader.echo_tick() != _last_echo:
 		_last_echo = reader.echo_tick()
 		if _last_echo >= 0:
-			_flash_arc(reader, reader.echo_angle(), ItemLooks.color(WorldReader.ITEM_TWIN_ARC))
+			_flash_arc(
+				reader,
+				reader.echo_angle(),
+				reader.echo_step(),
+				ItemLooks.color(WorldReader.ITEM_TWIN_ARC)
+			)
 	if reader.overcharge_tick() != _last_shock:
 		_last_shock = reader.overcharge_tick()
 		if _last_shock >= 0:
@@ -125,8 +130,9 @@ func _add_fx(n: MeshInstance3D, mat: StandardMaterial3D, grow: float) -> void:
 	_fx.append([n, mat, FX_FRAMES, mat.albedo_color.a, grow])
 
 
-func _flash_arc(reader: WorldReader, angle: int, c: Color) -> void:
-	var shape := reader.swing_shape()
+## Twin Arc's echo: the echoed step's own arc (the shape it hit with).
+func _flash_arc(reader: WorldReader, angle: int, step: int, c: Color) -> void:
+	var shape := reader.swing_shape(step)
 	var n := MeshInstance3D.new()
 	n.mesh = KitView.fan_mesh(shape[0], shape[2] + 0.2, shape[1])
 	n.position = SimPlane.to_3d(reader.player_pos(), 0.45)

@@ -74,7 +74,7 @@ only adds numbers, menus or breadth fails the filter.
 |---|---|---|
 | Move | Screen-relative, 8-way on keys and analog on a stick; the sim reads −127..127 per axis | GA §5 |
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
-| Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a 3-hit swing combo; shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10 (starting values) |
+| Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a four-slash combo (owner, 2026-10-07, v0.3.0 L11: a horizontal slash, a backhand, a narrow forward thrust, a heavy spinning finisher; replaced the 3-hit swing combo); shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10; v0.3.0 PLAN L11 (starting values) |
 | Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state (hits from the front cut to 20%). **Or a mobile skill: Blink**, a short teleport the way you're moving, through walls (owner, 2026-10-07) | v0.1.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 

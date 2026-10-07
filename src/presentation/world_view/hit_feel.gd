@@ -2,11 +2,14 @@ class_name HitFeel
 extends Node3D
 ## Hit feel from the event log (PRESENTATION §6): a white flash on whoever took damage, a camera shake when you're
 ## hit, a spark where a hit was guarded, a dull grey spark off a Warden's armoured front, a bright one on its weak
-## spot behind, and a pop of shards when an enemy dies.
+## spot behind, and a pop of shards when an enemy dies. The combo's finisher (v0.3.0 L11) hits harder: a longer
+## flash on each enemy it lands on, a bright spark and a small camera shake (none when shake is off).
 ## The sim's hit-stop is already in the tick (freeze_ticks); nothing here changes an outcome.
 
 const SHARDS := 7
 const SHARD_FRAMES := 30
+const FINISHER_SHAKE := 0.3
+const FINISHER_FLASH_MULT := 2
 
 var actors: ActorViews
 var rig: IsoRig
@@ -24,11 +27,19 @@ func _init(p_actors: ActorViews, p_rig: IsoRig) -> void:
 
 func sync(reader: WorldReader) -> void:
 	var player_id := reader.actor_id(0)
+	var shook := false
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		match e.kind:
 			SimEvent.Kind.DAMAGE:
-				actors.flash(e.target_id)
+				if finisher_hit(reader, e):
+					actors.flash(e.target_id, actors.flash_frames * FINISHER_FLASH_MULT)
+					_burst(e.pos, Color(0.85, 1.0, 1.0), 6, 0.1)
+					if not shook:
+						rig.shake(FINISHER_SHAKE)
+						shook = true
+				else:
+					actors.flash(e.target_id)
 				if e.target_id == player_id:
 					rig.shake(0.55)
 			SimEvent.Kind.HIT:
@@ -41,6 +52,19 @@ func sync(reader: WorldReader) -> void:
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
 					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16)
+
+
+## A DAMAGE event from the combo's finisher itself (the player's melee, not an item's echo), read while that swing
+## is still running.
+static func finisher_hit(reader: WorldReader, e: SimEvent) -> bool:
+	return (
+		e.kind == SimEvent.Kind.DAMAGE
+		and (e.tags & SimEvent.TAG_MELEE) != 0
+		and e.effect_id == &""
+		and e.owner_id == reader.actor_id(0)
+		and reader.swing_tick() > 0
+		and reader.is_finisher()
+	)
 
 
 func _burst(at: Vector2, c: Color, n: int, size: float) -> void:
