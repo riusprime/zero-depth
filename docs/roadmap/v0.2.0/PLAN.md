@@ -25,6 +25,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L6 | "not waves but continuous controlled spawn … increasing every 30 seconds a bit" | A spawn director: alive cap, spawn interval, enemy mix and HP scale step up every 30 s (a tier) | C |
 | L7 | "create some items … modification on how the character attack and its own visuals" | 8 items on pedestals (one per room, from the loot stream); each changes an attack and the look | E |
 | L8 | "add the gateway to other levels even if it is not usable … a stone gate with the portal light inside with the rectangle shape" | A stone gate in the portal room with a swirling green rectangular portal; walking into it says it's sealed | D |
+| L10 | (2026-10-07, with a reference image) "the visual rework of the main character, it should be like the image … having animation and just a bit of physics around the cloak … so it does not feel static" | The cube becomes a small hooded wanderer: off-white faceted hood with a dark face and a glowing cyan visor, a wide faceted cloak, dark legs; idle/walk/dash/swing/guard/death animation; a light spring simulation on the cloak. Ring, bar, outline and X-ray stay | G |
 | L9 | v0.1.0 Steps 8–12 (owner moved them here) | Bench with real AI, readable-cause test, Options (G2), SFX hooks, release | later steps |
 
 ## Design (starting values)
@@ -61,6 +62,7 @@ isn't open yet."
 - **C. Spawn director:** continuous tiers, content data, tests.
 - **D. Portal gate:** presentation (stone gate + portal shader), the sealed message.
 - **E. Items:** content, pickups, effects in the sim, visuals, HUD (after A–C merge).
+- **G. Character rework:** `PlayerAvatar` (model, animation, cloak springs) replaces the player cube.
 - **F. Integration:** `FloorScenario` replaces the arena; HUD time/tier/kills; tour; a build for the owner.
 - **Later in v0.2.0:** v0.1.0's Steps 8–12.
 

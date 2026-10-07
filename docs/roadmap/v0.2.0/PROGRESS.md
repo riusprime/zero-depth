@@ -41,3 +41,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   Subagent's calls for the owner: Overcharge shockwave 2.0 m / 50% (invented starting values), one shared burn
   timer refreshed per stack, Twin Arc echoes every swing (the PLAN's wording). 187 tests pass; goldens
   re-recorded.
+- 2026-10-07 — F part 1 (`088a852`): the game runs on the floor (FloorScenario, pedestals, gate, floor HUD).
+  The owner asked for a character rework from a reference image (a hooded figure with a cyan visor, a cloak,
+  animation, light cloak physics): PLAN L10, workstream G started in parallel. The image arrived in chat only,
+  so G works from a written description (in its brief); it is not in the repo.
+
