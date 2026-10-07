@@ -66,3 +66,26 @@ func test_set_look_applies() -> void:
 		w.step(InputFrame.new())
 		kit.sync(reader)
 	assert_lte(kit.trail_samples(), 4, "trail_count caps the trail")
+
+
+## Crash on hit (v0.3.0 L28, evidence/CRASH_ON_HIT.md): a hit on the wanderer in the first tick of a swing freezes
+## the sim (hurt hit-stop), so the next syncs see swing tick 1 again. The trail used to clear itself on every
+## "tick 1" and add nothing (the tick hadn't moved), so the blade's head read the last sample of an empty trail:
+## an out-of-bounds read, an error in a debug build and a read of a bad Array in a release one.
+func test_a_hit_freeze_on_the_swings_first_tick_keeps_the_trail_head() -> void:
+	var w := _swing_world()
+	var reader := WorldReader.new(w)
+	var kit: KitView = add_child_autofree(KitView.new())
+	assert_eq(reader.swing_tick(), 1, "the press started a swing this tick")
+	kit.sync(reader)
+	var at := w.player_pos() + Vector2(1, 0)
+	Damage.hit(w, 0, 1, 999, 999, w.take_root(), 0, at, w.player_pos())
+	assert_gt(w.freeze_ticks, 0, "the hit froze the sim (hurt hit-stop)")
+	for k in 3:
+		w.step(InputFrame.new())
+		assert_eq(reader.swing_tick(), 1, "the freeze holds the swing on its first tick")
+		kit.sync(reader)
+		assert_gt(kit.trail_samples(), 0, "frozen sync %d: the trail keeps the blade's sample" % k)
+	await wait_physics_frames(2)  # _process rebuilds the trail from the head too
+	assert_eq(get_errors().size(), 0, "no out-of-bounds read of the trail")
+	assert_true(kit.blade_visible())

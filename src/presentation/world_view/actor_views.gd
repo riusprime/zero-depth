@@ -45,6 +45,10 @@ func sync(reader: WorldReader) -> void:
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
+	for d: Dictionary in [_flash, _tint]:  # a removed actor's flash and glow go with it (bounded)
+		for id in d.keys():
+			if not alive.has(id):
+				d.erase(id)
 	var live := {}
 	for i in reader.projectile_count():
 		var id := reader.projectile_id(i)
