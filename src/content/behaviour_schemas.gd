@@ -16,7 +16,16 @@ const SCHEMAS := {
 	},
 	&"warden":
 	{
-		"params": ["attack_range_m", "cooldown_seconds", "shield_arc_degrees", "turn_rate_dps"],
+		"params":
+		[
+			"attack_range_m",
+			"cooldown_seconds",
+			"front_arc_degrees",
+			"front_mult_permille",
+			"rear_arc_degrees",
+			"rear_mult_permille",
+			"turn_rate_dps",
+		],
 		"shape": 0,
 		"shape_params": ["radius_m"],
 	},

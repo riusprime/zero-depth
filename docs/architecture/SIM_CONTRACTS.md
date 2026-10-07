@@ -226,8 +226,10 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
 **Damage pipeline** for a `HIT` (all integer math, in this order):
 1. `base` from the attack or payoff.
 2. Attacker flat adds, then attacker multipliers: `amt = (base + flat) * mult_permille / 1000`.
-3. Target modifiers: guard and vulnerability states, as **per-mille multipliers** applied once. There is no flat
-   per-hit reduction. Deathventory's flat Guard cut was regressive: it removed 50% of a 4-damage hit but only 9% of a 22-damage one (L7).
+3. Target modifiers: guard, facing armour and vulnerability states, as **per-mille multipliers** applied once.
+   The Warden's armour is by the hit's direction against its facing: its front arc takes `front_mult_permille`
+   (tag `ARMOURED`), its rear arc `rear_mult_permille` (tag `WEAK_SPOT`), the sides 1000. It never blocks (owner,
+   2026-10-07). There is no flat per-hit reduction. Deathventory's flat Guard cut was regressive: it removed 50% of a 4-damage hit but only 9% of a 22-damage one (L7).
 4. Barrier absorbs first, then HP. `amount` is the request; `amount_applied` is what HP and barrier actually lost.
 5. Emit `DAMAGE`. If HP reaches 0 and the target is not already dead, mark it dead and emit **exactly one**
    `KILL`. Later lethal events against a dead target apply nothing.

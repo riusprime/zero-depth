@@ -11,7 +11,8 @@ const TAG_PROJECTILE := 2
 const TAG_DOT := 4
 const TAG_AREA := 8
 const TAG_CRIT := 16
-## The hit was fully blocked (a shield or guard multiplier of 0).
+## The hit was fully blocked (a multiplier of 0). Unused since the Warden lost its block (2026-10-07); kept so bits
+## never renumber.
 const TAG_BLOCKED := 32
 ## The hit was reduced by the target's guard.
 const TAG_GUARDED := 64
@@ -25,6 +26,10 @@ const TAG_CHAIN := 512
 const TAG_EXECUTE := 1024
 ## A Thorn Mantle ring bolt (v0.2.0 J).
 const TAG_THORN := 2048
+## The hit struck a Warden's armoured front (its front multiplier, under 1000; owner, 2026-10-07).
+const TAG_ARMOURED := 4096
+## The hit struck a Warden from behind (its rear multiplier, over 1000; owner, 2026-10-07).
+const TAG_WEAK_SPOT := 8192
 
 var seq := 0
 var tick := 0

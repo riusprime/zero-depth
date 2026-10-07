@@ -12,7 +12,7 @@ func _world() -> World:
 func _kill_all(w: World) -> void:
 	for i in range(1, w.actors.size()):
 		w.actors.invuln[i] = 0
-		Damage.hit(w, i, 9999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))  # from inside: no shield
+		Damage.hit(w, i, 9999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))  # from inside: no armour
 
 
 func _kinds(w: World) -> Array:

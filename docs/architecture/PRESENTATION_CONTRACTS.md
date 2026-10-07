@@ -85,6 +85,8 @@ breaks. The contrast figures below were computed from colours sampled out of the
 - **Shake:** see §1.
 - **Damage numbers:** optional (an Options toggle), placed from the event's `pos` and stacked so they don't
   overlap.
+- **Armour sparks:** read from `HIT` tags only. A guarded hit throws a pale spark, a hit on a Warden's armoured
+  front (`ARMOURED`) a dull grey one, a hit on its weak spot behind (`WEAK_SPOT`) a bright one, so flanking reads.
 - **Death:** a short pop of low-poly shards from the `cosmetic` stream. A dead enemy's ring disappears on the
   `KILL` tick, so it never reads as alive.
 

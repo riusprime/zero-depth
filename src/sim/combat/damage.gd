@@ -4,7 +4,9 @@ extends RefCounted
 ## never a flat cut), then HP, then DAMAGE, then at most one KILL. Every event carries its provenance.
 
 
-## Per-mille multiplier for a hit arriving from `from` (guard, shields). Returns [mult, tags].
+## Per-mille multiplier for a hit arriving from `from` (the player's guard, the Warden's armour). Returns
+## [mult, tags]. The Warden never blocks (owner, 2026-10-07): a hit from its front arc is ARMOURED (front mult), one
+## from its rear arc lands on its WEAK_SPOT (rear mult), and the sides (or a hit from its own position) take 1000.
 static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 	var a := w.actors
 	var to_attacker := Kin.angle_of(from - a.pos(target))
@@ -13,8 +15,12 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 			return [w.player.guard_mult_permille, SimEvent.TAG_GUARDED]
 	elif a.kinds[target] == ActorStore.Kind.WARDEN and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
-		if def != null and Kin.angle_diff(to_attacker, a.facing[target]) <= def.shield_half_arc:
-			return [0, SimEvent.TAG_BLOCKED]
+		if def != null:
+			var off := Kin.angle_diff(to_attacker, a.facing[target])
+			if def.front_half_arc > 0 and off <= def.front_half_arc:
+				return [def.front_mult_permille, SimEvent.TAG_ARMOURED]
+			if def.rear_half_arc > 0 and off >= 2048 - def.rear_half_arc:
+				return [def.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	return [1000, 0]
 
 
@@ -64,7 +70,7 @@ static func hit(
 
 
 ## A damage-over-time tick (SIM_CONTRACTS §8): DAMAGE with TAG_DOT and proc_pct 0, never a HIT, so it can't
-## trigger on-hit effects. A status tick opens its own root. Ignores guard and shields; skips invulnerable or dead
+## trigger on-hit effects. A status tick opens its own root. Ignores guard and armour; skips invulnerable or dead
 ## targets. Returns the HP removed.
 static func tick_dot(
 	w: World, target: int, amount: int, source_id: int, owner_id: int, effect_id: StringName

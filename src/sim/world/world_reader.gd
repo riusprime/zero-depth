@@ -204,10 +204,10 @@ func telegraph(i: int) -> Dictionary:
 	return EnemyAi.telegraph(_w, i)
 
 
-## [half_arc] of a Warden's shield, or 0.
-func shield_half_arc(i: int) -> int:
+## A Warden's armour half-arcs (1/4096 turns either side of its facing): x = front, y = rear. (0, 0) for others.
+func armour_half_arcs(i: int) -> Vector2i:
 	var t := _w.enemy_table(_w.actors.kinds[i])
-	return t.shield_half_arc if t != null else 0
+	return Vector2i(t.front_half_arc, t.rear_half_arc) if t != null else Vector2i.ZERO
 
 
 ## 0 while fighting, 1 when the last wave is cleared, 2 when the player is dead.

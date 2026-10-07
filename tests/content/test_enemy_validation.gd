@@ -38,3 +38,31 @@ func test_an_unknown_behaviour_is_rejected() -> void:
 	var d := _def()
 	d.behaviour_id = &"dragon"
 	assert_has(_codes(d), &"unknown_behaviour")
+
+
+func _warden() -> EnemyDefinition:
+	return (load("res://data/enemies/warden.tres") as EnemyDefinition).duplicate(true)
+
+
+func test_the_warden_has_no_shield_param() -> void:
+	var d := _warden()
+	assert_false(d.behaviour_params.has("shield_arc_degrees"))
+	d.behaviour_params["shield_arc_degrees"] = 120.0
+	assert_has(_codes(d), &"param_unknown", "the old block param is gone")
+
+
+func test_bad_warden_armour_is_rejected() -> void:
+	var bad := [
+		["front_mult_permille", 0],
+		["front_mult_permille", 1200],
+		["rear_mult_permille", 900],
+		["rear_mult_permille", 5000],
+		["front_arc_degrees", -10.0],
+		["rear_arc_degrees", 400.0],
+		["front_arc_degrees", 270.0],
+	]
+	for b in bad:
+		var d := _warden()
+		d.behaviour_params[b[0]] = b[1]
+		assert_has(_codes(d), &"armour", "%s = %s" % b)
+	assert_eq(_warden().validate(), [], "the shipped Warden passes")

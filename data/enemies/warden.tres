@@ -22,7 +22,10 @@ behaviour_id = &"warden"
 behaviour_params = {
 "attack_range_m": 2.2,
 "cooldown_seconds": 1.5,
-"shield_arc_degrees": 120.0,
+"front_arc_degrees": 120.0,
+"front_mult_permille": 800,
+"rear_arc_degrees": 120.0,
+"rear_mult_permille": 1100,
 "turn_rate_dps": 130.0
 }
 hp = 100

@@ -58,7 +58,10 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
 		&"warden":
-			t.shield_half_arc = degrees_to_units(float(bp["shield_arc_degrees"]) * 0.5)
+			t.front_half_arc = degrees_to_units(float(bp["front_arc_degrees"]) * 0.5)
+			t.front_mult_permille = int(bp["front_mult_permille"])
+			t.rear_half_arc = degrees_to_units(float(bp["rear_arc_degrees"]) * 0.5)
+			t.rear_mult_permille = int(bp["rear_mult_permille"])
 			t.turn_rate = maxi(
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
