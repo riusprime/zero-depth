@@ -44,25 +44,26 @@ func _initialize() -> void:
 		[82, _key.bind(KEY_W, true)],
 		[112, _key.bind(KEY_W, false)],
 		[120, _shot.bind("04_stage_moved")],
-		[122, _key.bind(KEY_ESCAPE, true)],
-		[123, _key.bind(KEY_ESCAPE, false)],
-		[130, _shot.bind("05_pause")],
-		[132, _key.bind(KEY_DOWN, true)],
-		[133, _key.bind(KEY_DOWN, false)],
-		[134, _key.bind(KEY_ENTER, true)],
-		[135, _key.bind(KEY_ENTER, false)],
-		[142, _key.bind(KEY_DOWN, true)],
-		[143, _key.bind(KEY_DOWN, false)],
-		[144, _key.bind(KEY_ENTER, true)],
-		[145, _key.bind(KEY_ENTER, false)],
-		[152, _shot.bind("06_options")],
-		[154, quit.bind(0)],
+		[121, _shot_when_telegraph.bind("04b_fight")],
+		[322, _key.bind(KEY_ESCAPE, true)],
+		[323, _key.bind(KEY_ESCAPE, false)],
+		[330, _shot.bind("05_pause")],
+		[332, _key.bind(KEY_DOWN, true)],
+		[333, _key.bind(KEY_DOWN, false)],
+		[334, _key.bind(KEY_ENTER, true)],
+		[335, _key.bind(KEY_ENTER, false)],
+		[342, _key.bind(KEY_DOWN, true)],
+		[343, _key.bind(KEY_DOWN, false)],
+		[344, _key.bind(KEY_ENTER, true)],
+		[345, _key.bind(KEY_ENTER, false)],
+		[352, _shot.bind("06_options")],
+		[354, quit.bind(0)],
 	]
 
 
 func _process(_delta: float) -> bool:
 	_frame += 1
-	for step: Array in _script:
+	for step: Array in _script.duplicate():
 		if step[0] == _frame:
 			(step[1] as Callable).call()
 	return false
@@ -74,6 +75,14 @@ func _key(code: Key, pressed: bool) -> void:
 	ev.keycode = code
 	ev.pressed = pressed
 	Input.parse_input_event(ev)
+
+
+## Waits (up to frame 320) until an enemy telegraph is on screen, then takes the shot.
+func _shot_when_telegraph(name: String) -> void:
+	if _main.view != null and _main.view.telegraphs.count() > 0:
+		_shot(name)
+	elif _frame < 320:
+		_script.append([_frame + 1, _shot_when_telegraph.bind(name)])
 
 
 func _shot(name: String) -> void:

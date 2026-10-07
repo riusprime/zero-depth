@@ -15,7 +15,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 3 | Pick Guard or Blink before play; hold to guard, press to blink | `26c4601` |
 | 4 | Charger, Warden and Needle fight you, each attack telegraphed on the ground | `1574783` |
 | 5 | Three waves; die and see why, or clear the arena; restart; a HUD | `fb3caa3` |
-| 6 | Hits feel like hits: hit-stop, a white flash, camera shake (with an option), shards on a kill | see `git log` |
+| 6 | Hits feel like hits: hit-stop, a white flash, camera shake (with an option), shards on a kill | `f0abdbd` |
+| 4 fix | The Warden commits to its slam, so it can be flanked | `306a31f`, lint `0c00cf1` |
+| 7 | A fight build for the owner: version `0.1.0-dev`, the tour shows the fight, [`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md) | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -63,7 +65,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Design questions Q1–Q4 | 2026-10-06 | see Owner decisions | 2026-10-06 |
-| Fight build check | after Step 7 | pending | |
+| Fight build check ([`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md)) | 2026-10-07 | pending | |
 | Options mockups (G2) | Step 10 | pending | |
 | Fun without loot | after Step 12 | pending | |
 
@@ -100,3 +102,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   unchanged.
 - 2026-10-07 — Step 4 fix: the Warden stops turning once it commits to a slam, so it can be flanked (see
   Deviations). 128 tests pass.
+- 2026-10-07 — Step 7: version `0.1.0-dev` (presets `0.1.0.0`), the tour adds the utility picker and a fight shot
+  (taken when a telegraph is up) and the shots workflow no longer hard-codes `v0.0.1`; `PLAYTEST_FIGHT.md` for
+  the owner (answers OWNER ONLY); `MIN_TEST_COUNT` 128. Local tour en/es ran (16 shots). Next: the owner plays;
+  meanwhile Step 8 (bench with real AI).
