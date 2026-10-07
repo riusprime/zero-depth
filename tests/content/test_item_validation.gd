@@ -1,6 +1,6 @@
 extends GutTest
-## Item content (v0.2.0 E, J; v0.3.0 G, L18): all 27 items validate, compile to the PLAN's starting values, and have
-## strings.
+## Item content (v0.2.0 E, J; v0.3.0 G, L18; v0.5.0 CP): all 31 items validate, compile to the PLAN's starting values,
+## and have strings.
 
 
 func _repo() -> ContentRepository:
@@ -13,7 +13,9 @@ func _codes(d: ItemDefinition) -> Array:
 
 func test_every_item_is_valid() -> void:
 	var repo := _repo()
-	assert_eq(repo.count(&"items"), 27, "24 + the three heat items (v0.3.0 L18)")
+	assert_eq(
+		repo.count(&"items"), 31, "24 + the three heat items (L18) + four ability mods (v0.5.0 CP)"
+	)
 	for def: ItemDefinition in repo.all_of(&"items"):
 		assert_eq(def.validate(), [], String(def.id))
 

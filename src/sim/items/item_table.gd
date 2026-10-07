@@ -32,6 +32,10 @@ enum Kind {
 	HEAT_SINK,
 	THERMAL_EDGE,
 	MELTDOWN,
+	CLUSTER_PAYLOAD,
+	OVERCLOCKED_DRONE,
+	RAZOR_ORBIT,
+	AFTERIMAGE,
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E).
@@ -49,6 +53,8 @@ var requires_utility := -1
 ## The PlayerTable.WEAPON_* bit the item feeds (v0.3.0 L15), or 0 for any: a build without that weapon is never
 ## offered it.
 var requires_weapon := 0
+## v0.5.0 CP: the AbilityTable.Kind the item modifies, or -1: rewards offer it only while you own that ability.
+var requires_ability := -1
 ## Long Edge.
 var reach_bonus_permille := 0
 ## Twin Arc.
@@ -129,3 +135,12 @@ var vent_damage_bonus_permille := 0
 var vent_radius_bonus_permille := 0
 var heat_hot_threshold := 0
 var meltdown_damage_permille := 0
+## Ability mods (v0.5.0 CP; see ItemDefinition and AbilityMods).
+var bomblets := 0
+var bomblet_damage_permille := 0
+var bomblet_radius_permille := 0
+var bomblet_delay_ticks := 0
+var drone_rate_per_heat_permille := 0
+var afterimage_damage := 0
+var afterimage_radius_m := 0.0
+var afterimage_delay_ticks := 0

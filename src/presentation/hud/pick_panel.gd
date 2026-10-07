@@ -131,7 +131,10 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 				ci.tr("UI_CARD_ABILITY_NEW") if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)
 		WorldReader.CARD_STAT:
-			face["sentence"] = ci.tr(info["desc_key"]) % GambleIcons.percent(int(info["amount"]))
+			var args := [GambleIcons.percent(int(info["amount"]))]
+			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
+				args.append(GambleIcons.percent(int(info["side"])))
+			face["sentence"] = ci.tr(info["desc_key"]) % args
 			face["tier_text"] = ci.tr(["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC"][face["tier"]])
 		_:
 			face["color"] = ItemLooks.color_of_id(id)

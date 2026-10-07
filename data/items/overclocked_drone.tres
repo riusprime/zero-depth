@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 28
+name_key = &"ITEM_OVERCLOCKED_DRONE"
+desc_key = &"ITEM_OVERCLOCKED_DRONE_DESC"
+rarity = 1
+requires_ability = &"drone_buddy"
+drone_rate_per_heat_permille = 8
+tags = PackedStringArray("ability", "heat")
+id = &"overclocked_drone"

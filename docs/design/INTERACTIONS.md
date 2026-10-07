@@ -1,6 +1,7 @@
 # Interactions: engines, items and combos
 
-The item × item table BLUEPRINT §D asks for, for the 24 items and 8 named combos of v0.3.0 step G (PLAN L8).
+The item × item table BLUEPRINT §D asks for, for the 24 items and 8 named combos of v0.3.0 step G (PLAN L8), and
+(last section) the v0.5.0 CP ability mods and rule stat cards.
 Every number is a **starting value** the owner tunes after playing; the data in `data/items/` and
 `data/combos/` is the source of truth, and this page follows it.
 
@@ -458,3 +459,96 @@ S = synergy, A = anti-synergy, · = none. Rows and columns use the codes below; 
 - **Bulwark** — anti-synergy: Frozen enemies don't attack, so there is less to block for charges.
 
 ### Bulwark
+
+## v0.5.0 CP: ability mods and rule stat cards
+
+The card pool step adds four **ability mods** (items that change an ability, tag `ability`, offered only while you
+own that ability: `requires_ability`; all rare, so mostly from chests) and five **rule stat cards** (a stat kind
+whose gain comes with a condition or a cost). Rules in `src/sim/abilities/ability_mods.gd` and `stats.gd`.
+
+| Mod | Tags | Needs | Trigger | Condition | Payoff |
+|---|---|---|---|---|---|
+| Cluster Payload | ability | Bomb Lobber | A thrown bomb lands | not a bomblet | 3 bomblets at the blast's edge, 0.25 s later: 40% damage, half radius |
+| Overclocked Drone | ability, heat | Drone Buddy, a run with heat | A drone's shot | heat held | +0.8% fire rate per heat point (+80% at 100 heat) |
+| Razor Orbit | ability, bleed | Orbit Blades | A blade touches an enemy | once per touch (its root) per enemy | +1 bleed (the bleed engine: 1 per stack per 0.5 s, max 8, dash burst) |
+| Afterimage | ability | Blink | Blink | an echo waits where the blink began | 18 in 1.8 m, 0.4 s later (area applies) |
+
+| Rule card | Common / Rare / Epic | Rule | Cap / limit |
+|---|---|---|---|
+| Glass Cannon | +15 / +25 / +40 % damage, −8 / −10 / −12 % max HP | both stats move; offers stop at either end | damage ×3; max HP never under ×0.4 |
+| Onrush | +10 / +18 / +30 % damage | while the move input is held | +90 % |
+| Overkill | 40 / 70 / 100 % | a direct hit that kills splashes that share of its excess onto the nearest other enemy within 3 m | 150 % |
+| Hoarder | +4 / +6 / +10 % damage per 100 shards held, +10 / +15 / +25 % shards | whole hundreds, at most 1000 shards count | +20 % per 100 |
+| Fast Hands | −8 / −14 / −20 % | auto abilities' cooldowns and periods only (Bomb Lobber, Drone Buddy's period, Orbit Blades' re-touch; step AB's auto abilities read the same `Stats.auto_cooldown` / `auto_period`) | −60 % |
+
+**Loop rules for the new cards** (the rules above still hold):
+- A bomblet never splits (`AbilityState.bomb_split` = 0); bomblets keep the bomb's root.
+- An Overkill splash (`effect_id` `overkill`) never splashes again and is not scaled twice: it skips the damage
+  stats and the crit roll (the excess already had them). It feeds no engine (no melee or bolt source).
+- Razor Orbit feeds bleed once per (touch root, enemy) through `ProcLedger` like every feeder; bleed ticks are DoT
+  and never proc.
+- One Afterimage echo waits at a time: a blink while one waits bursts it first.
+
+**Matrix** (the nine new cards; S = synergy, A = anti-synergy, · = none). `CP` Cluster Payload `OD` Overclocked
+Drone `RO` Razor Orbit `AI` Afterimage `GC` Glass Cannon `ON` Onrush `OK` Overkill `HO` Hoarder `FH` Fast Hands
+
+| | CP | OD | RO | AI | GC | ON | OK | HO | FH |
+|---|---|---|---|---|---|---|---|---|---|
+| **CP** | — | · | · | · | · | · | S | · | S |
+| **OD** | · | — | · | · | · | · | · | · | S |
+| **RO** | · | · | — | · | · | S | · | · | S |
+| **AI** | · | · | · | — | · | · | · | · | · |
+| **GC** | · | · | · | · | — | · | S | · | · |
+| **ON** | · | · | S | · | · | — | · | · | · |
+| **OK** | S | · | · | · | S | · | — | · | · |
+| **HO** | · | · | · | · | · | · | · | — | · |
+| **FH** | S | S | S | · | · | · | · | · | — |
+
+36 pairs: 6 synergy, 0 anti-synergy, 30 none. Each new card's synergies and anti-synergies with the older cards
+follow; every pair not listed is none (the two share no trigger, resource or status).
+
+### Cluster Payload
+- **Overkill** — synergy: the bomb kills the crowd's weak, the excess splashes, and the bomblets land on what's left.
+- **Fast Hands** — synergy: more throws, so more bomblets.
+- **Area** (stat) — synergy: the bomb's radius sets the ring the bomblets land on and their size.
+- **Wildfire** — synergy: bomblet kills in a burning crowd spread burn further.
+
+### Overclocked Drone
+- **Fast Hands** — synergy: both shorten the drone's period, multiplied.
+- **Attack speed** (stat) — synergy: the drone period already takes attack speed; heat multiplies on top.
+- **Meltdown** — synergy: no overheat stall, so you can ride the top of the heat bar where the drones fire fastest.
+- **Heat Sink** — anti-synergy: Heat Sink rewards venting, and a vent dumps the heat the drones feed on.
+
+### Razor Orbit
+- **Serrated Edge**, **Barbed Bolts** — synergy: blades, swings and bolts all feed the one bleed, to its 8-stack cap.
+- **Kinetic Dash** — synergy: any dash through a bleeding enemy bursts its stacks; Kinetic Dash adds its 12.
+- **Vampiric Core** — synergy: more bleed kills, more heals (inside its cap).
+- **Fast Hands** — synergy: a shorter re-touch interval, so more stacks per second.
+- **Onrush** — synergy: walking through the crowd keeps fresh enemies in the ring while moving adds damage.
+
+### Afterimage
+- **Phase Strike** — synergy: every blink hits twice: the arrival ring and the echo where it began.
+- **Blink level 3** (two charges) — synergy: two blinks in a row burst the first echo early and leave a second.
+- **Area** (stat) — synergy: the echo's radius takes area.
+
+### Glass Cannon
+- **Overkill** — synergy: bigger hits leave more excess to splash.
+- **Max HP** (stat) — anti-synergy: Glass Cannon cuts the very stat Vitality raises.
+- **Regen** (stat) — anti-synergy: regen heals a share of max HP, so less max HP heals less.
+- **Armour** (stat) — synergy: armour covers the HP Glass Cannon took.
+
+### Onrush
+- **Orbit Blades**, **Drone Buddy**, **Bomb Lobber** — synergy: auto abilities fire while you keep moving.
+- **Aegis** — anti-synergy: guarding means standing your ground, not moving.
+
+### Overkill
+- **Executioner** — synergy: its bonus lands on low-HP enemies, which is mostly excess.
+- **Crit damage** (stat) — synergy: a crit kill has the biggest excess.
+
+### Hoarder
+- **Shard gain** (stat) — synergy: more shards, sooner to the next hundred.
+- **Chests** — anti-synergy (by design): every chest bought spends the hundreds Hoarder counts.
+
+### Fast Hands
+- **Cooldowns** (stat) — synergy: on auto abilities both apply, multiplied.
+- **Combo Sword**, **Pulse Gun**, **Blink**, **Aegis** — none: manual abilities don't read it.

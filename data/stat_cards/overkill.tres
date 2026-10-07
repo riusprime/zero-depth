@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"overkill"
+name_key = &"STAT_OVERKILL"
+desc_key = &"STAT_OVERKILL_DESC"
+amounts = PackedFloat32Array(40, 70, 100)
+cap = 150
+weight = 7
+limit = 3.0
+id = &"overkill"

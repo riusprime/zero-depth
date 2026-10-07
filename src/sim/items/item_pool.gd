@@ -50,6 +50,7 @@ static func available(w: World) -> PackedInt32Array:
 
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
+## v0.5.0 CP: an ability mod only while the player owns its ability.
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
 	if it.requires_heat and w.heat == null:
@@ -57,4 +58,6 @@ static func _usable(w: World, idx: int) -> bool:
 	var need := it.requires_utility
 	if need >= 0 and need != Abilities.utility(w):  # v0.4.0: the utility comes from an ability
 		return false
+	if it.requires_ability >= 0 and Abilities.owned_of_kind(w, it.requires_ability) == null:
+		return false  # v0.5.0 CP: an ability mod only while you own the ability
 	return it.requires_weapon == 0 or (it.requires_weapon & w.player.weapons) != 0

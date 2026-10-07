@@ -32,6 +32,10 @@ enum Kind {
 	HEAT_SINK,
 	THERMAL_EDGE,
 	MELTDOWN,
+	CLUSTER_PAYLOAD,
+	OVERCLOCKED_DRONE,
+	RAZOR_ORBIT,
+	AFTERIMAGE,
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
@@ -39,8 +43,9 @@ enum Rarity { COMMON, RARE }
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
 ## v0.3.0 L18: &"heat" marks the Overclock heat items (offered only when the run has heat).
+## v0.5.0 CP: &"ability" marks the ability mods (each needs its ability: requires_ability).
 const TAGS: Array[StringName] = [
-	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard", &"heat"
+	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard", &"heat", &"ability"
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -51,6 +56,9 @@ const TAGS: Array[StringName] = [
 ## The weapon the item feeds (v0.3.0 L15): a BuildDefinition weapon id (&"blade", &"gun"), or empty for any. A run
 ## whose build lacks that weapon is never offered it.
 @export var requires_weapon: StringName = &""
+## v0.5.0 CP: the ability the mod changes (an AbilityDefinition.Kind in lower case, e.g. &"bomb_lobber"), or
+## empty. Altars and chests offer it only while you own that ability; an ability mod (tag &"ability") names one.
+@export var requires_ability: StringName = &""
 @export var name_key: StringName
 @export var desc_key: StringName
 ## Long Edge: swing reach × (1 + bonus / 1000).
@@ -148,6 +156,20 @@ const TAGS: Array[StringName] = [
 @export var heat_hot_threshold := 0
 ## Meltdown: reaching the overheat point blows up as a full-heat vent blast at this share (per mille), no stall.
 @export var meltdown_damage_permille := 0
+# --- Ability mods (v0.5.0 CP; AbilityMods).
+## Cluster Payload: a thrown bomb splits into this many bomblets at its edge, each landing this long after it, for
+## this share of its damage in this share of its radius.
+@export var bomblets := 0
+@export var bomblet_damage_permille := 0
+@export var bomblet_radius_permille := 0
+@export var bomblet_delay_seconds := 0.0
+## Overclocked Drone: drone fire rate + this per mille for each heat point held.
+@export var drone_rate_per_heat_permille := 0
+## Razor Orbit: a blade's touch adds stacks_per_hit bleed (with the bleed fields, like Serrated Edge).
+## Afterimage: a blink's echo bursts this long after for this damage in this radius.
+@export var afterimage_damage := 0
+@export var afterimage_radius_m := 0.0
+@export var afterimage_delay_seconds := 0.0
 
 
 func category() -> StringName:
@@ -171,6 +193,16 @@ func validate() -> Array[ValidationIssue]:
 	if not requires_weapon in [&"", &"blade", &"gun"]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
+		)
+	if requires_ability != &"" and ability_kind(requires_ability) < 0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "unknown ability %s" % requires_ability)
+		)
+	if tags.has("ability") != (requires_ability != &""):
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "an ability mod (tag ability) names requires_ability"
+			)
 		)
 	_check_tags(issues)
 	match kind:
@@ -280,6 +312,33 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 			check_positive(issues, "heat_hot_threshold", heat_hot_threshold)
 		Kind.MELTDOWN:
 			check_positive(issues, "meltdown_damage_permille", meltdown_damage_permille)
+		_:
+			_validate_ability_mods(issues)
+
+
+## v0.5.0 CP: the AbilityDefinition.Kind named `id` in lower case (&"bomb_lobber"), or -1.
+static func ability_kind(id: StringName) -> int:
+	return -1 if id == &"" else AbilityDefinition.Kind.keys().find(String(id).to_upper())
+
+
+## The ability mods (v0.5.0 CP).
+func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
+	match kind:
+		Kind.CLUSTER_PAYLOAD:
+			check_positive(issues, "bomblets", bomblets)
+			check_positive(issues, "bomblet_damage_permille", bomblet_damage_permille)
+			check_positive(issues, "bomblet_radius_permille", bomblet_radius_permille)
+			check_positive(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
+			check_duration(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
+		Kind.OVERCLOCKED_DRONE:
+			check_positive(issues, "drone_rate_per_heat_permille", drone_rate_per_heat_permille)
+		Kind.RAZOR_ORBIT:
+			_check_bleed(issues)
+		Kind.AFTERIMAGE:
+			check_positive(issues, "afterimage_damage", afterimage_damage)
+			check_positive(issues, "afterimage_radius_m", afterimage_radius_m)
+			check_positive(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
+			check_duration(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
 
 
 func _check_tags(issues: Array[ValidationIssue]) -> void:

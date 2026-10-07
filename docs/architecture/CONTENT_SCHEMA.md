@@ -172,6 +172,13 @@ class_name AttackDefinition extends Resource
 **Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
 default `COMMON`). Chests weight rare items higher (`RewardsDefinition.rare_weight_chest`). `@export var requires_utility: StringName` (empty, `guard` or `blink`) keeps an item out of every offer unless the
 player chose that utility (Bulwark: `guard`).
+v0.5.0 CP: `@export var requires_ability: StringName` (empty, or an `AbilityDefinition.Kind` in lower case, e.g.
+`bomb_lobber`) keeps an **ability mod** out of every offer until the player owns that ability; the tag `ability`
+(added to the closed tag set) and `requires_ability` go together. Four kinds, appended: `CLUSTER_PAYLOAD`
+(`bomblets`, `bomblet_damage_permille`, `bomblet_radius_permille`, `bomblet_delay_seconds`), `OVERCLOCKED_DRONE`
+(`drone_rate_per_heat_permille`; also offered only in runs with heat), `RAZOR_ORBIT` (`stacks_per_hit` and the
+bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterimage_radius_m`,
+`afterimage_delay_seconds`). Each validates the fields it reads (positive; seconds at least one tick).
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
@@ -388,6 +395,12 @@ chain, the blink's charges, Aegis's charge cap). Each kind validates the fields 
 `shard_gain`, `pickup_range`, `armour`), `name_key`, `desc_key` (one `%s` for the amount), `amounts` (common, rare,
 epic; positive, rising; percent, points for crit, percent of max HP per second for regen), `cap` (0 = none; crit
 chance and crit damage in percent points, the others as a multiplier: 2.5 = ×2.5, 0.4 = −60 %) and `weight`.
+v0.5.0 CP adds five rule stats, appended: `glass_cannon`, `onrush`, `overkill`, `hoarder`, `fast_hands`, and two
+fields: `side` (3 positive percents, only for `glass_cannon` (the max HP cut) and `hoarder` (the shard gain)) and
+`limit` (only for `glass_cannon` (the lowest max HP multiplier, 0 < limit < 1), `overkill` (the splash reach in m)
+and `hoarder` (the most shards that count)); any other stat must leave both empty. Caps of the added stats
+(`onrush`, `overkill`, `hoarder`, as for crit and regen) are in percent points. Offers draw a stat by its `weight`.
+A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.

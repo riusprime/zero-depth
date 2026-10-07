@@ -206,6 +206,7 @@ static func on_blink(w: World) -> void:
 	if w.blink_cd == 0:
 		w.blink_cd = blink_cooldown(w)
 	w.ab.shock_pending = w.tick
+	AbilityMods.on_blink(w)  # v0.5.0 CP: Afterimage
 
 
 ## Aegis: the most guard charges the guard stores, and each one's bonus to the next swing (per mille); a Bulwark
@@ -313,6 +314,7 @@ static func advance(w: World) -> void:
 		w.ab.shock_pending = -1
 		_blink_shock(w)
 	_land_bombs(w)
+	AbilityMods.advance(w)  # v0.5.0 CP: Afterimage's echo
 	for s in w.ability_owned.size():
 		var t := w.ability_tables[w.ability_owned[s]]
 		if not t.auto:
@@ -323,7 +325,7 @@ static func advance(w: World) -> void:
 				if w.ab.cd[s] > 0:
 					w.ab.cd[s] -= 1
 				if w.ab.cd[s] == 0 and _throw(w, t, lvl):
-					w.ab.cd[s] = Stats.cooldown(w, t.cooldown_ticks)
+					w.ab.cd[s] = Stats.auto_cooldown(w, t.cooldown_ticks)  # v0.5.0 CP: Fast Hands
 			AbilityTable.Kind.DRONE_BUDDY:
 				_drones(w, t)
 			AbilityTable.Kind.ORBIT_BLADES:
@@ -345,10 +347,10 @@ static func _blink_shock(w: World) -> void:
 	w.ab.shock_tick = w.tick
 	w.ab.shock_pos = center
 	w.ab.shock_r = r
-	_hit_disc(w, center, r, _damage(t, lvl), w.take_root(), EFFECT_BLINK)
+	hit_disc(w, center, r, _damage(t, lvl), w.take_root(), EFFECT_BLINK)
 
 
-static func _hit_disc(
+static func hit_disc(
 	w: World, center: Vector2, r: float, dmg: int, root: int, effect: StringName
 ) -> void:
 	var a := w.actors
@@ -419,6 +421,7 @@ static func _throw(w: World, t: AbilityTable, level: int) -> bool:
 		s.bomb_root.append(w.take_root())
 		s.bomb_r.append(r)
 		s.bomb_dmg.append(_damage(t, level))
+		s.bomb_split.append(1)  # v0.5.0 CP: a thrown bomb may split (Cluster Payload)
 	return true
 
 
@@ -427,7 +430,12 @@ static func _land_bombs(w: World) -> void:
 	for k in range(s.bomb_pos.size() - 1, -1, -1):
 		if w.tick < s.bomb_land[k]:
 			continue
-		_hit_disc(w, s.bomb_pos[k], s.bomb_r[k], s.bomb_dmg[k], s.bomb_root[k], EFFECT_BOMB)
+		var split := s.bomb_split[k] == 1
+		var at := s.bomb_pos[k]
+		var r := s.bomb_r[k]
+		var dmg := s.bomb_dmg[k]
+		var root := s.bomb_root[k]
+		hit_disc(w, at, r, dmg, root, EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER)
 		s.blast_pos.append(s.bomb_pos[k])
 		s.blast_tick.append(w.tick)
 		s.blast_r.append(s.bomb_r[k])
@@ -443,13 +451,17 @@ static func _land_bombs(w: World) -> void:
 		s.bomb_root.remove_at(k)
 		s.bomb_r.remove_at(k)
 		s.bomb_dmg.remove_at(k)
+		s.bomb_split.remove_at(k)
+		if split:
+			AbilityMods.split(w, at, r, dmg, root)  # v0.5.0 CP: Cluster Payload's bomblets
 
 
 # Drone Buddy -----------------------------------------------------------------------------------------------------
 ## Ticks between one drone's shots: the period / the level's rate, under attack speed.
 static func drone_period(w: World, t: AbilityTable) -> int:
 	var lvl := level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
-	return Stats.period(w, maxi(1, t.period_ticks * 1000 / t.rate_permille(lvl)))
+	var base := maxi(1, t.period_ticks * 1000 / t.rate_permille(lvl))
+	return Stats.auto_period(w, AbilityMods.drone_period(w, base))  # v0.5.0 CP: Overclocked Drone, Fast Hands
 
 
 ## Where drone k of n hovers: behind the player's facing, the drones fanned DRONE_SPREAD apart.
@@ -552,7 +564,7 @@ static func _orbit(w: World, t: AbilityTable, level: int) -> void:
 			if not AttackShapes.disc_touches(b, BLADE_R, a.pos(i), a.radius[i]):
 				continue
 			s.orbit_ids.append(a.ids[i])
-			s.orbit_next.append(w.tick + t.hit_ticks)
+			s.orbit_next.append(w.tick + Stats.auto_cooldown(w, t.hit_ticks))  # v0.5.0 CP: Fast Hands
 			s.orbit_hit_tick = w.tick
 			Damage.hit(
 				w, i, dmg, a.ids[0], a.ids[0], w.take_root(), tags, b, a.pos(i), EFFECT_ORBIT
@@ -594,7 +606,7 @@ static func read(w: World) -> Array[Dictionary]:
 		match t.kind:
 			AbilityTable.Kind.BOMB_LOBBER:
 				left = w.ab.cd[s] if s < w.ab.cd.size() else 0
-				total = Stats.cooldown(w, t.cooldown_ticks)
+				total = Stats.auto_cooldown(w, t.cooldown_ticks)
 			AbilityTable.Kind.DRONE_BUDDY:
 				left = w.ab.drone_cd[0] if not w.ab.drone_cd.is_empty() else 0
 				total = drone_period(w, t)
@@ -659,4 +671,9 @@ static func fx(w: World) -> Dictionary:
 		"chain_tick": s.chain_tick,
 		"chain_from": s.chain_from,
 		"chain_to": s.chain_to,
+		"echo_at": s.echo_at,  # v0.5.0 CP: Afterimage (waiting: echo_pos; the last burst: tick, where, radius)
+		"echo_pos": s.echo_pos,
+		"echo_tick": s.echo_tick,
+		"echo_burst_pos": s.echo_burst_pos,
+		"echo_r": s.echo_r,
 	}

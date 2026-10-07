@@ -359,6 +359,10 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.HEAT_SINK: ItemTable.Kind.HEAT_SINK,
 		ItemDefinition.Kind.THERMAL_EDGE: ItemTable.Kind.THERMAL_EDGE,
 		ItemDefinition.Kind.MELTDOWN: ItemTable.Kind.MELTDOWN,
+		ItemDefinition.Kind.CLUSTER_PAYLOAD: ItemTable.Kind.CLUSTER_PAYLOAD,
+		ItemDefinition.Kind.OVERCLOCKED_DRONE: ItemTable.Kind.OVERCLOCKED_DRONE,
+		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
+		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -367,6 +371,7 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	t.requires_utility = needs.get(def.requires_utility, -1)
 	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
 	t.requires_weapon = weapons.get(def.requires_weapon, 0)
+	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
 	t.reach_bonus_permille = def.reach_bonus_permille
 	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
 	t.echo_damage_permille = def.echo_damage_permille
@@ -441,13 +446,23 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 		in [
 			ItemDefinition.Kind.HEAT_SINK,
 			ItemDefinition.Kind.THERMAL_EDGE,
-			ItemDefinition.Kind.MELTDOWN
+			ItemDefinition.Kind.MELTDOWN,
+			ItemDefinition.Kind.OVERCLOCKED_DRONE,
 		]
 	)
 	t.vent_damage_bonus_permille = def.vent_damage_bonus_permille
 	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
 	t.heat_hot_threshold = def.heat_hot_threshold
 	t.meltdown_damage_permille = def.meltdown_damage_permille
+	# Ability mods (v0.5.0 CP).
+	t.bomblets = def.bomblets
+	t.bomblet_damage_permille = def.bomblet_damage_permille
+	t.bomblet_radius_permille = def.bomblet_radius_permille
+	t.bomblet_delay_ticks = SimTick.seconds_to_ticks(def.bomblet_delay_seconds)
+	t.drone_rate_per_heat_permille = def.drone_rate_per_heat_permille
+	t.afterimage_damage = def.afterimage_damage
+	t.afterimage_radius_m = def.afterimage_radius_m
+	t.afterimage_delay_ticks = SimTick.seconds_to_ticks(def.afterimage_delay_seconds)
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
@@ -749,8 +764,8 @@ static func compile_ability(def: AbilityDefinition) -> AbilityTable:
 
 
 ## The stat cards (v0.4.0 BS), indexed by Stats.Stat (null for a stat without data). Amounts: percent (points for
-## crit) to per mille (x 10). Caps: crit chance and crit damage in percent points (x 10), the others as a multiplier
-## (x 1000).
+## crit) to per mille (x 10). Caps: the ADD stats (crit chance, crit damage, regen, onrush, overkill, hoarder) in
+## percent points (x 10), the others as a multiplier (x 1000). v0.5.0 CP: side x 10, limit x 1000.
 static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
@@ -766,9 +781,13 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 		t.amounts = PackedInt32Array()
 		for k in StatCardDefinition.RARITIES:
 			t.amounts.append(int(round(def.amounts[k] * 10.0)))
-		var crit := s == Stats.Stat.CRIT_CHANCE or s == Stats.Stat.CRIT_DAMAGE
-		t.cap = int(round(def.cap * (10.0 if crit else 1000.0)))
+		var points := Stats.MODE[s] == Stats.ADD  # crit, regen and the v0.5.0 CP added cards
+		t.cap = int(round(def.cap * (10.0 if points else 1000.0)))
 		t.weight = def.weight
+		if def.side.size() == StatCardDefinition.RARITIES:  # v0.5.0 CP: the rule cards
+			for k in StatCardDefinition.RARITIES:
+				t.side[k] = int(round(def.side[k] * 10.0))
+		t.limit_permille = int(round(def.limit * 1000.0))
 		out[s] = t
 	return out
 

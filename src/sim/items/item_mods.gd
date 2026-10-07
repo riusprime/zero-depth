@@ -85,6 +85,16 @@ var vent_damage_bonus_permille := 0
 var vent_radius_bonus_permille := 0
 var heat_hot_threshold := 0
 var meltdown_damage_permille := 0
+## Ability mods (v0.5.0 CP; AbilityMods): Cluster Payload, Overclocked Drone, Razor Orbit's bleed feed, Afterimage.
+var bomblets := 0
+var bomblet_damage_permille := 0
+var bomblet_radius_permille := 0
+var bomblet_delay_ticks := 1
+var drone_rate_per_heat_permille := 0
+var bleed_orbit := 0
+var afterimage_damage := 0
+var afterimage_radius_m := 0.0
+var afterimage_delay_ticks := 1
 
 
 static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods:
@@ -118,7 +128,26 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 				_build_v2(m, t)
 		_build_engines(m, t)
 		_build_heat(m, t)
+		_build_ability_mods(m, t)
 	return m
+
+
+## Ability mods (v0.5.0 CP): one of each kind can be owned, so each takes its item's numbers.
+static func _build_ability_mods(m: ItemMods, t: ItemTable) -> void:
+	match t.kind:
+		ItemTable.Kind.CLUSTER_PAYLOAD:
+			m.bomblets = t.bomblets
+			m.bomblet_damage_permille = t.bomblet_damage_permille
+			m.bomblet_radius_permille = t.bomblet_radius_permille
+			m.bomblet_delay_ticks = maxi(1, t.bomblet_delay_ticks)
+		ItemTable.Kind.OVERCLOCKED_DRONE:
+			m.drone_rate_per_heat_permille = t.drone_rate_per_heat_permille
+		ItemTable.Kind.RAZOR_ORBIT:
+			m.bleed_orbit = t.stacks_per_hit
+		ItemTable.Kind.AFTERIMAGE:
+			m.afterimage_damage = t.afterimage_damage
+			m.afterimage_radius_m = t.afterimage_radius_m
+			m.afterimage_delay_ticks = maxi(1, t.afterimage_delay_ticks)
 
 
 ## Overclock heat items (v0.3.0 L18).
