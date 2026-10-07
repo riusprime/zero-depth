@@ -23,6 +23,12 @@ extends ContentDef
 @export var shard_tier_bonus := 0.25
 ## A boss kill pays boss_shards × the floor number (PLAN v0.3.0: 60 × floor).
 @export var boss_shards := 60
+## v0.4.0 BS (owner F8, F9): what a card is, by weight: [ability, stat, mod] at an altar and in a chest, and a stat
+## card's rarity [common, rare, epic] by source. A free altar also always offers one new ability while a slot is free.
+@export var altar_card_weights := PackedInt32Array([15, 75, 10])
+@export var chest_card_weights := PackedInt32Array([15, 55, 30])
+@export var altar_rarity_weights := PackedInt32Array([70, 25, 5])
+@export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
 
 
 func category() -> StringName:
@@ -64,4 +70,22 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "shard_tier_bonus is negative")
 		)
+	for pair: Array in [
+		["altar_card_weights", altar_card_weights],
+		["chest_card_weights", chest_card_weights],
+		["altar_rarity_weights", altar_rarity_weights],
+		["chest_rarity_weights", chest_rarity_weights],
+	]:
+		var weights: PackedInt32Array = pair[1]
+		var total := 0
+		var negative := false
+		for v in weights:
+			total += maxi(v, 0)
+			negative = negative or v < 0
+		if weights.size() != 3 or negative or total <= 0:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: 3 weights >= 0, not all 0" % pair[0]
+				)
+			)
 	return issues

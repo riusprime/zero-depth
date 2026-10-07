@@ -21,6 +21,7 @@ const EFFECT_OVERCHARGE := &"overcharge"
 static func swing_reach_m(w: World, step: int = -1) -> float:
 	var s := step if step >= 0 else w.combo_step
 	var reach := w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
+	reach = Stats.area(w, reach * Abilities.reach_permille(w) / 1000.0)  # v0.4.0: Combo Sword L3, area
 	var hot := Heat.reach_permille(w)  # Heat: Hot reaches farther.
 	return reach if hot == 1000 else reach * hot / 1000.0
 
@@ -30,8 +31,8 @@ static func shot_period_ticks(w: World) -> int:
 	var base := w.player.shot_period_ticks
 	var bonus := w.item_mods.fire_rate_bonus_permille
 	if bonus <= 0:
-		return base
-	return maxi(2, int(round(base * 1000.0 / (1000 + bonus))))
+		return Stats.period(w, base)  # v0.4.0 BS: attack speed
+	return Stats.period(w, maxi(2, int(round(base * 1000.0 / (1000 + bonus)))))
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
@@ -239,7 +240,7 @@ static func collect_pickups(w: World) -> void:
 	var at := w.player_pos()
 	var i := 0
 	while i < p.size():
-		if Kin.length(p.pos(i) - at) > PICKUP_RADIUS_M:
+		if Kin.length(p.pos(i) - at) > Stats.reach(w, PICKUP_RADIUS_M):  # v0.4.0: pickup range
 			i += 1
 			continue
 		var idx := p.item[i]

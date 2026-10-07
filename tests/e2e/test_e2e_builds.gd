@@ -69,9 +69,7 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 	assert_not_null(picker)
 	await _press(e, JOY_BUTTON_DPAD_RIGHT)
 	assert_eq(picker.focused_id(), &"gun", "the d-pad moves to Gun")
-	await _press(e, JOY_BUTTON_A)  # Gun
-	assert_not_null(main.get_node_or_null("UI/UtilityPicker"), "then the utility")
-	await _press(e, JOY_BUTTON_A)  # Guard
+	await _press(e, JOY_BUTTON_A)  # Gun: v0.4.0 BS (F11) has no utility pick, the run starts
 	assert_true(main.is_playing())
 	var w := e.world()
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_GUN, "a Gun run")
@@ -99,9 +97,7 @@ func test_pick_blade_with_the_keyboard_then_shooting_does_nothing() -> void:
 	assert_eq(picker.focused_id(), &"gun", "Right moves to Gun")
 	await e.tap(KEY_LEFT)
 	assert_eq(picker.focused_id(), &"blade", "Left back to Blade")
-	await e.tap(KEY_ENTER)
-	await e.frames(2)
-	await e.tap(KEY_ENTER)  # Guard
+	await e.tap(KEY_ENTER)  # Blade, and the run (no utility pick since v0.4.0 BS)
 	await e.frames(2)
 	var w := e.world()
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_BLADE, "a Blade run")
@@ -129,7 +125,7 @@ func test_a_click_picks_a_card_and_esc_goes_back() -> void:
 	picker = main.get_node_or_null("UI/BuildPicker") as BuildPicker
 	await e.click_at(picker.cards[1].get_global_rect().get_center())
 	await e.frames(2)
-	assert_not_null(main.get_node_or_null("UI/UtilityPicker"), "a click on Gun picks it")
+	assert_true(main.is_playing(), "a click on Gun picks it and starts the run")
 	assert_eq(main.profile.section("loadout")["build"], "gun")
 
 

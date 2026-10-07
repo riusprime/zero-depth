@@ -1,0 +1,662 @@
+# gdlint: disable=max-public-methods
+class_name Abilities
+extends RefCounted
+## The four ability slots (v0.4.0 BS, owner F8, F11). World.ability_owned holds compiled ability indices in slot
+## order and World.ability_levels their levels (1..5); both last the run (RunCarry). Slot 1 is the starting weapon
+## (grant_start); ability cards fill slots 2..4, and once the four are full an ability card only levels up what you
+## own. Blink and Aegis share the utility button, so owning one keeps the other out of the offers.
+## - Manual: Combo Sword and Pulse Gun scale the build's weapon and skill (weapon_permille, reach, pierce, twin
+##   bolts, the finisher's shockwave); Blink and Aegis turn the utility button on (utility()).
+## - Auto (tick phase 6, after the projectile sweeps, so the uniform grid holds this tick's bodies): Bomb Lobber,
+##   Drone Buddy and Orbit Blades pick targets by sim rules (densest cluster, nearest enemy, touch) through
+##   World.enemies_near; the only randomness (a spare bomb's scatter) comes from the `ability` stream.
+## Every hit is the player's, so stats and crit apply in Damage.hit; ability hits carry TAG_ABILITY and an effect id
+## (never heat, never an on-hit "attack").
+
+const SLOTS := 4
+const BLADE_R := 0.35
+const BOLT_RADIUS_M := 0.12
+## Twin bolts (Pulse Gun L5): each shot's bolts split this far either side of the aim (1/4096 turns).
+const TWIN_SPREAD := 40
+## A drone with no target looks again after this many ticks.
+const DRONE_IDLE_TICKS := 6
+## Drones trail this far behind the player, this far apart (1/4096 turns), closing this share of the gap a tick.
+const DRONE_TRAIL_M := 1.1
+const DRONE_SPREAD := 640
+const DRONE_FOLLOW_PERMILLE := 150
+## Bomb landings the view remembers.
+const BLAST_LOG := 8
+const EFFECT_BOMB := &"bomb_lobber"
+const EFFECT_DRONE := &"drone_buddy"
+const EFFECT_DRONE_CHAIN := &"drone_chain"
+const EFFECT_ORBIT := &"orbit_blades"
+const EFFECT_BLINK := &"blink_shock"
+const EFFECT_SWORD_WAVE := &"combo_sword_wave"
+
+
+# --- Ownership -------------------------------------------------------------------------------------------------
+static func owned(w: World, idx: int) -> bool:
+	return w.ability_owned.has(idx)
+
+
+## The level of ability `idx` (0 = not owned).
+static func level_of(w: World, idx: int) -> int:
+	var s := w.ability_owned.find(idx)
+	return w.ability_levels[s] if s >= 0 else 0
+
+
+## The compiled index of the first ability of `kind`, or -1.
+static func index_of_kind(w: World, kind: int) -> int:
+	for k in w.ability_tables.size():
+		if w.ability_tables[k].kind == kind:
+			return k
+	return -1
+
+
+## The owned ability of `kind` (its table), or null.
+static func owned_of_kind(w: World, kind: int) -> AbilityTable:
+	for idx in w.ability_owned:
+		if w.ability_tables[idx].kind == kind:
+			return w.ability_tables[idx]
+	return null
+
+
+static func level_of_kind(w: World, kind: int) -> int:
+	for s in w.ability_owned.size():
+		if w.ability_tables[w.ability_owned[s]].kind == kind:
+			return w.ability_levels[s]
+	return 0
+
+
+## A card for ability `idx` would do something now: a level-up of one you own below the top level, or a new one
+## for a free slot (never a starting weapon, never a second utility).
+static func can_take(w: World, idx: int) -> bool:
+	var s := w.ability_owned.find(idx)
+	if s >= 0:
+		return w.ability_levels[s] < AbilityTable.MAX_LEVEL
+	var t := w.ability_tables[idx]
+	if t.start_weapon != 0 or w.ability_owned.size() >= SLOTS:
+		return false
+	return not (t.is_utility() and utility(w) != PlayerTable.Utility.NONE)
+
+
+## Takes an ability card: a level up of an owned ability, or a new one in the next free slot at level 1. Returns
+## false (and changes nothing) when the card can't apply.
+static func grant(w: World, idx: int) -> bool:
+	var t := w.ability_tables[idx]
+	var s := w.ability_owned.find(idx)
+	if s >= 0:
+		if w.ability_levels[s] >= AbilityTable.MAX_LEVEL:
+			return false
+		w.ability_levels[s] += 1
+	else:
+		if w.ability_owned.size() >= SLOTS and t.start_weapon == 0:
+			return false
+		if t.is_utility() and utility(w) != PlayerTable.Utility.NONE:
+			return false
+		w.ability_owned.append(idx)
+		w.ability_levels.append(1)
+		w.ab.cd.append(0)
+	_sync_state(w)
+	if t.kind == AbilityTable.Kind.BLINK:
+		w.ab.blink_charges = mini(w.ab.blink_charges + 1, t.extra(level_of(w, idx)))
+	return true
+
+
+## Slot 1 at the start of a run: the ability whose start weapon the build uses (none outside a build).
+static func grant_start(w: World) -> void:
+	if not w.ability_owned.is_empty():
+		return
+	for k in w.ability_tables.size():
+		var t := w.ability_tables[k]
+		if t.start_weapon != 0 and (t.start_weapon & w.player.weapons) == t.start_weapon:
+			if w.player.weapons != PlayerTable.WEAPONS_ALL:
+				grant(w, k)
+				return
+
+
+## A fresh floor (after the carry restored the slots and levels): cooldowns, drones and the blink's charges start
+## over.
+static func start_floor(w: World) -> void:
+	w.ab = AbilityState.new()
+	for s in w.ability_owned.size():
+		w.ab.cd.append(0)
+	_sync_state(w)
+	var blink := owned_of_kind(w, AbilityTable.Kind.BLINK)
+	if blink != null:
+		w.ab.blink_charges = blink.extra(level_of_kind(w, AbilityTable.Kind.BLINK))
+
+
+## Keeps the drones in step with Drone Buddy's level (a new drone starts beside the player, half a period late).
+static func _sync_state(w: World) -> void:
+	var t := owned_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
+	var n := t.count(level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)) if t != null else 0
+	while w.ab.drone_pos.size() < n:
+		w.ab.drone_pos.append(w.player_pos())
+		w.ab.drone_cd.append(drone_period(w, t) * w.ab.drone_pos.size() / 2)
+		w.ab.drone_fire.append(-1)
+
+
+# --- The utility button (Blink, Aegis) -------------------------------------------------------------------------
+## The utility the player has now: the forced loadout's (PlayerTable.utility: tests, the dev runs of old), else an
+## owned Blink or Aegis (v0.4.0 F11: none at the start of a run).
+static func utility(w: World) -> int:
+	if w.player.utility != PlayerTable.Utility.NONE:
+		return w.player.utility
+	for idx in w.ability_owned:
+		match w.ability_tables[idx].kind:
+			AbilityTable.Kind.BLINK:
+				return PlayerTable.Utility.BLINK
+			AbilityTable.Kind.AEGIS:
+				return PlayerTable.Utility.GUARD
+	return PlayerTable.Utility.NONE
+
+
+## The Blink ability when it drives the blink (the forced loadout's blink keeps the player table's numbers).
+static func _blink(w: World) -> AbilityTable:
+	if w.player.utility != PlayerTable.Utility.NONE:
+		return null
+	return owned_of_kind(w, AbilityTable.Kind.BLINK)
+
+
+static func blink_range_m(w: World) -> float:
+	var t := _blink(w)
+	return t.range_m if t != null else w.player.blink_range_m
+
+
+static func blink_iframes(w: World) -> int:
+	var t := _blink(w)
+	return t.duration_ticks if t != null else w.player.blink_iframe_ticks
+
+
+## The blink's cooldown in ticks (per charge for the ability), under the cooldowns stat.
+static func blink_cooldown(w: World) -> int:
+	var t := _blink(w)
+	if t == null:
+		return Stats.cooldown(w, w.player.blink_cooldown_ticks)
+	return Stats.cooldown(w, t.cooldown_at(level_of_kind(w, AbilityTable.Kind.BLINK)))
+
+
+static func blink_charge_max(w: World) -> int:
+	var t := _blink(w)
+	return t.extra(level_of_kind(w, AbilityTable.Kind.BLINK)) if t != null else 1
+
+
+## A blink may start now (the cooldown or, for the ability, a charge).
+static func blink_ready(w: World) -> bool:
+	return w.ab.blink_charges > 0 if _blink(w) != null else w.blink_cd == 0
+
+
+## Phase 4, before the blink: the cooldown runs; the ability's charge comes back as it ends (and the next starts).
+static func recharge_blink(w: World) -> void:
+	if w.blink_cd > 0:
+		w.blink_cd -= 1
+		if w.blink_cd == 0 and _blink(w) != null:
+			w.ab.blink_charges = mini(w.ab.blink_charges + 1, blink_charge_max(w))
+			if w.ab.blink_charges < blink_charge_max(w):
+				w.blink_cd = blink_cooldown(w)
+
+
+## A blink just landed: spend the cooldown or a charge, and arm the ability's landing shock (phase 6).
+static func on_blink(w: World) -> void:
+	if _blink(w) == null:
+		w.blink_cd = blink_cooldown(w)
+		return
+	w.ab.blink_charges -= 1
+	if w.blink_cd == 0:
+		w.blink_cd = blink_cooldown(w)
+	w.ab.shock_pending = w.tick
+
+
+## Aegis: the most guard charges the guard stores, and each one's bonus to the next swing (per mille); a Bulwark
+## item's numbers when they are higher.
+static func charge_max(w: World) -> int:
+	var t := owned_of_kind(w, AbilityTable.Kind.AEGIS)
+	var n := t.extra(level_of_kind(w, AbilityTable.Kind.AEGIS)) if t != null else 0
+	return maxi(w.item_mods.charge_max, n)
+
+
+static func charge_bonus(w: World) -> int:
+	var t := owned_of_kind(w, AbilityTable.Kind.AEGIS)
+	return maxi(w.item_mods.charge_bonus_permille, t.damage if t != null else 0)
+
+
+# --- The starting weapons (Combo Sword, Pulse Gun) -------------------------------------------------------------
+## The build weapon's ability (slot 1) and its level, or null.
+static func _weapon(w: World) -> AbilityTable:
+	for idx in w.ability_owned:
+		var t := w.ability_tables[idx]
+		if t.start_weapon != 0 and (t.start_weapon & w.player.weapons) != 0:
+			return t
+	return null
+
+
+static func _weapon_level(w: World) -> int:
+	var t := _weapon(w)
+	return level_of(w, w.ability_tables.find(t)) if t != null else 0
+
+
+## The weapon ability's damage factor (per mille) on the build's swings, bolts and skill.
+static func weapon_permille(w: World) -> int:
+	var t := _weapon(w)
+	return t.damage_permille(_weapon_level(w)) if t != null else 1000
+
+
+## Combo Sword's reach factor (per mille) on the swings.
+static func reach_permille(w: World) -> int:
+	var t := _weapon(w)
+	if t == null or t.kind != AbilityTable.Kind.COMBO_SWORD:
+		return 1000
+	return t.radius_permille(_weapon_level(w))
+
+
+## Pulse Gun L3+: its bolts pierce one enemy.
+static func bolt_tags(w: World) -> int:
+	var t := _weapon(w)
+	if t == null or t.kind != AbilityTable.Kind.PULSE_GUN or t.extra(_weapon_level(w)) <= 0:
+		return 0
+	return SimEvent.TAG_PIERCE
+
+
+## Pulse Gun L5: each bolt of a shot becomes two, TWIN_SPREAD either side.
+static func shot_offsets(w: World, offsets: PackedInt32Array) -> PackedInt32Array:
+	var t := _weapon(w)
+	if t == null or t.kind != AbilityTable.Kind.PULSE_GUN or t.count(_weapon_level(w)) < 2:
+		return offsets
+	var out := PackedInt32Array()
+	for o in offsets:
+		out.append(o - TWIN_SPREAD)
+		out.append(o + TWIN_SPREAD)
+	return out
+
+
+## Combo Sword L5: a landed finisher sends a shockwave (radius_m, `damage` x the level's factor) around the player.
+static func after_swing(w: World, landed: bool) -> void:
+	var t := _weapon(w)
+	if not landed or t == null or t.kind != AbilityTable.Kind.COMBO_SWORD:
+		return
+	var lvl := _weapon_level(w)
+	if t.extra(lvl) <= 0 or not PlayerKit.is_finisher(w, w.combo_step):
+		return
+	var dmg := _damage(t, lvl)
+	var r := Stats.area(w, t.radius_m)
+	var a := w.actors
+	var center := w.player_pos()
+	for i in range(1, a.size()):
+		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
+			continue
+		if AttackShapes.disc_touches(center, r, a.pos(i), a.radius[i]):
+			var tags := SimEvent.TAG_AREA | SimEvent.TAG_ABILITY
+			Damage.hit(
+				w,
+				i,
+				dmg,
+				a.ids[0],
+				a.ids[0],
+				w.swing_root,
+				tags,
+				center,
+				a.pos(i),
+				EFFECT_SWORD_WAVE
+			)
+	w.ab.shock_tick = w.tick
+	w.ab.shock_pos = center
+	w.ab.shock_r = r
+
+
+# --- Auto abilities (phase 6) ----------------------------------------------------------------------------------
+static func advance(w: World) -> void:
+	if w.player_dead():
+		return
+	Stats.advance_regen(w)
+	if w.ab.shock_pending >= 0:
+		w.ab.shock_pending = -1
+		_blink_shock(w)
+	_land_bombs(w)
+	for s in w.ability_owned.size():
+		var t := w.ability_tables[w.ability_owned[s]]
+		if not t.auto:
+			continue
+		var lvl := w.ability_levels[s]
+		match t.kind:
+			AbilityTable.Kind.BOMB_LOBBER:
+				if w.ab.cd[s] > 0:
+					w.ab.cd[s] -= 1
+				if w.ab.cd[s] == 0 and _throw(w, t, lvl):
+					w.ab.cd[s] = Stats.cooldown(w, t.cooldown_ticks)
+			AbilityTable.Kind.DRONE_BUDDY:
+				_drones(w, t)
+			AbilityTable.Kind.ORBIT_BLADES:
+				_orbit(w, t, lvl)
+
+
+## An ability's damage at `level`, rounded half up.
+static func _damage(t: AbilityTable, level: int) -> int:
+	return maxi(1, (t.damage * t.damage_permille(level) + 500) / 1000)
+
+
+static func _blink_shock(w: World) -> void:
+	var t := owned_of_kind(w, AbilityTable.Kind.BLINK)
+	if t == null:
+		return
+	var lvl := level_of_kind(w, AbilityTable.Kind.BLINK)
+	var r := Stats.area(w, t.radius_m * t.radius_permille(lvl) / 1000.0)
+	var center := w.player_pos()
+	w.ab.shock_tick = w.tick
+	w.ab.shock_pos = center
+	w.ab.shock_r = r
+	_hit_disc(w, center, r, _damage(t, lvl), w.take_root(), EFFECT_BLINK)
+
+
+static func _hit_disc(
+	w: World, center: Vector2, r: float, dmg: int, root: int, effect: StringName
+) -> void:
+	var a := w.actors
+	var tags := SimEvent.TAG_AREA | SimEvent.TAG_ABILITY
+	for i in w.enemies_near(center, r):
+		Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, tags, center, a.pos(i), effect)
+
+
+# Bomb Lobber -----------------------------------------------------------------------------------------------------
+## The bomb's radius at `level` (area applied): the same number the landing and its ground circle use (EI-07).
+static func bomb_radius(w: World, t: AbilityTable, level: int) -> float:
+	return Stats.area(w, t.radius_m * t.radius_permille(level) / 1000.0)
+
+
+## The densest cluster within range: the enemy (alive, not spawning in) with the most other such enemies touching a
+## bomb-sized disc around it; ties go to the one nearest the player, then the lower index. `skip` are centres already
+## chosen this throw (enemies they cover don't count again). -1 when no enemy is in range.
+static func densest(
+	w: World, from: Vector2, range_m: float, r: float, skip: PackedVector2Array
+) -> int:
+	var a := w.actors
+	var cands := PackedInt32Array()
+	for i in w.enemies_near(from, range_m):
+		var covered := false
+		for c in skip:
+			covered = covered or AttackShapes.disc_touches(c, r, a.pos(i), a.radius[i])
+		if a.invuln[i] == 0 and not covered:
+			cands.append(i)
+	var best := -1
+	var best_n := 0
+	var best_d := 0.0
+	for i in cands:
+		var n := 0
+		for j in cands:
+			if AttackShapes.disc_touches(a.pos(i), r, a.pos(j), a.radius[j]):
+				n += 1
+		var d := Kin.length(a.pos(i) - from)
+		if best < 0 or n > best_n or (n == best_n and d < best_d):
+			best = i
+			best_n = n
+			best_d = d
+	return best
+
+
+## Throws level_count bombs: the first at the densest cluster, the next at the densest one left, or (none left)
+## scattered around the first from the `ability` stream. False (nothing thrown) when no enemy is in range.
+static func _throw(w: World, t: AbilityTable, level: int) -> bool:
+	var a := w.actors
+	var from := w.player_pos()
+	var r := bomb_radius(w, t, level)
+	var centres := PackedVector2Array()
+	for k in t.count(level):
+		var i := densest(w, from, t.range_m, r, centres)
+		var at := Vector2.ZERO
+		if i >= 0:
+			at = a.pos(i)
+		elif centres.is_empty():
+			return false
+		else:
+			var ang := w.rng_ability.range_int(0, SimTick.ANGLE_UNITS - 1)
+			at = centres[0] + Kin.dir(ang) * (r * w.rng_ability.range_int(400, 900) / 1000.0)
+		centres.append(at)
+		var s := w.ab
+		s.bomb_pos.append(at)
+		s.bomb_from.append(from)
+		s.bomb_throw.append(w.tick)
+		s.bomb_land.append(w.tick + t.duration_ticks)
+		s.bomb_root.append(w.take_root())
+		s.bomb_r.append(r)
+		s.bomb_dmg.append(_damage(t, level))
+	return true
+
+
+static func _land_bombs(w: World) -> void:
+	var s := w.ab
+	for k in range(s.bomb_pos.size() - 1, -1, -1):
+		if w.tick < s.bomb_land[k]:
+			continue
+		_hit_disc(w, s.bomb_pos[k], s.bomb_r[k], s.bomb_dmg[k], s.bomb_root[k], EFFECT_BOMB)
+		s.blast_pos.append(s.bomb_pos[k])
+		s.blast_tick.append(w.tick)
+		s.blast_r.append(s.bomb_r[k])
+		if s.blast_tick.size() > BLAST_LOG:
+			s.blast_pos.remove_at(0)
+			s.blast_tick.remove_at(0)
+			s.blast_r.remove_at(0)
+		# Packed arrays are values: each is removed from in place, by name.
+		s.bomb_pos.remove_at(k)
+		s.bomb_from.remove_at(k)
+		s.bomb_throw.remove_at(k)
+		s.bomb_land.remove_at(k)
+		s.bomb_root.remove_at(k)
+		s.bomb_r.remove_at(k)
+		s.bomb_dmg.remove_at(k)
+
+
+# Drone Buddy -----------------------------------------------------------------------------------------------------
+## Ticks between one drone's shots: the period / the level's rate, under attack speed.
+static func drone_period(w: World, t: AbilityTable) -> int:
+	var lvl := level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
+	return Stats.period(w, maxi(1, t.period_ticks * 1000 / t.rate_permille(lvl)))
+
+
+## Where drone k of n hovers: behind the player's facing, the drones fanned DRONE_SPREAD apart.
+static func drone_slot(w: World, k: int, n: int) -> Vector2:
+	var back := PlayerBuild.melee_angle(w) + SimTick.ANGLE_UNITS / 2
+	var off := (2 * k - (n - 1)) * DRONE_SPREAD / 2
+	return w.player_pos() + Kin.dir((back + off) & 4095) * DRONE_TRAIL_M
+
+
+static func _drones(w: World, t: AbilityTable) -> void:
+	var s := w.ab
+	var a := w.actors
+	var n := s.drone_pos.size()
+	for k in n:
+		var p := s.drone_pos[k]
+		p += (drone_slot(w, k, n) - p) * (DRONE_FOLLOW_PERMILLE / 1000.0)
+		s.drone_pos[k] = p
+		if s.drone_cd[k] > 0:
+			s.drone_cd[k] -= 1
+			continue
+		var best := -1
+		var best_d := 0.0
+		for i in w.enemies_near(p, t.range_m):
+			var d := Kin.length(a.pos(i) - p)
+			if a.invuln[i] == 0 and (best < 0 or d < best_d):
+				best = i
+				best_d = d
+		if best < 0:
+			s.drone_cd[k] = DRONE_IDLE_TICKS
+			continue
+		var dir := Kin.dir(Kin.angle_of(a.pos(best) - p))
+		var life := int(ceil(t.range_m / t.speed)) + 2
+		var dmg := _damage(t, level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
+		var tags := SimEvent.TAG_PROJECTILE | SimEvent.TAG_ABILITY
+		w.queue_projectile(
+			a.ids[0], ActorStore.TEAM_PLAYER, p, dir * t.speed, dmg, BOLT_RADIUS_M, life, tags
+		)
+		s.drone_cd[k] = drone_period(w, t)
+		s.drone_fire[k] = w.tick
+
+
+## World._projectile_hits: a drone bolt landed on actor `i`; at L5 it chains once to the nearest other enemy within
+## radius_m of the hit.
+static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> void:
+	var p := w.projectiles
+	if got <= 0 or p.team[pi] != ActorStore.TEAM_PLAYER or not (p.tags[pi] & SimEvent.TAG_ABILITY):
+		return
+	var t := owned_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
+	if t == null or t.extra(level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)) <= 0:
+		return
+	var a := w.actors
+	var best := -1
+	var best_d := 0.0
+	for j in w.enemies_near(at, t.radius_m):
+		var d := Kin.length(a.pos(j) - at)
+		if j != i and a.invuln[j] == 0 and (best < 0 or d < best_d):
+			best = j
+			best_d = d
+	if best < 0:
+		return
+	w.ab.chain_tick = w.tick
+	w.ab.chain_from = at
+	w.ab.chain_to = a.pos(best)
+	var tags := SimEvent.TAG_CHAIN | SimEvent.TAG_ABILITY
+	var dmg := p.damage[pi]
+	Damage.hit(
+		w, best, dmg, a.ids[0], a.ids[0], p.root_id[pi], tags, at, a.pos(best), EFFECT_DRONE_CHAIN
+	)
+
+
+# Orbit Blades ----------------------------------------------------------------------------------------------------
+## The blades' ring radius at `level` (area applied).
+static func orbit_radius(w: World, t: AbilityTable, level: int) -> float:
+	return Stats.area(w, t.radius_m * t.radius_permille(level) / 1000.0)
+
+
+## Where blade k of n is now: the same points the hits test and the view draws (EI-07).
+static func blade_pos(w: World, k: int, n: int, r: float) -> Vector2:
+	var ang := (w.ab.orbit_angle + k * SimTick.ANGLE_UNITS / n) & 4095
+	return w.player_pos() + Kin.dir(ang) * r
+
+
+static func _orbit(w: World, t: AbilityTable, level: int) -> void:
+	var s := w.ab
+	var a := w.actors
+	s.orbit_angle = (s.orbit_angle + maxi(1, SimTick.ANGLE_UNITS / t.period_ticks)) & 4095
+	for k in range(s.orbit_ids.size() - 1, -1, -1):
+		if s.orbit_next[k] <= w.tick:
+			s.orbit_ids.remove_at(k)
+			s.orbit_next.remove_at(k)
+	var n := t.count(level)
+	var r := orbit_radius(w, t, level)
+	var dmg := _damage(t, level)
+	var tags := SimEvent.TAG_ABILITY
+	for i in w.enemies_near(w.player_pos(), r + BLADE_R):
+		if a.invuln[i] > 0 or s.orbit_ids.has(a.ids[i]):
+			continue
+		for k in n:
+			var b := blade_pos(w, k, n, r)
+			if not AttackShapes.disc_touches(b, BLADE_R, a.pos(i), a.radius[i]):
+				continue
+			s.orbit_ids.append(a.ids[i])
+			s.orbit_next.append(w.tick + t.hit_ticks)
+			s.orbit_hit_tick = w.tick
+			Damage.hit(
+				w, i, dmg, a.ids[0], a.ids[0], w.take_root(), tags, b, a.pos(i), EFFECT_ORBIT
+			)
+			break
+
+
+# --- State hash and reads --------------------------------------------------------------------------------------
+static func touched(w: World) -> bool:
+	return (
+		not w.ability_owned.is_empty()
+		or not w.stat_values.is_empty()
+		or w.player.crit_chance_permille > 0
+		or w.ab.touched()
+	)
+
+
+static func hash_into(w: World, h: StateHasher) -> void:
+	if not touched(w):
+		return
+	h.add_ints(w.ability_owned)
+	h.add_ints(w.ability_levels)
+	h.add_ints(w.stat_values)
+	h.add_int(w.rng_crit.state)
+	h.add_int(w.rng_ability.state)
+	w.ab.hash_into(h)
+
+
+## Per slot (in slot order): the ability's id, name key, kind, auto, button, level, cooldown left and total, ready,
+## and for Blink its charges (WorldReader.abilities).
+static func read(w: World) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for s in w.ability_owned.size():
+		var t := w.ability_tables[w.ability_owned[s]]
+		var lvl := w.ability_levels[s]
+		var left := 0
+		var total := 1
+		var ready := true
+		match t.kind:
+			AbilityTable.Kind.BOMB_LOBBER:
+				left = w.ab.cd[s] if s < w.ab.cd.size() else 0
+				total = Stats.cooldown(w, t.cooldown_ticks)
+			AbilityTable.Kind.DRONE_BUDDY:
+				left = w.ab.drone_cd[0] if not w.ab.drone_cd.is_empty() else 0
+				total = drone_period(w, t)
+			AbilityTable.Kind.BLINK:
+				left = w.blink_cd
+				total = blink_cooldown(w)
+				ready = blink_ready(w)
+			AbilityTable.Kind.COMBO_SWORD, AbilityTable.Kind.PULSE_GUN:
+				var sk := PlayerSkill.read(w)
+				if not sk.is_empty():
+					left = sk["cooldown"]
+					total = sk["cooldown_total"]
+		ready = ready and left == 0
+		(
+			out
+			. append(
+				{
+					"id": t.id,
+					"name_key": t.name_key,
+					"kind": t.kind,
+					"auto": t.auto,
+					"button": t.button,
+					"level": lvl,
+					"cooldown": left,
+					"cooldown_total": maxi(1, total),
+					"ready": ready,
+					"charges": w.ab.blink_charges if t.kind == AbilityTable.Kind.BLINK else 0,
+				}
+			)
+		)
+	return out
+
+
+## What the views draw (WorldReader.ability_fx): bombs in flight and their ground circles, the last landings, the
+## drones, the orbit blades and the last blink shock or sword wave.
+static func fx(w: World) -> Dictionary:
+	var s := w.ab
+	var blades := PackedVector2Array()
+	var orbit := owned_of_kind(w, AbilityTable.Kind.ORBIT_BLADES)
+	if orbit != null and not w.player_dead():
+		var lvl := level_of_kind(w, AbilityTable.Kind.ORBIT_BLADES)
+		var n := orbit.count(lvl)
+		for k in n:
+			blades.append(blade_pos(w, k, n, orbit_radius(w, orbit, lvl)))
+	return {
+		"bomb_pos": s.bomb_pos,
+		"bomb_from": s.bomb_from,
+		"bomb_throw": s.bomb_throw,
+		"bomb_land": s.bomb_land,
+		"bomb_r": s.bomb_r,
+		"blast_pos": s.blast_pos,
+		"blast_tick": s.blast_tick,
+		"blast_r": s.blast_r,
+		"drones": s.drone_pos,
+		"drone_fire": s.drone_fire,
+		"blades": blades,
+		"blade_r": BLADE_R,
+		"orbit_hit_tick": s.orbit_hit_tick,
+		"shock_tick": s.shock_tick,
+		"shock_pos": s.shock_pos,
+		"shock_r": s.shock_r,
+		"chain_tick": s.chain_tick,
+		"chain_from": s.chain_from,
+		"chain_to": s.chain_to,
+	}

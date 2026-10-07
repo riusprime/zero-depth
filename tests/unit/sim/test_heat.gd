@@ -33,6 +33,7 @@ func _world(
 	items: Array = [], enemies: Array = [Vector2(1.2, 0)], utility: int = PlayerTable.Utility.NONE
 ) -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
+	t.crit_chance_permille = 0  # exact numbers here; crit has its own tests (v0.4.0 BS)
 	t.utility = utility
 	var w := World.new(5, t)
 	w.dummy_speed = 0.0
@@ -326,6 +327,7 @@ func test_heat_items_are_offered_only_with_heat() -> void:
 
 func test_a_world_without_heat_is_unchanged() -> void:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
+	t.crit_chance_permille = 0  # exact numbers here; crit has its own tests (v0.4.0 BS)
 	var w := World.new(5, t)
 	w.add_dummy(Vector2(1.2, 0), 0.35, 5000)
 	assert_null(w.heat)

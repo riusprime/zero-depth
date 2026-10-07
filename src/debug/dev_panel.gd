@@ -9,6 +9,7 @@ var api: DebugApi
 var _info := Label.new()
 var _hash := Label.new()
 var _boss := Label.new()
+var _ability := Label.new()
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -37,6 +38,8 @@ func _init(p_api: DebugApi) -> void:
 		["SpawnBoss", "UI_DEV_SPAWN_BOSS", api.request_boss],
 		["God", "UI_DEV_GOD", api.toggle_god],
 		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
+		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
+		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
 	]:
 		var b := Button.new()
 		b.name = spec[0]
@@ -47,6 +50,9 @@ func _init(p_api: DebugApi) -> void:
 	_boss.name = "BossChoice"
 	_boss.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_boss)
+	_ability.name = "AbilityChoice"
+	_ability.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_ability)
 
 
 func _process(_delta: float) -> void:
@@ -64,5 +70,11 @@ func _process(_delta: float) -> void:
 	_boss.text = (
 		tr(w.boss_tables[api.boss_choice].name_key)
 		if api.boss_choice < w.boss_tables.size()
+		else ""
+	)
+	var ab := w.ability_tables
+	_ability.text = (
+		"%s  L%d" % [tr(ab[api.ability_choice].name_key), Abilities.level_of(w, api.ability_choice)]
+		if api.ability_choice < ab.size()
 		else ""
 	)

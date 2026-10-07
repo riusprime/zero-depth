@@ -33,8 +33,12 @@ func test_compiled_player_matches_the_kernel_starting_values() -> void:
 	var a := ContentCompiler.compile_player(def)
 	var b := PlayerTable.starting_values()
 	for prop in a.get_property_list():
-		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and prop["name"] != "combo":
+		var crit: bool = prop["name"] in ["crit_chance_permille", "crit_mult_permille"]
+		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and prop["name"] != "combo" and not crit:
 			assert_eq(a.get(prop["name"]), b.get(prop["name"]), prop["name"])
+	# v0.4.0 BS: the data's crit (5 %, x1.5); the kernel worlds never crit, so their goldens keep their hashes.
+	assert_eq([a.crit_chance_permille, a.crit_mult_permille], [50, 1500], "the run's base crit")
+	assert_eq(b.crit_chance_permille, 0, "kernel worlds never crit")
 	assert_eq(a.combo.size(), b.combo.size(), "combo steps")
 	for k in mini(a.combo.size(), b.combo.size()):
 		var x := a.combo[k].to_array()

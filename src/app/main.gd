@@ -113,8 +113,9 @@ func show_main_menu() -> void:
 	_set_menu(m)
 
 
-## Play -> pick the build (v0.3.0 L15: Blade or Gun) -> pick the utility -> the run. Both picks are remembered in
-## the profile; the build is the run's (RunState.build_id) and holds on every floor.
+## Play -> pick the build (v0.3.0 L15: Blade or Gun) -> the run. The pick is remembered in the profile; the build is
+## the run's (RunState.build_id) and holds on every floor. v0.4.0 BS (owner F11, PD-01 flipped): there is no utility
+## pick any more; Blink and Aegis are ability cards found in the run.
 func show_build_picker() -> void:
 	var defs := ContentRepository.load_all().all_of(&"build")
 	var last := StringName(profile.section("loadout").get("build", "blade"))
@@ -122,27 +123,9 @@ func show_build_picker() -> void:
 	p.picked.connect(
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)
-			show_utility_picker()
-	)
-	p.back_pressed.connect(show_main_menu)
-	_set_menu(p)
-
-
-## The utility pick, after the build. The pick is remembered in the profile.
-func show_utility_picker() -> void:
-	var repo := ContentRepository.load_all()
-	var defs := repo.all_of(&"utility")
-	defs.sort_custom(
-		func(a: UtilityDefinition, b: UtilityDefinition) -> bool: return a.kind < b.kind
-	)
-	var last := StringName(profile.section("loadout").get("utility", "guard"))
-	var p := UtilityPicker.new(defs, last)
-	p.picked.connect(
-		func(id: StringName) -> void:
-			profile.section("loadout")["utility"] = String(id)
 			start_stage()
 	)
-	p.back_pressed.connect(show_build_picker)
+	p.back_pressed.connect(show_main_menu)
 	_set_menu(p)
 
 
@@ -214,10 +197,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		repo = ContentRepository.load_all()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
-	var utility: UtilityDefinition = repo.get_def(
-		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
-	)
-	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
+	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
 	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var enemies := ContentCompiler.compile_enemies(repo)
@@ -245,6 +225,10 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
+	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
+	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
+	Abilities.start_floor(world)
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
@@ -343,7 +327,7 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with the next seed and the same build and utility.
+## A new run with the next seed and the same build.
 func restart() -> void:
 	_stage_seed += 1
 	_end_stage()

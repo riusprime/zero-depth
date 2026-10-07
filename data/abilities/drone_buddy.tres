@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 3
+activation = 1
+button = 0
+name_key = &"ABILITY_DRONE_BUDDY"
+desc_key = &"ABILITY_DRONE_BUDDY_DESC"
+tags = Array[StringName]([&"bolt", &"auto", &"summon"])
+range_m = 9
+radius_m = 4
+speed_mps = 16
+period_seconds = 0.333333
+damage = 5
+level_rate = PackedFloat32Array(1, 1.2, 1.4, 1.6, 1.8)
+level_count = PackedInt32Array(1, 1, 2, 2, 2)
+level_extra = PackedInt32Array(0, 0, 0, 0, 1)
+id = &"drone_buddy"

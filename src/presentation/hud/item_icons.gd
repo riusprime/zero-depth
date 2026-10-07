@@ -46,6 +46,8 @@ static func has_icon(id: StringName) -> bool:
 
 ## The shapes of `id`'s icon (the gem for an unknown id).
 static func shapes(id: StringName) -> Array:
+	if not id in IDS and AbilityIcons.has_icon(id):
+		return AbilityIcons.shapes(id)  # v0.4.0 BS: abilities and stat cards
 	match id:
 		&"long_edge":
 			return [

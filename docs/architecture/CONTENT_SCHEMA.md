@@ -313,6 +313,30 @@ lunging step must hit 2 ticks or more in) and `sweep_seconds` (the blade's cross
 `UtilityDefinition` (defined in v0.1.0): `id`, `name_key`, `kind` (`GUARD` or `MOBILE`), the timings in seconds,
 a cooldown, and `params` checked against the kind's schema.
 
+v0.4.0 BS (owner F11, PD-01 flipped): no utility is chosen before the run. `UtilityDefinition` stays for the forced
+loadouts of tests and tools (`ContentCompiler.apply_utility`); in a run, Blink and Aegis are abilities (below).
+`PlayerDefinition` gains `crit_chance` (0–1, data 0.05) and `crit_damage` (≥ 1, data 1.5), compiled to per mille.
+
+`AbilityDefinition` (v0.4.0 BS, owner F8; `data/abilities/`, category `ability`): `id`, `kind` (`COMBO_SWORD`,
+`PULSE_GUN`, `BOMB_LOBBER`, `DRONE_BUDDY`, `ORBIT_BLADES`, `BLINK`, `AEGIS`; appended, never renumbered),
+`activation` (`MANUAL` or `AUTO`), `button` (`NONE` for auto; `PRIMARY` or `UTILITY` for manual, required),
+`rarity`, `name_key`, `desc_key`, `start_weapon` (`blade`/`gun`: slot 1 of that build; empty for a card), `tags`
+(closed set: melee, bolt, area, auto, utility, weapon, summon, orbit), `cooldown_seconds`, `damage`, `range_m`,
+`radius_m`, `speed_mps`, `period_seconds`, `duration_seconds`, `hit_seconds`, and the per-level table: six arrays of
+exactly 5 entries (L1–L5): `level_damage`, `level_radius`, `level_rate` (multipliers > 0), `level_count` (≥ 1),
+`level_cooldown` (seconds ≥ 0), `level_extra` (≥ 0; per kind: the sword's wave, the gun's pierce, the drone's
+chain, the blink's charges, Aegis's charge cap). Each kind validates the fields it reads. Compiled by
+`ContentCompiler.compile_abilities` (id order) into `AbilityTable`.
+
+`StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
+`max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
+`shard_gain`, `pickup_range`, `armour`), `name_key`, `desc_key` (one `%s` for the amount), `amounts` (common, rare,
+epic; positive, rising; percent, points for crit, percent of max HP per second for regen), `cap` (0 = none; crit
+chance and crit damage in percent points, the others as a multiplier: 2.5 = ×2.5, 0.4 = −60 %) and `weight`.
+
+`RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
+`altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
+
 `DashDefinition.cooldown_seconds` is 1.4 s in `data/player/runner.tres` since v0.3.5 K (owner F12; it was 0.8 s).
 
 `BuildDefinition` (v0.3.0 L15, L16; `data/builds/`): `id`, `weapon` (`BLADE` or `GUN`), `name_key`, `desc_key`,

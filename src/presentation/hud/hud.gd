@@ -40,6 +40,8 @@ var gamble := GambleHud.new()
 var minimap := Minimap.new()
 ## v0.3.5 K: the skill pip beside the HP bar and the vent hint beside the heat meter.
 var kit_hud := KitHud.new()
+## v0.4.0 BS: the four ability slots above the HP plate.
+var ability_hud := AbilityHud.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -133,6 +135,8 @@ func _init() -> void:
 	add_child(kit_hud)  # v0.3.5 K
 	kit_hud.hp_anchor = _hp_bar
 	kit_hud.heat_anchor = heat_meter
+	add_child(ability_hud)  # v0.4.0 BS
+	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
@@ -177,6 +181,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_rewards(reader)
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
+	ability_hud.sync(reader)  # v0.4.0 BS
 
 
 func _process(delta: float) -> void:
@@ -473,15 +478,10 @@ func _sync_items(reader: WorldReader) -> void:
 		_items.add_child(icon)
 
 
+## v0.4.0 BS: `idx` is a card code (an item, an ability or a stat card; PickPanel.card_face).
 func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
-	var id := reader.item_id(idx)
-	_card.show_item(
-		id,
-		tr(reader.item_name_key(idx)),
-		tr(reader.item_desc_key(idx)),
-		ItemLooks.color_of_id(id),
-		caption
-	)
+	var face := PickPanel.card_face(self, reader, idx)
+	_card.show_item(face["id"], face["title"], face["sentence"], face["color"], caption)
 
 
 ## The combo card (tests and shot scripts read it).

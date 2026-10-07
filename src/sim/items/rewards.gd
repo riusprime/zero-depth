@@ -29,6 +29,7 @@ static func shards_for_kill(w: World, kind: int) -> int:
 ## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
+	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
 	if amount <= 0:
 		return
 	w.shards += amount
@@ -77,7 +78,7 @@ static func spot_order(layout: FloorLayout) -> PackedInt32Array:
 ## The reward within interact reach nearest the player (lowest index on a tie), or -1.
 static func nearest(w: World) -> int:
 	var best := -1
-	var best_d := w.reward_table.interact_radius_m
+	var best_d := Stats.reach(w, w.reward_table.interact_radius_m)  # v0.4.0 BS: pickup range
 	var p := w.player_pos()
 	for i in w.rewards.size():
 		var d := Kin.length(w.rewards.pos(i) - p)
@@ -103,13 +104,7 @@ static func interact(w: World) -> bool:
 		_deny(w, i)
 		return false
 	if w.rewards.rolled[i] == 0:
-		var t := w.reward_table
-		var weight := (
-			t.rare_weight_chest
-			if w.rewards.kind[i] == RewardStore.Kind.CHEST
-			else t.rare_weight_altar
-		)
-		w.rewards.set_offer(i, ItemPool.draw_weighted(w, t.offer_size, weight))
+		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
 	if w.rewards.offer_of(i).is_empty():
 		_deny(w, i)
 		return false
@@ -137,7 +132,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
 	)
 	e.amount = idx
-	w.add_item(idx)
+	Offers.apply(w, idx)  # v0.4.0 BS: an item (mod), an ability or a stat card
 	w.rewards.remove_at(i)
 	_resume(w)
 

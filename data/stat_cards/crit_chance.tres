@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"crit_chance"
+name_key = &"STAT_CRIT_CHANCE"
+desc_key = &"STAT_CRIT_CHANCE_DESC"
+amounts = PackedFloat32Array(4, 8, 12)
+cap = 75
+weight = 10
+id = &"crit_chance"

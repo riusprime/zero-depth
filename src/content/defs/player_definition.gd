@@ -21,6 +21,10 @@ const MAX_LUNGE_M := 2.0
 ## per mille of max HP each second.
 @export var regen_delay_seconds := 10.0
 @export var regen_permille_per_second := 10
+## Crit (v0.4.0 BS, owner F9): every direct hit the player lands rolls this chance on the `crit` stream; a crit
+## deals crit_damage x the damage. Stat cards raise both.
+@export var crit_chance := 0.05
+@export var crit_damage := 1.5
 
 
 func category() -> StringName:
@@ -52,6 +56,10 @@ func validate() -> Array[ValidationIssue]:
 	if regen_permille_per_second < 0 or regen_permille_per_second > 1000:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "regen_permille_per_second is 0..1000")
+		)
+	if crit_chance < 0.0 or crit_chance > 1.0 or crit_damage < 1.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "crit_chance is 0..1, crit_damage >= 1")
 		)
 	if primary == null:
 		issues.append(ValidationIssue.new(&"missing", resource_path, "primary is missing"))

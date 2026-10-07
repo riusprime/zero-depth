@@ -12,6 +12,9 @@ const FIELDS: Array[StringName] = [
 	&"shards",
 	&"gamble_stacks",
 	&"regen_bonus_permille",
+	&"ability_owned",  # v0.4.0 BS: the slots, their levels and the stat cards
+	&"ability_levels",
+	&"stat_values",
 ]
 const HP := &"hp"
 

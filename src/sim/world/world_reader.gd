@@ -79,6 +79,21 @@ const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
 const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
 const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
+## Build (v0.4.0 BS): card types, ability kinds and buttons, slots and levels.
+const CARD_MOD := Offers.MOD
+const CARD_ABILITY := Offers.ABILITY
+const CARD_STAT := Offers.STAT
+const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
+const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
+const ABILITY_BOMB_LOBBER := AbilityTable.Kind.BOMB_LOBBER
+const ABILITY_DRONE_BUDDY := AbilityTable.Kind.DRONE_BUDDY
+const ABILITY_ORBIT_BLADES := AbilityTable.Kind.ORBIT_BLADES
+const ABILITY_BLINK := AbilityTable.Kind.BLINK
+const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
+const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
+const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
+const ABILITY_SLOTS := Abilities.SLOTS
+const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
 
 var _w: World
 
@@ -214,16 +229,17 @@ func projectile_team(i: int) -> int:
 	return _w.projectiles.team[i]
 
 
+## v0.4.0 BS: the forced loadout's utility, or an owned Blink / Aegis ability (Abilities.utility).
 func utility() -> int:
-	return _w.player.utility
+	return Abilities.utility(_w)
 
 
 func has_guard() -> bool:
-	return _w.player.utility == PlayerTable.Utility.GUARD
+	return Abilities.utility(_w) == PlayerTable.Utility.GUARD
 
 
 func has_blink() -> bool:
-	return _w.player.utility == PlayerTable.Utility.BLINK
+	return Abilities.utility(_w) == PlayerTable.Utility.BLINK
 
 
 func guarding() -> bool:
@@ -240,7 +256,7 @@ func blink_cooldown() -> int:
 
 
 func blink_cooldown_total() -> int:
-	return _w.player.blink_cooldown_ticks
+	return Abilities.blink_cooldown(_w)
 
 
 func blink_tick() -> int:
@@ -951,7 +967,7 @@ func guard_charges() -> int:
 
 
 func guard_charge_max() -> int:
-	return _w.item_mods.charge_max
+	return Abilities.charge_max(_w)  # Bulwark's, or Aegis's (v0.4.0)
 
 
 ## Owned combos in unlock order, as indices into the combo tables.
@@ -1226,3 +1242,36 @@ func melee_facing() -> int:
 ## The last Vent press that found no heat to vent (the cold click), as a tick (-1 = never).
 func vent_cold_tick() -> int:
 	return _w.kit.cold_tick
+
+
+# --- Build (v0.4.0 BS): the four ability slots, stat cards, crit and the card offers -----------------------------
+
+
+## The owned abilities in slot order (Abilities.read: id, name_key, kind, auto, button, level, cooldown,
+## cooldown_total, ready, charges).
+func abilities() -> Array[Dictionary]:
+	return Abilities.read(_w)
+
+
+## What the ability views draw (Abilities.fx).
+func ability_fx() -> Dictionary:
+	return Abilities.fx(_w)
+
+
+## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).
+func card_info(code: int) -> Dictionary:
+	return Offers.info(_w, code)
+
+
+## Crit chance and multiplier now, per mille (Stats).
+func crit_chance_permille() -> int:
+	return Stats.crit_chance(_w)
+
+
+func crit_mult_permille() -> int:
+	return Stats.crit_mult(_w)
+
+
+## A stat's raw value (Stats.value: per mille; base 1000 for multipliers, 0 for added points).
+func stat_value(stat: int) -> int:
+	return Stats.value(_w, stat)

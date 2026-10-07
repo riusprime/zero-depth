@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"cooldowns"
+name_key = &"STAT_COOLDOWNS"
+desc_key = &"STAT_COOLDOWNS_DESC"
+amounts = PackedFloat32Array(5, 9, 14)
+cap = 0.4
+weight = 8
+id = &"cooldowns"

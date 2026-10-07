@@ -91,7 +91,7 @@ static func _vent(w: World) -> void:
 static func _start(w: World, t: SkillTable) -> void:
 	var k := w.kit
 	k.skill_t = 1
-	k.skill_cd = t.cooldown_ticks
+	k.skill_cd = Stats.cooldown(w, t.cooldown_ticks)  # v0.4.0 BS: the cooldowns stat
 	k.skill_root = w.take_root()
 	k.skill_tick = w.tick
 	k.skill_from = w.player_pos()
@@ -122,7 +122,8 @@ static func move_step(w: World) -> Vector2:
 ## (WorldReader.skill_hits) use this one function (EI-07).
 static func cleave_touches(w: World, center: Vector2, angle: int, p: Vector2, r: float) -> bool:
 	var t := w.player.skill
-	return AttackShapes.arc_touches(center, w.player.radius_m, angle, t.half_arc, t.reach_m, p, r)
+	var reach := Stats.area(w, t.reach_m)  # v0.4.0 BS: area
+	return AttackShapes.arc_touches(center, w.player.radius_m, angle, t.half_arc, reach, p, r)
 
 
 static func _cleave(w: World, t: SkillTable) -> void:
@@ -247,7 +248,7 @@ static func read(w: World) -> Dictionary:
 	return {
 		"kind": t.kind,
 		"cooldown": k.skill_cd,
-		"cooldown_total": t.cooldown_ticks,
+		"cooldown_total": Stats.cooldown(w, t.cooldown_ticks),
 		"ready": ready(w),
 		"running": k.skill_t,
 		"move_ticks": t.move_ticks(),
@@ -258,7 +259,7 @@ static func read(w: World) -> Dictionary:
 		"hit_pos": k.hit_pos,
 		"pellet_ends": k.pellet_ends,
 		"half_arc": t.half_arc,
-		"reach_m": t.reach_m,
+		"reach_m": Stats.area(w, t.reach_m),
 		"half_cone": t.half_cone,
 		"range_m": t.range_m,
 		"pellets": t.pellets,

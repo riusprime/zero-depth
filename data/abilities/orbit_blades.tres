@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 4
+activation = 1
+button = 0
+name_key = &"ABILITY_ORBIT_BLADES"
+desc_key = &"ABILITY_ORBIT_BLADES_DESC"
+tags = Array[StringName]([&"orbit", &"auto"])
+radius_m = 1.6
+period_seconds = 1.2
+hit_seconds = 0.5
+damage = 8
+level_radius = PackedFloat32Array(1, 1, 1, 1, 1.375)
+level_count = PackedInt32Array(3, 4, 5, 6, 7)
+id = &"orbit_blades"

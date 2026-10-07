@@ -40,6 +40,8 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.hurt_freeze_ticks = SimTick.seconds_to_ticks(def.hurt_hitstop_seconds)
 	t.regen_delay_ticks = SimTick.seconds_to_ticks(def.regen_delay_seconds)
 	t.regen_permille = def.regen_permille_per_second
+	t.crit_chance_permille = int(round(def.crit_chance * 1000.0))  # v0.4.0 BS
+	t.crit_mult_permille = int(round(def.crit_damage * 1000.0))
 	var p := def.primary
 	var combo: Array[SwingStep] = []
 	for sd in p.combo:
@@ -526,6 +528,10 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.boss_shards = def.boss_shards
+	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
+	t.chest_card_weights = def.chest_card_weights.duplicate()
+	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
+	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
 	return t
 
 
@@ -592,6 +598,76 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 		t.heal = def.heal
 		t.window_ticks = SimTick.seconds_to_ticks(def.window_seconds)
 		out.append(t)
+	return out
+
+
+## The abilities (v0.4.0 BS) in id order (the order World.ability_owned refers to): seconds to ticks, multipliers
+## to per mille, the start weapon to its PlayerTable.WEAPON_* bit.
+static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
+	var out: Array[AbilityTable] = []
+	for def: AbilityDefinition in repo.all_of(&"ability"):
+		out.append(compile_ability(def))
+	return out
+
+
+static func compile_ability(def: AbilityDefinition) -> AbilityTable:
+	var t := AbilityTable.new()
+	t.id = def.id
+	t.kind = def.kind as AbilityTable.Kind
+	t.auto = def.activation == AbilityDefinition.Activation.AUTO
+	t.button = def.button as AbilityTable.Binding
+	t.rare = def.rarity == AbilityDefinition.Rarity.RARE
+	t.name_key = def.name_key
+	t.desc_key = def.desc_key
+	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+	t.start_weapon = weapons.get(def.start_weapon, 0)
+	t.tags = PackedStringArray()
+	for tag in def.tags:
+		t.tags.append(String(tag))
+	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
+	t.damage = def.damage
+	t.range_m = def.range_m
+	t.radius_m = def.radius_m
+	t.speed = def.speed_mps / SimTick.TICKS_PER_SECOND
+	t.period_ticks = maxi(1, SimTick.seconds_to_ticks(def.period_seconds))
+	t.duration_ticks = SimTick.seconds_to_ticks(def.duration_seconds)
+	t.hit_ticks = SimTick.seconds_to_ticks(def.hit_seconds)
+	t.level_damage = PackedInt32Array()
+	t.level_radius = PackedInt32Array()
+	t.level_rate = PackedInt32Array()
+	t.level_cooldown = PackedInt32Array()
+	for k in AbilityTable.MAX_LEVEL:
+		t.level_damage.append(int(round(def.level_damage[k] * 1000.0)))
+		t.level_radius.append(int(round(def.level_radius[k] * 1000.0)))
+		t.level_rate.append(int(round(def.level_rate[k] * 1000.0)))
+		t.level_cooldown.append(SimTick.seconds_to_ticks(def.level_cooldown[k]))
+	t.level_count = def.level_count.duplicate()
+	t.level_extra = def.level_extra.duplicate()
+	return t
+
+
+## The stat cards (v0.4.0 BS), indexed by Stats.Stat (null for a stat without data). Amounts: percent (points for
+## crit) to per mille (x 10). Caps: crit chance and crit damage in percent points (x 10), the others as a multiplier
+## (x 1000).
+static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
+	var out: Array[StatTable] = []
+	out.resize(Stats.COUNT)
+	for def: StatCardDefinition in repo.all_of(&"stat_card"):
+		var s := StatCardDefinition.STATS.find(def.stat)
+		if s < 0:
+			continue
+		var t := StatTable.new()
+		t.id = def.id
+		t.stat = s
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.amounts = PackedInt32Array()
+		for k in StatCardDefinition.RARITIES:
+			t.amounts.append(int(round(def.amounts[k] * 10.0)))
+		var crit := s == Stats.Stat.CRIT_CHANCE or s == Stats.Stat.CRIT_DAMAGE
+		t.cap = int(round(def.cap * (10.0 if crit else 1000.0)))
+		t.weight = def.weight
+		out[s] = t
 	return out
 
 
