@@ -39,8 +39,10 @@ L1 blink). Full remapping arrives with the Options step.
 5. Outline style: which one (off / ink / sketch / sketch + paper)? Thicker or thinner, more or less hand-drawn?
 6. Anything else: fun, readability, frame rate, Spanish.
 
-## Owner answers (date)
-OWNER ONLY
+## Owner answers (2026-10-07)
+Pasted verbatim from the owner's message:
+
+> Okay great! a couple of small things, blink is just like a faster dash but it should be a teleport, allowing you to go through walls, the hitbox of the shots should e just a bit bigger so it is easier to hit the enemies, but just a bit bigger than its actual size, I like the sketch, but it could be a bit thinner, like more precise, look like draw but not sooo much hand drown like taking the hand part of the drawing a 20% down, then the blade should have a sliding animation of a component to be more visual, not just the cone in the ground but more like a sword swinging but not an actual sword render, the acceleration curve should be a bit faster at both ends so you get to top speed fast and you stop fast but not like a hard stop like a fast smooth curve
 
 ## Free notes
 OWNER ONLY

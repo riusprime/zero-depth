@@ -37,6 +37,11 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L10 | "instead of charging one stronger attack we long press for continuous shooting that deals less damage each bullet" | Hold to fire continuously: 4 damage per bolt, 8.3 bolts/s (~33 dps, below the swing's ~45, so melee keeps its risk/reward). Replaces the charged bolt (changes Q1) | 7b |
 | L11 | "movement feels okay, but we could improve it still on how it feels" | Open: the owner names what to change after the next build; L8's fix may cover the pad side | — |
 | L12 | "a light and thin black stroke to borders of things … closer to a hand draw sketch … just the feeling" | A screen-space ink outline on every edge (walls, props, actors), thin and black, with a slight hand-drawn wobble. Three strengths are shown in game (Options: off / ink / sketch / sketch + paper) so the owner judges them live (a G2 pick in the build itself) | 7c |
+| L13 | (second build, 2026-10-07) "blink … should be a teleport, allowing you to go through walls" | Blink lands 5 m along the move direction even past walls; if that spot is inside a wall or outside the room, it lands at the nearest free spot back along the line. The view shows a vanish/appear burst, not a streak | 7e |
+| L14 | "the hitbox of the shots should be just a bit bigger … than its actual size" | The bolt's hit radius goes from 0.10 m to 0.16 m; its drawn size stays | 7e |
+| L15 | "I like the sketch, but it could be a bit thinner, more precise … the hand part … 20% down" | Sketch lines become 1 px (one-sided edge test) and the wobble and gaps drop by 20% | 7e |
+| L16 | "the blade should have a sliding animation … like a sword swinging but not an actual sword render" | A bright slash ribbon sweeps across the swing's arc in the swing's own ticks, alternating direction each combo hit; the ground cone stays faint | 7e |
+| L17 | "the acceleration curve should be a bit faster at both ends … not a hard stop … a fast smooth curve" | Movement gets velocity: it eases toward the target speed exponentially (90% in 0.10 s speeding up, 0.08 s stopping) | 7e |
 | L6 | ROADMAP §4 v0.1.0 scope (approved roadmap) | Options (audio, display, remap, shake, reduced motion, colour-blind), SFX hooks with captions, readable-cause test, bench with real AI | 8–12 |
 
 ## Design (starting values; the owner tunes them after playing)
@@ -127,6 +132,10 @@ cleared**; reaching 0 HP shows **You died** with the cause. Both offer Restart a
 
 ### 7d. Second fight build for the owner
 - `PLAYTEST_FIGHT_2.md`; Windows artifact.
+
+### 7e. Second-build fixes (sim + presentation)
+- L13–L17 above. **Tests:** blink through a wall, blink into a wall or out of the room falls back; bolt hit
+  radius; acceleration and stop times; the slash follows the swing ticks. **Goldens** change (player velocity).
 
 ### 8. Bench with real enemy AI (evidence)
 - The reference encounter is now the real arena; re-run `sim_bench`, `evidence/BENCH.md`.
