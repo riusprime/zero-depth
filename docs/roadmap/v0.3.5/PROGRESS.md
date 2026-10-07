@@ -11,16 +11,18 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|
 | — | Plan | this commit |
 | PT | The portal glows the visor's light blue; going in draws, spins and dissolves the hero into light (~1.0 s, sim-held); floor 2+ opens on a light-blue arrival column (~0.8 s, sim-held); reduced motion fades instead. Evidence [`evidence/PORTAL.md`](evidence/PORTAL.md) | `c6fe6f4`, merge (this commit) |
+| K | A **Vent** button (F / pad B) vents heat as a blast when Hot or above (a cold click below; dash and blink no longer vent); dash cooldown 0.8 → 1.4 s; a **Skill** button (Q / pad Y): Blade **Lunge Cleave** (3.5 m lunge + 180° cleave, 28 × 1.15, 4 s), Gun **Scatter Blast** (7 pellets over 60°, 4 m, 6 × 0.85, knockback, 3.5 s); a skill pip and a vent hint on the HUD. Evidence [`evidence/KIT.md`](evidence/KIT.md) | `28a6fb7`, merge `974b46c` |
+| UI | A straight, thin heat bar with Hot/Overclock ticks; a calmer HUD (LINE ships; BARE and SLATE in [`hud_mockups.png`](evidence/hud_mockups.png)); square, flat pick cards with a small rarity mark (FLAT ships; FACET, RULE in [`card_mockups.png`](evidence/card_mockups.png)); the minimap was mirrored top to bottom (one sign) — fixed with a camera-projection test; sword sounds −8 dB, one layer, half the tail, at most 2 swing voices. Evidence [`evidence/UI_PASS.md`](evidence/UI_PASS.md) | `d52f3cc`, merge `0d8eaec` |
 
 ## Goldens changed on purpose
-- none (PT: `BossFlow` now hashes its transit fields, which changes the state hash of generated floors only; no
+- none (K: the kernel scenario pins the v0.0.1 dash cooldown so the scripted golden input keeps its hashes; PT: `BossFlow` now hashes its transit fields, which changes the state hash of generated floors only; no
   golden fixture runs one)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2: HUD (calmer) mockups | — | not yet asked | |
-| G2: pick card mockups | — | not yet asked | |
+| G2: HUD (calmer) mockups | 2026-10-07 (with the build) | pending | |
+| G2: pick card mockups | 2026-10-07 (with the build) | pending | |
 | v0.5.0 start before a v0.4.0 playtest (F21 vs ROADMAP §0.3) | 2026-10-07 | "skip the rule, keep going to v0.5.0" | 2026-10-07 |
 
 ## Open
@@ -36,3 +38,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   without a v0.4.0 playtest; both are played together afterwards.
 - 2026-10-07 — PT: portal entry and floor arrival animations (F19, F20); `BossFlow.ENTERING` + arrival hold in
   ticks; the optional room scan reveal not built (minimap is UI's this wave). Suite 674 passing; MIN_TEST_COUNT 674.
+- 2026-10-07 — K and UI merged (conflicts: audio events, view root, MIN_TEST_COUNT, translations; kept both). 701 tests
+  pass; goldens unchanged.
