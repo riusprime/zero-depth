@@ -1,16 +1,22 @@
 class_name RunDefinition
 extends ContentDef
 ## A run (v0.3.0 PLAN "Run (B)"): how many floors, the biomes they draw from (a random order per run; PD-04: a
-## biome never changes difficulty), how enemies scale with the floor number, and how much you heal between floors.
-## Starting values the owner tunes.
+## biome never changes difficulty), how enemies and bosses scale with the floor number, and how much you heal
+## between floors. Starting values the owner tunes.
 
 ## Floors in a run; the last floor's portal wins it.
 @export var floors := 3
 ## Biome ids, shuffled per run; floor f uses the f-th (cycling when there are fewer biomes than floors).
 @export var biomes: Array[StringName] = []
-## Enemy HP × (1 + enemy_hp_per_floor × (f − 1)) and damage × (1 + enemy_damage_per_floor × (f − 1)).
-@export var enemy_hp_per_floor := 0.4
-@export var enemy_damage_per_floor := 0.2
+## v0.4.0 SC (F10): normal enemies' HP and damage per mille on floor f, entry f − 1 (past the end, the last entry):
+## 1.9^(f − 1) and 1.4^(f − 1) rounded. Integer tables, not runtime powers (EI-02). The danger tier's scaling comes
+## on top (SpawnDirectorDefinition).
+@export var enemy_hp_floor_permille := PackedInt32Array([1000, 1900, 3610])
+@export var enemy_damage_floor_permille := PackedInt32Array([1000, 1400, 1960])
+## Bosses keep their own per-floor scaling (v0.3.0 B): HP × (1 + boss_hp_per_floor × (f − 1)) and every attack's
+## damage × (1 + boss_damage_per_floor × (f − 1)).
+@export var boss_hp_per_floor := 0.4
+@export var boss_damage_per_floor := 0.2
 ## Between floors you heal this fraction of your max HP.
 @export var heal_between_floors := 0.4
 
@@ -27,13 +33,15 @@ func validate() -> Array[ValidationIssue]:
 	for b in biomes:
 		if String(b).is_empty():
 			issues.append(ValidationIssue.new(&"missing", resource_path, "a biome id is empty"))
-	if enemy_hp_per_floor < 0.0:
+	check_permille_table(issues, "enemy_hp_floor_permille", enemy_hp_floor_permille, true)
+	check_permille_table(issues, "enemy_damage_floor_permille", enemy_damage_floor_permille, true)
+	if boss_hp_per_floor < 0.0:
 		issues.append(
-			ValidationIssue.new(&"negative", resource_path, "enemy_hp_per_floor is negative")
+			ValidationIssue.new(&"negative", resource_path, "boss_hp_per_floor is negative")
 		)
-	if enemy_damage_per_floor < 0.0:
+	if boss_damage_per_floor < 0.0:
 		issues.append(
-			ValidationIssue.new(&"negative", resource_path, "enemy_damage_per_floor is negative")
+			ValidationIssue.new(&"negative", resource_path, "boss_damage_per_floor is negative")
 		)
 	if heal_between_floors < 0.0 or heal_between_floors > 1.0:
 		issues.append(

@@ -10,6 +10,10 @@ extends Node3D
 
 const CUBE := 0.7
 const BAR_W := 0.55
+## v0.4.0 SC: projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
+const PROJECTILE_POOL_MAX := 400
+## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation.
+const ANIMATE_RADIUS_M := 24.0
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
 var technique := &"xray"
@@ -24,12 +28,17 @@ var _proj_last := {}
 var _flash := {}
 ## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
 var _tint := {}
-## Projectile materials by look (see _projectile_material).
+## Projectile materials by look (see _projectile_material), and one mesh per look.
 var _proj_mats := {}
+var _proj_meshes := {}
+## v0.4.0 SC: idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
+var _proj_pool := {}
+var _proj_pooled := 0
 
 
 func sync(reader: WorldReader) -> void:
 	var alive := {}
+	var hero := reader.player_pos()
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		alive[id] = true
@@ -43,6 +52,9 @@ func sync(reader: WorldReader) -> void:
 			add_child(node)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
+		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
+			var near := (reader.actor_pos(i) - hero).length() <= ANIMATE_RADIUS_M
+			(node.get_meta(&"enemy_avatar") as Node).set_process(near)
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
@@ -60,7 +72,8 @@ func sync(reader: WorldReader) -> void:
 		if fresh:
 			node = _make_projectile(reader.projectile_team(i) == 0)
 			_projectiles[id] = node
-			add_child(node)
+			if node.get_parent() == null:  # a pooled node is already here
+				add_child(node)
 		var last: Vector2 = _proj_last.get(id, p - reader.projectile_vel(i))
 		var dir := p - last
 		if dir.length() > 0.0001:
@@ -69,7 +82,7 @@ func sync(reader: WorldReader) -> void:
 		_proj_last[id] = p
 		if fresh:
 			node.reset_physics_interpolation()
-	_drop_missing(_projectiles, live)
+	_pool_missing(live)
 	for id in _proj_last.keys():
 		if not live.has(id):
 			_proj_last.erase(id)
@@ -130,10 +143,13 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var spawning := reader.actor_spawning(i)
 	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
 	facing.visible = not spawning or node.has_meta(&"enemy_avatar")
-	(node.get_meta(&"bar") as Node3D).visible = not spawning and not node.has_meta(&"boss")
-	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
+	# v0.4.0 SC: an enemy's bar shows once it is hurt (a crowd at full health draws none); the hero's always.
 	var bar: Node3D = node.get_meta(&"bar")
-	bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
+	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
+	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
+	if bar.visible:
+		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
+		bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
 	if node.has_meta(&"dazed"):
 		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
 	if node.has_meta(&"avatar"):
@@ -141,6 +157,29 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
 	if node.has_meta(&"enemy_avatar"):
 		node.get_meta(&"enemy_avatar").sync(reader, i)
+
+
+## v0.4.0 SC: a projectile gone from the sim goes back to its look's pool (hidden) instead of being freed.
+func _pool_missing(live: Dictionary) -> void:
+	for id in _projectiles.keys():
+		if live.has(id):
+			continue
+		var node: Node3D = _projectiles[id]
+		_projectiles.erase(id)
+		if _proj_pooled >= PROJECTILE_POOL_MAX:
+			node.queue_free()
+			continue
+		node.visible = false
+		var key: String = node.get_meta(&"look")
+		if not _proj_pool.has(key):
+			_proj_pool[key] = []
+		(_proj_pool[key] as Array).append(node)
+		_proj_pooled += 1
+
+
+## Idle projectile nodes waiting for reuse (tests).
+func pooled_projectiles() -> int:
+	return _proj_pooled
 
 
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
@@ -397,21 +436,33 @@ func _add_core_panels(root: Node3D, size: float) -> void:
 
 
 ## Hostile shots are yellow streaks; the player's bolts are short cyan darts (reserved colours, PRESENTATION §3).
+## v0.4.0 SC: a node of the same look comes back from the pool when there is one; the mesh is shared per look.
 func _make_projectile(is_player: bool = false) -> Node3D:
-	var n := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(0.55, 0.05, 0.08)
+	var size := Vector3(0.55, 0.05, 0.08)
 	if is_player:
-		box.size = bolt_look.get("size", Vector3(0.38, 0.07, 0.07))
-	n.mesh = box
+		size = bolt_look.get("size", Vector3(0.38, 0.07, 0.07))
 	var role := &"player_core" if is_player else &"proj_hostile"
 	var c := ThemePalette.color(role)
 	if is_player:
 		c = bolt_look.get("color", c)
 	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
+	var key := "%s|%s|%s" % [size, c.to_html(), energy]
+	var idle: Array = _proj_pool.get(key, [])
+	if not idle.is_empty():
+		var reused: Node3D = idle.pop_back()
+		_proj_pooled -= 1
+		reused.visible = true
+		return reused
+	if not _proj_meshes.has(key):
+		var box := BoxMesh.new()
+		box.size = size
+		_proj_meshes[key] = box
+	var n := MeshInstance3D.new()
+	n.mesh = _proj_meshes[key]
 	n.material_override = _projectile_material(c, energy)
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var holder := Node3D.new()
+	holder.set_meta(&"look", key)
 	holder.add_child(n)
 	return holder
 

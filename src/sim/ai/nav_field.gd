@@ -8,6 +8,10 @@ const CELL := 0.5
 const CLEARANCE := 0.6
 const PERIOD := 10
 const UNREACHED := 1 << 30
+## v0.4.0 SC: the world's floods stop this many steps (half-metre cells, diagonals counted as one) from the player,
+## about 80 m of path: a whole floor's flood cost up to ~11 ms every PERIOD ticks, while enemies spawn in the
+## player's room or a neighbour. An enemy past it has no flow and walks straight until it is back in reach.
+const WORLD_FLOOD_STEPS := 160
 const STEPS: Array[Vector2i] = [
 	Vector2i(1, 0),
 	Vector2i(-1, 0),
@@ -28,9 +32,13 @@ var dist := PackedInt32Array()
 var region := PackedInt32Array()
 var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()
+## v0.4.0 SC: the goal cell and step bound of the last flood (x = -1: none since the last build). A flood from the
+## same cell with the same bound gives the same distances (the walls don't change between builds), so it is skipped.
+var _flooded := Vector3i(-1, -1, -1)
 
 
 func build(walls: Array[Obb]) -> void:
+	_flooded = Vector3i(-1, -1, -1)
 	if walls.is_empty():
 		size = Vector2i.ZERO
 		return
@@ -61,6 +69,7 @@ func build(walls: Array[Obb]) -> void:
 
 ## The reference build (every wall at every cell), kept for the test that the fast build matches it.
 func build_reference(walls: Array[Obb]) -> void:
+	_flooded = Vector3i(-1, -1, -1)
 	if walls.is_empty():
 		size = Vector2i.ZERO
 		return
@@ -145,12 +154,16 @@ func region_near(p: Vector2) -> int:
 
 ## Breadth-first distances from the goal's cell (the player). Diagonals don't cut blocked corners. Walks the
 ## adjacency built with the field; distances don't depend on the order neighbours are visited in, so this gives
-## exactly what flood_reference gives.
-func flood(goal: Vector2) -> void:
+## exactly what flood_reference gives. Cells more than `max_steps` from the goal stay UNREACHED (v0.4.0 SC).
+func flood(goal: Vector2, max_steps: int = UNREACHED) -> void:
 	if size == Vector2i.ZERO:
 		return
-	dist.fill(UNREACHED)
 	var g := cell_of(goal)
+	var key := Vector3i(g.x, g.y, max_steps)
+	if key == _flooded:
+		return
+	_flooded = key
+	dist.fill(UNREACHED)
 	if not inside(g):
 		return
 	var queue := PackedInt32Array()
@@ -163,6 +176,8 @@ func flood(goal: Vector2) -> void:
 		var k := queue[head]
 		head += 1
 		var nd := dist[k] + 1
+		if nd > max_steps:
+			break
 		for j in range(_adj_start[k], _adj_start[k + 1]):
 			var nk := _adj[j]
 			if dist[nk] == UNREACHED:
@@ -223,6 +238,7 @@ func _build_adjacency() -> void:
 
 ## The reference flood (the original loop over STEPS), kept for the test that the fast flood matches it.
 func flood_reference(goal: Vector2) -> void:
+	_flooded = Vector3i(-1, -1, -1)
 	if size == Vector2i.ZERO:
 		return
 	dist.fill(UNREACHED)

@@ -5,10 +5,13 @@ extends RefCounted
 ## Determinism: the same (seed, content, loadout, InputFrame log) gives the same state_hash() at every tick.
 
 const EVENT_LOG_CAP := 4096
+const EVENT_LOG_TRIM := 512
 const BUTTON_BITS: Array[int] = [
 	InputFrame.PRIMARY, InputFrame.UTILITY, InputFrame.DASH, InputFrame.INTERACT
 ]
 const DASH_SLOT := 2
+## v0.4.0 SC: how far a body may drift during the collision passes before its wall check is redone (_move_and_collide).
+const WALL_SKIP_M := 0.5
 
 var tick := 0
 var freeze_ticks := 0
@@ -247,8 +250,8 @@ var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
-var _wall_grid := UniformGrid.new()
-var _actor_grid := UniformGrid.new()
+var _wall_grid := DenseGrid.new()  # v0.4.0 SC: dense grids (were UniformGrids)
+var _actor_grid := DenseGrid.new()
 ## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
 var _wall_next: Obb
 var _nav_next: NavField
@@ -284,9 +287,28 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
 	nav.build(walls)
-	_wall_grid.clear()
-	for i in walls.size():
-		_wall_grid.insert_rect(i, walls[i].bounds())
+	var rects: Array[Rect2] = []
+	for o in walls:
+		rects.append(o.bounds())
+	_wall_grid.build(rects)
+
+
+## Indices of the walls that may touch `rect` (ascending; a superset), for sweeps that would test every wall (SC).
+func walls_near(rect: Rect2) -> PackedInt32Array:
+	return _wall_grid.query_rect(rect)
+
+
+## Indices of the walls that may touch a body of radius r moving from a to b (ascending; a superset): a line of sight
+## or a run (v0.4.0 SC), walking only the grid cells along it. The reach is r × 1.5: Collide.sweep_vs_obb grows a
+## turned wall by r along its own axes, which reaches up to r × 1.41 along the world's.
+func walls_along(a: Vector2, b: Vector2, r: float) -> PackedInt32Array:
+	return _wall_grid.query_segment(a, b, r * 1.5)
+
+
+## Indices of the actors whose bodies may touch `rect` (ascending; a superset) as of the last actor-grid build:
+## tick phase 3 builds it before the enemies plan (v0.4.0 SC), each collision pass in phase 5 rebuilds it.
+func actors_near(rect: Rect2) -> PackedInt32Array:
+	return _actor_grid.query_rect(rect)
 
 
 ## Adds a dummy mover immediately (setup only; during a tick, spawns are queued).
@@ -349,7 +371,7 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
-		nav.flood(player_pos())
+		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)  # v0.4.0 SC: bounded
 	_run_ai()
 	# 4. Action states.
 	_advance_actions()
@@ -427,6 +449,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
 	actors.invuln[i] = SimTick.SPAWN_IN_TICKS
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
+	actors.power[i] = 1000  # v0.4.0 SC: full damage; the spawn director scales it by tier
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
 	return id
 
@@ -510,14 +533,14 @@ func prepare_wall(o: Obb) -> void:
 ## floods from the player at once, so enemies path around the new wall from this tick.
 func add_wall_now(o: Obb) -> void:
 	walls.append(o)
-	_wall_grid.insert_rect(walls.size() - 1, o.bounds())
+	_wall_grid.add(o.bounds())
 	if o == _wall_next and _nav_next != null:
 		nav = _nav_next
 	else:
 		nav.build(walls)
 	_wall_next = null
 	_nav_next = null
-	nav.flood(player_pos())
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
 
 
 # --- end Run flow ------------------------------------------------------------------------------------------
@@ -597,7 +620,8 @@ func _rewards_touched() -> bool:
 
 
 ## v0.4.0 BS: living enemy indices whose body touches the disc (center, r), ascending. The uniform grid of this
-## tick's bodies (built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability targeting).
+## tick's bodies (the DenseGrid built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability
+## targeting).
 func enemies_near(center: Vector2, r: float) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var g := r + 1.0
@@ -799,7 +823,9 @@ func emit_event(kind: SimEvent.Kind, source: int, owner: int, target: int, at: V
 	e.target_id = target
 	e.pos = at
 	_events.append(e)
-	if _events.size() > EVENT_LOG_CAP * 2:
+	# v0.4.0 SC: trimmed EVENT_LOG_TRIM at a time (was EVENT_LOG_CAP at once: freeing that many events in one
+	# tick was a ~10 ms hitch in a horde).
+	if _events.size() > EVENT_LOG_CAP + EVENT_LOG_TRIM:
 		_events = _events.slice(_events.size() - EVENT_LOG_CAP)
 	return e
 
@@ -820,6 +846,8 @@ func _buffer_presses(pressed: int) -> void:
 
 func _run_ai() -> void:
 	var target := player_pos()
+	if not enemy_tables.is_empty():  # v0.4.0 SC: the grid the enemies' staggered plans query (EnemyAi.plan)
+		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 	for i in range(1, actors.size()):
 		if BossAi.is_boss_kind(actors.kinds[i]):
 			BossAi.think(self, i)  # Bosses (v0.3.0 C).
@@ -942,26 +970,50 @@ func _move_and_collide() -> void:
 		for i in actors.size():
 			through.append(1 if BossAi.passes_through(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
+	# v0.4.0 SC: a body with no wall within WALL_SKIP_M of it skips the wall checks while it stays within that of
+	# where it was looked at (walls that far off give no push, so the result is the same).
+	var open_x := PackedFloat32Array()
+	var open_y := PackedFloat32Array()
+	open_x.resize(actors.size())
+	open_y.resize(actors.size())
+	for i in actors.size():
+		var r := actors.radius[i] + WALL_SKIP_M
+		open_x[i] = INF
+		if (
+			_wall_grid
+			. query_rect(Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0))
+			. is_empty()
+		):
+			open_x[i] = actors.pos_x[i]
+			open_y[i] = actors.pos_y[i]
 	for _iter in SimTick.COLLIDE_ITERS:
 		for i in actors.size():
 			if not through.is_empty() and through[i] == 1:
+				continue
+			if (
+				absf(actors.pos_x[i] - open_x[i]) < WALL_SKIP_M
+				and absf(actors.pos_y[i] - open_y[i]) < WALL_SKIP_M
+			):
 				continue
 			var ap := actors.pos(i)
 			var r := actors.radius[i]
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
 			actors.set_pos(i, ap)
-		_actor_grid.clear()
-		for i in actors.size():
-			var r := actors.radius[i]
-			_actor_grid.insert_rect(
-				i, Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
-			)
+		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		for a in actors.size():
 			var ra := actors.radius[a]
 			var pa := actors.pos(a)
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
 				if b <= a:
+					continue
+				# v0.4.0 SC: bodies whose boxes are clearly apart get no push; skip the call (the margin covers
+				# rounding, so the result is the same).
+				var reach := ra + actors.radius[b] + 0.001
+				if (
+					absf(actors.pos_x[b] - actors.pos_x[a]) >= reach
+					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
+				):
 					continue
 				var push := Collide.circle_vs_circle(
 					actors.pos(a), ra, actors.pos(b), actors.radius[b]
@@ -1001,6 +1053,15 @@ func _projectile_hits() -> void:
 				best_wall = w
 		for k in _actor_grid.query_rect(span):
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
+				continue
+			# v0.4.0 SC: a body clearly outside the segment's box can't be hit; skip the sweep (same result).
+			var reach := actors.radius[k] + 0.001
+			if (
+				actors.pos_x[k] + reach < span.position.x
+				or actors.pos_x[k] - reach > span.end.x
+				or actors.pos_y[k] + reach < span.position.y
+				or actors.pos_y[k] - reach > span.end.y
+			):
 				continue
 			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
 			if t >= 0.0 and (t < best_t or (t == best_t and best_actor >= 0 and k < best_actor)):

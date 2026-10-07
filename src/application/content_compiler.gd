@@ -231,14 +231,18 @@ static func compile_encounter(def: EncounterDefinition, repo: ContentRepository)
 static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentRepository) -> SpawnTable:
 	var t := SpawnTable.new()
 	t.tier_ticks = maxi(1, SimTick.seconds_to_ticks(def.tier_seconds))
-	t.cap_base = def.cap_base
+	t.cap_by_floor = def.cap_by_floor.duplicate()
 	t.cap_per_tier = def.cap_per_tier
 	t.cap_max = def.cap_max
 	t.interval_start_ticks = maxi(1, SimTick.seconds_to_ticks(def.interval_start_seconds))
-	t.interval_step_ticks = SimTick.seconds_to_ticks(def.interval_step_seconds)
 	t.interval_min_ticks = maxi(1, SimTick.seconds_to_ticks(def.interval_min_seconds))
-	t.hp_per_tier_permille = int(round(def.hp_scale_per_tier * 1000.0))
+	t.interval_tier_permille = def.interval_tier_permille.duplicate()
+	t.hp_tier_permille = def.hp_tier_permille.duplicate()
+	t.damage_tier_permille = def.damage_tier_permille.duplicate()
+	t.pack_min_by_floor = def.pack_min_by_floor.duplicate()
+	t.pack_max_by_floor = def.pack_max_by_floor.duplicate()
 	t.min_distance_m = def.min_distance_m
+	t.edge_band_m = def.edge_band_m
 	for e in def.mix:
 		var enemy: EnemyDefinition = repo.get_def(&"enemies", e.enemy_id)
 		t.kinds.append(compile_enemy(enemy).kind)
@@ -797,8 +801,10 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	var t := RunTable.new()
 	t.floors = def.floors
 	t.biome_count = def.biomes.size()
-	t.hp_per_floor_permille = int(round(def.enemy_hp_per_floor * 1000.0))
-	t.damage_per_floor_permille = int(round(def.enemy_damage_per_floor * 1000.0))
+	t.enemy_hp_floor_permille = def.enemy_hp_floor_permille.duplicate()
+	t.enemy_damage_floor_permille = def.enemy_damage_floor_permille.duplicate()
+	t.boss_hp_per_floor_permille = int(round(def.boss_hp_per_floor * 1000.0))
+	t.boss_damage_per_floor_permille = int(round(def.boss_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
 	return t
 

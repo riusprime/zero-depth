@@ -12,15 +12,21 @@ merged.
 | — | Plan | this commit |
 | BS | Four ability slots (slot 1 = Combo Sword / Pulse Gun; Bomb Lobber, Drone Buddy, Orbit Blades, Blink with a landing shock, Aegis as cards; full slots level up to L5); no utility at the start (F11); 12 stat cards × 3 rarities and crit (5 %, ×1.5, `crit` stream); altars and chests offer abilities, stat cards and the items as mods; the shrine pays into the same stats; ability HUD, card faces, damage numbers (crits big and yellow), bombs / drones / blades / shock in the world; dev panel grants abilities. Evidence: [`evidence/BUILD_SYSTEM.md`](evidence/BUILD_SYSTEM.md) | `7a4a453` + this commit |
 | EN | Six horde enemies (Swarmer packs, Splitter, Shield Bearer, Mender, Mine Layer, Sniper): 12 behaviours ([`evidence/ENEMIES_12.md`](evidence/ENEMIES_12.md)) | `v0.4.0 Step EN` |
-
-## Goldens changed on purpose
-- none (BS: the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
-  chance is in play, which the kernel worlds never have. The export smoke, `scripts/ci/export_smoke.sh`, was not run
-  locally: CI covers it)
 | BO | A second boss in every pool: the Warlord (floor 1), the Hive Lens (floor 2, splits into three Lens Drones), the Foundry (floor 3); the `flood` move; sounds, strings, image prompts ([`evidence/BOSSES_2.md`](evidence/BOSSES_2.md), [`../../art/BOSSES_2.md`](../../art/BOSSES_2.md)) | `v0.4.0 Step BO` |
+| SC | Enemies scale per floor (HP ×1.9, damage ×1.4) and every 30 s danger tier (×1.10, ×1.05); hordes grow from 14/30/50 to 120 alive in packs at the room edges; the sim carries 120 enemies + 200 shots at 3.66 ms a tick (evidence/HORDES.md) | this commit |
 
 ## Goldens changed on purpose
-- none yet (BO: none; replay and export-smoke hashes unchanged)
+- BS: none (the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
+  chance is in play, which the kernel worlds never have).
+- BO: none (replay and export-smoke hashes unchanged).
+- SC: `tests/golden/fixtures/replay_ground_plane.json` (final `5171fdad…41ae` → `70ac7ca2…0add`, first different
+  checkpoint tick 420) and `tests/golden/fixtures/export_smoke_hash.txt` (`9c324d3d…17f2` → `e5365ddb…7391`). Why:
+  the broadphase changed from 1 m Dictionary cells to `DenseGrid` (2 m cells; actors listed by centre). Collision
+  resolves each body against its candidate walls and neighbours one after another, positions updating in between, so
+  a different candidate set lets a body pushed by one wall be resolved against another in the same pass. Bisected:
+  with the old grids and every other SC change the old fixture matched through tick 1200. The kernel scenario has no
+  enemies, so staggering and scaling don't touch it. After the merge with BS/EN/BO (`a2b6d5b`) both fixtures hold
+  unchanged (the replay golden passes; the export smoke's pack hash is `e5365ddb…`).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -48,6 +54,9 @@ merged.
 - 2026-10-07 — Step BO: three new bosses, two per pool; fight-length bands unchanged and met (melee 29.1-34.3 s, near
   59.7-68.3 s, far >= 2.8x melee); readable cause 0 violations over 12 seeds; `MIN_TEST_COUNT` 769. The Warlord's
   arena is OPEN (CROSS walled the player out of the fight on a real floor).
+- 2026-10-07 — SC: scaling tables (run + spawning data), packs at room edges, staggered AI plans, DenseGrid,
+  bounded flood, view pooling/bars/occlusion focus; horde bench 14.13 → 3.66 ms, `stress_ai` 6.38 → 1.73 ms;
+  kernel `stress` still 2.22 ms (> 2 ms, reported). Scorecard sims against the new scaling are TU's.
 - 2026-10-07 — PLAN drafted from the owner's direction while v0.3.5 wave 1 runs.
 - 2026-10-07 — Step EN: six horde kinds (starting values in CONTENT_SCHEMA §3 and SIM_CONTRACTS §10c), in the
   spawn mix from tiers 1-3 (`SpawnMixEntry.pack` for Swarmer packs of 8, within the alive cap); no golden changed.
@@ -62,3 +71,8 @@ merged.
 - 2026-10-07 — EN merged (812 tests), then BO on top (by hand: the Kind enum keeps EN's kinds then BO's; EnemyAi matches run
   on `behaviour_of()` with the Swarmer included; both telegraph style sets kept). 846 tests pass; export smoke 0 misses;
   goldens unchanged. A container restart stopped SC, CP and AB mid-run; their work survived on disk and they resumed.
+- 2026-10-07 — SC merged with BS, EN and BO (`a2b6d5b`): one pack rule (`SpawnMixEntry.pack`: 0 = the floor's draw,
+  > 0 fixed; Swarmer 8, the other horde kinds 1); EN/BO AI under the 4-tick plans; mine damage by tier power;
+  873 / 873, readable cause 0 violations, export smoke ok. Horde bench after the merge 4.84–4.89 ms: **target
+  missed** (SC's own commit measured 4.55 ms in the same session; the machine is slower than when it measured
+  3.66 ms). Reported, not retuned.

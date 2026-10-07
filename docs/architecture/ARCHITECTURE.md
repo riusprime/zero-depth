@@ -90,7 +90,7 @@ src/
     core/        tick constants, RngStream (+ ported rng math), CanonicalValue, Kin (+ generated trig_lut.gd),
                  StateHasher, InputFrame
     world/       World, WorldReader (read-only facade), actor and projectile stores, snapshots
-    collision/   circles, OBBs, swept segments, uniform grid, static wall grid
+    collision/   circles, OBBs, swept segments, dense broadphase grids (DenseGrid, v0.4.0 SC)
     combat/      action states, hitboxes, damage pipeline, statuses, CapLedger
     effects/     SimEvent, EffectQueue, RootLedger, LoadoutCompiler, EffectRuntime, watchdog
     ai/          behaviours, behaviour param schemas, steering
