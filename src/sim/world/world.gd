@@ -72,6 +72,12 @@ var wave_timer := -1
 var cleared := false
 var killer_kind := -1
 var killer_tags := 0
+## Continuous spawning (null = off): the compiled director, run ticks counted while the player lives, ticks
+## until the next spawn, and enemies killed this run.
+var spawner: SpawnTable
+var run_ticks := 0
+var spawn_cd := 0
+var kills := 0
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -170,6 +176,8 @@ func step(frame: InputFrame) -> void:
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	WaveDirector.advance(self)
+	if spawner != null:
+		SpawnDirector.advance(self)
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -267,6 +275,8 @@ func state_hash() -> String:
 	for v in [held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, shot_cd]:
 		h.add_int(v)
 	for v in [wave_index, wave_timer, 1 if cleared else 0, killer_kind, killer_tags]:
+		h.add_int(v)
+	for v in [1 if spawner != null else 0, run_ticks, spawn_cd, kills]:
 		h.add_int(v)
 	h.add_int(blink_cd)
 	h.add_int(blink_tick)
@@ -519,6 +529,8 @@ func _remove_dead() -> void:
 	for i in range(1, actors.size()):
 		if actors.dead[i] == 1:
 			gone.append(i)
+			if EnemyAi.is_enemy_kind(actors.kinds[i]):
+				kills += 1
 	actors.remove_sorted(gone)
 
 

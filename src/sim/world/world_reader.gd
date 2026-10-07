@@ -264,3 +264,18 @@ func snapshot() -> Dictionary:
 
 func state_hash() -> String:
 	return _w.state_hash()
+
+
+## Run time in seconds (counts while the player lives; 0 without a spawn director).
+func run_seconds() -> float:
+	return float(_w.run_ticks) / SimTick.TICKS_PER_SECOND
+
+
+## The spawn director's tier (0 without one).
+func tier() -> int:
+	return _w.spawner.tier_at(_w.run_ticks) if _w.spawner != null else 0
+
+
+## Enemies killed this run.
+func kills() -> int:
+	return _w.kills

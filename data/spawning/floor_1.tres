@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="SpawnDirectorDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/spawn_mix_entry.gd" id="1_mix"]
+[ext_resource type="Script" path="res://src/content/defs/spawn_director_definition.gd" id="2_sdd"]
+
+[sub_resource type="Resource" id="M_charger"]
+script = ExtResource("1_mix")
+enemy_id = &"charger"
+weight = 5
+unlock_tier = 0
+
+[sub_resource type="Resource" id="M_needle"]
+script = ExtResource("1_mix")
+enemy_id = &"needle"
+weight = 3
+unlock_tier = 0
+
+[sub_resource type="Resource" id="M_warden"]
+script = ExtResource("1_mix")
+enemy_id = &"warden"
+weight = 2
+unlock_tier = 1
+
+[resource]
+script = ExtResource("2_sdd")
+id = &"floor_1"
+tier_seconds = 30.0
+cap_base = 3
+cap_per_tier = 2
+cap_max = 14
+interval_start_seconds = 3.0
+interval_step_seconds = 0.25
+interval_min_seconds = 0.8
+hp_scale_per_tier = 0.08
+min_distance_m = 8.0
+mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden")])
