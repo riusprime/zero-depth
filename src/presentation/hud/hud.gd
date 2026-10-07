@@ -26,6 +26,8 @@ const BOSS_WARN_M := 6.0
 
 ## The boss bar (v0.3.0 C), shown while a boss is alive.
 var boss_bar := BossBar.new()
+## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
+var minimap := Minimap.new()
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
 var _dash := _pip("HUD_DASH")
@@ -133,6 +135,7 @@ func _init() -> void:
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
 	add_child(boss_bar)
+	add_child(minimap)
 	_build_rewards()
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -166,6 +169,7 @@ func sync(reader: WorldReader) -> void:
 	if _floor.visible:
 		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
 	boss_bar.sync(reader)
+	minimap.sync(reader)
 	_sync_rewards(reader)
 
 

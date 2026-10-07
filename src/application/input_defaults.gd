@@ -20,6 +20,8 @@ const ACTIONS := {
 	&"dash": [[&"key", KEY_SPACE], [&"button", JOY_BUTTON_RIGHT_SHOULDER]],
 	&"interact": [[&"key", KEY_E], [&"button", JOY_BUTTON_X]],
 	&"pause": [[&"key", KEY_ESCAPE], [&"button", JOY_BUTTON_START]],
+	# v0.3.0 MM: hold to show the full map (owner L30).
+	&"map": [[&"key", KEY_TAB], [&"button", JOY_BUTTON_BACK]],
 }
 ## Action -> InputFrame bit, for the latch.
 const BUTTON_BITS := {

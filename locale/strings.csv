@@ -171,3 +171,12 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+MAP_TITLE,MAP,MAPA
+MAP_LEGEND_YOU,You,Tú
+MAP_LEGEND_ROOM,Explored room,Sala explorada
+MAP_LEGEND_UNEXPLORED,Way to an unexplored room,Paso a una sala sin explorar
+MAP_LEGEND_ALTAR,Altar,Altar
+MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
+MAP_LEGEND_BOSS,Boss door,Puerta del jefe
+MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
+MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d

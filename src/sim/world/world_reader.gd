@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods,max-file-lines
 class_name WorldReader
 extends RefCounted
 ## The read-only face of World for presentation (EI-07). Presentation may name WorldReader, never World.
@@ -994,3 +994,41 @@ func bastion_tick() -> int:
 ## Projectile i is a Shrapnel Storm shard.
 func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
+
+
+# --- Minimap (v0.3.0 MM) ------------------------------------------------------------------------------------
+## The room whose interior holds p (-1 inside a wall, a doorway, or without a floor).
+func floor_room_of(p: Vector2) -> int:
+	return _w.floor_layout.room_of(p) if _w.floor_layout != null else -1
+
+
+func floor_start_room() -> int:
+	return _w.floor_layout.start_room if _w.floor_layout != null else -1
+
+
+## The room the portal gate stands in (-1 without a floor).
+func floor_portal_room() -> int:
+	return _w.floor_layout.portal_room if _w.floor_layout != null else -1
+
+
+## Doorways of the floor: door i joins rooms floor_door_rooms(i).x and .y; its passage through the wall; its index
+## of the boss door (-1 when none).
+func floor_door_count() -> int:
+	return _w.floor_layout.door_rooms.size() if _w.floor_layout != null else 0
+
+
+func floor_door_rooms(i: int) -> Vector2i:
+	return _w.floor_layout.door_rooms[i]
+
+
+func floor_door_rect(i: int) -> Rect2:
+	return _w.floor_layout.door_rect(i)
+
+
+## Direction from room .x to room .y through door i (1/4096 turns; a grid axis).
+func floor_door_angle(i: int) -> int:
+	return _w.floor_layout.door_angles[i]
+
+
+func floor_boss_door() -> int:
+	return _w.floor_layout.boss_door_index if _w.floor_layout != null else -1
