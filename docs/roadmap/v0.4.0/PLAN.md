@@ -130,6 +130,7 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | 3 | AB | Arc Field, Frost Nova, Flame Trail, 8 ability combos, Overrun branch, mods re-filed |
 | 3 | SV | Saves at room entry and on close, Continue |
 | 3 | TU | Tuning against the expected-build bot (bands above), readable-cause rerun, bench rerun |
+| 3 | CP | (v0.5.0 scope, pulled into this sprint by the owner) A 40–50 card candidate pool: abilities, stat cards and mods together, starting after BS merges |
 | — | R | Build for the owner + playtest sheet |
 
 ## Open items (what they block)

@@ -30,3 +30,5 @@ merged.
 - 2026-10-07 — PLAN drafted from the owner's direction while v0.3.5 wave 1 runs.
 - 2026-10-07 — Owner: "skip the rule, keep going to v0.5.0". ROADMAP §0.3 waived once: v0.5.0 follows v0.4.0
   without a v0.4.0 playtest; both are played together afterwards.
+- 2026-10-07 — Owner: "okay let's bove the bigger card pool to v0.5 and make it in this current development sprint". The
+  40–50 card pool (ROADMAP v0.6.0 → v0.5.0) runs as step CP in wave 3, after BS.
