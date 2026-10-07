@@ -6,6 +6,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | Plan | `39d7b35` |
+| A | Laser blade with a motion trail (cone removed), smooth shadows ([SHADOWS](evidence/SHADOWS.md)), pad A/Cross presses menu buttons, INK default | `16a90b1`, `3dc4c1f`, `102ce4e`, `381bef0`, merge (this commit) |
 | E | Eight items that change the attacks, pickups to walk over, a no-repeat pool (sim + content; visuals and pedestals in F) | `d684c37`, merge (this commit) |
 | B | A seeded floor: 3×3 rooms joined by doorways, cover slabs, item spots, spawn points, a gate spot ([FLOORS](evidence/FLOORS.md)); placed in the game in F | `40f9936`, `ee24b66`, merge `eb32d61` |
 | D | A stone gate with a swirling green portal, sealed ([PORTAL](evidence/PORTAL.md)); placed in the floor in F | `85e99c7`, merge `c3caa19` |
@@ -47,4 +48,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   so G works from a written description (in its brief); it is not in the repo.
 - 2026-10-07 — The owner uploaded the character reference (`e63c661`); renamed to
   `docs/art/main_character_visual_reference.png` and linked from ART_DIRECTION. Workstream G checks against it.
+- 2026-10-07 — A merged cleanly (8 new tests). Pad bug root cause: Godot 4.7's built-in `ui_accept` has no pad
+  button; `InputDefaults.apply()` now adds JOY_BUTTON_A. Shadow saw: mostly the camera's far plane (200 → 100) plus
+  an 8192 atlas, high soft-shadow filter, blur 0.5 (lavapipe renders; GPU cost and motion shimmer unverified).
+  The blade is hidden when not swinging. 195 tests pass.
 
