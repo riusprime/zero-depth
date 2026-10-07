@@ -13,6 +13,20 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | B | A seeded floor: 3×3 rooms joined by doorways, cover slabs, item spots, spawn points, a gate spot ([FLOORS](evidence/FLOORS.md)); placed in the game in F | `40f9936`, `ee24b66`, merge `eb32d61` |
 | D | A stone gate with a swirling green portal, sealed ([PORTAL](evidence/PORTAL.md)); placed in the floor in F | `85e99c7`, merge `c3caa19` |
 | C | Enemies arrive continuously; cap, pace, mix and HP step up every 30 s (sim + data; wired into the floor in F) | `97e3387`, merge `6d85d36` |
+| G2 | The wanderer rebuilt to the owner's character sheet (primary reference) | `10c2c07`, merge `39c5f13` |
+| G3 | Poncho under the face, legs showing, longer hood | `c99081e`, merge `770181f` |
+| J | Eight more items (16 in all); one-line descriptions ≤ 60 characters in en and es | `b7b9f2e`, merge `f3a885d`, `b1f5e3e` |
+| M | The Warden no longer blocks: front hits deal 80 %, rear hits 110 %, sides 100 % (data: arcs 120°/120°); grey spark on armour, bright spark on the weak spot. 239 tests; goldens unchanged (the hashed runs have no Warden) | `628f30a`, merge `3ff2d40` |
+| I | Floor v2: a 3×3-cell start hall with one exit on a random side, 9–11 more rooms (1×1 … 3×3 cells) in a tree plus 1–2 loop doors, 7 interior layouts, 1 item spot in 1×1 rooms and 1–2 in bigger ones (none in the hall), portal room farthest ([FLOORS](evidence/FLOORS.md)); NavField build 1.5 s → ~72 ms on these floors, identical results | `c8575b6`, `7a4da9e`, merge `d9313c2` |
+| L2 | The Needle is the legged turret from the enemy sheet: red faceted cube, red slit eyes, grey cannon, four IK legs; trot, wind-up glow, barrel recoil per shot ([compare](evidence/enemy_needle_compare.png)) | `dc0291a`, merge `6367bcc` |
+| K | White dash trail with afterimages; blue light column + pool at both blink ends; the portal turns blue; compact item card (icon, name, one sentence) on approach and pickup; 16 item icons and an icon row in the HUD ([VFX_CARDS](evidence/VFX_CARDS.md)) | `ae82c06`, merge `e47e377` |
+| L1 | The Charger is the red hooded crawler from the enemy sheet: faceted hood, red hex visor, four grey clawed legs with bone talons; scuttle, rear-up wind-up with a brighter visor, lunge, dazed slump ([compare](evidence/enemy_charger_compare.png)) | `8c5c74b`, merge `d332f98` |
+| L3 | The Warden is the rock golem from the enemy sheet: red faceted shell, red visor slot, boulder shoulders and fists, no shield; a glowing cracked weak spot on its back; fists-overhead wind-up, ground slam, recover, rise ([compare](evidence/enemy_warden_compare.png)) | `265cff8`, merge `3fbb31a` |
+| I2 | Ground only under rooms and their walls (the space between rooms reads as void, props too); enemy models show their rise-in while spawning | this commit |
+| H | Taking damage no longer stalls: hit flashes and tints change only emission colour/energy (toggling `emission_enabled` recompiled shaders mid-frame), projectile and burst materials are kept per look ([DAMAGE_LAG](evidence/DAMAGE_LAG.md)). The crash was not reproduced here | `fa05fd3`, merge `8574379` |
+| H2 | The H rule on the new work: the three enemy models build flashable materials (test), dash afterimages and item effects keep a template material alive; the soak's leak check counts nodes outside the stage (a restart rolls a different floor) | this commit |
+| L1b | Charger refinement: long flat wedge hood with a layered back flap, talons hooking forward and inward, dark back legs between the front pair, armour-plate leg segments, a lunge that reads from the iso camera; ~21 nodes per Charger (was ~48) ([compare](evidence/enemy_charger_compare.png)) | `253f5db`, merge `72c9dc5` |
+| L3b | Warden refinement: shorter notched hood shell, warmer faceted rocks, bigger stacked forearms and fists, a slam that lands the fists beside the shell ([compare](evidence/enemy_warden_compare.png)) | `67cd70a`, merge `d0e899e` |
 
 ## Goldens changed on purpose
 - **C** (spawner state hashed: run ticks, spawn cooldown, kills): replay golden final `815b1648…91f4e6` →
@@ -26,18 +40,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| Floor build check ([`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md)) | 2026-10-07 | pending | |
-| M | The Warden no longer blocks: front hits deal 80 %, rear hits 110 %, sides 100 % (data: arcs 120°/120°); grey spark on armour, bright spark on the weak spot. 239 tests; goldens unchanged (the hashed runs have no Warden) | `628f30a`, merge `3ff2d40` |
-| I | Floor v2: a 3×3-cell start hall with one exit on a random side, 9–11 more rooms (1×1 … 3×3 cells) in a tree plus 1–2 loop doors, 7 interior layouts, 1 item spot in 1×1 rooms and 1–2 in bigger ones (none in the hall), portal room farthest ([FLOORS](evidence/FLOORS.md)); NavField build 1.5 s → ~72 ms on these floors, identical results | `c8575b6`, `7a4da9e`, merge `d9313c2` |
-| L2 | The Needle is the legged turret from the enemy sheet: red faceted cube, red slit eyes, grey cannon, four IK legs; trot, wind-up glow, barrel recoil per shot ([compare](evidence/enemy_needle_compare.png)) | `dc0291a`, merge `6367bcc` |
-| K | White dash trail with afterimages; blue light column + pool at both blink ends; the portal turns blue; compact item card (icon, name, one sentence) on approach and pickup; 16 item icons and an icon row in the HUD ([VFX_CARDS](evidence/VFX_CARDS.md)) | `ae82c06`, merge `e47e377` |
-| L1 | The Charger is the red hooded crawler from the enemy sheet: faceted hood, red hex visor, four grey clawed legs with bone talons; scuttle, rear-up wind-up with a brighter visor, lunge, dazed slump ([compare](evidence/enemy_charger_compare.png)) | `8c5c74b`, merge `d332f98` |
-| L3 | The Warden is the rock golem from the enemy sheet: red faceted shell, red visor slot, boulder shoulders and fists, no shield; a glowing cracked weak spot on its back; fists-overhead wind-up, ground slam, recover, rise ([compare](evidence/enemy_warden_compare.png)) | `265cff8`, merge `3fbb31a` |
-| I2 | Ground only under rooms and their walls (the space between rooms reads as void, props too); enemy models show their rise-in while spawning | this commit |
-| H | Taking damage no longer stalls: hit flashes and tints change only emission colour/energy (toggling `emission_enabled` recompiled shaders mid-frame), projectile and burst materials are kept per look ([DAMAGE_LAG](evidence/DAMAGE_LAG.md)). The crash was not reproduced here | `fa05fd3`, merge `8574379` |
-| H2 | The H rule on the new work: the three enemy models build flashable materials (test), dash afterimages and item effects keep a template material alive; the soak's leak check counts nodes outside the stage (a restart rolls a different floor) | this commit |
-| L1b | Charger refinement: long flat wedge hood with a layered back flap, talons hooking forward and inward, dark back legs between the front pair, armour-plate leg segments, a lunge that reads from the iso camera; ~21 nodes per Charger (was ~48) ([compare](evidence/enemy_charger_compare.png)) | `253f5db`, merge `72c9dc5` |
-| L3b | Warden refinement: shorter notched hood shell, warmer faceted rocks, bigger stacked forearms and fists, a slam that lands the fists beside the shell ([compare](evidence/enemy_warden_compare.png)) | `67cd70a`, merge `d0e899e` |
+| Floor build check ([`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md)) | 2026-10-07 | answered (lag, VFX, cards, floor v2, more items) | 2026-10-07 |
+| Second floor build ([`PLAYTEST_FLOOR_2.md`](PLAYTEST_FLOOR_2.md)) | 2026-10-07 | answered ("something very cool now"; walls, randomness, next version) | 2026-10-07 |
 | Character matches the reference | 2026-10-07 | pending (lead's check: 3/4 views close; face-on boxy) | |
 
 ## Open
