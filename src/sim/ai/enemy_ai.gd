@@ -1,10 +1,10 @@
 class_name EnemyAi
 extends RefCounted
-## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. A Warden turns only while it walks:
-## once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it). Each enemy is a small state machine in
-## ActorStore (state, state_t, facing, lock_*, cd, fire_cd). think() runs in tick phase 3, move() in phase 5,
-## resolve() in phase 6. Every attack's area comes from one function here, which the telegraph view also draws
-## (EI-07): charge_lane, slam_disc, burst_line.
+## The v0.1.0 behaviours (owner Q3, 2026-10-06): Charger, Warden, Needle. A Warden turns only while it
+## walks: once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it).
+## Each enemy is a small state machine in ActorStore (state, state_t, facing, lock_*, cd, fire_cd). think() runs
+## in tick phase 3, move() in phase 5, resolve() in phase 6. Every attack's area comes from one function here,
+## which the telegraph view also draws (EI-07): charge_lane, slam_disc, burst_line.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
