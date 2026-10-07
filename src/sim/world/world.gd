@@ -93,9 +93,11 @@ var items_owned := PackedInt32Array()
 var item_mods := ItemMods.new()
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
-## Twin Arc: ticks until the pending echo (0 = none), its angle, root and damage, and the tick it last swung.
+## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
+## tick it last swung.
 var echo_t := 0
 var echo_angle := 0
+var echo_step := 0
 var echo_root := 0
 var echo_damage := 0
 var echo_tick := -1
@@ -135,9 +137,54 @@ var boss_tables: Array[BossTable] = []
 var bosses := BossStore.new()
 ## The boss attack (index in its table) that killed the player, or -1 (the recap's cause line).
 var killer_attack := -1
-## Enemies a boss brings in (eggs, turrets) wait until phase 9 of the tick: [kind, pos].
-var _pending_enemies: Array[Array] = []
+## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
+var boss_id := -1
 # --- end Bosses ---------------------------------------------------------------------------------------------
+# --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
+## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
+var combo_tables: Array[ComboTable] = []
+var combos_owned := PackedInt32Array()
+## Bit (1 << ComboTable.Effect) per owned combo (derived from combos_owned, so not hashed).
+var combo_mask := 0
+## Bulwark: guard charges stored, and how many the current swing took.
+var guard_charges := 0
+var swing_charges := 0
+## Landed player bolts counted by the bolt feeders (Cinder Shot, Static Chain, Barbed Bolts, Frost Core).
+var engine_bolt_hits := 0
+## Which effects already fired in which root chain.
+var proc_ledger := ProcLedger.new()
+## Twin Arc's pending echo comes from an Overcharge swing, and that swing's shockwave damage (Resonance).
+var echo_overcharged := false
+var echo_wave := 0
+## Slipstream: the first tick it may refund the dash again.
+var slipstream_next := 0
+## The last of each payoff, for the views: shock discharge (tick, from, jump ends), Plasma Arc (tick, from, to),
+## Shatter Dash, bleed burst, Wildfire and Blood Harvest (tick, where), Resonance, Shrapnel Storm, Spiked Phase,
+## Slipstream and Frozen Bastion (tick).
+var discharge_tick := -1
+var discharge_from := Vector2.ZERO
+var discharge_to := PackedVector2Array()
+var plasma_tick := -1
+var plasma_from := Vector2.ZERO
+var plasma_to := Vector2.ZERO
+var shatter_tick := -1
+var shatter_pos := Vector2.ZERO
+var burst_tick := -1
+var burst_pos := Vector2.ZERO
+var wildfire_tick := -1
+var wildfire_pos := Vector2.ZERO
+var harvest_tick := -1
+var harvest_pos := Vector2.ZERO
+var resonance_tick := -1
+var shrapnel_tick := -1
+var spiked_tick := -1
+var slipstream_tick := -1
+var bastion_tick := -1
+## Transient within a tick (not hashed): the payoff effects running right now (the ancestry), and the event seq when
+## this tick began (the watchdog's per-tick count).
+var engine_chain := PackedStringArray()
+var tick_seq0 := 0
+# --- end Engines -------------------------------------------------------------------------------------------
 
 var _next_id := 1
 var _event_seq := 0
@@ -146,6 +193,8 @@ var _wall_grid := UniformGrid.new()
 var _actor_grid := UniformGrid.new()
 ## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
+## Enemies a boss brings in (eggs, turrets) wait until phase 9 of the tick: [kind, pos].
+var _pending_enemies: Array[Array] = []
 
 
 func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZERO) -> void:
@@ -208,6 +257,7 @@ func step(frame: InputFrame) -> void:
 		_buffer_presses(frame.pressed)
 		tick += 1
 		return
+	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
 	# 2. Input (a dead player's input is ignored).
 	_age_buffer()
 	if player_dead():
@@ -238,6 +288,7 @@ func step(frame: InputFrame) -> void:
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
+	Engines.tick_statuses(self)  # Engines: shock, bleed, frost, freezes.
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
@@ -306,7 +357,39 @@ func add_item(item_index: int) -> bool:
 		return false
 	items_owned.append(item_index)
 	item_mods = ItemMods.build(item_tables, items_owned)
+	_refresh_combos(true)
 	return true
+
+
+## The compiled combos (v0.3.0 G), in the order combos_owned refers to. Combos already earned by the items owned
+## are owned at once, without an event.
+func set_combo_tables(tables: Array[ComboTable]) -> void:
+	combo_tables = tables
+	_refresh_combos(false)
+
+
+## Sets the items owned (carrying a run's items to a new floor): modifiers and combos follow, no events.
+func set_items_owned(owned: PackedInt32Array) -> void:
+	items_owned = owned.duplicate()
+	item_mods = ItemMods.build(item_tables, items_owned)
+	_refresh_combos(false)
+
+
+## Owns every combo whose two items are owned (new ones appended in combo order); `announce` emits COMBO_UNLOCKED
+## for each new one (amount = its combo index).
+func _refresh_combos(announce: bool) -> void:
+	for c in Engines.combos_for(combo_tables, items_owned):
+		if combos_owned.has(c):
+			continue
+		combos_owned.append(c)
+		if announce:
+			var pid := actors.ids[0]
+			var e := emit_event(SimEvent.Kind.COMBO_UNLOCKED, pid, pid, pid, player_pos())
+			e.amount = c
+			e.effect_id = combo_tables[c].id
+	combo_mask = 0
+	for c in combos_owned:
+		combo_mask |= 1 << combo_tables[c].effect
 
 
 ## Puts a pickup for item `item_index` on the floor at `pos` (setup, or a spawner in phase 9). Returns its id.
@@ -343,7 +426,9 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
 	actors.invuln[i] = BossAi.INTRO_TICKS
 	actors.facing[i] = Kin.angle_of(player_pos() - pos)
+	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
+	boss_id = id
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
 
@@ -431,7 +516,7 @@ func state_hash() -> String:
 	# Items (v0.2.0 E).
 	h.add_ints(items_owned)
 	pickups.hash_into(h)
-	for v in [echo_t, echo_angle, echo_root, echo_damage, echo_tick, swing_count]:
+	for v in [echo_t, echo_angle, echo_step, echo_root, echo_damage, echo_tick, swing_count]:
 		h.add_int(v)
 	h.add_int(1 if swing_overcharged else 0)
 	for v in [overcharge_tick, dash_root, dash_hit_tick]:
@@ -441,6 +526,7 @@ func state_hash() -> String:
 	if not boss_tables.is_empty():
 		bosses.hash_into(h)
 		h.add_int(killer_attack)
+		h.add_int(boss_id)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -448,6 +534,8 @@ func state_hash() -> String:
 		h.add_f32(v)
 	for v in [momentum_t, 1 if swing_momentum else 0, thorn_tick, phase_tick, phase_guard_next]:
 		h.add_int(v)
+	if not item_tables.is_empty():
+		_hash_engines(h)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -458,6 +546,34 @@ func state_hash() -> String:
 		h.add_f32(w.half.y)
 		h.add_int(w.angle)
 	return h.finish_hex()
+
+
+## Engines and combos (v0.3.0 G), in a fixed order. Only worlds whose loadout has items hash them: their fields
+## stay at their defaults otherwise, and leaving them out keeps the item-free goldens' hashes.
+func _hash_engines(h: StateHasher) -> void:
+	h.add_ints(combos_owned)
+	for v in [
+		guard_charges, swing_charges, engine_bolt_hits, 1 if echo_overcharged else 0, echo_wave
+	]:
+		h.add_int(v)
+	h.add_int(slipstream_next)
+	proc_ledger.hash_into(h)
+	actors.hash_statuses(h)
+	for v in [discharge_tick, plasma_tick, shatter_tick, burst_tick, wildfire_tick, harvest_tick]:
+		h.add_int(v)
+	for v in [resonance_tick, shrapnel_tick, spiked_tick, slipstream_tick, bastion_tick]:
+		h.add_int(v)
+	for p: Vector2 in [
+		discharge_from, plasma_from, plasma_to, shatter_pos, burst_pos, wildfire_pos
+	]:
+		h.add_f32(p.x)
+		h.add_f32(p.y)
+	h.add_f32(harvest_pos.x)
+	h.add_f32(harvest_pos.y)
+	h.add_int(discharge_to.size())
+	for p in discharge_to:
+		h.add_f32(p.x)
+		h.add_f32(p.y)
 
 
 ## Plain-data copy for inspectors and desync diffs; never used for gameplay.
@@ -603,7 +719,7 @@ func _move_and_collide() -> void:
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
-		p += vel
+		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step (v0.3.0 L11)
 	actors.set_pos(0, p)
 	# Dummies steer toward the player plus their jitter.
 	var target := p
@@ -749,6 +865,8 @@ func _remove_dead() -> void:
 				)
 				e.amount = bosses.table[b]
 				bosses.remove(b)
+				if boss_id == actors.ids[i]:
+					boss_id = -1
 	actors.remove_sorted(gone)
 
 

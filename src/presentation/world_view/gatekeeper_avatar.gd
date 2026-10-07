@@ -36,6 +36,11 @@ var legs: Array[Node3D] = []
 var _elbows: Array[Node3D] = []
 
 
+## The sheet's name for this boss: its imported model would be stone_sentinel.glb.
+func model_id() -> StringName:
+	return &"stone_sentinel"
+
+
 func _build() -> void:
 	var p := parts
 	chest.name = "Chest"

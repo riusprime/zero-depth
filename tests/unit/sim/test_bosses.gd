@@ -21,6 +21,8 @@ func test_spawn_boss_returns_its_id_and_it_rises_untouchable() -> void:
 	assert_eq(w.actors.kinds[i], ActorStore.Kind.GATEKEEPER)
 	assert_eq(w.actors.hp[i], w.boss_tables[k].hp)
 	assert_true(w.boss_alive())
+	assert_eq(w.boss_id, id)
+	assert_eq(w.actors.freeze_immune[i], 1, "frost only slows a boss")
 	assert_eq(w.actors.state[i], S.SPAWN)
 	assert_eq(
 		Damage.hit(w, i, 50, 1, 1, 1, 0, Vector2.ZERO, Vector2(8, 0)), 0, "invulnerable rising"
@@ -197,6 +199,7 @@ func test_boss_defeated_fires_exactly_once_after_a_normal_kill() -> void:
 	assert_eq(done[0].amount, BossLab.table_index(w, &"brood_mother"))
 	assert_gt(done[0].seq, kills[0].seq, "after the KILL")
 	assert_false(w.boss_alive())
+	assert_eq(w.boss_id, -1)
 	assert_eq(w.bosses.size(), 0)
 	assert_eq(w.kills, 1, "a boss counts as a kill")
 
@@ -226,6 +229,9 @@ func test_brood_hatches_and_caps_the_hatchlings() -> void:
 		if w.actors.kinds[k] == ActorStore.Kind.HATCHLING:
 			count += 1
 	assert_eq(count, 6, "three broods of three, capped at six alive")
+	for k in w.actors.size():
+		if w.actors.kinds[k] == ActorStore.Kind.HATCHLING:
+			assert_eq(w.actors.freeze_immune[k], 0, "hatchlings freeze as usual")
 
 
 func test_siege_phase_two_plants_and_deploys_two_needles() -> void:

@@ -9,6 +9,8 @@ extends Node3D
 ## back into the sim. The poncho's hem points are damped springs in this node's frame (which never rotates), so
 ## they lag behind acceleration and turns, stream back on a dash and settle when the wanderer stops.
 ## +X is the front and +Z the right in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
+## The body follows each melee combo step (v0.3.0 L11): the slashes twist the head and poncho one way, then the other;
+## the thrust leans into the stab; the finisher spins the whole wanderer once, low and leaning into its lunge.
 
 const HIP_Y := 0.42
 const LEG_LEN := 0.42
@@ -85,6 +87,10 @@ var _aim_yaw := 0.0
 var _dashing := false
 var _swing := 0.0
 var _swing_dir := 1.0
+## The swing's WorldReader.MOTION_*, its sweep progress (0..1, eased like the blade), and the spin's target turn.
+var _motion := 0
+var _sweep := 0.0
+var _spin_target := 0.0
 var _guarding := false
 var _dead := false
 # Smoothed animation state.
@@ -96,6 +102,8 @@ var _phase := 0.0
 var _walk := 0.0
 var _dash := 0.0
 var _twist := 0.0
+var _spin := 0.0
+var _stab := 0.0
 var _crouch := 0.0
 var _slump := 0.0
 var _lean := Vector3.ZERO
@@ -184,6 +192,8 @@ func sync(reader: WorldReader) -> void:
 			"swing_ticks": reader.swing_ticks(),
 			"swing_angle": reader.swing_angle(),
 			"combo": reader.combo_step(),
+			"motion": reader.swing_motion(),
+			"sweep_ticks": reader.swing_sweep_ticks(),
 			"guarding": reader.guarding(),
 			"dead": reader.player_dead(),
 		}
@@ -207,10 +217,20 @@ func apply_state(s: Dictionary) -> void:
 	_dead = s["dead"]
 	var st: int = s["swing_t"]
 	_swing = 0.0
+	_sweep = 0.0
+	_motion = s.get("motion", int(s["combo"]) % 2)
 	if st > 0:
 		_swing = clampf(float(st) / maxf(1.0, float(s["swing_ticks"])), 0.0, 1.0)
 		_aim_yaw = SimPlane.yaw_of(s["swing_angle"])
-		_swing_dir = 1.0 if int(s["combo"]) % 2 == 0 else -1.0
+		_swing_dir = -1.0 if _motion == WorldReader.MOTION_SLASH_LEFT_TO_RIGHT else 1.0
+		var sweep := clampf(float(st - 1) / maxf(1.0, float(s.get("sweep_ticks", 5))), 0.0, 1.0)
+		_sweep = 1.0 - (1.0 - sweep) * (1.0 - sweep)
+	if _motion == WorldReader.MOTION_SPIN and st > 0:
+		_spin_target = TAU * _sweep
+	else:
+		_spin_target = 0.0
+		if _spin > PI:
+			_spin -= TAU  # a full turn is the same pose: settle back from just under 0
 	if _fresh:
 		_fresh = false
 		_body_yaw = _aim_yaw
@@ -276,7 +296,16 @@ func slump_amount() -> float:
 
 ## The head's current yaw (radians, SimPlane.yaw_of convention), where the visor looks.
 func body_yaw() -> float:
-	return _body_yaw + _twist
+	return _body_yaw + _twist + _spin
+
+
+## The finisher's spin so far (radians, 0..TAU), and how far the body leans into a thrust or a lunge (0..1).
+func spin_amount() -> float:
+	return _spin
+
+
+func stab_amount() -> float:
+	return _stab
 
 
 func _rate(per_second: float, dt: float) -> float:
@@ -293,9 +322,19 @@ func _pose(dt: float) -> void:
 	_walk = lerpf(_walk, walk_target, _rate(10.0, dt))
 	# Head: toward the aim, quick; a swing winds back then whips through toward the swing.
 	var twist_target := 0.0
+	var stab_target := 0.0
 	if _swing > 0.0:
-		twist_target = _swing_dir * lerpf(-0.75, 0.5, smoothstep(0.0, 0.55, _swing))
+		match _motion:
+			WorldReader.MOTION_THRUST:
+				twist_target = lerpf(-0.25, 0.1, _sweep)
+				stab_target = 1.0 - smoothstep(0.5, 1.0, _swing)
+			WorldReader.MOTION_SPIN:
+				stab_target = 0.6 * (1.0 - smoothstep(0.4, 1.0, _swing))
+			_:
+				twist_target = _swing_dir * lerpf(-0.75, 0.5, smoothstep(0.0, 0.55, _swing))
 	_twist = lerpf(_twist, twist_target, _rate(30.0, dt))
+	_stab = lerpf(_stab, stab_target, _rate(25.0, dt))
+	_spin = lerpf(_spin, _spin_target, _rate(40.0, dt))
 	if not _dead:
 		_body_yaw = _turn_toward(_body_yaw, _aim_yaw, _rate(16.0, dt))
 	# Legs and cloak: toward the movement; walking backwards keeps them facing the aim and backpedals.
@@ -313,7 +352,7 @@ func _pose(dt: float) -> void:
 	var s := sin(_phase)
 	var bob := (1.0 - absf(s)) * 0.035 * _walk
 	var breath := sin(_t * 2.1) * 0.009 * (1.0 - _walk) * (1.0 - _slump)
-	var hip := HIP_Y + bob + breath - _crouch * 0.07 - _slump * 0.22
+	var hip := HIP_Y + bob + breath - _crouch * 0.07 - _slump * 0.22 - _stab * 0.05
 	_pelvis.position = Vector3(0, hip, 0)
 	# Lean: into the movement (hard on a dash), forward when guarding or collapsing, a slow idle sway.
 	var face_dir := Vector3(cos(_body_yaw), 0, -sin(_body_yaw))
@@ -321,7 +360,7 @@ func _pose(dt: float) -> void:
 	var side := Vector3(face_dir.z, 0, -face_dir.x)
 	var lean_target := (
 		move_dir * (0.16 * clampf(speed / WALK_SPEED, 0.0, 1.0) * (1.0 - _dash) + 0.32 * _dash)
-		+ face_dir * (_crouch * 0.12 + _slump * 0.22)
+		+ face_dir * (_crouch * 0.12 + _slump * 0.22 + _stab * 0.22)
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
@@ -329,14 +368,14 @@ func _pose(dt: float) -> void:
 	if _lean.length() > 0.0001:
 		b = Basis(Vector3.UP.cross(_lean.normalized()), _lean.length())
 	_pelvis.basis = b
-	_head_yaw.rotation = Vector3(0, _body_yaw + _twist, 0)
+	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin, 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
 	hood.rotation = Vector3(_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08)
 	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.
 	_leg_root.position.y = hip
-	_leg_root.rotation = Vector3(0, _leg_yaw, 0)
+	_leg_root.rotation = Vector3(0, _leg_yaw + _spin, 0)
 	var amp := 0.6 * _walk
 	for k in legs.size():
 		var sgn := -1.0 if k == 0 else 1.0
@@ -382,7 +421,7 @@ func _build_cloak_rest() -> void:
 
 func _cloak_frame() -> Transform3D:
 	# The front corner and the V-neck point where the wanderer faces, under the hood; a swing twists them a little.
-	var yaw := Basis(Vector3.UP, _body_yaw + _twist * 0.35)
+	var yaw := Basis(Vector3.UP, _body_yaw + _twist * 0.35 + _spin)
 	return Transform3D(_pelvis.basis * yaw, _pelvis.position)
 
 

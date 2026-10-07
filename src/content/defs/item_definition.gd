@@ -21,7 +21,20 @@ enum Kind {
 	EXECUTIONER,
 	SWIFT_FEET,
 	PHASE_STRIKE,
+	CINDER_SHOT,
+	WILDFIRE,
+	CONDUCTOR,
+	SERRATED_EDGE,
+	BARBED_BOLTS,
+	GLACIAL_EDGE,
+	COLD_SNAP,
+	BULWARK,
 }
+
+## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
+const TAGS: Array[StringName] = [
+	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard"
+]
 
 @export var kind := Kind.LONG_EDGE
 @export var name_key: StringName
@@ -46,7 +59,8 @@ enum Kind {
 @export var bounces := 0
 ## Kinetic Dash: damage to each enemy the dash passes through (once per dash).
 @export var dash_hit_damage := 0
-## Overcharge: every Nth swing deals × mult and a shockwave of this radius at a share of the swing's damage.
+## Overcharge: every Nth swing of the combo (N = 4: the finisher) deals × mult and a shockwave of this radius at a
+## share of the swing's damage.
 @export var overcharge_every := 0
 @export var overcharge_mult_permille := 0
 @export var shockwave_radius_m := 0.0
@@ -78,6 +92,40 @@ enum Kind {
 @export var phase_damage := 0
 @export var phase_radius_m := 0.0
 @export var phase_guard_window_seconds := 0.0
+# --- Engines (v0.3.0 G). An engine's numbers live in each item that feeds it; owning several takes the strongest.
+## Tags from TAGS: at least one, no repeats.
+@export var tags: PackedStringArray = PackedStringArray()
+## Stacks one qualifying hit adds (Static Chain, Overcharge, Conductor, Serrated Edge, Barbed Bolts, Frost Core,
+## Glacial Edge, Cold Snap, Cinder Shot), or the stacks Wildfire spreads.
+@export var stacks_per_hit := 0
+## Bolt feeders: one application every this many landed bolts (1 = every bolt).
+@export var stack_every := 0
+## Shock: stacks that discharge, how long stacks last (refreshed by each new one), the discharge's damage, how many
+## other enemies it jumps to, and how far each jump reaches.
+@export var shock_threshold := 0
+@export var shock_seconds := 0.0
+@export var shock_damage := 0
+@export var shock_jumps := 0
+@export var shock_range_m := 0.0
+## Bleed: damage per stack per period, how long stacks last (refreshed), the stack cap, and the extra damage per
+## stack a dash through the enemy bursts.
+@export var bleed_damage := 0
+@export var bleed_period_seconds := 0.0
+@export var bleed_seconds := 0.0
+@export var bleed_max_stacks := 0
+@export var bleed_burst_per_stack := 0
+## Frost: stacks that freeze, how long stacks last (refreshed), and how long a freeze holds.
+@export var frost_threshold := 0
+@export var frost_seconds := 0.0
+@export var freeze_seconds := 0.0
+## Wildfire: a kill spreads burn stacks to enemies within this radius.
+@export var spread_radius_m := 0.0
+## Cold Snap: your hits on chilled (frost stacks) and frozen enemies deal × (1 + bonus / 1000).
+@export var chill_bonus_permille := 0
+@export var frozen_bonus_permille := 0
+## Bulwark: guard charges stored at most, and the swing bonus per charge spent.
+@export var charge_max := 0
+@export var charge_bonus_permille := 0
 
 
 func category() -> StringName:
@@ -90,6 +138,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
+	_check_tags(issues)
 	match kind:
 		Kind.LONG_EDGE:
 			check_positive(issues, "reach_bonus_permille", reach_bonus_permille)
@@ -98,12 +147,7 @@ func validate() -> Array[ValidationIssue]:
 			check_duration(issues, "echo_delay_seconds", echo_delay_seconds)
 			check_positive(issues, "echo_damage_permille", echo_damage_permille)
 		Kind.EMBER_EDGE:
-			check_positive(issues, "burn_damage", burn_damage)
-			check_positive(issues, "burn_period_seconds", burn_period_seconds)
-			check_duration(issues, "burn_period_seconds", burn_period_seconds)
-			check_positive(issues, "burn_duration_seconds", burn_duration_seconds)
-			check_duration(issues, "burn_duration_seconds", burn_duration_seconds)
-			check_positive(issues, "burn_max_stacks", burn_max_stacks)
+			_check_burn(issues)
 		Kind.SPLINTER_SHOT:
 			if split_count < 2:
 				issues.append(ValidationIssue.new(&"range", resource_path, "split_count is >= 2"))
@@ -123,6 +167,7 @@ func validate() -> Array[ValidationIssue]:
 			check_positive(issues, "overcharge_mult_permille", overcharge_mult_permille)
 			check_positive(issues, "shockwave_radius_m", shockwave_radius_m)
 			check_positive(issues, "shockwave_damage_permille", shockwave_damage_permille)
+			_check_shock(issues)
 		Kind.VAMPIRIC_CORE:
 			check_positive(issues, "heal_per_kill", heal_per_kill)
 			check_positive(issues, "heal_cap", heal_cap)
@@ -132,14 +177,16 @@ func validate() -> Array[ValidationIssue]:
 			check_positive(issues, "chain_every", chain_every)
 			check_positive(issues, "chain_range_m", chain_range_m)
 			check_positive(issues, "chain_damage", chain_damage)
+			_check_shock(issues)
+			check_positive(issues, "stack_every", stack_every)
 		Kind.MOMENTUM:
 			check_positive(issues, "momentum_window_seconds", momentum_window_seconds)
 			check_duration(issues, "momentum_window_seconds", momentum_window_seconds)
 			check_positive(issues, "momentum_bonus_permille", momentum_bonus_permille)
 		Kind.FROST_CORE:
-			_check_permille_below_1000(issues, "slow_permille", slow_permille)
-			check_positive(issues, "slow_seconds", slow_seconds)
-			check_duration(issues, "slow_seconds", slow_seconds)
+			_check_slow(issues)
+			_check_frost(issues)
+			check_positive(issues, "stack_every", stack_every)
 		Kind.THORN_MANTLE:
 			check_positive(issues, "thorn_bolts", thorn_bolts)
 			check_positive(issues, "thorn_damage", thorn_damage)
@@ -158,7 +205,99 @@ func validate() -> Array[ValidationIssue]:
 			check_positive(issues, "phase_radius_m", phase_radius_m)
 			check_positive(issues, "phase_guard_window_seconds", phase_guard_window_seconds)
 			check_duration(issues, "phase_guard_window_seconds", phase_guard_window_seconds)
+		_:
+			_validate_engines(issues)
 	return issues
+
+
+## The eight engine items (v0.3.0 G).
+func _validate_engines(issues: Array[ValidationIssue]) -> void:
+	match kind:
+		Kind.CINDER_SHOT:
+			_check_burn(issues)
+			check_positive(issues, "stacks_per_hit", stacks_per_hit)
+			check_positive(issues, "stack_every", stack_every)
+		Kind.WILDFIRE:
+			_check_burn(issues)
+			check_positive(issues, "stacks_per_hit", stacks_per_hit)
+			check_positive(issues, "spread_radius_m", spread_radius_m)
+		Kind.CONDUCTOR:
+			_check_shock(issues)
+		Kind.SERRATED_EDGE:
+			_check_bleed(issues)
+		Kind.BARBED_BOLTS:
+			_check_bleed(issues)
+			check_positive(issues, "stack_every", stack_every)
+		Kind.GLACIAL_EDGE:
+			_check_slow(issues)
+			_check_frost(issues)
+		Kind.COLD_SNAP:
+			_check_slow(issues)
+			_check_frost(issues)
+			check_positive(issues, "chill_bonus_permille", chill_bonus_permille)
+			check_positive(issues, "frozen_bonus_permille", frozen_bonus_permille)
+		Kind.BULWARK:
+			check_positive(issues, "charge_max", charge_max)
+			check_positive(issues, "charge_bonus_permille", charge_bonus_permille)
+
+
+func _check_tags(issues: Array[ValidationIssue]) -> void:
+	if tags.is_empty():
+		issues.append(ValidationIssue.new(&"tags", resource_path, "at least one tag"))
+	var seen := {}
+	for t in tags:
+		if not StringName(t) in TAGS:
+			issues.append(ValidationIssue.new(&"tags", resource_path, "unknown tag %s" % t))
+		elif seen.has(t):
+			issues.append(ValidationIssue.new(&"tags", resource_path, "tag %s twice" % t))
+		seen[t] = true
+
+
+func _check_burn(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "burn_damage", burn_damage)
+	check_positive(issues, "burn_period_seconds", burn_period_seconds)
+	check_duration(issues, "burn_period_seconds", burn_period_seconds)
+	check_positive(issues, "burn_duration_seconds", burn_duration_seconds)
+	check_duration(issues, "burn_duration_seconds", burn_duration_seconds)
+	check_positive(issues, "burn_max_stacks", burn_max_stacks)
+
+
+func _check_shock(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+	if shock_threshold < 2:
+		issues.append(ValidationIssue.new(&"range", resource_path, "shock_threshold is >= 2"))
+	check_positive(issues, "shock_seconds", shock_seconds)
+	check_duration(issues, "shock_seconds", shock_seconds)
+	check_positive(issues, "shock_damage", shock_damage)
+	check_positive(issues, "shock_jumps", shock_jumps)
+	check_positive(issues, "shock_range_m", shock_range_m)
+
+
+func _check_bleed(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+	check_positive(issues, "bleed_damage", bleed_damage)
+	check_positive(issues, "bleed_period_seconds", bleed_period_seconds)
+	check_duration(issues, "bleed_period_seconds", bleed_period_seconds)
+	check_positive(issues, "bleed_seconds", bleed_seconds)
+	check_duration(issues, "bleed_seconds", bleed_seconds)
+	check_positive(issues, "bleed_max_stacks", bleed_max_stacks)
+	check_positive(issues, "bleed_burst_per_stack", bleed_burst_per_stack)
+
+
+func _check_frost(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+	if frost_threshold < 2:
+		issues.append(ValidationIssue.new(&"range", resource_path, "frost_threshold is >= 2"))
+	check_positive(issues, "frost_seconds", frost_seconds)
+	check_duration(issues, "frost_seconds", frost_seconds)
+	check_positive(issues, "freeze_seconds", freeze_seconds)
+	check_duration(issues, "freeze_seconds", freeze_seconds)
+
+
+func _check_slow(issues: Array[ValidationIssue]) -> void:
+	_check_permille_below_1000(issues, "slow_permille", slow_permille)
+	check_positive(issues, "slow_seconds", slow_seconds)
+	check_duration(issues, "slow_seconds", slow_seconds)
 
 
 ## A per-mille share strictly between 0 and 1000.

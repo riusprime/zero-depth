@@ -4,10 +4,22 @@ extends RefCounted
 ## new kinds are appended, never inserted, because kinds are hashed.
 
 ## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
+## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
 ## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
 ## index in World.boss_tables, pos = where it fell.
 enum Kind {
-	HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP, BOSS_DEFEATED
+	HIT,
+	DAMAGE,
+	HEAL,
+	BARRIER,
+	KILL,
+	STATUS_APPLY,
+	STATUS_TICK,
+	SPAWN,
+	LIMIT,
+	PICKUP,
+	COMBO_UNLOCKED,
+	BOSS_DEFEATED,
 }
 
 const TAG_MELEE := 1
@@ -34,6 +46,8 @@ const TAG_THORN := 2048
 const TAG_ARMOURED := 4096
 ## The hit struck a Warden from behind (its rear multiplier, over 1000; owner, 2026-10-07).
 const TAG_WEAK_SPOT := 8192
+## A Shrapnel Storm shard (v0.3.0 G): it never bursts again.
+const TAG_SHRAPNEL := 16384
 
 var seq := 0
 var tick := 0

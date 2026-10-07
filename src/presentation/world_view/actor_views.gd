@@ -78,10 +78,10 @@ func projectile_node(id: int) -> Node3D:
 	return _projectiles.get(id)
 
 
-## Flashes an actor white for a few frames.
-func flash(id: int) -> void:
+## Flashes an actor white for a few frames (`frames` > 0: that many instead, e.g. a longer flash on a finisher).
+func flash(id: int, frames: int = 0) -> void:
 	if _actors.has(id):
-		_flash[id] = flash_frames
+		_flash[id] = maxi(frames if frames > 0 else flash_frames, _flash.get(id, 0))
 		_set_flash(_actors[id], true)
 
 

@@ -24,7 +24,7 @@ var size := Vector2i.ZERO
 var blocked := PackedByteArray()
 var dist := PackedInt32Array()
 ## Connected region per free cell (-1 for blocked), labelled once from the static walls. A blink may only land in
-## the region the player stands in, so it never ends outside the room.
+## the region the player stands in, so it never ends in the void outside the floor.
 var region := PackedInt32Array()
 var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()

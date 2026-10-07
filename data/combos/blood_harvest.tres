@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"vampiric_core"
+item_b = &"executioner"
+name_key = &"ITEM_COMBO_BLOOD_HARVEST"
+desc_key = &"ITEM_COMBO_BLOOD_HARVEST_DESC"
+effect = 4
+damage = 8
+radius_m = 2.5
+heal = 2
+id = &"blood_harvest"

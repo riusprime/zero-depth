@@ -3,12 +3,18 @@ extends Node3D
 ## The player's melee as the view shows it: a laser blade (v0.2.0 PLAN L1, owner: "add a sword element … the
 ## laser part from a laser sword … a dash trail that follows it … replace the cone completely"). Only the light
 ## is drawn, no hilt: a bright cyan-white core capsule inside a larger, faint additive glow capsule, held at body
-## height. It sweeps through the swing's arc in the first SWEEP_TICKS ticks, alternating direction each combo hit
-## (the finisher's blade is thicker and brighter), then fades out over the recovery. A ribbon built from the last
-## `trail_count` blade positions follows it and fades with age.
+## height. Each combo step moves it its own way (v0.3.0 L11; the step's WorldReader.MOTION_*), crossing the arc in the
+## step's sweep ticks, then it fades out over the recovery:
+## - SLASH_RIGHT_TO_LEFT / SLASH_LEFT_TO_RIGHT: sweeps -half_arc..+half_arc around the aim (or back), with a ribbon
+##   built from the last `trail_count` blade positions behind it;
+## - THRUST: held on the aim, it stabs out from pulled back to full length, leaving a narrow streak over the arc
+##   (bright along the aim, clear at the arc's edges);
+## - SPIN: one full turn from the aim, keeping the whole turn as a circular trail; the finisher's blade is thicker
+##   and flares brighter for a few ticks when it hits.
 ##
-## What you see is what hits: the blade's tip sits at own_radius + reach from the cube's centre and it sweeps
-## +-half_arc around the swing angle, the same numbers PlayerKit hits with (WorldReader.swing_shape).
+## What you see is what hits: the blade's tip sits at own_radius + reach from the cube's centre (at full stab for
+## the thrust) and it crosses +-half_arc around the swing angle, the step's own numbers that PlayerKit hits with
+## (WorldReader.swing_shape).
 ##
 ## Idle: the blade is hidden between swings. It ignites with the swing and goes out with it, so a lit blade
 ## always means "this is hitting now"; a blade held at the side would read as a standing hitbox and clutter the
@@ -21,7 +27,6 @@ extends Node3D
 ##   width_scale  multiplies the core and glow thickness and the trail's inner width.
 ##   trail_count  how many ticks of blade positions the trail keeps (0 hides the trail).
 
-const SWEEP_TICKS := 5
 ## Height of the blade above the ground (the cube's middle).
 const BLADE_HEIGHT := 0.45
 ## The blade's hidden root: inside the cube, as a fraction of own_radius.
@@ -32,9 +37,16 @@ const GLOW_RADIUS := 0.1
 const TRAIL_INNER := 0.35
 ## Arc subdivisions between two trail samples, so the ribbon curves instead of cutting chords.
 const TRAIL_SUBSTEPS := 4
-const FINISHER_STEP := 2
 const FINISHER_WIDTH := 1.35
 const FINISHER_ENERGY := 1.5
+## The finisher's flare when it hits: energy multiplier, for this many ticks from the hit.
+const FINISHER_FLARE := 1.8
+const FINISHER_FLARE_TICKS := 4
+## The thrust starts this fraction of the blade's length pulled back toward the wanderer.
+const THRUST_PULLBACK := 0.55
+## Arc segments across a thrust's streak.
+const STREAK_SEGMENTS := 8
+const SPIN_SUBSTEPS := 8
 
 var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
@@ -53,9 +65,13 @@ var _glow_mat := StandardMaterial3D.new()
 var _trail_mat := StandardMaterial3D.new()
 var _shape: Array = [0, 0.0, 0.0]
 var _span := Vector2.ZERO
+## The current swing's motion (WorldReader.MOTION_*), and the thrust streak's state: [aim yaw, half arc, strength].
+var _motion := 0
+var _streak: Array = [0.0, 0.0, 0.0]
 ## Trail samples, newest last: [centre: Vector3, yaw: float, alpha: float].
 var _history: Array = []
 var _last_t := 0
+var _pivot_base := Vector3.ZERO
 
 
 func _init() -> void:
@@ -134,6 +150,26 @@ func trail_samples() -> int:
 	return _history.size()
 
 
+## The blade's yaw (radians, SimPlane.yaw_of convention) and how far its pivot sits from the cube's centre (the
+## thrust's pull-back), as of the last sync.
+func blade_yaw() -> float:
+	return _pivot.rotation.y
+
+
+func blade_offset() -> float:
+	return _pivot.position.distance_to(_pivot_base)
+
+
+## The current swing's motion as drawn (WorldReader.MOTION_*).
+func motion() -> int:
+	return _motion
+
+
+## The core's glow (emission energy) as of the last sync: brighter on the finisher, flaring when it hits.
+func blade_energy() -> float:
+	return _core_mat.emission_energy_multiplier
+
+
 func sync(reader: WorldReader) -> void:
 	var shape := reader.swing_shape()
 	if shape != _shape:
@@ -147,31 +183,49 @@ func sync(reader: WorldReader) -> void:
 		_history.clear()
 		_trail_mesh.clear_surfaces()
 		return
-	var step := reader.combo_step()
-	var finisher := step == FINISHER_STEP
+	var finisher := reader.is_finisher()
+	_motion = reader.swing_motion()
+	var sweep := reader.swing_sweep_ticks()
 	var half: float = TAU * float(shape[0]) / 4096.0
-	var dir := 1.0 if step % 2 == 0 else -1.0
-	var p := clampf(float(t - 1) / SWEEP_TICKS, 0.0, 1.0)
+	var p := clampf(float(t - 1) / sweep, 0.0, 1.0)
 	p = 1.0 - (1.0 - p) * (1.0 - p)  # ease out: fast first, settling at the arc's end
 	var ticks := reader.swing_ticks()
-	var fade := clampf(
-		1.0 - float(t - 1 - SWEEP_TICKS) / float(maxi(ticks - SWEEP_TICKS, 1)), 0.0, 1.0
-	)
-	var yaw := SimPlane.yaw_of(reader.swing_angle()) + (-half + 2.0 * half * p) * dir
+	var fade := clampf(1.0 - float(t - 1 - sweep) / float(maxi(ticks - sweep, 1)), 0.0, 1.0)
+	var aim := SimPlane.yaw_of(reader.swing_angle())
+	var yaw := aim
+	var pull := 0.0
+	match _motion:
+		WorldReader.MOTION_SLASH_RIGHT_TO_LEFT:
+			yaw = aim - half + 2.0 * half * p
+		WorldReader.MOTION_SLASH_LEFT_TO_RIGHT:
+			yaw = aim + half - 2.0 * half * p
+		WorldReader.MOTION_THRUST:
+			pull = (1.0 - p) * THRUST_PULLBACK * (_span.y - _span.x)
+		WorldReader.MOTION_SPIN:
+			yaw = aim + TAU * p
 	var at := SimPlane.to_3d(reader.player_pos(), BLADE_HEIGHT)
-	_pivot.position = at
+	_pivot_base = at
+	_pivot.position = at - Vector3(cos(yaw), 0, -sin(yaw)) * pull
 	_pivot.rotation = Vector3(0, yaw, 0)
 	var thick := (FINISHER_WIDTH if finisher else 1.0) * lerpf(0.4, 1.0, fade)
 	_pivot.scale = Vector3(1, thick, thick)
-	_core_mat.emission_energy_multiplier = 3.0 * (FINISHER_ENERGY if finisher else 1.0) * fade
+	var since_hit := t - reader.swing_active_tick()
+	var flare := (
+		FINISHER_FLARE if finisher and since_hit >= 0 and since_hit < FINISHER_FLARE_TICKS else 1.0
+	)
+	_core_mat.emission_energy_multiplier = (
+		3.0 * (FINISHER_ENERGY if finisher else 1.0) * flare * fade
+	)
 	_core_mat.albedo_color.a = fade
-	_glow_mat.albedo_color.a = 0.35 * fade * (1.25 if finisher else 1.0)
+	_glow_mat.albedo_color.a = 0.35 * fade * (1.25 if finisher else 1.0) * flare
+	_streak = [aim, half, fade * p]
 	if t == 1 or t < _last_t or not was:
 		_history.clear()
 		_pivot.reset_physics_interpolation()
 	if t != _last_t:  # hit-stop holds the tick: the trail holds too
 		_history.append([at, yaw, fade * (1.3 if finisher else 1.0)])
-		while _history.size() > trail_count + 1:
+		var keep := sweep + 2 if _motion == WorldReader.MOTION_SPIN else trail_count + 1
+		while _history.size() > keep:
 			_history.pop_front()
 	_last_t = t
 	_build_trail(_head())
@@ -180,7 +234,7 @@ func sync(reader: WorldReader) -> void:
 ## Rebuilds the trail every drawn frame so its head sits on the blade as drawn (interpolated between ticks);
 ## built from the tick samples alone, the trail would run up to a tick ahead of the blade.
 func _process(_delta: float) -> void:
-	if _pivot.visible and _history.size() >= 2:
+	if _pivot.visible and _history.size() >= 2 and _motion != WorldReader.MOTION_THRUST:
 		_build_trail(_head())
 
 
@@ -216,7 +270,12 @@ func _size_blade() -> void:
 ## the one before.
 func _build_trail(head: Array) -> void:
 	_trail_mesh.clear_surfaces()
-	if _history.size() < 2 or trail_count == 0:
+	if trail_count == 0:
+		return
+	if _motion == WorldReader.MOTION_THRUST:
+		_build_streak()
+		return
+	if _history.size() < 2:
 		return
 	var pts: Array = _history.slice(0, _history.size() - 1)
 	pts.append(head)
@@ -225,10 +284,11 @@ func _build_trail(head: Array) -> void:
 	var r_out := _span.y
 	var tip_color := color.lightened(0.15)
 	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP)
-	var total := (n - 1) * TRAIL_SUBSTEPS
+	var sub := SPIN_SUBSTEPS if _motion == WorldReader.MOTION_SPIN else TRAIL_SUBSTEPS
+	var total := (n - 1) * sub
 	for k in total + 1:
-		var seg := mini(floori(float(k) / TRAIL_SUBSTEPS), n - 2)
-		var f := float(k - seg * TRAIL_SUBSTEPS) / TRAIL_SUBSTEPS
+		var seg := mini(floori(float(k) / sub), n - 2)
+		var f := float(k - seg * sub) / sub
 		var a: Array = pts[seg]
 		var b: Array = pts[seg + 1]
 		var centre: Vector3 = (a[0] as Vector3).lerp(b[0], f)
@@ -240,6 +300,34 @@ func _build_trail(head: Array) -> void:
 		_trail_mesh.surface_add_vertex(centre + out * r_in)
 		_trail_mesh.surface_set_color(Color(tip_color, minf(0.95 * pow(age, 1.3) * strength, 1.0)))
 		_trail_mesh.surface_add_vertex(centre + out * r_out)
+	_trail_mesh.surface_end()
+
+
+## The thrust's streak: a thin fan over the step's arc around the aim, from the trail's inner radius out to the
+## tip, bright along the aim and clear at the arc's edges and near the wanderer. World space, at the wanderer.
+func _build_streak() -> void:
+	var strength: float = _streak[2]
+	if strength <= 0.01:
+		return
+	var aim: float = _streak[0]
+	var half: float = _streak[1]
+	var centre := _pivot_base
+	var r_in := lerpf(_span.x, _span.y, TRAIL_INNER)
+	var r_out := _span.y
+	# The blade's own hue, not whitened: the streak lies under a white-hot blade on pale ground.
+	var tip_color := color
+	_trail_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	var root := centre + Vector3(cos(aim), 0, -sin(aim)) * r_in
+	for k in STREAK_SEGMENTS:
+		var f0 := -1.0 + 2.0 * k / STREAK_SEGMENTS
+		var f1 := -1.0 + 2.0 * (k + 1) / STREAK_SEGMENTS
+		_trail_mesh.surface_set_color(Color(tip_color, 0.05 * strength))
+		_trail_mesh.surface_add_vertex(root)
+		for f in [f0, f1]:
+			var y: float = aim + half * f
+			var edge := 1.0 - absf(f)
+			_trail_mesh.surface_set_color(Color(tip_color, minf(strength * edge * 1.1, 1.0)))
+			_trail_mesh.surface_add_vertex(centre + Vector3(cos(y), 0, -sin(y)) * r_out)
 	_trail_mesh.surface_end()
 
 

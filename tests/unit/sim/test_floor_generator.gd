@@ -46,7 +46,7 @@ func _signature(f: FloorLayout) -> Array:
 
 
 func _interior(f: FloorLayout) -> Rect2:
-	return f.bounds.grow(-FloorParams.defaults().wall_half)
+	return f.bounds
 
 
 func test_same_seed_same_floor() -> void:
@@ -75,12 +75,19 @@ func test_shape_of_a_floor() -> void:
 	assert_eq(f.room_cells[0].size, Vector2i(3, 3), "the start hall is 3 x 3 cells")
 	# A tree (n - 1 doorways) plus up to 2 extra.
 	assert_between(f.door_rooms.size(), n - 1, n + 1)
-	var pitch := FloorParams.defaults().cell_size + Vector2(0.8, 0.8)
+	# The grid pitch is the drawn cell size plus the mean wall (0.3 + 1.5 m); each room side is pulled in from
+	# its grid line by its own drawn half.
+	var p := FloorParams.defaults()
+	var pitch := f.cell_size + Vector2(1.8, 1.8)
 	assert_eq(f.cell_pitch, pitch)
+	assert_eq(f.room_halves.size(), n * 4)
 	for room in n:
 		var cells := Vector2(f.room_cells[room].size)
-		assert_almost_eq(f.rooms[room].size.x, cells.x * pitch.x - 0.8, 0.001)
-		assert_almost_eq(f.rooms[room].size.y, cells.y * pitch.y - 0.8, 0.001)
+		var h := f.room_halves.slice(room * 4, room * 4 + 4)
+		for half in h:
+			assert_between(half, p.wall_half_min, p.wall_half_max)
+		assert_almost_eq(f.rooms[room].size.x, cells.x * pitch.x - h[0] - h[2], 0.001)
+		assert_almost_eq(f.rooms[room].size.y, cells.y * pitch.y - h[1] - h[3], 0.001)
 	assert_almost_eq(f.bounds.get_center().x, 0.0, 0.001, "the floor is centred on the origin")
 	assert_almost_eq(f.bounds.get_center().y, 0.0, 0.001)
 	for i in range(f.slab_first, f.walls.size()):
@@ -112,7 +119,9 @@ func test_fifty_floors_are_whole() -> void:
 			footprints[f.room_cells[room].size] = true
 		hall_sides[_hall_exit_side(f)] = true
 		_check_floor(f, "seed %d" % seed_value)
-	assert_gte(templates.size(), 3, "at least 3 interior templates across 50 floors")
+	assert_gte(templates.size(), 7, "at least 7 of the 9 interior templates across 50 floors")
+	assert_true(templates.has(FloorLayout.Template.COLONNADE), "the colonnade shows up")
+	assert_true(templates.has(FloorLayout.Template.DIAGONALS), "the diagonals show up")
 	assert_eq(hall_sides.size(), 4, "the hall's exit is on every side across 50 floors")
 	assert_gte(footprints.size(), 6, "the footprints vary")
 	var names := PackedStringArray()
@@ -208,28 +217,38 @@ func _check_grid(f: FloorLayout, tag: String) -> void:
 		assert_false(f.walls[i].bounds().intersects(hall), tag + ": a wall inside the hall")
 
 
-## Every room is walled all round, but at its doorways: points every 0.25 m along the middle of its wall band lie
-## inside a structural wall unless they are in a doorway's gap.
+## Every room is walled all round, but at its doorways: points every 0.25 m around the room just outside its wall
+## faces, and along each side as deep as that side's drawn half, lie inside a structural wall unless they are in a
+## doorway's passage.
 func _check_enclosed(f: FloorLayout, tag: String) -> void:
-	var hw := FloorParams.defaults().wall_half
-	var half_door := FloorParams.defaults().door_width * 0.5
 	for room in f.room_count():
-		var band := f.rooms[room].grow(hw)
+		var r := f.rooms[room]
 		var pts := PackedVector2Array()
-		var nx := int(band.size.x / 0.25)
-		var ny := int(band.size.y / 0.25)
-		for i in nx + 1:
-			var x := band.position.x + band.size.x * i / nx
-			pts.append(Vector2(x, band.position.y))
-			pts.append(Vector2(x, band.end.y))
-		for j in ny + 1:
-			var y := band.position.y + band.size.y * j / ny
-			pts.append(Vector2(band.position.x, y))
-			pts.append(Vector2(band.end.x, y))
+		for depth in 2:
+			for side in 4:
+				var d := 0.15 if depth == 0 else f.room_halves[room * 4 + side] - 0.02
+				# Just outside the faces the band runs round the corners; deep in the wall it runs along the face.
+				var band := r.grow(d)
+				var span := band if depth == 0 else r
+				var along_x := side % 2 == 1
+				var n := int((span.size.x if along_x else span.size.y) / 0.25)
+				for i in n + 1:
+					var t := float(i) / n
+					var x := span.position.x + span.size.x * t
+					var y := span.position.y + span.size.y * t
+					match side:
+						0:
+							pts.append(Vector2(band.end.x, y))
+						1:
+							pts.append(Vector2(x, band.end.y))
+						2:
+							pts.append(Vector2(band.position.x, y))
+						3:
+							pts.append(Vector2(x, band.position.y))
 		for q in pts:
 			var in_door := false
-			for c in f.door_centers:
-				if absf(q.x - c.x) <= half_door + 0.01 and absf(q.y - c.y) <= half_door + 0.01:
+			for i in f.door_centers.size():
+				if f.door_rect(i).grow(0.01).has_point(q):
 					in_door = true
 			if in_door:
 				continue
@@ -417,8 +436,8 @@ func test_layout_helpers() -> void:
 		assert_true(d.y in f.neighbours(d.x))
 		assert_true(d.x in f.neighbours(d.y))
 		assert_eq(f.door_angles[i] % 1024, 0)
-		# The doorway joins the two rooms: a step either way from its centre lands in each.
-		var step := Kin.dir(f.door_angles[i]) * 1.0
+		# The doorway joins the two rooms: a step either way from its centre, out of its passage, lands in each.
+		var step := Kin.dir(f.door_angles[i]) * (f.door_depths[i] * 0.5 + 0.5)
 		assert_eq(f.room_of(f.door_centers[i] - step), d.x)
 		assert_eq(f.room_of(f.door_centers[i] + step), d.y)
 
@@ -428,3 +447,86 @@ func test_fill_order_puts_first_spots_first() -> void:
 	f.item_spots = PackedVector2Array([Vector2(1, 0), Vector2(2, 0), Vector2(3, 0), Vector2(4, 0)])
 	f.item_rooms = PackedInt32Array([1, 1, 2, 3])
 	assert_eq(FloorScenario.spot_order(f), PackedInt32Array([0, 2, 3, 1]))
+
+
+## v0.3.0 L1-L2: walls are 0.6-3.0 m thick (a doorway's depth is the wall's thickness there), doorways are
+## 2.2-3.4 m wide and lie anywhere along the stretch both rooms share, clear of their corners, and the cell size
+## is drawn per floor. Across 50 floors every one of these varies over most of its range.
+func test_walls_and_doorways_vary_within_their_ranges() -> void:
+	var p := FloorParams.defaults()
+	var depth := Vector2(INF, -INF)
+	var width := Vector2(INF, -INF)
+	var cell_x := Vector2(INF, -INF)
+	var cell_y := Vector2(INF, -INF)
+	var off_centre := 0
+	var doors := 0
+	for s in SEEDS:
+		var f := FloorGenerator.generate(1000 + s * 7919)
+		var tag := "seed %d" % (1000 + s * 7919)
+		cell_x = Vector2(minf(cell_x.x, f.cell_size.x), maxf(cell_x.y, f.cell_size.x))
+		cell_y = Vector2(minf(cell_y.x, f.cell_size.y), maxf(cell_y.y, f.cell_size.y))
+		assert_between(f.cell_size.x, p.cell_size_min.x, p.cell_size_max.x, tag)
+		assert_between(f.cell_size.y, p.cell_size_min.y, p.cell_size_max.y, tag)
+		for i in f.door_rooms.size():
+			doors += 1
+			var d := f.door_rooms[i]
+			assert_between(f.door_depths[i], 0.6 - 0.001, 3.0 + 0.001, tag + ": wall thickness")
+			assert_between(
+				f.door_widths[i], p.door_width_min, p.door_width_max, tag + ": door width"
+			)
+			depth = Vector2(minf(depth.x, f.door_depths[i]), maxf(depth.y, f.door_depths[i]))
+			width = Vector2(minf(width.x, f.door_widths[i]), maxf(width.y, f.door_widths[i]))
+			# The passage lies within both rooms' faces along the wall, door_corner_margin in from their ends.
+			var g := f.door_rect(i)
+			var along_x := f.door_angles[i] % 2048 == 1024
+			for room in [d.x, d.y]:
+				var r := f.rooms[room]
+				var lo := (r.position.x if along_x else r.position.y) + p.door_corner_margin - 0.006
+				var hi := (r.end.x if along_x else r.end.y) - p.door_corner_margin + 0.006
+				assert_gte(
+					g.position.x if along_x else g.position.y, lo, tag + ": door clear of a corner"
+				)
+				assert_lte(g.end.x if along_x else g.end.y, hi, tag + ": door clear of a corner")
+			# The passage runs from one room's face to the other's.
+			assert_true(f.rooms[d.x].grow(0.01).intersects(g), tag)
+			assert_true(f.rooms[d.y].grow(0.01).intersects(g), tag)
+			var shared := f.rooms[d.x].intersection(f.rooms[d.y].grow(4.0))
+			var mid := shared.get_center().x if along_x else shared.get_center().y
+			if absf((g.get_center().x if along_x else g.get_center().y) - mid) > 1.0:
+				off_centre += 1
+		# Every structural wall is a box in a room's frame or skin: never thicker than one half.
+		for i in f.slab_first:
+			var thin := minf(f.walls[i].half.x, f.walls[i].half.y) * 2.0
+			assert_between(thin, p.wall_half_min - 0.001, p.wall_half_max + 0.001, tag)
+	(
+		gut
+		. p(
+			(
+				(
+					"walls and doorways over %d floors (%d doorways): wall thickness at doorways %.2f-%.2f m, door width"
+					+ " %.2f-%.2f m, %d doorways more than 1 m off the middle of the shared stretch; cell size x %.2f-%.2f m,"
+					+ " y %.2f-%.2f m"
+				)
+				% [
+					SEEDS,
+					doors,
+					depth.x,
+					depth.y,
+					width.x,
+					width.y,
+					off_centre,
+					cell_x.x,
+					cell_x.y,
+					cell_y.x,
+					cell_y.y
+				]
+			)
+		)
+	)
+	assert_lt(depth.x, 1.2, "some walls are thin")
+	assert_gt(depth.y, 2.4, "some walls are thick")
+	assert_lt(width.x, 2.5)
+	assert_gt(width.y, 3.1)
+	assert_gt(off_centre, doors / 4, "doorways are not all centred")
+	assert_gt(cell_x.y - cell_x.x, 2.0, "the cell size varies per floor")
+	assert_gt(cell_y.y - cell_y.x, 1.2)

@@ -38,19 +38,32 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.hurt_iframe_ticks = SimTick.seconds_to_ticks(def.hurt_iframes_seconds)
 	t.hurt_freeze_ticks = SimTick.seconds_to_ticks(def.hurt_hitstop_seconds)
 	var p := def.primary
-	t.swing_ticks = maxi(1, SimTick.seconds_to_ticks(p.swing_duration_seconds))
-	t.swing_active_tick = maxi(1, SimTick.seconds_to_ticks(p.swing_active_seconds))
-	t.swing_reach_m = p.swing_reach_m
-	t.swing_half_arc = degrees_to_units(p.swing_arc_degrees * 0.5)
-	t.swing_damage = p.swing_damage.duplicate()
+	var combo: Array[SwingStep] = []
+	for sd in p.combo:
+		combo.append(compile_swing_step(sd))
+	t.combo = combo
 	t.combo_window_ticks = SimTick.seconds_to_ticks(p.combo_window_seconds)
-	t.swing_hitstop_ticks = SimTick.seconds_to_ticks(p.swing_hitstop_seconds)
 	t.shot_period_ticks = maxi(1, SimTick.seconds_to_ticks(p.shot_period_seconds))
 	t.bolt_damage = p.bolt_damage
 	t.bolt_speed = p.bolt_speed_mps / SimTick.TICKS_PER_SECOND
 	t.bolt_radius_m = p.bolt_radius_m
 	t.bolt_life_ticks = SimTick.seconds_to_ticks(p.bolt_life_seconds)
 	return t
+
+
+## One melee combo step in sim units (v0.3.0 L11). The hit comes at least one tick after the swing starts.
+static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
+	return SwingStep.make(
+		sd.motion as SwingStep.Motion,
+		maxi(1, SimTick.seconds_to_ticks(sd.active_seconds)),
+		SimTick.seconds_to_ticks(sd.recovery_seconds),
+		mini(degrees_to_units(sd.arc_degrees * 0.5), SimTick.ANGLE_UNITS / 2),
+		sd.reach_m,
+		sd.damage,
+		SimTick.seconds_to_ticks(sd.hitstop_seconds),
+		sd.lunge_m,
+		maxi(1, SimTick.seconds_to_ticks(sd.sweep_seconds))
+	)
 
 
 ## An enemy's numbers in sim units. The behaviour id picks the actor kind.
@@ -195,6 +208,14 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.EXECUTIONER: ItemTable.Kind.EXECUTIONER,
 		ItemDefinition.Kind.SWIFT_FEET: ItemTable.Kind.SWIFT_FEET,
 		ItemDefinition.Kind.PHASE_STRIKE: ItemTable.Kind.PHASE_STRIKE,
+		ItemDefinition.Kind.CINDER_SHOT: ItemTable.Kind.CINDER_SHOT,
+		ItemDefinition.Kind.WILDFIRE: ItemTable.Kind.WILDFIRE,
+		ItemDefinition.Kind.CONDUCTOR: ItemTable.Kind.CONDUCTOR,
+		ItemDefinition.Kind.SERRATED_EDGE: ItemTable.Kind.SERRATED_EDGE,
+		ItemDefinition.Kind.BARBED_BOLTS: ItemTable.Kind.BARBED_BOLTS,
+		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
+		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
+		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -240,6 +261,32 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	t.phase_damage = def.phase_damage
 	t.phase_radius_m = def.phase_radius_m
 	t.phase_guard_window_ticks = SimTick.seconds_to_ticks(def.phase_guard_window_seconds)
+	_compile_item_engines(def, t)
+
+
+## Engines (v0.3.0 G).
+static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
+	t.tags = def.tags.duplicate()
+	t.stacks_per_hit = def.stacks_per_hit
+	t.stack_every = def.stack_every
+	t.shock_threshold = def.shock_threshold
+	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
+	t.shock_damage = def.shock_damage
+	t.shock_jumps = def.shock_jumps
+	t.shock_range_m = def.shock_range_m
+	t.bleed_damage = def.bleed_damage
+	t.bleed_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.bleed_period_seconds))
+	t.bleed_ticks = SimTick.seconds_to_ticks(def.bleed_seconds)
+	t.bleed_max_stacks = def.bleed_max_stacks
+	t.bleed_burst_per_stack = def.bleed_burst_per_stack
+	t.frost_threshold = def.frost_threshold
+	t.frost_ticks = SimTick.seconds_to_ticks(def.frost_seconds)
+	t.freeze_ticks = SimTick.seconds_to_ticks(def.freeze_seconds)
+	t.spread_radius_m = def.spread_radius_m
+	t.chill_bonus_permille = def.chill_bonus_permille
+	t.frozen_bonus_permille = def.frozen_bonus_permille
+	t.charge_max = def.charge_max
+	t.charge_bonus_permille = def.charge_bonus_permille
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
@@ -358,3 +405,33 @@ static func compile_boss_attack(
 			t.enemy_kind = compile_enemy(e).kind
 	t.max_alive = int(sp.get("max_alive", 99))
 	return t
+
+
+## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id).
+## Combos naming an unknown item are left out (the validator reports them).
+static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
+	var index := {}
+	var items := repo.all_of(&"items")
+	for k in items.size():
+		index[(items[k] as ItemDefinition).id] = k
+	var out: Array[ComboTable] = []
+	for def: ComboDefinition in repo.all_of(&"combos"):
+		if not index.has(def.item_a) or not index.has(def.item_b):
+			continue
+		var t := ComboTable.new()
+		t.id = def.id
+		t.effect = int(def.effect)
+		t.item_a = index[def.item_a]
+		t.item_b = index[def.item_b]
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.damage = def.damage
+		t.radius_m = def.radius_m
+		t.stacks = def.stacks
+		t.count = def.count
+		t.spread = degrees_to_units(def.spread_degrees)
+		t.share_permille = def.share_permille
+		t.heal = def.heal
+		t.window_ticks = SimTick.seconds_to_ticks(def.window_seconds)
+		out.append(t)
+	return out

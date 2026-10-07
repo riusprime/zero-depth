@@ -73,15 +73,15 @@ ITEM_RICOCHET_CORE_DESC,Your bolts bounce off a wall once.,Tus proyectiles rebot
 ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
 ITEM_KINETIC_DASH_DESC,Dashing through an enemy deals 12.,Atravesar a un enemigo con el esprint hace 12.
 ITEM_OVERCHARGE,Overcharge,Sobrecarga
-ITEM_OVERCHARGE_DESC,Every 4th swing hits double and sends a shockwave.,Cada 4.º tajo hace el doble y lanza una onda.
+ITEM_OVERCHARGE_DESC,Your finisher hits double with a shocking wave.,Tu remate hace el doble y lanza una onda eléctrica.
 ITEM_VAMPIRIC_CORE,Vampiric Core,Núcleo Vampírico
 ITEM_VAMPIRIC_CORE_DESC,"Kills heal 3 HP, up to 15 every 5 s.","Cada baja cura 3 PV, hasta 15 cada 5 s."
 ITEM_STATIC_CHAIN,Static Chain,Cadena Estática
-ITEM_STATIC_CHAIN_DESC,Every 3rd bolt hit arcs to a nearby enemy for 5.,Cada 3.er impacto salta a otro enemigo cercano: 5.
+ITEM_STATIC_CHAIN_DESC,Bolts shock; every 3rd bolt hit arcs to another for 5.,Tus proyectiles electrizan; cada 3.º salta a otro: 5.
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,A swing within 1 s of a dash deals +60% damage.,Un tajo hasta 1 s tras el esprint hace +60% de daño.
 ITEM_FROST_CORE,Frost Core,Núcleo de Escarcha
-ITEM_FROST_CORE_DESC,Bolt hits slow enemies by 30% for 1.5 s.,"Tus proyectiles ralentizan un 30% durante 1,5 s."
+ITEM_FROST_CORE_DESC,Bolt hits slow 30%; every 3rd adds a frost stack.,Tus impactos ralentizan un 30%; cada 3.º añade escarcha.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Taking damage fires a ring of 6 bolts.,Al recibir daño lanzas un anillo de 6 proyectiles.
 ITEM_EXECUTIONER,Executioner,Verdugo
@@ -114,3 +114,36 @@ CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyec
 CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
+ITEM_CINDER_SHOT,Cinder Shot,Disparo de Ceniza
+ITEM_CINDER_SHOT_DESC,Every 3rd bolt hit adds a burn stack.,Cada 3.er impacto de proyectil añade una quemadura.
+ITEM_WILDFIRE,Wildfire,Incendio
+ITEM_WILDFIRE_DESC,Kills spread burn to enemies within 2.5 m.,"Cada baja propaga quemaduras a 2,5 m."
+ITEM_CONDUCTOR,Conductor,Conductor
+ITEM_CONDUCTOR_DESC,Swings shock; discharges jump to 2 more enemies.,Tus tajos electrizan; las descargas saltan a 2 más.
+ITEM_SERRATED_EDGE,Serrated Edge,Filo Dentado
+ITEM_SERRATED_EDGE_DESC,Swings bleed; dash through a bleeder to burst it.,Tus tajos sangran; esprinta a través para reventarlo.
+ITEM_BARBED_BOLTS,Barbed Bolts,Proyectiles Lacerantes
+ITEM_BARBED_BOLTS_DESC,Every 2nd bolt hit adds a bleed stack.,Cada 2.º impacto de proyectil añade un sangrado.
+ITEM_GLACIAL_EDGE,Glacial Edge,Filo Glacial
+ITEM_GLACIAL_EDGE_DESC,Swings chill; 4 frost stacks freeze for 1 s.,Tus tajos enfrían; 4 cargas de escarcha congelan 1 s.
+ITEM_COLD_SNAP,Cold Snap,Ola de Frío
+ITEM_COLD_SNAP_DESC,Dashing through chills; frozen enemies take +60%.,Esprintar a través enfría; los congelados sufren +60%.
+ITEM_BULWARK,Bulwark,Baluarte
+ITEM_BULWARK_DESC,Guard blocks store charges: next swing +40% each.,Cada bloqueo guarda una carga: +40% al siguiente tajo.
+ITEM_COMBO_PLASMA_ARC,Plasma Arc,Arco de Plasma
+ITEM_COMBO_PLASMA_ARC_DESC,Shocking a burning enemy arcs fire to another.,Electrizar a un enemigo en llamas salta fuego a otro.
+ITEM_COMBO_SHATTER_DASH,Shatter Dash,Esprint Quebrador
+ITEM_COMBO_SHATTER_DASH_DESC,Dashing through a frozen enemy shatters it for 30.,Esprintar a través de un congelado lo rompe: 30.
+ITEM_COMBO_RESONANCE,Resonance,Resonancia
+ITEM_COMBO_RESONANCE_DESC,The echo of a charged swing sends a second wave.,El eco de un tajo cargado lanza otra onda.
+ITEM_COMBO_SHRAPNEL_STORM,Shrapnel Storm,Tormenta de Metralla
+ITEM_COMBO_SHRAPNEL_STORM_DESC,Bolts that bounce burst into 2 shards.,Los proyectiles que rebotan estallan en 2 esquirlas.
+ITEM_COMBO_BLOOD_HARVEST,Blood Harvest,Cosecha de Sangre
+ITEM_COMBO_BLOOD_HARVEST_DESC,Executions burst in a blood nova that heals you.,Las ejecuciones estallan en sangre y te curan.
+ITEM_COMBO_SPIKED_PHASE,Spiked Phase,Fase Espinosa
+ITEM_COMBO_SPIKED_PHASE_DESC,Phase Strike also fires your ring of thorns.,Golpe de Fase también lanza tu anillo de espinas.
+ITEM_COMBO_SLIPSTREAM,Slipstream,Estela
+ITEM_COMBO_SLIPSTREAM_DESC,A Momentum swing that hits recharges your dash.,Un tajo de Inercia que acierta recarga el esprint.
+ITEM_COMBO_FROZEN_BASTION,Frozen Bastion,Bastión Helado
+ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,Bloquear enfría al atacante: 2 cargas de escarcha.
+UI_COMBO_UNLOCKED,Combo,Combo

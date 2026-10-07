@@ -31,6 +31,11 @@ var eggs: Array[MeshInstance3D] = []
 var legs: Array[Node3D] = []
 
 
+## The sheet's name for this boss: its imported model would be crawler_queen.glb.
+func model_id() -> StringName:
+	return &"crawler_queen"
+
+
 func _build() -> void:
 	var p := parts
 	body.name = "Body"

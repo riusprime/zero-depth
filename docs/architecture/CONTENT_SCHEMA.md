@@ -241,10 +241,17 @@ class_name PlayerDefinition extends Resource
 @export var hp: int
 @export var radius_m: float
 @export var move_speed_mps: float
-@export var primary: PrimaryDefinition   # swing combo, charge, bolt (v0.1.0; the owner's Q1)
+@export var primary: PrimaryDefinition   # melee combo (one SwingStepDefinition per step), bolt (v0.1.0; v0.3.0 L11)
 @export var dash: DashDefinition          # distance_m, duration_seconds, cooldown_seconds, iframes_seconds
 @export var utilities: Array[UtilityDefinition]   # guard and the mobile skill; one is chosen before the run
 ```
+
+`SwingStepDefinition` (v0.3.0 L11): one melee combo step, in order inside `PrimaryDefinition.combo` (1–8 steps):
+`motion` (how the view moves the blade: `SLASH_RIGHT_TO_LEFT`, `SLASH_LEFT_TO_RIGHT`, `THRUST`, `SPIN`),
+`active_seconds` (start → the hit, > 0), `recovery_seconds` (the hit → the end; the combo window opens then, except
+after the last step), `arc_degrees` (0 < arc ≤ 360, centred on the aim), `reach_m` (> 0, beyond the player's edge),
+`damage` (> 0), `hitstop_seconds`, `lunge_m` (0–2 m along the aim, spread over the ticks before the hit, so a
+lunging step must hit 2 ticks or more in) and `sweep_seconds` (the blade's crossing time, presentation only).
 
 `UtilityDefinition` (defined in v0.1.0): `id`, `name_key`, `kind` (`GUARD` or `MOBILE`), the timings in seconds,
 a cooldown, and `params` checked against the kind's schema.

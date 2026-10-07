@@ -3,12 +3,62 @@
 [ext_resource type="Script" path="res://src/content/defs/dash_definition.gd" id="1_utv5o"]
 [ext_resource type="Script" path="res://src/content/defs/player_definition.gd" id="2_gn6h3"]
 [ext_resource type="Script" path="res://src/content/defs/primary_definition.gd" id="3_prim1"]
+[ext_resource type="Script" path="res://src/content/defs/swing_step_definition.gd" id="4_step1"]
 
 [sub_resource type="Resource" id="Resource_17p3l"]
 script = ExtResource("1_utv5o")
 
+[sub_resource type="Resource" id="Swing_slash"]
+script = ExtResource("4_step1")
+motion = 0
+active_seconds = 0.0333333
+recovery_seconds = 0.1833333
+arc_degrees = 120.0
+reach_m = 1.6
+damage = 10
+hitstop_seconds = 0.05
+lunge_m = 0.0
+sweep_seconds = 0.0833333
+
+[sub_resource type="Resource" id="Swing_backhand"]
+script = ExtResource("4_step1")
+motion = 1
+active_seconds = 0.05
+recovery_seconds = 0.1833333
+arc_degrees = 120.0
+reach_m = 1.6
+damage = 10
+hitstop_seconds = 0.05
+lunge_m = 0.0
+sweep_seconds = 0.0833333
+
+[sub_resource type="Resource" id="Swing_thrust"]
+script = ExtResource("4_step1")
+motion = 2
+active_seconds = 0.0666667
+recovery_seconds = 0.2
+arc_degrees = 40.0
+reach_m = 2.3
+damage = 12
+hitstop_seconds = 0.0666667
+lunge_m = 0.35
+sweep_seconds = 0.0666667
+
+[sub_resource type="Resource" id="Swing_spin"]
+script = ExtResource("4_step1")
+motion = 3
+active_seconds = 0.1166667
+recovery_seconds = 0.4
+arc_degrees = 360.0
+reach_m = 1.9
+damage = 24
+hitstop_seconds = 0.1166667
+lunge_m = 0.6
+sweep_seconds = 0.15
+
 [sub_resource type="Resource" id="Resource_prim1"]
 script = ExtResource("3_prim1")
+combo = Array[ExtResource("4_step1")]([SubResource("Swing_slash"), SubResource("Swing_backhand"), SubResource("Swing_thrust"), SubResource("Swing_spin")])
 
 [resource]
 script = ExtResource("2_gn6h3")

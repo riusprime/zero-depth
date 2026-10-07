@@ -133,6 +133,7 @@ func start_stage() -> void:
 		ContentCompiler.compile_items(repo)
 	)
 	world.set_boss_tables(ContentCompiler.compile_bosses(repo))  # Bosses (v0.3.0 C): spawn_boss's indices.
+	world.set_combo_tables(ContentCompiler.compile_combos(repo))  # v0.3.0 G: named combos.
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)

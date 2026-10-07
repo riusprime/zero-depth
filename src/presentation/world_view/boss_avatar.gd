@@ -14,6 +14,8 @@ const RISE_SECONDS := 0.8
 const SINK_SECONDS := 0.3
 ## A leap's peak height (metres).
 const LEAP_HEIGHT := 2.6
+## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
+const MODEL_DIR := "res://assets/models/bosses/"
 
 ## Parts and materials, read by tests and by ActorViews (the hit flash).
 var body_materials: Array[StandardMaterial3D] = []
@@ -51,7 +53,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	parts = BossParts.new(outline_color, technique)
 	model.name = "Model"
 	add_child(model)
-	_build()
+	_build_body()
 	body_materials = parts.body_materials
 	_pose(0.0)
 
@@ -161,7 +163,18 @@ func _gait(dt: float, walk_speed: float, stride: float) -> float:
 	return _walk
 
 
-## Subclasses build their parts with `parts` under `model`.
+## The id of this boss's imported model (its file name without .glb).
+func model_id() -> StringName:
+	return &""
+
+
+## The body, built in one place so an imported model can replace it by model_id() later, with the code-built body
+## (_build) as the fallback. Importing isn't wired yet: every body is built in code.
+func _build_body() -> void:
+	_build()
+
+
+## Subclasses build their code-built body with `parts` under `model`.
 func _build() -> void:
 	pass
 

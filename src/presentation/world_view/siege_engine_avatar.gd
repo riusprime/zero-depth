@@ -28,6 +28,11 @@ var legs: Array[Node3D] = []
 var _mortar_glow: Array[MeshInstance3D] = []
 
 
+## The sheet's name for this boss: its imported model would be fortress_turret.glb.
+func model_id() -> StringName:
+	return &"fortress_turret"
+
+
 func _build() -> void:
 	var p := parts
 	hull.name = "Hull"

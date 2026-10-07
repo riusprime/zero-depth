@@ -54,7 +54,7 @@ func _amounts(events: Array[SimEvent]) -> Array:
 
 func _swing(w: World, aim: int = 0) -> void:
 	w.step(_f(0, P, aim))
-	_idle(w, w.player.swing_ticks + 2)
+	_idle(w, w.player.step(w.combo_step).ticks + 2)
 
 
 func test_the_first_eight_kinds_are_shipped() -> void:
@@ -80,7 +80,7 @@ func test_twin_arc_echoes_once_at_half_damage_six_ticks_later() -> void:
 	_swing(w)
 	var d := _damage(w)
 	assert_eq(_amounts(d), [10, 5])
-	assert_eq(d[1].tick - d[0].tick, 6 + w.player.swing_hitstop_ticks, "0.1 s plus the hit-stop")
+	assert_eq(d[1].tick - d[0].tick, 6 + w.player.step(0).hitstop_ticks, "0.1 s plus the hit-stop")
 	assert_eq(d[1].root_id, d[0].root_id, "the echo belongs to the swing's chain")
 	assert_eq(d[1].effect_id, &"twin_arc")
 	assert_true(d[1].tags & SimEvent.TAG_MELEE != 0)
@@ -218,25 +218,47 @@ func test_kinetic_dash_hits_each_enemy_once_per_dash() -> void:
 	assert_eq(_amounts(_damage(w, SimEvent.TAG_DASH)), [12, 12], "the next dash hits it again")
 
 
-func test_overcharge_every_fourth_swing_doubles_and_shockwaves() -> void:
-	var w := _world([K.OVERCHARGE], [Vector2(1.2, 0), Vector2(-1.5, 0)])
+func test_overcharge_charges_the_finisher_doubles_and_shockwaves() -> void:
+	# v0.3.0 L11: every 4th swing of the combo is the spinning finisher, so Overcharge charges exactly that one.
+	var w := _world([K.OVERCHARGE], [Vector2(1.2, 0), Vector2(0, 6)])
 	var r := WorldReader.new(w)
 	for i in 3:
 		assert_false(r.overcharge_ready(), "swing %d" % (i + 1))
 		_swing(w)
-	assert_true(r.overcharge_ready())
-	_swing(w)
+	assert_true(r.overcharge_ready(), "the next press is the finisher")
+	_until_swing_ends(w)
+	w.step(_f(0, P))
+	assert_true(r.swing_overcharged())
+	assert_true(r.is_finisher())
+	_idle(w, 40)
 	assert_false(r.overcharge_ready())
 	var d := _damage(w)
 	assert_eq(
 		_amounts(d),
-		[10, 10, 18, 20, 5, 5],
-		"the combo, then 10 x 2 and a 5-damage shockwave on both"
+		[10, 10, 12, 48, 12],
+		"the combo, then the finisher 24 x 2 and a 12-damage shockwave"
 	)
 	assert_eq(d[4].tags & SimEvent.TAG_AREA, SimEvent.TAG_AREA)
-	assert_eq(d[5].target_id, w.actors.ids[2], "the shockwave reaches behind the player")
 	assert_eq(d[4].root_id, d[3].root_id)
 	assert_eq(r.overcharge_tick(), d[3].tick)
+
+
+func test_overcharge_never_drifts_off_the_finisher() -> void:
+	# A lapsed window restarts the combo; the charged swing is still the finisher, never a slash.
+	var w := _world([K.OVERCHARGE], [Vector2(1.2, 0)])
+	var r := WorldReader.new(w)
+	_swing(w)
+	_swing(w)
+	_idle(w, 30)
+	for i in 4:
+		w.step(_f(0, P))
+		assert_eq(r.swing_overcharged(), i == 3, "swing %d of the new combo" % (i + 1))
+		_until_swing_ends(w)
+
+
+func _until_swing_ends(w: World) -> void:
+	while w.swing_t > 0:
+		w.step(_f())
 
 
 func test_items_stack() -> void:
@@ -286,12 +308,12 @@ func test_walking_over_a_pickup_takes_it() -> void:
 
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
-	var all := ItemPool.draw(w, 20)
-	assert_eq(all.size(), 16)
+	var all := ItemPool.draw(w, 30)
+	assert_eq(all.size(), 24, "the v0.3.0 pool of 24")
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 16, "no repeats")
+	assert_eq(seen.size(), 24, "no repeats")
 	var v := _world([], [])
 	v.add_item(0)
 	v.add_pickup(1, Vector2(5, 5))
@@ -300,8 +322,8 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	for i in some:
 		assert_false(i in [0, 1])
 		v.add_pickup(i, Vector2(5, 5))
-	var rest := ItemPool.draw(v, 16)
-	assert_eq(rest.size(), 11, "16 - owned - 4 placed")
+	var rest := ItemPool.draw(v, 24)
+	assert_eq(rest.size(), 19, "24 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in [0, 1])
 

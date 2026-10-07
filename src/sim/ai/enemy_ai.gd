@@ -21,6 +21,8 @@ static func _charges(kind: int) -> bool:
 
 
 static func think(w: World, i: int) -> void:
+	if Engines.frozen(w, i):  # Engines: a frozen enemy holds still, its state paused.
+		return
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1
@@ -95,7 +97,7 @@ static func move(w: World, i: int) -> void:
 
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
-	if a.state[i] != State.ACTIVE or w.player_dead():
+	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
 	var t := w.enemy_table(a.kinds[i])
 	var p := w.player_pos()

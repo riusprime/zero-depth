@@ -7,7 +7,8 @@ extends Node3D
 ## - bolts (Splinter Shot small and green-tinged, Rapid Coil long, Ricochet Core white and brighter);
 ## - Twin Arc's echo flash, Overcharge's shockwave ring, Kinetic Dash's cyan afterimages (drawn over the white
 ##   trail every dash leaves, DashTrail);
-## - burning enemies glow orange.
+## - burning enemies glow orange, frozen ones icy white (v0.3.0 G; StatusVisuals draws the other status effects);
+## - v0.3.0 G: Glacial Edge, Serrated Edge and Conductor tint the blade; Cinder Shot and Barbed Bolts the bolts.
 
 const FX_FRAMES := 14
 
@@ -34,7 +35,12 @@ func sync(reader: WorldReader) -> void:
 	if reader.echo_tick() != _last_echo:
 		_last_echo = reader.echo_tick()
 		if _last_echo >= 0:
-			_flash_arc(reader, reader.echo_angle(), ItemLooks.color(WorldReader.ITEM_TWIN_ARC))
+			_flash_arc(
+				reader,
+				reader.echo_angle(),
+				reader.echo_step(),
+				ItemLooks.color(WorldReader.ITEM_TWIN_ARC)
+			)
 	if reader.overcharge_tick() != _last_shock:
 		_last_shock = reader.overcharge_tick()
 		if _last_shock >= 0:
@@ -65,6 +71,9 @@ static func bolt_look(reader: WorldReader) -> Dictionary:
 	if reader.has_item_kind(WorldReader.ITEM_RICOCHET_CORE):
 		look["color"] = look["color"].lerp(Color.WHITE, 0.6)
 		look["energy"] = 4.5
+	for k: int in [WorldReader.ITEM_CINDER_SHOT, WorldReader.ITEM_BARBED_BOLTS]:
+		if reader.has_item_kind(k):
+			look["color"] = look["color"].lerp(ItemLooks.color(k), 0.55)
 	return look
 
 
@@ -77,6 +86,12 @@ func _sync_looks(reader: WorldReader) -> void:
 	var c := ThemePalette.color(&"player_core")
 	var width := 1.0
 	var trail := 6
+	# v0.3.0 G: each elemental blade item pulls the blade toward its colour; Ember Edge wins outright.
+	for k: int in [
+		WorldReader.ITEM_CONDUCTOR, WorldReader.ITEM_SERRATED_EDGE, WorldReader.ITEM_GLACIAL_EDGE
+	]:
+		if reader.has_item_kind(k):
+			c = c.lerp(ItemLooks.color(k), 0.7)
 	if reader.has_item_kind(WorldReader.ITEM_EMBER_EDGE):
 		c = ItemLooks.color(WorldReader.ITEM_EMBER_EDGE)
 	if reader.has_item_kind(WorldReader.ITEM_TWIN_ARC):
@@ -92,11 +107,18 @@ func _sync_looks(reader: WorldReader) -> void:
 
 func _sync_burns(reader: WorldReader) -> void:
 	var now := {}
+	var frozen := {}
 	for i in range(1, reader.actor_count()):
-		if reader.burn_stacks(i) > 0:
+		if reader.actor_frozen(i):
+			frozen[reader.actor_id(i)] = true
+			now[reader.actor_id(i)] = 1
+		elif reader.burn_stacks(i) > 0:
 			now[reader.actor_id(i)] = reader.burn_stacks(i)
 	for id in now:
-		actors.set_tint(id, ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 0.4 + 0.15 * now[id])
+		if frozen.has(id):
+			actors.set_tint(id, ItemLooks.status_color(&"frozen"), 1.1)
+		else:
+			actors.set_tint(id, ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 0.4 + 0.15 * now[id])
 	for id in _burning:
 		if not now.has(id):
 			actors.set_tint(id, Color.BLACK, 0.0)
@@ -125,8 +147,9 @@ func _add_fx(n: MeshInstance3D, mat: StandardMaterial3D, grow: float) -> void:
 	_fx.append([n, mat, FX_FRAMES, mat.albedo_color.a, grow])
 
 
-func _flash_arc(reader: WorldReader, angle: int, c: Color) -> void:
-	var shape := reader.swing_shape()
+## Twin Arc's echo: the echoed step's own arc (the shape it hit with).
+func _flash_arc(reader: WorldReader, angle: int, step: int, c: Color) -> void:
+	var shape := reader.swing_shape(step)
 	var n := MeshInstance3D.new()
 	n.mesh = KitView.fan_mesh(shape[0], shape[2] + 0.2, shape[1])
 	n.position = SimPlane.to_3d(reader.player_pos(), 0.45)

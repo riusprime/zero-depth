@@ -62,7 +62,7 @@ func _amounts(events: Array[SimEvent]) -> Array:
 
 func _swing(w: World, aim: int = 0) -> void:
 	w.step(_f(0, P, aim))
-	_idle(w, w.player.swing_ticks + 2, 0, aim)
+	_idle(w, w.player.step(w.combo_step).ticks + 2, 0, aim)
 
 
 ## The player kills actor i outright with a melee hit (a fresh root).
@@ -73,12 +73,12 @@ func _kill(w: World, i: int) -> void:
 	)
 
 
-func test_the_data_has_sixteen_distinct_kinds() -> void:
-	assert_eq(_tables.size(), 16)
+func test_the_data_has_distinct_kinds() -> void:
+	assert_eq(_tables.size(), 24, "16 + the 8 engine items (v0.3.0 G)")
 	var kinds := {}
 	for t in _tables:
 		kinds[t.kind] = true
-	assert_eq(kinds.size(), 16)
+	assert_eq(kinds.size(), 24)
 	for k in range(K.VAMPIRIC_CORE, K.PHASE_STRIKE + 1):
 		assert_ne(_index(k), -1, "kind %d is shipped" % k)
 
@@ -431,14 +431,14 @@ func test_new_item_state_is_hashed_and_deterministic() -> void:
 	assert_ne(a.state_hash(), h, "the phase window is hashed")
 
 
-func test_the_pool_draws_all_sixteen_without_repeats() -> void:
+func test_the_pool_draws_every_item_without_repeats() -> void:
 	var w := _world([K.MOMENTUM], [])
 	var all := ItemPool.draw(w, 99)
-	assert_eq(all.size(), 15, "everything but the owned one")
+	assert_eq(all.size(), 23, "everything but the owned one")
 	var seen := {}
 	for i in all:
 		seen[i] = true
 		w.add_pickup(i, Vector2(5, 5))
-	assert_eq(seen.size(), 15)
+	assert_eq(seen.size(), 23)
 	assert_false(seen.has(_index(K.MOMENTUM)))
 	assert_eq(ItemPool.draw(w, 3).size(), 0, "all placed: nothing left to draw")
