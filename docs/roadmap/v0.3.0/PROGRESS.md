@@ -23,6 +23,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Design questions (run, combos, items, blink walls) | 2026-10-07 | answered (PLAN "Owner answers") | 2026-10-07 |
 | Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
+| Full-run build ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)) | 2026-10-07 | pending | |
 | Blink vs thick walls | 2026-10-07 | "Thicker room walls" | 2026-10-07 |
 
 ## Open
@@ -42,3 +43,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — E merged with C (conflicts in SimEvent, World, WorldReader, HUD, ContentCompiler, strings, SIM_CONTRACTS; kept both). Two merge slips fixed in the merge: the shard payout had slid inside the boss branch (4 failing tests caught it) and two functions lost their final `return`. Lead additions: `RewardsDefinition.boss_shards` (60 × floor, data + test), hatchling shards 1. 436 tests pass; goldens unchanged. G2 pick layout: centred row ships as default, owner to pick from `pick_mockups.png`.
 - 2026-10-07 — Owner uploaded three boss models (L13; generated with Tripo per the glTF metadata). Workstream C2 installs them. Open for the owner: the models' licence terms (check the Tripo plan used; a credit line may be required, O4).
 - 2026-10-07 — B merged on top of A, N, G, C, E (the agent merged each in turn; resumed once after an API rate limit). 466 tests pass; goldens unchanged; export smoke 0 misses; hitch probe ok. Floor generation mean 131.6 ms / max 262.5 ms (50 seeds). From point-blank, walls ≥ 4.5 m stop a blink. Version → 0.3.0-dev.
+- 2026-10-07 — First full-run build sent to the owner with [`PLAYTEST_RUN.md`](PLAYTEST_RUN.md) (code-built bosses; C2/C3 still running).
