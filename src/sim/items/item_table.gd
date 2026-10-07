@@ -31,10 +31,18 @@ enum Kind {
 	BULWARK,
 }
 
+## ItemDefinition.Rarity (v0.3.0 E).
+const COMMON := 0
+const RARE := 1
+
 var id := &""
 var kind := Kind.LONG_EDGE
 var name_key := &""
 var desc_key := &""
+## COMMON or RARE (chests weight rare items higher).
+var rarity := COMMON
+## The PlayerTable.Utility the item needs, or -1 for any (rewards never offer it otherwise).
+var requires_utility := -1
 ## Long Edge.
 var reach_bonus_permille := 0
 ## Twin Arc.

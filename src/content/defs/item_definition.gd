@@ -31,12 +31,19 @@ enum Kind {
 	BULWARK,
 }
 
+## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
+enum Rarity { COMMON, RARE }
+
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
 const TAGS: Array[StringName] = [
 	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard"
 ]
 
 @export var kind := Kind.LONG_EDGE
+@export var rarity := Rarity.COMMON
+## The utility the item needs to do anything (v0.3.0 E): a UtilityDefinition id (&"guard", &"blink"), or empty for
+## any. Altars and chests never offer an item whose utility you didn't choose.
+@export var requires_utility: StringName = &""
 @export var name_key: StringName
 @export var desc_key: StringName
 ## Long Edge: swing reach × (1 + bonus / 1000).
@@ -137,6 +144,14 @@ func validate() -> Array[ValidationIssue]:
 	if String(name_key).is_empty() or String(desc_key).is_empty():
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
+		)
+	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
+		issues.append(ValidationIssue.new(&"range", resource_path, "rarity is common or rare"))
+	if not requires_utility in [&"", &"guard", &"blink"]:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "requires_utility is empty, guard or blink"
+			)
 		)
 	_check_tags(issues)
 	match kind:

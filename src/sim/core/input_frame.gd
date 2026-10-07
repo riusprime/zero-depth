@@ -8,6 +8,9 @@ const DASH := 4
 const INTERACT := 8
 ## Shooting (held), separate from the melee PRIMARY (owner, 2026-10-07).
 const SHOOT := 16
+## `pick` values (v0.3.0 E): no pick this tick, or cancel the open altar/chest choice. 1..3 take that card.
+const PICK_NONE := 0
+const PICK_CANCEL := -1
 
 ## World-plane move, -127..127 per axis, deadzone applied.
 var move := Vector2i.ZERO
@@ -19,6 +22,8 @@ var aim_dist_cm := 0
 var held := 0
 ## Buttons pressed since the previous tick (each delivered once).
 var pressed := 0
+## The 3-card pick (v0.3.0 E): PICK_NONE, 1..3 (take that card), or PICK_CANCEL. Delivered once, like a press.
+var pick := PICK_NONE
 
 
 static func make(
@@ -40,8 +45,9 @@ func equals(o: InputFrame) -> bool:
 		and aim_dist_cm == o.aim_dist_cm
 		and held == o.held
 		and pressed == o.pressed
+		and pick == o.pick
 	)
 
 
 func to_array() -> Array[int]:
-	return [move.x, move.y, aim_angle, aim_dist_cm, held, pressed]
+	return [move.x, move.y, aim_angle, aim_dist_cm, held, pressed, pick]

@@ -140,6 +140,22 @@ var killer_attack := -1
 ## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
 var boss_id := -1
 # --- end Bosses ---------------------------------------------------------------------------------------------
+# --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
+## The floor's reward rules (part of the loadout, like item_tables; not hashed).
+var reward_table := RewardTable.new()
+## Shards held (hashed). The run flow carries it between floors.
+var shards := 0
+## The floor number, 1-based: chest prices and boss shards scale with it (the run flow sets it).
+var floor_index := 1
+## Altars and chests on the floor.
+var rewards := RewardStore.new()
+## The reward whose offer is open (its id), or -1. While >= 0 the world waits for the pick.
+var choosing := -1
+## The last refused open (a chest you can't afford, or an empty offer): the reward's id and the tick.
+var reward_denied_id := -1
+var reward_denied_tick := -1
+# --- end Rewards --------------------------------------------------------------------------------------------
+
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
 var combo_tables: Array[ComboTable] = []
@@ -258,6 +274,11 @@ func step(frame: InputFrame) -> void:
 		tick += 1
 		return
 	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
+	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
+	if choosing >= 0:
+		Rewards.choose(self, frame)
+		tick += 1
+		return
 	# 2. Input (a dead player's input is ignored).
 	_age_buffer()
 	if player_dead():
@@ -268,6 +289,10 @@ func step(frame: InputFrame) -> void:
 	aim_dist_cm = frame.aim_dist_cm
 	held_buttons = frame.held
 	actors.facing[0] = aim_angle
+	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
+	if Rewards.interact(self):
+		tick += 1
+		return
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
 		nav.flood(player_pos())
@@ -429,6 +454,14 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
 	boss_id = id
+	return id
+
+
+# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+## Puts an altar (price 0) or a chest on the floor (setup). Returns its id.
+func add_reward(kind: int, pos: Vector2, price: int) -> int:
+	var id := _take_id()
+	rewards.add(id, pos, kind, price)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
 
@@ -456,6 +489,24 @@ func pending_enemies_of(kind: int) -> int:
 
 
 # --- end Bosses ---------------------------------------------------------------------------------------------
+## Any reward state away from its default (state_hash includes the rewards only then).
+func _rewards_touched() -> bool:
+	return (
+		shards != 0
+		or floor_index != 1
+		or choosing != -1
+		or reward_denied_tick != -1
+		or reward_denied_id != -1
+		or rewards.size() > 0
+	)
+
+
+## Clears a buffered press of `bit` (it was used).
+func consume_buffered(bit: int) -> void:
+	input_buffer[BUTTON_BITS.find(bit)] = 0
+
+
+# --- end Rewards --------------------------------------------------------------------------------------------
 
 
 func dash_iframes_active() -> bool:
@@ -534,6 +585,12 @@ func state_hash() -> String:
 		h.add_f32(v)
 	for v in [momentum_t, 1 if swing_momentum else 0, thorn_tick, phase_tick, phase_guard_next]:
 		h.add_int(v)
+	# Rewards (v0.3.0 E): hashed once any reward state leaves its default, so worlds without rewards (the kernel
+	# golden) keep their hash; any two states that differ in it still hash apart.
+	if _rewards_touched():
+		for v in [shards, floor_index, choosing, reward_denied_id, reward_denied_tick]:
+			h.add_int(v)
+		rewards.hash_into(h)
 	if not item_tables.is_empty():
 		_hash_engines(h)
 	actors.hash_into(h)
@@ -867,6 +924,7 @@ func _remove_dead() -> void:
 				bosses.remove(b)
 				if boss_id == actors.ids[i]:
 					boss_id = -1
+			Rewards.on_kill(self, i)  # Rewards: shards.
 	actors.remove_sorted(gone)
 
 

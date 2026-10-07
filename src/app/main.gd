@@ -51,7 +51,12 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		toggle_dev_panel()
 		return
-	if driver != null and _end == null and event.is_action_pressed(&"pause"):
+	if (
+		driver != null
+		and _end == null
+		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and event.is_action_pressed(&"pause")
+	):
 		get_viewport().set_input_as_handled()
 		if _pause == null:
 			open_pause()
@@ -130,7 +135,8 @@ func start_stage() -> void:
 		table,
 		ContentCompiler.compile_enemies(repo),
 		ContentCompiler.compile_spawning(spawning, repo),
-		ContentCompiler.compile_items(repo)
+		ContentCompiler.compile_items(repo),
+		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor"))
 	)
 	world.set_boss_tables(ContentCompiler.compile_bosses(repo))  # Bosses (v0.3.0 C): spawn_boss's indices.
 	world.set_combo_tables(ContentCompiler.compile_combos(repo))  # v0.3.0 G: named combos.
@@ -153,6 +159,7 @@ func start_stage() -> void:
 	_hud = Hud.new()
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
+	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.sync(driver.reader)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))

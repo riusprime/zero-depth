@@ -114,6 +114,14 @@ CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyec
 CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
+REWARD_OPEN_ALTAR,[E / X] Open the altar,[E / X] Abrir el altar
+REWARD_OPEN_CHEST,[E / X] Open the chest · %d shards,[E / X] Abrir el cofre · %d fragmentos
+REWARD_TOO_POOR,Not enough shards · %d / %d,No tienes fragmentos suficientes · %d / %d
+PICK_TITLE_ALTAR,Altar · choose one,Altar · elige uno
+PICK_TITLE_CHEST,Chest · choose one for %d,Cofre · elige uno por %d
+PICK_HINT,"←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave it for later","←/→ o 1-3 para elegir · Intro o A para cogerlo · Esc o B para dejarlo para luego"
+RARITY_COMMON,Common,Común
+RARITY_RARE,Rare,Raro
 ITEM_CINDER_SHOT,Cinder Shot,Disparo de Ceniza
 ITEM_CINDER_SHOT_DESC,Every 3rd bolt hit adds a burn stack.,Cada 3.er impacto de proyectil añade una quemadura.
 ITEM_WILDFIRE,Wildfire,Incendio

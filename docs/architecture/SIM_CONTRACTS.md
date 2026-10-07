@@ -45,7 +45,9 @@ the order is part of the contract:
 | # | Phase | Notes |
 |---|---|---|
 | 1 | **Freeze check** | If `world.freeze_ticks > 0`: decrement it, add the frame's `pressed` bits to the input buffer (§3), increment `world.tick`, publish cues and **stop**. Nothing moves, no status ticks, and **the input buffer doesn't age** during hit-stop. |
+| 1b | **Choosing** (v0.3.0 E) | If an altar's or chest's 3-card choice is open (`world.choosing >= 0`): apply only the frame's `pick` (take a card, or cancel), increment `world.tick` and **stop**. Every gameplay phase waits (no AI, movement, hits, statuses, spawns, run time); presses made during the choice are dropped when it closes. |
 | 2 | **Input** | Apply the `InputFrame` to the player: move intent, aim, held buttons, and new presses into the 6-tick buffer. |
+| 2b | **Interact** (v0.3.0 E) | A buffered `INTERACT` press within reach of an altar or chest opens it (`Rewards.interact`): a chest you can't afford stays shut; otherwise its offer is rolled once (loot stream) and the choice opens. If it opened, increment `world.tick` and stop. |
 | 3 | **AI** | Enemies think in ascending entity id. Expensive thinking (path queries, target scoring) is staggered: an enemy with id `n` runs its heavy pass only when `(tick + n) % AI_HEAVY_PERIOD == 0` (**starting value** `AI_HEAVY_PERIOD = 6`). Light steering runs every tick. |
 | 4 | **Action states** | Each actor's current action advances through `WINDUP → ACTIVE → RECOVERY` by tick counts. A buffered press starts a new action only when the current one allows cancelling. |
 | 5 | **Move and collide** | Actors move, then resolve against walls and each other (§6). Projectiles sweep (§6). |
@@ -74,8 +76,10 @@ var held: int             # bitmask of buttons held this tick
 var pressed: int          # bitmask of buttons pressed since the previous tick
 ```
 
-- **Button bits:** `PRIMARY = 1`, `UTILITY = 2`, `DASH = 4`, `INTERACT = 8`. New bits are appended, never
-  renumbered.
+- **Button bits:** `PRIMARY = 1`, `UTILITY = 2`, `DASH = 4`, `INTERACT = 8`, `SHOOT = 16`. New bits are appended,
+  never renumbered.
+- **`pick: int`** (v0.3.0 E): the 3-card pick, delivered once like a press. `0` = none, `1..3` = take that card,
+  `-1` = cancel (keep the altar or chest for later). The pick UI sends it through `InputLatch.note_pick`.
 - **Latching.** The application layer's `InputLatch` collects device events between ticks. A press and release
   that both happen between two ticks still set the `pressed` bit on the next frame, so a tap shorter than one
   frame is never lost. Each `pressed` bit is delivered exactly once.
@@ -188,7 +192,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0) and `BOSS_DEFEATED` (v0.3.0: once per boss, after its `KILL`; `amount` = its boss table index). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |

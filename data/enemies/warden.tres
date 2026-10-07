@@ -33,4 +33,5 @@ radius_m = 0.55
 move_speed_mps = 1.6
 attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
 stress_tags = PackedStringArray("bleed")
+shards = 6
 id = &"warden"

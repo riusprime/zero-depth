@@ -11,6 +11,10 @@ const CARD_SECONDS := 3.0
 ## Standing this close to a pedestal (m) previews its item.
 const PREVIEW_M := 2.0
 const ROW_ICON := 40.0
+## Rewards (v0.3.0 E): the shard counter (top right) pulses this long when it grows.
+const SHARD_PULSE_S := 0.3
+const POOR := Color("#FF5A4D")
+
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
 const COMBO_BADGE := 44.0
@@ -32,6 +36,13 @@ var _card_mode := &""
 var _preview_item := -1
 var _last_seq := 0
 var _items_shown := -1
+# Rewards (v0.3.0 E): the shard counter, the interact prompt by an altar or chest, the 3-card pick.
+var _shards := Label.new()
+var _shard_box := HBoxContainer.new()
+var _shard_pulse := 0.0
+var _shards_shown := -1
+var _prompt := Label.new()
+var _pick := PickPanel.new()
 var _combos := HBoxContainer.new()
 var _combo_card := ComboCard.new()
 var _combo_left := 0.0
@@ -107,8 +118,10 @@ func _init() -> void:
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	add_child(boss_bar)
+	_build_rewards()
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_pick)  # after the loop: the pick takes mouse input
 
 
 func sync(reader: WorldReader) -> void:
@@ -135,6 +148,7 @@ func sync(reader: WorldReader) -> void:
 		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
 	_gate.text = tr("GATE_SEALED") if reader.has_floor() and reader.at_gate() else ""
 	boss_bar.sync(reader)
+	_sync_rewards(reader)
 
 
 func _process(delta: float) -> void:
@@ -142,6 +156,87 @@ func _process(delta: float) -> void:
 		_card_left -= delta
 	if _combo_left > 0.0:
 		_combo_left -= delta
+	if _shard_pulse > 0.0:
+		_shard_pulse = maxf(0.0, _shard_pulse - delta)
+	_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
+
+
+# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+## The 3-card pick panel (the app connects its `picked` signal to the input latch).
+func pick_panel() -> PickPanel:
+	return _pick
+
+
+func shard_text() -> String:
+	return _shards.text
+
+
+## The interact prompt by an altar or chest ("" when none), and whether it shows the can't-afford colour.
+func prompt_text() -> String:
+	return _prompt.text if _prompt.visible else ""
+
+
+func prompt_poor() -> bool:
+	return _prompt.get_theme_color(&"font_color") == POOR
+
+
+func _build_rewards() -> void:
+	var plate := PanelContainer.new()
+	plate.name = "Shards"
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0.03, 0.04, 0.07, 0.72)
+	box.set_corner_radius_all(10)
+	box.content_margin_left = 12
+	box.content_margin_right = 16
+	box.content_margin_top = 4
+	box.content_margin_bottom = 4
+	plate.add_theme_stylebox_override("panel", box)
+	plate.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	plate.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	plate.offset_left = -28
+	plate.offset_right = -28
+	plate.offset_top = 20
+	_shard_box.add_theme_constant_override("separation", 10)
+	_shard_box.add_child(ShardIcon.new(30.0))
+	_shards.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_shards.add_theme_font_size_override("font_size", 28)
+	_shards.add_theme_color_override("font_color", ShardIcon.LIGHT)
+	_shard_box.add_child(_shards)
+	plate.add_child(_shard_box)
+	add_child(plate)
+	_shard_box.pivot_offset = Vector2(20, 20)
+	_prompt.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_prompt.custom_minimum_size = Vector2(900, 0)
+	_prompt.position = Vector2(-450, -112)
+	_prompt.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_prompt.add_theme_font_size_override("font_size", 24)
+	_prompt.add_theme_constant_override("outline_size", 6)
+	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	add_child(_prompt)
+
+
+func _sync_rewards(reader: WorldReader) -> void:
+	var n := reader.shards()
+	if n != _shards_shown:
+		if _shards_shown >= 0 and n > _shards_shown:
+			_shard_pulse = SHARD_PULSE_S
+		_shards_shown = n
+		_shards.text = str(n)
+	var i := reader.reward_in_reach() if not reader.choosing() else -1
+	_prompt.visible = i >= 0
+	if i >= 0:
+		var price := reader.reward_price(i)
+		if reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
+			_prompt.text = tr("REWARD_OPEN_ALTAR")
+		elif reader.reward_affordable(i):
+			_prompt.text = tr("REWARD_OPEN_CHEST") % price
+		else:
+			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
+		_prompt.add_theme_color_override(
+			"font_color", Color.WHITE if reader.reward_affordable(i) else POOR
+		)
+	_pick.sync(reader)
 
 
 ## The item card (tests and shot scripts read it).

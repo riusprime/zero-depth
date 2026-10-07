@@ -16,4 +16,5 @@ freeze_seconds = 1.0
 chill_bonus_permille = 200
 frozen_bonus_permille = 600
 tags = PackedStringArray("frost", "dash")
+rarity = 1
 id = &"cold_snap"

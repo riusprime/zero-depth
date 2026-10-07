@@ -117,6 +117,11 @@ func _blink_step() -> void:
 
 func _start_walk() -> void:
 	var w := _main.driver.world
+	if w.pickups.size() == 0:
+		# v0.3.0 E replaced the pedestals with altars and chests (scripts/shots/rewards.gd shoots those).
+		print("vfx_cards: no pedestals on the floor since v0.3.0 E; skipping the card shots")
+		_go(&"settle")
+		return
 	var best := 0
 	for i in w.pickups.ids.size():
 		if (
