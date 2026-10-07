@@ -11,8 +11,10 @@ const FADED_ALPHA := 0.3
 ## Soft-shadow blur: 0.5 straightens the edges; 1.0 and above wiped out the props' small shadows in the test
 ## renders (evidence/SHADOWS.md).
 const SHADOW_BLUR := 0.5
-## On a generated floor the ground covers each room plus its walls (a wall is 0.8 m thick), not the floor's whole
-## bounding box, so the space between rooms reads as void (v0.2.0 I).
+## On a generated floor the ground covers the floor's footprint (WorldReader.floor_ground: each room's cells, so
+## its walls at their real thickness and its doorways, and the outer walls), not the floor's whole bounding box,
+## so the space between rooms reads as void (v0.2.0 I, v0.3.0 A). Any room or structural wall the footprint
+## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
 
 var palette := {}
@@ -29,8 +31,13 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 	_build_environment()
 	_build_light()
 	_ground_rects.clear()
-	for i in reader.floor_room_count():
-		_ground_rects.append(reader.floor_room(i).grow(ROOM_GROUND_MARGIN))
+	if reader.has_floor():
+		_ground_rects = reader.floor_ground()
+		for i in reader.floor_room_count():
+			_add_ground(reader.floor_room(i).grow(ROOM_GROUND_MARGIN))
+		for i in reader.wall_count():
+			if reader.wall_class(i) == 0:
+				_add_ground(reader.wall(i).bounds())
 	if _ground_rects.is_empty():
 		_build_ground(arena_half)
 	else:
@@ -95,6 +102,14 @@ func _build_ground(arena_half: float) -> void:
 			tile.position = Vector3(start + i * TILE_M, 0, start + j * TILE_M)
 			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(tile)
+
+
+## Ground over r, unless the ground already covers it whole.
+func _add_ground(r: Rect2) -> void:
+	for g in _ground_rects:
+		if g.grow(0.001).encloses(r):
+			return
+	_ground_rects.append(r)
 
 
 ## The same checker as _build_ground, on the global tile grid, clipped to each room's rect.
