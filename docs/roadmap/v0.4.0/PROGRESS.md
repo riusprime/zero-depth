@@ -47,3 +47,5 @@ merged.
   40–50 card pool (ROADMAP v0.6.0 → v0.5.0) runs as step CP in wave 3, after BS.
 - 2026-10-07 — Owner on the altar mix (43 % ability cards while a slot is free): "ill test it after"; on EI-05: "change the
   locked rule yea" → EI-05 lists `crit` and `ability` (and the `ai:enemy` sub-stream).
+- 2026-10-07 — BS merged on top of v0.3.5 (keep-both conflicts in world, debug API, dev panel, strings, SIM_CONTRACTS,
+  LOCKED_DECISIONS). 777 tests pass; goldens unchanged.
