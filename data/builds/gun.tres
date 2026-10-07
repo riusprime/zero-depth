@@ -1,6 +1,24 @@
 [gd_resource type="Resource" script_class="BuildDefinition" format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/build_definition.gd" id="1_build"]
+[ext_resource type="Script" path="res://src/content/defs/skill_definition.gd" id="2_skill"]
+
+[sub_resource type="Resource" id="Skill_scatter_blast"]
+script = ExtResource("2_skill")
+kind = 1
+name_key = &"SKILL_SCATTER_BLAST"
+desc_key = &"SKILL_SCATTER_BLAST_DESC"
+cooldown_seconds = 3.5
+damage = 6
+heat = 2.5
+pellets = 7
+cone_degrees = 60.0
+range_m = 4.0
+pellet_radius_m = 0.12
+knockback_m = 1.5
+knockback_seconds = 0.1333333
+recoil_m = 0.8
+recoil_seconds = 0.1
 
 [resource]
 script = ExtResource("1_build")
@@ -8,4 +26,5 @@ weapon = 1
 name_key = &"BUILD_GUN"
 desc_key = &"BUILD_GUN_DESC"
 damage_permille = 850
+skill = SubResource("Skill_scatter_blast")
 id = &"gun"

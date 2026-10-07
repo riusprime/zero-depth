@@ -46,6 +46,8 @@ const ACTIONS := {
 	&"primary": "UI_ACTION_PRIMARY",
 	&"shoot": "UI_ACTION_SHOOT",
 	&"dash": "UI_ACTION_DASH",
+	&"skill": "UI_ACTION_SKILL",
+	&"vent": "UI_ACTION_VENT",
 	&"utility": "UI_ACTION_UTILITY",
 	&"interact": "UI_ACTION_INTERACT",
 	&"pause": "UI_ACTION_PAUSE",

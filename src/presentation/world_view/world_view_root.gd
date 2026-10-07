@@ -29,6 +29,8 @@ var boss_door: BossDoorView
 var gamble_shrine: GambleShrineView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
 var challenge := BossChallengeView.new()
+## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
+var skill_fx := SkillVisuals.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -53,6 +55,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(status_fx)
 	heat_fx = HeatVisuals.new(kit, actors)
 	add_child(heat_fx)
+	add_child(skill_fx)  # v0.3.5 K
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -96,6 +99,7 @@ func sync() -> void:
 	status_fx.sync(reader)
 	heat_fx.sync(reader)
 	transit.sync(reader)  # after the actors: it poses the hero's model
+	skill_fx.sync(reader)  # v0.3.5 K
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

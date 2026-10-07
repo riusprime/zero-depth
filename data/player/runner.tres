@@ -7,6 +7,7 @@
 
 [sub_resource type="Resource" id="Resource_17p3l"]
 script = ExtResource("1_utv5o")
+cooldown_seconds = 1.4
 
 [sub_resource type="Resource" id="Swing_slash"]
 script = ExtResource("4_step1")

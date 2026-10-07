@@ -1,6 +1,21 @@
 [gd_resource type="Resource" script_class="BuildDefinition" format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/build_definition.gd" id="1_build"]
+[ext_resource type="Script" path="res://src/content/defs/skill_definition.gd" id="2_skill"]
+
+[sub_resource type="Resource" id="Skill_lunge_cleave"]
+script = ExtResource("2_skill")
+kind = 0
+name_key = &"SKILL_LUNGE_CLEAVE"
+desc_key = &"SKILL_LUNGE_CLEAVE_DESC"
+cooldown_seconds = 4.0
+damage = 28
+heat = 5.0
+lunge_m = 3.5
+lunge_seconds = 0.2
+arc_degrees = 180.0
+reach_m = 2.2
+hitstop_seconds = 0.1166667
 
 [resource]
 script = ExtResource("1_build")
@@ -8,4 +23,5 @@ weapon = 0
 name_key = &"BUILD_BLADE"
 desc_key = &"BUILD_BLADE_DESC"
 damage_permille = 1150
+skill = SubResource("Skill_lunge_cleave")
 id = &"blade"

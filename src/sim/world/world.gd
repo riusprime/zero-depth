@@ -226,6 +226,7 @@ var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders
 var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
 
 var heat: HeatState  # Overclock heat (v0.3.0 L18; Heat): null unless the loadout has it (Heat.enable).
+var kit := KitState.new()  # v0.3.5 K: the Vent and Skill buttons (PlayerSkill), hashed once touched.
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -667,6 +668,8 @@ func state_hash() -> String:
 		_hash_engines(h)
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
+	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
+		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
 		h.add_ints(gamble_stacks)
 		for v in [gamble_id, gamble_uses, gamble_last_stat, gamble_tick, gamble_denied_tick]:
@@ -764,12 +767,14 @@ func _age_buffer() -> void:
 	for i in input_buffer.size():
 		if input_buffer[i] > 0:
 			input_buffer[i] -= 1
+	PlayerSkill.age(self)  # Kit (v0.3.5 K)
 
 
 func _buffer_presses(pressed: int) -> void:
 	for i in BUTTON_BITS.size():
 		if pressed & BUTTON_BITS[i]:
 			input_buffer[i] = SimTick.INPUT_BUFFER_TICKS
+	PlayerSkill.buffer(self, pressed)  # Kit (v0.3.5 K)
 
 
 func _run_ai() -> void:
@@ -820,6 +825,7 @@ func _advance_actions() -> void:
 		return
 	PlayerKit.advance_utility(self)
 	PlayerKit.advance(self)
+	PlayerSkill.advance(self)  # Kit (v0.3.5 K): Vent, and the build's skill.
 	if dash_cooldown_left > 0:
 		dash_cooldown_left -= 1
 	if dash_ticks_left > 0:
@@ -827,14 +833,13 @@ func _advance_actions() -> void:
 		if dash_ticks_left == 0:
 			ItemProcs.on_dash_end(self)  # Items: Momentum.
 		return
-	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0:
+	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0 and not PlayerSkill.busy(self):
 		input_buffer[DASH_SLOT] = 0
 		dash_dir = PlayerKit.move_or_aim(self)
 		dash_root = 0  # Items: a new dash may hit every enemy once again.
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
-		Heat.on_move(self)  # Heat: a dash while Hot vents where it starts.
 
 
 func _move_and_collide() -> void:
@@ -844,6 +849,9 @@ func _move_and_collide() -> void:
 		vel = Vector2.ZERO
 	elif dash_ticks_left > 0:
 		p += dash_dir * (player.dash_distance_m / player.dash_ticks)
+	elif PlayerSkill.moving(self):  # Kit (v0.3.5 K): the lunge, or the blast's step back
+		vel = Vector2.ZERO
+		p += PlayerSkill.move_step(self)
 	else:
 		var target := Vector2.ZERO
 		if move_intent != Vector2i.ZERO:
@@ -884,6 +892,7 @@ func _move_and_collide() -> void:
 		if dist > dummy_speed:
 			at += to * (dummy_speed / dist)
 		actors.set_pos(i, at)
+	PlayerSkill.push(self)  # Kit (v0.3.5 K): Scatter Blast knockback, before walls resolve it.
 	# Resolve: walls first, then actor pairs in ascending index order. A boss in the air or underground passes
 	# through both; a boss on the ground isn't shoved: the other body takes the whole push (v0.3.0 C).
 	var through := PackedInt32Array()

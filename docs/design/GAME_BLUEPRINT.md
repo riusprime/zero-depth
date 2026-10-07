@@ -88,7 +88,7 @@ value or by an owner decision, and the change is noted here.
 | `data/player/runner.tres` | `move_speed_mps` | 6.0 m/s | Starting value (v0.0.1); owner Windows check |
 | `src/content/defs/dash_definition.gd` (defaults) | `distance_m` | 4.0 m | Starting value (v0.0.1); owner Windows check |
 | same | `duration_seconds` | 0.15 s (9 ticks) | Starting value (v0.0.1) |
-| same | `cooldown_seconds` | 0.8 s (48 ticks) | Starting value (v0.0.1) |
+| same | `cooldown_seconds` | 1.4 s (84 ticks) | Owner F12 (v0.3.5 K; was 0.8 s, v0.0.1). The kernel goldens keep 0.8 s |
 | same | `iframes_seconds` | 0.15 s (the whole dash) | Starting value (v0.1.0) |
 | v0.1.0 primary, guard, blink, enemies | all fields | see [`../roadmap/v0.1.0/PLAN.md`](../roadmap/v0.1.0/PLAN.md) "Design" | Starting values (v0.1.0); the owner tunes them |
 

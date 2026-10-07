@@ -574,6 +574,35 @@ def s_low_hp_heartbeat(r):
     return echo(one_pole_lp(x, 400), 120, 0.2, 0.15, 800, 0.1)
 
 
+
+# --- v0.3.5 K: the build skills and the cold Vent click ---------------------------------------------------------
+def s_skill_lunge_cleave(r):
+    """The Lunge Cleave: a rising rush over the 0.2 s lunge, then one heavy, wide slash with a low ring."""
+    rush = whoosh(r, 0.24, 300, 2400, 2.2, 0.1)
+    n = n_of(0.3)
+    slash = bandpass(noise(r, n), curve(5200, 900, n), 2.5) * env(n, 0.003, 0.09)
+    ring = metal_ping(0.45, 330.0, 1.41, 2.0, 0.14) * 0.35
+    thump = osc(curve(110, 50, n_of(0.18)), "sine") * env(n_of(0.18), 0.002, 0.05) * 0.6
+    return echo(mix(rush * 0.7, at(mix(slash, ring, thump), 0.2)), 90, 0.25, 0.2, 3000, 0.2)
+
+
+def s_skill_scatter_blast(r):
+    """The Scatter Blast: a short, dry, crunchy boom with a spray of pellet ticks."""
+    n = n_of(0.32)
+    boom = one_pole_lp(noise(r, n), curve(6000, 500, n)) * env(n, 0.001, 0.07)
+    body = osc(curve(160, 55, n), "sine") * env(n, 0.002, 0.08) * 0.8
+    ticks = mix(*[at(one_pole_hp(noise(r, n_of(0.01)), 3000) * env(n_of(0.01), 0.0005, 0.003), 0.02 + k * 0.011) for k in range(7)])
+    return echo(mix(bitcrush(boom, 7, 2), body, ticks * 0.4), 60, 0.2, 0.15, 2500, 0.12)
+
+
+def s_vent_cold(r):
+    """Vent pressed under Hot: a small, dull, cold click (nothing vented)."""
+    n = n_of(0.07)
+    click = bandpass(noise(r, n), 1800, 6.0) * env(n, 0.0005, 0.012)
+    tone = osc(420.0, "sine", n) * env(n, 0.001, 0.02) * 0.4
+    return mix(click, tone)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -621,6 +650,9 @@ SFX = [
     ("ui_confirm", s_ui_confirm),
     ("ui_back", s_ui_back),
     ("low_hp_heartbeat", s_low_hp_heartbeat),
+    ("skill_lunge_cleave", s_skill_lunge_cleave),
+    ("skill_scatter_blast", s_skill_scatter_blast),
+    ("vent_cold", s_vent_cold),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

@@ -313,6 +313,30 @@ lunging step must hit 2 ticks or more in) and `sweep_seconds` (the blade's cross
 `UtilityDefinition` (defined in v0.1.0): `id`, `name_key`, `kind` (`GUARD` or `MOBILE`), the timings in seconds,
 a cooldown, and `params` checked against the kind's schema.
 
+`DashDefinition.cooldown_seconds` is 1.4 s in `data/player/runner.tres` since v0.3.5 K (owner F12; it was 0.8 s).
+
+`BuildDefinition` (v0.3.0 L15, L16; `data/builds/`): `id`, `weapon` (`BLADE` or `GUN`), `name_key`, `desc_key`,
+`damage_permille` (100–5000, the weapon's damage factor) and, since v0.3.5 K (owner F18), `skill`, a required
+`SkillDefinition` sub-resource: the build's second ability on the Skill button. Its fields:
+
+| Field | Kinds | Rule |
+|---|---|---|
+| `kind` | both | `LUNGE_CLEAVE` (the Blade's) or `SCATTER_BLAST` (the Gun's); it must belong to the build's weapon |
+| `name_key`, `desc_key` | both | required locale keys (the HUD pip shows the name) |
+| `cooldown_seconds` | both | 1 tick to 60 s, counted from the press |
+| `damage` | both | 1–1000, per hit (cleave) or per pellet; the build's `damage_permille` applies |
+| `heat` | both | 0–100 heat points a landed use adds, once per use |
+| `lunge_m`, `lunge_seconds` | Lunge Cleave | (0, 12] m along the facing, over 1 tick to 2 s |
+| `arc_degrees`, `reach_m`, `hitstop_seconds` | Lunge Cleave | the cleave's fan (0–360°, (0, 12] m past the user's edge) and its hit-stop (0–8 ticks) |
+| `pellets`, `cone_degrees`, `range_m`, `pellet_radius_m` | Scatter Blast | 1–32 rays spread evenly over the cone toward the aim, out to `range_m` past the user's edge |
+| `knockback_m`, `knockback_seconds` | Scatter Blast | each enemy hit (not a boss) slides away (0–12 m) |
+| `recoil_m`, `recoil_seconds` | Scatter Blast | the user steps back (0–12 m) |
+
+Shipped starting values: Lunge Cleave 3.5 m lunge in 0.2 s, 180° cleave reaching 2.2 m, 28 damage, the finisher's
+7-tick hit-stop, 5 heat, 4 s; Scatter Blast 7 pellets over 60°, 4 m, 6 damage each, 1.5 m knockback, 0.8 m step
+back, 2.5 heat, 3.5 s. `ContentCompiler.compile_skill` turns it into `SkillTable` on `PlayerTable.skill`
+(`apply_build`); outside a build (the kernel and lab worlds) there is none and the Skill button does nothing.
+
 Values come from GA §5 (player kit). Until the gap analysis report is in the repo, v0.0.1 uses starting values,
 listed in [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C. The owner tunes them during the v0.0.1
 Windows check.

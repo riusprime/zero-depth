@@ -22,6 +22,9 @@ const ACTIONS := {
 	&"pause": [[&"key", KEY_ESCAPE], [&"button", JOY_BUTTON_START]],
 	# v0.3.0 MM: hold to show the full map (owner L30).
 	&"map": [[&"key", KEY_TAB], [&"button", JOY_BUTTON_BACK]],
+	# v0.3.5 K (owner F1, F18): Vent and the build's Skill, each on its own button.
+	&"vent": [[&"key", KEY_F], [&"button", JOY_BUTTON_B]],
+	&"skill": [[&"key", KEY_Q], [&"button", JOY_BUTTON_Y]],
 }
 ## Action -> InputFrame bit, for the latch.
 const BUTTON_BITS := {
@@ -30,6 +33,8 @@ const BUTTON_BITS := {
 	&"utility": InputFrame.UTILITY,
 	&"dash": InputFrame.DASH,
 	&"interact": InputFrame.INTERACT,
+	&"vent": InputFrame.VENT,
+	&"skill": InputFrame.SKILL,
 }
 const DEADZONE := 0.2
 ## Pad buttons added to Godot's built-in UI actions (v0.2.0 PLAN L3). Godot 4.7's default `ui_accept` holds only

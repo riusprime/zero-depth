@@ -8,6 +8,9 @@ const DASH := 4
 const INTERACT := 8
 ## Shooting (held), separate from the melee PRIMARY (owner, 2026-10-07).
 const SHOOT := 16
+## v0.3.5 K: the Vent button (owner F1) and the Skill button (owner F18).
+const VENT := 32
+const SKILL := 64
 ## `pick` values (v0.3.0 E): no pick this tick, or cancel the open altar/chest choice. 1..3 take that card.
 const PICK_NONE := 0
 const PICK_CANCEL := -1

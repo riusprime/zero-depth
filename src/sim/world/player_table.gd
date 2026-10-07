@@ -56,9 +56,13 @@ var bolt_damage_permille := 1000
 ## regen_permille of max HP per second (World.regen_bonus_permille adds to it).
 var regen_delay_ticks := 600
 var regen_permille := 10
+## The build's second ability (v0.3.5 K; ContentCompiler.apply_build): null outside a build (the kernel and lab
+## worlds), so the Skill button does nothing there.
+var skill: SkillTable = null
 
 
-## The v0.0.1 starting values (docs/design/GAME_BLUEPRINT.md §C): 6 m/s, dash 4 m over 0.15 s, 0.8 s cooldown.
+## The starting values (docs/design/GAME_BLUEPRINT.md §C): 6 m/s, dash 4 m over 0.15 s; the dash cooldown is 1.4 s
+## since v0.3.5 K (owner F12; it was 0.8 s). The kernel goldens keep 0.8 s (KernelScenario.KERNEL_DASH_COOLDOWN_TICKS).
 static func starting_values() -> PlayerTable:
 	var t := PlayerTable.new()
 	t.hp = 100
@@ -66,7 +70,7 @@ static func starting_values() -> PlayerTable:
 	t.move_speed = 6.0 / SimTick.TICKS_PER_SECOND
 	t.dash_distance_m = 4.0
 	t.dash_ticks = SimTick.seconds_to_ticks(0.15)
-	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(0.8)
+	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(1.4)
 	t.dash_iframe_ticks = SimTick.seconds_to_ticks(0.15)
 	return t
 

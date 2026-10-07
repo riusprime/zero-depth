@@ -1,7 +1,7 @@
 extends GutTest
 ## Overclock heat in the real game (v0.3.0 PLAN L18), through real input only: the left stick walks the wanderer
 ## up to the nearest enemy, the right stick aims at it and the left trigger swings until heat reaches Hot (the HUD
-## meter fills and shows the VENT prompt), then the dash button (pad right bumper) vents it. Read through
+## meter fills and shows the VENT prompt), then the Vent button (pad B, v0.3.5 K) vents it. Read through
 ## WorldReader and the HUD: the blast hits the enemy beside you, heat resets to 0, the meter empties and the
 ## world view draws the blast ring at the sim's radius.
 
@@ -15,6 +15,7 @@ const VENT_M := 1.7
 func after_each() -> void:
 	Input.action_release(&"primary")
 	Input.action_release(&"dash")
+	Input.action_release(&"vent")
 
 
 func _nearest_enemy(r: WorldReader) -> int:
@@ -48,7 +49,7 @@ func _click(e: E2e, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-func test_hit_enemies_until_hot_then_dash_to_vent() -> void:
+func test_hit_enemies_until_hot_then_press_vent() -> void:
 	var e := E2e.new(self)
 	await e.boot()
 	await e.start_from_menu()
@@ -115,13 +116,17 @@ func test_hit_enemies_until_hot_then_dash_to_vent() -> void:
 	await e.frames(1)
 	var before := r.heat_state()
 	var heat_before: float = before["heat"]
-	assert_gte(heat_before, float(before["hot"]), "Hot before the dash")
+	assert_gte(heat_before, float(before["hot"]), "Hot before the vent")
+	var hint := hud.kit_hud
+	assert_true(hint.vent_lit(), "the vent hint is lit")
+	assert_false(KitHud.key_text(&"vent").is_empty(), "the vent has a key")
+	assert_true(hint.vent_text().contains(KitHud.key_text(&"vent")), "the hint names it")
 	assert_ne(meter.vent_text(), "", "the meter shows the VENT prompt")
 	assert_gt(meter.fill(), 0.35, "the meter is filled past the Hot mark")
 	var seq := r.last_event_seq()
-	e.joy_button(JOY_BUTTON_RIGHT_SHOULDER, true)
+	e.joy_button(JOY_BUTTON_B, true)
 	await e.frames(2)
-	e.joy_button(JOY_BUTTON_RIGHT_SHOULDER, false)
+	e.joy_button(JOY_BUTTON_B, false)
 	await e.frames(2)
 	var blast: Array[SimEvent] = []
 	for ev in r.events_since(seq):
@@ -129,7 +134,8 @@ func test_hit_enemies_until_hot_then_dash_to_vent() -> void:
 			blast.append(ev)
 	var after := r.heat_state()
 	gut.p("vented %d heat, %d blast hit(s)" % [after["vent_heat"], blast.size()])
-	assert_gt(int(after["vent_tick"]), -1, "the dash vented")
+	assert_gt(int(after["vent_tick"]), -1, "the Vent button vented")
+	assert_false(r.is_dashing(), "without a dash")
 	assert_gt(blast.size(), 0, "the blast hit the enemy beside you")
 	if not blast.is_empty():
 		assert_eq(

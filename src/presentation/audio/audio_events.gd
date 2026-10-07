@@ -108,6 +108,10 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"portal_open", null, 1.0])
 			SimEvent.Kind.FLOOR_EXIT:  # v0.3.5 PT: the hero goes into the portal (the blink's whoosh, lower)
 				out.append([&"blink_out", null, 0.7])
+			SimEvent.Kind.SKILL_USED:  # v0.3.5 K: the build skill, by its kind
+				out.append([skill_cue(e.amount), e.pos, 1.0])
+			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
+				out.append([&"vent_cold", null, 1.0])
 
 
 func _is_boss(actor_id: int) -> bool:
@@ -183,6 +187,13 @@ func _player(reader: WorldReader, out: Array) -> void:
 		out.append([&"blink_out", reader.blink_from(), 1.0])
 		out.append([&"blink_in", here, 1.0])
 	_blink_tick = bt
+
+
+## v0.3.5 K: the sound of a build skill (SkillUsed's amount).
+static func skill_cue(kind: int) -> StringName:
+	return (
+		&"skill_lunge_cleave" if kind == WorldReader.SKILL_LUNGE_CLEAVE else &"skill_scatter_blast"
+	)
 
 
 ## The first two slashes have their own sounds (right-to-left, then the backhand); any later slash in the combo
