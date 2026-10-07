@@ -1,0 +1,222 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_molten_flood"]
+script = ExtResource("1_atk")
+id = &"molten_flood"
+shape = 2
+shape_params = {
+"burn_seconds": 0.5,
+"count": 3,
+"gap_m": 3.0,
+"length_m": 16.0,
+"width_m": 1.4
+}
+telegraph_seconds = 0.9
+active_seconds = 2.0
+recovery_seconds = 1.2
+damage = 12
+move = &"flood"
+min_range_m = 2.0
+max_range_m = 18.0
+weight = 3
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_FOUNDRY_FLOOD"
+
+[sub_resource type="Resource" id="A_slag_mortar"]
+script = ExtResource("1_atk")
+id = &"slag_mortar"
+shape = 0
+shape_params = {
+"count": 4,
+"radius_m": 1.5,
+"spread_m": 2.5
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 18
+move = &"barrage"
+min_range_m = 3.0
+max_range_m = 30.0
+weight = 3
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_FOUNDRY_SLAG"
+follow_up = &"molten_flood"
+follow_up_permille = 350
+
+[sub_resource type="Resource" id="A_vent_blast"]
+script = ExtResource("1_atk")
+id = &"vent_blast"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"radius_m": 4.2
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 20
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 4.5
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_FOUNDRY_VENT"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_bomb_launch"]
+script = ExtResource("1_atk")
+id = &"bomb_launch"
+shape = 0
+shape_params = {
+"count": 2,
+"distance_m": 3.0,
+"enemy_id": "bomb_drone",
+"max_alive": 3,
+"radius_m": 1.0
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 12
+move = &"brood"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 1.2
+cause_key = &"CAUSE_FOUNDRY_LAUNCH"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_molten_flood_5"]
+script = ExtResource("1_atk")
+id = &"molten_flood_5"
+shape = 2
+shape_params = {
+"burn_seconds": 0.5,
+"count": 5,
+"gap_m": 2.8,
+"length_m": 18.0,
+"width_m": 1.4
+}
+telegraph_seconds = 0.9
+active_seconds = 2.0
+recovery_seconds = 1.0
+damage = 12
+move = &"flood"
+min_range_m = 2.0
+max_range_m = 20.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_FOUNDRY_FLOOD"
+
+[sub_resource type="Resource" id="A_bomb_launch_3"]
+script = ExtResource("1_atk")
+id = &"bomb_launch_3"
+shape = 0
+shape_params = {
+"count": 3,
+"distance_m": 3.0,
+"enemy_id": "bomb_drone",
+"max_alive": 4,
+"radius_m": 1.0
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 12
+move = &"brood"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_FOUNDRY_LAUNCH"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_firestorm"]
+script = ExtResource("1_atk")
+id = &"firestorm"
+shape = 2
+shape_params = {
+"burn_seconds": 0.5,
+"count": 7,
+"gap_m": 2.6,
+"length_m": 26.0,
+"width_m": 2.0
+}
+telegraph_seconds = 1.2
+active_seconds = 1.2
+recovery_seconds = 1.4
+damage = 16
+move = &"flood"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_FOUNDRY_FIRESTORM"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("molten_flood", "slag_mortar", "vent_blast", "bomb_launch")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("molten_flood_5", "slag_mortar", "vent_blast", "bomb_launch_3")
+entry_attack = &"molten_flood_5"
+speed_permille = 900
+cooldown_permille = 650
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_FOUNDRY"
+hp = 1900
+radius_m = 1.5
+move_speed_mps = 1.5
+turn_rate_dps = 60.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 300
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_molten_flood"), SubResource("A_slag_mortar"), SubResource("A_vent_blast"), SubResource("A_bomb_launch"), SubResource("A_molten_flood_5"), SubResource("A_bomb_launch_3"), SubResource("A_firestorm")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+arena_cells = Vector2i(3, 2)
+arena_template = 6
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"firestorm"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = 1
+arena_close_after_seconds = 45.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 1.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 6
+arena_hazard_seconds = 0.5
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"slag_mortar"
+gap_close_distance_m = 10.0
+gap_close_seconds = 2.0
+id = &"foundry"

@@ -347,6 +347,15 @@ def s_enemy_death_bomb_drone(r):
     return echo(x, 100, 0.3, 0.28, 2400, 0.3)
 
 
+def s_enemy_death_lens_drone(r):
+    """v0.4.0 BO: a Lens Drone popping: a falling glassy chirp and a crackle."""
+    n = n_of(0.45)
+    chirp = osc(curve(2200, 260, n), "sine") * env(n, 0.002, 0.25) * 0.5
+    crackle = bandpass(noise(r, n), 3200, 3.0) * env(n, 0.001, 0.08)
+    x = bitcrush(mix(chirp, crackle), 6, 2)
+    return echo(x, 90, 0.3, 0.28, 3000, 0.3)
+
+
 def s_arc_bolt(r):
     n = n_of(0.22)
     zap = osc(curve(2600, 500, n), "square", n) * env(n, 0.001, 0.08)
@@ -513,6 +522,46 @@ def s_boss_telegraph_siege_engine(r):
     return echo(bitcrush(x, 7, 2), 130, 0.35, 0.3, 3000, 0.35)
 
 
+def s_boss_telegraph_warlord(r):
+    """v0.4.0 BO: the Warlord's warning: armour plates clanking twice, then a low horn."""
+    clank1 = metal_ping(0.35, 520, 1.62, 3.0, 0.07)
+    clank2 = metal_ping(0.35, 470, 1.62, 3.0, 0.07)
+    n = n_of(0.8)
+    horn = one_pole_lp(osc(curve(98, 110, n), "saw", n), 900) * env(n, 0.2, 0.35) * 0.6
+    x = mix(clank1 * 0.6, at(clank2 * 0.6, 0.14), at(horn, 0.18))
+    return echo(bitcrush(x, 7, 2), 140, 0.35, 0.3, 2200, 0.35)
+
+
+def s_boss_telegraph_hive_lens(r):
+    """v0.4.0 BO: the Hive Lens focusing: a rising glassy hum with a beating partial."""
+    n = n_of(0.8)
+    t = np.arange(n) / RATE
+    hum = osc(curve(330, 990, n), "sine") * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * t))
+    glass = fm(curve(1320, 1980, n), 2.01, 1.2, n) * 0.25
+    x = mix(hum * 0.7, glass) * env(n, 0.3, 0.3)
+    return echo(bitcrush(x, 7, 2), 120, 0.4, 0.35, 4000, 0.4)
+
+
+def s_boss_telegraph_foundry(r):
+    """v0.4.0 BO: the Foundry stoking up: a roaring furnace swell over a slow bellows pump."""
+    n = n_of(0.85)
+    t = np.arange(n) / RATE
+    roar = one_pole_lp(noise(r, n), curve(300, 1800, n)) * (0.6 + 0.4 * np.sin(2 * np.pi * 4 * t))
+    pump = osc(curve(60, 75, n), "square", n) * 0.25
+    x = soft_clip(mix(roar * 1.2, one_pole_lp(pump, 500)), 1.6) * env(n, 0.3, 0.3)
+    return echo(x, 150, 0.35, 0.3, 1800, 0.35)
+
+
+def s_boss_floor_burst(r):
+    """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
+    n = n_of(0.7)
+    crack = bandpass(noise(r, n), curve(3000, 600, n), 1.5) * env(n, 0.001, 0.06)
+    thud = osc(curve(140, 50, n), "sine") * env(n, 0.002, 0.12)
+    hiss = one_pole_hp(noise(r, n), 3500) * env(n, 0.04, 0.35) * 0.35
+    x = soft_clip(mix(crack, thud, hiss), 1.5)
+    return echo(bitcrush(x, 7, 2), 120, 0.35, 0.3, 2500, 0.4)
+
+
 def s_boss_slam(r):
     n = n_of(0.7)
     boom = osc(curve(120, 32, n), "sine") * env(n, 0.002, 0.2)
@@ -665,6 +714,7 @@ SFX = [
     ("enemy_windup", s_enemy_windup),
     ("enemy_death_arc_caster", s_enemy_death_arc_caster),
     ("enemy_death_bomb_drone", s_enemy_death_bomb_drone),
+    ("enemy_death_lens_drone", s_enemy_death_lens_drone),
     ("arc_bolt", s_arc_bolt),
     ("rune_erupt", s_rune_erupt),
     ("bomb_lob", s_bomb_lob),
@@ -686,6 +736,10 @@ SFX = [
     ("boss_telegraph_gatekeeper", s_boss_telegraph_gatekeeper),
     ("boss_telegraph_brood_mother", s_boss_telegraph_brood_mother),
     ("boss_telegraph_siege_engine", s_boss_telegraph_siege_engine),
+    ("boss_telegraph_warlord", s_boss_telegraph_warlord),
+    ("boss_telegraph_hive_lens", s_boss_telegraph_hive_lens),
+    ("boss_telegraph_foundry", s_boss_telegraph_foundry),
+    ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),
     ("boss_mortar", s_boss_mortar),

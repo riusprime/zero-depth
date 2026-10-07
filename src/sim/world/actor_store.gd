@@ -4,7 +4,8 @@ extends RefCounted
 ## Kinds are appended, never renumbered, because they are hashed.
 
 ## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi). The
-## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them.
+## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them; then the second boss of each pool and the Hive Lens's
+## drones (v0.4.0 BO).
 enum Kind {
 	PLAYER,
 	DUMMY,
@@ -17,6 +18,10 @@ enum Kind {
 	SIEGE_ENGINE,
 	ARC_CASTER,
 	BOMB_DRONE,
+	WARLORD,
+	HIVE_LENS,
+	FOUNDRY,
+	LENS_DRONE,
 }
 
 const TEAM_PLAYER := 0

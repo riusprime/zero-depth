@@ -3,7 +3,19 @@ extends RefCounted
 ## One boss attack in sim units (BossAttackDefinition compiled). Only the fields its move uses are set.
 
 enum Move {
-	SLAM_RING, LANES, SWEEP, CHARGE, LEAP, BURROW, BROOD, BARRAGE, RAIL, BOLT_FAN, DEPLOY, PULL
+	SLAM_RING,
+	LANES,
+	SWEEP,
+	CHARGE,
+	LEAP,
+	BURROW,
+	BROOD,
+	BARRAGE,
+	RAIL,
+	BOLT_FAN,
+	DEPLOY,
+	PULL,
+	FLOOD
 }
 
 var id := &""
@@ -51,3 +63,6 @@ var pull_range_m := 0.0
 var opens_weak := false
 var follow_up := -1
 var follow_up_permille := 0
+## v0.4.0 BO: a flood's lanes stand gap_m apart (centre to centre) and hurt again every burn_ticks while active.
+var gap_m := 0.0
+var burn_ticks := 1

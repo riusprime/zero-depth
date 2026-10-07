@@ -137,6 +137,10 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
+  `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
+  (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
@@ -213,6 +217,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var weak_point_range_m: float              # hits from within it...
 @export var weak_point_mult_permille: int          # ...deal this (1000..4000)
 @export var weak_point_stagger_permille: int       # ...and fill the stagger meter at this (1000..4000)
+@export var weak_point_drops_armour: bool          # v0.4.0 BO: while it is open the front armour is off (the Warlord's shield)
 @export var arena_close_phase: int                 # closing arena starts at this phase (-1 = not by phase)
 @export var arena_close_after_seconds: float       # or after this long fighting (0 = not by time)
 @export var arena_close_step_seconds: float        # a step every this long...
@@ -235,6 +240,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never
   chains again). The `pull` move (`inner_radius_m`, `radius_m`, `pull_mps`, `pull_range_m`) drags the player in
   during its windup, then slams a ring.
+- The `flood` move (v0.4.0 BO; LINE): `count` parallel lanes `gap_m` apart (centre to centre, > 0), centred on the
+  line toward the player, each `length_m` long and `width_m` wide from the boss's edge, cut short by walls. The
+  lanes are marked for the windup; then they stand for the whole `active_seconds` (drawn styled: the Warlord's
+  spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
+  `count` is at most 8, as every count.
 
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
@@ -242,6 +252,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   eruption's own mark), compile to at least `MIN_TELEGRAPH_TICKS`. Every attack names a `cause_key` (the death
   recap line).
 - `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
+  Since v0.4.0 BO each pool holds two: floor 1 Gatekeeper and Warlord, floor 2 Brood Mother and Hive Lens, floor 3
+  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`).
 - Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
   bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
   floor generator reads.

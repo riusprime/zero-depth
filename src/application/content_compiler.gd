@@ -8,6 +8,9 @@ const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
 	&"siege_engine": ActorStore.Kind.SIEGE_ENGINE,
+	&"warlord": ActorStore.Kind.WARLORD,
+	&"hive_lens": ActorStore.Kind.HIVE_LENS,
+	&"foundry": ActorStore.Kind.FOUNDRY,
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -22,6 +25,7 @@ const BOSS_MOVES := {
 	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
 	&"deploy": BossAttackTable.Move.DEPLOY,
 	&"pull": BossAttackTable.Move.PULL,
+	&"flood": BossAttackTable.Move.FLOOD,
 }
 
 
@@ -79,6 +83,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"hatchling": ActorStore.Kind.HATCHLING,
 		&"arc_caster": ActorStore.Kind.ARC_CASTER,
 		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+		&"lens_drone": ActorStore.Kind.LENS_DRONE,
 	}[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
@@ -112,7 +117,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
 			t.slam_radius_m = sp["radius_m"]
-		&"needle":
+		&"needle", &"lens_drone":
 			t.keep_distance_m = bp["keep_distance_m"]
 			t.flee_distance_m = bp["flee_distance_m"]
 			t.burst_count = int(sp["count"])
@@ -484,6 +489,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.weak_range_m = def.weak_point_range_m
 	t.weak_mult_permille = def.weak_point_mult_permille
 	t.weak_stagger_permille = def.weak_point_stagger_permille
+	t.weak_drops_armour = def.weak_point_drops_armour
 	t.close_phase = def.arena_close_phase
 	t.close_after_ticks = SimTick.seconds_to_ticks(def.arena_close_after_seconds)
 	t.close_step_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_close_step_seconds))
@@ -552,6 +558,8 @@ static func compile_boss_attack(
 	t.max_alive = int(sp.get("max_alive", 99))
 	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
+	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
+	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	return t
 
 

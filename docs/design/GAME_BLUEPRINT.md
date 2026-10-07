@@ -174,6 +174,16 @@ Their names and specs are decided in v0.4.0 Phase 0.
   - The boss must be beatable by both v0.2.0 engines within the scorecard bands.
 - **Bosses 2–3** (v0.4.0): roles from GA: boss, decided in v0.4.0 Phase 0. Each tests a different engine harder
   than boss 1 does, without draining any.
+- **Pools of two** (v0.4.0 BO, PLAN "Bosses (BO)"): each floor's pool gains a second boss, so a run meets one of
+  two per floor. Same framework and BX anti-kite rules (ranged armour, a punish move, the closing band, a weak point
+  up close), v0.3.5's tracking, dash reading and gap-closer; every number a starting value.
+  - **The Warlord** (floor 1): a shielded knight. Its shield takes 35 % off hits from the front 140°; it bashes
+    with it, plants three (later five) parallel spear lines that stand for a moment, dashes, and rains javelins on
+    a kiter. Planting and dashing lift the shield: the weak point opens and the front armour is off.
+  - **The Hive Lens** (floor 2): a floating eye that sweeps beams (rails), fires prism bolt fans, flares a glare
+    ring up close and dives at a runaway. At 50 % it splits: three Lens Drones (Needle behaviour) break off its rim.
+  - **The Foundry** (floor 3): a walking furnace that floods lanes with molten floor (lanes that burn for 2 s),
+    lobs slag, blows a vent ring up close and launches Bomb Drones (at most 3, then 4 alive).
 
 ## G. Procedural floors
 

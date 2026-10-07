@@ -61,9 +61,10 @@ func test_the_shipped_data() -> void:
 			KIND.WARDEN: 6,
 			KIND.HATCHLING: 1,
 			KIND.ARC_CASTER: 4,
-			KIND.BOMB_DRONE: 4
+			KIND.BOMB_DRONE: 4,
+			KIND.LENS_DRONE: 3
 		},
-		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4)"
+		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 Lens Drone 3)"
 	)
 	assert_eq(_rewards.chest_prices, PackedInt32Array([40, 60, 80]))
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])

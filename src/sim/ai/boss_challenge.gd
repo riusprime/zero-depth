@@ -21,6 +21,7 @@ const LEADING_MOVES: Array[int] = [
 	BossAttackTable.Move.BARRAGE,
 	BossAttackTable.Move.RAIL,
 	BossAttackTable.Move.BOLT_FAN,
+	BossAttackTable.Move.FLOOD,
 ]
 
 

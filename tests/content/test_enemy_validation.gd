@@ -14,8 +14,11 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		6,
-		"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5)"
+		7,
+		(
+			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
+			+ " the Lens Drone (v0.4.0 BO)"
+		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		assert_eq(def.validate(), [], String(def.id))

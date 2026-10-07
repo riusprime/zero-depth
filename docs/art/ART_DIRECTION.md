@@ -140,6 +140,21 @@ bomb's circle a cross-hair and the bomb itself arcing down to it as the circle f
 
 **Bosses (owner, 2026-10-07).** The reference is [`first-three-bosses-concept.png`](first-three-bosses-concept.png): **Stone Sentinel** (colossal grey boulder golem, huge stacked stone fists, a spiky faceted red crown and back shell with a red visor slot and glowing red cracks on the back), **Crawler Queen** (a red faceted hood carapace with a red hex visor, a huge red egg sac of glowing spheres with spikes, many grey legs with long bone talons), **Fortress Turret** (a red armoured box hull with red slit eyes, a long grey main cannon with a vented muzzle, two back mortar tubes with red glow, four heavy grey mechanical legs). Matched as close to 1:1 as possible (PLAN v0.3.0 L10).
 
+**Second bosses (v0.4.0 BO; code-built in the same style until the owner's sheet; prompts in
+[`BOSSES_2.md`](BOSSES_2.md)).** **Warlord** — a grey faceted armoured knight on short armoured legs, red tabard and
+pauldrons, a closed grey helm with a glowing red T visor under a crest of red crystal blades, a tall red tower shield
+with a grey rim and a glowing emblem on its left arm, a long grey spear with a red head; the shield lifts up and aside
+while its weak point (a gold core on the chest) is open. **Hive Lens** — a faceted grey armoured sphere hovering
+1.75 m up over a soft ground shadow, one great red iris with a dark pupil ringed by red crystal lashes, three red
+drone pods docked on its rim (they drift off and vanish when it splits), three grey cable tails with glowing red
+tips. **Lens Drone** — a small red pod with a grey cap, a red eye slit and a turning grey ring, hovering 1.3 m up.
+**Foundry** — a squat grey furnace block with a red hood, a glowing grate behind a dark door frame in front (the door
+swings open on the weak point), two chimneys glowing inside, glowing side vents, a red launcher tube on its back and
+four short heavy legs. Their flood telegraphs stand drawn while active: the Warlord's as a row of spear heads down
+each lane, the Foundry's as a hot orange core with cross bars. Every body piece is outlined and flashable
+(`ActorViews.flashable`); glows change energy only. A model file `assets/models/bosses/<warlord|hive_lens|foundry>.glb`
+replaces a code body (whole-body motion until rigged).
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator

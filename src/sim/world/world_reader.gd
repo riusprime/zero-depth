@@ -16,6 +16,11 @@ const KIND_SIEGE_ENGINE := ActorStore.Kind.SIEGE_ENGINE
 ## v0.3.5 AI: the Arc Caster and the Bomb Drone.
 const KIND_ARC_CASTER := ActorStore.Kind.ARC_CASTER
 const KIND_BOMB_DRONE := ActorStore.Kind.BOMB_DRONE
+## v0.4.0 BO: the second boss of each pool, and the Hive Lens's drones.
+const KIND_WARLORD := ActorStore.Kind.WARLORD
+const KIND_HIVE_LENS := ActorStore.Kind.HIVE_LENS
+const KIND_FOUNDRY := ActorStore.Kind.FOUNDRY
+const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -78,6 +83,8 @@ const MOVE_BOLT_FAN := BossAttackTable.Move.BOLT_FAN
 const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
 ## Boss challenge (v0.3.0 BX): the vortex that drags you in, then slams.
 const MOVE_PULL := BossAttackTable.Move.PULL
+## v0.4.0 BO: parallel lanes that stand while active (spears, molten floor).
+const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST

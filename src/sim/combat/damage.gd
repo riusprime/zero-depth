@@ -17,7 +17,8 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		# Bosses (v0.3.0 C): armour by direction, as the Warden's.
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
-		if bt.front_half_arc > 0 and off <= bt.front_half_arc:
+		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
+		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
 			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
