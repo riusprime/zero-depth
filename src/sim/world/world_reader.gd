@@ -105,20 +105,12 @@ func swing_ticks() -> int:
 	return _w.player.swing_ticks
 
 
-func charge_permille() -> int:
-	return PlayerKit.charge_permille(_w)
-
-
-func charging() -> bool:
-	return PlayerKit.charging(_w)
+func shooting() -> bool:
+	return PlayerKit.shooting(_w)
 
 
 func projectile_team(i: int) -> int:
 	return _w.projectiles.team[i]
-
-
-func projectile_full_charge(i: int) -> bool:
-	return (_w.projectiles.tags[i] & SimEvent.TAG_FULL_CHARGE) != 0
 
 
 func utility() -> int:

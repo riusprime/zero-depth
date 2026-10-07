@@ -1,7 +1,7 @@
 class_name HitFeel
 extends Node3D
 ## Hit feel from the event log (PRESENTATION §6): a white flash on whoever took damage, a camera shake when you're
-## hit or land a full bolt, a spark where a hit was blocked or guarded, and a pop of shards when an enemy dies.
+## hit, a spark where a hit was blocked or guarded, and a pop of shards when an enemy dies.
 ## The sim's hit-stop is already in the tick (freeze_ticks); nothing here changes an outcome.
 
 const SHARDS := 7
@@ -29,8 +29,6 @@ func sync(reader: WorldReader) -> void:
 				actors.flash(e.target_id)
 				if e.target_id == player_id:
 					rig.shake(0.55)
-				elif e.tags & SimEvent.TAG_FULL_CHARGE:
-					rig.shake(0.3)
 			SimEvent.Kind.HIT:
 				if e.tags & (SimEvent.TAG_BLOCKED | SimEvent.TAG_GUARDED):
 					_burst(e.pos, Color(0.85, 0.9, 1.0), 4, 0.08)

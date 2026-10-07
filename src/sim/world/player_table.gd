@@ -27,7 +27,7 @@ var guard_move_permille := 400
 var blink_range_m := 5.0
 var blink_cooldown_ticks := 150
 var blink_iframe_ticks := 6
-## Primary: swing (3-hit combo), charge, bolt. Distances in metres, speeds in metres per tick.
+## Melee: swing (3-hit combo). Shooting: bolts. Distances in metres, speeds in metres per tick.
 var swing_ticks := 14
 var swing_active_tick := 2
 var swing_reach_m := 1.6
@@ -35,15 +35,12 @@ var swing_half_arc := 683
 var swing_damage: Array[int] = [10, 10, 18]
 var combo_window_ticks := 12
 var swing_hitstop_ticks := 3
-var charge_start_ticks := 12
-var charge_full_ticks := 48
-var charge_move_permille := 500
-var bolt_min_damage := 12
-var bolt_max_damage := 36
-var bolt_speed := 16.0 / 60.0
-var bolt_radius_m := 0.15
-var bolt_life_ticks := 90
-var bolt_full_hitstop_ticks := 5
+## Shooting: a bolt every shot_period_ticks while held, bolt_damage each.
+var shot_period_ticks := 7
+var bolt_damage := 4
+var bolt_speed := 18.0 / 60.0
+var bolt_radius_m := 0.1
+var bolt_life_ticks := 36
 
 
 ## The v0.0.1 starting values (docs/design/GAME_BLUEPRINT.md §C): 6 m/s, dash 4 m over 0.15 s, 0.8 s cooldown.

@@ -12,8 +12,11 @@ const ACTIONS := {
 	&"aim_down": [[&"axis", JOY_AXIS_RIGHT_Y, 1.0]],
 	&"aim_left": [[&"axis", JOY_AXIS_RIGHT_X, -1.0]],
 	&"aim_right": [[&"axis", JOY_AXIS_RIGHT_X, 1.0]],
-	&"primary": [[&"mouse", MOUSE_BUTTON_LEFT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
-	&"utility": [[&"mouse", MOUSE_BUTTON_RIGHT], [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0]],
+	# Owner, 2026-10-07: the triggers attack, the bumpers dash and use the utility; melee and shooting
+	# have separate buttons. The keyboard side (Shift for the utility) is the lead's pick, remappable.
+	&"primary": [[&"mouse", MOUSE_BUTTON_LEFT], [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0]],
+	&"shoot": [[&"mouse", MOUSE_BUTTON_RIGHT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
+	&"utility": [[&"key", KEY_SHIFT], [&"button", JOY_BUTTON_LEFT_SHOULDER]],
 	&"dash": [[&"key", KEY_SPACE], [&"button", JOY_BUTTON_RIGHT_SHOULDER]],
 	&"interact": [[&"key", KEY_E], [&"button", JOY_BUTTON_X]],
 	&"pause": [[&"key", KEY_ESCAPE], [&"button", JOY_BUTTON_START]],
@@ -21,6 +24,7 @@ const ACTIONS := {
 ## Action -> InputFrame bit, for the latch.
 const BUTTON_BITS := {
 	&"primary": InputFrame.PRIMARY,
+	&"shoot": InputFrame.SHOOT,
 	&"utility": InputFrame.UTILITY,
 	&"dash": InputFrame.DASH,
 	&"interact": InputFrame.INTERACT,

@@ -32,13 +32,13 @@ var dash_cooldown_left := 0
 var dash_dir := Vector2.ZERO
 ## Buttons held this tick (InputFrame bits).
 var held_buttons := 0
-## Primary (PlayerKit): swing tick (0 = none), its locked angle and root, combo step and window, hold ticks.
+## Attacks (PlayerKit): swing tick (0 = none), its locked angle and root, combo step and window, shot cooldown.
 var swing_t := 0
 var swing_angle := 0
 var swing_root := 0
 var combo_step := 0
 var combo_window := 0
-var primary_hold := 0
+var shot_cd := 0
 ## Utility: blink cooldown, and the last blink (tick and start point) for the view.
 var blink_cd := 0
 var blink_tick := -1
@@ -260,9 +260,7 @@ func state_hash() -> String:
 	h.add_f32(dash_dir.x)
 	h.add_f32(dash_dir.y)
 	h.add_ints(input_buffer)
-	for v in [
-		held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, primary_hold
-	]:
+	for v in [held_buttons, swing_t, swing_angle, swing_root, combo_step, combo_window, shot_cd]:
 		h.add_int(v)
 	for v in [wave_index, wave_timer, 1 if cleared else 0, killer_kind, killer_tags]:
 		h.add_int(v)
@@ -378,7 +376,7 @@ func _advance_actions() -> void:
 	if player_dead():
 		dash_ticks_left = 0
 		swing_t = 0
-		primary_hold = 0
+		shot_cd = 0
 		return
 	PlayerKit.advance_utility(self)
 	PlayerKit.advance(self)
@@ -389,8 +387,7 @@ func _advance_actions() -> void:
 		return
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0:
 		input_buffer[DASH_SLOT] = 0
-		var mv := Vector2(move_intent.x, move_intent.y)
-		dash_dir = Kin.dir(Kin.angle_of(mv)) if mv != Vector2.ZERO else Kin.dir(aim_angle)
+		dash_dir = PlayerKit.move_or_aim(self)
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = player.dash_cooldown_ticks
 
@@ -410,8 +407,6 @@ func _move_and_collide() -> void:
 		var speed := player.move_speed
 		if guarding():
 			speed = speed * player.guard_move_permille / 1000.0
-		elif PlayerKit.charging(self):
-			speed = speed * player.charge_move_permille / 1000.0
 		p += mv * speed
 	actors.set_pos(0, p)
 	# Dummies steer toward the player plus their jitter.

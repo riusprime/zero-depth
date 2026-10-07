@@ -1,25 +1,31 @@
 extends GutTest
-## Pick a utility before play and use it with real input (PLAN v0.1.0 Step 3).
+## Pick a utility before play and use it with real input (PLAN v0.1.0 Steps 3, 7b): Shift or the left bumper.
+## Blink goes the way you're moving.
 
 
 func after_each() -> void:
-	Input.action_release(&"utility")
+	for a in [&"utility", &"move_right", &"move_up"]:
+		Input.action_release(a)
 
 
-func test_guard_is_the_default_pick_and_right_mouse_raises_it() -> void:
+func test_guard_is_the_default_pick_and_shift_or_left_bumper_raises_it() -> void:
 	var e := E2e.new(self)
 	await e.boot()
 	await e.start_from_menu()
 	assert_eq(e.world().player.utility, PlayerTable.Utility.GUARD)
-	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
+	e.key(KEY_SHIFT, true)
 	await e.frames(3)
-	assert_true(e.world().guarding(), "holding right mouse guards")
-	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
+	assert_true(e.world().guarding(), "holding Shift guards")
+	e.key(KEY_SHIFT, false)
 	await e.frames(2)
 	assert_false(e.world().guarding())
+	e.joy_button(JOY_BUTTON_LEFT_SHOULDER, true)
+	await e.frames(3)
+	assert_true(e.world().guarding(), "holding the left bumper guards")
+	e.joy_button(JOY_BUTTON_LEFT_SHOULDER, false)
 
 
-func test_pick_blink_and_the_left_trigger_blinks_and_it_is_remembered() -> void:
+func test_pick_blink_and_it_follows_movement_and_is_remembered() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.tap(KEY_ENTER)  # Play
@@ -29,14 +35,15 @@ func test_pick_blink_and_the_left_trigger_blinks_and_it_is_remembered() -> void:
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
 	assert_eq(e.world().player.utility, PlayerTable.Utility.BLINK)
+	e.key(KEY_D, true)  # move screen-right: sim angle 512
+	await e.frames(3)
 	var start := e.world().player_pos()
-	e.joy_axis(JOY_AXIS_RIGHT_X, 1.0)
-	await e.frames(3)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
-	await e.frames(3)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
-	e.joy_axis(JOY_AXIS_RIGHT_X, 0.0)
+	e.joy_button(JOY_BUTTON_LEFT_SHOULDER, true)
+	e.joy_button(JOY_BUTTON_LEFT_SHOULDER, false)
 	await e.frames(2)
+	e.key(KEY_D, false)
+	var moved := e.world().player_pos() - start
 	assert_gt(e.world().blink_cd, 0, "blinked")
-	assert_gt((e.world().player_pos() - start).length(), 1.0, "moved by the blink")
+	assert_gt(moved.length(), 3.0, "a full blink")
+	assert_almost_eq(Kin.angle_of(moved), 512, 40, "the way you were moving")
 	assert_eq(main.profile.section("loadout")["utility"], "blink", "remembered")

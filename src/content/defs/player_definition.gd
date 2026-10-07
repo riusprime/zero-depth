@@ -48,8 +48,7 @@ func _check_primary(issues: Array[ValidationIssue]) -> void:
 	var p := primary
 	check_duration(issues, "primary.swing_duration_seconds", p.swing_duration_seconds)
 	check_duration(issues, "primary.swing_active_seconds", p.swing_active_seconds)
-	check_duration(issues, "primary.charge_start_seconds", p.charge_start_seconds)
-	check_duration(issues, "primary.charge_full_seconds", p.charge_full_seconds)
+	check_duration(issues, "primary.shot_period_seconds", p.shot_period_seconds)
 	check_positive(issues, "primary.swing_reach_m", p.swing_reach_m)
 	check_positive(issues, "primary.bolt_speed_mps", p.bolt_speed_mps)
 	if p.swing_damage.is_empty():
@@ -60,7 +59,9 @@ func _check_primary(issues: Array[ValidationIssue]) -> void:
 		issues.append(
 			ValidationIssue.new(&"order", resource_path, "the swing must hit before it ends")
 		)
-	if p.charge_full_seconds <= p.charge_start_seconds:
+	if p.shot_period_seconds <= 0.0 or p.bolt_damage <= 0:
 		issues.append(
-			ValidationIssue.new(&"order", resource_path, "full charge must come after charge start")
+			ValidationIssue.new(
+				&"not_positive", resource_path, "shooting needs a period and damage"
+			)
 		)

@@ -1,7 +1,8 @@
 class_name PlayerKit
 extends RefCounted
-## The player's primary (PLAN v0.1.0 Step 2): press = swing (a 3-hit combo), keep holding = charge,
-## release = a bolt. Runs in tick phase 4. All numbers come from PlayerTable (starting values).
+## The player's attacks and utility (PLAN v0.1.0 Steps 2, 3, 7b). Melee and shooting have separate buttons
+## (owner, 2026-10-07): PRIMARY = a swing (a 3-hit combo); SHOOT held = a bolt every shot_period_ticks.
+## Blink goes the way you're moving, like the dash. Runs in tick phase 4; numbers from PlayerTable.
 
 const PRIMARY_SLOT := 0
 const UTILITY_SLOT := 1
@@ -25,26 +26,30 @@ static func advance_utility(w: World) -> void:
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
 
 
-## Where a blink lands: toward the aim point, at most blink_range_m, stopping just before the first wall.
+## The way a blink (or a dash) goes: the move direction, or the aim when standing still.
+static func move_or_aim(w: World) -> Vector2:
+	var mv := Vector2(w.move_intent.x, w.move_intent.y)
+	return Kin.dir(Kin.angle_of(mv)) if mv != Vector2.ZERO else Kin.dir(w.aim_angle)
+
+
+## Where a blink lands: blink_range_m along move_or_aim, stopping just before the first wall.
 static func blink_target(w: World) -> Vector2:
 	var t := w.player
 	var from := w.player_pos()
-	var dist := minf(w.aim_dist_cm / 100.0, t.blink_range_m)
-	var to := from + Kin.dir(w.aim_angle) * dist
+	var to := from + move_or_aim(w) * t.blink_range_m
 	var best := 1.0
 	for wall in w.walls:
 		var hit := Collide.sweep_vs_obb(from, to, t.radius_m, wall)
 		if hit >= 0.0 and hit < best:
 			best = hit
 	if best < 1.0:
-		var back := 0.02 / maxf(dist, 0.001)
+		var back := 0.02 / t.blink_range_m
 		return from + (to - from) * maxf(best - back, 0.0)
 	return to
 
 
 static func advance(w: World) -> void:
 	var t := w.player
-	var held_primary := (w.held_buttons & InputFrame.PRIMARY) != 0
 	var can_attack := not w.guarding() and not w.is_dashing()
 	# Swing in progress: hit on its active tick, then end and open the combo window.
 	if w.swing_t > 0:
@@ -64,26 +69,16 @@ static func advance(w: World) -> void:
 		w.swing_t = 1
 		w.swing_angle = w.aim_angle
 		w.swing_root = w.take_root()
-		w.primary_hold = 1 if held_primary else 0
-	elif held_primary and w.primary_hold > 0:
-		w.primary_hold += 1
-	elif not held_primary and w.primary_hold > 0:
-		if w.primary_hold > t.charge_start_ticks and can_attack:
-			_fire_bolt(w)
-		w.primary_hold = 0
+	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
+	if w.shot_cd > 0:
+		w.shot_cd -= 1
+	if shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
+		_fire_bolt(w)
+		w.shot_cd = t.shot_period_ticks
 
 
-static func charging(w: World) -> bool:
-	return w.primary_hold > w.player.charge_start_ticks
-
-
-## 0..1000 per mille of a full charge.
-static func charge_permille(w: World) -> int:
-	var t := w.player
-	if not charging(w):
-		return 0
-	var span := maxi(1, t.charge_full_ticks - t.charge_start_ticks)
-	return clampi((w.primary_hold - t.charge_start_ticks) * 1000 / span, 0, 1000)
+static func shooting(w: World) -> bool:
+	return (w.held_buttons & InputFrame.SHOOT) != 0 and not w.player_dead()
 
 
 static func swing_hits(w: World, i: int) -> bool:
@@ -124,9 +119,6 @@ static func _resolve_swing(w: World) -> void:
 
 static func _fire_bolt(w: World) -> void:
 	var t := w.player
-	var c := charge_permille(w)
-	var dmg := t.bolt_min_damage + (t.bolt_max_damage - t.bolt_min_damage) * c / 1000
-	var tags := SimEvent.TAG_PROJECTILE | (SimEvent.TAG_FULL_CHARGE if c >= 1000 else 0)
 	var dir := Kin.dir(w.aim_angle)
 	var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
 	w.queue_projectile(
@@ -134,8 +126,8 @@ static func _fire_bolt(w: World) -> void:
 		ActorStore.TEAM_PLAYER,
 		muzzle,
 		dir * t.bolt_speed,
-		dmg,
+		t.bolt_damage,
 		t.bolt_radius_m,
 		t.bolt_life_ticks,
-		tags
+		SimEvent.TAG_PROJECTILE
 	)

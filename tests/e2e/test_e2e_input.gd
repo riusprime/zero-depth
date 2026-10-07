@@ -102,3 +102,23 @@ func test_remapped_key_from_profile_moves_the_player() -> void:
 	e.key(KEY_I, false)
 	assert_gt((e.world().player_pos() - start).length(), 1.0, "I does")
 	InputDefaults.apply()
+
+
+func test_a_light_stick_tilt_moves_and_full_tilt_matches_the_keys() -> void:
+	var e := E2e.new(self)
+	await e.boot()
+	await e.start_from_menu()
+	var start := e.world().player_pos()
+	e.joy_axis(JOY_AXIS_LEFT_X, 0.3)  # was inside the old double dead zone
+	await e.frames(30)
+	e.joy_axis(JOY_AXIS_LEFT_X, 0.0)
+	assert_gt((e.world().player_pos() - start).length(), 0.2, "a 30% tilt walks")
+	e.joy_axis(JOY_AXIS_LEFT_X, 0.95)
+	await e.frames(3)
+	var pad := e.world().move_intent
+	e.joy_axis(JOY_AXIS_LEFT_X, 0.0)
+	e.key(KEY_D, true)
+	await e.frames(3)
+	var keys := e.world().move_intent
+	e.key(KEY_D, false)
+	assert_eq(pad, keys, "near-full tilt gives the sim the same move as the D key")

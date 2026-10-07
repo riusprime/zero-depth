@@ -52,6 +52,13 @@ func joy_axis(axis: JoyAxis, value: float) -> void:
 	send(ev)
 
 
+func joy_button(button: JoyButton, pressed: bool) -> void:
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = button
+	ev.pressed = pressed
+	send(ev)
+
+
 func mouse_button(button: MouseButton, pressed: bool) -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = button

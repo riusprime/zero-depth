@@ -1,20 +1,18 @@
 class_name KitView
 extends Node3D
-## The player's primary as the view shows it (PLAN v0.1.0 Step 2): the swing fan, drawn from the same numbers
-## PlayerKit hits with (WorldReader.swing_shape), and a charge ring that fills and brightens at full charge.
+## The player's melee as the view shows it (PLAN v0.1.0 Step 2): the swing fan, drawn from the same numbers
+## PlayerKit hits with (WorldReader.swing_shape).
 
 const FAN_STEPS := 16
 
 var _fan := MeshInstance3D.new()
 var _fan_mat := StandardMaterial3D.new()
-var _ring := MeshInstance3D.new()
-var _ring_mat := StandardMaterial3D.new()
 var _shape_key := []
 
 
 func _ready() -> void:
 	var cyan := ThemePalette.color(&"player_core")
-	for m: StandardMaterial3D in [_fan_mat, _ring_mat]:
+	for m: StandardMaterial3D in [_fan_mat]:
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -23,14 +21,6 @@ func _ready() -> void:
 	_fan.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_fan.visible = false
 	add_child(_fan)
-	var torus := TorusMesh.new()
-	torus.inner_radius = 0.5
-	torus.outer_radius = 0.6
-	_ring.mesh = torus
-	_ring.material_override = _ring_mat
-	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_ring.visible = false
-	add_child(_ring)
 
 
 func sync(reader: WorldReader) -> void:
@@ -49,18 +39,6 @@ func sync(reader: WorldReader) -> void:
 		_fan_mat.albedo_color.a = 0.15 + 0.5 * left
 		if not was_visible:
 			_fan.reset_physics_interpolation()
-	var c := reader.charge_permille()
-	var ring_was := _ring.visible
-	_ring.visible = reader.charging() and not reader.player_dead()
-	if _ring.visible:
-		_ring.position = at
-		var s := 0.6 + 0.6 * c / 1000.0
-		_ring.scale = Vector3(s, 0.08, s)
-		_ring_mat.albedo_color.a = 0.35 + 0.5 * c / 1000.0
-		_ring_mat.emission_enabled = c >= 1000
-		_ring_mat.emission = ThemePalette.color(&"player_core")
-		if not ring_was:
-			_ring.reset_physics_interpolation()
 
 
 ## A flat fan facing +X (sim angle 0): from the cube's edge out to edge + reach, across +-half_arc.

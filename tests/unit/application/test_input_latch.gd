@@ -22,8 +22,16 @@ func test_rotation_table_from_sim_contracts() -> void:
 		assert_eq(Kin.angle_of(Vector2(q.x, q.y)), table[screen], "screen %s" % screen)
 
 
-func test_quantize_deadzone_and_clamp() -> void:
-	assert_eq(InputLatch.quantize_move(Vector2(0.1, 0.0)), Vector2i.ZERO)
+func test_quantize_curve_and_clamp() -> void:
+	# The actions' dead zone already ran (Input.get_vector); the latch adds no second one.
+	assert_eq(InputLatch.quantize_move(Vector2.ZERO), Vector2i.ZERO)
+	assert_gt(
+		InputLatch.quantize_move(Vector2(0.1, 0.0)).x, 0, "a light tilt past the dead zone moves"
+	)
+	assert_eq(InputLatch.quantize_move(Vector2(InputLatch.FULL_TILT * 0.5, 0.0)), Vector2i(64, 0))
+	assert_eq(
+		InputLatch.quantize_move(Vector2(InputLatch.FULL_TILT, 0.0)), Vector2i(127, 0), "full speed"
+	)
 	assert_eq(InputLatch.quantize_move(Vector2(1.0, 0.0)), Vector2i(127, 0))
 	var diag := InputLatch.quantize_move(Vector2(1.0, 1.0))
 	assert_eq(diag, Vector2i(90, 90), "length clamped to 1")

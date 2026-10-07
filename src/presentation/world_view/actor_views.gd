@@ -45,9 +45,7 @@ func sync(reader: WorldReader) -> void:
 		var node: Node3D = _projectiles.get(id)
 		var fresh := node == null
 		if fresh:
-			node = _make_projectile(
-				reader.projectile_team(i) == 0, reader.projectile_full_charge(i)
-			)
+			node = _make_projectile(reader.projectile_team(i) == 0)
 			_projectiles[id] = node
 			add_child(node)
 		var last: Vector2 = _proj_last.get(id, p - reader.projectile_vel(i))
@@ -279,14 +277,13 @@ func _add_core_panels(root: Node3D, size: float) -> void:
 		root.add_child(n)
 
 
-## Hostile shots are yellow streaks; the player's bolts are cyan (reserved colours, PRESENTATION §3), thicker when
-## fully charged.
-func _make_projectile(is_player: bool = false, full: bool = false) -> Node3D:
+## Hostile shots are yellow streaks; the player's bolts are short cyan darts (reserved colours, PRESENTATION §3).
+func _make_projectile(is_player: bool = false) -> Node3D:
 	var n := MeshInstance3D.new()
 	var box := BoxMesh.new()
 	box.size = Vector3(0.55, 0.05, 0.08)
 	if is_player:
-		box.size = Vector3(0.6, 0.14, 0.14) if full else Vector3(0.45, 0.09, 0.09)
+		box.size = Vector3(0.38, 0.07, 0.07)
 	n.mesh = box
 	var role := &"player_core" if is_player else &"proj_hostile"
 	var m := StandardMaterial3D.new()

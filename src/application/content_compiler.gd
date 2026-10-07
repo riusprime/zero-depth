@@ -23,15 +23,11 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.swing_damage = p.swing_damage.duplicate()
 	t.combo_window_ticks = SimTick.seconds_to_ticks(p.combo_window_seconds)
 	t.swing_hitstop_ticks = SimTick.seconds_to_ticks(p.swing_hitstop_seconds)
-	t.charge_start_ticks = SimTick.seconds_to_ticks(p.charge_start_seconds)
-	t.charge_full_ticks = SimTick.seconds_to_ticks(p.charge_full_seconds)
-	t.charge_move_permille = int(round(p.charge_move_multiplier * 1000.0))
-	t.bolt_min_damage = p.bolt_min_damage
-	t.bolt_max_damage = p.bolt_max_damage
+	t.shot_period_ticks = maxi(1, SimTick.seconds_to_ticks(p.shot_period_seconds))
+	t.bolt_damage = p.bolt_damage
 	t.bolt_speed = p.bolt_speed_mps / SimTick.TICKS_PER_SECOND
 	t.bolt_radius_m = p.bolt_radius_m
 	t.bolt_life_ticks = SimTick.seconds_to_ticks(p.bolt_life_seconds)
-	t.bolt_full_hitstop_ticks = SimTick.seconds_to_ticks(p.bolt_full_hitstop_seconds)
 	return t
 
 

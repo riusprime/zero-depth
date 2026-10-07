@@ -6,6 +6,8 @@ const PRIMARY := 1
 const UTILITY := 2
 const DASH := 4
 const INTERACT := 8
+## Shooting (held), separate from the melee PRIMARY (owner, 2026-10-07).
+const SHOOT := 16
 
 ## World-plane move, -127..127 per axis, deadzone applied.
 var move := Vector2i.ZERO

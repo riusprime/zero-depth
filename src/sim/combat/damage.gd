@@ -56,8 +56,6 @@ static func hit(
 	d.amount = scaled
 	d.amount_applied = applied
 	d.tags = h.tags
-	if tags & SimEvent.TAG_FULL_CHARGE:
-		w.add_freeze(w.player.bolt_full_hitstop_ticks)
 	if target == 0:
 		a.invuln[0] = w.player.hurt_iframe_ticks
 		w.add_freeze(w.player.hurt_freeze_ticks)

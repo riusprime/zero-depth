@@ -14,7 +14,7 @@ const TAG_CRIT := 16
 const TAG_BLOCKED := 32
 ## The hit was reduced by the target's guard.
 const TAG_GUARDED := 64
-## A fully charged bolt.
+## A fully charged bolt. Unused since the charged shot was dropped (2026-10-07); kept so bits never renumber.
 const TAG_FULL_CHARGE := 128
 
 var seq := 0

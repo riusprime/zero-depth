@@ -1,5 +1,5 @@
 extends GutTest
-## The primary (PLAN v0.1.0 Step 2): swing arc and combo, charge and bolt. Aim angle 0 = +x.
+## Melee and shooting (PLAN v0.1.0 Steps 2, 7b): swing arc and combo; hold-to-shoot. Aim angle 0 = +x.
 
 const P := InputFrame.PRIMARY
 
@@ -63,52 +63,35 @@ func test_the_combo_chains_then_resets() -> void:
 	)
 
 
-func test_a_full_charge_fires_a_full_bolt() -> void:
-	var w := _world(Vector2(6, 0))
-	w.step(_f(P, P))
-	for i in 70:
-		w.step(_f(P))
-	assert_eq(PlayerKit.charge_permille(w), 1000)
-	w.step(_f())  # release
-	_idle(w, 2)
-	assert_eq(w.projectiles.size(), 1)
-	assert_eq(w.projectiles.damage[0], w.player.bolt_max_damage)
-	assert_ne(w.projectiles.tags[0] & SimEvent.TAG_FULL_CHARGE, 0)
-	var freeze_seen := 0
-	for i in 40:
-		w.step(_f())
-		freeze_seen = maxi(freeze_seen, w.freeze_ticks)
-	assert_has(_damage_amounts(w), w.player.bolt_max_damage)
-	assert_eq(freeze_seen, w.player.bolt_full_hitstop_ticks, "hit-stop on a full bolt")
-
-
-func test_a_partial_charge_scales_and_a_short_hold_fires_nothing() -> void:
+func test_holding_shoot_fires_a_steady_stream() -> void:
 	var w := _world(Vector2.INF)
 	var t := w.player
-	w.step(_f(P, P))
-	for i in t.charge_start_ticks - 2:
-		w.step(_f(P))
-	w.step(_f())
+	for i in t.shot_period_ticks * 5:
+		w.step(_f(InputFrame.SHOOT))
+	assert_eq(
+		w.projectiles.size(), 5, "one bolt every %d ticks, the first at once" % t.shot_period_ticks
+	)
+	for k in w.projectiles.size():
+		assert_eq(w.projectiles.damage[k], t.bolt_damage)
+	_idle(w, 60)
+	w.step(_f(InputFrame.SHOOT))
 	_idle(w, 2)
-	assert_eq(w.projectiles.size(), 0, "released before charging: only the swing")
+	assert_eq(w.projectiles.size(), 1, "releasing stops it; pressing again fires at once")
+
+
+func test_bolts_hit_for_their_damage_and_melee_is_a_separate_button() -> void:
+	var w := _world(Vector2(5, 0))
+	for i in 3:
+		w.step(_f(InputFrame.SHOOT))
 	_idle(w, 30)
-	w.step(_f(P, P))
-	var hold := t.charge_start_ticks + (t.charge_full_ticks - t.charge_start_ticks) / 2
-	for i in hold - 1:
-		w.step(_f(P))
-	w.step(_f())
-	_idle(w, 2)
-	assert_eq(w.projectiles.size(), 1)
-	assert_between(w.projectiles.damage[0], t.bolt_min_damage + 1, t.bolt_max_damage - 1)
+	assert_eq(
+		_damage_amounts(w), [w.player.bolt_damage], "the first bolt landed; shooting never swings"
+	)
+	assert_eq(w.combo_step, 0)
 
 
-func test_charging_slows_movement() -> void:
-	var a := _world(Vector2.INF)
-	var b := _world(Vector2.INF)
-	var move := Vector2i(127, 0)
-	a.step(_f(P, P, move))
-	b.step(_f(0, 0, move))
-	for i in 40:
-		a.step(_f(P, 0, move))
-		b.step(_f(0, 0, move))
-	assert_lt(a.player_pos().x, b.player_pos().x * 0.85)
+func test_a_swing_pauses_shooting() -> void:
+	var w := _world(Vector2.INF)
+	w.step(_f(InputFrame.SHOOT, InputFrame.PRIMARY))
+	assert_gt(w.swing_t, 0)
+	assert_eq(w.projectiles.size(), 0, "no bolt during the swing")

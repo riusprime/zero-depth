@@ -5,7 +5,8 @@ extends RefCounted
 
 ## The camera rig's fixed yaw: screen-relative input rotates +45° into the sim plane.
 const C45 := 0.70710678118654752
-const DEADZONE := 0.2
+## A stick reaches full speed at this much of its travel past the dead zone (keys are always full speed).
+const FULL_TILT := 0.85
 
 var _pressed := 0
 var _held := 0
@@ -40,13 +41,14 @@ static func screen_to_sim(v: Vector2) -> Vector2:
 	return Vector2((v.x - v.y) * C45, (v.x + v.y) * C45)
 
 
-## Applies the deadzone, then scales to -127..127 per axis (length clamped to 1).
+## Scales to -127..127 per axis. The dead zone is already applied by the input actions (Input.get_vector
+## rescales past it); a second one here made ~36% of a stick's travel dead (owner fight check, 2026-10-07).
+## Lengths at or above FULL_TILT move at full speed, like keys.
 static func quantize_move(v: Vector2) -> Vector2i:
 	var len := v.length()
-	if len < DEADZONE:
+	if len < 0.001:
 		return Vector2i.ZERO
-	if len > 1.0:
-		v /= len
+	v = v / len * minf(1.0, len / FULL_TILT)
 	return Vector2i(
 		clampi(int(round(v.x * SimTick.MOVE_MAX)), -SimTick.MOVE_MAX, SimTick.MOVE_MAX),
 		clampi(int(round(v.y * SimTick.MOVE_MAX)), -SimTick.MOVE_MAX, SimTick.MOVE_MAX)

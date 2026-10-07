@@ -33,17 +33,24 @@ func test_guard_slows_and_stops_attacks() -> void:
 	assert_eq(w.swing_t, 0, "no swing while guarding")
 
 
-func test_blink_jumps_toward_the_aim_with_a_cooldown() -> void:
+func test_blink_follows_movement_not_the_aim() -> void:
+	var w := _world(PlayerTable.Utility.BLINK)
+	# Moving +x while aiming -x (angle 2048): the blink goes +x, its full 5 m.
+	w.step(InputFrame.make(Vector2i(127, 0), 2048, 300, 0, U))
+	assert_almost_eq(w.player_pos().x, 5.0 + w.player.move_speed, 0.01)
+	assert_true(w.actors.invuln[0] > 0, "briefly invulnerable")
+
+
+func test_standing_still_blinks_toward_the_aim_with_a_cooldown() -> void:
 	var w := _world(PlayerTable.Utility.BLINK)
 	w.step(_f(0, U, 300))
-	assert_almost_eq(w.player_pos().x, 3.0, 0.01, "the aim point was 3 m away")
-	assert_true(w.actors.invuln[0] > 0, "briefly invulnerable")
-	w.step(_f(0, U, 2000))
-	assert_almost_eq(w.player_pos().x, 3.0, 0.01, "still on cooldown")
+	assert_almost_eq(w.player_pos().x, 5.0, 0.01, "the full range, whatever the aim distance")
+	w.step(_f(0, U))
+	assert_almost_eq(w.player_pos().x, 5.0, 0.01, "still on cooldown")
 	for i in w.player.blink_cooldown_ticks:
 		w.step(_f())
-	w.step(_f(0, U, 2000))
-	assert_almost_eq(w.player_pos().x, 8.0, 0.01, "capped at 5 m")
+	w.step(_f(0, U))
+	assert_almost_eq(w.player_pos().x, 10.0, 0.01)
 
 
 func test_blink_stops_before_a_wall() -> void:
