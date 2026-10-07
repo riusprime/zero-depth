@@ -994,3 +994,7 @@ func bastion_tick() -> int:
 ## Projectile i is a Shrapnel Storm shard.
 func projectile_is_shard(i: int) -> bool:
 	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0
+
+
+func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
+	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0
