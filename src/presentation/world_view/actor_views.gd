@@ -2,8 +2,10 @@ class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
 ## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2).
-## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3): the Charger is a red
-## hooded crawler on four clawed legs, the Warden a tall block behind a shield slab, the Needle a legged turret.
+## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3), from the enemy sheet
+## (docs/art/enemies_visual_reference.png): the Charger a red hooded crawler on four clawed legs, the Warden a
+## hulking rock golem under a red shell (fists in front, a glowing weak spot on its back; no shield), the Needle a
+## legged turret.
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -237,16 +239,13 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.add_child(dazed)
 			root.set_meta(&"dazed", dazed)
 		WorldReader.KIND_WARDEN:
-			height = 1.1
-			_piece(facing, Vector3(0.8, 1.1, 0.8), Vector3(0, 0.55, 0), body_color, team_color)
-			var shield_c := body_color.darkened(0.35)
-			_piece(
-				facing,
-				Vector3(0.14, 0.95, 1.25),
-				Vector3(radius + 0.12, 0.5, 0),
-				shield_c,
-				team_color
-			)
+			# The rock golem (owner, v0.2.0 L17): its own node, animated in frame time.
+			height = 1.25
+			var warden := WardenAvatar.new()
+			warden.setup(outline_color, technique)
+			facing.add_child(warden)
+			root.set_meta(&"enemy_avatar", warden)
+			root.set_meta(&"mats", warden.body_materials.duplicate())
 		WorldReader.KIND_NEEDLE:
 			# The walking turret (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var needle := NeedleAvatar.new()
