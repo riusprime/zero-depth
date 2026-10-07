@@ -9,6 +9,9 @@ extends SceneTree
 ## - reference_floor: floor 1 as played (its own spawning), FightBot playing; reference_boss: floor 2's boss fight
 ##   (hatchlings included). Measured against the reference band.
 ## The dummy-mover scenes (stress, reference) stay for comparison with v0.0.1's evidence.
+## v0.4.0 SC adds the horde target (PLAN v0.4.0 "Performance"): 120 enemies + 200 projectiles <= 4 ms mean a tick.
+## - horde: floor 3's start hall and its neighbours, 120 real enemies kept alive (the five normal kinds in turn),
+##   the player's bolts topped up to 200 projectiles in flight, FightBot playing, HP topped up.
 ## Writes build/bench.json and prints a summary; paste the output into evidence by hand.
 ##   godot --headless --path . -s scripts/bench/sim_bench.gd
 
@@ -21,33 +24,63 @@ const ENEMY_KINDS: Array[int] = [
 	ActorStore.Kind.HATCHLING
 ]
 const RUN_SEED := 20261007
+## The horde scene (v0.4.0 SC).
+const HORDE_ENEMIES := 120
+const HORDE_PROJECTILES := 200
+const HORDE_KINDS: Array[int] = [
+	ActorStore.Kind.CHARGER,
+	ActorStore.Kind.NEEDLE,
+	ActorStore.Kind.WARDEN,
+	ActorStore.Kind.ARC_CASTER,
+	ActorStore.Kind.BOMB_DRONE
+]
 
 
+## `-- --only=horde,stress_ai` runs only the named scenes (quick checks); the evidence runs them all.
 func _initialize() -> void:
-	var stress := _run("stress", _scene(11, 60, 5, 360, 36), null)
-	var reference := _run("reference", _scene(12, 12, 16, 140, 8), null)
-	var stress_ai := _stress_ai()
-	var ref_floor := _reference_floor()
-	var ref_boss := _reference_boss()
-	var doc := {
-		"godot": Engine.get_version_info()["string"],
-		"stress": stress,
-		"reference": reference,
-		"stress_in_band": _stress_ok(stress),
-		"reference_in_band": reference["realtime_x"] >= 15.0,
-		"stress_ai": stress_ai,
-		"stress_ai_in_band": _stress_ok(stress_ai),
-		"reference_floor": ref_floor,
-		"reference_floor_in_band": ref_floor["realtime_x"] >= 15.0,
-		"reference_boss": ref_boss,
-		"reference_boss_in_band": ref_boss["realtime_x"] >= 15.0,
+	var only := PackedStringArray()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--only="):
+			only = arg.trim_prefix("--only=").split(",")
+	var scenes := {
+		"stress": func() -> Dictionary: return _run("stress", _scene(11, 60, 5, 360, 36), null),
+		"reference":
+		func() -> Dictionary: return _run("reference", _scene(12, 12, 16, 140, 8), null),
+		"stress_ai": _stress_ai,
+		"reference_floor": _reference_floor,
+		"reference_boss": _reference_boss,
+		"horde": _horde,
 	}
+	var doc := {"godot": Engine.get_version_info()["string"]}
+	for name: String in scenes:
+		if only.is_empty() or only.has(name):
+			doc[name] = (scenes[name] as Callable).call()
+	var bands := {
+		"stress": _stress_ok,
+		"reference": _fast,
+		"stress_ai": _stress_ok,
+		"reference_floor": _fast,
+		"reference_boss": _fast,
+		"horde": _horde_ok,
+	}
+	for name: String in bands:
+		if doc.has(name):
+			doc[name + "_in_band"] = (bands[name] as Callable).call(doc[name])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build"))
 	var f := FileAccess.open("res://build/bench.json", FileAccess.WRITE)
 	f.store_string(JSON.stringify(doc, "\t", true) + "\n")
 	f.close()
 	print(JSON.stringify(doc, "\t", true))
 	quit(0)
+
+
+static func _fast(r: Dictionary) -> bool:
+	return r["realtime_x"] >= 15.0
+
+
+## v0.4.0 SC: the horde band, mean <= 4 ms a tick.
+static func _horde_ok(r: Dictionary) -> bool:
+	return r["mean_ms"] <= 4.0
 
 
 static func _stress_ok(r: Dictionary) -> bool:
@@ -90,6 +123,69 @@ func _stress_ai() -> Dictionary:
 	r["combos_owned"] = w.combos_owned.size()
 	r["items_owned"] = w.items_owned.size()
 	return r
+
+
+## v0.4.0 SC: floor 3 with HORDE_ENEMIES real enemies kept alive around the player's start hall and its
+## neighbours, and the player's bolts topped up to HORDE_PROJECTILES (damage 1, so the crowd thins slowly).
+func _horde() -> Dictionary:
+	var w := _floor_world(ContentRepository.load_all(), RUN_SEED, 3)
+	w.spawner = null  # the scene keeps the count itself
+	var spots := _horde_spots(w)
+	var state := {"next": 0, "shot": 0}
+	var keep := func(world: World) -> void:
+		var alive := 0
+		for i in range(1, world.actors.size()):
+			if world.actors.dead[i] == 0 and EnemyAi.is_enemy_kind(world.actors.kinds[i]):
+				alive += 1
+		while alive < HORDE_ENEMIES:
+			var n: int = state["next"]
+			world.add_enemy(HORDE_KINDS[n % HORDE_KINDS.size()], spots[(n * 7) % spots.size()])
+			state["next"] = n + 1
+			alive += 1
+		var from := world.player_pos()
+		for k in maxi(0, HORDE_PROJECTILES - world.projectiles.size()):
+			var shot: int = state["shot"]
+			state["shot"] = shot + 1
+			var dir := Kin.dir((shot * 397) & 4095)
+			world.queue_projectile(
+				world.actors.ids[0],
+				ActorStore.TEAM_PLAYER,
+				from + dir * 0.6,
+				dir * (12.0 / SimTick.TICKS_PER_SECOND),
+				1,
+				0.12,
+				150,
+				SimEvent.TAG_PROJECTILE
+			)
+		_top_up(world)
+	keep.call(w)
+	return _run("horde", w, FightBot.new(RUN_SEED + 3), keep)
+
+
+## Spots on a 1.4 m grid in the start room and its neighbours, 1 m clear of walls and 6 m from the start.
+static func _horde_spots(w: World) -> PackedVector2Array:
+	var f := w.floor_layout
+	var rooms := f.neighbours(f.start_room)
+	rooms.append(f.start_room)
+	var out := PackedVector2Array()
+	for r in rooms:
+		if r == f.boss_room:
+			continue
+		var rect := f.rooms[r].grow(-1.0)
+		var y := rect.position.y
+		while y <= rect.end.y:
+			var x := rect.position.x
+			while x <= rect.end.x:
+				var p := Vector2(x, y)
+				var clear := Kin.length(p - f.start_pos) >= 6.0
+				for wall in w.walls:
+					if clear and Collide.circle_vs_obb(p, 1.0, wall) != Vector2.ZERO:
+						clear = false
+				if clear:
+					out.append(p)
+				x += 1.4
+			y += 1.4
+	return out
 
 
 func _reference_floor() -> Dictionary:

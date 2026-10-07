@@ -194,7 +194,13 @@ Their names and specs are decided in v0.4.0 Phase 0.
 
 ## H. Scaling and threat
 
-- **Floor index drives scaling:** enemy HP, damage and density come from integer per-floor tables (GA: scaling).
+- **Floor index and the danger tier drive scaling** (owner F7, F10; v0.4.0 SC). Enemies grow per floor and every
+  30 s of a floor (the danger tier), "just a bit below" the player's growth: HP × 1.9^(floor − 1) × 1.10^tier,
+  damage × 1.4^(floor − 1) × 1.05^tier, from integer `‰` tables (flat after tier 20). Bosses keep their own per-floor
+  scaling (+40 % HP, +20 % damage a floor). **Hordes:** at most 14 / 30 / 50 enemies alive at tier 0 of floors 1/2/3,
+  +6 a tier up to 120; packs (2-3, 3-4, 3-5 strong) arrive every 2.5 s, 10 % faster each tier (at least 0.4 s
+  apart), at the edges of the player's room and its neighbours, never within 8 m of the player and never in the
+  boss room. All starting values; the expected-build bot's bands (v0.4.0 TU) tune them.
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)

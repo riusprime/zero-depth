@@ -56,7 +56,9 @@ const STATUS_FIELDS: Array[StringName] = [
 ]
 ## Enemy AI (v0.3.5 AI; EnemyAi), kept apart from INT_FIELDS so worlds without enemy tables (the kernel golden)
 ## hash as before: World hashes them (hash_ai) only when its loadout has enemies.
-const AI_FIELDS: Array[StringName] = [&"windup", &"pick"]
+const AI_FIELDS: Array[StringName] = [&"windup", &"pick", &"plan_block", &"power"]
+## The staggered plan (v0.4.0 SC; EnemyAi.plan): the walk, refreshed every EnemyAi.PLAN_PERIOD ticks.
+const AI_FLOAT_FIELDS: Array[StringName] = [&"plan_x", &"plan_y"]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
@@ -111,6 +113,13 @@ var freeze_immune := PackedInt32Array()
 ## several (the Arc Caster) is winding up.
 var windup := PackedInt32Array()
 var pick := PackedInt32Array()
+## The staggered plan (v0.4.0 SC): 1 while the straight walk toward the player was blocked by a wall at the last
+## check (follow the flow field), and the walk itself (direction × the share of full speed), per tick.
+var plan_block := PackedInt32Array()
+var plan_x := PackedFloat32Array()
+var plan_y := PackedFloat32Array()
+## v0.4.0 SC: an enemy's damage factor in per mille (World.add_enemy sets 1000; the spawn director the danger tier's).
+var power := PackedInt32Array()
 
 
 func size() -> int:
@@ -123,7 +132,7 @@ func add(id: int, kind: int, team: int, p: Vector2, r: float, p_hp: int, p_fire_
 		var ai: PackedInt32Array = get(f)
 		ai.append(0)
 		set(f, ai)
-	for f in FLOAT_FIELDS:
+	for f in FLOAT_FIELDS + AI_FLOAT_FIELDS:
 		var af: PackedFloat32Array = get(f)
 		af.append(0.0)
 		set(f, af)
@@ -157,17 +166,17 @@ func index_of(id: int) -> int:
 func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
-	var keep := PackedInt32Array()
-	var j := 0
-	for i in ids.size():
-		if j < indices.size() and indices[j] == i:
-			j += 1
-		else:
-			keep.append(i)
+	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (a native move, not a rebuild).
 	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS:
-		set(f, ProjectileStore._pick_i(get(f), keep))
-	for f in FLOAT_FIELDS:
-		set(f, ProjectileStore._pick_f(get(f), keep))
+		var ai: PackedInt32Array = get(f)
+		for k in range(indices.size() - 1, -1, -1):
+			ai.remove_at(indices[k])
+		set(f, ai)
+	for f in FLOAT_FIELDS + AI_FLOAT_FIELDS:
+		var af: PackedFloat32Array = get(f)
+		for k in range(indices.size() - 1, -1, -1):
+			af.remove_at(indices[k])
+		set(f, af)
 
 
 func hash_into(h: StateHasher) -> void:
@@ -187,3 +196,5 @@ func hash_statuses(h: StateHasher) -> void:
 func hash_ai(h: StateHasher) -> void:
 	for f in AI_FIELDS:
 		h.add_ints(get(f))
+	for f in AI_FLOAT_FIELDS:
+		h.add_f32s(get(f))

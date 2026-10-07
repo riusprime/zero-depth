@@ -307,8 +307,27 @@ class_name ThreatModifier extends Resource
 @export var permille_by_t: PackedInt32Array   # integer table indexed by T
 ```
 
-`data/threat/scaling.tres` (`ScalingTable`) holds per-floor `‰` tables for enemy HP, damage and density. Values
-come from GA: scaling. No formula in content uses `pow` or `exp`.
+No formula in content uses `pow` or `exp`: growth is authored as integer `‰` tables. Since v0.4.0 SC (owner F7,
+F10) the tables live with the run and the spawner (there is no `data/threat/scaling.tres`):
+
+- **`RunDefinition`** (`data/run/three_floors.tres`): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
+  one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
+  past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+  `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
+  enemies' tables.
+- **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
+  `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
+  `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
+  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
+  `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
+  rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
+- **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and, since v0.4.0 SC, `pack_size` (0 = the floor's
+  draw; > 0 = always that many, e.g. a swarm). A new enemy joins the hordes with one more entry.
+- **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
+  within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
+  fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
+  cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
+  `pack_range`; a negative `pack_size` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
 ## 8. Player
 

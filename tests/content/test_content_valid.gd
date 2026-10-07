@@ -73,7 +73,8 @@ func test_the_run_validates_and_catches_bad_values() -> void:
 	assert_eq(def.validate().size(), 0)
 	def.floors = 0
 	def.biomes = []
-	def.enemy_hp_per_floor = -0.1
+	def.boss_hp_per_floor = -0.1
+	def.enemy_hp_floor_permille = PackedInt32Array([1000, 900])
 	def.heal_between_floors = 1.5
 	var codes := []
 	for i in def.validate():
@@ -81,4 +82,5 @@ func test_the_run_validates_and_catches_bad_values() -> void:
 	assert_has(codes, "not_positive", "floors must be > 0")
 	assert_has(codes, "missing", "biomes can't be empty")
 	assert_has(codes, "negative", "scaling can't be negative")
+	assert_has(codes, "table_order", "the per-floor HP table never falls (v0.4.0 SC)")
 	assert_has(codes, "range", "the heal is a share of max HP")

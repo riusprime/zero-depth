@@ -102,7 +102,7 @@ func test_shards_scale_with_the_danger_tier() -> void:
 	var w := _world()
 	w.spawner = SpawnTable.new()
 	w.spawner.tier_ticks = 100
-	w.spawner.cap_base = 0
+	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_max = 0
 	# × (1 + 0.25 × tier), rounded half up: Charger 3 → 3, 4 (3.75), 5 (4.5), 5 (5.25), 6; Warden 6 → 6, 8 (7.5), 9.
 	var want := {0: [3, 6], 1: [4, 8], 2: [5, 9], 3: [5, 11], 4: [6, 12]}
