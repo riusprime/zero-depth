@@ -7,6 +7,7 @@ extends RefCounted
 ## Per-mille multiplier for a hit arriving from `from` (the player's guard, the Warden's armour). Returns
 ## [mult, tags]. The Warden never blocks (owner, 2026-10-07): a hit from its front arc is ARMOURED (front mult), one
 ## from its rear arc lands on its WEAK_SPOT (rear mult), and the sides (or a hit from its own position) take 1000.
+## The Shield Bearer (v0.4.0 EN) BLOCKS everything from its front arc (multiplier 0); sides and back take 1000.
 static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 	var a := w.actors
 	var to_attacker := Kin.angle_of(from - a.pos(target))
@@ -21,12 +22,16 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
-	elif a.kinds[target] == ActorStore.Kind.WARDEN and from != a.pos(target):
+	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
 		if def != null:
 			var off := Kin.angle_diff(to_attacker, a.facing[target])
 			if def.front_half_arc > 0 and off <= def.front_half_arc:
-				return [def.front_mult_permille, SimEvent.TAG_ARMOURED]
+				# v0.4.0 EN: the Shield Bearer's shield (a 0 multiplier) blocks the hit outright.
+				var tag := (
+					SimEvent.TAG_BLOCKED if def.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
+				)
+				return [def.front_mult_permille, tag]
 			if def.rear_half_arc > 0 and off >= 2048 - def.rear_half_arc:
 				return [def.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	return [1000, 0]

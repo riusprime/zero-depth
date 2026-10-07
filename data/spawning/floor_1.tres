@@ -33,6 +33,43 @@ enemy_id = &"bomb_drone"
 weight = 2
 unlock_tier = 2
 
+[sub_resource type="Resource" id="M_swarmer"]
+script = ExtResource("1_mix")
+enemy_id = &"swarmer"
+weight = 3
+unlock_tier = 1
+pack = 8
+
+[sub_resource type="Resource" id="M_splitter"]
+script = ExtResource("1_mix")
+enemy_id = &"splitter"
+weight = 2
+unlock_tier = 1
+
+[sub_resource type="Resource" id="M_shield_bearer"]
+script = ExtResource("1_mix")
+enemy_id = &"shield_bearer"
+weight = 2
+unlock_tier = 2
+
+[sub_resource type="Resource" id="M_mine_layer"]
+script = ExtResource("1_mix")
+enemy_id = &"mine_layer"
+weight = 2
+unlock_tier = 2
+
+[sub_resource type="Resource" id="M_sniper"]
+script = ExtResource("1_mix")
+enemy_id = &"sniper"
+weight = 1
+unlock_tier = 2
+
+[sub_resource type="Resource" id="M_mender"]
+script = ExtResource("1_mix")
+enemy_id = &"mender"
+weight = 1
+unlock_tier = 3
+
 [resource]
 script = ExtResource("2_sdd")
 id = &"floor_1"
@@ -45,4 +82,4 @@ interval_step_seconds = 0.25
 interval_min_seconds = 0.8
 hp_scale_per_tier = 0.08
 min_distance_m = 8.0
-mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone")])
+mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone"), SubResource("M_swarmer"), SubResource("M_splitter"), SubResource("M_shield_bearer"), SubResource("M_mine_layer"), SubResource("M_sniper"), SubResource("M_mender")])

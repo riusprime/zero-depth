@@ -14,6 +14,12 @@ const CAUSES := {
 	WorldReader.KIND_HATCHLING: "CAUSE_HATCHLING",
 	WorldReader.KIND_ARC_CASTER: "CAUSE_ARC_CASTER",
 	WorldReader.KIND_BOMB_DRONE: "CAUSE_BOMB_DRONE",
+	WorldReader.KIND_SWARMER: "CAUSE_SWARMER",
+	WorldReader.KIND_SPLITTER: "CAUSE_SPLITTER",
+	WorldReader.KIND_SPLITLING: "CAUSE_SPLITTER",
+	WorldReader.KIND_SHIELD_BEARER: "CAUSE_SHIELD_BEARER",
+	WorldReader.KIND_MINE_LAYER: "CAUSE_MINE_LAYER",
+	WorldReader.KIND_SNIPER: "CAUSE_SNIPER",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

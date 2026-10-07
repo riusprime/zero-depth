@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"swipe"
+shape = 0
+shape_params = {
+"radius_m": 1.1,
+"reach_m": 0.9
+}
+telegraph_seconds = 0.45
+telegraph_max_seconds = 0.6667
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 12
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_SPLITTER"
+behaviour_id = &"splitter"
+behaviour_params = {
+"attack_range_m": 1.8,
+"cooldown_seconds": 1.2,
+"split_count": 2
+}
+hp = 50
+radius_m = 0.5
+move_speed_mps = 2.4
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("bleed")
+shards = 3
+id = &"splitter"

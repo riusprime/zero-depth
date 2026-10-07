@@ -320,6 +320,8 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
     fields, only in worlds with enemy tables;
   - the bosses' v0.3.5 fields (`BossStore.gap_t`, `dash_t`, `dash_x`, `dash_y`) are part of `BossStore`, hashed only
     in worlds with boss tables.
+  - the mines (v0.4.0 EN; `MineStore`: ids, owner, damage, life, fuse, fuse total, position, radius), after the enemy
+    AI fields, only once a mine was ever dropped (`MineStore.touched`).
 - It runs on demand, not every tick:
   - every 60 ticks in replays and goldens (a checkpoint);
   - at encounter end;
@@ -354,6 +356,34 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   1.8 m up). Keeps 5-8 m away, lobs a bomb at where the player stands: a 1.8 m circle that fills for 48 ticks, then
   explodes for 16. It keeps drifting while the bomb flies; killing it first defuses the bomb (the bomb is its
   windup).
+
+## 10c. The horde kinds (v0.4.0 EN)
+
+Starting values; `EnemyAi` and `Mines` hold the rules, `data/enemies` the numbers. Every attack keeps the readable-cause
+rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap line (`CAUSE_*`).
+- **Swarmer** (packs of 8 from the spawner): the Charger's behaviour with a short, unbent lunge.
+- **Splitter.** Swipes a disc `reach_m` ahead of it (`swipe_disc`, fixed at the windup's start). When it dies
+  (tick phase 9, `EnemyAi.on_death`) it queues `split_count` Splitlings 0.45 m to either side of where it fell; they
+  arrive in the same phase with the usual spawn-in. A Splitling swipes the same way and never splits. Dissolving
+  (a boss summon) doesn't split it.
+- **Shield Bearer.** `Damage.target_mult` gives a hit from within its front half-arc a multiplier of 0 and
+  `TAG_BLOCKED` (a bolt into it ends there); sides and back take 1000. It turns at `turn_rate` only while walking,
+  starts a bash only at a player inside the shield arc, and bashes along its facing (`bash_lane`).
+- **Mender.** No attack and no telegraph. It keeps its patient (`pick` = the ally's id) while it is alive, hurt and
+  within `heal_range_m`; otherwise it looks for the most hurt normal enemy in range every 15 ticks (staggered by id;
+  bosses are never healed). Every `heal_period_ticks` it adds `heal_amount` HP (capped at max) and emits `HEAL`
+  (source/owner the Mender, target the ally). The view marks it as the priority target.
+- **Mine Layer and mines** (tick phase 6, after the enemies' hits). Its active tick drops a mine at its feet (at most
+  `max_mines`). An idle mine lives `mine_life_ticks`; when the player's body touches its circle it arms, and
+  `fuse_ticks` later (the attack's telegraph, >= 24) it blows, hitting the player if still in the circle. The layer's
+  telegraph is its armed mines' discs (`Mines.telegraph`, style `mine`); its own drop shows none (it hurts nobody).
+  A mine whose layer is gone is removed (killing the layer defuses its mines). Mine ids come from the actor id
+  counter.
+- **Sniper.** Keeps 10-14 m. Its line (`snipe_lane`, style `snipe`) shows for 60 ticks, follows the player until
+  `SNIPE_COMMIT_TICKS` (24) before the shot, then a hit resolves down the drawn line (TAG_PROJECTILE, no
+  projectile). After recovering it walks at 1.5x speed to a spot 45-90 deg around the player (the side and angle
+  from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
+  150 ticks.
 
 ## 11. Scaling and threat
 

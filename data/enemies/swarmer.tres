@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"bite"
+shape = 2
+shape_params = {
+"length_m": 2.0,
+"speed_mps": 12.0
+}
+telegraph_seconds = 0.4
+telegraph_max_seconds = 0.5
+active_seconds = 0.1667
+recovery_seconds = 0.6
+damage = 5
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_SWARMER"
+behaviour_id = &"swarmer"
+behaviour_params = {
+"attack_range_m": 2.6,
+"charge_turn_dps": 0.0,
+"cooldown_seconds": 0.8
+}
+hp = 8
+radius_m = 0.24
+move_speed_mps = 4.6
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("bleed")
+shards = 1
+id = &"swarmer"

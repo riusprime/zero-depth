@@ -6,7 +6,7 @@ extends Node3D
 ## (docs/art/enemies_visual_reference.png): the Charger a red hooded crawler on four clawed legs, the Warden a
 ## hulking rock golem under a red shell (fists in front, a glowing weak spot on its back; no shield), the Needle a
 ## legged turret; v0.3.5 AI adds the Arc Caster (a robed caster with a staff) and the Bomb Drone (a hovering
-## quad-rotor).
+## quad-rotor); v0.4.0 EN the six horde kinds (HordeAvatar).
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -319,6 +319,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
+		_ when HordeAvatar.is_horde_kind(kind):
+			# The horde kinds (v0.4.0 EN): one code-built model per kind.
+			var horde := HordeAvatar.new()
+			horde.setup(kind, outline_color, technique)
+			facing.add_child(horde)
+			height = horde.height
+			root.set_meta(&"enemy_avatar", horde)
+			root.set_meta(&"mats", horde.body_materials.duplicate())
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

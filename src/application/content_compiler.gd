@@ -81,12 +81,24 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"hatchling": ActorStore.Kind.HATCHLING,
 		&"arc_caster": ActorStore.Kind.ARC_CASTER,
 		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+		&"swarmer": ActorStore.Kind.SWARMER,
+		&"splitter": ActorStore.Kind.SPLITTER,
+		&"splitling": ActorStore.Kind.SPLITLING,
+		&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
+		&"mender": ActorStore.Kind.MENDER,
+		&"mine_layer": ActorStore.Kind.MINE_LAYER,
+		&"sniper": ActorStore.Kind.SNIPER,
 	}[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	var bp := def.behaviour_params
+	t.shards = def.shards
+	t.shards_by_floor = def.shards_by_floor
+	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
+		_compile_horde(def, t, {})
+		return t
 	t.attack_range_m = bp["attack_range_m"]
 	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
 	var atk := def.attacks[0]
@@ -96,10 +108,8 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
-	t.shards = def.shards
-	t.shards_by_floor = def.shards_by_floor
 	match def.behaviour_id:
-		&"charger", &"hatchling":
+		&"charger", &"hatchling", &"swarmer":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
 			t.charge_turn = degrees_to_units(
@@ -131,7 +141,44 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.keep_min_m = bp["keep_min_m"]
 			t.keep_distance_m = bp["keep_max_m"]
 			t.slam_radius_m = sp["radius_m"]
+		_:
+			_compile_horde(def, t, sp)
 	return t
+
+
+## The horde kinds (v0.4.0 EN): the numbers each one adds, from its params and its attack's shape params.
+static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) -> void:
+	var bp := def.behaviour_params
+	if bp.has("keep_min_m"):
+		t.keep_min_m = bp["keep_min_m"]
+		t.keep_distance_m = bp["keep_max_m"]
+	match def.behaviour_id:
+		&"splitter", &"splitling":
+			t.slam_radius_m = sp["radius_m"]
+			t.reach_m = sp["reach_m"]
+			t.split_count = int(bp.get("split_count", 0))
+		&"shield_bearer":
+			t.front_half_arc = degrees_to_units(float(bp["shield_arc_degrees"]) * 0.5)
+			t.front_mult_permille = 0
+			t.turn_rate = maxi(
+				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
+			)
+			t.reach_m = sp["length_m"]
+			t.lane_half_m = sp["half_width_m"]
+		&"mender":
+			t.heal_amount = int(bp["heal_amount"])
+			t.heal_period_ticks = maxi(1, SimTick.seconds_to_ticks(bp["heal_period_seconds"]))
+			t.heal_range_m = bp["heal_range_m"]
+		&"mine_layer":
+			t.slam_radius_m = sp["radius_m"]
+			t.fuse_ticks = t.windup_ticks
+			t.windup_ticks = maxi(1, SimTick.seconds_to_ticks(bp["drop_seconds"]))
+			t.windup_max_ticks = t.windup_ticks
+			t.max_mines = int(bp["max_mines"])
+			t.mine_life_ticks = SimTick.seconds_to_ticks(bp["mine_life_seconds"])
+		&"sniper":
+			t.reach_m = sp["range_m"]
+			t.lane_half_m = sp["half_width_m"]
 
 
 ## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune).
@@ -192,6 +239,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 		t.kinds.append(compile_enemy(enemy).kind)
 		t.weights.append(e.weight)
 		t.unlock_tiers.append(e.unlock_tier)
+		t.packs.append(e.pack)
 	return t
 
 

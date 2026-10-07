@@ -378,6 +378,76 @@ def s_bomb_blast(r):
     return echo(x, 140, 0.35, 0.3, 1800, 0.4)
 
 
+# v0.4.0 EN: the horde kinds.
+def s_enemy_death_swarmer(r):
+    n = n_of(0.14)
+    crunch = bandpass(noise(r, n), curve(4200, 1200, n), 5.0) * env(n, 0.001, 0.03)
+    pip = osc(curve(2200, 900, n), "square", n) * env(n, 0.001, 0.03) * 0.3
+    return echo(bitcrush(mix(crunch, pip), 6, 2), 60, 0.2, 0.18, 3500, 0.1)
+
+
+def s_enemy_death_splitter(r):
+    n = n_of(0.4)
+    tear = bandpass(noise(r, n), curve(600, 2400, n), 3.0) * env(n, 0.004, 0.14)
+    halves = mix(osc(curve(300, 120, n), "saw", n), osc(curve(360, 150, n), "saw", n)) * env(n, 0.002, 0.12) * 0.35
+    return echo(bitcrush(soft_clip(mix(tear, halves), 1.4), 6, 2), 90, 0.3, 0.25, 2800, 0.25)
+
+
+def s_enemy_death_shield_bearer(r):
+    return death(r, 220, 35, 0.6, 6, ring=410)
+
+
+def s_enemy_death_mender(r):
+    n = n_of(0.5)
+    fall = fm(curve(1400, 350, n), 1.5, 2.0, n) * env(n, 0.003, 0.2) * 0.6
+    sparkle = bandpass(noise(r, n), 5200, 3.0) * env(n, 0.002, 0.12) * 0.4
+    return echo(mix(fall, sparkle), 110, 0.35, 0.3, 4000, 0.3)
+
+
+def s_enemy_death_mine_layer(r):
+    return death(r, 520, 70, 0.5, 5, ring=600)
+
+
+def s_enemy_death_sniper(r):
+    return death(r, 1500, 220, 0.4, 5, chirp=True)
+
+
+def s_sniper_shot(r):
+    n = n_of(0.5)
+    crack = one_pole_hp(noise(r, n), 1500) * env(n, 0.0005, 0.03)
+    boom = osc(curve(240, 60, n), "sine", n) * env(n, 0.001, 0.12) * 0.8
+    whine = osc(curve(3800, 1800, n), "tri", n) * env(n, 0.001, 0.08) * 0.25
+    return echo(soft_clip(mix(crack, boom, whine), 1.8), 150, 0.35, 0.3, 3000, 0.35)
+
+
+def s_mine_arm(r):
+    x = mix(*[at(osc(1760.0, "square", n_of(0.05)) * env(n_of(0.05), 0.001, 0.02), k * 0.09) for k in range(3)])
+    return echo(bitcrush(x * 0.6, 7, 2), 70, 0.25, 0.2, 4000, 0.1)
+
+
+def s_mine_blast(r):
+    n = n_of(0.6)
+    boom = osc(curve(150, 35, n), "sine", n) * env(n, 0.002, 0.25)
+    grit = one_pole_lp(noise(r, n), 2600) * env(n, 0.001, 0.16)
+    x = bitcrush(soft_clip(mix(boom, grit * 0.7), 2.0), 6, 3)
+    return echo(x, 120, 0.3, 0.28, 2000, 0.35)
+
+
+def s_shield_bash(r):
+    n = n_of(0.35)
+    clang = metal_ping(0.35, 240.0, 1.37, 3.0, 0.1) * 0.6
+    thud = osc(curve(130, 55, n), "sine", n) * env(n, 0.002, 0.07)
+    scrape = bandpass(noise(r, n), 1600, 2.0) * env(n, 0.002, 0.05) * 0.4
+    return echo(mix(clang, thud, scrape), 80, 0.25, 0.22, 3000, 0.2)
+
+
+def s_mender_heal(r):
+    x = notes((659.25, 987.77), 0.06, 0.12, "tri", 0.03, 6000) * 0.4
+    n = len(x)
+    shimmer = fm(np.full(n, 1318.5), 2.0, 1.2, n) * env(n, 0.02, 0.1) * 0.25
+    return echo(mix(x, shimmer), 100, 0.3, 0.3, 5000, 0.2)
+
+
 def s_player_death(r):
     n = n_of(1.1)
     fall = osc(curve(520, 40, n), "saw", n)
@@ -669,6 +739,17 @@ SFX = [
     ("rune_erupt", s_rune_erupt),
     ("bomb_lob", s_bomb_lob),
     ("bomb_blast", s_bomb_blast),
+    ("enemy_death_swarmer", s_enemy_death_swarmer),
+    ("enemy_death_splitter", s_enemy_death_splitter),
+    ("enemy_death_shield_bearer", s_enemy_death_shield_bearer),
+    ("enemy_death_mender", s_enemy_death_mender),
+    ("enemy_death_mine_layer", s_enemy_death_mine_layer),
+    ("enemy_death_sniper", s_enemy_death_sniper),
+    ("sniper_shot", s_sniper_shot),
+    ("mine_arm", s_mine_arm),
+    ("mine_blast", s_mine_blast),
+    ("shield_bash", s_shield_bash),
+    ("mender_heal", s_mender_heal),
     ("player_death", s_player_death),
     ("dash", s_dash),
     ("blink_out", s_blink_out),

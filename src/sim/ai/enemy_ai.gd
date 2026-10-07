@@ -11,6 +11,11 @@ extends RefCounted
 ## player at a limited rate; the Needle's burst fans out; enemies spread around the player instead of stacking.
 ## Two new kinds: the Arc Caster (a fast bolt, a 3-bolt spread, a rune that erupts under you) and the Bomb Drone
 ## (lobs a bomb whose circle fills until it lands). The drone hovers only in the view: here it is a ground body.
+## v0.4.0 EN, six horde kinds: the Swarmer (a tiny Charger whose charge is a short lunge bite), the Splitter (swipes a
+## disc ahead of it; dies into Splitlings, which swipe too and never split), the Shield Bearer (blocks from the front,
+## turns slowly, bashes a short lane), the Mender (keeps away and heals hurt allies through a beam, no attack), the
+## Mine Layer (drops mines; Mines) and the Sniper (a 60-tick line, a hit down it, then a walk to a new spot). Their
+## shapes: swipe_disc, bash_lane, snipe_lane, Mines.telegraph.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -18,6 +23,14 @@ enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 enum Spell { BOLT, SPREAD, RUNE }
 
 const STRAFE_PERMILLE := 600
+## Kinds that keep a distance band (_keeps_away).
+const KEEP_AWAY: Array[int] = [
+	ActorStore.Kind.ARC_CASTER,
+	ActorStore.Kind.BOMB_DRONE,
+	ActorStore.Kind.MENDER,
+	ActorStore.Kind.MINE_LAYER,
+	ActorStore.Kind.SNIPER,
+]
 ## Aimed windups stop tracking the player this many ticks before they fire (starting value, as the bosses').
 const COMMIT_TICKS := 12
 ## Enemies closer than this to each other push apart while they walk (starting value).
@@ -30,29 +43,65 @@ const FLANK_PERMILLE := 450
 ## A charge touches the player within this much of contact: the collision pass (phase 5) has already pushed the
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
+## v0.4.0 EN (starting values). A Sniper's line stops following the player this many ticks before it fires.
+const SNIPE_COMMIT_TICKS := 24
+## After a shot a Sniper walks, this much faster, to a spot 45-90 degrees around the player (1/4096 turns), until it
+## is within RELOCATE_DONE_M of it or RELOCATE_MAX_TICKS have passed.
+const RELOCATE_SPEED_PERMILLE := 1500
+const RELOCATE_MIN_TURN := 512
+const RELOCATE_MAX_TURN := 1024
+const RELOCATE_DONE_M := 0.5
+const RELOCATE_MAX_TICKS := 150
+## A Mender without a patient looks for one every this many ticks (staggered by its id).
+const MEND_SCAN_TICKS := 15
+## A Splitter's halves appear this far to either side of where it died.
+const SPLIT_OFFSET_M := 0.45
 
 
 static func is_enemy_kind(kind: int) -> bool:
 	return kind >= ActorStore.Kind.CHARGER
 
 
-## Chargers and the Brood Mother's hatchlings (v0.3.0 C, a small Charger) run the charge behaviour.
+## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
 static func _charges(kind: int) -> bool:
-	return kind == ActorStore.Kind.CHARGER or kind == ActorStore.Kind.HATCHLING
+	return (
+		kind == ActorStore.Kind.CHARGER
+		or kind == ActorStore.Kind.HATCHLING
+		or kind == ActorStore.Kind.SWARMER
+	)
 
 
-## Kinds that keep a distance band and shoot or lob from it (v0.3.5 AI).
+## Kinds that keep a distance band and shoot, lob, heal or lay mines from it (v0.3.5 AI, v0.4.0 EN).
 static func _keeps_away(kind: int) -> bool:
-	return kind == ActorStore.Kind.ARC_CASTER or kind == ActorStore.Kind.BOMB_DRONE
+	return kind in KEEP_AWAY
+
+
+## Kinds that turn at a limited rate while they walk and hold their facing once they attack (v0.4.0 EN).
+static func _turns_slowly(kind: int) -> bool:
+	return kind == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+
+
+## Kinds whose hits are softened or blocked by the direction they come from (Damage.target_mult).
+static func armoured(kind: int) -> bool:
+	return kind == ActorStore.Kind.WARDEN or kind == ActorStore.Kind.SHIELD_BEARER
+
+
+## The Mender (v0.4.0 EN): the target to kill first. The view marks it.
+static func is_priority(kind: int) -> bool:
+	return kind == ActorStore.Kind.MENDER
 
 
 ## True while actor i's windup aims a shot that still follows the player (it commits COMMIT_TICKS before it fires).
+## A Sniper's line (v0.4.0 EN) follows until SNIPE_COMMIT_TICKS before the shot.
 static func tracking(w: World, i: int) -> bool:
 	var a := w.actors
-	if a.state[i] != State.WINDUP or a.state_t[i] >= a.windup[i] - COMMIT_TICKS:
+	var sniper := a.kinds[i] == ActorStore.Kind.SNIPER
+	var commit := SNIPE_COMMIT_TICKS if sniper else COMMIT_TICKS
+	if a.state[i] != State.WINDUP or a.state_t[i] >= a.windup[i] - commit:
 		return false
 	return (
-		a.kinds[i] == ActorStore.Kind.NEEDLE
+		sniper
+		or a.kinds[i] == ActorStore.Kind.NEEDLE
 		or (a.kinds[i] == ActorStore.Kind.ARC_CASTER and a.pick[i] != Spell.RUNE)
 	)
 
@@ -74,13 +123,24 @@ static func think(w: World, i: int) -> void:
 			if a.state_t[i] >= SimTick.SPAWN_IN_TICKS:
 				_enter(a, i, State.MOVE)
 		State.MOVE:
-			if a.kinds[i] == ActorStore.Kind.WARDEN:
+			if _turns_slowly(a.kinds[i]):
 				a.facing[i] = Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			else:
 				a.facing[i] = aim
+			if a.kinds[i] == ActorStore.Kind.MENDER:
+				_mend(w, i)  # v0.4.0 EN: heals instead of attacking.
+				return
+			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
+				_end_relocation(a, i)
 			# A Needle backs off before it shoots; the others attack as soon as they're in range.
 			var too_close := a.kinds[i] == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
-			if alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close:
+			if (
+				alive
+				and a.cd[i] == 0
+				and dist <= t.attack_range_m
+				and not too_close
+				and _may_attack(w, i)
+			):
 				_start_windup(w, i, aim)
 		State.WINDUP:
 			if tracking(w, i) and alive:
@@ -91,7 +151,7 @@ static func think(w: World, i: int) -> void:
 		State.ACTIVE:
 			var done := false
 			match a.kinds[i]:
-				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
+				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 					done = a.lock_len[i] <= 0.0
 				ActorStore.Kind.NEEDLE:
 					done = a.fire_cd[i] >= t.burst_count and a.state_t[i] >= t.active_ticks
@@ -103,6 +163,106 @@ static func think(w: World, i: int) -> void:
 			if a.state_t[i] >= t.recover_ticks:
 				_enter(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
+				if a.kinds[i] == ActorStore.Kind.SNIPER:
+					_plan_relocation(w, i)
+
+
+## Whether a horde kind may start its attack now (v0.4.0 EN; always true for the others): a Shield Bearer only at a
+## player in front of it, a Mine Layer below its mine count, a Sniper once it has relocated.
+static func _may_attack(w: World, i: int) -> bool:
+	var a := w.actors
+	match a.kinds[i]:
+		ActorStore.Kind.SHIELD_BEARER:
+			var aim := Kin.angle_of(w.player_pos() - a.pos(i))
+			return Kin.angle_diff(aim, a.facing[i]) <= w.enemy_table(a.kinds[i]).front_half_arc
+		ActorStore.Kind.MINE_LAYER:
+			return Mines.count_of(w, a.ids[i]) < w.enemy_table(a.kinds[i]).max_mines
+		ActorStore.Kind.SNIPER:
+			return a.pick[i] == 0
+	return true
+
+
+## A relocating Sniper (v0.4.0 EN) is done once within RELOCATE_DONE_M of its spot or after RELOCATE_MAX_TICKS.
+static func _end_relocation(a: ActorStore, i: int) -> void:
+	var near := Kin.length(Vector2(a.lock_x[i], a.lock_y[i]) - a.pos(i)) <= RELOCATE_DONE_M
+	if near or a.state_t[i] >= RELOCATE_MAX_TICKS:
+		a.pick[i] = 0
+
+
+## A Sniper's next spot (v0.4.0 EN): around the player by 45-90 degrees (a side drawn from ai:enemy), in the middle
+## of its distance band. pick = 1 while it walks there.
+static func _plan_relocation(w: World, i: int) -> void:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	var p := w.player_pos()
+	var turn := w.rng_enemy.range_int(RELOCATE_MIN_TURN, RELOCATE_MAX_TURN)
+	if w.rng_enemy.chance_permille(500):
+		turn = -turn
+	var ang := (Kin.angle_of(a.pos(i) - p) + turn) & 4095
+	var spot := p + Kin.dir(ang) * ((t.keep_min_m + t.keep_distance_m) * 0.5)
+	a.lock_x[i] = spot.x
+	a.lock_y[i] = spot.y
+	a.pick[i] = 1
+
+
+## The Mender (v0.4.0 EN): keeps its patient (pick) while it is alive, hurt and within heal_range_m, else looks for
+## the most hurt ally in range every MEND_SCAN_TICKS; heals it heal_amount every heal_period_ticks (HEAL event).
+static func _mend(w: World, i: int) -> void:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	var j := a.index_of(a.pick[i]) if a.pick[i] > 0 else -1
+	if j >= 0 and (a.dead[j] == 1 or a.hp[j] >= a.max_hp[j] or not _near(a, i, j, t.heal_range_m)):
+		j = -1
+	if j < 0 and (w.tick + a.ids[i]) % MEND_SCAN_TICKS == 0:
+		j = _patient(w, i, t.heal_range_m)
+	if j < 0:
+		a.pick[i] = 0
+		return
+	if a.pick[i] != a.ids[j]:
+		a.pick[i] = a.ids[j]
+		a.cd[i] = t.heal_period_ticks  # a new beam takes a full period to land its first heal
+	if a.cd[i] > 0:
+		return
+	a.cd[i] = t.heal_period_ticks
+	var add := mini(t.heal_amount, a.max_hp[j] - a.hp[j])
+	a.hp[j] += add
+	var e := w.emit_event(SimEvent.Kind.HEAL, a.ids[i], a.ids[i], a.ids[j], a.pos(j))
+	e.amount = add
+	e.amount_applied = add
+
+
+static func _near(a: ActorStore, i: int, j: int, r: float) -> bool:
+	var d := a.pos(j) - a.pos(i)
+	return absf(d.x) <= r and absf(d.y) <= r and Kin.length(d) <= r
+
+
+## The most hurt (lowest HP share) normal enemy within r of Mender i, other than itself; -1 when none is hurt.
+static func _patient(w: World, i: int, r: float) -> int:
+	var a := w.actors
+	var best := -1
+	var best_share := 1000
+	for j in range(1, a.size()):
+		if j == i or a.dead[j] == 1 or a.hp[j] >= a.max_hp[j] or not is_enemy_kind(a.kinds[j]):
+			continue
+		if BossAi.is_boss_kind(a.kinds[j]) or not _near(a, i, j, r):
+			continue
+		var share := a.hp[j] * 1000 / maxi(1, a.max_hp[j])
+		if share < best_share:
+			best = j
+			best_share = share
+	return best
+
+
+## A dying Splitter (v0.4.0 EN) splits into split_count Splitlings beside where it fell (they arrive in phase 9).
+static func on_death(w: World, i: int) -> void:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	if t == null or t.split_count <= 0 or w.enemy_table(ActorStore.Kind.SPLITLING) == null:
+		return
+	var side := Kin.dir((a.facing[i] + 1024) & 4095)
+	for k in t.split_count:
+		var off := (k - (t.split_count - 1) * 0.5) * 2.0 * SPLIT_OFFSET_M
+		w.queue_enemy(ActorStore.Kind.SPLITLING, a.pos(i) + side * off)
 
 
 static func move(w: World, i: int) -> void:
@@ -112,6 +272,9 @@ static func move(w: World, i: int) -> void:
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
 	var slow := ItemProcs.slow_factor(w, i)
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
+	if a.state[i] == State.MOVE and a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
+		_relocate(w, i, t, slow)
+		return
 	if a.state[i] == State.MOVE or hovering:
 		var to := w.player_pos() - at
 		var dist := Kin.length(to)
@@ -145,6 +308,18 @@ static func move(w: World, i: int) -> void:
 			var step := minf(t.charge_speed * slow, a.lock_len[i])
 			a.lock_len[i] -= step
 			a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
+
+
+## A Sniper walking to its next spot (v0.4.0 EN), RELOCATE_SPEED_PERMILLE of its speed.
+static func _relocate(w: World, i: int, t: EnemyTable, slow: float) -> void:
+	var a := w.actors
+	var at := a.pos(i)
+	var to := Vector2(a.lock_x[i], a.lock_y[i]) - at
+	var d := Kin.length(to)
+	if d <= 0.0001:
+		return
+	var step := minf(t.speed * slow * RELOCATE_SPEED_PERMILLE / 1000.0, d)
+	a.set_pos(i, at + steer(w, at, to / d, t.radius_m) * step)
 
 
 ## The push that keeps enemy i off the other normal enemies near it: the sum, over each one closer than
@@ -182,7 +357,7 @@ static func resolve(w: World, i: int) -> void:
 	var p := w.player_pos()
 	var pr := w.player.radius_m
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			var reach := t.radius_m + pr + CONTACT_SLOP_M
 			if a.fire_cd[i] == 0 and Kin.length(p - a.pos(i)) <= reach:
 				a.fire_cd[i] = 1
@@ -233,6 +408,26 @@ static func resolve(w: World, i: int) -> void:
 				var d := bomb_disc(w, i)
 				if AttackShapes.disc_touches(d[0], d[1], p, pr):
 					_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
+		_:
+			if a.state_t[i] == 0:
+				_resolve_horde(w, i, t, p, pr)
+
+
+## The horde kinds' hits (v0.4.0 EN), on their active tick.
+static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: float) -> void:
+	match w.actors.kinds[i]:
+		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
+			var d := swipe_disc(w, i)
+			if AttackShapes.disc_touches(d[0], d[1], p, pr):
+				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
+		ActorStore.Kind.SHIELD_BEARER:
+			if Collide.circle_vs_obb(p, pr, bash_lane(w, i)) != Vector2.ZERO:
+				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
+		ActorStore.Kind.SNIPER:
+			if Collide.circle_vs_obb(p, pr, snipe_lane(w, i)) != Vector2.ZERO:
+				_hit_player(w, i, t.damage, SimEvent.TAG_PROJECTILE)
+		ActorStore.Kind.MINE_LAYER:
+			Mines.drop(w, i)
 
 
 static func _fire(
@@ -352,6 +547,27 @@ static func bomb_disc(w: World, i: int) -> Array:
 	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
 
 
+## [center, radius] of a Splitter's (or Splitling's) swipe (v0.4.0 EN): reach_m ahead of it when it wound up.
+static func swipe_disc(w: World, i: int) -> Array:
+	var a := w.actors
+	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
+
+
+## A Shield Bearer's bash (v0.4.0 EN): a lane from its centre along its locked facing, reach_m past its body.
+static func bash_lane(w: World, i: int) -> Obb:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	return AttackShapes.lane(
+		Vector2(a.lock_x[i], a.lock_y[i]), a.lock_a[i], a.radius[i] + t.reach_m, t.lane_half_m
+	)
+
+
+## A Sniper's line (v0.4.0 EN): reach_m from its muzzle along its aim, lane_half_m wide, cut short by walls.
+static func snipe_lane(w: World, i: int) -> Obb:
+	var t := w.enemy_table(w.actors.kinds[i])
+	return _shot_lane(w, i, w.actors.lock_a[i], t.reach_m, t.lane_half_m)
+
+
 ## What the view draws for actor i: {} or {"shape": &"lane"|&"lanes"|&"disc", ..., "progress": 0..1000}. The new
 ## kinds (v0.3.5 AI) add "style": &"bolt", &"rune" or &"bomb", and a bomb its "from" (the drone).
 static func telegraph(w: World, i: int) -> Dictionary:
@@ -362,12 +578,25 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {}
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 		return {"shape": &"lane", "obb": running_lane(w, i), "progress": 1000}
+	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:
+		return Mines.telegraph(w, a.ids[i])  # v0.4.0 EN: its armed mines; the drop itself hurts nobody
 	if a.state[i] != State.WINDUP:
 		return {}
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, a.windup[i]), 0, 1000)
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
+		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
+			var s := swipe_disc(w, i)
+			return {"shape": &"disc", "center": s[0], "radius": s[1], "progress": progress}
+		ActorStore.Kind.SHIELD_BEARER:
+			return {
+				"shape": &"lane", "obb": bash_lane(w, i), "progress": progress, "style": &"bash"
+			}
+		ActorStore.Kind.SNIPER:
+			return {
+				"shape": &"lane", "obb": snipe_lane(w, i), "progress": progress, "style": &"snipe"
+			}
 		ActorStore.Kind.WARDEN:
 			var d := slam_disc(w, i)
 			return {"shape": &"disc", "center": d[0], "radius": d[1], "progress": progress}
@@ -414,10 +643,16 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 	if t.windup_max_ticks > t.windup_ticks:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
-		ActorStore.Kind.NEEDLE:
+		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
 			_aim(w, i)
+		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
+			var c := a.pos(i) + Kin.dir(aim) * t.reach_m
+			a.lock_x[i] = c.x
+			a.lock_y[i] = c.y
+		ActorStore.Kind.SHIELD_BEARER:
+			a.lock_a[i] = a.facing[i]  # it bashes the way its shield faces
 		ActorStore.Kind.ARC_CASTER:
 			a.pick[i] = maxi(0, w.rng_enemy.pick_weighted(t.spell_weights))
 			if a.pick[i] == Spell.RUNE:

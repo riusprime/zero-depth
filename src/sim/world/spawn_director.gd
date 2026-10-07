@@ -6,6 +6,9 @@ extends RefCounted
 ## tier, its spot a pick (map stream) among the spawn points at least min_distance_m from the player, and its HP
 ## is scaled by tier. With no spot far enough, that spawn is skipped and the interval starts again.
 
+## v0.4.0 EN: a pack spreads on a ring this wide around its spawn point (starting value).
+const PACK_RING_M := 0.8
+
 
 static func advance(w: World) -> void:
 	var t := w.spawner
@@ -65,8 +68,14 @@ static func _spawn_one(w: World, t: SpawnTable, tier: int) -> void:
 		return
 	var kind := t.kinds[open[pick]]
 	var at := pts[w.rng_map.range_int(0, pts.size() - 1)]
-	w.add_enemy(kind, at)
-	var i := w.actors.size() - 1
-	var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
-	w.actors.hp[i] = hp
-	w.actors.max_hp[i] = hp
+	# v0.4.0 EN: a pack (Swarmers) arrives in a ring around the spot, never past the alive cap.
+	var n := 1
+	if open[pick] < t.packs.size():
+		n = clampi(t.packs[open[pick]], 1, t.cap(tier) - WaveDirector.enemies_alive(w))
+	for k in n:
+		var off := Kin.dir(k * 4096 / n) * PACK_RING_M if n > 1 else Vector2.ZERO
+		w.add_enemy(kind, at + off)
+		var i := w.actors.size() - 1
+		var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
+		w.actors.hp[i] = hp
+		w.actors.max_hp[i] = hp

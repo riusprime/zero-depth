@@ -11,6 +11,7 @@ merged.
 |---|---|---|
 | — | Plan | this commit |
 | BS | Four ability slots (slot 1 = Combo Sword / Pulse Gun; Bomb Lobber, Drone Buddy, Orbit Blades, Blink with a landing shock, Aegis as cards; full slots level up to L5); no utility at the start (F11); 12 stat cards × 3 rarities and crit (5 %, ×1.5, `crit` stream); altars and chests offer abilities, stat cards and the items as mods; the shrine pays into the same stats; ability HUD, card faces, damage numbers (crits big and yellow), bombs / drones / blades / shock in the world; dev panel grants abilities. Evidence: [`evidence/BUILD_SYSTEM.md`](evidence/BUILD_SYSTEM.md) | `7a4a453` + this commit |
+| EN | Six horde enemies (Swarmer packs, Splitter, Shield Bearer, Mender, Mine Layer, Sniper): 12 behaviours ([`evidence/ENEMIES_12.md`](evidence/ENEMIES_12.md)) | `v0.4.0 Step EN` |
 
 ## Goldens changed on purpose
 - none (BS: the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
@@ -41,6 +42,8 @@ merged.
   evidence and this file. Owner note mid-step ("spell cooldowns have to be a bit bigger"): the ability slots are 52 px
   with a sweep and seconds left; their frames follow `CardStyle.current`.
 - 2026-10-07 — PLAN drafted from the owner's direction while v0.3.5 wave 1 runs.
+- 2026-10-07 — Step EN: six horde kinds (starting values in CONTENT_SCHEMA §3 and SIM_CONTRACTS §10c), in the
+  spawn mix from tiers 1-3 (`SpawnMixEntry.pack` for Swarmer packs of 8, within the alive cap); no golden changed.
 - 2026-10-07 — Owner: "skip the rule, keep going to v0.5.0". ROADMAP §0.3 waived once: v0.5.0 follows v0.4.0
   without a v0.4.0 playtest; both are played together afterwards.
 - 2026-10-07 — Owner: "okay let's bove the bigger card pool to v0.5 and make it in this current development sprint". The

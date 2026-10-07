@@ -34,6 +34,8 @@ var skill_fx := SkillVisuals.new()
 ## v0.4.0 BS: bombs, drones, orbit blades, the blink shock; damage numbers (crits big and yellow).
 var ability_fx := AbilityVisuals.new()
 var damage_numbers := DamageNumbers.new()
+## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
+var horde_fx := HordeVisuals.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -61,6 +63,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(skill_fx)  # v0.3.5 K
 	add_child(ability_fx)  # v0.4.0 BS
 	add_child(damage_numbers)
+	add_child(horde_fx)  # v0.4.0 EN
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -107,6 +110,7 @@ func sync() -> void:
 	skill_fx.sync(reader)  # v0.3.5 K
 	ability_fx.sync(reader)  # v0.4.0 BS
 	damage_numbers.sync(reader)
+	horde_fx.sync(reader)  # v0.4.0 EN
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

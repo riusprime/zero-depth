@@ -8,6 +8,8 @@ extends Node3D
 ## v0.3.5 AI: a telegraph with a "style" gets a mark on top of its shape: an Arc Caster's bolt a bright core line down
 ## each lane, its rune an inner ring with turning spokes, a Bomb Drone's bomb a cross-hair and the bomb itself flying
 ## from the drone ("from") to the circle's centre as the circle fills.
+## v0.4.0 EN: a Sniper's line ("snipe") carries the bolt's bright core; a Shield Bearer's bash ("bash") two chevrons
+## pointing down its lane; a Mine Layer's armed mines ("mine") a spiked star in each filling circle.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple"]
@@ -188,7 +190,7 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 	var p := float(tg["progress"]) / 1000.0
 	var pts := []
 	match tg["style"]:
-		&"bolt":
+		&"bolt", &"snipe":
 			var lanes: Array = tg["obbs"] if tg.has("obbs") else [tg["obb"]]
 			for o: Obb in lanes:
 				var u := o.axis_u
@@ -226,7 +228,32 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 			var bomb := n.get_node("Bomb") as Node3D
 			bomb.global_position = SimPlane.to_3d(from.lerp(c, p), y)
 			bomb.rotation = Vector3(p * 9.0, p * 5.0, 0)
-	_emit(deco, pts, _core_mat if tg["style"] == &"bolt" else _edge_mat)
+		&"bash":
+			var o: Obb = tg["obb"]
+			for k in 2:
+				var tip := o.center + o.axis_u * (o.half.x * (0.15 + 0.45 * k))
+				var back := tip - o.axis_u * o.half.y * 0.8
+				for sgn: float in [-1.0, 1.0]:
+					var wing := back + o.axis_v * o.half.y * 0.7 * sgn
+					var d := (tip - wing).normalized()
+					var sd := Vector2(-d.y, d.x) * EDGE * 0.4
+					_quad(pts, wing - sd, tip - sd, tip + sd, wing + sd)
+		&"mine":
+			var r: float = tg["radius"]
+			for c: Vector2 in tg["centers"]:
+				for k in 4:
+					var ang := TAU * k / 8.0 + p * PI
+					var d := Vector2(cos(ang), sin(ang))
+					var sd := Vector2(-d.y, d.x) * EDGE * 0.4
+					_quad(
+						pts,
+						c - d * r * 0.3 - sd,
+						c + d * r * 0.3 - sd,
+						c + d * r * 0.3 + sd,
+						c - d * r * 0.3 + sd
+					)
+	var core: bool = tg["style"] == &"bolt" or tg["style"] == &"snipe"
+	_emit(deco, pts, _core_mat if core else _edge_mat)
 
 
 # --- boss shapes (v0.3.0 C) -------------------------------------------------------------------------------------

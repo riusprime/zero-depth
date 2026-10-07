@@ -16,6 +16,14 @@ const KIND_SIEGE_ENGINE := ActorStore.Kind.SIEGE_ENGINE
 ## v0.3.5 AI: the Arc Caster and the Bomb Drone.
 const KIND_ARC_CASTER := ActorStore.Kind.ARC_CASTER
 const KIND_BOMB_DRONE := ActorStore.Kind.BOMB_DRONE
+## v0.4.0 EN: the horde kinds (a Splitter splits into Splitlings).
+const KIND_SWARMER := ActorStore.Kind.SWARMER
+const KIND_SPLITTER := ActorStore.Kind.SPLITTER
+const KIND_SPLITLING := ActorStore.Kind.SPLITLING
+const KIND_SHIELD_BEARER := ActorStore.Kind.SHIELD_BEARER
+const KIND_MENDER := ActorStore.Kind.MENDER
+const KIND_MINE_LAYER := ActorStore.Kind.MINE_LAYER
+const KIND_SNIPER := ActorStore.Kind.SNIPER
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -308,6 +316,51 @@ func actor_spell(i: int) -> int:
 ## The enemy's telegraph, from the same function that resolves the attack (EI-07). {} when none.
 func telegraph(i: int) -> Dictionary:
 	return EnemyAi.telegraph(_w, i)
+
+
+# --- Horde kinds (v0.4.0 EN) --------------------------------------------------------------------------------------
+## The id of the ally a Mender is healing (its beam's far end), or -1.
+func actor_heal_target(i: int) -> int:
+	if _w.actors.kinds[i] != ActorStore.Kind.MENDER or _w.actors.pick[i] <= 0:
+		return -1
+	return _w.actors.pick[i]
+
+
+## The actor index of an id, or -1 (a Mender's beam finds its patient with it).
+func actor_index(id: int) -> int:
+	return _w.actors.index_of(id)
+
+
+## True for a priority target (the Mender): the view marks it.
+func actor_priority(i: int) -> bool:
+	return EnemyAi.is_priority(_w.actors.kinds[i])
+
+
+## The line a Sniper shoots down (its telegraph's lane), for the shot's tracer.
+func sniper_line(i: int) -> Obb:
+	return EnemyAi.snipe_lane(_w, i)
+
+
+func mine_count() -> int:
+	return _w.mines.size()
+
+
+func mine_id(k: int) -> int:
+	return _w.mines.ids[k]
+
+
+func mine_pos(k: int) -> Vector2:
+	return _w.mines.pos(k)
+
+
+func mine_radius(k: int) -> float:
+	return _w.mines.radius[k]
+
+
+## An armed mine's fuse, 0..1000 (the blast at 1000), or -1 while it lies idle.
+func mine_fuse(k: int) -> int:
+	var m := _w.mines
+	return -1 if m.fuse[k] < 0 else clampi(m.fuse[k] * 1000 / maxi(1, m.fuse_total[k]), 0, 1000)
 
 
 ## A Warden's armour half-arcs (1/4096 turns either side of its facing): x = front, y = rear. (0, 0) for others.

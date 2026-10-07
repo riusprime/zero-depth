@@ -41,6 +41,7 @@ func validate() -> Array[ValidationIssue]:
 	_check_keys(issues, "behaviour_params", behaviour_params, schema["params"])
 	if behaviour_id == &"warden":
 		_check_armour(issues)
+	_check_horde(issues)
 	var specs: Array = schema.get("attacks", [{"shape": schema.get("shape"), "shape_params": []}])
 	if attacks.size() != specs.size():
 		issues.append(
@@ -144,6 +145,34 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 				&"armour", resource_path, "rear_mult_permille must be within 1000..3000"
 			)
 		)
+
+
+## The horde kinds (v0.4.0 EN): counts, heals and times that must be positive, and a shield arc within 0..360.
+func _check_horde(issues: Array[ValidationIssue]) -> void:
+	var bp := behaviour_params
+	for k in [
+		"split_count",
+		"max_mines",
+		"heal_amount",
+		"heal_period_seconds",
+		"heal_range_m",
+		"mine_life_seconds",
+		"drop_seconds"
+	]:
+		if bp.has(k) and float(bp[k]) <= 0.0:
+			issues.append(
+				ValidationIssue.new(
+					&"not_positive", resource_path, "behaviour_params.%s must be > 0" % k
+				)
+			)
+	if bp.has("shield_arc_degrees"):
+		var arc := float(bp["shield_arc_degrees"])
+		if arc <= 0.0 or arc >= 360.0:
+			issues.append(
+				ValidationIssue.new(
+					&"armour", resource_path, "shield_arc_degrees must be within 0..360"
+				)
+			)
 
 
 func _check_keys(

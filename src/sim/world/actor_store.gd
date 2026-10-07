@@ -4,7 +4,8 @@ extends RefCounted
 ## Kinds are appended, never renumbered, because they are hashed.
 
 ## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi). The
-## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them.
+## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them, then the horde kinds (v0.4.0 EN; SPLITLING is what a
+## Splitter splits into).
 enum Kind {
 	PLAYER,
 	DUMMY,
@@ -17,6 +18,13 @@ enum Kind {
 	SIEGE_ENGINE,
 	ARC_CASTER,
 	BOMB_DRONE,
+	SWARMER,
+	SPLITTER,
+	SPLITLING,
+	SHIELD_BEARER,
+	MENDER,
+	MINE_LAYER,
+	SNIPER,
 }
 
 const TEAM_PLAYER := 0
@@ -108,7 +116,8 @@ var frost_t := PackedInt32Array()
 var frozen_t := PackedInt32Array()
 var freeze_immune := PackedInt32Array()
 ## Enemy AI (v0.3.5 AI): the current attack's windup in ticks (drawn per attack), and which attack an enemy with
-## several (the Arc Caster) is winding up.
+## several (the Arc Caster) is winding up. v0.4.0 EN: a Mender's pick is the id it heals (0 = none), a Sniper's 1
+## while it relocates.
 var windup := PackedInt32Array()
 var pick := PackedInt32Array()
 

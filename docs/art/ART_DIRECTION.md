@@ -138,6 +138,21 @@ hit it there). Telegraphs: the bolt's line carries a bright core, the rune an in
 bomb's circle a cross-hair and the bomb itself arcing down to it as the circle fills. Flash materials come from
 `ActorViews.flashable` (emission on at energy 0; nothing toggles `emission_enabled` at runtime).
 
+**Horde enemies (v0.4.0 EN; code-built in the same style, no sheet yet; `HordeAvatar`, `HordeVisuals`).** **Swarmer**
+— a tiny red beetle on six grey legs with a grey head, a red slit eye and bone mandibles that open through its
+windup. **Splitter** — two red half-bodies (a light and a dark red hexagonal frustum, grey caps) pressed over a
+glowing hostile-orange seam that gapes as it winds up, grey claws with bone tips; a **Splitling** is the same at 0.62
+scale. **Shield Bearer** — a squat grey body under a red helm with a red visor, dark legs, and a tall light-grey tower
+shield (red rim and stripe) on its front; the shield draws back through the windup and slams forward on the bash; a
+blocked hit sparks pale blue (the guard's block spark). **Mender** — a floating red robe and grey hood holding up a
+heal crystal, with a spinning cross over it (the priority mark), both **pale green `#7CF29A`** (the heal colour: not
+a reserved role); its heal beam is the same green, pulsing, from the crystal to its patient. **Mine Layer** — a low
+red crawler on dark treads with a grey dome, a red eye and a rear hopper holding a dark mine; a mine on the floor is
+a dark disc with a blinking red light inside a faint hostile ring (its circle), and an armed mine's circle fills as a
+telegraph with a turning spiked star. **Sniper** — a red box body on a grey tripod with a long light-grey barrel and
+a red scope that glows hotter through the windup; its line carries the bolt's bright core and its shot leaves a
+hostile-yellow tracer. The Shield Bearer's bash lane carries two chevrons pointing down it.
+
 **Bosses (owner, 2026-10-07).** The reference is [`first-three-bosses-concept.png`](first-three-bosses-concept.png): **Stone Sentinel** (colossal grey boulder golem, huge stacked stone fists, a spiky faceted red crown and back shell with a red visor slot and glowing red cracks on the back), **Crawler Queen** (a red faceted hood carapace with a red hex visor, a huge red egg sac of glowing spheres with spikes, many grey legs with long bone talons), **Fortress Turret** (a red armoured box hull with red slit eyes, a long grey main cannon with a vented muzzle, two back mortar tubes with red glow, four heavy grey mechanical legs). Matched as close to 1:1 as possible (PLAN v0.3.0 L10).
 
 ## 5. Pipeline
