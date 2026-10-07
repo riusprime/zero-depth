@@ -79,7 +79,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var into := Kin.dir(f.boss_door_angle)
 	var walls_before := w.walls.size()
 	var sealed: bool = await _walk(
-		e, f.boss_door_center + into * 3.0, func() -> bool: return w.boss_flow.door_sealed(), into
+		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into
 	)
 	assert_true(sealed, "walking past the boss door seals it")
 	if not sealed:

@@ -8,6 +8,11 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
+## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
+const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
+const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
+const MOTION_THRUST := SwingStep.Motion.THRUST
+const MOTION_SPIN := SwingStep.Motion.SPIN
 ## Item kinds, for views (presentation may not name ItemTable).
 const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
 const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
@@ -124,13 +129,43 @@ func combo_step() -> int:
 	return _w.combo_step
 
 
-## The arc of the current swing, for drawing: [half_arc, reach_m, own_radius_m]. Same numbers PlayerKit hits with.
-func swing_shape() -> Array:
-	return [_w.player.swing_half_arc, swing_reach_m(), _w.player.radius_m]
+## The arc of combo step `step` (-1 = the current swing's), for drawing: [half_arc, reach_m, own_radius_m]. Same
+## numbers PlayerKit hits with (EI-07).
+func swing_shape(step: int = -1) -> Array:
+	var s := _step_index(step)
+	return [_w.player.combo[s].half_arc, swing_reach_m(s), _w.player.radius_m]
 
 
+## The current swing's length in ticks (its step's).
 func swing_ticks() -> int:
-	return _w.player.swing_ticks
+	return PlayerKit.current_step(_w).ticks
+
+
+## The current swing's step: how the blade moves (SwingStep.Motion), how long it takes to cross the arc, the tick
+## it hits on.
+func swing_motion() -> int:
+	return PlayerKit.current_step(_w).motion
+
+
+func swing_sweep_ticks() -> int:
+	return PlayerKit.current_step(_w).sweep_ticks
+
+
+func swing_active_tick() -> int:
+	return PlayerKit.current_step(_w).active_tick
+
+
+## Steps in the melee combo, and whether step `step` (-1 = the current swing's) is its finisher.
+func combo_length() -> int:
+	return _w.player.combo.size()
+
+
+func is_finisher(step: int = -1) -> bool:
+	return PlayerKit.is_finisher(_w, _step_index(step))
+
+
+func _step_index(step: int) -> int:
+	return step if step >= 0 else _w.combo_step
 
 
 func shooting() -> bool:
@@ -376,12 +411,13 @@ func burn_stacks(actor_i: int) -> int:
 	return _w.actors.burn_stacks[actor_i]
 
 
-## The swing's reach with Long Edge applied: the same number PlayerKit hits with (EI-07).
-func swing_reach_m() -> float:
-	return ItemEffects.swing_reach_m(_w)
+## The reach of combo step `step` (-1 = the current one) with Long Edge applied: the same number PlayerKit hits
+## with (EI-07).
+func swing_reach_m(step: int = -1) -> float:
+	return ItemEffects.swing_reach_m(_w, _step_index(step))
 
 
-## Overcharge: the next swing will be the Nth (charged) one.
+## Overcharge: a press now would start the charged swing (the finisher, with the four-slash combo).
 func overcharge_ready() -> bool:
 	return ItemEffects.overcharge_ready(_w)
 
@@ -400,14 +436,18 @@ func shockwave_radius_m() -> float:
 	return _w.item_mods.shockwave_radius_m
 
 
-## Twin Arc: an echo swing is pending, its angle, and the tick the last echo swung (-1 = never). The echo uses
-## swing_shape() with this angle.
+## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
+## uses swing_shape(echo_step()) with this angle.
 func echo_pending() -> bool:
 	return _w.echo_t > 0
 
 
 func echo_angle() -> int:
 	return _w.echo_angle
+
+
+func echo_step() -> int:
+	return _w.echo_step
 
 
 func echo_tick() -> int:
@@ -610,3 +650,15 @@ func boss_id() -> int:
 ## How far p is past the boss door's line, into the boss room (negative on the host side).
 func boss_door_depth(p: Vector2) -> float:
 	return _w.floor_layout.boss_door_depth(p) if _w.floor_layout != null else 0.0
+
+
+# --- Walls with thickness (v0.3.0 A) ------------------------------------------------------------------------
+
+
+## The generated floor's footprint, for the stage's ground: each room's cells (its thick walls and doorways
+## included) and the outer half of each outer wall. Empty without a floor.
+func floor_ground() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if _w.floor_layout != null:
+		out.append_array(_w.floor_layout.ground)
+	return out

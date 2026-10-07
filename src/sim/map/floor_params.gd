@@ -1,11 +1,13 @@
 class_name FloorParams
 extends RefCounted
-## Starting values for one generated floor (v0.2.0 PLAN L5, L14-L15). Lengths in sim metres; the generator draws
-## lengths in whole centimetres from the `map` stream.
+## Starting values for one generated floor (v0.2.0 PLAN L5, L14-L15; v0.3.0 PLAN L1-L2). Lengths in sim metres;
+## the generator draws lengths in whole centimetres from the `map` stream.
 
-## Interior size of one grid cell (wall face to wall face). A room of w x h cells spans the walls between its
-## cells, so its interior is w * pitch - 2 * wall_half wide (pitch = cell_size + 2 * wall_half).
-var cell_size := Vector2(12.0, 10.0)
+## The cell size, drawn per floor (each axis) from this range. Grid lines lie cell_size + wall_half_min +
+## wall_half_max apart, and each room side is inset from its grid line by its own drawn half, so a one-cell
+## room's interior (wall face to wall face) averages cell_size and is within 1.2 m of it either way.
+var cell_size_min := Vector2(11.0, 9.0)
+var cell_size_max := Vector2(14.0, 11.0)
 ## The start hall: one big room of this many cells, with no partitions inside.
 var hall_cells := Vector2i(3, 3)
 ## Rooms on the floor, the hall included, inclusive range.
@@ -28,15 +30,24 @@ var footprint_weights := PackedInt32Array([30, 14, 14, 8, 8, 10, 5, 5, 3])
 var max_span := 8
 ## Random placements tried for each room after the hall before giving up on the floor's room count.
 var place_attempts := 400
-## Half-thickness of every outer and partition wall.
-var wall_half := 0.4
-## Width of a doorway gap.
-var door_width := 2.6
-## How far a doorway may slide from the middle of its cell edge, either way.
-var door_jitter := 2.0
+## Wall thickness (v0.3.0 L1). Each room side draws a half from this range: the wall material from its face out to
+## its grid line. A partition is the two rooms' halves (0.6-5.0 m thick); an outer wall is twice its room's half
+## (0.6-5.0 m), half inside the grid line and half outside. Owner, 2026-10-07, "Thicker room walls": the blink stays
+## 5 m and the thickest walls can't be crossed even from point-blank (starting value; was 1.5).
+var wall_half_min := 0.3
+var wall_half_max := 2.5
+## Doorway width, drawn per doorway (v0.3.0 L2).
+var door_width_min := 2.2
+var door_width_max := 3.4
+## A doorway keeps this far from the corners of both rooms it joins; within that it lies anywhere along the
+## stretch of wall the two rooms share.
+var door_corner_margin := 0.6
 ## Extra doorways beyond the tree (between rooms that already touch), inclusive range.
 var extra_links_min := 1
 var extra_links_max := 2
+## Interior templates: the chance (permille) that a template is mirrored or turned a quarter turn where that
+## changes it (v0.3.0 L2; RoomInterior).
+var template_flip_permille := 500
 ## Scattered-slab template: slabs per cell, inclusive range, capped; their shape. Angles are multiples of 512.
 var scatter_per_cell_min := 1
 var scatter_per_cell_max := 2

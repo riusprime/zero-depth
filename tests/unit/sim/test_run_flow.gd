@@ -148,12 +148,12 @@ func test_entering_the_boss_room_seals_it_and_starts_the_boss() -> void:
 	CombatLab.idle(w, 5)
 	assert_eq(w.boss_flow.state, BossFlow.State.WAITING)
 	# Standing in the doorway does not seal it.
-	w.actors.set_pos(0, f.boss_door_center + _into(w) * 0.3)
+	w.actors.set_pos(0, f.boss_door_center)
 	w.vel = Vector2.ZERO
 	CombatLab.idle(w, 2)
 	assert_eq(w.boss_flow.state, BossFlow.State.WAITING, "the doorway itself doesn't seal it")
 	assert_false(w.boss_alive())
-	w.actors.set_pos(0, f.boss_door_center + _into(w) * 2.5)
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT, "past the door line, the fight starts")
 	assert_eq(w.walls.size(), walls_before + 1, "the door's collider joined the walls")
@@ -170,7 +170,7 @@ func test_entering_the_boss_room_seals_it_and_starts_the_boss() -> void:
 func test_the_sealed_door_holds_and_spawns_stop() -> void:
 	var w := _floor_world(32)
 	var f := w.floor_layout
-	w.actors.set_pos(0, f.boss_door_center + _into(w) * 2.5)
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
 	var boss := w.boss_id
@@ -189,13 +189,13 @@ func test_the_sealed_door_holds_and_spawns_stop() -> void:
 	assert_eq(spawned, 0, "no normal spawns while the boss room is sealed")
 	assert_eq(w.run_ticks, ticks + 900, "the floor's clock keeps running")
 	# Walk back into the door from inside: it holds.
-	w.actors.set_pos(0, f.boss_door_center + _into(w) * 1.5)
+	w.actors.set_pos(0, f.boss_door_inside(0.6))
 	var frame := InputFrame.new()
 	var back := -_into(w)
 	frame.move = Vector2i(roundi(back.x * SimTick.MOVE_MAX), roundi(back.y * SimTick.MOVE_MAX))
 	for k in 120:
 		w.step(frame)
-	assert_gt(f.boss_door_depth(w.player_pos()), 0.0, "the sealed door keeps you in")
+	assert_true(f.rooms[f.boss_room].has_point(w.player_pos()), "the sealed door keeps you in")
 
 
 func test_the_boss_dying_opens_the_portal_and_the_portal_ends_the_floor() -> void:
@@ -203,7 +203,7 @@ func test_the_boss_dying_opens_the_portal_and_the_portal_ends_the_floor() -> voi
 	w.floor_count = 3  # floor 1 of a three-floor run
 	var f := w.floor_layout
 	var reader := WorldReader.new(w)
-	w.actors.set_pos(0, f.boss_door_center + _into(w) * 2.5)
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	CombatLab.idle(w, 3)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
@@ -255,7 +255,82 @@ func test_same_seed_same_boss_flow() -> void:
 	var hashes: Array[String] = []
 	for k in 2:
 		var w := _floor_world(35)
-		w.actors.set_pos(0, w.floor_layout.boss_door_center + _into(w) * 2.5)
+		w.actors.set_pos(0, w.floor_layout.boss_door_inside(1.5))
 		CombatLab.idle(w, 120)
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1])
+
+
+# --- blink and the boss room (v0.3.0 B2) -------------------------------------------------------------------
+
+
+## A floor whose boss door (the shared wall) is at most `max_depth` thick, with the player on Blink.
+func _blink_floor(max_depth: float) -> World:
+	for s in 60:
+		var f := FloorGenerator.generate(700 + s)
+		BossRoomBuilder.attach(f)
+		if f.door_depths[f.boss_door_index] <= max_depth:
+			var w := _floor_world(700 + s)
+			w.player.utility = PlayerTable.Utility.BLINK
+			return w
+	return null
+
+
+func _blink(w: World, dir: Vector2) -> void:
+	w.vel = Vector2.ZERO
+	w.step(InputFrame.make(Vector2i.ZERO, Kin.angle_of(dir), 1000, 0, InputFrame.UTILITY))
+
+
+func test_blink_never_enters_the_boss_room_through_its_wall() -> void:
+	var w := _blink_floor(3.2)
+	assert_not_null(w, "a floor with a thin boss wall")
+	if w == null:
+		return
+	var f := w.floor_layout
+	var host := f.rooms[f.boss_host_room]
+	var into := _into(w)
+	var along := Vector2(-into.y, into.x)
+	var width := f.door_widths[f.boss_door_index]
+	var face := f.boss_door_outside(0.0)
+	var tried := 0
+	for k: float in [-1.0, 1.0]:
+		# Beside the door, still against the shared wall: through it, the free floor beyond is within range.
+		var at := face + along * k * (width * 0.5 + 1.2) - into * 0.4
+		if not host.has_point(at) or not f.boss_cells_rect.has_point(at + into * 4.6):
+			continue
+		tried += 1
+		w.actors.set_pos(0, at)
+		w.blink_cd = 0
+		_blink(w, into)
+		assert_false(
+			f.boss_cells_rect.has_point(w.player_pos()), "no blink through the boss room's wall"
+		)
+	assert_gt(tried, 0, "a spot beside the door against the shared wall")
+
+
+func test_blink_through_the_open_doorway_is_allowed() -> void:
+	var w := _blink_floor(3.2)
+	if w == null:
+		return
+	var f := w.floor_layout
+	w.actors.set_pos(0, f.boss_door_outside(0.4))
+	_blink(w, _into(w))
+	assert_true(f.boss_cells_rect.has_point(w.player_pos()), "straight through the open door")
+
+
+func test_blink_never_leaves_or_enters_the_sealed_boss_room() -> void:
+	var w := _blink_floor(3.2)
+	if w == null:
+		return
+	var f := w.floor_layout
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
+	CombatLab.idle(w, 1)
+	assert_true(w.boss_flow.door_sealed())
+	w.actors.set_pos(0, f.boss_door_inside(0.4))
+	w.blink_cd = 0
+	_blink(w, -_into(w))
+	assert_true(f.boss_cells_rect.has_point(w.player_pos()), "no blink out through the sealed door")
+	w.actors.set_pos(0, f.boss_door_outside(0.4))
+	w.blink_cd = 0
+	_blink(w, _into(w))
+	assert_false(f.boss_cells_rect.has_point(w.player_pos()), "and none in from outside")

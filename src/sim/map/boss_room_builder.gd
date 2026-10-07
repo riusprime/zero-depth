@@ -3,22 +3,27 @@ extends RefCounted
 ## The boss room (v0.3.0 PLAN L4, "Boss room and portal"): after FloorGenerator.generate, a room of the boss's size
 ## (BossArenaSpec.cells, in grid cells) is attached to the farthest room through one doorway, the boss door, and the
 ## stone gate moves into it, against the wall opposite the door. The room sits on free grid cells (it never overlaps
-## another room), so it is walled like any room: new walls where it borders nothing, the existing wall where it
-## borders a room, cut for the door. Its interior comes from the spec's template (FloorLayout.Template; OPEN by
-## default), kept only where it leaves the door, the gate and the room whole. If no side of the farthest room has
-## free cells for it, the next farthest room hosts it (a room on the floor's edge always has a free side).
-## Draws come from the `boss_room` stream, never `map`, so the rest of the floor is unchanged. Pure sim code.
+## another room) and follows the generator's wall-thickness model (v0.3.0 L1): each side's half is drawn from
+## wall_half_min..wall_half_max, except the side shared with the host, which keeps the host's half (the host's outer
+## skin there becomes the boss room's frame, so the shared wall is twice the host side's half); a side is thickened
+## where a neighbour's skin reaches further into its cells. Its frame strips (interior out to the grid lines) and its
+## outer skins are added where no wall stands yet, and the door is cut through the full thickness. Its cells and new
+## skins join FloorLayout.ground. Its interior comes from the spec's template (OPEN by default), kept only where it
+## leaves the door, the gate and the room whole. If no side of the farthest room has free cells for it, the next
+## farthest room hosts it (a room on the floor's edge always has a free side). Draws come from the `boss_room`
+## stream, never `map`, so the rest of the floor is unchanged. Pure sim code.
 
-## The boss door's gap (m), wider than a normal doorway so it reads as the way on.
+## The boss door's gap (m), wider than most doorways so it reads as the way on.
 const DOOR_WIDTH := 3.0
 const _STEPS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
 ## The gate's facing on the boss room's +X, +Y, -X, -Y wall (it faces into the room).
 const _SIDE_ANGLES := [2048, 3072, 0, 1024]
 ## The boss needs this much clear floor around where it appears.
 const _SPAWN_CLEAR := 1.5
-## Host spawn points closer than this to the boss door are dropped (no enemy appears in the doorway).
+## Host spawn points closer than this to the boss door's host face are dropped (no enemy appears in the doorway).
 const _HOST_SPAWN_CLEAR := 3.0
 const _DOOR_APPROACH := 1.4
+const _SLIVER := 0.01
 const _NONE := -1
 
 
@@ -32,36 +37,74 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	var host: int = place[0]
 	var rect: Rect2i = place[1]
 	var side: int = place[2]
-	var door := _door_center(f, f.room_cells[host], rect, side)
-	var hw := p.wall_half
-	var interior := Rect2(
-		f.grid_origin + Vector2(rect.position) * f.cell_pitch + Vector2(hw, hw),
-		Vector2(rect.size) * f.cell_pitch - Vector2(hw, hw) * 2.0
-	)
-	# Walls: the structural ones (cut for the door, plus the boss room's own), then every interior piece.
+	var cell := _cell_rect(f, rect)
 	var structural: Array[Obb] = []
+	for i in f.slab_first:
+		structural.append(f.walls[i])
+	# Halves: drawn, the host side's from the host, then thickened past any wall already in the cells.
+	var halves := PackedFloat64Array()
+	for k in 4:
+		halves.append(rng.range_int(_cm(p.wall_half_min), _cm(p.wall_half_max)) / 100.0)
+	var back := (side + 2) % 4
+	halves[back] = f.room_halves[host * 4 + side]
+	halves = _thicken(cell, halves, structural)
+	var interior := _inset(cell, halves)
+	# The door: across the shared stretch's middle, from the host's face to the boss room's.
+	var door := _door_rect(f, host, side, interior)
+	var width := door.size.x if side % 2 == 1 else door.size.y
+	var door_center := door.get_center()
+	var host_face := door_center - Kin.dir(side * 1024) * _depth(door, side) * 0.5
 	var pieces: Array[Obb] = []
-	for i in f.walls.size():
-		if i < f.slab_first:
-			structural.append(f.walls[i])
-		elif Collide.circle_vs_obb(door, p.door_clear_radius, f.walls[i]) == Vector2.ZERO:
+	for i in range(f.slab_first, f.walls.size()):
+		if Collide.circle_vs_obb(host_face, p.door_clear_radius, f.walls[i]) == Vector2.ZERO:
 			pieces.append(f.walls[i])  # a host piece in the door's way is dropped
-	f.boss_door_wall = _cut_door(structural, door, side)
-	structural.append_array(_new_walls(f, p, rect))
+	# The frame and skins, where no wall stands yet; then the door cut through everything on its rect.
+	var blockers: Array[Rect2] = []
+	for w in structural:
+		blockers.append(w.bounds())
+	var fresh: Array[Rect2] = []
+	for strip in _strips(cell, interior):
+		fresh.append_array(_subtract_all(strip, blockers))
+	var skins := _skins(f, rect, cell, halves)
+	for skin in skins:
+		fresh.append_array(_subtract_all(skin, blockers))
+	for r in fresh:
+		if r.size.x > _SLIVER and r.size.y > _SLIVER:
+			structural.append(Obb.make(r.get_center(), r.size * 0.5, 0))
+	structural = _cut(structural, door)
+	# Ground: the room's cells and its skins, less what is already ground.
+	var ground_new: Array[Rect2] = [cell]
+	ground_new.append_array(skins)
+	for g in ground_new:
+		for r in _subtract_all(g, f.ground):
+			if r.size.x > _SLIVER and r.size.y > _SLIVER:
+				f.ground.append(r)
 	var boss := f.room_count()
 	f.rooms.append(interior)
+	f.room_halves.append_array(halves)
 	f.room_cells.append(rect)
 	f.room_template.append(s.template)
 	f.spawn_points.append(PackedVector2Array())
 	f.hops.append(f.hops[host] + 1)
 	f.door_rooms.append(Vector2i(host, boss))
-	f.door_centers.append(door)
+	f.door_centers.append(door_center)
 	f.door_angles.append(side * 1024)
+	f.door_widths.append(width)
+	f.door_depths.append(_depth(door, side))
 	f.boss_room = boss
 	f.boss_host_room = host
-	f.boss_door_center = door
+	f.boss_door_index = f.door_centers.size() - 1
+	f.boss_door_center = door_center
 	f.boss_door_angle = side * 1024
-	f.boss_door_width = DOOR_WIDTH
+	f.boss_door_width = width
+	f.boss_cells_rect = cell
+	var seal := door.grow_individual(
+		0.05 if side % 2 == 1 else 0.0,
+		0.05 if side % 2 == 0 else 0.0,
+		0.05 if side % 2 == 1 else 0.0,
+		0.05 if side % 2 == 0 else 0.0
+	)
+	f.boss_door_wall = Obb.make(seal.get_center(), seal.size * 0.5, 0)
 	_place_gate(f, interior, side)
 	f.walls = structural
 	f.slab_first = structural.size()
@@ -70,11 +113,208 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	f.boss_spawn = _spawn_spot(f, p)
 	var kept := PackedVector2Array()
 	for q in f.spawn_points[host]:
-		if Kin.length(q - door) >= _HOST_SPAWN_CLEAR:
+		if Kin.length(q - host_face) >= _HOST_SPAWN_CLEAR:
 			kept.append(q)
 	f.spawn_points[host] = kept
-	_grow_bounds(f, interior.grow(hw))
+	var m := p.wall_half_max
+	f.bounds = f.bounds.merge(cell.grow(m))
+	_grid_extent(f)
 	return boss
+
+
+static func _cm(metres: float) -> int:
+	return roundi(metres * 100.0)
+
+
+## A room's cells in metres, grid line to grid line.
+static func _cell_rect(f: FloorLayout, cells: Rect2i) -> Rect2:
+	var a := f.grid_origin + Vector2(cells.position) * f.cell_pitch
+	var b := f.grid_origin + Vector2(cells.end) * f.cell_pitch
+	return Rect2(a, b - a)
+
+
+static func _inset(cell: Rect2, halves: PackedFloat64Array) -> Rect2:
+	var a := cell.position + Vector2(halves[2], halves[3])
+	var b := cell.end - Vector2(halves[0], halves[1])
+	return Rect2(a, b - a)
+
+
+## The halves, each raised until no existing wall reaches into the interior.
+static func _thicken(
+	cell: Rect2, drawn: PackedFloat64Array, walls: Array[Obb]
+) -> PackedFloat64Array:
+	var halves := drawn.duplicate()
+	var r := _inset(cell, halves)
+	for pass_k in 8:
+		var moved := false
+		for w in walls:
+			var b := w.bounds()
+			if not b.intersects(r.grow(-0.001)):
+				continue
+			# The side whose grid line the wall reaches in from: the least penetration.
+			var depth := [
+				cell.end.x - b.position.x,
+				cell.end.y - b.position.y,
+				b.end.x - cell.position.x,
+				b.end.y - cell.position.y
+			]
+			var best := 0
+			for k in 4:
+				if depth[k] < depth[best]:
+					best = k
+			halves[best] = maxf(halves[best], depth[best])
+			r = _inset(cell, halves)
+			moved = true
+		if not moved:
+			break
+	assert(r.size.x > 4.0 and r.size.y > 4.0, "the boss room's walls ate its interior")
+	return halves
+
+
+## The doorway rect: DOOR_WIDTH along the shared wall (less where the stretch both interiors face is short, keeping
+## door_corner_margin from the corners) at the stretch's middle, from the host's face to the boss room's.
+static func _door_rect(f: FloorLayout, host: int, side: int, interior: Rect2) -> Rect2:
+	var hr := f.rooms[host]
+	var along_x := side % 2 == 1
+	var lo := (
+		maxf(hr.position.x, interior.position.x)
+		if along_x
+		else maxf(hr.position.y, interior.position.y)
+	)
+	var hi := minf(hr.end.x, interior.end.x) if along_x else minf(hr.end.y, interior.end.y)
+	var mid := roundi((lo + hi) * 50.0) / 100.0
+	var a := 0.0
+	var b := 0.0
+	match side:
+		0:
+			a = hr.end.x
+			b = interior.position.x
+		1:
+			a = hr.end.y
+			b = interior.position.y
+		2:
+			a = interior.end.x
+			b = hr.position.x
+		_:
+			a = interior.end.y
+			b = hr.position.y
+	var margin := FloorParams.defaults().door_corner_margin
+	var width := minf(DOOR_WIDTH, floorf((hi - lo - 2.0 * margin) * 100.0) / 100.0)
+	assert(width >= FloorParams.defaults().door_width_min, "the boss door has no room")
+	var half := width * 0.5
+	if along_x:
+		return Rect2(mid - half, a, width, b - a)
+	return Rect2(a, mid - half, b - a, width)
+
+
+## The door's depth through the wall.
+static func _depth(door: Rect2, side: int) -> float:
+	return door.size.y if side % 2 == 1 else door.size.x
+
+
+## The four frame strips from the interior out to the grid lines (the -Y and +Y strips run over the corners).
+static func _strips(c: Rect2, r: Rect2) -> Array[Rect2]:
+	return [
+		Rect2(c.position.x, c.position.y, c.size.x, r.position.y - c.position.y),
+		Rect2(c.position.x, r.end.y, c.size.x, c.end.y - r.end.y),
+		Rect2(c.position.x, r.position.y, r.position.x - c.position.x, r.size.y),
+		Rect2(r.end.x, r.position.y, c.end.x - r.end.x, r.size.y),
+	]
+
+
+## Skins outside the grid lines on every run of side cells with no room beyond, as thick as the side's half; the -Y
+## and +Y skins run over a free corner (as FloorGenerator does).
+static func _skins(
+	f: FloorLayout, rect: Rect2i, cell: Rect2, halves: PackedFloat64Array
+) -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for side in 4:
+		var along_x := side % 2 == 1
+		var along := Vector2i(1, 0) if along_x else Vector2i(0, 1)
+		var first := rect.position
+		if side == 0:
+			first.x = rect.end.x - 1
+		elif side == 1:
+			first.y = rect.end.y - 1
+		var n := rect.size.x if along_x else rect.size.y
+		var h := halves[side]
+		var step := _STEPS[side]
+		var k := 0
+		while k < n:
+			if _room_at(f, first + along * k + step) != _NONE:
+				k += 1
+				continue
+			var k1 := k
+			while k1 < n and _room_at(f, first + along * k1 + step) == _NONE:
+				k1 += 1
+			var c0 := _cell_rect(f, Rect2i(first + along * k, Vector2i.ONE))
+			var c1 := _cell_rect(f, Rect2i(first + along * (k1 - 1), Vector2i.ONE))
+			var lo := c0.position.x if along_x else c0.position.y
+			var hi := c1.end.x if along_x else c1.end.y
+			if along_x:
+				if k == 0 and _free_corner(f, first, step, Vector2i(-1, 0)):
+					lo -= halves[2]
+				if k1 == n and _free_corner(f, first + along * (n - 1), step, Vector2i(1, 0)):
+					hi += halves[0]
+			var line := 0.0
+			match side:
+				0:
+					line = cell.end.x
+				1:
+					line = cell.end.y
+				2:
+					line = cell.position.x - h
+				_:
+					line = cell.position.y - h
+			out.append(Rect2(lo, line, hi - lo, h) if along_x else Rect2(line, lo, h, hi - lo))
+			k = k1
+	return out
+
+
+static func _free_corner(f: FloorLayout, c: Vector2i, out: Vector2i, side_step: Vector2i) -> bool:
+	return _room_at(f, c + side_step) == _NONE and _room_at(f, c + side_step + out) == _NONE
+
+
+## `r` less every blocker (axis-aligned), as up to four pieces per blocker.
+static func _subtract_all(r: Rect2, blockers: Array[Rect2]) -> Array[Rect2]:
+	var parts: Array[Rect2] = [r]
+	for b in blockers:
+		var next: Array[Rect2] = []
+		for q in parts:
+			next.append_array(_subtract(q, b))
+		parts = next
+	return parts
+
+
+static func _subtract(q: Rect2, b: Rect2) -> Array[Rect2]:
+	var i := q.intersection(b)
+	if i.size.x <= _SLIVER or i.size.y <= _SLIVER:
+		return [q]
+	var out: Array[Rect2] = []
+	if i.position.y - q.position.y > _SLIVER:
+		out.append(Rect2(q.position.x, q.position.y, q.size.x, i.position.y - q.position.y))
+	if q.end.y - i.end.y > _SLIVER:
+		out.append(Rect2(q.position.x, i.end.y, q.size.x, q.end.y - i.end.y))
+	if i.position.x - q.position.x > _SLIVER:
+		out.append(Rect2(q.position.x, i.position.y, i.position.x - q.position.x, i.size.y))
+	if q.end.x - i.end.x > _SLIVER:
+		out.append(Rect2(i.end.x, i.position.y, q.end.x - i.end.x, i.size.y))
+	return out
+
+
+## Every axis-aligned wall less the door's rect.
+static func _cut(walls: Array[Obb], door: Rect2) -> Array[Obb]:
+	var out: Array[Obb] = []
+	var gap: Array[Rect2] = [door]
+	for w in walls:
+		var b := w.bounds()
+		if w.angle != 0 or not b.intersects(door):
+			out.append(w)
+			continue
+		for r in _subtract_all(b, gap):
+			if r.size.x > _SLIVER and r.size.y > _SLIVER:
+				out.append(Obb.make(r.get_center(), r.size * 0.5, 0))
+	return out
 
 
 ## [host room, the boss room's cells, the side of the host it sits on], or [] if nothing fits. The farthest room
@@ -94,10 +334,9 @@ static func _choose(f: FloorLayout, p: FloorParams, s: BossArenaSpec, rng: RngSt
 		for side in sides:
 			for size in sizes:
 				for rect in _candidates(f.room_cells[host], size, side, rng):
-					if _overlaps(f, rect):
+					if _overlaps(f, rect) or not _shares_enough(f, p, host, rect, side):
 						continue
-					var door := _door_center(f, f.room_cells[host], rect, side)
-					if _door_clean(f, p, door):
+					if _door_clean(f, p, _host_face(f, host, rect, side)):
 						return [host, rect, side]
 					if fallback.is_empty():
 						fallback = [host, rect, side]
@@ -162,106 +401,43 @@ static func _overlaps(f: FloorLayout, rect: Rect2i) -> bool:
 	return false
 
 
-## The door's centre on the shared wall line: the middle of the cell edges the two rooms share.
-static func _door_center(f: FloorLayout, host: Rect2i, rect: Rect2i, side: int) -> Vector2:
-	var o := f.grid_origin
-	var pitch := f.cell_pitch
-	if side % 2 == 0:
-		var x := host.end.x if side == 0 else host.position.x
-		var y0 := maxi(host.position.y, rect.position.y)
-		var y1 := mini(host.end.y, rect.end.y)
-		return Vector2(o.x + x * pitch.x, o.y + (y0 + y1) * 0.5 * pitch.y)
-	var y := host.end.y if side == 1 else host.position.y
-	var x0 := maxi(host.position.x, rect.position.x)
-	var x1 := mini(host.end.x, rect.end.x)
-	return Vector2(o.x + (x0 + x1) * 0.5 * pitch.x, o.y + y * pitch.y)
+## The host's interior and the boss room's interior (at its thickest walls, wall_half_max a side) share room for
+## the narrowest doorway plus the corner margins.
+static func _shares_enough(
+	f: FloorLayout, p: FloorParams, host: int, rect: Rect2i, side: int
+) -> bool:
+	var hr := f.rooms[host]
+	var c := _cell_rect(f, rect).grow(-p.wall_half_max)
+	var along_x := side % 2 == 1
+	var lo := maxf(hr.position.x, c.position.x) if along_x else maxf(hr.position.y, c.position.y)
+	var hi := minf(hr.end.x, c.end.x) if along_x else minf(hr.end.y, c.end.y)
+	return hi - lo >= p.door_width_min + 2.0 * p.door_corner_margin
 
 
-## No interior piece of the host stands within a doorway's clear radius of the door.
-static func _door_clean(f: FloorLayout, p: FloorParams, door: Vector2) -> bool:
+## Where the door will meet the host's face (the middle of the shared stretch of the host's interior edge).
+static func _host_face(f: FloorLayout, host: int, rect: Rect2i, side: int) -> Vector2:
+	var hr := f.rooms[host]
+	var c := _cell_rect(f, rect)
+	var along_x := side % 2 == 1
+	var lo := maxf(hr.position.x, c.position.x) if along_x else maxf(hr.position.y, c.position.y)
+	var hi := minf(hr.end.x, c.end.x) if along_x else minf(hr.end.y, c.end.y)
+	var mid := (lo + hi) * 0.5
+	match side:
+		0:
+			return Vector2(hr.end.x, mid)
+		1:
+			return Vector2(mid, hr.end.y)
+		2:
+			return Vector2(hr.position.x, mid)
+	return Vector2(mid, hr.position.y)
+
+
+## No interior piece of the host stands within a doorway's clear radius of the door's host face.
+static func _door_clean(f: FloorLayout, p: FloorParams, face: Vector2) -> bool:
 	for i in range(f.slab_first, f.walls.size()):
-		if Collide.circle_vs_obb(door, p.door_clear_radius, f.walls[i]) != Vector2.ZERO:
+		if Collide.circle_vs_obb(face, p.door_clear_radius, f.walls[i]) != Vector2.ZERO:
 			return false
 	return true
-
-
-## Cuts the door's gap out of the structural wall it lies on and returns the collider that seals it (as thick as
-## that wall, a little longer than the gap so it overlaps the cut ends).
-static func _cut_door(structural: Array[Obb], door: Vector2, side: int) -> Obb:
-	var horizontal := side % 2 == 1
-	var half_gap := DOOR_WIDTH * 0.5
-	for i in structural.size():
-		var w := structural[i]
-		if w.angle != 0 or not w.bounds().grow(0.01).has_point(door):
-			continue
-		var b := w.bounds()
-		var lo := b.position.x if horizontal else b.position.y
-		var hi := b.end.x if horizontal else b.end.y
-		var cut := door.x if horizontal else door.y
-		var thick := w.half.y if horizontal else w.half.x
-		var fixed := w.center.y if horizontal else w.center.x
-		structural.remove_at(i)
-		for span: Vector2 in [Vector2(lo, cut - half_gap), Vector2(cut + half_gap, hi)]:
-			if span.y - span.x > 0.001:
-				structural.append(_piece(horizontal, fixed, span.x, span.y, thick))
-		return _piece(horizontal, fixed, cut - half_gap - 0.05, cut + half_gap + 0.05, thick)
-	assert(false, "no wall under the boss door")
-	return null
-
-
-static func _piece(horizontal: bool, fixed: float, lo: float, hi: float, thick: float) -> Obb:
-	var mid := (lo + hi) * 0.5
-	var half := (hi - lo) * 0.5
-	if horizontal:
-		return Obb.make(Vector2(mid, fixed), Vector2(half, thick), 0)
-	return Obb.make(Vector2(fixed, mid), Vector2(thick, half), 0)
-
-
-## Walls on every cell edge of the boss room that borders no room, merged into runs. Each run reaches one wall
-## half past its ends, so the corners are closed.
-static func _new_walls(f: FloorLayout, p: FloorParams, rect: Rect2i) -> Array[Obb]:
-	var out: Array[Obb] = []
-	var hw := p.wall_half
-	var o := f.grid_origin
-	var pitch := f.cell_pitch
-	for side in 4:
-		var horizontal := side % 2 == 1
-		var n := rect.size.x if horizontal else rect.size.y
-		var line := 0.0
-		match side:
-			0:
-				line = o.x + rect.end.x * pitch.x
-			1:
-				line = o.y + rect.end.y * pitch.y
-			2:
-				line = o.x + rect.position.x * pitch.x
-			_:
-				line = o.y + rect.position.y * pitch.y
-		var start := _NONE
-		for k in n + 1:
-			var open := false
-			if k < n:
-				var cell := (
-					Vector2i(rect.position.x + k, rect.position.y)
-					if horizontal
-					else Vector2i(rect.position.x, rect.position.y + k)
-				)
-				if side == 0:
-					cell.x = rect.end.x - 1
-				elif side == 1:
-					cell.y = rect.end.y - 1
-				open = _room_at(f, cell + _STEPS[side]) == _NONE
-			if open and start == _NONE:
-				start = k
-			elif not open and start != _NONE:
-				var base := rect.position.x if horizontal else rect.position.y
-				var step := pitch.x if horizontal else pitch.y
-				var origin := o.x if horizontal else o.y
-				var a := origin + (base + start) * step - hw
-				var b := origin + (base + k) * step + hw
-				out.append(_piece(horizontal, line, a, b, hw))
-				start = _NONE
-	return out
 
 
 static func _room_at(f: FloorLayout, cell: Vector2i) -> int:
@@ -299,6 +475,13 @@ static func _gate_zone(f: FloorLayout) -> Rect2:
 	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
 
 
+## The door's approach point just inside the boss room.
+static func _inner_approach(f: FloorLayout) -> Vector2:
+	var into := Kin.dir(f.boss_door_angle)
+	var depth := f.door_depths[f.boss_door_index]
+	return f.boss_door_center + into * (depth * 0.5 + _DOOR_APPROACH)
+
+
 ## The template's pieces that keep the door, the gate and the middle clear and leave the room one region.
 static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, template: int) -> Array[Obb]:
 	var r := f.rooms[f.boss_room]
@@ -329,7 +512,7 @@ static func _piece_allowed(
 	var b := piece.bounds()
 	if not r.encloses(b) or b.intersects(_gate_zone(f)):
 		return false
-	if Collide.circle_vs_obb(f.boss_door_center, p.door_clear_radius + 1.0, piece) != Vector2.ZERO:
+	if Collide.circle_vs_obb(_inner_approach(f), p.door_clear_radius, piece) != Vector2.ZERO:
 		return false
 	for w in walls:
 		if w.bounds().grow(p.slab_gap).intersects(b):
@@ -343,9 +526,7 @@ static func _whole(f: FloorLayout, p: FloorParams, r: Rect2, walls: Array[Obb]) 
 	reach.build(r, walls, p.nav_clearance)
 	if reach.region_count != 1:
 		return false
-	var inward := Kin.dir(f.boss_door_angle)
-	var approach := f.boss_door_center + inward * (p.wall_half + _DOOR_APPROACH)
-	return reach.region_at(approach) == 0 and reach.region_at(f.portal_front_point()) == 0
+	return reach.region_at(_inner_approach(f)) == 0 and reach.region_at(f.portal_front_point()) == 0
 
 
 ## Where the boss appears: the room's middle, or the open cell nearest it.
@@ -384,8 +565,7 @@ static func _clear(q: Vector2, walls: Array[Obb]) -> bool:
 	return true
 
 
-static func _grow_bounds(f: FloorLayout, r: Rect2) -> void:
-	f.bounds = f.bounds.merge(r)
+static func _grid_extent(f: FloorLayout) -> void:
 	var lo := f.room_cells[0].position
 	var hi := f.room_cells[0].end
 	for c in f.room_cells:

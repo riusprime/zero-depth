@@ -62,7 +62,7 @@ func _amounts(events: Array[SimEvent]) -> Array:
 
 func _swing(w: World, aim: int = 0) -> void:
 	w.step(_f(0, P, aim))
-	_idle(w, w.player.swing_ticks + 2, 0, aim)
+	_idle(w, w.player.step(w.combo_step).ticks + 2, 0, aim)
 
 
 ## The player kills actor i outright with a melee hit (a fresh root).

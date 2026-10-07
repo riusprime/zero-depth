@@ -52,18 +52,18 @@ func _process(_delta: float) -> bool:
 				main.start_stage()
 				_world().actors.invuln[0] = 1 << 24
 				var f := _world().floor_layout
-				_put(f.boss_door_center - Kin.dir(f.boss_door_angle) * 7.5)
+				_put(f.boss_door_outside(6.0))
 				_next()
 		1:
 			if _frames == SETTLE:
 				_shot("1_boss_door_outside")
 				var f := _world().floor_layout
-				_put(f.boss_door_center + Kin.dir(f.boss_door_angle) * 2.5)
+				_put(f.boss_door_inside(1.5))
 				_next()
 		2:
 			if _frames == 4:
 				var f := _world().floor_layout
-				_put(f.boss_door_center + Kin.dir(f.boss_door_angle) * 3.5)
+				_put(f.boss_door_inside(2.5))
 			if _frames == SETTLE:
 				_shot("2_boss_door_sealed")
 				var w := _world()

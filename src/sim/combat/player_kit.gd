@@ -1,8 +1,10 @@
 class_name PlayerKit
 extends RefCounted
 ## The player's attacks and utility (PLAN v0.1.0 Steps 2, 3, 7b). Melee and shooting have separate buttons
-## (owner, 2026-10-07): PRIMARY = a swing (a 3-hit combo); SHOOT held = a bolt every shot_period_ticks.
-## Blink teleports the way you're moving, through walls. Runs in tick phase 4; numbers from PlayerTable.
+## (owner, 2026-10-07): PRIMARY = a swing, the next step of the combo (v0.3.0 L11: four distinct slashes, each its
+## own SwingStep); SHOOT held = a bolt every shot_period_ticks.
+## Blink teleports the way you're moving, through a wall when the far side is within range. Runs in tick phase 4;
+## numbers from PlayerTable.
 
 const PRIMARY_SLOT := 0
 const UTILITY_SLOT := 1
@@ -34,9 +36,14 @@ static func move_or_aim(w: World) -> Vector2:
 	return Kin.dir(Kin.angle_of(mv)) if mv != Vector2.ZERO else Kin.dir(w.aim_angle)
 
 
-## Where a blink lands (owner, 2026-10-07: "a teleport, allowing you to go through walls"): blink_range_m along
-## move_or_aim, through any wall. If that spot overlaps a wall or lies outside the room (another region of the
-## flow field), it steps back toward the start in BLINK_STEP_M increments until it finds a free spot.
+## Where a blink lands (owner, 2026-10-07: "a teleport, allowing you to go through walls"; v0.3.0 L1: "By thickness
+## vs range"). It goes up to blink_range_m along move_or_aim, and it passes through a wall only when a free spot
+## beyond the wall lies within that range; otherwise it ends at the last free spot before the wall. A spot is free
+## when the player's circle touches no wall (the sealed gate's footprint included) and it lies in the NavField
+## region the player walks in, so a blink never ends inside a wall, in the void outside the floor, or in a pocket
+## you can't walk to; it may end in another room, but never across the boss room's boundary except through its
+## open door (v0.3.0 B, World.blink_may_land). So thin cover is crossed at almost any distance and a thick wall
+## only from close up. Samples every BLINK_STEP_M from the far end back: the farthest free one wins (none: stay).
 static func blink_target(w: World) -> Vector2:
 	var t := w.player
 	var from := w.player_pos()
@@ -45,7 +52,11 @@ static func blink_target(w: World) -> Vector2:
 	var steps := int(round(t.blink_range_m / BLINK_STEP_M))
 	for k in range(steps, 0, -1):
 		var at := from + dir * (BLINK_STEP_M * k)
-		if _clear(w, at, t.radius_m) and w.nav.region_near(at) == home:
+		if (
+			_clear(w, at, t.radius_m)
+			and w.nav.region_near(at) == home
+			and w.blink_may_land(from, at)
+		):
 			return at
 	return from
 
@@ -61,20 +72,22 @@ static func advance(w: World) -> void:
 	var t := w.player
 	var can_attack := not w.guarding() and not w.is_dashing()
 	ItemEffects.advance_echo(w)
-	# Swing in progress: hit on its active tick, then end and open the combo window.
+	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
+	# step: the combo starts over).
 	if w.swing_t > 0:
-		if w.swing_t == t.swing_active_tick:
+		var cur := current_step(w)
+		if w.swing_t == cur.active_tick:
 			_resolve_swing(w)
 		w.swing_t += 1
-		if w.swing_t > t.swing_ticks:
+		if w.swing_t > cur.ticks:
 			w.swing_t = 0
-			w.combo_window = t.combo_window_ticks
+			w.combo_window = t.combo_window_ticks if w.combo_step < t.combo.size() - 1 else 0
 	elif w.combo_window > 0:
 		w.combo_window -= 1
 	# A buffered press starts the next swing as soon as the current one ends.
 	if w.swing_t == 0 and can_attack and w.input_buffer[PRIMARY_SLOT] > 0:
 		w.input_buffer[PRIMARY_SLOT] = 0
-		w.combo_step = (w.combo_step + 1) % t.swing_damage.size() if w.combo_window > 0 else 0
+		w.combo_step = next_step(w)
 		w.combo_window = 0
 		w.swing_t = 1
 		w.swing_angle = w.aim_angle
@@ -94,40 +107,75 @@ static func shooting(w: World) -> bool:
 	return (w.held_buttons & InputFrame.SHOOT) != 0 and not w.player_dead()
 
 
+## The step the current (or last) swing is: w.combo_step.
+static func current_step(w: World) -> SwingStep:
+	return w.player.combo[w.combo_step]
+
+
+## The step a press would start now: the next one while a swing runs or the combo window is open, else the first.
+static func next_step(w: World) -> int:
+	if w.swing_t > 0 or w.combo_window > 0:
+		return (w.combo_step + 1) % w.player.combo.size()
+	return 0
+
+
+## The combo's last step (the finisher).
+static func is_finisher(w: World, step: int) -> bool:
+	return step == w.player.combo.size() - 1
+
+
 static func swing_hits(w: World, i: int) -> bool:
 	return arc_hits(w, i, w.swing_angle)
 
 
-## True if a swing arc at `angle` touches actor i. The reach includes Long Edge (ItemEffects.swing_reach_m), the
-## same number WorldReader.swing_shape draws.
-static func arc_hits(w: World, i: int, angle: int) -> bool:
+## True if the arc of combo step `step` (-1 = the current one) at `angle` touches actor i. The reach includes Long
+## Edge (ItemEffects.swing_reach_m), the same numbers WorldReader.swing_shape draws (EI-07).
+static func arc_hits(w: World, i: int, angle: int, step: int = -1) -> bool:
 	var t := w.player
+	var s := step if step >= 0 else w.combo_step
 	return AttackShapes.arc_touches(
 		w.player_pos(),
 		t.radius_m,
 		angle,
-		t.swing_half_arc,
-		ItemEffects.swing_reach_m(w),
+		t.combo[s].half_arc,
+		ItemEffects.swing_reach_m(w, s),
 		w.actors.pos(i),
 		w.actors.radius[i]
 	)
 
 
+## The lunge for this tick (phase 5): the current step's lunge_m spread over the ticks before its hit, along the
+## swing angle. Zero when no swing is running or the step doesn't lunge.
+static func lunge_offset(w: World) -> Vector2:
+	if w.swing_t <= 0:
+		return Vector2.ZERO
+	var s := current_step(w)
+	if s.lunge_m <= 0.0 or w.swing_t > s.lunge_ticks():
+		return Vector2.ZERO
+	return Kin.dir(w.swing_angle) * (s.lunge_m / s.lunge_ticks())
+
+
 static func _resolve_swing(w: World) -> void:
-	var base: int = w.player.swing_damage[w.combo_step]
+	var s := current_step(w)
+	var base := s.damage
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	if swing_arc(w, w.swing_angle, dmg, w.swing_root, &""):
-		w.add_freeze(w.player.swing_hitstop_ticks)
+		w.add_freeze(s.hitstop_ticks)
 	ItemEffects.after_swing(w, base, dmg)
 
 
-## Hits every enemy in the swing arc at `angle` for `dmg` (melee; Ember Edge burns on a landed hit). Used by the
-## swing and by the Twin Arc echo. Returns true if any hit landed.
-static func swing_arc(w: World, angle: int, dmg: int, root: int, effect_id: StringName) -> bool:
+## Hits every enemy in the arc of combo step `step` (-1 = the current one) at `angle` for `dmg` (melee; Ember Edge
+## burns on a landed hit). Used by the swing and by the Twin Arc echo (with its own step). Returns true if any hit
+## landed.
+static func swing_arc(
+	w: World, angle: int, dmg: int, root: int, effect_id: StringName, step: int = -1
+) -> bool:
 	var a := w.actors
 	var landed := false
 	for i in range(1, a.size()):
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1 or not arc_hits(w, i, angle):
+		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
+			continue
+		if not arc_hits(w, i, angle, step):
 			continue
 		var got := Damage.hit(
 			w,

@@ -27,6 +27,7 @@ func test_same_seed_same_boss_room() -> void:
 
 
 func test_the_rest_of_the_floor_is_as_generated() -> void:
+	var same_host := 0
 	for s in 20:
 		var plain := FloorGenerator.generate(_seed(s))
 		var f := _floor(_seed(s))
@@ -36,7 +37,11 @@ func test_the_rest_of_the_floor_is_as_generated() -> void:
 			assert_eq(f.room_cells[room], plain.room_cells[room], tag)
 			assert_eq(f.rooms[room], plain.rooms[room], tag)
 		assert_eq(f.item_spots, plain.item_spots, tag + ": the item spots are untouched")
-		assert_eq(f.boss_host_room, plain.portal_room, tag + ": it opens off the farthest room")
+		if f.boss_host_room == plain.portal_room:
+			same_host += 1
+	assert_gte(
+		same_host, 17, "it opens off the farthest room, but where that room has no free side"
+	)
 
 
 func test_two_hundred_boss_rooms_keep_the_layout_whole() -> void:
@@ -104,6 +109,7 @@ func _check(f: FloorLayout, tag: String) -> void:
 		for b in range(a + 1, f.room_count()):
 			assert_false(f.room_cells[a].intersects(f.room_cells[b]), tag + ": rooms overlap")
 	assert_true(f.bounds.encloses(f.rooms[boss]), tag + ": the bounds hold the boss room")
+	_check_thickness(f, tag)
 	_check_enclosed(f, [f.boss_host_room, boss], tag)
 	var gate := _gate(f)
 	var all: Array[Obb] = f.walls.duplicate()
@@ -117,8 +123,8 @@ func _check(f: FloorLayout, tag: String) -> void:
 	var home := reach.region_at(_other_door_approach(f, host))
 	assert_gte(home, 0, tag)
 	var into := Kin.dir(f.boss_door_angle)
-	var approach := f.boss_door_center - into * 1.6
-	var inside := f.boss_door_center + into * 1.6
+	var approach := f.boss_door_outside(1.6)
+	var inside := f.boss_door_inside(1.6)
 	assert_eq(
 		reach.region_at(approach), home, tag + ": the boss door is reachable from the host's doors"
 	)
@@ -149,36 +155,41 @@ func _check(f: FloorLayout, tag: String) -> void:
 	assert_eq(sealed.region_at(f.portal_front_point()), sealed.region_at(inside), tag)
 
 
-## Every room's wall band is solid but at its doorways (the boss door is wider).
+## A's walled-all-round check (test_floor_generator), on the host and the boss room: just outside each face (the
+## band running round the corners) and deep in the wall (its half less 2 cm) every point is in a structural wall
+## unless it is in a doorway's passage.
 func _check_enclosed(f: FloorLayout, rooms: Array, tag: String) -> void:
-	var hw := FloorParams.defaults().wall_half
 	for room: int in rooms:
-		var band := f.rooms[room].grow(hw)
+		var r := f.rooms[room]
 		var near: Array[Obb] = []
 		for i in f.slab_first:
-			if f.walls[i].bounds().intersects(band.grow(0.1)):
+			if f.walls[i].bounds().intersects(r.grow(6.0)):
 				near.append(f.walls[i])
 		var pts := PackedVector2Array()
-		var nx := int(band.size.x / 0.25)
-		var ny := int(band.size.y / 0.25)
-		for i in nx + 1:
-			var x := band.position.x + band.size.x * i / nx
-			pts.append(Vector2(x, band.position.y))
-			pts.append(Vector2(x, band.end.y))
-		for j in ny + 1:
-			var y := band.position.y + band.size.y * j / ny
-			pts.append(Vector2(band.position.x, y))
-			pts.append(Vector2(band.end.x, y))
+		for depth in 2:
+			for side in 4:
+				var d := 0.15 if depth == 0 else f.room_halves[room * 4 + side] - 0.02
+				var band := r.grow(d)
+				var span := band if depth == 0 else r
+				var along_x := side % 2 == 1
+				var n := int((span.size.x if along_x else span.size.y) / 0.25)
+				for i in n + 1:
+					var t := float(i) / n
+					var x := span.position.x + span.size.x * t
+					var y := span.position.y + span.size.y * t
+					match side:
+						0:
+							pts.append(Vector2(band.end.x, y))
+						1:
+							pts.append(Vector2(x, band.end.y))
+						2:
+							pts.append(Vector2(band.position.x, y))
+						3:
+							pts.append(Vector2(x, band.position.y))
 		for q in pts:
 			var in_door := false
-			for d in f.door_centers.size():
-				var c := f.door_centers[d]
-				var half := (
-					BossRoomBuilder.DOOR_WIDTH * 0.5
-					if d == f.door_centers.size() - 1
-					else FloorParams.defaults().door_width * 0.5
-				)
-				if absf(q.x - c.x) <= half + 0.01 and absf(q.y - c.y) <= half + 0.01:
+			for i in f.door_centers.size():
+				if f.door_rect(i).grow(0.01).has_point(q):
 					in_door = true
 			if in_door:
 				continue
@@ -190,6 +201,48 @@ func _check_enclosed(f: FloorLayout, rooms: Array, tag: String) -> void:
 			if not walled:
 				assert_true(false, "%s: room %d is open at %s" % [tag, room, q])
 				return
+
+
+## The boss room follows the wall-thickness model: its halves within the drawn range, the shared side as thick as
+## the host's (the wall there twice the host side's half), the door through the full wall, the walls never
+## overlapping its interior, and its cells drawn as ground.
+func _check_thickness(f: FloorLayout, tag: String) -> void:
+	var p := FloorParams.defaults()
+	var boss := f.boss_room
+	var side := f.boss_door_angle / 1024
+	for k in 4:
+		assert_between(
+			f.room_halves[boss * 4 + k], p.wall_half_min - 0.001, p.wall_half_max + 0.001, tag
+		)
+	# The shared side keeps at least the host's half (more where another neighbour's skin reaches further into the
+	# boss room's cells along that line), and the door runs from the host's face to the boss room's.
+	var host_half := f.room_halves[f.boss_host_room * 4 + side]
+	var boss_half := f.room_halves[boss * 4 + (side + 2) % 4]
+	assert_gte(boss_half, host_half - 0.001, tag + ": the shared side keeps the host's half")
+	var d := f.boss_door_index
+	assert_almost_eq(
+		f.door_depths[d], host_half * 2.0 + (boss_half - host_half), 0.011, tag + ": face to face"
+	)
+	assert_true(f.rooms[f.boss_host_room].grow(0.01).intersects(f.door_rect(d)), tag)
+	assert_true(f.rooms[boss].grow(0.01).intersects(f.door_rect(d)), tag)
+	assert_between(f.door_widths[d], p.door_width_min, BossRoomBuilder.DOOR_WIDTH, tag)
+	for i in f.slab_first:
+		assert_false(
+			f.walls[i].bounds().intersects(f.rooms[boss].grow(-0.01)),
+			tag + ": a structural wall inside the boss room"
+		)
+		assert_false(
+			f.walls[i].bounds().intersects(f.door_rect(d).grow(-0.01)),
+			tag + ": a wall in the boss door"
+		)
+	var c := f.boss_cells_rect.get_center()
+	var covered := false
+	for g in f.ground:
+		covered = covered or g.has_point(c)
+	assert_true(covered, tag + ": ground under the boss room")
+	assert_true(
+		f.boss_door_wall.bounds().encloses(f.door_rect(d).grow(-0.01)), tag + ": the seal fills it"
+	)
 
 
 func _gate(f: FloorLayout) -> Obb:
