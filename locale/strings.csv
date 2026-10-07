@@ -171,3 +171,17 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+UI_VOLUME_AMBIENCE,Ambience,Ambiente
+UI_CAPTIONS,Captions,Subtítulos
+CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
+CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]
+CAPTION_OVERHEAT,[Overheat alarm],[Alarma de sobrecalentamiento]
+CAPTION_TELEGRAPH_GATEKEEPER,[Warning: the Gatekeeper's attack rumbles],[Aviso: el ataque del Guardián de la Puerta retumba]
+CAPTION_TELEGRAPH_BROOD_MOTHER,[Warning: the Brood Mother chitters],[Aviso: la Madre de la Prole chirría]
+CAPTION_TELEGRAPH_SIEGE_ENGINE,[Warning: the Siege Engine whines as it charges],[Aviso: la Máquina de Asedio zumba al cargar]
+CAPTION_BOSS_STAGGER,[Boss staggered: power drops],[Jefe aturdido: pierde potencia]
+CAPTION_BOSS_PHASE,[Boss roars: a new phase],[El jefe ruge: nueva fase]
+CAPTION_BOSS_DEATH,[Boss destroyed],[Jefe destruido]
+CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de golpe]
+CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
+CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]

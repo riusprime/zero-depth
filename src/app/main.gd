@@ -15,6 +15,8 @@ var view: WorldViewRoot
 var ui := CanvasLayer.new()
 ## The run in progress (null outside one): floors, biome order, carry, totals. _stage_seed is its run seed.
 var run: RunState
+## Sounds, ambience and captions (v0.3.0 AU); it outlives floors so the ambience can crossfade.
+var audio := AudioDirector.new()
 
 var _menu: Control
 var _pause: PauseMenu
@@ -36,6 +38,8 @@ func _ready() -> void:
 	profile = ProfileStore.shared()
 	InputRemap.apply(profile)
 	GameSettings.apply_all(profile)
+	audio.setup(profile)
+	add_child(audio)
 	ui.name = "UI"
 	add_child(ui)
 	_fade.name = "Fade"
@@ -91,6 +95,7 @@ func is_playing() -> bool:
 
 func show_main_menu() -> void:
 	_end_stage()
+	audio.set_ambience(&"")
 	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build())
 	m.play_pressed.connect(show_utility_picker)
 	m.options_pressed.connect(show_options)
@@ -205,6 +210,8 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
 	driver.ticked.connect(view.sync)
+	audio.attach(driver.reader, biome.id)
+	driver.ticked.connect(audio.sync.bind(driver.reader))
 	_hud = Hud.new()
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
@@ -343,6 +350,7 @@ func _end_stage() -> void:
 ## Frees one floor's nodes (driver, view, HUD, panels); the run itself stays.
 func _end_floor() -> void:
 	close_pause()
+	audio.detach()
 	for n in [_hud, _end, _dev, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
