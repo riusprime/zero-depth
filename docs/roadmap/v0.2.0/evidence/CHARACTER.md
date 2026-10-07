@@ -1,4 +1,4 @@
-# The player's hooded wanderer (v0.2.0 G / G2, owner requests 2026-10-07)
+# The player's hooded wanderer (v0.2.0 G / G2 / G3, owner requests 2026-10-07)
 
 **What this proves:** what `PlayerAvatar` (`src/presentation/world_view/player_avatar.gd`) looks like next to the
 owner's detailed character sheet ([`docs/art/main-character-sheet.png`](../../../art/main-character-sheet.png), the
@@ -6,11 +6,74 @@ primary reference), from a sheet-like camera and from the real iso camera (`IsoR
 how it moves in the real game when it's driven by key and mouse events.
 **What it doesn't prove:** whether it looks right or feels good to the owner. Feel and taste are `OWNER ONLY`.
 
-- **Build:** the renders and the suite ran on a working tree based on `dbd4f7d` with this round's changes
-  uncommitted; the committed code and shot script are the ones that ran. Only this doc and the copied PNGs were
-  written after the runs.
+- **Build:** the G3 renders and suite ran on a working tree based on `5608e78` with the G3 changes uncommitted.
+  The committed code and shot script are the ones that ran. Only this doc and the copied PNGs were written after
+  the runs. (G2 ran on `dbd4f7d` the same way.)
 - **Machine:** a cloud container, software Vulkan (llvmpipe), under xvfb. This is not the owner's hardware. On this
   renderer about 4 physics ticks run per rendered frame.
+
+## Round 4 (G3): the coordinator's five-point list, 2026-10-07
+
+The PNGs in this folder are from this round. The G2 section below describes the previous state. Its numbers for
+the hem, the hood and the visor height are superseded by the ones here.
+
+Changes:
+1. **Poncho in the side views:** the front corner is pulled in (reach 0.40 → 0.32 m, against the back corner's
+   0.34 m), so it hangs under the face instead of jutting forward. The side corners flare wider and lower (reach
+   0.47 → 0.50 m, height 0.42 → 0.39 m).
+2. **Hem levels and legs:** the front corner is raised to 0.36 m and the back to 0.37 m. It's still the lowest hem
+   point, which the unit test checks. In the front view the V tip now ends about knee height, and the legs and
+   boots below it are clearly visible.
+3. **Hood:** longer front to back (0.42 → 0.50 m). It sits 3 cm further forward and 2 cm lower (origin at
+   (0.05, 0.91) m). The face plane moved forward with it, and the neck ring's V-neck notch moved forward (x 0.13 →
+   0.19 m) to stay under the chin.
+4. **Hood top:** narrower (half-width 0.13 → 0.10 m), so the hood tapers more toward the top.
+5. **Neck sliver:** a dark collar (`#1E1F24`, both sides) now spans the poncho's neck ring, and the underside darkens
+   to that colour at the neck. Looking into the V-neck from a 3/4 view now shows shadow, not the poncho's lit
+   inside. The light sliver is gone from both rows A and B, as far as I can see in the renders.
+6. **Visor:** lowered to the face's centre height (hood-local y 0.035 → 0.0), so there's black above it as on the
+   sheet. It's still in the face's upper half, which the test checks.
+
+The figure is now about 1.09 m tall. The poncho's span is 1.00 m, about 2.3× the hood's width; the test allows
+1.8–2.4×.
+
+### Per-view state after G3 ([`character_sheet_compare.png`](character_sheet_compare.png))
+
+- **Front:**
+  - Matches: the shield hood with a narrow flat top, the black shield face with the visor centred and black above
+    it, the V-neck, the wide side corners, the front V ending about knee height, and two separate legs with boots
+    clearly visible.
+  - Differs: my hood's sides flare less than the sheet's, so less of the grey side wall shows beside the face. My
+    poncho's lower outline under the side corners is shorter.
+- **Right-front:**
+  - Matches: the forward box hood with the face and visor on its right, and the poncho as a pyramid with the far
+    corner sweeping out low to the left. The front of the poncho no longer juts out.
+  - Differs: the sheet's hood still looks a bit bigger relative to the poncho.
+- **Right:**
+  - Matches: a longer hood box over the poncho with the face at its front edge and the dark chin below. The poncho
+    is a roughly symmetric pyramid, with the near side corner as the lowest point in the middle.
+  - Differs: the sheet's poncho is a little wider front to back, with its front corner reaching just past the face.
+    Mine ends about under the face.
+- **Back-right:**
+  - Matches: the box hood with a narrower top on a ridged pyramid, with the legs and boots visible.
+  - Differs: the sheet shows more of the hood's top.
+- **In-game camera (row B):**
+  - The hood's top face still reads large. It's narrower now but longer, so its area is about the same.
+  - From the front, the legs now show below the V.
+  - The faces turned away from the game's light stay flat grey.
+  - The hood's shadow on the poncho is still jagged on this renderer.
+- **Real-game frames ([`character_motion.png`](character_motion.png)):** the same reading as G2. A cream hooded
+  figure with a dark face and cyan visor; the poncho trails on the walk, streams back on the dash and settles when
+  it stops. The legs show more between the hem and the ring.
+
+Suite for G3: `bash scripts/verify.sh` exited 0, and the summary reported `Tests 210`, `Passing Tests 210`,
+`Asserts 54619`. Its last line was `check_gut_log: ok (210 passing, minimum 210)`.
+
+Lint for G3: `gdformat --check src scripts tests` printed "176 files would be left unchanged". `gdlint src scripts
+tests` printed "Success: no problems found".
+
+Both render commands below were re-run for G3 and printed the same three lines as shown, each followed by
+`exit=0`.
 
 ## Round 3 (G2): rebuilt to the character sheet
 

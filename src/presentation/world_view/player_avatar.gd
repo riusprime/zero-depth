@@ -15,20 +15,20 @@ const LEG_LEN := 0.42
 ## Leg centres sit this far either side of the middle: a gap about one leg wide between them.
 const LEG_GAP := 0.115
 const LEG_W := 0.13
-const NECK_Y := 0.93
+const NECK_Y := 0.91
 ## Hem points: the four diamond corners (front, right, back, left) and a fold point between each pair.
 const CLOAK_SIDES := 8
 ## Hem corner heights and reaches (front, side, back), in metres from the ground / the body axis.
-const HEM_FRONT := Vector2(0.4, 0.29)
-const HEM_SIDE := Vector2(0.47, 0.42)
-const HEM_BACK := Vector2(0.36, 0.3)
+const HEM_FRONT := Vector2(0.32, 0.36)
+const HEM_SIDE := Vector2(0.5, 0.39)
+const HEM_BACK := Vector2(0.34, 0.37)
 ## The hood tips forward, as in the sheet's side view.
 const HOOD_TILT := 0.1
 ## The hood's open front and the face plate recessed behind it (hood-local x).
-const HOOD_HALF_LEN := 0.21
+const HOOD_HALF_LEN := 0.25
 const HOOD_FRONT_SCALE := 0.82
 const HOOD_MID_Y := 0.015
-const FACE_X := 0.19
+const FACE_X := HOOD_HALF_LEN - 0.02
 ## The face's point, below the hood's bottom (hood-local y).
 const CHIN_Y := -0.3
 ## The avatar's rim is thinner than the other actors' (the sheet has a light line, not a heavy one).
@@ -51,6 +51,8 @@ const CLOAK_COLOR := Color("#EBDCCB")
 const HOOD_COLOR := Color("#EBDCCB")
 ## The poncho's underside: the same cream in shade.
 const UNDER_COLOR := Color("#C9B8A6")
+## The poncho's inside at the neck, deep in the hood's shadow.
+const NECK_SHADE := Color("#1E1F24")
 const FACE_COLOR := Color("#15161A")
 const LEG_COLOR := Color("#3A3D44")
 const BOOT_COLOR := Color("#50535B")
@@ -108,7 +110,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(_pelvis)
 	_pelvis.add_child(_head_yaw)
 	hood = Node3D.new()
-	hood.position = Vector3(0.02, NECK_Y - HIP_Y, 0)
+	hood.position = Vector3(0.05, NECK_Y - HIP_Y, 0)
 	_head_yaw.add_child(hood)
 	var shell := _mesh_piece(hood, _hood_mesh(), HOOD_COLOR, outline_color, team, technique)
 	(shell.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -131,7 +133,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.emission_energy_multiplier = 2.4
 	_write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
-	visor.position = Vector3(FACE_X + 0.006, 0.035, 0)
+	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(visor)
 	_build_cloak_rest()
@@ -348,11 +350,11 @@ func _build_cloak_rest() -> void:
 	# Ring order: front, front-right, right, back-right, back, back-left, left, front-left (+Z is the right).
 	# Neck ring (fixed to the body): the V-neck notch under the chin, then up the shoulders under the hood's rim.
 	var neck := [
-		Vector3(0.13, 0.58, 0.0),
-		Vector3(0.08, 0.72, 0.14),
-		Vector3(-0.01, 0.84, 0.2),
-		Vector3(-0.13, 0.85, 0.15),
-		Vector3(-0.19, 0.85, 0.0),
+		Vector3(0.19, 0.57, 0.0),
+		Vector3(0.12, 0.7, 0.14),
+		Vector3(0.0, 0.82, 0.2),
+		Vector3(-0.12, 0.83, 0.15),
+		Vector3(-0.18, 0.83, 0.0),
 	]
 	# Hem ring (springs): the four diamond corners, each pair joined through a fold point a little inside the
 	# straight edge, so every side reads as two big flat facets.
@@ -447,8 +449,21 @@ func _rebuild_cloak() -> void:
 	var colors := PackedColorArray()
 	for j in CLOAK_SIDES:
 		var j2 := (j + 1) % CLOAK_SIDES
-		_tri2(verts, normals, colors, [top[j], top[j2], ring[j]], centre)
-		_tri2(verts, normals, colors, [top[j2], ring[j2], ring[j]], centre)
+		_tri2(verts, normals, colors, [top[j], top[j2], ring[j]], 2, centre)
+		_tri2(verts, normals, colors, [top[j2], ring[j2], ring[j]], 1, centre)
+	# A dark collar across the neck ring, both ways round: looking into the V-neck from a 3/4 view shows shadow,
+	# not the poncho's lit inside.
+	var mid := Vector3.ZERO
+	for p in top:
+		mid += p
+	mid /= top.size()
+	var up := xf.basis.y.normalized()
+	for j in CLOAK_SIDES:
+		var j2 := (j + 1) % CLOAK_SIDES
+		verts.append_array([mid, top[j], top[j2], mid, top[j2], top[j]])
+		normals.append_array([up, up, up, -up, -up, -up])
+		for _k in 6:
+			colors.append(NECK_SHADE)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
@@ -458,12 +473,15 @@ func _rebuild_cloak() -> void:
 	_cloak_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
 
-## One poncho facet, both sides: the outside in cream, the underside (wound the other way) in the shaded cream.
+## One poncho facet, both sides: the outside in cream, the underside (wound the other way) in the shaded cream,
+## darkening to near-black at the neck (the first `tops` points of t), so the inside never shows as a light sliver
+## between the hood and the shoulders.
 static func _tri2(
 	verts: PackedVector3Array,
 	normals: PackedVector3Array,
 	colors: PackedColorArray,
 	t: Array,
+	tops: int,
 	centre: Vector3
 ) -> void:
 	var n0 := verts.size()
@@ -476,9 +494,12 @@ static func _tri2(
 	var d := -n * 0.01
 	verts.append_array([a + d, c + d, b + d])
 	normals.append_array([-n, -n, -n])
-	colors.append_array(
-		[CLOAK_COLOR, CLOAK_COLOR, CLOAK_COLOR, UNDER_COLOR, UNDER_COLOR, UNDER_COLOR]
-	)
+	colors.append_array([CLOAK_COLOR, CLOAK_COLOR, CLOAK_COLOR])
+	for v in [a, c, b]:
+		var at_neck := false
+		for k in tops:
+			at_neck = at_neck or v.is_equal_approx(t[k])
+		colors.append(NECK_SHADE if at_neck else UNDER_COLOR)
 
 
 ## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
@@ -539,8 +560,8 @@ static func _hood_mesh() -> ArrayMesh:
 ## right, bottom left, belt left (+Z is the right).
 static func _hood_ring(x: float, s: float) -> Array:
 	var pts := [
-		Vector3(x, 0.16, -0.13),
-		Vector3(x, 0.16, 0.13),
+		Vector3(x, 0.16, -0.1),
+		Vector3(x, 0.16, 0.1),
 		Vector3(x, -0.04, 0.22),
 		Vector3(x, -0.13, 0.15),
 		Vector3(x, -0.13, -0.15),
