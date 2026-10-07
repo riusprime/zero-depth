@@ -44,7 +44,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 
 ## Design (starting values)
 **Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–3.0 m (map stream); cover slabs and
-pillars stay thin (0.5 m). Blink range stays 4.5 m: a blink toward a wall crosses it when the free landing spot on
+pillars stay thin (0.5 m). Blink range stays 5.0 m (the v0.1.0 data value; this line first said 4.5 m by mistake): a blink toward a wall crosses it when the free landing spot on
 the far side is within range, else it lands short of the wall. The view draws walls at their real thickness.
 Doors: width 2.2–3.4 m, position anywhere along the shared wall (not only centred). Cell size per floor drawn from
 11–14 × 9–11 m. Templates gain parameters (counts, spacing, rotation) and 2 new ones.
