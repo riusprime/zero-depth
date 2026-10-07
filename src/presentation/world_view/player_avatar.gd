@@ -1,28 +1,38 @@
 class_name PlayerAvatar
 extends Node3D
-## The player's hooded wanderer (owner, 2026-10-07; docs/art/main_character_visual_reference.png): a big faceted
-## box hood with a low pyramid roof, a recessed dark face and a small off-centre cyan visor; a tent-shaped cloak
-## (a square frustum, corners on the diagonals, a soft vertical fold down the middle of each side); two short
-## charcoal legs. Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance()
-## animates in frame time, and nothing here feeds back into the sim. The cloak's hem points are damped springs in
-## this node's frame (which never rotates), so they lag behind acceleration and turns, stream back on a dash and
-## settle when the wanderer stops.
-## +X is the front in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
+## The player's hooded wanderer (owner, 2026-10-07; docs/art/main-character-sheet.png, the primary reference): a
+## forward-tipped hood that tapers from a wide, square back to a shield-shaped front (flat top, a point at the
+## chin), a recessed black face of the same shape with a centred landscape cyan visor; a diamond poncho (its hem
+## corners point front, back, left and right; the front corner hangs lowest, a V-neck notch sits under the chin)
+## about twice the hood's width; two chunky charcoal legs with lighter boot blocks. Presentation only (EI-07):
+## sync() reads the sim through WorldReader once per tick, advance() animates in frame time, and nothing here feeds
+## back into the sim. The poncho's hem points are damped springs in this node's frame (which never rotates), so
+## they lag behind acceleration and turns, stream back on a dash and settle when the wanderer stops.
+## +X is the front and +Z the right in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
 
-const HIP_Y := 0.4
-const LEG_LEN := 0.41
-const LEG_GAP := 0.09
-const NECK_Y := 0.95
-const SHOULDER_Y := 0.76
-## Hem points: four corners (on the diagonals) and the four fold points between them.
+const HIP_Y := 0.42
+const LEG_LEN := 0.42
+## Leg centres sit this far either side of the middle: a gap about one leg wide between them.
+const LEG_GAP := 0.115
+const LEG_W := 0.13
+const NECK_Y := 0.93
+## Hem points: the four diamond corners (front, right, back, left) and a fold point between each pair.
 const CLOAK_SIDES := 8
-const HEM_Y := 0.4
-const HEM_R := 0.44
-## The hood is a little smaller than its mesh, sits a little forward and tips forward, as in the reference.
-const HOOD_SCALE := 0.92
-const HOOD_TILT := 0.26
-## The avatar's rim is thinner than the other actors' (the reference has a light line, not a heavy one).
-const OUTLINE_M := 0.018
+## Hem corner heights and reaches (front, side, back), in metres from the ground / the body axis.
+const HEM_FRONT := Vector2(0.4, 0.29)
+const HEM_SIDE := Vector2(0.47, 0.42)
+const HEM_BACK := Vector2(0.36, 0.3)
+## The hood tips forward, as in the sheet's side view.
+const HOOD_TILT := 0.1
+## The hood's open front and the face plate recessed behind it (hood-local x).
+const HOOD_HALF_LEN := 0.21
+const HOOD_FRONT_SCALE := 0.82
+const HOOD_MID_Y := 0.015
+const FACE_X := 0.19
+## The face's point, below the hood's bottom (hood-local y).
+const CHIN_Y := -0.3
+## The avatar's rim is thinner than the other actors' (the sheet has a light line, not a heavy one).
+const OUTLINE_M := 0.014
 ## Walking speed the gait is tuned for (the sim's 6 m/s) and the stride (metres per full two-step cycle).
 const WALK_SPEED := 6.0
 const STRIDE := 1.25
@@ -37,11 +47,13 @@ const SUB_STEP := 1.0 / 120.0
 ## Faster than this between two ticks is a teleport (blink, a new floor), not motion: the dash is ~27 m/s.
 const TELEPORT_SPEED := 40.0
 
-const CLOAK_COLOR := Color("#E9E4DA")
-const HOOD_COLOR := Color("#EFEBE3")
-const FACE_COLOR := Color("#121217")
-const LEG_COLOR := Color("#4A4C56")
-const BOOT_COLOR := Color("#34343B")
+const CLOAK_COLOR := Color("#EBDCCB")
+const HOOD_COLOR := Color("#EBDCCB")
+## The poncho's underside: the same cream in shade.
+const UNDER_COLOR := Color("#C9B8A6")
+const FACE_COLOR := Color("#15161A")
+const LEG_COLOR := Color("#3A3D44")
+const BOOT_COLOR := Color("#50535B")
 
 ## Parts, read by tests and by ActorViews (flash materials).
 var hood: Node3D
@@ -96,8 +108,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(_pelvis)
 	_pelvis.add_child(_head_yaw)
 	hood = Node3D.new()
-	hood.position = Vector3(0.015, NECK_Y - HIP_Y, 0)
-	hood.scale = Vector3.ONE * HOOD_SCALE
+	hood.position = Vector3(0.02, NECK_Y - HIP_Y, 0)
 	_head_yaw.add_child(hood)
 	var shell := _mesh_piece(hood, _hood_mesh(), HOOD_COLOR, outline_color, team, technique)
 	(shell.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -112,7 +123,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	hood.add_child(face)
 	visor = MeshInstance3D.new()
 	var vb := BoxMesh.new()
-	vb.size = Vector3(0.012, 0.1, 0.08)
+	vb.size = Vector3(0.012, 0.085, 0.13)
 	visor.mesh = vb
 	_visor_mat.albedo_color = team
 	_visor_mat.emission_enabled = true
@@ -120,12 +131,15 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.emission_energy_multiplier = 2.4
 	_write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
-	visor.position = Vector3(0.178, 0.02, 0.045)
+	visor.position = Vector3(FACE_X + 0.006, 0.035, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(visor)
 	_build_cloak_rest()
-	cloak = _mesh_piece(self, _cloak_mesh, CLOAK_COLOR, outline_color, team, technique)
-	(cloak.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
+	# The poncho's colour comes from its vertices: cream outside, the shaded cream underneath.
+	cloak = _mesh_piece(self, _cloak_mesh, Color.WHITE, outline_color, team, technique)
+	var cm := cloak.material_override as StandardMaterial3D
+	cm.vertex_color_use_as_albedo = true
+	cm.vertex_color_is_srgb = true
 	_leg_root.position.y = HIP_Y
 	add_child(_leg_root)
 	for side in [-1.0, 1.0]:
@@ -133,17 +147,24 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		pivot.position = Vector3(0, 0, side * LEG_GAP)
 		_leg_root.add_child(pivot)
 		var leg := BoxMesh.new()
-		leg.size = Vector3(0.1, LEG_LEN - 0.05, 0.085)
+		leg.size = Vector3(LEG_W, LEG_LEN - 0.1, LEG_W)
 		var shin := Node3D.new()
-		shin.position.y = -(LEG_LEN - 0.05) * 0.5
+		shin.position.y = -(LEG_LEN - 0.1) * 0.5
 		pivot.add_child(shin)
 		_mesh_piece(shin, leg, LEG_COLOR, outline_color, team, &"outline")
+		# The boot: a slightly larger, lighter block with a low toe stepping out in front.
 		var boot := BoxMesh.new()
-		boot.size = Vector3(0.15, 0.06, 0.095)
+		boot.size = Vector3(LEG_W + 0.025, 0.15, LEG_W + 0.02)
 		var foot := Node3D.new()
-		foot.position = Vector3(0.025, -LEG_LEN + 0.03, 0)
+		foot.position = Vector3(0.0, -LEG_LEN + 0.075, 0)
 		pivot.add_child(foot)
 		_mesh_piece(foot, boot, BOOT_COLOR, outline_color, team, &"outline")
+		var toe := BoxMesh.new()
+		toe.size = Vector3(0.06, 0.055, LEG_W + 0.02)
+		var toe_at := Node3D.new()
+		toe_at.position = Vector3((LEG_W + 0.025) * 0.5 + 0.025, -LEG_LEN + 0.0275, 0)
+		pivot.add_child(toe_at)
+		_mesh_piece(toe_at, toe, BOOT_COLOR, outline_color, team, &"outline")
 		legs.append(pivot)
 	_pose(0.0)
 	_rebuild_cloak()
@@ -240,6 +261,12 @@ func cloak_flare() -> float:
 	return sum / CLOAK_SIDES
 
 
+## The poncho's hem points (diamond corners and the fold points between them) in this node's frame: the front
+## corner first, then round through the body's right. A copy; tests read the shape through it.
+func cloak_hem() -> Array[Vector3]:
+	return _spring_pos.duplicate()
+
+
 ## 0 standing, 1 fully collapsed.
 func slump_amount() -> float:
 	return _slump
@@ -318,25 +345,42 @@ func _pose(dt: float) -> void:
 
 
 func _build_cloak_rest() -> void:
-	# Corners on the diagonals (a tent seen corner-on from 3/4 views, as in the reference), and between them a
-	# point a little proud of the straight edge: a soft vertical fold down the middle of each side. The hem is
-	# nearly level, a few centimetres uneven.
-	var drop := [0.0, 0.0, 0.02, 0.0, -0.015, 0.0, 0.01, 0.0]
+	# Ring order: front, front-right, right, back-right, back, back-left, left, front-left (+Z is the right).
+	# Neck ring (fixed to the body): the V-neck notch under the chin, then up the shoulders under the hood's rim.
+	var neck := [
+		Vector3(0.13, 0.58, 0.0),
+		Vector3(0.08, 0.72, 0.14),
+		Vector3(-0.01, 0.84, 0.2),
+		Vector3(-0.13, 0.85, 0.15),
+		Vector3(-0.19, 0.85, 0.0),
+	]
+	# Hem ring (springs): the four diamond corners, each pair joined through a fold point a little inside the
+	# straight edge, so every side reads as two big flat facets.
+	var corners := [
+		Vector3(HEM_FRONT.x, HEM_FRONT.y, 0.0),
+		Vector3(0.0, HEM_SIDE.y, HEM_SIDE.x),
+		Vector3(-HEM_BACK.x, HEM_BACK.y, 0.0),
+	]
+	var hem: Array[Vector3] = [corners[0], Vector3.ZERO, corners[1], Vector3.ZERO, corners[2]]
+	for k in [1, 3]:
+		var mid: Vector3 = (hem[k - 1] + hem[k + 1]) * 0.5
+		hem[k] = Vector3(mid.x * 0.9, mid.y + 0.02, mid.z * 0.9)
 	for j in CLOAK_SIDES:
-		var a := TAU * (float(j) + 1.0) / CLOAK_SIDES
-		var corner := j % 2 == 0
-		var top_r := 0.2 if corner else 0.15
-		var hem_r := HEM_R if corner else HEM_R * 0.76
-		_top_rest.append(Vector3(cos(a) * top_r, SHOULDER_Y - HIP_Y, -sin(a) * top_r))
-		var y: float = HEM_Y + (0.0 if corner else 0.025) + drop[j]
-		_spring_rest.append(Vector3(cos(a) * hem_r, y - HIP_Y, -sin(a) * hem_r))
+		# Mirror the right half (0..4) onto the left (5..7).
+		var m := j if j <= 4 else CLOAK_SIDES - j
+		var flip := 1.0 if j <= 4 else -1.0
+		var n: Vector3 = neck[m]
+		var h: Vector3 = hem[m]
+		_top_rest.append(Vector3(n.x, n.y - HIP_Y, n.z * flip))
+		_spring_rest.append(Vector3(h.x, h.y - HIP_Y, h.z * flip))
 		_spring_pos.append(Vector3.ZERO)
 		_spring_vel.append(Vector3.ZERO)
 		_spring_target.append(Vector3.ZERO)
 
 
 func _cloak_frame() -> Transform3D:
-	var yaw := Basis(Vector3.UP, _leg_yaw + _twist * 0.35)
+	# The front corner and the V-neck point where the wanderer faces, under the hood; a swing twists them a little.
+	var yaw := Basis(Vector3.UP, _body_yaw + _twist * 0.35)
 	return Transform3D(_pelvis.basis * yaw, _pelvis.position)
 
 
@@ -397,19 +441,44 @@ func _rebuild_cloak() -> void:
 		p.y += Vector2(off.x, off.z).length_squared() * 1.6
 		p.y = maxf(p.y, 0.03)
 		ring.append(p)
-	var centre := xf * Vector3(0, (SHOULDER_Y + HEM_Y) * 0.5 - HIP_Y, 0)
+	var centre := xf * Vector3(0, 0.62 - HIP_Y, 0)
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
+	var colors := PackedColorArray()
 	for j in CLOAK_SIDES:
 		var j2 := (j + 1) % CLOAK_SIDES
-		_tri(verts, normals, top[j], top[j2], ring[j], centre)
-		_tri(verts, normals, top[j2], ring[j2], ring[j], centre)
+		_tri2(verts, normals, colors, [top[j], top[j2], ring[j]], centre)
+		_tri2(verts, normals, colors, [top[j2], ring[j2], ring[j]], centre)
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR] = colors
 	_cloak_mesh.clear_surfaces()
 	_cloak_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
+
+## One poncho facet, both sides: the outside in cream, the underside (wound the other way) in the shaded cream.
+static func _tri2(
+	verts: PackedVector3Array,
+	normals: PackedVector3Array,
+	colors: PackedColorArray,
+	t: Array,
+	centre: Vector3
+) -> void:
+	var n0 := verts.size()
+	_tri(verts, normals, t[0], t[1], t[2], centre)
+	var a := verts[n0]
+	var b := verts[n0 + 1]
+	var c := verts[n0 + 2]
+	var n := normals[n0]
+	# A centimetre inside, so the two sides never share a depth (no shadow acne between them).
+	var d := -n * 0.01
+	verts.append_array([a + d, c + d, b + d])
+	normals.append_array([-n, -n, -n])
+	colors.append_array(
+		[CLOAK_COLOR, CLOAK_COLOR, CLOAK_COLOR, UNDER_COLOR, UNDER_COLOR, UNDER_COLOR]
+	)
 
 
 ## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
@@ -446,58 +515,60 @@ static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
 	return m
 
 
-## The hood: a box whose lower sides and back taper in (the rounded look of the reference), under a low
-## four-faced roof whose peak sits a little toward the back. The front is open; the dark face sits in it.
+## The hood: a six-sided box, narrow at the top, widest at a belt a little below the middle and bevelled in under
+## it, that tapers slightly toward the open front; under the face its bottom is cut back. Closed at the back; the
+## dark face sits in the front opening. +X is the front; the node tips it forward.
 static func _hood_mesh() -> ArrayMesh:
-	var lo := [
-		Vector3(0.2, -0.2, -0.16),
-		Vector3(0.2, -0.2, 0.16),
-		Vector3(-0.15, -0.2, 0.16),
-		Vector3(-0.15, -0.2, -0.16)
-	]
-	var mid := [
-		Vector3(0.2, -0.07, -0.2),
-		Vector3(0.2, -0.07, 0.2),
-		Vector3(-0.2, -0.07, 0.2),
-		Vector3(-0.2, -0.07, -0.2)
-	]
-	var hi := [
-		Vector3(0.2, 0.15, -0.2),
-		Vector3(0.2, 0.15, 0.2),
-		Vector3(-0.19, 0.14, 0.19),
-		Vector3(-0.19, 0.14, -0.19)
-	]
-	var peak := Vector3(-0.09, 0.21, 0.0)
+	var back := _hood_ring(-HOOD_HALF_LEN, 1.0)
+	var front := _hood_ring(HOOD_HALF_LEN, HOOD_FRONT_SCALE)
+	# Under the face the hood's bottom stops short of the front, so the face's point hangs clear of it.
+	for k in [3, 4]:
+		front[k].x -= 0.12
+	var n := back.size()
 	var tris := []
-	for k in 4:
-		var k2 := (k + 1) % 4
-		if k != 0:
-			for pair in [[lo, mid], [mid, hi]]:
-				var a: Array = pair[0]
-				var b: Array = pair[1]
-				tris.append([a[k], a[k2], b[k2]])
-				tris.append([a[k], b[k2], b[k]])
-		tris.append([hi[k], hi[k2], peak])
-	tris.append([lo[0], lo[1], lo[2]])
-	tris.append([lo[0], lo[2], lo[3]])
-	return _mesh_from(tris, Vector3(0, 0, 0))
+	for k in n:
+		var k2 := (k + 1) % n
+		tris.append([back[k], back[k2], front[k2]])
+		tris.append([back[k], front[k2], front[k]])
+	for k in range(1, n - 1):
+		tris.append([back[0], back[k], back[k + 1]])
+	return _mesh_from(tris, Vector3(0, 0.0, 0))
 
 
-## The dark face: a plate set 3 cm back inside the hood's open front, filling the opening.
-static func _face_mesh() -> ArrayMesh:
-	var x := 0.17
+## The hood's cross-section at depth x, scaled about its middle by s. Order: top-left, top-right, belt right, bottom
+## right, bottom left, belt left (+Z is the right).
+static func _hood_ring(x: float, s: float) -> Array:
 	var pts := [
-		Vector3(x, -0.2, -0.16),
-		Vector3(x, -0.2, 0.16),
-		Vector3(x, -0.07, 0.195),
-		Vector3(x, 0.145, 0.195),
-		Vector3(x, 0.145, -0.195),
-		Vector3(x, -0.07, -0.195)
+		Vector3(x, 0.16, -0.13),
+		Vector3(x, 0.16, 0.13),
+		Vector3(x, -0.04, 0.22),
+		Vector3(x, -0.13, 0.15),
+		Vector3(x, -0.13, -0.15),
+		Vector3(x, -0.04, -0.22),
 	]
-	var tris := []
-	for k in range(1, pts.size() - 1):
-		tris.append([pts[0], pts[k], pts[k + 1]])
-	return _mesh_from(tris, Vector3(0, -0.03, 0))
+	var out := []
+	for p: Vector3 in pts:
+		out.append(Vector3(x, HOOD_MID_Y + (p.y - HOOD_MID_Y) * s, p.z * s))
+	return out
+
+
+## The dark face: a shield (flat top, sides down to the hood's belt, then a point at the chin) set back inside the
+## hood's front opening. Its point hangs below the hood, so a small dark wedge behind it gives the chin depth.
+static func _face_mesh() -> ArrayMesh:
+	var ring := _hood_ring(FACE_X, HOOD_FRONT_SCALE * 0.97)
+	var tl: Vector3 = ring[0]
+	var tr: Vector3 = ring[1]
+	var br: Vector3 = ring[2]
+	var bl: Vector3 = ring[5]
+	var chin := Vector3(FACE_X, CHIN_Y, 0)
+	var tris := [[tl, tr, br], [tl, br, bl], [bl, br, chin]]
+	var mesh := _mesh_from(tris, Vector3(-1, -0.02, 0))
+	var back := Vector3(FACE_X - 0.14, -0.12, 0)
+	var wedge := [[br, chin, back], [bl, back, chin]]
+	var wm := _mesh_from(wedge, Vector3(FACE_X - 0.05, -0.05, 0))
+	var arrays := wm.surface_get_arrays(0)
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 
 ## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.

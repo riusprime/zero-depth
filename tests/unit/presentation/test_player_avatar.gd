@@ -64,6 +64,37 @@ func test_builds_hood_visor_cloak_and_two_legs() -> void:
 	assert_between(top, 0.8, 1.0, "the hood sits at head height")
 
 
+func test_poncho_is_a_diamond_pointing_where_the_wanderer_faces() -> void:
+	for aim in [0, 1024, 2600]:
+		var a := _avatar()
+		a.apply_state(_state(0, Vector2.ZERO, {"aim": aim}))
+		var hem := a.cloak_hem()
+		var front := hem[0]
+		var off := wrapf(atan2(-front.z, front.x) - SimPlane.yaw_of(aim), -PI, PI)
+		assert_almost_eq(off, 0.0, 0.02, "aim %d: the front corner points where it faces" % aim)
+		for k in range(1, hem.size()):
+			assert_lt(
+				front.y, hem[k].y, "aim %d: the front corner hangs lowest (point %d)" % [aim, k]
+			)
+		var span := Vector2(hem[2].x - hem[6].x, hem[2].z - hem[6].z).length()
+		var hood_w := (a.hood.get_child(0) as MeshInstance3D).get_aabb().size.z
+		assert_between(span / hood_w, 1.8, 2.4, "aim %d: about twice the hood's width" % aim)
+		var reach := Vector2(hem[2].x, hem[2].z).length()
+		assert_gt(
+			reach, Vector2(front.x, front.z).length(), "aim %d: side corners reach widest" % aim
+		)
+
+
+func test_visor_is_centred_and_landscape_in_the_upper_face() -> void:
+	var a := _avatar()
+	var v := (a.visor.mesh as BoxMesh).size
+	assert_gt(v.z, v.y, "wider than tall")
+	assert_almost_eq(a.visor.position.z, 0.0, 1e-6, "centred")
+	var face := a.face.get_aabb()
+	assert_gt(a.visor.position.y, face.position.y + face.size.y * 0.5, "in the face's upper half")
+	assert_between(v.z / face.size.z, 0.3, 0.5, "about 40% of the face's width")
+
+
 func test_xray_twins_only_with_the_xray_technique() -> void:
 	var xray := _avatar()
 	var plain := PlayerAvatar.new()
