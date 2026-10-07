@@ -219,8 +219,52 @@ Results of the full suite and the export smoke for this commit: see "Results" be
 
 ## Results
 
-NOT YET RUN at the time of this commit (the full suite and the export smoke run from a clean worktree of it; the
-numbers are added by hand in the next commit).
+Run from a clean worktree of `4b3fff2` (`v0.3.0 Step AU`).
+
+```
+$ gdformat --check src scripts tests && gdlint src scripts tests
+277 files would be left unchanged
+Success: no problems found
+
+$ bash scripts/verify.sh
+…
+Totals
+------
+Scripts              90
+Tests               503
+Passing Tests       503
+Asserts           403458
+Time              1026.33s
+
+---- All tests passed! ----
+
+Results saved to build/gut.xml
+check_gut_log: ok (503 passing, minimum 503)
+
+$ bash scripts/ci/export_smoke.sh
+manifest: f0f63d049f0f21927f5a38135a16b4d788dda5748370b5547cb33293026eb374 (103 files, 0 errors)
+Export smoke check (exported pack)
+  ok    running inside the exported pack (run from outside the project folder)
+  ok    the main scene ships
+  ok    600-tick World run hash 9c324d3dbf34 matches the project's
+  ok    content player: 1
+  ok    content biomes: 3
+  ok    content validates inside the pack (0 errors)
+  ok    manifest hash f0f63d049f0f matches the project's
+  ok    Spanish translation is loaded
+  ok    UI_PLAY is PLAY / JUGAR
+  ok    boss model stone_sentinel loads from the pack
+  ok    boss model crawler_queen loads from the pack
+  ok    boss model fortress_turret loads from the pack
+  ok    audio cues: 49
+  ok    every cue's sound loads from the pack (missing: [])
+  ok    the test framework is not shipped
+  ok    tests are not shipped
+0 miss(es)
+```
+
+No golden changed (the 600-tick hash still matches its fixture). The content manifest hash moves because 49 cue
+definitions joined `data/`; it is computed live by the smoke, not a fixture.
 
 ## Owner checks (OWNER ONLY)
 
