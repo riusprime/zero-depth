@@ -59,7 +59,7 @@ static func heal_cap_left(w: World) -> int:
 
 # --- Bolt hits: Static Chain and Frost Core -----------------------------------------------------------------
 ## Projectile `pi` hit actor `i` at `at`, removing `got` HP. Only the player's bolts count, and only landed hits
-## (got > 0: a shield block or a spawning enemy doesn't count). DoT never reaches here.
+## (got > 0: a hit on a spawning enemy doesn't count). DoT never reaches here.
 static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> void:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER or got <= 0:
 		return

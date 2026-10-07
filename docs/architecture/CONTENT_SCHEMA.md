@@ -117,6 +117,9 @@ class_name AttackDefinition extends Resource
 - Each `behaviour_id` has a param schema in code (`src/content/behaviour_schemas.gd`: content is the lowest
   layer, so validation can read it; the behaviours themselves are in `src/sim/ai/`). Unknown keys and missing
   required keys are `ERROR`s.
+- **Warden armour** (owner, 2026-10-07: no block). `warden` takes `front_arc_degrees` and `rear_arc_degrees`
+  (each 0..360, together at most 360), `front_mult_permille` (1..1000: armour softens a hit, never blocks it) and
+  `rear_mult_permille` (1000..3000). **Starting values:** 120°, 800, 120°, 1100. Anything else is an `ERROR`.
 - **Telegraph minimum.** `telegraph_seconds` must compile to at least `MIN_TELEGRAPH_TICKS` (GA: enemies; a kernel
   constant). An attack with no readable warning fails validation. This is the content side of "no damage without
   a readable cause".

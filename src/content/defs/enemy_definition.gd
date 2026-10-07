@@ -33,6 +33,8 @@ func validate() -> Array[ValidationIssue]:
 		)
 		return issues
 	_check_keys(issues, "behaviour_params", behaviour_params, schema["params"])
+	if behaviour_id == &"warden":
+		_check_armour(issues)
 	if attacks.size() != 1:
 		issues.append(
 			ValidationIssue.new(&"attacks", resource_path, "this behaviour takes exactly 1 attack")
@@ -65,6 +67,45 @@ func validate() -> Array[ValidationIssue]:
 	if atk.damage <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", resource_path, "damage must be > 0"))
 	return issues
+
+
+## The Warden's armour (owner, 2026-10-07): arcs within 0..360 that don't overlap, a front multiplier that softens
+## without blocking (1..1000 per mille) and a rear one that doesn't soften (1000..3000).
+func _check_armour(issues: Array[ValidationIssue]) -> void:
+	var bp := behaviour_params
+	var keys := [
+		"front_arc_degrees", "rear_arc_degrees", "front_mult_permille", "rear_mult_permille"
+	]
+	for k in keys:
+		if not bp.has(k):
+			return
+	var front := float(bp["front_arc_degrees"])
+	var rear := float(bp["rear_arc_degrees"])
+	for pair in [["front_arc_degrees", front], ["rear_arc_degrees", rear]]:
+		if pair[1] < 0.0 or pair[1] > 360.0:
+			issues.append(
+				ValidationIssue.new(&"armour", resource_path, "%s must be within 0..360" % pair[0])
+			)
+	if front + rear > 360.0:
+		issues.append(
+			ValidationIssue.new(
+				&"armour", resource_path, "front_arc_degrees + rear_arc_degrees must be <= 360"
+			)
+		)
+	var fm := int(bp["front_mult_permille"])
+	if fm < 1 or fm > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"armour", resource_path, "front_mult_permille must be within 1..1000 (no block)"
+			)
+		)
+	var rm := int(bp["rear_mult_permille"])
+	if rm < 1000 or rm > 3000:
+		issues.append(
+			ValidationIssue.new(
+				&"armour", resource_path, "rear_mult_permille must be within 1000..3000"
+			)
+		)
 
 
 func _check_keys(

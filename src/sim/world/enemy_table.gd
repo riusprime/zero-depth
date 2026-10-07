@@ -17,8 +17,11 @@ var damage := 0
 ## Charger.
 var charge_speed := 0.0
 var charge_distance_m := 0.0
-## Warden.
-var shield_half_arc := 0
+## Warden: armour by the direction a hit comes from (1/4096 turns either side of facing, per-mille multipliers).
+var front_half_arc := 0
+var front_mult_permille := 1000
+var rear_half_arc := 0
+var rear_mult_permille := 1000
 var turn_rate := 0
 var slam_radius_m := 0.0
 ## Needle.
