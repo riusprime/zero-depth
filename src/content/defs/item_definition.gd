@@ -46,7 +46,8 @@ enum Kind {
 @export var bounces := 0
 ## Kinetic Dash: damage to each enemy the dash passes through (once per dash).
 @export var dash_hit_damage := 0
-## Overcharge: every Nth swing deals × mult and a shockwave of this radius at a share of the swing's damage.
+## Overcharge: every Nth swing of the combo (N = 4: the finisher) deals × mult and a shockwave of this radius at a
+## share of the swing's damage.
 @export var overcharge_every := 0
 @export var overcharge_mult_permille := 0
 @export var shockwave_radius_m := 0.0

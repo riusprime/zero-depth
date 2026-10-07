@@ -21,7 +21,7 @@ func test_a_landed_swing_freezes_three_ticks_and_a_hit_on_you_four() -> void:
 	for i in 6:
 		w.step(InputFrame.new())
 		seen = maxi(seen, w.freeze_ticks)
-	assert_eq(seen, w.player.swing_hitstop_ticks)
+	assert_eq(seen, w.player.step(0).hitstop_ticks)
 	var v := World.new(3, PlayerTable.starting_values())
 	Damage.hit(v, 0, 5, 9, 9, 9, 0, Vector2(3, 0), Vector2.ZERO)
 	assert_eq(v.freeze_ticks, v.player.hurt_freeze_ticks)

@@ -93,9 +93,11 @@ var items_owned := PackedInt32Array()
 var item_mods := ItemMods.new()
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
-## Twin Arc: ticks until the pending echo (0 = none), its angle, root and damage, and the tick it last swung.
+## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
+## tick it last swung.
 var echo_t := 0
 var echo_angle := 0
+var echo_step := 0
 var echo_root := 0
 var echo_damage := 0
 var echo_tick := -1
@@ -365,7 +367,7 @@ func state_hash() -> String:
 	# Items (v0.2.0 E).
 	h.add_ints(items_owned)
 	pickups.hash_into(h)
-	for v in [echo_t, echo_angle, echo_root, echo_damage, echo_tick, swing_count]:
+	for v in [echo_t, echo_angle, echo_step, echo_root, echo_damage, echo_tick, swing_count]:
 		h.add_int(v)
 	h.add_int(1 if swing_overcharged else 0)
 	for v in [overcharge_tick, dash_root, dash_hit_tick]:
@@ -530,7 +532,7 @@ func _move_and_collide() -> void:
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
-		p += vel
+		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step (v0.3.0 L11)
 	actors.set_pos(0, p)
 	# Dummies steer toward the player plus their jitter.
 	var target := p

@@ -73,7 +73,7 @@ ITEM_RICOCHET_CORE_DESC,Your bolts bounce off a wall once.,Tus proyectiles rebot
 ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
 ITEM_KINETIC_DASH_DESC,Dashing through an enemy deals 12.,Atravesar a un enemigo con el esprint hace 12.
 ITEM_OVERCHARGE,Overcharge,Sobrecarga
-ITEM_OVERCHARGE_DESC,Every 4th swing hits double and sends a shockwave.,Cada 4.º tajo hace el doble y lanza una onda.
+ITEM_OVERCHARGE_DESC,Your finisher hits double and sends a shockwave.,Tu remate hace el doble y lanza una onda.
 ITEM_VAMPIRIC_CORE,Vampiric Core,Núcleo Vampírico
 ITEM_VAMPIRIC_CORE_DESC,"Kills heal 3 HP, up to 15 every 5 s.","Cada baja cura 3 PV, hasta 15 cada 5 s."
 ITEM_STATIC_CHAIN,Static Chain,Cadena Estática

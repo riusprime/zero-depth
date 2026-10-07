@@ -18,19 +18,32 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.hurt_iframe_ticks = SimTick.seconds_to_ticks(def.hurt_iframes_seconds)
 	t.hurt_freeze_ticks = SimTick.seconds_to_ticks(def.hurt_hitstop_seconds)
 	var p := def.primary
-	t.swing_ticks = maxi(1, SimTick.seconds_to_ticks(p.swing_duration_seconds))
-	t.swing_active_tick = maxi(1, SimTick.seconds_to_ticks(p.swing_active_seconds))
-	t.swing_reach_m = p.swing_reach_m
-	t.swing_half_arc = degrees_to_units(p.swing_arc_degrees * 0.5)
-	t.swing_damage = p.swing_damage.duplicate()
+	var combo: Array[SwingStep] = []
+	for sd in p.combo:
+		combo.append(compile_swing_step(sd))
+	t.combo = combo
 	t.combo_window_ticks = SimTick.seconds_to_ticks(p.combo_window_seconds)
-	t.swing_hitstop_ticks = SimTick.seconds_to_ticks(p.swing_hitstop_seconds)
 	t.shot_period_ticks = maxi(1, SimTick.seconds_to_ticks(p.shot_period_seconds))
 	t.bolt_damage = p.bolt_damage
 	t.bolt_speed = p.bolt_speed_mps / SimTick.TICKS_PER_SECOND
 	t.bolt_radius_m = p.bolt_radius_m
 	t.bolt_life_ticks = SimTick.seconds_to_ticks(p.bolt_life_seconds)
 	return t
+
+
+## One melee combo step in sim units (v0.3.0 L11). The hit comes at least one tick after the swing starts.
+static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
+	return SwingStep.make(
+		sd.motion as SwingStep.Motion,
+		maxi(1, SimTick.seconds_to_ticks(sd.active_seconds)),
+		SimTick.seconds_to_ticks(sd.recovery_seconds),
+		mini(degrees_to_units(sd.arc_degrees * 0.5), SimTick.ANGLE_UNITS / 2),
+		sd.reach_m,
+		sd.damage,
+		SimTick.seconds_to_ticks(sd.hitstop_seconds),
+		sd.lunge_m,
+		maxi(1, SimTick.seconds_to_ticks(sd.sweep_seconds))
+	)
 
 
 ## An enemy's numbers in sim units. The behaviour id picks the actor kind.
