@@ -6,6 +6,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | Plan | `39d7b35` |
+| G | The hooded wanderer from the owner's reference replaces the cube: animation + cloak springs ([CHARACTER](evidence/CHARACTER.md)) | `701302f`, `77414ca`, merge (this commit's parent) |
+| F | The game runs on the floor; item visuals; lower walls; pedestal e2e; version `0.2.0-dev`; [`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md) | `088a852`, `8692b6e`, this commit |
 | A | Laser blade with a motion trail (cone removed), smooth shadows ([SHADOWS](evidence/SHADOWS.md)), pad A/Cross presses menu buttons, INK default | `16a90b1`, `3dc4c1f`, `102ce4e`, `381bef0`, merge (this commit) |
 | E | Eight items that change the attacks, pickups to walk over, a no-repeat pool (sim + content; visuals and pedestals in F) | `d684c37`, merge (this commit) |
 | B | A seeded floor: 3×3 rooms joined by doorways, cover slabs, item spots, spawn points, a gate spot ([FLOORS](evidence/FLOORS.md)); placed in the game in F | `40f9936`, `ee24b66`, merge `eb32d61` |
@@ -21,7 +23,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| Floor build check | after F | pending | |
+| Floor build check ([`PLAYTEST_FLOOR.md`](PLAYTEST_FLOOR.md)) | 2026-10-07 | pending | |
+| Character matches the reference | 2026-10-07 | pending (lead's check: 3/4 views close; face-on boxy) | |
 
 ## Open
 - O3 `main`. O4 credit line.
@@ -56,4 +59,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   Overcharge shockwave ring, Kinetic Dash afterimages, burning enemies glow orange), `WorldReader.wall_class`
   (structural walls drawn low, slabs 1.8 m instead of 2.4, the gate's footprint not drawn), props scaled to the
   floor's area. New e2e walks to the nearest pedestal with the left stick only and takes the item. 200 tests pass.
+- 2026-10-07 — G merged after one refinement round: the lead compared the first turnaround with the owner's
+  reference and sent back seven fixes (cloak silhouette, hood height, visor size/placement, separate legs,
+  lighter outline, dead pose, swing-twist evidence). The 3/4 views now read like the reference; face-on views
+  still look boxy (reported to the owner). Version `0.2.0-dev`; `PLAYTEST_FLOOR.md`. 208 tests pass; export smoke
+  0 misses.
 
