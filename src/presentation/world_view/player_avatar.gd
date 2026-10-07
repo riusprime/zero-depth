@@ -611,6 +611,7 @@ func _mesh_piece(
 	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
 	mat.stencil_color = outline
 	mat.stencil_outline_thickness = OUTLINE_M
+	ActorViews.flashable(mat)  # the hit flash changes only parameters, never the shader
 	body.material_override = mat
 	parent.add_child(body)
 	body_materials.append(mat)

@@ -13,6 +13,7 @@ var rig: IsoRig
 var _last_seq := 0
 var _rng := RandomNumberGenerator.new()
 var _shards: Array = []
+var _burst_mats := {}
 
 
 func _init(p_actors: ActorViews, p_rig: IsoRig) -> void:
@@ -43,9 +44,14 @@ func sync(reader: WorldReader) -> void:
 
 
 func _burst(at: Vector2, c: Color, n: int, size: float) -> void:
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	var m: StandardMaterial3D = _burst_mats.get(c)
+	if m == null:
+		# One material per colour, kept for the view's life, not one per kill (DAMAGE_LAG.md): nothing is
+		# allocated per kill, and its shader never depends on another node staying alive.
+		m = StandardMaterial3D.new()
+		m.albedo_color = c
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_burst_mats[c] = m
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * size
 	for k in n:
