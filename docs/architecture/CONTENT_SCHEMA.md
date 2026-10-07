@@ -124,6 +124,18 @@ class_name AttackDefinition extends Resource
   constant). An attack with no readable warning fails validation. This is the content side of "no damage without
   a readable cause".
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
+- **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
+  × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
+  `shards` × the floor number instead, with no tier scaling.
+
+**Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
+default `COMMON`). Chests weight rare items higher (`RewardsDefinition.rare_weight_chest`).
+
+**Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
+altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
+later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),
+`interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
+and the radius positive.
 
 ## 4. Encounters and bosses
 

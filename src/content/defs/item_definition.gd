@@ -23,7 +23,11 @@ enum Kind {
 	PHASE_STRIKE,
 }
 
+## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
+enum Rarity { COMMON, RARE }
+
 @export var kind := Kind.LONG_EDGE
+@export var rarity := Rarity.COMMON
 @export var name_key: StringName
 @export var desc_key: StringName
 ## Long Edge: swing reach × (1 + bonus / 1000).
@@ -90,6 +94,8 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
+	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
+		issues.append(ValidationIssue.new(&"range", resource_path, "rarity is common or rare"))
 	match kind:
 		Kind.LONG_EDGE:
 			check_positive(issues, "reach_bonus_permille", reach_bonus_permille)

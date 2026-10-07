@@ -31,6 +31,11 @@ const STATE_MOVE := EnemyAi.State.MOVE
 const STATE_WINDUP := EnemyAi.State.WINDUP
 const STATE_ACTIVE := EnemyAi.State.ACTIVE
 const STATE_RECOVER := EnemyAi.State.RECOVER
+## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
+const REWARD_ALTAR := RewardStore.Kind.ALTAR
+const REWARD_CHEST := RewardStore.Kind.CHEST
+const RARITY_COMMON := ItemTable.COMMON
+const RARITY_RARE := ItemTable.RARE
 
 var _w: World
 
@@ -530,3 +535,77 @@ func phase_tick() -> int:
 
 func phase_radius_m() -> float:
 	return _w.item_mods.phase_radius_m
+
+
+# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+func shards() -> int:
+	return _w.shards
+
+
+func floor_index() -> int:
+	return _w.floor_index
+
+
+func item_rarity(item_index: int) -> int:
+	return _w.item_tables[item_index].rarity
+
+
+func reward_count() -> int:
+	return _w.rewards.size()
+
+
+func reward_id(i: int) -> int:
+	return _w.rewards.ids[i]
+
+
+func reward_pos(i: int) -> Vector2:
+	return _w.rewards.pos(i)
+
+
+## REWARD_ALTAR or REWARD_CHEST.
+func reward_kind(i: int) -> int:
+	return _w.rewards.kind[i]
+
+
+## Shards to open (0 for an altar).
+func reward_price(i: int) -> int:
+	return _w.rewards.price[i]
+
+
+## You hold enough shards to open it (the same check the sim makes).
+func reward_affordable(i: int) -> bool:
+	return Rewards.can_afford(_w, i)
+
+
+## The reward the interact button would open now (the sim's own choice), or -1.
+func reward_in_reach() -> int:
+	return Rewards.nearest(_w)
+
+
+func interact_radius_m() -> float:
+	return _w.reward_table.interact_radius_m
+
+
+## True while a 3-card choice is open (the world waits for the pick).
+func choosing() -> bool:
+	return _w.choosing >= 0
+
+
+## The open choice's reward index (-1 when none).
+func choice_reward() -> int:
+	return _w.rewards.index_of(_w.choosing) if _w.choosing >= 0 else -1
+
+
+## The open choice's cards, as item indices in card order (empty when none).
+func choice_items() -> PackedInt32Array:
+	var i := choice_reward()
+	return _w.rewards.offer_of(i) if i >= 0 else PackedInt32Array()
+
+
+## The last refused open: the reward's id and the tick (-1 when none yet).
+func reward_denied_id() -> int:
+	return _w.reward_denied_id
+
+
+func reward_denied_tick() -> int:
+	return _w.reward_denied_tick

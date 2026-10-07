@@ -10,6 +10,7 @@ const FULL_TILT := 0.85
 
 var _pressed := 0
 var _held := 0
+var _pick := InputFrame.PICK_NONE
 
 
 ## Records a press edge (from an input event); it is delivered on the next frame only.
@@ -20,6 +21,11 @@ func note_pressed(bit: int) -> void:
 
 func note_released(bit: int) -> void:
 	_held &= ~bit
+
+
+## Records a 3-card pick (1..3) or InputFrame.PICK_CANCEL (v0.3.0 E); delivered on the next frame only.
+func note_pick(value: int) -> void:
+	_pick = value
 
 
 ## Builds this tick's frame and clears the latched presses.
@@ -33,6 +39,8 @@ func close_frame(move_screen: Vector2, aim_world: Vector2, aim_dist_m: float) ->
 		_pressed
 	)
 	_pressed = 0
+	f.pick = _pick
+	_pick = InputFrame.PICK_NONE
 	return f
 
 

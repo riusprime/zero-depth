@@ -128,6 +128,22 @@ var phase_tick := -1
 var phase_guard_next := 0
 # --- end Items ---------------------------------------------------------------------------------------------
 
+# --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
+## The floor's reward rules (part of the loadout, like item_tables; not hashed).
+var reward_table := RewardTable.new()
+## Shards held (hashed). The run flow carries it between floors.
+var shards := 0
+## The floor number, 1-based: chest prices and boss shards scale with it (the run flow sets it).
+var floor_index := 1
+## Altars and chests on the floor.
+var rewards := RewardStore.new()
+## The reward whose offer is open (its id), or -1. While >= 0 the world waits for the pick.
+var choosing := -1
+## The last refused open (a chest you can't afford, or an empty offer): the reward's id and the tick.
+var reward_denied_id := -1
+var reward_denied_tick := -1
+# --- end Rewards --------------------------------------------------------------------------------------------
+
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -197,6 +213,11 @@ func step(frame: InputFrame) -> void:
 		_buffer_presses(frame.pressed)
 		tick += 1
 		return
+	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
+	if choosing >= 0:
+		Rewards.choose(self, frame)
+		tick += 1
+		return
 	# 2. Input (a dead player's input is ignored).
 	_age_buffer()
 	if player_dead():
@@ -207,6 +228,10 @@ func step(frame: InputFrame) -> void:
 	aim_dist_cm = frame.aim_dist_cm
 	held_buttons = frame.held
 	actors.facing[0] = aim_angle
+	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
+	if Rewards.interact(self):
+		tick += 1
+		return
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
 		nav.flood(player_pos())
@@ -307,6 +332,23 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 # --- end Items ---------------------------------------------------------------------------------------------
 
 
+# --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
+## Puts an altar (price 0) or a chest on the floor (setup). Returns its id.
+func add_reward(kind: int, pos: Vector2, price: int) -> int:
+	var id := _take_id()
+	rewards.add(id, pos, kind, price)
+	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
+	return id
+
+
+## Clears a buffered press of `bit` (it was used).
+func consume_buffered(bit: int) -> void:
+	input_buffer[BUTTON_BITS.find(bit)] = 0
+
+
+# --- end Rewards --------------------------------------------------------------------------------------------
+
+
 func dash_iframes_active() -> bool:
 	return dash_ticks_left > 0 and player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
 
@@ -378,6 +420,10 @@ func state_hash() -> String:
 		h.add_f32(v)
 	for v in [momentum_t, 1 if swing_momentum else 0, thorn_tick, phase_tick, phase_guard_next]:
 		h.add_int(v)
+	# Rewards (v0.3.0 E).
+	for v in [shards, floor_index, choosing, reward_denied_id, reward_denied_tick]:
+		h.add_int(v)
+	rewards.hash_into(h)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -643,6 +689,7 @@ func _remove_dead() -> void:
 			gone.append(i)
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
+				Rewards.on_kill(self, i)  # Rewards: shards.
 	actors.remove_sorted(gone)
 
 

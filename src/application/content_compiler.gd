@@ -53,6 +53,8 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
+	t.shards = def.shards
+	t.shards_by_floor = def.shards_by_floor
 	match def.behaviour_id:
 		&"charger":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
@@ -177,6 +179,7 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
+	t.rarity = def.rarity
 	t.reach_bonus_permille = def.reach_bonus_permille
 	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
 	t.echo_damage_permille = def.echo_damage_permille
@@ -228,3 +231,22 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	for def: ItemDefinition in repo.all_of(&"items"):
 		out.append(compile_item(def))
 	return out
+
+
+## The floor's reward rules (v0.3.0 E): counts, chest prices, rarity weight, the shard tier bonus, in per mille.
+static func compile_rewards(def: RewardsDefinition) -> RewardTable:
+	var t := RewardTable.new()
+	if def == null:
+		return t
+	t.altars_min = def.altars_min
+	t.altars_max = def.altars_max
+	t.chests_min = def.chests_min
+	t.chests_max = def.chests_max
+	t.chest_prices = def.chest_prices.duplicate()
+	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.rare_weight_chest = def.rare_weight_chest
+	t.rare_weight_altar = def.rare_weight_altar
+	t.offer_size = def.offer_size
+	t.interact_radius_m = def.interact_radius_m
+	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	return t

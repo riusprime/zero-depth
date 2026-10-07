@@ -12,6 +12,8 @@ const FADE_S := 0.15
 const SLIDE_PX := 14.0
 
 var icon := ItemIconView.new()
+## False inside a container (the 3-card pick): the card fades but leaves its position to the container.
+var slide := true
 var _name := Label.new()
 var _caption := Label.new()
 var _desc := Label.new()
@@ -133,5 +135,7 @@ func _process(delta: float) -> void:
 
 func _apply() -> void:
 	modulate.a = _shown
+	if not slide:
+		return
 	offset_bottom = _rest_bottom + SLIDE_PX * (1.0 - _shown) * (1.0 - _shown)
 	offset_top = offset_bottom - maxf(size.y, MIN_HEIGHT)

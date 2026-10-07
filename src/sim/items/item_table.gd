@@ -23,10 +23,16 @@ enum Kind {
 	PHASE_STRIKE,
 }
 
+## ItemDefinition.Rarity (v0.3.0 E).
+const COMMON := 0
+const RARE := 1
+
 var id := &""
 var kind := Kind.LONG_EDGE
 var name_key := &""
 var desc_key := &""
+## COMMON or RARE (chests weight rare items higher).
+var rarity := COMMON
 ## Long Edge.
 var reach_bonus_permille := 0
 ## Twin Arc.

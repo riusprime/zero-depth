@@ -12,6 +12,9 @@ var telegraphs := TelegraphViews.new()
 var hit_feel: HitFeel
 var ink := InkPass.new()
 var pickups := PickupViews.new()
+## Altars, chests and shard gems (v0.3.0 E).
+var rewards := RewardViews.new()
+var shards := ShardViews.new()
 var item_fx: ItemVisuals
 var gate: PortalGate
 var rig := IsoRig.new()
@@ -28,6 +31,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(utility)
 	add_child(rig)
 	add_child(pickups)
+	add_child(rewards)
+	add_child(shards)
 	item_fx = ItemVisuals.new(kit, actors)
 	add_child(item_fx)
 	if reader.has_floor():
@@ -50,6 +55,8 @@ func sync() -> void:
 	utility.sync(reader)
 	hit_feel.sync(reader)
 	pickups.sync(reader)
+	rewards.sync(reader)
+	shards.sync(reader)
 	item_fx.sync(reader)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:

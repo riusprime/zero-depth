@@ -3,8 +3,12 @@ extends RefCounted
 ## One gameplay consequence with its provenance (SIM_CONTRACTS §7). The whole Kind enum is declared now;
 ## new kinds are appended, never inserted, because kinds are hashed.
 
-## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
-enum Kind { HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP }
+## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables (v0.3.0: also a card
+## taken from an altar or chest; source = the reward's id).
+## SHARDS (v0.3.0 E): a kill paid shards; amount = how many, pos = the body, source = the dead actor's id.
+enum Kind {
+	HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP, SHARDS
+}
 
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
