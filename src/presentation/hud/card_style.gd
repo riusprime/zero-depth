@@ -8,7 +8,7 @@ extends RefCounted
 ##
 ## Three looks were shown to the owner as G2 mockups (docs/roadmap/v0.3.5/evidence/card_mockups.png):
 ##   FLAT  - square corners, a 1 px outline;
-##   FACET - the same with two opposite corners cut, like the game's chamfered low-poly shapes (shipped: owner pick, 2026-10-07);
+##   FACET - two opposite corners cut, like the game's chamfered low-poly shapes (shipped: owner pick, 2026-10-07);
 ##   RULE  - square, no outline; a thin rule along the top edge, in the card's colour.
 ## Swapping is one line: DEFAULT below (or set `CardStyle.current` before the cards are built).
 
