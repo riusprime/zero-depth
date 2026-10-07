@@ -2,7 +2,8 @@ class_name PlayerKit
 extends RefCounted
 ## The player's attacks and utility (PLAN v0.1.0 Steps 2, 3, 7b). Melee and shooting have separate buttons
 ## (owner, 2026-10-07): PRIMARY = a swing (a 3-hit combo); SHOOT held = a bolt every shot_period_ticks.
-## Blink teleports the way you're moving, through walls. Runs in tick phase 4; numbers from PlayerTable.
+## Blink teleports the way you're moving, through a wall when the far side is within range. Runs in tick phase 4;
+## numbers from PlayerTable.
 
 const PRIMARY_SLOT := 0
 const UTILITY_SLOT := 1
@@ -34,9 +35,13 @@ static func move_or_aim(w: World) -> Vector2:
 	return Kin.dir(Kin.angle_of(mv)) if mv != Vector2.ZERO else Kin.dir(w.aim_angle)
 
 
-## Where a blink lands (owner, 2026-10-07: "a teleport, allowing you to go through walls"): blink_range_m along
-## move_or_aim, through any wall. If that spot overlaps a wall or lies outside the room (another region of the
-## flow field), it steps back toward the start in BLINK_STEP_M increments until it finds a free spot.
+## Where a blink lands (owner, 2026-10-07: "a teleport, allowing you to go through walls"; v0.3.0 L1: "By thickness
+## vs range"). It goes up to blink_range_m along move_or_aim, and it passes through a wall only when a free spot
+## beyond the wall lies within that range; otherwise it ends at the last free spot before the wall. A spot is free
+## when the player's circle touches no wall (the sealed gate's footprint included) and it lies in the NavField
+## region the player walks in, so a blink never ends inside a wall, in the void outside the floor, or in a pocket
+## you can't walk to; it may end in another room. So thin cover is crossed at almost any distance and a thick wall
+## only from close up. Samples every BLINK_STEP_M from the far end back: the farthest free one wins (none: stay).
 static func blink_target(w: World) -> Vector2:
 	var t := w.player
 	var from := w.player_pos()

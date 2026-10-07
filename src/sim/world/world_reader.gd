@@ -530,3 +530,15 @@ func phase_tick() -> int:
 
 func phase_radius_m() -> float:
 	return _w.item_mods.phase_radius_m
+
+
+# --- Walls with thickness (v0.3.0 A) ------------------------------------------------------------------------
+
+
+## The generated floor's footprint, for the stage's ground: each room's cells (its thick walls and doorways
+## included) and the outer half of each outer wall. Empty without a floor.
+func floor_ground() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if _w.floor_layout != null:
+		out.append_array(_w.floor_layout.ground)
+	return out

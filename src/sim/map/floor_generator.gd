@@ -6,12 +6,17 @@ extends RefCounted
 ## doorways between rooms that touch (loops; never into the hall). Each room gets an interior template (RoomInterior)
 ## that never blocks a doorway or splits the room; item spots (1 in a 1 x 1 room, 1-2 in bigger rooms, none in the
 ## hall) and spawn points scaled with its size. The portal room is the room farthest from the hall by doorways.
+## v0.3.0 (L1-L2): the cell size is drawn per floor; every room side draws its own wall half, so walls are 0.6-3.0 m
+## thick and room interiors give way to them; doorways are 2.2-3.4 m wide, anywhere along the stretch the two rooms
+## share, and cut through the full thickness.
 ## Every draw comes from the `map` stream in a fixed order, so a seed always gives the same floor. Pure sim code:
 ## integer draws, floats from whole centimetres, no trig.
 
 const _SIDE_ANGLES := [2048, 3072, 0, 1024]  # the gate's facing on the room's +X, +Y, -X, -Y wall
 const _STEPS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(0, -1)]
 const _GATE_SLIDES := [0.0, 2.5, -2.5]
+## Half the width of the gate's stone footprint across its facing (as FloorScenario.gate_collider: the pillars).
+const _GATE_HALF_SPAN := FloorLayout.GATE_WIDTH * 0.5 + 0.35
 const _ITEM_ATTEMPTS := 64
 const _SPAWN_ATTEMPTS_PER_POINT := 20
 const _DOOR_APPROACH := 1.0  # metres in from the wall face, where a doorway's approach must be walkable
@@ -23,12 +28,10 @@ class Plan:
 	extends RefCounted
 	var cells: Array[Rect2i] = []
 	var occupied := {}  # Vector2i cell -> room
-	## Doorway k: from room door_rooms[k].x (the lower index) through the side door_side[k] of its cell
-	## door_cell[k], slid door_slide[k] metres along the wall from the cell edge's middle.
+	## Doorway k: from room door_rooms[k].x (the lower index) through its side door_side[k], somewhere along the
+	## stretch it shares with room door_rooms[k].y (placed in metres by _place_doors).
 	var door_rooms: Array[Vector2i] = []
-	var door_cell: Array[Vector2i] = []
 	var door_side := PackedInt32Array()
-	var door_slide := PackedFloat64Array()
 
 	func add_room(r: Rect2i) -> void:
 		for y in range(r.position.y, r.end.y):
@@ -60,16 +63,23 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	var rng := RngStream.derive(seed_value, "map")
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
+	f.cell_size = Vector2(
+		rng.range_int(_cm(p.cell_size_min.x), _cm(p.cell_size_max.x)) / 100.0,
+		rng.range_int(_cm(p.cell_size_min.y), _cm(p.cell_size_max.y)) / 100.0
+	)
 	var plan := Plan.new()
 	_place_rooms(plan, p, rng)
 	_link_extra(plan, p, rng)
+	for k in plan.cells.size() * 4:
+		f.room_halves.append(rng.range_int(_cm(p.wall_half_min), _cm(p.wall_half_max)) / 100.0)
 	_lay_out(f, p, plan)
+	_place_doors(f, p, plan, rng)
 	f.start_room = 0
 	f.start_pos = f.rooms[0].get_center()
 	f.hops = _hops_from(f, f.start_room)
 	f.portal_room = _farthest(f.hops)
-	_place_portal(f, p, rng)
-	_make_walls(f, p, plan)
+	_place_portal(f, rng)
+	_make_walls(f, plan)
 	f.slab_first = f.walls.size()
 	for room in f.room_count():
 		var cells := f.room_cells[room].size
@@ -108,7 +118,7 @@ static func _place_rooms(plan: Plan, p: FloorParams, rng: RngStream) -> void:
 
 
 ## A room of a drawn footprint against side `side` of room `parent`, sharing at least one cell edge with it, and
-## a doorway on a shared cell edge. False (nothing placed) if it overlaps a room or makes the floor too wide.
+## a doorway on the shared stretch. False (nothing placed) if it overlaps a room or makes the floor too wide.
 static func _try_attach(plan: Plan, p: FloorParams, rng: RngStream, parent: int, side: int) -> bool:
 	var fp := p.footprints[rng.pick_weighted(p.footprint_weights)]
 	var pr := plan.cells[parent]
@@ -123,7 +133,7 @@ static func _try_attach(plan: Plan, p: FloorParams, rng: RngStream, parent: int,
 	if not _fits(plan, p, rect):
 		return false
 	plan.add_room(rect)
-	_add_door(plan, p, rng, parent, plan.cells.size() - 1, side)
+	_add_door(plan, parent, plan.cells.size() - 1, side)
 	return true
 
 
@@ -154,24 +164,10 @@ static func _touching_side(a: Rect2i, b: Rect2i) -> int:
 	return -1
 
 
-## A doorway from room a (lower index) to room b, which touches a's side `side`: on a random shared cell edge.
-static func _add_door(
-	plan: Plan, p: FloorParams, rng: RngStream, a: int, b: int, side: int
-) -> void:
-	var ra := plan.cells[a]
-	var rb := plan.cells[b]
-	var cell := Vector2i.ZERO
-	if side % 2 == 0:
-		cell.y = rng.range_int(maxi(ra.position.y, rb.position.y), mini(ra.end.y, rb.end.y) - 1)
-		cell.x = ra.end.x - 1 if side == 0 else ra.position.x
-	else:
-		cell.x = rng.range_int(maxi(ra.position.x, rb.position.x), mini(ra.end.x, rb.end.x) - 1)
-		cell.y = ra.end.y - 1 if side == 1 else ra.position.y
-	var jitter := _cm(p.door_jitter)
+## A doorway from room a (lower index) to room b, which touches a's side `side` (placed later, in metres).
+static func _add_door(plan: Plan, a: int, b: int, side: int) -> void:
 	plan.door_rooms.append(Vector2i(a, b))
-	plan.door_cell.append(cell)
 	plan.door_side.append(side)
-	plan.door_slide.append(rng.range_int(-jitter, jitter) / 100.0)
 
 
 ## Extra doorways between touching rooms not yet joined (never the hall, whose one exit stays its only one).
@@ -187,39 +183,83 @@ static func _link_extra(plan: Plan, p: FloorParams, rng: RngStream) -> void:
 		var at := rng.range_int(0, pairs.size() - 1)
 		var e := pairs[at]
 		pairs.remove_at(at)
-		_add_door(plan, p, rng, e.x, e.y, e.z)
+		_add_door(plan, e.x, e.y, e.z)
 
 
 # --- metres ---
 
 
-## Grid line g lies at grid_origin + g * cell_pitch; the floor's bounding box is centred on the origin.
+## Grid line g lies at grid_origin + g * cell_pitch; the floor's bounding box is centred on the origin. A room's
+## interior is its cells' rect with each side pulled in by that side's wall half.
 static func _lay_out(f: FloorLayout, p: FloorParams, plan: Plan) -> void:
-	var hw := p.wall_half
 	var lo := plan.min_cell()
 	var hi := plan.max_cell()
 	f.cols = hi.x - lo.x
 	f.rows = hi.y - lo.y
-	f.cell_pitch = p.cell_size + Vector2(hw, hw) * 2.0
+	var mean := p.wall_half_min + p.wall_half_max
+	f.cell_pitch = f.cell_size + Vector2(mean, mean)
 	f.grid_origin = -Vector2(lo + hi) * 0.5 * f.cell_pitch
 	var edge := f.grid_origin + Vector2(lo) * f.cell_pitch
-	f.bounds = Rect2(
-		edge - Vector2(hw, hw), Vector2(hi - lo) * f.cell_pitch + Vector2(hw, hw) * 2.0
-	)
-	for r in plan.cells:
-		var corner := f.grid_origin + Vector2(r.position) * f.cell_pitch + Vector2(hw, hw)
-		f.rooms.append(Rect2(corner, Vector2(r.size) * f.cell_pitch - Vector2(hw, hw) * 2.0))
-		f.room_cells.append(r)
+	var m := p.wall_half_max
+	f.bounds = Rect2(edge - Vector2(m, m), Vector2(hi - lo) * f.cell_pitch + Vector2(m, m) * 2.0)
+	for room in plan.cells.size():
+		var c := _cell_rect(f, plan.cells[room])
+		var a := c.position + Vector2(_half(f, room, 2), _half(f, room, 3))
+		var b := c.end - Vector2(_half(f, room, 0), _half(f, room, 1))
+		f.rooms.append(Rect2(a, b - a))
+		f.room_cells.append(plan.cells[room])
+
+
+static func _half(f: FloorLayout, room: int, side: int) -> float:
+	return f.room_halves[room * 4 + side]
+
+
+## A room's cells in metres, grid line to grid line.
+static func _cell_rect(f: FloorLayout, cells: Rect2i) -> Rect2:
+	var a := f.grid_origin + Vector2(cells.position) * f.cell_pitch
+	var b := f.grid_origin + Vector2(cells.end) * f.cell_pitch
+	return Rect2(a, b - a)
+
+
+## The coordinate of a rect's edge on side (0 +X, 1 +Y, 2 -X, 3 -Y).
+static func _edge(r: Rect2, side: int) -> float:
+	match side:
+		0:
+			return r.end.x
+		1:
+			return r.end.y
+		2:
+			return r.position.x
+	return r.position.y
+
+
+## Each doorway: a drawn width, anywhere along the stretch where both rooms' interiors face each other (kept
+## door_corner_margin from either room's corners), through the wall from one face to the other.
+static func _place_doors(f: FloorLayout, p: FloorParams, plan: Plan, rng: RngStream) -> void:
 	for k in plan.door_rooms.size():
+		var d := plan.door_rooms[k]
 		var side := plan.door_side[k]
-		var step := Vector2(_STEPS[side])
-		var mid := f.grid_origin + (Vector2(plan.door_cell[k]) + Vector2(0.5, 0.5)) * f.cell_pitch
-		var at := mid + step * f.cell_pitch * 0.5
-		var slide := plan.door_slide[k]
-		at += Vector2(0.0, slide) if side % 2 == 0 else Vector2(slide, 0.0)
-		f.door_rooms.append(plan.door_rooms[k])
-		f.door_centers.append(at)
+		var ra := f.rooms[d.x]
+		var rb := f.rooms[d.y]
+		var along_x := side % 2 == 1
+		var lo := (
+			maxf(ra.position.x, rb.position.x) if along_x else maxf(ra.position.y, rb.position.y)
+		)
+		var hi := minf(ra.end.x, rb.end.x) if along_x else minf(ra.end.y, rb.end.y)
+		lo += p.door_corner_margin
+		hi -= p.door_corner_margin
+		var width := rng.range_int(_cm(p.door_width_min), _cm(p.door_width_max)) / 100.0
+		width = minf(width, floorf((hi - lo) * 100.0) / 100.0)
+		assert(width >= p.door_width_min, "two rooms share too little wall for a doorway")
+		var c := rng.range_int(_cm(lo + width * 0.5), _cm(hi - width * 0.5)) / 100.0
+		var face_a := _edge(ra, side)
+		var face_b := _edge(rb, (side + 2) % 4)
+		var across := (face_a + face_b) * 0.5
+		f.door_rooms.append(d)
+		f.door_centers.append(Vector2(c, across) if along_x else Vector2(across, c))
 		f.door_angles.append(side * 1024)
+		f.door_widths.append(width)
+		f.door_depths.append(absf(face_b - face_a))
 
 
 ## Breadth-first doorway hops from a room (-1 for a room it can't reach).
@@ -259,16 +299,13 @@ static func _door_side(f: FloorLayout, door: int, room: int) -> int:
 	return -1
 
 
-## A point on the room's wall face at side (0 +X, 1 +Y, 2 -X, 3 -Y), at the middle of its k-th cell along that
-## side, slid along the wall.
+## A point on the room's wall face at side (0 +X, 1 +Y, 2 -X, 3 -Y): the middle of the k-th of n equal stretches
+## along that side, slid along the wall.
 static func _face_point(
-	f: FloorLayout, p: FloorParams, room: int, side: int, k: int, slide: float
+	f: FloorLayout, room: int, side: int, k: int, n: int, slide: float
 ) -> Vector2:
 	var r := f.rooms[room]
-	var along := (
-		Vector2(p.cell_size.x * 0.5 + k * f.cell_pitch.x, p.cell_size.y * 0.5 + k * f.cell_pitch.y)
-		+ Vector2(slide, slide)
-	)
+	var along := (Vector2(k, k) + Vector2(0.5, 0.5)) * r.size / n + Vector2(slide, slide)
 	match side:
 		0:
 			return Vector2(r.end.x, r.position.y + along.y)
@@ -280,9 +317,9 @@ static func _face_point(
 			return Vector2(r.position.x + along.x, r.position.y)
 
 
-## The gate stands against a wall of the portal room, clear of its doorways, facing into the room.
+## The gate stands against a wall of the portal room, clear of its doorways and corners, facing into the room.
 ## Sides without a doorway are tried first, in a random order, from a random cell along the side.
-static func _place_portal(f: FloorLayout, p: FloorParams, rng: RngStream) -> void:
+static func _place_portal(f: FloorLayout, rng: RngStream) -> void:
 	var sides := PackedInt32Array([0, 1, 2, 3])
 	for i in range(3, 0, -1):
 		var j := rng.range_int(0, i)
@@ -290,29 +327,41 @@ static func _place_portal(f: FloorLayout, p: FloorParams, rng: RngStream) -> voi
 		sides[i] = sides[j]
 		sides[j] = t
 	var cells := f.room_cells[f.portal_room].size
-	var keep := p.door_width * 0.5 + FloorLayout.GATE_WIDTH * 0.5 + 1.5
 	for allow_doors in [false, true]:
 		for side in sides:
-			var along := PackedFloat32Array()
+			var along := PackedFloat64Array()
+			var keep := PackedFloat64Array()
 			for d in f.door_rooms.size():
 				if _door_side(f, d, f.portal_room) == side:
 					along.append(f.door_centers[d].y if side % 2 == 0 else f.door_centers[d].x)
+					keep.append(f.door_widths[d] * 0.5 + FloorLayout.GATE_WIDTH * 0.5 + 1.5)
 			if not along.is_empty() and not allow_doors:
 				continue
 			var n := cells.y if side % 2 == 0 else cells.x
 			var k0 := rng.range_int(0, n - 1)
 			for i in n:
 				for slide: float in _GATE_SLIDES:
-					var at := _face_point(f, p, f.portal_room, side, (k0 + i) % n, slide)
+					var at := _face_point(f, f.portal_room, side, (k0 + i) % n, n, slide)
 					var ok := true
-					for a in along:
-						if absf(a - (at.y if side % 2 == 0 else at.x)) < keep:
+					for a in along.size():
+						if absf(along[a] - (at.y if side % 2 == 0 else at.x)) < keep[a]:
 							ok = false
-					if ok:
-						f.portal_angle = _SIDE_ANGLES[side]
-						f.portal_pos = at + f.portal_facing() * FloorLayout.GATE_HALF_DEPTH
+					f.portal_angle = _SIDE_ANGLES[side]
+					f.portal_pos = at + f.portal_facing() * FloorLayout.GATE_HALF_DEPTH
+					if ok and _gate_fits(f):
 						return
 	assert(false, "no wall of the portal room fits the gate")
+
+
+## The gate's stone footprint and the clear square in front of it both lie inside the portal room.
+static func _gate_fits(f: FloorLayout) -> bool:
+	var r := f.rooms[f.portal_room].grow(0.001)
+	var n := f.portal_facing()
+	var half := Vector2(
+		absf(n.x) * FloorLayout.GATE_HALF_DEPTH + absf(n.y) * _GATE_HALF_SPAN,
+		absf(n.y) * FloorLayout.GATE_HALF_DEPTH + absf(n.x) * _GATE_HALF_SPAN
+	)
+	return r.encloses(Rect2(f.portal_pos - half, half * 2.0)) and r.encloses(f.portal_front())
 
 
 ## The area kept free of slabs and spots around the gate: its footprint, the clear front square, and a margin.
@@ -328,104 +377,98 @@ static func _portal_zone(f: FloorLayout) -> Rect2:
 # --- walls ---
 
 
-## True where the horizontal cell edge on grid line gy above cell (gx, gy) separates two rooms (or a room from
-## nothing).
-static func _h_edge(plan: Plan, gx: int, gy: int) -> bool:
-	return plan.room_at(Vector2i(gx, gy - 1)) != plan.room_at(Vector2i(gx, gy))
+## Outer walls and partitions. Every room is framed by four strips from its interior out to its grid lines (the
+## -Y and +Y strips run over the corners), so neighbouring frames meet at the grid lines and leave no hole; a
+## partition is the two frames beside it. Doorways cut both frames through. Each outer stretch of a room side
+## gets a skin outside the grid line as thick as that side's half (the -Y and +Y skins run over a free corner).
+## The ground is each room's cells plus the skins.
+static func _make_walls(f: FloorLayout, plan: Plan) -> void:
+	for room in plan.cells.size():
+		var c := _cell_rect(f, plan.cells[room])
+		var r := f.rooms[room]
+		f.ground.append(c)
+		var top := r.position.y - c.position.y
+		_emit_strip(f, room, 3, Rect2(c.position.x, c.position.y, c.size.x, top))
+		_emit_strip(f, room, 1, Rect2(c.position.x, r.end.y, c.size.x, c.end.y - r.end.y))
+		var left := r.position.x - c.position.x
+		_emit_strip(f, room, 2, Rect2(c.position.x, r.position.y, left, r.size.y))
+		_emit_strip(f, room, 0, Rect2(r.end.x, r.position.y, c.end.x - r.end.x, r.size.y))
+	for room in plan.cells.size():
+		for side in 4:
+			_emit_skins(f, plan, room, side)
 
 
-static func _v_edge(plan: Plan, gx: int, gy: int) -> bool:
-	return plan.room_at(Vector2i(gx - 1, gy)) != plan.room_at(Vector2i(gx, gy))
-
-
-## A grid corner where a horizontal wall passes (its wall square is covered by that wall).
-static func _covered(plan: Plan, gx: int, gy: int) -> bool:
-	return _h_edge(plan, gx - 1, gy) or _h_edge(plan, gx, gy)
-
-
-## Outer walls and partitions: every cell edge between two different rooms (or a room and nothing) is wall,
-## merged into runs and broken at doorways. Horizontal runs cover the corner squares at their ends; vertical
-## runs stop at a corner a horizontal wall covers, so walls never overlap.
-static func _make_walls(f: FloorLayout, p: FloorParams, plan: Plan) -> void:
-	var lo := plan.min_cell()
-	var hi := plan.max_cell()
-	var hw := p.wall_half
-	for gy in range(lo.y, hi.y + 1):
-		var running := false
-		var start := 0
-		for gx in range(lo.x, hi.x + 1):
-			var wall := gx < hi.x and _h_edge(plan, gx, gy)
-			if wall and not running:
-				running = true
-				start = gx
-			elif not wall and running:
-				var y := f.grid_origin.y + gy * f.cell_pitch.y
-				var x0 := f.grid_origin.x + start * f.cell_pitch.x - hw
-				var x1 := f.grid_origin.x + gx * f.cell_pitch.x + hw
-				_emit_line(f, p, true, y, x0, x1, _gaps(f, true, y, x0, x1))
-				running = false
-	for gx in range(lo.x, hi.x + 1):
-		var running := false
-		var start := 0
-		for gy in range(lo.y, hi.y + 1):
-			var wall := gy < hi.y and _v_edge(plan, gx, gy)
-			if running and (not wall or _covered(plan, gx, gy)):
-				var x := f.grid_origin.x + gx * f.cell_pitch.x
-				var y0 := f.grid_origin.y + start * f.cell_pitch.y
-				y0 += hw if _covered(plan, gx, start) else -hw
-				var y1 := f.grid_origin.y + gy * f.cell_pitch.y
-				y1 -= hw if _covered(plan, gx, gy) else -hw
-				_emit_line(f, p, false, x, y0, y1, _gaps(f, false, x, y0, y1))
-				running = false
-			if wall and not running:
-				running = true
-				start = gy
-
-
-## The doorway centres (along the line) on the wall line at `fixed` between lo and hi.
-static func _gaps(
-	f: FloorLayout, horizontal: bool, fixed: float, lo: float, hi: float
-) -> PackedFloat32Array:
-	var out := PackedFloat32Array()
-	for d in f.door_centers.size():
-		var c := f.door_centers[d]
-		var on_horizontal := f.door_angles[d] % 2048 == 1024
-		if on_horizontal != horizontal:
-			continue
-		var line := c.y if horizontal else c.x
-		var along := c.x if horizontal else c.y
-		if absf(line - fixed) < 0.01 and along > lo and along < hi:
-			out.append(along)
-	return out
-
-
-## Solid pieces of the line from lo to hi (along x if horizontal) at `fixed`, skipping a door gap at each centre.
-static func _emit_line(
-	f: FloorLayout,
-	p: FloorParams,
-	horizontal: bool,
-	fixed: float,
-	lo: float,
-	hi: float,
-	gaps: PackedFloat32Array
-) -> void:
-	gaps.sort()
-	var cuts := PackedFloat64Array([lo])
-	for g in gaps:
-		cuts.append(g - p.door_width * 0.5)
-		cuts.append(g + p.door_width * 0.5)
-	cuts.append(hi)
+## The strip of a room's frame on `side`, less the doorways through it (doorways never reach its ends).
+static func _emit_strip(f: FloorLayout, room: int, side: int, strip: Rect2) -> void:
+	var along_x := side % 2 == 1
+	var spans: Array[Vector2] = []
+	for d in f.door_rooms.size():
+		if _door_side(f, d, room) == side:
+			var g := f.door_rect(d)
+			spans.append(
+				Vector2(g.position.x, g.end.x) if along_x else Vector2(g.position.y, g.end.y)
+			)
+	spans.sort()
+	var cuts := PackedFloat64Array([strip.position.x if along_x else strip.position.y])
+	for g in spans:
+		cuts.append(g.x)
+		cuts.append(g.y)
+	cuts.append(strip.end.x if along_x else strip.end.y)
 	for k in range(0, cuts.size(), 2):
 		var a := cuts[k]
 		var b := cuts[k + 1]
 		if b - a <= 0.001:
 			continue
-		var mid := (a + b) * 0.5
-		var half := (b - a) * 0.5
-		if horizontal:
-			f.walls.append(Obb.make(Vector2(mid, fixed), Vector2(half, p.wall_half), 0))
-		else:
-			f.walls.append(Obb.make(Vector2(fixed, mid), Vector2(p.wall_half, half), 0))
+		var piece := Rect2(strip.position.x, a, strip.size.x, b - a)
+		if along_x:
+			piece = Rect2(a, strip.position.y, b - a, strip.size.y)
+		f.walls.append(Obb.make(piece.get_center(), piece.size * 0.5, 0))
+
+
+## The skins on a room's side: one per run of the side's cells with no room beyond, as thick as the side's half.
+static func _emit_skins(f: FloorLayout, plan: Plan, room: int, side: int) -> void:
+	var cells := plan.cells[room]
+	var step := _STEPS[side]
+	var along_x := side % 2 == 1
+	var along := Vector2i(1, 0) if along_x else Vector2i(0, 1)
+	var first := cells.position
+	if side == 0:
+		first.x = cells.end.x - 1
+	elif side == 1:
+		first.y = cells.end.y - 1
+	var n := cells.size.x if along_x else cells.size.y
+	var h := _half(f, room, side)
+	var line := _edge(_cell_rect(f, cells), side)
+	var k := 0
+	while k < n:
+		if plan.room_at(first + along * k + step) != _NONE:
+			k += 1
+			continue
+		var k1 := k
+		while k1 < n and plan.room_at(first + along * k1 + step) == _NONE:
+			k1 += 1
+		var c0 := _cell_rect(f, Rect2i(first + along * k, Vector2i.ONE))
+		var c1 := _cell_rect(f, Rect2i(first + along * (k1 - 1), Vector2i.ONE))
+		var lo := c0.position.x if along_x else c0.position.y
+		var hi := c1.end.x if along_x else c1.end.y
+		if along_x:
+			# Over a free corner: this room's -X / +X skin meets this one there.
+			if k == 0 and _free_corner(plan, first, step, Vector2i(-1, 0)):
+				lo -= _half(f, room, 2)
+			if k1 == n and _free_corner(plan, first + along * (n - 1), step, Vector2i(1, 0)):
+				hi += _half(f, room, 0)
+		var near := minf(line, line + (h if side < 2 else -h))
+		var r := Rect2(near, lo, h, hi - lo)
+		if along_x:
+			r = Rect2(lo, near, hi - lo, h)
+		f.walls.append(Obb.make(r.get_center(), r.size * 0.5, 0))
+		f.ground.append(r)
+		k = k1
+
+
+## True when no room holds the cell beside `cell` (toward `side_step`) or the cell beyond that one (toward `out`).
+static func _free_corner(plan: Plan, cell: Vector2i, out: Vector2i, side_step: Vector2i) -> bool:
+	return plan.room_at(cell + side_step) == _NONE and plan.room_at(cell + side_step + out) == _NONE
 
 
 # --- interiors ---
@@ -442,14 +485,14 @@ static func _room_walls(f: FloorLayout, room: int) -> Array[Obb]:
 
 
 ## The doorways of a room, as approach points just inside it.
-static func _door_approaches(f: FloorLayout, p: FloorParams, room: int) -> PackedVector2Array:
+static func _door_approaches(f: FloorLayout, room: int) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	for d in f.door_rooms.size():
 		var side := _door_side(f, d, room)
 		if side < 0:
 			continue
 		var inward := -Kin.dir(side * 1024)
-		out.append(f.door_centers[d] + inward * (p.wall_half + _DOOR_APPROACH))
+		out.append(f.door_centers[d] + inward * (f.door_depths[d] * 0.5 + _DOOR_APPROACH))
 	return out
 
 
@@ -459,7 +502,7 @@ static func _room_is_whole(f: FloorLayout, p: FloorParams, room: int, walls: Arr
 	reach.build(f.rooms[room], walls, p.nav_clearance)
 	if reach.region_count != 1:
 		return false
-	var must := _door_approaches(f, p, room)
+	var must := _door_approaches(f, room)
 	if room == f.start_room:
 		must.append(f.start_pos)
 	if room == f.portal_room:
