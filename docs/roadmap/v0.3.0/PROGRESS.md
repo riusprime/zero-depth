@@ -34,6 +34,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
 | Full-run build ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)) | 2026-10-07 | answered (verbatim in the sheet) | 2026-10-07 |
+| Finishing build ([`PLAYTEST_RUN_2.md`](PLAYTEST_RUN_2.md)) | 2026-10-07 | pending | |
 | Blink vs thick walls | 2026-10-07 | "Thicker room walls" | 2026-10-07 |
 
 ## Open
@@ -66,3 +67,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — O merged. Lead reconciliation: one set of volume keys (`audio/master|sfx|ambience`; SFX moves the Effects bus that carries SFX + UI), reduced motion also drives `HudStyle.reduced_motion`, a duplicate `UI_CAPTIONS` row removed. The suite's readable-cause test had 0 violations but its bot took only 18 hits (< 20) after BX cleared floors on summon: widened to two seeds (not a lower bar). 624 tests pass. Bench miss reported to the owner.
 - 2026-10-07 — MM merged (HUD and WorldReader conflicts by hand; shrine icon + legend added). 630 tests pass; goldens unchanged. Only P (builds) remains, being re-integrated by its agent.
 - 2026-10-07 — P merged (re-integrated by its agent on top of every other workstream). 664 tests pass; goldens unchanged; export smoke 0 misses. All v0.3.0 finishing workstreams are merged; build for the owner next.
+- 2026-10-07 — Finishing build sent with [`PLAYTEST_RUN_2.md`](PLAYTEST_RUN_2.md).
