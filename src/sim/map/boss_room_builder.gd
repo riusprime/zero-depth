@@ -19,7 +19,7 @@ const _STEPS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)
 ## The gate's facing on the boss room's +X, +Y, -X, -Y wall (it faces into the room).
 const _SIDE_ANGLES := [2048, 3072, 0, 1024]
 ## The boss needs this much clear floor around where it appears.
-const _SPAWN_CLEAR := 1.5
+const _SPAWN_CLEAR := 1.8
 ## Host spawn points closer than this to the boss door's host face are dropped (no enemy appears in the doorway).
 const _HOST_SPAWN_CLEAR := 3.0
 const _DOOR_APPROACH := 1.4
@@ -490,7 +490,21 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, template: i
 		if w.bounds().intersects(r.grow(1.0)):
 			walls.append(w)
 	var kept: Array[Obb] = []
-	for group: Array in RoomInterior.groups(template, r, rng, p, false):
+	var groups: Array = RoomInterior.groups(template, r, rng, p, false)
+	if template == FloorLayout.Template.SCATTER:
+		# Scattered slabs (the generator's SCATTER), one try each: cells x the per-cell maximum, capped.
+		var cells := f.room_cell_count(f.boss_room)
+		for k in mini(p.scatter_cap, cells * p.scatter_per_cell_max * 2):
+			var half_len := (
+				rng.range_int(_cm(p.slab_half_len_min), _cm(p.slab_half_len_max)) / 100.0
+			)
+			var angle := rng.range_int(0, 7) * 512
+			var cx := rng.range_int(_cm(r.position.x + 1.0), _cm(r.end.x - 1.0)) / 100.0
+			var cy := rng.range_int(_cm(r.position.y + 1.0), _cm(r.end.y - 1.0)) / 100.0
+			groups.append(
+				[Obb.make(Vector2(cx, cy), Vector2(half_len, p.slab_half_thickness), angle)]
+			)
+	for group: Array in groups:
 		var ok := true
 		for piece: Obb in group:
 			ok = ok and _piece_allowed(f, p, r, piece, walls)

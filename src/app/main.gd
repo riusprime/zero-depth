@@ -159,16 +159,26 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
+	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
+	var bosses := ContentCompiler.compile_bosses(repo)
+	run.scale_bosses(bosses)
+	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
+	var arena := (
+		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
+		if boss >= 0
+		else null
+	)
 	var world := FloorScenario.build(
 		run.floor_seed(),
 		table,
 		enemies,
 		ContentCompiler.compile_spawning(spawning, repo),
 		ContentCompiler.compile_items(repo),
-		null,
+		arena,
 		run,
 		ContentCompiler.compile_combos(repo)  # v0.3.0 G: named combos.
 	)
+	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -225,7 +235,9 @@ func _next_floor() -> void:
 
 func show_end_panel(won: bool) -> void:
 	close_pause()
-	_end = EndPanel.new(won, driver.reader.killer_kind(), run_recap())
+	_end = EndPanel.new(
+		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), run_recap()
+	)
 	_end.restart_pressed.connect(restart)
 	_end.main_menu_pressed.connect(show_main_menu)
 	ui.add_child(_end)

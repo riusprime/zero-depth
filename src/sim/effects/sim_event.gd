@@ -5,8 +5,10 @@ extends RefCounted
 
 ## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
 ## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
-## Run flow (v0.3.0 B): BOSS_DEFEATED (the boss died; the boss contract, C), BOSS_ROOM_SEALED (the boss door shut
-## behind the player), PORTAL_OPENED (the gate is active), FLOOR_EXIT (the player walked into the active gate).
+## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
+## index in World.boss_tables, pos = where it fell.
+## Run flow (v0.3.0 B): BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
+## active), FLOOR_EXIT (the player walked into the active gate).
 enum Kind {
 	HIT,
 	DAMAGE,

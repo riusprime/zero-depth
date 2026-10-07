@@ -138,15 +138,36 @@ class_name EncounterDefinition extends Resource
 ```
 
 ```gdscript
-class_name BossDefinition extends Resource
-@export var id: StringName
-@export var enemy: EnemyDefinition        # base stats and attacks
-@export var phases: Array[BossPhase]      # each: hp_threshold_permille, attack set, behaviour params
-@export var stagger_threshold: int        # stagger meter size; rules in the blueprint §F
-@export var arena_template_id: StringName
+class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3.0 C)
+@export var id: StringName                         # one of BossSchemas.KINDS: each boss has its own actor kind and model
+@export var name_key: StringName
+@export var hp: int
+@export var radius_m: float
+@export var move_speed_mps: float
+@export var turn_rate_dps: float                   # 0 = always faces the player
+@export var keep_distance_m: float                 # pursuit stops this far away (0 = melee)
+@export var front_arc_degrees: float               # armour, as the Warden's (§3)
+@export var front_mult_permille: int
+@export var rear_arc_degrees: float
+@export var rear_mult_permille: int
+@export var stagger_size: int                      # stagger meter size in damage points; rules in the blueprint §F
+@export var stagger_decay_per_second: float
+@export var stagger_seconds: float
+@export var attacks: Array[BossAttackDefinition]   # AttackDefinition + move, min/max_range_m, weight, cooldown_seconds, cause_key
+@export var phases: Array[BossPhaseDefinition]     # each: hp_threshold_permille, attack_ids, entry_attack, speed/cooldown_permille
+@export var arena_cells: Vector2i                  # the boss room's size in cells
+@export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
 ```
 
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
+- Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
+  missing or unknown keys are `ERROR`s. Every attack's `telegraph_seconds`, and a burrow's `erupt_seconds` (the
+  eruption's own mark), compile to at least `MIN_TELEGRAPH_TICKS`. Every attack names a `cause_key` (the death
+  recap line).
+- `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
+- Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
+  bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
+  floor generator reads.
 
 ## 5. Rooms
 

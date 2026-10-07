@@ -10,6 +10,7 @@ func test_victory_recap_lists_the_run() -> void:
 		. new(
 			true,
 			-1,
+			&"",
 			{
 				"floor": 3,
 				"floors": 3,
@@ -37,6 +38,7 @@ func test_death_recap_has_the_cause_and_omits_missing_shards() -> void:
 	var p := EndPanel.new(
 		false,
 		WorldReader.KIND_WARDEN,
+		&"",
 		{"floor": 2, "floors": 3, "seconds": 61.0, "kills": 9, "items": []}
 	)
 	assert_eq((p.find_child("Title", true, false) as Label).text, "UI_YOU_DIED")

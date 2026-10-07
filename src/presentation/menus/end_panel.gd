@@ -11,6 +11,7 @@ const CAUSES := {
 	WorldReader.KIND_CHARGER: "CAUSE_CHARGER",
 	WorldReader.KIND_WARDEN: "CAUSE_WARDEN",
 	WorldReader.KIND_NEEDLE: "CAUSE_NEEDLE",
+	WorldReader.KIND_HATCHLING: "CAUSE_HATCHLING",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
@@ -18,7 +19,10 @@ const CAUSES := {
 var recap := {}
 
 
-func _init(won: bool, killer_kind: int, p_recap: Dictionary = {}) -> void:
+## `cause_key` (v0.3.0 C): a boss's attack line (WorldReader.killer_cause_key), used before the kind's line.
+func _init(
+	won: bool, killer_kind: int, cause_key: StringName = &"", p_recap: Dictionary = {}
+) -> void:
 	super()
 	name = "EndPanel"
 	recap = p_recap
@@ -33,7 +37,12 @@ func _init(won: bool, killer_kind: int, p_recap: Dictionary = {}) -> void:
 		title = "UI_RUN_COMPLETE" if not recap.is_empty() else "UI_ARENA_CLEARED"
 	add_title(title).name = "Title"
 	if not won:
-		var cause := _line("Cause", CAUSES.get(killer_kind, "CAUSE_UNKNOWN"), 26)
+		var key: String = (
+			String(cause_key)
+			if not String(cause_key).is_empty()
+			else CAUSES.get(killer_kind, "CAUSE_UNKNOWN")
+		)
+		var cause := _line("Cause", key, 26)
 		cause.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_INHERIT
 	if not recap.is_empty():
 		_add_recap()

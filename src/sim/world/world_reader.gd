@@ -8,6 +8,11 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
+## Bosses and the Brood Mother's hatchlings (v0.3.0 C).
+const KIND_HATCHLING := ActorStore.Kind.HATCHLING
+const KIND_GATEKEEPER := ActorStore.Kind.GATEKEEPER
+const KIND_BROOD_MOTHER := ActorStore.Kind.BROOD_MOTHER
+const KIND_SIEGE_ENGINE := ActorStore.Kind.SIEGE_ENGINE
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -49,6 +54,20 @@ const BOSS_WAITING := BossFlow.State.WAITING
 const BOSS_FIGHT := BossFlow.State.FIGHT
 const BOSS_OPEN := BossFlow.State.OPEN
 const BOSS_EXITED := BossFlow.State.EXITED
+## A boss knocked off balance by a full stagger meter (BossAi).
+const STATE_STAGGERED := BossAi.STAGGERED
+## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
+const MOVE_SLAM_RING := BossAttackTable.Move.SLAM_RING
+const MOVE_LANES := BossAttackTable.Move.LANES
+const MOVE_SWEEP := BossAttackTable.Move.SWEEP
+const MOVE_CHARGE := BossAttackTable.Move.CHARGE
+const MOVE_LEAP := BossAttackTable.Move.LEAP
+const MOVE_BURROW := BossAttackTable.Move.BURROW
+const MOVE_BROOD := BossAttackTable.Move.BROOD
+const MOVE_BARRAGE := BossAttackTable.Move.BARRAGE
+const MOVE_RAIL := BossAttackTable.Move.RAIL
+const MOVE_BOLT_FAN := BossAttackTable.Move.BOLT_FAN
+const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
 
 var _w: World
 
@@ -254,6 +273,9 @@ func telegraph(i: int) -> Dictionary:
 
 ## A Warden's armour half-arcs (1/4096 turns either side of its facing): x = front, y = rear. (0, 0) for others.
 func armour_half_arcs(i: int) -> Vector2i:
+	if BossAi.is_boss_kind(_w.actors.kinds[i]):
+		var bt := BossAi.table_of(_w, i)
+		return Vector2i(bt.front_half_arc, bt.rear_half_arc)
 	var t := _w.enemy_table(_w.actors.kinds[i])
 	return Vector2i(t.front_half_arc, t.rear_half_arc) if t != null else Vector2i.ZERO
 
@@ -646,6 +668,11 @@ func portal_opened_tick() -> int:
 	return _w.boss_flow.opened_tick if _w.boss_flow != null else -1
 
 
+# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+static func is_boss_kind(kind: int) -> bool:
+	return BossAi.is_boss_kind(kind)
+
+
 func boss_alive() -> bool:
 	return _w.boss_alive()
 
@@ -658,6 +685,88 @@ func boss_id() -> int:
 ## How far p is past the boss door's line, into the boss room (negative on the host side).
 func boss_door_depth(p: Vector2) -> float:
 	return _w.floor_layout.boss_door_depth(p) if _w.floor_layout != null else 0.0
+
+
+## The actor index of the first live boss, or -1 (the boss bar shows it).
+func boss_index() -> int:
+	for i in range(1, _w.actors.size()):
+		if BossAi.is_boss_kind(_w.actors.kinds[i]) and _w.actors.dead[i] == 0:
+			return i
+	return -1
+
+
+## Locale key of boss i's name (tr() it in the view).
+func boss_name_key(i: int) -> StringName:
+	return BossAi.table_of(_w, i).name_key
+
+
+## Boss i's stagger meter, 0..1000 of full (1000 while staggered).
+func boss_stagger_permille(i: int) -> int:
+	if _w.actors.state[i] == BossAi.STAGGERED:
+		return 1000
+	var b := BossAi.entry_of(_w, i)
+	var t := BossAi.table_of(_w, i)
+	return clampi(_w.bosses.meter[b] * 1000 / maxi(1, t.stagger_size_milli), 0, 1000)
+
+
+func boss_staggered(i: int) -> bool:
+	return _w.actors.state[i] == BossAi.STAGGERED
+
+
+## Boss i's phase (0 = the first) and how many it has.
+func boss_phase(i: int) -> int:
+	return _w.bosses.phase[BossAi.entry_of(_w, i)]
+
+
+func boss_phase_count(i: int) -> int:
+	return BossAi.table_of(_w, i).phase_threshold.size()
+
+
+## HP thresholds (per mille of max) where boss i's later phases start, for marks on the bar.
+func boss_phase_thresholds(i: int) -> PackedInt32Array:
+	return BossAi.table_of(_w, i).phase_threshold
+
+
+## The move of boss i's attack in progress (a MOVE_* constant), or -1.
+func boss_move(i: int) -> int:
+	var atk := BossAi.attack_of(_w, i)
+	return atk.move if atk != null else -1
+
+
+## Ticks into boss i's current state, for its animation.
+func actor_state_ticks(i: int) -> int:
+	return _w.actors.state_t[i]
+
+
+## Boss i is underground (a burrow): the view hides its body.
+func boss_hidden(i: int) -> bool:
+	return BossAi.hidden(_w, i)
+
+
+## Boss i is mid-leap: [true, progress 0..1] while airborne, else [false, 0].
+func boss_leap(i: int) -> Array:
+	var atk := BossAi.attack_of(_w, i)
+	if (
+		atk == null
+		or atk.move != BossAttackTable.Move.LEAP
+		or _w.actors.state[i] != EnemyAi.State.ACTIVE
+	):
+		return [false, 0.0]
+	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
+
+
+## The death recap's cause key when a boss killed the player (its attack's line), else &"".
+func killer_cause_key() -> StringName:
+	return BossAi.cause_key(_w)
+
+
+## Number of compiled bosses (indices for the dev panel's spawn), and boss k's name key.
+func boss_table_count() -> int:
+	return _w.boss_tables.size()
+
+
+func boss_table_name_key(k: int) -> StringName:
+	return _w.boss_tables[k].name_key
 
 
 # --- Walls with thickness (v0.3.0 A) ------------------------------------------------------------------------

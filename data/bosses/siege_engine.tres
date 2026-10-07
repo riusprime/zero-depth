@@ -1,0 +1,146 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_barrage"]
+script = ExtResource("1_atk")
+id = &"barrage"
+shape = 0
+shape_params = {
+"count": 5,
+"radius_m": 1.6,
+"spread_m": 3.5
+}
+telegraph_seconds = 1.1
+active_seconds = 0.0167
+recovery_seconds = 0.8
+damage = 20
+move = &"barrage"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 3
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_SIEGE_BARRAGE"
+
+[sub_resource type="Resource" id="A_barrage_7"]
+script = ExtResource("1_atk")
+id = &"barrage_7"
+shape = 0
+shape_params = {
+"count": 7,
+"radius_m": 1.6,
+"spread_m": 4.0
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 20
+move = &"barrage"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 3
+cooldown_seconds = 0.7
+cause_key = &"CAUSE_SIEGE_BARRAGE"
+
+[sub_resource type="Resource" id="A_rail_sweep"]
+script = ExtResource("1_atk")
+id = &"rail_sweep"
+shape = 1
+shape_params = {
+"arc_degrees": 110.0,
+"reach_m": 13.0
+}
+telegraph_seconds = 1.0
+active_seconds = 1.2
+recovery_seconds = 1.2
+damage = 28
+move = &"rail"
+min_range_m = 0.0
+max_range_m = 13.0
+weight = 2
+cooldown_seconds = 1.2
+cause_key = &"CAUSE_SIEGE_RAIL"
+
+[sub_resource type="Resource" id="A_bolt_fan"]
+script = ExtResource("1_atk")
+id = &"bolt_fan"
+shape = 4
+shape_params = {
+"count": 7,
+"gap_seconds": 0.25,
+"radius_m": 0.16,
+"range_m": 16.0,
+"speed_mps": 10.0,
+"spread_degrees": 10.0,
+"volleys": 3
+}
+telegraph_seconds = 0.7
+active_seconds = 0.75
+recovery_seconds = 0.6
+damage = 10
+move = &"bolt_fan"
+min_range_m = 0.0
+max_range_m = 16.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SIEGE_BOLTS"
+
+[sub_resource type="Resource" id="A_deploy"]
+script = ExtResource("1_atk")
+id = &"deploy"
+shape = 0
+shape_params = {
+"count": 2,
+"distance_m": 3.0,
+"enemy_id": "needle",
+"radius_m": 1.1
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.8
+damage = 15
+move = &"deploy"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.5
+cause_key = &"CAUSE_SIEGE_DEPLOY"
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("barrage", "rail_sweep", "bolt_fan")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("barrage_7", "rail_sweep", "bolt_fan")
+entry_attack = &"deploy"
+speed_permille = 0
+cooldown_permille = 650
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_SIEGE_ENGINE"
+hp = 1800
+radius_m = 1.4
+move_speed_mps = 1.1
+turn_rate_dps = 90.0
+keep_distance_m = 7.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 300
+stagger_decay_per_second = 15.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_barrage"), SubResource("A_barrage_7"), SubResource("A_rail_sweep"), SubResource("A_bolt_fan"), SubResource("A_deploy")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+arena_cells = Vector2i(3, 1)
+arena_template = 5
+id = &"siege_engine"

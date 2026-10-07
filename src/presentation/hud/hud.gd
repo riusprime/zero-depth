@@ -20,6 +20,8 @@ const FLOOR_CARD_SECONDS := 2.6
 const FLOOR_CARD_FADE := 0.7
 const BOSS_WARN_M := 6.0
 
+## The boss bar (v0.3.0 C), shown while a boss is alive.
+var boss_bar := BossBar.new()
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
 var _dash := _pip("HUD_DASH")
@@ -119,6 +121,7 @@ func _init() -> void:
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
+	add_child(boss_bar)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -149,6 +152,7 @@ func sync(reader: WorldReader) -> void:
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
 		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
+	boss_bar.sync(reader)
 
 
 func _process(delta: float) -> void:

@@ -1,10 +1,10 @@
 extends GutTest
 ## The run through real input only (v0.3.0 PLAN L3-L4, B): floor 1 shows its card and "Floor 1 · <biome>"; the
 ## left stick walks to the nearest pedestal (an item to carry), then through the boss door, which seals behind you
-## and starts the boss; the dev panel (backtick, then mouse clicks: God mode for the long walk, Kill boss) stands in
-## for the fight, which is C's; the portal opens, the stick walks into it, and floor 2 loads with the item kept, a
-## 40 % heal, its own card and HUD line. Pause: Esc freezes the sim and Enter resumes; Restart run from the pause
-## menu starts a fresh run.
+## and starts floor 1's real boss (drawn from its pool, its arena sizing the room); the dev panel (backtick, then
+## mouse clicks: God mode for the long walk, Kill boss) stands in for the fight; the portal opens, the stick walks
+## into it, and floor 2 loads with the items kept, a 40 % heal, its own card and HUD line. Pause: Esc freezes the
+## sim and Enter resumes; Restart run from the pause menu starts a fresh run.
 
 const LEG_FRAMES := 7000
 
@@ -86,6 +86,17 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 		return
 	assert_eq(w.walls.size(), walls_before + 1, "the door is a wall now")
 	assert_true(w.boss_alive(), "the boss is up")
+	var boss_i := w.actors.index_of(w.boss_id)
+	var pool := ContentCompiler.compile_boss_pool(ContentRepository.load_all(), 1)
+	assert_has(pool, w.boss_flow.boss_index, "floor 1's boss comes from floor 1's pool")
+	assert_eq(
+		w.actors.kinds[boss_i], w.boss_tables[w.boss_flow.boss_index].kind, "the real boss (C's)"
+	)
+	var arena := w.boss_tables[w.boss_flow.boss_index].arena_cells
+	var cells := f.room_cells[f.boss_room].size
+	assert_true(
+		cells == arena or cells == Vector2i(arena.y, arena.x), "the room has the boss's arena size"
+	)
 	await e.frames(30)
 	assert_true(main.view.boss_door.is_sealed(), "the door view shut")
 	assert_lt(main.view.boss_door.open_amount, 0.5, "and its slab is up")

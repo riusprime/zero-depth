@@ -68,7 +68,6 @@ func advance(w: World) -> void:
 				w.emit_event(SimEvent.Kind.BOSS_ROOM_SEALED, 0, 0, 0, f.boss_door_center)
 				w.spawn_boss(boss_index, f.boss_spawn)
 		State.FIGHT:
-			BossStub.advance(w)  # STUB: C removes this line (the real boss emits BOSS_DEFEATED itself).
 			if not w.boss_alive():
 				state = State.OPEN
 				opened_tick = w.tick

@@ -30,6 +30,10 @@ func _floor_world(seed_value: int, run: RunState = null) -> World:
 		run,
 		ContentCompiler.compile_combos(repo)
 	)
+	var bosses := ContentCompiler.compile_bosses(repo)
+	if run != null:
+		run.scale_bosses(bosses)
+	w.set_boss_tables(bosses)  # as Main does after the build
 	w.actors.invuln[0] = LONG
 	return w
 
@@ -152,6 +156,45 @@ func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
 	assert_eq(unlocks, 0, "no second unlock card on the new floor")
 
 
+func test_each_floor_draws_its_boss_and_scales_it() -> void:
+	var repo := _repo()
+	var base := ContentCompiler.compile_bosses(repo)
+	var r := RunState.start(5, _run_table())
+	for f in [1, 2, 3]:
+		var pool := ContentCompiler.compile_boss_pool(repo, f)
+		assert_false(pool.is_empty(), "floor %d has a boss pool" % f)
+		var k := r.pick_boss(pool, f)
+		assert_has(pool, k, "the boss comes from floor %d's pool" % f)
+		assert_eq(
+			k,
+			RunState.start(5, _run_table()).pick_boss(pool, f),
+			"the same run meets the same boss"
+		)
+		var t := ContentCompiler.compile_bosses(repo)
+		r.scale_bosses(t, f)
+		assert_eq(t[k].hp, base[k].hp * (10 + 4 * (f - 1)) / 10, "boss HP x (1 + 0.4 (f - 1))")
+		for a in t[k].attacks.size():
+			assert_eq(
+				t[k].attacks[a].damage,
+				base[k].attacks[a].damage * (10 + 2 * (f - 1)) / 10,
+				"boss damage x (1 + 0.2 (f - 1))"
+			)
+
+
+func test_the_boss_room_takes_the_bosses_arena() -> void:
+	var bosses := ContentCompiler.compile_bosses(_repo())
+	for k in bosses.size():
+		var spec := BossArenaSpec.make(bosses[k].arena_cells, bosses[k].arena_template, k)
+		var f := FloorGenerator.generate(321 + k)
+		BossRoomBuilder.attach(f, spec)
+		var cells := f.room_cells[f.boss_room].size
+		assert_true(
+			cells == spec.cells or cells == Vector2i(spec.cells.y, spec.cells.x),
+			"%s: a %s room" % [bosses[k].id, spec.cells]
+		)
+		assert_eq(f.room_template[f.boss_room], spec.template)
+
+
 func test_the_carry_names_its_fields_in_one_place() -> void:
 	assert_has(RunCarry.FIELDS, &"items_owned")
 	assert_has(RunCarry.FIELDS, &"combos_owned")
@@ -185,7 +228,8 @@ func test_entering_the_boss_room_seals_it_and_starts_the_boss() -> void:
 	assert_true(w.boss_alive(), "the boss is up")
 	var bi := w.actors.index_of(w.boss_id)
 	assert_eq(w.actors.pos(bi), f.boss_spawn)
-	assert_eq(w.actors.max_hp[bi], w.enemy_table(ActorStore.Kind.WARDEN).hp * BossStub.HP_MULT)
+	assert_eq(w.actors.kinds[bi], w.boss_tables[0].kind, "boss 0 (the default arena's)")
+	assert_eq(w.actors.max_hp[bi], w.boss_tables[0].hp)
 	var reader := WorldReader.new(w)
 	assert_true(reader.boss_door_sealed())
 	assert_false(reader.portal_active())
@@ -197,11 +241,11 @@ func test_the_sealed_door_holds_and_spawns_stop() -> void:
 	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
-	var boss := w.boss_id
-	for i in range(1, w.actors.size()):
-		if w.actors.ids[i] != boss:
-			w.actors.invuln[i] = 0
-			Damage.hit(w, i, 999999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))
+	# The boss's own brood and turrets are the boss's (C); with it and everything else dead, nothing may arrive.
+	_kill_enemies(w)
+	CombatLab.idle(w, 1)
+	assert_eq(w.boss_flow.state, BossFlow.State.OPEN)
+	assert_true(w.boss_flow.door_sealed(), "the door stays shut after the boss")
 	var ticks := w.run_ticks
 	var spawned := 0
 	for k in 900:

@@ -130,6 +130,16 @@ var phase_tick := -1
 var phase_guard_next := 0
 # --- end Items ---------------------------------------------------------------------------------------------
 
+# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+## Compiled bosses (part of the loadout, like enemy_tables); spawn_boss takes an index into it.
+var boss_tables: Array[BossTable] = []
+## The live bosses' own state (stagger, phase, the attack in progress).
+var bosses := BossStore.new()
+## The boss attack (index in its table) that killed the player, or -1 (the recap's cause line).
+var killer_attack := -1
+## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
+var boss_id := -1
+# --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
 var combo_tables: Array[ComboTable] = []
@@ -175,13 +185,13 @@ var bastion_tick := -1
 var engine_chain := PackedStringArray()
 var tick_seq0 := 0
 # --- end Engines -------------------------------------------------------------------------------------------
+
 # --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
 ## The floor's boss room, door and portal (null in the arena and kernel scenarios), this floor's number in the run
-## (1-based) and the run's floor count (RunState sets both), and the boss's actor id (0 = none; BossStub).
+## (1-based) and the run's floor count (RunState sets both). The boss itself is C's (boss_id, bosses).
 var boss_flow: BossFlow
 var floor_index := 1
 var floor_count := 1
-var boss_id := 0
 # --- end Run flow ------------------------------------------------------------------------------------------
 
 var _next_id := 1
@@ -194,6 +204,8 @@ var _wall_next: Obb
 var _nav_next: NavField
 ## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
+## Enemies a boss brings in (eggs, turrets) wait until phase 9 of the tick: [kind, pos].
+var _pending_enemies: Array[Array] = []
 
 
 func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZERO) -> void:
@@ -281,7 +293,9 @@ func step(frame: InputFrame) -> void:
 	_move_and_collide()
 	# 6. Hits: enemy attacks, then projectile sweeps.
 	for i in range(1, actors.size()):
-		if EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
+		if BossAi.is_boss_kind(actors.kinds[i]) and actors.dead[i] == 0:
+			BossAi.resolve(self, i)  # Bosses (v0.3.0 C).
+		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
 	_projectile_hits()
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
@@ -409,17 +423,6 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 
 
 # --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
-## The boss contract (C implements it; BossStub stands in until then): spawns boss `boss_table_index` at `pos` and
-## returns its actor id.
-func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
-	return BossStub.spawn(self, boss_table_index, pos)
-
-
-## True while the floor's boss lives (C implements it; BossStub stands in until then).
-func boss_alive() -> bool:
-	return BossStub.alive(self)
-
-
 ## Whether a blink from `from` may land at `at`: the boss room's door rules (BossFlow.blink_may_land).
 func blink_may_land(from: Vector2, at: Vector2) -> bool:
 	return boss_flow == null or boss_flow.blink_may_land(self, from, at)
@@ -450,6 +453,61 @@ func add_wall_now(o: Obb) -> void:
 
 
 # --- end Run flow ------------------------------------------------------------------------------------------
+
+
+# --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
+## The compiled bosses, in the order spawn_boss's index refers to (ContentCompiler.compile_bosses).
+func set_boss_tables(tables: Array[BossTable]) -> void:
+	boss_tables = tables
+
+
+## The first boss table of an actor kind, or null.
+func boss_table_of_kind(kind: int) -> BossTable:
+	for t in boss_tables:
+		if t.kind == kind:
+			return t
+	return null
+
+
+## Adds boss `boss_table_index` at `pos` now (setup, or tick phase 9 like the wave director) and returns its actor
+## id. It rises for BossAi.INTRO_TICKS (invulnerable, not acting), then fights. Its death emits KILL (as any enemy,
+## with its own kind) and then BOSS_DEFEATED once.
+func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
+	var t := boss_tables[boss_table_index]
+	var id := _take_id()
+	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
+	actors.invuln[i] = BossAi.INTRO_TICKS
+	actors.facing[i] = Kin.angle_of(player_pos() - pos)
+	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
+	bosses.add(id, boss_table_index)
+	boss_id = id
+	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
+	return id
+
+
+## True while any boss is alive (not yet killed).
+func boss_alive() -> bool:
+	for id in bosses.ids:
+		var i := actors.index_of(id)
+		if i >= 0 and actors.dead[i] == 0:
+			return true
+	return false
+
+
+## Queues an enemy for phase 9 of this tick (a boss's eggs and turrets).
+func queue_enemy(kind: int, pos: Vector2) -> void:
+	_pending_enemies.append([kind, pos])
+
+
+func pending_enemies_of(kind: int) -> int:
+	var n := 0
+	for s in _pending_enemies:
+		if s[0] == kind:
+			n += 1
+	return n
+
+
+# --- end Bosses ---------------------------------------------------------------------------------------------
 
 
 func dash_iframes_active() -> bool:
@@ -516,6 +574,11 @@ func state_hash() -> String:
 	for v in [overcharge_tick, dash_root, dash_hit_tick]:
 		h.add_int(v)
 	h.add_ints(dash_hit_ids)
+	# Bosses (v0.3.0 C): only in a world with boss tables, so worlds without bosses hash as before.
+	if not boss_tables.is_empty():
+		bosses.hash_into(h)
+		h.add_int(killer_attack)
+		h.add_int(boss_id)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -527,7 +590,7 @@ func state_hash() -> String:
 		_hash_engines(h)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
-		for v in [floor_index, floor_count, boss_id]:
+		for v in [floor_index, floor_count]:
 			h.add_int(v)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
@@ -627,6 +690,9 @@ func _buffer_presses(pressed: int) -> void:
 func _run_ai() -> void:
 	var target := player_pos()
 	for i in range(1, actors.size()):
+		if BossAi.is_boss_kind(actors.kinds[i]):
+			BossAi.think(self, i)  # Bosses (v0.3.0 C).
+			continue
 		if EnemyAi.is_enemy_kind(actors.kinds[i]):
 			EnemyAi.think(self, i)
 			continue
@@ -714,6 +780,9 @@ func _move_and_collide() -> void:
 	# Dummies steer toward the player plus their jitter.
 	var target := p
 	for i in range(1, actors.size()):
+		if BossAi.is_boss_kind(actors.kinds[i]):
+			BossAi.move(self, i)  # Bosses (v0.3.0 C).
+			continue
 		if EnemyAi.is_enemy_kind(actors.kinds[i]):
 			EnemyAi.move(self, i)
 			continue
@@ -729,9 +798,18 @@ func _move_and_collide() -> void:
 		if dist > dummy_speed:
 			at += to * (dummy_speed / dist)
 		actors.set_pos(i, at)
-	# Resolve: walls first, then actor pairs in ascending index order.
+	# Resolve: walls first, then actor pairs in ascending index order. A boss in the air or underground passes
+	# through both; a boss on the ground isn't shoved: the other body takes the whole push (v0.3.0 C).
+	var through := PackedInt32Array()
+	var heavy := PackedInt32Array()
+	if not bosses.ids.is_empty():
+		for i in actors.size():
+			through.append(1 if BossAi.passes_through(self, i) else 0)
+			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
 	for _iter in SimTick.COLLIDE_ITERS:
 		for i in actors.size():
+			if not through.is_empty() and through[i] == 1:
+				continue
 			var ap := actors.pos(i)
 			var r := actors.radius[i]
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
@@ -752,9 +830,19 @@ func _move_and_collide() -> void:
 				var push := Collide.circle_vs_circle(
 					actors.pos(a), ra, actors.pos(b), actors.radius[b]
 				)
-				if push != Vector2.ZERO:
-					actors.set_pos(a, actors.pos(a) + push)
-					actors.set_pos(b, actors.pos(b) - push)
+				if push == Vector2.ZERO:
+					continue
+				if not through.is_empty():
+					if through[a] == 1 or through[b] == 1:
+						continue
+					if heavy[a] != heavy[b]:
+						if heavy[a] == 1:
+							actors.set_pos(b, actors.pos(b) - push * 2.0)
+						else:
+							actors.set_pos(a, actors.pos(a) + push * 2.0)
+						continue
+				actors.set_pos(a, actors.pos(a) + push)
+				actors.set_pos(b, actors.pos(b) - push)
 
 
 func _projectile_hits() -> void:
@@ -822,6 +910,19 @@ func _remove_dead() -> void:
 			gone.append(i)
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
+			var b := bosses.index_of(actors.ids[i])
+			if b >= 0:  # Bosses (v0.3.0 C): defeated, once, as it leaves.
+				var e := emit_event(
+					SimEvent.Kind.BOSS_DEFEATED,
+					actors.ids[i],
+					actors.ids[i],
+					actors.ids[i],
+					actors.pos(i)
+				)
+				e.amount = bosses.table[b]
+				bosses.remove(b)
+				if boss_id == actors.ids[i]:
+					boss_id = -1
 	actors.remove_sorted(gone)
 
 
@@ -831,3 +932,7 @@ func _apply_spawns() -> void:
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()
+	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
+		if enemy_table(s[0]) != null:
+			add_enemy(s[0], s[1])
+	_pending_enemies.clear()

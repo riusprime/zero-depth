@@ -60,6 +60,20 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 		t.damage = t.damage * (1000 + table.damage_per_floor_permille * (f - 1)) / 1000
 
 
+## Scales freshly compiled boss tables for floor f by the same factors: HP, and every attack's damage.
+func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
+	for t in tables:
+		t.hp = maxi(1, t.hp * (1000 + table.hp_per_floor_permille * (f - 1)) / 1000)
+		for a in t.attacks:
+			a.damage = a.damage * (1000 + table.damage_per_floor_permille * (f - 1)) / 1000
+
+
+## Floor f's boss: one of its pool (indices into the compiled bosses), drawn from a stream of the run seed
+## (`boss_<f>`), so a run always meets the same bosses. -1 for an empty pool.
+func pick_boss(pool: PackedInt32Array, f: int = floor_index) -> int:
+	return BossTable.pick(pool, RngStream.derive(run_seed, "boss_%d" % f))
+
+
 ## Sets up a fresh floor's world: its number, and the carry from the floor before.
 func prepare(w: World) -> void:
 	w.floor_index = floor_index
