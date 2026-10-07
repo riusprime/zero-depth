@@ -59,3 +59,6 @@ merged.
   locked rule yea" → EI-05 lists `crit` and `ability` (and the `ai:enemy` sub-stream).
 - 2026-10-07 — BS merged on top of v0.3.5 (keep-both conflicts in world, debug API, dev panel, strings, SIM_CONTRACTS,
   LOCKED_DECISIONS). 777 tests pass; goldens unchanged.
+- 2026-10-07 — EN merged (812 tests), then BO on top (by hand: the Kind enum keeps EN's kinds then BO's; EnemyAi matches run
+  on `behaviour_of()` with the Swarmer included; both telegraph style sets kept). 846 tests pass; export smoke 0 misses;
+  goldens unchanged. A container restart stopped SC, CP and AB mid-run; their work survived on disk and they resumed.
