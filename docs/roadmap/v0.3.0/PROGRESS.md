@@ -24,7 +24,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Design questions (run, combos, items, blink walls) | 2026-10-07 | answered (PLAN "Owner answers") | 2026-10-07 |
 | Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
-| Full-run build ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)) | 2026-10-07 | pending | |
+| Full-run build ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)) | 2026-10-07 | answered (verbatim in the sheet) | 2026-10-07 |
 | Blink vs thick walls | 2026-10-07 | "Thicker room walls" | 2026-10-07 |
 
 ## Open
@@ -46,3 +46,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — B merged on top of A, N, G, C, E (the agent merged each in turn; resumed once after an API rate limit). 466 tests pass; goldens unchanged; export smoke 0 misses; hitch probe ok. Floor generation mean 131.6 ms / max 262.5 ms (50 seeds). From point-blank, walls ≥ 4.5 m stop a blink. Version → 0.3.0-dev.
 - 2026-10-07 — First full-run build sent to the owner with [`PLAYTEST_RUN.md`](PLAYTEST_RUN.md) (code-built bosses; C2/C3 still running).
 - 2026-10-07 — C2+C3 merged clean; 482 tests pass; goldens unchanged; export smoke 0 misses (the models load from the Windows pack). Known: slight seam stretching at extreme poses, a turret foot can dip below ground when planted, subtle wind-up glow, first-draw shader compile per boss not measured.
+- 2026-10-07 — Owner played the full run ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)): finish v0.3.0; split melee/ranged starts; anti-kiting bosses; more original mechanics; a shard gamble; clear enemies on boss summon; HUD style, visual danger meter, boss bar filling during the rise, low-HP blink, out-of-combat regen; harder boss AI; asks about sounds. Design questions asked before building.
