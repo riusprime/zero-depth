@@ -28,6 +28,38 @@ extends ContentDef
 @export var arena_cells := Vector2i(2, 2)
 @export_enum("open", "scatter", "pillars", "centre", "cross", "lines", "bunkers")
 var arena_template := 0
+## Boss challenge (v0.3.0 BX, PLAN L17 and L26). Distances are from the boss's edge to the player.
+## Ranged armour: the player's hits deal full damage up to ranged_full_m away, falling linearly to
+## ranged_far_permille at ranged_far_m and beyond (1000 = no ranged armour).
+@export var ranged_full_m := 5.0
+@export var ranged_far_m := 12.0
+@export var ranged_far_permille := 1000
+## Punish: stay farther than punish_distance_m for punish_seconds and it performs punish_attack (empty = none).
+@export var punish_distance_m := 9.0
+@export var punish_seconds := 4.0
+@export var punish_attack: StringName
+## Weak point: after an attack whose opens_weak_point is set, it is open for weak_point_seconds; hits from within
+## weak_point_range_m deal weak_point_mult_permille and fill the stagger meter at weak_point_stagger_permille.
+@export var weak_point_seconds := 2.0
+@export var weak_point_range_m := 2.5
+@export var weak_point_mult_permille := 1000
+@export var weak_point_stagger_permille := 1000
+## Closing arena: from phase arena_close_phase (-1 = not by phase) or after arena_close_after_seconds of fighting
+## (0 = not by time), a band creeps in from the room's walls: arena_close_step_m every arena_close_step_seconds
+## (0 m = never), each step marked arena_close_warn_seconds first, stopping arena_safe_half_m short of the room's
+## centre on each axis. Standing in it hurts arena_hazard_damage every arena_hazard_seconds.
+@export var arena_close_phase := -1
+@export var arena_close_after_seconds := 0.0
+@export var arena_close_step_seconds := 6.0
+@export var arena_close_step_m := 0.0
+@export var arena_close_warn_seconds := 1.5
+@export var arena_safe_half_m := 5.0
+@export var arena_hazard_damage := 0
+@export var arena_hazard_seconds := 0.5
+## Harder AI: every attack's recovery is scaled by recovery_permille, and aimed attacks lead the player by
+## lead_seconds of their current velocity.
+@export var recovery_permille := 1000
+@export var lead_seconds := 0.0
 
 
 func category() -> StringName:
@@ -56,6 +88,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"duration", p, "stagger_seconds must be > 0"))
 	_check_attacks(issues)
 	_check_phases(issues)
+	_check_challenge(issues)
 	if (
 		arena_cells.x < 1
 		or arena_cells.y < 1
@@ -149,3 +182,60 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 		issues.append(ValidationIssue.new(&"armour", p, "front_mult_permille must be 1..1000"))
 	if rear_mult_permille < 1000 or rear_mult_permille > 3000:
 		issues.append(ValidationIssue.new(&"armour", p, "rear_mult_permille must be 1000..3000"))
+
+
+## Boss challenge (v0.3.0 BX): ranged armour, the punish move, the weak point, the closing arena, the harder AI.
+func _check_challenge(issues: Array[ValidationIssue]) -> void:
+	var p := resource_path
+	if ranged_full_m < 0.0 or ranged_far_m <= ranged_full_m:
+		issues.append(
+			ValidationIssue.new(&"challenge", p, "needs 0 <= ranged_full_m < ranged_far_m")
+		)
+	if ranged_far_permille < 1 or ranged_far_permille > 1000:
+		issues.append(ValidationIssue.new(&"challenge", p, "ranged_far_permille must be 1..1000"))
+	if not String(punish_attack).is_empty():
+		if attack(punish_attack) == null:
+			issues.append(
+				ValidationIssue.new(&"unknown_attack", p, "no punish attack %s" % punish_attack)
+			)
+		if punish_distance_m <= 0.0 or int(round(punish_seconds * 60.0)) < 1:
+			issues.append(
+				ValidationIssue.new(&"challenge", p, "punish distance and time must be > 0")
+			)
+	if weak_point_seconds < 0.0 or weak_point_range_m <= 0.0:
+		issues.append(ValidationIssue.new(&"challenge", p, "weak point time >= 0, range > 0"))
+	for pair in [
+		["weak_point_mult_permille", weak_point_mult_permille],
+		["weak_point_stagger_permille", weak_point_stagger_permille]
+	]:
+		if pair[1] < 1000 or pair[1] > 4000:
+			issues.append(ValidationIssue.new(&"challenge", p, "%s must be 1000..4000" % pair[0]))
+	if arena_close_phase < -1 or arena_close_phase >= phases.size():
+		issues.append(ValidationIssue.new(&"challenge", p, "arena_close_phase is not a phase"))
+	if arena_close_after_seconds < 0.0 or arena_close_step_m < 0.0 or arena_safe_half_m <= 0.0:
+		issues.append(ValidationIssue.new(&"challenge", p, "arena closing numbers out of range"))
+	var step := int(round(arena_close_step_seconds * 60.0))
+	var warn := int(round(arena_close_warn_seconds * 60.0))
+	if warn < BehaviourSchemas.MIN_TELEGRAPH_TICKS or step <= warn:
+		issues.append(
+			ValidationIssue.new(
+				&"telegraph_short",
+				p,
+				"the closing band's warning must last the telegraph minimum and fit in its step"
+			)
+		)
+	if arena_hazard_damage < 0 or int(round(arena_hazard_seconds * 60.0)) < 1:
+		issues.append(ValidationIssue.new(&"challenge", p, "arena hazard damage >= 0, period > 0"))
+	if recovery_permille < 1 or recovery_permille > 2000:
+		issues.append(ValidationIssue.new(&"challenge", p, "recovery_permille must be 1..2000"))
+	if lead_seconds < 0.0 or lead_seconds > 1.0:
+		issues.append(ValidationIssue.new(&"challenge", p, "lead_seconds must be 0..1"))
+	for a in attacks:
+		if a == null or String(a.follow_up).is_empty():
+			continue
+		if attack(a.follow_up) == null or a.follow_up == a.id:
+			issues.append(
+				ValidationIssue.new(
+					&"unknown_attack", p, "attack %s: bad follow-up %s" % [a.id, a.follow_up]
+				)
+			)

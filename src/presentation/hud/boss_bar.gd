@@ -3,6 +3,8 @@ extends Control
 ## The boss bar (PLAN v0.3.0 C) across the top of the HUD while a boss is alive: its name, its HP with a mark at each
 ## later phase's threshold, and its stagger meter under it (bright and labelled while it is staggered). Reads the
 ## sim through WorldReader only; hidden when no boss is alive.
+## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
+## (WorldReader.boss_intro_permille), then shows its real HP.
 
 const BAR := Vector2(640, 18)
 const STAGGER := Vector2(640, 7)
@@ -65,6 +67,7 @@ func sync(reader: WorldReader) -> void:
 		_name.text = tr(key)
 		_build_marks(reader.boss_phase_thresholds(i))
 	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
+	frac *= reader.boss_intro_permille(i) / 1000.0
 	_hp_fill.size = Vector2(BAR.x * frac, BAR.y)
 	var st := reader.boss_stagger_permille(i)
 	var staggered := reader.boss_staggered(i)

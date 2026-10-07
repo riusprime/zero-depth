@@ -24,6 +24,15 @@ func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
 	return a
 
 
+## The body's meshes: every MeshInstance3D but the weak point's gem and halo (v0.3.0 BX).
+func _body_meshes(a: BossAvatar) -> int:
+	var n := 0
+	for m in a.find_children("*", "MeshInstance3D", true, false):
+		if m != a.weak_core and not a.weak_core.is_ancestor_of(m):
+			n += 1
+	return n
+
+
 func test_each_boss_uses_its_installed_model() -> void:
 	for id: StringName in classes:
 		var a := _avatar(classes[id])
@@ -32,11 +41,7 @@ func test_each_boss_uses_its_installed_model() -> void:
 		var box: AABB = a.imported.mesh.get_aabb()
 		assert_almost_eq(box.position.y, 0.0, 0.01, "%s stands on the ground" % id)
 		assert_almost_eq(box.size.y, BossModels.SPECS[id]["height"], 0.01, "%s at its height" % id)
-		assert_eq(
-			a.find_children("*", "MeshInstance3D", true, false).size(),
-			2,
-			"the mesh and its X-ray twin"
-		)
+		assert_eq(_body_meshes(a), 2, "the mesh and its X-ray twin")
 
 
 func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> void:
@@ -51,9 +56,7 @@ func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> vo
 		assert_not_null(m.albedo_texture, "%s keeps its albedo texture" % id)
 		assert_eq(a.imported.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
 		var o := _avatar(classes[id], &"outline")
-		assert_eq(
-			o.find_children("*", "MeshInstance3D", true, false).size(), 1, "no twin without xray"
-		)
+		assert_eq(_body_meshes(o), 1, "no twin without xray")
 
 
 func test_whole_body_motion_and_glow_change_no_shader() -> void:

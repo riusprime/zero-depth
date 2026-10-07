@@ -34,9 +34,11 @@ static func ready_boss(w: World, id: StringName, pos: Vector2 = Vector2.ZERO) ->
 	return i
 
 
-## Starts attack `attack_id` of the boss at index i (the aim locks on the player where it stands now).
+## Starts attack `attack_id` of the boss at index i (the aim locks on the player where it stands now). It runs alone:
+## marked as a follow-up, so it never chains into another (BX); BossAi.start_attack itself lets it chain.
 static func start(w: World, i: int, attack_id: StringName) -> void:
 	BossAi.start_attack(w, i, BossAi.table_of(w, i).attack_index(attack_id))
+	w.bosses.chained[BossAi.entry_of(w, i)] = 1
 
 
 static func boss_damage_to_player(w: World) -> Array:
