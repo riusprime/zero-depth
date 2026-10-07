@@ -19,6 +19,12 @@ const TAG_GUARDED := 64
 const TAG_FULL_CHARGE := 128
 ## A Kinetic Dash body hit (v0.2.0 items).
 const TAG_DASH := 256
+## A Static Chain jump (v0.2.0 J).
+const TAG_CHAIN := 512
+## Executioner raised this hit (v0.2.0 J).
+const TAG_EXECUTE := 1024
+## A Thorn Mantle ring bolt (v0.2.0 J).
+const TAG_THORN := 2048
 
 var seq := 0
 var tick := 0

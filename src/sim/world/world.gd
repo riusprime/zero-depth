@@ -107,6 +107,25 @@ var overcharge_tick := -1
 var dash_root := 0
 var dash_hit_ids := PackedInt32Array()
 var dash_hit_tick := -1
+# Items, the second eight (v0.2.0 J; ItemProcs).
+## Vampiric Core: the heal cap's window (start tick, -1 = none; HP healed in it) and the tick it last healed.
+var heal_window_start := -1
+var heal_window_used := 0
+var heal_tick := -1
+## Static Chain: landed player bolts counted, the root that last chained, and the last jump (tick, from, to).
+var chain_count := 0
+var chain_root := 0
+var chain_tick := -1
+var chain_from := Vector2.ZERO
+var chain_to := Vector2.ZERO
+## Momentum: ticks left to start an empowered swing (0 = none), and whether the current swing took it.
+var momentum_t := 0
+var swing_momentum := false
+## Thorn Mantle: the tick the last ring was released.
+var thorn_tick := -1
+## Phase Strike: the tick it last discharged, and the first tick a guard block may discharge it again.
+var phase_tick := -1
+var phase_guard_next := 0
 # --- end Items ---------------------------------------------------------------------------------------------
 
 var _next_id := 1
@@ -205,6 +224,7 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
 	ItemEffects.tick_burns(self)
+	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
@@ -351,6 +371,13 @@ func state_hash() -> String:
 	for v in [overcharge_tick, dash_root, dash_hit_tick]:
 		h.add_int(v)
 	h.add_ints(dash_hit_ids)
+	# Items, the second eight (v0.2.0 J).
+	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
+		h.add_int(v)
+	for v in [chain_from.x, chain_from.y, chain_to.x, chain_to.y]:
+		h.add_f32(v)
+	for v in [momentum_t, 1 if swing_momentum else 0, thorn_tick, phase_tick, phase_guard_next]:
+		h.add_int(v)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -467,6 +494,8 @@ func _advance_actions() -> void:
 		dash_cooldown_left -= 1
 	if dash_ticks_left > 0:
 		dash_ticks_left -= 1
+		if dash_ticks_left == 0:
+			ItemProcs.on_dash_end(self)  # Items: Momentum.
 		return
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0:
 		input_buffer[DASH_SLOT] = 0
@@ -474,7 +503,7 @@ func _advance_actions() -> void:
 		dash_root = 0  # Items: a new dash may hit every enemy once again.
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
-		dash_cooldown_left = player.dash_cooldown_ticks
+		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
 
 
 func _move_and_collide() -> void:
@@ -491,7 +520,7 @@ func _move_and_collide() -> void:
 			var len := Kin.length(mv)
 			if len > 1.0:
 				mv /= len
-			var speed := player.move_speed
+			var speed := ItemProcs.move_speed(self)  # Items: Swift Feet.
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -576,7 +605,7 @@ func _projectile_hits() -> void:
 				best_actor = k
 		if best_t <= 1.0:
 			if best_actor >= 0:
-				Damage.hit(
+				var got := Damage.hit(
 					self,
 					best_actor,
 					projectiles.damage[i],
@@ -585,8 +614,11 @@ func _projectile_hits() -> void:
 					projectiles.root_id[i],
 					projectiles.tags[i],
 					a,
-					a + v * best_t
+					a + v * best_t,
+					ItemProcs.bolt_effect(projectiles.tags[i])
 				)
+				# Items: Frost Core and Static Chain react to the player's landed bolts.
+				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
 			elif projectiles.bounces[i] > 0:
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
 				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])

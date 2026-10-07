@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 12
+name_key = &"ITEM_THORN_MANTLE"
+desc_key = &"ITEM_THORN_MANTLE_DESC"
+thorn_bolts = 6
+thorn_damage = 4
+id = &"thorn_mantle"

@@ -13,6 +13,14 @@ enum Kind {
 	RICOCHET_CORE,
 	KINETIC_DASH,
 	OVERCHARGE,
+	VAMPIRIC_CORE,
+	STATIC_CHAIN,
+	MOMENTUM,
+	FROST_CORE,
+	THORN_MANTLE,
+	EXECUTIONER,
+	SWIFT_FEET,
+	PHASE_STRIKE,
 }
 
 var id := &""
@@ -44,3 +52,30 @@ var overcharge_every := 0
 var overcharge_mult_permille := 1000
 var shockwave_radius_m := 0.0
 var shockwave_damage_permille := 0
+## Vampiric Core: HP healed per kill, and the most it heals in each window.
+var heal_per_kill := 0
+var heal_cap := 0
+var heal_window_ticks := 0
+## Static Chain: every Nth landed bolt jumps to the nearest other enemy within range for this damage.
+var chain_every := 0
+var chain_range_m := 0.0
+var chain_damage := 0
+## Momentum: a swing started within this many ticks of a dash's end deals × (1 + bonus / 1000).
+var momentum_window_ticks := 0
+var momentum_bonus_permille := 0
+## Frost Core: a slowed enemy moves at slow_permille / 1000 of its speed for slow_ticks.
+var slow_permille := 1000
+var slow_ticks := 0
+## Thorn Mantle: bolts in the ring released when the player takes damage, and each one's damage.
+var thorn_bolts := 0
+var thorn_damage := 0
+## Executioner: hits on enemies below threshold / 1000 of their max HP deal × (1 + bonus / 1000).
+var execute_threshold_permille := 0
+var execute_bonus_permille := 0
+## Swift Feet: move speed × (1 + bonus / 1000); dash cooldown × (1 − cut / 1000).
+var move_speed_bonus_permille := 0
+var dash_cooldown_cut_permille := 0
+## Phase Strike: the ring's damage and radius, and how often a guard block can set it off.
+var phase_damage := 0
+var phase_radius_m := 0.0
+var phase_guard_window_ticks := 0

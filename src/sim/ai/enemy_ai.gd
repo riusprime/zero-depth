@@ -63,6 +63,8 @@ static func move(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
 	var at := a.pos(i)
+	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
+	var slow := ItemProcs.slow_factor(w, i)
 	match a.state[i]:
 		State.MOVE:
 			var to := w.player_pos() - at
@@ -78,10 +80,10 @@ static func move(w: World, i: int) -> void:
 					dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
 			elif dist <= t.radius_m + w.player.radius_m + 0.1:
 				return
-			a.set_pos(i, at + steer(w, at, dir, t.radius_m) * t.speed)
+			a.set_pos(i, at + steer(w, at, dir, t.radius_m) * (t.speed * slow))
 		State.ACTIVE:
 			if a.kinds[i] == ActorStore.Kind.CHARGER and a.lock_len[i] > 0.0:
-				var step := minf(t.charge_speed, a.lock_len[i])
+				var step := minf(t.charge_speed * slow, a.lock_len[i])
 				a.lock_len[i] -= step
 				a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
 
