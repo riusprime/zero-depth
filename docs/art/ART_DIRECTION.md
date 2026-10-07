@@ -120,6 +120,11 @@ offer off / ink / sketch / sketch + paper, and an unknown saved value falls back
 [`main_character_visual_reference.png`](main_character_visual_reference.png): a small hooded wanderer, off-white
 faceted hood with a dark face and a glowing cyan visor, a wide faceted cloak, short dark legs; shown in the game
 scene and as a five-view turnaround. The player avatar must match it (PLAN v0.2.0 L10).
+The detailed character sheet [`main-character-sheet.png`](main-character-sheet.png) (owner, 2026-10-07: front,
+right-front, right, back-right) is the **primary** reference; where the two images differ, the sheet wins:
+a forward-tipped, tapered box hood with a black shield-shaped face (pointed at the bottom) and a centred cyan
+rectangle visor; a diamond poncho (corners front/back/left/right, a V-neck under the face, the front corner
+lowest, ~2× the hood's width); two chunky, separated charcoal legs with lighter boot blocks, ~¼ of the height.
 
 ## 5. Pipeline
 

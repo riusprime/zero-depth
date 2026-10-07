@@ -64,4 +64,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   lighter outline, dead pose, swing-twist evidence). The 3/4 views now read like the reference; face-on views
   still look boxy (reported to the owner). Version `0.2.0-dev`; `PLAYTEST_FLOOR.md`. 208 tests pass; export smoke
   0 misses.
+- 2026-10-07 — The owner uploaded a detailed character sheet (`docs/art/main-character-sheet.png`, `63a0d24`): "we
+  should keep working on matching it as much as we can". It becomes the primary character reference
+  (ART_DIRECTION); workstream G2 matches the avatar to it while the owner tests the floor build.
 
