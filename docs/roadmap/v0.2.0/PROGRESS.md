@@ -67,4 +67,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — The owner uploaded a detailed character sheet (`docs/art/main-character-sheet.png`, `63a0d24`): "we
   should keep working on matching it as much as we can". It becomes the primary character reference
   (ART_DIRECTION); workstream G2 matches the avatar to it while the owner tests the floor build.
+- 2026-10-07 — G2 merged (`10c2c07`): the avatar rebuilt to the character sheet (shield-faced tapered hood, centred
+  visor, diamond poncho with a V-neck, chunky legs and boots); `evidence/character_sheet_compare.png` puts the sheet
+  over the renders. Lead check: the front view matches closely; side views still differ (the poncho's front corner
+  juts forward; the sheet's hangs down and the sides flare lower/wider); from the game camera the hood top is large.
+  A G3 round targets those. 210 tests pass.
 
