@@ -94,3 +94,23 @@ HUD_TIME_TIER,%02d:%02d · Danger %d,%02d:%02d · Peligro %d
 HUD_KILLS,Kills: %d,Bajas: %d
 HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
 HUD_PICKED_UP,Picked up,Recogido
+ENEMY_HATCHLING,Hatchling,Cría
+BOSS_GATEKEEPER,The Gatekeeper,El Guardián de la Puerta
+BOSS_BROOD_MOTHER,The Brood Mother,La Madre de la Prole
+BOSS_SIEGE_ENGINE,The Siege Engine,La Máquina de Asedio
+HUD_BOSS_STAGGER,Stagger,Aturdimiento
+HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
+CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
+CAUSE_GATEKEEPER_SLAM,The Gatekeeper's ring of spikes crushed you.,El anillo de púas del Guardián de la Puerta te aplastó.
+CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque del Guardián de la Puerta te derribó.
+CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido del Guardián de la Puerta te destrozó.
+CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida del Guardián de la Puerta te aplastó.
+CAUSE_BROOD_LEAP,The Brood Mother landed on you.,La Madre de la Prole cayó sobre ti.
+CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,La Madre de la Prole surgió bajo tus pies.
+CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de la Madre de la Prole te aplastaron.
+CAUSE_SIEGE_BARRAGE,The Siege Engine's shells blew you apart.,Los proyectiles de la Máquina de Asedio te destrozaron.
+CAUSE_SIEGE_RAIL,The Siege Engine's rail beam burned through you.,El rayo de la Máquina de Asedio te atravesó.
+CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyectiles de la Máquina de Asedio te abatió.
+CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
+UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
+UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe

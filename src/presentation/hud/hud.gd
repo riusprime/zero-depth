@@ -12,6 +12,8 @@ const CARD_SECONDS := 3.0
 const PREVIEW_M := 2.0
 const ROW_ICON := 40.0
 
+## The boss bar (v0.3.0 C), shown while a boss is alive.
+var boss_bar := BossBar.new()
 var _hp_fill := ColorRect.new()
 var _hp_text := Label.new()
 var _dash := _pip("HUD_DASH")
@@ -83,6 +85,7 @@ func _init() -> void:
 	_gate.add_theme_font_size_override("font_size", 24)
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
+	add_child(boss_bar)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -109,6 +112,7 @@ func sync(reader: WorldReader) -> void:
 		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
 		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
 	_gate.text = tr("GATE_SEALED") if reader.has_floor() and reader.at_gate() else ""
+	boss_bar.sync(reader)
 
 
 func _process(delta: float) -> void:

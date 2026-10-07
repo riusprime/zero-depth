@@ -132,6 +132,7 @@ func start_stage() -> void:
 		ContentCompiler.compile_spawning(spawning, repo),
 		ContentCompiler.compile_items(repo)
 	)
+	world.set_boss_tables(ContentCompiler.compile_bosses(repo))  # Bosses (v0.3.0 C): spawn_boss's indices.
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -170,7 +171,7 @@ func _on_tick(from: SimDriver) -> void:
 
 func show_end_panel(won: bool) -> void:
 	close_pause()
-	_end = EndPanel.new(won, driver.reader.killer_kind())
+	_end = EndPanel.new(won, driver.reader.killer_kind(), driver.reader.killer_cause_key())
 	_end.restart_pressed.connect(restart)
 	_end.main_menu_pressed.connect(show_main_menu)
 	ui.add_child(_end)

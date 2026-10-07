@@ -125,7 +125,7 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var spawning := reader.actor_spawning(i)
 	# Enemy models play their own rise-in while spawning (v0.2.0 L17); the others stay hidden until they arrive.
 	facing.visible = not spawning or node.has_meta(&"enemy_avatar")
-	(node.get_meta(&"bar") as Node3D).visible = not spawning
+	(node.get_meta(&"bar") as Node3D).visible = not spawning and not node.has_meta(&"boss")
 	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 	var bar: Node3D = node.get_meta(&"bar")
 	bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
@@ -273,6 +273,31 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = NeedleAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", needle)
 			root.set_meta(&"mats", needle.body_materials.duplicate())
+		WorldReader.KIND_HATCHLING:
+			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
+			var hatch := ChargerAvatar.new()
+			hatch.setup(outline_color, technique)
+			hatch.scale = Vector3.ONE * 0.66
+			facing.add_child(hatch)
+			height = ChargerAvatar.HEIGHT * 0.66
+			root.set_meta(&"enemy_avatar", hatch)
+			root.set_meta(&"mats", hatch.body_materials.duplicate())
+		WorldReader.KIND_GATEKEEPER, WorldReader.KIND_BROOD_MOTHER, WorldReader.KIND_SIEGE_ENGINE:
+			# The bosses (v0.3.0 C): their own models; their HP shows in the HUD's boss bar, not over them.
+			var boss: BossAvatar = (
+				{
+					WorldReader.KIND_GATEKEEPER: GatekeeperAvatar,
+					WorldReader.KIND_BROOD_MOTHER: BroodMotherAvatar,
+					WorldReader.KIND_SIEGE_ENGINE: SiegeEngineAvatar,
+				}[kind]
+				. new()
+			)
+			boss.setup(outline_color, technique)
+			facing.add_child(boss)
+			height = 2.6
+			root.set_meta(&"enemy_avatar", boss)
+			root.set_meta(&"boss", true)
+			root.set_meta(&"mats", boss.body_materials.duplicate())
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

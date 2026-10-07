@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"charge"
+shape = 2
+shape_params = {
+"length_m": 5.0,
+"speed_mps": 13.0
+}
+telegraph_seconds = 0.5
+active_seconds = 0.3833
+recovery_seconds = 0.9
+damage = 8
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_HATCHLING"
+behaviour_id = &"hatchling"
+behaviour_params = {
+"attack_range_m": 4.5,
+"cooldown_seconds": 1.2
+}
+hp = 12
+radius_m = 0.28
+move_speed_mps = 3.6
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("guard")
+id = &"hatchling"

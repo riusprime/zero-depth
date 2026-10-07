@@ -15,6 +15,11 @@ static func is_enemy_kind(kind: int) -> bool:
 	return kind >= ActorStore.Kind.CHARGER
 
 
+## Chargers and the Brood Mother's hatchlings (v0.3.0 C, a small Charger) run the charge behaviour.
+static func _charges(kind: int) -> bool:
+	return kind == ActorStore.Kind.CHARGER or kind == ActorStore.Kind.HATCHLING
+
+
 static func think(w: World, i: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
@@ -45,7 +50,7 @@ static func think(w: World, i: int) -> void:
 		State.ACTIVE:
 			var done := false
 			match a.kinds[i]:
-				ActorStore.Kind.CHARGER:
+				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
 					done = a.lock_len[i] <= 0.0
 				ActorStore.Kind.NEEDLE:
 					done = a.fire_cd[i] >= t.burst_count and a.state_t[i] >= t.active_ticks
@@ -82,7 +87,7 @@ static func move(w: World, i: int) -> void:
 				return
 			a.set_pos(i, at + steer(w, at, dir, t.radius_m) * (t.speed * slow))
 		State.ACTIVE:
-			if a.kinds[i] == ActorStore.Kind.CHARGER and a.lock_len[i] > 0.0:
+			if _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 				var step := minf(t.charge_speed * slow, a.lock_len[i])
 				a.lock_len[i] -= step
 				a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
@@ -96,7 +101,7 @@ static func resolve(w: World, i: int) -> void:
 	var p := w.player_pos()
 	var pr := w.player.radius_m
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
 			if a.fire_cd[i] == 0 and Kin.length(p - a.pos(i)) <= t.radius_m + pr:
 				a.fire_cd[i] = 1
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
@@ -165,12 +170,14 @@ static func burst_line(w: World, i: int) -> Obb:
 ## What the view draws for actor i: {} or {"shape": &"lane"|&"disc", ..., "progress": 0..1000}.
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
+	if BossAi.is_boss_kind(a.kinds[i]):
+		return BossAi.telegraph(w, i)  # Bosses (v0.3.0 C).
 	if a.state[i] != State.WINDUP or not is_enemy_kind(a.kinds[i]):
 		return {}
 	var t := w.enemy_table(a.kinds[i])
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, t.windup_ticks), 0, 1000)
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
 			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
 		ActorStore.Kind.WARDEN:
 			var d := slam_disc(w, i)
@@ -188,7 +195,7 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 	a.lock_y[i] = a.pos_y[i]
 	a.lock_a[i] = aim
 	match a.kinds[i]:
-		ActorStore.Kind.CHARGER:
+		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING:
 			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE:
 			var start := a.pos(i) + Kin.dir(aim) * t.radius_m

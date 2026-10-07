@@ -4,7 +4,11 @@ extends RefCounted
 ## new kinds are appended, never inserted, because kinds are hashed.
 
 ## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
-enum Kind { HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP }
+## BOSS_DEFEATED (v0.3.0 C): a boss died, once per boss, after its KILL; target_id = the boss's id, amount = its
+## index in World.boss_tables, pos = where it fell.
+enum Kind {
+	HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP, BOSS_DEFEATED
+}
 
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2

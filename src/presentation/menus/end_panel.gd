@@ -10,10 +10,12 @@ const CAUSES := {
 	WorldReader.KIND_CHARGER: "CAUSE_CHARGER",
 	WorldReader.KIND_WARDEN: "CAUSE_WARDEN",
 	WorldReader.KIND_NEEDLE: "CAUSE_NEEDLE",
+	WorldReader.KIND_HATCHLING: "CAUSE_HATCHLING",
 }
 
 
-func _init(won: bool, killer_kind: int) -> void:
+## `cause_key` (v0.3.0 C): a boss's attack line (WorldReader.killer_cause_key), used before the kind's line.
+func _init(won: bool, killer_kind: int, cause_key: StringName = &"") -> void:
 	super()
 	name = "EndPanel"
 	var dim := ColorRect.new()
@@ -26,7 +28,11 @@ func _init(won: bool, killer_kind: int) -> void:
 	if not won:
 		var cause := Label.new()
 		cause.name = "Cause"
-		cause.text = CAUSES.get(killer_kind, "CAUSE_UNKNOWN")
+		cause.text = (
+			String(cause_key)
+			if not String(cause_key).is_empty()
+			else CAUSES.get(killer_kind, "CAUSE_UNKNOWN")
+		)
 		cause.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cause.add_theme_font_size_override("font_size", 26)
 		box.add_child(cause)

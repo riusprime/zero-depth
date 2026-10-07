@@ -13,6 +13,14 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 	if target == 0 and w.guarding():
 		if Kin.angle_diff(to_attacker, a.facing[0]) <= w.player.guard_half_arc:
 			return [w.player.guard_mult_permille, SimEvent.TAG_GUARDED]
+	elif BossAi.is_boss_kind(a.kinds[target]) and from != a.pos(target):
+		# Bosses (v0.3.0 C): armour by direction, as the Warden's.
+		var bt := BossAi.table_of(w, target)
+		var off := Kin.angle_diff(to_attacker, a.facing[target])
+		if bt.front_half_arc > 0 and off <= bt.front_half_arc:
+			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
+		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
+			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	elif a.kinds[target] == ActorStore.Kind.WARDEN and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
 		if def != null:
@@ -137,6 +145,8 @@ static func _apply(
 		k.effect_id = effect_id
 		if target != 0 and owner_id == a.ids[0]:
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
+	if target != 0 and not (tags & SimEvent.TAG_DOT):
+		BossAi.on_damage(w, target, applied)  # Bosses (v0.3.0 C): hits fill the stagger meter.
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 	return applied

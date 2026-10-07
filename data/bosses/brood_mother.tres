@@ -1,0 +1,147 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_leap"]
+script = ExtResource("1_atk")
+id = &"leap"
+shape = 0
+shape_params = {
+"chain": 1,
+"radius_m": 2.4,
+"range_m": 12.0
+}
+telegraph_seconds = 0.8
+active_seconds = 0.5
+recovery_seconds = 1.0
+damage = 24
+move = &"leap"
+min_range_m = 4.0
+max_range_m = 14.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_BROOD_LEAP"
+
+[sub_resource type="Resource" id="A_leap_chain"]
+script = ExtResource("1_atk")
+id = &"leap_chain"
+shape = 0
+shape_params = {
+"chain": 2,
+"radius_m": 2.4,
+"range_m": 12.0
+}
+telegraph_seconds = 0.6
+active_seconds = 0.5
+recovery_seconds = 1.0
+damage = 24
+move = &"leap"
+min_range_m = 4.0
+max_range_m = 14.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_BROOD_LEAP"
+
+[sub_resource type="Resource" id="A_burrow"]
+script = ExtResource("1_atk")
+id = &"burrow"
+shape = 0
+shape_params = {
+"erupt_seconds": 0.6,
+"radius_m": 2.2,
+"speed_mps": 5.0,
+"track_seconds": 1.6
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 26
+move = &"burrow"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 2
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_BROOD_BURROW"
+
+[sub_resource type="Resource" id="A_brood"]
+script = ExtResource("1_atk")
+id = &"brood"
+shape = 0
+shape_params = {
+"count": 3,
+"distance_m": 2.8,
+"enemy_id": "hatchling",
+"max_alive": 6,
+"radius_m": 0.9
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 8
+move = &"brood"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 2
+cooldown_seconds = 1.5
+cause_key = &"CAUSE_BROOD_BROOD"
+
+[sub_resource type="Resource" id="A_brood_4"]
+script = ExtResource("1_atk")
+id = &"brood_4"
+shape = 0
+shape_params = {
+"count": 4,
+"distance_m": 2.8,
+"enemy_id": "hatchling",
+"max_alive": 6,
+"radius_m": 0.9
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 0.8
+damage = 8
+move = &"brood"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_BROOD_BROOD"
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("leap", "burrow", "brood")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4")
+entry_attack = &""
+speed_permille = 1100
+cooldown_permille = 800
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_BROOD_MOTHER"
+hp = 1600
+radius_m = 1.2
+move_speed_mps = 2.4
+turn_rate_dps = 0.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 260
+stagger_decay_per_second = 14.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_brood"), SubResource("A_brood_4")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+arena_cells = Vector2i(2, 2)
+arena_template = 1
+id = &"brood_mother"

@@ -14,6 +14,13 @@ const SCHEMAS := {
 		"shape": 2,
 		"shape_params": ["length_m", "speed_mps"],
 	},
+	## The Brood Mother's hatchlings (PLAN v0.3.0 C): a small Charger.
+	&"hatchling":
+	{
+		"params": ["attack_range_m", "cooldown_seconds"],
+		"shape": 2,
+		"shape_params": ["length_m", "speed_mps"],
+	},
 	&"warden":
 	{
 		"params":
