@@ -28,6 +28,7 @@ static func advance_utility(w: World) -> void:
 	w.blink_cd = t.blink_cooldown_ticks
 	w.blink_tick = w.tick
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
+	Heat.on_move(w)  # Heat: a blink while Hot vents where it lands.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
 
 
@@ -70,8 +71,9 @@ static func _clear(w: World, at: Vector2, r: float) -> bool:
 
 
 static func advance(w: World) -> void:
+	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
-	var can_attack := not w.guarding() and not w.is_dashing()
+	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
 	# step: the combo starts over).
@@ -167,6 +169,7 @@ static func _resolve_swing(w: World) -> void:
 	var base := PlayerBuild.melee_damage(w, s.damage)  # Builds: the Blade's damage factor (L16).
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
+	dmg = Gamble.melee_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
 	if landed:
 		w.add_freeze(s.hitstop_ticks)
@@ -209,6 +212,7 @@ static func swing_arc(
 static func _fire_bolt(w: World) -> void:
 	var t := w.player
 	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
+	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	for off in ItemEffects.shot_offsets(w):
 		var dir := Kin.dir(w.aim_angle + off)
 		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
@@ -220,6 +224,6 @@ static func _fire_bolt(w: World) -> void:
 			dmg,
 			t.bolt_radius_m,
 			t.bolt_life_ticks,
-			SimEvent.TAG_PROJECTILE,
+			SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w),  # Heat: a Hot bolt pierces
 			w.item_mods.bounces
 		)

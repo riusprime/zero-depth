@@ -49,9 +49,11 @@ static func available(w: World) -> PackedInt32Array:
 
 
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
-## is never offered blade items, nor a Blade run bolt items).
+## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
+	if it.requires_heat and w.heat == null:
+		return false
 	var need := it.requires_utility
 	if need >= 0 and need != w.player.utility:
 		return false

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AudioCueDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/audio_cue_definition.gd" id="1_cue"]
+
+[resource]
+script = ExtResource("1_cue")
+kind = &"sfx"
+bus = &"ui"
+volume_db = -3.0
+pitch_jitter = 0.0
+max_voices = 1
+cooldown_s = 1.0
+caption_key = &"CAPTION_PORTAL_OPEN"
+id = &"portal_open"

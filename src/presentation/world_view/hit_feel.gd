@@ -5,11 +5,15 @@ extends Node3D
 ## spot behind, and a pop of shards when an enemy dies. The combo's finisher (v0.3.0 L11) hits harder: a longer
 ## flash on each enemy it lands on, a bright spark and a small camera shake (none when shake is off).
 ## The sim's hit-stop is already in the tick (freeze_ticks); nothing here changes an outcome.
+## Bosses (v0.3.0 BX): a dull grey-blue spark when the ranged armour deflects most of a far hit, a big gold one on
+## the open weak point.
 
 const SHARDS := 7
 const SHARD_FRAMES := 30
 const FINISHER_SHAKE := 0.3
 const FINISHER_FLASH_MULT := 2
+## A hit a boss's ranged armour deflected (v0.3.0 BX): a dull, small, grey-blue spark.
+const DEFLECT_COLOR := Color(0.42, 0.46, 0.52)
 
 var actors: ActorViews
 var rig: IsoRig
@@ -43,7 +47,11 @@ func sync(reader: WorldReader) -> void:
 				if e.target_id == player_id:
 					rig.shake(0.55)
 			SimEvent.Kind.HIT:
-				if e.tags & (SimEvent.TAG_BLOCKED | SimEvent.TAG_GUARDED):
+				if e.tags & SimEvent.TAG_EXPOSED:  # BX: a boss's open weak point, struck up close
+					_burst(e.pos, Color(1.0, 0.84, 0.42), 9, 0.11)
+				elif e.tags & SimEvent.TAG_DEFLECTED:  # BX: the ranged armour turned most of it
+					_burst(e.pos, DEFLECT_COLOR, 3, 0.06)
+				elif e.tags & (SimEvent.TAG_BLOCKED | SimEvent.TAG_GUARDED):
 					_burst(e.pos, Color(0.85, 0.9, 1.0), 4, 0.08)
 				elif e.tags & SimEvent.TAG_ARMOURED:
 					_burst(e.pos, Color(0.45, 0.45, 0.48), 3, 0.07)
@@ -65,6 +73,11 @@ static func finisher_hit(reader: WorldReader, e: SimEvent) -> bool:
 		and reader.swing_tick() > 0
 		and reader.is_finisher()
 	)
+
+
+## How many spark pieces are flying (tests).
+func spark_count() -> int:
+	return _shards.size()
 
 
 func _burst(at: Vector2, c: Color, n: int, size: float) -> void:

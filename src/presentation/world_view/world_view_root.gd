@@ -18,9 +18,15 @@ var shards := ShardViews.new()
 var item_fx: ItemVisuals
 ## v0.3.0 G: engine statuses and combo payoffs.
 var status_fx: StatusVisuals
+## v0.3.0 L18: overclock heat on the hero, vent blasts, steam and embers.
+var heat_fx: HeatVisuals
 var gate: PortalGate
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
+## The gamble shrine (v0.3.0 L19; null on a floor without one).
+var gamble_shrine: GambleShrineView
+## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
+var challenge := BossChallengeView.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -31,6 +37,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
+	add_child(challenge)
 	add_child(actors)
 	add_child(kit)
 	add_child(utility)
@@ -42,6 +49,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(item_fx)
 	status_fx = StatusVisuals.new(actors)
 	add_child(status_fx)
+	heat_fx = HeatVisuals.new(kit, actors)
+	add_child(heat_fx)
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -56,6 +65,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 			reader.boss_door_half_thickness(),
 			palette["cover"]
 		)
+	if reader.has_gamble():
+		gamble_shrine = GambleShrineView.new()
+		add_child(gamble_shrine)
+		gamble_shrine.setup(reader.gamble_pos())
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -67,6 +80,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 
 func sync() -> void:
 	telegraphs.sync(reader)
+	challenge.sync(reader)
 	actors.sync(reader)
 	kit.sync(reader)
 	utility.sync(reader)
@@ -76,8 +90,11 @@ func sync() -> void:
 	shards.sync(reader)
 	item_fx.sync(reader)
 	status_fx.sync(reader)
+	heat_fx.sync(reader)
 	if boss_door != null:
 		boss_door.sync(reader)
+	if gamble_shrine != null:
+		gamble_shrine.sync(reader)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
 		gate.set_sealed(not reader.portal_active())
 	rig.target = SimPlane.to_3d(reader.player_pos())

@@ -2,9 +2,13 @@ class_name Hud
 extends Control
 ## The fight's HUD (PLAN v0.1.0 Step 5): health, dash and utility readiness (bottom left), wave and enemies left
 ## (top centre); on a floor, the carried-item icons (bottom right) and the item card (bottom centre). It never
-## takes mouse input, so clicks reach the game.
+## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24): drawn in the HudStyle look (techno/echo
+## type, plates and bars; values echo when they change); the top plate shows floor, biome, time and a visual danger
+## meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
 
-const BAR := Vector2(320, 22)
+const BAR := Vector2(320, 18)
+## The top plate's width (px).
+const TOP_W := 540.0
 ## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a
 ## preview while you stand by a pedestal), the sealed-gate note.
 const CARD_SECONDS := 3.0
@@ -26,13 +30,17 @@ const BOSS_WARN_M := 6.0
 
 ## The boss bar (v0.3.0 C), shown while a boss is alive.
 var boss_bar := BossBar.new()
-var _hp_fill := ColorRect.new()
-var _hp_text := Label.new()
-var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse while regenerating.
+## Overclock heat (v0.3.0 L18): the heat meter, bottom centre (hidden without heat).
+var heat_meter := HeatMeter.new()
+## The gamble shrine's prompt, result card and stats (v0.3.0 L19).
+var gamble := GambleHud.new()
+var _hp_bar := HudBar.new()
+var _hp_text := EchoLabel.new(15, true)
+var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
 var _dash := _pip("HUD_DASH")
 var _util := _pip("HUD_UTILITY")
-var _wave := Label.new()
-var _left := Label.new()
+var _wave := EchoLabel.new(26, true)
+var _left := EchoLabel.new(13)
 var _items := HBoxContainer.new()
 var _card := ItemCard.new()
 var _gate := Label.new()
@@ -55,50 +63,27 @@ var _combo_left := 0.0
 var _combo_pending := -1
 var _combos_shown := -1
 # Run flow (v0.3.0 B).
-var _floor := Label.new()
+var _floor := EchoLabel.new(18, true)
 var _floor_card := VBoxContainer.new()
-var _floor_card_title := Label.new()
-var _floor_card_biome := Label.new()
+var _floor_card_title := EchoLabel.new(76, true)
+var _floor_card_biome := EchoLabel.new(28)
 var _floor_card_left := 0.0
 var _biome_key := ""
+# v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
+var _danger := DangerMeter.new()
+var _vignette := LowHpVignette.new()
+var _top_frame := HudFrame.new(Vector2(18, 6))
+var _hp_frame := HudFrame.new(Vector2(14, 8))
+var _t := 0.0
 
 
 func _init() -> void:
 	name = "Hud"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var corner := VBoxContainer.new()
-	corner.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	corner.position = Vector2(28, -150)
-	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	add_child(corner)
-	_hp_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	corner.add_child(_hp_text)
-	var back := ColorRect.new()
-	back.color = Color(0, 0, 0, 0.55)
-	back.custom_minimum_size = BAR
-	corner.add_child(back)
-	_hp_fill.color = ThemePalette.color(&"player_bar")
-	_hp_fill.size = BAR
-	back.add_child(_hp_fill)
-	back.add_child(_regen)
-	var pips := HBoxContainer.new()
-	pips.add_theme_constant_override("separation", 18)
-	pips.add_child(_dash)
-	pips.add_child(_util)
-	corner.add_child(pips)
-	var top := VBoxContainer.new()
-	top.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	top.position = Vector2(-160, 18)
-	top.custom_minimum_size = Vector2(320, 0)
-	add_child(top)
-	_floor.name = "FloorLabel"
-	_floor.add_theme_font_size_override("font_size", 22)
-	for l: Label in [_floor, _wave, _left]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		top.add_child(l)
-	_wave.add_theme_font_size_override("font_size", 28)
+	add_child(_vignette)
+	_build_corner()
+	_build_top()
 	_items.name = "ItemIcons"
 	# Anchored to the bottom-right corner; it grows leftward as items are added.
 	_items.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -130,12 +115,14 @@ func _init() -> void:
 	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate.custom_minimum_size = Vector2(900, 0)
 	_gate.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_gate.add_theme_font_size_override("font_size", 24)
+	HudStyle.style_label(_gate, 22, true)
 	add_child(_gate)
 	_gate.position = Vector2(-450, -150)
 	_build_floor_card()
 	add_child(boss_bar)
+	add_child(heat_meter)
 	_build_rewards()
+	add_child(gamble)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
@@ -144,9 +131,13 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	var hp := reader.player_hp()
 	var mx := maxi(1, reader.player_max_hp())
-	_hp_fill.size = Vector2(BAR.x * clampf(float(hp) / mx, 0.0, 1.0), BAR.y)
+	_hp_bar.set_fraction(float(hp) / mx)
 	_hp_text.text = tr("HUD_HP") % [hp, mx]
-	_regen.sync(reader, _hp_fill.size)
+	var low := HudStyle.low_hp(hp, mx)
+	_hp_bar.warn = low
+	_vignette.active = low
+	_hp_text.add_theme_color_override("font_color", HudStyle.WARN if low else HudStyle.text_color())
+	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.fraction(), _hp_bar.size.y))
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
 		(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
@@ -157,22 +148,30 @@ func sync(reader: WorldReader) -> void:
 	_util.visible = reader.has_blink() or reader.has_guard()
 	if reader.has_floor():
 		var secs := int(reader.run_seconds())
-		_wave.text = tr("HUD_TIME_TIER") % [secs / 60, secs % 60, reader.tier() + 1]
+		_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
+		_danger.set_danger(reader.tier(), reader.tier_progress())
 		_left.text = tr("HUD_KILLS") % reader.kills()
 		_sync_items(reader)
 		_sync_combos(reader)
 	else:
 		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
 		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
+	_danger.visible = reader.has_floor()
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
 		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
 	boss_bar.sync(reader)
+	heat_meter.sync(reader)
 	_sync_rewards(reader)
+	gamble.sync(reader)
 
 
 func _process(delta: float) -> void:
+	_t += delta
+	_hp_frame.tint = (
+		Color.WHITE.lerp(HudStyle.WARN, HudStyle.pulse(_t)) if _hp_bar.warn else Color.WHITE
+	)
 	if _card_left > 0.0:
 		_card_left -= delta
 	if _combo_left > 0.0:
@@ -189,16 +188,12 @@ func _process(delta: float) -> void:
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card.
 func show_floor(floor_index: int, biome_key: String) -> void:
 	_biome_key = biome_key
+	_floor_card_title.text = ""  # a fresh card always echoes in
 	_floor_card_title.text = tr("HUD_FLOOR_CARD") % floor_index
 	_floor_card_biome.text = tr(biome_key)
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
-
-
-## The HP bar's regen pulse is on (v0.3.0 L25).
-func regen_pulsing() -> bool:
-	return _regen.is_pulsing()
 
 
 func floor_card_showing() -> bool:
@@ -211,6 +206,86 @@ func floor_card_text() -> String:
 
 func floor_text() -> String:
 	return _floor.text
+
+
+## v0.3.0 UI: the danger meter (tests read its tier, lit chevrons and segments).
+func danger_meter() -> DangerMeter:
+	return _danger
+
+
+## v0.3.0 UI: the low-HP warning is on (the HP bar pulses red and the screen edge glows).
+func low_hp_warning() -> bool:
+	return _hp_bar.warn and _vignette.active
+
+
+func hp_bar() -> HudBar:
+	return _hp_bar
+
+
+func vignette() -> LowHpVignette:
+	return _vignette
+
+
+## The top plate's text, all of it (tests: the danger meter adds no digits).
+func top_texts() -> PackedStringArray:
+	var out := PackedStringArray()
+	for l in _top_frame.find_children("*", "Label", true, false):
+		if not l.get_parent() is EchoLabel:  # an echo's ghosts repeat its text
+			out.append((l as Label).text)
+	return out
+
+
+func _build_corner() -> void:
+	var corner := VBoxContainer.new()
+	corner.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	corner.position = Vector2(28, -160)
+	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	add_child(corner)
+	_hp_frame.name = "HpPlate"
+	corner.add_child(_hp_frame)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 7)
+	_hp_frame.add_child(col)
+	col.add_child(_hp_text)
+	_hp_bar.name = "HpBar"
+	_hp_bar.color = ThemePalette.color(&"player_bar")
+	_hp_bar.custom_minimum_size = BAR
+	col.add_child(_hp_bar)
+	_hp_bar.add_child(_regen)
+	var pips := HBoxContainer.new()
+	pips.add_theme_constant_override("separation", 18)
+	pips.add_child(_dash)
+	pips.add_child(_util)
+	col.add_child(pips)
+
+
+## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
+func _build_top() -> void:
+	_top_frame.name = "TopPlate"
+	_top_frame.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_top_frame.position = Vector2(-TOP_W * 0.5, 10)
+	_top_frame.custom_minimum_size = Vector2(TOP_W, 0)
+	add_child(_top_frame)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	_top_frame.add_child(col)
+	_floor.name = "FloorLabel"
+	_floor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor.add_theme_color_override("font_color", HudStyle.accent())
+	col.add_child(_floor)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 16)
+	col.add_child(row)
+	_wave.name = "TimeLabel"
+	_wave.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	row.add_child(_wave)
+	_danger.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(_danger)
+	_left.name = "KillsLabel"
+	_left.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_left.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.7))
+	row.add_child(_left)
 
 
 func gate_text() -> String:
@@ -236,18 +311,19 @@ func _build_floor_card() -> void:
 	_floor_card.name = "FloorCard"
 	_floor_card.set_anchors_preset(Control.PRESET_CENTER)
 	_floor_card.custom_minimum_size = Vector2(800, 0)
-	_floor_card.position = Vector2(-400, -190)
+	_floor_card.position = Vector2(-400, -200)
+	_floor_card.add_theme_constant_override("separation", 4)
 	_floor_card.visible = false
 	add_child(_floor_card)
-	for l: Label in [_floor_card_title, _floor_card_biome]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
-		l.add_theme_constant_override("outline_size", 10)
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_floor_card.add_child(l)
-	_floor_card_title.add_theme_font_size_override("font_size", 64)
-	_floor_card_biome.add_theme_font_size_override("font_size", 34)
+	_floor_card_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_title.add_theme_constant_override("outline_size", 10)
+	_floor_card.add_child(_floor_card_title)
+	var plate := HudFrame.new(Vector2(28, 4))
+	plate.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_floor_card.add_child(plate)
+	_floor_card_biome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_biome.add_theme_color_override("font_color", HudStyle.accent())
+	plate.add_child(_floor_card_biome)
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -271,16 +347,8 @@ func prompt_poor() -> bool:
 
 
 func _build_rewards() -> void:
-	var plate := PanelContainer.new()
+	var plate := HudFrame.new(Vector2(14, 5))
 	plate.name = "Shards"
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.03, 0.04, 0.07, 0.72)
-	box.set_corner_radius_all(10)
-	box.content_margin_left = 12
-	box.content_margin_right = 16
-	box.content_margin_top = 4
-	box.content_margin_bottom = 4
-	plate.add_theme_stylebox_override("panel", box)
 	plate.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	plate.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	plate.offset_left = -28
@@ -289,7 +357,7 @@ func _build_rewards() -> void:
 	_shard_box.add_theme_constant_override("separation", 10)
 	_shard_box.add_child(ShardIcon.new(30.0))
 	_shards.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_shards.add_theme_font_size_override("font_size", 28)
+	HudStyle.style_label(_shards, 26, true)
 	_shards.add_theme_color_override("font_color", ShardIcon.LIGHT)
 	_shard_box.add_child(_shards)
 	plate.add_child(_shard_box)
@@ -300,7 +368,7 @@ func _build_rewards() -> void:
 	_prompt.custom_minimum_size = Vector2(900, 0)
 	_prompt.position = Vector2(-450, -112)
 	_prompt.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_prompt.add_theme_font_size_override("font_size", 24)
+	HudStyle.style_label(_prompt, 22, true)
 	_prompt.add_theme_constant_override("outline_size", 6)
 	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	add_child(_prompt)
@@ -324,7 +392,7 @@ func _sync_rewards(reader: WorldReader) -> void:
 		else:
 			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
 		_prompt.add_theme_color_override(
-			"font_color", Color.WHITE if reader.reward_affordable(i) else POOR
+			"font_color", HudStyle.text_color() if reader.reward_affordable(i) else POOR
 		)
 	_pick.sync(reader)
 
@@ -456,9 +524,11 @@ func _sync_combos(reader: WorldReader) -> void:
 ## A small square that fills as the cooldown runs out, with a label.
 func _pip(key: String) -> HBoxContainer:
 	var box := HBoxContainer.new()
+	box.add_theme_constant_override("separation", 8)
 	var sq := ColorRect.new()
 	sq.custom_minimum_size = Vector2(22, 22)
-	sq.color = Color(0, 0, 0, 0.55)
+	sq.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	sq.color = HudStyle.dim()
 	var fill := ColorRect.new()
 	fill.color = ThemePalette.color(&"player_core")
 	fill.size = Vector2(22, 22)
@@ -466,6 +536,7 @@ func _pip(key: String) -> HBoxContainer:
 	box.add_child(sq)
 	var l := Label.new()
 	l.text = key
+	HudStyle.style_label(l, 14, true)
 	box.add_child(l)
 	return box
 

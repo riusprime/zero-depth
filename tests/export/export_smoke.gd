@@ -34,6 +34,7 @@ func _initialize() -> void:
 	_check_content()
 	_check_spanish()
 	_check_boss_models()
+	_check_audio()
 	if packed:
 		_check(
 			not FileAccess.file_exists("res://addons/gut/plugin.cfg"),
@@ -49,6 +50,21 @@ func _check_boss_models() -> void:
 	BossModels.preload_all()
 	for id: StringName in BossModels.SPECS:
 		_check(not BossModels.get_model(id).is_empty(), "boss model %s loads from the pack" % id)
+
+
+## v0.3.0 AU: every sound ships in the pack, its cue validates there and its stream loads.
+func _check_audio() -> void:
+	var repo := ContentRepository.load_all()
+	var cues := repo.all_of(&"audio_cues")
+	_check(cues.size() > 40, "audio cues: %d" % cues.size())
+	var missing: Array[String] = []
+	for c: AudioCueDefinition in cues:
+		var s: AudioStream = (
+			load(c.default_path()) if ResourceLoader.exists(c.default_path()) else null
+		)
+		if s == null or s.get_length() <= 0.0:
+			missing.append(String(c.id))
+	_check(missing.is_empty(), "every cue's sound loads from the pack (missing: %s)" % [missing])
 
 
 ## Step 4: a 600-tick headless World run inside the pack reproduces the hash computed in the project.

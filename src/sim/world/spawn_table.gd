@@ -23,6 +23,11 @@ func tier_at(run_ticks: int) -> int:
 	return run_ticks / maxi(1, tier_ticks)
 
 
+## How far `run_ticks` is through its tier, 0 .. <1 (v0.3.0 UI: the HUD's danger meter, L23).
+func tier_progress(run_ticks: int) -> float:
+	return float(run_ticks % maxi(1, tier_ticks)) / maxi(1, tier_ticks)
+
+
 func cap(tier: int) -> int:
 	return mini(cap_base + cap_per_tier * tier, cap_max)
 

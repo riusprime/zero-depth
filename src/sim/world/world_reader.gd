@@ -68,6 +68,8 @@ const MOVE_BARRAGE := BossAttackTable.Move.BARRAGE
 const MOVE_RAIL := BossAttackTable.Move.RAIL
 const MOVE_BOLT_FAN := BossAttackTable.Move.BOLT_FAN
 const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
+## Boss challenge (v0.3.0 BX): the vortex that drags you in, then slams.
+const MOVE_PULL := BossAttackTable.Move.PULL
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -774,6 +776,43 @@ func boss_table_name_key(k: int) -> StringName:
 	return _w.boss_tables[k].name_key
 
 
+# --- Boss challenge (v0.3.0 BX) ----------------------------------------------------------------------------------
+## How far boss i has risen, 0..1000: state ticks over BossAi.INTRO_TICKS while it rises, then 1000 (L22: the boss
+## bar fills over exactly this).
+func boss_intro_permille(i: int) -> int:
+	if _w.actors.state[i] != EnemyAi.State.SPAWN:
+		return 1000
+	return clampi(_w.actors.state_t[i] * 1000 / BossAi.INTRO_TICKS, 0, 1000)
+
+
+## Boss i's weak point: how much of its open time is left, 0..1000 (0 = closed).
+func boss_weak_point_permille(i: int) -> int:
+	var b := BossAi.entry_of(_w, i)
+	var t := BossAi.table_of(_w, i)
+	if b < 0 or t.weak_ticks <= 0:
+		return 0
+	return clampi(_w.bosses.exposed_t[b] * 1000 / t.weak_ticks, 0, 1000)
+
+
+## How close (from boss i's edge) a hit must land to strike its open weak point.
+func boss_weak_range_m(i: int) -> float:
+	return BossAi.table_of(_w, i).weak_range_m
+
+
+## The closing arena's band (BossChallenge.band): {} or "arena", "depth", "next", "warn" (-1 or 0..1000).
+func boss_arena_band() -> Dictionary:
+	return BossChallenge.band(_w)
+
+
+## How long the player has stayed too far from boss i, 0..1000 of the time that starts its punish (0 = none).
+func boss_punish_permille(i: int) -> int:
+	var b := BossAi.entry_of(_w, i)
+	var t := BossAi.table_of(_w, i)
+	if b < 0 or t.punish_attack < 0 or t.punish_ticks <= 0:
+		return 0
+	return clampi(_w.bosses.far_t[b] * 1000 / t.punish_ticks, 0, 1000)
+
+
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
 func shards() -> int:
 	return _w.shards
@@ -998,3 +1037,104 @@ func projectile_is_shard(i: int) -> bool:
 
 func player_build() -> Dictionary:  # v0.3.0 P: PlayerBuild.read (has_blade, has_gun, facing, regenerating, ...).
 	return PlayerBuild.read(_w)
+
+
+func heat_state() -> Dictionary:
+	return Heat.read(_w)  # Overclock heat (v0.3.0 L18): the meter's values (Heat.read); {} without heat.
+
+
+# --- Gamble shrine (v0.3.0 L19) -----------------------------------------------------------------------------
+## The floor has a gamble shrine.
+func has_gamble() -> bool:
+	return Gamble.present(_w)
+
+
+func gamble_id() -> int:
+	return _w.gamble_id
+
+
+func gamble_pos() -> Vector2:
+	return _w.gamble_pos
+
+
+## Shards for the next use (the sim's own price).
+func gamble_price() -> int:
+	return Gamble.price(_w)
+
+
+func gamble_affordable() -> bool:
+	return Gamble.can_afford(_w)
+
+
+## Every stat is at its cap.
+func gamble_exhausted() -> bool:
+	return Gamble.exhausted(_w)
+
+
+## The interact button would use the shrine now: in its reach, and no altar or chest in reach (they go first).
+func gamble_in_reach() -> bool:
+	return Gamble.in_reach(_w) and Rewards.nearest(_w) < 0
+
+
+func gamble_interact_radius_m() -> float:
+	return _w.gamble_table.interact_radius_m
+
+
+## The last win: its tick (-1 = none yet on this floor) and its stat (an index below gamble_stat_count()).
+func gamble_tick() -> int:
+	return _w.gamble_tick
+
+
+func gamble_last_stat() -> int:
+	return _w.gamble_last_stat
+
+
+## The last refused use (too poor, or every stat capped): its tick, -1 when none.
+func gamble_denied_tick() -> int:
+	return _w.gamble_denied_tick
+
+
+func gamble_uses() -> int:
+	return _w.gamble_uses
+
+
+func gamble_stat_count() -> int:
+	return GambleTable.STAT_COUNT
+
+
+## The stat's data name (max_hp, melee_damage ...), for icons and text.
+func gamble_stat_id(stat: int) -> StringName:
+	return GambleTable.STAT_IDS[stat]
+
+
+## Wins of `stat` this run, and its cap.
+func gamble_stacks(stat: int) -> int:
+	return Gamble.stacks(_w, stat)
+
+
+func gamble_cap(stat: int) -> int:
+	return _w.gamble_table.cap[stat]
+
+
+## What one win of `stat` adds: HP for max_hp, per mille otherwise (regen: per mille of max HP per second).
+func gamble_amount(stat: int) -> int:
+	return _w.gamble_table.amount[stat]
+
+
+## What the wins of `stat` add so far, in the same unit.
+func gamble_bonus(stat: int) -> int:
+	return Gamble.bonus(_w, stat)
+
+
+## The stats the shrine can still draw, in stat order (the view's spin shows these).
+func gamble_candidates() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var weights := Gamble.weights(_w)
+	for s in weights.size():
+		if weights[s] > 0:
+			out.append(s)
+	return out
+
+
+func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
+	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0

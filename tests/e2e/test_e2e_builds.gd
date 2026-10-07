@@ -232,7 +232,7 @@ func test_out_of_combat_regen_heals_and_the_bar_pulses() -> void:
 	var pulsed := false
 	for k in 60 * 14:
 		await e.frames(1)
-		pulsed = pulsed or hud.regen_pulsing()
+		pulsed = pulsed or (hud.find_child("RegenPulse", true, false) as RegenPulse).is_pulsing()
 		if w.actors.hp[0] >= hurt + 2 and pulsed:
 			break
 	assert_false(w.player_dead())

@@ -72,6 +72,8 @@ var _head_yaw := Node3D.new()
 var _leg_root := Node3D.new()
 var _cloak_mesh := ArrayMesh.new()
 var _visor_mat := StandardMaterial3D.new()
+## Overclock heat (v0.3.0 L18; HeatVisuals): how far (0..1) the visor leans toward the heat colour.
+var _heat_amount := 0.0
 # Rest cloak rings in the cloak frame (pelvis * cloak yaw): top (fixed), flare (springs), hem (springs).
 var _top_rest: Array[Vector3] = []
 var _spring_rest: Array[Vector3] = []
@@ -262,6 +264,19 @@ func advance(delta: float) -> void:
 	_rebuild_cloak()
 
 
+## Overclock heat: the visor shifts from its own cyan toward `c` (orange, then white-hot) by `amount`, and burns
+## brighter. Only the kept material's colour and energy change, never emission_enabled.
+func set_heat(c: Color, amount: float) -> void:
+	_heat_amount = clampf(amount, 0.0, 1.0)
+	var col := ThemePalette.color(&"player_core").lerp(c, _heat_amount)
+	_visor_mat.albedo_color = col
+	_visor_mat.emission = col
+
+
+func visor_color() -> Color:
+	return _visor_mat.emission
+
+
 ## Largest distance of a cloak spring from its rest target (0 when the cloak has settled).
 func cloak_offset() -> float:
 	var worst := 0.0
@@ -371,7 +386,7 @@ func _pose(dt: float) -> void:
 	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin, 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
 	hood.rotation = Vector3(_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08)
-	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump)
+	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.
 	_leg_root.position.y = hip

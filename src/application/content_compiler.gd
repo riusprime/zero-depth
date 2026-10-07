@@ -21,6 +21,7 @@ const BOSS_MOVES := {
 	&"rail": BossAttackTable.Move.RAIL,
 	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
 	&"deploy": BossAttackTable.Move.DEPLOY,
+	&"pull": BossAttackTable.Move.PULL,
 }
 
 
@@ -235,6 +236,9 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
 		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
 		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
+		ItemDefinition.Kind.HEAT_SINK: ItemTable.Kind.HEAT_SINK,
+		ItemDefinition.Kind.THERMAL_EDGE: ItemTable.Kind.THERMAL_EDGE,
+		ItemDefinition.Kind.MELTDOWN: ItemTable.Kind.MELTDOWN,
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -311,6 +315,19 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.frozen_bonus_permille = def.frozen_bonus_permille
 	t.charge_max = def.charge_max
 	t.charge_bonus_permille = def.charge_bonus_permille
+	# Overclock heat (v0.3.0 L18).
+	t.requires_heat = (
+		def.kind
+		in [
+			ItemDefinition.Kind.HEAT_SINK,
+			ItemDefinition.Kind.THERMAL_EDGE,
+			ItemDefinition.Kind.MELTDOWN
+		]
+	)
+	t.vent_damage_bonus_permille = def.vent_damage_bonus_permille
+	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
+	t.heat_hot_threshold = def.heat_hot_threshold
+	t.meltdown_damage_permille = def.meltdown_damage_permille
 
 
 ## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
@@ -384,7 +401,40 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		t.phase_cd_permille.append(ph.cooldown_permille)
 	t.arena_cells = def.arena_cells
 	t.arena_template = def.arena_template
+	_compile_boss_challenge(def, t)
 	return t
+
+
+## Boss challenge (v0.3.0 BX): ranged armour, punish, weak point, closing arena, harder AI.
+static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
+	t.ranged_full_m = def.ranged_full_m
+	t.ranged_far_m = def.ranged_far_m
+	t.ranged_far_permille = def.ranged_far_permille
+	t.punish_distance_m = def.punish_distance_m
+	t.punish_ticks = SimTick.seconds_to_ticks(def.punish_seconds)
+	t.punish_attack = (
+		t.attack_index(def.punish_attack) if not String(def.punish_attack).is_empty() else -1
+	)
+	t.weak_ticks = SimTick.seconds_to_ticks(def.weak_point_seconds)
+	t.weak_range_m = def.weak_point_range_m
+	t.weak_mult_permille = def.weak_point_mult_permille
+	t.weak_stagger_permille = def.weak_point_stagger_permille
+	t.close_phase = def.arena_close_phase
+	t.close_after_ticks = SimTick.seconds_to_ticks(def.arena_close_after_seconds)
+	t.close_step_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_close_step_seconds))
+	t.close_step_m = def.arena_close_step_m
+	t.close_warn_ticks = SimTick.seconds_to_ticks(def.arena_close_warn_seconds)
+	t.safe_half_m = def.arena_safe_half_m
+	t.hazard_damage = def.arena_hazard_damage
+	t.hazard_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_hazard_seconds))
+	t.lead_ticks = SimTick.seconds_to_ticks(def.lead_seconds)
+	for k in def.attacks.size():
+		var a := def.attacks[k]
+		var at := t.attacks[k]
+		at.recover_ticks = at.recover_ticks * def.recovery_permille / 1000
+		at.opens_weak = a.opens_weak_point
+		at.follow_up = t.attack_index(a.follow_up) if not String(a.follow_up).is_empty() else -1
+		at.follow_up_permille = a.follow_up_permille
 
 
 static func compile_boss_attack(
@@ -428,6 +478,8 @@ static func compile_boss_attack(
 		if e != null:
 			t.enemy_kind = compile_enemy(e).kind
 	t.max_alive = int(sp.get("max_alive", 99))
+	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
+	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
 	return t
 
 
@@ -448,6 +500,36 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.boss_shards = def.boss_shards
+	return t
+
+
+## The gamble shrine (v0.3.0 L19): prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
+## percent otherwise), weight and cap in GambleTable.Stat order. A stat the data leaves out gets weight 0.
+static func compile_gamble(def: GambleDefinition) -> GambleTable:
+	var t := GambleTable.new()
+	if def == null:
+		return t
+	t.base_price = def.base_price
+	t.price_step_permille = int(round(def.price_step * 1000.0))
+	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.interact_radius_m = def.interact_radius_m
+	t.spot_distance_m = def.spot_distance_m
+	t.clear_radius_m = def.clear_radius_m
+	t.amount = PackedInt32Array()
+	t.weight = PackedInt32Array()
+	t.cap = PackedInt32Array()
+	for s in GambleTable.STAT_COUNT:
+		t.amount.append(0)
+		t.weight.append(0)
+		t.cap.append(0)
+	for e in def.stats:
+		var s := GambleTable.STAT_IDS.find(e.stat) if e != null else -1
+		if s < 0:
+			continue
+		var scale := 1.0 if s == GambleTable.Stat.MAX_HP else 10.0
+		t.amount[s] = int(round(e.amount * scale))
+		t.weight[s] = e.weight
+		t.cap[s] = e.max_stacks
 	return t
 
 
@@ -489,4 +571,29 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.hp_per_floor_permille = int(round(def.enemy_hp_per_floor * 1000.0))
 	t.damage_per_floor_permille = int(round(def.enemy_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	return t
+
+
+## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition
+## (Heat.enable then leaves heat off).
+static func compile_heat(def: HeatDefinition) -> HeatTable:
+	if def == null:
+		return null
+	var t := HeatTable.new()
+	var m := HeatTable.MILLI
+	t.max_heat = def.max_heat
+	t.gain_swing = int(round(def.gain_swing * m))
+	t.gain_finisher = int(round(def.gain_finisher * m))
+	t.gain_bolt = int(round(def.gain_bolt * m))
+	t.decay_delay_ticks = SimTick.seconds_to_ticks(def.decay_delay_seconds)
+	t.decay_per_tick = int(round(def.decay_per_second * m / SimTick.TICKS_PER_SECOND))
+	t.hot_threshold = def.hot_threshold
+	t.hot_reach_permille = int(round(def.hot_reach_bonus * 1000.0))
+	t.overclock_threshold = def.overclock_threshold
+	t.overclock_damage_permille = int(round(def.overclock_damage_bonus * 1000.0))
+	t.overclock_burn_stacks = def.overclock_burn_stacks
+	t.stall_ticks = maxi(1, SimTick.seconds_to_ticks(def.overheat_seconds))
+	t.stall_move_permille = int(round(def.overheat_move_multiplier * 1000.0))
+	t.vent_radius_m = def.vent_radius_m
+	t.vent_damage_permille = int(round(def.vent_damage_per_heat * 1000.0))
 	return t

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AudioCueDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/audio_cue_definition.gd" id="1_cue"]
+
+[resource]
+script = ExtResource("1_cue")
+kind = &"sfx"
+bus = &"ui"
+volume_db = -5.0
+pitch_jitter = 0.03
+max_voices = 1
+cooldown_s = 0.3
+duck = true
+caption_key = &"CAPTION_TELEGRAPH_GATEKEEPER"
+id = &"boss_telegraph_gatekeeper"

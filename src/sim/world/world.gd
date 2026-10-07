@@ -1,4 +1,4 @@
-# gdlint: disable=max-public-methods
+# gdlint: disable=max-public-methods, max-file-lines
 class_name World
 extends RefCounted
 ## The whole simulation state, mutated in place one tick at a time (SIM_CONTRACTS §2).
@@ -155,6 +155,20 @@ var choosing := -1
 var reward_denied_id := -1
 var reward_denied_tick := -1
 # --- end Rewards --------------------------------------------------------------------------------------------
+# --- Gamble shrine (v0.3.0 L19; Gamble) ---------------------------------------------------------------------
+## The shrine's rules (part of the loadout, like reward_table; not hashed).
+var gamble_table := GambleTable.new()
+## The floor's shrine: its id (-1 = none on this floor) and where it stands.
+var gamble_id := -1
+var gamble_pos := Vector2.ZERO
+## Wins per GambleTable.Stat this run (empty until the first). The run flow carries it between floors.
+var gamble_stacks := PackedInt32Array()
+## Uses on this floor (the price steps up with each; not carried), the last win (stat, tick) and the last refusal.
+var gamble_uses := 0
+var gamble_last_stat := -1
+var gamble_tick := -1
+var gamble_denied_tick := -1
+# --- end Gamble ---------------------------------------------------------------------------------------------
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -211,6 +225,7 @@ var floor_count := 1
 var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders, combat and regen (PlayerBuild).
 var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
 
+var heat: HeatState  # Overclock heat (v0.3.0 L18; Heat): null unless the loadout has it (Heat.enable).
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -309,6 +324,7 @@ func step(frame: InputFrame) -> void:
 	if Rewards.interact(self):
 		tick += 1
 		return
+	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
 		nav.flood(player_pos())
@@ -649,6 +665,13 @@ func state_hash() -> String:
 	if not item_tables.is_empty():
 		_hash_engines(h)
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
+	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
+	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
+		h.add_ints(gamble_stacks)
+		for v in [gamble_id, gamble_uses, gamble_last_stat, gamble_tick, gamble_denied_tick]:
+			h.add_int(v)
+		h.add_f32(gamble_pos.x)
+		h.add_f32(gamble_pos.y)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
@@ -810,6 +833,7 @@ func _advance_actions() -> void:
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
+		Heat.on_move(self)  # Heat: a dash while Hot vents where it starts.
 
 
 func _move_and_collide() -> void:
@@ -826,7 +850,7 @@ func _move_and_collide() -> void:
 			var len := Kin.length(mv)
 			if len > 1.0:
 				mv /= len
-			var speed := ItemProcs.move_speed(self)  # Items: Swift Feet.
+			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -947,6 +971,8 @@ func _projectile_hits() -> void:
 				)
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
+				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
+					continue
 			elif projectiles.bounces[i] > 0:
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
 				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])

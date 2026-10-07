@@ -57,6 +57,10 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
+	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
+	if heat != 1000:
+		amount = amount * heat / 1000
+		tags |= SimEvent.TAG_OVERCLOCK
 	var h := w.emit_event(SimEvent.Kind.HIT, source_id, owner_id, target_id, at)
 	h.root_id = root_id
 	h.amount = amount
@@ -68,6 +72,9 @@ static func hit(
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
 	var m := target_mult(w, target, from)
+	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
+		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.
+		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
 	var got := 0
@@ -80,6 +87,7 @@ static func hit(
 		Engines.on_guard_block(w, owner_id, root_id)  # Engines: Bulwark, Frozen Bastion.
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
+		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 	return got
 
 
@@ -154,7 +162,7 @@ static func _apply(
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
-		BossAi.on_damage(w, target, applied)  # Bosses (v0.3.0 C): hits fill the stagger meter.
+		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
 	return applied

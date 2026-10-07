@@ -17,7 +17,13 @@ const INT_FIELDS: Array[StringName] = [
 	&"last_attack",
 	&"entry",
 	&"hit",
-	&"span"
+	&"span",
+	&"far_t",
+	&"exposed_t",
+	&"chained",
+	&"fight_t",
+	&"close_t",
+	&"hazard_cd"
 ]
 
 ## The boss's actor id, and its index in World.boss_tables.
@@ -38,6 +44,18 @@ var entry := PackedInt32Array()
 var hit := PackedInt32Array()
 ## A rail sweep's signed span (1/4096 turns), from its start angle (the actor's lock_a).
 var span := PackedInt32Array()
+## Boss challenge (v0.3.0 BX; BossChallenge): ticks the player has stayed beyond the punish distance; ticks the weak
+## point stays open; 1 while the attack in progress is a follow-up (it can't chain again); ticks fought (after the
+## rise); ticks since the arena began closing (0 = not yet); ticks until the closing band may hurt again.
+var far_t := PackedInt32Array()
+var exposed_t := PackedInt32Array()
+var chained := PackedInt32Array()
+var fight_t := PackedInt32Array()
+var close_t := PackedInt32Array()
+var hazard_cd := PackedInt32Array()
+## The boss room's interior (wall face to wall face) the closing band creeps in from; empty = no closing arena (the
+## run flow sets it when the door seals).
+var arena := Rect2()
 ## Locked points, MAX_PTS per boss: [x, y] spots, or a lane's length in x.
 var pts_x := PackedFloat32Array()
 var pts_y := PackedFloat32Array()
@@ -93,3 +111,5 @@ func hash_into(h: StateHasher) -> void:
 		h.add_ints(get(f))
 	h.add_f32s(pts_x)
 	h.add_f32s(pts_y)
+	for v in [arena.position.x, arena.position.y, arena.size.x, arena.size.y]:
+		h.add_f32(v)

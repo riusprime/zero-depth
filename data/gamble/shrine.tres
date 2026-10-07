@@ -1,0 +1,71 @@
+[gd_resource type="Resource" script_class="GambleDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/gamble_stat_entry.gd" id="1_gse"]
+[ext_resource type="Script" path="res://src/content/defs/gamble_definition.gd" id="2_gdf"]
+
+[sub_resource type="Resource" id="S_max_hp"]
+script = ExtResource("1_gse")
+stat = &"max_hp"
+amount = 8.0
+weight = 3
+max_stacks = 6
+
+[sub_resource type="Resource" id="S_melee"]
+script = ExtResource("1_gse")
+stat = &"melee_damage"
+amount = 6.0
+weight = 3
+max_stacks = 5
+
+[sub_resource type="Resource" id="S_shot"]
+script = ExtResource("1_gse")
+stat = &"shot_damage"
+amount = 6.0
+weight = 3
+max_stacks = 5
+
+[sub_resource type="Resource" id="S_move"]
+script = ExtResource("1_gse")
+stat = &"move_speed"
+amount = 4.0
+weight = 2
+max_stacks = 4
+
+[sub_resource type="Resource" id="S_dash"]
+script = ExtResource("1_gse")
+stat = &"dash_cooldown"
+amount = 6.0
+weight = 2
+max_stacks = 4
+
+[sub_resource type="Resource" id="S_regen"]
+script = ExtResource("1_gse")
+stat = &"regen"
+amount = 0.5
+weight = 2
+max_stacks = 4
+
+[sub_resource type="Resource" id="S_heat"]
+script = ExtResource("1_gse")
+stat = &"heat_capacity"
+amount = 8.0
+weight = 2
+max_stacks = 4
+
+[sub_resource type="Resource" id="S_shards"]
+script = ExtResource("1_gse")
+stat = &"shard_gain"
+amount = 5.0
+weight = 2
+max_stacks = 4
+
+[resource]
+script = ExtResource("2_gdf")
+id = &"shrine"
+base_price = 25
+price_step = 0.5
+floor_price_step = 0.5
+interact_radius_m = 1.8
+spot_distance_m = 2.6
+clear_radius_m = 0.9
+stats = Array[ExtResource("1_gse")]([SubResource("S_max_hp"), SubResource("S_melee"), SubResource("S_shot"), SubResource("S_move"), SubResource("S_dash"), SubResource("S_regen"), SubResource("S_heat"), SubResource("S_shards")])

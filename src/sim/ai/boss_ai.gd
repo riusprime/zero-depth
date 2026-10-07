@@ -7,6 +7,9 @@ extends RefCounted
 ## Every attack's area comes from one function here (ring_of, lane_of, arc_of, charge_lane, leap_disc,
 ## burrow_disc, spots_of, rail_of, fan_lane_of), which telegraph() hands the view and resolve() hits with (EI-07).
 ## Randomness only from the ai stream.
+## Boss challenge (v0.3.0 BX; BossChallenge): the far timer starts the punish attack, an attack may chain into its
+## follow-up instead of recovering, some recoveries open the weak point, aimed attacks lead the player, a pull drags
+## the player during its windup, and the closing band hurts in phase 6.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -58,6 +61,7 @@ static func think(w: World, i: int) -> void:
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
 	_update_phase(w, i, b, t)
+	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
 	var to_player := w.player_pos() - a.pos(i)
@@ -76,7 +80,11 @@ static func think(w: World, i: int) -> void:
 			a.facing[i] = (
 				aim if t.turn_rate <= 0 else Kin.turn_toward(a.facing[i], aim, t.turn_rate)
 			)
-			if not w.player_dead() and a.cd[i] == 0:
+			var punish := BossChallenge.punish_due(w, b, t)
+			if punish >= 0:
+				start_attack(w, i, punish)
+				bs.far_t[b] = 0
+			elif not w.player_dead() and a.cd[i] == 0:
 				var k := _choose(w, b, t, Kin.length(to_player))
 				if k >= 0:
 					start_attack(w, i, k)
@@ -103,7 +111,7 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 	match atk.move:
 		M.CHARGE:
 			if a.lock_len[i] <= 0.0:
-				_enter(a, i, S.RECOVER)
+				_finish(w, i, b, atk)
 		M.LEAP:
 			a.invuln[i] = maxi(a.invuln[i], 2)  # airborne
 			if a.state_t[i] >= atk.active_ticks:
@@ -114,7 +122,7 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 					_lock(w, i, b, atk)
 				else:
 					a.invuln[i] = 0
-					_enter(a, i, S.RECOVER)
+					_finish(w, i, b, atk)
 		M.BURROW:
 			if bs.step[b] < 2:
 				a.invuln[i] = maxi(a.invuln[i], 2)  # underground
@@ -128,17 +136,40 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 				a.state_t[i] = 0
 				a.invuln[i] = 0
 			elif bs.step[b] == 2:
-				_enter(a, i, S.RECOVER)
+				_finish(w, i, b, atk)
 		M.RAIL:
 			a.facing[i] = rail_angle(w, i, mini(a.state_t[i] + 1, atk.active_ticks)) & 4095
 			if a.state_t[i] >= atk.active_ticks:
-				_enter(a, i, S.RECOVER)
+				_finish(w, i, b, atk)
 		M.BOLT_FAN:
 			if bs.step[b] >= atk.volleys and a.state_t[i] >= atk.active_ticks:
-				_enter(a, i, S.RECOVER)
+				_finish(w, i, b, atk)
 		_:
 			if a.state_t[i] >= atk.active_ticks:
-				_enter(a, i, S.RECOVER)
+				_finish(w, i, b, atk)
+
+
+## The end of an attack (BX, L26): its follow-up starts at once when one is set, the roll (ai stream) passes and the
+## player is in its range band (a follow-up never chains again); otherwise the boss recovers, and the recovery of an
+## attack that opens the weak point opens it (L17).
+static func _finish(w: World, i: int, b: int, atk: BossAttackTable) -> void:
+	var a := w.actors
+	var bs := w.bosses
+	var t: BossTable = w.boss_tables[bs.table[b]]
+	if atk.follow_up >= 0 and bs.chained[b] == 0 and not w.player_dead():
+		var nxt := t.attacks[atk.follow_up]
+		var dist := Kin.length(w.player_pos() - a.pos(i))
+		if (
+			dist >= nxt.min_range_m
+			and dist <= nxt.max_range_m
+			and w.rng_ai.range_int(0, 999) < atk.follow_up_permille
+		):
+			start_attack(w, i, atk.follow_up)
+			bs.chained[b] = 1
+			return
+	_enter(a, i, S.RECOVER)
+	if atk.opens_weak and t.weak_ticks > 0:
+		bs.exposed_t[b] = t.weak_ticks
 
 
 ## The phase for the current HP: the last one whose threshold the HP has fallen to. Phases only advance.
@@ -191,6 +222,7 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	bs.last_attack[b] = k
 	bs.step[b] = 0
 	bs.hit[b] = 0
+	bs.chained[b] = 0
 	_lock(w, i, b, atk)
 
 
@@ -199,7 +231,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var a := w.actors
 	var bs := w.bosses
 	var at := a.pos(i)
-	var target := w.player_pos()
+	var target := BossChallenge.aim_point(w, b, atk.move)  # BX (L26): aimed moves lead the player.
 	var aim := Kin.angle_of(target - at)
 	a.lock_x[i] = at.x
 	a.lock_y[i] = at.y
@@ -279,6 +311,10 @@ static func move(w: World, i: int) -> void:
 			if dist <= maxf(t.keep_distance_m, t.radius_m + w.player.radius_m + 0.1):
 				return
 			a.set_pos(i, at + EnemyAi.steer(w, at, to / dist, t.radius_m) * speed)
+		S.WINDUP:
+			var atk := attack_of(w, i)
+			if atk != null and atk.move == M.PULL:
+				BossChallenge.drag(w, i, atk)  # BX (L17): the vortex drags the player in.
 		S.ACTIVE:
 			var atk := attack_of(w, i)
 			match atk.move:
@@ -327,6 +363,7 @@ static func hidden(w: World, i: int) -> bool:
 
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
+	BossChallenge.resolve_arena(w, i)  # BX (L17): the closing band.
 	if a.state[i] != S.ACTIVE or w.player_dead():
 		return
 	var b := entry_of(w, i)
@@ -335,7 +372,7 @@ static func resolve(w: World, i: int) -> void:
 	var pr := w.player.radius_m
 	var st := a.state_t[i]
 	match atk.move:
-		M.SLAM_RING:
+		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
 			if st == 0 and AttackShapes.ring_touches(r[0], r[1], r[2], p, pr):
 				_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
@@ -437,7 +474,7 @@ static func _hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from:
 
 ## Damage (not damage over time) on a boss fills its stagger meter; a full meter staggers it: its attack stops,
 ## it can't act for stagger_ticks, and the meter resets. Emits STATUS_APPLY (effect &"boss_stagger").
-static func on_damage(w: World, i: int, applied: int) -> void:
+static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 	var a := w.actors
 	if not is_boss_kind(a.kinds[i]) or a.dead[i] == 1 or applied <= 0:
 		return
@@ -445,7 +482,7 @@ static func on_damage(w: World, i: int, applied: int) -> void:
 		return
 	var b := entry_of(w, i)
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
-	w.bosses.meter[b] += applied * 1000
+	w.bosses.meter[b] += applied * BossChallenge.stagger_permille(w, i, tags)  # BX: the weak point
 	if w.bosses.meter[b] < t.stagger_size_milli:
 		return
 	w.bosses.meter[b] = 0
@@ -573,7 +610,8 @@ static func fan_lane_of(w: World, i: int, k: int) -> Obb:
 ## What the view draws for boss i: {} or a shape with "progress" (0..1000). Shapes: &"ring" (center, inner,
 ## outer), &"lanes" (obbs), &"arc" (center, own_r, angle, half_arc, reach), &"lane" (obb), &"disc" (center,
 ## radius), &"discs" (centers, radius), &"sweep" (center, own_r, start, span, reach, beam) and the harmless
-## &"ripple" (center, radius) that marks a burrowing boss. "move" names the attack's move (BossAttackTable.Move).
+## &"ripple" (center, radius) that marks a burrowing boss. A pull (BX) draws a &"ring" with "pull_m", the vortex's
+## reach from the boss's centre. "move" names the attack's move (BossAttackTable.Move).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -584,9 +622,11 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
 	var out := {}
 	match atk.move:
-		M.SLAM_RING:
+		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
 			out = {"shape": &"ring", "center": r[0], "inner": r[1], "outer": r[2]}
+			if atk.move == M.PULL:
+				out["pull_m"] = atk.pull_range_m + a.radius[i]  # BX: how far the vortex reaches
 		M.LANES, M.BOLT_FAN:
 			var obbs: Array[Obb] = []
 			for k in atk.count:
@@ -659,6 +699,8 @@ static func cause_key(w: World) -> StringName:
 	var t := w.boss_table_of_kind(w.killer_kind)
 	if t == null:
 		return &""
+	if w.killer_attack == BossChallenge.ARENA_ATTACK:
+		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
 		return t.attacks[w.killer_attack].cause_key
 	for atk in t.attacks:

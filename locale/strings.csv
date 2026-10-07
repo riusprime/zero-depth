@@ -90,7 +90,7 @@ ITEM_SWIFT_FEET,Swift Feet,Pies Ligeros
 ITEM_SWIFT_FEET_DESC,Move 15% faster; dash recharges 20% sooner.,Corres un 15% más; el esprint recarga un 20% antes.
 ITEM_PHASE_STRIKE,Phase Strike,Golpe de Fase
 ITEM_PHASE_STRIKE_DESC,Blinks and guard blocks deal 12 around you.,Destellar o bloquear hace 12 de daño a tu alrededor.
-HUD_TIME_TIER,%02d:%02d · Danger %d,%02d:%02d · Peligro %d
+HUD_TIME,%02d:%02d,%02d:%02d
 HUD_KILLS,Kills: %d,Bajas: %d
 HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
 HUD_PICKED_UP,Picked up,Recogido
@@ -157,8 +157,8 @@ ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
-HUD_FLOOR,Floor %d · %s,Piso %d · %s
-HUD_FLOOR_CARD,FLOOR %d,PISO %d
+HUD_FLOOR,Floor %02d // %s,Piso %02d // %s
+HUD_FLOOR_CARD,FLOOR %02d,PISO %02d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
 HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
 UI_RESTART_RUN,RESTART RUN,REINICIAR PARTIDA
@@ -178,3 +178,46 @@ BUILD_GUN,GUN,PISTOLA
 BUILD_GUN_DESC,Hold to shoot where you aim. No blade.,Mantén para disparar hacia donde apuntas. Sin hoja.
 BUILD_DAMAGE,Damage %s,Daño %s
 BUILD_HINT,Left / Right to choose · Enter or A to start · Esc or B to go back,Izquierda / Derecha para elegir · Intro o A para empezar · Esc o B para volver
+UI_VOLUME_AMBIENCE,Ambience,Ambiente
+UI_CAPTIONS,Captions,Subtítulos
+CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
+CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]
+CAPTION_OVERHEAT,[Overheat alarm],[Alarma de sobrecalentamiento]
+CAPTION_TELEGRAPH_GATEKEEPER,[Warning: the Gatekeeper's attack rumbles],[Aviso: el ataque del Guardián de la Puerta retumba]
+CAPTION_TELEGRAPH_BROOD_MOTHER,[Warning: the Brood Mother chitters],[Aviso: la Madre de la Prole chirría]
+CAPTION_TELEGRAPH_SIEGE_ENGINE,[Warning: the Siege Engine whines as it charges],[Aviso: la Máquina de Asedio zumba al cargar]
+CAPTION_BOSS_STAGGER,[Boss staggered: power drops],[Jefe aturdido: pierde potencia]
+CAPTION_BOSS_PHASE,[Boss roars: a new phase],[El jefe ruge: nueva fase]
+CAPTION_BOSS_DEATH,[Boss destroyed],[Jefe destruido]
+CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de golpe]
+CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
+CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
+ITEM_HEAT_SINK,Heat Sink,Disipador
+ITEM_HEAT_SINK_DESC,Vent blasts deal +50% and reach 30% farther.,Las purgas hacen +50% y llegan un 30% más lejos.
+ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
+ITEM_THERMAL_EDGE_DESC,You run Hot from 30 heat instead of 40.,Entras en Caliente con 30 de calor en vez de 40.
+ITEM_MELTDOWN,Meltdown,Fusión
+ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
+HUD_HEAT,HEAT,CALOR
+HUD_HEAT_HOT,HOT,CALIENTE
+HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
+HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
+HUD_HEAT_VENT,VENT: DASH,PURGA: ESPRINT
+HUD_HEAT_VENT_BLINK,VENT: DASH / BLINK,PURGA: ESPRINT / DESTELLO
+UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
+UI_GAMBLE_SPENT,The shrine has nothing left to give,El santuario ya no tiene nada que dar
+UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
+UI_GAMBLE_STATS,Shrine stats,Estadísticas del santuario
+UI_GAMBLE_STATS_NONE,No shrine stats yet,Aún no tienes estadísticas del santuario
+UI_GAMBLE_MAX_HP,+%d max HP,+%d PV máximos
+UI_GAMBLE_MELEE_DAMAGE,+%s %% melee damage,+%s %% de daño cuerpo a cuerpo
+UI_GAMBLE_SHOT_DAMAGE,+%s %% shot damage,+%s %% de daño de disparo
+UI_GAMBLE_MOVE_SPEED,+%s %% move speed,+%s %% de velocidad
+UI_GAMBLE_DASH_COOLDOWN,−%s %% dash cooldown,−%s %% de recarga del esprint
+UI_GAMBLE_REGEN,+%s %% HP/s out of combat,+%s %% PV/s fuera de combate
+UI_GAMBLE_HEAT_CAPACITY,+%s %% heat capacity,+%s %% de capacidad de calor
+UI_GAMBLE_SHARD_GAIN,+%s %% shards from kills,+%s %% de fragmentos por baja
+CAUSE_GATEKEEPER_PULL,The Gatekeeper's vortex dragged you into its slam.,El vórtice del Guardián de la Puerta te arrastró hasta su golpe.
+CAUSE_BROOD_POUNCE,The Brood Mother hunted you down in a run of leaps.,La Madre de la Prole te dio caza con una serie de saltos.
+CAUSE_SIEGE_SHOCKWAVE,The Siege Engine's shockwave swept the room and you with it.,La onda de choque de la Máquina de Asedio barrió la sala y a ti con ella.
+CAUSE_BOSS_ARENA,The closing arena caught you against the wall.,La arena que se cierra te atrapó contra el muro.
