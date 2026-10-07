@@ -31,14 +31,11 @@ var guard_move_permille := 400
 var blink_range_m := 5.0
 var blink_cooldown_ticks := 150
 var blink_iframe_ticks := 6
-## Melee: swing (3-hit combo). Shooting: bolts. Distances in metres, speeds in metres per tick.
-var swing_ticks := 14
-var swing_active_tick := 2
-var swing_reach_m := 1.6
-var swing_half_arc := 683
-var swing_damage: Array[int] = [10, 10, 18]
+## Melee: a combo of distinct swings (v0.3.0 L11), one SwingStep per step in order; a press within
+## combo_window_ticks of a swing's end starts the next step, otherwise (and after the last step) the combo
+## starts over. Shooting: bolts. Distances in metres, speeds in metres per tick.
+var combo: Array[SwingStep] = default_combo()
 var combo_window_ticks := 12
-var swing_hitstop_ticks := 3
 ## Shooting: a bolt every shot_period_ticks while held, bolt_damage each.
 var shot_period_ticks := 7
 var bolt_damage := 4
@@ -58,3 +55,21 @@ static func starting_values() -> PlayerTable:
 	t.dash_cooldown_ticks = SimTick.seconds_to_ticks(0.8)
 	t.dash_iframe_ticks = SimTick.seconds_to_ticks(0.15)
 	return t
+
+
+## The v0.3.0 four-slash combo (PLAN L11, starting values): a horizontal slash right to left, a backhand left to
+## right, a forward thrust (narrow, longer, a slight step) and a heavy spinning finisher (all around, more damage
+## and hit-stop, a longer recovery, a small lunge). The same numbers as data/player/runner.tres.
+static func default_combo() -> Array[SwingStep]:
+	var out: Array[SwingStep] = [
+		SwingStep.make(SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 2, 11, 683, 1.6, 10, 3, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 3, 11, 683, 1.6, 10, 3, 0.0, 5),
+		SwingStep.make(SwingStep.Motion.THRUST, 4, 12, 228, 2.3, 12, 4, 0.35, 4),
+		SwingStep.make(SwingStep.Motion.SPIN, 7, 24, 2048, 1.9, 24, 7, 0.6, 9),
+	]
+	return out
+
+
+## The combo step `i` (0-based).
+func step(i: int) -> SwingStep:
+	return combo[i]

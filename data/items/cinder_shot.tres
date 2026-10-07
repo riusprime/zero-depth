@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 16
+name_key = &"ITEM_CINDER_SHOT"
+desc_key = &"ITEM_CINDER_SHOT_DESC"
+burn_damage = 2
+burn_period_seconds = 0.5
+burn_duration_seconds = 3.0
+burn_max_stacks = 5
+stacks_per_hit = 1
+stack_every = 3
+tags = PackedStringArray("fire", "bolt")
+id = &"cinder_shot"

@@ -49,18 +49,24 @@ func test_the_swing_misses_behind_and_beyond_reach() -> void:
 
 
 func test_the_combo_chains_then_resets() -> void:
-	var w := _world()
+	var w := _world(Vector2(1.2, 0), 999)
+	w.dummy_speed = 0.0
 	var t := w.player
-	for i in 3:
+	for i in t.combo.size():
 		w.step(_f(0, P))
-		_idle(w, t.swing_ticks + 2)
-	assert_eq(_damage_amounts(w), t.swing_damage, "10, 10, 18 when chained")
-	_idle(w, t.combo_window_ticks + 5)
+		_idle(w, t.step(w.combo_step).ticks + t.step(w.combo_step).hitstop_ticks + 1)
+	assert_eq(_damage_amounts(w), [10, 10, 12, 24], "the four slashes when chained")
+	_idle(w, 2)
+	w.step(_f(0, P))
+	assert_eq(w.combo_step, 0, "after the finisher the combo starts over")
+	_idle(w, 20)
+	w.step(_f(0, P))
+	assert_eq(w.combo_step, 1, "chained again")
+	_idle(w, 20 + t.combo_window_ticks + 5)
 	w.step(_f(0, P))
 	_idle(w, 20)
-	assert_eq(
-		_damage_amounts(w).back(), t.swing_damage[0], "the window ran out: back to the first swing"
-	)
+	assert_eq(w.combo_step, 0, "the window ran out: back to the first swing")
+	assert_eq(_damage_amounts(w).back(), 10)
 
 
 func test_holding_shoot_fires_a_steady_stream() -> void:

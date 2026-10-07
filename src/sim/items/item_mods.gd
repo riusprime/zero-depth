@@ -43,6 +43,42 @@ var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
 ## Bit (1 << ItemTable.Kind) per owned kind.
 var kinds_mask := 0
+## Engines (v0.3.0 G). Feeders: stacks added per qualifying hit by source (melee swing, landed bolt every N,
+## Static Chain jump, Overcharge shockwave, a dash through), 0 = that source doesn't feed it. Engine numbers take
+## the strongest owned value.
+var burn_bolt := 0
+var burn_bolt_every := 0
+var wildfire_stacks := 0
+var wildfire_radius_m := 0.0
+var shock_melee := 0
+var shock_bolt := 0
+var shock_bolt_every := 0
+var shock_chain := 0
+var shock_wave := 0
+var shock_threshold := 0
+var shock_ticks := 0
+var shock_damage := 0
+var shock_jumps := 0
+var shock_range_m := 0.0
+var bleed_melee := 0
+var bleed_bolt := 0
+var bleed_bolt_every := 0
+var bleed_damage := 0
+var bleed_period_ticks := 1
+var bleed_ticks := 0
+var bleed_max_stacks := 0
+var bleed_burst_per_stack := 0
+var frost_melee := 0
+var frost_bolt := 0
+var frost_bolt_every := 0
+var frost_dash := 0
+var frost_threshold := 0
+var frost_ticks := 0
+var freeze_ticks := 0
+var chill_bonus_permille := 0
+var frozen_bonus_permille := 0
+var charge_max := 0
+var charge_bonus_permille := 0
 
 
 static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods:
@@ -58,7 +94,7 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 			ItemTable.Kind.TWIN_ARC:
 				m.echo_delay_ticks = t.echo_delay_ticks
 				m.echo_damage_permille = maxi(m.echo_damage_permille, t.echo_damage_permille)
-			ItemTable.Kind.EMBER_EDGE:
+			ItemTable.Kind.EMBER_EDGE, ItemTable.Kind.CINDER_SHOT, ItemTable.Kind.WILDFIRE:
 				m.burn_damage = maxi(m.burn_damage, t.burn_damage)
 				m.burn_period_ticks = maxi(1, t.burn_period_ticks)
 				m.burn_duration_ticks = maxi(m.burn_duration_ticks, t.burn_duration_ticks)
@@ -74,6 +110,7 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 				m.shockwave_damage_permille = t.shockwave_damage_permille
 			_:
 				_build_v2(m, t)
+		_build_engines(m, t)
 	return m
 
 
@@ -94,8 +131,8 @@ static func _build_v2(m: ItemMods, t: ItemTable) -> void:
 			m.momentum_window_ticks = t.momentum_window_ticks
 			m.momentum_bonus_permille = t.momentum_bonus_permille
 		ItemTable.Kind.FROST_CORE:
-			m.slow_permille = t.slow_permille
-			m.slow_ticks = t.slow_ticks
+			m.slow_permille = mini(m.slow_permille, t.slow_permille)
+			m.slow_ticks = maxi(m.slow_ticks, t.slow_ticks)
 		ItemTable.Kind.THORN_MANTLE:
 			m.thorn_bolts = t.thorn_bolts
 			m.thorn_damage = t.thorn_damage
@@ -106,6 +143,63 @@ static func _build_v2(m: ItemMods, t: ItemTable) -> void:
 			m.phase_damage = t.phase_damage
 			m.phase_radius_m = t.phase_radius_m
 			m.phase_guard_window_ticks = t.phase_guard_window_ticks
+
+
+## Engines (v0.3.0 G): which sources feed which status, and each engine's strongest numbers.
+static func _build_engines(m: ItemMods, t: ItemTable) -> void:
+	_build_fire(m, t)
+	match t.kind:
+		ItemTable.Kind.STATIC_CHAIN:
+			m.shock_bolt = t.stacks_per_hit
+			m.shock_bolt_every = t.stack_every
+			m.shock_chain = t.stacks_per_hit
+		ItemTable.Kind.OVERCHARGE:
+			m.shock_wave = t.stacks_per_hit
+		ItemTable.Kind.CONDUCTOR:
+			m.shock_melee = t.stacks_per_hit
+		ItemTable.Kind.SERRATED_EDGE:
+			m.bleed_melee = t.stacks_per_hit
+		ItemTable.Kind.BARBED_BOLTS:
+			m.bleed_bolt = t.stacks_per_hit
+			m.bleed_bolt_every = t.stack_every
+		ItemTable.Kind.FROST_CORE:
+			m.frost_bolt = t.stacks_per_hit
+			m.frost_bolt_every = t.stack_every
+		ItemTable.Kind.GLACIAL_EDGE:
+			m.frost_melee = t.stacks_per_hit
+		ItemTable.Kind.COLD_SNAP:
+			m.frost_dash = t.stacks_per_hit
+			m.chill_bonus_permille = t.chill_bonus_permille
+			m.frozen_bonus_permille = t.frozen_bonus_permille
+		ItemTable.Kind.BULWARK:
+			m.charge_max = t.charge_max
+			m.charge_bonus_permille = t.charge_bonus_permille
+	if t.kind in [ItemTable.Kind.GLACIAL_EDGE, ItemTable.Kind.COLD_SNAP]:
+		m.slow_permille = mini(m.slow_permille, t.slow_permille)
+		m.slow_ticks = maxi(m.slow_ticks, t.slow_ticks)
+	m.shock_threshold = maxi(m.shock_threshold, t.shock_threshold)
+	m.shock_ticks = maxi(m.shock_ticks, t.shock_ticks)
+	m.shock_damage = maxi(m.shock_damage, t.shock_damage)
+	m.shock_jumps = maxi(m.shock_jumps, t.shock_jumps)
+	m.shock_range_m = maxf(m.shock_range_m, t.shock_range_m)
+	m.bleed_damage = maxi(m.bleed_damage, t.bleed_damage)
+	m.bleed_period_ticks = maxi(m.bleed_period_ticks, t.bleed_period_ticks)
+	m.bleed_ticks = maxi(m.bleed_ticks, t.bleed_ticks)
+	m.bleed_max_stacks = maxi(m.bleed_max_stacks, t.bleed_max_stacks)
+	m.bleed_burst_per_stack = maxi(m.bleed_burst_per_stack, t.bleed_burst_per_stack)
+	m.frost_threshold = maxi(m.frost_threshold, t.frost_threshold)
+	m.frost_ticks = maxi(m.frost_ticks, t.frost_ticks)
+	m.freeze_ticks = maxi(m.freeze_ticks, t.freeze_ticks)
+
+
+## Cinder Shot (bolts burn every Nth landed bolt) and Wildfire (kills spread burn).
+static func _build_fire(m: ItemMods, t: ItemTable) -> void:
+	if t.kind == ItemTable.Kind.CINDER_SHOT:
+		m.burn_bolt = t.stacks_per_hit
+		m.burn_bolt_every = t.stack_every
+	elif t.kind == ItemTable.Kind.WILDFIRE:
+		m.wildfire_stacks = t.stacks_per_hit
+		m.wildfire_radius_m = t.spread_radius_m
 
 
 func has(kind: int) -> bool:

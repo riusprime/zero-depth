@@ -128,6 +128,8 @@ lowest, ~2× the hood's width); two chunky, separated charcoal legs with lighter
 
 **Enemies (owner, 2026-10-07).** The reference is [`enemies_visual_reference.png`](enemies_visual_reference.png) (front, right-front and right views of each), to be matched as close to 1:1 as possible (PLAN v0.2.0 L17). Low-poly faceted, red and grey: **Charger** — a red hooded body with a glowing red visor, carried on four grey segmented claw legs with bone talons; **Needle** — a red cube body with red slit eyes on four mechanical legs, a grey cannon barrel forward; **Warden** — a hulking grey rock golem with huge stone fists, a faceted red cap/shell and a red visor slot.
 
+**Bosses (owner, 2026-10-07).** The reference is [`first-three-bosses-concept.png`](first-three-bosses-concept.png): **Stone Sentinel** (colossal grey boulder golem, huge stacked stone fists, a spiky faceted red crown and back shell with a red visor slot and glowing red cracks on the back), **Crawler Queen** (a red faceted hood carapace with a red hex visor, a huge red egg sac of glowing spheres with spikes, many grey legs with long bone talons), **Fortress Turret** (a red armoured box hull with red slit eyes, a long grey main cannon with a vented muzzle, two back mortar tubes with red glow, four heavy grey mechanical legs). Matched as close to 1:1 as possible (PLAN v0.3.0 L10).
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator

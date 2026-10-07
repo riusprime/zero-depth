@@ -134,6 +134,8 @@ static func bolt_effect(tags: int) -> StringName:
 
 ## Frost Core: the move-speed factor for actor i (1.0 unless slowed). EnemyAi.move multiplies its speeds by it.
 static func slow_factor(w: World, i: int) -> float:
+	if w.actors.frozen_t[i] > 0:  # Engines: a frozen enemy doesn't move.
+		return 0.0
 	if w.actors.slow_t[i] <= 0:
 		return 1.0
 	return w.item_mods.slow_permille / 1000.0
@@ -178,9 +180,14 @@ static func momentum_damage(w: World, dmg: int) -> int:
 ## The player took damage: release a ring of thorn_bolts bolts (the player's bolt speed, size and range), the
 ## first one along the facing. They spawn in phase 9 like every projectile; each is its own root chain.
 static func on_player_hurt(w: World) -> void:
-	var m := w.item_mods
-	if m.thorn_bolts <= 0 or w.player_dead():
+	if w.item_mods.thorn_bolts <= 0 or w.player_dead():
 		return
+	thorn_ring(w)
+
+
+## The Thorn Mantle ring itself (also released by Spiked Phase).
+static func thorn_ring(w: World) -> void:
+	var m := w.item_mods
 	w.thorn_tick = w.tick
 	var t := w.player
 	var from := w.player_pos()
@@ -270,3 +277,4 @@ static func discharge(w: World) -> void:
 			a.pos(i),
 			EFFECT_PHASE_STRIKE
 		)
+	Engines.on_phase(w, root)  # Engines: Spiked Phase.

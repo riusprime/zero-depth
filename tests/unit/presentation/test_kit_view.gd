@@ -12,9 +12,9 @@ func _swing_world() -> World:
 func test_blade_tip_is_the_hit_reach() -> void:
 	var t := PlayerTable.starting_values()
 	var kit: KitView = add_child_autofree(KitView.new())
-	kit.set_shape([t.swing_half_arc, t.swing_reach_m, t.radius_m])
+	kit.set_shape([t.step(0).half_arc, t.step(0).reach_m, t.radius_m])
 	assert_almost_eq(
-		kit.blade_tip_m(), t.radius_m + t.swing_reach_m, 0.0001, "tip = own radius + reach"
+		kit.blade_tip_m(), t.radius_m + t.step(0).reach_m, 0.0001, "tip = own radius + reach"
 	)
 	assert_almost_eq(KitView.blade_span([100, 2.0, 0.5]).y, 2.5, 0.0001)
 
@@ -45,7 +45,7 @@ func test_blade_follows_the_reader_shape_and_only_shows_while_swinging() -> void
 func test_set_look_applies() -> void:
 	var t := PlayerTable.starting_values()
 	var kit: KitView = add_child_autofree(KitView.new())
-	kit.set_shape([t.swing_half_arc, t.swing_reach_m, t.radius_m])
+	kit.set_shape([t.step(0).half_arc, t.step(0).reach_m, t.radius_m])
 	var base_core: float = (kit.get_node("Blade/BladeCore").mesh as CapsuleMesh).radius
 	kit.set_look(Color.RED, 1.5, 2.0, 3)
 	assert_eq(kit.color, Color.RED)
@@ -53,7 +53,7 @@ func test_set_look_applies() -> void:
 	var core: CapsuleMesh = kit.get_node("Blade/BladeCore").mesh
 	assert_almost_eq(core.radius, base_core * 2.0, 0.0001, "width_scale thickens the core")
 	assert_almost_eq(
-		kit.blade_tip_m(), (t.radius_m + t.swing_reach_m) * 1.5, 0.0001, "length_scale"
+		kit.blade_tip_m(), (t.radius_m + t.step(0).reach_m) * 1.5, 0.0001, "length_scale"
 	)
 	var core_mat: StandardMaterial3D = kit.get_node("Blade/BladeCore").material_override
 	assert_almost_eq(

@@ -132,11 +132,18 @@ func test_hud_counter_and_prompt() -> void:
 
 func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	var w := _world()
-	w.item_tables[3].rarity = ItemTable.RARE
+	var common := []
+	var rare := -1
+	for k in w.item_tables.size():
+		if w.item_tables[k].rarity == ItemTable.RARE:
+			rare = k
+		elif common.size() < 2:
+			common.append(k)
+	assert_gt(rare, -1, "the data has a rare item")
 	w.add_reward(RewardStore.Kind.CHEST, Vector2(1, 0), 40)
 	w.shards = 40
-	# Force the offer so the rare item is in it (the draw itself is tested in the sim).
-	w.rewards.set_offer(0, PackedInt32Array([1, 3, 5]))
+	# Force the offer so a rare item is in it (the draw itself is tested in the sim).
+	w.rewards.set_offer(0, PackedInt32Array([common[0], rare, common[1]]))
 	_open(w)
 	var r := WorldReader.new(w)
 	var p := PickPanel.new()
@@ -147,9 +154,8 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	assert_eq(p.title_text(), tr("PICK_TITLE_CHEST") % 40, "the title carries the price")
 	assert_eq(p.slot(0).frame_color(), PickSlot.COMMON)
 	assert_eq(p.slot(1).frame_color(), PickSlot.RARE, "a rare item has the gold frame")
-	assert_eq(p.slot(1).card.title_text(), tr(r.item_name_key(3)))
+	assert_eq(p.slot(1).card.title_text(), tr(r.item_name_key(rare)))
 	assert_true(p.slot(0).focused, "the first card has the focus")
-	w.item_tables[3].rarity = ItemTable.COMMON
 
 
 func test_the_pick_panel_sends_picks_and_cancels() -> void:

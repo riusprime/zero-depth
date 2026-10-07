@@ -3,11 +3,23 @@ extends RefCounted
 ## One gameplay consequence with its provenance (SIM_CONTRACTS §7). The whole Kind enum is declared now;
 ## new kinds are appended, never inserted, because kinds are hashed.
 
-## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables (v0.3.0: also a card
-## taken from an altar or chest; source = the reward's id).
-## SHARDS (v0.3.0 E): a kill paid shards; amount = how many, pos = the body, source = the dead actor's id.
+## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
+## COMBO_UNLOCKED (v0.3.0 G): owning both items unlocked a combo; amount = its index in World.combo_tables.
+## v0.3.0 E: PICKUP is also a card taken from an altar or chest (source = the reward's id). SHARDS: a kill paid
+## shards; amount = how many, pos = the body, source = the dead actor's id.
 enum Kind {
-	HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP, SHARDS
+	HIT,
+	DAMAGE,
+	HEAL,
+	BARRIER,
+	KILL,
+	STATUS_APPLY,
+	STATUS_TICK,
+	SPAWN,
+	LIMIT,
+	PICKUP,
+	COMBO_UNLOCKED,
+	SHARDS,
 }
 
 const TAG_MELEE := 1
@@ -34,6 +46,8 @@ const TAG_THORN := 2048
 const TAG_ARMOURED := 4096
 ## The hit struck a Warden from behind (its rear multiplier, over 1000; owner, 2026-10-07).
 const TAG_WEAK_SPOT := 8192
+## A Shrapnel Storm shard (v0.3.0 G): it never bursts again.
+const TAG_SHRAPNEL := 16384
 
 var seq := 0
 var tick := 0

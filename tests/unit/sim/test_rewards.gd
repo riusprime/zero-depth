@@ -61,8 +61,16 @@ func test_the_shipped_data() -> void:
 	assert_eq([_rewards.chests_min, _rewards.chests_max], [2, 3])
 	assert_eq(_rewards.rare_weight_chest, 3)
 	assert_eq(_rewards.shard_tier_bonus_permille, 250)
+	var rare := []
 	for it in _items:
-		assert_eq(it.rarity, ItemTable.COMMON, "%s: rarity defaults to common" % it.id)
+		if it.rarity == ItemTable.RARE:
+			rare.append(String(it.id))
+		var need := PlayerTable.Utility.GUARD if it.id == &"bulwark" else -1
+		assert_eq(it.requires_utility, need, "%s: utility requirement" % it.id)
+	rare.sort()
+	assert_eq(
+		rare, ["bulwark", "cold_snap", "conductor", "wildfire"], "the rare items (lead, 2026-10-07)"
+	)
 
 
 func test_a_kill_pays_its_kinds_shards() -> void:
@@ -278,16 +286,39 @@ func test_offers_are_deterministic_and_never_repeat_across_rewards() -> void:
 
 func test_owned_items_are_never_offered() -> void:
 	var w := _world()
-	for k in 14:
-		w.add_item(k)
+	var keep := [_index(&"long_edge"), _index(&"twin_arc")]
+	for k in _items.size():
+		if not k in keep:
+			w.add_item(k)
 	w.add_reward(RewardStore.Kind.ALTAR, Vector2(1.0, 0), 0)
 	_press(w, I)
 	var offer := w.rewards.offer_of(0)
 	assert_eq(offer.size(), 2, "only two items left")
 	for idx in offer:
-		assert_true(idx >= 14)
+		assert_has(keep, idx)
 	_pick(w, 2)
-	assert_eq(w.items_owned.size(), 15)
+	assert_eq(w.items_owned.size(), _items.size() - 1)
+
+
+func test_items_for_another_utility_are_never_offered() -> void:
+	var bulwark := _index(&"bulwark")
+	var w := _world()
+	w.player.utility = PlayerTable.Utility.BLINK
+	assert_false(bulwark in ItemPool.available(w), "Bulwark needs the guard")
+	for s in 40:
+		var v := _world(s + 1)
+		v.player.utility = PlayerTable.Utility.BLINK
+		assert_false(bulwark in ItemPool.draw_weighted(v, 3, 3), "seed %d" % (s + 1))
+	var g := _world()
+	g.player.utility = PlayerTable.Utility.GUARD
+	assert_true(bulwark in ItemPool.available(g), "with the guard it can be offered")
+
+
+func _index(id: StringName) -> int:
+	for k in _items.size():
+		if _items[k].id == id:
+			return k
+	return -1
 
 
 func test_an_empty_pool_doesnt_open() -> void:
@@ -301,7 +332,7 @@ func test_an_empty_pool_doesnt_open() -> void:
 
 
 func test_chests_weight_rare_items() -> void:
-	# Two rare items among sixteen: over many single-card draws a chest (× 3) shows them about 3× as often as an
+	# Two rare items among all of them: over many single-card draws a chest (× 3) shows them about 3× as often as an
 	# altar (× 1). Counts are from the loot stream, so they are exact for these seeds.
 	var rare_hits := {"chest": 0, "altar": 0}
 	for s in 400:
@@ -320,9 +351,9 @@ func test_chests_weight_rare_items() -> void:
 			var got := ItemPool.draw_weighted(w, 1, weight)
 			if got[0] < 2:
 				rare_hits[kind] += 1
-	# Expected shares: chest 6 / 20 = 30 %, altar 2 / 16 = 12.5 %.
-	assert_between(rare_hits["chest"], 90, 150, "chest rare share ~30 % of 400")
-	assert_between(rare_hits["altar"], 25, 75, "altar rare share ~12.5 % of 400")
+	# Expected shares with 24 items: chest 6 / 28 = 21 %, altar 2 / 24 = 8.3 %.
+	assert_between(rare_hits["chest"], 55, 115, "chest rare share ~21 % of 400")
+	assert_between(rare_hits["altar"], 13, 53, "altar rare share ~8 % of 400")
 	gut.p("rare hits in 400 draws: chest %d, altar %d" % [rare_hits["chest"], rare_hits["altar"]])
 
 
@@ -374,6 +405,10 @@ func test_validation() -> void:
 	it.desc_key = &"B"
 	it.kind = ItemDefinition.Kind.LONG_EDGE
 	it.reach_bonus_permille = 1
+	it.tags = PackedStringArray(["blade"])
 	assert_eq(it.validate().size(), 0)
 	it.set("rarity", 7)
 	assert_eq(it.validate().size(), 1, "rarity is common or rare")
+	it.rarity = ItemDefinition.Rarity.COMMON
+	it.requires_utility = &"jetpack"
+	assert_eq(it.validate().size(), 1, "requires_utility is empty, guard or blink")

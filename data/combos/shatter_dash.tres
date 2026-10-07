@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"frost_core"
+item_b = &"kinetic_dash"
+name_key = &"ITEM_COMBO_SHATTER_DASH"
+desc_key = &"ITEM_COMBO_SHATTER_DASH_DESC"
+effect = 1
+damage = 30
+id = &"shatter_dash"

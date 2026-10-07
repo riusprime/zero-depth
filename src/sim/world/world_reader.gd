@@ -8,6 +8,11 @@ const KIND_PLAYER := ActorStore.Kind.PLAYER
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
+## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
+const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
+const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
+const MOTION_THRUST := SwingStep.Motion.THRUST
+const MOTION_SPIN := SwingStep.Motion.SPIN
 ## Item kinds, for views (presentation may not name ItemTable).
 const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
 const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
@@ -25,6 +30,14 @@ const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
 const ITEM_EXECUTIONER := ItemTable.Kind.EXECUTIONER
 const ITEM_SWIFT_FEET := ItemTable.Kind.SWIFT_FEET
 const ITEM_PHASE_STRIKE := ItemTable.Kind.PHASE_STRIKE
+const ITEM_CINDER_SHOT := ItemTable.Kind.CINDER_SHOT
+const ITEM_WILDFIRE := ItemTable.Kind.WILDFIRE
+const ITEM_CONDUCTOR := ItemTable.Kind.CONDUCTOR
+const ITEM_SERRATED_EDGE := ItemTable.Kind.SERRATED_EDGE
+const ITEM_BARBED_BOLTS := ItemTable.Kind.BARBED_BOLTS
+const ITEM_GLACIAL_EDGE := ItemTable.Kind.GLACIAL_EDGE
+const ITEM_COLD_SNAP := ItemTable.Kind.COLD_SNAP
+const ITEM_BULWARK := ItemTable.Kind.BULWARK
 ## Enemy AI states, for actor_state() (presentation animates from them; EnemyAi.State is the source).
 const STATE_SPAWN := EnemyAi.State.SPAWN
 const STATE_MOVE := EnemyAi.State.MOVE
@@ -124,13 +137,43 @@ func combo_step() -> int:
 	return _w.combo_step
 
 
-## The arc of the current swing, for drawing: [half_arc, reach_m, own_radius_m]. Same numbers PlayerKit hits with.
-func swing_shape() -> Array:
-	return [_w.player.swing_half_arc, swing_reach_m(), _w.player.radius_m]
+## The arc of combo step `step` (-1 = the current swing's), for drawing: [half_arc, reach_m, own_radius_m]. Same
+## numbers PlayerKit hits with (EI-07).
+func swing_shape(step: int = -1) -> Array:
+	var s := _step_index(step)
+	return [_w.player.combo[s].half_arc, swing_reach_m(s), _w.player.radius_m]
 
 
+## The current swing's length in ticks (its step's).
 func swing_ticks() -> int:
-	return _w.player.swing_ticks
+	return PlayerKit.current_step(_w).ticks
+
+
+## The current swing's step: how the blade moves (SwingStep.Motion), how long it takes to cross the arc, the tick
+## it hits on.
+func swing_motion() -> int:
+	return PlayerKit.current_step(_w).motion
+
+
+func swing_sweep_ticks() -> int:
+	return PlayerKit.current_step(_w).sweep_ticks
+
+
+func swing_active_tick() -> int:
+	return PlayerKit.current_step(_w).active_tick
+
+
+## Steps in the melee combo, and whether step `step` (-1 = the current swing's) is its finisher.
+func combo_length() -> int:
+	return _w.player.combo.size()
+
+
+func is_finisher(step: int = -1) -> bool:
+	return PlayerKit.is_finisher(_w, _step_index(step))
+
+
+func _step_index(step: int) -> int:
+	return step if step >= 0 else _w.combo_step
 
 
 func shooting() -> bool:
@@ -373,12 +416,13 @@ func burn_stacks(actor_i: int) -> int:
 	return _w.actors.burn_stacks[actor_i]
 
 
-## The swing's reach with Long Edge applied: the same number PlayerKit hits with (EI-07).
-func swing_reach_m() -> float:
-	return ItemEffects.swing_reach_m(_w)
+## The reach of combo step `step` (-1 = the current one) with Long Edge applied: the same number PlayerKit hits
+## with (EI-07).
+func swing_reach_m(step: int = -1) -> float:
+	return ItemEffects.swing_reach_m(_w, _step_index(step))
 
 
-## Overcharge: the next swing will be the Nth (charged) one.
+## Overcharge: a press now would start the charged swing (the finisher, with the four-slash combo).
 func overcharge_ready() -> bool:
 	return ItemEffects.overcharge_ready(_w)
 
@@ -397,14 +441,18 @@ func shockwave_radius_m() -> float:
 	return _w.item_mods.shockwave_radius_m
 
 
-## Twin Arc: an echo swing is pending, its angle, and the tick the last echo swung (-1 = never). The echo uses
-## swing_shape() with this angle.
+## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
+## uses swing_shape(echo_step()) with this angle.
 func echo_pending() -> bool:
 	return _w.echo_t > 0
 
 
 func echo_angle() -> int:
 	return _w.echo_angle
+
+
+func echo_step() -> int:
+	return _w.echo_step
 
 
 func echo_tick() -> int:
@@ -609,3 +657,155 @@ func reward_denied_id() -> int:
 
 func reward_denied_tick() -> int:
 	return _w.reward_denied_tick
+
+
+# --- Walls with thickness (v0.3.0 A) ------------------------------------------------------------------------
+
+
+## The generated floor's footprint, for the stage's ground: each room's cells (its thick walls and doorways
+## included) and the outer half of each outer wall. Empty without a floor.
+func floor_ground() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	if _w.floor_layout != null:
+		out.append_array(_w.floor_layout.ground)
+	return out
+
+
+# --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
+## An item's tags (fire, shock, frost, bleed, blade, bolt, dash, guard).
+func item_tags(item_index: int) -> PackedStringArray:
+	return _w.item_tables[item_index].tags
+
+
+## Shock, bleed and frost stacks on actor i, and whether it is frozen.
+func shock_stacks(actor_i: int) -> int:
+	return _w.actors.shock_stacks[actor_i]
+
+
+func bleed_stacks(actor_i: int) -> int:
+	return _w.actors.bleed_stacks[actor_i]
+
+
+func frost_stacks(actor_i: int) -> int:
+	return _w.actors.frost_stacks[actor_i]
+
+
+func actor_frozen(actor_i: int) -> bool:
+	return Engines.frozen(_w, actor_i)
+
+
+## Stacks at which shock discharges and frost freezes (0 = that engine isn't owned).
+func shock_threshold() -> int:
+	return _w.item_mods.shock_threshold
+
+
+func frost_threshold() -> int:
+	return _w.item_mods.frost_threshold
+
+
+## Bulwark: guard charges stored now, and the most it stores.
+func guard_charges() -> int:
+	return _w.guard_charges
+
+
+func guard_charge_max() -> int:
+	return _w.item_mods.charge_max
+
+
+## Owned combos in unlock order, as indices into the combo tables.
+func combos_owned() -> PackedInt32Array:
+	return _w.combos_owned
+
+
+func combo_table_count() -> int:
+	return _w.combo_tables.size()
+
+
+func combo_id(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].id
+
+
+func combo_effect(combo_index: int) -> int:
+	return _w.combo_tables[combo_index].effect
+
+
+## Locale keys (tr() them in the view).
+func combo_name_key(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].name_key
+
+
+func combo_desc_key(combo_index: int) -> StringName:
+	return _w.combo_tables[combo_index].desc_key
+
+
+## The two item ids a combo needs.
+func combo_item_ids(combo_index: int) -> Array[StringName]:
+	var c := _w.combo_tables[combo_index]
+	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
+
+
+## The last shock discharge: tick (-1 = never), where it went off, and where each jump landed.
+func discharge_tick() -> int:
+	return _w.discharge_tick
+
+
+func discharge_from() -> Vector2:
+	return _w.discharge_from
+
+
+func discharge_to() -> PackedVector2Array:
+	return _w.discharge_to
+
+
+## The last Plasma Arc: tick (-1 = never), from, to.
+func plasma_tick() -> int:
+	return _w.plasma_tick
+
+
+func plasma_from() -> Vector2:
+	return _w.plasma_from
+
+
+func plasma_to() -> Vector2:
+	return _w.plasma_to
+
+
+## The last payoff of each kind: [tick (-1 = never), where]. Kinds: &"shatter", &"burst", &"wildfire", &"harvest".
+func payoff(kind: StringName) -> Array:
+	match kind:
+		&"shatter":
+			return [_w.shatter_tick, _w.shatter_pos]
+		&"burst":
+			return [_w.burst_tick, _w.burst_pos]
+		&"wildfire":
+			return [_w.wildfire_tick, _w.wildfire_pos]
+		&"harvest":
+			return [_w.harvest_tick, _w.harvest_pos]
+	return [-1, Vector2.ZERO]
+
+
+## The tick of the last Resonance wave, Shrapnel Storm burst, Spiked Phase ring, Slipstream refund and Frozen
+## Bastion chill (-1 = never).
+func resonance_tick() -> int:
+	return _w.resonance_tick
+
+
+func shrapnel_tick() -> int:
+	return _w.shrapnel_tick
+
+
+func spiked_tick() -> int:
+	return _w.spiked_tick
+
+
+func slipstream_tick() -> int:
+	return _w.slipstream_tick
+
+
+func bastion_tick() -> int:
+	return _w.bastion_tick
+
+
+## Projectile i is a Shrapnel Storm shard.
+func projectile_is_shard(i: int) -> bool:
+	return (_w.projectiles.tags[i] & SimEvent.TAG_SHRAPNEL) != 0

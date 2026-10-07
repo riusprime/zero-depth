@@ -33,5 +33,34 @@ func test_compiled_player_matches_the_kernel_starting_values() -> void:
 	var a := ContentCompiler.compile_player(def)
 	var b := PlayerTable.starting_values()
 	for prop in a.get_property_list():
-		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE:
+		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE and prop["name"] != "combo":
 			assert_eq(a.get(prop["name"]), b.get(prop["name"]), prop["name"])
+	assert_eq(a.combo.size(), b.combo.size(), "combo steps")
+	for k in mini(a.combo.size(), b.combo.size()):
+		var x := a.combo[k].to_array()
+		var y := b.combo[k].to_array()
+		for j in x.size():
+			if x[j] is float:
+				assert_almost_eq(x[j], y[j], 1e-6, "combo[%d] field %d" % [k, j])
+			else:
+				assert_eq(x[j], y[j], "combo[%d] field %d" % [k, j])
+
+
+func test_the_combo_compiles_to_the_four_slashes() -> void:
+	# v0.3.0 L11: the data's four steps in ticks (the starting-value table in FOUR_SLASHES.md).
+	var def: PlayerDefinition = ContentRepository.load_all().get_def(&"player", &"runner")
+	var c := ContentCompiler.compile_player(def).combo
+	var got := []
+	for s in c:
+		got.append(
+			[s.motion, s.ticks, s.active_tick, s.half_arc, s.damage, s.hitstop_ticks, s.sweep_ticks]
+		)
+	assert_eq(
+		got,
+		[
+			[SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 13, 2, 683, 10, 3, 5],
+			[SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 14, 3, 683, 10, 3, 5],
+			[SwingStep.Motion.THRUST, 16, 4, 228, 12, 4, 4],
+			[SwingStep.Motion.SPIN, 31, 7, 2048, 24, 7, 9],
+		]
+	)

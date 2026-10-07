@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+item_a = &"thorn_mantle"
+item_b = &"phase_strike"
+name_key = &"ITEM_COMBO_SPIKED_PHASE"
+desc_key = &"ITEM_COMBO_SPIKED_PHASE_DESC"
+effect = 5
+id = &"spiked_phase"

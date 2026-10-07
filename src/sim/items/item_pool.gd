@@ -1,7 +1,8 @@
 class_name ItemPool
 extends RefCounted
 ## Which items a floor offers: no duplicates on one floor (v0.2.0 PLAN). Draws use the loot stream only.
-## v0.3.0 E: an item held in an altar's or chest's rolled offer is out of the pool until that offer is taken.
+## v0.3.0 E: an item held in an altar's or chest's rolled offer is out of the pool until that offer is taken, and
+## an item that needs another utility (ItemTable.requires_utility) is never drawn.
 
 
 ## Up to `count` item indices, drawn without replacement from the items neither owned, nor lying on the floor,
@@ -41,6 +42,13 @@ static func available(w: World) -> PackedInt32Array:
 			not w.items_owned.has(idx)
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
+			and _usable(w, idx)
 		):
 			left.append(idx)
 	return left
+
+
+## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard).
+static func _usable(w: World, idx: int) -> bool:
+	var need := w.item_tables[idx].requires_utility
+	return need < 0 or need == w.player.utility

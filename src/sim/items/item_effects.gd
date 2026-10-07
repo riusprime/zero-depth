@@ -16,9 +16,11 @@ const EFFECT_KINETIC_DASH := &"kinetic_dash"
 const EFFECT_OVERCHARGE := &"overcharge"
 
 
-## The swing's reach with Long Edge applied. PlayerKit hits with it and WorldReader draws it (EI-07).
-static func swing_reach_m(w: World) -> float:
-	return w.player.swing_reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
+## The reach of combo step `step` (-1 = the current one) with Long Edge applied: every step scales the same way.
+## PlayerKit hits with it and WorldReader draws it (EI-07).
+static func swing_reach_m(w: World, step: int = -1) -> float:
+	var s := step if step >= 0 else w.combo_step
+	return w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
 
 
 ## Ticks between bolts while shooting, with Rapid Coil applied (never under 2 ticks once shortened).
@@ -52,20 +54,27 @@ static func shot_offsets(w: World) -> PackedInt32Array:
 	return out
 
 
-## Called when a swing starts: counts swings toward Overcharge and marks this one if it's the Nth.
+## Called when a swing starts (w.combo_step is already the new step): Overcharge marks every Nth swing of the
+## combo, so with N = 4 and the four-slash combo it is always the finisher (v0.3.0 L11). swing_count still counts
+## the swings started while it is owned.
 static func on_swing_start(w: World) -> void:
 	var every := w.item_mods.overcharge_every
 	if every <= 0:
 		w.swing_overcharged = false
 		return
 	w.swing_count += 1
-	w.swing_overcharged = w.swing_count % every == 0
+	w.swing_overcharged = overcharged_step(w, w.combo_step)
 
 
-## The next swing will be an Overcharge swing.
-static func overcharge_ready(w: World) -> bool:
+## Overcharge charges combo step `step` (0-based): the Nth, 2Nth, ... swing of the combo.
+static func overcharged_step(w: World, step: int) -> bool:
 	var every := w.item_mods.overcharge_every
-	return every > 0 and (w.swing_count + 1) % every == 0
+	return every > 0 and (step + 1) % every == 0
+
+
+## A press now would start an Overcharge swing.
+static func overcharge_ready(w: World) -> bool:
+	return overcharged_step(w, PlayerKit.next_step(w))
 
 
 ## A swing's damage with Overcharge applied.
@@ -79,36 +88,37 @@ static func swing_damage(w: World, base: int) -> int:
 ## then schedule the Twin Arc echo.
 static func after_swing(w: World, base: int, dmg: int) -> void:
 	var m := w.item_mods
+	var wave := 0
 	if w.swing_overcharged:
 		w.overcharge_tick = w.tick
-		var wave := maxi(1, base * m.shockwave_damage_permille / 1000)
-		var a := w.actors
-		var center := w.player_pos()
-		for i in range(1, a.size()):
-			if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-				continue
-			if not AttackShapes.disc_touches(center, m.shockwave_radius_m, a.pos(i), a.radius[i]):
-				continue
-			Damage.hit(
-				w,
-				i,
-				wave,
-				a.ids[0],
-				a.ids[0],
-				w.swing_root,
-				SimEvent.TAG_AREA,
-				center,
-				a.pos(i),
-				EFFECT_OVERCHARGE
-			)
+		wave = maxi(1, base * m.shockwave_damage_permille / 1000)
+		shockwave(w, wave, w.swing_root, EFFECT_OVERCHARGE)
 	if m.echo_delay_ticks > 0:
 		w.echo_t = m.echo_delay_ticks
 		w.echo_angle = w.swing_angle
+		w.echo_step = w.combo_step
 		w.echo_root = w.swing_root
 		w.echo_damage = maxi(1, dmg * m.echo_damage_permille / 1000)
+		w.echo_overcharged = w.swing_overcharged  # Engines: Resonance.
+		w.echo_wave = wave
 
 
-## Phase 4: counts down the pending Twin Arc echo and swings it (same arc, re-tested from where the player is).
+## The Overcharge shockwave: `dmg` to every enemy touching the shockwave disc around the player (also Resonance's).
+static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void:
+	var a := w.actors
+	var center := w.player_pos()
+	for i in range(1, a.size()):
+		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
+			continue
+		if not AttackShapes.disc_touches(
+			center, w.item_mods.shockwave_radius_m, a.pos(i), a.radius[i]
+		):
+			continue
+		Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, SimEvent.TAG_AREA, center, a.pos(i), effect)
+
+
+## Phase 4: counts down the pending Twin Arc echo and swings it (the same step's arc, re-tested from where the
+## player is).
 static func advance_echo(w: World) -> void:
 	if w.echo_t <= 0:
 		return
@@ -116,7 +126,8 @@ static func advance_echo(w: World) -> void:
 	if w.echo_t > 0:
 		return
 	w.echo_tick = w.tick
-	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC)
+	PlayerKit.swing_arc(w, w.echo_angle, w.echo_damage, w.echo_root, EFFECT_TWIN_ARC, w.echo_step)
+	Engines.on_echo(w, w.echo_root)  # Engines: Resonance.
 
 
 ## A melee hit landed on actor `i`: Ember Edge adds a burn stack, once per root chain per target.
@@ -159,7 +170,7 @@ static func tick_burns(w: World) -> void:
 ## Phase 6: Kinetic Dash hits each enemy the dash swept through this tick, once per dash.
 static func dash_hits(w: World, before: Vector2) -> void:
 	var dmg := w.item_mods.dash_hit_damage
-	if dmg <= 0 or not w.is_dashing() or w.player_dead():
+	if (dmg <= 0 and not Engines.dash_wants(w)) or not w.is_dashing() or w.player_dead():
 		return
 	var a := w.actors
 	var now := w.player_pos()
@@ -172,20 +183,22 @@ static func dash_hits(w: World, before: Vector2) -> void:
 		if w.dash_root == 0:
 			w.dash_root = w.take_root()
 		w.dash_hit_ids.append(a.ids[i])
-		var got := Damage.hit(
-			w,
-			i,
-			dmg,
-			a.ids[0],
-			a.ids[0],
-			w.dash_root,
-			SimEvent.TAG_DASH,
-			before,
-			a.pos(i),
-			EFFECT_KINETIC_DASH
-		)
-		if got > 0:
-			w.dash_hit_tick = w.tick
+		if dmg > 0:
+			var got := Damage.hit(
+				w,
+				i,
+				dmg,
+				a.ids[0],
+				a.ids[0],
+				w.dash_root,
+				SimEvent.TAG_DASH,
+				before,
+				a.pos(i),
+				EFFECT_KINETIC_DASH
+			)
+			if got > 0:
+				w.dash_hit_tick = w.tick
+		Engines.on_dash_pass(w, i)  # Engines: bleed burst, Cold Snap, Shatter Dash.
 
 
 ## Ricochet Core: bolt `i` touched `wall` at `at`; reflect it off the touched face and spend a bounce.
@@ -201,6 +214,7 @@ static func bounce(w: World, i: int, at: Vector2, wall: Obb) -> void:
 	p.pos_y[i] = out.y
 	p.bounces[i] -= 1
 	p.bounce_tick[i] = w.tick
+	Engines.on_bounce(w, i)  # Engines: Shrapnel Storm.
 
 
 ## The outward normal of the face of `box` (grown by r) nearest to `at`: the axis with the smallest margin.
