@@ -44,6 +44,19 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L12 | (2026-10-07, asked: from point-blank a 5 m blink crosses every 0.6–3 m wall) "Thicker room walls" | Keep the 5 m blink; room walls range 0.6–5.0 m, so the thickest stop a blink even from point-blank and thin ones still let it through. The sealed boss room can't be blinked into or out of | A, B |
 | L13 | (2026-10-07) "I also added the boss models to assets folder to replace the current ones" (`assets/boss_gatekeeper.glb`, `assets/brood_mother.glb`, `assets/boss_siege_engine_compare.glb`: one textured mesh each, ~10–12k triangles, no parts or animations) | The owner's models replace the code-built boss bodies (installed under `assets/models/bosses/` with a manifest and an asset test; the code model stays as the fallback). With one mesh each, bosses animate as a whole body (bob, lean, lunge, squash, turn, glow on wind-up), not limb by limb | C2 |
 | L14 | "oh so no animation for these? you cant work on that by your end?" | Rig each owner model in code at load time: a skeleton and per-vertex bone weights built from the mesh's regions (fists, legs, cannon, egg sac…), then limb-by-limb procedural animation from the boss state; any part that can't be separated cleanly falls back to whole-body motion, reported honestly | C3 |
+| L15 | (full-run playtest, 2026-10-07, verbatim in `PLAYTEST_RUN.md`) "melee and ranged should be separate runs … you start from one build or the other" + (Q) "pick at start, have a two card screen with a cool animation of appearing that shows both" | Two starting builds: **Blade** (melee only) and **Gun** (shooting only), chosen before each run on a two-card screen that animates in. The other weapon does not appear in that run (lead's reading of "separate runs"; reversible). Items that only feed the other weapon are not offered | P |
+| L16 | "melee should do just a bit more damage, because shooter is OP" | Blade damage +15 %, Gun damage −15 % (starting values), re-checked against the boss fight-length band | P |
+| L17 | "in bosses you just stay away and shoot them to death, they should have a mechanic where that is punished … come closer and have a dynamic fight" + (Q) all four: "Ranged armour, Pull / punish move, Closing arena, Weak point up close" | Bosses: hits from beyond 5 m deal less (ranged armour falls off with distance); a punish move when you stay far too long (a pull, a gap-closing charge or a room-wide wave that spares the area near the boss); hazards that creep in from the walls during the fight; a weak point that opens after certain attacks and takes big damage only up close | BX |
+| L18 | "combos feel alright, but nothing different from a poor mobile game, i'd like to have more original mechanics … still missing something cool" + (Q) "Echoes, Overclock heat, Core theft, Depth descent" and "overclock heat should show a combo meter that shows you the overheat point" | All four become the game's signature systems, in this order: **Overclock heat** in v0.3.0 (attacks build heat shown on a meter with the overheat point marked; thresholds transform attacks; overheating stalls you; venting with dash/blink blasts); **Echoes**, **Core theft** and **Depth descent** designed with the owner (`docs/design/SIGNATURE.md`) and built in v0.4.0 | H, design doc |
+| L19 | "overstaying the first level gave me a ton of money that I did not have how to spend, so a gamble feature where you spend money on incrementing steps and have a random stat increase" | A **gamble shrine** per floor: each use costs more (escalating steps) and grants a random stat increase from a pool (max HP, damage, speed, dash cooldown, regen, heat capacity…) | EG |
+| L20 | "the enemies should disappear from the level when the boss is summoned" | Summoning the boss removes every normal enemy on the floor (with a dissolve effect) | BX |
+| L21 | "the letter at the top that say floor numbers and danger … something that fits this game, a bit more futuristic/robotic/echoey" | A new HUD style (G2: 2–3 mockups to the owner, a default ships): techno/robotic type and framing with an echo/glitch treatment | UI |
+| L22 | "boss health appeared like a loading bar filling as he spawns, it should take the same amount of time" | The boss bar fills from empty to full over exactly the boss's rise (read from the sim's intro ticks) | BX |
+| L23 | "the dangermeter should be something visual instead of numbers" | The danger level becomes a visual meter (segments that fill toward the next tier), no numbers | UI |
+| L24 | "when my hp goes below 30% it should blink with red color" | Below 30 % HP the HP bar (and a screen-edge vignette, subtle) pulses red | UI |
+| L25 | "an out of combat HP regen feature, when after 10s after no combat you start to regen a bit of health that can later be increased" | After 10 s without dealing or taking damage, regenerate 1 % max HP per second (starting value); items/gamble can raise it | P |
+| L26 | "bosses felt just a bit easy so incrementing their AI to be a bit harder" | Harder boss AI: shorter recoveries, attack chaining, better targeting/leading, more aggressive phase 2 (starting values, re-checked against the fight-length band) | BX |
+| L27 | "how far can you take the sounds on your own?" + (Q) "I synthesise SFX now" | Procedurally synthesised SFX for every event (robotic/synth/echo style) and an ambient drone per biome, with captions; any file can be replaced by dropping one with the same name | AU |
 
 ## Design (starting values)
 **Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–5.0 m (L12; was 0.6–3.0 m) (map stream); cover slabs and
@@ -114,6 +127,15 @@ pool grows from 16 to 24 so each engine has 3–4 members:
 - **N. Four-slash combo:** melee becomes 4 distinct slashes with their own shapes and blade animation; items that read the combo (Overcharge, Twin Arc, Long Edge) follow (sim + presentation + tests + goldens).
 - **F. Integration:** merges, goldens, a full-run e2e (enter floor 1, beat a boss with the dev panel's help, reach
   floor 2), the tour, a Windows build and a playtest sheet.
+- **Finishing v0.3.0 (owner, full-run playtest; parallel workstreams):**
+  - **P. Player builds:** the Blade/Gun two-card start screen, split kits, damage rebalance, out-of-combat regen.
+  - **BX. Boss challenge:** anti-kiting (ranged armour, punish move, closing arena, weak point), harder AI, clear
+    enemies on summon, the boss bar filling during the rise.
+  - **UI. HUD style:** techno/echo HUD (G2 mockups), visual danger meter, low-HP blink.
+  - **EG. Gamble shrine:** escalating shard cost, random stat increase.
+  - **H. Overclock heat:** the heat meter with its overheat point, thresholds, overheat, vent blasts.
+  - **AU. Audio:** synthesised SFX and ambience, captions, the audio options.
+  - **O. Options and checks:** the Options screen (G2), the readable-cause test, the bench with real AI.
 - **Later in v0.3.0 (from v0.1.0/v0.2.0):** Options screen (G2), SFX hooks with captions, the bench with real AI,
   the readable-cause test.
 
