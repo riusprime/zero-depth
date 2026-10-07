@@ -17,6 +17,7 @@ func _init(profile: ProfileStore) -> void:
 		_add_slider("UI_" + key.to_upper(), key)
 	_add_choice("UI_VSYNC", "vsync", ["on", "off"])
 	_add_choice("UI_FRAME_CAP", "frame_cap", GameSettings.FRAME_CAPS)
+	_add_choice("UI_SHAKE", "shake", ["on", "off"])
 	add_button("UI_BACK", _on_back).name = "Back"
 
 

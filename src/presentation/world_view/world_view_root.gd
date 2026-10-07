@@ -9,6 +9,7 @@ var actors := ActorViews.new()
 var kit := KitView.new()
 var utility := UtilityView.new()
 var telegraphs := TelegraphViews.new()
+var hit_feel: HitFeel
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -22,6 +23,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(kit)
 	add_child(utility)
 	add_child(rig)
+	hit_feel = HitFeel.new(actors, rig)
+	add_child(hit_feel)
 	stage.build(reader, palette, arena_half)
 	sync()
 	rig.snap_to(SimPlane.to_3d(reader.player_pos()))
@@ -32,6 +35,7 @@ func sync() -> void:
 	actors.sync(reader)
 	kit.sync(reader)
 	utility.sync(reader)
+	hit_feel.sync(reader)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

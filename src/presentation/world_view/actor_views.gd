@@ -10,10 +10,13 @@ const BAR_W := 0.55
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
 var technique := &"xray"
+## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
+var flash_frames := 3
 var outline_color := Color("#1A1A22")
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
+var _flash := {}
 
 
 func sync(reader: WorldReader) -> void:
@@ -63,6 +66,33 @@ func sync(reader: WorldReader) -> void:
 
 func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
+
+
+## Flashes an actor white for a few frames.
+func flash(id: int) -> void:
+	if _actors.has(id):
+		_flash[id] = flash_frames
+		_set_flash(_actors[id], true)
+
+
+func is_flashing(id: int) -> bool:
+	return _flash.has(id)
+
+
+func _process(_delta: float) -> void:
+	for id in _flash.keys():
+		_flash[id] -= 1
+		if _flash[id] <= 0:
+			_flash.erase(id)
+			if _actors.has(id):
+				_set_flash(_actors[id], false)
+
+
+func _set_flash(node: Node3D, on: bool) -> void:
+	for m: StandardMaterial3D in node.get_meta(&"mats", []):
+		m.emission_enabled = on
+		m.emission = Color.WHITE
+		m.emission_energy_multiplier = 1.6
 
 
 func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
@@ -119,6 +149,10 @@ func _piece(parent: Node3D, size: Vector3, at: Vector3, c: Color, team_c: Color)
 	body.material_override = _body_material(c)
 	body.position = at
 	parent.add_child(body)
+	var root := parent.get_parent()
+	var mats: Array = root.get_meta(&"mats", [])
+	mats.append(body.material_override)
+	root.set_meta(&"mats", mats)
 	if technique == &"xray":
 		var ghost := MeshInstance3D.new()
 		var gbox := BoxMesh.new()

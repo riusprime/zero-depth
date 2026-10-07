@@ -13,6 +13,10 @@ const YAW_DEG := 45.0
 
 var camera: Camera3D
 var target := Vector3.ZERO
+## Screen shake (PRESENTATION §1, §6): off means none at all.
+var shake_enabled := true
+var _shake := 0.0
+var _shake_seed := 0
 var _pitch: Node3D
 
 
@@ -49,6 +53,25 @@ func _process(delta: float) -> void:
 		var want := position + offset * ((dist - dead_zone_m) / dist)
 		position = position.lerp(want, clampf(delta * smoothing, 0.0, 1.0))
 	camera.size = view_size
+	_shake = maxf(0.0, _shake - delta * 2.5)
+	_shake_seed += 1
+	if _shake > 0.0:
+		var a := float(_shake_seed) * 2.399
+		camera.h_offset = cos(a) * _shake * 0.35
+		camera.v_offset = sin(a * 1.7) * _shake * 0.35
+	else:
+		camera.h_offset = 0.0
+		camera.v_offset = 0.0
+
+
+## Adds shake (0..1). Does nothing when shake is off.
+func shake(amount: float) -> void:
+	if shake_enabled:
+		_shake = minf(1.0, _shake + amount)
+
+
+func shake_level() -> float:
+	return _shake
 
 
 ## Horizontal direction on the sim plane from a point toward the camera.

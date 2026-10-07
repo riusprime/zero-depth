@@ -14,7 +14,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | 2 | The primary: click to swing (3-hit combo), hold to charge, release to fire a bolt | `f7f8c88` |
 | 3 | Pick Guard or Blink before play; hold to guard, press to blink | `26c4601` |
 | 4 | Charger, Warden and Needle fight you, each attack telegraphed on the ground | `1574783` |
-| 5 | Three waves; die and see why, or clear the arena; restart; a HUD | see `git log` |
+| 5 | Three waves; die and see why, or clear the arena; restart; a HUD | `fb3caa3` |
+| 6 | Hits feel like hits: hit-stop, a white flash, camera shake (with an option), shards on a kill | see `git log` |
 
 ## Goldens changed on purpose
 - **Step 1** (new actor state in the hash: max HP, invulnerability, dead flag, behaviour state; projectile damage
@@ -48,6 +49,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - The Needle won't start a burst inside its flee distance: it backs off first ("backs off when you close in").
 - The "Arena cleared" panel is proved by a sim test (the last wave cleared sets `cleared`) and a panel test, not
   by an e2e that clears three waves through real input (that needs a scripted fighter; Step 9's bot can do it).
+- CI: Step 1's Verify run failed on gdlint (`WorldReader` over 20 public methods); Step 2 allowed the wide reader
+  facade, and every run since is green on Verify, Windows (cross-OS golden) and Shots.
 - `tests/unit/application/test_settings_profile.gd` fails when only `tests/unit` runs (it needs the audio buses
   and the input map that earlier suites set up); it passes in the full suite. Pre-existing; to fix in Step 10.
 
@@ -86,3 +89,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   the killer's kind kept for the death screen; `Hud` (HP, dash and utility readiness, wave, enemies left) and
   `EndPanel` (You died + cause / Arena cleared, Restart with the next seed, Main menu). 123 tests pass;
   goldens re-recorded.
+- 2026-10-06 — Step 6: `HitFeel` reads the event log (flash on DAMAGE, shake when you're hit or land a full bolt,
+  sparks on blocked/guarded hits, shards on a kill from a cosmetic RNG); `IsoRig.shake` with a "Screen shake"
+  option (on by default; off means none). Sim hit-stop unchanged (3 / 5 / 4 ticks). 128 tests pass; goldens
+  unchanged.

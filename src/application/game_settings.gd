@@ -12,6 +12,7 @@ const DEFAULTS := {
 	"volume_music": 70,
 	"volume_effects": 80,
 	"vsync": "on",
+	"shake": "on",
 	"frame_cap": "off",
 	"language": "en",
 }
