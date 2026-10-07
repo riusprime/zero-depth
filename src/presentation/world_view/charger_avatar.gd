@@ -8,20 +8,21 @@ extends Node3D
 ## time, and nothing here feeds back into the sim. ActorViews puts it under the actor's facing node, so +X is the
 ## front and +Z the right; it never turns itself.
 
-## The legs: hip (right side; the left mirrors it), yaw (0 is the front, negative turns toward +Z), segment lengths
-## (femur, tibia, talon) and their absolute pitch in the leg's plane (0 is level, negative points down).
+## The legs, right side (the left mirrors it): the hip, then per segment (femur, tibia, talon) its length, its yaw
+## (0 is the front, negative turns toward +Z, the right) and its pitch (0 is level, negative points down). Each
+## segment points its own way, so a front leg can arch out to the side while its talon hooks forward and in.
 const FRONT_HIP := Vector3(0.06, 0.56, 0.17)
-const FRONT_YAW := -0.7
-const FRONT_LEN := [0.27, 0.13, 0.237]
-const FRONT_PITCH := [-0.85, -1.5, -1.69]
-const BACK_HIP := Vector3(-0.18, 0.4, 0.1)
-const BACK_YAW := -2.45
-const BACK_LEN := [0.14, 0.19, 0.167]
-const BACK_PITCH := [-0.53, -1.0, -1.47]
-## The roof's ridge height: the model's height, for the health bar.
-const HEIGHT := 0.84
-## The front talons curl toward the front as well as in (a twist about the tibia's axis).
-const TALON_TWIST := 1.1
+const FRONT_LEN := [0.27, 0.15, 0.245]
+const FRONT_YAW := [-1.0, -0.6, 1.15]
+const FRONT_PITCH := [-0.75, -1.1, -0.93]
+const BACK_HIP := Vector3(-0.12, 0.42, 0.11)
+const BACK_LEN := [0.12, 0.2, 0.17]
+const BACK_YAW := [-2.2, -2.6, -2.8]
+const BACK_PITCH := [-0.5, -1.25, -1.2]
+## The talon mesh's tip sits below its axis: (length, -TALON_DROP * length).
+const TALON_DROP := 0.22
+## The ridge's highest point (the back corner): the model's height, for the health bar.
+const HEIGHT := 0.86
 ## Movement the scuttle is tuned for: metres per full four-leg cycle, and the cycle-rate cap (a charge is 15 m/s).
 const STRIDE := 0.55
 const MAX_CYCLES := 7.0
@@ -38,6 +39,8 @@ const FLAP_COLOR := Color("#C63B34")
 const FACE_COLOR := Color("#16181D")
 const CORE_COLOR := Color("#24272D")
 const LEG_COLOR := Color("#6E605D")
+## The back legs sit in the body's shadow on the sheet: a darker grey.
+const BACK_LEG_COLOR := Color("#4A4446")
 const JOINT_COLOR := Color("#34363C")
 const TALON_COLOR := Color("#E6B596")
 const VISOR_COLOR := Color("#FF2A22")
@@ -81,9 +84,10 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(_model)
 	body = Node3D.new()
 	_model.add_child(body)
-	_piece(body, _hood_mesh(), HOOD_COLOR, outline_color, team, technique)
-	_piece(body, _flap_mesh(), FLAP_COLOR, outline_color, team, technique)
-	_piece(body, _core_mesh(), CORE_COLOR, outline_color, team, technique)
+	var shell := [
+		[_hood_mesh(), HOOD_COLOR], [_flap_mesh(), FLAP_COLOR], [_core_mesh(), CORE_COLOR]
+	]
+	_piece(body, shell, outline_color, team, technique)
 	var face := MeshInstance3D.new()
 	face.mesh = _face_mesh()
 	var fm := StandardMaterial3D.new()
@@ -178,7 +182,7 @@ func leg_tips() -> Array[Vector3]:
 			(
 				global_transform.affine_inverse()
 				* _talons[k].global_transform
-				* Vector3(l, -l * 0.22, 0)
+				* Vector3(l, -l * TALON_DROP, 0)
 			)
 		)
 	return out
@@ -201,11 +205,13 @@ func _pose() -> void:
 	var bob := absf(sin(_phase * 2.0)) * 0.02 * _walk
 	var breath := sin(_t * 2.4) * 0.008 * (1.0 - _walk)
 	var tremble := sin(_t * 47.0) * 0.006 * _wind
-	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.02
+	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07
 	var y := bob + breath + tremble - drop
 	_model.position = Vector3(0, -(1.0 - rise) * 0.45, 0)
-	body.position = Vector3(-_wind * 0.06 + lunge * 0.07, y, 0)
-	body.rotation = Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.14 - _daze * 0.1)
+	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.
+	body.position = Vector3(-_wind * 0.06 + lunge * 0.16, y, 0)
+	body.rotation = Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
+	body.scale = Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
 	var glow := (
 		VISOR_ENERGY
 		* (1.0 + _wind * (1.6 + 0.5 * sin(_t * 30.0)) + lunge * 1.2)
@@ -218,73 +224,80 @@ func _pose() -> void:
 
 func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	var front := k < 2
-	var right := k % 2 == 0
+	var side := 1.0 if k % 2 == 0 else -1.0
 	var hip: Vector3 = FRONT_HIP if front else BACK_HIP
-	var pitch: Array = FRONT_PITCH if front else BACK_PITCH
 	var lens: Array = FRONT_LEN if front else BACK_LEN
-	var side := 1.0 if right else -1.0
+	var yaw: Array = (FRONT_YAW if front else BACK_YAW).duplicate()
+	var pitch: Array = (FRONT_PITCH if front else BACK_PITCH).duplicate()
 	# Diagonal pairs step together: front right with back left, front left with back right.
 	var off := 0.0 if (k == 0 or k == 3) else PI
-	var s := sin(_phase + off)
 	var lift := maxf(0.0, cos(_phase + off)) * 0.45 * _walk
 	# Idle: now and then one leg lifts and taps (a slow fidget, never two at once).
-	var fidget := maxf(0.0, sin(_t * 0.9 + k * 1.6) - 0.85) * 2.2 * (1.0 - _walk) * (1.0 - _wind)
-	var sweep := s * 0.3 * _walk
-	var e1: float = pitch[0] + lift + fidget
-	var e2: float = pitch[1] + lift * 0.3
-	var e3: float = pitch[2]
-	var yaw: float = (FRONT_YAW if front else BACK_YAW) + sweep
-	if front:
-		# Wind-up: claws raised high and pointed forward; lunge: reaching out ahead.
-		e1 += _wind * 0.75 + lunge * 0.35
-		e2 += _wind * 1.15 + lunge * 0.75
-		e3 += _wind * 1.0 + lunge * 0.55
-		yaw += _wind * 0.35 + lunge * 0.4
-	else:
-		# Back legs brace behind on the wind-up and kick back on the lunge.
-		e1 += -_wind * 0.15 + lunge * 0.2
-		e2 += lunge * 0.4
-		yaw += -_wind * 0.15 - lunge * 0.3
-	# Dazed: legs splay and the talons go limp.
-	e1 += _daze * 0.3
-	e3 += _daze * 0.35 + sin(_t * 9.0 + k) * 0.05 * _daze
-	yaw -= _daze * 0.15
+	var fidget := (
+		maxf(0.0, sin(_t * 0.9 + k * 1.6 + 4.0) - 0.85) * 2.2 * (1.0 - _walk) * (1.0 - _wind)
+	)
+	var sweep := sin(_phase + off) * 0.3 * _walk
 	# Hips follow the body; the femur tips to keep the feet near the ground (a cheap stand-in for IK).
-	e1 += clampf(-body_y / float(lens[0]), -0.6, 0.6)
+	var hold := clampf(-body_y / float(lens[0]), -0.6, 0.6)
+	# Toward the front is +yaw on the right side (the left mirrors it).
+	var add_yaw := [sweep, sweep, sweep]
+	var add_pitch := [lift + fidget + hold, lift * 0.5, 0.0]
+	if front:
+		# Wind-up: claws raised high and pointed forward. Lunge: the arms thrown out ahead, talons forward.
+		add_yaw = _plus(
+			add_yaw, [_wind * 0.3 + lunge * 0.55, _wind * 0.2 + lunge * 0.2, -lunge * 0.5]
+		)
+		add_pitch = _plus(
+			add_pitch,
+			[_wind * 0.9 + lunge * 0.55, _wind * 1.7 + lunge * 1.1, _wind * 1.5 + lunge * 0.7]
+		)
+	else:
+		# Back legs brace on the wind-up and kick out behind on the lunge.
+		add_yaw = _plus(add_yaw, [-_wind * 0.15 - lunge * 0.35, -lunge * 0.3, -lunge * 0.3])
+		add_pitch = _plus(add_pitch, [-_wind * 0.1 + lunge * 0.3, lunge * 0.5, lunge * 0.3])
+	# Dazed: legs splay, the talons go limp and twitch.
+	var twitch := sin(_t * 9.0 + k) * 0.05 * _daze
+	add_yaw = _plus(add_yaw, [-_daze * 0.15, -_daze * 0.15, -_daze * 0.2])
+	add_pitch = _plus(add_pitch, [_daze * 0.3, 0.0, _daze * 0.35 + twitch])
 	# Rising out of the ground the legs start folded up against the body.
-	e1 += (1.0 - rise) * 1.2
-	e2 += (1.0 - rise) * 1.4
+	add_pitch = _plus(add_pitch, [(1.0 - rise) * 1.2, (1.0 - rise) * 1.4, (1.0 - rise) * 1.0])
 	legs[k].position = Vector3(hip.x + body.position.x, hip.y + body_y, hip.z * side)
-	legs[k].rotation = Vector3(0, yaw * side, 0)
-	_femurs[k].rotation = Vector3(0, 0, e1)
-	_tibias[k].rotation = Vector3(0, 0, e2 - e1)
-	_talons[k].rotation = Vector3((TALON_TWIST if front else 0.0) * side, 0, e3 - e2)
+	var at := Vector3.ZERO
+	var segs: Array[Node3D] = [_femurs[k], _tibias[k], _talons[k]]
+	for j in 3:
+		var y: float = (yaw[j] + add_yaw[j]) * side
+		var p: float = pitch[j] + add_pitch[j]
+		segs[j].position = at
+		segs[j].rotation = Vector3(0, y, p)
+		var reach: float = lens[j]
+		at += Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
+
+
+static func _plus(a: Array, b: Array) -> Array:
+	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
 
 
 func _build_leg(
 	hip: Vector3, lens: Array, side: float, front: bool, outline: Color, team: Color
 ) -> void:
 	var s := 1.0 if front else 0.8
+	var c := LEG_COLOR if front else BACK_LEG_COLOR
 	var root := Node3D.new()
 	root.position = Vector3(hip.x, hip.y, hip.z * side)
 	_model.add_child(root)
-	var femur := Node3D.new()
-	root.add_child(femur)
+	# Each segment is one mesh node (its knuckle and its plate as two surfaces), hanging from the hip side by
+	# side; _pose_leg chains them end to end. Few nodes per Charger: a fight holds many of them.
 	var l1: float = lens[0]
 	var l2: float = lens[1]
 	var l3: float = lens[2]
-	_piece(femur, _prism(l1, 0.048 * s, 0.04 * s, 5), LEG_COLOR, outline, team, &"outline")
+	var femur_parts := [[_plate(l1, 0.046 * s, 0.042 * s), c]]
 	if not front:
-		_piece(femur, _ball(0.055), JOINT_COLOR, outline, team, &"outline")
-	var tibia := Node3D.new()
-	tibia.position.x = l1
-	femur.add_child(tibia)
-	_piece(tibia, _ball(0.055 * s), JOINT_COLOR, outline, team, &"outline")
-	_piece(tibia, _prism(l2, 0.06 * s, 0.07 * s, 5), LEG_COLOR, outline, team, &"outline")
-	var talon := Node3D.new()
-	talon.position.x = l2
-	tibia.add_child(talon)
-	_piece(talon, _talon_mesh(l3, 0.052 * s), TALON_COLOR, outline, team, &"outline")
+		femur_parts.append([_ball(0.05), JOINT_COLOR])
+	var femur := _piece(root, femur_parts, outline, team, &"outline")
+	var tibia_parts := [[_ball(0.05 * s), JOINT_COLOR], [_plate(l2, 0.055 * s, 0.068 * s), c]]
+	var tibia := _piece(root, tibia_parts, outline, team, &"outline")
+	var talon_parts := [[_ball(0.042 * s), JOINT_COLOR], [_talon_mesh(l3, 0.05 * s), TALON_COLOR]]
+	var talon := _piece(root, talon_parts, outline, team, &"outline")
 	legs.append(root)
 	_femurs.append(femur)
 	_tibias.append(tibia)
@@ -294,37 +307,35 @@ func _build_leg(
 # --- meshes -------------------------------------------------------------------------------------------------------
 
 
-## The roof's cross-section rings, front to back: [x, peak y, shoulder (x, y, z), flare (x, y, z), hem (x, y, z)]
-## for the right half (the left mirrors it). The front ring is the pointed arch around the face.
+## The roof's cross-section rings, front to back: [x, ridge y, shoulder (x, y, z), flare (x, y, z), hem (x, y, z)]
+## for the right half (the left mirrors it). The front ring is the pointed arch around the face. The ridge climbs a
+## little toward the back and the hem climbs steeply, so from the side the roof is a long flat wedge whose lower
+## edge cuts up diagonally to the sharp back corner, leaving the mantle below it showing.
 static func _hood_rings() -> Array:
 	return [
 		_ring(
-			0.27,
-			0.68,
-			Vector3(0.25, 0.61, 0.1),
-			Vector3(0.2, 0.51, 0.16),
-			Vector3(0.12, 0.41, 0.16)
+			0.27, 0.7, Vector3(0.25, 0.62, 0.1), Vector3(0.2, 0.52, 0.16), Vector3(0.12, 0.41, 0.16)
 		),
 		_ring(
-			0.08,
-			HEIGHT,
-			Vector3(0.09, 0.69, 0.15),
-			Vector3(0.07, 0.55, 0.24),
-			Vector3(0.04, 0.42, 0.23)
+			0.06,
+			0.8,
+			Vector3(0.07, 0.69, 0.15),
+			Vector3(0.05, 0.56, 0.235),
+			Vector3(0.02, 0.43, 0.23)
 		),
 		_ring(
-			-0.16,
+			-0.18,
 			0.83,
-			Vector3(-0.16, 0.69, 0.16),
-			Vector3(-0.17, 0.56, 0.25),
-			Vector3(-0.16, 0.47, 0.235)
+			Vector3(-0.18, 0.72, 0.16),
+			Vector3(-0.19, 0.62, 0.24),
+			Vector3(-0.2, 0.55, 0.235)
 		),
 		_ring(
-			-0.38,
-			0.78,
-			Vector3(-0.39, 0.67, 0.14),
-			Vector3(-0.4, 0.6, 0.2),
-			Vector3(-0.37, 0.56, 0.18)
+			-0.42,
+			HEIGHT - 0.01,
+			Vector3(-0.43, 0.77, 0.15),
+			Vector3(-0.45, 0.72, 0.2),
+			Vector3(-0.46, 0.69, 0.18)
 		),
 	]
 
@@ -335,70 +346,98 @@ static func _ring(x: float, peak: float, sh: Vector3, fl: Vector3, hem: Vector3)
 	return [hem * m, fl * m, sh * m, Vector3(x, peak, 0), sh, fl, hem]
 
 
-## The hood: a ridged roof from the face's arch back to a tail that juts out behind the ridge.
+## The hood: a ridged roof from the face's arch back to a sharp corner that juts out behind the ridge.
 static func _hood_mesh() -> ArrayMesh:
-	var key := _hood_rings()
-	# Between each pair of key rings, a ring pushed in or out a little per point: the roof crumples into uneven
-	# facets like the sheet's instead of reading as a smooth tent.
-	var dents := [0.02, -0.025, 0.03, 0.015, -0.02, 0.03, -0.015]
+	var rings := _crumple(_hood_rings(), 1)
+	var tris := _shell(rings)
+	var back: Array = rings[rings.size() - 1]
+	var tail := Vector3(-0.58, HEIGHT, 0)
+	var low := Vector3(-0.47, 0.7, 0)
+	for k in back.size() - 1:
+		tris.append([back[k], back[k + 1], tail])
+	tris.append([back[0], low, tail])
+	tris.append([back[back.size() - 1], tail, low])
+	return _mesh_from(tris, Vector3(-0.08, 0.6, 0))
+
+
+## Key rings with `n` in-between rings after each, each point pushed in or out a little: the cloth crumples into
+## small uneven facets like the sheet's instead of reading as a smooth tent.
+static func _crumple(key: Array, n: int) -> Array:
+	var dents := [0.02, -0.025, 0.03, 0.012, -0.02, 0.028, -0.015, 0.01, -0.03]
 	var rings := []
 	for r in key.size():
 		rings.append(key[r])
 		if r == key.size() - 1:
 			break
-		var mid := []
-		for k in key[r].size():
-			var p: Vector3 = (key[r][k] + key[r + 1][k]) * 0.5
-			var d: float = dents[(k + r * 3) % dents.size()]
-			mid.append(Vector3(p.x, p.y + d * 0.6, p.z * (1.0 + d)))
-		rings.append(mid)
+		for j in n:
+			var f := float(j + 1) / float(n + 1)
+			var mid := []
+			for k in key[r].size():
+				var q: Vector3 = key[r][k].lerp(key[r + 1][k], f)
+				var d: float = dents[(k * 2 + r * 3 + j * 5) % dents.size()]
+				# The ridge point stays on the centre line.
+				mid.append(Vector3(q.x, q.y + d * 0.5, q.z * (1.0 + d)))
+			rings.append(mid)
+	return rings
+
+
+## Joins consecutive rings into a shell. Each quad becomes four triangles round a centre nudged in or out, which
+## breaks the surface into small facets.
+static func _shell(rings: Array) -> Array:
 	var tris := []
 	for r in rings.size() - 1:
 		var a: Array = rings[r]
 		var b: Array = rings[r + 1]
 		for k in a.size() - 1:
-			# Alternate the diagonal so the roof breaks into uneven triangles, as on the sheet.
-			if (k + r) % 2 == 0:
-				tris.append([a[k], a[k + 1], b[k + 1]])
-				tris.append([a[k], b[k + 1], b[k]])
-			else:
-				tris.append([a[k], a[k + 1], b[k]])
-				tris.append([a[k + 1], b[k + 1], b[k]])
+			var c: Vector3 = (a[k] + a[k + 1] + b[k] + b[k + 1]) * 0.25
+			var n: Vector3 = (a[k + 1] - a[k]).cross(b[k] - a[k])
+			var bump := 0.007 if (k + r) % 3 == 0 else (-0.004 if (k + r) % 3 == 1 else 0.0)
+			if n.length_squared() > 1e-10:
+				var axis := Vector3(c.x, 0.5, 0)
+				var out := n.normalized()
+				if out.dot(c - axis) < 0.0:
+					out = -out
+				c += out * bump
+			tris.append([a[k], a[k + 1], c])
+			tris.append([a[k + 1], b[k + 1], c])
+			tris.append([b[k + 1], b[k], c])
+			tris.append([b[k], a[k], c])
+	return tris
+
+
+## A second, lower layer under the roof: a mantle whose hem runs level from the face to the back, so it shows
+## below the roof's rising lower edge and juts out to a corner behind and at the back sides.
+static func _flap_mesh() -> ArrayMesh:
+	var key := [
+		_ring(
+			0.04,
+			0.66,
+			Vector3(0.04, 0.6, 0.15),
+			Vector3(0.03, 0.5, 0.215),
+			Vector3(0.04, 0.4, 0.24)
+		),
+		_ring(
+			-0.2,
+			0.72,
+			Vector3(-0.2, 0.66, 0.15),
+			Vector3(-0.21, 0.56, 0.225),
+			Vector3(-0.22, 0.4, 0.285)
+		),
+		_ring(
+			-0.44,
+			0.76,
+			Vector3(-0.45, 0.71, 0.13),
+			Vector3(-0.47, 0.62, 0.2),
+			Vector3(-0.5, 0.44, 0.27)
+		),
+	]
+	var rings := _crumple(key, 1)
+	var tris := _shell(rings)
 	var back: Array = rings[rings.size() - 1]
-	var tail := Vector3(-0.5, 0.76, 0)
-	var low := Vector3(-0.4, 0.58, 0)
+	var tail := Vector3(-0.64, 0.5, 0)
 	for k in back.size() - 1:
 		tris.append([back[k], back[k + 1], tail])
-	tris.append([back[0], low, tail])
-	tris.append([back[back.size() - 1], tail, low])
-	return _mesh_from(tris, Vector3(-0.05, 0.56, 0))
-
-
-## A second, lower layer under the roof's back half: a mantle whose hem sticks out behind and to the sides.
-static func _flap_mesh() -> ArrayMesh:
-	var top := [
-		Vector3(0.02, 0.5, -0.22),
-		Vector3(-0.2, 0.55, -0.22),
-		Vector3(-0.38, 0.63, -0.17),
-		Vector3(-0.45, 0.66, 0.0),
-		Vector3(-0.38, 0.63, 0.17),
-		Vector3(-0.2, 0.55, 0.22),
-		Vector3(0.02, 0.5, 0.22),
-	]
-	var hem := [
-		Vector3(0.03, 0.42, -0.25),
-		Vector3(-0.22, 0.41, -0.29),
-		Vector3(-0.47, 0.44, -0.24),
-		Vector3(-0.58, 0.5, 0.0),
-		Vector3(-0.47, 0.44, 0.24),
-		Vector3(-0.22, 0.41, 0.29),
-		Vector3(0.03, 0.42, 0.25),
-	]
-	var tris := []
-	for k in top.size() - 1:
-		tris.append([top[k], top[k + 1], hem[k + 1]])
-		tris.append([top[k], hem[k + 1], hem[k]])
-	return _mesh_from(tris, Vector3(-0.15, 0.62, 0))
+	return _mesh_from(tris, Vector3(-0.2, 0.62, 0))
 
 
 ## The dark body under the hood: a squat faceted lump that closes the hood's open bottom.
@@ -467,23 +506,37 @@ static func _visor_mesh() -> ArrayMesh:
 	return _mesh_from(tris, Vector3.ZERO)
 
 
-## A faceted limb segment along +X: an n-sided prism from radius r0 to r1 with blunt pointed ends.
-static func _prism(length: float, r0: float, r1: float, n: int) -> ArrayMesh:
-	var a := []
-	var b := []
-	for k in n:
-		var ang := TAU * (k + 0.5) / n
-		a.append(Vector3(0.0, cos(ang) * r0, sin(ang) * r0))
-		b.append(Vector3(length, cos(ang) * r1, sin(ang) * r1))
-	var e0 := Vector3(-r0 * 0.45, 0, 0)
-	var e1 := Vector3(length + r1 * 0.45, 0, 0)
+## An armoured limb segment along +X: a six-sided plate, uneven round its sides, narrow at the joint, swelling to
+## its widest three quarters down and bevelled in at the far end, with a raised ridge along its back.
+static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
+	var shape := [1.25, 0.95, 0.85, 1.05, 0.85, 0.95]
+	var stations := [
+		[0.0, r0 * 0.75],
+		[0.18, r0],
+		[0.72, r1 * 1.08],
+		[1.0, r1 * 0.72],
+	]
+	var rings := []
+	for st: Array in stations:
+		var ring := []
+		for k in 6:
+			var ang := TAU * k / 6.0
+			var rr: float = st[1] * shape[k]
+			ring.append(Vector3(length * st[0], cos(ang) * rr, sin(ang) * rr))
+		rings.append(ring)
 	var tris := []
-	for k in n:
-		var k2 := (k + 1) % n
-		tris.append([a[k], a[k2], b[k2]])
-		tris.append([a[k], b[k2], b[k]])
-		tris.append([a[k], e0, a[k2]])
-		tris.append([b[k], b[k2], e1])
+	for r in rings.size() - 1:
+		var a: Array = rings[r]
+		var b: Array = rings[r + 1]
+		for k in 6:
+			var k2 := (k + 1) % 6
+			tris.append([a[k], a[k2], b[k2]])
+			tris.append([a[k], b[k2], b[k]])
+	var e0 := Vector3(-r0 * 0.3, 0, 0)
+	var e1 := Vector3(length + r1 * 0.3, 0, 0)
+	for k in 6:
+		tris.append([rings[0][k], e0, rings[0][(k + 1) % 6]])
+		tris.append([rings[3][k], rings[3][(k + 1) % 6], e1])
 	return _mesh_from(tris, Vector3(length * 0.5, 0, 0))
 
 
@@ -522,7 +575,7 @@ static func _talon_mesh(length: float, r: float) -> ArrayMesh:
 			var ang := TAU * k / n
 			ring.append(c + Vector3(0, cos(ang) * rr, sin(ang) * rr))
 		rings.append(ring)
-	var tip := Vector3(length, -length * 0.22, 0)
+	var tip := Vector3(length, -length * TALON_DROP, 0)
 	var base := Vector3(-0.02, 0, 0)
 	var tris := []
 	for r2 in rings.size() - 1:
@@ -576,26 +629,33 @@ static func _write_stencil(m: StandardMaterial3D) -> void:
 	m.stencil_reference = 1
 
 
+## One mesh node from several [mesh, colour] parts, a surface each with its own outlined, flashable material;
+## technique "xray" adds one silhouette twin for the whole node.
 func _piece(
-	parent: Node3D, mesh: Mesh, c: Color, outline: Color, team: Color, technique: StringName
+	parent: Node3D, parts: Array, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
+	var merged := ArrayMesh.new()
+	for part: Array in parts:
+		var m: ArrayMesh = part[0]
+		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.surface_get_arrays(0))
 	var mi := MeshInstance3D.new()
-	mi.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	mi.material_override = mat
+	mi.mesh = merged
+	for k in parts.size():
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = parts[k][1]
+		mat.roughness = 1.0
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
+		mat.stencil_color = outline
+		mat.stencil_outline_thickness = OUTLINE_M
+		mi.set_surface_override_material(k, mat)
+		body_materials.append(ActorViews.flashable(mat))
 	parent.add_child(mi)
-	body_materials.append(ActorViews.flashable(mat))
 	if technique == &"xray":
 		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
+		ghost.mesh = merged
 		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
+		gm.albedo_color = parts[0][1]
 		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
 		gm.stencil_color = Color(team, 0.85)
 		ghost.material_override = gm

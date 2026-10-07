@@ -49,6 +49,8 @@ func test_builds_hood_visor_and_four_clawed_legs() -> void:
 		assert_eq(
 			m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "outlined like the other actors"
 		)
+		assert_true(m.emission_enabled, "built flashable: a hit changes energy, never the shader")
+		assert_eq(m.emission_energy_multiplier, 0.0, "and dark until hit")
 	var tips := a.leg_tips()
 	for k in tips.size():
 		assert_lt(absf(tips[k].y), 0.08, "talon %d stands near the ground" % k)
