@@ -210,3 +210,7 @@ UI_GAMBLE_DASH_COOLDOWN,−%s %% dash cooldown,−%s %% de recarga del esprint
 UI_GAMBLE_REGEN,+%s %% HP/s out of combat,+%s %% PV/s fuera de combate
 UI_GAMBLE_HEAT_CAPACITY,+%s %% heat capacity,+%s %% de capacidad de calor
 UI_GAMBLE_SHARD_GAIN,+%s %% shards from kills,+%s %% de fragmentos por baja
+CAUSE_GATEKEEPER_PULL,The Gatekeeper's vortex dragged you into its slam.,El vórtice del Guardián de la Puerta te arrastró hasta su golpe.
+CAUSE_BROOD_POUNCE,The Brood Mother hunted you down in a run of leaps.,La Madre de la Prole te dio caza con una serie de saltos.
+CAUSE_SIEGE_SHOCKWAVE,The Siege Engine's shockwave swept the room and you with it.,La onda de choque de la Máquina de Asedio barrió la sala y a ti con ella.
+CAUSE_BOSS_ARENA,The closing arena caught you against the wall.,La arena que se cierra te atrapó contra el muro.

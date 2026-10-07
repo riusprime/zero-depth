@@ -11,6 +11,9 @@ extends Node3D
 ## red glow for the windup, a lunge and squash (a recoil for a turret) for the attack, a sag in recovery, a wobble
 ## when staggered, and a steady glow in the last phase. The glow is a material_overlay whose alpha changes, and the
 ## body's material is flashable (emission on at energy 0), so no shader ever changes at run time.
+## The weak point (v0.3.0 BX, L17): a glowing core on the boss's chest while it is open (WorldReader
+## .boss_weak_point_permille), a kept material with emission on from the start, so only its energy changes, and a
+## small light; hidden while shut.
 
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 40.0
@@ -21,6 +24,10 @@ const SINK_SECONDS := 0.3
 const LEAP_HEIGHT := 2.6
 ## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
 const MODEL_DIR := "res://assets/models/bosses/"
+## The weak point's core (BX): its colour and its glow at full.
+const WEAK_COLOR := Color("#FFD36A")
+const WEAK_ENERGY := 5.0
+const WEAK_LIGHT := 2.2
 
 ## Parts and materials, read by tests and by ActorViews (the hit flash).
 var body_materials: Array[StandardMaterial3D] = []
@@ -34,6 +41,12 @@ var glow_overlay: StandardMaterial3D
 ## The owner's model's skeleton (v0.3.0 L13: rigged in code, BossRig) and its rig.
 var skeleton: Skeleton3D
 var rig: BossRig
+## The weak point (BX): its core, its halo, their kept material and the light.
+var weak_core := MeshInstance3D.new()
+var weak_material := StandardMaterial3D.new()
+var weak_light := OmniLight3D.new()
+var _weak := 0.0
+var _weak_shown := 0.0
 
 # Sim state from the last sync.
 var _fresh := true
@@ -69,7 +82,56 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(model)
 	_build_body()
 	body_materials = parts.body_materials
+	_build_weak_point()
 	_pose_any(0.0)
+
+
+## The weak point's core: a bright gem on the chest with a halo ring, unshaded, emission on from the start.
+func _build_weak_point() -> void:
+	weak_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	weak_material.albedo_color = WEAK_COLOR
+	weak_material.emission_enabled = true
+	weak_material.emission = WEAK_COLOR
+	weak_material.emission_energy_multiplier = 0.0
+	weak_material.no_depth_test = true  # seen through the body's own front
+	weak_core.name = "WeakPoint"
+	var gem := SphereMesh.new()
+	gem.radius = 0.24
+	gem.height = 0.48
+	gem.radial_segments = 12
+	gem.rings = 6
+	weak_core.mesh = gem
+	weak_core.material_override = weak_material
+	weak_core.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	weak_core.position = _weak_point_at()
+	weak_core.visible = false
+	model.add_child(weak_core)
+	var halo := MeshInstance3D.new()
+	halo.name = "Halo"
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.36
+	torus.outer_radius = 0.44
+	halo.mesh = torus
+	halo.material_override = weak_material
+	halo.rotation = Vector3(0, 0, PI * 0.5)
+	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	weak_core.add_child(halo)
+	weak_light.name = "WeakLight"
+	weak_light.light_color = WEAK_COLOR
+	weak_light.light_energy = 0.0
+	weak_light.omni_range = 3.0
+	weak_light.shadow_enabled = false
+	weak_core.add_child(weak_light)
+
+
+## Where the weak point sits on the model (+X front, Y up); bodies override it.
+func _weak_point_at() -> Vector3:
+	return Vector3(0.75, 1.55, 0)
+
+
+## 0..1: how open the weak point shows (tests).
+func weak_amount() -> float:
+	return _weak_shown
 
 
 ## Reads boss i's state after a sim tick.
@@ -88,6 +150,7 @@ func sync(reader: WorldReader, i: int) -> void:
 			"leap": leap[1],
 			"hidden": reader.boss_hidden(i),
 			"phase": reader.boss_phase(i),
+			"weak": reader.boss_weak_point_permille(i) / 1000.0,
 		}
 	)
 
@@ -117,6 +180,7 @@ func apply_state(s: Dictionary) -> void:
 	_leap = s.get("leap", 0.0)
 	_hidden = s.get("hidden", false)
 	_boss_phase = s.get("phase", 0)
+	_weak = s.get("weak", 0.0)
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
@@ -145,6 +209,7 @@ func advance(delta: float) -> void:
 	var stag := 1.0 if _state == WorldReader.STATE_STAGGERED else 0.0
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
 	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
+	_pose_weak_point(dt)
 	_pose_any(dt)
 	# The rise from the ground, a leap's arc, the burrow's sink, the stagger's slump.
 	var rise := 1.0 - _rise
@@ -154,6 +219,19 @@ func advance(delta: float) -> void:
 		lift = 4.0 * _leap * (1.0 - _leap) * LEAP_HEIGHT
 	model.position = Vector3(0, -3.2 * rise - 3.0 * _sink * _sink + lift - 0.12 * _stagger, 0)
 	model.visible = _sink < 0.98
+
+
+## The weak point: it pops open, pulses, and fades over its last fifth (energy and scale only).
+func _pose_weak_point(dt: float) -> void:
+	var target := 1.0 if _weak > 0.0 else 0.0
+	_weak_shown = move_toward(_weak_shown, target, dt * (10.0 if target > _weak_shown else 4.0))
+	weak_core.visible = _weak_shown > 0.01 and not _hidden
+	var fade := clampf(_weak * 5.0, 0.0, 1.0)
+	var pulse := 0.75 + 0.25 * sin(_t * 14.0)
+	weak_material.emission_energy_multiplier = WEAK_ENERGY * _weak_shown * fade * pulse
+	weak_light.light_energy = WEAK_LIGHT * _weak_shown * fade * pulse
+	weak_core.scale = Vector3.ONE * (0.6 + 0.4 * _weak_shown) * (0.92 + 0.08 * pulse)
+	(weak_core.get_node("Halo") as Node3D).rotation.x = _t * 3.0
 
 
 ## 0..1: the attack's windup pose.

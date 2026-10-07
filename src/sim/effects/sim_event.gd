@@ -11,6 +11,8 @@ extends RefCounted
 ## shards; amount = how many, pos = the body, source = the dead actor's id.
 ## Run flow (v0.3.0 B): BOSS_ROOM_SEALED (the boss door shut behind the player), PORTAL_OPENED (the gate is
 ## active), FLOOR_EXIT (the player walked into the active gate).
+## Boss challenge (v0.3.0 BX, L20): ENEMY_DISSOLVED: summoning the boss removed a normal enemy from the floor (no
+## kill, no shards); target_id = its id, amount = its kind, pos = where it stood.
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -28,6 +30,7 @@ enum Kind {
 	BOSS_ROOM_SEALED,
 	PORTAL_OPENED,
 	FLOOR_EXIT,
+	ENEMY_DISSOLVED,
 }
 
 const TAG_MELEE := 1
@@ -59,6 +62,10 @@ const TAG_SHRAPNEL := 16384
 ## Overclock heat (v0.3.0 L18): the hit was raised by Overclock; a Hot bolt that still pierces one enemy.
 const TAG_OVERCLOCK := 32768
 const TAG_PIERCE := 65536
+## Boss challenge (v0.3.0 BX, L17): the player hit a boss from farther than its ranged armour allows (less damage).
+const TAG_DEFLECTED := 131072
+## Boss challenge (v0.3.0 BX, L17): the player hit a boss's open weak point up close (more damage and stagger).
+const TAG_EXPOSED := 262144
 
 var seq := 0
 var tick := 0

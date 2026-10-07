@@ -97,3 +97,25 @@ func test_armour_stagger_and_basics_are_checked() -> void:
 	assert_has(codes, &"unknown_boss")
 	d.attacks[0].cause_key = &""
 	assert_has(_codes(d), &"missing")
+
+
+func test_the_boss_challenge_numbers_are_checked() -> void:
+	var d := _def()
+	assert_eq(_codes(d), [])
+	d.punish_attack = &"nope"
+	assert_has(_codes(d), &"unknown_attack", "the punish attack must exist")
+	d = _def()
+	d.arena_close_warn_seconds = 0.2
+	assert_has(_codes(d), &"telegraph_short", "each closing step is marked long enough")
+	d = _def()
+	d.attacks[0].follow_up = d.attacks[0].id
+	assert_has(_codes(d), &"unknown_attack", "an attack can't follow itself")
+	d = _def()
+	d.ranged_far_permille = 0
+	d.weak_point_mult_permille = 900
+	d.recovery_permille = 0
+	d.arena_close_phase = 5
+	assert_eq(_codes(d).count(&"challenge"), 4)
+	d = _def()
+	d.attacks[0].follow_up_permille = 1001
+	assert_has(_codes(d), &"range")

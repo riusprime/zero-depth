@@ -33,6 +33,36 @@ var phase_cd_permille := PackedInt32Array()
 ## The boss room: size in cells and its interior template (a FloorLayout.Template value).
 var arena_cells := Vector2i(2, 2)
 var arena_template := 0
+## Boss challenge (v0.3.0 BX, L17 and L26; BossChallenge). Distances are from the boss's edge to the player's centre.
+## Ranged armour: the player's hits deal 1000 per mille up to ranged_full_m, falling linearly to ranged_far_permille
+## at ranged_far_m and beyond.
+var ranged_full_m := 5.0
+var ranged_far_m := 12.0
+var ranged_far_permille := 1000
+## Punish: beyond punish_distance_m for punish_ticks, it performs attack punish_attack (-1 = none).
+var punish_distance_m := 9.0
+var punish_ticks := 0
+var punish_attack := -1
+## Weak point: open for weak_ticks after an attack that opens it; hits from within weak_range_m deal weak_mult and
+## fill the stagger meter by weak_stagger (per mille).
+var weak_ticks := 0
+var weak_range_m := 2.5
+var weak_mult_permille := 1000
+var weak_stagger_permille := 1000
+## Closing arena: it starts at phase close_phase (-1 = not by phase) or after close_after_ticks of fighting (0 = not
+## by time); every close_step_ticks the band moves close_step_m inward (0 = never closes), each step marked
+## close_warn_ticks first, and stops safe_half_m short of the room's centre on each axis. Standing in the band hurts
+## hazard_damage every hazard_ticks.
+var close_phase := -1
+var close_after_ticks := 0
+var close_step_ticks := 1
+var close_step_m := 0.0
+var close_warn_ticks := 24
+var safe_half_m := 5.0
+var hazard_damage := 0
+var hazard_ticks := 30
+## Harder AI: attacks aim where the player will be in lead_ticks at their current velocity.
+var lead_ticks := 0
 
 
 ## The attack index with this id, or -1.

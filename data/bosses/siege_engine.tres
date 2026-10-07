@@ -23,6 +23,8 @@ max_range_m = 30.0
 weight = 3
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_SIEGE_BARRAGE"
+follow_up = &"bolt_fan"
+follow_up_permille = 350
 
 [sub_resource type="Resource" id="A_barrage_7"]
 script = ExtResource("1_atk")
@@ -43,6 +45,8 @@ max_range_m = 30.0
 weight = 3
 cooldown_seconds = 0.7
 cause_key = &"CAUSE_SIEGE_BARRAGE"
+follow_up = &"rail_sweep"
+follow_up_permille = 400
 
 [sub_resource type="Resource" id="A_rail_sweep"]
 script = ExtResource("1_atk")
@@ -62,6 +66,7 @@ max_range_m = 13.0
 weight = 2
 cooldown_seconds = 1.2
 cause_key = &"CAUSE_SIEGE_RAIL"
+opens_weak_point = true
 
 [sub_resource type="Resource" id="A_bolt_fan"]
 script = ExtResource("1_atk")
@@ -86,6 +91,7 @@ max_range_m = 16.0
 weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_SIEGE_BOLTS"
+opens_weak_point = true
 
 [sub_resource type="Resource" id="A_deploy"]
 script = ExtResource("1_atk")
@@ -108,6 +114,26 @@ weight = 1
 cooldown_seconds = 0.5
 cause_key = &"CAUSE_SIEGE_DEPLOY"
 
+[sub_resource type="Resource" id="A_shockwave"]
+script = ExtResource("1_atk")
+id = &"shockwave"
+shape = 3
+shape_params = {
+"inner_radius_m": 4.0,
+"radius_m": 40.0
+}
+telegraph_seconds = 1.2
+active_seconds = 0.0167
+recovery_seconds = 1.5
+damage = 22
+move = &"slam_ring"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_SIEGE_SHOCKWAVE"
+opens_weak_point = true
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
@@ -122,7 +148,7 @@ hp_threshold_permille = 500
 attack_ids = PackedStringArray("barrage_7", "rail_sweep", "bolt_fan")
 entry_attack = &"deploy"
 speed_permille = 0
-cooldown_permille = 650
+cooldown_permille = 550
 
 [resource]
 script = ExtResource("3_boss")
@@ -139,8 +165,28 @@ rear_mult_permille = 1000
 stagger_size = 300
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_barrage"), SubResource("A_barrage_7"), SubResource("A_rail_sweep"), SubResource("A_bolt_fan"), SubResource("A_deploy")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_barrage"), SubResource("A_barrage_7"), SubResource("A_rail_sweep"), SubResource("A_bolt_fan"), SubResource("A_deploy"), SubResource("A_shockwave")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
 arena_cells = Vector2i(3, 1)
 arena_template = 5
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"shockwave"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = 1
+arena_close_after_seconds = 45.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 1.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 6
+arena_hazard_seconds = 0.5
+recovery_permille = 800
+lead_seconds = 0.3
 id = &"siege_engine"

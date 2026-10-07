@@ -78,6 +78,7 @@ func apply_pending() -> int:
 		return -1
 	var k := _boss_pending
 	_boss_pending = -1
+	BossChallenge.dissolve_floor(world)  # BX (L20): a summoned boss clears the floor.
 	return world.spawn_boss(k, boss_spot(world, world.boss_tables[k].radius_m))
 
 

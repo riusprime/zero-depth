@@ -22,6 +22,7 @@ max_range_m = 4.5
 weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_GATEKEEPER_SLAM"
+opens_weak_point = true
 
 [sub_resource type="Resource" id="A_shock_lanes"]
 script = ExtResource("1_atk")
@@ -64,6 +65,8 @@ max_range_m = 18.0
 weight = 3
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_GATEKEEPER_LANES"
+follow_up = &"charge"
+follow_up_permille = 350
 
 [sub_resource type="Resource" id="A_sweep"]
 script = ExtResource("1_atk")
@@ -83,6 +86,8 @@ max_range_m = 3.4
 weight = 4
 cooldown_seconds = 0.6
 cause_key = &"CAUSE_GATEKEEPER_SWEEP"
+follow_up = &"fist_slam"
+follow_up_permille = 400
 
 [sub_resource type="Resource" id="A_charge"]
 script = ExtResource("1_atk")
@@ -102,6 +107,31 @@ max_range_m = 20.0
 weight = 2
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_GATEKEEPER_CHARGE"
+opens_weak_point = true
+follow_up = &"sweep"
+follow_up_permille = 500
+
+[sub_resource type="Resource" id="A_vortex_slam"]
+script = ExtResource("1_atk")
+id = &"vortex_slam"
+shape = 3
+shape_params = {
+"inner_radius_m": 0.0,
+"pull_mps": 5.5,
+"pull_range_m": 30.0,
+"radius_m": 4.5
+}
+telegraph_seconds = 1.3
+active_seconds = 0.0167
+recovery_seconds = 1.5
+damage = 24
+move = &"pull"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_GATEKEEPER_PULL"
+opens_weak_point = true
 
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
@@ -116,8 +146,8 @@ script = ExtResource("2_ph")
 hp_threshold_permille = 500
 attack_ids = PackedStringArray("fist_slam", "shock_lanes_5", "sweep", "charge")
 entry_attack = &"charge"
-speed_permille = 1150
-cooldown_permille = 800
+speed_permille = 1300
+cooldown_permille = 650
 
 [resource]
 script = ExtResource("3_boss")
@@ -134,8 +164,28 @@ rear_mult_permille = 1100
 stagger_size = 220
 stagger_decay_per_second = 12.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_slam"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_5"), SubResource("A_sweep"), SubResource("A_charge")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_slam"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_5"), SubResource("A_sweep"), SubResource("A_charge"), SubResource("A_vortex_slam")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
 arena_cells = Vector2i(3, 3)
 arena_template = 2
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"vortex_slam"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = 1
+arena_close_after_seconds = 45.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 1.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 6
+arena_hazard_seconds = 0.5
+recovery_permille = 800
+lead_seconds = 0.3
 id = &"gatekeeper"

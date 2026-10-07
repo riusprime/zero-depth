@@ -188,7 +188,33 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var phases: Array[BossPhaseDefinition]     # each: hp_threshold_permille, attack_ids, entry_attack, speed/cooldown_permille
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
+# Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
+@export var ranged_full_m: float                   # ranged armour: full damage up to here...
+@export var ranged_far_m: float                    # ...falling linearly to ranged_far_permille here and beyond
+@export var ranged_far_permille: int               # 1..1000 (1000 = none)
+@export var punish_distance_m: float               # beyond this for punish_seconds -> punish_attack
+@export var punish_seconds: float
+@export var punish_attack: StringName              # an attack id (empty = none); it needn't be in a phase
+@export var weak_point_seconds: float              # open after an attack with opens_weak_point
+@export var weak_point_range_m: float              # hits from within it...
+@export var weak_point_mult_permille: int          # ...deal this (1000..4000)
+@export var weak_point_stagger_permille: int       # ...and fill the stagger meter at this (1000..4000)
+@export var arena_close_phase: int                 # closing arena starts at this phase (-1 = not by phase)
+@export var arena_close_after_seconds: float       # or after this long fighting (0 = not by time)
+@export var arena_close_step_seconds: float        # a step every this long...
+@export var arena_close_step_m: float              # ...this far in (0 = never closes)
+@export var arena_close_warn_seconds: float        # each step marked first (>= MIN_TELEGRAPH_TICKS, < the step)
+@export var arena_safe_half_m: float               # stops this far from the room's centre on each axis
+@export var arena_hazard_damage: int               # standing in the band: damage over time...
+@export var arena_hazard_seconds: float            # ...every this long
+@export var recovery_permille: int                 # scales every attack's recovery (1..2000)
+@export var lead_seconds: float                    # aimed attacks lead the player's velocity (0..1)
 ```
+
+- Boss attacks (v0.3.0 BX) also take `opens_weak_point: bool`, and `follow_up: StringName` (another attack of the
+  boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never
+  chains again). The `pull` move (`inner_radius_m`, `radius_m`, `pull_mps`, `pull_range_m`) drags the player in
+  during its windup, then slams a ring.
 
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);

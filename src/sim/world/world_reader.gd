@@ -68,6 +68,8 @@ const MOVE_BARRAGE := BossAttackTable.Move.BARRAGE
 const MOVE_RAIL := BossAttackTable.Move.RAIL
 const MOVE_BOLT_FAN := BossAttackTable.Move.BOLT_FAN
 const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
+## Boss challenge (v0.3.0 BX): the vortex that drags you in, then slams.
+const MOVE_PULL := BossAttackTable.Move.PULL
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -772,6 +774,43 @@ func boss_table_count() -> int:
 
 func boss_table_name_key(k: int) -> StringName:
 	return _w.boss_tables[k].name_key
+
+
+# --- Boss challenge (v0.3.0 BX) ----------------------------------------------------------------------------------
+## How far boss i has risen, 0..1000: state ticks over BossAi.INTRO_TICKS while it rises, then 1000 (L22: the boss
+## bar fills over exactly this).
+func boss_intro_permille(i: int) -> int:
+	if _w.actors.state[i] != EnemyAi.State.SPAWN:
+		return 1000
+	return clampi(_w.actors.state_t[i] * 1000 / BossAi.INTRO_TICKS, 0, 1000)
+
+
+## Boss i's weak point: how much of its open time is left, 0..1000 (0 = closed).
+func boss_weak_point_permille(i: int) -> int:
+	var b := BossAi.entry_of(_w, i)
+	var t := BossAi.table_of(_w, i)
+	if b < 0 or t.weak_ticks <= 0:
+		return 0
+	return clampi(_w.bosses.exposed_t[b] * 1000 / t.weak_ticks, 0, 1000)
+
+
+## How close (from boss i's edge) a hit must land to strike its open weak point.
+func boss_weak_range_m(i: int) -> float:
+	return BossAi.table_of(_w, i).weak_range_m
+
+
+## The closing arena's band (BossChallenge.band): {} or "arena", "depth", "next", "warn" (-1 or 0..1000).
+func boss_arena_band() -> Dictionary:
+	return BossChallenge.band(_w)
+
+
+## How long the player has stayed too far from boss i, 0..1000 of the time that starts its punish (0 = none).
+func boss_punish_permille(i: int) -> int:
+	var b := BossAi.entry_of(_w, i)
+	var t := BossAi.table_of(_w, i)
+	if b < 0 or t.punish_attack < 0 or t.punish_ticks <= 0:
+		return 0
+	return clampi(_w.bosses.far_t[b] * 1000 / t.punish_ticks, 0, 1000)
 
 
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------

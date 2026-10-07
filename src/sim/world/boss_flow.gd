@@ -3,7 +3,8 @@ extends RefCounted
 ## A floor's ending (v0.3.0 PLAN L4, "Boss room and portal"), advanced in tick phase 9 after spawning:
 ## WAITING: normal spawns run. Walking ENTRY_DEPTH_M into the boss room past the door's inner face seals the door
 ##   behind you (its collider, the whole passage, joins the walls), stops normal spawns and spawns the boss
-##   (World.spawn_boss) where the layout says.
+##   (World.spawn_boss) where the layout says. Every normal enemy on the floor dissolves first (BossChallenge, L20),
+##   and the boss room's interior becomes the arena its closing band creeps in from.
 ## FIGHT: when World.boss_alive() turns false, the portal opens (PORTAL_OPENED).
 ## OPEN: walking into the gate's opening ends the floor (FLOOR_EXIT); the world then stands still (EXITED).
 ## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed.
@@ -66,6 +67,8 @@ func advance(w: World) -> void:
 				sealed_tick = w.tick
 				w.add_wall_now(f.boss_door_wall)
 				w.emit_event(SimEvent.Kind.BOSS_ROOM_SEALED, 0, 0, 0, f.boss_door_center)
+				BossChallenge.dissolve_floor(w)  # BX (L20): the floor's enemies dissolve.
+				w.bosses.arena = f.rooms[f.boss_room]  # BX (L17): the band closes in from these walls.
 				w.spawn_boss(boss_index, f.boss_spawn)
 		State.FIGHT:
 			if not w.boss_alive():

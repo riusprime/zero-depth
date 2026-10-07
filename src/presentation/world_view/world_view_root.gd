@@ -25,6 +25,8 @@ var gate: PortalGate
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
+## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
+var challenge := BossChallengeView.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -35,6 +37,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
+	add_child(challenge)
 	add_child(actors)
 	add_child(kit)
 	add_child(utility)
@@ -77,6 +80,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 
 func sync() -> void:
 	telegraphs.sync(reader)
+	challenge.sync(reader)
 	actors.sync(reader)
 	kit.sync(reader)
 	utility.sync(reader)

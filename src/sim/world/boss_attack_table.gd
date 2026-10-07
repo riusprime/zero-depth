@@ -2,7 +2,9 @@ class_name BossAttackTable
 extends RefCounted
 ## One boss attack in sim units (BossAttackDefinition compiled). Only the fields its move uses are set.
 
-enum Move { SLAM_RING, LANES, SWEEP, CHARGE, LEAP, BURROW, BROOD, BARRAGE, RAIL, BOLT_FAN, DEPLOY }
+enum Move {
+	SLAM_RING, LANES, SWEEP, CHARGE, LEAP, BURROW, BROOD, BARRAGE, RAIL, BOLT_FAN, DEPLOY, PULL
+}
 
 var id := &""
 var move := Move.SLAM_RING
@@ -41,3 +43,11 @@ var erupt_ticks := 24
 ## Brood and deploy: the actor kind that comes out, and how many of them may be alive.
 var enemy_kind := ActorStore.Kind.CHARGER
 var max_alive := 99
+## Boss challenge (v0.3.0 BX): a pull drags the player toward the boss during its windup at pull speed (metres per
+## tick) from within pull_range_m; its recovery opens the weak point; a follow-up attack (index, -1 = none) may start
+## at once instead of the recovery, follow_up_permille of the time.
+var pull := 0.0
+var pull_range_m := 0.0
+var opens_weak := false
+var follow_up := -1
+var follow_up_permille := 0

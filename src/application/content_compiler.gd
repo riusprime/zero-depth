@@ -21,6 +21,7 @@ const BOSS_MOVES := {
 	&"rail": BossAttackTable.Move.RAIL,
 	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
 	&"deploy": BossAttackTable.Move.DEPLOY,
+	&"pull": BossAttackTable.Move.PULL,
 }
 
 
@@ -381,7 +382,40 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		t.phase_cd_permille.append(ph.cooldown_permille)
 	t.arena_cells = def.arena_cells
 	t.arena_template = def.arena_template
+	_compile_boss_challenge(def, t)
 	return t
+
+
+## Boss challenge (v0.3.0 BX): ranged armour, punish, weak point, closing arena, harder AI.
+static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
+	t.ranged_full_m = def.ranged_full_m
+	t.ranged_far_m = def.ranged_far_m
+	t.ranged_far_permille = def.ranged_far_permille
+	t.punish_distance_m = def.punish_distance_m
+	t.punish_ticks = SimTick.seconds_to_ticks(def.punish_seconds)
+	t.punish_attack = (
+		t.attack_index(def.punish_attack) if not String(def.punish_attack).is_empty() else -1
+	)
+	t.weak_ticks = SimTick.seconds_to_ticks(def.weak_point_seconds)
+	t.weak_range_m = def.weak_point_range_m
+	t.weak_mult_permille = def.weak_point_mult_permille
+	t.weak_stagger_permille = def.weak_point_stagger_permille
+	t.close_phase = def.arena_close_phase
+	t.close_after_ticks = SimTick.seconds_to_ticks(def.arena_close_after_seconds)
+	t.close_step_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_close_step_seconds))
+	t.close_step_m = def.arena_close_step_m
+	t.close_warn_ticks = SimTick.seconds_to_ticks(def.arena_close_warn_seconds)
+	t.safe_half_m = def.arena_safe_half_m
+	t.hazard_damage = def.arena_hazard_damage
+	t.hazard_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_hazard_seconds))
+	t.lead_ticks = SimTick.seconds_to_ticks(def.lead_seconds)
+	for k in def.attacks.size():
+		var a := def.attacks[k]
+		var at := t.attacks[k]
+		at.recover_ticks = at.recover_ticks * def.recovery_permille / 1000
+		at.opens_weak = a.opens_weak_point
+		at.follow_up = t.attack_index(a.follow_up) if not String(a.follow_up).is_empty() else -1
+		at.follow_up_permille = a.follow_up_permille
 
 
 static func compile_boss_attack(
@@ -425,6 +459,8 @@ static func compile_boss_attack(
 		if e != null:
 			t.enemy_kind = compile_enemy(e).kind
 	t.max_alive = int(sp.get("max_alive", 99))
+	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
+	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
 	return t
 
 

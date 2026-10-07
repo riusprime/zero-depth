@@ -23,6 +23,7 @@ max_range_m = 14.0
 weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_LEAP"
+opens_weak_point = true
 
 [sub_resource type="Resource" id="A_leap_chain"]
 script = ExtResource("1_atk")
@@ -43,6 +44,9 @@ max_range_m = 14.0
 weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_LEAP"
+opens_weak_point = true
+follow_up = &"brood_4"
+follow_up_permille = 300
 
 [sub_resource type="Resource" id="A_burrow"]
 script = ExtResource("1_atk")
@@ -64,6 +68,9 @@ max_range_m = 30.0
 weight = 2
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_BROOD_BURROW"
+opens_weak_point = true
+follow_up = &"leap"
+follow_up_permille = 350
 
 [sub_resource type="Resource" id="A_brood"]
 script = ExtResource("1_atk")
@@ -109,6 +116,27 @@ weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_BROOD"
 
+[sub_resource type="Resource" id="A_pounce_chain"]
+script = ExtResource("1_atk")
+id = &"pounce_chain"
+shape = 0
+shape_params = {
+"chain": 3,
+"radius_m": 2.4,
+"range_m": 12.0
+}
+telegraph_seconds = 0.5
+active_seconds = 0.45
+recovery_seconds = 1.5
+damage = 22
+move = &"leap"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_BROOD_POUNCE"
+opens_weak_point = true
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
@@ -122,8 +150,8 @@ script = ExtResource("2_ph")
 hp_threshold_permille = 500
 attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4")
 entry_attack = &""
-speed_permille = 1100
-cooldown_permille = 800
+speed_permille = 1250
+cooldown_permille = 650
 
 [resource]
 script = ExtResource("3_boss")
@@ -140,8 +168,28 @@ rear_mult_permille = 1000
 stagger_size = 260
 stagger_decay_per_second = 14.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_brood"), SubResource("A_brood_4")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_brood"), SubResource("A_brood_4"), SubResource("A_pounce_chain")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
 arena_cells = Vector2i(2, 2)
 arena_template = 1
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"pounce_chain"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+arena_close_phase = 1
+arena_close_after_seconds = 45.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 1.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 6
+arena_hazard_seconds = 0.5
+recovery_permille = 800
+lead_seconds = 0.35
 id = &"brood_mother"

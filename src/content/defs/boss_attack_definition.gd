@@ -13,6 +13,12 @@ extends AttackDefinition
 @export var cooldown_seconds := 1.0
 ## Locale key of the death recap line ("The Gatekeeper's fist slam crushed you.").
 @export var cause_key: StringName
+## Boss challenge (v0.3.0 BX): its recovery opens the boss's weak point; and a follow-up attack (an id of the same
+## boss, empty = none) that starts at once instead of the recovery, follow_up_permille of the time (when the player
+## is in the follow-up's range band; a follow-up never chains again).
+@export var opens_weak_point := false
+@export var follow_up: StringName
+@export var follow_up_permille := 0
 
 
 func validate_into(issues: Array[ValidationIssue], path: String) -> void:
@@ -72,6 +78,8 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(ValidationIssue.new(&"duration", path, where + "cooldown_seconds < 0"))
 	if String(cause_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", path, where + "cause_key is required"))
+	if follow_up_permille < 0 or follow_up_permille > 1000:
+		issues.append(ValidationIssue.new(&"range", path, where + "follow_up_permille: 0..1000"))
 	for k in ["count", "chain", "volleys", "max_alive"]:
 		if shape_params.has(k) and int(shape_params[k]) < 1:
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be >= 1" % k))

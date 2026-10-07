@@ -42,6 +42,9 @@ const MOVES := {
 	},
 	## Drops `count` turrets on marked discs beside itself (an enemy each).
 	&"deploy": {"shape": 0, "params": ["count", "radius_m", "distance_m", "enemy_id"]},
+	## Boss challenge (v0.3.0 BX): a vortex drags the player (within pull_range_m, at pull_mps) toward the boss for
+	## its whole windup, then a ring of inner_radius_m..radius_m around it slams.
+	&"pull": {"shape": 3, "params": ["inner_radius_m", "radius_m", "pull_mps", "pull_range_m"]},
 }
 
 ## Params that name an enemy (resolved by the compiler; a content test checks they exist).
