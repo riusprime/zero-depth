@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 2
+activation = 1
+button = 0
+name_key = &"ABILITY_BOMB_LOBBER"
+desc_key = &"ABILITY_BOMB_LOBBER_DESC"
+tags = Array[StringName]([&"area", &"auto"])
+cooldown_seconds = 2.5
+range_m = 8
+radius_m = 2
+duration_seconds = 0.6
+damage = 22
+level_radius = PackedFloat32Array(1, 1, 1.15, 1.15, 1.3225)
+level_count = PackedInt32Array(1, 2, 2, 3, 3)
+id = &"bomb_lobber"

@@ -360,11 +360,11 @@ static func attacker_mult(w: World, target: int, owner_id: int) -> int:
 # --- Guard charges (Bulwark) ----------------------------------------------------------------------------------
 ## The guard reduced a hit from `owner_id` (root `root`): store a charge; Frozen Bastion chills the attacker.
 static func on_guard_block(w: World, owner_id: int, root: int) -> void:
-	var m := w.item_mods
 	var a := w.actors
 	if w.player_dead():
 		return
-	if m.charge_max > 0 and w.guard_charges < m.charge_max:
+	var cap := Abilities.charge_max(w)  # v0.4.0 BS: Aegis stores charges like Bulwark
+	if cap > 0 and w.guard_charges < cap:
 		w.guard_charges += 1
 		_status(w, 0, root, w.guard_charges, EFFECT_BULWARK)
 	var c := combo(w, ComboTable.Effect.FROZEN_BASTION)
@@ -389,7 +389,7 @@ static func on_swing_start(w: World) -> void:
 static func charged_damage(w: World, dmg: int) -> int:
 	if w.swing_charges <= 0:
 		return dmg
-	return dmg * (1000 + w.swing_charges * w.item_mods.charge_bonus_permille) / 1000
+	return dmg * (1000 + w.swing_charges * Abilities.charge_bonus(w)) / 1000
 
 
 # --- Dash passes (bleed burst, Cold Snap, Shatter Dash) -------------------------------------------------------

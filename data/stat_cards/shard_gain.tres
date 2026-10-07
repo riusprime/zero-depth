@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"shard_gain"
+name_key = &"STAT_SHARD_GAIN"
+desc_key = &"STAT_SHARD_GAIN_DESC"
+amounts = PackedFloat32Array(10, 20, 30)
+cap = 0
+weight = 6
+id = &"shard_gain"

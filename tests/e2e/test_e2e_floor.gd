@@ -77,9 +77,11 @@ func test_walk_to_an_altar_and_take_the_second_card_with_the_pad() -> void:
 	assert_eq(panel.title_text(), tr("PICK_TITLE_ALTAR"))
 	var offer := w.rewards.offer_of(w.rewards.index_of(altar_id))
 	var reader := main.driver.reader
-	for k in 3:
+	for k in 3:  # v0.4.0 BS: a card is a mod, an ability or a stat card (PickPanel.card_face)
 		assert_eq(
-			panel.slot(k).card.title_text(), tr(reader.item_name_key(offer[k])), "card %d" % k
+			panel.slot(k).card.title_text(),
+			PickPanel.card_face(self, reader, offer[k])["title"],
+			"card %d" % k
 		)
 	var tick := w.tick
 	var hp := w.actors.hp[0]
@@ -96,11 +98,21 @@ func test_walk_to_an_altar_and_take_the_second_card_with_the_pad() -> void:
 	await e.frames(3)
 	assert_eq(w.choosing, -1, "the pick closed the choice")
 	assert_false(panel.is_open())
-	assert_eq(w.items_owned, PackedInt32Array([offer[1]]), "the 2nd card's item is owned")
+	var face := PickPanel.card_face(self, reader, offer[1])
+	match Offers.type_of(offer[1]):
+		Offers.MOD:
+			assert_eq(w.items_owned, PackedInt32Array([offer[1]]), "the 2nd card's item is owned")
+		Offers.ABILITY:
+			assert_true(Abilities.owned(w, Offers.ability_of(offer[1])), "the 2nd card's ability")
+		Offers.STAT:
+			assert_ne(
+				Stats.value(w, Offers.stat_of(offer[1])), Stats.BASE[Offers.stat_of(offer[1])]
+			)
 	assert_eq(w.rewards.index_of(altar_id), -1, "the altar is consumed")
 	assert_eq(main.view.rewards.node_of(altar_id), null, "and gone from the view")
 	assert_eq(hud.card_mode(), &"pickup", "the card shows the item just taken")
-	assert_eq(hud.card().title_text(), tr(reader.item_name_key(offer[1])), "the HUD names the item")
-	assert_eq(hud.card().desc_text(), tr(reader.item_desc_key(offer[1])), "and says what it does")
-	assert_eq(hud.card().icon_id(), reader.item_id(offer[1]), "with its symbol")
-	assert_eq(hud.item_icon_count(), 1, "the carried-items row has one icon")
+	assert_eq(hud.card().title_text(), face["title"], "the HUD names the card")
+	assert_eq(hud.card().desc_text(), face["sentence"], "and says what it does")
+	assert_eq(hud.card().icon_id(), face["id"], "with its symbol")
+	var mod := Offers.type_of(offer[1]) == Offers.MOD
+	assert_eq(hud.item_icon_count(), 1 if mod else 0, "a mod joins the carried-items row")

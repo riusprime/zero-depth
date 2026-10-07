@@ -13,21 +13,26 @@ const BLINK_STEP_M := 0.1
 
 
 ## Guard is a held state (World.guarding); Blink spends a buffered press when it's ready.
+## v0.4.0 BS: the utility is the forced loadout's or an owned Blink / Aegis ability (Abilities.utility); the
+## ability's blink has its own range, cooldown, charges and a landing shock (Abilities).
 static func advance_utility(w: World) -> void:
-	if w.blink_cd > 0:
-		w.blink_cd -= 1
-	var t := w.player
-	if t.utility != PlayerTable.Utility.BLINK:
+	Abilities.recharge_blink(w)
+	if Abilities.utility(w) != PlayerTable.Utility.BLINK:
 		w.input_buffer[UTILITY_SLOT] = 0
 		return
-	if w.input_buffer[UTILITY_SLOT] == 0 or w.blink_cd > 0 or w.is_dashing() or PlayerSkill.busy(w):
+	if (
+		w.input_buffer[UTILITY_SLOT] == 0
+		or not Abilities.blink_ready(w)
+		or w.is_dashing()
+		or PlayerSkill.busy(w)
+	):
 		return
 	w.input_buffer[UTILITY_SLOT] = 0
 	w.blink_from = w.player_pos()
 	w.actors.set_pos(0, blink_target(w))
-	w.blink_cd = t.blink_cooldown_ticks
 	w.blink_tick = w.tick
-	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
+	w.actors.invuln[0] = maxi(w.actors.invuln[0], Abilities.blink_iframes(w))
+	Abilities.on_blink(w)  # v0.4.0 BS: the cooldown or a charge, and the landing shock.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
 
 
@@ -50,7 +55,7 @@ static func blink_target(w: World) -> Vector2:
 	var from := w.player_pos()
 	var dir := move_or_aim(w)
 	var home := w.nav.region_near(from)
-	var steps := int(round(t.blink_range_m / BLINK_STEP_M))
+	var steps := int(round(Abilities.blink_range_m(w) / BLINK_STEP_M))
 	for k in range(steps, 0, -1):
 		var at := from + dir * (BLINK_STEP_M * k)
 		if (
@@ -82,7 +87,7 @@ static func advance(w: World) -> void:
 		if w.swing_t == cur.active_tick:
 			_resolve_swing(w)
 		w.swing_t += 1
-		if w.swing_t > cur.ticks:
+		if w.swing_t > Stats.swing_end(w, cur):  # v0.4.0 BS: attack speed shortens the recovery
 			w.swing_t = 0
 			w.combo_window = t.combo_window_ticks if w.combo_step < t.combo.size() - 1 else 0
 	elif w.combo_window > 0:
@@ -174,6 +179,7 @@ static func _resolve_swing(w: World) -> void:
 	if landed:
 		w.add_freeze(s.hitstop_ticks)
 	ItemEffects.after_swing(w, base, dmg)
+	Abilities.after_swing(w, landed)  # v0.4.0 BS: Combo Sword L5's finisher shockwave.
 	Engines.after_swing(w, landed)  # Engines: Slipstream.
 
 
@@ -213,7 +219,7 @@ static func _fire_bolt(w: World) -> void:
 	var t := w.player
 	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
-	for off in ItemEffects.shot_offsets(w):
+	for off in Abilities.shot_offsets(w, ItemEffects.shot_offsets(w)):  # Pulse Gun L5: twin bolts
 		var dir := Kin.dir(w.aim_angle + off)
 		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
 		w.queue_projectile(
@@ -224,6 +230,6 @@ static func _fire_bolt(w: World) -> void:
 			dmg,
 			t.bolt_radius_m,
 			t.bolt_life_ticks,
-			SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w),  # Heat: a Hot bolt pierces
+			SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w),  # Hot, Pulse Gun L3
 			w.item_mods.bounces
 		)

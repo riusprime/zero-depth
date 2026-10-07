@@ -74,8 +74,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_gte(w.choosing, 0, "E opened the altar's pick")
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_eq(w.items_owned.size(), 1, "took a card's item")
-	var item := w.items_owned[0] if not w.items_owned.is_empty() else -1
+	# v0.4.0 BS: an altar's first (focused) card is a new ability while a slot is free.
+	assert_eq(w.ability_owned.size(), 2, "took the card: a second ability slot")
+	var item := w.ability_owned[1] if w.ability_owned.size() > 1 else -1
 	# Leg 2: through the boss door.
 	var into := Kin.dir(f.boss_door_angle)
 	var walls_before := w.walls.size()
@@ -110,7 +111,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
 	assert_eq(hud.gate_text(), tr("HUD_PORTAL_OPEN"))
 	var hp_before := w.actors.hp[0]
-	var owned := w.items_owned.duplicate()
+	var owned := w.ability_owned.duplicate()
+	var levels := w.ability_levels.duplicate()
+	var items := w.items_owned.duplicate()
 	var shards := w.shards  # kills on the way and the boss's purse
 	assert_has(owned, item)
 	# Leg 3: into the portal.
@@ -127,7 +130,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var w2 := e.world()
 	assert_ne(w2, w, "a new floor")
 	assert_eq(w2.floor_index, 2)
-	assert_eq(w2.items_owned, owned, "the items came along, in order")
+	assert_eq(w2.ability_owned, owned, "the abilities came along, in slot order")
+	assert_eq(w2.ability_levels, levels, "at their levels")
+	assert_eq(w2.items_owned, items, "and the items")
 	assert_eq(w2.shards, shards, "the shards came along")
 	assert_eq(
 		w2.player.weapons, PlayerTable.WEAPON_BLADE, "the run's build came along (v0.3.0 L15)"
@@ -142,7 +147,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	)
 	assert_eq(hud2.floor_text(), tr("HUD_FLOOR") % [2, tr(biome_2.name_key)])
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
-	assert_eq(hud2.item_icon_count(), owned.size(), "the carried items' icons")
+	assert_eq(hud2.item_icon_count(), items.size(), "the carried items' icons")
+	assert_eq(hud2.ability_hud.filled_count(), owned.size(), "the ability slots")
 	assert_true(main.get_node("UI/Fade").visible, "the floor fades in")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 

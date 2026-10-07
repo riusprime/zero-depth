@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"pickup_range"
+name_key = &"STAT_PICKUP_RANGE"
+desc_key = &"STAT_PICKUP_RANGE_DESC"
+amounts = PackedFloat32Array(15, 30, 45)
+cap = 0
+weight = 4
+id = &"pickup_range"

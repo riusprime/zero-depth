@@ -258,7 +258,8 @@ static func vent_ready(w: World) -> bool:
 
 ## The blast's radius: the table's, with Heat Sink's bonus.
 static func vent_radius_m(w: World) -> float:
-	return w.heat.table.vent_radius_m * (1000 + w.item_mods.vent_radius_bonus_permille) / 1000.0
+	var r := w.heat.table.vent_radius_m * (1000 + w.item_mods.vent_radius_bonus_permille) / 1000.0
+	return Stats.area(w, r)  # v0.4.0 BS: area
 
 
 ## The blast's damage for `heat` points at `share` per mille: heat x vent_damage, with Heat Sink's bonus.

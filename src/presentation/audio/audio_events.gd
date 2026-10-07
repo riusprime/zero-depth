@@ -11,6 +11,8 @@ const LOW_HP_PERMILLE := 300
 const HEARTBEAT_TICKS := 54
 ## Boss hits and deaths are pitched down a little.
 const BOSS_PITCH := 0.8
+## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
+const CRIT_PITCH := 1.6
 
 const BOSS_FLAVOUR := {
 	WorldReader.KIND_GATEKEEPER: &"boss_telegraph_gatekeeper",
@@ -90,6 +92,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				else:
 					var p := BOSS_PITCH if _is_boss(e.target_id) else 1.0
 					var proj := (e.tags & SimEvent.TAG_PROJECTILE) != 0
+					if e.tags & SimEvent.TAG_CRIT:  # v0.4.0 BS: a crit rings sharper (the hit, pitched up)
+						p *= CRIT_PITCH
 					out.append([&"bolt_hit" if proj else &"enemy_hit", e.pos, p])
 			SimEvent.Kind.HIT:
 				if e.tags & (SimEvent.TAG_GUARDED | SimEvent.TAG_BLOCKED):

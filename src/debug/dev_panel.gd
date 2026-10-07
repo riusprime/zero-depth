@@ -10,6 +10,7 @@ var _info := Label.new()
 var _hash := Label.new()
 var _boss := Label.new()
 var _enemy := Label.new()
+var _ability := Label.new()
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -40,6 +41,8 @@ func _init(p_api: DebugApi) -> void:
 		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
 		["NextEnemy", "UI_DEV_NEXT_ENEMY", api.next_enemy],
 		["SpawnEnemy", "UI_DEV_SPAWN_ENEMY", api.request_enemy],
+		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
+		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
 	]:
 		var b := Button.new()
 		b.name = spec[0]
@@ -53,6 +56,9 @@ func _init(p_api: DebugApi) -> void:
 	_enemy.name = "EnemyChoice"
 	_enemy.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_enemy)
+	_ability.name = "AbilityChoice"
+	_ability.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_ability)
 
 
 func _process(_delta: float) -> void:
@@ -75,3 +81,9 @@ func _process(_delta: float) -> void:
 	var kinds := api.enemy_kinds()
 	var k := kinds[api.enemy_choice % kinds.size()] if not kinds.is_empty() else -1
 	_enemy.text = tr(w.enemy_table(k).name_key) if k >= 0 else ""
+	var ab := w.ability_tables
+	_ability.text = (
+		"%s  L%d" % [tr(ab[api.ability_choice].name_key), Abilities.level_of(w, api.ability_choice)]
+		if api.ability_choice < ab.size()
+		else ""
+	)

@@ -82,9 +82,8 @@ static func present(w: World) -> bool:
 
 ## The player stands within the shrine's interact radius.
 static func in_reach(w: World) -> bool:
-	return (
-		present(w) and Kin.length(w.gamble_pos - w.player_pos()) <= w.gamble_table.interact_radius_m
-	)
+	var reach := Stats.reach(w, w.gamble_table.interact_radius_m)  # v0.4.0 BS: pickup range
+	return present(w) and Kin.length(w.gamble_pos - w.player_pos()) <= reach
 
 
 ## Shards for the next use on this floor.
@@ -104,6 +103,12 @@ static func stacks(w: World, stat: int) -> int:
 ## What the wins of `stat` add (HP for MAX_HP, per mille otherwise).
 static func bonus(w: World, stat: int) -> int:
 	return stacks(w, stat) * w.gamble_table.amount[stat]
+
+
+## What the hooks below add: bonus(), or 0 for a stat the shrine pays into the stat cards' values instead
+## (v0.4.0 BS, Stats.from_gamble), so no win counts twice.
+static func hook_bonus(w: World, stat: int) -> int:
+	return 0 if Stats.from_gamble(w, stat) >= 0 else bonus(w, stat)
 
 
 ## Draw weights now: a stat at its cap (or without weight) has 0, and so has a stat for the weapon the run's build
@@ -161,15 +166,26 @@ static func grant(w: World, stat: int) -> void:
 	if w.gamble_stacks.size() < GambleTable.STAT_COUNT:
 		w.gamble_stacks.resize(GambleTable.STAT_COUNT)
 	w.gamble_stacks[stat] += 1
-	if stat == GambleTable.Stat.MAX_HP:
+	var card := Stats.from_gamble(w, stat)
+	if card >= 0:  # v0.4.0 BS: in a run with stat cards the win raises that stat by the shrine's own amount
+		Stats.add_amount(w, card, gamble_permille(w, stat))
+	elif stat == GambleTable.Stat.MAX_HP:
 		var add := w.gamble_table.amount[stat]
 		w.actors.max_hp[0] += add
 		w.actors.hp[0] = mini(w.actors.max_hp[0], w.actors.hp[0] + add)
 
 
+## A win of `stat` in the stat cards' unit (v0.4.0 BS): per mille, max HP as a share of the table's HP.
+static func gamble_permille(w: World, stat: int) -> int:
+	var amount := w.gamble_table.amount[stat]
+	if stat == GambleTable.Stat.MAX_HP:
+		return amount * 1000 / maxi(1, w.player.hp)
+	return amount
+
+
 ## After a run's carry restored gamble_stacks on a fresh floor (RunCarry.apply): max HP follows the wins.
 static func after_carry(w: World) -> void:
-	w.actors.max_hp[0] = w.player.hp + bonus(w, GambleTable.Stat.MAX_HP)
+	w.actors.max_hp[0] = Stats.max_hp(w)  # the table's HP x the max HP stat (v0.4.0), + old-style wins
 
 
 # --- Hooks: each stat's effect where the sim computes it ---------------------------------------------------
@@ -181,30 +197,30 @@ static func raise(base: int, permille: int) -> int:
 
 
 static func melee_damage(w: World, dmg: int) -> int:
-	return raise(dmg, bonus(w, GambleTable.Stat.MELEE))
+	return raise(dmg, hook_bonus(w, GambleTable.Stat.MELEE))
 
 
 static func shot_damage(w: World, dmg: int) -> int:
-	return raise(dmg, bonus(w, GambleTable.Stat.SHOT))
+	return raise(dmg, hook_bonus(w, GambleTable.Stat.SHOT))
 
 
 static func shard_gain(w: World, amount: int) -> int:
-	return raise(amount, bonus(w, GambleTable.Stat.SHARDS))
+	return raise(amount, hook_bonus(w, GambleTable.Stat.SHARDS))
 
 
 static func move_speed_bonus_permille(w: World) -> int:
-	return bonus(w, GambleTable.Stat.MOVE)
+	return hook_bonus(w, GambleTable.Stat.MOVE)
 
 
 static func dash_cooldown_cut_permille(w: World) -> int:
-	return bonus(w, GambleTable.Stat.DASH_CD)
+	return hook_bonus(w, GambleTable.Stat.DASH_CD)
 
 
 ## Extra out-of-combat regen, in per mille of max HP per second (for the regen hook, workstream P).
 static func regen_bonus_permille(w: World) -> int:
-	return bonus(w, GambleTable.Stat.REGEN)
+	return hook_bonus(w, GambleTable.Stat.REGEN)
 
 
 ## Extra heat capacity, in per mille of the base capacity (for the heat hook, workstream H).
 static func heat_capacity_bonus_permille(w: World) -> int:
-	return bonus(w, GambleTable.Stat.HEAT)
+	return hook_bonus(w, GambleTable.Stat.HEAT)

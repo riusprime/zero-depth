@@ -99,17 +99,7 @@ func sync(reader: WorldReader) -> void:
 		s.visible = k < _count
 		if k >= _count:
 			continue
-		var idx := items[k]
-		var id := reader.item_id(idx)
-		var rare := reader.item_rarity(idx) == WorldReader.RARITY_RARE
-		s.show_item(
-			id,
-			tr(reader.item_name_key(idx)),
-			tr(reader.item_desc_key(idx)),
-			ItemLooks.color_of_id(id),
-			rare,
-			tr("RARITY_RARE") if rare else tr("RARITY_COMMON")
-		)
+		s.show_card(card_face(self, reader, items[k]))  # v0.4.0 BS: a mod, an ability or a stat card
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
 	_title.text = (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
@@ -117,6 +107,38 @@ func sync(reader: WorldReader) -> void:
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)
+
+
+## A card code's face (v0.4.0 BS; WorldReader.card_info), translated through `ci`: id, title, sentence, color,
+## tier (PickSlot.TIERS: 0 common, 1 rare, 2 epic, 3 ability) and tier_text (the rarity, or "New ability" /
+## "Level N", with "Mod" before a mod's rarity once the run has other card types).
+static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
+	var info := reader.card_info(code)
+	var id: StringName = info["id"]
+	var face := {
+		"id": id,
+		"title": ci.tr(info["name_key"]),
+		"sentence": ci.tr(info["desc_key"]),
+		"color": AbilityIcons.color(id),
+		"tier": int(info["rarity"]),
+		"tier_text": "",
+	}
+	match int(info["type"]):
+		WorldReader.CARD_ABILITY:
+			face["tier"] = 3
+			var lvl := int(info["level"])
+			face["tier_text"] = (
+				ci.tr("UI_CARD_ABILITY_NEW") if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
+			)
+		WorldReader.CARD_STAT:
+			face["sentence"] = ci.tr(info["desc_key"]) % GambleIcons.percent(int(info["amount"]))
+			face["tier_text"] = ci.tr(["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC"][face["tier"]])
+		_:
+			face["color"] = ItemLooks.color_of_id(id)
+			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")
+			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
+			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), rarity] if run else rarity
+	return face
 
 
 func is_open() -> bool:

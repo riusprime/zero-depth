@@ -20,6 +20,12 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	# TEST HELPER (labelled): grant shards so the chests can be opened too. Earning shards by input is
 	# test_e2e_rewards.gd; this test is about the combo.
 	w.shards = 10000
+	# TEST HELPER (labelled): v0.4.0 BS made the items rarer mods among ability and stat cards, so a floor rarely
+	# offers a whole combo pair now; this test is about the combo, so the floor's cards are drawn almost all as mods
+	# (stat cards only once the mods run out; an altar's first card stays its new ability). The mix itself is
+	# tests/unit/sim/test_offers.gd.
+	w.reward_table.altar_card_weights = PackedInt32Array([0, 1, 1000])
+	w.reward_table.chest_card_weights = PackedInt32Array([0, 1, 1000])
 	var offers := {}
 	var left := Array(w.rewards.ids)
 	while not left.is_empty() and not w.player_dead():

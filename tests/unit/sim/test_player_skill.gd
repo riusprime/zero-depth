@@ -18,6 +18,7 @@ func before_all() -> void:
 ## The runner with build `build`, still dummies (radius 0.35, lots of HP) at `enemies`, optional walls.
 func _world(build: StringName, enemies: Array = [], walls: Array[Obb] = []) -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
+	t.crit_chance_permille = 0  # exact numbers here; crit has its own tests (v0.4.0 BS)
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", build))
 	var w := World.new(5, t)
 	w.dummy_speed = 0.0

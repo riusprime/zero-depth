@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"move_speed"
+name_key = &"STAT_MOVE_SPEED"
+desc_key = &"STAT_MOVE_SPEED_DESC"
+amounts = PackedFloat32Array(4, 7, 10)
+cap = 1.6
+weight = 8
+id = &"move_speed"

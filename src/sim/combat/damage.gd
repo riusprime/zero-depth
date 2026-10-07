@@ -51,6 +51,10 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
+	if owner_id == a.ids[0] and target != 0:  # v0.4.0 BS: the damage stat, then the crit roll (Stats).
+		var out := Stats.outgoing(w, amount, tags)
+		amount = out[0]
+		tags |= out[1]
 	# Items: Executioner is an attacker multiplier, applied before the target's (SIM_CONTRACTS §8 step 2).
 	var exec := ItemProcs.execute_mult(w, target, owner_id)
 	if exec != 1000:
@@ -77,6 +81,8 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
+	if target == 0 and scaled > 0 and Stats.armour_permille(w) != 1000:  # v0.4.0 BS: armour
+		scaled = maxi(1, (scaled * Stats.armour_permille(w) + 500) / 1000)
 	var got := 0
 	if scaled > 0:
 		got = _apply(
@@ -100,6 +106,8 @@ static func tick_dot(
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
+	if owner_id == a.ids[0] and target != 0:
+		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
 	var root := w.take_root()
 	return _apply(
 		w,

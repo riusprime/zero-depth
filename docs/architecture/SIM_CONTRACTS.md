@@ -153,6 +153,9 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   per-room ones below. Normal enemies draw from it (each attack's windup length, the Arc Caster's spell), so the
   spawn director's and the bosses' `ai` draws stay where they were. Its state is hashed only in worlds with enemy
   tables (§10).
+- **v0.4.0 BS** adds two named streams, derived the same way: `crit` (one roll per direct player hit while the crit
+  chance is above 0; `Stats.outgoing`) and `ability` (the auto abilities' randomness: a spare bomb's scatter;
+  `Abilities`). Offers still draw only `loot`. Both states join the hash with the build block (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier.
@@ -255,6 +258,26 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
 5. Emit `DAMAGE`. If HP reaches 0 and the target is not already dead, mark it dead and emit **exactly one**
    `KILL`. Later lethal events against a dead target apply nothing.
 6. On-hit triggers then see the `HIT` (step 2 of the drain).
+
+**Stats and crit (v0.4.0 BS, owner F9; `Stats`).** A hit the player owns on an enemy first takes the damage stat
+(`amount × damage / 1000`, half up) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
+`range_int(0, 999) < chance`, chance = the player's base (data: 5 %) + crit-chance cards, at most 750. A crit
+multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), half up, and tags `HIT` and `DAMAGE`
+with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attacker multipliers, so it applies to
+every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
+DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
+target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
+1210) within their caps; the other stats are read where the sim computes them (cooldowns: dash, skill, blink, bombs;
+attack speed: shot period, drone period, a swing's recovery; area: swing and cleave reach, vent radius, ability
+radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
+in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
+
+**Abilities (v0.4.0 BS, owner F8; `Abilities`).** Auto abilities run in phase 6, after the projectile sweeps, so
+`World.enemies_near` can use the uniform grid of this tick's bodies; their hits carry `TAG_ABILITY` (bit 24) and an
+effect id (`bomb_lobber`, `drone_buddy`, `drone_chain`, `orbit_blades`, `blink_shock`, `combo_sword_wave`), so they
+never add heat. Targeting: Bomb Lobber = the enemy with the most others touching a bomb-sized disc around it within
+range (ties: nearest the player, then lower index); Drone Buddy = the nearest enemy to the drone within range; Orbit
+Blades = any enemy touching a blade, once per enemy per `hit_ticks`. Enemies still spawning in are skipped.
 
 **Damage-over-time** ticks emit `DAMAGE` with `tags |= DOT` and `proc_pct = 0`. They never emit `HIT`, so they
 can't trigger on-hit effects.
