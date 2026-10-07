@@ -21,8 +21,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2: HUD (calmer) mockups | 2026-10-07 (with the build) | pending | |
-| G2: pick card mockups | 2026-10-07 (with the build) | pending | |
+| G2: HUD (calmer) mockups | 2026-10-07 | "HUD middle but spell cooldowns have to be a bit bigger" → BARE; cooldown squares 12 → 24 px, skill pip 22 → 36 px | 2026-10-07 |
+| G2: pick card mockups | 2026-10-07 | "and card middle as well" → FACET | 2026-10-07 |
 | v0.5.0 start before a v0.4.0 playtest (F21 vs ROADMAP §0.3) | 2026-10-07 | "skip the rule, keep going to v0.5.0" | 2026-10-07 |
 
 ## Open
@@ -40,3 +40,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   ticks; the optional room scan reveal not built (minimap is UI's this wave). Suite 674 passing; MIN_TEST_COUNT 674.
 - 2026-10-07 — K and UI merged (conflicts: audio events, view root, MIN_TEST_COUNT, translations; kept both). 701 tests
   pass; goldens unchanged.
+- 2026-10-07 — AI merged (strings conflict, kept both). On the merged tree the new-kinds readable-cause test's bot took
+  18 hits over seeds 3–5 (bar > 20; 20+ on AI's own branch): widened to seeds 3–6, bar unchanged; 0 violations.
+  Export smoke 0 misses.
+- 2026-10-07 — Owner G2 picks (verbatim): "HUD middle but spell cooldowns have to be a bit bigger and card middle as
+  well". HUD → BARE, cards → FACET; cooldown squares 12 → 24 px, the skill pip 22 → 36 px (starting values).

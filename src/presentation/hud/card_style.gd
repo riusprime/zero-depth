@@ -7,14 +7,14 @@ extends RefCounted
 ## what it means: the item's name, and the rarity as a small faceted mark (CardMark).
 ##
 ## Three looks were shown to the owner as G2 mockups (docs/roadmap/v0.3.5/evidence/card_mockups.png):
-##   FLAT  - square corners, a 1 px outline (the shipped default);
-##   FACET - the same with two opposite corners cut, like the game's chamfered low-poly shapes;
+##   FLAT  - square corners, a 1 px outline;
+##   FACET - the same with two opposite corners cut, like the game's chamfered low-poly shapes (shipped: owner pick, 2026-10-07);
 ##   RULE  - square, no outline; a thin rule along the top edge, in the card's colour.
 ## Swapping is one line: DEFAULT below (or set `CardStyle.current` before the cards are built).
 
 enum Look { FLAT, FACET, RULE }
 
-const DEFAULT := Look.FLAT
+const DEFAULT := Look.FACET
 const BG := Color(0.035, 0.04, 0.05, 0.9)
 const BG_FOCUS := Color(0.075, 0.085, 0.1, 0.95)
 const EDGE := Color(0.8, 0.84, 0.88, 0.3)

@@ -5,8 +5,8 @@ extends RefCounted
 ## brackets, end caps) is gone: plain type, thin lines, few elements, colour only where it carries state.
 ##
 ## Three calm directions were shown to the owner as G2 mockups (docs/roadmap/v0.3.5/evidence/hud_mockups.png):
-##   LINE  - no plates; each group sits over one hairline (the shipped default);
-##   BARE  - no plates and no lines: type and bars straight on the game;
+##   LINE  - no plates; each group sits over one hairline;
+##   BARE  - no plates and no lines: type and bars straight on the game (shipped: owner pick, 2026-10-07);
 ##   SLATE - flat, square, translucent dark plates; no lines.
 ## Swapping is one line: DEFAULT below (or set `HudStyle.current` before the HUD is built).
 ##
@@ -23,7 +23,7 @@ extends RefCounted
 enum Style { LINE, BARE, SLATE }
 
 ## The shipped style (owner picks from the G2 mockups; one constant to swap).
-const DEFAULT := Style.LINE
+const DEFAULT := Style.BARE
 ## Low-HP warning (L24): below this share of max HP the HP bar pulses red (starting value).
 const LOW_HP_PERCENT := 30
 ## Warning pulses per second (starting value).

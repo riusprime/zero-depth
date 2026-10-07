@@ -344,7 +344,7 @@ func test_the_new_ai_is_deterministic() -> void:
 func test_every_hit_from_the_new_kinds_has_a_readable_cause() -> void:
 	var damage := 0
 	var causes := {}
-	for s in [3, 4, 5]:
+	for s in [3, 4, 5, 6]:
 		var w := _mixed(s)
 		var bot := FightBot.new(s)
 		var check := ReadableCause.new(w)
@@ -358,6 +358,6 @@ func test_every_hit_from_the_new_kinds_has_a_readable_cause() -> void:
 		causes.merge(check.by_cause)
 		for v: Dictionary in check.violations:
 			fail_test("unreadable hit: %s" % JSON.stringify(v))
-	assert_gt(damage, 20, "hit often enough to mean something")
+	assert_gt(damage, 20, "hit often enough to mean something (%d)" % damage)
 	assert_true(causes.has("CAUSE_ARC_CASTER"), "the Arc Caster landed hits: %s" % [causes])
 	assert_true(causes.has("CAUSE_BOMB_DRONE"), "the Bomb Drone landed hits: %s" % [causes])

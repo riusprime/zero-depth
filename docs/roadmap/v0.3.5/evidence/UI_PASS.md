@@ -96,7 +96,7 @@ pulse are kept.
 Overclock heat 58 = Hot) with a real `Hud` in each style; under each: the top group, the HP corner, and the heat
 bar at 1:1. `hud_style.png`: the shipped HUD in play (full HP; low HP with the floor card).
 
-| | A. LINE (shipped default) | B. BARE | C. SLATE |
+| | A. LINE (lead default) | B. BARE (owner pick, ships) | C. SLATE |
 |---|---|---|---|
 | Groups | one hairline under each | nothing | flat square translucent plates |
 | Why / why not | calmest that still groups things | lightest, loosest on bright floors | most legible on sand, heaviest |
@@ -116,7 +116,7 @@ outline; `test_status_visuals` checks the combo card's outline is even.
 `card_mockups.png` (2250 × 525): the same frame with a real pick (second card focused, rare), an item card and a
 combo card in each look, left to right:
 
-| | A. FLAT (shipped default) | B. FACET | C. RULE |
+| | A. FLAT (lead default) | B. FACET (owner pick, ships) | C. RULE |
 |---|---|---|---|
 | Panel | square, 1 px outline | two opposite corners cut | square, no outline, a top rule in the card's colour |
 

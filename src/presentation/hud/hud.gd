@@ -8,7 +8,7 @@ extends Control
 
 const BAR := Vector2(300, 8)
 ## The dash / utility readiness squares (px).
-const PIP := 12.0
+const PIP := 24.0
 ## The top plate's width (px).
 const TOP_W := 540.0
 ## Floor (PLAN v0.2.0 F, K): a row of icons for the items you carry, a compact item card (on pickup, and as a

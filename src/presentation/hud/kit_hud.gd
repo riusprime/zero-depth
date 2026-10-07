@@ -7,7 +7,7 @@ extends Control
 ## - the vent hint, beside the heat meter: "[F] VENT", bright while venting would blast (Hot), dim otherwise.
 ## Reads WorldReader only (EI-07); the keys come from the live bindings (InputRebind), so a remap shows at once.
 
-const PIP := 22.0
+const PIP := 36.0
 const GAP := 16.0
 const FONT_SIZE := 14
 const DIM_ALPHA := 0.4

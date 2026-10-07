@@ -129,7 +129,7 @@ func test_every_style_builds_every_piece() -> void:
 
 
 func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
-	assert_eq(HudStyle.DEFAULT, HudStyle.Style.LINE, "the shipped calm style")
+	assert_eq(HudStyle.DEFAULT, HudStyle.Style.BARE, "the owner's pick (2026-10-07)")
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(WorldReader.new(_world()))
