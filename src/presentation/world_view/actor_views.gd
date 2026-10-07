@@ -2,8 +2,8 @@ class_name ActorViews
 extends Node3D
 ## One node per live actor and projectile, keyed by entity id. Transforms are written right after each sim
 ## tick, and Godot's physics interpolation smooths them between ticks (PRESENTATION_CONTRACTS §2).
-## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3): the Charger is a low
-## wedge with a horn, the Warden a tall block behind a shield slab, the Needle a thin pillar.
+## Each enemy behaviour has its own silhouette, readable in greyscale (PRESENTATION §3): the Charger is a red
+## hooded crawler on four clawed legs, the Warden a tall block behind a shield slab, the Needle a thin pillar.
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -217,9 +217,13 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 	var height := CUBE
 	match kind:
 		WorldReader.KIND_CHARGER:
-			height = 0.5
-			_piece(facing, Vector3(0.85, 0.5, 0.7), Vector3(0, 0.25, 0), body_color, team_color)
-			_piece(facing, Vector3(0.4, 0.18, 0.18), Vector3(0.6, 0.3, 0), body_color, team_color)
+			# The clawed hooded crawler (v0.2.0 L17): its own node under the facing, animated in frame time.
+			var avatar := ChargerAvatar.new()
+			avatar.setup(outline_color, technique)
+			facing.add_child(avatar)
+			root.set_meta(&"enemy_avatar", avatar)
+			root.set_meta(&"mats", avatar.body_materials.duplicate())
+			height = ChargerAvatar.HEIGHT
 			var dazed := MeshInstance3D.new()
 			var dt := TorusMesh.new()
 			dt.inner_radius = 0.22
