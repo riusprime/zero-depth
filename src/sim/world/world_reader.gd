@@ -25,6 +25,12 @@ const ITEM_THORN_MANTLE := ItemTable.Kind.THORN_MANTLE
 const ITEM_EXECUTIONER := ItemTable.Kind.EXECUTIONER
 const ITEM_SWIFT_FEET := ItemTable.Kind.SWIFT_FEET
 const ITEM_PHASE_STRIKE := ItemTable.Kind.PHASE_STRIKE
+## Enemy AI states, for actor_state() (presentation animates from them; EnemyAi.State is the source).
+const STATE_SPAWN := EnemyAi.State.SPAWN
+const STATE_MOVE := EnemyAi.State.MOVE
+const STATE_WINDUP := EnemyAi.State.WINDUP
+const STATE_ACTIVE := EnemyAi.State.ACTIVE
+const STATE_RECOVER := EnemyAi.State.RECOVER
 
 var _w: World
 

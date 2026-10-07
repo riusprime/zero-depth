@@ -121,6 +121,9 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
 	if node.has_meta(&"avatar"):
 		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
+	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.
+	if node.has_meta(&"enemy_avatar"):
+		node.get_meta(&"enemy_avatar").sync(reader, i)
 
 
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
