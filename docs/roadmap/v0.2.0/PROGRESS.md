@@ -45,4 +45,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   The owner asked for a character rework from a reference image (a hooded figure with a cyan visor, a cloak,
   animation, light cloak physics): PLAN L10, workstream G started in parallel. The image arrived in chat only,
   so G works from a written description (in its brief); it is not in the repo.
+- 2026-10-07 — The owner uploaded the character reference (`e63c661`); renamed to
+  `docs/art/main_character_visual_reference.png` and linked from ART_DIRECTION. Workstream G checks against it.
 

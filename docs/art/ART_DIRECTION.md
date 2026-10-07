@@ -113,6 +113,11 @@ pass over depth and normals; Options offer off / ink / sketch / sketch + paper, 
 one after playing ([`../roadmap/v0.1.0/evidence/OUTLINES.md`](../roadmap/v0.1.0/evidence/OUTLINES.md)); the pick
 then becomes this section's rule.
 
+**Main character (owner, 2026-10-07).** The reference is
+[`main_character_visual_reference.png`](main_character_visual_reference.png): a small hooded wanderer, off-white
+faceted hood with a dark face and a glowing cyan visor, a wide faceted cloak, short dark legs; shown in the game
+scene and as a five-view turnaround. The player avatar must match it (PLAN v0.2.0 L10).
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator
