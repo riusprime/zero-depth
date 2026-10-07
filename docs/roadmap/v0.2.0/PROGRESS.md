@@ -19,6 +19,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   `6e73b137…010326`; export-smoke hash `39e66d22…d3756c` → `e011ccdd…a17af8`. Kernel behaviour unchanged.
 - **E** (item, pickup, burn, echo, dash-hit, bounce state hashed; direct DAMAGE now carries proc_pct 100): replay
   golden `6e73b137…010326` → `cc3595c1…54c565`; export-smoke hash `e011ccdd…a17af8` → `d18fc1dc…42d4cb`.
+- **J** (8 more items' state hashed: heal window, chain, momentum, thorn, phase, per-actor slow): replay golden
+  `cc3595c1…54c565` → `c798f9e5…a309df`; export-smoke hash `d18fc1dc…42d4cb` → `921997d9…5e4234`. The subagent
+  confirmed the kernel's behaviour is unchanged by re-running the golden with the new fields un-hashed.
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -80,4 +83,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   corners flare wider and lower, the V ends at knee height so legs and boots show, the hood is longer, the neck
   sliver is gone. Lead check against the sheet: front, right-front and right views now match closely; still
   differs: the hood's top reads large from the game camera, and the sheet's hood sides flare a little more. 210 tests.
+- 2026-10-07 — J merged (`b7b9f2e`): Vampiric Core, Static Chain, Momentum, Frost Core, Thorn Mantle, Executioner,
+  Swift Feet, Phase Strike (numbers in the subagent's report and data/items); all 16 descriptions ≤ 60 characters
+  in en and es. Item indices are alphabetical, so a seed's pedestal draws changed. 231 tests pass; goldens
+  re-recorded; export smoke 0 misses.
 
