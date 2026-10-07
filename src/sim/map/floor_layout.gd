@@ -57,6 +57,16 @@ var spawn_points: Array[PackedVector2Array] = []
 var hops := PackedInt32Array()
 ## The outer edge of the outer walls (the bounding box of the whole floor, centred on the origin).
 var bounds := Rect2()
+## The boss room (v0.3.0 B; BossRoomBuilder.attach, -1 before it runs). It opens off boss_host_room (the farthest
+## room) through one doorway: its centre on the wall line, boss_door_angle the direction from the host into the boss
+## room, its width, and the collider that seals it once you are inside. The boss appears at boss_spawn.
+var boss_room := -1
+var boss_host_room := -1
+var boss_door_center := Vector2.ZERO
+var boss_door_angle := 0
+var boss_door_width := 0.0
+var boss_door_wall: Obb
+var boss_spawn := Vector2.ZERO
 
 
 func room_count() -> int:
@@ -103,3 +113,10 @@ func portal_front() -> Rect2:
 ## The middle of the clear area in front of the gate: where the player walks into it from.
 func portal_front_point() -> Vector2:
 	return portal_front().get_center()
+
+
+## How far p is past the boss door's wall line, into the boss room (negative before it; 0 without a boss room).
+func boss_door_depth(p: Vector2) -> float:
+	if boss_room < 0:
+		return 0.0
+	return (p - boss_door_center).dot(Kin.dir(boss_door_angle))

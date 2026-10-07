@@ -14,6 +14,8 @@ var ink := InkPass.new()
 var pickups := PickupViews.new()
 var item_fx: ItemVisuals
 var gate: PortalGate
+## Run flow (v0.3.0 B): the boss door (null without a boss room).
+var boss_door: BossDoorView
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -34,6 +36,16 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
+	if reader.has_boss_room():
+		boss_door = BossDoorView.new()
+		add_child(boss_door)
+		boss_door.setup(
+			reader.boss_door_center(),
+			reader.boss_door_angle(),
+			reader.boss_door_width(),
+			reader.boss_door_half_thickness(),
+			palette["cover"]
+		)
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -51,6 +63,10 @@ func sync() -> void:
 	hit_feel.sync(reader)
 	pickups.sync(reader)
 	item_fx.sync(reader)
+	if boss_door != null:
+		boss_door.sync(reader)
+	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
+		gate.set_sealed(not reader.portal_active())
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

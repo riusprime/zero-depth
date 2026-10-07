@@ -31,6 +31,11 @@ const STATE_MOVE := EnemyAi.State.MOVE
 const STATE_WINDUP := EnemyAi.State.WINDUP
 const STATE_ACTIVE := EnemyAi.State.ACTIVE
 const STATE_RECOVER := EnemyAi.State.RECOVER
+## Run flow (v0.3.0 B): boss flow states, for views (BossFlow.State is the source).
+const BOSS_WAITING := BossFlow.State.WAITING
+const BOSS_FIGHT := BossFlow.State.FIGHT
+const BOSS_OPEN := BossFlow.State.OPEN
+const BOSS_EXITED := BossFlow.State.EXITED
 
 var _w: World
 
@@ -210,8 +215,11 @@ func armour_half_arcs(i: int) -> Vector2i:
 	return Vector2i(t.front_half_arc, t.rear_half_arc) if t != null else Vector2i.ZERO
 
 
-## 0 while fighting, 1 when the last wave is cleared, 2 when the player is dead.
+## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead,
+## 3 when the portal of a floor before the last was taken (the app loads the next floor).
 func outcome() -> int:
+	if _w.boss_flow != null and _w.boss_flow.exited():
+		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
 		return 2
 	return 1 if _w.cleared else 0
@@ -530,3 +538,75 @@ func phase_tick() -> int:
 
 func phase_radius_m() -> float:
 	return _w.item_mods.phase_radius_m
+
+
+# --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
+
+
+## This floor's number in the run (1-based) and the run's floor count.
+func floor_index() -> int:
+	return _w.floor_index
+
+
+func floor_count() -> int:
+	return _w.floor_count
+
+
+func has_boss_room() -> bool:
+	return _w.floor_layout != null and _w.floor_layout.boss_room >= 0 and _w.boss_flow != null
+
+
+func boss_room() -> int:
+	return _w.floor_layout.boss_room if _w.floor_layout != null else -1
+
+
+## The boss door: centre on the wall line, the direction into the boss room, the gap's width, and the half
+## thickness of the wall it sits in.
+func boss_door_center() -> Vector2:
+	return _w.floor_layout.boss_door_center
+
+
+func boss_door_angle() -> int:
+	return _w.floor_layout.boss_door_angle
+
+
+func boss_door_width() -> float:
+	return _w.floor_layout.boss_door_width
+
+
+func boss_door_half_thickness() -> float:
+	var o := _w.floor_layout.boss_door_wall
+	return minf(o.half.x, o.half.y) if o != null else 0.4
+
+
+## The door has shut behind the player (the boss fight began).
+func boss_door_sealed() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.door_sealed()
+
+
+func boss_state() -> int:
+	return _w.boss_flow.state if _w.boss_flow != null else BOSS_WAITING
+
+
+## The gate's portal is active: the boss is dead, and walking in leaves the floor.
+func portal_active() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.portal_active()
+
+
+## The tick the portal opened (-1 = not yet).
+func portal_opened_tick() -> int:
+	return _w.boss_flow.opened_tick if _w.boss_flow != null else -1
+
+
+func boss_alive() -> bool:
+	return _w.boss_alive()
+
+
+## The boss's actor id (0 = none, or dead; the boss contract's stand-in tracks it in World.boss_id).
+func boss_id() -> int:
+	return _w.boss_id
+
+
+## How far p is past the boss door's line, into the boss room (negative on the host side).
+func boss_door_depth(p: Vector2) -> float:
+	return _w.floor_layout.boss_door_depth(p) if _w.floor_layout != null else 0.0

@@ -5,11 +5,16 @@ extends Node
 
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
+## Run flow (v0.3.0 B): the run's data, and the fade-in from black when a floor starts.
+const RUN_ID := &"three_floors"
+const FADE_SECONDS := 0.45
 
 var profile: ProfileStore
 var driver: SimDriver
 var view: WorldViewRoot
 var ui := CanvasLayer.new()
+## The run in progress (null outside one): floors, biome order, carry, totals. _stage_seed is its run seed.
+var run: RunState
 
 var _menu: Control
 var _pause: PauseMenu
@@ -19,6 +24,9 @@ var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
 var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
+var _run_biomes: Array[StringName] = []
+var _fade := ColorRect.new()
+var _fade_left := 0.0
 
 
 func _ready() -> void:
@@ -30,7 +38,20 @@ func _ready() -> void:
 	GameSettings.apply_all(profile)
 	ui.name = "UI"
 	add_child(ui)
+	_fade.name = "Fade"
+	_fade.color = Color.BLACK
+	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fade.visible = false
+	ui.add_child(_fade)
 	show_main_menu()
+
+
+func _process(delta: float) -> void:
+	if _fade_left > 0.0:
+		_fade_left = maxf(0.0, _fade_left - delta)
+		_fade.color.a = _fade_left / FADE_SECONDS
+		_fade.visible = _fade_left > 0.0
 
 
 func _notification(what: int) -> void:
@@ -115,22 +136,37 @@ func show_gallery() -> void:
 	g.setup(&"ruins", 35.26, &"xray", true)
 
 
+## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor.
 func start_stage() -> void:
 	_set_menu(null)
 	var repo := ContentRepository.load_all()
+	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
+	_run_biomes = run_def.biomes.duplicate()
+	run = RunState.start(_stage_seed, ContentCompiler.compile_run(run_def))
+	_start_floor(repo)
+
+
+## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied.
+func _start_floor(repo: ContentRepository = null) -> void:
+	if repo == null:
+		repo = ContentRepository.load_all()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
-	var biome: BiomeDefinition = repo.get_def(&"biomes", &"ruins")
+	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var utility: UtilityDefinition = repo.get_def(
 		&"utility", StringName(profile.section("loadout").get("utility", "guard"))
 	)
 	var table := ContentCompiler.apply_utility(ContentCompiler.compile_player(def), utility)
 	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
+	var enemies := ContentCompiler.compile_enemies(repo)
+	run.scale_enemies(enemies)
 	var world := FloorScenario.build(
-		_stage_seed,
+		run.floor_seed(),
 		table,
-		ContentCompiler.compile_enemies(repo),
+		enemies,
 		ContentCompiler.compile_spawning(spawning, repo),
-		ContentCompiler.compile_items(repo)
+		ContentCompiler.compile_items(repo),
+		null,
+		run
 	)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
@@ -138,9 +174,12 @@ func start_stage() -> void:
 	add_child(driver)
 	view = WorldViewRoot.new()
 	view.name = "WorldView"
+	view.stage.prop_style = biome.id
 	add_child(view)
+	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
 	var b := driver.reader.floor_bounds()
-	view.setup(driver.reader, biome.palette, maxf(b.size.x, b.size.y) * 0.5 + 4.0)
+	var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
+	view.setup(driver.reader, biome.palette, half + 4.0)
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
 	var player_input := PlayerInput.new(view.rig, driver.reader)
@@ -152,8 +191,13 @@ func start_stage() -> void:
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.sync(driver.reader)
+	_hud.show_floor(run.floor_index, String(biome.name_key))
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
+	_fade_left = FADE_SECONDS
+	_fade.color.a = 1.0
+	_fade.visible = true
+	ui.move_child(_fade, ui.get_child_count() - 1)
 
 
 func _on_tick(from: SimDriver) -> void:
@@ -161,6 +205,9 @@ func _on_tick(from: SimDriver) -> void:
 		return  # a stage that already ended, ticking once more before it's freed
 	_hud.sync(driver.reader)
 	var outcome := driver.reader.outcome()
+	if outcome == 3 and _end == null:
+		_next_floor()
+		return
 	if outcome == 0 or _end != null:
 		return
 	_ended_ticks += 1
@@ -168,16 +215,49 @@ func _on_tick(from: SimDriver) -> void:
 		show_end_panel(outcome == 1)
 
 
+## The run's portal was taken: carry over, then the next floor (with its card and a fade-in).
+func _next_floor() -> void:
+	run.finish_floor(driver.world)
+	_end_floor()
+	_start_floor()
+
+
 func show_end_panel(won: bool) -> void:
 	close_pause()
-	_end = EndPanel.new(won, driver.reader.killer_kind())
+	_end = EndPanel.new(won, driver.reader.killer_kind(), run_recap())
 	_end.restart_pressed.connect(restart)
 	_end.main_menu_pressed.connect(show_main_menu)
 	ui.add_child(_end)
 	_end.focus_first()
 
 
-## A new fight with the next seed and the same utility.
+## The run recap's numbers (EndPanel): floor reached, run time and kills over every floor, shards when the world
+## counts them, and the items held.
+func run_recap() -> Dictionary:
+	if run == null or driver == null:
+		return {}
+	var w := driver.world
+	var names: Array[String] = []
+	for idx in driver.reader.items_owned():
+		names.append(String(driver.reader.item_name_key(idx)))
+	var out := {
+		"floor": run.floor_index,
+		"floors": run.table.floors,
+		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
+		"kills": run.total_kills(w),
+		"items": names,
+	}
+	if &"shards" in w:
+		out["shards"] = int(w.get(&"shards"))
+	return out
+
+
+## The current floor's biome id.
+func run_biome_id() -> StringName:
+	return _run_biomes[run.biome_of()] if run != null else &""
+
+
+## A new run with the next seed and the same utility.
 func restart() -> void:
 	_stage_seed += 1
 	_end_stage()
@@ -210,6 +290,7 @@ func open_pause() -> void:
 	driver.paused = true
 	_pause = PauseMenu.new()
 	_pause.resume_pressed.connect(close_pause)
+	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	ui.add_child(_pause)
 	_pause.focus_first()
@@ -234,17 +315,27 @@ func _set_menu(m: Control) -> void:
 
 
 func _end_stage() -> void:
+	_end_floor()
+	run = null
+
+
+## Frees one floor's nodes (driver, view, HUD, panels); the run itself stays.
+func _end_floor() -> void:
 	close_pause()
-	for n in [_hud, _end]:
-		if n != null:
-			n.queue_free()
+	for n in [_hud, _end, _dev, driver, view, get_node_or_null("Gallery")]:
+		_drop(n)
 	_hud = null
 	_end = null
-	if _dev != null:
-		_dev.queue_free()
-		_dev = null
-	for n in [driver, view, get_node_or_null("Gallery")]:
-		if n != null:
-			n.queue_free()
+	_dev = null
 	driver = null
 	view = null
+
+
+## Takes a node out of the tree now and frees it at the end of the frame, so the next floor's nodes get their plain
+## names (UI/Hud, SimDriver, WorldView) in the same frame.
+static func _drop(n: Node) -> void:
+	if n == null:
+		return
+	if n.get_parent() != null:
+		n.get_parent().remove_child(n)
+	n.queue_free()

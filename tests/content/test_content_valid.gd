@@ -7,7 +7,7 @@ func test_all_data_validates() -> void:
 	for i in repo.errors():
 		fail_test("%s: %s (%s)" % [i.path, i.message, i.code])
 	assert_eq(repo.count(&"player"), 1)
-	assert_eq(repo.count(&"biomes"), 1)
+	assert_eq(repo.count(&"biomes"), 3)
 	assert_eq(repo.count(&"credits"), 1)
 	assert_eq(repo.count(&"utility"), 2, "guard and blink")
 
@@ -35,3 +35,21 @@ func test_compiled_player_matches_the_kernel_starting_values() -> void:
 	for prop in a.get_property_list():
 		if prop["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE:
 			assert_eq(a.get(prop["name"]), b.get(prop["name"]), prop["name"])
+
+
+func test_the_run_validates_and_catches_bad_values() -> void:
+	var repo := ContentRepository.load_all()
+	assert_eq(repo.count(&"run"), 1, "one run definition (v0.3.0 B)")
+	var def: RunDefinition = (load("res://data/run/three_floors.tres") as RunDefinition).duplicate()
+	assert_eq(def.validate().size(), 0)
+	def.floors = 0
+	def.biomes = []
+	def.enemy_hp_per_floor = -0.1
+	def.heal_between_floors = 1.5
+	var codes := []
+	for i in def.validate():
+		codes.append(String(i.code))
+	assert_has(codes, "not_positive", "floors must be > 0")
+	assert_has(codes, "missing", "biomes can't be empty")
+	assert_has(codes, "negative", "scaling can't be negative")
+	assert_has(codes, "range", "the heal is a share of max HP")

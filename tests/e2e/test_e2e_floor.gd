@@ -29,7 +29,7 @@ func test_the_floor_has_pedestals_and_a_gate() -> void:
 		rooms[room] = true
 	assert_eq(
 		rooms.size(),
-		mini(expected, layout.room_count() - 1),
+		mini(expected, layout.room_count() - 2),  # not the start hall, not the boss room (v0.3.0 B)
 		"each room gets a pedestal before any room gets its second"
 	)
 	assert_true(main.view.stage.covers_ground(layout.start_pos), "ground under the start")

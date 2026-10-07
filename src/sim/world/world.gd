@@ -128,11 +128,23 @@ var phase_tick := -1
 var phase_guard_next := 0
 # --- end Items ---------------------------------------------------------------------------------------------
 
+# --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
+## The floor's boss room, door and portal (null in the arena and kernel scenarios), this floor's number in the run
+## (1-based) and the run's floor count (RunState sets both), and the boss's actor id (0 = none; BossStub).
+var boss_flow: BossFlow
+var floor_index := 1
+var floor_count := 1
+var boss_id := 0
+# --- end Run flow ------------------------------------------------------------------------------------------
+
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
 var _wall_grid := UniformGrid.new()
 var _actor_grid := UniformGrid.new()
+## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
+var _wall_next: Obb
+var _nav_next: NavField
 ## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
 
@@ -197,6 +209,9 @@ func step(frame: InputFrame) -> void:
 		_buffer_presses(frame.pressed)
 		tick += 1
 		return
+	if boss_flow != null and boss_flow.exited():  # Run flow: the floor is over; nothing moves.
+		tick += 1
+		return
 	# 2. Input (a dead player's input is ignored).
 	_age_buffer()
 	if player_dead():
@@ -230,7 +245,12 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
 	if spawner != null:
-		SpawnDirector.advance(self)
+		if boss_flow == null or boss_flow.spawns_open():
+			SpawnDirector.advance(self)
+		else:
+			boss_flow.count_time(self)  # Run flow: the sealed boss room stops spawns, not the clock.
+	if boss_flow != null:
+		boss_flow.advance(self)
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -307,6 +327,45 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 # --- end Items ---------------------------------------------------------------------------------------------
 
 
+# --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
+## The boss contract (C implements it; BossStub stands in until then): spawns boss `boss_table_index` at `pos` and
+## returns its actor id.
+func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
+	return BossStub.spawn(self, boss_table_index, pos)
+
+
+## True while the floor's boss lives (C implements it; BossStub stands in until then).
+func boss_alive() -> bool:
+	return BossStub.alive(self)
+
+
+## Builds, at setup, the flow field for the walls plus `o`, so adding `o` in play (the boss door sealing) never
+## rebuilds the whole field mid-fight (about 0.1 s on a floor).
+func prepare_wall(o: Obb) -> void:
+	var next: Array[Obb] = walls.duplicate()
+	next.append(o)
+	_wall_next = o
+	_nav_next = NavField.new()
+	_nav_next.build(next)
+
+
+## Adds a wall during play. The flow field swaps to the one prepare_wall built (or is rebuilt if there is none) and
+## floods from the player at once, so enemies path around the new wall from this tick.
+func add_wall_now(o: Obb) -> void:
+	walls.append(o)
+	_wall_grid.insert_rect(walls.size() - 1, o.bounds())
+	if o == _wall_next and _nav_next != null:
+		nav = _nav_next
+	else:
+		nav.build(walls)
+	_wall_next = null
+	_nav_next = null
+	nav.flood(player_pos())
+
+
+# --- end Run flow ------------------------------------------------------------------------------------------
+
+
 func dash_iframes_active() -> bool:
 	return dash_ticks_left > 0 and player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
 
@@ -378,6 +437,10 @@ func state_hash() -> String:
 		h.add_f32(v)
 	for v in [momentum_t, 1 if swing_momentum else 0, thorn_tick, phase_tick, phase_guard_next]:
 		h.add_int(v)
+	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
+		boss_flow.hash_into(h)
+		for v in [floor_index, floor_count, boss_id]:
+			h.add_int(v)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())

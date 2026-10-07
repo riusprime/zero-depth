@@ -31,6 +31,8 @@ func _init(p_api: DebugApi) -> void:
 		["Step", "UI_DEV_STEP", api.request_step],
 		["Hash", "UI_DEV_HASH", func() -> void: _hash.text = api.hash_now().left(16)],
 		["Reseed", "UI_DEV_RESEED", func() -> void: api.reseed(api.world.seed_value + 1)],
+		["God", "UI_DEV_GOD", api.toggle_god],
+		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
 	]:
 		var b := Button.new()
 		b.name = spec[0]

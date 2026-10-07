@@ -4,7 +4,24 @@ extends RefCounted
 ## new kinds are appended, never inserted, because kinds are hashed.
 
 ## PICKUP (v0.2.0): the player took an item; amount = the item's index in World.item_tables.
-enum Kind { HIT, DAMAGE, HEAL, BARRIER, KILL, STATUS_APPLY, STATUS_TICK, SPAWN, LIMIT, PICKUP }
+## Run flow (v0.3.0 B): BOSS_DEFEATED (the boss died; the boss contract, C), BOSS_ROOM_SEALED (the boss door shut
+## behind the player), PORTAL_OPENED (the gate is active), FLOOR_EXIT (the player walked into the active gate).
+enum Kind {
+	HIT,
+	DAMAGE,
+	HEAL,
+	BARRIER,
+	KILL,
+	STATUS_APPLY,
+	STATUS_TICK,
+	SPAWN,
+	LIMIT,
+	PICKUP,
+	BOSS_DEFEATED,
+	BOSS_ROOM_SEALED,
+	PORTAL_OPENED,
+	FLOOR_EXIT,
+}
 
 const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
