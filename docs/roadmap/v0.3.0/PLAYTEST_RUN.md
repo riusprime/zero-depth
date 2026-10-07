@@ -45,3 +45,5 @@ Additional feedback (2026-10-07, verbatim):
 
 > * Sometimes when taking a hit game crashes
 > * Sword should be used towards where the character is looking, shooting towards the aimed with the other joystick
+
+> Also should add a minimap that does not make you go in circles for a long time, that is discovered as you walk into new rooms

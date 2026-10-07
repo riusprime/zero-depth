@@ -59,6 +59,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L27 | "how far can you take the sounds on your own?" + (Q) "I synthesise SFX now" | Procedurally synthesised SFX for every event (robotic/synth/echo style) and an ambient drone per biome, with captions; any file can be replaced by dropping one with the same name | AU |
 | L28 | "Sometimes when taking a hit game crashes" | Reproduce and root-cause the crash on hit (it survived v0.2.0 H's lag fix); a regression test; ask the owner for the Windows log if it isn't reproducible here | X |
 | L29 | "Sword should be used towards where the character is looking, shooting towards the aimed with the other joystick" | Melee swings toward the character's facing (the move direction, or last facing when still); shooting stays on the aim (right stick / mouse) | P |
+| L30 | "Also should add a minimap that does not make you go in circles for a long time, that is discovered as you walk into new rooms" | A minimap in a HUD corner: rooms appear as you enter them (and their doorways show where unexplored rooms lie), your position and facing, icons for altars, chests, the gamble shrine, the boss door and the open portal; a larger full-map view on a held button (Tab / pad Select) | MM |
 
 ## Design (starting values)
 **Walls (A).** Outer and partition walls: thickness drawn per wall from 0.6–5.0 m (L12; was 0.6–3.0 m) (map stream); cover slabs and
