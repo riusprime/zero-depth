@@ -65,7 +65,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | Design questions Q1–Q4 | 2026-10-06 | see Owner decisions | 2026-10-06 |
-| Fight build check ([`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md)) | 2026-10-07 | pending | |
+| Fight build check ([`PLAYTEST_FIGHT.md`](PLAYTEST_FIGHT.md)) | 2026-10-07 | Answered: blink should follow movement; pad movement felt different; separate attack buttons (triggers = attacks, bumpers = blink and dash); hold to shoot continuously instead of charging; a thin black sketch-like stroke. → PLAN L7–L12, Steps 7b–7d | 2026-10-07 |
+| Outline style (G2, in game) | Step 7d build | pending | |
 | Options mockups (G2) | Step 10 | pending | |
 | Fun without loot | after Step 12 | pending | |
 
@@ -106,3 +107,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   (taken when a telegraph is up) and the shots workflow no longer hard-codes `v0.0.1`; `PLAYTEST_FIGHT.md` for
   the owner (answers OWNER ONLY); `MIN_TEST_COUNT` 128. Local tour en/es ran (16 shots). Next: the owner plays;
   meanwhile Step 8 (bench with real AI).
+- 2026-10-07 — The owner played the fight build (answers in `PLAYTEST_FIGHT.md`). PLAN gains L7–L12 and Steps
+  7b (controls, rapid fire, blink direction, pad dead zone), 7c (sketch outlines in Options) and 7d (a second
+  build). The pad difference was a double dead zone (see L8).

@@ -74,8 +74,8 @@ only adds numbers, menus or breadth fails the filter.
 |---|---|---|
 | Move | Screen-relative, 8-way on keys and analog on a stick; the sim reads −127..127 per axis | GA §5 |
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
-| Primary | **A melee swing and a charged shot** (owner, 2026-10-06): press = swing (3-hit combo); keep holding = charge; release = a bolt | v0.1.0 PLAN (starting values) |
-| Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state (hits from the front cut to 20%). **Or a mobile skill: Blink**, a short teleport toward the aim | v0.1.0 PLAN (starting values) |
+| Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a 3-hit swing combo; shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10 (starting values) |
+| Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state (hits from the front cut to 20%). **Or a mobile skill: Blink**, a short teleport the way you're moving (owner, 2026-10-07) | v0.1.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 
 **Starting values in use.** These are tuning defaults that no source has given yet. Each one is replaced by the GA

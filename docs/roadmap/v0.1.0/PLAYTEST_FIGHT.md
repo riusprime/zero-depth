@@ -46,8 +46,14 @@ All numbers are **starting values** for you to tune: player 100 HP, swing 10/10/
    renderer, pitch and occlusion are still open.)
 8. Frame rate on your PC, and anything that broke or read wrong in Spanish.
 
-## Owner answers (date)
-OWNER ONLY
+## Owner answers (2026-10-07)
+Pasted verbatim from the owner's message:
+
+> okay some feedback, for a first version the movement feels okay, but we could improve it still on how it feels, for spells, dash worked toward I was moving and that's the right choice, and same should happen with blink, that now currently moves where the front face of the character is so is harder to control, we should have both moving following my movement, I played mouse and controller, with the controller the movement felt a bit different than with keys, can we go over that just to check it is meant to be this way or can it be fixed, also attacks, we have 2, the front blade and the ranged attack, in keys I could easily get to shoot, not in the controller, so I had do kill with the blades all of them, both attacks should have different keys, in controller the triggers should be attacks and the R1 L1 should be the blink and dash, we change the shooting, instead of charging one stronger attack we ling press for continuous shooting that deals less damage each bullet
+>
+> For the visuals could we ahh a light and thin black stroke to borders of things, i'd like to see how that is seen in game, i like the art but it is not exact exact thing I want, i want it to be closer to a hand draw sketch but not so much that just the feeling that's where the black stroke comes from, like the image attached, but that's too much, just for the feeling
+>
+> [image attached: a screenshot of a third-party game with a heavy hand-drawn ink-sketch look (pencil-hatched white geometry, black ink outlines); not committed to the repo]
 
 ## Free notes
 OWNER ONLY

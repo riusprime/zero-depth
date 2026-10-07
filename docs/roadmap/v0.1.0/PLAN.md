@@ -31,6 +31,12 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L3 | Q2: both utilities, picked before play | Guard (hold) and Blink (press); a picker screen between Play and the arena; the last pick is remembered | 3 |
 | L4 | Q3: the enemy proposals | Charger, Warden, Needle as specified below; `MIN_TELEGRAPH_TICKS = 24` | 4 |
 | L5 | Q4: playable fight first | Steps 1–7 before options, accessibility and audio hooks | order |
+| L7 | (fight build, 2026-10-07) "dash worked toward I was moving … same should happen with blink" | Blink goes the way you're moving (the aim only when standing still), like the dash | 7b |
+| L8 | "with the controller the movement felt a bit different than with keys … check it is meant to be this way or can it be fixed" | Investigated: a stick's tilt went through two dead zones (Godot's, then ours), so ~36% of the travel did nothing and half tilt gave ~37% speed. Fix: one dead zone, full speed from 85% tilt | 7b |
+| L9 | "both attacks should have different keys, in controller the triggers should be attacks and the R1 L1 should be the blink and dash" | Melee and shooting get separate buttons. Pad: LT melee, RT shoot, RB dash, LB utility. KB+M: left click melee, right click shoot, Space dash, Shift utility (lead's pick; remappable in Step 10) | 7b |
+| L10 | "instead of charging one stronger attack we long press for continuous shooting that deals less damage each bullet" | Hold to fire continuously: 4 damage per bolt, 8.3 bolts/s (~33 dps, below the swing's ~45, so melee keeps its risk/reward). Replaces the charged bolt (changes Q1) | 7b |
+| L11 | "movement feels okay, but we could improve it still on how it feels" | Open: the owner names what to change after the next build; L8's fix may cover the pad side | — |
+| L12 | "a light and thin black stroke to borders of things … closer to a hand draw sketch … just the feeling" | A screen-space ink outline on every edge (walls, props, actors), thin and black, with a slight hand-drawn wobble. Three strengths are shown in game (Options: off / ink / sketch / sketch + paper) so the owner judges them live (a G2 pick in the build itself) | 7c |
 | L6 | ROADMAP §4 v0.1.0 scope (approved roadmap) | Options (audio, display, remap, shake, reduced motion, colour-blind), SFX hooks with captions, readable-cause test, bench with real AI | 8–12 |
 
 ## Design (starting values; the owner tunes them after playing)
@@ -104,6 +110,23 @@ cleared**; reaching 0 HP shows **You died** with the cause. Both offer Restart a
 ### 7. Fight build for the owner (release-lite)
 - Tour updated (fight shots), `PLAYTEST_FIGHT.md` for the owner (OWNER ONLY answers), CI Windows artifact.
 - **Done when:** the build is on CI and the owner has the sheet.
+
+### 7b. Controls from the fight check (sim + application + e2e)
+- Separate melee (InputFrame `PRIMARY`) and shoot (a new bit, `SHOOT`, appended). Hold shoot: a bolt every
+  0.12 s, 4 damage, 18 m/s. The charged bolt goes away.
+- Blink follows the move direction (the aim when standing still), always its full 5 m unless a wall is closer.
+- Bindings: LT melee, RT shoot, RB dash, LB utility; left click melee, right click shoot, Space dash, Shift utility.
+- Stick movement: one dead zone (Godot's), full speed from 85% tilt.
+- **Tests:** the shoot cadence and damage; blink follows movement; e2e for every binding on both devices; the
+  stick speed curve.
+
+### 7c. Sketch outlines (presentation; shown in game for the owner to pick)
+- A full-screen ink pass from depth and normals: thin black lines on every silhouette and crease, with optional
+  hand-drawn wobble and paper grain. Options → "Outline style": off / ink / sketch / sketch + paper.
+- Screenshots of all four in `evidence/OUTLINES.md`; the owner picks one in the next build.
+
+### 7d. Second fight build for the owner
+- `PLAYTEST_FIGHT_2.md`; Windows artifact.
 
 ### 8. Bench with real enemy AI (evidence)
 - The reference encounter is now the real arena; re-run `sim_bench`, `evidence/BENCH.md`.
