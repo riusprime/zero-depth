@@ -21,6 +21,8 @@ var _proj_last := {}
 var _flash := {}
 ## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
 var _tint := {}
+## Projectile materials by look (see _projectile_material).
+var _proj_mats := {}
 
 
 func sync(reader: WorldReader) -> void:
@@ -70,6 +72,10 @@ func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
 
 
+func projectile_node(id: int) -> Node3D:
+	return _projectiles.get(id)
+
+
 ## Flashes an actor white for a few frames.
 func flash(id: int) -> void:
 	if _actors.has(id):
@@ -100,10 +106,13 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 		_set_flash(_actors[id], false, id)
 
 
+## Only the emission colour and energy change here, never emission_enabled or another feature flag: those pick the
+## material's shader, and switching it compiles a new shader variant (and frees it again when no material uses
+## it), which stalled the frame on every hit (docs/roadmap/v0.2.0/evidence/DAMAGE_LAG.md). Flashable materials
+## are built with emission on at energy 0 (flashable()).
 func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 	var tint: Array = _tint.get(id, [])
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		m.emission_enabled = on or not tint.is_empty()
 		m.emission = Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE)
 		m.emission_energy_multiplier = 1.6 if on else (tint[1] if not tint.is_empty() else 0.0)
 
@@ -137,6 +146,15 @@ func _unshaded(c: Color) -> StandardMaterial3D:
 	return m
 
 
+## Makes a body material ready for the hit flash and tints: emission on, dark (energy 0), so a flash changes
+## only shader parameters and never the shader (see _set_flash).
+static func flashable(m: StandardMaterial3D) -> StandardMaterial3D:
+	m.emission_enabled = true
+	m.emission = Color.WHITE
+	m.emission_energy_multiplier = 0.0
+	return m
+
+
 func _body_material(c: Color) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = c
@@ -144,7 +162,7 @@ func _body_material(c: Color) -> StandardMaterial3D:
 	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
 	mat.stencil_color = outline_color
 	mat.stencil_outline_thickness = 0.035
-	return mat
+	return flashable(mat)
 
 
 func _ghost_material(c: Color, team_c: Color) -> StandardMaterial3D:
@@ -314,14 +332,24 @@ func _make_projectile(is_player: bool = false) -> Node3D:
 	var c := ThemePalette.color(role)
 	if is_player:
 		c = bolt_look.get("color", c)
-	var m := StandardMaterial3D.new()
-	m.albedo_color = c
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.emission_enabled = true
-	m.emission = c
-	m.emission_energy_multiplier = bolt_look.get("energy", 2.5) if is_player else 2.5
-	n.material_override = m
+	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
+	n.material_override = _projectile_material(c, energy)
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var holder := Node3D.new()
 	holder.add_child(n)
 	return holder
+
+
+## One shared material per bolt look, kept for the view's life. A fresh material per shot meant that whenever the
+## last shot of a look was freed its shader variant went with it, and the next shot compiled it again (a stall).
+func _projectile_material(c: Color, energy: float) -> StandardMaterial3D:
+	var key := "%s|%s" % [c.to_html(), energy]
+	if not _proj_mats.has(key):
+		var m := StandardMaterial3D.new()
+		m.albedo_color = c
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.emission_enabled = true
+		m.emission = c
+		m.emission_energy_multiplier = energy
+		_proj_mats[key] = m
+	return _proj_mats[key]
