@@ -6,6 +6,11 @@ extends Node3D
 ## model poses itself from them in _pose(). Presentation only (EI-07): sync() reads once per tick, advance() animates
 ## in frame time, and nothing here feeds back into the sim. +X is the front and +Z the right; the node sits at the
 ## actor's feet under ActorViews' facing node.
+## The owner's models (v0.3.0 L13): when assets/models/bosses/<model_id()>.glb exists (BossModels), it replaces the
+## code-built body. It is one mesh, so it moves as a whole: breathing, a walk bob and sway, a lean and crouch with a
+## red glow for the windup, a lunge and squash (a recoil for a turret) for the attack, a sag in recovery, a wobble
+## when staggered, and a steady glow in the last phase. The glow is a material_overlay whose alpha changes, and the
+## body's material is flashable (emission on at energy 0), so no shader ever changes at run time.
 
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 40.0
@@ -22,6 +27,13 @@ var body_materials: Array[StandardMaterial3D] = []
 var parts: BossParts
 ## The model's root (moved for the rise, a leap, a burrow and a stagger's slump).
 var model := Node3D.new()
+## The owner's model, when it is used (null with the code-built body), its pivot, and its glow overlay.
+var imported: MeshInstance3D
+var pivot: Node3D
+var glow_overlay: StandardMaterial3D
+## The owner's model's skeleton (v0.3.0 L13: rigged in code, BossRig) and its rig.
+var skeleton: Skeleton3D
+var rig: BossRig
 
 # Sim state from the last sync.
 var _fresh := true
@@ -35,6 +47,7 @@ var _windup := 0.0
 var _leap := 0.0
 var _airborne := false
 var _hidden := false
+var _boss_phase := 0
 # Smoothed animation state.
 var _t := 0.0
 var _speed := 0.0
@@ -45,6 +58,7 @@ var _hit := 0.0
 var _rise := 1.0
 var _stagger := 0.0
 var _sink := 0.0
+var _late := 0.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
@@ -55,7 +69,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(model)
 	_build_body()
 	body_materials = parts.body_materials
-	_pose(0.0)
+	_pose_any(0.0)
 
 
 ## Reads boss i's state after a sim tick.
@@ -73,6 +87,7 @@ func sync(reader: WorldReader, i: int) -> void:
 			"airborne": leap[0],
 			"leap": leap[1],
 			"hidden": reader.boss_hidden(i),
+			"phase": reader.boss_phase(i),
 		}
 	)
 
@@ -101,10 +116,11 @@ func apply_state(s: Dictionary) -> void:
 	_airborne = s.get("airborne", false)
 	_leap = s.get("leap", 0.0)
 	_hidden = s.get("hidden", false)
+	_boss_phase = s.get("phase", 0)
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
-		_pose(0.0)
+		_pose_any(0.0)
 
 
 func _process(delta: float) -> void:
@@ -128,7 +144,8 @@ func advance(delta: float) -> void:
 	_hit = move_toward(_hit, 0.0, dt * 2.2)
 	var stag := 1.0 if _state == WorldReader.STATE_STAGGERED else 0.0
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
-	_pose(dt)
+	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
+	_pose_any(dt)
 	# The rise from the ground, a leap's arc, the burrow's sink, the stagger's slump.
 	var rise := 1.0 - _rise
 	rise = rise * rise * (3.0 - 2.0 * rise)
@@ -171,7 +188,164 @@ func model_id() -> StringName:
 ## The body, built in one place so an imported model can replace it by model_id() later, with the code-built body
 ## (_build) as the fallback. Importing isn't wired yet: every body is built in code.
 func _build_body() -> void:
-	_build()
+	var m := BossModels.get_model(model_id())
+	if m.is_empty():
+		_build()
+		return
+	_build_imported(m)
+	for n in _code_nodes():
+		if n.get_parent() == null:
+			n.free()
+
+
+## The owner's model: its mesh with the model's albedo kept, made flashable and outlined, a glow overlay, and an
+## X-ray twin with the X-ray technique.
+func _build_imported(m: Dictionary) -> void:
+	pivot = Node3D.new()
+	pivot.name = "Body"
+	model.add_child(pivot)
+	rig = m["rig"]
+	skeleton = Skeleton3D.new()
+	skeleton.name = "Skeleton"
+	for k in rig.bones.size():
+		var b: Array = rig.bones[k]
+		skeleton.add_bone(String(b[0]))
+		var at: Vector3 = b[2]
+		if b[1] >= 0:
+			skeleton.set_bone_parent(k, b[1])
+			at -= rig.bones[b[1]][2]
+		skeleton.set_bone_rest(k, Transform3D(Basis(), at))
+	skeleton.reset_bone_poses()
+	pivot.add_child(skeleton)
+	imported = MeshInstance3D.new()
+	imported.name = "Imported"
+	imported.mesh = m["mesh"]
+	imported.skin = m["skin"]
+	var mat: StandardMaterial3D = (
+		(m["material"] as StandardMaterial3D).duplicate()
+		if m["material"] != null
+		else StandardMaterial3D.new()
+	)
+	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
+	mat.stencil_color = parts.outline_color()
+	mat.stencil_outline_thickness = 0.03
+	imported.material_override = ActorViews.flashable(mat)
+	glow_overlay = StandardMaterial3D.new()
+	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	glow_overlay.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
+	glow_overlay.albedo_color = Color(1.0, 0.06, 0.03, 0.0)
+	imported.material_overlay = glow_overlay
+	imported.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	skeleton.add_child(imported)
+	imported.skeleton = NodePath("..")
+	parts.body_materials.append(mat)
+	if parts.technique() == &"xray":
+		var ghost := MeshInstance3D.new()
+		ghost.name = "XrayTwin"
+		ghost.mesh = m["mesh"]
+		ghost.skin = m["skin"]
+		var gm := StandardMaterial3D.new()
+		gm.albedo_color = Color("#6B5F5B")
+		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
+		# Shrunk along its normals (the skinned twin shares the body's surface, so it would z-fight with it).
+		gm.grow = true
+		gm.grow_amount = -0.04
+		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
+		ghost.material_override = gm
+		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		skeleton.add_child(ghost)
+		ghost.skeleton = NodePath("..")
+
+
+## Nodes the code-built body creates up front (freed when the owner's model is used instead).
+func _code_nodes() -> Array[Node]:
+	return []
+
+
+## True for a body that kicks back when it fires (the turret) rather than lunging.
+func _recoils() -> bool:
+	return false
+
+
+func _pose_any(dt: float) -> void:
+	if imported != null:
+		_pose_imported(dt)
+	else:
+		_pose(dt)
+
+
+## The owner's single-mesh model moves as a whole.
+func _pose_imported(dt: float) -> void:
+	var walk := _gait(dt, 2.0, 1.6)
+	var s := sin(_phase)
+	var breath := sin(_t * 1.6) * (1.0 - walk)
+	var lean := 0.0
+	var crouch := 0.0
+	var sag := 0.0
+	if _state == WorldReader.STATE_WINDUP:
+		lean = _wind
+		crouch = _wind
+	elif _state == WorldReader.STATE_RECOVER:
+		sag = 1.0 - smoothstep(20.0, 60.0, float(_state_ticks))
+	var hit := _hit * _hit
+	var kick := -hit * 0.35 if _recoils() else hit * 0.45
+	var squash := 0.0 if _recoils() else hit * 0.14
+	var wob := sin(_t * 9.0) * _stagger
+	pivot.position = Vector3(kick, absf(s) * 0.07 * walk, 0)
+	pivot.rotation = Vector3(
+		s * 0.04 * walk + wob * 0.08,
+		0,
+		(
+			lean * 0.14
+			- sag * 0.08
+			- hit * (0.0 if _recoils() else 0.12)
+			+ wob * 0.06
+			+ _stagger * 0.08
+		)
+	)
+	var sy := 1.0 + breath * 0.015 - crouch * 0.07 - squash - sag * 0.03
+	var sxz := 1.0 + crouch * 0.03 + squash * 0.5
+	pivot.scale = Vector3(sxz, sy, sxz)
+	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
+	_pose_rig(dt)
+	glow_overlay.albedo_color.a = clampf(
+		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse), 0.0, 0.06
+	)
+
+
+## Subclasses move the owner's model's bones (BossRig) from the same inputs as the code-built body.
+func _pose_rig(_dt: float) -> void:
+	pass
+
+
+## Sets a bone's pose: a rotation about `axis` (in the model frame: +X front, Y up) by `angle`, and an offset from
+## its rest position.
+func bone(
+	bone_name: StringName, axis: Vector3, angle: float, offset: Vector3 = Vector3.ZERO
+) -> void:
+	var k := skeleton.find_bone(String(bone_name))
+	if k < 0:
+		return
+	skeleton.set_bone_pose_rotation(k, Quaternion(axis.normalized(), angle))
+	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
+
+
+## Sets a bone's rotation from a full quaternion, its offset and its scale.
+func bone_q(
+	bone_name: StringName, q: Quaternion, offset: Vector3 = Vector3.ZERO, scl: float = 1.0
+) -> void:
+	var k := skeleton.find_bone(String(bone_name))
+	if k < 0:
+		return
+	skeleton.set_bone_pose_rotation(k, q)
+	skeleton.set_bone_pose_position(k, skeleton.get_bone_rest(k).origin + offset)
+	skeleton.set_bone_pose_scale(k, Vector3.ONE * scl)
+
+
+## The glow overlay's strength now (0..1), for tests.
+func glow_amount() -> float:
+	return glow_overlay.albedo_color.a if glow_overlay != null else 0.0
 
 
 ## Subclasses build their code-built body with `parts` under `model`.
@@ -182,3 +356,12 @@ func _build() -> void:
 ## Subclasses pose their parts.
 func _pose(_dt: float) -> void:
 	pass
+
+
+## 1 in the active frames of an attack, fading through its recovery (0 otherwise).
+func _act_fade() -> float:
+	if _state == WorldReader.STATE_ACTIVE:
+		return 1.0
+	if _state == WorldReader.STATE_RECOVER:
+		return 1.0 - smoothstep(20.0, 60.0, float(_state_ticks))
+	return 0.0

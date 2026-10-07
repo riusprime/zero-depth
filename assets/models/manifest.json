@@ -1,0 +1,19 @@
+{
+  "models": [
+    {
+      "id": "stone_sentinel",
+      "path": "assets/models/bosses/stone_sentinel.glb",
+      "sha256": "df34e3d2327f2891aa2c38f6ad50fefb81f66a988a108f2f3ed51c31ba39b4ac"
+    },
+    {
+      "id": "crawler_queen",
+      "path": "assets/models/bosses/crawler_queen.glb",
+      "sha256": "cd5e3c5956a3f9c7ed0181817a07534f48ec0c4ca3db6bde567c968e92fe9e75"
+    },
+    {
+      "id": "fortress_turret",
+      "path": "assets/models/bosses/fortress_turret.glb",
+      "sha256": "a2a6d4bada8c38530c2ad7196a4cf7b6d55e7ab3ed00300fc4772adf4aec2c6d"
+    }
+  ]
+}

@@ -41,6 +41,10 @@ func model_id() -> StringName:
 	return &"stone_sentinel"
 
 
+func _code_nodes() -> Array[Node]:
+	return [chest]
+
+
 func _build() -> void:
 	var p := parts
 	chest.name = "Chest"
@@ -281,3 +285,52 @@ func _pose(dt: float) -> void:
 		var sgn := -1.0 if k == 0 else 1.0
 		legs[k].rotation = Vector3(0, 0, s * 0.38 * walk * sgn)
 		legs[k].position.y = HIP_Y + maxf(0.0, s * sgn) * 0.08 * walk + 0.02
+
+
+## The owner's model, rigged in code (BossRig): the fists rise overhead for the slam and the lanes and come down
+## hard, the right arm draws back and sweeps, the arms swing back for the charge, the legs and arms swing as it
+## walks, the crown nods, and staggered the arms hang limp.
+func _pose_rig(_dt: float) -> void:
+	var walk := _walk
+	var s := sin(_phase)
+	var fade := _act_fade()
+	var windup := _state == WorldReader.STATE_WINDUP
+	var raise := 0.0
+	var slam := 0.0
+	var sweep := 0.0
+	var charge := 0.0
+	match _move:
+		WorldReader.MOVE_SLAM_RING, WorldReader.MOVE_LANES:
+			raise = _wind if windup else 0.0
+			slam = 0.0 if windup else fade
+		WorldReader.MOVE_SWEEP:
+			sweep = -_wind if windup else fade
+		WorldReader.MOVE_CHARGE:
+			charge = _wind if windup else fade
+	var stag := _stagger
+	var wob := sin(_t * 9.0) * stag
+	for side: int in [-1, 1]:
+		var tag := "l" if side < 0 else "r"
+		var swing := side * s * 0.3 * walk
+		swing = lerpf(lerpf(swing, 2.5, raise), 0.55, slam)
+		swing = lerpf(swing, -0.55, charge)
+		if sweep != 0.0:
+			swing = (
+				(sweep * 1.3 if sweep > 0.0 else sweep * 0.8) if side > 0 else swing + sweep * 0.2
+			)
+		swing = lerpf(swing, -0.1, stag)
+		var roll := side * (raise * 0.35 - slam * 0.15 - 0.05) + side * stag * 0.2
+		bone_q(
+			StringName("arm_" + tag),
+			Quaternion(Vector3.FORWARD, -roll) * Quaternion(Vector3(0, 0, 1), swing)
+		)
+		bone(StringName("fist_" + tag), Vector3(0, 0, 1), raise * 0.55 - slam * 0.2 + 0.05)
+		bone(StringName("leg_" + tag), Vector3(0, 0, 1), s * 0.38 * walk * side)
+	bone_q(
+		&"torso",
+		(
+			Quaternion(Vector3.UP, sweep * 0.55)
+			* Quaternion(Vector3(0, 0, 1), raise * 0.12 - slam * 0.18 - charge * 0.3 + wob * 0.06)
+		)
+	)
+	bone(&"head", Vector3(0, 0, 1), -raise * 0.12 + slam * 0.15 + charge * 0.2 + wob * 0.1)

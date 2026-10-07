@@ -3,11 +3,14 @@ extends SceneTree
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/bosses.gd -- mode=sheet
 ##   ... -s scripts/shots/bosses.gd -- mode=compare
+##   ... -s scripts/shots/bosses.gd -- mode=rigs
 ## Writes build/shots/<version>/bosses/ and prints each path. Frames are grabbed in _process.
 ## sheet: the real game view (WorldViewRoot: the Ruins stage, the iso camera, ActorViews, TelegraphViews) of a real
 ## World with each boss: idle (pursuing), then two of its attacks mid-windup with their telegraphs, a 3 x 3 grid.
 ## compare: each boss model alone in the sheet's three views (FRONT, RIGHT-FRONT, RIGHT) from a low camera, plus
 ## an iso inset with the player for scale, under the matching row of docs/art/first-three-bosses-concept.png.
+## rigs: the owner's rigged models (v0.3.0 L13) from the iso camera next to the hero, four poses each (walking, two
+## windups or attacks), driven through BossAvatar.apply_state; one row per boss in boss_rigs.png.
 
 const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engine"]
 ## Two attacks shown per boss in the sheet.
@@ -27,6 +30,31 @@ const VIEW_YAW := [-PI * 0.5, -PI * 0.25, PI]
 const VIEW_M := 4.5
 const VIEW_PITCH := 14.0
 const FEET_PX := 300.0
+const RIG_ROW := Vector2i(1600, 420)
+## Per boss, four poses: [label, state, move, phase, airborne]. The first walks.
+const RIG_POSES := {
+	&"gatekeeper":
+	[
+		["walk", 1, -1, 0, false],
+		["slam windup", 2, 0, 0, false],
+		["slam", 3, 0, 0, false],
+		["sweep", 3, 2, 0, false],
+	],
+	&"brood_mother":
+	[
+		["walk", 1, -1, 0, false],
+		["leap windup", 2, 4, 0, false],
+		["leap (airborne)", 3, 4, 0, true],
+		["brood windup", 2, 6, 0, false],
+	],
+	&"siege_engine":
+	[
+		["walk", 1, -1, 0, false],
+		["barrage windup", 2, 7, 0, false],
+		["bolt fan recoil", 3, 9, 0, false],
+		["planted, deploy windup", 2, 10, 1, false],
+	],
+}
 
 var _mode := "sheet"
 var _dir := ""
@@ -44,6 +72,9 @@ var _plan: Array = []
 var _boss_k := 0
 var _scene: Node3D
 var _inset_vp: SubViewport
+# rigs
+var _rig_avatars: Array[BossAvatar] = []
+var _rig_rows: Array[Image] = []
 
 
 func _initialize() -> void:
@@ -58,6 +89,10 @@ func _initialize() -> void:
 	_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_vp.own_world_3d = true
 	root.add_child(_vp)
+	if _mode == "rigs":
+		_vp.size = RIG_ROW
+		_build_rigs(0)
+		return
 	if _mode == "compare":
 		_vp.size = ROW
 		_inset_vp = SubViewport.new()
@@ -78,6 +113,8 @@ func _initialize() -> void:
 
 func _process(_delta: float) -> bool:
 	_frame += 1
+	if _mode == "rigs":
+		return _rigs_process()
 	if _mode == "compare":
 		return _compare_process()
 	return _sheet_process()
@@ -285,3 +322,79 @@ func _grab(vp: SubViewport) -> Image:
 	var img := vp.get_texture().get_image()
 	img.convert(Image.FORMAT_RGBA8)
 	return img
+
+
+# --- rigs -------------------------------------------------------------------------------------------------------
+
+
+func _build_rigs(k: int) -> void:
+	for c in _vp.get_children():
+		c.queue_free()
+	_rig_avatars.clear()
+	var id := BOSSES[k]
+	var scene := Node3D.new()
+	_vp.add_child(scene)
+	_env(scene, Color("#C8A57A"))
+	_ground(scene, Color("#C8A57A"))
+	var rig := IsoRig.new()
+	rig.set_process(false)
+	scene.add_child(rig)
+	rig.view_size = 7.5
+	rig.camera.size = 7.5
+	# Cells along screen-right (the iso yaw is 45°), each boss facing the camera a little to the right.
+	var right := Vector3(cos(PI / 4), 0, -sin(PI / 4))
+	for j in 4:
+		var a := _boss_avatar(id)
+		a.position = right * (float(j) - 1.5) * 4.6
+		a.rotation = Vector3(0, -PI * 0.25 + 0.45, 0)
+		scene.add_child(a)
+		_rig_avatars.append(a)
+	var hero := PlayerAvatar.new()
+	hero.setup(Color("#1A1A22"))
+	hero.position = right * -9.0 + Vector3(1.2, 0, 1.2)
+	scene.add_child(hero)
+	rig.snap_to(Vector3(0, 1.0, 0) + right * -0.6)
+	rig.camera.current = true
+
+
+func _rigs_process() -> bool:
+	var id := BOSSES[_cells.size()]
+	var poses: Array = RIG_POSES[id]
+	var t := _frame
+	for j in 4:
+		var p: Array = poses[j]
+		var state: int = p[1]
+		var st := state
+		# Windups build up; attacks wind up first, then go active for a few frames before the grab.
+		if state == WorldReader.STATE_ACTIVE and t < 50:
+			st = WorldReader.STATE_WINDUP
+		var walk := Vector2(t * 0.025, 0) if p[2] == -1 else Vector2.ZERO
+		(
+			_rig_avatars[j]
+			. apply_state(
+				{
+					"tick": t,
+					"pos": walk,
+					"state": st,
+					"move": p[2],
+					"windup": clampf(float(t) / 45.0, 0.0, 1.0) * 0.9,
+					"phase": p[3],
+					"airborne": p[4] and t >= 50,
+					"leap": clampf(float(t - 50) / 12.0, 0.0, 1.0) * 0.5,
+					"state_ticks": maxi(0, t - 50),
+				}
+			)
+		)
+	if t == 54:
+		_cells.append(_grab(_vp))
+		_frame = 0
+		if _cells.size() == BOSSES.size():
+			var out := Image.create(RIG_ROW.x, RIG_ROW.y * 3, false, Image.FORMAT_RGBA8)
+			for k in _cells.size():
+				out.blit_rect(_cells[k], Rect2i(Vector2i.ZERO, RIG_ROW), Vector2i(0, RIG_ROW.y * k))
+			var path := _dir + "boss_rigs.png"
+			out.save_png(path)
+			print("bosses: ", path, " poses per row: walk + three from RIG_POSES")
+			return true
+		_build_rigs(_cells.size())
+	return false

@@ -27,6 +27,7 @@ var occlusion_enabled := true
 
 func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> void:
 	reader = p_reader
+	BossModels.preload_all()  # v0.3.0 L13: the owner's boss models load with the stage, never on a spawn.
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
