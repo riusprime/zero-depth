@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name World
 extends RefCounted
 ## The whole simulation state, mutated in place one tick at a time (SIM_CONTRACTS §2).
@@ -81,12 +82,37 @@ var kills := 0
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
+# --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
+## Compiled items (part of the loadout, like enemy_tables); items_owned and pickups hold indices into it.
+var item_tables: Array[ItemTable] = []
+## Items the player holds, in pickup order (indices into item_tables, no duplicates).
+var items_owned := PackedInt32Array()
+## The owned items folded into modifiers (derived from items_owned, so not hashed).
+var item_mods := ItemMods.new()
+## Item pickups lying on the floor.
+var pickups := PickupStore.new()
+## Twin Arc: ticks until the pending echo (0 = none), its angle, root and damage, and the tick it last swung.
+var echo_t := 0
+var echo_angle := 0
+var echo_root := 0
+var echo_damage := 0
+var echo_tick := -1
+## Overcharge: swings started while it is owned, whether the current swing is the Nth, the tick it last fired.
+var swing_count := 0
+var swing_overcharged := false
+var overcharge_tick := -1
+## Kinetic Dash: this dash's root (0 until its first hit), the ids it already hit, the tick it last hit.
+var dash_root := 0
+var dash_hit_ids := PackedInt32Array()
+var dash_hit_tick := -1
+# --- end Items ---------------------------------------------------------------------------------------------
+
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
 var _wall_grid := UniformGrid.new()
 var _actor_grid := UniformGrid.new()
-## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags].
+## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
 
 
@@ -127,7 +153,7 @@ func add_dummy(p: Vector2, radius_m: float, hp: int) -> int:
 	return id
 
 
-## Queues a projectile for phase 9 of this tick.
+## Queues a projectile for phase 9 of this tick. `bounces`: wall bounces (Ricochet Core).
 func queue_projectile(
 	owner_id: int,
 	team: int,
@@ -136,9 +162,10 @@ func queue_projectile(
 	damage: int,
 	radius_m: float,
 	life: int,
-	tags: int
+	tags: int,
+	bounces: int = 0
 ) -> void:
-	_pending_projectiles.append([owner_id, team, at, vel, damage, radius_m, life, tags])
+	_pending_projectiles.append([owner_id, team, at, vel, damage, radius_m, life, tags, bounces])
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
@@ -166,15 +193,19 @@ func step(frame: InputFrame) -> void:
 	# 4. Action states.
 	_advance_actions()
 	# 5. Move and collide.
+	var before_move := player_pos()  # Items: the Kinetic Dash sweep starts here.
 	_move_and_collide()
 	# 6. Hits: enemy attacks, then projectile sweeps.
 	for i in range(1, actors.size()):
 		if EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
 	_projectile_hits()
-	# 7. Effect queue and 8. statuses arrive in v0.2.0.
+	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
+	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
+	ItemEffects.tick_burns(self)
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
+	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
 	if spawner != null:
 		SpawnDirector.advance(self)
@@ -225,6 +256,33 @@ func add_enemy(kind: int, p: Vector2) -> int:
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
 	return id
+
+
+# --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
+## The compiled items, in the order the indices in items_owned and pickups refer to.
+func set_item_tables(tables: Array[ItemTable]) -> void:
+	item_tables = tables
+	item_mods = ItemMods.build(item_tables, items_owned)
+
+
+## Gives the player item `item_index`. Returns false (and changes nothing) if it is already owned.
+func add_item(item_index: int) -> bool:
+	if items_owned.has(item_index):
+		return false
+	items_owned.append(item_index)
+	item_mods = ItemMods.build(item_tables, items_owned)
+	return true
+
+
+## Puts a pickup for item `item_index` on the floor at `pos` (setup, or a spawner in phase 9). Returns its id.
+func add_pickup(item_index: int, pos: Vector2) -> int:
+	var id := _take_id()
+	pickups.add(id, pos, item_index)
+	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
+	return id
+
+
+# --- end Items ---------------------------------------------------------------------------------------------
 
 
 func dash_iframes_active() -> bool:
@@ -282,6 +340,15 @@ func state_hash() -> String:
 	h.add_int(blink_tick)
 	h.add_f32(blink_from.x)
 	h.add_f32(blink_from.y)
+	# Items (v0.2.0 E).
+	h.add_ints(items_owned)
+	pickups.hash_into(h)
+	for v in [echo_t, echo_angle, echo_root, echo_damage, echo_tick, swing_count]:
+		h.add_int(v)
+	h.add_int(1 if swing_overcharged else 0)
+	for v in [overcharge_tick, dash_root, dash_hit_tick]:
+		h.add_int(v)
+	h.add_ints(dash_hit_ids)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())
@@ -402,6 +469,8 @@ func _advance_actions() -> void:
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0:
 		input_buffer[DASH_SLOT] = 0
 		dash_dir = PlayerKit.move_or_aim(self)
+		dash_root = 0  # Items: a new dash may hit every enemy once again.
+		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = player.dash_cooldown_ticks
 
@@ -489,11 +558,13 @@ func _projectile_hits() -> void:
 		var span := Rect2(a, Vector2.ZERO).expand(b).grow(r)
 		var best_t := 2.0
 		var best_actor := -1
+		var best_wall := -1
 		for w in _wall_grid.query_rect(span):
 			var t := Collide.sweep_vs_obb(a, b, r, walls[w])
 			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_actor = -1
+				best_wall = w
 		for k in _actor_grid.query_rect(span):
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
 				continue
@@ -514,6 +585,13 @@ func _projectile_hits() -> void:
 					a,
 					a + v * best_t
 				)
+			elif projectiles.bounces[i] > 0:
+				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
+				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])
+				projectiles.life[i] -= 1
+				if projectiles.life[i] <= 0:
+					dead.append(i)
+				continue
 			dead.append(i)
 			continue
 		projectiles.pos_x[i] = b.x
@@ -537,6 +615,6 @@ func _remove_dead() -> void:
 func _apply_spawns() -> void:
 	for s in _pending_projectiles:
 		var id := _take_id()
-		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7])
+		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()

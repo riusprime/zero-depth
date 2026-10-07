@@ -58,3 +58,19 @@ UI_OPT_SKETCH,Sketch,Boceto
 UI_OPT_PAPER,Sketch + paper,Boceto + papel
 GATE_SEALED,The gate is sealed. The way on isn't open yet.,La puerta está sellada. El camino aún no está abierto.
 GATE_NAME,Gate,Puerta
+ITEM_LONG_EDGE,Long Edge,Filo Largo
+ITEM_LONG_EDGE_DESC,Your blade reaches 35% farther.,Tu hoja llega un 35% más lejos.
+ITEM_TWIN_ARC,Twin Arc,Arco Gemelo
+ITEM_TWIN_ARC_DESC,"Each swing echoes 0.1 s later, at half damage.","Cada tajo se repite 0,1 s después, con la mitad de daño."
+ITEM_EMBER_EDGE,Ember Edge,Filo de Brasa
+ITEM_EMBER_EDGE_DESC,"Melee hits burn: 2 damage every 0.5 s for 3 s, stacking up to 5 times.","Los golpes cuerpo a cuerpo queman: 2 de daño cada 0,5 s durante 3 s, acumulable hasta 5 veces."
+ITEM_SPLINTER_SHOT,Splinter Shot,Disparo Astillado
+ITEM_SPLINTER_SHOT_DESC,"Each shot fires 3 bolts in a fan, each at 60% damage.","Cada disparo lanza 3 proyectiles en abanico, cada uno con el 60% del daño."
+ITEM_RAPID_COIL,Rapid Coil,Bobina Rápida
+ITEM_RAPID_COIL_DESC,You shoot 40% faster.,Disparas un 40% más rápido.
+ITEM_RICOCHET_CORE,Ricochet Core,Núcleo de Rebote
+ITEM_RICOCHET_CORE_DESC,Your bolts bounce off a wall once.,Tus proyectiles rebotan una vez en una pared.
+ITEM_KINETIC_DASH,Kinetic Dash,Impulso Cinético
+ITEM_KINETIC_DASH_DESC,Dashing through an enemy hits it for 12.,Atravesar a un enemigo con el impulso le hace 12 de daño.
+ITEM_OVERCHARGE,Overcharge,Sobrecarga
+ITEM_OVERCHARGE_DESC,Every 4th swing deals double damage and sends out a small shockwave.,Cada 4.º tajo hace el doble de daño y lanza una pequeña onda expansiva.

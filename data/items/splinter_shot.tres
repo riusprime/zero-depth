@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 3
+name_key = &"ITEM_SPLINTER_SHOT"
+desc_key = &"ITEM_SPLINTER_SHOT_DESC"
+split_count = 3
+split_spread_degrees = 12.0
+split_damage_permille = 600
+id = &"splinter_shot"
