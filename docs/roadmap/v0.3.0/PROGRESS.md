@@ -34,7 +34,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | Boss reference sheets (from the PLAN's prompts) | 2026-10-07 | received: `docs/art/first-three-bosses-concept.png` | 2026-10-07 |
 | G2: 3-card pick screen, run recap | — | not yet asked | |
 | Full-run build ([`PLAYTEST_RUN.md`](PLAYTEST_RUN.md)) | 2026-10-07 | answered (verbatim in the sheet) | 2026-10-07 |
-| Finishing build ([`PLAYTEST_RUN_2.md`](PLAYTEST_RUN_2.md)) | 2026-10-07 | pending | |
+| Finishing build ([`PLAYTEST_RUN_2.md`](PLAYTEST_RUN_2.md)) | 2026-10-07 | answered (verbatim in the sheet; F1–F22 in `../v0.3.5/PLAN.md`) | 2026-10-07 |
 | Blink vs thick walls | 2026-10-07 | "Thicker room walls" | 2026-10-07 |
 
 ## Open
@@ -68,3 +68,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — MM merged (HUD and WorldReader conflicts by hand; shrine icon + legend added). 630 tests pass; goldens unchanged. Only P (builds) remains, being re-integrated by its agent.
 - 2026-10-07 — P merged (re-integrated by its agent on top of every other workstream). 664 tests pass; goldens unchanged; export smoke 0 misses. All v0.3.0 finishing workstreams are merged; build for the owner next.
 - 2026-10-07 — Finishing build sent with [`PLAYTEST_RUN_2.md`](PLAYTEST_RUN_2.md).
+- 2026-10-07 — Owner played the finishing build; feedback F1–F22 goes to v0.3.5 (fixes, combat, UI) and v0.4.0 (the
+  build-system direction). v0.3.0 closed as played.
