@@ -1,6 +1,9 @@
 # HORDES (v0.4.0 SC): can the sim and the view carry 120 enemies and 200 projectiles?
 
-- **Status:** RUN. **Sim horde target (≤ 4 ms mean a tick): met on this machine (3.656 ms).** `stress_ai` (v0.3.0's
+- **Status:** RUN. **After the BS/EN/BO merge (`b58e737`, below): the horde target is MISSED (4.841 and
+  4.893 ms).** On the same machine at the same hour SC's own commit `1330ecd` measured 4.554 ms, so most of the rise
+  is the machine (post-restart host, load 4.5–6.2), and the merge adds about 0.3 ms (~7 %). Not retuned. Before the
+  merge: **sim horde target (≤ 4 ms mean a tick) met on this machine (3.656 ms).** `stress_ai` (v0.3.0's
   missed target, ≤ 2 ms mean, p99 ≤ 4 ms): met (1.732 / 3.35 ms). The v0.0.1 kernel `stress` scene: still missed on
   the mean (2.216 ms vs ≤ 2 ms; p99 3.85 ms is in band). View frame time: measured only on lavapipe, a CPU
   rasteriser; the owner's 60 fps check is OWNER ONLY.
@@ -434,3 +437,344 @@ sys	0m0.292s
 0 violations over 36 runs (12 seeds, every floor and boss, both utilities). The unit tests
 (`tests/unit/sim/test_readable_cause.gd`, `test_enemy_ai.gd`'s readable-cause test) pass unchanged; no hit bar was
 lowered.
+
+## After the merge with BS, EN and BO (`a2b6d5b`)
+- **Build:** the merge commit `b58e737` (it carries the merge fixes: `MineStore` in-place removal, mine damage by
+  the layer's tier power); the commit carrying this section changes only docs and `MIN_TEST_COUNT`. The comparison row is SC's own `1330ecd`, exported with
+  `git archive 1330ecd` and benched right after, on the same machine and load.
+- **Machine:** the container restarted twice since the numbers above; the load is in the raw output.
+
+### Commands
+```
+uptime; time godot --headless --path . -s scripts/bench/sim_bench.gd; uptime                       # merged, all scenes
+uptime; time godot --headless --path . -s scripts/bench/sim_bench.gd -- --only=horde,stress_ai,stress; uptime   # merged, again; and 1330ecd
+time godot --headless --path . -s scripts/checks/readable_cause.gd
+bash <repo>/scripts/ci/export_smoke.sh      # run from the scratchpad, outside the project folder
+```
+
+### Result
+| Scene | `1330ecd` now (mean / p99 / CPU ms) | Merged run 1 | Merged run 2 | Band | In band? |
+|---|---|---|---|---|---|
+| `horde` | 4.554 / 11.076 / 4.753 | 4.841 / 12.896 / 5.042 | 4.893 / 12.827 / 5.097 | mean ≤ 4 ms | **No** |
+| `stress_ai` | 2.172 / 4.429 / 2.267 | 2.029 / 4.567 / 2.131 | 2.092 / 5.036 / 2.2 | ≤ 2 / ≤ 4 ms | **No** |
+| `stress` (kernel; no merge code runs in it) | 2.86 / 5.538 / 2.844 | 2.896 / 5.582 / 2.892 | 2.935 / 5.675 / 2.95 | ≤ 2 / ≤ 4 ms | **No** |
+
+The kernel scene runs none of the merged code and still rose from 2.216 to ~2.9 ms between the sessions: the machine
+is slower now. Measured against SC's commit under the same conditions, the merge costs ~0.3 ms in the horde (the
+horde kinds' AI and BS's abilities hooks in the tick). Against the target it is a miss, reported as such: the owner
+(or the lead) decides whether to optimise further (the next candidates are the flood ticks, the projectile phase and
+the per-enemy think) or to judge the target on the CI runner / the owner's PC.
+
+### Raw output: merged, all scenes
+```
+ 23:43:01 up 32 min,  0 user,  load average: 5.85, 4.35, 3.07
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{
+	"godot": "4.7.2-stable (official)",
+	"horde": {
+		"cpu_ms_per_tick_all": 5.042,
+		"max_ms": 31.266,
+		"mean_actors": 121.0,
+		"mean_ms": 4.841,
+		"mean_projectiles": 191.4,
+		"over_4ms_on_flow_field_ticks": 285,
+		"p50_ms": 5.291,
+		"p99_ms": 12.896,
+		"realtime_x": 3.4,
+		"scene": "horde",
+		"ticks_over_4ms": 2759,
+		"walls": 140
+	},
+	"horde_in_band": false,
+	"reference": {
+		"cpu_ms_per_tick_all": 0.436,
+		"max_ms": 1.035,
+		"mean_actors": 13.0,
+		"mean_ms": 0.424,
+		"mean_projectiles": 42.5,
+		"over_4ms_on_flow_field_ticks": 0,
+		"p50_ms": 0.414,
+		"p99_ms": 0.727,
+		"realtime_x": 39.3,
+		"scene": "reference",
+		"ticks_over_4ms": 0,
+		"walls": 12
+	},
+	"reference_boss": {
+		"cpu_ms_per_tick_all": 0.267,
+		"max_ms": 1.894,
+		"mean_actors": 2.7,
+		"mean_ms": 0.24,
+		"mean_projectiles": 0.6,
+		"over_4ms_on_flow_field_ticks": 0,
+		"p50_ms": 0.155,
+		"p99_ms": 1.245,
+		"realtime_x": 69.4,
+		"scene": "reference_boss",
+		"ticks_over_4ms": 0,
+		"walls": 156
+	},
+	"reference_boss_in_band": true,
+	"reference_floor": {
+		"cpu_ms_per_tick_all": 0.736,
+		"max_ms": 7.045,
+		"mean_actors": 12.1,
+		"mean_ms": 0.702,
+		"mean_projectiles": 3.6,
+		"over_4ms_on_flow_field_ticks": 215,
+		"p50_ms": 0.396,
+		"p99_ms": 5.011,
+		"realtime_x": 23.7,
+		"scene": "reference_floor",
+		"ticks_over_4ms": 215,
+		"walls": 186
+	},
+	"reference_floor_in_band": true,
+	"reference_in_band": true,
+	"stress": {
+		"cpu_ms_per_tick_all": 2.892,
+		"max_ms": 9.136,
+		"mean_actors": 61.0,
+		"mean_ms": 2.896,
+		"mean_projectiles": 311.4,
+		"over_4ms_on_flow_field_ticks": 19,
+		"p50_ms": 2.792,
+		"p99_ms": 5.582,
+		"realtime_x": 5.8,
+		"scene": "stress",
+		"ticks_over_4ms": 147,
+		"walls": 40
+	},
+	"stress_ai": {
+		"combos_owned": 8,
+		"cpu_ms_per_tick_all": 2.131,
+		"items_owned": 16,
+		"max_ms": 10.55,
+		"mean_actors": 62.0,
+		"mean_ms": 2.029,
+		"mean_projectiles": 26.6,
+		"over_4ms_on_flow_field_ticks": 67,
+		"p50_ms": 2.227,
+		"p99_ms": 4.567,
+		"realtime_x": 8.2,
+		"scene": "stress_ai",
+		"ticks_over_4ms": 103,
+		"walls": 141
+	},
+	"stress_ai_in_band": false,
+	"stress_in_band": false
+}
+
+real	0m44.694s
+user	0m44.318s
+sys	0m0.092s
+ 23:43:45 up 33 min,  0 user,  load average: 4.93, 4.38, 3.14
+```
+
+### Raw output: merged, second run
+```
+ 23:43:51 up 33 min,  0 user,  load average: 4.53, 4.31, 3.13
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{
+	"godot": "4.7.2-stable (official)",
+	"horde": {
+		"cpu_ms_per_tick_all": 5.097,
+		"max_ms": 29.887,
+		"mean_actors": 121.0,
+		"mean_ms": 4.893,
+		"mean_projectiles": 191.4,
+		"over_4ms_on_flow_field_ticks": 285,
+		"p50_ms": 5.337,
+		"p99_ms": 12.827,
+		"realtime_x": 3.4,
+		"scene": "horde",
+		"ticks_over_4ms": 2764,
+		"walls": 140
+	},
+	"horde_in_band": false,
+	"stress": {
+		"cpu_ms_per_tick_all": 2.95,
+		"max_ms": 8.719,
+		"mean_actors": 61.0,
+		"mean_ms": 2.935,
+		"mean_projectiles": 311.4,
+		"over_4ms_on_flow_field_ticks": 11,
+		"p50_ms": 2.839,
+		"p99_ms": 5.675,
+		"realtime_x": 5.7,
+		"scene": "stress",
+		"ticks_over_4ms": 116,
+		"walls": 40
+	},
+	"stress_ai": {
+		"combos_owned": 8,
+		"cpu_ms_per_tick_all": 2.2,
+		"items_owned": 16,
+		"max_ms": 9.207,
+		"mean_actors": 62.0,
+		"mean_ms": 2.092,
+		"mean_projectiles": 26.6,
+		"over_4ms_on_flow_field_ticks": 92,
+		"p50_ms": 2.271,
+		"p99_ms": 5.036,
+		"realtime_x": 8.0,
+		"scene": "stress_ai",
+		"ticks_over_4ms": 161,
+		"walls": 141
+	},
+	"stress_ai_in_band": false,
+	"stress_in_band": false
+}
+
+real	0m38.798s
+user	0m38.671s
+sys	0m0.092s
+ 23:44:30 up 34 min,  0 user,  load average: 4.73, 4.36, 3.19
+```
+
+### Raw output: `1330ecd` (SC before the merge), same session
+```
+ 23:45:21 up 35 min,  0 user,  load average: 6.15, 4.77, 3.39
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{
+	"godot": "4.7.2-stable (official)",
+	"horde": {
+		"cpu_ms_per_tick_all": 4.753,
+		"max_ms": 16.726,
+		"mean_actors": 121.0,
+		"mean_ms": 4.554,
+		"mean_projectiles": 189.9,
+		"over_4ms_on_flow_field_ticks": 288,
+		"p50_ms": 4.996,
+		"p99_ms": 11.076,
+		"realtime_x": 3.7,
+		"scene": "horde",
+		"ticks_over_4ms": 2736,
+		"walls": 142
+	},
+	"horde_in_band": false,
+	"stress": {
+		"cpu_ms_per_tick_all": 2.844,
+		"max_ms": 8.615,
+		"mean_actors": 61.0,
+		"mean_ms": 2.86,
+		"mean_projectiles": 311.4,
+		"over_4ms_on_flow_field_ticks": 14,
+		"p50_ms": 2.759,
+		"p99_ms": 5.538,
+		"realtime_x": 5.8,
+		"scene": "stress",
+		"ticks_over_4ms": 117,
+		"walls": 40
+	},
+	"stress_ai": {
+		"combos_owned": 8,
+		"cpu_ms_per_tick_all": 2.267,
+		"items_owned": 16,
+		"max_ms": 7.495,
+		"mean_actors": 62.0,
+		"mean_ms": 2.172,
+		"mean_projectiles": 10.8,
+		"over_4ms_on_flow_field_ticks": 3,
+		"p50_ms": 2.54,
+		"p99_ms": 4.429,
+		"realtime_x": 7.7,
+		"scene": "stress_ai",
+		"ticks_over_4ms": 54,
+		"walls": 143
+	},
+	"stress_ai_in_band": false,
+	"stress_in_band": false
+}
+
+real	0m37.339s
+user	0m37.013s
+sys	0m0.084s
+ 23:45:58 up 35 min,  0 user,  load average: 5.78, 4.88, 3.49
+```
+
+### Readable cause (merged)
+```
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+{
+	"boss_fights": 36,
+	"boss_ticks": 3600,
+	"by_cause": {
+		"CAUSE_ARC_CASTER": 31,
+		"CAUSE_BOMB_DRONE": 44,
+		"CAUSE_BOSS_ARENA": 72,
+		"CAUSE_BROOD_BROOD": 1,
+		"CAUSE_BROOD_BURROW": 17,
+		"CAUSE_CHARGER": 395,
+		"CAUSE_FOUNDRY_FLOOD": 28,
+		"CAUSE_FOUNDRY_LAUNCH": 1,
+		"CAUSE_FOUNDRY_SLAG": 10,
+		"CAUSE_FOUNDRY_VENT": 21,
+		"CAUSE_GATEKEEPER_CHARGE": 5,
+		"CAUSE_GATEKEEPER_LANES": 3,
+		"CAUSE_GATEKEEPER_SWEEP": 17,
+		"CAUSE_HATCHLING": 12,
+		"CAUSE_HIVE_DIVE": 2,
+		"CAUSE_HIVE_GLARE": 35,
+		"CAUSE_HIVE_PRISM": 5,
+		"CAUSE_HIVE_SPLIT": 1,
+		"CAUSE_HIVE_SWEEP": 35,
+		"CAUSE_LENS_DRONE": 12,
+		"CAUSE_NEEDLE": 387,
+		"CAUSE_SIEGE_BARRAGE": 15,
+		"CAUSE_SIEGE_BOLTS": 24,
+		"CAUSE_SIEGE_DEPLOY": 1,
+		"CAUSE_SIEGE_RAIL": 17,
+		"CAUSE_SPLITTER": 5,
+		"CAUSE_SWARMER": 12,
+		"CAUSE_WARDEN": 16,
+		"CAUSE_WARLORD_BASH": 15,
+		"CAUSE_WARLORD_DASH": 4,
+		"CAUSE_WARLORD_SPEARS": 13
+	},
+	"damage_to_player": 1256,
+	"death_recap_mismatches": [],
+	"deaths_checked": 24,
+	"floor_ticks": 3600,
+	"godot": "4.7.2-stable (official)",
+	"runs": 36,
+	"seeds": 12,
+	"violations": 0
+}
+
+real	4m5.920s
+user	4m5.248s
+sys	0m0.348s
+```
+
+### Export smoke (merged; from outside the project folder)
+```
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+manifest: f2e51de52154a21808597da3a63a8cc2cd250adee46c23b0fc58a8092573b06e (167 files, 0 errors)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+Export smoke check (exported pack)
+  ok    running inside the exported pack (run from outside the project folder)
+  ok    the main scene ships
+  ok    600-tick World run hash e5365ddb6dcb matches the project's
+  ok    content player: 1
+  ok    content biomes: 3
+  ok    content validates inside the pack (0 errors)
+  ok    manifest hash f2e51de52154 matches the project's
+  ok    Spanish translation is loaded
+  ok    UI_PLAY is PLAY / JUGAR
+  ok    boss model stone_sentinel loads from the pack
+  ok    boss model crawler_queen loads from the pack
+  ok    boss model fortress_turret loads from the pack
+  ok    audio cues: 74
+  ok    every cue's sound loads from the pack (missing: [])
+  ok    the test framework is not shipped
+  ok    tests are not shipped
+0 miss(es)
+```
+The 600-tick kernel hash in the pack is `e5365ddb…`, the one SC re-recorded; the merge didn't change it.

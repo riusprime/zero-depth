@@ -25,7 +25,8 @@ merged.
   resolves each body against its candidate walls and neighbours one after another, positions updating in between, so
   a different candidate set lets a body pushed by one wall be resolved against another in the same pass. Bisected:
   with the old grids and every other SC change the old fixture matched through tick 1200. The kernel scenario has no
-  enemies, so staggering and scaling don't touch it.
+  enemies, so staggering and scaling don't touch it. After the merge with BS/EN/BO (`a2b6d5b`) both fixtures hold
+  unchanged (the replay golden passes; the export smoke's pack hash is `e5365ddb…`).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -70,3 +71,8 @@ merged.
 - 2026-10-07 — EN merged (812 tests), then BO on top (by hand: the Kind enum keeps EN's kinds then BO's; EnemyAi matches run
   on `behaviour_of()` with the Swarmer included; both telegraph style sets kept). 846 tests pass; export smoke 0 misses;
   goldens unchanged. A container restart stopped SC, CP and AB mid-run; their work survived on disk and they resumed.
+- 2026-10-07 — SC merged with BS, EN and BO (`a2b6d5b`): one pack rule (`SpawnMixEntry.pack`: 0 = the floor's draw,
+  > 0 fixed; Swarmer 8, the other horde kinds 1); EN/BO AI under the 4-tick plans; mine damage by tier power;
+  873 / 873, readable cause 0 violations, export smoke ok. Horde bench after the merge 4.84–4.89 ms: **target
+  missed** (SC's own commit measured 4.55 ms in the same session; the machine is slower than when it measured
+  3.66 ms). Reported, not retuned.
