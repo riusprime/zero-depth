@@ -48,3 +48,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   well". HUD → BARE, cards → FACET; cooldown squares 12 → 24 px, the skill pip 22 → 36 px (starting values).
 - 2026-10-07 — v0.3.5 wave 1 all merged; 735 tests pass; goldens unchanged. Open for the owner (from AI): a Charger is still
   beaten by a well-timed sideways dash (its 60°/s turn can't follow a 4 m dash).
+- 2026-10-07 — Owner on the Charger beaten by a well-timed sideways dash: "if it is a well times let me play and judge it".
+  Left as is; the owner judges it in play.

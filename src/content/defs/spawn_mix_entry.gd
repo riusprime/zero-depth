@@ -6,5 +6,6 @@ extends Resource
 @export var enemy_id: StringName
 @export var weight := 1
 @export var unlock_tier := 0
-## v0.4.0 SC: a fixed pack size for this enemy (a swarm of 8, say); 0 = the director's per-floor draw.
-@export var pack_size := 0
+## How many arrive together (v0.4.0 SC + EN, one rule): 0 = the floor's draw (SpawnDirectorDefinition
+## pack_min_by_floor .. pack_max_by_floor); > 0 = always that many (a Swarmer pack of 8). Never past the alive cap.
+@export var pack := 0

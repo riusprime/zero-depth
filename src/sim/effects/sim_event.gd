@@ -16,6 +16,8 @@ extends RefCounted
 ## Kit (v0.3.5 K): SKILL_USED: the build's skill started (amount = SkillTable.Kind, root = the skill's root, pos =
 ## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
 ## Hot did nothing (the cold click).
+## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
+## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -43,6 +45,7 @@ const TAG_MELEE := 1
 const TAG_PROJECTILE := 2
 const TAG_DOT := 4
 const TAG_AREA := 8
+## A critical hit (v0.4.0 BS, owner F9; Stats.outgoing): reserved since v0.0.1, first emitted in v0.4.0.
 const TAG_CRIT := 16
 ## The hit was fully blocked (a multiplier of 0). Unused since the Warden lost its block (2026-10-07); kept so bits
 ## never renumber.
@@ -75,6 +78,9 @@ const TAG_EXPOSED := 262144
 ## Kit (v0.3.5 K): a hit from the build's skill (the Lunge Cleave, a Scatter Blast pellet). Bit 21, leaving 19 and 20
 ## for the step that ran in parallel.
 const TAG_SKILL := 2097152
+## v0.4.0 BS: a hit from an ability (a bomb, a drone bolt or its chain, an orbit blade, the blink's landing shock,
+## Combo Sword's finisher shockwave). Bit 24, clear of the bits a parallel step may take.
+const TAG_ABILITY := 16777216
 
 var seq := 0
 var tick := 0

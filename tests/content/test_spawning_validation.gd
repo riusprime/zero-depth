@@ -29,14 +29,29 @@ func test_the_shipped_floor_is_valid_and_compiles() -> void:
 	assert_eq(t.hp_tier_permille[1], 1100)
 	assert_eq(t.damage_tier_permille[1], 1050)
 	assert_eq(t.interval_tier_permille[1], 900)
-	assert_eq(t.kinds.size(), 5)
-	assert_eq(t.pack_sizes.size(), t.kinds.size(), "a pack size per mix row (0 = the floor's draw)")
+	assert_eq(t.kinds.size(), 11)
+	assert_eq(t.packs.size(), t.kinds.size(), "a pack per mix row (0 = the floor's draw)")
 	var warden := t.kinds.find(ActorStore.Kind.WARDEN)
 	assert_gte(warden, 0)
 	assert_eq(t.unlock_tiers[warden], 1, "Wardens from tier 1")
 	# v0.3.5 AI (owner F5, F6): the Arc Caster from tier 1, the Bomb Drone from tier 2.
 	assert_eq(t.unlock_tiers[t.kinds.find(ActorStore.Kind.ARC_CASTER)], 1)
 	assert_eq(t.unlock_tiers[t.kinds.find(ActorStore.Kind.BOMB_DRONE)], 2)
+	# v0.4.0 EN: the horde kinds, Swarmers in packs of 8.
+	var horde := {
+		ActorStore.Kind.SWARMER: [1, 8],
+		ActorStore.Kind.SPLITTER: [1, 1],
+		ActorStore.Kind.SHIELD_BEARER: [2, 1],
+		ActorStore.Kind.MINE_LAYER: [2, 1],
+		ActorStore.Kind.SNIPER: [2, 1],
+		ActorStore.Kind.MENDER: [3, 1],
+	}
+	# One pack rule (v0.4.0 SC + EN): the older kinds take the floor's draw (0); the horde kinds name theirs.
+	assert_eq(t.packs[t.kinds.find(ActorStore.Kind.CHARGER)], 0)
+	for kind: int in horde:
+		var k := t.kinds.find(kind)
+		assert_gte(k, 0, "kind %d is in the mix" % kind)
+		assert_eq([t.unlock_tiers[k], t.packs[k]], horde[kind], "kind %d: tier, pack" % kind)
 
 
 func test_non_positive_values_are_rejected() -> void:
@@ -56,6 +71,9 @@ func test_a_bad_mix_entry_is_rejected() -> void:
 	assert_has(_codes(d), &"mix_entry")
 	d = _def()
 	d.mix[1].weight = 0
+	assert_has(_codes(d), &"mix_entry")
+	d = _def()
+	d.mix[0].pack = -1
 	assert_has(_codes(d), &"mix_entry")
 
 
@@ -97,7 +115,7 @@ func test_bad_caps_and_packs_are_rejected() -> void:
 	d.pack_max_by_floor = PackedInt32Array([3, 4])
 	assert_has(_codes(d), &"pack_range")
 	d = _def()
-	d.mix[0].pack_size = -1
+	d.mix[0].pack = -1
 	assert_has(_codes(d), &"mix_entry")
 	d = _def()
 	d.edge_band_m = -1.0

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_MENDER"
+behaviour_id = &"mender"
+behaviour_params = {
+"heal_amount": 5,
+"heal_period_seconds": 0.5,
+"heal_range_m": 7.0,
+"keep_max_m": 9.0,
+"keep_min_m": 6.0
+}
+hp = 35
+radius_m = 0.36
+move_speed_mps = 2.8
+attacks = Array[ExtResource("1_atk")]([])
+stress_tags = PackedStringArray("guard")
+shards = 5
+id = &"mender"

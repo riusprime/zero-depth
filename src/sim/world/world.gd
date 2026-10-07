@@ -87,6 +87,8 @@ var floor_layout: FloorLayout
 var run_ticks := 0
 var spawn_cd := 0
 var kills := 0
+## Mine Layers' mines (v0.4.0 EN; Mines), hashed once one was dropped.
+var mines := MineStore.new()
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -233,6 +235,18 @@ var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a se
 
 var heat: HeatState  # Overclock heat (v0.3.0 L18; Heat): null unless the loadout has it (Heat.enable).
 var kit := KitState.new()  # v0.3.5 K: the Vent and Skill buttons (PlayerSkill), hashed once touched.
+# --- Build (v0.4.0 BS; Abilities, Stats, Offers). Hashed once touched (Abilities.hash_into). ---------------------
+## Compiled abilities and stat cards (part of the loadout, like item_tables; stat_tables indexed by Stats.Stat).
+var ability_tables: Array[AbilityTable] = []
+var stat_tables: Array[StatTable] = []
+## Run-long (RunCarry): abilities in slot order (indices into ability_tables), their levels, and Stats values.
+var ability_owned := PackedInt32Array()
+var ability_levels := PackedInt32Array()
+var stat_values := PackedInt32Array()
+var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
+var rng_crit: RngStream  # crit rolls (Stats.outgoing)
+var rng_ability: RngStream  # auto-ability randomness (Abilities)
+# --- end Build ----------------------------------------------------------------------------------------------
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -254,6 +268,8 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_combat = RngStream.derive(p_seed, "combat")
 	rng_ai = RngStream.derive(p_seed, "ai")
 	rng_enemy = RngStream.derive(p_seed, "ai:enemy")
+	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
+	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
 	var id := _take_id()
 	actors.add(
@@ -368,8 +384,10 @@ func step(frame: InputFrame) -> void:
 			BossAi.resolve(self, i)  # Bosses (v0.3.0 C).
 		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
+	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	_projectile_hits()
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
+	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
@@ -406,7 +424,7 @@ func player_dead() -> bool:
 ## The player's guard is up: guard chosen, the utility button held, not dashing, alive.
 func guarding() -> bool:
 	return (
-		player.utility == PlayerTable.Utility.GUARD
+		Abilities.utility(self) == PlayerTable.Utility.GUARD  # the forced loadout's guard, or Aegis (v0.4.0)
 		and (held_buttons & InputFrame.UTILITY) != 0
 		and dash_ticks_left == 0
 		and not player_dead()
@@ -601,6 +619,20 @@ func _rewards_touched() -> bool:
 	)
 
 
+## v0.4.0 BS: living enemy indices whose body touches the disc (center, r), ascending. The uniform grid of this
+## tick's bodies (the DenseGrid built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability
+## targeting).
+func enemies_near(center: Vector2, r: float) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	var g := r + 1.0
+	for i in _actor_grid.query_rect(Rect2(center.x - g, center.y - g, g * 2.0, g * 2.0)):
+		if i >= actors.size() or actors.teams[i] == ActorStore.TEAM_PLAYER or actors.dead[i] == 1:
+			continue
+		if Kin.length(actors.pos(i) - center) <= r + actors.radius[i]:
+			out.append(i)
+	return out
+
+
 ## Clears a buffered press of `bit` (it was used).
 func consume_buffered(bit: int) -> void:
 	input_buffer[BUTTON_BITS.find(bit)] = 0
@@ -681,6 +713,8 @@ func state_hash() -> String:
 	if not enemy_tables.is_empty():  # Enemy AI (v0.3.5 AI): only worlds with enemies, so the kernel golden holds.
 		h.add_int(rng_enemy.state)
 		actors.hash_ai(h)
+	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
+		mines.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -698,6 +732,7 @@ func state_hash() -> String:
 		_hash_engines(h)
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
+	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
@@ -1048,6 +1083,7 @@ func _projectile_hits() -> void:
 				)
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
+				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
 					continue
 			elif projectiles.bounces[i] > 0:
@@ -1074,6 +1110,7 @@ func _remove_dead() -> void:
 			gone.append(i)
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
+				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.
 			var b := bosses.index_of(actors.ids[i])
 			if b >= 0:  # Bosses (v0.3.0 C): defeated, once, as it leaves.
 				var e := emit_event(

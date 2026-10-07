@@ -75,7 +75,9 @@ only adds numbers, menus or breadth fails the filter.
 | Move | Screen-relative, 8-way on keys and analog on a stick; the sim reads −127..127 per axis | GA §5 |
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
 | Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a four-slash combo (owner, 2026-10-07, v0.3.0 L11: a horizontal slash, a backhand, a narrow forward thrust, a heavy spinning finisher; replaced the 3-hit swing combo); shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10; v0.3.0 PLAN L11 (starting values) |
-| Utility (one, chosen before the run, PD-01) | **Guard:** a directional defensive state (hits from the front cut to 20%). **Or a mobile skill: Blink**, a short teleport the way you're moving, through walls (owner, 2026-10-07) | v0.1.0 PLAN (starting values) |
+| Utility (v0.4.0 BS, owner F11: none at the start; PD-01 flipped) | An ability card on the utility button: **Aegis** (the guard: hits from the front cut to 20 %, blocks store guard charges for the next swing) **or Blink** (a teleport the way you're moving, through walls by range, with a 2 m landing shock), never both | v0.1.0 PLAN; v0.4.0 PLAN (starting values) |
+| Abilities (v0.4.0 BS, owner F8) | **Four slots.** Slot 1 is the build's weapon as an ability (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5. Slots 2–4 take ability cards (Bomb Lobber, Drone Buddy, Orbit Blades, Blink, Aegis); once full, ability cards only level up | v0.4.0 PLAN table (starting values) |
+| Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 
 **Starting values in use.** These are tuning defaults that no source has given yet. Each one is replaced by the GA
@@ -128,8 +130,13 @@ value or by an owner decision, and the change is noted here.
   - a watchdog stops any chain past its limits, and sims require 0 `LIMIT` events.
 - **No flat per-hit damage reduction**, on either side. Reductions are per-mille multipliers or structural (block,
   guard arc, dodge).
-- **Slot cap** (PD-08): 6 mechanism slots plus a 3-slot reserve, behind a flag from v0.4.0. Kept or dropped at
-  balance alpha (GA: slots).
+- **Slot cap** (PD-08, flipped in v0.4.0 BS by owner F8): the build is **four ability slots**, always on (§C). The
+  6 + 3 mechanism-slot prototype is dropped.
+- **Rewards (v0.4.0 BS, owner F9, F13).** Altars and chests offer pick 1 of 3 from three card types: **ability
+  cards** (a free altar's first card is a new ability while a slot is free), **stat cards** (most cards: 12 stats ×
+  common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
+  rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
+  → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
 
 ## E. Enemies and the stress matrix
 
@@ -174,6 +181,16 @@ Their names and specs are decided in v0.4.0 Phase 0.
   - The boss must be beatable by both v0.2.0 engines within the scorecard bands.
 - **Bosses 2–3** (v0.4.0): roles from GA: boss, decided in v0.4.0 Phase 0. Each tests a different engine harder
   than boss 1 does, without draining any.
+- **Pools of two** (v0.4.0 BO, PLAN "Bosses (BO)"): each floor's pool gains a second boss, so a run meets one of
+  two per floor. Same framework and BX anti-kite rules (ranged armour, a punish move, the closing band, a weak point
+  up close), v0.3.5's tracking, dash reading and gap-closer; every number a starting value.
+  - **The Warlord** (floor 1): a shielded knight. Its shield takes 35 % off hits from the front 140°; it bashes
+    with it, plants three (later five) parallel spear lines that stand for a moment, dashes, and rains javelins on
+    a kiter. Planting and dashing lift the shield: the weak point opens and the front armour is off.
+  - **The Hive Lens** (floor 2): a floating eye that sweeps beams (rails), fires prism bolt fans, flares a glare
+    ring up close and dives at a runaway. At 50 % it splits: three Lens Drones (Needle behaviour) break off its rim.
+  - **The Foundry** (floor 3): a walking furnace that floods lanes with molten floor (lanes that burn for 2 s),
+    lobs slag, blows a vent ring up close and launches Bomb Drones (at most 3, then 4 alive).
 
 ## G. Procedural floors
 

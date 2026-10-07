@@ -21,12 +21,12 @@ var pack_min_by_floor := PackedInt32Array([1])
 var pack_max_by_floor := PackedInt32Array([1])
 var min_distance_m := 8.0
 var edge_band_m := 3.0
-## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, the tier it unlocks at, its fixed pack size
-## (0 = the per-floor draw).
+## The mix, parallel arrays: actor kind (ActorStore.Kind), weight, the tier it unlocks at, and its pack size
+## (SpawnMixEntry.pack: 0 = the per-floor draw, > 0 = always that many, e.g. a Swarmer pack).
 var kinds := PackedInt32Array()
 var weights := PackedInt32Array()
 var unlock_tiers := PackedInt32Array()
-var pack_sizes := PackedInt32Array()
+var packs := PackedInt32Array()
 
 
 func tier_at(run_ticks: int) -> int:

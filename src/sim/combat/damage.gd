@@ -7,6 +7,7 @@ extends RefCounted
 ## Per-mille multiplier for a hit arriving from `from` (the player's guard, the Warden's armour). Returns
 ## [mult, tags]. The Warden never blocks (owner, 2026-10-07): a hit from its front arc is ARMOURED (front mult), one
 ## from its rear arc lands on its WEAK_SPOT (rear mult), and the sides (or a hit from its own position) take 1000.
+## The Shield Bearer (v0.4.0 EN) BLOCKS everything from its front arc (multiplier 0); sides and back take 1000.
 static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 	var a := w.actors
 	var to_attacker := Kin.angle_of(from - a.pos(target))
@@ -17,16 +18,21 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		# Bosses (v0.3.0 C): armour by direction, as the Warden's.
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
-		if bt.front_half_arc > 0 and off <= bt.front_half_arc:
+		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
+		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
 			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
-	elif a.kinds[target] == ActorStore.Kind.WARDEN and from != a.pos(target):
+	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):
 		var def := w.enemy_table(a.kinds[target])
 		if def != null:
 			var off := Kin.angle_diff(to_attacker, a.facing[target])
 			if def.front_half_arc > 0 and off <= def.front_half_arc:
-				return [def.front_mult_permille, SimEvent.TAG_ARMOURED]
+				# v0.4.0 EN: the Shield Bearer's shield (a 0 multiplier) blocks the hit outright.
+				var tag := (
+					SimEvent.TAG_BLOCKED if def.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
+				)
+				return [def.front_mult_permille, tag]
 			if def.rear_half_arc > 0 and off >= 2048 - def.rear_half_arc:
 				return [def.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	return [1000, 0]
@@ -51,6 +57,10 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
+	if owner_id == a.ids[0] and target != 0:  # v0.4.0 BS: the damage stat, then the crit roll (Stats).
+		var out := Stats.outgoing(w, amount, tags)
+		amount = out[0]
+		tags |= out[1]
 	# Items: Executioner is an attacker multiplier, applied before the target's (SIM_CONTRACTS §8 step 2).
 	var exec := ItemProcs.execute_mult(w, target, owner_id)
 	if exec != 1000:
@@ -77,6 +87,8 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
+	if target == 0 and scaled > 0 and Stats.armour_permille(w) != 1000:  # v0.4.0 BS: armour
+		scaled = maxi(1, (scaled * Stats.armour_permille(w) + 500) / 1000)
 	var got := 0
 	if scaled > 0:
 		got = _apply(
@@ -100,6 +112,8 @@ static func tick_dot(
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
 		return 0
+	if owner_id == a.ids[0] and target != 0:
+		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)
 	var root := w.take_root()
 	return _apply(
 		w,

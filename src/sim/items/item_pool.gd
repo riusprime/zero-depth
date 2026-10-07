@@ -55,6 +55,6 @@ static func _usable(w: World, idx: int) -> bool:
 	if it.requires_heat and w.heat == null:
 		return false
 	var need := it.requires_utility
-	if need >= 0 and need != w.player.utility:
+	if need >= 0 and need != Abilities.utility(w):  # v0.4.0: the utility comes from an ability
 		return false
 	return it.requires_weapon == 0 or (it.requires_weapon & w.player.weapons) != 0

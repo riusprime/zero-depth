@@ -85,6 +85,16 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be >= 1" % k))
 	if shape_params.has("count") and int(shape_params["count"]) > 8:
 		issues.append(ValidationIssue.new(&"too_many", path, where + "count must be <= 8"))
+	# v0.4.0 BO: a flood's lanes need room between them and a burn period of at least a tick.
+	if shape_params.has("gap_m") and float(shape_params["gap_m"]) <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", path, where + "gap_m must be > 0"))
+	if (
+		shape_params.has("burn_seconds")
+		and int(round(float(shape_params["burn_seconds"]) * 60.0)) < 1
+	):
+		issues.append(
+			ValidationIssue.new(&"duration", path, where + "burn_seconds is under a tick")
+		)
 	for k: String in BossSchemas.ENEMY_PARAMS:
 		if shape_params.has(k) and String(shape_params[k]).is_empty():
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))

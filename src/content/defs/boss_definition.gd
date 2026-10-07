@@ -44,6 +44,8 @@ var arena_template := 0
 @export var weak_point_range_m := 2.5
 @export var weak_point_mult_permille := 1000
 @export var weak_point_stagger_permille := 1000
+## v0.4.0 BO (the Warlord): while the weak point is open the front armour is down (the shield is lifted).
+@export var weak_point_drops_armour := false
 ## Closing arena: from phase arena_close_phase (-1 = not by phase) or after arena_close_after_seconds of fighting
 ## (0 = not by time), a band creeps in from the room's walls: arena_close_step_m every arena_close_step_seconds
 ## (0 m = never), each step marked arena_close_warn_seconds first, stopping arena_safe_half_m short of the room's

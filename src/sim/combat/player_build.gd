@@ -33,7 +33,7 @@ static func melee_angle(w: World) -> int:
 
 ## A swing's damage under the build (the melee remainder carries over).
 static func melee_damage(w: World, base: int) -> int:
-	var pm := w.player.melee_damage_permille
+	var pm := w.player.melee_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Combo Sword level
 	if pm == 1000:
 		return base
 	var total := base * pm + w.build_state.melee_residue
@@ -43,7 +43,7 @@ static func melee_damage(w: World, base: int) -> int:
 
 ## A shot's damage per bolt under the build (the bolt remainder carries over, once per shot).
 static func bolt_damage(w: World, base: int) -> int:
-	var pm := w.player.bolt_damage_permille
+	var pm := w.player.bolt_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Pulse Gun level
 	if pm == 1000:
 		return base
 	var total := base * pm + w.build_state.bolt_residue

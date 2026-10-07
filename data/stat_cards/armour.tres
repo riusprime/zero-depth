@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"armour"
+name_key = &"STAT_ARMOUR"
+desc_key = &"STAT_ARMOUR_DESC"
+amounts = PackedFloat32Array(4, 7, 10)
+cap = 0.4
+weight = 8
+id = &"armour"

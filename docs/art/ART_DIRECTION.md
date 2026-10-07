@@ -138,7 +138,37 @@ hit it there). Telegraphs: the bolt's line carries a bright core, the rune an in
 bomb's circle a cross-hair and the bomb itself arcing down to it as the circle fills. Flash materials come from
 `ActorViews.flashable` (emission on at energy 0; nothing toggles `emission_enabled` at runtime).
 
+**Horde enemies (v0.4.0 EN; code-built in the same style, no sheet yet; `HordeAvatar`, `HordeVisuals`).** **Swarmer**
+— a tiny red beetle on six grey legs with a grey head, a red slit eye and bone mandibles that open through its
+windup. **Splitter** — two red half-bodies (a light and a dark red hexagonal frustum, grey caps) pressed over a
+glowing hostile-orange seam that gapes as it winds up, grey claws with bone tips; a **Splitling** is the same at 0.62
+scale. **Shield Bearer** — a squat grey body under a red helm with a red visor, dark legs, and a tall light-grey tower
+shield (red rim and stripe) on its front; the shield draws back through the windup and slams forward on the bash; a
+blocked hit sparks pale blue (the guard's block spark). **Mender** — a floating red robe and grey hood holding up a
+heal crystal, with a spinning cross over it (the priority mark), both **pale green `#7CF29A`** (the heal colour: not
+a reserved role); its heal beam is the same green, pulsing, from the crystal to its patient. **Mine Layer** — a low
+red crawler on dark treads with a grey dome, a red eye and a rear hopper holding a dark mine; a mine on the floor is
+a dark disc with a blinking red light inside a faint hostile ring (its circle), and an armed mine's circle fills as a
+telegraph with a turning spiked star. **Sniper** — a red box body on a grey tripod with a long light-grey barrel and
+a red scope that glows hotter through the windup; its line carries the bolt's bright core and its shot leaves a
+hostile-yellow tracer. The Shield Bearer's bash lane carries two chevrons pointing down it.
+
 **Bosses (owner, 2026-10-07).** The reference is [`first-three-bosses-concept.png`](first-three-bosses-concept.png): **Stone Sentinel** (colossal grey boulder golem, huge stacked stone fists, a spiky faceted red crown and back shell with a red visor slot and glowing red cracks on the back), **Crawler Queen** (a red faceted hood carapace with a red hex visor, a huge red egg sac of glowing spheres with spikes, many grey legs with long bone talons), **Fortress Turret** (a red armoured box hull with red slit eyes, a long grey main cannon with a vented muzzle, two back mortar tubes with red glow, four heavy grey mechanical legs). Matched as close to 1:1 as possible (PLAN v0.3.0 L10).
+
+**Second bosses (v0.4.0 BO; code-built in the same style until the owner's sheet; prompts in
+[`BOSSES_2.md`](BOSSES_2.md)).** **Warlord** — a grey faceted armoured knight on short armoured legs, red tabard and
+pauldrons, a closed grey helm with a glowing red T visor under a crest of red crystal blades, a tall red tower shield
+with a grey rim and a glowing emblem on its left arm, a long grey spear with a red head; the shield lifts up and aside
+while its weak point (a gold core on the chest) is open. **Hive Lens** — a faceted grey armoured sphere hovering
+1.75 m up over a soft ground shadow, one great red iris with a dark pupil ringed by red crystal lashes, three red
+drone pods docked on its rim (they drift off and vanish when it splits), three grey cable tails with glowing red
+tips. **Lens Drone** — a small red pod with a grey cap, a red eye slit and a turning grey ring, hovering 1.3 m up.
+**Foundry** — a squat grey furnace block with a red hood, a glowing grate behind a dark door frame in front (the door
+swings open on the weak point), two chimneys glowing inside, glowing side vents, a red launcher tube on its back and
+four short heavy legs. Their flood telegraphs stand drawn while active: the Warlord's as a row of spear heads down
+each lane, the Foundry's as a hot orange core with cross bars. Every body piece is outlined and flashable
+(`ActorViews.flashable`); glows change energy only. A model file `assets/models/bosses/<warlord|hive_lens|foundry>.glb`
+replaces a code body (whole-body motion until rigged).
 
 ## 5. Pipeline
 

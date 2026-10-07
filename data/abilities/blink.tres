@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 5
+activation = 0
+button = 2
+rarity = 1
+name_key = &"ABILITY_BLINK"
+desc_key = &"ABILITY_BLINK_DESC"
+tags = Array[StringName]([&"utility", &"area"])
+range_m = 5
+radius_m = 2
+duration_seconds = 0.1
+damage = 15
+level_radius = PackedFloat32Array(1, 1, 1, 1, 1.4)
+level_cooldown = PackedFloat32Array(2.5, 2.3, 2.1, 1.9, 1.7)
+level_extra = PackedInt32Array(1, 1, 2, 2, 2)
+id = &"blink"

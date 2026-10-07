@@ -6,7 +6,8 @@ extends RefCounted
 ## - its kind is a weighted pick (ai stream) among the kinds unlocked at this tier;
 ## - its anchor a pick (map stream) among the spawn points at least min_distance_m from the player, in the player's
 ##   room or a neighbouring one (never the boss room), preferring those within edge_band_m of their room's walls;
-## - its size the kind's fixed pack size, or a draw (map stream) from the floor's range, never past the cap;
+## - its size the kind's fixed pack (SpawnMixEntry.pack > 0: a Swarmer pack of 8), or a draw (map stream) from
+##   the floor's range, never past the cap;
 ## - its members stand on a ring around the anchor (anchor first, then 6 spots at PACK_STEP_M, then 12 at twice
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
@@ -140,7 +141,7 @@ static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
 	var entry := open[pick]
 	var kind := t.kinds[entry]
 	var anchor := pts[w.rng_map.range_int(0, pts.size() - 1)]
-	var size := t.pack_sizes[entry] if entry < t.pack_sizes.size() else 0
+	var size := t.packs[entry] if entry < t.packs.size() else 0
 	if size <= 0:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
 	var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)

@@ -14,8 +14,11 @@ func test_the_shipped_enemies_are_valid_and_compile() -> void:
 	var repo := ContentRepository.load_all()
 	assert_eq(
 		repo.count(&"enemies"),
-		6,
-		"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5)"
+		14,
+		(
+			"charger, warden, needle, the hatchling (v0.3.0 C), the Arc Caster and the Bomb Drone (v0.3.5),"
+			+ " six horde kinds and the Splitling (v0.4.0 EN), the Lens Drone (v0.4.0 BO)"
+		)
 	)
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
 		assert_eq(def.validate(), [], String(def.id))
@@ -50,6 +53,52 @@ func test_the_arc_caster_and_the_bomb_drone_compile_to_the_plan() -> void:
 	assert_eq([drone.keep_min_m, drone.keep_distance_m], [5.0, 8.0])
 	assert_eq(drone.slam_radius_m, 1.8)
 	assert_eq(drone.windup_ticks, 48, "the bomb's circle fills for 48 ticks")
+
+
+## v0.4.0 EN: the horde kinds' starting values (docs/roadmap/v0.4.0/evidence/ENEMIES_12.md).
+func test_the_horde_kinds_compile_to_their_starting_values() -> void:
+	var repo := ContentRepository.load_all()
+	var c := func(id: StringName) -> EnemyTable:
+		return ContentCompiler.compile_enemy(repo.get_def(&"enemies", id))
+	var sw: EnemyTable = c.call(&"swarmer")
+	assert_eq([sw.kind, sw.hp, sw.damage, sw.shards], [ActorStore.Kind.SWARMER, 8, 5, 1])
+	assert_eq([sw.windup_ticks, sw.windup_max_ticks], [24, 30], "a 24-30 tick bite telegraph")
+	assert_almost_eq(sw.charge_distance_m, 2.0, 0.001, "a short lunge")
+	var sp: EnemyTable = c.call(&"splitter")
+	assert_eq([sp.kind, sp.hp, sp.split_count], [ActorStore.Kind.SPLITTER, 50, 2])
+	var sl: EnemyTable = c.call(&"splitling")
+	assert_eq(
+		[sl.kind, sl.hp, sl.split_count], [ActorStore.Kind.SPLITLING, 16, 0], "it never splits"
+	)
+	var sb: EnemyTable = c.call(&"shield_bearer")
+	assert_eq([sb.kind, sb.hp, sb.front_mult_permille], [ActorStore.Kind.SHIELD_BEARER, 90, 0])
+	assert_eq(sb.front_half_arc, ContentCompiler.degrees_to_units(60.0), "a 120-degree shield")
+	var me: EnemyTable = c.call(&"mender")
+	assert_eq(
+		[me.kind, me.damage, me.heal_amount, me.heal_period_ticks],
+		[ActorStore.Kind.MENDER, 0, 5, 30]
+	)
+	var ml: EnemyTable = c.call(&"mine_layer")
+	assert_eq(
+		[ml.kind, ml.fuse_ticks, ml.windup_ticks, ml.max_mines],
+		[ActorStore.Kind.MINE_LAYER, 36, 30, 3]
+	)
+	assert_gte(ml.fuse_ticks, SimTick.MIN_TELEGRAPH_TICKS, "the fuse is the mine's telegraph")
+	var sn: EnemyTable = c.call(&"sniper")
+	assert_eq([sn.kind, sn.hp, sn.damage, sn.windup_ticks], [ActorStore.Kind.SNIPER, 30, 28, 60])
+
+
+func test_a_horde_param_out_of_range_is_rejected() -> void:
+	var d := (load("res://data/enemies/splitter.tres") as EnemyDefinition).duplicate(true)
+	assert_eq(d.validate(), [])
+	d.behaviour_params["split_count"] = 0
+	assert_has(_codes(d), &"not_positive")
+	d = (load("res://data/enemies/shield_bearer.tres") as EnemyDefinition).duplicate(true)
+	d.behaviour_params["shield_arc_degrees"] = 400.0
+	assert_has(_codes(d), &"armour")
+	d = (load("res://data/enemies/mine_layer.tres") as EnemyDefinition).duplicate(true)
+	d.attacks[0].telegraph_seconds = 0.3
+	assert_has(_codes(d), &"telegraph_short", "a mine's fuse is held to the telegraph minimum")
 
 
 func test_the_arc_caster_needs_its_three_spells_in_order() -> void:

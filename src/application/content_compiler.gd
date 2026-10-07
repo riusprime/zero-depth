@@ -8,6 +8,9 @@ const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
 	&"siege_engine": ActorStore.Kind.SIEGE_ENGINE,
+	&"warlord": ActorStore.Kind.WARLORD,
+	&"hive_lens": ActorStore.Kind.HIVE_LENS,
+	&"foundry": ActorStore.Kind.FOUNDRY,
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -22,6 +25,7 @@ const BOSS_MOVES := {
 	&"bolt_fan": BossAttackTable.Move.BOLT_FAN,
 	&"deploy": BossAttackTable.Move.DEPLOY,
 	&"pull": BossAttackTable.Move.PULL,
+	&"flood": BossAttackTable.Move.FLOOD,
 }
 
 
@@ -40,6 +44,8 @@ static func compile_player(def: PlayerDefinition) -> PlayerTable:
 	t.hurt_freeze_ticks = SimTick.seconds_to_ticks(def.hurt_hitstop_seconds)
 	t.regen_delay_ticks = SimTick.seconds_to_ticks(def.regen_delay_seconds)
 	t.regen_permille = def.regen_permille_per_second
+	t.crit_chance_permille = int(round(def.crit_chance * 1000.0))  # v0.4.0 BS
+	t.crit_mult_permille = int(round(def.crit_damage * 1000.0))
 	var p := def.primary
 	var combo: Array[SwingStep] = []
 	for sd in p.combo:
@@ -79,12 +85,25 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 		&"hatchling": ActorStore.Kind.HATCHLING,
 		&"arc_caster": ActorStore.Kind.ARC_CASTER,
 		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+		&"swarmer": ActorStore.Kind.SWARMER,
+		&"splitter": ActorStore.Kind.SPLITTER,
+		&"splitling": ActorStore.Kind.SPLITLING,
+		&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
+		&"mender": ActorStore.Kind.MENDER,
+		&"mine_layer": ActorStore.Kind.MINE_LAYER,
+		&"sniper": ActorStore.Kind.SNIPER,
+		&"lens_drone": ActorStore.Kind.LENS_DRONE,
 	}[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m
 	t.speed = def.move_speed_mps / SimTick.TICKS_PER_SECOND
 	var bp := def.behaviour_params
+	t.shards = def.shards
+	t.shards_by_floor = def.shards_by_floor
+	if def.attacks.is_empty():  # v0.4.0 EN: the Mender has no attack.
+		_compile_horde(def, t, {})
+		return t
 	t.attack_range_m = bp["attack_range_m"]
 	t.cooldown_ticks = SimTick.seconds_to_ticks(bp["cooldown_seconds"])
 	var atk := def.attacks[0]
@@ -94,10 +113,8 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	t.active_ticks = maxi(1, SimTick.seconds_to_ticks(atk.active_seconds))
 	t.recover_ticks = SimTick.seconds_to_ticks(atk.recovery_seconds)
 	t.damage = atk.damage
-	t.shards = def.shards
-	t.shards_by_floor = def.shards_by_floor
 	match def.behaviour_id:
-		&"charger", &"hatchling":
+		&"charger", &"hatchling", &"swarmer":
 			t.charge_speed = float(sp["speed_mps"]) / SimTick.TICKS_PER_SECOND
 			t.charge_distance_m = sp["length_m"]
 			t.charge_turn = degrees_to_units(
@@ -112,7 +129,7 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
 			t.slam_radius_m = sp["radius_m"]
-		&"needle":
+		&"needle", &"lens_drone":
 			t.keep_distance_m = bp["keep_distance_m"]
 			t.flee_distance_m = bp["flee_distance_m"]
 			t.burst_count = int(sp["count"])
@@ -129,7 +146,44 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.keep_min_m = bp["keep_min_m"]
 			t.keep_distance_m = bp["keep_max_m"]
 			t.slam_radius_m = sp["radius_m"]
+		_:
+			_compile_horde(def, t, sp)
 	return t
+
+
+## The horde kinds (v0.4.0 EN): the numbers each one adds, from its params and its attack's shape params.
+static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) -> void:
+	var bp := def.behaviour_params
+	if bp.has("keep_min_m"):
+		t.keep_min_m = bp["keep_min_m"]
+		t.keep_distance_m = bp["keep_max_m"]
+	match def.behaviour_id:
+		&"splitter", &"splitling":
+			t.slam_radius_m = sp["radius_m"]
+			t.reach_m = sp["reach_m"]
+			t.split_count = int(bp.get("split_count", 0))
+		&"shield_bearer":
+			t.front_half_arc = degrees_to_units(float(bp["shield_arc_degrees"]) * 0.5)
+			t.front_mult_permille = 0
+			t.turn_rate = maxi(
+				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
+			)
+			t.reach_m = sp["length_m"]
+			t.lane_half_m = sp["half_width_m"]
+		&"mender":
+			t.heal_amount = int(bp["heal_amount"])
+			t.heal_period_ticks = maxi(1, SimTick.seconds_to_ticks(bp["heal_period_seconds"]))
+			t.heal_range_m = bp["heal_range_m"]
+		&"mine_layer":
+			t.slam_radius_m = sp["radius_m"]
+			t.fuse_ticks = t.windup_ticks
+			t.windup_ticks = maxi(1, SimTick.seconds_to_ticks(bp["drop_seconds"]))
+			t.windup_max_ticks = t.windup_ticks
+			t.max_mines = int(bp["max_mines"])
+			t.mine_life_ticks = SimTick.seconds_to_ticks(bp["mine_life_seconds"])
+		&"sniper":
+			t.reach_m = sp["range_m"]
+			t.lane_half_m = sp["half_width_m"]
 
 
 ## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune).
@@ -194,7 +248,7 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 		t.kinds.append(compile_enemy(enemy).kind)
 		t.weights.append(e.weight)
 		t.unlock_tiers.append(e.unlock_tier)
-		t.pack_sizes.append(e.pack_size)
+		t.packs.append(e.pack)
 	return t
 
 
@@ -489,6 +543,7 @@ static func _compile_boss_challenge(def: BossDefinition, t: BossTable) -> void:
 	t.weak_range_m = def.weak_point_range_m
 	t.weak_mult_permille = def.weak_point_mult_permille
 	t.weak_stagger_permille = def.weak_point_stagger_permille
+	t.weak_drops_armour = def.weak_point_drops_armour
 	t.close_phase = def.arena_close_phase
 	t.close_after_ticks = SimTick.seconds_to_ticks(def.arena_close_after_seconds)
 	t.close_step_ticks = maxi(1, SimTick.seconds_to_ticks(def.arena_close_step_seconds))
@@ -557,6 +612,8 @@ static func compile_boss_attack(
 	t.max_alive = int(sp.get("max_alive", 99))
 	t.pull = float(sp.get("pull_mps", 0.0)) / SimTick.TICKS_PER_SECOND
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
+	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
+	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	return t
 
 
@@ -577,6 +634,10 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
 	t.boss_shards = def.boss_shards
+	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
+	t.chest_card_weights = def.chest_card_weights.duplicate()
+	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
+	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
 	return t
 
 
@@ -643,6 +704,76 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 		t.heal = def.heal
 		t.window_ticks = SimTick.seconds_to_ticks(def.window_seconds)
 		out.append(t)
+	return out
+
+
+## The abilities (v0.4.0 BS) in id order (the order World.ability_owned refers to): seconds to ticks, multipliers
+## to per mille, the start weapon to its PlayerTable.WEAPON_* bit.
+static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
+	var out: Array[AbilityTable] = []
+	for def: AbilityDefinition in repo.all_of(&"ability"):
+		out.append(compile_ability(def))
+	return out
+
+
+static func compile_ability(def: AbilityDefinition) -> AbilityTable:
+	var t := AbilityTable.new()
+	t.id = def.id
+	t.kind = def.kind as AbilityTable.Kind
+	t.auto = def.activation == AbilityDefinition.Activation.AUTO
+	t.button = def.button as AbilityTable.Binding
+	t.rare = def.rarity == AbilityDefinition.Rarity.RARE
+	t.name_key = def.name_key
+	t.desc_key = def.desc_key
+	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+	t.start_weapon = weapons.get(def.start_weapon, 0)
+	t.tags = PackedStringArray()
+	for tag in def.tags:
+		t.tags.append(String(tag))
+	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
+	t.damage = def.damage
+	t.range_m = def.range_m
+	t.radius_m = def.radius_m
+	t.speed = def.speed_mps / SimTick.TICKS_PER_SECOND
+	t.period_ticks = maxi(1, SimTick.seconds_to_ticks(def.period_seconds))
+	t.duration_ticks = SimTick.seconds_to_ticks(def.duration_seconds)
+	t.hit_ticks = SimTick.seconds_to_ticks(def.hit_seconds)
+	t.level_damage = PackedInt32Array()
+	t.level_radius = PackedInt32Array()
+	t.level_rate = PackedInt32Array()
+	t.level_cooldown = PackedInt32Array()
+	for k in AbilityTable.MAX_LEVEL:
+		t.level_damage.append(int(round(def.level_damage[k] * 1000.0)))
+		t.level_radius.append(int(round(def.level_radius[k] * 1000.0)))
+		t.level_rate.append(int(round(def.level_rate[k] * 1000.0)))
+		t.level_cooldown.append(SimTick.seconds_to_ticks(def.level_cooldown[k]))
+	t.level_count = def.level_count.duplicate()
+	t.level_extra = def.level_extra.duplicate()
+	return t
+
+
+## The stat cards (v0.4.0 BS), indexed by Stats.Stat (null for a stat without data). Amounts: percent (points for
+## crit) to per mille (x 10). Caps: crit chance and crit damage in percent points (x 10), the others as a multiplier
+## (x 1000).
+static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
+	var out: Array[StatTable] = []
+	out.resize(Stats.COUNT)
+	for def: StatCardDefinition in repo.all_of(&"stat_card"):
+		var s := StatCardDefinition.STATS.find(def.stat)
+		if s < 0:
+			continue
+		var t := StatTable.new()
+		t.id = def.id
+		t.stat = s
+		t.name_key = def.name_key
+		t.desc_key = def.desc_key
+		t.amounts = PackedInt32Array()
+		for k in StatCardDefinition.RARITIES:
+			t.amounts.append(int(round(def.amounts[k] * 10.0)))
+		var crit := s == Stats.Stat.CRIT_CHANCE or s == Stats.Stat.CRIT_DAMAGE
+		t.cap = int(round(def.cap * (10.0 if crit else 1000.0)))
+		t.weight = def.weight
+		out[s] = t
 	return out
 
 

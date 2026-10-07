@@ -137,6 +137,34 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
+  - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
+    4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
+  - `splitter` (`attack_range_m`, `cooldown_seconds`, `split_count`; one CIRCLE `swipe`, `radius_m`/`reach_m`: a disc
+    `reach_m` ahead of it): HP 50, damage 12, 3 shards; dies into `split_count` (2) `splitling`s (same params without
+    `split_count`; HP 16, damage 6, 1 shard), which never split.
+  - `shield_bearer` (`attack_range_m`, `cooldown_seconds`, `shield_arc_degrees`, `turn_rate_dps`; one LINE `bash`,
+    `length_m`/`half_width_m`): HP 90, damage 18, 6 shards, 1.4 m/s, a 120 deg shield that blocks every hit from its
+    front (multiplier 0, `TAG_BLOCKED`), turning at 80 deg/s; it bashes only a player inside that arc.
+  - `mender` (`keep_min_m`, `keep_max_m`, `heal_amount`, `heal_period_seconds`, `heal_range_m`; **no attacks**, the
+    schema's `"attacks": []`): HP 35, 5 shards, keeps 6-9 m, heals 5 HP every 0.5 s to the most hurt ally within 7 m.
+  - `mine_layer` (`attack_range_m`, `cooldown_seconds`, `keep_min_m`, `keep_max_m`, `drop_seconds`, `max_mines`,
+    `mine_life_seconds`; one CIRCLE `mine`, `radius_m`: the mine's circle, its telegraph the fuse after it arms):
+    HP 40, damage 18, 4 shards, keeps 4-7 m, drops a mine every 2.5 s (0.5 s drop), at most 3, each lasting 20 s;
+    a 1.5 m circle that arms when the player touches it and blows 0.6 s (36 ticks) later.
+  - `sniper` (`attack_range_m`, `cooldown_seconds`, `keep_min_m`, `keep_max_m`; one LINE `shot`, `range_m`/
+    `half_width_m`): HP 30, damage 28, 5 shards, keeps 10-14 m, a 20 m line shown for 1.0 s (60 ticks), then a hit
+    down it; then it walks to a new spot.
+  - Positive params (`split_count`, `max_mines`, `heal_*`, `mine_life_seconds`, `drop_seconds`) <= 0 are an `ERROR`
+    (`not_positive`); `shield_arc_degrees` outside 0..360 is an `ERROR` (`armour`).
+  - The spawner's mix (`data/spawning/floor_1.tres`): Swarmer (weight 3, tier 1, `pack` 8) and Splitter (2, tier 1);
+    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. The horde kinds other than the
+    Swarmer ship `pack` 1 (singles). `SpawnMixEntry.pack` follows the one rule in §7 (0 = the floor's draw; `mix_entry`
+    `ERROR` below 0).
+- **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
+  `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
+  (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
@@ -213,6 +241,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var weak_point_range_m: float              # hits from within it...
 @export var weak_point_mult_permille: int          # ...deal this (1000..4000)
 @export var weak_point_stagger_permille: int       # ...and fill the stagger meter at this (1000..4000)
+@export var weak_point_drops_armour: bool          # v0.4.0 BO: while it is open the front armour is off (the Warlord's shield)
 @export var arena_close_phase: int                 # closing arena starts at this phase (-1 = not by phase)
 @export var arena_close_after_seconds: float       # or after this long fighting (0 = not by time)
 @export var arena_close_step_seconds: float        # a step every this long...
@@ -235,6 +264,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never
   chains again). The `pull` move (`inner_radius_m`, `radius_m`, `pull_mps`, `pull_range_m`) drags the player in
   during its windup, then slams a ring.
+- The `flood` move (v0.4.0 BO; LINE): `count` parallel lanes `gap_m` apart (centre to centre, > 0), centred on the
+  line toward the player, each `length_m` long and `width_m` wide from the boss's edge, cut short by walls. The
+  lanes are marked for the windup; then they stand for the whole `active_seconds` (drawn styled: the Warlord's
+  spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
+  `count` is at most 8, as every count.
 
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
@@ -242,6 +276,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   eruption's own mark), compile to at least `MIN_TELEGRAPH_TICKS`. Every attack names a `cause_key` (the death
   recap line).
 - `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
+  Since v0.4.0 BO each pool holds two: floor 1 Gatekeeper and Warlord, floor 2 Brood Mother and Hive Lens, floor 3
+  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`).
 - Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
   bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
   floor generator reads.
@@ -321,13 +357,15 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
   `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
   rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
-- **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and, since v0.4.0 SC, `pack_size` (0 = the floor's
-  draw; > 0 = always that many, e.g. a swarm). A new enemy joins the hordes with one more entry.
+- **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and `pack` — one rule since the v0.4.0 SC + EN merge:
+  `0` (the default) takes the floor's draw (`pack_min_by_floor`..`pack_max_by_floor`), `> 0` always brings that
+  many (the Swarmer's 8; the other horde kinds ship `1`, singles as EN designed them). A pack stands on rings around
+  its anchor and never takes the alive count past the cap. A new enemy joins the hordes with one more entry.
 - **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
   within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
-  `pack_range`; a negative `pack_size` is `mix_entry`; a negative `edge_band_m` is `negative`.
+  `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
 ## 8. Player
 
@@ -351,6 +389,30 @@ lunging step must hit 2 ticks or more in) and `sweep_seconds` (the blade's cross
 
 `UtilityDefinition` (defined in v0.1.0): `id`, `name_key`, `kind` (`GUARD` or `MOBILE`), the timings in seconds,
 a cooldown, and `params` checked against the kind's schema.
+
+v0.4.0 BS (owner F11, PD-01 flipped): no utility is chosen before the run. `UtilityDefinition` stays for the forced
+loadouts of tests and tools (`ContentCompiler.apply_utility`); in a run, Blink and Aegis are abilities (below).
+`PlayerDefinition` gains `crit_chance` (0–1, data 0.05) and `crit_damage` (≥ 1, data 1.5), compiled to per mille.
+
+`AbilityDefinition` (v0.4.0 BS, owner F8; `data/abilities/`, category `ability`): `id`, `kind` (`COMBO_SWORD`,
+`PULSE_GUN`, `BOMB_LOBBER`, `DRONE_BUDDY`, `ORBIT_BLADES`, `BLINK`, `AEGIS`; appended, never renumbered),
+`activation` (`MANUAL` or `AUTO`), `button` (`NONE` for auto; `PRIMARY` or `UTILITY` for manual, required),
+`rarity`, `name_key`, `desc_key`, `start_weapon` (`blade`/`gun`: slot 1 of that build; empty for a card), `tags`
+(closed set: melee, bolt, area, auto, utility, weapon, summon, orbit), `cooldown_seconds`, `damage`, `range_m`,
+`radius_m`, `speed_mps`, `period_seconds`, `duration_seconds`, `hit_seconds`, and the per-level table: six arrays of
+exactly 5 entries (L1–L5): `level_damage`, `level_radius`, `level_rate` (multipliers > 0), `level_count` (≥ 1),
+`level_cooldown` (seconds ≥ 0), `level_extra` (≥ 0; per kind: the sword's wave, the gun's pierce, the drone's
+chain, the blink's charges, Aegis's charge cap). Each kind validates the fields it reads. Compiled by
+`ContentCompiler.compile_abilities` (id order) into `AbilityTable`.
+
+`StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
+`max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
+`shard_gain`, `pickup_range`, `armour`), `name_key`, `desc_key` (one `%s` for the amount), `amounts` (common, rare,
+epic; positive, rising; percent, points for crit, percent of max HP per second for regen), `cap` (0 = none; crit
+chance and crit damage in percent points, the others as a multiplier: 2.5 = ×2.5, 0.4 = −60 %) and `weight`.
+
+`RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
+`altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
 
 `DashDefinition.cooldown_seconds` is 1.4 s in `data/player/runner.tres` since v0.3.5 K (owner F12; it was 0.8 s).
 

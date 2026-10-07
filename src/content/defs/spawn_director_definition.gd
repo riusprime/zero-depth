@@ -22,7 +22,7 @@ extends ContentDef
 @export var hp_tier_permille := PackedInt32Array([1000, 1100, 1210])
 @export var damage_tier_permille := PackedInt32Array([1000, 1050, 1102])
 ## A pack's size is drawn from pack_min_by_floor .. pack_max_by_floor (inclusive) for the floor, unless its mix entry
-## fixes one (SpawnMixEntry.pack_size); it never takes the alive count past the cap.
+## fixes one (SpawnMixEntry.pack); it never takes the alive count past the cap.
 @export var pack_min_by_floor := PackedInt32Array([2, 3, 3])
 @export var pack_max_by_floor := PackedInt32Array([3, 4, 5])
 ## Enemies never appear closer than this to the player.
@@ -94,7 +94,7 @@ func validate() -> Array[ValidationIssue]:
 			or String(e.enemy_id).is_empty()
 			or e.weight <= 0
 			or e.unlock_tier < 0
-			or e.pack_size < 0
+			or e.pack < 0
 		):
 			issues.append(ValidationIssue.new(&"mix_entry", resource_path, "mix[%d] is bad" % k))
 			continue

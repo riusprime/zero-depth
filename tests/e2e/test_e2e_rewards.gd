@@ -89,7 +89,9 @@ func test_a_chest_is_shut_until_you_can_pay_then_the_keyboard_buys_a_card() -> v
 	assert_eq(panel.focus_index(), 2, "3 focused the 3rd card")
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_eq(w.items_owned, PackedInt32Array([offer[2]]), "bought the 3rd card's item")
+	assert_true(
+		_took(w, offer[2]), "bought the 3rd card (a mod, an ability or a stat card; v0.4.0 BS)"
+	)
 	assert_eq(w.shards, 7, "paid the price")
 	assert_eq(w.rewards.index_of(chest_id), -1, "the chest is consumed")
 	assert_eq(hud.shard_text(), "7")
@@ -115,6 +117,7 @@ func test_esc_leaves_the_choice_for_later() -> void:
 	assert_eq(w.choosing, -1)
 	assert_ne(w.rewards.index_of(altar_id), -1, "the altar is still there")
 	assert_eq(w.items_owned.size(), 0)
+	assert_eq(w.ability_owned.size(), 1, "only the weapon: nothing taken")
 
 
 func _nearest_enemy(w: World) -> int:
@@ -131,3 +134,13 @@ func _nearest_enemy(w: World) -> int:
 		):
 			best = i
 	return best
+
+
+## Card `code` (Offers) was applied to the world.
+static func _took(w: World, code: int) -> bool:
+	match Offers.type_of(code):
+		Offers.MOD:
+			return w.items_owned == PackedInt32Array([code])
+		Offers.ABILITY:
+			return Abilities.owned(w, Offers.ability_of(code))
+	return Stats.value(w, Offers.stat_of(code)) != Stats.BASE[Offers.stat_of(code)]

@@ -6,7 +6,7 @@ extends Node3D
 ## (docs/art/enemies_visual_reference.png): the Charger a red hooded crawler on four clawed legs, the Warden a
 ## hulking rock golem under a red shell (fists in front, a glowing weak spot on its back; no shield), the Needle a
 ## legged turret; v0.3.5 AI adds the Arc Caster (a robed caster with a staff) and the Bomb Drone (a hovering
-## quad-rotor).
+## quad-rotor); v0.4.0 EN the six horde kinds (HordeAvatar).
 
 const CUBE := 0.7
 const BAR_W := 0.55
@@ -333,6 +333,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = BombDroneAvatar.HEIGHT
 			root.set_meta(&"enemy_avatar", drone)
 			root.set_meta(&"mats", drone.body_materials.duplicate())
+		WorldReader.KIND_LENS_DRONE:
+			# The Hive Lens's drones (v0.4.0 BO): drawn hovering, their shadow where the sim has them.
+			var lens := LensDroneAvatar.new()
+			lens.setup(outline_color, technique)
+			facing.add_child(lens)
+			height = LensDroneAvatar.HEIGHT
+			root.set_meta(&"enemy_avatar", lens)
+			root.set_meta(&"mats", lens.body_materials.duplicate())
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
@@ -342,13 +350,16 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			height = ChargerAvatar.HEIGHT * 0.66
 			root.set_meta(&"enemy_avatar", hatch)
 			root.set_meta(&"mats", hatch.body_materials.duplicate())
-		WorldReader.KIND_GATEKEEPER, WorldReader.KIND_BROOD_MOTHER, WorldReader.KIND_SIEGE_ENGINE:
+		_ when WorldReader.is_boss_kind(kind):
 			# The bosses (v0.3.0 C): their own models; their HP shows in the HUD's boss bar, not over them.
 			var boss: BossAvatar = (
 				{
 					WorldReader.KIND_GATEKEEPER: GatekeeperAvatar,
 					WorldReader.KIND_BROOD_MOTHER: BroodMotherAvatar,
 					WorldReader.KIND_SIEGE_ENGINE: SiegeEngineAvatar,
+					WorldReader.KIND_WARLORD: WarlordAvatar,  # v0.4.0 BO
+					WorldReader.KIND_HIVE_LENS: HiveLensAvatar,
+					WorldReader.KIND_FOUNDRY: FoundryAvatar,
 				}[kind]
 				. new()
 			)
@@ -358,6 +369,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
+		_ when HordeAvatar.is_horde_kind(kind):
+			# The horde kinds (v0.4.0 EN): one code-built model per kind.
+			var horde := HordeAvatar.new()
+			horde.setup(kind, outline_color, technique)
+			facing.add_child(horde)
+			height = horde.height
+			root.set_meta(&"enemy_avatar", horde)
+			root.set_meta(&"mats", horde.body_materials.duplicate())
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

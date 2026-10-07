@@ -129,6 +129,8 @@ static func chain_ready(w: World) -> bool:
 
 ## The effect id a projectile's hit carries: Thorn Mantle bolts name it, plain bolts don't.
 static func bolt_effect(tags: int) -> StringName:
+	if tags & SimEvent.TAG_ABILITY:  # v0.4.0 BS: a drone's bolt is the ability's, not a shot
+		return Abilities.EFFECT_DRONE
 	return EFFECT_THORN_MANTLE if tags & SimEvent.TAG_THORN else &""
 
 
@@ -229,7 +231,7 @@ static func in_execute_range(w: World, i: int) -> bool:
 ## The player's top speed in metres per tick (Swift Feet applied).
 static func move_speed(w: World) -> float:
 	var bonus := w.item_mods.move_speed_bonus_permille + Gamble.move_speed_bonus_permille(w)
-	return w.player.move_speed * (1000 + bonus) / 1000.0
+	return w.player.move_speed * (1000 + bonus) / 1000.0 * Stats.move_permille(w) / 1000.0  # v0.4.0
 
 
 ## The dash cooldown in ticks (Swift Feet applied, never under 1).
@@ -237,7 +239,7 @@ static func dash_cooldown_ticks(w: World) -> int:
 	var cut := mini(
 		w.item_mods.dash_cooldown_cut_permille + Gamble.dash_cooldown_cut_permille(w), 900
 	)
-	return maxi(1, w.player.dash_cooldown_ticks * (1000 - cut) / 1000)
+	return Stats.cooldown(w, maxi(1, w.player.dash_cooldown_ticks * (1000 - cut) / 1000))  # v0.4.0
 
 
 # --- Phase Strike -------------------------------------------------------------------------------------------

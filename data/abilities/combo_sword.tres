@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 0
+activation = 0
+button = 1
+name_key = &"ABILITY_COMBO_SWORD"
+desc_key = &"ABILITY_COMBO_SWORD_DESC"
+start_weapon = &"blade"
+tags = Array[StringName]([&"melee", &"weapon"])
+radius_m = 3
+damage = 14
+level_damage = PackedFloat32Array(1, 1.12, 1.24, 1.36, 1.48)
+level_radius = PackedFloat32Array(1, 1, 1.15, 1.15, 1.15)
+level_extra = PackedInt32Array(0, 0, 0, 0, 1)
+id = &"combo_sword"

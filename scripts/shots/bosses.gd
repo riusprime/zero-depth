@@ -11,13 +11,20 @@ extends SceneTree
 ## an iso inset with the player for scale, under the matching row of docs/art/first-three-bosses-concept.png.
 ## rigs: the owner's rigged models (v0.3.0 L13) from the iso camera next to the hero, four poses each (walking, two
 ## windups or attacks), driven through BossAvatar.apply_state; one row per boss in boss_rigs.png.
+## v0.4.0 BO: `set=2` renders the sheet for the second boss of each pool (Warlord, Hive Lens, Foundry) into
+## bosses_2.png. A shown attack "id@active" is caught 10 ticks into its active time (a flood's standing lanes, a
+## sweeping beam), "id@half" starts at half HP (the Hive Lens's split, in phase 2).
 
 const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engine"]
+const BOSSES_2: Array[StringName] = [&"warlord", &"hive_lens", &"foundry"]
 ## Two attacks shown per boss in the sheet.
 const SHOWN := {
 	&"gatekeeper": [&"fist_slam", &"shock_lanes_5"],
 	&"brood_mother": [&"leap", &"brood_4"],
 	&"siege_engine": [&"barrage_7", &"rail_sweep"],
+	&"warlord": [&"spear_lines@active", &"lunge_dash"],
+	&"hive_lens": [&"lens_sweep@active", &"split@half"],
+	&"foundry": [&"molten_flood@active", &"bomb_launch"],
 }
 const CELL := Vector2i(560, 400)
 const REF := "res://docs/art/first-three-bosses-concept.png"
@@ -57,6 +64,7 @@ const RIG_POSES := {
 }
 
 var _mode := "sheet"
+var _set := 1
 var _dir := ""
 var _frame := 0
 var _vp: SubViewport
@@ -81,6 +89,8 @@ func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("mode="):
 			_mode = arg.trim_prefix("mode=")
+		if arg.begins_with("set="):
+			_set = int(arg.trim_prefix("set="))
 	_dir = "res://build/shots/%s/bosses/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_repo = ContentRepository.load_all()
@@ -104,7 +114,7 @@ func _initialize() -> void:
 		_build_compare(0)
 	else:
 		_vp.size = CELL
-		for id in BOSSES:
+		for id in BOSSES if _set == 1 else BOSSES_2:
 			_plan.append([id, &"", "%s idle" % id])
 			for a: StringName in SHOWN[id]:
 				_plan.append([id, a, "%s %s" % [id, a]])
@@ -142,7 +152,12 @@ func _build_cell(k: int) -> void:
 	_world.actors.cd[i] = 100000 if spec[1] == &"" else 0
 	_world.actors.hp[0] = 100000
 	if spec[1] != &"":
-		BossAi.start_attack(_world, i, BossAi.table_of(_world, i).attack_index(spec[1]))
+		var parts := String(spec[1]).split("@")
+		if parts.size() > 1 and parts[1] == "half":
+			_world.actors.hp[i] = _world.actors.max_hp[i] / 2
+		BossAi.start_attack(
+			_world, i, BossAi.table_of(_world, i).attack_index(StringName(parts[0]))
+		)
 	_view = WorldViewRoot.new()
 	_vp.add_child(_view)
 	var biome: BiomeDefinition = _repo.get_def(&"biomes", &"ruins")
@@ -166,6 +181,8 @@ func _sheet_process() -> bool:
 	if spec[1] != &"" and i >= 0:
 		var atk := BossAi.attack_of(_world, i)
 		want = atk.windup_ticks * 2 / 3 if atk != null else 0
+		if String(spec[1]).ends_with("@active") and atk != null:
+			want = atk.windup_ticks + 10
 	if _step < want:
 		_world.actors.set_pos(0, Vector2(4.5, -3.0))
 		_world.step(InputFrame.make(Vector2i.ZERO, 2048 + 300, 300, 0, 0))
@@ -191,7 +208,7 @@ func _write_sheet() -> void:
 		out.blit_rect(
 			_cells[k], Rect2i(Vector2i.ZERO, CELL), Vector2i(k % cols * CELL.x, k / cols * CELL.y)
 		)
-	var path := _dir + "bosses.png"
+	var path := _dir + ("bosses.png" if _set == 1 else "bosses_2.png")
 	out.save_png(path)
 	print("bosses: ", path, " cells=", ", ".join(_labels))
 

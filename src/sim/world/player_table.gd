@@ -59,6 +59,10 @@ var regen_permille := 10
 ## The build's second ability (v0.3.5 K; ContentCompiler.apply_build): null outside a build (the kernel and lab
 ## worlds), so the Skill button does nothing there.
 var skill: SkillTable = null
+## Crit (v0.4.0 BS, owner F9; Stats): the base chance and multiplier, per mille. 0 outside content (the kernel and
+## lab worlds never crit); ContentCompiler.compile_player sets the data's 5 % and x1.5.
+var crit_chance_permille := 0
+var crit_mult_permille := 1500
 
 
 ## The starting values (docs/design/GAME_BLUEPRINT.md §C): 6 m/s, dash 4 m over 0.15 s; the dash cooldown is 1.4 s

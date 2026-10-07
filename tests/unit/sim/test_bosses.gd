@@ -43,15 +43,16 @@ func test_arena_accessors() -> void:
 	assert_eq(b.arena_cells, Vector2i(2, 2))
 
 
-func test_pools_hold_one_boss_per_floor() -> void:
+## v0.4.0 BO: each pool now holds a second boss (tests/unit/sim/test_bosses_2.gd); the first is still there.
+func test_pools_hold_the_first_boss_per_floor() -> void:
 	var repo := ContentRepository.load_all()
 	var tables := ContentCompiler.compile_bosses(repo)
 	var want := {1: &"gatekeeper", 2: &"brood_mother", 3: &"siege_engine"}
 	for f in want:
 		var pool := ContentCompiler.compile_boss_pool(repo, f)
-		assert_eq(pool.size(), 1, "floor %d" % f)
+		assert_eq(pool.size(), 2, "floor %d" % f)
 		assert_eq(tables[pool[0]].id, want[f])
-		assert_eq(BossTable.pick(pool, RngStream.new(5)), pool[0])
+		assert_true(pool.has(BossTable.pick(pool, RngStream.new(5))))
 	assert_eq(BossTable.pick(PackedInt32Array(), RngStream.new(5)), -1)
 
 

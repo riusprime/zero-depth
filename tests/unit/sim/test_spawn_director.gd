@@ -195,9 +195,9 @@ func test_later_floors_send_bigger_packs_and_more_enemies() -> void:
 
 func test_a_fixed_pack_size_is_a_data_row() -> void:
 	var w := _world()
-	var sizes := w.spawner.pack_sizes.duplicate()
+	var sizes := w.spawner.packs.duplicate()
 	sizes.fill(6)
-	w.spawner.pack_sizes = sizes
+	w.spawner.packs = sizes
 	var packs := _packs(_run(w, 150 * 3))
 	var sizes_seen := packs.map(func(p: Array) -> int: return p.size())
 	assert_eq(sizes_seen, [6, 6, 2], "packs of 6, the third cut to the 2 the cap of 14 leaves")
@@ -221,8 +221,10 @@ func test_the_mix_only_uses_unlocked_kinds() -> void:
 	var at_zero := SpawnDirector.unlocked(w, t, 0)
 	for k in at_zero:
 		assert_ne(t.kinds[k], KIND.WARDEN, "no Warden at tier 0")
-	assert_eq(SpawnDirector.unlocked(w, t, 1).size(), 4, "the first four from tier 1")
-	assert_eq(SpawnDirector.unlocked(w, t, 2).size(), 5, "all five from tier 2 (v0.3.5 AI)")
+	# v0.4.0 EN: Swarmers and Splitters join at tier 1; Shield Bearers, Mine Layers and Snipers at 2; Menders at 3.
+	assert_eq(SpawnDirector.unlocked(w, t, 1).size(), 6, "the first six from tier 1")
+	assert_eq(SpawnDirector.unlocked(w, t, 2).size(), 10, "ten from tier 2")
+	assert_eq(SpawnDirector.unlocked(w, t, 3).size(), 11, "all eleven from tier 3")
 	for k in SpawnDirector.unlocked(w, t, 1):
 		assert_ne(t.kinds[k], KIND.BOMB_DRONE, "no Bomb Drone before tier 2")
 	for k in at_zero:

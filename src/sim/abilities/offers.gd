@@ -1,0 +1,197 @@
+class_name Offers
+extends RefCounted
+## What an altar or chest offers (v0.4.0 BS, owner F8, F9, F13). A card is one int code, so the reward store, the
+## PICKUP event and the hash need no new shape:
+## - 0..ABILITY_BASE-1: a mod (the v0.3.0 items; the item index, as before);
+## - ABILITY_BASE + i: ability i (a new one into a free slot, or a level-up of one you own);
+## - STAT_BASE + stat x 10 + rarity: a stat card.
+## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
+## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
+## (RewardTable: [ability, stat, mod] for altars and chests), then an ability card uniformly among those that can
+## apply (new or level-up), a stat uniformly among stats under their cap at a rarity by the source's rarity weights
+## (chests roll more rare and epic), a mod as the items always were (rare items weigh rare_weight). No card repeats
+## in one offer (a stat card counts by stat). A world without abilities and stat cards (the v0.3.0 scenarios and
+## tests) rolls items only, exactly as before.
+
+const ABILITY_BASE := 1000
+const STAT_BASE := 2000
+const MOD := 0
+const ABILITY := 1
+const STAT := 2
+
+
+static func enabled(w: World) -> bool:
+	return not w.ability_tables.is_empty() or not w.stat_tables.is_empty()
+
+
+static func type_of(code: int) -> int:
+	if code >= STAT_BASE:
+		return STAT
+	if code >= ABILITY_BASE:
+		return ABILITY
+	return MOD
+
+
+static func ability_code(idx: int) -> int:
+	return ABILITY_BASE + idx
+
+
+static func stat_code(stat: int, rarity: int) -> int:
+	return STAT_BASE + stat * 10 + rarity
+
+
+static func ability_of(code: int) -> int:
+	return code - ABILITY_BASE
+
+
+static func stat_of(code: int) -> int:
+	return (code - STAT_BASE) / 10
+
+
+static func rarity_of(code: int) -> int:
+	return (code - STAT_BASE) % 10
+
+
+## Rolls reward i's offer (Rewards.interact, on its first open).
+static func roll(w: World, i: int) -> PackedInt32Array:
+	var t := w.reward_table
+	var chest := w.rewards.kind[i] == RewardStore.Kind.CHEST
+	var rare := t.rare_weight_chest if chest else t.rare_weight_altar
+	if not enabled(w):
+		return ItemPool.draw_weighted(w, t.offer_size, rare)
+	var weights := t.chest_card_weights if chest else t.altar_card_weights
+	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
+	var out := PackedInt32Array()
+	if not chest:
+		var fresh := _abilities(w, out, true)
+		if not fresh.is_empty():
+			out.append(ability_code(fresh[w.rng_loot.range_int(0, fresh.size() - 1)]))
+	var guard := 0
+	while out.size() < t.offer_size and guard < 16:
+		guard += 1
+		# Indexed by card type (MOD, ABILITY, STAT); the data's weights are [ability, stat, mod].
+		var pools := [_mods(w, out), _abilities(w, out, false), _stats(w, out)]
+		var wts := PackedInt32Array()
+		for k in 3:
+			var weight: int = weights[(k + 2) % 3]
+			wts.append(weight if not (pools[k] as PackedInt32Array).is_empty() else 0)
+		var kind := pick(w.rng_loot, wts)
+		if kind < 0:
+			break
+		var pool: PackedInt32Array = pools[kind]
+		match kind:
+			ABILITY:
+				out.append(ability_code(pool[w.rng_loot.range_int(0, pool.size() - 1)]))
+			STAT:
+				var s := pool[w.rng_loot.range_int(0, pool.size() - 1)]
+				out.append(stat_code(s, pick(w.rng_loot, rarity)))
+			MOD:
+				var mw := PackedInt32Array()
+				for idx in pool:
+					mw.append(rare if w.item_tables[idx].rarity == ItemTable.RARE else 1)
+				out.append(pool[w.rng_loot.pick_weighted(mw)])
+	return out
+
+
+## A weighted pick that allows zero weights (RngStream.pick_weighted refuses them): an index with a positive weight,
+## or -1 when none has one. One draw from `rng`, only when some weight is positive.
+static func pick(rng: RngStream, weights: PackedInt32Array) -> int:
+	var idx := PackedInt32Array()
+	var positive := PackedInt32Array()
+	for k in weights.size():
+		if weights[k] > 0:
+			idx.append(k)
+			positive.append(weights[k])
+	if positive.is_empty():
+		return -1
+	return idx[rng.pick_weighted(positive)]
+
+
+## Ability indices a card could apply to now, not already in `out`; `fresh_only`: new abilities only.
+static func _abilities(w: World, out: PackedInt32Array, fresh_only: bool) -> PackedInt32Array:
+	var left := PackedInt32Array()
+	for idx in w.ability_tables.size():
+		if out.has(ability_code(idx)) or not Abilities.can_take(w, idx):
+			continue
+		if fresh_only and Abilities.owned(w, idx):
+			continue
+		left.append(idx)
+	return left
+
+
+## Stats with a card table, under their cap, not already offered in `out`.
+static func _stats(w: World, out: PackedInt32Array) -> PackedInt32Array:
+	var left := PackedInt32Array()
+	for s in w.stat_tables.size():
+		var t := w.stat_tables[s]
+		if t == null or t.weight <= 0 or Stats.at_cap(w, s):
+			continue
+		var taken := false
+		for c in out:
+			taken = taken or (type_of(c) == STAT and stat_of(c) == s)
+		if not taken:
+			left.append(s)
+	return left
+
+
+## Mods still in the item pool (ItemPool.available), not already in `out`.
+static func _mods(w: World, out: PackedInt32Array) -> PackedInt32Array:
+	var left := PackedInt32Array()
+	for idx in ItemPool.available(w):
+		if not out.has(idx):
+			left.append(idx)
+	return left
+
+
+## Takes card `code` (Rewards.choose).
+static func apply(w: World, code: int) -> void:
+	match type_of(code):
+		MOD:
+			w.add_item(code)
+		ABILITY:
+			Abilities.grant(w, ability_of(code))
+		STAT:
+			Stats.add_card(w, stat_of(code), rarity_of(code))
+
+
+## What the pick panel shows for card `code` (WorldReader.card_info): its type, id, name and description keys,
+## rarity (0 common, 1 rare, 2 epic), the amount in per mille (stats), and for an ability its level after the pick
+## (1 = new).
+static func info(w: World, code: int) -> Dictionary:
+	match type_of(code):
+		ABILITY:
+			var idx := ability_of(code)
+			var t := w.ability_tables[idx]
+			return {
+				"type": ABILITY,
+				"id": t.id,
+				"kind": t.kind,
+				"name_key": t.name_key,
+				"desc_key": t.desc_key,
+				"rarity": 1 if t.rare else 0,
+				"level": mini(Abilities.level_of(w, idx) + 1, AbilityTable.MAX_LEVEL),
+				"amount": 0,
+			}
+		STAT:
+			var st := w.stat_tables[stat_of(code)]
+			return {
+				"type": STAT,
+				"id": st.id,
+				"kind": st.stat,
+				"name_key": st.name_key,
+				"desc_key": st.desc_key,
+				"rarity": rarity_of(code),
+				"level": 0,
+				"amount": st.amounts[rarity_of(code)],
+			}
+	var it := w.item_tables[code]
+	return {
+		"type": MOD,
+		"id": it.id,
+		"kind": it.kind,
+		"name_key": it.name_key,
+		"desc_key": it.desc_key,
+		"rarity": 1 if it.rarity == ItemTable.RARE else 0,
+		"level": 0,
+		"amount": 0,
+	}

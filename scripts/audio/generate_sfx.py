@@ -347,6 +347,15 @@ def s_enemy_death_bomb_drone(r):
     return echo(x, 100, 0.3, 0.28, 2400, 0.3)
 
 
+def s_enemy_death_lens_drone(r):
+    """v0.4.0 BO: a Lens Drone popping: a falling glassy chirp and a crackle."""
+    n = n_of(0.45)
+    chirp = osc(curve(2200, 260, n), "sine") * env(n, 0.002, 0.25) * 0.5
+    crackle = bandpass(noise(r, n), 3200, 3.0) * env(n, 0.001, 0.08)
+    x = bitcrush(mix(chirp, crackle), 6, 2)
+    return echo(x, 90, 0.3, 0.28, 3000, 0.3)
+
+
 def s_arc_bolt(r):
     n = n_of(0.22)
     zap = osc(curve(2600, 500, n), "square", n) * env(n, 0.001, 0.08)
@@ -376,6 +385,76 @@ def s_bomb_blast(r):
     debris = one_pole_lp(noise(r, n), 1800) * env(n, 0.001, 0.25)
     x = bitcrush(soft_clip(mix(boom, debris * 0.8), 2.2), 6, 3)
     return echo(x, 140, 0.35, 0.3, 1800, 0.4)
+
+
+# v0.4.0 EN: the horde kinds.
+def s_enemy_death_swarmer(r):
+    n = n_of(0.14)
+    crunch = bandpass(noise(r, n), curve(4200, 1200, n), 5.0) * env(n, 0.001, 0.03)
+    pip = osc(curve(2200, 900, n), "square", n) * env(n, 0.001, 0.03) * 0.3
+    return echo(bitcrush(mix(crunch, pip), 6, 2), 60, 0.2, 0.18, 3500, 0.1)
+
+
+def s_enemy_death_splitter(r):
+    n = n_of(0.4)
+    tear = bandpass(noise(r, n), curve(600, 2400, n), 3.0) * env(n, 0.004, 0.14)
+    halves = mix(osc(curve(300, 120, n), "saw", n), osc(curve(360, 150, n), "saw", n)) * env(n, 0.002, 0.12) * 0.35
+    return echo(bitcrush(soft_clip(mix(tear, halves), 1.4), 6, 2), 90, 0.3, 0.25, 2800, 0.25)
+
+
+def s_enemy_death_shield_bearer(r):
+    return death(r, 220, 35, 0.6, 6, ring=410)
+
+
+def s_enemy_death_mender(r):
+    n = n_of(0.5)
+    fall = fm(curve(1400, 350, n), 1.5, 2.0, n) * env(n, 0.003, 0.2) * 0.6
+    sparkle = bandpass(noise(r, n), 5200, 3.0) * env(n, 0.002, 0.12) * 0.4
+    return echo(mix(fall, sparkle), 110, 0.35, 0.3, 4000, 0.3)
+
+
+def s_enemy_death_mine_layer(r):
+    return death(r, 520, 70, 0.5, 5, ring=600)
+
+
+def s_enemy_death_sniper(r):
+    return death(r, 1500, 220, 0.4, 5, chirp=True)
+
+
+def s_sniper_shot(r):
+    n = n_of(0.5)
+    crack = one_pole_hp(noise(r, n), 1500) * env(n, 0.0005, 0.03)
+    boom = osc(curve(240, 60, n), "sine", n) * env(n, 0.001, 0.12) * 0.8
+    whine = osc(curve(3800, 1800, n), "tri", n) * env(n, 0.001, 0.08) * 0.25
+    return echo(soft_clip(mix(crack, boom, whine), 1.8), 150, 0.35, 0.3, 3000, 0.35)
+
+
+def s_mine_arm(r):
+    x = mix(*[at(osc(1760.0, "square", n_of(0.05)) * env(n_of(0.05), 0.001, 0.02), k * 0.09) for k in range(3)])
+    return echo(bitcrush(x * 0.6, 7, 2), 70, 0.25, 0.2, 4000, 0.1)
+
+
+def s_mine_blast(r):
+    n = n_of(0.6)
+    boom = osc(curve(150, 35, n), "sine", n) * env(n, 0.002, 0.25)
+    grit = one_pole_lp(noise(r, n), 2600) * env(n, 0.001, 0.16)
+    x = bitcrush(soft_clip(mix(boom, grit * 0.7), 2.0), 6, 3)
+    return echo(x, 120, 0.3, 0.28, 2000, 0.35)
+
+
+def s_shield_bash(r):
+    n = n_of(0.35)
+    clang = metal_ping(0.35, 240.0, 1.37, 3.0, 0.1) * 0.6
+    thud = osc(curve(130, 55, n), "sine", n) * env(n, 0.002, 0.07)
+    scrape = bandpass(noise(r, n), 1600, 2.0) * env(n, 0.002, 0.05) * 0.4
+    return echo(mix(clang, thud, scrape), 80, 0.25, 0.22, 3000, 0.2)
+
+
+def s_mender_heal(r):
+    x = notes((659.25, 987.77), 0.06, 0.12, "tri", 0.03, 6000) * 0.4
+    n = len(x)
+    shimmer = fm(np.full(n, 1318.5), 2.0, 1.2, n) * env(n, 0.02, 0.1) * 0.25
+    return echo(mix(x, shimmer), 100, 0.3, 0.3, 5000, 0.2)
 
 
 def s_player_death(r):
@@ -511,6 +590,46 @@ def s_boss_telegraph_siege_engine(r):
     hum = osc(110.0, "saw", n) * env(n, 0.3, 0.35) * 0.4
     x = one_pole_lp(mix(whine * 0.6, hum), 3500)
     return echo(bitcrush(x, 7, 2), 130, 0.35, 0.3, 3000, 0.35)
+
+
+def s_boss_telegraph_warlord(r):
+    """v0.4.0 BO: the Warlord's warning: armour plates clanking twice, then a low horn."""
+    clank1 = metal_ping(0.35, 520, 1.62, 3.0, 0.07)
+    clank2 = metal_ping(0.35, 470, 1.62, 3.0, 0.07)
+    n = n_of(0.8)
+    horn = one_pole_lp(osc(curve(98, 110, n), "saw", n), 900) * env(n, 0.2, 0.35) * 0.6
+    x = mix(clank1 * 0.6, at(clank2 * 0.6, 0.14), at(horn, 0.18))
+    return echo(bitcrush(x, 7, 2), 140, 0.35, 0.3, 2200, 0.35)
+
+
+def s_boss_telegraph_hive_lens(r):
+    """v0.4.0 BO: the Hive Lens focusing: a rising glassy hum with a beating partial."""
+    n = n_of(0.8)
+    t = np.arange(n) / RATE
+    hum = osc(curve(330, 990, n), "sine") * (0.6 + 0.4 * np.sin(2 * np.pi * 14 * t))
+    glass = fm(curve(1320, 1980, n), 2.01, 1.2, n) * 0.25
+    x = mix(hum * 0.7, glass) * env(n, 0.3, 0.3)
+    return echo(bitcrush(x, 7, 2), 120, 0.4, 0.35, 4000, 0.4)
+
+
+def s_boss_telegraph_foundry(r):
+    """v0.4.0 BO: the Foundry stoking up: a roaring furnace swell over a slow bellows pump."""
+    n = n_of(0.85)
+    t = np.arange(n) / RATE
+    roar = one_pole_lp(noise(r, n), curve(300, 1800, n)) * (0.6 + 0.4 * np.sin(2 * np.pi * 4 * t))
+    pump = osc(curve(60, 75, n), "square", n) * 0.25
+    x = soft_clip(mix(roar * 1.2, one_pole_lp(pump, 500)), 1.6) * env(n, 0.3, 0.3)
+    return echo(x, 150, 0.35, 0.3, 1800, 0.35)
+
+
+def s_boss_floor_burst(r):
+    """v0.4.0 BO: a flood's lanes bursting up (spears through the floor, molten metal): a crack and a hiss."""
+    n = n_of(0.7)
+    crack = bandpass(noise(r, n), curve(3000, 600, n), 1.5) * env(n, 0.001, 0.06)
+    thud = osc(curve(140, 50, n), "sine") * env(n, 0.002, 0.12)
+    hiss = one_pole_hp(noise(r, n), 3500) * env(n, 0.04, 0.35) * 0.35
+    x = soft_clip(mix(crack, thud, hiss), 1.5)
+    return echo(bitcrush(x, 7, 2), 120, 0.35, 0.3, 2500, 0.4)
 
 
 def s_boss_slam(r):
@@ -665,10 +784,22 @@ SFX = [
     ("enemy_windup", s_enemy_windup),
     ("enemy_death_arc_caster", s_enemy_death_arc_caster),
     ("enemy_death_bomb_drone", s_enemy_death_bomb_drone),
+    ("enemy_death_lens_drone", s_enemy_death_lens_drone),
     ("arc_bolt", s_arc_bolt),
     ("rune_erupt", s_rune_erupt),
     ("bomb_lob", s_bomb_lob),
     ("bomb_blast", s_bomb_blast),
+    ("enemy_death_swarmer", s_enemy_death_swarmer),
+    ("enemy_death_splitter", s_enemy_death_splitter),
+    ("enemy_death_shield_bearer", s_enemy_death_shield_bearer),
+    ("enemy_death_mender", s_enemy_death_mender),
+    ("enemy_death_mine_layer", s_enemy_death_mine_layer),
+    ("enemy_death_sniper", s_enemy_death_sniper),
+    ("sniper_shot", s_sniper_shot),
+    ("mine_arm", s_mine_arm),
+    ("mine_blast", s_mine_blast),
+    ("shield_bash", s_shield_bash),
+    ("mender_heal", s_mender_heal),
     ("player_death", s_player_death),
     ("dash", s_dash),
     ("blink_out", s_blink_out),
@@ -686,6 +817,10 @@ SFX = [
     ("boss_telegraph_gatekeeper", s_boss_telegraph_gatekeeper),
     ("boss_telegraph_brood_mother", s_boss_telegraph_brood_mother),
     ("boss_telegraph_siege_engine", s_boss_telegraph_siege_engine),
+    ("boss_telegraph_warlord", s_boss_telegraph_warlord),
+    ("boss_telegraph_hive_lens", s_boss_telegraph_hive_lens),
+    ("boss_telegraph_foundry", s_boss_telegraph_foundry),
+    ("boss_floor_burst", s_boss_floor_burst),
     ("boss_slam", s_boss_slam),
     ("boss_laser", s_boss_laser),
     ("boss_mortar", s_boss_mortar),

@@ -153,6 +153,9 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   per-room ones below. Normal enemies draw from it (each attack's windup length, the Arc Caster's spell), so the
   spawn director's and the bosses' `ai` draws stay where they were. Its state is hashed only in worlds with enemy
   tables (§10).
+- **v0.4.0 BS** adds two named streams, derived the same way: `crit` (one roll per direct player hit while the crit
+  chance is above 0; `Stats.outgoing`) and `ability` (the auto abilities' randomness: a spare bomb's scatter;
+  `Abilities`). Offers still draw only `loot`. Both states join the hash with the build block (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier.
@@ -264,6 +267,26 @@ is garbage-collected when its count reaches 0 and the queue holds none of its ev
    `KILL`. Later lethal events against a dead target apply nothing.
 6. On-hit triggers then see the `HIT` (step 2 of the drain).
 
+**Stats and crit (v0.4.0 BS, owner F9; `Stats`).** A hit the player owns on an enemy first takes the damage stat
+(`amount × damage / 1000`, half up) and then, unless it is a DoT tick, one crit roll on the `crit` stream:
+`range_int(0, 999) < chance`, chance = the player's base (data: 5 %) + crit-chance cards, at most 750. A crit
+multiplies by the crit multiplier (base 1500 + crit-damage cards, at most 4000), half up, and tags `HIT` and `DAMAGE`
+with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attacker multipliers, so it applies to
+every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
+DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
+target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
+1210) within their caps; the other stats are read where the sim computes them (cooldowns: dash, skill, blink, bombs;
+attack speed: shot period, drone period, a swing's recovery; area: swing and cleave reach, vent radius, ability
+radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
+in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
+
+**Abilities (v0.4.0 BS, owner F8; `Abilities`).** Auto abilities run in phase 6, after the projectile sweeps, so
+`World.enemies_near` can use the uniform grid of this tick's bodies; their hits carry `TAG_ABILITY` (bit 24) and an
+effect id (`bomb_lobber`, `drone_buddy`, `drone_chain`, `orbit_blades`, `blink_shock`, `combo_sword_wave`), so they
+never add heat. Targeting: Bomb Lobber = the enemy with the most others touching a bomb-sized disc around it within
+range (ties: nearest the player, then lower index); Drone Buddy = the nearest enemy to the drone within range; Orbit
+Blades = any enemy touching a blade, once per enemy per `hit_ticks`. Enemies still spawning in are skipped.
+
 **Damage-over-time** ticks emit `DAMAGE` with `tags |= DOT` and `proc_pct = 0`. They never emit `HIT`, so they
 can't trigger on-hit effects.
 
@@ -305,6 +328,8 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
     fields, only in worlds with enemy tables;
   - the bosses' v0.3.5 fields (`BossStore.gap_t`, `dash_t`, `dash_x`, `dash_y`) are part of `BossStore`, hashed only
     in worlds with boss tables.
+  - the mines (v0.4.0 EN; `MineStore`: ids, owner, damage, life, fuse, fuse total, position, radius), after the enemy
+    AI fields, only once a mine was ever dropped (`MineStore.touched`).
 - It runs on demand, not every tick:
   - every 60 ticks in replays and goldens (a checkpoint);
   - at encounter end;
@@ -350,6 +375,40 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   1.8 m up). Keeps 5-8 m away, lobs a bomb at where the player stands: a 1.8 m circle that fills for 48 ticks, then
   explodes for 16. It keeps drifting while the bomb flies; killing it first defuses the bomb (the bomb is its
   windup).
+- **v0.4.0 BO.** The flood move (`BossAi.flood_lane_of`, one shape function, drawn and hit alike) tracks and leads
+  like the other aimed moves, then its lanes stand for the active time and re-arm the boss's one-hit flag every
+  `burn_ticks`, so a player standing in them is hurt at most once per burn period. A boss whose
+  `weak_drops_armour` is set (the Warlord) skips its front armour in `Damage.target_mult` while its weak point is
+  open. The Lens Drone (the Hive Lens's split, `deploy`) runs the Needle's rules (`EnemyAi.behaviour_of`). New
+  actor kinds `WARLORD`, `HIVE_LENS`, `FOUNDRY`, `LENS_DRONE` are appended after `BOMB_DRONE`.
+
+## 10c. The horde kinds (v0.4.0 EN)
+
+Starting values; `EnemyAi` and `Mines` hold the rules, `data/enemies` the numbers. Every attack keeps the readable-cause
+rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap line (`CAUSE_*`).
+- **Swarmer** (packs of 8 from the spawner): the Charger's behaviour with a short, unbent lunge.
+- **Splitter.** Swipes a disc `reach_m` ahead of it (`swipe_disc`, fixed at the windup's start). When it dies
+  (tick phase 9, `EnemyAi.on_death`) it queues `split_count` Splitlings 0.45 m to either side of where it fell; they
+  arrive in the same phase with the usual spawn-in. A Splitling swipes the same way and never splits. Dissolving
+  (a boss summon) doesn't split it.
+- **Shield Bearer.** `Damage.target_mult` gives a hit from within its front half-arc a multiplier of 0 and
+  `TAG_BLOCKED` (a bolt into it ends there); sides and back take 1000. It turns at `turn_rate` only while walking,
+  starts a bash only at a player inside the shield arc, and bashes along its facing (`bash_lane`).
+- **Mender.** No attack and no telegraph. It keeps its patient (`pick` = the ally's id) while it is alive, hurt and
+  within `heal_range_m`; otherwise it looks for the most hurt normal enemy in range every 15 ticks (staggered by id;
+  bosses are never healed). Every `heal_period_ticks` it adds `heal_amount` HP (capped at max) and emits `HEAL`
+  (source/owner the Mender, target the ally). The view marks it as the priority target.
+- **Mine Layer and mines** (tick phase 6, after the enemies' hits). Its active tick drops a mine at its feet (at most
+  `max_mines`). An idle mine lives `mine_life_ticks`; when the player's body touches its circle it arms, and
+  `fuse_ticks` later (the attack's telegraph, >= 24) it blows, hitting the player if still in the circle. The layer's
+  telegraph is its armed mines' discs (`Mines.telegraph`, style `mine`); its own drop shows none (it hurts nobody).
+  A mine whose layer is gone is removed (killing the layer defuses its mines). Mine ids come from the actor id
+  counter.
+- **Sniper.** Keeps 10-14 m. Its line (`snipe_lane`, style `snipe`) shows for 60 ticks, follows the player until
+  `SNIPE_COMMIT_TICKS` (24) before the shot, then a hit resolves down the drawn line (TAG_PROJECTILE, no
+  projectile). After recovering it walks at 1.5x speed to a spot 45-90 deg around the player (the side and angle
+  from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
+  150 ticks.
 
 ## 11. Scaling and threat
 

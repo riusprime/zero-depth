@@ -19,6 +19,11 @@ var interact_radius_m := 1.6
 var shard_tier_bonus_permille := 250
 ## A boss kill pays boss_shards × the floor number.
 var boss_shards := 60
+## v0.4.0 BS (Offers): card type weights [ability, stat, mod] and stat rarity weights [common, rare, epic] by source.
+var altar_card_weights := PackedInt32Array([15, 75, 10])
+var chest_card_weights := PackedInt32Array([15, 55, 30])
+var altar_rarity_weights := PackedInt32Array([70, 25, 5])
+var chest_rarity_weights := PackedInt32Array([40, 40, 20])
 
 
 ## The price of the `order`-th chest (0-based) on floor `floor_index` (1-based), integer math.

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"attack_speed"
+name_key = &"STAT_ATTACK_SPEED"
+desc_key = &"STAT_ATTACK_SPEED_DESC"
+amounts = PackedFloat32Array(6, 12, 18)
+cap = 2.5
+weight = 10
+id = &"attack_speed"

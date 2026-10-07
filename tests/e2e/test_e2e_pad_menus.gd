@@ -50,11 +50,9 @@ func test_pad_a_plays_and_pause_goes_home() -> void:
 	)
 	assert_null(main.get_node_or_null("UI/MainMenu"))
 	await _press(e, JOY_BUTTON_A)
-	assert_not_null(
-		main.get_node_or_null("UI/UtilityPicker"), "pad A on a build opens the utility picker"
+	assert_true(
+		main.is_playing(), "pad A on a build starts the run (no utility pick since v0.4.0 BS)"
 	)
-	await _press(e, JOY_BUTTON_A)
-	assert_true(main.is_playing(), "pad A on the focused utility starts the arena")
 	await e.frames(3)
 	await _press(e, JOY_BUTTON_START)
 	assert_not_null(main.get_node_or_null("UI/PauseMenu"), "Start pauses")
@@ -73,7 +71,7 @@ func test_pad_a_plays_and_pause_goes_home() -> void:
 func test_pad_a_resumes_from_pause() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	for k in 3:  # Play, Blade, Guard
+	for k in 2:  # Play, Blade
 		await _press(e, JOY_BUTTON_A)
 	await _press(e, JOY_BUTTON_START)
 	assert_not_null(main.get_node_or_null("UI/PauseMenu"))
@@ -103,20 +101,13 @@ func test_stick_moves_focus_and_pad_a_opens_options_and_credits() -> void:
 	assert_not_null(main.get_node_or_null("UI/MainMenu"), "pad A on Back leaves the credits")
 
 
-func test_pad_back_from_the_utility_picker() -> void:
+## v0.4.0 BS (F11): the utility picker is gone; the build screen is the last menu before the run.
+func test_pad_back_from_the_build_screen() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await _press(e, JOY_BUTTON_A)
-	await _press(e, JOY_BUTTON_A)
-	var picker := main.get_node_or_null("UI/UtilityPicker")
-	assert_not_null(picker)
-	for k in 8:
-		await _press(e, JOY_BUTTON_DPAD_DOWN)
-	assert_eq(_focused(main).name, &"Back", "the d-pad walks down to Back")
-	await _press(e, JOY_BUTTON_A)
-	assert_not_null(
-		main.get_node_or_null("UI/BuildPicker"), "pad A on Back returns to the build screen"
-	)
+	assert_not_null(main.get_node_or_null("UI/BuildPicker"))
+	assert_null(main.get_node_or_null("UI/UtilityPicker"), "no utility picker any more")
 	await _press(e, JOY_BUTTON_B)
 	assert_not_null(
 		main.get_node_or_null("UI/MainMenu"), "pad B on the build screen returns to the menu"
@@ -126,7 +117,7 @@ func test_pad_back_from_the_utility_picker() -> void:
 func test_pad_a_on_the_end_panel() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	for k in 3:  # Play, Blade, Guard
+	for k in 2:  # Play, Blade
 		await _press(e, JOY_BUTTON_A)
 	var panel := await _wait_for_end(e, main)
 	assert_not_null(panel, "standing still, you die")

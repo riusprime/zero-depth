@@ -57,3 +57,18 @@ var spread_radius_m := 0.12
 var spread_life_ticks := 1
 var rune_radius_m := 0.0
 var rune_windup_ticks := 24
+## Horde kinds (v0.4.0 EN). A melee reach: a Splitter's swipe centre sits reach_m ahead of it, a Shield Bearer's
+## bash lane runs reach_m past its body, a Sniper's line is reach_m long; lanes are lane_half_m either side.
+var reach_m := 0.0
+var lane_half_m := 0.0
+## Splitter: how many Splitlings it splits into when it dies (once: a Splitling never splits).
+var split_count := 0
+## Mender: heal_amount HP to one hurt ally within heal_range_m every heal_period_ticks.
+var heal_amount := 0
+var heal_period_ticks := 1
+var heal_range_m := 0.0
+## Mine Layer: mines alive at once, an idle mine's life, and an armed mine's fuse (its circle's radius is
+## slam_radius_m; its windup_ticks is the drop).
+var max_mines := 0
+var mine_life_ticks := 0
+var fuse_ticks := 24

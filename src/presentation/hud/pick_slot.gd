@@ -10,11 +10,18 @@ signal hovered(slot: int)
 
 const COMMON := Color("#9AA4B2")
 const RARE := Color("#F0B840")
+## v0.4.0 BS: an epic stat card, and an ability card (the hero's cyan).
+const EPIC := Color("#C77DFF")
+const ABILITY := Color("#2BC4E2")
+## The mark's colour by tier: common, rare, epic, ability.
+const TIERS: Array[Color] = [COMMON, RARE, EPIC, ABILITY]
 
 var index := 0
 var card := ItemCard.new()
 var focused := false
 var rare := false
+## v0.4.0 BS: 0 common, 1 rare, 2 epic, 3 an ability card (TIERS).
+var tier := 0
 var _box := CardStyle.box(Vector4(10, 8, 10, 10))
 var _key := Label.new()
 var _mark := CardMark.new(11.0)
@@ -58,8 +65,18 @@ func show_item(
 	id: StringName, title: String, sentence: String, c: Color, p_rare: bool, rarity_text: String
 ) -> void:
 	rare = p_rare
+	tier = 1 if p_rare else 0
 	card.show_item(id, title, sentence, c)
 	_rarity.text = rarity_text
+	_apply()
+
+
+## v0.4.0 BS: shows any card's face (PickPanel.card_face: id, title, sentence, color, tier, tier_text).
+func show_card(face: Dictionary) -> void:
+	tier = int(face["tier"])
+	rare = tier == 1
+	card.show_item(face["id"], face["title"], face["sentence"], face["color"])
+	_rarity.text = face["tier_text"]
 	_apply()
 
 
@@ -70,7 +87,7 @@ func set_focused(on: bool) -> void:
 
 ## The rarity's colour: the mark's colour (the card's outline stays neutral).
 func rarity_color() -> Color:
-	return RARE if rare else COMMON
+	return TIERS[clampi(tier, 0, TIERS.size() - 1)]
 
 
 ## The card's panel (tests check it is square, unshadowed and has no side bar).

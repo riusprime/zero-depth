@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/enemy_definition.gd" id="2_enm"]
+
+[sub_resource type="Resource" id="Resource_atk"]
+script = ExtResource("1_atk")
+id = &"mine"
+shape = 0
+shape_params = {
+"radius_m": 1.5
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 0.4
+damage = 18
+
+[resource]
+script = ExtResource("2_enm")
+name_key = &"ENEMY_MINE_LAYER"
+behaviour_id = &"mine_layer"
+behaviour_params = {
+"attack_range_m": 12.0,
+"cooldown_seconds": 2.5,
+"drop_seconds": 0.5,
+"keep_max_m": 7.0,
+"keep_min_m": 4.0,
+"max_mines": 3,
+"mine_life_seconds": 20.0
+}
+hp = 40
+radius_m = 0.42
+move_speed_mps = 2.4
+attacks = Array[ExtResource("1_atk")]([SubResource("Resource_atk")])
+stress_tags = PackedStringArray("guard")
+shards = 4
+id = &"mine_layer"

@@ -38,9 +38,6 @@ func _initialize() -> void:
 		[44, _shot.bind("03a_build_picker")],  # v0.3.0 L15: the build screen, Blade focused
 		[45, _key.bind(KEY_ENTER, true)],
 		[46, _key.bind(KEY_ENTER, false)],
-		[48, _shot.bind("03_utility_picker")],
-		[49, _key.bind(KEY_ENTER, true)],
-		[50, _key.bind(KEY_ENTER, false)],
 		[56, _shot.bind("03_stage")],
 		[53, _key.bind(KEY_D, true)],
 		[93, _key.bind(KEY_D, false)],

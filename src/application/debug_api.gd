@@ -14,7 +14,11 @@ var god := false
 var boss_choice := 0
 ## v0.3.5 AI: the normal enemy kind the panel spawns next (an index into enemy_kinds()), and a spawn waiting.
 var enemy_choice := 0
+## v0.4.0 BS forced loadouts: the ability the panel grants next (an index into World.ability_tables), and grants
+## waiting for the tick boundary (each one a new slot or a level, as a card would).
+var ability_choice := 0
 var _kill_boss := false
+var _grants := PackedInt32Array()
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
@@ -128,7 +132,22 @@ static func boss_spot(w: World, r: float) -> Vector2:
 	return p + Vector2(6, 0)
 
 
+## v0.4.0 BS: picks the next compiled ability for grant_ability.
+func next_ability() -> void:
+	if not world.ability_tables.is_empty():
+		ability_choice = (ability_choice + 1) % world.ability_tables.size()
+
+
+## Queues the chosen ability (a new slot, or one level up) for the next tick boundary.
+func grant_ability() -> void:
+	if not world.ability_tables.is_empty():
+		_grants.append(ability_choice)
+
+
 func _apply_commands() -> void:
+	for idx in _grants:
+		Abilities.grant(world, idx)
+	_grants.clear()
 	if god and world.actors.invuln[0] < 2:
 		world.actors.invuln[0] = 2
 	if _kill_boss:
