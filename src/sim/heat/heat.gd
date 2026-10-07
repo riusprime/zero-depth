@@ -9,8 +9,9 @@ extends RefCounted
 ##   stacks when a burn item (the fire engine) is owned.
 ## - Overheat (reaching max_heat): a stall of stall_ticks, moving slower and unable to attack, while heat drains to
 ##   0. Meltdown (item): the overheat blows up as a full-heat blast instead, with no stall.
-## - Vent: a dash or blink started while Hot blasts every enemy around you for heat x vent_damage and resets heat.
-##   The blast is a payoff: its own root, inside Engines.begin/end (ancestry), and in Engines.PAYOFFS (no stacks).
+## - Vent: the Vent button (v0.3.5 K, owner F1; PlayerSkill) pressed while Hot blasts every enemy around you for
+##   heat x vent_damage and resets heat. Dash and blink no longer vent. The blast is a payoff: its own root, inside
+##   Engines.begin/end (ancestry), and in Engines.PAYOFFS (no stacks).
 
 const TIER_COOL := 0
 const TIER_HOT := 1
@@ -148,6 +149,8 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		g = (
 			s.table.gain_finisher if PlayerKit.is_finisher(w, w.combo_step) else s.table.gain_swing
 		)
+	if tags & SimEvent.TAG_SKILL and w.player.skill != null:
+		g = w.player.skill.heat_gain  # Kit (v0.3.5 K): a skill adds its own heat, once per use.
 	add(w, g, root)
 
 
@@ -234,25 +237,23 @@ static func pierce(w: World, pi: int, k: int, from: Vector2) -> bool:
 
 
 # --- Vent ---------------------------------------------------------------------------------------------------
-## A dash or blink just started (at the player's position): while Hot, vent every point of heat in a blast.
-static func on_move(w: World) -> void:
+## The Vent button (v0.3.5 K; PlayerSkill): while Hot, vent every point of heat in a blast around the player.
+## Returns true if it vented (false: no heat, under Hot, overheated or dead).
+static func vent(w: World) -> bool:
 	var s := w.heat
 	if s == null or w.player_dead() or not hot(w):
-		return
+		return false
 	var heat := s.milli / HeatTable.MILLI
 	_blast(w, heat, 1000, w.take_root(), EFFECT_VENT)
 	s.milli = 0
 	s.idle = 0
 	_retier(w)
+	return true
 
 
-## Venting now would blast (the meter's VENT prompt): Hot, and a dash or a blink is ready.
+## Venting now would blast (the meter's VENT prompt): Hot (or Overclock) and alive.
 static func vent_ready(w: World) -> bool:
-	if not hot(w) or w.player_dead():
-		return false
-	var dash := w.dash_cooldown_left == 0 and not w.is_dashing()
-	var blink := w.player.utility == PlayerTable.Utility.BLINK and w.blink_cd == 0
-	return dash or blink
+	return hot(w) and not w.player_dead()
 
 
 ## The blast's radius: the table's, with Heat Sink's bonus.

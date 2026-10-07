@@ -36,6 +36,8 @@ var heat_meter := HeatMeter.new()
 var gamble := GambleHud.new()
 ## The minimap (v0.3.0 MM): the corner map, and the full map while Tab / pad Select is held.
 var minimap := Minimap.new()
+## v0.3.5 K: the skill pip beside the HP bar and the vent hint beside the heat meter.
+var kit_hud := KitHud.new()
 var _hp_bar := HudBar.new()
 var _hp_text := EchoLabel.new(15, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -126,6 +128,9 @@ func _init() -> void:
 	add_child(minimap)
 	_build_rewards()
 	add_child(gamble)
+	add_child(kit_hud)  # v0.3.5 K
+	kit_hud.hp_anchor = _hp_bar
+	kit_hud.heat_anchor = heat_meter
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
@@ -169,6 +174,7 @@ func sync(reader: WorldReader) -> void:
 	minimap.sync(reader)
 	_sync_rewards(reader)
 	gamble.sync(reader)
+	kit_hud.sync(reader)  # v0.3.5 K
 
 
 func _process(delta: float) -> void:

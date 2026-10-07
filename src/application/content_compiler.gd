@@ -193,6 +193,32 @@ static func apply_build(t: PlayerTable, def: BuildDefinition) -> PlayerTable:
 		BuildDefinition.Weapon.GUN:
 			t.weapons = PlayerTable.WEAPON_GUN
 			t.bolt_damage_permille = def.damage_permille
+	t.skill = compile_skill(def.skill)  # v0.3.5 K: the build's second ability.
+	return t
+
+
+## A build's skill in sim units (v0.3.5 K); null stays null (no Skill button).
+static func compile_skill(def: SkillDefinition) -> SkillTable:
+	if def == null:
+		return null
+	var t := SkillTable.new()
+	t.kind = def.kind as SkillTable.Kind
+	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
+	t.damage = def.damage
+	t.heat_gain = int(round(def.heat * HeatTable.MILLI))
+	t.lunge_m = def.lunge_m
+	t.lunge_ticks = maxi(1, SimTick.seconds_to_ticks(def.lunge_seconds))
+	t.half_arc = degrees_to_units(def.arc_degrees * 0.5)
+	t.reach_m = def.reach_m
+	t.hitstop_ticks = SimTick.seconds_to_ticks(def.hitstop_seconds)
+	t.pellets = def.pellets
+	t.half_cone = degrees_to_units(def.cone_degrees * 0.5)
+	t.range_m = def.range_m
+	t.pellet_radius_m = def.pellet_radius_m
+	t.knockback_m = def.knockback_m
+	t.knockback_ticks = SimTick.seconds_to_ticks(def.knockback_seconds)
+	t.recoil_m = def.recoil_m
+	t.recoil_ticks = maxi(1, SimTick.seconds_to_ticks(def.recoil_seconds))
 	return t
 
 

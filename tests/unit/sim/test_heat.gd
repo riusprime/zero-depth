@@ -7,6 +7,7 @@ const P := InputFrame.PRIMARY
 const S := InputFrame.SHOOT
 const U := InputFrame.UTILITY
 const D := InputFrame.DASH
+const V := InputFrame.VENT
 const M := HeatTable.MILLI
 
 var _repo: ContentRepository
@@ -232,10 +233,10 @@ func test_reaching_the_overheat_point_stalls_for_1_2_seconds() -> void:
 	assert_gt(w.heat.milli, 0, "attacking again")
 
 
-func test_a_dash_while_hot_vents_a_blast_and_resets_heat() -> void:
+func test_the_vent_button_while_hot_vents_a_blast_and_resets_heat() -> void:
 	var w := _world([], [Vector2(1.5, 0), Vector2(4.5, 0)])
 	w.heat.milli = 50 * M + 600
-	w.step(_f(0, D, 0, Vector2i(0, 127)))
+	w.step(_f(0, V))
 	var blast := _events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT)
 	assert_eq(blast.size(), 1, "the near enemy is in the 2.5 m blast, the far one isn't")
 	assert_eq(blast[0].target_id, w.actors.ids[1])
@@ -248,34 +249,28 @@ func test_a_dash_while_hot_vents_a_blast_and_resets_heat() -> void:
 	assert_eq(w.heat.vent_tick, blast[0].tick)
 	assert_eq(w.heat.vent_heat, 50)
 	assert_almost_eq(w.heat.vent_radius, 2.5, 1e-6)
+	assert_eq(_events(w, SimEvent.Kind.VENT).size(), 1, "a VENT event")
+	assert_eq(_events(w, SimEvent.Kind.VENT)[0].amount, 50, "carrying the heat vented")
 	var cool := _world([], [Vector2(1.5, 0)])
 	cool.heat.milli = 39 * M
-	cool.step(_f(0, D, 0, Vector2i(0, 127)))
-	assert_eq(_events(cool, SimEvent.Kind.HIT).size(), 0, "under Hot a dash vents nothing")
-	assert_eq(cool.heat.milli, 39 * M)
-
-
-func test_a_blink_while_hot_vents_where_it_lands() -> void:
-	var w := _world([], [Vector2(5, 1.0)], PlayerTable.Utility.BLINK)
-	w.heat.milli = 60 * M
-	w.step(_f(0, U, 0, Vector2i(127, 0)))
-	var blast := _events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT)
-	assert_eq(blast.size(), 1, "blinked 5 m next to the enemy and vented there")
-	assert_eq(blast[0].amount, 30)
-	assert_eq(w.heat.milli, 0)
+	cool.step(_f(0, V))
+	assert_eq(_events(cool, SimEvent.Kind.HIT).size(), 0, "under Hot the Vent button vents nothing")
+	assert_eq(cool.heat.milli, 39 * M, "and keeps its heat")
+	assert_eq(_events(cool, SimEvent.Kind.VENT_COLD).size(), 1, "only a cold click")
+	assert_eq(cool.kit.cold_tick, 0)
 
 
 func test_the_vent_blast_adds_no_heat_and_no_stacks_and_respects_ancestry() -> void:
 	var w := _world([&"serrated_edge"], [Vector2(1.5, 0)])
 	w.heat.milli = 60 * M
-	w.step(_f(0, D, 0, Vector2i(0, 127)))
+	w.step(_f(0, V))
 	assert_eq(_events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT).size(), 1)
 	assert_eq(w.heat.milli, 0, "the blast's own hit adds no heat")
 	assert_eq(w.actors.bleed_stacks[1], 0, "and feeds no engine (a payoff)")
 	var v := _world([], [Vector2(1.5, 0)])
 	v.heat.milli = 60 * M
 	v.engine_chain.append(Heat.EFFECT_VENT)
-	Heat.on_move(v)
+	Heat.vent(v)
 	assert_eq(
 		_events(v, SimEvent.Kind.HIT, Heat.EFFECT_VENT).size(), 0, "a vent inside a vent never runs"
 	)
@@ -284,7 +279,7 @@ func test_the_vent_blast_adds_no_heat_and_no_stacks_and_respects_ancestry() -> v
 func test_heat_sink_makes_vent_blasts_bigger() -> void:
 	var w := _world([&"heat_sink"], [Vector2(3.2, 0)])
 	w.heat.milli = 50 * M
-	w.step(_f(0, D, 0, Vector2i(0, 127)))
+	w.step(_f(0, V))
 	var blast := _events(w, SimEvent.Kind.HIT, Heat.EFFECT_VENT)
 	assert_eq(blast.size(), 1, "3.25 m reaches the enemy at 3.2 m")
 	assert_eq(blast[0].amount, 37, "50 x 0.5 x 1.5")

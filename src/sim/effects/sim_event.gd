@@ -13,6 +13,9 @@ extends RefCounted
 ## active), FLOOR_EXIT (the player walked into the active gate).
 ## Boss challenge (v0.3.0 BX, L20): ENEMY_DISSOLVED: summoning the boss removed a normal enemy from the floor (no
 ## kill, no shards); target_id = its id, amount = its kind, pos = where it stood.
+## Kit (v0.3.5 K): SKILL_USED: the build's skill started (amount = SkillTable.Kind, root = the skill's root, pos =
+## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
+## Hot did nothing (the cold click).
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -31,6 +34,9 @@ enum Kind {
 	PORTAL_OPENED,
 	FLOOR_EXIT,
 	ENEMY_DISSOLVED,
+	SKILL_USED,
+	VENT,
+	VENT_COLD,
 }
 
 const TAG_MELEE := 1
@@ -66,6 +72,9 @@ const TAG_PIERCE := 65536
 const TAG_DEFLECTED := 131072
 ## Boss challenge (v0.3.0 BX, L17): the player hit a boss's open weak point up close (more damage and stagger).
 const TAG_EXPOSED := 262144
+## Kit (v0.3.5 K): a hit from the build's skill (the Lunge Cleave, a Scatter Blast pellet). Bit 21, leaving 19 and 20
+## for the step that ran in parallel.
+const TAG_SKILL := 2097152
 
 var seq := 0
 var tick := 0

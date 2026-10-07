@@ -1,9 +1,9 @@
 extends SceneTree
 ## The v0.3.0 L18 shots: Overclock heat through the iso camera with the real HUD meter, one tile per state (cool,
-## Hot with the VENT prompt, Overclock with embers, overheat with steam, a dash vent blast) plus the three heat
+## Hot with the VENT prompt, Overclock with embers, overheat with steam, a vent blast) plus the three heat
 ## item icons. Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/heat.gd
-## The heat is set on the world between shots; the vent and the overheat come from real ticks (a dash press; a
+## The heat is set on the world between shots; the vent and the overheat come from real ticks (a Vent press; a
 ## landed swing at 99 heat). Writes build/shots/v0.3.0/heat/heat_<n>.png (full frames) and heat.png (the sheet).
 
 const OUT := "res://build/shots/v0.3.0/heat/"
@@ -157,9 +157,9 @@ func _begin() -> int:
 			return 10
 		"vent":
 			_set_heat(heat)
-			_tick(_f(InputFrame.DASH, Vector2i(-127, 0)))
+			_tick(_f(InputFrame.VENT, Vector2i(-127, 0)))  # v0.3.5 K: the Vent button
 			_caption.text = (
-				"VENT  (dash at heat %d: %d heat vented, %.2f m blast)"
+				"VENT  (Vent at heat %d: %d heat vented, %.2f m blast)"
 				% [heat, _w.heat.vent_heat, _w.heat.vent_radius]
 			)
 			return 5

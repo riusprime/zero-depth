@@ -465,6 +465,36 @@
       "loop": false
     },
     {
+      "id": "skill_lunge_cleave",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/skill_lunge_cleave.wav",
+      "sha256": "92d4e9328bf653dd7e72a02dfece70eded646496dc7a3099e673dc8fbf459c66",
+      "seconds": 0.85,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -23.1,
+      "loop": false
+    },
+    {
+      "id": "skill_scatter_blast",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/skill_scatter_blast.wav",
+      "sha256": "97bb61b149bfb5a335a6c095caf5398dcd8105f2d79451c02eb147227e536d2b",
+      "seconds": 0.44,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.83,
+      "loop": false
+    },
+    {
+      "id": "vent_cold",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/vent_cold.wav",
+      "sha256": "f278a6cc280382103b42a45b8ad8bc63e250b6171b3bf1d4eb8ade40e60b0c32",
+      "seconds": 0.07,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -18.82,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

@@ -20,7 +20,7 @@ static func advance_utility(w: World) -> void:
 	if t.utility != PlayerTable.Utility.BLINK:
 		w.input_buffer[UTILITY_SLOT] = 0
 		return
-	if w.input_buffer[UTILITY_SLOT] == 0 or w.blink_cd > 0 or w.is_dashing():
+	if w.input_buffer[UTILITY_SLOT] == 0 or w.blink_cd > 0 or w.is_dashing() or PlayerSkill.busy(w):
 		return
 	w.input_buffer[UTILITY_SLOT] = 0
 	w.blink_from = w.player_pos()
@@ -28,7 +28,6 @@ static func advance_utility(w: World) -> void:
 	w.blink_cd = t.blink_cooldown_ticks
 	w.blink_tick = w.tick
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], t.blink_iframe_ticks)
-	Heat.on_move(w)  # Heat: a blink while Hot vents where it lands.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
 
 
@@ -74,6 +73,7 @@ static func advance(w: World) -> void:
 	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
 	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
+	can_attack = can_attack and not PlayerSkill.busy(w)  # Kit (v0.3.5 K): a skill commits
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
 	# step: the combo starts over).

@@ -201,8 +201,8 @@ HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
 HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
 HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
-HUD_HEAT_VENT,VENT: DASH,PURGA: ESPRINT
-HUD_HEAT_VENT_BLINK,VENT: DASH / BLINK,PURGA: ESPRINT / DESTELLO
+HUD_HEAT_VENT,VENT READY,PURGA LISTA
+HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
 UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
 UI_GAMBLE_SPENT,The shrine has nothing left to give,El santuario ya no tiene nada que dar
 UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
@@ -310,3 +310,11 @@ MAP_LEGEND_BOSS,Boss door,Puerta del jefe
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
 MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
+UI_ACTION_VENT,Vent,Purgar
+UI_ACTION_SKILL,Skill,Técnica
+HUD_KEY_HINT,[%s] %s,[%s] %s
+HUD_VENT,VENT,PURGA
+SKILL_LUNGE_CLEAVE,LUNGE CLEAVE,ESTOCADA TAJANTE
+SKILL_LUNGE_CLEAVE_DESC,"Skill: lunge 3.5 m where you face, then cleave everything in front of you.","Técnica: arremete 3,5 m hacia donde miras y luego tajea todo lo que tengas delante."
+SKILL_SCATTER_BLAST,SCATTER BLAST,RÁFAGA DISPERSA
+SKILL_SCATTER_BLAST_DESC,"Skill: a close-range spray of 7 pellets toward your aim that knocks enemies back.","Técnica: una ráfaga corta de 7 perdigones hacia donde apuntas que empuja a los enemigos."

@@ -62,10 +62,12 @@ func test_the_meter_fills_flashes_at_thresholds_and_prompts_the_vent() -> void:
 	m.sync(r)
 	assert_true(m.flashing(), "crossing Hot flashes")
 	assert_eq(m.tier_text(), tr("HUD_HEAT_HOT"))
-	assert_eq(m.vent_text(), tr("HUD_HEAT_VENT"), "a dash would vent now")
+	assert_eq(m.vent_text(), tr("HUD_HEAT_VENT"), "the Vent button would vent now")
 	w.dash_cooldown_left = 10
 	m.sync(r)
-	assert_eq(m.vent_text(), "", "not while the dash recharges")
+	assert_eq(
+		m.vent_text(), tr("HUD_HEAT_VENT"), "the dash recharging no longer matters (v0.3.5 K)"
+	)
 	w.dash_cooldown_left = 0
 	m._process(1.0)
 	assert_false(m.flashing())
@@ -138,7 +140,7 @@ func test_a_vent_draws_its_ring_at_the_sim_radius_and_overheat_steams() -> void:
 	fx.sync(r)
 	assert_eq(fx.fx_count(), 0)
 	_set_heat(w, 60)
-	w.step(InputFrame.make(Vector2i(0, 127), 0, 300, 0, InputFrame.DASH))
+	w.step(InputFrame.make(Vector2i(0, 127), 0, 300, 0, InputFrame.VENT))
 	fx.sync(r)
 	assert_eq(fx.fx_count_of(&"ring"), 1, "the blast ring")
 	assert_eq(fx.fx_count_of(&"blast"), 1, "and its flash disc")

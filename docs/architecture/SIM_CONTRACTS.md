@@ -76,8 +76,20 @@ var held: int             # bitmask of buttons held this tick
 var pressed: int          # bitmask of buttons pressed since the previous tick
 ```
 
-- **Button bits:** `PRIMARY = 1`, `UTILITY = 2`, `DASH = 4`, `INTERACT = 8`, `SHOOT = 16`. New bits are appended,
-  never renumbered.
+- **Button bits:** `PRIMARY = 1`, `UTILITY = 2`, `DASH = 4`, `INTERACT = 8`, `SHOOT = 16`, then (v0.3.5 K)
+  `VENT = 32` (the Vent button, owner F1) and `SKILL = 64` (the build's second ability, owner F18). New bits are
+  appended, never renumbered. `VENT` and `SKILL` presses buffer like the others (6 ticks, not aged during
+  hit-stop) in `World.kit` (`KitState`), which is hashed only once either was pressed, so the kernel goldens keep
+  their hashes.
+- **Vent and Skill** (v0.3.5 K, `PlayerSkill`, phase 4 after the attacks). A `VENT` press while Hot or Overclock
+  fires the vent blast (`Heat.vent`, the same shape and damage as before) and resets heat to 0 (event `VENT`,
+  `amount` = heat vented); under Hot, overheated or without heat it does nothing but the cold click (event
+  `VENT_COLD`). Dash and blink no longer vent. A `SKILL` press starts the build's skill when it is ready (cooldown
+  over, no swing, dash or guard, not overheated); the skill then commits: no swing, shot, dash or blink starts until
+  it ends. Its movement (the Lunge Cleave's lunge, the Scatter Blast's step back) is the player's movement in phase
+  5 in place of walking, so walls stop it as they stop a dash; the Scatter Blast's knockback slides enemies in phase
+  5 before walls and bodies resolve. Shapes: the cleave is `AttackShapes.arc_touches`; each pellet is a swept ray
+  (`PlayerSkill.pellet_touches`, angles from `AttackShapes.pellet_angles`) stopping at the first wall or body.
 - **`pick: int`** (v0.3.0 E): the 3-card pick, delivered once like a press. `0` = none, `1..3` = take that card,
   `-1` = cancel (keep the altar or chest for later). The pick UI sends it through `InputLatch.note_pick`.
 - **Latching.** The application layer's `InputLatch` collects device events between ticks. A press and release
@@ -192,7 +204,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -202,7 +214,7 @@ Every gameplay consequence is a `SimEvent`:
 | `amount` | int | Amount requested |
 | `amount_applied` | int | Amount after barriers, caps and HP limits |
 | `proc_pct` | int | Proc coefficient carried by this event (§8) |
-| `tags` | int | Bitmask: `MELEE`, `PROJECTILE`, `DOT`, `AREA`, `CRIT`, … (appended, never renumbered) |
+| `tags` | int | Bitmask: `MELEE`, `PROJECTILE`, `DOT`, `AREA`, `CRIT`, … (appended, never renumbered; each its own bit, `test_sim_event_tags.gd`). v0.3.5 K: `SKILL = 1 << 21` marks a build-skill hit (the cleave carries `MELEE`, a pellet `PROJECTILE`); a landed skill adds its own heat once per use |
 | `effect_id` | StringName | The item effect that produced it, or `&""` |
 | `ancestry` | PackedStringArray | Effect ids already fired in this chain, root to here |
 | `pos` | Vector2 | Where it happened, for presentation |

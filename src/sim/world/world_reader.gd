@@ -75,6 +75,9 @@ const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
 const RARITY_COMMON := ItemTable.COMMON
 const RARITY_RARE := ItemTable.RARE
+## Kit (v0.3.5 K): the build skills.
+const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
+const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 
 var _w: World
 
@@ -1176,3 +1179,35 @@ func floor_door_angle(i: int) -> int:
 
 func floor_boss_door() -> int:
 	return _w.floor_layout.boss_door_index if _w.floor_layout != null else -1
+
+
+# --- Kit: Vent and Skill (v0.3.5 K) ------------------------------------------------------------------------
+## The build's skill for the views (PlayerSkill.read; {} without one): kind, cooldown and total, ready, running
+## (its tick, 0 = none) and move_ticks, angle, start tick and point, the last cleave/blast (tick, where, pellet ends),
+## and the shape numbers (half_arc, reach_m, half_cone, range_m, pellets, lunge_m).
+func skill_state() -> Dictionary:
+	return PlayerSkill.read(_w)
+
+
+## True if the skill used from `center` toward `angle` would reach actor i: the forecast calls the hit's own shape
+## function (PlayerSkill.would_hit, EI-07).
+func skill_hits(i: int, center: Vector2, angle: int) -> bool:
+	return PlayerSkill.would_hit(_w, i, center, angle)
+
+
+## The skill's pellet angles for a blast toward `angle` (AttackShapes.pellet_angles, as the sim's).
+func skill_pellet_angles(angle: int) -> PackedInt32Array:
+	var t := _w.player.skill
+	if t == null:
+		return PackedInt32Array()
+	return AttackShapes.pellet_angles(angle, t.half_cone, t.pellets)
+
+
+## The melee facing now (the angle a Lunge Cleave would take).
+func melee_facing() -> int:
+	return PlayerBuild.melee_angle(_w)
+
+
+## The last Vent press that found no heat to vent (the cold click), as a tick (-1 = never).
+func vent_cold_tick() -> int:
+	return _w.kit.cold_tick

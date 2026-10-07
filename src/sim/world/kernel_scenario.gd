@@ -4,6 +4,9 @@ extends RefCounted
 ## Used by the replay golden, the export smoke, the kernel smoke and the bench. Pure sim code.
 
 const ARENA_HALF := 15.0
+## The v0.0.1 dash cooldown (0.8 s). The kernel worlds keep it when the game's dash slowed to 1.4 s (v0.3.5 K, owner
+## F12), so the replay golden and the export smoke hash stay the cross-OS proof they were recorded as.
+const KERNEL_DASH_COOLDOWN_TICKS := 48
 
 
 ## movers: dummy count; fire_period / life: ticks; inner_walls: walls besides the 4 arena edges.
@@ -11,6 +14,7 @@ static func build(
 	seed_value: int, movers: int, fire_period: int, life: int, inner_walls: int
 ) -> World:
 	var w := World.new(seed_value, PlayerTable.starting_values())
+	w.player.dash_cooldown_ticks = KERNEL_DASH_COOLDOWN_TICKS
 	w.dummy_fire_period = fire_period
 	w.projectile_life = life
 	var walls: Array[Obb] = []

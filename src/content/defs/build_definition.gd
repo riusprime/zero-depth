@@ -17,6 +17,8 @@ const MAX_DAMAGE_PERMILLE := 5000
 @export var desc_key: StringName
 ## The enabled weapon's damage x damage_permille / 1000 (the sim carries the remainder, so the average is exact).
 @export var damage_permille := 1000
+## The build's second ability on the Skill button (v0.3.5 K, owner F18): one per build, of its weapon's kind.
+@export var skill: SkillDefinition
 
 
 func category() -> StringName:
@@ -43,4 +45,16 @@ func validate() -> Array[ValidationIssue]:
 				"damage_permille is %d..%d" % [MIN_DAMAGE_PERMILLE, MAX_DAMAGE_PERMILLE]
 			)
 		)
+	if skill == null:
+		issues.append(
+			ValidationIssue.new(&"missing", resource_path, "skill is required (v0.3.5 K)")
+		)
+	else:
+		issues.append_array(skill.validate(resource_path))
+		if SkillDefinition.WEAPON_OF.get(skill.kind, -1) != weapon:
+			issues.append(
+				ValidationIssue.new(
+					&"mismatch", resource_path, "skill.kind belongs to the other weapon"
+				)
+			)
 	return issues

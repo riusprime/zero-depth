@@ -12,7 +12,9 @@ Owner: "overclock heat should show a combo meter that shows you the overheat poi
 
 ### The loop
 Attacking builds heat; heat makes your attacks stronger in steps; the top step is a cliff (overheat). The skill
-is riding near the edge and venting at the right moment with a dash or a blink, which turns the heat into a blast.
+is riding near the edge and venting at the right moment with the **Vent button** (F / pad B, remappable; v0.3.5 K,
+owner F1: "this should be an different action button"), which turns the heat into a blast. Until v0.3.5 a dash or
+a blink vented; they no longer do.
 
 | Rule | Starting value | Where |
 |---|---|---|
@@ -23,7 +25,8 @@ is riding near the edge and venting at the right moment with a dash or a blink, 
 | **Hot** (≥ 40) | blade reach +20 %; each bolt pierces one enemy | `hot_threshold`, `hot_reach_bonus` |
 | **Overclock** (≥ 75) | the player's attacks deal +25 % and leave embers; with a burn item owned (the fire engine), each Overclock hit adds 1 burn stack | `overclock_threshold`, `overclock_damage_bonus`, `overclock_burn_stacks` |
 | **Overheat** (reaching 100) | a 1.2 s stall: you move at 60 % and can't swing or shoot; heat drains to 0 over the stall; steam vents | `overheat_seconds`, `overheat_move_multiplier` |
-| **Vent** | a dash or a blink started while Hot blasts every enemy within 2.5 m for heat vented × 0.5 (40 heat → 20, 99 → 49) and resets heat to 0 | `vent_radius_m`, `vent_damage_per_heat` |
+| **Vent** (v0.3.5 K) | pressing Vent while Hot (or Overclock) blasts every enemy within 2.5 m of you for heat vented × 0.5 (40 heat → 20, 99 → 49) and resets heat to 0; under Hot (or overheated) the press does nothing but a small cold click | `vent_radius_m`, `vent_damage_per_heat`; `PlayerSkill` (the button), `Heat.vent` |
+| Skills (v0.3.5 K) | a landed build skill adds its own heat once per use: Lunge Cleave +5, Scatter Blast +2.5 | `data/builds/*.tres` `skill.heat` |
 
 Tuning check (unit test `test_a_sustained_fight_reaches_the_thresholds_in_6_to_10_seconds`, mashing against a
 still target): Blade reaches Hot at 4.60 s and Overclock at 8.60 s; Gun (shooting held) at 5.17 s and 9.72 s.
@@ -34,10 +37,11 @@ Overheat comes about 3 s after Overclock if you never vent.
   whole numbers. It is hashed only in worlds whose loadout has heat (`World.heat` is null otherwise), so the
   kernel and item goldens keep their hashes.
 - The gain per attack type is data, so the Blade and Gun builds (L15) can be tuned apart.
-- A dash vents where it **starts** (you leave the blast behind you); a blink vents where it **lands** (blink into a
-  crowd), as Phase Strike does.
+- The vent goes off where you stand when you press it (v0.3.5 K): dash or blink into a crowd first, then vent.
+  Dash and blink no longer vent at all, so moving never spends your heat by accident. A press during hit-stop
+  waits for it (the 6-tick buffer), as the other buttons do.
 - A vent spends all the heat, so venting at Overclock trades the +25 % for the biggest blast. During the stall
-  you can still dash (to escape), but it vents nothing.
+  the Vent button does nothing (a cold click).
 - The vent blast and the Meltdown blast are payoffs: their own root (vent) or the overheating attack's root
   (Meltdown, once per root), run inside the engines' ancestry (`Engines.begin`/`end`), are listed in
   `Engines.PAYOFFS` (they never add engine stacks) and never add heat.
@@ -57,7 +61,8 @@ Overheat comes about 3 s after Overclock if you never vent.
   (steel, amber Hot, red-orange Overclock, white-hot at the end); the filled part glows wider and brighter as it
   fills. The Hot and Overclock thresholds are notches with their names; the **overheat point** is a red bar and
   arrow at the arc's end, named OVERHEAT, pulsing once heat passes 88 %. Crossing a threshold flashes the arc;
-  **VENT: DASH** (or **VENT: DASH / BLINK**) pulses above it while a dash or blink would blast; overheating
+  **VENT READY** pulses above it while the Vent button would blast (v0.3.5 K; beside the meter a small hint names
+  the bound key, "[F] VENT", lit while Hot and dim otherwise); overheating
   flashes red and vents steam from the arc for the whole stall. The word under the arc names the state (HEAT,
   HOT, OVERCLOCK, OVERHEAT).
 - **The hero**: the visor and the laser blade shift from cyan toward amber, then red-orange, then white-hot as heat

@@ -49,3 +49,15 @@ static func lane(start: Vector2, angle: int, length: float, half_width: float) -
 	return Obb.make(
 		start + Kin.dir(angle) * (length * 0.5), Vector2(length * 0.5, half_width), angle
 	)
+
+
+## The angles of `count` pellets spread evenly over the cone of `half_cone` either side of `angle` (1/4096 turns;
+## one pellet goes straight). v0.3.5 K: the Scatter Blast's rays, which its view draws too.
+static func pellet_angles(angle: int, half_cone: int, count: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if count <= 1:
+		out.append(angle & 4095)
+		return out
+	for j in count:
+		out.append((angle - half_cone + 2 * half_cone * j / (count - 1)) & 4095)
+	return out

@@ -339,8 +339,8 @@ func test_swift_feet_moves_faster_and_dashes_sooner() -> void:
 	var w := _world([K.SWIFT_FEET], [])
 	var plain := _world([], [])
 	var r := WorldReader.new(w)
-	assert_eq(r.dash_cooldown_total(), 38, "48 ticks x 0.8")
-	assert_eq(WorldReader.new(plain).dash_cooldown_total(), 48)
+	assert_eq(r.dash_cooldown_total(), 67, "84 ticks (1.4 s, v0.3.5 K) x 0.8")
+	assert_eq(WorldReader.new(plain).dash_cooldown_total(), 84)
 	assert_almost_eq(r.move_speed_mps(), 6.9, 1e-4)
 	for i in 40:
 		w.step(_f(0, 0, 0, Vector2i(SimTick.MOVE_MAX, 0)))
@@ -348,7 +348,7 @@ func test_swift_feet_moves_faster_and_dashes_sooner() -> void:
 	assert_almost_eq(Kin.length(w.vel), 6.9 / 60.0, 1e-4)
 	assert_almost_eq(Kin.length(plain.vel), 6.0 / 60.0, 1e-4)
 	w.step(_f(0, InputFrame.DASH))
-	assert_eq(w.dash_cooldown_left, 38)
+	assert_eq(w.dash_cooldown_left, 67)
 
 
 # --- Phase Strike -------------------------------------------------------------------------------------------

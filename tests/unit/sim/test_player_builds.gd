@@ -73,7 +73,9 @@ func test_a_bad_build_fails_validation() -> void:
 	for i in d.validate():
 		codes.append(String(i.code))
 	codes.sort()
-	assert_eq(codes, ["missing", "range", "range"], "keys, weapon and damage")
+	assert_eq(
+		codes, ["missing", "missing", "range", "range"], "keys, skill (v0.3.5 K), weapon and damage"
+	)
 
 
 func test_apply_build_enables_one_weapon_and_its_factor() -> void:
