@@ -6,6 +6,8 @@ extends RefCounted
 ## HATCHLING and the bosses (v0.3.0 C): the Brood Mother's small Charger, then one kind per boss (BossAi). The
 ## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them, then the horde kinds (v0.4.0 EN; SPLITLING is what a
 ## Splitter splits into).
+## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them; then the second boss of each pool and the Hive Lens's
+## drones (v0.4.0 BO).
 enum Kind {
 	PLAYER,
 	DUMMY,
@@ -25,6 +27,10 @@ enum Kind {
 	MENDER,
 	MINE_LAYER,
 	SNIPER,
+	WARLORD,
+	HIVE_LENS,
+	FOUNDRY,
+	LENS_DRONE,
 }
 
 const TEAM_PLAYER := 0

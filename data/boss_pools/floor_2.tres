@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_pool")
 floor_index = 2
-boss_ids = PackedStringArray("brood_mother")
+boss_ids = PackedStringArray("brood_mother", "hive_lens")
 id = &"floor_2"

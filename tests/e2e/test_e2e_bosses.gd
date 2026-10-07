@@ -7,7 +7,7 @@ func test_the_dev_panel_spawns_a_boss_with_its_bar() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
-	assert_eq(e.world().boss_tables.size(), 3, "the run carries the compiled bosses")
+	assert_eq(e.world().boss_tables.size(), 6, "the run carries the compiled bosses")
 	await e.tap(KEY_QUOTELEFT)
 	assert_true(main.is_dev_panel_open())
 	var panel := main.ui.find_child("DevPanel", true, false) as Control

@@ -17,6 +17,10 @@ merged.
 - none (BS: the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
   chance is in play, which the kernel worlds never have. The export smoke, `scripts/ci/export_smoke.sh`, was not run
   locally: CI covers it)
+| BO | A second boss in every pool: the Warlord (floor 1), the Hive Lens (floor 2, splits into three Lens Drones), the Foundry (floor 3); the `flood` move; sounds, strings, image prompts ([`evidence/BOSSES_2.md`](evidence/BOSSES_2.md), [`../../art/BOSSES_2.md`](../../art/BOSSES_2.md)) | `v0.4.0 Step BO` |
+
+## Goldens changed on purpose
+- none yet (BO: none; replay and export-smoke hashes unchanged)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -41,6 +45,9 @@ merged.
 - 2026-10-07 — BS: build system built and verified on `7a4a453` (743 / 743, lint clean); final commit adds the
   evidence and this file. Owner note mid-step ("spell cooldowns have to be a bit bigger"): the ability slots are 52 px
   with a sweep and seconds left; their frames follow `CardStyle.current`.
+- 2026-10-07 — Step BO: three new bosses, two per pool; fight-length bands unchanged and met (melee 29.1-34.3 s, near
+  59.7-68.3 s, far >= 2.8x melee); readable cause 0 violations over 12 seeds; `MIN_TEST_COUNT` 769. The Warlord's
+  arena is OPEN (CROSS walled the player out of the fight on a real floor).
 - 2026-10-07 — PLAN drafted from the owner's direction while v0.3.5 wave 1 runs.
 - 2026-10-07 — Step EN: six horde kinds (starting values in CONTENT_SCHEMA §3 and SIM_CONTRACTS §10c), in the
   spawn mix from tiers 1-3 (`SpawnMixEntry.pack` for Swarmer packs of 8, within the alive cap); no golden changed.

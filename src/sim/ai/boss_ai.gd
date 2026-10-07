@@ -5,7 +5,8 @@ extends RefCounted
 ## fill a stagger meter; a full meter staggers it (STAGGERED) and resets. Phases start at HP thresholds; a phase may
 ## open with an entry attack. think() runs in tick phase 3, move() in 5, resolve() in 6.
 ## Every attack's area comes from one function here (ring_of, lane_of, arc_of, charge_lane, leap_disc,
-## burrow_disc, spots_of, rail_of, fan_lane_of), which telegraph() hands the view and resolve() hits with (EI-07).
+## burrow_disc, spots_of, rail_of, fan_lane_of, flood_lane_of), which telegraph() hands the view and resolve() hits
+## with (EI-07).
 ## Randomness only from the ai stream.
 ## Boss challenge (v0.3.0 BX; BossChallenge): the far timer starts the punish attack, an attack may chain into its
 ## follow-up instead of recovering, some recoveries open the weak point, aimed attacks lead the player, a pull drags
@@ -31,6 +32,7 @@ const TRACKING_MOVES: Array[int] = [
 	BossAttackTable.Move.BARRAGE,
 	BossAttackTable.Move.RAIL,
 	BossAttackTable.Move.BOLT_FAN,
+	BossAttackTable.Move.FLOOD,
 ]
 
 
@@ -39,7 +41,8 @@ static func is_boss_kind(kind: int) -> bool:
 		kind == ActorStore.Kind.GATEKEEPER
 		or kind == ActorStore.Kind.BROOD_MOTHER
 		or kind == ActorStore.Kind.SIEGE_ENGINE
-	)
+		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)
+	)  # v0.4.0 BO
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).
@@ -262,6 +265,11 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
 					w, start, ang, atk.length_m, atk.half_width_m
 				)
+		M.FLOOD:  # v0.4.0 BO: each parallel lane's length, cut short by walls.
+			for k in atk.count:
+				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+					w, _flood_start(w, i, atk, aim, k), aim, atk.length_m, atk.half_width_m
+				)
 		M.BOLT_FAN:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
@@ -460,6 +468,14 @@ static func resolve(w: World, i: int) -> void:
 				var a1 := rail_angle(w, i, st + 1)
 				if AttackShapes.span_touches(r[0], r[1], a0, a1 - a0, r[4], p, pr):
 					_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
+		M.FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt again every burn_ticks.
+			if st < atk.active_ticks:
+				if st % atk.burn_ticks == 0:
+					w.bosses.hit[b] = 0
+				for k in atk.count:
+					if Collide.circle_vs_obb(p, pr, flood_lane_of(w, i, k)) != Vector2.ZERO:
+						_hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+						break
 		M.BOLT_FAN:
 			if w.bosses.step[b] < atk.volleys and st % atk.gap_ticks == 0:
 				w.bosses.step[b] += 1
@@ -653,10 +669,29 @@ static func fan_lane_of(w: World, i: int, k: int) -> Obb:
 	return AttackShapes.lane(start, ang, len, atk.radius_m)
 
 
+## Where flood lane k starts (v0.4.0 BO): beside the boss's edge, offset sideways from the aim line by its place in
+## the row (lanes gap_m apart, centred on the aim).
+static func _flood_start(w: World, i: int, atk: BossAttackTable, aim: int, k: int) -> Vector2:
+	var d := Kin.dir(aim)
+	var side := Vector2(-d.y, d.x) * (atk.gap_m * (k - (atk.count - 1) * 0.5))
+	return Vector2(w.actors.lock_x[i], w.actors.lock_y[i]) + d * w.actors.radius[i] + side
+
+
+## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as clear_run allowed when it locked.
+static func flood_lane_of(w: World, i: int, k: int) -> Obb:
+	var a := w.actors
+	var atk := attack_of(w, i)
+	var len := maxf(w.bosses.pts_x[entry_of(w, i) * BossStore.MAX_PTS + k], 0.01)
+	return AttackShapes.lane(
+		_flood_start(w, i, atk, a.lock_a[i], k), a.lock_a[i], len, atk.half_width_m
+	)
+
+
 ## What the view draws for boss i: {} or a shape with "progress" (0..1000). Shapes: &"ring" (center, inner,
 ## outer), &"lanes" (obbs), &"arc" (center, own_r, angle, half_arc, reach), &"lane" (obb), &"disc" (center,
 ## radius), &"discs" (centers, radius), &"sweep" (center, own_r, start, span, reach, beam) and the harmless
-## &"ripple" (center, radius) that marks a burrowing boss. A pull (BX) draws a &"ring" with "pull_m", the vortex's
+## &"ripple" (center, radius) that marks a burrowing boss; a flood (v0.4.0 BO) draws &"lanes", and while its lanes
+## stand a "style" (&"spears" or &"molten"). A pull (BX) draws a &"ring" with "pull_m", the vortex's
 ## reach from the boss's centre. "move" names the attack's move (BossAttackTable.Move).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
@@ -717,6 +752,15 @@ static func telegraph(w: World, i: int) -> Dictionary:
 			return {}
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			out = {"shape": &"discs", "centers": spots_of(w, i), "radius": atk.radius_m}
+		M.FLOOD:  # v0.4.0 BO: marked for the windup, then standing (spears, molten floor) while active.
+			var obbs: Array[Obb] = []
+			for k in atk.count:
+				obbs.append(flood_lane_of(w, i, k))
+			out = {"shape": &"lanes", "obbs": obbs}
+			if not windup:
+				out["style"] = &"spears" if a.kinds[i] == ActorStore.Kind.WARLORD else &"molten"
+				progress = 1000
+				windup = true
 		M.RAIL:
 			var r := rail_of(w, i)
 			out = {

@@ -10,7 +10,8 @@ const OLD_SPEED := {&"gatekeeper": 1.5, &"brood_mother": 2.4, &"siege_engine": 1
 
 func test_bosses_move_thirty_percent_faster() -> void:
 	for t in BossLab.tables():
-		assert_almost_eq(t.speed * 60.0, OLD_SPEED[t.id] * 1.3, 0.001, String(t.id))
+		if OLD_SPEED.has(t.id):  # the v0.4.0 bosses (BO) were made at the faster speeds
+			assert_almost_eq(t.speed * 60.0, OLD_SPEED[t.id] * 1.3, 0.001, String(t.id))
 
 
 func test_the_new_numbers_compile() -> void:

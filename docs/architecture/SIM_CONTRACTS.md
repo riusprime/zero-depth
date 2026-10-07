@@ -356,6 +356,12 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   1.8 m up). Keeps 5-8 m away, lobs a bomb at where the player stands: a 1.8 m circle that fills for 48 ticks, then
   explodes for 16. It keeps drifting while the bomb flies; killing it first defuses the bomb (the bomb is its
   windup).
+- **v0.4.0 BO.** The flood move (`BossAi.flood_lane_of`, one shape function, drawn and hit alike) tracks and leads
+  like the other aimed moves, then its lanes stand for the active time and re-arm the boss's one-hit flag every
+  `burn_ticks`, so a player standing in them is hurt at most once per burn period. A boss whose
+  `weak_drops_armour` is set (the Warlord) skips its front armour in `Damage.target_mult` while its weak point is
+  open. The Lens Drone (the Hive Lens's split, `deploy`) runs the Needle's rules (`EnemyAi.behaviour_of`). New
+  actor kinds `WARLORD`, `HIVE_LENS`, `FOUNDRY`, `LENS_DRONE` are appended after `BOMB_DRONE`.
 
 ## 10c. The horde kinds (v0.4.0 EN)
 

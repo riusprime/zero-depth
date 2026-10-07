@@ -49,6 +49,8 @@ var weak_ticks := 0
 var weak_range_m := 2.5
 var weak_mult_permille := 1000
 var weak_stagger_permille := 1000
+## v0.4.0 BO: while the weak point is open the front armour doesn't apply (the Warlord lifts its shield).
+var weak_drops_armour := false
 ## Closing arena: it starts at phase close_phase (-1 = not by phase) or after close_after_ticks of fighting (0 = not
 ## by time); every close_step_ticks the band moves close_step_m inward (0 = never closes), each step marked
 ## close_warn_ticks first, and stops safe_half_m short of the room's centre on each axis. Standing in the band hurts

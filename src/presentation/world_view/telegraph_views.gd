@@ -10,6 +10,8 @@ extends Node3D
 ## from the drone ("from") to the circle's centre as the circle fills.
 ## v0.4.0 EN: a Sniper's line ("snipe") carries the bolt's bright core; a Shield Bearer's bash ("bash") two chevrons
 ## pointing down its lane; a Mine Layer's armed mines ("mine") a spiked star in each filling circle.
+## v0.4.0 BO: a flood's standing lanes carry a style too: the Warlord's spears a row of spear heads down each lane,
+## the Foundry's molten floor a hot core with cross bars (a fixed colour; nothing toggles emission at run time).
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple"]
@@ -23,6 +25,7 @@ var _fill_mat := StandardMaterial3D.new()
 var _edge_mat := StandardMaterial3D.new()
 var _core_mat := StandardMaterial3D.new()
 var _bomb_mat := StandardMaterial3D.new()
+var _molten_mat := StandardMaterial3D.new()
 
 
 func _ready() -> void:
@@ -36,6 +39,9 @@ func _ready() -> void:
 	_core_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_core_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_core_mat.albedo_color = ThemePalette.color(&"proj_hostile")
+	_molten_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	_molten_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	_molten_mat.albedo_color = Color("#FF8A2E")
 	_bomb_mat.albedo_color = Color("#1B1C20")
 	_bomb_mat.emission_enabled = true
 	_bomb_mat.emission = c
@@ -252,8 +258,40 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 						c + d * r * 0.3 + sd,
 						c - d * r * 0.3 + sd
 					)
-	var core: bool = tg["style"] == &"bolt" or tg["style"] == &"snipe"
-	_emit(deco, pts, _core_mat if core else _edge_mat)
+		&"spears", &"molten":
+			for o: Obb in tg["obbs"]:
+				_flood_marks(pts, o, tg["style"] == &"spears")
+	var mat := _edge_mat
+	if tg["style"] == &"bolt" or tg["style"] == &"snipe":
+		mat = _core_mat
+	elif tg["style"] == &"molten":
+		mat = _molten_mat
+	_emit(deco, pts, mat)
+
+
+## v0.4.0 BO: a standing flood lane's marks: spear heads every SPEAR_STEP along it, or a molten core with bars.
+func _flood_marks(pts: Array, o: Obb, spears: bool) -> void:
+	var u := o.axis_u
+	var v := o.axis_v
+	var a := o.center - u * o.half.x
+	var n := maxi(1, int(o.half.x * 2.0 / 0.7))
+	if spears:
+		for k in n:
+			var c := a + u * (0.35 + 0.7 * k)
+			var w := v * minf(o.half.y, 0.22)
+			_quad(pts, c - u * 0.3, c - w, c + u * 0.3, c + w)
+		return
+	var side := v * o.half.y * 0.3
+	_quad(pts, a - side, a + u * o.half.x * 2.0 - side, a + u * o.half.x * 2.0 + side, a + side)
+	for k in n:
+		var c := a + u * (0.35 + 0.7 * k)
+		_quad(
+			pts,
+			c - u * 0.06 - v * o.half.y,
+			c + u * 0.06 - v * o.half.y,
+			c + u * 0.06 + v * o.half.y,
+			c - u * 0.06 + v * o.half.y
+		)
 
 
 # --- boss shapes (v0.3.0 C) -------------------------------------------------------------------------------------

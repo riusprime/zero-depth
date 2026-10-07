@@ -5,7 +5,9 @@ extends RefCounted
 ## Shapes are AttackDefinition.Shape values: 0 CIRCLE, 1 CONE, 2 LINE, 3 RING, 4 PROJECTILE.
 
 ## The boss kinds, by boss id (each has its own actor kind and model).
-const KINDS: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engine"]
+const KINDS: Array[StringName] = [
+	&"gatekeeper", &"brood_mother", &"siege_engine", &"warlord", &"hive_lens", &"foundry"
+]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
 const ARENA_TEMPLATES: Array[String] = [
@@ -45,6 +47,10 @@ const MOVES := {
 	## Boss challenge (v0.3.0 BX): a vortex drags the player (within pull_range_m, at pull_mps) toward the boss for
 	## its whole windup, then a ring of inner_radius_m..radius_m around it slams.
 	&"pull": {"shape": 3, "params": ["inner_radius_m", "radius_m", "pull_mps", "pull_range_m"]},
+	## v0.4.0 BO: `count` parallel lanes gap_m apart, centred on the line toward the player, marked for the windup;
+	## then for the whole active time the lanes stay (the Warlord's spears, the Foundry's molten floor) and hurt
+	## a player standing in them once every burn_seconds.
+	&"flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
 }
 
 ## Params that name an enemy (resolved by the compiler; a content test checks they exist).

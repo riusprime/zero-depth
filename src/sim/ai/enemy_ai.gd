@@ -62,6 +62,11 @@ static func is_enemy_kind(kind: int) -> bool:
 	return kind >= ActorStore.Kind.CHARGER
 
 
+## The behaviour an actor kind runs: its own, except the Hive Lens's drones (v0.4.0 BO), which run the Needle's.
+static func behaviour_of(kind: int) -> int:
+	return ActorStore.Kind.NEEDLE if kind == ActorStore.Kind.LENS_DRONE else kind
+
+
 ## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
 static func _charges(kind: int) -> bool:
 	return (
@@ -101,7 +106,7 @@ static func tracking(w: World, i: int) -> bool:
 		return false
 	return (
 		sniper
-		or a.kinds[i] == ActorStore.Kind.NEEDLE
+		or behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE
 		or (a.kinds[i] == ActorStore.Kind.ARC_CASTER and a.pick[i] != Spell.RUNE)
 	)
 
@@ -133,7 +138,7 @@ static func think(w: World, i: int) -> void:
 			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 				_end_relocation(a, i)
 			# A Needle backs off before it shoots; the others attack as soon as they're in range.
-			var too_close := a.kinds[i] == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
+			var too_close := behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
 			if (
 				alive
 				and a.cd[i] == 0
@@ -150,7 +155,7 @@ static func think(w: World, i: int) -> void:
 				a.fire_cd[i] = 0
 		State.ACTIVE:
 			var done := false
-			match a.kinds[i]:
+			match behaviour_of(a.kinds[i]):
 				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 					done = a.lock_len[i] <= 0.0
 				ActorStore.Kind.NEEDLE:
@@ -282,7 +287,7 @@ static func move(w: World, i: int) -> void:
 			return
 		var dir := to / dist
 		var side := 1.0 if a.ids[i] % 2 == 0 else -1.0
-		if a.kinds[i] == ActorStore.Kind.NEEDLE:
+		if behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE:
 			if dist < t.flee_distance_m:
 				dir = -dir
 			elif dist <= t.keep_distance_m + 1.0:
@@ -356,7 +361,7 @@ static func resolve(w: World, i: int) -> void:
 	var t := w.enemy_table(a.kinds[i])
 	var p := w.player_pos()
 	var pr := w.player.radius_m
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			var reach := t.radius_m + pr + CONTACT_SLOP_M
 			if a.fire_cd[i] == 0 and Kin.length(p - a.pos(i)) <= reach:
@@ -583,7 +588,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	if a.state[i] != State.WINDUP:
 		return {}
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, a.windup[i]), 0, 1000)
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
@@ -642,7 +647,7 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 	a.windup[i] = t.windup_ticks
 	if t.windup_max_ticks > t.windup_ticks:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
