@@ -5,7 +5,7 @@ extends RefCounted
 ## run-long state to World (shards, combos, engine stacks) append its field name to FIELDS; a name the world lacks
 ## is skipped, so the list may run ahead of the code. Values are copied, never shared between worlds.
 
-const FIELDS: Array[StringName] = [&"items_owned", &"shards"]
+const FIELDS: Array[StringName] = [&"items_owned", &"combos_owned", &"guard_charges", &"shards"]
 const HP := &"hp"
 
 
@@ -20,14 +20,19 @@ static func take(w: World, heal_permille: int) -> Dictionary:
 	return out
 
 
-## Applies a carry to a fresh world (before its loot is drawn, so a floor never offers what you already hold).
+## Applies a carry to a fresh world (before its loot is drawn, so a floor never offers what you already hold). The
+## items go through World.set_items_owned (modifiers and combos follow, no unlock events); the combos owned keep
+## their unlock order. Call it after World.set_item_tables and World.set_combo_tables (FloorScenario does).
 static func apply(w: World, carry: Dictionary) -> void:
+	if carry.has(&"items_owned"):
+		w.set_items_owned(carry[&"items_owned"])
 	for field: StringName in carry:
 		if field == HP:
 			w.actors.hp[0] = clampi(int(carry[HP]), 1, w.actors.max_hp[0])
+		elif field == &"items_owned":
+			continue
 		elif field in w:
 			w.set(field, _copy(carry[field]))
-	w.item_mods = ItemMods.build(w.item_tables, w.items_owned)
 
 
 static func _copy(v: Variant) -> Variant:

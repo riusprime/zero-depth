@@ -98,6 +98,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
 	assert_eq(hud.gate_text(), tr("HUD_PORTAL_OPEN"))
 	var hp_before := w.actors.hp[0]
+	var owned := w.items_owned.duplicate()  # the pedestal's item, and any picked up on the way
+	assert_has(owned, item)
 	# Leg 3: into the portal.
 	var gone: bool = await _walk(
 		e,
@@ -112,7 +114,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var w2 := e.world()
 	assert_ne(w2, w, "a new floor")
 	assert_eq(w2.floor_index, 2)
-	assert_eq(w2.items_owned, PackedInt32Array([item]), "the item came along")
+	assert_eq(w2.items_owned, owned, "the items came along, in order")
 	assert_eq(w2.actors.hp[0], mini(100, hp_before + 40), "healed 40 % of max HP")
 	assert_lt(w2.run_ticks, 30, "the danger clock restarts")
 	assert_eq(w2.seed_value, main.run.floor_seed(2), "with floor 2's seed")
@@ -122,7 +124,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	)
 	assert_eq(hud2.floor_text(), tr("HUD_FLOOR") % [2, tr(biome_2.name_key)])
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
-	assert_eq(hud2.item_icon_count(), 1, "the carried item's icon")
+	assert_eq(hud2.item_icon_count(), owned.size(), "the carried items' icons")
 	assert_true(main.get_node("UI/Fade").visible, "the floor fades in")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 

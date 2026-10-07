@@ -17,7 +17,8 @@ static func build(
 	spawning: SpawnTable,
 	items: Array[ItemTable],
 	arena: BossArenaSpec = null,
-	run: RunState = null
+	run: RunState = null,
+	combos: Array[ComboTable] = []
 ) -> World:
 	var layout := FloorGenerator.generate(seed_value)
 	var spec := arena if arena != null else BossArenaSpec.new()
@@ -33,6 +34,7 @@ static func build(
 		w.spawn_points.append_array(pts)
 	w.spawner = spawning
 	w.set_item_tables(items)
+	w.set_combo_tables(combos)  # v0.3.0 G: named combos, set before the run's carry restores the owned ones.
 	w.boss_flow = BossFlow.create(spec.boss_index)
 	if run != null:
 		run.prepare(w)

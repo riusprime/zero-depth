@@ -27,7 +27,8 @@ func _floor_world(seed_value: int, run: RunState = null) -> World:
 		ContentCompiler.compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo),
 		ContentCompiler.compile_items(repo),
 		null,
-		run
+		run,
+		ContentCompiler.compile_combos(repo)
 	)
 	w.actors.invuln[0] = LONG
 	return w
@@ -130,8 +131,31 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	assert_eq(RunCarry.take(w2, 400)[RunCarry.HP], 100, "the heal stops at max HP")
 
 
+func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
+	var r := RunState.start(9, _run_table())
+	var w := _floor_world(r.floor_seed(), r)
+	var combo := w.combo_tables[0]
+	w.add_item(combo.item_a)
+	w.add_item(combo.item_b)
+	w.guard_charges = 2
+	assert_eq(w.combos_owned, PackedInt32Array([0]), "both items unlock the combo")
+	assert_true(Engines.has_combo(w, combo.effect))
+	r.finish_floor(w)
+	var w2 := _floor_world(r.floor_seed(), r)
+	assert_eq(w2.combos_owned, PackedInt32Array([0]), "the combo came along")
+	assert_true(Engines.has_combo(w2, combo.effect), "and it is active on floor 2")
+	assert_eq(w2.guard_charges, 2, "guard charges carry too")
+	var unlocks := 0
+	for e in w2.events_since(0):
+		if e.kind == SimEvent.Kind.COMBO_UNLOCKED:
+			unlocks += 1
+	assert_eq(unlocks, 0, "no second unlock card on the new floor")
+
+
 func test_the_carry_names_its_fields_in_one_place() -> void:
 	assert_has(RunCarry.FIELDS, &"items_owned")
+	assert_has(RunCarry.FIELDS, &"combos_owned")
+	assert_has(RunCarry.FIELDS, &"guard_charges")
 	assert_has(RunCarry.FIELDS, &"shards", "E's shards carry when World has them")
 	var w := CombatLab.world()
 	var c := RunCarry.take(w, 400)
