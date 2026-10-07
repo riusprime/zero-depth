@@ -1130,3 +1130,7 @@ func gamble_candidates() -> PackedInt32Array:
 		if weights[s] > 0:
 			out.append(s)
 	return out
+
+
+func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
+	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0
