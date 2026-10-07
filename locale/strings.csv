@@ -171,3 +171,83 @@ UI_RECAP_ITEMS,Items: %s,Objetos: %s
 UI_RECAP_NO_ITEMS,Items: none,Objetos: ninguno
 UI_DEV_GOD,God mode,Modo dios
 UI_DEV_KILL_BOSS,Kill boss,Matar jefe
+UI_SECTION_AUDIO,Audio,Audio
+UI_SECTION_DISPLAY,Display,Pantalla
+UI_SECTION_CONTROLS,Controls,Controles
+UI_SECTION_ACCESSIBILITY,Accessibility,Accesibilidad
+UI_SECTION_LANGUAGE,Language,Idioma
+UI_AUDIO_MASTER,Master volume,Volumen general
+UI_AUDIO_SFX,Sound effects,Efectos de sonido
+UI_AUDIO_AMBIENCE,Ambience,Ambiente
+UI_CAPTIONS,Sound captions,Subtítulos de sonido
+UI_WINDOW_MODE,Window,Ventana
+UI_OPT_WINDOWED,Windowed,En ventana
+UI_OPT_FULLSCREEN,Fullscreen,Pantalla completa
+UI_RENDER_SCALE,Resolution scale,Escala de resolución
+UI_OPT_50,50 %,50 %
+UI_OPT_67,67 %,67 %
+UI_OPT_75,75 %,75 %
+UI_OPT_85,85 %,85 %
+UI_OPT_100,100 %,100 %
+UI_REDUCED_MOTION,Reduced motion,Movimiento reducido
+UI_COLOUR_MODE,Colour-blind mode,Modo daltónico
+UI_OPT_PROTANOPIA,Protanopia,Protanopía
+UI_OPT_DEUTERANOPIA,Deuteranopia,Deuteranopía
+UI_OPT_TRITANOPIA,Tritanopia,Tritanopía
+UI_COLOUR_MODE_NOTE,Colour changes show from the next floor.,Los cambios de color se ven desde el siguiente piso.
+UI_REMAP_ACTION,Action,Acción
+UI_REMAP_KEYBOARD,Keyboard / mouse,Teclado / ratón
+UI_REMAP_PAD,Controller,Mando
+UI_REMAP_RESET,Reset controls,Restablecer controles
+UI_REMAP_WAITING,…,…
+UI_REMAP_PRESS,Press a key or button (Esc / Back cancels),Pulsa una tecla o un botón (Esc / Back cancela)
+UI_REMAP_SWAPPED,Swapped with %s,Intercambiado con %s
+UI_REMAP_NONE,None,Ninguno
+UI_REMAP_MOUSE_AIMS,The mouse aims,Apunta el ratón
+UI_ACTION_MOVE_UP,Move up,Mover arriba
+UI_ACTION_MOVE_DOWN,Move down,Mover abajo
+UI_ACTION_MOVE_LEFT,Move left,Mover a la izquierda
+UI_ACTION_MOVE_RIGHT,Move right,Mover a la derecha
+UI_ACTION_PRIMARY,Melee,Cuerpo a cuerpo
+UI_ACTION_SHOOT,Shoot,Disparar
+UI_ACTION_DASH,Dash,Impulso
+UI_ACTION_UTILITY,Utility,Habilidad
+UI_ACTION_INTERACT,Interact,Interactuar
+UI_ACTION_PAUSE,Pause,Pausa
+UI_ACTION_AIM_UP,Aim up,Apuntar arriba
+UI_ACTION_AIM_DOWN,Aim down,Apuntar abajo
+UI_ACTION_AIM_LEFT,Aim left,Apuntar a la izquierda
+UI_ACTION_AIM_RIGHT,Aim right,Apuntar a la derecha
+UI_MOUSE_LEFT,Left click,Clic izquierdo
+UI_MOUSE_RIGHT,Right click,Clic derecho
+UI_MOUSE_MIDDLE,Middle click,Clic central
+UI_MOUSE_WHEEL_UP,Wheel up,Rueda arriba
+UI_MOUSE_WHEEL_DOWN,Wheel down,Rueda abajo
+UI_MOUSE_BACK,Mouse back,Ratón atrás
+UI_MOUSE_FORWARD,Mouse forward,Ratón adelante
+UI_MOUSE_OTHER,Mouse button,Botón del ratón
+UI_PAD_A,A / Cross,A / Cruz
+UI_PAD_B,B / Circle,B / Círculo
+UI_PAD_X,X / Square,X / Cuadrado
+UI_PAD_Y,Y / Triangle,Y / Triángulo
+UI_PAD_BACK,Back / Share,Back / Share
+UI_PAD_START,Start / Options,Start / Options
+UI_PAD_L3,Left stick click,Clic del stick izquierdo
+UI_PAD_R3,Right stick click,Clic del stick derecho
+UI_PAD_LB,LB / L1,LB / L1
+UI_PAD_RB,RB / R1,RB / R1
+UI_PAD_LT,LT / L2,LT / L2
+UI_PAD_RT,RT / R2,RT / R2
+UI_PAD_DPAD_UP,D-pad up,Cruceta arriba
+UI_PAD_DPAD_DOWN,D-pad down,Cruceta abajo
+UI_PAD_DPAD_LEFT,D-pad left,Cruceta izquierda
+UI_PAD_DPAD_RIGHT,D-pad right,Cruceta derecha
+UI_PAD_LS_UP,Left stick up,Stick izquierdo arriba
+UI_PAD_LS_DOWN,Left stick down,Stick izquierdo abajo
+UI_PAD_LS_LEFT,Left stick left,Stick izquierdo a la izquierda
+UI_PAD_LS_RIGHT,Left stick right,Stick izquierdo a la derecha
+UI_PAD_RS_UP,Right stick up,Stick derecho arriba
+UI_PAD_RS_DOWN,Right stick down,Stick derecho abajo
+UI_PAD_RS_LEFT,Right stick left,Stick derecho a la izquierda
+UI_PAD_RS_RIGHT,Right stick right,Stick derecho a la derecha
+UI_PAD_OTHER,Pad button,Botón del mando

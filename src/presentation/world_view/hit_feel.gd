@@ -78,7 +78,7 @@ func _burst(at: Vector2, c: Color, n: int, size: float) -> void:
 		_burst_mats[c] = m
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * size
-	for k in n:
+	for k in ViewPrefs.sparks(n):  # reduced motion throws fewer (v0.3.0 O)
 		var s := MeshInstance3D.new()
 		s.mesh = box
 		s.material_override = m
