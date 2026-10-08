@@ -1,6 +1,9 @@
 extends SceneTree
-## G2 "Look" mockup (v0.5.9 PLAN Step 2): the same floor (fixed run seed) in each biome, A = the pre-v0.5.9 look
-## (no mood), B = the biome's lighting mood. Boots main.tscn, starts a run with keys, then rebuilds the first floor
+## G2 "Look" mockup (v0.5.9 PLAN Step 2): the same floor (fixed run seed) in each biome. A = the pre-v0.5.9
+## look (no mood), B = the biome's lighting mood and the owner's kit, C = B pixelated. C is made in post: the B
+## frame is downsampled PIXEL_FACTOR times and scaled back up nearest-neighbour, so the HUD is pixelated too
+## (the real filter would render only the 3D world at low resolution and keep the HUD sharp).
+## Boots main.tscn, starts a run with keys, then rebuilds the first floor
 ## per biome and variant. Saves PNGs to build/shots/<version>/look/. Needs a renderer (not --headless):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_look.gd
 ## Optional: lighting=low (B without SSAO/SSIL), biomes=ruins,red_canyon, zoom=30 (the ortho camera size),
@@ -8,6 +11,7 @@ extends SceneTree
 
 ## Frames to let a rebuilt floor settle (shaders compile, SSAO/SSIL history fills) before the shot.
 const SETTLE := 40
+const PIXEL_FACTOR := 3
 
 var _biomes: Array[StringName] = [&"ruins", &"night_rocks", &"red_canyon"]
 
@@ -52,7 +56,7 @@ func _initialize() -> void:
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
 	for b in _biomes:
-		for variant in ["A", "B"]:
+		for variant in ["A", "B", "C"]:
 			_jobs.append([b, variant])
 
 
@@ -89,7 +93,7 @@ func _process(_delta: float) -> bool:
 				_main.view.rewards._opening[_chest] = 0.0
 			if _wait <= 0:
 				var job: Array = _jobs.pop_front()
-				_shot("%s_%s_%s%s" % [job[1], job[0], _lighting, _tag])
+				_shot("%s_%s_%s%s" % [job[1], job[0], _lighting, _tag], job[1] == "C")
 				_phase = 1
 	return false
 
@@ -99,7 +103,7 @@ func _build(biome: StringName, variant: String) -> void:
 	var def: BiomeDefinition = load("res://data/biomes/%s.tres" % biome)
 	var mood := def.mood
 	if variant == "A":
-		def.mood = null
+		def.mood = null  # C keeps the mood: it is B, pixelated at the shot
 	_main._end_floor()
 	_main._run_biomes = [biome, biome, biome, biome] as Array[StringName]
 	_main._start_floor()
@@ -137,7 +141,13 @@ func _key(code: Key, pressed: bool) -> void:
 	Input.parse_input_event(ev)
 
 
-func _shot(name: String) -> void:
+func _shot(name: String, pixelate := false) -> void:
 	var path := _dir + name + ".png"
-	root.get_texture().get_image().save_png(path)
+	var img := root.get_texture().get_image()
+	if pixelate:
+		var w := img.get_width()
+		var h := img.get_height()
+		img.resize(w / PIXEL_FACTOR, h / PIXEL_FACTOR, Image.INTERPOLATE_BILINEAR)
+		img.resize(w, h, Image.INTERPOLATE_NEAREST)
+	img.save_png(path)
 	print("mock_look: ", path)

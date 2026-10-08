@@ -31,6 +31,9 @@ const SPECS := {
 ## The chest's lid seam, as a fraction of its height (an empty band in its vertex heights at 0.55-0.575; the
 ## lock is on its -Z face after the yaw, so the hinge is the +Z edge of the seam).
 const CHEST_LID_CUT := 0.56
+## Level-of-detail generation (ImporterMesh.generate_lods): normals merge below / split above these angles.
+const LOD_NORMAL_MERGE_DEG := 25.0
+const LOD_NORMAL_SPLIT_DEG := 60.0
 
 ## Where pieces are looked up (tests point it elsewhere to see the fallback).
 static var dir := DIR
@@ -110,6 +113,16 @@ static func split(id: StringName, cut: float) -> Dictionary:
 	return out
 
 
+## The surface as a mesh with generated levels of detail (the owner's pieces are 7-14k triangles each; a level
+## at about half and one at about a quarter, picked by on-screen size). Where the engine build can't simplify,
+## the mesh simply has no LODs.
+static func _with_lods(arrays: Array) -> ArrayMesh:
+	var im := ImporterMesh.new()
+	im.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	im.generate_lods(LOD_NORMAL_MERGE_DEG, LOD_NORMAL_SPLIT_DEG, [])
+	return im.get_mesh()
+
+
 ## Surface arrays keeping only the vertices `idx` uses (so each part's bounds are its own), re-indexed.
 static func _compact(arrays: Array, idx: PackedInt32Array) -> Array:
 	var remap := {}
@@ -181,8 +194,7 @@ static func _normalise(surface: Dictionary, spec: Dictionary) -> Dictionary:
 			ts[k + 1] = t.y
 			ts[k + 2] = t.z
 		arrays[Mesh.ARRAY_TANGENT] = ts
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var mesh := _with_lods(arrays)
 	var height: float = spec["height"]
 	var size := Vector3(ext.x, ext.y, ext.z) * (height / ext.y)
 	return {"mesh": mesh, "material": surface["material"], "size": size}

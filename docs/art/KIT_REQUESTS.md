@@ -27,22 +27,22 @@ Nothing here blocks a step. A missing piece draws its current primitive (L15).
 
 | # | id | role | target W×D×H (m) | prompt (after the prefix) | status |
 |---|---|---|---|---|---|
-| 1 | `wall_1m` | wall | 1 × 1 × 1 | a cube-shaped block of rough grey stone or concrete, chipped top edges, small cracks | received raw (`b21b2af`) |
-| 2 | `wall_2m` | wall | 2 × 1 × 1 | a long rectangular block of rough grey stone or concrete, twice as long as tall, a crack across the middle | received raw (`b21b2af`) |
-| 3 | `wall_broken` | wall | 1 × 1 × 0.7 | a broken low concrete block with a jagged, crumbled top, a few bits of rusty rebar sticking out | received raw (`b21b2af`) |
-| 4 | `wall_pillar` | wall corner | 1 × 1 × 1.3 | a thick square stone pillar, slightly taller than wide, chipped corners, flat top | received raw (`b21b2af`) |
-| 5 | `slab_concrete` | cover | 1 × 1 × 1.8 | a tall weathered concrete slab standing upright, cracked, chunks missing from the top corner | received raw (`b21b2af`) |
-| 6 | `slab_wide` | cover | 2 × 1 × 1.8 | two tall weathered concrete slabs standing side by side, touching, different heights | received raw (`b21b2af`) |
-| 7 | `crate_stack` | cover | 1 × 1 × 1.2 | a stack of two or three old wooden and metal crates, slightly offset, worn planks | received raw (`b21b2af`) |
-| 8 | `car_wreck` | cover | 2 × 4 × 1.4 | an abandoned rusty boxy car wreck, flat tyres, broken windows, dented panels | received raw (`b21b2af`) |
-| 9 | `rock_large` | cover | 1.5 × 1.5 × 1.2 | a large faceted boulder with sharp flat faces, angular low-poly rock | received raw (`b21b2af`) |
-| 10 | `fire_barrel` | light source | 0.6 × 0.6 × 0.9 | a rusty open-top oil drum, dented, burn marks near the rim, empty inside (no fire) | received raw (`b21b2af`) |
-| 11 | `brazier_pole` | light source | 0.3 × 0.3 × 2.0 | a tall thin metal pole with a small iron fire basket on top, empty basket (no fire) | received raw (`b21b2af`) |
-| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed, a clear horizontal seam between lid and body. **Closed only.** A separate lid part is nice but not needed: a single mesh is cut at the seam in code (as BossRig does for bosses) | received raw (`b21b2af`) |
-| 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | received raw (`b21b2af`) |
-| 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | received raw (`b21b2af`) |
-| 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | received raw (`b21b2af`) |
-| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | full prompts in [Ground textures](#ground-textures) below (they replace the prefix) | received raw (`b21b2af`) |
+| 1 | `wall_1m` | wall | 1 × 1 × 1 | a cube-shaped block of rough grey stone or concrete, chipped top edges, small cracks | delivered (`fbedd6d`) |
+| 2 | `wall_2m` | wall | 2 × 1 × 1 | a long rectangular block of rough grey stone or concrete, twice as long as tall, a crack across the middle | delivered (`fbedd6d`) |
+| 3 | `wall_broken` | wall | 1 × 1 × 0.7 | a broken low concrete block with a jagged, crumbled top, a few bits of rusty rebar sticking out | delivered (`fbedd6d`) |
+| 4 | `wall_pillar` | wall corner | 1 × 1 × 1.3 | a thick square stone pillar, slightly taller than wide, chipped corners, flat top | delivered (`fbedd6d`) |
+| 5 | `slab_concrete` | cover | 1 × 1 × 1.8 | a tall weathered concrete slab standing upright, cracked, chunks missing from the top corner | delivered (`fbedd6d`) |
+| 6 | `slab_wide` | cover | 2 × 1 × 1.8 | two tall weathered concrete slabs standing side by side, touching, different heights | delivered (`fbedd6d`) |
+| 7 | `crate_stack` | cover | 1 × 1 × 1.2 | a stack of two or three old wooden and metal crates, slightly offset, worn planks | delivered (`fbedd6d`) |
+| 8 | `car_wreck` | cover | 2 × 4 × 1.4 | an abandoned rusty boxy car wreck, flat tyres, broken windows, dented panels | delivered (`fbedd6d`) |
+| 9 | `rock_large` | cover | 1.5 × 1.5 × 1.2 | a large faceted boulder with sharp flat faces, angular low-poly rock | delivered (`fbedd6d`) |
+| 10 | `fire_barrel` | light source | 0.6 × 0.6 × 0.9 | a rusty open-top oil drum, dented, burn marks near the rim, empty inside (no fire) | delivered (`fbedd6d`) |
+| 11 | `brazier_pole` | light source | 0.3 × 0.3 × 2.0 | a tall thin metal pole with a small iron fire basket on top, empty basket (no fire) | delivered (`fbedd6d`) |
+| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed, a clear horizontal seam between lid and body. **Closed only.** A separate lid part is nice but not needed: a single mesh is cut at the seam in code (as BossRig does for bosses) | delivered (`fbedd6d`) |
+| 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | delivered (`fbedd6d`) |
+| 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | delivered (`fbedd6d`) |
+| 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | delivered (`fbedd6d`) |
+| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | full prompts in [Ground textures](#ground-textures) below (they replace the prefix) | delivered (`fbedd6d`) |
 
 **Fire and glow** (flames, sparks, the chest's inner light) are made in the engine, not in the models.
 
@@ -86,11 +86,17 @@ These don't use the prefix above. Each one is a 2D image, 1024 × 1024 px, squar
 | `column_broken` | Ruins | cover | 1 × 1 × 1.6 | a broken ancient stone column, snapped top, fallen chunk at its base | requested |
 | `ladder_frame` | Ruins | cover | 1 × 0.4 × 2.0 | a rusty metal scaffold frame with a ladder, flat-backed so it stands against a wall | requested |
 | `boulder_small` | Night Rocks | decoration | 0.5 × 0.5 × 0.35 | a small angular faceted rock, flat underside | requested |
-| `dead_tree` | Night Rocks | cover | 1 × 1 × 2.2 | a leafless dead tree with a thick twisted trunk and a few bare angular branches | received raw (`5bc2917`, on `main`) |
+| `dead_tree` | Night Rocks | cover | 1 × 1 × 2.2 | a leafless dead tree with a thick twisted trunk and a few bare angular branches | delivered (`fbedd6d`) |
 | `mesa_chunk` | Red Canyon | cover | 1.5 × 1.5 × 1.4 | a layered sandstone rock block with horizontal strata, flat top | requested |
 | `dry_shrub` | Red Canyon | decoration | 0.5 × 0.5 × 0.4 | a small dry thorny desert shrub, low-poly | requested |
 
 ## Delivery
+
+`scripts/assets/kit_prep.py` turns each upload into the game's copy:
+- textures downscaled to 1024 px and brightened, because the uploads read black under the night moods;
+- the ground textures made seamless and neutral, so each biome's ground colour tints them.
+
+The raw uploads stay in `unprocessed_images/kit/`.
 
 When a piece arrives:
 
