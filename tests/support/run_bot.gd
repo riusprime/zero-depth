@@ -199,7 +199,10 @@ func _update_goal(w: World) -> void:
 		return
 	var bf := w.boss_flow
 	if bf != null and bf.portal_active():
-		_set_goal(f.portal_front_point(), "portal", -1)
+		# Into the gate's opening (BossFlow: within EXIT_DEPTH_M of its face), not the clear square in front of it,
+		# whose middle is 1.5 m out (the v0.5.0 SCD bot found a wait there).
+		var into := FloorLayout.GATE_HALF_DEPTH + BossFlow.EXIT_DEPTH_M * 0.5
+		_set_goal(f.portal_pos + f.portal_facing() * into, "portal", -1)
 		return
 	if bf != null and bf.door_sealed():
 		_goal_kind = "boss"
