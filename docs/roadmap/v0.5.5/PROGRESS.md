@@ -11,10 +11,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
-| — | Plan: every line of the feedback | this commit |
+| — | Plan: every line of the feedback | `8e248ab` |
+| EC | Floor 1 is calm for 30 s then ramps faster, floors 2–3 start warm (D1); heal orbs only with the new Lifesprout card (D9); at most 2 altars a floor, the rest chests (S1); shop rerolls keep sold slots and 4 buys a floor (S2, S3); shards −30 %, floor 2–3 shop prices ×1.5 and a portal keeps half the unspent shards (S4, Q-S4); bot balance sims retired (P1). Evidence: [`evidence/ECONOMY.md`](evidence/ECONOMY.md) | `afa3c70` |
 
 ## Goldens changed on purpose
-- none
+- none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -30,3 +31,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 
 ## History
 - 2026-10-08: plan written from the owner's v0.5.0 playtest; wave 1 (EC, CD, LK) started.
+- 2026-10-08: Step EC built (`afa3c70`), full suite 1076/1076 and export smoke green; MIN_TEST_COUNT 1086 → 1076
+  (the bot tests left, P1). Owner answered Q-S4 "Keep half" (built in EC). Open for the owner: whether the Overrun
+  clear's altar counts toward S1's two, and the Blade's card pool at 51 (evidence/ECONOMY.md).
