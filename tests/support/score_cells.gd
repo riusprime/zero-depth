@@ -35,40 +35,6 @@ const IDS: Array[String] = [
 	"M-GENERALIST",
 ]
 const STATUSES: Array[String] = ["met", "missed", "no band yet", "no data", "NOT YET RUN"]
-## Damage effect ids (SimEvent.effect_id) that come from a multiplicative interaction (M-SYNERGY): an engine's
-## status ticks and payoffs, the named item combos and the ability combos, by engine. Everything else (weapon
-## swings and bolts, the abilities' own hits, plain item procs) is additive.
-const ENGINE_EFFECTS := {
-	"fire": [&"ember_edge", &"cinder_shot", &"wildfire", &"napalm_drone", &"ember_ward"],
-	"shock":
-	[
-		&"shock",
-		&"shock_discharge",
-		&"static_chain",
-		&"overcharge",
-		&"plasma_arc",
-		&"storm_bombs",
-		&"superconductor"
-	],
-	"bleed": [&"bleed", &"bleed_burst", &"blood_harvest"],
-	"frost":
-	[
-		&"frost",
-		&"freeze",
-		&"cold_snap",
-		&"frost_core",
-		&"glacial_edge",
-		&"glacier_ring",
-		&"frozen_bastion",
-		&"shatter_dash"
-	],
-	"guard": [&"bulwark", &"thorn_mantle", &"spiked_phase"],
-	"heat": [&"heat_vent", &"meltdown", &"overclock_heat"],
-	"combo":
-	[&"resonance", &"shrapnel_storm", &"slipstream", &"blink_charge", &"blade_dance", &"wingman"],
-}
-## The engine an element ability brings (it counts as a stack of that engine).
-const ENGINE_OF_ABILITY := {&"arc_field": "shock", &"frost_nova": "frost", &"flame_trail": "fire"}
 ## The v0.4.0 PLAN TU starting band (expected-build bot): deaths on floor 1 under 30 %, by floor 3 30–60 %.
 const TU_FLOOR1_DEATH_MAX := 0.30
 const MIN_PICK_OFFERS := 5
@@ -496,9 +462,12 @@ static func _threat(records: Array) -> Dictionary:
 			base.append(r)
 		elif r["policy"] == "competent+t":
 			t.append(r)
-	if t.is_empty():
+	if t.is_empty() or base.is_empty():
 		return cell(
-			"win rate falls as T rises; rewards make T worth it", "no data", {}, "no +t runs"
+			"win rate falls as T rises; rewards make T worth it",
+			"no data",
+			{},
+			"no competent and competent+t runs"
 		)
 	var cards := 0
 	var bonus := 0
@@ -653,8 +622,9 @@ static func _hazard(records: Array) -> Dictionary:
 			rates[b] = ScoreStats.wilson(died[b], reached[b])
 			lo = minf(lo, float(rates[b]["rate"]))
 			hi = maxf(hi, float(rates[b]["rate"]))
-		var diff := snappedf((hi - lo) * 100.0, 0.01) if keys.size() >= 2 else 0.0
+		var diff: Variant = null  # null: the floor was not played in two biomes
 		if keys.size() >= 2:
+			diff = snappedf((hi - lo) * 100.0, 0.01)
 			any = true
 			worst = maxf(worst, diff)
 		out[str(f)] = {"death_rate_by_biome": rates, "spread_pp": diff}
@@ -664,7 +634,10 @@ static func _hazard(records: Array) -> Dictionary:
 		"<= 10 pp (v0.7.0 gate)",
 		"met" if worst <= 10.0 else "missed",
 		out,
-		"a floor's death rate per biome (normal policies), and the widest spread between two biomes"
+		(
+			"a floor's death rate per biome (normal policies), and the widest spread between two biomes (null: the "
+			+ "floor was not played in two biomes); status over the floors that were"
+		)
 	)
 
 
@@ -769,13 +742,6 @@ static func _power(records: Array) -> Dictionary:
 	)
 
 
-static func _engine_of(effect: String) -> String:
-	for e: String in ENGINE_EFFECTS:
-		if (ENGINE_EFFECTS[e] as Array).has(StringName(effect)):
-			return e
-	return ""
-
-
 static func _synergy(records: Array) -> Dictionary:
 	var tags := {}
 	for def: ItemDefinition in ContentRepository.load_all().all_of(&"items"):
@@ -792,7 +758,7 @@ static func _synergy(records: Array) -> Dictionary:
 			var by_engine := {}
 			var syn := 0
 			for eff: String in fr["dealt_by_effect"]:
-				var e := _engine_of(eff)
+				var e := ScoreStats.engine_of(eff)
 				if e != "":
 					syn += int(fr["dealt_by_effect"][eff])
 					by_engine[e] = int(by_engine.get(e, 0)) + int(fr["dealt_by_effect"][eff])
@@ -802,10 +768,10 @@ static func _synergy(records: Array) -> Dictionary:
 				for t: String in tags.get(id, PackedStringArray()):
 					stacks[t] = int(stacks.get(t, 0)) + 1
 			for ab: Array in fr["end_abilities"]:
-				var e: String = ENGINE_OF_ABILITY.get(StringName(ab[0]), "")
+				var e: String = ScoreStats.ENGINE_OF_ABILITY.get(StringName(ab[0]), "")
 				if e != "":
 					stacks[e] = int(stacks.get(e, 0)) + 1
-			for e: String in ENGINE_EFFECTS:
+			for e: String in ScoreStats.ENGINE_EFFECTS:
 				if e == "combo":
 					continue
 				var s := str(mini(int(stacks.get(e, 0)), 3))
@@ -853,7 +819,7 @@ static func _synergy(records: Array) -> Dictionary:
 		status,
 		{"synergy_share_per_floor": ScoreStats.dist(share_all), "engine_share_by_stacks": table},
 		(
-			"a floor's share of the player's damage from engine statuses, payoffs and combos (ENGINE_EFFECTS), by "
+			"a floor's share of the player's damage from engine statuses, payoffs and combos (ScoreStats.ENGINE_EFFECTS), by "
 			+ "the engine's stacks at the floor's end (mods with its tag + its element ability; 3 = 3 or more). "
 			+ (
 				"Status: the share must rise strictly from each bucket with >= 3 floors to the next; "

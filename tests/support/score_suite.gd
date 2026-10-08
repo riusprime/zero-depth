@@ -293,7 +293,8 @@ static func headline(id: String, cell: Dictionary) -> String:
 		"M-HAZARD":
 			var parts := PackedStringArray()
 			for f: String in d:
-				parts.append("floor %s %s pp" % [f, str(d[f]["spread_pp"])])
+				var pp: Variant = d[f]["spread_pp"]
+				parts.append("floor %s %s" % [f, "—" if pp == null else "%s pp" % str(pp)])
 			return ", ".join(parts)
 		"M-BENCH":
 			return _short(d)

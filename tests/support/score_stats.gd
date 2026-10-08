@@ -3,6 +3,41 @@ extends RefCounted
 ## Groups and statistics for the scorecard's cells (v0.5.0 SCD; ScoreCells): archetype labels, which records a cell
 ## reads, win rates with 95 % Wilson intervals (SCORECARD §1.4) and nearest-rank distributions.
 
+## Damage effect ids (SimEvent.effect_id) that come from a multiplicative interaction (M-SYNERGY): an engine's
+## status ticks and payoffs, the named item combos and the ability combos, by engine. Everything else (weapon
+## swings and bolts, the abilities' own hits, plain item procs) is additive.
+const ENGINE_EFFECTS := {
+	"fire": [&"ember_edge", &"cinder_shot", &"wildfire", &"napalm_drone", &"ember_ward"],
+	"shock":
+	[
+		&"shock",
+		&"shock_discharge",
+		&"static_chain",
+		&"overcharge",
+		&"plasma_arc",
+		&"storm_bombs",
+		&"superconductor"
+	],
+	"bleed": [&"bleed", &"bleed_burst", &"blood_harvest"],
+	"frost":
+	[
+		&"frost",
+		&"freeze",
+		&"cold_snap",
+		&"frost_core",
+		&"glacial_edge",
+		&"glacier_ring",
+		&"frozen_bastion",
+		&"shatter_dash"
+	],
+	"guard": [&"bulwark", &"thorn_mantle", &"spiked_phase"],
+	"heat": [&"heat_vent", &"meltdown", &"overclock_heat"],
+	"combo":
+	[&"resonance", &"shrapnel_storm", &"slipstream", &"blink_charge", &"blade_dance", &"wingman"],
+}
+## The engine an element ability brings (it counts as a stack of that engine).
+const ENGINE_OF_ABILITY := {&"arc_field": "shock", &"frost_nova": "frost", &"flame_trail": "fire"}
+
 
 ## A record's archetype label: "<policy>:<build>", plus "@<skill>" off the average preset.
 static func label(r: Dictionary) -> String:
@@ -45,7 +80,7 @@ static func by_label(records: Array, keep: Callable) -> Dictionary:
 ## Wins over n with the 95 % Wilson interval: {wins, n, rate, lo, hi} (rates rounded to 4 places).
 static func wilson(wins: int, n: int) -> Dictionary:
 	if n <= 0:
-		return {"wins": 0, "n": 0, "rate": 0.0, "lo": 0.0, "hi": 0.0}
+		return {"wins": 0, "n": 0, "rate": null, "lo": null, "hi": null}  # nothing measured, no number
 	var z := 1.959964
 	var p := float(wins) / n
 	var den := 1.0 + z * z / n
@@ -112,3 +147,11 @@ static func sorted_sets(d: Dictionary) -> Dictionary:
 		v.sort()
 		out[k] = v
 	return out
+
+
+## The engine whose effect id `effect` is (ENGINE_EFFECTS), or "".
+static func engine_of(effect: String) -> String:
+	for e: String in ENGINE_EFFECTS:
+		if (ENGINE_EFFECTS[e] as Array).has(StringName(effect)):
+			return e
+	return ""
