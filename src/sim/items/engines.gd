@@ -91,6 +91,8 @@ static func combo(w: World, effect: int) -> ComboTable:
 static func combos_for(tables: Array[ComboTable], owned: PackedInt32Array) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for c in tables.size():
+		if tables[c].item_a < 0:  # v0.4.0 AB: an ability combo (AbilityCombos.earned)
+			continue
 		if owned.has(tables[c].item_a) and owned.has(tables[c].item_b):
 			out.append(c)
 	return out
@@ -373,6 +375,7 @@ static func on_guard_block(w: World, owner_id: int, root: int) -> void:
 	if cap > 0 and w.guard_charges < cap:
 		w.guard_charges += 1
 		_status(w, 0, root, w.guard_charges, EFFECT_BULWARK)
+	AbilityCombos.on_guard_block(w, root)  # v0.4.0 AB: Ember Ward
 	var c := combo(w, ComboTable.Effect.FROZEN_BASTION)
 	var k := a.index_of(owner_id)
 	if c == null or k <= 0 or a.dead[k] == 1 or a.teams[k] == ActorStore.TEAM_PLAYER:

@@ -40,6 +40,9 @@ var skill_fx := SkillVisuals.new()
 ## v0.4.0 BS: bombs, drones, orbit blades, the blink shock; damage numbers (crits big and yellow).
 var ability_fx := AbilityVisuals.new()
 var damage_numbers := DamageNumbers.new()
+## v0.4.0 AB: Arc Field, Frost Nova, the fire, the ability combos; the Overrun room's red door frames.
+var element_fx := ElementVisuals.new()
+var overrun_doors := OverrunDoorViews.new()
 ## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
 var horde_fx := HordeVisuals.new()
 var rig := IsoRig.new()
@@ -68,6 +71,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(heat_fx)
 	add_child(skill_fx)  # v0.3.5 K
 	add_child(ability_fx)  # v0.4.0 BS
+	add_child(element_fx)  # v0.4.0 AB
+	add_child(overrun_doors)
+	overrun_doors.setup(reader)
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
 	if reader.has_floor():
@@ -115,6 +121,8 @@ func sync() -> void:
 	transit.sync(reader)  # after the actors: it poses the hero's model
 	skill_fx.sync(reader)  # v0.3.5 K
 	ability_fx.sync(reader)  # v0.4.0 BS
+	element_fx.sync(reader)  # v0.4.0 AB
+	overrun_doors.sync(reader)
 	damage_numbers.sync(reader)
 	horde_fx.sync(reader)  # v0.4.0 EN
 	if boss_door != null:

@@ -11,6 +11,7 @@ merged.
 |---|---|---|
 | — | Plan | this commit |
 | BS | Four ability slots (slot 1 = Combo Sword / Pulse Gun; Bomb Lobber, Drone Buddy, Orbit Blades, Blink with a landing shock, Aegis as cards; full slots level up to L5); no utility at the start (F11); 12 stat cards × 3 rarities and crit (5 %, ×1.5, `crit` stream); altars and chests offer abilities, stat cards and the items as mods; the shrine pays into the same stats; ability HUD, card faces, damage numbers (crits big and yellow), bombs / drones / blades / shock in the world; dev panel grants abilities. Evidence: [`evidence/BUILD_SYSTEM.md`](evidence/BUILD_SYSTEM.md) | `7a4a453` + this commit |
+| AB | Arc Field, Frost Nova, Flame Trail (auto abilities feeding the shock, frost and burn engines; L1–L5); eight ability combos (both at L3 evolve: Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward; combo card, badge, look); the Overrun threat branch (one optional red-framed side room per floor, ×1.5 HP and damage, +50 % spawns inside, 12 kills clear it for an ability-card altar and 2× shards; minimap mark, banner, sounds); dev panel route to the Overrun door. Evidence: [`evidence/ABILITIES_2.md`](evidence/ABILITIES_2.md) | `v0.4.0 Step AB` |
 | EN | Six horde enemies (Swarmer packs, Splitter, Shield Bearer, Mender, Mine Layer, Sniper): 12 behaviours ([`evidence/ENEMIES_12.md`](evidence/ENEMIES_12.md)) | `v0.4.0 Step EN` |
 | BO | A second boss in every pool: the Warlord (floor 1), the Hive Lens (floor 2, splits into three Lens Drones), the Foundry (floor 3); the `flood` move; sounds, strings, image prompts ([`evidence/BOSSES_2.md`](evidence/BOSSES_2.md), [`../../art/BOSSES_2.md`](../../art/BOSSES_2.md)) | `v0.4.0 Step BO` |
 | SC | Enemies scale per floor (HP ×1.9, damage ×1.4) and every 30 s danger tier (×1.10, ×1.05); hordes grow from 14/30/50 to 120 alive in packs at the room edges; the sim carries 120 enemies + 200 shots at 3.66 ms a tick (evidence/HORDES.md) | this commit |
@@ -19,6 +20,7 @@ merged.
 - BS: none (the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
   chance is in play, which the kernel worlds never have).
 - BO: none (replay and export-smoke hashes unchanged).
+- AB: none (the new ability-state and Overrun hash blocks are added only once those are in play).
 - SC: `tests/golden/fixtures/replay_ground_plane.json` (final `5171fdad…41ae` → `70ac7ca2…0add`, first different
   checkpoint tick 420) and `tests/golden/fixtures/export_smoke_hash.txt` (`9c324d3d…17f2` → `e5365ddb…7391`). Why:
   the broadphase changed from 1 m Dictionary cells to `DenseGrid` (2 m cells; actors listed by centre). Collision
@@ -44,10 +46,25 @@ merged.
 - BS: `scripts/shots/vfx_cards.gd` still sets the removed utility pick in its profile (it no longer gets Blink); not
   run in CI.
 
+- AB decisions (starting values, the owner tunes after playing): Frost Nova's "L3 freezes on 4 stacks faster" is
+  read as 4 frost stacks per nova from L3 (a nova freezes on its own; 2 stacks a nova at 4 s never reach the 3 s
+  stack life). Flame Trail drops a 0.9 m patch every 0.8 m moved (at most every 0.15 s); "6 dmg/s" = 3 every 0.5 s.
+  The three borrow their engine's numbers from an item (Static Chain, Glacial Edge, Ember Edge). Ability combos
+  reuse the v0.3.0 combo framework (ComboDefinition with two abilities). Overrun: the room is picked among the rooms
+  already generated (no new room or wall: layouts and goldens unchanged), from the `map:overrun` sub-stream; "while
+  you're in it" = enemies that arrive while you stand in the room are Overrun enemies (×1.5 HP and damage for life);
+  the clear is a kill count (12 Overrun kills), "2× shards" = the shards those kills paid are paid again on the clear.
+- AB not done: no ability-combo or Overrun line in the run recap; the Overrun altar looks like any altar (its offer
+  is ability cards only).
+
 ## Blockers
 - none
 
 ## History
+- 2026-10-08 — AB merged with the lead branch (BO, CP, SC at `55a895d`): bombs, blink, Fast Hands and the Overrun
+  spawn hooks composed as in `evidence/ABILITIES_2.md`; 924 / 924, readable cause 0 violations, export smoke ok.
+- 2026-10-07 — Step AB: three element abilities, eight ability combos and the Overrun branch built and verified (see
+  `evidence/ABILITIES_2.md`: 845 / 845, lint clean, minimum test count 845); no golden changed.
 - 2026-10-07 — BS: build system built and verified on `7a4a453` (743 / 743, lint clean); final commit adds the
   evidence and this file. Owner note mid-step ("spell cooldowns have to be a bit bigger"): the ability slots are 52 px
   with a sweep and seconds left; their frames follow `CardStyle.current`.

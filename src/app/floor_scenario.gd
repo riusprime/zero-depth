@@ -28,6 +28,7 @@ static func build(
 	var layout := FloorGenerator.generate(seed_value)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
+	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))

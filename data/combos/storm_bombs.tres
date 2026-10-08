@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"bomb_lobber"
+ability_b = &"arc_field"
+min_level = 3
+name_key = &"ABILITY_COMBO_STORM_BOMBS"
+desc_key = &"ABILITY_COMBO_STORM_BOMBS_DESC"
+effect = 8
+damage = 10
+radius_m = 5.0
+count = 3
+stacks = 1
+id = &"storm_bombs"

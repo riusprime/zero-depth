@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 9
+activation = 1
+button = 0
+name_key = &"ABILITY_FLAME_TRAIL"
+desc_key = &"ABILITY_FLAME_TRAIL_DESC"
+tags = Array[StringName]([&"fire", &"area", &"auto"])
+radius_m = 0.9
+period_seconds = 0.15
+duration_seconds = 2.0
+hit_seconds = 0.5
+damage = 3
+level_damage = PackedFloat32Array(1, 1.25, 1.5, 1.75, 2)
+level_rate = PackedFloat32Array(1, 1.25, 1.5, 1.75, 2)
+level_extra = PackedInt32Array(1, 1, 1, 1, 1)
+engine_item = &"ember_edge"
+id = &"flame_trail"

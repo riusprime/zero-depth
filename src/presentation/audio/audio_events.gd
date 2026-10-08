@@ -39,6 +39,17 @@ const DEATHS := {
 	WorldReader.KIND_LENS_DRONE: &"enemy_death_lens_drone",
 }
 
+## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
+const ELEMENT_CUES := {
+	&"arc_field": &"arc_field",
+	&"superconductor": &"arc_field",
+	&"frost_nova": &"frost_nova",
+	&"flame_trail": &"flame_trail",
+	&"napalm_drone": &"flame_trail",
+	&"ember_ward": &"flame_trail",
+	&"storm_bombs": &"arc_field",
+}
+
 var _last_seq := 0
 var _kinds := {}
 var _states := {}
@@ -57,6 +68,8 @@ var _denied_tick := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
+## v0.4.0 AB: the Overrun room's last state (inside, cleared).
+var _overrun := [false, false]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -70,6 +83,8 @@ func prime(reader: WorldReader) -> void:
 	_denied_tick = reader.reward_denied_tick()
 	_heartbeat_left = 0
 	_heat_ticks = _heat_edges(reader.heat_state())
+	var o := reader.overrun()
+	_overrun = [o["inside"], o["cleared"]]
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -92,7 +107,18 @@ func collect(reader: WorldReader) -> Array:
 	_rewards(reader, out)
 	_low_hp(reader, out)
 	_heat(reader, out)
+	_overrun_edges(reader, out)
 	return out
+
+
+## v0.4.0 AB: walking into the Overrun room sounds its alarm; clearing it, its fanfare.
+func _overrun_edges(reader: WorldReader, out: Array) -> void:
+	var o := reader.overrun()
+	if o["inside"] and not _overrun[0]:
+		out.append([&"overrun_enter", null, 1.0])
+	if o["cleared"] and not _overrun[1]:
+		out.append([&"overrun_clear", null, 1.0])
+	_overrun = [o["inside"], o["cleared"]]
 
 
 func _events(reader: WorldReader, out: Array) -> void:
@@ -103,6 +129,9 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
 					continue  # ticks are silent (SFX_NEEDS)
+				if ELEMENT_CUES.has(e.effect_id):  # v0.4.0 AB: the element's own sound
+					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
+					continue
 				if e.target_id == player_id:
 					out.append([&"hit_taken", null, 1.0])
 				else:

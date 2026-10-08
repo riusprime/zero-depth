@@ -18,6 +18,7 @@ const LEGEND: Array = [
 	[&"boss", "MAP_LEGEND_BOSS"],
 	[&"portal", "MAP_LEGEND_PORTAL"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
+	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
 ]
 
 ## True for the full map.
@@ -210,6 +211,8 @@ func _touches(dr: Rect2, a: Vector2, b: Vector2) -> bool:
 ## arrowhead past it.
 func _draw_doors() -> void:
 	var boss_door := reader.floor_boss_door()
+	var over: Dictionary = reader.overrun()  # v0.4.0 AB: the Overrun room's doorways in red
+	var over_doors: PackedInt32Array = over["doors"] if over["active"] else PackedInt32Array()
 	for i in reader.floor_door_count():
 		if not state.door_known(reader, i):
 			continue
@@ -227,8 +230,8 @@ func _draw_doors() -> void:
 				self, to_map(e - depth), to_map(e + depth), MinimapStyle.ROOM_EDGE
 			)
 		var boss := i == boss_door
-		if boss:
-			_draw_boss_door(rect, side)
+		if boss or over_doors.has(i):
+			_draw_boss_door(rect, side, MinimapStyle.BOSS if boss else MinimapStyle.OVERRUN)
 		if not state.door_to_unknown(reader, i):
 			continue
 		var into := side if state.is_discovered(d.x) else -side
@@ -243,11 +246,11 @@ func _draw_doors() -> void:
 		)
 
 
-func _draw_boss_door(rect: Rect2, side: Vector2) -> void:
+func _draw_boss_door(rect: Rect2, side: Vector2, col: Color = MinimapStyle.BOSS) -> void:
 	var across := Vector2(side.y, side.x).abs() * rect.size * 0.5
 	var c := rect.get_center()
 	var w := 3.0 if full else 2.5
-	MinimapStyle.glow_line(self, to_map(c - across), to_map(c + across), MinimapStyle.BOSS, w)
+	MinimapStyle.glow_line(self, to_map(c - across), to_map(c + across), col, w)
 
 
 func _arrow(a: Vector2, b: Vector2, col: Color, head: float, width: float = 2.0) -> void:
@@ -275,6 +278,9 @@ func _draw_icons() -> void:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
 	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
+	if over["active"] and state.is_discovered(over["room"]):
+		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
@@ -346,6 +352,13 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
 			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
+			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
+			if kind == &"overrun":
+				draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
+			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
+			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
+			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 

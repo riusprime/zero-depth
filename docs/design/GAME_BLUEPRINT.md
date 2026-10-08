@@ -137,6 +137,11 @@ value or by an owner decision, and the change is noted here.
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
+- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field (lightning on 3 enemies, shock), Frost
+  Nova (a nova around you, frost) and Flame Trail (fire where you walk, burn) bring the shock, frost and burn engines
+  to any build without an item. Owning two paired abilities at level 3 evolves them into one of eight ability combos
+  (Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward), each with
+  a card, a badge and a look ([`INTERACTIONS.md`](INTERACTIONS.md) "Ability combos").
 - **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
   card is an ability (new or levelled), a stat-card kind (its three rarities are one card) or a mod. A run's pool is
   what its build can ever be offered: Blade 50 (9 abilities with the three of step AB, 17 stat kinds, 24 mods), Gun
@@ -232,6 +237,10 @@ Their names and specs are decided in v0.4.0 Phase 0.
   its cost and its reward on the door or card before you take it.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)
   §11). After that, changing it needs a new sim result that keeps the scorecard bands.
+- **The first T branch: Overrun (v0.4.0 AB).** One optional side room per floor behind a red-framed door, never on
+  the way to the boss: inside it enemies have ×1.5 HP and damage and arrive 50 % more often and in larger numbers;
+  12 Overrun kills clear it for an ability-card altar (level-ups of your abilities first) and the shards those kills
+  paid, again (2×). The minimap marks it. Starting values in `data/overrun/overrun.tres`.
 - **No Endless mode before balance alpha** (PD-12; [`../LESSONS.md`](../LESSONS.md) L8).
 
 ## I. Meta-progression limits

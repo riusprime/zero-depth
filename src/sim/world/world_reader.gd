@@ -116,6 +116,8 @@ const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 const ABILITY_SLOTS := Abilities.SLOTS
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
+## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
+const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 
 var _w: World
 
@@ -1071,6 +1073,8 @@ func combo_desc_key(combo_index: int) -> StringName:
 ## The two item ids a combo needs.
 func combo_item_ids(combo_index: int) -> Array[StringName]:
 	var c := _w.combo_tables[combo_index]
+	if c.ability_a >= 0:  # v0.4.0 AB: an ability combo's two abilities
+		return [_w.ability_tables[c.ability_a].id, _w.ability_tables[c.ability_b].id]
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
@@ -1328,6 +1332,23 @@ func abilities() -> Array[Dictionary]:
 ## What the ability views draw (Abilities.fx).
 func ability_fx() -> Dictionary:
 	return Abilities.fx(_w)
+
+
+## v0.4.0 AB: Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
+## A fire patch's kind in element_fx()["fire_kind"]: FIRE_NAPALM is Napalm Drone's (else Flame Trail's).
+func element_fx() -> Dictionary:
+	return ElementAbilities.fx(_w)
+
+
+## v0.4.0 AB: the Overrun room (Overrun.read: active, room, doors, inside, entered, kills, needed, cleared,
+## clear_tick, bonus, reward_id, boosted).
+func overrun() -> Dictionary:
+	return Overrun.read(_w)
+
+
+## v0.4.0 AB: a combo pairs two abilities (combo_item_ids then gives the ability ids).
+func combo_is_ability(combo_index: int) -> bool:
+	return _w.combo_tables[combo_index].ability_a >= 0
 
 
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).

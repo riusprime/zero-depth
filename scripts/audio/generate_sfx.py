@@ -765,6 +765,50 @@ def s_vent_cold(r):
     return mix(click, tone)
 
 
+# --- v0.4.0 AB: the three element abilities and the Overrun room -------------------------------------------------
+
+
+def s_arc_field(r):
+    """Arc Field: a dry electric crack with a buzzing FM tail."""
+    n = n_of(0.22)
+    crack = one_pole_hp(noise(r, n), 2500) * env(n, 0.0005, 0.03)
+    buzz = fm(curve(900, 300, n), 3.01, 4.0, n) * env(n, 0.002, 0.08) * 0.5
+    return echo(bitcrush(mix(crack, buzz), 7, 2), 60, 0.25, 0.2, 5000, 0.12)
+
+
+def s_frost_nova(r):
+    """Frost Nova: a glassy chime over a falling, cold whoosh."""
+    w = whoosh(r, 0.45, 6000, 1500, 3.0, 0.15) * 0.6
+    chime = metal_ping(0.6, 1568.0, 2.76, 1.6, 0.18) * 0.45
+    n = n_of(0.45)
+    sparkle = bandpass(noise(r, n), 7000, 8.0) * env(n, 0.005, 0.12) * 0.4
+    return echo(mix(w, chime, sparkle), 110, 0.35, 0.3, 6000, 0.3)
+
+
+def s_flame_trail(r):
+    """Flame Trail: a short soft crackle of fire."""
+    n = n_of(0.18)
+    roar = one_pole_lp(noise(r, n), 900) * env(n, 0.01, 0.08) * 0.6
+    pops = mix(*[at(one_pole_hp(noise(r, n_of(0.008)), 2000) * env(n_of(0.008), 0.0005, 0.003), 0.02 + 0.037 * k) for k in range(4)])
+    return mix(roar, pops * 0.5)
+
+
+def s_overrun_enter(r):
+    """Walking into the Overrun room: a low alarm, two falling square stabs over a rumble."""
+    stabs = notes((220.0, 164.81), 0.16, 0.14, "square", 0.08, 1800) * 0.5
+    n = n_of(0.6)
+    rumble = one_pole_lp(noise(r, n), 300) * env(n, 0.02, 0.3) * 0.7
+    return echo(mix(stabs, rumble), 150, 0.4, 0.35, 2000, 0.4)
+
+
+def s_overrun_clear(r):
+    """The Overrun room cleared: a rising, bright four-note arpeggio with a shimmer."""
+    x = notes((523.25, 659.25, 783.99, 1046.5), 0.07, 0.12, "square", 0.05, 6000) * 0.5
+    n = n_of(0.5)
+    shimmer = bandpass(noise(r, n), curve(3000, 9000, n), 10.0) * np.linspace(1, 0, n) * 0.3
+    return echo(mix(x, at(shimmer, 0.15)), 120, 0.4, 0.3, 5000, 0.4)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -837,6 +881,11 @@ SFX = [
     ("skill_lunge_cleave", s_skill_lunge_cleave),
     ("skill_scatter_blast", s_skill_scatter_blast),
     ("vent_cold", s_vent_cold),
+    ("arc_field", s_arc_field),
+    ("frost_nova", s_frost_nova),
+    ("flame_trail", s_flame_trail),
+    ("overrun_enter", s_overrun_enter),
+    ("overrun_clear", s_overrun_clear),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

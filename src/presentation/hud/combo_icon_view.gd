@@ -1,8 +1,8 @@
 class_name ComboIconView
 extends Control
-## A named combo's symbol (v0.3.0 G): its two items' icons (ItemIcons), the first up-left and the second down-right
-## on a dark disc, optionally on a tile framed in the combo's colour with a corner notch on each side. Used by the
-## combo card and the HUD combo badges.
+## A named combo's symbol (v0.3.0 G): its two items' (v0.4.0 AB: or abilities') icons (ItemIcons), the first up-left
+## and the second down-right on a dark disc, optionally on a tile framed in the combo's colour with a corner notch on
+## each side. Used by the combo card and the HUD combo badges.
 
 var item_a := &""
 var item_b := &""
@@ -49,6 +49,13 @@ func _draw() -> void:
 	var side := minf(r.size.x, r.size.y) * 0.64
 	var first := Rect2(r.position, Vector2(side, side))
 	var second := Rect2(r.end - Vector2(side, side), Vector2(side, side))
-	drawn = ItemIcons.draw(self, item_a, first, ItemLooks.color_of_id(item_a))
+	drawn = ItemIcons.draw(self, item_a, first, _color(item_a))
 	draw_circle(second.get_center(), side * 0.56, Color(0.03, 0.04, 0.07, 0.9))
-	drawn += ItemIcons.draw(self, item_b, second.grow(-side * 0.08), ItemLooks.color_of_id(item_b))
+	drawn += ItemIcons.draw(self, item_b, second.grow(-side * 0.08), _color(item_b))
+
+
+## An item's colour, or (v0.4.0 AB: an ability combo) the ability's.
+static func _color(id: StringName) -> Color:
+	if not ItemIcons.has_icon(id) and AbilityIcons.has_icon(id):
+		return AbilityIcons.color(id)
+	return ItemLooks.color_of_id(id)

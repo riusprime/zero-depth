@@ -219,6 +219,7 @@ static func _fire_bolt(w: World) -> void:
 	var t := w.player
 	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
+	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
 	for off in Abilities.shot_offsets(w, ItemEffects.shot_offsets(w)):  # Pulse Gun L5: twin bolts
 		var dir := Kin.dir(w.aim_angle + off)
 		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)

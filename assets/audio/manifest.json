@@ -715,6 +715,56 @@
       "loop": false
     },
     {
+      "id": "arc_field",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/arc_field.wav",
+      "sha256": "dfceebbd6e4af9ddd4d56d9c5159486a9700da65d2b7162f801e6b2ba2ba7176",
+      "seconds": 0.34,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.23,
+      "loop": false
+    },
+    {
+      "id": "frost_nova",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/frost_nova.wav",
+      "sha256": "ff778b7d5dfdab8f697369a4b9f18ff03de44dc7b0d716e296e3f5f20cfd8a68",
+      "seconds": 0.9,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -22.29,
+      "loop": false
+    },
+    {
+      "id": "flame_trail",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/flame_trail.wav",
+      "sha256": "0cee72e7e8af7fd6aee923f67374c3728e231a5976a1a4aa76f027ea7ccc8dd6",
+      "seconds": 0.18,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.26,
+      "loop": false
+    },
+    {
+      "id": "overrun_enter",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/overrun_enter.wav",
+      "sha256": "1b857916ac6fb703f8a1dea120daa09b2bc2aacfb6273dc4b0e41536f0cf3411",
+      "seconds": 1.0,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.15,
+      "loop": false
+    },
+    {
+      "id": "overrun_clear",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/overrun_clear.wav",
+      "sha256": "ac1c94ad4ce641e6266aa9dcceb6ef6ab71b3ae27e4ee58df70be0cb7b4b152d",
+      "seconds": 1.05,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -17.6,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",
