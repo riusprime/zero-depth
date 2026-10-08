@@ -524,8 +524,45 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   `power` come on top per enemy as before. A Deep floor also gets `deep_extra_chests` (1) more chests and one free
   **epic altar** (`BossFlow.epic_altar_id`; `Offers.roll_epic`: epic stat cards and level-ups of owned abilities,
   from the loot stream, never a curse or a mod), placed on item spots the floor's rewards left free (no stream is
-  drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: TODO (v0.5.0
-  EV), through `Routes.is_deep`.
+  drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: +1 per Deep floor
+  taken (`World.deep_threat`, in `Curses.threat`).
+- **Deep floors that bite (v0.5.5 DS, owner S5).** On a Deep floor (`Routes.is_deep`): the first pack the spawn
+  director brings into each room has an elite as its first member (`SpawnDirector.deep_elite`, `Curses.make_elite`;
+  the rooms already served are `World.deep_elite_rooms`, hashed once one was; no stream is drawn); the epic altar
+  stands on the free spot nearest the boss door, the floor's end (`Routes.end_first`; still free and curse-free);
+  the event draw takes a Deep-only event first while one is left (`EventTable.deep_only`, `Events.draw_event`; on a
+  normal floor such an event has weight 0, so the other events' draws don't move); and the floor's extra T raises
+  the hidden catch-up's caps (below). The violet look is presentation's (`StageView`, over the biome's mood).
+- **The hidden catch-up (v0.5.5 DS, owner D3-D7, D10, B1: "regular scaling + multiplier based on how much you
+  grew", "Yes, but hidden").** Everything above stays the regular scaling; `CatchUp` multiplies on top of it. The
+  build's power `P` (per mille of a fresh build, `CatchUp.power`, the one function a later term such as the modifier
+  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × DAMAGE × GLASS_CANNON ×
+  (1000 + ONRUSH) × expected_crit(chance, mult) / expected_crit(base) × ATTACK_SPEED × (1000 + ability_level ×
+  levels of the non-weapon abilities + item × items held + combo × combos owned)`, each step `/ 1000` in integers;
+  nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
+  cap)` per mille with an integer square root (no float, no `pow`). At floor entry (`CatchUp.start_floor`, after the
+  carry, the abilities, the heat and the events are set up; `Main._start_floor`) `E = expected_power[f − 1]` and
+  `cap = cap[f − 1] + threat_cap × T` (`Curses.threat`: curses held and Deep floors taken); `m` is then fixed for the
+  floor (`World.catch_up`, a `CatchUpState`: P, E, cap, m and the boss's, hashed only when the loadout has
+  `World.catch_up_table`, snapshotted as state; the table is loadout). Each arriving enemy (`SpawnDirector.
+  scale_arrival`, after the tier, the curve and the Overrun; the ambush's elites) gets max HP × m and
+  `ActorStore.power × isqrt(m × 1000)` (damage × sqrt(m)). A boss reads its own m when it spawns (`World.spawn_boss`,
+  `CatchUp.on_boss`): P now against `boss_expected[f − 1]` (the expected power at the floor's end) with
+  `boss_cap[f − 1] + threat_cap × T`; its max HP × m and its attacks' damage × sqrt(m) (`ActorStore.power`, read by
+  `BossAi.powered` on every hit and bolt; the closing band's hazard is not scaled). Starting values
+  (`data/scaling/catch_up.tres`): E = 1000 / 2000 / 4000, cap ×1.5 / ×2 / ×2.5, boss E = 2000 / 4000 / 7000, boss cap
+  ×2 / ×3 / ×4, +0.25 per T, 120 per ability level, 80 per item, 150 per combo. It is never shown to the player: no
+  `WorldReader` accessor exists (a test checks); the dev panel reads the world directly.
+- **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
+  330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
+  `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev
+  panel's Kill boss, pass). `BossAi._update_phase` advances one phase at a time, and each new phase opens with its
+  gate (`BossGates.begin`): the attack in progress and the stagger stop, the boss enters state `BossAi.GATE` (6) for
+  `GATE_TICKS` (60), standing still and invulnerable, `STATUS_APPLY` with `effect_id` `boss_phase_gate` (amount = the
+  gate) is emitted, and `clamp(floor + gate − 1, 2, 4)` adds of the floor's spawn mix open now (round-robin, no stream)
+  are queued on a 3.2 m ring (they rise with the normal spawn-in and arrive scaled like any enemy). The gate deals no
+  damage. Then the phase's entry attack starts (its own telegraph). `BossStore.gate_t` holds the ticks left.
+  Without spawning (the boss labs) a gate brings no adds.
 - **After the boss (v0.5.0 PB, owner D10).** `BossFlow` (tick phase 9): the boss's death (`FIGHT` → `OPEN`,
   `PORTAL_OPENED`) also reopens the boss door: `World.remove_wall_now(boss_door_wall)` takes its collider out of the
   walls (matched by shape), rebuilds the wall grid and swaps back the flow field from before the seal (no rebuild),

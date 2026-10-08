@@ -149,23 +149,27 @@ func test_stagger_interrupts_an_attack() -> void:
 	assert_eq(CombatLab.player_damage(w), [], "and never lands")
 
 
-func test_phase_two_starts_at_half_hp_with_its_entry_attack() -> void:
+## v0.5.5 DS (D7): phase two now starts at 66 % (the first gate), its entry attack after the gate.
+func test_phase_two_starts_at_its_gate_with_its_entry_attack() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2(0, 0))
 	var aid := w.actors.ids[i]
 	w.actors.set_pos(0, Vector2(9, 0))
 	var b := BossAi.entry_of(w, i)
-	var half := w.actors.max_hp[i] / 2
-	w.actors.hp[i] = half + 1
+	var gate := w.actors.max_hp[i] * 660 / 1000
+	w.actors.hp[i] = gate + 1
 	w.step(InputFrame.new())
 	assert_eq(w.bosses.phase[b], 0, "above the threshold")
 	i = w.actors.index_of(aid)
-	w.actors.hp[i] = half
+	w.actors.hp[i] = gate
 	w.actors.cd[i] = 0
 	w.actors.state[i] = S.MOVE
 	w.step(InputFrame.new())
 	i = w.actors.index_of(aid)
 	assert_eq(w.bosses.phase[b], 1, "at the threshold")
+	assert_eq(w.actors.state[i], BossAi.GATE, "the gate first")
+	BossLab.through_gate(w, aid)
+	i = w.actors.index_of(aid)
 	var t := BossAi.table_of(w, i)
 	assert_eq(w.bosses.attack[b], t.attack_index(&"charge"), "phase two opens with the charge")
 	assert_eq(w.actors.state[i], S.WINDUP)
@@ -185,8 +189,8 @@ func test_boss_defeated_fires_exactly_once_after_a_normal_kill() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"brood_mother", Vector2(5, 0))
 	var aid := w.actors.ids[i]
-	Damage.hit(w, i, 999999, 1, 1, 1, 0, Vector2.ZERO, w.actors.pos(i))
-	Damage.hit(w, i, 999999, 1, 1, 1, 0, Vector2.ZERO, w.actors.pos(i))
+	Damage.hit(w, i, 999999, 0, 0, 1, 0, Vector2.ZERO, w.actors.pos(i))
+	Damage.hit(w, i, 999999, 0, 0, 1, 0, Vector2.ZERO, w.actors.pos(i))
 	CombatLab.idle(w, 5)
 	var kills := w.events_since(0).filter(
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.KILL and e.target_id == aid

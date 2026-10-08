@@ -1,7 +1,7 @@
 class_name CatchUp
 extends RefCounted
 ## The hidden growth-matching difficulty (v0.5.5 Step DS; owner D3-D7, D10, B1: "regular scaling + multiplier based
-## on how much you grew", "Yes, but hidden"; SIM_CONTRACTS §8d). Regular scaling (the floor's tables, the danger tier,
+## on how much you grew", "Yes, but hidden"; SIM_CONTRACTS §11). Regular scaling (the floor's tables, the danger tier,
 ## Deep) stays; on top of it:
 ## - power(w): the build's power P, per mille of a fresh build (1000), a pure function of the loadout and never of
 ##   how well it is played: weapon level × damage stat × Glass Cannon × (1 + Onrush) × expected crit (relative to the

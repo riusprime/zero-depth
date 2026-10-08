@@ -98,7 +98,7 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
 	w.actors.invuln[bi] = 0
-	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
 	CombatLab.idle(w, 2)
 	w.actors.set_pos(0, Routes.deep_front(f).get_center())
 	var n := Kin.dir(f.deep_portal_angle)

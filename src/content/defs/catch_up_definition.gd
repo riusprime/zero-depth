@@ -1,7 +1,7 @@
 class_name CatchUpDefinition
 extends ContentDef
-## The hidden growth-matching difficulty (v0.5.5 Step DS, owner D4 and D7, "Yes, but hidden"; SIM_CONTRACTS §8d;
-## CONTENT_SCHEMA §11). At each floor entry the sim reads the player's power P from the build alone (CatchUp.power)
+## The hidden growth-matching difficulty (v0.5.5 Step DS, owner D4 and D7, "Yes, but hidden"; SIM_CONTRACTS §11;
+## CONTENT_SCHEMA §7). At each floor entry the sim reads the player's power P from the build alone (CatchUp.power)
 ## and compares it with the power a normal build has by then, E(floor): the catch-up m = clamp(sqrt(P / E), 1, cap),
 ## cap = cap(floor) + threat_cap_bonus × threat T. Enemy HP × m, enemy damage × sqrt(m), fixed for the floor. A boss
 ## takes its own m when it spawns, against the expected power at the floor's end and the boss cap. Every number is a

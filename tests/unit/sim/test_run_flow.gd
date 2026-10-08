@@ -43,7 +43,7 @@ func _floor_world(seed_value: int, run: RunState = null) -> World:
 func _kill_enemies(w: World) -> void:
 	for i in range(1, w.actors.size()):
 		w.actors.invuln[i] = 0
-		Damage.hit(w, i, 999999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))
+		Damage.hit(w, i, 999999, 0, 0, 1, 0, w.actors.pos(i), w.actors.pos(i))
 
 
 func _events_of(w: World, kind: SimEvent.Kind) -> int:
@@ -328,7 +328,7 @@ func test_the_boss_dying_opens_the_portal_and_the_portal_ends_the_floor() -> voi
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
 	var bi := w.actors.index_of(w.boss_id)
 	w.actors.invuln[bi] = 0
-	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
 	CombatLab.idle(w, 1)
 	assert_false(w.boss_alive())
 	assert_eq(_events_of(w, SimEvent.Kind.BOSS_DEFEATED), 1, "BOSS_DEFEATED once")

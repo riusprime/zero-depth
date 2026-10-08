@@ -104,8 +104,7 @@ static func catch_up_text(w: World) -> String:
 		return ""
 	var s := w.catch_up
 	var out := (
-		"m x%.2f (P %d / E %d, cap x%.2f)"
-		% [s.enemy / 1000.0, s.power, s.expected, s.cap / 1000.0]
+		"m x%.2f (P %d / E %d, cap x%.2f)" % [s.enemy / 1000.0, s.power, s.expected, s.cap / 1000.0]
 	)
 	if s.boss_expected > 0:
 		out += (

@@ -1,7 +1,7 @@
 class_name BossGates
 extends RefCounted
 ## Phase gates (v0.5.5 Step DS; owner D7: "we have to make bosses harder not only matching in some way the HP to our
-## damage"; SIM_CONTRACTS §8d). Mechanics HP can't skip, on every boss: each phase after the first (the data's HP
+## damage"; SIM_CONTRACTS §11). Mechanics HP can't skip, on every boss: each phase after the first (the data's HP
 ## thresholds, 66 % and 33 % on all six bosses) opens with a gate.
 ## - The HP can't fall past the next gate in one burst: damage on a boss stops at the gate's HP (clamp; DoT too)
 ##   until the gate has run. Only the world's own hits (owner 0: the dev panel's Kill boss) pass.
@@ -9,8 +9,9 @@ extends RefCounted
 ##   invulnerable, and the view shows the transition (WorldReader.boss_gate_permille: a shell around the boss and
 ##   "PHASE SHIFT" on the boss bar). It deals no damage meanwhile (no damage without a readable cause).
 ## - The gate brings adds: clamp(floor + gate − 1, ADDS_MIN, ADDS_MAX) of the floor's enemy kinds (the spawn mix
-##   open now, else every compiled normal kind), round-robin, on a ring around the boss; they rise with the normal
-##   spawn-in (SimTick.SPAWN_IN_TICKS, no acting, no damage) and arrive scaled like any enemy (World.queue_enemy).
+##   open now, else the mix's first kind; none in a world without spawning, such as the boss labs), round-robin, on
+##   a ring around the boss; they rise with the normal spawn-in (SimTick.SPAWN_IN_TICKS, no acting, no damage) and
+##   arrive scaled like any enemy (World.queue_enemy).
 ## - Then the new phase starts with its entry attack (its own telegraph); the phase's attacks are new or faster.
 ## Pure: no stream is drawn (kinds and spots are fixed by the gate), so the fight's other rolls stay where they were.
 
@@ -91,21 +92,21 @@ static func advance(w: World, i: int, b: int) -> void:
 	w.actors.cd[i] = 0
 
 
-## The kinds the adds come from: the floor's spawn mix open now (in mix order, once each), else every compiled
-## normal enemy kind (ascending). Never a boss.
+## The kinds the adds come from: the floor's spawn mix open now (in mix order, once each), else the mix's first kind
+## with a table; empty without spawning. Never a boss.
 static func add_kinds(w: World) -> PackedInt32Array:
 	var out := PackedInt32Array()
-	if w.spawner != null:
-		for k in SpawnDirector.unlocked(w, w.spawner, w.run_ticks):
-			var kind := w.spawner.kinds[k]
-			if not out.has(kind) and not BossAi.is_boss_kind(kind):
+	if w.spawner == null:
+		return out
+	for k in SpawnDirector.unlocked(w, w.spawner, w.run_ticks):
+		var kind := w.spawner.kinds[k]
+		if not out.has(kind) and not BossAi.is_boss_kind(kind):
+			out.append(kind)
+	if out.is_empty():  # nothing open yet (the floor's first seconds): the mix's first kind
+		for kind in w.spawner.kinds:
+			if w.enemy_table(kind) != null and not BossAi.is_boss_kind(kind):
 				out.append(kind)
-	if out.is_empty():
-		var keys := w.enemy_tables.keys()
-		keys.sort()
-		for kind: int in keys:
-			if not BossAi.is_boss_kind(kind):
-				out.append(kind)
+				break
 	return out
 
 

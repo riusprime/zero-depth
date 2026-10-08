@@ -258,6 +258,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var stagger_seconds: float
 @export var attacks: Array[BossAttackDefinition]   # AttackDefinition + move, min/max_range_m, weight, cooldown_seconds, cause_key
 @export var phases: Array[BossPhaseDefinition]     # each: hp_threshold_permille, attack_ids, entry_attack, speed/cooldown_permille
+                                                   # v0.5.5 DS: every shipped boss has 1000 / 660 / 330 (each later phase opens with a gate)
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
 # Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
@@ -438,6 +439,15 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
+- **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
+  `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):
+  `expected_power_permille` (E at floor entry, `[1000, 2000, 4000]`), `cap_permille` (`[1500, 2000, 2500]`),
+  `boss_expected_power_permille` (E at the floor's end, `[2000, 4000, 7000]`), `boss_cap_permille` (`[2000, 3000,
+  4000]`), entry f − 1 and the last repeats; `threat_cap_bonus_permille` (250 per T), and the build's power terms
+  `ability_level_permille` (120), `item_permille` (80), `combo_permille` (150). Validation: each table 1-64 entries,
+  entries within 1..100000 (caps 1000..100000) and never falling (`table_size`, `table_range`, `table_order`); the
+  four single numbers within 0..10000 (`range`). Starting values the owner tunes by play.
+
 ### Events and curses (v0.5.0 EV)
 
 Compiled by `EventCompiler` (application), beside `ContentCompiler`; the sim reads `EventTable`, `CurseTable` and
@@ -450,6 +460,7 @@ class_name EventDefinition extends ContentDef          # data/events/*.tres, cat
 @export var weight := 10                               # draw weight among the floor's events
 @export var min_floor := 1
 @export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var deep_only := false                         # v0.5.5 DS (S5): Deep floors only, drawn first there
 @export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
 
 class_name EventChoiceDefinition extends Resource
