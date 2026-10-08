@@ -80,6 +80,10 @@ var boss_door_wall: Obb
 var boss_door_index := -1
 var boss_cells_rect := Rect2()
 var boss_spawn := Vector2.ZERO
+## The shop (v0.5.0 SH; ShopPlacement.pick, -1 before it runs): its room, the terminal's centre and its facing.
+var shop_room := -1
+var shop_pos := Vector2.ZERO
+var shop_angle := 0
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []

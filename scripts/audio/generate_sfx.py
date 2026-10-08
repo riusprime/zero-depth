@@ -524,6 +524,28 @@ def s_chest_refuse(r):
     return echo(bitcrush(buzz, 5, 4) * 0.7, 80, 0.25, 0.2, 2000, 0.15)
 
 
+def s_shop_open(r):
+    # v0.5.0 SH: the terminal wakes: a rising two-note chirp over a soft relay click.
+    click = bandpass(noise(r, n_of(0.025)), 1800, 3.0) * env(n_of(0.025), 0.001, 0.008)
+    chirp = notes((392.0, 587.33), 0.07, 0.16, "tri", 0.06, 5000) * 0.5
+    return echo(mix(click * 0.6, at(chirp, 0.03)), 90, 0.3, 0.3, 5000, 0.25)
+
+
+def s_shop_buy(r):
+    # v0.5.0 SH: a register: a short coin rattle, then a bright two-tone ka-ching.
+    rattle = mix(*[at(bandpass(noise(r, n_of(0.018)), 5200, 5.0) * env(n_of(0.018), 0.001, 0.006), k * 0.035) for k in range(3)])
+    ding = mix(metal_ping(0.4, 1318.5, 1.5, 1.8, 0.12) * 0.45, at(metal_ping(0.35, 1975.5, 1.5, 1.4, 0.1) * 0.35, 0.07))
+    return echo(mix(rattle * 0.5, at(ding, 0.09)), 100, 0.35, 0.3, 6000, 0.3)
+
+
+def s_shop_sell(r):
+    # v0.5.0 SH: salvage: a falling clink and a low thunk as the part drops into the hopper.
+    clink = mix(metal_ping(0.25, 1567.98, 1.41, 1.6, 0.07) * 0.35, at(metal_ping(0.25, 1174.66, 1.41, 1.6, 0.07) * 0.35, 0.06))
+    n = n_of(0.18)
+    thunk = one_pole_lp(osc(curve(160, 70, n), "sine", n), 900) * env(n, 0.002, 0.07) * 0.7
+    return echo(mix(clink, at(thunk, 0.12)), 90, 0.3, 0.25, 4000, 0.25)
+
+
 def s_shard_collect(r):
     n = n_of(0.06)
     blip = osc(curve(1800, 2600, n), "sine") * env(n, 0.001, 0.02)
@@ -809,6 +831,9 @@ SFX = [
     ("chest_open", s_chest_open),
     ("chest_refuse", s_chest_refuse),
     ("shard_collect", s_shard_collect),
+    ("shop_open", s_shop_open),
+    ("shop_buy", s_shop_buy),
+    ("shop_sell", s_shop_sell),
     ("combo_unlock", s_combo_unlock),
     ("heat_threshold", s_heat_threshold),
     ("heat_overheat", s_heat_overheat),

@@ -18,6 +18,7 @@ const LEGEND: Array = [
 	[&"boss", "MAP_LEGEND_BOSS"],
 	[&"portal", "MAP_LEGEND_PORTAL"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
+	[&"shop", "MAP_LEGEND_SHOP"],
 ]
 
 ## True for the full map.
@@ -275,6 +276,8 @@ func _draw_icons() -> void:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
 	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	if reader.has_shop() and state.is_discovered(reader.shop_room()):
+		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
@@ -346,6 +349,21 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
 			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
+			var house := PackedVector2Array(
+				[
+					p + Vector2(0, -s * 1.3),
+					p + Vector2(s * 1.1, -s * 0.3),
+					p + Vector2(s * 0.9, s * 0.9),
+					p + Vector2(-s * 0.9, s * 0.9),
+					p + Vector2(-s * 1.1, -s * 0.3)
+				]
+			)
+			draw_circle(p, s * 1.6, Color(MinimapStyle.SHOP, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(house, MinimapStyle.SHOP)
+			draw_rect(
+				Rect2(p + Vector2(-s * 0.3, s * 0.1), Vector2(s * 0.6, s * 0.8)), MinimapStyle.PANEL
+			)
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 

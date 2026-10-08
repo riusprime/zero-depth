@@ -80,6 +80,7 @@ static func table(w: World, s: int) -> StatTable:
 static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
+		w.stat_cards.append(Offers.stat_code(s, clampi(rarity, 0, 2)))  # v0.5.0 SH: the shop can sell it back
 		add_amount(w, s, t.amounts[clampi(rarity, 0, 2)])
 		_side(w, t, s, t.side[clampi(rarity, 0, 2)])
 

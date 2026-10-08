@@ -42,6 +42,8 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.4.0 BS: the four ability slots above the HP plate.
 var ability_hud := AbilityHud.new()
+## v0.5.0 SH: the shop's prompt and panel.
+var shop := ShopHud.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -140,6 +142,7 @@ func _init() -> void:
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
+	add_child(shop)  # v0.5.0 SH: so does the shop panel
 
 
 func sync(reader: WorldReader) -> void:
@@ -182,6 +185,7 @@ func sync(reader: WorldReader) -> void:
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_hud.sync(reader)  # v0.4.0 BS
+	shop.sync(reader)  # v0.5.0 SH
 
 
 func _process(delta: float) -> void:
