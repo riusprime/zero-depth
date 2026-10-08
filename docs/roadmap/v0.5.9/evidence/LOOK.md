@@ -126,6 +126,10 @@ tuned here). With the themed rooms:
 
 **Not tuned.** The owner's v0.5.0 feedback decides the tuning.
 
+**Owner, 2026-10-08:** "okay bot runs don't matter anymore, i cleared every single time I played v0.5 really easy, so
+sims here are almost useless". The bots are far weaker than a human player, so these numbers don't measure the
+game's difficulty.
+
 ## 5. Not covered yet
 
 - **On-screen contrast of hero, enemies and telegraphs against the lit ground** (`look_contrast.gd`, Step 1):

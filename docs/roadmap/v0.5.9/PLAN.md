@@ -289,8 +289,10 @@ more renders I could generate them after".
 - **Tests:** `tests/unit/sim/test_room_themes.gd` (200 floors: kit-piece tags, the car cap, no slits, bigger rooms
   hold more, deterministic tags). `test_floor_generator.gd`'s template assertion changes on purpose: the four
   themes show up, and no geometric template in ordinary rooms.
-- **Done when:** the full suite passes; the floor property tests and the scorecard sims are re-run (layouts change,
-  so balance numbers may move); the owner sees generated rooms.
+- **Done when:** the full suite passes (`a8f6958`: 1107/1107); the floor property tests pass; the owner sees generated
+  rooms. The owner dropped the scorecard as a measure of difficulty (2026-10-08): "bot runs don't matter anymore, i
+  cleared every single time I played v0.5 really easy". The one before-and-after run made stays in
+  evidence/LOOK.md §4 for the record.
 
 ## Open items (what they block)
 - Q1 (G2), Q2 and Q3: these block Steps 2 and 4 from shipping as the default.

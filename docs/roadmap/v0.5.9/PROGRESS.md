@@ -17,6 +17,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   kinda like the image reference … saving the spacing we have now so the game still has its mobility". Design
   proposal in PLAN "L8"; not built until the owner answers its questions.
 
+- Bot sims: "okay bot runs don't matter anymore, i cleared every single time I played v0.5 really easy, so sims
+  here are almost useless" (2026-10-08). The bots die on floor 1 in most runs (evidence/LOOK.md §4), so they are far
+  weaker than the owner. Balance and difficulty go by the owner's play, not the scorecard, until the bots are
+  rebuilt. Step 7 doesn't wait on scorecard re-runs.
+
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
