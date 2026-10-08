@@ -186,4 +186,4 @@ Nobody wrote "Echo Slash + Ember + Split + Halo + Drone + Storm" anywhere. The r
 5. The legendary tier for the boss reward (X1b) from the same engine.
 
 ## Open questions for the owner
-- The M-list (G1 in PLAN.md): keep, cut or edit rows.
+- None for the build model. The M-list was approved in full ("keep all M1–M30", 2026-10-08).
