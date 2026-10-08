@@ -205,15 +205,20 @@ static func place_deep_rewards(w: World, layout: FloorLayout, extra_chests: int)
 			w.add_reward(RewardStore.Kind.CHEST, spots[k], price)
 
 
-## Spots free for an extra reward: unused item spots in spot order, then open spawn spots (rooms in order, never the
-## start hall or the boss room), each REWARD_CLEAR from every reward and from each other.
+## Spots free for an extra reward: unused item spots in spot order, then open spawn spots (rooms in order), each
+## REWARD_CLEAR from every reward and from each other. Never in the start hall, the boss room, the Overrun room
+## (v0.4.0 AB) or the room the shop will take (v0.5.0 SH: ShopPlacement.pick is a pure function of the layout, so
+## its room is known before FloorScenario.add_shop places the terminal).
 static func free_spots(w: World, layout: FloorLayout) -> PackedVector2Array:
 	var out := PackedVector2Array()
 	var pool := PackedVector2Array()
+	var shut := PackedInt32Array([layout.start_room, layout.boss_room, layout.overrun_room])
+	shut.append(shop_room_of(layout))
 	for idx in Rewards.spot_order(layout):
-		pool.append(layout.item_spots[idx])
+		if not shut.has(layout.item_rooms[idx]):
+			pool.append(layout.item_spots[idx])
 	for room in layout.spawn_points.size():
-		if room != layout.start_room and room != layout.boss_room:
+		if not shut.has(room):
 			pool.append_array(layout.spawn_points[room])
 	for q in pool:
 		var ok := true
@@ -226,6 +231,16 @@ static func free_spots(w: World, layout: FloorLayout) -> PackedVector2Array:
 		if ok:
 			out.append(q)
 	return out
+
+
+## The room ShopPlacement would put the shop in (-1 = none), leaving the layout's shop fields as they were.
+static func shop_room_of(layout: FloorLayout) -> int:
+	var keep := [layout.shop_room, layout.shop_pos, layout.shop_angle]
+	var room := ShopPlacement.pick(layout)
+	layout.shop_room = keep[0]
+	layout.shop_pos = keep[1]
+	layout.shop_angle = keep[2]
+	return room
 
 
 ## Whether reward i is the floor's epic altar.

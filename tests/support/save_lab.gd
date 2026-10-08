@@ -8,12 +8,17 @@ extends RefCounted
 const RUN_ID := &"three_floors"
 
 
-static func run_state(run_seed: int, floor_index: int, build: StringName = &"blade") -> RunState:
+## `route` (v0.5.0 RT): the route taken into every floor after the first (Routes.Route; DEEP makes them Deep floors).
+static func run_state(
+	run_seed: int, floor_index: int, build: StringName = &"blade", route: int = 0
+) -> RunState:
 	var repo := ContentRepository.load_all()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
 	run.floor_index = floor_index
+	for f in range(2, floor_index + 1):
+		run.routes.append(route)
 	return run
 
 

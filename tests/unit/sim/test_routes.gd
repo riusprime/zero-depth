@@ -49,6 +49,7 @@ func _floor(run: RunState, seed_value: int = -1) -> World:
 		run,
 		ContentCompiler.compile_combos(_repo)
 	)
+	FloorScenario.add_shop(w, ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal")))
 	var bosses := ContentCompiler.compile_bosses(_repo)
 	run.scale_bosses(bosses)
 	w.set_boss_tables(bosses)
@@ -301,6 +302,15 @@ func test_deep_floors_have_an_extra_chest_and_an_epic_altar_property() -> void:
 			var room := d.floor_layout.room_of(d.rewards.pos(i))
 			assert_ne(room, d.floor_layout.boss_room, "never in the boss room")
 			assert_ne(room, d.floor_layout.start_room, "never in the start hall")
+			if i >= n.rewards.size():  # the Deep extras keep clear of the shop and the Overrun room
+				assert_ne(
+					room, d.floor_layout.shop_room, "seed %d: not in the shop's room" % seed_value
+				)
+				assert_ne(
+					room,
+					d.floor_layout.overrun_room,
+					"seed %d: not in the Overrun room" % seed_value
+				)
 			for j in range(i + 1, d.rewards.size()):
 				assert_gt(
 					d.rewards.pos(i).distance_to(d.rewards.pos(j)),

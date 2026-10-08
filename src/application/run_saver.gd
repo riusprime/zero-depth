@@ -9,7 +9,8 @@ extends RefCounted
 ## The payload: the run (RunState's fields and the stage seed; its RunTable is compiled again from content), the
 ## rooms entered on this floor (the minimap's discovery) and the world's canonical snapshot (WorldSnapshot).
 
-const PAYLOAD_VERSION := 1
+## 2: v0.5.0 RT adds the run's route per floor (`run.routes`).
+const PAYLOAD_VERSION := 2
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
@@ -81,6 +82,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.carry = (r["carry"] as Dictionary).duplicate(true)
 	run.ticks_done = int(r["ticks_done"])
 	run.kills_done = int(r["kills_done"])
+	run.routes = PackedInt32Array(r["routes"])  # v0.5.0 RT
 	return run
 
 
@@ -109,6 +111,7 @@ static func payload_of(
 			"carry": run.carry.duplicate(true),
 			"ticks_done": run.ticks_done,
 			"kills_done": run.kills_done,
+			"routes": run.routes.duplicate(),  # v0.5.0 RT: each floor's route
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,
