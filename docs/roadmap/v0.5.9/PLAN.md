@@ -3,8 +3,11 @@
 Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.md`](PROGRESS.md).
 
 ## Context
-- **When:** this version starts **after the v0.5.0 session ends**. It runs on its own branch, cut from `origin/main` once
-  v0.5.0 has merged, and merges only after the owner has verified the build. The version number `v0.5.9` is a proposal
+- **When:** the owner moved the start forward (2026-10-08): "can we start developing on what the other agent is building,
+  he's just running balancing tweaks, so we can build over that code". This version runs on `claude/keen-volta-ht74pz`,
+  built over the v0.4.0/v0.5.0 branch `claude/lucid-fermat-9wv2tf` (merged at `5e5b3f9`), not `origin/main`. That
+  branch is merged in again often, because it still touches presentation files this version changes
+  (`reward_views.gd`, `world_view_root.gd`). This version merges only after the owner has verified the build. The version number `v0.5.9` is a proposal
   (an art-only version between v0.5.0 and v0.6.0); the owner may rename it at Step 0.
 - **What the owner sent (2026-10-08):** a target image ([`../../art/look_reference.webp`](../../art/look_reference.webp)).
   It shows a dark iso scene where fire barrels and a glowing chest throw warm pools of light. Every block sits in soft
@@ -48,7 +51,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 
 ## Steps
 ### 0. Setup
-- Branch from `origin/main` after v0.5.0 merges. Update this PLAN with the SHA and commit it first.
+- Branch `claude/keen-volta-ht74pz`, built over `claude/lucid-fermat-9wv2tf` at `5e5b3f9` (owner, 2026-10-08).
 - Add a ROADMAP §4 row and ART_DIRECTION §6 rows.
 - The art list is [`../../art/KIT_REQUESTS.md`](../../art/KIT_REQUESTS.md). The owner can start making pieces now.
 

@@ -86,7 +86,7 @@ These don't use the prefix above. Each one is a 2D image, 1024 × 1024 px, squar
 | `column_broken` | Ruins | cover | 1 × 1 × 1.6 | a broken ancient stone column, snapped top, fallen chunk at its base | requested |
 | `ladder_frame` | Ruins | cover | 1 × 0.4 × 2.0 | a rusty metal scaffold frame with a ladder, flat-backed so it stands against a wall | requested |
 | `boulder_small` | Night Rocks | decoration | 0.5 × 0.5 × 0.35 | a small angular faceted rock, flat underside | requested |
-| `dead_tree` | Night Rocks | cover | 1 × 1 × 2.2 | a leafless dead tree with a thick twisted trunk and a few bare angular branches | requested |
+| `dead_tree` | Night Rocks | cover | 1 × 1 × 2.2 | a leafless dead tree with a thick twisted trunk and a few bare angular branches | received raw (`5bc2917`, on `main`) |
 | `mesa_chunk` | Red Canyon | cover | 1.5 × 1.5 × 1.4 | a layered sandstone rock block with horizontal strata, flat top | requested |
 | `dry_shrub` | Red Canyon | decoration | 0.5 × 0.5 × 0.4 | a small dry thorny desert shrub, low-poly | requested |
 
