@@ -368,6 +368,24 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   `0` (the default) takes the floor's draw (`pack_min_by_floor`..`pack_max_by_floor`), `> 0` always brings that
   many (the Swarmer's 8; the other horde kinds ship `1`, singles as EN designed them). A pack stands on rings around
   its anchor and never takes the alive count past the cap. A new enemy joins the hordes with one more entry.
+- **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
+  category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
+  `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier
+  × 1000 at the phase start: SC's per-tier HP, damage and interval tables and the shard bonus read the curve's tier),
+  `cap_permille` (1..1000 of SC's alive cap at that tier), `interval_permille` (× SC's interval; > 1000 is slower),
+  `hp_permille` and `damage_permille` (1..1000 of SC's tier values: the curve only eases toward the peak),
+  `pack_cap` (the largest pack; 0 = no limit, a Swarmer pack of 8), `hold` (true: the phase keeps its values; false:
+  every number ramps linearly to the next phase's) and `kinds` (the mix's enemy ids that start appearing in it; the
+  earlier phases' stay). The last phase is the **peak** and holds. SC's mix still gives the weights; with a curve its
+  `unlock_tier` is not read. `ContentCompiler.compile_floor_spawning(repo, floor)` hangs the floor's compiled curve
+  (`CurveTable`) on its `SpawnTable`; a floor without a curve runs SC's plain 30 s tiers. A kind is **new to the run**
+  on the first floor whose curve names it (the HUD announces it when it first appears).
+  - Validation: `floor_index` ≥ 1 (`floor_index`); phases present (`missing`), none null (`phase`), each named
+    (`phase_name`); cap and HP / damage within 1..1000, tier ≥ 0, interval ≥ 1, pack ≥ 0 (`phase_range`); a kind
+    named once per curve (`phase_kind`); each phase starts after the one before (`phase_order`) and is never easier
+    (tier, cap, HP and damage don't fall, the interval doesn't grow: `phase_ramp`); the first phase starts at 0,
+    holds, has tier 0 and opens at least one kind (`calm`). Content tests also hold the shipped curves to: kinds in
+    SC's mix, every mix kind on some floor, the peak at SC's tier max with every per mille at 1000.
 - **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
   within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's

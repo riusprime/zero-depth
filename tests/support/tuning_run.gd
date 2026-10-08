@@ -18,7 +18,9 @@ const EXPECTED_END_TICKS := 600 * 60
 const FLOOR_LIMIT_TICKS := 20 * 60 * 60
 ## Kinds left out of the time-to-kill (one-hit chaff and summons).
 const TTK_EXCLUDED: Array[int] = [
-	ActorStore.Kind.SWARMER, ActorStore.Kind.SPLITLING, ActorStore.Kind.HATCHLING,
+	ActorStore.Kind.SWARMER,
+	ActorStore.Kind.SPLITLING,
+	ActorStore.Kind.HATCHLING,
 	ActorStore.Kind.LENS_DRONE
 ]
 
@@ -91,7 +93,9 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 						if e.target_id == me:
 							var src := w.actors.index_of(e.owner_id)
 							var who := _kind_name(w.actors.kinds[src]) if src >= 0 else "gone"
-							var book: Dictionary = rec["hurt_boss" if rec["door_s"] >= 0.0 else "hurt_floor"]
+							var book: Dictionary = rec[
+								"hurt_boss" if rec["door_s"] >= 0.0 else "hurt_floor"
+							]
 							book[who] = int(book.get(who, 0)) + e.amount_applied
 						elif not first_hit.has(e.target_id):
 							first_hit[e.target_id] = e.tick

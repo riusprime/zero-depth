@@ -1,3 +1,4 @@
+# gdlint: disable=max-returns
 class_name RunBot
 extends RefCounted
 ## The "expected build" bot (v0.4.0 TU; SCORECARD §3 `competent` movement, best-score picks): it plays a whole
@@ -28,7 +29,8 @@ const GOAL_TICKS := 40 * 60
 ## A careful player's floor budget before heading to the boss (M-FLOOR's top, 15 min).
 const MAX_EXPLORE_TICKS := 15 * 60 * 60
 
-## Card scores: abilities first (a new slot, then levels), then stats by id (× rarity), then mods.
+## Card scores: abilities first (a new slot, then levels), then stats by id (× rarity; survival stats × 2 while
+## under 60 % HP), then mods.
 const STAT_SCORE := {
 	&"damage": 50,
 	&"attack_speed": 42,
@@ -49,6 +51,8 @@ const STAT_SCORE := {
 	&"pickup_range": 6,
 }
 const RARITY_PERMILLE: Array[int] = [1000, 1700, 2600]
+## Stats a hurt bot values twice as much.
+const SURVIVAL: Array[StringName] = [&"max_hp", &"regen", &"armour"]
 
 var max_explore_ticks := MAX_EXPLORE_TICKS
 var reaction_ticks := 14
@@ -103,6 +107,9 @@ static func score_card(w: World, code: int) -> int:
 			return 100 if int(info["level"]) == 1 else 55 + 5 * int(info["level"])
 		Offers.STAT:
 			var base: int = STAT_SCORE.get(info["id"], 20)
+			# Hurt (under 60 % HP): staying alive first, as a player would pick.
+			if w.actors.hp[0] * 1000 < w.actors.max_hp[0] * 600 and SURVIVAL.has(info["id"]):
+				base *= 2
 			return base * RARITY_PERMILLE[clampi(int(info["rarity"]), 0, 2)] / 1000
 	return 40 if int(info["rarity"]) == 1 else 30
 
@@ -253,8 +260,8 @@ func _set_goal(at: Vector2, kind: String, ref: int) -> void:
 	_nav.flood(_free(at))
 
 
-## The centre of the free flow-field cell nearest p (p itself when none is within 12 cells, 6 m): a flood from a blocked
-## cell (a room's centre on a pillar, the player brushing a wall) reaches nothing.
+## The centre of the free flow-field cell nearest p (p itself when none is within 12 cells, 6 m): a flood from a
+## blocked cell (a room's centre on a pillar, the player brushing a wall) reaches nothing.
 func _free(p: Vector2) -> Vector2:
 	var c := _nav.cell_of(p)
 	for r in 13:

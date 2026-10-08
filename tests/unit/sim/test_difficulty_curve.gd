@@ -45,7 +45,9 @@ func test_phase_lookup_and_the_ramp() -> void:
 	c.holds = PackedByteArray([1, 0, 0])
 	c.name_keys = [&"A", &"B", &"C"]
 	assert_eq([c.phase_at(0), c.phase_at(599), c.phase_at(600), c.phase_at(99999)], [0, 0, 1, 2])
-	assert_eq([c.tier_permille_at(0), c.tier_permille_at(599)], [0, 0], "a holding phase keeps its values")
+	assert_eq(
+		[c.tier_permille_at(0), c.tier_permille_at(599)], [0, 0], "a holding phase keeps its values"
+	)
 	assert_eq(c.cap_permille_at(599), 300)
 	assert_eq(c.tier_permille_at(900), 3000, "halfway through a ramping phase")
 	assert_eq(c.interval_permille_at(900), 1250)
@@ -79,8 +81,12 @@ func test_the_calm_minute() -> void:
 		assert_lte(t.power_now(0), 1000, "calm enemies hit no harder than SC's tier 0")
 		assert_gt(t.interval_now(0), t.interval(0), "calm spawns come slower than SC's tier 0")
 	assert_between(_table(1).cap_now(1, 0), 4, 6, "floor 1's calm cap is 4-6")
-	assert_gt(_table(2).cap_now(2, 0), _table(1).cap_now(1, 0), "floor 2 starts higher than floor 1")
-	assert_gt(_table(3).cap_now(3, 0), _table(2).cap_now(2, 0), "floor 3 starts higher than floor 2")
+	assert_gt(
+		_table(2).cap_now(2, 0), _table(1).cap_now(1, 0), "floor 2 starts higher than floor 1"
+	)
+	assert_gt(
+		_table(3).cap_now(3, 0), _table(2).cap_now(2, 0), "floor 3 starts higher than floor 2"
+	)
 	assert_lt(_table(3).cap_now(3, 0), _table(3).cap(3, 0), "but still calmer than SC's tier 0")
 
 
@@ -105,7 +111,9 @@ func test_the_peak_is_sc_s_tier_max_at_the_floor_s_end() -> void:
 		var t := _table(f)
 		var c := t.curve
 		var peak := c.starts[c.phase_count() - 1]
-		assert_eq(peak, TuningRun.EXPECTED_END_TICKS, "floor %d peaks at the floor's expected end" % f)
+		assert_eq(
+			peak, TuningRun.EXPECTED_END_TICKS, "floor %d peaks at the floor's expected end" % f
+		)
 		for ticks in [peak, peak + 36000]:
 			assert_eq(t.danger_tier(ticks), tier_max, "the peak is SC's tier max, and it holds")
 			assert_eq(t.cap_now(f, ticks), t.cap(f, tier_max))
@@ -127,7 +135,9 @@ func test_kinds_are_introduced_across_the_three_floors() -> void:
 			assert_has(all, k, "floor %d brings kind %d" % [f, k])
 			seen[k] = true
 		for k: int in all:
-			assert_true(seen.has(k), "floor %d: kind %d comes from this floor or one before" % [f, k])
+			assert_true(
+				seen.has(k), "floor %d: kind %d comes from this floor or one before" % [f, k]
+			)
 		var news := Array(t.curve.new_kinds)
 		news.sort()
 		var want: Array = NEW_BY_FLOOR[f].duplicate()
@@ -198,7 +208,9 @@ func test_a_splitter_s_splitlings_arrive_scaled_on_a_curved_floor() -> void:
 		if w.actors.kinds[k] == KIND.SPLITLING and w.actors.dead[k] == 0:
 			lings += 1
 			var want := w.spawner.hp_now(w.enemy_table(KIND.SPLITLING).hp, w.run_ticks - 2)
-			assert_almost_eq(w.actors.max_hp[k], want, 1, "a Splitling at the peak has the peak's HP")
+			assert_almost_eq(
+				w.actors.max_hp[k], want, 1, "a Splitling at the peak has the peak's HP"
+			)
 	assert_eq(lings, 2)
 
 
@@ -215,7 +227,9 @@ func test_the_first_reward_is_an_altar_next_to_the_start_hall() -> void:
 			var room := f.room_of(w.rewards.pos(i))
 			if w.rewards.kind[i] == RewardStore.Kind.ALTAR and room >= 0 and f.hops[room] == 1:
 				near_altar = true
-		assert_true(near_altar, "seed %d: a free altar in a room next to the start hall" % (5100 + s))
+		assert_true(
+			near_altar, "seed %d: a free altar in a room next to the start hall" % (5100 + s)
+		)
 		assert_eq(best, 1)
 
 

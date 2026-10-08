@@ -41,7 +41,9 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(_issue(&"phase_range", "phases[%d]: interval or pack out of range" % k))
 		for id in p.kinds:
 			if String(id).is_empty() or seen.has(id):
-				issues.append(_issue(&"phase_kind", "phases[%d]: kind '%s' empty or repeated" % [k, id]))
+				issues.append(
+					_issue(&"phase_kind", "phases[%d]: kind '%s' empty or repeated" % [k, id])
+				)
 			seen[id] = true
 		if k > 0 and phases[k - 1] != null:
 			_check_step(issues, k, phases[k - 1], p)
@@ -66,7 +68,9 @@ func enemy_ids() -> Array[StringName]:
 
 
 ## Phase k after phase q: later, and never easier (tier, cap, HP and damage don't fall, the interval doesn't grow).
-func _check_step(issues: Array[ValidationIssue], k: int, q: DifficultyPhase, p: DifficultyPhase) -> void:
+func _check_step(
+	issues: Array[ValidationIssue], k: int, q: DifficultyPhase, p: DifficultyPhase
+) -> void:
 	if p.start_seconds <= q.start_seconds:
 		issues.append(_issue(&"phase_order", "phases[%d] starts no later than the one before" % k))
 	if (

@@ -129,6 +129,15 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | D2 | "introduce the enemies by phases" | Enemy kinds unlock in phases across the floor (basic → ranged → specialists → elites), each phase announced | TU |
 | D3 | "reach this difficulty closer to the end of the floor, when the difficulty has reached its max" / "then it becomes harder and harder" | The floor's difficulty ramps to its peak (today's level) near the floor's expected end, then holds; the curve is data | TU |
 | D4 | "I do like this level of difficulty, but only if the character has grown a bit on the scaling vector" / "too many hard enemies … before even reaching the first boss or getting enough spells or upgrades" | Tune against the expected-build bot: early rewards come sooner (an altar near the start hall), and the peak is reached only when a bot that picks normally has grown into it | TU |
+| D5 | "we also have a lot of variety of enemies, let's distribute presenting them through the first 3 floors" (2026-10-08) | Floor 1 brings Charger, Needle, Swarmer, Warden, Arc Caster, Splitter; floor 2 adds Shield Bearer, Bomb Drone, Mine Layer; floor 3 adds Mender, Sniper, Swarmer packs. Each kind's first appearance is announced ("New: Sniper"); boss summons are exempt | TU |
+| D6 | "also, do not make gun -15% it is actually unplayable with that debuff" (2026-10-08) | The Gun's damage factor ×0.85 → ×1.00 (bolts and Scatter Blast); the Blade keeps +15 %; boss fight bots re-measured | TU |
+
+**TU as built (starting values, evidence in [`evidence/TUNING.md`](evidence/TUNING.md)).** A curve per floor
+(`data/curves/floor_N.tres`): Calm 0–60 s (holds tier 0; 35 / 25 / 18 % of SC's tier-0 cap: 5 / 7 / 9 alive; spawns
+half as often; HP 60 %, damage 40 % of SC's; one at a time; Charger, Needle, Swarmer), They stir at 60 s, The hunt at
+120 s, The swarm at 180 s (each floor's new kinds by then), Full horde at 600 s (M-FLOOR's 10 min: SC's tier 20, every
+per mille at 1000), each number ramping linearly between phase starts. A free altar always stands in a room next to the
+start hall. Split and summoned enemies get the tier scaling.
 
 ## Steps
 | Wave | Step | Scope |

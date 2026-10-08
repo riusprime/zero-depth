@@ -47,7 +47,13 @@ func _initialize() -> void:
 		for s in seeds:
 			for b in builds:
 				var r := TuningRun.run(
-					repo, 7300 + first + s, StringName(b), floors, TuningRun.FLOOR_LIMIT_TICKS, god == 1, preset
+					repo,
+					7300 + first + s,
+					StringName(b),
+					floors,
+					TuningRun.FLOOR_LIMIT_TICKS,
+					god == 1,
+					preset
 				)
 				var line := JSON.stringify(_compact(r), "", true)
 				file.store_line(line)
@@ -67,20 +73,23 @@ static func _compact(r: Dictionary) -> Dictionary:
 static func _one_line(r: Dictionary) -> String:
 	var parts := PackedStringArray()
 	for f: Dictionary in r["floors"]:
-		parts.append(
-			(
-				"F%d %s door %.0fs floor %.0fs kills %d cards %d/%d/%d peak %d"
-				% [
-					f["floor"],
-					f["result"],
-					f["door_s"],
-					f["floor_s"],
-					f["kills"],
-					f["cards_2m"],
-					f["cards_5m"],
-					f["cards_end"],
-					f["peak_alive"],
-				]
+		(
+			parts
+			. append(
+				(
+					"F%d %s door %.0fs floor %.0fs kills %d cards %d/%d/%d peak %d"
+					% [
+						f["floor"],
+						f["result"],
+						f["door_s"],
+						f["floor_s"],
+						f["kills"],
+						f["cards_2m"],
+						f["cards_5m"],
+						f["cards_end"],
+						f["peak_alive"],
+					]
+				)
 			)
 		)
 	return "seed %d %s: %s" % [r["seed"], r["build"], " | ".join(parts)]
@@ -105,17 +114,33 @@ static func summary(runs: Array) -> PackedStringArray:
 			if reached == 0:
 				lines.append("%s F%d: not reached" % [b, fl])
 				continue
-			var died := recs.filter(func(f: Dictionary) -> bool: return String(f["result"]).begins_with("died")).size()
-			var died_boss := recs.filter(func(f: Dictionary) -> bool: return f["result"] == "died_boss").size()
-			var timeouts := recs.filter(func(f: Dictionary) -> bool: return f["result"] == "timeout").size()
+			var died := (
+				recs
+				. filter(
+					func(f: Dictionary) -> bool: return String(f["result"]).begins_with("died")
+				)
+				. size()
+			)
+			var died_boss := (
+				recs.filter(func(f: Dictionary) -> bool: return f["result"] == "died_boss").size()
+			)
+			var timeouts := (
+				recs.filter(func(f: Dictionary) -> bool: return f["result"] == "timeout").size()
+			)
 			died_by += died
-			var door := recs.filter(func(f: Dictionary) -> bool: return float(f["door_s"]) >= 0.0).map(
-				func(f: Dictionary) -> float: return float(f["door_s"])
+			var door := (
+				recs
+				. filter(func(f: Dictionary) -> bool: return float(f["door_s"]) >= 0.0)
+				. map(func(f: Dictionary) -> float: return float(f["door_s"]))
 			)
 			var start_ttk := []
 			var end_ttk := []
 			for f: Dictionary in recs:
-				var last := int(float(f["door_s"]) / 60.0) if float(f["door_s"]) >= 0.0 else int(float(f["floor_s"]) / 60.0)
+				var last := (
+					int(float(f["door_s"]) / 60.0)
+					if float(f["door_s"]) >= 0.0
+					else int(float(f["floor_s"]) / 60.0)
+				)
 				for s: Array in f["ttk"]:
 					var m := int(s[0])
 					if m < 2:
@@ -126,21 +151,49 @@ static func summary(runs: Array) -> PackedStringArray:
 			var ttk1 := TuningRun.median(end_ttk) / 60.0
 			lines.append(
 				(
-					"%s F%d: reached %d, died %d (boss %d), timeouts %d; died by F%d %d/%d (%.0f%%); door s med %.0f [%s..%s]; kills med %.0f; cards 2m/5m/end med %.1f/%.1f/%.1f; first chest s med %.0f; peak alive med %.0f max %d; ttk s start %.2f (n %d) end %.2f (n %d) change %+.0f%%"
+					(
+						"%s F%d: reached %d, died %d (boss %d), timeouts %d; died by F%d %d/%d (%.0f%%);"
+						+ " door s med %.0f [%s..%s]; kills med %.0f; cards 2m/5m/end med %.1f/%.1f/%.1f;"
+						+ " first chest s med %.0f; peak alive med %.0f max %d;"
+						+ " ttk s start %.2f (n %d) end %.2f (n %d) change %+.0f%%"
+					)
 					% [
-						b, fl, reached, died, died_boss, timeouts, fl, died_by, mine.size(),
+						b,
+						fl,
+						reached,
+						died,
+						died_boss,
+						timeouts,
+						fl,
+						died_by,
+						mine.size(),
 						100.0 * died_by / mine.size(),
 						TuningRun.median(door),
 						"%.0f" % door.min() if not door.is_empty() else "-",
 						"%.0f" % door.max() if not door.is_empty() else "-",
-						TuningRun.median(recs.map(func(f: Dictionary) -> int: return int(f["kills"]))),
-						TuningRun.median(recs.map(func(f: Dictionary) -> int: return int(f["cards_2m"]))),
-						TuningRun.median(recs.map(func(f: Dictionary) -> int: return int(f["cards_5m"]))),
-						TuningRun.median(recs.map(func(f: Dictionary) -> int: return int(f["cards_end"]))),
-						TuningRun.median(recs.map(func(f: Dictionary) -> float: return float(f["first_chest_s"]))),
-						TuningRun.median(recs.map(func(f: Dictionary) -> int: return int(f["peak_alive"]))),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> int: return int(f["kills"]))
+						),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> int: return int(f["cards_2m"]))
+						),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> int: return int(f["cards_5m"]))
+						),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> int: return int(f["cards_end"]))
+						),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> float: return float(f["first_chest_s"]))
+						),
+						TuningRun.median(
+							recs.map(func(f: Dictionary) -> int: return int(f["peak_alive"]))
+						),
 						recs.map(func(f: Dictionary) -> int: return int(f["peak_alive"])).max(),
-						ttk0, start_ttk.size(), ttk1, end_ttk.size(),
+						ttk0,
+						start_ttk.size(),
+						ttk1,
+						end_ttk.size(),
 						(100.0 * (ttk1 - ttk0) / ttk0) if ttk0 > 0.0 else 0.0,
 					]
 				)
@@ -156,7 +209,9 @@ static func summary(runs: Array) -> PackedStringArray:
 			var keys := per_min.keys()
 			keys.sort()
 			for m: int in keys:
-				cells.append("%d:%.2f(%d)" % [m, TuningRun.median(per_min[m]) / 60.0, per_min[m].size()])
+				cells.append(
+					"%d:%.2f(%d)" % [m, TuningRun.median(per_min[m]) / 60.0, per_min[m].size()]
+				)
 			lines.append("%s F%d ttk by minute: %s" % [b, fl, " ".join(cells)])
 			for book in ["hurt_floor", "hurt_boss"]:
 				var hurt := {}

@@ -77,6 +77,7 @@ only adds numbers, menus or breadth fails the filter.
 | Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a four-slash combo (owner, 2026-10-07, v0.3.0 L11: a horizontal slash, a backhand, a narrow forward thrust, a heavy spinning finisher; replaced the 3-hit swing combo); shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10; v0.3.0 PLAN L11 (starting values) |
 | Utility (v0.4.0 BS, owner F11: none at the start; PD-01 flipped) | An ability card on the utility button: **Aegis** (the guard: hits from the front cut to 20 %, blocks store guard charges for the next swing) **or Blink** (a teleport the way you're moving, through walls by range, with a 2 m landing shock), never both | v0.1.0 PLAN; v0.4.0 PLAN (starting values) |
 | Abilities (v0.4.0 BS, owner F8) | **Four slots.** Slot 1 is the build's weapon as an ability (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5. Slots 2–4 take ability cards (Bomb Lobber, Drone Buddy, Orbit Blades, Blink, Aegis); once full, ability cards only level up | v0.4.0 PLAN table (starting values) |
+| Builds (v0.3.0 L15) | **Blade** (melee only) or **Gun** (shooting only), picked before the run. Blade hits ×1.15 (L16); the Gun hits ×1.00 since 2026-10-08 (owner: "do not make gun -15% it is actually unplayable with that debuff"; L16's ×0.85 is gone) | `data/builds/*.tres` `damage_permille` |
 | Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 
@@ -173,6 +174,18 @@ the version that builds it. `MIN_TELEGRAPH_TICKS = 24` (0.4 s; owner, 2026-10-06
 
 Their names and specs are decided in v0.4.0 Phase 0.
 
+**Enemies by floor (v0.4.0 TU; owner 2026-10-08: "let's distribute presenting them through the first 3 floors").**
+A run meets its enemy kinds across the three floors, not all on floor 1. Each floor still opens calm with the basic
+kinds, brings back the kinds of the floors before, then its own new kinds; each kind's first appearance in the run
+is announced on the HUD ("New: Sniper"). Bosses' summons (Hatchlings, Lens Drones, the Foundry's Bomb Drones,
+Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
+
+| Floor | New in the run | Every floor's calm minute | Back from earlier floors |
+|---|---|---|---|
+| 1 | Charger, Needle, Swarmer (singles), Warden, Arc Caster, Splitter | Charger, Needle, Swarmer | — |
+| 2 | Shield Bearer, Bomb Drone, Mine Layer | Charger, Needle, Swarmer | Warden, Arc Caster, Splitter |
+| 3 | Mender, Sniper, Swarmer packs (of 8) | Charger, Needle, Swarmer | all of floors 1–2 |
+
 **Stress matrix** (S = stresses the engine, D = drains it, – = neutral). The rules are in
 [`../balance/SCORECARD.md`](../balance/SCORECARD.md) §4.
 
@@ -233,6 +246,24 @@ Their names and specs are decided in v0.4.0 Phase 0.
   +6 a tier up to 120; packs (2-3, 3-4, 3-5 strong) arrive every 2.5 s, 10 % faster each tier (at least 0.4 s
   apart), at the edges of the player's room and its neighbours, never within 8 m of the player and never in the
   boss room. All starting values; the expected-build bot's bands (v0.4.0 TU) tune them.
+- **The difficulty curve (v0.4.0 TU; owner 2026-10-08 D1–D4: "difficulty should be "easy" the first minute so you
+  can explore and gather some stuff and then it becomes harder and harder").** SC's numbers above are the floor's
+  **peak**; each floor reaches it through phases (`data/curves/floor_N.tres`; starting values):
+
+  | Phase (HUD name) | Starts | Danger tier | Alive cap (of SC's at that tier) | Spawn interval | Enemy HP / damage (of SC's) | Largest pack |
+  |---|---|---|---|---|---|---|
+  | Calm | 0:00 (holds) | 0 | 35 % / 25 % / 18 % on floors 1/2/3 (5 / 7 / 9) | ×2.0 | 60 % / 40 % | 1 |
+  | They stir | 1:00 | 0 → 2 | 40 % → | ×1.8 → | 70 % / 45 % → | 2 |
+  | The hunt | 2:00 | 2 → 4 | 50 % → | ×1.5 → | 75 % / 55 % → | 3 |
+  | The swarm | 3:00 | 4 → 20 | 60 % → | ×1.3 → | 80 % / 65 % → | 3 / 4 / 8 |
+  | Full horde (peak) | 10:00 (M-FLOOR's 10 min; holds) | 20 | 100 % (120) | ×1.0 | 100 % / 100 % | 3 / 4 / 8 |
+
+  Every number ramps linearly from one phase start to the next ("→"). Each floor's new kinds arrive by The swarm (§E),
+  so a player who heads for the boss early still meets them. Floors 2 and 3 start calm too, from their own higher
+  base (the per-floor tables and caps). Each phase start is announced on the HUD under the top plate.
+- **Early growth (D4).** One free altar always stands in a room next to the start hall (its first card is a new
+  ability while a slot is free); shards per kill follow the curve's tier.
+- **Enemies that join mid-fight** (Splitlings, boss summons) get the same tier scaling as the spawner's (TU).
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)

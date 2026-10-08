@@ -1011,8 +1011,8 @@ func _move_and_collide() -> void:
 	for i in actors.size():
 		var r := actors.radius[i] + WALL_SKIP_M
 		open_x[i] = INF
-		if not _wall_grid.any_in_rect(  # v0.4.0 TU: no list built
-			Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
+		if not _wall_grid.any_in_rect(
+			Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)  # v0.4.0 TU: no list built
 		):
 			open_x[i] = actors.pos_x[i]
 			open_y[i] = actors.pos_y[i]
@@ -1047,7 +1047,10 @@ func _move_and_collide() -> void:
 				):
 					continue
 				# v0.4.0 TU: Collide.circle_vs_circle inlined (the same operations in the same order).
-				var d := Vector2(actors.pos_x[a], actors.pos_y[a]) - Vector2(actors.pos_x[b], actors.pos_y[b])
+				var d := (
+					Vector2(actors.pos_x[a], actors.pos_y[a])
+					- Vector2(actors.pos_x[b], actors.pos_y[b])
+				)
 				var rr := ra + rb
 				var dist2 := float(d.x) * d.x + float(d.y) * d.y
 				if dist2 >= rr * rr:
