@@ -38,7 +38,7 @@ Nothing here blocks a step. A missing piece draws its current primitive (L15).
 | 9 | `rock_large` | cover | 1.5 × 1.5 × 1.2 | a large faceted boulder with sharp flat faces, angular low-poly rock | requested |
 | 10 | `fire_barrel` | light source | 0.6 × 0.6 × 0.9 | a rusty open-top oil drum, dented, burn marks near the rim, empty inside (no fire) | requested |
 | 11 | `brazier_pole` | light source | 0.3 × 0.3 × 2.0 | a tall thin metal pole with a small iron fire basket on top, empty basket (no fire) | requested |
-| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed. **The lid must be a separate mesh part** | requested |
+| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed, a clear horizontal seam between lid and body. **Closed only.** A separate lid part is nice but not needed: a single mesh is cut at the seam in code (as BossRig does for bosses) | requested |
 | 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | requested |
 | 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | requested |
 | 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | requested |
