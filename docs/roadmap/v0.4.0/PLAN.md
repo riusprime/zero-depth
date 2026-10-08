@@ -134,6 +134,9 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | D7 | (2026-10-08, Q-T1) "Peak ~1 min before boss" | The curve peaks about one minute before the median time the expected-build bot reaches the boss door (re-measured), then holds; staying longer still pays more shards | TU |
 | D8 | (2026-10-08, Q-T2) "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25% and enemies damage and player health should be like I take damage but I can heal, wont risk taking too much damage but I know this healing orb is coming sooner or later" | Kills drop a **heal orb** 10 % of the time (healing 25 % max HP on pickup); enemy damage and player HP tuned so damage is steady but survivable until the next orb | TU |
 | D9 | (2026-10-08, Q-T3) "Ease floor 1 only" | Floor-1 bosses −20 % HP and damage; HP restored to full on entering the boss room (floor 1; floors 2–3 unchanged) | TU |
+| D10 | (2026-10-08, Q-T1/Q-T5) "You can go as soon as you want to the boss and then explore back, so if you want to rush the boss no problem, you get the boss reward and then explore" | Floors have no minimum length. Killing the boss reopens the boss door; the portal stays open until you take it; you can go back out, explore, open what's left and keep fighting (spawns resume at the curve's level) before leaving. M-FLOOR (10–15 min) is no longer a target: floor length is the player's choice | PB |
+| D11 | (2026-10-08, Q-T6) "Leave as is" | Floor-2/3 bosses unchanged | — |
+| D12 | (2026-10-08, Q-T7) "OK for this build" | The tuned peak (TU round 2, c7) ships | — |
 
 **TU as built (starting values, evidence in [`evidence/TUNING.md`](evidence/TUNING.md)).** A curve per floor
 (`data/curves/floor_N.tres`): Calm 0–60 s (holds tier 0; 35 / 25 / 18 % of SC's tier-0 cap: 5 / 7 / 9 alive; spawns
