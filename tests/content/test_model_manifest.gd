@@ -1,6 +1,6 @@
 extends GutTest
 ## Owner-supplied models (docs/art/ART_DIRECTION.md §5.2): assets/models/manifest.json lists each model's id, path
-## and sha256, and the files on disk match it exactly, both ways.
+## and sha256, and the files on disk match it exactly, both ways. v0.5.9: the kit pieces and its ground textures too.
 
 const MANIFEST := "res://assets/models/manifest.json"
 
@@ -25,7 +25,7 @@ func test_every_model_file_is_listed() -> void:
 	var listed := {}
 	for m: Dictionary in _manifest():
 		listed["res://" + String(m["path"])] = true
-	for dir in ["res://assets/models/bosses"]:
+	for dir in ["res://assets/models/bosses", "res://assets/models/kit"]:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".glb"):
 				assert_true(listed.has(dir.path_join(f)), "%s is in the manifest" % f)
@@ -37,3 +37,26 @@ func test_the_boss_models_are_the_ids_the_avatars_ask_for() -> void:
 		ids.append(StringName(m["id"]))
 	for id: StringName in BossModels.SPECS:
 		assert_has(ids, id)
+
+
+func test_every_kit_texture_is_listed_with_its_hash() -> void:
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(MANIFEST))
+	var listed := {}
+	for t: Dictionary in data.get("textures", []):
+		var path := "res://" + String(t["path"])
+		assert_true(FileAccess.file_exists(path), path)
+		assert_eq(FileAccess.get_sha256(path), t["sha256"], "%s matches its hash" % t["id"])
+		listed[path] = true
+	for f in DirAccess.get_files_at("res://assets/textures/kit"):
+		if f.ends_with(".png"):
+			assert_true(
+				listed.has("res://assets/textures/kit".path_join(f)), "%s is in the manifest" % f
+			)
+
+
+func test_the_kit_models_are_the_ids_the_dresser_asks_for() -> void:
+	var ids := []
+	for m: Dictionary in _manifest():
+		ids.append(StringName(m["id"]))
+	for id: StringName in KitModels.SPECS:
+		assert_has(ids, id, "%s is delivered" % id)

@@ -16,6 +16,13 @@ const SHADOW_BLUR := 0.5
 ## so the space between rooms reads as void (v0.2.0 I, v0.3.0 A). Any room or structural wall the footprint
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
+## v0.5.9: the kit's ground textures by biome (prop_style; "" for any other), and the metres one texture covers.
+const GROUND_TEXTURES := {
+	&"": "res://assets/textures/kit/ground_a.png",
+	&"night_rocks": "res://assets/textures/kit/ground_b.png",
+	&"red_canyon": "res://assets/textures/kit/ground_b.png",
+}
+const GROUND_TEXTURE_M := 4.0
 
 ## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
 ## (SSIL); "low" leaves both off for slower GPUs.
@@ -33,10 +40,14 @@ var environment: Environment
 var sun: DirectionalLight3D
 var vignette: TextureRect
 var contact_shadows: MeshInstance3D
+## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
+## loads; otherwise the boxes and primitive props draw as before.
+var kit: StageKit
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
+var _wall_classes: Array[int] = []
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
 
@@ -57,9 +68,13 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 		_build_ground(arena_half)
 	else:
 		_build_room_ground()
-	_build_walls(reader)
+	var use_kit := mood != null and KitModels.has_structure()
+	_build_walls(reader, not use_kit)
 	_build_contact_shadows()
-	_build_props(reader.seed_value(), arena_half)
+	if use_kit:
+		_build_kit(reader)
+	else:
+		_build_props(reader.seed_value(), arena_half)
 
 
 func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
@@ -113,6 +128,8 @@ func set_lighting(quality: String) -> void:
 	var high := mood != null and lighting == "high"
 	environment.ssao_enabled = high
 	environment.ssil_enabled = high and mood.ssil_enabled
+	if kit != null:
+		kit.set_shadows(high)
 
 
 ## Darkens the screen's edges (a radial gradient on a full-screen rect, under the HUD and the portal transit).
@@ -184,9 +201,13 @@ func _add_ground(r: Rect2) -> void:
 	_ground_rects.append(r)
 
 
-## The same checker as _build_ground, on the global tile grid, clipped to each room's rect.
+## The same checker as _build_ground, on the global tile grid, clipped to each room's rect. With a mood (v0.5.9),
+## the owner's ground texture instead, mapped in world space so it runs on across tiles, tinted by the biome.
 func _build_room_ground() -> void:
 	var mats := [_mat(palette["ground"]), _mat(palette["ground_alt"])]
+	var textured := _ground_material()
+	if textured != null:
+		mats = [textured, textured]
 	for r in _ground_rects:
 		var i0 := int(floor(r.position.x / TILE_M))
 		var i1 := int(floor(r.end.x / TILE_M))
@@ -207,6 +228,22 @@ func _build_room_ground() -> void:
 				add_child(tile)
 
 
+## The kit ground (Ruins: stone tiles; the other biomes: packed dirt), or null without a mood or the texture.
+func _ground_material() -> StandardMaterial3D:
+	if mood == null:
+		return null
+	var path := GROUND_TEXTURES.get(prop_style, GROUND_TEXTURES[&""]) as String
+	if not ResourceLoader.exists(path):
+		return null
+	var m := _mat(palette["ground"])
+	m.albedo_texture = load(path)
+	m.uv1_triplanar = true
+	m.uv1_world_triplanar = true
+	m.uv1_scale = Vector3.ONE / GROUND_TEXTURE_M
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
+
+
 ## True where the stage draws ground (everywhere in the arena; inside a room or its walls on a floor).
 func covers_ground(p: Vector2) -> bool:
 	if _ground_rects.is_empty():
@@ -217,7 +254,8 @@ func covers_ground(p: Vector2) -> bool:
 	return false
 
 
-func _build_walls(reader: WorldReader) -> void:
+## The walls' specs (for occlusion and the dresser) and, unless the kit dresses them, their boxes.
+func _build_walls(reader: WorldReader, draw := true) -> void:
 	_wall_solid = _mat(palette["cover"])
 	_wall_faded = _mat(palette["cover"])
 	_wall_faded.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -228,6 +266,10 @@ func _build_walls(reader: WorldReader) -> void:
 			continue
 		var w := reader.wall(i)
 		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
+		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
+		_wall_classes.append(kind)
+		if not draw:
+			continue
 		var box := BoxMesh.new()
 		box.size = Vector3(w.half.x * 2.0, height, w.half.y * 2.0)
 		var node := MeshInstance3D.new()
@@ -237,7 +279,6 @@ func _build_walls(reader: WorldReader) -> void:
 		node.rotation = Vector3(0, SimPlane.yaw_of(w.angle), 0)
 		add_child(node)
 		_wall_nodes.append(node)
-		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 
 
 func _build_props(seed_value: int, arena_half: float) -> void:
@@ -295,8 +336,46 @@ func _build_contact_shadows() -> void:
 		add_child(contact_shadows)
 
 
+## v0.5.9 Step 4: the floor dressed with the kit (StageDresser's rules), its pieces under a StageKit node.
+func _build_kit(reader: WorldReader) -> void:
+	var walls: Array = []
+	for i in wall_specs.size():
+		walls.append([wall_specs[i][0], wall_specs[i][1], wall_specs[i][2], _wall_classes[i]])
+	var rooms: Array = []
+	for i in reader.floor_room_count():
+		rooms.append(reader.floor_room(i))
+	var doors: Array = []
+	for i in reader.floor_door_count():
+		doors.append(reader.floor_door_rect(i))
+	var keep: Array = [reader.portal_pos()]
+	for i in reader.reward_count():
+		keep.append(reader.reward_pos(i))
+	var placements := (
+		StageDresser
+		. dress(
+			{
+				"walls": walls,
+				"rooms": rooms,
+				"start_room": reader.floor_start_room(),
+				"doors": doors,
+				"keep_clear": keep,
+				"biome": prop_style,
+				"seed": reader.seed_value(),
+			}
+		)
+	)
+	kit = StageKit.new()
+	kit.name = "Kit"
+	add_child(kit)
+	kit.build(placements, wall_specs.size(), palette["cover"], mood)
+	kit.set_shadows(lighting == "high")
+
+
 ## Fades the walls at the given indices (dithered alpha) and restores the rest.
 func apply_occlusion(indices: PackedInt32Array) -> void:
+	if kit != null:
+		kit.set_faded(indices)
+		return
 	for i in _wall_nodes.size():
 		_wall_nodes[i].material_override = _wall_faded if i in indices else _wall_solid
 

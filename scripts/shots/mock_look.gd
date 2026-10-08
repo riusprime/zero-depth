@@ -3,7 +3,8 @@ extends SceneTree
 ## (no mood), B = the biome's lighting mood. Boots main.tscn, starts a run with keys, then rebuilds the first floor
 ## per biome and variant. Saves PNGs to build/shots/<version>/look/. Needs a renderer (not --headless):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_look.gd
-## Optional: lighting=low (B without SSAO/SSIL), biomes=ruins,red_canyon.
+## Optional: lighting=low (B without SSAO/SSIL), biomes=ruins,red_canyon, zoom=30 (the ortho camera size),
+## focus=light (look at the fire nearest the start instead of the hero).
 
 ## Frames to let a rebuilt floor settle (shaders compile, SSAO/SSIL history fills) before the shot.
 const SETTLE := 40
@@ -14,6 +15,9 @@ var _main: Main
 var _frame := 0
 var _dir := ""
 var _lighting := "high"
+var _zoom := 0.0
+var _focus_light := false
+var _tag := ""
 var _jobs: Array = []
 var _wait := 0
 var _phase := 0
@@ -23,6 +27,11 @@ func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("lighting="):
 			_lighting = arg.trim_prefix("lighting=")
+		elif arg == "focus=light":
+			_focus_light = true
+			_tag = "_fire"
+		elif arg.begins_with("zoom="):
+			_zoom = float(arg.trim_prefix("zoom="))
 		elif arg.begins_with("biomes="):
 			_biomes.assign(
 				Array(arg.trim_prefix("biomes=").split(",")).map(
@@ -64,7 +73,7 @@ func _process(_delta: float) -> bool:
 			_wait -= 1
 			if _wait <= 0:
 				var job: Array = _jobs.pop_front()
-				_shot("%s_%s_%s" % [job[1], job[0], _lighting])
+				_shot("%s_%s_%s%s" % [job[1], job[0], _lighting, _tag])
 				_phase = 1
 	return false
 
@@ -79,6 +88,18 @@ func _build(biome: StringName, variant: String) -> void:
 	_main._run_biomes = [biome, biome, biome, biome] as Array[StringName]
 	_main._start_floor()
 	def.mood = mood
+	if _zoom > 0.0:
+		_main.view.rig.view_size = _zoom
+	# focus=light: the camera stops following the hero and looks at the fire nearest the start.
+	var kit := _main.view.stage.kit
+	if _focus_light and kit != null and not kit.lights.is_empty():
+		var rig := _main.view.rig
+		var best := kit.lights[0].global_position
+		for l in kit.lights:
+			if l.global_position.length() < best.length():
+				best = l.global_position
+		rig.dead_zone_m = 1.0e6
+		rig.snap_to(Vector3(best.x, 0, best.z))
 
 
 func _key(code: Key, pressed: bool) -> void:
