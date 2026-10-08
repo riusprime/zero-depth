@@ -42,6 +42,8 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.4.0 BS: the four ability slots above the HP plate.
 var ability_hud := AbilityHud.new()
+## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
+var overrun_hud := OverrunHud.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -136,6 +138,7 @@ func _init() -> void:
 	kit_hud.hp_anchor = _hp_bar
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_hud)  # v0.4.0 BS
+	add_child(overrun_hud)  # v0.4.0 AB
 	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -182,6 +185,7 @@ func sync(reader: WorldReader) -> void:
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_hud.sync(reader)  # v0.4.0 BS
+	overrun_hud.sync(reader)  # v0.4.0 AB
 
 
 func _process(delta: float) -> void:

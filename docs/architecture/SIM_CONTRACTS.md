@@ -279,6 +279,27 @@ never add heat. Targeting: Bomb Lobber = the enemy with the most others touching
 range (ties: nearest the player, then lower index); Drone Buddy = the nearest enemy to the drone within range; Orbit
 Blades = any enemy touching a blade, once per enemy per `hit_ticks`. Enemies still spawning in are skipped.
 
+**Element abilities and ability combos (v0.4.0 AB; `ElementAbilities`, `AbilityCombos`).** Arc Field picks its
+targets among the enemies within range (alive, not spawning in, ascending index) by a partial shuffle on the
+`ability` stream (`range_int(k, n − 1)` per pick); Frost Nova hits every such enemy in its radius; fire patches hit
+each enemy touching one at most once per Flame Trail's `hit_ticks`. Each cast and each fire hit takes its own root.
+These abilities feed the v0.3.0 engines directly (`Engines.add_shock`, `add_frost`, `add_burn`) after a hit that
+landed; the engine numbers come from `World.item_mods`, which `World.refresh_build` rebuilds from the items owned
+and then folds in each owned ability's `engine` item (`ItemMods.fold_engine`: engine numbers only, never a feeder;
+the stronger value wins). Their hits carry only `TAG_ABILITY` (and `TAG_AREA`), so `Engines.on_hit` sees no source
+and no item feeder adds stacks through them. Ability combos are `ComboTable`s with two abilities: `refresh_build`
+(after every ability card and at each floor's start) owns those whose abilities are both at `min_level`
+(`COMBO_UNLOCKED` as for items). Their payoffs follow §7–§8's loop rules: Storm Bombs, Glacier Ring and Ember Ward
+run between `Engines.begin` and `end` (ancestry and the watchdog); Storm Bombs fires once per bomb root, Napalm Drone
+once per bolt root, Glacier Ring once per (blade root, enemy) (`ProcLedger` codes 64–66); Wingman and Ember Ward are
+rate-limited by their window; Blink Charge only queues bombs and Blade Dance and Superconductor only change numbers
+(radius, damage). New hit effect ids: `arc_field`, `frost_nova`, `flame_trail`, `storm_bombs`, `napalm_drone`,
+`blade_dance`, `superconductor`, `ember_ward` (and status effects `glacier_ring`).
+
+**Overrun (v0.4.0 AB; `Overrun`).** An attacker multiplier like Cold Snap's: a hit owned by an Overrun enemy (an id
+in `World.overrun.boosted`) is `× damage_permille / 1000` before the target's multipliers. The rest of the branch is
+in §11.
+
 **Damage-over-time** ticks emit `DAMAGE` with `tags |= DOT` and `proc_pct = 0`. They never emit `HIT`, so they
 can't trigger on-hit effects.
 
@@ -392,6 +413,15 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
 - **Threat T** adds to those tables through `ThreatModifier`s ([`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §7). The
   player raises T only by choice (PD-05). Every threat cost is shown on the fork or reward before the choice.
 - There is no time-based scaling: no global clock and no enrage timer.
+- **Overrun (v0.4.0 AB, the first T branch).** `OverrunRooms.mark` picks one room per floor after the boss room is
+  attached, from the `map:overrun` sub-stream (the `map` stream itself and the walls never change): any room but the
+  hall, the boss room, its host and the portal room that is off the shortest doorway path from the hall to the host
+  and whose removal keeps the two joined; fewest doorways first (a dead end in 979 of 1,000 seeds). While the player
+  stands in it (`FloorLayout.room_of`, tick phase 9), the spawn director's alive cap is `× spawn_permille` and its
+  interval `÷` it, and each arrival becomes an Overrun enemy (HP `× hp_permille` at once, its hits `× damage_permille`).
+  `kills_to_clear` Overrun kills (counted wherever they die) clear it: an altar at the room's open spot nearest its
+  centre, its offer pre-rolled from the loot stream (ability level-ups first, then new abilities), and the shards those
+  kills paid paid again `× (shard_permille − 1000) / 1000` (one `SHARDS` event). Hashed once the room was entered.
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.
 - **The formula is locked by evidence.** Its first version is measured in v0.3.0 and recorded in that version's
   `evidence/`. Later changes need a new sim result showing the scorecard bands still hold

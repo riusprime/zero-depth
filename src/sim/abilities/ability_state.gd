@@ -43,6 +43,47 @@ var orbit_hit_tick := -1
 ## Stat regen (Stats.advance_regen): the accumulator and the last tick it healed.
 var regen_acc := 0
 var regen_tick := -1
+# --- v0.4.0 AB (ElementAbilities, AbilityCombos). Hashed after the fields above, once any leaves its default. ---
+## Arc Field: the last strike (tick, from, where each bolt hit) and whether Superconductor raised it.
+var arc_tick := -1
+var arc_from := Vector2.ZERO
+var arc_to := PackedVector2Array()
+var arc_super := 0
+## Frost Nova: the last nova (tick, centre, radius).
+var nova_tick := -1
+var nova_pos := Vector2.ZERO
+var nova_r := 0.0
+## Fire patches (Flame Trail, Napalm Drone): centre, radius, the tick it goes out, damage per hit, burn stacks per
+## hit, and its kind (FIRE_TRAIL / FIRE_NAPALM). Oldest first.
+var fire_pos := PackedVector2Array()
+var fire_r := PackedFloat32Array()
+var fire_end := PackedInt32Array()
+var fire_dmg := PackedInt32Array()
+var fire_stacks := PackedInt32Array()
+var fire_kind := PackedInt32Array()
+## Enemies the fire hit lately (ids, the first tick they may be hit again), and where the last trail patch fell
+## (trail_tick -1 = none on this floor yet).
+var fire_ids := PackedInt32Array()
+var fire_next := PackedInt32Array()
+var trail_tick := -1
+var trail_at := Vector2.ZERO
+## Storm Bombs: the last chain (tick, the blast centre, where each bolt hit).
+var storm_tick := -1
+var storm_from := Vector2.ZERO
+var storm_to := PackedVector2Array()
+## Blade Dance: the tick the dance ends; Wingman: the first tick of the next volley and the last one; Ember Ward:
+## the first tick it may burst again and the last burst (tick, centre, radius); Blink Charge and Glacier Ring: the
+## last tick they fired.
+var dance_until := 0
+var wing_next := 0
+var wing_tick := -1
+var ward_next := 0
+var ward_tick := -1
+var ward_pos := Vector2.ZERO
+var ward_r := 0.0
+var charge_tick := -1
+var charge_pos := Vector2.ZERO
+var glacier_tick := -1
 
 
 func touched() -> bool:
@@ -56,6 +97,24 @@ func touched() -> bool:
 		or not orbit_ids.is_empty()
 		or regen_acc != 0
 		or regen_tick != -1
+		or touched_ab()
+	)
+
+
+## Any v0.4.0 AB field away from its default.
+func touched_ab() -> bool:
+	return (
+		arc_tick != -1
+		or nova_tick != -1
+		or not fire_pos.is_empty()
+		or not fire_ids.is_empty()
+		or trail_tick != -1
+		or storm_tick != -1
+		or dance_until != 0
+		or wing_next != 0
+		or ward_next != 0
+		or charge_tick != -1
+		or glacier_tick != -1
 	)
 
 
@@ -82,3 +141,22 @@ func hash_into(h: StateHasher) -> void:
 	h.add_f32s(blast_r)
 	h.add_ints(orbit_ids)
 	h.add_ints(orbit_next)
+	if not touched_ab():
+		return
+	for v in [arc_tick, arc_super, nova_tick, trail_tick, storm_tick, dance_until, wing_next]:
+		h.add_int(v)
+	for v in [wing_tick, ward_next, ward_tick, charge_tick, glacier_tick]:
+		h.add_int(v)
+	for p: Vector2 in [arc_from, nova_pos, trail_at, storm_from, ward_pos, charge_pos]:
+		h.add_f32(p.x)
+		h.add_f32(p.y)
+	h.add_f32(nova_r)
+	h.add_f32(ward_r)
+	for arr: PackedVector2Array in [arc_to, fire_pos, storm_to]:
+		h.add_int(arr.size())
+		for p in arr:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
+	h.add_f32s(fire_r)
+	for arr: PackedInt32Array in [fire_end, fire_dmg, fire_stacks, fire_kind, fire_ids, fire_next]:
+		h.add_ints(arr)

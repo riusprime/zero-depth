@@ -54,16 +54,49 @@ func test_bad_engine_items_are_rejected() -> void:
 	assert_has(_codes(w.validate()), &"not_positive")
 
 
+## v0.4.0 AB: eight item combos and eight ability combos (each names two real abilities).
 func test_the_eight_combos_are_valid_and_name_real_items() -> void:
 	var repo := _repo()
-	assert_eq(repo.count(&"combos"), 8)
+	assert_eq(repo.count(&"combos"), 16)
 	for i in repo.errors():
 		fail_test("%s: %s (%s)" % [i.path, i.message, i.code])
+	var abilities := 0
 	for def: ComboDefinition in repo.all_of(&"combos"):
 		assert_eq(def.validate(), [], String(def.id))
+		if def.is_ability_combo():
+			abilities += 1
+			assert_not_null(repo.get_def(&"ability", def.ability_a), String(def.ability_a))
+			assert_not_null(repo.get_def(&"ability", def.ability_b), String(def.ability_b))
+			continue
 		assert_not_null(repo.get_def(&"items", def.item_a), "%s: %s" % [def.id, def.item_a])
 		assert_not_null(repo.get_def(&"items", def.item_b), "%s: %s" % [def.id, def.item_b])
-	assert_eq(ContentCompiler.compile_combos(repo).size(), 8, "every combo compiles")
+	assert_eq(abilities, 8, "eight ability combos")
+	assert_eq(ContentCompiler.compile_combos(repo).size(), 16, "every combo compiles")
+
+
+func test_an_ability_combo_needs_two_real_abilities_and_an_ability_effect() -> void:
+	var storm := (load("res://data/combos/storm_bombs.tres") as ComboDefinition).duplicate(true)
+	assert_eq(storm.validate(), [])
+	var both := storm.duplicate(true) as ComboDefinition
+	both.item_a = &"ember_edge"
+	assert_has(_codes(both.validate()), &"combo_pair", "items and abilities, not both")
+	var solo := storm.duplicate(true) as ComboDefinition
+	solo.ability_b = solo.ability_a
+	assert_has(_codes(solo.validate()), &"combo_pair")
+	var wrong := storm.duplicate(true) as ComboDefinition
+	wrong.effect = ComboDefinition.Effect.PLASMA_ARC
+	assert_has(_codes(wrong.validate()), &"mismatch")
+	var lvl := storm.duplicate(true) as ComboDefinition
+	lvl.min_level = 6
+	assert_has(_codes(lvl.validate()), &"range")
+	var ghost := storm.duplicate(true) as ComboDefinition
+	ghost.ability_b = &"no_such_ability"
+	var defs: Array[ContentDef] = [load("res://data/abilities/bomb_lobber.tres"), ghost]
+	assert_has(_codes(ContentValidator.validate(defs)), &"unknown_ability")
+	var nova := (load("res://data/abilities/frost_nova.tres") as AbilityDefinition).duplicate(true)
+	nova.engine_item = &"no_such_item"
+	var adefs: Array[ContentDef] = [nova]
+	assert_has(_codes(ContentValidator.validate(adefs)), &"unknown_item", "an engine item exists")
 
 
 func test_a_combo_needs_two_existing_items_and_a_new_pair() -> void:

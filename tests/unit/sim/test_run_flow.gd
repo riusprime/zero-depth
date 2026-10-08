@@ -143,15 +143,18 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
 	var r := RunState.start(9, _run_table())
 	var w := _floor_world(r.floor_seed(), r)
-	var combo := w.combo_tables[0]
+	var first := 0
+	while w.combo_tables[first].item_a < 0:  # v0.4.0 AB: the first item combo (ability pairs sort among them)
+		first += 1
+	var combo := w.combo_tables[first]
 	w.add_item(combo.item_a)
 	w.add_item(combo.item_b)
 	w.guard_charges = 2
-	assert_eq(w.combos_owned, PackedInt32Array([0]), "both items unlock the combo")
+	assert_eq(w.combos_owned, PackedInt32Array([first]), "both items unlock the combo")
 	assert_true(Engines.has_combo(w, combo.effect))
 	r.finish_floor(w)
 	var w2 := _floor_world(r.floor_seed(), r)
-	assert_eq(w2.combos_owned, PackedInt32Array([0]), "the combo came along")
+	assert_eq(w2.combos_owned, PackedInt32Array([first]), "the combo came along")
 	assert_true(Engines.has_combo(w2, combo.effect), "and it is active on floor 2")
 	assert_eq(w2.guard_charges, 2, "guard charges carry too")
 	var unlocks := 0

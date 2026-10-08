@@ -19,6 +19,8 @@ const SHRINE := Color("#D46BFF")
 const CHEST := Color("#E0A458")
 const CHEST_POOR := Color(0.62, 0.55, 0.50, 0.85)
 const BOSS := Color("#FF4A3D")
+## v0.4.0 AB: the Overrun room (its doorways and its mark): a hotter, pinker red than the boss door.
+const OVERRUN := Color("#FF2E6A")
 const PORTAL_OPEN := Color("#4DA3FF")
 const PORTAL_SEALED := Color(0.55, 0.60, 0.70, 0.8)
 const TEXT := Color(0.85, 0.95, 1.0, 0.95)

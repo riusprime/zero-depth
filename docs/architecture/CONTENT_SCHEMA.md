@@ -371,6 +371,32 @@ exactly 5 entries (L1–L5): `level_damage`, `level_radius`, `level_rate` (multi
 chain, the blink's charges, Aegis's charge cap). Each kind validates the fields it reads. Compiled by
 `ContentCompiler.compile_abilities` (id order) into `AbilityTable`.
 
+v0.4.0 AB appends three auto kinds, `ARC_FIELD`, `FROST_NOVA` and `FLAME_TRAIL`, the tags `shock`, `frost` and `fire`,
+and `engine_item` (an item id; required for those three, and the validator checks the item exists): the item whose
+engine numbers (shock threshold and discharge, frost threshold and freeze with its chill, burn damage, period,
+duration and stack cap) the ability's status uses when no owned item brings stronger ones. For those kinds
+`level_extra` is the status stacks per hit (≥ 1 at every level). Arc Field reads `range_m`, `damage`,
+`level_count` (targets) and `level_cooldown` (> 0); Frost Nova `radius_m`, `damage`, `level_radius` and
+`level_cooldown` (> 0); Flame Trail `radius_m` (a patch), `period_seconds` (least time between patches),
+`duration_seconds` (a patch's life, × `level_rate`), `hit_seconds` (per enemy) and `damage` (× `level_damage`).
+Shipped: Arc Field 3 targets within 6 m, 12 damage, 1 shock stack, 1.5 s (−0.1 s and +1 target a level; engine
+Static Chain); Frost Nova 3 m (+0.4 m a level), 10 damage, 2 frost stacks (4 from L3: a nova freezes on its own),
+every 4 s (3 s at L5; engine Glacial Edge); Flame Trail 0.9 m patches every 0.15 s and 0.8 m of movement, 2 s, 3
+damage every 0.5 s (6/s), 1 burn stack, +25 % damage and duration a level (engine Ember Edge).
+
+`ComboDefinition` (v0.4.0 AB) may pair two abilities instead of two items: `ability_a`, `ability_b` (ability ids,
+both required and different, never together with `item_a`/`item_b`) and `min_level` (1–5, data 3: both owned at that
+level or higher evolve the pair). The effect must be one of the appended ability effects `STORM_BOMBS`,
+`NAPALM_DRONE`, `GLACIER_RING`, `BLINK_CHARGE`, `BLADE_DANCE`, `WINGMAN`, `SUPERCONDUCTOR`, `EMBER_WARD`, each
+validating the fields it reads (`damage`, `radius_m`, `stacks`, `count`, `share_permille`, `window_seconds`; see
+[`../design/INTERACTIONS.md`](../design/INTERACTIONS.md) "Ability combos"). The validator checks both abilities exist
+and that no ability pair repeats. Compiled with the item combos (`ComboTable.ability_a/b`, indices in
+`compile_abilities` order; `item_a/b` stay −1).
+
+`OverrunDefinition` (v0.4.0 AB; `data/overrun/overrun.tres`, category `overrun`): the Overrun threat branch.
+`hp_multiplier`, `damage_multiplier`, `spawn_multiplier` (≥ 1; data 1.5 each), `kills_to_clear` (> 0; data 12) and
+`shard_multiplier` (≥ 1; data 2.0). Compiled by `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
+
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
 `shard_gain`, `pickup_range`, `armour`), `name_key`, `desc_key` (one `%s` for the amount), `amounts` (common, rare,

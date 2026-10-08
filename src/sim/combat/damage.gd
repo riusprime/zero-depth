@@ -66,6 +66,7 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
+	amount = amount * Overrun.attacker_mult(w, owner_id) / 1000  # v0.4.0 AB: an Overrun enemy hits harder.
 	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
 	if heat != 1000:
 		amount = amount * heat / 1000

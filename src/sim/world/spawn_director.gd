@@ -20,9 +20,9 @@ static func advance(w: World) -> void:
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
 		w.spawn_cd -= 1
-	if w.spawn_cd > 0 or WaveDirector.enemies_alive(w) >= t.cap(tier):
+	if w.spawn_cd > 0 or WaveDirector.enemies_alive(w) >= Overrun.cap(w, t.cap(tier)):  # v0.4.0 AB
 		return
-	w.spawn_cd = t.interval(tier)
+	w.spawn_cd = Overrun.interval(w, t.interval(tier))  # v0.4.0 AB: the Overrun room spawns more
 	_spawn_one(w, t, tier)
 
 
@@ -79,3 +79,4 @@ static func _spawn_one(w: World, t: SpawnTable, tier: int) -> void:
 		var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
+		Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy

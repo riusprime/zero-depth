@@ -272,7 +272,8 @@ func test_every_combo_is_reachable_in_some_build() -> void:
 				if c.item_a in ids and c.item_b in ids:
 					reach[c.id] = reach.get(c.id, []) + ["%s/%d" % [build, util]]
 	for c: ComboDefinition in repo.all_of(&"combos"):
-		assert_true(reach.has(c.id), "%s is reachable in some build" % c.id)
+		if not c.is_ability_combo():  # v0.4.0 AB: ability pairs are test_abilities_ab's
+			assert_true(reach.has(c.id), "%s is reachable in some build" % c.id)
 	var plasma: ComboDefinition = repo.get_def(&"combos", &"plasma_arc")
 	assert_eq([plasma.item_a, plasma.item_b], [&"ember_edge", &"conductor"])
 	gut.p("combo reach: %s" % reach)

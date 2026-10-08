@@ -381,3 +381,32 @@ CAUSE_SPLITTER,A Splitter's swipe cut you down.,El zarpazo de un Divisor te abat
 CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un Portaescudos te aplastó.
 CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
 CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.
+ABILITY_ARC_FIELD,Arc Field,Campo de arco
+ABILITY_ARC_FIELD_DESC,"Every 1.5 s lightning strikes 3 enemies within 6 m: 12 damage and a shock stack each. One more target and a faster strike every level.","Cada 1,5 s un rayo golpea a 3 enemigos a 6 m: 12 de daño y una carga de choque a cada uno. Un objetivo más y un rayo más rápido por nivel."
+ABILITY_FROST_NOVA,Frost Nova,Nova de escarcha
+ABILITY_FROST_NOVA_DESC,"Every 4 s a 3 m nova around you: 10 damage and 2 frost stacks. Wider every level; from level 3 a nova freezes on its own; every 3 s at level 5.","Cada 4 s una nova de 3 m a tu alrededor: 10 de daño y 2 cargas de escarcha. Más amplia por nivel; desde el nivel 3 una nova congela por sí sola; cada 3 s en el nivel 5."
+ABILITY_FLAME_TRAIL,Flame Trail,Rastro de llamas
+ABILITY_FLAME_TRAIL_DESC,"While you move you leave fire for 2 s: 6 damage a second and burn to enemies in it. +25 % duration and damage every level.","Mientras te mueves dejas fuego 2 s: 6 de daño por segundo y quemadura a los enemigos en él. +25 % de duración y daño por nivel."
+ABILITY_COMBO_STORM_BOMBS,Storm Bombs,Bombas de Tormenta
+ABILITY_COMBO_STORM_BOMBS_DESC,Each bomb blast chains lightning to 3 enemies.,Cada explosión encadena rayos a 3 enemigos.
+ABILITY_COMBO_NAPALM_DRONE,Napalm Drone,Dron de Napalm
+ABILITY_COMBO_NAPALM_DRONE_DESC,Drone bolts set the ground on fire.,Los disparos del dron incendian el suelo.
+ABILITY_COMBO_GLACIER_RING,Glacier Ring,Anillo Glaciar
+ABILITY_COMBO_GLACIER_RING_DESC,Every blade touch adds frost.,Cada toque de cuchilla añade escarcha.
+ABILITY_COMBO_BLINK_CHARGE,Blink Charge,Carga de Destello
+ABILITY_COMBO_BLINK_CHARGE_DESC,Each blink leaves two bombs behind.,Cada destello deja dos bombas atrás.
+ABILITY_COMBO_BLADE_DANCE,Blade Dance,Danza de Cuchillas
+ABILITY_COMBO_BLADE_DANCE_DESC,Landed swings spread the blades: +50 % damage.,Tus tajos abren las cuchillas: +50 % de daño.
+ABILITY_COMBO_WINGMAN,Wingman,Escolta
+ABILITY_COMBO_WINGMAN_DESC,Your drones fire with every shot.,Tus drones disparan con cada disparo.
+ABILITY_COMBO_SUPERCONDUCTOR,Superconductor,Superconductor
+ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning deals double damage to chilled foes.,Los rayos hacen doble daño a enemigos helados.
+ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
+ABILITY_COMBO_EMBER_WARD_DESC,Blocking a hit bursts fire around you.,Bloquear un golpe estalla en fuego a tu alrededor.
+HUD_OVERRUN,OVERRUN,ASEDIO
+HUD_OVERRUN_PROGRESS,Kills: %d / %d,Bajas: %d / %d
+HUD_OVERRUN_CLEARED,Overrun cleared: an ability card and double shards,Asedio superado: una carta de habilidad y fragmentos dobles
+MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
+UI_DEV_GO_OVERRUN,Go to the Overrun door,Ir a la puerta del asedio
+CAPTION_OVERRUN_ENTER,[Overrun alarm],[Alarma de asedio]
+CAPTION_OVERRUN_CLEAR,[Overrun cleared],[Asedio superado]
