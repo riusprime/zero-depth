@@ -11,9 +11,13 @@ extends RefCounted
 ## Boss challenge (v0.3.0 BX; BossChallenge): the far timer starts the punish attack, an attack may chain into its
 ## follow-up instead of recovering, some recoveries open the weak point, aimed attacks lead the player, a pull drags
 ## the player during its windup, and the closing band hurts in phase 6.
+## v0.5.5 DS (D7): each phase after the first opens with a gate (BossGates: a short invulnerable transition, the HP
+## can't fall past it in one burst, adds rise); the hidden catch-up scales the boss (CatchUp.on_boss, powered).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
+## v0.5.5 DS (D7): a phase gate's transition (BossGates): invulnerable, still, the adds rising.
+const GATE := 6
 ## A boss rises for this long before it acts (invulnerable meanwhile; starting value, 1.0 s).
 const INTRO_TICKS := 60
 ## After a stagger, a short pause before it attacks again.
@@ -73,7 +77,8 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	_update_phase(w, i, b, t)
+	if a.state[i] != GATE:
+		_update_phase(w, i, b, t)
 	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
@@ -83,6 +88,8 @@ static func think(w: World, i: int) -> void:
 		S.SPAWN:
 			if a.state_t[i] >= INTRO_TICKS:
 				_enter(a, i, S.MOVE)
+		GATE:
+			BossGates.advance(w, i, b)
 		STAGGERED:
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
@@ -191,7 +198,8 @@ static func _finish(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 		bs.exposed_t[b] = t.weak_ticks
 
 
-## The phase for the current HP: the last one whose threshold the HP has fallen to. Phases only advance.
+## The phase for the current HP: the last one whose threshold the HP has fallen to. Phases only advance, and (v0.5.5
+## DS, D7) one at a time: each new phase opens with its gate (BossGates.begin), its entry attack after it.
 static func _update_phase(w: World, i: int, b: int, t: BossTable) -> void:
 	var a := w.actors
 	var target := 0
@@ -199,8 +207,10 @@ static func _update_phase(w: World, i: int, b: int, t: BossTable) -> void:
 		if a.hp[i] * 1000 <= t.phase_threshold[k] * a.max_hp[i]:
 			target = k
 	if target > w.bosses.phase[b]:
-		w.bosses.phase[b] = target
-		w.bosses.entry[b] = t.phase_entry[target]
+		var next := w.bosses.phase[b] + 1
+		w.bosses.phase[b] = next
+		w.bosses.entry[b] = t.phase_entry[next]
+		BossGates.begin(w, i, b, next)
 
 
 ## The next attack: the phase's entry attack if one waits, else a weighted pick (ai stream) among the phase's attacks
@@ -329,6 +339,18 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			a.facing[i] = a.lock_a[i]
 		_:
 			_lock(w, i, b, atk)
+
+
+## v0.5.5 DS (D4, D7): an attack's damage under boss i's hidden catch-up (ActorStore.power, per mille; CatchUp.on_boss
+## sets it, 0 = unscaled).
+static func powered(w: World, i: int, amount: int) -> int:
+	var pm := w.actors.power[i]
+	return amount if pm <= 0 or pm == 1000 else amount * pm / 1000
+
+
+## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (public: BossGates' adds).
+static func spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
+	return _spot(w, at, angle, dist)
 
 
 ## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself).
@@ -493,7 +515,7 @@ static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			ActorStore.TEAM_ENEMY,
 			muzzle,
 			dir * atk.speed,
-			atk.damage,
+			powered(w, i, atk.damage),
 			atk.radius_m,
 			atk.bolt_life_ticks,
 			SimEvent.TAG_PROJECTILE
@@ -526,7 +548,8 @@ static func _hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from:
 		return
 	w.bosses.hit[b] = 1
 	var a := w.actors
-	Damage.hit(w, 0, atk.damage, a.ids[i], a.ids[i], w.take_root(), tags, from, w.player_pos())
+	var dmg := powered(w, i, atk.damage)  # v0.5.5 DS: the hidden catch-up
+	Damage.hit(w, 0, dmg, a.ids[i], a.ids[i], w.take_root(), tags, from, w.player_pos())
 	if w.player_dead() and w.killer_attack < 0:
 		w.killer_attack = w.bosses.attack[b]
 
@@ -540,7 +563,7 @@ static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 	var a := w.actors
 	if not is_boss_kind(a.kinds[i]) or a.dead[i] == 1 or applied <= 0:
 		return
-	if a.state[i] == STAGGERED or a.state[i] == S.SPAWN:
+	if a.state[i] == STAGGERED or a.state[i] == S.SPAWN or a.state[i] == GATE:
 		return
 	var b := entry_of(w, i)
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]

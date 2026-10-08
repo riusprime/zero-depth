@@ -12,6 +12,8 @@ var weight := 0
 var min_floor := 1
 ## Events.Need.
 var requires := 0
+## v0.5.5 DS (S5): only on Deep floors (and first there).
+var deep_only := false
 var labels: Array[StringName] = []
 var cost := PackedInt32Array()
 var cost_amount := PackedInt32Array()

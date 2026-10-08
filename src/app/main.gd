@@ -263,6 +263,9 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
+	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
+	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
+	CatchUp.start_floor(world)
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":

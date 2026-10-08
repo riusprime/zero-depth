@@ -3,7 +3,8 @@ extends PanelContainer
 ## Developer panel stub (debug builds only), adapted from Deathventory's release gate: it opens only when
 ## unlocked() is true, toggled by backtick (physical key). Shows seed, tick, FPS and ticks per frame; buttons
 ## pause, step one tick, hash now and reseed, (v0.3.0 C) spawn a chosen boss near the player and (v0.3.5 AI) a
-## chosen normal enemy, all through DebugApi.
+## chosen normal enemy, all through DebugApi. v0.5.5 DS: the hidden catch-up's readout (developers only; the player
+## never sees it: owner D4 "Yes, but hidden").
 
 var api: DebugApi
 var _info := Label.new()
@@ -11,6 +12,7 @@ var _hash := Label.new()
 var _boss := Label.new()
 var _enemy := Label.new()
 var _ability := Label.new()
+var _catch_up := Label.new()
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -62,6 +64,9 @@ func _init(p_api: DebugApi) -> void:
 	_ability.name = "AbilityChoice"
 	_ability.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_ability)
+	_catch_up.name = "CatchUp"
+	_catch_up.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_catch_up)
 
 
 func _process(_delta: float) -> void:
@@ -90,3 +95,21 @@ func _process(_delta: float) -> void:
 		if api.ability_choice < ab.size()
 		else ""
 	)
+	_catch_up.text = catch_up_text(w)
+
+
+## v0.5.5 DS: "m ×1.41 (P 2000 / E 1000, cap ×1.75) · boss ×1.20 (P … / E …, cap …)", or "" without the table.
+static func catch_up_text(w: World) -> String:
+	if w.catch_up_table == null:
+		return ""
+	var s := w.catch_up
+	var out := (
+		"m x%.2f (P %d / E %d, cap x%.2f)"
+		% [s.enemy / 1000.0, s.power, s.expected, s.cap / 1000.0]
+	)
+	if s.boss_expected > 0:
+		out += (
+			"  boss x%.2f (P %d / E %d, cap x%.2f)"
+			% [s.boss / 1000.0, s.boss_power, s.boss_expected, s.boss_cap / 1000.0]
+		)
+	return out

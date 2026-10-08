@@ -34,6 +34,7 @@ static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 		t.weight = def.weight
 		t.min_floor = def.min_floor
 		t.requires = EventDefinition.REQUIRES.find(def.requires)
+		t.deep_only = def.deep_only  # v0.5.5 DS (S5)
 		for c in def.choices:
 			t.labels.append(c.label_key)
 			var cost := EventChoiceDefinition.COSTS.find(c.cost)

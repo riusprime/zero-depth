@@ -33,6 +33,7 @@ const WORLD_KEPT := {
 	&"stat_tables": "loadout",
 	&"overrun_table": "loadout",  # v0.4.0 AB
 	&"shop_table": "loadout",  # v0.5.0 SH
+	&"catch_up_table": "loadout",  # v0.5.5 DS
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -63,6 +64,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"EventTable",  # v0.5.0 EV
 	&"CurseTable",
 	&"EventRules",
+	&"CatchUpTable",  # v0.5.5 DS
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -86,6 +88,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"OverrunState",  # v0.4.0 AB
 	&"ShopState",  # v0.5.0 SH
 	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
+	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.
@@ -342,6 +345,8 @@ static func _make(cls: StringName) -> Object:
 			return ItemMods.new()
 		&"DenseGrid":
 			return DenseGrid.new()
+		&"CatchUpState":
+			return CatchUpState.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 

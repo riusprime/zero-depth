@@ -127,14 +127,21 @@ static func _clear(layout: FloorLayout, room: int, p: Vector2, rules: EventRules
 
 
 ## An event index for the next pedestal (loot:event): weighted among the events allowed on this floor, whose
-## requirement holds and that aren't in `placed`; -1 when none is left.
+## requirement holds and that aren't in `placed`; -1 when none is left. v0.5.5 DS (S5): a Deep-only event is allowed
+## only on a Deep floor, and there the draw takes one first while one is left (so every Deep floor has one).
 static func draw_event(w: World, placed: PackedInt32Array) -> int:
+	var deep := Routes.is_deep(w)
 	var weights := PackedInt32Array()
+	var deep_weights := PackedInt32Array()
+	var any_deep := false
 	for e in w.ev.events.size():
 		var t := w.ev.events[e]
 		var ok := t.min_floor <= w.floor_index and not placed.has(e) and needs_met(w, t.requires)
+		ok = ok and (deep or not t.deep_only)
 		weights.append(t.weight if ok else 0)
-	return Offers.pick(w.ev.rng, weights)
+		deep_weights.append(t.weight if ok and t.deep_only else 0)
+		any_deep = any_deep or (ok and t.deep_only and t.weight > 0)
+	return Offers.pick(w.ev.rng, deep_weights if any_deep else weights)
 
 
 static func needs_met(w: World, need: int) -> bool:
@@ -437,6 +444,7 @@ static func _ambush(w: World, k: int, n: int) -> void:
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
 		w.actors.power[i] = t.damage_permille(tier)  # v0.4.0 SC: the tier's damage, like a spawn
+		CatchUp.on_enemy(w, i)  # v0.5.5 DS (D4): the floor's hidden catch-up, like a spawn
 		Curses.make_elite(w, i)
 		s.ambush_ids.append(id)
 

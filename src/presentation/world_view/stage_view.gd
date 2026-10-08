@@ -16,11 +16,20 @@ const SHADOW_BLUR := 0.5
 ## so the space between rooms reads as void (v0.2.0 I, v0.3.0 A). Any room or structural wall the footprint
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
+## v0.5.5 DS (S5): the Deep look (the Deep gate's violet; starting values).
+const DEEP_VIOLET := Color("#8A5CFF")
+const DEEP_EDGE := Color("#140A26")
+const DEEP_FOG_DENSITY := 0.012
 
 ## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
 var prop_style := &""
 var palette := {}
+## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) is drawn under a
+## violet haze: violet fog, the ambient and the sun pulled toward the Deep gate's violet, a darker background.
+var deep := false
+var env: Environment
+var sun: DirectionalLight3D
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
@@ -31,6 +40,7 @@ var _ground_rects: Array[Rect2] = []
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
 	palette = p_palette
+	deep = reader.floor_is_deep()
 	_build_environment()
 	_build_light()
 	_ground_rects.clear()
@@ -59,7 +69,7 @@ func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
 
 
 func _build_environment() -> void:
-	var env := Environment.new()
+	env = Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = palette["edge"]
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
@@ -69,6 +79,15 @@ func _build_environment() -> void:
 	env.glow_enabled = true
 	env.glow_intensity = 0.6
 	env.glow_hdr_threshold = 1.0
+	if deep:  # v0.5.5 DS (S5): the violet haze
+		env.background_color = Color(palette["edge"]).lerp(DEEP_EDGE, 0.6)
+		env.ambient_light_color = Color(palette["ambient"]).lerp(DEEP_VIOLET, 0.55)
+		env.ambient_light_energy = 0.7
+		env.fog_enabled = true
+		env.fog_light_color = DEEP_VIOLET
+		env.fog_light_energy = 0.6
+		env.fog_density = DEEP_FOG_DENSITY
+		env.fog_sky_affect = 0.0
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
@@ -84,10 +103,14 @@ func _build_light() -> void:
 	light.rotation_degrees = Vector3(-38, 168, 0)
 	light.light_energy = 1.05
 	light.light_color = Color(1, 0.98, 0.95)
+	if deep:  # v0.5.5 DS (S5): a colder, violet sun
+		light.light_color = Color(1, 0.98, 0.95).lerp(DEEP_VIOLET, 0.45)
+		light.light_energy = 0.9
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	light.directional_shadow_max_distance = 80.0
+	sun = light
 	add_child(light)
 
 
