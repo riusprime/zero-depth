@@ -2,6 +2,9 @@
 
 > **Version (owner, 2026-10-08):** "this new version will be v0.6.0 with all the Ui and gameplay feedback together". This
 > plan, the UI restyle and every step below ship together as **v0.6.0** (`0.6.0-dev` when the playable PR goes up).
+> **v0.6.0 includes the v0.5.9 "Embers" visual rework** (owner: "v0.6.0 should also include the visual rework, don't lose
+> it buddy very important"): lighting moods, the owner's kit, themed rooms, the hero's light, the chest. It is merged
+> into this branch (`85084e9`); every step builds on it and none may remove or replace it.
 > The folder keeps the name `v0.5.5` while agents are working in it; it is renamed `v0.6.0` with the PR.
 
 Recorded so no line of the owner's feedback depends on chat context. The owner's message is pasted verbatim in
