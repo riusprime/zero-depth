@@ -233,7 +233,7 @@ docs/ (this kit)
   - Materials are `StandardMaterial3D` only, with no custom shaders unless a gallery scene proves the need.
 - **CI.** This is a summary. The exact steps, and the step in which each guard goes live, are in
   [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 3.
-  - **`verify` (ubuntu):**
+  - **`verify` (ubuntu)** runs on every push and on PRs into `main`:
     1. check the Godot and GUT versions;
     2. import;
     3. run GUT, grepping its summary, writing JUnit XML, asserting a committed minimum test count, and failing on
@@ -244,6 +244,8 @@ docs/ (this kit)
        `World` run inside the pack (dummy movers in v0.0.1, a real encounter from v0.1.0), and no GUT shipped;
     7. sim smoke: 20 seeded runs, run twice and diffed;
     8. the bench, as an informational (non-failing) step whose output feeds evidence.
+  - **`shots`** and **`windows`** run only on pushes to `main` and on demand (the Actions tab's "Run workflow"
+    button), so a playable build exists per merge, not per branch push. Uploaded artifacts are kept 14 days.
   - **`shots`** (ubuntu, under `xvfb-run`): gallery and tour screenshots as an artifact
     ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §10).
   - **`windows`:**
