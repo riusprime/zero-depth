@@ -129,6 +129,7 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | D2 | "introduce the enemies by phases" | Enemy kinds unlock in phases across the floor (basic → ranged → specialists → elites), each phase announced | TU |
 | D3 | "reach this difficulty closer to the end of the floor, when the difficulty has reached its max" / "then it becomes harder and harder" | The floor's difficulty ramps to its peak (today's level) near the floor's expected end, then holds; the curve is data | TU |
 | D4 | "I do like this level of difficulty, but only if the character has grown a bit on the scaling vector" / "too many hard enemies … before even reaching the first boss or getting enough spells or upgrades" | Tune against the expected-build bot: early rewards come sooner (an altar near the start hall), and the peak is reached only when a bot that picks normally has grown into it | TU |
+| D5 | (2026-10-08) "we also have a lot of variety of enemies, let's distribute presenting them through the first 3 floors" | Enemy kinds are introduced across floors 1–3 (floor 1: basics + a few specialists; floor 2 and 3 add the rest), each first appearance announced; boss summons exempt | TU |
 
 ## Steps
 | Wave | Step | Scope |
