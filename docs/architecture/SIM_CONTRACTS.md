@@ -359,6 +359,30 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
 - A replay that doesn't match its checkpoint hash reports the first mismatching checkpoint and diffs the two
   `snapshot()`s.
 
+## 10a. The world snapshot (v0.4.0 SV)
+
+`WorldSnapshot` (`src/sim/core/world_snapshot.gd`) turns a whole `World` into plain data and back, for saves
+([`ARCHITECTURE.md`](ARCHITECTURE.md) §10). Pure: no file I/O, no hashing.
+- **`World.to_snapshot()`** (between ticks) copies **every script variable** of `World` and of every state object it
+  holds (`STATE_CLASSES`: the stores, `RngStream`s, `AbilityState`, `KitState`, `HeatState`, `BossFlow`, the actor
+  grid…), recursively, in declaration order; packed arrays are duplicated. New state is snapshotted without a list to
+  keep. A wall array goes as packed columns. `{format: FORMAT, world: …}`; `FORMAT` changes only when the encoding
+  does.
+- **Not copied, by name** (`WORLD_KEPT`, each with its reason): the loadout tables (content compiled at setup, kept
+  from the base world), the event log (not state; `_event_seq` is copied), the wall grid (rebuilt from the walls), the
+  pending boss door and its prepared flow field (only whether they are still pending), and the flow field (rebuilt
+  from the walls; its last flood is copied). Objects of a `LOADOUT_CLASSES` class are kept wherever they appear.
+- **An object of an unclassified class is an error naming its path** (`take(w, errors)`), never a silent skip.
+- **`World.from_snapshot(snap, base)`** writes the snapshot into `base`, a world built from the same generation inputs
+  (run seed, floor, build, content) at any tick. It checks the base's generated walls start the snapshot's (else the
+  save doesn't fit), re-adds a boss door sealed in play through its prepared field, and rebuilds the grid and flow
+  field for any other added wall. The restored world's `state_hash()` equals the saved world's, and stepping both with
+  the same inputs keeps them equal (`tests/unit/sim/test_world_snapshot.gd`, T-SAVE).
+- **The guard** (same test file): every `World` field is in the snapshot or in `WORLD_KEPT`; every object reachable
+  from `World` is classified; every object with `hash_into` is a `STATE_CLASSES` class; the loadout tables don't change
+  over a long run with a boss fight. A workstream adding a store class adds it to `STATE_CLASSES` (and `_make` if it
+  can appear inside an array) or, for read-only content, to `LOADOUT_CLASSES`.
+
 ## 10b. Enemy and boss AI (v0.3.5 AI; owner lines F3-F6)
 
 Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data/bosses` the numbers.
