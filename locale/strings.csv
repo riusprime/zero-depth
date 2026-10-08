@@ -101,6 +101,7 @@ BOSS_BROOD_MOTHER,The Brood Mother,La Madre de la Prole
 BOSS_SIEGE_ENGINE,The Siege Engine,La Máquina de Asedio
 HUD_BOSS_STAGGER,Stagger,Aturdimiento
 HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
+HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
 CAUSE_GATEKEEPER_SLAM,The Gatekeeper's ring of spikes crushed you.,El anillo de púas del Guardián de la Puerta te aplastó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque del Guardián de la Puerta te derribó.
@@ -485,6 +486,10 @@ EVENT_CLEANSING_FONT,Cleansing Font,Fuente purificadora
 EVENT_CLEANSING_FONT_DESC,Clear water that washes a curse away.,Agua clara que lava una maldición.
 EVENT_CLEANSING_FONT_PAY,Pay the keeper,Pagar al guardián
 EVENT_CLEANSING_FONT_BLEED,Bleed into the water,Sangrar en el agua
+EVENT_WHISPERING_DEEP,Whispering Deep,Abismo susurrante
+EVENT_WHISPERING_DEEP_DESC,"Down here the dark speaks, and it bargains.","Aquí abajo la oscuridad habla, y negocia."
+EVENT_WHISPERING_DEEP_LISTEN,Listen to the voice,Escuchar la voz
+EVENT_WHISPERING_DEEP_BLEED,Feed it your blood,Darle tu sangre
 CURSE_SWIFT_FOES,Swift Foes,Enemigos veloces
 CURSE_SWIFT_FOES_DESC,Enemies move %s %% faster,Los enemigos se mueven un %s %% más rápido
 CURSE_WITHERING,Withering,Marchitamiento

@@ -147,11 +147,19 @@ cooldown_permille = 1000
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
-hp_threshold_permille = 500
+hp_threshold_permille = 660
 attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4")
 entry_attack = &""
 speed_permille = 1250
 cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4", "pounce_chain")
+entry_attack = &"pounce_chain"
+speed_permille = 1375
+cooldown_permille = 487
 
 [resource]
 script = ExtResource("3_boss")
@@ -169,7 +177,7 @@ stagger_size = 260
 stagger_decay_per_second = 14.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_brood"), SubResource("A_brood_4"), SubResource("A_pounce_chain")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(2, 2)
 arena_template = 1
 ranged_full_m = 5.0

@@ -6,7 +6,9 @@ extends Node3D
 ##   BossChallenge.resolve_arena hits with);
 ## - the vortex of a pull (a telegraph whose move is MOVE_PULL): spiral arms turning inward out to its reach;
 ## - enemies dissolving as the boss is summoned (ENEMY_DISSOLVED): a column of motes rising from where each stood and
-##   a ring that fades.
+##   a ring that fades;
+## - v0.5.5 DS (D7) a phase gate (WorldReader.boss_gate_permille): a violet shell around the boss that swells as the
+##   transition runs (it can't be hurt meanwhile), and a ground ring as wide as the adds' ring.
 ## Meshes are rebuilt each tick (ImmediateMesh) with kept materials; only colours change. Nothing here feeds back.
 
 const Y := 0.04
@@ -18,10 +20,19 @@ const MOTES := 10
 const MOTE_FRAMES := 45
 const BAND_COLOR := Color("#FF5A2A")
 const DISSOLVE_COLOR := Color("#8FE6FF")
+const GATE_COLOR := Color("#B48CFF")
 
 var band_mesh := MeshInstance3D.new()
 var warn_mesh := MeshInstance3D.new()
 var vortex_mesh := MeshInstance3D.new()
+## v0.5.5 DS: the phase gate's shell and ground ring (hidden outside a gate).
+var gate_shell := MeshInstance3D.new()
+var gate_ring := MeshInstance3D.new()
+var _gate_mat := StandardMaterial3D.new()
+var _gate_ring_mat := StandardMaterial3D.new()
+var _gate_at := Vector3.ZERO
+var _gate_radius := 0.0
+var _gate_p := -1.0
 var _band_mat := StandardMaterial3D.new()
 var _warn_fill_mat := StandardMaterial3D.new()
 var _warn_edge_mat := StandardMaterial3D.new()
@@ -43,7 +54,14 @@ func _init() -> void:
 	name = "BossChallengeView"
 	_rng.seed = 7  # cosmetic only (EI-05)
 	for m: StandardMaterial3D in [
-		_band_mat, _warn_fill_mat, _warn_edge_mat, _vortex_mat, _mote_mat, _ring_mat
+		_band_mat,
+		_warn_fill_mat,
+		_warn_edge_mat,
+		_vortex_mat,
+		_mote_mat,
+		_ring_mat,
+		_gate_mat,
+		_gate_ring_mat
 	]:
 		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
@@ -60,6 +78,24 @@ func _init() -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)
 	band_mesh.name = "Band"
+	_gate_mat.albedo_color = Color(GATE_COLOR, 0.28)
+	_gate_ring_mat.albedo_color = Color(GATE_COLOR, 0.7)
+	var sphere := SphereMesh.new()
+	sphere.radius = 1.0
+	sphere.height = 2.0
+	gate_shell.mesh = sphere
+	gate_shell.material_override = _gate_mat
+	gate_shell.name = "GateShell"
+	var torus := TorusMesh.new()
+	torus.inner_radius = 0.94
+	torus.outer_radius = 1.0
+	gate_ring.mesh = torus
+	gate_ring.material_override = _gate_ring_mat
+	gate_ring.name = "GateRing"
+	for mi: MeshInstance3D in [gate_shell, gate_ring]:
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = false
+		add_child(mi)
 	warn_mesh.name = "BandWarning"
 	vortex_mesh.name = "Vortex"
 
@@ -67,9 +103,14 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	_band = reader.boss_arena_band()
 	_vortices.clear()
+	_gate_p = -1.0
 	for i in reader.actor_count():
 		if not WorldReader.is_boss_kind(reader.actor_kind(i)):
 			continue
+		if reader.boss_in_gate(i):  # v0.5.5 DS
+			_gate_p = reader.boss_gate_permille(i) / 1000.0
+			_gate_at = SimPlane.to_3d(reader.actor_pos(i))
+			_gate_radius = reader.actor_radius(i)
 		var tg := reader.telegraph(i)
 		if not tg.is_empty() and tg.get("move", -1) == WorldReader.MOVE_PULL:
 			_vortices.append([tg["center"], float(tg["pull_m"]), float(tg["progress"]) / 1000.0])
@@ -85,6 +126,11 @@ func band() -> Dictionary:
 	return _band
 
 
+## 0..1: the phase gate shown now, or -1 when none (tests).
+func gate_progress() -> float:
+	return _gate_p if gate_shell.visible else -1.0
+
+
 ## How many vortices are drawn (tests).
 func vortex_count() -> int:
 	return _vortices.size()
@@ -98,6 +144,7 @@ func dissolved_count() -> int:
 func _process(delta: float) -> void:
 	_t += delta
 	_draw_vortices()
+	_draw_gate()
 	for k in range(_fx.size() - 1, -1, -1):
 		var f: Array = _fx[k]
 		var node: Node3D = f[0]
@@ -134,6 +181,22 @@ func _dissolve(at: Vector2) -> void:
 	ring.position = SimPlane.to_3d(at, Y)
 	add_child(ring)
 	_fx.append([ring, Vector3.ZERO, MOTE_FRAMES, 1])
+
+
+## The phase gate: the shell swells and pulses around the boss; the ring marks where the adds rise.
+func _draw_gate() -> void:
+	var on := _gate_p >= 0.0
+	gate_shell.visible = on
+	gate_ring.visible = on
+	if not on:
+		return
+	var pulse := 1.0 + 0.06 * sin(_t * 18.0)
+	var r := (_gate_radius + 0.4 + 0.5 * _gate_p) * pulse
+	gate_shell.position = _gate_at + Vector3(0, _gate_radius * 0.8, 0)
+	gate_shell.scale = Vector3.ONE * r
+	gate_ring.position = _gate_at + Vector3(0, Y, 0)
+	gate_ring.scale = Vector3.ONE * WorldReader.GATE_ADD_RING_M
+	_gate_mat.albedo_color = Color(GATE_COLOR, 0.2 + 0.15 * (1.0 - _gate_p))
 
 
 func _draw_band() -> void:

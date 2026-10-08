@@ -248,6 +248,12 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
     ring up close and dives at a runaway. At 50 % it splits: three Lens Drones (Needle behaviour) break off its rim.
   - **The Foundry** (floor 3): a walking furnace that floods lanes with molten floor (lanes that burn for 2 s),
     lobs slag, blows a vent ring up close and launches Bomb Drones (at most 3, then 4 alive).
+- **Phase gates (v0.5.5 D7, owner: "we have to make bosses harder not only matching in some way the HP to our
+  damage").** Every boss has three phases, at 66 % and 33 % HP. A burst can't take the HP past the next gate; at the
+  gate the boss stands invulnerable for about a second (a violet shell, PHASE SHIFT on the bar), adds of the floor's
+  enemies rise around it (2-4, more on later floors), and the new phase opens with its entry attack. The second phase
+  is v0.4.0's phase two (new attacks); the third adds the boss's punish move to its rotation and attacks 25 % more
+  often. So a strong build still has to play the fight; only a build past the cap melts the HP between gates.
 
 ## G. Procedural floors
 
@@ -315,6 +321,20 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
   12 Overrun kills clear it for an ability-card altar (level-ups of your abilities first) and the shards those kills
   paid, again (2×). The minimap marks it. Starting values in `data/overrun/overrun.tres`.
 - **No Endless mode before balance alpha** (PD-12; [`../LESSONS.md`](../LESSONS.md) L8).
+
+- **The design principle of difficulty (v0.5.5 D8, owner 2026-10-08: "The difficulty balancing does not have to be
+  about making the game extremely difficult, its to be a good balance between the difficulty curve and the growing
+  path").** The target: **a normal build feels strong but challenged; a lucky build past the cap feels like a god.**
+  Difficulty answers growth; it never erases it.
+- **Hidden catch-up (v0.5.5 D4, owner: "Yes, but hidden").** On top of the regular scaling, each floor reads your
+  build's power from its cards and abilities alone (never from how well you play) and compares it with a normal
+  build's: enemies get HP × m and damage × √m, m = √(your power ÷ expected), at least ×1, at most ×1.5 / ×2 / ×2.5 on
+  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor and never shown. A build twice as strong as expected
+  meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run.
+- **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
+  cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
+- **Deep floors bite (S5).** A Deep floor: a violet haze over the biome's light, an elite in every combat room,
+  +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep).
 
 ## I. Meta-progression limits
 

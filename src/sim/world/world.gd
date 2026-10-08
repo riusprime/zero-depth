@@ -267,6 +267,12 @@ var curses_owned := PackedInt32Array()
 var threat_peak := 0
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0
+## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
+## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
+## one did).
+var catch_up_table: CatchUpTable
+var catch_up := CatchUpState.new()
+var deep_elite_rooms := PackedInt32Array()
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -648,6 +654,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
 	boss_id = id
+	CatchUp.on_boss(self, i)  # v0.5.5 DS (D7): the boss's own hidden catch-up, fixed for the fight
 	return id
 
 
@@ -824,6 +831,10 @@ func state_hash() -> String:
 	if shop.present():  # v0.5.0 SH: only floors with a shop.
 		shop.hash_into(h)
 	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
+	if catch_up_table != null:  # v0.5.5 DS: only worlds whose loadout has the hidden catch-up.
+		catch_up.hash_into(h)
+	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.
+		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:

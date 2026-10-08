@@ -317,6 +317,10 @@ func test_the_arena_starts_closing_in_phase_two() -> void:
 	var i := w.actors.index_of(aid)
 	w.actors.hp[i] = w.actors.max_hp[i] / 2
 	w.step(InputFrame.new())
+	i = w.actors.index_of(aid)  # v0.5.5 DS: the phase gate began; hold it staggered again so it never attacks
+	w.actors.state[i] = BossAi.STAGGERED
+	w.bosses.stagger_t[BossAi.entry_of(w, i)] = 99999
+	w.bosses.gate_t[BossAi.entry_of(w, i)] = 0
 	var bd := BossChallenge.band(w)
 	assert_false(bd.is_empty(), "phase 2: it begins")
 	assert_eq(bd["depth"], Vector2.ZERO, "nothing hurts yet")

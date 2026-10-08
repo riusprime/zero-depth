@@ -75,11 +75,18 @@ func sync(reader: WorldReader) -> void:
 	_stagger_fill.size = Vector2(STAGGER.x * st / 1000.0, STAGGER.y)
 	_stagger_fill.color = Color("#FFE38A") if staggered else Color("#E8C15A")
 	_stagger_label.text = tr("HUD_BOSS_STAGGERED") if staggered else ""
+	if reader.boss_in_gate(i):  # v0.5.5 DS (D7): the phase gate's transition
+		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
 
 
 ## The HP fraction shown (tests).
 func hp_fraction() -> float:
 	return _hp_fill.size.x / BAR.x
+
+
+## The line beside the stagger meter (STAGGERED, PHASE SHIFT or empty; tests).
+func status_text() -> String:
+	return _stagger_label.text
 
 
 ## The stagger fraction shown (tests).

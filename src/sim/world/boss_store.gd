@@ -25,7 +25,8 @@ const INT_FIELDS: Array[StringName] = [
 	&"close_t",
 	&"hazard_cd",
 	&"gap_t",
-	&"dash_t"
+	&"dash_t",
+	&"gate_t"
 ]
 
 ## The boss's actor id, and its index in World.boss_tables.
@@ -59,6 +60,8 @@ var hazard_cd := PackedInt32Array()
 ## landing point (dash_x, dash_y) stays the target of aimed attacks (0 = none).
 var gap_t := PackedInt32Array()
 var dash_t := PackedInt32Array()
+## v0.5.5 DS (D7): ticks left of a phase gate's transition (BossGates; 0 = none).
+var gate_t := PackedInt32Array()
 var dash_x := PackedFloat32Array()
 var dash_y := PackedFloat32Array()
 ## The boss room's interior (wall face to wall face) the closing band creeps in from; empty = no closing arena (the

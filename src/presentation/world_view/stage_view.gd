@@ -27,6 +27,10 @@ const GROUND_TEXTURE_M := 4.0
 ## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
 ## (SSIL); "low" leaves both off for slower GPUs.
 const LIGHTING_QUALITIES: Array[String] = ["high", "low"]
+## v0.5.5 DS (S5): the Deep look, layered on the biome's mood (the Deep gate's violet; starting values).
+const DEEP_VIOLET := Color("#8A5CFF")
+const DEEP_EDGE := Color("#140A26")
+const DEEP_FOG_DENSITY := 0.012
 
 ## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
@@ -43,6 +47,9 @@ var contact_shadows: MeshInstance3D
 ## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
 ## loads; otherwise the boxes and primitive props draw as before.
 var kit: StageKit
+## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
+## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
+var deep := false
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
@@ -56,6 +63,7 @@ var _ground_rects: Array[Rect2] = []
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
 	palette = p_palette
+	deep = reader.floor_is_deep()
 	_build_environment()
 	_build_light()
 	_ground_rects.clear()
@@ -115,11 +123,26 @@ func _build_environment() -> void:
 		env.fog_density = mood.fog_density
 		env.fog_light_color = mood.fog_color
 		_build_vignette(mood.vignette)
+	if deep:
+		_apply_deep(env)
 	environment = env
 	set_lighting(lighting)
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+
+
+## v0.5.5 DS (S5): the Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
+## and the ambient pulled toward violet, and violet fog at least DEEP_FOG_DENSITY thick.
+func _apply_deep(env: Environment) -> void:
+	env.background_color = env.background_color.lerp(DEEP_EDGE, 0.6)
+	env.ambient_light_color = env.ambient_light_color.lerp(DEEP_VIOLET, 0.5)
+	env.fog_light_color = (
+		env.fog_light_color.lerp(DEEP_VIOLET, 0.7) if env.fog_enabled else DEEP_VIOLET
+	)
+	env.fog_enabled = true
+	env.fog_density = maxf(env.fog_density, DEEP_FOG_DENSITY)
+	env.fog_sky_affect = 0.0
 
 
 ## Applies a lighting quality ("high" or "low") to the running stage: contact shadow and bounce light follow it.
@@ -171,6 +194,9 @@ func _build_light() -> void:
 		light.rotation_degrees = Vector3(mood.sun_pitch_deg, mood.sun_yaw_deg, 0)
 		light.light_energy = mood.sun_energy
 		light.light_color = mood.sun_color
+	if deep:  # v0.5.5 DS (S5): the sun pulled toward violet, a little dimmer
+		light.light_color = light.light_color.lerp(DEEP_VIOLET, 0.45)
+		light.light_energy *= 0.85
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL

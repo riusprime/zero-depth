@@ -169,11 +169,19 @@ cooldown_permille = 1000
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
-hp_threshold_permille = 500
+hp_threshold_permille = 660
 attack_ids = PackedStringArray("molten_flood_5", "slag_mortar", "vent_blast", "bomb_launch_3")
 entry_attack = &"molten_flood_5"
 speed_permille = 900
 cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("molten_flood_5", "slag_mortar", "vent_blast", "bomb_launch_3", "firestorm")
+entry_attack = &"firestorm"
+speed_permille = 990
+cooldown_permille = 487
 
 [resource]
 script = ExtResource("3_boss")
@@ -191,7 +199,7 @@ stagger_size = 300
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_molten_flood"), SubResource("A_slag_mortar"), SubResource("A_vent_blast"), SubResource("A_bomb_launch"), SubResource("A_molten_flood_5"), SubResource("A_bomb_launch_3"), SubResource("A_firestorm")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(3, 2)
 arena_template = 6
 ranged_full_m = 5.0

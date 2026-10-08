@@ -7,7 +7,10 @@ extends RefCounted
 ##   factors (RunState.scale_enemies / scale_bosses: one multiplication per table, never applied twice; the danger
 ##   tier's power still comes on top as each enemy arrives);
 ## - one extra chest (RunTable.deep_extra_chests) and a curse-free epic altar (Offers.roll_epic: epic stat cards and
-##   ability level-ups only), on item spots the floor's own rewards left free.
+##   ability level-ups only), on item spots the floor's own rewards left free; v0.5.5 DS (S5) the epic altar on the
+##   free spot nearest the boss door, the floor's end (end_first);
+## - v0.5.5 DS (S5): an elite in every combat room (SpawnDirector.deep_elite), a Deep-only event (Events.draw_event),
+##   the violet look (StageView), and the extra threat raises the hidden catch-up's caps (CatchUp).
 ## - +1 threat T per Deep floor taken (World.deep_threat, set by RunState.prepare; Curses.threat adds it).
 ## Pure sim code: no stream is drawn here (placement is a pure function of the layout), so a Deep floor's loot and
 ## enemies come from the same streams as a normal one.
@@ -191,7 +194,7 @@ static func _on_wall(r: Rect2, s: int, u: float) -> Vector2:
 ## floor's rewards left free (in spot order), else on the open spawn spots of rooms other than the start hall and the
 ## boss room. No stream is drawn. The epic altar is an altar (free) whose id BossFlow.epic_altar_id names.
 static func place_deep_rewards(w: World, layout: FloorLayout, extra_chests: int) -> void:
-	var spots := free_spots(w, layout)
+	var spots := end_first(layout, free_spots(w, layout))
 	var chests := 0
 	for i in w.rewards.size():
 		if w.rewards.kind[i] == RewardStore.Kind.CHEST:
@@ -203,6 +206,23 @@ static func place_deep_rewards(w: World, layout: FloorLayout, extra_chests: int)
 			var price := w.reward_table.chest_price(chests, w.floor_index)
 			chests += 1
 			w.add_reward(RewardStore.Kind.CHEST, spots[k], price)
+
+
+## v0.5.5 DS (owner S5, "a guaranteed epic chest at the floor's end"): `spots` with the one nearest the boss door
+## (the floor's end) moved to the front, so the epic altar stands by the way to the boss. Pure.
+static func end_first(layout: FloorLayout, spots: PackedVector2Array) -> PackedVector2Array:
+	var best := -1
+	for k in spots.size():
+		var d := Kin.length(spots[k] - layout.boss_door_center)
+		if best < 0 or d < Kin.length(spots[best] - layout.boss_door_center):
+			best = k
+	if best <= 0:
+		return spots
+	var out := PackedVector2Array([spots[best]])
+	for k in spots.size():
+		if k != best:
+			out.append(spots[k])
+	return out
 
 
 ## Spots free for an extra reward: unused item spots in spot order, then open spawn spots (rooms in order), each

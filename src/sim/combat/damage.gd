@@ -149,7 +149,8 @@ static func _apply(
 ) -> int:
 	var a := w.actors
 	var target_id := a.ids[target]
-	var applied := mini(scaled, a.hp[target])
+	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
+	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)

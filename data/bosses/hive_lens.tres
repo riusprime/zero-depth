@@ -162,11 +162,19 @@ cooldown_permille = 1000
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
-hp_threshold_permille = 500
+hp_threshold_permille = 660
 attack_ids = PackedStringArray("twin_sweep", "prism_fan", "glare_ring", "dive")
 entry_attack = &"split"
 speed_permille = 1250
 cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("twin_sweep", "prism_fan", "glare_ring", "dive", "focus_beam")
+entry_attack = &"focus_beam"
+speed_permille = 1375
+cooldown_permille = 487
 
 [resource]
 script = ExtResource("3_boss")
@@ -184,7 +192,7 @@ stagger_size = 240
 stagger_decay_per_second = 13.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_lens_sweep"), SubResource("A_prism_fan"), SubResource("A_glare_ring"), SubResource("A_dive"), SubResource("A_split"), SubResource("A_twin_sweep"), SubResource("A_focus_beam")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(2, 2)
 arena_template = 3
 ranged_full_m = 5.0

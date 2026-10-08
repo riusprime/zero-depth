@@ -77,6 +77,10 @@ const BOSS_EXITED := BossFlow.State.EXITED
 const BOSS_ENTERING := BossFlow.State.ENTERING
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
+## v0.5.5 DS (D7): a boss in a phase gate's transition (BossGates).
+const STATE_GATE := BossAi.GATE
+## How far from a gated boss its adds rise (m).
+const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
 const MOVE_SLAM_RING := BossAttackTable.Move.SLAM_RING
 const MOVE_LANES := BossAttackTable.Move.LANES
@@ -968,6 +972,15 @@ func boss_stagger_permille(i: int) -> int:
 
 func boss_staggered(i: int) -> bool:
 	return _w.actors.state[i] == BossAi.STAGGERED
+
+
+## v0.5.5 DS (D7): 0..1000, how far boss i's phase gate has run (0 when it isn't in one; BossGates).
+func boss_gate_permille(i: int) -> int:
+	return BossGates.progress(_w, i)
+
+
+func boss_in_gate(i: int) -> bool:
+	return _w.actors.state[i] == BossAi.GATE
 
 
 ## Boss i's phase (0 = the first) and how many it has.

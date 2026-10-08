@@ -40,7 +40,7 @@ func _into_portal(w: World) -> int:
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
 	w.actors.invuln[bi] = 0
-	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "the portal is open")
 	w.actors.set_pos(0, f.portal_front_point())

@@ -935,6 +935,22 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	return t
 
 
+## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (CatchUpDefinition), or null without one.
+static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
+	if def == null:
+		return null
+	var t := CatchUpTable.new()
+	t.expected_permille = def.expected_power_permille.duplicate()
+	t.cap_permille = def.cap_permille.duplicate()
+	t.boss_expected_permille = def.boss_expected_power_permille.duplicate()
+	t.boss_cap_permille = def.boss_cap_permille.duplicate()
+	t.threat_cap_permille = def.threat_cap_bonus_permille
+	t.ability_level_permille = def.ability_level_permille
+	t.item_permille = def.item_permille
+	t.combo_permille = def.combo_permille
+	return t
+
+
 static func compile_heat(def: HeatDefinition) -> HeatTable:
 	if def == null:
 		return null

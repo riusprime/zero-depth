@@ -34,7 +34,7 @@ func _beat_boss(w: World) -> void:
 	for i in range(1, w.actors.size()):
 		if w.actors.dead[i] == 0 and w.actors.teams[i] == ActorStore.TEAM_ENEMY:
 			w.actors.invuln[i] = 0
-			Damage.hit(w, i, 9999999, 1, 1, 1, 0, w.actors.pos(i), w.actors.pos(i))
+			Damage.hit(w, i, 9999999, 0, 0, 1, 0, w.actors.pos(i), w.actors.pos(i))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "the boss is dead, the portal open")
 
@@ -279,7 +279,7 @@ func test_a_save_in_the_fight_then_the_boss_dies_after_the_restore() -> void:
 	for x: World in [w, r]:
 		var bi := x.actors.index_of(x.boss_id)
 		x.actors.invuln[bi] = 0
-		Damage.hit(x, bi, 9999999, 1, 1, 1, 0, x.actors.pos(bi), x.actors.pos(bi))
+		Damage.hit(x, bi, 9999999, 0, 0, 1, 0, x.actors.pos(bi), x.actors.pos(bi))
 		CombatLab.idle(x, 2)
 		assert_eq(x.walls.size(), walls_open, "the door opened")
 		x.actors.set_pos(0, f.boss_door_outside(2.5))

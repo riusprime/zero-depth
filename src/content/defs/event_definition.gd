@@ -15,6 +15,8 @@ const MAX_CHOICES := 2
 ## The first floor it can appear on.
 @export var min_floor := 1
 @export var requires: StringName = &""
+## v0.5.5 DS (S5): only on Deep floors, and a Deep floor's first pedestal holds one (Events.draw_event).
+@export var deep_only := false
 @export var choices: Array[EventChoiceDefinition] = []
 
 

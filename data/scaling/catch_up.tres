@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CatchUpDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/catch_up_definition.gd" id="1_cu"]
+
+[resource]
+script = ExtResource("1_cu")
+expected_power_permille = PackedInt32Array(1000, 2000, 4000)
+cap_permille = PackedInt32Array(1500, 2000, 2500)
+boss_expected_power_permille = PackedInt32Array(2000, 4000, 7000)
+boss_cap_permille = PackedInt32Array(2000, 3000, 4000)
+threat_cap_bonus_permille = 250
+ability_level_permille = 120
+item_permille = 80
+combo_permille = 150
+id = &"catch_up"

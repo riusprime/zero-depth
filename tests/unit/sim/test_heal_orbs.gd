@@ -21,7 +21,7 @@ func _kill(w: World, at: Vector2, kind: int = KIND.CHARGER) -> void:
 	var id := w.add_enemy(kind, at)
 	var i := w.actors.index_of(id)
 	w.actors.invuln[i] = 0
-	Damage.hit(w, i, 999999, 1, 1, w.take_root(), 0, at, at)
+	Damage.hit(w, i, 999999, 0, 0, w.take_root(), 0, at, at)
 	w.step(InputFrame.new())
 
 
@@ -98,7 +98,7 @@ func test_a_kill_drops_an_orb_where_it_fell_and_a_boss_none() -> void:
 	b.reward_table.heal_orb_chance_permille = 1000
 	var bi := b.actors.index_of(b.spawn_boss(0, Vector2(6, 0)))
 	b.actors.invuln[bi] = 0
-	Damage.hit(b, bi, 9999999, 1, 1, b.take_root(), 0, Vector2(6, 0), Vector2(6, 0))
+	Damage.hit(b, bi, 9999999, 0, 0, b.take_root(), 0, Vector2(6, 0), Vector2(6, 0))
 	b.step(InputFrame.new())
 	assert_eq(b.orbs.size(), 0, "a boss drops no orb")
 
