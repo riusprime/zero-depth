@@ -20,7 +20,7 @@ var kills_done := 0
 ## floor. Each floor's PlayerTable is compiled with it (the world hashes its weapons and damage factors).
 var build_id := &""
 ## v0.5.0 RT: the route of each floor reached (Routes.Route), entry f − 1; floor 1 is always NORMAL. A saved run
-## keeps it (TODO(v0.5.0 SV): add `routes` to the run save payload once RunSaver lands).
+## keeps it (RunSaver.payload_of / run_from, payload version 2).
 var routes := PackedInt32Array([Routes.Route.NORMAL])
 
 
