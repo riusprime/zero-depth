@@ -726,6 +726,14 @@ func at_gate() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.portal_front().has_point(_w.player_pos())
 
 
+## v0.5.9 L8: the kit piece a themed room's wall i is drawn with (&"" for any other wall). Presentation only.
+func wall_piece(i: int) -> StringName:
+	var f := _w.floor_layout
+	if f == null or i < f.slab_first or i >= _w.walls.size():
+		return &""
+	return f.piece_tag(_w.walls[i])
+
+
 ## What a wall is, for drawing it: 0 a structural wall (the room edges and partitions), 1 a cover slab, 2 not drawn
 ## (the gate's footprint, which the gate itself shows). Without a floor: the first 4 walls are edges.
 func wall_class(i: int) -> int:
@@ -1058,6 +1066,11 @@ func boss_punish_permille(i: int) -> int:
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
 func shards() -> int:
 	return _w.shards
+
+
+## v0.5.5 EC (owner Q-S4): shards the portal left behind on the way to this floor (half of the unspent ones).
+func shards_left_behind() -> int:
+	return _w.shards_left_behind
 
 
 func item_rarity(item_index: int) -> int:

@@ -3,6 +3,9 @@ extends RefCounted
 ## Drives the real game the way a player does: Input.parse_input_event, then flush, then wait for physics
 ## frames (TEST_MATRIX T-E2E). No calls into game objects to make things happen; reads are fine.
 
+## walk_to's budget (frames of stick input).
+const WALK_FRAMES := 2400
+
 var test: GutTest
 var main: Main
 
@@ -143,22 +146,42 @@ static func nearest_reward(w: World, kind: int) -> int:
 	return best
 
 
+## The flood's goal for `target`: its own cell, or (when a wall is within the enemies' nav clearance of it, as on
+## a v0.5.9 themed floor where a vignette may stand by a shop's front) the nearest free cell, from which the walk goes
+## straight in. The player's radius is smaller than the nav clearance, so the target itself stays reachable.
+static func _free_goal(nav: NavField, target: Vector2) -> Vector2:
+	var c := nav.cell_of(target)
+	if not nav.inside(c) or nav.blocked[c.y * nav.size.x + c.x] == 0:
+		return target
+	for ring in range(1, 8):
+		for dy in range(-ring, ring + 1):
+			for dx in range(-ring, ring + 1):
+				if maxi(absi(dx), absi(dy)) != ring:
+					continue
+				var n := c + Vector2i(dx, dy)
+				if nav.inside(n) and nav.blocked[n.y * nav.size.x + n.x] == 0:
+					return nav.center(n)
+	return target
+
+
 ## Walks with the left stick only (a flow field toward `target`, then straight in) until within `within` m, then
 ## lets go and waits for the player to stop. False if it didn't get there (or died).
 func walk_to(target: Vector2, within: float) -> bool:
 	var w := world()
 	var nav := NavField.new()
 	nav.build(w.walls)
-	nav.flood(target)
+	nav.flood(_free_goal(nav, target))
 	var ok := false
-	for k in 2400:
+	for k in WALK_FRAMES:
 		var p := w.player_pos()
 		if (target - p).length() <= within:
 			ok = true
 			break
 		if w.player_dead():
 			break
-		var dir := (target - p).normalized() if (target - p).length() < 1.5 else nav.direction(p)
+		var dir := nav.direction(p)
+		if (target - p).length() < 1.5 or dir == Vector2.ZERO:
+			dir = (target - p).normalized()
 		# Sim direction -> screen stick (the inverse of the +45 degree screen-to-sim rotation); stick y is down.
 		var c := InputLatch.C45
 		var screen := Vector2((dir.x + dir.y) * c, (dir.y - dir.x) * c)

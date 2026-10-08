@@ -6,7 +6,23 @@ extends RefCounted
 ## side is inset from its grid line by its own drawn half, so a partition is as thick as the two halves beside it.
 
 ## Interior templates (room_template). Each is scaled to the room's size by RoomInterior.
-enum Template { OPEN, SCATTER, PILLARS, CENTRE, CROSS, LINES, BUNKERS, COLONNADE, DIAGONALS }
+## v0.5.9 L8 adds the themed rooms (RoomThemes), which ordinary rooms now draw; the geometric templates remain for
+## boss arenas (BossArenaSpec).
+enum Template {
+	OPEN,
+	SCATTER,
+	PILLARS,
+	CENTRE,
+	CROSS,
+	LINES,
+	BUNKERS,
+	COLONNADE,
+	DIAGONALS,
+	SCRAPYARD,
+	RUINED_HALL,
+	CAMP,
+	OVERGROWN
+}
 
 ## The portal gate: 2.4 m wide, standing against a wall of the portal room.
 const GATE_WIDTH := 2.4
@@ -16,9 +32,21 @@ const GATE_HALF_DEPTH := 0.4
 const GATE_FRONT := 3.0
 
 ## How many templates there are, and their names (for tools and evidence).
-const TEMPLATE_COUNT := 9
+const TEMPLATE_COUNT := 13
 const TEMPLATE_NAMES: Array[String] = [
-	"open", "scatter", "pillars", "centre", "cross", "lines", "bunkers", "colonnade", "diagonals"
+	"open",
+	"scatter",
+	"pillars",
+	"centre",
+	"cross",
+	"lines",
+	"bunkers",
+	"colonnade",
+	"diagonals",
+	"scrapyard",
+	"ruined_hall",
+	"camp",
+	"overgrown"
 ]
 
 var seed_value := 0
@@ -65,6 +93,9 @@ var deep_portal_angle := 0
 ## Item spots: 1 in a 1 x 1 room, 1-2 in bigger rooms, none in the start hall. Grouped by room in room order;
 ## item_rooms[i] is spot i's room.
 var item_spots := PackedVector2Array()
+## v0.5.9 L8: the kit piece a themed room's piece is drawn with, keyed by its footprint (piece_key). Presentation
+## only: the sim never reads it.
+var piece_tags := {}
 var item_rooms := PackedInt32Array()
 ## Open spots per room (index = room).
 var spawn_points: Array[PackedVector2Array] = []
@@ -170,3 +201,22 @@ func boss_door_inside(m: float) -> Vector2:
 func boss_door_outside(m: float) -> Vector2:
 	var half := door_depths[boss_door_index] * 0.5 if boss_door_index >= 0 else 0.0
 	return boss_door_center - Kin.dir(boss_door_angle) * (half + m)
+
+
+## The key piece_tags uses for a piece: its centre and half-extents in whole centimetres, and its angle.
+static func piece_key(o: Obb) -> String:
+	return (
+		"%d,%d,%d,%d,%d"
+		% [
+			roundi(o.center.x * 100.0),
+			roundi(o.center.y * 100.0),
+			roundi(o.half.x * 100.0),
+			roundi(o.half.y * 100.0),
+			o.angle
+		]
+	)
+
+
+## The kit piece wall `o` is drawn with (&"" when it names none).
+func piece_tag(o: Obb) -> StringName:
+	return piece_tags.get(piece_key(o), &"")

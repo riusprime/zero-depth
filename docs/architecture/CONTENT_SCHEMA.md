@@ -188,7 +188,10 @@ later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_w
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
 and the radius positive. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
 loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 m, × the pickup-range stat); both
-shares within 0..1 (`range`), the reach positive.
+shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
+card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
+become chests, the same draws and spots; 0 = no cap; ≥ 0) and `shard_scale` (0.7, owner S4: every kill's shards ×
+this, rounded half up; > 0).
 
 **Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
 [`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
@@ -220,7 +223,10 @@ rules (`Offers.draw`: ability cards only while they can apply, mods only with th
 is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
 `shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
 ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
-the steps non-negative; the shares in (0, 1]; `offer_size` 1–9.
+the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
+bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
+and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
+by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1).
 
 ## 4. Encounters and bosses
 
@@ -342,7 +348,19 @@ class_name BiomeDefinition extends Resource
 @export var enemy_weights: Dictionary     # enemy_id -> weight for this biome's encounter fill
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
+@export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
 ```
+
+- `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
+  - sun colour, energy and angle;
+  - ambient colour and energy;
+  - void colour and AgX exposure;
+  - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
+  - fog, glow and the vignette;
+  - the warm light colour, energy and range that fire props use.
+
+  A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
+  `mood_invalid` `ERROR`.
 
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
@@ -390,6 +408,9 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   a floor's boss HP and attack damage × this, on top of the per-floor factors and Deep) and
   `boss_room_heal_floor_permille` (`[1000, 0, 0]`: the share of max HP restored when the boss room seals); both per
   floor, past the end the last entry, entries 1..1000 / 0..1000 (`range`).
+- **`RunDefinition`, v0.5.5 EC (owner Q-S4, "Keep half"):** `shard_carry` (0.5: the share of unspent shards a
+  portal carries to the next floor, rounded down; the rest is shown as left behind on the arrival card; 0..1,
+  `range`).
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier
@@ -406,9 +427,11 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
     (`phase_name`); cap and HP / damage within 1..1000, tier ≥ 0, interval ≥ 1, pack ≥ 0 (`phase_range`); a kind
     named once per curve (`phase_kind`); each phase starts after the one before (`phase_order`) and is never easier
     (tier, cap, HP and damage don't fall, the interval doesn't grow: `phase_ramp`); the first phase starts at 0,
-    holds, has tier 0 and opens at least one kind (`calm`). Content tests also hold the shipped curves to: kinds in
-    SC's mix, every mix kind on some floor, every kind in before the peak, the peak's tier within SC's tables; the peak's start is tested against
-    the measured boss-door times (owner D7, `TuningRun.peak_ticks`).
+    has tier 0 and opens at least one kind, and only the first phase may hold (`calm`; v0.5.5 D1: floor 1's first
+    phase is a 30 s calm that holds, floors 2–3 start at the warm-up level with no calm). Content tests also hold
+    the shipped curves to: kinds in SC's mix, every mix kind on some floor, every kind in before the peak, the
+    peak's tier within SC's tables; the peak's start is data (90 s on floor 1, 30 s on floors 2–3, starting values),
+    no longer the bots' measured boss-door times (owner P1).
 - **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
   within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
@@ -533,6 +556,8 @@ fields: `side` (3 positive percents, only for `glass_cannon` (the max HP cut) an
 and `hoarder` (the most shards that count)); any other stat must leave both empty. Caps of the added stats
 (`onrush`, `overkill`, `hoarder`, as for crit and regen) are in percent points. Offers draw a stat by its `weight`.
 A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
+v0.5.5 EC (owner D9) appends `lifesprout` (SIDED): the only source of heal orbs. The first card sets a kill's orb
+chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read capped at `cap` (30 percent points).
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.

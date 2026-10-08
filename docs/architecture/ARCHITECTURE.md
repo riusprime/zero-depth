@@ -37,7 +37,7 @@ app ──► presentation ──► application ──► sim ──► content
 - **Nothing imports `app/` or `debug/`.**
 - `presentation` never writes sim state (EI-07). It calls `application` methods, which turn requests into
   `InputFrame` bits or debug commands applied at a tick boundary.
-- `scripts/` (sims, bench, content tools) may use `application`, `sim` and `content`. Only `scripts/shots/` and
+- `scripts/` (bench, checks, content tools; the bot balance sims were retired in v0.5.5, owner P1) may use `application`, `sim` and `content`. Only `scripts/shots/` and
   `scripts/checks/` boot the app (`main.tscn`), because they test the running game.
 
 ## 3. Architecture lint

@@ -139,7 +139,10 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 			0,
 			"%s has no ghost copies" % l.name
 		)
-		assert_false((l as Label).uppercase, "%s is plain type" % l.name)
+		# v0.5.5 A4: the pick cards' titles are coloured capitals, as in the owner's card reference
+		# (docs/roadmap/v0.5.5/refs/card_style_reference.webp); every other HUD label stays plain type.
+		var card_title := l.name == &"Title" and l.get_parent().get_parent() is CrystalCard
+		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
 	assert_lte(Hud.BAR.y, 10.0, "a thin HP bar")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
 	assert_lte(BossBar.BAR.y, 10.0, "a thin boss bar")

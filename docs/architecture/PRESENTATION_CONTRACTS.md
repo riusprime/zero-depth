@@ -146,7 +146,11 @@ the mode's colour vision on the tokens and asserts:
 - **HUD and card look** (v0.3.5 F15, F16; G2 picks pending, defaults ship): the HUD is calm, plain type, thin
   bars, one hairline per group, no glow, echo or glitch (`HudStyle`, one constant: `DEFAULT`); every card (pick,
   item, combo, gamble) is a flat square dark panel with a thin outline, no rounded corners, shadow or coloured side
-  bar, with rarity as a small faceted mark (`CardStyle`, one constant: `DEFAULT`). Overclock heat is a thin straight
+  bar, with rarity as a small faceted mark (`CardStyle`, one constant: `DEFAULT`). Since v0.5.5 A4 the **pick
+  cards** (altar, chest, shop stock) wear the owner's crystal frames instead (`CrystalCard`, `CardFrames`: the
+  frame colour is the card's family, epic and cursed offers override it; rarity reads as the rarity line, the gem
+  and a glow; text steps down in size so it never overflows the panel, checked in en and es by
+  `test_card_frames.gd`); the item, combo, gamble and event cards keep `CardStyle` until the A5 pick. Overclock heat is a thin straight
   bar whose ticks come from the sim's heat table (F2). The minimap is oriented like the screen: up, left and right on
   the map are up, left and right through the iso camera (`MinimapView.turn`, checked against `IsoRig`'s projection
   in `test_minimap_orientation.gd`, F14).

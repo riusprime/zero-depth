@@ -8,6 +8,9 @@ extends ContentDef
 ## `side` cuts max HP down to `limit` x), onrush (+damage while moving), overkill (a kill's excess damage splashes
 ## to the nearest enemy within `limit` m), hoarder (+damage per 100 shards held, counting at most `limit` shards;
 ## `side` raises shard gain) and fast_hands (auto abilities' cooldowns only).
+## v0.5.5 D9 (owner: heal orbs "as a card, so it is not perma enables only if you get it"): lifesprout, the only
+## source of heal orbs: the first card gives kills its amount as a drop chance, every further card adds its `side`,
+## up to `cap` (percent points).
 
 ## The stats in the sim's order (Stats.Stat mirrors it). Appended, never renumbered.
 const STATS: Array[StringName] = [
@@ -28,9 +31,11 @@ const STATS: Array[StringName] = [
 	&"overkill",
 	&"hoarder",
 	&"fast_hands",
+	&"lifesprout",
 ]
-## The rule cards with a second number per rarity (`side`) and a `limit`.
-const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder"]
+## The rule cards with a second number per rarity (`side`) and a `limit`. v0.5.5 D9: Lifesprout's side is what each
+## further card adds to the heal-orb chance (its amount is the first card's chance).
+const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder", &"lifesprout"]
 const LIMITED: Array[StringName] = [&"glass_cannon", &"overkill", &"hoarder"]
 const RARITIES := 3
 

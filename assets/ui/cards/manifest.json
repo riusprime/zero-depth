@@ -1,0 +1,188 @@
+{
+  "generator": "scripts/art/crop_card_frames.py",
+  "source": "docs/roadmap/v0.5.5/refs/card_templates_empty.webp",
+  "source_sha256": "7eb503cc4dca6264faad110941adc693496b505db600631167aa00df4c720f88",
+  "licence": "The owner's own art (Rius, delivered 2026-10-08 for v0.5.5 A4); no third-party art",
+  "frames": [
+    {
+      "id": "red",
+      "path": "assets/ui/cards/frame_red.png",
+      "sha256": "96c8dbbeed09d2ed1591a6cccd57196bbeeecc6d7f369107983dd2ca6685a29c",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        64,
+        247,
+        119,
+        183
+      ]
+    },
+    {
+      "id": "blue",
+      "path": "assets/ui/cards/frame_blue.png",
+      "sha256": "58aff403decfa179a86eac12c2ed959f19a07b6a424fe17980e497b8a953b00e",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        51,
+        241,
+        140,
+        166
+      ]
+    },
+    {
+      "id": "amber",
+      "path": "assets/ui/cards/frame_amber.png",
+      "sha256": "06b451e3a3a1e15f3058fb3e315d11929d0673b540f3776711d5874fde601fb7",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        72,
+        258,
+        114,
+        182
+      ]
+    },
+    {
+      "id": "purple",
+      "path": "assets/ui/cards/frame_purple.png",
+      "sha256": "b256c6323b5e7802aa65566352c3dae0159154c7cb577a11b68f5e833710108d",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        59,
+        276,
+        136,
+        157
+      ]
+    },
+    {
+      "id": "green",
+      "path": "assets/ui/cards/frame_green.png",
+      "sha256": "46b70dc18009107051e8884bac7a7ec78018e2b0770d7a2876a95b2a4ab2832a",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        51,
+        274,
+        137,
+        137
+      ]
+    },
+    {
+      "id": "silver",
+      "path": "assets/ui/cards/frame_silver.png",
+      "sha256": "364aa21332611fbaa2b068018e8386ded9b0b0d4fd3fd401b4b1f04a1b106684",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        67,
+        268,
+        120,
+        180
+      ]
+    },
+    {
+      "id": "pink",
+      "path": "assets/ui/cards/frame_pink.png",
+      "sha256": "5ebcb8a9c0ee8545bab22e34f3060d4f8cbabcecbdcdade95a8aa4928593e4e8",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        103,
+        222,
+        88,
+        197
+      ]
+    },
+    {
+      "id": "cyan",
+      "path": "assets/ui/cards/frame_cyan.png",
+      "sha256": "397288fefccc19b62d069fca4a51fe512e71d7053c31d5721a86ee78fcca51a7",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        66,
+        257,
+        133,
+        151
+      ]
+    },
+    {
+      "id": "orange",
+      "path": "assets/ui/cards/frame_orange.png",
+      "sha256": "3034b49d7ad56586580a82bcb6d769cd249080f763d834fbab0c6f0e6d9cca7f",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        65,
+        250,
+        117,
+        180
+      ]
+    },
+    {
+      "id": "violet",
+      "path": "assets/ui/cards/frame_violet.png",
+      "sha256": "504309c1930fcec270265bf61d4c27b51b33903b0e0bedb47cac8b0ff0c15278",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        47,
+        244,
+        151,
+        152
+      ]
+    },
+    {
+      "id": "gold",
+      "path": "assets/ui/cards/frame_gold.png",
+      "sha256": "1f7b400d55f97483592ffae2488029b0fe489e845f02ff5717c40e0926977384",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        69,
+        252,
+        124,
+        175
+      ]
+    },
+    {
+      "id": "indigo",
+      "path": "assets/ui/cards/frame_indigo.png",
+      "sha256": "26297065ee654b86ad7fa2c8370aeb31f9d40a731c777edd387c4da93d76e19e",
+      "size": [
+        251,
+        505
+      ],
+      "panel": [
+        74,
+        305,
+        117,
+        117
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 class_name PickPanel
 extends Control
-## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three compact item
-## cards (PickSlot: flat square panels with a rarity mark since v0.3.5 F16), a title (the chest's price) and a
-## hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
+## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three cards
+## (PickSlot: the owner's crystal frames since v0.5.5 A4, coloured by the card's family), a title (the chest's
+## price) and a hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
 ## InputLatch.note_pick → InputFrame.pick); it decides nothing itself.
 ## - Mouse: hover focuses a card, a click takes it.
 ## - Keyboard: ←/→ (or 1/2/3) moves the focus, Enter takes it, Esc leaves the choice for later.
@@ -126,6 +126,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"color": AbilityIcons.color(id),
 		"tier": int(info["rarity"]),
 		"tier_text": "",
+		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:

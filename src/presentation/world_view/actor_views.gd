@@ -16,6 +16,8 @@ const PROJECTILE_POOL_MAX := 400
 const ANIMATE_RADIUS_M := 24.0
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
+## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
+var hero_mood: BiomeMood
 var technique := &"xray"
 ## How many frames a hit flashes the actor white (PRESENTATION §6, starting value).
 var flash_frames := 3
@@ -389,6 +391,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			root.add_child(avatar)
 			root.set_meta(&"avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
+			var glow := StageKit.hero_light(hero_mood)  # v0.5.9: the hero's warm light
+			if glow != null:
+				root.add_child(glow)
 		_:
 			var size := CUBE if is_player else CUBE * 0.85
 			height = size

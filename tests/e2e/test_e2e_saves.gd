@@ -69,7 +69,8 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 				at_entry["hash"] = w.state_hash()
 	)
 	var room := f.neighbours(f.start_room)[0]
-	var centre := f.rooms[room].get_center()
+	# An open spot in the room (v0.5.9 L8: a themed room's centre can hold a vignette, e.g. Camp's burn barrel).
+	var centre := f.spawn_points[room][0]
 	var entered: bool = await _walk(e, centre, func() -> bool: return not at_entry.is_empty())
 	assert_true(entered, "walked into room %d" % room)
 	if not entered:

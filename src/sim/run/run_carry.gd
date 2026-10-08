@@ -20,14 +20,22 @@ const FIELDS: Array[StringName] = [
 	&"stat_cards",  # v0.5.0 SH: the stat cards taken, so the shop can sell one back
 ]
 const HP := &"hp"
+## v0.5.5 EC (owner Q-S4): the shards the portal left behind, written to the next floor's World.shards_left_behind
+## (the arrival card says so).
+const LEFT := &"shards_left_behind"
 
 
-## The carry out of a finished floor.
-static func take(w: World, heal_permille: int) -> Dictionary:
+## The carry out of a finished floor. v0.5.5 EC (owner Q-S4, "Keep half"): only shard_carry_permille of the unspent
+## shards carry (rounded down; 1000 = all, the default for callers without a run table).
+static func take(w: World, heal_permille: int, shard_carry_permille: int = 1000) -> Dictionary:
 	var out := {}
 	for field in FIELDS:
 		if field in w:
 			out[field] = _copy(w.get(field))
+	if out.has(&"shards"):
+		var kept := int(out[&"shards"]) * clampi(shard_carry_permille, 0, 1000) / 1000
+		out[LEFT] = int(out[&"shards"]) - kept
+		out[&"shards"] = kept
 	var max_hp := w.actors.max_hp[0]
 	out[HP] = mini(max_hp, w.actors.hp[0] + max_hp * heal_permille / 1000)
 	return out

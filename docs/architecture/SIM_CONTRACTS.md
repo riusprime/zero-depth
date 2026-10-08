@@ -167,8 +167,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   an event; drawn fresh from the run seed by `Events.pick_rooms`, a pure function of layout and seed), `loot:event`
   (`World.ev.rng`: the event drawn per pedestal, each panel's cards and curses on its first open, an ambush's kinds
   and spots, the cursed-chest roll and its card and curse) and `ai:elite` (`World.ev.rng_elite`: one roll per spawn
-  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05's list of
-  named streams is unchanged. Both world states join the hash with the event block (§10).
+  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05 lists them
+  (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier.
@@ -565,4 +565,6 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
 - **The formula is locked by evidence.** Its first version is measured in v0.3.0 and recorded in that version's
   `evidence/`. Later changes need a new sim result showing the scorecard bands still hold
   ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)). The v0.4.0 change (SC, above) is the owner's direction;
-  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC).
+  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC). **Superseded 2026-10-08
+  (owner P1, v0.5.5):** bot balance sims are no longer run or evidence; a scaling change is judged by the owner's
+  play (LOCKED_DECISIONS 2026-10-08).

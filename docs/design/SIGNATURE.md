@@ -75,12 +75,15 @@ Evidence: `docs/roadmap/v0.3.0/evidence/HEAT.md` and `heat.png`.
 
 ## Echoes
 
-To design with the owner, v0.4.0.
+Decided 2026-10-08 (owner: "yes to all three"): no separate system. Echoes are a family of modifiers in the
+modifier engine (`MODIFIER_ENGINE.md`): Echo Slash (M5), Twin Cast (M12), Long Shadow (M19).
 
 ## Core theft
 
-To design with the owner, v0.4.0.
+Decided 2026-10-08: elites and bosses carry a visible **core** (a modifier). Kill them during a short window
+after a stagger to steal it as a free pick (it goes through the 6-slot Swap like any modifier).
 
 ## Depth descent
 
-To design with the owner, v0.4.0.
+Decided 2026-10-08: it is the Deep route (v0.5.5 S5). Each Deep floor taken raises threat, so it raises the
+cap of the hidden growth-matching difficulty, and the rewards.
