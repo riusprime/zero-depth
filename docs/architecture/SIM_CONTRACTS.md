@@ -167,8 +167,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   an event; drawn fresh from the run seed by `Events.pick_rooms`, a pure function of layout and seed), `loot:event`
   (`World.ev.rng`: the event drawn per pedestal, each panel's cards and curses on its first open, an ambush's kinds
   and spots, the cursed-chest roll and its card and curse) and `ai:elite` (`World.ev.rng_elite`: one roll per spawn
-  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05's list of
-  named streams is unchanged. Both world states join the hash with the event block (§10).
+  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05 lists them
+  (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier.

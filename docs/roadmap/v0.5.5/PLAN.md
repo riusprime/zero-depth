@@ -32,7 +32,7 @@ asked to talk it through), **Kept** (no change wanted).
 | D1 | "Very calm, that fits the first 30 seconds of the first floor then it should ramp a bit faster" | The calm phase lasts 30 s, and only on floor 1; after it the ramp to the peak is steeper (floors 2–3 start at their warm-up level, no calm) | Decided | Step EC |
 | D2 | "we should add closing door to some rooms so you have to stay there until you kill X enemies before continuing" | Locked arena rooms: doors close on entry, waves spawn inside, the doors and the room's reward open on the clear. How many rooms, and what the other rooms are, depends on the direction (X1) | Proposed (X1) | Step AR |
 | D3 | "and also find a way of enemies also matching what you can do in terms of not super mega outgrowing them" | The growth-matching scaling below (D4) | Proposed | Step DS |
-| D4 | "I think a cool mechanic would be to recalculate difficulty for next floor based on your damage, but that'd make it same difficulty everytime even if your build is broken so not exactly scaling with you but maybe regular scaling + multiplier based on how much you grew" | **Regular scaling × a catch-up multiplier, capped.** At each floor entry the sim computes the player's power `P` from the loadout (weapon damage × damage, crit, attack-speed and ability multipliers; a pure function of the build, not of how well you play) and compares it with the expected power `E(floor)` of a normal build. Catch-up `m = clamp(sqrt(P / E), 1, cap(floor, T))`; `cap` = 1.5 / 2.0 / 2.5 on floors 1/2/3, +0.25 per threat T. Enemy HP × m, damage × sqrt(m). `m` is fixed for the floor (no mid-floor rubber band) and shown in the pause menu. A build twice as strong as expected meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run. | Proposed | Step DS |
+| D4 | "I think a cool mechanic would be to recalculate difficulty for next floor based on your damage, but that'd make it same difficulty everytime even if your build is broken so not exactly scaling with you but maybe regular scaling + multiplier based on how much you grew" | **Regular scaling × a catch-up multiplier, capped.** At each floor entry the sim computes the player's power `P` from the loadout (weapon damage × damage, crit, attack-speed and ability multipliers; a pure function of the build, not of how well you play) and compares it with the expected power `E(floor)` of a normal build. Catch-up `m = clamp(sqrt(P / E), 1, cap(floor, T))`; `cap` = 1.5 / 2.0 / 2.5 on floors 1/2/3, +0.25 per threat T. Enemy HP × m, damage × sqrt(m). `m` is fixed for the floor (no mid-floor rubber band) and **hidden from the player** (owner: "Yes, but hidden"). A build twice as strong as expected meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run. | **Decided 2026-10-08** ("Yes, but hidden") | Step DS |
 | D5 | "I cleared so easy, and highly outgrew the difficulty of each floor" | D4, plus the economy cuts (D9, S1–S4) that made the growth too fast | Decided (cuts) / Proposed (D4) | Steps EC, DS |
 | D6 | "Really easy, but maybe because I got there clearly outscaling the difficulty" (floor-2/3 bosses) | Bosses use D4 with their own cap and get harder fights (D7) | Proposed | Step DS |
 | D7 | "bosses felt just like an elite, we have to make bosses harder not only matching in some way the HP to our damage, but not fixed because it would be always hard even if I had the luckiest so that matching in difficulty should have a cap based on the floor and how far you took it, you know how in RoR2 sometimes you delete bosses but other runs the difficulty is hard but not impossible, we have to design a system that only super lucky broken builds allow you to kill with easy" | Bosses: HP × m with the boss cap (2 / 3 / 4 on floors 1/2/3, + threat); **plus mechanics that HP can't skip**: phase gates (a phase change at 66 % and 33 % with a short invulnerable transition and new attacks), adds that spawn per phase, arena hazards; so a strong build still has to play the fight, and only a build past the cap melts it | Proposed | Step DS |
@@ -47,7 +47,7 @@ asked to talk it through), **Kept** (no change wanted).
 | S1 | "I think too many and that's what made me so strong, we could add max 2 per floor and the rest should be chests" (altars) | At most 2 altars per floor (abilities come from altars); the other reward spots become chests (stat cards) | Decided | Step EC |
 | S2 | "The shop is too broken, once you buy a slot refreshing it should now spawn again 4, the bought slots should stay bought" | A reroll redraws only the unsold slots; a bought slot stays empty ("SOLD") for the floor | Decided | Step EC |
 | S3 | "and not be able to buy 16 upgrades at a time only 4 max per floor if gold gets it" | At most 4 card purchases per floor per shop (the heal and rerolls don't count) | Decided | Step EC |
-| S4 | "I felt like I had enough shards to buy whatever I wanted and passing them onto the next floor also made next floor pretty easy, explored full of shards, bought everything and by the time the enemies started appearing I was super strong" | Shard drops −30 % and shop prices ×1.5 on floors 2–3 (starting values); whether unspent shards carry to the next floor is a question (Q-S4) | Decided (cut) / Q-S4 | Step EC |
+| S4 | "I felt like I had enough shards to buy whatever I wanted and passing them onto the next floor also made next floor pretty easy, explored full of shards, bought everything and by the time the enemies started appearing I was super strong" | Shard drops −30 % and shop prices ×1.5 on floors 2–3 (starting values); half the unspent shards (rounded down) carry to the next floor (owner Q-S4: "Keep half") | Decided | Step EC |
 | S5 | "Used deep portals but I felt like nothing changed tho, maybe because I was too strong" | Deep floors must feel different: a distinct look (violet fog and light), an elite in every combat room, +1 T, a guaranteed epic chest at the end, a Deep-only event. With D4 the extra threat raises the cap, so it bites even a strong build | Proposed | Step DS |
 | S6 | "curse was fun, but also gave me the god feeling too fast" | Cursed offers stop giving an epic stat card; a cursed offer is a trade-off card (S7) whose upside is rare-level | Decided | Step CU |
 | S7 | "curses are fun, we can add more variables into it, you lose dash but have a dodge % or attack speed lower but 4th hit increased X% on damage" | New trade-off curses (list C1–C8 below, G1: the owner approves rows) | Proposed (G1) | Step CU |
@@ -78,9 +78,10 @@ asked to talk it through), **Kept** (no change wanted).
 ### Direction and open questions
 | # | Owner line (verbatim) | Decision | Status | Where |
 |---|---|---|---|---|
-| X1 | "I am between two options help me choose and justify why can we make other rooms not visible from the one you are in so you focus in the one that you are fighting, about 60% of the rooms should close the doors and unlock their rewards after clearing them, more like Isaac, or leaving it as is where it is closer to RoR2 or to megabonk, but those have "open world" and it is different, I think the kinda openworld thingy matches better with the incremental part of the game, but then the world generation feels a bit off with the rooms, I need to decide on how to guide the game, you could maybe help me asking some questions and then we decide the direction of the gameplay" | The lead's recommendation and the questions are below ("Direction: open or sealed rooms") | Discuss | — |
+| X1 | "I am between two options help me choose and justify why can we make other rooms not visible from the one you are in so you focus in the one that you are fighting, about 60% of the rooms should close the doors and unlock their rewards after clearing them, more like Isaac, or leaving it as is where it is closer to RoR2 or to megabonk, but those have "open world" and it is different, I think the kinda openworld thingy matches better with the incremental part of the game, but then the world generation feels a bit off with the rooms, I need to decide on how to guide the game, you could maybe help me asking some questions and then we decide the direction of the gameplay" | The lead's recommendation and the questions are below ("Direction: open or sealed rooms") | **Decided 2026-10-08: the hybrid** (answers below) | Step AR |
+| X1b | "Yes to the arenas, we are also missing a big reward from killing the boss" | Killing a boss offers a pick of 3 from a boss-only **legendary** tier (modifiers and trinkets stronger than chest cards) | **Decided 2026-10-08** ("Pick a legendary card") | Step AR |
 | X2 | "Let's discuss" (Echoes, Core theft, Depth descent) | Proposals below ("Signature systems") | Discuss | — |
-| X3 | "Let's discuss" (EI-05 sub-streams `map:event`, `loot:event`, `ai:elite`) | Explained below ("EI-05") | Discuss | — |
+| X3 | "Let's discuss" (EI-05 sub-streams `map:event`, `loot:event`, `ai:elite`) | Approved: EI-05 lists `map:event`, `loot:event`, `ai:elite` | **Decided 2026-10-08** ("Approve") | LOCKED_DECISIONS |
 
 ## Direction: open or sealed rooms (X1)
 **Recommendation: a hybrid, "open floor, sealed arenas".** The floor stays connected and open (you roam, hordes
@@ -98,11 +99,17 @@ before the enemies arrived. Sealed arenas gate the rewards behind fights at the 
 Why the generation "feels off": the rooms are boxes with no job in an open game. In the hybrid each room has a job
 (arena, shop, event, shrine, corridor of hordes), so the rooms read as places.
 
-The questions that decide it (the owner's answers settle X1):
-1. Is time the enemy (the longer you take, the harder), or is each room its own fight?
-2. Where should enemies come from: they stream in from anywhere, or they wait in rooms?
-3. May the player skip fights and sneak to the boss?
-4. Should you see the next room while fighting?
+The questions that decide it, with the owner's answers (2026-10-08):
+1. Is time the enemy (the longer you take, the harder), or is each room its own fight? **"Time"**
+2. Where should enemies come from: they stream in from anywhere, or they wait in rooms? **"Mostly stream in"**
+   (sealed arenas spawn their own waves inside)
+3. May the player skip fights and sneak to the boss? **"Yes to the arenas, we are also missing a big reward from
+   killing the boss"** (you may skip; the good rewards sit in sealed arenas; X1b)
+4. Should you see the next room while fighting? **"Others go dark when sealed"**
+
+**Decided: open floor, sealed arenas.** The clock and the streaming hordes stay; about a third of the rooms
+(starting value) are arenas that seal on entry, fight in waves and hold the floor's chests and altars; the rest of
+the floor darkens while you're sealed in. The Overrun room is the hardest arena (S8).
 
 ## The modifier engine (B2–B6)
 **Answer: build an engine, with a few hand-made interactions on top.** Writing every pair by hand grows as
@@ -212,9 +219,8 @@ and stats, purple = dash and void, green = healing, silver = time and slow, pink
 fire, violet = curses, gold = epic, indigo = trinkets. The owner may remap.
 
 ## Open items (what they block)
-- X1 direction (blocks D2 beyond the Overrun).
-- D4 / D7 numbers and the boss mechanics (block DS).
+- X1: decided (open floor, sealed arenas).
+- D4 / D7: decided (hidden); the numbers are starting values the owner tunes by play.
 - G1 on M1–M30 and C1–C8 (block MX, CU).
-- Q-S4: do unspent shards carry to the next floor, or reset?
-- X2 signature systems, X3 EI-05.
+- X2 signature systems (Echoes, Core theft, Depth descent).
 - A5 mockup pick (blocks the UI restyle beyond the cards).

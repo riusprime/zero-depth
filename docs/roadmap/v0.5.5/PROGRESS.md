@@ -19,13 +19,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| X1 direction: open floor, sealed arenas, or Isaac rooms | 2026-10-08 | pending | |
-| D4 / D7 growth-matching scaling with a cap | 2026-10-08 | pending | |
+| X1 direction: open floor, sealed arenas, or Isaac rooms | 2026-10-08 | "Time"; "Mostly stream in"; "Yes to the arenas, we are also missing a big reward from killing the boss"; "Others go dark when sealed" → open floor, sealed arenas | 2026-10-08 |
+| D4 / D7 growth-matching scaling with a cap | 2026-10-08 | "Yes, but hidden" | 2026-10-08 |
 | G1 modifiers M1–M30 | 2026-10-08 | pending | |
 | G1 curses C1–C8 | 2026-10-08 | pending | |
-| Q-S4 unspent shards carry to the next floor? | 2026-10-08 | pending | |
+| Q-S4 unspent shards carry to the next floor? | 2026-10-08 | "Keep half" | 2026-10-08 |
 | X2 Echoes / Core theft / Depth descent proposals | 2026-10-08 | pending | |
-| X3 EI-05 sub-streams | 2026-10-08 | pending | |
+| X3 EI-05 sub-streams | 2026-10-08 | "Approve" | 2026-10-08 |
+| X1b boss reward | 2026-10-08 | "Pick a legendary card" | 2026-10-08 |
 | A5 UI mockup pick | — | pending (mockups in step CD) | |
 
 ## History
