@@ -78,6 +78,11 @@ merged.
 - TU: horde bench still over 4 ms (CPU 4.95–5.02 ms a tick, ~5–6 % under the pre-pass tree, load ~6); not measured
   on a quiet machine. FightLab (readable cause, `stress_ai`) still runs floors without a curve on purpose.
 
+- TU round 2 (owner D7–D9): floor-1 deaths 25 % (band met); by floor 3 95 % (missed: all floor-2/3 deaths at the
+  bosses, kept unchanged by D9); TTK +78 % (missed). Owner questions **Q-T5** (D7's peak lands inside floors 2–3's
+  calm minute: shipped at 1:30), **Q-T6** (floor-2/3 bosses), **Q-T7** (the peak is SC's tier 3.5 at 55 % / 77.5 % /
+  55 %, not tier 20). Horde bench 4.69–4.83 ms on a quiet machine (target ≤ 4 ms: missed).
+
 ## Blockers
 - none
 
@@ -130,3 +135,7 @@ merged.
   `scripts/sim/tuning_sim.gd`). Sims: floor-1 deaths 100 % → 90 %, median death 61 s → 210 s, alive at 2:00 1/20 →
   20/20; bands missed (reported, Q-T1–T4). Readable cause 0 violations; boss bands in with the Gun at ×1.00; horde
   bench still missed. Goldens unchanged. `MIN_TEST_COUNT` 964.
+- 2026-10-08 — TU round 2: merged the lead branch (SH, RT, EV, then SCD); heal orbs (D8), floor-1 boss −20 % and a
+  full heal at its door (D9), peaks a minute before the measured boss door (D7: floor 1 2:24, floors 2–3 1:30, tuned
+  c5→c8), shards by floor time, salvage refund 25 → 10 (lead fix), the bot's portal fix. Floor-1 deaths 90 % → 25 %;
+  readable cause 0; export smoke 0 misses; goldens unchanged (`e5365ddb…`).

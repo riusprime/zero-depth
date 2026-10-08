@@ -137,10 +137,12 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 
 **TU as built (starting values, evidence in [`evidence/TUNING.md`](evidence/TUNING.md)).** A curve per floor
 (`data/curves/floor_N.tres`): Calm 0–60 s (holds tier 0; 35 / 25 / 18 % of SC's tier-0 cap: 5 / 7 / 9 alive; spawns
-half as often; HP 60 %, damage 40 % of SC's; one at a time; Charger, Needle, Swarmer), They stir at 60 s, The hunt at
-120 s, The swarm at 180 s (each floor's new kinds by then), Full horde at 600 s (M-FLOOR's 10 min: SC's tier 20, every
-per mille at 1000), each number ramping linearly between phase starts. A free altar always stands in a room next to the
-start hall. Split and summoned enemies get the tier scaling.
+half as often; HP 60 %, damage 40 % of SC's; one at a time; Charger, Needle, Swarmer), then They stir, The hunt and
+The swarm bring the floor's kinds in, ramping to the peak (D7: about a minute before the bots' median boss-door time;
+floor 1 at 2:24, floors 2–3 at 1:30, tier 3.5, cap 55 %, HP 77.5 %, damage 55 % of SC's), which holds; shards keep
+growing with floor time. Heal orbs (D8: 10 % of kills, +25 % max HP). Floor-1 bosses −20 % HP / damage and a full heal
+at their door (D9). A free altar always stands in a room next to the start hall. Split and summoned enemies get the
+tier scaling. Gun ×1.00 (D6).
 
 ## Steps
 | Wave | Step | Scope |

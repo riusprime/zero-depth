@@ -407,7 +407,8 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
     named once per curve (`phase_kind`); each phase starts after the one before (`phase_order`) and is never easier
     (tier, cap, HP and damage don't fall, the interval doesn't grow: `phase_ramp`); the first phase starts at 0,
     holds, has tier 0 and opens at least one kind (`calm`). Content tests also hold the shipped curves to: kinds in
-    SC's mix, every mix kind on some floor, the peak at SC's tier max with every per mille at 1000.
+    SC's mix, every mix kind on some floor, every kind in before the peak, the peak's tier within SC's tables; the peak's start is tested against
+    the measured boss-door times (owner D7, `TuningRun.peak_ticks`).
 - **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
   within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's

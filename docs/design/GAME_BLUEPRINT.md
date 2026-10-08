@@ -267,22 +267,31 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
   apart), at the edges of the player's room and its neighbours, never within 8 m of the player and never in the
   boss room. All starting values; the expected-build bot's bands (v0.4.0 TU) tune them.
 - **The difficulty curve (v0.4.0 TU; owner 2026-10-08 D1–D4: "difficulty should be "easy" the first minute so you
-  can explore and gather some stuff and then it becomes harder and harder").** SC's numbers above are the floor's
-  **peak**; each floor reaches it through phases (`data/curves/floor_N.tres`; starting values):
+  can explore and gather some stuff and then it becomes harder and harder"; D7: "Peak ~1 min before boss").** SC's
+  per-tier tables above are the scale the curve reads; each floor climbs through phases to its **peak**, placed about
+  a minute before the measured median time the expected-build bot reaches the boss door (floor 1: door at 3:24 →
+  peak 2:24; floors 2–3: doors at 1:17 / 1:35, but never inside the calm minute's ramp → peak 1:30), and then holds
+  (`data/curves/floor_N.tres`; starting values tuned against the bot, evidence `v0.4.0/evidence/TUNING.md`):
 
-  | Phase (HUD name) | Starts | Danger tier | Alive cap (of SC's at that tier) | Spawn interval | Enemy HP / damage (of SC's) | Largest pack |
+  | Phase (HUD name) | Floor 1 / floors 2–3 start | Danger tier | Alive cap (of SC's at that tier) | Spawn interval | Enemy HP / damage (of SC's) | Largest pack |
   |---|---|---|---|---|---|---|
-  | Calm | 0:00 (holds) | 0 | 35 % / 25 % / 18 % on floors 1/2/3 (5 / 7 / 9) | ×2.0 | 60 % / 40 % | 1 |
-  | They stir | 1:00 | 0 → 2 | 40 % → | ×1.8 → | 70 % / 45 % → | 2 |
-  | The hunt | 2:00 | 2 → 4 | 50 % → | ×1.5 → | 75 % / 55 % → | 3 |
-  | The swarm | 3:00 | 4 → 20 | 60 % → | ×1.3 → | 80 % / 65 % → | 3 / 4 / 8 |
-  | Full horde (peak) | 10:00 (M-FLOOR's 10 min; holds) | 20 | 100 % (120) | ×1.0 | 100 % / 100 % | 3 / 4 / 8 |
+  | Calm | 0:00 / 0:00 (holds) | 0 | 35 % / 25 % / 18 % on floors 1/2/3 (5 / 7 / 9) | ×2.0 | 60 % / 40 % | 1 |
+  | They stir | 1:00 / 1:00 | 0 → 1.5 | 40 % → | ×1.8 → | 70 % / 45 % → | 2 |
+  | The hunt | 1:30 / 1:10 | 1.5 → 2.5 | 45 % → | ×1.6 → | 72.5 % / 47.5 % → | 3 |
+  | The swarm | 2:00 / 1:20 | 2.5 → 3.5 | 50 % → | ×1.45 → | 75 % / 52.5 % → | 3 / 4 / 8 |
+  | Full horde (peak, holds) | 2:24 / 1:30 | 3.5 | 55 % | ×1.3 | 77.5 % / 55 % | 3 / 4 / 8 |
 
-  Every number ramps linearly from one phase start to the next ("→"). Each floor's new kinds arrive by The swarm (§E),
-  so a player who heads for the boss early still meets them. Floors 2 and 3 start calm too, from their own higher
-  base (the per-floor tables and caps). Each phase start is announced on the HUD under the top plate.
+  Every number ramps linearly from one phase start to the next ("→"). The peak is far below SC's tier 20 (the owner's
+  D8: damage steady but survivable); staying longer still pays more shards, which follow the floor's plain 30 s tier.
+  Each floor's new kinds arrive by The swarm (§E). Floors 2 and 3 start calm too, from their own higher base.
+  Each phase start is announced on the HUD under the top plate.
+- **Heal orbs (D8: "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25%").** A normal
+  enemy's kill drops a green orb 10 % of the time; walking over it (pickup range counts) heals 25 % of max HP. It
+  stays until taken; at most 16 lie on a floor.
+- **Floor 1's boss (D9: "Ease floor 1 only").** Floor-1 bosses have −20 % HP and damage, and entering the floor-1
+  boss room restores your HP to full; floors 2–3 are unchanged.
 - **Early growth (D4).** One free altar always stands in a room next to the start hall (its first card is a new
-  ability while a slot is free); shards per kill follow the curve's tier.
+  ability while a slot is free).
 - **Enemies that join mid-fight** (Splitlings, boss summons) get the same tier scaling as the spawner's (TU).
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.

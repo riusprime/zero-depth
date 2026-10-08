@@ -1,6 +1,8 @@
 # TUNING (v0.4.0 TU): does the difficulty curve give an easy first minute, enemies by phase and a peak at the floor's end, and does the expected-build bot meet the PLAN's bands?
 
-- **Status:** RUN. **The calm minute and the phases work as specified; the PLAN's three sim bands are MISSED** (floor-1
+- **Round 2 (owner D7–D9) is at the end of this file and supersedes these bands' results:** floor-1 deaths 25 % (met),
+  by floor 3 95 % (missed, bosses), TTK +78 % (missed).
+- **Status (round 1):** RUN. **The calm minute and the phases work as specified; the PLAN's three sim bands are MISSED** (floor-1
   deaths 90 % vs < 30 %; deaths by floor 3 100 % vs 30–60 %; time-to-kill rises 101 % vs falls 20–40 %). Reported,
   not widened, and not retuned further: three more curve variants (below) moved deaths by a few runs at most, because
   the deaths are attrition and the floor-1 boss, not the curve (Interpretation). **Horde bench target still missed**
@@ -297,3 +299,206 @@ check_gut_log: ok (964 passing, minimum 964)
 ```
 Export smoke (`aec532d` tree, run from the scratchpad): 0 misses; 600-tick hash `e5365ddb6dcb` (unchanged), manifest
 `a57cabd1d460…` (196 files: the three curves added).
+
+
+---
+
+# Round 2 (owner answers D7–D9, 2026-10-08)
+
+- **Status:** RUN. **Floor-1 deaths band MET (5/20 = 25 % < 30 %).** Deaths by floor 3: **MISSED** (19/20 = 95 % vs
+  30–60 %): every death on floors 2–3 is at the boss (10/10, 4/4), which the owner kept unchanged (D9); with the boss
+  removed by a labelled shortcut the floors alone kill 9/20 by floor 3 (45 %). TTK: **MISSED** (+78 %, should fall).
+  Readable cause 0 violations; export smoke 0 misses; horde bench still over 4 ms.
+- **Build:** `027ccd9` (the lead branch `claude/lucid-fermat-9wv2tf` at `421ee41` merged in, then the bot's portal fix);
+  the commit carrying this section changes only docs and `MIN_TEST_COUNT`. Godot 4.7.2, headless.
+- **Machine:** the same container, quieter (load 0.5 → 4.1 during the sims, ~1 during the bench).
+
+## What changed (D7–D9 and the lead's fix)
+- **D7 "Peak ~1 min before boss":** each floor's peak is placed one minute before the median boss-door time measured
+  with D8/D9 in and the old curve (run `m1`: 3:24 / 1:17 / 1:35 on floors 1/2/3). Floor 1 peaks at 2:24; floors 2–3
+  would peak inside the calm minute (0:17, 0:35), which D1 forbids, so they peak at 1:30 (phases at 1:00 / 1:10 /
+  1:20) — **a conflict for the owner (Q-T5)**. The peak holds; shards now follow the floor's plain 30 s tier, so staying
+  longer still pays more. The peak's level was tuned against the bot (it is not SC's tier 20 any more; below).
+- **D8 heal orbs:** 10 % of normal kills drop one (loot stream), +25 % max HP when walked over (pickup range counts),
+  at most 16 on a floor, drawn as a pulsing green sphere (`HealOrbViews`); hashed and snapshotted (`HealOrbStore`).
+  The bot walks to an orb in sight within 12 m when under 75 % HP. Floor 1: 4.8 orbs a run, +75 HP a run (median runs).
+- **D9:** floor-1 bosses −20 % HP and damage (`RunDefinition.boss_ease_floor_permille`), and a full heal when the
+  floor-1 boss room seals (`boss_room_heal_floor_permille`).
+- **Lead fix:** the shop's ability salvage refund 25 → 10 shards per level (`data/shop/terminal.tres`; M-LOOP).
+- **Bot:** walks into the portal's opening (the v0.5.0 SCD bot's fix); the floor-1 numbers are unchanged by it.
+
+## Commands
+```
+bash build/run_sims.sh <name> 5 [killboss=1]   # as in round 1; killboss=1 kills each boss the tick it appears
+time godot --headless --path . -s scripts/checks/readable_cause.gd
+bash build/bench_ab.sh                          # horde bench, interleaved: 6ff13c6, this tree, 87bac21
+bash <repo>/scripts/ci/export_smoke.sh          # from the scratchpad
+```
+`killboss=1` is a **labelled shortcut** (the dev panel's Kill boss, a test-side write) used only to sample floors 2–3;
+none of its numbers stand for a real run.
+
+## Peak tuning on the way (20 runs each; `all F1` deaths, the normal runs)
+| Run | Floor-1 peak | Peak values (tier / cap / HP / damage) | F1 deaths | by F3 | F1 door median |
+|---|---|---|---|---|---|
+| m1 | 10:00 (round 1's curve) + D8/D9 | 20 / 100 % / 100 % / 100 % | 4/20 (20 %) | 20/20 | 204 s |
+| c5 | 2:24 | 6 / 65 % / 85 % / 70 % | 16/20 (80 %) | 19/20 | 168 s |
+| c6 | 2:24 | 4 / 55 % / 80 % / 60 % | 7/20 (35 %) | 20/20 | 197 s |
+| **c7 (shipped)** | **2:24** | **3.5 / 55 % / 77.5 % / 55 %** | **5/20 (25 %)** | 20/20 | 180 s |
+| c8 | 2:00 (one minute before c7's 180 s) | as c7 | 8/20 (40 %) | 20/20 | 206 s |
+
+c8 put the peak exactly a minute before c7's re-measured door time and broke the floor-1 band, so c7 ships: its peak is
+36 s before its own measured median (180 s), not 60 s. With 20 runs a cell, 25 % vs 40 % is within the noise (5 vs 8
+deaths); a P0 verdict needs 100 seeds (SCORECARD §5).
+
+## Raw output (`fin`, the shipped tree; 10 seeds × Blade/Gun)
+```
+ 11:02:42 up  4:17,  0 user,  load average: 0.48, 0.81, 1.57
+seed 7301 blade: F1 next door 180s floor 198s kills 81 cards 3/-1/5 peak 17 orbs 5 (+56 HP) | F2 died_boss door 63s floor 82s kills 11 cards -1/-1/4 peak 5 orbs 1 (+4 HP)
+seed 7301 gun: F1 next door 136s floor 170s kills 43 cards 4/-1/5 peak 16 orbs 1 (+16 HP) | F2 died_boss door 131s floor 154s kills 41 cards 3/-1/4 peak 26 orbs 2 (+48 HP)
+seed 7302 blade: F1 next door 213s floor 233s kills 110 cards 4/-1/6 peak 18 orbs 5 (+60 HP) | F2 next door 99s floor 128s kills 18 cards 4/-1/4 peak 25 orbs 2 (+33 HP) | F3 died_boss door 95s floor 109s kills 27 cards -1/-1/4 peak 23 orbs 1 (+5 HP)
+seed 7302 gun: F1 next door 215s floor 241s kills 108 cards 5/-1/6 peak 18 orbs 5 (+50 HP) | F2 died_boss door 99s floor 123s kills 19 cards 4/-1/4 peak 24 orbs 1 (+10 HP)
+seed 7303 blade: F1 next door 162s floor 186s kills 54 cards 3/-1/4 peak 18 orbs 3 (+48 HP) | F2 next door 75s floor 110s kills 12 cards -1/-1/3 peak 6 orbs 0 (+0 HP) | F3 died_boss door 102s floor 116s kills 17 cards -1/-1/4 peak 37 orbs 0 (+0 HP)
+seed 7303 gun: F1 died_boss door 189s floor 217s kills 77 cards 4/-1/4 peak 18 orbs 3 (+37 HP)
+seed 7304 blade: F1 next door 267s floor 297s kills 111 cards 3/-1/5 peak 18 orbs 11 (+191 HP) | F2 died_boss door 42s floor 65s kills 1 cards -1/-1/5 peak 7 orbs 1 (+27 HP)
+seed 7304 gun: F1 died_boss door 303s floor 341s kills 130 cards 3/5/5 peak 19 orbs 9 (+154 HP)
+seed 7305 blade: F1 next door 160s floor 182s kills 50 cards 4/-1/5 peak 17 orbs 2 (+29 HP) | F2 died_boss door 138s floor 170s kills 43 cards 4/-1/4 peak 26 orbs 1 (+25 HP)
+seed 7305 gun: F1 next door 176s floor 211s kills 68 cards 4/-1/5 peak 18 orbs 1 (+28 HP) | F2 next door 131s floor 173s kills 47 cards 4/-1/4 peak 26 orbs 2 (+56 HP) | F3 died_boss door 97s floor 114s kills 24 cards -1/-1/5 peak 16 orbs 0 (+0 HP)
+seed 7306 blade: F1 next door 274s floor 304s kills 139 cards 3/5/5 peak 19 orbs 15 (+281 HP) | F2 died_boss door 75s floor 112s kills 8 cards -1/-1/4 peak 11 orbs 1 (+5 HP)
+seed 7306 gun: F1 next door 171s floor 197s kills 70 cards 4/-1/5 peak 18 orbs 1 (+7 HP) | F2 died_boss door 74s floor 96s kills 9 cards -1/-1/4 peak 10 orbs 1 (+4 HP)
+seed 7307 blade: F1 died_boss door 197s floor 221s kills 80 cards 1/-1/3 peak 18 orbs 6 (+115 HP)
+seed 7307 gun: F1 next door 179s floor 207s kills 71 cards 2/-1/3 peak 18 orbs 5 (+73 HP) | F2 died_boss door 67s floor 82s kills 11 cards -1/-1/5 peak 4 orbs 0 (+0 HP)
+seed 7308 blade: F1 next door 173s floor 191s kills 56 cards 4/-1/6 peak 18 orbs 2 (+9 HP) | F2 next door 78s floor 105s kills 19 cards -1/-1/5 peak 12 orbs 1 (+14 HP) | F3 won door 37s floor 66s kills 4 cards -1/-1/4 peak 9 orbs 0 (+0 HP)
+seed 7308 gun: F1 next door 165s floor 192s kills 55 cards 4/-1/6 peak 18 orbs 1 (+12 HP) | F2 next door 194s floor 234s kills 138 cards 7/-1/7 peak 28 orbs 6 (+118 HP) | F3 died_boss door 37s floor 62s kills 8 cards -1/-1/4 peak 6 orbs 0 (+0 HP)
+seed 7309 blade: F1 died_floor door -1s floor 268s kills 109 cards 3/-1/5 peak 20 orbs 7 (+117 HP)
+seed 7309 gun: F1 died_boss door 239s floor 264s kills 138 cards 4/-1/5 peak 18 orbs 7 (+132 HP)
+seed 7310 blade: F1 next door 156s floor 182s kills 48 cards 3/-1/4 peak 19 orbs 2 (+42 HP) | F2 died_boss door 199s floor 226s kills 114 cards 5/-1/5 peak 27 orbs 10 (+161 HP)
+seed 7310 gun: F1 next door 243s floor 273s kills 130 cards 3/-1/4 peak 18 orbs 4 (+41 HP) | F2 died_boss door 88s floor 118s kills 17 cards -1/-1/6 peak 13 orbs 1 (+25 HP)
+ 11:08:40 up  4:23,  0 user,  load average: 3.90, 3.41, 2.55
+runs: 20
+all F1: reached 20, died 5 (boss 4), timeouts 0; died by F1 5/20 (25%); door s med 180 [136..303]; kills med 78; cards 2m/5m/end med 3.5/-1.0/5.0; first chest s med 84; peak alive med 18 max 20; ttk s start 0.85 (n 397) end 1.52 (n 481) change +78%
+all F1 ttk by minute: 0:0.62(107) 1:0.97(290) 2:1.41(502) 3:2.08(226) 4:2.17(80)
+all F1 hurt_floor: warden 585, arc_caster 441, needle 407, charger 330, gone 51, splitter 32, swarmer 3
+all F1 hurt_boss: gatekeeper 662, warlord 393
+all F2: reached 15, died 10 (boss 10), timeouts 0; died by F2 15/20 (75%); door s med 88 [42..199]; kills med 18; cards 2m/5m/end med -1.0/-1.0/4.0; first chest s med 14; peak alive med 13 max 28; ttk s start 1.07 (n 241) end 3.12 (n 94) change +193%
+all F2 hurt_floor: needle 163, arc_caster 143, warden 98, charger 67, gone 22, mine_layer 14, splitling 10
+all F2 hurt_boss: hive_lens 829, brood_mother 281, lens_drone 17, hatchling 7
+all F3: reached 5, died 4 (boss 4), timeouts 0; died by F3 19/20 (95%); door s med 95 [37..102]; kills med 17; cards 2m/5m/end med -1.0/-1.0/4.0; first chest s med 10; peak alive med 16 max 37; ttk s start 1.75 (n 57) end 0.00 (n 0) change -100%
+all F3 hurt_floor: warden 22, needle 16
+all F3 hurt_boss: foundry 371, siege_engine 57, bomb_drone 40
+```
+(The two processes' lines merged in seed order.) Per build on floor 1: Blade 2/10 died (1 at the boss), Gun 3/10 (3 at
+the boss).
+```
+fin_1.jsonl runs 20 F1 died_s median 264 min 217 max 341 alive@60s 20/20 alive@120s 20/20 floor_s med 214 shards@door med 319
+```
+
+### Kill-boss shortcut (`fink`, labelled: bosses die on arrival)
+```
+runs: 20
+all F1: reached 20, died 1 (boss 0), timeouts 0; died by F1 1/20 (5%); door s med 180 [136..303]; kills med 78; cards 2m/5m/end med 3.5/-1.0/5.0; first chest s med 84; peak alive med 18 max 20; ttk s start 0.85 (n 397) end 1.52 (n 481) change +78%
+all F1 ttk by minute: 0:0.62(107) 1:0.97(290) 2:1.40(499) 3:1.93(217) 4:2.08(77)
+all F2: reached 19, died 1 (boss 0), timeouts 0; died by F2 2/20 (10%); door s med 73 [39..131]; kills med 13; cards 2m/5m/end med -1.0/-1.0/4.0; first chest s med 14; peak alive med 7 max 26; ttk s start 0.97 (n 206) end 0.00 (n 0) change -100%
+all F3: reached 18, died 7 (boss 0), timeouts 0; died by F3 9/20 (45%); door s med 88 [36..118]; kills med 18; cards 2m/5m/end med -1.0/-1.0/5.0; first chest s med 12; peak alive med 18 max 38; ttk s start 2.11 (n 280) end 0.00 (n 0) change -100%
+```
+
+### Readable cause (`027ccd9`)
+```
+	"death_recap_mismatches": [],
+	"deaths_checked": 24,
+	"runs": 36,
+	"violations": 0
+real	4m10.548s
+```
+
+### Horde bench (interleaved, `--only=horde`, quiet machine)
+```
+=== round 1 tree /tmp/claude-0/-home-user/b2a5e714-7fb3-53a7-be6c-7e4e971fcb73/scratchpad/bench_before
+ 11:10:12 up  4:25,  0 user,  load average: 1.09, 2.62, 2.35
+		"cpu_ms_per_tick_all": 5.192,
+		"mean_actors": 121.0,
+		"mean_ms": 4.979,
+		"mean_projectiles": 191.4,
+		"p99_ms": 13.378,
+ 11:10:32 up  4:25,  0 user,  load average: 1.07, 2.52, 2.32
+=== round 1 tree /home/user/zero-depth/.claude/worktrees/agent-ae97ce255e6b6ccfd
+ 11:10:32 up  4:25,  0 user,  load average: 1.07, 2.52, 2.32
+		"cpu_ms_per_tick_all": 5.031,
+		"mean_actors": 121.0,
+		"mean_ms": 4.825,
+		"mean_projectiles": 192.5,
+		"p99_ms": 12.697,
+ 11:10:52 up  4:25,  0 user,  load average: 1.05, 2.42, 2.29
+=== round 1 tree /tmp/claude-0/-home-user/b2a5e714-7fb3-53a7-be6c-7e4e971fcb73/scratchpad/before
+ 11:10:52 up  4:25,  0 user,  load average: 1.05, 2.42, 2.29
+		"cpu_ms_per_tick_all": 5.061,
+		"mean_actors": 121.0,
+		"mean_ms": 4.856,
+		"mean_projectiles": 191.4,
+		"p99_ms": 13.527,
+ 11:11:11 up  4:26,  0 user,  load average: 1.03, 2.32, 2.26
+=== round 2 tree /tmp/claude-0/-home-user/b2a5e714-7fb3-53a7-be6c-7e4e971fcb73/scratchpad/bench_before
+ 11:11:11 up  4:26,  0 user,  load average: 1.03, 2.32, 2.26
+		"cpu_ms_per_tick_all": 4.989,
+		"mean_actors": 121.0,
+		"mean_ms": 4.803,
+		"mean_projectiles": 191.4,
+		"p99_ms": 12.918,
+ 11:11:31 up  4:26,  0 user,  load average: 1.02, 2.26, 2.24
+=== round 2 tree /home/user/zero-depth/.claude/worktrees/agent-ae97ce255e6b6ccfd
+ 11:11:31 up  4:26,  0 user,  load average: 1.02, 2.26, 2.24
+		"cpu_ms_per_tick_all": 4.889,
+		"mean_actors": 121.0,
+		"mean_ms": 4.686,
+		"mean_projectiles": 192.5,
+		"p99_ms": 12.696,
+ 11:11:50 up  4:26,  0 user,  load average: 1.02, 2.18, 2.22
+=== round 2 tree /tmp/claude-0/-home-user/b2a5e714-7fb3-53a7-be6c-7e4e971fcb73/scratchpad/before
+ 11:11:50 up  4:26,  0 user,  load average: 1.02, 2.18, 2.22
+		"cpu_ms_per_tick_all": 4.914,
+		"mean_actors": 121.0,
+		"mean_ms": 4.716,
+		"mean_projectiles": 191.4,
+		"p99_ms": 12.564,
+ 11:12:10 up  4:27,  0 user,  load average: 1.01, 2.10, 2.19
+```
+
+### Export smoke (`027ccd9`, from the scratchpad)
+```
+manifest: 9bc3be2a05970e9fbb3bb123891686cb0d89544aec4bb4680d34ff66d3e9d7ab (220 files, 0 errors)
+  ok    600-tick World run hash e5365ddb6dcb matches the project's
+  ok    manifest hash 9bc3be2a0597 matches the project's
+0 miss(es)
+```
+
+## Result (round 2)
+| Metric | Before (`87bac21`) | Round 1 (`d080d66`) | Round 2 (`027ccd9`) | Band | In band? |
+|---|---|---|---|---|---|
+| Floor-1 deaths | 20/20 (100 %) | 18/20 (90 %) | 5/20 (25 %); 4 at the boss | < 30 % | **Yes** |
+| Deaths by floor 3 | 20/20 | 20/20 | 19/20 (95 %); floors 2–3: 14 deaths, all at the boss | 30–60 % | **No** |
+| Same, bosses killed on arrival (shortcut) | — | — | 9/20 (45 %) | (not the band's measure) | — |
+| Median TTK, floor-1 start → end | 1.82 s → — | 0.75 → 1.51 s (+101 %) | 0.85 → 1.52 s (+78 %) | −20…−40 % | **No** |
+| Alive at 1:00 / 2:00 | 10/20 / 1/20 | 20/20 / 20/20 | 20/20 / 20/20 | (D1) | — |
+| Median floor-1 death time (those who died) | 61 s | 210 s | 264 s | — | — |
+| Floor-1 boss door (median) | 67 s (1 run) | 191 s | 180 s | M-FLOOR 10–15 min | **No** (Q-T1) |
+| Floor-2 / floor-3 door (median, shortcut runs) | — | — | 73 s / 88 s | — | — |
+| Peak alive on floor 1 (median / max) | 21 / 32 | 22 / 28 | 18 / 20 | — | — |
+| Readable cause | — | 0 / 36 | 0 / 36 | 0 | Yes |
+| Horde bench mean (ms a tick) | 4.72–4.86 (`87bac21`) | — | 4.69–4.83 (6ff13c6: 4.80–4.98) | ≤ 4 | **No** |
+| Owner's feel | — | — | — | — | OWNER ONLY |
+
+## Interpretation (round 2)
+- Heal orbs did what the owner asked for: the same bot that lost 18 of 20 floor-1 runs now loses 5, and the deaths moved
+  from attrition on the floor to the floor-1 boss (4 of 5) even with D9's ease and full heal.
+- Floors 2–3 are now decided by their bosses (Brood Mother / Hive Lens; Foundry / Siege Engine), which the owner kept
+  unchanged; the floors themselves (shortcut runs) cost 9/20 by floor 3.
+- **Questions for the owner:**
+  - **Q-T5 (D7 vs D1 on floors 2–3):** the bots reach the floor-2/3 boss doors at ~1:15–1:35, so "a minute before"
+    lands inside the calm minute. Shipped: calm minute kept, peak at 1:30. Keep that, shorten the calm minute on
+    floors 2–3, or lengthen those floors?
+  - **Q-T6 (bosses on floors 2–3):** they killed 10 of the 15 bots that reached floor 2 and 4 of the 5 that reached floor 3. Ease them like floor 1, as is, or tune
+    the band to exclude bosses?
+  - **Q-T7 (the peak's level):** the shipped peak is SC's tier 3.5 at 55 % cap / 77.5 % HP / 55 % damage (SC's tier 20
+    is no longer reached). Higher peaks (c5, c6) broke the floor-1 band. Accept?
+  - The TTK band can't be met while enemy HP grows with the tier and floor 1 gives 4–5 cards; it is reported, not
+    widened.
+- Bench: same code as round 1's pass; on a quiet machine the TU tree is 1–3 % faster than `87bac21` and still over 4 ms.
