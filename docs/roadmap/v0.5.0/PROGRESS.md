@@ -38,3 +38,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
   are priced by their rarity like the rest (common 30 / rare 55); the reroll's price doesn't rise by floor; the heal
   is refused at full HP; a salvaged ability's mods stay owned (inert) and can be sold; selling a stat card rebuilds
   the stat values from the cards left in the order taken, then the gamble shrine's stat wins.
+- 2026-10-08 — SH merged with v0.4.0 SC (`55a895d`): `test_e2e_horde_enemies` failed on the Shield Bearer (bash never
+  landed in 900 frames). Root cause, not a sim bug: the shop terminal takes one entity id at floor setup
+  (`Shop.place` → `take_root`), shifting every later actor id by one; SC's AI is staggered by id, so the crowd's
+  schedule moved, and the floor's own Chargers and Needle plus the earlier-spawned Swarmer and Splitter knocked the
+  God-mode player out of both of the Bearer's locked bash lanes during their windups (traced; confirmed by giving the
+  terminal an id outside the counter: the test passed). The test assumed a player standing still stays in front of a
+  slow-turning enemy; it now stands up to the Bearer with the left stick (steps back within 1.4 m whenever knocked
+  away), same bar (telegraph drawn and its HIT on the player), and passes with the shop, with the id shift removed
+  and with no shop. Suite 918 / 918 (minimum 918); export smoke 0 misses.
