@@ -42,9 +42,42 @@ Nothing here blocks a step. A missing piece draws its current primitive (L15).
 | 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | requested |
 | 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | requested |
 | 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | requested |
-| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | seamless tileable top-down texture of dusty worn stone floor tiles with subtle cracks, muted, flat lighting (two variants) | requested |
+| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | full prompts in [Ground textures](#ground-textures) below (they replace the prefix) | requested |
 
 **Fire and glow** (flames, sparks, the chest's inner light) are made in the engine, not in the models.
+
+## Ground textures
+
+These don't use the prefix above. Each one is a 2D image, 1024 × 1024 px, square.
+
+**ground_a (worn stone tiles):**
+
+> seamless tileable texture, perfectly repeating pattern, orthographic top-down view looking straight down, flat even
+> lighting, no shadows, no vignette, no border, no frame. A floor of a regular grid of exactly 4 by 4 square worn stone
+> paving tiles, equal size, the grid lines aligned to the image edges so that every tile is complete and the image
+> edge cuts through the middle of a grout line. Muted desaturated grey-brown stone, thin dark grout, small chips,
+> faint hairline cracks and light dust spread evenly across the whole image. No large unique features, no object, no
+> plants, no text. Low-detail stylised game texture, low contrast.
+
+**ground_b (packed dirt and gravel):**
+
+> seamless tileable texture, perfectly repeating pattern, orthographic top-down view looking straight down, flat even
+> lighting, no shadows, no vignette, no border, no frame. Packed dusty dirt ground with small scattered gravel and
+> tiny pebbles, a few faint cracks, spread evenly across the whole image with no focal point. Muted desaturated
+> grey-brown, low contrast. No large rocks, no object, no plants, no text, no tiles. Low-detail stylised game
+> texture.
+
+**Negative prompt** (if the tool has one):
+
+> border, frame, vignette, edge decoration, perspective, horizon, shadows, lighting gradient, centred object, large
+> rock, text, watermark, high contrast, saturated colours
+
+**Tips:**
+
+- If the generator has a **tile / seamless / tiling option**, turn it on. It matters more than the prompt. Midjourney
+  uses `--tile`; Stable Diffusion UIs have a "Tiling" checkbox.
+- Edges that don't loop are fine to send anyway. Claude makes them seamless in code: offset by half, then blend the
+  seam. The texture must have no single big feature for that to work.
 
 ## Biome extras (6, second batch)
 
