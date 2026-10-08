@@ -52,7 +52,7 @@ func test_the_build_screen_shows_both_cards() -> void:
 	assert_eq(picker.cards.size(), 2)
 	assert_eq(picker.cards[0].title_key, &"BUILD_BLADE")
 	assert_eq(picker.cards[1].title_key, &"BUILD_GUN")
-	assert_eq([picker.cards[0].damage_text(), picker.cards[1].damage_text()], ["+15 %", "-15 %"])
+	assert_eq([picker.cards[0].damage_text(), picker.cards[1].damage_text()], ["+15 %", "+0 %"])  # owner 2026-10-08: no Gun -15 %
 	assert_lt(
 		picker.cards[1].appear(), picker.cards[0].appear() + 0.001, "the cards come in staggered"
 	)
