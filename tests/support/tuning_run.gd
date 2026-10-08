@@ -8,9 +8,12 @@ extends RefCounted
 ## - peak_alive: the most enemies alive at once (spawner and summons, not the boss);
 ## - ttk: [minute, ticks] for every normal enemy killed (first hit by the player's side to its death; Swarmers,
 ##   Splitlings, boss summons and bosses excluded), so medians over time can be taken;
-## - first_chest_s: when the first chest was opened (-1: none).
+## - first_chest_s: when the first chest was opened (-1: none);
+## - hurt_floor / hurt_boss: the damage the player took by attacker kind, before and after the boss door sealed.
 ## The bot's world is never written to: what happens is what the game does.
 
+## The floor's expected end, where the curves peak (data/curves/*.tres, last phase): evidence/TUNING.md says why.
+const EXPECTED_END_TICKS := 600 * 60
 ## A floor that runs this long is called a timeout (20 min, past M-FLOOR's 15 plus a boss fight).
 const FLOOR_LIMIT_TICKS := 20 * 60 * 60
 ## Kinds left out of the time-to-kill (one-hit chaff and summons).
@@ -26,11 +29,12 @@ static func run(
 	build: StringName,
 	floors: int = 3,
 	floor_limit_ticks: int = FLOOR_LIMIT_TICKS,
-	god: bool = false
+	god: bool = false,
+	preset: String = "average"
 ) -> Dictionary:
 	var lab := RunLab.new(repo, run_seed, build)
-	var bot := RunBot.new(run_seed * 977 + (1 if build == &"gun" else 0))
-	var out := {"seed": run_seed, "build": String(build), "floors": []}
+	var bot := RunBot.new(run_seed * 977 + (1 if build == &"gun" else 0), preset)
+	var out := {"seed": run_seed, "build": String(build), "preset": preset, "floors": []}
 	for f in floors:
 		var w := lab.floor_world()
 		bot.start_floor(w)
@@ -60,6 +64,8 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 		"first_chest_s": -1.0,
 		"died_s": -1.0,
 		"result": "timeout",
+		"hurt_floor": {},
+		"hurt_boss": {},
 	}
 	var first_hit := {}
 	var kinds := {}
@@ -82,7 +88,12 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 			for e in w.events_since(seq):
 				match e.kind:
 					SimEvent.Kind.DAMAGE:
-						if e.target_id != me and not first_hit.has(e.target_id):
+						if e.target_id == me:
+							var src := w.actors.index_of(e.owner_id)
+							var who := _kind_name(w.actors.kinds[src]) if src >= 0 else "gone"
+							var book: Dictionary = rec["hurt_boss" if rec["door_s"] >= 0.0 else "hurt_floor"]
+							book[who] = int(book.get(who, 0)) + e.amount_applied
+						elif not first_hit.has(e.target_id):
 							first_hit[e.target_id] = e.tick
 							var i := w.actors.index_of(e.target_id)
 							kinds[e.target_id] = w.actors.kinds[i] if i >= 0 else -1
@@ -122,6 +133,10 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 	rec["floor_s"] = (w.tick - start) / 60.0
 	rec["chests_on_floor"] = chest_ids.size()
 	return rec
+
+
+static func _kind_name(kind: int) -> String:
+	return String(ActorStore.Kind.keys()[kind]).to_lower() if kind >= 0 else "none"
 
 
 ## The median of `values` (0 when empty).

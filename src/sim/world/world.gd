@@ -1011,10 +1011,8 @@ func _move_and_collide() -> void:
 	for i in actors.size():
 		var r := actors.radius[i] + WALL_SKIP_M
 		open_x[i] = INF
-		if (
-			_wall_grid
-			. query_rect(Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0))
-			. is_empty()
+		if not _wall_grid.any_in_rect(  # v0.4.0 TU: no list built
+			Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
 		):
 			open_x[i] = actors.pos_x[i]
 			open_y[i] = actors.pos_y[i]
@@ -1035,23 +1033,29 @@ func _move_and_collide() -> void:
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		for a in actors.size():
 			var ra := actors.radius[a]
-			var pa := actors.pos(a)
+			var pa := Vector2(actors.pos_x[a], actors.pos_y[a])
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
 				if b <= a:
 					continue
 				# v0.4.0 SC: bodies whose boxes are clearly apart get no push; skip the call (the margin covers
 				# rounding, so the result is the same).
-				var reach := ra + actors.radius[b] + 0.001
+				var rb := actors.radius[b]
+				var reach := ra + rb + 0.001
 				if (
 					absf(actors.pos_x[b] - actors.pos_x[a]) >= reach
 					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
 				):
 					continue
-				var push := Collide.circle_vs_circle(
-					actors.pos(a), ra, actors.pos(b), actors.radius[b]
-				)
-				if push == Vector2.ZERO:
+				# v0.4.0 TU: Collide.circle_vs_circle inlined (the same operations in the same order).
+				var d := Vector2(actors.pos_x[a], actors.pos_y[a]) - Vector2(actors.pos_x[b], actors.pos_y[b])
+				var rr := ra + rb
+				var dist2 := float(d.x) * d.x + float(d.y) * d.y
+				if dist2 >= rr * rr:
 					continue
+				var push := Vector2(rr * 0.5, 0.0)
+				if dist2 != 0.0:
+					var dist := sqrt(dist2)
+					push = d * ((rr - dist) * 0.5 / dist)
 				if not through.is_empty():
 					if through[a] == 1 or through[b] == 1:
 						continue

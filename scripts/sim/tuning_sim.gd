@@ -13,6 +13,7 @@ var builds := PackedStringArray(["blade", "gun"])
 var out := "build/tuning/runs.jsonl"
 var summarize := ""
 var god := 0
+var preset := "average"
 
 
 func _initialize() -> void:
@@ -25,6 +26,8 @@ func _initialize() -> void:
 				set(kv[0], int(kv[1]))
 			"builds":
 				builds = kv[1].split(",")
+			"preset":
+				preset = kv[1]
 			"out":
 				out = kv[1]
 			"summarize":
@@ -44,7 +47,7 @@ func _initialize() -> void:
 		for s in seeds:
 			for b in builds:
 				var r := TuningRun.run(
-					repo, 7300 + first + s, StringName(b), floors, TuningRun.FLOOR_LIMIT_TICKS, god == 1
+					repo, 7300 + first + s, StringName(b), floors, TuningRun.FLOOR_LIMIT_TICKS, god == 1, preset
 				)
 				var line := JSON.stringify(_compact(r), "", true)
 				file.store_line(line)
@@ -155,4 +158,15 @@ static func summary(runs: Array) -> PackedStringArray:
 			for m: int in keys:
 				cells.append("%d:%.2f(%d)" % [m, TuningRun.median(per_min[m]) / 60.0, per_min[m].size()])
 			lines.append("%s F%d ttk by minute: %s" % [b, fl, " ".join(cells)])
+			for book in ["hurt_floor", "hurt_boss"]:
+				var hurt := {}
+				for f: Dictionary in recs:
+					for k: String in f.get(book, {}):
+						hurt[k] = int(hurt.get(k, 0)) + int(f[book][k])
+				var ks := hurt.keys()
+				ks.sort_custom(func(x: String, y: String) -> bool: return hurt[x] > hurt[y])
+				var parts := PackedStringArray()
+				for k: String in ks:
+					parts.append("%s %d" % [k, hurt[k]])
+				lines.append("%s F%d %s: %s" % [b, fl, book, ", ".join(parts)])
 	return lines
