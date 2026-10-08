@@ -246,7 +246,18 @@ proposed.
 - any balance numbers measured on today's layouts move;
 - the replay goldens on generated floors change on purpose.
 
-**Questions for the owner:**
+**Owner answers (2026-10-08):** "we are still adding this to the same version we worked on this session, which
+will come after the v0.5.0 feedback, balancing is done from the other agent is done and I did not send the
+feedback yet, but I'll send it after we work the visual rework, yes send mockups and I chose the rooms, if we need
+more renders I could generate them after".
+- **Q4:** (b). The room rework is part of v0.5.9, a one-time exception to "patch versions are presentation and
+  art" (LOCKED_DECISIONS).
+- **Q5:** the balancing pass is done and merged to `main` (PR #1); this branch merged `main` at `37d008d`. The
+  scorecard sims are re-run after the rework.
+- **Q6:** yes. Room mockups first (`scripts/shots/mock_rooms.gd`); the owner picks the rooms; the owner can make
+  more pieces if a vignette needs them.
+
+**Questions for the owner (answered above):**
 - **Q4. Where it lives.** ROADMAP §0.3/§2 keep patch versions to presentation and art, and this is sim.
   - (a) Its own minor version after the v0.5.0 playtest, folded into this look work before the merge. ← recommended
   - (b) In v0.5.9 now, as a one-time waiver.
