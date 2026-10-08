@@ -20,7 +20,7 @@ func after_each() -> void:
 func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, target))
 	nav.flood(target)
 	for k in LEG_FRAMES:
 		if done.call():

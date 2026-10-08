@@ -15,12 +15,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | CD | Altar, chest and shop picks show the owner's crystal card frames (12 cropped frames in `assets/ui/cards/`, colour by card family from one table in `CardFrames`, coloured caps title, sentence, rarity line with the card's icon and a rarity gem, glow for rare/epic/ability, cursed offers in the curse frame; text fits in en and es); 3 HUD + pause mockups for the A5 pick ([`evidence/CARDS.md`](evidence/CARDS.md), [`evidence/UI_MOCKUPS.md`](evidence/UI_MOCKUPS.md)) | v0.5.5 Step CD commit |
 | EC | Floor 1 is calm for 30 s then ramps faster, floors 2–3 start warm (D1); heal orbs only with the new Lifesprout card (D9); at most 2 altars a floor, the rest chests (S1); shop rerolls keep sold slots and 4 buys a floor (S2, S3); shards −30 %, floor 2–3 shop prices ×1.5 and a portal keeps half the unspent shards (S4, Q-S4); bot balance sims retired (P1). Evidence: [`evidence/ECONOMY.md`](evidence/ECONOMY.md) | `afa3c70` |
 | LK | The blade, its trail, the bolts and both skills turn the heat meter's orange at Hot and red at Overclock (A2); Lunge Cleave lunges and whips a 180° sweep drawn on its real hit fan, landing on the hit tick, and Scatter Blast braces and recoils with a muzzle flash and the real 60° cone (A1); VFX audit of 48 effects against the v0.5.9 look, with the vent / skill flashes made additive and the death shards and steam lit (A3, G1 rows awaiting the owner); model request with image and 3D prompts for Warlord, Hive Lens and Foundry (A6). Evidence: [`evidence/LOOK.md`](evidence/LOOK.md), [`evidence/VFX_AUDIT.md`](evidence/VFX_AUDIT.md) | v0.5.5 Step LK commit |
-
 | DS | Hidden catch-up: each floor reads the build's power at entry and scales enemies' HP × m and damage × √m (m = √(P/E), ×1 to ×1.5 / ×2 / ×2.5, +0.25 per T), never shown (D3–D6, D10, B1); bosses take their own m with the boss cap (×2 / ×3 / ×4) and all six get phase gates at 66 % and 33 % (a burst stops there, a 1 s invulnerable PHASE SHIFT, 2–4 adds of the floor's kinds, then a new or faster phase; D7); Deep floors bite: violet haze over the v0.5.9 mood, an elite in every combat room, +1 T raising the caps, the epic altar by the boss door, the Deep-only event Whispering Deep (S5); the D8 principle in GAME_BLUEPRINT. Evidence: [`evidence/DIFFICULTY.md`](evidence/DIFFICULTY.md) (suite 1134/1135: `test_e2e_heal_orbs` fails on the base too) | v0.5.5 Step DS commit |
+| AR | Sealed arenas (D2, X1): about a third of the combat rooms seal on entry, the horde pauses, 2–3 waves spawn inside, the floor's altars and chests sit in them locked until the clear, the rest of the floor goes dark (over v0.5.9's lighting), marked on the minimap; the Overrun is the hardest arena with 3–5 waves of 4/8/12 inside (S8); the boss leaves a legendary altar: "Pick a legendary card" from a boss-only tier in a bright-gold frame (X1b). Evidence: [`evidence/ARENAS.md`](evidence/ARENAS.md) | `bb0aa38` |
 
 ## Goldens changed on purpose
 - none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
 - none (Step DS: the replay and export-smoke goldens are the kernel's and still match)
+- none (Step AR: the same goldens held; full suite 1122/1122 and export smoke green)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -56,3 +57,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
   also fails on `85084e9` without DS; export smoke green. Open for the owner: every catch-up and gate number (starting
   values), and whether the Deep "epic chest" should stay the free epic altar moved to the boss door (as built).
 - 2026-10-08: Step LK built, merged with the v0.5.9 Embers rework (`e27e543`) and re-shot against it. Full suite 1114/1115: the one failure, `test_e2e_heal_orbs.gd` ("with the card a kill dropped a heal orb"), fails the same at the merged base without LK's files (evidence/LOOK.md); export smoke green; goldens unchanged. Open for the owner: G1 on the VFX_AUDIT rows awaiting owner, Q-A3.
+- 2026-10-08: Step AR built (`bb0aa38`): sealed arenas, the Overrun's waves inside, the boss's legendary pick; full
+  suite 1122/1122 and export smoke green; MIN_TEST_COUNT 1076 → 1122. Open: legendary mods are the rare mods at their
+  normal values until MX (evidence/ARENAS.md).

@@ -12,6 +12,8 @@ extends RefCounted
 ## plinth's footprint a wall.
 ## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
 ## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
+## v0.5.5 AR: with an arena table, the sealed arenas (ArenaRooms.mark, after the Overrun room), whose item spots the
+## rewards fill first.
 
 
 static func build(
@@ -25,12 +27,15 @@ static func build(
 	arena: BossArenaSpec = null,
 	run: RunState = null,
 	combos: Array[ComboTable] = [],
-	gamble: GambleTable = null
+	gamble: GambleTable = null,
+	arenas: ArenaTable = null
 ) -> World:
 	var layout := FloorGenerator.generate(seed_value)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
 	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
+	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
+		ArenaRooms.mark(layout, arenas.share_permille)
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
@@ -42,6 +47,7 @@ static func build(
 	w.set_walls(walls)
 	w.prepare_wall(layout.boss_door_wall)
 	w.floor_layout = layout
+	w.arena_table = arenas  # v0.5.5 AR
 	w.set_enemy_tables(enemies)
 	for pts in layout.spawn_points:
 		w.spawn_points.append_array(pts)

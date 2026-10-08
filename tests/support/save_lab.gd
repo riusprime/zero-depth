@@ -45,20 +45,24 @@ static func build_floor(run: RunState) -> World:
 		run.floor_seed(),
 		table,
 		enemies,
-		ContentCompiler.compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo),
+		ContentCompiler.compile_floor_spawning(repo, run.floor_index),  # as Main (v0.4.0 TU curve)
 		ContentCompiler.compile_items(repo),
 		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),
 		run.floor_index,
 		arena,
 		run,
 		ContentCompiler.compile_combos(repo),
-		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))
+		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
+		ContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR, as Main
 	)
 	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
+	w.legendary_table = ContentCompiler.compile_legendary(
+		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
+	)
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	if w.boss_flow != null:

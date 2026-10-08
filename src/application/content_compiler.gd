@@ -879,6 +879,8 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
+	var ld: LegendaryDefinition = repo.get_def(&"legendary", &"boss")  # v0.5.5 AR
+	var legend := int(round(ld.stat_multiplier * 1000.0)) if ld != null else 1600
 	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		var s := StatCardDefinition.STATS.find(def.stat)
 		if s < 0:
@@ -898,6 +900,9 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
 		t.limit_permille = int(round(def.limit * 1000.0))
+		# v0.5.5 AR (X1b): the legendary rarity, the epic numbers x the tier's stat multiplier.
+		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
+		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		out[s] = t
 	return out
 
@@ -929,9 +934,46 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	var t := OverrunTable.new()
 	t.hp_permille = int(round(def.hp_multiplier * 1000.0))
 	t.damage_permille = int(round(def.damage_multiplier * 1000.0))
-	t.spawn_permille = int(round(def.spawn_multiplier * 1000.0))
-	t.kills_to_clear = def.kills_to_clear
 	t.shard_permille = int(round(def.shard_multiplier * 1000.0))
+	t.waves_min = def.waves_min  # v0.5.5 AR (S8)
+	t.waves_max = def.waves_max
+	t.wave_sizes = def.wave_sizes.duplicate()
+	return t
+
+
+## v0.5.5 AR: the sealed arenas (null without a definition: no regular arenas).
+static func compile_arena(def: ArenaDefinition) -> ArenaTable:
+	if def == null:
+		return null
+	var t := ArenaTable.new()
+	t.share_permille = int(round(def.share * 1000.0))
+	t.waves_min = def.waves_min
+	t.waves_max = def.waves_max
+	t.wave_sizes = def.wave_sizes.duplicate()
+	t.first_wave_ticks = int(round(def.first_wave_seconds * SimTick.TICKS_PER_SECOND))
+	t.wave_gap_ticks = int(round(def.wave_gap_seconds * SimTick.TICKS_PER_SECOND))
+	t.min_spawn_distance_m = def.min_spawn_distance
+	return t
+
+
+## v0.5.5 AR (X1b): the boss-only legendary tier, its ids resolved against the compiled stat cards and items.
+static func compile_legendary(
+	def: LegendaryDefinition, stats: Array[StatTable], items: Array[ItemTable]
+) -> LegendaryTable:
+	if def == null:
+		return null
+	var t := LegendaryTable.new()
+	for id in def.stat_cards:
+		for s in stats.size():
+			if stats[s] != null and stats[s].id == id:
+				t.stats.append(s)
+	for id in def.mods:
+		for k in items.size():
+			if items[k].id == id:
+				t.mods.append(k)
+	t.weights = PackedInt32Array([def.stat_weight, def.mod_weight])
+	t.offer_size = def.offer_size
+	t.stat_permille = int(round(def.stat_multiplier * 1000.0))
 	return t
 
 

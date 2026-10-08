@@ -27,16 +27,20 @@ func test_the_shipped_stat_cards() -> void:
 	assert_eq(tables.size(), Stats.COUNT)
 	for s in Stats.COUNT:
 		assert_not_null(tables[s], "stat %d has a card" % s)
-	assert_eq(tables[Stats.Stat.DAMAGE].amounts, PackedInt32Array([80, 150, 250]), "+8/15/25 %")
 	assert_eq(
-		tables[Stats.Stat.CRIT_CHANCE].amounts, PackedInt32Array([40, 80, 120]), "+4/8/12 pts"
+		tables[Stats.Stat.DAMAGE].amounts,
+		PackedInt32Array([80, 150, 250, 400]),
+		"+8/15/25 % (+40 legendary, AR)"
+	)
+	assert_eq(
+		tables[Stats.Stat.CRIT_CHANCE].amounts, PackedInt32Array([40, 80, 120, 192]), "+4/8/12 pts"
 	)
 	assert_eq(tables[Stats.Stat.CRIT_CHANCE].cap, 750, "75 %")
 	assert_eq(tables[Stats.Stat.CRIT_DAMAGE].cap, 4000, "x4.0")
 	assert_eq(tables[Stats.Stat.COOLDOWNS].cap, 400, "-60 %")
 	assert_eq(tables[Stats.Stat.ATTACK_SPEED].cap, 2500)
 	assert_eq(tables[Stats.Stat.MOVE].cap, 1600)
-	assert_eq(tables[Stats.Stat.REGEN].amounts, PackedInt32Array([3, 6, 10]), "0.3/0.6/1.0 %/s")
+	assert_eq(tables[Stats.Stat.REGEN].amounts, PackedInt32Array([3, 6, 10, 16]), "0.3/0.6/1.0 %/s")
 	var p := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	assert_eq([p.crit_chance_permille, p.crit_mult_permille], [50, 1500], "base 5 %, x1.5")
 

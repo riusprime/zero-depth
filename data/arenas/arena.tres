@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ArenaDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/arena_definition.gd" id="1_arena"]
+
+[resource]
+script = ExtResource("1_arena")
+share = 0.33
+waves_min = 2
+waves_max = 3
+wave_sizes = PackedInt32Array(3, 5, 7)
+first_wave_seconds = 0.75
+wave_gap_seconds = 1.0
+min_spawn_distance = 3.0
+id = &"arena"

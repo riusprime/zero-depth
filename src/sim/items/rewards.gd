@@ -7,7 +7,10 @@ extends RefCounted
 ## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
 ##   in the start hall. Their counts and order come from the loot stream. v0.4.0 TU (D4): the first spot filled is
 ##   in a room next to the start hall (start_first) and always holds an altar. v0.5.5 EC (owner S1): at most
-##   altars_cap altars; the altars rolled past it become chests (the same draws, the same spots).
+##   altars_cap altars; the altars rolled past it become chests (the same draws, the same spots). v0.5.5 AR (X1):
+##   the spots in the floor's sealed arenas (FloorLayout.arena_rooms) are filled first, the arena nearest the start
+##   hall first (so the first altar sits in the nearest arena), then the rest as before; a reward in an arena that
+##   isn't cleared is locked (Arenas.locked: nearest never offers it).
 ## - The interact button within reach opens the nearest one. A chest you can't afford stays shut (the world
 ##   records the refusal for the view). Opening rolls the offer once: up to offer_size different items from the
 ##   pool (loot stream; chests weight rare items higher). The world then waits for the pick (World.choosing):
@@ -57,7 +60,7 @@ static func on_kill(w: World, i: int) -> void:
 ## drawn from the loot stream; chest prices follow chest order and World.floor_index.
 static func place(w: World, layout: FloorLayout) -> void:
 	var t := w.reward_table
-	var order := start_first(layout, spot_order(layout))
+	var order := arena_first(layout, spot_order(layout))
 	var kinds := PackedInt32Array()
 	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
 		kinds.append(RewardStore.Kind.ALTAR)
@@ -82,6 +85,25 @@ static func place(w: World, layout: FloorLayout) -> void:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
 		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+
+
+## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first
+## among them); without arenas, start_first(order) as before.
+static func arena_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
+	if layout.arena_rooms.is_empty():
+		return start_first(layout, order)
+	var inside := PackedInt32Array()
+	var rest := PackedInt32Array()
+	for k in order:
+		if layout.arena_rooms.has(layout.item_rooms[k]):
+			inside.append(k)
+		else:
+			rest.append(k)
+	if inside.is_empty():
+		return start_first(layout, order)
+	var out := start_first(layout, inside)
+	out.append_array(start_first(layout, rest))
+	return out
 
 
 ## v0.4.0 TU (owner D4): `order` with the first spot of the room nearest the start hall (fewest hops; the first
@@ -120,6 +142,8 @@ static func nearest(w: World) -> int:
 	var best_d := Stats.reach(w, w.reward_table.interact_radius_m)  # v0.4.0 BS: pickup range
 	var p := w.player_pos()
 	for i in w.rewards.size():
+		if Arenas.locked(w, i):  # v0.5.5 AR: locked until its arena clears
+			continue
 		var d := Kin.length(w.rewards.pos(i) - p)
 		if d <= best_d and (best < 0 or d < best_d):
 			best = i

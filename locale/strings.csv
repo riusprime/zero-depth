@@ -429,8 +429,7 @@ ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning deals double damage to chilled foes.
 ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
 ABILITY_COMBO_EMBER_WARD_DESC,Blocking a hit bursts fire around you.,Bloquear un golpe estalla en fuego a tu alrededor.
 HUD_OVERRUN,OVERRUN,ASEDIO
-HUD_OVERRUN_PROGRESS,Kills: %d / %d,Bajas: %d / %d
-HUD_OVERRUN_CLEARED,Overrun cleared: an ability card and double shards,Asedio superado: una carta de habilidad y fragmentos dobles
+HUD_OVERRUN_CLEARED,"Overrun cleared, the doors open: an ability card and double shards","Asedio superado, las puertas se abren: una carta de habilidad y fragmentos dobles"
 MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
 UI_DEV_GO_OVERRUN,Go to the Overrun door,Ir a la puerta del asedio
 CAPTION_OVERRUN_ENTER,[Overrun alarm],[Alarma de asedio]
@@ -572,3 +571,11 @@ PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
 HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."
+HUD_ARENA,ARENA,ARENA
+HUD_ARENA_WAVE,Wave %d / %d · %d left,Oleada %d / %d · quedan %d
+HUD_ARENA_CLEARED,"Arena cleared: the doors are open, its reward is unlocked","Arena superada: las puertas se abren, su recompensa está desbloqueada"
+MAP_LEGEND_ARENA,"Arena (seals until cleared, holds rewards)","Arena (se sella hasta superarla, guarda recompensas)"
+UI_DEV_GO_ARENA,Go to an arena door,Ir a la puerta de una arena
+UI_DEV_CLEAR_WAVE,Clear the arena wave,Despejar la oleada de la arena
+PICK_TITLE_LEGENDARY,Pick a legendary card,Elige una carta legendaria
+RARITY_LEGENDARY,Legendary,Legendaria

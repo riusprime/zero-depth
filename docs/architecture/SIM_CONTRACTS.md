@@ -171,7 +171,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
-  happened earlier.
+  happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
+  floor's seed (`World.seed_value`, which the run seed derives per floor), so room `k` on each floor has its own.
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -596,6 +597,33 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   `kills_to_clear` Overrun kills (counted wherever they die) clear it: an altar at the room's open spot nearest its
   centre, its offer pre-rolled from the loot stream (ability level-ups first, then new abilities), and the shards those
   kills paid paid again `× (shard_permille − 1000) / 1000` (one `SHARDS` event). Hashed once the room was entered.
+  **v0.5.5 AR (owner S8):** the Overrun is the hardest sealed arena (below); the spawn multiplier and
+  `kills_to_clear` are gone: its `waves_min..waves_max` waves of `wave_sizes[floor]` spawn inside, each member an
+  Overrun enemy, and the altar and bonus come after the last wave.
+- **Sealed arenas (v0.5.5 AR; PLAN D2, X1 "open floor, sealed arenas"; `ArenaRooms`, `Arenas`).** With an arena
+  table, `ArenaRooms.mark` (after the Overrun room, before the rewards) makes `round(combat rooms × share)` rooms
+  arenas: combat rooms are all but the hall (shrine), the boss room and its host, the portal room, the Overrun and the
+  shop's room; event rooms are picked afterwards among the rest. No draw: candidates are taken in a fixed order
+  (fewest doorways, most hops from the hall, lower index), each only if every non-arena room stays reachable from
+  the hall with every arena and the Overrun shut (an arena is always skippable), and only with at least 3 spawn
+  points. In play (tick phase 9, `Arenas.advance` after the deaths): the tick the player stands in an uncleared arena
+  it seals: a barrier `Obb` per doorway joins `World.walls` (`World.add_barrier`: collision, shots, sight; never the
+  flow field, so no rebuild), the room derives its `combat:room:k` and `ai:room:k` streams (§5), draws its wave count
+  from `combat:room:k` and its first wave is due `first_wave_ticks` later. While sealed the spawn director does not
+  run (the run clock still counts, `Arenas.count_time`) and a blink never lands outside the room. A wave spawns
+  `wave_size(floor)` enemies inside (kinds weighted as the director's at the curve's level, `ai:room:k`; spots from
+  the room's spawn points ≥ `min_spawn_distance_m` from the player, shuffled from `combat:room:k`), each scaled as any
+  arrival (`SpawnDirector.scale_arrival`) with an elite-curse roll; the next is due `wave_gap_ticks` after no enemy is
+  alive in the room and none is queued. After the last wave the barriers leave the walls (the wall grid is rebuilt)
+  and the room joins `ArenaState.cleared` for the floor. The floor's altars and chests fill arena spots first
+  (`Rewards.arena_first`); a reward in an uncleared arena is locked (`Arenas.locked`; `Rewards.nearest` skips it).
+  `ArenaState` is hashed once an arena sealed and is snapshotted (STATE_CLASSES); a restore rebuilds only the wall
+  grid for the barriers.
+- **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
+  `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
+  `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
+  stays set after the pick). Its offer (`Offers.roll_legendary`, loot stream, on the first open) is up to 3 cards from
+  the tier only: legendary stat cards (`Offers.LEGENDARY` = rarity 3) and the pool's mods.
 - There is no enrage timer. The danger tier is the floor's own clock (it restarts on every floor and counts only
   while the player lives), not a global one; the owner asked for scaling over time (F10, v0.4.0 PLAN).
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.

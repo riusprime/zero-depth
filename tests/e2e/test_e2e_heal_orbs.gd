@@ -26,7 +26,7 @@ func test_a_kill_drops_a_heal_orb_and_walking_onto_it_heals() -> void:
 	var w := e.world()
 	var r := main.driver.reader
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	var trigger := false
 	var kills_without := -1
 	for k in MAX_FRAMES:

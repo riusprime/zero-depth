@@ -21,6 +21,8 @@ const ABILITY := 1
 const STAT := 2
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
+## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
+const LEGENDARY := 3
 
 
 static func enabled(w: World) -> bool:
@@ -59,6 +61,8 @@ static func rarity_of(code: int) -> int:
 static func roll(w: World, i: int) -> PackedInt32Array:
 	if Routes.is_epic_altar(w, i):
 		return roll_epic(w)  # v0.5.0 RT
+	if BossReward.is_legendary(w, i):
+		return roll_legendary(w)  # v0.5.5 AR
 	return draw(w, w.rewards.kind[i] == RewardStore.Kind.CHEST, w.reward_table.offer_size)
 
 
@@ -141,6 +145,44 @@ static func roll_epic(w: World) -> PackedInt32Array:
 	return out
 
 
+## v0.5.5 AR (X1b): the boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
+## each a legendary stat card (a pool stat under its cap, by its card weight) or a pool mod still in the item pool;
+## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats.
+static func roll_legendary(w: World) -> PackedInt32Array:
+	var t := w.legendary_table
+	var out := PackedInt32Array()
+	if t == null:
+		return out
+	var guard := 0
+	while out.size() < t.offer_size and guard < 16:
+		guard += 1
+		var stats := PackedInt32Array()
+		for s in _stats(w, out):
+			if t.stats.has(s) and w.stat_tables[s].amounts.size() > LEGENDARY:
+				stats.append(s)
+		var mods := PackedInt32Array()
+		for idx in _mods(w, out):
+			if t.mods.has(idx):
+				mods.append(idx)
+		var wts := PackedInt32Array(
+			[
+				t.weights[0] if not stats.is_empty() else 0,
+				t.weights[1] if not mods.is_empty() else 0
+			]
+		)
+		var kind := pick(w.rng_loot, wts)
+		if kind < 0:
+			break
+		if kind == 0:
+			var sw := PackedInt32Array()
+			for st in stats:
+				sw.append(maxi(1, w.stat_tables[st].weight))
+			out.append(stat_code(stats[w.rng_loot.pick_weighted(sw)], LEGENDARY))
+		else:
+			out.append(mods[w.rng_loot.range_int(0, mods.size() - 1)])
+	return out
+
+
 ## A weighted pick that allows zero weights (RngStream.pick_weighted refuses them): an index with a positive weight,
 ## or -1 when none has one. One draw from `rng`, only when some weight is positive.
 static func pick(rng: RngStream, weights: PackedInt32Array) -> int:
@@ -203,7 +245,8 @@ static func apply(w: World, code: int) -> void:
 
 
 ## What the pick panel shows for card `code` (WorldReader.card_info): its type, id, name and description keys,
-## rarity (0 common, 1 rare, 2 epic), the amount in per mille (stats), and for an ability its level after the pick
+## rarity (0 common, 1 rare, 2 epic, 3 legendary), the amount in per mille (stats), and for an ability its level
+## after the pick
 ## (1 = new).
 static func info(w: World, code: int) -> Dictionary:
 	match type_of(code):
@@ -231,7 +274,8 @@ static func info(w: World, code: int) -> Dictionary:
 				"rarity": rarity_of(code),
 				"level": 0,
 				"amount": st.amounts[rarity_of(code)],
-				"side": st.side[rarity_of(code)],  # v0.5.0 CP: a rule card's second number
+				# v0.5.0 CP: a rule card's second number
+				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
 			}
 	var it := w.item_tables[code]
 	return {

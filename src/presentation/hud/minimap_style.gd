@@ -27,6 +27,8 @@ const BOSS := Color("#FF4A3D")
 const BOSS_OPEN := Color(1.0, 0.29, 0.24, 0.38)
 ## v0.4.0 AB: the Overrun room (its doorways and its mark): a hotter, pinker red than the boss door.
 const OVERRUN := Color("#FF2E6A")
+## v0.5.5 AR: a sealed arena (its doorways and its mark): amber, like its frames in the world.
+const ARENA := Color("#FFB020")
 const PORTAL_OPEN := Color("#4DA3FF")
 const PORTAL_SEALED := Color(0.55, 0.60, 0.70, 0.8)
 ## v0.5.0 RT: the Deep portal, violet in a red ring (the gate's own colours).
