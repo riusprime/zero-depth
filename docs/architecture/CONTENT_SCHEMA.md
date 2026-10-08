@@ -357,7 +357,8 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
   past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
   `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
-  enemies' tables.
+  enemies' tables. v0.5.0 RT: `deep_scale` (1.25, at least 1) multiplies both on a Deep floor, and
+  `deep_extra_chests` (1, not negative) adds chests there ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11).
 - **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
   `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
   `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),

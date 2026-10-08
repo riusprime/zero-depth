@@ -422,6 +422,19 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   ten minutes) the factors stay flat, which keeps the integer products small.
 - **Bosses keep their own per-floor scaling** (`boss_hp_per_floor`, `boss_damage_per_floor`: +40 % HP and +20 %
   damage a floor), applied once, and no tier scaling.
+- **Optional routes (v0.5.0 RT, R5).** On a run's floor before the last the boss room holds two gates: the gate and
+  the **Deep gate** (`Routes.place_deep_gate`, a pure function of the layout: on the back wall beside the gate,
+  else on a side wall; interior pieces in its zone are removed only if no spot is clear). Both open on the boss's
+  death (`PORTAL_OPENED`, `amount` 1 when the Deep gate opened too); walking into one sets
+  `BossFlow.route_taken` once (`Routes.Route`: `NORMAL` 0, `DEEP` 1; `FLOOR_EXIT.amount` = the route) and the other
+  closes. `RunState.routes` keeps each floor's route (floor 1 `NORMAL`). On a **Deep** floor the floor factor is
+  multiplied by `deep_scale` (1.25) before it scales anything: enemy tables × `scale(floor‰, 1250)`, bosses ×
+  `(1000 + per_floor × (f − 1)) × 1250 / 1000` — one scale per table, so nothing is applied twice; the tier's HP and
+  `power` come on top per enemy as before. A Deep floor also gets `deep_extra_chests` (1) more chests and one free
+  **epic altar** (`BossFlow.epic_altar_id`; `Offers.roll_epic`: epic stat cards and level-ups of owned abilities,
+  from the loot stream, never a curse or a mod), placed on item spots the floor's rewards left free (no stream is
+  drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: TODO (v0.5.0
+  EV), through `Routes.is_deep`.
 - **Density.** The alive cap is `cap_by_floor` (14 / 30 / 50) + 6 a tier, at most 120; packs arrive every
   `interval_start` (2.5 s) × `interval_tier_permille` (0.9^tier), at least 0.4 s apart (SpawnDirector).
 - **Threat T** adds to those tables through `ThreatModifier`s ([`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §7). The
