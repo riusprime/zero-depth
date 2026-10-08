@@ -5,15 +5,21 @@ extends RefCounted
 ##   behind you (its collider, the whole passage, joins the walls), stops normal spawns and spawns the boss
 ##   (World.spawn_boss) where the layout says. Every normal enemy on the floor dissolves first (BossChallenge, L20),
 ##   and the boss room's interior becomes the arena its closing band creeps in from.
-## FIGHT: when World.boss_alive() turns false, the portal opens (PORTAL_OPENED).
-## OPEN: walking into the gate's opening takes the portal (FLOOR_EXIT): ENTERING holds the world still and ignores
+## FIGHT: when World.boss_alive() turns false, the portal opens (PORTAL_OPENED) and the door reopens (v0.5.0 PB,
+##   owner D10: its collider leaves the walls; PORTAL_OPENED marks both).
+## OPEN: the floor goes on (D10): the boss's drops stay, the gate(s) stay open until walked into, and the player may
+##   leave the boss room to explore and fight. Normal spawns resume while the player is outside the boss room, at
+##   the curve's level for the floor time (the clock never stopped); none arrive inside it (a safe spot by the
+##   portal; SpawnDirector never anchors there). Re-entering never seals the door again, so the D9 heal is once.
+##   Walking into the gate's opening takes the portal (FLOOR_EXIT): ENTERING holds the world still and ignores
 ##   input for enter_ticks while the hero is drawn in (v0.3.5 PT, F19), then the floor ends (EXITED, still).
 ## Arrival (v0.3.5 PT, F20): a floor after the first opens with arrive_ticks of the same hold while the hero
 ##   materialises; the run flow sets both lengths (set_transit), shorter with reduced motion. One clock (EI-03).
 ## Routes (v0.5.0 RT): on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
 ##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
 ##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
-## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed.
+## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed
+## (the fight); once the boss is dead the door is open both ways (v0.5.0 PB).
 ## Run time keeps counting while spawns are stopped (count_time), so the floor's clock covers the boss fight.
 
 ## Appended, never inserted: the state is hashed.
@@ -56,11 +62,24 @@ static func create(p_boss_index: int) -> BossFlow:
 	return b
 
 
-func spawns_open() -> bool:
-	return state == State.WAITING
+## Normal spawning runs: before the boss room is entered, and after the boss died while the player is outside the
+## boss room (v0.5.0 PB, D10). During the fight, and inside the boss room after it, the clock runs (count_time).
+func spawns_open(w: World) -> bool:
+	if state == State.WAITING:
+		return true
+	if state != State.OPEN:
+		return false
+	var f := w.floor_layout
+	return f == null or f.room_of(w.player_pos()) != f.boss_room
 
 
+## The door is shut: only during the fight (v0.5.0 PB: the boss's death reopens it).
 func door_sealed() -> bool:
+	return state == State.FIGHT
+
+
+## The boss room has been entered (the door sealed once): the fight began, or is over.
+func boss_reached() -> bool:
 	return state != State.WAITING
 
 
@@ -159,6 +178,7 @@ func advance(w: World) -> void:
 				opened_tick = w.tick
 				var e := w.emit_event(SimEvent.Kind.PORTAL_OPENED, 0, 0, 0, f.portal_pos)
 				e.amount = 1 if routes else 0  # v0.5.0 RT: 1 when the Deep gate opened too
+				w.remove_wall_now(f.boss_door_wall)  # v0.5.0 PB (D10): the door opens both ways
 		State.OPEN:
 			var route := -1
 			if in_portal(f, p):

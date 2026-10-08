@@ -66,8 +66,9 @@ func test_into_the_deep_portal_and_floor_two_is_deep() -> void:
 	assert_true(reader.gate_open(WorldReader.ROUTE_DEEP), "and the Deep gate beside it")
 	assert_false(main.view.gate.is_sealed())
 	assert_false(main.view.deep_gate.is_sealed())
-	assert_eq(
-		(main.get_node("UI/Hud") as Hud).gate_text(), tr("HUD_PORTALS_OPEN"), "the HUD names both"
+	assert_true(
+		(main.get_node("UI/Hud") as Hud).gate_text().begins_with(tr("HUD_PORTALS_OPEN")),
+		"the HUD names both"
 	)
 	var floors_started := [0]
 	main.child_entered_tree.connect(

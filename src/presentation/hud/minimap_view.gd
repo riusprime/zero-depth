@@ -234,7 +234,8 @@ func _draw_doors() -> void:
 			)
 		var boss := i == boss_door
 		if boss or over_doors.has(i):
-			_draw_boss_door(rect, side, MinimapStyle.BOSS if boss else MinimapStyle.OVERRUN)
+			var shut := MinimapStyle.BOSS_OPEN if reader.portal_active() else MinimapStyle.BOSS  # PB
+			_draw_boss_door(rect, side, shut if boss else MinimapStyle.OVERRUN)
 		if not state.door_to_unknown(reader, i):
 			continue
 		var into := side if state.is_discovered(d.x) else -side
