@@ -24,6 +24,11 @@ var altar_card_weights := PackedInt32Array([15, 75, 10])
 var chest_card_weights := PackedInt32Array([15, 55, 30])
 var altar_rarity_weights := PackedInt32Array([70, 25, 5])
 var chest_rarity_weights := PackedInt32Array([40, 40, 20])
+## v0.4.0 TU (owner D8; HealOrbs): the drop chance per normal kill and the heal, per mille of max HP, and the reach.
+## 0 here (a world without reward data drops none); the data ships 100 and 250.
+var heal_orb_chance_permille := 0
+var heal_orb_heal_permille := 250
+var heal_orb_reach_m := 0.9
 
 
 ## The price of the `order`-th chest (0-based) on floor `floor_index` (1-based), integer math.

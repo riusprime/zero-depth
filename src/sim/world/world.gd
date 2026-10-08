@@ -89,6 +89,11 @@ var spawn_cd := 0
 var kills := 0
 ## Mine Layers' mines (v0.4.0 EN; Mines), hashed once one was dropped.
 var mines := MineStore.new()
+## Heal orbs on the floor (v0.4.0 TU, owner D8; HealOrbs), hashed once one was dropped.
+var orbs := HealOrbStore.new()
+## v0.4.0 TU (owner D9): the share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
+## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
+var boss_room_heal_permille := 0
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -421,6 +426,7 @@ func step(frame: InputFrame) -> void:
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
+	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
 		if boss_flow == null or boss_flow.spawns_open():
@@ -756,6 +762,8 @@ func state_hash() -> String:
 		actors.hash_ai(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
+	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
+		orbs.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -858,6 +866,11 @@ func snapshot() -> Dictionary:
 
 
 ## A fresh root id for a new chain (a player action or an enemy attack).
+## A fresh entity id (v0.4.0 TU: heal orbs).
+func take_id() -> int:
+	return _take_id()
+
+
 func take_root() -> int:
 	return _take_id()
 

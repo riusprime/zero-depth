@@ -538,6 +538,18 @@ func new_kinds() -> PackedInt32Array:
 	return _w.spawner.curve.new_kinds if has_curve() else PackedInt32Array()
 
 
+## v0.4.0 TU (owner D8): where the heal orbs lie, in drop order, and their ids.
+func heal_orbs() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in _w.orbs.size():
+		out.append(_w.orbs.pos(k))
+	return out
+
+
+func heal_orb_ids() -> PackedInt32Array:
+	return _w.orbs.ids
+
+
 ## True while a living enemy of `kind` is on the floor.
 func kind_alive(kind: int) -> bool:
 	var a := _w.actors

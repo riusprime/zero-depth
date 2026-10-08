@@ -32,7 +32,8 @@ static func run(
 	floors: int = 3,
 	floor_limit_ticks: int = FLOOR_LIMIT_TICKS,
 	god: bool = false,
-	preset: String = "average"
+	preset: String = "average",
+	kill_boss: bool = false
 ) -> Dictionary:
 	var lab := RunLab.new(repo, run_seed, build)
 	var bot := RunBot.new(run_seed * 977 + (1 if build == &"gun" else 0), preset)
@@ -40,7 +41,7 @@ static func run(
 	for f in floors:
 		var w := lab.floor_world()
 		bot.start_floor(w)
-		var rec := play_floor(w, bot, floor_limit_ticks, god)
+		var rec := play_floor(w, bot, floor_limit_ticks, god, kill_boss)
 		rec["floor"] = lab.run.floor_index
 		out["floors"].append(rec)
 		if rec["result"] != "next":
@@ -51,7 +52,11 @@ static func run(
 
 ## `god`: the player's HP is topped up after every tick (a test-side write: only to check the bot's route, never
 ## for evidence of difficulty).
-static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> Dictionary:
+## `kill_boss`: the boss dies the tick it appears (the dev panel's Kill boss, a test-side write): a labelled shortcut
+## so floors 2 and 3 get sampled; never for the boss's own numbers.
+static func play_floor(
+	w: World, bot: RunBot, limit: int, god: bool = false, kill_boss: bool = false
+) -> Dictionary:
 	var start := w.tick
 	var cards0 := bot.cards_taken
 	var rec := {
@@ -66,6 +71,8 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 		"first_chest_s": -1.0,
 		"died_s": -1.0,
 		"result": "timeout",
+		"orbs": 0,
+		"orb_hp": 0,
 		"hurt_floor": {},
 		"hurt_boss": {},
 	}
@@ -111,10 +118,20 @@ static func play_floor(w: World, bot: RunBot, limit: int, god: bool = false) -> 
 							rec["ttk"].append(
 								[(e.tick - start) / 3600, e.tick - int(first_hit[e.target_id])]
 							)
+					SimEvent.Kind.HEAL:
+						if e.effect_id == HealOrbs.EFFECT:
+							rec["orbs"] += 1
+							rec["orb_hp"] += e.amount_applied
 					SimEvent.Kind.PICKUP:
 						if chest_ids.has(e.source_id) and rec["first_chest_s"] < 0.0:
 							rec["first_chest_s"] = el / 60.0
 			seq = w.last_event_seq()
+		if kill_boss and w.boss_id >= 0:
+			var bi := w.actors.index_of(w.boss_id)
+			if bi >= 0 and w.actors.dead[bi] == 0:
+				w.actors.invuln[bi] = 0
+				var at := w.actors.pos(bi)
+				Damage.hit(w, bi, w.actors.hp[bi] * 10, 0, 0, w.take_root(), 0, at, at)
 		if w.tick % 30 == 0:
 			rec["peak_alive"] = maxi(rec["peak_alive"], WaveDirector.enemies_alive(w))
 		if rec["door_s"] < 0.0 and w.boss_flow != null and w.boss_flow.door_sealed():

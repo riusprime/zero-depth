@@ -717,6 +717,9 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.chest_card_weights = def.chest_card_weights.duplicate()
 	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
 	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
+	t.heal_orb_chance_permille = int(round(def.heal_orb_chance * 1000.0))  # v0.4.0 TU (D8)
+	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))
+	t.heal_orb_reach_m = def.heal_orb_reach_m
 	return t
 
 
@@ -907,6 +910,8 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
 	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
 	t.deep_extra_chests = def.deep_extra_chests
+	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
+	t.boss_room_heal_floor_permille = def.boss_room_heal_floor_permille.duplicate()
 	return t
 
 

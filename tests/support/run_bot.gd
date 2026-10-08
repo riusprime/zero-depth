@@ -10,6 +10,7 @@ extends RefCounted
 ##   can, so a floor lasts as long as buying every reward takes.
 ## - Then the boss: when nothing is left (or after max_explore_ticks), it walks through the boss door, fights the
 ##   boss and walks into the portal.
+## - Heal orbs (v0.4.0 TU, D8): under 75 % HP it walks to the nearest orb in sight within 12 m first.
 ## - Fighting (both builds): the nearest living enemy in line of sight. Blade closes in and swings (Lunge Cleave
 ##   when in reach); Gun keeps 4–7 m and holds fire, shooting on the move while it explores. Below 35 % HP it backs
 ##   off. It dodges a visible telegraph within 10 m after reaction_ticks with dodge_permille (the `average` preset),
@@ -291,6 +292,10 @@ func _act(w: World) -> InputFrame:
 		to_goal = g.normalized() if Kin.length(g) < 1.5 else _nav.direction(p)
 		if to_goal == Vector2.ZERO and Kin.length(g) > 0.01:
 			to_goal = g.normalized()
+	# Hurt (under 75 % HP): a heal orb in sight within 12 m comes first (v0.4.0 TU, D8).
+	var orb := _orb(w, p)
+	if orb != Vector2.INF:
+		to_goal = (orb - p).normalized()
 	# A reward in reach: open it (or give up on a chest it can no longer afford).
 	if _goal_kind == "reward":
 		var i := _reward_index(w, _goal_reward)
@@ -361,6 +366,21 @@ func _act(w: World) -> InputFrame:
 	move = _unstick(w, p, move)
 	var mv := Vector2i(int(move.x * 127.0), int(move.y * 127.0))
 	return InputFrame.make(mv, aim, aim_d, held, pressed)
+
+
+## The nearest heal orb in sight within 12 m while under 75 % HP, or Vector2.INF.
+static func _orb(w: World, p: Vector2) -> Vector2:
+	if w.actors.hp[0] * 1000 >= w.actors.max_hp[0] * 750:
+		return Vector2.INF
+	var best := Vector2.INF
+	var best_d := 12.0
+	for k in w.orbs.size():
+		var q := w.orbs.pos(k)
+		var d := Kin.length(q - p)
+		if d < best_d and _sight(w, p, q):
+			best = q
+			best_d = d
+	return best
 
 
 ## The nearest living enemy (or boss) in line of sight within 12 m, or -1.

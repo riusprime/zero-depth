@@ -2,7 +2,8 @@ class_name RunLab
 extends RefCounted
 ## Whole runs for the tuning sims (v0.4.0 TU): each floor built the way Main._start_floor builds it (the run's
 ## floor seed, build, scaling, boss pool and arena, spawning, rewards, items, combos, gamble shrine, abilities, stat
-## cards, Overrun, heat), with the carry from the floor before. No view: test-side and script-side only.
+## cards, Overrun, heat, v0.5.0's shop and events), with the carry from the floor before. No view: test-side and
+## script-side only.
 
 var repo: ContentRepository
 var run: RunState
@@ -42,6 +43,7 @@ func floor_world() -> World:
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))
 	)
+	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
@@ -49,6 +51,7 @@ func floor_world() -> World:
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
+	EventCompiler.setup(w, repo)  # v0.5.0 EV, as Main
 	return w
 
 

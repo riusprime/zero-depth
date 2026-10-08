@@ -95,6 +95,11 @@ func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 	var deep := route_permille(f)
 	var hp_pm := (1000 + table.boss_hp_per_floor_permille * (f - 1)) * deep / 1000
 	var dmg_pm := (1000 + table.boss_damage_per_floor_permille * (f - 1)) * deep / 1000
+	# v0.4.0 TU (owner D9): floor 1's bosses are eased (-20 % HP and damage), in the same step.
+	var ease := SpawnTable.per_floor(table.boss_ease_floor_permille, f)
+	if ease > 0 and ease != 1000:
+		hp_pm = hp_pm * ease / 1000
+		dmg_pm = dmg_pm * ease / 1000
 	for t in tables:
 		t.hp = maxi(1, t.hp * hp_pm / 1000)
 		for a in t.attacks:
@@ -111,6 +116,9 @@ func pick_boss(pool: PackedInt32Array, f: int = floor_index) -> int:
 func prepare(w: World) -> void:
 	w.floor_index = floor_index
 	w.floor_count = table.floors
+	w.boss_room_heal_permille = SpawnTable.per_floor(
+		table.boss_room_heal_floor_permille, floor_index
+	)  # TU (D9)
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken

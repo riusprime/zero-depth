@@ -29,6 +29,11 @@ extends ContentDef
 @export var chest_card_weights := PackedInt32Array([15, 55, 30])
 @export var altar_rarity_weights := PackedInt32Array([70, 25, 5])
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
+## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
+## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP.
+@export var heal_orb_chance := 0.1
+@export var heal_orb_heal := 0.25
+@export var heal_orb_reach_m := 0.9
 
 
 func category() -> StringName:
@@ -88,4 +93,9 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: 3 weights >= 0, not all 0" % pair[0]
 				)
 			)
+	if heal_orb_chance < 0.0 or heal_orb_chance > 1.0 or heal_orb_heal < 0.0 or heal_orb_heal > 1.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "heal_orb_chance and heal_orb_heal: 0..1")
+		)
+	check_positive(issues, "heal_orb_reach_m", heal_orb_reach_m)
 	return issues

@@ -14,6 +14,7 @@ var out := "build/tuning/runs.jsonl"
 var summarize := ""
 var god := 0
 var preset := "average"
+var killboss := 0
 
 
 func _initialize() -> void:
@@ -22,7 +23,7 @@ func _initialize() -> void:
 		if kv.size() != 2:
 			continue
 		match kv[0]:
-			"seeds", "first", "floors", "god":
+			"seeds", "first", "floors", "god", "killboss":
 				set(kv[0], int(kv[1]))
 			"builds":
 				builds = kv[1].split(",")
@@ -53,7 +54,8 @@ func _initialize() -> void:
 					floors,
 					TuningRun.FLOOR_LIMIT_TICKS,
 					god == 1,
-					preset
+					preset,
+					killboss == 1
 				)
 				var line := JSON.stringify(_compact(r), "", true)
 				file.store_line(line)
@@ -77,7 +79,7 @@ static func _one_line(r: Dictionary) -> String:
 			parts
 			. append(
 				(
-					"F%d %s door %.0fs floor %.0fs kills %d cards %d/%d/%d peak %d"
+					"F%d %s door %.0fs floor %.0fs kills %d cards %d/%d/%d peak %d %s"
 					% [
 						f["floor"],
 						f["result"],
@@ -88,11 +90,17 @@ static func _one_line(r: Dictionary) -> String:
 						f["cards_5m"],
 						f["cards_end"],
 						f["peak_alive"],
+						_orbs(f),
 					]
 				)
 			)
 		)
 	return "seed %d %s: %s" % [r["seed"], r["build"], " | ".join(parts)]
+
+
+## Orbs taken and HP they gave on a floor record (0 in records from before v0.4.0 TU's orbs).
+static func _orbs(f: Dictionary) -> String:
+	return "orbs %d (+%d HP)" % [int(f.get("orbs", 0)), int(f.get("orb_hp", 0))]
 
 
 ## Summary lines per floor and build.
