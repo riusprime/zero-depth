@@ -4,7 +4,7 @@ extends SceneTree
 ## per biome and variant. Saves PNGs to build/shots/<version>/look/. Needs a renderer (not --headless):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_look.gd
 ## Optional: lighting=low (B without SSAO/SSIL), biomes=ruins,red_canyon, zoom=30 (the ortho camera size),
-## focus=light (look at the fire nearest the start instead of the hero).
+## focus=light (look at the fire nearest the start instead of the hero), focus=chest or focus=chest_open.
 
 ## Frames to let a rebuilt floor settle (shaders compile, SSAO/SSIL history fills) before the shot.
 const SETTLE := 40
@@ -17,6 +17,9 @@ var _dir := ""
 var _lighting := "high"
 var _zoom := 0.0
 var _focus_light := false
+## focus=chest: look at a chest; focus=chest_open: and open its lid (the cosmetic opening, no sim change).
+var _focus_chest := ""
+var _chest: Node3D
 var _tag := ""
 var _jobs: Array = []
 var _wait := 0
@@ -30,6 +33,9 @@ func _initialize() -> void:
 		elif arg == "focus=light":
 			_focus_light = true
 			_tag = "_fire"
+		elif arg in ["focus=chest", "focus=chest_open"]:
+			_focus_chest = arg.trim_prefix("focus=")
+			_tag = "_" + _focus_chest
 		elif arg.begins_with("zoom="):
 			_zoom = float(arg.trim_prefix("zoom="))
 		elif arg.begins_with("biomes="):
@@ -71,6 +77,16 @@ func _process(_delta: float) -> bool:
 			_jobs.push_front(job)
 		2:
 			_wait -= 1
+			if _wait == 12 and _focus_chest != "":
+				_look_at_chest()
+			# Lavapipe frames are slow: open the lid just before the shot so it is caught mid-swing.
+			if (
+				_wait == 1
+				and _focus_chest == "chest_open"
+				and _chest != null
+				and _chest.has_meta(&"lid")
+			):
+				_main.view.rewards._opening[_chest] = 0.0
 			if _wait <= 0:
 				var job: Array = _jobs.pop_front()
 				_shot("%s_%s_%s%s" % [job[1], job[0], _lighting, _tag])
@@ -100,6 +116,17 @@ func _build(biome: StringName, variant: String) -> void:
 				best = l.global_position
 		rig.dead_zone_m = 1.0e6
 		rig.snap_to(Vector3(best.x, 0, best.z))
+
+
+func _look_at_chest() -> void:
+	var rewards := _main.view.rewards
+	for n: Node in rewards.get_children():
+		if n is Node3D and (n as Node3D).has_meta(&"price"):
+			var rig := _main.view.rig
+			rig.dead_zone_m = 1.0e6
+			rig.snap_to(Vector3((n as Node3D).position.x, 0, (n as Node3D).position.z))
+			_chest = n as Node3D
+			return
 
 
 func _key(code: Key, pressed: bool) -> void:

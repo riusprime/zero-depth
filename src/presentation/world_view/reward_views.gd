@@ -22,6 +22,17 @@ const PRICE_NEAR_M := 4.5
 const PRICE_OK := Color("#F4F1EA")
 const PRICE_POOR := Color("#FF4A3D")
 const SHAKE_S := 0.35
+## v0.5.9 Step 5: the owner's chest model. When its reward is taken the chest stays a moment: the lid swings open
+## on its back hinge over LID_OPEN_S with a warm flare, then the node goes after OPENED_S (cosmetic only: the
+## reward is already gone from the sim and from count()).
+const LID_OPEN_S := 0.35
+const LID_OPEN_RAD := 1.9
+const OPENED_S := 1.1
+const FLARE := Color("#FFB45A")
+
+## Use the owner's chest model (set by WorldViewRoot when the floor has a lighting mood; the old look keeps the
+## code-built stone chest).
+var kit_chest := false
 
 var _nodes := {}
 var _t := 0.0
@@ -29,6 +40,8 @@ var _reach_id := -1
 var _denied_tick := -1
 ## id -> seconds of shake left.
 var _shake := {}
+## Chests whose reward was taken, opening: node -> seconds since.
+var _opening := {}
 var _rune_mat := StandardMaterial3D.new()
 var _epic_mat := StandardMaterial3D.new()
 var _lock_mat := StandardMaterial3D.new()
@@ -77,7 +90,11 @@ func sync(reader: WorldReader) -> void:
 			_shake[reader.reward_denied_id()] = SHAKE_S
 	for id in _nodes.keys():
 		if not live.has(id):
-			_nodes[id].queue_free()
+			var gone: Node3D = _nodes[id]
+			if gone.has_meta(&"lid"):
+				_opening[gone] = 0.0
+			else:
+				gone.queue_free()
 			_nodes.erase(id)
 			_shake.erase(id)
 
@@ -98,6 +115,17 @@ func price_label(id: int) -> Label3D:
 
 func _process(delta: float) -> void:
 	_t += delta
+	for n: Node3D in _opening.keys():
+		var s: float = _opening[n] + delta
+		_opening[n] = s
+		var lid: Node3D = n.get_meta(&"lid")
+		lid.rotation.x = LID_OPEN_RAD * smoothstep(0.0, LID_OPEN_S, s)
+		var flare: OmniLight3D = n.get_meta(&"light")
+		flare.light_color = FLARE
+		flare.light_energy = 3.0 * (1.0 - smoothstep(LID_OPEN_S, OPENED_S, s))
+		if s >= OPENED_S:
+			_opening.erase(n)
+			n.queue_free()
 	for id: int in _nodes:
 		var n: Node3D = _nodes[id]
 		var hot := id == _reach_id
@@ -156,8 +184,43 @@ func make_altar(epic: bool = false) -> Node3D:
 	return root
 
 
-## A stone chest with a sloped lid, iron bands and a red-glowing lock; its price floats above it.
+## The owner's chest (v0.5.9 Step 5) when kit_chest is on and the model loads, else the code-built stone chest.
 func make_chest() -> Node3D:
+	if kit_chest:
+		var parts := KitModels.split(&"chest", KitModels.CHEST_LID_CUT)
+		if not parts.is_empty():
+			return _kit_chest(parts)
+	return _stone_chest()
+
+
+## The owner's chest, its front (the lock) toward the camera's side (3D +z), the lid on a hinge at its back top
+## edge; the red lock glow, light and price as on the stone chest.
+func _kit_chest(parts: Dictionary) -> Node3D:
+	var size: Vector3 = parts["size"]
+	var root := Node3D.new()
+	var body := Node3D.new()
+	root.add_child(body)
+	var model := Node3D.new()
+	model.rotation.y = PI  # the model's front is its -z; the chest faces +z
+	body.add_child(model)
+	model.add_child(_mesh(parts["body"], parts["material"]))
+	var hinge := Node3D.new()
+	hinge.position = Vector3(0, size.y * KitModels.CHEST_LID_CUT, size.z * 0.5)
+	model.add_child(hinge)
+	var lid := _mesh(parts["lid"], parts["material"])
+	lid.position = -hinge.position
+	hinge.add_child(lid)
+	var lock := _mesh(bipyramid(4, 0.06, 0.06, 0.06), _lock_mat)
+	lock.position = Vector3(0, size.y * 0.5, size.z * 0.5 + 0.04)
+	lock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.add_child(lock)
+	_finish_chest(root, body, size.y)
+	root.set_meta(&"lid", hinge)
+	return root
+
+
+## A stone chest with a sloped lid, iron bands and a red-glowing lock; its price floats above it.
+func _stone_chest() -> Node3D:
 	var root := Node3D.new()
 	var body := Node3D.new()
 	root.add_child(body)
@@ -180,6 +243,12 @@ func make_chest() -> Node3D:
 	lock.position = Vector3(0, 0.42, 0.39)
 	lock.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(lock)
+	_finish_chest(root, body, 0.75)
+	return root
+
+
+## The chest's red lock light and its floating price (both chests).
+func _finish_chest(root: Node3D, body: Node3D, height: float) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = LOCK_RED
 	light.light_energy = 0.7
@@ -192,7 +261,7 @@ func make_chest() -> Node3D:
 	label.font_size = 72
 	label.outline_size = 16
 	label.pixel_size = 0.008
-	label.position.y = 1.45
+	label.position.y = height + 0.7
 	label.visible = false
 	root.add_child(label)
 	var gem := _mesh(bipyramid(4, 0.08, 0.12, 0.12), ShardViews.shared_material())
@@ -202,7 +271,6 @@ func make_chest() -> Node3D:
 	root.set_meta(&"light", light)
 	root.set_meta(&"energy", 0.7)
 	root.set_meta(&"price", label)
-	return root
 
 
 func _stone_mat(c: Color) -> StandardMaterial3D:
