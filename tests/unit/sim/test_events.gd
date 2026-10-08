@@ -252,3 +252,21 @@ func test_the_press_goes_to_an_altar_or_chest_first() -> void:
 	EventLab.open(w)
 	assert_eq(w.ev.open, -1, "the altar took the press")
 	assert_gte(w.choosing, 0)
+
+
+func test_a_save_mid_ambush_with_a_curse_restores_the_same_world() -> void:
+	var w := _world(&"ambush_cache", [&"marked_hunt"])
+	EventLab.open(w)
+	EventLab.pick(w, 1)
+	EventLab.idle(w, 30)
+	var snap := w.to_snapshot()
+	var base := EventLab.world(SEED, 1, &"blade", [&"marked_hunt"])
+	EventLab.set_event(base, &"ambush_cache")
+	assert_eq(WorldSnapshot.apply(base, snap), "", "the snapshot applies")
+	assert_eq(base.state_hash(), w.state_hash(), "the same world, events and curses included")
+	assert_eq(base.ev.events.size(), w.ev.events.size(), "its event tables are kept")
+	assert_not_null(base.ev.events[0])
+	for t in 60:
+		w.step(InputFrame.new())
+		base.step(InputFrame.new())
+	assert_eq(base.state_hash(), w.state_hash(), "and it plays on the same")

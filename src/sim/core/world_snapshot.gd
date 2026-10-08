@@ -278,10 +278,11 @@ static func _decode(cur: Variant, v: Variant, where: String) -> Array:
 		return [cur if LOADOUT_CLASSES.has(cls) else null, ""]
 	if typeof(v) == TYPE_ARRAY and typeof(cur) == TYPE_ARRAY:
 		var arr: Array = cur
+		var old := arr.duplicate()  # v0.5.0 EV: an array of content tables (World.ev.events) keeps its tables
 		arr.clear()
 		var src: Array = v
 		for i in src.size():
-			var r: Array = _decode(null, src[i], "%s[%d]" % [where, i])
+			var r: Array = _decode(old[i] if i < old.size() else null, src[i], "%s[%d]" % [where, i])
 			if r[1] != "":
 				return r
 			arr.append(r[0])

@@ -251,10 +251,14 @@ func test_the_reroll_draws_a_new_stock_at_a_rising_price() -> void:
 
 func test_sell_a_mod_for_forty_percent_and_lose_its_combos() -> void:
 	var w := _world(4)
-	var combo: ComboTable = w.combo_tables[0]
+	var combo: ComboTable = null  # the first item combo (AB's ability combos come first and have no items)
+	for c in w.combo_tables:
+		if combo == null and c.item_a >= 0:
+			combo = c
+	var combo_index := w.combo_tables.find(combo)
 	w.add_item(combo.item_a)
 	w.add_item(combo.item_b)
-	assert_true(w.combos_owned.has(0), "the combo is on")
+	assert_true(w.combos_owned.has(combo_index), "the combo is on")
 	_open(w)
 	var list := Shop.sell_list(w)
 	assert_eq(list[0][0], Shop.SELL_MOD)
@@ -264,7 +268,7 @@ func test_sell_a_mod_for_forty_percent_and_lose_its_combos() -> void:
 	_pick(w, InputFrame.PICK_SHOP_SELL + 0)
 	assert_false(w.items_owned.has(combo.item_a), "sold")
 	assert_true(w.items_owned.has(combo.item_b))
-	assert_false(w.combos_owned.has(0), "its combo is gone")
+	assert_false(w.combos_owned.has(combo_index), "its combo is gone")
 	assert_eq(w.shards, 1000 + refund)
 	var ev := _events(w, SimEvent.Kind.SHOP_SALVAGE)
 	assert_eq(ev.size(), 1)
