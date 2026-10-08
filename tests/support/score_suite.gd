@@ -139,10 +139,28 @@ static func write_json(path: String, doc: Variant) -> void:
 	f.close()
 
 
+## A JSON file, with every whole number back to an int (JSON reads all numbers as floats; run records hold ints
+## only, so a record read back aggregates exactly as the one played in process).
 static func read_json(path: String) -> Variant:
 	if not FileAccess.file_exists(path):
 		return null
-	return JSON.parse_string(FileAccess.get_file_as_string(path))
+	return ints(JSON.parse_string(FileAccess.get_file_as_string(path)))
+
+
+static func ints(v: Variant) -> Variant:
+	if v is float and is_equal_approx(v, roundf(v)) and absf(v) < 9.0e15:
+		return int(v)
+	if v is Array:
+		var out: Array = []
+		for x: Variant in v:
+			out.append(ints(x))
+		return out
+	if v is Dictionary:
+		var out := {}
+		for k: Variant in v:
+			out[k] = ints(v[k])
+		return out
+	return v
 
 
 ## A task's file name under runs/.

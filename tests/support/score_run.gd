@@ -22,6 +22,8 @@ const ENGINE_TAGS: Array[String] = ["fire", "shock", "bleed", "frost", "guard", 
 
 var repo: ContentRepository
 var run: RunState
+## Test-side only (the route tests, never the scorecard): the player's HP is topped up after every tick.
+var god := false
 var bot: ScoreBot
 var record := {}
 
@@ -45,7 +47,7 @@ var _global_room := 0
 var _kinds := {}
 
 
-## Plays the run of seed `run_seed` with policy `policy` ("competent", "gun_element", "competent+t" ...) on build
+## Plays the run of seed `run_seed` with policy `policy` ("competent", "element", "competent+t" ...) on build
 ## `build` (&"blade" or &"gun"), skill preset `skill`, at most `floors` floors. Returns the record.
 static func play(
 	p_repo: ContentRepository,
@@ -54,14 +56,11 @@ static func play(
 	build: StringName,
 	skill: String = "average",
 	floors: int = 3,
-	floor_limit: int = FLOOR_LIMIT_TICKS
+	floor_limit: int = FLOOR_LIMIT_TICKS,
+	p_god: bool = false
 ) -> Dictionary:
-	var r := ScoreRun.new()
-	r.repo = p_repo
-	r.run = RunState.start(
-		run_seed, ContentCompiler.compile_run(p_repo.get_def(&"run", &"three_floors")), build
-	)
-	r.bot = ScoreBot.new(run_seed, policy, skill)
+	var r := setup(p_repo, run_seed, policy, build, skill)
+	r.god = p_god
 	r.record = {
 		"schema": "scorecard_run.v1",
 		"seed": run_seed,
@@ -100,6 +99,23 @@ static func play(
 	r.record["salvage"] = r.bot.salvage_log
 	r.record["explore_capped"] = r.bot.explore_capped
 	return r.record
+
+
+## A run of seed `run_seed` on its first floor, with its bot, not yet played (play() and the bot tests).
+static func setup(
+	p_repo: ContentRepository,
+	run_seed: int,
+	policy: String,
+	build: StringName,
+	skill: String = "average"
+) -> ScoreRun:
+	var r := ScoreRun.new()
+	r.repo = p_repo
+	r.run = RunState.start(
+		run_seed, ContentCompiler.compile_run(p_repo.get_def(&"run", &"three_floors")), build
+	)
+	r.bot = ScoreBot.new(run_seed, policy, skill)
+	return r
 
 
 ## The run's current floor as a fresh World (as Main builds it; no arrival hold, so the sim starts at once).
@@ -192,6 +208,8 @@ func play_floor(w: World, biome: String, limit: int) -> String:
 	for t in limit:
 		var was_choosing := w.choosing
 		w.step(bot.frame(w))
+		if god and not w.player_dead():
+			w.actors.hp[0] = w.actors.max_hp[0]
 		_observe(w, start, was_choosing)
 		if w.player_dead():
 			result = "died"

@@ -236,7 +236,7 @@ static func _limit(records: Array) -> Dictionary:
 			by_effect[k] = int(by_effect.get(k, 0)) + int(r["limit"][k])
 		per_run.append(n)
 	if per_run.is_empty():
-		return cell("0", "no data", {})
+		return cell("0", "no data", {}, "no run of the policies this cell reads")
 	var total := 0
 	for n: int in per_run:
 		total += n
@@ -264,7 +264,7 @@ static func _limit(records: Array) -> Dictionary:
 static func _gap(records: Array) -> Dictionary:
 	var groups := by_label(records, is_specialist)
 	if groups.is_empty():
-		return cell("GA §1–3 (open design question)", "no data", {})
+		return cell("GA §1–3 (open design question)", "no data", {}, "no run of the policies this cell reads")
 	var rates := {}
 	var best := 0.0
 	for k: String in groups:
@@ -374,7 +374,7 @@ static func _drought(records: Array) -> Dictionary:
 				best = maxi(best, streak)
 		longest.append(best)
 	if longest.is_empty():
-		return cell("<= 2 (PD-07)", "no data", {})
+		return cell("<= 2 (PD-07)", "no data", {}, "no run of the policies this cell reads")
 	var d := dist(longest)
 	return cell(
 		"<= 2 (PD-07)",
@@ -671,7 +671,7 @@ static func _stress(records: Array, stress_tags: Dictionary) -> Dictionary:
 	var seen := {}
 	for r: Dictionary in records:
 		for fr: Dictionary in r["floors"]:
-			var f := str(fr["floor"])
+			var f := str(int(fr["floor"]))
 			if not seen.has(f):
 				seen[f] = {}
 			for k: String in fr["kinds_seen"]:
@@ -701,7 +701,7 @@ static func _stress(records: Array, stress_tags: Dictionary) -> Dictionary:
 			rule_a[a][f] = by
 			ok = ok and not by.is_empty()
 	if floors.is_empty():
-		return cell("all §4 rules", "no data", {})
+		return cell("all §4 rules", "no data", {}, "no run of the policies this cell reads")
 	return cell(
 		"all §4 rules",
 		"met" if ok else "missed",
@@ -912,7 +912,7 @@ static func _synergy(records: Array) -> Dictionary:
 				acc[e][s][1] += total
 				acc[e][s][2] += 1
 	if share_all.is_empty():
-		return cell("rises with stacks for every engine (GA §2)", "no data", {})
+		return cell("rises with stacks for every engine (GA §2)", "no data", {}, "no run of the policies this cell reads")
 	var table := {}
 	var rises := true
 	var judged := 0
@@ -971,7 +971,7 @@ static func _loop(records: Array) -> Dictionary:
 	for k: String in chain_limits:
 		watchdog += int(chain_limits[k])
 	if salvage_runs == 0 and chain_runs == 0:
-		return cell("0", "no data", {})
+		return cell("0", "no data", {}, "no run of the policies this cell reads")
 	var spent := 0
 	var back := 0
 	for e: Array in trades:
@@ -1028,7 +1028,7 @@ static func _diverge(records: Array) -> Dictionary:
 			(per[lbl] as Array).append(g)
 			all_g.append(g)
 	if per.is_empty():
-		return cell("by Room 3–4 (framework pillar 3)", "no data", {})
+		return cell("by Room 3–4 (framework pillar 3)", "no data", {}, "no run of the policies this cell reads")
 	var out := {}
 	for k: String in per:
 		out[k] = dist(per[k])
@@ -1055,7 +1055,7 @@ static func _generalist(records: Array) -> Dictionary:
 			comp.append(r)
 	var groups := by_label(records, is_specialist)
 	if comp.is_empty() or groups.is_empty():
-		return cell("the generalist is below the best specialist", "no data", {})
+		return cell("the generalist is below the best specialist", "no data", {}, "no run of the policies this cell reads")
 	var gw := _win_rate(comp)
 	var best := ""
 	var best_rate := -1.0

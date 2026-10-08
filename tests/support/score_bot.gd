@@ -60,6 +60,8 @@ const REWARD_REACH_M := 1.0
 const ROOM_VISIT_M := 2.0
 ## A room or reward not reached in this long (40 s) is given up.
 const GOAL_TICKS := 40 * 60
+## After this long on one goal (8 s) the bot stops fighting the crowd around it and walks on, attacking in passing.
+const PRESS_ON_TICKS := 8 * 60
 ## A floor's exploring budget before heading to the boss: M-FLOOR's top (15 min). ScoreRun reports every floor
 ## that used it all, so the cap never hides a long floor.
 const MAX_EXPLORE_TICKS := 15 * 60 * 60
@@ -126,8 +128,8 @@ var _wiggle_dir := Vector2.ZERO
 var _floor_start := 0
 var _goal_tick := 0
 var _tick := 0
-var _shop_done := false
-var _shop_queue: Array = []
+var _shop_blocked := false
+var _shop_visits := 0
 var _shop_pending_sell := -1
 var _capped_now := false
 
@@ -173,8 +175,8 @@ func start_floor(w: World) -> void:
 	_skipped = {}
 	_seen_tel = {}
 	_floor_start = w.tick
-	_shop_done = false
-	_shop_queue = []
+	_shop_blocked = false
+	_shop_visits = 0
 	_shop_pending_sell = -1
 	_capped_now = false
 	gun = PlayerBuild.has_gun(w)
@@ -315,7 +317,9 @@ func _shop_frame(w: World) -> InputFrame:
 			salvage_log.append([code, price, 0])
 		f.pick = best + 1
 		return f
-	_shop_done = true
+	_shop_visits += 1
+	if _goal_kind == "shop":
+		_goal_kind = ""
 	f.pick = InputFrame.PICK_CANCEL
 	return f
 
@@ -353,7 +357,7 @@ func _mark_room(w: World) -> void:
 			"reward":
 				_skipped[_goal_ref] = true
 			"shop":
-				_shop_done = true
+				_shop_blocked = true
 		_goal_kind = ""
 
 
@@ -385,10 +389,23 @@ func _targets(w: World) -> Array:
 	return out
 
 
+## The shop is a target: never visited and the bot has a card's worth of shards, or a card it saw there (or the heal,
+## when hurt) is worth buying and affordable now. A shop it couldn't reach in GOAL_TICKS is dropped for the floor.
 func _wants_shop(w: World) -> bool:
-	if moves != "competent" or _shop_done or not Shop.present(w) or w.shop_table == null:
+	if moves != "competent" or _shop_blocked or not Shop.present(w) or w.shop_table == null:
 		return false
-	return w.shards >= SHOP_MIN_SHARDS * maxi(1, w.floor_index)
+	if not w.shop.rolled:
+		return w.shards >= SHOP_MIN_SHARDS * maxi(1, w.floor_index)
+	if exploit == "salvage" and _shop_visits > 0:
+		return false
+	var hurt := w.actors.hp[0] * 1000 < w.actors.max_hp[0] * 600
+	if hurt and not w.shop.heal_used and w.shards >= Shop.heal_price(w):
+		return true
+	for code in w.shop.offer:
+		if code >= 0 and Shop.can_apply(w, code) and w.shards >= Shop.price(w, code):
+			if score_card(w, code) >= SHOP_MIN_SCORE:
+				return true
+	return false
 
 
 func _update_goal(w: World) -> void:
@@ -409,7 +426,7 @@ func _update_goal(w: World) -> void:
 		return
 	if _goal_kind == "room" and not _visited.has(_goal_ref):
 		return
-	if _goal_kind == "shop" and not _shop_done:
+	if _goal_kind == "shop":
 		return
 	if _goal_kind == "door":
 		return
@@ -444,7 +461,7 @@ func _update_goal(w: World) -> void:
 				"reward":
 					_skipped[t[2]] = true
 				"shop":
-					_shop_done = true
+					_shop_blocked = true
 		_set_goal(f.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2), "door", -1)
 		return
 	_set_goal(targets[best][0], targets[best][1], targets[best][2])
@@ -570,6 +587,14 @@ func _fight(
 	var move := Vector2.ZERO
 	var staying := _goal_kind in ["boss", "overrun"]
 	var fighting := staying or dist <= (GUN_ENGAGE_M if gun else BLADE_ENGAGE_M) or hp_low
+	# Pressing on: a goal held this long is walked to through the crowd, attacking in passing (a horde never ends).
+	if not staying and to_goal != Vector2.ZERO and w.tick - _goal_tick >= PRESS_ON_TICKS and not hp_low:
+		move = to_goal if dist >= 1.0 else (to_goal + side).normalized()
+		if gun:
+			held |= InputFrame.SHOOT
+		elif dist <= SWING_RANGE and w.tick % 6 == 0:
+			pressed |= InputFrame.PRIMARY
+		return [move, held, pressed]
 	if gun:
 		held |= InputFrame.SHOOT
 		if dist < 5.0 and _rng.chance_permille(30):
