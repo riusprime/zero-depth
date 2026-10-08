@@ -131,6 +131,9 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | D4 | "I do like this level of difficulty, but only if the character has grown a bit on the scaling vector" / "too many hard enemies … before even reaching the first boss or getting enough spells or upgrades" | Tune against the expected-build bot: early rewards come sooner (an altar near the start hall), and the peak is reached only when a bot that picks normally has grown into it | TU |
 | D5 | (2026-10-08) "we also have a lot of variety of enemies, let's distribute presenting them through the first 3 floors" | Enemy kinds are introduced across floors 1–3 (floor 1: basics + a few specialists; floor 2 and 3 add the rest), each first appearance announced; boss summons exempt | TU |
 | D6 | (2026-10-08) "also, do not make gun -15% it is actually unplayable with that debuff" | Gun damage multiplier 0.85 → 1.00 (supersedes v0.3.0 L16 for the Gun; Blade +15 % stays) | TU |
+| D7 | (2026-10-08, Q-T1) "Peak ~1 min before boss" | The curve peaks about one minute before the median time the expected-build bot reaches the boss door (re-measured), then holds; staying longer still pays more shards | TU |
+| D8 | (2026-10-08, Q-T2) "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25% and enemies damage and player health should be like I take damage but I can heal, wont risk taking too much damage but I know this healing orb is coming sooner or later" | Kills drop a **heal orb** 10 % of the time (healing 25 % max HP on pickup); enemy damage and player HP tuned so damage is steady but survivable until the next orb | TU |
+| D9 | (2026-10-08, Q-T3) "Ease floor 1 only" | Floor-1 bosses −20 % HP and damage; HP restored to full on entering the boss room (floor 1; floors 2–3 unchanged) | TU |
 
 ## Steps
 | Wave | Step | Scope |
