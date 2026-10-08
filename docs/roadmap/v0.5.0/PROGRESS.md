@@ -30,3 +30,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - 2026-10-07 — CP built (on v0.4.0 BS) and merged on top of v0.4.0 EN + BO: 864 tests pass; goldens unchanged. The
   brief's "≈8 stat cards + ≈6–8 mods" would have overshot 50 per build; CP added 5 + 4 to fit. Owner: count per
   build. PLAN written for the rest of v0.5.0.
+- 2026-10-08 — `main` now exists (from `55a895d`); Windows/Shots CI run only on `main`. Owner: PRs into `main` only for a
+  playable version ("only push to main when we get something"): the next PR is the v0.4.0 + v0.5.0 build.
