@@ -38,6 +38,7 @@ const WORLD_KEPT := {
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
+	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
@@ -109,8 +110,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 		return "snapshot format %s, expected %d" % [str(snap.get("format")), FORMAT]
 	var data: Dictionary = snap["world"]
 	var walls_before := base.walls.size()
-	# The base's walls come from generating the floor; the snapshot's start with the same ones (walls are only ever
-	# added in play). A difference means another floor or other content: the save doesn't fit this build.
+	# The base's walls come from generating the floor; the snapshot's start with the same ones (in play only the boss
+	# door is added, and v0.5.0 PB removes it again once the boss is dead). A difference means another floor or other
+	# content: the save doesn't fit this build.
 	var saved: Dictionary = data.get(&"walls", {})
 	var built := _encode_obbs(base.walls)
 	var saved_c: PackedVector2Array = saved.get("center", PackedVector2Array())

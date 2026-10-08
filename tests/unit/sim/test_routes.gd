@@ -146,7 +146,7 @@ func test_two_gates_only_after_the_bosses_of_floors_one_and_two() -> void:
 		assert_eq(
 			opened[0].amount, 1 if f < 3 else 0, "the event says whether the Deep gate opened"
 		)
-		assert_eq(w.walls.size(), before + 1, "only the door's seal joined the walls")
+		assert_eq(w.walls.size(), before, "no wall was left behind (v0.5.0 PB: the door reopened)")
 	var plain := WorldReader.new(World.new(1, PlayerTable.starting_values()))
 	assert_false(plain.has_deep_portal(), "worlds without a run have no Deep gate")
 

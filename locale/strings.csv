@@ -315,7 +315,7 @@ MAP_LEGEND_ROOM,Explored room,Sala explorada
 MAP_LEGEND_UNEXPLORED,Way to an unexplored room,Paso a una sala sin explorar
 MAP_LEGEND_ALTAR,Altar,Altar
 MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
-MAP_LEGEND_BOSS,Boss door,Puerta del jefe
+MAP_LEGEND_BOSS,Boss door (dim: open after the boss),Puerta del jefe (tenue: abierta tras el jefe)
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
 MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
@@ -557,3 +557,4 @@ PHASE_SWARM,The swarm,El enjambre
 PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
+HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."

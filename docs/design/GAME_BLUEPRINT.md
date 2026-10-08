@@ -72,6 +72,15 @@ only adds numbers, menus or breadth fails the filter.
   extra chest and a curse-free **epic altar** (epic stat cards or ability level-ups). The floor card and the HUD's
   floor label say "Deep"; the run recap lists the route per floor. Floor 3's boss still wins the run through one
   portal. (Threat T for Deep: with EV's T.)
+- **Explore after the boss** (v0.5.0 PB, owner D10, 2026-10-08: "You can go as soon as you want to the boss and then
+  explore back, so if you want to rush the boss no problem, you get the boss reward and then explore"). Floors have
+  no minimum length. The boss door seals behind you only for the fight; the boss's death reopens it both ways (walk
+  or blink through the doorway), its drops stay, and the portal(s) stay open until you walk into one. You may go
+  back out, open the altars, chests, shop and events you left, take on the Overrun room and keep fighting: normal
+  spawns resume whenever you are outside the boss room, at the difficulty curve's level for the floor time (the
+  clock runs through the fight, so staying longer still pays more, D7), and none arrive inside it (a safe spot by
+  the portal). Entering again never re-seals the door, so floor 1's heal on entry (D9) happens once. When you take
+  the portal is the player's choice.
   door. There is no global clock and no enrage timer. What T changes is in §H. Since v0.5.0 (EV) T counts the
   **curses** held: each one came with a reward the player took knowing it and adds 1 to T; a cleanse lifts one.
 - **Event rooms** (v0.5.0 EV): 1–2 side rooms per floor hold a lit pedestal; its panel offers 1–2 choices, each
