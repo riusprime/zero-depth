@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"combo_sword"
+ability_b = &"orbit_blades"
+min_level = 3
+name_key = &"ABILITY_COMBO_BLADE_DANCE"
+desc_key = &"ABILITY_COMBO_BLADE_DANCE_DESC"
+effect = 12
+share_permille = 500
+radius_m = 0.8
+window_seconds = 1.5
+id = &"blade_dance"

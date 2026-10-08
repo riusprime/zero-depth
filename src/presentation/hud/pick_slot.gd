@@ -26,6 +26,9 @@ var _box := CardStyle.box(Vector4(10, 8, 10, 10))
 var _key := Label.new()
 var _mark := CardMark.new(11.0)
 var _rarity := Label.new()
+## v0.5.0 EV: a cursed card's mark and line, under the card (hidden on a clean card).
+var _curse := HBoxContainer.new()
+var _curse_text := Label.new()
 
 
 func _init(p_index: int) -> void:
@@ -55,6 +58,7 @@ func _init(p_index: int) -> void:
 	card.slide = false
 	card.bare = true
 	col.add_child(card)
+	_build_curse(col)
 	gui_input.connect(_on_gui_input)
 	mouse_entered.connect(func() -> void: hovered.emit(index))
 	_apply()
@@ -78,6 +82,34 @@ func show_card(face: Dictionary) -> void:
 	card.show_item(face["id"], face["title"], face["sentence"], face["color"])
 	_rarity.text = face["tier_text"]
 	_apply()
+
+
+## v0.5.0 EV: marks the card cursed with `line` (CurseLook.line), or clean with "".
+func show_curse(line: String) -> void:
+	_curse_text.text = line
+	_curse.visible = not line.is_empty()
+
+
+func curse_text() -> String:
+	return _curse_text.text if _curse.visible else ""
+
+
+func _build_curse(col: VBoxContainer) -> void:
+	_curse.name = "Curse"
+	_curse.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_curse.add_theme_constant_override("separation", 6)
+	var mark := CardMark.new(12.0)
+	mark.color = CurseLook.COLOR
+	_curse.add_child(mark)
+	_curse_text.add_theme_font_size_override("font_size", 14)
+	_curse_text.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.3))
+	_curse_text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_curse_text.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_curse_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_curse_text.custom_minimum_size = Vector2(220, 0)
+	_curse.add_child(_curse_text)
+	_curse.visible = false
+	col.add_child(_curse)
 
 
 func set_focused(on: bool) -> void:

@@ -109,7 +109,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_false(w.boss_alive(), "Kill boss killed it")
 	assert_true(main.driver.reader.portal_active(), "the boss's death opens the portal")
 	assert_false(main.view.gate.is_sealed(), "the gate lights up")
-	assert_eq(hud.gate_text(), tr("HUD_PORTAL_OPEN"))
+	assert_eq(hud.gate_text(), tr("HUD_PORTALS_OPEN"), "v0.5.0 RT: floor 1 opens both portals")
 	var hp_before := w.actors.hp[0]
 	var owned := w.ability_owned.duplicate()
 	var levels := w.ability_levels.duplicate()

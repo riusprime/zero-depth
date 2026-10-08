@@ -10,6 +10,9 @@ extends Node3D
 
 const ALTAR_GLOW := Color("#CFE8FF")
 const ALTAR_LIGHT := Color("#9CC8FF")
+## v0.5.0 RT: a Deep floor's epic altar glows the Deep gate's violet.
+const EPIC_GLOW := Color("#B47CFF")
+const EPIC_LIGHT := Color("#8B3DFF")
 const LOCK_RED := Color("#FF3B30")
 const STONE := Color("#77706A")
 const STONE_TOP := Color("#8B847D")
@@ -27,6 +30,7 @@ var _denied_tick := -1
 ## id -> seconds of shake left.
 var _shake := {}
 var _rune_mat := StandardMaterial3D.new()
+var _epic_mat := StandardMaterial3D.new()
 var _lock_mat := StandardMaterial3D.new()
 
 
@@ -36,6 +40,10 @@ func _init() -> void:
 	_rune_mat.emission_enabled = true
 	_rune_mat.emission = ALTAR_GLOW
 	_rune_mat.emission_energy_multiplier = 2.2
+	_epic_mat.albedo_color = EPIC_GLOW
+	_epic_mat.emission_enabled = true
+	_epic_mat.emission = EPIC_GLOW
+	_epic_mat.emission_energy_multiplier = 2.6
 	_lock_mat.albedo_color = LOCK_RED
 	_lock_mat.emission_enabled = true
 	_lock_mat.emission = LOCK_RED
@@ -52,7 +60,8 @@ func sync(reader: WorldReader) -> void:
 		live[id] = true
 		var n: Node3D = _nodes.get(id)
 		if n == null:
-			n = make_altar() if reader.reward_kind(i) == WorldReader.REWARD_ALTAR else make_chest()
+			var altar := reader.reward_kind(i) == WorldReader.REWARD_ALTAR
+			n = make_altar(reader.reward_is_epic(i)) if altar else make_chest()
 			n.position = SimPlane.to_3d(reader.reward_pos(i))
 			add_child(n)
 			n.reset_physics_interpolation()
@@ -111,7 +120,7 @@ func _process(delta: float) -> void:
 
 
 ## A hexagonal stone plinth with a floating rune crystal (blue-white) and three orbiting shards.
-func make_altar() -> Node3D:
+func make_altar(epic: bool = false) -> Node3D:
 	var root := Node3D.new()
 	var body := Node3D.new()
 	root.add_child(body)
@@ -123,17 +132,18 @@ func make_altar() -> Node3D:
 	var spin := Node3D.new()
 	spin.position.y = 1.25
 	root.add_child(spin)
-	var rune := _mesh(bipyramid(4, 0.17, 0.3, 0.3), _rune_mat)
+	var glow := _epic_mat if epic else _rune_mat  # v0.5.0 RT: the epic altar's violet
+	var rune := _mesh(bipyramid(4, 0.17, 0.3, 0.3), glow)
 	rune.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	spin.add_child(rune)
 	for k in 3:
 		var a := TAU * k / 3.0
-		var shard := _mesh(bipyramid(3, 0.05, 0.1, 0.1), _rune_mat)
+		var shard := _mesh(bipyramid(3, 0.05, 0.1, 0.1), glow)
 		shard.position = Vector3(cos(a) * 0.42, -0.1 + 0.08 * k, sin(a) * 0.42)
 		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		spin.add_child(shard)
 	var light := OmniLight3D.new()
-	light.light_color = ALTAR_LIGHT
+	light.light_color = EPIC_LIGHT if epic else ALTAR_LIGHT
 	light.light_energy = 0.9
 	light.omni_range = 3.0
 	light.position.y = 1.2
@@ -142,6 +152,7 @@ func make_altar() -> Node3D:
 	root.set_meta(&"spin", spin)
 	root.set_meta(&"light", light)
 	root.set_meta(&"energy", 0.9)
+	root.set_meta(&"epic", epic)
 	return root
 
 

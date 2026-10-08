@@ -96,6 +96,9 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
+## v0.5.0 RT: the routes (Routes.Route).
+const ROUTE_NORMAL := Routes.Route.NORMAL
+const ROUTE_DEEP := Routes.Route.DEEP
 const RARITY_COMMON := ItemTable.COMMON
 const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
@@ -105,6 +108,15 @@ const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
+## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
+const SHOP_SELL_MOD := Shop.SELL_MOD
+const SHOP_SELL_STAT := Shop.SELL_STAT
+const SHOP_SELL_ABILITY := Shop.SELL_ABILITY
+const SHOP_BUY := ShopState.Action.BUY
+const SHOP_HEAL := ShopState.Action.HEAL
+const SHOP_REROLL := ShopState.Action.REROLL
+const SHOP_SELL := ShopState.Action.SELL
+const SHOP_SALVAGE := ShopState.Action.SALVAGE_ABILITY
 const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BOMB_LOBBER := AbilityTable.Kind.BOMB_LOBBER
@@ -116,6 +128,28 @@ const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 const ABILITY_SLOTS := Abilities.SLOTS
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
+## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events), and the curse counted, not in percent.
+const EVENT_READY := Events.State.READY
+const EVENT_ACTIVE := Events.State.ACTIVE
+const EVENT_DONE := Events.State.DONE
+const EVENT_COST_NONE := Events.Cost.NONE
+const EVENT_COST_HP := Events.Cost.HP
+const EVENT_COST_MAX_HP := Events.Cost.MAX_HP
+const EVENT_COST_SHARDS := Events.Cost.SHARDS
+const EVENT_COST_OVERHEAT := Events.Cost.OVERHEAT
+const EVENT_COST_FIGHT := Events.Cost.FIGHT
+const EVENT_COST_DEFEND := Events.Cost.DEFEND
+const EVENT_REWARD_OVERCLOCK := Events.Reward.OVERCLOCK
+const EVENT_REWARD_SHARDS := Events.Reward.SHARDS
+const EVENT_REWARD_CHEST := Events.Reward.CHEST
+const EVENT_REWARD_CLEANSE := Events.Reward.CLEANSE
+const EVENT_BLOCK_OK := Events.OK
+const EVENT_BLOCK_SHARDS := Events.NEED_SHARDS
+const EVENT_BLOCK_NOTHING := Events.NEED_NOTHING_TO_GAIN
+const EVENT_BLOCK_BUSY := Events.NEED_BUSY
+const CURSE_EXTRA_ENEMY := Curses.Effect.EXTRA_ENEMY
+## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
+const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 
 var _w: World
 
@@ -467,9 +501,68 @@ func run_seconds() -> float:
 	return float(_w.run_ticks) / SimTick.TICKS_PER_SECOND
 
 
-## The spawn director's tier (0 without one).
+## The spawn director's danger tier (0 without one; v0.4.0 TU: the difficulty curve's when the floor has one).
 func tier() -> int:
-	return _w.spawner.tier_at(_w.run_ticks) if _w.spawner != null else 0
+	return _w.spawner.danger_tier(_w.run_ticks) if _w.spawner != null else 0
+
+
+# --- Difficulty curve (v0.4.0 TU, owner D1–D3) ------------------------------------------------------------------
+## True when the floor's spawning follows a difficulty curve.
+func has_curve() -> bool:
+	return _w.spawner != null and _w.spawner.curve != null
+
+
+## The curve's phase now (0 = the calm minute; 0 without a curve).
+func phase() -> int:
+	return _w.spawner.curve.phase_at(_w.run_ticks) if has_curve() else 0
+
+
+func phase_count() -> int:
+	return _w.spawner.curve.phase_count() if has_curve() else 0
+
+
+## The locale key naming the phase now (empty without a curve).
+func phase_name_key() -> StringName:
+	return _w.spawner.curve.name_keys[phase()] if has_curve() else &""
+
+
+## Seconds until the next phase begins (0 at the peak or without a curve).
+func phase_seconds_left() -> float:
+	if not has_curve():
+		return 0.0
+	return float(_w.spawner.curve.ticks_to_next(_w.run_ticks)) / SimTick.TICKS_PER_SECOND
+
+
+## Enemy kinds this floor shows for the first time in the run (ActorStore.Kind).
+func new_kinds() -> PackedInt32Array:
+	return _w.spawner.curve.new_kinds if has_curve() else PackedInt32Array()
+
+
+## v0.4.0 TU (owner D8): where the heal orbs lie, in drop order, and their ids.
+func heal_orbs() -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in _w.orbs.size():
+		out.append(_w.orbs.pos(k))
+	return out
+
+
+func heal_orb_ids() -> PackedInt32Array:
+	return _w.orbs.ids
+
+
+## True while a living enemy of `kind` is on the floor.
+func kind_alive(kind: int) -> bool:
+	var a := _w.actors
+	for i in range(1, a.size()):
+		if a.kinds[i] == kind and a.dead[i] == 0:
+			return true
+	return false
+
+
+## The locale key of enemy kind `kind`'s name (empty when it has no table).
+func enemy_name_key(kind: int) -> StringName:
+	var t := _w.enemy_table(kind)
+	return t.name_key if t != null else &""
 
 
 ## Enemies killed this run.
@@ -781,6 +874,49 @@ func transit_holds() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.holds_world()
 
 
+# --- Routes (v0.5.0 RT) ---------------------------------------------------------------------------------------
+## This floor's boss room has the Deep gate (a run's floor before the last), where it stands and faces.
+func has_deep_portal() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.routes
+
+
+func deep_portal_pos() -> Vector2:
+	return _w.floor_layout.deep_portal_pos if _w.floor_layout != null else Vector2.ZERO
+
+
+func deep_portal_angle() -> int:
+	return _w.floor_layout.deep_portal_angle if _w.floor_layout != null else 0
+
+
+## Gate `route` (Routes.Route) is open: the boss is dead, and no route was taken or this one was.
+func gate_open(route: int) -> bool:
+	return _w.boss_flow != null and _w.boss_flow.gate_open(route)
+
+
+## The route walked into on this floor (Routes.Route; -1 = none yet).
+func route_taken() -> int:
+	return _w.boss_flow.route_taken if _w.boss_flow != null else -1
+
+
+## This floor is a Deep floor (the Deep portal was taken on the floor before).
+func floor_is_deep() -> bool:
+	return Routes.is_deep(_w)
+
+
+## Reward i is the Deep floor's epic altar.
+func reward_is_epic(i: int) -> bool:
+	return Routes.is_epic_altar(_w, i)
+
+
+## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
+func entered_portal_pos() -> Vector2:
+	return deep_portal_pos() if route_taken() == Routes.Route.DEEP else portal_pos()
+
+
+func entered_portal_angle() -> int:
+	return deep_portal_angle() if route_taken() == Routes.Route.DEEP else portal_angle()
+
+
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
 static func is_boss_kind(kind: int) -> bool:
 	return BossAi.is_boss_kind(kind)
@@ -945,9 +1081,9 @@ func reward_kind(i: int) -> int:
 	return _w.rewards.kind[i]
 
 
-## Shards to open (0 for an altar).
+## Shards to open (0 for an altar), under the prices curse (v0.5.0 EV).
 func reward_price(i: int) -> int:
-	return _w.rewards.price[i]
+	return Rewards.price_of(_w, i)
 
 
 ## You hold enough shards to open it (the same check the sim makes).
@@ -1071,6 +1207,8 @@ func combo_desc_key(combo_index: int) -> StringName:
 ## The two item ids a combo needs.
 func combo_item_ids(combo_index: int) -> Array[StringName]:
 	var c := _w.combo_tables[combo_index]
+	if c.ability_a >= 0:  # v0.4.0 AB: an ability combo's two abilities
+		return [_w.ability_tables[c.ability_a].id, _w.ability_tables[c.ability_b].id]
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
@@ -1243,7 +1381,9 @@ func gamble_candidates() -> PackedInt32Array:
 
 
 func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
-	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0
+	if _w.spawner == null:
+		return 0.0
+	return float(_w.spawner.danger_permille(_w.run_ticks) % 1000) / 1000.0  # v0.4.0 TU: the curve's
 
 
 # --- Minimap (v0.3.0 MM) ------------------------------------------------------------------------------------
@@ -1330,6 +1470,23 @@ func ability_fx() -> Dictionary:
 	return Abilities.fx(_w)
 
 
+## v0.4.0 AB: Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
+## A fire patch's kind in element_fx()["fire_kind"]: FIRE_NAPALM is Napalm Drone's (else Flame Trail's).
+func element_fx() -> Dictionary:
+	return ElementAbilities.fx(_w)
+
+
+## v0.4.0 AB: the Overrun room (Overrun.read: active, room, doors, inside, entered, kills, needed, cleared,
+## clear_tick, bonus, reward_id, boosted).
+func overrun() -> Dictionary:
+	return Overrun.read(_w)
+
+
+## v0.4.0 AB: a combo pairs two abilities (combo_item_ids then gives the ability ids).
+func combo_is_ability(combo_index: int) -> bool:
+	return _w.combo_tables[combo_index].ability_a >= 0
+
+
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).
 func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
@@ -1347,3 +1504,246 @@ func crit_mult_permille() -> int:
 ## A stat's raw value (Stats.value: per mille; base 1000 for multipliers, 0 for added points).
 func stat_value(stat: int) -> int:
 	return Stats.value(_w, stat)
+
+
+# --- v0.5.0 EV: event rooms, curses and threat T (Events, Curses) ----------------------------------------------
+
+
+func event_count() -> int:
+	return _w.ev.size()
+
+
+func event_pos(k: int) -> Vector2:
+	return _w.ev.pos(k)
+
+
+func event_room(k: int) -> int:
+	return _w.ev.room[k]
+
+
+## EVENT_READY, EVENT_ACTIVE (a fight or a defence running) or EVENT_DONE.
+func event_state(k: int) -> int:
+	return _w.ev.state[k]
+
+
+func event_id(k: int) -> StringName:
+	return Events.table(_w, k).id
+
+
+func event_name_key(k: int) -> StringName:
+	return Events.table(_w, k).name_key
+
+
+func event_desc_key(k: int) -> StringName:
+	return Events.table(_w, k).desc_key
+
+
+## The pedestal the interact button would open now (the sim's own choice), or -1.
+func event_in_reach() -> int:
+	return Events.nearest(_w) if not choosing() else -1
+
+
+func event_interact_radius_m() -> float:
+	return _w.ev.rules.interact_radius_m
+
+
+## True while an event panel is open (the world waits for the choice).
+func event_open() -> bool:
+	return _w.ev.open >= 0
+
+
+func event_open_index() -> int:
+	return _w.ev.open
+
+
+func event_choice_count(k: int) -> int:
+	return Events.table(_w, k).choice_count()
+
+
+func event_choice_label(k: int, c: int) -> StringName:
+	return Events.table(_w, k).labels[c]
+
+
+## EVENT_COST_*.
+func event_choice_cost(k: int, c: int) -> int:
+	return Events.table(_w, k).cost[c]
+
+
+## The cost's number as shown: percent of max HP (HP, MAX_HP), shards now (SHARDS), enemies (FIGHT), seconds
+## (DEFEND); 0 otherwise.
+func event_choice_cost_value(k: int, c: int) -> int:
+	var t := Events.table(_w, k)
+	match t.cost[c]:
+		Events.Cost.HP, Events.Cost.MAX_HP:
+			return t.cost_amount[c] / 10
+		Events.Cost.SHARDS:
+			return Events.shard_cost(_w, k, c)
+		Events.Cost.DEFEND:
+			return t.cost_amount[c] / SimTick.TICKS_PER_SECOND
+	return t.cost_amount[c]
+
+
+## Events.Reward: card rewards show their rolled card (event_choice_card); the rest are EVENT_REWARD_*.
+func event_choice_reward(k: int, c: int) -> int:
+	return Events.table(_w, k).reward[c]
+
+
+## The reward's number as shown: percent of Overclock damage, or shards (x the floor).
+func event_choice_reward_value(k: int, c: int) -> int:
+	var t := Events.table(_w, k)
+	if t.reward[c] == Events.Reward.OVERCLOCK:
+		return t.reward_amount[c] / 10
+	return t.reward_amount[c] * maxi(1, _w.floor_index)
+
+
+## The card the choice gives (a card code for card_info), or -1 (not a card, or not rolled yet).
+func event_choice_card(k: int, c: int) -> int:
+	return _w.ev.roll_card[k * Events.MAX_CHOICES + c]
+
+
+## The curse the choice carries (an index for curse_* reads), or -1.
+func event_choice_curse(k: int, c: int) -> int:
+	return _w.ev.roll_curse[k * Events.MAX_CHOICES + c]
+
+
+## EVENT_BLOCK_OK, or why the sim would refuse the choice now.
+func event_choice_block(k: int, c: int) -> int:
+	return Events.block(_w, k, c)
+
+
+## The last choice taken (tick; -1 none), a refused pick, a fight or defence finished.
+func event_result_tick() -> int:
+	return _w.ev.result_tick
+
+
+func event_denied_tick() -> int:
+	return _w.ev.denied_tick
+
+
+func event_done_tick() -> int:
+	return _w.ev.done_tick
+
+
+## The pedestal of the ambush fighting now (-1 none) and its elites left.
+func event_ambush() -> int:
+	return _w.ev.ambush
+
+
+func event_ambush_left() -> int:
+	var n := 0
+	for id in _w.ev.ambush_ids:
+		n += 1 if _w.actors.index_of(id) >= 0 else 0
+	return n
+
+
+## The pedestal being defended (-1 none), the share held (0..1) and the ring's radius.
+func event_defend() -> int:
+	return _w.ev.defend
+
+
+func event_defend_progress() -> float:
+	return float(_w.ev.defend_ticks) / maxf(1.0, _w.ev.defend_total)
+
+
+func event_defend_radius_m() -> float:
+	return _w.ev.rules.defend_radius_m
+
+
+## Actor i is an elite (an ambush pack or an elite curse's spawn).
+func actor_elite(i: int) -> bool:
+	return Curses.is_elite(_w, _w.actors.ids[i])
+
+
+## Threat T now (the curses held) and the run's peak so far (PD-05; M-THREAT).
+func threat() -> int:
+	return Curses.threat(_w)
+
+
+func threat_peak() -> int:
+	return maxi(_w.threat_peak, Curses.threat(_w))
+
+
+## The curses held, in the order taken (curse indices).
+func curses_owned() -> PackedInt32Array:
+	return _w.curses_owned
+
+
+func curse_id(c: int) -> StringName:
+	return _w.ev.curses[c].id if c < _w.ev.curses.size() else &""
+
+
+func curse_name_key(c: int) -> StringName:
+	return _w.ev.curses[c].name_key if c < _w.ev.curses.size() else &""
+
+
+func curse_desc_key(c: int) -> StringName:
+	return _w.ev.curses[c].desc_key if c < _w.ev.curses.size() else &""
+
+
+## The curse's number as its sentence shows it: percent, or a count (CURSE_EXTRA_ENEMY).
+func curse_value(c: int) -> int:
+	if c >= _w.ev.curses.size():
+		return 0
+	var t := _w.ev.curses[c]
+	return t.amount if t.effect == Curses.Effect.EXTRA_ENEMY else t.amount / 10
+
+
+## The last curse taken (tick, curse) and lifted (tick, curse); -1 when none yet.
+func curse_tick() -> int:
+	return _w.ev.curse_tick
+
+
+func curse_last() -> int:
+	return _w.ev.curse_last
+
+
+func cleanse_tick() -> int:
+	return _w.ev.cleanse_tick
+
+
+func cleanse_last() -> int:
+	return _w.ev.cleanse_last
+
+
+## The curse on card k of the open 3-card choice (a cursed chest card), or -1.
+func choice_curse(k: int) -> int:
+	return Curses.offer_curse(_w, _w.choosing, k) if choosing() else -1
+
+
+# --- Shop (v0.5.0 SH; Shop) --------------------------------------------------------------------------------------
+## The floor has a shop terminal.
+func has_shop() -> bool:
+	return Shop.present(_w)
+
+
+func shop_pos() -> Vector2:
+	return _w.shop.pos
+
+
+func shop_room() -> int:
+	return _w.shop.room
+
+
+## The terminal's facing (1/4096 turns; toward its room's first doorway).
+func shop_angle() -> int:
+	return _w.floor_layout.shop_angle if _w.floor_layout != null else 0
+
+
+func shop_in_reach() -> bool:
+	return Shop.in_reach(_w)
+
+
+## The shop's panel is open (the world waits on it).
+func shop_open() -> bool:
+	return _w.shop.open
+
+
+## The last refused shop action's tick (-1 when none).
+func shop_denied_tick() -> int:
+	return _w.shop.denied_tick
+
+
+## Everything the shop panel shows (Shop.read): stock (code, sold, price, can_apply, affordable), heal (price,
+## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
+func shop() -> Dictionary:
+	return Shop.read(_w)

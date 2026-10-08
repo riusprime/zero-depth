@@ -524,6 +524,28 @@ def s_chest_refuse(r):
     return echo(bitcrush(buzz, 5, 4) * 0.7, 80, 0.25, 0.2, 2000, 0.15)
 
 
+def s_shop_open(r):
+    # v0.5.0 SH: the terminal wakes: a rising two-note chirp over a soft relay click.
+    click = bandpass(noise(r, n_of(0.025)), 1800, 3.0) * env(n_of(0.025), 0.001, 0.008)
+    chirp = notes((392.0, 587.33), 0.07, 0.16, "tri", 0.06, 5000) * 0.5
+    return echo(mix(click * 0.6, at(chirp, 0.03)), 90, 0.3, 0.3, 5000, 0.25)
+
+
+def s_shop_buy(r):
+    # v0.5.0 SH: a register: a short coin rattle, then a bright two-tone ka-ching.
+    rattle = mix(*[at(bandpass(noise(r, n_of(0.018)), 5200, 5.0) * env(n_of(0.018), 0.001, 0.006), k * 0.035) for k in range(3)])
+    ding = mix(metal_ping(0.4, 1318.5, 1.5, 1.8, 0.12) * 0.45, at(metal_ping(0.35, 1975.5, 1.5, 1.4, 0.1) * 0.35, 0.07))
+    return echo(mix(rattle * 0.5, at(ding, 0.09)), 100, 0.35, 0.3, 6000, 0.3)
+
+
+def s_shop_sell(r):
+    # v0.5.0 SH: salvage: a falling clink and a low thunk as the part drops into the hopper.
+    clink = mix(metal_ping(0.25, 1567.98, 1.41, 1.6, 0.07) * 0.35, at(metal_ping(0.25, 1174.66, 1.41, 1.6, 0.07) * 0.35, 0.06))
+    n = n_of(0.18)
+    thunk = one_pole_lp(osc(curve(160, 70, n), "sine", n), 900) * env(n, 0.002, 0.07) * 0.7
+    return echo(mix(clink, at(thunk, 0.12)), 90, 0.3, 0.25, 4000, 0.25)
+
+
 def s_shard_collect(r):
     n = n_of(0.06)
     blip = osc(curve(1800, 2600, n), "sine") * env(n, 0.001, 0.02)
@@ -703,6 +725,17 @@ def s_portal_open(r):
     return echo(mix(chord, shimmer), 180, 0.45, 0.4, 4000, 0.8)
 
 
+def s_deep_portal_open(r):
+    """v0.5.0 RT: the Deep gate opening: a low detuned drone that swells, a falling growl and a dark rumble."""
+    n = n_of(1.6)
+    drone = sum(fm(f * curve(0.7, 1.0, n), 1.5, 2.2, n) for f in (55.0, 82.4, 110.0, 116.5)) * 0.22
+    drone *= np.linspace(0, 1, n) ** 0.8
+    drone = fade_tail(one_pole_lp(drone, 1600), 0.25)
+    growl = bitcrush(osc(curve(140, 60, n), "saw", n) * env(n, 0.3, 0.6), 6, 3) * 0.25
+    rumble = one_pole_lp(noise(r, n), 220) * np.linspace(0, 1, n) * 0.9
+    return echo(mix(drone, one_pole_lp(growl, 900), rumble), 240, 0.5, 0.4, 1800, 0.9)
+
+
 def s_floor_enter(r):
     w = whoosh(r, 0.6, 5000, 400, 1.5, 0.25)
     n = n_of(0.8)
@@ -765,6 +798,86 @@ def s_vent_cold(r):
     return mix(click, tone)
 
 
+# --- v0.5.0 EV: event rooms and curses ---------------------------------------------------------------------------
+def s_event_open(r):
+    """An event pedestal wakes: a soft glassy chord rising out of a hum, with a shimmer on top."""
+    n = n_of(0.75)
+    hum = osc(curve(110, 165, n), "sine") * np.linspace(0, 1, n) ** 0.5 * env(n, 0.05, 0.5) * 0.4
+    chord = sum(fm(f, 3.0, 0.8, n) for f in (440.0, 554.37, 659.25)) * env(n, 0.08, 0.45) * 0.25
+    shimmer = bandpass(noise(r, n), curve(3000, 7000, n), 12.0) * env(n, 0.15, 0.3) * 0.3
+    return echo(mix(hum, chord, shimmer), 150, 0.4, 0.35, 4000, 0.5)
+
+
+def s_curse_gain(r):
+    """A curse taken: a detuned falling drone with a low crushed growl, ominous but short."""
+    n = n_of(0.9)
+    a = osc(curve(330, 92, n), "saw", n)
+    b = osc(curve(347, 97, n), "saw", n)
+    drone = one_pole_lp(mix(a, b) * 0.5, curve(3000, 400, n)) * env(n, 0.01, 0.55)
+    growl = bitcrush(osc(curve(70, 45, n), "square", n) * env(n, 0.02, 0.4), 5, 4) * 0.35
+    return echo(soft_clip(mix(drone, growl), 1.6), 190, 0.45, 0.35, 1800, 0.6)
+
+
+def s_ambush_start(r):
+    """The Ambush Cache's seal breaks: a hard alarm stab, two klaxon blips and a metal clank."""
+    n = n_of(0.16)
+    blip = one_pole_lp(osc(880.0, "square", n), 3500) * env(n, 0.002, 0.08)
+    clank = metal_ping(0.5, 210, 1.41, 3.5, 0.15) * 0.6
+    stab = one_pole_lp(noise(r, n_of(0.12)), 2500) * env(n_of(0.12), 0.001, 0.04)
+    return echo(mix(stab, clank, at(blip, 0.08), at(blip * 0.8, 0.26)), 120, 0.35, 0.3, 3000, 0.35)
+
+
+def s_event_done(r):
+    """An event paid out (the ambush cleared, the drone rebooted): a bright rising arpeggio and a chime."""
+    x = notes((523.25, 659.25, 783.99, 1046.5), 0.07, 0.16, "square", 0.05, 4500) * 0.45
+    chime = metal_ping(0.6, 1568.0, 2.0, 1.5, 0.2) * 0.25
+    return echo(mix(x, at(chime, 0.21)), 110, 0.35, 0.3, 5000, 0.4)
+
+
+# --- v0.4.0 AB: the three element abilities and the Overrun room -------------------------------------------------
+
+
+def s_arc_field(r):
+    """Arc Field: a dry electric crack with a buzzing FM tail."""
+    n = n_of(0.22)
+    crack = one_pole_hp(noise(r, n), 2500) * env(n, 0.0005, 0.03)
+    buzz = fm(curve(900, 300, n), 3.01, 4.0, n) * env(n, 0.002, 0.08) * 0.5
+    return echo(bitcrush(mix(crack, buzz), 7, 2), 60, 0.25, 0.2, 5000, 0.12)
+
+
+def s_frost_nova(r):
+    """Frost Nova: a glassy chime over a falling, cold whoosh."""
+    w = whoosh(r, 0.45, 6000, 1500, 3.0, 0.15) * 0.6
+    chime = metal_ping(0.6, 1568.0, 2.76, 1.6, 0.18) * 0.45
+    n = n_of(0.45)
+    sparkle = bandpass(noise(r, n), 7000, 8.0) * env(n, 0.005, 0.12) * 0.4
+    return echo(mix(w, chime, sparkle), 110, 0.35, 0.3, 6000, 0.3)
+
+
+def s_flame_trail(r):
+    """Flame Trail: a short soft crackle of fire."""
+    n = n_of(0.18)
+    roar = one_pole_lp(noise(r, n), 900) * env(n, 0.01, 0.08) * 0.6
+    pops = mix(*[at(one_pole_hp(noise(r, n_of(0.008)), 2000) * env(n_of(0.008), 0.0005, 0.003), 0.02 + 0.037 * k) for k in range(4)])
+    return mix(roar, pops * 0.5)
+
+
+def s_overrun_enter(r):
+    """Walking into the Overrun room: a low alarm, two falling square stabs over a rumble."""
+    stabs = notes((220.0, 164.81), 0.16, 0.14, "square", 0.08, 1800) * 0.5
+    n = n_of(0.6)
+    rumble = one_pole_lp(noise(r, n), 300) * env(n, 0.02, 0.3) * 0.7
+    return echo(mix(stabs, rumble), 150, 0.4, 0.35, 2000, 0.4)
+
+
+def s_overrun_clear(r):
+    """The Overrun room cleared: a rising, bright four-note arpeggio with a shimmer."""
+    x = notes((523.25, 659.25, 783.99, 1046.5), 0.07, 0.12, "square", 0.05, 6000) * 0.5
+    n = n_of(0.5)
+    shimmer = bandpass(noise(r, n), curve(3000, 9000, n), 10.0) * np.linspace(1, 0, n) * 0.3
+    return echo(mix(x, at(shimmer, 0.15)), 120, 0.4, 0.3, 5000, 0.4)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -809,6 +922,9 @@ SFX = [
     ("chest_open", s_chest_open),
     ("chest_refuse", s_chest_refuse),
     ("shard_collect", s_shard_collect),
+    ("shop_open", s_shop_open),
+    ("shop_buy", s_shop_buy),
+    ("shop_sell", s_shop_sell),
     ("combo_unlock", s_combo_unlock),
     ("heat_threshold", s_heat_threshold),
     ("heat_overheat", s_heat_overheat),
@@ -829,6 +945,7 @@ SFX = [
     ("boss_death", s_boss_death),
     ("boss_door_seal", s_boss_door_seal),
     ("portal_open", s_portal_open),
+    ("deep_portal_open", s_deep_portal_open),
     ("floor_enter", s_floor_enter),
     ("ui_move", s_ui_move),
     ("ui_confirm", s_ui_confirm),
@@ -837,6 +954,15 @@ SFX = [
     ("skill_lunge_cleave", s_skill_lunge_cleave),
     ("skill_scatter_blast", s_skill_scatter_blast),
     ("vent_cold", s_vent_cold),
+    ("event_open", s_event_open),
+    ("curse_gain", s_curse_gain),
+    ("ambush_start", s_ambush_start),
+    ("event_done", s_event_done),
+    ("arc_field", s_arc_field),
+    ("frost_nova", s_frost_nova),
+    ("flame_trail", s_flame_trail),
+    ("overrun_enter", s_overrun_enter),
+    ("overrun_clear", s_overrun_clear),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

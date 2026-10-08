@@ -16,7 +16,7 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	await e.start_from_menu()
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_eq(w.combo_tables.size(), 8, "the game loads the combos")
+	assert_eq(w.combo_tables.size(), 16, "the game loads the combos (8 item, 8 ability: v0.4.0 AB)")
 	# TEST HELPER (labelled): grant shards so the chests can be opened too. Earning shards by input is
 	# test_e2e_rewards.gd; this test is about the combo.
 	w.shards = 10000

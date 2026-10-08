@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"pulse_gun"
+ability_b = &"drone_buddy"
+min_level = 3
+name_key = &"ABILITY_COMBO_WINGMAN"
+desc_key = &"ABILITY_COMBO_WINGMAN_DESC"
+effect = 13
+share_permille = 600
+window_seconds = 0.25
+id = &"wingman"

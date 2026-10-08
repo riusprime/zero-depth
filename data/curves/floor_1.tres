@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="DifficultyCurveDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/difficulty_phase.gd" id="1_phase"]
+[ext_resource type="Script" path="res://src/content/defs/difficulty_curve_definition.gd" id="2_curve"]
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("1_phase")
+start_seconds = 0.0
+name_key = &"PHASE_CALM"
+tier_permille = 0
+cap_permille = 350
+interval_permille = 2000
+hp_permille = 600
+damage_permille = 400
+pack_cap = 1
+hold = true
+kinds = Array[StringName]([&"charger", &"needle", &"swarmer"])
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("1_phase")
+start_seconds = 60.0
+name_key = &"PHASE_STIR"
+tier_permille = 0
+cap_permille = 400
+interval_permille = 1800
+hp_permille = 700
+damage_permille = 450
+pack_cap = 2
+hold = false
+kinds = Array[StringName]([&"warden"])
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("1_phase")
+start_seconds = 90.0
+name_key = &"PHASE_HUNT"
+tier_permille = 1500
+cap_permille = 450
+interval_permille = 1600
+hp_permille = 725
+damage_permille = 475
+pack_cap = 3
+hold = false
+kinds = Array[StringName]([&"arc_caster"])
+
+[sub_resource type="Resource" id="P_3"]
+script = ExtResource("1_phase")
+start_seconds = 120.0
+name_key = &"PHASE_SWARM"
+tier_permille = 2500
+cap_permille = 500
+interval_permille = 1450
+hp_permille = 750
+damage_permille = 525
+pack_cap = 3
+hold = false
+kinds = Array[StringName]([&"splitter"])
+
+[sub_resource type="Resource" id="P_4"]
+script = ExtResource("1_phase")
+start_seconds = 144.0
+name_key = &"PHASE_PEAK"
+tier_permille = 3500
+cap_permille = 550
+interval_permille = 1300
+hp_permille = 775
+damage_permille = 550
+pack_cap = 3
+hold = false
+kinds = Array[StringName]([])
+
+[resource]
+script = ExtResource("2_curve")
+floor_index = 1
+phases = Array[ExtResource("1_phase")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2"), SubResource("P_3"), SubResource("P_4")])
+id = &"floor_1"

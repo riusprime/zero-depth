@@ -82,7 +82,9 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 			if (ev.tags & SimEvent.TAG_MELEE) == 0:
 				continue
 			if ev.kind == SimEvent.Kind.HIT:
-				swings.back()[1].append(ev.amount)
+				# v0.4.0 TU: a crit (5 %, v0.4.0 BS) is ×1.5 on top; the slash amounts below are the plain ones.
+				if (ev.tags & SimEvent.TAG_CRIT) == 0:
+					swings.back()[1].append(ev.amount)
 			elif ev.kind == SimEvent.Kind.DAMAGE:
 				swings.back()[2] += ev.amount
 		found = _four_in_a_row(swings)

@@ -19,9 +19,13 @@ var enemy_choice := 0
 var ability_choice := 0
 var _kill_boss := false
 var _grants := PackedInt32Array()
+## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
+var _to_overrun := false
+var _next_phase := false
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
+var _curse_chest := false
 
 
 func _init(p_world: World) -> void:
@@ -144,7 +148,49 @@ func grant_ability() -> void:
 		_grants.append(ability_choice)
 
 
+## v0.4.0 AB (dev route): puts the player just outside the Overrun room's first doorway at the next tick boundary,
+## so walking on goes through the red frame.
+func go_overrun() -> void:
+	_to_overrun = true
+
+
+## v0.4.0 TU (dev route): moves the floor's clock to the start of the next difficulty phase at the next tick
+## boundary, so a phase can be seen without waiting for it.
+func next_phase() -> void:
+	_next_phase = true
+
+
+## The spot `m` metres outside the Overrun room's first doorway (in the room next to it), or Vector2.INF.
+static func overrun_door_outside(w: World, m: float) -> Vector2:
+	var f := w.floor_layout
+	if f == null or f.overrun_room < 0 or f.overrun_doors.is_empty():
+		return Vector2.INF
+	var d := f.overrun_doors[0]
+	var into := Kin.dir(f.door_angles[d])  # from door_rooms.x toward .y
+	if f.door_rooms[d].x == f.overrun_room:
+		into = -into
+	return f.door_centers[d] - into * (f.door_depths[d] * 0.5 + m)
+
+
+## v0.5.0 EV (dev runs only): the next chest offer rolled is cursed.
+func curse_next_chest() -> void:
+	_curse_chest = true
+
+
 func _apply_commands() -> void:
+	if _next_phase:
+		_next_phase = false
+		var c := world.spawner.curve if world.spawner != null else null
+		if c != null:
+			world.run_ticks += c.ticks_to_next(world.run_ticks)
+	if _curse_chest:
+		_curse_chest = false
+		world.ev.force_curse = true
+	if _to_overrun:
+		_to_overrun = false
+		var at := overrun_door_outside(world, 1.5)
+		if at != Vector2.INF:
+			world.actors.set_pos(0, at)
 	for idx in _grants:
 		Abilities.grant(world, idx)
 	_grants.clear()

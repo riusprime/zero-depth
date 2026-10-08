@@ -221,11 +221,12 @@ func test_the_mix_only_uses_unlocked_kinds() -> void:
 	var at_zero := SpawnDirector.unlocked(w, t, 0)
 	for k in at_zero:
 		assert_ne(t.kinds[k], KIND.WARDEN, "no Warden at tier 0")
+	# (v0.4.0 TU: unlocked() reads floor ticks; without a curve, the tier they fall in.)
 	# v0.4.0 EN: Swarmers and Splitters join at tier 1; Shield Bearers, Mine Layers and Snipers at 2; Menders at 3.
-	assert_eq(SpawnDirector.unlocked(w, t, 1).size(), 6, "the first six from tier 1")
-	assert_eq(SpawnDirector.unlocked(w, t, 2).size(), 10, "ten from tier 2")
-	assert_eq(SpawnDirector.unlocked(w, t, 3).size(), 11, "all eleven from tier 3")
-	for k in SpawnDirector.unlocked(w, t, 1):
+	assert_eq(SpawnDirector.unlocked(w, t, 1 * t.tier_ticks).size(), 6, "the first six from tier 1")
+	assert_eq(SpawnDirector.unlocked(w, t, 2 * t.tier_ticks).size(), 10, "ten from tier 2")
+	assert_eq(SpawnDirector.unlocked(w, t, 3 * t.tier_ticks).size(), 11, "all eleven from tier 3")
+	for k in SpawnDirector.unlocked(w, t, 1 * t.tier_ticks):
 		assert_ne(t.kinds[k], KIND.BOMB_DRONE, "no Bomb Drone before tier 2")
 	for k in at_zero:
 		assert_ne(t.kinds[k], KIND.ARC_CASTER, "no Arc Caster at tier 0")

@@ -5,7 +5,18 @@ extends RefCounted
 ## what each kind reads.
 
 ## Mirrors AbilityDefinition.Kind (appended, never renumbered).
-enum Kind { COMBO_SWORD, PULSE_GUN, BOMB_LOBBER, DRONE_BUDDY, ORBIT_BLADES, BLINK, AEGIS }
+enum Kind {
+	COMBO_SWORD,
+	PULSE_GUN,
+	BOMB_LOBBER,
+	DRONE_BUDDY,
+	ORBIT_BLADES,
+	BLINK,
+	AEGIS,
+	ARC_FIELD,
+	FROST_NOVA,
+	FLAME_TRAIL,
+}
 enum Binding { NONE, PRIMARY, UTILITY }
 
 const MAX_LEVEL := 5
@@ -35,6 +46,8 @@ var level_radius := PackedInt32Array([1000, 1000, 1000, 1000, 1000])
 var level_rate := PackedInt32Array([1000, 1000, 1000, 1000, 1000])
 var level_cooldown := PackedInt32Array([0, 0, 0, 0, 0])
 var level_extra := PackedInt32Array([0, 0, 0, 0, 0])
+## v0.4.0 AB: the compiled engine item whose status numbers the ability borrows (null for none).
+var engine: ItemTable
 
 
 ## Level `level` (1-based, clamped) as an array index.

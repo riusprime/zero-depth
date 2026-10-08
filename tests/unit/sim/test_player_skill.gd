@@ -224,8 +224,8 @@ func test_the_pellet_damage_takes_the_guns_factor() -> void:
 	var total := 0
 	for a: int in amounts:
 		total += a
-		assert_true(a == 5 or a == 6, "6 x 0.85 = 5.1, the remainder carried")
-	assert_eq(total, 35, "42 x 0.85 = 35.7, floored with the carry")
+		assert_eq(a, 6, "6 x 1.00 (owner 2026-10-08: no Gun -15 %)")
+	assert_eq(total, 42, "7 pellets x 6")
 
 
 # --- Forecast (EI-07) ---------------------------------------------------------------------------------------

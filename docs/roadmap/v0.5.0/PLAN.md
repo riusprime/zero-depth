@@ -38,6 +38,46 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | 5 | SCD | Scorecard collection: every cell from a reproducible command |
 | — | R | Build for the owner (v0.4.0 + v0.5.0 together) + playtest sheet |
 
+## Step EV: events and cursed rewards (lead proposals, built; the owner may change any of them)
+Every number is a starting value (data in `data/events/`, `data/curses/`, `data/event_rules/floor.tres`).
+- **Rooms:** 1–2 event rooms per floor (`Events.pick_rooms`, its own generator function: never the start hall, the
+  boss room or the room before the boss door; a `taken` list keeps other side-room kinds out). A lit pedestal stands
+  at a spot clear of walls and ≥ 3 m from every altar or chest spot; interact (E / pad X) opens its panel and the
+  world waits, like a pick. Each choice shows its cost, its reward (the rolled card itself) and its curse before you
+  take it; "Leave it" is always the last card and keeps the event for later.
+- **The eight events** (the brief's list, with two changes, below):
+
+| Event | Choice → cost → reward | Needs |
+|---|---|---|
+| Unstable Core | Draw: −25 % max HP now → an epic stat card · Embrace: a curse → an epic stat card | stat cards |
+| Echo Mirror | Gaze: a curse → a rare card of the stat you raised most · Shatter: −10 % HP → 30 shards × floor | stat cards |
+| Scrap Heap | Pay 35 shards × floor → a random mod · Dig: −15 % HP → a random mod | — |
+| Ambush Cache | Break the seal: 3 elites (×2 HP) arrive in the room → a free chest when they fall | — |
+| Overclock Vent | Overheat now (the stall) → +30 % Overclock damage for the floor | heat |
+| Blood Price | −12 % max HP for the run → one owned ability levels up | abilities |
+| Wandering Drone | Stay within 4.5 m for 20 s, spawns twice as fast → 45 shards × floor | — |
+| Cleansing Font | Pay 30 shards × floor, or −20 % HP → your latest curse is lifted | a curse held |
+
+  Changes from the brief: **Echo Mirror** repeats the stat you raised most (the sim keeps no per-card stacks, only
+  stat values); **Wandering Drone** is a defence (stay by it), not an escort (no friendly-AI actor exists).
+  "Leave it" is the panel's last card on every event, not an event of its own.
+- **Curses** (each +1 threat T, held for the run, never twice): Swift Foes (normal enemies +15 % move speed),
+  Withering (−20 % regen), Leaky Core (Overclock heat decays 2× faster), Swarm Call (+1 enemy in every spawn
+  arrival, under the alive cap), Price Gouge (+25 % shard prices: chests, the gamble shrine, event costs, and shops
+  through `Curses.price`), Marked Hunt (12 % of spawns are elites: ×2 HP, a gold crown ring).
+- **Cursed chests:** 25 % of chest offers (rolled on first open) turn their first card into a guaranteed epic stat
+  card carrying a curse you don't hold, marked on the card; the other cards are clean. Altars are never cursed.
+- **Cleanse:** the Cleansing Font, and the shop's "Lift your latest curse" tile (60 shards × floor, while a curse
+  is held; `Shop.cleanse` → `Curses.cleanse`). Shop prices (cards, heal, reroll, cleanse) go through `Curses.price`.
+- **Placement order** (as Main and FloorScenario): the Overrun room and the shop are marked first; event rooms
+  never take either (`Events.pick_rooms` reads `overrun_room` and `shop_room`).
+- **Threat T** = the held curses' threat; shown on the HUD (top left, while T > 0), in the pause menu and in the run
+  recap ("Threat: T (peak P)"); `World.threat_peak` and `RunState.threat_by_floor` record it for M-THREAT.
+- **Elites** did not exist before EV: an elite here is a normal enemy kind with +100 % HP and a crown ring; its
+  attacks are its kind's own (readable). SC may fold this into a shared elite rule.
+- **Streams:** room picks on `map:event`, event and cursed-chest rolls on `loot:event`, the elite curse's roll on
+  `ai:elite`, sub-streams of `map`, `loot` and `ai` like `ai:enemy`, so no older draw moved (SIM_CONTRACTS §5).
+
 ## Open items
 - Q1 (from v0.4.0): Echoes, Core theft, Depth descent — still unanswered; not built.
 - O3 `main`; O4 credit line.

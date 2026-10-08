@@ -11,6 +11,8 @@ var discovered := PackedByteArray()
 var current := -1
 ## Grows on every change the map has to redraw for.
 var revision := 0
+## v0.4.0 SV: rooms already entered on a resumed floor (one byte per room), taken when the floor is first read.
+var preset := PackedByteArray()
 
 var _floor_key := ""
 var _rewards_key := ""
@@ -31,6 +33,9 @@ func update(reader: WorldReader) -> bool:
 	if key != _floor_key:
 		_floor_key = key
 		_reset(reader.floor_room_count())
+		if preset.size() == discovered.size():
+			discovered = preset
+		preset = PackedByteArray()
 		var start := reader.floor_start_room()
 		if start >= 0:
 			discovered[start] = 1

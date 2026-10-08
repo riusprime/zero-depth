@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CurseDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/curse_definition.gd" id="1_curse"]
+
+[resource]
+script = ExtResource("1_curse")
+name_key = &"CURSE_PRICE_GOUGE"
+desc_key = &"CURSE_PRICE_GOUGE_DESC"
+effect = &"prices"
+amount = 25
+threat = 1
+weight = 10
+id = &"price_gouge"

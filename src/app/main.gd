@@ -19,6 +19,8 @@ var ui := CanvasLayer.new()
 var run: RunState
 ## Sounds, ambience and captions (v0.3.0 AU); it outlives floors so the ambience can crossfade.
 var audio := AudioDirector.new()
+## v0.4.0 SV: the run save (room entries, close, Continue).
+var saves: RunSaver
 
 var _menu: Control
 var _pause: PauseMenu
@@ -41,6 +43,7 @@ func _ready() -> void:
 	get_window().theme = load(ThemePalette.UI_THEME)
 	InputDefaults.apply()
 	profile = ProfileStore.shared()
+	saves = RunSaver.new(RunSaveStore.shared())
 	InputRemap.apply(profile)
 	GameSettings.apply_all(profile)
 	audio.setup(profile)
@@ -66,6 +69,7 @@ func _process(delta: float) -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		saves.close()  # v0.4.0 SV: the last room entry is on disk
 		profile.save_file()
 		get_tree().quit()
 
@@ -86,6 +90,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		driver != null
 		and _end == null
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
+		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -100,9 +106,11 @@ func is_playing() -> bool:
 
 
 func show_main_menu() -> void:
+	saves.close()  # v0.4.0 SV: leaving a run (pause -> Main menu) keeps its last room entry
 	_end_stage()
 	audio.set_ambience(&"")
-	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build())
+	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build(), saves.store.has_save())
+	m.continue_pressed.connect(continue_run)
 	m.play_pressed.connect(show_build_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
@@ -191,15 +199,35 @@ func start_stage() -> void:
 	_start_floor(repo)
 
 
-## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied.
-func _start_floor(repo: ContentRepository = null) -> void:
+## v0.4.0 SV: Continue resumes the saved run at its last room entry. A save that doesn't fit is set aside.
+func continue_run() -> void:
+	var save := saves.store.read()
+	if not RunSaver.is_usable(save):
+		if not save.is_empty():
+			saves.store.reject("payload version %s" % str(save.get("version")))
+		show_main_menu()
+		return
+	_set_menu(null)
+	var repo := ContentRepository.load_all()
+	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
+	_run_biomes = run_def.biomes.duplicate()
+	_stage_seed = int(save["run"]["stage_seed"])
+	run = RunSaver.run_from(save, ContentCompiler.compile_run(run_def))
+	var err := _start_floor(repo, save)
+	if err != "":
+		saves.store.reject(err)
+		show_main_menu()
+
+
+## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
+## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
+func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	if repo == null:
 		repo = ContentRepository.load_all()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
-	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
@@ -215,7 +243,7 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		run.floor_seed(),
 		table,
 		enemies,
-		ContentCompiler.compile_spawning(spawning, repo),
+		ContentCompiler.compile_floor_spawning(repo, run.floor_index),  # v0.4.0 TU: with the floor's curve
 		ContentCompiler.compile_items(repo),
 		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
 		run.floor_index,
@@ -224,14 +252,22 @@ func _start_floor(repo: ContentRepository = null) -> void:
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
+	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
+	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
 	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(world)
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
+	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
+	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
+		var err := WorldSnapshot.apply(world, resume["world"])
+		if err != "":
+			return err
+	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -254,11 +290,13 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	audio.attach(driver.reader, biome.id)
 	driver.ticked.connect(audio.sync.bind(driver.reader))
 	_hud = Hud.new()
+	_hud.minimap.state.preset = saves.rooms.duplicate()  # v0.4.0 SV: the rooms already entered
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
+	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.sync(driver.reader)
-	_hud.show_floor(run.floor_index, String(biome.name_key))
+	_hud.show_floor(run.floor_index, String(biome.name_key), run.is_deep())  # v0.5.0 RT: "Floor 2 · Deep"
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
 	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
@@ -266,11 +304,13 @@ func _start_floor(repo: ContentRepository = null) -> void:
 	_fade.color.a = 1.0
 	_fade.visible = true
 	ui.move_child(_fade, ui.get_child_count() - 1)
+	return ""
 
 
 func _on_tick(from: SimDriver) -> void:
 	if from != driver or _hud == null:
 		return  # a stage that already ended, ticking once more before it's freed
+	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
 	_hud.sync(driver.reader)
 	var outcome := driver.reader.outcome()
 	if outcome == 3 and _end == null:
@@ -278,6 +318,8 @@ func _on_tick(from: SimDriver) -> void:
 		return
 	if outcome == 0 or _end != null:
 		return
+	if _ended_ticks == 0:
+		saves.discard()  # v0.4.0 SV: a death or a win ends the run's save
 	_ended_ticks += 1
 	if _ended_ticks >= END_PANEL_DELAY_TICKS:
 		show_end_panel(outcome == 1)
@@ -316,9 +358,12 @@ func run_recap() -> Dictionary:
 		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
 		"kills": run.total_kills(w),
 		"items": names,
+		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
+	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
+	out["threat_peak"] = driver.reader.threat_peak()
 	return out
 
 
@@ -368,6 +413,11 @@ func open_pause() -> void:
 		_pause.add_child(stats)
 		stats.place_top_right(84)
 		stats.sync(driver.reader)
+	if driver.reader.threat_peak() > 0:  # v0.5.0 EV: threat T and the curses held
+		var threat := ThreatPanel.new()
+		_pause.add_child(threat)
+		threat.place_top_left(84)
+		threat.sync(driver.reader)
 	ui.add_child(_pause)
 	_pause.focus_first()
 
