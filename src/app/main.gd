@@ -251,13 +251,17 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		arena,
 		run,
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
-		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
+		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
+		ContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR: the sealed arenas
 	)
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
+	world.legendary_table = ContentCompiler.compile_legendary(
+		repo.get_def(&"legendary", &"boss"), world.stat_tables, world.item_tables
+	)
 	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(world)
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.

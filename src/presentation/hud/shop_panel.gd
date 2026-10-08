@@ -385,7 +385,9 @@ func _add_sell(reader: WorldReader, n: int, e: Dictionary) -> void:
 			detail = tr("UI_CARD_MOD")
 		WorldReader.SHOP_SELL_STAT:
 			var rarity: String = tr(
-				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC"][int(info["rarity"])]
+				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"][int(
+					info["rarity"]
+				)]
 			)
 			detail = tr("SHOP_SELL_STAT") % [rarity, int(e["ref"])]
 		WorldReader.SHOP_SELL_ABILITY:

@@ -21,6 +21,9 @@ var _kill_boss := false
 var _grants := PackedInt32Array()
 ## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
 var _to_overrun := false
+## v0.5.5 AR: dev routes to an arena door and to clear the sealed arena's wave, waiting for the tick boundary.
+var _to_arena := false
+var _clear_wave := false
 var _next_phase := false
 var _steps := 0
 var _boss_pending := -1
@@ -154,6 +157,39 @@ func go_overrun() -> void:
 	_to_overrun = true
 
 
+## v0.5.5 AR (dev route): puts the player just outside the first doorway of the nearest arena that isn't cleared (a
+## regular one), at the next tick boundary, so walking on seals it.
+func go_arena() -> void:
+	_to_arena = true
+
+
+## v0.5.5 AR (dev runs only): kills every enemy inside the sealed arena at the next tick boundary (one wave).
+func clear_wave() -> void:
+	_clear_wave = true
+
+
+## The spot `m` metres outside the first doorway of the nearest regular arena not cleared, or Vector2.INF.
+static func arena_door_outside(w: World, m: float) -> Vector2:
+	var f := w.floor_layout
+	if f == null:
+		return Vector2.INF
+	var best := Vector2.INF
+	for room in f.arena_rooms:
+		if Arenas.is_cleared(w, room):
+			continue
+		var doors := ArenaRooms.doors_of(f, room)
+		if doors.is_empty():
+			continue
+		var d := doors[0]
+		var into := Kin.dir(f.door_angles[d])
+		if f.door_rooms[d].x == room:
+			into = -into
+		var at := f.door_centers[d] - into * (f.door_depths[d] * 0.5 + m)
+		if best == Vector2.INF or at.distance_to(w.player_pos()) < best.distance_to(w.player_pos()):
+			best = at
+	return best
+
+
 ## v0.4.0 TU (dev route): moves the floor's clock to the start of the next difficulty phase at the next tick
 ## boundary, so a phase can be seen without waiting for it.
 func next_phase() -> void:
@@ -186,6 +222,24 @@ func _apply_commands() -> void:
 	if _curse_chest:
 		_curse_chest = false
 		world.ev.force_curse = true
+	if _to_arena:
+		_to_arena = false
+		var spot := arena_door_outside(world, 1.5)
+		if spot != Vector2.INF:
+			world.actors.set_pos(0, spot)
+	if _clear_wave:
+		_clear_wave = false
+		if world.arenas.sealed():
+			var rect := world.floor_layout.rooms[world.arenas.room].grow(Arenas.ROOM_MARGIN_M)
+			for i in range(1, world.actors.size()):
+				var p := world.actors.pos(i)
+				if (
+					world.actors.dead[i] == 0
+					and EnemyAi.is_enemy_kind(world.actors.kinds[i])
+					and rect.has_point(p)
+				):
+					world.actors.invuln[i] = 0
+					Damage.hit(world, i, world.actors.hp[i] * 10, 0, 0, world.take_root(), 0, p, p)
 	if _to_overrun:
 		_to_overrun = false
 		var at := overrun_door_outside(world, 1.5)

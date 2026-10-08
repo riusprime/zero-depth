@@ -37,12 +37,12 @@ static func advance(w: World) -> void:
 	if w.spawn_cd > 0:
 		return
 	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
-	# v0.4.0 AB: inside the Overrun room the cap is x1.5 and the interval / 1.5, on top of the tier's (Overrun).
+	# v0.5.5 AR: no Overrun multiplier any more: a sealed arena (the Overrun too) pauses this director (Arenas).
 	var ticks := w.run_ticks - 1
-	var room := Overrun.cap(w, t.cap_now(w.floor_index, ticks)) - WaveDirector.enemies_alive(w)
+	var room := t.cap_now(w.floor_index, ticks) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = Overrun.interval(w, t.interval_now(ticks))
+	w.spawn_cd = t.interval_now(ticks)
 	_spawn_pack(w, t, ticks, room)
 
 

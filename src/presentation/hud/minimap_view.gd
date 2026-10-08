@@ -21,6 +21,7 @@ const LEGEND: Array = [
 	[&"shrine", "MAP_LEGEND_SHRINE"],
 	[&"event", "MAP_LEGEND_EVENT"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
+	[&"arena", "MAP_LEGEND_ARENA"],  # v0.5.5 AR
 	[&"shop", "MAP_LEGEND_SHOP"],
 ]
 
@@ -216,6 +217,7 @@ func _draw_doors() -> void:
 	var boss_door := reader.floor_boss_door()
 	var over: Dictionary = reader.overrun()  # v0.4.0 AB: the Overrun room's doorways in red
 	var over_doors: PackedInt32Array = over["doors"] if over["active"] else PackedInt32Array()
+	var arena_doors := _arena_doors()  # v0.5.5 AR: an arena's doorways in amber (dim once cleared)
 	for i in reader.floor_door_count():
 		if not state.door_known(reader, i):
 			continue
@@ -236,6 +238,8 @@ func _draw_doors() -> void:
 		if boss or over_doors.has(i):
 			var shut := MinimapStyle.BOSS_OPEN if reader.portal_active() else MinimapStyle.BOSS  # PB
 			_draw_boss_door(rect, side, shut if boss else MinimapStyle.OVERRUN)
+		elif arena_doors.has(i):
+			_draw_boss_door(rect, side, arena_doors[i])
 		if not state.door_to_unknown(reader, i):
 			continue
 		var into := side if state.is_discovered(d.x) else -side
@@ -248,6 +252,21 @@ func _draw_doors() -> void:
 		_arrow(
 			a, b, col, minf(MinimapStyle.STUB_HEAD_M * _scale, MinimapStyle.STUB_MAX_PX * 0.4), 2.5
 		)
+
+
+## v0.5.5 AR: doorway -> colour for the discovered regular arenas' doorways (amber; dim once cleared).
+func _arena_doors() -> Dictionary:
+	var out := {}
+	var a := reader.arenas()
+	if not a["active"]:
+		return out
+	var cleared: PackedInt32Array = a["cleared"]
+	for i in reader.floor_door_count():
+		var d := reader.floor_door_rooms(i)
+		for room: int in a["rooms"]:
+			if room != a["overrun"] and (d.x == room or d.y == room) and state.is_discovered(room):
+				out[i] = (MinimapStyle.PORTAL_SEALED if cleared.has(room) else MinimapStyle.ARENA)
+	return out
 
 
 func _draw_boss_door(rect: Rect2, side: Vector2, col: Color = MinimapStyle.BOSS) -> void:
@@ -289,6 +308,16 @@ func _draw_icons() -> void:
 	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
+	var ar := reader.arenas()  # v0.5.5 AR: each arena, once seen (dim once cleared)
+	if ar["active"]:
+		for room: int in ar["rooms"]:
+			if room != ar["overrun"] and state.is_discovered(room):
+				var done := (ar["cleared"] as PackedInt32Array).has(room)
+				draw_icon(
+					&"arena_cleared" if done else &"arena",
+					to_map(reader.floor_room(room).get_center()),
+					k
+				)
 	if reader.has_shop() and state.is_discovered(reader.shop_room()):
 		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
@@ -388,6 +417,12 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
 			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
+		&"arena", &"arena_cleared":  # v0.5.5 AR: an amber square with a bar across its doors' line
+			var col := MinimapStyle.ARENA if kind == &"arena" else MinimapStyle.PORTAL_SEALED
+			if kind == &"arena":
+				draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
+			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
+			draw_rect(Rect2(p - Vector2(s * 0.45, s * 0.45), Vector2(s * 0.9, s * 0.9)), col)
 		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
 			var house := PackedVector2Array(
 				[

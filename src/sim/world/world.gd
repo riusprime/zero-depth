@@ -260,6 +260,12 @@ var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
 var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
+var arena_table: ArenaTable  # v0.5.5 AR: the sealed arenas' numbers (null = no regular arenas; not hashed)
+var arenas := ArenaState.new()  # v0.5.5 AR: the arena sealed now and those cleared (Arenas), hashed once touched
+## v0.5.5 AR (owner X1b): the boss-only legendary tier (null = none; not hashed) and the legendary altar the boss's
+## death left (its reward id; -1 until then; it stays set after the pick so one boss pays once). BossReward.
+var legendary_table: LegendaryTable
+var legendary_id := -1
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
@@ -430,17 +436,20 @@ func step(frame: InputFrame) -> void:
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
-	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
+	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
-		if boss_flow == null or boss_flow.spawns_open(self):
+		if Arenas.holds_spawns(self):
+			Arenas.count_time(self)  # v0.5.5 AR: sealed in an arena, the horde waits; the clock runs on
+		elif boss_flow == null or boss_flow.spawns_open(self):
 			SpawnDirector.advance(self)
 		else:
 			boss_flow.count_time(self)  # Run flow: the boss fight (and its room after, PB) stops spawns, not the clock.
 	if boss_flow != null:
 		boss_flow.advance(self)
+	BossReward.advance(self)  # v0.5.5 AR (X1b): the boss's legendary altar
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -569,7 +578,40 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 # --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
 ## Whether a blink from `from` may land at `at`: the boss room's door rules (BossFlow.blink_may_land).
 func blink_may_land(from: Vector2, at: Vector2) -> bool:
+	if not Arenas.blink_may_land(self, at):  # v0.5.5 AR: never out of a sealed arena
+		return false
 	return boss_flow == null or boss_flow.blink_may_land(self, from, at)
+
+
+## v0.5.5 AR: a sealed arena's doorway barrier joins the walls for collision, shots and sight only: the flow field is
+## left as it is (a rebuild is ~0.1 s on a floor), so the enemies outside press against it and those inside chase you.
+func add_barrier(o: Obb) -> void:
+	walls.append(o)
+	_wall_grid.add(o.bounds())
+
+
+## v0.5.5 AR: removes a barrier (matched by its shape; a restored world holds copies) and rebuilds the wall grid.
+func remove_barrier(o: Obb) -> void:
+	var k := walls.size() - 1
+	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
+		k -= 1
+	if k < 0:
+		return
+	walls.remove_at(k)
+	rebuild_wall_grid()
+
+
+## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
+func rebuild_wall_grid() -> void:
+	var rects: Array[Rect2] = []
+	for x in walls:
+		rects.append(x.bounds())
+	_wall_grid.build(rects)
+
+
+## Enemies queued for phase 9's arrival (Splitlings, boss adds) that aren't actors yet (Arenas waits for them).
+func has_pending_enemies() -> bool:
+	return not _pending_enemies.is_empty()
 
 
 ## Builds, at setup, the flow field for the walls plus `o`, so adding `o` in play (the boss door sealing) never
@@ -813,6 +855,10 @@ func state_hash() -> String:
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
 	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
 		overrun.hash_into(h)
+	if arenas.touched():  # v0.5.5 AR: only once an arena sealed.
+		arenas.hash_into(h)
+	if legendary_id != -1:  # v0.5.5 AR: only once a boss left its legendary altar.
+		h.add_int(legendary_id)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.

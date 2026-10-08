@@ -93,13 +93,17 @@ func sync(reader: WorldReader) -> void:
 	_reward = rid
 	visible = true
 	var items := reader.choice_items()
+	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR (X1b)
 	_count = items.size()
 	for k in SLOTS:
 		var s := _slots[k]
 		s.visible = k < _count
 		if k >= _count:
 			continue
-		s.show_card(card_face(self, reader, items[k]))  # v0.4.0 BS: a mod, an ability or a stat card
+		var face := card_face(self, reader, items[k])  # v0.4.0 BS: a mod, an ability or a stat card
+		if legendary:
+			face = legendary_face(self, face)
+		s.show_card(face)
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
 		s.show_curse(CurseLook.line(self, reader, curse) if curse >= 0 else "")
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
@@ -108,6 +112,8 @@ func sync(reader: WorldReader) -> void:
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
 		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
+	if legendary:  # v0.5.5 AR (X1b): the boss's reward
+		_title.text = tr("PICK_TITLE_LEGENDARY")
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)
@@ -140,13 +146,36 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
 				args.append(GambleIcons.percent(int(info["side"])))
 			face["sentence"] = ci.tr(info["desc_key"]) % args
-			face["tier_text"] = ci.tr(["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC"][face["tier"]])
+			face["tier_text"] = ci.tr(
+				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"][face["tier"]]
+			)
+			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
+				face["tier"] = CardFrames.LEGENDARY_TIER
 		_:
 			face["color"] = ItemLooks.color_of_id(id)
 			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
 			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), rarity] if run else rarity
 	return face
+
+
+## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
+## it on a mod).
+static func legendary_face(ci: Object, face: Dictionary) -> Dictionary:
+	var out := face.duplicate()
+	out["tier"] = CardFrames.LEGENDARY_TIER
+	var word: String = ci.tr("RARITY_LEGENDARY")
+	out["tier_text"] = (
+		"%s · %s" % [ci.tr("UI_CARD_MOD"), word]
+		if int(face["type"]) == WorldReader.CARD_MOD
+		else word
+	)
+	return out
+
+
+## Whether the open choice is the boss's legendary pick.
+func is_legendary() -> bool:
+	return _open and _slots[0].tier == CardFrames.LEGENDARY_TIER
 
 
 func is_open() -> bool:

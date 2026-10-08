@@ -39,7 +39,7 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 	var w := e.world()
 	var r := WorldReader.new(w)
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	# One record per swing: [combo step, melee HIT amounts, DAMAGE dealt].
 	var swings: Array = []
 	var last_t := 0

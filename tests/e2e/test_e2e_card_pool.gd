@@ -56,6 +56,11 @@ func test_open_altars_until_a_new_card_is_offered_and_take_it() -> void:
 		await _grant(e, main, id)
 	await e.tap(KEY_QUOTELEFT)
 	assert_eq(w.ability_owned.size(), 4, "four slots full")
+	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
+	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.
+	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
+	if Overrun.enabled(w):
+		w.arenas.cleared.append(w.floor_layout.overrun_room)
 	var visited := []
 	var found := -1
 	var offer := PackedInt32Array()

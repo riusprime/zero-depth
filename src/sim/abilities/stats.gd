@@ -45,7 +45,7 @@ enum Stat {
 	FAST_HANDS,
 	LIFESPROUT,
 }
-enum Rarity { COMMON, RARE, EPIC }
+enum Rarity { COMMON, RARE, EPIC, LEGENDARY }  # v0.5.5 AR: LEGENDARY, the boss's tier (X1b)
 
 const COUNT := 18
 const MULT := 0
@@ -84,11 +84,11 @@ static func table(w: World, s: int) -> StatTable:
 static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
-		var r := clampi(rarity, 0, 2)
+		var r := clampi(rarity, 0, t.amounts.size() - 1)
 		w.stat_cards.append(Offers.stat_code(s, r))  # v0.5.0 SH: the shop can sell it back
 		add_amount(w, s, card_amount(w, s, r))
 		if s != Stat.LIFESPROUT:
-			_side(w, t, s, t.side[r])
+			_side(w, t, s, t.side[r] if r < t.side.size() else 0)
 
 
 ## What a card of stat `s` at `rarity` adds now: its amount, but for Lifesprout (v0.5.5 D9) only the first card
@@ -97,9 +97,9 @@ static func card_amount(w: World, s: int, rarity: int) -> int:
 	var t := table(w, s)
 	if t == null:
 		return 0
-	var r := clampi(rarity, 0, 2)
+	var r := clampi(rarity, 0, t.amounts.size() - 1)
 	if s == Stat.LIFESPROUT and value(w, s) > 0:
-		return t.side[r]
+		return t.side[r] if r < t.side.size() else 0
 	return t.amounts[r]
 
 

@@ -83,6 +83,7 @@ static func pick_rooms(
 			r == layout.portal_room
 			or r == layout.overrun_room
 			or r == layout.shop_room
+			or layout.arena_rooms.has(r)  # v0.5.5 AR: arenas are combat rooms
 			or taken.has(r)
 		):
 			continue

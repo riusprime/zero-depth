@@ -120,6 +120,9 @@ var boss_spawn := Vector2.ZERO
 ## (-1 = none on this floor) and the doorways into it (indices into the doorway arrays: their red frames).
 var overrun_room := -1
 var overrun_doors := PackedInt32Array()
+## v0.5.5 AR: the sealed arenas (ArenaRooms.mark, after the Overrun room; ascending; empty without an arena table).
+## The Overrun room is the hardest arena but is listed on its own (overrun_room).
+var arena_rooms := PackedInt32Array()
 ## The shop (v0.5.0 SH; ShopPlacement.pick, -1 before it runs): its room, the terminal's centre and its facing.
 var shop_room := -1
 var shop_pos := Vector2.ZERO

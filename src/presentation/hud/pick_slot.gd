@@ -15,8 +15,10 @@ const RARE := Color("#F0B840")
 ## v0.4.0 BS: an epic stat card, and an ability card (the hero's cyan).
 const EPIC := Color("#C77DFF")
 const ABILITY := Color("#2BC4E2")
-## The mark's colour by tier: common, rare, epic, ability.
-const TIERS: Array[Color] = [COMMON, RARE, EPIC, ABILITY]
+## v0.5.5 AR (X1b): a legendary card (the boss's tier): bright gold.
+const LEGENDARY := Color("#FFD84A")
+## The mark's colour by tier: common, rare, epic, ability, legendary (CardFrames.LEGENDARY_TIER).
+const TIERS: Array[Color] = [COMMON, RARE, EPIC, ABILITY, LEGENDARY]
 ## Frame pixels → screen pixels in the 3-card pick (1080p layout); the shop passes its own.
 const PICK_SCALE := 1.2
 
@@ -24,7 +26,7 @@ var index := 0
 var card: CrystalCard
 var focused := false
 var rare := false
-## v0.4.0 BS: 0 common, 1 rare, 2 epic, 3 an ability card (TIERS).
+## v0.4.0 BS: 0 common, 1 rare, 2 epic, 3 an ability card, 4 (v0.5.5 AR) a legendary card (TIERS).
 var tier := 0
 var _key := Label.new()
 ## v0.5.0 EV: a cursed card's mark and line, under the card (hidden on a clean card).

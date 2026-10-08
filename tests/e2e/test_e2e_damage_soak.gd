@@ -33,7 +33,7 @@ func test_take_hits_die_and_restart_with_no_errors_or_growth() -> void:
 		var keys := DamageFlashKeys.of(player)
 		var last_hp := w.actors.hp[0]
 		var nav := NavField.new()
-		nav.build(w.walls)
+		nav.build(E2e.walk_walls(w, target))
 		for k in MAX_FRAMES_PER_LIFE:
 			if w.player_dead():
 				break

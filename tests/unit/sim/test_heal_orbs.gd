@@ -36,8 +36,10 @@ func test_the_shipped_numbers() -> void:
 	)
 	var ls := ContentCompiler.compile_stat_cards(repo)[Stats.Stat.LIFESPROUT]
 	assert_not_null(ls, "the Lifesprout card exists")
-	assert_eq(Array(ls.amounts), [100, 100, 100], "D9: the first card gives 10 %")
-	assert_eq(Array(ls.side), [50, 50, 50], "D9: every further card +5 %")
+	assert_eq(
+		Array(ls.amounts), [100, 100, 100, 160], "D9: the first card gives 10 % (AR: + legendary)"
+	)
+	assert_eq(Array(ls.side), [50, 50, 50, 80], "D9: every further card +5 %")
 	assert_eq(ls.cap, 300, "capped at 30 %")
 	assert_gt(ls.weight, 0, "it is in the card pool")
 

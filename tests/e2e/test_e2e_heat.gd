@@ -87,7 +87,7 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	assert_eq(choice.text, tr("ENEMY_WARDEN"), "the panel names the Warden")
 	var wardens := 0
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	var trigger := false
 	var charging := true
 	var ready := false

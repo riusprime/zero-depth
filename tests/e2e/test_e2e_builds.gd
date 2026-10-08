@@ -139,7 +139,7 @@ func test_melee_follows_the_move_stick_and_shots_the_aim_stick() -> void:
 	var w := e.world()
 	var r := WorldReader.new(w)
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	var hit_toward := false
 	var swing_dir_ok := false
 	var trigger := false
