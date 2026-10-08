@@ -15,10 +15,12 @@ merged.
 | EN | Six horde enemies (Swarmer packs, Splitter, Shield Bearer, Mender, Mine Layer, Sniper): 12 behaviours ([`evidence/ENEMIES_12.md`](evidence/ENEMIES_12.md)) | `v0.4.0 Step EN` |
 | BO | A second boss in every pool: the Warlord (floor 1), the Hive Lens (floor 2, splits into three Lens Drones), the Foundry (floor 3); the `flood` move; sounds, strings, image prompts ([`evidence/BOSSES_2.md`](evidence/BOSSES_2.md), [`../../art/BOSSES_2.md`](../../art/BOSSES_2.md)) | `v0.4.0 Step BO` |
 | SC | Enemies scale per floor (HP ×1.9, damage ×1.4) and every 30 s danger tier (×1.10, ×1.05); hordes grow from 14/30/50 to 120 alive in packs at the room edges; the sim carries 120 enemies + 200 shots at 3.66 ms a tick (evidence/HORDES.md) | this commit |
-
+| TU | A difficulty curve per floor (`data/curves/`): a calm first minute (5 / 7 / 9 alive, the basic kinds one at a time, no tier growth, eased HP and damage), then They stir / The hunt / The swarm bring the floor's kinds in by 3:00 and ramp to SC's peak at 10:00; enemy kinds spread over floors 1–3 (owner D5), each phase and each new kind announced on the HUD (en/es); a free altar next to the start hall; Splitlings and boss summons scaled like the spawner's; Gun ×1.00 (owner D6); the expected-build bot and run sims. Bands missed and reported ([`evidence/TUNING.md`](evidence/TUNING.md)) | `v0.4.0 Step TU` |
 | SV | Saves at each first room entry and on close (pause → Main menu, window close); **Continue** on the main menu resumes at the last room's entry with the same state hash; a death or a win deletes the save ([`evidence/SAVES.md`](evidence/SAVES.md)) | `v0.4.0 Step SV` |
 
 ## Goldens changed on purpose
+- TU: none (the replay golden passes; the export smoke's 600-tick hash stays `e5365ddb…`; the curve is loadout and
+  the collision change keeps every result).
 - SV: none (no hashed field added; the snapshot reads the world, it doesn't change how it steps).
 - BS: none (the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
   chance is in play, which the kernel worlds never have).
@@ -69,6 +71,13 @@ merged.
   content tables needs a `WORLD_KEPT` entry. New run-level state in `RunState` needs a line in `RunSaver.payload_of`
   and `run_from`.
 
+- TU (owner questions, `evidence/TUNING.md`): **Q-T1** the bots reach the floor-1 boss door at ~3 min, M-FLOOR says
+  10–15 min (the peak is at 10:00); **Q-T2** no healing in a fight, so attrition kills the expected-build bot whatever
+  the curve; **Q-T3** the floor-1 boss kills half the bots that reach it; **Q-T4** the PLAN's bands (floor-1 deaths
+  < 30 %, 30–60 % by floor 3, TTK falling 20–40 %) are all missed (90 %, 100 %, +101 %) and were not widened.
+- TU: horde bench still over 4 ms (CPU 4.95–5.02 ms a tick, ~5–6 % under the pre-pass tree, load ~6); not measured
+  on a quiet machine. FightLab (readable cause, `stress_ai`) still runs floors without a curve on purpose.
+
 ## Blockers
 - none
 
@@ -116,3 +125,8 @@ merged.
   a further optimisation pass goes into TU. Gap: split/summoned enemies get floor scaling only (fix in TU).
 - 2026-10-08 — Owner played a playable build: too hard from the start; wants an easy first minute, enemies introduced in
   phases, the peak reached near the floor's end (verbatim in the PLAN, D1–D4). Goes into TU, started now.
+- 2026-10-08 — Step TU: difficulty curve (5 phases per floor, data), phase HUD + dev "Next difficulty phase", kinds by
+  floor (D5), altar by the start, queued-enemy scaling, Gun ×1.00 (D6), the expected-build bot (`RunBot`, `TuningRun`,
+  `scripts/sim/tuning_sim.gd`). Sims: floor-1 deaths 100 % → 90 %, median death 61 s → 210 s, alive at 2:00 1/20 →
+  20/20; bands missed (reported, Q-T1–T4). Readable cause 0 violations; boss bands in with the Gun at ×1.00; horde
+  bench still missed. Goldens unchanged. `MIN_TEST_COUNT` 964.

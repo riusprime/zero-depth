@@ -79,6 +79,10 @@ map onto them like this:
 | other archetype specialists | added as each engine lands | Biased to that engine |
 | `exploit:<case>` | Scripted to look for one exploit (a proc loop, cap abuse, a doorway cheese) | — |
 
+v0.4.0 TU builds the first whole-run bot, `tests/support/run_bot.gd` ("expected build": `competent`-style movement,
+best-score picks, the reaction and dodge knobs below), run by `scripts/sim/tuning_sim.gd`
+(`docs/roadmap/v0.4.0/evidence/TUNING.md`); the `run.v1` record and `run_sim.gd` above are still to come.
+
 **Skill knobs** (every policy takes them; presets combine them):
 
 | Knob | Meaning | Presets (**starting values**: novice / average / expert) |
