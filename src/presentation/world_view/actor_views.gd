@@ -22,6 +22,9 @@ var flash_frames := 3
 var outline_color := Color("#1A1A22")
 ## The look of new player bolts (ItemVisuals sets it from the items owned).
 var bolt_look := {}
+## v0.5.5 LK (owner A2): the heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
+## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
+var heat_tier := HeatLooks.TIER_COOL
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -37,6 +40,7 @@ var _proj_pooled := 0
 
 
 func sync(reader: WorldReader) -> void:
+	heat_tier = HeatLooks.tier_of(reader.heat_state())
 	var alive := {}
 	var hero := reader.player_pos()
 	for i in reader.actor_count():
@@ -435,6 +439,13 @@ func _add_core_panels(root: Node3D, size: float) -> void:
 		root.add_child(n)
 
 
+## The colour a player bolt fired now takes: the bolt look's own (ItemVisuals), or the heat tier's from Hot up.
+func bolt_color() -> Color:
+	return HeatLooks.attack_color(
+		bolt_look.get("color", ThemePalette.color(&"player_core")), heat_tier
+	)
+
+
 ## Hostile shots are yellow streaks; the player's bolts are short cyan darts (reserved colours, PRESENTATION §3).
 ## v0.4.0 SC: a node of the same look comes back from the pool when there is one; the mesh is shared per look.
 func _make_projectile(is_player: bool = false) -> Node3D:
@@ -444,7 +455,7 @@ func _make_projectile(is_player: bool = false) -> Node3D:
 	var role := &"player_core" if is_player else &"proj_hostile"
 	var c := ThemePalette.color(role)
 	if is_player:
-		c = bolt_look.get("color", c)
+		c = bolt_color()
 	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
 	var key := "%s|%s|%s" % [size, c.to_html(), energy]
 	var idle: Array = _proj_pool.get(key, [])

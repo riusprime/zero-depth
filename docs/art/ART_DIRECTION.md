@@ -168,7 +168,18 @@ swings open on the weak point), two chimneys glowing inside, glowing side vents,
 four short heavy legs. Their flood telegraphs stand drawn while active: the Warlord's as a row of spear heads down
 each lane, the Foundry's as a hot orange core with cross bars. Every body piece is outlined and flashable
 (`ActorViews.flashable`); glows change energy only. A model file `assets/models/bosses/<warlord|hive_lens|foundry>.glb`
-replaces a code body (whole-body motion until rigged).
+replaces a code body (whole-body motion until rigged). v0.5.5 LK (A6): the model request in the new style, with an image
+prompt and a 3D model prompt per boss, is [`requests/v0.5.5_bosses_2_models.md`](requests/v0.5.5_bosses_2_models.md).
+
+**Heat-coloured attacks (owner, v0.5.5 A2).** The hero's attacks (the blade and its trail, the bolts, the Lunge
+Cleave and the Scatter Blast) wear the Overclock meter's tier colour (`HeatLooks.attack_color`): their own colour
+below Hot, the meter's Hot orange `#FFA63A` at Hot, its Overclock red `#FF4A1A` at Overclock and while overheated.
+One table (`HeatLooks`) feeds the meter and the attacks.
+
+**VFX audit (v0.5.5 A3).** Every effect against the owner's new art and light:
+[`../roadmap/v0.5.5/evidence/VFX_AUDIT.md`](../roadmap/v0.5.5/evidence/VFX_AUDIT.md). Rule taken from it: a flash
+of light (a vent's disc, a skill's flash) is additive; debris and vapour (death shards, steam) are lit by the scene;
+telegraphs stay unshaded (PRESENTATION §4).
 
 ## 5. Pipeline
 

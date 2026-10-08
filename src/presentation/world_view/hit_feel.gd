@@ -59,7 +59,7 @@ func sync(reader: WorldReader) -> void:
 					_burst(e.pos, Color(1.0, 0.92, 0.55), 6, 0.09)
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
-					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16)
+					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16, true)
 
 
 ## A DAMAGE event from the combo's finisher itself (the player's melee, not an item's echo), read while that swing
@@ -80,15 +80,22 @@ func spark_count() -> int:
 	return _shards.size()
 
 
-func _burst(at: Vector2, c: Color, n: int, size: float) -> void:
-	var m: StandardMaterial3D = _burst_mats.get(c)
+## `lit`: the pieces are debris (a dead enemy's body), shaded by the scene's light like the body they came from;
+## otherwise they are sparks of light, unshaded. v0.5.5 LK (A3 VFX audit): the death pop was unshaded, so its red
+## chunks glowed at full brightness next to the lit bodies, and stood out of a darker scene as flat stickers.
+func _burst(at: Vector2, c: Color, n: int, size: float, lit: bool = false) -> void:
+	var key := [c, lit]
+	var m: StandardMaterial3D = _burst_mats.get(key)
 	if m == null:
-		# One material per colour, kept for the view's life, not one per kill (DAMAGE_LAG.md): nothing is
+		# One material per look, kept for the view's life, not one per kill (DAMAGE_LAG.md): nothing is
 		# allocated per kill, and its shader never depends on another node staying alive.
 		m = StandardMaterial3D.new()
 		m.albedo_color = c
-		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		_burst_mats[c] = m
+		if lit:
+			m.roughness = 1.0
+		else:
+			m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_burst_mats[key] = m
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * size
 	for k in ViewPrefs.sparks(n):  # reduced motion throws fewer (v0.3.0 O)
