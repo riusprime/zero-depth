@@ -2,8 +2,8 @@
 
 - **Status:** RUN (agent checks). Whether exploring after the boss is worth it and how it feels: OWNER ONLY.
 - **Build:** the PB worktree branch, cut from `5e5b3f9` (lead-merge2). The suite, lint and export smoke ran on the
-  tree at `34c117c` (code and tests as committed in `v0.5.0 Step PB: explore the floor after the boss`, whose own
-  SHA is in `git log`; only this file and PROGRESS were added after the runs). The readable-cause check ran at
+  tree at `34c117c` (all of the step's code and tests; the commits after it, up to `v0.5.0 Step PB: explore the
+  floor after the boss`, add only this file and PROGRESS). The readable-cause check ran at
   `6d7f6a0`, whose `src/`, `scripts/` and `data/` equal `34c117c`'s (`git diff --stat 6d7f6a0 34c117c -- src scripts
   data` is empty). Godot `4.7.2.stable.official.ed1daf0bf`; OS Linux 6.18 (cloud container).
 - **Date:** 2026-10-08
@@ -71,7 +71,24 @@ after the boss (`[137] expected to equal [138]: only the door's seal joined the 
 rule, changed on purpose (above). Second run, at `34c117c`:
 ```
 $ bash scripts/verify.sh
-VERIFY_TAIL
+[… trimmed …]
+res://tests/e2e/test_e2e_after_boss.gd
+* test_out_through_the_boss_door_and_back_to_the_portal
+    first post-boss arrival after 210 frames out, floor time 1797 ticks
+1/1 passed.
+[… trimmed …]
+Totals
+------
+Scripts             171
+Tests              1086
+Passing Tests      1086
+Asserts           483650
+Time              1569.16s
+
+---- All tests passed! ----
+
+Results saved to build/gut.xml
+check_gut_log: ok (1086 passing, minimum 1086)
 ```
 `tests/MIN_TEST_COUNT` 1076 → 1086.
 
@@ -99,7 +116,26 @@ $ godot --headless --path . -s scripts/checks/readable_cause.gd -- seeds=4 floor
 
 ## Command (export smoke, from outside the project folder)
 ```
-EXPORT_TAIL
+$ cd <scratch dir outside the project> && bash <repo>/scripts/ci/export_smoke.sh
+manifest: 9bc3be2a05970e9fbb3bb123891686cb0d89544aec4bb4680d34ff66d3e9d7ab (220 files, 0 errors)
+Export smoke check (exported pack)
+  ok    running inside the exported pack (run from outside the project folder)
+  ok    the main scene ships
+  ok    600-tick World run hash e5365ddb6dcb matches the project's
+  ok    content player: 1
+  ok    content biomes: 3
+  ok    content validates inside the pack (0 errors)
+  ok    manifest hash 9bc3be2a0597 matches the project's
+  ok    Spanish translation is loaded
+  ok    UI_PLAY is PLAY / JUGAR
+  ok    boss model stone_sentinel loads from the pack
+  ok    boss model crawler_queen loads from the pack
+  ok    boss model fortress_turret loads from the pack
+  ok    audio cues: 87
+  ok    every cue's sound loads from the pack (missing: [])
+  ok    the test framework is not shipped
+  ok    tests are not shipped
+0 miss(es)
 ```
 
 ## Goldens
