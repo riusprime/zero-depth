@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CurseDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/curse_definition.gd" id="1_curse"]
+
+[resource]
+script = ExtResource("1_curse")
+name_key = &"CURSE_MARKED_HUNT"
+desc_key = &"CURSE_MARKED_HUNT_DESC"
+effect = &"elite_chance"
+amount = 12
+threat = 1
+weight = 10
+id = &"marked_hunt"

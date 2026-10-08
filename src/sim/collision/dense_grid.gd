@@ -163,6 +163,25 @@ func query_rect(rect: Rect2) -> PackedInt32Array:
 	return out
 
 
+## v0.4.0 TU: whether query_rect(rect) would return anything (box mode or circle mode), without building the list.
+func any_in_rect(rect: Rect2) -> bool:
+	if _count == 0:
+		return false
+	var grow := _pad if _pad > 0.0 else 0.0
+	var inv := 1.0 / cell
+	var mx := size.x - 1
+	var my := size.y - 1
+	var cx0 := clampi(int((rect.position.x - grow - origin.x) * inv), 0, mx)
+	var cx1 := clampi(int((rect.end.x + grow - origin.x) * inv), 0, mx)
+	var cy0 := clampi(int((rect.position.y - grow - origin.y) * inv), 0, my)
+	var cy1 := clampi(int((rect.end.y + grow - origin.y) * inv), 0, my)
+	for cy in range(cy0, cy1 + 1):
+		var row := cy * size.x
+		if _start[row + cx1 + 1] > _start[row + cx0]:
+			return true
+	return false
+
+
 ## Box mode: indices of the boxes whose cells the segment from `a` to `b`, thickened by `r`, passes through
 ## (ascending, no duplicates; a superset of the boxes it touches). Walks the grid a column at a time, so a long
 ## line of sight visits about twice its length in cells, not its bounding box's area.

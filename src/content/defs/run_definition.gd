@@ -19,6 +19,15 @@ extends ContentDef
 @export var boss_damage_per_floor := 0.2
 ## Between floors you heal this fraction of your max HP.
 @export var heal_between_floors := 0.4
+## v0.5.0 RT (R5): a Deep floor (the Deep portal after a floor before the last) scales enemies' and bosses' HP and
+## damage by this on top of the floor's own scaling, and adds this many chests (and one curse-free epic altar).
+@export var deep_scale := 1.25
+@export var deep_extra_chests := 1
+## v0.4.0 TU (owner D9, "Ease floor 1 only"): a floor's boss HP and attack damage × this per mille, entry f − 1 (past
+## the end, the last entry), on top of the per-floor scaling; and the share of max HP (per mille) restored when the
+## boss room seals.
+@export var boss_ease_floor_permille := PackedInt32Array([800, 1000, 1000])
+@export var boss_room_heal_floor_permille := PackedInt32Array([1000, 0, 0])
 
 
 func category() -> StringName:
@@ -47,4 +56,22 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "heal_between_floors must be within 0..1")
 		)
+	if deep_scale < 1.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "deep_scale must be at least 1"))
+	if deep_extra_chests < 0:
+		issues.append(
+			ValidationIssue.new(&"negative", resource_path, "deep_extra_chests is negative")
+		)
+	for v in boss_ease_floor_permille:
+		if v < 1 or v > 1000:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "boss_ease_floor_permille: 1..1000")
+			)
+	for v in boss_room_heal_floor_permille:
+		if v < 0 or v > 1000:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "boss_room_heal_floor_permille: 0..1000"
+				)
+			)
 	return issues

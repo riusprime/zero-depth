@@ -78,6 +78,15 @@ const COMBO_COLORS := {
 	&"spiked_phase": Color("#9BE070"),
 	&"slipstream": Color("#7CFFE0"),
 	&"frozen_bastion": Color("#9FD8FF"),
+	# v0.4.0 AB: the ability combos.
+	&"storm_bombs": Color("#C8B4FF"),
+	&"napalm_drone": Color("#FF6A2A"),
+	&"glacier_ring": Color("#A8F0FF"),
+	&"blink_charge": Color("#D88CFF"),
+	&"blade_dance": Color("#E8F4FF"),
+	&"wingman": Color("#3AE0FF"),
+	&"superconductor": Color("#7CF6FF"),
+	&"ember_ward": Color("#FFB03A"),
 }
 
 ## The colour of an item this table doesn't know.

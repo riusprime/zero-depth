@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ShopDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/shop_definition.gd" id="1_shp"]
+
+[resource]
+script = ExtResource("1_shp")
+id = &"terminal"
+offer_size = 4
+rarity_prices = PackedInt32Array(30, 55, 90)
+floor_price_step = 0.5
+heal_share = 0.3
+heal_price = 40
+reroll_price = 20
+reroll_step = 0.5
+sell_share = 0.4
+ability_refund_per_level = 10
+interact_radius_m = 1.8

@@ -120,6 +120,33 @@ line telegraph, 1.0 s, high damage). All with readable telegraphs ≥ 24 ticks a
 One **Overrun** door per floor (from floor 1, a side room with a red frame): ×1.5 HP/damage, +50 % spawns; clearing
 it gives an ability level-up card and 2× shards. Optional, never on the path to the boss.
 
+## Owner playtest feedback (2026-10-08, verbatim)
+> okay, I tried one of these playable versions, it is extreamly hard from the beggining, I do like this level of difficulty, but only if the character has grown a bit on the scaling vector, we need to ease the difficulty curve on the first minutes of the game, and introduce the enemies by phases, and then reach this difficulty closer to the end of the floor, when the difficulty has reached its max,  difficulty should be "easy" the first minute so you can explore and gather some stuff and then it becomes harder and harder, what I felt is that there were too many hard enemies I could not really kill all before even reaching the first boss or getting enough spells or upgrades
+
+| # | Owner line | Decision | Step |
+|---|---|---|---|
+| D1 | "ease the difficulty curve on the first minutes of the game" / "difficulty should be "easy" the first minute so you can explore and gather some stuff" | A calm first minute on every floor: few enemies, only the basic kinds, slow spawns, no tier scaling yet | TU |
+| D2 | "introduce the enemies by phases" | Enemy kinds unlock in phases across the floor (basic → ranged → specialists → elites), each phase announced | TU |
+| D3 | "reach this difficulty closer to the end of the floor, when the difficulty has reached its max" / "then it becomes harder and harder" | The floor's difficulty ramps to its peak (today's level) near the floor's expected end, then holds; the curve is data | TU |
+| D4 | "I do like this level of difficulty, but only if the character has grown a bit on the scaling vector" / "too many hard enemies … before even reaching the first boss or getting enough spells or upgrades" | Tune against the expected-build bot: early rewards come sooner (an altar near the start hall), and the peak is reached only when a bot that picks normally has grown into it | TU |
+| D5 | (2026-10-08) "we also have a lot of variety of enemies, let's distribute presenting them through the first 3 floors" | Enemy kinds are introduced across floors 1–3 (floor 1: basics + a few specialists; floor 2 and 3 add the rest), each first appearance announced; boss summons exempt | TU |
+| D6 | (2026-10-08) "also, do not make gun -15% it is actually unplayable with that debuff" | Gun damage multiplier 0.85 → 1.00 (supersedes v0.3.0 L16 for the Gun; Blade +15 % stays) | TU |
+| D7 | (2026-10-08, Q-T1) "Peak ~1 min before boss" | The curve peaks about one minute before the median time the expected-build bot reaches the boss door (re-measured), then holds; staying longer still pays more shards | TU |
+| D8 | (2026-10-08, Q-T2) "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25% and enemies damage and player health should be like I take damage but I can heal, wont risk taking too much damage but I know this healing orb is coming sooner or later" | Kills drop a **heal orb** 10 % of the time (healing 25 % max HP on pickup); enemy damage and player HP tuned so damage is steady but survivable until the next orb | TU |
+| D9 | (2026-10-08, Q-T3) "Ease floor 1 only" | Floor-1 bosses −20 % HP and damage; HP restored to full on entering the boss room (floor 1; floors 2–3 unchanged) | TU |
+| D10 | (2026-10-08, Q-T1/Q-T5) "You can go as soon as you want to the boss and then explore back, so if you want to rush the boss no problem, you get the boss reward and then explore" | Floors have no minimum length. Killing the boss reopens the boss door; the portal stays open until you take it; you can go back out, explore, open what's left and keep fighting (spawns resume at the curve's level) before leaving. M-FLOOR (10–15 min) is no longer a target: floor length is the player's choice | PB |
+| D11 | (2026-10-08, Q-T6) "Leave as is" | Floor-2/3 bosses unchanged | — |
+| D12 | (2026-10-08, Q-T7) "OK for this build" | The tuned peak (TU round 2, c7) ships | — |
+
+**TU as built (starting values, evidence in [`evidence/TUNING.md`](evidence/TUNING.md)).** A curve per floor
+(`data/curves/floor_N.tres`): Calm 0–60 s (holds tier 0; 35 / 25 / 18 % of SC's tier-0 cap: 5 / 7 / 9 alive; spawns
+half as often; HP 60 %, damage 40 % of SC's; one at a time; Charger, Needle, Swarmer), then They stir, The hunt and
+The swarm bring the floor's kinds in, ramping to the peak (D7: about a minute before the bots' median boss-door time;
+floor 1 at 2:24, floors 2–3 at 1:30, tier 3.5, cap 55 %, HP 77.5 %, damage 55 % of SC's), which holds; shards keep
+growing with floor time. Heal orbs (D8: 10 % of kills, +25 % max HP). Floor-1 bosses −20 % HP / damage and a full heal
+at their door (D9). A free altar always stands in a room next to the start hall. Split and summoned enemies get the
+tier scaling. Gun ×1.00 (D6).
+
 ## Steps
 | Wave | Step | Scope |
 |---|---|---|

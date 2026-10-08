@@ -4,7 +4,8 @@ extends RefCounted
 ## - Shards: every enemy kill pays its kind's shards × (1 + bonus × danger tier), rounded half up; a kind marked
 ##   shards_by_floor (a boss) pays shards × the floor number instead.
 ## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
-##   in the start hall. Their counts and order come from the loot stream.
+##   in the start hall. Their counts and order come from the loot stream. v0.4.0 TU (D4): the first spot filled is
+##   in a room next to the start hall (start_first) and always holds an altar.
 ## - The interact button within reach opens the nearest one. A chest you can't afford stays shut (the world
 ##   records the refusal for the view). Opening rolls the offer once: up to offer_size different items from the
 ##   pool (loot stream; chests weight rare items higher). The world then waits for the pick (World.choosing):
@@ -22,6 +23,8 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return t.shards * maxi(1, w.floor_index)
+	# v0.4.0 TU (owner D7, "staying longer still pays more shards"): the floor's plain 30 s tier, not the curve's,
+	# so shards keep growing after the curve peaks and holds.
 	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
 	return (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 
@@ -30,6 +33,8 @@ static func shards_for_kill(w: World, kind: int) -> int:
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
+	Overrun.on_kill(w, i, amount)  # v0.4.0 AB: an Overrun kill counts toward the clear
+	HealOrbs.on_kill(w, i)  # v0.4.0 TU (D8): maybe a heal orb
 	if amount <= 0:
 		return
 	w.shards += amount
@@ -42,7 +47,7 @@ static func on_kill(w: World, i: int) -> void:
 ## drawn from the loot stream; chest prices follow chest order and World.floor_index.
 static func place(w: World, layout: FloorLayout) -> void:
 	var t := w.reward_table
-	var order := spot_order(layout)
+	var order := start_first(layout, spot_order(layout))
 	var kinds := PackedInt32Array()
 	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
 		kinds.append(RewardStore.Kind.ALTAR)
@@ -53,6 +58,10 @@ static func place(w: World, layout: FloorLayout) -> void:
 		var swap := kinds[k]
 		kinds[k] = kinds[j]
 		kinds[j] = swap
+	var altar := kinds.find(RewardStore.Kind.ALTAR)  # v0.4.0 TU (D4): the first spot takes an altar
+	if altar > 0:
+		kinds[altar] = kinds[0]
+		kinds[0] = RewardStore.Kind.ALTAR
 	var chests := 0
 	for k in mini(kinds.size(), order.size()):
 		var price := 0
@@ -60,6 +69,23 @@ static func place(w: World, layout: FloorLayout) -> void:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
 		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+
+
+## v0.4.0 TU (owner D4): `order` with the first spot of the room nearest the start hall (fewest hops; the first
+## such in `order`) moved to the front, so the floor's first reward, an altar, is next to the start.
+static func start_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
+	var best := -1
+	for k in order.size():
+		var hops := layout.hops[layout.item_rooms[order[k]]]
+		if best < 0 or hops < layout.hops[layout.item_rooms[order[best]]]:
+			best = k
+	if best <= 0:
+		return order
+	var out := PackedInt32Array([order[best]])
+	for k in order.size():
+		if k != best:
+			out.append(order[k])
+	return out
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
@@ -89,7 +115,12 @@ static func nearest(w: World) -> int:
 
 
 static func can_afford(w: World, i: int) -> bool:
-	return w.shards >= w.rewards.price[i]
+	return w.shards >= price_of(w, i)
+
+
+## Reward i's price now: its placed price under the prices curse (v0.5.0 EV).
+static func price_of(w: World, i: int) -> int:
+	return Curses.price(w, w.rewards.price[i])
 
 
 ## Tick phase 2b: a buffered interact press next to a reward opens it. True if the world is now choosing.
@@ -105,6 +136,7 @@ static func interact(w: World) -> bool:
 		return false
 	if w.rewards.rolled[i] == 0:
 		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
+		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
 		_deny(w, i)
 		return false
@@ -125,7 +157,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	var k := frame.pick - 1
 	if k < 0 or k >= offer.size() or not can_afford(w, i):
 		return
-	w.shards -= w.rewards.price[i]
+	w.shards -= price_of(w, i)
 	var idx := offer[k]
 	var at := w.rewards.pos(i)
 	var e := w.emit_event(
@@ -133,6 +165,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	)
 	e.amount = idx
 	Offers.apply(w, idx)  # v0.4.0 BS: an item (mod), an ability or a stat card
+	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
 	w.rewards.remove_at(i)
 	_resume(w)
 

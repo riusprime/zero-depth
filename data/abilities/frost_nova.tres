@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="AbilityDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/ability_definition.gd" id="1_abil"]
+
+[resource]
+script = ExtResource("1_abil")
+kind = 8
+activation = 1
+button = 0
+name_key = &"ABILITY_FROST_NOVA"
+desc_key = &"ABILITY_FROST_NOVA_DESC"
+tags = Array[StringName]([&"frost", &"area", &"auto"])
+radius_m = 3.0
+damage = 10
+level_radius = PackedFloat32Array(1, 1.133333, 1.266667, 1.4, 1.533333)
+level_cooldown = PackedFloat32Array(4, 4, 4, 4, 3)
+level_extra = PackedInt32Array(2, 2, 4, 4, 4)
+engine_item = &"glacial_edge"
+id = &"frost_nova"

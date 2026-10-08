@@ -39,6 +39,17 @@ const DEATHS := {
 	WorldReader.KIND_LENS_DRONE: &"enemy_death_lens_drone",
 }
 
+## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
+const ELEMENT_CUES := {
+	&"arc_field": &"arc_field",
+	&"superconductor": &"arc_field",
+	&"frost_nova": &"frost_nova",
+	&"flame_trail": &"flame_trail",
+	&"napalm_drone": &"flame_trail",
+	&"ember_ward": &"flame_trail",
+	&"storm_bombs": &"arc_field",
+}
+
 var _last_seq := 0
 var _kinds := {}
 var _states := {}
@@ -54,9 +65,18 @@ var _echo_tick := -1
 var _blink_tick := -1
 var _choosing := false
 var _denied_tick := -1
+var _shop_open := false
+var _shop_denied := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
+## v0.5.0 EV: the event panel open, the ambush on, and the last curse and payout ticks seen.
+var _event_open := false
+var _ambush := false
+var _curse_tick := -1
+var _done_tick := -1
+## v0.4.0 AB: the Overrun room's last state (inside, cleared).
+var _overrun := [false, false]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -68,8 +88,12 @@ func prime(reader: WorldReader) -> void:
 	_blink_tick = reader.blink_tick()
 	_choosing = reader.choosing()
 	_denied_tick = reader.reward_denied_tick()
+	_shop_open = reader.shop_open()
+	_shop_denied = reader.shop_denied_tick()
 	_heartbeat_left = 0
 	_heat_ticks = _heat_edges(reader.heat_state())
+	var o := reader.overrun()
+	_overrun = [o["inside"], o["cleared"]]
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -92,7 +116,19 @@ func collect(reader: WorldReader) -> Array:
 	_rewards(reader, out)
 	_low_hp(reader, out)
 	_heat(reader, out)
+	_event_rooms(reader, out)  # v0.5.0 EV
+	_overrun_edges(reader, out)
 	return out
+
+
+## v0.4.0 AB: walking into the Overrun room sounds its alarm; clearing it, its fanfare.
+func _overrun_edges(reader: WorldReader, out: Array) -> void:
+	var o := reader.overrun()
+	if o["inside"] and not _overrun[0]:
+		out.append([&"overrun_enter", null, 1.0])
+	if o["cleared"] and not _overrun[1]:
+		out.append([&"overrun_clear", null, 1.0])
+	_overrun = [o["inside"], o["cleared"]]
 
 
 func _events(reader: WorldReader, out: Array) -> void:
@@ -103,6 +139,9 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.DAMAGE:
 				if e.tags & SimEvent.TAG_DOT:
 					continue  # ticks are silent (SFX_NEEDS)
+				if ELEMENT_CUES.has(e.effect_id):  # v0.4.0 AB: the element's own sound
+					out.append([ELEMENT_CUES[e.effect_id], e.pos, 1.0])
+					continue
 				if e.target_id == player_id:
 					out.append([&"hit_taken", null, 1.0])
 				else:
@@ -131,12 +170,18 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"boss_door_seal", null, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
+				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it
+					out.append([&"deep_portal_open", e.pos, 1.0])
 			SimEvent.Kind.FLOOR_EXIT:  # v0.3.5 PT: the hero goes into the portal (the blink's whoosh, lower)
 				out.append([&"blink_out", null, 0.7])
 			SimEvent.Kind.SKILL_USED:  # v0.3.5 K: the build skill, by its kind
 				out.append([skill_cue(e.amount), e.pos, 1.0])
 			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
 				out.append([&"vent_cold", null, 1.0])
+			SimEvent.Kind.SHOP_BUY:  # v0.5.0 SH: a purchase, the heal or a reroll
+				out.append([&"shop_buy", null, 1.0])
+			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
+				out.append([&"shop_sell", null, 1.0])
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
@@ -313,6 +358,13 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	if denied != _denied_tick and denied >= 0:
 		out.append([&"chest_refuse", null, 1.0])
 	_denied_tick = denied
+	var shop := reader.shop_open()  # v0.5.0 SH: the terminal wakes; a refused action buzzes
+	if shop and not _shop_open:
+		out.append([&"shop_open", null, 1.0])
+	_shop_open = shop
+	if reader.shop_denied_tick() != _shop_denied and reader.shop_denied_tick() >= 0:
+		out.append([&"chest_refuse", null, 1.0])
+	_shop_denied = reader.shop_denied_tick()
 
 
 func _low_hp(reader: WorldReader, out: Array) -> void:
@@ -343,3 +395,23 @@ func _heat(reader: WorldReader, out: Array) -> void:
 		if now[k] != _heat_ticks[k] and now[k] >= 0 and rising:
 			out.append([cues[k], null, 1.0])
 	_heat_ticks = now
+
+
+## v0.5.0 EV: a pedestal waking (its panel opening), an ambush starting, a curse taken, an event paying out.
+func _event_rooms(reader: WorldReader, out: Array) -> void:
+	var open := reader.event_open()
+	if open and not _event_open:
+		out.append([&"event_open", null, 1.0])
+	_event_open = open
+	var ambush := reader.event_ambush() >= 0
+	if ambush and not _ambush:
+		out.append([&"ambush_start", null, 1.0])
+	_ambush = ambush
+	if reader.curse_tick() != _curse_tick:
+		if reader.curse_tick() >= 0:
+			out.append([&"curse_gain", null, 1.0])
+		_curse_tick = reader.curse_tick()
+	if reader.event_done_tick() != _done_tick:
+		if reader.event_done_tick() >= 0:
+			out.append([&"event_done", null, 1.0])
+		_done_tick = reader.event_done_tick()

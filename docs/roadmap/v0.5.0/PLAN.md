@@ -25,6 +25,7 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | R4 | ROADMAP: "cursed rewards" | Some chest offers and events carry a **curse**: a strong card plus a lasting drawback (e.g. enemies +15 % speed, −20 % regen, Overclock decays faster); curses raise threat T (PD-05) and are listed on the stats panel | EV |
 | R5 | ROADMAP: "optional routes" | After floors 1 and 2 the portal room offers **two portals**: the normal next floor or a **Deep** variant (×1.25 scaling, one extra chest, a curse-free epic altar); the choice shows on the floor card and the minimap | RT |
 | R6 | ROADMAP: "A full run of 30–60 minutes" | Floors last 10–15 min (M-FLOOR) by measured pacing (boss door opens after the floor's last required room or a minimum time); a bot run is 30–60 min | TU5 |
+| D10 | Owner (2026-10-08, v0.4.0 PLAN D10): "You can go as soon as you want to the boss and then explore back, so if you want to rush the boss no problem, you get the boss reward and then explore" | Floors have no minimum length: the boss's death reopens the boss door both ways, its drops stay, the portal(s) stay open until walked into; spawns resume outside the boss room at the curve's level (none inside it); the D9 heal is once; M-FLOOR is reported, no longer a band | PB |
 | R7 | ROADMAP exit gate: "All scorecard data collected … every cell can be filled from reproducible commands" | `scripts/sims/scorecard.gd` writes every SCORECARD §2 cell to `build/`; the evidence file is filled by hand from its output | SCD |
 
 ## Steps
@@ -36,7 +37,64 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | 5 | RT | Optional routes (Deep portals) |
 | 5 | TU5 | Pacing to a 30–60 minute run (with v0.4.0 TU's scaling tuning) |
 | 5 | SCD | Scorecard collection: every cell from a reproducible command |
+| 5 | PB | Explore the floor after the boss (owner D10) |
 | — | R | Build for the owner (v0.4.0 + v0.5.0 together) + playtest sheet |
+
+## Step EV: events and cursed rewards (lead proposals, built; the owner may change any of them)
+Every number is a starting value (data in `data/events/`, `data/curses/`, `data/event_rules/floor.tres`).
+- **Rooms:** 1–2 event rooms per floor (`Events.pick_rooms`, its own generator function: never the start hall, the
+  boss room or the room before the boss door; a `taken` list keeps other side-room kinds out). A lit pedestal stands
+  at a spot clear of walls and ≥ 3 m from every altar or chest spot; interact (E / pad X) opens its panel and the
+  world waits, like a pick. Each choice shows its cost, its reward (the rolled card itself) and its curse before you
+  take it; "Leave it" is always the last card and keeps the event for later.
+- **The eight events** (the brief's list, with two changes, below):
+
+| Event | Choice → cost → reward | Needs |
+|---|---|---|
+| Unstable Core | Draw: −25 % max HP now → an epic stat card · Embrace: a curse → an epic stat card | stat cards |
+| Echo Mirror | Gaze: a curse → a rare card of the stat you raised most · Shatter: −10 % HP → 30 shards × floor | stat cards |
+| Scrap Heap | Pay 35 shards × floor → a random mod · Dig: −15 % HP → a random mod | — |
+| Ambush Cache | Break the seal: 3 elites (×2 HP) arrive in the room → a free chest when they fall | — |
+| Overclock Vent | Overheat now (the stall) → +30 % Overclock damage for the floor | heat |
+| Blood Price | −12 % max HP for the run → one owned ability levels up | abilities |
+| Wandering Drone | Stay within 4.5 m for 20 s, spawns twice as fast → 45 shards × floor | — |
+| Cleansing Font | Pay 30 shards × floor, or −20 % HP → your latest curse is lifted | a curse held |
+
+  Changes from the brief: **Echo Mirror** repeats the stat you raised most (the sim keeps no per-card stacks, only
+  stat values); **Wandering Drone** is a defence (stay by it), not an escort (no friendly-AI actor exists).
+  "Leave it" is the panel's last card on every event, not an event of its own.
+- **Curses** (each +1 threat T, held for the run, never twice): Swift Foes (normal enemies +15 % move speed),
+  Withering (−20 % regen), Leaky Core (Overclock heat decays 2× faster), Swarm Call (+1 enemy in every spawn
+  arrival, under the alive cap), Price Gouge (+25 % shard prices: chests, the gamble shrine, event costs, and shops
+  through `Curses.price`), Marked Hunt (12 % of spawns are elites: ×2 HP, a gold crown ring).
+- **Cursed chests:** 25 % of chest offers (rolled on first open) turn their first card into a guaranteed epic stat
+  card carrying a curse you don't hold, marked on the card; the other cards are clean. Altars are never cursed.
+- **Cleanse:** the Cleansing Font, and the shop's "Lift your latest curse" tile (60 shards × floor, while a curse
+  is held; `Shop.cleanse` → `Curses.cleanse`). Shop prices (cards, heal, reroll, cleanse) go through `Curses.price`.
+- **Placement order** (as Main and FloorScenario): the Overrun room and the shop are marked first; event rooms
+  never take either (`Events.pick_rooms` reads `overrun_room` and `shop_room`).
+- **Threat T** = the held curses' threat; shown on the HUD (top left, while T > 0), in the pause menu and in the run
+  recap ("Threat: T (peak P)"); `World.threat_peak` and `RunState.threat_by_floor` record it for M-THREAT.
+- **Elites** did not exist before EV: an elite here is a normal enemy kind with +100 % HP and a crown ring; its
+  attacks are its kind's own (readable). SC may fold this into a shared elite rule.
+- **Streams:** room picks on `map:event`, event and cursed-chest rolls on `loot:event`, the elite curse's roll on
+  `ai:elite`, sub-streams of `map`, `loot` and `ai` like `ai:enemy`, so no older draw moved (SIM_CONTRACTS §5).
+
+## Step PB: explore the floor after the boss (owner D10)
+- **Door.** `BossFlow`: the boss's death (`FIGHT` → `OPEN`) removes the door's collider (`World.remove_wall_now`; the
+  flow field from before the seal swaps back in). `door_sealed()` is true only during the fight, so blinks cross the
+  open doorway again. Entering again never re-seals it: `BOSS_ROOM_SEALED` and the floor-1 heal (D9) are once.
+- **Spawns.** `BossFlow.spawns_open(w)`: before the boss room is entered, and after the boss while the player stands
+  outside the boss room (a doorway counts as outside). The floor clock never stops (`count_time`), so arrivals come at
+  the curve's level for the floor time and D7's "staying longer pays more" holds. No spawn anchors in the boss room.
+- **Portals.** Unchanged: open until walked into (both gates on floors 1–2, RT).
+- **Shown.** The HUD's portal note gets a second line in the boss room after the boss ("The boss door is open:
+  explore the rest of the floor, the portal waits for you.", en + es); outside the boss room the note is empty. The
+  minimap draws the boss door dimmed once it is open (legend: "Boss door (dim: open after the boss)"). The door view
+  already sinks when you walk up to it and isn't sealed.
+- **Saves.** A save after the boss died holds the floor's walls without the door: it restores an open door and open
+  portals (no format change).
+- **M-FLOOR** is reported, no longer a band (SCORECARD §2 note, dated).
 
 ## Open items
 - Q1 (from v0.4.0): Echoes, Core theft, Depth descent — still unanswered; not built.

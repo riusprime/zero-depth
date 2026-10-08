@@ -155,15 +155,18 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
 	var r := RunState.start(9, _run_table())
 	var w := _floor_world(r.floor_seed(), r)
-	var combo := w.combo_tables[0]
+	var first := 0
+	while w.combo_tables[first].item_a < 0:  # v0.4.0 AB: the first item combo (ability pairs sort among them)
+		first += 1
+	var combo := w.combo_tables[first]
 	w.add_item(combo.item_a)
 	w.add_item(combo.item_b)
 	w.guard_charges = 2
-	assert_eq(w.combos_owned, PackedInt32Array([0]), "both items unlock the combo")
+	assert_eq(w.combos_owned, PackedInt32Array([first]), "both items unlock the combo")
 	assert_true(Engines.has_combo(w, combo.effect))
 	r.finish_floor(w)
 	var w2 := _floor_world(r.floor_seed(), r)
-	assert_eq(w2.combos_owned, PackedInt32Array([0]), "the combo came along")
+	assert_eq(w2.combos_owned, PackedInt32Array([first]), "the combo came along")
 	assert_true(Engines.has_combo(w2, combo.effect), "and it is active on floor 2")
 	assert_eq(w2.guard_charges, 2, "guard charges carry too")
 	var unlocks := 0
@@ -189,12 +192,18 @@ func test_each_floor_draws_its_boss_and_scales_it() -> void:
 		)
 		var t := ContentCompiler.compile_bosses(repo)
 		r.scale_bosses(t, f)
-		assert_eq(t[k].hp, base[k].hp * (10 + 4 * (f - 1)) / 10, "boss HP x (1 + 0.4 (f - 1))")
+		# v0.4.0 TU (owner D9): floor 1's bosses x0.8 in the same step.
+		var ease: int = 800 if f == 1 else 1000
+		var hp_pm: int = (1000 + 400 * (f - 1)) * ease / 1000
+		var dmg_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
+		assert_eq(
+			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.4 (f - 1)), x0.8 on floor 1"
+		)
 		for a in t[k].attacks.size():
 			assert_eq(
 				t[k].attacks[a].damage,
-				base[k].attacks[a].damage * (10 + 2 * (f - 1)) / 10,
-				"boss damage x (1 + 0.2 (f - 1))"
+				base[k].attacks[a].damage * dmg_pm / 1000,
+				"boss damage x (1 + 0.2 (f - 1)), x0.8 on floor 1"
 			)
 
 
@@ -258,11 +267,24 @@ func test_the_sealed_door_holds_and_spawns_stop() -> void:
 	w.actors.set_pos(0, f.boss_door_inside(1.5))
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT)
-	# The boss's own brood and turrets are the boss's (C); with it and everything else dead, nothing may arrive.
+	# Walk back into the door from inside while the boss rises (BossAi.INTRO_TICKS, it doesn't act): it holds.
+	var bi := w.actors.index_of(w.boss_id)
+	w.actors.invuln[bi] = LONG
+	w.actors.set_pos(0, f.boss_door_inside(0.6))
+	var frame := InputFrame.new()
+	var back := -_into(w)
+	frame.move = Vector2i(roundi(back.x * SimTick.MOVE_MAX), roundi(back.y * SimTick.MOVE_MAX))
+	for k in 50:
+		w.step(frame)
+	assert_true(f.rooms[f.boss_room].has_point(w.player_pos()), "the sealed door keeps you in")
+	assert_true(w.boss_flow.door_sealed())
+	# The boss's own brood and turrets are the boss's (C); with it and everything else dead, nothing may arrive
+	# while you stay in the boss room (v0.5.0 PB: it is a safe spot after the boss).
+	w.actors.set_pos(0, f.boss_spawn)
 	_kill_enemies(w)
 	CombatLab.idle(w, 1)
 	assert_eq(w.boss_flow.state, BossFlow.State.OPEN)
-	assert_true(w.boss_flow.door_sealed(), "the door stays shut after the boss")
+	assert_false(w.boss_flow.door_sealed(), "v0.5.0 PB: the door opens after the boss")
 	var ticks := w.run_ticks
 	var spawned := 0
 	for k in 900:
@@ -271,16 +293,8 @@ func test_the_sealed_door_holds_and_spawns_stop() -> void:
 		for e in w.events_since(before):
 			if e.kind == SimEvent.Kind.SPAWN and w.actors.index_of(e.target_id) >= 0:
 				spawned += 1
-	assert_eq(spawned, 0, "no normal spawns while the boss room is sealed")
+	assert_eq(spawned, 0, "no normal spawns in the boss room")
 	assert_eq(w.run_ticks, ticks + 900, "the floor's clock keeps running")
-	# Walk back into the door from inside: it holds.
-	w.actors.set_pos(0, f.boss_door_inside(0.6))
-	var frame := InputFrame.new()
-	var back := -_into(w)
-	frame.move = Vector2i(roundi(back.x * SimTick.MOVE_MAX), roundi(back.y * SimTick.MOVE_MAX))
-	for k in 120:
-		w.step(frame)
-	assert_true(f.rooms[f.boss_room].has_point(w.player_pos()), "the sealed door keeps you in")
 
 
 func test_the_boss_dying_opens_the_portal_and_the_portal_ends_the_floor() -> void:

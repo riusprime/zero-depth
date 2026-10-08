@@ -33,10 +33,10 @@ Evidence files are part of the deliverable, not a substitute for tests
 | T-GEN | Generation properties | `tests/gen/` | N seeds per biome produce valid, deterministic floors with no fallback storms | CI (200 per biome); `nightly.yml` (10,000 per biome), both from v0.3.0 |
 | T-PARITY | Forecast parity | `tests/unit/presentation/` | Telegraph areas and preview numbers equal the resolved outcome (EI-07) | CI `verify` |
 | T-FUZZ | Chain fuzz | `tests/unit/effects/test_chain_fuzz.gd` | 200 random loadouts of 10–30 stacks: zero `LIMIT` events, ≤ 256 events per tick | CI `verify` (from v0.2.0) |
-| T-SAVE | Save round-trip | `tests/unit/application/` | Save → load → continue gives the same hashes. A bad save is kept and reported | CI `verify` (from v0.4.0) |
+| T-SAVE | Save round-trip | `tests/unit/sim/test_world_snapshot.gd`, `tests/unit/application/test_run_saves.gd`, `tests/e2e/test_e2e_saves.gd` | Save → load → continue gives the same hashes (and 600 more ticks stay equal). A bad save is kept and reported. Hashed state is always snapshotted (the guard) | CI `verify` (from v0.4.0) |
 | T-EXPORT | Export smoke | `tests/export/export_smoke.gd` | The exported pack holds the project's content (same manifest hash), loads Spanish, runs a 600-tick `World` (an encounter from v0.1.0), and doesn't ship GUT | CI `verify` |
 | T-BENCH | Bench | `scripts/bench/` | Sim tick cost against the budget in [`ARCHITECTURE.md`](ARCHITECTURE.md) §13 | Each version; result in `evidence/` |
-| T-SIM | Balance sims | `scripts/sim/` | Scorecard metrics ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)) | From v0.2.0; evidence |
+| T-SIM | Balance sims | `scripts/sim/`, `scripts/sims/scorecard.gd` (v0.5.0 SCD: every scorecard cell from one command; bots in `tests/support/score_*.gd`) | Scorecard metrics ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)). `tests/unit/scorecard/` runs the scorecard in quick mode (every cell produced and well-formed, records byte-reproducible) and checks each bot policy is deterministic | From v0.2.0; evidence. Quick mode in CI `verify` (v0.5.0) |
 | T-SHOTS | Screenshot tour | `scripts/shots/` | Every screen renders in en and es at the tested resolutions. It needs a real renderer, never `--headless` | CI `shots` (xvfb) and each release; evidence |
 | T-CI | CI self-checks | `.github/workflows/` | Versions match the pins. The minimum test count holds. No `SCRIPT ERROR` or `Parse Error` in the log | CI |
 

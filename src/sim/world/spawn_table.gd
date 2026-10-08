@@ -27,10 +27,68 @@ var kinds := PackedInt32Array()
 var weights := PackedInt32Array()
 var unlock_tiers := PackedInt32Array()
 var packs := PackedInt32Array()
+## v0.4.0 TU (owner D1–D3): the floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
+## floor time picks a phase: the danger tier, the cap and the interval follow it, and the mix opens by phase.
+var curve: CurveTable
 
 
 func tier_at(run_ticks: int) -> int:
 	return run_ticks / maxi(1, tier_ticks)
+
+
+## v0.4.0 TU: the danger tier at `run_ticks` of floor time: the curve's (its tier × 1000, rounded down), or the
+## plain tier. HP, damage and shards scale by it.
+func danger_tier(run_ticks: int) -> int:
+	return curve.tier_permille_at(run_ticks) / 1000 if curve != null else tier_at(run_ticks)
+
+
+## The danger tier × 1000 (the curve's, or the plain tier with its progress), for the HUD's meter.
+func danger_permille(run_ticks: int) -> int:
+	if curve != null:
+		return curve.tier_permille_at(run_ticks)
+	return tier_at(run_ticks) * 1000 + run_ticks % maxi(1, tier_ticks) * 1000 / maxi(1, tier_ticks)
+
+
+## v0.4.0 TU: the alive cap at `run_ticks` of floor time on floor `floor_index`: the curve's share of the tier's cap
+## (at least 1), or the tier's cap.
+func cap_now(floor_index: int, run_ticks: int) -> int:
+	var tier := danger_tier(run_ticks)
+	if curve == null:
+		return cap(floor_index, tier)
+	return maxi(1, scale(cap(floor_index, tier), curve.cap_permille_at(run_ticks)))
+
+
+## v0.4.0 TU: ticks between packs at `run_ticks` (the curve stretches or keeps the tier's interval).
+func interval_now(run_ticks: int) -> int:
+	var tier := danger_tier(run_ticks)
+	if curve == null:
+		return interval(tier)
+	return maxi(1, scale(interval(tier), curve.interval_permille_at(run_ticks)))
+
+
+## v0.4.0 TU: mix row k may spawn at `run_ticks` (its curve phase has begun; without a curve, its unlock tier).
+func row_open(k: int, run_ticks: int) -> bool:
+	if curve == null:
+		return unlock_tiers[k] <= tier_at(run_ticks)
+	var p := curve.kind_phase[k] if k < curve.kind_phase.size() else -1
+	return p >= 0 and p <= curve.phase_at(run_ticks)
+
+
+## v0.4.0 TU: a kind's max HP arriving at `run_ticks` (its floor-scaled `base_hp`): the tier's, eased by the curve.
+func hp_now(base_hp: int, run_ticks: int) -> int:
+	var hp := scaled_hp(base_hp, danger_tier(run_ticks))
+	return maxi(1, scale(hp, curve.hp_permille_at(run_ticks))) if curve != null else hp
+
+
+## v0.4.0 TU: the damage factor (per mille) of an enemy arriving at `run_ticks`: the tier's, eased by the curve.
+func power_now(run_ticks: int) -> int:
+	var p := damage_permille(danger_tier(run_ticks))
+	return maxi(1, scale(p, curve.damage_permille_at(run_ticks))) if curve != null else p
+
+
+## v0.4.0 TU: the largest pack at `run_ticks` (0 = no limit).
+func pack_cap_now(run_ticks: int) -> int:
+	return curve.pack_cap_at(run_ticks) if curve != null else 0
 
 
 ## How far `run_ticks` is through its tier, 0 .. <1 (v0.3.0 UI: the HUD's danger meter, L23).

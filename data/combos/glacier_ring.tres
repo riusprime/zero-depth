@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"orbit_blades"
+ability_b = &"frost_nova"
+min_level = 3
+name_key = &"ABILITY_COMBO_GLACIER_RING"
+desc_key = &"ABILITY_COMBO_GLACIER_RING_DESC"
+effect = 10
+stacks = 1
+id = &"glacier_ring"

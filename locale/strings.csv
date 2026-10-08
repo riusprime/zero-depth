@@ -1,6 +1,7 @@
 keys,en,es
 UI_TITLE,{{TITLE}},{{TITLE}}
 UI_PLAY,PLAY,JUGAR
+UI_CONTINUE,CONTINUE,CONTINUAR
 UI_OPTIONS,OPTIONS,OPCIONES
 UI_CREDITS,CREDITS,CRÉDITOS
 UI_GALLERIES,GALLERIES,GALERÍAS
@@ -314,7 +315,7 @@ MAP_LEGEND_ROOM,Explored room,Sala explorada
 MAP_LEGEND_UNEXPLORED,Way to an unexplored room,Paso a una sala sin explorar
 MAP_LEGEND_ALTAR,Altar,Altar
 MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
-MAP_LEGEND_BOSS,Boss door,Puerta del jefe
+MAP_LEGEND_BOSS,Boss door (dim: open after the boss),Puerta del jefe (tenue: abierta tras el jefe)
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
 MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
@@ -399,6 +400,35 @@ CAUSE_SPLITTER,A Splitter's swipe cut you down.,El zarpazo de un Divisor te abat
 CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un Portaescudos te aplastó.
 CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
 CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.
+ABILITY_ARC_FIELD,Arc Field,Campo de arco
+ABILITY_ARC_FIELD_DESC,"Every 1.5 s lightning strikes 3 enemies within 6 m: 12 damage and a shock stack each. One more target and a faster strike every level.","Cada 1,5 s un rayo golpea a 3 enemigos a 6 m: 12 de daño y una carga de choque a cada uno. Un objetivo más y un rayo más rápido por nivel."
+ABILITY_FROST_NOVA,Frost Nova,Nova de escarcha
+ABILITY_FROST_NOVA_DESC,"Every 4 s a 3 m nova around you: 10 damage and 2 frost stacks. Wider every level; from level 3 a nova freezes on its own; every 3 s at level 5.","Cada 4 s una nova de 3 m a tu alrededor: 10 de daño y 2 cargas de escarcha. Más amplia por nivel; desde el nivel 3 una nova congela por sí sola; cada 3 s en el nivel 5."
+ABILITY_FLAME_TRAIL,Flame Trail,Rastro de llamas
+ABILITY_FLAME_TRAIL_DESC,"While you move you leave fire for 2 s: 6 damage a second and burn to enemies in it. +25 % duration and damage every level.","Mientras te mueves dejas fuego 2 s: 6 de daño por segundo y quemadura a los enemigos en él. +25 % de duración y daño por nivel."
+ABILITY_COMBO_STORM_BOMBS,Storm Bombs,Bombas de Tormenta
+ABILITY_COMBO_STORM_BOMBS_DESC,Each bomb blast chains lightning to 3 enemies.,Cada explosión encadena rayos a 3 enemigos.
+ABILITY_COMBO_NAPALM_DRONE,Napalm Drone,Dron de Napalm
+ABILITY_COMBO_NAPALM_DRONE_DESC,Drone bolts set the ground on fire.,Los disparos del dron incendian el suelo.
+ABILITY_COMBO_GLACIER_RING,Glacier Ring,Anillo Glaciar
+ABILITY_COMBO_GLACIER_RING_DESC,Every blade touch adds frost.,Cada toque de cuchilla añade escarcha.
+ABILITY_COMBO_BLINK_CHARGE,Blink Charge,Carga de Destello
+ABILITY_COMBO_BLINK_CHARGE_DESC,Each blink leaves two bombs behind.,Cada destello deja dos bombas atrás.
+ABILITY_COMBO_BLADE_DANCE,Blade Dance,Danza de Cuchillas
+ABILITY_COMBO_BLADE_DANCE_DESC,Landed swings spread the blades: +50 % damage.,Tus tajos abren las cuchillas: +50 % de daño.
+ABILITY_COMBO_WINGMAN,Wingman,Escolta
+ABILITY_COMBO_WINGMAN_DESC,Your drones fire with every shot.,Tus drones disparan con cada disparo.
+ABILITY_COMBO_SUPERCONDUCTOR,Superconductor,Superconductor
+ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning deals double damage to chilled foes.,Los rayos hacen doble daño a enemigos helados.
+ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
+ABILITY_COMBO_EMBER_WARD_DESC,Blocking a hit bursts fire around you.,Bloquear un golpe estalla en fuego a tu alrededor.
+HUD_OVERRUN,OVERRUN,ASEDIO
+HUD_OVERRUN_PROGRESS,Kills: %d / %d,Bajas: %d / %d
+HUD_OVERRUN_CLEARED,Overrun cleared: an ability card and double shards,Asedio superado: una carta de habilidad y fragmentos dobles
+MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
+UI_DEV_GO_OVERRUN,Go to the Overrun door,Ir a la puerta del asedio
+CAPTION_OVERRUN_ENTER,[Overrun alarm],[Alarma de asedio]
+CAPTION_OVERRUN_CLEAR,[Overrun cleared],[Asedio superado]
 BOSS_WARLORD,The Warlord,El Señor de la Guerra
 BOSS_HIVE_LENS,The Hive Lens,La Lente Enjambre
 BOSS_FOUNDRY,The Foundry,La Fundición
@@ -422,3 +452,109 @@ CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición in
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
+EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
+EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
+EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía
+EVENT_UNSTABLE_CORE_EMBRACE,Let it bond with you,Dejar que se una a ti
+EVENT_ECHO_MIRROR,Echo Mirror,Espejo de eco
+EVENT_ECHO_MIRROR_DESC,"The glass shows you stronger, at a price.","El cristal te muestra más fuerte, a un precio."
+EVENT_ECHO_MIRROR_GAZE,Gaze into it,Mirar dentro
+EVENT_ECHO_MIRROR_SHATTER,Shatter it,Romperlo
+EVENT_SCRAP_HEAP,Scrap Heap,Montón de chatarra
+EVENT_SCRAP_HEAP_DESC,Something useful is buried in the wreckage.,Hay algo útil enterrado entre los restos.
+EVENT_SCRAP_HEAP_BUY,Pay a scavenger,Pagar a un chatarrero
+EVENT_SCRAP_HEAP_DIG,Dig with bare hands,Cavar con las manos
+EVENT_AMBUSH_CACHE,Ambush Cache,Alijo emboscado
+EVENT_AMBUSH_CACHE_DESC,A sealed cache. Its guardians are close.,Un alijo sellado. Sus guardianes están cerca.
+EVENT_AMBUSH_CACHE_OPEN,Break the seal,Romper el sello
+EVENT_OVERCLOCK_VENT,Overclock Vent,Respiradero de sobrecarga
+EVENT_OVERCLOCK_VENT_DESC,Raw heat pours from the vent.,Calor puro sale del respiradero.
+EVENT_OVERCLOCK_VENT_VENT,Breathe in the heat,Respirar el calor
+EVENT_BLOOD_PRICE,Blood Price,Precio de sangre
+EVENT_BLOOD_PRICE_DESC,"The altar asks for part of you, for good.","El altar pide una parte de ti, para siempre."
+EVENT_BLOOD_PRICE_PAY,Pay in blood,Pagar con sangre
+EVENT_WANDERING_DRONE,Wandering Drone,Dron errante
+EVENT_WANDERING_DRONE_DESC,A lost drone calls for help. Its signal draws enemies.,Un dron perdido pide ayuda. Su señal atrae enemigos.
+EVENT_WANDERING_DRONE_DEFEND,Guard it while it reboots,Protegerlo mientras se reinicia
+EVENT_CLEANSING_FONT,Cleansing Font,Fuente purificadora
+EVENT_CLEANSING_FONT_DESC,Clear water that washes a curse away.,Agua clara que lava una maldición.
+EVENT_CLEANSING_FONT_PAY,Pay the keeper,Pagar al guardián
+EVENT_CLEANSING_FONT_BLEED,Bleed into the water,Sangrar en el agua
+CURSE_SWIFT_FOES,Swift Foes,Enemigos veloces
+CURSE_SWIFT_FOES_DESC,Enemies move %s %% faster,Los enemigos se mueven un %s %% más rápido
+CURSE_WITHERING,Withering,Marchitamiento
+CURSE_WITHERING_DESC,−%s %% regeneration,−%s %% de regeneración
+CURSE_LEAKY_CORE,Leaky Core,Núcleo con fugas
+CURSE_LEAKY_CORE_DESC,Overclock heat fades %s %% faster,El calor de sobrecarga se disipa un %s %% más rápido
+CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
+CURSE_SWARM_CALL_DESC,+%s enemy in every pack,+%s enemigo en cada grupo
+CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
+CURSE_PRICE_GOUGE_DESC,Shard prices +%s %%,Precios en fragmentos +%s %%
+CURSE_MARKED_HUNT,Marked Hunt,Caza marcada
+CURSE_MARKED_HUNT_DESC,%s %% chance a new enemy is an elite,Un %s %% de probabilidad de que un enemigo nuevo sea élite
+UI_EVENT_OPEN,[E / X] Inspect: %s,[E / X] Examinar: %s
+UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave,←/→ o 1-3 para elegir · Intro o A para aceptar · Esc o B para irte
+UI_EVENT_COST,Cost,Coste
+UI_EVENT_REWARD,Reward,Recompensa
+UI_EVENT_LEAVE,Leave it,Dejarlo
+UI_EVENT_LEAVE_DESC,Walk away. You can come back later.,Márchate. Puedes volver más tarde.
+UI_EVENT_COST_NONE,Nothing but the curse,Nada más que la maldición
+UI_EVENT_COST_HP,Lose %d %% of your max HP now,Pierdes un %d %% de tu vida máxima ahora
+UI_EVENT_COST_MAX_HP,%d %% less max HP for the run,Un %d %% menos de vida máxima durante la partida
+UI_EVENT_COST_SHARDS,Pay %d shards,Pagas %d fragmentos
+UI_EVENT_COST_OVERHEAT,Overheat now: a stall,Sobrecalentarte ahora: un bloqueo
+UI_EVENT_COST_FIGHT,Fight %d elites here,Luchar aquí contra %d élites
+UI_EVENT_COST_DEFEND,Stay by it for %d s; enemies come faster,Quédate a su lado %d s; los enemigos llegan antes
+UI_EVENT_REWARD_OVERCLOCK,+%d %% Overclock damage this floor,+%d %% de daño de sobrecarga en esta planta
+UI_EVENT_REWARD_SHARDS,+%d shards,+%d fragmentos
+UI_EVENT_REWARD_CHEST,A free chest once they fall,Un cofre gratis cuando caigan
+UI_EVENT_REWARD_CLEANSE,Lift your latest curse: %s,Quita tu última maldición: %s
+UI_EVENT_BLOCK_SHARDS,Not enough shards,No tienes fragmentos suficientes
+UI_EVENT_BLOCK_NOTHING,Nothing to gain now,Ahora no hay nada que ganar
+UI_EVENT_BLOCK_BUSY,Not now,Ahora no
+UI_EVENT_AMBUSH,Ambush · %d elites left,Emboscada · quedan %d élites
+UI_EVENT_DEFEND,Guarding the drone · %d %%,Protegiendo el dron · %d %%
+UI_EVENT_DEFEND_AWAY,Get back to the drone!,¡Vuelve junto al dron!
+UI_CURSED,Cursed,Maldito
+UI_CURSE_GAINED,Curse taken,Maldición recibida
+UI_CURSE_LIFTED,Curse lifted,Maldición eliminada
+UI_THREAT,Threat %d,Amenaza %d
+UI_THREAT_NONE,No curses,Sin maldiciones
+UI_RECAP_THREAT,Threat: %d (peak %d),Amenaza: %d (máximo %d)
+MAP_LEGEND_EVENT,Event,Evento
+CAPTION_CURSE,[curse],[maldición]
+CAPTION_AMBUSH,[ambush],[emboscada]
+UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
+SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
+SHOP_TITLE,Shop,Tienda
+SHOP_SOLD,Sold,Vendido
+SHOP_CANT_USE,Can't use now,No se puede usar ahora
+SHOP_HEAL,Heal +%d HP,Curar +%d PV
+SHOP_HEAL_USED,Already healed here,Ya te curaste aquí
+SHOP_HEAL_FULL,Your HP is full,Tienes la vida al máximo
+SHOP_REROLL,Reroll the stock,Renovar el surtido
+SHOP_CLEANSE,Lift your latest curse,Quitar tu última maldición
+SHOP_SALVAGE,Salvage,Desguace
+SHOP_SALVAGE_NONE,Nothing to salvage yet,Aún no hay nada que desguazar
+SHOP_SELL_STAT,%s · %d held,%s · %d en tu poder
+SHOP_SELL_ABILITY,Frees the slot · level %d,Libera la ranura · nivel %d
+SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar o vender · Esc o B para salir"
+MAP_LEGEND_SHOP,Shop,Tienda
+HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
+HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
+HUD_PORTALS_OPEN,"Two portals are open: blue goes on, violet goes Deep (harder, richer).","Hay dos portales abiertos: el azul sigue, el violeta baja a lo Profundo (más duro, más botín)."
+REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
+PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno
+MAP_LEGEND_PORTAL_DEEP,Deep portal (violet in red),Portal profundo (violeta en rojo)
+UI_RECAP_ROUTE,Route: %s,Ruta: %s
+ROUTE_NORMAL,Normal,Normal
+ROUTE_DEEP,Deep,Profundo
+CAPTION_DEEP_PORTAL,[A deeper portal rumbles open],[Un portal más profundo se abre con un rugido]
+PHASE_CALM,Calm,Calma
+PHASE_STIR,They stir,Se agitan
+PHASE_HUNT,The hunt,La cacería
+PHASE_SWARM,The swarm,El enjambre
+PHASE_PEAK,Full horde,Horda completa
+HUD_NEW_ENEMY,New: %s,Nuevo: %s
+UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
+HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."

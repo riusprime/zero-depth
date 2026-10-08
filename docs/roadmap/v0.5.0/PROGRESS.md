@@ -11,6 +11,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 |---|---|---|
 | — | Plan | this commit |
 | CP | Five new stat cards that force choices (Glass Cannon, Onrush, Overkill, Hoarder, Fast Hands) and four ability mods (Cluster Payload, Overclocked Drone, Razor Orbit, Afterimage), offered only with their ability; pool per build Blade 50 / Gun 48 (58 in all); no dead cards over 300 seeds per build ([`evidence/CARD_POOL.md`](evidence/CARD_POOL.md)) | `2f7951f`, merge `1dbd7fb` |
+| SH | A shop terminal per floor (a side room, usually a dead end; never the Overrun room): 4 cards (30/55/90 × floor step), a heal (30 %), rerolls (20, +50 %); sell a mod or stat card for 40 %, salvage an ability for 25/level to free its slot ([`evidence/SHOP.md`](evidence/SHOP.md)) | `706f033`, `e98c807`, merge `0f86c77`, fix `b010603` |
+| RT | After floors 1–2 the boss room opens a normal and a violet **Deep** portal; Deep floors ×1.25 enemies, +1 chest, a free epic altar; floor card/label/recap name the route; routes are saved ([`evidence/ROUTES.md`](evidence/ROUTES.md)) | `7db9887`, `5174057`, merge `e4fec48` |
+| EV | 1–2 event rooms per floor (8 events, a pedestal, choices with costs; never the shop/Overrun room); 6 curses (+1 threat T each), 25 % of chest offers cursed (an epic stat card + a curse); threat on the HUD, pause and recap; a paid cleanse at the shop; each Deep floor taken +1 T (lead) ([`evidence/EVENTS.md`](evidence/EVENTS.md)) | `9e48445`, `6f2c288`, merge `51dbc0b` |
+| SH | One shop per floor in a side room (a terminal: E / pad X): 4 cards from the chests' pools priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a heal (30 % max HP, once, 40 × floor), a reroll (20, +50 % per use); salvage at the same panel (a mod or stat card for 40 % of its price, an ability but the weapon for 25 shards per level, freeing its slot); minimap icon, sounds, en + es ([`evidence/SHOP.md`](evidence/SHOP.md)) | `v0.5.0 Step SH: shops and salvage` (this branch) |
+| EV | 1–2 event rooms per floor (a lit pedestal, a panel of costed choices and "Leave it"; eight events), six curses (each +1 threat T) on 25 % of chest offers and on some event choices, a cleanse (the Cleansing Font, and a hook for shops), T on the HUD, in the pause menu and the recap ([`evidence/EVENTS.md`](evidence/EVENTS.md)) | `v0.5.0 Step EV` commit |
+| SCD | Every SCORECARD §2 cell (23) from one command, `scripts/sims/scorecard.gd` (full: 22 bot policies × 20 seeds, whole 3-floor runs, then the bench, ~34 min; `--quick` for CI), written to `build/scorecard/<sha>/`; bot policies idle / novice / competent (3 presets) / competent+t / Blade-Gun × element-ordnance-guard / exploit:salvage / exploit:chain; numbers predate TU ([`evidence/SCORECARD_v0.5.0.md`](evidence/SCORECARD_v0.5.0.md)) | `v0.5.0 Step SCD: every scorecard cell from one command` (this branch) |
+| PB | Explore after the boss (owner D10): the boss's death reopens the boss door both ways (walk or blink), its drops stay, the portal(s) stay open until walked into; spawns resume outside the boss room at the curve's level for the floor time (none inside it); the D9 heal is once; the HUD says you may keep exploring, the minimap dims the open door; saves after the boss restore an open door and portals; M-FLOOR reported, no band ([`evidence/AFTER_BOSS.md`](evidence/AFTER_BOSS.md)) | `v0.5.0 Step PB: explore the floor after the boss` (this branch) |
 
 ## Goldens changed on purpose
 - none
@@ -22,11 +29,52 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 
 ## Open
 - O3 `main`; O4 credit line.
+- EV (lead, for the owner): curses are fixed drawbacks, not CONTENT_SCHEMA §7's T-indexed `ThreatModifier` tables
+  (still unbuilt); the elite rule (+100 % HP, a crown) is EV's own until SC sets a shared one; Echo Mirror repeats
+  the stat raised most and Wandering Drone is a defence (PLAN, step EV). The three new streams are sub-streams
+  (`map:event`, `loot:event`, `ai:elite`), like `ai:enemy`; EI-05's named list is unchanged: confirm or amend.
 
 ## Blockers
 - none
 
 ## History
+- 2026-10-08 — PB built on `5e5b3f9` (owner D10): `BossFlow` reopens the door on the boss's death
+  (`World.remove_wall_now`, the pre-seal flow field swapped back), `spawns_open(w)` resumes spawning outside the
+  boss room; HUD line `HUD_EXPLORE_AFTER_BOSS` (en + es), dimmed minimap door; SCORECARD M-FLOOR reported, no band
+  (dated note). Three tests that asserted the old sealed-after-the-boss rule changed on purpose (run flow, routes,
+  two e2e HUD notes). Suite 1086 (minimum 1076 → 1086); readable cause 0 violations; goldens unchanged.
+  Lead calls for the owner: enemies already outside may follow you into the boss room (only new arrivals are kept
+  out); M-RUN keeps its band until the owner says otherwise; the bots still rush the portal.
+- 2026-10-08 — EV merged with the lead branch (`d5450d9`: SC, AB, SV, SH) in the EV worktree: 1012 tests pass,
+  readable cause 0 violations over 36 runs, export smoke 0 misses; goldens unchanged. The three EV sub-streams
+  (`map:event`, `loot:event`, `ai:elite`) await the owner's approval.
+- 2026-10-08 — EV built on `ac62796` (events, curses, threat T); goldens unchanged; evidence in
+  [`evidence/EVENTS.md`](evidence/EVENTS.md).
 - 2026-10-07 — CP built (on v0.4.0 BS) and merged on top of v0.4.0 EN + BO: 864 tests pass; goldens unchanged. The
   brief's "≈8 stat cards + ≈6–8 mods" would have overshot 50 per build; CP added 5 + 4 to fit. Owner: count per
   build. PLAN written for the rest of v0.5.0.
+- 2026-10-08 — `main` now exists (from `55a895d`); Windows/Shots CI run only on `main`. Owner: PRs into `main` only for a
+  playable version ("only push to main when we get something"): the next PR is the v0.4.0 + v0.5.0 build.
+- 2026-10-08 — SH built on `ac62796`: shops (ShopPlacement: its own pass and stream `shop_room`; 1,000 seeds, every
+  floor one shop, 963 in a dead end) and salvage in the sim (`Shop`, `ShopState`, `ShopTable`, `data/shop/terminal.tres`),
+  the terminal model, the shop panel (FACET cards, keyboard / pad / mouse), minimap icon + legend, three generated
+  sounds; suite 891 (minimum raised from 864); goldens unchanged. Lead calls the owner may change: ability cards
+  are priced by their rarity like the rest (common 30 / rare 55); the reroll's price doesn't rise by floor; the heal
+  is refused at full HP; a salvaged ability's mods stay owned (inert) and can be sold; selling a stat card rebuilds
+  the stat values from the cards left in the order taken, then the gamble shrine's stat wins.
+- 2026-10-08 — SH merged with v0.4.0 SC (`55a895d`): `test_e2e_horde_enemies` failed on the Shield Bearer (bash never
+  landed in 900 frames). Root cause, not a sim bug: the shop terminal takes one entity id at floor setup
+  (`Shop.place` → `take_root`), shifting every later actor id by one; SC's AI is staggered by id, so the crowd's
+  schedule moved, and the floor's own Chargers and Needle plus the earlier-spawned Swarmer and Splitter knocked the
+  God-mode player out of both of the Bearer's locked bash lanes during their windups (traced; confirmed by giving the
+  terminal an id outside the counter: the test passed). The test assumed a player standing still stays in front of a
+  slow-turning enemy; it now stands up to the Bearer with the left stick (steps back within 1.4 m whenever knocked
+  away), same bar (telegraph drawn and its HIT on the player), and passes with the shop, with the id shift removed
+  and with no shop. Suite 918 / 918 (minimum 918); export smoke 0 misses.
+- 2026-10-08 — SH merged on AB+SV (shop kept out of the Overrun room; shop state in saves; a sell test fixed for ability
+  combos): 974 tests. RT merged (its agent integrated AB+SV+SH; routes in the save, PAYLOAD_VERSION 2): 996 tests.
+  Open: +1 threat per Deep floor waits for EV; entry particles stay light blue on the Deep gate.
+- 2026-10-08 — EV merged (its agent integrated SC, AB, SV, SH; fixed a save-restore bug that emptied content-table arrays;
+  a paid cleanse at the shop). Lead: +1 threat per Deep floor, with a test. 1035 tests pass; export smoke 0 misses.
+  Open for the owner: approve the sub-streams `map:event`, `loot:event`, `ai:elite` (EI-05).
+- 2026-10-08 — SCD built on `b010603`: `scripts/sims/scorecard.gd` + `tests/support/score_{bot,run,cells,stats,suite}.gd` (the bot adapted from TU's WIP RunBot, separate files); SCORECARD.md §7 (the command, outputs, every cell's mapping onto continuous-spawn floors: Room N, encounters, T = the Overrun room, starters = builds). Full run at `2a1a1c4` (evidence file): every normal-policy bot dies on floor 1, so M-FLOOR / M-RUN have no data and the win-rate cells compare zeros; misses for the owner: M-LIMIT (Vampiric Core's cap clip emits LIMIT), M-ENGINE 0.667, M-DROUGHT median 4, M-STRESS (tags only for bleed / guard), M-LOOP (a shop-bought level-up of a free ability salvages for 50 against 30), M-SYNERGY, M-DIVERGE, M-GENERALIST, M-THREAT, M-BENCH (stress scenes). Nothing tuned. Run records byte-identical across two full runs. Found while measuring: the bot stopped 1.5 m short of the portal (TU's RunBot uses the same `portal_front_point` goal). Suite 989 / 989 (`bash scripts/verify.sh` at `2a1a1c4`; minimum 974 → 989); goldens unchanged.
