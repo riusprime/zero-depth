@@ -114,3 +114,5 @@ merged.
   `70ac7ca2…`, export smoke `9c324d3d…` → `e5365ddb…`. **Horde bench target missed after the merge:** 4.84–4.89 ms
   mean per tick vs ≤ 4 ms (4.55 ms for SC alone in the same session; machine load 4.5–6.2). Reported to the owner;
   a further optimisation pass goes into TU. Gap: split/summoned enemies get floor scaling only (fix in TU).
+- 2026-10-08 — Owner played a playable build: too hard from the start; wants an easy first minute, enemies introduced in
+  phases, the peak reached near the floor's end (verbatim in the PLAN, D1–D4). Goes into TU, started now.
