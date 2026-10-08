@@ -96,4 +96,5 @@ func test_walk_through_the_red_door_into_an_overrun() -> void:
 	if boosted:
 		var i := w.actors.index_of(w.overrun.boosted[0])
 		var base := w.enemy_table(w.actors.kinds[i]).hp
-		assert_gt(w.actors.max_hp[i], base, "with more HP")
+		# v0.4.0 TU: on top of the curve's HP (the calm minute eases it below the table's).
+		assert_gt(w.actors.max_hp[i], w.spawner.hp_now(base, w.run_ticks), "with more HP")

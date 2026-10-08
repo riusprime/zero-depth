@@ -252,6 +252,70 @@ static func compile_spawning(def: SpawnDirectorDefinition, repo: ContentReposito
 	return t
 
 
+## v0.4.0 TU: floor `floor_index`'s spawning as the run uses it: SC's director (`floor_1`, every floor) with the
+## floor's difficulty curve on it (none when the content has no curve for that floor).
+static func compile_floor_spawning(repo: ContentRepository, floor_index: int) -> SpawnTable:
+	var t := compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo)
+	var def := curve_def(repo, floor_index)
+	if def != null:
+		t.curve = compile_curve(def, t, repo)
+	return t
+
+
+## The difficulty curve for floor `floor_index` (null when none).
+static func curve_def(repo: ContentRepository, floor_index: int) -> DifficultyCurveDefinition:
+	for d: DifficultyCurveDefinition in repo.all_of(&"curve"):
+		if d.floor_index == floor_index:
+			return d
+	return null
+
+
+## A curve compiled against the spawn table `spawn` (its mix rows get their phases) in ticks and per mille. A kind
+## is new to the run when no curve of an earlier floor names it.
+static func compile_curve(
+	def: DifficultyCurveDefinition, spawn: SpawnTable, repo: ContentRepository
+) -> CurveTable:
+	var c := CurveTable.new()
+	c.starts = PackedInt32Array()
+	c.tier_permille = PackedInt32Array()
+	c.cap_permille = PackedInt32Array()
+	c.interval_permille = PackedInt32Array()
+	c.hp_permille = PackedInt32Array()
+	c.damage_permille = PackedInt32Array()
+	c.pack_cap = PackedInt32Array()
+	c.holds = PackedByteArray()
+	c.name_keys = []
+	var phase_of := {}
+	for k in def.phases.size():
+		var p := def.phases[k]
+		c.starts.append(SimTick.seconds_to_ticks(p.start_seconds))
+		c.tier_permille.append(p.tier_permille)
+		c.cap_permille.append(p.cap_permille)
+		c.interval_permille.append(p.interval_permille)
+		c.hp_permille.append(p.hp_permille)
+		c.damage_permille.append(p.damage_permille)
+		c.pack_cap.append(p.pack_cap)
+		c.holds.append(1 if p.hold else 0)
+		c.name_keys.append(p.name_key)
+		for id in p.kinds:
+			var e: EnemyDefinition = repo.get_def(&"enemies", id)
+			if e != null:
+				phase_of[compile_enemy(e).kind] = k
+	c.kind_phase = PackedInt32Array()
+	for kind in spawn.kinds:
+		c.kind_phase.append(phase_of.get(kind, -1))
+	var earlier := {}
+	for d: DifficultyCurveDefinition in repo.all_of(&"curve"):
+		if d.floor_index < def.floor_index:
+			for id in d.enemy_ids():
+				earlier[id] = true
+	for id in def.enemy_ids():
+		var e: EnemyDefinition = repo.get_def(&"enemies", id)
+		if e != null and not earlier.has(id):
+			c.new_kinds.append(compile_enemy(e).kind)
+	return c
+
+
 ## Every enemy in a repository, compiled.
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
@@ -653,6 +717,9 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.chest_card_weights = def.chest_card_weights.duplicate()
 	t.altar_rarity_weights = def.altar_rarity_weights.duplicate()
 	t.chest_rarity_weights = def.chest_rarity_weights.duplicate()
+	t.heal_orb_chance_permille = int(round(def.heal_orb_chance * 1000.0))  # v0.4.0 TU (D8)
+	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))
+	t.heal_orb_reach_m = def.heal_orb_reach_m
 	return t
 
 
@@ -843,6 +910,8 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
 	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
 	t.deep_extra_chests = def.deep_extra_chests
+	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
+	t.boss_room_heal_floor_permille = def.boss_room_heal_floor_permille.duplicate()
 	return t
 
 

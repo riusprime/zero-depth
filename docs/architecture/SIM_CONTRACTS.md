@@ -486,6 +486,28 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   tier factor to each enemy as the spawn director brings it in (HP, and `ActorStore.power`, which `EnemyAi` applies
   to every hit and shot). Tier n starts at n × 30 s of the floor's run time; past the tables' last entry (tier 20,
   ten minutes) the factors stay flat, which keeps the integer products small.
+- **The difficulty curve (v0.4.0 TU, owner D1–D4).** On a floor with a curve (`SpawnTable.curve`, a `CurveTable`),
+  floor time picks a phase (`phase_at`: the last phase whose start has passed). The curve's danger tier × 1000
+  (`tier_permille_at`, integer interpolation within a ramping phase, held in a holding one and at the peak) replaces
+  the plain `run_ticks / tier_ticks` everywhere the tier is read (`SpawnTable.danger_tier`): the HP and damage tables,
+  the shard bonus (`Rewards.shards_for_kill`) and the HUD's meter. The alive cap is `cap(floor, tier) ×
+  cap_permille_at` (at least 1, `cap_now`), the interval `interval(tier) × interval_permille_at` (`interval_now`), an
+  arrival's HP and power SC's tier values × `hp_permille_at` / `damage_permille_at` (`hp_now`, `power_now`), and a mix
+  row may spawn once its phase has begun (`row_open`); a phase's `pack_cap` caps the pack size. The curve is loadout
+  (compiled content, not hashed, not snapshotted): a save resumes on a floor built with the same curve.
+- **Heal orbs (v0.4.0 TU, owner D8).** A normal enemy's death (tick phase 9, `Rewards.on_kill`) rolls the `loot`
+  stream once against `heal_orb_chance_permille`; a hit lays an orb (`World.orbs`, `HealOrbStore`: id and position,
+  hashed once touched, snapshotted) where it fell, at most 16 (the oldest goes). After the pickups, a hurt player
+  within `heal_orb_reach_m` × the pickup-range stat takes the nearest one: + `heal_orb_heal_permille` of max HP,
+  capped, one `HEAL` event (`effect_id` `heal_orb`). Bosses drop none; orbs don't expire.
+- **The floor-1 boss (v0.4.0 TU, owner D9).** `RunState.scale_bosses` multiplies floor f's boss HP and damage by
+  `boss_ease_floor_permille[f − 1]` in the same step as the per-floor and Deep factors; `RunState.prepare` sets
+  `World.boss_room_heal_permille`, which the sealing of the boss room (`BossFlow`, `HEAL` with `boss_room_heal`)
+  restores, capped at max HP.
+- **Enemies that join mid-fight** through `World.queue_enemy` (a Splitter's Splitlings, a boss's summons) arrive in
+  tick phase 9 with the same scaling as a spawner pack (`SpawnDirector.scale_arrival`: the tier, the curve's easing,
+  then the Overrun's ×1.5 when it applies), read at the floor time of that tick (v0.4.0 TU; before it they kept only
+  the floor scaling).
 - **Bosses keep their own per-floor scaling** (`boss_hp_per_floor`, `boss_damage_per_floor`: +40 % HP and +20 %
   damage a floor), applied once, and no tier scaling.
 - **Optional routes (v0.5.0 RT, R5).** On a run's floor before the last the boss room holds two gates: the gate and

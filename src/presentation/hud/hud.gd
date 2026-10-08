@@ -48,6 +48,8 @@ var ability_hud := AbilityHud.new()
 var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
+## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
+var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
 var _hp_bar := HudBar.new()
@@ -145,6 +147,7 @@ func _init() -> void:
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_hud)  # v0.4.0 BS
 	add_child(overrun_hud)  # v0.4.0 AB
+	add_child(phase_hud)  # v0.4.0 TU
 	ability_hud.anchor = _hp_frame
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -201,6 +204,7 @@ func sync(reader: WorldReader) -> void:
 	ability_hud.sync(reader)  # v0.4.0 BS
 	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
+	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
 
 

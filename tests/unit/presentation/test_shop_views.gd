@@ -107,7 +107,7 @@ func test_the_panel_navigates_and_sends_actions() -> void:
 	p.picked.connect(func(v: int) -> void: got.append(v))
 	p.sync(r)
 	assert_eq(p.salvage_count(), 2, "the stat card and Bomb Lobber (never the weapon)")
-	assert_eq(p.salvage_tile(1).price.text, "+25")
+	assert_eq(p.salvage_tile(1).price.text, "+10")  # 10 shards per level (M-LOOP fix)
 	assert_eq(p.focus_index(), 0)
 	for k in 6:
 		p._input(_key(KEY_RIGHT))

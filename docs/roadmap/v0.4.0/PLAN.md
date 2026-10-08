@@ -135,6 +135,15 @@ it gives an ability level-up card and 2× shards. Optional, never on the path to
 | D8 | (2026-10-08, Q-T2) "healing orb heals more, but is more rare maybe 10% rate appearence but heals 25% and enemies damage and player health should be like I take damage but I can heal, wont risk taking too much damage but I know this healing orb is coming sooner or later" | Kills drop a **heal orb** 10 % of the time (healing 25 % max HP on pickup); enemy damage and player HP tuned so damage is steady but survivable until the next orb | TU |
 | D9 | (2026-10-08, Q-T3) "Ease floor 1 only" | Floor-1 bosses −20 % HP and damage; HP restored to full on entering the boss room (floor 1; floors 2–3 unchanged) | TU |
 
+**TU as built (starting values, evidence in [`evidence/TUNING.md`](evidence/TUNING.md)).** A curve per floor
+(`data/curves/floor_N.tres`): Calm 0–60 s (holds tier 0; 35 / 25 / 18 % of SC's tier-0 cap: 5 / 7 / 9 alive; spawns
+half as often; HP 60 %, damage 40 % of SC's; one at a time; Charger, Needle, Swarmer), then They stir, The hunt and
+The swarm bring the floor's kinds in, ramping to the peak (D7: about a minute before the bots' median boss-door time;
+floor 1 at 2:24, floors 2–3 at 1:30, tier 3.5, cap 55 %, HP 77.5 %, damage 55 % of SC's), which holds; shards keep
+growing with floor time. Heal orbs (D8: 10 % of kills, +25 % max HP). Floor-1 bosses −20 % HP / damage and a full heal
+at their door (D9). A free altar always stands in a room next to the start hall. Split and summoned enemies get the
+tier scaling. Gun ×1.00 (D6).
+
 ## Steps
 | Wave | Step | Scope |
 |---|---|---|

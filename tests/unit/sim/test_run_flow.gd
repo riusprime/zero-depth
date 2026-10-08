@@ -192,12 +192,18 @@ func test_each_floor_draws_its_boss_and_scales_it() -> void:
 		)
 		var t := ContentCompiler.compile_bosses(repo)
 		r.scale_bosses(t, f)
-		assert_eq(t[k].hp, base[k].hp * (10 + 4 * (f - 1)) / 10, "boss HP x (1 + 0.4 (f - 1))")
+		# v0.4.0 TU (owner D9): floor 1's bosses x0.8 in the same step.
+		var ease: int = 800 if f == 1 else 1000
+		var hp_pm: int = (1000 + 400 * (f - 1)) * ease / 1000
+		var dmg_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
+		assert_eq(
+			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.4 (f - 1)), x0.8 on floor 1"
+		)
 		for a in t[k].attacks.size():
 			assert_eq(
 				t[k].attacks[a].damage,
-				base[k].attacks[a].damage * (10 + 2 * (f - 1)) / 10,
-				"boss damage x (1 + 0.2 (f - 1))"
+				base[k].attacks[a].damage * dmg_pm / 1000,
+				"boss damage x (1 + 0.2 (f - 1)), x0.8 on floor 1"
 			)
 
 

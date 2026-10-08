@@ -15,6 +15,9 @@ var heal_permille := 400
 ## v0.5.0 RT: a Deep floor's extra scaling (per mille, on top of the floor's) and extra chests.
 var deep_scale_permille := 1250
 var deep_extra_chests := 1
+## v0.4.0 TU (owner D9): per floor, the boss's HP and damage per mille and the HP restored when its room seals.
+var boss_ease_floor_permille := PackedInt32Array([1000])
+var boss_room_heal_floor_permille := PackedInt32Array([0])
 
 
 static func starting_values() -> RunTable:

@@ -89,6 +89,11 @@ var spawn_cd := 0
 var kills := 0
 ## Mine Layers' mines (v0.4.0 EN; Mines), hashed once one was dropped.
 var mines := MineStore.new()
+## Heal orbs on the floor (v0.4.0 TU, owner D8; HealOrbs), hashed once one was dropped.
+var orbs := HealOrbStore.new()
+## v0.4.0 TU (owner D9): the share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
+## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
+var boss_room_heal_permille := 0
 ## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
 var nav := NavField.new()
 
@@ -421,6 +426,7 @@ func step(frame: InputFrame) -> void:
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
+	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
 		if boss_flow == null or boss_flow.spawns_open():
@@ -756,6 +762,8 @@ func state_hash() -> String:
 		actors.hash_ai(h)
 	if mines.touched:  # v0.4.0 EN: only once a Mine Layer dropped a mine.
 		mines.hash_into(h)
+	if orbs.touched:  # v0.4.0 TU: only once a kill dropped a heal orb.
+		orbs.hash_into(h)
 	# Items, the second eight (v0.2.0 J).
 	for v in [heal_window_start, heal_window_used, heal_tick, chain_count, chain_root, chain_tick]:
 		h.add_int(v)
@@ -858,6 +866,11 @@ func snapshot() -> Dictionary:
 
 
 ## A fresh root id for a new chain (a player action or an enemy attack).
+## A fresh entity id (v0.4.0 TU: heal orbs).
+func take_id() -> int:
+	return _take_id()
+
+
 func take_root() -> int:
 	return _take_id()
 
@@ -1036,10 +1049,8 @@ func _move_and_collide() -> void:
 	for i in actors.size():
 		var r := actors.radius[i] + WALL_SKIP_M
 		open_x[i] = INF
-		if (
-			_wall_grid
-			. query_rect(Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0))
-			. is_empty()
+		if not _wall_grid.any_in_rect(
+			Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)  # v0.4.0 TU: no list built
 		):
 			open_x[i] = actors.pos_x[i]
 			open_y[i] = actors.pos_y[i]
@@ -1060,23 +1071,32 @@ func _move_and_collide() -> void:
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		for a in actors.size():
 			var ra := actors.radius[a]
-			var pa := actors.pos(a)
+			var pa := Vector2(actors.pos_x[a], actors.pos_y[a])
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
 				if b <= a:
 					continue
 				# v0.4.0 SC: bodies whose boxes are clearly apart get no push; skip the call (the margin covers
 				# rounding, so the result is the same).
-				var reach := ra + actors.radius[b] + 0.001
+				var rb := actors.radius[b]
+				var reach := ra + rb + 0.001
 				if (
 					absf(actors.pos_x[b] - actors.pos_x[a]) >= reach
 					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
 				):
 					continue
-				var push := Collide.circle_vs_circle(
-					actors.pos(a), ra, actors.pos(b), actors.radius[b]
+				# v0.4.0 TU: Collide.circle_vs_circle inlined (the same operations in the same order).
+				var d := (
+					Vector2(actors.pos_x[a], actors.pos_y[a])
+					- Vector2(actors.pos_x[b], actors.pos_y[b])
 				)
-				if push == Vector2.ZERO:
+				var rr := ra + rb
+				var dist2 := float(d.x) * d.x + float(d.y) * d.y
+				if dist2 >= rr * rr:
 					continue
+				var push := Vector2(rr * 0.5, 0.0)
+				if dist2 != 0.0:
+					var dist := sqrt(dist2)
+					push = d * ((rr - dist) * 0.5 / dist)
 				if not through.is_empty():
 					if through[a] == 1 or through[b] == 1:
 						continue
@@ -1194,4 +1214,5 @@ func _apply_spawns() -> void:
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])
+			SpawnDirector.scale_arrival(self, actors.size() - 1, run_ticks)  # v0.4.0 TU: tier scaling too
 	_pending_enemies.clear()

@@ -70,6 +70,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ProjectileStore",
 	&"PickupStore",
 	&"MineStore",
+	&"HealOrbStore",  # v0.4.0 TU
 	&"BossStore",
 	&"RewardStore",
 	&"AbilityState",
@@ -319,6 +320,8 @@ static func _make(cls: StringName) -> Object:
 			return PickupStore.new()
 		&"MineStore":
 			return MineStore.new()
+		&"HealOrbStore":
+			return HealOrbStore.new()
 		&"BossStore":
 			return BossStore.new()
 		&"RewardStore":

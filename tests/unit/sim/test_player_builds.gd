@@ -59,7 +59,7 @@ func test_the_two_builds_in_data() -> void:
 	assert_eq(blade.weapon, BuildDefinition.Weapon.BLADE)
 	assert_eq(gun.weapon, BuildDefinition.Weapon.GUN)
 	assert_eq(blade.damage_permille, 1150, "L16: Blade +15 % (starting value)")
-	assert_eq(gun.damage_permille, 850, "L16: Gun -15 % (starting value)")
+	assert_eq(gun.damage_permille, 1000, "owner 2026-10-08: no Gun -15 % (supersedes L16's)")
 	for d: BuildDefinition in [blade, gun]:
 		assert_eq(d.validate().size(), 0, "%s validates" % d.id)
 
@@ -84,7 +84,7 @@ func test_apply_build_enables_one_weapon_and_its_factor() -> void:
 	assert_eq([b.melee_damage_permille, b.bolt_damage_permille], [1150, 1000])
 	var g := _table(&"gun")
 	assert_eq(g.weapons, PlayerTable.WEAPON_GUN)
-	assert_eq([g.melee_damage_permille, g.bolt_damage_permille], [1000, 850])
+	assert_eq([g.melee_damage_permille, g.bolt_damage_permille], [1000, 1000])
 	assert_eq(_table(&"").weapons, PlayerTable.WEAPONS_ALL, "no build keeps both (kernel, labs)")
 
 
@@ -129,7 +129,7 @@ func test_blade_damage_is_up_15_percent_exactly_on_average() -> void:
 	assert_eq(total, (10 + 10 + 12 + 24) * 2 * 1150 / 1000, "the sum is exact: 112 + 15 %")
 
 
-func test_gun_damage_is_down_15_percent_exactly_on_average() -> void:
+func test_gun_damage_is_the_bolts_own() -> void:  # owner 2026-10-08: the Gun's -15 % is gone
 	var w := _world(&"gun", Vector2(2.0, 0), 5000)
 	for i in 7 * 10:
 		w.step(_f(S))
@@ -139,9 +139,9 @@ func test_gun_damage_is_down_15_percent_exactly_on_average() -> void:
 	var total := 0
 	for v in got:
 		total += v
-	assert_eq(total, 34, "4 x 0.85 x 10 = 34 (3 or 4 a bolt)")
+	assert_eq(total, 40, "4 x 1.00 x 10 = 40")
 	for v in got:
-		assert_true(v == 3 or v == 4)
+		assert_eq(v, 4)
 
 
 func test_full_damage_without_a_build() -> void:

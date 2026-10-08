@@ -109,6 +109,20 @@ func enter_progress(tick: int) -> float:
 	return clampf(float(tick - enter_tick) / float(maxi(1, enter_ticks)), 0.0, 1.0)
 
 
+## v0.4.0 TU (D9): the sealing heals World.boss_room_heal_permille of max HP (never past it), with a HEAL event.
+static func _entry_heal(w: World) -> void:
+	var a := w.actors
+	if w.boss_room_heal_permille <= 0 or w.player_dead():
+		return
+	var want := a.max_hp[0] * w.boss_room_heal_permille / 1000
+	var applied := maxi(0, mini(want, a.max_hp[0] - a.hp[0]))
+	a.hp[0] += applied
+	var e := w.emit_event(SimEvent.Kind.HEAL, a.ids[0], a.ids[0], a.ids[0], w.player_pos())
+	e.amount = want
+	e.amount_applied = applied
+	e.effect_id = &"boss_room_heal"
+
+
 ## 0..1 through the arrival (-1 when not arriving).
 func arrive_progress() -> float:
 	if arrive_left <= 0:
@@ -135,6 +149,7 @@ func advance(w: World) -> void:
 				sealed_tick = w.tick
 				w.add_wall_now(f.boss_door_wall)
 				w.emit_event(SimEvent.Kind.BOSS_ROOM_SEALED, 0, 0, 0, f.boss_door_center)
+				_entry_heal(w)  # v0.4.0 TU (owner D9): floor 1's boss room restores your HP
 				BossChallenge.dissolve_floor(w)  # BX (L20): the floor's enemies dissolve.
 				w.bosses.arena = f.rooms[f.boss_room]  # BX (L17): the band closes in from these walls.
 				w.spawn_boss(boss_index, f.boss_spawn)

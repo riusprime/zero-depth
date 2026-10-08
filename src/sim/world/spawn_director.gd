@@ -1,6 +1,8 @@
 class_name SpawnDirector
 extends RefCounted
-## Continuous, controlled spawning in tick phase 9 (PLAN v0.2.0 L6; PD-05 flipped; hordes v0.4.0 SC, F7/F10). Run
+## Continuous, controlled spawning in tick phase 9 (PLAN v0.2.0 L6; PD-05 flipped; hordes v0.4.0 SC, F7/F10). v0.4.0
+## TU: with a difficulty curve (SpawnTable.curve) "tier" below reads "the curve's danger tier", the cap and interval
+## are the curve's share of the tier's, kinds open by phase and a phase may cap the pack size. Run
 ## time counts while the player lives; every tier_ticks of it is a new danger tier. While fewer enemies than
 ## cap(floor, tier) are alive, a pack arrives every interval(tier) ticks:
 ## - its kind is a weighted pick (ai stream) among the kinds unlocked at this tier;
@@ -27,20 +29,21 @@ static func advance(w: World) -> void:
 	var t := w.spawner
 	if t == null or w.player_dead():
 		return
-	var tier := t.tier_at(w.run_ticks)
 	if w.run_ticks == 0:
-		w.spawn_cd = t.interval(tier)
+		w.spawn_cd = t.interval_now(0)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
 		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	if w.spawn_cd > 0:
 		return
+	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
 	# v0.4.0 AB: inside the Overrun room the cap is x1.5 and the interval / 1.5, on top of the tier's (Overrun).
-	var room := Overrun.cap(w, t.cap(w.floor_index, tier)) - WaveDirector.enemies_alive(w)
+	var ticks := w.run_ticks - 1
+	var room := Overrun.cap(w, t.cap_now(w.floor_index, ticks)) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = Overrun.interval(w, t.interval(tier))
-	_spawn_pack(w, t, tier, room)
+	w.spawn_cd = Overrun.interval(w, t.interval_now(ticks))
+	_spawn_pack(w, t, ticks, room)
 
 
 ## Spawn points at least min_distance_m from the player, in their stored order. On a floor, only in the player's
@@ -89,11 +92,12 @@ static func anchor_points(w: World) -> PackedVector2Array:
 	return edge if not edge.is_empty() else far
 
 
-## Indices into the mix that may spawn at this tier (unlocked, with a compiled enemy table).
-static func unlocked(w: World, t: SpawnTable, tier: int) -> PackedInt32Array:
+## Indices into the mix that may spawn at `ticks` of floor time (open by tier or by curve phase, with a compiled
+## enemy table).
+static func unlocked(w: World, t: SpawnTable, ticks: int) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for k in t.kinds.size():
-		if t.unlock_tiers[k] <= tier and w.enemy_table(t.kinds[k]) != null:
+		if t.row_open(k, ticks) and w.enemy_table(t.kinds[k]) != null:
 			out.append(k)
 	return out
 
@@ -130,9 +134,9 @@ static func _clear(w: World, q: Vector2) -> bool:
 	return true
 
 
-static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
+static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 	var pts := anchor_points(w)
-	var open := unlocked(w, t, tier)
+	var open := unlocked(w, t, ticks)
 	if pts.is_empty() or open.is_empty():
 		return
 	var weights := PackedInt32Array()
@@ -147,14 +151,25 @@ static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
 	var size := t.packs[entry] if entry < t.packs.size() else 0
 	if size <= 0:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
+	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
+		size = mini(size, t.pack_cap_now(ticks))
 	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
-	var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
-	var power := t.damage_permille(tier)
 	for q in pack_spots(w, anchor, mini(size, room)):
 		w.add_enemy(kind, q)
-		var i := w.actors.size() - 1
-		w.actors.hp[i] = hp
-		w.actors.max_hp[i] = hp
-		w.actors.power[i] = power
-		Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)
-		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
+		scale_arrival(w, w.actors.size() - 1, ticks)
+		Curses.maybe_elite(w, w.actors.size() - 1)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
+
+
+## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor
+## scaling is already in the compiled tables), then the Overrun's ×1.5 when it arrives there. v0.4.0 TU: also every
+## enemy that joins mid-fight through World.queue_enemy (Splitlings, boss summons), so they match the spawner's.
+## `ticks`: the floor time the tier is read at.
+static func scale_arrival(w: World, i: int, ticks: int) -> void:
+	var t := w.spawner
+	if t == null:
+		return
+	var hp := t.hp_now(w.enemy_table(w.actors.kinds[i]).hp, ticks)
+	w.actors.hp[i] = hp
+	w.actors.max_hp[i] = hp
+	w.actors.power[i] = t.power_now(ticks)
+	Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)

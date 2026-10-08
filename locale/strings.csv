@@ -550,3 +550,10 @@ UI_RECAP_ROUTE,Route: %s,Ruta: %s
 ROUTE_NORMAL,Normal,Normal
 ROUTE_DEEP,Deep,Profundo
 CAPTION_DEEP_PORTAL,[A deeper portal rumbles open],[Un portal más profundo se abre con un rugido]
+PHASE_CALM,Calm,Calma
+PHASE_STIR,They stir,Se agitan
+PHASE_HUNT,The hunt,La cacería
+PHASE_SWARM,The swarm,El enjambre
+PHASE_PEAK,Full horde,Horda completa
+HUD_NEW_ENEMY,New: %s,Nuevo: %s
+UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad

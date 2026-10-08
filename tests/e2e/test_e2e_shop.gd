@@ -106,7 +106,7 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	var before := w.shards
 	var slots := w.ability_owned.size()
 	var refund := list[n][3]
-	assert_eq(refund, 25 * Abilities.level_of(w, bomb), "25 shards per level")
+	assert_eq(refund, 10 * Abilities.level_of(w, bomb), "10 shards per level")
 	await _pad(e, JOY_BUTTON_A)
 	await e.frames(2)
 	assert_false(Abilities.owned(w, bomb), "Bomb Lobber salvaged")
