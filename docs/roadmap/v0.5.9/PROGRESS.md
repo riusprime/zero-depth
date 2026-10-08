@@ -22,6 +22,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   weaker than the owner. Balance and difficulty go by the owner's play, not the scorecard, until the bots are
   rebuilt. Step 7 doesn't wait on scorecard re-runs.
 
+- Scope (owner, 2026-10-08): "the feedback from v0.50 fix does not belong to you, you are just in charge of the art
+  rework". This version's lead does the look, the kit and the themed rooms; the v0.5.0 feedback fixes and tuning
+  belong to the other agent.
+
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
@@ -64,5 +68,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   chest with an opening lid. G2 mockup renders A / B / C. Next: the G2 pick, contrast evidence, bench.
 - 2026-10-08 — Step 7 themed rooms (`8616a2d`, fixes `a8f6958`): full suite 1107/1107 at `a8f6958`. Scorecard
   before and after in evidence/LOOK.md §4: floor-1 deaths 86.8 % → 91.8 % (normal policies), Ruins +11 pp, biome
-  spread 11.6 → 2.9 pp; competent floor-1 clears 19 → 17 of 160. Not tuned (the owner's v0.5.0 feedback comes
-  next).
+  spread 11.6 → 2.9 pp; competent floor-1 clears 19 → 17 of 160. Not tuned (the v0.5.0 feedback and tuning belong to
+  the other agent).

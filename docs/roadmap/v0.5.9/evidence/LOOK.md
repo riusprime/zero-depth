@@ -124,7 +124,7 @@ tuned here). With the themed rooms:
 - The two status flips rest on 1-win differences in 20 runs. The confidence intervals overlap, so they are noise
   at this sample.
 
-**Not tuned.** The owner's v0.5.0 feedback decides the tuning.
+**Not tuned.** Tuning belongs to the other agent's v0.5.0 feedback work, not to this version.
 
 **Owner, 2026-10-08:** "okay bot runs don't matter anymore, i cleared every single time I played v0.5 really easy, so
 sims here are almost useless". The bots are far weaker than a human player, so these numbers don't measure the
