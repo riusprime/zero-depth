@@ -37,7 +37,7 @@ simulator mistakes ([`../LESSONS.md`](../LESSONS.md) L20). So:
 | M-DEAD | Dead starters | Each starter's win rate and pick-through rate | No dead starter (GA §1–3) | P0 |
 | M-TTK | Time to kill | Seconds to kill each enemy type, per archetype and floor | GA §1–3 | P1 |
 | M-ENC | Encounter length | Seconds per encounter, median and p90, by floor | GA §1–3 | P1 |
-| M-FLOOR | Floor length | Minutes per floor | 10–15 (v0.3.0 gate) | P0 |
+| M-FLOOR | Floor length | Minutes per floor | Reported, no band since 2026-10-08 (owner D10; was 10–15, the v0.3.0 gate: see the note below) | P1 |
 | M-RUN | Run length | Minutes per run | median 35–45 (PD-03); every full run 30–60 (v0.5.0) | P1 |
 | M-THREAT | Threat trade | Win rate and reward value against the T chosen | Win rate falls as T rises; rewards make choosing T worth it (GA: threat) | P1 |
 | M-CAP | Cap pressure | Requested vs applied heal, barrier and refund amounts | Reported every version; bands from GA: caps | P1 |
@@ -50,6 +50,14 @@ simulator mistakes ([`../LESSONS.md`](../LESSONS.md) L20). So:
 | M-LOOP | Degenerate loops | Any resource spend that returns ≥ its cost, found by `exploit:<case>` bots and the chain fuzz (framework §2) | 0 | P0 |
 | M-DIVERGE | Build divergence | First room where each specialist's behaviour (positioning, ability use, picks) separates from the generalist's (framework §3) | By Room 3–4 (framework pillar 3) | P0 |
 | M-GENERALIST | Generalist trap | Win rate of the unbiased `competent` policy compared with the best specialist (framework pillar 3) | The generalist is below the best specialist | P1 |
+
+**M-FLOOR note (2026-10-08, v0.5.0 PB).** Owner D10 ([`../roadmap/v0.4.0/PLAN.md`](../roadmap/v0.4.0/PLAN.md)):
+"You can go as soon as you want to the boss and then explore back, so if you want to rush the boss no problem, you
+get the boss reward and then explore". Floors have no minimum length and the floor goes on after the boss until the
+player takes the portal, so floor length is the player's choice. M-FLOOR is still measured and reported every
+version (time to the boss door, and time to the portal), but it is no longer a band: its old band, 10–15 minutes
+(the v0.3.0 gate, P0), is kept here for the record and no longer gates a version. M-RUN's band is unchanged until
+the owner says otherwise.
 
 **P0** cells are exit-gate material: a P0 miss blocks the version's exit gate until the owner decides. **P1** cells
 are reported every version and discussed with the owner when they drift.
