@@ -422,3 +422,13 @@ CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición in
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
+HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
+HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
+HUD_PORTALS_OPEN,"Two portals are open: blue goes on, violet goes Deep (harder, richer).","Hay dos portales abiertos: el azul sigue, el violeta baja a lo Profundo (más duro, más botín)."
+REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
+PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno
+MAP_LEGEND_PORTAL_DEEP,Deep portal (violet in red),Portal profundo (violeta en rojo)
+UI_RECAP_ROUTE,Route: %s,Ruta: %s
+ROUTE_NORMAL,Normal,Normal
+ROUTE_DEEP,Deep,Profundo
+CAPTION_DEEP_PORTAL,[A deeper portal rumbles open],[Un portal más profundo se abre con un rugido]

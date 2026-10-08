@@ -57,6 +57,11 @@ var start_pos := Vector2.ZERO
 ## The centre of the gate's footprint; the gate faces portal_angle (into the room).
 var portal_pos := Vector2.ZERO
 var portal_angle := 0
+## v0.5.0 RT: the Deep gate (Routes.place_deep_gate; only on a run's floors before the last), beside the gate in the
+## boss room. has_deep_portal is false until it is placed.
+var has_deep_portal := false
+var deep_portal_pos := Vector2.ZERO
+var deep_portal_angle := 0
 ## Item spots: 1 in a 1 x 1 room, 1-2 in bigger rooms, none in the start hall. Grouped by room in room order;
 ## item_rooms[i] is spot i's room.
 var item_spots := PackedVector2Array()

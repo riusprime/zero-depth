@@ -8,6 +8,9 @@ extends Node3D
 ## the swirl under a dark veil; v0.3.0 B: the view unseals it when the sim's portal opens (the boss is dead), with a
 ## brief flare, and the open swirl runs bright and fast.
 ##
+## v0.5.0 RT: set_deep() makes it the Deep gate: a violet swirl, light and glow, a red rim on the swirl and red-lit
+## strips framing the opening, so the two gates read apart at a glance (by hue, brightness and the frame).
+##
 ## Local frame: the opening spans local Z, the gate faces local +X; setup() turns +X to the sim facing angle.
 
 const OPENING_W := 2.4
@@ -21,6 +24,10 @@ const LIGHT_ENERGY_SEALED := 0.7
 ## The flare when the portal opens: extra light energy, fading over FLARE_SECONDS.
 const FLARE_ENERGY := 5.0
 const FLARE_SECONDS := 1.2
+## v0.5.0 RT, the Deep gate (starting values): violet swirl and light, a red rim and frame.
+const DEEP_VIOLET := Color("#8B3DFF")
+const DEEP_RIM := Color("#FF2A3D")
+const RIM_STRIP := 0.09
 
 ## Stacked blocks of one pillar, bottom to top: [height, width, depth, z offset, y-rotation°, z-roll°].
 ## Hand-picked (not random) so every gate looks the same and the opening stays clear.
@@ -43,6 +50,7 @@ uniform vec4 veil_color : source_color = vec4(0.02, 0.03, 0.08, 1.0);
 uniform float swirl_speed = 1.0;
 uniform float energy = 1.6;
 uniform float sealed = 1.0;
+uniform vec4 rim_color : source_color = vec4(0.0, 0.0, 0.0, 0.0);
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -98,7 +106,8 @@ void fragment() {
 	float core = 1.0 - smoothstep(0.0, 0.55, r);
 	col = mix(col, color_light.rgb, core * 0.75);
 	float rim = 1.0 - smoothstep(0.0, 0.3, d_edge + (n2 - 0.5) * 0.12);
-	col = mix(col, color_light.rgb * 1.4, rim * 0.9);
+	vec3 rim_col = mix(color_light.rgb * 1.4, rim_color.rgb * 1.6, rim_color.a);
+	col = mix(col, rim_col, rim * 0.9);
 	float bright = energy * mix(1.15, 0.38, sealed);
 	col *= bright;
 	// Sealed: a faint dark veil that drifts over the swirl.
@@ -129,6 +138,9 @@ var glow_material: ShaderMaterial
 var light: OmniLight3D
 var stone_blocks: Array[MeshInstance3D] = []
 var _sealed := true
+## v0.5.0 RT: the Deep gate's look is on, and its red frame strips (empty on the gate).
+var deep := false
+var rim_strips: Array[MeshInstance3D] = []
 var _flare := 0.0
 var _stone := StandardMaterial3D.new()
 var _stone_top := StandardMaterial3D.new()
@@ -159,6 +171,45 @@ func _init() -> void:
 func setup(sim_pos: Vector2, facing_angle: int) -> void:
 	position = SimPlane.to_3d(sim_pos)
 	rotation = Vector3(0, SimPlane.yaw_of(facing_angle), 0)
+
+
+## v0.5.0 RT: the Deep gate's colours and frame (once, at setup).
+func set_deep() -> void:
+	if deep:
+		return
+	deep = true
+	var shades := deep_colors()
+	portal_material.set_shader_parameter("color_deep", shades[0])
+	portal_material.set_shader_parameter("color_mid", shades[1])
+	portal_material.set_shader_parameter("color_light", shades[2])
+	portal_material.set_shader_parameter("rim_color", Color(DEEP_RIM, 1.0))
+	light.light_color = DEEP_VIOLET
+	glow_material.set_shader_parameter("glow_color", DEEP_VIOLET)
+	var red := StandardMaterial3D.new()
+	red.albedo_color = DEEP_RIM
+	red.emission_enabled = true
+	red.emission = DEEP_RIM
+	red.emission_energy_multiplier = 2.4
+	var inner := OPENING_W * 0.5
+	for z in [-(inner + RIM_STRIP * 0.5), inner + RIM_STRIP * 0.5]:
+		_rim(Vector3(0.1, OPENING_H, RIM_STRIP), Vector3(0.36, OPENING_H * 0.5, z), red)
+	_rim(Vector3(0.1, RIM_STRIP, OPENING_W + RIM_STRIP * 2.0), Vector3(0.36, OPENING_H, 0), red)
+
+
+static func deep_colors() -> Array[Color]:
+	return [DEEP_VIOLET.darkened(0.75), DEEP_VIOLET, DEEP_VIOLET.lightened(0.55)]
+
+
+func _rim(size: Vector3, pos: Vector3, mat: Material) -> void:
+	var box := BoxMesh.new()
+	box.size = size
+	var node := MeshInstance3D.new()
+	node.mesh = box
+	node.material_override = mat
+	node.position = pos
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(node)
+	rim_strips.append(node)
 
 
 func set_sealed(sealed: bool) -> void:

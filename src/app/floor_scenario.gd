@@ -10,6 +10,8 @@ extends RefCounted
 ## card offers an item you hold. v0.2.0's item pedestals are gone: items come from an altar's or chest's pick.
 ## v0.3.0 L19: with a gamble table, the gamble shrine in the start hall (Gamble.place, after the rewards), its
 ## plinth's footprint a wall.
+## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
+## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
 
 
 static func build(
@@ -31,6 +33,9 @@ static func build(
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
+	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
+	if routes:
+		walls.append(Routes.deep_gate_collider(layout))
 	if gamble != null:  # v0.3.0 L19: the shrine is solid, like the gate (its footprint is not drawn as a wall).
 		walls.append(Gamble.collider(Gamble.spot(layout, gamble)))
 	w.set_walls(walls)
@@ -43,6 +48,7 @@ static func build(
 	w.set_item_tables(items)
 	w.set_combo_tables(combos)  # v0.3.0 G: named combos, set before the run's carry restores the owned ones.
 	w.boss_flow = BossFlow.create(spec.boss_index)
+	w.boss_flow.routes = routes
 	if rewards != null:
 		w.reward_table = rewards
 	w.floor_index = floor_index
@@ -52,6 +58,8 @@ static func build(
 	if gamble != null:  # v0.3.0 L19: the gamble shrine in the start hall.
 		w.gamble_table = gamble
 		Gamble.place(w, layout)
+	if Routes.is_deep(w):  # v0.5.0 RT (set by run.prepare)
+		Routes.place_deep_rewards(w, layout, run.table.deep_extra_chests)
 	return w
 
 

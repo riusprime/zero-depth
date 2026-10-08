@@ -10,6 +10,9 @@ extends RefCounted
 ##   input for enter_ticks while the hero is drawn in (v0.3.5 PT, F19), then the floor ends (EXITED, still).
 ## Arrival (v0.3.5 PT, F20): a floor after the first opens with arrive_ticks of the same hold while the hero
 ##   materialises; the run flow sets both lengths (set_transit), shorter with reduced motion. One clock (EI-03).
+## Routes (v0.5.0 RT): on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
+##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
+##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
 ## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed.
 ## Run time keeps counting while spawns are stopped (count_time), so the floor's clock covers the boss fight.
 
@@ -40,6 +43,11 @@ var enter_tick := -1
 var enter_ticks := ENTER_TICKS
 var arrive_ticks := 0
 var arrive_left := 0
+## v0.5.0 RT: two gates on this floor, the route taken (-1 = none yet), this floor is Deep, its epic altar's id.
+var routes := false
+var route_taken := -1
+var deep := false
+var epic_altar_id := -1
 
 
 static func create(p_boss_index: int) -> BossFlow:
@@ -62,6 +70,13 @@ func portal_active() -> bool:
 
 func exited() -> bool:
 	return state == State.EXITED
+
+
+## v0.5.0 RT: gate `route` (Routes.Route) is open: the portal is active and no route was taken, or this one was.
+func gate_open(route: int) -> bool:
+	if not portal_active() or (route == Routes.Route.DEEP and not routes):
+		return false
+	return route_taken < 0 or route_taken == route
 
 
 ## Setup (the run flow, before the first tick): the transit lengths, short with reduced motion (`calm`), and whether
@@ -127,12 +142,19 @@ func advance(w: World) -> void:
 			if not w.boss_alive():
 				state = State.OPEN
 				opened_tick = w.tick
-				w.emit_event(SimEvent.Kind.PORTAL_OPENED, 0, 0, 0, f.portal_pos)
+				var e := w.emit_event(SimEvent.Kind.PORTAL_OPENED, 0, 0, 0, f.portal_pos)
+				e.amount = 1 if routes else 0  # v0.5.0 RT: 1 when the Deep gate opened too
 		State.OPEN:
+			var route := -1
 			if in_portal(f, p):
+				route = Routes.Route.NORMAL
+			elif routes and in_gate(f.deep_portal_pos, f.deep_portal_angle, p):
+				route = Routes.Route.DEEP  # v0.5.0 RT
+			if route >= 0:
 				state = State.ENTERING
 				enter_tick = w.tick
-				w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, p)
+				route_taken = route
+				w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, p).amount = route
 
 
 ## Whether a blink from `from` may land at `at` (PlayerKit.blink_target asks): crossing the boss room's boundary
@@ -155,8 +177,13 @@ func blink_may_land(w: World, from: Vector2, at: Vector2) -> bool:
 
 ## p stands in the gate's opening: within EXIT_DEPTH_M of its face and within its width.
 static func in_portal(f: FloorLayout, p: Vector2) -> bool:
-	var n := f.portal_facing()
-	var d := p - f.portal_pos
+	return in_gate(f.portal_pos, f.portal_angle, p)
+
+
+## p stands in the opening of a gate at `pos` facing `angle`.
+static func in_gate(pos: Vector2, angle: int, p: Vector2) -> bool:
+	var n := Kin.dir(angle)
+	var d := p - pos
 	var depth := d.dot(n) - FloorLayout.GATE_HALF_DEPTH
 	var across := absf(d.dot(Vector2(-n.y, n.x)))
 	return depth >= 0.0 and depth <= EXIT_DEPTH_M and across <= FloorLayout.GATE_WIDTH * 0.5
@@ -166,4 +193,6 @@ func hash_into(h: StateHasher) -> void:
 	for v in [state, boss_index, sealed_tick, opened_tick, exit_tick]:
 		h.add_int(v)
 	for v in [enter_tick, enter_ticks, arrive_ticks, arrive_left]:  # v0.3.5 PT
+		h.add_int(v)
+	for v in [1 if routes else 0, route_taken, 1 if deep else 0, epic_altar_id]:  # v0.5.0 RT
 		h.add_int(v)
