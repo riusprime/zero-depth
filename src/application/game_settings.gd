@@ -33,6 +33,7 @@ const DEFAULTS := {
 	"vsync": "on",
 	"shake": "on",
 	"outline": "ink",
+	"lighting": "high",
 	"frame_cap": "off",
 	"language": "en",
 }

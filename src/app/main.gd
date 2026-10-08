@@ -171,6 +171,7 @@ func _on_setting_changed(_key: String) -> void:
 	if view != null:
 		view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 		view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
+		view.stage.set_lighting(GameSettings.get_value(profile, "lighting"))
 
 
 func show_credits() -> void:
@@ -275,6 +276,8 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view = WorldViewRoot.new()
 	view.name = "WorldView"
 	view.stage.prop_style = biome.id
+	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	view.stage.lighting = GameSettings.get_value(profile, "lighting")
 	add_child(view)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
 	var b := driver.reader.floor_bounds()
