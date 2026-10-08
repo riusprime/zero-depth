@@ -141,6 +141,10 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	var before := r.heat_state()
 	var heat_before: float = before["heat"]
 	assert_gte(heat_before, float(before["hot"]), "Hot before the vent")
+	# v0.5.5 LK (A2): the blade wears the heat meter's tier colour: orange at Hot, red at Overclock.
+	var kit: KitView = e.main.view.kit
+	assert_eq(kit.hue(), HeatLooks.attack_color(kit.color, int(before["tier"])), "a hot blade")
+	assert_ne(kit.hue(), kit.color, "not its cool colour")
 	var hint := hud.kit_hud
 	assert_true(hint.vent_lit(), "the vent hint is lit")
 	assert_false(KitHud.key_text(&"vent").is_empty(), "the vent has a key")
@@ -168,6 +172,7 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 			"damage scales with the heat vented"
 		)
 	assert_almost_eq(float(after["heat"]), 0.0, 0.3, "heat reset to 0")
+	assert_eq(kit.hue(), kit.color, "vented: the blade is back to its own colour")
 	assert_eq(meter.vent_text(), "", "no VENT prompt once vented")
 	assert_lt(meter.fill(), 0.05, "the meter emptied")
 	var fx: HeatVisuals = e.main.view.heat_fx

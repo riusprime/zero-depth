@@ -1,8 +1,9 @@
 class_name HeatVisuals
 extends Node3D
 ## Overclock heat on the hero and in the world (v0.3.0 PLAN L18). Reads WorldReader.heat_state() only (EI-07):
-## - the visor and the blade lean from their own cyan toward amber, red-orange and white-hot as heat rises
-##   (HeatLooks; kept materials, colour and energy only, never emission_enabled);
+## - the visor leans from its own cyan toward amber, red-orange and white-hot as heat rises (HeatLooks; kept
+##   materials, colour and energy only, never emission_enabled); the blade, the bolts and the skills take the heat
+##   tier's colour themselves (v0.5.5 LK: KitView, ActorViews, SkillVisuals via HeatLooks.attack_color);
 ## - a vent blast: a flash disc and a ring that grows out to the blast's real radius (the sim's), hotter the more
 ##   heat was vented; a Meltdown is the same blast in white-hot;
 ## - overheat: a burst of steam, then steam venting from the hero for the whole stall;
@@ -16,6 +17,10 @@ var kit: KitView
 var actors: ActorViews
 ## Kept for the view's life so the effects compile their shader once (the v0.2.0 H rule, as ItemVisuals).
 var _fx_template := _make_fx_template()
+## v0.5.5 LK (A3 VFX audit): steam is vapour, not light: shaded by the scene's light (the glowing effects stay
+## unshaded). Unshaded, its pale puffs read as flat white stickers, brightest in the darkest scene.
+var _steam_template := _make_steam_template()
+var _glow_template := make_glow_template()
 var _sphere := SphereMesh.new()
 var _box := BoxMesh.new()
 var _disc := CylinderMesh.new()
@@ -48,7 +53,7 @@ func _init(p_kit: KitView, p_actors: ActorViews) -> void:
 func sync(reader: WorldReader) -> void:
 	var s := reader.heat_state()
 	var look := HeatLooks.from_state(s)
-	kit.set_heat_tint(look[0], look[1])
+	# v0.5.5 LK (A2): the blade takes its heat tier's colour itself (KitView.sync, HeatLooks.attack_color).
 	var avatar := _avatar(reader)
 	if avatar != null:
 		avatar.set_heat(look[0], look[1])
@@ -118,7 +123,9 @@ func _blast(s: Dictionary) -> void:
 	disc.mesh = _disc
 	disc.position = SimPlane.to_3d(at, 0.06)
 	disc.scale = Vector3(r, 1, r)
-	_add(disc, c.lerp(HeatLooks.WHITE_HOT, 0.3), 0.2 + 0.25 * share, &"blast", Vector3.ZERO, r)
+	# v0.5.5 LK (A3 VFX audit): the flash disc is light, so it adds to the floor (a mixed, unshaded pale disc read
+	# as a flat sheet of paper over a dark lit floor); the ring keeps the blast's edge readable on pale ground.
+	_add(disc, c, 0.1 + 0.15 * share, &"blast", Vector3.ZERO, r, _glow_template)
 	var ring := MeshInstance3D.new()
 	var torus := TorusMesh.new()
 	torus.inner_radius = 0.86
@@ -137,7 +144,7 @@ func _steam(at: Vector2, spread: float) -> void:
 	var off := Vector2(_rng.randf_range(-0.3, 0.3), _rng.randf_range(-0.3, 0.3))
 	n.position = SimPlane.to_3d(at + off, 0.9 + _rng.randf_range(0.0, 0.3))
 	var vel := Vector3(off.x * spread, _rng.randf_range(1.2, 2.0), -off.y * spread)
-	_add(n, HeatLooks.STEAM, 0.55, &"steam", vel, 2.4)
+	_add(n, HeatLooks.STEAM, 0.55, &"steam", vel, 2.4, _steam_template)
 
 
 func _ember(at: Vector2, speed: float) -> void:
@@ -153,9 +160,15 @@ func _ember(at: Vector2, speed: float) -> void:
 
 
 func _add(
-	n: MeshInstance3D, c: Color, alpha: float, kind: StringName, vel: Vector3, grow: float
+	n: MeshInstance3D,
+	c: Color,
+	alpha: float,
+	kind: StringName,
+	vel: Vector3,
+	grow: float,
+	template: StandardMaterial3D = null
 ) -> void:
-	var m := _fx_template.duplicate() as StandardMaterial3D
+	var m := (template if template != null else _fx_template).duplicate() as StandardMaterial3D
 	m.albedo_color = Color(c, alpha)
 	n.material_override = m
 	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -192,4 +205,21 @@ static func _make_fx_template() -> StandardMaterial3D:
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+
+static func _make_steam_template() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.roughness = 1.0
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return m
+
+
+## v0.5.5 LK (A3): an additive, unshaded effect material for flashes of light (a vent's disc, a skill's flash), kept
+## as a template; SkillVisuals uses it too.
+static func make_glow_template() -> StandardMaterial3D:
+	var m := _make_fx_template()
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 	return m
