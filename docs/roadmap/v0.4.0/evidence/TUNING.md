@@ -282,3 +282,18 @@ profile of the same scene (`build/dbg/prof_horde.gd`, untracked, load ~6) put 1.
   they say nothing about the ≤ 4 ms target, which stays **missed** until measured on a quiet machine or the CI runner.
   The next candidates (the projectile sweeps, the plan's grid queries, the flood) need deeper changes.
 - **Not proved:** floors 2 and 3 (2 and 1 runs reached them); the owner's feel; the 60 fps view with the phase HUD.
+
+## Verify (`4f6d419`, the tree of this commit but this section)
+```
+godot --headless --path . --editor --import --quit          # exit 0, 0 ERROR lines
+gdformat --check src scripts tests && gdlint src scripts tests   # 458 files unchanged; Success: no problems found
+bash scripts/verify.sh
+Tests               964
+Passing Tests       964
+Asserts           455577
+Time              999.941s
+---- All tests passed! ----
+check_gut_log: ok (964 passing, minimum 964)
+```
+Export smoke (`aec532d` tree, run from the scratchpad): 0 misses; 600-tick hash `e5365ddb6dcb` (unchanged), manifest
+`a57cabd1d460…` (196 files: the three curves added).
