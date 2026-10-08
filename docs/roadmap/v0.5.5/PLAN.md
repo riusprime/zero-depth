@@ -63,7 +63,10 @@ asked to talk it through), **Kept** (no change wanted).
 | B3 | "and all abilities have a combination between them so you can play a lot of different builds, some are stronger than others but players will have to discover those on their own" | Every attack (weapon, skill, the eight abilities) goes through the engine, so every modifier combines with every attack without a hand-made pair. The named combos stay as showcase extras | Proposed | Step MX |
 | B4 | "and then adding trinkets and stuff like binding of isaac that also modify how you interact, shorter shots but in a cicle, or weapon shots now are shock circles" | **Trinkets**: rare modifiers that change an attack's form, from the same engine (list below) | Proposed (G1) | Step MX |
 | B5 | "there is infinite possibilities so I cant list them all but you have to help me come up with a list for this" | The candidate list M1–M30 below | Proposed (G1) | Step MX |
-| B6 | "Is it possible to create some kind of engine that makes creating this easier so when adding a new modifier you don't have to create every single interaction, or is it better to create each interaction individually?" | **An engine**, answered below ("The modifier engine") | Proposed | Step MX |
+| B7 | "we are no longer having 4 abilities weapons, every build turns around the main weapon, and the rest are modifiers, so it makes sense to be able to swap modifiers, if you don't like one you have a swap button for the next you get and you can decide which one to swap so you can have a build and modify it on the run," | The build is the weapon + up to **6 modifier slots** (owner pick) with a **Swap** choice when full; the six old abilities become weapon modifiers; the utility button (Blink, Aegis) stays outside the slots; stat cards are unlimited and visible. Replaces v0.4.0's four ability slots (F8) | **Decided 2026-10-08** | Step MX, [`../../design/MODIFIER_ENGINE.md`](../../design/MODIFIER_ENGINE.md) |
+| B8 | "The base should be sword or shooting, and modifiers apply to that, we said for example shooting sword, adding the third modifier would be for example fire, shooting a sword that applies fire, and the forth one could be a shooting fire sword that divides when you hit an enemy, you get the point?" | Modifiers layer onto the weapon in pick order; each adds, none replaces | **Decided 2026-10-08** | Step MX |
+| B9 | "Help me with the modifiers engine the idea is that based on what you have what you do also changes visually not only damage wise as I describe with the shooting swords, that was just an example, but we need all of them to be a modifier that adds to your build" | The view draws every attack from its final spec, so every card shows; stat cards show as weight, size and speed (owner picks: element core + heat edge; visible numbers, no slot) | **Decided 2026-10-08** | Step MX |
+| B6 | "Is it possible to create some kind of engine that makes creating this easier so when adding a new modifier you don't have to create every single interaction, or is it better to create each interaction individually?" | **An engine**: the full design is [`../../design/MODIFIER_ENGINE.md`](../../design/MODIFIER_ENGINE.md) | Decided (build model) / G1 (the list) | Step MX |
 
 ### Look, feel and art
 | # | Owner line (verbatim) | Decision | Status | Where |
@@ -111,7 +114,10 @@ The questions that decide it, with the owner's answers (2026-10-08):
 (starting value) are arenas that seal on entry, fight in waves and hold the floor's chests and altars; the rest of
 the floor darkens while you're sealed in. The Overrun room is the hardest arena (S8).
 
-## The modifier engine (B2–B6)
+## The modifier engine (B2–B9)
+The full design (build model, spec, rules, visuals, tests): [`../../design/MODIFIER_ENGINE.md`](../../design/MODIFIER_ENGINE.md).
+The summary below predates the owner's build-model answers; the design doc wins.
+
 **Answer: build an engine, with a few hand-made interactions on top.** Writing every pair by hand grows as
 modifiers × attacks (30 modifiers × 10 attacks = 300 pieces of code) and new content would keep breaking old
 combinations. Isaac's tear effects and Noita's wands are engines.
