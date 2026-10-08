@@ -124,3 +124,47 @@ Shot setup (not play): the player is kept invulnerable, the next chest is cursed
 - [`events_cursed_card.png`](events_cursed_card.png): a cursed chest: card 1 an epic Haste marked with Leaky Core,
   cards 2 and 3 clean; the event room's hexagon on the minimap.
 - [`events_threat.png`](events_threat.png): after taking it: "Threat 1", the curse note and the curse line, top left.
+
+## After the merge with the lead branch (`d5450d9`: SC, AB, SV, SH)
+Run on the merge in this worktree (merge commit `6f2c288` plus the fix commit after it; Godot 4.7.2, Linux). What
+changed for EV: event rooms never take the Overrun or shop room; Swarm Call and Marked Hunt act on SC's pack
+spawner (an elite doubles the tier-scaled HP); an Ambush pack takes the tier's HP and power; shop prices go through
+`Curses.price` and the shop sells a cleanse (60 shards × floor); `EventState` is in `WorldSnapshot.STATE_CLASSES`
+(its tables in `LOADOUT_CLASSES`) and `threat_by_floor` is in the save payload. A snapshot array of content tables
+now keeps its tables on restore (`WorldSnapshot._decode`). SH's `test_sell_a_mod_for_forty_percent_and_lose_its_combos`
+picked `combo_tables[0]`, which AB made an ability combo; it now picks the first item combo.
+
+`bash scripts/verify.sh` (tail, `build/verify_merge2.log`):
+```
+Tests              1012
+Passing Tests      1012
+Asserts           466827
+Time              1647.773s
+
+
+---- All tests passed! ----
+
+Results saved to build/gut.xml
+check_gut_log: ok (1012 passing, minimum 947)
+```
+
+`godot --headless --path . -s scripts/checks/readable_cause.gd` (run on `6f2c288`, before the fix commit, which
+changed only the snapshot restore and tests; tail, `build/readable_cause_merge.log`):
+```
+	"deaths_checked": 24,
+	"floor_ticks": 3600,
+	"godot": "4.7.2-stable (official)",
+	"runs": 36,
+	"seeds": 12,
+	"violations": 0
+```
+
+`bash scripts/ci/export_smoke.sh` (tail, `build/export_smoke_merge.log`):
+```
+  ok    audio cues: 86
+  ok    every cue's sound loads from the pack (missing: [])
+  ok    the test framework is not shipped
+  ok    tests are not shipped
+0 miss(es)
+```
+The minimum test count is now 1012.

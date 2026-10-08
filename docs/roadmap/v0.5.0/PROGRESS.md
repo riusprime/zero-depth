@@ -33,6 +33,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - none
 
 ## History
+- 2026-10-08 — EV merged with the lead branch (`d5450d9`: SC, AB, SV, SH) in the EV worktree: 1012 tests pass,
+  readable cause 0 violations over 36 runs, export smoke 0 misses; goldens unchanged. The three EV sub-streams
+  (`map:event`, `loot:event`, `ai:elite`) await the owner's approval.
 - 2026-10-08 — EV built on `ac62796` (events, curses, threat T); goldens unchanged; evidence in
   [`evidence/EVENTS.md`](evidence/EVENTS.md).
 - 2026-10-07 — CP built (on v0.4.0 BS) and merged on top of v0.4.0 EN + BO: 864 tests pass; goldens unchanged. The
