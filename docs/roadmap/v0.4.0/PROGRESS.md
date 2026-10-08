@@ -15,7 +15,10 @@ merged.
 | BO | A second boss in every pool: the Warlord (floor 1), the Hive Lens (floor 2, splits into three Lens Drones), the Foundry (floor 3); the `flood` move; sounds, strings, image prompts ([`evidence/BOSSES_2.md`](evidence/BOSSES_2.md), [`../../art/BOSSES_2.md`](../../art/BOSSES_2.md)) | `v0.4.0 Step BO` |
 | SC | Enemies scale per floor (HP ×1.9, damage ×1.4) and every 30 s danger tier (×1.10, ×1.05); hordes grow from 14/30/50 to 120 alive in packs at the room edges; the sim carries 120 enemies + 200 shots at 3.66 ms a tick (evidence/HORDES.md) | this commit |
 
+| SV | Saves at each first room entry and on close (pause → Main menu, window close); **Continue** on the main menu resumes at the last room's entry with the same state hash; a death or a win deletes the save ([`evidence/SAVES.md`](evidence/SAVES.md)) | `v0.4.0 Step SV` |
+
 ## Goldens changed on purpose
+- SV: none (no hashed field added; the snapshot reads the world, it doesn't change how it steps).
 - BS: none (the replay golden passes unchanged; the new hash block is added only once a slot, a stat card or a crit
   chance is in play, which the kernel worlds never have).
 - BO: none (replay and export-smoke hashes unchanged).
@@ -44,10 +47,25 @@ merged.
 - BS: `scripts/shots/vfx_cards.gd` still sets the removed utility pick in its profile (it no longer gets Blink); not
   run in CI.
 
+- SV: ARCHITECTURE §10 said "never `World` in a save"; the PLAN's SV text (owner-directed) says the save holds the
+  room-entry snapshot of the full `World`. Built as the PLAN says and ARCHITECTURE §10 rewritten to match; **owner to
+  confirm** the rule change (CLAUDE.md: a lower-ranked source overriding a higher one).
+- SV: a save that can't be used is ignored with a warning and kept as `run.bad.<time>.save`; the menu shows no
+  "Can't load this save" message (ARCHITECTURE §10 asked for one with Abandon). Not built.
+- SV: AB, SH and EV add state. `WorldSnapshot` copies every script variable of `World` and of known state classes;
+  a new store class fails `test_every_hashed_store_is_snapshotted` with its path until it is added to
+  `WorldSnapshot.STATE_CLASSES` (and `_make` if it sits in an array) or `LOADOUT_CLASSES`. A new World field holding
+  content tables needs a `WORLD_KEPT` entry. New run-level state in `RunState` needs a line in `RunSaver.payload_of`
+  and `run_from`.
+
 ## Blockers
 - none
 
 ## History
+- 2026-10-08 — Step SV: `WorldSnapshot` (every World script field, loadout kept from a base built from the save's
+  inputs; the guard tests), `RunSaver` / `RunSaveStore` (room-entry and close saves, worker-thread writes, checksum,
+  `.bad` copy), Continue (en/es). 914 / 914, hitch probe ok, entry save 0.64–0.72 ms on the frame; goldens unchanged;
+  `MIN_TEST_COUNT` 914 ([`evidence/SAVES.md`](evidence/SAVES.md)).
 - 2026-10-07 — BS: build system built and verified on `7a4a453` (743 / 743, lint clean); final commit adds the
   evidence and this file. Owner note mid-step ("spell cooldowns have to be a bit bigger"): the ability slots are 52 px
   with a sweep and seconds left; their frames follow `CardStyle.current`.

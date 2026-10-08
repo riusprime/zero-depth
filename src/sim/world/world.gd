@@ -785,6 +785,17 @@ func _hash_engines(h: StateHasher) -> void:
 		h.add_f32(p.y)
 
 
+## v0.4.0 SV: the canonical snapshot of the whole world (WorldSnapshot), for saves; restore it with from_snapshot.
+func to_snapshot() -> Dictionary:
+	return WorldSnapshot.take(self)
+
+
+## Writes `snap` into `base`, a world built from the same generation inputs (seed, floor, build, content); returns
+## it, or null when the snapshot doesn't fit (WorldSnapshot.apply says why).
+static func from_snapshot(snap: Dictionary, base: World) -> World:
+	return base if WorldSnapshot.apply(base, snap) == "" else null
+
+
 ## Plain-data copy for inspectors and desync diffs; never used for gameplay.
 func snapshot() -> Dictionary:
 	return {
