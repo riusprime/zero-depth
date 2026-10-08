@@ -1,37 +1,20 @@
 extends SceneTree
 ## v0.5.5 LK (A3, owner: "Some VFX need to match the new style of the game … some don't match neither style nor
 ## lighting"): the VFX audit shots. Boots the real game (main.tscn), starts a run, spawns a ring of Chargers round the
-## hero and drives the attacks with real input actions, taking one shot per effect: the weapon at each heat tier, the
+## hero and drives the attacks with real input events, taking one shot per effect: the weapon at each heat tier, the
 ## vent blast, the skill, the enemy telegraphs, the element abilities and a death pop. Needs a renderer:
-##   xvfb-run -a godot --path . --fixed-fps 60 --audio-driver Dummy --resolution 1600x900 \
-##     -s scripts/shots/vfx_audit.gd -- \
-##     build=blade look=game
+##   xvfb-run -a godot --path . --fixed-fps 60 --audio-driver Dummy --resolution 1280x720 \
+##     -s scripts/shots/vfx_audit.gd -- build=blade
 ## (--fixed-fps 60 keeps one sim tick per frame on a slow software renderer, so the shots land on their ticks.)
-## build=blade|gun; look=game draws the floor as the game does, look=new lays the owner's new art over it (the
-## ground-a.png texture and the environment .glb models from the repo root, which the game does not use yet) under a
-## darker, warm-lit light: an approximation of the new style for comparing the effects against it, not a spec.
+## build=blade|gun. The floor is drawn as the game draws it (since v0.5.9 "Embers": the owner's kit, the biome's
+## lighting mood and the hero's warm light), so the effects are judged against the real look and light.
 ## Shot setup only (the hero can't be hurt, heat is held at a tier, enemies are spawned and abilities granted as the
-## dev panel would). Writes build/shots/v0.5.5/vfx_audit/<build>_<look>/NN_name.png.
+## dev panel would). Writes build/shots/v0.5.5/vfx_audit/<build>/NN_name.png.
 
-const OUT := "res://build/shots/v0.5.5/vfx_audit/%s_%s/"
-## The owner's environment models placed round the hero for look=new: [file, sim offset, target height m, yaw].
-const PROPS := [
-	["res://wall_2m.glb", Vector2(-4.5, 3.5), 2.4, 0.0],
-	["res://wall_broken.glb", Vector2(-1.5, 5.0), 1.8, 0.4],
-	["res://wall_pillar.glb", Vector2(3.5, 4.5), 2.6, 0.0],
-	["res://fire_barrel.glb", Vector2(5.0, 2.0), 1.0, 0.0],
-	["res://brazier_pole.glb", Vector2(-5.0, -2.5), 2.0, 0.0],
-	["res://car_wreck.glb", Vector2(4.5, -4.5), 1.4, 0.8],
-	["res://rubble_small.glb", Vector2(-2.5, -4.5), 0.5, 0.0],
-	["res://debris_low.glb", Vector2(1.5, -5.5), 0.5, 1.2],
-	["res://rock_large.glb", Vector2(-6.0, 0.5), 1.2, 0.0],
-	["res://dead_tree.glb", Vector2(6.5, 5.5), 2.8, 0.0],
-]
-
+const OUT := "res://build/shots/v0.5.5/vfx_audit/%s/"
 var _main: Main
 var _frame := 0
 var _build := &"blade"
-var _look := &"game"
 var _dir := ""
 ## Heat held for the shot (points), or -1 to let the sim run it.
 var _heat := -1
@@ -42,50 +25,49 @@ func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("build="):
 			_build = StringName(a.trim_prefix("build="))
-		if a.begins_with("look="):
-			_look = StringName(a.trim_prefix("look="))
-	_dir = OUT % [_build, _look]
+	_dir = OUT % _build
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	print("vfx_audit: renderer=%s" % RenderingServer.get_current_rendering_method())
 	var profile := ProfileStore.new("")
 	profile.section("loadout")["build"] = String(_build)  # the build picker focuses the last build
 	ProfileStore.use_shared(profile)
+	RunSaveStore.use_shared(RunSaveStore.new(""))  # no run save read or left behind
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
 	var btn := MOUSE_BUTTON_LEFT if _build == &"blade" else MOUSE_BUTTON_RIGHT
 	var at := 3 if _build == &"blade" else 9  # frames from the press to the shot: mid-swing, or bolts in flight
 	_script = [
-		[10, _tap.bind(KEY_ENTER)],
-		[36, _tap.bind(KEY_ENTER)],
-		[44, _setup],
-		[100, _set_heat.bind(0)],
-		[102, _mouse.bind(btn, true)],
-		[102 + at, _shot.bind("01_attack_cool")],
-		[114, _mouse.bind(btn, false)],
-		[130, _set_heat.bind(55)],
-		[132, _mouse.bind(btn, true)],
-		[132 + at, _shot.bind("02_attack_hot")],
-		[144, _mouse.bind(btn, false)],
-		[160, _set_heat.bind(85)],
-		[162, _mouse.bind(btn, true)],
-		[162 + at, _shot.bind("03_attack_overclock")],
-		[174, _mouse.bind(btn, false)],
-		[189, _set_heat.bind(-1)],
-		[190, _key.bind(KEY_F, true)],
-		[191, _key.bind(KEY_F, false)],
-		[194, _shot.bind("04_vent_blast")],
-		[230, _key.bind(KEY_Q, true)],
-		[231, _key.bind(KEY_Q, false)],
-		[236, _shot.bind("05_skill_start")],
-		[245, _shot.bind("06_skill_hit")],
-		[270, _shot_when_telegraph.bind("07_enemy_telegraphs")],
-		[300, _grant],
-		[350, _shot.bind("08_element_abilities")],
-		[352, _doom],
-		[354, _mouse.bind(btn, true)],
-		[354 + at + 2, _shot.bind("09_hits_and_deaths")],
-		[370, _mouse.bind(btn, false)],
-		[372, quit.bind(0)],
+		[6, _tap.bind(KEY_ENTER)],
+		[14, _tap.bind(KEY_ENTER)],
+		[20, _setup],
+		[30, _set_heat.bind(0)],
+		[32, _mouse.bind(btn, true)],
+		[32 + at, _shot.bind("01_attack_cool")],
+		[44, _mouse.bind(btn, false)],
+		[52, _set_heat.bind(55)],
+		[54, _mouse.bind(btn, true)],
+		[54 + at, _shot.bind("02_attack_hot")],
+		[66, _mouse.bind(btn, false)],
+		[74, _set_heat.bind(85)],
+		[76, _mouse.bind(btn, true)],
+		[76 + at, _shot.bind("03_attack_overclock")],
+		[88, _mouse.bind(btn, false)],
+		[95, _set_heat.bind(-1)],
+		[96, _key.bind(KEY_F, true)],
+		[97, _key.bind(KEY_F, false)],
+		[100, _shot.bind("04_vent_blast")],
+		[120, _key.bind(KEY_Q, true)],
+		[121, _key.bind(KEY_Q, false)],
+		[126, _shot.bind("05_skill_start")],
+		[135, _shot.bind("06_skill_hit")],
+		[150, _shot_when_telegraph.bind("07_enemy_telegraphs")],
+		[180, _grant],
+		[215, _shot.bind("08_element_abilities")],
+		[217, _doom],
+		[219, _mouse.bind(btn, true)],
+		[219 + at + 2, _shot.bind("09_hits_and_deaths")],
+		[235, _mouse.bind(btn, false)],
+		[237, quit.bind(0)],
 	]
 
 
@@ -112,9 +94,7 @@ func _setup() -> void:
 	for i in range(1, w.actors.size()):
 		w.actors.hp[i] = 9999
 		w.actors.max_hp[i] = 9999
-	Input.warp_mouse(Vector2(1000, 450))
-	if _look == &"new":
-		_backdrop(p)
+	Input.warp_mouse(Vector2(900, 360))
 
 
 func _set_heat(points: int) -> void:
@@ -137,65 +117,6 @@ func _doom() -> void:
 			w.actors.hp[i] = 1
 
 
-## look=new: the owner's ground texture over the floor round the hero, the environment models, a dimmer warm light.
-func _backdrop(at: Vector2) -> void:
-	var holder := Node3D.new()
-	holder.name = "AuditBackdrop"
-	_main.view.add_child(holder)
-	var plane := MeshInstance3D.new()
-	var pm := PlaneMesh.new()
-	pm.size = Vector2(28, 28)
-	plane.mesh = pm
-	var gm := StandardMaterial3D.new()
-	gm.albedo_texture = load("res://ground-a.png")
-	gm.uv1_scale = Vector3(7, 7, 1)
-	gm.roughness = 1.0
-	plane.material_override = gm
-	plane.position = SimPlane.to_3d(at, 0.004)
-	holder.add_child(plane)
-	for row: Array in PROPS:
-		var scene := load(row[0]) as PackedScene
-		if scene == null:
-			print("vfx_audit: missing ", row[0])
-			continue
-		var n := scene.instantiate() as Node3D
-		holder.add_child(n)
-		var box := _aabb(n)
-		var s: float = row[2] / maxf(box.size.y, 0.001)
-		n.scale = Vector3.ONE * s
-		n.rotation.y = row[3]
-		var foot := SimPlane.to_3d(at + (row[1] as Vector2), 0.0)
-		n.position = foot - Vector3(0, box.position.y * s, 0)
-		if String(row[0]).contains("fire") or String(row[0]).contains("brazier"):
-			var omni := OmniLight3D.new()
-			omni.light_color = Color("#FF9A4A")
-			omni.light_energy = 2.5
-			omni.omni_range = 6.0
-			omni.position = foot + Vector3(0, row[2] + 0.3, 0)
-			holder.add_child(omni)
-	for we: WorldEnvironment in _main.view.find_children("*", "WorldEnvironment", true, false):
-		we.environment.ambient_light_color = Color("#6E6458")
-		we.environment.ambient_light_energy = 0.35
-		we.environment.background_color = Color("#121014")
-	for light: DirectionalLight3D in _main.view.find_children(
-		"*", "DirectionalLight3D", true, false
-	):
-		light.light_energy = 0.6
-		light.light_color = Color("#C8C4D8")
-
-
-func _aabb(n: Node) -> AABB:
-	var box := AABB()
-	var first := true
-	for mi: MeshInstance3D in n.find_children("*", "MeshInstance3D", true, false):
-		var b := (
-			(mi.get_global_transform() if mi.is_inside_tree() else mi.transform) * mi.get_aabb()
-		)
-		box = b if first else box.merge(b)
-		first = false
-	return box
-
-
 func _key(code: Key, pressed: bool) -> void:
 	var ev := InputEventKey.new()
 	ev.physical_keycode = code
@@ -209,7 +130,7 @@ func _mouse(button: MouseButton, pressed: bool) -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = button
 	ev.pressed = pressed
-	ev.position = Vector2(1000, 450)
+	ev.position = Vector2(900, 360)
 	ev.global_position = ev.position
 	Input.parse_input_event(ev)
 	Input.flush_buffered_events()

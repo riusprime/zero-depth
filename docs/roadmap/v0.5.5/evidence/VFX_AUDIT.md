@@ -6,48 +6,49 @@ matches the new art, and the change proposed. The owner approves, edits or cuts 
 **applied** were changed in this step (low-risk: shading mode, blend mode, alpha). Every other row is **awaiting
 owner**.
 
-## What "the new style" is, and how it was compared
+## The look the effects are judged against
 
-- **The owner's new art** is on `main` but **not in the game yet**: 16 environment models at the repo root
-  (`wall_1m/2m/broken/pillar`, `slab_concrete/wide`, `rock_large`, `rubble_small`, `debris_low`, `car_wreck`,
-  `crate_stack`, `chest`, `fire_barrel`, `brazier_pole`, `dead_tree`, `grass_tuft`, `.glb` with baked colour
-  textures) and two ground textures (`ground-a.png`, `ground-b.png`, worn stone tiles). Nothing under `src/`
-  references them; the floors still draw the code-built biomes (pale sand Ruins in the tour shot). The first three
-  bosses' textured models (`assets/models/bosses/`) are in the game.
-- **Read from the files:** a dark, desaturated ruined city: weathered concrete (texture means `#373439`–`#504E4F`),
-  rust and soot (`#4C3E37`, `#543528`), worn stone floor (`#7E6750` / `#7E6044`); bosses in saturated red and charcoal.
-  The fire barrel and brazier suggest a scene lit by fire.
-- **Two looks were shot** with `scripts/shots/vfx_audit.gd` (committed), which boots the real game, spawns a ring of
-  Chargers and drives the attacks with real input events, one shot per effect:
-  - `look=game`: the floor as the game draws it today;
-  - `look=new`: the owner's `ground-a.png` laid over the floor round the hero, ten of the owner's models placed round
-    it, and a dimmer, warm light (ambient `#6E6458` at 0.35, the sun at 0.6, two warm omni lights at the fire barrel
-    and the brazier). **This light is the auditor's approximation of the new style, not a spec**: the owner's
-    target light is an open question (Q-A3 below).
-- Renderer: `xvfb-run` + Mesa lavapipe (llvmpipe, Vulkan, Forward+); raw output in [`LOOK.md`](LOOK.md). Contact
-  sheets (crops round the hero) in [`shots/`](shots/):
-  - `vfx_audit_blade_new_before.jpg` / `_after.jpg`, `vfx_audit_gun_new_before.jpg` / `_after.jpg` (new look);
-  - `vfx_audit_blade_game_before.jpg` / `_after.jpg`, `vfx_audit_gun_game_before.jpg` / `_after.jpg` (game look).
-  Tiles, left to right, top to bottom: attack cool, attack Hot, attack Overclock, vent blast, skill start, skill
-  hit, enemy telegraphs, element abilities (Bomb Lobber, Frost Nova, Arc Field), hits and deaths.
+- **The owner's visual rework is in the game** (v0.5.9 "Embers", merged into this branch at `e27e543`, merged here
+  in `5bba4ba`): floors built from the owner's `.glb` kit (`assets/models/kit/`) over the worn stone ground textures,
+  a lighting mood per biome (`data/biomes/*`: AgX tonemap, SSAO, SSIL, fog, a dimmer sun, warm omni lights at the
+  fire props), soft contact shadows, themed rooms, and the hero's small warm light. Target image:
+  [`../../../art/look_reference.webp`](../../../art/look_reference.webp) (owner: "the lighting and occlusion ambience
+  is the thing I'd like to achieve").
+- **Read from the art:** a dark, desaturated ruined city; weathered concrete (kit texture means `#373439`–`#504E4F`),
+  rust and soot (`#4C3E37`, `#543528`), worn stone floor (`#7E6750`); bosses in saturated red and charcoal; light comes
+  from fire and the hero.
+- **How it was shot:** `scripts/shots/vfx_audit.gd` (committed) boots the real game (`main.tscn`), starts a run with a
+  fixed profile, spawns a ring of Chargers round the hero and drives the attacks with real input events, one shot per
+  effect. Two passes per build: **before** (the merged branch `e27e543` with this step's presentation files reverted)
+  and **after** (this step). Renderer: `xvfb-run` + Mesa lavapipe (llvmpipe, Vulkan, Forward+), 1280 × 720; the
+  raw output is in [`LOOK.md`](LOOK.md). Contact sheets (crops round the hero) in [`shots/`](shots/):
+  `vfx_audit_blade_before.jpg` / `_after.jpg`, `vfx_audit_gun_before.jpg` / `_after.jpg`. Tiles, left to right, top
+  to bottom: attack cool, attack Hot, attack Overclock, vent blast, skill start, skill hit, enemy telegraphs, element
+  abilities (Bomb Lobber, Frost Nova, Arc Field), hits and deaths. A "Floor 1" banner covers the top of the first
+  tiles (the shots start right after the floor intro).
+- An earlier draft of this audit, made before the rework reached this branch, compared the effects against the kit
+  laid over the old floors under an approximated light. Those shots are not committed; this version replaces them.
 
 ## The main finding
 
-The effects were tuned for bright, pale biomes under a strong ambient light (0.55). On the owner's dark, textured,
-fire-lit art they split in two:
+The effects were tuned for bright, pale biomes under a strong ambient light. Under the Embers light they split in
+two:
 - **Light-like effects read well**: the emissive blade core, bolts, hostile shots, embers, the visor, gems and orbs,
-  the telegraph outlines. They glow against the dark like the fire does.
-- **Flat unshaded fills don't**: the vent's disc, the skill flashes, the fire patches, the Frost Nova disc. Drawn as
-  mixed, unshaded, pale translucent sheets, they ignore the scene light and read as **flat paper laid on the floor**
-  (shot `new` tile 4: the vent disc is a pale salmon sheet; tiles 5–6: the cleave fans are pale cyan sheets).
+  the telegraph outlines. They glow against the dark like the fire does, and the heat colours (A2) read clearly.
+- **Flat unshaded fills don't**: the skill flashes, the Bomb Lobber's landing disc, the fire patches, the Frost Nova
+  disc, and before this step the vent's disc. Drawn as mixed, unshaded, pale translucent sheets, they ignore the scene
+  light and read as **flat paper laid on the floor** (after sheet, tiles 5–6: the cleave's pale cyan fans; tiles 8–9:
+  the Bomb Lobber's solid orange disc).
 - **Debris and vapour drawn unshaded** (death shards, steam) glow at full brightness next to the lit bodies they come
-  from: the death pop's red chunks look like stickers rather than broken pieces of the enemy.
+  from, so the death pop's red chunks look like stickers rather than broken pieces of the enemy.
 
-A first try with the additive discs at their old alphas made them brighter sheets, not softer ones (seen in a
-render, not committed); the applied values are the lower alphas in the table.
+A first try with additive discs at their old alphas made them brighter sheets, not softer ones (seen in a render of
+the earlier draft, not committed); the applied values are the lower alphas in the table.
 
 Rule proposed for every effect (written into ART_DIRECTION §4 for the applied rows): **a flash of light is additive;
 debris and vapour are lit by the scene; telegraphs stay unshaded** (PRESENTATION §4: no shadow may hide a warning).
+Nothing here changes the v0.5.9 look: no light, environment, mood, kit, ground or hero-light value was touched; the
+applied rows change only the materials of transient effects.
 
 ## Every VFX
 
@@ -74,7 +75,7 @@ owner** (proposal only), **keep** (matches; no change proposed).
 ### Heat
 | # | VFX | File | Now | Matches? | Proposed change | Status |
 |---|---|---|---|---|---|---|
-| V10 | Vent blast disc | `world_view/heat_visuals.gd` (`_blast`) | Was a mixed unshaded disc, heat colour lerped 30 % to white-hot, alpha 0.2–0.45 | **No**: the clearest mismatch (a pale salmon sheet, shot `new` 04) | Additive (glow template), the pure heat colour, alpha 0.2–0.45 → 0.1–0.25; the ring keeps the edge readable on pale ground. Softer in the after shots, but still a disc of even colour: a radial falloff (bright core, clear edge) is proposed next | **applied** (falloff: awaiting owner) |
+| V10 | Vent blast disc | `world_view/heat_visuals.gd` (`_blast`) | Was a mixed unshaded disc, heat colour lerped 30 % to white-hot, alpha 0.2–0.45 | **No**: the clearest mismatch (a pale salmon sheet in the earlier draft's dark shots; before sheet tile 4) | Additive (glow template), the pure heat colour, alpha 0.2–0.45 → 0.1–0.25; the ring keeps the edge readable on pale ground. Under the v0.5.9 light the before and after sheets look nearly the same (tile 4): still a disc of even colour: a radial falloff (bright core, clear edge) is proposed next | **applied** (falloff: awaiting owner) |
 | V11 | Vent blast ring | `world_view/heat_visuals.gd` | Unshaded torus growing to the sim radius | Yes (a bright edge) | — | keep |
 | V12 | Overclock embers (hits, trail, vent) | `world_view/heat_visuals.gd` | Unshaded small boxes, orange to white-hot, gravity | Yes (sparks of light) | — | keep |
 | V13 | Overheat steam | `world_view/heat_visuals.gd` (`_steam`) | Was unshaded pale spheres at 0.55: bright white blobs, brightest in the dark | **No** (vapour drawn as light) | Shaded by the scene light (roughness 1), same colour and alpha | **applied** |
@@ -130,17 +131,16 @@ owner** (proposal only), **keep** (matches; no change proposed).
 |---|---|---|---|---|---|---|
 | V40 | Shard gems | `world_view/shard_views.gd` | Violet emissive 2.4 | Yes | — | keep |
 | V41 | Heal orbs | `world_view/heal_orb_views.gd` | Green emissive 2.2, pulsing | Yes | — | keep |
-| V42 | Item pedestals, altars, chests | `pickup_views.gd`, `reward_views.gd` | Flat-colour code stone (`#6F6A66`–`#8B847D`) + glowing crystal / lock and a light | Glows yes; the stone is flat colour next to the owner's textured concrete | Swap the stone for the owner's `chest.glb` / slab models when the environment lands | awaiting owner (models) |
+| V42 | Item pedestals, altars, chests | `pickup_views.gd`, `reward_views.gd` | Chests: the owner's model since v0.5.9 (red lock glow, warm flare on opening). Pedestals and altars: flat-colour code stone (`#6F6A66`–`#8B847D`) with a glowing crystal and a light | Glows yes; the pedestal and altar stone is flat colour next to the textured kit (judged from code) | Kit-textured plinths (an art request like KIT_REQUESTS) | awaiting owner (models) |
 | V43 | Portal gate (swirl, floor glow, Deep variant) | `world_view/portal_gate.gd` | Visor-blue / violet swirl and light; code-built stone pillars | Glow yes; stone as V42 | As V42 for the stone | awaiting owner (models) |
 | V44 | Boss door seal, Overrun door frames | `boss_door_view.gd`, `overrun_door_views.gd` | Red emissive seal and frames | Yes | — | keep |
 | V45 | Event pedestals, Wandering Drone ring | `world_view/event_pedestal_views.gd` | Violet glyph crystal and light | Yes | — | keep |
-| V46 | Gamble shrine, shop terminal | `gamble_shrine_view.gd`, `shop_terminal_view.gd` | Teal core / violet screen, emissive | Partly: the shop screen is the brightest object in the dark shots | Lower the screen's energy on dark floors | awaiting owner |
-| V47 | Team and contact rings, HP bars | `world_view/actor_views.gd` | Unshaded, biome `outline` token | Contract (PRESENTATION §3) | The new floor needs its own `outline` token (≥ 3:1 on `#7E6750`) | awaiting owner |
+| V46 | Gamble shrine, shop terminal | `gamble_shrine_view.gd`, `shop_terminal_view.gd` | Teal core / violet screen, emissive | Partly (judged from the earlier draft's dark shots): the shop screen was the brightest object on screen | Lower the screen's energy on dark floors | awaiting owner |
+| V47 | Team and contact rings, HP bars | `world_view/actor_views.gd` | Unshaded, biome `outline` token | Contract (PRESENTATION §3) | Check each biome's `outline` token against the textured ground under the mood light (the palette test checks the flat `ground` token) | awaiting owner |
 | V48 | Ink outline pass | `world_view/ink_pass.gd` | Screen-space one-pixel ink (owner's pick) | Yes on the models | — | keep |
 
 ## Open questions for the owner (Q-A3)
-1. **The target light:** the new art is dark and fire-lit. Should the floors move to a darker ambient with warm point
-   lights (as in the `new` shots), or keep the bright sun and only swap the models? The effects' energies depend on it.
-2. **Wiring the new environment:** the models and ground textures are not used by the game yet. Is that a step of
-   this version (a new step), or later?
-3. Approve, edit or cut the rows marked **awaiting owner**.
+1. Approve, edit or cut the rows marked **awaiting owner**. The largest group is the flat fills (V6, V10 falloff,
+   V29, V33, V38, V39): one shared change (additive light with a radial falloff) would fix them together.
+2. Telegraph fills (V25): keep the flat orange (most readable), or add a light-like inner glow?
+3. The dash trail (V16): keep pure white, or dim / tint it for the darker floors?
