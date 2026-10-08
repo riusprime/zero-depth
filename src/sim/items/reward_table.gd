@@ -7,6 +7,8 @@ var altars_min := 2
 var altars_max := 3
 var chests_min := 2
 var chests_max := 3
+## v0.5.5 EC (S1): the most placed altars per floor (0 = no cap); the data ships 2.
+var altars_cap := 0
 ## Floor-1 chest prices by chest order; the last repeats.
 var chest_prices := PackedInt32Array([40, 60, 80])
 ## Each floor after the first adds this per mille of the floor-1 price.
@@ -17,6 +19,8 @@ var offer_size := 3
 var interact_radius_m := 1.6
 ## A kill's shards × (1000 + bonus × tier) / 1000, rounded half up.
 var shard_tier_bonus_permille := 250
+## v0.5.5 EC (S4): every kill's shards × this per mille (the data ships 700: −30 %).
+var shard_permille := 1000
 ## A boss kill pays boss_shards × the floor number.
 var boss_shards := 60
 ## v0.4.0 BS (Offers): card type weights [ability, stat, mod] and stat rarity weights [common, rare, epic] by source.

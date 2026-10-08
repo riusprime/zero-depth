@@ -85,6 +85,7 @@ var _floor := HudStyle.label(16)
 var _floor_card := VBoxContainer.new()
 var _floor_card_title := HudStyle.label(56, true)
 var _floor_card_biome := HudStyle.label(22)
+var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
 var _floor_card_left := 0.0
 var _biome_key := ""
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
@@ -227,11 +228,15 @@ func _process(delta: float) -> void:
 
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
-## floor, v0.5.0 RT).
-func show_floor(floor_index: int, biome_key: String, deep: bool = false) -> void:
+## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
+func show_floor(
+	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0
+) -> void:
 	_biome_key = biome_key
 	_floor_card_title.text = tr("HUD_FLOOR_CARD_DEEP" if deep else "HUD_FLOOR_CARD") % floor_index
 	_floor_card_biome.text = tr(biome_key)
+	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
+	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
@@ -241,8 +246,10 @@ func floor_card_showing() -> bool:
 	return _floor_card.visible
 
 
+## The card's title and biome, then (v0.5.5 EC, Q-S4) the shard line when the portal left shards behind.
 func floor_card_text() -> String:
-	return "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
+	var out := "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
+	return out + " " + _floor_card_shards.text if _floor_card_shards.visible else out
 
 
 func floor_text() -> String:
@@ -367,6 +374,12 @@ func _build_floor_card() -> void:
 	_floor_card_biome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_biome.add_theme_color_override("font_color", HudStyle.accent())
 	plate.add_child(_floor_card_biome)
+	_floor_card_shards.name = "FloorCardShards"
+	_floor_card_shards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_shards.add_theme_color_override("font_color", ShardIcon.MID)
+	_floor_card_shards.add_theme_constant_override("outline_size", 4)
+	_floor_card_shards.visible = false
+	_floor_card.add_child(_floor_card_shards)
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 

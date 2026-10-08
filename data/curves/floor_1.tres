@@ -18,7 +18,7 @@ kinds = Array[StringName]([&"charger", &"needle", &"swarmer"])
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("1_phase")
-start_seconds = 60.0
+start_seconds = 30.0
 name_key = &"PHASE_STIR"
 tier_permille = 0
 cap_permille = 400
@@ -31,7 +31,7 @@ kinds = Array[StringName]([&"warden"])
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("1_phase")
-start_seconds = 90.0
+start_seconds = 50.0
 name_key = &"PHASE_HUNT"
 tier_permille = 1500
 cap_permille = 450
@@ -44,7 +44,7 @@ kinds = Array[StringName]([&"arc_caster"])
 
 [sub_resource type="Resource" id="P_3"]
 script = ExtResource("1_phase")
-start_seconds = 120.0
+start_seconds = 70.0
 name_key = &"PHASE_SWARM"
 tier_permille = 2500
 cap_permille = 500
@@ -57,7 +57,7 @@ kinds = Array[StringName]([&"splitter"])
 
 [sub_resource type="Resource" id="P_4"]
 script = ExtResource("1_phase")
-start_seconds = 144.0
+start_seconds = 90.0
 name_key = &"PHASE_PEAK"
 tier_permille = 3500
 cap_permille = 550

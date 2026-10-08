@@ -11,6 +11,7 @@ const STAT_COLORS := {
 	&"overkill": Color("#FF4A6A"),
 	&"hoarder": Color("#F2C14E"),
 	&"fast_hands": Color("#6AF0FF"),
+	&"lifesprout": Color("#7DF29C"),  # v0.5.5 EC (D9): green = healing (the card frame mapping)
 }
 ## The ability mods and their colours (each a shade of its ability's).
 const MOD_COLORS := {
@@ -91,6 +92,22 @@ static func shapes(id: StringName) -> Array:
 				_line([Vector2(0.44, 0.54), Vector2(0.44, 0.32)], 0.06),
 				_line([Vector2(0.44, 0.54), Vector2(0.6, 0.62)], 0.06),
 				_line([Vector2(0.72, 0.1), Vector2(0.92, 0.2), Vector2(0.78, 0.34)], 0.06),
+			]
+		&"lifesprout":
+			return [
+				_line([Vector2(0.5, 0.9), Vector2(0.5, 0.42)], 0.06),
+				_poly(
+					[Vector2(0.5, 0.5), Vector2(0.2, 0.36), Vector2(0.14, 0.14), Vector2(0.4, 0.24)]
+				),
+				_poly(
+					[
+						Vector2(0.5, 0.42),
+						Vector2(0.84, 0.24),
+						Vector2(0.9, 0.04),
+						Vector2(0.6, 0.12)
+					]
+				),
+				_circle(Vector2(0.5, 0.9), 0.08, 0.0),
 			]
 	return _mod_shapes(id)
 

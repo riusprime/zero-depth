@@ -118,3 +118,87 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	assert_false(panel.visible)
 	await e.frames(10)
 	assert_gt(w.run_ticks, run, "play resumes")
+
+
+## Moves the panel's focus to entry `target` with the arrow keys (rows with up / down, then along the row).
+func _focus_to(e: E2e, panel: ShopPanel, target: int) -> void:
+	var guard := 0
+	while panel.focus_index() != target and guard < 40:
+		guard += 1
+		var row := int(panel.entry(panel.focus_index())["row"])
+		var want := int(panel.entry(target)["row"])
+		if row < want:
+			await e.tap(KEY_DOWN)
+		elif row > want:
+			await e.tap(KEY_UP)
+		else:
+			await e.tap(KEY_RIGHT if panel.focus_index() < target else KEY_LEFT)
+
+
+## v0.5.5 EC (owner S2, S3), real input only: buy a card, reroll (the bought slot stays Sold, only the others are
+## drawn again), buy until the floor's four buys are used: the panel shows the buys left, then says the limit is
+## reached, and the reroll no longer does anything.
+func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")
+	await e.tap(KEY_QUOTELEFT)
+	assert_true(await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked to the terminal")
+	# TEST HELPER (labelled): grant the shards directly, as in the test above.
+	w.shards = 5000
+	await e.tap(KEY_E)
+	await e.frames(2)
+	var panel := hud.shop.panel
+	assert_true(panel.is_open(), "the shop is open")
+	assert_eq(panel.buys_text(), tr("SHOP_BUYS_LEFT") % 4, "four buys on this floor")
+	var guard := 0
+	var rerolled := false
+	while w.shop.bought < 4 and guard < 12:
+		guard += 1
+		var k := -1
+		for i in w.shop.offer.size():
+			if k < 0 and w.shop.offer[i] >= 0 and Shop.can_apply(w, w.shop.offer[i]):
+				k = i
+		if k >= 0 and (rerolled or w.shop.bought == 0):
+			await e.tap([KEY_1, KEY_2, KEY_3, KEY_4][k])
+			await e.tap(KEY_ENTER)
+			await e.frames(2)
+			assert_eq(w.shop.offer[k], ShopState.SOLD, "bought slot %d" % (k + 1))
+			assert_eq(panel.card_price_text(k), tr("SHOP_SOLD"))
+			if w.shop.bought < 4:
+				assert_eq(panel.buys_text(), tr("SHOP_BUYS_LEFT") % (4 - w.shop.bought))
+			continue
+		# Reroll with the keyboard: the sold slots must stay sold.
+		var sold := []
+		for i in w.shop.offer.size():
+			if w.shop.offer[i] == ShopState.SOLD:
+				sold.append(i)
+		var rolls := w.shop.rerolls
+		await _focus_to(e, panel, panel.index_of_value(InputFrame.PICK_SHOP_REROLL))
+		await e.tap(KEY_ENTER)
+		await e.frames(2)
+		assert_eq(w.shop.rerolls, rolls + 1, "rerolled")
+		for i: int in sold:
+			assert_eq(w.shop.offer[i], ShopState.SOLD, "S2: slot %d stays sold" % (i + 1))
+			assert_eq(panel.card_price_text(i), tr("SHOP_SOLD"))
+		rerolled = true
+		await _focus_to(e, panel, 0)
+	assert_true(rerolled, "a reroll happened")
+	assert_eq(w.shop.bought, 4, "four cards bought")
+	assert_true(panel.buys_at_limit(), "S3: the limit is reached")
+	assert_eq(panel.buys_text(), tr("SHOP_BUYS_DONE") % [4, 4], "the panel says so")
+	var r := panel.index_of_value(InputFrame.PICK_SHOP_REROLL)
+	assert_false(panel.entry(r)["enabled"], "the reroll is off")
+	var before := w.shards
+	var rolls := w.shop.rerolls
+	await _focus_to(e, panel, r)
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	assert_eq([w.shards, w.shop.rerolls], [before, rolls], "nothing happens")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_false(w.shop.open, "Esc closes the shop")

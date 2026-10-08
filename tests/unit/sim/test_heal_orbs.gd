@@ -1,6 +1,9 @@
 extends GutTest
 ## v0.4.0 TU, the owner's answers of 2026-10-08: heal orbs (D8: 10 % of kills, 25 % of max HP, walked over), the
 ## floor-1 boss eased with a full heal at its door (D9), and shards that keep growing with floor time (D7).
+## v0.5.5 EC (owner D9, "Too common, we should add them as a card"): orbs drop only with the Lifesprout stat card
+## (10 % of kills with the first card, +5 % per further card, capped at 30 %); the reward table's base chance is 0.
+## The mechanic tests below set the base chance directly (a test-side write) to force a drop.
 
 const KIND := ActorStore.Kind
 
@@ -23,13 +26,67 @@ func _kill(w: World, at: Vector2, kind: int = KIND.CHARGER) -> void:
 
 
 func test_the_shipped_numbers() -> void:
-	var t := ContentCompiler.compile_rewards(
-		ContentRepository.load_all().get_def(&"rewards", &"floor")
+	var repo := ContentRepository.load_all()
+	var t := ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor"))
+	assert_eq(
+		[t.heal_orb_chance_permille, t.heal_orb_heal_permille], [0, 250], "D9: no base chance"
 	)
-	assert_eq([t.heal_orb_chance_permille, t.heal_orb_heal_permille], [100, 250], "D8: 10 %, 25 %")
 	assert_eq(
 		RewardTable.new().heal_orb_chance_permille, 0, "a world without reward data drops none"
 	)
+	var ls := ContentCompiler.compile_stat_cards(repo)[Stats.Stat.LIFESPROUT]
+	assert_not_null(ls, "the Lifesprout card exists")
+	assert_eq(Array(ls.amounts), [100, 100, 100], "D9: the first card gives 10 %")
+	assert_eq(Array(ls.side), [50, 50, 50], "D9: every further card +5 %")
+	assert_eq(ls.cap, 300, "capped at 30 %")
+	assert_gt(ls.weight, 0, "it is in the card pool")
+
+
+## A world with the shipped rewards and stat cards (the base chance 0, as shipped).
+func _sprout_world() -> World:
+	var w := _world(0)
+	w.stat_tables = ContentCompiler.compile_stat_cards(ContentRepository.load_all())
+	return w
+
+
+func _drops(w: World, kills: int) -> int:
+	var drops := 0
+	for k in kills:
+		var before := w.orbs.size()
+		_kill(w, Vector2(6, 0))
+		drops += w.orbs.size() - before
+		w.orbs = HealOrbStore.new()  # a test-side reset, so the floor's limit never hides a drop
+	return drops
+
+
+func test_without_lifesprout_no_orb_ever_drops() -> void:
+	var w := _sprout_world()
+	var loot := w.rng_loot.state
+	assert_eq(_drops(w, 200), 0, "D9: no card, no orbs")
+	assert_eq(w.rng_loot.state, loot, "and no loot draw for them")
+
+
+func test_lifesprout_stacks_its_chance_up_to_the_cap() -> void:
+	var w := _sprout_world()
+	assert_eq(Stats.heal_orb_chance(w), 0)
+	Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.COMMON)
+	assert_eq(Stats.heal_orb_chance(w), 100, "the first card: 10 %")
+	Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.EPIC)
+	assert_eq(Stats.heal_orb_chance(w), 150, "a second card: +5 %")
+	assert_false(Stats.at_cap(w, Stats.Stat.LIFESPROUT))
+	for k in 3:
+		Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.RARE)
+	assert_eq(Stats.heal_orb_chance(w), 300, "five cards: the 30 % cap")
+	assert_true(Stats.at_cap(w, Stats.Stat.LIFESPROUT), "offers stop at the cap")
+	Shop.remove_stat_card(w, Offers.stat_code(Stats.Stat.LIFESPROUT, Stats.Rarity.RARE))
+	assert_eq(Stats.heal_orb_chance(w), 250, "selling one back rebuilds the chance")
+
+
+func test_about_one_kill_in_ten_drops_one_with_a_lifesprout() -> void:
+	var v := _sprout_world()
+	Stats.add_card(v, Stats.Stat.LIFESPROUT, Stats.Rarity.COMMON)
+	var drops := _drops(v, 400)
+	assert_between(drops, 25, 60, "about 10 %% of 400 kills (%d)" % drops)
 
 
 func test_a_kill_drops_an_orb_where_it_fell_and_a_boss_none() -> void:
@@ -44,17 +101,6 @@ func test_a_kill_drops_an_orb_where_it_fell_and_a_boss_none() -> void:
 	Damage.hit(b, bi, 9999999, 1, 1, b.take_root(), 0, Vector2(6, 0), Vector2(6, 0))
 	b.step(InputFrame.new())
 	assert_eq(b.orbs.size(), 0, "a boss drops no orb")
-
-
-func test_about_one_kill_in_ten_drops_one() -> void:
-	var v := _world(100)
-	var drops := 0
-	for k in 400:
-		var before := v.orbs.size()
-		_kill(v, Vector2(6, 0))
-		drops += v.orbs.size() - before
-		v.orbs = HealOrbStore.new()  # a test-side reset, so the floor's limit never hides a drop
-	assert_between(drops, 25, 60, "about 10 %% of 400 kills (%d)" % drops)
 
 
 func test_walking_over_an_orb_heals_a_quarter_and_never_past_full() -> void:
@@ -126,7 +172,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 
 func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
 	var w := RunLab.new(ContentRepository.load_all(), 78, &"gun").floor_world()
-	var peak := TuningRun.peak_ticks(1)
+	var peak := w.spawner.curve.starts[w.spawner.curve.phase_count() - 1]
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
 	w.run_ticks = peak + 3600 * 2

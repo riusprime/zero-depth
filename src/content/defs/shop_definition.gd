@@ -10,10 +10,17 @@ extends ContentDef
 @export var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 @export var floor_price_step := 0.5
+## v0.5.5 EC (owner S4): floors 2 and later multiply every price the floor step raises by this too (1.5: x 1, 2.25,
+## 3); salvage refunds stay on the floor step alone.
+@export var late_floor_price := 1.5
+## v0.5.5 EC (owner S3, "only 4 max per floor"): the most cards bought at this floor's shop (the heal, rerolls and
+## cleanses don't count; 0 = no limit).
+@export var max_buys := 4
 ## The heal: this share of max HP, once per shop, for heal_price x the floor step.
 @export var heal_share := 0.3
 @export var heal_price := 40
-## The reroll: a new stock for reroll_price, then x (1 + reroll_step) per use at this shop.
+## The reroll: a new card in every unsold slot (v0.5.5 EC, owner S2: a bought slot stays sold) for reroll_price,
+## then x (1 + reroll_step) per use at this shop.
 @export var reroll_price := 20
 @export var reroll_step := 0.5
 ## Salvage: a mod or stat card sells for this share of its shop price; an ability refunds this much per level.
@@ -43,6 +50,10 @@ func validate() -> Array[ValidationIssue]:
 	for pair in [["heal_share", heal_share], ["sell_share", sell_share]]:
 		if pair[1] <= 0.0 or pair[1] > 1.0:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s is in (0, 1]" % pair[0]))
+	if late_floor_price < 1.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "late_floor_price is >= 1"))
+	if max_buys < 0:
+		issues.append(ValidationIssue.new(&"negative", resource_path, "max_buys is negative"))
 	check_positive(issues, "heal_price", heal_price)
 	check_positive(issues, "reroll_price", reroll_price)
 	check_positive(issues, "ability_refund_per_level", ability_refund_per_level)

@@ -141,7 +141,8 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 	assert_true(w2.item_mods.has(w2.item_tables[0].kind), "their modifiers are live")
 	assert_eq(w2.actors.hp[0], 50)
 	assert_eq(w2.floor_index, 2)
-	assert_eq(w2.shards, 30, "shards carry (E)")
+	assert_eq(w2.shards, 15, "shards carry (E), half of them (v0.5.5 Q-S4: keep half)")
+	assert_eq(w2.shards_left_behind, 15, "the portal kept the other half")
 	assert_eq(w2.floor_count, 3)
 	assert_eq(w2.run_ticks, 0, "the danger tier restarts on each floor")
 	assert_eq(WorldReader.new(w2).tier(), 0)
@@ -229,6 +230,25 @@ func test_the_carry_names_its_fields_in_one_place() -> void:
 	var w := CombatLab.world()
 	var c := RunCarry.take(w, 400)
 	assert_eq(c.has(&"shards"), &"shards" in w, "a field the world lacks is skipped")
+
+
+## v0.5.5 EC (owner Q-S4, "Keep half"): a portal carries half the unspent shards, rounded down; the run's data says
+## so, and the next floor knows how many were left behind.
+func test_the_portal_keeps_half_the_shards_rounded_down() -> void:
+	var run := ContentCompiler.compile_run(
+		ContentRepository.load_all().get_def(&"run", &"three_floors")
+	)
+	assert_eq(run.shard_carry_permille, 500, "keep half")
+	var w := CombatLab.world()
+	w.shards = 31
+	var c := RunCarry.take(w, 0, run.shard_carry_permille)
+	assert_eq([c[&"shards"], c[RunCarry.LEFT]], [15, 16], "15 carried, 16 left behind")
+	var next := CombatLab.world()
+	RunCarry.apply(next, c)
+	assert_eq([next.shards, next.shards_left_behind], [15, 16])
+	assert_eq(RunCarry.take(w, 0)[&"shards"], 31, "without a run table every shard carries")
+	w.shards = 0
+	assert_eq(RunCarry.take(w, 0, 500)[RunCarry.LEFT], 0, "nothing held, nothing lost")
 
 
 # --- boss flow ---------------------------------------------------------------------------------------------

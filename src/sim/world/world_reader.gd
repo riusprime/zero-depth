@@ -1060,6 +1060,11 @@ func shards() -> int:
 	return _w.shards
 
 
+## v0.5.5 EC (owner Q-S4): shards the portal left behind on the way to this floor (half of the unspent ones).
+func shards_left_behind() -> int:
+	return _w.shards_left_behind
+
+
 func item_rarity(item_index: int) -> int:
 	return _w.item_tables[item_index].rarity
 

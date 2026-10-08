@@ -1,11 +1,20 @@
 extends GutTest
 ## The difficulty curve (v0.4.0 TU, owner 2026-10-08 D1–D4, "distribute presenting them through the first 3
-## floors"): phase lookup and the ramp (CurveTable), the calm minute's rules (cap, kinds, no tier growth), the order
-## kinds open in, the peak (SC's tier max) at the floor's expected end, the kinds per floor, enemies that join through
+## floors"): phase lookup and the ramp (CurveTable), the calm phase's rules (cap, kinds, no tier growth), the order
+## kinds open in, the peak (SC's tier max) and that it holds, the kinds per floor, enemies that join through
 ## queue_enemy scaled like the spawner's, and the floor's first reward, an altar next to the start hall.
+## v0.5.5 EC (owner D1, "Very calm, that fits the first 30 seconds of the first floor then it should ramp a bit
+## faster"): floor 1's calm phase lasts 30 s and its ramp to the peak is steeper (60 s, was 84 s); floors 2-3 have
+## no calm phase and start at the warm-up level. The peak times are data (starting values), no longer the
+## expected-build bot's door times (owner P1).
 
 const KIND := ActorStore.Kind
 const CALM: Array[int] = [KIND.CHARGER, KIND.NEEDLE, KIND.SWARMER]
+## v0.5.5 D1 (starting values): floor 1's calm phase, its ramp to the peak, and when each floor peaks.
+const CALM_S := 30
+const FLOOR_1_RAMP_S := 60
+const PEAK_S := {1: 90, 2: 30, 3: 30}
+const PHASES := {1: 5, 2: 4, 3: 4}
 ## The kinds each floor brings into the run (owner, 2026-10-08), and the calm minute's on every floor.
 const NEW_BY_FLOOR := {
 	1: [KIND.CHARGER, KIND.NEEDLE, KIND.SWARMER, KIND.WARDEN, KIND.ARC_CASTER, KIND.SPLITTER],
@@ -22,6 +31,12 @@ func before_all() -> void:
 
 func _table(floor_index: int) -> SpawnTable:
 	return ContentCompiler.compile_floor_spawning(_repo, floor_index)
+
+
+## Floor `f`'s peak start in ticks (its curve's last phase).
+func _peak(f: int) -> int:
+	var c := _table(f).curve
+	return c.starts[c.phase_count() - 1]
 
 
 ## The mix rows open at `ticks`, as actor kinds.
@@ -64,30 +79,58 @@ func test_every_floor_has_a_curve_and_the_run_uses_it() -> void:
 		assert_eq(t.curve.kind_phase.size(), t.kinds.size())
 
 
-func test_the_calm_minute() -> void:
-	for f in [1, 2, 3]:
+func test_floor_1_is_calm_for_30_s_then_ramps_faster() -> void:
+	var t := _table(1)
+	var c := t.curve
+	assert_eq(c.starts[0], 0)
+	assert_eq(c.holds[0], 1, "floor 1 opens with a calm phase that holds")
+	assert_eq(c.name_keys[0], &"PHASE_CALM")
+	assert_eq(c.starts[1], CALM_S * 60, "D1: the calm phase is the first 30 s")
+	for ticks in [0, 900, CALM_S * 60 - 1]:
+		assert_eq(t.danger_tier(ticks), 0, "no tier growth in the calm phase")
+		assert_eq(t.power_now(ticks), t.power_now(0), "the calm phase's damage holds")
+		assert_eq(t.hp_now(100, ticks), t.hp_now(100, 0), "the calm phase's HP holds")
+		assert_eq(_open_kinds(t, ticks).size(), CALM.size())
+		for k: int in _open_kinds(t, ticks):
+			assert_has(CALM, k, "only the calm kinds")
+		assert_eq(t.pack_cap_now(ticks), 1, "calm kinds come one at a time (no Swarmer pack)")
+	assert_lte(t.power_now(0), 1000, "calm enemies hit no harder than SC's tier 0")
+	assert_gt(t.interval_now(0), t.interval(0), "calm spawns come slower than SC's tier 0")
+	assert_between(t.cap_now(1, 0), 4, 6, "floor 1's calm cap is 4-6")
+	var ramp := c.starts[c.phase_count() - 1] - c.starts[1]
+	assert_eq(ramp, FLOOR_1_RAMP_S * 60, "D1: the ramp to the peak takes 60 s")
+	assert_lt(ramp, 84 * 60, "steeper than v0.4.0's 84 s ramp to the same peak")
+
+
+func test_floors_2_and_3_start_at_the_warm_up_level() -> void:
+	var one := _table(1).curve
+	for f in [2, 3]:
 		var t := _table(f)
 		var c := t.curve
 		assert_eq(c.starts[0], 0)
-		assert_eq(c.starts[1], 3600, "floor %d: the calm phase is the first minute" % f)
-		for ticks in [0, 1800, 3599]:
-			assert_eq(t.danger_tier(ticks), 0, "no tier growth in the calm minute")
-			assert_eq(t.power_now(ticks), t.power_now(0), "the calm minute's damage holds")
-			assert_eq(t.hp_now(100, ticks), t.hp_now(100, 0), "the calm minute's HP holds")
-			assert_eq(_open_kinds(t, ticks).size(), CALM.size())
-			for k: int in _open_kinds(t, ticks):
-				assert_has(CALM, k, "floor %d: only the calm kinds" % f)
-			assert_eq(t.pack_cap_now(ticks), 1, "calm kinds come one at a time (no Swarmer pack)")
-		assert_lte(t.power_now(0), 1000, "calm enemies hit no harder than SC's tier 0")
-		assert_gt(t.interval_now(0), t.interval(0), "calm spawns come slower than SC's tier 0")
-	assert_between(_table(1).cap_now(1, 0), 4, 6, "floor 1's calm cap is 4-6")
+		assert_eq(c.holds[0], 0, "floor %d: no calm phase" % f)
+		assert_ne(c.name_keys[0], &"PHASE_CALM", "floor %d: no calm phase" % f)
+		assert_eq(c.name_keys[0], one.name_keys[1], "floor %d opens at the warm-up phase" % f)
+		assert_eq(
+			[c.tier_permille[0], c.interval_permille[0], c.hp_permille[0], c.damage_permille[0]],
+			[
+				one.tier_permille[1],
+				one.interval_permille[1],
+				one.hp_permille[1],
+				one.damage_permille[1]
+			],
+			"floor %d starts at floor 1's warm-up level" % f
+		)
+		assert_gt(t.danger_permille(600), 0, "floor %d: the tier grows from the start" % f)
+		for k: int in CALM:
+			assert_has(_open_kinds(t, 0), k, "floor %d: the basic kinds are in from the start" % f)
 	assert_gt(
 		_table(2).cap_now(2, 0), _table(1).cap_now(1, 0), "floor 2 starts higher than floor 1"
 	)
-	assert_gt(
-		_table(3).cap_now(3, 0), _table(2).cap_now(2, 0), "floor 3 starts higher than floor 2"
+	assert_gte(
+		_table(3).cap_now(3, 0), _table(2).cap_now(2, 0), "floor 3 starts no lower than floor 2"
 	)
-	assert_lt(_table(3).cap_now(3, 0), _table(3).cap(3, 0), "but still calmer than SC's tier 0")
+	assert_lt(_table(3).cap_now(3, 0), _table(3).cap(3, 0), "but still under SC's tier 0")
 
 
 func test_kinds_open_phase_by_phase_and_never_close() -> void:
@@ -101,17 +144,17 @@ func test_kinds_open_phase_by_phase_and_never_close() -> void:
 				assert_has(now, k, "floor %d phase %d keeps the kinds before it" % [f, p])
 			assert_eq(_open_kinds(t, c.starts[p] - 1 if p > 0 else 0), before if p > 0 else now)
 			before = now
-		assert_eq(c.phase_count(), 5)
+		assert_eq(c.phase_count(), PHASES[f])
 
 
-func test_the_peak_comes_a_minute_before_the_boss_door_and_holds() -> void:
+func test_the_peak_comes_on_time_and_holds() -> void:
 	var sc: SpawnDirectorDefinition = _repo.get_def(&"spawning", &"floor_1")
 	var tier_max := sc.hp_tier_permille.size() - 1
 	for f in [1, 2, 3]:
 		var t := _table(f)
 		var c := t.curve
 		var peak := c.starts[c.phase_count() - 1]
-		assert_eq(peak, TuningRun.peak_ticks(f), "floor %d: owner D7, ~1 min before the door" % f)
+		assert_eq(peak, PEAK_S[f] * 60, "floor %d: the peak's start (data, D1)" % f)
 		var top := [
 			t.danger_permille(peak), t.cap_now(f, peak), t.hp_now(100, peak), t.power_now(peak)
 		]
@@ -164,13 +207,13 @@ func test_floor_1_never_spawns_a_later_floor_s_kind() -> void:
 	var w := RunLab.new(_repo, 4242, &"blade").floor_world()
 	var later := NEW_BY_FLOOR[2] + NEW_BY_FLOOR[3]
 	var t := w.spawner
-	for ticks in range(0, TuningRun.peak_ticks(1) * 2, 300):
+	for ticks in range(0, _peak(1) * 2, 300):
 		for k: int in _open_kinds(t, ticks):
 			assert_does_not_have(later, k)
 	# And in play: the last 2 min before the peak of the real floor 1 with an invulnerable player, every enemy
 	# that appears (checked each second).
 	w.actors.invuln[0] = 1 << 24
-	w.run_ticks = TuningRun.peak_ticks(1)
+	w.run_ticks = _peak(1)
 	var kinds := {}
 	for n in 2 * 3600:
 		w.step(InputFrame.new())
@@ -212,7 +255,7 @@ func test_a_splitter_s_splitlings_arrive_scaled_on_a_curved_floor() -> void:
 	w.spawner = _table(1)
 	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_per_tier = 0
-	w.run_ticks = TuningRun.peak_ticks(1)
+	w.run_ticks = _peak(1)
 	var id := w.add_enemy(KIND.SPLITTER, Vector2(8, 0))
 	CombatLab.idle(w, SimTick.SPAWN_IN_TICKS + 1)
 	var i := w.actors.index_of(id)
@@ -253,8 +296,8 @@ func test_the_reader_names_the_phase() -> void:
 	var r := WorldReader.new(w)
 	assert_true(r.has_curve())
 	assert_eq([r.phase(), r.phase_name_key(), r.tier()], [0, &"PHASE_CALM", 0])
-	assert_almost_eq(r.phase_seconds_left(), 60.0, 0.02)
-	w.run_ticks = TuningRun.peak_ticks(1)
+	assert_almost_eq(r.phase_seconds_left(), float(CALM_S), 0.02)
+	w.run_ticks = _peak(1)
 	assert_eq(r.phase(), r.phase_count() - 1)
 	assert_eq(r.phase_name_key(), &"PHASE_PEAK")
 	assert_eq(r.phase_seconds_left(), 0.0)

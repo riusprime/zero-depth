@@ -102,17 +102,20 @@ func test_the_shipped_data() -> void:
 	)
 
 
+## v0.5.5 EC (owner S4): every kill's shards x 0.7 (-30 %), rounded half up: Charger 3 -> 2, Needle 4 -> 3,
+## Warden 6 -> 4.
 func test_a_kill_pays_its_kinds_shards() -> void:
 	var w := _world()
-	assert_eq(_kill(w, KIND.CHARGER), 3)
-	assert_eq(_kill(w, KIND.NEEDLE), 4)
-	assert_eq(_kill(w, KIND.WARDEN), 6)
-	assert_eq(w.shards, 13)
+	assert_eq(w.reward_table.shard_permille, 700, "S4: -30 %")
+	assert_eq(_kill(w, KIND.CHARGER), 2)
+	assert_eq(_kill(w, KIND.NEEDLE), 3)
+	assert_eq(_kill(w, KIND.WARDEN), 4)
+	assert_eq(w.shards, 9)
 	assert_eq(w.kills, 3)
 	var paid := w.events_since(0).filter(
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.SHARDS
 	)
-	assert_eq(paid.map(func(e: SimEvent) -> int: return e.amount), [3, 4, 6], "a SHARDS event each")
+	assert_eq(paid.map(func(e: SimEvent) -> int: return e.amount), [2, 3, 4], "a SHARDS event each")
 	assert_eq(paid[0].pos, Vector2(6, 0), "at the body (the gems fly from there)")
 
 
@@ -123,7 +126,8 @@ func test_shards_scale_with_the_danger_tier() -> void:
 	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_max = 0
 	# × (1 + 0.25 × tier), rounded half up: Charger 3 → 3, 4 (3.75), 5 (4.5), 5 (5.25), 6; Warden 6 → 6, 8 (7.5), 9.
-	var want := {0: [3, 6], 1: [4, 8], 2: [5, 9], 3: [5, 11], 4: [6, 12]}
+	# v0.5.5 EC (S4): then × 0.7, rounded half up.
+	var want := {0: [2, 4], 1: [3, 6], 2: [4, 6], 3: [4, 8], 4: [4, 8]}
 	for tier: int in want:
 		w.run_ticks = tier * 100
 		assert_eq(
@@ -144,7 +148,7 @@ func test_a_boss_kind_pays_by_floor_not_tier() -> void:
 	w.run_ticks = w.spawner.tier_ticks * 3
 	for f in [1, 2, 3]:
 		w.floor_index = f
-		assert_eq(Rewards.shards_for_kill(w, KIND.WARDEN), 60 * f, "floor %d" % f)
+		assert_eq(Rewards.shards_for_kill(w, KIND.WARDEN), 42 * f, "floor %d (x 0.7, S4)" % f)
 
 
 func test_chest_prices_by_order_and_floor() -> void:
@@ -177,9 +181,11 @@ func test_the_floor_places_altars_and_chests_in_different_rooms() -> void:
 			else:
 				chests += 1
 				prices.append(w.rewards.price[i])
-		assert_between(altars, 2, 3, "seed %d altars" % s)
-		assert_between(chests, 2, 3, "seed %d chests" % s)
-		assert_eq(prices, [40, 60, 80].slice(0, chests), "seed %d: prices by chest order" % s)
+		# v0.5.5 EC (owner S1): at most 2 altars; the 3rd altar rolled becomes a chest.
+		assert_eq(altars, 2, "seed %d altars" % s)
+		assert_between(chests, 2, 4, "seed %d chests" % s)
+		assert_between(altars + chests, 4, 6, "seed %d: the reward spots stay" % s)
+		assert_eq(prices, [40, 60, 80, 80].slice(0, chests), "seed %d: prices by chest order" % s)
 		assert_eq(w.pickups.size(), 0, "no v0.2.0 pedestals")
 		var again := FloorScenario.build(
 			s, PlayerTable.starting_values(), enemies, SpawnTable.new(), _items, _rewards
@@ -448,6 +454,6 @@ func test_a_boss_pays_its_shards_times_the_floor() -> void:
 	assert_eq(_rewards.boss_shards, 60, "PLAN E: a boss drops 60 × floor")
 	w.reward_table = _rewards
 	w.floor_index = 1
-	assert_eq(Rewards.shards_for_kill(w, KIND.GATEKEEPER), 60)
+	assert_eq(Rewards.shards_for_kill(w, KIND.GATEKEEPER), 42, "60 x 0.7 (S4)")
 	w.floor_index = 3
-	assert_eq(Rewards.shards_for_kill(w, KIND.SIEGE_ENGINE), 180)
+	assert_eq(Rewards.shards_for_kill(w, KIND.SIEGE_ENGINE), 126)
