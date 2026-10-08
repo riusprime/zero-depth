@@ -435,6 +435,36 @@
       "loop": false
     },
     {
+      "id": "shop_open",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shop_open.wav",
+      "sha256": "e87813573210a2577824f8ef6d61a7263cc7044e12537bdb687e820a619c1192",
+      "seconds": 0.51,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.68,
+      "loop": false
+    },
+    {
+      "id": "shop_buy",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shop_buy.wav",
+      "sha256": "ff08a7057d409e74250a106f95c9799e178d2339333d4ee5fd8abc6bbdb8cc1e",
+      "seconds": 0.81,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.77,
+      "loop": false
+    },
+    {
+      "id": "shop_sell",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/shop_sell.wav",
+      "sha256": "1cbb293bdd27ec05f6967f7340403780bb36c73ae97523ca80bcf4c07a9e3e49",
+      "seconds": 0.56,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.91,
+      "loop": false
+    },
+    {
       "id": "combo_unlock",
       "kind": "sfx",
       "path": "assets/audio/sfx/combo_unlock.wav",

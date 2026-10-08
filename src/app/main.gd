@@ -90,6 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		driver != null
 		and _end == null
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -251,6 +252,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
+	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
@@ -291,6 +293,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
+	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.sync(driver.reader)
 	_hud.show_floor(run.floor_index, String(biome.name_key))
 	_ended_ticks = 0

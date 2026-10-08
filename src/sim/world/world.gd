@@ -177,6 +177,9 @@ var gamble_last_stat := -1
 var gamble_tick := -1
 var gamble_denied_tick := -1
 # --- end Gamble ---------------------------------------------------------------------------------------------
+# v0.5.0 SH (Shop): the shop's rules (loadout, not hashed; null = no shops) and the floor's shop (hashed once placed).
+var shop_table: ShopTable
+var shop := ShopState.new()
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -243,6 +246,7 @@ var stat_tables: Array[StatTable] = []
 var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
+var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
@@ -351,6 +355,10 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
+	if shop.open:  # v0.5.0 SH: the shop's panel is open; only its actions run, the tick still counts.
+		Shop.choose(self, frame)
+		tick += 1
+		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
 		boss_flow.advance_transit(self)
 		tick += 1
@@ -368,6 +376,9 @@ func step(frame: InputFrame) -> void:
 	PlayerBuild.note_facing(self)  # Builds: melee follows the facing (L29).
 	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
 	if Rewards.interact(self):
+		tick += 1
+		return
+	if Shop.interact(self):  # v0.5.0 SH: interact by the terminal opens the shop.
 		tick += 1
 		return
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
@@ -762,6 +773,8 @@ func state_hash() -> String:
 			h.add_int(v)
 		h.add_f32(gamble_pos.x)
 		h.add_f32(gamble_pos.y)
+	if shop.present():  # v0.5.0 SH: only floors with a shop.
+		shop.hash_into(h)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:

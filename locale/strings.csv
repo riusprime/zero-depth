@@ -452,3 +452,17 @@ CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición in
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
+SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
+SHOP_TITLE,Shop,Tienda
+SHOP_SOLD,Sold,Vendido
+SHOP_CANT_USE,Can't use now,No se puede usar ahora
+SHOP_HEAL,Heal +%d HP,Curar +%d PV
+SHOP_HEAL_USED,Already healed here,Ya te curaste aquí
+SHOP_HEAL_FULL,Your HP is full,Tienes la vida al máximo
+SHOP_REROLL,Reroll the stock,Renovar el surtido
+SHOP_SALVAGE,Salvage,Desguace
+SHOP_SALVAGE_NONE,Nothing to salvage yet,Aún no hay nada que desguazar
+SHOP_SELL_STAT,%s · %d held,%s · %d en tu poder
+SHOP_SELL_ABILITY,Frees the slot · level %d,Libera la ranura · nivel %d
+SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar o vender · Esc o B para salir"
+MAP_LEGEND_SHOP,Shop,Tienda

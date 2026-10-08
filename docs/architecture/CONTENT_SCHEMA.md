@@ -205,6 +205,20 @@ half up; the count resets per floor), `floor_price_step` (raises a later floor's
 max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, amounts, weights and caps positive,
 steps non-negative, every stat known and listed once, the pool not empty.
 
+**Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
+(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; a mod or
+an ability card is common or rare), `floor_price_step` (each later floor raises every price but the reroll by this
+share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
+step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
+`sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
+the cards left so the caps hold), `ability_refund_per_level` (25 shards per level for salvaging an ability, never the
+weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
+rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
+is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
+`shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
+ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
+the steps non-negative; the shares in (0, 1]; `offer_size` 1–9.
+
 ## 4. Encounters and bosses
 
 ```gdscript

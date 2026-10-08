@@ -65,6 +65,8 @@ var _echo_tick := -1
 var _blink_tick := -1
 var _choosing := false
 var _denied_tick := -1
+var _shop_open := false
+var _shop_denied := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
@@ -81,6 +83,8 @@ func prime(reader: WorldReader) -> void:
 	_blink_tick = reader.blink_tick()
 	_choosing = reader.choosing()
 	_denied_tick = reader.reward_denied_tick()
+	_shop_open = reader.shop_open()
+	_shop_denied = reader.shop_denied_tick()
 	_heartbeat_left = 0
 	_heat_ticks = _heat_edges(reader.heat_state())
 	var o := reader.overrun()
@@ -166,6 +170,10 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([skill_cue(e.amount), e.pos, 1.0])
 			SimEvent.Kind.VENT_COLD:  # v0.3.5 K: Vent pressed under Hot
 				out.append([&"vent_cold", null, 1.0])
+			SimEvent.Kind.SHOP_BUY:  # v0.5.0 SH: a purchase, the heal or a reroll
+				out.append([&"shop_buy", null, 1.0])
+			SimEvent.Kind.SHOP_SALVAGE:  # v0.5.0 SH: a sale or an ability salvaged
+				out.append([&"shop_sell", null, 1.0])
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
@@ -342,6 +350,13 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	if denied != _denied_tick and denied >= 0:
 		out.append([&"chest_refuse", null, 1.0])
 	_denied_tick = denied
+	var shop := reader.shop_open()  # v0.5.0 SH: the terminal wakes; a refused action buzzes
+	if shop and not _shop_open:
+		out.append([&"shop_open", null, 1.0])
+	_shop_open = shop
+	if reader.shop_denied_tick() != _shop_denied and reader.shop_denied_tick() >= 0:
+		out.append([&"chest_refuse", null, 1.0])
+	_shop_denied = reader.shop_denied_tick()
 
 
 func _low_hp(reader: WorldReader, out: Array) -> void:

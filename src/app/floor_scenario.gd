@@ -56,6 +56,20 @@ static func build(
 	return w
 
 
+## v0.5.0 SH: the floor's shop (after build): ShopPlacement picks its side room and spot, the terminal's footprint
+## becomes a wall (the flow fields are rebuilt with it), and Shop.place puts it on the floor. No-op without a table.
+static func add_shop(w: World, shop: ShopTable) -> void:
+	var layout := w.floor_layout
+	if shop == null or layout == null or ShopPlacement.pick(layout) < 0:
+		return
+	var walls: Array[Obb] = w.walls.duplicate()
+	walls.append(ShopPlacement.collider(layout.shop_pos, layout.shop_angle))
+	w.set_walls(walls)
+	w.prepare_wall(layout.boss_door_wall)
+	w.shop_table = shop
+	Shop.place(w, layout)
+
+
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
 static func spot_order(layout: FloorLayout) -> PackedInt32Array:
 	return Rewards.spot_order(layout)

@@ -692,6 +692,24 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	return t
 
 
+## The shop (v0.5.0 SH): shares in per mille; prices as the data gives them. Null without a definition.
+static func compile_shop(def: ShopDefinition) -> ShopTable:
+	if def == null:
+		return null
+	var t := ShopTable.new()
+	t.offer_size = def.offer_size
+	t.rarity_prices = def.rarity_prices.duplicate()
+	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.heal_permille = int(round(def.heal_share * 1000.0))
+	t.heal_price = def.heal_price
+	t.reroll_price = def.reroll_price
+	t.reroll_step_permille = int(round(def.reroll_step * 1000.0))
+	t.sell_permille = int(round(def.sell_share * 1000.0))
+	t.ability_refund_per_level = def.ability_refund_per_level
+	t.interact_radius_m = def.interact_radius_m
+	return t
+
+
 ## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id);
 ## v0.4.0 AB: an ability combo's ability ids to ability indices (compile_abilities). Combos naming an unknown item
 ## or ability are left out (the validator reports them).

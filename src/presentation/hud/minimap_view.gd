@@ -19,6 +19,7 @@ const LEGEND: Array = [
 	[&"portal", "MAP_LEGEND_PORTAL"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
+	[&"shop", "MAP_LEGEND_SHOP"],
 ]
 
 ## True for the full map.
@@ -281,6 +282,8 @@ func _draw_icons() -> void:
 	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
+	if reader.has_shop() and state.is_discovered(reader.shop_room()):
+		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
@@ -359,6 +362,21 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
 			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
+		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
+			var house := PackedVector2Array(
+				[
+					p + Vector2(0, -s * 1.3),
+					p + Vector2(s * 1.1, -s * 0.3),
+					p + Vector2(s * 0.9, s * 0.9),
+					p + Vector2(-s * 0.9, s * 0.9),
+					p + Vector2(-s * 1.1, -s * 0.3)
+				]
+			)
+			draw_circle(p, s * 1.6, Color(MinimapStyle.SHOP, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(house, MinimapStyle.SHOP)
+			draw_rect(
+				Rect2(p + Vector2(-s * 0.3, s * 0.1), Vector2(s * 0.6, s * 0.8)), MinimapStyle.PANEL
+			)
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 

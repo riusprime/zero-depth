@@ -33,6 +33,8 @@ var transit := PortalTransitView.new()
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
+## The shop terminal (v0.5.0 SH; null on a floor without one).
+var shop_terminal: ShopTerminalView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
 var challenge := BossChallengeView.new()
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
@@ -94,6 +96,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gamble_shrine = GambleShrineView.new()
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+	if reader.has_shop():
+		shop_terminal = ShopTerminalView.new()
+		add_child(shop_terminal)
+		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
 	add_child(transit)
 	transit.setup(actors, gate)
 	rig.camera.add_child(ink)
@@ -129,6 +135,8 @@ func sync() -> void:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
+	if shop_terminal != null:
+		shop_terminal.sync(reader)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
 		gate.set_sealed(not reader.portal_active())
 	rig.target = SimPlane.to_3d(reader.player_pos())

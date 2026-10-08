@@ -49,6 +49,7 @@ static func build_floor(run: RunState) -> World:
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))
 	)
+	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)

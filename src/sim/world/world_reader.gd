@@ -105,6 +105,15 @@ const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
+## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
+const SHOP_SELL_MOD := Shop.SELL_MOD
+const SHOP_SELL_STAT := Shop.SELL_STAT
+const SHOP_SELL_ABILITY := Shop.SELL_ABILITY
+const SHOP_BUY := ShopState.Action.BUY
+const SHOP_HEAL := ShopState.Action.HEAL
+const SHOP_REROLL := ShopState.Action.REROLL
+const SHOP_SELL := ShopState.Action.SELL
+const SHOP_SALVAGE := ShopState.Action.SALVAGE_ABILITY
 const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BOMB_LOBBER := AbilityTable.Kind.BOMB_LOBBER
@@ -1368,3 +1377,42 @@ func crit_mult_permille() -> int:
 ## A stat's raw value (Stats.value: per mille; base 1000 for multipliers, 0 for added points).
 func stat_value(stat: int) -> int:
 	return Stats.value(_w, stat)
+
+
+# --- Shop (v0.5.0 SH; Shop) --------------------------------------------------------------------------------------
+## The floor has a shop terminal.
+func has_shop() -> bool:
+	return Shop.present(_w)
+
+
+func shop_pos() -> Vector2:
+	return _w.shop.pos
+
+
+func shop_room() -> int:
+	return _w.shop.room
+
+
+## The terminal's facing (1/4096 turns; toward its room's first doorway).
+func shop_angle() -> int:
+	return _w.floor_layout.shop_angle if _w.floor_layout != null else 0
+
+
+func shop_in_reach() -> bool:
+	return Shop.in_reach(_w)
+
+
+## The shop's panel is open (the world waits on it).
+func shop_open() -> bool:
+	return _w.shop.open
+
+
+## The last refused shop action's tick (-1 when none).
+func shop_denied_tick() -> int:
+	return _w.shop.denied_tick
+
+
+## Everything the shop panel shows (Shop.read): stock (code, sold, price, can_apply, affordable), heal (price,
+## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
+func shop() -> Dictionary:
+	return Shop.read(_w)

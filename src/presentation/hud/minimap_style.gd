@@ -16,6 +16,8 @@ const PLAYER := Color("#3FE0FF")
 const ALTAR := Color("#F2D16B")
 ## The gamble shrine (v0.3.0 L19).
 const SHRINE := Color("#D46BFF")
+## The shop terminal (v0.5.0 SH), in the shards' violet.
+const SHOP := Color("#B48CFF")
 const CHEST := Color("#E0A458")
 const CHEST_POOR := Color(0.62, 0.55, 0.50, 0.85)
 const BOSS := Color("#FF4A3D")
