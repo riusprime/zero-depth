@@ -19,7 +19,7 @@ static func advance(w: World) -> void:
 		w.spawn_cd = t.interval(tier)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
-		w.spawn_cd -= 1
+		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	if w.spawn_cd > 0 or WaveDirector.enemies_alive(w) >= t.cap(tier):
 		return
 	w.spawn_cd = t.interval(tier)
@@ -69,9 +69,10 @@ static func _spawn_one(w: World, t: SpawnTable, tier: int) -> void:
 	var kind := t.kinds[open[pick]]
 	var at := pts[w.rng_map.range_int(0, pts.size() - 1)]
 	# v0.4.0 EN: a pack (Swarmers) arrives in a ring around the spot, never past the alive cap.
-	var n := 1
+	var n := 1 + Curses.extra_enemies(w)  # v0.5.0 EV curse: one more in every arrival
 	if open[pick] < t.packs.size():
-		n = clampi(t.packs[open[pick]], 1, t.cap(tier) - WaveDirector.enemies_alive(w))
+		n = t.packs[open[pick]] + n - 1
+	n = clampi(n, 1, t.cap(tier) - WaveDirector.enemies_alive(w))
 	for k in n:
 		var off := Kin.dir(k * 4096 / n) * PACK_RING_M if n > 1 else Vector2.ZERO
 		w.add_enemy(kind, at + off)
@@ -79,3 +80,4 @@ static func _spawn_one(w: World, t: SpawnTable, tier: int) -> void:
 		var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
+		Curses.maybe_elite(w, i)  # v0.5.0 EV curse

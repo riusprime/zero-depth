@@ -36,6 +36,7 @@ var ability_fx := AbilityVisuals.new()
 var damage_numbers := DamageNumbers.new()
 ## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
 var horde_fx := HordeVisuals.new()
+var events := EventPedestalViews.new()  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -64,6 +65,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(ability_fx)  # v0.4.0 BS
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
+	add_child(events)  # v0.5.0 EV
+	events.setup(reader)
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -111,6 +114,7 @@ func sync() -> void:
 	ability_fx.sync(reader)  # v0.4.0 BS
 	damage_numbers.sync(reader)
 	horde_fx.sync(reader)  # v0.4.0 EN
+	events.sync(reader)  # v0.5.0 EV
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

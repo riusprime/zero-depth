@@ -765,6 +765,42 @@ def s_vent_cold(r):
     return mix(click, tone)
 
 
+# --- v0.5.0 EV: event rooms and curses ---------------------------------------------------------------------------
+def s_event_open(r):
+    """An event pedestal wakes: a soft glassy chord rising out of a hum, with a shimmer on top."""
+    n = n_of(0.75)
+    hum = osc(curve(110, 165, n), "sine") * np.linspace(0, 1, n) ** 0.5 * env(n, 0.05, 0.5) * 0.4
+    chord = sum(fm(f, 3.0, 0.8, n) for f in (440.0, 554.37, 659.25)) * env(n, 0.08, 0.45) * 0.25
+    shimmer = bandpass(noise(r, n), curve(3000, 7000, n), 12.0) * env(n, 0.15, 0.3) * 0.3
+    return echo(mix(hum, chord, shimmer), 150, 0.4, 0.35, 4000, 0.5)
+
+
+def s_curse_gain(r):
+    """A curse taken: a detuned falling drone with a low crushed growl, ominous but short."""
+    n = n_of(0.9)
+    a = osc(curve(330, 92, n), "saw", n)
+    b = osc(curve(347, 97, n), "saw", n)
+    drone = one_pole_lp(mix(a, b) * 0.5, curve(3000, 400, n)) * env(n, 0.01, 0.55)
+    growl = bitcrush(osc(curve(70, 45, n), "square", n) * env(n, 0.02, 0.4), 5, 4) * 0.35
+    return echo(soft_clip(mix(drone, growl), 1.6), 190, 0.45, 0.35, 1800, 0.6)
+
+
+def s_ambush_start(r):
+    """The Ambush Cache's seal breaks: a hard alarm stab, two klaxon blips and a metal clank."""
+    n = n_of(0.16)
+    blip = one_pole_lp(osc(880.0, "square", n), 3500) * env(n, 0.002, 0.08)
+    clank = metal_ping(0.5, 210, 1.41, 3.5, 0.15) * 0.6
+    stab = one_pole_lp(noise(r, n_of(0.12)), 2500) * env(n_of(0.12), 0.001, 0.04)
+    return echo(mix(stab, clank, at(blip, 0.08), at(blip * 0.8, 0.26)), 120, 0.35, 0.3, 3000, 0.35)
+
+
+def s_event_done(r):
+    """An event paid out (the ambush cleared, the drone rebooted): a bright rising arpeggio and a chime."""
+    x = notes((523.25, 659.25, 783.99, 1046.5), 0.07, 0.16, "square", 0.05, 4500) * 0.45
+    chime = metal_ping(0.6, 1568.0, 2.0, 1.5, 0.2) * 0.25
+    return echo(mix(x, at(chime, 0.21)), 110, 0.35, 0.3, 5000, 0.4)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -837,6 +873,10 @@ SFX = [
     ("skill_lunge_cleave", s_skill_lunge_cleave),
     ("skill_scatter_blast", s_skill_scatter_blast),
     ("vent_cold", s_vent_cold),
+    ("event_open", s_event_open),
+    ("curse_gain", s_curse_gain),
+    ("ambush_start", s_ambush_start),
+    ("event_done", s_event_done),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

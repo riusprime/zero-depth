@@ -22,6 +22,7 @@ var _grants := PackedInt32Array()
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
+var _curse_chest := false
 
 
 func _init(p_world: World) -> void:
@@ -144,7 +145,15 @@ func grant_ability() -> void:
 		_grants.append(ability_choice)
 
 
+## v0.5.0 EV (dev runs only): the next chest offer rolled is cursed.
+func curse_next_chest() -> void:
+	_curse_chest = true
+
+
 func _apply_commands() -> void:
+	if _curse_chest:
+		_curse_chest = false
+		world.ev.force_curse = true
 	for idx in _grants:
 		Abilities.grant(world, idx)
 	_grants.clear()

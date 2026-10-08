@@ -16,6 +16,8 @@ const PLAYER := Color("#3FE0FF")
 const ALTAR := Color("#F2D16B")
 ## The gamble shrine (v0.3.0 L19).
 const SHRINE := Color("#D46BFF")
+## v0.5.0 EV: an event pedestal (dim once spent).
+const EVENT := Color("#B98CFF")
 const CHEST := Color("#E0A458")
 const CHEST_POOR := Color(0.62, 0.55, 0.50, 0.85)
 const BOSS := Color("#FF4A3D")

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CurseDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/curse_definition.gd" id="1_curse"]
+
+[resource]
+script = ExtResource("1_curse")
+name_key = &"CURSE_LEAKY_CORE"
+desc_key = &"CURSE_LEAKY_CORE_DESC"
+effect = &"heat_decay"
+amount = 100
+threat = 1
+weight = 10
+id = &"leaky_core"

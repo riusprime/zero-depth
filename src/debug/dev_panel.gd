@@ -43,6 +43,7 @@ func _init(p_api: DebugApi) -> void:
 		["SpawnEnemy", "UI_DEV_SPAWN_ENEMY", api.request_enemy],
 		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
+		["CurseChest", "UI_DEV_CURSE_CHEST", api.curse_next_chest],  # v0.5.0 EV
 	]:
 		var b := Button.new()
 		b.name = spec[0]

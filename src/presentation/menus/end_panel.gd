@@ -24,7 +24,7 @@ const CAUSES := {
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
-## when the run has no shards), "items" (Array of item name keys).
+## when the run has no shards), "items" (Array of item name keys), "threat" and "threat_peak" (ints; v0.5.0 EV).
 var recap := {}
 
 
@@ -75,6 +75,11 @@ func _add_recap() -> void:
 		_line("Kills", tr("UI_RECAP_KILLS") % recap["kills"])
 	if recap.has("shards"):
 		_line("Shards", tr("UI_RECAP_SHARDS") % recap["shards"])
+	if recap.has("threat"):  # v0.5.0 EV: threat T now and the run's peak
+		_line(
+			"Threat",
+			tr("UI_RECAP_THREAT") % [recap["threat"], recap.get("threat_peak", recap["threat"])]
+		)
 	if recap.has("items"):
 		var names := PackedStringArray()
 		for k in recap["items"]:

@@ -21,7 +21,7 @@ static func note_combat(w: World, target: int, owner_id: int) -> void:
 ## The gamble shrine's REGEN wins add to it (v0.3.0 L19).
 static func rate_permille(w: World) -> int:
 	var gamble := Gamble.regen_bonus_permille(w) if w.gamble_table != null else 0
-	return maxi(0, w.player.regen_permille + w.regen_bonus_permille + gamble)
+	return Curses.regen(w, maxi(0, w.player.regen_permille + w.regen_bonus_permille + gamble))
 
 
 ## Out of combat long enough to regenerate (whether or not HP is missing).

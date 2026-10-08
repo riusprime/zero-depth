@@ -18,6 +18,7 @@ const LEGEND: Array = [
 	[&"boss", "MAP_LEGEND_BOSS"],
 	[&"portal", "MAP_LEGEND_PORTAL"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
+	[&"event", "MAP_LEGEND_EVENT"],
 ]
 
 ## True for the full map.
@@ -275,6 +276,10 @@ func _draw_icons() -> void:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
 	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
+		if state.is_discovered(reader.event_room(e)):
+			var spent := reader.event_state(e) == WorldReader.EVENT_DONE
+			draw_icon(&"event_spent" if spent else &"event", to_map(reader.event_pos(e)), k)
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
@@ -346,6 +351,15 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
 			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+		&"event", &"event_spent":
+			var hexa := PackedVector2Array()
+			for j in 6:
+				hexa.append(p + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * s * 1.1)
+			var col := MinimapStyle.EVENT if kind == &"event" else Color(MinimapStyle.EVENT, 0.35)
+			if kind == &"event":
+				draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(hexa, col)
+			draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 

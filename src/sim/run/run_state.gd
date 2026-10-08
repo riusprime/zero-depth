@@ -19,6 +19,8 @@ var kills_done := 0
 ## The run's starting build (v0.3.0 L15): a BuildDefinition id chosen on the start screen, the same on every
 ## floor. Each floor's PlayerTable is compiled with it (the world hashes its weapons and damage factors).
 var build_id := &""
+## v0.5.0 EV (M-THREAT): threat T at the end of each finished floor.
+var threat_by_floor := PackedInt32Array()
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -90,6 +92,7 @@ func prepare(w: World) -> void:
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
+	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille)
 	floor_index += 1
 
