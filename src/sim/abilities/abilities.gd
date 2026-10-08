@@ -614,6 +614,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_ints(w.ability_owned)
 	h.add_ints(w.ability_levels)
 	h.add_ints(w.stat_values)
+	h.add_ints(w.stat_cards)  # v0.5.0 SH
 	h.add_int(w.rng_crit.state)
 	h.add_int(w.rng_ability.state)
 	w.ab.hash_into(h)

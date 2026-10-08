@@ -177,6 +177,9 @@ var gamble_last_stat := -1
 var gamble_tick := -1
 var gamble_denied_tick := -1
 # --- end Gamble ---------------------------------------------------------------------------------------------
+# v0.5.0 SH (Shop): the shop's rules (loadout, not hashed; null = no shops) and the floor's shop (hashed once placed).
+var shop_table: ShopTable
+var shop := ShopState.new()
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -243,12 +246,19 @@ var stat_tables: Array[StatTable] = []
 var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
+var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
 var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
 # --- end Build ----------------------------------------------------------------------------------------------
+# v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
+var ev := EventState.new()
+var curses_owned := PackedInt32Array()
+var threat_peak := 0
+## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
+var deep_threat := 0
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -351,6 +361,14 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
+	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
+	if shop.open or ev.open >= 0:
+		if shop.open:
+			Shop.choose(self, frame)
+		else:
+			Events.choose(self, frame)
+		tick += 1
+		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
 		boss_flow.advance_transit(self)
 		tick += 1
@@ -367,7 +385,10 @@ func step(frame: InputFrame) -> void:
 	actors.facing[0] = aim_angle
 	PlayerBuild.note_facing(self)  # Builds: melee follows the facing (L29).
 	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
-	if Rewards.interact(self):
+	if Rewards.interact(self) or Events.interact(self):  # 2c. v0.5.0 EV: an event pedestal opens its panel.
+		tick += 1
+		return
+	if Shop.interact(self):  # v0.5.0 SH: interact by the terminal opens the shop.
 		tick += 1
 		return
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
@@ -397,6 +418,7 @@ func step(frame: InputFrame) -> void:
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
+	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
@@ -762,6 +784,9 @@ func state_hash() -> String:
 			h.add_int(v)
 		h.add_f32(gamble_pos.x)
 		h.add_f32(gamble_pos.y)
+	if shop.present():  # v0.5.0 SH: only floors with a shop.
+		shop.hash_into(h)
+	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:

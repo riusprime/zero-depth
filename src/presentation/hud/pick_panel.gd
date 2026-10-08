@@ -100,10 +100,14 @@ func sync(reader: WorldReader) -> void:
 		if k >= _count:
 			continue
 		s.show_card(card_face(self, reader, items[k]))  # v0.4.0 BS: a mod, an ability or a stat card
+		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
+		s.show_curse(CurseLook.line(self, reader, curse) if curse >= 0 else "")
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
 	_title.text = (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
 	)
+	if reader.reward_is_epic(r):  # v0.5.0 RT
+		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)

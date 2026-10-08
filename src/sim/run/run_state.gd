@@ -19,6 +19,11 @@ var kills_done := 0
 ## The run's starting build (v0.3.0 L15): a BuildDefinition id chosen on the start screen, the same on every
 ## floor. Each floor's PlayerTable is compiled with it (the world hashes its weapons and damage factors).
 var build_id := &""
+## v0.5.0 RT: the route of each floor reached (Routes.Route), entry f − 1; floor 1 is always NORMAL. A saved run
+## keeps it (RunSaver.payload_of / run_from, payload version 2).
+var routes := PackedInt32Array([Routes.Route.NORMAL])
+## v0.5.0 EV (M-THREAT): threat T at the end of each finished floor.
+var threat_by_floor := PackedInt32Array()
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -57,24 +62,43 @@ func is_last_floor() -> bool:
 	return floor_index >= table.floors
 
 
+## v0.5.0 RT: floor f's route (Routes.Route; NORMAL past the floors reached) and whether it is Deep.
+func route_of(f: int = floor_index) -> int:
+	return routes[f - 1] if f >= 1 and f <= routes.size() else Routes.Route.NORMAL
+
+
+func is_deep(f: int = floor_index) -> bool:
+	return route_of(f) == Routes.Route.DEEP
+
+
+## Floor f's extra scaling in per mille: the Deep factor on a Deep floor, else 1000.
+func route_permille(f: int = floor_index) -> int:
+	return table.deep_scale_permille if is_deep(f) else 1000
+
+
 ## Scales freshly compiled enemy tables for floor f (v0.4.0 SC): HP and damage × the run's per-floor per-mille
 ## tables, rounded (SpawnTable.scale). The danger tier's scaling comes on top as each enemy arrives (SpawnDirector);
 ## the tier restarts with each floor's World. Enemies a boss brings in (eggs, turrets) get the floor's only.
+## v0.5.0 RT: on a Deep floor the per-floor factor is first multiplied by the Deep factor (one rounding, one scale).
 func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
-	var hp_pm := SpawnTable.per_floor(table.enemy_hp_floor_permille, f)
-	var dmg_pm := SpawnTable.per_floor(table.enemy_damage_floor_permille, f)
+	var deep := route_permille(f)
+	var hp_pm := SpawnTable.scale(SpawnTable.per_floor(table.enemy_hp_floor_permille, f), deep)
+	var dmg_pm := SpawnTable.scale(SpawnTable.per_floor(table.enemy_damage_floor_permille, f), deep)
 	for t in tables:
 		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
 
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
-## applies twice): HP, and every attack's damage.
+## applies twice): HP, and every attack's damage. v0.5.0 RT: × the Deep factor on a Deep floor, in the same step.
 func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
+	var deep := route_permille(f)
+	var hp_pm := (1000 + table.boss_hp_per_floor_permille * (f - 1)) * deep / 1000
+	var dmg_pm := (1000 + table.boss_damage_per_floor_permille * (f - 1)) * deep / 1000
 	for t in tables:
-		t.hp = maxi(1, t.hp * (1000 + table.boss_hp_per_floor_permille * (f - 1)) / 1000)
+		t.hp = maxi(1, t.hp * hp_pm / 1000)
 		for a in t.attacks:
-			a.damage = a.damage * (1000 + table.boss_damage_per_floor_permille * (f - 1)) / 1000
+			a.damage = a.damage * dmg_pm / 1000
 
 
 ## Floor f's boss: one of its pool (indices into the compiled bosses), drawn from a stream of the run seed
@@ -87,6 +111,9 @@ func pick_boss(pool: PackedInt32Array, f: int = floor_index) -> int:
 func prepare(w: World) -> void:
 	w.floor_index = floor_index
 	w.floor_count = table.floors
+	if w.boss_flow != null:  # v0.5.0 RT
+		w.boss_flow.deep = is_deep()
+	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
 
@@ -95,8 +122,12 @@ func prepare(w: World) -> void:
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
+	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille)
 	floor_index += 1
+	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
+	routes.resize(floor_index - 1)  # v0.5.0 RT: the next floor's route, the one walked into
+	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)
 
 
 ## Run totals including the current floor's world (null = only the finished floors).

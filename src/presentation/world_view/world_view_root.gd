@@ -27,12 +27,16 @@ var status_fx: StatusVisuals
 ## v0.3.0 L18: overclock heat on the hero, vent blasts, steam and embers.
 var heat_fx: HeatVisuals
 var gate: PortalGate
+## v0.5.0 RT: the Deep gate beside it (null on floors without the choice).
+var deep_gate: PortalGate
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit := PortalTransitView.new()
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
+## The shop terminal (v0.5.0 SH; null on a floor without one).
+var shop_terminal: ShopTerminalView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
 var challenge := BossChallengeView.new()
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
@@ -45,6 +49,7 @@ var element_fx := ElementVisuals.new()
 var overrun_doors := OverrunDoorViews.new()
 ## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
 var horde_fx := HordeVisuals.new()
+var events := EventPedestalViews.new()  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -76,10 +81,18 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	overrun_doors.setup(reader)
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
+	add_child(events)  # v0.5.0 EV
+	events.setup(reader)
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
+	if reader.has_deep_portal():
+		deep_gate = PortalGate.new()
+		deep_gate.name = "DeepGate"
+		add_child(deep_gate)
+		deep_gate.setup(reader.deep_portal_pos(), reader.deep_portal_angle())
+		deep_gate.set_deep()
 	if reader.has_boss_room():
 		boss_door = BossDoorView.new()
 		add_child(boss_door)
@@ -94,8 +107,13 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gamble_shrine = GambleShrineView.new()
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+	if reader.has_shop():
+		shop_terminal = ShopTerminalView.new()
+		add_child(shop_terminal)
+		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
 	add_child(transit)
 	transit.setup(actors, gate)
+	transit.deep_gate = deep_gate
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -125,12 +143,20 @@ func sync() -> void:
 	overrun_doors.sync(reader)
 	damage_numbers.sync(reader)
 	horde_fx.sync(reader)  # v0.4.0 EN
+	events.sync(reader)  # v0.5.0 EV
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
-	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
-		gate.set_sealed(not reader.portal_active())
+	if shop_terminal != null:
+		shop_terminal.sync(reader)
+	# v0.5.0 RT: each gate closes when the other one is taken.
+	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
+	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:
+		gate.set_sealed(not open)
+	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
+	if deep_gate != null and deep_gate.is_sealed() == deep_open:
+		deep_gate.set_sealed(not deep_open)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

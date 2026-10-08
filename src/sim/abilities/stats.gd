@@ -80,6 +80,7 @@ static func table(w: World, s: int) -> StatTable:
 static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
+		w.stat_cards.append(Offers.stat_code(s, clampi(rarity, 0, 2)))  # v0.5.0 SH: the shop can sell it back
 		add_amount(w, s, t.amounts[clampi(rarity, 0, 2)])
 		_side(w, t, s, t.side[clampi(rarity, 0, 2)])
 
@@ -308,7 +309,7 @@ static func reach(w: World, metres: float) -> float:
 
 ## Tick phase 6 (Abilities.advance): regen heals regen per mille of max HP a second, in and out of combat.
 static func advance_regen(w: World) -> void:
-	var rate := value(w, Stat.REGEN)
+	var rate := Curses.regen(w, value(w, Stat.REGEN))  # v0.5.0 EV curse
 	var a := w.actors
 	if rate <= 0 or w.player_dead() or a.hp[0] >= a.max_hp[0]:
 		w.ab.regen_acc = 0

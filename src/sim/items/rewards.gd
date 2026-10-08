@@ -112,7 +112,12 @@ static func nearest(w: World) -> int:
 
 
 static func can_afford(w: World, i: int) -> bool:
-	return w.shards >= w.rewards.price[i]
+	return w.shards >= price_of(w, i)
+
+
+## Reward i's price now: its placed price under the prices curse (v0.5.0 EV).
+static func price_of(w: World, i: int) -> int:
+	return Curses.price(w, w.rewards.price[i])
 
 
 ## Tick phase 2b: a buffered interact press next to a reward opens it. True if the world is now choosing.
@@ -128,6 +133,7 @@ static func interact(w: World) -> bool:
 		return false
 	if w.rewards.rolled[i] == 0:
 		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
+		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
 		_deny(w, i)
 		return false
@@ -148,7 +154,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	var k := frame.pick - 1
 	if k < 0 or k >= offer.size() or not can_afford(w, i):
 		return
-	w.shards -= w.rewards.price[i]
+	w.shards -= price_of(w, i)
 	var idx := offer[k]
 	var at := w.rewards.pos(i)
 	var e := w.emit_event(
@@ -156,6 +162,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	)
 	e.amount = idx
 	Offers.apply(w, idx)  # v0.4.0 BS: an item (mod), an ability or a stat card
+	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
 	w.rewards.remove_at(i)
 	_resume(w)
 

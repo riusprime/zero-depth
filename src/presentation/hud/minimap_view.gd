@@ -17,8 +17,11 @@ const LEGEND: Array = [
 	[&"chest", "MAP_LEGEND_CHEST"],
 	[&"boss", "MAP_LEGEND_BOSS"],
 	[&"portal", "MAP_LEGEND_PORTAL"],
+	[&"portal_deep", "MAP_LEGEND_PORTAL_DEEP"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
+	[&"event", "MAP_LEGEND_EVENT"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
+	[&"shop", "MAP_LEGEND_SHOP"],
 ]
 
 ## True for the full map.
@@ -278,15 +281,27 @@ func _draw_icons() -> void:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
 	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
+		if state.is_discovered(reader.event_room(e)):
+			var spent := reader.event_state(e) == WorldReader.EVENT_DONE
+			draw_icon(&"event_spent" if spent else &"event", to_map(reader.event_pos(e)), k)
 	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
+	if reader.has_shop() and state.is_discovered(reader.shop_room()):
+		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
 		draw_icon(
 			&"portal" if reader.portal_active() else &"portal_sealed",
 			to_map(reader.portal_pos()),
 			k
 		)
+		if reader.has_deep_portal():  # v0.5.0 RT
+			draw_icon(
+				&"portal_deep" if reader.gate_open(WorldReader.ROUTE_DEEP) else &"portal_sealed",
+				to_map(reader.deep_portal_pos()),
+				k
+			)
 
 
 func _draw_player() -> void:
@@ -352,6 +367,19 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
 			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+		&"portal_deep":
+			draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_DEEP, 0.25))
+			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_DEEP_RIM, 2.0, true)
+			draw_circle(p, s * 0.55, MinimapStyle.PORTAL_DEEP)
+		&"event", &"event_spent":
+			var hexa := PackedVector2Array()
+			for j in 6:
+				hexa.append(p + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * s * 1.1)
+			var col := MinimapStyle.EVENT if kind == &"event" else Color(MinimapStyle.EVENT, 0.35)
+			if kind == &"event":
+				draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(hexa, col)
+			draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
 		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
 			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
 			if kind == &"overrun":
@@ -359,6 +387,21 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
 			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
+		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
+			var house := PackedVector2Array(
+				[
+					p + Vector2(0, -s * 1.3),
+					p + Vector2(s * 1.1, -s * 0.3),
+					p + Vector2(s * 0.9, s * 0.9),
+					p + Vector2(-s * 0.9, s * 0.9),
+					p + Vector2(-s * 1.1, -s * 0.3)
+				]
+			)
+			draw_circle(p, s * 1.6, Color(MinimapStyle.SHOP, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(house, MinimapStyle.SHOP)
+			draw_rect(
+				Rect2(p + Vector2(-s * 0.3, s * 0.1), Vector2(s * 0.6, s * 0.8)), MinimapStyle.PANEL
+			)
 		&"portal_sealed":
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_SEALED, 1.5, true)
 

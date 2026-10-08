@@ -205,6 +205,20 @@ half up; the count resets per floor), `floor_price_step` (raises a later floor's
 max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, amounts, weights and caps positive,
 steps non-negative, every stat known and listed once, the pool not empty.
 
+**Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
+(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; a mod or
+an ability card is common or rare), `floor_price_step` (each later floor raises every price but the reroll by this
+share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
+step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
+`sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
+the cards left so the caps hold), `ability_refund_per_level` (25 shards per level for salvaging an ability, never the
+weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
+rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
+is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
+`shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
+ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
+the steps non-negative; the shares in (0, 1]; `offer_size` 1–9.
+
 ## 4. Encounters and bosses
 
 ```gdscript
@@ -357,7 +371,8 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
   past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
   `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
-  enemies' tables.
+  enemies' tables. v0.5.0 RT: `deep_scale` (1.25, at least 1) multiplies both on a Deep floor, and
+  `deep_extra_chests` (1, not negative) adds chests there ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11).
 - **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
   `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
   `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
@@ -391,6 +406,49 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
+
+### Events and curses (v0.5.0 EV)
+
+Compiled by `EventCompiler` (application), beside `ContentCompiler`; the sim reads `EventTable`, `CurseTable` and
+`EventRules`. Every number is a starting value.
+
+```gdscript
+class_name EventDefinition extends ContentDef          # data/events/*.tres, category "events"
+@export var name_key: StringName
+@export var desc_key: StringName
+@export var weight := 10                               # draw weight among the floor's events
+@export var min_floor := 1
+@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
+
+class_name EventChoiceDefinition extends Resource
+@export var label_key: StringName
+@export var cost: StringName = &"none"                 # none, hp, max_hp, shards, overheat, fight, defend
+@export var cost_amount := 0.0                         # % max HP (hp, max_hp), shards per floor, enemies, seconds
+@export var reward: StringName = &"stat_epic"          # stat_epic, stat_echo, mod, chest, overclock,
+                                                       # ability_level, shards, cleanse
+@export var reward_amount := 0.0                       # % Overclock damage, shards per floor
+@export var curse: StringName = &""                    # "", "random" (one you don't hold), or a curse id
+
+class_name CurseDefinition extends ContentDef          # data/curses/*.tres, category "curses"
+@export var name_key: StringName
+@export var desc_key: StringName                       # one %s: the amount
+@export var effect: StringName                         # enemy_speed, regen, heat_decay, extra_enemy, prices,
+                                                       # elite_chance
+@export var amount := 15.0                             # percent (a count for extra_enemy)
+@export var threat := 1                                # added to T while held
+@export var weight := 10
+
+class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.tres, category "event_rules"
+# rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
+# walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
+# defend_radius_m
+```
+
+Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
+below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
+`threat >= 1`. Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
+the `ThreatModifier` tables are still unbuilt.
 
 ## 8. Player
 

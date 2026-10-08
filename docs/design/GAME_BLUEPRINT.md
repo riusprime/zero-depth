@@ -66,6 +66,18 @@ only adds numbers, menus or breadth fails the filter.
   The exact pools and weights are from GA: rewards.
 - **Threat T** (PD-05). T rises only when the player chooses it: an optional branch, a cursed reward, a threat
   door. There is no global clock and no enrage timer. What T changes is in §H.
+- **Optional routes** (v0.5.0 R5, step RT). After the bosses of floors 1 and 2 the boss room opens **two
+  portals**: the normal one (the visor's light blue) and a **Deep** portal (violet with a red rim and frame). Walking
+  into one chooses; the other closes. A Deep floor scales enemies and bosses ×1.25 on top of the floor and has one
+  extra chest and a curse-free **epic altar** (epic stat cards or ability level-ups). The floor card and the HUD's
+  floor label say "Deep"; the run recap lists the route per floor. Floor 3's boss still wins the run through one
+  portal. (Threat T for Deep: with EV's T.)
+  door. There is no global clock and no enrage timer. What T changes is in §H. Since v0.5.0 (EV) T counts the
+  **curses** held: each one came with a reward the player took knowing it and adds 1 to T; a cleanse lifts one.
+- **Event rooms** (v0.5.0 EV): 1–2 side rooms per floor hold a lit pedestal; its panel offers 1–2 choices, each
+  with a cost (HP, max HP, shards, an overheat, an elite fight, a defence, or a curse) and a reward shown before
+  you take it, plus "Leave it". The eight events and six curses are listed in
+  [`../roadmap/v0.5.0/PLAN.md`](../roadmap/v0.5.0/PLAN.md) (step EV).
 - **Death** ends the run. A recap shows the killing cause, the build and the timeline (v0.3.0).
 
 ## C. Player kit
@@ -153,6 +165,14 @@ value or by an owner decision, and the change is noted here.
   while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
   Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
   [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
+- **Shops and salvage (v0.5.0 SH; ROADMAP v0.5.0 "Shops", "salvage").** One shop per floor, a terminal in a side
+  room (never the start hall, the boss room or the room before the boss door; on the minimap once seen). Interact
+  opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
+  priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
+  (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
+  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 25 shards per level to
+  free its slot for a later ability card: a way to change a build's direction, paid for. Starting values; evidence:
+  `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
 ## E. Enemies and the stress matrix
 
@@ -266,6 +286,10 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 - **Enemies that join mid-fight** (Splitlings, boss summons) get the same tier scaling as the spawner's (TU).
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.
+- **Curses are the first threat modifiers** (v0.5.0 EV): faster enemies, less regen, faster heat decay, one more
+  enemy per spawn, higher shard prices, a chance of elites. Each is a fixed drawback for +1 T, shown on the cursed
+  card or event choice, listed on the HUD's threat panel and in the pause menu, and counted in the run recap;
+  M-THREAT reads T per floor and its peak.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)
   §11). After that, changing it needs a new sim result that keeps the scorecard bands.
 - **The first T branch: Overrun (v0.4.0 AB).** One optional side room per floor behind a red-framed door, never on

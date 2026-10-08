@@ -90,6 +90,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		driver != null
 		and _end == null
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
+		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -250,6 +252,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
 	)
+	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
@@ -259,6 +262,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
+	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
@@ -290,8 +294,9 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	ui.add_child(_hud)
 	ui.move_child(_hud, 0)
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
+	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.sync(driver.reader)
-	_hud.show_floor(run.floor_index, String(biome.name_key))
+	_hud.show_floor(run.floor_index, String(biome.name_key), run.is_deep())  # v0.5.0 RT: "Floor 2 · Deep"
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
 	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
@@ -353,9 +358,12 @@ func run_recap() -> Dictionary:
 		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
 		"kills": run.total_kills(w),
 		"items": names,
+		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
+	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
+	out["threat_peak"] = driver.reader.threat_peak()
 	return out
 
 
@@ -405,6 +413,11 @@ func open_pause() -> void:
 		_pause.add_child(stats)
 		stats.place_top_right(84)
 		stats.sync(driver.reader)
+	if driver.reader.threat_peak() > 0:  # v0.5.0 EV: threat T and the curses held
+		var threat := ThreatPanel.new()
+		_pause.add_child(threat)
+		threat.place_top_left(84)
+		threat.sync(driver.reader)
 	ui.add_child(_pause)
 	_pause.focus_first()
 

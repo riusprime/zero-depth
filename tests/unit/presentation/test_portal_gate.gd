@@ -10,7 +10,8 @@ const UNIFORMS := [
 	"veil_color",
 	"swirl_speed",
 	"energy",
-	"sealed"
+	"sealed",
+	"rim_color"
 ]
 
 

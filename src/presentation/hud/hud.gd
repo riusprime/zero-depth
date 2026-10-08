@@ -28,6 +28,8 @@ const COMBO_BADGE := 44.0
 ## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.
 const FLOOR_CARD_SECONDS := 2.6
 const FLOOR_CARD_FADE := 0.7
+## v0.5.0 RT: a Deep floor's label colour (a light violet, readable on the HUD plate).
+const DEEP_TEXT := Color("#C9A2FF")
 const BOSS_WARN_M := 6.0
 
 ## The boss bar (v0.3.0 C), shown while a boss is alive.
@@ -42,10 +44,14 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.4.0 BS: the four ability slots above the HP plate.
 var ability_hud := AbilityHud.new()
+## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
+var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
 ## v0.4.0 TU: the difficulty phase's name, and the line announcing a new phase or a new enemy kind.
 var phase_hud := PhaseHud.new()
+## v0.5.0 SH: the shop's prompt and panel.
+var shop := ShopHud.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -146,6 +152,9 @@ func _init() -> void:
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
+	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
+	events.panel.picked.connect(_pick.picked.emit)
+	add_child(shop)  # v0.5.0 SH: so does the shop panel
 
 
 func sync(reader: WorldReader) -> void:
@@ -180,7 +189,12 @@ func sync(reader: WorldReader) -> void:
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
-		_floor.text = tr("HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
+		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
+		_floor.text = (
+			tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
+		)
+		if deep:
+			_floor.add_theme_color_override("font_color", DEEP_TEXT)
 	boss_bar.sync(reader)
 	heat_meter.sync(reader)
 	minimap.sync(reader)
@@ -188,8 +202,10 @@ func sync(reader: WorldReader) -> void:
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_hud.sync(reader)  # v0.4.0 BS
+	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	phase_hud.sync(reader)  # v0.4.0 TU
+	shop.sync(reader)  # v0.5.0 SH
 
 
 func _process(delta: float) -> void:
@@ -210,10 +226,11 @@ func _process(delta: float) -> void:
 	_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
 
 
-## Run flow: names the floor's biome (a locale key) and shows the floor-title card.
-func show_floor(floor_index: int, biome_key: String) -> void:
+## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
+## floor, v0.5.0 RT).
+func show_floor(floor_index: int, biome_key: String, deep: bool = false) -> void:
 	_biome_key = biome_key
-	_floor_card_title.text = tr("HUD_FLOOR_CARD") % floor_index
+	_floor_card_title.text = tr("HUD_FLOOR_CARD_DEEP" if deep else "HUD_FLOOR_CARD") % floor_index
 	_floor_card_biome.text = tr(biome_key)
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
@@ -320,7 +337,7 @@ func _gate_note(reader: WorldReader) -> String:
 		return ""
 	if reader.has_boss_room():
 		if reader.portal_active():
-			return tr("HUD_PORTAL_OPEN")
+			return tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())
 			var near := reader.player_pos().distance_to(reader.boss_door_center()) <= BOSS_WARN_M
@@ -407,7 +424,9 @@ func _sync_rewards(reader: WorldReader) -> void:
 	_prompt.visible = i >= 0
 	if i >= 0:
 		var price := reader.reward_price(i)
-		if reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
+		if reader.reward_is_epic(i):  # v0.5.0 RT
+			_prompt.text = tr("REWARD_OPEN_EPIC_ALTAR")
+		elif reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
 			_prompt.text = tr("REWARD_OPEN_ALTAR")
 		elif reader.reward_affordable(i):
 			_prompt.text = tr("REWARD_OPEN_CHEST") % price

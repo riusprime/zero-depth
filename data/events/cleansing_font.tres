@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/event_choice_definition.gd" id="1_ch"]
+[ext_resource type="Script" path="res://src/content/defs/event_definition.gd" id="2_ev"]
+
+[sub_resource type="Resource" id="C_pay"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_CLEANSING_FONT_PAY"
+cost = &"shards"
+cost_amount = 30
+reward = &"cleanse"
+reward_amount = 0
+curse = &""
+
+[sub_resource type="Resource" id="C_bleed"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_CLEANSING_FONT_BLEED"
+cost = &"hp"
+cost_amount = 20
+reward = &"cleanse"
+reward_amount = 0
+curse = &""
+
+[resource]
+script = ExtResource("2_ev")
+name_key = &"EVENT_CLEANSING_FONT"
+desc_key = &"EVENT_CLEANSING_FONT_DESC"
+weight = 14
+min_floor = 1
+requires = &"curse"
+choices = Array[ExtResource("1_ch")]([SubResource("C_pay"), SubResource("C_bleed")])
+id = &"cleansing_font"

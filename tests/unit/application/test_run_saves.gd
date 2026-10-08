@@ -119,6 +119,19 @@ func test_run_state_round_trips_through_the_payload() -> void:
 	assert_eq(back.floor_seed(), run.floor_seed(), "the same floor seed, so the same floor")
 	assert_eq(int(p["run"]["stage_seed"]), 99)
 	assert_false(RunSaver.is_usable({"version": 0}))
+	assert_eq(back.routes, run.routes, "v0.5.0 RT: the routes too")
+
+
+## v0.5.0 RT: a Deep run's route per floor survives the save, so Continue rebuilds a Deep floor as Deep.
+func test_the_routes_round_trip_through_the_payload() -> void:
+	var run := SaveLab.run_state(55, 3, &"blade", Routes.Route.DEEP)
+	var w := SaveLab.build_floor(run)
+	var p := RunSaver.payload_of(w, run, 1, PackedByteArray([1]))
+	assert_eq(int(p["version"]), RunSaver.PAYLOAD_VERSION)
+	var back := RunSaver.run_from(bytes_to_var(var_to_bytes(p)), run.table)
+	assert_eq(back.routes, PackedInt32Array([0, 1, 1]))
+	assert_true(back.is_deep(), "floor 3 is Deep again")
+	assert_eq(back.route_permille(), run.table.deep_scale_permille)
 
 
 ## The first room the player walks into saves, after the tick of the entry; the same room again doesn't.

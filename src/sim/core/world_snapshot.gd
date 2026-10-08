@@ -32,6 +32,7 @@ const WORLD_KEPT := {
 	&"ability_tables": "loadout",
 	&"stat_tables": "loadout",
 	&"overrun_table": "loadout",  # v0.4.0 AB
+	&"shop_table": "loadout",  # v0.5.0 SH
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -57,6 +58,10 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"SwingStep",
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
+	&"ShopTable",  # v0.5.0 SH
+	&"EventTable",  # v0.5.0 EV
+	&"CurseTable",
+	&"EventRules",
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -77,6 +82,8 @@ const STATE_CLASSES: Array[StringName] = [
 	&"DenseGrid",
 	&"Obb",
 	&"OverrunState",  # v0.4.0 AB
+	&"ShopState",  # v0.5.0 SH
+	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.
@@ -271,10 +278,13 @@ static func _decode(cur: Variant, v: Variant, where: String) -> Array:
 		return [cur if LOADOUT_CLASSES.has(cls) else null, ""]
 	if typeof(v) == TYPE_ARRAY and typeof(cur) == TYPE_ARRAY:
 		var arr: Array = cur
+		var old := arr.duplicate()  # v0.5.0 EV: an array of content tables (World.ev.events) keeps its tables
 		arr.clear()
 		var src: Array = v
 		for i in src.size():
-			var r: Array = _decode(null, src[i], "%s[%d]" % [where, i])
+			var r: Array = _decode(
+				old[i] if i < old.size() else null, src[i], "%s[%d]" % [where, i]
+			)
 			if r[1] != "":
 				return r
 			arr.append(r[0])

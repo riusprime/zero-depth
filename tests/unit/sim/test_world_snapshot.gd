@@ -79,6 +79,46 @@ func test_round_trip_at_floor_start_without_extras() -> void:
 		_round_trip(SaveLab.floor_world(77, f), SaveLab.floor_world(77, f), "floor %d start" % f)
 
 
+## v0.5.0 RT: a Deep floor (its epic altar, extra chest and scaled tables) and a floor whose Deep gate was taken.
+func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
+	var d := SaveLab.build_floor(SaveLab.run_state(88, 2, &"blade", Routes.Route.DEEP))
+	assert_true(Routes.is_deep(d))
+	assert_gte(d.boss_flow.epic_altar_id, 0)
+	var b := FightBot.new(5)
+	SaveLab.run(d, b, 300)
+	_round_trip(
+		d,
+		SaveLab.build_floor(SaveLab.run_state(88, 2, &"blade", Routes.Route.DEEP)),
+		"Deep floor 2"
+	)
+	var w := SaveLab.floor_world(88, 1)
+	w.actors.invuln[0] = 1 << 24
+	var f := w.floor_layout
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
+	CombatLab.idle(w, 4)
+	var bi := w.actors.index_of(w.boss_id)
+	w.actors.invuln[bi] = 0
+	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	CombatLab.idle(w, 2)
+	w.actors.set_pos(0, Routes.deep_front(f).get_center())
+	var n := Kin.dir(f.deep_portal_angle)
+	var into := InputFrame.new()
+	into.move = Vector2i(roundi(-n.x * SimTick.MOVE_MAX), roundi(-n.y * SimTick.MOVE_MAX))
+	for k in 120:
+		w.step(into)
+		if w.boss_flow.route_taken >= 0:
+			break
+	assert_eq(w.boss_flow.route_taken, Routes.Route.DEEP)
+	var snap := WorldSnapshot.take(w, PackedStringArray())
+	var restored := World.from_snapshot(
+		bytes_to_var(var_to_bytes(snap)), SaveLab.floor_world(88, 1)
+	)
+	assert_not_null(restored)
+	if restored != null:
+		assert_eq(restored.boss_flow.route_taken, Routes.Route.DEEP, "the route taken is saved")
+		assert_eq(restored.state_hash(), w.state_hash())
+
+
 ## Items and combos (engines, statuses): every item owned.
 func test_round_trip_with_items_and_combos() -> void:
 	var w := SaveLab.floor_world(12, 2)

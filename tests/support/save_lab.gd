@@ -8,12 +8,17 @@ extends RefCounted
 const RUN_ID := &"three_floors"
 
 
-static func run_state(run_seed: int, floor_index: int, build: StringName = &"blade") -> RunState:
+## `route` (v0.5.0 RT): the route taken into every floor after the first (Routes.Route; DEEP makes them Deep floors).
+static func run_state(
+	run_seed: int, floor_index: int, build: StringName = &"blade", route: int = 0
+) -> RunState:
 	var repo := ContentRepository.load_all()
 	var run := RunState.start(
 		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RUN_ID)), build
 	)
 	run.floor_index = floor_index
+	for f in range(2, floor_index + 1):
+		run.routes.append(route)
 	return run
 
 
@@ -49,6 +54,7 @@ static func build_floor(run: RunState) -> World:
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))
 	)
+	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
@@ -58,6 +64,7 @@ static func build_floor(run: RunState) -> World:
 	if w.boss_flow != null:
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
+	EventCompiler.setup(w, repo)  # v0.5.0 EV, as Main: event rooms and curses after the heat
 	return w
 
 
