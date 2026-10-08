@@ -1,6 +1,6 @@
 extends GutTest
 ## Difficulty curve content (v0.4.0 TU): the three shipped curves (floors 1-3) validate, name only kinds in SC's
-## spawn mix, peak at SC's full values, bring in every mix kind by floor 3, and bad curves are rejected by code.
+## spawn mix, bring in every kind before the peak and every mix kind by floor 3, and bad curves are rejected by code.
 
 
 func _def() -> DifficultyCurveDefinition:
@@ -24,13 +24,10 @@ func test_the_shipped_curves_are_valid() -> void:
 			assert_has(mix, id, "%s: %s is in the spawn mix (it has a weight)" % [d.id, id])
 			assert_not_null(repo.get_def(&"enemies", id))
 		var peak := d.phases[d.phases.size() - 1]
-		assert_eq(
-			peak.tier_permille, (sc.hp_tier_permille.size() - 1) * 1000, "the peak is SC's tier max"
+		assert_between(
+			peak.tier_permille, 1000, (sc.hp_tier_permille.size() - 1) * 1000, "within SC's tables"
 		)
-		for v in [
-			peak.cap_permille, peak.interval_permille, peak.hp_permille, peak.damage_permille
-		]:
-			assert_eq(v, 1000, "%s: the peak is SC's full values" % d.id)
+		assert_eq(peak.kinds.size(), 0, "%s: every kind is in before the peak" % d.id)
 	floors.sort()
 	assert_eq(floors, [1, 2, 3])
 

@@ -12,8 +12,13 @@ extends RefCounted
 ## - hurt_floor / hurt_boss: the damage the player took by attacker kind, before and after the boss door sealed.
 ## The bot's world is never written to: what happens is what the game does.
 
-## The floor's expected end, where the curves peak (data/curves/*.tres, last phase): evidence/TUNING.md says why.
-const EXPECTED_END_TICKS := 600 * 60
+## v0.4.0 TU (owner D7, "Peak ~1 min before boss"): the median time (s) the expected-build bot reaches each floor's
+## boss door (measured, evidence/TUNING.md), and where the curves peak: PEAK_LEAD_S before it, but never inside the
+## calm minute's ramp (at least PEAK_MIN_S, owner D1).
+const EXPECTED_DOOR_S: Array[int] = [204, 77, 95]
+const PEAK_LEAD_S := 60
+const PEAK_MIN_S := 90
+
 ## A floor that runs this long is called a timeout (20 min, past M-FLOOR's 15 plus a boss fight).
 const FLOOR_LIMIT_TICKS := 20 * 60 * 60
 ## Kinds left out of the time-to-kill (one-hit chaff and summons).
@@ -23,6 +28,11 @@ const TTK_EXCLUDED: Array[int] = [
 	ActorStore.Kind.HATCHLING,
 	ActorStore.Kind.LENS_DRONE
 ]
+
+
+## Floor `f`'s peak start in ticks (the last phase of data/curves/floor_<f>.tres).
+static func peak_ticks(f: int) -> int:
+	return maxi(EXPECTED_DOOR_S[clampi(f - 1, 0, 2)] - PEAK_LEAD_S, PEAK_MIN_S) * 60
 
 
 static func run(

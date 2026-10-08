@@ -495,6 +495,15 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   arrival's HP and power SC's tier values × `hp_permille_at` / `damage_permille_at` (`hp_now`, `power_now`), and a mix
   row may spawn once its phase has begun (`row_open`); a phase's `pack_cap` caps the pack size. The curve is loadout
   (compiled content, not hashed, not snapshotted): a save resumes on a floor built with the same curve.
+- **Heal orbs (v0.4.0 TU, owner D8).** A normal enemy's death (tick phase 9, `Rewards.on_kill`) rolls the `loot`
+  stream once against `heal_orb_chance_permille`; a hit lays an orb (`World.orbs`, `HealOrbStore`: id and position,
+  hashed once touched, snapshotted) where it fell, at most 16 (the oldest goes). After the pickups, a hurt player
+  within `heal_orb_reach_m` × the pickup-range stat takes the nearest one: + `heal_orb_heal_permille` of max HP,
+  capped, one `HEAL` event (`effect_id` `heal_orb`). Bosses drop none; orbs don't expire.
+- **The floor-1 boss (v0.4.0 TU, owner D9).** `RunState.scale_bosses` multiplies floor f's boss HP and damage by
+  `boss_ease_floor_permille[f − 1]` in the same step as the per-floor and Deep factors; `RunState.prepare` sets
+  `World.boss_room_heal_permille`, which the sealing of the boss room (`BossFlow`, `HEAL` with `boss_room_heal`)
+  restores, capped at max HP.
 - **Enemies that join mid-fight** through `World.queue_enemy` (a Splitter's Splitlings, a boss's summons) arrive in
   tick phase 9 with the same scaling as a spawner pack (`SpawnDirector.scale_arrival`: the tier, the curve's easing,
   then the Overrun's ×1.5 when it applies), read at the floor time of that tick (v0.4.0 TU; before it they kept only

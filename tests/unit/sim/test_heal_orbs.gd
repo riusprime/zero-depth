@@ -126,7 +126,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 
 func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
 	var w := RunLab.new(ContentRepository.load_all(), 78, &"gun").floor_world()
-	var peak := TuningRun.EXPECTED_END_TICKS
+	var peak := TuningRun.peak_ticks(1)
 	w.run_ticks = peak
 	var at_peak := Rewards.shards_for_kill(w, KIND.CHARGER)
 	w.run_ticks = peak + 3600 * 2

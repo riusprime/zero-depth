@@ -196,7 +196,9 @@ func test_each_floor_draws_its_boss_and_scales_it() -> void:
 		var ease: int = 800 if f == 1 else 1000
 		var hp_pm: int = (1000 + 400 * (f - 1)) * ease / 1000
 		var dmg_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
-		assert_eq(t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.4 (f - 1)), x0.8 on floor 1")
+		assert_eq(
+			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.4 (f - 1)), x0.8 on floor 1"
+		)
 		for a in t[k].attacks.size():
 			assert_eq(
 				t[k].attacks[a].damage,

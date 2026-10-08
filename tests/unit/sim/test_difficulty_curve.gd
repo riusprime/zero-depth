@@ -104,26 +104,41 @@ func test_kinds_open_phase_by_phase_and_never_close() -> void:
 		assert_eq(c.phase_count(), 5)
 
 
-func test_the_peak_is_sc_s_tier_max_at_the_floor_s_end() -> void:
+func test_the_peak_comes_a_minute_before_the_boss_door_and_holds() -> void:
 	var sc: SpawnDirectorDefinition = _repo.get_def(&"spawning", &"floor_1")
 	var tier_max := sc.hp_tier_permille.size() - 1
 	for f in [1, 2, 3]:
 		var t := _table(f)
 		var c := t.curve
 		var peak := c.starts[c.phase_count() - 1]
-		assert_eq(
-			peak, TuningRun.EXPECTED_END_TICKS, "floor %d peaks at the floor's expected end" % f
-		)
-		for ticks in [peak, peak + 36000]:
-			assert_eq(t.danger_tier(ticks), tier_max, "the peak is SC's tier max, and it holds")
-			assert_eq(t.cap_now(f, ticks), t.cap(f, tier_max))
-			assert_eq(t.interval_now(ticks), t.interval(tier_max))
-			assert_eq(t.hp_now(100, ticks), t.scaled_hp(100, tier_max))
-			assert_eq(t.power_now(ticks), t.damage_permille(tier_max))
-		var last := 0
-		for ticks in range(0, peak + 1, 600):
-			assert_gte(t.danger_permille(ticks), last, "the danger never falls on the way up")
-			last = t.danger_permille(ticks)
+		assert_eq(peak, TuningRun.peak_ticks(f), "floor %d: owner D7, ~1 min before the door" % f)
+		var top := [
+			t.danger_permille(peak), t.cap_now(f, peak), t.hp_now(100, peak), t.power_now(peak)
+		]
+		assert_between(t.danger_tier(peak), 1, tier_max, "within SC's tables")
+		for ticks in [peak + 600, peak + 36000]:
+			assert_eq(
+				[
+					t.danger_permille(ticks),
+					t.cap_now(f, ticks),
+					t.hp_now(100, ticks),
+					t.power_now(ticks)
+				],
+				top,
+				"floor %d: the peak holds" % f
+			)
+		var last := [0, 0, 0, 0]
+		for ticks in range(0, peak + 1, 300):
+			var now := [
+				t.danger_permille(ticks),
+				t.cap_now(f, ticks),
+				t.hp_now(100, ticks),
+				t.power_now(ticks)
+			]
+			for k in 4:
+				assert_gte(now[k], last[k], "floor %d: never easier on the way up" % f)
+				assert_lte(now[k], top[k], "floor %d: the peak is the most" % f)
+			last = now
 
 
 func test_kinds_are_introduced_across_the_three_floors() -> void:
@@ -149,13 +164,13 @@ func test_floor_1_never_spawns_a_later_floor_s_kind() -> void:
 	var w := RunLab.new(_repo, 4242, &"blade").floor_world()
 	var later := NEW_BY_FLOOR[2] + NEW_BY_FLOOR[3]
 	var t := w.spawner
-	for ticks in range(0, TuningRun.EXPECTED_END_TICKS * 2, 300):
+	for ticks in range(0, TuningRun.peak_ticks(1) * 2, 300):
 		for k: int in _open_kinds(t, ticks):
 			assert_does_not_have(later, k)
 	# And in play: the last 2 min before the peak of the real floor 1 with an invulnerable player, every enemy
 	# that appears (checked each second).
 	w.actors.invuln[0] = 1 << 24
-	w.run_ticks = TuningRun.EXPECTED_END_TICKS - 2 * 3600
+	w.run_ticks = TuningRun.peak_ticks(1)
 	var kinds := {}
 	for n in 2 * 3600:
 		w.step(InputFrame.new())
@@ -197,7 +212,7 @@ func test_a_splitter_s_splitlings_arrive_scaled_on_a_curved_floor() -> void:
 	w.spawner = _table(1)
 	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_per_tier = 0
-	w.run_ticks = TuningRun.EXPECTED_END_TICKS
+	w.run_ticks = TuningRun.peak_ticks(1)
 	var id := w.add_enemy(KIND.SPLITTER, Vector2(8, 0))
 	CombatLab.idle(w, SimTick.SPAWN_IN_TICKS + 1)
 	var i := w.actors.index_of(id)
@@ -239,7 +254,7 @@ func test_the_reader_names_the_phase() -> void:
 	assert_true(r.has_curve())
 	assert_eq([r.phase(), r.phase_name_key(), r.tier()], [0, &"PHASE_CALM", 0])
 	assert_almost_eq(r.phase_seconds_left(), 60.0, 0.02)
-	w.run_ticks = TuningRun.EXPECTED_END_TICKS
+	w.run_ticks = TuningRun.peak_ticks(1)
 	assert_eq(r.phase(), r.phase_count() - 1)
 	assert_eq(r.phase_name_key(), &"PHASE_PEAK")
 	assert_eq(r.phase_seconds_left(), 0.0)

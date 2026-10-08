@@ -167,7 +167,8 @@ class_name AttackDefinition extends Resource
   damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
-  × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
+  × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
+  growing after the difficulty curve holds at its peak; owner D7). `@export var shards_by_floor: bool` (bosses) pays
   `shards` × the floor number instead, with no tier scaling.
 
 **Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
@@ -185,7 +186,9 @@ bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterima
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
 later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
-and the radius positive.
+and the radius positive. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
+loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 m, × the pickup-range stat); both
+shares within 0..1 (`range`), the reach positive.
 
 **Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
 [`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
@@ -383,6 +386,10 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   `0` (the default) takes the floor's draw (`pack_min_by_floor`..`pack_max_by_floor`), `> 0` always brings that
   many (the Swarmer's 8; the other horde kinds ship `1`, singles as EN designed them). A pack stands on rings around
   its anchor and never takes the alive count past the cap. A new enemy joins the hordes with one more entry.
+- **`RunDefinition`, v0.4.0 TU (owner D9, "Ease floor 1 only"):** `boss_ease_floor_permille` (`[800, 1000, 1000]`:
+  a floor's boss HP and attack damage × this, on top of the per-floor factors and Deep) and
+  `boss_room_heal_floor_permille` (`[1000, 0, 0]`: the share of max HP restored when the boss room seals); both per
+  floor, past the end the last entry, entries 1..1000 / 0..1000 (`range`).
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier

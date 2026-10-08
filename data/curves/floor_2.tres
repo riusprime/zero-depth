@@ -31,7 +31,7 @@ kinds = Array[StringName]([&"warden", &"arc_caster", &"splitter"])
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("1_phase")
-start_seconds = 120.0
+start_seconds = 70.0
 name_key = &"PHASE_HUNT"
 tier_permille = 2000
 cap_permille = 500
@@ -44,7 +44,7 @@ kinds = Array[StringName]([&"shield_bearer"])
 
 [sub_resource type="Resource" id="P_3"]
 script = ExtResource("1_phase")
-start_seconds = 180.0
+start_seconds = 80.0
 name_key = &"PHASE_SWARM"
 tier_permille = 4000
 cap_permille = 600
@@ -57,13 +57,13 @@ kinds = Array[StringName]([&"bomb_drone", &"mine_layer"])
 
 [sub_resource type="Resource" id="P_4"]
 script = ExtResource("1_phase")
-start_seconds = 600.0
+start_seconds = 90.0
 name_key = &"PHASE_PEAK"
-tier_permille = 20000
-cap_permille = 1000
-interval_permille = 1000
-hp_permille = 1000
-damage_permille = 1000
+tier_permille = 6000
+cap_permille = 650
+interval_permille = 1200
+hp_permille = 850
+damage_permille = 700
 pack_cap = 4
 hold = false
 kinds = Array[StringName]([])
