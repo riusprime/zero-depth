@@ -31,6 +31,7 @@ const WORLD_KEPT := {
 	&"combo_tables": "loadout",
 	&"ability_tables": "loadout",
 	&"stat_tables": "loadout",
+	&"overrun_table": "loadout",  # v0.4.0 AB
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -55,6 +56,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BossAttackTable",
 	&"SwingStep",
 	&"SkillTable",
+	&"OverrunTable",  # v0.4.0 AB
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -74,6 +76,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ItemMods",
 	&"DenseGrid",
 	&"Obb",
+	&"OverrunState",  # v0.4.0 AB
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.

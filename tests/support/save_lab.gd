@@ -52,6 +52,7 @@ static func build_floor(run: RunState) -> World:
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
+	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	if w.boss_flow != null:
