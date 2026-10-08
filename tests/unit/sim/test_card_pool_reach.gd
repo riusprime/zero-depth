@@ -24,7 +24,10 @@ func test_each_builds_pool_holds_40_to_50_distinct_cards() -> void:
 			)
 		)
 		assert_between(
-			n, CardPoolSurvey.POOL_MIN, CardPoolSurvey.POOL_MAX, "%s: 40-50 cards" % build
+			n,
+			CardPoolSurvey.POOL_MIN,
+			CardPoolSurvey.POOL_MAX,
+			"%s: %d-%d cards" % [build, CardPoolSurvey.POOL_MIN, CardPoolSurvey.POOL_MAX]
 		)
 
 

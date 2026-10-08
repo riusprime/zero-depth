@@ -10,7 +10,11 @@ extends RefCounted
 ##   (Offers.apply); its slot is then sold out. A card that can no longer apply (a slot filled since, a stat at its
 ##   cap) can't be bought.
 ## - Heal: heal_permille of max HP, once per shop, for heal_price x the floor step; refused at full HP.
-## - Reroll: a new stock (every slot) for reroll_price, x (1 + step) per use at this shop.
+## - Reroll: a new card in every unsold slot for reroll_price, x (1 + step) per use at this shop. v0.5.5 EC (owner
+##   S2): a bought slot stays SOLD for the floor; a reroll with no unsold slot, or with no buys left, is refused.
+## - Buy limit (v0.5.5 EC, owner S3): at most ShopTable.max_buys cards bought at the floor's shop (the heal, rerolls,
+##   cleanses and salvage don't count); a buy past it is refused with ShopState.Deny.LIMIT for the view's message.
+## - Prices (v0.5.5 EC, owner S4): floors 2-3 multiply the floor step by late_floor_permille (ShopTable).
 ## - Salvage (sell_list): an owned mod or stat card sells for sell_permille of its shop price (a stat card: one
 ##   stack, the stat values rebuilt from the cards left, so the caps hold); an ability that is not the build's
 ##   weapon frees its slot for ability_refund_per_level x its level (a later ability card can take the slot). Mods
@@ -75,6 +79,38 @@ static func restock(w: World) -> void:
 	w.shop.offer = PackedInt32Array()  # out of the pool while drawing
 	w.shop.offer = Offers.draw(w, true, w.shop_table.offer_size)
 	w.shop.rolled = true
+
+
+## v0.5.5 EC (owner S2): a new card in every unsold slot; the sold slots stay SOLD. The unsold cards go back to the
+## pool while drawing (as a full restock does); a slot the draw can't fill reads SOLD.
+static func restock_unsold(w: World) -> void:
+	var open_slots := PackedInt32Array()
+	for k in w.shop.offer.size():
+		if w.shop.offer[k] != ShopState.SOLD:
+			open_slots.append(k)
+	var kept := w.shop.offer.duplicate()
+	for k in open_slots:
+		kept[k] = ShopState.SOLD
+	w.shop.offer = kept  # the unsold cards are out of the stock (back in the pool) while drawing
+	var fresh := Offers.draw(w, true, open_slots.size())
+	for n in open_slots.size():
+		kept[open_slots[n]] = fresh[n] if n < fresh.size() else ShopState.SOLD
+	w.shop.offer = kept
+
+
+## Unsold slots in the stock now.
+static func unsold(w: World) -> int:
+	var n := 0
+	for code in w.shop.offer:
+		if code != ShopState.SOLD:
+			n += 1
+	return n
+
+
+## v0.5.5 EC (owner S3): cards still buyable at this floor's shop (-1 = no limit).
+static func buys_left(w: World) -> int:
+	var cap := w.shop_table.max_buys
+	return -1 if cap <= 0 else maxi(0, cap - w.shop.bought)
 
 
 ## While open: one action per pick value (InputFrame.PICK_*); anything else waits.
@@ -155,11 +191,16 @@ static func buy(w: World, k: int) -> bool:
 	if k < 0 or k >= w.shop.offer.size():
 		return _deny(w)
 	var code := w.shop.offer[k]
+	if code == ShopState.SOLD:
+		return _deny(w)
+	if buys_left(w) == 0:
+		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3)
 	if not can_apply(w, code) or w.shards < price(w, code):
 		return _deny(w)
 	var cost := price(w, code)
 	w.shards -= cost
 	w.shop.offer[k] = ShopState.SOLD
+	w.shop.bought += 1
 	_spend(w, cost, Offers.info(w, code)["id"])
 	var pid := w.actors.ids[0]
 	var e := w.emit_event(SimEvent.Kind.PICKUP, w.shop.id, pid, pid, w.shop.pos)
@@ -189,12 +230,14 @@ static func heal(w: World) -> bool:
 
 static func reroll(w: World) -> bool:
 	var cost := reroll_price(w)
-	if w.shards < cost:
-		return _deny(w)
+	if buys_left(w) == 0:
+		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3): nothing more to buy here
+	if unsold(w) == 0 or w.shards < cost:
+		return _deny(w)  # v0.5.5 EC (S2): every slot sold, nothing to reroll
 	w.shards -= cost
 	w.shop.rerolls += 1
 	_spend(w, cost, EFFECT_REROLL)
-	restock(w)
+	restock_unsold(w)
 	_note(w, ShopState.Action.REROLL, cost)
 	return true
 
@@ -355,6 +398,11 @@ static func read(w: World) -> Dictionary:
 		"cleanse_name_key":
 		w.ev.curses[_latest_curse(w)].name_key if _latest_curse(w) >= 0 else &"",
 		"rerolls": w.shop.rerolls,
+		"unsold": unsold(w),  # v0.5.5 EC (S2)
+		"bought": w.shop.bought,  # v0.5.5 EC (S3)
+		"max_buys": w.shop_table.max_buys,
+		"buys_left": buys_left(w),
+		"denied_reason": w.shop.denied_reason,
 		"sell": sells,
 		"last_action": w.shop.last_action,
 		"last_tick": w.shop.last_tick,
@@ -382,6 +430,7 @@ static func _note(w: World, action: int, value: int) -> void:
 	w.shop.last_value = value
 
 
-static func _deny(w: World) -> bool:
+static func _deny(w: World, reason: int = ShopState.Deny.OTHER) -> bool:
 	w.shop.denied_tick = w.tick
+	w.shop.denied_reason = reason
 	return false

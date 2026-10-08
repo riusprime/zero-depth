@@ -48,8 +48,11 @@ func test_bad_curves_are_rejected() -> void:
 	d.phases[0].tier_permille = 500
 	assert_has(_codes(d), &"calm")
 	d = _def()
-	d.phases[0].hold = false
+	d.phases[2].hold = true  # v0.5.5 D1: only the first phase may hold
 	assert_has(_codes(d), &"calm")
+	d = _def()
+	d.phases[0].hold = false  # v0.5.5 D1: floors 2-3 start without a calm phase
+	assert_does_not_have(_codes(d), &"calm")
 	d = _def()
 	d.phases[0].start_seconds = 5.0
 	assert_has(_codes(d), &"calm")

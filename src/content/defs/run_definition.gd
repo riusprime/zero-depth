@@ -19,6 +19,9 @@ extends ContentDef
 @export var boss_damage_per_floor := 0.2
 ## Between floors you heal this fraction of your max HP.
 @export var heal_between_floors := 0.4
+## v0.5.5 EC (owner Q-S4, "Keep half"): the share of unspent shards a portal carries to the next floor (rounded
+## down); the rest is left behind.
+@export var shard_carry := 0.5
 ## v0.5.0 RT (R5): a Deep floor (the Deep portal after a floor before the last) scales enemies' and bosses' HP and
 ## damage by this on top of the floor's own scaling, and adds this many chests (and one curse-free epic altar).
 @export var deep_scale := 1.25
@@ -51,6 +54,10 @@ func validate() -> Array[ValidationIssue]:
 	if boss_damage_per_floor < 0.0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "boss_damage_per_floor is negative")
+		)
+	if shard_carry < 0.0 or shard_carry > 1.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "shard_carry must be within 0..1")
 		)
 	if heal_between_floors < 0.0 or heal_between_floors > 1.0:
 		issues.append(

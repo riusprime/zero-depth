@@ -47,7 +47,7 @@ asked to talk it through), **Kept** (no change wanted).
 | S1 | "I think too many and that's what made me so strong, we could add max 2 per floor and the rest should be chests" (altars) | At most 2 altars per floor (abilities come from altars); the other reward spots become chests (stat cards) | Decided | Step EC |
 | S2 | "The shop is too broken, once you buy a slot refreshing it should now spawn again 4, the bought slots should stay bought" | A reroll redraws only the unsold slots; a bought slot stays empty ("SOLD") for the floor | Decided | Step EC |
 | S3 | "and not be able to buy 16 upgrades at a time only 4 max per floor if gold gets it" | At most 4 card purchases per floor per shop (the heal and rerolls don't count) | Decided | Step EC |
-| S4 | "I felt like I had enough shards to buy whatever I wanted and passing them onto the next floor also made next floor pretty easy, explored full of shards, bought everything and by the time the enemies started appearing I was super strong" | Shard drops −30 % and shop prices ×1.5 on floors 2–3 (starting values); whether unspent shards carry to the next floor is a question (Q-S4) | Decided (cut) / Q-S4 | Step EC |
+| S4 | "I felt like I had enough shards to buy whatever I wanted and passing them onto the next floor also made next floor pretty easy, explored full of shards, bought everything and by the time the enemies started appearing I was super strong" | Shard drops −30 % and shop prices ×1.5 on floors 2–3 (starting values); whether unspent shards carry to the next floor is a question (Q-S4). **Q-S4 answered (owner, 2026-10-08): "Keep half"**: a portal carries half the unspent shards (rounded down) and the arrival card says how many it kept | Decided | Step EC |
 | S5 | "Used deep portals but I felt like nothing changed tho, maybe because I was too strong" | Deep floors must feel different: a distinct look (violet fog and light), an elite in every combat room, +1 T, a guaranteed epic chest at the end, a Deep-only event. With D4 the extra threat raises the cap, so it bites even a strong build | Proposed | Step DS |
 | S6 | "curse was fun, but also gave me the god feeling too fast" | Cursed offers stop giving an epic stat card; a cursed offer is a trade-off card (S7) whose upside is rare-level | Decided | Step CU |
 | S7 | "curses are fun, we can add more variables into it, you lose dash but have a dodge % or attack speed lower but 4th hit increased X% on damage" | New trade-off curses (list C1–C8 below, G1: the owner approves rows) | Proposed (G1) | Step CU |
@@ -215,6 +215,6 @@ fire, violet = curses, gold = epic, indigo = trinkets. The owner may remap.
 - X1 direction (blocks D2 beyond the Overrun).
 - D4 / D7 numbers and the boss mechanics (block DS).
 - G1 on M1–M30 and C1–C8 (block MX, CU).
-- Q-S4: do unspent shards carry to the next floor, or reset?
+- ~~Q-S4: do unspent shards carry to the next floor, or reset?~~ Answered 2026-10-08: "Keep half" (Step EC).
 - X2 signature systems, X3 EI-05.
 - A5 mockup pick (blocks the UI restyle beyond the cards).

@@ -218,7 +218,8 @@ func test_shard_gain_raises_what_a_kill_pays() -> void:
 	w.actors.hp[i] = 0
 	w.actors.dead[i] = 1
 	CombatLab.idle(w, 1)
-	assert_eq(w.shards, 7, "a Warden's 6 × 1.2 = 7.2, rounded")
+	# v0.5.5 EC (owner S4): a Warden pays 6 × 0.7 = 4 (4.2, rounded), then the shrine's × 1.2 = 4.8 → 5.
+	assert_eq(w.shards, 5, "a Warden's 4 × 1.2 = 4.8, rounded")
 
 
 func test_melee_damage_reaches_a_real_swing() -> void:

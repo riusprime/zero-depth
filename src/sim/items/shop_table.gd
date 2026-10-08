@@ -10,10 +10,16 @@ var offer_size := 4
 var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 var floor_price_step_permille := 500
+## v0.5.5 EC (owner S4): floors 2 and later multiply the stepped prices (cards, heal) by this too (x 1, 2.25, 3);
+## salvage refunds stay on the floor step alone.
+var late_floor_permille := 1500
+## v0.5.5 EC (owner S3): the most cards bought at one floor's shop (0 = no limit).
+var max_buys := 4
 ## The heal: this share of max HP, once per shop, for heal_price x the floor step.
 var heal_permille := 300
 var heal_price := 40
-## The reroll: reroll_price, then x (1 + step) per use at this shop, rounded half up (20, 30, 45, 68 ...).
+## The reroll (v0.5.5 EC: only the unsold slots): reroll_price, then x (1 + step) per use at this shop, rounded
+## half up (20, 30, 45, 68 ...).
 var reroll_price := 20
 var reroll_step_permille := 500
 ## Salvage: a mod or stat card sells for this share of its shop price; an ability refunds this much per level.
@@ -23,8 +29,15 @@ var ability_refund_per_level := 10
 var interact_radius_m := 1.8
 
 
-## The floor's price multiplier, per mille (1000 on floor 1).
+## The floor's price multiplier, per mille (1000 on floor 1): the floor step, and from floor 2 the late-floor
+## multiplier on top (v0.5.5 EC, S4).
 func floor_step_permille(floor_index: int) -> int:
+	var step := sell_step_permille(floor_index)
+	return step if floor_index < 2 else scaled(step, late_floor_permille)
+
+
+## The floor step alone (1000, 1500, 2000), what salvage refunds go by (v0.5.5 EC: not the late-floor multiplier).
+func sell_step_permille(floor_index: int) -> int:
 	return 1000 + floor_price_step_permille * maxi(0, floor_index - 1)
 
 
@@ -50,6 +63,8 @@ func reroll_cost(uses: int) -> int:
 	return maxi(1, p)
 
 
-## What a card of `rarity` sells for on floor `floor_index`.
+## What a card of `rarity` sells for on floor `floor_index` (its price under the floor step alone).
 func sell_price(rarity: int, floor_index: int) -> int:
-	return scaled(card_price(rarity, floor_index), sell_permille)
+	var r := clampi(rarity, 0, rarity_prices.size() - 1)
+	var base := maxi(1, scaled(rarity_prices[r], sell_step_permille(floor_index)))
+	return scaled(base, sell_permille)

@@ -296,7 +296,12 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.sync(driver.reader)
-	_hud.show_floor(run.floor_index, String(biome.name_key), run.is_deep())  # v0.5.0 RT: "Floor 2 · Deep"
+	_hud.show_floor(
+		run.floor_index,
+		String(biome.name_key),
+		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
+		driver.reader.shards_left_behind() if resume.is_empty() else 0  # v0.5.5 EC (Q-S4)
+	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
 	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS

@@ -8,6 +8,9 @@ extends ContentDef
 @export var altars_max := 3
 @export var chests_min := 2
 @export var chests_max := 3
+## v0.5.5 EC (owner S1, "max 2 per floor and the rest should be chests"): at most this many of the floor's placed
+## altars (0 = no cap); the altars rolled past it become chests, so the floor keeps its reward spots.
+@export var altars_cap := 2
 ## Chest prices on floor 1, by chest order on the floor (the last price repeats for any further chest).
 @export var chest_prices := PackedInt32Array([40, 60, 80])
 ## Each floor after the first raises prices by this share of the floor-1 price (0.5: × 1.5, × 2).
@@ -21,6 +24,8 @@ extends ContentDef
 @export var interact_radius_m := 1.6
 ## A kill's shards × (1 + shard_tier_bonus × danger tier).
 @export var shard_tier_bonus := 0.25
+## v0.5.5 EC (owner S4): every kill's shards × this (0.7: −30 %), rounded half up.
+@export var shard_scale := 0.7
 ## A boss kill pays boss_shards × the floor number (PLAN v0.3.0: 60 × floor).
 @export var boss_shards := 60
 ## v0.4.0 BS (owner F8, F9): what a card is, by weight: [ability, stat, mod] at an altar and in a chest, and a stat
@@ -30,8 +35,9 @@ extends ContentDef
 @export var altar_rarity_weights := PackedInt32Array([70, 25, 5])
 @export var chest_rarity_weights := PackedInt32Array([40, 40, 20])
 ## v0.4.0 TU (owner D8): a normal enemy's kill drops a heal orb with this chance; walking over it (within
-## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP.
-@export var heal_orb_chance := 0.1
+## heal_orb_reach_m, × pickup range) heals heal_orb_heal of max HP. v0.5.5 EC (owner D9): heal_orb_chance is only a
+## base under the Lifesprout stat card's chance; the shipped data has 0, so orbs drop only with the card.
+@export var heal_orb_chance := 0.0
 @export var heal_orb_heal := 0.25
 @export var heal_orb_reach_m := 0.9
 
@@ -71,6 +77,10 @@ func validate() -> Array[ValidationIssue]:
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
 	check_positive(issues, "interact_radius_m", interact_radius_m)
+	if altars_cap < 0:
+		issues.append(ValidationIssue.new(&"negative", resource_path, "altars_cap is negative"))
+	if shard_scale <= 0.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "shard_scale must be > 0"))
 	if shard_tier_bonus < 0.0:
 		issues.append(
 			ValidationIssue.new(&"negative", resource_path, "shard_tier_bonus is negative")

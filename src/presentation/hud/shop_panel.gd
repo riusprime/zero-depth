@@ -5,6 +5,9 @@ extends Control
 ## (every mod, stat card and ability but the weapon you can sell, with its refund). It shows what the sim offers and
 ## sends the player's choice as input (`picked` → InputLatch.note_pick → InputFrame.pick); it decides nothing.
 ## A card you can't afford or can't use, a spent heal and an unaffordable reroll are dimmed and send nothing.
+## v0.5.5 EC (owner S2, S3): a line under the title shows how many cards you can still buy on this floor; at the limit
+## it turns red and says so, the unsold cards and the reroll dim and send nothing. A reroll with every slot sold
+## dims too ("Nothing left to reroll"): rerolls redraw only the unsold slots.
 ## - Mouse: hover focuses, a click acts.
 ## - Keyboard: arrows move the focus (left / right along a row, up / down between rows), 1-4 jump to a card, Enter
 ##   buys or sells, Esc leaves.
@@ -25,6 +28,7 @@ var cleanse_tile := ShopTile.new("ShopCleanse", 260.0)
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _shards := Label.new()
+var _buys := Label.new()
 var _hint := Label.new()
 var _salvage_title := Label.new()
 var _salvage_none := Label.new()
@@ -36,6 +40,7 @@ var _focus := 0
 var _open := false
 var _sig := ""
 var _shards_cache := 0
+var _limit := false
 
 
 func _init() -> void:
@@ -64,6 +69,8 @@ func _init() -> void:
 	head.add_child(icon)
 	head.add_child(_shards)
 	col.add_child(head)
+	_buys.name = "ShopBuys"
+	col.add_child(_buys)
 	_cards.name = "ShopCards"
 	_cards.alignment = BoxContainer.ALIGNMENT_CENTER
 	_cards.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -92,9 +99,10 @@ func _init() -> void:
 	HudStyle.style_label(_salvage_title, 19, true)
 	HudStyle.style_label(_salvage_none, 15)
 	HudStyle.style_label(_hint, 15)
+	HudStyle.style_label(_buys, 16)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	_salvage_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
-	for l: Label in [_title, _shards, _hint, _salvage_title, _salvage_none]:
+	for l: Label in [_title, _shards, _buys, _hint, _salvage_title, _salvage_none]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -119,6 +127,7 @@ func sync(reader: WorldReader) -> void:
 			s["reroll_price"],
 			s["cleanse_curse"],
 			s["cleanse_price"],
+			s["buys_left"],
 			reader.shards(),
 			TranslationServer.get_locale()
 		]
@@ -183,6 +192,15 @@ func title_text() -> String:
 	return _title.text
 
 
+## v0.5.5 EC (S3): the buys line ("Cards you can still buy on this floor: 3", or the limit's message).
+func buys_text() -> String:
+	return _buys.text
+
+
+func buys_at_limit() -> bool:
+	return _limit
+
+
 func _render(reader: WorldReader, s: Dictionary) -> void:
 	_entries.clear()
 	for c in _cards.get_children() + _salvage.get_children():
@@ -192,6 +210,14 @@ func _render(reader: WorldReader, s: Dictionary) -> void:
 	_shards_cache = reader.shards()
 	_shards.text = str(_shards_cache)
 	_hint.text = tr("SHOP_HINT")
+	var left := int(s["buys_left"])
+	_limit = left == 0
+	_buys.visible = left >= 0
+	if _limit:
+		_buys.text = tr("SHOP_BUYS_DONE") % [int(s["bought"]), int(s["max_buys"])]
+	else:
+		_buys.text = tr("SHOP_BUYS_LEFT") % left
+	_buys.add_theme_color_override("font_color", POOR if _limit else Color(1, 1, 1, 0.8))
 	var stock: Array = s["stock"]
 	for k in stock.size():
 		_add_card(reader, k, stock[k])
@@ -228,7 +254,7 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	box.add_child(row)
 	_cards.add_child(box)
 	var sold: bool = c["sold"]
-	var ok: bool = not sold and c["can_apply"] and c["affordable"]
+	var ok: bool = not sold and c["can_apply"] and c["affordable"] and not _limit
 	if sold:
 		slot.show_card(
 			{
@@ -274,13 +300,14 @@ func _render_services(s: Dictionary) -> void:
 		false,
 		Color("#9CF29C")
 	)
-	var reroll_ok := _shards_now() >= int(s["reroll_price"])
+	var any_left := int(s["unsold"]) > 0  # v0.5.5 EC (S2): only unsold slots reroll
+	var reroll_ok := _shards_now() >= int(s["reroll_price"]) and any_left and not _limit
 	reroll_tile.show_tile(
 		tr("SHOP_REROLL"),
-		"",
+		"" if any_left else tr("SHOP_REROLL_NONE"),
 		int(s["reroll_price"]),
 		reroll_ok,
-		not reroll_ok,
+		_shards_now() < int(s["reroll_price"]),
 		false,
 		ShardIcon.MID
 	)
