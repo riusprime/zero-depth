@@ -75,7 +75,7 @@ asked to talk it through), **Kept** (no change wanted).
 | A2 | "and the color of the swrod/bullets the current hit color as well, once reached the first threshold they turn orangem second one red" | The blade trail and the bullets take the heat colour: base colour below Hot, **orange** at Hot, **red** at Overclock (one palette shared with the heat bar) | Decided | Step LK |
 | A3 | "Some VFX need to match the new style of the game, I worked a full art rework and some don't match neither style nor lighting" | A VFX audit against the owner's new art (G1: a table of every VFX, its screenshot and the change), then the restyle of the rows the owner approves | Decided (audit) | Step LK |
 | A4 | "I attached two image for the new card select templates, one is the visual reference and the secord one is the empty templates you'll have to crop to use them as real cards" | The 12 empty frames are cropped from `refs/card_templates_empty.webp` (white background removed, alpha edges kept) into `assets/ui/cards/`; pick cards draw the frame with the title, text and two icons laid out as in `refs/card_style_reference.webp`; the frame colour follows the card's family (mapping below) | Decided | Step CD |
-| A5 | "The UI should also match this new style, we can work with some mockups" | G2: 2–3 HUD / menu mockups in the new style (crystal frames, dark panels, warm-cold glow), the owner picks | Decided (mockups) | Step CD |
+| A5 | "The UI should also match this new style, we can work with some mockups"; pick: "Menu from C (we don't need to have those crystal those there, or what is the purpose? but ingame UI, heat, health and minimap  from B(we should remove the black background tho)" | Mockups done (Step CD). **Picked 2026-10-08:** menus (pause and the other menus) in C "Cold glass" style without the build cards beside them; the in-game HUD (heat bar, health, minimap) in B "Ember stone" style, with the minimap's black background removed (the map floats over the game) | **Decided 2026-10-08** | Step UI |
 | A6 | "Yes, new bosses might need a render tho" (the Charger dodge) | The Charger dodge is kept. The three new bosses (Warlord, Hive Lens, Foundry) are code-built; an art request (ART_DIRECTION template) for their models goes to the owner | Kept / art request | Step LK |
 
 ### Direction and open questions
@@ -213,6 +213,7 @@ the owner's answers on X1, D4/D7, G1 (M, C) and the mockups.
 | LK | Look: heat-coloured blade and bullets (A2), skill animations (A1), the VFX audit (A3), the boss art request (A6) | A1–A3, A6 | 1 |
 | AR | Sealed arenas: the Overrun waves inside a sealed room (S8) now; more arenas after X1 (D2) | S8, D2 | 2 (S8 may start in wave 1's place if a slot frees) |
 | DS | Difficulty scaling with a cap (D4), boss caps and phase mechanics (D6, D7), Deep that bites (S5), principle in the blueprint (D8) | D3–D8, D10, S5, B1 | 2 |
+| UI | The UI restyle from the A5 pick: menus in C, HUD/heat/health/minimap in B, no minimap black background | A5 | 2 |
 | MX | The attack-modifier engine and the approved modifiers (B2–B6) | B2–B6 | 2 |
 | CU | Trade-off curses (S6, S7) | S6, S7 | 2 |
 
@@ -227,4 +228,3 @@ fire, violet = curses, gold = epic, indigo = trinkets. The owner may remap.
 ## Open items (what they block)
 - X1: decided (open floor, sealed arenas).
 - D4 / D7: decided (hidden); the numbers are starting values the owner tunes by play.
-- A5 mockup pick (blocks the UI restyle beyond the cards).
