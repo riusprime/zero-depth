@@ -214,7 +214,7 @@ an ability card is common or rare), `floor_price_step` (each later floor raises 
 share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
 step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
 `sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
-the cards left so the caps hold), `ability_refund_per_level` (25 shards per level for salvaging an ability, never the
+the cards left so the caps hold), `ability_refund_per_level` (10 shards per level, was 25: a free ability plus a bought level-up must not salvage for profit, M-LOOP; for salvaging an ability, never the
 weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
 rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
 is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream

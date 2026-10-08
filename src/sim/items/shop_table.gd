@@ -18,7 +18,7 @@ var reroll_price := 20
 var reroll_step_permille := 500
 ## Salvage: a mod or stat card sells for this share of its shop price; an ability refunds this much per level.
 var sell_permille := 400
-var ability_refund_per_level := 25
+var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 var interact_radius_m := 1.8
 

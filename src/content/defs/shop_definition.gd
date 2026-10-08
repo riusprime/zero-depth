@@ -18,7 +18,7 @@ extends ContentDef
 @export var reroll_step := 0.5
 ## Salvage: a mod or stat card sells for this share of its shop price; an ability refunds this much per level.
 @export var sell_share := 0.4
-@export var ability_refund_per_level := 25
+@export var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 @export var interact_radius_m := 1.8
 

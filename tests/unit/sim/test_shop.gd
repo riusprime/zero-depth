@@ -2,7 +2,7 @@ extends GutTest
 ## v0.5.0 SH (PLAN R1, R2): the shop and salvage in the sim. Prices by rarity x floor step; the interact button by
 ## the terminal opens it and the world waits; a bought card applies exactly as a picked card; the heal (once), the
 ## reroll (rising price); selling a mod or a stat card (40 % of its price; a stat stack removed, values rebuilt) and
-## salvaging an ability (25 shards per level; the slot frees for a later card); refusals change nothing; every
+## salvaging an ability (10 shards per level, M-LOOP; the slot frees for a later card); refusals change nothing; every
 ## action is deterministic, emits its SimEvent and is in the hash.
 
 var _repo: ContentRepository
@@ -70,7 +70,7 @@ func test_the_data_compiles_to_the_starting_values() -> void:
 	assert_eq(_shop.offer_size, 4)
 	assert_eq(_shop.rarity_prices, PackedInt32Array([30, 55, 90]))
 	assert_eq([_shop.heal_permille, _shop.heal_price, _shop.reroll_price], [300, 40, 20])
-	assert_eq([_shop.sell_permille, _shop.ability_refund_per_level], [400, 25])
+	assert_eq([_shop.sell_permille, _shop.ability_refund_per_level], [400, 10])
 
 
 func test_prices_by_rarity_and_floor() -> void:
@@ -355,13 +355,13 @@ func test_salvage_an_ability_frees_its_slot() -> void:
 		"every ability but the weapon"
 	)
 	var n := list.size() - 2  # Drone Buddy, level 3
-	assert_eq(list[n][3], 75, "25 shards per level")
+	assert_eq(list[n][3], 30, "10 shards per level")
 	_pick(w, InputFrame.PICK_SHOP_SELL + n)
 	assert_false(Abilities.owned(w, drone))
 	assert_eq(w.ability_owned.size(), 3)
 	assert_eq(w.ab.cd.size(), 3, "the cooldowns follow the slots")
 	assert_true(w.ab.drone_pos.is_empty(), "the drones go")
-	assert_eq(w.shards, 1075)
+	assert_eq(w.shards, 1030)
 	assert_true(Abilities.can_take(w, blink), "a later ability card can take the slot")
 	assert_eq(_events(w, SimEvent.Kind.SHOP_SALVAGE)[0].effect_id, w.ability_tables[drone].id)
 	assert_true(Abilities.grant(w, blink))

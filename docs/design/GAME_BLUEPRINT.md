@@ -170,7 +170,7 @@ value or by an owner decision, and the change is noted here.
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
   priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
   (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
-  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 25 shards per level to
+  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to
   free its slot for a later ability card: a way to change a build's direction, paid for. Starting values; evidence:
   `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
