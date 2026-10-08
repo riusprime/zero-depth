@@ -1,5 +1,9 @@
 # v0.5.5 — Feedback pass: the owner's notes on the v0.4.0 + v0.5.0 build (plan, owner-directed 2026-10-08)
 
+> **Version (owner, 2026-10-08):** "this new version will be v0.6.0 with all the Ui and gameplay feedback together". This
+> plan, the UI restyle and every step below ship together as **v0.6.0** (`0.6.0-dev` when the playable PR goes up).
+> The folder keeps the name `v0.5.5` while agents are working in it; it is renamed `v0.6.0` with the PR.
+
 Recorded so no line of the owner's feedback depends on chat context. The owner's message is pasted verbatim in
 [`../v0.5.0/PLAYTEST.md`](../v0.5.0/PLAYTEST.md) "Owner answers". Progress: [`PROGRESS.md`](PROGRESS.md).
 

@@ -35,6 +35,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | Does the Overrun clear's altar count toward S1's two altars? | 2026-10-08 | "No" → it doesn't count; the Overrun keeps its altar (as built in EC) | 2026-10-08 |
 | Blade card pool at 51 (ROADMAP 40–50) | 2026-10-08 | "that's okay" | 2026-10-08 |
 
+| What number does this version get? | — | "this new version will be v0.6.0 with all the Ui and gameplay feedback together". The old roadmap's v0.6.0 "Balance Alpha" (built on bot sims, now retired) moves to v0.7.0 and later versions shift by one minor step: provisional, for the owner to confirm | 2026-10-08 |
+
 ## History
 - 2026-10-08: plan written from the owner's v0.5.0 playtest; wave 1 (EC, CD, LK) started.
 - 2026-10-08: Step CD done: crystal pick cards and the A5 mockups (the in-game HUD is unchanged until the pick).
