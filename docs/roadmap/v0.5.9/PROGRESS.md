@@ -32,7 +32,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
 | Q2 wall heights | 2026-10-08 (PLAN) | keep (1.0 m / 1.8 m) | 2026-10-08 |
 | Q3 hero light | 2026-10-08 (PLAN) | yes | 2026-10-08 |
 | Q4-Q6 room rework (where, timing, mockup first) | 2026-10-08 (PLAN L8) | in v0.5.9; after the balancing (done); mockups first | 2026-10-08 |
-| G2 Rooms (room themes, mock_rooms.gd) | — | pending | |
+| G2 Rooms (room themes, mock_rooms.gd) | 2026-10-08 (4 themes) | all 4; density "about right"; cars max 2 per room of the mockups' size, more in proportion in bigger rooms; "go ahead and implement these variants" | 2026-10-08 |
 
 ## Open
 - `origin/main` has a stray upload of the kit at the repo root (`5bc2917`, 16 `.glb` + 2 `.png`). It is the owner's

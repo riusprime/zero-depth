@@ -266,6 +266,32 @@ more renders I could generate them after".
   - (b) Build now; it re-measures afterwards.
 - **Q6. Mockup first (G2).** Three room themes, rendered with the kit before the generator changes. ← recommended
 
+### 7. Themed rooms (sim + tests + sims) — owner G2 Rooms, 2026-10-08
+
+- **Owner:** "Density is about right … Just don't use as many cars scrapeyard, max 2 per room of the sized you show,
+  if it's bigger it should increase proporcionally go ahead and implement these variants". On room sizes: unchanged.
+  The generator still draws 1×1 to 3×3-cell rooms; the themes only fill them.
+- **Files:**
+  - new `src/sim/map/room_themes.gd` (the vignettes, the four themes, counts and the car cap);
+  - `room_interior.gd` (the weights: ordinary rooms draw only themes, or now and then an open room; the geometric
+    templates stay for boss arenas);
+  - `floor_generator.gd` (`_furnish_themed`, `_vignette_fits`);
+  - `floor_layout.gd` (`Template` gains SCRAPYARD, RUINED_HALL, CAMP, OVERGROWN; `piece_tags`);
+  - `world_reader.gd` (`wall_piece`);
+  - `stage_view.gd` (passes the piece to the dresser).
+- **Rules:**
+  - Vignettes per room = area / 44 m², clamped to 2..18.
+  - Corners first, then the centre (Camp, rooms ≥ 200 m², never the start hall), then walls, then free floor.
+  - Car wrecks ≤ max(1, ⌊2 × area / 352 m²⌋).
+  - Spacing: a vignette's footprint touches a wall lining the room exactly (within 5 mm) or keeps the slab gap
+    (2.2 m) from it, and keeps the slab gap from every other vignette. No overlaps. Plus every existing group check:
+    doorways, the start and the gate clear, and the room stays one region.
+- **Tests:** `tests/unit/sim/test_room_themes.gd` (200 floors: kit-piece tags, the car cap, no slits, bigger rooms
+  hold more, deterministic tags). `test_floor_generator.gd`'s template assertion changes on purpose: the four
+  themes show up, and no geometric template in ordinary rooms.
+- **Done when:** the full suite passes; the floor property tests and the scorecard sims are re-run (layouts change,
+  so balance numbers may move); the owner sees generated rooms.
+
 ## Open items (what they block)
 - Q1 (G2), Q2 and Q3: these block Steps 2 and 4 from shipping as the default.
 - Kit pieces from the owner: they block nothing, since each missing piece draws its primitive (L15).

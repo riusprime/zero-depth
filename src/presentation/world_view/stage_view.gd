@@ -48,6 +48,8 @@ var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
 var _wall_classes: Array[int] = []
+## v0.5.9 L8: each drawn wall's kit piece from a themed room (&"" for none).
+var _wall_pieces: Array[StringName] = []
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
 
@@ -268,6 +270,7 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
 		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 		_wall_classes.append(kind)
+		_wall_pieces.append(reader.wall_piece(i))
 		if not draw:
 			continue
 		var box := BoxMesh.new()
@@ -340,7 +343,15 @@ func _build_contact_shadows() -> void:
 func _build_kit(reader: WorldReader) -> void:
 	var walls: Array = []
 	for i in wall_specs.size():
-		walls.append([wall_specs[i][0], wall_specs[i][1], wall_specs[i][2], _wall_classes[i]])
+		walls.append(
+			[
+				wall_specs[i][0],
+				wall_specs[i][1],
+				wall_specs[i][2],
+				_wall_classes[i],
+				_wall_pieces[i] if i < _wall_pieces.size() else &""
+			]
+		)
 	var rooms: Array = []
 	for i in reader.floor_room_count():
 		rooms.append(reader.floor_room(i))

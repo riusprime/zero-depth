@@ -7,7 +7,8 @@ extends SceneTree
 ## per biome and variant. Saves PNGs to build/shots/<version>/look/. Needs a renderer (not --headless):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_look.gd
 ## Optional: lighting=low (B without SSAO/SSIL), biomes=ruins,red_canyon, zoom=30 (the ortho camera size),
-## focus=light (look at the fire nearest the start instead of the hero), focus=chest or focus=chest_open.
+## focus=light (look at the fire nearest the start instead of the hero), focus=chest or focus=chest_open,
+## variants=B (only some of A, B, C).
 
 ## Frames to let a rebuilt floor settle (shaders compile, SSAO/SSIL history fills) before the shot.
 const SETTLE := 40
@@ -20,6 +21,7 @@ var _frame := 0
 var _dir := ""
 var _lighting := "high"
 var _zoom := 0.0
+var _variants := PackedStringArray(["A", "B", "C"])
 var _focus_light := false
 ## focus=chest: look at a chest; focus=chest_open: and open its lid (the cosmetic opening, no sim change).
 var _focus_chest := ""
@@ -40,6 +42,8 @@ func _initialize() -> void:
 		elif arg in ["focus=chest", "focus=chest_open"]:
 			_focus_chest = arg.trim_prefix("focus=")
 			_tag = "_" + _focus_chest
+		elif arg.begins_with("variants="):
+			_variants = arg.trim_prefix("variants=").split(",")
 		elif arg.begins_with("zoom="):
 			_zoom = float(arg.trim_prefix("zoom="))
 		elif arg.begins_with("biomes="):
@@ -56,7 +60,7 @@ func _initialize() -> void:
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
 	for b in _biomes:
-		for variant in ["A", "B", "C"]:
+		for variant in _variants:
 			_jobs.append([b, variant])
 
 
@@ -69,6 +73,8 @@ func _process(_delta: float) -> bool:
 			elif _frame in [11, 21]:
 				_key(KEY_ENTER, false)
 			elif _frame == 40:
+				if _main.run == null:
+					_main.start_stage()  # the menu flow changed: start the run directly
 				_phase = 1
 		1:
 			if _jobs.is_empty():
