@@ -1,8 +1,10 @@
 class_name ItemEffects
 extends RefCounted
-## What the owned items do to the attacks (v0.2.0 PLAN, Items). Plain modifiers for now: the full
-## Trigger → Condition → Payoff queue (SIM_CONTRACTS §8) arrives with the engine work. Each effect still fires at
-## most once per root chain per target, and burn ticks are DoT (DAMAGE with TAG_DOT, proc 0, no HIT).
+## What the owned items do to the attacks (v0.2.0 PLAN, Items). Each effect still fires at most once per root chain
+## per target, and burn ticks are DoT (DAMAGE with TAG_DOT, proc 0, no HIT).
+## v0.6.0 MX1: the numbers come from the compiled specs (Modifiers; the items' modifiers rewrote them): the reach
+## bonus, the shot period, the split, Overcharge's Nth step and shockwave, Twin Arc's repeat, the burn a step feeds.
+## These functions keep their v0.5 names, so the views and the other systems read the same numbers as before.
 
 ## Walking within this distance of a pickup takes it.
 const PICKUP_RADIUS_M := 0.8
@@ -16,20 +18,19 @@ const EFFECT_KINETIC_DASH := &"kinetic_dash"
 const EFFECT_OVERCHARGE := &"overcharge"
 
 
-## The reach of combo step `step` (-1 = the current one) with Long Edge applied: every step scales the same way.
-## PlayerKit hits with it and WorldReader draws it (EI-07).
+## The reach of combo step `step` (-1 = the current one): its spec's (Long Edge's bonus in it), Combo Sword's level,
+## area and Hot (Attacks.arc_reach_m). PlayerKit hits with it and WorldReader draws it (EI-07).
 static func swing_reach_m(w: World, step: int = -1) -> float:
 	var s := step if step >= 0 else w.combo_step
-	var reach := w.player.combo[s].reach_m * (1000 + w.item_mods.reach_bonus_permille) / 1000.0
-	reach = Stats.area(w, reach * Abilities.reach_permille(w) / 1000.0)  # v0.4.0: Combo Sword L3, area
-	var hot := Heat.reach_permille(w)  # Heat: Hot reaches farther.
-	return reach if hot == 1000 else reach * hot / 1000.0
+	return Attacks.arc_reach_m(w, Modifiers.step(w, s))
 
 
-## Ticks between bolts while shooting, with Rapid Coil applied (never under 2 ticks once shortened).
+## Ticks between bolts while shooting: the bolt spec's period, with its rate bonus (Rapid Coil) applied (never under
+## 2 ticks once shortened), then attack speed.
 static func shot_period_ticks(w: World) -> int:
-	var base := w.player.shot_period_ticks
-	var bonus := w.item_mods.fire_rate_bonus_permille
+	var spec := Modifiers.bolt(w)
+	var base := spec.period_ticks
+	var bonus := spec.rate_bonus_permille
 	if bonus <= 0:
 		return Stats.period(w, base)  # v0.4.0 BS: attack speed
 	return Stats.period(w, maxi(2, int(round(base * 1000.0 / (1000 + bonus)))))
@@ -37,31 +38,19 @@ static func shot_period_ticks(w: World) -> int:
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).
 static func bolt_damage(w: World) -> int:
-	var m := w.item_mods
-	if m.split_count <= 1:
-		return w.player.bolt_damage
-	return maxi(1, w.player.bolt_damage * m.split_damage_permille / 1000)
+	return Attacks.bolt_base_damage(Modifiers.bolt(w))
 
 
 ## Angle offsets (1/4096 turns) of the bolts in one shot: [0], or a Splinter fan centred on the aim.
 static func shot_offsets(w: World) -> PackedInt32Array:
-	var m := w.item_mods
-	var n := maxi(1, m.split_count)
-	var out := PackedInt32Array()
-	if n == 1:
-		out.append(0)
-		return out
-	var half := m.split_spread / 2
-	for k in n:
-		out.append(-half + 2 * half * k / (n - 1))
-	return out
+	return Attacks.shot_offsets(Modifiers.bolt(w))
 
 
 ## Called when a swing starts (w.combo_step is already the new step): Overcharge marks every Nth swing of the
 ## combo, so with N = 4 and the four-slash combo it is always the finisher (v0.3.0 L11). swing_count still counts
 ## the swings started while it is owned.
 static func on_swing_start(w: World) -> void:
-	var every := w.item_mods.overcharge_every
+	var every := Modifiers.step(w, w.combo_step).nth_every
 	if every <= 0:
 		w.swing_overcharged = false
 		return
@@ -71,7 +60,7 @@ static func on_swing_start(w: World) -> void:
 
 ## Overcharge charges combo step `step` (0-based): the Nth, 2Nth, ... swing of the combo.
 static func overcharged_step(w: World, step: int) -> bool:
-	var every := w.item_mods.overcharge_every
+	var every := Modifiers.step(w, step).nth_every
 	return every > 0 and (step + 1) % every == 0
 
 
@@ -84,38 +73,37 @@ static func overcharge_ready(w: World) -> bool:
 static func swing_damage(w: World, base: int) -> int:
 	if not w.swing_overcharged:
 		return base
-	return base * w.item_mods.overcharge_mult_permille / 1000
+	return base * Modifiers.step(w, w.combo_step).nth_damage_permille / 1000
 
 
-## After a swing resolves (`dmg` is what it dealt per target, `base` its combo damage): the Overcharge shockwave,
-## then schedule the Twin Arc echo.
+## After a swing resolves (`dmg` is what it dealt per target, `base` its combo damage): the step's ON_NTH hooks
+## (Overcharge's shockwave, Attacks.on_nth), then schedule the step's repeat (Twin Arc's echo).
 static func after_swing(w: World, base: int, dmg: int) -> void:
-	var m := w.item_mods
+	var spec := Modifiers.step(w, w.combo_step)
 	var wave := 0
 	if w.swing_overcharged:
 		w.overcharge_tick = w.tick
-		wave = maxi(1, base * m.shockwave_damage_permille / 1000)
-		shockwave(w, wave, w.swing_root, EFFECT_OVERCHARGE)
-	if m.echo_delay_ticks > 0:
-		w.echo_t = m.echo_delay_ticks
+		wave = Attacks.on_nth(w, spec, base, w.swing_root)
+	if spec.repeat_delay_ticks > 0:
+		w.echo_t = spec.repeat_delay_ticks
 		w.echo_angle = w.swing_angle
 		w.echo_step = w.combo_step
 		w.echo_root = w.swing_root
-		w.echo_damage = maxi(1, dmg * m.echo_damage_permille / 1000)
+		w.echo_damage = maxi(1, dmg * spec.repeat_damage_permille / 1000)
 		w.echo_overcharged = w.swing_overcharged  # Engines: Resonance.
 		w.echo_wave = wave
 
 
-## The Overcharge shockwave: `dmg` to every enemy touching the shockwave disc around the player (also Resonance's).
+## Resonance's shockwave (Engines.on_echo): `dmg` to every enemy touching the disc of Overcharge's shockwave
+## (its ON_NTH burst's radius) around the player, at full proc (an engine payoff, not a hook).
 static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void:
 	var a := w.actors
 	var center := w.player_pos()
+	var radius := Modifiers.nth_burst_radius_m(w)
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		if not AttackShapes.disc_touches(
-			center, w.item_mods.shockwave_radius_m, a.pos(i), a.radius[i]
-		):
+		if not AttackShapes.disc_touches(center, radius, a.pos(i), a.radius[i]):
 			continue
 		Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, SimEvent.TAG_AREA, center, a.pos(i), effect)
 
@@ -133,8 +121,9 @@ static func advance_echo(w: World) -> void:
 	Engines.on_echo(w, w.echo_root)  # Engines: Resonance.
 
 
-## A melee hit landed on actor `i`: Ember Edge adds a burn stack, once per root chain per target.
-static func on_melee_hit(w: World, i: int, root: int) -> void:
+## A weapon step's hit landed on actor `i` and its spec burns (Ember Edge's modifier, or the burn rider;
+## Attacks._landed): `stacks` burn stacks, once per root chain per target.
+static func on_melee_hit(w: World, i: int, root: int, stacks: int = 1) -> void:
 	var m := w.item_mods
 	var a := w.actors
 	if m.burn_max_stacks <= 0 or a.dead[i] == 1 or a.burn_root[i] == root:
@@ -142,7 +131,7 @@ static func on_melee_hit(w: World, i: int, root: int) -> void:
 	a.burn_root[i] = root
 	if a.burn_stacks[i] == 0:
 		a.burn_cd[i] = m.burn_period_ticks
-	a.burn_stacks[i] = mini(a.burn_stacks[i] + 1, m.burn_max_stacks)
+	a.burn_stacks[i] = mini(a.burn_stacks[i] + stacks, m.burn_max_stacks)
 	a.burn_t[i] = m.burn_duration_ticks
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
 	e.root_id = root

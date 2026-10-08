@@ -13,6 +13,8 @@ extends RefCounted
 ##     within range_m; damage per pellet x the build's bolt factor; each enemy hit (not a boss) is knocked back;
 ##     the user steps back recoil_m.
 ##   A use that lands adds its heat once (Heat.on_hit), and every use emits SKILL_USED (amount = SkillTable.Kind).
+## v0.6.0 MX1: the hit itself launches the Skill's compiled spec (Modifiers.skill, Attacks.launch); its shape tests
+## are Attacks' (the forecast reads the same ones, EI-07). No v0.5 item targets the Skill, so it is unchanged.
 
 const TAGS_CLEAVE := SimEvent.TAG_MELEE | SimEvent.TAG_SKILL
 const TAGS_PELLET := SimEvent.TAG_PROJECTILE | SimEvent.TAG_SKILL
@@ -121,74 +123,42 @@ static func move_step(w: World) -> Vector2:
 ## True if the cleave fan at `center` facing `angle` touches a circle (p, r): the hit and the view's forecast
 ## (WorldReader.skill_hits) use this one function (EI-07).
 static func cleave_touches(w: World, center: Vector2, angle: int, p: Vector2, r: float) -> bool:
-	var t := w.player.skill
-	var reach := Stats.area(w, t.reach_m)  # v0.4.0 BS: area
-	return AttackShapes.arc_touches(center, w.player.radius_m, angle, t.half_arc, reach, p, r)
+	return Attacks.arc_touches(w, Modifiers.skill(w), center, angle, p, r)  # area: Attacks.arc_reach_m
 
 
-static func _cleave(w: World, t: SkillTable) -> void:
+static func _cleave(w: World, _t: SkillTable) -> void:
 	var k := w.kit
-	var a := w.actors
+	var spec := Modifiers.skill(w)
 	var center := w.player_pos()
 	k.hit_tick = w.tick
 	k.hit_pos = center
-	var dmg := Gamble.melee_damage(w, PlayerBuild.melee_damage(w, t.damage))
-	var pid := a.ids[0]
-	var landed := false
-	for i in range(1, a.size()):
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-			continue
-		if not cleave_touches(w, center, k.skill_angle, a.pos(i), a.radius[i]):
-			continue
-		var got := Damage.hit(w, i, dmg, pid, pid, k.skill_root, TAGS_CLEAVE, center, a.pos(i))
-		landed = landed or got > 0
-	if landed:
-		w.add_freeze(t.hitstop_ticks)
+	var dmg := Gamble.melee_damage(w, PlayerBuild.melee_damage(w, spec.damage))
+	var ctx := AttackContext.make(center, k.skill_angle, dmg, k.skill_root, TAGS_CLEAVE, &"")
+	if Attacks.launch(w, spec, ctx):
+		w.add_freeze(spec.hitstop_ticks)
 
 
 # --- Scatter Blast ------------------------------------------------------------------------------------------
 ## Where along pellet `ang`'s path from `center` it first touches a circle (p, r): 0..1, or -1 if it never does.
 ## The hit and the view's forecast (WorldReader.skill_hits) use this one function (EI-07).
 static func pellet_touches(w: World, center: Vector2, ang: int, p: Vector2, r: float) -> float:
-	var t := w.player.skill
-	var dir := Kin.dir(ang)
-	var from := center + dir * w.player.radius_m
-	return Collide.sweep_vs_circle(from, from + dir * t.range_m, t.pellet_radius_m, p, r)
+	return Attacks.ray_touches(w, Modifiers.skill(w), center, ang, p, r)
 
 
 static func _blast(w: World, t: SkillTable) -> void:
 	var k := w.kit
-	var a := w.actors
+	var spec := Modifiers.skill(w)
 	var origin := w.player_pos()
-	var pid := a.ids[0]
 	k.hit_tick = w.tick
 	k.hit_pos = origin
 	k.pellet_ends = PackedVector2Array()
-	for ang in AttackShapes.pellet_angles(k.skill_angle, t.half_cone, t.pellets):
-		var dir := Kin.dir(ang)
-		var from := origin + dir * w.player.radius_m
-		var to := from + dir * t.range_m
-		var best := 2.0
-		var target := -1
-		for wall in w.walls:
-			var s := Collide.sweep_vs_obb(from, to, t.pellet_radius_m, wall)
-			if s >= 0.0 and s < best:
-				best = s
-		for i in range(1, a.size()):
-			if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-				continue
-			var s := pellet_touches(w, origin, ang, a.pos(i), a.radius[i])
-			if s >= 0.0 and s < best:
-				best = s
-				target = i
-		var end := from + (to - from) * minf(best, 1.0)
-		k.pellet_ends.append(end)
-		if target < 0:
-			continue
-		var dmg := Gamble.shot_damage(w, PlayerBuild.bolt_damage(w, t.damage))
-		var got := Damage.hit(w, target, dmg, pid, pid, k.skill_root, TAGS_PELLET, origin, end)
-		if got > 0 and a.dead[target] == 0:
-			_knock(w, target, origin, t)
+	var ctx := AttackContext.make(origin, k.skill_angle, 0, k.skill_root, TAGS_PELLET, &"")
+	# The bolt factor's remainder carries pellet to pellet, so each landed pellet takes its damage then (as v0.5).
+	ctx.damage_fn = func() -> int:
+		return Gamble.shot_damage(w, PlayerBuild.bolt_damage(w, spec.damage))
+	ctx.on_ray = func(end: Vector2) -> void: k.pellet_ends.append(end)
+	ctx.on_landed = func(target: int) -> void: _knock(w, target, origin, t)
+	Attacks.launch(w, spec, ctx)
 
 
 static func _knock(w: World, i: int, origin: Vector2, t: SkillTable) -> void:
@@ -233,7 +203,8 @@ static func would_hit(w: World, i: int, center: Vector2, angle: int) -> bool:
 	var r := w.actors.radius[i]
 	if t.kind == SkillTable.Kind.LUNGE_CLEAVE:
 		return cleave_touches(w, center, angle, p, r)
-	for ang in AttackShapes.pellet_angles(angle, t.half_cone, t.pellets):
+	var spec := Modifiers.skill(w)
+	for ang in AttackShapes.pellet_angles(angle, spec.spread / 2, spec.count):
 		if pellet_touches(w, center, ang, p, r) >= 0.0:
 			return true
 	return false
@@ -245,6 +216,7 @@ static func read(w: World) -> Dictionary:
 	if t == null:
 		return {}
 	var k := w.kit
+	var spec := Modifiers.skill(w)  # v0.6.0 MX1: the view draws the compiled spec
 	return {
 		"kind": t.kind,
 		"cooldown": k.skill_cd,
@@ -258,10 +230,10 @@ static func read(w: World) -> Dictionary:
 		"hit_tick": k.hit_tick,
 		"hit_pos": k.hit_pos,
 		"pellet_ends": k.pellet_ends,
-		"half_arc": t.half_arc,
-		"reach_m": Stats.area(w, t.reach_m),
-		"half_cone": t.half_cone,
-		"range_m": t.range_m,
-		"pellets": t.pellets,
+		"half_arc": spec.half_arc,
+		"reach_m": Attacks.arc_reach_m(w, spec),
+		"half_cone": spec.spread / 2,
+		"range_m": spec.reach_m,
+		"pellets": spec.count,
 		"lunge_m": t.lunge_m,
 	}

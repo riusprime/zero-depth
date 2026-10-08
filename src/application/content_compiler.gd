@@ -395,8 +395,10 @@ static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
 
 
-## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name.
-static func compile_item(def: ItemDefinition) -> ItemTable:
+## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name. v0.6.0 MX1: with
+## `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation error and is
+## left out here); without it the item has none (offer and pool tests that never fight).
+static func compile_item(def: ItemDefinition, repo: ContentRepository = null) -> ItemTable:
 	var t := ItemTable.new()
 	t.id = def.id
 	t.kind = {
@@ -440,23 +442,16 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
 	t.requires_weapon = weapons.get(def.requires_weapon, 0)
 	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
-	t.reach_bonus_permille = def.reach_bonus_permille
-	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
-	t.echo_damage_permille = def.echo_damage_permille
+	if repo != null:
+		for id in def.modifiers:
+			var md: ModifierDefinition = repo.get_def(&"modifiers", id)
+			if md != null:
+				t.modifiers.append(ModifierCompiler.compile_modifier(md))
 	t.burn_damage = def.burn_damage
 	t.burn_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.burn_period_seconds))
 	t.burn_duration_ticks = SimTick.seconds_to_ticks(def.burn_duration_seconds)
 	t.burn_max_stacks = def.burn_max_stacks
-	t.split_count = def.split_count
-	t.split_spread = degrees_to_units(def.split_spread_degrees)
-	t.split_damage_permille = def.split_damage_permille
-	t.fire_rate_bonus_permille = def.fire_rate_bonus_permille
-	t.bounces = def.bounces
 	t.dash_hit_damage = def.dash_hit_damage
-	t.overcharge_every = def.overcharge_every
-	t.overcharge_mult_permille = def.overcharge_mult_permille
-	t.shockwave_radius_m = def.shockwave_radius_m
-	t.shockwave_damage_permille = def.shockwave_damage_permille
 	_compile_item_v2(def, t)
 	return t
 
@@ -466,9 +461,6 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	t.heal_per_kill = def.heal_per_kill
 	t.heal_cap = def.heal_cap
 	t.heal_window_ticks = SimTick.seconds_to_ticks(def.heal_window_seconds)
-	t.chain_every = def.chain_every
-	t.chain_range_m = def.chain_range_m
-	t.chain_damage = def.chain_damage
 	t.momentum_window_ticks = SimTick.seconds_to_ticks(def.momentum_window_seconds)
 	t.momentum_bonus_permille = def.momentum_bonus_permille
 	t.slow_permille = def.slow_permille if def.slow_permille > 0 else 1000
@@ -489,7 +481,6 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
 	t.stacks_per_hit = def.stacks_per_hit
-	t.stack_every = def.stack_every
 	t.shock_threshold = def.shock_threshold
 	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
 	t.shock_damage = def.shock_damage
@@ -538,7 +529,7 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
 	for def: ItemDefinition in repo.all_of(&"items"):
-		out.append(compile_item(def))
+		out.append(compile_item(def, repo))
 	return out
 
 

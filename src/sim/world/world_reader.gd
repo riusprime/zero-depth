@@ -34,6 +34,17 @@ const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
 const MOTION_THRUST := SwingStep.Motion.THRUST
 const MOTION_SPIN := SwingStep.Motion.SPIN
+## v0.6.0 MX1: attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
+const FORM_ARC := AttackSpec.Form.ARC
+const FORM_BOLT := AttackSpec.Form.BOLT
+const FORM_RING := AttackSpec.Form.RING
+const FORM_BEAM := AttackSpec.Form.BEAM
+const FORM_ZONE := AttackSpec.Form.ZONE
+const FORM_ORBITER := AttackSpec.Form.ORBITER
+const FORM_LOB := AttackSpec.Form.LOB
+const FORM_BURST := AttackSpec.Form.BURST
+const ATTACK_BOLT := Modifiers.GUN_BOLT
+const ATTACK_SKILL := Modifiers.SKILL
 ## Item kinds, for views (presentation may not name ItemTable).
 const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
 const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
@@ -246,7 +257,7 @@ func combo_step() -> int:
 ## numbers PlayerKit hits with (EI-07).
 func swing_shape(step: int = -1) -> Array:
 	var s := _step_index(step)
-	return [_w.player.combo[s].half_arc, swing_reach_m(s), _w.player.radius_m]
+	return [Modifiers.step(_w, s).half_arc, swing_reach_m(s), _w.player.radius_m]
 
 
 ## The current swing's length in ticks (its step's).
@@ -659,7 +670,7 @@ func overcharge_tick() -> int:
 
 
 func shockwave_radius_m() -> float:
-	return _w.item_mods.shockwave_radius_m
+	return Modifiers.nth_burst_radius_m(_w)
 
 
 ## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
@@ -692,6 +703,28 @@ func projectile_bounces(i: int) -> int:
 
 func projectile_bounce_tick(i: int) -> int:
 	return _w.projectiles.bounce_tick[i]
+
+
+## v0.6.0 MX1: the ids of the build's compiled attacks (the combo steps, the bolt, the Skill), and one attack's final
+## spec as plain data (AttackSpec.read: form, tags, modifiers, sizes, damage, statuses, elements, behaviour, hooks
+## with their children), {} for an unknown id. AttackView draws the weapon attacks from it.
+func attack_ids() -> PackedStringArray:
+	return Modifiers.book(_w).order.duplicate()
+
+
+func attack_spec(id: StringName) -> Dictionary:
+	var s := Modifiers.book(_w).spec(id)
+	return s.read() if s != null else {}
+
+
+## The spec id of combo step `step` (-1 = the current swing's).
+func step_attack_id(step: int = -1) -> StringName:
+	return Modifiers.step_id(_step_index(step))
+
+
+## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
+func attack_digest() -> String:
+	return Modifiers.book(_w).digest
 
 
 ## Ticks between bolts while shooting (Rapid Coil applied).

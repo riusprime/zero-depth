@@ -40,7 +40,8 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 
 ## Applies one hit to the actor at index `target`. `from` is where the attack came from (the attacker, or the
 ## projectile's previous position), `at` where it landed. `effect_id` names the item effect that made the hit
-## (v0.2.0), or &"". Returns the HP removed.
+## (v0.2.0), or &"". `proc_pct` (v0.6.0 MX1): the proc coefficient the HIT carries (a hook's attack: 50, then 25;
+## Attacks). Returns the HP removed.
 static func hit(
 	w: World,
 	target: int,
@@ -51,7 +52,8 @@ static func hit(
 	tags: int,
 	from: Vector2,
 	at: Vector2,
-	effect_id: StringName = &""
+	effect_id: StringName = &"",
+	proc_pct: int = 100
 ) -> int:
 	var a := w.actors
 	if a.dead[target] == 1:
@@ -76,7 +78,7 @@ static func hit(
 	h.root_id = root_id
 	h.amount = amount
 	h.tags = tags
-	h.proc_pct = 100
+	h.proc_pct = proc_pct
 	h.effect_id = effect_id
 	h.depth = w.engine_chain.size()  # Engines: the payoff chain this hit runs in.
 	h.ancestry = w.engine_chain.duplicate()

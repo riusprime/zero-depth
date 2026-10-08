@@ -13,4 +13,5 @@ burn_duration_seconds = 3.0
 burn_max_stacks = 5
 tags = PackedStringArray("fire", "blade")
 requires_weapon = &"blade"
+modifiers = Array[StringName]([&"ember_edge"])
 id = &"ember_edge"

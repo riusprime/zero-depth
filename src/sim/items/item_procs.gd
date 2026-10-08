@@ -59,20 +59,21 @@ static func heal_cap_left(w: World) -> int:
 
 # --- Bolt hits: Static Chain and Frost Core -----------------------------------------------------------------
 ## Projectile `pi` hit actor `i` at `at`, removing `got` HP. Only the player's bolts count, and only landed hits
-## (got > 0: a hit on a spawning enemy doesn't count). DoT never reaches here.
+## (got > 0: a hit on a spawning enemy doesn't count). DoT never reaches here. v0.6.0 MX1: the bolt spec's slow
+## (Frost Core's modifier, or the slow rider), then its ON_HIT hooks (Static Chain's jump, Attacks).
 static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> void:
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER or got <= 0:
 		return
 	var root := w.projectiles.root_id[pi]
 	_frost(w, i, root)
-	_chain(w, i, root, at)
+	Attacks.on_projectile_hit(w, i, pi, at)
 
 
-## Frost Core: slow the enemy for slow_ticks (refreshed by each hit, never stacked).
+## Frost Core: slow the enemy for slow_ticks (refreshed by each hit, never stacked), when the bolt spec slows.
 static func _frost(w: World, i: int, root: int) -> void:
 	var m := w.item_mods
 	var a := w.actors
-	if m.slow_ticks <= 0 or a.dead[i] == 1:
+	if m.slow_ticks <= 0 or a.dead[i] == 1 or not Modifiers.bolt(w).has_status(&"slow"):
 		return
 	a.slow_t[i] = m.slow_ticks
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))
@@ -81,50 +82,9 @@ static func _frost(w: World, i: int, root: int) -> void:
 	e.effect_id = EFFECT_FROST_CORE
 
 
-## Static Chain: every chain_every-th landed bolt jumps to the nearest other living enemy (centre within
-## chain_range_m of the hit point; ties go to the lower index). At most once per root chain. If nothing is in
-## range the charge is spent anyway.
-static func _chain(w: World, i: int, root: int, at: Vector2) -> void:
-	var m := w.item_mods
-	if m.chain_every <= 0:
-		return
-	w.chain_count += 1
-	if w.chain_count % m.chain_every != 0 or w.chain_root == root:
-		return
-	var a := w.actors
-	var best := -1
-	var best_d := m.chain_range_m
-	for j in range(1, a.size()):
-		if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
-			continue
-		var d := Kin.length(a.pos(j) - at)
-		if d <= best_d and (best < 0 or d < best_d):
-			best = j
-			best_d = d
-	if best < 0:
-		return
-	w.chain_root = root
-	w.chain_tick = w.tick
-	w.chain_from = at
-	w.chain_to = a.pos(best)
-	Damage.hit(
-		w,
-		best,
-		m.chain_damage,
-		a.ids[0],
-		a.ids[0],
-		root,
-		SimEvent.TAG_CHAIN,
-		at,
-		a.pos(best),
-		EFFECT_STATIC_CHAIN
-	)
-
-
-## The next landed bolt will chain.
+## The next landed bolt will chain (Static Chain's mark: the bolt spec's every-N ON_HIT hook, Attacks).
 static func chain_ready(w: World) -> bool:
-	var every := w.item_mods.chain_every
-	return every > 0 and (w.chain_count + 1) % every == 0
+	return Attacks.bolt_hook_ready(w)
 
 
 ## The effect id a projectile's hit carries: Thorn Mantle bolts name it, plain bolts don't.

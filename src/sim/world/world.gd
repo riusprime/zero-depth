@@ -104,6 +104,15 @@ var item_tables: Array[ItemTable] = []
 var items_owned := PackedInt32Array()
 ## The owned items folded into modifiers (derived from items_owned, so not hashed).
 var item_mods := ItemMods.new()
+## v0.6.0 MX1: the build's compiled attack specs (Modifiers.book compiles them when null; the build changing sets it
+## back to null). Derived from the build: a snapshot keeps it out and a restore compiles again; Modifiers.hash_into
+## hashes its digest.
+var attack_book: AttackBook = null
+## v0.6.0 MX1 (Attacks): the hooks running now (the ancestry guard; empty between ticks), and the launches counted
+## in tick launch_tick (the per-tick cap).
+var hook_chain := PackedStringArray()
+var launch_tick := -1
+var launch_count := 0
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
@@ -532,6 +541,7 @@ func set_items_owned(owned: PackedInt32Array) -> void:
 func _build_mods() -> void:
 	item_mods = ItemMods.build(item_tables, items_owned)
 	ElementAbilities.fold_engines(self, item_mods)
+	Modifiers.invalidate(self)  # v0.6.0 MX1: the specs compile again on their next read
 
 
 ## v0.4.0 AB: after the abilities owned or their levels changed: the modifiers, then the combos (an ability pair at
@@ -818,6 +828,7 @@ func state_hash() -> String:
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
+	Modifiers.hash_into(self, h)  # v0.6.0 MX1: the compiled specs, once the build has a modifier.
 	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
 		overrun.hash_into(h)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.

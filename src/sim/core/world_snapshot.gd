@@ -34,6 +34,7 @@ const WORLD_KEPT := {
 	&"overrun_table": "loadout",  # v0.4.0 AB
 	&"shop_table": "loadout",  # v0.5.0 SH
 	&"catch_up_table": "loadout",  # v0.5.5 DS
+	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -65,6 +66,8 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CurseTable",
 	&"EventRules",
 	&"CatchUpTable",  # v0.5.5 DS
+	&"ModifierTable",  # v0.6.0 MX1
+	&"ModifierOp",
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -89,6 +92,11 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ShopState",  # v0.5.0 SH
 	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
 	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
+	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
+	# guard knows them).
+	&"AttackBook",
+	&"AttackSpec",
+	&"AttackHook",
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.
@@ -134,6 +142,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var err := _apply_object(base, data, WORLD_KEPT, "World")
 	if err != "":
 		return err
+	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
 	if base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
 		base.set_walls(base.walls)
 	var nav: Dictionary = data.get(&"nav", {})
