@@ -1,6 +1,6 @@
 extends GutTest
 ## The card pool (v0.5.0 CP; ROADMAP v0.5.0: "a 40–50 card candidate pool"): each build's pool of distinct cards
-## (abilities, stat-card kinds, mods; the three abilities step AB adds counted as planned) holds 40–50 cards, and
+## (abilities, stat-card kinds, mods; step AB's three abilities, in the data since the AB merge) holds 40–50 cards, and
 ## every card in it is offered by some altar or chest from a reachable state (no dead cards). The frequency table
 ## is printed here and by scripts/checks/card_pool.gd.
 

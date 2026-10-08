@@ -1,7 +1,9 @@
 class_name MainMenu
 extends MenuPanel
-## Play, Options, Credits, Quit, the version label and, in debug builds only, the galleries.
+## Continue (v0.4.0 SV: only while a run save exists, focused first), Play, Options, Credits, Quit, the version
+## label and, in debug builds only, the galleries.
 
+signal continue_pressed
 signal play_pressed
 signal options_pressed
 signal credits_pressed
@@ -11,10 +13,12 @@ signal quit_pressed
 var version_label := Label.new()
 
 
-func _init(version: String, show_galleries: bool) -> void:
+func _init(version: String, show_galleries: bool, show_continue: bool = false) -> void:
 	super()
 	name = "MainMenu"
 	add_title("UI_TITLE")
+	if show_continue:
+		add_button("UI_CONTINUE", func() -> void: continue_pressed.emit()).name = "Continue"
 	add_button("UI_PLAY", func() -> void: play_pressed.emit()).name = "Play"
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"
 	add_button("UI_CREDITS", func() -> void: credits_pressed.emit()).name = "Credits"

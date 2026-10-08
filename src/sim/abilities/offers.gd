@@ -55,11 +55,15 @@ static func rarity_of(code: int) -> int:
 
 ## Rolls reward i's offer (Rewards.interact, on its first open).
 static func roll(w: World, i: int) -> PackedInt32Array:
+	return draw(w, w.rewards.kind[i] == RewardStore.Kind.CHEST, w.reward_table.offer_size)
+
+
+## Up to `size` cards by an altar's (`chest` false) or a chest's rules (v0.5.0 SH: the shop's stock draws as a chest).
+static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 	var t := w.reward_table
-	var chest := w.rewards.kind[i] == RewardStore.Kind.CHEST
 	var rare := t.rare_weight_chest if chest else t.rare_weight_altar
 	if not enabled(w):
-		return ItemPool.draw_weighted(w, t.offer_size, rare)
+		return ItemPool.draw_weighted(w, size, rare)
 	var weights := t.chest_card_weights if chest else t.altar_card_weights
 	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
 	var out := PackedInt32Array()
@@ -68,7 +72,7 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 		if not fresh.is_empty():
 			out.append(ability_code(fresh[w.rng_loot.range_int(0, fresh.size() - 1)]))
 	var guard := 0
-	while out.size() < t.offer_size and guard < 16:
+	while out.size() < size and guard < 16:
 		guard += 1
 		# Indexed by card type (MOD, ABILITY, STAT); the data's weights are [ability, stat, mod].
 		var pools := [_mods(w, out), _abilities(w, out, false), _stats(w, out)]

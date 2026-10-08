@@ -96,6 +96,39 @@ func test_price_gouge_raises_chest_shrine_and_event_prices_by_25_percent() -> vo
 		assert_false(Rewards.can_afford(w, chest))
 
 
+func test_the_shop_prices_under_price_gouge_and_sells_a_cleanse() -> void:
+	var w := _world([&"price_gouge", &"withering"])
+	var v := _world()
+	assert_true(Shop.present(w), "the floor has a shop")
+	assert_eq(Shop.heal_price(w), (Shop.heal_price(v) * 1250 + 500) / 1000, "heal x1.25")
+	assert_eq(Shop.reroll_price(w), (Shop.reroll_price(v) * 1250 + 500) / 1000, "reroll x1.25")
+	Shop.restock(w)
+	Shop.restock(v)
+	for k in w.shop.offer.size():
+		var code := w.shop.offer[k]
+		if code >= 0:
+			assert_eq(Shop.price(w, code), (Shop.price(v, code) * 1250 + 500) / 1000)
+	assert_eq(Shop.cleanse_price(v), 60, "60 shards on floor 1")
+	assert_eq(Shop.read(v)["cleanse_curse"], -1, "nothing to cleanse: no tile")
+	assert_false(Shop.cleanse(v), "refused without a curse")
+	w.shards = 10  # test setup
+	assert_false(Shop.cleanse(w), "refused without the shards")
+	w.shards = 200
+	var cost := Shop.cleanse_price(w)
+	assert_eq(cost, 75, "60 x 1.25")
+	var f := InputFrame.new()
+	f.pick = InputFrame.PICK_SHOP_CLEANSE
+	w.shop.open = true
+	w.step(f)
+	assert_eq(w.shards, 200 - cost, "paid")
+	assert_eq(
+		w.curses_owned,
+		PackedInt32Array([EventLab.curse_index(w, &"price_gouge")]),
+		"the latest lifted"
+	)
+	assert_eq(Curses.threat(w), 1)
+
+
 func test_marked_hunt_makes_about_12_percent_of_spawns_elite() -> void:
 	var w := _world([&"marked_hunt"])
 	var elites := 0

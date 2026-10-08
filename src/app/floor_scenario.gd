@@ -28,6 +28,7 @@ static func build(
 	var layout := FloorGenerator.generate(seed_value)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
+	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
@@ -53,6 +54,20 @@ static func build(
 		w.gamble_table = gamble
 		Gamble.place(w, layout)
 	return w
+
+
+## v0.5.0 SH: the floor's shop (after build): ShopPlacement picks its side room and spot, the terminal's footprint
+## becomes a wall (the flow fields are rebuilt with it), and Shop.place puts it on the floor. No-op without a table.
+static func add_shop(w: World, shop: ShopTable) -> void:
+	var layout := w.floor_layout
+	if shop == null or layout == null or ShopPlacement.pick(layout) < 0:
+		return
+	var walls: Array[Obb] = w.walls.duplicate()
+	walls.append(ShopPlacement.collider(layout.shop_pos, layout.shop_angle))
+	w.set_walls(walls)
+	w.prepare_wall(layout.boss_door_wall)
+	w.shop_table = shop
+	Shop.place(w, layout)
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.

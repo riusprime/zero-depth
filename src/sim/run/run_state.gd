@@ -59,19 +59,24 @@ func is_last_floor() -> bool:
 	return floor_index >= table.floors
 
 
-## Scales freshly compiled enemy tables for floor f: HP and damage. The danger tier restarts with each floor's World.
+## Scales freshly compiled enemy tables for floor f (v0.4.0 SC): HP and damage × the run's per-floor per-mille
+## tables, rounded (SpawnTable.scale). The danger tier's scaling comes on top as each enemy arrives (SpawnDirector);
+## the tier restarts with each floor's World. Enemies a boss brings in (eggs, turrets) get the floor's only.
 func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
+	var hp_pm := SpawnTable.per_floor(table.enemy_hp_floor_permille, f)
+	var dmg_pm := SpawnTable.per_floor(table.enemy_damage_floor_permille, f)
 	for t in tables:
-		t.hp = maxi(1, t.hp * (1000 + table.hp_per_floor_permille * (f - 1)) / 1000)
-		t.damage = t.damage * (1000 + table.damage_per_floor_permille * (f - 1)) / 1000
+		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
+		t.damage = SpawnTable.scale(t.damage, dmg_pm)
 
 
-## Scales freshly compiled boss tables for floor f by the same factors: HP, and every attack's damage.
+## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
+## applies twice): HP, and every attack's damage.
 func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 	for t in tables:
-		t.hp = maxi(1, t.hp * (1000 + table.hp_per_floor_permille * (f - 1)) / 1000)
+		t.hp = maxi(1, t.hp * (1000 + table.boss_hp_per_floor_permille * (f - 1)) / 1000)
 		for a in t.attacks:
-			a.damage = a.damage * (1000 + table.damage_per_floor_permille * (f - 1)) / 1000
+			a.damage = a.damage * (1000 + table.boss_damage_per_floor_permille * (f - 1)) / 1000
 
 
 ## Floor f's boss: one of its pool (indices into the compiled bosses), drawn from a stream of the run seed

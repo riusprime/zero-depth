@@ -90,7 +90,7 @@ src/
     core/        tick constants, RngStream (+ ported rng math), CanonicalValue, Kin (+ generated trig_lut.gd),
                  StateHasher, InputFrame
     world/       World, WorldReader (read-only facade), actor and projectile stores, snapshots
-    collision/   circles, OBBs, swept segments, uniform grid, static wall grid
+    collision/   circles, OBBs, swept segments, dense broadphase grids (DenseGrid, v0.4.0 SC)
     combat/      action states, hitboxes, damage pipeline, statuses, CapLedger
     effects/     SimEvent, EffectQueue, RootLedger, LoadoutCompiler, EffectRuntime, watchdog
     ai/          behaviours, behaviour param schemas, steering
@@ -101,7 +101,7 @@ src/
     content_scanner.gd, content_validator.gd, validation_issue.gd
     (content_repository.gd and content_compiler.gd live in application/: the manifest hash uses the sim's
     CanonicalValue and the compiler emits sim tables, and content may not import upward)
-  application/   game_version, run_session, encounter_session, input_latch, aim_assist, replay, run_save_store,
+  application/   game_version, run_session, encounter_session, input_latch, aim_assist, replay, run_save_store, run_saver,
                  profile_store, game_settings, input_remap, cue_buffer, debug_api
   presentation/
     world_view/  actor, projectile, wall, prop and telegraph views
@@ -191,33 +191,39 @@ docs/ (this kit)
   - CI runs 200 seeds per biome on every PR, checking validity, determinism and no fallback storms.
   - A nightly job (`.github/workflows/nightly.yml`, from v0.3.0) runs 10,000 seeds per biome.
   - v0.4.0 adds 1,000-seed property tests across all floors.
-- **Plan hash.** `FloorPlan` has its own hash, which saves store ([`§10`](#10-save)).
+- **Plan check.** A save's snapshot carries the floor's walls; restoring it into a floor generated from the save's
+  inputs checks they match ([`§10`](#10-save)).
 
 ## 10. Save
 
-- **When.** The game saves at **room entry only**, plus on window close. Quitting mid-room resumes at that room's
-  entry. Saves arrive in v0.4.0 ([`../roadmap/ROADMAP.md`](../roadmap/ROADMAP.md) §4).
-- **What.** The save holds `RunState`:
-  - the seed, the floor and the cleared nodes;
-  - the threat choices and T;
-  - item stacks and HP;
-  - the `loot` stream state;
-  - the biome order;
-  - a `dev_touched` flag (set by the dev panel; those runs don't count for records);
-  - the floor plan hash.
-- **Never in a save:** `World`. Combat is never saved mid-room.
-- **Load.**
-  1. Regenerate the floor from the seed.
-  2. Check it against the stored plan hash; a mismatch is a reported load failure.
-  3. Re-derive the room's `combat:room:k` and `ai:room:k` streams.
-- **Store.** Port Deathventory's `RunSaveStore`:
+v0.4.0 SV ([`../roadmap/v0.4.0/PLAN.md`](../roadmap/v0.4.0/PLAN.md) "Saves (SV)", ROADMAP R3). The PLAN's owner-directed
+design replaces this section's earlier rule ("never `World` in a save"): the save now holds the room-entry snapshot of
+the whole `World`.
+- **When.** At each **first entry into a room** of the floor (the start hall at the floor's first tick, then every room
+  the player walks into for the first time), right after the tick of the entry; and **on close** (pause → Main menu,
+  the window's close request), which makes sure the last room-entry save is on disk. Quitting mid-room resumes at that
+  room's entry. A death or a win deletes the save; a new run overwrites it. `RunSaver` (`src/application/`) decides.
+- **What** (a payload, `RunSaver.PAYLOAD_VERSION`):
+  - the run: `RunState`'s seed, floor, biome order, carry, totals and build, plus the stage seed (the `RunTable` is
+    compiled again from content);
+  - the rooms entered on this floor (the minimap's discovery comes back with them);
+  - the tick, and the world's canonical snapshot (`WorldSnapshot`, [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10a).
+- **Load (Continue).** The main menu shows **Continue** (first, focused) while a save reads. Continue rebuilds the run
+  and its floor the way a new floor is built (seed, floor, build, content), then writes the snapshot into it
+  (`WorldSnapshot.apply`): the resumed world has the saved state hash. A snapshot whose floor differs from the one
+  generated from its inputs (other content, another game build) doesn't fit and is a reported load failure.
+- **Cost.** The snapshot is taken on the frame (≈ 0.6–0.8 ms, packed arrays copied, no hashing); the encode, the
+  checksum and the file write run on a `WorkerThreadPool` task (`RunSaveStore.write_async`). Numbers:
+  [`../roadmap/v0.4.0/evidence/SAVES.md`](../roadmap/v0.4.0/evidence/SAVES.md).
+- **Store.** `RunSaveStore`, `user://saves/run.save`:
   - atomic write: write a `.tmp`, then rename;
-  - an envelope `{save_version, game_version, …}`;
+  - an envelope `{save_version, game_version, payload}`, stored as the magic `ZDSV`, `save_version`, the size, a
+    SHA-256 of the body and the body (zstd of `var_to_bytes`, plain data only);
   - compatibility checks `save_version` only (EI-09);
-  - headless runs use an in-memory store (`RunSaveStore.new("")`).
-- **Failed load.** Deathventory returned `{}` and kept the file. Here the file is also copied to
-  `run_save.bad.<timestamp>.sav`, and the menu shows "Can't load this save" with an Abandon option.
-- **Codec.** `RunStateCodec` encodes `RunState` only, never `World`.
+  - headless runs (tests, sims, CI) keep the bytes in memory (`RunSaveStore.new("")`).
+- **Failed load.** A save that is corrupt, fails its checksum, has another `save_version` or doesn't fit is ignored
+  with a warning and moved to `run.bad.<time>.save` (kept on disk, never deleted, EI-09); the menu shows no Continue.
+  A "Can't load this save" message in the menu is not built (v0.4.0 SV open item).
 - **Profile.** Port `ProfileStore`: atomic writes, per-section merge on load, and a corrupt file renamed to
   `profile.bad.json`. It holds settings, bindings, unlocks and seen hints.
 
@@ -233,7 +239,7 @@ docs/ (this kit)
   - Materials are `StandardMaterial3D` only, with no custom shaders unless a gallery scene proves the need.
 - **CI.** This is a summary. The exact steps, and the step in which each guard goes live, are in
   [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 3.
-  - **`verify` (ubuntu):**
+  - **`verify` (ubuntu)** runs on every push and on PRs into `main`:
     1. check the Godot and GUT versions;
     2. import;
     3. run GUT, grepping its summary, writing JUnit XML, asserting a committed minimum test count, and failing on
@@ -244,6 +250,8 @@ docs/ (this kit)
        `World` run inside the pack (dummy movers in v0.0.1, a real encounter from v0.1.0), and no GUT shipped;
     7. sim smoke: 20 seeded runs, run twice and diffed;
     8. the bench, as an informational (non-failing) step whose output feeds evidence.
+  - **`shots`** and **`windows`** run only on pushes to `main` and on demand (the Actions tab's "Run workflow"
+    button), so a playable build exists per merge, not per branch push. Uploaded artifacts are kept 14 days.
   - **`shots`** (ubuntu, under `xvfb-run`): gallery and tour screenshots as an artifact
     ([`PRESENTATION_CONTRACTS.md`](PRESENTATION_CONTRACTS.md) §10).
   - **`windows`:**
@@ -272,7 +280,7 @@ records the SHA it ports from in `evidence/PORTS.md`. Every later port uses that
 | `src/domain/core/canonical_value.gd` | Type-tagged little-endian encoding, sorted dictionary keys, `sha256_hex` | Add `Vector2` and packed float arrays. Write floats as **float32** bits, with −0.0 normalized. Replace `assert(false)` (stripped in release) with a hard error. Add a streaming mode for `StateHasher` |
 | `src/domain/model/validation_issue.gd` | All of it | — |
 | `src/app/game_version.gd` + its test `tests/v2/v2_01/test_game_version.gd` (lines 14–22) | The version comes from `application/config/version`. The test checks every export preset's `file_version`/`product_version` | Drop the patch-note entry checks from the test (lines 34–49) until patch notes exist |
-| `src/application/run_save_store.gd` | Atomic tmp+rename, the envelope, `save_version`-only compatibility, the headless in-memory mode | Store `RunState` (§10). Add the `.bad` copy on a failed load |
+| `src/application/run_save_store.gd` | Atomic tmp+rename, the envelope, `save_version`-only compatibility, the headless in-memory mode | Built in v0.4.0 SV (§10): the run payload with the world snapshot, a checksum, worker-thread writes, the `.bad` copy on a failed load |
 | `src/application/profile_store.gd` | Atomic writes, a corrupt file renamed to `.bad.json`, per-section merge, the headless in-memory mode | Replace Deathventory's sections. Cut `JournalStore` and its migration |
 | `src/presentation/audio/sfx_mixer.gd` | Pure voice policy: per-cue cooldown, lane caps, max voices, the repeat roll-off, ducking | Read typed cue resources instead of `SfxLibrary.spec()`. Pitch jitter uses the `cosmetic` stream |
 | `tests/export/export_smoke.gd` | Runs as a `SceneTree` script inside the pack. Pack detection, the "GUT not shipped" check, the `ok`/`MISS` lines and exit code | Replace every check with this game's (§11) |

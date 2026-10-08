@@ -27,7 +27,7 @@ static func drop(w: World, i: int) -> void:
 		a.ids[i],
 		a.pos(i),
 		t.slam_radius_m,
-		t.damage,
+		EnemyAi.powered(w, i, t.damage),  # v0.4.0 SC: the layer's danger-tier damage
 		t.mine_life_ticks,
 		t.fuse_ticks
 	)

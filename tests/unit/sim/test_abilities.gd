@@ -32,6 +32,13 @@ func _world(build: StringName = &"blade", enemies: Array = [], hp: int = 5000) -
 	return w
 
 
+func _by(id: StringName) -> AbilityTable:
+	for t in _abilities:
+		if t.id == id:
+			return t
+	return null
+
+
 func _idx(w: World, kind: int) -> int:
 	return Abilities.index_of_kind(w, kind)
 
@@ -62,16 +69,19 @@ func test_the_shipped_abilities_compile() -> void:
 		ids,
 		[
 			"aegis",
+			"arc_field",
 			"blink",
 			"bomb_lobber",
 			"combo_sword",
 			"drone_buddy",
+			"flame_trail",
+			"frost_nova",
 			"orbit_blades",
 			"pulse_gun"
 		],
-		"seven abilities, in id order"
+		"ten abilities (v0.4.0 AB added three), in id order"
 	)
-	var bomb := _abilities[2]
+	var bomb := _by(&"bomb_lobber")
 	assert_eq(
 		[bomb.cooldown_ticks, bomb.damage, bomb.duration_ticks, bomb.auto],
 		[150, 22, 36, true],
@@ -83,17 +93,17 @@ func test_the_shipped_abilities_compile() -> void:
 	assert_eq(
 		bomb.level_radius, PackedInt32Array([1000, 1000, 1150, 1150, 1322]), "+15 % at L3, L5"
 	)
-	var drone := _abilities[4]
+	var drone := _by(&"drone_buddy")
 	assert_eq([drone.period_ticks, drone.damage], [20, 5], "3 shots a second, 5 dmg")
 	assert_eq(drone.level_count, PackedInt32Array([1, 1, 2, 2, 2]), "a second drone at L3")
-	var orbit := _abilities[5]
+	var orbit := _by(&"orbit_blades")
 	assert_eq([orbit.damage, orbit.hit_ticks, orbit.period_ticks], [8, 30, 72])
 	assert_eq(orbit.level_count, PackedInt32Array([3, 4, 5, 6, 7]), "+1 blade per level")
-	var blink := _abilities[1]
+	var blink := _by(&"blink")
 	assert_eq(blink.level_cooldown, PackedInt32Array([150, 138, 126, 114, 102]), "-0.2 s per level")
 	assert_eq(blink.level_extra, PackedInt32Array([1, 1, 2, 2, 2]), "a second charge at L3")
-	assert_eq(_abilities[3].start_weapon, PlayerTable.WEAPON_BLADE)
-	assert_eq(_abilities[6].start_weapon, PlayerTable.WEAPON_GUN)
+	assert_eq(_by(&"combo_sword").start_weapon, PlayerTable.WEAPON_BLADE)
+	assert_eq(_by(&"pulse_gun").start_weapon, PlayerTable.WEAPON_GUN)
 
 
 func test_slot_one_is_the_builds_weapon() -> void:

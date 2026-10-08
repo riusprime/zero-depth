@@ -3,6 +3,12 @@ extends Node3D
 ## The 3D view of one room: stage, actors, the iso camera and occlusion. It reads the sim only through
 ## WorldReader (EI-07); the app calls sync() after every tick.
 
+## v0.4.0 SC: walls fade for the hero and the enemies within this distance of it, at most this many of them (with a
+## crowd, testing every wall against every enemy each frame cost more than the rest of the view; the X-ray
+## silhouettes still show the ones farther off).
+const OCCLUSION_RADIUS_M := 10.0
+const OCCLUSION_FOCUS_MAX := 24
+
 var reader: WorldReader
 var stage := StageView.new()
 var actors := ActorViews.new()
@@ -27,6 +33,8 @@ var transit := PortalTransitView.new()
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
+## The shop terminal (v0.5.0 SH; null on a floor without one).
+var shop_terminal: ShopTerminalView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
 var challenge := BossChallengeView.new()
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
@@ -34,6 +42,9 @@ var skill_fx := SkillVisuals.new()
 ## v0.4.0 BS: bombs, drones, orbit blades, the blink shock; damage numbers (crits big and yellow).
 var ability_fx := AbilityVisuals.new()
 var damage_numbers := DamageNumbers.new()
+## v0.4.0 AB: Arc Field, Frost Nova, the fire, the ability combos; the Overrun room's red door frames.
+var element_fx := ElementVisuals.new()
+var overrun_doors := OverrunDoorViews.new()
 ## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
 var horde_fx := HordeVisuals.new()
 var events := EventPedestalViews.new()  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
@@ -63,6 +74,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(heat_fx)
 	add_child(skill_fx)  # v0.3.5 K
 	add_child(ability_fx)  # v0.4.0 BS
+	add_child(element_fx)  # v0.4.0 AB
+	add_child(overrun_doors)
+	overrun_doors.setup(reader)
 	add_child(damage_numbers)
 	add_child(horde_fx)  # v0.4.0 EN
 	add_child(events)  # v0.5.0 EV
@@ -85,6 +99,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gamble_shrine = GambleShrineView.new()
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
+	if reader.has_shop():
+		shop_terminal = ShopTerminalView.new()
+		add_child(shop_terminal)
+		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
 	add_child(transit)
 	transit.setup(actors, gate)
 	rig.camera.add_child(ink)
@@ -112,6 +130,8 @@ func sync() -> void:
 	transit.sync(reader)  # after the actors: it poses the hero's model
 	skill_fx.sync(reader)  # v0.3.5 K
 	ability_fx.sync(reader)  # v0.4.0 BS
+	element_fx.sync(reader)  # v0.4.0 AB
+	overrun_doors.sync(reader)
 	damage_numbers.sync(reader)
 	horde_fx.sync(reader)  # v0.4.0 EN
 	events.sync(reader)  # v0.5.0 EV
@@ -119,13 +139,20 @@ func sync() -> void:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
+	if shop_terminal != null:
+		shop_terminal.sync(reader)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
 		gate.set_sealed(not reader.portal_active())
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []
+		var hero := reader.player_pos()
 		for i in reader.actor_count():
-			focus.append(reader.actor_pos(i))
+			var p := reader.actor_pos(i)
+			if i == 0 or (p - hero).length() <= OCCLUSION_RADIUS_M:
+				focus.append(p)
+				if focus.size() > OCCLUSION_FOCUS_MAX:
+					break
 		stage.apply_occlusion(
 			Occlusion.select(rig.toward_camera_on_plane(), rig.pitch_deg, focus, stage.wall_specs)
 		)

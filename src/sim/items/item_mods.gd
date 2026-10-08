@@ -251,5 +251,27 @@ static func _build_fire(m: ItemMods, t: ItemTable) -> void:
 		m.wildfire_radius_m = t.spread_radius_m
 
 
+## v0.4.0 AB: folds item `t`'s engine numbers only (burn, shock, frost and the chill's slow; never a feeder, kind or
+## other effect) into `m`, each taking the stronger value: the engine an owned Arc Field, Frost Nova or Flame Trail
+## borrows (AbilityTable.engine) when no owned item brings it.
+static func fold_engine(m: ItemMods, t: ItemTable) -> void:
+	if t.burn_max_stacks > 0:
+		m.burn_damage = maxi(m.burn_damage, t.burn_damage)
+		m.burn_period_ticks = maxi(m.burn_period_ticks, maxi(1, t.burn_period_ticks))
+		m.burn_duration_ticks = maxi(m.burn_duration_ticks, t.burn_duration_ticks)
+		m.burn_max_stacks = maxi(m.burn_max_stacks, t.burn_max_stacks)
+	if t.slow_ticks > 0:
+		m.slow_permille = mini(m.slow_permille, t.slow_permille)
+		m.slow_ticks = maxi(m.slow_ticks, t.slow_ticks)
+	m.shock_threshold = maxi(m.shock_threshold, t.shock_threshold)
+	m.shock_ticks = maxi(m.shock_ticks, t.shock_ticks)
+	m.shock_damage = maxi(m.shock_damage, t.shock_damage)
+	m.shock_jumps = maxi(m.shock_jumps, t.shock_jumps)
+	m.shock_range_m = maxf(m.shock_range_m, t.shock_range_m)
+	m.frost_threshold = maxi(m.frost_threshold, t.frost_threshold)
+	m.frost_ticks = maxi(m.frost_ticks, t.frost_ticks)
+	m.freeze_ticks = maxi(m.freeze_ticks, t.freeze_ticks)
+
+
 func has(kind: int) -> bool:
 	return (kinds_mask & (1 << kind)) != 0

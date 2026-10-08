@@ -75,6 +75,7 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.elite_hp_bonus_permille = int(round(def.elite_hp_bonus * 10.0))
 	t.ambush_min_distance_m = def.ambush_min_distance_m
 	t.defend_radius_m = def.defend_radius_m
+	t.cleanse_price = def.cleanse_price
 	return t
 
 

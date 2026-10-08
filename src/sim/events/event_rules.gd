@@ -12,3 +12,4 @@ var cursed_chest_permille := 250
 var elite_hp_bonus_permille := 1000
 var ambush_min_distance_m := 4.0
 var defend_radius_m := 4.5
+var cleanse_price := 60

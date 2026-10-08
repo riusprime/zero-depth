@@ -13,4 +13,5 @@ cursed_chest_chance = 25.0
 elite_hp_bonus = 100.0
 ambush_min_distance_m = 4.0
 defend_radius_m = 4.5
+cleanse_price = 60
 id = &"floor"

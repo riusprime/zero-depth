@@ -45,41 +45,50 @@ script = ExtResource("1_mix")
 enemy_id = &"splitter"
 weight = 2
 unlock_tier = 1
+pack = 1
 
 [sub_resource type="Resource" id="M_shield_bearer"]
 script = ExtResource("1_mix")
 enemy_id = &"shield_bearer"
 weight = 2
 unlock_tier = 2
+pack = 1
 
 [sub_resource type="Resource" id="M_mine_layer"]
 script = ExtResource("1_mix")
 enemy_id = &"mine_layer"
 weight = 2
 unlock_tier = 2
+pack = 1
 
 [sub_resource type="Resource" id="M_sniper"]
 script = ExtResource("1_mix")
 enemy_id = &"sniper"
 weight = 1
 unlock_tier = 2
+pack = 1
 
 [sub_resource type="Resource" id="M_mender"]
 script = ExtResource("1_mix")
 enemy_id = &"mender"
 weight = 1
 unlock_tier = 3
+pack = 1
 
 [resource]
 script = ExtResource("2_sdd")
 id = &"floor_1"
 tier_seconds = 30.0
-cap_base = 3
-cap_per_tier = 2
-cap_max = 14
-interval_start_seconds = 3.0
-interval_step_seconds = 0.25
-interval_min_seconds = 0.8
-hp_scale_per_tier = 0.08
+cap_by_floor = PackedInt32Array(14, 30, 50)
+cap_per_tier = 6
+cap_max = 120
+interval_start_seconds = 2.5
+interval_min_seconds = 0.4
+interval_tier_permille = PackedInt32Array(1000, 900, 810, 729, 656, 590, 531, 478, 430, 387, 349, 314, 282, 254, 229, 206, 185, 167, 150, 135, 122)
+hp_tier_permille = PackedInt32Array(1000, 1100, 1210, 1331, 1464, 1611, 1772, 1949, 2144, 2358, 2594, 2853, 3138, 3452, 3797, 4177, 4595, 5054, 5560, 6116, 6727)
+damage_tier_permille = PackedInt32Array(1000, 1050, 1102, 1158, 1216, 1276, 1340, 1407, 1477, 1551, 1629, 1710, 1796, 1886, 1980, 2079, 2183, 2292, 2407, 2527, 2653)
+pack_min_by_floor = PackedInt32Array(2, 3, 3)
+pack_max_by_floor = PackedInt32Array(3, 4, 5)
 min_distance_m = 8.0
+edge_band_m = 3.0
 mix = Array[ExtResource("1_mix")]([SubResource("M_charger"), SubResource("M_needle"), SubResource("M_warden"), SubResource("M_arc_caster"), SubResource("M_bomb_drone"), SubResource("M_swarmer"), SubResource("M_splitter"), SubResource("M_shield_bearer"), SubResource("M_mine_layer"), SubResource("M_sniper"), SubResource("M_mender")])

@@ -142,6 +142,11 @@ value or by an owner decision, and the change is noted here.
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
+- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field (lightning on 3 enemies, shock), Frost
+  Nova (a nova around you, frost) and Flame Trail (fire where you walk, burn) bring the shock, frost and burn engines
+  to any build without an item. Owning two paired abilities at level 3 evolves them into one of eight ability combos
+  (Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward), each with
+  a card, a badge and a look ([`INTERACTIONS.md`](INTERACTIONS.md) "Ability combos").
 - **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
   card is an ability (new or levelled), a stat-card kind (its three rarities are one card) or a mod. A run's pool is
   what its build can ever be offered: Blade 50 (9 abilities with the three of step AB, 17 stat kinds, 24 mods), Gun
@@ -152,6 +157,14 @@ value or by an owner decision, and the change is noted here.
   while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
   Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
   [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
+- **Shops and salvage (v0.5.0 SH; ROADMAP v0.5.0 "Shops", "salvage").** One shop per floor, a terminal in a side
+  room (never the start hall, the boss room or the room before the boss door; on the minimap once seen). Interact
+  opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
+  priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
+  (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
+  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 25 shards per level to
+  free its slot for a later ability card: a way to change a build's direction, paid for. Starting values; evidence:
+  `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
 ## E. Enemies and the stress matrix
 
@@ -226,7 +239,13 @@ Their names and specs are decided in v0.4.0 Phase 0.
 
 ## H. Scaling and threat
 
-- **Floor index drives scaling:** enemy HP, damage and density come from integer per-floor tables (GA: scaling).
+- **Floor index and the danger tier drive scaling** (owner F7, F10; v0.4.0 SC). Enemies grow per floor and every
+  30 s of a floor (the danger tier), "just a bit below" the player's growth: HP × 1.9^(floor − 1) × 1.10^tier,
+  damage × 1.4^(floor − 1) × 1.05^tier, from integer `‰` tables (flat after tier 20). Bosses keep their own per-floor
+  scaling (+40 % HP, +20 % damage a floor). **Hordes:** at most 14 / 30 / 50 enemies alive at tier 0 of floors 1/2/3,
+  +6 a tier up to 120; packs (2-3, 3-4, 3-5 strong) arrive every 2.5 s, 10 % faster each tier (at least 0.4 s
+  apart), at the edges of the player's room and its neighbours, never within 8 m of the player and never in the
+  boss room. All starting values; the expected-build bot's bands (v0.4.0 TU) tune them.
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.
 - **Curses are the first threat modifiers** (v0.5.0 EV): faster enemies, less regen, faster heat decay, one more
@@ -235,6 +254,10 @@ Their names and specs are decided in v0.4.0 Phase 0.
   M-THREAT reads T per floor and its peak.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)
   §11). After that, changing it needs a new sim result that keeps the scorecard bands.
+- **The first T branch: Overrun (v0.4.0 AB).** One optional side room per floor behind a red-framed door, never on
+  the way to the boss: inside it enemies have ×1.5 HP and damage and arrive 50 % more often and in larger numbers;
+  12 Overrun kills clear it for an ability-card altar (level-ups of your abilities first) and the shards those kills
+  paid, again (2×). The minimap marks it. Starting values in `data/overrun/overrun.tres`.
 - **No Endless mode before balance alpha** (PD-12; [`../LESSONS.md`](../LESSONS.md) L8).
 
 ## I. Meta-progression limits

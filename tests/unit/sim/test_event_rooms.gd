@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.5.0 EV (PLAN R3): which rooms hold an event, over 1,000 generated floors. Each floor gets 1-2 event rooms
-## (rules rooms_min..rooms_max), always side rooms (never the start hall, the boss room or the room before the boss
-## door), each with a pedestal spot inside the room, clear of every wall and of every altar or chest spot; the pick
-## is a pure function of the layout and the seed, and rooms another side-room kind took (`taken`) are never used.
+## (rules rooms_min..rooms_max), always side rooms (never the start hall, the boss room, the room before the boss
+## door, the Overrun room or the shop room), each with a pedestal spot inside the room, clear of every wall and of
+## every altar or chest spot; the pick is a pure function of the layout and the seed, and rooms another side-room kind
+## took (`taken`) are never used.
 
 const SEEDS := 1000
 
@@ -16,6 +17,8 @@ func before_all() -> void:
 func _layout(seed_value: int) -> FloorLayout:
 	var layout := FloorGenerator.generate(seed_value)
 	BossRoomBuilder.attach(layout, BossArenaSpec.new())
+	OverrunRooms.mark(layout)  # as FloorScenario.build and Main: the Overrun room, then the shop, then events
+	ShopPlacement.pick(layout)
 	return layout
 
 
@@ -31,6 +34,7 @@ func test_every_floor_gets_one_or_two_side_rooms_with_a_clear_pedestal() -> void
 		for r in rooms:
 			ok = ok and r != layout.start_room and r != layout.boss_room
 			ok = ok and r != layout.boss_host_room and r != layout.portal_room
+			ok = ok and r != layout.overrun_room and r != layout.shop_room
 			ok = ok and rooms.count(r) == 1
 			var at := Events.spot(layout, r, _rules)
 			ok = ok and at.size() == 1 and layout.room_of(at[0]) == r

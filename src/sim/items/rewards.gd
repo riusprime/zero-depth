@@ -30,6 +30,7 @@ static func shards_for_kill(w: World, kind: int) -> int:
 static func on_kill(w: World, i: int) -> void:
 	var amount := Gamble.shard_gain(w, shards_for_kill(w, w.actors.kinds[i]))  # the shrine's shard gain
 	amount = Stats.shards(w, amount)  # v0.4.0 BS: the shard gain stat
+	Overrun.on_kill(w, i, amount)  # v0.4.0 AB: an Overrun kill counts toward the clear
 	if amount <= 0:
 		return
 	w.shards += amount

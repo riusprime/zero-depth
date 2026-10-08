@@ -25,6 +25,9 @@ and epic are one card) or a mod. A run's **candidate pool** is what its build ca
 but the other build's start weapon, every stat card with a weight, every mod whose weapon the build has
 (`tests/support/card_pool_survey.gd`, `CardPoolSurvey.pool`). The three abilities of step AB (Arc Field, Frost
 Nova, Flame Trail, PLAN v0.4.0) count as planned until their data exists, so the test keeps holding after AB.
+After the AB merge (2026-10-08) their data exists: `test_card_pool_reach.gd` printed `blade pool: 50 in the data + 0
+planned ([]) = 50` and `gun pool: 48 in the data + 0 planned ([]) = 48` (the same totals; the raw output below is
+from before AB).
 
 | | Abilities | Stat kinds | Mods | Pool |
 |---|---|---|---|---|

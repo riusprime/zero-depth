@@ -67,7 +67,10 @@ Every number is a starting value (data in `data/events/`, `data/curses/`, `data/
   through `Curses.price`), Marked Hunt (12 % of spawns are elites: ×2 HP, a gold crown ring).
 - **Cursed chests:** 25 % of chest offers (rolled on first open) turn their first card into a guaranteed epic stat
   card carrying a curse you don't hold, marked on the card; the other cards are clean. Altars are never cursed.
-- **Cleanse:** the Cleansing Font, and `Curses.cleanse(w)` for shops (SH) to call.
+- **Cleanse:** the Cleansing Font, and the shop's "Lift your latest curse" tile (60 shards × floor, while a curse
+  is held; `Shop.cleanse` → `Curses.cleanse`). Shop prices (cards, heal, reroll, cleanse) go through `Curses.price`.
+- **Placement order** (as Main and FloorScenario): the Overrun room and the shop are marked first; event rooms
+  never take either (`Events.pick_rooms` reads `overrun_room` and `shop_room`).
 - **Threat T** = the held curses' threat; shown on the HUD (top left, while T > 0), in the pause menu and in the run
   recap ("Threat: T (peak P)"); `World.threat_peak` and `RunState.threat_by_floor` record it for M-THREAT.
 - **Elites** did not exist before EV: an elite here is a normal enemy kind with +100 % HP and a crown ring; its

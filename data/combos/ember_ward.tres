@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"flame_trail"
+ability_b = &"aegis"
+min_level = 3
+name_key = &"ABILITY_COMBO_EMBER_WARD"
+desc_key = &"ABILITY_COMBO_EMBER_WARD_DESC"
+effect = 15
+damage = 14
+radius_m = 2.5
+stacks = 2
+window_seconds = 1.0
+id = &"ember_ward"

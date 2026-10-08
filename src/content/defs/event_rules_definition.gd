@@ -18,6 +18,8 @@ extends ContentDef
 @export var ambush_min_distance_m := 4.0
 ## Wandering Drone: stay within this distance of the pedestal.
 @export var defend_radius_m := 4.5
+## The shop's cleanse: lifting the latest curse costs this many shards x the floor (SH's terminal).
+@export var cleanse_price := 60
 
 
 func category() -> StringName:
@@ -38,6 +40,8 @@ func validate() -> Array[ValidationIssue]:
 		check_positive(issues, f[0], f[1])
 	if cursed_chest_chance < 0.0 or cursed_chest_chance > 100.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "cursed_chest_chance 0..100"))
+	if cleanse_price <= 0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "cleanse_price must be > 0"))
 	if elite_hp_bonus < 0.0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "elite_hp_bonus is negative"))
 	return issues

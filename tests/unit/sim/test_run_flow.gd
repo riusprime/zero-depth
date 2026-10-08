@@ -65,8 +65,12 @@ func test_the_run_data_compiles() -> void:
 	var t := _run_table()
 	assert_eq(t.floors, 3)
 	assert_eq(t.biome_count, 3)
-	assert_eq(t.hp_per_floor_permille, 400)
-	assert_eq(t.damage_per_floor_permille, 200)
+	assert_eq(
+		t.enemy_hp_floor_permille, PackedInt32Array([1000, 1900, 3610]), "v0.4.0 SC: 1.9^(f - 1)"
+	)
+	assert_eq(t.enemy_damage_floor_permille, PackedInt32Array([1000, 1400, 1960]), "1.4^(f - 1)")
+	assert_eq(t.boss_hp_per_floor_permille, 400, "bosses keep their own scaling")
+	assert_eq(t.boss_damage_per_floor_permille, 200)
 	assert_eq(t.heal_permille, 400)
 	var def: RunDefinition = _repo().get_def(&"run", &"three_floors")
 	for id in def.biomes:
@@ -97,16 +101,24 @@ func test_floor_seeds_derive_from_the_run_seed() -> void:
 	assert_ne(r.floor_seed(2), RunState.start(4243, _run_table()).floor_seed(2))
 
 
+## v0.4.0 SC (F10): HP × 1.9^(f - 1) and damage × 1.4^(f - 1), per-mille tables, rounded half up; floor 4 and on
+## keep floor 3's factor (the table's last entry).
 func test_enemies_scale_with_the_floor() -> void:
 	var base := CombatLab.tables()
 	var r := RunState.start(1, _run_table())
-	for f in [1, 2, 3]:
+	var hp_pm := {1: 1000, 2: 1900, 3: 3610, 4: 3610}
+	var dmg_pm := {1: 1000, 2: 1400, 3: 1960, 4: 1960}
+	for f in [1, 2, 3, 4]:
 		var t := CombatLab.tables()
 		r.scale_enemies(t, f)
 		for k in t.size():
-			assert_eq(t[k].hp, base[k].hp * (10 + 4 * (f - 1)) / 10, "HP x (1 + 0.4 (f - 1))")
 			assert_eq(
-				t[k].damage, base[k].damage * (10 + 2 * (f - 1)) / 10, "damage x (1 + 0.2 (f - 1))"
+				t[k].hp, (base[k].hp * hp_pm[f] + 500) / 1000, "HP x 1.9^(f - 1), floor %d" % f
+			)
+			assert_eq(
+				t[k].damage,
+				(base[k].damage * dmg_pm[f] + 500) / 1000,
+				"damage x 1.4^(f - 1), floor %d" % f
 			)
 
 
@@ -143,15 +155,18 @@ func test_the_carry_keeps_items_and_heals_forty_percent() -> void:
 func test_a_combo_owned_on_floor_one_is_active_on_floor_two() -> void:
 	var r := RunState.start(9, _run_table())
 	var w := _floor_world(r.floor_seed(), r)
-	var combo := w.combo_tables[0]
+	var first := 0
+	while w.combo_tables[first].item_a < 0:  # v0.4.0 AB: the first item combo (ability pairs sort among them)
+		first += 1
+	var combo := w.combo_tables[first]
 	w.add_item(combo.item_a)
 	w.add_item(combo.item_b)
 	w.guard_charges = 2
-	assert_eq(w.combos_owned, PackedInt32Array([0]), "both items unlock the combo")
+	assert_eq(w.combos_owned, PackedInt32Array([first]), "both items unlock the combo")
 	assert_true(Engines.has_combo(w, combo.effect))
 	r.finish_floor(w)
 	var w2 := _floor_world(r.floor_seed(), r)
-	assert_eq(w2.combos_owned, PackedInt32Array([0]), "the combo came along")
+	assert_eq(w2.combos_owned, PackedInt32Array([first]), "the combo came along")
 	assert_true(Engines.has_combo(w2, combo.effect), "and it is active on floor 2")
 	assert_eq(w2.guard_charges, 2, "guard charges carry too")
 	var unlocks := 0

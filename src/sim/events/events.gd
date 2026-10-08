@@ -68,8 +68,9 @@ static func place(
 
 
 ## The floor's event rooms, ascending (the generator side; property-tested over 1,000 seeds). Candidates are side
-## rooms: not the start hall, not the boss room, not the boss door's host room, not in `taken` (other side-room
-## kinds), and with a clear pedestal spot. The count is drawn in rules.rooms_min..rooms_max from `map:event`, then
+## rooms: not the start hall, not the boss room, not the boss door's host room, not the Overrun room (AB) or the shop
+## room (SH; both marked on the layout before this runs), not in `taken` (any other side-room kind), and with a
+## clear pedestal spot. The count is drawn in rules.rooms_min..rooms_max from `map:event`, then
 ## that many rooms by a partial shuffle of the candidates from the same stream.
 static func pick_rooms(
 	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array
@@ -78,7 +79,12 @@ static func pick_rooms(
 	for r in layout.room_count():
 		if r == layout.start_room or r == layout.boss_room or r == layout.boss_host_room:
 			continue
-		if r == layout.portal_room or taken.has(r):
+		if (
+			r == layout.portal_room
+			or r == layout.overrun_room
+			or r == layout.shop_room
+			or taken.has(r)
+		):
 			continue
 		if spot(layout, r, rules).is_empty():
 			continue
@@ -393,7 +399,7 @@ static func cut_max_hp(w: World, permille: int) -> void:
 
 ## Ambush Cache: `n` elites of the kinds the floor spawns now (loot:event picks kind and spot), at the room's spawn
 ## points at least ambush_min_distance_m from you (else any of the room's), HP scaled to the danger tier like the
-## spawn director's, then raised as elites.
+## spawn director's (HP and power), then raised as elites.
 static func _ambush(w: World, k: int, n: int) -> void:
 	var s := w.ev
 	var t := w.spawner
@@ -430,6 +436,7 @@ static func _ambush(w: World, k: int, n: int) -> void:
 		var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
+		w.actors.power[i] = t.damage_permille(tier)  # v0.4.0 SC: the tier's damage, like a spawn
 		Curses.make_elite(w, i)
 		s.ambush_ids.append(id)
 

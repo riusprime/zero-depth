@@ -75,6 +75,10 @@ breaks. The contrast figures below were computed from colours sampled out of the
 - Picking which walls fade is a pure function, `Occlusion.select(cam_dir, focus_points, walls) ->
   PackedInt32Array`. It is unit tested in `tests/unit/presentation/test_occlusion_select.gd`, separately from the
   rendering.
+- **Crowds (v0.4.0 SC):** the focus points are the player and at most `WorldViewRoot.OCCLUSION_FOCUS_MAX` (24)
+  enemies within `OCCLUSION_RADIUS_M` (10 m) of it; `select` rejects far point-wall pairs with a cheap distance test
+  before the exact one (it picks the same walls). Testing every wall against every enemy each frame had become the
+  view's largest CPU cost with a horde; the X-ray silhouettes still show the enemies farther off.
 
 ## 6. Hit feel
 
@@ -91,6 +95,15 @@ breaks. The contrast figures below were computed from colours sampled out of the
   `KILL` tick, so it never reads as alive.
 
 ## 7. VFX and cue budget
+
+- **Crowds (v0.4.0 SC):** projectile nodes are pooled per look (hidden and reused, at most
+  `ActorViews.PROJECTILE_POOL_MAX` idle) and share one mesh and one kept material per look; an enemy's floating HP
+  bar shows only once it is hurt (the hero's always); enemy models beyond `ActorViews.ANIMATE_RADIUS_M` (24 m, off
+  screen) stop their frame-time animation; no enemy carries a light (a boss has its weak-point light only). The
+  damage-lag rule stands: materials are built flashable (`ActorViews.flashable`), and nothing toggles
+  `emission_enabled` or another feature flag at runtime. Enemy models are not MultiMesh instances: each kind's model
+  animates its own parts, so a crowd stays one node tree per enemy (measured in `docs/roadmap/v0.4.0/evidence/
+  HORDES.md`).
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;

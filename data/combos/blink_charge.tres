@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ComboDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/combo_definition.gd" id="1_combo"]
+
+[resource]
+script = ExtResource("1_combo")
+ability_a = &"blink"
+ability_b = &"bomb_lobber"
+min_level = 3
+name_key = &"ABILITY_COMBO_BLINK_CHARGE"
+desc_key = &"ABILITY_COMBO_BLINK_CHARGE_DESC"
+effect = 11
+count = 2
+id = &"blink_charge"

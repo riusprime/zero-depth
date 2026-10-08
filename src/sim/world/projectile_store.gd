@@ -54,32 +54,26 @@ func add(
 	bounce_tick.append(-1)
 
 
-## Removes the entries at the given ascending indices, keeping order.
+## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own
+## remove_at (v0.4.0 SC: a native move instead of rebuilding every array element by element each tick).
 func remove_sorted(indices: PackedInt32Array) -> void:
-	if indices.is_empty():
-		return
-	var keep := PackedInt32Array()
-	var j := 0
-	for i in ids.size():
-		if j < indices.size() and indices[j] == i:
-			j += 1
-		else:
-			keep.append(i)
-	ids = _pick_i(ids, keep)
-	owner = _pick_i(owner, keep)
-	team = _pick_i(team, keep)
-	life = _pick_i(life, keep)
-	root_id = _pick_i(root_id, keep)
-	proc_pct = _pick_i(proc_pct, keep)
-	damage = _pick_i(damage, keep)
-	tags = _pick_i(tags, keep)
-	bounces = _pick_i(bounces, keep)
-	bounce_tick = _pick_i(bounce_tick, keep)
-	pos_x = _pick_f(pos_x, keep)
-	pos_y = _pick_f(pos_y, keep)
-	vel_x = _pick_f(vel_x, keep)
-	vel_y = _pick_f(vel_y, keep)
-	radius = _pick_f(radius, keep)
+	for k in range(indices.size() - 1, -1, -1):
+		var i := indices[k]
+		ids.remove_at(i)
+		owner.remove_at(i)
+		team.remove_at(i)
+		life.remove_at(i)
+		root_id.remove_at(i)
+		proc_pct.remove_at(i)
+		damage.remove_at(i)
+		tags.remove_at(i)
+		bounces.remove_at(i)
+		bounce_tick.remove_at(i)
+		pos_x.remove_at(i)
+		pos_y.remove_at(i)
+		vel_x.remove_at(i)
+		vel_y.remove_at(i)
+		radius.remove_at(i)
 
 
 func hash_into(h: StateHasher) -> void:
@@ -98,19 +92,3 @@ func hash_into(h: StateHasher) -> void:
 	h.add_ints(tags)
 	h.add_ints(bounces)
 	h.add_ints(bounce_tick)
-
-
-static func _pick_i(a: PackedInt32Array, keep: PackedInt32Array) -> PackedInt32Array:
-	var out := PackedInt32Array()
-	out.resize(keep.size())
-	for k in keep.size():
-		out[k] = a[keep[k]]
-	return out
-
-
-static func _pick_f(a: PackedFloat32Array, keep: PackedInt32Array) -> PackedFloat32Array:
-	var out := PackedFloat32Array()
-	out.resize(keep.size())
-	for k in keep.size():
-		out[k] = a[keep[k]]
-	return out

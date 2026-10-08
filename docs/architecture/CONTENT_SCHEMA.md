@@ -158,8 +158,9 @@ class_name AttackDefinition extends Resource
   - Positive params (`split_count`, `max_mines`, `heal_*`, `mine_life_seconds`, `drop_seconds`) <= 0 are an `ERROR`
     (`not_positive`); `shield_arc_degrees` outside 0..360 is an `ERROR` (`armour`).
   - The spawner's mix (`data/spawning/floor_1.tres`): Swarmer (weight 3, tier 1, `pack` 8) and Splitter (2, tier 1);
-    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. `SpawnMixEntry.pack` (>= 1,
-    default 1; `mix_entry` `ERROR` below 1) is how many arrive together around one spawn point, never past the cap.
+    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. The horde kinds other than the
+    Swarmer ship `pack` 1 (singles). `SpawnMixEntry.pack` follows the one rule in §7 (0 = the floor's draw; `mix_entry`
+    `ERROR` below 0).
 - **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
   `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
   (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
@@ -203,6 +204,20 @@ half up; the count resets per floor), `floor_price_step` (raises a later floor's
 `GambleStatEntry` (`stat`, one of `GambleStatEntry.STATS`; `amount`, HP for `max_hp`, % for the rest, regen in % of
 max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, amounts, weights and caps positive,
 steps non-negative, every stat known and listed once, the pool not empty.
+
+**Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
+(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; a mod or
+an ability card is common or rare), `floor_price_step` (each later floor raises every price but the reroll by this
+share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
+step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
+`sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
+the cards left so the caps hold), `ability_refund_per_level` (25 shards per level for salvaging an ability, never the
+weapon; its slot frees for a later ability card) and `interact_radius_m`. The stock is drawn from `loot` by a chest's
+rules (`Offers.draw`: ability cards only while they can apply, mods only with their ability), and a mod in the stock
+is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
+`shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
+ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
+the steps non-negative; the shares in (0, 1]; `offer_size` 1–9.
 
 ## 4. Encounters and bosses
 
@@ -349,8 +364,29 @@ class_name ThreatModifier extends Resource
 @export var permille_by_t: PackedInt32Array   # integer table indexed by T
 ```
 
-`data/threat/scaling.tres` (`ScalingTable`) holds per-floor `‰` tables for enemy HP, damage and density. Values
-come from GA: scaling. No formula in content uses `pow` or `exp`.
+No formula in content uses `pow` or `exp`: growth is authored as integer `‰` tables. Since v0.4.0 SC (owner F7,
+F10) the tables live with the run and the spawner (there is no `data/threat/scaling.tres`):
+
+- **`RunDefinition`** (`data/run/three_floors.tres`): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
+  one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
+  past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+  `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
+  enemies' tables.
+- **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
+  `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
+  `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
+  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
+  `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
+  rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
+- **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and `pack` — one rule since the v0.4.0 SC + EN merge:
+  `0` (the default) takes the floor's draw (`pack_min_by_floor`..`pack_max_by_floor`), `> 0` always brings that
+  many (the Swarmer's 8; the other horde kinds ship `1`, singles as EN designed them). A pack stands on rings around
+  its anchor and never takes the alive count past the cap. A new enemy joins the hordes with one more entry.
+- **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
+  within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
+  fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
+  cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
+  `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
 ### Events and curses (v0.5.0 EV)
 
@@ -432,6 +468,32 @@ exactly 5 entries (L1–L5): `level_damage`, `level_radius`, `level_rate` (multi
 `level_cooldown` (seconds ≥ 0), `level_extra` (≥ 0; per kind: the sword's wave, the gun's pierce, the drone's
 chain, the blink's charges, Aegis's charge cap). Each kind validates the fields it reads. Compiled by
 `ContentCompiler.compile_abilities` (id order) into `AbilityTable`.
+
+v0.4.0 AB appends three auto kinds, `ARC_FIELD`, `FROST_NOVA` and `FLAME_TRAIL`, the tags `shock`, `frost` and `fire`,
+and `engine_item` (an item id; required for those three, and the validator checks the item exists): the item whose
+engine numbers (shock threshold and discharge, frost threshold and freeze with its chill, burn damage, period,
+duration and stack cap) the ability's status uses when no owned item brings stronger ones. For those kinds
+`level_extra` is the status stacks per hit (≥ 1 at every level). Arc Field reads `range_m`, `damage`,
+`level_count` (targets) and `level_cooldown` (> 0); Frost Nova `radius_m`, `damage`, `level_radius` and
+`level_cooldown` (> 0); Flame Trail `radius_m` (a patch), `period_seconds` (least time between patches),
+`duration_seconds` (a patch's life, × `level_rate`), `hit_seconds` (per enemy) and `damage` (× `level_damage`).
+Shipped: Arc Field 3 targets within 6 m, 12 damage, 1 shock stack, 1.5 s (−0.1 s and +1 target a level; engine
+Static Chain); Frost Nova 3 m (+0.4 m a level), 10 damage, 2 frost stacks (4 from L3: a nova freezes on its own),
+every 4 s (3 s at L5; engine Glacial Edge); Flame Trail 0.9 m patches every 0.15 s and 0.8 m of movement, 2 s, 3
+damage every 0.5 s (6/s), 1 burn stack, +25 % damage and duration a level (engine Ember Edge).
+
+`ComboDefinition` (v0.4.0 AB) may pair two abilities instead of two items: `ability_a`, `ability_b` (ability ids,
+both required and different, never together with `item_a`/`item_b`) and `min_level` (1–5, data 3: both owned at that
+level or higher evolve the pair). The effect must be one of the appended ability effects `STORM_BOMBS`,
+`NAPALM_DRONE`, `GLACIER_RING`, `BLINK_CHARGE`, `BLADE_DANCE`, `WINGMAN`, `SUPERCONDUCTOR`, `EMBER_WARD`, each
+validating the fields it reads (`damage`, `radius_m`, `stacks`, `count`, `share_permille`, `window_seconds`; see
+[`../design/INTERACTIONS.md`](../design/INTERACTIONS.md) "Ability combos"). The validator checks both abilities exist
+and that no ability pair repeats. Compiled with the item combos (`ComboTable.ability_a/b`, indices in
+`compile_abilities` order; `item_a/b` stay −1).
+
+`OverrunDefinition` (v0.4.0 AB; `data/overrun/overrun.tres`, category `overrun`): the Overrun threat branch.
+`hp_multiplier`, `damage_multiplier`, `spawn_multiplier` (≥ 1; data 1.5 each), `kills_to_clear` (> 0; data 12) and
+`shard_multiplier` (≥ 1; data 2.0). Compiled by `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

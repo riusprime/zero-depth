@@ -12,6 +12,8 @@ extends RefCounted
 ##   World.enemies_near; the only randomness (a spare bomb's scatter) comes from the `ability` stream.
 ## Every hit is the player's, so stats and crit apply in Damage.hit; ability hits carry TAG_ABILITY and an effect id
 ## (never heat, never an on-hit "attack").
+## v0.4.0 AB: Arc Field, Frost Nova and Flame Trail (ElementAbilities) and the eight ability combos (AbilityCombos);
+## taking a card refreshes the build (World.refresh_build: the engines the abilities borrow, combos evolving).
 
 const SLOTS := 4
 const BLADE_R := 0.35
@@ -98,6 +100,7 @@ static func grant(w: World, idx: int) -> bool:
 		w.ability_levels.append(1)
 		w.ab.cd.append(0)
 	_sync_state(w)
+	w.refresh_build(true)  # v0.4.0 AB: borrowed engines; a pair at L3 evolves (its combo card)
 	if t.kind == AbilityTable.Kind.BLINK:
 		w.ab.blink_charges = mini(w.ab.blink_charges + 1, t.extra(level_of(w, idx)))
 	return true
@@ -125,6 +128,7 @@ static func start_floor(w: World) -> void:
 	var blink := owned_of_kind(w, AbilityTable.Kind.BLINK)
 	if blink != null:
 		w.ab.blink_charges = blink.extra(level_of_kind(w, AbilityTable.Kind.BLINK))
+	w.refresh_build(false)  # v0.4.0 AB: after the carry restored the slots
 
 
 ## Keeps the drones in step with Drone Buddy's level (a new drone starts beside the player, half a period late).
@@ -207,6 +211,7 @@ static func on_blink(w: World) -> void:
 		w.blink_cd = blink_cooldown(w)
 	w.ab.shock_pending = w.tick
 	AbilityMods.on_blink(w)  # v0.5.0 CP: Afterimage
+	AbilityCombos.on_blink(w)  # v0.4.0 AB: Blink Charge
 
 
 ## Aegis: the most guard charges the guard stores, and each one's bonus to the next swing (per mille); a Bulwark
@@ -273,6 +278,7 @@ static func shot_offsets(w: World, offsets: PackedInt32Array) -> PackedInt32Arra
 
 ## Combo Sword L5: a landed finisher sends a shockwave (radius_m, `damage` x the level's factor) around the player.
 static func after_swing(w: World, landed: bool) -> void:
+	AbilityCombos.after_swing(w, landed)  # v0.4.0 AB: Blade Dance
 	var t := _weapon(w)
 	if not landed or t == null or t.kind != AbilityTable.Kind.COMBO_SWORD:
 		return
@@ -330,9 +336,16 @@ static func advance(w: World) -> void:
 				_drones(w, t)
 			AbilityTable.Kind.ORBIT_BLADES:
 				_orbit(w, t, lvl)
+			_:
+				ElementAbilities.advance_slot(w, s, t, lvl)  # v0.4.0 AB
+	ElementAbilities.advance_fire(w)
 
 
-## An ability's damage at `level`, rounded half up.
+## An ability's damage at `level`, rounded half up (v0.4.0 AB: public for ElementAbilities, AbilityCombos).
+static func damage_at(t: AbilityTable, level: int) -> int:
+	return _damage(t, level)
+
+
 static func _damage(t: AbilityTable, level: int) -> int:
 	return maxi(1, (t.damage * t.damage_permille(level) + 500) / 1000)
 
@@ -413,16 +426,24 @@ static func _throw(w: World, t: AbilityTable, level: int) -> bool:
 			var ang := w.rng_ability.range_int(0, SimTick.ANGLE_UNITS - 1)
 			at = centres[0] + Kin.dir(ang) * (r * w.rng_ability.range_int(400, 900) / 1000.0)
 		centres.append(at)
-		var s := w.ab
-		s.bomb_pos.append(at)
-		s.bomb_from.append(from)
-		s.bomb_throw.append(w.tick)
-		s.bomb_land.append(w.tick + t.duration_ticks)
-		s.bomb_root.append(w.take_root())
-		s.bomb_r.append(r)
-		s.bomb_dmg.append(_damage(t, level))
-		s.bomb_split.append(1)  # v0.5.0 CP: a thrown bomb may split (Cluster Payload)
+		drop_bomb(w, at, from, r, _damage(t, level), t.duration_ticks)
 	return true
+
+
+## A Bomb Lobber bomb in flight from `from` to `at`, landing `flight` ticks from now (a throw, or Blink Charge's
+## drop). Cluster Payload's bomblets are queued by AbilityMods.split (they never split again).
+static func drop_bomb(
+	w: World, at: Vector2, from: Vector2, r: float, dmg: int, flight: int
+) -> void:
+	var s := w.ab
+	s.bomb_pos.append(at)
+	s.bomb_from.append(from)
+	s.bomb_throw.append(w.tick)
+	s.bomb_land.append(w.tick + flight)
+	s.bomb_root.append(w.take_root())
+	s.bomb_r.append(r)
+	s.bomb_dmg.append(dmg)
+	s.bomb_split.append(1)  # v0.5.0 CP: a Bomb Lobber bomb may split (Cluster Payload), Blink Charge's too
 
 
 static func _land_bombs(w: World) -> void:
@@ -436,6 +457,8 @@ static func _land_bombs(w: World) -> void:
 		var dmg := s.bomb_dmg[k]
 		var root := s.bomb_root[k]
 		hit_disc(w, at, r, dmg, root, EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER)
+		if split:  # v0.4.0 AB: Storm Bombs chains from a bomb, never from its bomblets (they share its root)
+			AbilityCombos.on_blast(w, at, root)
 		s.blast_pos.append(s.bomb_pos[k])
 		s.blast_tick.append(w.tick)
 		s.blast_r.append(s.bomb_r[k])
@@ -509,6 +532,7 @@ static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> voi
 	var p := w.projectiles
 	if got <= 0 or p.team[pi] != ActorStore.TEAM_PLAYER or not (p.tags[pi] & SimEvent.TAG_ABILITY):
 		return
+	AbilityCombos.on_drone_bolt(w, pi, got, at)  # v0.4.0 AB: Napalm Drone
 	var t := owned_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)
 	if t == null or t.extra(level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY)) <= 0:
 		return
@@ -533,9 +557,10 @@ static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> voi
 
 
 # Orbit Blades ----------------------------------------------------------------------------------------------------
-## The blades' ring radius at `level` (area applied).
+## The blades' ring radius at `level` (area applied; v0.4.0 AB: wider while Blade Dance is on).
 static func orbit_radius(w: World, t: AbilityTable, level: int) -> float:
-	return Stats.area(w, t.radius_m * t.radius_permille(level) / 1000.0)
+	var r := t.radius_m * t.radius_permille(level) / 1000.0 + AbilityCombos.dance_radius(w)
+	return Stats.area(w, r)
 
 
 ## Where blade k of n is now: the same points the hits test and the view draws (EI-07).
@@ -554,7 +579,8 @@ static func _orbit(w: World, t: AbilityTable, level: int) -> void:
 			s.orbit_next.remove_at(k)
 	var n := t.count(level)
 	var r := orbit_radius(w, t, level)
-	var dmg := _damage(t, level)
+	var dmg := _damage(t, level) * AbilityCombos.dance_permille(w) / 1000  # v0.4.0 AB: Blade Dance
+	var effect := AbilityCombos.EFFECT_DANCE if AbilityCombos.dancing(w) else EFFECT_ORBIT
 	var tags := SimEvent.TAG_ABILITY
 	for i in w.enemies_near(w.player_pos(), r + BLADE_R):
 		if a.invuln[i] > 0 or s.orbit_ids.has(a.ids[i]):
@@ -566,9 +592,9 @@ static func _orbit(w: World, t: AbilityTable, level: int) -> void:
 			s.orbit_ids.append(a.ids[i])
 			s.orbit_next.append(w.tick + Stats.auto_cooldown(w, t.hit_ticks))  # v0.5.0 CP: Fast Hands
 			s.orbit_hit_tick = w.tick
-			Damage.hit(
-				w, i, dmg, a.ids[0], a.ids[0], w.take_root(), tags, b, a.pos(i), EFFECT_ORBIT
-			)
+			var root := w.take_root()
+			var got := Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, tags, b, a.pos(i), effect)
+			AbilityCombos.on_blade_hit(w, i, root, got)  # v0.4.0 AB: Glacier Ring
 			break
 
 
@@ -588,9 +614,13 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_ints(w.ability_owned)
 	h.add_ints(w.ability_levels)
 	h.add_ints(w.stat_values)
+	h.add_ints(w.stat_cards)  # v0.5.0 SH
 	h.add_int(w.rng_crit.state)
 	h.add_int(w.rng_ability.state)
 	w.ab.hash_into(h)
+	if w.item_tables.is_empty() and w.ab.touched_ab():  # v0.4.0 AB: a world without items (_hash_engines)
+		h.add_ints(w.combos_owned)
+		w.actors.hash_statuses(h)
 
 
 ## Per slot (in slot order): the ability's id, name key, kind, auto, button, level, cooldown left and total, ready,
@@ -607,6 +637,9 @@ static func read(w: World) -> Array[Dictionary]:
 			AbilityTable.Kind.BOMB_LOBBER:
 				left = w.ab.cd[s] if s < w.ab.cd.size() else 0
 				total = Stats.auto_cooldown(w, t.cooldown_ticks)
+			AbilityTable.Kind.ARC_FIELD, AbilityTable.Kind.FROST_NOVA:  # v0.4.0 AB
+				left = w.ab.cd[s] if s < w.ab.cd.size() else 0
+				total = Stats.auto_cooldown(w, t.cooldown_at(lvl))
 			AbilityTable.Kind.DRONE_BUDDY:
 				left = w.ab.drone_cd[0] if not w.ab.drone_cd.is_empty() else 0
 				total = drone_period(w, t)

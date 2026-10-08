@@ -43,6 +43,7 @@ static func available(w: World) -> PackedInt32Array:
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows
+			and not w.shop.offer.has(idx)  # v0.5.0 SH: a mod in the shop's stock
 			and _usable(w, idx)
 		):
 			left.append(idx)
@@ -52,6 +53,10 @@ static func available(w: World) -> PackedInt32Array:
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
 ## v0.5.0 CP: an ability mod only while the player owns its ability.
+static func usable(w: World, idx: int) -> bool:
+	return _usable(w, idx)
+
+
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
 	if it.requires_heat and w.heat == null:

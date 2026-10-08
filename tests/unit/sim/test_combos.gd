@@ -16,7 +16,9 @@ var _combos: Array[ComboTable] = []
 func before_all() -> void:
 	var repo := ContentRepository.load_all()
 	_tables = ContentCompiler.compile_items(repo)
-	_combos = ContentCompiler.compile_combos(repo)
+	for c in ContentCompiler.compile_combos(repo):  # the item combos (v0.4.0 AB's ability pairs: test_abilities_ab)
+		if c.ability_a < 0:
+			_combos.append(c)
 
 
 func _index(kind: int) -> int:

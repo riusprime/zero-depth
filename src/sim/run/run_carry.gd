@@ -17,6 +17,7 @@ const FIELDS: Array[StringName] = [
 	&"stat_values",
 	&"curses_owned",  # v0.5.0 EV: curses and the threat peak
 	&"threat_peak",
+	&"stat_cards",  # v0.5.0 SH: the stat cards taken, so the shop can sell one back
 ]
 const HP := &"hp"
 

@@ -9,6 +9,8 @@ extends Node3D
 ##   drone's sim position, bobbing; a cyan flash at its muzzle when it fires, a cyan line when a bolt chains.
 ## - Orbit Blades: a flat steel blade at each blade point, edge-on along the ring.
 ## - Blink's landing shock and Combo Sword's finisher wave: a ring that flashes out to the shock's radius.
+## - v0.4.0 AB: Glacier Ring turns the blades to ice; Blade Dance draws them bigger while it lasts. The new abilities'
+##   looks are ElementVisuals.
 
 const BOMB_COLOR := Color("#FF8A3A")
 const BLINK_COLOR := Color("#B48CFF")
@@ -16,6 +18,9 @@ const FX_FRAMES := 18
 const RING_Y := 0.03
 const DRONE_Y := 1.35
 const BOMB_ARC_M := 2.4
+const STEEL := Color("#D6E4F0")
+const ICE := Color("#A8F0FF")
+const DANCE_SCALE := 1.35
 
 var _drones: Array[Node3D] = []
 var _blades: Array[MeshInstance3D] = []
@@ -41,7 +46,7 @@ var _t := 0.0
 func _init() -> void:
 	name = "AbilityVisuals"
 	_blade_mesh.size = Vector3(0.62, 0.05, 0.16)
-	_blade_mat.albedo_color = Color("#D6E4F0")
+	_blade_mat.albedo_color = STEEL
 	_blade_mat.metallic = 0.6
 	_blade_mat.roughness = 0.3
 	_ring_mat.albedo_color = Color(BOMB_COLOR, 0.85)
@@ -59,6 +64,11 @@ func sync(reader: WorldReader) -> void:
 	var fx := reader.ability_fx()
 	_sync_drones(fx)
 	_sync_blades(fx)
+	var el := reader.element_fx()  # v0.4.0 AB: Glacier Ring, Blade Dance
+	_blade_mat.albedo_color = ICE if el["glacier"] else STEEL
+	var big := DANCE_SCALE if el["dancing"] else 1.0
+	for b in _blades:
+		b.scale = Vector3(big, big, big)
 	_sync_bombs(fx, reader.tick())
 	var bt: PackedInt32Array = fx["blast_tick"]
 	var bp: PackedVector2Array = fx["blast_pos"]

@@ -76,6 +76,29 @@ pairs two different mechanics and adds one payoff neither item has alone.
 | **Slipstream** | Momentum + Swift Feet | A Momentum swing that lands recharges the dash at once | at most once per 1.5 s (refund cap) |
 | **Frozen Bastion** | Bulwark + Glacial Edge | A guard block chills the attacker (within 4 m) with 2 frost stacks | once per block; frost stops building while frozen |
 
+## Ability combos (8, v0.4.0 AB)
+
+Owner F13 ("more objects or upgrades and combos"); PLAN v0.4.0 "Ability combos". Owning **both abilities at level 3
+or higher** evolves the pair (`ComboDefinition.ability_a/ability_b/min_level`, the v0.3.0 combo framework:
+`COMBO_UNLOCKED`, the combo card with both ability icons, a HUD badge, its sound). Three of them use the three new
+auto abilities, which feed the engines above: **Arc Field** adds shock (Static Chain's numbers when no shock item is
+owned), **Frost Nova** frost (Glacial Edge's), **Flame Trail** burn (Ember Edge's). Their hits carry no melee or bolt
+source, so no item feeder adds stacks through them; the stacks come from the ability itself.
+
+| Combo | Abilities | Effect | Limit | Look |
+|---|---|---|---|---|
+| **Storm Bombs** | Bomb Lobber + Arc Field | A bomb's blast chains lightning to the 3 nearest enemies within 5 m: 10 damage and 1 shock stack each | once per bomb (root); runs inside the ancestry guard | violet jagged bolts from the blast |
+| **Napalm Drone** | Drone Buddy + Flame Trail | A drone bolt that lands leaves a 1 m fire patch for 1.5 s (3 damage per 0.5 s, 1 burn stack) | once per bolt; fire hits an enemy at most every 0.5 s whatever patch it stands in | deep red fire discs |
+| **Glacier Ring** | Orbit Blades + Frost Nova | Every blade touch adds 1 frost stack | once per blade hit per enemy (its root); no stacks while frozen | the blades turn to ice |
+| **Blink Charge** | Blink + Bomb Lobber | Each blink leaves 2 of Bomb Lobber's bombs (its level's radius and damage) where you left | once per blink | a violet flash where you left; the bombs' ground circles |
+| **Blade Dance** | Combo Sword + Orbit Blades | A landed swing spreads the blades 0.8 m wider and makes their hits +50 % for 1.5 s | refreshed by each landed swing, never stacks | the blades drawn larger |
+| **Wingman** | Pulse Gun + Drone Buddy | Each shot makes every drone fire a bolt along your aim (60 % of a drone bolt) | at most every 0.25 s | a cyan flash at each drone |
+| **Superconductor** | Arc Field + Frost Nova | An Arc Field strike on a chilled or frozen enemy deals double | a damage factor only, no extra hit | the bolt turns cyan-white and thicker |
+| **Ember Ward** | Flame Trail + Aegis | A guard block bursts fire around you: 14 damage and 2 burn stacks within 2.5 m | at most once a second; inside the ancestry guard | an orange ring burst |
+
+Pairs across builds: Blade Dance needs the Blade (Combo Sword), Wingman the Gun (Pulse Gun); Blink Charge and Ember Ward
+exclude each other (Blink and Aegis share the utility button). Every other pair can meet in either build.
+
 ## Matrix
 
 S = synergy, A = anti-synergy, · = none. Rows and columns use the codes below; every pair's reason follows.

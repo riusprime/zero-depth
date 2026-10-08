@@ -5,10 +5,13 @@ extends RefCounted
 ## Determinism: the same (seed, content, loadout, InputFrame log) gives the same state_hash() at every tick.
 
 const EVENT_LOG_CAP := 4096
+const EVENT_LOG_TRIM := 512
 const BUTTON_BITS: Array[int] = [
 	InputFrame.PRIMARY, InputFrame.UTILITY, InputFrame.DASH, InputFrame.INTERACT
 ]
 const DASH_SLOT := 2
+## v0.4.0 SC: how far a body may drift during the collision passes before its wall check is redone (_move_and_collide).
+const WALL_SKIP_M := 0.5
 
 var tick := 0
 var freeze_ticks := 0
@@ -174,6 +177,9 @@ var gamble_last_stat := -1
 var gamble_tick := -1
 var gamble_denied_tick := -1
 # --- end Gamble ---------------------------------------------------------------------------------------------
+# v0.5.0 SH (Shop): the shop's rules (loadout, not hashed; null = no shops) and the floor's shop (hashed once placed).
+var shop_table: ShopTable
+var shop := ShopState.new()
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -240,9 +246,12 @@ var stat_tables: Array[StatTable] = []
 var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
+var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
+var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
+var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
@@ -251,8 +260,8 @@ var threat_peak := 0
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
-var _wall_grid := UniformGrid.new()
-var _actor_grid := UniformGrid.new()
+var _wall_grid := DenseGrid.new()  # v0.4.0 SC: dense grids (were UniformGrids)
+var _actor_grid := DenseGrid.new()
 ## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
 var _wall_next: Obb
 var _nav_next: NavField
@@ -288,9 +297,28 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
 	nav.build(walls)
-	_wall_grid.clear()
-	for i in walls.size():
-		_wall_grid.insert_rect(i, walls[i].bounds())
+	var rects: Array[Rect2] = []
+	for o in walls:
+		rects.append(o.bounds())
+	_wall_grid.build(rects)
+
+
+## Indices of the walls that may touch `rect` (ascending; a superset), for sweeps that would test every wall (SC).
+func walls_near(rect: Rect2) -> PackedInt32Array:
+	return _wall_grid.query_rect(rect)
+
+
+## Indices of the walls that may touch a body of radius r moving from a to b (ascending; a superset): a line of sight
+## or a run (v0.4.0 SC), walking only the grid cells along it. The reach is r × 1.5: Collide.sweep_vs_obb grows a
+## turned wall by r along its own axes, which reaches up to r × 1.41 along the world's.
+func walls_along(a: Vector2, b: Vector2, r: float) -> PackedInt32Array:
+	return _wall_grid.query_segment(a, b, r * 1.5)
+
+
+## Indices of the actors whose bodies may touch `rect` (ascending; a superset) as of the last actor-grid build:
+## tick phase 3 builds it before the enemies plan (v0.4.0 SC), each collision pass in phase 5 rebuilds it.
+func actors_near(rect: Rect2) -> PackedInt32Array:
+	return _actor_grid.query_rect(rect)
 
 
 ## Adds a dummy mover immediately (setup only; during a tick, spawns are queued).
@@ -331,8 +359,12 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
-	if ev.open >= 0:  # 1c. v0.5.0 EV: an event panel waits for its choice, like the pick.
-		Events.choose(self, frame)
+	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
+	if shop.open or ev.open >= 0:
+		if shop.open:
+			Shop.choose(self, frame)
+		else:
+			Events.choose(self, frame)
 		tick += 1
 		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
@@ -354,10 +386,13 @@ func step(frame: InputFrame) -> void:
 	if Rewards.interact(self) or Events.interact(self):  # 2c. v0.5.0 EV: an event pedestal opens its panel.
 		tick += 1
 		return
+	if Shop.interact(self):  # v0.5.0 SH: interact by the terminal opens the shop.
+		tick += 1
+		return
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
-		nav.flood(player_pos())
+		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)  # v0.4.0 SC: bounded
 	_run_ai()
 	# 4. Action states.
 	_advance_actions()
@@ -382,6 +417,7 @@ func step(frame: InputFrame) -> void:
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
+	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
 	if spawner != null:
@@ -436,6 +472,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
 	actors.invuln[i] = SimTick.SPAWN_IN_TICKS
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
+	actors.power[i] = 1000  # v0.4.0 SC: full damage; the spawn director scales it by tier
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
 	return id
 
@@ -444,7 +481,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 ## The compiled items, in the order the indices in items_owned and pickups refer to.
 func set_item_tables(tables: Array[ItemTable]) -> void:
 	item_tables = tables
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 
 
 ## Gives the player item `item_index`. Returns false (and changes nothing) if it is already owned.
@@ -452,7 +489,7 @@ func add_item(item_index: int) -> bool:
 	if items_owned.has(item_index):
 		return false
 	items_owned.append(item_index)
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 	_refresh_combos(true)
 	return true
 
@@ -467,14 +504,30 @@ func set_combo_tables(tables: Array[ComboTable]) -> void:
 ## Sets the items owned (carrying a run's items to a new floor): modifiers and combos follow, no events.
 func set_items_owned(owned: PackedInt32Array) -> void:
 	items_owned = owned.duplicate()
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 	_refresh_combos(false)
 
 
-## Owns every combo whose two items are owned (new ones appended in combo order); `announce` emits COMBO_UNLOCKED
-## for each new one (amount = its combo index).
+## v0.4.0 AB: the item modifiers plus the engine numbers the owned abilities borrow (ElementAbilities).
+func _build_mods() -> void:
+	item_mods = ItemMods.build(item_tables, items_owned)
+	ElementAbilities.fold_engines(self, item_mods)
+
+
+## v0.4.0 AB: after the abilities owned or their levels changed: the modifiers, then the combos (an ability pair at
+## its level evolves; `announce` emits COMBO_UNLOCKED).
+func refresh_build(announce: bool) -> void:
+	_build_mods()
+	_refresh_combos(announce)
+
+
+## Owns every combo whose two items are owned, and (v0.4.0 AB) every ability combo whose two abilities are at its
+## level (new ones appended in combo order); `announce` emits COMBO_UNLOCKED for each new one (amount = its combo
+## index).
 func _refresh_combos(announce: bool) -> void:
-	for c in Engines.combos_for(combo_tables, items_owned):
+	var earned := Engines.combos_for(combo_tables, items_owned)
+	earned.append_array(AbilityCombos.earned(self))
+	for c in earned:
 		if combos_owned.has(c):
 			continue
 		combos_owned.append(c)
@@ -519,14 +572,14 @@ func prepare_wall(o: Obb) -> void:
 ## floods from the player at once, so enemies path around the new wall from this tick.
 func add_wall_now(o: Obb) -> void:
 	walls.append(o)
-	_wall_grid.insert_rect(walls.size() - 1, o.bounds())
+	_wall_grid.add(o.bounds())
 	if o == _wall_next and _nav_next != null:
 		nav = _nav_next
 	else:
 		nav.build(walls)
 	_wall_next = null
 	_nav_next = null
-	nav.flood(player_pos())
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
 
 
 # --- end Run flow ------------------------------------------------------------------------------------------
@@ -606,7 +659,8 @@ func _rewards_touched() -> bool:
 
 
 ## v0.4.0 BS: living enemy indices whose body touches the disc (center, r), ascending. The uniform grid of this
-## tick's bodies (built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability targeting).
+## tick's bodies (the DenseGrid built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability
+## targeting).
 func enemies_near(center: Vector2, r: float) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var g := r + 1.0
@@ -718,6 +772,8 @@ func state_hash() -> String:
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
+	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
+		overrun.hash_into(h)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
@@ -726,6 +782,8 @@ func state_hash() -> String:
 			h.add_int(v)
 		h.add_f32(gamble_pos.x)
 		h.add_f32(gamble_pos.y)
+	if shop.present():  # v0.5.0 SH: only floors with a shop.
+		shop.hash_into(h)
 	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
@@ -771,6 +829,17 @@ func _hash_engines(h: StateHasher) -> void:
 		h.add_f32(p.y)
 
 
+## v0.4.0 SV: the canonical snapshot of the whole world (WorldSnapshot), for saves; restore it with from_snapshot.
+func to_snapshot() -> Dictionary:
+	return WorldSnapshot.take(self)
+
+
+## Writes `snap` into `base`, a world built from the same generation inputs (seed, floor, build, content); returns
+## it, or null when the snapshot doesn't fit (WorldSnapshot.apply says why).
+static func from_snapshot(snap: Dictionary, base: World) -> World:
+	return base if WorldSnapshot.apply(base, snap) == "" else null
+
+
 ## Plain-data copy for inspectors and desync diffs; never used for gameplay.
 func snapshot() -> Dictionary:
 	return {
@@ -809,7 +878,9 @@ func emit_event(kind: SimEvent.Kind, source: int, owner: int, target: int, at: V
 	e.target_id = target
 	e.pos = at
 	_events.append(e)
-	if _events.size() > EVENT_LOG_CAP * 2:
+	# v0.4.0 SC: trimmed EVENT_LOG_TRIM at a time (was EVENT_LOG_CAP at once: freeing that many events in one
+	# tick was a ~10 ms hitch in a horde).
+	if _events.size() > EVENT_LOG_CAP + EVENT_LOG_TRIM:
 		_events = _events.slice(_events.size() - EVENT_LOG_CAP)
 	return e
 
@@ -830,6 +901,8 @@ func _buffer_presses(pressed: int) -> void:
 
 func _run_ai() -> void:
 	var target := player_pos()
+	if not enemy_tables.is_empty():  # v0.4.0 SC: the grid the enemies' staggered plans query (EnemyAi.plan)
+		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 	for i in range(1, actors.size()):
 		if BossAi.is_boss_kind(actors.kinds[i]):
 			BossAi.think(self, i)  # Bosses (v0.3.0 C).
@@ -952,26 +1025,50 @@ func _move_and_collide() -> void:
 		for i in actors.size():
 			through.append(1 if BossAi.passes_through(self, i) else 0)
 			heavy.append(1 if BossAi.is_boss_kind(actors.kinds[i]) else 0)
+	# v0.4.0 SC: a body with no wall within WALL_SKIP_M of it skips the wall checks while it stays within that of
+	# where it was looked at (walls that far off give no push, so the result is the same).
+	var open_x := PackedFloat32Array()
+	var open_y := PackedFloat32Array()
+	open_x.resize(actors.size())
+	open_y.resize(actors.size())
+	for i in actors.size():
+		var r := actors.radius[i] + WALL_SKIP_M
+		open_x[i] = INF
+		if (
+			_wall_grid
+			. query_rect(Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0))
+			. is_empty()
+		):
+			open_x[i] = actors.pos_x[i]
+			open_y[i] = actors.pos_y[i]
 	for _iter in SimTick.COLLIDE_ITERS:
 		for i in actors.size():
 			if not through.is_empty() and through[i] == 1:
+				continue
+			if (
+				absf(actors.pos_x[i] - open_x[i]) < WALL_SKIP_M
+				and absf(actors.pos_y[i] - open_y[i]) < WALL_SKIP_M
+			):
 				continue
 			var ap := actors.pos(i)
 			var r := actors.radius[i]
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
 			actors.set_pos(i, ap)
-		_actor_grid.clear()
-		for i in actors.size():
-			var r := actors.radius[i]
-			_actor_grid.insert_rect(
-				i, Rect2(actors.pos_x[i] - r, actors.pos_y[i] - r, r * 2.0, r * 2.0)
-			)
+		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
 		for a in actors.size():
 			var ra := actors.radius[a]
 			var pa := actors.pos(a)
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
 				if b <= a:
+					continue
+				# v0.4.0 SC: bodies whose boxes are clearly apart get no push; skip the call (the margin covers
+				# rounding, so the result is the same).
+				var reach := ra + actors.radius[b] + 0.001
+				if (
+					absf(actors.pos_x[b] - actors.pos_x[a]) >= reach
+					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
+				):
 					continue
 				var push := Collide.circle_vs_circle(
 					actors.pos(a), ra, actors.pos(b), actors.radius[b]
@@ -1011,6 +1108,15 @@ func _projectile_hits() -> void:
 				best_wall = w
 		for k in _actor_grid.query_rect(span):
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
+				continue
+			# v0.4.0 SC: a body clearly outside the segment's box can't be hit; skip the sweep (same result).
+			var reach := actors.radius[k] + 0.001
+			if (
+				actors.pos_x[k] + reach < span.position.x
+				or actors.pos_x[k] - reach > span.end.x
+				or actors.pos_y[k] + reach < span.position.y
+				or actors.pos_y[k] - reach > span.end.y
+			):
 				continue
 			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
 			if t >= 0.0 and (t < best_t or (t == best_t and best_actor >= 0 and k < best_actor)):

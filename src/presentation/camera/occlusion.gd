@@ -15,7 +15,14 @@ static func select(
 	for wi in walls.size():
 		var w: Array = walls[wi]
 		var reach: float = maxf(0.0, (w[3] - SimPlane.CORE_HEIGHT) / maxf(rise, 0.01))
+		# v0.4.0 SC: only points within the wall's circle grown by the reach can be hidden by it (a cheap test
+		# before the exact one: with a crowd, most point-wall pairs are far apart).
+		var c: Vector2 = w[0]
+		var h: Vector2 = w[1]
+		var near := reach + h.length() + 0.01
 		for p in focus:
+			if absf(p.x - c.x) > near or absf(p.y - c.y) > near:
+				continue
 			if _segment_hits_box(p, p + to_camera * reach, w[0], w[1], w[2]):
 				out.append(wi)
 				break

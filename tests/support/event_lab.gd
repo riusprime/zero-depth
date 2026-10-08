@@ -1,7 +1,8 @@
 class_name EventLab
 extends RefCounted
 ## Real floors with event rooms (v0.5.0 EV), built the way Main builds one (the run's floor seed, scaling, boss
-## arena, rewards, the gamble shrine, abilities, stat cards, heat, then EventCompiler.setup), and helpers that put a
+## arena, rewards, the gamble shrine, the shop, abilities, stat cards, the Overrun rules, heat, then
+## EventCompiler.setup), and helpers that put a
 ## chosen event on a pedestal. Test-side only: the setters here are labelled test setup, never gameplay.
 
 static var _repo: ContentRepository
@@ -53,9 +54,11 @@ static func world(
 		ContentCompiler.compile_combos(r),
 		ContentCompiler.compile_gamble(r.get_def(&"gamble", &"shrine"))
 	)
+	FloorScenario.add_shop(w, ContentCompiler.compile_shop(r.get_def(&"shop", &"terminal")))  # as Main
 	w.set_boss_tables(bosses)
 	w.ability_tables = ContentCompiler.compile_abilities(r)
 	w.stat_tables = ContentCompiler.compile_stat_cards(r)
+	w.overrun_table = ContentCompiler.compile_overrun(r.get_def(&"overrun", &"overrun"))
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(r.get_def(&"heat", &"overclock")))
