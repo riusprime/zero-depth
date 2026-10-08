@@ -19,9 +19,30 @@ extends ContentDef
 ##   shock of `damage` in radius_m x level_radius; level_extra = charges.
 ## - AEGIS (utility button): the guard (guard numbers from the player table); level_extra = the guard-charge cap,
 ##   `damage` = each charge's bonus to the next swing, in per mille.
+## v0.4.0 AB: three auto abilities that feed the v0.3.0 status engines (Engines). `engine_item` names the item whose
+## engine numbers (threshold, how long stacks last, the DoT or discharge, the freeze) the ability's status uses when no
+## owned item brings stronger ones; level_extra = the status stacks each hit adds.
+## - ARC_FIELD: every level_cooldown, lightning strikes level_count enemies within range_m (picked at random from the
+##   `ability` stream) for `damage` and level_extra shock stacks.
+## - FROST_NOVA: every level_cooldown, a nova of radius_m x level_radius around the player: `damage` and level_extra
+##   frost stacks to every enemy in it.
+## - FLAME_TRAIL: while the player moves, a fire patch (radius_m x level_radius) every period_seconds lasting
+##   duration_seconds x level_rate; an enemy in fire takes `damage` x level_damage and level_extra burn stacks, once
+##   every hit_seconds.
 
 ## Appended, never renumbered (AbilityTable.Kind mirrors it).
-enum Kind { COMBO_SWORD, PULSE_GUN, BOMB_LOBBER, DRONE_BUDDY, ORBIT_BLADES, BLINK, AEGIS }
+enum Kind {
+	COMBO_SWORD,
+	PULSE_GUN,
+	BOMB_LOBBER,
+	DRONE_BUDDY,
+	ORBIT_BLADES,
+	BLINK,
+	AEGIS,
+	ARC_FIELD,
+	FROST_NOVA,
+	FLAME_TRAIL,
+}
 ## Manual abilities answer a button; auto abilities fire on their own.
 enum Activation { MANUAL, AUTO }
 ## The button a manual ability answers (NONE for auto).
@@ -30,8 +51,20 @@ enum Rarity { COMMON, RARE }
 
 const MAX_LEVEL := 5
 const TAGS: Array[StringName] = [
-	&"melee", &"bolt", &"area", &"auto", &"utility", &"weapon", &"summon", &"orbit"
+	&"melee",
+	&"bolt",
+	&"area",
+	&"auto",
+	&"utility",
+	&"weapon",
+	&"summon",
+	&"orbit",
+	&"shock",
+	&"frost",
+	&"fire"
 ]
+## v0.4.0 AB: the kinds that feed a status engine (they need engine_item).
+const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TRAIL]
 ## The build weapon ids (BuildDefinition.WEAPON_IDS) a starting ability may name.
 const WEAPONS: Array[StringName] = [&"blade", &"gun"]
 
@@ -52,6 +85,8 @@ const WEAPONS: Array[StringName] = [&"blade", &"gun"]
 @export var period_seconds := 0.0
 @export var duration_seconds := 0.0
 @export var hit_seconds := 0.0
+## v0.4.0 AB: the item (an id under data/items) whose engine numbers this ability's status uses; empty for none.
+@export var engine_item: StringName = &""
 @export_group("Levels (L1..L5)")
 @export var level_damage := PackedFloat32Array([1.0, 1.0, 1.0, 1.0, 1.0])
 @export var level_count := PackedInt32Array([1, 1, 1, 1, 1])
@@ -75,7 +110,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
-	if kind < Kind.COMBO_SWORD or kind > Kind.AEGIS:
+	if kind < Kind.COMBO_SWORD or kind > Kind.FLAME_TRAIL:
 		issues.append(ValidationIssue.new(&"range", resource_path, "kind is out of range"))
 	var manual := activation == Activation.MANUAL
 	if manual == (button == Binding.NONE):
@@ -140,4 +175,40 @@ func validate() -> Array[ValidationIssue]:
 		Kind.BLINK:
 			check_positive(issues, "range_m", range_m)
 			check_positive(issues, "level_cooldown[0]", level_cooldown[0])
+		Kind.ARC_FIELD:
+			check_positive(issues, "range_m", range_m)
+			check_positive(issues, "damage", damage)
+		Kind.FROST_NOVA:
+			check_positive(issues, "radius_m", radius_m)
+			check_positive(issues, "damage", damage)
+		Kind.FLAME_TRAIL:
+			check_positive(issues, "radius_m", radius_m)
+			check_positive(issues, "period_seconds", period_seconds)
+			check_positive(issues, "duration_seconds", duration_seconds)
+			check_positive(issues, "hit_seconds", hit_seconds)
+			check_positive(issues, "damage", damage)
+	if kind in ENGINE_KINDS:
+		if String(engine_item).is_empty():
+			issues.append(ValidationIssue.new(&"missing", resource_path, "engine_item is required"))
+		if kind != Kind.FLAME_TRAIL:
+			for k in MAX_LEVEL:
+				check_positive(issues, "level_cooldown[%d]" % k, level_cooldown[k])
+		for k in MAX_LEVEL:
+			check_positive(issues, "level_extra[%d]" % k, level_extra[k])
+	return issues
+
+
+## v0.4.0 AB (ContentValidator, over the whole set): every engine_item names an item that exists.
+static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
+	var issues: Array[ValidationIssue] = []
+	var items := {}
+	for d in defs:
+		if d is ItemDefinition:
+			items[d.id] = true
+	for d in defs:
+		var a := d as AbilityDefinition
+		if a != null and not String(a.engine_item).is_empty() and not items.has(a.engine_item):
+			issues.append(
+				ValidationIssue.new(&"unknown_item", a.resource_path, "no item %s" % a.engine_item)
+			)
 	return issues

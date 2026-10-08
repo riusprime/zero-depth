@@ -177,6 +177,9 @@ var gamble_last_stat := -1
 var gamble_tick := -1
 var gamble_denied_tick := -1
 # --- end Gamble ---------------------------------------------------------------------------------------------
+# v0.5.0 SH (Shop): the shop's rules (loadout, not hashed; null = no shops) and the floor's shop (hashed once placed).
+var shop_table: ShopTable
+var shop := ShopState.new()
 
 # --- Engines and combos (v0.3.0 G; Engines). Hashed when the loadout has items (_hash_engines). --------------
 ## Compiled combos (part of the loadout, like item_tables); combos_owned holds indices into it, in unlock order.
@@ -243,9 +246,12 @@ var stat_tables: Array[StatTable] = []
 var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
+var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
+var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
+var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
 # --- end Build ----------------------------------------------------------------------------------------------
 var _next_id := 1
 var _event_seq := 0
@@ -349,6 +355,10 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
+	if shop.open:  # v0.5.0 SH: the shop's panel is open; only its actions run, the tick still counts.
+		Shop.choose(self, frame)
+		tick += 1
+		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
 		boss_flow.advance_transit(self)
 		tick += 1
@@ -366,6 +376,9 @@ func step(frame: InputFrame) -> void:
 	PlayerBuild.note_facing(self)  # Builds: melee follows the facing (L29).
 	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
 	if Rewards.interact(self):
+		tick += 1
+		return
+	if Shop.interact(self):  # v0.5.0 SH: interact by the terminal opens the shop.
 		tick += 1
 		return
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
@@ -395,6 +408,7 @@ func step(frame: InputFrame) -> void:
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
+	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
 	if spawner != null:
@@ -458,7 +472,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 ## The compiled items, in the order the indices in items_owned and pickups refer to.
 func set_item_tables(tables: Array[ItemTable]) -> void:
 	item_tables = tables
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 
 
 ## Gives the player item `item_index`. Returns false (and changes nothing) if it is already owned.
@@ -466,7 +480,7 @@ func add_item(item_index: int) -> bool:
 	if items_owned.has(item_index):
 		return false
 	items_owned.append(item_index)
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 	_refresh_combos(true)
 	return true
 
@@ -481,14 +495,30 @@ func set_combo_tables(tables: Array[ComboTable]) -> void:
 ## Sets the items owned (carrying a run's items to a new floor): modifiers and combos follow, no events.
 func set_items_owned(owned: PackedInt32Array) -> void:
 	items_owned = owned.duplicate()
-	item_mods = ItemMods.build(item_tables, items_owned)
+	_build_mods()
 	_refresh_combos(false)
 
 
-## Owns every combo whose two items are owned (new ones appended in combo order); `announce` emits COMBO_UNLOCKED
-## for each new one (amount = its combo index).
+## v0.4.0 AB: the item modifiers plus the engine numbers the owned abilities borrow (ElementAbilities).
+func _build_mods() -> void:
+	item_mods = ItemMods.build(item_tables, items_owned)
+	ElementAbilities.fold_engines(self, item_mods)
+
+
+## v0.4.0 AB: after the abilities owned or their levels changed: the modifiers, then the combos (an ability pair at
+## its level evolves; `announce` emits COMBO_UNLOCKED).
+func refresh_build(announce: bool) -> void:
+	_build_mods()
+	_refresh_combos(announce)
+
+
+## Owns every combo whose two items are owned, and (v0.4.0 AB) every ability combo whose two abilities are at its
+## level (new ones appended in combo order); `announce` emits COMBO_UNLOCKED for each new one (amount = its combo
+## index).
 func _refresh_combos(announce: bool) -> void:
-	for c in Engines.combos_for(combo_tables, items_owned):
+	var earned := Engines.combos_for(combo_tables, items_owned)
+	earned.append_array(AbilityCombos.earned(self))
+	for c in earned:
 		if combos_owned.has(c):
 			continue
 		combos_owned.append(c)
@@ -733,6 +763,8 @@ func state_hash() -> String:
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
+	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
+		overrun.hash_into(h)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
@@ -741,6 +773,8 @@ func state_hash() -> String:
 			h.add_int(v)
 		h.add_f32(gamble_pos.x)
 		h.add_f32(gamble_pos.y)
+	if shop.present():  # v0.5.0 SH: only floors with a shop.
+		shop.hash_into(h)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
@@ -783,6 +817,17 @@ func _hash_engines(h: StateHasher) -> void:
 	for p in discharge_to:
 		h.add_f32(p.x)
 		h.add_f32(p.y)
+
+
+## v0.4.0 SV: the canonical snapshot of the whole world (WorldSnapshot), for saves; restore it with from_snapshot.
+func to_snapshot() -> Dictionary:
+	return WorldSnapshot.take(self)
+
+
+## Writes `snap` into `base`, a world built from the same generation inputs (seed, floor, build, content); returns
+## it, or null when the snapshot doesn't fit (WorldSnapshot.apply says why).
+static func from_snapshot(snap: Dictionary, base: World) -> World:
+	return base if WorldSnapshot.apply(base, snap) == "" else null
 
 
 ## Plain-data copy for inspectors and desync diffs; never used for gameplay.

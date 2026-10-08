@@ -1,10 +1,11 @@
 # Gallery screenshots with a real renderer (software Vulkan / GL under Xvfb): PRESENTATION_CONTRACTS §10.
 name: Shots
 
+# Builds only for pushes to main (and the manual "Run workflow" button), not every branch push.
 on:
   push:
-  pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: "4.7.2"
@@ -44,3 +45,4 @@ jobs:
           name: shots
           path: build/shots/
           if-no-files-found: error
+          retention-days: 14

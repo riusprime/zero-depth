@@ -33,10 +33,11 @@ static func advance(w: World) -> void:
 		w.spawn_cd -= 1
 	if w.spawn_cd > 0:
 		return
-	var room := t.cap(w.floor_index, tier) - WaveDirector.enemies_alive(w)
+	# v0.4.0 AB: inside the Overrun room the cap is x1.5 and the interval / 1.5, on top of the tier's (Overrun).
+	var room := Overrun.cap(w, t.cap(w.floor_index, tier)) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = t.interval(tier)
+	w.spawn_cd = Overrun.interval(w, t.interval(tier))
 	_spawn_pack(w, t, tier, room)
 
 
@@ -152,3 +153,4 @@ static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
 		w.actors.power[i] = power
+		Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)

@@ -692,22 +692,52 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	return t
 
 
-## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id).
-## Combos naming an unknown item are left out (the validator reports them).
+## The shop (v0.5.0 SH): shares in per mille; prices as the data gives them. Null without a definition.
+static func compile_shop(def: ShopDefinition) -> ShopTable:
+	if def == null:
+		return null
+	var t := ShopTable.new()
+	t.offer_size = def.offer_size
+	t.rarity_prices = def.rarity_prices.duplicate()
+	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.heal_permille = int(round(def.heal_share * 1000.0))
+	t.heal_price = def.heal_price
+	t.reroll_price = def.reroll_price
+	t.reroll_step_permille = int(round(def.reroll_step * 1000.0))
+	t.sell_permille = int(round(def.sell_share * 1000.0))
+	t.ability_refund_per_level = def.ability_refund_per_level
+	t.interact_radius_m = def.interact_radius_m
+	return t
+
+
+## The named combos (v0.3.0 G), their item ids resolved to item indices (the order compile_items gives: by id);
+## v0.4.0 AB: an ability combo's ability ids to ability indices (compile_abilities). Combos naming an unknown item
+## or ability are left out (the validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
 	var items := repo.all_of(&"items")
 	for k in items.size():
 		index[(items[k] as ItemDefinition).id] = k
+	var abilities := {}  # v0.4.0 AB: ability combos name abilities (compile_abilities order: by id)
+	var defs := repo.all_of(&"ability")
+	for k in defs.size():
+		abilities[(defs[k] as AbilityDefinition).id] = k
 	var out: Array[ComboTable] = []
 	for def: ComboDefinition in repo.all_of(&"combos"):
-		if not index.has(def.item_a) or not index.has(def.item_b):
-			continue
 		var t := ComboTable.new()
+		if def.is_ability_combo():
+			if not abilities.has(def.ability_a) or not abilities.has(def.ability_b):
+				continue
+			t.ability_a = abilities[def.ability_a]
+			t.ability_b = abilities[def.ability_b]
+			t.min_level = def.min_level
+		elif not index.has(def.item_a) or not index.has(def.item_b):
+			continue
+		else:
+			t.item_a = index[def.item_a]
+			t.item_b = index[def.item_b]
 		t.id = def.id
 		t.effect = int(def.effect)
-		t.item_a = index[def.item_a]
-		t.item_b = index[def.item_b]
 		t.name_key = def.name_key
 		t.desc_key = def.desc_key
 		t.damage = def.damage
@@ -727,11 +757,12 @@ static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
 	var out: Array[AbilityTable] = []
 	for def: AbilityDefinition in repo.all_of(&"ability"):
-		out.append(compile_ability(def))
+		out.append(compile_ability(def, repo))
 	return out
 
 
-static func compile_ability(def: AbilityDefinition) -> AbilityTable:
+## v0.4.0 AB: with `repo`, the ability's engine_item is compiled too (AbilityTable.engine).
+static func compile_ability(def: AbilityDefinition, repo: ContentRepository = null) -> AbilityTable:
 	var t := AbilityTable.new()
 	t.id = def.id
 	t.kind = def.kind as AbilityTable.Kind
@@ -764,6 +795,10 @@ static func compile_ability(def: AbilityDefinition) -> AbilityTable:
 		t.level_cooldown.append(SimTick.seconds_to_ticks(def.level_cooldown[k]))
 	t.level_count = def.level_count.duplicate()
 	t.level_extra = def.level_extra.duplicate()
+	if repo != null and not String(def.engine_item).is_empty():
+		var item: ItemDefinition = repo.get_def(&"items", def.engine_item)
+		if item != null:
+			t.engine = compile_item(item)
 	return t
 
 
@@ -813,6 +848,19 @@ static func compile_run(def: RunDefinition) -> RunTable:
 
 ## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition
 ## (Heat.enable then leaves heat off).
+## v0.4.0 AB: the Overrun branch's numbers (null without a definition: no Overrun).
+static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
+	if def == null:
+		return null
+	var t := OverrunTable.new()
+	t.hp_permille = int(round(def.hp_multiplier * 1000.0))
+	t.damage_permille = int(round(def.damage_multiplier * 1000.0))
+	t.spawn_permille = int(round(def.spawn_multiplier * 1000.0))
+	t.kills_to_clear = def.kills_to_clear
+	t.shard_permille = int(round(def.shard_multiplier * 1000.0))
+	return t
+
+
 static func compile_heat(def: HeatDefinition) -> HeatTable:
 	if def == null:
 		return null

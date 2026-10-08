@@ -120,6 +120,18 @@ line telegraph, 1.0 s, high damage). All with readable telegraphs ≥ 24 ticks a
 One **Overrun** door per floor (from floor 1, a side room with a red frame): ×1.5 HP/damage, +50 % spawns; clearing
 it gives an ability level-up card and 2× shards. Optional, never on the path to the boss.
 
+## Owner playtest feedback (2026-10-08, verbatim)
+> okay, I tried one of these playable versions, it is extreamly hard from the beggining, I do like this level of difficulty, but only if the character has grown a bit on the scaling vector, we need to ease the difficulty curve on the first minutes of the game, and introduce the enemies by phases, and then reach this difficulty closer to the end of the floor, when the difficulty has reached its max,  difficulty should be "easy" the first minute so you can explore and gather some stuff and then it becomes harder and harder, what I felt is that there were too many hard enemies I could not really kill all before even reaching the first boss or getting enough spells or upgrades
+
+| # | Owner line | Decision | Step |
+|---|---|---|---|
+| D1 | "ease the difficulty curve on the first minutes of the game" / "difficulty should be "easy" the first minute so you can explore and gather some stuff" | A calm first minute on every floor: few enemies, only the basic kinds, slow spawns, no tier scaling yet | TU |
+| D2 | "introduce the enemies by phases" | Enemy kinds unlock in phases across the floor (basic → ranged → specialists → elites), each phase announced | TU |
+| D3 | "reach this difficulty closer to the end of the floor, when the difficulty has reached its max" / "then it becomes harder and harder" | The floor's difficulty ramps to its peak (today's level) near the floor's expected end, then holds; the curve is data | TU |
+| D4 | "I do like this level of difficulty, but only if the character has grown a bit on the scaling vector" / "too many hard enemies … before even reaching the first boss or getting enough spells or upgrades" | Tune against the expected-build bot: early rewards come sooner (an altar near the start hall), and the peak is reached only when a bot that picks normally has grown into it | TU |
+| D5 | (2026-10-08) "we also have a lot of variety of enemies, let's distribute presenting them through the first 3 floors" | Enemy kinds are introduced across floors 1–3 (floor 1: basics + a few specialists; floor 2 and 3 add the rest), each first appearance announced; boss summons exempt | TU |
+| D6 | (2026-10-08) "also, do not make gun -15% it is actually unplayable with that debuff" | Gun damage multiplier 0.85 → 1.00 (supersedes v0.3.0 L16 for the Gun; Blade +15 % stays) | TU |
+
 ## Steps
 | Wave | Step | Scope |
 |---|---|---|

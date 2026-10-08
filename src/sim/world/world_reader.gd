@@ -108,6 +108,15 @@ const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
+## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
+const SHOP_SELL_MOD := Shop.SELL_MOD
+const SHOP_SELL_STAT := Shop.SELL_STAT
+const SHOP_SELL_ABILITY := Shop.SELL_ABILITY
+const SHOP_BUY := ShopState.Action.BUY
+const SHOP_HEAL := ShopState.Action.HEAL
+const SHOP_REROLL := ShopState.Action.REROLL
+const SHOP_SELL := ShopState.Action.SELL
+const SHOP_SALVAGE := ShopState.Action.SALVAGE_ABILITY
 const ABILITY_COMBO_SWORD := AbilityTable.Kind.COMBO_SWORD
 const ABILITY_PULSE_GUN := AbilityTable.Kind.PULSE_GUN
 const ABILITY_BOMB_LOBBER := AbilityTable.Kind.BOMB_LOBBER
@@ -119,6 +128,8 @@ const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 const ABILITY_SLOTS := Abilities.SLOTS
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
+## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
+const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 
 var _w: World
 
@@ -1117,6 +1128,8 @@ func combo_desc_key(combo_index: int) -> StringName:
 ## The two item ids a combo needs.
 func combo_item_ids(combo_index: int) -> Array[StringName]:
 	var c := _w.combo_tables[combo_index]
+	if c.ability_a >= 0:  # v0.4.0 AB: an ability combo's two abilities
+		return [_w.ability_tables[c.ability_a].id, _w.ability_tables[c.ability_b].id]
 	return [_w.item_tables[c.item_a].id, _w.item_tables[c.item_b].id]
 
 
@@ -1376,6 +1389,23 @@ func ability_fx() -> Dictionary:
 	return Abilities.fx(_w)
 
 
+## v0.4.0 AB: Arc Field, Frost Nova, the fire patches and the ability combos' moments (ElementAbilities.fx).
+## A fire patch's kind in element_fx()["fire_kind"]: FIRE_NAPALM is Napalm Drone's (else Flame Trail's).
+func element_fx() -> Dictionary:
+	return ElementAbilities.fx(_w)
+
+
+## v0.4.0 AB: the Overrun room (Overrun.read: active, room, doors, inside, entered, kills, needed, cleared,
+## clear_tick, bonus, reward_id, boosted).
+func overrun() -> Dictionary:
+	return Overrun.read(_w)
+
+
+## v0.4.0 AB: a combo pairs two abilities (combo_item_ids then gives the ability ids).
+func combo_is_ability(combo_index: int) -> bool:
+	return _w.combo_tables[combo_index].ability_a >= 0
+
+
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).
 func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
@@ -1393,3 +1423,42 @@ func crit_mult_permille() -> int:
 ## A stat's raw value (Stats.value: per mille; base 1000 for multipliers, 0 for added points).
 func stat_value(stat: int) -> int:
 	return Stats.value(_w, stat)
+
+
+# --- Shop (v0.5.0 SH; Shop) --------------------------------------------------------------------------------------
+## The floor has a shop terminal.
+func has_shop() -> bool:
+	return Shop.present(_w)
+
+
+func shop_pos() -> Vector2:
+	return _w.shop.pos
+
+
+func shop_room() -> int:
+	return _w.shop.room
+
+
+## The terminal's facing (1/4096 turns; toward its room's first doorway).
+func shop_angle() -> int:
+	return _w.floor_layout.shop_angle if _w.floor_layout != null else 0
+
+
+func shop_in_reach() -> bool:
+	return Shop.in_reach(_w)
+
+
+## The shop's panel is open (the world waits on it).
+func shop_open() -> bool:
+	return _w.shop.open
+
+
+## The last refused shop action's tick (-1 when none).
+func shop_denied_tick() -> int:
+	return _w.shop.denied_tick
+
+
+## Everything the shop panel shows (Shop.read): stock (code, sold, price, can_apply, affordable), heal (price,
+## amount, used), reroll (price, rerolls), sell (kind SHOP_SELL_*, ref, code, refund) and the last action / refusal.
+func shop() -> Dictionary:
+	return Shop.read(_w)

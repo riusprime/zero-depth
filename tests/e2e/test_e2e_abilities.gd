@@ -68,6 +68,9 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 		AbilityTable.Kind.BOMB_LOBBER: Abilities.EFFECT_BOMB,
 		AbilityTable.Kind.DRONE_BUDDY: Abilities.EFFECT_DRONE,
 		AbilityTable.Kind.ORBIT_BLADES: Abilities.EFFECT_ORBIT,
+		AbilityTable.Kind.ARC_FIELD: ElementAbilities.EFFECT_ARC,  # v0.4.0 AB
+		AbilityTable.Kind.FROST_NOVA: ElementAbilities.EFFECT_NOVA,
+		AbilityTable.Kind.FLAME_TRAIL: ElementAbilities.EFFECT_FLAME,
 	}[t.kind]
 	var seq := w.last_event_seq()
 	var fired := false
@@ -94,7 +97,8 @@ func test_blink_card_then_shift_blinks() -> void:
 	await e.start_from_menu()
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
-	await _click(e, main, "NextAbility")  # aegis -> blink (the dev panel's forced loadout)
+	while w.ability_tables[main.driver.debug.ability_choice].id != &"blink":
+		await _click(e, main, "NextAbility")  # (the dev panel's forced loadout)
 	assert_eq(w.ability_tables[main.driver.debug.ability_choice].id, &"blink")
 	await _click(e, main, "GrantAbility")
 	await e.frames(2)

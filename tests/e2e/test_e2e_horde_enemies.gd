@@ -5,6 +5,9 @@ extends GutTest
 ## shows and its attack reaches the player (a HIT event; God mode, also clicked, keeps the player standing). The Mine
 ## Layer's mine is walked onto with the left stick; the Mender heals an ally the player has shot.
 
+## How close the player stays to a Shield Bearer it stands up to (m): inside its bash's reach.
+const FACE_M := 1.4
+
 
 func _click(e: E2e, main: Main, button_name: String) -> void:
 	var b := main.get_node("UI/DevPanel").find_child(button_name, true, false) as Button
@@ -32,7 +35,12 @@ func _spawn(e: E2e, main: Main, kind: int, key: String) -> int:
 
 
 ## Steps frames until actor `id` lands a HIT on the player (true), noting whether a telegraph in `styles` showed.
-func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int) -> Array:
+## `face_it`: the player steps back in front of the enemy (left stick) whenever it is more than FACE_M away, the way
+## you stand up to a Shield Bearer. Its bash locks its facing at the windup and it turns slowly, while the floor's
+## own spawns and the kinds spawned before it keep hitting the player in God mode, and every hit knocks the player
+## aside; standing still, whether a knock lands inside a bash's windup depends only on the AI's id-staggered schedule
+## (v0.4.0 SC), which one more entity id at floor setup (v0.5.0 SH's shop terminal) shifts.
+func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int, face_it := false) -> Array:
 	var w := e.world()
 	var styled := false
 	var hit := false
@@ -42,6 +50,9 @@ func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int) -> Array:
 		var i := w.actors.index_of(id)
 		if i < 0:
 			break
+		if face_it:
+			var to := w.actors.pos(i) - w.player_pos()
+			e.stick_toward(to.normalized() if to.length() > FACE_M else Vector2.ZERO)
 		var tg := main.driver.reader.telegraph(i)
 		if (
 			not tg.is_empty()
@@ -55,6 +66,9 @@ func _watch(e: E2e, main: Main, id: int, styles: Array, frames: int) -> Array:
 				hit = hit or ev.owner_id == id
 		if styled and hit:
 			break
+	if face_it:
+		e.stick_toward(Vector2.ZERO)
+		await e.frames(1)
 	return [styled, hit]
 
 
@@ -73,7 +87,8 @@ func test_the_dev_panel_brings_in_each_horde_kind_and_it_acts() -> void:
 		[ActorStore.Kind.SNIPER, "ENEMY_SNIPER", [&"snipe"]],
 	]:
 		var id: int = await _spawn(e, main, spec[0], spec[1])
-		var got: Array = await _watch(e, main, id, spec[2], 900)
+		var bearer: bool = spec[0] == ActorStore.Kind.SHIELD_BEARER
+		var got: Array = await _watch(e, main, id, spec[2], 900, bearer)
 		assert_true(got[0], "%s: its telegraph is drawn" % spec[1])
 		assert_true(got[1], "%s: its attack reached the player" % spec[1])
 	# The Mine Layer drops a mine; walking onto it arms it (its circle fills) and it blows on the player.

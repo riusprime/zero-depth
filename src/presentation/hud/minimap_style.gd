@@ -16,9 +16,13 @@ const PLAYER := Color("#3FE0FF")
 const ALTAR := Color("#F2D16B")
 ## The gamble shrine (v0.3.0 L19).
 const SHRINE := Color("#D46BFF")
+## The shop terminal (v0.5.0 SH), in the shards' violet.
+const SHOP := Color("#B48CFF")
 const CHEST := Color("#E0A458")
 const CHEST_POOR := Color(0.62, 0.55, 0.50, 0.85)
 const BOSS := Color("#FF4A3D")
+## v0.4.0 AB: the Overrun room (its doorways and its mark): a hotter, pinker red than the boss door.
+const OVERRUN := Color("#FF2E6A")
 const PORTAL_OPEN := Color("#4DA3FF")
 const PORTAL_SEALED := Color(0.55, 0.60, 0.70, 0.8)
 ## v0.5.0 RT: the Deep portal, violet in a red ring (the gate's own colours).

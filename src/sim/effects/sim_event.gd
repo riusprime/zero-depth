@@ -16,6 +16,9 @@ extends RefCounted
 ## Kit (v0.3.5 K): SKILL_USED: the build's skill started (amount = SkillTable.Kind, root = the skill's root, pos =
 ## where it started). VENT: the Vent button vented (amount = heat points vented). VENT_COLD: the Vent button under
 ## Hot did nothing (the cold click).
+## v0.5.0 SH: SHOP_BUY: shards spent at the shop (amount = the price, effect_id = the card's id, or &"shop_heal" /
+## &"shop_reroll"; a bought card also emits PICKUP from the terminal). SHOP_SALVAGE: shards back for a mod, a stat
+## card or an ability (amount = the refund, effect_id = its id, target_id = the card code).
 ## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
 enum Kind {
@@ -39,6 +42,8 @@ enum Kind {
 	SKILL_USED,
 	VENT,
 	VENT_COLD,
+	SHOP_BUY,
+	SHOP_SALVAGE,
 }
 
 const TAG_MELEE := 1

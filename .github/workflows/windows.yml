@@ -2,10 +2,11 @@
 # Cross-OS golden replays (EI-11), the release export and its zip audit. PLAN v0.0.1 Step 3.
 name: Windows
 
+# Builds only for pushes to main (and the manual "Run workflow" button), not every branch push.
 on:
   push:
-  pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: "4.7.2"
@@ -78,3 +79,4 @@ jobs:
             build/windows/game_windows_x86_64.zip
             build/windows/SHA256SUMS.txt
           if-no-files-found: error
+          retention-days: 14
