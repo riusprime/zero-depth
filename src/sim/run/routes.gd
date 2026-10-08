@@ -43,20 +43,32 @@ static func offers_choice(run: RunState) -> bool:
 ## Places the Deep gate in f's boss room: on the back wall beside the gate (each side, nearest first), else on a side
 ## wall from the back corner toward the door. A spot fits when the gate and its clear front lie inside the room, its
 ## zone keeps clear of the gate's zone, the interior pieces, the boss's spawn and the door, and its front is reached
-## from the door. Returns false (and leaves has_deep_portal false) if no spot fits.
+## from the door. If no spot fits, a second pass takes the first spot that fits once the interior pieces in its zone
+## are gone, and removes them (a dense template, e.g. a long LINES room). Call it before the layout's walls are
+## copied into a world. Returns false (and leaves has_deep_portal false) if still no spot fits.
 static func place_deep_gate(f: FloorLayout, params: FloorParams = null) -> bool:
 	f.has_deep_portal = false
 	if f.boss_room < 0:
 		return false
 	var p := params if params != null else FloorParams.defaults()
 	var r := f.rooms[f.boss_room]
-	for c: Array in candidates(f):
-		if fits(f, p, r, c[0], c[1]):
-			f.deep_portal_pos = c[0]
-			f.deep_portal_angle = c[1]
-			f.has_deep_portal = true
-			return true
+	for clearing in [false, true]:
+		for c: Array in candidates(f):
+			if fits(f, p, r, c[0], c[1], clearing):
+				f.deep_portal_pos = c[0]
+				f.deep_portal_angle = c[1]
+				f.has_deep_portal = true
+				if clearing:
+					_clear_zone(f, zone(c[0], c[1]))
+				return true
 	return false
+
+
+## Removes the interior pieces whose bounds touch zone z (index slab_first on; the structure stays).
+static func _clear_zone(f: FloorLayout, z: Rect2) -> void:
+	for i in range(f.walls.size() - 1, f.slab_first - 1, -1):
+		if f.walls[i].bounds().intersects(z):
+			f.walls.remove_at(i)
 
 
 ## Candidate [centre, facing] pairs in order of preference.
@@ -85,7 +97,11 @@ static func candidates(f: FloorLayout) -> Array:
 	return out
 
 
-static func fits(f: FloorLayout, p: FloorParams, r: Rect2, pos: Vector2, angle: int) -> bool:
+## Whether a gate at pos facing angle fits (see place_deep_gate); `clearing`: interior pieces in its zone don't
+## count (they would be removed).
+static func fits(
+	f: FloorLayout, p: FloorParams, r: Rect2, pos: Vector2, angle: int, clearing: bool = false
+) -> bool:
 	var room := r.grow(0.001)
 	var box := collider_at(pos, angle)
 	if not room.encloses(box.bounds()) or not room.encloses(_front(pos, angle)):
@@ -101,7 +117,9 @@ static func fits(f: FloorLayout, p: FloorParams, r: Rect2, pos: Vector2, angle: 
 	for i in f.walls.size():
 		var w := f.walls[i]
 		if i >= f.slab_first and w.bounds().intersects(z):
-			return false
+			if not clearing:
+				return false
+			continue
 		if w.bounds().intersects(r.grow(1.0)):
 			walls.append(w)
 	walls.append(collider_at(f.portal_pos, f.portal_angle))

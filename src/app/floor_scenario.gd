@@ -30,10 +30,10 @@ static func build(
 	var layout := FloorGenerator.generate(seed_value)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
+	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))
-	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
 	if routes:
 		walls.append(Routes.deep_gate_collider(layout))
 	if gamble != null:  # v0.3.0 L19: the shrine is solid, like the gate (its footprint is not drawn as a wall).
