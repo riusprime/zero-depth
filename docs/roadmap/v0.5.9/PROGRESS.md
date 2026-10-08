@@ -11,6 +11,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
 - The pixel look is decided at the G2 mockup.
 - Its own version and branch, merged after the owner verifies it.
 - Start now, over the other agent's v0.4.0/v0.5.0 branch: "we can build over that code".
+- G2: **B** (not pixelated), keep wall heights, add the hero light: "B, keep wall heights, yes to the hero light".
+- New line L8 (room layouts): "rework of how rooms generate … distinct objects and combinations of them while keeping
+  a logical and structured way of items to spawn, I dont want the slabs doing a 9x9 diagonal wall design, I want it
+  kinda like the image reference … saving the spacing we have now so the game still has its mobility". Design
+  proposal in PLAN "L8"; not built until the owner answers its questions.
 
 ## Done
 | Step | What (player-facing) | Commit |
@@ -23,9 +28,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2 Look (A today / B lit + kit / C B pixelated) | 2026-10-08 (`scripts/shots/mock_look.gd`, 3 biomes, hero and fire views) | pending | |
-| Q2 wall heights | 2026-10-08 (PLAN) | pending | |
-| Q3 hero light | 2026-10-08 (PLAN) | pending | |
+| G2 Look (A today / B lit + kit / C B pixelated) | 2026-10-08 (`scripts/shots/mock_look.gd`, 3 biomes, hero and fire views) | **B** ("B, keep wall heights, yes to the hero light") | 2026-10-08 |
+| Q2 wall heights | 2026-10-08 (PLAN) | keep (1.0 m / 1.8 m) | 2026-10-08 |
+| Q3 hero light | 2026-10-08 (PLAN) | yes | 2026-10-08 |
 
 ## Open
 - `origin/main` has a stray upload of the kit at the repo root (`5bc2917`, 16 `.glb` + 2 `.png`). It is the owner's

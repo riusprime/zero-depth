@@ -38,6 +38,8 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 | L5 | All 3 biomes, one shared kit | Kit retinted by the biome palette, plus 2 biome props each and one lighting mood per biome | 3, 5 |
 | L6 | Pixel look: decide at the mockup | Q1 → G2 variant C | 2 |
 | L7 | "different version, worked from a new branch and we'll merge and verify when ready" | Its own version and branch; merged after the owner verifies | 0, R |
+| G2 | "B, keep wall heights, yes to the hero light" (2026-10-08) | Variant B; PD-11 superseded (LOCKED_DECISIONS); C dropped; Q2 keep; Q3 yes | 1, 2 |
+| L8 | "rework of how rooms generate … distinct objects and combinations … logical and structured … not the 9x9 diagonal wall design … like the image reference … saving the spacing we have now" (2026-10-08) | Proposal: themed rooms built from vignettes (below); waits on the owner's answers | 7 (proposed) |
 
 ## Design questions
 - **Q1. Pixel look.** (a) Full resolution, with the mood coming only from light, AO and textures. (b) A low-res render
@@ -183,6 +185,75 @@ Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.m
 - ROADMAP §0.4 checklist: version bump, patch notes en + es, tour en + es, README row, PROGRESS final.
 - `PLAYTEST.md` with look questions; owner answers are verbatim.
 - Merge after the owner verifies the build.
+
+## L8 proposal: themed rooms built from vignettes (step 7, not built until answered)
+
+**Today.** `RoomInterior` gives each room a geometric template (PILLARS, CROSS, LINES, BUNKERS, COLONNADE,
+DIAGONALS…) made of identical slabs. `FloorGenerator` then keeps a group only if it keeps the gaps
+(`EDGE` 2.6 m from walls, `slab_gap` 2.2 m between groups), leaves the doorways, start and gate clear, and leaves
+the room in one piece. The patterns read as geometry, not as places, and the dresser has to guess what each slab
+is from its shape.
+
+**Proposal.** Keep the second half (the validation is what guarantees the mobility) and replace what gets
+proposed.
+
+1. **Vignettes** (new typed content, `data/vignettes/*.tres`, EI-08). A vignette is a small, authored, recognisable
+   cluster:
+   - a footprint;
+   - its blocking boxes, which are the sim's collision;
+   - its decoration, which is presentation only;
+   - an anchor: `corner`, `wall`, `centre` or `free`.
+
+   Each blocking box names the kit piece that draws it, so the dresser stops guessing. Starting set, from the
+   reference:
+
+   | Vignette | What it is |
+   |---|---|
+   | Wreck | A car wreck, a crate stack beside it, an oil drum |
+   | Supply pile | 2–3 crate stacks in an L, with rubble |
+   | Collapsed wall | A broken wall run with a pillar and fallen blocks |
+   | Shrine / pillar pair | Two slabs framing a gap |
+   | Barricade | A short low wall with crates behind it |
+   | Burn barrel | A fire barrel inside a ring of low debris; a light source |
+   | Rock outcrop (Night Rocks) | A large rock and a dead tree |
+   | Mesa stack (Red Canyon) | Layered stone blocks |
+   | Shed corner | Two short walls in an L hugging a room corner, with a ladder frame |
+
+2. **Room themes.** Each room draws a theme by its size and role (hall, side room, portal room). The theme says
+   which vignettes may appear, how many, and how they're laid out:
+   - **Scrapyard:** wrecks and supply piles against the walls.
+   - **Ruined hall:** collapsed walls and pillar pairs.
+   - **Camp:** a burn barrel in the centre and barricades.
+   - **Overgrown:** outcrops and grass.
+   - **Open arena:** almost empty; for the boss approach and big fights.
+
+3. **Structured placement on anchors.** This is what makes rooms look like your image: objects hug corners and
+   walls, and the middle stays open lanes. The order is:
+   1. corner vignettes first;
+   2. then wall vignettes along the walls (never in front of a doorway);
+   3. then at most one centrepiece in a big room.
+
+   Every placement goes through today's checks: gaps, doorways clear, one region. A room also has a **blocked-area
+   band** (starting value 8–15 % of its floor, measured against today's templates), so open space and mobility stay
+   where they are now.
+
+4. **Decoration** (grass at bases, rubble, drums) comes from each vignette's own list plus the dresser's existing
+   rules. It stays presentation only and seeded.
+
+**What it touches.** This is sim and content (`room_interior.gd`, `floor_generator.gd`, a new
+`VignetteDefinition`, `FloorLayout` keeping each box's piece tag), plus the dresser. Every floor layout changes, so:
+- the floor property tests (1,000 seeds) and the scorecard sims must be re-run;
+- any balance numbers measured on today's layouts move;
+- the replay goldens on generated floors change on purpose.
+
+**Questions for the owner:**
+- **Q4. Where it lives.** ROADMAP §0.3/§2 keep patch versions to presentation and art, and this is sim.
+  - (a) Its own minor version after the v0.5.0 playtest, folded into this look work before the merge. ← recommended
+  - (b) In v0.5.9 now, as a one-time waiver.
+- **Q5. Timing with the balancing agent.** Its tuning is measured on today's layouts.
+  - (a) Build this after its pass merges, then re-run the sims. ← recommended
+  - (b) Build now; it re-measures afterwards.
+- **Q6. Mockup first (G2).** Three room themes, rendered with the kit before the generator changes. ← recommended
 
 ## Open items (what they block)
 - Q1 (G2), Q2 and Q3: these block Steps 2 and 4 from shipping as the default.
