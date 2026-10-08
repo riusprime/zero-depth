@@ -149,6 +149,12 @@ func test_competent_can_finish_a_floor() -> void:
 	assert_eq(f["result"], "next", "the portal was taken")
 	assert_gt(int(f["door_tick"]), 0, "the boss door sealed")
 	assert_gt(int(f["boss_ticks"]), 0, "the boss died")
+	var to_portal := int(f["ticks"]) - int(f["door_tick"]) - int(f["boss_ticks"])
+	assert_lt(
+		to_portal,
+		10 * 60,
+		"it walks into the portal soon after the boss dies (%d ticks)" % to_portal
+	)
 	assert_gte((r["rooms"] as Array).size(), 8, "it walked the floor")
 	assert_gte((r["offers"] as Array).size(), 3, "it opened rewards")
 	var shop := false
