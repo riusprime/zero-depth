@@ -177,7 +177,9 @@ func sync(reader: WorldReader) -> void:
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
 		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
-		_floor.text = tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
+		_floor.text = (
+			tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
+		)
 		if deep:
 			_floor.add_theme_color_override("font_color", DEEP_TEXT)
 	boss_bar.sync(reader)

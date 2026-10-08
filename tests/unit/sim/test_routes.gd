@@ -126,17 +126,25 @@ func test_two_gates_only_after_the_bosses_of_floors_one_and_two() -> void:
 		assert_eq(Routes.offers_choice(run), f < 3, "floor %d" % f)
 		var w := _floor(run)
 		var reader := WorldReader.new(w)
-		assert_eq(reader.has_deep_portal(), f < 3, "floor %d: the Deep gate stands only before the last" % f)
+		assert_eq(
+			reader.has_deep_portal(),
+			f < 3,
+			"floor %d: the Deep gate stands only before the last" % f
+		)
 		assert_eq(w.floor_layout.has_deep_portal, f < 3)
 		var before := w.walls.size()
 		assert_false(reader.gate_open(Routes.Route.DEEP), "sealed before the boss dies")
 		assert_false(reader.gate_open(Routes.Route.NORMAL))
 		_open_gates(w)
 		assert_true(reader.gate_open(Routes.Route.NORMAL), "floor %d: the gate opens" % f)
-		assert_eq(reader.gate_open(Routes.Route.DEEP), f < 3, "floor %d: the Deep gate opens with it" % f)
+		assert_eq(
+			reader.gate_open(Routes.Route.DEEP), f < 3, "floor %d: the Deep gate opens with it" % f
+		)
 		var opened := _events_of(w, SimEvent.Kind.PORTAL_OPENED)
 		assert_eq(opened.size(), 1)
-		assert_eq(opened[0].amount, 1 if f < 3 else 0, "the event says whether the Deep gate opened")
+		assert_eq(
+			opened[0].amount, 1 if f < 3 else 0, "the event says whether the Deep gate opened"
+		)
 		assert_eq(w.walls.size(), before + 1, "only the door's seal joined the walls")
 	var plain := WorldReader.new(World.new(1, PlayerTable.starting_values()))
 	assert_false(plain.has_deep_portal(), "worlds without a run have no Deep gate")
@@ -148,12 +156,16 @@ func test_the_deep_gate_takes_the_deep_route_once_and_closes_the_gate() -> void:
 	var f := w.floor_layout
 	var reader := WorldReader.new(w)
 	_open_gates(w)
-	assert_true(_walk_into(w, f.deep_portal_pos, f.deep_portal_angle), "the Deep gate takes the hero")
+	assert_true(
+		_walk_into(w, f.deep_portal_pos, f.deep_portal_angle), "the Deep gate takes the hero"
+	)
 	assert_eq(w.boss_flow.state, BossFlow.State.ENTERING)
 	assert_eq(reader.route_taken(), Routes.Route.DEEP)
 	assert_true(reader.gate_open(Routes.Route.DEEP))
 	assert_false(reader.gate_open(Routes.Route.NORMAL), "the other gate closes")
-	assert_eq(reader.entered_portal_pos(), f.deep_portal_pos, "the way in draws the hero to the Deep gate")
+	assert_eq(
+		reader.entered_portal_pos(), f.deep_portal_pos, "the way in draws the hero to the Deep gate"
+	)
 	# Standing in the other gate now changes nothing.
 	w.actors.set_pos(0, f.portal_front_point())
 	CombatLab.idle(w, 120)
@@ -226,7 +238,9 @@ func test_deep_scaling_composes_with_the_floor_once() -> void:
 		var boss_dmg := 1000 + t.boss_damage_per_floor_permille * (f - 1)
 		for k in bosses0.size():
 			assert_eq(bn[k].hp, maxi(1, bosses0[k].hp * boss_hp / 1000), "normal boss unchanged")
-			assert_eq(bd[k].hp, maxi(1, bosses0[k].hp * (boss_hp * 1250 / 1000) / 1000), "Deep boss")
+			assert_eq(
+				bd[k].hp, maxi(1, bosses0[k].hp * (boss_hp * 1250 / 1000) / 1000), "Deep boss"
+			)
 			for a in bd[k].attacks.size():
 				var d0 := bosses0[k].attacks[a].damage
 				assert_eq(bd[k].attacks[a].damage, d0 * (boss_dmg * 1250 / 1000) / 1000)
@@ -255,7 +269,9 @@ func test_the_danger_tier_still_scales_deep_enemies_on_top() -> void:
 	var table_hp := maxi(1, SpawnTable.scale(base_hp, hp_pm))
 	assert_eq(w.enemy_table(kind).hp, table_hp, "the table: floor × Deep")
 	assert_eq(w.actors.max_hp[i], w.spawner.scaled_hp(table_hp, tier), "the tier on top, once")
-	assert_eq(w.actors.power[i], w.spawner.damage_permille(tier), "the tier's damage power, untouched")
+	assert_eq(
+		w.actors.power[i], w.spawner.damage_permille(tier), "the tier's damage power, untouched"
+	)
 
 
 # --- Deep floors' rewards -------------------------------------------------------------------------------------
@@ -287,7 +303,9 @@ func test_deep_floors_have_an_extra_chest_and_an_epic_altar_property() -> void:
 			assert_ne(room, d.floor_layout.start_room, "never in the start hall")
 			for j in range(i + 1, d.rewards.size()):
 				assert_gt(
-					d.rewards.pos(i).distance_to(d.rewards.pos(j)), 1.0, "seed %d: apart" % seed_value
+					d.rewards.pos(i).distance_to(d.rewards.pos(j)),
+					1.0,
+					"seed %d: apart" % seed_value
 				)
 		assert_eq(epic, 1, "seed %d: exactly one epic altar" % seed_value)
 
@@ -305,7 +323,9 @@ func test_the_epic_altar_offers_only_epic_stats_or_level_ups() -> void:
 				Offers.STAT:
 					assert_eq(Offers.rarity_of(c), Offers.EPIC, "an epic stat card")
 				Offers.ABILITY:
-					assert_true(Abilities.owned(w, Offers.ability_of(c)), "a level-up, not a new one")
+					assert_true(
+						Abilities.owned(w, Offers.ability_of(c)), "a level-up, not a new one"
+					)
 				_:
 					fail_test("seed %d: no mods (and no curses) on the epic altar" % s)
 			assert_false(seen.has(c), "no repeats")
@@ -359,9 +379,13 @@ func test_the_deep_gate_fits_every_boss_room_property() -> void:
 				"seed %d: no cover in front of it" % (3000 + s)
 			)
 		assert_eq(
-			Collide.circle_vs_obb(f.boss_spawn, Routes.SPAWN_CLEAR, box), Vector2.ZERO, "clear of the boss"
+			Collide.circle_vs_obb(f.boss_spawn, Routes.SPAWN_CLEAR, box),
+			Vector2.ZERO,
+			"clear of the boss"
 		)
-		assert_true(Routes.fits(f, p, r, f.deep_portal_pos, f.deep_portal_angle), "reached from the door")
+		assert_true(
+			Routes.fits(f, p, r, f.deep_portal_pos, f.deep_portal_angle), "reached from the door"
+		)
 		assert_false(
 			BossFlow.in_gate(f.portal_pos, f.portal_angle, Routes.deep_front(f).get_center()),
 			"one gate's mouth is not the other's"
@@ -383,4 +407,8 @@ func test_routes_are_deterministic() -> void:
 	assert_ne(n.state_hash(), hashes[0], "the route is part of the state")
 	var a := _floor(_run_on(1), 12)
 	var b := _floor(_run_on(1), 12)
-	assert_eq(a.floor_layout.deep_portal_pos, b.floor_layout.deep_portal_pos, "the gate's spot is a pure function")
+	assert_eq(
+		a.floor_layout.deep_portal_pos,
+		b.floor_layout.deep_portal_pos,
+		"the gate's spot is a pure function"
+	)

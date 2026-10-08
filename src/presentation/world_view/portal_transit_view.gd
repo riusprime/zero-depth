@@ -63,11 +63,11 @@ var column := MeshInstance3D.new()
 var flash_ball := MeshInstance3D.new()
 var light := OmniLight3D.new()
 var overlay := ColorRect.new()
+## v0.5.0 RT: the Deep gate (null without one); the way in flares and draws the hero to the gate taken.
+var deep_gate: PortalGate
 
 var _actors: ActorViews
 var _gate: PortalGate
-## v0.5.0 RT: the Deep gate (null without one); the way in flares and draws the hero to the gate taken.
-var deep_gate: PortalGate
 var _blue := PortalGate.visor_blue()
 var _column_mat := ShaderMaterial.new()
 var _flash_mat := StandardMaterial3D.new()

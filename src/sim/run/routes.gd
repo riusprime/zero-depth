@@ -230,4 +230,8 @@ static func free_spots(w: World, layout: FloorLayout) -> PackedVector2Array:
 
 ## Whether reward i is the floor's epic altar.
 static func is_epic_altar(w: World, i: int) -> bool:
-	return w.boss_flow != null and w.boss_flow.epic_altar_id >= 0 and w.rewards.ids[i] == w.boss_flow.epic_altar_id
+	return (
+		w.boss_flow != null
+		and w.boss_flow.epic_altar_id >= 0
+		and w.rewards.ids[i] == w.boss_flow.epic_altar_id
+	)

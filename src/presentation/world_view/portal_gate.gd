@@ -137,10 +137,10 @@ var portal_material: ShaderMaterial
 var glow_material: ShaderMaterial
 var light: OmniLight3D
 var stone_blocks: Array[MeshInstance3D] = []
-var _sealed := true
 ## v0.5.0 RT: the Deep gate's look is on, and its red frame strips (empty on the gate).
 var deep := false
 var rim_strips: Array[MeshInstance3D] = []
+var _sealed := true
 var _flare := 0.0
 var _stone := StandardMaterial3D.new()
 var _stone_top := StandardMaterial3D.new()
