@@ -211,7 +211,7 @@ the owner's answers on X1, D4/D7, G1 (M, C) and the mockups.
 | EC | Economy and pacing: remove bot sims and band tests (P1), floor-1 calm 30 s then a steeper ramp (D1), heal orbs only with Lifesprout (D9), max 2 altars per floor and the rest chests (S1), shop rerolls keep sold slots and max 4 buys per floor (S2, S3), shards −30 % and floor 2–3 prices ×1.5 (S4) | P1, D1, D9, S1–S4 | 1 |
 | CD | Cards and UI style: crop the 12 frames, new pick cards matching the reference (A4); 2–3 UI mockups (A5) | A4, A5 | 1 |
 | LK | Look: heat-coloured blade and bullets (A2), skill animations (A1), the VFX audit (A3), the boss art request (A6) | A1–A3, A6 | 1 |
-| AR | Sealed arenas: the Overrun waves inside a sealed room (S8) now; more arenas after X1 (D2) | S8, D2 | 2 (S8 may start in wave 1's place if a slot frees) |
+| AR | Sealed arenas: the Overrun waves inside a sealed room (S8); about a third of the combat rooms are arenas (D2, X1); the boss's legendary pick (X1b). **Built** (`bb0aa38`, [`evidence/ARENAS.md`](evidence/ARENAS.md)) | S8, D2, X1, X1b | 2 |
 | DS | Difficulty scaling with a cap (D4), boss caps and phase mechanics (D6, D7), Deep that bites (S5), principle in the blueprint (D8) | D3–D8, D10, S5, B1 | 2 |
 | UI | The UI restyle from the A5 pick: menus in C, HUD/heat/health/minimap in B, no minimap black background | A5 | 2 |
 | MX | The attack-modifier engine and the approved modifiers (B2–B6) | B2–B6 | 2 |

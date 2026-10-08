@@ -14,9 +14,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | — | Plan: every line of the feedback | `8e248ab` |
 | CD | Altar, chest and shop picks show the owner's crystal card frames (12 cropped frames in `assets/ui/cards/`, colour by card family from one table in `CardFrames`, coloured caps title, sentence, rarity line with the card's icon and a rarity gem, glow for rare/epic/ability, cursed offers in the curse frame; text fits in en and es); 3 HUD + pause mockups for the A5 pick ([`evidence/CARDS.md`](evidence/CARDS.md), [`evidence/UI_MOCKUPS.md`](evidence/UI_MOCKUPS.md)) | v0.5.5 Step CD commit |
 | EC | Floor 1 is calm for 30 s then ramps faster, floors 2–3 start warm (D1); heal orbs only with the new Lifesprout card (D9); at most 2 altars a floor, the rest chests (S1); shop rerolls keep sold slots and 4 buys a floor (S2, S3); shards −30 %, floor 2–3 shop prices ×1.5 and a portal keeps half the unspent shards (S4, Q-S4); bot balance sims retired (P1). Evidence: [`evidence/ECONOMY.md`](evidence/ECONOMY.md) | `afa3c70` |
+| AR | Sealed arenas (D2, X1): about a third of the combat rooms seal on entry, the horde pauses, 2–3 waves spawn inside, the floor's altars and chests sit in them locked until the clear, the rest of the floor goes dark (over v0.5.9's lighting), marked on the minimap; the Overrun is the hardest arena with 3–5 waves of 4/8/12 inside (S8); the boss leaves a legendary altar: "Pick a legendary card" from a boss-only tier in a bright-gold frame (X1b). Evidence: [`evidence/ARENAS.md`](evidence/ARENAS.md) | `bb0aa38` |
 
 ## Goldens changed on purpose
 - none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
+- none (Step AR: the same goldens held; full suite 1122/1122 and export smoke green)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -41,3 +43,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 - 2026-10-08: Step EC built (`afa3c70`), full suite 1076/1076 and export smoke green; MIN_TEST_COUNT 1086 → 1076
   (the bot tests left, P1). Owner answered Q-S4 "Keep half" (built in EC). Open for the owner: whether the Overrun
   clear's altar counts toward S1's two, and the Blade's card pool at 51 (evidence/ECONOMY.md).
+- 2026-10-08: Step AR built (`bb0aa38`): sealed arenas, the Overrun's waves inside, the boss's legendary pick; full
+  suite 1122/1122 and export smoke green; MIN_TEST_COUNT 1076 → 1122. Open: legendary mods are the rare mods at their
+  normal values until MX (evidence/ARENAS.md).
