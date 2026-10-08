@@ -45,12 +45,16 @@ func test_every_policy_is_deterministic() -> void:
 
 func test_policy_names_set_the_knobs() -> void:
 	var c := ScoreBot.new(1, "competent")
-	assert_eq([c.moves, c.picks_mode, c.focus, c.threat, c.exploit], ["competent", "best", "", false, ""])
+	assert_eq(
+		[c.moves, c.picks_mode, c.focus, c.threat, c.exploit], ["competent", "best", "", false, ""]
+	)
 	assert_eq([c.reaction_ticks, c.dodge_permille, c.greed], [14, 650, 500], "the average preset")
 	var e := ScoreBot.new(1, "competent", "expert")
 	assert_eq([e.reaction_ticks, e.dodge_permille, e.aim_error], [8, 900, 2 * 4096 / 360])
 	var n := ScoreBot.new(1, "novice")
-	assert_eq([n.moves, n.picks_mode, n.preset, n.reaction_ticks], ["novice", "random", "novice", 24])
+	assert_eq(
+		[n.moves, n.picks_mode, n.preset, n.reaction_ticks], ["novice", "random", "novice", 24]
+	)
 	assert_eq(ScoreBot.new(1, "idle").picks_mode, "none")
 	assert_eq(ScoreBot.new(1, "element").focus, "element")
 	var t := ScoreBot.new(1, "competent+t")
@@ -74,7 +78,9 @@ func test_specialists_prefer_their_focus_cards() -> void:
 	assert_eq(ScoreBot.new(1, "element").choose_card(w, offer), 1, "element takes Arc Field")
 	assert_eq(ScoreBot.new(1, "ordnance").choose_card(w, offer), 0, "ordnance takes Bomb Lobber")
 	assert_eq(ScoreBot.new(1, "guard").choose_card(w, offer), 2, "guard takes the Aegis")
-	assert_eq(ScoreBot.new(1, "competent").choose_card(w, offer), 0, "competent: the first best (no bias)")
+	assert_eq(
+		ScoreBot.new(1, "competent").choose_card(w, offer), 0, "competent: the first best (no bias)"
+	)
 	assert_true(ScoreBot.in_focus(w, arc, "element"))
 	assert_false(ScoreBot.in_focus(w, arc, "ordnance"))
 	var ember := -1
@@ -132,3 +138,31 @@ func test_salvage_exploit_buys_and_sells_back() -> void:
 		assert_gt(int(e[1]), 0, "a price was paid")
 		assert_lt(int(e[2]), int(e[1]), "sold back for less than it cost: no loop (%s)" % str(e))
 	assert_false(w.shop.open, "it closes the shop when done")
+
+
+## The route (so M-FLOOR and M-RUN can be measured once bots survive): with its HP topped up after every tick (a
+## test-side write, never in the scorecard), competent walks floor 1's rooms, opens rewards, shops, seals the boss
+## door, kills the boss and takes the portal.
+func test_competent_can_finish_a_floor() -> void:
+	var r := ScoreRun.play(_repo, 20261001, "competent", &"gun", "average", 1, 20 * 3600, true)
+	var f: Dictionary = r["floors"][0]
+	assert_eq(f["result"], "next", "the portal was taken")
+	assert_gt(int(f["door_tick"]), 0, "the boss door sealed")
+	assert_gt(int(f["boss_ticks"]), 0, "the boss died")
+	assert_gte((r["rooms"] as Array).size(), 8, "it walked the floor")
+	assert_gte((r["offers"] as Array).size(), 3, "it opened rewards")
+	var shop := false
+	for o: Dictionary in r["offers"]:
+		shop = shop or o["source"] == "shop"
+	assert_true(shop, "it used the shop")
+
+
+func test_chain_exploit_starts_with_every_combo_item() -> void:
+	var r := ScoreRun.setup(_repo, SEED, "exploit:chain", &"blade")
+	var w := r.floor_world()
+	for c in w.combo_tables:
+		for k in [c.item_a, c.item_b]:
+			if k >= 0:
+				assert_true(w.items_owned.has(k), "owns %s" % w.item_tables[k].id)
+	var plain := ScoreRun.setup(_repo, SEED, "competent", &"blade").floor_world()
+	assert_eq(plain.items_owned.size(), 0, "other policies start with nothing")

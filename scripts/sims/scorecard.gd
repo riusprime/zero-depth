@@ -8,13 +8,13 @@ extends SceneTree
 ##   godot --headless --path . -s scripts/sims/scorecard.gd -- [--quick] [seeds=N|seeds=A..B] [policies=a,b,...]
 ##       [floors=3] [floor_ticks=90000] [jobs=4] [--no-bench] [--fresh] [out=build/scorecard/<sha>]
 ##
-## Full mode (default): FULL_POLICIES x seeds 1..12, 3 floors, jobs=4. --quick: QUICK_POLICIES x 2 seeds, 1 floor of
+## Full mode (default): FULL_POLICIES x seeds 1..20, 3 floors, jobs=4. --quick: QUICK_POLICIES x 2 seeds, 1 floor of
 ## 30 s, the bench's reference scenes only (well-formed cells, not bands). Output (never under docs/):
 ##   build/scorecard/<sha>/scorecard.json, scorecard.md, timings.tsv, bench.json, runs/<task>.json
 ## Finished run records are kept: a rerun (after a container restart) plays only the missing tasks; --fresh replays
 ## every one. Workers: `jobs` child processes of this script (`--worker tasks=...`), each writing its own records.
 
-const FULL_SEEDS := 12
+const FULL_SEEDS := 20
 const QUICK_SEEDS := 2
 
 var quick := false
@@ -78,7 +78,9 @@ func _initialize() -> void:
 	for t in all:
 		if fresh or not FileAccess.file_exists(_run_path(t)):
 			todo.append(t)
-	print("scorecard: %d tasks, %d to play, jobs %d -> %s" % [all.size(), todo.size(), jobs, out_dir])
+	print(
+		"scorecard: %d tasks, %d to play, jobs %d -> %s" % [all.size(), todo.size(), jobs, out_dir]
+	)
 	_dispatch(todo)
 	var sims_ms := Time.get_ticks_msec() - t0
 	var records: Array = []
@@ -184,13 +186,20 @@ func _work(list: PackedStringArray) -> void:
 		ScoreSuite.write_json(_run_path(t), rec)
 		var ms := Time.get_ticks_msec() - t0
 		_time_line(t, ms, int(rec["run_ticks"]))
-		print("scorecard: %s %s floor %d (%.1f s)" % [t, rec["result"], rec["floor_reached"], ms / 1000.0])
+		print(
+			(
+				"scorecard: %s %s floor %d (%.1f s)"
+				% [t, rec["result"], rec["floor_reached"], ms / 1000.0]
+			)
+		)
 
 
 func _time_line(what: String, ms: int, ticks: int = -1) -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
 	var path := out_dir + "/timings.tsv"
-	var f := FileAccess.open(path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE)
+	var f := FileAccess.open(
+		path, FileAccess.READ_WRITE if FileAccess.file_exists(path) else FileAccess.WRITE
+	)
 	f.seek_end()
 	f.store_line("%s\t%d\t%d" % [what, ms, ticks])
 	f.close()
@@ -202,7 +211,11 @@ func _bench() -> Dictionary:
 	if FileAccess.file_exists(src):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(src))
 	var args := [
-		"--headless", "--path", ProjectSettings.globalize_path("res://"), "-s", "res://scripts/bench/sim_bench.gd"
+		"--headless",
+		"--path",
+		ProjectSettings.globalize_path("res://"),
+		"-s",
+		"res://scripts/bench/sim_bench.gd"
 	]
 	if quick:
 		args.append_array(["--", "--only=reference"])
@@ -217,14 +230,22 @@ func _bench() -> Dictionary:
 
 func _sha() -> String:
 	var out := []
-	OS.execute("git", ["-C", ProjectSettings.globalize_path("res://"), "rev-parse", "--short", "HEAD"], out)
+	OS.execute(
+		"git", ["-C", ProjectSettings.globalize_path("res://"), "rev-parse", "--short", "HEAD"], out
+	)
 	var sha := String(out[0]).strip_edges() if not out.is_empty() else ""
 	if sha.is_empty():
 		return "nogit"
 	var st := []
 	OS.execute(
 		"git",
-		["-C", ProjectSettings.globalize_path("res://"), "status", "--porcelain", "--untracked-files=no"],
+		[
+			"-C",
+			ProjectSettings.globalize_path("res://"),
+			"status",
+			"--porcelain",
+			"--untracked-files=no"
+		],
 		st
 	)
 	if not st.is_empty() and not String(st[0]).strip_edges().is_empty():
@@ -234,6 +255,7 @@ func _sha() -> String:
 
 func _command_line() -> String:
 	var a := OS.get_cmdline_user_args()
-	return "godot --headless --path . -s scripts/sims/scorecard.gd" + (
-		(" -- " + " ".join(a)) if not a.is_empty() else ""
+	return (
+		"godot --headless --path . -s scripts/sims/scorecard.gd"
+		+ ((" -- " + " ".join(a)) if not a.is_empty() else "")
 	)

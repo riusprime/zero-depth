@@ -1,3 +1,4 @@
+# gdlint: disable=max-returns
 class_name ScoreBot
 extends RefCounted
 ## The scorecard's bot policies (v0.5.0 SCD; SCORECARD §3). One bot plays a whole run through an InputFrame per tick,
@@ -38,7 +39,7 @@ const FOCUS_ABILITIES := {
 	"ordnance": [&"bomb_lobber", &"drone_buddy", &"orbit_blades"],
 	"guard": [&"aegis"],
 }
-const FOCUS_MOD_tags_cache := {
+const FOCUS_MOD_TAGS := {
 	"element": ["fire", "shock", "frost"],
 	"ordnance": ["ability"],
 	"guard": ["guard"],
@@ -90,6 +91,9 @@ const STAT_SCORE := {
 const RARITY_PERMILLE: Array[int] = [1000, 1700, 2600]
 ## A shop card is bought only at or above this score.
 const SHOP_MIN_SCORE := 30
+
+## Mod tags by id (mod_tags), read once from the data.
+static var _tags_cache := {}
 
 var policy := "competent"
 var moves := "competent"
@@ -206,7 +210,7 @@ static func in_focus(w: World, code: int, f: String) -> bool:
 		Offers.STAT:
 			return (FOCUS_STATS[f] as Array).has(info["id"])
 	var it := w.item_tables[code]
-	for tag in FOCUS_MOD_tags_cache[f]:
+	for tag in FOCUS_MOD_TAGS[f]:
 		if mod_tags(it.id).has(tag):
 			return true
 	return false
@@ -242,9 +246,6 @@ static func mod_tags(id: StringName) -> PackedStringArray:
 		for def: ItemDefinition in ContentRepository.load_all().all_of(&"items"):
 			_tags_cache[def.id] = def.tags
 	return _tags_cache.get(id, PackedStringArray())
-
-
-static var _tags_cache := {}
 
 
 # --- The tick ---------------------------------------------------------------------------------------------------
@@ -573,13 +574,7 @@ func _interact(w: World, p: Vector2) -> int:
 
 ## `competent` fighting: [move, held, pressed].
 func _fight(
-	w: World,
-	target: int,
-	dist: float,
-	dir: Vector2,
-	side: Vector2,
-	to_goal: Vector2,
-	hp_low: bool
+	w: World, target: int, dist: float, dir: Vector2, side: Vector2, to_goal: Vector2, hp_low: bool
 ) -> Array:
 	var p := w.player_pos()
 	var held := 0
@@ -588,7 +583,12 @@ func _fight(
 	var staying := _goal_kind in ["boss", "overrun"]
 	var fighting := staying or dist <= (GUN_ENGAGE_M if gun else BLADE_ENGAGE_M) or hp_low
 	# Pressing on: a goal held this long is walked to through the crowd, attacking in passing (a horde never ends).
-	if not staying and to_goal != Vector2.ZERO and w.tick - _goal_tick >= PRESS_ON_TICKS and not hp_low:
+	if (
+		not staying
+		and to_goal != Vector2.ZERO
+		and w.tick - _goal_tick >= PRESS_ON_TICKS
+		and not hp_low
+	):
 		move = to_goal if dist >= 1.0 else (to_goal + side).normalized()
 		if gun:
 			held |= InputFrame.SHOOT

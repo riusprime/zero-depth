@@ -218,7 +218,7 @@ func play_floor(w: World, biome: String, limit: int) -> String:
 		if w.boss_flow != null and w.boss_flow.exited():
 			result = "next"
 			break
-	_close_bout(w.tick)
+	_close_bout()
 	var f := _floor_rec
 	f["ticks"] = w.tick - start
 	f["result"] = result
@@ -284,7 +284,7 @@ func _observe(w: World, start: int, was_choosing: int) -> void:
 	# Combat bouts and the boss fight.
 	var bf := w.boss_flow
 	if bf != null and bf.door_sealed() and _boss_start < 0:
-		_close_bout(w.tick)
+		_close_bout()
 		_boss_start = w.tick
 		_floor_rec["door_tick"] = el
 	if _boss_start >= 0:
@@ -299,7 +299,7 @@ func _observe(w: World, start: int, was_choosing: int) -> void:
 			if not _room_rec.is_empty():
 				_room_rec["combat_ticks"] = int(_room_rec["combat_ticks"]) + 6
 		elif _bout_start >= 0 and w.tick - _bout_last > BOUT_GAP_TICKS:
-			_close_bout(w.tick)
+			_close_bout()
 	if w.tick % 60 == 0:
 		_floor_rec["peak_alive"] = maxi(_floor_rec["peak_alive"], WaveDirector.enemies_alive(w))
 		for i in range(1, w.actors.size()):
@@ -435,7 +435,7 @@ func _death(w: World, start: int) -> void:
 	}
 
 
-func _close_bout(tick: int) -> void:
+func _close_bout() -> void:
 	if _bout_start >= 0:
 		(_floor_rec["encounters"] as Array).append([_bout_last - _bout_start + 6, false])
 	_bout_start = -1

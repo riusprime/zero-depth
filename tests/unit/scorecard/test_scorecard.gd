@@ -79,16 +79,18 @@ func test_tasks_parse_back() -> void:
 		{"policy": "exploit:salvage", "build": "gun", "skill": "average", "seed": 12}
 	)
 	assert_eq(ScoreSuite.tasks(["a:blade"], [1, 2]), PackedStringArray(["a:blade#1", "a:blade#2"]))
-	assert_eq(ScoreSuite.file_of("competent+t:gun@novice#2"), "competent_plust_gun_at_novice_s2.json")
+	assert_eq(
+		ScoreSuite.file_of("competent+t:gun@novice#2"), "competent_plust_gun_at_novice_s2.json"
+	)
 
 
 func test_wilson_and_distributions() -> void:
-	var w := ScoreCells.wilson(5, 10)
+	var w := ScoreStats.wilson(5, 10)
 	assert_eq(w["rate"], 0.5)
 	assert_almost_eq(float(w["lo"]), 0.2366, 0.0001)
 	assert_almost_eq(float(w["hi"]), 0.7634, 0.0001)
-	assert_eq(ScoreCells.wilson(0, 0)["n"], 0)
-	var d := ScoreCells.dist([5, 1, 3, 2, 4])
+	assert_eq(ScoreStats.wilson(0, 0)["n"], 0)
+	var d := ScoreStats.dist([5, 1, 3, 2, 4])
 	assert_eq([d["median"], d["p10"], d["p90"], d["max"]], [3.0, 1.0, 5.0, 5.0])
 
 

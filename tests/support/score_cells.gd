@@ -113,95 +113,6 @@ static func cell(band: String, status: String, value: Variant, note: String = ""
 	return {"band": band, "status": status, "value": value, "note": note}
 
 
-# --- Groups and statistics -------------------------------------------------------------------------------------
-## A record's archetype label: "<policy>:<build>", plus "@<skill>" off the average preset.
-static func label(r: Dictionary) -> String:
-	var s := "%s:%s" % [r["policy"], r["build"]]
-	if r["skill"] != "average" and r["policy"] != "novice":
-		s += "@%s" % r["skill"]
-	return s
-
-
-static func is_specialist(r: Dictionary) -> bool:
-	return not String(r["focus"]).is_empty() and r["skill"] == "average"
-
-
-static func is_competent(r: Dictionary) -> bool:
-	return r["policy"] == "competent" and r["skill"] == "average"
-
-
-## Records that play the game normally (no idle reference, no exploit search, no threat opt-in).
-static func is_normal(r: Dictionary) -> bool:
-	var p := String(r["policy"])
-	return p != "idle" and not p.begins_with("exploit:") and not p.ends_with("+t")
-
-
-static func by_label(records: Array, keep: Callable) -> Dictionary:
-	var out := {}
-	for r: Dictionary in records:
-		if keep.call(r):
-			var k := label(r)
-			if not out.has(k):
-				out[k] = []
-			(out[k] as Array).append(r)
-	var sorted := {}
-	var keys := out.keys()
-	keys.sort()
-	for k in keys:
-		sorted[k] = out[k]
-	return sorted
-
-
-## Wins over n with the 95 % Wilson interval: {wins, n, rate, lo, hi} (rates rounded to 4 places).
-static func wilson(wins: int, n: int) -> Dictionary:
-	if n <= 0:
-		return {"wins": 0, "n": 0, "rate": 0.0, "lo": 0.0, "hi": 0.0}
-	var z := 1.959964
-	var p := float(wins) / n
-	var den := 1.0 + z * z / n
-	var centre := (p + z * z / (2.0 * n)) / den
-	var half := z * sqrt(p * (1.0 - p) / n + z * z / (4.0 * n * n)) / den
-	return {
-		"wins": wins,
-		"n": n,
-		"rate": snappedf(p, 0.0001),
-		"lo": snappedf(maxf(0.0, centre - half), 0.0001),
-		"hi": snappedf(minf(1.0, centre + half), 0.0001),
-	}
-
-
-## Median, p10 and p90 (nearest rank) of numbers, rounded to 3 places: {n, median, p10, p90, max}.
-static func dist(values: Array) -> Dictionary:
-	if values.is_empty():
-		return {"n": 0, "median": null, "p10": null, "p90": null, "max": null}
-	var v := values.duplicate()
-	v.sort()
-	return {
-		"n": v.size(),
-		"median": snappedf(_rank(v, 0.5), 0.001),
-		"p10": snappedf(_rank(v, 0.1), 0.001),
-		"p90": snappedf(_rank(v, 0.9), 0.001),
-		"max": snappedf(float(v[-1]), 0.001),
-	}
-
-
-static func _rank(sorted: Array, q: float) -> float:
-	var k := clampi(int(ceil(q * sorted.size())) - 1, 0, sorted.size() - 1)
-	return float(sorted[k])
-
-
-static func won(r: Dictionary) -> bool:
-	return r["result"] == "won"
-
-
-static func _win_rate(rs: Array) -> Dictionary:
-	var w := 0
-	for r: Dictionary in rs:
-		if won(r):
-			w += 1
-	return wilson(w, rs.size())
-
-
 # --- P0 / P1 cells ---------------------------------------------------------------------------------------------
 static func _cause(records: Array) -> Dictionary:
 	var dmg := 0
@@ -251,7 +162,7 @@ static func _limit(records: Array) -> Dictionary:
 			"runs": per_run.size(),
 			"runs_with_limit": runs_with,
 			"total": total,
-			"per_run": dist(per_run),
+			"per_run": ScoreStats.dist(per_run),
 			"by_effect": by_effect
 		},
 		(
@@ -262,13 +173,18 @@ static func _limit(records: Array) -> Dictionary:
 
 
 static func _gap(records: Array) -> Dictionary:
-	var groups := by_label(records, is_specialist)
+	var groups := ScoreStats.by_label(records, ScoreStats.is_specialist)
 	if groups.is_empty():
-		return cell("GA §1–3 (open design question)", "no data", {}, "no run of the policies this cell reads")
+		return cell(
+			"GA §1–3 (open design question)",
+			"no data",
+			{},
+			"no run of the policies this cell reads"
+		)
 	var rates := {}
 	var best := 0.0
 	for k: String in groups:
-		rates[k] = _win_rate(groups[k])
+		rates[k] = ScoreStats.win_rate(groups[k])
 		best = maxf(best, float(rates[k]["rate"]))
 	var gaps := {}
 	for k: String in rates:
@@ -282,7 +198,7 @@ static func _gap(records: Array) -> Dictionary:
 
 
 static func _win(records: Array) -> Dictionary:
-	var groups := by_label(records, func(_r: Dictionary) -> bool: return true)
+	var groups := ScoreStats.by_label(records, func(_r: Dictionary) -> bool: return true)
 	var out := {}
 	for k: String in groups:
 		var rs: Array = groups[k]
@@ -296,18 +212,18 @@ static func _win(records: Array) -> Dictionary:
 						reached += 1
 						if fr["result"] == "next":
 							cleared += 1
-			floors[str(f)] = wilson(cleared, reached)
-		out[k] = {"run": _win_rate(rs), "floor_clear": floors}
+			floors[str(f)] = ScoreStats.wilson(cleared, reached)
+		out[k] = {"run": ScoreStats.win_rate(rs), "floor_clear": floors}
 	var comp := []
 	for r: Dictionary in records:
-		if is_competent(r):
+		if ScoreStats.is_competent(r):
 			comp.append(r)
 	var died1 := 0
 	for r: Dictionary in comp:
 		var d: Variant = r["death"]
 		if d != null and int(d["floor"]) == 1:
 			died1 += 1
-	var f1 := wilson(died1, comp.size())
+	var f1 := ScoreStats.wilson(died1, comp.size())
 	var status := "no data"
 	if not comp.is_empty():
 		status = "met" if float(f1["rate"]) < TU_FLOOR1_DEATH_MAX else "missed"
@@ -324,7 +240,7 @@ static func _engine(records: Array) -> Dictionary:
 	var n := 0
 	var hit := 0
 	for r: Dictionary in records:
-		if not (is_competent(r) or is_specialist(r)):
+		if not (ScoreStats.is_competent(r) or ScoreStats.is_specialist(r)):
 			continue
 		var deepest := 0
 		for rm: Dictionary in r["rooms"]:
@@ -339,7 +255,7 @@ static func _engine(records: Array) -> Dictionary:
 				break
 	if n == 0:
 		return cell(">= 90% (v0.3.0 gate)", "no data", {"runs": 0}, "no run reached Room 4")
-	var w := wilson(hit, n)
+	var w := ScoreStats.wilson(hit, n)
 	return cell(
 		">= 90% (v0.3.0 gate)",
 		"met" if float(w["rate"]) >= 0.9 else "missed",
@@ -355,7 +271,7 @@ static func _engine(records: Array) -> Dictionary:
 static func _drought(records: Array) -> Dictionary:
 	var longest: Array = []
 	for r: Dictionary in records:
-		if not (is_competent(r) or is_specialist(r)):
+		if not (ScoreStats.is_competent(r) or ScoreStats.is_specialist(r)):
 			continue
 		var relevant := {}
 		for o: Dictionary in r["offers"]:
@@ -375,7 +291,7 @@ static func _drought(records: Array) -> Dictionary:
 		longest.append(best)
 	if longest.is_empty():
 		return cell("<= 2 (PD-07)", "no data", {}, "no run of the policies this cell reads")
-	var d := dist(longest)
+	var d := ScoreStats.dist(longest)
 	return cell(
 		"<= 2 (PD-07)",
 		"met" if float(d["max"]) <= 2.0 else "missed",
@@ -388,7 +304,9 @@ static func _drought(records: Array) -> Dictionary:
 
 
 static func _pick(records: Array) -> Dictionary:
-	var groups := by_label(records, func(r: Dictionary) -> bool: return is_normal(r))
+	var groups := ScoreStats.by_label(
+		records, func(r: Dictionary) -> bool: return ScoreStats.is_normal(r)
+	)
 	var table := {}
 	var candidates := {}
 	for k: String in groups:
@@ -438,9 +356,9 @@ static func _dead(records: Array) -> Dictionary:
 	for b in ["blade", "gun"]:
 		var rs: Array = []
 		for r: Dictionary in records:
-			if is_normal(r) and r["build"] == b:
+			if ScoreStats.is_normal(r) and r["build"] == b:
 				rs.append(r)
-		out[b] = _win_rate(rs)
+		out[b] = ScoreStats.win_rate(rs)
 	return cell(
 		"No dead starter (GA §1–3)",
 		"no band yet",
@@ -456,7 +374,7 @@ static func _dead(records: Array) -> Dictionary:
 static func _ttk(records: Array) -> Dictionary:
 	var acc := {}
 	for r: Dictionary in records:
-		if not (is_competent(r) or is_specialist(r)):
+		if not (ScoreStats.is_competent(r) or ScoreStats.is_specialist(r)):
 			continue
 		for fr: Dictionary in r["floors"]:
 			for kind: String in fr["ttk"]:
@@ -469,7 +387,7 @@ static func _ttk(records: Array) -> Dictionary:
 	var keys := acc.keys()
 	keys.sort()
 	for k: String in keys:
-		out[k] = dist(acc[k])
+		out[k] = ScoreStats.dist(acc[k])
 	return cell(
 		"GA §1–3 (open design question)",
 		"no band yet" if not out.is_empty() else "no data",
@@ -487,7 +405,7 @@ static func _enc(records: Array) -> Dictionary:
 		var bouts: Array = []
 		var boss: Array = []
 		for r: Dictionary in records:
-			if not is_normal(r):
+			if not ScoreStats.is_normal(r):
 				continue
 			for fr: Dictionary in r["floors"]:
 				if int(fr["floor"]) != f:
@@ -497,7 +415,7 @@ static func _enc(records: Array) -> Dictionary:
 						boss.append(int(e[0]) / 60.0)
 					else:
 						bouts.append(int(e[0]) / 60.0)
-		out[str(f)] = {"bouts_s": dist(bouts), "boss_s": dist(boss)}
+		out[str(f)] = {"bouts_s": ScoreStats.dist(bouts), "boss_s": ScoreStats.dist(boss)}
 	return cell(
 		"GA §1–3 (open design question)",
 		"no band yet",
@@ -515,17 +433,17 @@ static func _floor(records: Array) -> Dictionary:
 	for f in [1, 2, 3]:
 		var m: Array = []
 		for r: Dictionary in records:
-			if not is_normal(r):
+			if not ScoreStats.is_normal(r):
 				continue
 			for fr: Dictionary in r["floors"]:
 				if int(fr["floor"]) == f and fr["result"] == "next":
 					m.append(int(fr["ticks"]) / 3600.0)
-		out[str(f)] = dist(m)
+		out[str(f)] = ScoreStats.dist(m)
 		mins.append_array(m)
 	var capped := 0
 	for r: Dictionary in records:
 		capped += int(r.get("explore_capped", 0))
-	out["all"] = dist(mins)
+	out["all"] = ScoreStats.dist(mins)
 	out["explore_budget_used_up"] = capped
 	var status := "no data"
 	if not mins.is_empty():
@@ -546,9 +464,9 @@ static func _floor(records: Array) -> Dictionary:
 static func _run(records: Array) -> Dictionary:
 	var mins: Array = []
 	for r: Dictionary in records:
-		if is_normal(r) and won(r):
+		if ScoreStats.is_normal(r) and ScoreStats.won(r):
 			mins.append(int(r["run_ticks"]) / 3600.0)
-	var d := dist(mins)
+	var d := ScoreStats.dist(mins)
 	if mins.is_empty():
 		return cell(
 			"median 35–45 (PD-03); every full run 30–60 (v0.5.0)",
@@ -594,13 +512,14 @@ static func _threat(records: Array) -> Dictionary:
 			entered += 1 if bool(fr["overrun"]["entered"]) else 0
 			cleared += 1 if bool(fr["overrun"]["cleared"]) else 0
 			bonus += int(fr["overrun"]["bonus_shards"])
-	var wr0 := _win_rate(base)
-	var wr1 := _win_rate(t)
-	var f1_0 := _floor_clear(base, 1)
-	var f1_1 := _floor_clear(t, 1)
+	var wr0 := ScoreStats.win_rate(base)
+	var wr1 := ScoreStats.win_rate(t)
+	var f1_0 := ScoreStats.floor_clear(base, 1)
+	var f1_1 := ScoreStats.floor_clear(t, 1)
 	var status := "missed"
-	if float(wr1["rate"]) < float(wr0["rate"]) or (
-		float(wr0["rate"]) == 0.0 and float(f1_1["rate"]) < float(f1_0["rate"])
+	if (
+		float(wr1["rate"]) < float(wr0["rate"])
+		or (float(wr0["rate"]) == 0.0 and float(f1_1["rate"]) < float(f1_0["rate"]))
 	):
 		status = "met"
 	return cell(
@@ -619,21 +538,10 @@ static func _threat(records: Array) -> Dictionary:
 		(
 			"no threat number T exists on this base (EV adds it); T here is the Overrun room (v0.4.0 AB, the first T "
 			+ "branch): competent (T = 0) against competent+t, which takes every floor's Overrun room, on the same "
-			+ "seeds and builds. Status: the T = 1 win rate (floor 1 clears when no run is won) is below T = 0's; "
+			+ "seeds and builds. Status: the T = 1 win rate (floor 1 clears when no run is ScoreStats.won) is below T = 0's; "
 			+ "whether the rewards make T worth it is the owner's call"
 		)
 	)
-
-
-static func _floor_clear(rs: Array, f: int) -> Dictionary:
-	var reached := 0
-	var cleared := 0
-	for r: Dictionary in rs:
-		for fr: Dictionary in r["floors"]:
-			if int(fr["floor"]) == f:
-				reached += 1
-				cleared += 1 if fr["result"] == "next" else 0
-	return wilson(cleared, reached)
 
 
 static func _cap(records: Array) -> Dictionary:
@@ -709,7 +617,7 @@ static func _stress(records: Array, stress_tags: Dictionary) -> Dictionary:
 			"rule_every_archetype_stressed_each_floor": rule_a,
 			"rule_no_archetype_drained_by_all": "holds (no D tags in the data)",
 			"rule_no_enemy_drains_two": "holds (no D tags in the data)",
-			"kinds_seen_by_floor": _sorted_sets(seen),
+			"kinds_seen_by_floor": ScoreStats.sorted_sets(seen),
 			"untagged_archetypes": untagged,
 		},
 		(
@@ -720,17 +628,6 @@ static func _stress(records: Array, stress_tags: Dictionary) -> Dictionary:
 	)
 
 
-static func _sorted_sets(d: Dictionary) -> Dictionary:
-	var out := {}
-	var keys := d.keys()
-	keys.sort()
-	for k: String in keys:
-		var v: Array = (d[k] as Dictionary).keys()
-		v.sort()
-		out[k] = v
-	return out
-
-
 static func _hazard(records: Array) -> Dictionary:
 	var out := {}
 	var worst := 0.0
@@ -739,7 +636,7 @@ static func _hazard(records: Array) -> Dictionary:
 		var reached := {}
 		var died := {}
 		for r: Dictionary in records:
-			if not is_normal(r):
+			if not ScoreStats.is_normal(r):
 				continue
 			for fr: Dictionary in r["floors"]:
 				if int(fr["floor"]) != f:
@@ -753,7 +650,7 @@ static func _hazard(records: Array) -> Dictionary:
 		var keys := reached.keys()
 		keys.sort()
 		for b: String in keys:
-			rates[b] = wilson(died[b], reached[b])
+			rates[b] = ScoreStats.wilson(died[b], reached[b])
 			lo = minf(lo, float(rates[b]["rate"]))
 			hi = maxf(hi, float(rates[b]["rate"]))
 		var diff := snappedf((hi - lo) * 100.0, 0.01) if keys.size() >= 2 else 0.0
@@ -777,7 +674,7 @@ static func _bench(bench: Dictionary, note: String) -> Dictionary:
 		return cell(band, "NOT YET RUN", {}, note)
 	var ok := true
 	var any := false
-	for k in ["stress", "reference", "stress_ai", "reference_floor", "reference_boss"]:
+	for k in ["stress", "reference", "stress_ai", "reference_floor", "reference_boss", "horde"]:
 		if bench.has(k + "_in_band"):
 			any = true
 			ok = ok and bool(bench[k + "_in_band"])
@@ -795,12 +692,17 @@ static func _bench(bench: Dictionary, note: String) -> Dictionary:
 		band,
 		("met" if ok else "missed") if any else "no data",
 		value,
-		"scripts/bench/sim_bench.gd (wall-clock timings: the only cell that is not byte-reproducible)" + note
+		(
+			"scripts/bench/sim_bench.gd (wall-clock timings: the only cell that is not byte-reproducible)"
+			+ note
+		)
 	)
 
 
 static func _mort(records: Array) -> Dictionary:
-	var groups := by_label(records, func(r: Dictionary) -> bool: return is_normal(r))
+	var groups := ScoreStats.by_label(
+		records, func(r: Dictionary) -> bool: return ScoreStats.is_normal(r)
+	)
 	var out := {}
 	for k: String in groups:
 		var rows := {}
@@ -810,9 +712,10 @@ static func _mort(records: Array) -> Dictionary:
 			if d == null:
 				continue
 			deaths += 1
-			var key := "floor %d room %d%s" % [
-				int(d["floor"]), int(d["room"]), " (boss)" if bool(d["in_boss_room"]) else ""
-			]
+			var key := (
+				"floor %d room %d%s"
+				% [int(d["floor"]), int(d["room"]), " (boss)" if bool(d["in_boss_room"]) else ""]
+			)
 			rows[key] = int(rows.get(key, 0)) + 1
 		var sorted := {}
 		var keys := rows.keys()
@@ -829,7 +732,9 @@ static func _mort(records: Array) -> Dictionary:
 
 
 static func _power(records: Array) -> Dictionary:
-	var groups := by_label(records, func(r: Dictionary) -> bool: return is_normal(r))
+	var groups := ScoreStats.by_label(
+		records, func(r: Dictionary) -> bool: return ScoreStats.is_normal(r)
+	)
 	var out := {}
 	for k: String in groups:
 		var dps := {}
@@ -848,8 +753,8 @@ static func _power(records: Array) -> Dictionary:
 		gs.sort_custom(func(a: String, b: String) -> bool: return int(a) < int(b))
 		for g: String in gs:
 			rows[g] = {
-				"dps_median": dist(dps[g])["median"],
-				"ehp_median": dist(ehp[g])["median"],
+				"dps_median": ScoreStats.dist(dps[g])["median"],
+				"ehp_median": ScoreStats.dist(ehp[g])["median"],
 				"n": (ehp[g] as Array).size()
 			}
 		out[k] = rows
@@ -878,7 +783,7 @@ static func _synergy(records: Array) -> Dictionary:
 	var share_all: Array = []
 	var acc := {}  # engine -> stacks -> [engine damage, total damage, floors]
 	for r: Dictionary in records:
-		if not is_normal(r):
+		if not ScoreStats.is_normal(r):
 			continue
 		for fr: Dictionary in r["floors"]:
 			var total := int(fr["dealt_total"])
@@ -912,7 +817,12 @@ static func _synergy(records: Array) -> Dictionary:
 				acc[e][s][1] += total
 				acc[e][s][2] += 1
 	if share_all.is_empty():
-		return cell("rises with stacks for every engine (GA §2)", "no data", {}, "no run of the policies this cell reads")
+		return cell(
+			"rises with stacks for every engine (GA §2)",
+			"no data",
+			{},
+			"no run of the policies this cell reads"
+		)
 	var table := {}
 	var rises := true
 	var judged := 0
@@ -924,7 +834,9 @@ static func _synergy(records: Array) -> Dictionary:
 			if acc[e].has(s):
 				var v: Array = acc[e][s]
 				var share := float(v[0]) / maxi(1, int(v[1]))
-				row[s + ("+" if s == "3" else "")] = {"share": snappedf(share, 0.0001), "floors": v[2]}
+				row[s + ("+" if s == "3" else "")] = {
+					"share": snappedf(share, 0.0001), "floors": v[2]
+				}
 				if int(v[2]) >= 3:
 					if prev >= 0.0 and share <= prev:
 						rises = false
@@ -939,11 +851,14 @@ static func _synergy(records: Array) -> Dictionary:
 	return cell(
 		"rises with stacks for every engine (GA §2)",
 		status,
-		{"synergy_share_per_floor": dist(share_all), "engine_share_by_stacks": table},
+		{"synergy_share_per_floor": ScoreStats.dist(share_all), "engine_share_by_stacks": table},
 		(
 			"a floor's share of the player's damage from engine statuses, payoffs and combos (ENGINE_EFFECTS), by "
 			+ "the engine's stacks at the floor's end (mods with its tag + its element ability; 3 = 3 or more). "
-			+ "Status: the share must rise strictly from each bucket with >= 3 floors to the next; %d engine(s) had two such buckets" % judged
+			+ (
+				"Status: the share must rise strictly from each bucket with >= 3 floors to the next; "
+				+ "%d engine(s) had two such buckets" % judged
+			)
 		)
 	)
 
@@ -961,7 +876,9 @@ static func _loop(records: Array) -> Dictionary:
 				for e: Array in r["salvage"]:
 					trades.append(e)
 					if int(e[2]) >= int(e[1]):
-						loops.append({"seed": r["seed"], "card_code": e[0], "spent": e[1], "back": e[2]})
+						loops.append(
+							{"seed": r["seed"], "card_code": e[0], "spent": e[1], "back": e[2]}
+						)
 			"exploit:chain":
 				chain_runs += 1
 				for k: String in r["limit"]:
@@ -1000,13 +917,13 @@ static func _loop(records: Array) -> Dictionary:
 static func _diverge(records: Array) -> Dictionary:
 	var comp := {}
 	for r: Dictionary in records:
-		if is_competent(r):
+		if ScoreStats.is_competent(r):
 			comp["%d|%s" % [int(r["seed"]), r["build"]]] = r
 	var per := {}
 	var all_g: Array = []
 	var never := 0
 	for r: Dictionary in records:
-		if not is_specialist(r):
+		if not ScoreStats.is_specialist(r):
 			continue
 		var c: Variant = comp.get("%d|%s" % [int(r["seed"]), r["build"]])
 		if c == null:
@@ -1019,7 +936,7 @@ static func _diverge(records: Array) -> Dictionary:
 				var src: Dictionary = a[k] if k < a.size() else b[k]
 				g = int(src["g"])
 				break
-		var lbl := label(r)
+		var lbl := ScoreStats.label(r)
 		if not per.has(lbl):
 			per[lbl] = []
 		if g < 0:
@@ -1028,11 +945,16 @@ static func _diverge(records: Array) -> Dictionary:
 			(per[lbl] as Array).append(g)
 			all_g.append(g)
 	if per.is_empty():
-		return cell("by Room 3–4 (framework pillar 3)", "no data", {}, "no run of the policies this cell reads")
+		return cell(
+			"by Room 3–4 (framework pillar 3)",
+			"no data",
+			{},
+			"no run of the policies this cell reads"
+		)
 	var out := {}
 	for k: String in per:
-		out[k] = dist(per[k])
-	var d := dist(all_g)
+		out[k] = ScoreStats.dist(per[k])
+	var d := ScoreStats.dist(all_g)
 	var status := "no data"
 	if not all_g.is_empty():
 		status = "met" if float(d["median"]) <= 4.0 and never == 0 else "missed"
@@ -1051,20 +973,25 @@ static func _diverge(records: Array) -> Dictionary:
 static func _generalist(records: Array) -> Dictionary:
 	var comp: Array = []
 	for r: Dictionary in records:
-		if is_competent(r):
+		if ScoreStats.is_competent(r):
 			comp.append(r)
-	var groups := by_label(records, is_specialist)
+	var groups := ScoreStats.by_label(records, ScoreStats.is_specialist)
 	if comp.is_empty() or groups.is_empty():
-		return cell("the generalist is below the best specialist", "no data", {}, "no run of the policies this cell reads")
-	var gw := _win_rate(comp)
+		return cell(
+			"the generalist is below the best specialist",
+			"no data",
+			{},
+			"no run of the policies this cell reads"
+		)
+	var gw := ScoreStats.win_rate(comp)
 	var best := ""
 	var best_rate := -1.0
 	for k: String in groups:
-		var w := _win_rate(groups[k])
+		var w := ScoreStats.win_rate(groups[k])
 		if float(w["rate"]) > best_rate:
 			best_rate = float(w["rate"])
 			best = k
-	var bw := _win_rate(groups[best])
+	var bw := ScoreStats.win_rate(groups[best])
 	return cell(
 		"the generalist is below the best specialist (framework pillar 3)",
 		"met" if float(gw["rate"]) < float(bw["rate"]) else "missed",
