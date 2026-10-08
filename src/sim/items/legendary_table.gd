@@ -1,6 +1,6 @@
 class_name LegendaryTable
 extends RefCounted
-## The boss-only legendary tier (v0.5.5 AR, owner X1b "Pick a legendary card"; ContentCompiler.compile_legendary from
+## The boss-only legendary tier (v0.5.5 AR, owner X1b "Pick a legendary card"; RunContentCompiler.compile_legendary from
 ## LegendaryDefinition). Until the modifier engine (Step MX) swaps the pool, it is built from the current cards:
 ## stat cards at the legendary rarity (Offers.LEGENDARY: the epic amount x stat_permille, compiled into each
 ## StatTable) and the strongest mods. Loadout: never written in play.

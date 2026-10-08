@@ -1,6 +1,6 @@
 class_name ArenaTable
 extends RefCounted
-## The sealed arenas' numbers in sim units (v0.5.5 AR; ContentCompiler.compile_arena from ArenaDefinition). The
+## The sealed arenas' numbers in sim units (v0.5.5 AR; RunContentCompiler.compile_arena from ArenaDefinition). The
 ## defaults equal the data's starting values; a world without the table still times the Overrun's waves by them.
 
 ## The share of a floor's combat rooms that are arenas, per mille (ArenaRooms.mark).

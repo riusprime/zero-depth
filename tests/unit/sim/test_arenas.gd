@@ -43,7 +43,7 @@ func _kill_inside(w: World) -> void:
 
 # --- Generation ---------------------------------------------------------------------------------------------------
 func test_about_a_third_of_the_combat_rooms_are_skippable_arenas() -> void:
-	var share := ContentCompiler.compile_arena(
+	var share := RunContentCompiler.compile_arena(
 		ContentRepository.load_all().get_def(&"arena", &"arena")
 	)
 	assert_eq(share.share_permille, 330, "the data's starting share")
@@ -272,7 +272,9 @@ func test_a_locked_reward_cannot_be_opened_until_the_clear() -> void:
 
 
 func test_wave_sizes_by_floor() -> void:
-	var t := ContentCompiler.compile_arena(ContentRepository.load_all().get_def(&"arena", &"arena"))
+	var t := RunContentCompiler.compile_arena(
+		ContentRepository.load_all().get_def(&"arena", &"arena")
+	)
 	assert_eq(t.wave_sizes, PackedInt32Array([3, 5, 7]))
 	assert_eq([t.waves_min, t.waves_max], [2, 3])
 	for fl in [2, 3]:
