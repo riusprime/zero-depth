@@ -27,22 +27,22 @@ Nothing here blocks a step. A missing piece draws its current primitive (L15).
 
 | # | id | role | target W×D×H (m) | prompt (after the prefix) | status |
 |---|---|---|---|---|---|
-| 1 | `wall_1m` | wall | 1 × 1 × 1 | a cube-shaped block of rough grey stone or concrete, chipped top edges, small cracks | requested |
-| 2 | `wall_2m` | wall | 2 × 1 × 1 | a long rectangular block of rough grey stone or concrete, twice as long as tall, a crack across the middle | requested |
-| 3 | `wall_broken` | wall | 1 × 1 × 0.7 | a broken low concrete block with a jagged, crumbled top, a few bits of rusty rebar sticking out | requested |
-| 4 | `wall_pillar` | wall corner | 1 × 1 × 1.3 | a thick square stone pillar, slightly taller than wide, chipped corners, flat top | requested |
-| 5 | `slab_concrete` | cover | 1 × 1 × 1.8 | a tall weathered concrete slab standing upright, cracked, chunks missing from the top corner | requested |
-| 6 | `slab_wide` | cover | 2 × 1 × 1.8 | two tall weathered concrete slabs standing side by side, touching, different heights | requested |
-| 7 | `crate_stack` | cover | 1 × 1 × 1.2 | a stack of two or three old wooden and metal crates, slightly offset, worn planks | requested |
-| 8 | `car_wreck` | cover | 2 × 4 × 1.4 | an abandoned rusty boxy car wreck, flat tyres, broken windows, dented panels | requested |
-| 9 | `rock_large` | cover | 1.5 × 1.5 × 1.2 | a large faceted boulder with sharp flat faces, angular low-poly rock | requested |
-| 10 | `fire_barrel` | light source | 0.6 × 0.6 × 0.9 | a rusty open-top oil drum, dented, burn marks near the rim, empty inside (no fire) | requested |
-| 11 | `brazier_pole` | light source | 0.3 × 0.3 × 2.0 | a tall thin metal pole with a small iron fire basket on top, empty basket (no fire) | requested |
-| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed, a clear horizontal seam between lid and body. **Closed only.** A separate lid part is nice but not needed: a single mesh is cut at the seam in code (as BossRig does for bosses) | requested |
-| 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | requested |
-| 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | requested |
-| 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | requested |
-| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | full prompts in [Ground textures](#ground-textures) below (they replace the prefix) | requested |
+| 1 | `wall_1m` | wall | 1 × 1 × 1 | a cube-shaped block of rough grey stone or concrete, chipped top edges, small cracks | received raw (`b21b2af`) |
+| 2 | `wall_2m` | wall | 2 × 1 × 1 | a long rectangular block of rough grey stone or concrete, twice as long as tall, a crack across the middle | received raw (`b21b2af`) |
+| 3 | `wall_broken` | wall | 1 × 1 × 0.7 | a broken low concrete block with a jagged, crumbled top, a few bits of rusty rebar sticking out | received raw (`b21b2af`) |
+| 4 | `wall_pillar` | wall corner | 1 × 1 × 1.3 | a thick square stone pillar, slightly taller than wide, chipped corners, flat top | received raw (`b21b2af`) |
+| 5 | `slab_concrete` | cover | 1 × 1 × 1.8 | a tall weathered concrete slab standing upright, cracked, chunks missing from the top corner | received raw (`b21b2af`) |
+| 6 | `slab_wide` | cover | 2 × 1 × 1.8 | two tall weathered concrete slabs standing side by side, touching, different heights | received raw (`b21b2af`) |
+| 7 | `crate_stack` | cover | 1 × 1 × 1.2 | a stack of two or three old wooden and metal crates, slightly offset, worn planks | received raw (`b21b2af`) |
+| 8 | `car_wreck` | cover | 2 × 4 × 1.4 | an abandoned rusty boxy car wreck, flat tyres, broken windows, dented panels | received raw (`b21b2af`) |
+| 9 | `rock_large` | cover | 1.5 × 1.5 × 1.2 | a large faceted boulder with sharp flat faces, angular low-poly rock | received raw (`b21b2af`) |
+| 10 | `fire_barrel` | light source | 0.6 × 0.6 × 0.9 | a rusty open-top oil drum, dented, burn marks near the rim, empty inside (no fire) | received raw (`b21b2af`) |
+| 11 | `brazier_pole` | light source | 0.3 × 0.3 × 2.0 | a tall thin metal pole with a small iron fire basket on top, empty basket (no fire) | received raw (`b21b2af`) |
+| 12 | `chest` | reward | 0.9 × 0.6 × 0.6 | a sturdy wooden treasure chest with dark metal bands, closed, a clear horizontal seam between lid and body. **Closed only.** A separate lid part is nice but not needed: a single mesh is cut at the seam in code (as BossRig does for bosses) | received raw (`b21b2af`) |
+| 13 | `rubble_small` | decoration | 0.6 × 0.6 × 0.25 | a small flat cluster of 3 to 5 broken stone chunks | received raw (`b21b2af`) |
+| 14 | `grass_tuft` | decoration | 0.5 × 0.5 × 0.4 | a clump of dry spiky grass blades, low-poly | received raw (`b21b2af`) |
+| 15 | `debris_low` | decoration | 0.8 × 0.4 × 0.2 | a flat pile of scrap: a broken plank, a short rusty pipe and a metal plate lying on the ground | received raw (`b21b2af`) |
+| 16 | `ground_a`, `ground_b` | ground | **2D tileable texture**, 512 × 512 px | full prompts in [Ground textures](#ground-textures) below (they replace the prefix) | received raw (`b21b2af`) |
 
 **Fire and glow** (flames, sparks, the chest's inner light) are made in the engine, not in the models.
 
