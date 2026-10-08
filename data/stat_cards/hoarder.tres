@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"hoarder"
+name_key = &"STAT_HOARDER"
+desc_key = &"STAT_HOARDER_DESC"
+amounts = PackedFloat32Array(4, 6, 10)
+cap = 20
+weight = 6
+side = PackedFloat32Array(10, 15, 25)
+limit = 1000.0
+id = &"hoarder"

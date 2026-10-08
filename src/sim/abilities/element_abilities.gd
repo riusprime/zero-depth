@@ -45,13 +45,13 @@ static func advance_slot(w: World, s: int, t: AbilityTable, level: int) -> void:
 	match t.kind:
 		AbilityTable.Kind.ARC_FIELD:
 			if cd[s] == 0 and _arc(w, t, level):
-				cd[s] = Stats.cooldown(w, t.cooldown_at(level))
+				cd[s] = Stats.auto_cooldown(w, t.cooldown_at(level))  # Fast Hands applies
 		AbilityTable.Kind.FROST_NOVA:
 			if cd[s] == 0 and _nova(w, t, level):
-				cd[s] = Stats.cooldown(w, t.cooldown_at(level))
+				cd[s] = Stats.auto_cooldown(w, t.cooldown_at(level))  # Fast Hands applies
 		AbilityTable.Kind.FLAME_TRAIL:
 			if cd[s] == 0 and _trail(w, t, level):
-				cd[s] = t.period_ticks
+				cd[s] = Stats.auto_cooldown(w, t.period_ticks)
 	w.ab.cd = cd
 
 

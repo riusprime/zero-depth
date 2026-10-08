@@ -8,7 +8,8 @@ extends RefCounted
 ## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
 ## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
 ## (RewardTable: [ability, stat, mod] for altars and chests), then an ability card uniformly among those that can
-## apply (new or level-up), a stat uniformly among stats under their cap at a rarity by the source's rarity weights
+## apply (new or level-up), a stat by its card weight (v0.5.0 CP; uniform before) among stats under their cap at a
+## rarity by the source's rarity weights
 ## (chests roll more rare and epic), a mod as the items always were (rare items weigh rare_weight). No card repeats
 ## in one offer (a stat card counts by stat). A world without abilities and stat cards (the v0.3.0 scenarios and
 ## tests) rolls items only, exactly as before.
@@ -83,7 +84,10 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 			ABILITY:
 				out.append(ability_code(pool[w.rng_loot.range_int(0, pool.size() - 1)]))
 			STAT:
-				var s := pool[w.rng_loot.range_int(0, pool.size() - 1)]
+				var sw := PackedInt32Array()  # v0.5.0 CP: by the cards' weights
+				for st in pool:
+					sw.append(w.stat_tables[st].weight)
+				var s := pool[w.rng_loot.pick_weighted(sw)]
 				out.append(stat_code(s, pick(w.rng_loot, rarity)))
 			MOD:
 				var mw := PackedInt32Array()
@@ -183,6 +187,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"rarity": rarity_of(code),
 				"level": 0,
 				"amount": st.amounts[rarity_of(code)],
+				"side": st.side[rarity_of(code)],  # v0.5.0 CP: a rule card's second number
 			}
 	var it := w.item_tables[code]
 	return {

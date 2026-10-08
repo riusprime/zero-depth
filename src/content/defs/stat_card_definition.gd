@@ -4,6 +4,10 @@ extends ContentDef
 ## ability or a mod is one of these. Amounts are percent (or points for crit chance and crit damage, percent of
 ## max HP per second for regen), compiled to per mille. Cards stack multiplicatively (two +10 % = x1.21); `cap` is
 ## the most (or for a cut, the least) the stat may reach, as a multiplier or a total in points (0 = none).
+## v0.5.0 CP: five rule cards that trade or condition their gain (Stats has each rule): glass_cannon (+damage, and
+## `side` cuts max HP down to `limit` x), onrush (+damage while moving), overkill (a kill's excess damage splashes
+## to the nearest enemy within `limit` m), hoarder (+damage per 100 shards held, counting at most `limit` shards;
+## `side` raises shard gain) and fast_hands (auto abilities' cooldowns only).
 
 ## The stats in the sim's order (Stats.Stat mirrors it). Appended, never renumbered.
 const STATS: Array[StringName] = [
@@ -19,7 +23,15 @@ const STATS: Array[StringName] = [
 	&"shard_gain",
 	&"pickup_range",
 	&"armour",
+	&"glass_cannon",
+	&"onrush",
+	&"overkill",
+	&"hoarder",
+	&"fast_hands",
 ]
+## The rule cards with a second number per rarity (`side`) and a `limit`.
+const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder"]
+const LIMITED: Array[StringName] = [&"glass_cannon", &"overkill", &"hoarder"]
 const RARITIES := 3
 
 ## One of STATS.
@@ -32,6 +44,12 @@ const RARITIES := 3
 @export var cap := 0.0
 ## Draw weight against the other stat cards.
 @export var weight := 10
+## v0.5.0 CP: the card's second number per rarity, in percent (SIDED cards only: Glass Cannon's max HP cut,
+## Hoarder's shard gain).
+@export var side := PackedFloat32Array()
+## v0.5.0 CP: the rule's limit (LIMITED cards only): Glass Cannon's lowest max HP multiplier (0..1), Overkill's
+## splash reach in metres, Hoarder's most shards that count.
+@export var limit := 0.0
 
 
 func category() -> StringName:
@@ -61,4 +79,26 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "cap is negative"))
 	if weight < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "weight is negative"))
+	_validate_rule(issues)
 	return issues
+
+
+## v0.5.0 CP: a SIDED card has 3 positive side numbers; a LIMITED card a positive limit (Glass Cannon's below 1).
+func _validate_rule(issues: Array[ValidationIssue]) -> void:
+	if SIDED.has(stat):
+		var ok := side.size() == RARITIES
+		for v in side:
+			ok = ok and v > 0.0
+		if not ok:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "side needs 3 positive entries")
+			)
+	elif not side.is_empty():
+		issues.append(ValidationIssue.new(&"range", resource_path, "side is only for %s" % [SIDED]))
+	if LIMITED.has(stat):
+		if limit <= 0.0 or (stat == &"glass_cannon" and limit >= 1.0):
+			issues.append(ValidationIssue.new(&"range", resource_path, "limit out of range"))
+	elif limit != 0.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "limit is only for %s" % [LIMITED])
+		)

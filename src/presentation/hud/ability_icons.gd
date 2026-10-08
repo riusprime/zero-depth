@@ -44,14 +44,18 @@ const GAMBLE_SHAPES := {
 
 
 static func has_icon(id: StringName) -> bool:
-	return ABILITY_COLORS.has(id) or STAT_COLORS.has(id)
+	return ABILITY_COLORS.has(id) or STAT_COLORS.has(id) or CardPoolIcons.STAT_COLORS.has(id)
 
 
 static func color(id: StringName) -> Color:
+	if CardPoolIcons.has_icon(id):
+		return CardPoolIcons.color(id)  # v0.5.0 CP
 	return ABILITY_COLORS.get(id, STAT_COLORS.get(id, Color.WHITE))
 
 
 static func shapes(id: StringName) -> Array:
+	if CardPoolIcons.STAT_COLORS.has(id):
+		return CardPoolIcons.shapes(id)  # v0.5.0 CP: the rule stat cards
 	if GAMBLE_SHAPES.has(id):
 		return GambleIcons.shapes(GAMBLE_SHAPES[id])
 	match id:

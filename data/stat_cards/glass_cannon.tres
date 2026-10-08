@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="StatCardDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/stat_card_definition.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+stat = &"glass_cannon"
+name_key = &"STAT_GLASS_CANNON"
+desc_key = &"STAT_GLASS_CANNON_DESC"
+amounts = PackedFloat32Array(15, 25, 40)
+cap = 3.0
+weight = 6
+side = PackedFloat32Array(8, 10, 12)
+limit = 0.4
+id = &"glass_cannon"

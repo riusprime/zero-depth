@@ -123,16 +123,9 @@ func test_overrun_enemies_have_more_hp_and_hit_harder() -> void:
 	var base := _spawning.scaled_hp(w.enemy_table(w.actors.kinds[i]).hp, 0)
 	assert_eq(w.actors.max_hp[i], base * 1500 / 1000, "x1.5 HP")
 	assert_eq(w.actors.hp[i], w.actors.max_hp[i])
-	var seq := w.last_event_seq()
-	w.actors.invuln[0] = 0
-	var id := w.actors.ids[i]
-	Damage.hit(w, 0, 10, id, id, w.take_root(), SimEvent.TAG_MELEE, w.actors.pos(i), w.player_pos())
-	var hit: SimEvent = null
-	for e in w.events_since(seq):
-		if e.kind == SimEvent.Kind.HIT and e.target_id == w.actors.ids[0]:
-			hit = e
-	assert_not_null(hit)
-	assert_eq(hit.amount, 15, "x1.5 damage")
+	var tier_power := _spawning.damage_permille(0)
+	assert_eq(w.actors.power[i], tier_power * 1500 / 1000, "x1.5 on the tier's damage")
+	assert_eq(EnemyAi.powered(w, i, 100), SpawnTable.scale(100, tier_power * 1500 / 1000))
 
 
 func test_clearing_pays_an_ability_card_altar_and_double_shards() -> void:
@@ -150,7 +143,7 @@ func test_clearing_pays_an_ability_card_altar_and_double_shards() -> void:
 				Damage.hit(w, i, 100000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, at, at)
 		w.step(InputFrame.new())
 	assert_true(w.overrun.cleared(), "twelve Overrun kills clear it")
-	assert_eq(w.overrun.kills, 12)
+	assert_gte(w.overrun.kills, 12, "packs can die together: the tick that reaches 12 clears it")
 	assert_gt(w.overrun.shards_in, 0)
 	assert_eq(w.overrun.bonus, w.overrun.shards_in, "their shards paid again: x2")
 	assert_eq(w.shards - shards_before, w.overrun.shards_in * 2)

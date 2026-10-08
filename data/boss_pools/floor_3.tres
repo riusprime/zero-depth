@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_pool")
 floor_index = 3
-boss_ids = PackedStringArray("siege_engine")
+boss_ids = PackedStringArray("siege_engine", "foundry")
 id = &"floor_3"

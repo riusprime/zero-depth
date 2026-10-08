@@ -18,7 +18,8 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		# Bosses (v0.3.0 C): armour by direction, as the Warden's.
 		var bt := BossAi.table_of(w, target)
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
-		if bt.front_half_arc > 0 and off <= bt.front_half_arc:
+		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
+		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
 			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
@@ -56,7 +57,8 @@ static func hit(
 	if a.dead[target] == 1:
 		return 0
 	var target_id := a.ids[target]
-	if owner_id == a.ids[0] and target != 0:  # v0.4.0 BS: the damage stat, then the crit roll (Stats).
+	var splash := effect_id == Stats.EFFECT_OVERKILL  # v0.5.0 CP: an Overkill splash is already scaled
+	if owner_id == a.ids[0] and target != 0 and not splash:  # v0.4.0 BS: damage stats, crit (Stats)
 		var out := Stats.outgoing(w, amount, tags)
 		amount = out[0]
 		tags |= out[1]
@@ -66,7 +68,6 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
-	amount = amount * Overrun.attacker_mult(w, owner_id) / 1000  # v0.4.0 AB: an Overrun enemy hits harder.
 	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
 	if heat != 1000:
 		amount = amount * heat / 1000
@@ -100,6 +101,8 @@ static func hit(
 	elif got > 0 and target != 0 and owner_id == a.ids[0]:
 		Engines.on_hit(w, target, root_id, h.tags, effect_id)  # Engines: stacks.
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
+		if a.dead[target] == 1 and not splash:
+			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
 	return got
 
 

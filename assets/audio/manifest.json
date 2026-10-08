@@ -185,6 +185,16 @@
       "loop": false
     },
     {
+      "id": "enemy_death_lens_drone",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/enemy_death_lens_drone.wav",
+      "sha256": "1e467dac0957dcee6299c72fbe99d727fcf119b1025dc1574baa3a8d2031cc18",
+      "seconds": 0.75,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.84,
+      "loop": false
+    },
+    {
       "id": "arc_bolt",
       "kind": "sfx",
       "path": "assets/audio/sfx/arc_bolt.wav",
@@ -502,6 +512,46 @@
       "seconds": 1.15,
       "peak_dbfs": -1.0,
       "rms_dbfs": -14.86,
+      "loop": false
+    },
+    {
+      "id": "boss_telegraph_warlord",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_warlord.wav",
+      "sha256": "64061d03c1ea4689a07f73f8dfc8eb4a9add2edeb75377dcc67c139bc85e97c7",
+      "seconds": 1.33,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.32,
+      "loop": false
+    },
+    {
+      "id": "boss_telegraph_hive_lens",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_hive_lens.wav",
+      "sha256": "43fc9eefec4a8e2e9b79204e83cd87aed3a9812166b3686c110eb516a366c6b2",
+      "seconds": 1.2,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.66,
+      "loop": false
+    },
+    {
+      "id": "boss_telegraph_foundry",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_telegraph_foundry.wav",
+      "sha256": "0afaf606220838c1f099821a3738dec9bd37c194fd498971d158209cf4d46ec7",
+      "seconds": 1.2,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.62,
+      "loop": false
+    },
+    {
+      "id": "boss_floor_burst",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/boss_floor_burst.wav",
+      "sha256": "4bd4075f9ef44d6a2474c8f80ee9d2a9e800691fc8a2f64274869dd4606aad45",
+      "seconds": 1.1,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -15.86,
       "loop": false
     },
     {

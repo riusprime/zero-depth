@@ -18,6 +18,9 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_GATEKEEPER: &"boss_telegraph_gatekeeper",
 	WorldReader.KIND_BROOD_MOTHER: &"boss_telegraph_brood_mother",
 	WorldReader.KIND_SIEGE_ENGINE: &"boss_telegraph_siege_engine",
+	WorldReader.KIND_WARLORD: &"boss_telegraph_warlord",
+	WorldReader.KIND_HIVE_LENS: &"boss_telegraph_hive_lens",
+	WorldReader.KIND_FOUNDRY: &"boss_telegraph_foundry",
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",
@@ -33,6 +36,7 @@ const DEATHS := {
 	WorldReader.KIND_MENDER: &"enemy_death_mender",
 	WorldReader.KIND_MINE_LAYER: &"enemy_death_mine_layer",
 	WorldReader.KIND_SNIPER: &"enemy_death_sniper",
+	WorldReader.KIND_LENS_DRONE: &"enemy_death_lens_drone",
 }
 
 ## v0.4.0 AB: the element abilities' hits (and their combos') by effect: their own sound.
@@ -257,6 +261,8 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_laser"
 		WorldReader.MOVE_BARRAGE, WorldReader.MOVE_BOLT_FAN, WorldReader.MOVE_DEPLOY, WorldReader.MOVE_BROOD:
 			return &"boss_mortar"
+		WorldReader.MOVE_FLOOD:  # v0.4.0 BO: spears or molten floor bursting up along the lanes.
+			return &"boss_floor_burst"
 	return &""
 
 

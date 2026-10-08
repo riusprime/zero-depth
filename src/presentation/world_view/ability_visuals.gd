@@ -37,6 +37,8 @@ var _core_mat := StandardMaterial3D.new()
 var _last_blast := -1
 var _last_shock := -1
 var _last_chain := -1
+var _last_echo_at := -1
+var _last_echo := -1
 var _drone_fire := PackedInt32Array()
 var _t := 0.0
 
@@ -84,6 +86,19 @@ func sync(reader: WorldReader) -> void:
 		_last_chain = int(fx["chain_tick"])
 		if _last_chain >= 0:
 			_line(fx["chain_from"], fx["chain_to"])
+	_sync_echo(fx)
+
+
+## v0.5.0 CP, Afterimage: a small ring where the echo waits, then a disc as it bursts (the sim's radius).
+func _sync_echo(fx: Dictionary) -> void:
+	if int(fx.get("echo_at", -1)) != _last_echo_at:
+		_last_echo_at = int(fx["echo_at"])
+		if _last_echo_at >= 0:
+			_flash_ring(fx["echo_pos"], 0.45)
+	if int(fx.get("echo_tick", -1)) != _last_echo:
+		_last_echo = int(fx["echo_tick"])
+		if _last_echo >= 0:
+			_flash_disc(fx["echo_burst_pos"], float(fx["echo_r"]), BLINK_COLOR, &"afterimage")
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------

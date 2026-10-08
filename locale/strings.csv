@@ -197,6 +197,14 @@ ITEM_THERMAL_EDGE,Thermal Edge,Filo Térmico
 ITEM_THERMAL_EDGE_DESC,You run Hot from 30 heat instead of 40.,Entras en Caliente con 30 de calor en vez de 40.
 ITEM_MELTDOWN,Meltdown,Fusión
 ITEM_MELTDOWN_DESC,Overheating explodes instead of stalling you.,Sobrecalentarte explota en vez de bloquearte.
+ITEM_CLUSTER_PAYLOAD,Cluster Payload,Carga de racimo
+ITEM_CLUSTER_PAYLOAD_DESC,Bomb Lobber's bombs split into 3 bomblets (40% damage each).,Las bombas se dividen en 3 bombetas (40% de daño cada una).
+ITEM_OVERCLOCKED_DRONE,Overclocked Drone,Dron sobrealimentado
+ITEM_OVERCLOCKED_DRONE_DESC,Your drones fire 0.8% faster per point of heat.,"Tus drones disparan un 0,8% más rápido por punto de calor."
+ITEM_RAZOR_ORBIT,Razor Orbit,Órbita afilada
+ITEM_RAZOR_ORBIT_DESC,Orbit Blades make enemies bleed (+1 per touch).,Las Cuchillas orbitales hacen sangrar (+1 por toque).
+ITEM_AFTERIMAGE,Afterimage,Imagen residual
+ITEM_AFTERIMAGE_DESC,Blinking leaves an echo that bursts for 18 soon after.,Al teletransportarte dejas un eco que estalla por 18.
 HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
 HUD_HEAT_OVERCLOCK,OVERCLOCK,SOBRECARGA
@@ -362,6 +370,16 @@ STAT_PICKUP_RANGE,Magnet,Imán
 STAT_PICKUP_RANGE_DESC,+%s%% pickup and interact range,+%s %% de alcance para recoger e interactuar
 STAT_ARMOUR,Armour,Armadura
 STAT_ARMOUR_DESC,-%s%% damage taken,-%s %% de daño recibido
+STAT_GLASS_CANNON,Glass Cannon,Cañón de cristal
+STAT_GLASS_CANNON_DESC,"+%s%% damage, -%s%% max HP","+%s %% de daño, -%s %% de vida máxima"
+STAT_ONRUSH,Onrush,Embestida
+STAT_ONRUSH_DESC,+%s%% damage while moving,+%s %% de daño mientras te mueves
+STAT_OVERKILL,Overkill,Remate
+STAT_OVERKILL_DESC,A kill splashes %s%% of its excess damage onto the nearest enemy,Una baja salpica el %s %% de su daño sobrante al enemigo más cercano
+STAT_HOARDER,Hoarder,Acaparador
+STAT_HOARDER_DESC,"+%s%% damage per 100 shards held, +%s%% shards","+%s %% de daño por cada 100 fragmentos guardados, +%s %% de fragmentos"
+STAT_FAST_HANDS,Fast Hands,Manos rápidas
+STAT_FAST_HANDS_DESC,-%s%% auto ability cooldowns,-%s %% de enfriamiento de las habilidades automáticas
 RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d
@@ -410,3 +428,26 @@ MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil
 UI_DEV_GO_OVERRUN,Go to the Overrun door,Ir a la puerta del asedio
 CAPTION_OVERRUN_ENTER,[Overrun alarm],[Alarma de asedio]
 CAPTION_OVERRUN_CLEAR,[Overrun cleared],[Asedio superado]
+BOSS_WARLORD,The Warlord,El Señor de la Guerra
+BOSS_HIVE_LENS,The Hive Lens,La Lente Enjambre
+BOSS_FOUNDRY,The Foundry,La Fundición
+ENEMY_LENS_DRONE,Lens Drone,Dron Lente
+CAUSE_LENS_DRONE,A Lens Drone's pulses got you.,Los pulsos de un Dron Lente te alcanzaron.
+CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo del Señor de la Guerra te derribó.
+CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas del Señor de la Guerra te atravesaron.
+CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida del Señor de la Guerra te arrolló.
+CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas del Señor de la Guerra llovieron sobre ti.
+CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de la Lente Enjambre te barrió.
+CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de la Lente Enjambre te abatieron.
+CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de la Lente Enjambre te quemó.
+CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,La Lente Enjambre se lanzó sobre ti.
+CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de la Lente Enjambre te aplastó.
+CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concentrado de la Lente Enjambre te encontró a lo lejos.
+CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de la Fundición te quemó.
+CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de la Fundición te destrozaron.
+CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de la Fundición te abrasó.
+CAUSE_FOUNDRY_LAUNCH,A Bomb Drone launched by the Foundry crushed you.,Un Dron Bombardero lanzado por la Fundición te aplastó.
+CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición inundó la sala de fuego.
+CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
+CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
+CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]

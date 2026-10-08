@@ -1,0 +1,178 @@
+[gd_resource type="Resource" script_class="BossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_shield_bash"]
+script = ExtResource("1_atk")
+id = &"shield_bash"
+shape = 1
+shape_params = {
+"arc_degrees": 130.0,
+"reach_m": 2.3
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 0.9
+damage = 18
+move = &"sweep"
+min_range_m = 0.0
+max_range_m = 3.3
+weight = 4
+cooldown_seconds = 0.6
+cause_key = &"CAUSE_WARLORD_BASH"
+follow_up = &"spear_lines"
+follow_up_permille = 350
+
+[sub_resource type="Resource" id="A_spear_lines"]
+script = ExtResource("1_atk")
+id = &"spear_lines"
+shape = 2
+shape_params = {
+"burn_seconds": 0.5,
+"count": 3,
+"gap_m": 2.4,
+"length_m": 14.0,
+"width_m": 1.0
+}
+telegraph_seconds = 0.8
+active_seconds = 0.6
+recovery_seconds = 1.2
+damage = 20
+move = &"flood"
+min_range_m = 0.0
+max_range_m = 16.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_WARLORD_SPEARS"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_spear_wall"]
+script = ExtResource("1_atk")
+id = &"spear_wall"
+shape = 2
+shape_params = {
+"burn_seconds": 0.5,
+"count": 5,
+"gap_m": 2.2,
+"length_m": 15.0,
+"width_m": 1.0
+}
+telegraph_seconds = 0.8
+active_seconds = 0.7
+recovery_seconds = 1.1
+damage = 20
+move = &"flood"
+min_range_m = 0.0
+max_range_m = 16.0
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_WARLORD_SPEARS"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_lunge_dash"]
+script = ExtResource("1_atk")
+id = &"lunge_dash"
+shape = 2
+shape_params = {
+"length_m": 16.0,
+"speed_mps": 16.0
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 24
+move = &"charge"
+min_range_m = 4.5
+max_range_m = 18.0
+weight = 2
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_WARLORD_DASH"
+opens_weak_point = true
+follow_up = &"shield_bash"
+follow_up_permille = 450
+
+[sub_resource type="Resource" id="A_javelin_rain"]
+script = ExtResource("1_atk")
+id = &"javelin_rain"
+shape = 0
+shape_params = {
+"count": 6,
+"radius_m": 1.6,
+"spread_m": 3.0
+}
+telegraph_seconds = 1.1
+active_seconds = 0.0167
+recovery_seconds = 1.4
+damage = 22
+move = &"barrage"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_WARLORD_JAVELINS"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("shield_bash", "spear_lines", "lunge_dash")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("shield_bash", "spear_wall", "lunge_dash")
+entry_attack = &"spear_wall"
+speed_permille = 1300
+cooldown_permille = 650
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_WARLORD"
+hp = 1400
+radius_m = 1.1
+move_speed_mps = 2.1
+turn_rate_dps = 130.0
+keep_distance_m = 0.0
+front_arc_degrees = 140.0
+front_mult_permille = 650
+rear_arc_degrees = 100.0
+rear_mult_permille = 1250
+stagger_size = 220
+stagger_decay_per_second = 12.0
+stagger_seconds = 2.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash"), SubResource("A_javelin_rain")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+arena_cells = Vector2i(3, 2)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 400
+punish_distance_m = 9.0
+punish_seconds = 4.0
+punish_attack = &"javelin_rain"
+weak_point_seconds = 2.0
+weak_point_range_m = 2.5
+weak_point_mult_permille = 2000
+weak_point_stagger_permille = 2000
+weak_point_drops_armour = true
+arena_close_phase = 1
+arena_close_after_seconds = 45.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 1.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 6
+arena_hazard_seconds = 0.5
+recovery_permille = 600
+lead_seconds = 0.3
+track_commit_seconds = 0.2
+dash_read_seconds = 0.5
+gap_close_attack = &"lunge_dash"
+gap_close_distance_m = 5.0
+gap_close_seconds = 2.0
+id = &"warlord"

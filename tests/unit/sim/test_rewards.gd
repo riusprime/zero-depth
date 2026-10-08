@@ -69,8 +69,9 @@ func test_the_shipped_data() -> void:
 			KIND.MENDER: 5,
 			KIND.MINE_LAYER: 4,
 			KIND.SNIPER: 5,
+			KIND.LENS_DRONE: 3,
 		},
-		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde)"
+		"shards per kind (PLAN E; hatchlings 1; v0.3.5 Arc Caster and Bomb Drone 4; v0.4.0 EN horde; v0.4.0 BO Lens Drone 3)"
 	)
 	assert_eq(_rewards.chest_prices, PackedInt32Array([40, 60, 80]))
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])
@@ -86,8 +87,18 @@ func test_the_shipped_data() -> void:
 	rare.sort()
 	assert_eq(
 		rare,
-		["bulwark", "cold_snap", "conductor", "meltdown", "wildfire"],
-		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18)"
+		[
+			"afterimage",
+			"bulwark",
+			"cluster_payload",
+			"cold_snap",
+			"conductor",
+			"meltdown",
+			"overclocked_drone",
+			"razor_orbit",
+			"wildfire"
+		],
+		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP)"
 	)
 
 
@@ -109,7 +120,7 @@ func test_shards_scale_with_the_danger_tier() -> void:
 	var w := _world()
 	w.spawner = SpawnTable.new()
 	w.spawner.tier_ticks = 100
-	w.spawner.cap_base = 0
+	w.spawner.cap_by_floor = PackedInt32Array([0])
 	w.spawner.cap_max = 0
 	# × (1 + 0.25 × tier), rounded half up: Charger 3 → 3, 4 (3.75), 5 (4.5), 5 (5.25), 6; Warden 6 → 6, 8 (7.5), 9.
 	var want := {0: [3, 6], 1: [4, 8], 2: [5, 9], 3: [5, 11], 4: [6, 12]}

@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 30
+name_key = &"ITEM_AFTERIMAGE"
+desc_key = &"ITEM_AFTERIMAGE_DESC"
+rarity = 1
+requires_ability = &"blink"
+afterimage_damage = 18
+afterimage_radius_m = 1.8
+afterimage_delay_seconds = 0.4
+tags = PackedStringArray("ability")
+id = &"afterimage"

@@ -20,6 +20,7 @@ const CAUSES := {
 	WorldReader.KIND_SHIELD_BEARER: "CAUSE_SHIELD_BEARER",
 	WorldReader.KIND_MINE_LAYER: "CAUSE_MINE_LAYER",
 	WorldReader.KIND_SNIPER: "CAUSE_SNIPER",
+	WorldReader.KIND_LENS_DRONE: "CAUSE_LENS_DRONE",
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted

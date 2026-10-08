@@ -3,6 +3,12 @@ extends Node3D
 ## The 3D view of one room: stage, actors, the iso camera and occlusion. It reads the sim only through
 ## WorldReader (EI-07); the app calls sync() after every tick.
 
+## v0.4.0 SC: walls fade for the hero and the enemies within this distance of it, at most this many of them (with a
+## crowd, testing every wall against every enemy each frame cost more than the rest of the view; the X-ray
+## silhouettes still show the ones farther off).
+const OCCLUSION_RADIUS_M := 10.0
+const OCCLUSION_FOCUS_MAX := 24
+
 var reader: WorldReader
 var stage := StageView.new()
 var actors := ActorViews.new()
@@ -128,8 +134,13 @@ func sync() -> void:
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []
+		var hero := reader.player_pos()
 		for i in reader.actor_count():
-			focus.append(reader.actor_pos(i))
+			var p := reader.actor_pos(i)
+			if i == 0 or (p - hero).length() <= OCCLUSION_RADIUS_M:
+				focus.append(p)
+				if focus.size() > OCCLUSION_FOCUS_MAX:
+					break
 		stage.apply_occlusion(
 			Occlusion.select(rig.toward_camera_on_plane(), rig.pitch_deg, focus, stage.wall_specs)
 		)

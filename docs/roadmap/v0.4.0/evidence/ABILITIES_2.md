@@ -102,3 +102,49 @@ directly and later puts the hero just inside the Overrun door; the input paths a
   the Chargers, the ability HUD with level pips.
 - [`abilities_2_overrun.png`](abilities_2_overrun.png): the red door frame, the OVERRUN banner with its kill count
   (8 / 12), the minimap's Overrun mark and red doorway.
+
+## After merging the lead branch (BO, CP, SC; `55a895d`), 2026-10-08
+Build `99d5dc7` (the merge with conflicts resolved; the final merge commit adds only this section, PROGRESS and
+`tests/MIN_TEST_COUNT`). How the two sides compose:
+- Bombs: `Abilities.drop_bomb` marks every Bomb Lobber bomb (thrown, or Blink Charge's) as splittable, so Cluster
+  Payload splits it; bomblets share the bomb's root and are never splittable. Storm Bombs chains only from a
+  splittable bomb's blast and at most once per root, so a Cluster bomb chains once and its bomblets never chain.
+- A blink runs both AbilityMods.on_blink (Afterimage) and AbilityCombos.on_blink (Blink Charge).
+- Arc Field, Frost Nova and Flame Trail use `Stats.auto_cooldown` (Fast Hands applies; the HUD reads the same).
+- Overrun on SC's spawn director: alive cap = `SpawnTable.cap(floor, tier)` x 1.5 and interval = `interval(tier)` / 1.5
+  while inside; every pack member that arrives then gets its tier-scaled HP x 1.5 and its tier power
+  (`ActorStore.power`, used by every enemy attack, bolt and mine) x 1.5. The Damage-pipeline multiplier AB had is
+  gone (it would have doubled with power).
+
+Commands and raw output:
+```
+godot --headless --path . --editor --import --quit        # exit 0, 0 ERROR lines
+gdformat --check src scripts tests && gdlint src scripts tests
+438 files would be left unchanged
+Success: no problems found
+
+bash scripts/verify.sh
+Scripts             145
+Tests               924
+Passing Tests       924
+Asserts           451844
+Time              693.678s
+---- All tests passed! ----
+check_gut_log: ok (924 passing, minimum 891)
+exit 0
+
+godot --headless --path . -s scripts/checks/readable_cause.gd     (build/readable_cause.json; summary)
+	"deaths_checked": 24,
+	"floor_ticks": 3600,
+	"runs": 36,
+	"seeds": 12,
+	"violations": 0
+
+bash scripts/ci/export_smoke.sh      # run from the scratchpad, outside the project folder; exit 0
+  ok    600-tick World run hash e5365ddb6dcb matches the project's
+  ok    manifest hash 462435cea790 matches the project's
+  ok    audio cues: 79
+0 miss(es)
+```
+Goldens: none changed by AB or the merge (the replay golden passes; the export smoke's hash is SC's `e5365ddb…`).
+

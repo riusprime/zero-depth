@@ -69,6 +69,8 @@ const SRC_MELEE := 1
 const SRC_BOLT := 2
 const SRC_CHAIN := 3
 const SRC_WAVE := 4
+## v0.5.0 CP: an Orbit Blades touch (Razor Orbit feeds bleed from it).
+const SRC_ORBIT := 5
 
 
 # --- Combos ---------------------------------------------------------------------------------------------------
@@ -149,6 +151,8 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			shock = m.shock_chain
 		SRC_WAVE:
 			shock = m.shock_wave
+		SRC_ORBIT:
+			bleed = m.bleed_orbit
 	var id := a.ids[i]
 	if burn > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BURN + src, id, w.tick):
 		add_burn(w, i, burn, root, EFFECT_CINDER_SHOT)
@@ -167,6 +171,8 @@ static func source_of(tags: int, effect_id: StringName) -> int:
 		return SRC_CHAIN
 	if effect_id == ItemEffects.EFFECT_OVERCHARGE or effect_id == EFFECT_RESONANCE:
 		return SRC_WAVE
+	if effect_id == Abilities.EFFECT_ORBIT:
+		return SRC_ORBIT
 	if tags & SimEvent.TAG_MELEE:
 		return SRC_MELEE
 	if tags & SimEvent.TAG_PROJECTILE:

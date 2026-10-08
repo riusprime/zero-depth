@@ -142,6 +142,16 @@ value or by an owner decision, and the change is noted here.
   to any build without an item. Owning two paired abilities at level 3 evolves them into one of eight ability combos
   (Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward), each with
   a card, a badge and a look ([`INTERACTIONS.md`](INTERACTIONS.md) "Ability combos").
+- **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
+  card is an ability (new or levelled), a stat-card kind (its three rarities are one card) or a mod. A run's pool is
+  what its build can ever be offered: Blade 50 (9 abilities with the three of step AB, 17 stat kinds, 24 mods), Gun
+  48 (9, 17, 22). The five added stat kinds are **rule cards** that ask for a decision instead of a flat gain:
+  Glass Cannon (+damage, −max HP to a floor), Onrush (+damage while moving), Overkill (a kill's excess damage
+  splashes onto the nearest enemy), Hoarder (+damage per 100 shards held, +shard gain: spend at a chest or keep the
+  power) and Fast Hands (auto abilities' cooldowns only). The four added mods are **ability mods**, offered only
+  while you own their ability: Cluster Payload (Bomb Lobber), Overclocked Drone (Drone Buddy, with heat), Razor
+  Orbit (Orbit Blades, bleed) and Afterimage (Blink). Stat cards are drawn by weight. Pairs:
+  [`INTERACTIONS.md`](INTERACTIONS.md); evidence: `docs/roadmap/v0.5.0/evidence/CARD_POOL.md`.
 
 ## E. Enemies and the stress matrix
 
@@ -186,6 +196,16 @@ Their names and specs are decided in v0.4.0 Phase 0.
   - The boss must be beatable by both v0.2.0 engines within the scorecard bands.
 - **Bosses 2–3** (v0.4.0): roles from GA: boss, decided in v0.4.0 Phase 0. Each tests a different engine harder
   than boss 1 does, without draining any.
+- **Pools of two** (v0.4.0 BO, PLAN "Bosses (BO)"): each floor's pool gains a second boss, so a run meets one of
+  two per floor. Same framework and BX anti-kite rules (ranged armour, a punish move, the closing band, a weak point
+  up close), v0.3.5's tracking, dash reading and gap-closer; every number a starting value.
+  - **The Warlord** (floor 1): a shielded knight. Its shield takes 35 % off hits from the front 140°; it bashes
+    with it, plants three (later five) parallel spear lines that stand for a moment, dashes, and rains javelins on
+    a kiter. Planting and dashing lift the shield: the weak point opens and the front armour is off.
+  - **The Hive Lens** (floor 2): a floating eye that sweeps beams (rails), fires prism bolt fans, flares a glare
+    ring up close and dives at a runaway. At 50 % it splits: three Lens Drones (Needle behaviour) break off its rim.
+  - **The Foundry** (floor 3): a walking furnace that floods lanes with molten floor (lanes that burn for 2 s),
+    lobs slag, blows a vent ring up close and launches Bomb Drones (at most 3, then 4 alive).
 
 ## G. Procedural floors
 
@@ -206,7 +226,13 @@ Their names and specs are decided in v0.4.0 Phase 0.
 
 ## H. Scaling and threat
 
-- **Floor index drives scaling:** enemy HP, damage and density come from integer per-floor tables (GA: scaling).
+- **Floor index and the danger tier drive scaling** (owner F7, F10; v0.4.0 SC). Enemies grow per floor and every
+  30 s of a floor (the danger tier), "just a bit below" the player's growth: HP × 1.9^(floor − 1) × 1.10^tier,
+  damage × 1.4^(floor − 1) × 1.05^tier, from integer `‰` tables (flat after tier 20). Bosses keep their own per-floor
+  scaling (+40 % HP, +20 % damage a floor). **Hordes:** at most 14 / 30 / 50 enemies alive at tier 0 of floors 1/2/3,
+  +6 a tier up to 120; packs (2-3, 3-4, 3-5 strong) arrive every 2.5 s, 10 % faster each tier (at least 0.4 s
+  apart), at the edges of the player's room and its neighbours, never within 8 m of the player and never in the
+  boss room. All starting values; the expected-build bot's bands (v0.4.0 TU) tune them.
 - **T adds threat modifiers** (GA: threat), such as more elites, an extra wave or tougher enemies. Each one shows
   its cost and its reward on the door or card before you take it.
 - **The formula is locked by evidence** in v0.3.0 ([`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md)

@@ -43,6 +43,8 @@ const FLANK_PERMILLE := 450
 ## A charge touches the player within this much of contact: the collision pass (phase 5) has already pushed the
 ## two bodies exactly apart before the hit check (phase 6), so an exact test missed by a rounding error (v0.3.5 AI).
 const CONTACT_SLOP_M := 0.02
+## v0.4.0 SC: each enemy re-plans its walk every this many ticks, on the phase of its id (it moves every tick).
+const PLAN_PERIOD := 4
 ## v0.4.0 EN (starting values). A Sniper's line stops following the player this many ticks before it fires.
 const SNIPE_COMMIT_TICKS := 24
 ## After a shot a Sniper walks, this much faster, to a spot 45-90 degrees around the player (1/4096 turns), until it
@@ -60,6 +62,11 @@ const SPLIT_OFFSET_M := 0.45
 
 static func is_enemy_kind(kind: int) -> bool:
 	return kind >= ActorStore.Kind.CHARGER
+
+
+## The behaviour an actor kind runs: its own, except the Hive Lens's drones (v0.4.0 BO), which run the Needle's.
+static func behaviour_of(kind: int) -> int:
+	return ActorStore.Kind.NEEDLE if kind == ActorStore.Kind.LENS_DRONE else kind
 
 
 ## Chargers, the Brood Mother's hatchlings (v0.3.0 C, a small Charger) and Swarmers (v0.4.0 EN) run the charge.
@@ -101,47 +108,48 @@ static func tracking(w: World, i: int) -> bool:
 		return false
 	return (
 		sniper
-		or a.kinds[i] == ActorStore.Kind.NEEDLE
+		or behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE
 		or (a.kinds[i] == ActorStore.Kind.ARC_CASTER and a.pick[i] != Spell.RUNE)
 	)
 
 
 static func think(w: World, i: int) -> void:
-	if Engines.frozen(w, i):  # Engines: a frozen enemy holds still, its state paused.
-		return
 	var a := w.actors
+	var planning := plans_now(w, i)
+	if planning:  # v0.4.0 SC: the staggered plan (before the frozen check: a thawed enemy has a fresh one)
+		plan(w, i)
+	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
+		return
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	var to_player := w.player_pos() - a.pos(i)
-	var dist := Kin.length(to_player)
-	var aim := Kin.angle_of(to_player)
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
 			if a.state_t[i] >= SimTick.SPAWN_IN_TICKS:
 				_enter(a, i, State.MOVE)
 		State.MOVE:
+			var to_player := w.player_pos() - a.pos(i)
+			var dist := Kin.length(to_player)
+			# A Needle backs off before it shoots; the others attack as soon as they're in range.
+			var too_close := (
+				behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
+			)
+			var attack := alive and a.cd[i] == 0 and dist <= t.attack_range_m and not too_close
+			# v0.4.0 SC: a walker faces the player on its plan ticks and as it attacks; the slow turners (Warden,
+			# Shield Bearer) turn every tick (their facing is their armour).
 			if _turns_slowly(a.kinds[i]):
-				a.facing[i] = Kin.turn_toward(a.facing[i], aim, t.turn_rate)
-			else:
-				a.facing[i] = aim
+				a.facing[i] = Kin.turn_toward(a.facing[i], Kin.angle_of(to_player), t.turn_rate)
+			elif attack or planning:
+				a.facing[i] = Kin.angle_of(to_player)
 			if a.kinds[i] == ActorStore.Kind.MENDER:
 				_mend(w, i)  # v0.4.0 EN: heals instead of attacking.
 				return
 			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 				_end_relocation(a, i)
-			# A Needle backs off before it shoots; the others attack as soon as they're in range.
-			var too_close := a.kinds[i] == ActorStore.Kind.NEEDLE and dist < t.flee_distance_m
-			if (
-				alive
-				and a.cd[i] == 0
-				and dist <= t.attack_range_m
-				and not too_close
-				and _may_attack(w, i)
-			):
-				_start_windup(w, i, aim)
+			if attack and _may_attack(w, i):
+				_start_windup(w, i, Kin.angle_of(to_player))
 		State.WINDUP:
 			if tracking(w, i) and alive:
 				_aim(w, i)
@@ -150,7 +158,7 @@ static func think(w: World, i: int) -> void:
 				a.fire_cd[i] = 0
 		State.ACTIVE:
 			var done := false
-			match a.kinds[i]:
+			match behaviour_of(a.kinds[i]):
 				ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 					done = a.lock_len[i] <= 0.0
 				ActorStore.Kind.NEEDLE:
@@ -276,28 +284,18 @@ static func move(w: World, i: int) -> void:
 		_relocate(w, i, t, slow)
 		return
 	if a.state[i] == State.MOVE or hovering:
-		var to := w.player_pos() - at
-		var dist := Kin.length(to)
-		if dist <= 0.0001 or w.player_dead():
+		# v0.4.0 SC: the walk follows the last plan (every PLAN_PERIOD ticks); a melee walker still stops the
+		# tick it touches the player.
+		var dir := Vector2(a.plan_x[i], a.plan_y[i])
+		if dir == Vector2.ZERO or w.player_dead():
 			return
-		var dir := to / dist
-		var side := 1.0 if a.ids[i] % 2 == 0 else -1.0
-		if a.kinds[i] == ActorStore.Kind.NEEDLE:
-			if dist < t.flee_distance_m:
-				dir = -dir
-			elif dist <= t.keep_distance_m + 1.0:
-				dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
-		elif _keeps_away(a.kinds[i]):
-			if dist < t.keep_min_m:
-				dir = -dir
-			elif dist <= t.keep_distance_m:
-				dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
-		elif dist <= t.radius_m + w.player.radius_m + 0.1:
+		if (
+			behaviour_of(a.kinds[i]) != ActorStore.Kind.NEEDLE
+			and not _keeps_away(a.kinds[i])
+			and Kin.length(w.player_pos() - at) <= t.radius_m + w.player.radius_m + 0.1
+		):
 			return
-		elif dist > FLANK_MIN_M and dist < FLANK_RANGE_M:
-			dir = _unit(dir + Vector2(-dir.y, dir.x) * side * (FLANK_PERMILLE / 1000.0))
-		dir = _unit(dir + spread_push(w, i) * SPREAD_WEIGHT) * Kin.length(dir)
-		a.set_pos(i, at + steer(w, at, dir, t.radius_m) * (t.speed * slow))
+		a.set_pos(i, at + dir * (t.speed * slow))
 	elif a.state[i] == State.ACTIVE:
 		if _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
 			# v0.3.5 AI (F4): the charge bends toward the player, at most charge_turn a tick.
@@ -308,6 +306,62 @@ static func move(w: World, i: int) -> void:
 			var step := minf(t.charge_speed * slow, a.lock_len[i])
 			a.lock_len[i] -= step
 			a.set_pos(i, at + Kin.dir(a.lock_a[i]) * step)
+
+
+## Where enemy i would walk this tick before the spread push and walls (ZERO = stand still): toward the player,
+## a Needle backing off or strafing, the keep-away kinds holding their band, melee walkers flanking.
+static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
+	var a := w.actors
+	var to := w.player_pos() - a.pos(i)
+	var dist := Kin.length(to)
+	if dist <= 0.0001 or w.player_dead():
+		return Vector2.ZERO
+	var dir := to / dist
+	var side := 1.0 if a.ids[i] % 2 == 0 else -1.0
+	if behaviour_of(a.kinds[i]) == ActorStore.Kind.NEEDLE:
+		if dist < t.flee_distance_m:
+			dir = -dir
+		elif dist <= t.keep_distance_m + 1.0:
+			dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
+	elif _keeps_away(a.kinds[i]):
+		if dist < t.keep_min_m:
+			dir = -dir
+		elif dist <= t.keep_distance_m:
+			dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
+	elif dist <= t.radius_m + w.player.radius_m + 0.1:
+		return Vector2.ZERO
+	elif dist > FLANK_MIN_M and dist < FLANK_RANGE_M:
+		dir = _unit(dir + Vector2(-dir.y, dir.x) * side * (FLANK_PERMILLE / 1000.0))
+	return dir
+
+
+## v0.4.0 SC: whether enemy i re-plans this tick. Each enemy re-plans every PLAN_PERIOD ticks, on the phase its
+## id gives (id % PLAN_PERIOD), so a crowd's planning is spread evenly over the ticks; it still moves every tick.
+static func plans_now(w: World, i: int) -> bool:
+	return posmod(w.tick, PLAN_PERIOD) == posmod(w.actors.ids[i], PLAN_PERIOD)
+
+
+## v0.4.0 SC: the walk, planned every PLAN_PERIOD ticks (tick phase 3, before anything moves) and followed every
+## tick by move(): the way _walk_dir picks, pushed off the enemies near it (through the actor grid World built this
+## tick) and, while a wall blocks the straight walk, along the flow field instead. The wall check itself runs every
+## other plan (it sweeps the line to the player).
+static func plan(w: World, i: int) -> void:
+	var a := w.actors
+	var t := w.enemy_table(a.kinds[i])
+	var at := a.pos(i)
+	var dir := _walk_dir(w, i, t)
+	if dir != Vector2.ZERO:
+		var reach := Vector2(SPREAD_RADIUS_M, SPREAD_RADIUS_M)
+		var push := _spread_over(w, i, w.actors_near(Rect2(at - reach, reach * 2.0)))
+		dir = _unit(dir + push * SPREAD_WEIGHT) * Kin.length(dir)
+		if posmod(w.tick, PLAN_PERIOD * 2) == posmod(a.ids[i], PLAN_PERIOD * 2):
+			a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
+		if a.plan_block[i] == 1:
+			var flow := w.nav.direction(at)
+			if flow != Vector2.ZERO:
+				dir = flow * Kin.length(dir)
+	a.plan_x[i] = dir.x
+	a.plan_y[i] = dir.y
 
 
 ## A Sniper walking to its next spot (v0.4.0 EN), RELOCATE_SPEED_PERMILLE of its speed.
@@ -325,11 +379,24 @@ static func _relocate(w: World, i: int, t: EnemyTable, slow: float) -> void:
 ## The push that keeps enemy i off the other normal enemies near it: the sum, over each one closer than
 ## SPREAD_RADIUS_M, of the direction away from it weighted by how close it is (0 when alone).
 static func spread_push(w: World, i: int) -> Vector2:
+	var every := PackedInt32Array()
+	for j in range(1, w.actors.size()):
+		every.append(j)
+	return _spread_over(w, i, every)
+
+
+## spread_push over the candidates `js` (ascending actor indices; any superset of the enemies near i gives the same
+## sum, added in the same order).
+static func _spread_over(w: World, i: int, js: PackedInt32Array) -> Vector2:
 	var a := w.actors
 	var at := a.pos(i)
 	var push := Vector2.ZERO
-	for j in range(1, a.size()):
-		if j == i or a.dead[j] == 1 or not is_enemy_kind(a.kinds[j]):
+	var far := SPREAD_RADIUS_M + 0.001
+	for j in js:
+		# v0.4.0 SC: the cheap distance test first (with a margin over rounding; the tests below repeat it exactly).
+		if absf(a.pos_x[j] - at.x) >= far or absf(a.pos_y[j] - at.y) >= far:
+			continue
+		if j == 0 or j == i or a.dead[j] == 1 or a.kinds[j] < ActorStore.Kind.CHARGER:
 			continue
 		var d := at - a.pos(j)
 		if absf(d.x) >= SPREAD_RADIUS_M or absf(d.y) >= SPREAD_RADIUS_M:
@@ -356,7 +423,7 @@ static func resolve(w: World, i: int) -> void:
 	var t := w.enemy_table(a.kinds[i])
 	var p := w.player_pos()
 	var pr := w.player.radius_m
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			var reach := t.radius_m + pr + CONTACT_SLOP_M
 			if a.fire_cd[i] == 0 and Kin.length(p - a.pos(i)) <= reach:
@@ -441,7 +508,7 @@ static func _fire(
 		ActorStore.TEAM_ENEMY,
 		muzzle,
 		dir * speed,
-		damage,
+		powered(w, i, damage),
 		r,
 		life,
 		SimEvent.TAG_PROJECTILE
@@ -452,14 +519,22 @@ static func _fire(
 ## else along the flow field (NavField). A Needle backing off or strafing (dir not toward the player) keeps dir
 ## unless a wall is right in front of it.
 static func steer(w: World, at: Vector2, dir: Vector2, r: float) -> Vector2:
+	if _blocked(w, at, dir, r):
+		var flow := w.nav.direction(at)
+		return flow * Kin.length(dir) if flow != Vector2.ZERO else dir
+	return dir
+
+
+## Whether a wall blocks a body of radius r walking `dir` from `at`: the whole line to the player when dir heads
+## toward it, else the next metre. Walls come from the grid (v0.4.0 SC), not a sweep over every wall.
+static func _blocked(w: World, at: Vector2, dir: Vector2, r: float) -> bool:
 	var target := w.player_pos()
 	var toward := Kin.length(target - at) > 0.0 and (target - at).dot(dir) > 0.0
 	var probe := target if toward else at + dir * 1.0
-	for wall in w.walls:
-		if Collide.sweep_vs_obb(at, probe, r, wall) >= 0.0:
-			var flow := w.nav.direction(at)
-			return flow * Kin.length(dir) if flow != Vector2.ZERO else dir
-	return dir
+	for k in w.walls_along(at, probe, r):
+		if Collide.sweep_vs_obb(at, probe, r, w.walls[k]) >= 0.0:
+			return true
+	return false
 
 
 ## The lane a Charger is about to run: its body's path from where it stands to its body's front at the end of
@@ -583,7 +658,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	if a.state[i] != State.WINDUP:
 		return {}
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, a.windup[i]), 0, 1000)
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
@@ -642,7 +717,7 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 	a.windup[i] = t.windup_ticks
 	if t.windup_max_ticks > t.windup_ticks:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
-	match a.kinds[i]:
+	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
@@ -692,8 +767,8 @@ static func lead_angle(w: World, from: Vector2, speed: float, max_ticks: int) ->
 static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
 	var to := from + Kin.dir(angle) * length
 	var best := 1.0
-	for wall in w.walls:
-		var hit := Collide.sweep_vs_obb(from, to, r, wall)
+	for k in w.walls_along(from, to, r):  # v0.4.0 SC: the grid cells along the run, not every wall
+		var hit := Collide.sweep_vs_obb(from, to, r, w.walls[k])
 		if hit >= 0.0 and hit < best:
 			best = hit
 	return length * best
@@ -702,7 +777,15 @@ static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: fl
 static func _hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:
 	var a := w.actors
 	var at := a.pos(i) if from == Vector2.INF else from
-	Damage.hit(w, 0, amount, a.ids[i], a.ids[i], w.take_root(), tags, at, w.player_pos())
+	Damage.hit(
+		w, 0, powered(w, i, amount), a.ids[i], a.ids[i], w.take_root(), tags, at, w.player_pos()
+	)
+
+
+## v0.4.0 SC: enemy i's attack damage scaled by the danger tier it arrived in (ActorStore.power, per mille).
+static func powered(w: World, i: int, amount: int) -> int:
+	var pm := w.actors.power[i]
+	return amount if pm == 1000 or pm <= 0 else SpawnTable.scale(amount, pm)
 
 
 static func _enter(a: ActorStore, i: int, s: int) -> void:

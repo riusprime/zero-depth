@@ -3,9 +3,11 @@ extends RefCounted
 ## The Overrun threat branch in play (v0.4.0 AB; ROADMAP "Threat T branches"; OverrunDefinition, OverrunRooms).
 ## On a floor with an Overrun room (FloorLayout.overrun_room) and a loadout with its table (World.overrun_table):
 ## - you are inside while you stand in the room (FloorLayout.room_of) and it isn't cleared;
-## - while inside, the spawn director's alive cap is x spawn_permille and its interval / spawn_permille (on_spawn
-##   runs for every arrival): every enemy that arrives then is an Overrun enemy (World.overrun.boosted): HP x
-##   hp_permille at once, its hits x damage_permille (attacker_mult, in Damage.hit) for as long as it lives;
+## - while inside, the spawn director's alive cap is x spawn_permille and its interval / spawn_permille, on top of
+##   the floor and danger-tier values (SpawnTable.cap, interval); on_spawn runs for every pack member: every enemy that
+##   arrives then is an Overrun enemy (World.overrun.boosted): its tier-scaled HP x hp_permille at once and its
+##   tier power (ActorStore.power, which every enemy attack, bolt and mine goes through: EnemyAi.powered) x
+##   damage_permille, for as long as it lives;
 ## - kills of Overrun enemies count (on_kill, from Rewards.on_kill, with the shards they paid) wherever they die;
 ##   kills_to_clear of them clear the room (tick phase 9, advance): an altar appears at the room's open spot nearest
 ##   its centre with ability cards already rolled from the loot stream (level-ups of abilities you own first, then new
@@ -49,14 +51,8 @@ static func on_spawn(w: World, i: int) -> void:
 	var hp := maxi(1, a.hp[i] * w.overrun_table.hp_permille / 1000)
 	a.hp[i] = hp
 	a.max_hp[i] = hp
+	a.power[i] = maxi(1, a.power[i]) * w.overrun_table.damage_permille / 1000
 	w.overrun.boosted.append(a.ids[i])
-
-
-## An attacker's damage factor (per mille): an Overrun enemy hits harder.
-static func attacker_mult(w: World, owner_id: int) -> int:
-	if w.overrun.boosted.is_empty() or not w.overrun.boosted.has(owner_id):
-		return 1000
-	return w.overrun_table.damage_permille
 
 
 ## Rewards.on_kill: actor `i` died paying `shards`.

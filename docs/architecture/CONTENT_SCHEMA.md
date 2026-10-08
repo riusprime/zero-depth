@@ -158,8 +158,13 @@ class_name AttackDefinition extends Resource
   - Positive params (`split_count`, `max_mines`, `heal_*`, `mine_life_seconds`, `drop_seconds`) <= 0 are an `ERROR`
     (`not_positive`); `shield_arc_degrees` outside 0..360 is an `ERROR` (`armour`).
   - The spawner's mix (`data/spawning/floor_1.tres`): Swarmer (weight 3, tier 1, `pack` 8) and Splitter (2, tier 1);
-    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. `SpawnMixEntry.pack` (>= 1,
-    default 1; `mix_entry` `ERROR` below 1) is how many arrive together around one spawn point, never past the cap.
+    Shield Bearer (2), Mine Layer (2), Sniper (1) from tier 2; Mender (1) from tier 3. The horde kinds other than the
+    Swarmer ship `pack` 1 (singles). `SpawnMixEntry.pack` follows the one rule in §7 (0 = the floor's draw; `mix_entry`
+    `ERROR` below 0).
+- **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
+  `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
+  (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up. `@export var shards_by_floor: bool` (bosses) pays
@@ -168,6 +173,13 @@ class_name AttackDefinition extends Resource
 **Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
 default `COMMON`). Chests weight rare items higher (`RewardsDefinition.rare_weight_chest`). `@export var requires_utility: StringName` (empty, `guard` or `blink`) keeps an item out of every offer unless the
 player chose that utility (Bulwark: `guard`).
+v0.5.0 CP: `@export var requires_ability: StringName` (empty, or an `AbilityDefinition.Kind` in lower case, e.g.
+`bomb_lobber`) keeps an **ability mod** out of every offer until the player owns that ability; the tag `ability`
+(added to the closed tag set) and `requires_ability` go together. Four kinds, appended: `CLUSTER_PAYLOAD`
+(`bomblets`, `bomblet_damage_permille`, `bomblet_radius_permille`, `bomblet_delay_seconds`), `OVERCLOCKED_DRONE`
+(`drone_rate_per_heat_permille`; also offered only in runs with heat), `RAZOR_ORBIT` (`stacks_per_hit` and the
+bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterimage_radius_m`,
+`afterimage_delay_seconds`). Each validates the fields it reads (positive; seconds at least one tick).
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
@@ -236,6 +248,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var weak_point_range_m: float              # hits from within it...
 @export var weak_point_mult_permille: int          # ...deal this (1000..4000)
 @export var weak_point_stagger_permille: int       # ...and fill the stagger meter at this (1000..4000)
+@export var weak_point_drops_armour: bool          # v0.4.0 BO: while it is open the front armour is off (the Warlord's shield)
 @export var arena_close_phase: int                 # closing arena starts at this phase (-1 = not by phase)
 @export var arena_close_after_seconds: float       # or after this long fighting (0 = not by time)
 @export var arena_close_step_seconds: float        # a step every this long...
@@ -258,6 +271,11 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   boss) with `follow_up_permille` (0..1000): the chance it starts at once instead of the recovery (a follow-up never
   chains again). The `pull` move (`inner_radius_m`, `radius_m`, `pull_mps`, `pull_range_m`) drags the player in
   during its windup, then slams a ring.
+- The `flood` move (v0.4.0 BO; LINE): `count` parallel lanes `gap_m` apart (centre to centre, > 0), centred on the
+  line toward the player, each `length_m` long and `width_m` wide from the boss's edge, cut short by walls. The
+  lanes are marked for the windup; then they stand for the whole `active_seconds` (drawn styled: the Warlord's
+  spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
+  `count` is at most 8, as every count.
 
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
@@ -265,6 +283,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   eruption's own mark), compile to at least `MIN_TELEGRAPH_TICKS`. Every attack names a `cause_key` (the death
   recap line).
 - `BossPoolDefinition` (`data/boss_pools/floor_<n>.tres`): `floor_index` and the `boss_ids` that floor draws from.
+  Since v0.4.0 BO each pool holds two: floor 1 Gatekeeper and Warlord, floor 2 Brood Mother and Hive Lens, floor 3
+  Siege Engine and Foundry. A run draws each floor's boss from its own stream (`RunState.pick_boss`).
 - Changed from the earlier sketch (`enemy: EnemyDefinition`, `stagger_threshold`, `arena_template_id`) when the
   bosses were built (v0.3.0 C): the numbers live on the boss itself and the arena is the cells and template the
   floor generator reads.
@@ -330,8 +350,29 @@ class_name ThreatModifier extends Resource
 @export var permille_by_t: PackedInt32Array   # integer table indexed by T
 ```
 
-`data/threat/scaling.tres` (`ScalingTable`) holds per-floor `‰` tables for enemy HP, damage and density. Values
-come from GA: scaling. No formula in content uses `pow` or `exp`.
+No formula in content uses `pow` or `exp`: growth is authored as integer `‰` tables. Since v0.4.0 SC (owner F7,
+F10) the tables live with the run and the spawner (there is no `data/threat/scaling.tres`):
+
+- **`RunDefinition`** (`data/run/three_floors.tres`): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
+  one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
+  past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+  `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
+  enemies' tables.
+- **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
+  `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
+  `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
+  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
+  `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
+  rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
+- **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and `pack` — one rule since the v0.4.0 SC + EN merge:
+  `0` (the default) takes the floor's draw (`pack_min_by_floor`..`pack_max_by_floor`), `> 0` always brings that
+  many (the Swarmer's 8; the other horde kinds ship `1`, singles as EN designed them). A pack stands on rings around
+  its anchor and never takes the alive count past the cap. A new enemy joins the hordes with one more entry.
+- **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
+  within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
+  fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
+  cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
+  `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
 ## 8. Player
 
@@ -402,6 +443,12 @@ and that no ability pair repeats. Compiled with the item combos (`ComboTable.abi
 `shard_gain`, `pickup_range`, `armour`), `name_key`, `desc_key` (one `%s` for the amount), `amounts` (common, rare,
 epic; positive, rising; percent, points for crit, percent of max HP per second for regen), `cap` (0 = none; crit
 chance and crit damage in percent points, the others as a multiplier: 2.5 = ×2.5, 0.4 = −60 %) and `weight`.
+v0.5.0 CP adds five rule stats, appended: `glass_cannon`, `onrush`, `overkill`, `hoarder`, `fast_hands`, and two
+fields: `side` (3 positive percents, only for `glass_cannon` (the max HP cut) and `hoarder` (the shard gain)) and
+`limit` (only for `glass_cannon` (the lowest max HP multiplier, 0 < limit < 1), `overkill` (the splash reach in m)
+and `hoarder` (the most shards that count)); any other stat must leave both empty. Caps of the added stats
+(`onrush`, `overkill`, `hoarder`, as for crit and regen) are in percent points. Offers draw a stat by its `weight`.
+A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.

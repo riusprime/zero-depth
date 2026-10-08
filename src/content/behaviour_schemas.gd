@@ -45,6 +45,14 @@ const SCHEMAS := {
 		"shape_params":
 		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
 	},
+	## v0.4.0 BO: the Hive Lens's drones, split off at half HP; they fly the Needle's behaviour (EnemyAi.behaviour_of).
+	&"lens_drone":
+	{
+		"params": ["attack_range_m", "cooldown_seconds", "keep_distance_m", "flee_distance_m"],
+		"shape": 4,
+		"shape_params":
+		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
+	},
 	## v0.3.5 AI (owner F5): keeps keep_min_m..keep_max_m away and casts one of three spells, picked by weight.
 	&"arc_caster":
 	{

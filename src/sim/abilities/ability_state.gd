@@ -31,6 +31,15 @@ var bomb_land := PackedInt32Array()
 var bomb_root := PackedInt32Array()
 var bomb_r := PackedFloat32Array()
 var bomb_dmg := PackedInt32Array()
+## v0.5.0 CP: 1 = a thrown bomb (Cluster Payload splits it on landing), 0 = a bomblet.
+var bomb_split := PackedInt32Array()
+## v0.5.0 CP, Afterimage: the echo a blink leaves (where, the tick it bursts, -1 = none) and the last burst (tick,
+## where, radius) for the view.
+var echo_pos := Vector2.ZERO
+var echo_at := -1
+var echo_tick := -1
+var echo_burst_pos := Vector2.ZERO
+var echo_r := 0.0
 ## The last BLAST_LOG landings (where, tick, radius), oldest first.
 var blast_pos := PackedVector2Array()
 var blast_tick := PackedInt32Array()
@@ -97,6 +106,8 @@ func touched() -> bool:
 		or not orbit_ids.is_empty()
 		or regen_acc != 0
 		or regen_tick != -1
+		or echo_at != -1
+		or echo_tick != -1
 		or touched_ab()
 	)
 
@@ -122,19 +133,20 @@ func hash_into(h: StateHasher) -> void:
 	h.add_ints(cd)
 	for v in [blink_charges, shock_pending, shock_tick, chain_tick, orbit_angle, orbit_hit_tick]:
 		h.add_int(v)
-	for v in [regen_acc, regen_tick]:
+	for v in [regen_acc, regen_tick, echo_at, echo_tick]:
 		h.add_int(v)
-	for p: Vector2 in [shock_pos, chain_from, chain_to]:
+	for p: Vector2 in [shock_pos, chain_from, chain_to, echo_pos, echo_burst_pos]:
 		h.add_f32(p.x)
 		h.add_f32(p.y)
 	h.add_f32(shock_r)
+	h.add_f32(echo_r)
 	for arr: PackedVector2Array in [drone_pos, bomb_pos, bomb_from, blast_pos]:
 		h.add_int(arr.size())
 		for p in arr:
 			h.add_f32(p.x)
 			h.add_f32(p.y)
 	for arr: PackedInt32Array in [
-		drone_cd, drone_fire, bomb_throw, bomb_land, bomb_root, bomb_dmg, blast_tick
+		drone_cd, drone_fire, bomb_throw, bomb_land, bomb_root, bomb_dmg, bomb_split, blast_tick
 	]:
 		h.add_ints(arr)
 	h.add_f32s(bomb_r)

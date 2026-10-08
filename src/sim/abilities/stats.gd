@@ -11,6 +11,16 @@ extends RefCounted
 ## tick) a crit roll on the `crit` stream: chance = base + cards (capped at 75 %), crit = x crit damage (base x1.5,
 ## capped at x4) and TAG_CRIT. A DoT tick takes the damage stat but never crits. Hits the player takes go through
 ## armour. The other stats are read where the sim computes them (cooldowns, reach, move speed, shards, regen ...).
+## v0.5.0 CP, five rule cards that make a decision rather than a flat gain (StatTable.side and limit_permille):
+## - GLASS_CANNON (MULT): x damage; each card also cuts the max HP stat by its side amount, never under the limit
+##   (offers stop once either end is reached);
+## - ONRUSH (ADD): + damage while the player moves (InputFrame move held);
+## - OVERKILL (ADD): a direct hit that kills splashes this share of its excess damage onto the nearest other enemy
+##   within the limit's metres (once; the splash never splashes, never re-rolls crit or the damage stats);
+## - HOARDER (ADD): + damage per full 100 shards held (at most the limit's shards count); each card also raises
+##   the shard gain stat by its side amount, so spending at a chest trades power for a card;
+## - FAST_HANDS (CUT): the auto abilities' cooldowns and periods only (auto_cooldown, auto_period).
+## Damage stats fold into one multiplier (damage_permille): damage x glass cannon x (1 + onrush + hoarder).
 
 enum Stat {
 	MAX_HP,
@@ -25,15 +35,27 @@ enum Stat {
 	SHARDS,
 	PICKUP,
 	ARMOUR,
+	GLASS_CANNON,
+	ONRUSH,
+	OVERKILL,
+	HOARDER,
+	FAST_HANDS,
 }
 enum Rarity { COMMON, RARE, EPIC }
 
-const COUNT := 12
+const COUNT := 17
 const MULT := 0
 const CUT := 1
 const ADD := 2
-const MODE: Array[int] = [MULT, MULT, ADD, ADD, MULT, MULT, CUT, MULT, ADD, MULT, MULT, CUT]
-const BASE: Array[int] = [1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000]
+const MODE: Array[int] = [
+	MULT, MULT, ADD, ADD, MULT, MULT, CUT, MULT, ADD, MULT, MULT, CUT, MULT, ADD, ADD, ADD, CUT
+]
+const BASE: Array[int] = [
+	1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 0, 0, 0, 1000
+]
+## Hoarder counts shards in steps of this many.
+const HOARD_STEP := 100
+const EFFECT_OVERKILL := &"overkill"
 ## One HP of stat regen in the accumulator: per mille x ticks per second.
 const REGEN_UNIT := 1000 * SimTick.TICKS_PER_SECOND
 
@@ -59,6 +81,24 @@ static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
 		add_amount(w, s, t.amounts[clampi(rarity, 0, 2)])
+		_side(w, t, s, t.side[clampi(rarity, 0, 2)])
+
+
+## v0.5.0 CP: a rule card's second number: Glass Cannon cuts the max HP stat (never under its limit), Hoarder raises
+## shard gain. Both move the other stat's value directly, so they work without that stat's own card table.
+static func _side(w: World, t: StatTable, s: int, a: int) -> void:
+	if a <= 0:
+		return
+	match s:
+		Stat.GLASS_CANNON:
+			var before := max_hp(w)
+			var v := (w.stat_values[Stat.MAX_HP] * (1000 - a) + 500) / 1000
+			w.stat_values[Stat.MAX_HP] = maxi(v, t.limit_permille)
+			var gain := max_hp(w) - before
+			w.actors.max_hp[0] = maxi(1, w.actors.max_hp[0] + gain)
+			w.actors.hp[0] = clampi(w.actors.hp[0], 1, w.actors.max_hp[0])
+		Stat.HOARDER:
+			w.stat_values[Stat.SHARDS] = (w.stat_values[Stat.SHARDS] * (1000 + a) + 500) / 1000
 
 
 ## Moves stat `s` by `a` per mille (a card's amount, or a gamble win's) within its cap.
@@ -94,6 +134,8 @@ static func at_cap(w: World, s: int) -> bool:
 	var t := table(w, s)
 	if t == null:
 		return true
+	if s == Stat.GLASS_CANNON and value(w, Stat.MAX_HP) <= t.limit_permille:
+		return true  # v0.5.0 CP: no more HP to trade
 	if t.cap <= 0:
 		return false
 	match MODE[s]:
@@ -139,7 +181,7 @@ static func crit_mult(w: World) -> int:
 ## A hit the player owns, before the target's multipliers (Damage.hit): x damage, then the crit roll. Returns
 ## [amount, extra tags]. The roll draws the `crit` stream only when the chance is above 0.
 static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
-	var m := value(w, Stat.DAMAGE)
+	var m := damage_permille(w)
 	if m != 1000:
 		amount = (amount * m + 500) / 1000
 	if tags & SimEvent.TAG_DOT:
@@ -152,8 +194,48 @@ static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 
 ## A DoT tick the player owns: x damage only (DoT never crits).
 static func dot(w: World, amount: int) -> int:
-	var m := value(w, Stat.DAMAGE)
+	var m := damage_permille(w)
 	return amount if m == 1000 else (amount * m + 500) / 1000
+
+
+## The player's damage multiplier now, per mille: damage x glass cannon x (1 + onrush while moving + hoarder per
+## 100 shards held) (v0.5.0 CP).
+static func damage_permille(w: World) -> int:
+	var m := value(w, Stat.DAMAGE)
+	var g := value(w, Stat.GLASS_CANNON)
+	if g != 1000:
+		m = (m * g + 500) / 1000
+	var bonus := hoard_bonus(w)
+	if w.move_intent != Vector2i.ZERO:
+		bonus += value(w, Stat.ONRUSH)
+	return m if bonus == 0 else (m * (1000 + bonus) + 500) / 1000
+
+
+## Hoarder's bonus now, per mille: per full 100 shards held, at most the limit's shards counted.
+static func hoard_bonus(w: World) -> int:
+	var rate := value(w, Stat.HOARDER)
+	var t := table(w, Stat.HOARDER)
+	if rate <= 0 or t == null:
+		return 0
+	return mini(w.shards, t.limit_permille / 1000) / HOARD_STEP * rate
+
+
+## Overkill (Damage.hit): a direct player hit killed enemy `target` with `excess` damage left over; the share
+## splashes onto the nearest other live enemy within the limit's reach. No-op without the card.
+static func overkill(w: World, target: int, excess: int, root: int) -> void:
+	var share := value(w, Stat.OVERKILL)
+	var t := table(w, Stat.OVERKILL)
+	if share <= 0 or excess <= 0 or t == null:
+		return
+	var amount := (excess * share + 500) / 1000
+	var a := w.actors
+	var at := a.pos(target)
+	var near := Engines.nearest_enemies(w, target, at, t.limit_permille / 1000.0, 1)
+	if amount <= 0 or near.is_empty():
+		return
+	var best := near[0]
+	var pid := a.ids[0]
+	Damage.hit(w, best, amount, pid, pid, root, SimEvent.TAG_AREA, at, a.pos(best), EFFECT_OVERKILL)
 
 
 ## Armour's multiplier on a hit the player takes, per mille.
@@ -168,6 +250,23 @@ static func cooldown(w: World, ticks: int) -> int:
 	if m == 1000 or ticks <= 0:
 		return ticks
 	return maxi(1, (ticks * m + 500) / 1000)
+
+
+## v0.5.0 CP: an auto ability's cooldown: the cooldowns stat, then Fast Hands (never under 1 tick).
+static func auto_cooldown(w: World, ticks: int) -> int:
+	return _fast(w, cooldown(w, ticks))
+
+
+## v0.5.0 CP: an auto ability's firing period: attack speed, then Fast Hands (never under 1 tick).
+static func auto_period(w: World, ticks: int) -> int:
+	return _fast(w, period(w, ticks))
+
+
+static func _fast(w: World, ticks: int) -> int:
+	var f := value(w, Stat.FAST_HANDS)
+	if f == 1000 or ticks <= 0:
+		return ticks
+	return maxi(1, (ticks * f + 500) / 1000)
 
 
 ## A firing period of `ticks` under attack speed (never under 1 tick).

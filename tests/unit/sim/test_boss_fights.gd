@@ -19,7 +19,10 @@ const NEAR_MAX_S := 120.0
 ## The far bot must take at least this many times as long as the melee bot (starting value).
 const FAR_SLOWER := 1.5
 const LIMIT_TICKS := 60 * 600
-const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engine"]
+## v0.4.0 BO: the second boss of each pool (Warlord, Hive Lens, Foundry) is held to the same bands.
+const BOSSES: Array[StringName] = [
+	&"gatekeeper", &"brood_mother", &"siege_engine", &"warlord", &"hive_lens", &"foundry"
+]
 
 
 ## Ticks for `bot` to kill boss `id` (seeded), or -1 if it didn't within LIMIT_TICKS. stats (optional) gets the hits
