@@ -422,3 +422,13 @@ func test_routes_are_deterministic() -> void:
 		b.floor_layout.deep_portal_pos,
 		"the gate's spot is a pure function"
 	)
+
+
+func test_each_deep_floor_taken_adds_one_threat() -> void:
+	var normal := _floor(_run_on(3, Routes.Route.NORMAL))
+	assert_eq(Curses.threat(normal), 0, "no Deep floor, no curse: threat 0")
+	var one := _run_on(2, Routes.Route.DEEP)
+	assert_eq(Curses.threat(_floor(one)), 1, "floor 2 Deep: threat 1")
+	var two := _floor(_run_on(3, Routes.Route.DEEP))
+	assert_eq(Curses.threat(two), 2, "floors 2 and 3 Deep: threat 2")
+	assert_eq(WorldReader.new(two).threat_peak(), 2, "the run's peak shows it")

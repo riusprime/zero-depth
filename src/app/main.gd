@@ -90,6 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		driver != null
 		and _end == null
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
+		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and event.is_action_pressed(&"pause")
 	):
@@ -262,6 +263,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
+	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
@@ -361,6 +363,8 @@ func run_recap() -> Dictionary:
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
+	out["threat"] = driver.reader.threat()  # v0.5.0 EV: threat T now, and the run's peak
+	out["threat_peak"] = driver.reader.threat_peak()
 	return out
 
 
@@ -410,6 +414,11 @@ func open_pause() -> void:
 		_pause.add_child(stats)
 		stats.place_top_right(84)
 		stats.sync(driver.reader)
+	if driver.reader.threat_peak() > 0:  # v0.5.0 EV: threat T and the curses held
+		var threat := ThreatPanel.new()
+		_pause.add_child(threat)
+		threat.place_top_left(84)
+		threat.sync(driver.reader)
 	ui.add_child(_pause)
 	_pause.focus_first()
 

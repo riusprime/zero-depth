@@ -70,6 +70,11 @@ var _shop_denied := -1
 var _heartbeat_left := 0
 ## Overclock heat edges (v0.3.0 H): the last threshold-cross, overheat and vent ticks seen.
 var _heat_ticks := [-1, -1, -1, 0]
+## v0.5.0 EV: the event panel open, the ambush on, and the last curse and payout ticks seen.
+var _event_open := false
+var _ambush := false
+var _curse_tick := -1
+var _done_tick := -1
 ## v0.4.0 AB: the Overrun room's last state (inside, cleared).
 var _overrun := [false, false]
 
@@ -111,6 +116,7 @@ func collect(reader: WorldReader) -> Array:
 	_rewards(reader, out)
 	_low_hp(reader, out)
 	_heat(reader, out)
+	_event_rooms(reader, out)  # v0.5.0 EV
 	_overrun_edges(reader, out)
 	return out
 
@@ -389,3 +395,23 @@ func _heat(reader: WorldReader, out: Array) -> void:
 		if now[k] != _heat_ticks[k] and now[k] >= 0 and rising:
 			out.append([cues[k], null, 1.0])
 	_heat_ticks = now
+
+
+## v0.5.0 EV: a pedestal waking (its panel opening), an ambush starting, a curse taken, an event paying out.
+func _event_rooms(reader: WorldReader, out: Array) -> void:
+	var open := reader.event_open()
+	if open and not _event_open:
+		out.append([&"event_open", null, 1.0])
+	_event_open = open
+	var ambush := reader.event_ambush() >= 0
+	if ambush and not _ambush:
+		out.append([&"ambush_start", null, 1.0])
+	_ambush = ambush
+	if reader.curse_tick() != _curse_tick:
+		if reader.curse_tick() >= 0:
+			out.append([&"curse_gain", null, 1.0])
+		_curse_tick = reader.curse_tick()
+	if reader.event_done_tick() != _done_tick:
+		if reader.event_done_tick() >= 0:
+			out.append([&"event_done", null, 1.0])
+		_done_tick = reader.event_done_tick()

@@ -389,6 +389,49 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
+### Events and curses (v0.5.0 EV)
+
+Compiled by `EventCompiler` (application), beside `ContentCompiler`; the sim reads `EventTable`, `CurseTable` and
+`EventRules`. Every number is a starting value.
+
+```gdscript
+class_name EventDefinition extends ContentDef          # data/events/*.tres, category "events"
+@export var name_key: StringName
+@export var desc_key: StringName
+@export var weight := 10                               # draw weight among the floor's events
+@export var min_floor := 1
+@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
+
+class_name EventChoiceDefinition extends Resource
+@export var label_key: StringName
+@export var cost: StringName = &"none"                 # none, hp, max_hp, shards, overheat, fight, defend
+@export var cost_amount := 0.0                         # % max HP (hp, max_hp), shards per floor, enemies, seconds
+@export var reward: StringName = &"stat_epic"          # stat_epic, stat_echo, mod, chest, overclock,
+                                                       # ability_level, shards, cleanse
+@export var reward_amount := 0.0                       # % Overclock damage, shards per floor
+@export var curse: StringName = &""                    # "", "random" (one you don't hold), or a curse id
+
+class_name CurseDefinition extends ContentDef          # data/curses/*.tres, category "curses"
+@export var name_key: StringName
+@export var desc_key: StringName                       # one %s: the amount
+@export var effect: StringName                         # enemy_speed, regen, heat_decay, extra_enemy, prices,
+                                                       # elite_chance
+@export var amount := 15.0                             # percent (a count for extra_enemy)
+@export var threat := 1                                # added to T while held
+@export var weight := 10
+
+class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.tres, category "event_rules"
+# rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
+# walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
+# defend_radius_m
+```
+
+Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
+below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
+`threat >= 1`. Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
+the `ThreatModifier` tables are still unbuilt.
+
 ## 8. Player
 
 ```gdscript

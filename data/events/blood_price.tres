@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/event_choice_definition.gd" id="1_ch"]
+[ext_resource type="Script" path="res://src/content/defs/event_definition.gd" id="2_ev"]
+
+[sub_resource type="Resource" id="C_pay"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_BLOOD_PRICE_PAY"
+cost = &"max_hp"
+cost_amount = 12
+reward = &"ability_level"
+reward_amount = 0
+curse = &""
+
+[resource]
+script = ExtResource("2_ev")
+name_key = &"EVENT_BLOOD_PRICE"
+desc_key = &"EVENT_BLOOD_PRICE_DESC"
+weight = 8
+min_floor = 1
+requires = &"ability"
+choices = Array[ExtResource("1_ch")]([SubResource("C_pay")])
+id = &"blood_price"

@@ -18,6 +18,8 @@ const PICK_CANCEL := -1
 ## the salvage list (Shop.sell_list); PICK_CANCEL closes the shop.
 const PICK_SHOP_HEAL := 20
 const PICK_SHOP_REROLL := 21
+## v0.5.0 EV: while the shop is open and a curse is held, pay to lift the latest curse (Shop.cleanse).
+const PICK_SHOP_CLEANSE := 22
 const PICK_SHOP_SELL := 100
 
 ## World-plane move, -127..127 per axis, deadzone applied.

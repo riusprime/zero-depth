@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/event_choice_definition.gd" id="1_ch"]
+[ext_resource type="Script" path="res://src/content/defs/event_definition.gd" id="2_ev"]
+
+[sub_resource type="Resource" id="C_draw"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_UNSTABLE_CORE_DRAW"
+cost = &"hp"
+cost_amount = 25
+reward = &"stat_epic"
+reward_amount = 0
+curse = &""
+
+[sub_resource type="Resource" id="C_embrace"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_UNSTABLE_CORE_EMBRACE"
+cost = &"none"
+cost_amount = 0
+reward = &"stat_epic"
+reward_amount = 0
+curse = &"random"
+
+[resource]
+script = ExtResource("2_ev")
+name_key = &"EVENT_UNSTABLE_CORE"
+desc_key = &"EVENT_UNSTABLE_CORE_DESC"
+weight = 12
+min_floor = 1
+requires = &"stat_card"
+choices = Array[ExtResource("1_ch")]([SubResource("C_draw"), SubResource("C_embrace")])
+id = &"unstable_core"

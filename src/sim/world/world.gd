@@ -253,6 +253,12 @@ var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
 var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
 # --- end Build ----------------------------------------------------------------------------------------------
+# v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
+var ev := EventState.new()
+var curses_owned := PackedInt32Array()
+var threat_peak := 0
+## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
+var deep_threat := 0
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -355,8 +361,12 @@ func step(frame: InputFrame) -> void:
 		Rewards.choose(self, frame)
 		tick += 1
 		return
-	if shop.open:  # v0.5.0 SH: the shop's panel is open; only its actions run, the tick still counts.
-		Shop.choose(self, frame)
+	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
+	if shop.open or ev.open >= 0:
+		if shop.open:
+			Shop.choose(self, frame)
+		else:
+			Events.choose(self, frame)
 		tick += 1
 		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
@@ -375,7 +385,7 @@ func step(frame: InputFrame) -> void:
 	actors.facing[0] = aim_angle
 	PlayerBuild.note_facing(self)  # Builds: melee follows the facing (L29).
 	# 2b. Rewards: interact by an altar or chest opens its choice; the rest of this tick waits with it.
-	if Rewards.interact(self):
+	if Rewards.interact(self) or Events.interact(self):  # 2c. v0.5.0 EV: an event pedestal opens its panel.
 		tick += 1
 		return
 	if Shop.interact(self):  # v0.5.0 SH: interact by the terminal opens the shop.
@@ -408,6 +418,7 @@ func step(frame: InputFrame) -> void:
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
+	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	WaveDirector.advance(self)
@@ -775,6 +786,7 @@ func state_hash() -> String:
 		h.add_f32(gamble_pos.y)
 	if shop.present():  # v0.5.0 SH: only floors with a shop.
 		shop.hash_into(h)
+	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:

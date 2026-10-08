@@ -22,6 +22,8 @@ var build_id := &""
 ## v0.5.0 RT: the route of each floor reached (Routes.Route), entry f − 1; floor 1 is always NORMAL. A saved run
 ## keeps it (RunSaver.payload_of / run_from, payload version 2).
 var routes := PackedInt32Array([Routes.Route.NORMAL])
+## v0.5.0 EV (M-THREAT): threat T at the end of each finished floor.
+var threat_by_floor := PackedInt32Array()
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -111,6 +113,7 @@ func prepare(w: World) -> void:
 	w.floor_count = table.floors
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
+	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
 
@@ -119,6 +122,7 @@ func prepare(w: World) -> void:
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
+	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille)
 	floor_index += 1
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1

@@ -4,7 +4,7 @@ extends RefCounted
 ## while it is), the stock (card codes, Offers; SOLD for a bought slot), the heal and reroll counters, and the last
 ## action and refusal for the views. A new floor starts it fresh. Hashed once the floor has a shop.
 
-enum Action { NONE, BUY, HEAL, REROLL, SELL, SALVAGE_ABILITY, OPEN, CLOSE }
+enum Action { NONE, BUY, HEAL, REROLL, SELL, SALVAGE_ABILITY, OPEN, CLOSE, CLEANSE }
 
 const SOLD := -1
 

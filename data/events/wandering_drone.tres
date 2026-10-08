@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/event_choice_definition.gd" id="1_ch"]
+[ext_resource type="Script" path="res://src/content/defs/event_definition.gd" id="2_ev"]
+
+[sub_resource type="Resource" id="C_defend"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_WANDERING_DRONE_DEFEND"
+cost = &"defend"
+cost_amount = 20
+reward = &"shards"
+reward_amount = 45
+curse = &""
+
+[resource]
+script = ExtResource("2_ev")
+name_key = &"EVENT_WANDERING_DRONE"
+desc_key = &"EVENT_WANDERING_DRONE_DESC"
+weight = 10
+min_floor = 1
+requires = &""
+choices = Array[ExtResource("1_ch")]([SubResource("C_defend")])
+id = &"wandering_drone"

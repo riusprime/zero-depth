@@ -42,6 +42,7 @@ static func available(w: World) -> PackedInt32Array:
 			not w.items_owned.has(idx)
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
+			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows
 			and not w.shop.offer.has(idx)  # v0.5.0 SH: a mod in the shop's stock
 			and _usable(w, idx)
 		):

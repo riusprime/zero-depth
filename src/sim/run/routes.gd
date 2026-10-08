@@ -8,7 +8,7 @@ extends RefCounted
 ##   tier's power still comes on top as each enemy arrives);
 ## - one extra chest (RunTable.deep_extra_chests) and a curse-free epic altar (Offers.roll_epic: epic stat cards and
 ##   ability level-ups only), on item spots the floor's own rewards left free.
-## TODO(v0.5.0 EV): +1 threat T per Deep floor taken, once the run tracks T (read Routes.is_deep / RunState.routes).
+## - +1 threat T per Deep floor taken (World.deep_threat, set by RunState.prepare; Curses.threat adds it).
 ## Pure sim code: no stream is drawn here (placement is a pure function of the layout), so a Deep floor's loot and
 ## enemies come from the same streams as a normal one.
 

@@ -92,7 +92,7 @@ static func advance(w: World) -> void:
 	else:
 		s.idle += 1
 		if s.idle > s.table.decay_delay_ticks and s.milli > 0:
-			s.milli = maxi(0, s.milli - s.table.decay_per_tick)
+			s.milli = maxi(0, s.milli - Curses.heat_decay(w, s.table.decay_per_tick))  # v0.5.0 EV
 	_retier(w)
 
 
@@ -120,7 +120,7 @@ static func attacker_mult(
 		return 1000
 	if not is_attack(tags, effect_id) or not overclocked(w):
 		return 1000
-	return 1000 + w.heat.table.overclock_damage_permille
+	return 1000 + w.heat.table.overclock_damage_permille + Events.overclock_bonus(w)  # + EV vent
 
 
 ## The player's hit on enemy `i` landed (Damage.hit, got > 0): an Overclock hit leaves an ember and feeds the fire

@@ -19,6 +19,7 @@ const LEGEND: Array = [
 	[&"portal", "MAP_LEGEND_PORTAL"],
 	[&"portal_deep", "MAP_LEGEND_PORTAL_DEEP"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
+	[&"event", "MAP_LEGEND_EVENT"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
 	[&"shop", "MAP_LEGEND_SHOP"],
 ]
@@ -280,6 +281,10 @@ func _draw_icons() -> void:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
 	if reader.has_gamble() and state.is_discovered(reader.floor_room_of(reader.gamble_pos())):
 		draw_icon(&"shrine", to_map(reader.gamble_pos()), k)  # v0.3.0 L19: the gamble shrine
+	for e in reader.event_count():  # v0.5.0 EV: event pedestals in rooms you have seen
+		if state.is_discovered(reader.event_room(e)):
+			var spent := reader.event_state(e) == WorldReader.EVENT_DONE
+			draw_icon(&"event_spent" if spent else &"event", to_map(reader.event_pos(e)), k)
 	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
@@ -366,6 +371,15 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_DEEP, 0.25))
 			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_DEEP_RIM, 2.0, true)
 			draw_circle(p, s * 0.55, MinimapStyle.PORTAL_DEEP)
+		&"event", &"event_spent":
+			var hexa := PackedVector2Array()
+			for j in 6:
+				hexa.append(p + Vector2(cos(TAU * j / 6.0), sin(TAU * j / 6.0)) * s * 1.1)
+			var col := MinimapStyle.EVENT if kind == &"event" else Color(MinimapStyle.EVENT, 0.35)
+			if kind == &"event":
+				draw_circle(p, s * 1.6, Color(MinimapStyle.EVENT, MinimapStyle.GLOW_ALPHA))
+			draw_colored_polygon(hexa, col)
+			draw_circle(p, s * 0.35, Color(0.05, 0.05, 0.08, 0.9))
 		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
 			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
 			if kind == &"overrun":

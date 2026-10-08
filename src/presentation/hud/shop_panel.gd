@@ -20,6 +20,8 @@ const POOR := Color("#FF5A4D")
 var input_enabled := true
 var heal_tile := ShopTile.new("ShopHeal", 220.0)
 var reroll_tile := ShopTile.new("ShopReroll", 220.0)
+## v0.5.0 EV: lift your latest curse (shown only while you hold one).
+var cleanse_tile := ShopTile.new("ShopCleanse", 260.0)
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _shards := Label.new()
@@ -73,6 +75,7 @@ func _init() -> void:
 	services.add_theme_constant_override("separation", 16)
 	services.add_child(heal_tile)
 	services.add_child(reroll_tile)
+	services.add_child(cleanse_tile)
 	col.add_child(services)
 	col.add_child(_salvage_title)
 	_salvage.name = "ShopSalvage"
@@ -114,6 +117,8 @@ func sync(reader: WorldReader) -> void:
 			s["heal_used"],
 			s["heal_amount"],
 			s["reroll_price"],
+			s["cleanse_curse"],
+			s["cleanse_price"],
 			reader.shards(),
 			TranslationServer.get_locale()
 		]
@@ -279,7 +284,7 @@ func _render_services(s: Dictionary) -> void:
 		false,
 		ShardIcon.MID
 	)
-	for t: ShopTile in [heal_tile, reroll_tile]:
+	for t: ShopTile in [heal_tile, reroll_tile, cleanse_tile]:
 		for sig: Signal in [t.hovered, t.clicked]:
 			for conn in sig.get_connections():
 				sig.disconnect(conn["callable"])
@@ -305,6 +310,37 @@ func _render_services(s: Dictionary) -> void:
 			"row": 1,
 			"focus": reroll_tile.set_focused,
 			"node": reroll_tile
+		}
+	)
+	_render_cleanse(s)
+
+
+## v0.5.0 EV: the paid cleanse, while a curse is held (its name on the tile; Shop.cleanse lifts the latest).
+func _render_cleanse(s: Dictionary) -> void:
+	var curse := int(s["cleanse_curse"])
+	cleanse_tile.visible = curse >= 0
+	if curse < 0:
+		return
+	var ok := _shards_now() >= int(s["cleanse_price"])
+	cleanse_tile.show_tile(
+		tr("SHOP_CLEANSE"),
+		tr(s["cleanse_name_key"]),
+		int(s["cleanse_price"]),
+		ok,
+		not ok,
+		false,
+		CurseLook.COLOR
+	)
+	var c := _entries.size()
+	cleanse_tile.hovered.connect(func() -> void: _set_focus(c))
+	cleanse_tile.clicked.connect(func() -> void: _act(c))
+	_entries.append(
+		{
+			"value": InputFrame.PICK_SHOP_CLEANSE,
+			"enabled": ok,
+			"row": 1,
+			"focus": cleanse_tile.set_focused,
+			"node": cleanse_tile
 		}
 	)
 

@@ -309,7 +309,7 @@ static func reach(w: World, metres: float) -> float:
 
 ## Tick phase 6 (Abilities.advance): regen heals regen per mille of max HP a second, in and out of combat.
 static func advance_regen(w: World) -> void:
-	var rate := value(w, Stat.REGEN)
+	var rate := Curses.regen(w, value(w, Stat.REGEN))  # v0.5.0 EV curse
 	var a := w.actors
 	if rate <= 0 or w.player_dead() or a.hp[0] >= a.max_hp[0]:
 		w.ab.regen_acc = 0

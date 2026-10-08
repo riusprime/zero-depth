@@ -27,6 +27,7 @@ const SELL_ABILITY := 2
 const SPAWN_CLEAR_M := 1.6
 const EFFECT_HEAL := &"shop_heal"
 const EFFECT_REROLL := &"shop_reroll"
+const EFFECT_CLEANSE := &"shop_cleanse"  # v0.5.0 EV
 
 
 static func present(w: World) -> bool:
@@ -89,6 +90,8 @@ static func choose(w: World, frame: InputFrame) -> void:
 		heal(w)
 	elif v == InputFrame.PICK_SHOP_REROLL:
 		reroll(w)
+	elif v == InputFrame.PICK_SHOP_CLEANSE:
+		cleanse(w)
 	elif v >= InputFrame.PICK_SHOP_SELL:
 		sell(w, v - InputFrame.PICK_SHOP_SELL)
 	else:
@@ -109,16 +112,22 @@ static func rarity(w: World, code: int) -> int:
 	return int(Offers.info(w, code)["rarity"])
 
 
+## v0.5.0 EV: every shop price goes through the prices curse (Curses.price); salvage refunds don't.
 static func price(w: World, code: int) -> int:
-	return w.shop_table.card_price(rarity(w, code), w.floor_index)
+	return Curses.price(w, w.shop_table.card_price(rarity(w, code), w.floor_index))
 
 
 static func heal_price(w: World) -> int:
-	return w.shop_table.heal_cost(w.floor_index)
+	return Curses.price(w, w.shop_table.heal_cost(w.floor_index))
 
 
 static func reroll_price(w: World) -> int:
-	return w.shop_table.reroll_cost(w.shop.rerolls)
+	return Curses.price(w, w.shop_table.reroll_cost(w.shop.rerolls))
+
+
+## v0.5.0 EV: lifting the latest curse costs the rules' cleanse price x the floor (under the prices curse too).
+static func cleanse_price(w: World) -> int:
+	return Curses.price(w, w.ev.rules.cleanse_price * maxi(1, w.floor_index))
 
 
 ## HP the heal would restore now.
@@ -187,6 +196,19 @@ static func reroll(w: World) -> bool:
 	_spend(w, cost, EFFECT_REROLL)
 	restock(w)
 	_note(w, ShopState.Action.REROLL, cost)
+	return true
+
+
+## v0.5.0 EV: pays cleanse_price to lift the latest curse (Curses.cleanse). Refused without a curse or the shards.
+static func cleanse(w: World) -> bool:
+	var cost := cleanse_price(w)
+	if w.curses_owned.is_empty() or w.shards < cost:
+		return _deny(w)
+	w.shards -= cost
+	_spend(w, cost, EFFECT_CLEANSE)
+	var c := w.curses_owned[w.curses_owned.size() - 1]
+	Curses.cleanse(w)
+	_note(w, ShopState.Action.CLEANSE, c)
 	return true
 
 
@@ -328,6 +350,10 @@ static func read(w: World) -> Dictionary:
 		"heal_amount": heal_amount(w),
 		"heal_used": w.shop.heal_used,
 		"reroll_price": reroll_price(w),
+		"cleanse_price": cleanse_price(w),  # v0.5.0 EV
+		"cleanse_curse": _latest_curse(w),
+		"cleanse_name_key":
+		w.ev.curses[_latest_curse(w)].name_key if _latest_curse(w) >= 0 else &"",
 		"rerolls": w.shop.rerolls,
 		"sell": sells,
 		"last_action": w.shop.last_action,
@@ -335,6 +361,12 @@ static func read(w: World) -> Dictionary:
 		"last_value": w.shop.last_value,
 		"denied_tick": w.shop.denied_tick,
 	}
+
+
+## The curse a cleanse would lift (the latest held, with a table), or -1.
+static func _latest_curse(w: World) -> int:
+	var n := w.curses_owned.size()
+	return w.curses_owned[n - 1] if n > 0 and w.curses_owned[n - 1] < w.ev.curses.size() else -1
 
 
 static func _spend(w: World, cost: int, what: StringName) -> void:

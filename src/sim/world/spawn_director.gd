@@ -10,6 +10,8 @@ extends RefCounted
 ##   the floor's range, never past the cap;
 ## - its members stand on a ring around the anchor (anchor first, then 6 spots at PACK_STEP_M, then 12 at twice
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
+## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap), Marked Hunt may raise a member to
+##   an elite (its tier HP x2); a Wandering Drone defence runs the interval clock twice as fast;
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
 ##   compiled enemy tables, RunState.scale_enemies).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
@@ -30,7 +32,7 @@ static func advance(w: World) -> void:
 		w.spawn_cd = t.interval(tier)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
-		w.spawn_cd -= 1
+		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	if w.spawn_cd > 0:
 		return
 	# v0.4.0 AB: inside the Overrun room the cap is x1.5 and the interval / 1.5, on top of the tier's (Overrun).
@@ -145,6 +147,7 @@ static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
 	var size := t.packs[entry] if entry < t.packs.size() else 0
 	if size <= 0:
 		size = w.rng_map.range_int(t.pack_min(w.floor_index), t.pack_max(w.floor_index))
+	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
 	var hp := t.scaled_hp(w.enemy_table(kind).hp, tier)
 	var power := t.damage_permille(tier)
 	for q in pack_spots(w, anchor, mini(size, room)):
@@ -154,3 +157,4 @@ static func _spawn_pack(w: World, t: SpawnTable, tier: int, room: int) -> void:
 		w.actors.max_hp[i] = hp
 		w.actors.power[i] = power
 		Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)
+		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP

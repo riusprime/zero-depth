@@ -14,6 +14,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | SH | A shop terminal per floor (a side room, usually a dead end; never the Overrun room): 4 cards (30/55/90 × floor step), a heal (30 %), rerolls (20, +50 %); sell a mod or stat card for 40 %, salvage an ability for 25/level to free its slot ([`evidence/SHOP.md`](evidence/SHOP.md)) | `706f033`, `e98c807`, merge `0f86c77`, fix `b010603` |
 | RT | After floors 1–2 the boss room opens a normal and a violet **Deep** portal; Deep floors ×1.25 enemies, +1 chest, a free epic altar; floor card/label/recap name the route; routes are saved ([`evidence/ROUTES.md`](evidence/ROUTES.md)) | `7db9887`, `5174057`, merge `e4fec48` |
 | SH | One shop per floor in a side room (a terminal: E / pad X): 4 cards from the chests' pools priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a heal (30 % max HP, once, 40 × floor), a reroll (20, +50 % per use); salvage at the same panel (a mod or stat card for 40 % of its price, an ability but the weapon for 25 shards per level, freeing its slot); minimap icon, sounds, en + es ([`evidence/SHOP.md`](evidence/SHOP.md)) | `v0.5.0 Step SH: shops and salvage` (this branch) |
+| EV | 1–2 event rooms per floor (a lit pedestal, a panel of costed choices and "Leave it"; eight events), six curses (each +1 threat T) on 25 % of chest offers and on some event choices, a cleanse (the Cleansing Font, and a hook for shops), T on the HUD, in the pause menu and the recap ([`evidence/EVENTS.md`](evidence/EVENTS.md)) | `v0.5.0 Step EV` commit |
 
 ## Goldens changed on purpose
 - none
@@ -25,11 +26,20 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 
 ## Open
 - O3 `main`; O4 credit line.
+- EV (lead, for the owner): curses are fixed drawbacks, not CONTENT_SCHEMA §7's T-indexed `ThreatModifier` tables
+  (still unbuilt); the elite rule (+100 % HP, a crown) is EV's own until SC sets a shared one; Echo Mirror repeats
+  the stat raised most and Wandering Drone is a defence (PLAN, step EV). The three new streams are sub-streams
+  (`map:event`, `loot:event`, `ai:elite`), like `ai:enemy`; EI-05's named list is unchanged: confirm or amend.
 
 ## Blockers
 - none
 
 ## History
+- 2026-10-08 — EV merged with the lead branch (`d5450d9`: SC, AB, SV, SH) in the EV worktree: 1012 tests pass,
+  readable cause 0 violations over 36 runs, export smoke 0 misses; goldens unchanged. The three EV sub-streams
+  (`map:event`, `loot:event`, `ai:elite`) await the owner's approval.
+- 2026-10-08 — EV built on `ac62796` (events, curses, threat T); goldens unchanged; evidence in
+  [`evidence/EVENTS.md`](evidence/EVENTS.md).
 - 2026-10-07 — CP built (on v0.4.0 BS) and merged on top of v0.4.0 EN + BO: 864 tests pass; goldens unchanged. The
   brief's "≈8 stat cards + ≈6–8 mods" would have overshot 50 per build; CP added 5 + 4 to fit. Owner: count per
   build. PLAN written for the rest of v0.5.0.

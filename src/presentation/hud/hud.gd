@@ -44,6 +44,8 @@ var minimap := Minimap.new()
 var kit_hud := KitHud.new()
 ## v0.4.0 BS: the four ability slots above the HP plate.
 var ability_hud := AbilityHud.new()
+## v0.5.0 EV: the event prompt, status and panel, and threat T with the curses held.
+var events := EventHud.new()
 ## v0.4.0 AB: the Overrun room's banner (its kills, then what clearing it paid).
 var overrun_hud := OverrunHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
@@ -147,6 +149,8 @@ func _init() -> void:
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_pick)  # after the loop: the pick takes mouse input
+	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
+	events.panel.picked.connect(_pick.picked.emit)
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 
 
@@ -195,6 +199,7 @@ func sync(reader: WorldReader) -> void:
 	gamble.sync(reader)
 	kit_hud.sync(reader)  # v0.3.5 K
 	ability_hud.sync(reader)  # v0.4.0 BS
+	events.sync(reader)  # v0.5.0 EV
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	shop.sync(reader)  # v0.5.0 SH
 

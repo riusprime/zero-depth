@@ -83,6 +83,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.ticks_done = int(r["ticks_done"])
 	run.kills_done = int(r["kills_done"])
 	run.routes = PackedInt32Array(r["routes"])  # v0.5.0 RT
+	run.threat_by_floor = PackedInt32Array(r.get("threat_by_floor", PackedInt32Array()))  # v0.5.0 EV
 	return run
 
 
@@ -112,6 +113,7 @@ static func payload_of(
 			"ticks_done": run.ticks_done,
 			"kills_done": run.kills_done,
 			"routes": run.routes.duplicate(),  # v0.5.0 RT: each floor's route
+			"threat_by_floor": run.threat_by_floor.duplicate(),  # v0.5.0 EV (M-THREAT)
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

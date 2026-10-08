@@ -16,6 +16,8 @@ const PLAYER := Color("#3FE0FF")
 const ALTAR := Color("#F2D16B")
 ## The gamble shrine (v0.3.0 L19).
 const SHRINE := Color("#D46BFF")
+## v0.5.0 EV: an event pedestal (dim once spent), green so it reads apart from the shop.
+const EVENT := Color("#9EE37D")
 ## The shop terminal (v0.5.0 SH), in the shards' violet.
 const SHOP := Color("#B48CFF")
 const CHEST := Color("#E0A458")

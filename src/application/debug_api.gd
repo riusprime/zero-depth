@@ -24,6 +24,7 @@ var _to_overrun := false
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
+var _curse_chest := false
 
 
 func _init(p_world: World) -> void:
@@ -164,7 +165,15 @@ static func overrun_door_outside(w: World, m: float) -> Vector2:
 	return f.door_centers[d] - into * (f.door_depths[d] * 0.5 + m)
 
 
+## v0.5.0 EV (dev runs only): the next chest offer rolled is cursed.
+func curse_next_chest() -> void:
+	_curse_chest = true
+
+
 func _apply_commands() -> void:
+	if _curse_chest:
+		_curse_chest = false
+		world.ev.force_curse = true
 	if _to_overrun:
 		_to_overrun = false
 		var at := overrun_door_outside(world, 1.5)
