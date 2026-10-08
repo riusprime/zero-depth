@@ -6,7 +6,9 @@
 script = ExtResource("1_run")
 floors = 3
 biomes = Array[StringName]([&"ruins", &"night_rocks", &"red_canyon"])
-enemy_hp_per_floor = 0.4
-enemy_damage_per_floor = 0.2
+enemy_hp_floor_permille = PackedInt32Array(1000, 1900, 3610)
+enemy_damage_floor_permille = PackedInt32Array(1000, 1400, 1960)
+boss_hp_per_floor = 0.4
+boss_damage_per_floor = 0.2
 heal_between_floors = 0.4
 id = &"three_floors"

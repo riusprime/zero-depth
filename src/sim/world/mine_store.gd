@@ -47,17 +47,17 @@ func pos(k: int) -> Vector2:
 func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
-	var keep := PackedInt32Array()
-	var j := 0
-	for k in ids.size():
-		if j < indices.size() and indices[j] == k:
-			j += 1
-		else:
-			keep.append(k)
+	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (as ActorStore and ProjectileStore).
 	for f in INT_FIELDS:
-		set(f, ProjectileStore._pick_i(get(f), keep))
+		var ai: PackedInt32Array = get(f)
+		for k in range(indices.size() - 1, -1, -1):
+			ai.remove_at(indices[k])
+		set(f, ai)
 	for f in FLOAT_FIELDS:
-		set(f, ProjectileStore._pick_f(get(f), keep))
+		var af: PackedFloat32Array = get(f)
+		for k in range(indices.size() - 1, -1, -1):
+			af.remove_at(indices[k])
+		set(f, af)
 
 
 func hash_into(h: StateHasher) -> void:

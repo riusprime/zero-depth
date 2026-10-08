@@ -194,9 +194,17 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
 - Walls and cover are oriented boxes (OBBs: centre, half-extents, angle as `int` 1/4096 turn).
 - Projectiles are swept segments from last tick's position to this tick's.
 
-**Broadphase:**
-- A uniform grid with 1 m cells is rebuilt for actors each tick, in id order.
-- Each room has a static wall grid, built once when the room loads.
+**Broadphase** (`DenseGrid`, v0.4.0 SC; it was a Dictionary-of-Arrays uniform grid with 1 m cells):
+- A dense grid of 2 m cells over what it holds, each cell's indices in one flat list (a counting sort, no
+  Dictionary). Queries return ascending indices without duplicates: every entry whose box overlaps the query, and
+  maybe a few more.
+- Actors: one entry per centre (queries grow by the largest radius), rebuilt in place in tick phase 3 (the enemies'
+  plans query it) and before each collision pass.
+- Walls: one entry per covered cell, built with the floor and again when a wall is added in play (the boss door).
+  A line of sight or a charge's run walks only the cells along the segment (`World.walls_along`); no sweep tests
+  every wall of the floor any more.
+- Which candidates a pass sees decides the order bodies are pushed in, so changing the cells changes the replay
+  golden: it changed on purpose in v0.4.0 SC (v0.4.0 PROGRESS, "Goldens changed on purpose").
 
 **Resolution:**
 - Actors resolve against walls first, then against each other, in ascending id pairs `(a, b)` with `a < b`.
@@ -357,6 +365,17 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
   contact, because phase 5 has already pushed the bodies exactly apart.
 - **Spreading.** Walking enemies push off other enemies within 1.6 m, and melee walkers within 2-6 m of the player
   swing out to the side their id picks, so a pack surrounds instead of stacking.
+- **Staggered plans (v0.4.0 SC).** An enemy re-plans its walk every `EnemyAi.PLAN_PERIOD` (4) ticks, on the ticks
+  where `tick % 4 == id % 4`, so a quarter of a crowd plans each tick; it moves every tick along the last plan
+  (`ActorStore.plan_x/plan_y`: the way it picks, the spread push, and the flow field while a wall blocks the straight
+  walk). The wall check (a sweep along the line to the player) runs every other plan (`plan_block`). A melee walker
+  still stops the tick it touches the player. Walkers face the player on their plan ticks and as they attack; the
+  Warden turns every tick (its facing is its armour). Timers, windups, tracking and hits still run every tick. The
+  plan fields are hashed with the other AI fields.
+- **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (10 ticks) from the player for every enemy, stopped
+  `NavField.WORLD_FLOOD_STEPS` (160 half-metre steps, ~80 m of path) out, and skipped when the player is still in
+  the cell of the last flood (the walls don't change between builds, so the result would be the same). An enemy past
+  the bound walks straight until it is back in reach.
 - **The gap-closer.** A boss whose player stays beyond `gap_close_distance_m` (from its edge) for
   `gap_close_seconds` performs `gap_close_attack` (Gatekeeper: charge; Brood Mother: leap; Siege Engine: bolt fan).
   The punish attack (`punish_*`, BX) keeps its priority.
@@ -403,12 +422,24 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
 
 ## 11. Scaling and threat
 
-- **Floor index drives scaling.** Enemy HP, damage and density come from authored integer tables per floor
-  (`data/threat/scaling.tres`), with values from GA: scaling.
+- **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×
+  `enemy_hp_floor_permille[floor − 1]` (`data/run/three_floors.tres`: 1.9^(f − 1)) × `hp_tier_permille[tier]`
+  (`data/spawning/floor_1.tres`: 1.10^tier), its damage × `enemy_damage_floor_permille` (1.4^(f − 1)) ×
+  `damage_tier_permille` (1.05^tier), each step rounded half up (`SpawnTable.scale`). The floor factor is applied to
+  the compiled enemy tables when the floor is built (`RunState.scale_enemies`, so a boss's summons get it too); the
+  tier factor to each enemy as the spawn director brings it in (HP, and `ActorStore.power`, which `EnemyAi` applies
+  to every hit and shot). Tier n starts at n × 30 s of the floor's run time; past the tables' last entry (tier 20,
+  ten minutes) the factors stay flat, which keeps the integer products small.
+- **Bosses keep their own per-floor scaling** (`boss_hp_per_floor`, `boss_damage_per_floor`: +40 % HP and +20 %
+  damage a floor), applied once, and no tier scaling.
+- **Density.** The alive cap is `cap_by_floor` (14 / 30 / 50) + 6 a tier, at most 120; packs arrive every
+  `interval_start` (2.5 s) × `interval_tier_permille` (0.9^tier), at least 0.4 s apart (SpawnDirector).
 - **Threat T** adds to those tables through `ThreatModifier`s ([`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §7). The
   player raises T only by choice (PD-05). Every threat cost is shown on the fork or reward before the choice.
-- There is no time-based scaling: no global clock and no enrage timer.
+- There is no enrage timer. The danger tier is the floor's own clock (it restarts on every floor and counts only
+  while the player lives), not a global one; the owner asked for scaling over time (F10, v0.4.0 PLAN).
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.
 - **The formula is locked by evidence.** Its first version is measured in v0.3.0 and recorded in that version's
   `evidence/`. Later changes need a new sim result showing the scorecard bands still hold
-  ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)).
+  ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)). The v0.4.0 change (SC, above) is the owner's direction;
+  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC).

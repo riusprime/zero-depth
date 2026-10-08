@@ -95,7 +95,7 @@ func test_swarmers_arrive_in_a_pack_of_eight_within_the_cap() -> void:
 		t.weights = PackedInt32Array([1])
 		t.unlock_tiers = PackedInt32Array([0])
 		t.packs = PackedInt32Array([8])
-		t.cap_base = cap
+		t.cap_by_floor = PackedInt32Array([cap])
 		t.cap_max = cap
 		t.interval_start_ticks = 2
 		t.interval_min_ticks = 1
@@ -107,7 +107,11 @@ func test_swarmers_arrive_in_a_pack_of_eight_within_the_cap() -> void:
 		assert_eq(ids.size(), mini(8, cap), "cap %d: one pack" % cap)
 		for id in ids:
 			var d := Kin.length(w.actors.pos(_i(w, id)) - Vector2(10, 0))
-			assert_lt(d, SpawnDirector.PACK_RING_M + 0.3, "around the spawn point")
+			assert_lt(
+				d,
+				2.0 * SpawnDirector.PACK_STEP_M + 0.01,
+				"around the spawn point (v0.4.0 SC rings)"
+			)
 
 
 # --- Splitter -----------------------------------------------------------------------------------------------------
