@@ -239,7 +239,7 @@ the whole `World`.
   - Materials are `StandardMaterial3D` only, with no custom shaders unless a gallery scene proves the need.
 - **CI.** This is a summary. The exact steps, and the step in which each guard goes live, are in
   [`../roadmap/v0.0.1/PLAN.md`](../roadmap/v0.0.1/PLAN.md) Step 3.
-  - **`verify` (ubuntu)** runs on every push and on PRs into `main`:
+  - **`verify` (ubuntu)** runs on PRs into `main` and by hand (owner, 2026-10-08: session branches run the full suite locally before each push):
     1. check the Godot and GUT versions;
     2. import;
     3. run GUT, grepping its summary, writing JUnit XML, asserting a committed minimum test count, and failing on
