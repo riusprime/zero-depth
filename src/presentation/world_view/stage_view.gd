@@ -17,10 +17,22 @@ const SHADOW_BLUR := 0.5
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
 
+## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
+## (SSIL); "low" leaves both off for slower GPUs.
+const LIGHTING_QUALITIES: Array[String] = ["high", "low"]
+
 ## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
 var prop_style := &""
 var palette := {}
+## The biome's lighting mood (v0.5.9 Step 1). Null keeps the pre-v0.5.9 look (one bright sun, linear tonemap), the
+## G2 mockup's variant A. Set before build().
+var mood: BiomeMood = null
+var lighting := "high"
+var environment: Environment
+var sun: DirectionalLight3D
+var vignette: TextureRect
+var contact_shadows: MeshInstance3D
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
@@ -46,6 +58,7 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 	else:
 		_build_room_ground()
 	_build_walls(reader)
+	_build_contact_shadows()
 	_build_props(reader.seed_value(), arena_half)
 
 
@@ -61,17 +74,68 @@ func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
 func _build_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = palette["edge"]
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = palette["ambient"]
-	env.ambient_light_energy = 0.55
-	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.glow_enabled = true
-	env.glow_intensity = 0.6
 	env.glow_hdr_threshold = 1.0
+	if mood == null:
+		env.background_color = palette["edge"]
+		env.ambient_light_color = palette["ambient"]
+		env.ambient_light_energy = 0.55
+		env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		env.glow_intensity = 0.6
+	else:
+		env.background_color = mood.void_color
+		env.ambient_light_color = mood.ambient_color
+		env.ambient_light_energy = mood.ambient_energy
+		env.tonemap_mode = Environment.TONE_MAPPER_AGX
+		env.tonemap_exposure = mood.exposure
+		env.glow_intensity = mood.glow_intensity
+		env.ssao_radius = mood.ssao_radius
+		env.ssao_intensity = mood.ssao_intensity
+		env.ssao_light_affect = mood.ssao_light_affect
+		env.ssil_intensity = mood.ssil_intensity
+		env.fog_enabled = mood.fog_density > 0.0
+		env.fog_density = mood.fog_density
+		env.fog_light_color = mood.fog_color
+		_build_vignette(mood.vignette)
+	environment = env
+	set_lighting(lighting)
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+
+
+## Applies a lighting quality ("high" or "low") to the running stage: contact shadow and bounce light follow it.
+func set_lighting(quality: String) -> void:
+	lighting = quality if quality in LIGHTING_QUALITIES else "high"
+	if environment == null:
+		return
+	var high := mood != null and lighting == "high"
+	environment.ssao_enabled = high
+	environment.ssil_enabled = high and mood.ssil_enabled
+
+
+## Darkens the screen's edges (a radial gradient on a full-screen rect, under the HUD and the portal transit).
+func _build_vignette(strength: float) -> void:
+	if strength <= 0.0:
+		return
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, strength)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.15, 0.5)
+	var layer := CanvasLayer.new()
+	layer.layer = -1
+	add_child(layer)
+	vignette = TextureRect.new()
+	vignette.texture = tex
+	vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(vignette)
 
 
 func _build_light() -> void:
@@ -84,10 +148,15 @@ func _build_light() -> void:
 	light.rotation_degrees = Vector3(-38, 168, 0)
 	light.light_energy = 1.05
 	light.light_color = Color(1, 0.98, 0.95)
+	if mood != null:
+		light.rotation_degrees = Vector3(mood.sun_pitch_deg, mood.sun_yaw_deg, 0)
+		light.light_energy = mood.sun_energy
+		light.light_color = mood.sun_color
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
 	light.directional_shadow_max_distance = 80.0
+	sun = light
 	add_child(light)
 
 
@@ -212,6 +281,18 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 			)
 			g.rotation = Vector3(rng.randf_range(-0.4, 0.4), 0, rng.randf_range(-0.4, 0.4))
 			add_child(g)
+
+
+## v0.5.9 Step 1: a soft contact shadow around every wall and slab (only with a mood; the old look has none).
+func _build_contact_shadows() -> void:
+	if mood == null:
+		return
+	var boxes: Array = []
+	for spec: Array in wall_specs:
+		boxes.append([spec[0], spec[1], spec[2]])
+	contact_shadows = ContactShadows.build(boxes, mood.contact_radius, mood.contact_strength)
+	if contact_shadows != null:
+		add_child(contact_shadows)
 
 
 ## Fades the walls at the given indices (dithered alpha) and restores the rest.

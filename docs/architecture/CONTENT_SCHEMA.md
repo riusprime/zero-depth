@@ -342,7 +342,19 @@ class_name BiomeDefinition extends Resource
 @export var enemy_weights: Dictionary     # enemy_id -> weight for this biome's encounter fill
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
+@export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
 ```
+
+- `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
+  - sun colour, energy and angle;
+  - ambient colour and energy;
+  - void colour and AgX exposure;
+  - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
+  - fog, glow and the vignette;
+  - the warm light colour, energy and range that fire props use.
+
+  A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
+  `mood_invalid` `ERROR`.
 
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
