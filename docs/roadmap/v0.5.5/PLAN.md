@@ -48,7 +48,7 @@ asked to talk it through), **Kept** (no change wanted).
 | S2 | "The shop is too broken, once you buy a slot refreshing it should now spawn again 4, the bought slots should stay bought" | A reroll redraws only the unsold slots; a bought slot stays empty ("SOLD") for the floor | Decided | Step EC |
 | S3 | "and not be able to buy 16 upgrades at a time only 4 max per floor if gold gets it" | At most 4 card purchases per floor per shop (the heal and rerolls don't count) | Decided | Step EC |
 | S4 | "I felt like I had enough shards to buy whatever I wanted and passing them onto the next floor also made next floor pretty easy, explored full of shards, bought everything and by the time the enemies started appearing I was super strong" | Shard drops −30 % and shop prices ×1.5 on floors 2–3 (starting values); half the unspent shards (rounded down) carry to the next floor (owner Q-S4: "Keep half") | Decided | Step EC |
-| S5 | "Used deep portals but I felt like nothing changed tho, maybe because I was too strong" | Deep floors must feel different: a distinct look (violet fog and light), an elite in every combat room, +1 T, a guaranteed epic chest at the end, a Deep-only event. With D4 the extra threat raises the cap, so it bites even a strong build | Proposed | Step DS |
+| S5 | "Used deep portals but I felt like nothing changed tho, maybe because I was too strong" | Deep floors must feel different: a distinct look (violet fog and light), an elite in every combat room, +1 T, a guaranteed epic chest at the end, a Deep-only event. With D4 the extra threat raises the cap, so it bites even a strong build | **Decided 2026-10-08** ("yes to all three") | Step DS |
 | S6 | "curse was fun, but also gave me the god feeling too fast" | Cursed offers stop giving an epic stat card; a cursed offer is a trade-off card (S7) whose upside is rare-level | Decided | Step CU |
 | S7 | "curses are fun, we can add more variables into it, you lose dash but have a dodge % or attack speed lower but 4th hit increased X% on damage" | New trade-off curses (list C1–C8 below, G1: the owner approves rows) | **Decided 2026-10-08** | Step CU |
 | S8 | "Overrun: should close the door and have between 3-5 waves of 4, 8 or 12 enemies spawning in them, not just killing what spawns outside" | Overrun rooms seal on entry; 3–5 waves (drawn per room) of 4, 8 or 12 enemies (by floor 1/2/3) spawn **inside**; the next wave starts when the last enemy dies; the doors and the reward open after the last wave | Decided | Step AR |
@@ -58,7 +58,7 @@ asked to talk it through), **Kept** (no change wanted).
 ### Builds: modifiers and merged attacks
 | # | Owner line (verbatim) | Decision | Status | Where |
 |---|---|---|---|---|
-| B1 | "Blade i tried to took it a bit further, but extremely OP too, i was insta deleting everything, bosses, hordes, whatever was in front of me, I liked the playstyle but that's where the balancing I talked about previously comes in" | The Blade keeps its play; D4/D7 do the balancing (no flat nerf) | Proposed | Step DS |
+| B1 | "Blade i tried to took it a bit further, but extremely OP too, i was insta deleting everything, bosses, hordes, whatever was in front of me, I liked the playstyle but that's where the balancing I talked about previously comes in" | The Blade keeps its play; D4/D7 do the balancing (no flat nerf) | **Decided 2026-10-08** ("yes to all three") | Step DS |
 | B2 | "I think a good way to distinct this game would be adding modifiers and merging attacks for example lighting, modifies the way bullets fo out, or grabbing something that shoots makes your sword shoot an echo of the slide whenever you attack" | The **attack-modifier engine** (below) and the first modifier set | **Decided 2026-10-08** | Step MX |
 | B3 | "and all abilities have a combination between them so you can play a lot of different builds, some are stronger than others but players will have to discover those on their own" | Every attack (weapon, skill, the eight abilities) goes through the engine, so every modifier combines with every attack without a hand-made pair. The named combos stay as showcase extras | **Decided 2026-10-08** | Step MX |
 | B4 | "and then adding trinkets and stuff like binding of isaac that also modify how you interact, shorter shots but in a cicle, or weapon shots now are shock circles" | **Trinkets**: rare modifiers that change an attack's form, from the same engine (list below) | **Decided 2026-10-08** | Step MX |
@@ -83,7 +83,7 @@ asked to talk it through), **Kept** (no change wanted).
 |---|---|---|---|---|
 | X1 | "I am between two options help me choose and justify why can we make other rooms not visible from the one you are in so you focus in the one that you are fighting, about 60% of the rooms should close the doors and unlock their rewards after clearing them, more like Isaac, or leaving it as is where it is closer to RoR2 or to megabonk, but those have "open world" and it is different, I think the kinda openworld thingy matches better with the incremental part of the game, but then the world generation feels a bit off with the rooms, I need to decide on how to guide the game, you could maybe help me asking some questions and then we decide the direction of the gameplay" | The lead's recommendation and the questions are below ("Direction: open or sealed rooms") | **Decided 2026-10-08: the hybrid** (answers below) | Step AR |
 | X1b | "Yes to the arenas, we are also missing a big reward from killing the boss" | Killing a boss offers a pick of 3 from a boss-only **legendary** tier (modifiers and trinkets stronger than chest cards) | **Decided 2026-10-08** ("Pick a legendary card") | Step AR |
-| X2 | "Let's discuss" (Echoes, Core theft, Depth descent) | Proposals below ("Signature systems") | Discuss | — |
+| X2 | "Let's discuss" (Echoes, Core theft, Depth descent) | Proposals below ("Signature systems") | **Decided 2026-10-08** ("yes to all three") | — |
 | X3 | "Let's discuss" (EI-05 sub-streams `map:event`, `loot:event`, `ai:elite`) | Approved: EI-05 lists `map:event`, `loot:event`, `ai:elite` | **Decided 2026-10-08** ("Approve") | LOCKED_DECISIONS |
 
 ## Direction: open or sealed rooms (X1)
@@ -186,8 +186,8 @@ Fragment. Lifesprout (D9) is the Lifebloom slot.)
 | C7 | Brittle | Taking a hit stuns you for 0.2 s | +20 % move speed |
 | C8 | Marked | Elites hunt you | Elites drop a rare card |
 
-## Signature systems (X2)
-These three were named in v0.3.0 (L18) and never designed. Proposals in the new direction:
+## Signature systems (X2, decided 2026-10-08: "yes to all three, go ahead")
+These three were named in v0.3.0 (L18) and never designed. Approved in the new direction:
 - **Echoes:** becomes the modifier family M5, M12, M19 (attacks that repeat as echoes). No separate system.
 - **Core theft:** elites and bosses carry a visible **core** (a modifier from the list). Kill them during a short
   window after a stagger to steal it as a free pick. That makes elites a target and gives the engine a source.
@@ -227,5 +227,4 @@ fire, violet = curses, gold = epic, indigo = trinkets. The owner may remap.
 ## Open items (what they block)
 - X1: decided (open floor, sealed arenas).
 - D4 / D7: decided (hidden); the numbers are starting values the owner tunes by play.
-- X2 signature systems (Echoes, Core theft, Depth descent).
 - A5 mockup pick (blocks the UI restyle beyond the cards).
