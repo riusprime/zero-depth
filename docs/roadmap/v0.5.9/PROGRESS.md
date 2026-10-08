@@ -23,7 +23,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2 Look (A today / B lit / C lit + pixel) | — | pending (Step 2) | |
+| G2 Look (A today / B lit + kit / C B pixelated) | 2026-10-08 (`scripts/shots/mock_look.gd`, 3 biomes, hero and fire views) | pending | |
 | Q2 wall heights | 2026-10-08 (PLAN) | pending | |
 | Q3 hero light | 2026-10-08 (PLAN) | pending | |
 
