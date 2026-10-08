@@ -243,6 +243,9 @@ UI_WINDOW_MODE,Window,Ventana
 UI_OPT_WINDOWED,Windowed,En ventana
 UI_OPT_FULLSCREEN,Fullscreen,Pantalla completa
 UI_RENDER_SCALE,Resolution scale,Escala de resolución
+UI_LIGHTING,Lighting quality,Calidad de iluminación
+UI_OPT_HIGH,High,Alta
+UI_OPT_LOW,Low,Baja
 UI_OPT_50,50 %,50 %
 UI_OPT_67,67 %,67 %
 UI_OPT_75,75 %,75 %
@@ -382,6 +385,8 @@ STAT_HOARDER,Hoarder,Acaparador
 STAT_HOARDER_DESC,"+%s%% damage per 100 shards held, +%s%% shards","+%s %% de daño por cada 100 fragmentos guardados, +%s %% de fragmentos"
 STAT_FAST_HANDS,Fast Hands,Manos rápidas
 STAT_FAST_HANDS_DESC,-%s%% auto ability cooldowns,-%s %% de enfriamiento de las habilidades automáticas
+STAT_LIFESPROUT,Lifesprout,Brote vital
+STAT_LIFESPROUT_DESC,"Kills have a %s%% chance to drop a heal orb (+25%% HP); each extra card +%s%%","Las bajas tienen un %s %% de probabilidad de soltar un orbe de curación (+25 %% de vida); cada carta extra, +%s %%"
 RARITY_EPIC,Epic,Épico
 UI_CARD_ABILITY_NEW,New ability,Habilidad nueva
 UI_CARD_ABILITY_LEVEL,Level %d,Nivel %d
@@ -541,12 +546,16 @@ SHOP_REROLL,Reroll the stock,Renovar el surtido
 SHOP_CLEANSE,Lift your latest curse,Quitar tu última maldición
 SHOP_SALVAGE,Salvage,Desguace
 SHOP_SALVAGE_NONE,Nothing to salvage yet,Aún no hay nada que desguazar
+SHOP_BUYS_LEFT,Cards you can still buy on this floor: %d,Cartas que aún puedes comprar en esta planta: %d
+SHOP_BUYS_DONE,No buys left on this floor (%d of %d bought),No te quedan compras en esta planta (%d de %d compradas)
+SHOP_REROLL_NONE,Nothing left to reroll,No queda nada que renovar
 SHOP_SELL_STAT,%s · %d held,%s · %d en tu poder
 SHOP_SELL_ABILITY,Frees the slot · level %d,Libera la ranura · nivel %d
 SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to leave","Flechas o 1-4 para elegir · Intro o A para comprar o vender · Esc o B para salir"
 MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
+HUD_SHARDS_HALVED,The portal kept half your shards: -%d,El portal se quedó con la mitad de tus fragmentos: -%d
 HUD_PORTALS_OPEN,"Two portals are open: blue goes on, violet goes Deep (harder, richer).","Hay dos portales abiertos: el azul sigue, el violeta baja a lo Profundo (más duro, más botín)."
 REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
 PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno

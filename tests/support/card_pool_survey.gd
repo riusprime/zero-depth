@@ -13,7 +13,9 @@ extends RefCounted
 const BUILDS: Array[StringName] = [&"blade", &"gun"]
 const PLANNED_ABILITIES: Array[StringName] = [&"arc_field", &"flame_trail", &"frost_nova"]
 const POOL_MIN := 40
-const POOL_MAX := 50
+## v0.5.5 EC: 51, the owner's Lifesprout card (D9) on top of the blade's 50 (PLAN v0.5.5 outranks the roadmap's
+## 40-50; the pruning is v0.6.0's).
+const POOL_MAX := 51
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

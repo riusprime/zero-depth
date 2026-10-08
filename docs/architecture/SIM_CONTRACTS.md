@@ -565,4 +565,6 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
 - **The formula is locked by evidence.** Its first version is measured in v0.3.0 and recorded in that version's
   `evidence/`. Later changes need a new sim result showing the scorecard bands still hold
   ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)). The v0.4.0 change (SC, above) is the owner's direction;
-  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC).
+  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC). **Superseded 2026-10-08
+  (owner P1, v0.5.5):** bot balance sims are no longer run or evidence; a scaling change is judged by the owner's
+  play (LOCKED_DECISIONS 2026-10-08).

@@ -158,6 +158,9 @@ var boss_id := -1
 var reward_table := RewardTable.new()
 ## Shards held (hashed). The run flow carries it between floors.
 var shards := 0
+## v0.5.5 EC (owner Q-S4): the shards the portal left behind on the way to this floor (RunCarry; 0 on floor 1). Read
+## by the arrival card only.
+var shards_left_behind := 0
 ## The floor number, 1-based: chest prices and boss shards scale with it (the run flow sets it).
 var floor_index := 1
 ## Altars and chests on the floor.

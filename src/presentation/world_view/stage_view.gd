@@ -16,7 +16,18 @@ const SHADOW_BLUR := 0.5
 ## so the space between rooms reads as void (v0.2.0 I, v0.3.0 A). Any room or structural wall the footprint
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
-## v0.5.5 DS (S5): the Deep look (the Deep gate's violet; starting values).
+## v0.5.9: the kit's ground textures by biome (prop_style; "" for any other), and the metres one texture covers.
+const GROUND_TEXTURES := {
+	&"": "res://assets/textures/kit/ground_a.png",
+	&"night_rocks": "res://assets/textures/kit/ground_b.png",
+	&"red_canyon": "res://assets/textures/kit/ground_b.png",
+}
+const GROUND_TEXTURE_M := 4.0
+
+## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
+## (SSIL); "low" leaves both off for slower GPUs.
+const LIGHTING_QUALITIES: Array[String] = ["high", "low"]
+## v0.5.5 DS (S5): the Deep look, layered on the biome's mood (the Deep gate's violet; starting values).
 const DEEP_VIOLET := Color("#8A5CFF")
 const DEEP_EDGE := Color("#140A26")
 const DEEP_FOG_DENSITY := 0.012
@@ -25,15 +36,27 @@ const DEEP_FOG_DENSITY := 0.012
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
 var prop_style := &""
 var palette := {}
-## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) is drawn under a
-## violet haze: violet fog, the ambient and the sun pulled toward the Deep gate's violet, a darker background.
-var deep := false
-var env: Environment
+## The biome's lighting mood (v0.5.9 Step 1). Null keeps the pre-v0.5.9 look (one bright sun, linear tonemap), the
+## G2 mockup's variant A. Set before build().
+var mood: BiomeMood = null
+var lighting := "high"
+var environment: Environment
 var sun: DirectionalLight3D
+var vignette: TextureRect
+var contact_shadows: MeshInstance3D
+## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
+## loads; otherwise the boxes and primitive props draw as before.
+var kit: StageKit
+## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
+## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
+var deep := false
 var wall_specs: Array = []
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
+var _wall_classes: Array[int] = []
+## v0.5.9 L8: each drawn wall's kit piece from a themed room (&"" for none).
+var _wall_pieces: Array[StringName] = []
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
 
@@ -55,8 +78,13 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 		_build_ground(arena_half)
 	else:
 		_build_room_ground()
-	_build_walls(reader)
-	_build_props(reader.seed_value(), arena_half)
+	var use_kit := mood != null and KitModels.has_structure()
+	_build_walls(reader, not use_kit)
+	_build_contact_shadows()
+	if use_kit:
+		_build_kit(reader)
+	else:
+		_build_props(reader.seed_value(), arena_half)
 
 
 func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
@@ -69,28 +97,87 @@ func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
 
 
 func _build_environment() -> void:
-	env = Environment.new()
+	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = palette["edge"]
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = palette["ambient"]
-	env.ambient_light_energy = 0.55
-	env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 	env.glow_enabled = true
-	env.glow_intensity = 0.6
 	env.glow_hdr_threshold = 1.0
-	if deep:  # v0.5.5 DS (S5): the violet haze
-		env.background_color = Color(palette["edge"]).lerp(DEEP_EDGE, 0.6)
-		env.ambient_light_color = Color(palette["ambient"]).lerp(DEEP_VIOLET, 0.55)
-		env.ambient_light_energy = 0.7
-		env.fog_enabled = true
-		env.fog_light_color = DEEP_VIOLET
-		env.fog_light_energy = 0.6
-		env.fog_density = DEEP_FOG_DENSITY
-		env.fog_sky_affect = 0.0
+	if mood == null:
+		env.background_color = palette["edge"]
+		env.ambient_light_color = palette["ambient"]
+		env.ambient_light_energy = 0.55
+		env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		env.glow_intensity = 0.6
+	else:
+		env.background_color = mood.void_color
+		env.ambient_light_color = mood.ambient_color
+		env.ambient_light_energy = mood.ambient_energy
+		env.tonemap_mode = Environment.TONE_MAPPER_AGX
+		env.tonemap_exposure = mood.exposure
+		env.glow_intensity = mood.glow_intensity
+		env.ssao_radius = mood.ssao_radius
+		env.ssao_intensity = mood.ssao_intensity
+		env.ssao_light_affect = mood.ssao_light_affect
+		env.ssil_intensity = mood.ssil_intensity
+		env.fog_enabled = mood.fog_density > 0.0
+		env.fog_density = mood.fog_density
+		env.fog_light_color = mood.fog_color
+		_build_vignette(mood.vignette)
+	if deep:
+		_apply_deep(env)
+	environment = env
+	set_lighting(lighting)
 	var we := WorldEnvironment.new()
 	we.environment = env
 	add_child(we)
+
+
+## v0.5.5 DS (S5): the Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
+## and the ambient pulled toward violet, and violet fog at least DEEP_FOG_DENSITY thick.
+func _apply_deep(env: Environment) -> void:
+	env.background_color = env.background_color.lerp(DEEP_EDGE, 0.6)
+	env.ambient_light_color = env.ambient_light_color.lerp(DEEP_VIOLET, 0.5)
+	env.fog_light_color = (
+		env.fog_light_color.lerp(DEEP_VIOLET, 0.7) if env.fog_enabled else DEEP_VIOLET
+	)
+	env.fog_enabled = true
+	env.fog_density = maxf(env.fog_density, DEEP_FOG_DENSITY)
+	env.fog_sky_affect = 0.0
+
+
+## Applies a lighting quality ("high" or "low") to the running stage: contact shadow and bounce light follow it.
+func set_lighting(quality: String) -> void:
+	lighting = quality if quality in LIGHTING_QUALITIES else "high"
+	if environment == null:
+		return
+	var high := mood != null and lighting == "high"
+	environment.ssao_enabled = high
+	environment.ssil_enabled = high and mood.ssil_enabled
+	if kit != null:
+		kit.set_shadows(high)
+
+
+## Darkens the screen's edges (a radial gradient on a full-screen rect, under the HUD and the portal transit).
+func _build_vignette(strength: float) -> void:
+	if strength <= 0.0:
+		return
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	g.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, strength)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = g
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(1.15, 0.5)
+	var layer := CanvasLayer.new()
+	layer.layer = -1
+	add_child(layer)
+	vignette = TextureRect.new()
+	vignette.texture = tex
+	vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	layer.add_child(vignette)
 
 
 func _build_light() -> void:
@@ -103,9 +190,13 @@ func _build_light() -> void:
 	light.rotation_degrees = Vector3(-38, 168, 0)
 	light.light_energy = 1.05
 	light.light_color = Color(1, 0.98, 0.95)
-	if deep:  # v0.5.5 DS (S5): a colder, violet sun
-		light.light_color = Color(1, 0.98, 0.95).lerp(DEEP_VIOLET, 0.45)
-		light.light_energy = 0.9
+	if mood != null:
+		light.rotation_degrees = Vector3(mood.sun_pitch_deg, mood.sun_yaw_deg, 0)
+		light.light_energy = mood.sun_energy
+		light.light_color = mood.sun_color
+	if deep:  # v0.5.5 DS (S5): the sun pulled toward violet, a little dimmer
+		light.light_color = light.light_color.lerp(DEEP_VIOLET, 0.45)
+		light.light_energy *= 0.85
 	light.shadow_enabled = true
 	light.shadow_blur = SHADOW_BLUR
 	light.directional_shadow_mode = DirectionalLight3D.SHADOW_ORTHOGONAL
@@ -138,9 +229,13 @@ func _add_ground(r: Rect2) -> void:
 	_ground_rects.append(r)
 
 
-## The same checker as _build_ground, on the global tile grid, clipped to each room's rect.
+## The same checker as _build_ground, on the global tile grid, clipped to each room's rect. With a mood (v0.5.9),
+## the owner's ground texture instead, mapped in world space so it runs on across tiles, tinted by the biome.
 func _build_room_ground() -> void:
 	var mats := [_mat(palette["ground"]), _mat(palette["ground_alt"])]
+	var textured := _ground_material()
+	if textured != null:
+		mats = [textured, textured]
 	for r in _ground_rects:
 		var i0 := int(floor(r.position.x / TILE_M))
 		var i1 := int(floor(r.end.x / TILE_M))
@@ -161,6 +256,22 @@ func _build_room_ground() -> void:
 				add_child(tile)
 
 
+## The kit ground (Ruins: stone tiles; the other biomes: packed dirt), or null without a mood or the texture.
+func _ground_material() -> StandardMaterial3D:
+	if mood == null:
+		return null
+	var path := GROUND_TEXTURES.get(prop_style, GROUND_TEXTURES[&""]) as String
+	if not ResourceLoader.exists(path):
+		return null
+	var m := _mat(palette["ground"])
+	m.albedo_texture = load(path)
+	m.uv1_triplanar = true
+	m.uv1_world_triplanar = true
+	m.uv1_scale = Vector3.ONE / GROUND_TEXTURE_M
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+	return m
+
+
 ## True where the stage draws ground (everywhere in the arena; inside a room or its walls on a floor).
 func covers_ground(p: Vector2) -> bool:
 	if _ground_rects.is_empty():
@@ -171,7 +282,8 @@ func covers_ground(p: Vector2) -> bool:
 	return false
 
 
-func _build_walls(reader: WorldReader) -> void:
+## The walls' specs (for occlusion and the dresser) and, unless the kit dresses them, their boxes.
+func _build_walls(reader: WorldReader, draw := true) -> void:
 	_wall_solid = _mat(palette["cover"])
 	_wall_faded = _mat(palette["cover"])
 	_wall_faded.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -182,6 +294,11 @@ func _build_walls(reader: WorldReader) -> void:
 			continue
 		var w := reader.wall(i)
 		var height := EDGE_WALL_HEIGHT if kind == 0 else SLAB_HEIGHT
+		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
+		_wall_classes.append(kind)
+		_wall_pieces.append(reader.wall_piece(i))
+		if not draw:
+			continue
 		var box := BoxMesh.new()
 		box.size = Vector3(w.half.x * 2.0, height, w.half.y * 2.0)
 		var node := MeshInstance3D.new()
@@ -191,7 +308,6 @@ func _build_walls(reader: WorldReader) -> void:
 		node.rotation = Vector3(0, SimPlane.yaw_of(w.angle), 0)
 		add_child(node)
 		_wall_nodes.append(node)
-		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 
 
 func _build_props(seed_value: int, arena_half: float) -> void:
@@ -237,8 +353,66 @@ func _build_props(seed_value: int, arena_half: float) -> void:
 			add_child(g)
 
 
+## v0.5.9 Step 1: a soft contact shadow around every wall and slab (only with a mood; the old look has none).
+func _build_contact_shadows() -> void:
+	if mood == null:
+		return
+	var boxes: Array = []
+	for spec: Array in wall_specs:
+		boxes.append([spec[0], spec[1], spec[2]])
+	contact_shadows = ContactShadows.build(boxes, mood.contact_radius, mood.contact_strength)
+	if contact_shadows != null:
+		add_child(contact_shadows)
+
+
+## v0.5.9 Step 4: the floor dressed with the kit (StageDresser's rules), its pieces under a StageKit node.
+func _build_kit(reader: WorldReader) -> void:
+	var walls: Array = []
+	for i in wall_specs.size():
+		walls.append(
+			[
+				wall_specs[i][0],
+				wall_specs[i][1],
+				wall_specs[i][2],
+				_wall_classes[i],
+				_wall_pieces[i] if i < _wall_pieces.size() else &""
+			]
+		)
+	var rooms: Array = []
+	for i in reader.floor_room_count():
+		rooms.append(reader.floor_room(i))
+	var doors: Array = []
+	for i in reader.floor_door_count():
+		doors.append(reader.floor_door_rect(i))
+	var keep: Array = [reader.portal_pos()]
+	for i in reader.reward_count():
+		keep.append(reader.reward_pos(i))
+	var placements := (
+		StageDresser
+		. dress(
+			{
+				"walls": walls,
+				"rooms": rooms,
+				"start_room": reader.floor_start_room(),
+				"doors": doors,
+				"keep_clear": keep,
+				"biome": prop_style,
+				"seed": reader.seed_value(),
+			}
+		)
+	)
+	kit = StageKit.new()
+	kit.name = "Kit"
+	add_child(kit)
+	kit.build(placements, wall_specs.size(), palette["cover"], mood)
+	kit.set_shadows(lighting == "high")
+
+
 ## Fades the walls at the given indices (dithered alpha) and restores the rest.
 func apply_occlusion(indices: PackedInt32Array) -> void:
+	if kit != null:
+		kit.set_faded(indices)
+		return
 	for i in _wall_nodes.size():
 		_wall_nodes[i].material_override = _wall_faded if i in indices else _wall_solid
 

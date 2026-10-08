@@ -12,6 +12,8 @@ var enemy_damage_floor_permille := PackedInt32Array([1000, 1400, 1960])
 var boss_hp_per_floor_permille := 400
 var boss_damage_per_floor_permille := 200
 var heal_permille := 400
+## v0.5.5 EC (owner Q-S4, "Keep half"): per mille of the unspent shards a portal carries over (rounded down).
+var shard_carry_permille := 500
 ## v0.5.0 RT: a Deep floor's extra scaling (per mille, on top of the floor's) and extra chests.
 var deep_scale_permille := 1250
 var deep_extra_chests := 1

@@ -54,21 +54,12 @@ static func clear_cache() -> void:
 
 
 static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Dictionary:
-	if scene == null:
+	var surface := ModelLibrary.first_surface(scene)
+	if surface.is_empty():
 		return {}
-	var root := scene.instantiate()
-	var found: Array[Node] = root.find_children("*", "MeshInstance3D", true, false)
-	if root is MeshInstance3D:
-		found.push_front(root)
-	if found.is_empty():
-		root.free()
-		return {}
-	var src := found[0] as MeshInstance3D
-	var mesh := src.mesh
-	var mat := src.get_active_material(0) as StandardMaterial3D
-	var arrays := mesh.surface_get_arrays(0)
-	root.free()
-	var aabb := mesh.get_aabb()
+	var mat: StandardMaterial3D = surface["material"]
+	var arrays: Array = surface["arrays"]
+	var aabb: AABB = surface["aabb"]
 	var s: float = spec["height"] / maxf(aabb.size.y, 0.0001)
 	var turn := Basis(Vector3.UP, spec["yaw"])
 	var lift := -aabb.position.y * s

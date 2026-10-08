@@ -67,6 +67,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(utility)
 	add_child(rig)
 	add_child(pickups)
+	actors.hero_mood = stage.mood
+	rewards.kit_chest = stage.mood != null  # v0.5.9 Step 5: the owner's chest with the new look
 	add_child(rewards)
 	add_child(shards)
 	add_child(heal_orbs)

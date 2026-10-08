@@ -705,6 +705,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.altars_max = def.altars_max
 	t.chests_min = def.chests_min
 	t.chests_max = def.chests_max
+	t.altars_cap = def.altars_cap  # v0.5.5 EC (S1)
 	t.chest_prices = def.chest_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
 	t.rare_weight_chest = def.rare_weight_chest
@@ -712,6 +713,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.offer_size = def.offer_size
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
 	t.chest_card_weights = def.chest_card_weights.duplicate()
@@ -767,6 +769,8 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.offer_size = def.offer_size
 	t.rarity_prices = def.rarity_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.late_floor_permille = int(round(def.late_floor_price * 1000.0))  # v0.5.5 EC (S4)
+	t.max_buys = def.max_buys  # v0.5.5 EC (S3)
 	t.heal_permille = int(round(def.heal_share * 1000.0))
 	t.heal_price = def.heal_price
 	t.reroll_price = def.reroll_price
@@ -908,6 +912,7 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.boss_hp_per_floor_permille = int(round(def.boss_hp_per_floor * 1000.0))
 	t.boss_damage_per_floor_permille = int(round(def.boss_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	t.shard_carry_permille = int(round(def.shard_carry * 1000.0))  # v0.5.5 EC (Q-S4)
 	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
 	t.deep_extra_chests = def.deep_extra_chests
 	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)

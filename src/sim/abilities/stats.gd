@@ -20,6 +20,9 @@ extends RefCounted
 ## - HOARDER (ADD): + damage per full 100 shards held (at most the limit's shards count); each card also raises
 ##   the shard gain stat by its side amount, so spending at a chest trades power for a card;
 ## - FAST_HANDS (CUT): the auto abilities' cooldowns and periods only (auto_cooldown, auto_period).
+## v0.5.5 EC (owner D9): LIFESPROUT (ADD), the heal-orb card: the first card sets the kill's heal-orb drop chance to
+## its amount, each further card adds its side amount; the chance is read capped (heal_orb_chance). Without the card
+## no orb drops (HealOrbs.on_kill).
 ## Damage stats fold into one multiplier (damage_permille): damage x glass cannon x (1 + onrush + hoarder).
 
 enum Stat {
@@ -40,18 +43,19 @@ enum Stat {
 	OVERKILL,
 	HOARDER,
 	FAST_HANDS,
+	LIFESPROUT,
 }
 enum Rarity { COMMON, RARE, EPIC }
 
-const COUNT := 17
+const COUNT := 18
 const MULT := 0
 const CUT := 1
 const ADD := 2
 const MODE: Array[int] = [
-	MULT, MULT, ADD, ADD, MULT, MULT, CUT, MULT, ADD, MULT, MULT, CUT, MULT, ADD, ADD, ADD, CUT
+	MULT, MULT, ADD, ADD, MULT, MULT, CUT, MULT, ADD, MULT, MULT, CUT, MULT, ADD, ADD, ADD, CUT, ADD
 ]
 const BASE: Array[int] = [
-	1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 0, 0, 0, 1000
+	1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 0, 0, 0, 1000, 0
 ]
 ## Hoarder counts shards in steps of this many.
 const HOARD_STEP := 100
@@ -80,9 +84,23 @@ static func table(w: World, s: int) -> StatTable:
 static func add_card(w: World, s: int, rarity: int) -> void:
 	var t := table(w, s)
 	if t != null:
-		w.stat_cards.append(Offers.stat_code(s, clampi(rarity, 0, 2)))  # v0.5.0 SH: the shop can sell it back
-		add_amount(w, s, t.amounts[clampi(rarity, 0, 2)])
-		_side(w, t, s, t.side[clampi(rarity, 0, 2)])
+		var r := clampi(rarity, 0, 2)
+		w.stat_cards.append(Offers.stat_code(s, r))  # v0.5.0 SH: the shop can sell it back
+		add_amount(w, s, card_amount(w, s, r))
+		if s != Stat.LIFESPROUT:
+			_side(w, t, s, t.side[r])
+
+
+## What a card of stat `s` at `rarity` adds now: its amount, but for Lifesprout (v0.5.5 D9) only the first card
+## adds the amount and every further card its side amount.
+static func card_amount(w: World, s: int, rarity: int) -> int:
+	var t := table(w, s)
+	if t == null:
+		return 0
+	var r := clampi(rarity, 0, 2)
+	if s == Stat.LIFESPROUT and value(w, s) > 0:
+		return t.side[r]
+	return t.amounts[r]
 
 
 ## v0.5.0 CP: a rule card's second number: Glass Cannon cuts the max HP stat (never under its limit), Hoarder raises
@@ -242,6 +260,13 @@ static func overkill(w: World, target: int, excess: int, root: int) -> void:
 ## Armour's multiplier on a hit the player takes, per mille.
 static func armour_permille(w: World) -> int:
 	return value(w, Stat.ARMOUR)
+
+
+## v0.5.5 D9: a kill's heal-orb drop chance from Lifesprout, per mille (0 without the card; at most its cap).
+static func heal_orb_chance(w: World) -> int:
+	var t := table(w, Stat.LIFESPROUT)
+	var c := value(w, Stat.LIFESPROUT)
+	return mini(c, t.cap) if t != null and t.cap > 0 else c
 
 
 # --- Times, areas, speeds --------------------------------------------------------------------------------------

@@ -12,6 +12,8 @@ const MIN_OUTLINE_CONTRAST := 3.0
 @export var palette: Dictionary = {}
 @export var hazard_flavour: StringName
 @export var template_tags: PackedStringArray
+## Its lighting mood (v0.5.9 Step 1): what StageView lights the floor with.
+@export var mood: BiomeMood
 
 
 func category() -> StringName:
@@ -40,6 +42,11 @@ func validate() -> Array[ValidationIssue]:
 					&"palette_unknown", resource_path, "unknown palette key '%s'" % key
 				)
 			)
+	if mood == null:
+		issues.append(ValidationIssue.new(&"mood_missing", resource_path, "no lighting mood"))
+	else:
+		for p in mood.problems():
+			issues.append(ValidationIssue.new(&"mood_invalid", resource_path, "mood " + p))
 	if palette.has("ground") and palette.has("outline"):
 		var ratio := contrast(palette["ground"], palette["outline"])
 		if ratio < MIN_OUTLINE_CONTRAST:
