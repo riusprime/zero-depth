@@ -15,8 +15,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | CD | Altar, chest and shop picks show the owner's crystal card frames (12 cropped frames in `assets/ui/cards/`, colour by card family from one table in `CardFrames`, coloured caps title, sentence, rarity line with the card's icon and a rarity gem, glow for rare/epic/ability, cursed offers in the curse frame; text fits in en and es); 3 HUD + pause mockups for the A5 pick ([`evidence/CARDS.md`](evidence/CARDS.md), [`evidence/UI_MOCKUPS.md`](evidence/UI_MOCKUPS.md)) | v0.5.5 Step CD commit |
 | EC | Floor 1 is calm for 30 s then ramps faster, floors 2–3 start warm (D1); heal orbs only with the new Lifesprout card (D9); at most 2 altars a floor, the rest chests (S1); shop rerolls keep sold slots and 4 buys a floor (S2, S3); shards −30 %, floor 2–3 shop prices ×1.5 and a portal keeps half the unspent shards (S4, Q-S4); bot balance sims retired (P1). Evidence: [`evidence/ECONOMY.md`](evidence/ECONOMY.md) | `afa3c70` |
 
+| DS | Hidden catch-up: each floor reads the build's power at entry and scales enemies' HP × m and damage × √m (m = √(P/E), ×1 to ×1.5 / ×2 / ×2.5, +0.25 per T), never shown (D3–D6, D10, B1); bosses take their own m with the boss cap (×2 / ×3 / ×4) and all six get phase gates at 66 % and 33 % (a burst stops there, a 1 s invulnerable PHASE SHIFT, 2–4 adds of the floor's kinds, then a new or faster phase; D7); Deep floors bite: violet haze over the v0.5.9 mood, an elite in every combat room, +1 T raising the caps, the epic altar by the boss door, the Deep-only event Whispering Deep (S5); the D8 principle in GAME_BLUEPRINT. Evidence: [`evidence/DIFFICULTY.md`](evidence/DIFFICULTY.md) (suite 1134/1135: `test_e2e_heal_orbs` fails on the base too) | v0.5.5 Step DS commit |
+
 ## Goldens changed on purpose
 - none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
+- none (Step DS: the replay and export-smoke goldens are the kernel's and still match)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -38,3 +41,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 - 2026-10-08: Step EC built (`afa3c70`), full suite 1076/1076 and export smoke green; MIN_TEST_COUNT 1086 → 1076
   (the bot tests left, P1). Owner answered Q-S4 "Keep half" (built in EC). Open for the owner: whether the Overrun
   clear's altar counts toward S1's two, and the Blade's card pool at 51 (evidence/ECONOMY.md).
+- 2026-10-08: Step DS built (hidden catch-up, boss phase gates, Deep bite, D8 in the blueprint), merged with v0.5.9
+  "Embers" (the Deep haze layers on the biome moods); full suite 1134/1135, the one failure (`test_e2e_heal_orbs`)
+  also fails on `85084e9` without DS; export smoke green. Open for the owner: every catch-up and gate number (starting
+  values), and whether the Deep "epic chest" should stay the free epic altar moved to the boss door (as built).
