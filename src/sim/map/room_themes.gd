@@ -154,16 +154,16 @@ static func candidates(template: int, r: Rect2, rng: RngStream, hall: bool) -> D
 	for c: int in corners:
 		var v := _pick(theme, Anchor.CORNER, rng)
 		if v != &"":
-			out.append(_corner(v, c, r))
+			_push(out, _corner(v, c, r))
 	# The centre (a big room that isn't the start hall).
 	if theme.has(Anchor.CENTRE) and area >= CENTRE_MIN_AREA and not hall:
-		out.append(_free(_pick(theme, Anchor.CENTRE, rng), r.get_center(), false, r))
+		_push(out, _free(_pick(theme, Anchor.CENTRE, rng), r.get_center(), false, r))
 	var rest := maxi(total - 4, 0)
 	var walls := (rest + 1) / 2
 	for k in walls * ATTEMPTS / 4:
 		var v := _pick(theme, Anchor.WALL, rng)
 		if v != &"":
-			out.append(_wall(v, rng.range_int(0, 3), r, rng))
+			_push(out, _wall(v, rng.range_int(0, 3), r, rng))
 	# Free floor: on a lattice of LATTICE-metre cells over the room (inset from the walls), one vignette per cell,
 	# all turned the same way in a room, so the open floor reads as rows and aisles instead of a scatter.
 	var cells := _lattice(r)
@@ -176,7 +176,7 @@ static func candidates(template: int, r: Rect2, rng: RngStream, hall: bool) -> D
 	for at: Vector2 in cells:
 		var v := _pick(theme, Anchor.FREE, rng)
 		if v != &"":
-			out.append(_free(v, at, turn, r))
+			_push(out, _free(v, at, turn, r))
 	return {
 		"list": out,
 		"quota":
@@ -186,10 +186,10 @@ static func candidates(template: int, r: Rect2, rng: RngStream, hall: bool) -> D
 
 ## The free-floor lattice: cell centres LATTICE apart over the room inset by LATTICE_INSET, centred.
 static func _lattice(r: Rect2) -> Array[Vector2]:
-	var inner := r.grow(-LATTICE_INSET)
 	var out: Array[Vector2] = []
-	if inner.size.x <= 0.0 or inner.size.y <= 0.0:
-		return out
+	if r.size.x <= LATTICE_INSET * 2.0 or r.size.y <= LATTICE_INSET * 2.0:
+		return out  # too narrow for free floor (checked first: a negative Rect2 logs an engine error)
+	var inner := r.grow(-LATTICE_INSET)
 	var nx := maxi(1, int(inner.size.x / LATTICE) + 1)
 	var ny := maxi(1, int(inner.size.y / LATTICE) + 1)
 	var span := Vector2((nx - 1) * LATTICE, (ny - 1) * LATTICE)
@@ -198,6 +198,12 @@ static func _lattice(r: Rect2) -> Array[Vector2]:
 		for j in ny:
 			out.append(Vector2(_m(_cm(start.x + i * LATTICE)), _m(_cm(start.y + j * LATTICE))))
 	return out
+
+
+## Appends a candidate unless it is empty (a vignette that didn't fit inside the room).
+static func _push(out: Array, cand: Dictionary) -> void:
+	if not cand.is_empty():
+		out.append(cand)
 
 
 static func _pick(theme: Dictionary, anchor: int, rng: RngStream) -> StringName:
@@ -218,7 +224,8 @@ static func _m(cm: int) -> float:
 	return cm / 100.0
 
 
-## A candidate from pieces mapped by `to_world` (a corner rect in the anchor frame -> a world rect).
+## A candidate from pieces mapped by `to_world` (a point in the anchor frame -> the world), or {} when a piece
+## would leave the room.
 static func _make(v: StringName, to_world: Callable, r: Rect2) -> Dictionary:
 	var pieces: Array[Obb] = []
 	var tags: Array[StringName] = []
@@ -230,6 +237,15 @@ static func _make(v: StringName, to_world: Callable, r: Rect2) -> Dictionary:
 		var hi := Vector2(_m(_cm(maxf(a.x, b.x))), _m(_cm(maxf(a.y, b.y))))
 		# And never past the room's own edges (which carry float noise below a centimetre): a flush piece stops
 		# FLUSH_INSET inside, which still counts as touching (FloorGenerator: within 5 mm) and leaves no slit.
+		# A piece that really leaves the room (a vignette too big for a narrow room) makes the vignette invalid.
+		var tol := Vector2(0.02, 0.02)
+		if (
+			lo.x < r.position.x - tol.x
+			or lo.y < r.position.y - tol.y
+			or hi.x > r.end.x + tol.x
+			or hi.y > r.end.y + tol.y
+		):
+			return {}
 		lo = lo.max(r.position + Vector2(FLUSH_INSET, FLUSH_INSET))
 		hi = hi.min(r.end - Vector2(FLUSH_INSET, FLUSH_INSET))
 		pieces.append(Obb.make((lo + hi) * 0.5, (hi - lo) * 0.5, 0))
@@ -250,7 +266,8 @@ static func _corner(v: StringName, c: int, r: Rect2) -> Dictionary:
 ## Wall side s (0: min y, 1: max x, 2: max y, 3: min x), at a drawn place along it.
 static func _wall(v: StringName, s: int, r: Rect2, rng: RngStream) -> Dictionary:
 	var along_len := r.size.x if s % 2 == 0 else r.size.y
-	var t := rng.range_int(_cm(-along_len * 0.5 + 3.0), _cm(along_len * 0.5 - 3.0)) / 100.0
+	var reach := maxf(along_len * 0.5 - 3.0, 0.0)  # a wall shorter than 6 m: centred
+	var t := rng.range_int(_cm(-reach), _cm(reach)) / 100.0
 	var c := r.get_center()
 	var map := func(q: Vector2) -> Vector2:
 		match s:
