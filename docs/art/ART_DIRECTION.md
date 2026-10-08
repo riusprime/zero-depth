@@ -194,3 +194,7 @@ Each version's PLAN lists its art needs in a short table and adds the prompts to
 | `icon_bleed_edge` | item icon 128×128 | v0.2.0 Step 5 | generated letter icon | requested |
 
 A delivery moves the row to `delivered` with the commit SHA.
+
+**v0.5.9 "Embers" kit:** the modular `.glb` pieces and ground textures are requested in
+[`KIT_REQUESTS.md`](KIT_REQUESTS.md) (target image [`look_reference.webp`](look_reference.webp)). Until the v0.5.9 G2
+look pick, §4 and PD-11 still stand.

@@ -119,9 +119,19 @@ func test_fifty_floors_are_whole() -> void:
 			footprints[f.room_cells[room].size] = true
 		hall_sides[_hall_exit_side(f)] = true
 		_check_floor(f, "seed %d" % seed_value)
-	assert_gte(templates.size(), 7, "at least 7 of the 9 interior templates across 50 floors")
-	assert_true(templates.has(FloorLayout.Template.COLONNADE), "the colonnade shows up")
-	assert_true(templates.has(FloorLayout.Template.DIAGONALS), "the diagonals show up")
+	# v0.5.9 L8 (owner, 2026-10-08): ordinary rooms are themed (or now and then open); no geometric template.
+	for theme in [
+		FloorLayout.Template.SCRAPYARD,
+		FloorLayout.Template.RUINED_HALL,
+		FloorLayout.Template.CAMP,
+		FloorLayout.Template.OVERGROWN
+	]:
+		assert_true(templates.has(theme), "%s shows up" % FloorLayout.TEMPLATE_NAMES[theme])
+	for t in templates:
+		assert_true(
+			RoomThemes.is_themed(t) or t == FloorLayout.Template.OPEN,
+			"%s is not drawn for ordinary rooms" % FloorLayout.TEMPLATE_NAMES[t]
+		)
 	assert_eq(hall_sides.size(), 4, "the hall's exit is on every side across 50 floors")
 	assert_gte(footprints.size(), 6, "the footprints vary")
 	var names := PackedStringArray()

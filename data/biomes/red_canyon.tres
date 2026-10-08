@@ -1,6 +1,33 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_pvo31"]
+
+[ext_resource type="Script" path="res://src/content/defs/biome_mood.gd" id="2_mood"]
+
+[sub_resource type="Resource" id="Resource_mood"]
+script = ExtResource("2_mood")
+sun_color = Color(1.0, 0.62, 0.4, 1)
+sun_energy = 0.9
+sun_pitch_deg = -22.0
+sun_yaw_deg = 168.0
+ambient_color = Color(0.45, 0.38, 0.45, 1)
+ambient_energy = 0.6
+void_color = Color(0.12, 0.06, 0.05, 1)
+exposure = 1.0
+ssao_radius = 3.0
+ssao_light_affect = 0.6
+ssao_intensity = 6.0
+contact_radius = 0.9
+contact_strength = 0.6
+ssil_enabled = true
+ssil_intensity = 1.0
+fog_density = 0.0025
+fog_color = Color(0.3, 0.15, 0.1, 1)
+glow_intensity = 0.7
+warm_light_color = Color(1.0, 0.6, 0.3, 1)
+warm_light_energy = 5.0
+warm_light_range = 10.0
+vignette = 0.35
 
 [resource]
 script = ExtResource("1_pvo31")
@@ -16,3 +43,4 @@ palette = {
 }
 template_tags = PackedStringArray("red_canyon")
 id = &"red_canyon"
+mood = SubResource("Resource_mood")

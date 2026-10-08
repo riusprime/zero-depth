@@ -14,6 +14,98 @@
       "id": "fortress_turret",
       "path": "assets/models/bosses/fortress_turret.glb",
       "sha256": "a2a6d4bada8c38530c2ad7196a4cf7b6d55e7ab3ed00300fc4772adf4aec2c6d"
+    },
+    {
+      "id": "brazier_pole",
+      "path": "assets/models/kit/brazier_pole.glb",
+      "sha256": "25799d6236a3371af19caabcc7cec7cc277a402097a40b9fd2bf71024a502051"
+    },
+    {
+      "id": "car_wreck",
+      "path": "assets/models/kit/car_wreck.glb",
+      "sha256": "3d8e36e12c5157cc8a1882112a638d709b02566e988554a30c1d67642c94327c"
+    },
+    {
+      "id": "chest",
+      "path": "assets/models/kit/chest.glb",
+      "sha256": "e9af39716d3df9a7a784ad68dc38efa0e7b360ced9a190f52473c2b8e30a1a2a"
+    },
+    {
+      "id": "crate_stack",
+      "path": "assets/models/kit/crate_stack.glb",
+      "sha256": "fbcc313b3d188e965ddd3488436afd15467ff58283bbd37e713874e80c96e51b"
+    },
+    {
+      "id": "dead_tree",
+      "path": "assets/models/kit/dead_tree.glb",
+      "sha256": "dddfc4896983bfdc8ec4f815a5132644b51815920df5df23edd724a42ed0c5e8"
+    },
+    {
+      "id": "debris_low",
+      "path": "assets/models/kit/debris_low.glb",
+      "sha256": "5c70e17d217aad4f547a370c3c735ef26ead5736262583ab96d793e95b8d6099"
+    },
+    {
+      "id": "fire_barrel",
+      "path": "assets/models/kit/fire_barrel.glb",
+      "sha256": "140330423845c142606ad642bf1a49f944e7a3c5b2a9ce33f47c597699bdf219"
+    },
+    {
+      "id": "grass_tuft",
+      "path": "assets/models/kit/grass_tuft.glb",
+      "sha256": "627d3cc41bee8935f09f520b76d4bc2ba1ce1dc1080b5b659fca4526a519532a"
+    },
+    {
+      "id": "rock_large",
+      "path": "assets/models/kit/rock_large.glb",
+      "sha256": "203d2c8201f7d393a505fa8db70aa0a006e76d3931b163cd8765c20fcfb4ffcb"
+    },
+    {
+      "id": "rubble_small",
+      "path": "assets/models/kit/rubble_small.glb",
+      "sha256": "1f8fd9d0b4b56e0460e218f84b69eb0d4ed873249bfa49554fa2ca4049b388d2"
+    },
+    {
+      "id": "slab_concrete",
+      "path": "assets/models/kit/slab_concrete.glb",
+      "sha256": "c771fa9154e95d11598f9fccb3499c70861df8fbd3f70f79e03ad07526f26e68"
+    },
+    {
+      "id": "slab_wide",
+      "path": "assets/models/kit/slab_wide.glb",
+      "sha256": "25b7a12c9303bd9c8020ead189ceec38b391ac5bf4ec461ab919c95dbae3edc6"
+    },
+    {
+      "id": "wall_1m",
+      "path": "assets/models/kit/wall_1m.glb",
+      "sha256": "613b48ef7953ba1411ad4b363e91201d0541a5d1a6d0e51146a27f2abf653137"
+    },
+    {
+      "id": "wall_2m",
+      "path": "assets/models/kit/wall_2m.glb",
+      "sha256": "560a9ded3654d4a062979e14a7b71089c4d0913b84d18787cf2e422b5b2d520c"
+    },
+    {
+      "id": "wall_broken",
+      "path": "assets/models/kit/wall_broken.glb",
+      "sha256": "91c090dd262bcead7edab65e045581647f2f3760466055925bfad0ae2d874b00"
+    },
+    {
+      "id": "wall_pillar",
+      "path": "assets/models/kit/wall_pillar.glb",
+      "sha256": "974a27a26302411bf6f7cc087adb19e94fbf35b49f64be4045fceee936948b2e"
+    }
+  ],
+  "textures": [
+    {
+      "id": "ground_a",
+      "path": "assets/textures/kit/ground_a.png",
+      "sha256": "bd8596e3a1b2343f1520318d5cabd2004ac7e941ad52e3d3950da9028a58d573"
+    },
+    {
+      "id": "ground_b",
+      "path": "assets/textures/kit/ground_b.png",
+      "sha256": "3ee735cf33e8bff2e66ab565e2e8bbcd70908d7270785dfe6e79e17a423efc9c"
     }
   ]
 }

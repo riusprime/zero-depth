@@ -513,9 +513,11 @@ static func _room_is_whole(f: FloorLayout, p: FloorParams, room: int, walls: Arr
 	return true
 
 
-static func _slab_allowed(f: FloorLayout, p: FloorParams, room: int, slab: Obb) -> bool:
+static func _slab_allowed(
+	f: FloorLayout, p: FloorParams, room: int, slab: Obb, slack: float = 0.0
+) -> bool:
 	var b := slab.bounds()
-	if not f.rooms[room].encloses(b):
+	if not f.rooms[room].grow(slack).encloses(b):
 		return false
 	if (
 		room == f.start_room
@@ -563,6 +565,9 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 	var walls := _room_walls(f, room)
 	var pieces: Array[Obb] = []
 	var template := f.room_template[room]
+	if RoomThemes.is_themed(template):
+		_furnish_themed(f, p, rng, room, walls)
+		return
 	if template == FloorLayout.Template.SCATTER:
 		var cells := f.room_cell_count(room)
 		var count := mini(
@@ -584,6 +589,82 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 					walls.append(piece)
 					pieces.append(piece)
 	f.walls.append_array(pieces)
+
+
+## v0.5.9 L8: a themed room's vignettes, tried in RoomThemes' order while each anchor's quota lasts, cars capped.
+static func _furnish_themed(
+	f: FloorLayout, p: FloorParams, rng: RngStream, room: int, walls: Array[Obb]
+) -> void:
+	var r := f.rooms[room]
+	var plan := RoomThemes.candidates(f.room_template[room], r, rng, room == f.start_room)
+	var quota: Dictionary = plan["quota"]
+	var cap := RoomThemes.car_cap(r.get_area())
+	var cars := 0
+	var structural := walls.size()
+	var pieces: Array[Obb] = []
+	for cand: Dictionary in plan["list"]:
+		var anchor: int = cand["anchor"]
+		if int(quota.get(anchor, 0)) <= 0:
+			continue
+		var tags: Array[StringName] = cand["tags"]
+		var n_cars := tags.count(RoomThemes.CAR)
+		if cars + n_cars > cap:
+			continue
+		var group: Array[Obb] = cand["pieces"]
+		if not _vignette_fits(f, p, room, walls, structural, group):
+			continue
+		for k in group.size():
+			walls.append(group[k])
+			pieces.append(group[k])
+			f.piece_tags[FloorLayout.piece_key(group[k])] = tags[k]
+		quota[anchor] = int(quota[anchor]) - 1
+		cars += n_cars
+	f.walls.append_array(pieces)
+
+
+## A vignette fits like any group (allowed, the room stays whole), except for spacing, which is measured on the
+## vignette's whole footprint (its pieces touch, so the space between them is filled): the footprint either touches
+## a wall lining the room exactly or keeps the slab gap from it, and keeps the slab gap from every other piece. A
+## structural wall that doesn't line the room (one behind the room's own wall) can't make a slit and is skipped.
+## No piece may overlap anything.
+static func _vignette_fits(
+	f: FloorLayout, p: FloorParams, room: int, walls: Array[Obb], structural: int, group: Array[Obb]
+) -> bool:
+	var r := f.rooms[room]
+	var foot := group[0].bounds()
+	for piece in group:
+		if not _slab_allowed(f, p, room, piece, 0.01):
+			return false
+		foot = foot.merge(piece.bounds())
+	for k in walls.size():
+		var w := walls[k]
+		if w.angle % 1024 != 0:
+			for piece in group:
+				var one: Array[Obb] = [w]
+				if not _clear_of(piece.center, maxf(piece.half.x, piece.half.y) + p.slab_gap, one):
+					return false
+			continue
+		var wb := w.bounds()
+		for piece in group:
+			if _rect_gap(piece.bounds(), wb) < 0.0:
+				return false
+		if k < structural and _rect_gap(wb, r) > 0.005:
+			continue
+		var d := _rect_gap(foot, wb)
+		if d < p.slab_gap and not (k < structural and d <= 0.005):
+			return false
+	var trial: Array[Obb] = walls.duplicate()
+	trial.append_array(group)
+	return _room_is_whole(f, p, room, trial)
+
+
+## The gap between two rects (m): 0 when they touch, negative when they overlap.
+static func _rect_gap(a: Rect2, b: Rect2) -> float:
+	var dx := maxf(a.position.x - b.end.x, b.position.x - a.end.x)
+	var dy := maxf(a.position.y - b.end.y, b.position.y - a.end.y)
+	if dx < -0.005 and dy < -0.005:
+		return -1.0
+	return Kin.length(Vector2(maxf(dx, 0.0), maxf(dy, 0.0)))
 
 
 static func _random_slab(r: Rect2, p: FloorParams, rng: RngStream) -> Obb:

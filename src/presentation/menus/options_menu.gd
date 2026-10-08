@@ -241,6 +241,7 @@ func _build_section(id: StringName) -> VBoxContainer:
 			_cycler(box, "UI_FRAME_CAP", "frame_cap", GameSettings.FRAME_CAPS)
 			_cycler(box, "UI_RENDER_SCALE", "render_scale", GameSettings.RENDER_SCALES)
 			_cycler(box, "UI_OUTLINE", "outline", ["off", "ink", "sketch", "paper"])
+			_cycler(box, "UI_LIGHTING", "lighting", StageView.LIGHTING_QUALITIES)
 		&"controls":
 			_controls(box)
 		&"accessibility":
