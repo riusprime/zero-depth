@@ -57,3 +57,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   ortho camera, evidence/LOOK.md §1), Lighting quality option; the full suite passes 1083/1083. Steps 3-4
   (`fbedd6d`): kit prep, KitModels, StageDresser, StageKit, textured ground. Step 5 (`cafb6db`): the owner's
   chest with an opening lid. G2 mockup renders A / B / C. Next: the G2 pick, contrast evidence, bench.
+- 2026-10-08 — Step 7 themed rooms (`8616a2d`, fixes `a8f6958`): full suite 1107/1107 at `a8f6958`. Scorecard
+  before and after in evidence/LOOK.md §4: floor-1 deaths 86.8 % → 91.8 % (normal policies), Ruins +11 pp, biome
+  spread 11.6 → 2.9 pp; competent floor-1 clears 19 → 17 of 160. Not tuned (the owner's v0.5.0 feedback comes
+  next).

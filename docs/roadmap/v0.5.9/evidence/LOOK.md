@@ -63,7 +63,70 @@ is not in the repository. Re-checking them needs a fresh run of `kit_prep.py`'s 
 | `fbedd6d` (Steps 3–4) | same | `Scripts 174, Tests 1092, Passing Tests 1092, Time 1707.753s, ---- All tests passed! ----` |
 | `9e5f9be` (Step 5, LODs, variant C) | same | `Scripts 175, Tests 1094, Passing Tests 1094, Time 1608.567s, ---- All tests passed! ----` |
 
-## 4. Not covered yet
+## 4. Themed rooms (Step 7): scorecard before and after
+
+**Commits:**
+- **Base:** `f80fe18`, before the themed rooms.
+- **New:** `a8f6958`, with the themed rooms.
+
+**Command** (on a clean worktree of each commit; `--no-bench` because only the play cells compare):
+```
+godot --headless --path . -s scripts/sims/scorecard.gd -- --no-bench out=build/scorecard/<base|new>
+```
+**Run length.** Base: "sims 26.4 min wall; missing 0". New: "sims 20.4 min wall; missing 0". Both logged a script
+error from `score_suite.gd:207` (the markdown writer) after writing `scorecard.json`. It is probably the skipped
+bench and was not investigated.
+
+**Floor-1 clears, out of 20 runs per policy** (`M-WIN` → `by_policy` → `floor_clear["1"]`):
+
+| Policy | Base | New |
+|---|---|---|
+| competent:blade | 3 | 0 |
+| competent:blade@expert | 4 | 2 |
+| competent:blade@novice | 1 | 2 |
+| competent:gun | 4 | 3 |
+| competent:gun@expert | 5 | 5 |
+| competent:gun@novice | 2 | 2 |
+| competent+t:blade | 0 | 1 |
+| competent+t:gun | 0 | 2 |
+| **all competent policies** | **19/160** | **17/160** |
+| element:blade | 3 | 0 |
+| element:gun | 6 | 4 |
+| guard:blade | 2 | 0 |
+| guard:gun | 1 | 2 |
+| ordnance:blade | 5 | 2 |
+| ordnance:gun | 1 | 1 |
+| exploit:chain:blade | 20 | 19 |
+| exploit:chain:gun | 19 | 19 |
+| exploit:salvage:blade | 3 | 2 |
+| exploit:salvage:gun | 3 | 3 |
+| idle and novice (each) | 0 | 0 |
+
+**Floor-1 death rate by biome, normal policies** (`M-HAZARD`, deaths / runs):
+
+| Biome | Base | New |
+|---|---|---|
+| Night Rocks | 101/112 (90.2 %) | 103/112 (92.0 %) |
+| Red Canyon | 87/98 (88.8 %) | 91/98 (92.9 %) |
+| Ruins | 55/70 (78.6 %) | 63/70 (90.0 %) |
+| **Spread between biomes** | **11.61 pp (missed)** | **2.86 pp (within the 10 pp gate)** |
+
+**Status changes:**
+- `M-GENERALIST` met → missed. The best specialist went from 1 win in 20 to 0 in 20.
+- `M-THREAT` met → missed. The floor-1 clear at T0 went from 7/40 to 3/40.
+- `M-ENGINE`: 0.675 → 0.778 (still missed; the band is 90 %).
+- Every other cell keeps its status.
+
+**Reading.** In both versions the bots die on floor 1 in most runs (v0.5.0 SCD already reported this; nothing is
+tuned here). With the themed rooms:
+- Ruins' floor-1 death rate rises by 11 pp, and the biomes even out.
+- The competent bots clear floor 1 about as often (19 → 17 of 160).
+- The two status flips rest on 1-win differences in 20 runs. The confidence intervals overlap, so they are noise
+  at this sample.
+
+**Not tuned.** The owner's v0.5.0 feedback decides the tuning.
+
+## 5. Not covered yet
 
 - **On-screen contrast of hero, enemies and telegraphs against the lit ground** (`look_contrast.gd`, Step 1):
   NOT YET RUN.
