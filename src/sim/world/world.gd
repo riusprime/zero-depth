@@ -1169,4 +1169,5 @@ func _apply_spawns() -> void:
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])
+			SpawnDirector.scale_arrival(self, actors.size() - 1, run_ticks)  # v0.4.0 TU: tier scaling too
 	_pending_enemies.clear()

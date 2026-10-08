@@ -4,7 +4,8 @@ extends RefCounted
 ## - Shards: every enemy kill pays its kind's shards × (1 + bonus × danger tier), rounded half up; a kind marked
 ##   shards_by_floor (a boss) pays shards × the floor number instead.
 ## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
-##   in the start hall. Their counts and order come from the loot stream.
+##   in the start hall. Their counts and order come from the loot stream. v0.4.0 TU (D4): the first spot filled is
+##   in a room next to the start hall (start_first) and always holds an altar.
 ## - The interact button within reach opens the nearest one. A chest you can't afford stays shut (the world
 ##   records the refusal for the view). Opening rolls the offer once: up to offer_size different items from the
 ##   pool (loot stream; chests weight rare items higher). The world then waits for the pick (World.choosing):
@@ -22,7 +23,7 @@ static func shards_for_kill(w: World, kind: int) -> int:
 		return 0
 	if t.shards_by_floor:
 		return t.shards * maxi(1, w.floor_index)
-	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
+	var tier := w.spawner.danger_tier(w.run_ticks) if w.spawner != null else 0  # v0.4.0 TU: the curve's
 	return (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
 
 
@@ -43,7 +44,7 @@ static func on_kill(w: World, i: int) -> void:
 ## drawn from the loot stream; chest prices follow chest order and World.floor_index.
 static func place(w: World, layout: FloorLayout) -> void:
 	var t := w.reward_table
-	var order := spot_order(layout)
+	var order := start_first(layout, spot_order(layout))
 	var kinds := PackedInt32Array()
 	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
 		kinds.append(RewardStore.Kind.ALTAR)
@@ -54,6 +55,10 @@ static func place(w: World, layout: FloorLayout) -> void:
 		var swap := kinds[k]
 		kinds[k] = kinds[j]
 		kinds[j] = swap
+	var altar := kinds.find(RewardStore.Kind.ALTAR)  # v0.4.0 TU (D4): the first spot takes an altar
+	if altar > 0:
+		kinds[altar] = kinds[0]
+		kinds[0] = RewardStore.Kind.ALTAR
 	var chests := 0
 	for k in mini(kinds.size(), order.size()):
 		var price := 0
@@ -61,6 +66,23 @@ static func place(w: World, layout: FloorLayout) -> void:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
 		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+
+
+## v0.4.0 TU (owner D4): `order` with the first spot of the room nearest the start hall (fewest hops; the first
+## such in `order`) moved to the front, so the floor's first reward, an altar, is next to the start.
+static func start_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
+	var best := -1
+	for k in order.size():
+		var hops := layout.hops[layout.item_rooms[order[k]]]
+		if best < 0 or hops < layout.hops[layout.item_rooms[order[best]]]:
+			best = k
+	if best <= 0:
+		return order
+	var out := PackedInt32Array([order[best]])
+	for k in order.size():
+		if k != best:
+			out.append(order[k])
+	return out
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.

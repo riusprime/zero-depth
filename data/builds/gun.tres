@@ -25,6 +25,6 @@ script = ExtResource("1_build")
 weapon = 1
 name_key = &"BUILD_GUN"
 desc_key = &"BUILD_GUN_DESC"
-damage_permille = 850
+damage_permille = 1000
 skill = SubResource("Skill_scatter_blast")
 id = &"gun"

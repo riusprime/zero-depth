@@ -226,7 +226,6 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
-	var spawning: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var enemies := ContentCompiler.compile_enemies(repo)
 	run.scale_enemies(enemies)
 	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
@@ -242,7 +241,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		run.floor_seed(),
 		table,
 		enemies,
-		ContentCompiler.compile_spawning(spawning, repo),
+		ContentCompiler.compile_floor_spawning(repo, run.floor_index),  # v0.4.0 TU: with the floor's curve
 		ContentCompiler.compile_items(repo),
 		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
 		run.floor_index,

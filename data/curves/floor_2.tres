@@ -1,0 +1,75 @@
+[gd_resource type="Resource" script_class="DifficultyCurveDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/difficulty_phase.gd" id="1_phase"]
+[ext_resource type="Script" path="res://src/content/defs/difficulty_curve_definition.gd" id="2_curve"]
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("1_phase")
+start_seconds = 0.0
+name_key = &"PHASE_CALM"
+tier_permille = 0
+cap_permille = 250
+interval_permille = 2000
+hp_permille = 700
+damage_permille = 500
+pack_cap = 1
+hold = true
+kinds = Array[StringName]([&"charger", &"needle", &"swarmer"])
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("1_phase")
+start_seconds = 60.0
+name_key = &"PHASE_STIR"
+tier_permille = 0
+cap_permille = 450
+interval_permille = 1600
+hp_permille = 800
+damage_permille = 650
+pack_cap = 2
+hold = false
+kinds = Array[StringName]([&"warden", &"arc_caster", &"splitter"])
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("1_phase")
+start_seconds = 192.0
+name_key = &"PHASE_HUNT"
+tier_permille = 6000
+cap_permille = 650
+interval_permille = 1300
+hp_permille = 900
+damage_permille = 800
+pack_cap = 3
+hold = false
+kinds = Array[StringName]([&"shield_bearer"])
+
+[sub_resource type="Resource" id="P_3"]
+script = ExtResource("1_phase")
+start_seconds = 336.0
+name_key = &"PHASE_SWARM"
+tier_permille = 12000
+cap_permille = 850
+interval_permille = 1150
+hp_permille = 1000
+damage_permille = 900
+pack_cap = 4
+hold = false
+kinds = Array[StringName]([&"bomb_drone"])
+
+[sub_resource type="Resource" id="P_4"]
+script = ExtResource("1_phase")
+start_seconds = 480.0
+name_key = &"PHASE_PEAK"
+tier_permille = 20000
+cap_permille = 1000
+interval_permille = 1000
+hp_permille = 1000
+damage_permille = 1000
+pack_cap = 4
+hold = false
+kinds = Array[StringName]([&"mine_layer"])
+
+[resource]
+script = ExtResource("2_curve")
+floor_index = 2
+phases = Array[ExtResource("1_phase")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2"), SubResource("P_3"), SubResource("P_4")])
+id = &"floor_2"

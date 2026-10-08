@@ -21,6 +21,7 @@ var _kill_boss := false
 var _grants := PackedInt32Array()
 ## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
 var _to_overrun := false
+var _next_phase := false
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
@@ -152,6 +153,12 @@ func go_overrun() -> void:
 	_to_overrun = true
 
 
+## v0.4.0 TU (dev route): moves the floor's clock to the start of the next difficulty phase at the next tick
+## boundary, so a phase can be seen without waiting for it.
+func next_phase() -> void:
+	_next_phase = true
+
+
 ## The spot `m` metres outside the Overrun room's first doorway (in the room next to it), or Vector2.INF.
 static func overrun_door_outside(w: World, m: float) -> Vector2:
 	var f := w.floor_layout
@@ -165,6 +172,11 @@ static func overrun_door_outside(w: World, m: float) -> Vector2:
 
 
 func _apply_commands() -> void:
+	if _next_phase:
+		_next_phase = false
+		var c := world.spawner.curve if world.spawner != null else null
+		if c != null:
+			world.run_ticks += c.ticks_to_next(world.run_ticks)
 	if _to_overrun:
 		_to_overrun = false
 		var at := overrun_door_outside(world, 1.5)

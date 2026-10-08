@@ -469,9 +469,56 @@ func run_seconds() -> float:
 	return float(_w.run_ticks) / SimTick.TICKS_PER_SECOND
 
 
-## The spawn director's tier (0 without one).
+## The spawn director's danger tier (0 without one; v0.4.0 TU: the difficulty curve's when the floor has one).
 func tier() -> int:
-	return _w.spawner.tier_at(_w.run_ticks) if _w.spawner != null else 0
+	return _w.spawner.danger_tier(_w.run_ticks) if _w.spawner != null else 0
+
+
+# --- Difficulty curve (v0.4.0 TU, owner D1–D3) ------------------------------------------------------------------
+## True when the floor's spawning follows a difficulty curve.
+func has_curve() -> bool:
+	return _w.spawner != null and _w.spawner.curve != null
+
+
+## The curve's phase now (0 = the calm minute; 0 without a curve).
+func phase() -> int:
+	return _w.spawner.curve.phase_at(_w.run_ticks) if has_curve() else 0
+
+
+func phase_count() -> int:
+	return _w.spawner.curve.phase_count() if has_curve() else 0
+
+
+## The locale key naming the phase now (empty without a curve).
+func phase_name_key() -> StringName:
+	return _w.spawner.curve.name_keys[phase()] if has_curve() else &""
+
+
+## Seconds until the next phase begins (0 at the peak or without a curve).
+func phase_seconds_left() -> float:
+	if not has_curve():
+		return 0.0
+	return float(_w.spawner.curve.ticks_to_next(_w.run_ticks)) / SimTick.TICKS_PER_SECOND
+
+
+## Enemy kinds this floor shows for the first time in the run (ActorStore.Kind).
+func new_kinds() -> PackedInt32Array:
+	return _w.spawner.curve.new_kinds if has_curve() else PackedInt32Array()
+
+
+## True while a living enemy of `kind` is on the floor.
+func kind_alive(kind: int) -> bool:
+	var a := _w.actors
+	for i in range(1, a.size()):
+		if a.kinds[i] == kind and a.dead[i] == 0:
+			return true
+	return false
+
+
+## The locale key of enemy kind `kind`'s name (empty when it has no table).
+func enemy_name_key(kind: int) -> StringName:
+	var t := _w.enemy_table(kind)
+	return t.name_key if t != null else &""
 
 
 ## Enemies killed this run.
@@ -1247,7 +1294,9 @@ func gamble_candidates() -> PackedInt32Array:
 
 
 func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
-	return _w.spawner.tier_progress(_w.run_ticks) if _w.spawner != null else 0.0
+	if _w.spawner == null:
+		return 0.0
+	return float(_w.spawner.danger_permille(_w.run_ticks) % 1000) / 1000.0  # v0.4.0 TU: the curve's
 
 
 # --- Minimap (v0.3.0 MM) ------------------------------------------------------------------------------------

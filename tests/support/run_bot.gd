@@ -5,21 +5,26 @@ extends RefCounted
 ## - Explore: walks (its own flow field over the floor's walls) to the nearest target by path: a room it hasn't been
 ##   in, a free altar, or a chest it can afford; opens each reward and takes the best-scoring card (score_card).
 ##   Never the boss room or the optional Overrun room while exploring.
+## - Farm: while a chest is left that it can't afford yet, it tours the rooms again (fighting on the way) until it
+##   can, so a floor lasts as long as buying every reward takes.
 ## - Then the boss: when nothing is left (or after max_explore_ticks), it walks through the boss door, fights the
 ##   boss and walks into the portal.
 ## - Fighting (both builds): the nearest living enemy in line of sight. Blade closes in and swings (Lunge Cleave
 ##   when in reach); Gun keeps 4–7 m and holds fire, shooting on the move while it explores. Below 35 % HP it backs
-##   off. It dodges a visible telegraph within 4 m after reaction_ticks with dodge_permille (the `average` preset),
+##   off. It dodges a visible telegraph within 10 m after reaction_ticks with dodge_permille (the `average` preset),
 ##   vents when crowded, and uses its utility now and then. Every random choice comes from its own stream.
 ## Reads the world only to choose its input (a player sees the same: the map, enemies, telegraphs, cards).
 
-const REACTION_TICKS := 14
-const DODGE_PERMILLE := 650
+## SCORECARD §3 skill presets (starting values): reaction ticks and dodge chance, novice / average / expert.
+const PRESETS := {"novice": [24, 300], "average": [14, 650], "expert": [8, 900]}
+const DODGE_RANGE_M := 10.0
 const BLADE_ENGAGE_M := 4.5
 const GUN_ENGAGE_M := 9.0
 const SWING_RANGE := 2.2
 const REWARD_REACH_M := 1.0
 const ROOM_VISIT_M := 2.0
+## A room or reward not reached in this long (40 s) is given up.
+const GOAL_TICKS := 40 * 60
 ## A careful player's floor budget before heading to the boss (M-FLOOR's top, 15 min).
 const MAX_EXPLORE_TICKS := 15 * 60 * 60
 
@@ -46,6 +51,8 @@ const STAT_SCORE := {
 const RARITY_PERMILLE: Array[int] = [1000, 1700, 2600]
 
 var max_explore_ticks := MAX_EXPLORE_TICKS
+var reaction_ticks := 14
+var dodge_permille := 650
 var gun := false
 var cards_taken := 0
 ## Picks as [tick, card code, score].
@@ -66,10 +73,14 @@ var _last_check := 0
 var _wiggle := 0
 var _wiggle_dir := Vector2.ZERO
 var _floor_start := 0
+var _goal_tick := 0
+var _tick := 0
 
 
-func _init(seed_value: int) -> void:
+func _init(seed_value: int, preset: String = "average") -> void:
 	_rng = RngStream.derive(seed_value, "run_bot")
+	reaction_ticks = PRESETS[preset][0]
+	dodge_permille = PRESETS[preset][1]
 
 
 ## A fresh floor: forget the map state.
@@ -123,6 +134,7 @@ func frame(w: World) -> InputFrame:
 		return InputFrame.new()
 	if w.tick % 90 == 0:
 		_strafe = -_strafe
+	_tick = w.tick
 	_ensure_nav(w)
 	_mark_room(w)
 	_update_goal(w)
@@ -142,8 +154,15 @@ func _mark_room(w: World) -> void:
 	if f == null:
 		return
 	var r := f.room_of(w.player_pos())
-	if r >= 0 and Kin.length(w.player_pos() - f.rooms[r].get_center()) <= ROOM_VISIT_M:
+	if r >= 0 and Kin.length(w.player_pos() - _free(f.rooms[r].get_center())) <= ROOM_VISIT_M:
 		_visited[r] = true
+	# A goal not reached in GOAL_TICKS (blocked, or always in a fight on the way): given up.
+	if _goal_kind in ["room", "reward"] and w.tick - _goal_tick > GOAL_TICKS:
+		if _goal_kind == "room":
+			_visited[_goal_reward] = true
+		else:
+			_skipped[_goal_reward] = true
+		_goal_kind = ""
 
 
 ## Candidate targets while exploring: [position, kind, reward index].
@@ -162,7 +181,7 @@ func _targets(w: World) -> Array:
 		for r in f.room_count():
 			if _visited.has(r) or r == f.boss_room or r == f.overrun_room:
 				continue
-			out.append([f.rooms[r].get_center(), "room", r])
+			out.append([_free(f.rooms[r].get_center()), "room", r])
 	return out
 
 
@@ -183,17 +202,22 @@ func _update_goal(w: World) -> void:
 		return
 	if _goal_kind == "door":
 		return
-	var targets := (
-		_targets(w) if w.tick - _floor_start < max_explore_ticks and f.boss_room >= 0 else []
-	)
+	var exploring := w.tick - _floor_start < max_explore_ticks and f.boss_room >= 0
+	var targets := _targets(w) if exploring else []
+	if targets.is_empty() and exploring and _chests_left(w):
+		_visited = {}  # chests it can't afford yet: tour the rooms again, fighting, until it can
+		var here := f.room_of(w.player_pos())
+		if here >= 0:
+			_visited[here] = true
+		targets = _targets(w)
 	if targets.is_empty():
 		_set_goal(f.boss_door_inside(BossFlow.ENTRY_DEPTH_M + 1.2), "door", -1)
 		return
-	_nav.flood(w.player_pos())
+	_nav.flood(_free(w.player_pos()))
 	var best := -1
 	var best_d := NavField.UNREACHED
 	for k in targets.size():
-		var c := _nav.cell_of(targets[k][0])
+		var c := _nav.cell_of(_free(targets[k][0]))
 		var d := _nav.dist[c.y * _nav.size.x + c.x] if _nav.inside(c) else NavField.UNREACHED
 		if d < best_d:
 			best = k
@@ -209,13 +233,37 @@ func _update_goal(w: World) -> void:
 	_set_goal(targets[best][0], targets[best][1], targets[best][2])
 
 
+## A chest still on the floor that the bot hasn't given up on (outside the Overrun room).
+func _chests_left(w: World) -> bool:
+	var f := w.floor_layout
+	for i in w.rewards.size():
+		if w.rewards.kind[i] == RewardStore.Kind.CHEST and not _skipped.has(w.rewards.ids[i]):
+			if f == null or f.room_of(w.rewards.pos(i)) != f.overrun_room:
+				return true
+	return false
+
+
 func _set_goal(at: Vector2, kind: String, ref: int) -> void:
 	if at == _goal and kind == _goal_kind:
 		return
 	_goal = at
 	_goal_kind = kind
 	_goal_reward = ref
-	_nav.flood(at)
+	_goal_tick = _tick
+	_nav.flood(_free(at))
+
+
+## The centre of the free flow-field cell nearest p (p itself when none is within 12 cells, 6 m): a flood from a blocked
+## cell (a room's centre on a pillar, the player brushing a wall) reaches nothing.
+func _free(p: Vector2) -> Vector2:
+	var c := _nav.cell_of(p)
+	for r in 13:
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				var n := c + Vector2i(dx, dy)
+				if _nav.inside(n) and _nav.blocked[n.y * _nav.size.x + n.x] == 0:
+					return _nav.center(n)
+	return p
 
 
 static func _reward_index(w: World, id: int) -> int:
@@ -274,6 +322,8 @@ func _act(w: World) -> InputFrame:
 				move = (-dir + side * 0.6).normalized()
 			elif dist < SWING_RANGE * 0.6:
 				move = side
+			elif _telegraphing(w, target) and dist > SWING_RANGE:
+				move = side  # don't walk into its swing or its run
 			elif dist < 7.0 and _rng.chance_permille(300):
 				move = (dir + side) * 0.7071
 			else:
@@ -290,9 +340,10 @@ func _act(w: World) -> InputFrame:
 			pressed |= InputFrame.UTILITY
 			held |= InputFrame.UTILITY
 		var dodge := _dodge(w, p)
-		if dodge != Vector2.ZERO:
-			move = dodge
-			pressed |= InputFrame.DASH
+		if dodge[0] != Vector2.ZERO:
+			move = dodge[0]
+			if dodge[1]:
+				pressed |= InputFrame.DASH
 	else:
 		move = to_goal
 		var b := w.actors.index_of(w.boss_id) if w.boss_id >= 0 else -1
@@ -336,24 +387,64 @@ static func _crowd(w: World, p: Vector2, r: float) -> int:
 	return n
 
 
-## A dash direction away from a telegraphing enemy within 4 m that the bot has reacted to (once per telegraph), or
-## ZERO.
-func _dodge(w: World, p: Vector2) -> Vector2:
+## The way out of the telegraphs the player stands in (with a 0.6 m margin): [direction, dash now]. Each telegraph
+## is noticed after reaction_ticks and then dodged with dodge_permille (one roll per telegraph); a dodged one is
+## walked out of for as long as the player is in it, with a dash at the moment it is noticed. A lane (a Charger's
+## run, a Sniper's line, a Needle's burst) is left sideways, a disc (a slam, a rune, a swipe) straight away.
+func _dodge(w: World, p: Vector2) -> Array:
 	var out := Vector2.ZERO
+	var dash := false
 	for i in range(1, w.actors.size()):
 		if w.actors.dead[i] == 1 or w.actors.teams[i] != ActorStore.TEAM_ENEMY:
 			continue
 		var id := w.actors.ids[i]
-		var to := p - w.actors.pos(i)
-		if Kin.length(to) > 4.0 or EnemyAi.telegraph(w, i).is_empty():
+		if Kin.length(p - w.actors.pos(i)) > DODGE_RANGE_M:
 			_seen_tel.erase(id)
 			continue
-		var n: int = _seen_tel.get(id, 0) + 1
+		var tel := EnemyAi.telegraph(w, i)
+		if tel.is_empty():
+			_seen_tel.erase(id)
+			continue
+		var away := _out_of(tel, p)
+		var n: int = _seen_tel.get(id, 0)
+		if n >= 0 and away != Vector2.ZERO:
+			n += 1
+			if n >= reaction_ticks:
+				n = -1 if _rng.chance_permille(dodge_permille) else -2  # -1 dodging, -2 missed it
+				dash = dash or n == -1
 		_seen_tel[id] = n
-		if n == REACTION_TICKS and _rng.chance_permille(DODGE_PERMILLE):
-			var away := to.normalized() if Kin.length(to) > 0.0 else Vector2.RIGHT
-			out = (away + Vector2(-away.y, away.x) * _strafe).normalized()
-	return out
+		if n == -1 and away != Vector2.ZERO:
+			out = away
+	return [out, dash]
+
+
+## True while enemy i shows a telegraph (the Blade waits it out instead of walking into it).
+static func _telegraphing(w: World, i: int) -> bool:
+	return not EnemyAi.telegraph(w, i).is_empty()
+
+
+## The way out of telegraph `tel` from p (unit), or ZERO when p is clear of it.
+static func _out_of(tel: Dictionary, p: Vector2) -> Vector2:
+	match tel.get("shape", &""):
+		&"lane":
+			return _out_of_lane(tel["obb"], p)
+		&"lanes":
+			for o: Obb in tel["obbs"]:
+				var d := _out_of_lane(o, p)
+				if d != Vector2.ZERO:
+					return d
+		&"disc":
+			var to: Vector2 = p - tel["center"]
+			if Kin.length(to) <= float(tel["radius"]) + 0.6:
+				return to.normalized() if Kin.length(to) > 0.01 else Vector2.RIGHT
+	return Vector2.ZERO
+
+
+static func _out_of_lane(o: Obb, p: Vector2) -> Vector2:
+	if o == null or Collide.circle_vs_obb(p, 0.6, o) == Vector2.ZERO:
+		return Vector2.ZERO
+	var side := (p - o.center).dot(o.axis_v)
+	return o.axis_v if side >= 0.0 else -o.axis_v
 
 
 ## Stuck against a wall for 2 s while trying to move: wiggle sideways for half a second.

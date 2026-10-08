@@ -33,7 +33,7 @@ func floor_world() -> World:
 		run.floor_seed(),
 		table,
 		enemies,
-		ContentCompiler.compile_spawning(repo.get_def(&"spawning", &"floor_1"), repo),
+		ContentCompiler.compile_floor_spawning(repo, run.floor_index),
 		ContentCompiler.compile_items(repo),
 		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),
 		run.floor_index,
