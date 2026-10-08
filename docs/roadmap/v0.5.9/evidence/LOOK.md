@@ -60,7 +60,8 @@ is not in the repository. Re-checking them needs a fresh run of `kit_prep.py`'s 
 |---|---|---|
 | `23f2237` (merged base, before any v0.5.9 code) | `godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit` | `Scripts 169, Tests 1076, Passing Tests 1076, Time 1755.531s, ---- All tests passed! ----` |
 | `9f4866c` (Step 1) | same | `Scripts 172, Tests 1083, Passing Tests 1083, Time 1771.714s, ---- All tests passed! ----` |
-| `fbedd6d` (Steps 3–4) | same | NOT YET RUN to completion when this file was written |
+| `fbedd6d` (Steps 3–4) | same | `Scripts 174, Tests 1092, Passing Tests 1092, Time 1707.753s, ---- All tests passed! ----` |
+| `9e5f9be` (Step 5, LODs, variant C) | same | `Scripts 175, Tests 1094, Passing Tests 1094, Time 1608.567s, ---- All tests passed! ----` |
 
 ## 4. Not covered yet
 
