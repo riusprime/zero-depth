@@ -411,13 +411,11 @@ static func _floor(records: Array) -> Dictionary:
 		capped += int(r.get("explore_capped", 0))
 	out["all"] = ScoreStats.dist(mins)
 	out["explore_budget_used_up"] = capped
-	var status := "no data"
-	if not mins.is_empty():
-		var med := float(out["all"]["median"])
-		status = "met" if med >= 10.0 and med <= 15.0 else "missed"
+	# v0.5.0 PB (owner D10, 2026-10-08): floor length is the player's choice; reported, no longer a band (it was
+	# 10–15 min, the v0.3.0 gate; SCORECARD §2's M-FLOOR note).
 	return cell(
-		"10–15 min (v0.3.0 gate)",
-		status,
+		"reported every version; no band (owner D10; was 10–15 min)",
+		"no band (D10)" if not mins.is_empty() else "no data",
 		out,
 		(
 			"minutes from a floor's start to its portal, floors the bot finished (normal policies). The bot explores "

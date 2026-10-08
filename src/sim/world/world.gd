@@ -272,6 +272,9 @@ var _actor_grid := DenseGrid.new()
 ## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
 var _wall_next: Obb
 var _nav_next: NavField
+## v0.5.0 PB: the flow field from before the prepared wall was added (add_wall_now), swapped back in when that wall
+## is removed again (remove_wall_now: the boss door reopening after the boss), so reopening never rebuilds it.
+var _nav_open: NavField
 ## Projectile spawns wait until phase 9 of the tick: [owner, team, pos, vel, damage, radius, life, tags, bounces].
 var _pending_projectiles: Array[Array] = []
 ## Enemies a boss brings in (eggs, turrets) wait until phase 9 of the tick: [kind, pos].
@@ -429,10 +432,10 @@ func step(frame: InputFrame) -> void:
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
-		if boss_flow == null or boss_flow.spawns_open():
+		if boss_flow == null or boss_flow.spawns_open(self):
 			SpawnDirector.advance(self)
 		else:
-			boss_flow.count_time(self)  # Run flow: the sealed boss room stops spawns, not the clock.
+			boss_flow.count_time(self)  # Run flow: the boss fight (and its room after, PB) stops spawns, not the clock.
 	if boss_flow != null:
 		boss_flow.advance(self)
 	_apply_spawns()
@@ -582,11 +585,34 @@ func add_wall_now(o: Obb) -> void:
 	walls.append(o)
 	_wall_grid.add(o.bounds())
 	if o == _wall_next and _nav_next != null:
+		_nav_open = nav
 		nav = _nav_next
 	else:
 		nav.build(walls)
 	_wall_next = null
 	_nav_next = null
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
+
+
+## v0.5.0 PB (owner D10): removes a wall added in play (the boss door reopening once the boss is dead). The wall is
+## matched by its shape (a restored world holds copies of the walls); the grid is rebuilt, and the flow field from
+## before add_wall_now swaps back in (or is rebuilt if there is none) and floods from the player at once.
+func remove_wall_now(o: Obb) -> void:
+	var k := walls.size() - 1
+	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
+		k -= 1
+	if k < 0:
+		return
+	walls.remove_at(k)
+	var rects: Array[Rect2] = []
+	for x in walls:
+		rects.append(x.bounds())
+	_wall_grid.build(rects)
+	if _nav_open != null:
+		nav = _nav_open
+	else:
+		nav.build(walls)
+	_nav_open = null
 	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
 
 

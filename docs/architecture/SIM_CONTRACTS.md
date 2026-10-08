@@ -206,7 +206,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   maybe a few more.
 - Actors: one entry per centre (queries grow by the largest radius), rebuilt in place in tick phase 3 (the enemies'
   plans query it) and before each collision pass.
-- Walls: one entry per covered cell, built with the floor and again when a wall is added in play (the boss door).
+- Walls: one entry per covered cell, built with the floor and again when a wall is added in play (the boss door) or
+  removed (v0.5.0 PB: the boss door reopening, `World.remove_wall_now`).
   A line of sight or a charge's run walks only the cells along the segment (`World.walls_along`); no sweep tests
   every wall of the floor any more.
 - Which candidates a pass sees decides the order bodies are pushed in, so changing the cells changes the replay
@@ -396,7 +397,9 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
 - **`World.from_snapshot(snap, base)`** writes the snapshot into `base`, a world built from the same generation inputs
   (run seed, floor, build, content) at any tick. It checks the base's generated walls start the snapshot's (else the
   save doesn't fit), re-adds a boss door sealed in play through its prepared field, and rebuilds the grid and flow
-  field for any other added wall. The restored world's `state_hash()` equals the saved world's, and stepping both with
+  field for any other added wall. A save taken after the boss died (v0.5.0 PB) holds the floor's own walls again (the
+  door was removed), so it restores an open door and open portals; `World._nav_open` (the field from before the
+  seal, swapped back in when the door reopens) is not copied: `apply`'s re-seal sets it. The restored world's `state_hash()` equals the saved world's, and stepping both with
   the same inputs keeps them equal (`tests/unit/sim/test_world_snapshot.gd`, T-SAVE).
 - **The guard** (same test file): every `World` field is in the snapshot or in `WORLD_KEPT`; every object reachable
   from `World` is classified; every object with `hash_into` is a `STATE_CLASSES` class; the loadout tables don't change
@@ -523,6 +526,16 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   from the loot stream, never a curse or a mod), placed on item spots the floor's rewards left free (no stream is
   drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: TODO (v0.5.0
   EV), through `Routes.is_deep`.
+- **After the boss (v0.5.0 PB, owner D10).** `BossFlow` (tick phase 9): the boss's death (`FIGHT` → `OPEN`,
+  `PORTAL_OPENED`) also reopens the boss door: `World.remove_wall_now(boss_door_wall)` takes its collider out of the
+  walls (matched by shape), rebuilds the wall grid and swaps back the flow field from before the seal (no rebuild),
+  flooded at once. `door_sealed()` is true only in `FIGHT`, so `blink_may_land` lets a blink cross the open doorway
+  again; `boss_reached()` is true from the seal on. `spawns_open(w)`: in `WAITING`, and in `OPEN` while the player's
+  room (`FloorLayout.room_of`; a doorway counts as outside) isn't the boss room; otherwise `count_time` keeps the
+  floor clock (`run_ticks`) running, so spawns resume at the curve's level for the floor time, and
+  `SpawnDirector.far_points` never anchors in the boss room. The seal happens only from `WAITING`, so its D9 heal
+  and `BOSS_ROOM_SEALED` are once a floor. No event kind or hashed field was added: the door's state follows from
+  `BossFlow.state`, and the walls are not hashed.
 - **Density.** The alive cap is `cap_by_floor` (14 / 30 / 50) + 6 a tier, at most 120; packs arrive every
   `interval_start` (2.5 s) × `interval_tier_permille` (0.9^tier), at least 0.4 s apart (SpawnDirector).
 - **Threat T** adds to those tables through `ThreatModifier`s ([`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §7). The

@@ -331,13 +331,17 @@ func gate_text() -> String:
 	return _gate.text
 
 
-## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal.
+## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal. v0.5.0 PB (D10):
+## in the boss room after the boss, a second line says the floor is still yours to explore (none outside it).
 func _gate_note(reader: WorldReader) -> String:
 	if not reader.has_floor():
 		return ""
 	if reader.has_boss_room():
 		if reader.portal_active():
-			return tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
+			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
+				return ""
+			var open := tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
+			return open + "\n" + tr("HUD_EXPLORE_AFTER_BOSS")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())
 			var near := reader.player_pos().distance_to(reader.boss_door_center()) <= BOSS_WARN_M
