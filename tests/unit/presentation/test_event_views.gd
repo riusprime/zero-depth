@@ -146,7 +146,7 @@ func test_every_event_and_curse_string_is_in_both_languages() -> void:
 			keys.append(String(c.label_key))
 	for d: CurseDefinition in repo.all_of(&"curses"):
 		keys.append_array([String(d.name_key), String(d.desc_key)])
-	assert_eq(keys.size(), 8 * 2 + 12 + 6 * 2)
+	assert_eq(keys.size(), 9 * 2 + 14 + 6 * 2)  # v0.5.5 DS: Whispering Deep and its two choices
 	for k in keys:
 		assert_true(rows.has(k), "%s is in strings.csv" % k)
 		if rows.has(k):

@@ -77,7 +77,7 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	if a.state[i] != GATE:
+	if a.state[i] != GATE and a.dead[i] == 0:  # v0.5.5 DS: a boss killed between ticks opens no gate
 		_update_phase(w, i, b, t)
 	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
