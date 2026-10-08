@@ -76,3 +76,8 @@ merged.
   873 / 873, readable cause 0 violations, export smoke ok. Horde bench after the merge 4.84–4.89 ms: **target
   missed** (SC's own commit measured 4.55 ms in the same session; the machine is slower than when it measured
   3.66 ms). Reported, not retuned.
+- 2026-10-08 — SC merged (re-integrated by its agent on BS+EN+BO, then on top of CP; one conflict: MIN_TEST_COUNT). 891 tests
+  pass; export smoke 0 misses. Goldens changed on purpose by SC (new collision grid order): replay `5171fdad…` →
+  `70ac7ca2…`, export smoke `9c324d3d…` → `e5365ddb…`. **Horde bench target missed after the merge:** 4.84–4.89 ms
+  mean per tick vs ≤ 4 ms (4.55 ms for SC alone in the same session; machine load 4.5–6.2). Reported to the owner;
+  a further optimisation pass goes into TU. Gap: split/summoned enemies get floor scaling only (fix in TU).
