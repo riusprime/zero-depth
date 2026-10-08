@@ -17,6 +17,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 | SH | One shop per floor in a side room (a terminal: E / pad X): 4 cards from the chests' pools priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a heal (30 % max HP, once, 40 × floor), a reroll (20, +50 % per use); salvage at the same panel (a mod or stat card for 40 % of its price, an ability but the weapon for 25 shards per level, freeing its slot); minimap icon, sounds, en + es ([`evidence/SHOP.md`](evidence/SHOP.md)) | `v0.5.0 Step SH: shops and salvage` (this branch) |
 | EV | 1–2 event rooms per floor (a lit pedestal, a panel of costed choices and "Leave it"; eight events), six curses (each +1 threat T) on 25 % of chest offers and on some event choices, a cleanse (the Cleansing Font, and a hook for shops), T on the HUD, in the pause menu and the recap ([`evidence/EVENTS.md`](evidence/EVENTS.md)) | `v0.5.0 Step EV` commit |
 | SCD | Every SCORECARD §2 cell (23) from one command, `scripts/sims/scorecard.gd` (full: 22 bot policies × 20 seeds, whole 3-floor runs, then the bench, ~34 min; `--quick` for CI), written to `build/scorecard/<sha>/`; bot policies idle / novice / competent (3 presets) / competent+t / Blade-Gun × element-ordnance-guard / exploit:salvage / exploit:chain; numbers predate TU ([`evidence/SCORECARD_v0.5.0.md`](evidence/SCORECARD_v0.5.0.md)) | `v0.5.0 Step SCD: every scorecard cell from one command` (this branch) |
+| PB | Explore after the boss (owner D10): the boss's death reopens the boss door both ways (walk or blink), its drops stay, the portal(s) stay open until walked into; spawns resume outside the boss room at the curve's level for the floor time (none inside it); the D9 heal is once; the HUD says you may keep exploring, the minimap dims the open door; saves after the boss restore an open door and portals; M-FLOOR reported, no band ([`evidence/AFTER_BOSS.md`](evidence/AFTER_BOSS.md)) | `v0.5.0 Step PB: explore the floor after the boss` (this branch) |
 
 ## Goldens changed on purpose
 - none
@@ -37,6 +38,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf` (no `main` yet:
 - none
 
 ## History
+- 2026-10-08 — PB built on `5e5b3f9` (owner D10): `BossFlow` reopens the door on the boss's death
+  (`World.remove_wall_now`, the pre-seal flow field swapped back), `spawns_open(w)` resumes spawning outside the
+  boss room; HUD line `HUD_EXPLORE_AFTER_BOSS` (en + es), dimmed minimap door; SCORECARD M-FLOOR reported, no band
+  (dated note). Three tests that asserted the old sealed-after-the-boss rule changed on purpose (run flow, routes,
+  two e2e HUD notes). Suite 1086 (minimum 1076 → 1086); readable cause 0 violations; goldens unchanged.
+  Lead calls for the owner: enemies already outside may follow you into the boss room (only new arrivals are kept
+  out); M-RUN keeps its band until the owner says otherwise; the bots still rush the portal.
 - 2026-10-08 — EV merged with the lead branch (`d5450d9`: SC, AB, SV, SH) in the EV worktree: 1012 tests pass,
   readable cause 0 violations over 36 runs, export smoke 0 misses; goldens unchanged. The three EV sub-streams
   (`map:event`, `loot:event`, `ai:elite`) await the owner's approval.
