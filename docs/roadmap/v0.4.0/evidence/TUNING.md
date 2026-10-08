@@ -502,3 +502,16 @@ manifest: 9bc3be2a05970e9fbb3bb123891686cb0d89544aec4bb4680d34ff66d3e9d7ab (220 
   - The TTK band can't be met while enemy HP grows with the tier and floor 1 gives 4–5 cards; it is reported, not
     widened.
 - Bench: same code as round 1's pass; on a quiet machine the TU tree is 1–3 % faster than `87bac21` and still over 4 ms.
+
+## Verify (round 2, `9495cbf`; the commit carrying this section changes only this file)
+```
+godot --headless --path . --editor --import --quit                  # 0 ERROR lines
+gdformat --check src scripts tests && gdlint src scripts tests       # 514 files unchanged; Success: no problems found
+bash scripts/verify.sh
+Tests              1076
+Passing Tests      1076
+Asserts           483535
+Time              1538.87s
+---- All tests passed! ----
+check_gut_log: ok (1076 passing, minimum 1076)
+```
