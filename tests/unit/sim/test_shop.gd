@@ -251,10 +251,13 @@ func test_the_reroll_draws_a_new_stock_at_a_rising_price() -> void:
 
 func test_sell_a_mod_for_forty_percent_and_lose_its_combos() -> void:
 	var w := _world(4)
-	var combo: ComboTable = w.combo_tables[0]
+	var c := 0
+	while w.combo_tables[c].item_a < 0:  # v0.4.0 AB: skip the ability combos (they pair abilities, not items)
+		c += 1
+	var combo: ComboTable = w.combo_tables[c]
 	w.add_item(combo.item_a)
 	w.add_item(combo.item_b)
-	assert_true(w.combos_owned.has(0), "the combo is on")
+	assert_true(w.combos_owned.has(c), "the combo is on")
 	_open(w)
 	var list := Shop.sell_list(w)
 	assert_eq(list[0][0], Shop.SELL_MOD)
@@ -264,7 +267,7 @@ func test_sell_a_mod_for_forty_percent_and_lose_its_combos() -> void:
 	_pick(w, InputFrame.PICK_SHOP_SELL + 0)
 	assert_false(w.items_owned.has(combo.item_a), "sold")
 	assert_true(w.items_owned.has(combo.item_b))
-	assert_false(w.combos_owned.has(0), "its combo is gone")
+	assert_false(w.combos_owned.has(c), "its combo is gone")
 	assert_eq(w.shards, 1000 + refund)
 	var ev := _events(w, SimEvent.Kind.SHOP_SALVAGE)
 	assert_eq(ev.size(), 1)
