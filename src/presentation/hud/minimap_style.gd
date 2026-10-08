@@ -25,6 +25,9 @@ const BOSS := Color("#FF4A3D")
 const OVERRUN := Color("#FF2E6A")
 const PORTAL_OPEN := Color("#4DA3FF")
 const PORTAL_SEALED := Color(0.55, 0.60, 0.70, 0.8)
+## v0.5.0 RT: the Deep portal, violet in a red ring (the gate's own colours).
+const PORTAL_DEEP := Color("#8B3DFF")
+const PORTAL_DEEP_RIM := Color("#FF2A3D")
 const TEXT := Color(0.85, 0.95, 1.0, 0.95)
 const TEXT_DIM := Color(0.70, 0.80, 0.88, 0.75)
 

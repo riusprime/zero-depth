@@ -725,6 +725,17 @@ def s_portal_open(r):
     return echo(mix(chord, shimmer), 180, 0.45, 0.4, 4000, 0.8)
 
 
+def s_deep_portal_open(r):
+    """v0.5.0 RT: the Deep gate opening: a low detuned drone that swells, a falling growl and a dark rumble."""
+    n = n_of(1.6)
+    drone = sum(fm(f * curve(0.7, 1.0, n), 1.5, 2.2, n) for f in (55.0, 82.4, 110.0, 116.5)) * 0.22
+    drone *= np.linspace(0, 1, n) ** 0.8
+    drone = fade_tail(one_pole_lp(drone, 1600), 0.25)
+    growl = bitcrush(osc(curve(140, 60, n), "saw", n) * env(n, 0.3, 0.6), 6, 3) * 0.25
+    rumble = one_pole_lp(noise(r, n), 220) * np.linspace(0, 1, n) * 0.9
+    return echo(mix(drone, one_pole_lp(growl, 900), rumble), 240, 0.5, 0.4, 1800, 0.9)
+
+
 def s_floor_enter(r):
     w = whoosh(r, 0.6, 5000, 400, 1.5, 0.25)
     n = n_of(0.8)
@@ -898,6 +909,7 @@ SFX = [
     ("boss_death", s_boss_death),
     ("boss_door_seal", s_boss_door_seal),
     ("portal_open", s_portal_open),
+    ("deep_portal_open", s_deep_portal_open),
     ("floor_enter", s_floor_enter),
     ("ui_move", s_ui_move),
     ("ui_confirm", s_ui_confirm),

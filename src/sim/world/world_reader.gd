@@ -96,6 +96,9 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
+## v0.5.0 RT: the routes (Routes.Route).
+const ROUTE_NORMAL := Routes.Route.NORMAL
+const ROUTE_DEEP := Routes.Route.DEEP
 const RARITY_COMMON := ItemTable.COMMON
 const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
@@ -790,6 +793,49 @@ func arrival_progress() -> float:
 
 func transit_holds() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.holds_world()
+
+
+# --- Routes (v0.5.0 RT) ---------------------------------------------------------------------------------------
+## This floor's boss room has the Deep gate (a run's floor before the last), where it stands and faces.
+func has_deep_portal() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.routes
+
+
+func deep_portal_pos() -> Vector2:
+	return _w.floor_layout.deep_portal_pos if _w.floor_layout != null else Vector2.ZERO
+
+
+func deep_portal_angle() -> int:
+	return _w.floor_layout.deep_portal_angle if _w.floor_layout != null else 0
+
+
+## Gate `route` (Routes.Route) is open: the boss is dead, and no route was taken or this one was.
+func gate_open(route: int) -> bool:
+	return _w.boss_flow != null and _w.boss_flow.gate_open(route)
+
+
+## The route walked into on this floor (Routes.Route; -1 = none yet).
+func route_taken() -> int:
+	return _w.boss_flow.route_taken if _w.boss_flow != null else -1
+
+
+## This floor is a Deep floor (the Deep portal was taken on the floor before).
+func floor_is_deep() -> bool:
+	return Routes.is_deep(_w)
+
+
+## Reward i is the Deep floor's epic altar.
+func reward_is_epic(i: int) -> bool:
+	return Routes.is_epic_altar(_w, i)
+
+
+## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
+func entered_portal_pos() -> Vector2:
+	return deep_portal_pos() if route_taken() == Routes.Route.DEEP else portal_pos()
+
+
+func entered_portal_angle() -> int:
+	return deep_portal_angle() if route_taken() == Routes.Route.DEEP else portal_angle()
 
 
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------

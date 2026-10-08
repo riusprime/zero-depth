@@ -24,7 +24,8 @@ const CAUSES := {
 }
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
-## when the run has no shards), "items" (Array of item name keys).
+## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
+## first, as WorldReader.ROUTE_* ints).
 var recap := {}
 
 
@@ -75,6 +76,8 @@ func _add_recap() -> void:
 		_line("Kills", tr("UI_RECAP_KILLS") % recap["kills"])
 	if recap.has("shards"):
 		_line("Shards", tr("UI_RECAP_SHARDS") % recap["shards"])
+	if recap.has("routes"):
+		_line("Route", tr("UI_RECAP_ROUTE") % route_text(self, recap["routes"]))
 	if recap.has("items"):
 		var names := PackedStringArray()
 		for k in recap["items"]:
@@ -87,6 +90,14 @@ func _add_recap() -> void:
 		var l := _line("Items", text, 20)
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		l.custom_minimum_size = Vector2(560, 0)
+
+
+## The route per floor, translated through `ci`: "Normal → Deep → Normal".
+static func route_text(ci: Object, routes: Variant) -> String:
+	var names := PackedStringArray()
+	for r: int in routes:
+		names.append(ci.tr("ROUTE_DEEP" if r == WorldReader.ROUTE_DEEP else "ROUTE_NORMAL"))
+	return " → ".join(names)
 
 
 func _line(line_name: String, text: String, font_size: int = 24) -> Label:

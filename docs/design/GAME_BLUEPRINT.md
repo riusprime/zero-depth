@@ -66,6 +66,12 @@ only adds numbers, menus or breadth fails the filter.
   The exact pools and weights are from GA: rewards.
 - **Threat T** (PD-05). T rises only when the player chooses it: an optional branch, a cursed reward, a threat
   door. There is no global clock and no enrage timer. What T changes is in §H.
+- **Optional routes** (v0.5.0 R5, step RT). After the bosses of floors 1 and 2 the boss room opens **two
+  portals**: the normal one (the visor's light blue) and a **Deep** portal (violet with a red rim and frame). Walking
+  into one chooses; the other closes. A Deep floor scales enemies and bosses ×1.25 on top of the floor and has one
+  extra chest and a curse-free **epic altar** (epic stat cards or ability level-ups). The floor card and the HUD's
+  floor label say "Deep"; the run recap lists the route per floor. Floor 3's boss still wins the run through one
+  portal. (Threat T for Deep: with EV's T.)
 - **Death** ends the run. A recap shows the killing cause, the build and the timeline (v0.3.0).
 
 ## C. Player kit

@@ -164,6 +164,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"boss_door_seal", null, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
+				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it
+					out.append([&"deep_portal_open", e.pos, 1.0])
 			SimEvent.Kind.FLOOR_EXIT:  # v0.3.5 PT: the hero goes into the portal (the blink's whoosh, lower)
 				out.append([&"blink_out", null, 0.7])
 			SimEvent.Kind.SKILL_USED:  # v0.3.5 K: the build skill, by its kind

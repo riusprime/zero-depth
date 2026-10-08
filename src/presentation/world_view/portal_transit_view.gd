@@ -63,6 +63,8 @@ var column := MeshInstance3D.new()
 var flash_ball := MeshInstance3D.new()
 var light := OmniLight3D.new()
 var overlay := ColorRect.new()
+## v0.5.0 RT: the Deep gate (null without one); the way in flares and draws the hero to the gate taken.
+var deep_gate: PortalGate
 
 var _actors: ActorViews
 var _gate: PortalGate
@@ -102,8 +104,10 @@ func sync(reader: WorldReader) -> void:
 		progress = 0.0
 	if phase != was:
 		_burst_done = false
-		if phase == Phase.ENTER and _gate != null:
-			_gate.flare()
+		var deep := reader.route_taken() == WorldReader.ROUTE_DEEP and deep_gate != null
+		var taken := deep_gate if deep else _gate
+		if phase == Phase.ENTER and taken != null:
+			taken.flare()
 	var node := _player_node(reader)
 	var avatar := (
 		node.get_meta(&"avatar") as Node3D if node != null and node.has_meta(&"avatar") else null
@@ -137,7 +141,9 @@ func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 		if avatar != null:
 			avatar.visible = p < 1.0
 		return
-	var centre := SimPlane.to_3d(reader.portal_pos() + Kin.dir(reader.portal_angle()) * PULL_DEPTH)
+	var centre := SimPlane.to_3d(
+		reader.entered_portal_pos() + Kin.dir(reader.entered_portal_angle()) * PULL_DEPTH
+	)
 	var start := node.position if node != null else centre
 	if avatar != null:
 		var pull := smoothstep(0.0, PULL_END, p)

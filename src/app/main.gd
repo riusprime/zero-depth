@@ -295,7 +295,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.sync(driver.reader)
-	_hud.show_floor(run.floor_index, String(biome.name_key))
+	_hud.show_floor(run.floor_index, String(biome.name_key), run.is_deep())  # v0.5.0 RT: "Floor 2 · Deep"
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
 	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
@@ -357,6 +357,7 @@ func run_recap() -> Dictionary:
 		"seconds": float(run.total_ticks(w)) / SimTick.TICKS_PER_SECOND,
 		"kills": run.total_kills(w),
 		"items": names,
+		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))

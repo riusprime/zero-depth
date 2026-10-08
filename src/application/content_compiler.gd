@@ -841,6 +841,8 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.boss_hp_per_floor_permille = int(round(def.boss_hp_per_floor * 1000.0))
 	t.boss_damage_per_floor_permille = int(round(def.boss_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
+	t.deep_extra_chests = def.deep_extra_chests
 	return t
 
 

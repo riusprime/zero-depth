@@ -27,6 +27,8 @@ var status_fx: StatusVisuals
 ## v0.3.0 L18: overclock heat on the hero, vent blasts, steam and embers.
 var heat_fx: HeatVisuals
 var gate: PortalGate
+## v0.5.0 RT: the Deep gate beside it (null on floors without the choice).
+var deep_gate: PortalGate
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit := PortalTransitView.new()
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
@@ -82,6 +84,12 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
+	if reader.has_deep_portal():
+		deep_gate = PortalGate.new()
+		deep_gate.name = "DeepGate"
+		add_child(deep_gate)
+		deep_gate.setup(reader.deep_portal_pos(), reader.deep_portal_angle())
+		deep_gate.set_deep()
 	if reader.has_boss_room():
 		boss_door = BossDoorView.new()
 		add_child(boss_door)
@@ -102,6 +110,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
 	add_child(transit)
 	transit.setup(actors, gate)
+	transit.deep_gate = deep_gate
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -137,8 +146,13 @@ func sync() -> void:
 		gamble_shrine.sync(reader)
 	if shop_terminal != null:
 		shop_terminal.sync(reader)
-	if gate != null and reader.has_boss_room() and gate.is_sealed() == reader.portal_active():
-		gate.set_sealed(not reader.portal_active())
+	# v0.5.0 RT: each gate closes when the other one is taken.
+	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
+	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:
+		gate.set_sealed(not open)
+	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
+	if deep_gate != null and deep_gate.is_sealed() == deep_open:
+		deep_gate.set_sealed(not deep_open)
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

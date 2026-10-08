@@ -19,6 +19,8 @@ const STAT_BASE := 2000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
+## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
+const EPIC := 2
 
 
 static func enabled(w: World) -> bool:
@@ -55,6 +57,8 @@ static func rarity_of(code: int) -> int:
 
 ## Rolls reward i's offer (Rewards.interact, on its first open).
 static func roll(w: World, i: int) -> PackedInt32Array:
+	if Routes.is_epic_altar(w, i):
+		return roll_epic(w)  # v0.5.0 RT
 	return draw(w, w.rewards.kind[i] == RewardStore.Kind.CHEST, w.reward_table.offer_size)
 
 
@@ -98,6 +102,42 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 				for idx in pool:
 					mw.append(rare if w.item_tables[idx].rarity == ItemTable.RARE else 1)
 				out.append(pool[w.rng_loot.pick_weighted(mw)])
+	return out
+
+
+## v0.5.0 RT: a Deep floor's epic altar: up to offer_size cards, each an epic stat card (a stat under its cap, by
+## its card weight) or a level-up of an ability you own, never a curse; drawn from the loot stream, no repeats. The
+## type is picked by the altar's [ability, stat] weights among the pools left. A world without abilities and stat
+## cards offers rare-weighted mods.
+static func roll_epic(w: World) -> PackedInt32Array:
+	var t := w.reward_table
+	if not enabled(w):
+		return ItemPool.draw_weighted(w, t.offer_size, t.rare_weight_chest)
+	var out := PackedInt32Array()
+	var guard := 0
+	while out.size() < t.offer_size and guard < 16:
+		guard += 1
+		var ups := PackedInt32Array()
+		for idx in _abilities(w, out, false):
+			if Abilities.owned(w, idx):
+				ups.append(idx)
+		var stats := _stats(w, out)
+		var wts := PackedInt32Array(
+			[
+				t.altar_card_weights[0] if not ups.is_empty() else 0,
+				t.altar_card_weights[1] if not stats.is_empty() else 0
+			]
+		)
+		var kind := pick(w.rng_loot, wts)
+		if kind < 0:
+			break
+		if kind == 0:
+			out.append(ability_code(ups[w.rng_loot.range_int(0, ups.size() - 1)]))
+		else:
+			var sw := PackedInt32Array()
+			for st in stats:
+				sw.append(w.stat_tables[st].weight)
+			out.append(stat_code(stats[w.rng_loot.pick_weighted(sw)], EPIC))
 	return out
 
 

@@ -665,6 +665,16 @@
       "loop": false
     },
     {
+      "id": "deep_portal_open",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/deep_portal_open.wav",
+      "sha256": "76daa9864974b1e3b5aae822c82e5ebe237519c71ec1e755312def271c128251",
+      "seconds": 2.5,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -14.86,
+      "loop": false
+    },
+    {
       "id": "floor_enter",
       "kind": "sfx",
       "path": "assets/audio/sfx/floor_enter.wav",

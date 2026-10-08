@@ -17,6 +17,7 @@ const LEGEND: Array = [
 	[&"chest", "MAP_LEGEND_CHEST"],
 	[&"boss", "MAP_LEGEND_BOSS"],
 	[&"portal", "MAP_LEGEND_PORTAL"],
+	[&"portal_deep", "MAP_LEGEND_PORTAL_DEEP"],
 	[&"shrine", "MAP_LEGEND_SHRINE"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
 	[&"shop", "MAP_LEGEND_SHOP"],
@@ -290,6 +291,12 @@ func _draw_icons() -> void:
 			to_map(reader.portal_pos()),
 			k
 		)
+		if reader.has_deep_portal():  # v0.5.0 RT
+			draw_icon(
+				&"portal_deep" if reader.gate_open(WorldReader.ROUTE_DEEP) else &"portal_sealed",
+				to_map(reader.deep_portal_pos()),
+				k
+			)
 
 
 func _draw_player() -> void:
@@ -355,6 +362,10 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			)
 			draw_circle(p, s * 1.5, Color(MinimapStyle.SHRINE, MinimapStyle.GLOW_ALPHA))
 			draw_colored_polygon(tri, MinimapStyle.SHRINE)
+		&"portal_deep":
+			draw_circle(p, s * 1.9, Color(MinimapStyle.PORTAL_DEEP, 0.25))
+			draw_arc(p, s * 1.1, 0.0, TAU, 20, MinimapStyle.PORTAL_DEEP_RIM, 2.0, true)
+			draw_circle(p, s * 0.55, MinimapStyle.PORTAL_DEEP)
 		&"overrun", &"overrun_cleared":  # v0.4.0 AB: a red crossed-swords mark in a square
 			var col := MinimapStyle.OVERRUN if kind == &"overrun" else MinimapStyle.PORTAL_SEALED
 			if kind == &"overrun":

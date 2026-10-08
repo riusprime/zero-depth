@@ -104,6 +104,8 @@ func sync(reader: WorldReader) -> void:
 	_title.text = (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
 	)
+	if reader.reward_is_epic(r):  # v0.5.0 RT
+		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)
