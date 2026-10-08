@@ -134,7 +134,7 @@ merged.
   floor (D5), altar by the start, queued-enemy scaling, Gun ×1.00 (D6), the expected-build bot (`RunBot`, `TuningRun`,
   `scripts/sim/tuning_sim.gd`). Sims: floor-1 deaths 100 % → 90 %, median death 61 s → 210 s, alive at 2:00 1/20 →
   20/20; bands missed (reported, Q-T1–T4). Readable cause 0 violations; boss bands in with the Gun at ×1.00; horde
-  bench still missed. Goldens unchanged. `MIN_TEST_COUNT` 964.
+  bench still missed. Goldens unchanged. `MIN_TEST_COUNT` 964 (1076 after round 2).
 - 2026-10-08 — TU round 2: merged the lead branch (SH, RT, EV, then SCD); heal orbs (D8), floor-1 boss −20 % and a
   full heal at its door (D9), peaks a minute before the measured boss door (D7: floor 1 2:24, floors 2–3 1:30, tuned
   c5→c8), shards by floor time, salvage refund 25 → 10 (lead fix), the bot's portal fix. Floor-1 deaths 90 % → 25 %;
