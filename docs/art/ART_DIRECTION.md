@@ -178,6 +178,18 @@ replaces a code body (whole-body motion until rigged).
 2. **Owner-supplied models later.** `.glb` files go in `assets/models/<kind>/`. A manifest
    (`assets/models/manifest.json`, with `id`, `path` and `sha256` per model) is checked by an asset test. A model
    replaces its primitive by id; if it's missing, the primitive draws.
+   **Owner-supplied UI art (v0.5.5 A4).** The pick cards' 12 crystal frames are the owner's own art, cropped from
+   [`../roadmap/v0.5.5/refs/card_templates_empty.webp`](../roadmap/v0.5.5/refs/card_templates_empty.webp) by
+   `scripts/art/crop_card_frames.py` into `assets/ui/cards/frame_<colour>.png` (251 × 505, RGBA). The manifest
+   (`assets/ui/cards/manifest.json`: source and its sha256, licence, and per frame `id`, `path`, `sha256`, `size`
+   and the dark `panel` box) is checked by `tests/content/test_card_frame_assets.gd`; `--check` re-crops in memory
+   and fails if a file differs. The card layout follows
+   [`../roadmap/v0.5.5/refs/card_style_reference.webp`](../roadmap/v0.5.5/refs/card_style_reference.webp): the
+   frame's crystals on top, then inside its dark panel the title in coloured capitals, the sentence, the rarity line
+   between the card's icon and a rarity gem; a glow behind the frame for rare, epic and ability cards. The frame
+   colour is the card's family, one table in `src/presentation/hud/card_frames.gd` (red damage, blue projectiles
+   and frost, amber economy and stats, purple dash and void, green healing, silver time and slow, pink crit, cyan
+   area, orange fire, violet curses, gold epic, indigo trinkets; the owner may remap).
 3. **2D art** (item icons, key art, the app icon): agents write prompts, the owner generates the images, and the
    lead installs them. This is Deathventory's `ART_PROMPTS.json` flow. Prompts live in
    `docs/art/ART_PROMPTS.json` with `id`, `kind`, `size`, `prompt`, `style_ref` and `status`. Delivered images go

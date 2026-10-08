@@ -14,6 +14,9 @@ extends Control
 signal picked(value: int)
 
 const SALVAGE_COLUMNS := 4
+## v0.5.5 A4: the stock's crystal cards are drawn a little smaller than the pick's, so the services and the salvage
+## list still fit under them at 1080p.
+const CARD_SCALE := 0.92
 const POOR := Color("#FF5A4D")
 
 ## Off while a menu sits over the panel.
@@ -215,7 +218,7 @@ func _add_card(reader: WorldReader, k: int, c: Dictionary) -> void:
 	box.name = "ShopCard%d" % (k + 1)
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.add_theme_constant_override("separation", 6)
-	var slot := PickSlot.new(k)
+	var slot := PickSlot.new(k, CARD_SCALE)
 	box.add_child(slot)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER

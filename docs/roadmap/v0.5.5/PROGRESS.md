@@ -12,6 +12,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | Plan: every line of the feedback | this commit |
+| CD | Altar, chest and shop picks show the owner's crystal card frames (12 cropped frames in `assets/ui/cards/`, colour by card family from one table in `CardFrames`, coloured caps title, sentence, rarity line with the card's icon and a rarity gem, glow for rare/epic/ability, cursed offers in the curse frame; text fits in en and es); 3 HUD + pause mockups for the A5 pick ([`evidence/CARDS.md`](evidence/CARDS.md), [`evidence/UI_MOCKUPS.md`](evidence/UI_MOCKUPS.md)) | v0.5.5 Step CD commit |
 
 ## Goldens changed on purpose
 - none
@@ -27,7 +28,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | X2 Echoes / Core theft / Depth descent proposals | 2026-10-08 | "yes to all three, go ahead" (also Deep S5 and Blade B1) | 2026-10-08 |
 | X3 EI-05 sub-streams | 2026-10-08 | "Approve" | 2026-10-08 |
 | X1b boss reward | 2026-10-08 | "Pick a legendary card" | 2026-10-08 |
-| A5 UI mockup pick | — | pending (mockups in step CD) | |
+| A5 UI mockup pick: A Crystal crown / B Ember stone / C Cold glass ([`evidence/UI_MOCKUPS.md`](evidence/UI_MOCKUPS.md)) | 2026-10-08 | pending | |
+| A4 card family → frame colour mapping (as built in `CardFrames.FAMILY_OF`; see [`evidence/CARDS.md`](evidence/CARDS.md)) | 2026-10-08 | pending (starting mapping) | |
 
 ## History
 - 2026-10-08: plan written from the owner's v0.5.0 playtest; wave 1 (EC, CD, LK) started.
+- 2026-10-08: Step CD done: crystal pick cards and the A5 mockups (the in-game HUD is unchanged until the pick).
