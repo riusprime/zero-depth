@@ -38,6 +38,10 @@ func test_a_kill_drops_a_heal_orb_and_walking_onto_it_heals() -> void:
 			# TEST HELPER (labelled): the Lifesprout card, as a chest pick would give it.
 			Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.COMMON)
 			assert_eq(Stats.heal_orb_chance(w), 100, "the card: 10 % of kills")
+			# More copies up to the cap, so the fight needs few kills on any floor layout (v0.5.9 themed rooms).
+			for _n in 4:
+				Stats.add_card(w, Stats.Stat.LIFESPROUT, Stats.Rarity.COMMON)
+			assert_eq(Stats.heal_orb_chance(w), 300, "stacked copies: the 30 % cap")
 		var best := -1
 		var best_d := INF
 		for i in range(1, r.actor_count()):
@@ -66,7 +70,13 @@ func test_a_kill_drops_a_heal_orb_and_walking_onto_it_heals() -> void:
 		e.joy_axis(axis, 0.0)
 	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
 	assert_gte(kills_without, 5, "five kills before the card")
-	assert_false(r.heal_orbs().is_empty(), "with the card a kill dropped a heal orb")
+	assert_false(
+		r.heal_orbs().is_empty(),
+		(
+			"with the card a kill dropped a heal orb (kills %d, before the card %d, dead %s, tick %d)"
+			% [w.kills, kills_without, r.player_dead(), w.tick]
+		)
+	)
 	if r.heal_orbs().is_empty():
 		return
 	await e.frames(2)
