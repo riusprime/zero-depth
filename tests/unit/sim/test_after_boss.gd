@@ -198,7 +198,11 @@ func test_the_portals_stay_open_while_you_explore() -> void:
 	CombatLab.idle(w, 1800)
 	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "still open after half a minute away")
 	assert_true(w.boss_flow.gate_open(Routes.Route.NORMAL))
-	assert_eq(w.boss_flow.gate_open(Routes.Route.DEEP), routes, "the Deep gate too, when the floor has one")
+	assert_eq(
+		w.boss_flow.gate_open(Routes.Route.DEEP),
+		routes,
+		"the Deep gate too, when the floor has one"
+	)
 	assert_false(w.boss_flow.exited())
 	assert_eq(_events_of(w, SimEvent.Kind.BOSS_DEFEATED).size(), 1, "the boss died once")
 
@@ -227,7 +231,9 @@ func _round_trip(w: World, base: World, label: String) -> World:
 	assert_eq(restored.state_hash(), w.state_hash(), "%s: restored hash" % label)
 	assert_eq(restored.walls.size(), w.walls.size(), "%s: the same walls" % label)
 	assert_eq(restored.boss_flow.door_sealed(), w.boss_flow.door_sealed(), "%s: the door" % label)
-	assert_eq(restored.boss_flow.portal_active(), w.boss_flow.portal_active(), "%s: portals" % label)
+	assert_eq(
+		restored.boss_flow.portal_active(), w.boss_flow.portal_active(), "%s: portals" % label
+	)
 	var b1 := FightBot.new(21)
 	var b2 := FightBot.new(21)
 	for i in 600:
@@ -253,7 +259,9 @@ func test_a_save_after_the_boss_restores_an_open_door_and_portals() -> void:
 	var r2 := _round_trip(w2, _world(4108), "exploring after the boss")
 	if r2 != null:
 		assert_false(r2.boss_flow.door_sealed())
-		assert_true(r2.boss_flow.gate_open(Routes.Route.NORMAL), "the portal is open after the restore")
+		assert_true(
+			r2.boss_flow.gate_open(Routes.Route.NORMAL), "the portal is open after the restore"
+		)
 
 
 func test_a_save_in_the_fight_then_the_boss_dies_after_the_restore() -> void:

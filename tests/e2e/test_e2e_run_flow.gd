@@ -112,7 +112,9 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(
 		hud.gate_text().begins_with(tr("HUD_PORTALS_OPEN")), "v0.5.0 RT: floor 1 opens both portals"
 	)
-	assert_true(hud.gate_text().ends_with(tr("HUD_EXPLORE_AFTER_BOSS")), "v0.5.0 PB: and you may explore")
+	assert_true(
+		hud.gate_text().ends_with(tr("HUD_EXPLORE_AFTER_BOSS")), "v0.5.0 PB: and you may explore"
+	)
 	var hp_before := w.actors.hp[0]
 	var owned := w.ability_owned.duplicate()
 	var levels := w.ability_levels.duplicate()

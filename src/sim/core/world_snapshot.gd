@@ -38,7 +38,8 @@ const WORLD_KEPT := {
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
-	&"_nav_open": "rebuilt: the field before the door sealed (apply re-seals a sealed door with add_wall_now)",
+	&"_nav_open":
+	"rebuilt: the field before the door sealed (apply re-seals a sealed door with add_wall_now)",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
