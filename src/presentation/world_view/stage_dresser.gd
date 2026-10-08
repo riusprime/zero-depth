@@ -27,6 +27,8 @@ const DOOR_CLEAR := 1.8
 const KEEP_CLEAR := 1.5
 const GRASS_STEP := 1.1
 const GRASS_CHANCE := 0.35
+## Chance of each of a cover piece's 1-3 base tufts.
+const BASE_GRASS_CHANCE := 0.7
 ## Rubble and debris pieces per square metre of room interior.
 const SCATTER_DENSITY := 0.03
 ## Heights of the walls the sim describes (StageView's EDGE_WALL_HEIGHT and SLAB_HEIGHT).
@@ -35,8 +37,9 @@ const SLAB_HEIGHT := 1.8
 
 
 ## Places the kit over a floor. `f` keys:
-## - "walls": [[center: Vector2, half: Vector2, yaw: float, kind: int]] (kind 0 structural, 1 cover slab), the
-##   same order and yaw as StageView.wall_specs;
+## - "walls": [[center: Vector2, half: Vector2, yaw: float, kind: int, piece (optional StringName)]] (kind 0
+##   structural, 1 cover slab; a slab that names its piece is drawn with it), the same order and yaw as
+##   StageView.wall_specs;
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
 ## - "biome": StringName; "seed": int.
 ## Returns [{"piece": StringName, "xform": Transform3D (scales the unit-box piece), "wall": the wall index it
@@ -173,6 +176,9 @@ static func _dress_slab(
 	var fr := _frame(w)
 	var length: float = fr["length"]
 	var depth: float = fr["depth"]
+	if w.size() > 4 and StringName(w[4]) != &"":
+		_named(out, i, fr, StringName(w[4]), rng)
+		return
 	if length / depth < 1.6:
 		var pick: StringName
 		if biome == &"night_rocks":
@@ -202,6 +208,18 @@ static func _dress_slab(
 		var h := _jitter(rng, SLAB_HEIGHT)
 		_add(out, piece, _place(fr, a + seg * 0.5, 0.0, Vector3(seg, h, depth)), i, &"cover")
 		a += seg
+
+
+## A box that names its piece (a vignette's, PLAN L8): that piece fills the footprint at its natural height; a
+## light piece (a burn barrel) also carries its light.
+static func _named(
+	out: Array, i: int, fr: Dictionary, piece: StringName, rng: RandomNumberGenerator
+) -> void:
+	var spec: Dictionary = KitModels.SPECS.get(piece, {"height": SLAB_HEIGHT, "role": &"cover"})
+	var kind: StringName = &"light" if spec["role"] == &"light" else &"cover"
+	var h := _jitter(rng, float(spec["height"]))
+	var size := Vector3(fr["length"], h, fr["depth"])
+	_add(out, piece, _place(fr, 0.0, 0.0, size), i, kind)
 
 
 ## {wall index: [[along, side, piece]]}: where each room's light props go.
@@ -274,6 +292,22 @@ static func _light_slots(f: Dictionary, rng: RandomNumberGenerator) -> Dictionar
 static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> void:
 	var doors: Array = f.get("doors", [])
 	var keep: Array = f.get("keep_clear", [])
+	# Grass at the bases of cover pieces (the reference's tufts around every block), just outside each footprint.
+	for w: Array in f.get("walls", []):
+		if w[3] != 1:
+			continue
+		var fr := _frame(w)
+		var c: Vector2 = w[0]
+		var axis2 := Vector2(fr["axis"].x, -fr["axis"].z)
+		var depth2 := Vector2(fr["depth_axis"].x, -fr["depth_axis"].z)
+		for k in rng.randi_range(1, 3):
+			var side := 1.0 if rng.randf() < 0.5 else -1.0
+			var along := rng.randf_range(-0.5, 0.5) * float(fr["length"])
+			var p := c + axis2 * along + depth2 * side * (float(fr["depth"]) * 0.5 + 0.2)
+			if _near_any_rect(p, doors, KEEP_CLEAR) or _near_any_point(p, keep, KEEP_CLEAR):
+				continue
+			if rng.randf() < BASE_GRASS_CHANCE:
+				_decor(out, &"grass_tuft", p, rng.randf_range(0.6, 1.0), rng)
 	for room: Rect2 in f.get("rooms", []):
 		# Grass along the room's four walls.
 		var inner := room.grow(-0.3)

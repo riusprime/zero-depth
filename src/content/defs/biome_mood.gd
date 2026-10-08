@@ -36,6 +36,10 @@ extends Resource
 @export var warm_light_color := Color(1.0, 0.62, 0.3)
 @export var warm_light_energy := 2.2
 @export var warm_light_range := 6.0
+## The small warm light the hero carries (owner Q3, 2026-10-08: "yes to the hero light"), so the hero's
+## surroundings stay readable in dark rooms; energy 0 turns it off.
+@export var hero_light_energy := 1.2
+@export var hero_light_range := 4.5
 ## Screen-edge darkening, 0 (none) to 1.
 @export var vignette := 0.35
 
@@ -58,6 +62,8 @@ func problems() -> PackedStringArray:
 		["warm_light_energy", warm_light_energy, 0.0, 16.0],
 		["warm_light_range", warm_light_range, 0.5, 30.0],
 		["vignette", vignette, 0.0, 1.0],
+		["hero_light_energy", hero_light_energy, 0.0, 8.0],
+		["hero_light_range", hero_light_range, 0.5, 15.0],
 	]:
 		if f[1] < f[2] or f[1] > f[3]:
 			out.append("%s: %s is outside %s..%s" % f)

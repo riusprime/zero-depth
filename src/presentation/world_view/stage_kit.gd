@@ -123,6 +123,22 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	add_child(flame)
 
 
+## The hero's light (owner Q3): a small warm omni light at chest height, carried by the hero's node. No shadow,
+## so it costs little; enemies still carry no light (PRESENTATION_CONTRACTS §7).
+static func hero_light(mood: BiomeMood) -> OmniLight3D:
+	if mood == null or mood.hero_light_energy <= 0.0:
+		return null
+	var l := OmniLight3D.new()
+	l.name = "HeroLight"
+	l.light_color = mood.warm_light_color.lerp(Color.WHITE, 0.35)
+	l.light_energy = mood.hero_light_energy
+	l.omni_range = mood.hero_light_range
+	l.omni_attenuation = 1.3
+	l.position = Vector3(0, 1.3, 0)
+	l.shadow_enabled = false
+	return l
+
+
 ## Fades every piece of the walls at `indices` (dithered) and restores the rest; only changed walls are touched.
 func set_faded(indices: PackedInt32Array) -> void:
 	var want := {}
