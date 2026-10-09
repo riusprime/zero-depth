@@ -184,10 +184,10 @@ func _hold_statuses() -> void:
 	var w: World = _main.driver.world
 	var a := w.actors
 	var looks: Array = [
-		{"burn_stacks": 6},
+		{"burn_stacks": 6, "burn_t": 120},
 		{"frozen_t": 30},
-		{"poison_stacks": 6},
-		{"bleed_stacks": 7, "shock_stacks": 3},
+		{"poison_stacks": 6, "poison_t": 120},
+		{"bleed_stacks": 7, "bleed_t": 120, "shock_stacks": 3, "shock_t": 120},
 	]
 	for k in _dummies.size():
 		var i := a.ids.find(_dummies[k])
