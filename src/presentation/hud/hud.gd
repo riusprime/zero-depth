@@ -5,8 +5,10 @@ extends Control
 ## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
 ## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
 ## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
+## v0.5.5 A5 (owner pick B "Ember stone"): the groups sit on chipped stone slabs (HudStyle.EMBER); the HP and top
+## plates carry the warm ember line; HP is a red bar; the skill and vent hints get small slabs of their own.
 
-const BAR := Vector2(300, 8)
+const BAR := Vector2(300, 10)
 ## The dash / utility readiness squares (px).
 const PIP := 24.0
 ## The top plate's width (px).
@@ -91,8 +93,8 @@ var _biome_key := ""
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
-var _top_frame := HudFrame.new(Vector2(18, 6))
-var _hp_frame := HudFrame.new(Vector2(14, 8))
+var _top_frame := HudFrame.new(Vector2(20, 8))
+var _hp_frame := HudFrame.new(Vector2(16, 10))
 var _t := 0.0
 
 
@@ -144,7 +146,7 @@ func _init() -> void:
 	_build_rewards()
 	add_child(gamble)
 	add_child(kit_hud)  # v0.3.5 K
-	kit_hud.hp_anchor = _hp_bar
+	kit_hud.hp_anchor = _hp_frame  # v0.5.5 A5: the skill's slab sits beside the HP slab
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_hud)  # v0.4.0 BS
 	add_child(overrun_hud)  # v0.4.0 AB
@@ -289,13 +291,14 @@ func _build_corner() -> void:
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(corner)
 	_hp_frame.name = "HpPlate"
+	_hp_frame.ember = true
 	corner.add_child(_hp_frame)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 7)
 	_hp_frame.add_child(col)
 	col.add_child(_hp_text)
 	_hp_bar.name = "HpBar"
-	_hp_bar.color = ThemePalette.color(&"player_bar")
+	_hp_bar.color = HudStyle.hp_color()
 	_hp_bar.custom_minimum_size = BAR
 	col.add_child(_hp_bar)
 	_hp_bar.add_child(_regen)
@@ -309,6 +312,7 @@ func _build_corner() -> void:
 ## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
 func _build_top() -> void:
 	_top_frame.name = "TopPlate"
+	_top_frame.ember = true
 	_top_frame.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_top_frame.position = Vector2(-TOP_W * 0.5, 10)
 	_top_frame.custom_minimum_size = Vector2(TOP_W, 0)

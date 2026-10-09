@@ -6,6 +6,7 @@ extends Control
 ##   bound key and the build's skill name); lit when the skill is ready;
 ## - the vent hint, beside the heat meter: "[F] VENT", bright while venting would blast (Hot), dim otherwise.
 ## Reads WorldReader only (EI-07); the keys come from the live bindings (InputRebind), so a remap shows at once.
+## v0.5.5 A5: each sits on a small HudFrame slab of its own (the HUD's Ember stone look), beside its anchor.
 
 const PIP := 36.0
 const GAP := 16.0
@@ -16,6 +17,8 @@ const DIM_ALPHA := 0.4
 var hp_anchor: Control
 var heat_anchor: Control
 var _skill := HBoxContainer.new()
+var _skill_plate := HudFrame.new(Vector2(10, 6))
+var _vent_plate := HudFrame.new(Vector2(10, 4))
 var _skill_back := ColorRect.new()
 var _skill_fill := ColorRect.new()
 var _skill_label := Label.new()
@@ -39,20 +42,27 @@ func _init() -> void:
 	_skill_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_skill_label, FONT_SIZE, true)
 	_skill.add_child(_skill_label)
-	add_child(_skill)
+	_skill_plate.name = "SkillPlate"
+	_skill_plate.add_child(_skill)
+	add_child(_skill_plate)
 	_vent.name = "VentHint"
 	_vent.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	HudStyle.style_label(_vent, FONT_SIZE, true)
-	add_child(_vent)
+	_vent_plate.name = "VentPlate"
+	_vent_plate.add_child(_vent)
+	add_child(_vent_plate)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_skill.visible = false
 	_vent.visible = false
+	_skill_plate.visible = false
+	_vent_plate.visible = false
 
 
 func sync(reader: WorldReader) -> void:
 	var s := reader.skill_state()
 	_skill.visible = not s.is_empty()
+	_skill_plate.visible = _skill.visible
 	if _skill.visible:
 		var cd := float(s["cooldown"])
 		_ready = 1.0 - clampf(cd / maxf(1.0, float(s["cooldown_total"])), 0.0, 1.0)
@@ -70,6 +80,7 @@ func sync(reader: WorldReader) -> void:
 		_skill_label.modulate.a = 1.0 if s["ready"] else 0.7
 	var h := reader.heat_state()
 	_vent.visible = not h.is_empty()
+	_vent_plate.visible = _vent.visible
 	if _vent.visible:
 		_vent.text = tr("HUD_KEY_HINT") % [key_text(&"vent"), tr("HUD_VENT")]
 		var hot: bool = h["vent_ready"]
@@ -89,10 +100,14 @@ static func key_text(action: StringName) -> String:
 func _place() -> void:
 	if hp_anchor != null and hp_anchor.is_inside_tree():
 		var r := hp_anchor.get_global_rect()
-		_skill.global_position = Vector2(r.end.x + GAP, r.position.y + (r.size.y - PIP) * 0.5)
+		var ps := _skill_plate.get_combined_minimum_size()
+		_skill_plate.size = ps
+		_skill_plate.global_position = Vector2(r.end.x + GAP, r.end.y - ps.y)
 	if heat_anchor != null and heat_anchor.is_inside_tree():
 		var m := heat_anchor.get_global_rect()
-		_vent.global_position = Vector2(m.end.x + GAP * 0.5, m.end.y - _vent.size.y - 8.0)
+		var pv := _vent_plate.get_combined_minimum_size()
+		_vent_plate.size = pv
+		_vent_plate.global_position = Vector2(m.end.x + GAP * 0.5, m.end.y - pv.y)
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------

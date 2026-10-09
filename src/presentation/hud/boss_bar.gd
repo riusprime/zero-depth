@@ -6,6 +6,7 @@ extends Control
 ## v0.3.0 BX (L22): while the boss rises the bar fills from empty to full over exactly its intro ticks
 ## (WorldReader.boss_intro_permille), then shows its real HP.
 ## v0.3.5 F15: calmer; plain type, a thin bar on a faint track, a hairline stagger meter.
+## v0.5.5 A5 (Ember stone): in HudStyle.EMBER the bar sits on a stone slab with the ember line (HudStyle.draw_plate).
 
 const BAR := Vector2(560, 8)
 const STAGGER := Vector2(560, 3)
@@ -23,7 +24,7 @@ var _boss_key := &""
 func _init() -> void:
 	name = "BossBar"
 	set_anchors_preset(Control.PRESET_CENTER_TOP)
-	position = Vector2(-BAR.x * 0.5, 78)
+	position = Vector2(-BAR.x * 0.5, 100)
 	custom_minimum_size = Vector2(BAR.x, 44)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_name.name = "BossName"
@@ -96,6 +97,12 @@ func stagger_fraction() -> float:
 
 func boss_name() -> String:
 	return _name.text
+
+
+func _draw() -> void:
+	if HudStyle.current == HudStyle.Style.EMBER:
+		var h := 26.0 + BAR.y + 3.0 + STAGGER.y
+		HudStyle.draw_plate(self, Rect2(-18, -4, BAR.x + 36, h + 16), true)
 
 
 func _build_marks(thresholds: PackedInt32Array) -> void:

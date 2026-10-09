@@ -36,7 +36,7 @@ func fraction() -> float:
 func fill_color() -> Color:
 	if not warn:
 		return color
-	return color.lerp(HudStyle.WARN, 0.55 + 0.45 * HudStyle.pulse(_t))
+	return color.lerp(HudStyle.warn_pulse(style), 0.55 + 0.45 * HudStyle.pulse(_t))
 
 
 func _process(delta: float) -> void:
@@ -51,8 +51,12 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	var w := size.x
 	var h := size.y
-	draw_rect(Rect2(0, 0, w, h), Color(0, 0, 0, 0.42))
+	var ember := style == HudStyle.Style.EMBER
+	draw_rect(Rect2(0, 0, w, h), Color(0, 0, 0, 0.6) if ember else Color(0, 0, 0, 0.42))
 	draw_rect(Rect2(0, 0, w * _echo, h), Color(1, 1, 1, 0.3))
 	draw_rect(Rect2(0, 0, w * _fraction, h), fill_color())
+	if ember:  # v0.5.5 A5: a lit top edge on the fill and a dark sunk rim round the track
+		draw_rect(Rect2(0, 0, w * _fraction, 1), Color(1, 1, 1, 0.22))
+		draw_rect(Rect2(-1, -1, w + 2, h + 2), HudStyle.STONE_EDGE, false, 1.0)
 	if style == HudStyle.Style.SLATE:
 		draw_rect(Rect2(0, 0, w, h), HudStyle.line(style), false, 1.0)

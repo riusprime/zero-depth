@@ -113,7 +113,7 @@ func _draw() -> void:
 		var whole := map_rect.grow(24)
 		whole.size.x += MinimapStyle.LEGEND_WIDTH
 		draw_style_box(panel, whole)
-	else:
+	elif draws_backdrop():
 		draw_style_box(panel, Rect2(Vector2.ZERO, size))
 	_draw_rooms()
 	_draw_doors()
@@ -121,6 +121,32 @@ func _draw() -> void:
 	_draw_player()
 	if full:
 		_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
+	else:
+		_draw_corner_ticks()
+
+
+## True when this view draws a dark panel behind the map: the full map only (v0.5.5 A5: the corner map floats).
+func draws_backdrop() -> bool:
+	return full or MinimapStyle.CORNER_PANEL
+
+
+## v0.5.5 A5: four small ember L-ticks at the corner map's corners, over a dark halo, so its window reads without a
+## panel.
+func _draw_corner_ticks() -> void:
+	var arm := MinimapStyle.TICK_ARM
+	var e := size - Vector2(1.5, 1.5)
+	var o := Vector2(1.5, 1.5)
+	var corners := [
+		[o, Vector2(1, 0), Vector2(0, 1)],
+		[Vector2(e.x, o.y), Vector2(-1, 0), Vector2(0, 1)],
+		[e, Vector2(-1, 0), Vector2(0, -1)],
+		[Vector2(o.x, e.y), Vector2(1, 0), Vector2(0, -1)],
+	]
+	for c: Array in corners:
+		var p: Vector2 = c[0]
+		var pts := PackedVector2Array([p + c[1] * arm, p, p + c[2] * arm])
+		draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
+		draw_polyline(pts, MinimapStyle.TICK, 2.0)
 
 
 ## Sets the centre, scale and origin; returns the rect the floor is drawn in.
@@ -165,9 +191,13 @@ func _draw_rooms() -> void:
 	for r in reader.floor_room_count():
 		if not state.is_discovered(r) or r == state.current:
 			continue
+		if not draws_backdrop():
+			draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_WASH)
 		draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_FILL)
 		_outline(r, MinimapStyle.ROOM_EDGE, MinimapStyle.LINE)
 	if state.is_discovered(state.current):
+		if not draws_backdrop():
+			draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.ROOM_WASH)
 		draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.CURRENT_FILL)
 		_outline(state.current, MinimapStyle.CURRENT_EDGE, 2.0)
 
@@ -352,6 +382,9 @@ func _draw_player_arrow(p: Vector2, dir: Vector2, k: float) -> void:
 		]
 	)
 	draw_circle(p, s * 1.3, Color(MinimapStyle.PLAYER, 0.18))
+	var halo := tri.duplicate()
+	halo.append(tri[0])
+	draw_polyline(halo, MinimapStyle.SHADOW, MinimapStyle.SHADOW_WIDTH, true)  # v0.5.5 A5
 	draw_colored_polygon(tri, MinimapStyle.PLAYER)
 
 
