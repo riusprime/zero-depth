@@ -93,6 +93,13 @@ asked to talk it through), **Kept** (no change wanted).
 | X2 | "Let's discuss" (Echoes, Core theft, Depth descent) | Proposals below ("Signature systems") | **Decided 2026-10-08** ("yes to all three") | — |
 | X3 | "Let's discuss" (EI-05 sub-streams `map:event`, `loot:event`, `ai:elite`) | Approved: EI-05 lists `map:event`, `loot:event`, `ai:elite` | **Decided 2026-10-08** ("Approve") | LOCKED_DECISIONS |
 
+### Added by the owner on 2026-10-09
+| # | Owner line (verbatim) | Decision | Status | Where |
+|---|---|---|---|---|
+| L1 | "change the texture from first floor to match the rest of the floors, we do not need to run all the tests for this change since we already know it works on other floors" | Ruins floors use `ground_b` like Night Rocks and Red Canyon (`StageView.GROUND_TEXTURES`) | Done (`cb11ac4`) | lead |
+| L2 | "at some point we changed blade attack to left trigger, it should be right trigger by default, not all test or full suite for this either" | `primary` on the right trigger; the Blade and the Gun share it (a Blade run never shoots, a Gun run never swings) | Done (`6b3a716`) | lead |
+| L3 | "we need to change the way character looks, it should always be looking towards the movement and not only the camera, because we have him running backwords most of the time, so the orientation of the model should match the movement and not the aiming for blades, for the shooting we keep this but when you shoot it changes so running matches unless you start shooting that it changes, it should behave slightly different for each weapon for it to make sense" | The body faces the movement. Blade: turns to the swing's angle only during a swing or a skill. Gun: faces the aim while shooting and for 0.5 s after the last shot (`PlayerAvatar.GUN_AIM_HOLD_TICKS`, starting value), then back to the movement | Done (`6b3a716`, `4ceae9a`) | lead |
+
 ## Direction: open or sealed rooms (X1)
 **Recommendation: a hybrid, "open floor, sealed arenas".** The floor stays connected and open (you roam, hordes
 grow with time, you walk back to the shop and the shrine, which you did), but about a third of the rooms are arenas
