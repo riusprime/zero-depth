@@ -1,28 +1,39 @@
 class_name ShardDressing
 extends RefCounted
 ## Where the crystal-shard clusters go on a floor (v0.6.1 Step SD, owner R4: "we could also add to the generation
-## map or the initial room the shard looks"). A pure function like StageDresser: the floor's geometry in, the
-## clusters' crystals out, the same for the same seed. Its draws come from its own cosmetic stream (a
-## RandomNumberGenerator seeded from the floor seed, offset from the dresser's and the props'), never from or into
-## the sim (EI-05). Presentation only: no cluster has collision, so none may look like it needs it.
+## map or the initial room the shard looks"; Step SD2, owner A3: "Very frequent on the starting room and be an
+## element of all rooms, but disparity not all equally distributid some zones have more density than others,
+## specially walls at smaller rooms"). A pure function like StageDresser: the floor's geometry in, the clusters'
+## crystals out, the same for the same seed. Its draws come from its own cosmetic stream (a RandomNumberGenerator
+## seeded from the floor seed, offset from the dresser's and the props'), never from or into the sim (EI-05).
+## Presentation only: no cluster has collision, so none may look like it needs it.
 ##
 ## Rules (starting values, tuned on screenshots):
 ## 1. Looks solid = is solid (StageDresser rule 1). A crystal taller than StageDresser.DECOR_MAX_HEIGHT grows out
 ##    of a structural wall: its base sits inside the wall's footprint. On open floor only low shards (no taller than
 ##    the decoration limit) spill from the cluster's foot, and floating fragments hover above head height.
-## 2. Clusters hug the room's back walls (the -X and +Y sides, which face the iso camera and are never faded by
-##    occlusion), mostly at the back corner, so they never hide the floor or stand in front of a fight.
+## 2. Clusters line the room's walls. The back walls (-X and +Y faces, never faded by occlusion) take full-size
+##    clusters and the back corner. The front walls (+X and -Y faces, between the room and the camera, faded when
+##    they hide the hero) take only low clusters: no crystal over FRONT_MAX_HEIGHT (just over the 1 m wall top),
+##    leaning away from the room, and no floating fragments, so a faded front wall never leaves a crystal in front
+##    of the fight.
 ## 3. Spacing (v0.5.9 "everything touches a wall or leaves a 2.2 m gap"): every cluster touches its wall; its foot
-##    keeps SLAB_GAP from every cover piece and CLUSTER_SPACING from other clusters; DOOR_CLEAR from doorways and
-##    arena barriers; KEEP_CLEAR from rewards, gates, the shop, the shrine, events and light props; SPAWN_CLEAR from
-##    enemy spawn spots; START_CLEAR from the hero's start.
-## 4. Density by the room's theme: Ruined hall and Overgrown 0-3, Camp 0-1, any other room 0-2. The start room
-##    gets the hero cluster (bigger, at its back corner, with a small cold light) and no small ones. Boss arenas
-##    get none.
+##    keeps SLAB_GAP from every cover piece; DOOR_CLEAR from doorways and arena barriers; KEEP_CLEAR from rewards,
+##    gates, the shop, the shrine, events and light props; SPAWN_CLEAR from enemy spawn spots; START_CLEAR from the
+##    hero's start; CLUSTER_GAP between two clusters' feet (SD2: clusters may line a wall, so this is a gap, not
+##    SD's 3 m spacing).
+## 4. Density (SD2) is uneven: a smooth "vein" field over the floor (a few dense zones per floor, seeded on room
+##    walls, plus weaker minor veins; `veins`/`vein_at`) drives the chance that a step along a wall gets a cluster
+##    and how big and bright it is. Smaller rooms get more per wall metre (the chance scales with
+##    REF_AREA / area, clamped); the room's theme nudges it (Ruined hall and Overgrown richer, Camp poorer). Every room
+##    but the boss arena gets at least one cluster (the best spot that fits). The start room is crystal-rich: the
+##    hero cluster (bigger, at its back corner, with a small cold light) and most of its free wall length lined with
+##    mixed sizes, more low shards and fragments. Boss arenas get none (their look is the arena's: v0.6.0).
 
 ## The v0.5.9 slab gap (the floor generator's gap between groups; the vignettes' spacing).
 const SLAB_GAP := 2.2
-const CLUSTER_SPACING := 3.0
+## SD2: the gap between two clusters' feet (SD kept 3 m between them; lining a wall needs them closer).
+const CLUSTER_GAP := 0.3
 const DOOR_CLEAR := 1.8
 const KEEP_CLEAR := 1.5
 const SPAWN_CLEAR := 0.6
@@ -37,16 +48,43 @@ const SMALL_SPREAD := 0.45
 const HERO_SPREAD := 1.0
 ## Wall depth probes (m from the face) and the depth used at most.
 const DEPTH_PROBES: Array[float] = [0.3, 0.45, 0.6]
-const ATTEMPTS := 14
 const HERO_ATTEMPTS := 30
+## The fallback (a room with no cluster after its walk): a finer walk and a tighter cluster.
+const FALLBACK_STEP := 0.5
+const FALLBACK_END := 0.55
+const TIGHT_FOOT := 0.42
+const TIGHT_REACH := 0.22
+const TIGHT_SPREAD := 0.3
 ## How far around a room anything can still matter to its clusters (the widest clearance plus the deepest wall).
 const NEAR := 5.0
-## Density weights per theme (index = clusters in the room).
-const WEIGHTS_RICH: Array[float] = [0.1, 0.35, 0.35, 0.2]
-const WEIGHTS_CAMP: Array[float] = [0.6, 0.4]
-const WEIGHTS_PLAIN: Array[float] = [0.35, 0.45, 0.2]
 ## Floating fragments hover at least this high (above the hero's head).
 const FRAGMENT_MIN_Y := 1.1
+## SD2: no crystal on a front (camera-side) wall stands taller than this: its tip just shows over the 1 m wall.
+const FRONT_MAX_HEIGHT := 1.4
+## SD2 density (starting values). The walk along each wall: one candidate every WALK_STEP m (START_STEP in the
+## start room). A candidate gets a
+## cluster with chance (BASE_CHANCE + VEIN_CHANCE * vein) * size factor * theme factor, at most MAX_CHANCE; the
+## start room's chance is START_CHANCE everywhere.
+const WALK_STEP := 1.1
+const START_STEP := 0.8
+const BASE_CHANCE := 0.12
+const VEIN_CHANCE := 0.85
+const MAX_CHANCE := 0.92
+const START_CHANCE := 0.9
+## The size factor: REF_AREA / room area, clamped (a median room is about 250 m²).
+const REF_AREA := 250.0
+const SIZE_MIN := 0.55
+const SIZE_MAX := 2.5
+const THEME_RICH := 1.25
+const THEME_CAMP := 0.6
+## The veins: major ones (the dense zones) and minor ones, each [count min, count max, radius min, radius max,
+## strength].
+const MAJOR_VEINS: Array[float] = [3.0, 5.0, 6.0, 10.0, 1.0]
+const MINOR_VEINS: Array[float] = [4.0, 7.0, 3.0, 5.0, 0.45]
+## How much brighter a cluster at a vein's centre glows (its crystals' glow factor goes 1 .. 1 + VEIN_GLOW).
+const VEIN_GLOW := 0.35
+## The hero cluster's crystals glow this much more than the room's (SD's hero room energy 0.7 over 0.45).
+const HERO_GLOW := 1.55
 
 
 ## Places the clusters. `f` keys:
@@ -56,10 +94,10 @@ const FRAGMENT_MIN_Y := 1.1
 ##   "boss_room": int;
 ## - "doors": [Rect2] (doorways and arena barriers); "keep_clear": [Vector2]; "spawns": [Vector2];
 ##   "start": Vector2; "seed": int.
-## Returns [{"room": int, "hero": bool, "foot": Vector2 (the foot's centre), "radius": float, "inward": Vector2,
-## "crystals": [{"xform": Transform3D (scales the unit crystal), "base": Vector2, "radius": float,
-## "height": float, "tall": bool, "variant": int}], "fragments": [Transform3D], "light": Vector3 (the hero's only;
-## Vector3.INF for none)}].
+## Returns [{"room": int, "hero": bool, "front": bool, "vein": float, "foot": Vector2 (the foot's centre),
+## "radius": float, "inward": Vector2, "crystals": [{"xform": Transform3D (scales the unit crystal),
+## "base": Vector2, "radius": float, "height": float, "tall": bool, "variant": int, "glow": float}],
+## "fragments": [Transform3D], "light": Vector3 (the hero's only; Vector3.INF for none)}].
 static func place(f: Dictionary) -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(f.get("seed", 0)) * 7919 + 9241  # the cosmetic stream: presentation only
@@ -68,22 +106,162 @@ static func place(f: Dictionary) -> Array:
 	var themes: Array = f.get("themes", [])
 	var start := int(f.get("start_room", -1))
 	var boss := int(f.get("boss_room", -1))
+	var field := veins(rooms, boss, rng)  # the stream's first draws: floor_veins(f) gives the same field
 	for r in rooms.size():
 		if r == boss:
 			continue
 		var near := _local(f, rooms[r])
+		var mine: Array = []
 		if r == start:
-			var hero := _try_cluster(near, r, true, out, rng)
+			var hero := _try_hero(near, r, out, rng)
 			if not hero.is_empty():
 				out.append(hero)
-			continue
+				mine.append(hero)
 		var t := StringName(themes[r]) if r < themes.size() else &""
-		var want := _weighted(rng, _weights(t))
-		for k in want:
-			var c := _try_cluster(near, r, false, out, rng)
+		var chance := _chance_scale(rooms[r], t)
+		var candidates := _walk(rooms[r], rng, START_STEP if r == start else WALK_STEP)
+		for cand: Array in candidates:
+			var v := vein_at(field, cand[0])
+			cand.append(v)
+			var p := (
+				START_CHANCE
+				if r == start
+				else minf((BASE_CHANCE + VEIN_CHANCE * v) * chance, MAX_CHANCE)
+			)
+			if rng.randf() >= p:
+				continue
+			var c := _try_at(near, r, cand, r == start, out, rng)
+			if c.is_empty():
+				# Where a foot on the floor breaks a rule (mostly the slab gap), crystals only in the wall top.
+				c = _cluster(
+					near, r, cand, _wall_only(_spec(v, r == start, cand[3], rng)), out, rng
+				)
 			if not c.is_empty():
 				out.append(c)
+				mine.append(c)
+		if mine.is_empty():
+			# Every room gets one: a tight cluster at the best spot that fits, on a finer walk (back walls first,
+			# then the stronger vein).
+			var fine := _walk(rooms[r], rng, FALLBACK_STEP, FALLBACK_END)
+			for cand: Array in fine:
+				cand.append(vein_at(field, cand[0]))
+			fine.sort_custom(_better)
+			# A tight cluster first; where none fits (a small room crowded with cover and doorways), crystals
+			# only in the wall top: no foot on the floor (radius 0 at the wall face), no low shards.
+			for wall_only in [false, true]:
+				var done := false
+				for cand: Array in fine:
+					var spec := _tight_spec(cand[3], cand[5], wall_only, rng)
+					var c := _cluster(near, r, cand, spec, out, rng)
+					if not c.is_empty():
+						out.append(c)
+						done = true
+						break
+				if done:
+					break
 	return out
+
+
+## The vein field place(f) uses (for tests and tools): the same stream, its first draws.
+static func floor_veins(f: Dictionary) -> Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(f.get("seed", 0)) * 7919 + 9241
+	return veins(f.get("rooms", []), int(f.get("boss_room", -1)), rng)
+
+
+## The floor's vein field: [[centre: Vector2, radius: float, strength: float]]. Major veins sit on a room's wall
+## (a dense stretch); minor ones anywhere on a room's floor. Drawn from the cosmetic stream.
+static func veins(rooms: Array, boss: int, rng: RandomNumberGenerator) -> Array:
+	var out: Array = []
+	var pool: Array[int] = []
+	for r in rooms.size():
+		if r != boss:
+			pool.append(r)
+	if pool.is_empty():
+		return out
+	for spec: Array in [MAJOR_VEINS, MINOR_VEINS]:
+		var n := rng.randi_range(int(spec[0]), int(spec[1]))
+		for k in n:
+			var room: Rect2 = rooms[pool[rng.randi() % pool.size()]]
+			var p := Vector2(
+				rng.randf_range(room.position.x, room.end.x),
+				rng.randf_range(room.position.y, room.end.y)
+			)
+			if spec[4] >= 1.0:
+				# Onto the nearest wall of its room: a dense stretch of wall.
+				var dl := p.x - room.position.x
+				var dr := room.end.x - p.x
+				var db := p.y - room.position.y
+				var dt := room.end.y - p.y
+				var m := minf(minf(dl, dr), minf(db, dt))
+				if m == dl:
+					p.x = room.position.x
+				elif m == dr:
+					p.x = room.end.x
+				elif m == db:
+					p.y = room.position.y
+				else:
+					p.y = room.end.y
+			out.append([p, rng.randf_range(spec[2], spec[3]), spec[4]])
+	return out
+
+
+## The vein field's value at p, 0..1: each vein adds strength * (1 - (d / radius)²)² inside its radius (smooth).
+static func vein_at(field: Array, p: Vector2) -> float:
+	var v := 0.0
+	for vein: Array in field:
+		var x := p.distance_squared_to(vein[0]) / (float(vein[1]) * float(vein[1]))
+		if x < 1.0:
+			v += float(vein[2]) * (1.0 - x) * (1.0 - x)
+	return clampf(v, 0.0, 1.0)
+
+
+## The room's chance multiplier: its size factor times its theme factor.
+static func _chance_scale(room: Rect2, theme: StringName) -> float:
+	var size_f := clampf(REF_AREA / maxf(room.get_area(), 1.0), SIZE_MIN, SIZE_MAX)
+	match theme:
+		&"ruined_hall", &"overgrown":
+			return size_f * THEME_RICH
+		&"camp":
+			return size_f * THEME_CAMP
+	return size_f
+
+
+## The candidate spots along the room's walls: [[anchor, outward, along, front, corner]], the back corner first,
+## then each wall from a random offset every `step` m, `end` m clear of the room's corners.
+static func _walk(
+	room: Rect2, rng: RandomNumberGenerator, step := WALK_STEP, end := SMALL_SPREAD + 0.6
+) -> Array:
+	var out: Array = [
+		[
+			Vector2(room.position.x, room.end.y),
+			Vector2(-1, 1).normalized(),
+			Vector2(1, 1).normalized(),
+			false,
+			true
+		]
+	]
+	# [origin, along, outward, length, front]: -X and +Y are the back walls, +X and -Y the front ones.
+	var sides := [
+		[room.position, Vector2(0, 1), Vector2(-1, 0), room.size.y, false],
+		[Vector2(room.position.x, room.end.y), Vector2(1, 0), Vector2(0, 1), room.size.x, false],
+		[Vector2(room.end.x, room.position.y), Vector2(0, 1), Vector2(1, 0), room.size.y, true],
+		[room.position, Vector2(1, 0), Vector2(0, -1), room.size.x, true],
+	]
+	for s: Array in sides:
+		var length: float = s[3]
+		var t := end + rng.randf() * step
+		while t <= length - end:
+			out.append([(s[0] as Vector2) + (s[1] as Vector2) * t, s[2], s[1], s[4], false])
+			t += step
+	return out
+
+
+## Sort order for the fallback: back walls before front ones, then the stronger vein.
+static func _better(a: Array, b: Array) -> bool:
+	if a[3] != b[3]:
+		return not a[3]
+	return float(a[5]) > float(b[5])
 
 
 ## f with only what can matter near `room` (its walls, doorways and spots within NEAR of it): the same answers,
@@ -120,34 +298,97 @@ static func _box_rect(w: Array) -> Rect2:
 	return Rect2(c - Vector2(ex, ey), Vector2(ex, ey) * 2.0)
 
 
-static func _weights(theme: StringName) -> Array[float]:
-	match theme:
-		&"ruined_hall", &"overgrown":
-			return WEIGHTS_RICH
-		&"camp":
-			return WEIGHTS_CAMP
-	return WEIGHTS_PLAIN
+## The cluster's shape for a vein strength v (0..1): bigger, fuller and brighter toward a vein's centre. `start`:
+## the start room's mixed sizes (never the smallest) with more low shards and fragments. `front`: low and no
+## fragments (rule 2).
+static func _spec(v: float, start: bool, front: bool, rng: RandomNumberGenerator) -> Dictionary:
+	if start:
+		v = maxf(v, rng.randf_range(0.3, 0.9))
+	var k := 1.0 + 0.7 * v
+	var w := 0.95 + 0.45 * v
+	return {
+		"tall_n": 3 + roundi(3.0 * v) + rng.randi_range(0, 1),
+		"first": [1.45 * k, 1.8 * k],
+		"rest": [1.05 * k, 1.4 * k],
+		"rad": [0.13 * w, 0.2 * w],
+		"spread": SMALL_SPREAD * (0.9 + 0.9 * v),
+		"foot": SMALL_FOOT * (0.85 + 0.3 * v),
+		"reach": SMALL_REACH,
+		"low_n": 2 + roundi(2.0 * v) + rng.randi_range(0, 1) + (2 if start else 0),
+		"frag_n": 0 if front else rng.randi_range(1, 2) + roundi(2.0 * v) + (2 if start else 0),
+		"frag_y": [1.15, 1.6 + 0.3 * v],
+		"cap": FRONT_MAX_HEIGHT if front else INF,
+		"glow": 1.0 + VEIN_GLOW * v,
+		"hero": false,
+		"front": front,
+		"vein": v,
+	}
 
 
-## A cluster in room r on a back wall, or {} when no spot passes the rules within ATTEMPTS.
-static func _try_cluster(
-	f: Dictionary, r: int, hero: bool, placed: Array, rng: RandomNumberGenerator
+## The fallback's tight cluster (a room where no ordinary cluster fits): a smaller foot closer to the wall, a
+## narrower spread, two or three crystals; still every spacing rule.
+## `wall_only`: no foot on the floor at all (the crystals stay in the wall top, leaning away from the room).
+static func _tight_spec(
+	front: bool, v: float, wall_only: bool, rng: RandomNumberGenerator
+) -> Dictionary:
+	var spec := _spec(0.0, false, front, rng)
+	spec["tall_n"] = rng.randi_range(2, 3)
+	spec["spread"] = TIGHT_SPREAD
+	spec["foot"] = TIGHT_FOOT
+	spec["reach"] = TIGHT_REACH
+	spec["low_n"] = rng.randi_range(1, 2)
+	spec["glow"] = 1.0 + VEIN_GLOW * v
+	spec["vein"] = v
+	return _wall_only(spec) if wall_only else spec
+
+
+## A spec without a foot on the floor: the crystals stay in the wall top and lean away from the room, no low
+## shards (radius 0 at the wall face, so every spacing rule is measured from the wall itself).
+static func _wall_only(spec: Dictionary) -> Dictionary:
+	spec["foot"] = 0.0
+	spec["reach"] = 0.0
+	spec["low_n"] = 0
+	spec["lean_out"] = true
+	return spec
+
+
+static func _hero_spec(rng: RandomNumberGenerator) -> Dictionary:
+	return {
+		"tall_n": rng.randi_range(7, 9),
+		"first": [2.3, 2.8],
+		"rest": [1.2, 2.0],
+		"rad": [0.16, 0.26],
+		"spread": HERO_SPREAD,
+		"foot": HERO_FOOT,
+		"reach": HERO_REACH,
+		"low_n": rng.randi_range(6, 8),
+		"frag_n": rng.randi_range(4, 5),
+		"frag_y": [FRAGMENT_MIN_Y + 0.2, 1.9],
+		"cap": INF,
+		"glow": HERO_GLOW,
+		"hero": true,
+		"front": false,
+		"vein": 1.0,
+	}
+
+
+## The start room's hero cluster on a back wall (the back corner first), or {} when no spot passes the rules.
+static func _try_hero(
+	f: Dictionary, r: int, placed: Array, rng: RandomNumberGenerator
 ) -> Dictionary:
 	var room: Rect2 = f["rooms"][r]
-	var foot_r := HERO_FOOT if hero else SMALL_FOOT
-	var reach := HERO_REACH if hero else SMALL_REACH
-	var spread := HERO_SPREAD if hero else SMALL_SPREAD
-	var corner := Vector2(room.position.x, room.end.y)
-	for attempt in HERO_ATTEMPTS if hero else ATTEMPTS:
-		# The back corner first (the hero's first try), else a stretch of a back wall.
-		var at_corner := (hero and attempt == 0) or (not hero and rng.randf() < 0.35)
-		var anchor: Vector2
-		var outward: Vector2
-		var along: Vector2
-		if at_corner:
-			anchor = corner
-			outward = Vector2(-1, 1).normalized()
-			along = Vector2(1, 1).normalized()
+	var spec := _hero_spec(rng)
+	var spread := HERO_SPREAD
+	for attempt in HERO_ATTEMPTS:
+		var cand: Array
+		if attempt == 0:
+			cand = [
+				Vector2(room.position.x, room.end.y),
+				Vector2(-1, 1).normalized(),
+				Vector2(1, 1).normalized(),
+				false,
+				true
+			]
 		else:
 			var left := rng.randf() < room.size.y / (room.size.x + room.size.y)
 			var lo := spread + 0.3
@@ -155,33 +396,65 @@ static func _try_cluster(
 				var hi := room.size.y - lo
 				if hi <= lo:
 					continue
-				anchor = Vector2(room.position.x, room.position.y + rng.randf_range(lo, hi))
-				outward = Vector2(-1, 0)
-				along = Vector2(0, 1)
+				cand = [
+					Vector2(room.position.x, room.position.y + rng.randf_range(lo, hi)),
+					Vector2(-1, 0),
+					Vector2(0, 1),
+					false,
+					false
+				]
 			else:
 				var hi := room.size.x - lo
 				if hi <= lo:
 					continue
-				anchor = Vector2(room.position.x + rng.randf_range(lo, hi), room.end.y)
-				outward = Vector2(0, 1)
-				along = Vector2(1, 0)
-		var inward := -outward
-		var foot := anchor + inward * (reach * (1.4 if at_corner else 1.0))
-		if not _clear(f, room, foot, foot_r, placed):
-			continue
-		var depth := _wall_depth(f, anchor, outward, along, spread, at_corner)
-		if depth <= 0.0:
-			continue
-		var c := _grow(f, [anchor, outward, along, foot, foot_r, room], depth, at_corner, hero, rng)
-		if c["crystals"].is_empty():
-			continue
-		c["room"] = r
-		c["hero"] = hero
-		c["foot"] = foot
-		c["radius"] = foot_r
-		c["inward"] = inward
-		return c
+				cand = [
+					Vector2(room.position.x + rng.randf_range(lo, hi), room.end.y),
+					Vector2(0, 1),
+					Vector2(1, 0),
+					false,
+					false
+				]
+		var c := _cluster(f, r, cand, spec, placed, rng)
+		if not c.is_empty():
+			return c
 	return {}
+
+
+## A cluster at the candidate `cand` ([anchor, outward, along, front, corner, vein]), or {} when it breaks a rule.
+static func _try_at(
+	f: Dictionary, r: int, cand: Array, start: bool, placed: Array, rng: RandomNumberGenerator
+) -> Dictionary:
+	var v: float = cand[5] if cand.size() > 5 else 0.0
+	return _cluster(f, r, cand, _spec(v, start, cand[3], rng), placed, rng)
+
+
+static func _cluster(
+	f: Dictionary, r: int, cand: Array, spec: Dictionary, placed: Array, rng: RandomNumberGenerator
+) -> Dictionary:
+	var room: Rect2 = f["rooms"][r]
+	var anchor: Vector2 = cand[0]
+	var outward: Vector2 = cand[1]
+	var along: Vector2 = cand[2]
+	var at_corner: bool = cand[4]
+	var inward := -outward
+	var foot_r: float = spec["foot"]
+	var foot := anchor + inward * (float(spec["reach"]) * (1.4 if at_corner else 1.0))
+	if not _clear(f, room, foot, foot_r, placed):
+		return {}
+	var depth := _wall_depth(f, anchor, outward, along, spec["spread"], at_corner)
+	if depth <= 0.0:
+		return {}
+	var c := _grow(f, [anchor, outward, along, foot, foot_r, room], depth, at_corner, spec, rng)
+	if c["crystals"].is_empty():
+		return {}
+	c["room"] = r
+	c["hero"] = spec["hero"]
+	c["front"] = spec["front"]
+	c["vein"] = spec["vein"]
+	c["foot"] = foot
+	c["radius"] = foot_r
+	c["inward"] = inward
+	return c
 
 
 ## True when a foot at p (radius rad) breaks no spacing rule.
@@ -205,7 +478,9 @@ static func _clear(f: Dictionary, room: Rect2, p: Vector2, rad: float, placed: A
 		if _dist_to_box(p, w) < SLAB_GAP + rad:
 			return false
 	for c: Dictionary in placed:
-		if p.distance_to(c["foot"]) < CLUSTER_SPACING + rad + float(c["radius"]):
+		var foot: Vector2 = c["foot"]
+		var gap := CLUSTER_GAP + rad + float(c["radius"])
+		if absf(p.x - foot.x) < gap and absf(p.y - foot.y) < gap and p.distance_to(foot) < gap:
 			return false
 	return true
 
@@ -250,9 +525,14 @@ static func _in_structure(f: Dictionary, p: Vector2) -> bool:
 
 
 ## The cluster's crystals: tall ones grown from inside the wall, low shards at its foot, fragments above.
-## `frame`: [anchor, outward, along, foot centre, foot radius, room].
+## `frame`: [anchor, outward, along, foot centre, foot radius, room]. `spec`: _spec / _hero_spec.
 static func _grow(
-	f: Dictionary, frame: Array, depth: float, corner: bool, hero: bool, rng: RandomNumberGenerator
+	f: Dictionary,
+	frame: Array,
+	depth: float,
+	corner: bool,
+	spec: Dictionary,
+	rng: RandomNumberGenerator
 ) -> Dictionary:
 	var anchor: Vector2 = frame[0]
 	var outward: Vector2 = frame[1]
@@ -262,12 +542,18 @@ static func _grow(
 	var room: Rect2 = frame[5]
 	var crystals: Array = []
 	var inward := -outward
-	var spread := HERO_SPREAD if hero else SMALL_SPREAD
-	var tall_n := rng.randi_range(6, 8) if hero else rng.randi_range(3, 4)
+	var spread: float = spec["spread"]
+	var glow: float = spec["glow"]
+	var cap: float = spec["cap"]
+	var front: bool = spec["front"]
+	var tall_n: int = spec["tall_n"]
+	var rads: Array = spec["rad"]
+	var first_h: Array = spec["first"]
+	var rest_h: Array = spec["rest"]
 	for k in tall_n * 3:
 		if crystals.size() >= tall_n:
 			break
-		var rad := rng.randf_range(0.12, 0.2) if hero else rng.randf_range(0.11, 0.17)
+		var rad := rng.randf_range(rads[0], rads[1])
 		rad = minf(rad, depth * 0.45)
 		var base: Vector2
 		if corner:
@@ -288,19 +574,24 @@ static func _grow(
 		if not _base_in_structure(f, base, rad):
 			continue
 		var first := crystals.is_empty()
-		var h: float
-		if hero:
-			h = rng.randf_range(1.6, 2.2) if first else rng.randf_range(0.8, 1.5)
-		else:
-			h = rng.randf_range(1.3, 1.7) if first else rng.randf_range(0.9, 1.35)
-		var lean := inward.rotated(rng.randf_range(-0.6, 0.6))
+		var h := (
+			rng.randf_range(first_h[0], first_h[1])
+			if first
+			else rng.randf_range(rest_h[0], rest_h[1])
+		)
+		h = minf(h, cap)
+		# A front wall's crystals lean away from the room (over the wall), the rest into it.
+		var out_lean := front or bool(spec.get("lean_out", false))
+		var lean := (outward if out_lean else inward).rotated(rng.randf_range(-0.6, 0.6))
 		var tilt := rng.randf_range(0.05, 0.22) if first else rng.randf_range(0.15, 0.45)
-		crystals.append(_crystal(base, rad, h, lean, tilt, rng.randi() % 3, rng))
+		if front:
+			tilt *= 0.5
+		crystals.append(_crystal(base, rad, h, lean, tilt, rng.randi() % 3, glow, rng))
 	if crystals.is_empty():
 		return {"crystals": []}
 	# Low shards on the floor at the foot, leaning away from the wall; each stays in the room and the foot.
-	var low_n := rng.randi_range(6, 8) if hero else rng.randi_range(3, 4)
-	var reach := (HERO_REACH if hero else SMALL_REACH) * 2.2
+	var low_n: int = spec["low_n"]
+	var reach := float(spec["reach"]) * 2.2
 	var floor_dir := -outward
 	var low := 0
 	for k in low_n * 4:
@@ -317,19 +608,20 @@ static func _grow(
 		var rad := rng.randf_range(0.05, 0.1)
 		var lean := floor_dir.rotated(rng.randf_range(-0.9, 0.9))
 		crystals.append(
-			_crystal(base, rad, h, lean, rng.randf_range(0.2, 0.5), rng.randi() % 3, rng)
+			_crystal(base, rad, h, lean, rng.randf_range(0.2, 0.5), rng.randi() % 3, glow, rng)
 		)
 		low += 1
 	# Floating fragments above the cluster, over the wall and its foot.
 	var frags: Array = []
-	var frag_n := rng.randi_range(4, 5) if hero else rng.randi_range(2, 3)
+	var frag_y: Array = spec["frag_y"]
+	var frag_n: int = spec["frag_n"]
 	for k in frag_n:
 		var p := (
 			anchor
 			+ floor_dir * rng.randf_range(-0.3, 0.6)
 			+ along * rng.randf_range(-spread, spread)
 		)
-		var y := rng.randf_range(FRAGMENT_MIN_Y + 0.2, 1.9) if hero else rng.randf_range(1.15, 1.6)
+		var y := rng.randf_range(frag_y[0], frag_y[1])
 		var s := rng.randf_range(0.05, 0.09)
 		var basis := (
 			Basis(Vector3.UP, rng.randf() * TAU)
@@ -338,7 +630,7 @@ static func _grow(
 		)
 		frags.append(Transform3D(basis, SimPlane.to_3d(p, y)))
 	var light := Vector3.INF
-	if hero:
+	if spec["hero"]:
 		light = SimPlane.to_3d(anchor + floor_dir * 0.9, 1.1)
 	return {"crystals": crystals, "fragments": frags, "light": light}
 
@@ -358,7 +650,7 @@ static func _base_in_structure(f: Dictionary, base: Vector2, rad: float) -> bool
 
 
 ## One crystal: the unit crystal (radius 1, height 1, base at y = 0) scaled to rad × h, tilted by `tilt` radians
-## toward `lean` (a sim-plane direction), turned at random about its own axis.
+## toward `lean` (a sim-plane direction), turned at random about its own axis. `glow`: its glow factor.
 static func _crystal(
 	base: Vector2,
 	rad: float,
@@ -366,6 +658,7 @@ static func _crystal(
 	lean: Vector2,
 	tilt: float,
 	variant: int,
+	glow: float,
 	rng: RandomNumberGenerator
 ) -> Dictionary:
 	var lean3 := SimPlane.to_3d(lean).normalized()
@@ -381,6 +674,7 @@ static func _crystal(
 		"height": h * cos(tilt),
 		"tall": h * cos(tilt) > StageDresser.DECOR_MAX_HEIGHT,
 		"variant": variant,
+		"glow": glow,
 	}
 
 
@@ -396,12 +690,3 @@ static func _inside(p: Vector2, w: Array, slack: float) -> bool:
 	var local := (p - (w[0] as Vector2)).rotated(-(w[2] as float))
 	var half: Vector2 = w[1]
 	return absf(local.x) <= half.x + slack and absf(local.y) <= half.y + slack
-
-
-static func _weighted(rng: RandomNumberGenerator, weights: Array[float]) -> int:
-	var x := rng.randf()
-	for k in weights.size():
-		x -= weights[k]
-		if x < 0.0:
-			return k
-	return weights.size() - 1
