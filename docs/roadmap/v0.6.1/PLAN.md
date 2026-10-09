@@ -19,6 +19,7 @@ on that and leave the current PR for playtest running its test").
 | A1 | Which other world pieces get the shard look (SHARD_AUDIT.md) | "the shop terminal is fine, the portals could have some of them around matching the color of the portal" | The shop terminal stays; portals get shard clusters around them in the portal's colour (normal blue, Deep violet); the other audit rows stay as they are | SW2 |
 | A2 | Epic altar gold instead of violet? | "no" | Stays violet | — |
 | A3 | Room crystals bigger, brighter or more frequent? | "Very frequent on the starting room and be an element of all rooms, but disparity not all equally distributid some zones have more density than others, specially walls at smaller rooms" | Start room: many clusters. Every room gets crystals. Uneven: a few dense zones (veins) per floor and sparse stretches; walls of smaller rooms get more | SD2 |
+| A3b | (after SD2's shots) | "yeah but not on top of the walls it should be floor closed to the walls, corners of some rooms, and other obstacle like they grow from the ground" | No crystals on or in walls; clusters grow from the floor at wall bases, in the corners of some rooms and round obstacles; decorative (no collision), kept tight so the hero rarely overlaps them | SD3 |
 | A4 | Violet vs purple, amber vs orange plaques | "that's fine" | Kept | — |
 | A5 | Build picker title | "yes, choose weapon" | "Choose your weapon" / "Elige tu arma" | SW2 |
 
