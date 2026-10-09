@@ -1,5 +1,9 @@
 # v0.6.1 Step SD3: crystals grow from the floor (evidence)
 
+> **Superseded in part by SD4** (owner A3c, [`SHARD_DRESSING_4.md`](SHARD_DRESSING_4.md)): about a fifth of a room,
+> mostly corners, only against stone, with crystal rooms. The `shards2_*.png` files now hold SD4's shots, and
+> `shards2_small_room.png` and `shards2_large_room.png` were removed.
+
 Owner answer A3b (2026-10-09, after SD2's shots; PLAN "Owner answers"): "yeah but not on top of the walls it should
 be floor closed to the walls, corners of some rooms, and other obstacle like they grow from the ground".
 

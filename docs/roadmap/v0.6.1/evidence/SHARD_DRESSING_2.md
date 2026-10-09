@@ -1,8 +1,9 @@
 # v0.6.1 Step SD2 — denser, uneven shard dressing (evidence)
 
 > **Superseded in part by SD3** (owner A3b, [`SHARD_DRESSING_3.md`](SHARD_DRESSING_3.md)): the crystals no longer grow
-> in or on walls; they grow from the floor. The `shards2_*.png` files now hold SD3's shots. The density and vein
-> design below still applies.
+> in or on walls; they grow from the floor. SD4 ([`SHARD_DRESSING_4.md`](SHARD_DRESSING_4.md)) then replaced the
+> density design (a fifth of a room, mostly corners, crystal rooms; no vein field). The `shards2_*.png` files now hold
+> SD4's shots.
 
 Owner answer A3 (2026-10-09, PLAN "Owner answers"): "Very frequent on the starting room and be an element of all
 rooms, but disparity not all equally distributid some zones have more density than others, specially walls at

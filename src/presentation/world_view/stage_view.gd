@@ -421,10 +421,8 @@ func _build_shards(
 ) -> void:
 	if not reader.has_floor():
 		return
-	var themes: Array = []
-	for i in rooms.size():
-		themes.append(reader.floor_room_theme(i))
 	var clear: Array = keep.duplicate()
+	var special: Array = []  # v0.6.1 SD4: rooms holding these are never crystal rooms
 	for p: Dictionary in placements:
 		if p["kind"] == &"light":
 			clear.append(SimPlane.to_sim((p["xform"] as Transform3D).origin))
@@ -432,10 +430,13 @@ func _build_shards(
 		clear.append(reader.deep_portal_pos())
 	if reader.has_shop():
 		clear.append(reader.shop_pos())
+		special.append(reader.shop_pos())
 	if reader.has_gamble():
 		clear.append(reader.gamble_pos())
+		special.append(reader.gamble_pos())
 	for k in reader.event_count():
 		clear.append(reader.event_pos(k))
+		special.append(reader.event_pos(k))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
 	var placed := (
@@ -443,8 +444,9 @@ func _build_shards(
 		. place(
 			{
 				"walls": walls,
+				"pieces": placements,
 				"rooms": rooms,
-				"themes": themes,
+				"special": special,
 				"start_room": reader.floor_start_room(),
 				"boss_room": reader.boss_room(),
 				"doors": blocked,

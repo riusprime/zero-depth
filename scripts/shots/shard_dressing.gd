@@ -1,8 +1,8 @@
 extends SceneTree
-## v0.6.1 Step SD / SD2 / SD3 shots: the crystal-shard dressing on a real generated floor, drawn by the game's own
+## v0.6.1 Step SD / SD2 / SD3 / SD4 shots: the crystal-shard dressing on a real generated floor, drawn by the game's own
 ## WorldViewRoot (the biome's v0.5.9 mood, the kit, the dresser, then the shards): the whole start room, its hero
-## cluster's wall, and two ordinary rooms of different sizes (SD2: the small room with the most clusters per wall
-## metre and the large room with the most clusters). The world is never stepped (a still floor, no enemies yet).
+## cluster's corner or wall, an ordinary room (SD4: the one with the most clusters, up to 400 m²) and a crystal
+## room. The world is never stepped (a still floor, no enemies yet).
 ## Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/shard_dressing.gd
 ## Options after `--`: seed=<run seed> (default 7), floor=<index> (default 1), biome=<id> (default ruins).
@@ -59,22 +59,21 @@ func _initialize() -> void:
 			_shots.append(["2_hero_corner", at + Vector2(3.5, -3.5), 14.0])
 	var start_rect := _reader.floor_room(start)
 	_shots.push_front(["1_start_room", start_rect.get_center(), 30.0])
-	var small := -1
-	var small_best := -1.0
-	var large := -1
-	var large_best := -1
+	# SD4: an ordinary room (the one with the most clusters, not too big to frame) and a crystal room.
+	var ordinary := -1
+	var ordinary_best := -1
+	var crystal := -1
+	for c: Dictionary in shards.clusters:
+		if c["crystal_room"] and crystal < 0:
+			crystal = c["room"]
 	for r: int in per_room:
-		if r == start:
-			continue
 		var rect := _reader.floor_room(r)
-		var per_m := float(per_room[r]) / (2.0 * (rect.size.x + rect.size.y))
-		if rect.get_area() < 250.0 and per_m > small_best:
-			small_best = per_m
-			small = r
-		elif rect.get_area() >= 250.0 and per_room[r] > large_best:
-			large_best = per_room[r]
-			large = r
-	for pick in [[small, "3_small_room"], [large, "4_large_room"]]:
+		if r == start or r == crystal or rect.get_area() > 400.0:
+			continue
+		if per_room[r] > ordinary_best:
+			ordinary_best = per_room[r]
+			ordinary = r
+	for pick in [[ordinary, "3_ordinary_room"], [crystal, "4_crystal_room"]]:
 		if pick[0] < 0:
 			continue
 		var rect := _reader.floor_room(pick[0])

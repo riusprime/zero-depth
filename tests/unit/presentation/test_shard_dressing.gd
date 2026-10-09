@@ -6,7 +6,9 @@ extends GutTest
 ## (uneven across a floor), smaller rooms get more per wall metre, bigger and brighter in the veins. Step SD3 (owner
 ## A3b: "not on top of the walls it should be floor closed to the walls, corners of some rooms, and other obstacle
 ## like they grow from the ground"): every crystal grows from the floor, hugging a wall, a corner or an obstacle;
-## camera-side faces stay low. Properties over generated floors: the same seed gives the same clusters; the
+## camera-side faces stay low. Step SD4 (owner A3c): about a fifth of a room's wall base, mostly corners, only
+## against stone; 1-2 crystal rooms a floor with a far higher share and big crystals (the vein field is gone).
+## Properties over generated floors: the same seed gives the same clusters; the
 ## clearances (doorways, rewards and gates, spawn spots, the start, the paths, each other); none in a boss arena;
 ## the start room's hero cluster with its cold light; the meshes build; the sim is untouched.
 
@@ -40,13 +42,26 @@ func _from_layout(layout: FloorLayout, seed_value: int) -> Dictionary:
 	for pts in layout.spawn_points:
 		for p in pts:
 			spawns.append(p)
+	# The dresser's pieces, as StageView passes them (SD4: stone or not).
+	var pieces := (
+		StageDresser
+		. dress(
+			{
+				"walls": walls,
+				"rooms": layout.rooms.duplicate(),
+				"start_room": layout.start_room,
+				"doors": doors,
+				"keep_clear": keep,
+				"biome": &"ruins",
+				"seed": seed_value,
+			}
+		)
+	)
 	return {
 		"walls": walls,
+		"pieces": pieces,
 		"rooms": layout.rooms.duplicate(),
-		"themes":
-		Array(layout.room_template).map(
-			func(t: int) -> StringName: return StringName(FloorLayout.TEMPLATE_NAMES[t])
-		),
+		"special": [],
 		"start_room": layout.start_room,
 		"boss_room": layout.boss_room,
 		"doors": doors,
@@ -105,6 +120,8 @@ func test_crystals_grow_from_the_floor_hugging_walls_and_obstacles() -> void:
 				_count(broken, "not in a wall or an obstacle", _in_structure(f, base))
 				_count(broken, "the base clear of structures", d < rad * 0.8 - 0.001)
 				var hug := ShardDressing.TALL_HUG if x["tall"] else ShardDressing.HUG
+				if x["big"]:
+					hug = ShardDressing.BIG_HUG
 				_count(broken, "hugs a wall or an obstacle", d + rad > hug + 0.001)
 				if not x["tall"]:
 					_count(
@@ -223,183 +240,177 @@ func _count(broken: Dictionary, rule: String, bad: bool) -> void:
 		broken[rule] = broken.get(rule, 0) + 1
 
 
-## The wall metres of a room (its perimeter).
-func _wall_m(room: Rect2) -> float:
-	return 2.0 * (room.size.x + room.size.y)
+## The rooms' corners.
+func _corners(room: Rect2) -> Array[Vector2]:
+	return [
+		room.position,
+		room.end,
+		Vector2(room.position.x, room.end.y),
+		Vector2(room.end.x, room.position.y)
+	]
 
 
-func test_every_room_has_crystals_and_the_start_room_is_rich() -> void:
+## SD4 (owner A3c): about a fifth of an ordinary room's free wall base (the start room too: no longer crystal-rich),
+## a clearly higher share in the crystal rooms; every room but the boss arena has crystals; the start room keeps its
+## hero cluster.
+func test_a_fifth_of_a_room_and_the_crystal_rooms_far_more() -> void:
 	var heroes := 0
-	var start_per_m := 0.0
-	var other_n := 0
-	var other_m := 0.0
-	for s in SEEDS:
+	var ordinary: Array[float] = []
+	var start: Array[float] = []
+	var crystal: Array[float] = []
+	for s in 30:
 		var f := _floor(1100 + s)
-		var counts := {}
-		for c: Dictionary in ShardDressing.place(f):
-			var r: int = c["room"]
-			counts[r] = counts.get(r, 0) + 1
+		var placed := ShardDressing.place(f)
+		var picked := ShardDressing.floor_crystal_rooms(f)
+		var by_room := {}
+		for c: Dictionary in placed:
+			by_room[c["room"]] = by_room.get(c["room"], []) + [c]
 			if c["hero"]:
-				assert_eq(r, f["start_room"], "the hero cluster is the start room's")
+				assert_eq(c["room"], f["start_room"], "the hero cluster is the start room's")
 				heroes += 1
 				assert_true((c["light"] as Vector3).is_finite(), "the hero's cold light")
-				var tallest := 0.0
-				for x: Dictionary in c["crystals"]:
-					tallest = maxf(tallest, (x["xform"] as Transform3D).basis.y.length())
-				assert_gte(tallest, 1.6, "a centrepiece crystal")
 			else:
 				assert_false((c["light"] as Vector3).is_finite(), "only the hero carries a light")
 		var rooms: Array = f["rooms"]
 		for r in rooms.size():
 			if r == f["boss_room"]:
 				continue
-			assert_gte(counts.get(r, 0), 1, "seed %d: room %d has crystals" % [1100 + s, r])
-			if r == f["start_room"]:
-				start_per_m += float(counts.get(r, 0)) / _wall_m(rooms[r]) / float(SEEDS)
+			var mine: Array = by_room.get(r, [])
+			assert_gte(mine.size(), 1, "seed %d: room %d has crystals" % [1100 + s, r])
+			var cov := ShardDressing.coverage(f, rooms[r], mine)
+			if picked.has(r):
+				crystal.append(cov)
+			elif r == f["start_room"]:
+				start.append(cov)
 			else:
-				other_n += counts.get(r, 0)
-				other_m += _wall_m(rooms[r])
-	assert_gte(
-		heroes,
-		int(SEEDS * 0.9),
-		"the start room nearly always fits its hero (%d/%d)" % [heroes, SEEDS]
-	)
-	var other := float(other_n) / other_m
-	gut.p("clusters per wall metre: start room %.3f, other rooms %.3f" % [start_per_m, other])
-	assert_gt(start_per_m, other * 2.0, "the start room is crystal-rich")
-
-
-func test_smaller_rooms_get_more_per_wall_metre() -> void:
-	var small_n := 0
-	var small_m := 0.0
-	var large_n := 0
-	var large_m := 0.0
-	for s in SEEDS:
-		var f := _floor(1100 + s)
-		var counts := {}
-		for c: Dictionary in ShardDressing.place(f):
-			counts[c["room"]] = counts.get(c["room"], 0) + 1
-		var rooms: Array = f["rooms"]
-		for r in rooms.size():
-			if r == f["boss_room"] or r == f["start_room"]:
-				continue
-			var room: Rect2 = rooms[r]
-			if room.get_area() < ShardDressing.REF_AREA:
-				small_n += counts.get(r, 0)
-				small_m += _wall_m(room)
-			else:
-				large_n += counts.get(r, 0)
-				large_m += _wall_m(room)
-	var small := float(small_n) / small_m
-	var large := float(large_n) / large_m
-	gut.p("clusters per wall metre: small rooms %.3f, large rooms %.3f" % [small, large])
-	assert_gt(small, large * 1.3, "smaller rooms' walls are denser")
-
-
-## The mean vein value along a wall side (sampled every metre) and the clusters whose foot is on it.
-func _side(field: Array, placed: Array, r: int, side: Array) -> Array:
-	var a: Vector2 = side[0]
-	var length := (side[1] as Vector2).length()
-	var d := (side[1] as Vector2).normalized()
-	var steps := maxi(int(length), 1)
-	var v := 0.0
-	for k in steps:
-		v += ShardDressing.vein_at(field, a + d * length * ((k + 0.5) / steps)) / steps
-	var n := 0
-	for c: Dictionary in placed:
-		if c["room"] != r:
-			continue
-		var off: Vector2 = (c["foot"] as Vector2) - a
-		var t := off.dot(d)
-		if t >= 0.0 and t <= length and absf(off.cross(d)) <= 0.9:
-			n += 1
-	return [v, n, length]
-
-
-## Density follows the vein field: wall sides deep in a vein hold more, sides out of every vein fewer; and the
-## clusters in a vein are bigger and brighter than those out of one.
-func test_density_follows_the_veins_unevenly() -> void:
-	var dense := [0, 0.0]  # clusters, metres
-	var sparse := [0, 0.0]
-	var in_vein := [0.0, 0.0, 0]  # tallest sum, glow sum, count
-	var out_vein := [0.0, 0.0, 0]
-	for s in SEEDS:
-		var f := _floor(1100 + s)
-		var field := ShardDressing.floor_veins(f)
-		var placed := ShardDressing.place(f)
-		var rooms: Array = f["rooms"]
-		for r in rooms.size():
-			if r == f["boss_room"] or r == f["start_room"]:
-				continue
-			var room: Rect2 = rooms[r]
-			for side: Array in [
-				[room.position, Vector2(0, room.size.y)],
-				[Vector2(room.position.x, room.end.y), Vector2(room.size.x, 0)],
-				[Vector2(room.end.x, room.position.y), Vector2(0, room.size.y)],
-				[room.position, Vector2(room.size.x, 0)],
-			]:
-				var got := _side(field, placed, r, side)
-				var bucket: Array = dense if got[0] >= 0.5 else (sparse if got[0] <= 0.05 else [])
-				if not bucket.is_empty():
-					bucket[0] += got[1]
-					bucket[1] += got[2]
-		for c: Dictionary in placed:
-			if c["room"] == f["start_room"]:
-				continue
-			var tallest := 0.0
-			var glow := 0.0
-			for x: Dictionary in c["crystals"]:
-				tallest = maxf(tallest, float(x["height"]))
-				glow = maxf(glow, float(x["glow"]))
-			var bucket: Array = (
-				in_vein if c["vein"] >= 0.6 else (out_vein if c["vein"] <= 0.1 else [])
-			)
-			if bucket.is_empty():
-				continue
-			bucket[0] += tallest
-			bucket[1] += glow
-			bucket[2] += 1
-	var dense_m: float = dense[0] / maxf(dense[1], 1.0)
-	var sparse_m: float = sparse[0] / maxf(sparse[1], 1.0)
+				ordinary.append(cov)
+	assert_gte(heroes, 27, "the start room nearly always fits its hero (%d/30)" % heroes)
+	var mean := func(xs: Array[float]) -> float:
+		var t := 0.0
+		for x in xs:
+			t += x
+		return t / maxf(xs.size(), 1)
+	var o: float = mean.call(ordinary)
+	var st: float = mean.call(start)
+	var cr: float = mean.call(crystal)
 	(
 		gut
 		. p(
 			(
-				"clusters per wall metre: in a vein %.3f (%.0f m of wall), out of every vein %.3f (%.0f m)"
-				% [dense_m, dense[1], sparse_m, sparse[1]]
+				"covered share of the free wall base: ordinary %.3f, start room %.3f, crystal rooms %.3f"
+				% [o, st, cr]
 			)
 		)
 	)
-	assert_gt(dense[1], 0.0, "the floors have dense stretches")
-	assert_gt(sparse[1], 0.0, "the floors have sparse stretches")
-	assert_gt(dense_m, sparse_m * 2.0, "uneven: the veins hold more")
-	assert_gt(in_vein[2], 0)
-	assert_gt(out_vein[2], 0)
-	var in_h: float = in_vein[0] / in_vein[2]
-	var out_h: float = out_vein[0] / out_vein[2]
-	gut.p("tallest crystal per cluster: in a vein %.2f m, out of one %.2f m" % [in_h, out_h])
-	assert_gt(in_h, out_h, "bigger in the veins")
-	assert_gt(in_vein[1] / in_vein[2], out_vein[1] / out_vein[2], "brighter in the veins")
+	assert_between(o, 0.15, 0.3, "about a fifth")
+	assert_between(st, 0.12, 0.32, "the start room too (no longer crystal-rich)")
+	assert_gt(cr, 0.55, "crystal rooms: a clearly higher share")
+	assert_gt(cr, o * 2.5, "crystal rooms stand out")
 
 
-func test_the_vein_field_is_smooth_and_seeded() -> void:
-	var f := _floor(31)
-	var a := ShardDressing.floor_veins(f)
-	assert_eq(a, ShardDressing.floor_veins(f), "the same seed, the same veins")
-	assert_ne(a, ShardDressing.floor_veins(_floor(32)), "another seed, other veins")
-	var majors := a.filter(func(v: Array) -> bool: return v[2] >= 1.0)
-	assert_between(majors.size(), 3, 5, "a few dense zones per floor")
-	var vein: Array = majors[0]
-	var centre: Vector2 = vein[0]
-	var radius: float = vein[1]
-	assert_almost_eq(ShardDressing.vein_at([vein], centre), 1.0, 0.0001, "full at the centre")
-	assert_eq(ShardDressing.vein_at([vein], centre + Vector2(radius + 0.1, 0)), 0.0, "none outside")
-	for k in 40:
-		var p := centre + Vector2(k * 0.25, 0)
-		var dv := absf(
-			ShardDressing.vein_at([vein], p) - ShardDressing.vein_at([vein], p + Vector2(0.25, 0))
+## Mostly corners: the ordinary rooms' wall-base crystals sit near the rooms' corners (corners first, then short runs).
+func test_mostly_in_the_corners() -> void:
+	var near := 0
+	var total := 0
+	for s in SEEDS:
+		var f := _floor(1100 + s)
+		var picked := ShardDressing.floor_crystal_rooms(f)
+		for c: Dictionary in ShardDressing.place(f):
+			if picked.has(c["room"]) or c["kind"] == &"obstacle" or c["hero"]:
+				continue
+			var room: Rect2 = f["rooms"][c["room"]]
+			for x: Dictionary in c["crystals"]:
+				if not x["tall"]:
+					continue
+				total += 1
+				var d := INF
+				for q in _corners(room):
+					d = minf(d, (x["base"] as Vector2).distance_to(q))
+				if d <= 6.0:
+					near += 1
+	var share := float(near) / maxf(total, 1)
+	gut.p("ordinary rooms' tall wall crystals within 6 m of a corner: %.3f of %d" % [share, total])
+	assert_gt(share, 0.8, "mostly corners")
+
+
+## Only stone (A3c): no crystal touches a crate, a wreck, a dead tree or a light prop.
+func test_crystals_touch_only_stone() -> void:
+	var touching := 0
+	var seen := 0
+	for s in SEEDS:
+		var f := _floor(500 + s)
+		var g := ShardDressing._with_stone(f)
+		assert_gt((g["soft"] as Array).size(), 0, "the floor has wood or metal pieces")
+		for c: Dictionary in ShardDressing.place(f):
+			for x: Dictionary in c["crystals"]:
+				seen += 1
+				var rad: float = x["radius"]
+				if (
+					ShardDressing.near_soft(g, x["base"])
+					< rad + ShardDressing.NON_STONE_CLEAR - 0.001
+				):
+					touching += 1
+	assert_gt(seen, 0)
+	assert_eq(touching, 0, "nothing grows against wood or metal")
+	assert_true(&"rock_large" in ShardDressing.STONE and &"wall_1m" in ShardDressing.STONE)
+	for piece in [&"crate_stack", &"car_wreck", &"dead_tree", &"fire_barrel", &"brazier_pole"]:
+		assert_false(piece in ShardDressing.STONE, "%s is not stone" % piece)
+
+
+## Crystal rooms (A3c): 1-2 a floor, never the start or the boss arena, smaller rooms more likely, the same per
+## seed; big crystals (the 1 x 1 m blocks' size) only there.
+func test_crystal_rooms_are_few_small_and_hold_the_big_crystals() -> void:
+	var picked_area := 0.0
+	var picked_n := 0
+	var all_area := 0.0
+	var all_n := 0
+	var big_in := 0
+	var big_out := 0
+	for s in SEEDS:
+		var f := _floor(1100 + s)
+		var picked := ShardDressing.floor_crystal_rooms(f)
+		assert_eq(picked, ShardDressing.floor_crystal_rooms(f), "the same seed, the same rooms")
+		assert_between(picked.size(), 1, 2, "one or two a floor")
+		for r in picked:
+			assert_ne(r, f["start_room"])
+			assert_ne(r, f["boss_room"])
+			picked_area += (f["rooms"][r] as Rect2).get_area()
+			picked_n += 1
+		for r in (f["rooms"] as Array).size():
+			if r != f["start_room"] and r != f["boss_room"]:
+				all_area += (f["rooms"][r] as Rect2).get_area()
+				all_n += 1
+		for c: Dictionary in ShardDressing.place(f):
+			assert_eq(c["crystal_room"], picked.has(c["room"]))
+			for x: Dictionary in c["crystals"]:
+				if x["big"]:
+					if picked.has(c["room"]):
+						big_in += 1
+						assert_gte(float(x["radius"]), 0.3, "about the 1 x 1 m blocks' size")
+					else:
+						big_out += 1
+	var pa := picked_area / maxf(picked_n, 1)
+	var aa := all_area / maxf(all_n, 1)
+	gut.p(
+		(
+			"mean room area: crystal rooms %.0f m², all rooms %.0f m²; big crystals %d"
+			% [pa, aa, big_in]
 		)
-		assert_lt(dv, 0.2, "smooth: a small step never jumps")
+	)
+	assert_lt(pa, aa, "smaller rooms first")
+	assert_gt(big_in, 0, "crystal rooms hold big crystals")
+	assert_eq(big_out, 0, "only crystal rooms do")
+
+
+func test_a_crystal_room_is_never_the_shop_the_shrine_or_an_event_room() -> void:
+	var f := _floor(1100)
+	var rooms: Array = f["rooms"]
+	var g := f.duplicate()
+	var specials: Array = []
+	for r in rooms.size():
+		specials.append((rooms[r] as Rect2).get_center())
+	g["special"] = specials
+	assert_eq(ShardDressing.floor_crystal_rooms(g).size(), 0, "every room special: none picked")
 
 
 func test_a_crystal_glow_bakes_into_the_vertex_colour() -> void:
@@ -435,6 +446,19 @@ func test_no_cluster_in_a_boss_arena_and_the_sim_is_untouched() -> void:
 				assert_true(
 					shards.room_meshes.has(r), "SD2: every other room has crystals (%d)" % r
 				)
+		# SD4: a crystal room never holds the shop, the shrine or an event.
+		var specials: Array[Vector2] = []
+		if reader.has_shop():
+			specials.append(reader.shop_pos())
+		if reader.has_gamble():
+			specials.append(reader.gamble_pos())
+		for k in reader.event_count():
+			specials.append(reader.event_pos(k))
+		for c: Dictionary in shards.clusters:
+			if c["crystal_room"]:
+				assert_ne(c["room"], reader.floor_start_room(), "never the start room")
+				for p in specials:
+					assert_false(reader.floor_room(c["room"]).has_point(p), "never a special room")
 		v.queue_free()
 
 
