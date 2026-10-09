@@ -75,3 +75,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   love the after this is the direction I want"); polish `a78648e`. Full suite (`bash scripts/verify.sh`, clean
   worktree at `a78648e`): 1354/1354 passing. Next: the fading fireball and smoke still read weakly; frost, venom,
   void and bleed; burning enemies.
+- 2026-10-09 — VFX phase 2 (`docs/art/VFX_REQUESTS.md`): the owner's 8 textures prepared (`ee773f0`; ice shards not
+  delivered, built as 3D crystals); frost, venom, void and bleed on every form, enemy statuses and payoffs in the
+  effects layer (`a2eb4da`); fixes `99ded37`, `4258c13`. Full suite (`bash scripts/verify.sh`, clean worktree at
+  `a2eb4da`): 1358/1358 passing. The fixes after it ran the VFX tests only (10/10). G2 Effects phase 2: OWNER ONLY.

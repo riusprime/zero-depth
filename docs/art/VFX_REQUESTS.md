@@ -154,7 +154,8 @@ and the floor marks; `VfxLayer` draws the elements on each form through `field`,
 - **Reader:** `WorldReader.poison_stacks(i)` (read-only, for the poisoned look).
 - **Tests:** `tests/unit/presentation/test_vfx_layer.gd` (every element on every form, floor marks, a frost bomb,
   enemy statuses).
-- **Mockup:** `mock_vfx.gd -- scenes=frost,venom,void,bleed,status`.
+- **Mockup:** `mock_vfx.gd -- scenes=frost,venom,void,bleed,status` (status: four dummies by the hero with real statuses).
+- **Full suite** at `a2eb4da`: 1358/1358 passing.
 
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
