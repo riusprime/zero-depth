@@ -87,4 +87,4 @@ flat shapes; without it, the canvas draws as before.
 
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2 Effects (before / after, mock_vfx.gd) | 2026-10-09 | OWNER ONLY | — |
+| G2 Effects (before / after, mock_vfx.gd) | 2026-10-09 | **After** ("Yep I love the after this is the direction I want") | 2026-10-09 |

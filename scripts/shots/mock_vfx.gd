@@ -5,7 +5,7 @@ extends SceneTree
 ## then spawns each scene's effects round the hero at fixed ages.
 ## Saves PNGs to build/shots/<version>/vfx/. Needs a renderer (not --headless):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_vfx.gd
-## Optional: zoom=14 (the ortho camera size), biome=night_rocks.
+## Optional (after --): scenes=fire,all, zoom=14 (the ortho camera size), biome=night_rocks.
 
 const SETTLE := 40
 const SHOT_WAIT := 10
@@ -18,6 +18,7 @@ var _biome: StringName = &"ruins"
 var _jobs: Array = []
 var _wait := 0
 var _phase := 0
+var _scenes: Array = ["fire", "bomb", "bomb_smoke", "electric", "all"]
 var _layer: VfxLayer
 ## This scene's effects and the age each is held at: [effect, age]. The clock runs on (software rendering is slow),
 ## so each frame sets every effect's start back to hold its age.
@@ -28,13 +29,15 @@ func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("zoom="):
 			_zoom = float(arg.trim_prefix("zoom="))
+		elif arg.begins_with("scenes="):
+			_scenes = Array(arg.trim_prefix("scenes=").split(","))
 		elif arg.begins_with("biome="):
 			_biome = StringName(arg.trim_prefix("biome="))
 	_dir = "res://build/shots/%s/vfx/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
-	for scene in ["fire", "bomb", "bomb_smoke", "electric", "all"]:
+	for scene: String in _scenes:
 		for variant in ["before", "after"]:
 			_jobs.append([scene, variant])
 

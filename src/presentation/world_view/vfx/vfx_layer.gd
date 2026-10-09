@@ -221,15 +221,20 @@ static func h(a: int, b: int) -> float:
 func fire(c: Vector3, r: float, fade: float, age: float, sd: int, warm: Color) -> void:
 	if fade <= 0.0:
 		return
-	var n := clampi(int(round((2.0 + r * r * 2.2) * density)), 2, 16)
+	var n := clampi(int(round((4.0 + r * r * 2.5) * density)), 3, 20)
 	for k in n:
 		var a := TAU * h(sd, k)
-		var d := sqrt(h(sd + 3, k)) * r * 0.8
+		# The first three flames make a taller core near the centre, so the patch reads as one blaze.
+		var d := sqrt(h(sd + 3, k)) * r * (0.3 if k < 3 else 0.85)
 		var p := c + Vector3(cos(a) * d, 0.0, sin(a) * d)
 		# Each flame breathes on its own beat and swaps its shape now and then.
 		var beat := 0.85 + 0.15 * sin(age * (0.35 + 0.2 * h(sd + 5, k)) + TAU * h(sd + 7, k))
 		var hgt := (
-			(0.9 + 0.9 * h(sd + 9, k)) * (0.6 + 0.4 * (1.0 - d / maxf(r, 0.01))) * beat * fade
+			(0.9 + 0.9 * h(sd + 9, k))
+			* (0.6 + 0.4 * (1.0 - d / maxf(r, 0.01)))
+			* beat
+			* fade
+			* (1.35 if k < 3 else 1.0)
 		)
 		var cell := (k + int(age / (9.0 + 5.0 * h(sd, k + 40)))) % 4
 		_put(
@@ -272,7 +277,7 @@ func _smoke(p: Vector3, age: float, sd: int, size: float, alpha: float, period: 
 	_put(
 		&"smoke",
 		_facing(q, s, s, true, h(sd, 4) * TAU),
-		Color(0.16, 0.14, 0.13, a),
+		Color(0.42, 0.39, 0.37, a),
 		int(h(sd, 5) * 4.0),
 		u * 0.8,
 		h(sd, 6)
@@ -291,12 +296,12 @@ func explosion(c: Vector3, r: float, u: float, sd: int, warm: Color) -> void:
 		_put(
 			&"blast",
 			_facing(c + off + Vector3(0, 0.05, 0), s, s, false),
-			Color(1.8, 1.6, 1.4, 1.0),
+			Color(1.8, 1.6, 1.4, (1.0 - burn) * (1.0 - burn)),
 			(sd + k) % 4,
-			burn,
+			burn * 0.35,
 			h(sd, k)
 		)
-	var nd := int(round(6 * density))
+	var nd := int(round(4 * density))
 	for k in nd:
 		var a := TAU * (k + h(sd + 4, k)) / maxf(nd, 1)
 		var sp := r * (0.9 + 0.8 * h(sd + 5, k))
@@ -309,11 +314,11 @@ func explosion(c: Vector3, r: float, u: float, sd: int, warm: Color) -> void:
 				sin(a) * sp * t
 			)
 		)
-		var s := 0.7 + 0.4 * h(sd + 7, k)
+		var s := 0.9 + 0.4 * h(sd + 7, k)
 		_put(
 			&"debris",
 			_facing(q, s, s, true, u * 6.0 * (h(sd, k) - 0.5)),
-			Color(0.95, 0.9, 0.85, 1.0 - clampf((u - 0.75) / 0.25, 0.0, 1.0)),
+			Color(0.95, 0.9, 0.85, 1.0 - clampf((u - 0.35) / 0.2, 0.0, 1.0)),
 			(sd + k) % 4,
 			0.0,
 			0.0
@@ -326,7 +331,7 @@ func explosion(c: Vector3, r: float, u: float, sd: int, warm: Color) -> void:
 		_put(
 			&"smoke",
 			_facing(q, s, s, true, TAU * h(sd + 9, k)),
-			Color(0.14, 0.12, 0.11, al),
+			Color(0.4, 0.37, 0.35, al),
 			(sd + k) % 4,
 			u * 0.85,
 			h(sd, k + 9)
@@ -400,7 +405,7 @@ func lightning(
 ## A crackling field of radius `r` at `c`: short bolts between points inside it, re-striking, a cold light.
 func storm_field(c: Vector3, r: float, fade: float, age: float, sd: int, cold: Color) -> void:
 	var strike := int(age / 4.0)
-	var n := clampi(int(round((1.5 + r * 1.2) * density)), 1, 8)
+	var n := clampi(int(round((3.0 + r * 2.0) * density)), 2, 10)
 	for k in n:
 		var a := TAU * h(sd + strike, k)
 		var b := TAU * h(sd + strike, k + 20)
@@ -420,7 +425,7 @@ func storm_field(c: Vector3, r: float, fade: float, age: float, sd: int, cold: C
 				sin(b) * r * 0.8 * h(sd, k + 5)
 			)
 		)
-		lightning(p, q, fade * 0.8, age, sd + k * 7, cold, 0.35)
+		lightning(p, q, fade * 0.85, age, sd + k * 7, cold, 0.45)
 	_light(c + Vector3(0, 0.8, 0), cold, (1.2 + r * 0.4) * fade, r + 3.0)
 
 
