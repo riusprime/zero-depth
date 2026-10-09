@@ -50,9 +50,9 @@ func test_swap_with_the_keyboard() -> void:
 	var hud: Hud = main.get_node("UI/Hud")
 	var code := w.swap_code
 	var gone := w.mod_slots[2]
-	var t0 := w.tick
+	var t0 := w.run_ticks
 	await e.frames(10)
-	assert_le(w.tick - t0, 1, "the world waits for the answer")
+	assert_eq(w.run_ticks, t0, "the world waits for the answer (only the tick counts)")
 	await e.tap(KEY_3)
 	assert_eq(hud.swap.focus_index(), 2)
 	await e.tap(KEY_ENTER)

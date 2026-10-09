@@ -152,7 +152,9 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		WorldReader.CARD_ABILITY:
 			face["tier"] = 3
 			var lvl := int(info["level"])
-			var new_key := "UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
+			var new_key := (
+				"UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
+			)
 			face["tier_text"] = (
 				ci.tr(new_key) if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)

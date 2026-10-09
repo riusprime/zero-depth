@@ -247,7 +247,8 @@ static func _mods(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	return left
 
 
-## Takes card `code` (Rewards.choose, Shop.buy, an event's card, v0.6.0 CU a stolen core or a curse card). v0.6.0 MX2: through BuildSlots.take; a new
+## Takes card `code` (Rewards.choose, Shop.buy, an event's card, v0.6.0 CU a stolen core or a curse card).
+## v0.6.0 MX2: through BuildSlots.take; a new
 ## modifier with the six slots full replaces slot `replace`, and without one it opens the swap choice by itself
 ## (BuildSlots.Source.GRANT: the world waits for the answer; a skip leaves the card).
 static func apply(w: World, code: int, replace: int = -1) -> void:

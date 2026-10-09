@@ -110,7 +110,9 @@ func test_the_utility_and_stat_cards_take_no_slot() -> void:
 	assert_true(BuildSlots.full(w))
 	assert_false(BuildSlots.needs_swap(w, _ab(w, &"blink")))
 	BuildSlots.take(w, _ab(w, &"blink"))
-	assert_eq(Abilities.utility(w), PlayerTable.Utility.BLINK, "the utility pick, outside the slots")
+	assert_eq(
+		Abilities.utility(w), PlayerTable.Utility.BLINK, "the utility pick, outside the slots"
+	)
 	for k in 12:
 		BuildSlots.take(w, Offers.stat_code(Stats.Stat.DAMAGE, 0))
 	assert_eq(w.stat_cards.size(), 12, "unlimited stat cards")
@@ -224,7 +226,9 @@ func _old_carry(w: World) -> Dictionary:
 	for id: StringName in [&"bomb_lobber", &"orbit_blades", &"arc_field"]:
 		owned.append(Offers.ability_of(_ab(w, id)))
 	var items := PackedInt32Array()
-	for id: StringName in [&"long_edge", &"ember_edge", &"twin_arc", &"momentum", &"overcharge", &"conductor"]:
+	for id: StringName in [
+		&"long_edge", &"ember_edge", &"twin_arc", &"momentum", &"overcharge", &"conductor"
+	]:
 		items.append(_it(w, id))
 	return {
 		&"ability_owned": owned,
@@ -252,7 +256,9 @@ func test_a_v0_5_carry_migrates_into_six_slots_deterministically() -> void:
 		w.ability_tables = ContentCompiler.compile_abilities(_repo)  # as Main: after the carry
 		w.stat_tables = ContentCompiler.compile_stat_cards(_repo)
 		Abilities.start_floor(w)
-		runs.append([w.mod_slots.duplicate(), w.items_owned.duplicate(), w.ability_levels.duplicate()])
+		runs.append(
+			[w.mod_slots.duplicate(), w.items_owned.duplicate(), w.ability_levels.duplicate()]
+		)
 	var w := _world()
 	var want := PackedInt32Array(
 		[
@@ -264,7 +270,9 @@ func test_a_v0_5_carry_migrates_into_six_slots_deterministically() -> void:
 			_it(w, &"twin_arc"),
 		]
 	)
-	assert_eq(runs[0][0], want, "the abilities in slot order, then the attack items in pickup order")
+	assert_eq(
+		runs[0][0], want, "the abilities in slot order, then the attack items in pickup order"
+	)
 	assert_false((runs[0][1] as PackedInt32Array).has(_it(w, &"overcharge")), "past six: dropped")
 	assert_false((runs[0][1] as PackedInt32Array).has(_it(w, &"conductor")))
 	assert_true((runs[0][1] as PackedInt32Array).has(_it(w, &"momentum")), "a plain item stays")

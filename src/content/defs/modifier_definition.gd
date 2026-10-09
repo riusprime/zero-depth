@@ -197,8 +197,6 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 		for id in names:
 			if not mods.has(id):
 				issues.append(
-					ValidationIssue.new(
-						&"unknown_modifier", d.resource_path, "no modifier %s" % id
-					)
+					ValidationIssue.new(&"unknown_modifier", d.resource_path, "no modifier %s" % id)
 				)
 	return issues

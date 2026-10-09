@@ -3,7 +3,8 @@ extends ContentDef
 ## An ability (v0.4.0 BS, owner F8; CONTENT_SCHEMA §8). v0.6.0 MX2 (owner B7, docs/design/MODIFIER_ENGINE.md "The
 ## build"): the starting weapon (Combo Sword for the Blade, Pulse Gun for the Gun) and the utility pick (Blink or
 ## Aegis) sit outside the six modifier slots; the six auto abilities are weapon modifiers (BuildSlots), each taking
-## one slot and levelling up to MAX_LEVEL when taken again. Times in seconds, compiled to ticks once (ContentCompiler.compile_abilities). Every number is a
+## one slot and levelling up to MAX_LEVEL when taken again. Times in seconds, compiled to ticks once
+## (ContentCompiler.compile_abilities). Every number is a
 ## starting value the owner tunes after playing.
 ## The per-level tables hold one entry per level (L1..L5); each kind reads only the ones it uses:
 ## - COMBO_SWORD: level_damage scales the swings and the Lunge Cleave; level_radius the reach; level_extra 1 = the

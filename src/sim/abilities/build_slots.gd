@@ -16,10 +16,11 @@ extends RefCounted
 ##   (World.swap_*: the world waits like an altar's pick).
 ## Every function here is deterministic and draws no randomness.
 
-const SLOTS := 6
 ## Where a pending swap came from (World.swap_source): the altar or chest choice (skip returns to its cards), the shop
 ## (skip returns to the shop), or a grant with no panel (an event, a pickup: skip leaves the card).
 enum Source { NONE, REWARD, SHOP, GRANT }
+
+const SLOTS := 6
 
 
 # --- What a card is ------------------------------------------------------------------------------------------
@@ -92,7 +93,10 @@ static func sync(w: World) -> void:
 
 ## A listed card stays while its table isn't loaded yet (the carry comes before the abilities' tables).
 static func _maybe_modifier(w: World, code: int) -> bool:
-	if Offers.type_of(code) == Offers.ABILITY and Offers.ability_of(code) >= w.ability_tables.size():
+	if (
+		Offers.type_of(code) == Offers.ABILITY
+		and Offers.ability_of(code) >= w.ability_tables.size()
+	):
 		return true
 	if Offers.type_of(code) == Offers.MOD and code >= w.item_tables.size():
 		return true
@@ -221,14 +225,17 @@ static func read(w: World) -> Dictionary:
 	for s in w.mod_slots.size():
 		var code := w.mod_slots[s]
 		var info := Offers.info(w, code)
-		slots.append(
-			{
-				"code": code,
-				"id": info["id"],
-				"name_key": info["name_key"],
-				"type": info["type"],
-				"level": level_at(w, s),
-			}
+		(
+			slots
+			. append(
+				{
+					"code": code,
+					"id": info["id"],
+					"name_key": info["name_key"],
+					"type": info["type"],
+					"level": level_at(w, s),
+				}
+			)
 		)
 	return {
 		"slots": slots,

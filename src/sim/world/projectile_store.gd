@@ -37,8 +37,7 @@ func add(
 	p_life: int,
 	p_damage: int = 0,
 	p_tags: int = SimEvent.TAG_PROJECTILE,
-	p_bounces: int = 0,
-	p_spec: String = ""
+	p_bounces: int = 0
 ) -> void:
 	ids.append(id)
 	owner.append(p_owner)
@@ -55,7 +54,7 @@ func add(
 	tags.append(p_tags)
 	bounces.append(p_bounces)
 	bounce_tick.append(-1)
-	spec_key.append(p_spec)
+	spec_key.append("")  # v0.6.0 MX2: World._apply_spawns names a player bolt's spec
 
 
 ## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own

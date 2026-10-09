@@ -131,7 +131,9 @@ func sync(reader: WorldReader) -> void:
 		var s: Dictionary = slots[k]
 		_names[k].text = tr(s["name_key"])
 		var lvl := int(s["level"])
-		_levels[k].text = tr("UI_SWAP_LEVEL") % lvl if int(s["type"]) == WorldReader.CARD_ABILITY else ""
+		_levels[k].text = (
+			tr("UI_SWAP_LEVEL") % lvl if int(s["type"]) == WorldReader.CARD_ABILITY else ""
+		)
 		var fam := CardFrames.family(s["id"], int(s["type"]))
 		t.set_meta(&"tint", CardFrames.tint(CardFrames.frame_of(fam)))
 	_title.text = tr("UI_SWAP_TITLE") % _count

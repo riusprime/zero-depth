@@ -203,7 +203,9 @@ func test_the_same_seed_replays_the_six_together() -> void:
 	]
 	var hashes := []
 	for n in 2:
-		var w := _world(&"blade", ids, [&"ember_edge"], [[Vector2(2, 1), 400], [Vector2(-2, 2), 400]])
+		var w := _world(
+			&"blade", ids, [&"ember_edge"], [[Vector2(2, 1), 400], [Vector2(-2, 2), 400]]
+		)
 		for k in 400:
 			w.step(_f(P if k % 12 == 0 else 0, 0, (k * 31) & 4095))
 		hashes.append(w.state_hash())

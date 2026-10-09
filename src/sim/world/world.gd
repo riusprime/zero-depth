@@ -408,12 +408,12 @@ func step(frame: InputFrame) -> void:
 		return
 	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
 	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
-	if swap_code >= 0 and swap_source == BuildSlots.Source.GRANT:  # v0.6.0 MX2: a swap with no panel of its own
-		BuildSlots.choose_grant(self, frame)
-		tick += 1
-		return
-	if choosing >= 0:
-		Rewards.choose(self, frame)
+	var granting := swap_code >= 0 and swap_source == BuildSlots.Source.GRANT
+	if granting or choosing >= 0:
+		if granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
+			BuildSlots.choose_grant(self, frame)
+		else:
+			Rewards.choose(self, frame)
 		tick += 1
 		return
 	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
@@ -1343,7 +1343,8 @@ func _remove_dead() -> void:
 func _apply_spawns() -> void:
 	for s in _pending_projectiles:
 		var id := _take_id()
-		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8], s[9])
+		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
+		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.

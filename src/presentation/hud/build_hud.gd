@@ -68,7 +68,9 @@ func sync(reader: WorldReader) -> void:
 		box.set_border_width_all(1)
 		if k < slots.size():
 			var s: Dictionary = slots[k]
-			var tint := CardFrames.tint(CardFrames.frame_of(CardFrames.family(s["id"], int(s["type"]))))
+			var tint := CardFrames.tint(
+				CardFrames.frame_of(CardFrames.family(s["id"], int(s["type"])))
+			)
 			box.bg_color = Color(tint, 0.85)
 			box.border_color = tint.lightened(0.3)
 			var ability := int(s["type"]) == WorldReader.CARD_ABILITY

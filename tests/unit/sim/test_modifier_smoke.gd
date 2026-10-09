@@ -71,7 +71,11 @@ func _check(label: String, r: Dictionary) -> void:
 
 
 func test_every_modifier_is_shipped_and_compiled() -> void:
-	assert_eq(_mods.size(), 16, "the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2)")
+	assert_eq(
+		_mods.size(),
+		16,
+		"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2)"
+	)
 
 
 func test_every_modifier_alone_on_each_weapon_runs_and_replays() -> void:
@@ -174,8 +178,10 @@ func test_every_form_as_a_layer_runs_on_every_attack() -> void:
 
 
 func test_the_ability_specs_are_compiled_and_carry_the_weapon() -> void:
-	var w := AttackScenario.world(&"blade", [&"ember_edge"], false, ABILITY_MODS)
-	for id: StringName in ABILITY_MODS:
+	var five := ABILITY_MODS.slice(0, 5)  # Ember Edge takes the sixth slot
+	var w := AttackScenario.world(&"blade", [&"ember_edge"], false, five)
+	assert_eq(w.mod_slots.size(), 6)
+	for id: StringName in five:
 		var s := Modifiers.book(w).spec(id)
 		assert_not_null(s, "%s has a spec" % id)
 		if s != null:

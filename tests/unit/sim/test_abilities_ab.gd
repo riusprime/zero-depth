@@ -459,7 +459,9 @@ func test_ability_worlds_replay_to_the_same_hash() -> void:
 			_grant(w, id, 3)
 		for n in 400:
 			var mv := Vector2i(SimTick.MOVE_MAX if (n / 60) % 2 == 0 else -SimTick.MOVE_MAX, 0)
-			var press := InputFrame.PRIMARY if n % 15 == 0 else (InputFrame.DASH if n % 97 == 5 else 0)
+			var press := (
+				InputFrame.PRIMARY if n % 15 == 0 else (InputFrame.DASH if n % 97 == 5 else 0)
+			)
 			w.step(_f(press, mv))
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1])

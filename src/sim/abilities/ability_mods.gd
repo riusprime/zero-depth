@@ -3,7 +3,8 @@ extends RefCounted
 ## The ability mods (v0.5.0 CP, owner F13: "more objects or upgrades and combos"): items that change an ability
 ## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). v0.6.0 MX2: each is a
 ## modifier card that takes one of the six slots (BuildSlots.is_slot_item); Razor Orbit is a modifier on the orbit
-## spec (data/modifiers/razor_orbit.tres: bleed on the orbiters' hits), the other three keep their numbers here. Their numbers live in
+## spec (data/modifiers/razor_orbit.tres: bleed on the orbiters' hits), the other three keep their numbers here.
+## Their numbers live in
 ## ItemMods (built from the owned items); every hook is a no-op without the item.
 ## - Cluster Payload (Bomb Lobber): a thrown bomb splits on landing into `bomblets` bomblets, evenly around the
 ##   blast at its edge, each landing bomblet_delay ticks later for a share of the bomb's damage in a share of its

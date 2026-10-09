@@ -136,7 +136,9 @@ static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
 		return
 	for k in root.status_ids.size():
 		if root.status_rider[k] == 0 and not s.has_status(StringName(root.status_ids[k])):
-			s.set_status(StringName(root.status_ids[k]), root.status_stacks[k], root.status_every[k])
+			s.set_status(
+				StringName(root.status_ids[k]), root.status_stacks[k], root.status_every[k]
+			)
 	for e in root.elements:
 		if not s.elements.has(e):
 			s.elements.append(e)

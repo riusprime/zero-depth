@@ -193,7 +193,8 @@ enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed comp
 @export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
 @export var rarity: Rarity                # COMMON, RARE
 @export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
-                                          # chain, hook, auto); empty = every spec
+                                          # chain, hook, auto; v0.6.0 MX2 the ability modifiers' own attacks: bomb,
+                                          # drone, orbit, field, nova, trail); empty = every spec
 @export var stage: Stage                  # the stage its ops run in, unless an op names another
 @export var ops: Array[ModifierOpDefinition]
 @export var overlay: StringName           # optional visual overlay id (design §4); empty in MX1
@@ -215,8 +216,8 @@ enum Trigger { ON_HIT, ON_KILL, ON_NTH }
 @export var element: StringName           # ELEMENT: ember, storm, frost, venom, void, bleed
 @export var hook_trigger: Trigger         # HOOK: when
 @export var hook_tags: PackedStringArray  #   the spawned attack's tags (it also gets `hook`)
-@export var hook_radius_m: float          #   a BURST's radius
-@export var hook_reach_m: float           #   a BEAM's jump reach
+@export var hook_radius_m: float          #   a BURST's radius (MX2: also a LOB's blast, a ZONE's, a RING's)
+@export var hook_reach_m: float           #   a BEAM's jump reach (MX2: a LOB's throw along the parent's way)
 @export var hook_damage: int              #   flat damage, or
 @export var hook_damage_permille: int     #   a share of the parent's base damage (at least 1)
 @export var hook_every: int               #   fires every Nth time (0 = each)
@@ -231,12 +232,18 @@ enum Trigger { ON_HIT, ON_KILL, ON_NTH }
 - **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
   known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
   belongs to; `MUL_PERMILLE` > 0; a known status with stacks > 0 and every >= 0; a known element; a known form; a
-  hook on a known trigger with known tags, spawning a `BURST` (radius > 0) or a `BEAM` (reach > 0; the two forms with
-  a hook runner in MX1), with damage or a damage share > 0, every >= 0.
+  hook on a known trigger with known tags, spawning a `BURST` (radius > 0) or a `BEAM` (reach > 0); v0.6.0 MX2 also
+  a `LOB`, a `ZONE` or a `RING` (radius > 0; the lingering times are the compile's: `Modifiers.HOOK_LOB_TICKS`,
+  `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`), with damage or a damage share > 0, every >= 0.
 - **Compile** (`ModifierCompiler`, application): seconds to ticks (`SimTick.seconds_to_ticks`), degrees to 1/4096
   turns (`ContentCompiler.degrees_to_units`; `arc_degrees` to the half width), m/s to m per tick, integer fields
   rounded once; `MUL_PERMILLE` values stay per mille. The same functions the item compiler used, so a migrated item
   keeps its exact numbers.
+- **v0.6.0 MX2: the modifier slots.** A card that names modifiers (an item, or an ability: `AbilityDefinition.
+  modifiers`), and every ability mod (`requires_ability`), is a modifier card: it takes one of the six slots and
+  its modifiers compile in slot order (SIM_CONTRACTS §8c). Shipped in MX2: `frost_nova` (Frost Nova's frost element:
+  target `weapon`, 1 frost stack a hit and the `frost` element) and `razor_orbit` (Razor Orbit: target `orbit`, 1
+  bleed stack and the `bleed` element; the bleed engine's numbers stay on the item). 16 modifiers in all.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
@@ -636,6 +643,16 @@ Shipped: Arc Field 3 targets within 6 m, 12 damage, 1 shock stack, 1.5 s (−0.1
 Static Chain); Frost Nova 3 m (+0.4 m a level), 10 damage, 2 frost stacks (4 from L3: a nova freezes on its own),
 every 4 s (3 s at L5; engine Glacial Edge); Flame Trail 0.9 m patches every 0.15 s and 0.8 m of movement, 2 s, 3
 damage every 0.5 s (6/s), 1 burn stack, +25 % damage and duration a level (engine Ember Edge).
+
+v0.6.0 MX2 (owner B7; SIM_CONTRACTS §8c): the six auto abilities are weapon modifiers (each takes one of the six
+modifier slots; Blink and Aegis are the utility pick outside them; the starting weapons stay). Appended fields:
+`modifiers: Array[StringName]` (ModifierDefinition ids the ability adds while held, at its place in the slot order;
+the cross-check reports an unknown one), `every_attacks` (Bomb Lobber: lobs on every Nth weapon attack; > 0 for that
+kind), `streak_kills` and `streak_seconds` (Frost Nova's kill streak; > 0 for that kind). Arc Field now reads
+`radius_m` (its field), `duration_seconds` (the field's life) and `hit_seconds` (> 0 each), `level_count` as the most
+enemies its field hits a tick, `range_m` as how far a shot's field may land. Shipped starting values: Bomb Lobber
+every 4th attack (2.5 s cooldown kept); Arc Field 1.6 m, 2 s, every 0.5 s; Frost Nova `modifiers = [frost_nova]`, 4
+kills within 2 s of each other. Every other number is v0.5's.
 
 `ComboDefinition` (v0.4.0 AB) may pair two abilities instead of two items: `ability_a`, `ability_b` (ability ids,
 both required and different, never together with `item_a`/`item_b`) and `min_level` (1–5, data 3: both owned at that
