@@ -1,20 +1,17 @@
 class_name RewardViews
 extends Node3D
 ## Altars and chests (v0.3.0 E). Low-poly, faceted stone like the gate:
-## - an altar: a hexagonal stone plinth with a blue-white rune crystal floating and turning above it, three small
-##   shards orbiting it, and a cold light;
+## - an altar (v0.6.1 SW, the shard look): a stone base with a cluster of outlined faceted crystals in its tier's
+##   card-frame colour, a soft glow, small fragments floating over it, and a light (ShardMesh builds the pieces);
 ## - a chest: a stone chest with iron bands and a red-glowing lock; its price floats above it while you are near,
 ##   red when you can't afford it. A refused open shakes it.
 ## The reward you can open now glows brighter. A node disappears when the sim removes its reward. Glowing
 ## materials have emission on from creation; only energies change at runtime (flash-safe).
 
-const ALTAR_GLOW := Color("#CFE8FF")
 const ALTAR_LIGHT := Color("#9CC8FF")
 ## v0.5.0 RT: a Deep floor's epic altar glows the Deep gate's violet.
-const EPIC_GLOW := Color("#B47CFF")
 const EPIC_LIGHT := Color("#8B3DFF")
 ## v0.5.5 AR (X1b): the boss's legendary altar glows bright gold.
-const LEGENDARY_GLOW := Color("#FFD84A")
 const LEGENDARY_LIGHT := Color("#FFC233")
 ## v0.5.5 AR: a reward locked in an arena that isn't cleared wears an amber seal ring until the clear.
 const SEAL := Color("#FFB020")
@@ -34,6 +31,19 @@ const LID_OPEN_S := 0.35
 const LID_OPEN_RAD := 1.9
 const OPENED_S := 1.1
 const FLARE := Color("#FFB45A")
+## v0.6.1 SW: the shard altar. Its tier wears a card frame's colour (CardFrames.TINT; one table, the owner may remap):
+## a plain altar the blue frame (the old rune's cold blue), the Deep floor's epic altar the purple frame (the Deep
+## gate's violet, PickSlot.EPIC), the boss's legendary altar the gold frame (the legendary cards' gold).
+const ALTAR_FRAME := {&"normal": &"blue", &"epic": &"purple", &"legendary": &"gold"}
+## The footprint (m): the stone base's radius, as the old plinth's. The sim's altar radius is not drawn from this.
+const ALTAR_RADIUS := 0.62
+const ALTAR_SPIN_Y := 1.3
+const ALTAR_CRYSTAL_ENERGY := 0.5
+const ALTAR_GLOW_ALPHA := 0.3
+## In reach: the crystals' emission and the glow's strength are multiplied by this.
+const ALTAR_HOT := 1.8
+## A dropped core floats this high (m); before v0.6.1 SW it was built at 0.9 and the bob lifted it to 1.25.
+const DROP_SPIN_Y := 1.0
 
 ## Use the owner's chest model (set by WorldViewRoot when the floor has a lighting mood; the old look keeps the
 ## code-built stone chest).
@@ -47,28 +57,13 @@ var _denied_tick := -1
 var _shake := {}
 ## Chests whose reward was taken, opening: node -> seconds since.
 var _opening := {}
-var _rune_mat := StandardMaterial3D.new()
-var _epic_mat := StandardMaterial3D.new()
 var _lock_mat := StandardMaterial3D.new()
-var _legend_mat := StandardMaterial3D.new()
 var _seal_mat := StandardMaterial3D.new()
 
 
 func _init() -> void:
 	name = "Rewards"
-	_rune_mat.albedo_color = ALTAR_GLOW
-	_rune_mat.emission_enabled = true
-	_rune_mat.emission = ALTAR_GLOW
-	_rune_mat.emission_energy_multiplier = 2.2
-	_epic_mat.albedo_color = EPIC_GLOW
-	_epic_mat.emission_enabled = true
-	_epic_mat.emission = EPIC_GLOW
-	_epic_mat.emission_energy_multiplier = 2.6
-	_lock_mat.albedo_color = LOCK_RED
-	_lock_mat.emission_enabled = true
-	_lock_mat.emission = LOCK_RED
-	_lock_mat.emission_energy_multiplier = 2.6
-	for pair: Array in [[_legend_mat, LEGENDARY_GLOW, 3.2], [_seal_mat, SEAL, 2.0]]:
+	for pair: Array in [[_lock_mat, LOCK_RED, 2.6], [_seal_mat, SEAL, 2.0]]:
 		var m: StandardMaterial3D = pair[0]
 		m.albedo_color = pair[1]
 		m.emission_enabled = true
@@ -191,8 +186,16 @@ func _process(delta: float) -> void:
 		)
 		var spin: Node3D = n.get_meta(&"spin") if n.has_meta(&"spin") else null
 		if spin != null:
-			spin.position.y = 1.25 + sin(_t * 2.0 + n.position.x) * 0.07
+			var y0: float = n.get_meta(&"spin_y", 1.25)
+			spin.position.y = y0 + sin(_t * 2.0 + n.position.x) * 0.07
 			spin.rotation.y = _t * (1.6 if hot else 0.9)
+			for frag: Node3D in spin.get_children():
+				if frag.has_meta(&"bob"):  # v0.6.1 SW: each fragment bobs on its own beat
+					frag.position.y = (
+						frag.get_meta(&"bob") + sin(_t * 2.6 + frag.get_index() * 1.7) * 0.05
+					)
+		if n.has_meta(&"crystal_mat"):  # v0.6.1 SW: the shard altar brightens in reach
+			_glow_toward(n, hot, delta)
 		var body: Node3D = n.get_meta(&"body")
 		var left: float = _shake.get(id, 0.0)
 		if left > 0.0:
@@ -203,31 +206,53 @@ func _process(delta: float) -> void:
 			body.position.x = 0.0
 
 
-## A hexagonal stone plinth with a floating rune crystal (blue-white) and three orbiting shards.
+## v0.6.1 SW: eases the shard altar's crystal emission and glow toward their in-reach (hot) or idle strength. Only
+## energies and the glow's alpha change (flash-safe).
+func _glow_toward(n: Node3D, hot: bool, delta: float) -> void:
+	var mat: StandardMaterial3D = n.get_meta(&"crystal_mat")
+	var want := ALTAR_CRYSTAL_ENERGY * (ALTAR_HOT if hot else 1.0)
+	mat.emission_energy_multiplier = move_toward(mat.emission_energy_multiplier, want, delta * 3.0)
+	var glow_mat := (n.get_meta(&"glow") as MeshInstance3D).material_override as StandardMaterial3D
+	var c := glow_mat.albedo_color
+	c.a = move_toward(c.a, ALTAR_GLOW_ALPHA * (ALTAR_HOT if hot else 1.0), delta * 1.5)
+	glow_mat.albedo_color = c
+
+
+## v0.6.1 SW (owner R3): the altar in the crystal-shard look of the owner's card art. On the same hexagonal footprint
+## as before (radius ALTAR_RADIUS): a two-step stone base, a cluster of outlined faceted shards growing from it in
+## the tier's card-frame colour (ALTAR_FRAME), a soft additive inner glow, and a few small fragments floating and
+## bobbing over the cluster. The crystals are lit by the scene (the v0.5.9 moods) with a little emission of their
+## own. In reach the light, the glow and the crystals' emission brighten and the fragments turn faster.
 func make_altar(epic: bool = false, legendary: bool = false) -> Node3D:
+	var tier := &"legendary" if legendary else (&"epic" if epic else &"normal")
+	var color := altar_color(tier)
 	var root := Node3D.new()
+	root.name = "ShardAltar"
 	var body := Node3D.new()
 	root.add_child(body)
-	var stone := _stone_mat(STONE)
-	var top := _stone_mat(STONE_TOP)
-	body.add_child(_mesh(prism(6, 0.62, 0.56, 0.16, 0.0, 0.0, 3), stone))
-	body.add_child(_mesh(prism(6, 0.36, 0.3, 0.52, 0.16, 0.26, 5), stone))
-	body.add_child(_mesh(prism(6, 0.48, 0.44, 0.13, 0.68, 0.0, 7), top))
+	var stone := ShardMesh.stone_material(ShardMesh.STONE)
+	var top := ShardMesh.stone_material(ShardMesh.STONE_TOP)
+	body.add_child(_mesh(prism(6, ALTAR_RADIUS, 0.56, 0.16, 0.0, 0.0, 3), stone))
+	var rock := _mesh(ShardMesh.rock(7, 0.5, 0.4, 0.2, 5), top)
+	rock.position.y = 0.16
+	body.add_child(rock)
+	var mat := ShardMesh.crystal_material(color, ALTAR_CRYSTAL_ENERGY)
+	var cluster := ShardMesh.cluster(mat, 8, 0.95 if legendary else 0.85, 0.5, 11)
+	cluster.position.y = 0.3
+	body.add_child(cluster)
+	var glow := ShardMesh.glow(color, 1.7, ALTAR_GLOW_ALPHA)
+	glow.position.y = 0.85
+	root.add_child(glow)
 	var spin := Node3D.new()
-	spin.position.y = 1.25
+	spin.position.y = ALTAR_SPIN_Y
 	root.add_child(spin)
-	var glow := _epic_mat if epic else _rune_mat  # v0.5.0 RT: the epic altar's violet
-	if legendary:
-		glow = _legend_mat  # v0.5.5 AR (X1b): the boss's legendary gold
-	var rune := _mesh(bipyramid(4, 0.17, 0.3, 0.3), glow)
-	rune.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	spin.add_child(rune)
-	for k in 3:
-		var a := TAU * k / 3.0
-		var shard := _mesh(bipyramid(3, 0.05, 0.1, 0.1), glow)
-		shard.position = Vector3(cos(a) * 0.42, -0.1 + 0.08 * k, sin(a) * 0.42)
-		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		spin.add_child(shard)
+	for k in 4:
+		var a := TAU * k / 4.0
+		var frag := ShardMesh.fragment(mat, 0.05 if k % 2 == 0 else 0.035, 13 + k)
+		frag.position = Vector3(cos(a) * 0.46, 0.08 * (k % 2), sin(a) * 0.46)
+		frag.rotation = Vector3(0.4 * k, a, 0.3)
+		frag.set_meta(&"bob", frag.position.y)
+		spin.add_child(frag)
 	var light := OmniLight3D.new()
 	light.light_color = EPIC_LIGHT if epic else ALTAR_LIGHT
 	if legendary:
@@ -238,11 +263,20 @@ func make_altar(epic: bool = false, legendary: bool = false) -> Node3D:
 	root.add_child(light)
 	root.set_meta(&"body", body)
 	root.set_meta(&"spin", spin)
+	root.set_meta(&"spin_y", ALTAR_SPIN_Y)
 	root.set_meta(&"light", light)
 	root.set_meta(&"energy", 0.9)
 	root.set_meta(&"epic", epic)
 	root.set_meta(&"legendary", legendary)
+	root.set_meta(&"tier", tier)
+	root.set_meta(&"crystal_mat", mat)
+	root.set_meta(&"glow", glow)
 	return root
+
+
+## v0.6.1 SW: the colour of an altar of `tier` (&"normal", &"epic", &"legendary"): its card frame's tint.
+static func altar_color(tier: StringName) -> Color:
+	return CardFrames.tint(ALTAR_FRAME.get(tier, ALTAR_FRAME[&"normal"]))
 
 
 ## v0.6.0 CU: a free card drop (a stolen core, Marked's rare card): the core's crystal floating low over the floor,
@@ -253,11 +287,24 @@ func make_drop(color: Color) -> Node3D:
 	root.add_child(body)
 	var mat := CoreViews.glow_material(color, 2.6)
 	var spin := Node3D.new()
-	spin.position.y = 0.9
+	spin.position.y = DROP_SPIN_Y
 	root.add_child(spin)
-	var gem := _mesh(bipyramid(6, 0.2, 0.34, 0.34), mat)
-	gem.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# v0.6.1 SW: the core is a lit, outlined shard (ShardMesh) with a soft glow and two chips floating by it.
+	var shard_mat := ShardMesh.crystal_material(color, 1.1)
+	var gem := ShardMesh.outlined(
+		ShardMesh.shard(6, 0.2, 0.36, 0.3, 31), shard_mat, Vector3.ZERO, 0.16
+	)
+	(gem.get_meta(&"crystal") as MeshInstance3D).cast_shadow = (
+		GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	)
 	spin.add_child(gem)
+	for k in 2:
+		var frag := ShardMesh.fragment(shard_mat, 0.04, 33 + k)
+		frag.position = Vector3(0.34 if k == 0 else -0.3, 0.12 - 0.2 * k, 0.1)
+		frag.set_meta(&"bob", frag.position.y)
+		spin.add_child(frag)
+	var halo := ShardMesh.glow(color, 1.1, 0.3)
+	spin.add_child(halo)
 	var ring := MeshInstance3D.new()
 	var t := TorusMesh.new()
 	t.inner_radius = 0.42
@@ -275,9 +322,11 @@ func make_drop(color: Color) -> Node3D:
 	root.add_child(light)
 	root.set_meta(&"body", body)
 	root.set_meta(&"spin", spin)
+	root.set_meta(&"spin_y", DROP_SPIN_Y)
 	root.set_meta(&"light", light)
 	root.set_meta(&"energy", 0.8)
 	root.set_meta(&"drop", true)
+	root.set_meta(&"crystal_color", color)
 	return root
 
 
