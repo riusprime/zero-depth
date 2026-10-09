@@ -144,38 +144,40 @@ How it works here (deterministic sim, data in `.tres`):
 - Hand-made code only for named showcase combos and for an outlier that breaks the game.
 
 ### Modifiers and trinkets (G1 approved 2026-10-08, owner: "keep all M1–M30")
-| # | Name | Effect (applies to every attack) | Kind |
-|---|---|---|---|
-| M1 | Storm Core | Hits chain lightning to 2 more enemies (50 % damage) | element |
-| M2 | Ember Core | Hits burn; kills explode in a small fire burst | element |
-| M3 | Frost Core | Hits slow; the 3rd hit on a slowed enemy freezes it for 1 s | element |
-| M4 | Venom Core | Hits stack poison that spreads on death | element |
-| M5 | Echo Slash | Melee attacks also fire a projectile copy of the arc (the "sword that shoots") | merge |
-| M6 | Edge Rounds | Projectiles that hit pass through once and leave a short slash at the point of hit | merge |
-| M7 | Shock Circles | Projectiles become expanding shock rings at half range | form (trinket) |
-| M8 | Halo Shot | Projectiles fire in a full circle, ×3 count, ×0.5 range | form (trinket) |
-| M9 | Boomerang | Projectiles return to you, hitting again | form (trinket) |
-| M10 | Orbit Rounds | Projectiles orbit you once before launching | form (trinket) |
-| M11 | Split Shot | Projectiles split in 3 on the first hit | pattern |
-| M12 | Twin Cast | Every attack repeats once 0.2 s later at 50 % | pattern |
-| M13 | Rearguard | Every attack also fires backwards at 60 % | pattern |
-| M14 | Wide Arc | Arcs +40° wider, projectiles +30 % size | pattern |
-| M15 | Gravity Well | Hits pull nearby enemies toward the point of hit | hook |
-| M16 | Shatter | Kills burst into 4 shards that hit nearby enemies | hook |
-| M17 | Aftershock | The end of every arc or projectile leaves a small blast | hook |
-| M18 | Seeker | Projectiles home in; arcs snap toward the nearest enemy | form |
-| M19 | Long Shadow | Dash leaves an afterimage that repeats your last attack | hook (dash) |
-| M20 | Phase Dash | Dash is intangible and ends in a shard burst | hook (dash) |
-| M21 | Ember Trail | Moving leaves burning crystals on the ground | hook (move) |
-| M22 | Aether Shell | Out of combat for 3 s: a barrier that absorbs one hit | defence |
-| M23 | Ascension | After 3 s without attacking, the next attack is ×3 | payload |
-| M24 | Resonance | Each element on an enemy adds +15 % damage taken (rewards mixing elements) | payload |
-| M25 | Heat Sink Rounds | At Overclock, attacks fire one extra projectile | heat |
-| M26 | Meltdown Edge | Venting fires your weapon's attack in a full circle | heat |
-| M27 | Mirror Drone | The drone copies your weapon's attack form with its modifiers | ability merge |
-| M28 | Bomb Rounds | Every 5th projectile is a bomb from Bomb Lobber (needs Bomb Lobber) | ability merge |
-| M29 | Blade Orbit | Orbit Blades take your weapon's element and hooks | ability merge |
-| M30 | Short Fuse | All ranges ×0.6, all damage ×1.4 | trade-off trinket |
+**All 30 built in v0.6.0 Step MX4** as modifier data (each row's id, ops and the reading chosen: [`evidence/MODIFIER_ENGINE_4.md`](evidence/MODIFIER_ENGINE_4.md)); every number is a starting value.
+
+| # | Name | Effect (applies to every attack) | Kind | Status |
+|---|---|---|---|---|
+| M1 | Storm Core | Hits chain lightning to 2 more enemies (50 % damage) | element | Built (MX4, `storm_core`) |
+| M2 | Ember Core | Hits burn; kills explode in a small fire burst | element | Built (MX4, `ember_core`) |
+| M3 | Frost Core | Hits slow; the 3rd hit on a slowed enemy freezes it for 1 s | element | Built (MX4, `frost_core`) |
+| M4 | Venom Core | Hits stack poison that spreads on death | element | Built (MX4, `venom_core`) |
+| M5 | Echo Slash | Melee attacks also fire a projectile copy of the arc (the "sword that shoots") | merge | Built (MX4, `echo_slash`) |
+| M6 | Edge Rounds | Projectiles that hit pass through once and leave a short slash at the point of hit | merge | Built (MX4, `edge_rounds`) |
+| M7 | Shock Circles | Projectiles become expanding shock rings at half range | form (trinket) | Built (MX4, `shock_circles`) |
+| M8 | Halo Shot | Projectiles fire in a full circle, ×3 count, ×0.5 range | form (trinket) | Built (MX4, `halo_shot`) |
+| M9 | Boomerang | Projectiles return to you, hitting again | form (trinket) | Built (MX4, `boomerang`) |
+| M10 | Orbit Rounds | Projectiles orbit you once before launching | form (trinket) | Built (MX4, `orbit_rounds`) |
+| M11 | Split Shot | Projectiles split in 3 on the first hit | pattern | Built (MX4, `split_shot`) |
+| M12 | Twin Cast | Every attack repeats once 0.2 s later at 50 % | pattern | Built (MX4, `twin_cast`) |
+| M13 | Rearguard | Every attack also fires backwards at 60 % | pattern | Built (MX4, `rearguard`) |
+| M14 | Wide Arc | Arcs +40° wider, projectiles +30 % size | pattern | Built (MX4, `wide_arc`) |
+| M15 | Gravity Well | Hits pull nearby enemies toward the point of hit | hook | Built (MX4, `gravity_well`) |
+| M16 | Shatter | Kills burst into 4 shards that hit nearby enemies | hook | Built (MX4, `shatter`) |
+| M17 | Aftershock | The end of every arc or projectile leaves a small blast | hook | Built (MX4, `aftershock`) |
+| M18 | Seeker | Projectiles home in; arcs snap toward the nearest enemy | form | Built (MX4, `seeker`) |
+| M19 | Long Shadow | Dash leaves an afterimage that repeats your last attack | hook (dash) | Built (MX4, `long_shadow`) |
+| M20 | Phase Dash | Dash is intangible and ends in a shard burst | hook (dash) | Built (MX4, `phase_dash`) |
+| M21 | Ember Trail | Moving leaves burning crystals on the ground | hook (move) | Built (MX4, `ember_trail`) |
+| M22 | Aether Shell | Out of combat for 3 s: a barrier that absorbs one hit | defence | Built (MX4, `aether_shell`) |
+| M23 | Ascension | After 3 s without attacking, the next attack is ×3 | payload | Built (MX4, `ascension`) |
+| M24 | Resonance | Each element on an enemy adds +15 % damage taken (rewards mixing elements) | payload | Built (MX4, `resonance_core`) |
+| M25 | Heat Sink Rounds | At Overclock, attacks fire one extra projectile | heat | Built (MX4, `heat_sink_rounds`) |
+| M26 | Meltdown Edge | Venting fires your weapon's attack in a full circle | heat | Built (MX4, `meltdown_edge`) |
+| M27 | Mirror Drone | The drone copies your weapon's attack form with its modifiers | ability merge | Built (MX4, `mirror_drone`) |
+| M28 | Bomb Rounds | Every 5th projectile is a bomb from Bomb Lobber (needs Bomb Lobber) | ability merge | Built (MX4, `bomb_rounds`) |
+| M29 | Blade Orbit | Orbit Blades take your weapon's element and hooks | ability merge | Built (MX4, `blade_orbit`) |
+| M30 | Short Fuse | All ranges ×0.6, all damage ×1.4 | trade-off trinket | Built (MX4, `short_fuse`) |
 
 (Several names come from the owner's card reference image: Echo Shard, Soul Fracture, Tide Crystal, Resonance
 Core, Lifebloom, Stasis Vein, Gravity Well, Shatter Aura, Ember Trail, Ascension Shard, Aether Shell, Phase
@@ -221,7 +223,7 @@ the owner's answers on X1, D4/D7, G1 (M, C) and the mockups.
 | AR | Sealed arenas: the Overrun waves inside a sealed room (S8); about a third of the combat rooms are arenas (D2, X1); the boss's legendary pick (X1b). **Built** (`bb0aa38`, [`evidence/ARENAS.md`](evidence/ARENAS.md)) | S8, D2, X1, X1b | 2 |
 | DS | Difficulty scaling with a cap (D4), boss caps and phase mechanics (D6, D7), Deep that bites (S5), principle in the blueprint (D8) | D3–D8, D10, S5, B1 | 2 |
 | UI | The UI restyle from the A5 pick: menus in C, HUD/heat/health/minimap in B, no minimap black background | A5 | 2 |
-| MX | The attack-modifier engine and the approved modifiers (B2–B6) | B2–B6 | 2 |
+| MX | The attack-modifier engine and the approved modifiers (B2–B6). MX1, MX2 built; **MX4 built**: M1–M30 as modifier data, the legendary modifiers ([`evidence/MODIFIER_ENGINE_4.md`](evidence/MODIFIER_ENGINE_4.md)) | B2–B6 | 2 |
 | CU | Trade-off curses (S6, S7), and core theft (X2). **Built** (`949b32f`, [`evidence/CURSES.md`](evidence/CURSES.md)) | S6, S7, X2 | 2 |
 
 Each step: tests (unit + an e2e through `main.tscn` with real input where it's player-facing), an evidence file in

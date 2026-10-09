@@ -8,7 +8,7 @@ script = ExtResource("2_op")
 op = 6
 stage = 3
 status = &"burn"
-stacks = 1
+stacks = 2
 
 [sub_resource type="Resource" id="Op_2"]
 script = ExtResource("2_op")

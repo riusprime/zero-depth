@@ -738,6 +738,26 @@ func step_attack_id(step: int = -1) -> StringName:
 	return Modifiers.step_id(_step_index(step))
 
 
+## v0.6.0 MX4: what the M-list's modifiers do that no attack spec shows (ModifierOverlays draws it): Aether Shell's
+## barrier is up ("shell"; "shell_tick" the last hit it absorbed, -1 = none), Ascension's next attack is charged
+## ("charged"), the dash is intangible now ("phase", Phase Dash), the poisoned enemies' positions ("poisoned"), and
+## where a queued launch waits ("queued": Long Shadow's afterimage, Twin Cast's repeat).
+func modifier_marks() -> Dictionary:
+	var poisoned := PackedVector2Array()
+	var a := _w.actors
+	for i in range(1, a.size()):
+		if a.dead[i] == 0 and i < a.poison_stacks.size() and a.poison_stacks[i] > 0:
+			poisoned.append(a.pos(i))
+	return {
+		"shell": ModifierRuntime.shell_up(_w),
+		"shell_tick": _w.mx.shell_tick,
+		"charged": ModifierRuntime.charged(_w),
+		"phase": _w.is_dashing() and ModifierRuntime.intangible(_w),
+		"poisoned": poisoned,
+		"queued": _w.mx.q_pos.duplicate(),
+	}
+
+
 ## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
 func attack_digest() -> String:
 	return Modifiers.book(_w).digest

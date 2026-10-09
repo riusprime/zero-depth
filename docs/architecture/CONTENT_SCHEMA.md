@@ -181,6 +181,15 @@ v0.5.0 CP: `@export var requires_ability: StringName` (empty, or an `AbilityDefi
 (`drone_rate_per_heat_permille`; also offered only in runs with heat), `RAZOR_ORBIT` (`stacks_per_hit` and the
 bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterimage_radius_m`,
 `afterimage_delay_seconds`). Each validates the fields it reads (positive; seconds at least one tick).
+**v0.6.0 MX4:** Cluster Payload's, Overclocked Drone's and Afterimage's fields left the item: each names its own
+modifier (`data/modifiers/<id>.tres`: an `ON_END` lob of 3 bomblets on the `bomb` spec; `SET heat_rate_permille 8`
+on the `drone` spec; a waiting `ON_LAUNCH` burst on the `blink` spec), and the kinds joined `MODIFIER_KINDS`. The
+rarity gains `LEGENDARY` (offered only by the boss's legendary tier and a boss's core). The kind `MODIFIER` (31,
+appended) is a modifier card of the M-list: it names its own modifier and carries only the engine numbers that
+modifier feeds (burn fields, the shock fields, `slow_*`, and Venom Core's poison: `poison_damage`,
+`poison_period_seconds`, `poison_seconds`, `poison_max_stacks`, `poison_spread_m`; each set checked when present). The
+tag set gains `venom`; a `MODIFIER` card tagged `heat` is offered only in runs with heat. Item indices keep v0.5's
+order: the items of the v0.5 kinds by id, then the `MODIFIER` cards by id (`ModifierCompiler.item_defs`).
 
 **Modifiers** (v0.6.0 MX1, category `modifiers`, `data/modifiers/*.tres`; design
 [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §2; sim side
@@ -191,10 +200,11 @@ bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterima
 class_name ModifierDefinition extends ContentDef
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed compile order; appended, never renumbered
 @export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
-@export var rarity: Rarity                # COMMON, RARE
+@export var rarity: Rarity                # COMMON, RARE (v0.6.0 MX4: LEGENDARY)
 @export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
                                           # chain, hook, auto; v0.6.0 MX2 the ability modifiers' own attacks: bomb,
-                                          # drone, orbit, field, nova, trail); empty = every spec
+                                          # drone, orbit, field, nova, trail; v0.6.0 MX4 the moments: dash, vent,
+                                          # move, blink, body); empty = every attack (never a moment)
 @export var stage: Stage                  # the stage its ops run in, unless an op names another
 @export var ops: Array[ModifierOpDefinition]
 @export var overlay: StringName           # optional visual overlay id (design §4); empty in MX1
@@ -203,14 +213,15 @@ enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed comp
 ```gdscript
 class_name ModifierOpDefinition extends Resource   # a sub-resource of ops
 enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
-enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST }
-enum Trigger { ON_HIT, ON_KILL, ON_NTH }
+enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }   # MX4: WEAPON, a hook's child only
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }   # MX4: the last three
+enum When { ALWAYS, OVERCLOCK }                                         # MX4
 @export var op: Op
 @export var stage: int = -1               # -1: the modifier's stage
 @export var field: StringName             # numeric ops: one of FIELD_STAGE's keys, in content units
 @export var value: float                  # MUL_PERMILLE: per mille
 @export var form: Form                    # SET_FORM, and a HOOK's attack
-@export var status: StringName            # STATUS: burn, shock, bleed, frost, slow
+@export var status: StringName            # STATUS: burn, shock, bleed, frost, slow (MX4: poison)
 @export var stacks: int                   #   stacks a landed hit feeds
 @export var every: int                    #   one application every N landed hits (0 = each)
 @export var element: StringName           # ELEMENT: ember, storm, frost, venom, void, bleed
@@ -222,19 +233,29 @@ enum Trigger { ON_HIT, ON_KILL, ON_NTH }
 @export var hook_damage_permille: int     #   a share of the parent's base damage (at least 1)
 @export var hook_every: int               #   fires every Nth time (0 = each)
 @export var hook_effect: StringName       #   the effect id its hits carry
+@export var hook_delay_seconds: float     #   MX4: the child waits this long after its trigger (0 = at once)
+@export var hook_when: When               #   MX4: ALWAYS, or only at Overclock
+@export var hook_ops: Array[ModifierOpDefinition]  # MX4: shape the child before the build compiles it (no HOOK, no SET_FORM)
 ```
 
 - **Fields and stages** (`ModifierOpDefinition.FIELD_STAGE`): PATTERN `count`, `spread_degrees`,
   `repeat_delay_seconds`, `repeat_damage_permille`; BEHAVIOUR `bounces`, `pierce`; PAYLOAD `damage`,
   `damage_permille`, `nth_every`, `nth_damage_permille`, `hitstop_seconds`; SCALE `arc_degrees` (the full width),
   `reach_m`, `reach_bonus_permille`, `radius_m`, `speed_mps`, `life_seconds`, `period_seconds`,
-  `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK.
+  `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK. v0.6.0 MX4
+  (SIM_CONTRACTS §8d): FORM `mirror`; PATTERN `directions` (0 forward, 1 circle), `back_damage_permille`,
+  `aim_offset_degrees`; BEHAVIOUR `chains`, `homing_dps` (degrees per second), `returns`, `orbit_seconds`,
+  `intangible`; PAYLOAD `pull_m`, `barrier_seconds`, `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
+  `heat_rate_permille`, and the virtual `range` (`MUL_PERMILLE` on whichever field is the form's range).
 - **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
   known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
   belongs to; `MUL_PERMILLE` > 0; a known status with stacks > 0 and every >= 0; a known element; a known form; a
   hook on a known trigger with known tags, spawning a `BURST` (radius > 0) or a `BEAM` (reach > 0); v0.6.0 MX2 also
   a `LOB`, a `ZONE` or a `RING` (radius > 0; the lingering times are the compile's: `Modifiers.HOOK_LOB_TICKS`,
-  `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`), with damage or a damage share > 0, every >= 0.
+  `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`), with damage or a damage share > 0, every >= 0. v0.6.0 MX4: also
+  a `BOLT` or an `ARC` (radius or reach > 0) and a `WEAPON` copy (no size); the triggers `ON_END`, `ON_LAUNCH` and
+  `EVERY_NTH` (every >= 2); a delay >= 0; a known `when`; each of `hook_ops` neither a hook nor a form change, with a
+  known field, status or element.
 - **Compile** (`ModifierCompiler`, application): seconds to ticks (`SimTick.seconds_to_ticks`), degrees to 1/4096
   turns (`ContentCompiler.degrees_to_units`; `arc_degrees` to the half width), m/s to m per tick, integer fields
   rounded once; `MUL_PERMILLE` values stay per mille. The same functions the item compiler used, so a migrated item
@@ -243,7 +264,12 @@ enum Trigger { ON_HIT, ON_KILL, ON_NTH }
   modifiers`), and every ability mod (`requires_ability`), is a modifier card: it takes one of the six slots and
   its modifiers compile in slot order (SIM_CONTRACTS §8c). Shipped in MX2: `frost_nova` (Frost Nova's frost element:
   target `weapon`, 1 frost stack a hit and the `frost` element) and `razor_orbit` (Razor Orbit: target `orbit`, 1
-  bleed stack and the `bleed` element; the bleed engine's numbers stay on the item). 16 modifiers in all.
+  bleed stack and the `bleed` element; the bleed engine's numbers stay on the item). 16 modifiers in MX2.
+- **v0.6.0 MX4: the M-list.** 29 new cards (M1–M30; M3 Frost Core is the v0.5 item, generalised), 3 legendary
+  versions for the boss's tier (Tempest Core, Inferno Core, Echo Storm) and the three ability mods' own modifiers:
+  51 modifiers in all. Each card's ops, target and numbers are the table in
+  [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md); every number
+  is a starting value.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
@@ -680,7 +706,9 @@ Without the definition a floor has no regular arenas (the Overrun still seals).
 ids), `stat_weight` / `mod_weight` (data 60 / 40), `offer_size` (1..3; data 3) and `stat_multiplier` (≥ 1; data 1.6:
 a legendary stat card is its epic amount × this; `compile_stat_cards` appends that fourth rarity to every
 `StatTable`). Compiled by `ContentCompiler.compile_legendary` into `LegendaryTable` (indices into the compiled stat
-cards and items). Step MX swaps this pool for legendary modifiers.
+cards and items). v0.6.0 MX4: `mods` are the legendary modifiers: the three legendary versions (Tempest Core,
+Inferno Core, Echo Storm; rarity `LEGENDARY`, never in another pool) and the five trinkets (Shock Circles, Halo Shot,
+Boomerang, Orbit Rounds, Short Fuse); a boss's core draws from the same list.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

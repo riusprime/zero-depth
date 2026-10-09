@@ -21,6 +21,8 @@ func test_every_item_has_tags_from_the_closed_set() -> void:
 func test_each_engine_has_three_or_four_members() -> void:
 	var count := {}
 	for def: ItemDefinition in _repo().all_of(&"items"):
+		if def.kind == ItemDefinition.Kind.MODIFIER:
+			continue  # v0.6.0 MX4: the M-list's cards feed the engines too; the rule is the v0.3.0 items'
 		for t in def.tags:
 			count[t] = count.get(t, 0) + 1
 	for engine in ["fire", "shock", "frost", "bleed", "guard"]:

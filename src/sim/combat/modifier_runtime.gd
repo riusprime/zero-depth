@@ -43,7 +43,9 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 	c.muzzle_m = ctx.muzzle_m
 	c.target = ctx.target
 	c.has_target = ctx.has_target
-	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_AT_PLAYER
+	var flags := ModifierState.FLAG_REPEAT
+	if ctx.origin == w.player_pos():  # the player's own attack comes again from where the player is then
+		flags |= ModifierState.FLAG_AT_PLAYER
 	_queue(w, spec.key, w.tick + spec.repeat_delay_ticks, c, flags, "")
 
 
@@ -140,7 +142,7 @@ static func on_blink(w: World) -> void:
 static func _moment(w: World, spec: AttackSpec, trigger: int, at: Vector2) -> void:
 	if spec == null or spec.hooks_on(trigger).is_empty() or w.player_dead():
 		return
-	var ang := PlayerBuild.melee_angle(w) if PlayerBuild.has_blade(w) else w.aim_angle
+	var ang := w.swing_angle if PlayerBuild.has_blade(w) else w.aim_angle  # the last attack's way
 	var ctx := AttackContext.make(at, ang, 0, w.take_root(), 0, &"")
 	Attacks.fire(w, spec, trigger, ctx, at)
 

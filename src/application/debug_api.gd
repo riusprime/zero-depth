@@ -18,6 +18,8 @@ var enemy_choice := 0
 ## v0.4.0 BS forced loadouts: the ability the panel grants next (an index into World.ability_tables), and grants
 ## waiting for the tick boundary (each one a new slot or a level, as a card would).
 var ability_choice := 0
+## v0.6.0 MX4: the modifier card grant_mod gives (an item index picked with next_mod; -1 = the first one not held).
+var mod_choice := -1
 var _kill_boss := false
 var _grants := PackedInt32Array()
 ## v0.6.0 MX2: attack-item modifiers queued by grant_mod (each the first one not held that the build may take).
@@ -173,6 +175,16 @@ func grant_mod() -> void:
 	_mod_grants += 1
 
 
+## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order.
+func next_mod() -> void:
+	var n := world.item_tables.size()
+	for step in range(1, n + 1):
+		var k := (mod_choice + step) % n if mod_choice >= 0 else step - 1
+		if BuildSlots.is_slot_item(world.item_tables[k]):
+			mod_choice = k
+			return
+
+
 ## v0.4.0 AB (dev route): puts the player just outside the Overrun room's first doorway at the next tick boundary,
 ## so walking on goes through the red frame.
 func go_overrun() -> void:
@@ -272,6 +284,13 @@ func _apply_commands() -> void:
 	_grants.clear()
 	while _mod_grants > 0 and not BuildSlots.swapping(world):
 		_mod_grants -= 1
+		if (
+			mod_choice >= 0
+			and mod_choice < world.item_tables.size()
+			and not world.items_owned.has(mod_choice)
+		):
+			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card
+			continue
 		for k in world.item_tables.size():
 			if (
 				BuildSlots.is_slot_item(world.item_tables[k])

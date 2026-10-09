@@ -14,7 +14,14 @@ func _codes(d: ModifierDefinition) -> Array:
 
 func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
-	assert_eq(repo.count(&"modifiers"), 16, "MX1's 14, MX2's frost_nova and razor_orbit")
+	assert_eq(
+		repo.count(&"modifiers"),
+		51,
+		(
+			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
+			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage"
+		)
+	)
 	assert_true(
 		repo.paths.has("res://data/modifiers/static_chain.tres"), "the scanner finds the folder"
 	)
@@ -90,3 +97,45 @@ func test_bad_modifiers_are_rejected() -> void:
 	h = oc.duplicate(true)
 	h.ops[2].form = ModifierOpDefinition.Form.ORBITER
 	assert_has(_codes(h), &"range", "MX1 hooks spawn bursts and beams")
+
+
+## v0.6.0 MX4: the new hook parts (EVERY_NTH's count, a delay, the condition, the child's ops) are checked too.
+func test_bad_mx4_hooks_are_rejected() -> void:
+	var br := load("res://data/modifiers/bomb_rounds.tres") as ModifierDefinition
+	assert_eq(br.validate(), [])
+	var d := br.duplicate(true)
+	d.ops[0].hook_every = 1
+	assert_has(_codes(d), &"range", "every_nth needs every >= 2")
+	d = br.duplicate(true)
+	d.ops[0].hook_delay_seconds = -1.0
+	assert_has(_codes(d), &"range", "a negative delay")
+	d = br.duplicate(true)
+	d.ops[0].hook_ops[0].field = &"mana"
+	assert_has(_codes(d), &"range", "a child op's unknown field")
+	d = br.duplicate(true)
+	var nested := ModifierOpDefinition.new()
+	nested.op = ModifierOpDefinition.Op.HOOK
+	d.ops[0].hook_ops.append(nested)
+	assert_has(_codes(d), &"range", "a child op is never a hook")
+	var ls := (load("res://data/modifiers/long_shadow.tres") as ModifierDefinition).duplicate(true)
+	assert_eq(ls.validate(), [], "a weapon copy needs no size")
+	ls.target = PackedStringArray(["dash", "sparkle"])
+	assert_has(_codes(ls), &"tags", "an unknown target tag")
+
+
+func test_mx4_values_convert() -> void:
+	var by_id := {}
+	for t in ModifierCompiler.compile_modifiers(_repo()):
+		by_id[t.id] = t
+	var seeker: ModifierTable = by_id[&"seeker"]
+	assert_eq(
+		[seeker.ops[0].field, seeker.ops[0].value],
+		[&"homing", float(ContentCompiler.degrees_to_units(360.0) / 60)],
+		"360°/s in 1/4096 turns per tick"
+	)
+	var ls: ModifierTable = by_id[&"long_shadow"]
+	assert_eq([ls.ops[0].delay_ticks, ls.ops[0].form], [9, AttackSpec.Form.WEAPON], "0.15 s")
+	var split: ModifierTable = by_id[&"split_shot"]
+	assert_eq(split.ops[0].child_ops.size(), 2, "the child's count and spread")
+	var fuse: ModifierTable = by_id[&"short_fuse"]
+	assert_eq([fuse.ops[0].field, fuse.ops[0].value], [&"range", 600.0])

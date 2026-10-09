@@ -12,6 +12,7 @@ var _hash := Label.new()
 var _boss := Label.new()
 var _enemy := Label.new()
 var _ability := Label.new()
+var _mod := Label.new()  # v0.6.0 MX4: the modifier card GrantMod gives
 var _catch_up := Label.new()
 
 
@@ -46,6 +47,7 @@ func _init(p_api: DebugApi) -> void:
 		["SpawnElite", "UI_DEV_SPAWN_ELITE", api.request_elite],  # v0.6.0 CU: TEST HELPER (core theft)
 		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
+		["NextMod", "UI_DEV_NEXT_MOD", api.next_mod],  # v0.6.0 MX4
 		["GrantMod", "UI_DEV_GRANT_MOD", api.grant_mod],  # v0.6.0 MX2
 		["CurseChest", "UI_DEV_CURSE_CHEST", api.curse_next_chest],  # v0.5.0 EV
 		["GoOverrun", "UI_DEV_GO_OVERRUN", api.go_overrun],  # v0.4.0 AB
@@ -68,6 +70,9 @@ func _init(p_api: DebugApi) -> void:
 	_ability.name = "AbilityChoice"
 	_ability.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_ability)
+	_mod.name = "ModChoice"
+	_mod.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	col.add_child(_mod)
 	_catch_up.name = "CatchUp"
 	_catch_up.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_catch_up)
@@ -99,6 +104,8 @@ func _process(_delta: float) -> void:
 		if api.ability_choice < ab.size()
 		else ""
 	)
+	var mc := api.mod_choice
+	_mod.text = tr(w.item_tables[mc].name_key) if mc >= 0 and mc < w.item_tables.size() else ""
 	_catch_up.text = catch_up_text(w)
 
 

@@ -1302,7 +1302,7 @@ func _projectile_hits() -> void:
 					projectiles.tags[i],
 					a,
 					a + v * best_t,
-					ItemProcs.bolt_effect(projectiles.tags[i])
+					Attacks.projectile_effect(hit_spec, projectiles.tags[i])  # v0.6.0 MX4: a hook's names it
 				)
 				hit_spec = null
 				# Items: Frost Core and Static Chain react to the player's landed bolts.

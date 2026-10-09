@@ -15,7 +15,12 @@ func _codes(d: ItemDefinition) -> Array:
 func test_every_item_is_valid() -> void:
 	var repo := _repo()
 	assert_eq(
-		repo.count(&"items"), 31, "24 + the three heat items (L18) + four ability mods (v0.5.0 CP)"
+		repo.count(&"items"),
+		63,
+		(
+			"24 + the three heat items (L18) + four ability mods (v0.5.0 CP) + the M-list's 29 new cards"
+			+ " (Frost Core was one) + 3 legendary (v0.6.0 MX4)"
+		)
 	)
 	for def: ItemDefinition in repo.all_of(&"items"):
 		assert_eq(def.validate(), [], String(def.id))

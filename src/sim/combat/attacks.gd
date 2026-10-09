@@ -98,6 +98,7 @@ static func _weapon_copy(w: World, spec: AttackSpec, ctx: AttackContext) -> bool
 		s.count = maxi(root.count, spec.count)
 		SpecForms.settle(s)
 	ctx.step = -1
+	ctx.tags = tags_of(root)
 	return launch(w, s, ctx)
 
 
@@ -486,8 +487,14 @@ static func _landed(
 	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
 		if spec.has_tag(&"weapon"):
 			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
-	if ctx.depth > 0 or (spec.has_tag(&"ability") and spec.form != AttackSpec.Form.BOLT):
-		_feed(w, spec, ctx, i)  # v0.6.0 MX2: an ability's own attack (not a projectile) feeds here
+	var direct := (
+		spec.form == AttackSpec.Form.ARC
+		or spec.form == AttackSpec.Form.BOLT
+		or spec.form == AttackSpec.Form.BEAM
+	)
+	if ctx.depth > 0 or not direct:
+		_feed(w, spec, ctx, i)  # v0.6.0 MX2: an ability's own attack (not a projectile) feeds here; MX4: any
+		# root attack in a lingering or round form too (Shock Circles' rings, Vent's blast)
 	_run(w, spec, AttackSpec.Trigger.ON_HIT, ctx, at, i, nth)
 	if w.actors.dead[i] == 1:
 		_run(w, spec, AttackSpec.Trigger.ON_KILL, ctx, at, i, nth)
@@ -623,6 +630,15 @@ static func projectile_spec(w: World, pi: int) -> AttackSpec:
 		if s != null:
 			return s
 	return Modifiers.bolt(w)
+
+
+## v0.6.0 MX4: the effect id a projectile's hit carries: ItemProcs.bolt_effect (a drone's, a thorn's, a plain shot's
+## none), or a hook's projectile's own (Echo Slash's crescent, Split Shot's splits, Shatter's shards).
+static func projectile_effect(spec: AttackSpec, tags: int) -> StringName:
+	var fx := ItemProcs.bolt_effect(tags)
+	if fx == &"" and spec != null and spec.depth > 0:
+		return spec.effect_id
+	return fx
 
 
 ## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): its spec's ON_HIT hooks

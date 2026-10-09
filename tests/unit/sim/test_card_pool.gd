@@ -107,11 +107,8 @@ func test_bad_ability_mods_are_rejected() -> void:
 	c.requires_ability = &""
 	assert_eq(c.validate().size(), 1, "an ability mod names its ability")
 	c.requires_ability = &"bomb_lobber"
-	c.bomblets = 0
-	assert_eq(c.validate().size(), 1, "bomblets > 0")
-	var a := (load("res://data/items/afterimage.tres") as ItemDefinition).duplicate(true)
-	a.afterimage_delay_seconds = 0.001
-	assert_eq(a.validate().size(), 1, "the echo waits at least a tick")
+	c.modifiers = []  # v0.6.0 MX4: the bomblets are its modifier's ops now
+	assert_eq(c.validate().size(), 1, "it names its modifier")
 	assert_eq(ItemDefinition.ability_kind(&"orbit_blades"), AbilityDefinition.Kind.ORBIT_BLADES)
 
 
@@ -219,12 +216,12 @@ func test_cluster_payload_splits_each_bomb_into_bomblets_that_never_split() -> v
 	assert_eq(w.ab.bomb_pos.size(), 3, "three bomblets in the air")
 	assert_eq(w.ab.bomb_split, PackedInt32Array([0, 0, 0]), "bomblets never split")
 	assert_almost_eq(w.ab.bomb_r[0], 1.0, 1e-5, "half the radius")
-	assert_eq(w.ab.bomb_dmg[0], 9, "40 % of 22")
+	assert_eq(w.ab.bomb_dmg[0], 8, "40 % of 22 (v0.6.0 MX4: a hook's share rounds down)")
 	_run(w, 15)
 	var bits := _damage(w, AbilityMods.EFFECT_CLUSTER)
 	assert_gt(bits.size(), 0, "the bomblets landed on the cluster")
 	for e in bits:
-		assert_eq(e.amount, 9)
+		assert_eq(e.amount, 8)
 	assert_eq(w.ab.bomb_pos.size(), 0, "and nothing more")
 
 

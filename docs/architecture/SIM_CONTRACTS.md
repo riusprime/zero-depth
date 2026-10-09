@@ -430,8 +430,8 @@ outside the slots), up to `BuildSlots.SLOTS` = 6 modifier slots and unlimited st
 ability slots are gone. A **modifier card** is one of the six auto abilities (`AbilityTable.is_modifier`: Bomb
 Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail) or an item that changes attacks
 (`BuildSlots.is_slot_item`: it names modifiers, or it is an ability's mod: Cluster Payload, Overclocked Drone, Razor
-Orbit, Afterimage). The other 13 items take no slot (they don't rewrite attacks: Afterimage's, Cluster Payload's and
-Overclocked Drone's numbers stay in `ItemMods`, see the evidence's list). `World.mod_slots` holds the modifier cards
+Orbit, Afterimage). The other 13 items take no slot (they don't rewrite attacks). Afterimage's, Cluster Payload's and
+Overclocked Drone's numbers stayed in `ItemMods` in MX2; v0.6.0 MX4 made them modifiers of ops (§8d). `World.mod_slots` holds the modifier cards
 in pick order as `Offers` codes (an item index, or `ABILITY_BASE` + an ability index), the layer order
 `Modifiers.build_modifiers` compiles in; `BuildSlots.sync` keeps it after every change of what is held (a listed card
 stays in place, a new one is appended, one not held leaves), and it is carried (`RunCarry.FIELDS`).
@@ -498,6 +498,99 @@ are padded (`_pad_added`) and the slots migrate the same way. The ability ids ar
 **CatchUp.power** (§11) reads the new build: the modifier slots' levels (an ability modifier's level, an attack item
 1) and the utility's level at `ability_level_permille` each, the items without a slot at `item_permille`, the combos
 at `combo_permille`.
+
+## 8d. The M-list's modifiers (v0.6.0 MX4)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "Order of work" step 4; the cards are the PLAN's
+M1–M30 (owner: "keep all M1–M30"). Evidence: [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md).
+Every card is a `ModifierDefinition` of ops (CONTENT_SCHEMA "Modifiers"); the runner features below are the only
+code the list needed, each general (any card may use it), each on the one clock, none drawing randomness.
+
+**More base specs.** Besides the weapon's steps, its bolt, the Skill and the ability modifiers, every book compiles
+the **moments** `dash`, `move`, `blink` and `body` (form `BURST`, tags `[<id>, moment]`, no damage of their own) and,
+with heat, **`vent`** (a `BURST` of the heat table's `vent_radius_m`, tags `[vent, area]`). A modifier with an empty
+target rewrites every attack but never a moment: a moment's spec is reached only by a target naming its tag. The
+dash's `ON_LAUNCH` hooks fire as it starts (from where it starts) and its `ON_END` hooks as it ends (where it ends);
+the move spec's `ON_LAUNCH` hooks every `Modifiers.MOVE_STEP_M` (1.4 m) walked, not dashing; the blink spec's as a
+blink leaves (`AbilityMods` keeps a waiting one as v0.5's echo); the body spec is read, never launched (its rules
+below). Vent's blast (`Heat.vent`, Meltdown's too) launches the vent spec inside `Engines.begin` with its run-time
+radius (`AttackContext.radius_m`: the spec's radius × Heat Sink × area) and damage: the same hits as v0.5.
+
+**Spec fields added** (`AttackSpec`, appended to the hash order): pattern `directions` (`DIR_FORWARD`, `DIR_CIRCLE`:
+`count` evenly round; an arc's full circle), `back_permille` (also fired straight back at that share), `aim_offset`
+(every bolt's aim turned); behaviour `chains` (a seeking beam's further jumps, each to the nearest enemy not hit yet
+within `reach_m`), `homing` (a projectile's turn per tick toward the nearest enemy within 8 m; an arc snaps to the
+nearest within reach + 2 m), `returns`, `orbit_ticks`, `intangible`; `mirror` (1: copy the weapon's form, pattern
+and every hook; 2: take every hook of the weapon); payload `pull_m`; the body's `barrier_ticks`, `charge_ticks`,
+`charge_permille`, `resonance_permille`; the drone's `heat_rate_permille`; and `lineage` (below). Form `WEAPON`
+(a hook's child only) launches the weapon's last attack (the Blade's current combo step, the Gun's shot) when it
+fires, at a share of the weapon's damage (`Modifiers.weapon_damage`, no remainder carried); with `DIR_CIRCLE` it goes
+all round (a full-circle arc, `count` bolts).
+
+**Hooks** take three more triggers: `ON_END` in data (where an arc ends, a projectile ends, a burst, a bomb's blast,
+a ring at its radius, the dash's end), `ON_LAUNCH` (as an attack launches, from its origin, at its angle) and
+`EVERY_NTH` (every `every`-th launch of the spec launches the child instead; counted in `World.mx.counts`). A hook may
+wait (`delay_ticks`: its child goes into the launch queue below) and may be conditional (`when` `OVERCLOCK`: only at
+Overclock). A hook op's `hook_ops` shape the child before the build compiles it (a count, a speed, a life, a status,
+an element). A bolt child of an arc is a crescent as wide as the arc; a bolt child of a hit leaves from past the enemy
+it hit. **Lineage** is the ancestry guard at compile time: a modifier never adds its hook to a spec its own hook made
+(Split Shot's splits never split, Cluster Payload's bomblets never split, Aftershock never blasts its own blast); the
+run-time guard is unchanged (depth ≤ 2, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
+
+**A form change keeps the attack's reach** (`SpecForms.change_form`, the first `SET_FORM` and every layer): the range
+the spec had (an arc's reach, a bolt's speed × life, a ring's, burst's or zone's radius, a beam's or lob's reach)
+becomes the new form's, clamped per form (a bolt turned ring rings out to half its flight, 1.5–6 m). The virtual
+field `range` (`MUL_PERMILLE` only) scales whichever field is the form's range.
+
+**Launch** (`Attacks.launch`), in order: a `WEAPON` child resolves; an `EVERY_NTH` hook may replace the launch; a root
+weapon or Skill attack takes Ascension's charge; a seeking arc snaps; the form runs; its `ON_LAUNCH` hooks fire; a
+root attack with `back_permille` fires back (an arc, a bolt, a beam or a lob; a back copy never repeats); a root
+attack with `repeat_delay_ticks` that is not a combo step queues its repeat (the steps keep the Twin Arc echo, so a
+step repeats once). Root attacks in a lingering or round form (a weapon turned ring, Vent's blast) feed their own
+statuses like an ability's (`Attacks._feed`); an inherited status with an `every` counts that form's own hits
+(`ModifierRuntime.every_hit`, per spec and status), so an every-3rd burn on a field burns every 3rd field hit.
+
+**The launch queue** (`World.mx`, `ModifierState`; run in tick phase 6 by `ModifierRuntime.advance`, oldest first):
+Twin Cast's repeats (repeat_damage_permille of the damage, from where the player is then when the attack was the
+player's own) and delayed hook children (Long Shadow's afterimage). A queued launch keeps its hook level and proc,
+and its hook id rides `World.hook_chain` while it runs; one whose spec left the build is dropped.
+
+**Projectile behaviours** (`ProjectileMoves`; `ProjectileStore` columns `pierce_left`, `ret`, `home`, `orbit_t`,
+`orbit_n`, `orbit_a`, `life0`, `speed`, set from the spec when it spawns, hashed only once one had a behaviour):
+pierce N passes through N enemies (after Hot's and Pulse Gun's pierce); a returning projectile turns back at half its
+life, passes through every enemy and ends at the player; a homing one turns toward the nearest enemy; an orbiting one
+circles the player at 1.4 m for `orbit_ticks` (its life waits) and leaves along the aim it began on. A hook's
+projectile hit carries its spec's effect id (Echo Slash's crescent, Split Shot's splits, Shatter's shards).
+
+**Body rules** (`ModifierRuntime`): Ascension, after `charge_ticks` without a root weapon or Skill attack, the next
+one deals × `charge_permille`; Aether Shell, out of combat (no damage dealt or taken, `PlayerBuildState.combat_tick`)
+for `barrier_ticks`, the next enemy hit on the player is absorbed (HIT emitted, no damage, a `STATUS_APPLY` on the
+player with effect `aether_shell`) and combat starts again; Resonance, an attacker multiplier in `Damage.hit` after
+Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
+poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
+Gravity Well: a burst with `pull_m` moves every enemy it touches (not a boss, not spawning) up to that far toward its
+centre before its hits; walls push them out in the next collision pass.
+
+**Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
+new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
+never a HIT); a poisoned enemy's death spreads its stacks to every enemy within `poison_spread_m`, once per enemy per
+dying root (`ProcLedger` code 70; the poison feed is `Engines.CODE_FEED_POISON` 56 + source). The numbers are the
+strongest held (Venom Core's card). Actor columns `poison_stacks`, `poison_t`, `poison_cd`, hashed with the modifier
+engine's state.
+
+**Hash, saves.** `Modifiers.hash_into` adds, after the book's digest and only once the build has a modifier, the
+queue and counters (`ModifierState`), the poison columns while poison runs and the projectile behaviour columns once
+used; worlds without a modifier (the kernel goldens) hash as before. `World.mx`, the projectile columns and the poison
+columns are in the snapshot (`WorldSnapshot.STATE_CLASSES` has `ModifierState`); a save from before MX4 lacks them
+(`ADDED_SINCE_V05`): the base's fresh state, zeroed columns.
+
+**Offers.** `ItemDefinition.Rarity.LEGENDARY` (and `ItemTable.LEGENDARY`): such a card is only drawn by the boss's
+legendary tier and a boss's core (`ItemPool.available(w, true)`); altars, chests, shops and elites never draw one.
+The M-list's cards are items of kind `MODIFIER` that name their own modifier; trinkets are `RARE`; an ability merge
+names its ability (`requires_ability`); a card tagged `heat` needs a run with heat. Item indices keep v0.5's order
+(the items of v0.5's kinds by id, then the `MODIFIER` cards by id: `ModifierCompiler.item_defs`), so a save's item
+codes still name the same cards. **CatchUp.power** counts a slot's card as levels: an ability modifier its level,
+a v0.5 item 1, an M-list card 1, 2 if rare, 3 if legendary.
 
 ## 9. What presentation receives
 
