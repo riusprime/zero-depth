@@ -25,7 +25,7 @@ hook_tags = PackedStringArray("melee")
 hook_reach_m = 1.1
 hook_damage_permille = 500
 hook_effect = &"edge_rounds"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_2")])
+hook_ops = Array[Resource]([SubResource("Op_2")])
 
 [resource]
 script = ExtResource("1_mod")

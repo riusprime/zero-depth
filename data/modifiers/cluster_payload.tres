@@ -26,7 +26,7 @@ hook_radius_m = 1.0
 hook_reach_m = 2.0
 hook_damage_permille = 400
 hook_effect = &"cluster_payload"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2")])
 
 [resource]
 script = ExtResource("1_mod")

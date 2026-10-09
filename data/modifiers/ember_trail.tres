@@ -38,7 +38,7 @@ hook_tags = PackedStringArray("area")
 hook_radius_m = 0.7
 hook_damage = 3
 hook_effect = &"ember_trail"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
+hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
 
 [resource]
 script = ExtResource("1_mod")

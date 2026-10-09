@@ -38,7 +38,7 @@ hook_radius_m = 0.35
 hook_reach_m = 8.0
 hook_damage_permille = 800
 hook_effect = &"echo_storm"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
+hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
 
 [resource]
 script = ExtResource("1_mod")

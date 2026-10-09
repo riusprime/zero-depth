@@ -32,7 +32,7 @@ hook_tags = PackedStringArray("area")
 hook_radius_m = 1.5
 hook_damage_permille = 600
 hook_effect = &"ember_core"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_3")])
+hook_ops = Array[Resource]([SubResource("Op_3")])
 
 [resource]
 script = ExtResource("1_mod")

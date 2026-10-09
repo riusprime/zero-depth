@@ -25,7 +25,7 @@ hook_tags = PackedStringArray("area")
 hook_radius_m = 2.5
 hook_damage_permille = 200
 hook_effect = &"gravity_well"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2")])
 
 [resource]
 script = ExtResource("1_mod")

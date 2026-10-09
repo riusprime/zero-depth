@@ -83,7 +83,8 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.effect_id = d.hook_effect
 	o.delay_ticks = SimTick.seconds_to_ticks(d.hook_delay_seconds)  # v0.6.0 MX4
 	o.when = int(d.hook_when)
-	for c: ModifierOpDefinition in d.hook_ops:
+	for r: Resource in d.hook_ops:
+		var c := r as ModifierOpDefinition
 		if c != null:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
 	if d.is_numeric() and MODIFIER_FIELDS.has(d.field):

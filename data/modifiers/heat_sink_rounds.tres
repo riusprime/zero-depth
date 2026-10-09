@@ -21,7 +21,7 @@ hook_reach_m = 9.0
 hook_damage_permille = 600
 hook_effect = &"heat_sink_rounds"
 hook_when = 1
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
+hook_ops = Array[Resource]([SubResource("Op_1")])
 
 [resource]
 script = ExtResource("1_mod")

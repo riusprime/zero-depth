@@ -23,7 +23,7 @@ form = 8
 hook_trigger = 4
 hook_damage_permille = 1000
 hook_effect = &"meltdown_edge"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2")])
 
 [resource]
 script = ExtResource("1_mod")

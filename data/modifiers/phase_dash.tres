@@ -38,7 +38,7 @@ hook_radius_m = 0.12
 hook_reach_m = 4.0
 hook_damage = 12
 hook_effect = &"phase_dash"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
+hook_ops = Array[Resource]([SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
 
 [resource]
 script = ExtResource("1_mod")

@@ -39,7 +39,7 @@ hook_tags = PackedStringArray("area")
 hook_radius_m = 2.5
 hook_damage_permille = 1000
 hook_effect = &"inferno_core"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_3"), SubResource("Op_4")])
+hook_ops = Array[Resource]([SubResource("Op_3"), SubResource("Op_4")])
 
 [resource]
 script = ExtResource("1_mod")

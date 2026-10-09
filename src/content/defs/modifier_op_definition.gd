@@ -103,7 +103,7 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## field's units: a count, a speed, a life, a status, an element...).
 @export var hook_delay_seconds := 0.0
 @export var hook_when := When.ALWAYS
-@export var hook_ops: Array[ModifierOpDefinition] = []
+@export var hook_ops: Array[Resource] = []  # ModifierOpDefinitions (Resource: a script never types itself)
 
 
 ## The stage this op runs in, given its modifier's.

@@ -21,7 +21,7 @@ hook_reach_m = 5.0
 hook_damage_permille = 1500
 hook_every = 5
 hook_effect = &"bomb_rounds"
-hook_ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
+hook_ops = Array[Resource]([SubResource("Op_1")])
 
 [resource]
 script = ExtResource("1_mod")

@@ -179,7 +179,7 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown when" % where))
 	_check_tag_list(issues, "%s.hook_tags" % where, o.hook_tags)
 	for k in o.hook_ops.size():  # v0.6.0 MX4: the child's shaping ops (any op but a hook)
-		var c := o.hook_ops[k]
+		var c := o.hook_ops[k] as ModifierOpDefinition
 		var cw := "%s.hook_ops[%d]" % [where, k]
 		if (
 			c == null
