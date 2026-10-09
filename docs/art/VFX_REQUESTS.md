@@ -88,3 +88,33 @@ flat shapes; without it, the canvas draws as before.
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | G2 Effects (before / after, mock_vfx.gd) | 2026-10-09 | **After** ("Yep I love the after this is the direction I want") | 2026-10-09 |
+
+## Phase 2: frost, venom, void, bleed and status effects on enemies (requested 2026-10-09)
+
+**Owner, 2026-10-09:** "Let's go for the next phase then, send me requirements for textures".
+
+Same rules and prompt prefix as above. Two kinds this time:
+- **Glow** (bright on black): the bright parts become light, black becomes see-through.
+- **Mask** (light grey and white on black): the engine colours it in the element's colour, so blood, venom and
+  void match the game's palette. Keep the 2–3 tone bands as grey levels.
+
+Phase 1's sparks, smoke, scorch and noise are reused. No new textures for the burning-enemy flames: they reuse
+`fx_flame_shapes`.
+
+| # | id | element | size | kind | prompt (after the prefix) | used for | status |
+|---|---|---|---|---|---|---|---|
+| 10 | `fx_ice_shards` | frost | 1024, 2 × 2 | glow | four different clusters of sharp ice crystal shards jutting upward, seen from the side, faceted low-poly crystals in pale cyan and white with a brighter white edge, each cluster centred in its own quarter | ice spikes bursting from the ground (frost bursts, Frost Nova rings), frozen enemies, shatter on hit | requested |
+| 11 | `fx_frost_mark` | frost | 1024 | mask | top-down view of an irregular patch of frost and rime on the ground, feathery ice crystals branching outward from the middle, NOT a circle, uneven ragged outline, light grey and white on black | frost left on the floor where frost lands (fades like the scorch) | requested |
+| 12 | `fx_liquid_splash` | venom, bleed | 1024, 2 × 2 | mask | four different chunky stylized liquid splashes seen from the side: a crown splash, a spray of droplets thrown sideways, a rising splash with globs, a few falling drips, light grey and white with 2-3 flat grey bands, each centred in its own quarter | venom and bleed hits, venom bomb landings, drips from poisoned and bleeding enemies (tinted green or red) | requested |
+| 13 | `fx_splatter_mark` | venom, bleed | 1024, 2 × 2 | mask | four different top-down liquid splatter stains on the ground, an irregular puddle with droplets around it, NOT circles, ragged uneven outlines, light grey and white on black, each centred in its own quarter | puddles and splatters left on the floor (tinted green or red, fade like the scorch) | requested |
+| 14 | `fx_bubbles` | venom | 512, 2 × 2 | mask | four tiny stylized bubble shapes: a single round bubble with a highlight, a cluster of three small bubbles, a bubble popping into a ring of droplets, a small puff of gas, white and light grey, each centred in its own quarter | toxic patches bubbling, poisoned enemies, gas puffs | requested |
+| 15 | `fx_void_tendrils` | void | 1024, 2 × 2 | mask | four different curling smoky tendrils of dark energy rising and twisting, wispy but chunky shapes with a bright rim along one edge, light grey with a white rim on black, each centred in its own quarter | void patches and hits: tendrils curling up from the ground (tinted deep purple) | requested |
+| 16 | `fx_void_rift` | void | 1024, 2 × 2 | glow | four different jagged vertical tears in space, each a narrow crack with a bright violet and magenta glowing edge and an empty black middle, small fragments floating near the edges, each centred in its own quarter | the void form's core: a rift opening where it hits, then closing | requested |
+| 17 | `fx_void_noise` | void | 512 | mask | seamless tileable texture, slow swirling smoke and spiral noise in white and grey on black, even coverage, no focal point | moving the tendrils and rifts so they swirl, not flicker | requested |
+
+**Enemy status looks built from these:** burning (flames on the body), frozen (ice shards round the feet, a pale
+tint), poisoned (bubbles and green drips), bleeding (red drips). The flat discs under status effects go the same way
+as the attack circles.
+
+**Also in phase 2, no textures needed:** the fading fireball (fades without streaks), visible smoke after a blast,
+and more strikes in a storm patch.
