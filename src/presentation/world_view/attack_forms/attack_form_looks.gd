@@ -59,7 +59,7 @@ const ELEMENT_PARTICLE := {
 const BLEED_TINT := 0.7
 
 ## Base glow (the colour multiplier the additive layers draw at; > 1 feeds the environment's glow) per form.
-const ENERGY: Array[float] = [0.9, 1.2, 0.9, 1.1, 0.7, 1.0, 0.9, 1.0]
+const ENERGY: Array[float] = [0.9, 1.2, 0.6, 1.1, 0.5, 1.0, 0.7, 0.6]
 ## Display life in ticks per form when the spec doesn't say (a bolt, a zone and an orbiter use life_ticks).
 const LIFE: Array[int] = [10, 40, 20, 9, 150, 240, 36, 12]
 ## Defaults for a spec without the size field (metres).
