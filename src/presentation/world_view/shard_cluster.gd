@@ -27,9 +27,11 @@ const BASE_TAPER := 0.82
 ## The short point under the base (buried for grown crystals; a fragment's lower point) and the core's height.
 const BOTTOM := -0.22
 const CORE_Y := 0.45
-## Glow (emission) and outline. The glow stays soft: under the mood's glow threshold except at the hero.
+## Glow (emission) and outline. The glow stays soft: under the mood's glow threshold except at the hero. SD2: each
+## crystal carries its own glow factor (ShardDressing: 1 .. 1.35 toward a vein's centre, 1.55 for the hero cluster),
+## stored in the vertex colour's green channel (factor / GLOW_SCALE) so a room still bakes into one mesh.
 const GLOW_ENERGY := 0.45
-const HERO_GLOW_ENERGY := 0.7
+const GLOW_SCALE := 2.0
 const OUTLINE_WIDTH := 0.022
 const INK := Color(0.05, 0.06, 0.09)
 ## Fragments bob this far (m) at this speed (radians per second); none with reduced motion.
@@ -50,9 +52,11 @@ uniform float bob = 0.0;
 uniform float bob_speed = 1.6;
 
 varying float v_shade;
+varying float v_glow;
 
 void vertex() {
 	v_shade = COLOR.r;
+	v_glow = COLOR.g * 2.0;
 	if (bob > 0.0) {
 		vec3 o = MODEL_MATRIX[3].xyz;
 		float b = sin(TIME * bob_speed + o.x * 1.7 + o.z * 2.3) * bob;
@@ -69,7 +73,7 @@ void fragment() {
 	SPECULAR = 0.75;
 	RIM = 0.35;
 	RIM_TINT = 0.6;
-	EMISSION = glow.rgb * glow_energy * (0.35 + 0.65 * facing * facing) * mix(0.6, 1.0, v_shade);
+	EMISSION = glow.rgb * glow_energy * v_glow * (0.35 + 0.65 * facing * facing) * mix(0.6, 1.0, v_shade);
 }
 """
 
@@ -125,23 +129,21 @@ func build(placed: Array, tint_key: StringName, shadows := true) -> void:
 		by_room[r].append(c)
 	var calm := ViewPrefs.reduced_motion
 	for r: int in by_room:
-		var hero := false
 		var crystals: Array = []
 		var frags: Array = []
 		for c: Dictionary in by_room[r]:
-			hero = hero or c["hero"]
 			crystals.append_array(c["crystals"])
 			frags.append_array(c["fragments"])
 			if c["hero"] and (c["light"] as Vector3).is_finite():
 				_add_light(c["light"], tint[1])
-		var glow_e := HERO_GLOW_ENERGY if hero else GLOW_ENERGY
+		var glow_e := GLOW_ENERGY
 		var node := MeshInstance3D.new()
 		node.name = "Shards_%d" % r
 		node.mesh = bake(crystals)
 		node.material_override = material(tint, glow_e, 0.0)
 		node.cast_shadow = (
 			GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-			if shadows or hero
+			if shadows or r == _hero_room(by_room[r])
 			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		)
 		add_child(node)
@@ -161,6 +163,14 @@ func build(placed: Array, tint_key: StringName, shadows := true) -> void:
 		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mmi)
 		room_fragments[r] = mmi
+
+
+## r's room index when one of its clusters is the hero's, else -1.
+static func _hero_room(room_clusters: Array) -> int:
+	for c: Dictionary in room_clusters:
+		if c["hero"]:
+			return int(c["room"])
+	return -1
 
 
 ## The TINTS key for a biome (StageView.prop_style) and the Deep flag: Deep floors take the Deep violet.
@@ -220,16 +230,16 @@ static func crystal_mesh(variant: int) -> ArrayMesh:
 	return mesh
 
 
-## Bakes many crystals ({"xform", "variant"}) into one mesh.
+## Bakes many crystals ({"xform", "variant", "glow" (optional, 1)}) into one mesh.
 static func bake(crystals: Array) -> ArrayMesh:
 	var parts: Array = []
 	for c: Dictionary in crystals:
-		parts.append(_crystal_arrays(int(c["variant"]), c["xform"]))
+		parts.append(_crystal_arrays(int(c["variant"]), c["xform"], float(c.get("glow", 1.0))))
 	return _commit(parts)
 
 
-## Vertex, normal, colour and core arrays of one crystal under xform.
-static func _crystal_arrays(variant: int, xform: Transform3D) -> Dictionary:
+## Vertex, normal, colour and core arrays of one crystal under xform. `glow`: its glow factor (COLOR.g).
+static func _crystal_arrays(variant: int, xform: Transform3D, glow := 1.0) -> Dictionary:
 	var sides := VARIANT_SIDES[posmod(variant, VARIANT_SIDES.size())]
 	# A fixed, per-variant irregularity: ring radii and the point's offset (no randomness: the same every run).
 	var ring_top: Array[Vector3] = []
@@ -248,10 +258,11 @@ static func _crystal_arrays(variant: int, xform: Transform3D) -> Dictionary:
 		var n := (k + 1) % sides
 		# Highlight: two facets catch the light, the rest step down.
 		var shade := 1.0 if k == 0 or k == 2 else 0.42 + 0.1 * float(k % 3)
-		_tri(arrays, xform, basis_n, [ring_bot[k], ring_top[n], ring_top[k]], shade)
-		_tri(arrays, xform, basis_n, [ring_bot[k], ring_bot[n], ring_top[n]], shade)
-		_tri(arrays, xform, basis_n, [ring_top[k], ring_top[n], tip], minf(shade + 0.2, 1.0))
-		_tri(arrays, xform, basis_n, [ring_bot[n], ring_bot[k], foot], shade * 0.6)
+		var g := clampf(glow / GLOW_SCALE, 0.0, 1.0)
+		_tri(arrays, xform, basis_n, [ring_bot[k], ring_top[n], ring_top[k]], shade, g)
+		_tri(arrays, xform, basis_n, [ring_bot[k], ring_bot[n], ring_top[n]], shade, g)
+		_tri(arrays, xform, basis_n, [ring_top[k], ring_top[n], tip], minf(shade + 0.2, 1.0), g)
+		_tri(arrays, xform, basis_n, [ring_bot[n], ring_bot[k], foot], shade * 0.6, g)
 	# The core (the outline grows away from it), in the mesh's own space.
 	var core := xform * Vector3(0.0, CORE_Y, 0.0)
 	var count: int = arrays[0].size()
@@ -271,8 +282,10 @@ static func _crystal_arrays(variant: int, xform: Transform3D) -> Dictionary:
 
 ## One flat triangle `t` ([a, b, c]) into `arrays` ([verts, normals, colors]) under xform, its normal pointing
 ## away from the crystal's axis, wound for Godot's front faces (clockwise seen from outside). The shade fades
-## toward the base.
-static func _tri(arrays: Array, xform: Transform3D, basis_n: Basis, t: Array, shade: float) -> void:
+## toward the base; `glow` (the glow factor / GLOW_SCALE) goes in the green channel.
+static func _tri(
+	arrays: Array, xform: Transform3D, basis_n: Basis, t: Array, shade: float, glow: float
+) -> void:
 	var a: Vector3 = t[0]
 	var b: Vector3 = t[1]
 	var c: Vector3 = t[2]
@@ -289,7 +302,7 @@ static func _tri(arrays: Array, xform: Transform3D, basis_n: Basis, t: Array, sh
 		arrays[0].append(xform * v)
 		arrays[1].append(wn)
 		var s := shade * (0.55 + 0.45 * clampf(v.y / SHOULDER, 0.0, 1.0))
-		arrays[2].append(Color(s, s, s))
+		arrays[2].append(Color(s, glow, s))
 
 
 static func _commit(parts: Array) -> ArrayMesh:

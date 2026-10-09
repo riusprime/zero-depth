@@ -1,7 +1,8 @@
 extends SceneTree
-## v0.6.1 Step SD shots: the crystal-shard dressing on a real generated floor, drawn by the game's own WorldViewRoot
-## (the biome's v0.5.9 mood, the kit, the dresser, then the shards): the start room's hero cluster, a close-up of
-## it, and two ordinary rooms with small clusters. The world is never stepped (a still floor, no enemies yet).
+## v0.6.1 Step SD / SD2 shots: the crystal-shard dressing on a real generated floor, drawn by the game's own
+## WorldViewRoot (the biome's v0.5.9 mood, the kit, the dresser, then the shards): the whole start room, its hero
+## cluster's wall, and two ordinary rooms of different sizes (SD2: the small room with the most clusters per wall
+## metre and the large room with the most clusters). The world is never stepped (a still floor, no enemies yet).
 ## Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/shard_dressing.gd
 ## Options after `--`: seed=<run seed> (default 7), floor=<index> (default 1), biome=<id> (default ruins).
@@ -50,18 +51,35 @@ func _initialize() -> void:
 		quit(1)
 		return
 	var start := _reader.floor_start_room()
-	var ordinary: Array = []
+	var per_room := {}
 	for c: Dictionary in shards.clusters:
+		per_room[c["room"]] = per_room.get(c["room"], 0) + 1
 		if c["hero"]:
 			var at: Vector2 = c["foot"]
-			_shots.append(["1_start_room", at + Vector2(3.0, -3.0), 15.0])
-			_shots.append(["2_hero_cluster", at + Vector2(0.6, -0.4), 7.0])
-		elif ordinary.size() < 2 and not ordinary.has(c["room"]):
-			ordinary.append(c["room"])
-			var at: Vector2 = c["foot"]
-			_shots.append(
-				["%d_room_%d" % [3 + ordinary.size() - 1, c["room"]], at + Vector2(2.0, -2.0), 12.0]
-			)
+			_shots.append(["2_hero_wall", at + Vector2(3.5, -3.5), 14.0])
+	var start_rect := _reader.floor_room(start)
+	_shots.push_front(["1_start_room", start_rect.get_center(), 30.0])
+	var small := -1
+	var small_best := -1.0
+	var large := -1
+	var large_best := -1
+	for r: int in per_room:
+		if r == start:
+			continue
+		var rect := _reader.floor_room(r)
+		var per_m := float(per_room[r]) / (2.0 * (rect.size.x + rect.size.y))
+		if rect.get_area() < 250.0 and per_m > small_best:
+			small_best = per_m
+			small = r
+		elif rect.get_area() >= 250.0 and per_room[r] > large_best:
+			large_best = per_room[r]
+			large = r
+	for pick in [[small, "3_small_room"], [large, "4_large_room"]]:
+		if pick[0] < 0:
+			continue
+		var rect := _reader.floor_room(pick[0])
+		var fit := maxf(rect.size.x, rect.size.y) * 0.85
+		_shots.append(["%s_%d" % [pick[1], pick[0]], rect.get_center(), clampf(fit, 11.0, 22.0)])
 	print(
 		(
 			"shard_dressing: seed=%d floor=%d biome=%s clusters=%d (hero %s) start_room=%d"
