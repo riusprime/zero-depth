@@ -70,3 +70,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/keen-volta-ht74pz`, built over `claud
   before and after in evidence/LOOK.md §4: floor-1 deaths 86.8 % → 91.8 % (normal policies), Ruins +11 pp, biome
   spread 11.6 → 2.9 pp; competent floor-1 clears 19 → 17 of 160. Not tuned (the v0.5.0 feedback and tuning belong to
   the other agent).
+- 2026-10-09 — After the merge: VFX pass for fire, bombs and electric (`docs/art/VFX_REQUESTS.md`). The owner's 9
+  textures prepared (`281e4f1`); VfxLayer wired into the attack forms (`8a5af92`); G2 Effects: **after** ("Yep I
+  love the after this is the direction I want"); polish `a78648e`. Full suite (`bash scripts/verify.sh`, clean
+  worktree at `a78648e`): 1354/1354 passing. Next: the fading fireball and smoke still read weakly; frost, venom,
+  void and bleed; burning enemies.
