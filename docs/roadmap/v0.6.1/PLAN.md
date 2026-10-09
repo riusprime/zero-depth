@@ -13,6 +13,15 @@ on that and leave the current PR for playtest running its test").
 | R3 | "we'd have to also modify some renders in game to match the more shard like style like altars or other elements" | G1 audit of every world piece vs the shard style (altars, reward pedestals, shop terminal, event pedestal, portals, heal orbs, shard pickups, cores, the boss-room door…); altars restyled now (code-built shard look, lit by v0.5.9); the rest by the owner's G1 pick, with art prompts where a model is better | Decided (altars) / G1 (rest) | SW |
 | R4 | "we could also add to the generation map or the initial room the shard looks, but that would be for v0.6.1" | Crystal-shard clusters as dressing: the start room gets a hero cluster; ordinary rooms get small clusters through the v0.5.9 dresser (presentation only, seeded, the same spacing rules); glow lit by the scene | Decided | SD |
 
+## Owner answers (2026-10-09, verbatim)
+| # | Question | Owner answer | Decision | Step |
+|---|---|---|---|---|
+| A1 | Which other world pieces get the shard look (SHARD_AUDIT.md) | "the shop terminal is fine, the portals could have some of them around matching the color of the portal" | The shop terminal stays; portals get shard clusters around them in the portal's colour (normal blue, Deep violet); the other audit rows stay as they are | SW2 |
+| A2 | Epic altar gold instead of violet? | "no" | Stays violet | — |
+| A3 | Room crystals bigger, brighter or more frequent? | "Very frequent on the starting room and be an element of all rooms, but disparity not all equally distributid some zones have more density than others, specially walls at smaller rooms" | Start room: many clusters. Every room gets crystals. Uneven: a few dense zones (veins) per floor and sparse stretches; walls of smaller rooms get more | SD2 |
+| A4 | Violet vs purple, amber vs orange plaques | "that's fine" | Kept | — |
+| A5 | Build picker title | "yes, choose weapon" | "Choose your weapon" / "Elige tu arma" | SW2 |
+
 ## Rules
 - Nothing from the v0.5.9 visual rework or v0.6.0 is removed; shard pieces layer on top.
 - Testing (owner, 2026-10-09): agents run lint + the tests of what they touched; the lead runs one full suite after

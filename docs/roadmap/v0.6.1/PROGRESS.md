@@ -16,7 +16,7 @@ Plan: [`PLAN.md`](PLAN.md). Local on `claude/lucid-fermat-9wv2tf` until v0.6.0's
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| R3 G1: which world pieces get the shard look | 2026-10-09 ([`evidence/SHARD_AUDIT.md`](evidence/SHARD_AUDIT.md)) | pending owner pick (SHARD_AUDIT.md) | |
+| R3 G1: which world pieces get the shard look (answered: shop terminal stays, portals get clusters in their colour; PLAN A1) | 2026-10-09 ([`evidence/SHARD_AUDIT.md`](evidence/SHARD_AUDIT.md)) | pending owner pick (SHARD_AUDIT.md) | |
 
 ## History
 - 2026-10-09: plan from the owner's plaque art and shard-look direction; wave 1 (PQ, SW, SD) started.
@@ -27,3 +27,4 @@ Plan: [`PLAN.md`](PLAN.md). Local on `claude/lucid-fermat-9wv2tf` until v0.6.0's
   replaced the Cold-glass stand-in. Flagged for the owner: the slate plaque is filed as `indigo` (the trinket
   family), purple/violet and amber/orange plaques are close in hue, the boss bar's PHASE SHIFT stays a plain label.
 - 2026-10-09: wave 1 merged (SD, SW, PQ); the wave's one full suite on `c2a0f40`: 1383/1383, no SCRIPT ERROR; MIN_TEST_COUNT 1383.
+- 2026-10-09: owner answers A1–A5 (PLAN); wave 2 (SW2, SD2) started.
