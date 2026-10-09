@@ -13,7 +13,12 @@ extends RefCounted
 const BUILDS: Array[StringName] = [&"blade", &"gun"]
 const PLANNED_ABILITIES: Array[StringName] = [&"arc_field", &"flame_trail", &"frost_nova"]
 const POOL_MIN := 40
-const POOL_MAX := 50
+## v0.5.5 EC: 51, the owner's Lifesprout card (D9) on top of the blade's 50 (PLAN v0.5.5 outranks the roadmap's
+## 40-50; the pruning is v0.6.0's).
+## v0.6.0 MX4: 80 (Blade) / 77 (Gun): the owner's M-list, approved in full ("keep all M1–M30", PLAN v0.5.5, which
+## outranks the roadmap's 40-50), adds 29 modifier cards (the 3 legendary ones are the boss's tier, not counted).
+## Whether to prune is an owner question (PROGRESS v0.5.5 "Gates"), not decided here.
+const POOL_MAX := 80
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [
@@ -65,6 +70,8 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 		if t != null and t.weight > 0:
 			have.append("stat:%s" % t.id)
 	for t in w.item_tables:
+		if t.rarity == ItemTable.LEGENDARY:
+			continue  # v0.6.0 MX4: the boss's legendary tier only, never an altar's or a chest's
 		if t.requires_weapon == 0 or (t.requires_weapon & w.player.weapons) != 0:
 			have.append("mod:%s" % t.id)
 	have.sort()

@@ -1,10 +1,13 @@
 # gdlint: disable=max-public-methods
 class_name Abilities
 extends RefCounted
-## The four ability slots (v0.4.0 BS, owner F8, F11). World.ability_owned holds compiled ability indices in slot
-## order and World.ability_levels their levels (1..5); both last the run (RunCarry). Slot 1 is the starting weapon
-## (grant_start); ability cards fill slots 2..4, and once the four are full an ability card only levels up what you
-## own. Blink and Aegis share the utility button, so owning one keeps the other out of the offers.
+## The abilities (v0.4.0 BS, owner F8, F11; v0.6.0 MX2, owner B7). World.ability_owned holds the compiled ability
+## indices held, in the order taken, and World.ability_levels their levels (1..5); both last the run (RunCarry). The
+## first is the starting weapon (grant_start). MX2: the four ability slots are gone; the build is the weapon, one
+## utility pick and six modifier slots (BuildSlots, World.mod_slots): the six auto abilities are weapon modifiers
+## (each takes a slot; a card for one you hold levels it up), Blink and Aegis share the utility button outside the
+## slots, so owning one keeps the other out of the offers. The auto abilities launch their attacks from their
+## compiled specs (Modifiers: each carries the weapon's statuses, elements and hooks; Attacks runs them).
 ## - Manual: Combo Sword and Pulse Gun scale the build's weapon and skill (weapon_permille, reach, pierce, twin
 ##   bolts, the finisher's shockwave); Blink and Aegis turn the utility button on (utility()).
 ## - Auto (tick phase 6, after the projectile sweeps, so the uniform grid holds this tick's bodies): Bomb Lobber,
@@ -15,7 +18,6 @@ extends RefCounted
 ## v0.4.0 AB: Arc Field, Frost Nova and Flame Trail (ElementAbilities) and the eight ability combos (AbilityCombos);
 ## taking a card refreshes the build (World.refresh_build: the engines the abilities borrow, combos evolving).
 
-const SLOTS := 4
 const BLADE_R := 0.35
 const BOLT_RADIUS_M := 0.12
 ## Twin bolts (Pulse Gun L5): each shot's bolts split this far either side of the aim (1/4096 turns).
@@ -71,19 +73,21 @@ static func level_of_kind(w: World, kind: int) -> int:
 
 
 ## A card for ability `idx` would do something now: a level-up of one you own below the top level, or a new one
-## for a free slot (never a starting weapon, never a second utility).
+## (never a starting weapon, never a second utility). v0.6.0 MX2: a new modifier is offered with the six slots full
+## too: taking it opens the swap (BuildSlots).
 static func can_take(w: World, idx: int) -> bool:
 	var s := w.ability_owned.find(idx)
 	if s >= 0:
 		return w.ability_levels[s] < AbilityTable.MAX_LEVEL
 	var t := w.ability_tables[idx]
-	if t.start_weapon != 0 or w.ability_owned.size() >= SLOTS:
+	if t.start_weapon != 0:
 		return false
 	return not (t.is_utility() and utility(w) != PlayerTable.Utility.NONE)
 
 
-## Takes an ability card: a level up of an owned ability, or a new one in the next free slot at level 1. Returns
-## false (and changes nothing) when the card can't apply.
+## Takes an ability card: a level up of an owned ability, or a new one at level 1 (v0.6.0 MX2: a new modifier only
+## while a modifier slot is free; BuildSlots.take swaps one out first). Returns false (and changes nothing) when the
+## card can't apply.
 static func grant(w: World, idx: int) -> bool:
 	var t := w.ability_tables[idx]
 	var s := w.ability_owned.find(idx)
@@ -92,13 +96,14 @@ static func grant(w: World, idx: int) -> bool:
 			return false
 		w.ability_levels[s] += 1
 	else:
-		if w.ability_owned.size() >= SLOTS and t.start_weapon == 0:
+		if t.is_modifier() and BuildSlots.full(w):
 			return false
 		if t.is_utility() and utility(w) != PlayerTable.Utility.NONE:
 			return false
 		w.ability_owned.append(idx)
 		w.ability_levels.append(1)
 		w.ab.cd.append(0)
+	BuildSlots.sync(w)  # v0.6.0 MX2: a new modifier takes the next slot
 	_sync_state(w)
 	w.refresh_build(true)  # v0.4.0 AB: borrowed engines; a pair at L3 evolves (its combo card)
 	if t.kind == AbilityTable.Kind.BLINK:
@@ -118,9 +123,44 @@ static func grant_start(w: World) -> void:
 				return
 
 
+## v0.6.0 MX2: ability slot `s` (World.ability_owned order) leaves the build: its level, cooldown and its own floor
+## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.salvage_ability).
+static func remove_slot(w: World, s: int) -> void:
+	var t := w.ability_tables[w.ability_owned[s]]
+	w.ability_owned.remove_at(s)
+	w.ability_levels.remove_at(s)
+	if s < w.ab.cd.size():
+		w.ab.cd.remove_at(s)
+	match t.kind:
+		AbilityTable.Kind.DRONE_BUDDY:
+			w.ab.drone_pos = PackedVector2Array()
+			w.ab.drone_cd = PackedInt32Array()
+			w.ab.drone_fire = PackedInt32Array()
+		AbilityTable.Kind.BLINK:
+			w.ab.blink_charges = 0
+			w.blink_cd = 0
+		AbilityTable.Kind.ORBIT_BLADES:
+			w.ab.orbit_ids = PackedInt32Array()
+			w.ab.orbit_next = PackedInt32Array()
+	var keep := PackedInt32Array()
+	var earned := Engines.combos_for(w.combo_tables, w.items_owned)
+	earned.append_array(AbilityCombos.earned(w))
+	for c in w.combos_owned:
+		if earned.has(c):
+			keep.append(c)
+	w.combos_owned = keep
+	BuildSlots.sync(w)
+	w.refresh_build(false)
+
+
 ## A fresh floor (after the carry restored the slots and levels): cooldowns, drones and the blink's charges start
 ## over.
 static func start_floor(w: World) -> void:
+	if w.migrate_slots:  # v0.6.0 MX2: a carry from before the slots (RunCarry.apply)
+		w.migrate_slots = false
+		BuildSlots.migrate(w)
+	else:
+		BuildSlots.sync(w)
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():
 		w.ab.cd.append(0)
@@ -211,6 +251,7 @@ static func on_blink(w: World) -> void:
 		w.blink_cd = blink_cooldown(w)
 	w.ab.shock_pending = w.tick
 	AbilityMods.on_blink(w)  # v0.5.0 CP: Afterimage
+	ModifierRuntime.on_blink(w)  # v0.6.0 MX4: the blink spec's other hooks
 	AbilityCombos.on_blink(w)  # v0.4.0 AB: Blink Charge
 
 
@@ -312,6 +353,9 @@ static func after_swing(w: World, landed: bool) -> void:
 
 
 # --- Auto abilities (phase 6) ----------------------------------------------------------------------------------
+## v0.6.0 MX2: every auto ability's cooldown runs down here; the drones and the orbit move and strike; Bomb Lobber,
+## Arc Field and Frost Nova fire from the weapon's attacks and kills (ModifierAbilities), Flame Trail from the dash
+## and the projectiles; bombs land, patches burn and rings grow.
 static func advance(w: World) -> void:
 	if w.player_dead():
 		return
@@ -325,20 +369,16 @@ static func advance(w: World) -> void:
 		var t := w.ability_tables[w.ability_owned[s]]
 		if not t.auto:
 			continue
-		var lvl := w.ability_levels[s]
+		if s < w.ab.cd.size() and w.ab.cd[s] > 0:
+			w.ab.cd[s] -= 1
 		match t.kind:
-			AbilityTable.Kind.BOMB_LOBBER:
-				if w.ab.cd[s] > 0:
-					w.ab.cd[s] -= 1
-				if w.ab.cd[s] == 0 and _throw(w, t, lvl):
-					w.ab.cd[s] = Stats.auto_cooldown(w, t.cooldown_ticks)  # v0.5.0 CP: Fast Hands
 			AbilityTable.Kind.DRONE_BUDDY:
 				_drones(w, t)
 			AbilityTable.Kind.ORBIT_BLADES:
-				_orbit(w, t, lvl)
-			_:
-				ElementAbilities.advance_slot(w, s, t, lvl)  # v0.4.0 AB
+				_orbit(w, t, w.ability_levels[s])
+	ModifierAbilities.advance(w)  # v0.6.0 MX2: Flame Trail's dash fire, the rings
 	ElementAbilities.advance_fire(w)
+	ModifierRuntime.advance(w)  # v0.6.0 MX4: the queued launches (Twin Cast, delayed hooks), the walk's trail
 
 
 ## An ability's damage at `level`, rounded half up (v0.4.0 AB: public for ElementAbilities, AbilityCombos).
@@ -408,15 +448,18 @@ static func densest(
 	return best
 
 
-## Throws level_count bombs: the first at the densest cluster, the next at the densest one left, or (none left)
-## scattered around the first from the `ability` stream. False (nothing thrown) when no enemy is in range.
-static func _throw(w: World, t: AbilityTable, level: int) -> bool:
+## Throws the spec's `count` bombs (form LOB): the first at the densest cluster, the next at the densest one left, or
+## (none left) scattered around the first from the `ability` stream. False (nothing thrown) when no enemy is in range.
+static func throw_bombs(w: World, t: AbilityTable, level: int) -> bool:
+	var spec := Modifiers.ability(w, t)
+	if spec == null:
+		return false
 	var a := w.actors
 	var from := w.player_pos()
 	var r := bomb_radius(w, t, level)
 	var centres := PackedVector2Array()
-	for k in t.count(level):
-		var i := densest(w, from, t.range_m, r, centres)
+	for k in spec.count:
+		var i := densest(w, from, spec.reach_m, r, centres)
 		var at := Vector2.ZERO
 		if i >= 0:
 			at = a.pos(i)
@@ -426,24 +469,44 @@ static func _throw(w: World, t: AbilityTable, level: int) -> bool:
 			var ang := w.rng_ability.range_int(0, SimTick.ANGLE_UNITS - 1)
 			at = centres[0] + Kin.dir(ang) * (r * w.rng_ability.range_int(400, 900) / 1000.0)
 		centres.append(at)
-		drop_bomb(w, at, from, r, _damage(t, level), t.duration_ticks)
+		var ctx := AttackContext.make(from, 0, spec.damage, 0, 0, spec.effect_id)
+		ctx.target = at
+		ctx.has_target = true
+		Attacks.launch(w, spec, ctx)
 	return true
 
 
-## A Bomb Lobber bomb in flight from `from` to `at`, landing `flight` ticks from now (a throw, or Blink Charge's
-## drop). Cluster Payload's bomblets are queued by AbilityMods.split (they never split again).
+## A bomb in flight from `from` to `at`, landing `flight` ticks from now (a throw, a hook's lob, or Blink Charge's
+## drop), running spec `key` at the hook level of `ctx` (none: a root bomb). v0.6.0 MX4: only a root bomb counts as
+## a thrown one (bomb_split 1: Storm Bombs chains from it); a hook's (Cluster Payload's bomblets, Bomb Rounds) is 0.
 static func drop_bomb(
-	w: World, at: Vector2, from: Vector2, r: float, dmg: int, flight: int
+	w: World,
+	at: Vector2,
+	from: Vector2,
+	r: float,
+	dmg: int,
+	flight: int,
+	key: String = "",
+	ctx: AttackContext = null
 ) -> void:
 	var s := w.ab
 	s.bomb_pos.append(at)
 	s.bomb_from.append(from)
 	s.bomb_throw.append(w.tick)
 	s.bomb_land.append(w.tick + flight)
-	s.bomb_root.append(w.take_root())
+	s.bomb_root.append(w.take_root() if ctx == null or ctx.depth == 0 else ctx.root)
 	s.bomb_r.append(r)
 	s.bomb_dmg.append(dmg)
-	s.bomb_split.append(1)  # v0.5.0 CP: a Bomb Lobber bomb may split (Cluster Payload), Blink Charge's too
+	s.bomb_split.append(1 if ctx == null or ctx.depth == 0 else 0)  # v0.6.0 MX4: a hook's bomb is 0
+	s.bomb_spec.append(key)  # v0.6.0 MX2
+	s.bomb_depth.append(ctx.depth if ctx != null else 0)
+	s.bomb_proc.append(ctx.proc_pct if ctx != null else 100)
+
+
+## The bomb spec key Bomb Lobber's bombs run ("" without it).
+static func bomb_key(w: World) -> String:
+	var spec := Modifiers.ability(w, owned_of_kind(w, AbilityTable.Kind.BOMB_LOBBER))
+	return spec.key if spec != null else ""
 
 
 static func _land_bombs(w: World) -> void:
@@ -456,8 +519,21 @@ static func _land_bombs(w: World) -> void:
 		var r := s.bomb_r[k]
 		var dmg := s.bomb_dmg[k]
 		var root := s.bomb_root[k]
-		hit_disc(w, at, r, dmg, root, EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER)
-		if split:  # v0.4.0 AB: Storm Bombs chains from a bomb, never from its bomblets (they share its root)
+		var key := s.bomb_spec[k] if k < s.bomb_spec.size() else ""
+		var depth := s.bomb_depth[k] if k < s.bomb_depth.size() else 0
+		var proc := s.bomb_proc[k] if k < s.bomb_proc.size() else 100
+		var spec := Modifiers.book(w).find(key) if key != "" else null
+		var bomb := spec == null or spec.has_tag(&"bomb")
+		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
+		if spec != null and (not spec.has_tag(&"bomb") or not split) and spec.effect_id != &"":
+			effect = spec.effect_id  # v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets)
+		elif spec != null and not spec.has_tag(&"bomb"):
+			effect = spec.effect_id
+		if spec != null:
+			Attacks.land_lob(w, spec, at, r, dmg, root, depth, proc, effect)
+		else:
+			hit_disc(w, at, r, dmg, root, effect)
+		if split and bomb:  # v0.4.0 AB: Storm Bombs chains from a bomb, never from its bomblets (they share its root)
 			AbilityCombos.on_blast(w, at, root)
 		s.blast_pos.append(s.bomb_pos[k])
 		s.blast_tick.append(w.tick)
@@ -466,17 +542,23 @@ static func _land_bombs(w: World) -> void:
 			s.blast_pos.remove_at(0)
 			s.blast_tick.remove_at(0)
 			s.blast_r.remove_at(0)
-		# Packed arrays are values: each is removed from in place, by name.
-		s.bomb_pos.remove_at(k)
-		s.bomb_from.remove_at(k)
-		s.bomb_throw.remove_at(k)
-		s.bomb_land.remove_at(k)
-		s.bomb_root.remove_at(k)
-		s.bomb_r.remove_at(k)
-		s.bomb_dmg.remove_at(k)
-		s.bomb_split.remove_at(k)
-		if split:
-			AbilityMods.split(w, at, r, dmg, root)  # v0.5.0 CP: Cluster Payload's bomblets
+		_remove_bomb(s, k)
+
+
+## Packed arrays are values: each is removed from in place, by name.
+static func _remove_bomb(s: AbilityState, k: int) -> void:
+	s.bomb_pos.remove_at(k)
+	s.bomb_from.remove_at(k)
+	s.bomb_throw.remove_at(k)
+	s.bomb_land.remove_at(k)
+	s.bomb_root.remove_at(k)
+	s.bomb_r.remove_at(k)
+	s.bomb_dmg.remove_at(k)
+	s.bomb_split.remove_at(k)
+	if k < s.bomb_spec.size():
+		s.bomb_spec.remove_at(k)
+		s.bomb_depth.remove_at(k)
+		s.bomb_proc.remove_at(k)
 
 
 # Drone Buddy -----------------------------------------------------------------------------------------------------
@@ -494,9 +576,12 @@ static func drone_slot(w: World, k: int, n: int) -> Vector2:
 	return w.player_pos() + Kin.dir((back + off) & 4095) * DRONE_TRAIL_M
 
 
+## v0.6.0 MX2: each drone fires its spec (a copy of the weapon's attack: the drone's bolt with the weapon's pattern,
+## payload and hooks; Modifiers) at the nearest enemy in range, from where it hovers.
 static func _drones(w: World, t: AbilityTable) -> void:
 	var s := w.ab
 	var a := w.actors
+	var spec := Modifiers.ability(w, t)
 	var n := s.drone_pos.size()
 	for k in n:
 		var p := s.drone_pos[k]
@@ -512,16 +597,15 @@ static func _drones(w: World, t: AbilityTable) -> void:
 			if a.invuln[i] == 0 and (best < 0 or d < best_d):
 				best = i
 				best_d = d
-		if best < 0:
+		if best < 0 or spec == null:
 			s.drone_cd[k] = DRONE_IDLE_TICKS
 			continue
-		var dir := Kin.dir(Kin.angle_of(a.pos(best) - p))
-		var life := int(ceil(t.range_m / t.speed)) + 2
-		var dmg := _damage(t, level_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
 		var tags := SimEvent.TAG_PROJECTILE | SimEvent.TAG_ABILITY
-		w.queue_projectile(
-			a.ids[0], ActorStore.TEAM_PLAYER, p, dir * t.speed, dmg, BOLT_RADIUS_M, life, tags
+		var ctx := AttackContext.make(
+			p, Kin.angle_of(a.pos(best) - p), Attacks.bolt_base_damage(spec), 0, tags, &""
 		)
+		ctx.muzzle_m = 0.0
+		Attacks.launch(w, spec, ctx)
 		s.drone_cd[k] = drone_period(w, t)
 		s.drone_fire[k] = w.tick
 
@@ -569,6 +653,8 @@ static func blade_pos(w: World, k: int, n: int, r: float) -> Vector2:
 	return w.player_pos() + Kin.dir(ang) * r
 
 
+## v0.6.0 MX2: the blades are copies of your attack (form ORBITER): a touch is a hit of the orbit spec, carrying the
+## weapon's statuses and hooks (Attacks.land).
 static func _orbit(w: World, t: AbilityTable, level: int) -> void:
 	var s := w.ab
 	var a := w.actors
@@ -577,23 +663,27 @@ static func _orbit(w: World, t: AbilityTable, level: int) -> void:
 		if s.orbit_next[k] <= w.tick:
 			s.orbit_ids.remove_at(k)
 			s.orbit_next.remove_at(k)
-	var n := t.count(level)
+	var spec := Modifiers.ability(w, t)
+	if spec == null:
+		return
+	var n := spec.count
 	var r := orbit_radius(w, t, level)
-	var dmg := _damage(t, level) * AbilityCombos.dance_permille(w) / 1000  # v0.4.0 AB: Blade Dance
+	var dmg := spec.damage * AbilityCombos.dance_permille(w) / 1000  # v0.4.0 AB: Blade Dance
 	var effect := AbilityCombos.EFFECT_DANCE if AbilityCombos.dancing(w) else EFFECT_ORBIT
-	var tags := SimEvent.TAG_ABILITY
+	var tags := Attacks.lingering_tags(spec)
 	for i in w.enemies_near(w.player_pos(), r + BLADE_R):
 		if a.invuln[i] > 0 or s.orbit_ids.has(a.ids[i]):
 			continue
 		for k in n:
 			var b := blade_pos(w, k, n, r)
-			if not AttackShapes.disc_touches(b, BLADE_R, a.pos(i), a.radius[i]):
+			if not AttackShapes.disc_touches(b, spec.radius_m, a.pos(i), a.radius[i]):
 				continue
 			s.orbit_ids.append(a.ids[i])
 			s.orbit_next.append(w.tick + Stats.auto_cooldown(w, t.hit_ticks))  # v0.5.0 CP: Fast Hands
 			s.orbit_hit_tick = w.tick
 			var root := w.take_root()
-			var got := Damage.hit(w, i, dmg, a.ids[0], a.ids[0], root, tags, b, a.pos(i), effect)
+			var ctx := AttackContext.make(b, 0, dmg, root, tags, effect)
+			var got := Attacks.land(w, spec, ctx, i, b, a.pos(i))
 			AbilityCombos.on_blade_hit(w, i, root, got)  # v0.4.0 AB: Glacier Ring
 			break
 

@@ -97,7 +97,7 @@ only adds numbers, menus or breadth fails the filter.
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
 | Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a four-slash combo (owner, 2026-10-07, v0.3.0 L11: a horizontal slash, a backhand, a narrow forward thrust, a heavy spinning finisher; replaced the 3-hit swing combo); shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10; v0.3.0 PLAN L11 (starting values) |
 | Utility (v0.4.0 BS, owner F11: none at the start; PD-01 flipped) | An ability card on the utility button: **Aegis** (the guard: hits from the front cut to 20 %, blocks store guard charges for the next swing) **or Blink** (a teleport the way you're moving, through walls by range, with a 2 m landing shock), never both | v0.1.0 PLAN; v0.4.0 PLAN (starting values) |
-| Abilities (v0.4.0 BS, owner F8) | **Four slots.** Slot 1 is the build's weapon as an ability (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5. Slots 2–4 take ability cards (Bomb Lobber, Drone Buddy, Orbit Blades, Blink, Aegis); once full, ability cards only level up | v0.4.0 PLAN table (starting values) |
+| The build (v0.6.0 MX2, owner B7; was v0.4.0's four ability slots, F8) | **The weapon, one utility pick and six modifier slots.** The weapon is the build's (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5, outside the slots, with the dash and Vent. The utility (Blink or Aegis) is one pick outside the slots. **Six modifier slots**, filled in pick order (the layer order): the six old abilities as weapon modifiers (Bomb Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail; each carries the weapon's elements and effects; taking one you hold levels it 1–5 without a slot) and the attack items (the 14 MX1 items and the four ability mods). With the six full, a new modifier offers **Swap**: pick the one it replaces, or skip. Stat cards are unlimited (no slot) | [`MODIFIER_ENGINE.md`](MODIFIER_ENGINE.md) "The build"; [`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §8c |
 | Builds (v0.3.0 L15) | **Blade** (melee only) or **Gun** (shooting only), picked before the run. Blade hits ×1.15 (L16); the Gun hits ×1.00 since 2026-10-08 (owner: "do not make gun -15% it is actually unplayable with that debuff"; L16's ×0.85 is gone) | `data/builds/*.tres` `damage_permille` |
 | Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
@@ -152,16 +152,19 @@ value or by an owner decision, and the change is noted here.
   - a watchdog stops any chain past its limits, and sims require 0 `LIMIT` events.
 - **No flat per-hit damage reduction**, on either side. Reductions are per-mille multipliers or structural (block,
   guard arc, dodge).
-- **Slot cap** (PD-08, flipped in v0.4.0 BS by owner F8): the build is **four ability slots**, always on (§C). The
-  6 + 3 mechanism-slot prototype is dropped.
+- **Slot cap** (PD-08, flipped in v0.4.0 BS by owner F8; v0.6.0 MX2, owner B7): the build is the weapon, one utility
+  pick and **six modifier slots** with a Swap when full (§C). The items that change attacks take a slot; the other
+  items (engines, dash, guard, heat, sustain) and the stat cards take none.
 - **Rewards (v0.4.0 BS, owner F9, F13).** Altars and chests offer pick 1 of 3 from three card types: **ability
   cards** (a free altar's first card is a new ability while a slot is free), **stat cards** (most cards: 12 stats ×
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
-- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field (lightning on 3 enemies, shock), Frost
-  Nova (a nova around you, frost) and Flame Trail (fire where you walk, burn) bring the shock, frost and burn engines
-  to any build without an item. Owning two paired abilities at level 3 evolves them into one of eight ability combos
+- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field, Frost Nova and Flame Trail bring the
+  shock, frost and burn engines to any build without an item (v0.6.0 MX2, as weapon modifiers: Arc Field's attacks
+  leave a shock field, Frost Nova gives the weapon frost and rings on a kill streak, Flame Trail's dash and
+  projectiles leave fire; Bomb Lobber lobs on every 4th attack; the drone fires a copy of your attack; the orbit
+  blades are copies of your attack). Owning two paired abilities at level 3 evolves them into one of eight ability combos
   (Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward), each with
   a card, a badge and a look ([`INTERACTIONS.md`](INTERACTIONS.md) "Ability combos").
 - **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
@@ -179,8 +182,8 @@ value or by an owner decision, and the change is noted here.
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
   priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
   (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
-  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to
-  free its slot for a later ability card: a way to change a build's direction, paid for. Starting values; evidence:
+  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon; v0.6.0 MX2: a modifier, or the
+  utility) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to free its slot for a later card: a way to change a build's direction, paid for. Starting values; evidence:
   `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
 ## E. Enemies and the stress matrix
@@ -248,6 +251,12 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
     ring up close and dives at a runaway. At 50 % it splits: three Lens Drones (Needle behaviour) break off its rim.
   - **The Foundry** (floor 3): a walking furnace that floods lanes with molten floor (lanes that burn for 2 s),
     lobs slag, blows a vent ring up close and launches Bomb Drones (at most 3, then 4 alive).
+- **Phase gates (v0.5.5 D7, owner: "we have to make bosses harder not only matching in some way the HP to our
+  damage").** Every boss has three phases, at 66 % and 33 % HP. A burst can't take the HP past the next gate; at the
+  gate the boss stands invulnerable for about a second (a violet shell, PHASE SHIFT on the bar), adds of the floor's
+  enemies rise around it (2-4, more on later floors), and the new phase opens with its entry attack. The second phase
+  is v0.4.0's phase two (new attacks); the third adds the boss's punish move to its rotation and attacks 25 % more
+  often. So a strong build still has to play the fight; only a build past the cap melts the HP between gates.
 
 ## G. Procedural floors
 
@@ -315,6 +324,20 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
   12 Overrun kills clear it for an ability-card altar (level-ups of your abilities first) and the shards those kills
   paid, again (2×). The minimap marks it. Starting values in `data/overrun/overrun.tres`.
 - **No Endless mode before balance alpha** (PD-12; [`../LESSONS.md`](../LESSONS.md) L8).
+
+- **The design principle of difficulty (v0.5.5 D8, owner 2026-10-08: "The difficulty balancing does not have to be
+  about making the game extremely difficult, its to be a good balance between the difficulty curve and the growing
+  path").** The target: **a normal build feels strong but challenged; a lucky build past the cap feels like a god.**
+  Difficulty answers growth; it never erases it.
+- **Hidden catch-up (v0.5.5 D4, owner: "Yes, but hidden").** On top of the regular scaling, each floor reads your
+  build's power from its cards and abilities alone (never from how well you play) and compares it with a normal
+  build's: enemies get HP × m and damage × √m, m = √(your power ÷ expected), at least ×1, at most ×1.5 / ×2 / ×2.5 on
+  floors 1/2/3 (+0.25 per threat T). m is fixed for the floor and never shown. A build twice as strong as expected
+  meets enemies ×1.41: still easier. A build ten times stronger hits the cap and deletes the floor: the lucky run.
+- **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
+  cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
+- **Deep floors bite (S5).** A Deep floor: a violet haze over the biome's light, an elite in every combat room,
+  +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep).
 
 ## I. Meta-progression limits
 

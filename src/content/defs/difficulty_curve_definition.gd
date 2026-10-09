@@ -1,9 +1,11 @@
 class_name DifficultyCurveDefinition
 extends ContentDef
 ## A floor's difficulty curve (v0.4.0 TU, owner 2026-10-08 D1–D4 and "distribute presenting them through the first
-## 3 floors"): floor time → phase. The first phase is the calm minute (no tier growth, few enemies, the basic kinds,
-## small packs); the next phases bring the floor's kinds in order and ramp the danger tier, the alive cap and the
-## spawn rate up to the last phase, the peak (SC's tier-max level), which holds to the floor's end. SC's spawn
+## 3 floors"): floor time → phase. The first phase starts at tier 0 and opens the first kinds; on floor 1 it is the
+## calm phase (it holds: no tier growth, few enemies, the basic kinds, small packs; v0.5.5 D1: 30 s), and floors 2–3
+## start straight at their warm-up level (no calm phase, v0.5.5 D1); the next phases bring the floor's kinds in
+## order and ramp the danger tier, the alive cap and the spawn rate up to the last phase, the peak (SC's tier-max
+## level), which holds to the floor's end. SC's spawn
 ## director (SpawnDirectorDefinition) stays the source of the per-tier tables and the mix's weights; the curve says
 ## when. One definition per floor (floor_index); compiled into CurveTable by ContentCompiler.compile_curve.
 
@@ -45,14 +47,16 @@ func validate() -> Array[ValidationIssue]:
 					_issue(&"phase_kind", "phases[%d]: kind '%s' empty or repeated" % [k, id])
 				)
 			seen[id] = true
+		if k > 0 and p.hold:
+			issues.append(_issue(&"calm", "only the first phase may hold (the calm phase)"))
 		if k > 0 and phases[k - 1] != null:
 			_check_step(issues, k, phases[k - 1], p)
 	var calm := phases[0]
 	if calm != null:
 		if calm.start_seconds != 0.0:
 			issues.append(_issue(&"calm", "the first phase must start at 0"))
-		if calm.tier_permille != 0 or not calm.hold:
-			issues.append(_issue(&"calm", "the first phase must hold tier 0 (the calm minute)"))
+		if calm.tier_permille != 0:
+			issues.append(_issue(&"calm", "the first phase must start at tier 0"))
 		if calm.kinds.is_empty():
 			issues.append(_issue(&"calm", "the first phase opens no kind"))
 	return issues

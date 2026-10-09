@@ -62,6 +62,8 @@ const CODE_RESONANCE := 37
 const CODE_SHRAPNEL := 38
 const CODE_BLOOD := 39
 const CODE_SPIKED := 40
+## v0.6.0 MX4: Venom Core's poison feed (+ source; after the hook feeds' 48..53).
+const CODE_FEED_POISON := 56
 
 ## What made a hit (on_hit): a swing (or its echo), a landed bolt, a Static Chain jump, a shockwave.
 const SRC_NONE := 0
@@ -123,10 +125,16 @@ static func end(w: World) -> void:
 
 # --- Feeding the statuses -------------------------------------------------------------------------------------
 ## A player hit landed on enemy `i` (Damage.hit, got > 0). Adds the stacks its source feeds, once per
-## (root, status, source, target).
+## (root, status, source, target). v0.6.0 MX1: a melee hit feeds the current combo step spec's statuses (shock,
+## bleed, frost; its burn is ItemEffects.on_melee_hit's), a projectile hit the bolt spec's (each every N landed
+## bolts; v0.6.0 MX2: the projectile's own spec, World.hit_spec); the other sources keep their items' numbers. An
+## ability's attack that isn't a projectile feeds its own spec's statuses instead (Attacks._feed).
 static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName) -> void:
 	var a := w.actors
 	if a.dead[i] == 1 or tags & SimEvent.TAG_DOT or effect_id in PAYOFFS:
+		return
+	var hs := w.hit_spec  # v0.6.0 MX2: an ability's own attack (not a bolt) feeds in Attacks._feed
+	if hs != null and hs.has_tag(&"ability") and hs.form != AttackSpec.Form.BOLT:
 		return
 	var m := w.item_mods
 	var src := source_of(tags, effect_id)
@@ -134,19 +142,27 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 	var shock := 0
 	var bleed := 0
 	var frost := 0
+	var poison := 0  # v0.6.0 MX4: Venom Core
 	match src:
 		SRC_MELEE:
-			shock = m.shock_melee
-			bleed = m.bleed_melee
-			frost = m.frost_melee
+			var sp := Modifiers.step(w, w.combo_step)
+			shock = sp.stacks_of(&"shock")
+			bleed = sp.stacks_of(&"bleed")
+			frost = sp.stacks_of(&"frost")
+			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
-			if m.burn_bolt + m.shock_bolt + m.bleed_bolt + m.frost_bolt > 0:
+			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
+			var fed := 0
+			for st: StringName in [&"burn", &"shock", &"bleed", &"frost", &"poison"]:
+				fed += b.stacks_of(st)
+			if fed > 0:
 				w.engine_bolt_hits += 1
 				var n := w.engine_bolt_hits
-				burn = m.burn_bolt if _every(n, m.burn_bolt_every) else 0
-				shock = m.shock_bolt if _every(n, m.shock_bolt_every) else 0
-				bleed = m.bleed_bolt if _every(n, m.bleed_bolt_every) else 0
-				frost = m.frost_bolt if _every(n, m.frost_bolt_every) else 0
+				burn = b.stacks_of(&"burn") if _every(n, b.every_of(&"burn")) else 0
+				shock = b.stacks_of(&"shock") if _every(n, b.every_of(&"shock")) else 0
+				bleed = b.stacks_of(&"bleed") if _every(n, b.every_of(&"bleed")) else 0
+				frost = b.stacks_of(&"frost") if _every(n, b.every_of(&"frost")) else 0
+				poison = b.stacks_of(&"poison") if _every(n, b.every_of(&"poison")) else 0
 		SRC_CHAIN:
 			shock = m.shock_chain
 		SRC_WAVE:
@@ -162,6 +178,8 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		add_frost(w, i, frost, root, EFFECT_FROST)
 	if shock > 0 and w.proc_ledger.try_mark(root, CODE_FEED_SHOCK + src, id, w.tick):
 		add_shock(w, i, shock, root)
+	if poison > 0 and w.proc_ledger.try_mark(root, CODE_FEED_POISON + src, id, w.tick):
+		Venom.add(w, i, poison, root)
 
 
 static func source_of(tags: int, effect_id: StringName) -> int:
@@ -180,8 +198,9 @@ static func source_of(tags: int, effect_id: StringName) -> int:
 	return SRC_NONE
 
 
+## The n-th landed bolt applies a status fed every `every` bolts (0: every bolt; v0.5's feeders all had one).
 static func _every(n: int, every: int) -> bool:
-	return every > 0 and n % every == 0
+	return every <= 0 or n % every == 0
 
 
 ## Adds burn stacks (capped, the burn refreshed); the Ember Edge DoT ticks them (ItemEffects.tick_burns).

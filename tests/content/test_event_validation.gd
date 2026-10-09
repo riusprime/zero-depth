@@ -10,8 +10,8 @@ func _codes(issues: Array[ValidationIssue]) -> Array:
 func test_the_shipped_events_curses_and_rules_compile() -> void:
 	var repo := EventLab.repo()
 	assert_eq(repo.errors().size(), 0, "content validates")
-	assert_eq(repo.count(&"events"), 8, "eight events")
-	assert_eq(repo.count(&"curses"), 6, "six curses")
+	assert_eq(repo.count(&"events"), 9, "nine events (v0.5.5 DS: Whispering Deep)")
+	assert_eq(repo.count(&"curses"), 13, "five plain curses and eight trade-offs (v0.6.0 CU)")
 	var events := EventCompiler.compile_events(repo)
 	for t in events:
 		assert_between(t.choice_count(), 1, 2, "%s choices" % t.id)

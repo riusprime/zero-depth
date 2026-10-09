@@ -115,5 +115,16 @@ func _bump() -> bool:
 func _rewards_signature(reader: WorldReader) -> String:
 	var parts := PackedStringArray()
 	for i in reader.reward_count():
-		parts.append("%d%s" % [reader.reward_id(i), "+" if reader.reward_affordable(i) else "-"])
+		parts.append(
+			(
+				"%d%s%s"
+				% [
+					reader.reward_id(i),
+					"+" if reader.reward_affordable(i) else "-",
+					"L" if reader.reward_locked(i) else ""  # v0.5.5 AR: a locked reward unlocks on the clear
+				]
+			)
+		)
+	var a := reader.arenas()  # v0.5.5 AR: an arena sealing or clearing redraws its mark
+	parts.append("a%d/%d" % [a["sealed"], (a["cleared"] as PackedInt32Array).size()])
 	return ",".join(parts)

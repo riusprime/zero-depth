@@ -131,7 +131,7 @@ func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
-	carry = RunCarry.take(w, table.heal_permille)
+	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	floor_index += 1
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(floor_index - 1)  # v0.5.0 RT: the next floor's route, the one walked into

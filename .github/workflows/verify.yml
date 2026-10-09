@@ -2,10 +2,13 @@
 # Steps and the step each goes live in: docs/roadmap/v0.0.1/PLAN.md Step 3.
 name: Verify
 
+# Owner, 2026-10-08: "why would be doing the same thing 3 times after it already turned green once". Session
+# branches run the full suite locally before every push (CLAUDE.md), so GitHub tests only the PR into main (its
+# merge result is what lands on main), plus a manual "Run workflow" button.
 on:
-  push:
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 env:
   GODOT_VERSION: "4.7.2"

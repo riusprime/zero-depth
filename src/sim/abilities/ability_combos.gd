@@ -115,7 +115,9 @@ static func on_blink(w: World) -> void:
 	var dmg := Abilities.damage_at(t, lvl)
 	for k in c.count:
 		var off := Vector2.ZERO if k == 0 else Kin.dir(k * 4096 / c.count) * (r * 0.6)
-		Abilities.drop_bomb(w, w.blink_from + off, w.blink_from, r, dmg, t.duration_ticks)
+		Abilities.drop_bomb(
+			w, w.blink_from + off, w.blink_from, r, dmg, t.duration_ticks, Abilities.bomb_key(w)
+		)
 	w.ab.charge_tick = w.tick
 	w.ab.charge_pos = w.blink_from
 

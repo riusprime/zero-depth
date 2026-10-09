@@ -181,6 +181,115 @@ v0.5.0 CP: `@export var requires_ability: StringName` (empty, or an `AbilityDefi
 (`drone_rate_per_heat_permille`; also offered only in runs with heat), `RAZOR_ORBIT` (`stacks_per_hit` and the
 bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterimage_radius_m`,
 `afterimage_delay_seconds`). Each validates the fields it reads (positive; seconds at least one tick).
+**v0.6.0 MX4:** Cluster Payload's, Overclocked Drone's and Afterimage's fields left the item: each names its own
+modifier (`data/modifiers/<id>.tres`: an `ON_END` lob of 3 bomblets on the `bomb` spec; `SET heat_rate_permille 8`
+on the `drone` spec; a waiting `ON_LAUNCH` burst on the `blink` spec), and the kinds joined `MODIFIER_KINDS`. The
+rarity gains `LEGENDARY` (offered only by the boss's legendary tier and a boss's core). The kind `MODIFIER` (31,
+appended) is a modifier card of the M-list: it names its own modifier and carries only the engine numbers that
+modifier feeds (burn fields, the shock fields, `slow_*`, and Venom Core's poison: `poison_damage`,
+`poison_period_seconds`, `poison_seconds`, `poison_max_stacks`, `poison_spread_m`; each set checked when present). The
+tag set gains `venom`; a `MODIFIER` card tagged `heat` is offered only in runs with heat. Item indices keep v0.5's
+order: the items of the v0.5 kinds by id, then the `MODIFIER` cards by id (`ModifierCompiler.item_defs`).
+
+**Modifiers** (v0.6.0 MX1, category `modifiers`, `data/modifiers/*.tres`; design
+[`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §2; sim side
+[`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8b). A modifier rewrites attack specs. `ModifierDefinition` (a
+`ContentDef`, discovered by `ContentScanner` like every definition):
+
+```gdscript
+class_name ModifierDefinition extends ContentDef
+enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed compile order; appended, never renumbered
+@export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
+@export var rarity: Rarity                # COMMON, RARE (v0.6.0 MX4: LEGENDARY)
+@export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
+                                          # chain, hook, auto; v0.6.0 MX2 the ability modifiers' own attacks: bomb,
+                                          # drone, orbit, field, nova, trail; v0.6.0 MX4 the moments: dash, vent,
+                                          # move, blink, body); empty = every attack (never a moment)
+@export var stage: Stage                  # the stage its ops run in, unless an op names another
+@export var ops: Array[ModifierOpDefinition]
+@export var overlay: StringName           # optional visual overlay id (design §4); empty in MX1
+```
+
+```gdscript
+class_name ModifierOpDefinition extends Resource   # a sub-resource of ops
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }   # MX4: WEAPON, a hook's child only
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }   # MX4: the last three
+enum When { ALWAYS, OVERCLOCK }                                         # MX4
+@export var op: Op
+@export var stage: int = -1               # -1: the modifier's stage
+@export var field: StringName             # numeric ops: one of FIELD_STAGE's keys, in content units
+@export var value: float                  # MUL_PERMILLE: per mille
+@export var form: Form                    # SET_FORM, and a HOOK's attack
+@export var status: StringName            # STATUS: burn, shock, bleed, frost, slow (MX4: poison)
+@export var stacks: int                   #   stacks a landed hit feeds
+@export var every: int                    #   one application every N landed hits (0 = each)
+@export var element: StringName           # ELEMENT: ember, storm, frost, venom, void, bleed
+@export var hook_trigger: Trigger         # HOOK: when
+@export var hook_tags: PackedStringArray  #   the spawned attack's tags (it also gets `hook`)
+@export var hook_radius_m: float          #   a BURST's radius (MX2: also a LOB's blast, a ZONE's, a RING's)
+@export var hook_reach_m: float           #   a BEAM's jump reach (MX2: a LOB's throw along the parent's way)
+@export var hook_damage: int              #   flat damage, or
+@export var hook_damage_permille: int     #   a share of the parent's base damage (at least 1)
+@export var hook_every: int               #   fires every Nth time (0 = each)
+@export var hook_effect: StringName       #   the effect id its hits carry
+@export var hook_delay_seconds: float     #   MX4: the child waits this long after its trigger (0 = at once)
+@export var hook_when: When               #   MX4: ALWAYS, or only at Overclock
+@export var hook_ops: Array[ModifierOpDefinition]  # MX4: shape the child before the build compiles it (no HOOK, no SET_FORM)
+```
+
+- **Fields and stages** (`ModifierOpDefinition.FIELD_STAGE`): PATTERN `count`, `spread_degrees`,
+  `repeat_delay_seconds`, `repeat_damage_permille`; BEHAVIOUR `bounces`, `pierce`; PAYLOAD `damage`,
+  `damage_permille`, `nth_every`, `nth_damage_permille`, `hitstop_seconds`; SCALE `arc_degrees` (the full width),
+  `reach_m`, `reach_bonus_permille`, `radius_m`, `speed_mps`, `life_seconds`, `period_seconds`,
+  `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK. v0.6.0 MX4
+  (SIM_CONTRACTS §8d): FORM `mirror`; PATTERN `directions` (0 forward, 1 circle), `back_damage_permille`,
+  `aim_offset_degrees`; BEHAVIOUR `chains`, `homing_dps` (degrees per second), `returns`, `orbit_seconds`,
+  `intangible`; PAYLOAD `pull_m`, `barrier_seconds`, `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
+  `heat_rate_permille`, and the virtual `range` (`MUL_PERMILLE` on whichever field is the form's range).
+- **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
+  known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
+  belongs to; `MUL_PERMILLE` > 0; a known status with stacks > 0 and every >= 0; a known element; a known form; a
+  hook on a known trigger with known tags, spawning a `BURST` (radius > 0) or a `BEAM` (reach > 0); v0.6.0 MX2 also
+  a `LOB`, a `ZONE` or a `RING` (radius > 0; the lingering times are the compile's: `Modifiers.HOOK_LOB_TICKS`,
+  `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`), with damage or a damage share > 0, every >= 0. v0.6.0 MX4: also
+  a `BOLT` or an `ARC` (radius or reach > 0) and a `WEAPON` copy (no size); the triggers `ON_END`, `ON_LAUNCH` and
+  `EVERY_NTH` (every >= 2); a delay >= 0; a known `when`; each of `hook_ops` neither a hook nor a form change, with a
+  known field, status or element.
+- **Compile** (`ModifierCompiler`, application): seconds to ticks (`SimTick.seconds_to_ticks`), degrees to 1/4096
+  turns (`ContentCompiler.degrees_to_units`; `arc_degrees` to the half width), m/s to m per tick, integer fields
+  rounded once; `MUL_PERMILLE` values stay per mille. The same functions the item compiler used, so a migrated item
+  keeps its exact numbers.
+- **v0.6.0 MX2: the modifier slots.** A card that names modifiers (an item, or an ability: `AbilityDefinition.
+  modifiers`), and every ability mod (`requires_ability`), is a modifier card: it takes one of the six slots and
+  its modifiers compile in slot order (SIM_CONTRACTS §8c). Shipped in MX2: `frost_nova` (Frost Nova's frost element:
+  target `weapon`, 1 frost stack a hit and the `frost` element) and `razor_orbit` (Razor Orbit: target `orbit`, 1
+  bleed stack and the `bleed` element; the bleed engine's numbers stay on the item). 16 modifiers in MX2.
+- **v0.6.0 MX4: the M-list.** 29 new cards (M1–M30; M3 Frost Core is the v0.5 item, generalised), 3 legendary
+  versions for the boss's tier (Tempest Core, Inferno Core, Echo Storm) and the three ability mods' own modifiers:
+  51 modifiers in all. Each card's ops, target and numbers are the table in
+  [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md); every number
+  is a starting value.
+- **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
+  into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
+  item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
+  Splinter Shot, Rapid Coil, Ricochet Core, Overcharge, Static Chain, Frost Core, Cinder Shot, Conductor, Serrated
+  Edge, Barbed Bolts, Glacial Edge) must name at least one (`missing`), and `ContentValidator` checks every named id
+  exists (`unknown_modifier`). Each ships a modifier of its own id. Their attack fields left the item
+  (`reach_bonus_permille`, `echo_*`, `split_*`, `fire_rate_bonus_permille`, `bounces`, `overcharge_*`,
+  `shockwave_*`, `chain_*`, `stack_every`, and `stacks_per_hit` where only a weapon hit used it); the engine numbers
+  stay on the item (`stacks_per_hit` stays on Static Chain and Overcharge: their jump and shockwave feed shock).
+  Shipped values (MX1, migrated unchanged): Long Edge `ADD reach_bonus_permille 350` (SCALE); Twin Arc
+  `SET repeat_delay_seconds 0.1`, `MAX repeat_damage_permille 500` (PATTERN); Splinter Shot `MAX count 3`,
+  `MAX spread_degrees 12` (PATTERN), `SET damage_permille 600` (PAYLOAD); Rapid Coil `ADD rate_bonus_permille 400`;
+  Ricochet Core `ADD bounces 1`; Overcharge `SET nth_every 4`, `SET nth_damage_permille 2000`, a `HOOK` `ON_NTH`
+  `BURST` radius 2 m at 500 ‰ (`overcharge`); Static Chain `STATUS shock 1 every 2`, `ELEMENT storm`, a `HOOK`
+  `ON_HIT` `BEAM` reach 4 m, 5 damage, every 3 (`static_chain`); Frost Core `STATUS slow`, `STATUS frost 1 every 3`,
+  `ELEMENT frost`; Cinder Shot `STATUS burn 1 every 3`, `ELEMENT ember`; Conductor `STATUS shock 1`,
+  `ELEMENT storm`; Serrated Edge `STATUS bleed 1`, `ELEMENT bleed`; Barbed Bolts `STATUS bleed 1 every 2`,
+  `ELEMENT bleed`; Glacial Edge `STATUS frost 1`, `ELEMENT frost`; Ember Edge `STATUS burn 1`, `ELEMENT ember`.
+  Melee ones target `[weapon, melee]`, bolt ones `[weapon, projectile]`, so none touches the Skills (as in v0.5).
+- No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
@@ -188,7 +297,10 @@ later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_w
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
 and the radius positive. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
 loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 m, × the pickup-range stat); both
-shares within 0..1 (`range`), the reach positive.
+shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
+card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
+become chests, the same draws and spots; 0 = no cap; ≥ 0) and `shard_scale` (0.7, owner S4: every kill's shards ×
+this, rounded half up; > 0).
 
 **Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
 [`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
@@ -220,7 +332,10 @@ rules (`Offers.draw`: ability cards only while they can apply, mods only with th
 is out of the item pool like one in an altar's offer. Placement is a pass of its own (`ShopPlacement.pick`, stream
 `shop_room`, never `map`): one per floor, never the start hall, the boss room or the room before the boss door, dead
 ends first. Validation: prices, the heal and reroll prices, the refund and the radius positive; three rarity prices;
-the steps non-negative; the shares in (0, 1]; `offer_size` 1–9.
+the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
+bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
+and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
+by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1).
 
 ## 4. Encounters and bosses
 
@@ -252,6 +367,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
 @export var stagger_seconds: float
 @export var attacks: Array[BossAttackDefinition]   # AttackDefinition + move, min/max_range_m, weight, cooldown_seconds, cause_key
 @export var phases: Array[BossPhaseDefinition]     # each: hp_threshold_permille, attack_ids, entry_attack, speed/cooldown_permille
+                                                   # v0.5.5 DS: every shipped boss has 1000 / 660 / 330 (each later phase opens with a gate)
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
 # Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
@@ -402,6 +518,9 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   a floor's boss HP and attack damage × this, on top of the per-floor factors and Deep) and
   `boss_room_heal_floor_permille` (`[1000, 0, 0]`: the share of max HP restored when the boss room seals); both per
   floor, past the end the last entry, entries 1..1000 / 0..1000 (`range`).
+- **`RunDefinition`, v0.5.5 EC (owner Q-S4, "Keep half"):** `shard_carry` (0.5: the share of unspent shards a
+  portal carries to the next floor, rounded down; the rest is shown as left behind on the arrival card; 0..1,
+  `range`).
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier
@@ -418,14 +537,25 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
     (`phase_name`); cap and HP / damage within 1..1000, tier ≥ 0, interval ≥ 1, pack ≥ 0 (`phase_range`); a kind
     named once per curve (`phase_kind`); each phase starts after the one before (`phase_order`) and is never easier
     (tier, cap, HP and damage don't fall, the interval doesn't grow: `phase_ramp`); the first phase starts at 0,
-    holds, has tier 0 and opens at least one kind (`calm`). Content tests also hold the shipped curves to: kinds in
-    SC's mix, every mix kind on some floor, every kind in before the peak, the peak's tier within SC's tables; the peak's start is tested against
-    the measured boss-door times (owner D7, `TuningRun.peak_ticks`).
+    has tier 0 and opens at least one kind, and only the first phase may hold (`calm`; v0.5.5 D1: floor 1's first
+    phase is a 30 s calm that holds, floors 2–3 start at the warm-up level with no calm). Content tests also hold
+    the shipped curves to: kinds in SC's mix, every mix kind on some floor, every kind in before the peak, the
+    peak's tier within SC's tables; the peak's start is data (90 s on floor 1, 30 s on floors 2–3, starting values),
+    no longer the bots' measured boss-door times (owner P1).
 - **Validation** (`ContentDef.check_permille_table`): a table has 1-64 entries, starts at exactly 1000, every entry is
   within 1..100000 (×100 at most, so the integer products stay small), and HP, damage and per-floor tables never
   fall while the interval table never rises (`table_size`, `table_start`, `table_range`, `table_order`). A floor's
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
+
+- **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
+  `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):
+  `expected_power_permille` (E at floor entry, `[1000, 2000, 4000]`), `cap_permille` (`[1500, 2000, 2500]`),
+  `boss_expected_power_permille` (E at the floor's end, `[2000, 4000, 7000]`), `boss_cap_permille` (`[2000, 3000,
+  4000]`), entry f − 1 and the last repeats; `threat_cap_bonus_permille` (250 per T), and the build's power terms
+  `ability_level_permille` (120), `item_permille` (80), `combo_permille` (150). Validation: each table 1-64 entries,
+  entries within 1..100000 (caps 1000..100000) and never falling (`table_size`, `table_range`, `table_order`); the
+  four single numbers within 0..10000 (`range`). Starting values the owner tunes by play.
 
 ### Events and curses (v0.5.0 EV)
 
@@ -439,6 +569,7 @@ class_name EventDefinition extends ContentDef          # data/events/*.tres, cat
 @export var weight := 10                               # draw weight among the floor's events
 @export var min_floor := 1
 @export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var deep_only := false                         # v0.5.5 DS (S5): Deep floors only, drawn first there
 @export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
 
 class_name EventChoiceDefinition extends Resource
@@ -456,18 +587,36 @@ class_name CurseDefinition extends ContentDef          # data/curses/*.tres, cat
 @export var effect: StringName                         # enemy_speed, regen, heat_decay, extra_enemy, prices,
                                                        # elite_chance
 @export var amount := 15.0                             # percent (a count for extra_enemy)
+@export var effect_2: StringName = &""                 # v0.6.0 CU: a second drawback ("" = none)
+@export var amount_2 := 0.0
+@export var up_effect: StringName = &""                # v0.6.0 CU: a trade-off's upside ("" = a plain curse)
+@export var up_amount := 0.0
+@export var up_desc_key: StringName                    # one %s (or none for an on/off effect)
 @export var threat := 1                                # added to T while held
 @export var weight := 10
 
 class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.tres, category "event_rules"
 # rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
 # walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
-# defend_radius_m
+# defend_radius_m; v0.6.0 CU: core_stagger_share (%), core_stagger_seconds, core_window_seconds, core_mod_weight,
+# hunt_range_m, drop_offset_m
 ```
 
 Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
 below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
-`threat >= 1`. Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
+`threat >= 1`. v0.6.0 CU (PLAN v0.5.5 S6, S7): a curse may add `effect_2` / `amount_2` (a second drawback) and
+`up_effect` / `up_amount` / `up_desc_key` (the upside of a trade-off curse; `&""` = a plain curse). The effects list
+grows (appended, never renumbered): `no_dash`, `dodge`, `attack_slow`, `fourth_hit`, `max_hp_cut`, `crit_chance`,
+`ability_hp_cost`, `ability_damage`, `heat_linger`, `overclock_damage`, `no_minimap`, `shard_gain`, `hit_stun`,
+`move_speed`, `elite_hunt`, `elite_rare_drop`. Amounts are percent, except the counts (`extra_enemy`, and 1 for the
+on/off `no_dash`, `no_minimap`, `elite_rare_drop`) and `hit_stun` in seconds; a cut (`attack_slow`, `max_hp_cut`,
+`heat_linger`) is at most 90 %. A trade-off needs `up_desc_key`. Shipped: five plain curses (`leaky_core`,
+`price_gouge`, `swarm_call`, `swift_foes`, `withering`) and the eight trade-offs C1-C8 (`rooted`, `heavy_hands`,
+`glass_heart`, `blood_price`, `fevered`, `tunnel_vision`, `brittle`, and `marked_hunt`, which became C8 Marked: it
+keeps its id and its 12 % elite chance as `effect_2`). The event rules add core theft's numbers: `core_stagger_share`
+(%, 30), `core_stagger_seconds` (0.75), `core_window_seconds` (2), `core_mod_weight` (10), `hunt_range_m` (16) and
+`drop_offset_m` (0.9).
+Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
 the `ThreatModifier` tables are still unbuilt.
 
 ## 8. Player
@@ -521,6 +670,16 @@ Static Chain); Frost Nova 3 m (+0.4 m a level), 10 damage, 2 frost stacks (4 fro
 every 4 s (3 s at L5; engine Glacial Edge); Flame Trail 0.9 m patches every 0.15 s and 0.8 m of movement, 2 s, 3
 damage every 0.5 s (6/s), 1 burn stack, +25 % damage and duration a level (engine Ember Edge).
 
+v0.6.0 MX2 (owner B7; SIM_CONTRACTS §8c): the six auto abilities are weapon modifiers (each takes one of the six
+modifier slots; Blink and Aegis are the utility pick outside them; the starting weapons stay). Appended fields:
+`modifiers: Array[StringName]` (ModifierDefinition ids the ability adds while held, at its place in the slot order;
+the cross-check reports an unknown one), `every_attacks` (Bomb Lobber: lobs on every Nth weapon attack; > 0 for that
+kind), `streak_kills` and `streak_seconds` (Frost Nova's kill streak; > 0 for that kind). Arc Field now reads
+`radius_m` (its field), `duration_seconds` (the field's life) and `hit_seconds` (> 0 each), `level_count` as the most
+enemies its field hits a tick, `range_m` as how far a shot's field may land. Shipped starting values: Bomb Lobber
+every 4th attack (2.5 s cooldown kept); Arc Field 1.6 m, 2 s, every 0.5 s; Frost Nova `modifiers = [frost_nova]`, 4
+kills within 2 s of each other. Every other number is v0.5's.
+
 `ComboDefinition` (v0.4.0 AB) may pair two abilities instead of two items: `ability_a`, `ability_b` (ability ids,
 both required and different, never together with `item_a`/`item_b`) and `min_level` (1–5, data 3: both owned at that
 level or higher evolve the pair). The effect must be one of the appended ability effects `STORM_BOMBS`,
@@ -531,8 +690,25 @@ and that no ability pair repeats. Compiled with the item combos (`ComboTable.abi
 `compile_abilities` order; `item_a/b` stay −1).
 
 `OverrunDefinition` (v0.4.0 AB; `data/overrun/overrun.tres`, category `overrun`): the Overrun threat branch.
-`hp_multiplier`, `damage_multiplier`, `spawn_multiplier` (≥ 1; data 1.5 each), `kills_to_clear` (> 0; data 12) and
-`shard_multiplier` (≥ 1; data 2.0). Compiled by `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
+`hp_multiplier`, `damage_multiplier` (≥ 1; data 1.5 each), `shard_multiplier` (≥ 1; data 2.0) and, since v0.5.5 AR
+(owner S8, replacing `spawn_multiplier` and `kills_to_clear`), `waves_min` / `waves_max` (> 0, max ≥ min; data 3 / 5)
+and `wave_sizes` (one positive size per floor, the last repeats; data 4, 8, 12). Compiled by
+`ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
+
+`ArenaDefinition` (v0.5.5 AR, PLAN D2 / X1; `data/arenas/arena.tres`, category `arena`): the sealed arenas. `share`
+(0..1; data 0.33: the share of a floor's combat rooms that are arenas), `waves_min` / `waves_max` (data 2 / 3),
+`wave_sizes` (per floor; data 3, 5, 7), `first_wave_seconds` (data 0.75), `wave_gap_seconds` (data 1.0) and
+`min_spawn_distance` (m; data 3.0). Compiled by `ContentCompiler.compile_arena` into `ArenaTable` (ticks, per mille).
+Without the definition a floor has no regular arenas (the Overrun still seals).
+
+`LegendaryDefinition` (v0.5.5 AR, owner X1b "Pick a legendary card"; `data/legendary/boss.tres`, category
+`legendary`): the boss-only legendary tier. `stat_cards` (stat card ids offered at the legendary rarity), `mods` (item
+ids), `stat_weight` / `mod_weight` (data 60 / 40), `offer_size` (1..3; data 3) and `stat_multiplier` (≥ 1; data 1.6:
+a legendary stat card is its epic amount × this; `compile_stat_cards` appends that fourth rarity to every
+`StatTable`). Compiled by `ContentCompiler.compile_legendary` into `LegendaryTable` (indices into the compiled stat
+cards and items). v0.6.0 MX4: `mods` are the legendary modifiers: the three legendary versions (Tempest Core,
+Inferno Core, Echo Storm; rarity `LEGENDARY`, never in another pool) and the five trinkets (Shock Circles, Halo Shot,
+Boomerang, Orbit Rounds, Short Fuse); a boss's core draws from the same list.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
@@ -545,6 +721,8 @@ fields: `side` (3 positive percents, only for `glass_cannon` (the max HP cut) an
 and `hoarder` (the most shards that count)); any other stat must leave both empty. Caps of the added stats
 (`onrush`, `overkill`, `hoarder`, as for crit and regen) are in percent points. Offers draw a stat by its `weight`.
 A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
+v0.5.5 EC (owner D9) appends `lifesprout` (SIDED): the only source of heal orbs. The first card sets a kill's orb
+chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read capped at `cap` (30 percent points).
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.

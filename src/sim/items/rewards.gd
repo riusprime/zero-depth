@@ -2,10 +2,15 @@ class_name Rewards
 extends RefCounted
 ## The economy and rewards (v0.3.0 PLAN, E; owner lines L6, L7, L9).
 ## - Shards: every enemy kill pays its kind's shards × (1 + bonus × danger tier), rounded half up; a kind marked
-##   shards_by_floor (a boss) pays shards × the floor number instead.
+##   shards_by_floor (a boss) pays shards × the floor number instead. v0.5.5 EC (owner S4): every kill's shards are
+##   then × shard_permille (−30 % in the data), rounded half up.
 ## - Altars (free) and chests (cost shards) stand on the layout's item spots, one per room while rooms last, never
 ##   in the start hall. Their counts and order come from the loot stream. v0.4.0 TU (D4): the first spot filled is
-##   in a room next to the start hall (start_first) and always holds an altar.
+##   in a room next to the start hall (start_first) and always holds an altar. v0.5.5 EC (owner S1): at most
+##   altars_cap altars; the altars rolled past it become chests (the same draws, the same spots). v0.5.5 AR (X1):
+##   the spots in the floor's sealed arenas (FloorLayout.arena_rooms) are filled first, the arena nearest the start
+##   hall first (so the first altar sits in the nearest arena), then the rest as before; a reward in an arena that
+##   isn't cleared is locked (Arenas.locked: nearest never offers it).
 ## - The interact button within reach opens the nearest one. A chest you can't afford stays shut (the world
 ##   records the refusal for the view). Opening rolls the offer once: up to offer_size different items from the
 ##   pool (loot stream; chests weight rare items higher). The world then waits for the pick (World.choosing):
@@ -17,16 +22,24 @@ extends RefCounted
 ## Shards a kill of `kind` pays now (0 for kinds without a table or without shards).
 static func shards_for_kill(w: World, kind: int) -> int:
 	if BossAi.is_boss_kind(kind):
-		return w.reward_table.boss_shards * maxi(1, w.floor_index)
+		return _scaled(w, w.reward_table.boss_shards * maxi(1, w.floor_index))
 	var t := w.enemy_table(kind)
 	if t == null or t.shards <= 0:
 		return 0
 	if t.shards_by_floor:
-		return t.shards * maxi(1, w.floor_index)
+		return _scaled(w, t.shards * maxi(1, w.floor_index))
 	# v0.4.0 TU (owner D7, "staying longer still pays more shards"): the floor's plain 30 s tier, not the curve's,
 	# so shards keep growing after the curve peaks and holds.
 	var tier := w.spawner.tier_at(w.run_ticks) if w.spawner != null else 0
-	return (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
+	return _scaled(
+		w, (t.shards * (1000 + w.reward_table.shard_tier_bonus_permille * tier) + 500) / 1000
+	)
+
+
+## v0.5.5 EC (owner S4): a kill's shards × the table's shard_permille, rounded half up.
+static func _scaled(w: World, amount: int) -> int:
+	var m := w.reward_table.shard_permille
+	return amount if m == 1000 else (amount * m + 500) / 1000
 
 
 ## Tick phase 9: actor i died. Pays its shards and emits SHARDS (amount = shards, at the body).
@@ -47,12 +60,15 @@ static func on_kill(w: World, i: int) -> void:
 ## drawn from the loot stream; chest prices follow chest order and World.floor_index.
 static func place(w: World, layout: FloorLayout) -> void:
 	var t := w.reward_table
-	var order := start_first(layout, spot_order(layout))
+	var order := arena_first(layout, spot_order(layout))
 	var kinds := PackedInt32Array()
 	for k in w.rng_loot.range_int(t.altars_min, t.altars_max):
 		kinds.append(RewardStore.Kind.ALTAR)
 	for k in w.rng_loot.range_int(t.chests_min, t.chests_max):
 		kinds.append(RewardStore.Kind.CHEST)
+	if t.altars_cap > 0:  # v0.5.5 EC (S1): the altars past the cap become chests
+		for k in range(t.altars_cap, kinds.size()):
+			kinds[k] = RewardStore.Kind.CHEST
 	for k in range(kinds.size() - 1, 0, -1):
 		var j := w.rng_loot.range_int(0, k)
 		var swap := kinds[k]
@@ -69,6 +85,25 @@ static func place(w: World, layout: FloorLayout) -> void:
 			price = t.chest_price(chests, w.floor_index)
 			chests += 1
 		w.add_reward(kinds[k], layout.item_spots[order[k]], price)
+
+
+## v0.5.5 AR: `order` with the spots in arena rooms first (start_first among them), then the others (start_first
+## among them); without arenas, start_first(order) as before.
+static func arena_first(layout: FloorLayout, order: PackedInt32Array) -> PackedInt32Array:
+	if layout.arena_rooms.is_empty():
+		return start_first(layout, order)
+	var inside := PackedInt32Array()
+	var rest := PackedInt32Array()
+	for k in order:
+		if layout.arena_rooms.has(layout.item_rooms[k]):
+			inside.append(k)
+		else:
+			rest.append(k)
+	if inside.is_empty():
+		return start_first(layout, order)
+	var out := start_first(layout, inside)
+	out.append_array(start_first(layout, rest))
+	return out
 
 
 ## v0.4.0 TU (owner D4): `order` with the first spot of the room nearest the start hall (fewest hops; the first
@@ -107,6 +142,8 @@ static func nearest(w: World) -> int:
 	var best_d := Stats.reach(w, w.reward_table.interact_radius_m)  # v0.4.0 BS: pickup range
 	var p := w.player_pos()
 	for i in w.rewards.size():
+		if Arenas.locked(w, i):  # v0.5.5 AR: locked until its arena clears
+			continue
 		var d := Kin.length(w.rewards.pos(i) - p)
 		if d <= best_d and (best < 0 or d < best_d):
 			best = i
@@ -144,18 +181,34 @@ static func interact(w: World) -> bool:
 	return true
 
 
-## While choosing: a pick takes that card, a cancel closes the choice; anything else waits.
+## While choosing: a pick takes that card, a cancel closes the choice; anything else waits. v0.6.0 MX2 (owner B7):
+## picking a new modifier with the six slots full opens the swap (BuildSlots): the next answer names the held
+## modifier it replaces (then the card is taken as a pick), or skips back to the cards.
 static func choose(w: World, frame: InputFrame) -> void:
 	var i := w.rewards.index_of(w.choosing)
 	if i < 0:
-		_resume(w)
-		return
-	if frame.pick == InputFrame.PICK_CANCEL:
+		BuildSlots.close_swap(w)
 		_resume(w)
 		return
 	var offer := w.rewards.offer_of(i)
+	var replace := -1
 	var k := frame.pick - 1
+	if BuildSlots.swapping(w) and w.swap_source == BuildSlots.Source.REWARD:
+		var s := BuildSlots.swap_answer(w, frame)
+		if s == -2:
+			return
+		k = w.swap_ref
+		BuildSlots.close_swap(w)
+		if s < 0:
+			return  # skipped: back to the cards
+		replace = s
+	elif frame.pick == InputFrame.PICK_CANCEL:
+		_resume(w)
+		return
 	if k < 0 or k >= offer.size() or not can_afford(w, i):
+		return
+	if replace < 0 and BuildSlots.needs_swap(w, offer[k]):
+		BuildSlots.open_swap(w, offer[k], BuildSlots.Source.REWARD, k)
 		return
 	w.shards -= price_of(w, i)
 	var idx := offer[k]
@@ -164,7 +217,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
 	)
 	e.amount = idx
-	Offers.apply(w, idx)  # v0.4.0 BS: an item (mod), an ability or a stat card
+	Offers.apply(w, idx, replace)  # v0.4.0 BS: an item (mod), an ability or a stat card
 	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
 	w.rewards.remove_at(i)
 	_resume(w)

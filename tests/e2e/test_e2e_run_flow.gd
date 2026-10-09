@@ -3,8 +3,9 @@ extends GutTest
 ## left stick walks to the nearest altar (E and Enter take a card: an item to carry), then through the boss door,
 ## which seals behind you and starts floor 1's real boss (drawn from its pool, its arena sizing the room); the dev
 ## panel (backtick, then mouse clicks: God mode for the long walk, Kill boss) stands in for the fight; the portal
-## opens, the stick walks into it, and floor 2 loads with the items and shards kept, a 40 % heal, its own card and
-## HUD line. Pause: Esc freezes the sim and Enter resumes; Restart run from the pause menu starts a fresh run.
+## opens, the stick walks into it, and floor 2 loads with the items and half the shards kept (v0.5.5 Q-S4), a
+## 40 % heal, its own card and HUD line. Pause: Esc freezes the sim and Enter resumes; Restart run from the pause
+## menu starts a fresh run.
 
 const LEG_FRAMES := 7000
 
@@ -19,7 +20,7 @@ func after_each() -> void:
 func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, target))
 	nav.flood(target)
 	for k in LEG_FRAMES:
 		if done.call():
@@ -138,7 +139,8 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_eq(w2.ability_owned, owned, "the abilities came along, in slot order")
 	assert_eq(w2.ability_levels, levels, "at their levels")
 	assert_eq(w2.items_owned, items, "and the items")
-	assert_eq(w2.shards, shards, "the shards came along")
+	# v0.5.5 EC (owner Q-S4, "Keep half"): half the unspent shards, rounded down.
+	assert_eq(w2.shards, shards / 2, "half the shards came along")
 	assert_eq(
 		w2.player.weapons, PlayerTable.WEAPON_BLADE, "the run's build came along (v0.3.0 L15)"
 	)

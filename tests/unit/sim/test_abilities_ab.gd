@@ -100,120 +100,139 @@ func test_owning_an_engine_ability_borrows_its_engine() -> void:
 	assert_eq(w.item_mods.burn_damage, 2)
 
 
-# --- Arc Field ----------------------------------------------------------------------------------------------------
-func test_arc_field_strikes_three_enemies_in_range() -> void:
-	var near := [Vector2(2, 0), Vector2(-2, 0), Vector2(0, 3), Vector2(0, -4), Vector2(4, 4)]
-	var w := _world(&"blade", near + [Vector2(9, 0)])
-	var far_id := w.actors.ids[6]
+# --- Arc Field (v0.6.0 MX2: a weapon attack leaves a shock field where it ends) ---------------------------------
+func _attack_at(w: World, at: Vector2) -> void:
+	ModifierAbilities.on_attack(w, at)
+
+
+func test_arc_field_leaves_a_shock_field_where_an_attack_ends() -> void:
+	var w := _world(&"blade", [Vector2(2, 0), Vector2(2.6, 0.6), Vector2(6, 0)])
+	var far_id := w.actors.ids[3]
 	_grant(w, &"arc_field")
 	w.step(_f())
+	_attack_at(w, Vector2(2.2, 0.2))
+	assert_eq(w.ab.fire_kind, PackedInt32Array([ElementAbilities.FIRE_FIELD]), "a field")
+	assert_almost_eq(w.ab.fire_r[0], 1.6, 1e-5, "1.6 m")
+	w.step(_f())
 	var hits := _damage(w, ElementAbilities.EFFECT_ARC)
-	assert_eq(hits.size(), 3, "three strikes")
-	var ids := {}
+	assert_eq(hits.size(), 2, "the two in it")
 	for e in hits:
-		assert_eq(e.amount, 12)
-		assert_ne(e.target_id, far_id, "never past 6 m")
-		ids[e.target_id] = true
-		var i := w.actors.index_of(e.target_id)
-		assert_eq(w.actors.shock_stacks[i], 1, "a shock stack each")
-	assert_eq(ids.size(), 3, "three different enemies")
-	assert_eq(w.ab.arc_to.size(), 3, "the view sees the three bolts")
-	var seq := w.last_event_seq()
-	_run(w, 89)
-	assert_eq(_damage(w, ElementAbilities.EFFECT_ARC, seq).size(), 0, "1.5 s cooldown")
-	w.step(_f())
-	assert_eq(_damage(w, ElementAbilities.EFFECT_ARC, seq).size(), 3, "then again")
+		assert_eq(e.amount, 12, "v0.5's 12")
+		assert_ne(e.target_id, far_id)
+		assert_eq(w.actors.shock_stacks[w.actors.index_of(e.target_id)], 1, "a shock stack each")
+	_attack_at(w, Vector2(2.2, 0.2))
+	assert_eq(w.ab.fire_pos.size(), 1, "1.5 s between fields")
+	_run(w, 90)
+	_attack_at(w, Vector2(2.2, 0.2))
+	assert_eq(w.ab.fire_pos.size(), 2, "then the next attack leaves another")
 
 
-func test_arc_field_levels_add_targets_and_waits_for_one() -> void:
-	var w := _world(&"blade", [])
-	_grant(w, &"arc_field", 3)
-	_run(w, 100)
-	assert_eq(w.ab.arc_tick, -1, "nothing in range: no strike")
-	for k in 8:
-		w.add_dummy(Kin.dir(k * 512) * 3.0, 0.35, 5000)
-	w.step(_f())
-	assert_eq(_damage(w, ElementAbilities.EFFECT_ARC).size(), 5, "L3: five targets")
-	var w2 := _world(&"blade", [Vector2(2, 0), Vector2(-2, 0)])
-	_grant(w2, &"arc_field")
-	w2.step(_f())
-	assert_eq(_damage(w2, ElementAbilities.EFFECT_ARC).size(), 2, "fewer enemies: all of them")
-
-
-func test_arc_field_picks_from_the_ability_stream_deterministically() -> void:
+func test_arc_field_hits_at_most_its_level_count_a_tick() -> void:
 	var pts := []
-	for k in 10:
-		pts.append(Kin.dir(k * 409) * 4.0)
-	var a := _world(&"blade", pts)
-	var b := _world(&"blade", pts)
-	_grant(a, &"arc_field")
-	_grant(b, &"arc_field")
-	var before := a.rng_ability.state
-	for k in 300:
-		a.step(_f())
-		b.step(_f())
-	assert_ne(a.rng_ability.state, before, "targets come from the ability stream")
-	assert_eq(a.state_hash(), b.state_hash(), "same seed, same strikes")
+	for k in 6:
+		pts.append(Vector2(3, 0) + Kin.dir(k * 682) * 0.5)
+	var w := _world(&"blade", pts)
+	_grant(w, &"arc_field")
+	w.step(_f())
+	_attack_at(w, Vector2(3, 0))
+	w.step(_f())
+	assert_eq(_damage(w, ElementAbilities.EFFECT_ARC).size(), 3, "L1: three a tick")
+	var v := _world(&"blade", pts)
+	_grant(v, &"arc_field", 3)
+	v.step(_f())
+	_attack_at(v, Vector2(3, 0))
+	v.step(_f())
+	assert_eq(_damage(v, ElementAbilities.EFFECT_ARC).size(), 5, "L3: five")
 
 
 func test_arc_field_shock_discharges_at_the_threshold() -> void:
-	var w := _world(&"blade", [Vector2(3, 0), Vector2(4, 1)], 100000)
+	var w := _world(&"blade", [Vector2(3, 0)], 100000)
 	_grant(w, &"arc_field")
-	_run(w, 90 * 3 + 1)  # strikes at ticks 0, 90, 180, 270
-	assert_eq(
-		_events(w, SimEvent.Kind.HIT, Engines.EFFECT_DISCHARGE).size(), 0, "4 stacks: not yet"
-	)
-	_run(w, 90)
-	assert_gt(
-		_damage(w, Engines.EFFECT_DISCHARGE).size(), 0, "the fifth stack discharges (the engine)"
-	)
+	w.step(_f())
+	_attack_at(w, Vector2(3, 0))
+	_run(w, 90)  # the field hits every 0.5 s: 4 stacks in its 2 s
+	assert_eq(_damage(w, Engines.EFFECT_DISCHARGE).size(), 0, "4 stacks: not yet")
+	_attack_at(w, Vector2(3, 0))
+	_run(w, 40)
+	assert_gt(_damage(w, Engines.EFFECT_DISCHARGE).size(), 0, "the fifth discharges (the engine)")
 
 
-# --- Frost Nova ---------------------------------------------------------------------------------------------------
-func test_frost_nova_hits_everything_in_its_radius_with_frost() -> void:
+# --- Frost Nova (v0.6.0 MX2: the frost element on the weapon, a ring on a kill streak) -----------------------
+func _streak(w: World, n: int) -> void:
+	for k in n:
+		ModifierAbilities.on_kill(w)
+
+
+func test_frost_nova_gives_the_weapon_frost() -> void:
+	var w := _world(&"blade", [Vector2(1.2, 0)])
+	_grant(w, &"frost_nova")
+	assert_true(Modifiers.step(w, 0).has_status(&"frost"))
+	assert_true(Modifiers.step(w, 0).elements.has("frost"))
+	w.step(_f(InputFrame.PRIMARY))
+	_run(w, 20)
+	assert_gt(w.actors.frost_stacks[1] + w.actors.frozen_t[1], 0, "a swing feeds frost")
+
+
+func test_frost_nova_rings_on_a_kill_streak_with_its_v0_5_numbers() -> void:
 	var w := _world(&"blade", [Vector2(2, 0), Vector2(0, -2.5), Vector2(3.6, 0)])
 	var out_id := w.actors.ids[3]
 	_grant(w, &"frost_nova")
 	w.step(_f())
+	_streak(w, 3)
+	assert_eq(w.ab.nova_tick, -1, "three kills: no ring")
+	_streak(w, 1)
+	assert_eq(w.ab.nova_tick, w.tick, "the fourth: the ring")
+	assert_almost_eq(w.ab.nova_r, 3.0, 1e-5)
+	_run(w, Modifiers.RING_TICKS + 2)
 	var hits := _damage(w, ElementAbilities.EFFECT_NOVA)
-	assert_eq(hits.size(), 2, "the 3 m nova")
+	assert_eq(hits.size(), 2, "the 3 m ring passes two")
 	for e in hits:
 		assert_eq(e.amount, 10)
 		assert_ne(e.target_id, out_id)
 		assert_eq(w.actors.frost_stacks[w.actors.index_of(e.target_id)], 2, "two frost stacks")
-	assert_almost_eq(w.ab.nova_r, 3.0, 1e-5)
-	var seq := w.last_event_seq()
-	_run(w, 239)
-	assert_eq(_damage(w, ElementAbilities.EFFECT_NOVA, seq).size(), 0, "every 4 s")
+	_streak(w, 4)
+	assert_eq(_damage(w, ElementAbilities.EFFECT_NOVA).size(), 2, "4 s between rings")
+
+
+func test_a_streak_breaks_after_two_seconds() -> void:
+	var w := _world(&"blade", [Vector2(2, 0)])
+	_grant(w, &"frost_nova")
 	w.step(_f())
-	assert_eq(_damage(w, ElementAbilities.EFFECT_NOVA, seq).size(), 2)
+	_streak(w, 3)
+	_run(w, 121)
+	_streak(w, 1)
+	assert_eq(w.ab.nova_tick, -1, "the streak broke")
+	assert_eq(w.ab.streak_n, 1)
 
 
 func test_frost_nova_levels_widen_freeze_and_quicken() -> void:
 	var w := _world(&"blade", [Vector2(3.6, 0)])
 	_grant(w, &"frost_nova", 3)
 	w.step(_f())
+	_streak(w, 4)
 	assert_almost_eq(w.ab.nova_r, 3.8, 0.01, "+0.4 m per level")
+	_run(w, Modifiers.RING_TICKS + 2)
 	assert_gt(w.actors.frozen_t[1], 0, "L3: four stacks freeze at once")
 	_grant(w, &"frost_nova", 5)
 	var s := w.ability_owned.find(_idx(w, &"frost_nova"))
 	_run(w, 240)
-	var seq := w.last_event_seq()
-	var gap := 0
-	while _damage(w, ElementAbilities.EFFECT_NOVA, seq).is_empty() and gap < 400:
-		w.step(_f())
-		gap += 1
+	_streak(w, 4)
 	assert_eq(w.ab.cd[s], 180, "L5: every 3 s")
 
 
-# --- Flame Trail --------------------------------------------------------------------------------------------------
-func test_flame_trail_leaves_fire_only_while_moving() -> void:
+# --- Flame Trail (v0.6.0 MX2: the dash and the projectiles leave fire) -----------------------------------------
+func _dash(w: World, ticks: int = 20) -> void:
+	w.step(_f(InputFrame.DASH, Vector2i(SimTick.MOVE_MAX, 0)))
+	_run(w, ticks, Vector2i(SimTick.MOVE_MAX, 0))
+
+
+func test_flame_trail_leaves_fire_from_the_dash_not_from_walking() -> void:
 	var w := _world(&"blade", [])
 	_grant(w, &"flame_trail")
-	_run(w, 60)
-	assert_eq(w.ab.fire_pos.size(), 0, "standing still: no fire")
 	_run(w, 60, Vector2i(SimTick.MOVE_MAX, 0))
-	assert_gt(w.ab.fire_pos.size(), 3, "moving: a trail")
+	assert_eq(w.ab.fire_pos.size(), 0, "walking: no fire")
+	_dash(w)
+	assert_gt(w.ab.fire_pos.size(), 0, "a dash: a trail")
 	for k in range(1, w.ab.fire_pos.size()):
 		assert_gte(w.ab.fire_pos[k].distance_to(w.ab.fire_pos[k - 1]), 0.79, "spaced")
 	_run(w, 121)
@@ -221,12 +240,12 @@ func test_flame_trail_leaves_fire_only_while_moving() -> void:
 
 
 func test_flame_trail_burns_enemies_in_it() -> void:
-	var w := _world(&"blade", [Vector2(2.5, 0)])
+	var w := _world(&"blade", [Vector2(1.6, 0.8)])
 	_grant(w, &"flame_trail")
-	_run(w, 40, Vector2i(SimTick.MOVE_MAX, 0))
+	_dash(w, 5)
 	_run(w, 60)
 	var hits := _damage(w, ElementAbilities.EFFECT_FLAME)
-	assert_gt(hits.size(), 0, "the dummy in the trail burns")
+	assert_gt(hits.size(), 0, "the dummy by the trail burns")
 	for e in hits:
 		assert_eq(e.amount, 3, "3 per half second: 6 dmg/s")
 	var ticks := []
@@ -241,10 +260,19 @@ func test_flame_trail_burns_enemies_in_it() -> void:
 func test_flame_trail_level_two_is_stronger_and_longer() -> void:
 	var w := _world(&"blade", [])
 	_grant(w, &"flame_trail", 2)
-	_run(w, 30, Vector2i(SimTick.MOVE_MAX, 0))
+	_dash(w)
 	assert_eq(w.ab.fire_dmg[0], 4, "3 x 1.25, rounded")
-	var t := w.ability_tables[_idx(w, &"flame_trail")]
-	assert_eq(ElementAbilities.trail_ticks(t, 2), 150, "2.5 s")
+	var spec := Modifiers.ability(w, w.ability_tables[_idx(w, &"flame_trail")])
+	assert_eq(spec.life_ticks, 150, "2.5 s")
+
+
+func test_flame_trail_fire_where_a_shot_ends() -> void:
+	var w := _world(&"gun", [])
+	_grant(w, &"flame_trail")
+	for k in 70:
+		w.step(_f(0, Vector2i.ZERO, InputFrame.SHOOT))
+	assert_gt(w.ab.fire_pos.size(), 0, "a bolt's end leaves fire")
+	assert_lte(w.ab.fire_pos.size(), 70 / 9 + 1, "at most one every 0.15 s")
 
 
 # --- Ability combos: the trigger rule -------------------------------------------------------------------------------
@@ -302,6 +330,9 @@ func test_storm_bombs_chain_lightning_from_each_blast() -> void:
 	var w := _world(&"blade", [Vector2(5, 0), Vector2(5.5, 0.4), Vector2(8.5, 0), Vector2(9, 2)])
 	_grant(w, &"bomb_lobber", 3)
 	_grant(w, &"arc_field", 3)
+	w.step(_f())
+	for k in 4:  # v0.6.0 MX2: the fourth attack lobs (the field it leaves is far from the bombs)
+		_attack_at(w, Vector2(-9, -9))
 	_run(w, 40)
 	var storm := _damage(w, AbilityCombos.EFFECT_STORM)
 	assert_between(storm.size(), 1, 6, "each of the two L3 blasts chains (up to 3 each)")
@@ -398,8 +429,10 @@ func test_superconductor_doubles_arcs_on_chilled_enemies() -> void:
 	w.actors.frost_stacks[1] = 1
 	w.actors.frost_t[1] = 600
 	w.step(_f())
+	_attack_at(w, Vector2(4.5, 0))  # v0.6.0 MX2: the field
+	w.step(_f())
 	var hits := _damage(w, AbilityCombos.EFFECT_SUPER)
-	assert_eq(hits.size(), 1, "the strike on a chilled enemy is a Superconductor hit")
+	assert_eq(hits.size(), 1, "the field's hit on a chilled enemy is a Superconductor hit")
 	assert_eq(hits[0].amount, 24, "x2")
 
 
@@ -425,6 +458,10 @@ func test_ability_worlds_replay_to_the_same_hash() -> void:
 		for id: StringName in [&"arc_field", &"frost_nova", &"flame_trail"]:
 			_grant(w, id, 3)
 		for n in 400:
-			w.step(_f(0, Vector2i(SimTick.MOVE_MAX if (n / 60) % 2 == 0 else -SimTick.MOVE_MAX, 0)))
+			var mv := Vector2i(SimTick.MOVE_MAX if (n / 60) % 2 == 0 else -SimTick.MOVE_MAX, 0)
+			var press := (
+				InputFrame.PRIMARY if n % 15 == 0 else (InputFrame.DASH if n % 97 == 5 else 0)
+			)
+			w.step(_f(press, mv))
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1])

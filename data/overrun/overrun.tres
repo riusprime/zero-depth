@@ -6,7 +6,8 @@
 script = ExtResource("1_over")
 hp_multiplier = 1.5
 damage_multiplier = 1.5
-spawn_multiplier = 1.5
-kills_to_clear = 12
+waves_min = 3
+waves_max = 5
+wave_sizes = PackedInt32Array(4, 8, 12)
 shard_multiplier = 2.0
 id = &"overrun"

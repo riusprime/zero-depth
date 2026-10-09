@@ -71,6 +71,9 @@ const STATUS_FIELDS: Array[StringName] = [
 ## Enemy AI (v0.3.5 AI; EnemyAi), kept apart from INT_FIELDS so worlds without enemy tables (the kernel golden)
 ## hash as before: World hashes them (hash_ai) only when its loadout has enemies.
 const AI_FIELDS: Array[StringName] = [&"windup", &"pick", &"plan_block", &"power"]
+## v0.6.0 MX4: Venom Core's poison (Venom), kept apart so worlds without it hash as before (hash_venom, only while
+## the poison engine runs).
+const VENOM_FIELDS: Array[StringName] = [&"poison_stacks", &"poison_t", &"poison_cd"]
 ## The staggered plan (v0.4.0 SC; EnemyAi.plan): the walk, refreshed every EnemyAi.PLAN_PERIOD ticks.
 const AI_FLOAT_FIELDS: Array[StringName] = [&"plan_x", &"plan_y"]
 const FLOAT_FIELDS: Array[StringName] = [
@@ -135,6 +138,10 @@ var plan_x := PackedFloat32Array()
 var plan_y := PackedFloat32Array()
 ## v0.4.0 SC: an enemy's damage factor in per mille (World.add_enemy sets 1000; the spawn director the danger tier's).
 var power := PackedInt32Array()
+## v0.6.0 MX4 (Venom): poison stacks, ticks until they run out, ticks to the next DoT tick.
+var poison_stacks := PackedInt32Array()
+var poison_t := PackedInt32Array()
+var poison_cd := PackedInt32Array()
 
 
 func size() -> int:
@@ -143,7 +150,7 @@ func size() -> int:
 
 func add(id: int, kind: int, team: int, p: Vector2, r: float, p_hp: int, p_fire_cd: int) -> int:
 	# Packed arrays are values: get() returns a copy, so append to it and set it back.
-	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		ai.append(0)
 		set(f, ai)
@@ -182,7 +189,7 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
 	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (a native move, not a rebuild).
-	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS:
+	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		for k in range(indices.size() - 1, -1, -1):
 			ai.remove_at(indices[k])
@@ -213,3 +220,9 @@ func hash_ai(h: StateHasher) -> void:
 		h.add_ints(get(f))
 	for f in AI_FLOAT_FIELDS:
 		h.add_f32s(get(f))
+
+
+## v0.6.0 MX4: the poison columns (Venom), in VENOM_FIELDS order.
+func hash_venom(h: StateHasher) -> void:
+	for f in VENOM_FIELDS:
+		h.add_ints(get(f))

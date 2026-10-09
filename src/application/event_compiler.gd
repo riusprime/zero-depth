@@ -13,12 +13,27 @@ static func compile_curses(repo: ContentRepository) -> Array[CurseTable]:
 		t.name_key = def.name_key
 		t.desc_key = def.desc_key
 		t.effect = CurseDefinition.EFFECTS.find(def.effect)
-		var count := def.effect == &"extra_enemy"
-		t.amount = int(round(def.amount)) if count else int(round(def.amount * 10.0))
+		t.amount = curse_amount(def.effect, def.amount)
+		if def.effect_2 != &"":  # v0.6.0 CU: a second drawback, and a trade-off's upside
+			t.effect_2 = CurseDefinition.EFFECTS.find(def.effect_2)
+			t.amount_2 = curse_amount(def.effect_2, def.amount_2)
+		if def.up_effect != &"":
+			t.up_effect = CurseDefinition.EFFECTS.find(def.up_effect)
+			t.up_amount = curse_amount(def.up_effect, def.up_amount)
+			t.up_desc_key = def.up_desc_key
 		t.threat = def.threat
 		t.weight = def.weight
 		out.append(t)
 	return out
+
+
+## A curse effect's amount in sim units: a count stays a count, seconds become ticks, a percent becomes per mille.
+static func curse_amount(effect: StringName, amount: float) -> int:
+	if CurseDefinition.COUNTS.has(effect):
+		return int(round(amount))
+	if CurseDefinition.SECONDS.has(effect):
+		return int(round(amount * SimTick.TICKS_PER_SECOND))
+	return int(round(amount * 10.0))
 
 
 static func compile_events(repo: ContentRepository) -> Array[EventTable]:
@@ -34,6 +49,7 @@ static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 		t.weight = def.weight
 		t.min_floor = def.min_floor
 		t.requires = EventDefinition.REQUIRES.find(def.requires)
+		t.deep_only = def.deep_only  # v0.5.5 DS (S5)
 		for c in def.choices:
 			t.labels.append(c.label_key)
 			var cost := EventChoiceDefinition.COSTS.find(c.cost)
@@ -76,6 +92,12 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.ambush_min_distance_m = def.ambush_min_distance_m
 	t.defend_radius_m = def.defend_radius_m
 	t.cleanse_price = def.cleanse_price
+	t.core_stagger_permille = int(round(def.core_stagger_share * 10.0))  # v0.6.0 CU: core theft
+	t.core_stagger_ticks = int(round(def.core_stagger_seconds * SimTick.TICKS_PER_SECOND))
+	t.core_window_ticks = int(round(def.core_window_seconds * SimTick.TICKS_PER_SECOND))
+	t.core_mod_weight = def.core_mod_weight
+	t.hunt_range_m = def.hunt_range_m
+	t.drop_offset_m = def.drop_offset_m
 	return t
 
 

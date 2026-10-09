@@ -16,4 +16,7 @@ level_radius = PackedFloat32Array(1, 1.133333, 1.266667, 1.4, 1.533333)
 level_cooldown = PackedFloat32Array(4, 4, 4, 4, 3)
 level_extra = PackedInt32Array(2, 2, 4, 4, 4)
 engine_item = &"glacial_edge"
+modifiers = Array[StringName]([&"frost_nova"])
+streak_kills = 4
+streak_seconds = 2.0
 id = &"frost_nova"

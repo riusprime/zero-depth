@@ -5,8 +5,10 @@ extends Control
 ## takes mouse input, so clicks reach the game. v0.3.0 UI (L21, L23, L24), calmer in v0.3.5 (F15): drawn in the
 ## HudStyle look (plain type, thin bars, a hairline per group); the top group shows floor, biome, time and a visual
 ## danger meter (no numbers); below 30 % HP the HP bar and the screen edge pulse red.
+## v0.5.5 A5 (owner pick B "Ember stone"): the groups sit on chipped stone slabs (HudStyle.EMBER); the HP and top
+## plates carry the warm ember line; HP is a red bar; the skill and vent hints get small slabs of their own.
 
-const BAR := Vector2(300, 8)
+const BAR := Vector2(300, 10)
 ## The dash / utility readiness squares (px).
 const PIP := 24.0
 ## The top plate's width (px).
@@ -52,6 +54,9 @@ var overrun_hud := OverrunHud.new()
 var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
+## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
+var build_hud := BuildHud.new()
+var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -85,13 +90,16 @@ var _floor := HudStyle.label(16)
 var _floor_card := VBoxContainer.new()
 var _floor_card_title := HudStyle.label(56, true)
 var _floor_card_biome := HudStyle.label(22)
+var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
 var _floor_card_left := 0.0
 var _biome_key := ""
+## The floor card's [floor, deep, shards lost], so a language switch can word it again (v0.6.0 UP).
+var _floor_card_args := []
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
-var _top_frame := HudFrame.new(Vector2(18, 6))
-var _hp_frame := HudFrame.new(Vector2(14, 8))
+var _top_frame := HudFrame.new(Vector2(20, 8))
+var _hp_frame := HudFrame.new(Vector2(16, 10))
 var _t := 0.0
 
 
@@ -143,7 +151,7 @@ func _init() -> void:
 	_build_rewards()
 	add_child(gamble)
 	add_child(kit_hud)  # v0.3.5 K
-	kit_hud.hp_anchor = _hp_bar
+	kit_hud.hp_anchor = _hp_frame  # v0.5.5 A5: the skill's slab sits beside the HP slab
 	kit_hud.heat_anchor = heat_meter
 	add_child(ability_hud)  # v0.4.0 BS
 	add_child(overrun_hud)  # v0.4.0 AB
@@ -155,6 +163,9 @@ func _init() -> void:
 	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
 	events.panel.picked.connect(_pick.picked.emit)
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
+	add_child(build_hud)  # v0.6.0 MX2
+	build_hud.anchor = _hp_frame
+	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
 
 
 func sync(reader: WorldReader) -> void:
@@ -206,6 +217,9 @@ func sync(reader: WorldReader) -> void:
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
+	build_hud.sync(reader)  # v0.6.0 MX2
+	swap.sync(reader)
+	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
 
 
 func _process(delta: float) -> void:
@@ -227,22 +241,44 @@ func _process(delta: float) -> void:
 
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
-## floor, v0.5.0 RT).
-func show_floor(floor_index: int, biome_key: String, deep: bool = false) -> void:
+## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
+func show_floor(
+	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0
+) -> void:
 	_biome_key = biome_key
-	_floor_card_title.text = tr("HUD_FLOOR_CARD_DEEP" if deep else "HUD_FLOOR_CARD") % floor_index
-	_floor_card_biome.text = tr(biome_key)
+	_floor_card_args = [floor_index, deep, shards_lost]
+	_word_floor_card()
+	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
+
+
+## The floor-title card's words in the language now (v0.6.0 UP: again on a language switch while it shows).
+func _word_floor_card() -> void:
+	if _floor_card_args.is_empty():
+		return
+	var floor_index: int = _floor_card_args[0]
+	var shards_lost: int = _floor_card_args[2]
+	var card_key := "HUD_FLOOR_CARD_DEEP" if _floor_card_args[1] else "HUD_FLOOR_CARD"
+	_floor_card_title.text = tr(card_key) % floor_index
+	_floor_card_biome.text = tr(_biome_key)
+	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_word_floor_card()
 
 
 func floor_card_showing() -> bool:
 	return _floor_card.visible
 
 
+## The card's title and biome, then (v0.5.5 EC, Q-S4) the shard line when the portal left shards behind.
 func floor_card_text() -> String:
-	return "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
+	var out := "%s %s" % [_floor_card_title.text, _floor_card_biome.text]
+	return out + " " + _floor_card_shards.text if _floor_card_shards.visible else out
 
 
 func floor_text() -> String:
@@ -282,13 +318,14 @@ func _build_corner() -> void:
 	corner.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	add_child(corner)
 	_hp_frame.name = "HpPlate"
+	_hp_frame.ember = true
 	corner.add_child(_hp_frame)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 7)
 	_hp_frame.add_child(col)
 	col.add_child(_hp_text)
 	_hp_bar.name = "HpBar"
-	_hp_bar.color = ThemePalette.color(&"player_bar")
+	_hp_bar.color = HudStyle.hp_color()
 	_hp_bar.custom_minimum_size = BAR
 	col.add_child(_hp_bar)
 	_hp_bar.add_child(_regen)
@@ -302,6 +339,7 @@ func _build_corner() -> void:
 ## The top plate: "FLOOR 01 // RUINS" over the run time, the danger meter and the kills.
 func _build_top() -> void:
 	_top_frame.name = "TopPlate"
+	_top_frame.ember = true
 	_top_frame.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_top_frame.position = Vector2(-TOP_W * 0.5, 10)
 	_top_frame.custom_minimum_size = Vector2(TOP_W, 0)
@@ -367,6 +405,12 @@ func _build_floor_card() -> void:
 	_floor_card_biome.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_floor_card_biome.add_theme_color_override("font_color", HudStyle.accent())
 	plate.add_child(_floor_card_biome)
+	_floor_card_shards.name = "FloorCardShards"
+	_floor_card_shards.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_floor_card_shards.add_theme_color_override("font_color", ShardIcon.MID)
+	_floor_card_shards.add_theme_constant_override("outline_size", 4)
+	_floor_card_shards.visible = false
+	_floor_card.add_child(_floor_card_shards)
 	_floor_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
@@ -430,6 +474,8 @@ func _sync_rewards(reader: WorldReader) -> void:
 		var price := reader.reward_price(i)
 		if reader.reward_is_epic(i):  # v0.5.0 RT
 			_prompt.text = tr("REWARD_OPEN_EPIC_ALTAR")
+		elif reader.reward_kind(i) == WorldReader.REWARD_DROP:  # v0.6.0 CU: a free card drop
+			_prompt.text = tr("REWARD_OPEN_DROP")
 		elif reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
 			_prompt.text = tr("REWARD_OPEN_ALTAR")
 		elif reader.reward_affordable(i):

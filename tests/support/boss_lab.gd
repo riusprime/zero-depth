@@ -43,3 +43,14 @@ static func start(w: World, i: int, attack_id: StringName) -> void:
 
 static func boss_damage_to_player(w: World) -> Array:
 	return CombatLab.player_damage(w)
+
+
+## v0.5.5 DS: steps boss `aid` through the phase gate it is in (BossGates) and one tick more, so its new phase's entry
+## attack has started.
+static func through_gate(w: World, aid: int) -> void:
+	for k in BossGates.GATE_TICKS + 2:
+		var i := w.actors.index_of(aid)
+		if i < 0 or w.actors.state[i] != BossAi.GATE:
+			break
+		w.step(InputFrame.new())
+	w.step(InputFrame.new())

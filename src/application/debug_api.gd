@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name DebugApi
 extends RefCounted
 ## Debug commands for the dev panel, applied at tick boundaries by SimDriver, never by touching World from a
@@ -17,15 +18,24 @@ var enemy_choice := 0
 ## v0.4.0 BS forced loadouts: the ability the panel grants next (an index into World.ability_tables), and grants
 ## waiting for the tick boundary (each one a new slot or a level, as a card would).
 var ability_choice := 0
+## v0.6.0 MX4: the modifier card grant_mod gives (an item index picked with next_mod; -1 = the first one not held).
+var mod_choice := -1
 var _kill_boss := false
 var _grants := PackedInt32Array()
+## v0.6.0 MX2: attack-item modifiers queued by grant_mod (each the first one not held that the build may take).
+var _mod_grants := 0
 ## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
 var _to_overrun := false
+## v0.5.5 AR: dev routes to an arena door and to clear the sealed arena's wave, waiting for the tick boundary.
+var _to_arena := false
+var _clear_wave := false
 var _next_phase := false
 var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
 var _curse_chest := false
+## v0.6.0 CU (TEST HELPER, dev runs only): the chosen enemy spawns as an elite carrying a core.
+var _elite_pending := false
 
 
 func _init(p_world: World) -> void:
@@ -105,12 +115,23 @@ func request_enemy() -> void:
 		_enemy_pending = enemy_choice % enemy_kinds().size()
 
 
+## v0.6.0 CU, TEST HELPER (dev runs only): queues the chosen enemy to spawn as an elite (with its core) about 6 m
+## from the player at the next tick boundary, so core theft can be seen without waiting for an elite.
+func request_elite() -> void:
+	if not enemy_kinds().is_empty():
+		_enemy_pending = enemy_choice % enemy_kinds().size()
+		_elite_pending = true
+
+
 ## Applies queued commands between ticks. Returns the spawned boss's actor id, or -1.
 func apply_pending() -> int:
 	if _enemy_pending >= 0:
 		var kind := enemy_kinds()[_enemy_pending]
 		_enemy_pending = -1
 		world.add_enemy(kind, boss_spot(world, world.enemy_table(kind).radius_m))
+		if _elite_pending:
+			_elite_pending = false
+			Curses.make_elite(world, world.actors.size() - 1)
 	if _boss_pending < 0:
 		return -1
 	var k := _boss_pending
@@ -148,10 +169,59 @@ func grant_ability() -> void:
 		_grants.append(ability_choice)
 
 
+## v0.6.0 MX2: queues the next attack-item modifier (the first slot item not held that the build may use) for the next
+## tick boundary; with the six slots full it opens the Swap, as a found card would (Offers.apply).
+func grant_mod() -> void:
+	_mod_grants += 1
+
+
+## v0.6.0 MX4: picks the next modifier card (an item that takes a slot) for grant_mod, in item order.
+func next_mod() -> void:
+	var n := world.item_tables.size()
+	for step in range(1, n + 1):
+		var k := (mod_choice + step) % n if mod_choice >= 0 else step - 1
+		if BuildSlots.is_slot_item(world.item_tables[k]):
+			mod_choice = k
+			return
+
+
 ## v0.4.0 AB (dev route): puts the player just outside the Overrun room's first doorway at the next tick boundary,
 ## so walking on goes through the red frame.
 func go_overrun() -> void:
 	_to_overrun = true
+
+
+## v0.5.5 AR (dev route): puts the player just outside the first doorway of the nearest arena that isn't cleared (a
+## regular one), at the next tick boundary, so walking on seals it.
+func go_arena() -> void:
+	_to_arena = true
+
+
+## v0.5.5 AR (dev runs only): kills every enemy inside the sealed arena at the next tick boundary (one wave).
+func clear_wave() -> void:
+	_clear_wave = true
+
+
+## The spot `m` metres outside the first doorway of the nearest regular arena not cleared, or Vector2.INF.
+static func arena_door_outside(w: World, m: float) -> Vector2:
+	var f := w.floor_layout
+	if f == null:
+		return Vector2.INF
+	var best := Vector2.INF
+	for room in f.arena_rooms:
+		if Arenas.is_cleared(w, room):
+			continue
+		var doors := ArenaRooms.doors_of(f, room)
+		if doors.is_empty():
+			continue
+		var d := doors[0]
+		var into := Kin.dir(f.door_angles[d])
+		if f.door_rooms[d].x == room:
+			into = -into
+		var at := f.door_centers[d] - into * (f.door_depths[d] * 0.5 + m)
+		if best == Vector2.INF or at.distance_to(w.player_pos()) < best.distance_to(w.player_pos()):
+			best = at
+	return best
 
 
 ## v0.4.0 TU (dev route): moves the floor's clock to the start of the next difficulty phase at the next tick
@@ -186,14 +256,50 @@ func _apply_commands() -> void:
 	if _curse_chest:
 		_curse_chest = false
 		world.ev.force_curse = true
+	if _to_arena:
+		_to_arena = false
+		var spot := arena_door_outside(world, 1.5)
+		if spot != Vector2.INF:
+			world.actors.set_pos(0, spot)
+	if _clear_wave:
+		_clear_wave = false
+		if world.arenas.sealed():
+			var rect := world.floor_layout.rooms[world.arenas.room].grow(Arenas.ROOM_MARGIN_M)
+			for i in range(1, world.actors.size()):
+				var p := world.actors.pos(i)
+				if (
+					world.actors.dead[i] == 0
+					and EnemyAi.is_enemy_kind(world.actors.kinds[i])
+					and rect.has_point(p)
+				):
+					world.actors.invuln[i] = 0
+					Damage.hit(world, i, world.actors.hp[i] * 10, 0, 0, world.take_root(), 0, p, p)
 	if _to_overrun:
 		_to_overrun = false
 		var at := overrun_door_outside(world, 1.5)
 		if at != Vector2.INF:
 			world.actors.set_pos(0, at)
 	for idx in _grants:
-		Abilities.grant(world, idx)
+		Offers.apply(world, Offers.ability_code(idx))  # v0.6.0 MX2: a seventh modifier opens the Swap
 	_grants.clear()
+	while _mod_grants > 0 and not BuildSlots.swapping(world):
+		_mod_grants -= 1
+		if (
+			mod_choice >= 0
+			and mod_choice < world.item_tables.size()
+			and not world.items_owned.has(mod_choice)
+		):
+			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card
+			continue
+		for k in world.item_tables.size():
+			if (
+				BuildSlots.is_slot_item(world.item_tables[k])
+				and not world.items_owned.has(k)
+				and ItemPool.usable(world, k)
+			):
+				Offers.apply(world, k)
+				break
+	_mod_grants = 0
 	if god and world.actors.invuln[0] < 2:
 		world.actors.invuln[0] = 2
 	if _kill_boss:

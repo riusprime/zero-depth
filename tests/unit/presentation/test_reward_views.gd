@@ -154,10 +154,20 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	assert_eq(p.title_text(), tr("PICK_TITLE_CHEST") % 40, "the title carries the price")
 	assert_eq(p.slot(0).rarity_color(), PickSlot.COMMON)
 	assert_eq(p.slot(1).rarity_color(), PickSlot.RARE, "a rare item has the gold mark")
-	for k in 3:  # v0.3.5 F16: square, no shadow, no coloured side bar; the outline is neutral
+	for k in 3:  # v0.5.5 A4: the crystal frame of the card's family; the text panel inside stays plain
 		var box := p.slot(k).panel_box()
-		assert_true(CardStyle.is_plain(box), "card %d is a plain square panel" % k)
-		assert_ne(box.border_color, PickSlot.RARE, "card %d: rarity is the mark, not the frame" % k)
+		assert_true(CardStyle.is_plain(box), "card %d: a plain panel inside the frame" % k)
+		assert_ne(
+			box.border_color,
+			PickSlot.RARE,
+			"card %d: rarity is the gem and glow, not the frame" % k
+		)
+		var id := r.item_id(r.choice_items()[k])
+		assert_eq(
+			p.slot(k).frame_id(), CardFrames.frame_of(CardFrames.family(id)), "card %d frame" % k
+		)
+	assert_eq(p.slot(1).card.gem.color, PickSlot.RARE, "the rare card's gem")
+	assert_gt(p.slot(1).card.glow_alpha(), p.slot(2).card.glow_alpha(), "the rare card glows more")
 	assert_eq(p.slot(1).card.title_text(), tr(r.item_name_key(rare)))
 	assert_true(p.slot(0).focused, "the first card has the focus")
 

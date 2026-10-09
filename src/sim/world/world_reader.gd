@@ -34,6 +34,17 @@ const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
 const MOTION_THRUST := SwingStep.Motion.THRUST
 const MOTION_SPIN := SwingStep.Motion.SPIN
+## v0.6.0 MX1: attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
+const FORM_ARC := AttackSpec.Form.ARC
+const FORM_BOLT := AttackSpec.Form.BOLT
+const FORM_RING := AttackSpec.Form.RING
+const FORM_BEAM := AttackSpec.Form.BEAM
+const FORM_ZONE := AttackSpec.Form.ZONE
+const FORM_ORBITER := AttackSpec.Form.ORBITER
+const FORM_LOB := AttackSpec.Form.LOB
+const FORM_BURST := AttackSpec.Form.BURST
+const ATTACK_BOLT := Modifiers.GUN_BOLT
+const ATTACK_SKILL := Modifiers.SKILL
 ## Item kinds, for views (presentation may not name ItemTable).
 const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
 const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
@@ -77,6 +88,10 @@ const BOSS_EXITED := BossFlow.State.EXITED
 const BOSS_ENTERING := BossFlow.State.ENTERING
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
+## v0.5.5 DS (D7): a boss in a phase gate's transition (BossGates).
+const STATE_GATE := BossAi.GATE
+## How far from a gated boss its adds rise (m).
+const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
 const MOVE_SLAM_RING := BossAttackTable.Move.SLAM_RING
 const MOVE_LANES := BossAttackTable.Move.LANES
@@ -96,6 +111,13 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
+const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR (X1b)
+const REWARD_DROP := RewardStore.Kind.DROP  # v0.6.0 CU: a free one-card drop (a stolen core, Marked's card)
+## v0.6.0 CU: a drop's kind (CoreState.Drop).
+const DROP_CORE := CoreState.Drop.CORE
+const DROP_BOSS_CORE := CoreState.Drop.BOSS_CORE
+const DROP_ELITE_CARD := CoreState.Drop.ELITE_CARD
+const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
@@ -108,6 +130,7 @@ const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
+const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
 ## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
 const SHOP_SELL_MOD := Shop.SELL_MOD
 const SHOP_SELL_STAT := Shop.SELL_STAT
@@ -126,7 +149,12 @@ const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
 const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
-const ABILITY_SLOTS := Abilities.SLOTS
+## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
+const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
+## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values.
+const MOD_SLOTS := BuildSlots.SLOTS
+const PICK_SWAP_BASE := InputFrame.PICK_SWAP_BASE
+const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
 ## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events), and the curse counted, not in percent.
 const EVENT_READY := Events.State.READY
@@ -150,6 +178,9 @@ const EVENT_BLOCK_BUSY := Events.NEED_BUSY
 const CURSE_EXTRA_ENEMY := Curses.Effect.EXTRA_ENEMY
 ## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
 const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
+## v0.6.0 MX2: Arc Field's shock field, and any other spec's patch (a hook's zone).
+const FIRE_FIELD := ElementAbilities.FIRE_FIELD
+const FIRE_ZONE := ElementAbilities.FIRE_ZONE
 
 var _w: World
 
@@ -242,7 +273,7 @@ func combo_step() -> int:
 ## numbers PlayerKit hits with (EI-07).
 func swing_shape(step: int = -1) -> Array:
 	var s := _step_index(step)
-	return [_w.player.combo[s].half_arc, swing_reach_m(s), _w.player.radius_m]
+	return [Modifiers.step(_w, s).half_arc, swing_reach_m(s), _w.player.radius_m]
 
 
 ## The current swing's length in ticks (its step's).
@@ -655,7 +686,7 @@ func overcharge_tick() -> int:
 
 
 func shockwave_radius_m() -> float:
-	return _w.item_mods.shockwave_radius_m
+	return Modifiers.nth_burst_radius_m(_w)
 
 
 ## Twin Arc: an echo swing is pending, its angle and step, and the tick the last echo swung (-1 = never). The echo
@@ -688,6 +719,100 @@ func projectile_bounces(i: int) -> int:
 
 func projectile_bounce_tick(i: int) -> int:
 	return _w.projectiles.bounce_tick[i]
+
+
+## v0.6.0 MX1: the ids of the build's compiled attacks (the combo steps, the bolt, the Skill), and one attack's final
+## spec as plain data (AttackSpec.read: form, tags, modifiers, sizes, damage, statuses, elements, behaviour, hooks
+## with their children), {} for an unknown id. AttackView draws the weapon attacks from it.
+func attack_ids() -> PackedStringArray:
+	return Modifiers.book(_w).order.duplicate()
+
+
+func attack_spec(id: StringName) -> Dictionary:
+	var s := Modifiers.book(_w).spec(id)
+	return s.read() if s != null else {}
+
+
+## The spec id of combo step `step` (-1 = the current swing's).
+func step_attack_id(step: int = -1) -> StringName:
+	return Modifiers.step_id(_step_index(step))
+
+
+## v0.6.0 MX4: what the M-list's modifiers do that no attack spec shows (ModifierOverlays draws it): Aether Shell's
+## barrier is up ("shell"; "shell_tick" the last hit it absorbed, -1 = none), Ascension's next attack is charged
+## ("charged"), the dash is intangible now ("phase", Phase Dash), the poisoned enemies' positions ("poisoned"), and
+## where a queued launch waits ("queued": Long Shadow's afterimage, Twin Cast's repeat).
+func modifier_marks() -> Dictionary:
+	var poisoned := PackedVector2Array()
+	var a := _w.actors
+	for i in range(1, a.size()):
+		if a.dead[i] == 0 and i < a.poison_stacks.size() and a.poison_stacks[i] > 0:
+			poisoned.append(a.pos(i))
+	return {
+		"shell": ModifierRuntime.shell_up(_w),
+		"shell_tick": _w.mx.shell_tick,
+		"charged": ModifierRuntime.charged(_w),
+		"phase": _w.is_dashing() and ModifierRuntime.intangible(_w),
+		"poisoned": poisoned,
+		"queued": _w.mx.q_pos.duplicate(),
+	}
+
+
+## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
+func attack_digest() -> String:
+	return Modifiers.book(_w).digest
+
+
+## v0.6.0 MX3: the final spec an AttackBook key names (a root's id, a hook child's "<parent key>/<n>"; MX2), as
+## plain data ({} for "" or a key the current build doesn't have). AttackFormView draws the live attacks from it.
+func attack_spec_at(key: String) -> Dictionary:
+	if key == "":
+		return {}
+	var s := Modifiers.book(_w).find(key)
+	return s.read() if s != null else {}
+
+
+## v0.6.0 MX3: the spec key player projectile i runs ("" = none: an enemy's, or one from before MX2).
+func projectile_spec_key(i: int) -> String:
+	var keys := _w.projectiles.spec_key
+	return keys[i] if i < keys.size() else ""
+
+
+## v0.6.0 MX3: the spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
+## element_fx()["fire_pos"] ("" = one without a spec: Napalm Drone's patches).
+func bomb_spec_keys() -> PackedStringArray:
+	return _padded(_w.ab.bomb_spec, _w.ab.bomb_pos.size())
+
+
+func fire_spec_keys() -> PackedStringArray:
+	return _padded(_w.ab.fire_spec, _w.ab.fire_pos.size())
+
+
+## v0.6.0 MX3: the RING form's live rings: {key, pos, radius (full), start, end} (the radius now grows linearly from
+## start to end, ModifierAbilities.ring_radius).
+func rings_live() -> Array[Dictionary]:
+	var st := _w.ab
+	var out: Array[Dictionary] = []
+	for k in st.ring_pos.size():
+		(
+			out
+			. append(
+				{
+					"key": st.ring_spec[k] if k < st.ring_spec.size() else "",
+					"pos": st.ring_pos[k],
+					"radius": st.ring_r[k],
+					"start": st.ring_start[k],
+					"end": st.ring_end[k],
+				}
+			)
+		)
+	return out
+
+
+static func _padded(keys: PackedStringArray, n: int) -> PackedStringArray:
+	var out := keys.duplicate()
+	out.resize(n)
+	return out
 
 
 ## Ticks between bolts while shooting (Rapid Coil applied).
@@ -916,6 +1041,41 @@ func reward_is_epic(i: int) -> bool:
 	return Routes.is_epic_altar(_w, i)
 
 
+## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
+func reward_is_legendary(i: int) -> bool:
+	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
+
+
+## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
+func reward_drop_kind(i: int) -> int:
+	return CoreTheft.drop_kind(_w, _w.rewards.ids[i])
+
+
+## v0.6.0 CU: the card a drop holds (an Offers code for card_info), or -1 when it holds none.
+func reward_drop_card(i: int) -> int:
+	var offer := _w.rewards.offer_of(i)
+	return offer[0] if _w.rewards.kind[i] == REWARD_DROP and not offer.is_empty() else -1
+
+
+## v0.5.5 AR: reward i stands in an arena that isn't cleared (it can't be opened yet).
+func reward_locked(i: int) -> bool:
+	return Arenas.locked(_w, i)
+
+
+## v0.5.5 AR: the sealed arenas (Arenas.read: active, rooms, overrun, cleared, sealed, overrun_sealed, wave, waves,
+## alive, next_wave_tick, sealed_tick, clear_tick, last_cleared).
+func arenas() -> Dictionary:
+	return Arenas.read(_w)
+
+
+## v0.5.5 AR: the barriers of the sealed arena now (centre and half extents, axis-aligned), for the door views.
+func arena_barriers() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for o in _w.arenas.barriers:
+		out.append(Rect2(o.center - o.half, o.half * 2.0))
+	return out
+
+
 ## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
 func entered_portal_pos() -> Vector2:
 	return deep_portal_pos() if route_taken() == Routes.Route.DEEP else portal_pos()
@@ -968,6 +1128,15 @@ func boss_stagger_permille(i: int) -> int:
 
 func boss_staggered(i: int) -> bool:
 	return _w.actors.state[i] == BossAi.STAGGERED
+
+
+## v0.5.5 DS (D7): 0..1000, how far boss i's phase gate has run (0 when it isn't in one; BossGates).
+func boss_gate_permille(i: int) -> int:
+	return BossGates.progress(_w, i)
+
+
+func boss_in_gate(i: int) -> bool:
+	return _w.actors.state[i] == BossAi.GATE
 
 
 ## Boss i's phase (0 = the first) and how many it has.
@@ -1068,6 +1237,11 @@ func shards() -> int:
 	return _w.shards
 
 
+## v0.5.5 EC (owner Q-S4): shards the portal left behind on the way to this floor (half of the unspent ones).
+func shards_left_behind() -> int:
+	return _w.shards_left_behind
+
+
 func item_rarity(item_index: int) -> int:
 	return _w.item_tables[item_index].rarity
 
@@ -1084,7 +1258,7 @@ func reward_pos(i: int) -> Vector2:
 	return _w.rewards.pos(i)
 
 
-## REWARD_ALTAR or REWARD_CHEST.
+## REWARD_ALTAR, REWARD_CHEST or (v0.5.5 AR) REWARD_LEGENDARY.
 func reward_kind(i: int) -> int:
 	return _w.rewards.kind[i]
 
@@ -1495,6 +1669,32 @@ func combo_is_ability(combo_index: int) -> bool:
 	return _w.combo_tables[combo_index].ability_a >= 0
 
 
+## v0.6.0 MX2: the build (BuildSlots.read): the modifier slots in pick order (code, id, name_key, type, level), the
+## slot count (max), and the pending swap's card (swap_code, -1 for none) and source.
+func build() -> Dictionary:
+	return BuildSlots.read(_w)
+
+
+## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).
+func swapping() -> bool:
+	return BuildSlots.swapping(_w)
+
+
+## v0.6.0 MX2: the build's weapon (the starting weapon ability's id, &"" outside a build) and the utility pick's id.
+func weapon_id() -> StringName:
+	for idx in _w.ability_owned:
+		if _w.ability_tables[idx].start_weapon != 0:
+			return _w.ability_tables[idx].id
+	return &""
+
+
+func utility_id() -> StringName:
+	for idx in _w.ability_owned:
+		if _w.ability_tables[idx].is_utility():
+			return _w.ability_tables[idx].id
+	return &""
+
+
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).
 func card_info(code: int) -> Dictionary:
 	return Offers.info(_w, code)
@@ -1660,6 +1860,97 @@ func event_defend_radius_m() -> float:
 ## Actor i is an elite (an ambush pack or an elite curse's spawn).
 func actor_elite(i: int) -> bool:
 	return Curses.is_elite(_w, _w.actors.ids[i])
+
+
+# --- v0.6.0 CU: core theft and the trade-off curses ---------------------------------------------------------------
+## The card actor i's core holds (an Offers code for card_info), or -1 when it carries none.
+func actor_core(i: int) -> int:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return _w.cores.card[k] if k >= 0 else -1
+
+
+## Actor i carries a boss's (legendary) core.
+func actor_core_boss(i: int) -> bool:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return k >= 0 and _w.cores.boss[k] == 1
+
+
+## Actor i's steal window: ticks left (0 = shut), and its length.
+func actor_steal_ticks(i: int) -> int:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return _w.cores.window_t[k] if k >= 0 else 0
+
+
+func steal_window_ticks() -> int:
+	return _w.ev.rules.core_window_ticks
+
+
+## Elite actor i stands staggered (its own stagger; a boss's is boss_staggered).
+func actor_core_staggered(i: int) -> bool:
+	return CoreTheft.staggered(_w, i)
+
+
+## The last steal (tick, card); -1 when none yet.
+func steal_tick() -> int:
+	return _w.cores.steal_tick
+
+
+func steal_card() -> int:
+	return _w.cores.steal_card
+
+
+## Tunnel Vision: the minimap is off.
+func minimap_blind() -> bool:
+	return Curses.no_minimap(_w)
+
+
+## Rooted's last dodge and Brittle's stun (ticks left; the tick it started); -1 when none yet.
+func dodge_tick() -> int:
+	return _w.cs.dodge_tick
+
+
+func stun_ticks() -> int:
+	return _w.cs.stun_t
+
+
+func stun_tick() -> int:
+	return _w.cs.stun_tick
+
+
+## Curse c is a trade-off (it has an upside), and its upside's sentence key.
+func curse_is_trade_off(c: int) -> bool:
+	return c < _w.ev.curses.size() and _w.ev.curses[c].is_trade_off()
+
+
+func curse_up_desc_key(c: int) -> StringName:
+	return _w.ev.curses[c].up_desc_key if c < _w.ev.curses.size() else &""
+
+
+## The numbers the curse sentences show (CurseLook): the drawback's and the upside's, as text (a percent, a count,
+## or seconds for a stun).
+func curse_value_text(c: int) -> String:
+	if c >= _w.ev.curses.size():
+		return ""
+	var t := _w.ev.curses[c]
+	return _effect_text(t.effect, t.amount)
+
+
+func curse_up_value_text(c: int) -> String:
+	if c >= _w.ev.curses.size() or not _w.ev.curses[c].is_trade_off():
+		return ""
+	var t := _w.ev.curses[c]
+	return _effect_text(t.up_effect, t.up_amount)
+
+
+static func _effect_text(effect: int, amount: int) -> String:
+	match effect:
+		Curses.Effect.EXTRA_ENEMY, Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
+			return str(amount)
+		Curses.Effect.ELITE_RARE_DROP:
+			return str(amount)
+		Curses.Effect.HIT_STUN:
+			return str(snappedf(float(amount) / SimTick.TICKS_PER_SECOND, 0.01))
+	return str(amount / 10)
 
 
 ## Threat T now (the curses held) and the run's peak so far (PD-05; M-THREAT).

@@ -104,6 +104,15 @@ var item_tables: Array[ItemTable] = []
 var items_owned := PackedInt32Array()
 ## The owned items folded into modifiers (derived from items_owned, so not hashed).
 var item_mods := ItemMods.new()
+## v0.6.0 MX1: the build's compiled attack specs (Modifiers.book compiles them when null; the build changing sets it
+## back to null). Derived from the build: a snapshot keeps it out and a restore compiles again; Modifiers.hash_into
+## hashes its digest.
+var attack_book: AttackBook = null
+## v0.6.0 MX1 (Attacks): the hooks running now (the ancestry guard; empty between ticks), and the launches counted
+## in tick launch_tick (the per-tick cap).
+var hook_chain := PackedStringArray()
+var launch_tick := -1
+var launch_count := 0
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
@@ -158,6 +167,9 @@ var boss_id := -1
 var reward_table := RewardTable.new()
 ## Shards held (hashed). The run flow carries it between floors.
 var shards := 0
+## v0.5.5 EC (owner Q-S4): the shards the portal left behind on the way to this floor (RunCarry; 0 on floor 1). Read
+## by the arrival card only.
+var shards_left_behind := 0
 ## The floor number, 1-based: chest prices and boss shards scale with it (the run flow sets it).
 var floor_index := 1
 ## Altars and chests on the floor.
@@ -253,10 +265,29 @@ var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
 var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
+## v0.6.0 MX2 (BuildSlots; owner B7): the modifier slots in pick order (the layer order), as Offers card codes (an item
+## index, or ABILITY_BASE + an ability index), at most BuildSlots.SLOTS; run-long (RunCarry). A pending swap: the
+## card waiting for a slot (-1 = none), where it came from (BuildSlots.Source) and its offer index there.
+var mod_slots := PackedInt32Array()
+var swap_code := -1
+var swap_source := 0
+var swap_ref := -1
+## v0.6.0 MX2: a carry from before MX2 arrived (RunCarry.apply); Abilities.start_floor migrates it into the slots
+## (BuildSlots.migrate) once the abilities' tables are set, and clears it.
+var migrate_slots := false
+## v0.6.0 MX2: the spec of the player hit resolving now (Attacks, the projectile sweep; null between hits), which the
+## engines read for its statuses. Transient within a tick (WorldSnapshot.WORLD_KEPT).
+var hit_spec: AttackSpec = null
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
 var overrun := OverrunState.new()  # v0.4.0 AB: the floor's Overrun room in play (Overrun), hashed once touched
+var arena_table: ArenaTable  # v0.5.5 AR: the sealed arenas' numbers (null = no regular arenas; not hashed)
+var arenas := ArenaState.new()  # v0.5.5 AR: the arena sealed now and those cleared (Arenas), hashed once touched
+## v0.5.5 AR (owner X1b): the boss-only legendary tier (null = none; not hashed) and the legendary altar the boss's
+## death left (its reward id; -1 until then; it stays set after the pick so one boss pays once). BossReward.
+var legendary_table: LegendaryTable
+var legendary_id := -1
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
@@ -264,6 +295,18 @@ var curses_owned := PackedInt32Array()
 var threat_peak := 0
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0
+## v0.6.0 CU: the trade-off curses' state in play (Curses) and core theft (CoreTheft), per floor.
+var cs := CurseState.new()
+var cores := CoreState.new()
+## v0.6.0 MX4: the modifier engine's state in play (ModifierRuntime), per floor: queued launches, every-N counters,
+## the moments' and body rules' marks. Hashed with the build's specs (Modifiers.hash_into).
+var mx := ModifierState.new()
+## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
+## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
+## one did).
+var catch_up_table: CatchUpTable
+var catch_up := CatchUpState.new()
+var deep_elite_rooms := PackedInt32Array()
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
@@ -350,9 +393,12 @@ func queue_projectile(
 	radius_m: float,
 	life: int,
 	tags: int,
-	bounces: int = 0
+	bounces: int = 0,
+	spec_key: String = ""
 ) -> void:
-	_pending_projectiles.append([owner_id, team, at, vel, damage, radius_m, life, tags, bounces])
+	_pending_projectiles.append(
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key]
+	)
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
@@ -365,8 +411,12 @@ func step(frame: InputFrame) -> void:
 		return
 	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
 	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
-	if choosing >= 0:
-		Rewards.choose(self, frame)
+	var granting := swap_code >= 0 and swap_source == BuildSlots.Source.GRANT
+	if granting or choosing >= 0:
+		if granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
+			BuildSlots.choose_grant(self, frame)
+		else:
+			Rewards.choose(self, frame)
 		tick += 1
 		return
 	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
@@ -423,21 +473,26 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
 	Engines.tick_statuses(self)  # Engines: shock, bleed, frost, freezes.
+	Venom.tick(self)  # v0.6.0 MX4: Venom Core's poison
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
-	Overrun.advance(self)  # v0.4.0 AB: inside the Overrun room, and its clear
+	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
+	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
 	WaveDirector.advance(self)
 	if spawner != null:
-		if boss_flow == null or boss_flow.spawns_open(self):
+		if Arenas.holds_spawns(self):
+			Arenas.count_time(self)  # v0.5.5 AR: sealed in an arena, the horde waits; the clock runs on
+		elif boss_flow == null or boss_flow.spawns_open(self):
 			SpawnDirector.advance(self)
 		else:
 			boss_flow.count_time(self)  # Run flow: the boss fight (and its room after, PB) stops spawns, not the clock.
 	if boss_flow != null:
 		boss_flow.advance(self)
+	BossReward.advance(self)  # v0.5.5 AR (X1b): the boss's legendary altar
 	_apply_spawns()
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
@@ -500,6 +555,7 @@ func add_item(item_index: int) -> bool:
 	if items_owned.has(item_index):
 		return false
 	items_owned.append(item_index)
+	BuildSlots.sync(self)  # v0.6.0 MX2: an attack item takes the next modifier slot
 	_build_mods()
 	_refresh_combos(true)
 	return true
@@ -515,6 +571,7 @@ func set_combo_tables(tables: Array[ComboTable]) -> void:
 ## Sets the items owned (carrying a run's items to a new floor): modifiers and combos follow, no events.
 func set_items_owned(owned: PackedInt32Array) -> void:
 	items_owned = owned.duplicate()
+	BuildSlots.sync(self)  # v0.6.0 MX2
 	_build_mods()
 	_refresh_combos(false)
 
@@ -523,6 +580,7 @@ func set_items_owned(owned: PackedInt32Array) -> void:
 func _build_mods() -> void:
 	item_mods = ItemMods.build(item_tables, items_owned)
 	ElementAbilities.fold_engines(self, item_mods)
+	Modifiers.invalidate(self)  # v0.6.0 MX1: the specs compile again on their next read
 
 
 ## v0.4.0 AB: after the abilities owned or their levels changed: the modifiers, then the combos (an ability pair at
@@ -566,7 +624,40 @@ func add_pickup(item_index: int, pos: Vector2) -> int:
 # --- Run flow (v0.3.0 B) -----------------------------------------------------------------------------------
 ## Whether a blink from `from` may land at `at`: the boss room's door rules (BossFlow.blink_may_land).
 func blink_may_land(from: Vector2, at: Vector2) -> bool:
+	if not Arenas.blink_may_land(self, at):  # v0.5.5 AR: never out of a sealed arena
+		return false
 	return boss_flow == null or boss_flow.blink_may_land(self, from, at)
+
+
+## v0.5.5 AR: a sealed arena's doorway barrier joins the walls for collision, shots and sight only: the flow field is
+## left as it is (a rebuild is ~0.1 s on a floor), so the enemies outside press against it and those inside chase you.
+func add_barrier(o: Obb) -> void:
+	walls.append(o)
+	_wall_grid.add(o.bounds())
+
+
+## v0.5.5 AR: removes a barrier (matched by its shape; a restored world holds copies) and rebuilds the wall grid.
+func remove_barrier(o: Obb) -> void:
+	var k := walls.size() - 1
+	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
+		k -= 1
+	if k < 0:
+		return
+	walls.remove_at(k)
+	rebuild_wall_grid()
+
+
+## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
+func rebuild_wall_grid() -> void:
+	var rects: Array[Rect2] = []
+	for x in walls:
+		rects.append(x.bounds())
+	_wall_grid.build(rects)
+
+
+## Enemies queued for phase 9's arrival (Splitlings, boss adds) that aren't actors yet (Arenas waits for them).
+func has_pending_enemies() -> bool:
+	return not _pending_enemies.is_empty()
 
 
 ## Builds, at setup, the flow field for the walls plus `o`, so adding `o` in play (the boss door sealing) never
@@ -645,6 +736,8 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
 	boss_id = id
+	CoreTheft.on_boss(self, i)  # v0.6.0 CU: the boss's legendary core
+	CatchUp.on_boss(self, i)  # v0.5.5 DS (D7): the boss's own hidden catch-up, fixed for the fight
 	return id
 
 
@@ -714,8 +807,14 @@ func consume_buffered(bit: int) -> void:
 # --- end Rewards --------------------------------------------------------------------------------------------
 
 
+## v0.6.0 MX4: Phase Dash's intangible dash keeps the i-frames for the whole dash.
 func dash_iframes_active() -> bool:
-	return dash_ticks_left > 0 and player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
+	if dash_ticks_left <= 0:
+		return false
+	return (
+		player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
+		or ModifierRuntime.intangible(self)
+	)
 
 
 func is_dashing() -> bool:
@@ -808,8 +907,14 @@ func state_hash() -> String:
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
+	BuildSlots.hash_into(self, h)  # v0.6.0 MX2: only once a modifier slot is filled or a swap waits.
+	Modifiers.hash_into(self, h)  # v0.6.0 MX1: the compiled specs, once the build has a modifier.
 	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
 		overrun.hash_into(h)
+	if arenas.touched():  # v0.5.5 AR: only once an arena sealed.
+		arenas.hash_into(h)
+	if legendary_id != -1:  # v0.5.5 AR: only once a boss left its legendary altar.
+		h.add_int(legendary_id)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
@@ -821,6 +926,10 @@ func state_hash() -> String:
 	if shop.present():  # v0.5.0 SH: only floors with a shop.
 		shop.hash_into(h)
 	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
+	if catch_up_table != null:  # v0.5.5 DS: only worlds whose loadout has the hidden catch-up.
+		catch_up.hash_into(h)
+	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.
+		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
@@ -988,6 +1097,7 @@ func _advance_actions() -> void:
 		swing_t = 0
 		shot_cd = 0
 		return
+	Curses.advance(self)  # v0.6.0 CU: Brittle's stun runs down
 	PlayerKit.advance_utility(self)
 	PlayerKit.advance(self)
 	PlayerSkill.advance(self)  # Kit (v0.3.5 K): Vent, and the build's skill.
@@ -997,7 +1107,10 @@ func _advance_actions() -> void:
 		dash_ticks_left -= 1
 		if dash_ticks_left == 0:
 			ItemProcs.on_dash_end(self)  # Items: Momentum.
+			ModifierRuntime.on_dash_end(self)  # v0.6.0 MX4: the dash spec's ON_END hooks (Phase Dash)
 		return
+	if input_buffer[DASH_SLOT] > 0 and (Curses.no_dash(self) or Curses.stunned(self)):
+		input_buffer[DASH_SLOT] = 0  # v0.6.0 CU: Rooted (no dash), Brittle (stunned)
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0 and not PlayerSkill.busy(self):
 		input_buffer[DASH_SLOT] = 0
 		dash_dir = PlayerKit.move_or_aim(self)
@@ -1005,6 +1118,7 @@ func _advance_actions() -> void:
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
+		ModifierRuntime.on_dash_start(self)  # v0.6.0 MX4: the dash spec's ON_LAUNCH hooks (Long Shadow)
 
 
 func _move_and_collide() -> void:
@@ -1025,6 +1139,7 @@ func _move_and_collide() -> void:
 			if len > 1.0:
 				mv /= len
 			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
+			speed *= Curses.move_factor(self)  # v0.6.0 CU: Brittle (the stun, + move speed)
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -1095,7 +1210,10 @@ func _move_and_collide() -> void:
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
 			actors.set_pos(i, ap)
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
+		var ghost := dash_ticks_left > 0 and ModifierRuntime.intangible(self)  # v0.6.0 MX4: Phase Dash
 		for a in actors.size():
+			if ghost and a == 0:
+				continue
 			var ra := actors.radius[a]
 			var pa := Vector2(actors.pos_x[a], actors.pos_y[a])
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
@@ -1139,6 +1257,7 @@ func _move_and_collide() -> void:
 func _projectile_hits() -> void:
 	var dead := PackedInt32Array()
 	for i in projectiles.size():
+		ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
 		var a := Vector2(projectiles.pos_x[i], projectiles.pos_y[i])
 		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
 		var b := a + v
@@ -1172,6 +1291,7 @@ func _projectile_hits() -> void:
 				best_actor = k
 		if best_t <= 1.0:
 			if best_actor >= 0:
+				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
 				var got := Damage.hit(
 					self,
 					best_actor,
@@ -1182,12 +1302,15 @@ func _projectile_hits() -> void:
 					projectiles.tags[i],
 					a,
 					a + v * best_t,
-					ItemProcs.bolt_effect(projectiles.tags[i])
+					Attacks.projectile_effect(hit_spec, projectiles.tags[i])  # v0.6.0 MX4: a hook's names it
 				)
+				hit_spec = null
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
 				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
+					continue
+				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
 					continue
 			elif projectiles.bounces[i] > 0:
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
@@ -1195,14 +1318,17 @@ func _projectile_hits() -> void:
 				projectiles.life[i] -= 1
 				if projectiles.life[i] <= 0:
 					dead.append(i)
+					Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2
 				continue
 			dead.append(i)
+			Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2: ON_END, Flame Trail
 			continue
 		projectiles.pos_x[i] = b.x
 		projectiles.pos_y[i] = b.y
 		projectiles.life[i] -= 1
 		if projectiles.life[i] <= 0:
 			dead.append(i)
+			Attacks.on_projectile_end(self, i, b)  # v0.6.0 MX2
 	projectiles.remove_sorted(dead)
 
 
@@ -1228,6 +1354,7 @@ func _remove_dead() -> void:
 				if boss_id == actors.ids[i]:
 					boss_id = -1
 			Rewards.on_kill(self, i)  # Rewards: shards.
+			CoreTheft.on_death(self, i)  # v0.6.0 CU: a core stolen in its window, Marked's rare card
 	actors.remove_sorted(gone)
 
 
@@ -1235,6 +1362,8 @@ func _apply_spawns() -> void:
 	for s in _pending_projectiles:
 		var id := _take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
+		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
+		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.

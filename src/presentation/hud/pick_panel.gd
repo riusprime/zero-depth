@@ -1,8 +1,8 @@
 class_name PickPanel
 extends Control
-## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three compact item
-## cards (PickSlot: flat square panels with a rarity mark since v0.3.5 F16), a title (the chest's price) and a
-## hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
+## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three cards
+## (PickSlot: the owner's crystal frames since v0.5.5 A4, coloured by the card's family), a title (the chest's
+## price) and a hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
 ## InputLatch.note_pick → InputFrame.pick); it decides nothing itself.
 ## - Mouse: hover focuses a card, a click takes it.
 ## - Keyboard: ←/→ (or 1/2/3) moves the focus, Enter takes it, Esc leaves the choice for later.
@@ -29,6 +29,7 @@ var _focus := 0
 var _reward := -1
 var _sent := false
 var _open := false
+var _swap_seen := false
 
 
 func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
@@ -86,6 +87,14 @@ func sync(reader: WorldReader) -> void:
 		return
 	var r := reader.choice_reward()
 	var rid := reader.reward_id(r)
+	if reader.swapping():  # v0.6.0 MX2: the Swap choice (SwapPanel) sits over the cards
+		_swap_seen = true
+		return
+	if _swap_seen and _open and rid == _reward:  # a skipped swap: back to the cards
+		_swap_seen = false
+		_sent = false
+		return
+	_swap_seen = false
 	if _open and rid == _reward:
 		return
 	_open = true
@@ -93,21 +102,32 @@ func sync(reader: WorldReader) -> void:
 	_reward = rid
 	visible = true
 	var items := reader.choice_items()
+	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR (X1b)
 	_count = items.size()
 	for k in SLOTS:
 		var s := _slots[k]
 		s.visible = k < _count
 		if k >= _count:
 			continue
-		s.show_card(card_face(self, reader, items[k]))  # v0.4.0 BS: a mod, an ability or a stat card
+		var face := card_face(self, reader, items[k])  # v0.4.0 BS: a mod, an ability or a stat card
+		if legendary:
+			face = legendary_face(self, face)
+		s.show_card(face)
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
-		s.show_curse(CurseLook.line(self, reader, curse) if curse >= 0 else "")
+		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
 	_title.text = (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
 		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
+	if legendary:  # v0.5.5 AR (X1b): the boss's reward
+		_title.text = tr("PICK_TITLE_LEGENDARY")
+	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
+	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
+		_title.text = tr("PICK_TITLE_CORE")
+	elif drop == WorldReader.DROP_ELITE_CARD:
+		_title.text = tr("PICK_TITLE_ELITE_DROP")
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)
@@ -126,26 +146,58 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"color": AbilityIcons.color(id),
 		"tier": int(info["rarity"]),
 		"tier_text": "",
+		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
 			face["tier"] = 3
 			var lvl := int(info["level"])
+			var new_key := (
+				"UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
+			)
 			face["tier_text"] = (
-				ci.tr("UI_CARD_ABILITY_NEW") if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
+				ci.tr(new_key) if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)
 		WorldReader.CARD_STAT:
 			var args := [GambleIcons.percent(int(info["amount"]))]
 			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
 				args.append(GambleIcons.percent(int(info["side"])))
 			face["sentence"] = ci.tr(info["desc_key"]) % args
-			face["tier_text"] = ci.tr(["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC"][face["tier"]])
+			face["tier_text"] = ci.tr(
+				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"][face["tier"]]
+			)
+			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
+				face["tier"] = CardFrames.LEGENDARY_TIER
+		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
+			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
+			face["color"] = CurseLook.COLOR
+			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_CURSE"), ci.tr("RARITY_RARE")]
 		_:
 			face["color"] = ItemLooks.color_of_id(id)
 			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
-			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), rarity] if run else rarity
+			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
+			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
 	return face
+
+
+## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
+## it on a mod).
+static func legendary_face(ci: Object, face: Dictionary) -> Dictionary:
+	var out := face.duplicate()
+	out["tier"] = CardFrames.LEGENDARY_TIER
+	var word: String = ci.tr("RARITY_LEGENDARY")
+	out["tier_text"] = (
+		"%s · %s" % [ci.tr("UI_CARD_MOD"), word]
+		if int(face["type"]) == WorldReader.CARD_MOD
+		else word
+	)
+	return out
+
+
+## Whether the open choice is the boss's legendary pick.
+func is_legendary() -> bool:
+	return _open and _slots[0].tier == CardFrames.LEGENDARY_TIER
 
 
 func is_open() -> bool:

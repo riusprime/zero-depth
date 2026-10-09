@@ -65,14 +65,14 @@ func test_the_rule_cards_compile_with_their_side_numbers_and_limits() -> void:
 	var glass := t[Stats.Stat.GLASS_CANNON]
 	assert_eq(
 		[glass.amounts, glass.side],
-		[PackedInt32Array([150, 250, 400]), PackedInt32Array([80, 100, 120])]
+		[PackedInt32Array([150, 250, 400, 640]), PackedInt32Array([80, 100, 120, 192])]  # v0.5.5 AR: + legendary
 	)
 	assert_eq(
 		[glass.cap, glass.limit_permille], [3000, 400], "damage at most x3, max HP at least x0.4"
 	)
 	assert_eq(
 		[t[Stats.Stat.ONRUSH].amounts, t[Stats.Stat.ONRUSH].cap],
-		[PackedInt32Array([100, 180, 300]), 900]
+		[PackedInt32Array([100, 180, 300, 480]), 900]
 	)
 	var ok := t[Stats.Stat.OVERKILL]
 	assert_eq(
@@ -107,11 +107,8 @@ func test_bad_ability_mods_are_rejected() -> void:
 	c.requires_ability = &""
 	assert_eq(c.validate().size(), 1, "an ability mod names its ability")
 	c.requires_ability = &"bomb_lobber"
-	c.bomblets = 0
-	assert_eq(c.validate().size(), 1, "bomblets > 0")
-	var a := (load("res://data/items/afterimage.tres") as ItemDefinition).duplicate(true)
-	a.afterimage_delay_seconds = 0.001
-	assert_eq(a.validate().size(), 1, "the echo waits at least a tick")
+	c.modifiers.clear()  # v0.6.0 MX4: the bomblets are its modifier's ops now
+	assert_eq(c.validate().size(), 1, "it names its modifier")
 	assert_eq(ItemDefinition.ability_kind(&"orbit_blades"), AbilityDefinition.Kind.ORBIT_BLADES)
 
 
@@ -181,6 +178,8 @@ func test_fast_hands_cuts_auto_ability_cooldowns_only() -> void:
 	var drone := _grant(w, AbilityTable.Kind.DRONE_BUDDY)
 	Stats.add_card(w, Stats.Stat.FAST_HANDS, Stats.Rarity.RARE)
 	w.step(_f())
+	for k in 4:  # v0.6.0 MX2: Bomb Lobber lobs on the fourth weapon attack
+		ModifierAbilities.on_attack(w, w.player_pos())
 	assert_eq(w.ab.cd[s], 129, "Bomb Lobber: 150 ticks x 0.86")
 	assert_eq(Abilities.drone_period(w, w.ability_tables[drone]), 17, "drone: 20 x 0.86")
 	assert_eq(Stats.cooldown(w, 150), 150, "the cooldowns stat (blink, skill, dash) is untouched")
@@ -210,17 +209,19 @@ func test_cluster_payload_splits_each_bomb_into_bomblets_that_never_split() -> v
 	_grant(w, AbilityTable.Kind.BOMB_LOBBER)
 	w.add_item(_item(w, &"cluster_payload"))
 	w.step(_f())
-	_run(w, 36)
+	for k in 4:  # v0.6.0 MX2: Bomb Lobber lobs on the fourth weapon attack
+		ModifierAbilities.on_attack(w, w.player_pos())
+	_run(w, 37)
 	assert_eq(_damage(w, Abilities.EFFECT_BOMB).size(), 3, "the bomb lands on the three")
 	assert_eq(w.ab.bomb_pos.size(), 3, "three bomblets in the air")
 	assert_eq(w.ab.bomb_split, PackedInt32Array([0, 0, 0]), "bomblets never split")
 	assert_almost_eq(w.ab.bomb_r[0], 1.0, 1e-5, "half the radius")
-	assert_eq(w.ab.bomb_dmg[0], 9, "40 % of 22")
+	assert_eq(w.ab.bomb_dmg[0], 8, "40 % of 22 (v0.6.0 MX4: a hook's share rounds down)")
 	_run(w, 15)
 	var bits := _damage(w, AbilityMods.EFFECT_CLUSTER)
 	assert_gt(bits.size(), 0, "the bomblets landed on the cluster")
 	for e in bits:
-		assert_eq(e.amount, 9)
+		assert_eq(e.amount, 8)
 	assert_eq(w.ab.bomb_pos.size(), 0, "and nothing more")
 
 

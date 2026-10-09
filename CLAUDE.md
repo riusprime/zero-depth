@@ -89,9 +89,13 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | The full suite, from a clean worktree of the commit |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead: **one** full suite per wave, on the merged result of the wave's agents, from a clean worktree |
 
-A release runs everything (ROADMAP §0.4).
+**One full run per wave** (owner, 2026-10-09: "i like the testing workflow so we ensure everything works but I think
+we are having too many, and double checking overall"; pick "One run per wave"). Agents don't run the full suite; the
+lead runs it once after merging a wave (up to 3 agents), fixes what breaks, and pushes. The PR into `main` runs it
+once more on GitHub; the lead doesn't run it locally again before opening the PR. A release runs everything
+(ROADMAP §0.4).
 
 ## Commands
 

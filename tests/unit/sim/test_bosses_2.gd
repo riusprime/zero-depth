@@ -237,6 +237,7 @@ func test_the_hive_lens_splits_into_three_drones_at_half_hp() -> void:
 	w.actors.max_hp[0] = 100000
 	w.actors.hp[i] = w.actors.max_hp[i] / 2
 	w.step(InputFrame.new())
+	BossLab.through_gate(w, aid)  # v0.5.5 DS: the 66 % gate first
 	i = w.actors.index_of(aid)
 	var t := BossAi.table_of(w, i)
 	assert_eq(w.bosses.attack[BossAi.entry_of(w, i)], t.attack_index(&"split"), "it opens phase 2")
@@ -291,6 +292,7 @@ func test_the_foundrys_phase_two_opens_with_five_molten_lanes() -> void:
 	w.actors.set_pos(0, Vector2(8, 0))
 	w.actors.hp[i] = w.actors.max_hp[i] / 2
 	w.step(InputFrame.new())
+	BossLab.through_gate(w, aid)  # v0.5.5 DS: the 66 % gate first
 	i = w.actors.index_of(aid)
 	var t := BossAi.table_of(w, i)
 	assert_eq(w.bosses.phase[BossAi.entry_of(w, i)], 1)

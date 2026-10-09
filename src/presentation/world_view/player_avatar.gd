@@ -11,7 +11,20 @@ extends Node3D
 ## +X is the front and +Z the right in every local frame; the sim (x, y) maps to 3D (x, h, -y) as in SimPlane.
 ## The body follows each melee combo step (v0.3.0 L11): the slashes twist the head and poncho one way, then the other;
 ## the thrust leans into the stab; the finisher spins the whole wanderer once, low and leaning into its lunge.
+## v0.5.5 LK (owner A1: "The ability for gun and blade should match the animation"): the skills have their own poses,
+## timed from the skill's sim ticks (WorldReader.skill_state):
+## - Lunge Cleave: a low lunge (front leg reaching, back leg trailing, body pitched into the lunge, the poncho
+##   streaming) with the head and poncho wound back to the arc's starting side; over the lunge's last ticks the body
+##   whips through the cleave's arc (SkillVisuals.cleave_progress: the same sweep the cleave is drawn with), lands
+##   on the far side on the hit tick and recovers over SKILL_RECOVER_TICKS;
+## - Scatter Blast: a braced, wide, low stance square to the aim, kicked back by the recoil (lean and hood thrown
+##   back, peaking on the blast's tick and easing out over the sim's recoil step-back) while the legs ride the real
+##   step back.
 
+## v0.6.0 (owner, 2026-10-09): the body faces the movement, not the aim ("we have him running backwards most of the
+## time"). It turns to the aim only while an attack needs it: the Blade during a swing or a skill, the Gun while
+## shooting and for GUN_AIM_HOLD_TICKS after the last shot, then back to the movement.
+const GUN_AIM_HOLD_TICKS := 30
 const HIP_Y := 0.42
 const LEG_LEN := 0.42
 ## Leg centres sit this far either side of the middle: a gap about one leg wide between them.
@@ -46,6 +59,14 @@ const AIR_DRAG := 1.0
 const INERTIA := 0.3
 const MAX_OFFSET := 0.22
 const SUB_STEP := 1.0 / 120.0
+## v0.5.5 LK (A1): the skill poses. Ticks after the cleave's hit / the blast before the pose has fully let go; the
+## cleave's wind-up and whip (head twist, radians); how far a full lunge or recoil leans the body.
+const SKILL_RECOVER_TICKS := 14
+const BLAST_RECOVER_TICKS := 16
+const CLEAVE_WIND := -1.15
+const CLEAVE_WHIP := 1.05
+const LUNGE_LEAN := 0.34
+const RECOIL_LEAN := 0.3
 ## Faster than this between two ticks is a teleport (blink, a new floor), not motion: the dash is ~27 m/s.
 const TELEPORT_SPEED := 40.0
 
@@ -95,6 +116,16 @@ var _sweep := 0.0
 var _spin_target := 0.0
 var _guarding := false
 var _dead := false
+## v0.6.0: the Gun build (faces the aim while shooting), the last tick it shot, and whether the body faces the aim.
+var _gun := false
+var _last_shot_tick := -1000000
+var _face_aim := false
+## v0.5.5 LK (A1): the skill pose targets from the last sync: the lunge (0..1), the cleave's sweep (0..1, -1 when
+## not cleaving), the brace (0..1) and the recoil kick (0..1).
+var _lunge_target := 0.0
+var _cleave_p := -1.0
+var _brace_target := 0.0
+var _recoil_target := 0.0
 # Smoothed animation state.
 var _t := 0.0
 var _vel_s := Vector3.ZERO
@@ -109,6 +140,9 @@ var _stab := 0.0
 var _crouch := 0.0
 var _slump := 0.0
 var _lean := Vector3.ZERO
+var _lunge := 0.0
+var _brace := 0.0
+var _recoil := 0.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
@@ -184,8 +218,14 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 
 ## Reads the player's state after a sim tick.
 func sync(reader: WorldReader) -> void:
+	var sk := reader.skill_state()
 	apply_state(
 		{
+			"skill_kind": int(sk.get("kind", -1)),
+			"skill_running": int(sk.get("running", 0)),
+			"skill_move_ticks": int(sk.get("move_ticks", 1)),
+			"skill_angle": int(sk.get("angle", 0)),
+			"skill_hit_tick": int(sk.get("hit_tick", -1)),
 			"tick": reader.tick(),
 			"pos": reader.player_pos(),
 			"aim": reader.aim_angle(),
@@ -198,6 +238,8 @@ func sync(reader: WorldReader) -> void:
 			"sweep_ticks": reader.swing_sweep_ticks(),
 			"guarding": reader.guarding(),
 			"dead": reader.player_dead(),
+			"gun": reader.weapon_id() == &"pulse_gun",
+			"shooting": reader.shooting(),
 		}
 	)
 
@@ -217,6 +259,9 @@ func apply_state(s: Dictionary) -> void:
 	_dashing = s["dashing"]
 	_guarding = s["guarding"]
 	_dead = s["dead"]
+	_gun = s.get("gun", false)
+	if s.get("shooting", false):
+		_last_shot_tick = tick
 	var st: int = s["swing_t"]
 	_swing = 0.0
 	_sweep = 0.0
@@ -233,12 +278,50 @@ func apply_state(s: Dictionary) -> void:
 		_spin_target = 0.0
 		if _spin > PI:
 			_spin -= TAU  # a full turn is the same pose: settle back from just under 0
+	_face_aim = _apply_skill(s, tick) or st > 0 or _guarding
+	if _gun and tick - _last_shot_tick < GUN_AIM_HOLD_TICKS:
+		_face_aim = true
+	if not s.has("gun"):
+		_face_aim = true  # plain-value tests that predate the rule keep the old aim-facing body
 	if _fresh:
 		_fresh = false
 		_body_yaw = _aim_yaw
 		_leg_yaw = _aim_yaw
 		_pose(0.0)
 		_reset_springs()
+
+
+## v0.5.5 LK (A1): the skill pose targets from the skill's ticks (optional keys; tests may leave them out).
+## Returns true while the skill turns the body to its angle.
+func _apply_skill(s: Dictionary, tick: int) -> bool:
+	_lunge_target = 0.0
+	_cleave_p = -1.0
+	_brace_target = 0.0
+	_recoil_target = 0.0
+	var kind: int = s.get("skill_kind", -1)
+	if kind < 0 or _dead:
+		return false
+	var running: int = s.get("skill_running", 0)
+	var hit: int = s.get("skill_hit_tick", -1)
+	var since := tick - hit if hit >= 0 else -1
+	if kind == WorldReader.SKILL_LUNGE_CLEAVE:
+		var after := running == 0 and since >= 0 and since < SKILL_RECOVER_TICKS
+		if running > 0 or after:
+			var move: int = s.get("skill_move_ticks", 1)
+			var ps := SkillVisuals.cleave_progress(running, move, -1 if running > 0 else since)
+			_cleave_p = ps.x
+			var rec := 0.0 if running > 0 else float(since) / SKILL_RECOVER_TICKS
+			_lunge_target = 1.0 - rec * rec
+			_aim_yaw = SimPlane.yaw_of(s.get("skill_angle", 0))
+			return true
+	elif kind == WorldReader.SKILL_SCATTER_BLAST:
+		if since >= 0 and since < BLAST_RECOVER_TICKS:
+			var move: int = maxi(1, s.get("skill_move_ticks", 1))
+			_brace_target = 1.0 - smoothstep(0.6, 1.0, float(since) / BLAST_RECOVER_TICKS)
+			_recoil_target = 1.0 - clampf(float(since) / float(move + 2), 0.0, 1.0)
+			_aim_yaw = SimPlane.yaw_of(s.get("skill_angle", 0))
+			return true
+	return false
 
 
 func _process(delta: float) -> void:
@@ -319,6 +402,24 @@ func spin_amount() -> float:
 	return _spin
 
 
+## v0.5.5 LK (A1): how far the body is in the Lunge Cleave's lunge, the Scatter Blast's brace and its recoil
+## (0..1, smoothed), and the head's twist off the aim (radians: negative wound back, positive through the cleave).
+func lunge_amount() -> float:
+	return _lunge
+
+
+func brace_amount() -> float:
+	return _brace
+
+
+func recoil_amount() -> float:
+	return _recoil
+
+
+func twist_amount() -> float:
+	return _twist
+
+
 func stab_amount() -> float:
 	return _stab
 
@@ -347,11 +448,21 @@ func _pose(dt: float) -> void:
 				stab_target = 0.6 * (1.0 - smoothstep(0.4, 1.0, _swing))
 			_:
 				twist_target = _swing_dir * lerpf(-0.75, 0.5, smoothstep(0.0, 0.55, _swing))
-	_twist = lerpf(_twist, twist_target, _rate(30.0, dt))
+	if _cleave_p >= 0.0:
+		# The cleave: wound back to the arc's starting side, then whipped through it with the sweep.
+		twist_target = lerpf(CLEAVE_WIND, CLEAVE_WHIP, smoothstep(0.0, 1.0, _cleave_p))
+	_lunge = lerpf(_lunge, _lunge_target, _rate(22.0, dt))
+	_brace = lerpf(_brace, _brace_target, _rate(26.0, dt))
+	_recoil = lerpf(_recoil, _recoil_target, _rate(40.0, dt))
+	_twist = lerpf(_twist, twist_target, _rate(30.0 if _cleave_p < 0.0 else 45.0, dt))
 	_stab = lerpf(_stab, stab_target, _rate(25.0, dt))
 	_spin = lerpf(_spin, _spin_target, _rate(40.0, dt))
 	if not _dead:
-		_body_yaw = _turn_toward(_body_yaw, _aim_yaw, _rate(16.0, dt))
+		var face_yaw := _aim_yaw
+		if not _face_aim:
+			# Toward the movement; standing still keeps the last facing.
+			face_yaw = atan2(-_vel_s.z, _vel_s.x) if speed > 0.4 else _body_yaw
+		_body_yaw = _turn_toward(_body_yaw, face_yaw, _rate(16.0, dt))
 	# Legs and cloak: toward the movement; walking backwards keeps them facing the aim and backpedals.
 	var back := 1.0
 	var leg_target := _body_yaw
@@ -367,7 +478,16 @@ func _pose(dt: float) -> void:
 	var s := sin(_phase)
 	var bob := (1.0 - absf(s)) * 0.035 * _walk
 	var breath := sin(_t * 2.1) * 0.009 * (1.0 - _walk) * (1.0 - _slump)
-	var hip := HIP_Y + bob + breath - _crouch * 0.07 - _slump * 0.22 - _stab * 0.05
+	var hip := (
+		HIP_Y
+		+ bob
+		+ breath
+		- _crouch * 0.07
+		- _slump * 0.22
+		- _stab * 0.05
+		- _lunge * 0.09
+		- _brace * 0.06
+	)
 	_pelvis.position = Vector3(0, hip, 0)
 	# Lean: into the movement (hard on a dash), forward when guarding or collapsing, a slow idle sway.
 	var face_dir := Vector3(cos(_body_yaw), 0, -sin(_body_yaw))
@@ -375,7 +495,8 @@ func _pose(dt: float) -> void:
 	var side := Vector3(face_dir.z, 0, -face_dir.x)
 	var lean_target := (
 		move_dir * (0.16 * clampf(speed / WALK_SPEED, 0.0, 1.0) * (1.0 - _dash) + 0.32 * _dash)
-		+ face_dir * (_crouch * 0.12 + _slump * 0.22 + _stab * 0.22)
+		+ face_dir * (_crouch * 0.12 + _slump * 0.22 + _stab * 0.22 + _lunge * LUNGE_LEAN)
+		- face_dir * (_recoil * RECOIL_LEAN)
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
@@ -385,7 +506,10 @@ func _pose(dt: float) -> void:
 	_pelvis.basis = b
 	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin, 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
-	hood.rotation = Vector3(_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08)
+	# Skills: the lunge pitches the hood down into it, the recoil throws it back.
+	hood.rotation = Vector3(
+		_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08 - _lunge * 0.12 + _recoil * 0.3
+	)
 	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.
@@ -394,10 +518,16 @@ func _pose(dt: float) -> void:
 	var amp := 0.6 * _walk
 	for k in legs.size():
 		var sgn := -1.0 if k == 0 else 1.0
-		var swing := s * amp * sgn + _dash * (0.35 if k == 0 else -0.75) + _slump * 1.25
+		var swing := (
+			s * amp * sgn
+			+ _dash * (0.35 if k == 0 else -0.75)
+			+ _slump * 1.25
+			+ _lunge * (0.7 if k == 0 else -0.8)
+		)
 		var reach := LEG_LEN * cos(swing)
 		var splay := acos(clampf(hip / maxf(reach, 0.01), -1.0, 1.0)) if hip < reach else 0.0
-		legs[k].rotation = Vector3(sgn * splay, 0, swing)
+		# The blast's brace plants the feet wide.
+		legs[k].rotation = Vector3(sgn * (splay + _brace * 0.28), 0, swing)
 
 
 func _build_cloak_rest() -> void:

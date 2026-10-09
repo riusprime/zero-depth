@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 4
+field = &"range"
+value = 600.0
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 4
+stage = 3
+field = &"damage"
+value = 1400.0
+
+[resource]
+script = ExtResource("1_mod")
+family = &"trinket"
+rarity = 1
+target = PackedStringArray()
+stage = 5
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+id = &"short_fuse"

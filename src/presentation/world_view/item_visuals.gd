@@ -9,6 +9,8 @@ extends Node3D
 ##   trail every dash leaves, DashTrail);
 ## - burning enemies glow orange, frozen ones icy white (v0.3.0 G; StatusVisuals draws the other status effects);
 ## - v0.3.0 G: Glacial Edge, Serrated Edge and Conductor tint the blade; Cinder Shot and Barbed Bolts the bolts.
+## v0.6.0 MX1: the blade's and the bolts' looks come from the final attack specs (AttackView), not from the items
+## held: the same looks, read from what the attacks are.
 
 const FX_FRAMES := 14
 
@@ -56,52 +58,22 @@ func sync(reader: WorldReader) -> void:
 	_sync_burns(reader)
 
 
-## The bolt look ActorViews applies to new player bolts.
+## The bolt look ActorViews applies to new player bolts: the bolt spec's (AttackView).
 static func bolt_look(reader: WorldReader) -> Dictionary:
-	var look := {
-		"size": Vector3(0.38, 0.07, 0.07),
-		"color": ThemePalette.color(&"player_core"),
-		"energy": 2.5
-	}
-	if reader.has_item_kind(WorldReader.ITEM_RAPID_COIL):
-		look["size"] = Vector3(0.62, 0.06, 0.06)
-	if reader.has_item_kind(WorldReader.ITEM_SPLINTER_SHOT):
-		look["size"] = look["size"] * Vector3(0.75, 1, 1)
-		look["color"] = look["color"].lerp(ItemLooks.color(WorldReader.ITEM_SPLINTER_SHOT), 0.5)
-	if reader.has_item_kind(WorldReader.ITEM_RICOCHET_CORE):
-		look["color"] = look["color"].lerp(Color.WHITE, 0.6)
-		look["energy"] = 4.5
-	for k: int in [WorldReader.ITEM_CINDER_SHOT, WorldReader.ITEM_BARBED_BOLTS]:
-		if reader.has_item_kind(k):
-			look["color"] = look["color"].lerp(ItemLooks.color(k), 0.55)
-	return look
+	return AttackView.bolt_look_of(reader)
 
 
+## The blade's and the bolts' looks, from the current step's and the bolt's specs (AttackView), rebuilt when the
+## build's specs, the step or the charge change.
 func _sync_looks(reader: WorldReader) -> void:
-	var owned := reader.items_owned()
-	var sig := "%s|%s" % [owned, reader.swing_overcharged()]
+	var sig := (
+		"%s|%s|%s" % [reader.attack_digest(), reader.step_attack_id(), reader.swing_overcharged()]
+	)
 	if sig == _sig:
 		return
 	_sig = sig
-	var c := ThemePalette.color(&"player_core")
-	var width := 1.0
-	var trail := 6
-	# v0.3.0 G: each elemental blade item pulls the blade toward its colour; Ember Edge wins outright.
-	for k: int in [
-		WorldReader.ITEM_CONDUCTOR, WorldReader.ITEM_SERRATED_EDGE, WorldReader.ITEM_GLACIAL_EDGE
-	]:
-		if reader.has_item_kind(k):
-			c = c.lerp(ItemLooks.color(k), 0.7)
-	if reader.has_item_kind(WorldReader.ITEM_EMBER_EDGE):
-		c = ItemLooks.color(WorldReader.ITEM_EMBER_EDGE)
-	if reader.has_item_kind(WorldReader.ITEM_TWIN_ARC):
-		trail = 11
-	if reader.has_item_kind(WorldReader.ITEM_OVERCHARGE):
-		width = 1.15
-		if reader.swing_overcharged():
-			width = 1.7
-			c = c.lerp(ItemLooks.color(WorldReader.ITEM_OVERCHARGE), 0.6)
-	kit.set_look(c, 1.0, width, trail)
+	var blade := AttackView.blade_look_of(reader)
+	kit.set_look(blade["color"], 1.0, blade["width"], blade["trail"])
 	actors.bolt_look = bolt_look(reader)
 
 

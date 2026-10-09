@@ -47,6 +47,7 @@ static func setup(
 		return
 	s.rng = RngStream.derive(w.seed_value, "loot:event")
 	s.rng_elite = RngStream.derive(w.seed_value, "ai:elite")
+	Curses.after_setup(w)  # v0.6.0 CU: a held Glass Heart cuts the fresh floor's max HP
 	if w.floor_layout != null and not events.is_empty():
 		place(w, w.floor_layout)
 
@@ -83,6 +84,7 @@ static func pick_rooms(
 			r == layout.portal_room
 			or r == layout.overrun_room
 			or r == layout.shop_room
+			or layout.arena_rooms.has(r)  # v0.5.5 AR: arenas are combat rooms
 			or taken.has(r)
 		):
 			continue
@@ -127,14 +129,21 @@ static func _clear(layout: FloorLayout, room: int, p: Vector2, rules: EventRules
 
 
 ## An event index for the next pedestal (loot:event): weighted among the events allowed on this floor, whose
-## requirement holds and that aren't in `placed`; -1 when none is left.
+## requirement holds and that aren't in `placed`; -1 when none is left. v0.5.5 DS (S5): a Deep-only event is allowed
+## only on a Deep floor, and there the draw takes one first while one is left (so every Deep floor has one).
 static func draw_event(w: World, placed: PackedInt32Array) -> int:
+	var deep := Routes.is_deep(w)
 	var weights := PackedInt32Array()
+	var deep_weights := PackedInt32Array()
+	var any_deep := false
 	for e in w.ev.events.size():
 		var t := w.ev.events[e]
 		var ok := t.min_floor <= w.floor_index and not placed.has(e) and needs_met(w, t.requires)
+		ok = ok and (deep or not t.deep_only)
 		weights.append(t.weight if ok else 0)
-	return Offers.pick(w.ev.rng, weights)
+		deep_weights.append(t.weight if ok and t.deep_only else 0)
+		any_deep = any_deep or (ok and t.deep_only and t.weight > 0)
+	return Offers.pick(w.ev.rng, deep_weights if any_deep else weights)
 
 
 static func needs_met(w: World, need: int) -> bool:
@@ -204,7 +213,7 @@ static func roll(w: World, k: int) -> void:
 		w.ev.roll_card[k * MAX_CHOICES + c] = code
 		var curse := t.curse[c]
 		if curse == CURSE_RANDOM:
-			curse = Curses.roll(w, cursed)
+			curse = Curses.roll(w, cursed, Curses.Pool.PLAIN)  # v0.6.0 CU: an event's price is a plain curse
 		elif curse >= 0 and Curses.owned(w, curse):
 			curse = CURSE_NONE  # the panel shows the choice blocked (curse_block)
 		if curse >= 0:
@@ -437,6 +446,7 @@ static func _ambush(w: World, k: int, n: int) -> void:
 		w.actors.hp[i] = hp
 		w.actors.max_hp[i] = hp
 		w.actors.power[i] = t.damage_permille(tier)  # v0.4.0 SC: the tier's damage, like a spawn
+		CatchUp.on_enemy(w, i)  # v0.5.5 DS (D4): the floor's hidden catch-up, like a spawn
 		Curses.make_elite(w, i)
 		s.ambush_ids.append(id)
 
@@ -528,3 +538,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_int(w.threat_peak)
 	h.add_int(w.deep_threat)
 	w.ev.hash_into(h)
+	if w.cs.touched():  # v0.6.0 CU: the trade-off curses' state and core theft, once touched
+		w.cs.hash_into(h)
+	if w.cores.touched():
+		w.cores.hash_into(h)

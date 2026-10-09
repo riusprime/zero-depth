@@ -90,6 +90,12 @@ These don't use the prefix above. Each one is a 2D image, 1024 × 1024 px, squar
 | `mesa_chunk` | Red Canyon | cover | 1.5 × 1.5 × 1.4 | a layered sandstone rock block with horizontal strata, flat top | requested |
 | `dry_shrub` | Red Canyon | decoration | 0.5 × 0.5 × 0.4 | a small dry thorny desert shrub, low-poly | requested |
 
+## Set pieces (owner's own, sent unrequested)
+
+| id | role | size in game (W×D×H m) | what it is | status |
+|---|---|---|---|---|
+| `gamble_shrine` | the gamble shrine's body (`GambleShrineView`) | 1.58 × 1.12 × 1.7 | the owner's own model: a ruined slot-machine shrine under a magenta crystal, with a pole, a barrel and stone blocks at its base (uploaded as `assets/models/gamble-shrine.glb`; the raw upload is now `unprocessed_images/kit/gamble_shrine.glb`) | delivered (v0.6.0 Step SR commit) |
+
 ## Delivery
 
 `scripts/assets/kit_prep.py` turns each upload into the game's copy:

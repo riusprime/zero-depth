@@ -55,6 +55,9 @@ func test_dev_panel_grants_a_pair_and_storm_bombs_evolve() -> void:
 	var drawn := false
 	for k in 1800:
 		await e.frames(1)
+		if k % 15 == 0:  # v0.6.0 MX2: Bomb Lobber lobs on every 4th attack (left mouse swings)
+			await e.mouse_button(MOUSE_BUTTON_LEFT, true)
+			await e.mouse_button(MOUSE_BUTTON_LEFT, false)
 		for ev in w.events_since(seq):
 			storm = storm or (ev.kind == SimEvent.Kind.DAMAGE and ev.effect_id == &"storm_bombs")
 		seq = w.last_event_seq()

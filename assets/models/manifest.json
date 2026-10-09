@@ -94,6 +94,11 @@
       "id": "wall_pillar",
       "path": "assets/models/kit/wall_pillar.glb",
       "sha256": "974a27a26302411bf6f7cc087adb19e94fbf35b49f64be4045fceee936948b2e"
+    },
+    {
+      "id": "gamble_shrine",
+      "path": "assets/models/kit/gamble_shrine.glb",
+      "sha256": "de311867124089b3b2e56c6fea0aabfe7e6d3ad7a3d37a7a53c84b590cf0d663"
     }
   ],
   "textures": [

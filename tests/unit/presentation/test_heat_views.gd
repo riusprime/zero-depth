@@ -107,7 +107,9 @@ func test_the_straight_bar_places_its_ticks_from_the_sim_table() -> void:
 	for k: Array in m.marks():
 		var want := bar.position.x + bar.size.x * float(k[0]) / mx
 		assert_almost_eq(m.x_of(float(k[0])), want, 0.01, "%s at its sim threshold" % k[1])
-	assert_almost_eq(m.x_of(float(s["hot"])), bar.size.x * 0.4, 0.01, "Hot at 40 of 100")
+	assert_almost_eq(
+		m.x_of(float(s["hot"])), bar.position.x + bar.size.x * 0.4, 0.01, "Hot at 40 of 100"
+	)
 	assert_almost_eq(m.x_of(mx), bar.end.x, 0.01, "the overheat point is the bar's end")
 	assert_eq(
 		m.find_children("*", "", true, false).size(),
@@ -135,12 +137,15 @@ func test_the_visor_and_blade_heat_up_without_changing_a_shader() -> void:
 	assert_eq(avatar.visor_color(), cyan, "cool: the visor keeps its cyan")
 	assert_eq(kit.hue(), kit.color, "and the blade its colour")
 	_set_heat(w, 60)
+	kit.sync(r)  # v0.5.5 LK (A2): the blade reads its heat tier itself
 	fx.sync(r)
 	var hot := avatar.visor_color()
 	assert_gt(hot.r, cyan.r + 0.3, "Hot: the visor turns toward orange")
 	assert_lt(hot.b, cyan.b, "and away from cyan")
 	assert_gt(kit.hue().r, kit.color.r + 0.3, "so does the blade")
+	assert_eq(kit.hue(), HeatLooks.HOT, "the blade is the meter's Hot orange (v0.5.5 LK, A2)")
 	_set_heat(w, 99)
+	kit.sync(r)
 	fx.sync(r)
 	var white := avatar.visor_color()
 	assert_gt(white.g + white.b, hot.g + hot.b, "near the overheat point it goes white-hot")

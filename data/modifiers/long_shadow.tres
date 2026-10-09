@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 8
+stage = 4
+form = 8
+hook_trigger = 4
+hook_damage_permille = 800
+hook_effect = &"long_shadow"
+hook_delay_seconds = 0.15
+
+[resource]
+script = ExtResource("1_mod")
+family = &"dash"
+rarity = 1
+target = PackedStringArray("dash")
+stage = 4
+ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
+id = &"long_shadow"

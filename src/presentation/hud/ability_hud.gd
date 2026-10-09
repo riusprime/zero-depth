@@ -47,7 +47,7 @@ func sync(reader: WorldReader) -> void:
 		var a: Dictionary = owned[k]
 		var key := ""
 		if not a["auto"]:
-			key = KitHud.key_text(_action_of(int(a["kind"])))
+			key = InputLabels.short_text(KitHud.key_spec(_action_of(int(a["kind"]))))
 		var fill := 1.0 - clampf(float(a["cooldown"]) / float(a["cooldown_total"]), 0.0, 1.0)
 		var secs := float(a["cooldown"]) / SimTick.TICKS_PER_SECOND
 		s.show_ability(a["id"], int(a["level"]), fill, a["ready"], key, int(a["charges"]), secs)

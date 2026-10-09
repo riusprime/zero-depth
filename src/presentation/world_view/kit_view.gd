@@ -52,9 +52,10 @@ var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
 var width_scale := 1.0
 var trail_count := 6
-## Overclock heat (v0.3.0 L18; HeatVisuals): the blade leans this far (0..1) toward this heat colour.
-var heat_color := Color.WHITE
-var heat_amount := 0.0
+## Overclock heat's tier (HeatLooks.TIER_*), read from the sim each sync: v0.5.5 LK (owner A2) the blade and its
+## trail take the heat meter's tier colour (HeatLooks.attack_color): their own below Hot, orange at Hot, red at
+## Overclock.
+var heat_tier := HeatLooks.TIER_COOL
 
 var _pivot := Node3D.new()
 var _core := MeshInstance3D.new()
@@ -115,24 +116,25 @@ func _init() -> void:
 	_apply_look()
 
 
-## Overclock heat: leans the blade's light toward `c` by `amount` (0 = its own colour). Only material parameters
-## change (never the shader).
-func set_heat_tint(c: Color, amount: float) -> void:
-	if c == heat_color and is_equal_approx(amount, heat_amount):
+## Overclock heat (v0.5.5 LK, A2): the blade and its trail take the tier's colour (HeatLooks.attack_color). Only
+## material parameters change (never the shader).
+func set_heat_tier(tier: int) -> void:
+	if tier == heat_tier:
 		return
-	heat_color = c
-	heat_amount = clampf(amount, 0.0, 1.0)
+	heat_tier = tier
 	_apply_colors()
 
 
-## The blade's light as drawn: its colour, leaned toward the heat colour.
+## The blade's light as drawn: its own colour below Hot, the heat meter's tier colour from Hot up.
 func hue() -> Color:
-	return color.lerp(heat_color, heat_amount)
+	return AttackView.edge_color(color, heat_tier)
 
 
 func _apply_colors() -> void:
 	var c := hue()
-	_core_mat.emission = c.lightened(0.75 * (1.0 - 0.5 * heat_amount))
+	# A hot blade whitens less at its core, so its orange or red still reads.
+	var hot := heat_tier != HeatLooks.TIER_COOL
+	_core_mat.emission = c.lightened(0.3 if hot else 0.75)
 	_glow_mat.albedo_color = Color(c.lightened(0.2), _glow_mat.albedo_color.a)
 
 
@@ -195,6 +197,7 @@ func blade_energy() -> float:
 
 
 func sync(reader: WorldReader) -> void:
+	set_heat_tier(HeatLooks.tier_of(reader.heat_state()))
 	var shape := reader.swing_shape()
 	if shape != _shape:
 		set_shape(shape)

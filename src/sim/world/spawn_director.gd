@@ -14,8 +14,9 @@ extends RefCounted
 ##   that), each in the anchor's room, clear of walls and at least min_distance_m from the player;
 ## - v0.5.0 EV curses: Swarm Call adds to every pack's size (still under the cap), Marked Hunt may raise a member to
 ##   an elite (its tier HP x2); a Wandering Drone defence runs the interval clock twice as fast;
+## - v0.5.5 DS (S5): on a Deep floor the first pack in each room brings an elite (deep_elite);
 ## - each arrives with its max HP and damage scaled by the tier (SpawnTable; the floor scaling is already in the
-##   compiled enemy tables, RunState.scale_enemies).
+##   compiled enemy tables, RunState.scale_enemies), then (v0.5.5 DS, D4) the floor's hidden catch-up (CatchUp).
 ## With no anchor far enough, that pack is skipped and the interval starts again.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
@@ -37,12 +38,12 @@ static func advance(w: World) -> void:
 	if w.spawn_cd > 0:
 		return
 	# v0.4.0 TU: the cap and the interval follow the floor's difficulty curve (SpawnTable.cap_now, interval_now).
-	# v0.4.0 AB: inside the Overrun room the cap is x1.5 and the interval / 1.5, on top of the tier's (Overrun).
+	# v0.5.5 AR: no Overrun multiplier any more: a sealed arena (the Overrun too) pauses this director (Arenas).
 	var ticks := w.run_ticks - 1
-	var room := Overrun.cap(w, t.cap_now(w.floor_index, ticks)) - WaveDirector.enemies_alive(w)
+	var room := t.cap_now(w.floor_index, ticks) - WaveDirector.enemies_alive(w)
 	if room <= 0:
 		return
-	w.spawn_cd = Overrun.interval(w, t.interval_now(ticks))
+	w.spawn_cd = t.interval_now(ticks)
 	_spawn_pack(w, t, ticks, room)
 
 
@@ -154,10 +155,28 @@ static func _spawn_pack(w: World, t: SpawnTable, ticks: int, room: int) -> void:
 	if t.pack_cap_now(ticks) > 0:  # v0.4.0 TU: the phase's largest pack
 		size = mini(size, t.pack_cap_now(ticks))
 	size += Curses.extra_enemies(w)  # v0.5.0 EV curse (Swarm Call): one more in every pack, under the cap
-	for q in pack_spots(w, anchor, mini(size, room)):
-		w.add_enemy(kind, q)
-		scale_arrival(w, w.actors.size() - 1, ticks)
-		Curses.maybe_elite(w, w.actors.size() - 1)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
+	var spots := pack_spots(w, anchor, mini(size, room))
+	for k in spots.size():
+		w.add_enemy(kind, spots[k])
+		var i := w.actors.size() - 1
+		scale_arrival(w, i, ticks)
+		if k == 0 and deep_elite(w, i, anchor):  # v0.5.5 DS (S5): a Deep room's elite
+			continue
+		Curses.maybe_elite(w, i)  # v0.5.0 EV curse (Marked Hunt): x2 on that HP
+
+
+## v0.5.5 DS (owner S5, "Deep floors must feel different"): on a Deep floor the first pack that arrives in each room
+## brings an elite (its first member; Curses.make_elite: the rules' HP bonus, the crown), so every combat room has
+## one. Pure: no stream is drawn, so a Deep floor's spawns stay where they were. Returns true when actor i became it.
+static func deep_elite(w: World, i: int, anchor: Vector2) -> bool:
+	if not Routes.is_deep(w) or w.floor_layout == null:
+		return false
+	var r := w.floor_layout.room_of(anchor)
+	if r < 0 or w.deep_elite_rooms.has(r):
+		return false
+	w.deep_elite_rooms.append(r)
+	Curses.make_elite(w, i)
+	return true
 
 
 ## An enemy arriving now (actor i, just added): max HP and damage scaled by the danger tier (SpawnTable; the floor
@@ -173,3 +192,4 @@ static func scale_arrival(w: World, i: int, ticks: int) -> void:
 	w.actors.max_hp[i] = hp
 	w.actors.power[i] = t.power_now(ticks)
 	Overrun.on_spawn(w, i)  # v0.4.0 AB: an Overrun enemy (x1.5 on the tier's HP and power)
+	CatchUp.on_enemy(w, i)  # v0.5.5 DS (D4): the floor's hidden catch-up, HP x m and damage x sqrt(m)

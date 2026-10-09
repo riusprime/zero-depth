@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 0
+field = &"repeat_delay_seconds"
+value = 0.1
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 2
+field = &"repeat_damage_permille"
+value = 500.0
+
+[resource]
+script = ExtResource("1_mod")
+family = &"time"
+target = PackedStringArray("weapon", "melee")
+stage = 1
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+id = &"twin_arc"

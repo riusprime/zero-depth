@@ -9,6 +9,9 @@ extends RefCounted
 ##   first, one a tick, and heals heal_orb_heal_permille of max HP (never past it), with a HEAL event (effect
 ##   heal_orb; amount the heal asked for, amount_applied what it gave). An orb at full HP stays on the floor.
 ## Orbs never expire on their own: the floor ends with them.
+## v0.5.5 EC (owner D9, "Too common, we should add them as a card"): the drop chance is the reward table's base
+## (0 in the shipped data) plus the Lifesprout stat card's (Stats.heal_orb_chance): no card, no orbs. The loot
+## stream is drawn only when the chance is above 0.
 
 const MAX_ON_FLOOR := 16
 const EFFECT := &"heal_orb"
@@ -18,11 +21,12 @@ const EFFECT := &"heal_orb"
 static func on_kill(w: World, i: int) -> void:
 	var t := w.reward_table
 	var kind := w.actors.kinds[i]
-	if t == null or t.heal_orb_chance_permille <= 0 or BossAi.is_boss_kind(kind):
+	if t == null or BossAi.is_boss_kind(kind) or not EnemyAi.is_enemy_kind(kind):
 		return
-	if not EnemyAi.is_enemy_kind(kind):
+	var chance := mini(1000, t.heal_orb_chance_permille + Stats.heal_orb_chance(w))
+	if chance <= 0:
 		return
-	if not w.rng_loot.chance_permille(t.heal_orb_chance_permille):
+	if not w.rng_loot.chance_permille(chance):
 		return
 	if w.orbs.size() >= MAX_ON_FLOOR:
 		w.orbs.remove_at(0)

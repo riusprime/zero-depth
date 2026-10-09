@@ -27,6 +27,21 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 	w.reward_table.altar_card_weights = PackedInt32Array([0, 1, 1000])
 	w.reward_table.chest_card_weights = PackedInt32Array([0, 1, 1000])
 	var offers := {}
+	# TEST HELPER (labelled): v0.5.5 AR locks the rewards in sealed arenas until their waves are cleared (that is
+	# tests/e2e/test_e2e_arenas.gd); this test is about the cards, so the floor's arenas start cleared.
+	w.arenas.cleared = w.floor_layout.arena_rooms.duplicate()
+	if Overrun.enabled(w):
+		w.arenas.cleared.append(w.floor_layout.overrun_room)
+	# TEST HELPER (labelled): with the arenas' rewards placed first (v0.5.5 AR) this floor's few mod cards no longer
+	# happen to hold a pair; the items that belong to no combo are held already, so the cards draw from combo items.
+	var paired := PackedInt32Array()
+	for t in w.combo_tables:
+		paired.append_array([t.item_a, t.item_b])
+	var held := PackedInt32Array()
+	for k in w.item_tables.size():
+		if not paired.has(k):
+			held.append(k)
+	w.set_items_owned(held)
 	var left := Array(w.rewards.ids)
 	while not left.is_empty() and not w.player_dead():
 		var id: int = _nearest(w, left)
@@ -45,6 +60,15 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 		for k in step[1]:
 			await _press(e, JOY_BUTTON_DPAD_RIGHT)
 		await _press(e, JOY_BUTTON_A)
+		if BuildSlots.swapping(w):  # v0.6.0 MX2: the held items fill the six slots: swap out one not of the pair
+			await e.frames(2)
+			var t: ComboTable = w.combo_tables[plan[0]]
+			var slot := 0
+			while w.mod_slots[slot] == t.item_a or w.mod_slots[slot] == t.item_b:
+				slot += 1
+			for n in slot:
+				await _press(e, JOY_BUTTON_DPAD_RIGHT)
+			await _press(e, JOY_BUTTON_A)
 		assert_eq(w.choosing, -1, "took a card")
 	assert_false(w.player_dead(), "survived the walks")
 	var combo: int = plan[0]

@@ -6,6 +6,8 @@ extends RefCounted
 ## A run's build enables one of the two (PlayerBuild, L15).
 ## Blink teleports the way you're moving, through a wall when the far side is within range. Runs in tick phase 4;
 ## numbers from PlayerTable.
+## v0.6.0 MX1: this is the weapons' driver (the combo's timing, the shot period); the swing and the shot themselves
+## launch from the build's compiled specs (Modifiers, Attacks.launch).
 
 const PRIMARY_SLOT := 0
 const UTILITY_SLOT := 1
@@ -25,7 +27,8 @@ static func advance_utility(w: World) -> void:
 		or not Abilities.blink_ready(w)
 		or w.is_dashing()
 		or PlayerSkill.busy(w)
-	):
+		or Curses.stunned(w)
+	):  # v0.6.0 CU: Brittle
 		return
 	w.input_buffer[UTILITY_SLOT] = 0
 	w.blink_from = w.player_pos()
@@ -34,6 +37,7 @@ static func advance_utility(w: World) -> void:
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], Abilities.blink_iframes(w))
 	Abilities.on_blink(w)  # v0.4.0 BS: the cooldown or a charge, and the landing shock.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
+	Curses.on_ability_use(w)  # v0.6.0 CU: Blood Price
 
 
 ## The way a blink (or a dash) goes: the move direction, or the aim when standing still.
@@ -78,6 +82,7 @@ static func advance(w: World) -> void:
 	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
 	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
+	can_attack = can_attack and not Curses.stunned(w)  # v0.6.0 CU: Brittle
 	can_attack = can_attack and not PlayerSkill.busy(w)  # Kit (v0.3.5 K): a skill commits
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
@@ -142,19 +147,12 @@ static func swing_hits(w: World, i: int) -> bool:
 	return arc_hits(w, i, w.swing_angle)
 
 
-## True if the arc of combo step `step` (-1 = the current one) at `angle` touches actor i. The reach includes Long
-## Edge (ItemEffects.swing_reach_m), the same numbers WorldReader.swing_shape draws (EI-07).
+## True if the arc of combo step `step` (-1 = the current one) at `angle` touches actor i: its compiled spec's
+## (Attacks.arc_touches), the same numbers WorldReader.swing_shape draws (EI-07).
 static func arc_hits(w: World, i: int, angle: int, step: int = -1) -> bool:
-	var t := w.player
 	var s := step if step >= 0 else w.combo_step
-	return AttackShapes.arc_touches(
-		w.player_pos(),
-		t.radius_m,
-		angle,
-		t.combo[s].half_arc,
-		ItemEffects.swing_reach_m(w, s),
-		w.actors.pos(i),
-		w.actors.radius[i]
+	return Attacks.arc_touches(
+		w, Modifiers.step(w, s), w.player_pos(), angle, w.actors.pos(i), w.actors.radius[i]
 	)
 
 
@@ -170,67 +168,42 @@ static func lunge_offset(w: World) -> Vector2:
 
 
 static func _resolve_swing(w: World) -> void:
-	var s := current_step(w)
-	var base := PlayerBuild.melee_damage(w, s.damage)  # Builds: the Blade's damage factor (L16).
+	var spec := Modifiers.step(w, w.combo_step)
+	var base := PlayerBuild.melee_damage(w, spec.damage)  # Builds: the Blade's damage factor (L16).
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
 	dmg = Gamble.melee_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
+	dmg = Curses.swing_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' 4th hit
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
 	if landed:
-		w.add_freeze(s.hitstop_ticks)
+		w.add_freeze(spec.hitstop_ticks)
 	ItemEffects.after_swing(w, base, dmg)
 	Abilities.after_swing(w, landed)  # v0.4.0 BS: Combo Sword L5's finisher shockwave.
 	Engines.after_swing(w, landed)  # Engines: Slipstream.
+	var tip := w.player.radius_m + Attacks.arc_reach_m(w, spec)
+	ModifierAbilities.on_attack(w, w.player_pos() + Kin.dir(w.swing_angle) * tip)  # v0.6.0 MX2
 
 
-## Hits every enemy in the arc of combo step `step` (-1 = the current one) at `angle` for `dmg` (melee; Ember Edge
-## burns on a landed hit). Used by the swing and by the Twin Arc echo (with its own step). Returns true if any hit
-## landed.
+## Launches combo step `step`'s spec (-1 = the current one) at `angle` for `dmg` from where the player is (melee;
+## a spec that burns adds its burn on a landed hit). Used by the swing and by the Twin Arc echo (with its own step).
+## Returns true if any hit landed.
 static func swing_arc(
 	w: World, angle: int, dmg: int, root: int, effect_id: StringName, step: int = -1
 ) -> bool:
-	var a := w.actors
-	var landed := false
-	for i in range(1, a.size()):
-		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
-			continue
-		if not arc_hits(w, i, angle, step):
-			continue
-		var got := Damage.hit(
-			w,
-			i,
-			dmg,
-			a.ids[0],
-			a.ids[0],
-			root,
-			SimEvent.TAG_MELEE,
-			w.player_pos(),
-			a.pos(i),
-			effect_id
-		)
-		if got > 0:
-			landed = true
-			ItemEffects.on_melee_hit(w, i, root)
-	return landed
+	var s := step if step >= 0 else w.combo_step
+	var ctx := AttackContext.make(w.player_pos(), angle, dmg, root, SimEvent.TAG_MELEE, effect_id)
+	ctx.step = s
+	return Attacks.launch(w, Modifiers.step(w, s), ctx)
 
 
-## One shot: a bolt along the aim, or a Splinter fan (ItemEffects.shot_offsets); Ricochet Core adds bounces.
+## One shot: the bolt spec launched along the aim (a Splinter fan, Ricochet's bounces: its spec's pattern and
+## behaviour).
 static func _fire_bolt(w: World) -> void:
-	var t := w.player
-	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
+	var spec := Modifiers.bolt(w)
+	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
+	dmg = Curses.shot_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' every 4th shot
 	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
-	for off in Abilities.shot_offsets(w, ItemEffects.shot_offsets(w)):  # Pulse Gun L5: twin bolts
-		var dir := Kin.dir(w.aim_angle + off)
-		var muzzle := w.player_pos() + dir * (t.radius_m + t.bolt_radius_m + 0.05)
-		w.queue_projectile(
-			w.actors.ids[0],
-			ActorStore.TEAM_PLAYER,
-			muzzle,
-			dir * t.bolt_speed,
-			dmg,
-			t.bolt_radius_m,
-			t.bolt_life_ticks,
-			SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w),  # Hot, Pulse Gun L3
-			w.item_mods.bounces
-		)
+	var tags := SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w)  # Hot, Pulse Gun L3
+	Attacks.launch(w, spec, AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &""))
+	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

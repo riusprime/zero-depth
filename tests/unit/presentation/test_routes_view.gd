@@ -32,7 +32,7 @@ func _open(w: World) -> void:
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
 	w.actors.invuln[bi] = 0
-	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
 	CombatLab.idle(w, 2)
 
 
@@ -116,6 +116,13 @@ func test_the_floor_card_and_label_name_a_deep_floor() -> void:
 	assert_eq(
 		h.floor_card_text(), "%s %s" % [tr("HUD_FLOOR_CARD") % 2, tr("BIOME_RUINS")], "normal"
 	)
+	h.show_floor(2, "BIOME_RUINS", false, 16)  # v0.5.5 EC (Q-S4): the portal kept half the shards
+	assert_eq(
+		h.floor_card_text(),
+		"%s %s %s" % [tr("HUD_FLOOR_CARD") % 2, tr("BIOME_RUINS"), tr("HUD_SHARDS_HALVED") % 16],
+		"the arrival card says the shards were halved"
+	)
+	h.show_floor(2, "BIOME_RUINS")
 	var w := _world()
 	w.boss_flow.deep = true
 	w.floor_index = 2

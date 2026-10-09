@@ -1,6 +1,6 @@
 extends GutTest
 ## Melee and shooting on separate buttons, through real input (PLAN v0.1.0 Step 7b; owner, 2026-10-07):
-## left click / left trigger swings; right click / right trigger held shoots. Since v0.3.0 L15 a run's build has
+## left click / right trigger swings; right click / right trigger held shoots. Since v0.3.0 L15 a run's build has
 ## one of the two: Blade swings and its shoot input does nothing; Gun shoots and its melee input does nothing.
 
 
@@ -52,10 +52,10 @@ func test_triggers_follow_the_build() -> void:
 	var e := E2e.new(self)
 	await e.boot()
 	await e.start_from_menu(&"blade")
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	await e.frames(2)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
-	assert_gt(e.world().swing_t, 0, "the left trigger swings")
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
+	assert_gt(e.world().swing_t, 0, "the right trigger swings")
 	await e.frames(30)
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	await e.frames(20)

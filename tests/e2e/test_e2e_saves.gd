@@ -27,7 +27,7 @@ func _focused(main: Main) -> Control:
 func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, target))
 	nav.flood(target)
 	for k in LEG_FRAMES:
 		if done.call() or w.player_dead():
@@ -91,7 +91,7 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 	assert_eq(
 		_focused(main).name, &"Continue", "Continue shows, focused first, while a save exists"
 	)
-	assert_eq(tr("UI_CONTINUE"), "CONTINUE")
+	assert_eq(tr("UI_CONTINUE"), "Continue")  # v0.5.5 A5: plain sentence case
 	# Enter on Continue: read the resumed world before its first tick.
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)

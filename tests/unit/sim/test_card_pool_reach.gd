@@ -4,7 +4,7 @@ extends GutTest
 ## every card in it is offered by some altar or chest from a reachable state (no dead cards). The frequency table
 ## is printed here and by scripts/checks/card_pool.gd.
 
-const SEEDS := 150
+const SEEDS := 300
 
 var _repo: ContentRepository
 
@@ -24,7 +24,10 @@ func test_each_builds_pool_holds_40_to_50_distinct_cards() -> void:
 			)
 		)
 		assert_between(
-			n, CardPoolSurvey.POOL_MIN, CardPoolSurvey.POOL_MAX, "%s: 40-50 cards" % build
+			n,
+			CardPoolSurvey.POOL_MIN,
+			CardPoolSurvey.POOL_MAX,
+			"%s: %d-%d cards" % [build, CardPoolSurvey.POOL_MIN, CardPoolSurvey.POOL_MAX]
 		)
 
 

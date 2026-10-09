@@ -98,7 +98,7 @@ func test_round_trip_on_a_deep_floor_and_after_the_deep_gate() -> void:
 	CombatLab.idle(w, 4)
 	var bi := w.actors.index_of(w.boss_id)
 	w.actors.invuln[bi] = 0
-	Damage.hit(w, bi, 999999, 1, 1, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
+	Damage.hit(w, bi, 999999, 0, 0, 1, 0, w.actors.pos(bi), w.actors.pos(bi))
 	CombatLab.idle(w, 2)
 	w.actors.set_pos(0, Routes.deep_front(f).get_center())
 	var n := Kin.dir(f.deep_portal_angle)
@@ -146,6 +146,40 @@ func test_round_trip_in_a_boss_fight() -> void:
 		)
 		assert_gt(w.walls.size(), _rich_floor(500 + f, f).walls.size(), "the door sealed")
 		_round_trip(w, _rich_floor(500 + f, f), "boss floor %d" % f)
+
+
+## v0.6.0 CU: trade-off curses held (Brittle's stun running, Heavy Hands' shot count), an elite carrying a core with
+## its steal window open, a boss with its legendary core, and a stolen core lying on the floor.
+func test_round_trip_with_trade_off_curses_and_core_theft() -> void:
+	var w := _rich_floor(88, 1)
+	SaveLab.run(w, FightBot.new(5), 120)
+	for id in [&"brittle", &"rooted", &"heavy_hands", &"glass_heart", &"marked_hunt"]:
+		assert_true(Curses.add(w, EventLab.curse_index(w, id)), "took %s" % id)
+	var p := w.player_pos()
+	for k in 2:
+		var eid := w.add_enemy(K.CHARGER, p + Vector2(3.0 + k * 2.0, 1.0))
+		var i := w.actors.index_of(eid)
+		Curses.make_elite(w, i)
+		w.actors.invuln[i] = 0
+		var hit := w.actors.max_hp[i] * 400 / 1000
+		Damage.hit(
+			w, i, hit, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, p, w.actors.pos(i)
+		)
+	var stolen := w.cores.ids[0]
+	var si := w.actors.index_of(stolen)
+	Damage.hit(
+		w, si, 100000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, p, w.actors.pos(si)
+	)
+	w.step(InputFrame.new())
+	w.spawn_boss(0, p + Vector2(-6.0, 0.0))
+	w.actors.invuln[0] = 0
+	Damage.hit(w, 0, 3, 999999, 999999, w.take_root(), 0, p + Vector2(1, 0), p)
+	w.cs.shots = 3  # test setup: Heavy Hands one shot from its heavy one
+	assert_gt(w.cs.stun_t + w.cs.dodges, 0, "Brittle stunned you (or Rooted dodged)")
+	assert_gt(w.cores.drop_ids.size(), 0, "a stolen core lies on the floor")
+	assert_gt(w.cores.size(), 1, "an elite and the boss carry cores")
+	assert_true(w.cores.window_t.has(w.ev.rules.core_window_ticks - 1), "a window is open")
+	_round_trip(w, _rich_floor(88, 1), "curses and cores")
 
 
 ## Horde enemies (v0.4.0 EN) and Mine Layer mines mid fuse.

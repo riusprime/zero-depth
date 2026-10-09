@@ -53,6 +53,11 @@ breaks. The contrast figures below were computed from colours sampled out of the
 - **Health bars** float above actors (white for the player, red for enemies), as in the image, and also show in
   the HUD for the player. Bars never overlap the actor's body.
 
+**Sealed arenas (v0.5.5 AR).** While an arena is sealed the rest of the floor goes dark (owner X1: "Others go dark
+when sealed") as a separate layer (`ArenaViews`: an unshaded dark veil box over every other room, faded in and out);
+the biome's lighting mood (sun, ambient, fog, SSAO, the kit's lights) is never written, so v0.5.9's look comes back
+unchanged at the clear. The minimap keeps showing the whole layout and marks each arena (amber) once discovered.
+
 ## 4. Telegraphs
 
 - Every enemy attack shows its area on the ground for its full windup. The windup is at least
@@ -64,6 +69,36 @@ breaks. The contrast figures below were computed from colours sampled out of the
   attack shape.
 - **No damage without a readable cause.** Every `DAMAGE` event against the player maps to a telegraph, a visible
   projectile, a visible field or a status icon. v0.1.0's exit gate tests this from the event log.
+
+- **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
+  [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
+  and composes the look by layer (form → what draws it, size → the blade's arc and reach and the dart's length,
+  elements → the core colour, behaviour → trail and brightness, heat → the edge via `HeatLooks.attack_color`). No
+  view asks which cards are held for an attack's look. MX1 keeps the v0.5 looks exactly
+  (`tests/unit/presentation/test_attack_view.gd`); the 8-form / 5-element art layers are MX stage 3.
+- **MX3: the form and element layers** (`src/presentation/world_view/attack_forms/`). `AttackFormLooks.compose(spec,
+  heat tier)` turns a spec into a look: the form picks the pools, size / reach / count / spread / directions the
+  meshes' scale, number and layout (a halo of 12 shots is 12 darts evenly round); the first element sets the core
+  colour and particles (storm white-blue crackle, ember orange sparks, frost pale shards, venom green drip, void violet
+  smear, bleed MX1's tint), a second element the rim; the heat edge is `HeatLooks.attack_color` over the rim (values
+  untouched); behaviour cues (pierce a streak, bounce a flash, home a curved trail, return a tether); a damage
+  multiplier (`damage_mul_permille`) thickens and brightens, a crit adds a white-hot flash. `AttackFormView` draws
+  them in MultiMesh pools per form layer and per particle kind, additive light (lit matter for the lob's bomb), timed
+  by sim ticks. **Ground marks never take a hostile hue:** a zone's patch, a lob's landing circle and the flat fill of
+  a ring or burst pass through `AttackFormLooks.ground_safe`, which leans a colour in the telegraphs' red-orange /
+  red / magenta band toward the player's cool core; only light that rises off the floor carries the heat edge.
+  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and dart.
+- **The ability modifiers' attacks** (v0.6.0 MX2) draw through the existing ability views from sim numbers: bombs and
+  their ground circles (`AbilityVisuals`), the drones and orbit blades, the patches by kind (`ElementVisuals`: fire
+  orange, Napalm red, Arc Field's shock field pale blue, a hook's zone pale white) and each growing ring (the RING
+  form) as a frost torus at its radius now. Their per-form art is MX stage 3.
+- **MX3 takes over the spec forms of MX2's runners** in the game (`WorldViewRoot` sets `forms_drawn` on
+  `ElementVisuals` and `AbilityVisuals`): `AttackFormView` reads each live ring (`WorldReader.rings_live`: drawn at the
+  runner's radius now, so the drawn front is the hit front), each patch that names a spec (`fire_spec_keys`), each bomb
+  (`bomb_spec_keys`: the shell on its arc over its blast circle, then its landing), the orbit blades' ORBITER spec
+  (an element glow and trail over the steel blades, which `AbilityVisuals` keeps) and every player projectile in its
+  own spec's look (`projectile_spec_key`, `attack_spec_at`). What names no spec (Napalm Drone's patches, the drones)
+  stays with the older views.
 
 ## 5. Occlusion cutaway
 
@@ -104,6 +139,11 @@ breaks. The contrast figures below were computed from colours sampled out of the
   `emission_enabled` or another feature flag at runtime. Enemy models are not MultiMesh instances: each kind's model
   animates its own parts, so a crowd stays one node tree per enemy (measured in `docs/roadmap/v0.4.0/evidence/
   HORDES.md`).
+- **Attack forms (v0.6.0 MX3):** at most `AttackFormView.MAX_ATTACK_MESHES` (1,024) form meshes and
+  `MAX_PARTICLES` (1,200, inside the 2,000 below) attack particles a frame, the live attacks first, then the newest
+  effects; every pool has a fixed size (384 per layer, 600 per particle kind) and at most 256 effects live. Options >
+  Display > **Effects density** (low / medium / high, `ViewPrefs.effects_density`; default high) scales the particles
+  (× 0.25 / 0.55 / 1) and the mesh cap (384 / 640 / 1,024); a pattern's own copies are never thinned below the cap.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;
@@ -134,6 +174,11 @@ the mode's colour vision on the tokens and asserts:
 
 ## 9. UI
 
+- **The build and the Swap** (v0.6.0 MX2): `BuildHud` (its own node) shows the weapon, the utility pick and six
+  modifier slot pips in the card family's frame colour (`CardFrames`) with the level on an ability modifier;
+  `SwapPanel` (its own node, over the pick panel and the shop) shows the incoming card and the six held modifiers
+  while `WorldReader.swapping()`; its answer goes out as input (`InputFrame.PICK_SWAP_BASE + n`, `PICK_SWAP_SKIP`):
+  keyboard 1–6 / arrows and Enter, Esc to skip; a mouse click; pad d-pad, A, B.
 - **Theme tokens** come from `ThemePalette` (adapted from Deathventory): colours, font sizes, a spacing scale and
   corner radii. No view hard-codes a colour or size.
 - **Layout:** the UI sits on a `CanvasLayer`. The base resolution is 1920×1080 with `canvas_items` stretch and
@@ -146,10 +191,25 @@ the mode's colour vision on the tokens and asserts:
 - **HUD and card look** (v0.3.5 F15, F16; G2 picks pending, defaults ship): the HUD is calm, plain type, thin
   bars, one hairline per group, no glow, echo or glitch (`HudStyle`, one constant: `DEFAULT`); every card (pick,
   item, combo, gamble) is a flat square dark panel with a thin outline, no rounded corners, shadow or coloured side
-  bar, with rarity as a small faceted mark (`CardStyle`, one constant: `DEFAULT`). Overclock heat is a thin straight
+  bar, with rarity as a small faceted mark (`CardStyle`, one constant: `DEFAULT`). Since v0.5.5 A4 the **pick
+  cards** (altar, chest, shop stock) wear the owner's crystal frames instead (`CrystalCard`, `CardFrames`: the
+  frame colour is the card's family, epic and cursed offers override it; rarity reads as the rarity line, the gem
+  and a glow; text steps down in size so it never overflows the panel, checked in en and es by
+  `test_card_frames.gd`); the item, combo, gamble and event cards keep `CardStyle` until the A5 pick. Overclock heat is a thin straight
   bar whose ticks come from the sim's heat table (F2). The minimap is oriented like the screen: up, left and right on
   the map are up, left and right through the iso camera (`MinimapView.turn`, checked against `IsoRig`'s projection
   in `test_minimap_orientation.gd`, F14).
+- **v0.5.5 A5 restyle (owner pick, 2026-10-08):** the in-game HUD is **B "Ember stone"** (`HudStyle.DEFAULT =
+  EMBER`): chipped dark stone slabs (`HudStyle.draw_plate`), a warm ember line and glow under the HP, top, heat and
+  boss slabs, warm type, a red HUD HP bar, danger marks drawn as ember teeth. The heat meter keeps its straight bar,
+  ticks and `HeatLooks` colours, set in a slab. The **corner minimap has no background** (owner: "we should remove
+  the black background"): it floats over the game, every line over a dark halo, every room over a faint dark wash,
+  four ember corner ticks mark its window (`MinimapStyle.CORNER_PANEL = false`); the held full map keeps its panel.
+  Every full-screen menu (main menu, pause, Options, credits, the run recap and death screen, the build picker's Back)
+  is **C "Cold glass"** (`MenuStyle`, one Theme set on each menu root): the game blurred and dimmed behind
+  (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
+  thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
+  build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

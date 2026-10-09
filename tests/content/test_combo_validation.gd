@@ -21,6 +21,8 @@ func test_every_item_has_tags_from_the_closed_set() -> void:
 func test_each_engine_has_three_or_four_members() -> void:
 	var count := {}
 	for def: ItemDefinition in _repo().all_of(&"items"):
+		if def.kind == ItemDefinition.Kind.MODIFIER:
+			continue  # v0.6.0 MX4: the M-list's cards feed the engines too; the rule is the v0.3.0 items'
 		for t in def.tags:
 			count[t] = count.get(t, 0) + 1
 	for engine in ["fire", "shock", "frost", "bleed", "guard"]:
@@ -44,7 +46,7 @@ func test_bad_engine_items_are_rejected() -> void:
 	c.shock_threshold = 1
 	assert_has(_codes(c.validate()), &"range")
 	var b := (load("res://data/items/barbed_bolts.tres") as ItemDefinition).duplicate(true)
-	b.stack_every = 0
+	b.bleed_max_stacks = 0  # v0.6.0 MX1: its every-N bolt feed moved into its modifier
 	assert_has(_codes(b.validate()), &"not_positive")
 	var g := (load("res://data/items/glacial_edge.tres") as ItemDefinition).duplicate(true)
 	g.freeze_seconds = 0.001

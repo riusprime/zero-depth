@@ -21,6 +21,10 @@ const PICK_SHOP_REROLL := 21
 ## v0.5.0 EV: while the shop is open and a curse is held, pay to lift the latest curse (Shop.cleanse).
 const PICK_SHOP_CLEANSE := 22
 const PICK_SHOP_SELL := 100
+## v0.6.0 MX2 (BuildSlots): while a swap choice is open (a modifier offered with the six slots full), replace held
+## modifier slot n (PICK_SWAP_BASE + n, n = 0..5), or skip it.
+const PICK_SWAP_BASE := 30
+const PICK_SWAP_SKIP := 39
 
 ## World-plane move, -127..127 per axis, deadzone applied.
 var move := Vector2i.ZERO

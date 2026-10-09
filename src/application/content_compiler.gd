@@ -395,8 +395,10 @@ static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
 
 
-## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name.
-static func compile_item(def: ItemDefinition) -> ItemTable:
+## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name. v0.6.0 MX1: with
+## `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation error and is
+## left out here); without it the item has none (offer and pool tests that never fight).
+static func compile_item(def: ItemDefinition, repo: ContentRepository = null) -> ItemTable:
 	var t := ItemTable.new()
 	t.id = def.id
 	t.kind = {
@@ -431,6 +433,7 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 		ItemDefinition.Kind.OVERCLOCKED_DRONE: ItemTable.Kind.OVERCLOCKED_DRONE,
 		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
 		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
+		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -440,23 +443,16 @@ static func compile_item(def: ItemDefinition) -> ItemTable:
 	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
 	t.requires_weapon = weapons.get(def.requires_weapon, 0)
 	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
-	t.reach_bonus_permille = def.reach_bonus_permille
-	t.echo_delay_ticks = SimTick.seconds_to_ticks(def.echo_delay_seconds)
-	t.echo_damage_permille = def.echo_damage_permille
+	if repo != null:
+		for id in def.modifiers:
+			var md: ModifierDefinition = repo.get_def(&"modifiers", id)
+			if md != null:
+				t.modifiers.append(ModifierCompiler.compile_modifier(md))
 	t.burn_damage = def.burn_damage
 	t.burn_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.burn_period_seconds))
 	t.burn_duration_ticks = SimTick.seconds_to_ticks(def.burn_duration_seconds)
 	t.burn_max_stacks = def.burn_max_stacks
-	t.split_count = def.split_count
-	t.split_spread = degrees_to_units(def.split_spread_degrees)
-	t.split_damage_permille = def.split_damage_permille
-	t.fire_rate_bonus_permille = def.fire_rate_bonus_permille
-	t.bounces = def.bounces
 	t.dash_hit_damage = def.dash_hit_damage
-	t.overcharge_every = def.overcharge_every
-	t.overcharge_mult_permille = def.overcharge_mult_permille
-	t.shockwave_radius_m = def.shockwave_radius_m
-	t.shockwave_damage_permille = def.shockwave_damage_permille
 	_compile_item_v2(def, t)
 	return t
 
@@ -466,9 +462,6 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 	t.heal_per_kill = def.heal_per_kill
 	t.heal_cap = def.heal_cap
 	t.heal_window_ticks = SimTick.seconds_to_ticks(def.heal_window_seconds)
-	t.chain_every = def.chain_every
-	t.chain_range_m = def.chain_range_m
-	t.chain_damage = def.chain_damage
 	t.momentum_window_ticks = SimTick.seconds_to_ticks(def.momentum_window_seconds)
 	t.momentum_bonus_permille = def.momentum_bonus_permille
 	t.slow_permille = def.slow_permille if def.slow_permille > 0 else 1000
@@ -489,7 +482,6 @@ static func _compile_item_v2(def: ItemDefinition, t: ItemTable) -> void:
 static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.tags = def.tags.duplicate()
 	t.stacks_per_hit = def.stacks_per_hit
-	t.stack_every = def.stack_every
 	t.shock_threshold = def.shock_threshold
 	t.shock_ticks = SimTick.seconds_to_ticks(def.shock_seconds)
 	t.shock_damage = def.shock_damage
@@ -522,23 +514,16 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
 	t.heat_hot_threshold = def.heat_hot_threshold
 	t.meltdown_damage_permille = def.meltdown_damage_permille
-	# Ability mods (v0.5.0 CP).
-	t.bomblets = def.bomblets
-	t.bomblet_damage_permille = def.bomblet_damage_permille
-	t.bomblet_radius_permille = def.bomblet_radius_permille
-	t.bomblet_delay_ticks = SimTick.seconds_to_ticks(def.bomblet_delay_seconds)
-	t.drone_rate_per_heat_permille = def.drone_rate_per_heat_permille
-	t.afterimage_damage = def.afterimage_damage
-	t.afterimage_radius_m = def.afterimage_radius_m
-	t.afterimage_delay_ticks = SimTick.seconds_to_ticks(def.afterimage_delay_seconds)
+	ModifierCompiler.compile_item_extras(def, t)  # v0.6.0 MX4: Venom Core's poison, a heat card
 
 
-## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
-## World.set_item_tables.
+## Every item in a repository, compiled, in the order of item indices (ModifierCompiler.item_defs: the v0.5 items in
+## id order, then the v0.6.0 MX4 modifier cards in id order, so a save's item indices keep naming the same items).
+## Give it to the world with World.set_item_tables.
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
-	for def: ItemDefinition in repo.all_of(&"items"):
-		out.append(compile_item(def))
+	for def: ItemDefinition in ModifierCompiler.item_defs(repo):
+		out.append(compile_item(def, repo))
 	return out
 
 
@@ -705,6 +690,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.altars_max = def.altars_max
 	t.chests_min = def.chests_min
 	t.chests_max = def.chests_max
+	t.altars_cap = def.altars_cap  # v0.5.5 EC (S1)
 	t.chest_prices = def.chest_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
 	t.rare_weight_chest = def.rare_weight_chest
@@ -712,6 +698,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.offer_size = def.offer_size
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))
+	t.shard_permille = int(round(def.shard_scale * 1000.0))  # v0.5.5 EC (S4)
 	t.boss_shards = def.boss_shards
 	t.altar_card_weights = def.altar_card_weights.duplicate()  # v0.4.0 BS
 	t.chest_card_weights = def.chest_card_weights.duplicate()
@@ -767,6 +754,8 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.offer_size = def.offer_size
 	t.rarity_prices = def.rarity_prices.duplicate()
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
+	t.late_floor_permille = int(round(def.late_floor_price * 1000.0))  # v0.5.5 EC (S4)
+	t.max_buys = def.max_buys  # v0.5.5 EC (S3)
 	t.heal_permille = int(round(def.heal_share * 1000.0))
 	t.heal_price = def.heal_price
 	t.reroll_price = def.reroll_price
@@ -782,7 +771,7 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 ## or ability are left out (the validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
-	var items := repo.all_of(&"items")
+	var items := ModifierCompiler.item_defs(repo)  # v0.6.0 MX4: the item index order
 	for k in items.size():
 		index[(items[k] as ItemDefinition).id] = k
 	var abilities := {}  # v0.4.0 AB: ability combos name abilities (compile_abilities order: by id)
@@ -866,6 +855,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 		var item: ItemDefinition = repo.get_def(&"items", def.engine_item)
 		if item != null:
 			t.engine = compile_item(item)
+	ModifierCompiler.compile_ability_extras(t, def, repo)  # v0.6.0 MX2
 	return t
 
 
@@ -875,6 +865,8 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
+	var ld: LegendaryDefinition = repo.get_def(&"legendary", &"boss")  # v0.5.5 AR
+	var legend := int(round(ld.stat_multiplier * 1000.0)) if ld != null else 1600
 	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		var s := StatCardDefinition.STATS.find(def.stat)
 		if s < 0:
@@ -894,6 +886,9 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
 		t.limit_permille = int(round(def.limit * 1000.0))
+		# v0.5.5 AR (X1b): the legendary rarity, the epic numbers x the tier's stat multiplier.
+		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
+		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		out[s] = t
 	return out
 
@@ -908,6 +903,7 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.boss_hp_per_floor_permille = int(round(def.boss_hp_per_floor * 1000.0))
 	t.boss_damage_per_floor_permille = int(round(def.boss_damage_per_floor * 1000.0))
 	t.heal_permille = int(round(def.heal_between_floors * 1000.0))
+	t.shard_carry_permille = int(round(def.shard_carry * 1000.0))  # v0.5.5 EC (Q-S4)
 	t.deep_scale_permille = int(round(def.deep_scale * 1000.0))  # v0.5.0 RT
 	t.deep_extra_chests = def.deep_extra_chests
 	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
@@ -924,9 +920,26 @@ static func compile_overrun(def: OverrunDefinition) -> OverrunTable:
 	var t := OverrunTable.new()
 	t.hp_permille = int(round(def.hp_multiplier * 1000.0))
 	t.damage_permille = int(round(def.damage_multiplier * 1000.0))
-	t.spawn_permille = int(round(def.spawn_multiplier * 1000.0))
-	t.kills_to_clear = def.kills_to_clear
 	t.shard_permille = int(round(def.shard_multiplier * 1000.0))
+	t.waves_min = def.waves_min  # v0.5.5 AR (S8)
+	t.waves_max = def.waves_max
+	t.wave_sizes = def.wave_sizes.duplicate()
+	return t
+
+
+## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (CatchUpDefinition), or null without one.
+static func compile_catch_up(def: CatchUpDefinition) -> CatchUpTable:
+	if def == null:
+		return null
+	var t := CatchUpTable.new()
+	t.expected_permille = def.expected_power_permille.duplicate()
+	t.cap_permille = def.cap_permille.duplicate()
+	t.boss_expected_permille = def.boss_expected_power_permille.duplicate()
+	t.boss_cap_permille = def.boss_cap_permille.duplicate()
+	t.threat_cap_permille = def.threat_cap_bonus_permille
+	t.ability_level_permille = def.ability_level_permille
+	t.item_permille = def.item_permille
+	t.combo_permille = def.combo_permille
 	return t
 
 

@@ -114,7 +114,9 @@ func test_a_cursed_chest_card_is_marked_and_the_others_are_clean() -> void:
 	panel.sync(reader)
 	var curse := reader.choice_curse(0)
 	assert_gte(curse, 0)
-	assert_eq(panel.slot(0).curse_text(), CurseLook.line(panel, reader, curse))
+	# v0.6.0 CU: the card is the trade-off curse (its face the upside); the line under it is the drawback
+	assert_eq(panel.slot(0).curse_text(), CurseLook.down_line(panel, reader, curse))
+	assert_eq(panel.slot(0).card.desc_text(), CurseLook.up_sentence(panel, reader, curse))
 	for k in range(1, panel.card_count()):
 		assert_eq(panel.slot(k).curse_text(), "", "card %d is clean" % k)
 
@@ -146,7 +148,10 @@ func test_every_event_and_curse_string_is_in_both_languages() -> void:
 			keys.append(String(c.label_key))
 	for d: CurseDefinition in repo.all_of(&"curses"):
 		keys.append_array([String(d.name_key), String(d.desc_key)])
-	assert_eq(keys.size(), 8 * 2 + 12 + 6 * 2)
+		if d.is_trade_off():
+			keys.append(String(d.up_desc_key))  # v0.6.0 CU: the upside's sentence
+	# v0.5.5 DS: Whispering Deep and its two choices; v0.6.0 CU: 13 curses, 8 of them with an upside
+	assert_eq(keys.size(), 9 * 2 + 14 + 13 * 2 + 8)
 	for k in keys:
 		assert_true(rows.has(k), "%s is in strings.csv" % k)
 		if rows.has(k):

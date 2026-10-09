@@ -309,12 +309,16 @@ func test_walking_over_a_pickup_takes_it() -> void:
 func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var w := _world([], [])
 	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
-	var all := ItemPool.draw(w, 30)
-	assert_eq(all.size(), 24, "the v0.3.0 pool of 24")
+	var all := ItemPool.draw(w, 100)
+	assert_eq(
+		all.size(),
+		48,
+		"the v0.3.0 pool of 24 + the M-list's 24 usable here (v0.6.0 MX4: no heat, no ability, no legendary)"
+	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 24, "no repeats")
+	assert_eq(seen.size(), 48, "no repeats")
 	var v := _world([], [])
 	v.player.utility = PlayerTable.Utility.GUARD
 	var first := ItemPool.available(v)  # v0.5.0 CP: index 0 may be an ability mod, never drawn here
@@ -326,8 +330,8 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	for i in some:
 		assert_false(i in held)
 		v.add_pickup(i, Vector2(5, 5))
-	var rest := ItemPool.draw(v, 24)
-	assert_eq(rest.size(), 19, "24 - owned - 4 placed")
+	var rest := ItemPool.draw(v, 100)
+	assert_eq(rest.size(), 43, "48 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in held)
 

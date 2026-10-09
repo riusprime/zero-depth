@@ -92,6 +92,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
 		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
+		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -251,19 +252,26 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		arena,
 		run,
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
-		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine"))  # v0.3.0 L19: the gamble shrine.
+		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
+		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR: the sealed arenas
 	)
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
+	world.legendary_table = RunContentCompiler.compile_legendary(
+		repo.get_def(&"legendary", &"boss"), world.stat_tables, world.item_tables
+	)
 	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(world)
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
 		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
+	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
+	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
+	CatchUp.start_floor(world)
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
@@ -298,8 +306,14 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	ui.move_child(_hud, 0)
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
+	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.
 	_hud.sync(driver.reader)
-	_hud.show_floor(run.floor_index, String(biome.name_key), run.is_deep())  # v0.5.0 RT: "Floor 2 · Deep"
+	_hud.show_floor(
+		run.floor_index,
+		String(biome.name_key),
+		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
+		driver.reader.shards_left_behind() if resume.is_empty() else 0  # v0.5.5 EC (Q-S4)
+	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
 	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
@@ -411,6 +425,11 @@ func open_pause() -> void:
 	_pause.options_pressed.connect(open_pause_options)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
+	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
+	if not recap.is_empty():
+		_pause.show_run(
+			recap["floor"], recap["seconds"], recap["kills"], int(recap.get("shards", 0))
+		)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()
 		_pause.add_child(stats)

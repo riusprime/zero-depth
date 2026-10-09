@@ -36,9 +36,9 @@ func test_menus_floor_and_blade_have_their_sounds() -> void:
 	await e.frames(30)
 	var before := log.size()
 	for k in 3:
-		e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+		e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 		await e.frames(2)
-		e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+		e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 		await e.frames(40)
 	var swings := main.audio.played_log.slice(before).filter(
 		func(id: StringName) -> bool: return String(id).begins_with("blade_")

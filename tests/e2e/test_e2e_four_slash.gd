@@ -1,6 +1,6 @@
 extends GutTest
 ## The four-slash combo in the real game (v0.3.0 L11), through real input only: the left stick walks the wanderer
-## up to the nearest enemy, the right stick aims at it, and the left trigger swings again the moment each swing
+## up to the nearest enemy, the right stick aims at it, and the right trigger swings again the moment each swing
 ## ends (inside the combo window). Read through WorldReader: four swings in a row are combo steps 0, 1, 2, 3, each
 ## lands a melee hit, and the fourth (the spinning finisher) hits for its 24 damage (+15 % on the Blade build).
 
@@ -39,7 +39,7 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 	var w := e.world()
 	var r := WorldReader.new(w)
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	# One record per swing: [combo step, melee HIT amounts, DAMAGE dealt].
 	var swings: Array = []
 	var last_t := 0
@@ -62,10 +62,10 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 			_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, to.normalized())
 			# Swing again as soon as the last swing ends (the combo window is open), while the enemy is close.
 			if trigger:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 				trigger = false
 			elif r.swing_tick() == 0 and to.length() < CLOSE_M + 0.5:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 				trigger = true
 		await e.frames(1)
 		if r.player_dead():
@@ -92,7 +92,7 @@ func test_four_presses_in_the_window_are_the_four_slashes() -> void:
 			break
 	for axis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
 		e.joy_axis(axis, 0.0)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	gut.p("swings (step, hits, damage): %s" % [swings])
 	assert_gte(found, 0, "four swings in a row were steps 0, 1, 2, 3 and each landed")
 	if found < 0:

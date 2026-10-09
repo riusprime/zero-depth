@@ -144,11 +144,19 @@ cooldown_permille = 1000
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
-hp_threshold_permille = 500
+hp_threshold_permille = 660
 attack_ids = PackedStringArray("barrage_7", "rail_sweep", "bolt_fan")
 entry_attack = &"deploy"
 speed_permille = 0
 cooldown_permille = 550
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("barrage_7", "rail_sweep", "bolt_fan", "shockwave")
+entry_attack = &"shockwave"
+speed_permille = 0
+cooldown_permille = 412
 
 [resource]
 script = ExtResource("3_boss")
@@ -166,7 +174,7 @@ stagger_size = 300
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_barrage"), SubResource("A_barrage_7"), SubResource("A_rail_sweep"), SubResource("A_bolt_fan"), SubResource("A_deploy"), SubResource("A_shockwave")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(3, 1)
 arena_template = 5
 ranged_full_m = 5.0

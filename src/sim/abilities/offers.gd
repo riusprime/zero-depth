@@ -4,7 +4,8 @@ extends RefCounted
 ## PICKUP event and the hash need no new shape:
 ## - 0..ABILITY_BASE-1: a mod (the v0.3.0 items; the item index, as before);
 ## - ABILITY_BASE + i: ability i (a new one into a free slot, or a level-up of one you own);
-## - STAT_BASE + stat x 10 + rarity: a stat card.
+## - STAT_BASE + stat x 10 + rarity: a stat card;
+## - CURSE_BASE + c (v0.6.0 CU, owner S6): trade-off curse c, a cursed chest's cursed card (Curses.on_offer_rolled).
 ## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
 ## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
 ## (RewardTable: [ability, stat, mod] for altars and chests), then an ability card uniformly among those that can
@@ -16,11 +17,15 @@ extends RefCounted
 
 const ABILITY_BASE := 1000
 const STAT_BASE := 2000
+const CURSE_BASE := 3000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
+const CURSE := 3
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
+## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
+const LEGENDARY := 3
 
 
 static func enabled(w: World) -> bool:
@@ -28,6 +33,8 @@ static func enabled(w: World) -> bool:
 
 
 static func type_of(code: int) -> int:
+	if code >= CURSE_BASE:
+		return CURSE
 	if code >= STAT_BASE:
 		return STAT
 	if code >= ABILITY_BASE:
@@ -41,6 +48,15 @@ static func ability_code(idx: int) -> int:
 
 static func stat_code(stat: int, rarity: int) -> int:
 	return STAT_BASE + stat * 10 + rarity
+
+
+## v0.6.0 CU: the card for trade-off curse c.
+static func curse_code(c: int) -> int:
+	return CURSE_BASE + c
+
+
+static func curse_of(code: int) -> int:
+	return code - CURSE_BASE
 
 
 static func ability_of(code: int) -> int:
@@ -59,6 +75,8 @@ static func rarity_of(code: int) -> int:
 static func roll(w: World, i: int) -> PackedInt32Array:
 	if Routes.is_epic_altar(w, i):
 		return roll_epic(w)  # v0.5.0 RT
+	if BossReward.is_legendary(w, i):
+		return roll_legendary(w)  # v0.5.5 AR
 	return draw(w, w.rewards.kind[i] == RewardStore.Kind.CHEST, w.reward_table.offer_size)
 
 
@@ -141,6 +159,44 @@ static func roll_epic(w: World) -> PackedInt32Array:
 	return out
 
 
+## v0.5.5 AR (X1b): the boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
+## each a legendary stat card (a pool stat under its cap, by its card weight) or a pool mod still in the item pool;
+## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats.
+static func roll_legendary(w: World) -> PackedInt32Array:
+	var t := w.legendary_table
+	var out := PackedInt32Array()
+	if t == null:
+		return out
+	var guard := 0
+	while out.size() < t.offer_size and guard < 16:
+		guard += 1
+		var stats := PackedInt32Array()
+		for s in _stats(w, out):
+			if t.stats.has(s) and w.stat_tables[s].amounts.size() > LEGENDARY:
+				stats.append(s)
+		var mods := PackedInt32Array()
+		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
+			if t.mods.has(idx) and not out.has(idx):
+				mods.append(idx)
+		var wts := PackedInt32Array(
+			[
+				t.weights[0] if not stats.is_empty() else 0,
+				t.weights[1] if not mods.is_empty() else 0
+			]
+		)
+		var kind := pick(w.rng_loot, wts)
+		if kind < 0:
+			break
+		if kind == 0:
+			var sw := PackedInt32Array()
+			for st in stats:
+				sw.append(maxi(1, w.stat_tables[st].weight))
+			out.append(stat_code(stats[w.rng_loot.pick_weighted(sw)], LEGENDARY))
+		else:
+			out.append(mods[w.rng_loot.range_int(0, mods.size() - 1)])
+	return out
+
+
 ## A weighted pick that allows zero weights (RngStream.pick_weighted refuses them): an index with a positive weight,
 ## or -1 when none has one. One draw from `rng`, only when some weight is positive.
 static func pick(rng: RngStream, weights: PackedInt32Array) -> int:
@@ -191,19 +247,20 @@ static func _mods(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	return left
 
 
-## Takes card `code` (Rewards.choose).
-static func apply(w: World, code: int) -> void:
-	match type_of(code):
-		MOD:
-			w.add_item(code)
-		ABILITY:
-			Abilities.grant(w, ability_of(code))
-		STAT:
-			Stats.add_card(w, stat_of(code), rarity_of(code))
+## Takes card `code` (Rewards.choose, Shop.buy, an event's card, v0.6.0 CU a stolen core or a curse card).
+## v0.6.0 MX2: through BuildSlots.take; a new
+## modifier with the six slots full replaces slot `replace`, and without one it opens the swap choice by itself
+## (BuildSlots.Source.GRANT: the world waits for the answer; a skip leaves the card).
+static func apply(w: World, code: int, replace: int = -1) -> void:
+	if BuildSlots.needs_swap(w, code) and replace < 0:
+		BuildSlots.open_swap(w, code, BuildSlots.Source.GRANT, -1)
+		return
+	BuildSlots.take(w, code, replace)
 
 
 ## What the pick panel shows for card `code` (WorldReader.card_info): its type, id, name and description keys,
-## rarity (0 common, 1 rare, 2 epic), the amount in per mille (stats), and for an ability its level after the pick
+## rarity (0 common, 1 rare, 2 epic, 3 legendary), the amount in per mille (stats), and for an ability its level
+## after the pick
 ## (1 = new).
 static func info(w: World, code: int) -> Dictionary:
 	match type_of(code):
@@ -219,6 +276,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"rarity": 1 if t.rare else 0,
 				"level": mini(Abilities.level_of(w, idx) + 1, AbilityTable.MAX_LEVEL),
 				"amount": 0,
+				"modifier": t.is_modifier(),  # v0.6.0 MX2: it takes a modifier slot
 			}
 		STAT:
 			var st := w.stat_tables[stat_of(code)]
@@ -231,16 +289,34 @@ static func info(w: World, code: int) -> Dictionary:
 				"rarity": rarity_of(code),
 				"level": 0,
 				"amount": st.amounts[rarity_of(code)],
-				"side": st.side[rarity_of(code)],  # v0.5.0 CP: a rule card's second number
+				# v0.5.0 CP: a rule card's second number
+				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
+			}
+		CURSE:  # v0.6.0 CU: a trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
+			var ct := w.ev.curses[curse_of(code)]
+			return {
+				"type": CURSE,
+				"id": ct.id,
+				"kind": ct.up_effect,
+				"name_key": ct.name_key,
+				"desc_key": ct.up_desc_key,
+				"rarity": 1,
+				"level": 0,
+				"amount": ct.up_amount,
+				"curse": curse_of(code),
 			}
 	var it := w.item_tables[code]
+	var rarity := 1 if it.rarity == ItemTable.RARE else 0
+	if it.rarity == ItemTable.LEGENDARY:
+		rarity = LEGENDARY  # v0.6.0 MX4: a legendary modifier
 	return {
+		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot
 		"type": MOD,
 		"id": it.id,
 		"kind": it.kind,
 		"name_key": it.name_key,
 		"desc_key": it.desc_key,
-		"rarity": 1 if it.rarity == ItemTable.RARE else 0,
+		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
 	}

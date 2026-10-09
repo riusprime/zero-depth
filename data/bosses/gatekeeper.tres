@@ -143,11 +143,19 @@ cooldown_permille = 1000
 
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
-hp_threshold_permille = 500
+hp_threshold_permille = 660
 attack_ids = PackedStringArray("fist_slam", "shock_lanes_5", "sweep", "charge")
 entry_attack = &"charge"
 speed_permille = 1300
 cooldown_permille = 650
+
+[sub_resource type="Resource" id="P_2"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 330
+attack_ids = PackedStringArray("fist_slam", "shock_lanes_5", "sweep", "charge", "vortex_slam")
+entry_attack = &"vortex_slam"
+speed_permille = 1430
+cooldown_permille = 487
 
 [resource]
 script = ExtResource("3_boss")
@@ -165,7 +173,7 @@ stagger_size = 220
 stagger_decay_per_second = 12.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_slam"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_5"), SubResource("A_sweep"), SubResource("A_charge"), SubResource("A_vortex_slam")])
-phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(3, 3)
 arena_template = 2
 ranged_full_m = 5.0

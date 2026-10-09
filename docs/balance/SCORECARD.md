@@ -1,5 +1,13 @@
 # Balance scorecard
 
+> **Retired for bots, 2026-10-08 (owner P1, v0.5.5 Step EC):** "From now on not run bot tests, because they do not
+> represent reality". Bot policies and balance-band sims are not run and are not evidence
+> ([`../architecture/LOCKED_DECISIONS.md`](../architecture/LOCKED_DECISIONS.md) 2026-10-08). Step EC removed the
+> scorecard command (`scripts/sims/scorecard.gd`), the tuning sims (`scripts/sim/tuning_sim.gd`), the bots
+> (`tests/support/score_*.gd`, `run_bot.gd`, `tuning_run.gd`) and their tests (`tests/unit/scorecard/`,
+> `tests/unit/sim/test_expected_build_bot.gd`). The metric definitions below stay as the vocabulary the owner's play
+> is discussed in; §3 (bot policies) and §7 (filling cells by command) are history. Balance is judged by the owner.
+
 What "balanced" means for this game, how each part is measured, and how sims may and may not be used. The
 metrics follow the five pillars and report sections of the audit framework
 ([`../design/ROGUELIKE_AUDIT_FRAMEWORK.md`](../design/ROGUELIKE_AUDIT_FRAMEWORK.md)). Bands come from the gap
@@ -167,9 +175,11 @@ anything is built. Deathventory's v0.9.5 gap analysis was written this way.
 
 One command fills every §2 cell (v0.5.0 exit gate, PLAN R7):
 
+**Retired (v0.5.5 EC, owner P1):** the command below and the files it names were removed; this section is kept
+as the record of what v0.5.0 measured.
+
 ```bash
-godot --headless --path . -s scripts/sims/scorecard.gd                 # full mode: evidence
-godot --headless --path . -s scripts/sims/scorecard.gd -- --quick      # quick mode: well-formed cells, not bands
+# removed in v0.5.5 EC: scripts/sims/scorecard.gd (full mode / --quick)
 ```
 
 - **Arguments:** `seeds=N` or `seeds=A..B` (seed k plays run seed 20261000 + k), `policies=a,b,…`, `floors=3`,

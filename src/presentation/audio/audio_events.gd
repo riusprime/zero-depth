@@ -77,6 +77,8 @@ var _curse_tick := -1
 var _done_tick := -1
 ## v0.4.0 AB: the Overrun room's last state (inside, cleared).
 var _overrun := [false, false]
+## v0.5.5 AR: the sealed arena's last state (sealed room, arenas cleared).
+var _arena := [-1, 0]
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -94,6 +96,8 @@ func prime(reader: WorldReader) -> void:
 	_heat_ticks = _heat_edges(reader.heat_state())
 	var o := reader.overrun()
 	_overrun = [o["inside"], o["cleared"]]
+	var a := reader.arenas()
+	_arena = [int(a["sealed"]), (a["cleared"] as PackedInt32Array).size()]
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -129,6 +133,16 @@ func _overrun_edges(reader: WorldReader, out: Array) -> void:
 	if o["cleared"] and not _overrun[1]:
 		out.append([&"overrun_clear", null, 1.0])
 	_overrun = [o["inside"], o["cleared"]]
+	# v0.5.5 AR: a regular arena sealing sounds the boss door's seal; its clear, the Overrun's fanfare (the Overrun
+	# keeps its own alarm and fanfare above).
+	var a := reader.arenas()
+	var sealed := int(a["sealed"])
+	var cleared := (a["cleared"] as PackedInt32Array).size()
+	if sealed >= 0 and sealed != _arena[0] and not a["overrun_sealed"]:
+		out.append([&"boss_door_seal", null, 1.0])
+	if cleared > _arena[1] and int(a["last_cleared"]) != int(a["overrun"]):
+		out.append([&"overrun_clear", null, 1.0])
+	_arena = [sealed, cleared]
 
 
 func _events(reader: WorldReader, out: Array) -> void:
@@ -351,7 +365,9 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	var choosing := reader.choosing()
 	if choosing and not _choosing:
 		var r := reader.choice_reward()
-		var altar := r >= 0 and reader.reward_kind(r) == WorldReader.REWARD_ALTAR
+		var altar := (
+			r >= 0 and reader.reward_kind(r) in [WorldReader.REWARD_ALTAR, WorldReader.REWARD_DROP]
+		)
 		out.append([&"altar_open" if altar else &"chest_open", null, 1.0])
 	_choosing = choosing
 	var denied := reader.reward_denied_tick()

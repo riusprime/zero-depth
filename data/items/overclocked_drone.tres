@@ -9,6 +9,6 @@ name_key = &"ITEM_OVERCLOCKED_DRONE"
 desc_key = &"ITEM_OVERCLOCKED_DRONE_DESC"
 rarity = 1
 requires_ability = &"drone_buddy"
-drone_rate_per_heat_permille = 8
 tags = PackedStringArray("ability", "heat")
+modifiers = Array[StringName]([&"overclocked_drone"])
 id = &"overclocked_drone"

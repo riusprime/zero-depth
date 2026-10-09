@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 31
+name_key = &"ITEM_INFERNO_CORE"
+desc_key = &"ITEM_INFERNO_CORE_DESC"
+rarity = 2
+burn_damage = 3
+burn_period_seconds = 0.5
+burn_duration_seconds = 3.0
+burn_max_stacks = 8
+tags = PackedStringArray("fire")
+modifiers = Array[StringName]([&"inferno_core"])
+id = &"inferno_core"

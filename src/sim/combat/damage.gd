@@ -40,7 +40,8 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 
 ## Applies one hit to the actor at index `target`. `from` is where the attack came from (the attacker, or the
 ## projectile's previous position), `at` where it landed. `effect_id` names the item effect that made the hit
-## (v0.2.0), or &"". Returns the HP removed.
+## (v0.2.0), or &"". `proc_pct` (v0.6.0 MX1): the proc coefficient the HIT carries (a hook's attack: 50, then 25;
+## Attacks). Returns the HP removed.
 static func hit(
 	w: World,
 	target: int,
@@ -51,7 +52,8 @@ static func hit(
 	tags: int,
 	from: Vector2,
 	at: Vector2,
-	effect_id: StringName = &""
+	effect_id: StringName = &"",
+	proc_pct: int = 100
 ) -> int:
 	var a := w.actors
 	if a.dead[target] == 1:
@@ -68,6 +70,8 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
+	if target != 0 and owner_id == a.ids[0]:  # v0.6.0 MX4: Resonance
+		amount = amount * ModifierRuntime.resonance_mult(w, target, owner_id) / 1000
 	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
 	if heat != 1000:
 		amount = amount * heat / 1000
@@ -76,11 +80,15 @@ static func hit(
 	h.root_id = root_id
 	h.amount = amount
 	h.tags = tags
-	h.proc_pct = 100
+	h.proc_pct = proc_pct
 	h.effect_id = effect_id
 	h.depth = w.engine_chain.size()  # Engines: the payoff chain this hit runs in.
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
+		return 0
+	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
+		return 0
+	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
 		return 0
 	var m := target_mult(w, target, from)
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
@@ -149,7 +157,8 @@ static func _apply(
 ) -> int:
 	var a := w.actors
 	var target_id := a.ids[target]
-	var applied := mini(scaled, a.hp[target])
+	# v0.5.5 DS (D7): a boss's HP stops at its next phase gate (BossGates).
+	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)
@@ -178,8 +187,13 @@ static func _apply(
 		if target != 0 and owner_id == a.ids[0]:
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
+			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
+			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
+		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
+		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
+			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
 	return applied

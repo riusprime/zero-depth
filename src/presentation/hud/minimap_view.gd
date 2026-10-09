@@ -21,6 +21,7 @@ const LEGEND: Array = [
 	[&"shrine", "MAP_LEGEND_SHRINE"],
 	[&"event", "MAP_LEGEND_EVENT"],
 	[&"overrun", "MAP_LEGEND_OVERRUN"],  # v0.4.0 AB
+	[&"arena", "MAP_LEGEND_ARENA"],  # v0.5.5 AR
 	[&"shop", "MAP_LEGEND_SHOP"],
 ]
 
@@ -112,7 +113,7 @@ func _draw() -> void:
 		var whole := map_rect.grow(24)
 		whole.size.x += MinimapStyle.LEGEND_WIDTH
 		draw_style_box(panel, whole)
-	else:
+	elif draws_backdrop():
 		draw_style_box(panel, Rect2(Vector2.ZERO, size))
 	_draw_rooms()
 	_draw_doors()
@@ -120,6 +121,32 @@ func _draw() -> void:
 	_draw_player()
 	if full:
 		_draw_legend(Vector2(map_rect.end.x + 40, map_rect.position.y))
+	else:
+		_draw_corner_ticks()
+
+
+## True when this view draws a dark panel behind the map: the full map only (v0.5.5 A5: the corner map floats).
+func draws_backdrop() -> bool:
+	return full or MinimapStyle.CORNER_PANEL
+
+
+## v0.5.5 A5: four small ember L-ticks at the corner map's corners, over a dark halo, so its window reads without a
+## panel.
+func _draw_corner_ticks() -> void:
+	var arm := MinimapStyle.TICK_ARM
+	var e := size - Vector2(1.5, 1.5)
+	var o := Vector2(1.5, 1.5)
+	var corners := [
+		[o, Vector2(1, 0), Vector2(0, 1)],
+		[Vector2(e.x, o.y), Vector2(-1, 0), Vector2(0, 1)],
+		[e, Vector2(-1, 0), Vector2(0, -1)],
+		[Vector2(o.x, e.y), Vector2(1, 0), Vector2(0, -1)],
+	]
+	for c: Array in corners:
+		var p: Vector2 = c[0]
+		var pts := PackedVector2Array([p + c[1] * arm, p, p + c[2] * arm])
+		draw_polyline(pts, MinimapStyle.SHADOW, 2.0 + MinimapStyle.SHADOW_WIDTH)
+		draw_polyline(pts, MinimapStyle.TICK, 2.0)
 
 
 ## Sets the centre, scale and origin; returns the rect the floor is drawn in.
@@ -164,9 +191,13 @@ func _draw_rooms() -> void:
 	for r in reader.floor_room_count():
 		if not state.is_discovered(r) or r == state.current:
 			continue
+		if not draws_backdrop():
+			draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_WASH)
 		draw_colored_polygon(_poly(reader.floor_room(r)), MinimapStyle.ROOM_FILL)
 		_outline(r, MinimapStyle.ROOM_EDGE, MinimapStyle.LINE)
 	if state.is_discovered(state.current):
+		if not draws_backdrop():
+			draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.ROOM_WASH)
 		draw_colored_polygon(_poly(reader.floor_room(state.current)), MinimapStyle.CURRENT_FILL)
 		_outline(state.current, MinimapStyle.CURRENT_EDGE, 2.0)
 
@@ -216,6 +247,7 @@ func _draw_doors() -> void:
 	var boss_door := reader.floor_boss_door()
 	var over: Dictionary = reader.overrun()  # v0.4.0 AB: the Overrun room's doorways in red
 	var over_doors: PackedInt32Array = over["doors"] if over["active"] else PackedInt32Array()
+	var arena_doors := _arena_doors()  # v0.5.5 AR: an arena's doorways in amber (dim once cleared)
 	for i in reader.floor_door_count():
 		if not state.door_known(reader, i):
 			continue
@@ -236,6 +268,8 @@ func _draw_doors() -> void:
 		if boss or over_doors.has(i):
 			var shut := MinimapStyle.BOSS_OPEN if reader.portal_active() else MinimapStyle.BOSS  # PB
 			_draw_boss_door(rect, side, shut if boss else MinimapStyle.OVERRUN)
+		elif arena_doors.has(i):
+			_draw_boss_door(rect, side, arena_doors[i])
 		if not state.door_to_unknown(reader, i):
 			continue
 		var into := side if state.is_discovered(d.x) else -side
@@ -248,6 +282,21 @@ func _draw_doors() -> void:
 		_arrow(
 			a, b, col, minf(MinimapStyle.STUB_HEAD_M * _scale, MinimapStyle.STUB_MAX_PX * 0.4), 2.5
 		)
+
+
+## v0.5.5 AR: doorway -> colour for the discovered regular arenas' doorways (amber; dim once cleared).
+func _arena_doors() -> Dictionary:
+	var out := {}
+	var a := reader.arenas()
+	if not a["active"]:
+		return out
+	var cleared: PackedInt32Array = a["cleared"]
+	for i in reader.floor_door_count():
+		var d := reader.floor_door_rooms(i)
+		for room: int in a["rooms"]:
+			if room != a["overrun"] and (d.x == room or d.y == room) and state.is_discovered(room):
+				out[i] = (MinimapStyle.PORTAL_SEALED if cleared.has(room) else MinimapStyle.ARENA)
+	return out
 
 
 func _draw_boss_door(rect: Rect2, side: Vector2, col: Color = MinimapStyle.BOSS) -> void:
@@ -276,7 +325,7 @@ func _draw_icons() -> void:
 	var k := _icon_scale()
 	for i in state.visible_rewards(reader):
 		var p := to_map(reader.reward_pos(i))
-		if reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
+		if reader.reward_kind(i) in [WorldReader.REWARD_ALTAR, WorldReader.REWARD_DROP]:
 			draw_icon(&"altar", p, k)
 		else:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)
@@ -289,6 +338,16 @@ func _draw_icons() -> void:
 	var over := reader.overrun()  # v0.4.0 AB: the Overrun room, once seen (dim once cleared)
 	if over["active"] and state.is_discovered(over["room"]):
 		draw_icon(&"overrun_cleared" if over["cleared"] else &"overrun", to_map(over["center"]), k)
+	var ar := reader.arenas()  # v0.5.5 AR: each arena, once seen (dim once cleared)
+	if ar["active"]:
+		for room: int in ar["rooms"]:
+			if room != ar["overrun"] and state.is_discovered(room):
+				var done := (ar["cleared"] as PackedInt32Array).has(room)
+				draw_icon(
+					&"arena_cleared" if done else &"arena",
+					to_map(reader.floor_room(room).get_center()),
+					k
+				)
 	if reader.has_shop() and state.is_discovered(reader.shop_room()):
 		draw_icon(&"shop", to_map(reader.shop_pos()), k)  # v0.5.0 SH: the shop terminal
 	if state.is_discovered(reader.floor_portal_room()):
@@ -323,6 +382,9 @@ func _draw_player_arrow(p: Vector2, dir: Vector2, k: float) -> void:
 		]
 	)
 	draw_circle(p, s * 1.3, Color(MinimapStyle.PLAYER, 0.18))
+	var halo := tri.duplicate()
+	halo.append(tri[0])
+	draw_polyline(halo, MinimapStyle.SHADOW, MinimapStyle.SHADOW_WIDTH, true)  # v0.5.5 A5
 	draw_colored_polygon(tri, MinimapStyle.PLAYER)
 
 
@@ -388,6 +450,12 @@ func draw_icon(kind: StringName, p: Vector2, k: float = 1.0) -> void:
 			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
 			draw_line(p - Vector2(s, s) * 0.7, p + Vector2(s, s) * 0.7, col, 2.0)
 			draw_line(p + Vector2(-s, s) * 0.7, p + Vector2(s, -s) * 0.7, col, 2.0)
+		&"arena", &"arena_cleared":  # v0.5.5 AR: an amber square with a bar across its doors' line
+			var col := MinimapStyle.ARENA if kind == &"arena" else MinimapStyle.PORTAL_SEALED
+			if kind == &"arena":
+				draw_circle(p, s * 1.6, Color(col, MinimapStyle.GLOW_ALPHA))
+			draw_rect(Rect2(p - Vector2(s, s), Vector2(s * 2, s * 2)), col, false, 2.0)
+			draw_rect(Rect2(p - Vector2(s * 0.45, s * 0.45), Vector2(s * 0.9, s * 0.9)), col)
 		&"shop":  # v0.5.0 SH: a storefront (a box under a roof), in the shards' violet
 			var house := PackedVector2Array(
 				[

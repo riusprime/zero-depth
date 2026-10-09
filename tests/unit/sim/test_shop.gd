@@ -82,7 +82,8 @@ func test_prices_by_rarity_and_floor() -> void:
 		row.append(_shop.heal_cost(f))
 		row.append(_shop.sell_price(1, f))
 		by_floor.append(row)
-	assert_eq(by_floor, [[30, 55, 90, 40, 22], [45, 83, 135, 60, 33], [60, 110, 180, 80, 44]])
+	# v0.5.5 EC (owner S4): floors 2-3 x 1.5 on top of the floor step (x 2.25, x 3); refunds stay on the step.
+	assert_eq(by_floor, [[30, 55, 90, 40, 22], [68, 124, 203, 90, 33], [90, 165, 270, 120, 44]])
 	var rerolls := []
 	for u in 5:
 		rerolls.append(_shop.reroll_cost(u))
@@ -124,10 +125,13 @@ func test_the_stock_follows_the_chest_rules_and_the_slot_rules() -> void:
 	for s in 60:
 		var w := _world(300 + s)
 		if s % 2 == 1:
-			for kind in [
+			for kind in [  # v0.6.0 MX2: the six modifier slots full
 				AbilityTable.Kind.BOMB_LOBBER,
 				AbilityTable.Kind.DRONE_BUDDY,
-				AbilityTable.Kind.ORBIT_BLADES
+				AbilityTable.Kind.ORBIT_BLADES,
+				AbilityTable.Kind.ARC_FIELD,
+				AbilityTable.Kind.FROST_NOVA,
+				AbilityTable.Kind.FLAME_TRAIL,
 			]:
 				Abilities.grant(w, Abilities.index_of_kind(w, kind))
 		_open(w)
@@ -142,8 +146,10 @@ func test_the_stock_follows_the_chest_rules_and_the_slot_rules() -> void:
 			assert_false(seen.has(key), "no card repeats")
 			seen[key] = true
 			if Offers.type_of(code) == Offers.ABILITY and s % 2 == 1:
+				var t := w.ability_tables[Offers.ability_of(code)]
 				assert_true(
-					Abilities.owned(w, Offers.ability_of(code)), "full slots: level-ups only"
+					Abilities.owned(w, Offers.ability_of(code)) or t.is_utility(),
+					"six held: a level-up, or the utility outside the slots"
 				)
 			if Offers.type_of(code) == Offers.MOD:
 				assert_true(ItemPool.usable(w, code), "a mod only with its ability and weapon")
@@ -338,7 +344,7 @@ func test_salvage_an_ability_frees_its_slot() -> void:
 		Abilities.grant(w, idx)
 	Abilities.grant(w, drone)
 	Abilities.grant(w, drone)
-	assert_false(Abilities.can_take(w, blink), "four slots full: no new ability")
+	assert_true(Abilities.can_take(w, blink), "v0.6.0 MX2: the utility pick sits outside the slots")
 	_open(w)
 	var list := Shop.sell_list(w)
 	var kinds := []
@@ -418,3 +424,61 @@ func test_the_stat_cards_carry_to_the_next_floor() -> void:
 	var next := _world(4)
 	RunCarry.apply(next, carry)
 	assert_eq(next.stat_cards, w.stat_cards)
+
+
+## v0.5.5 EC (owner S2, "the bought slots should stay bought"): a reroll redraws only the unsold slots; a bought
+## slot stays SOLD; with every slot sold the reroll is refused and costs nothing.
+func test_a_reroll_keeps_the_sold_slots_sold() -> void:
+	var w := _world(33)
+	_open(w)
+	assert_eq(w.shop.offer.size(), 4)
+	_pick(w, 2)
+	assert_eq(w.shop.offer[1], ShopState.SOLD)
+	var loot := w.rng_loot.state
+	_pick(w, InputFrame.PICK_SHOP_REROLL)
+	assert_eq(w.shop.rerolls, 1, "rerolled")
+	assert_ne(w.rng_loot.state, loot, "the unsold slots were drawn again")
+	assert_eq(w.shop.offer.size(), 4, "four slots still")
+	assert_eq(w.shop.offer[1], ShopState.SOLD, "the bought slot stays sold")
+	assert_eq(Shop.unsold(w), 3, "the other three hold new cards")
+	for k in [0, 2, 3]:
+		assert_gte(w.shop.offer[k], 0, "slot %d has a card" % k)
+	for k in [1, 3, 4]:
+		_pick(w, k)
+	assert_eq(Shop.unsold(w), 0, "all four bought")
+	var before := w.shards
+	_pick(w, InputFrame.PICK_SHOP_REROLL)
+	assert_eq(w.shards, before, "nothing left to reroll: refused, free")
+	assert_eq(w.shop.offer, PackedInt32Array([-1, -1, -1, -1]))
+	assert_eq(w.shop.denied_tick, w.tick - 1)
+
+
+## v0.5.5 EC (owner S3, "only 4 max per floor"): at most max_buys cards bought at the floor's shop; the heal and
+## rerolls don't count; past the limit a buy (and a reroll) is refused with the LIMIT reason the panel shows.
+func test_at_most_max_buys_cards_per_floor() -> void:
+	assert_eq(_shop.max_buys, 4, "the shipped limit")
+	var w := _world(34)
+	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
+	w.shop_table.max_buys = 2  # a test-side table, so rerolls can refill slots under the limit
+	_open(w)
+	assert_eq(Shop.buys_left(w), 2)
+	_pick(w, 1)
+	w.actors.hp[0] = 10
+	_pick(w, InputFrame.PICK_SHOP_HEAL)
+	_pick(w, InputFrame.PICK_SHOP_REROLL)
+	assert_eq([w.shop.bought, Shop.buys_left(w)], [1, 1], "the heal and the reroll don't count")
+	_pick(w, 2)
+	assert_eq([w.shop.bought, Shop.buys_left(w)], [2, 0])
+	var before := w.shards
+	var stock := w.shop.offer.duplicate()
+	_pick(w, 3)
+	assert_eq(w.shards, before, "a third buy is refused")
+	assert_eq(w.shop.offer, stock)
+	assert_eq(w.shop.denied_reason, ShopState.Deny.LIMIT, "for the limit")
+	_pick(w, InputFrame.PICK_SHOP_REROLL)
+	assert_eq(w.shards, before, "no reroll with no buys left")
+	var r := Shop.read(w)
+	assert_eq([r["bought"], r["max_buys"], r["buys_left"]], [2, 2, 0], "the panel reads the limit")
+	var next := _world(35)
+	_open(next)
+	assert_eq(Shop.buys_left(next), 4, "a new floor's shop starts fresh")

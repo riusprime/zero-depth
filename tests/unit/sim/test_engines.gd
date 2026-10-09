@@ -278,12 +278,13 @@ func test_a_freeze_immune_actor_is_only_slowed() -> void:
 	assert_lt(ItemProcs.slow_factor(w, 1), 1.0)
 
 
-func test_frost_core_freezes_on_every_third_bolt_and_cold_snap_hits_harder() -> void:
+## v0.6.0 MX4 (M3): Frost Core adds a frost stack on every hit; the 3rd freezes.
+func test_frost_core_freezes_on_the_third_hit_and_cold_snap_hits_harder() -> void:
 	var w := _world([K.FROST_CORE, K.COLD_SNAP])
 	var a := w.actors
-	for k in 3:
+	for k in 2:
 		_hit(w, 1, SimEvent.TAG_PROJECTILE)
-	assert_eq(a.frost_stacks[1], 1, "every third bolt")
+	assert_eq(a.frost_stacks[1], 2, "a stack every hit")
 	var before := w.last_event_seq()
 	_hit(w, 1, SimEvent.TAG_MELEE, 10)
 	assert_eq(_amounts(_events(w, SimEvent.Kind.DAMAGE, &"", before)), [12], "chilled: +20%")

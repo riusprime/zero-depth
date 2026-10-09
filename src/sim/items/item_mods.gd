@@ -3,31 +3,19 @@ extends RefCounted
 ## The owned items folded into one set of modifiers (derived from World.items_owned and the item tables, so it
 ## is not hashed; World rebuilds it whenever an item is added). Bonuses add up; per-kind payoffs take the
 ## strongest owned value, so owning several items combines their effects.
+## v0.6.0 MX1: what items do to the Blade's steps and the Gun's bolt (reach, echo, split, rate, bounces, Overcharge,
+## Static Chain's jump, the stacks a weapon hit feeds) moved into their modifiers and the compiled specs
+## (Modifiers); what stays here are the engines' numbers and the effects of other moments (dash, guard, kills, heat).
 
-var reach_bonus_permille := 0
-var echo_delay_ticks := 0
-var echo_damage_permille := 0
 var burn_damage := 0
 var burn_period_ticks := 1
 var burn_duration_ticks := 0
 var burn_max_stacks := 0
-var split_count := 1
-var split_spread := 0
-var split_damage_permille := 1000
-var fire_rate_bonus_permille := 0
-var bounces := 0
 var dash_hit_damage := 0
-var overcharge_every := 0
-var overcharge_mult_permille := 1000
-var shockwave_radius_m := 0.0
-var shockwave_damage_permille := 0
 ## v0.2.0 J (the second eight; see ItemTable for each field).
 var heal_per_kill := 0
 var heal_cap := 0
 var heal_window_ticks := 0
-var chain_every := 0
-var chain_range_m := 0.0
-var chain_damage := 0
 var momentum_window_ticks := 0
 var momentum_bonus_permille := 0
 var slow_permille := 1000
@@ -43,16 +31,11 @@ var phase_radius_m := 0.0
 var phase_guard_window_ticks := 0
 ## Bit (1 << ItemTable.Kind) per owned kind.
 var kinds_mask := 0
-## Engines (v0.3.0 G). Feeders: stacks added per qualifying hit by source (melee swing, landed bolt every N,
-## Static Chain jump, Overcharge shockwave, a dash through), 0 = that source doesn't feed it. Engine numbers take
-## the strongest owned value.
-var burn_bolt := 0
-var burn_bolt_every := 0
+## Engines (v0.3.0 G). Feeders: stacks added per qualifying hit by a source that is not a weapon attack (Static
+## Chain's jump, Overcharge's shockwave, a dash through, Razor Orbit), 0 = that source doesn't feed it; a weapon
+## hit's feeds are its spec's statuses (v0.6.0 MX1). Engine numbers take the strongest owned value.
 var wildfire_stacks := 0
 var wildfire_radius_m := 0.0
-var shock_melee := 0
-var shock_bolt := 0
-var shock_bolt_every := 0
 var shock_chain := 0
 var shock_wave := 0
 var shock_threshold := 0
@@ -60,17 +43,11 @@ var shock_ticks := 0
 var shock_damage := 0
 var shock_jumps := 0
 var shock_range_m := 0.0
-var bleed_melee := 0
-var bleed_bolt := 0
-var bleed_bolt_every := 0
 var bleed_damage := 0
 var bleed_period_ticks := 1
 var bleed_ticks := 0
 var bleed_max_stacks := 0
 var bleed_burst_per_stack := 0
-var frost_melee := 0
-var frost_bolt := 0
-var frost_bolt_every := 0
 var frost_dash := 0
 var frost_threshold := 0
 var frost_ticks := 0
@@ -85,16 +62,15 @@ var vent_damage_bonus_permille := 0
 var vent_radius_bonus_permille := 0
 var heat_hot_threshold := 0
 var meltdown_damage_permille := 0
-## Ability mods (v0.5.0 CP; AbilityMods): Cluster Payload, Overclocked Drone, Razor Orbit's bleed feed, Afterimage.
-var bomblets := 0
-var bomblet_damage_permille := 0
-var bomblet_radius_permille := 0
-var bomblet_delay_ticks := 1
-var drone_rate_per_heat_permille := 0
+## Ability mods (v0.5.0 CP; AbilityMods): Razor Orbit's bleed feed. v0.6.0 MX4: Cluster Payload, Overclocked Drone and
+## Afterimage carry their numbers in their modifiers' ops.
 var bleed_orbit := 0
-var afterimage_damage := 0
-var afterimage_radius_m := 0.0
-var afterimage_delay_ticks := 1
+## v0.6.0 MX4: Venom Core's poison engine (Venom), the strongest owned.
+var poison_damage := 0
+var poison_period_ticks := 1
+var poison_ticks := 0
+var poison_max_stacks := 0
+var poison_spread_m := 0.0
 
 
 static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods:
@@ -102,28 +78,15 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 	for idx in owned:
 		var t := tables[idx]
 		m.kinds_mask |= 1 << t.kind
-		m.reach_bonus_permille += t.reach_bonus_permille
-		m.fire_rate_bonus_permille += t.fire_rate_bonus_permille
-		m.bounces += t.bounces
 		m.dash_hit_damage += t.dash_hit_damage
 		match t.kind:
-			ItemTable.Kind.TWIN_ARC:
-				m.echo_delay_ticks = t.echo_delay_ticks
-				m.echo_damage_permille = maxi(m.echo_damage_permille, t.echo_damage_permille)
 			ItemTable.Kind.EMBER_EDGE, ItemTable.Kind.CINDER_SHOT, ItemTable.Kind.WILDFIRE:
 				m.burn_damage = maxi(m.burn_damage, t.burn_damage)
 				m.burn_period_ticks = maxi(1, t.burn_period_ticks)
 				m.burn_duration_ticks = maxi(m.burn_duration_ticks, t.burn_duration_ticks)
 				m.burn_max_stacks = maxi(m.burn_max_stacks, t.burn_max_stacks)
-			ItemTable.Kind.SPLINTER_SHOT:
-				m.split_count = maxi(m.split_count, t.split_count)
-				m.split_spread = maxi(m.split_spread, t.split_spread)
-				m.split_damage_permille = t.split_damage_permille
-			ItemTable.Kind.OVERCHARGE:
-				m.overcharge_every = t.overcharge_every
-				m.overcharge_mult_permille = t.overcharge_mult_permille
-				m.shockwave_radius_m = t.shockwave_radius_m
-				m.shockwave_damage_permille = t.shockwave_damage_permille
+			ItemTable.Kind.TWIN_ARC, ItemTable.Kind.SPLINTER_SHOT, ItemTable.Kind.OVERCHARGE:
+				pass  # v0.6.0 MX1: all of it is in the modifier (Overcharge's shock below)
 			_:
 				_build_v2(m, t)
 		_build_engines(m, t)
@@ -132,22 +95,21 @@ static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods
 	return m
 
 
-## Ability mods (v0.5.0 CP): one of each kind can be owned, so each takes its item's numbers.
+## Ability mods (v0.5.0 CP): one of each kind can be owned, so each takes its item's numbers. v0.6.0 MX4: a modifier
+## card (kind MODIFIER) brings the engine numbers its modifier feeds (burn, the chill's slow; shock, bleed and frost
+## fold in _build_engines for every item), and Venom Core the poison's, each the strongest owned.
 static func _build_ability_mods(m: ItemMods, t: ItemTable) -> void:
 	match t.kind:
-		ItemTable.Kind.CLUSTER_PAYLOAD:
-			m.bomblets = t.bomblets
-			m.bomblet_damage_permille = t.bomblet_damage_permille
-			m.bomblet_radius_permille = t.bomblet_radius_permille
-			m.bomblet_delay_ticks = maxi(1, t.bomblet_delay_ticks)
-		ItemTable.Kind.OVERCLOCKED_DRONE:
-			m.drone_rate_per_heat_permille = t.drone_rate_per_heat_permille
 		ItemTable.Kind.RAZOR_ORBIT:
 			m.bleed_orbit = t.stacks_per_hit
-		ItemTable.Kind.AFTERIMAGE:
-			m.afterimage_damage = t.afterimage_damage
-			m.afterimage_radius_m = t.afterimage_radius_m
-			m.afterimage_delay_ticks = maxi(1, t.afterimage_delay_ticks)
+		ItemTable.Kind.MODIFIER:
+			fold_engine(m, t)
+	if t.poison_max_stacks > 0:
+		m.poison_damage = maxi(m.poison_damage, t.poison_damage)
+		m.poison_period_ticks = maxi(m.poison_period_ticks, maxi(1, t.poison_period_ticks))
+		m.poison_ticks = maxi(m.poison_ticks, t.poison_ticks)
+		m.poison_max_stacks = maxi(m.poison_max_stacks, t.poison_max_stacks)
+		m.poison_spread_m = maxf(m.poison_spread_m, t.poison_spread_m)
 
 
 ## Overclock heat items (v0.3.0 L18).
@@ -172,10 +134,6 @@ static func _build_v2(m: ItemMods, t: ItemTable) -> void:
 			m.heal_per_kill = t.heal_per_kill
 			m.heal_cap = t.heal_cap
 			m.heal_window_ticks = t.heal_window_ticks
-		ItemTable.Kind.STATIC_CHAIN:
-			m.chain_every = t.chain_every
-			m.chain_range_m = t.chain_range_m
-			m.chain_damage = t.chain_damage
 		ItemTable.Kind.MOMENTUM:
 			m.momentum_window_ticks = t.momentum_window_ticks
 			m.momentum_bonus_permille = t.momentum_bonus_permille
@@ -199,23 +157,9 @@ static func _build_engines(m: ItemMods, t: ItemTable) -> void:
 	_build_fire(m, t)
 	match t.kind:
 		ItemTable.Kind.STATIC_CHAIN:
-			m.shock_bolt = t.stacks_per_hit
-			m.shock_bolt_every = t.stack_every
 			m.shock_chain = t.stacks_per_hit
 		ItemTable.Kind.OVERCHARGE:
 			m.shock_wave = t.stacks_per_hit
-		ItemTable.Kind.CONDUCTOR:
-			m.shock_melee = t.stacks_per_hit
-		ItemTable.Kind.SERRATED_EDGE:
-			m.bleed_melee = t.stacks_per_hit
-		ItemTable.Kind.BARBED_BOLTS:
-			m.bleed_bolt = t.stacks_per_hit
-			m.bleed_bolt_every = t.stack_every
-		ItemTable.Kind.FROST_CORE:
-			m.frost_bolt = t.stacks_per_hit
-			m.frost_bolt_every = t.stack_every
-		ItemTable.Kind.GLACIAL_EDGE:
-			m.frost_melee = t.stacks_per_hit
 		ItemTable.Kind.COLD_SNAP:
 			m.frost_dash = t.stacks_per_hit
 			m.chill_bonus_permille = t.chill_bonus_permille
@@ -241,12 +185,9 @@ static func _build_engines(m: ItemMods, t: ItemTable) -> void:
 	m.freeze_ticks = maxi(m.freeze_ticks, t.freeze_ticks)
 
 
-## Cinder Shot (bolts burn every Nth landed bolt) and Wildfire (kills spread burn).
+## Wildfire (kills spread burn). Cinder Shot's bolt burn is its modifier's (v0.6.0 MX1).
 static func _build_fire(m: ItemMods, t: ItemTable) -> void:
-	if t.kind == ItemTable.Kind.CINDER_SHOT:
-		m.burn_bolt = t.stacks_per_hit
-		m.burn_bolt_every = t.stack_every
-	elif t.kind == ItemTable.Kind.WILDFIRE:
+	if t.kind == ItemTable.Kind.WILDFIRE:
 		m.wildfire_stacks = t.stacks_per_hit
 		m.wildfire_radius_m = t.spread_radius_m
 

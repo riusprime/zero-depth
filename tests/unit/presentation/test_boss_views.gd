@@ -182,12 +182,14 @@ func test_the_boss_bar_shows_while_a_boss_lives() -> void:
 	hud.sync(reader)
 	assert_true(hud.boss_bar.visible)
 	assert_eq(hud.boss_bar.boss_name(), tr(&"BOSS_SIEGE_ENGINE"))
-	assert_almost_eq(hud.boss_bar.hp_fraction(), 0.5, 0.01)
 	assert_almost_eq(
-		hud.boss_bar.stagger_fraction(), 1.0, 0.01, "900 > 300: staggered, the meter shows full"
+		hud.boss_bar.hp_fraction(), 0.66, 0.01, "v0.5.5 DS: the burst stops at the 66 % gate"
+	)
+	assert_almost_eq(
+		hud.boss_bar.stagger_fraction(), 1.0, 0.01, "612 > 300: staggered, the meter shows full"
 	)
 	assert_true(reader.boss_staggered(i))
-	Damage.hit(w, i, 99999, 1, 1, 1, 0, Vector2(6, 5), w.actors.pos(i))
+	Damage.hit(w, i, 99999, 0, 0, 1, 0, Vector2(6, 5), w.actors.pos(i))  # the world's kill: past the gates
 	w.step(InputFrame.new())
 	hud.sync(reader)
 	assert_false(hud.boss_bar.visible, "gone with the boss")

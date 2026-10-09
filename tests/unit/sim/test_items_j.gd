@@ -75,12 +75,14 @@ func _kill(w: World, i: int) -> void:
 
 func test_the_data_has_distinct_kinds() -> void:
 	assert_eq(
-		_tables.size(), 31, "16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP)"
+		_tables.size(),
+		63,
+		"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
 	)
 	var kinds := {}
 	for t in _tables:
 		kinds[t.kind] = true
-	assert_eq(kinds.size(), 31)
+	assert_eq(kinds.size(), 32, "the 31 v0.5 kinds and MODIFIER")
 	for k in range(K.VAMPIRIC_CORE, K.PHASE_STRIKE + 1):
 		assert_ne(_index(k), -1, "kind %d is shipped" % k)
 
@@ -185,7 +187,7 @@ func test_static_chain_fires_once_per_root_and_never_from_dot() -> void:
 	assert_gt(_events(w, SimEvent.Kind.DAMAGE, SimEvent.TAG_DOT).size(), 0, "the burn ticked")
 	assert_eq(w.chain_count, 0, "melee and DoT never count")
 	# Two landed hits of the same bolt (same root) with a chain due each time: only the first chains.
-	w.item_mods.chain_every = 1
+	Modifiers.bolt(w).hooks[0].every = 1  # v0.6.0 MX1: Static Chain's jump is the bolt spec's ON_HIT hook
 	w.projectiles.add(
 		900, w.actors.ids[0], ActorStore.TEAM_PLAYER, Vector2.ZERO, Vector2.ZERO, 0.1, 10, 4
 	)
@@ -243,14 +245,19 @@ func test_frost_core_slows_on_bolt_hits_refreshing_never_stacking() -> void:
 	w.step(_f(S))
 	_idle(w, 8)
 	assert_true(r.actor_slowed(1))
-	var applies := _events(w, SimEvent.Kind.STATUS_APPLY)
+	var applies: Array = _events(w, SimEvent.Kind.STATUS_APPLY).filter(
+		func(e: SimEvent) -> bool: return e.effect_id == &"frost_core"
+	)  # v0.6.0 MX4 (M3): each hit also adds a frost stack (its own STATUS_APPLY)
 	assert_eq(applies.size(), 1)
 	assert_eq(applies[0].effect_id, &"frost_core")
 	assert_eq(applies[0].amount, 700)
 	assert_almost_eq(ItemProcs.slow_factor(w, 1), 0.7, 1e-6)
-	var hit_tick := applies[0].tick
+	var hit_tick: int = applies[0].tick
 	_shoot(w, 1)
-	var second := _events(w, SimEvent.Kind.STATUS_APPLY)[1]
+	var slows: Array = _events(w, SimEvent.Kind.STATUS_APPLY).filter(
+		func(e: SimEvent) -> bool: return e.effect_id == &"frost_core"
+	)
+	var second: SimEvent = slows[1]
 	assert_eq(w.actors.slow_t[1], 90 - (w.tick - second.tick), "refreshed to 1.5 s, not added")
 	assert_almost_eq(ItemProcs.slow_factor(w, 1), 0.7, 1e-6, "no stacking")
 	assert_gt(second.tick, hit_tick)
@@ -437,11 +444,13 @@ func test_the_pool_draws_every_item_without_repeats() -> void:
 	var w := _world([K.MOMENTUM], [])
 	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
 	var all := ItemPool.draw(w, 99)
-	assert_eq(all.size(), 23, "everything but the owned one")
+	assert_eq(
+		all.size(), 47, "everything but the owned one (v0.6.0 MX4: the M-list's 24 usable here too)"
+	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
 		w.add_pickup(i, Vector2(5, 5))
-	assert_eq(seen.size(), 23)
+	assert_eq(seen.size(), 47)
 	assert_false(seen.has(_index(K.MOMENTUM)))
 	assert_eq(ItemPool.draw(w, 3).size(), 0, "all placed: nothing left to draw")

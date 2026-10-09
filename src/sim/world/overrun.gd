@@ -1,46 +1,37 @@
 class_name Overrun
 extends RefCounted
 ## The Overrun threat branch in play (v0.4.0 AB; ROADMAP "Threat T branches"; OverrunDefinition, OverrunRooms).
-## On a floor with an Overrun room (FloorLayout.overrun_room) and a loadout with its table (World.overrun_table):
-## - you are inside while you stand in the room (FloorLayout.room_of) and it isn't cleared;
-## - while inside, the spawn director's alive cap is x spawn_permille and its interval / spawn_permille, on top of
-##   the floor and danger-tier values (SpawnTable.cap, interval); on_spawn runs for every pack member: every enemy that
-##   arrives then is an Overrun enemy (World.overrun.boosted): its tier-scaled HP x hp_permille at once and its
-##   tier power (ActorStore.power, which every enemy attack, bolt and mine goes through: EnemyAi.powered) x
-##   damage_permille, for as long as it lives;
-## - kills of Overrun enemies count (on_kill, from Rewards.on_kill, with the shards they paid) wherever they die;
-##   kills_to_clear of them clear the room (tick phase 9, advance): an altar appears at the room's open spot nearest
-##   its centre with ability cards already rolled from the loot stream (level-ups of abilities you own first, then new
-##   ones; an altar with none rolls as usual on opening), and the shards those kills paid are paid again x
-##   (shard_permille - 1000) / 1000 (a SHARDS event at the altar). A cleared room is a normal room.
+## v0.5.5 AR (owner S8: "should close the door and have between 3-5 waves of 4, 8 or 12 enemies spawning in them, not
+## just killing what spawns outside"): the Overrun room is the floor's hardest arena (Arenas). On a floor with an
+## Overrun room (FloorLayout.overrun_room) and a loadout with its table (World.overrun_table):
+## - walking in seals it (Arenas): you are inside until it clears; its waves_min..waves_max waves (drawn per room) of
+##   wave_sizes[floor] enemies spawn inside it, the next when the last one dies;
+## - every enemy that arrives while you're inside is an Overrun enemy (on_spawn; World.overrun.boosted): its
+##   tier-scaled HP x hp_permille at once and its tier power (ActorStore.power, which every enemy attack, bolt and mine
+##   goes through: EnemyAi.powered) x damage_permille, for as long as it lives;
+## - kills of Overrun enemies count (on_kill, from Rewards.on_kill, with the shards they paid);
+## - after the last wave (on_clear): an altar appears at the room's open spot nearest its centre with ability cards
+##   already rolled from the loot stream (level-ups of abilities you own first, then new ones; an altar with none
+##   rolls as usual on opening; it stays outside S1's two-altar cap, owner 2026-10-08), and the shards those kills
+##   paid are paid again x (shard_permille - 1000) / 1000 (a SHARDS event at the altar). A cleared room is a normal
+##   room.
 
 
 static func enabled(w: World) -> bool:
 	return w.overrun_table != null and w.floor_layout != null and w.floor_layout.overrun_room >= 0
 
 
-## Tick phase 9, after the deaths: inside or not, and the clear.
-static func advance(w: World) -> void:
-	if not enabled(w) or w.player_dead():
-		return
+## Arenas sealed the Overrun room: you're inside until it clears.
+static func on_seal(w: World) -> void:
 	var s := w.overrun
-	var room := w.floor_layout.overrun_room
-	s.inside = not s.cleared() and w.floor_layout.room_of(w.player_pos()) == room
-	if s.inside and s.enter_tick < 0:
+	s.inside = true
+	if s.enter_tick < 0:
 		s.enter_tick = w.tick
-	if not s.cleared() and s.kills >= w.overrun_table.kills_to_clear:
-		_clear(w)
 
 
-## The spawn director's alive cap and interval now (raised while inside).
-static func cap(w: World, base: int) -> int:
-	return base * w.overrun_table.spawn_permille / 1000 if w.overrun.inside else base
-
-
-static func interval(w: World, base: int) -> int:
-	if not w.overrun.inside:
-		return base
-	return maxi(1, base * 1000 / w.overrun_table.spawn_permille)
+## Arenas cleared it after its last wave.
+static func on_clear(w: World) -> void:
+	_clear(w)
 
 
 ## The spawn director added actor `i`: while inside, it is an Overrun enemy.
@@ -64,7 +55,7 @@ static func on_kill(w: World, i: int, shards: int) -> void:
 	s.boosted.remove_at(k)
 	if not s.cleared():
 		s.kills += 1
-		s.shards_in += maxi(0, shards)
+		s.shards_in += maxi(0, shards)  # v0.5.5 AR: every Overrun kill, whatever wave it came in
 
 
 static func _clear(w: World) -> void:
@@ -135,7 +126,8 @@ static func read(w: World) -> Dictionary:
 		"inside": s.inside,
 		"entered": s.enter_tick >= 0,
 		"kills": s.kills,
-		"needed": w.overrun_table.kills_to_clear if w.overrun_table != null else 0,
+		"wave": w.arenas.wave if s.inside else 0,  # v0.5.5 AR: the waves (Arenas)
+		"waves": w.arenas.waves if s.inside else 0,
 		"cleared": s.cleared(),
 		"clear_tick": s.clear_tick,
 		"bonus": s.bonus,

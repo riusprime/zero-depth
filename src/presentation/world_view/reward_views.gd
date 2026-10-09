@@ -13,6 +13,11 @@ const ALTAR_LIGHT := Color("#9CC8FF")
 ## v0.5.0 RT: a Deep floor's epic altar glows the Deep gate's violet.
 const EPIC_GLOW := Color("#B47CFF")
 const EPIC_LIGHT := Color("#8B3DFF")
+## v0.5.5 AR (X1b): the boss's legendary altar glows bright gold.
+const LEGENDARY_GLOW := Color("#FFD84A")
+const LEGENDARY_LIGHT := Color("#FFC233")
+## v0.5.5 AR: a reward locked in an arena that isn't cleared wears an amber seal ring until the clear.
+const SEAL := Color("#FFB020")
 const LOCK_RED := Color("#FF3B30")
 const STONE := Color("#77706A")
 const STONE_TOP := Color("#8B847D")
@@ -45,6 +50,8 @@ var _opening := {}
 var _rune_mat := StandardMaterial3D.new()
 var _epic_mat := StandardMaterial3D.new()
 var _lock_mat := StandardMaterial3D.new()
+var _legend_mat := StandardMaterial3D.new()
+var _seal_mat := StandardMaterial3D.new()
 
 
 func _init() -> void:
@@ -61,6 +68,12 @@ func _init() -> void:
 	_lock_mat.emission_enabled = true
 	_lock_mat.emission = LOCK_RED
 	_lock_mat.emission_energy_multiplier = 2.6
+	for pair: Array in [[_legend_mat, LEGENDARY_GLOW, 3.2], [_seal_mat, SEAL, 2.0]]:
+		var m: StandardMaterial3D = pair[0]
+		m.albedo_color = pair[1]
+		m.emission_enabled = true
+		m.emission = pair[1]
+		m.emission_energy_multiplier = pair[2]
 
 
 func sync(reader: WorldReader) -> void:
@@ -73,12 +86,21 @@ func sync(reader: WorldReader) -> void:
 		live[id] = true
 		var n: Node3D = _nodes.get(id)
 		if n == null:
-			var altar := reader.reward_kind(i) == WorldReader.REWARD_ALTAR
-			n = make_altar(reader.reward_is_epic(i)) if altar else make_chest()
+			var kind := reader.reward_kind(i)
+			if kind == WorldReader.REWARD_LEGENDARY:  # v0.5.5 AR (X1b)
+				n = make_altar(false, true)
+			elif kind == WorldReader.REWARD_DROP:  # v0.6.0 CU: a stolen core, Marked's card
+				n = make_drop(CoreViews.card_color(reader, reader.reward_drop_card(i)))
+			elif kind == WorldReader.REWARD_ALTAR:
+				n = make_altar(reader.reward_is_epic(i))
+			else:
+				n = make_chest()
+			_add_seal(n)
 			n.position = SimPlane.to_3d(reader.reward_pos(i))
 			add_child(n)
 			n.reset_physics_interpolation()
 			_nodes[id] = n
+		(n.get_meta(&"seal") as Node3D).visible = reader.reward_locked(i)  # v0.5.5 AR
 		var label: Label3D = n.get_meta(&"price") if n.has_meta(&"price") else null
 		if label != null:
 			label.text = str(reader.reward_price(i))
@@ -101,6 +123,40 @@ func sync(reader: WorldReader) -> void:
 
 func count() -> int:
 	return _nodes.size()
+
+
+## v0.5.5 AR: whether reward `id` shows its arena seal (tests).
+func is_sealed(id: int) -> bool:
+	var n: Node3D = _nodes.get(id)
+	return n != null and (n.get_meta(&"seal") as Node3D).visible
+
+
+## v0.5.5 AR: an amber ring around the reward's foot and two crossed bars over it, shown while it's locked.
+func _add_seal(root: Node3D) -> void:
+	var seal := Node3D.new()
+	seal.name = "ArenaSeal"
+	var ring := MeshInstance3D.new()
+	var t := TorusMesh.new()
+	t.inner_radius = 0.72
+	t.outer_radius = 0.8
+	ring.mesh = t
+	ring.position.y = 0.08
+	ring.material_override = _seal_mat
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	seal.add_child(ring)
+	for k in 2:
+		var bar := MeshInstance3D.new()
+		var b := BoxMesh.new()
+		b.size = Vector3(1.3, 0.06, 0.06)
+		bar.mesh = b
+		bar.position.y = 1.0
+		bar.rotation.y = PI * 0.25 + PI * 0.5 * k
+		bar.material_override = _seal_mat
+		bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		seal.add_child(bar)
+	seal.visible = false
+	root.add_child(seal)
+	root.set_meta(&"seal", seal)
 
 
 ## The node of reward `id` (tests and shot scripts), or null.
@@ -148,7 +204,7 @@ func _process(delta: float) -> void:
 
 
 ## A hexagonal stone plinth with a floating rune crystal (blue-white) and three orbiting shards.
-func make_altar(epic: bool = false) -> Node3D:
+func make_altar(epic: bool = false, legendary: bool = false) -> Node3D:
 	var root := Node3D.new()
 	var body := Node3D.new()
 	root.add_child(body)
@@ -161,6 +217,8 @@ func make_altar(epic: bool = false) -> Node3D:
 	spin.position.y = 1.25
 	root.add_child(spin)
 	var glow := _epic_mat if epic else _rune_mat  # v0.5.0 RT: the epic altar's violet
+	if legendary:
+		glow = _legend_mat  # v0.5.5 AR (X1b): the boss's legendary gold
 	var rune := _mesh(bipyramid(4, 0.17, 0.3, 0.3), glow)
 	rune.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	spin.add_child(rune)
@@ -172,6 +230,8 @@ func make_altar(epic: bool = false) -> Node3D:
 		spin.add_child(shard)
 	var light := OmniLight3D.new()
 	light.light_color = EPIC_LIGHT if epic else ALTAR_LIGHT
+	if legendary:
+		light.light_color = LEGENDARY_LIGHT
 	light.light_energy = 0.9
 	light.omni_range = 3.0
 	light.position.y = 1.2
@@ -181,6 +241,43 @@ func make_altar(epic: bool = false) -> Node3D:
 	root.set_meta(&"light", light)
 	root.set_meta(&"energy", 0.9)
 	root.set_meta(&"epic", epic)
+	root.set_meta(&"legendary", legendary)
+	return root
+
+
+## v0.6.0 CU: a free card drop (a stolen core, Marked's rare card): the core's crystal floating low over the floor,
+## glowing its card family's frame colour, turning, with a small light. No plinth: it fell from the body.
+func make_drop(color: Color) -> Node3D:
+	var root := Node3D.new()
+	var body := Node3D.new()
+	root.add_child(body)
+	var mat := CoreViews.glow_material(color, 2.6)
+	var spin := Node3D.new()
+	spin.position.y = 0.9
+	root.add_child(spin)
+	var gem := _mesh(bipyramid(6, 0.2, 0.34, 0.34), mat)
+	gem.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	spin.add_child(gem)
+	var ring := MeshInstance3D.new()
+	var t := TorusMesh.new()
+	t.inner_radius = 0.42
+	t.outer_radius = 0.48
+	ring.mesh = t
+	ring.position.y = 0.05
+	ring.material_override = mat
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.add_child(ring)
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = 0.8
+	light.omni_range = 2.5
+	light.position.y = 0.9
+	root.add_child(light)
+	root.set_meta(&"body", body)
+	root.set_meta(&"spin", spin)
+	root.set_meta(&"light", light)
+	root.set_meta(&"energy", 0.8)
+	root.set_meta(&"drop", true)
 	return root
 
 

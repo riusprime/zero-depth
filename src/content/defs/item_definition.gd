@@ -36,16 +36,52 @@ enum Kind {
 	OVERCLOCKED_DRONE,
 	RAZOR_ORBIT,
 	AFTERIMAGE,
+	MODIFIER,
 }
 
-## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
-enum Rarity { COMMON, RARE }
+## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
+## LEGENDARY, offered only by the boss's legendary tier (and a boss's core), never by altars, chests or shops.
+enum Rarity { COMMON, RARE, LEGENDARY }
+
+## v0.6.0 MX1: the kinds whose attack effects live in their modifiers (each must name at least one).
+const MODIFIER_KINDS: Array[Kind] = [
+	Kind.LONG_EDGE,
+	Kind.TWIN_ARC,
+	Kind.EMBER_EDGE,
+	Kind.SPLINTER_SHOT,
+	Kind.RAPID_COIL,
+	Kind.RICOCHET_CORE,
+	Kind.OVERCHARGE,
+	Kind.STATIC_CHAIN,
+	Kind.FROST_CORE,
+	Kind.CINDER_SHOT,
+	Kind.CONDUCTOR,
+	Kind.SERRATED_EDGE,
+	Kind.BARBED_BOLTS,
+	Kind.GLACIAL_EDGE,
+	# v0.6.0 MX4: the ability mods' effects are modifiers now, and the M-list's cards are all modifier cards.
+	Kind.CLUSTER_PAYLOAD,
+	Kind.OVERCLOCKED_DRONE,
+	Kind.AFTERIMAGE,
+	Kind.MODIFIER,
+]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
 ## v0.3.0 L18: &"heat" marks the Overclock heat items (offered only when the run has heat).
 ## v0.5.0 CP: &"ability" marks the ability mods (each needs its ability: requires_ability).
+## v0.6.0 MX4: &"venom" (Venom Core's poison engine).
 const TAGS: Array[StringName] = [
-	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard", &"heat", &"ability"
+	&"fire",
+	&"shock",
+	&"frost",
+	&"bleed",
+	&"blade",
+	&"bolt",
+	&"dash",
+	&"guard",
+	&"heat",
+	&"ability",
+	&"venom",
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -61,40 +97,21 @@ const TAGS: Array[StringName] = [
 @export var requires_ability: StringName = &""
 @export var name_key: StringName
 @export var desc_key: StringName
-## Long Edge: swing reach × (1 + bonus / 1000).
-@export var reach_bonus_permille := 0
-## Twin Arc: the echo swing's delay and its damage share of the swing.
-@export var echo_delay_seconds := 0.0
-@export var echo_damage_permille := 0
+## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md): the modifiers (ModifierDefinition ids, data/modifiers/) this item
+## brings into the build, in order. What an item does to the Blade's steps, the Gun's bolt and the Skills lives
+## there; the item keeps its card fields and its engine numbers (burn, shock, bleed, frost, slow, guard, heat).
+@export var modifiers: Array[StringName] = []
 ## Ember Edge: damage per burn stack per period, the burn's length (refreshed by each new stack), the stack cap.
 @export var burn_damage := 0
 @export var burn_period_seconds := 0.0
 @export var burn_duration_seconds := 0.0
 @export var burn_max_stacks := 0
-## Splinter Shot: bolts per shot, the fan's full width, each bolt's damage share (rounded down, at least 1).
-@export var split_count := 0
-@export var split_spread_degrees := 0.0
-@export var split_damage_permille := 0
-## Rapid Coil: fire rate × (1 + bonus / 1000).
-@export var fire_rate_bonus_permille := 0
-## Ricochet Core: wall bounces per bolt.
-@export var bounces := 0
 ## Kinetic Dash: damage to each enemy the dash passes through (once per dash).
 @export var dash_hit_damage := 0
-## Overcharge: every Nth swing of the combo (N = 4: the finisher) deals × mult and a shockwave of this radius at a
-## share of the swing's damage.
-@export var overcharge_every := 0
-@export var overcharge_mult_permille := 0
-@export var shockwave_radius_m := 0.0
-@export var shockwave_damage_permille := 0
 ## Vampiric Core: HP healed per kill, at most heal_cap HP in each heal_window_seconds.
 @export var heal_per_kill := 0
 @export var heal_cap := 0
 @export var heal_window_seconds := 0.0
-## Static Chain: every Nth bolt that lands jumps to the nearest other enemy within chain_range_m.
-@export var chain_every := 0
-@export var chain_range_m := 0.0
-@export var chain_damage := 0
 ## Momentum: a swing started within the window after a dash ends deals × (1 + bonus / 1000).
 @export var momentum_window_seconds := 0.0
 @export var momentum_bonus_permille := 0
@@ -117,11 +134,11 @@ const TAGS: Array[StringName] = [
 # --- Engines (v0.3.0 G). An engine's numbers live in each item that feeds it; owning several takes the strongest.
 ## Tags from TAGS: at least one, no repeats.
 @export var tags: PackedStringArray = PackedStringArray()
-## Stacks one qualifying hit adds (Static Chain, Overcharge, Conductor, Serrated Edge, Barbed Bolts, Frost Core,
-## Glacial Edge, Cold Snap, Cinder Shot), or the stacks Wildfire spreads.
+## Stacks one qualifying hit of a source that is not a weapon attack adds (Static Chain's jumps, Overcharge's
+## shockwave, Cold Snap's dash, Razor Orbit's blades), or the stacks Wildfire spreads. v0.6.0 MX1: the stacks a
+## Blade or Gun hit feeds (Conductor, Serrated Edge, Glacial Edge, Cinder Shot, Barbed Bolts, Frost Core, Static
+## Chain's bolts) moved into each item's modifier (a STATUS op with its stacks and every).
 @export var stacks_per_hit := 0
-## Bolt feeders: one application every this many landed bolts (1 = every bolt).
-@export var stack_every := 0
 ## Shock: stacks that discharge, how long stacks last (refreshed by each new one), the discharge's damage, how many
 ## other enemies it jumps to, and how far each jump reaches.
 @export var shock_threshold := 0
@@ -156,20 +173,16 @@ const TAGS: Array[StringName] = [
 @export var heat_hot_threshold := 0
 ## Meltdown: reaching the overheat point blows up as a full-heat vent blast at this share (per mille), no stall.
 @export var meltdown_damage_permille := 0
-# --- Ability mods (v0.5.0 CP; AbilityMods).
-## Cluster Payload: a thrown bomb splits into this many bomblets at its edge, each landing this long after it, for
-## this share of its damage in this share of its radius.
-@export var bomblets := 0
-@export var bomblet_damage_permille := 0
-@export var bomblet_radius_permille := 0
-@export var bomblet_delay_seconds := 0.0
-## Overclocked Drone: drone fire rate + this per mille for each heat point held.
-@export var drone_rate_per_heat_permille := 0
-## Razor Orbit: a blade's touch adds stacks_per_hit bleed (with the bleed fields, like Serrated Edge).
-## Afterimage: a blink's echo bursts this long after for this damage in this radius.
-@export var afterimage_damage := 0
-@export var afterimage_radius_m := 0.0
-@export var afterimage_delay_seconds := 0.0
+# --- Ability mods (v0.5.0 CP; AbilityMods). Razor Orbit: a blade's touch adds bleed (its modifier's STATUS op; the
+## bleed fields here, like Serrated Edge). v0.6.0 MX4: Cluster Payload's bomblets, Overclocked Drone's heat rate and
+## Afterimage's echo are their modifiers' ops (data/modifiers/), no longer fields here.
+# --- v0.6.0 MX4: Venom Core's poison engine (Venom): damage per stack per period, how long stacks last (refreshed by
+# each new one), the stack cap, and the radius a poisoned enemy's death spreads its stacks over.
+@export var poison_damage := 0
+@export var poison_period_seconds := 0.0
+@export var poison_seconds := 0.0
+@export var poison_max_stacks := 0
+@export var poison_spread_m := 0.0
 
 
 func category() -> StringName:
@@ -182,8 +195,10 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
-	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
-		issues.append(ValidationIssue.new(&"range", resource_path, "rarity is common or rare"))
+	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")
+		)
 	if not requires_utility in [&"", &"guard", &"blink"]:
 		issues.append(
 			ValidationIssue.new(
@@ -205,34 +220,16 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	_check_tags(issues)
+	if kind in MODIFIER_KINDS and modifiers.is_empty():
+		issues.append(
+			ValidationIssue.new(&"missing", resource_path, "this kind names its modifiers")
+		)
 	match kind:
-		Kind.LONG_EDGE:
-			check_positive(issues, "reach_bonus_permille", reach_bonus_permille)
-		Kind.TWIN_ARC:
-			check_positive(issues, "echo_delay_seconds", echo_delay_seconds)
-			check_duration(issues, "echo_delay_seconds", echo_delay_seconds)
-			check_positive(issues, "echo_damage_permille", echo_damage_permille)
 		Kind.EMBER_EDGE:
 			_check_burn(issues)
-		Kind.SPLINTER_SHOT:
-			if split_count < 2:
-				issues.append(ValidationIssue.new(&"range", resource_path, "split_count is >= 2"))
-			check_positive(issues, "split_spread_degrees", split_spread_degrees)
-			check_positive(issues, "split_damage_permille", split_damage_permille)
-		Kind.RAPID_COIL:
-			check_positive(issues, "fire_rate_bonus_permille", fire_rate_bonus_permille)
-		Kind.RICOCHET_CORE:
-			check_positive(issues, "bounces", bounces)
 		Kind.KINETIC_DASH:
 			check_positive(issues, "dash_hit_damage", dash_hit_damage)
 		Kind.OVERCHARGE:
-			if overcharge_every < 2:
-				issues.append(
-					ValidationIssue.new(&"range", resource_path, "overcharge_every is >= 2")
-				)
-			check_positive(issues, "overcharge_mult_permille", overcharge_mult_permille)
-			check_positive(issues, "shockwave_radius_m", shockwave_radius_m)
-			check_positive(issues, "shockwave_damage_permille", shockwave_damage_permille)
 			_check_shock(issues)
 		Kind.VAMPIRIC_CORE:
 			check_positive(issues, "heal_per_kill", heal_per_kill)
@@ -240,19 +237,14 @@ func validate() -> Array[ValidationIssue]:
 			check_positive(issues, "heal_window_seconds", heal_window_seconds)
 			check_duration(issues, "heal_window_seconds", heal_window_seconds)
 		Kind.STATIC_CHAIN:
-			check_positive(issues, "chain_every", chain_every)
-			check_positive(issues, "chain_range_m", chain_range_m)
-			check_positive(issues, "chain_damage", chain_damage)
 			_check_shock(issues)
-			check_positive(issues, "stack_every", stack_every)
 		Kind.MOMENTUM:
 			check_positive(issues, "momentum_window_seconds", momentum_window_seconds)
 			check_duration(issues, "momentum_window_seconds", momentum_window_seconds)
 			check_positive(issues, "momentum_bonus_permille", momentum_bonus_permille)
 		Kind.FROST_CORE:
 			_check_slow(issues)
-			_check_frost(issues)
-			check_positive(issues, "stack_every", stack_every)
+			_check_frost(issues, false)
 		Kind.THORN_MANTLE:
 			check_positive(issues, "thorn_bolts", thorn_bolts)
 			check_positive(issues, "thorn_damage", thorn_damage)
@@ -281,22 +273,19 @@ func _validate_engines(issues: Array[ValidationIssue]) -> void:
 	match kind:
 		Kind.CINDER_SHOT:
 			_check_burn(issues)
-			check_positive(issues, "stacks_per_hit", stacks_per_hit)
-			check_positive(issues, "stack_every", stack_every)
 		Kind.WILDFIRE:
 			_check_burn(issues)
 			check_positive(issues, "stacks_per_hit", stacks_per_hit)
 			check_positive(issues, "spread_radius_m", spread_radius_m)
 		Kind.CONDUCTOR:
-			_check_shock(issues)
+			_check_shock(issues, false)
 		Kind.SERRATED_EDGE:
-			_check_bleed(issues)
+			_check_bleed(issues, false)
 		Kind.BARBED_BOLTS:
-			_check_bleed(issues)
-			check_positive(issues, "stack_every", stack_every)
+			_check_bleed(issues, false)
 		Kind.GLACIAL_EDGE:
 			_check_slow(issues)
-			_check_frost(issues)
+			_check_frost(issues, false)
 		Kind.COLD_SNAP:
 			_check_slow(issues)
 			_check_frost(issues)
@@ -321,24 +310,29 @@ static func ability_kind(id: StringName) -> int:
 	return -1 if id == &"" else AbilityDefinition.Kind.keys().find(String(id).to_upper())
 
 
-## The ability mods (v0.5.0 CP).
+## The ability mods (v0.5.0 CP; v0.6.0 MX4: Cluster Payload, Overclocked Drone and Afterimage are their modifiers),
+## and the M-list's modifier cards (v0.6.0 MX4): the engine numbers a card's modifier feeds are checked when present.
 func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 	match kind:
-		Kind.CLUSTER_PAYLOAD:
-			check_positive(issues, "bomblets", bomblets)
-			check_positive(issues, "bomblet_damage_permille", bomblet_damage_permille)
-			check_positive(issues, "bomblet_radius_permille", bomblet_radius_permille)
-			check_positive(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
-			check_duration(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
-		Kind.OVERCLOCKED_DRONE:
-			check_positive(issues, "drone_rate_per_heat_permille", drone_rate_per_heat_permille)
 		Kind.RAZOR_ORBIT:
 			_check_bleed(issues)
-		Kind.AFTERIMAGE:
-			check_positive(issues, "afterimage_damage", afterimage_damage)
-			check_positive(issues, "afterimage_radius_m", afterimage_radius_m)
-			check_positive(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
-			check_duration(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
+		Kind.MODIFIER:
+			if burn_max_stacks > 0:
+				_check_burn(issues)
+			if poison_max_stacks > 0 or poison_damage > 0:
+				_check_poison(issues)
+
+
+## v0.6.0 MX4: Venom Core's poison engine.
+func _check_poison(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "poison_damage", poison_damage)
+	check_positive(issues, "poison_period_seconds", poison_period_seconds)
+	check_duration(issues, "poison_period_seconds", poison_period_seconds)
+	check_positive(issues, "poison_seconds", poison_seconds)
+	check_duration(issues, "poison_seconds", poison_seconds)
+	check_positive(issues, "poison_max_stacks", poison_max_stacks)
+	if poison_spread_m < 0.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "poison_spread_m >= 0"))
 
 
 func _check_tags(issues: Array[ValidationIssue]) -> void:
@@ -362,8 +356,11 @@ func _check_burn(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "burn_max_stacks", burn_max_stacks)
 
 
-func _check_shock(issues: Array[ValidationIssue]) -> void:
-	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+## `feeds`: the item feeds the status from a source of its own (stacks_per_hit); false when its modifier's STATUS
+## op carries the stacks (v0.6.0 MX1).
+func _check_shock(issues: Array[ValidationIssue], feeds: bool = true) -> void:
+	if feeds:
+		check_positive(issues, "stacks_per_hit", stacks_per_hit)
 	if shock_threshold < 2:
 		issues.append(ValidationIssue.new(&"range", resource_path, "shock_threshold is >= 2"))
 	check_positive(issues, "shock_seconds", shock_seconds)
@@ -373,8 +370,9 @@ func _check_shock(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "shock_range_m", shock_range_m)
 
 
-func _check_bleed(issues: Array[ValidationIssue]) -> void:
-	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+func _check_bleed(issues: Array[ValidationIssue], feeds: bool = true) -> void:
+	if feeds:
+		check_positive(issues, "stacks_per_hit", stacks_per_hit)
 	check_positive(issues, "bleed_damage", bleed_damage)
 	check_positive(issues, "bleed_period_seconds", bleed_period_seconds)
 	check_duration(issues, "bleed_period_seconds", bleed_period_seconds)
@@ -384,8 +382,9 @@ func _check_bleed(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "bleed_burst_per_stack", bleed_burst_per_stack)
 
 
-func _check_frost(issues: Array[ValidationIssue]) -> void:
-	check_positive(issues, "stacks_per_hit", stacks_per_hit)
+func _check_frost(issues: Array[ValidationIssue], feeds: bool = true) -> void:
+	if feeds:
+		check_positive(issues, "stacks_per_hit", stacks_per_hit)
 	if frost_threshold < 2:
 		issues.append(ValidationIssue.new(&"range", resource_path, "frost_threshold is >= 2"))
 	check_positive(issues, "frost_seconds", frost_seconds)

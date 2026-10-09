@@ -4,7 +4,9 @@ extends RefCounted
 ## An altar is free; a chest costs `price` shards. Opening one rolls its offer once (OFFER_SLOTS item indices,
 ## -1 for an empty slot) and keeps it until a card is taken, so cancelling and reopening shows the same cards.
 
-enum Kind { ALTAR, CHEST }
+## v0.5.5 AR: LEGENDARY, the boss's free legendary altar (BossReward). Appended, never inserted: the kind is hashed.
+## v0.6.0 CU: DROP, a free one-card drop (a stolen core, Marked's rare card; CoreTheft.grant), its offer set at once.
+enum Kind { ALTAR, CHEST, LEGENDARY, DROP }
 
 const OFFER_SLOTS := 3
 

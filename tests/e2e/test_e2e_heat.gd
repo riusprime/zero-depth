@@ -1,6 +1,6 @@
 extends GutTest
 ## Overclock heat in the real game (v0.3.0 PLAN L18), through real input only: the left stick walks the wanderer
-## up to the nearest enemy, the right stick aims at it and the left trigger swings until heat reaches Hot (the HUD
+## up to the nearest enemy, the right stick aims at it and the right trigger swings until heat reaches Hot (the HUD
 ## meter fills and shows the VENT prompt), then the Vent button (pad B, v0.3.5 K) vents it. Read through
 ## WorldReader and the HUD: the blast hits the enemy beside you, heat resets to 0, the meter empties and the
 ## world view draws the blast ring at the sim's radius.
@@ -50,7 +50,7 @@ func _stick(e: E2e, x_axis: JoyAxis, y_axis: JoyAxis, dir: Vector2) -> void:
 func _release(e: E2e) -> void:
 	for axis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
 		e.joy_axis(axis, 0.0)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 
 
 func _click(e: E2e, button: String) -> void:
@@ -87,7 +87,7 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	assert_eq(choice.text, tr("ENEMY_WARDEN"), "the panel names the Warden")
 	var wardens := 0
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, w.player_pos()))  # v0.5.5 AR: around the arenas
 	var trigger := false
 	var charging := true
 	var ready := false
@@ -116,10 +116,10 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 			_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, walk)
 			_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, to.normalized())
 			if trigger or not charging:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 				trigger = false
 			elif r.swing_tick() == 0 and to.length() < CLOSE_M + 0.5:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 				trigger = true
 			if (
 				not charging
@@ -141,6 +141,10 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 	var before := r.heat_state()
 	var heat_before: float = before["heat"]
 	assert_gte(heat_before, float(before["hot"]), "Hot before the vent")
+	# v0.5.5 LK (A2): the blade wears the heat meter's tier colour: orange at Hot, red at Overclock.
+	var kit: KitView = e.main.view.kit
+	assert_eq(kit.hue(), HeatLooks.attack_color(kit.color, int(before["tier"])), "a hot blade")
+	assert_ne(kit.hue(), kit.color, "not its cool colour")
 	var hint := hud.kit_hud
 	assert_true(hint.vent_lit(), "the vent hint is lit")
 	assert_false(KitHud.key_text(&"vent").is_empty(), "the vent has a key")
@@ -168,6 +172,7 @@ func test_hit_enemies_until_hot_then_press_vent() -> void:
 			"damage scales with the heat vented"
 		)
 	assert_almost_eq(float(after["heat"]), 0.0, 0.3, "heat reset to 0")
+	assert_eq(kit.hue(), kit.color, "vented: the blade is back to its own colour")
 	assert_eq(meter.vent_text(), "", "no VENT prompt once vented")
 	assert_lt(meter.fill(), 0.05, "the meter emptied")
 	var fx: HeatVisuals = e.main.view.heat_fx

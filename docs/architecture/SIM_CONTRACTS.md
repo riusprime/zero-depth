@@ -56,7 +56,7 @@ the order is part of the contract:
 | 6 | **Hits** | Active hitboxes and projectile sweeps produce `HIT` events in a fixed order: attacker id, then hitbox index, then target id. |
 | 7 | **Drain the effect queue** | All events and triggered payoffs resolve (§7–§8). |
 | 8 | **Statuses** | Status timers tick; damage-over-time emits `DAMAGE` (never `HIT`, proc 0) and drains through the queue again. |
-| 9 | **Deaths and waves** | Entities marked dead are removed. Spawns queued this tick are added with new ids. The encounter checks its wave and clear conditions. v0.5.0 EV: right after the removal, `Events.advance` drops dead elites, opens an Ambush Cache's chest once its pack is gone and counts a Wandering Drone defence (paying its shards when held). |
+| 9 | **Deaths and waves** | Entities marked dead are removed (v0.6.0 CU: as each leaves, `CoreTheft.on_death` drops a core stolen in its window, and Marked's rare card). Spawns queued this tick are added with new ids. The encounter checks its wave and clear conditions. v0.5.0 EV: right after the removal, `Events.advance` drops dead elites, opens an Ambush Cache's chest once its pack is gone and counts a Wandering Drone defence (paying its shards when held); v0.6.0 CU: then `CoreTheft.advance` runs the staggers and steal windows down. |
 | 10 | **Publish cues** | The tick's events are appended to the event log that presentation reads (§9). |
 | 11 | **Optional hash** | When a checkpoint is due (§10), the `StateHasher` runs. |
 
@@ -167,11 +167,18 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   an event; drawn fresh from the run seed by `Events.pick_rooms`, a pure function of layout and seed), `loot:event`
   (`World.ev.rng`: the event drawn per pedestal, each panel's cards and curses on its first open, an ambush's kinds
   and spots, the cursed-chest roll and its card and curse) and `ai:elite` (`World.ev.rng_elite`: one roll per spawn
-  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05's list of
-  named streams is unchanged. Both world states join the hash with the event block (§10).
+  while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05 lists them
+  (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
+- **v0.6.0 CU** draws only on named streams that already exist: `combat` (Rooted's dodge: one draw per enemy hit that
+  would land on the player, only while a dodge chance is held; `Curses.dodges`), `ai:elite` (core theft: the card an
+  elite's or a boss's core holds, drawn when it becomes an elite (`Curses.make_elite`) or rises (`World.spawn_boss`);
+  `CoreTheft.on_elite`, `on_boss`) and `loot:event` (the cursed chest's roll and its trade-off curse; a core redrawn at
+  its drop when its card no longer applies; Marked's rare card from a slain elite). Cores exist only in worlds with
+  the event streams (`World.ev.rng_elite`), so older worlds draw nothing new.
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
-  happened earlier.
+  happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
+  floor's seed (`World.seed_value`, which the run seed derives per floor), so room `k` on each floor has its own.
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -338,6 +345,258 @@ Hitting any of them stops that chain, emits one `LIMIT` event naming the guard, 
 sims assert that the `LIMIT` count is 0. The fuzz test is deliberately stricter: ≤ 256 events per tick, so normal
 play stays well under the watchdog ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-FUZZ).
 
+## 8b. Attack specs and modifiers (v0.6.0 MX1)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) (owner B2–B9). MX1 is its "order of work"
+step 1: the spec, the compile and one launch for the weapon attacks, with the v0.5 items that touch them moved into
+modifier data and no change in what the game does.
+
+**`AttackSpec`** (`src/sim/combat/attack_spec.gd`): one attack as data, in sim units. `form` (`ARC`, `BOLT`, `RING`,
+`BEAM`, `ZONE`, `ORBITER`, `LOB`, `BURST`); `tags` for target filters (`weapon`, `melee`, `projectile`, `skill`,
+`ability`, `area`, `chain`, `hook`, `auto`); pattern (`count` over the full fan `spread`, `repeat_delay_ticks` /
+`repeat_damage_permille`); size (`half_arc`, `reach_m` × (1000 + `reach_bonus_permille`) / 1000, `radius_m`, `speed`,
+`life_ticks`, `period_ticks`, `rate_bonus_permille`); payload (`damage`, `damage_permille` when the shot splits,
+`nth_every` / `nth_damage_permille`, `hitstop_ticks`, statuses with stacks and `every`, `elements` for the view);
+behaviour (`bounces`, `pierce`, `seek`); `hooks` (`AttackHook`: a trigger `ON_HIT`, `ON_KILL`, `ON_NTH` or `ON_END`,
+an `every`, flat damage or a per-mille share of the parent's base damage, and a `child` spec); `depth` (0 root, at
+most 2); `modifier_ids` (what rewrote it, in order).
+
+**Compile** (`Modifiers.compile(w)`): base specs come from the player table: `blade_step_0..3` (the combo steps,
+`[weapon, melee]`), `gun_bolt` (`[weapon, projectile]`), and `skill` (Lunge Cleave `[skill, melee]`, Scatter Blast a
+`BEAM` fan `[skill, projectile]`). Both weapons' specs are compiled in every run (the build only enables one, L15).
+The build's modifiers are the owned items' `ItemTable.modifiers`, in pick order. Each base spec goes through
+**`FORM → PATTERN → BEHAVIOUR → PAYLOAD → HOOK → SCALE`**; inside a stage the modifiers run in pick order and each
+one's ops in order; a modifier touches a spec only if the spec carries every tag of its `target` (empty = all).
+Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
+`STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
+spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
+(design §2, owner B8): the first `SET_FORM` sets the form; each later one never replaces it but adds an `ON_END`
+hook whose child is a copy of the spec in the new form, compiled through the stages after `FORM`. **Riders** keep two
+v0.5 rules exact: a weapon step's hits burn whenever the burn engine runs (Wildfire, Flame Trail's borrowed engine),
+and the bolt's hits slow whenever the slow runs (Glacial Edge, Cold Snap); a rider is a status, never an element.
+No randomness is drawn (EI-05).
+
+**Cache and hash.** The book (`AttackBook`) is cached on `World.attack_book`; `World._build_mods` (an item picked, an
+ability granted or levelled, a floor's carry) and a snapshot restore set it to null, and the next read compiles it.
+So a compile happens on pick and on load, never per tick. `World.state_hash` adds the book's SHA-256 digest
+(`Modifiers.hash_into`) once the build has a modifier; worlds without one (the kernel goldens) hash as before.
+Saves store the build's item ids (as before); the snapshot keeps `attack_book` out and the restore recompiles it
+(`WorldSnapshot.WORLD_KEPT`).
+
+**Launch** (`Attacks.launch(w, spec, ctx)`): the one entry point that runs a spec. The drivers keep their timing
+(`PlayerKit`: the combo's ticks and the shot period; `PlayerSkill`: the lunge) and the runtime factors (the build's
+per mille with its carried remainder, Overcharge, Momentum, Bulwark, the gamble shrine, crit and the damage stat in
+`Damage.hit`), and pass the damage, angle, root, tags and effect id in an `AttackContext`. Runners in MX1: `ARC`
+(the steps and the cleave; reach = `Attacks.arc_reach_m`: a weapon step's base × its reach bonus × Combo Sword's
+level, then area, then Hot; a Skill's base × area), `BOLT` (queued for phase 9 as before, one per offset of
+`count` / `spread` plus Pulse Gun's twins), `BURST` (a disc), `BEAM` (`seek`: a jump to the nearest other enemy
+within `reach_m`; otherwise a fan of rays that stop at the first wall or enemy). The other forms do nothing until the
+cards that use them (MX stage 2+). The shape functions (`arc_touches`, `ray_touches`) are the ones the views'
+forecasts call (EI-07).
+
+**Hooks and their guard** (design §2): `ON_HIT` and `ON_KILL` run after a landed hit (`every` counts the landed hits
+of one launch); `ON_NTH` when an Nth combo step resolves (Overcharge's shockwave); `ON_END` after an arc or a burst
+resolves, from where it ends. A player projectile's hit runs the bolt spec's `ON_HIT` hooks (MX1: a projectile does
+not carry its spec, so every player projectile reads the Gun bolt's, which is v0.5's Static Chain rule); an `every`
+there counts landed bolts on `World.chain_count`, at most once per root (`World.chain_root`). Every hook launch goes
+through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2) with half the parent's proc
+coefficient, so `HIT.proc_pct` is 100 for a root attack, 50 for a hook's attack and 25 below that (`Damage.hit`'s new
+`proc_pct` argument; `DAMAGE` keeps 100, `DOT` 0); a hook never runs while its own id is in `World.hook_chain`
+(ancestry; empty between ticks); at most `MAX_LAUNCHES_PER_TICK` = 256 launches run in one tick, then one `LIMIT`
+(effect `attack_launch_cap`) and the tick's other launches are dropped. A hook attack's own statuses feed at stacks ×
+its proc coefficient (rounded down), once per root per target (`ProcLedger` codes 48–52); a root attack's statuses
+feed through their v0.5 sources (`Engines.on_hit` by source: a melee hit reads the current step spec, a projectile
+hit the bolt spec; `ItemEffects.on_melee_hit` for a step's burn; `ItemProcs.on_bolt_hit` for the slow). The engines'
+own guards (`ProcLedger`, `Engines.begin` ancestry and the watchdog) are unchanged; MX1's hook guard keeps its own
+chain so v0.5's event provenance (`depth`, `ancestry`) is unchanged.
+
+**What MX1 moved, exactly.** Long Edge (reach bonus), Twin Arc (repeat), Ember Edge (burn status), Splinter Shot
+(count, spread, damage share), Rapid Coil (rate bonus), Ricochet Core (bounces), Overcharge (Nth step and its
+`ON_NTH` burst), Static Chain (shock status and the bolt's `ON_HIT` seeking beam), Frost Core (slow and frost
+statuses), Cinder Shot, Conductor, Serrated Edge, Barbed Bolts, Glacial Edge (their statuses). The items keep their
+cards and engine numbers (burn, shock, bleed, frost, slow; the shock Static Chain's jumps and Overcharge's shockwave
+feed). The other 17 items (dash, guard, kill, heat, sustain and the ability mods) are not attack rewrites yet (MX
+stage 2). The equivalence test (`test_modifier_equivalence`, fixture recorded on the v0.5 code) holds every outcome
+equal; the one event-level change is `HIT.proc_pct` on Overcharge's shockwave and Static Chain's jump (now 50).
+
+## 8c. The build model and the ability modifiers (v0.6.0 MX2)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "The build" (owner B7, B8) and "Order of work"
+step 2. Evidence: [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_2.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_2.md).
+
+**The build** (`BuildSlots`, `src/sim/abilities/build_slots.gd`): the starting weapon (Combo Sword / Pulse Gun, with
+its Skill, the dash and Vent; it still levels with its cards), one utility pick (Blink or Aegis, on the utility button,
+outside the slots), up to `BuildSlots.SLOTS` = 6 modifier slots and unlimited stat cards (no slot). v0.4.0's four
+ability slots are gone. A **modifier card** is one of the six auto abilities (`AbilityTable.is_modifier`: Bomb
+Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail) or an item that changes attacks
+(`BuildSlots.is_slot_item`: it names modifiers, or it is an ability's mod: Cluster Payload, Overclocked Drone, Razor
+Orbit, Afterimage). The other 13 items take no slot (they don't rewrite attacks). Afterimage's, Cluster Payload's and
+Overclocked Drone's numbers stayed in `ItemMods` in MX2; v0.6.0 MX4 made them modifiers of ops (§8d). `World.mod_slots` holds the modifier cards
+in pick order as `Offers` codes (an item index, or `ABILITY_BASE` + an ability index), the layer order
+`Modifiers.build_modifiers` compiles in; `BuildSlots.sync` keeps it after every change of what is held (a listed card
+stays in place, a new one is appended, one not held leaves), and it is carried (`RunCarry.FIELDS`).
+
+**Taking a card** goes through `BuildSlots.take(w, code, replace)` (`Offers.apply`): a held modifier levels up (an
+ability, levels 1..5) and uses no slot; a new one takes the next slot; with the six full it needs a **swap**: it
+replaces slot `replace` in place (that card leaves the build: an item with its combos, `Shop.remove_item`; an ability
+with its level, cooldown and floor state, `Abilities.remove_slot`, and the ability combos it no longer earns). The
+swap is a choice the world waits on, like an altar's pick: `World.swap_code` (the card), `swap_source`
+(`BuildSlots.Source`: `REWARD` the altar or chest pick, `SHOP` a buy, `GRANT` a card with no panel: an event's card,
+a floor pickup, the dev panel), `swap_ref` (its offer index). `InputFrame.pick` answers it: `PICK_SWAP_BASE + n`
+(30..35) replaces slot n, `PICK_SWAP_SKIP` (39) or `PICK_CANCEL` skips. A skip at an altar or the shop goes back to its
+cards (nothing paid; a chest's price and a shop's price are paid only when the swap is answered); a skipped grant
+leaves the card. A `GRANT` swap runs in `World.step` before the altar's pick (only the answer runs; the tick counts).
+`World.add_item` and `Abilities.grant` stay uncapped for tests and labs (the scenario worlds of MX1 hold up to 11
+attack items); every player-facing path caps. Hash: `mod_slots` and the swap fields once touched (worlds without a
+slot, the kernel goldens among them, hash as before).
+
+**The ability modifiers' attacks.** `Modifiers.compile` adds a spec per held ability modifier, id = the ability id,
+tags `[ability, auto, <bomb|drone|orbit|field|nova|trail>, <area|projectile|melee>]`, its v0.5 numbers at its level
+(damage × level, radius × level, count, flight / life, cooldown or period); compiled through every modifier (a target
+filter reaches it by those tags: Razor Orbit targets `orbit`), then `Modifiers.inherit` gives it the weapon's own
+attack's statuses (not the riders), elements and `ON_HIT` / `ON_KILL` hooks (the Blade's first step, or the Gun's
+bolt); the drone's copy of a Gun also takes the bolt's count, spread, split share, bounces and pierce. When they fire
+(`ModifierAbilities`; Drone Buddy and Orbit Blades keep their v0.5 drivers in `Abilities`):
+
+| Ability | Form | When (owner pick) | Starting values |
+|---|---|---|---|
+| Bomb Lobber | `LOB` | every `every_attacks`-th weapon attack (a step resolving, a shot), once its cooldown is ready; the count waits for an enemy in range | every 4th attack, 2.5 s cooldown; targets, damage, radius, count, flight as v0.5 |
+| Drone Buddy | `BOLT` | each drone's period, at the nearest enemy (v0.5) | a copy of the weapon's attack: its payload and hooks (and a Gun's pattern and behaviour), v0.5 damage and period |
+| Orbit Blades | `ORBITER` | each touch of a blade (v0.5: once per enemy per `hit_seconds`) | copies of your attack: the weapon's payload and hooks |
+| Arc Field | `ZONE` | a weapon attack leaves a shock field where it ends (the arc's tip; a shot's aim point, 1.5 m to `range_m`), at most once per `level_cooldown` | 1.6 m, 2 s, a hit every 0.5 s, at most `level_count` enemies a tick, 12 damage and `level_extra` shock |
+| Frost Nova | `RING` | its modifier (`data/modifiers/frost_nova.tres`) gives the weapon the frost element and 1 frost stack a hit; `streak_kills` kills each within `streak_seconds` send a ring from the player, at most once per `level_cooldown` | 4 kills within 2 s of each other; the ring grows to the v0.5 nova radius over 0.3 s; 10 damage and `level_extra` frost |
+| Flame Trail | `ZONE` | a patch every 0.8 m of a dash; a patch where a player projectile ends, at most once per `period_seconds` | v0.5 radius, life, damage and burn per level |
+
+**Runners** (`Attacks.launch`): `LOB` queues a bomb (`AbilityState.bomb_*`, with its spec key and hook level) that
+lands `life_ticks` later through `Attacks.land_lob` (every enemy in the blast: a hit of the spec, then its `ON_END`
+hooks; Storm Bombs and Cluster Payload as before); `ZONE` lights a patch (`ElementAbilities.add_zone`: the fire
+patches, now with a spec key, a hook level and a per-tick cap; an enemy is hit once per the spec's `period_ticks` per
+patch kind); `RING` grows a ring (`ModifierAbilities.add_ring`: an enemy is hit when the ring's edge crosses its near
+edge; `ON_END` when it reaches its radius); `ORBITER` from a hook sweeps its blades once. The area stat scales a
+lingering form's radius at launch (`Attacks.area_radius`, as v0.5's abilities had it). A hook's lingering child takes
+the times an op can't name: `Modifiers.HOOK_LOB_TICKS`, `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`.
+`Attacks.land(spec, ctx, i)` is one hit of a spec (an orbiter's touch, a patch's, a ring's, a blast's) under
+`World.hit_spec`.
+
+**Projectiles carry their spec.** `ProjectileStore.spec_key` names the spec a player projectile runs (`AttackBook`
+files every spec and every hook child by key: a root by id, a child under `"<parent key>/<n>"`). Its hit feeds that
+spec's statuses (`Engines.on_hit` reads `World.hit_spec`, set around the projectile's `Damage.hit`), its slow
+(`ItemProcs`), its `ON_HIT` and (on a kill) `ON_KILL` hooks, and where it ends (a hit that stops it, a wall, its life)
+its `ON_END` hooks and Flame Trail's fire (`Attacks.on_projectile_end`). A projectile without a key (Wingman's
+volley, Thorn Mantle's bolts, a save from before MX2, a spec gone with a build change) reads the Gun bolt's, v0.5's
+rule. Statuses: a projectile and a weapon attack feed through `Engines.on_hit` (as MX1); an ability's other attacks
+(a bomb, an orbiter, a patch, a ring) feed their spec's statuses at proc 100 in `Attacks._feed` and `Engines.on_hit`
+skips them (no double feed). `spec_key` is hashed only once a projectile names one.
+
+**Saves.** `RunSaver.PAYLOAD_VERSION` 3 (reads 2 and 3). A carry without `mod_slots` (v0.5) sets
+`World.migrate_slots`; `Abilities.start_floor`, once the abilities' tables are set, runs `BuildSlots.migrate`: the
+held modifier cards in a fixed order (the abilities in their v0.5 slot order, then the attack items in pickup order),
+the first six kept and the rest leaving the build (last first); levels are kept. A snapshot from before MX1/MX2 may
+lack the fields listed in `WorldSnapshot.ADDED_SINCE_V05`; they keep the base world's values, the per-entry arrays
+are padded (`_pad_added`) and the slots migrate the same way. The ability ids are the modifier ids, so no id maps.
+
+**CatchUp.power** (§11) reads the new build: the modifier slots' levels (an ability modifier's level, an attack item
+1) and the utility's level at `ability_level_permille` each, the items without a slot at `item_permille`, the combos
+at `combo_permille`.
+
+## 8d. The M-list's modifiers (v0.6.0 MX4)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "Order of work" step 4; the cards are the PLAN's
+M1–M30 (owner: "keep all M1–M30"). Evidence: [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md).
+Every card is a `ModifierDefinition` of ops (CONTENT_SCHEMA "Modifiers"); the runner features below are the only
+code the list needed, each general (any card may use it), each on the one clock, none drawing randomness.
+
+**More base specs.** Besides the weapon's steps, its bolt, the Skill and the ability modifiers, every book compiles
+the **moments** `dash`, `move`, `blink` and `body` (form `BURST`, tags `[<id>, moment]`, no damage of their own) and,
+with heat, **`vent`** (a `BURST` of the heat table's `vent_radius_m`, tags `[vent, area]`). A modifier with an empty
+target rewrites every attack but never a moment: a moment's spec is reached only by a target naming its tag. The
+dash's `ON_LAUNCH` hooks fire as it starts (from where it starts) and its `ON_END` hooks as it ends (where it ends);
+the move spec's `ON_LAUNCH` hooks every `Modifiers.MOVE_STEP_M` (1.4 m) walked, not dashing; the blink spec's as a
+blink leaves (`AbilityMods` keeps a waiting one as v0.5's echo); the body spec is read, never launched (its rules
+below). Vent's blast (`Heat.vent`, Meltdown's too) launches the vent spec inside `Engines.begin` with its run-time
+radius (`AttackContext.radius_m`: the spec's radius × Heat Sink × area) and damage: the same hits as v0.5.
+
+**Spec fields added** (`AttackSpec`, appended to the hash order): pattern `directions` (`DIR_FORWARD`, `DIR_CIRCLE`:
+`count` evenly round; an arc's full circle), `back_permille` (also fired straight back at that share), `aim_offset`
+(every bolt's aim turned); behaviour `chains` (a seeking beam's further jumps, each to the nearest enemy not hit yet
+within `reach_m`), `homing` (a projectile's turn per tick toward the nearest enemy within 8 m; an arc snaps to the
+nearest within reach + 2 m), `returns`, `orbit_ticks`, `intangible`; `mirror` (1: copy the weapon's form, pattern
+and every hook; 2: take every hook of the weapon); payload `pull_m`; the body's `barrier_ticks`, `charge_ticks`,
+`charge_permille`, `resonance_permille`; the drone's `heat_rate_permille`; and `lineage` (below). Form `WEAPON`
+(a hook's child only) launches the weapon's last attack (the Blade's current combo step, the Gun's shot) when it
+fires, at a share of the weapon's damage (`Modifiers.weapon_damage`, no remainder carried); with `DIR_CIRCLE` it goes
+all round (a full-circle arc, `count` bolts).
+
+**Hooks** take three more triggers: `ON_END` in data (where an arc ends, a projectile ends, a burst, a bomb's blast,
+a ring at its radius, the dash's end), `ON_LAUNCH` (as an attack launches, from its origin, at its angle) and
+`EVERY_NTH` (every `every`-th launch of the spec launches the child instead; counted in `World.mx.counts`). A hook may
+wait (`delay_ticks`: its child goes into the launch queue below) and may be conditional (`when` `OVERCLOCK`: only at
+Overclock). A hook op's `hook_ops` shape the child before the build compiles it (a count, a speed, a life, a status,
+an element). A bolt child of an arc is a crescent as wide as the arc; a bolt child of a hit leaves from past the enemy
+it hit. **Lineage** is the ancestry guard at compile time: a modifier never adds its hook to a spec its own hook made
+(Split Shot's splits never split, Cluster Payload's bomblets never split, Aftershock never blasts its own blast); the
+run-time guard is unchanged (depth ≤ 2, proc 100 → 50 → 25, `World.hook_chain`, 256 launches a tick).
+
+**A form change keeps the attack's reach** (`SpecForms.change_form`, the first `SET_FORM` and every layer): the range
+the spec had (an arc's reach, a bolt's speed × life, a ring's, burst's or zone's radius, a beam's or lob's reach)
+becomes the new form's, clamped per form (a bolt turned ring rings out to half its flight, 1.5–6 m). The virtual
+field `range` (`MUL_PERMILLE` only) scales whichever field is the form's range.
+
+**Launch** (`Attacks.launch`), in order: a `WEAPON` child resolves; an `EVERY_NTH` hook may replace the launch; a root
+weapon or Skill attack takes Ascension's charge; a seeking arc snaps; the form runs; its `ON_LAUNCH` hooks fire; a
+root attack with `back_permille` fires back (an arc, a bolt, a beam or a lob; a back copy never repeats); a root
+attack with `repeat_delay_ticks` that is not a combo step queues its repeat (the steps keep the Twin Arc echo, so a
+step repeats once). Root attacks in a lingering or round form (a weapon turned ring, Vent's blast) feed their own
+statuses like an ability's (`Attacks._feed`); an inherited status with an `every` counts that form's own hits
+(`ModifierRuntime.every_hit`, per spec and status), so an every-3rd burn on a field burns every 3rd field hit.
+
+**The launch queue** (`World.mx`, `ModifierState`; run in tick phase 6 by `ModifierRuntime.advance`, oldest first):
+Twin Cast's repeats (repeat_damage_permille of the damage, from where the player is then when the attack was the
+player's own) and delayed hook children (Long Shadow's afterimage). A queued launch keeps its hook level and proc,
+and its hook id rides `World.hook_chain` while it runs; one whose spec left the build is dropped.
+
+**Projectile behaviours** (`ProjectileMoves`; `ProjectileStore` columns `pierce_left`, `ret`, `home`, `orbit_t`,
+`orbit_n`, `orbit_a`, `life0`, `speed`, set from the spec when it spawns, hashed only once one had a behaviour):
+pierce N passes through N enemies (after Hot's and Pulse Gun's pierce); a returning projectile turns back at half its
+life, passes through every enemy and ends at the player; a homing one turns toward the nearest enemy; an orbiting one
+circles the player at 1.4 m for `orbit_ticks` (its life waits) and leaves along the aim it began on. A hook's
+projectile hit carries its spec's effect id (Echo Slash's crescent, Split Shot's splits, Shatter's shards).
+
+**Body rules** (`ModifierRuntime`): Ascension, after `charge_ticks` without a root weapon or Skill attack, the next
+one deals × `charge_permille`; Aether Shell, out of combat (no damage dealt or taken, `PlayerBuildState.combat_tick`)
+for `barrier_ticks`, the next enemy hit on the player is absorbed (HIT emitted, no damage, a `STATUS_APPLY` on the
+player with effect `aether_shell`) and combat starts again; Resonance, an attacker multiplier in `Damage.hit` after
+Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
+poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
+Gravity Well: a burst with `pull_m` moves every enemy it touches (not a boss, not spawning) up to that far toward its
+centre before its hits; walls push them out in the next collision pass.
+
+**Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
+new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
+never a HIT); a poisoned enemy's death spreads its stacks to every enemy within `poison_spread_m`, once per enemy per
+dying root (`ProcLedger` code 70; the poison feed is `Engines.CODE_FEED_POISON` 56 + source). The numbers are the
+strongest held (Venom Core's card). Actor columns `poison_stacks`, `poison_t`, `poison_cd`, hashed with the modifier
+engine's state.
+
+**What the views read** (`AttackSpec.read`, for MX3's `AttackFormLooks`): `directions` as a name (`"circle"`,
+`"back"` when the spec also fires back, else `"forward"`), the motion cues `home` and `return` (bools), and
+`damage_mul_permille` (the product of the `MUL_PERMILLE` ops on `damage`: the attack's weight), besides the numbers
+above. What no spec shows is `WorldReader.modifier_marks` (`ModifierOverlays`).
+
+**Hash, saves.** `Modifiers.hash_into` adds, after the book's digest and only once the build has a modifier, the
+queue and counters (`ModifierState`), the poison columns while poison runs and the projectile behaviour columns once
+used; worlds without a modifier (the kernel goldens) hash as before. `World.mx`, the projectile columns and the poison
+columns are in the snapshot (`WorldSnapshot.STATE_CLASSES` has `ModifierState`); a save from before MX4 lacks them
+(`ADDED_SINCE_V05`): the base's fresh state, zeroed columns.
+
+**Offers.** `ItemDefinition.Rarity.LEGENDARY` (and `ItemTable.LEGENDARY`): such a card is only drawn by the boss's
+legendary tier and a boss's core (`ItemPool.available(w, true)`); altars, chests, shops and elites never draw one.
+The M-list's cards are items of kind `MODIFIER` that name their own modifier; trinkets are `RARE`; an ability merge
+names its ability (`requires_ability`); a card tagged `heat` needs a run with heat. Item indices keep v0.5's order
+(the items of v0.5's kinds by id, then the `MODIFIER` cards by id: `ModifierCompiler.item_defs`), so a save's item
+codes still name the same cards. **CatchUp.power** counts a slot's card as levels: an ability modifier its level,
+a v0.5 item 1, an M-list card 1, 2 if rare, 3 if legendary.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
@@ -351,6 +610,10 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   hold the game; that is gone (see [`ARCHITECTURE.md`](ARCHITECTURE.md) §12).
 - **Forecasts:** any preview number or area is computed by calling the same sim function the real outcome uses,
   on the current state, without mutating it (EI-07).
+- **Attack specs** (v0.6.0 MX1, §8b): `attack_ids()`, `attack_spec(id)` (the final spec as plain data, hooks and
+  children included), `step_attack_id(step)` and `attack_digest()`. The views draw the weapon attacks from these
+  (`AttackView`), never from which cards are held. Reading compiles the cached book when the build just changed:
+  the same compile the sim would run, so it never changes an outcome or the hash.
 
 ## 10. Hashing and checkpoints
 
@@ -369,7 +632,11 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - the event block (v0.5.0 EV; `Events.hash_into`, after the gamble shrine, before the run flow): `curses_owned`,
     `threat_peak`, then `EventState.hash_into` (the two stream states, the pedestals and their rolls, the open panel,
     ambush, defence, Overclock bonus, elites, cursed offers and the last-result ticks), only in worlds set up with
-    event or curse tables or holding a curse (`EventState.touched`).
+    event or curse tables or holding a curse (`EventState.touched`). v0.6.0 CU appends to it, each only once touched:
+    the trade-off curses' state (`CurseState`: Brittle's stun ticks and start, Rooted's last dodge and count, Heavy
+    Hands' shot count and last boosted hit, Blood Price's last cost) and core theft (`CoreState`: each carrier's id,
+    card, boss flag, stagger meter, stagger and window ticks; the drops on the floor and their kinds; the last window
+    and steal). Both are in WorldSnapshot.STATE_CLASSES.
   - the shop (v0.5.0 SH; `ShopState`: id, room, open, rolled, heal used, rerolls, last action, tick and value, the
     refusal tick, the stock, the position), after the gamble shrine, only on floors with a shop; the stat cards taken
     (`World.stat_cards`, the `Offers` codes in order) with the build block, once it is touched.
@@ -524,8 +791,45 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   `power` come on top per enemy as before. A Deep floor also gets `deep_extra_chests` (1) more chests and one free
   **epic altar** (`BossFlow.epic_altar_id`; `Offers.roll_epic`: epic stat cards and level-ups of owned abilities,
   from the loot stream, never a curse or a mod), placed on item spots the floor's rewards left free (no stream is
-  drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: TODO (v0.5.0
-  EV), through `Routes.is_deep`.
+  drawn). `BossFlow` hashes `routes, route_taken, deep, epic_altar_id`. Threat T for a Deep floor: +1 per Deep floor
+  taken (`World.deep_threat`, in `Curses.threat`).
+- **Deep floors that bite (v0.5.5 DS, owner S5).** On a Deep floor (`Routes.is_deep`): the first pack the spawn
+  director brings into each room has an elite as its first member (`SpawnDirector.deep_elite`, `Curses.make_elite`;
+  the rooms already served are `World.deep_elite_rooms`, hashed once one was; no stream is drawn); the epic altar
+  stands on the free spot nearest the boss door, the floor's end (`Routes.end_first`; still free and curse-free);
+  the event draw takes a Deep-only event first while one is left (`EventTable.deep_only`, `Events.draw_event`; on a
+  normal floor such an event has weight 0, so the other events' draws don't move); and the floor's extra T raises
+  the hidden catch-up's caps (below). The violet look is presentation's (`StageView`, over the biome's mood).
+- **The hidden catch-up (v0.5.5 DS, owner D3-D7, D10, B1: "regular scaling + multiplier based on how much you
+  grew", "Yes, but hidden").** Everything above stays the regular scaling; `CatchUp` multiplies on top of it. The
+  build's power `P` (per mille of a fresh build, `CatchUp.power`, the one function a later term such as the modifier
+  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × DAMAGE × GLASS_CANNON ×
+  (1000 + ONRUSH) × expected_crit(chance, mult) / expected_crit(base) × ATTACK_SPEED × (1000 + ability_level ×
+  levels of the non-weapon abilities + item × items held + combo × combos owned)`, each step `/ 1000` in integers;
+  nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
+  cap)` per mille with an integer square root (no float, no `pow`). At floor entry (`CatchUp.start_floor`, after the
+  carry, the abilities, the heat and the events are set up; `Main._start_floor`) `E = expected_power[f − 1]` and
+  `cap = cap[f − 1] + threat_cap × T` (`Curses.threat`: curses held and Deep floors taken); `m` is then fixed for the
+  floor (`World.catch_up`, a `CatchUpState`: P, E, cap, m and the boss's, hashed only when the loadout has
+  `World.catch_up_table`, snapshotted as state; the table is loadout). Each arriving enemy (`SpawnDirector.
+  scale_arrival`, after the tier, the curve and the Overrun; the ambush's elites) gets max HP × m and
+  `ActorStore.power × isqrt(m × 1000)` (damage × sqrt(m)). A boss reads its own m when it spawns (`World.spawn_boss`,
+  `CatchUp.on_boss`): P now against `boss_expected[f − 1]` (the expected power at the floor's end) with
+  `boss_cap[f − 1] + threat_cap × T`; its max HP × m and its attacks' damage × sqrt(m) (`ActorStore.power`, read by
+  `BossAi.powered` on every hit and bolt; the closing band's hazard is not scaled). Starting values
+  (`data/scaling/catch_up.tres`): E = 1000 / 2000 / 4000, cap ×1.5 / ×2 / ×2.5, boss E = 2000 / 4000 / 7000, boss cap
+  ×2 / ×3 / ×4, +0.25 per T, 120 per ability level, 80 per item, 150 per combo. It is never shown to the player: no
+  `WorldReader` accessor exists (a test checks); the dev panel reads the world directly.
+- **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
+  330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
+  `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev
+  panel's Kill boss, pass). `BossAi._update_phase` advances one phase at a time, and each new phase opens with its
+  gate (`BossGates.begin`): the attack in progress and the stagger stop, the boss enters state `BossAi.GATE` (6) for
+  `GATE_TICKS` (60), standing still and invulnerable, `STATUS_APPLY` with `effect_id` `boss_phase_gate` (amount = the
+  gate) is emitted, and `clamp(floor + gate − 1, 2, 4)` adds of the floor's spawn mix open now (round-robin, no stream)
+  are queued on a 3.2 m ring (they rise with the normal spawn-in and arrive scaled like any enemy). The gate deals no
+  damage. Then the phase's entry attack starts (its own telegraph). `BossStore.gate_t` holds the ticks left.
+  Without spawning (the boss labs) a gate brings no adds.
 - **After the boss (v0.5.0 PB, owner D10).** `BossFlow` (tick phase 9): the boss's death (`FIGHT` → `OPEN`,
   `PORTAL_OPENED`) also reopens the boss door: `World.remove_wall_now(boss_door_wall)` takes its collider out of the
   walls (matched by shape), rebuilds the wall grid and swaps back the flow field from before the seal (no rebuild),
@@ -547,6 +851,28 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`EnemyAi.move`), both regen sources, heat decay, the spawn director's arrival size and elite roll, and every shard
   price (`Curses.price`: chests, the gamble shrine, event costs, shops). `Curses.cleanse` lifts one (T falls; the
   peak stays). The T-indexed `ThreatModifier` tables (CONTENT_SCHEMA §7) are not built yet.
+- **Trade-off curses** (v0.6.0 CU, PLAN v0.5.5 S6, S7, C1-C8): a curse may carry a second drawback and an upside
+  (`CurseTable.effect_2`, `up_effect`); `Curses.total` sums all three. A cursed chest's cursed card is now the curse
+  itself (`Offers.CURSE`, code 3000 + curse; rare-level, drawn among the trade-off curses you don't hold); the epic
+  stat card it used to carry is gone. Event choices' random curses draw plain curses only. Each effect is read at one
+  hook: no dash (`World._advance_actions`), dodge (`Damage.hit`, before any damage: the hurt i-frames and a
+  STATUS_APPLY `dodge`), attack speed (`Stats.period`, `Stats.swing_end`), the 4th Blade combo step and every 4th Gun
+  shot (`PlayerKit` through `Curses.swing_damage` / `shot_damage`), max HP (`Stats.max_hp`; taking or lifting it moves
+  `actors.max_hp[0]` by the difference, and `Events.setup` applies a carried one), crit chance (`Stats.crit_chance`),
+  the Skill's and Blink's HP cost (`Curses.on_ability_use`, never below 1 HP, no DAMAGE event) and skill/ability hit
+  damage (`Stats.outgoing`), heat decay and Overclock damage (`Heat`), the minimap (`WorldReader.minimap_blind`),
+  shards (`Stats.shards`), Brittle's stun (`Damage._apply` on an enemy hit that hurt, not a DoT tick: no move, swing,
+  shot, dash, skill or blink while it runs; `Curses.advance` in phase 4) and move speed, Marked's elite hunt
+  (`EnemyAi.move`: elites within `hunt_range_m` × (1 + amount)) and its rare card on an elite's death.
+- **Core theft** (v0.6.0 CU, PLAN X2; `CoreTheft`): every elite and boss carries a core (one card, drawn on
+  `ai:elite`; a boss's from the legendary tier). An elite's direct damage (never DoT) fills its meter; at
+  `core_stagger_permille` of its max HP it staggers for `core_stagger_ticks` (its attack is cancelled, `EnemyAi.think`
+  and `move` skip it) and the meter resets. A boss staggers by its own meter (BossAi, only read). A stagger while the
+  carrier lives opens its steal window for `core_window_ticks`. In phase 9 (`World._remove_dead`) a carrier dying with
+  its window open drops its core: `CoreTheft.grant` (the one grant function) puts a free one-card reward
+  (`RewardStore.Kind.DROP`, offer set at once) at the body, opened like an altar through the pick. A core whose card
+  no longer applies is redrawn on `loot:event`. Then `CoreTheft.advance` (after `Events.advance`) drops gone carriers
+  and runs the staggers and windows down.
 - There is no time-based scaling: no global clock and no enrage timer.
 - **Overrun (v0.4.0 AB, the first T branch).** `OverrunRooms.mark` picks one room per floor after the boss room is
   attached, from the `map:overrun` sub-stream (the `map` stream itself and the walls never change): any room but the
@@ -559,10 +885,39 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   `kills_to_clear` Overrun kills (counted wherever they die) clear it: an altar at the room's open spot nearest its
   centre, its offer pre-rolled from the loot stream (ability level-ups first, then new abilities), and the shards those
   kills paid paid again `× (shard_permille − 1000) / 1000` (one `SHARDS` event). Hashed once the room was entered.
+  **v0.5.5 AR (owner S8):** the Overrun is the hardest sealed arena (below); the spawn multiplier and
+  `kills_to_clear` are gone: its `waves_min..waves_max` waves of `wave_sizes[floor]` spawn inside, each member an
+  Overrun enemy, and the altar and bonus come after the last wave.
+- **Sealed arenas (v0.5.5 AR; PLAN D2, X1 "open floor, sealed arenas"; `ArenaRooms`, `Arenas`).** With an arena
+  table, `ArenaRooms.mark` (after the Overrun room, before the rewards) makes `round(combat rooms × share)` rooms
+  arenas: combat rooms are all but the hall (shrine), the boss room and its host, the portal room, the Overrun and the
+  shop's room; event rooms are picked afterwards among the rest. No draw: candidates are taken in a fixed order
+  (fewest doorways, most hops from the hall, lower index), each only if every non-arena room stays reachable from
+  the hall with every arena and the Overrun shut (an arena is always skippable), and only with at least 3 spawn
+  points. In play (tick phase 9, `Arenas.advance` after the deaths): the tick the player stands in an uncleared arena
+  it seals: a barrier `Obb` per doorway joins `World.walls` (`World.add_barrier`: collision, shots, sight; never the
+  flow field, so no rebuild), the room derives its `combat:room:k` and `ai:room:k` streams (§5), draws its wave count
+  from `combat:room:k` and its first wave is due `first_wave_ticks` later. While sealed the spawn director does not
+  run (the run clock still counts, `Arenas.count_time`) and a blink never lands outside the room. A wave spawns
+  `wave_size(floor)` enemies inside (kinds weighted as the director's at the curve's level, `ai:room:k`; spots from
+  the room's spawn points ≥ `min_spawn_distance_m` from the player, shuffled from `combat:room:k`), each scaled as any
+  arrival (`SpawnDirector.scale_arrival`) with an elite-curse roll; the next is due `wave_gap_ticks` after no enemy is
+  alive in the room and none is queued. After the last wave the barriers leave the walls (the wall grid is rebuilt)
+  and the room joins `ArenaState.cleared` for the floor. The floor's altars and chests fill arena spots first
+  (`Rewards.arena_first`); a reward in an uncleared arena is locked (`Arenas.locked`; `Rewards.nearest` skips it).
+  `ArenaState` is hashed once an arena sealed and is snapshotted (STATE_CLASSES); a restore rebuilds only the wall
+  grid for the barriers.
+- **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
+  `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
+  `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
+  stays set after the pick). Its offer (`Offers.roll_legendary`, loot stream, on the first open) is up to 3 cards from
+  the tier only: legendary stat cards (`Offers.LEGENDARY` = rarity 3) and the pool's mods.
 - There is no enrage timer. The danger tier is the floor's own clock (it restarts on every floor and counts only
   while the player lives), not a global one; the owner asked for scaling over time (F10, v0.4.0 PLAN).
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.
 - **The formula is locked by evidence.** Its first version is measured in v0.3.0 and recorded in that version's
   `evidence/`. Later changes need a new sim result showing the scorecard bands still hold
   ([`../balance/SCORECARD.md`](../balance/SCORECARD.md)). The v0.4.0 change (SC, above) is the owner's direction;
-  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC).
+  its sim result against the expected-build bot is v0.4.0 step TU's (not run in SC). **Superseded 2026-10-08
+  (owner P1, v0.5.5):** bot balance sims are no longer run or evidence; a scaling change is judged by the owner's
+  play (LOCKED_DECISIONS 2026-10-08).

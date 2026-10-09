@@ -33,6 +33,11 @@ const WORLD_KEPT := {
 	&"stat_tables": "loadout",
 	&"overrun_table": "loadout",  # v0.4.0 AB
 	&"shop_table": "loadout",  # v0.5.0 SH
+	&"catch_up_table": "loadout",  # v0.5.5 DS
+	&"arena_table": "loadout",  # v0.5.5 AR
+	&"legendary_table": "loadout",  # v0.5.5 AR
+	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
+	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -60,9 +65,15 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
 	&"ShopTable",  # v0.5.0 SH
+	&"ArenaTable",  # v0.5.5 AR
+	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
+	&"LegendaryTable",
 	&"EventTable",  # v0.5.0 EV
 	&"CurseTable",
 	&"EventRules",
+	&"CatchUpTable",  # v0.5.5 DS
+	&"ModifierTable",  # v0.6.0 MX1
+	&"ModifierOp",
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -86,7 +97,72 @@ const STATE_CLASSES: Array[StringName] = [
 	&"OverrunState",  # v0.4.0 AB
 	&"ShopState",  # v0.5.0 SH
 	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
+	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
+	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
+	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
+	# guard knows them).
+	&"AttackBook",
+	&"AttackSpec",
+	&"AttackHook",
+	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
+	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
+	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
 ]
+
+## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
+## base world's value (its default, or what the carry gave it) instead of failing the restore; apply() then pads
+## the per-entry arrays to their store's size and migrates the build into the slots (BuildSlots.migrate). Any other
+## missing field still fails.
+const ADDED_SINCE_V05 := {
+	&"World":
+	[
+		&"hook_chain",
+		&"launch_tick",
+		&"launch_count",
+		&"mod_slots",
+		&"swap_code",
+		&"swap_source",
+		&"swap_ref",
+		&"migrate_slots",
+		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
+	],
+	&"ProjectileStore":
+	[
+		&"spec_key",
+		&"pierce_left",  # v0.6.0 MX4 (ProjectileMoves; padded with "no behaviour")
+		&"ret",
+		&"home",
+		&"orbit_t",
+		&"orbit_n",
+		&"orbit_a",
+		&"life0",
+		&"speed",
+		&"moves",
+	],
+	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
+	&"AbilityState":
+	[
+		&"bomb_spec",
+		&"bomb_depth",
+		&"bomb_proc",
+		&"fire_spec",
+		&"fire_depth",
+		&"fire_proc",
+		&"fire_cap",
+		&"ring_pos",
+		&"ring_r",
+		&"ring_start",
+		&"ring_end",
+		&"ring_dmg",
+		&"ring_root",
+		&"ring_spec",
+		&"ring_depth",
+		&"ring_proc",
+		&"lob_count",
+		&"streak_n",
+		&"streak_last",
+	],
+}
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.
 static var _fields := {}
@@ -131,7 +207,17 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var err := _apply_object(base, data, WORLD_KEPT, "World")
 	if err != "":
 		return err
-	if base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
+	_pad_added(base)  # v0.6.0 MX2: an older save's stores get their new per-entry arrays
+	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
+		base.mod_slots = PackedInt32Array()
+		BuildSlots.migrate(base)
+	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
+	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
+	# so only the wall grid is rebuilt for them.
+	var barriers := base.arenas.barriers.size()
+	if base.walls.size() == walls_before + barriers and barriers > 0:
+		base.rebuild_wall_grid()
+	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
 		base.set_walls(base.walls)
 	var nav: Dictionary = data.get(&"nav", {})
 	if nav.get("size") != base.nav.size:
@@ -146,6 +232,42 @@ static func apply(base: World, snap: Dictionary) -> String:
 		elif base.get(f) == null:
 			return "World.%s: pending in the snapshot, missing in the base" % f
 	return ""
+
+
+## v0.6.0 MX2: per-entry arrays an older save didn't have, padded to their store's size with the "none" value (a
+## projectile, a bomb or a patch without a spec runs as before MX2).
+static func _pad_added(w: World) -> void:
+	var p := w.projectiles
+	while p.spec_key.size() < p.ids.size():
+		p.spec_key.append("")
+	if p.speed.size() != p.ids.size():  # v0.6.0 MX4: an older save's projectiles have no behaviour
+		var zeros := PackedInt32Array()
+		zeros.resize(p.ids.size())
+		zeros.fill(0)
+		for f in ProjectileStore.MOVE_INT_FIELDS:
+			p.set(f, zeros.duplicate())
+		var none := PackedFloat32Array()
+		none.resize(p.ids.size())
+		none.fill(0.0)
+		p.speed = none
+		p.moves = false
+	var a := w.actors
+	if a.poison_stacks.size() != a.ids.size():  # v0.6.0 MX4: an older save's actors carry no poison
+		var zero := PackedInt32Array()
+		zero.resize(a.ids.size())
+		zero.fill(0)
+		for f in ActorStore.VENOM_FIELDS:
+			a.set(f, zero.duplicate())
+	var s := w.ab
+	while s.bomb_spec.size() < s.bomb_pos.size():
+		s.bomb_spec.append("")
+		s.bomb_depth.append(0)
+		s.bomb_proc.append(100)
+	while s.fire_spec.size() < s.fire_pos.size():
+		s.fire_spec.append("")
+		s.fire_depth.append(0)
+		s.fire_proc.append(100)
+		s.fire_cap.append(0)
 
 
 ## The script variables of `obj`, in declaration order (cached per script: a class's fields don't change).
@@ -252,6 +374,8 @@ static func _apply_object(obj: Object, data: Dictionary, kept: Dictionary, where
 		if kept.has(f):
 			continue
 		if not data.has(f):
+			if (ADDED_SINCE_V05.get(class_of(obj), []) as Array).has(f):
+				continue  # v0.6.0 MX2: an older save; apply() fills it in
 			return "%s.%s: not in the snapshot" % [where, f]
 		var cur: Variant = obj.get(f)
 		var r: Array = _decode(cur, data[f], "%s.%s" % [where, f])
@@ -342,6 +466,10 @@ static func _make(cls: StringName) -> Object:
 			return ItemMods.new()
 		&"DenseGrid":
 			return DenseGrid.new()
+		&"CatchUpState":
+			return CatchUpState.new()
+		&"ArenaState":
+			return ArenaState.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 

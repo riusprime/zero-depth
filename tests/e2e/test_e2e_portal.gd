@@ -4,6 +4,8 @@ extends GutTest
 ## test_e2e_run_flow; the left stick walks through the boss door and into the open portal. The way in plays (the
 ## world holds, the stick does nothing, the hero shrinks into light), then floor 2 loads exactly once and opens on
 ## the arrival (held, the hero grows in its column) before the stick moves the hero again.
+## v0.5.5 EC (owner Q-S4, "Keep half"): the portal carries half the unspent shards (rounded down) and floor 2's
+## arrival card says how many it kept.
 
 const LEG_FRAMES := 7000
 
@@ -17,7 +19,7 @@ func after_each() -> void:
 func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO) -> bool:
 	var w := e.world()
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(E2e.walk_walls(w, target))
 	nav.flood(target)
 	for k in LEG_FRAMES:
 		if done.call():
@@ -61,6 +63,8 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	await _click(e, main, "KillBoss")
 	await e.frames(3)
 	assert_true(main.driver.reader.portal_active(), "the portal is open")
+	# TEST HELPER (labelled): a known shard count to carry. Earning shards by input is test_e2e_rewards'.
+	w.shards = 41
 	var floors_started := [0]
 	main.child_entered_tree.connect(
 		func(n: Node) -> void:
@@ -101,6 +105,13 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	var w2 := e.world()
 	assert_ne(w2, w)
 	assert_eq(floors_started[0], 1, "one new floor")
+	assert_eq(w2.shards, 20, "Q-S4: half of 41 shards carried, rounded down")
+	var hud := main.get_node("UI/Hud") as Hud
+	assert_true(hud.floor_card_showing(), "the arrival card shows")
+	assert_true(
+		hud.floor_card_text().ends_with(tr("HUD_SHARDS_HALVED") % 21),
+		"it says the portal kept 21 shards: %s" % hud.floor_card_text()
+	)
 	assert_eq(main.view.transit.phase, PortalTransitView.Phase.ARRIVE, "the arrival plays")
 	assert_true(main.driver.reader.transit_holds())
 	var start := w2.player_pos()

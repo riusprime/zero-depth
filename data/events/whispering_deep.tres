@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/event_choice_definition.gd" id="1_ch"]
+[ext_resource type="Script" path="res://src/content/defs/event_definition.gd" id="2_ev"]
+
+[sub_resource type="Resource" id="C_listen"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_WHISPERING_DEEP_LISTEN"
+cost = &"none"
+cost_amount = 0
+reward = &"stat_epic"
+reward_amount = 0
+curse = &"random"
+
+[sub_resource type="Resource" id="C_bleed"]
+script = ExtResource("1_ch")
+label_key = &"EVENT_WHISPERING_DEEP_BLEED"
+cost = &"hp"
+cost_amount = 30
+reward = &"mod"
+reward_amount = 0
+curse = &""
+
+[resource]
+script = ExtResource("2_ev")
+name_key = &"EVENT_WHISPERING_DEEP"
+desc_key = &"EVENT_WHISPERING_DEEP_DESC"
+weight = 10
+min_floor = 2
+requires = &""
+deep_only = true
+choices = Array[ExtResource("1_ch")]([SubResource("C_listen"), SubResource("C_bleed")])
+id = &"whispering_deep"
