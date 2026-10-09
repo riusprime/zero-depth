@@ -83,8 +83,11 @@ func test_card_shows_name_sentence_and_icon_then_hides() -> void:
 	assert_eq(card.icon_id(), &"frost_core")
 	assert_eq(card.icon.color, Color.CYAN)
 	await wait_process_frames(3)
-	assert_lt(card.size.x, 420.0, "a small card")
-	assert_lt(card.size.y, 130.0, "a small card")
+	# v0.6.1 R1 (on purpose): a wide crystal plaque, its own size, in the card's family colour
+	assert_almost_eq(card.size.x, ItemCard.WIDTH, 1.0, "the plaque's width")
+	assert_almost_eq(card.size.y, ItemCard.HEIGHT, 1.0, "the plaque's height")
+	assert_eq(card.plaque_box().plaque, Plaques.of_card(&"frost_core"))
+	assert_true(card.text_fits())
 	card.hide_card()
 	assert_false(card.is_showing())
 	assert_eq(card.title_text(), "")

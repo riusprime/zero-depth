@@ -1,8 +1,8 @@
 class_name ComboCard
 extends ItemCard
-## The card a named combo shows when it unlocks (v0.3.0 G): the item card's style and motion with a special frame
-## (v0.3.5 F16: a thin, even outline in the combo's colour; no shadow, no side bar) and both items' icons
-## (ComboIconView) in place of one. It shows text it is given (already translated); it decides nothing about the game.
+## The card a named combo shows when it unlocks (v0.3.0 G): the item card's plaque and motion (v0.6.1 R1: the
+## crystal plaque nearest the combo's own colour, Plaques.nearest) and both items' icons (ComboIconView) in place of
+## one. It shows text it is given (already translated); it decides nothing about the game.
 
 var pair := ComboIconView.new()
 
@@ -24,11 +24,8 @@ func show_combo(
 ) -> void:
 	var c := ItemLooks.combo_color(id)
 	pair.set_combo(a, b, c)
-	show_item(id, title, sentence, c, caption)
+	show_item(id, title, sentence, c, caption, Plaques.nearest(c))
 	icon.visible = false
-	CardStyle.apply(_box, c, true)
-	if CardStyle.current != CardStyle.Look.RULE:
-		_box.border_color = Color(c, 0.9)
 
 
 ## The two item ids the card shows ([] when hidden).

@@ -1,0 +1,332 @@
+{
+  "generator": "scripts/art/crop_plaques.py",
+  "source": "docs/roadmap/v0.6.1/refs/plaque_templates_empty.webp",
+  "source_sha256": "e1c682dbb7b3cf330cc7900659ab4a04fa7549f003ce451eada704e8ae41d232",
+  "licence": "The owner's own art (Rius, delivered 2026-10-09 for v0.6.1 R1); no third-party art",
+  "plaques": [
+    {
+      "id": "red",
+      "path": "assets/ui/plaques/plaque_red.png",
+      "sha256": "8c0925e25944adc9eb5e59666c56d2e6a50f8873899f05303ee38fa6653a127a",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        107,
+        51,
+        291,
+        107
+      ],
+      "text": [
+        162,
+        57,
+        182,
+        95
+      ],
+      "nine_slice": [
+        167,
+        100,
+        136,
+        93
+      ]
+    },
+    {
+      "id": "blue",
+      "path": "assets/ui/plaques/plaque_blue.png",
+      "sha256": "36492a4ec273f9dee4108cce03ac9cab8e91023fa39d172cf74d1b4b1b05d985",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        101,
+        51,
+        296,
+        107
+      ],
+      "text": [
+        158,
+        57,
+        183,
+        95
+      ],
+      "nine_slice": [
+        156,
+        100,
+        140,
+        93
+      ]
+    },
+    {
+      "id": "amber",
+      "path": "assets/ui/plaques/plaque_amber.png",
+      "sha256": "c4b59fdaf352d5ff89eef0bf6972b615379d951774d4e9a9301d75488a48cef7",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        98,
+        51,
+        305,
+        108
+      ],
+      "text": [
+        156,
+        57,
+        190,
+        96
+      ],
+      "nine_slice": [
+        152,
+        101,
+        134,
+        92
+      ]
+    },
+    {
+      "id": "purple",
+      "path": "assets/ui/plaques/plaque_purple.png",
+      "sha256": "efe888a0c0eff3da6de4b65cc80fac98c04e3c364b49ced842bf039e4e9abbc2",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        105,
+        51,
+        286,
+        107
+      ],
+      "text": [
+        161,
+        57,
+        176,
+        95
+      ],
+      "nine_slice": [
+        157,
+        100,
+        144,
+        93
+      ]
+    },
+    {
+      "id": "green",
+      "path": "assets/ui/plaques/plaque_green.png",
+      "sha256": "e10d5ed7d1e5f9a6edf0fbe923bfa8de12d6201ea6a96c9c6fdbc467c57b1c5d",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        105,
+        51,
+        298,
+        105
+      ],
+      "text": [
+        161,
+        57,
+        186,
+        93
+      ],
+      "nine_slice": [
+        158,
+        99,
+        136,
+        94
+      ]
+    },
+    {
+      "id": "silver",
+      "path": "assets/ui/plaques/plaque_silver.png",
+      "sha256": "ff3127679de681e186842317e6bc120d1975d8961ca65405850ceb4fb8734b35",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        100,
+        51,
+        297,
+        105
+      ],
+      "text": [
+        156,
+        57,
+        187,
+        93
+      ],
+      "nine_slice": [
+        152,
+        99,
+        139,
+        94
+      ]
+    },
+    {
+      "id": "pink",
+      "path": "assets/ui/plaques/plaque_pink.png",
+      "sha256": "86f9c840898f6e3fe6c2de771a9f96cdd8d49c1ed28ce595ac5a2604488747f8",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        99,
+        51,
+        301,
+        105
+      ],
+      "text": [
+        156,
+        57,
+        189,
+        93
+      ],
+      "nine_slice": [
+        150,
+        99,
+        136,
+        94
+      ]
+    },
+    {
+      "id": "cyan",
+      "path": "assets/ui/plaques/plaque_cyan.png",
+      "sha256": "3ded13d671d74a1cc39f718beb28823397459035f1354c898b665d3ca587bf7d",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        98,
+        52,
+        298,
+        105
+      ],
+      "text": [
+        154,
+        58,
+        187,
+        93
+      ],
+      "nine_slice": [
+        149,
+        100,
+        141,
+        93
+      ]
+    },
+    {
+      "id": "gold",
+      "path": "assets/ui/plaques/plaque_gold.png",
+      "sha256": "997c136e7ac10ff268203fe70e405b8854496ced09aeeb0d9b9e1ac7f968547d",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        104,
+        48,
+        293,
+        110
+      ],
+      "text": [
+        162,
+        54,
+        181,
+        98
+      ],
+      "nine_slice": [
+        159,
+        99,
+        138,
+        94
+      ]
+    },
+    {
+      "id": "violet",
+      "path": "assets/ui/plaques/plaque_violet.png",
+      "sha256": "6459fffdb678346089f2b1a788d28787d22736f3c43a8b0e558a120b7ac0b3f4",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        103,
+        49,
+        290,
+        110
+      ],
+      "text": [
+        158,
+        55,
+        182,
+        98
+      ],
+      "nine_slice": [
+        155,
+        100,
+        143,
+        93
+      ]
+    },
+    {
+      "id": "indigo",
+      "path": "assets/ui/plaques/plaque_indigo.png",
+      "sha256": "ce8a919de74a3891e69d5bdb3ab93b692cdd276e83cf1ea8c2c66287cef6bf8f",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        99,
+        49,
+        299,
+        110
+      ],
+      "text": [
+        156,
+        55,
+        189,
+        98
+      ],
+      "nine_slice": [
+        152,
+        100,
+        138,
+        93
+      ]
+    },
+    {
+      "id": "orange",
+      "path": "assets/ui/plaques/plaque_orange.png",
+      "sha256": "b74401440c30ed5663e7f26049b29cad88b7d5817122a0f3ff185b6923c0aea5",
+      "size": [
+        488,
+        201
+      ],
+      "panel": [
+        99,
+        49,
+        293,
+        110
+      ],
+      "text": [
+        157,
+        55,
+        183,
+        98
+      ],
+      "nine_slice": [
+        155,
+        100,
+        142,
+        93
+      ]
+    }
+  ]
+}

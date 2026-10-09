@@ -26,6 +26,8 @@ const POOR := Color("#FF5A4D")
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
 const COMBO_BADGE := 44.0
+## v0.6.1 R1: each badge sits in a small crystal plaque this tall (the combo's nearest colour).
+const COMBO_PLAQUE_H := 96.0
 ## Run flow (v0.3.0 B): the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
 ## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.
 const FLOOR_CARD_SECONDS := 2.6
@@ -136,7 +138,7 @@ func _init() -> void:
 	_combos.offset_top = -28 - ROW_ICON - 12
 	_combos.offset_bottom = -28 - ROW_ICON - 12
 	add_child(_combo_card)
-	_combo_card.place_bottom_centre(-300)
+	_combo_card.place_bottom_centre(-196 - ItemCard.HEIGHT - 10)  # v0.6.1 R1: above the taller item plaque
 	_gate.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_gate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_gate.custom_minimum_size = Vector2(900, 0)
@@ -558,7 +560,11 @@ func _sync_items(reader: WorldReader) -> void:
 ## v0.4.0 BS: `idx` is a card code (an item, an ability or a stat card; PickPanel.card_face).
 func _show_card(reader: WorldReader, idx: int, caption: String) -> void:
 	var face := PickPanel.card_face(self, reader, idx)
-	_card.show_item(face["id"], face["title"], face["sentence"], face["color"], caption)
+	var type := int(face.get("type", -1))
+	var plaque := Plaques.of_card(
+		face["id"], type, int(face["tier"]), type == WorldReader.CARD_CURSE
+	)
+	_card.show_item(face["id"], face["title"], face["sentence"], face["color"], caption, plaque)
 
 
 ## The combo card (tests and shot scripts read it).
@@ -590,6 +596,7 @@ func _sync_combos(reader: WorldReader) -> void:
 			tr("UI_COMBO_UNLOCKED")
 		)
 		_combo_left = COMBO_CARD_SECONDS
+		_combo_card.place_bottom_centre(-196 - _card.plaque_height() - 10)  # above the item plaque
 	if _combo_left <= 0.0 and _combo_card.is_showing():
 		_combo_card.hide_card()
 	var owned := reader.combos_owned()
@@ -600,11 +607,20 @@ func _sync_combos(reader: WorldReader) -> void:
 		c.queue_free()
 	for c in owned:
 		var pair := reader.combo_item_ids(c)
-		var badge := ComboIconView.new(
-			pair[0], pair[1], ItemLooks.combo_color(reader.combo_id(c)), true
+		var col := ItemLooks.combo_color(reader.combo_id(c))
+		var plate := PanelContainer.new()
+		plate.name = "ComboBadge%d" % c
+		plate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plate.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		plate.add_theme_stylebox_override(
+			"panel", Plaques.box(Plaques.nearest(col), COMBO_PLAQUE_H)
 		)
+		var badge := ComboIconView.new(pair[0], pair[1], col, false)
 		badge.custom_minimum_size = Vector2(COMBO_BADGE, COMBO_BADGE)
-		_combos.add_child(badge)
+		badge.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		badge.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		plate.add_child(badge)
+		_combos.add_child(plate)
 
 
 ## A small square that fills as the cooldown runs out, with a label.

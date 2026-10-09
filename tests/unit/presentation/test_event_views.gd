@@ -95,7 +95,7 @@ func test_the_panel_shows_every_event_with_costs_rewards_curses_and_leave() -> v
 			assert_eq(
 				panel.card_text(c, "Block").is_empty(), ok, "%s %d says why it's refused" % [id, c]
 			)
-			assert_true(CardStyle.is_plain(panel.card_box(c)))
+			assert_true(panel.card_fits(c), "%s %d fits its plaque (v0.6.1 R1)" % [id, c])
 		gut.p("%s: %s / %s" % [id, panel.card_text(0, "Cost"), panel.card_text(0, "Reward")])
 
 

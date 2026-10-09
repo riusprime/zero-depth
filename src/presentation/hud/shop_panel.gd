@@ -13,6 +13,8 @@ extends Control
 ##   buys or sells, Esc leaves.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) acts, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
+## v0.6.1 R1: the services and the salvage rows are the owner's crystal plaques (ShopTile); the stock keeps the
+## crystal card frames.
 
 signal picked(value: int)
 
@@ -21,13 +23,15 @@ const SALVAGE_COLUMNS := 4
 ## list still fit under them at 1080p.
 const CARD_SCALE := 0.92
 const POOR := Color("#FF5A4D")
+## v0.6.1 R1: a salvage plaque's width (px; four fit across at 1080p).
+const SELL_W := 340.0
 
 ## Off while a menu sits over the panel.
 var input_enabled := true
-var heal_tile := ShopTile.new("ShopHeal", 220.0)
-var reroll_tile := ShopTile.new("ShopReroll", 220.0)
+var heal_tile := ShopTile.new("ShopHeal", 360.0)
+var reroll_tile := ShopTile.new("ShopReroll", 360.0)
 ## v0.5.0 EV: lift your latest curse (shown only while you hold one).
-var cleanse_tile := ShopTile.new("ShopCleanse", 260.0)
+var cleanse_tile := ShopTile.new("ShopCleanse", 360.0)
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _shards := Label.new()
@@ -301,7 +305,8 @@ func _render_services(s: Dictionary) -> void:
 		heal_ok,
 		_shards_now() < int(s["heal_price"]),
 		false,
-		Color("#9CF29C")
+		Color("#9CF29C"),
+		Plaques.of_use(&"shop_heal")
 	)
 	var any_left := int(s["unsold"]) > 0  # v0.5.5 EC (S2): only unsold slots reroll
 	var reroll_ok := _shards_now() >= int(s["reroll_price"]) and any_left and not _limit
@@ -312,7 +317,8 @@ func _render_services(s: Dictionary) -> void:
 		reroll_ok,
 		_shards_now() < int(s["reroll_price"]),
 		false,
-		ShardIcon.MID
+		ShardIcon.MID,
+		Plaques.of_use(&"shop_reroll")
 	)
 	for t: ShopTile in [heal_tile, reroll_tile, cleanse_tile]:
 		for sig: Signal in [t.hovered, t.clicked]:
@@ -359,7 +365,8 @@ func _render_cleanse(s: Dictionary) -> void:
 		ok,
 		not ok,
 		false,
-		CurseLook.COLOR
+		CurseLook.COLOR,
+		Plaques.of_use(&"shop_cleanse")
 	)
 	var c := _entries.size()
 	cleanse_tile.hovered.connect(func() -> void: _set_focus(c))
@@ -393,8 +400,11 @@ func _add_sell(reader: WorldReader, n: int, e: Dictionary) -> void:
 		WorldReader.SHOP_SELL_ABILITY:
 			var lvl := int(reader.abilities()[int(e["ref"])]["level"])
 			detail = tr("SHOP_SELL_ABILITY") % lvl
-	var tile := ShopTile.new("ShopSell%d" % (n + 1), 200.0)
-	tile.show_tile(face["title"], detail, int(e["refund"]), true, false, true, face["color"])
+	var tile := ShopTile.new("ShopSell%d" % (n + 1), SELL_W)
+	var plaque := Plaques.of_card(face["id"], int(face["type"]), int(face["tier"]))
+	tile.show_tile(
+		face["title"], detail, int(e["refund"]), true, false, true, face["color"], plaque
+	)
 	_salvage.add_child(tile)
 	var at := _entries.size()
 	tile.hovered.connect(func() -> void: _set_focus(at))
