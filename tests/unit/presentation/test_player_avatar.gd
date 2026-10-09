@@ -115,17 +115,32 @@ func _count_xray(n: Node) -> int:
 	return c
 
 
-func test_visor_faces_the_aim_through_the_reader() -> void:
+## v0.6.0 (owner, 2026-10-09): the body faces the movement, not the aim; a Blade hero turns to the aim only to
+## swing. Walking east while aiming elsewhere faces east; a swing turns the visor to the swing's angle.
+func test_visor_faces_the_movement_and_turns_to_swing() -> void:
 	var w := CombatLab.world()
 	var reader := WorldReader.new(w)
 	var a := _avatar()
-	for aim in [0, 1024, 2600, 3500]:
-		for k in 30:
-			w.step(InputFrame.make(Vector2i.ZERO, aim, 300, 0, 0))
-			a.sync(reader)
-			a.advance(DT)
-		var want := SimPlane.yaw_of(aim)
-		assert_almost_eq(wrapf(_horizontal_yaw(a.visor) - want, -PI, PI), 0.0, 0.03, "aim %d" % aim)
+	for k in 40:
+		w.step(InputFrame.make(Vector2i(127, 0), 2048, 300, 0, 0))  # walk east (sim +x), aim west
+		a.sync(reader)
+		a.advance(DT)
+	var east := SimPlane.yaw_of(0)
+	assert_almost_eq(
+		wrapf(_horizontal_yaw(a.visor) - east, -PI, PI), 0.0, 0.1, "faces the movement"
+	)
+	w.step(InputFrame.make(Vector2i.ZERO, 1024, 300, 0, InputFrame.PRIMARY))
+	for k in 8:
+		a.sync(reader)
+		a.advance(DT)
+		w.step(InputFrame.make(Vector2i.ZERO, 1024, 300, 0, 0))
+	var swing := SimPlane.yaw_of(reader.swing_angle())
+	assert_almost_eq(
+		wrapf(_horizontal_yaw(a.visor) - swing, -PI, PI),
+		0.0,
+		0.6,
+		"a swing turns it to the swing (the twist of the slash adds its own turn)"
+	)
 
 
 func test_cloak_settles_after_motion_stops() -> void:
