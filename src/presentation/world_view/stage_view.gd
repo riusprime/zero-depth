@@ -17,8 +17,10 @@ const SHADOW_BLUR := 0.5
 ## doesn't enclose (a room added after generation) gets ground too: the room grown by this margin, the wall's box.
 const ROOM_GROUND_MARGIN := 0.8
 ## v0.5.9: the kit's ground textures by biome (prop_style; "" for any other), and the metres one texture covers.
+## v0.6.0 (owner, 2026-10-09): Ruins uses the same ground as the other floors ("change the texture from first floor
+## to match the rest of the floors").
 const GROUND_TEXTURES := {
-	&"": "res://assets/textures/kit/ground_a.png",
+	&"": "res://assets/textures/kit/ground_b.png",
 	&"night_rocks": "res://assets/textures/kit/ground_b.png",
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
 }
