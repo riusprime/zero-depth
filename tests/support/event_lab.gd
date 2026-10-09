@@ -59,7 +59,7 @@ static func world(
 	w.ability_tables = ContentCompiler.compile_abilities(r)
 	w.stat_tables = ContentCompiler.compile_stat_cards(r)
 	w.overrun_table = ContentCompiler.compile_overrun(r.get_def(&"overrun", &"overrun"))
-	w.legendary_table = ContentCompiler.compile_legendary(
+	w.legendary_table = RunContentCompiler.compile_legendary(
 		r.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.6.0 CU: as Main (boss cores)
 	)
 	Abilities.grant_start(w)
