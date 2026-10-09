@@ -103,6 +103,7 @@ static func _maybe_modifier(w: World, code: int) -> bool:
 ## sync, then the slots past SLOTS leave the build, last first (so the first SLOTS in sync's order stay: the
 ## abilities in their slot order, then the items in pickup order). Deterministic; idempotent.
 static func migrate(w: World) -> void:
+	w.mod_slots = PackedInt32Array()  # the fixed order, whatever a partial sync listed before the tables
 	sync(w)
 	while w.mod_slots.size() > SLOTS:
 		drop(w, w.mod_slots.size() - 1)

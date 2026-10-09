@@ -99,8 +99,9 @@ func test_a_held_modifier_levels_up_without_a_slot() -> void:
 	assert_eq(BuildSlots.level_at(w, 0), 3)
 	_fill(w)  # five more new ones: the bomb's level-ups never took a slot
 	assert_eq(w.mod_slots.size(), 6)
+	assert_eq(BuildSlots.level_at(w, 0), 4, "_fill took the bomb once more: a level-up")
 	assert_true(BuildSlots.take(w, bomb), "a level-up with the six full needs no swap")
-	assert_eq(BuildSlots.level_at(w, 0), 4)
+	assert_eq(BuildSlots.level_at(w, 0), 5)
 
 
 func test_the_utility_and_stat_cards_take_no_slot() -> void:
@@ -203,6 +204,7 @@ func test_the_shop_buy_swaps_and_pays_only_then() -> void:
 func test_salvage_frees_a_modifier_slot() -> void:
 	var w := _world()
 	_fill(w)
+	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
 	var sells := Shop.sell_list(w)
 	var n := -1
 	for k in sells.size():
@@ -210,7 +212,6 @@ func test_salvage_frees_a_modifier_slot() -> void:
 			n = k
 			break
 	assert_gt(n, -1, "a modifier on the salvage list")
-	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
 	Shop.salvage_ability(w, sells[n][1])
 	assert_eq(w.mod_slots.size(), 5, "its slot is free")
 	assert_false(BuildSlots.full(w))
@@ -287,8 +288,6 @@ func test_a_carry_with_slots_keeps_their_order() -> void:
 
 func test_the_slots_round_trip_a_snapshot_with_equal_hashes() -> void:
 	var w := _world()
-	BuildSlots.take(w, _it(w, &"ember_edge"))
-	BuildSlots.take(w, _ab(w, &"drone_buddy"))
 	_fill(w)
 	Offers.apply(w, _it(w, &"long_edge"))  # a swap waiting
 	var snap := w.to_snapshot()
@@ -301,10 +300,10 @@ func test_the_slots_round_trip_a_snapshot_with_equal_hashes() -> void:
 
 func test_a_snapshot_without_the_slots_migrates() -> void:
 	var w := _world()
-	for id: StringName in [&"long_edge", &"ember_edge", &"twin_arc", &"overcharge"]:
-		w.add_item(_it(w, id))
 	for id: StringName in [&"bomb_lobber", &"orbit_blades", &"arc_field"]:
 		Abilities.grant(w, Offers.ability_of(_ab(w, id)))
+	for id: StringName in [&"long_edge", &"ember_edge", &"twin_arc", &"overcharge"]:
+		w.add_item(_it(w, id))
 	assert_eq(w.mod_slots.size(), 7, "add_item never caps (tests and labs)")
 	var snap := w.to_snapshot()
 	var data: Dictionary = snap["world"]
