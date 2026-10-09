@@ -1338,6 +1338,12 @@ func frost_stacks(actor_i: int) -> int:
 	return _w.actors.frost_stacks[actor_i]
 
 
+## Venom poison stacks on actor i (0 = not poisoned).
+func poison_stacks(actor_i: int) -> int:
+	var a := _w.actors
+	return a.poison_stacks[actor_i] if actor_i < a.poison_stacks.size() else 0
+
+
 func actor_frozen(actor_i: int) -> bool:
 	return Engines.frozen(_w, actor_i)
 

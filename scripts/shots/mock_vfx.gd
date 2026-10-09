@@ -18,7 +18,12 @@ var _biome: StringName = &"ruins"
 var _jobs: Array = []
 var _wait := 0
 var _phase := 0
-var _scenes: Array = ["fire", "bomb", "bomb_smoke", "electric", "all"]
+var _scenes: Array = [
+	"fire", "bomb", "bomb_smoke", "electric", "all", "frost", "venom", "void", "bleed", "status"
+]
+## Scene "status": the nearest enemies are drawn burning, frozen, poisoned and bleeding (the layer's status look;
+## the sim isn't touched). Only the "after" shot shows them.
+var _status_on := false
 var _layer: VfxLayer
 ## This scene's effects and the age each is held at: [effect, age]. The clock runs on (software rendering is slow),
 ## so each frame sets every effect's start back to hold its age.
@@ -64,6 +69,8 @@ func _process(_delta: float) -> bool:
 			_wait -= 1
 			if _wait <= 0:
 				_layer = _main.view.attack_forms.vfx
+				if _layer != null:
+					_layer.drawers.append(_draw_statuses)
 				_phase = 2
 		2:
 			if _jobs.is_empty():
@@ -91,7 +98,8 @@ func _stage(scene: String, after: bool) -> void:
 	forms.clear()
 	_held.clear()
 	if _layer != null:
-		_layer.clear_scorches()
+		_layer.clear_marks()
+		_status_on = scene == "status" and after
 		_layer.visible = after
 		forms.vfx = _layer if after else null
 	var hero := _main.view.reader.player_pos()
@@ -128,6 +136,61 @@ func _stage(scene: String, after: bool) -> void:
 			now,
 			40.0
 		)
+
+	for el: String in ["frost", "venom", "void", "bleed"]:
+		if scene == el:
+			_element_scene(forms, el, hero, now)
+
+
+## One element on four forms round the hero: a patch, a ring, a beam and a bomb just landed.
+func _element_scene(forms: AttackFormView, el: String, hero: Vector2, now: float) -> void:
+	_at(
+		forms,
+		{"form": 4, "elements": [el], "radius_m": 2.0, "life_ticks": 240},
+		hero + Vector2(3.2, 0.5),
+		0.0,
+		now,
+		50.0
+	)
+	_at(forms, {"form": 2, "elements": [el], "radius_m": 2.6}, hero, 0.0, now, 10.0)
+	_at(
+		forms,
+		{"form": 3, "elements": [el]},
+		hero,
+		-0.6,
+		now,
+		2.0,
+		{"to": hero + Vector2(4.5, -2.6)}
+	)
+	var e := _at(
+		forms,
+		{"form": 6, "elements": [el], "reach_m": 4.5, "radius_m": 1.8},
+		hero + Vector2(-1.0, -1.0),
+		-0.5,
+		now,
+		0.0
+	)
+	_held[-1][1] = float(e.get("flight", float(e["life"]) * 0.75)) + 8.0
+
+
+## Scene "status": the four nearest enemies burning, frozen, poisoned, and bleeding and shocked.
+func _draw_statuses(layer: VfxCore) -> void:
+	if not _status_on:
+		return
+	var reader := _main.view.reader
+	var hero := reader.player_pos()
+	var near: Array = []
+	for i in range(1, reader.actor_count()):
+		near.append([reader.actor_pos(i).distance_to(hero), i])
+	near.sort()
+	var looks: Array = [{&"burn": 6}, {&"frozen": 1}, {&"poison": 6}, {&"bleed": 7, &"shock": 3}]
+	for k in mini(4, near.size()):
+		var i: int = near[k][1]
+		var node := _main.view.actors.actor_node(reader.actor_id(i))
+		if node == null:
+			continue
+		var p := node.global_position
+		(layer as VfxLayer).status(Vector3(p.x, 0, p.z), reader.actor_radius(i), looks[k], i)
 
 
 func _at(

@@ -67,8 +67,15 @@ const PARTICLE_MESH := {
 
 ## How long a landing lasts when the VfxLayer draws it (the smoke needs time to rise).
 const VFX_LANDING_TICKS := 70.0
-const WARM := Color(1.0, 0.6, 0.28)
-const COLD := Color(0.55, 0.75, 1.0)
+## Element -> VfxLayer kind, first match wins when an attack carries several (fire over storm over frost ...).
+const VFX_KINDS := [
+	["ember", &"fire"],
+	["storm", &"storm"],
+	["frost", &"frost"],
+	["venom", &"venom"],
+	["void", &"void"],
+	["bleed", &"bleed"],
+]
 
 var density := "high"
 ## v0.5.9-art (owner, 2026-10-09: "fire should be fire … not a circle with bad made particles on top"): with the
@@ -225,6 +232,11 @@ func _push(e: Dictionary) -> void:
 		var flight := float(e["life"]) * 0.75
 		e["flight"] = flight
 		e["life"] = flight + maxf(float(e["life"]) - flight, VFX_LANDING_TICKS)
+	elif (
+		vfx != null and e.get("kind") == &"form" and int(e["look"]["form"]) == AttackFormLooks.BURST
+	):
+		if _vfx_kind(e["look"]) != &"":
+			e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
 	_effects.append(e)
 	while _effects.size() > MAX_EFFECTS:
 		_effects.pop_front()
@@ -318,10 +330,9 @@ func _vfx_kind(look: Dictionary) -> StringName:
 	if vfx == null:
 		return &""
 	var els: Array = look.get("elements", [])
-	if els.has("ember"):
-		return &"fire"
-	if els.has("storm"):
-		return &"storm"
+	for pair: Array in VFX_KINDS:
+		if els.has(pair[0]):
+			return pair[1]
 	return &""
 
 
@@ -529,9 +540,9 @@ func _draw_ring(e: Dictionary, look: Dictionary, age: float) -> void:
 ## and its raised front in the heat edge.
 func _ring_at(c: Vector3, r: float, look: Dictionary, fade: float, points: Array[Vector3]) -> void:
 	r = maxf(r, 0.05)
-	if _vfx_kind(look) == &"storm":
-		var sd := int(c.x * 97.0) * 31 + int(c.z * 89.0)
-		vfx.storm_ring(c, r, fade, vfx._now, sd, COLD)
+	var kind := _vfx_kind(look)
+	if kind != &"":
+		vfx.ring(kind, c, r, fade, vfx.now(), int(c.x * 97.0) * 31 + int(c.z * 89.0))
 		return
 	_put(
 		&"ring_fill",
@@ -563,8 +574,8 @@ func _draw_beam(e: Dictionary, look: Dictionary, age: float) -> void:
 		var a := SimPlane.to_3d(e["origin"], BODY_H)
 		var b := SimPlane.to_3d(_beam_end(e, look, off), BODY_H)
 		var thick: float = look["thick"]
-		if _vfx_kind(look) == &"storm":
-			vfx.lightning(a, b, fade, age, int(e["seed"]) + int(off * 100.0), COLD)
+		if _vfx_kind(look) != &"":
+			vfx.line(_vfx_kind(look), a, b, fade, age, int(e["seed"]) + int(off * 100.0))
 			continue
 		_put(
 			&"beam_core",
@@ -605,13 +616,9 @@ func _draw_zone(e: Dictionary, look: Dictionary, age: float) -> void:
 func _zone_at(
 	c: Vector3, r: float, look: Dictionary, fade: float, age: float, sd: int, points: Array[Vector3]
 ) -> void:
-	match _vfx_kind(look):
-		&"fire":
-			vfx.fire(c, r, fade, age, sd, WARM)
-			return
-		&"storm":
-			vfx.storm_field(c, r, fade, age, sd, COLD)
-			return
+	if _vfx_kind(look) != &"":
+		vfx.field(_vfx_kind(look), c, r, fade, age, sd)
+		return
 	var pulse := 0.5 + 0.5 * sin(age * 0.15 + float(sd))
 	_put(
 		&"zone_fill",
@@ -727,7 +734,14 @@ func _landing_at(
 ) -> void:
 	var g := SimPlane.to_3d(target, GROUND_H)
 	if vfx != null:
-		vfx.explosion(g, blast, u, sd * 7 + int(target.x * 131.0 + target.y * 71.0), WARM)
+		var kind := _vfx_kind(look)
+		vfx.burst(
+			&"fire" if kind == &"" else kind,
+			g,
+			blast,
+			u,
+			sd * 7 + int(target.x * 131.0 + target.y * 71.0)
+		)
 		return
 	var fade := 1.0 - u
 	var r := blast * (0.6 + 0.4 * u)
@@ -751,8 +765,12 @@ func _draw_burst(e: Dictionary, look: Dictionary, age: float) -> void:
 	var fade := 1.0 - t
 	var big_r: float = look["radius"]
 	var points: Array[Vector3] = []
+	var kind := _vfx_kind(look)
 	for off: float in look["angles"]:
 		var c := SimPlane.to_3d(_ground_at(e, look, off), GROUND_H)
+		if kind != &"":
+			vfx.burst(kind, c, big_r, t, int(e["seed"]) * 13 + int(off * 100.0))
+			continue
 		var r := big_r * (0.5 + 0.5 * grow)
 		_put(
 			&"burst_fill",
