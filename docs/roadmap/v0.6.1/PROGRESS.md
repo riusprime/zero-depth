@@ -26,3 +26,4 @@ Plan: [`PLAN.md`](PLAN.md). Local on `claude/lucid-fermat-9wv2tf` until v0.6.0's
 - 2026-10-09: PQ done (agent): plaques installed and used; the owner's build-picker art (R2b) arrived mid-step and
   replaced the Cold-glass stand-in. Flagged for the owner: the slate plaque is filed as `indigo` (the trinket
   family), purple/violet and amber/orange plaques are close in hue, the boss bar's PHASE SHIFT stays a plain label.
+- 2026-10-09: wave 1 merged (SD, SW, PQ); the wave's one full suite on `c2a0f40`: 1383/1383, no SCRIPT ERROR; MIN_TEST_COUNT 1383.
