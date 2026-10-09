@@ -20,7 +20,7 @@ VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 
 # 2. the mockups
 python3 scripts/art/ui_mockups.py build/shots/v0.5.5/cards/00_game_no_hud_1920x1080.png \
   build/shots/v0.5.5/cards/01_altar_en_1920x1080.png build/mockups/v0.5.5
-# 3. copied by hand: build/mockups/v0.5.5/*.png -> docs/roadmap/v0.5.5/evidence/ui_mockups/
+# 3. copied by hand: build/mockups/v0.5.5/*.png -> docs/roadmap/v0.6.0/evidence/ui_mockups/
 ```
 
 ## Raw output

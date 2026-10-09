@@ -422,7 +422,7 @@ equal; the one event-level change is `HIT.proc_pct` on Overcharge's shockwave an
 ## 8c. The build model and the ability modifiers (v0.6.0 MX2)
 
 Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "The build" (owner B7, B8) and "Order of work"
-step 2. Evidence: [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_2.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_2.md).
+step 2. Evidence: [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_2.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_2.md).
 
 **The build** (`BuildSlots`, `src/sim/abilities/build_slots.gd`): the starting weapon (Combo Sword / Pulse Gun, with
 its Skill, the dash and Vent; it still levels with its cards), one utility pick (Blink or Aegis, on the utility button,
@@ -502,7 +502,7 @@ at `combo_permille`.
 ## 8d. The M-list's modifiers (v0.6.0 MX4)
 
 Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "Order of work" step 4; the cards are the PLAN's
-M1–M30 (owner: "keep all M1–M30"). Evidence: [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md).
+M1–M30 (owner: "keep all M1–M30"). Evidence: [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md).
 Every card is a `ModifierDefinition` of ops (CONTENT_SCHEMA "Modifiers"); the runner features below are the only
 code the list needed, each general (any card may use it), each on the one clock, none drawing randomness.
 

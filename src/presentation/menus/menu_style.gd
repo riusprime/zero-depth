@@ -1,7 +1,7 @@
 class_name MenuStyle
 extends RefCounted
 ## The menus' look (v0.5.5 A5, owner pick: "Menu from C (we don't need to have those crystal those there, or what is
-## the purpose?"; mockup docs/roadmap/v0.5.5/evidence/ui_mockups/pause_c.png): "Cold glass". The game blurred and
+## the purpose?"; mockup docs/roadmap/v0.6.0/evidence/ui_mockups/pause_c.png): "Cold glass". The game blurred and
 ## dimmed behind (MenuBackdrop), a left-aligned title and list, plain type, a thin cold-glass highlight on the
 ## focused row (a cyan wash that fades to the right over a bright hairline, with a small glass diamond beside it,
 ## GlassMarker), the key hints small. No build cards beside the menu (the owner: not needed).

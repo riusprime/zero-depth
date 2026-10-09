@@ -4,7 +4,7 @@ Owner (2026-10-08): "Help me with the modifiers engine the idea is that based on
 changes visually not only damage wise as I describe with the shooting swords, that was just an example, but we
 need all of them to be a modifier that adds to your build". Earlier: "Is it possible to create some kind of engine
 that makes creating this easier so when adding a new modifier you don't have to create every single interaction".
-Rows B2–B6 in [`../roadmap/v0.5.5/PLAN.md`](../roadmap/v0.5.5/PLAN.md).
+Rows B2–B6 in [`../roadmap/v0.6.0/PLAN.md`](../roadmap/v0.6.0/PLAN.md).
 
 ## The build (owner decisions, 2026-10-08)
 - **The weapon is the build.** "we are no longer having 4 abilities weapons, every build turns around the main
@@ -184,7 +184,7 @@ Nobody wrote "Echo Slash + Ember + Split + Halo + Drone + Storm" anywhere. The r
 3. The form / element art layers (8 forms, 5 elements), the edge heat tint.
 4. The first new cards from the approved M-list, stat cards as modifiers, the smoke test. **Built in v0.6.0 Step MX4
    (M1–M30, three legendary versions, the smoke test over the cards; stat cards as modifiers not yet):
-   [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md).**
+   [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md).**
 5. The legendary tier for the boss reward (X1b) from the same engine. **MX4: the boss tier offers legendary modifiers
    (three stronger versions and the five trinkets) and the legendary stat cards.**
 

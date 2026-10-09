@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Crops the owner's 12 empty card frames into game textures (v0.5.5 Step CD, PLAN row A4).
 
-Source: docs/roadmap/v0.5.5/refs/card_templates_empty.webp (the owner's own art, 1536 x 1024, a 6 x 2 grid of
+Source: docs/roadmap/v0.6.0/refs/card_templates_empty.webp (the owner's own art, 1536 x 1024, a 6 x 2 grid of
 crystal frames). Output: assets/ui/cards/frame_<colour>.png (RGBA, every frame the same size) and
 assets/ui/cards/manifest.json (id, path, sha256, size, the dark panel's rectangle, the source and the licence).
 
@@ -33,7 +33,7 @@ from collections import deque
 from PIL import Image, ImageFilter
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-SOURCE = "docs/roadmap/v0.5.5/refs/card_templates_empty.webp"
+SOURCE = "docs/roadmap/v0.6.0/refs/card_templates_empty.webp"
 OUT_DIR = os.path.join(ROOT, "assets", "ui", "cards")
 MANIFEST = os.path.join(OUT_DIR, "manifest.json")
 LICENCE = "The owner's own art (Rius, delivered 2026-10-08 for v0.5.5 A4); no third-party art"

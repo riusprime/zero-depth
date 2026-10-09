@@ -44,7 +44,7 @@ bash /tmp/claude-0/vd.sh <worktree> sr        # import + lint + bash scripts/ver
 cd /tmp && bash <worktree>/scripts/ci/export_smoke.sh
 XDG_DATA_HOME=<empty folder> xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --audio-driver Dummy \
   --resolution 1920x1080 -s scripts/shots/shrine_model.gd
-cp build/shots/v0.6.0/shrine_model/near.png docs/roadmap/v0.5.5/evidence/shrine_model.png   # by hand
+cp build/shots/v0.6.0/shrine_model/near.png docs/roadmap/v0.6.0/evidence/shrine_model.png   # by hand
 ```
 
 ## Raw output

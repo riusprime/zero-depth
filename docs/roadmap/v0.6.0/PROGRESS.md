@@ -1,4 +1,4 @@
-# v0.5.5 — progress
+# v0.6.0 (planned as v0.5.5) — progress
 
 Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `main` when the build is playable.
 
@@ -91,3 +91,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 - 2026-10-09: Step MX3 built (the form and element layers, heat edge, cues, budget and Effects density; the live MX2 forms drawn from their specs), merged with the session branch (MX2 at `321e66b`); full suite 1283/1283 on `30d659b`, export smoke green; MIN_TEST_COUNT 1253 → 1283. Open for the owner: the element colours and glow level under the v0.5.9 light (the ground fills read soft), evidence/MODIFIER_ENGINE_3.md.
 - 2026-10-09: Step MX4 built (M1–M30 as modifier data with the runner features they need, three legendary versions for the boss tier, the dash / walk / blink / Vent as specs, the ability mods op-built, pools by rarity, overlays), merged with the session branch (MX3); full suite 1333/1333 on `f2034b6`, export smoke green; MIN_TEST_COUNT 1283 → 1333. Open for the owner: the pool's size (80 / 77), Resonance's name, the readings.
 - 2026-10-09: Step UP built (key names, one style per screen, live re-wording on a language switch, Back aligned, BuildHud / Swap restyled), merged with the session branch (MX2, MX3, MX4, right trigger / facing / ground_b at `77dc6fe`); full suite 1348/1348 on `62aa597`, export smoke green; MIN_TEST_COUNT 1333 → 1348. Swap and 1280 × 720 menu screenshots NOT YET RUN (the software renderer was too slow); open items in evidence/UI_POLISH.md.
+- 2026-10-09: all steps merged (EC, CD, LK, DS, AR, CU, UI, SR, MX1–MX4, UP, the owner's L1–L3); the wave's one full suite (Step UP, `62aa597`, the same code as the PR head): 1348/1348, export smoke green. Version 0.6.0-dev; folder renamed v0.5.5 → v0.6.0; the playtest sheet [`PLAYTEST.md`](PLAYTEST.md); PR into `main`.

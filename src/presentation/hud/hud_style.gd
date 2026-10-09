@@ -9,7 +9,7 @@ extends RefCounted
 ##   BARE  - no plates and no lines: type and bars straight on the game (shipped: owner pick, 2026-10-07);
 ##   SLATE - flat, square, translucent dark plates; no lines.
 ## v0.5.5 A5 (owner pick, 2026-10-08: "ingame UI, heat, health and minimap from B"; mockup
-## docs/roadmap/v0.5.5/evidence/ui_mockups/hud_b.png) adds the fourth, shipped:
+## docs/roadmap/v0.6.0/evidence/ui_mockups/hud_b.png) adds the fourth, shipped:
 ##   EMBER - "Ember stone": chipped dark stone slabs with a warm ember line and glow along the bottom of the
 ##           important plates (HP, the top plate, heat); warm type. The minimap has no plate (owner: "we should
 ##           remove the black background"): it floats over the game with a dark halo under its lines.

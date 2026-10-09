@@ -52,7 +52,7 @@ roads between floors (v0.5.0), played together (owner: "skip the rule, keep goin
 
 ## Owner answers
 Pasted verbatim from the owner's message (2026-10-08, played the `main` build `8ce3de4`). The decisions are in
-[`../v0.5.5/PLAN.md`](../v0.5.5/PLAN.md).
+[`../v0.6.0/PLAN.md`](../v0.6.0/PLAN.md).
 
 > Feedback v0.4.0-v0.5.0 - This is a really big update so plan and make a document with everysingle thing I said so
 > we don't lose any of the feedback. Spawn 3 agents parallel at max at the same time
@@ -147,6 +147,6 @@ Pasted verbatim from the owner's message (2026-10-08, played the `main` build `8
 >   nor lighting
 > * I attached two image for the new card select templates, one is the visual reference and the secord one is the
 >   empty templates you'll have to crop to use them as real cards
->   (saved as [`../v0.5.5/refs/card_style_reference.webp`](../v0.5.5/refs/card_style_reference.webp) and
->   [`../v0.5.5/refs/card_templates_empty.webp`](../v0.5.5/refs/card_templates_empty.webp))
+>   (saved as [`../v0.6.0/refs/card_style_reference.webp`](../v0.6.0/refs/card_style_reference.webp) and
+>   [`../v0.6.0/refs/card_templates_empty.webp`](../v0.6.0/refs/card_templates_empty.webp))
 > * The UI should also match this new style, we can work with some mockups

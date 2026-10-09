@@ -1,6 +1,6 @@
 {
   "generator": "scripts/art/crop_card_frames.py",
-  "source": "docs/roadmap/v0.5.5/refs/card_templates_empty.webp",
+  "source": "docs/roadmap/v0.6.0/refs/card_templates_empty.webp",
   "source_sha256": "7eb503cc4dca6264faad110941adc693496b505db600631167aa00df4c720f88",
   "licence": "The owner's own art (Rius, delivered 2026-10-08 for v0.5.5 A4); no third-party art",
   "frames": [

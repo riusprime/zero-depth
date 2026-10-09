@@ -177,7 +177,7 @@ below Hot, the meter's Hot orange `#FFA63A` at Hot, its Overclock red `#FF4A1A` 
 One table (`HeatLooks`) feeds the meter and the attacks.
 
 **VFX audit (v0.5.5 A3).** Every effect against the owner's new art and light:
-[`../roadmap/v0.5.5/evidence/VFX_AUDIT.md`](../roadmap/v0.5.5/evidence/VFX_AUDIT.md). Rule taken from it: a flash
+[`../roadmap/v0.6.0/evidence/VFX_AUDIT.md`](../roadmap/v0.6.0/evidence/VFX_AUDIT.md). Rule taken from it: a flash
 of light (a vent's disc, a skill's flash) is additive; debris and vapour (death shards, steam) are lit by the scene;
 telegraphs stay unshaded (PRESENTATION §4).
 
@@ -198,12 +198,12 @@ except the lob's bomb shell, which is lit matter. Player ground marks keep out o
    (`assets/models/manifest.json`, with `id`, `path` and `sha256` per model) is checked by an asset test. A model
    replaces its primitive by id; if it's missing, the primitive draws.
    **Owner-supplied UI art (v0.5.5 A4).** The pick cards' 12 crystal frames are the owner's own art, cropped from
-   [`../roadmap/v0.5.5/refs/card_templates_empty.webp`](../roadmap/v0.5.5/refs/card_templates_empty.webp) by
+   [`../roadmap/v0.6.0/refs/card_templates_empty.webp`](../roadmap/v0.6.0/refs/card_templates_empty.webp) by
    `scripts/art/crop_card_frames.py` into `assets/ui/cards/frame_<colour>.png` (251 × 505, RGBA). The manifest
    (`assets/ui/cards/manifest.json`: source and its sha256, licence, and per frame `id`, `path`, `sha256`, `size`
    and the dark `panel` box) is checked by `tests/content/test_card_frame_assets.gd`; `--check` re-crops in memory
    and fails if a file differs. The card layout follows
-   [`../roadmap/v0.5.5/refs/card_style_reference.webp`](../roadmap/v0.5.5/refs/card_style_reference.webp): the
+   [`../roadmap/v0.6.0/refs/card_style_reference.webp`](../roadmap/v0.6.0/refs/card_style_reference.webp): the
    frame's crystals on top, then inside its dark panel the title in coloured capitals, the sentence, the rarity line
    between the card's icon and a rarity gem; a glow behind the frame for rare, epic and ability cards. The frame
    colour is the card's family, one table in `src/presentation/hud/card_frames.gd` (red damage, blue projectiles

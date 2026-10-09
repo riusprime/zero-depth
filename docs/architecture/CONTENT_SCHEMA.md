@@ -268,7 +268,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 - **v0.6.0 MX4: the M-list.** 29 new cards (M1–M30; M3 Frost Core is the v0.5 item, generalised), 3 legendary
   versions for the boss's tier (Tempest Core, Inferno Core, Echo Storm) and the three ability mods' own modifiers:
   51 modifiers in all. Each card's ops, target and numbers are the table in
-  [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md); every number
+  [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md); every number
   is a starting value.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14

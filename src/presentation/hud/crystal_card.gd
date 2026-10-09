@@ -1,6 +1,6 @@
 class_name CrystalCard
 extends Control
-## A pick card in the owner's crystal frame (v0.5.5 A4; reference docs/roadmap/v0.5.5/refs/card_style_reference.webp):
+## A pick card in the owner's crystal frame (v0.5.5 A4; reference docs/roadmap/v0.6.0/refs/card_style_reference.webp):
 ## the frame (CardFrames: its colour is the card's family) with the crystals on top, and inside its dark panel the
 ## title in coloured capitals, a hairline, the card's sentence, the rarity line, a hairline and two small icons (the
 ## card's own symbol and the rarity gem, CardMark). Rarity also shows as a glow behind the frame (none on a common
