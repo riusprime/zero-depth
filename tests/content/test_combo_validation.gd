@@ -44,7 +44,7 @@ func test_bad_engine_items_are_rejected() -> void:
 	c.shock_threshold = 1
 	assert_has(_codes(c.validate()), &"range")
 	var b := (load("res://data/items/barbed_bolts.tres") as ItemDefinition).duplicate(true)
-	b.stack_every = 0
+	b.bleed_max_stacks = 0  # v0.6.0 MX1: its every-N bolt feed moved into its modifier
 	assert_has(_codes(b.validate()), &"not_positive")
 	var g := (load("res://data/items/glacial_edge.tres") as ItemDefinition).duplicate(true)
 	g.freeze_seconds = 0.001

@@ -3,8 +3,6 @@ extends GutTest
 ## are the v0.5 looks: each attack item's blade or bolt look, now read from the spec, equals what v0.5 drew for the
 ## item. The edge takes the heat tier's colour (Step LK) over the core.
 
-const IV := WorldReader
-
 var _tables: Array[ItemTable] = []
 
 
@@ -35,10 +33,10 @@ func test_the_plain_attacks_look_as_before() -> void:
 func test_each_blade_item_looks_as_it_did() -> void:
 	var core := ThemePalette.color(&"player_core")
 	var cases := [
-		[&"conductor", core.lerp(ItemLooks.color(IV.ITEM_CONDUCTOR), 0.7), 1.0, 6],
-		[&"serrated_edge", core.lerp(ItemLooks.color(IV.ITEM_SERRATED_EDGE), 0.7), 1.0, 6],
-		[&"glacial_edge", core.lerp(ItemLooks.color(IV.ITEM_GLACIAL_EDGE), 0.7), 1.0, 6],
-		[&"ember_edge", ItemLooks.color(IV.ITEM_EMBER_EDGE), 1.0, 6],
+		[&"conductor", core.lerp(ItemLooks.color(WorldReader.ITEM_CONDUCTOR), 0.7), 1.0, 6],
+		[&"serrated_edge", core.lerp(ItemLooks.color(WorldReader.ITEM_SERRATED_EDGE), 0.7), 1.0, 6],
+		[&"glacial_edge", core.lerp(ItemLooks.color(WorldReader.ITEM_GLACIAL_EDGE), 0.7), 1.0, 6],
+		[&"ember_edge", ItemLooks.color(WorldReader.ITEM_EMBER_EDGE), 1.0, 6],
 		[&"twin_arc", core, 1.0, 11],
 		[&"overcharge", core, 1.15, 6],
 		[&"long_edge", core, 1.0, 6],
@@ -46,8 +44,8 @@ func test_each_blade_item_looks_as_it_did() -> void:
 	for c: Array in cases:
 		var look := AttackView.blade_look_of(_reader([c[0]]))
 		assert_eq([look["color"], look["width"], look["trail"]], [c[1], c[2], c[3]], String(c[0]))
-	var both := core.lerp(ItemLooks.color(IV.ITEM_CONDUCTOR), 0.7)
-	both = both.lerp(ItemLooks.color(IV.ITEM_GLACIAL_EDGE), 0.7)
+	var both := core.lerp(ItemLooks.color(WorldReader.ITEM_CONDUCTOR), 0.7)
+	both = both.lerp(ItemLooks.color(WorldReader.ITEM_GLACIAL_EDGE), 0.7)
 	var look := AttackView.blade_look_of(_reader([&"glacial_edge", &"conductor"]))
 	assert_eq(look["color"], both, "the fixed tint order, whatever the pick order")
 
@@ -56,7 +54,9 @@ func test_the_charged_swing_flares() -> void:
 	var spec := _reader([&"overcharge"]).attack_spec(&"blade_step_3")
 	var look := AttackView.blade_look(spec, true)
 	assert_eq(look["width"], 1.7)
-	var want := ThemePalette.color(&"player_core").lerp(ItemLooks.color(IV.ITEM_OVERCHARGE), 0.6)
+	var want := ThemePalette.color(&"player_core").lerp(
+		ItemLooks.color(WorldReader.ITEM_OVERCHARGE), 0.6
+	)
 	assert_eq(look["color"], want)
 
 
@@ -66,13 +66,13 @@ func test_each_bolt_item_looks_as_it_did() -> void:
 	assert_eq(coil["size"], Vector3(0.62, 0.06, 0.06))
 	var split := AttackView.bolt_look_of(_reader([&"splinter_shot"]))
 	assert_eq(split["size"], Vector3(0.38, 0.07, 0.07) * Vector3(0.75, 1, 1))
-	assert_eq(split["color"], core.lerp(ItemLooks.color(IV.ITEM_SPLINTER_SHOT), 0.5))
+	assert_eq(split["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_SPLINTER_SHOT), 0.5))
 	var rico := AttackView.bolt_look_of(_reader([&"ricochet_core"]))
 	assert_eq([rico["color"], rico["energy"]], [core.lerp(Color.WHITE, 0.6), 4.5])
 	var cinder := AttackView.bolt_look_of(_reader([&"cinder_shot"]))
-	assert_eq(cinder["color"], core.lerp(ItemLooks.color(IV.ITEM_CINDER_SHOT), 0.55))
+	assert_eq(cinder["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_CINDER_SHOT), 0.55))
 	var barbed := AttackView.bolt_look_of(_reader([&"barbed_bolts"]))
-	assert_eq(barbed["color"], core.lerp(ItemLooks.color(IV.ITEM_BARBED_BOLTS), 0.55))
+	assert_eq(barbed["color"], core.lerp(ItemLooks.color(WorldReader.ITEM_BARBED_BOLTS), 0.55))
 	for id: StringName in [&"static_chain", &"frost_core"]:
 		var plain := AttackView.bolt_look_of(_reader([id]))
 		assert_eq(plain["color"], core, "%s: no bolt tint before the element art (MX stage 3)" % id)
