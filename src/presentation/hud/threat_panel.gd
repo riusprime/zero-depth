@@ -3,13 +3,24 @@ extends PanelContainer
 ## Threat T and the curses held (v0.5.0 EV, PLAN R4; PD-05): "THREAT 2" over one line per curse (its mark, name and
 ## sentence). The HUD shows it at the top left while you hold a curse; the pause menu shows it too. A curse just
 ## taken or lifted flashes a caption under the title for a moment. Reads only.
+## v0.6.0 UP: on the HUD an Ember stone slab (HudStyle) with the curses' colour along its top; inside a menu (the
+## pause screen) the menu's Cold glass look (MenuStyle).
 
 const FLASH_S := 3.0
+const MARGIN := Vector2(14, 9)
+## The widest a curse line runs before it wraps (v0.6.0 UP: a long Spanish line ran under the top plate).
+const LINE_W := 560.0
 
+## Whether it wears the menus' Cold glass (set when it is added to a MenuPanel).
+var in_menu := false
+## The reader last shown (read only), to word the panel again on a language switch.
+var _reader: WorldReader
 var _title := HudStyle.label(18, true)
 var _note := HudStyle.label(14)
 var _rows := VBoxContainer.new()
 var _shown := PackedInt32Array([-1])
+## The language the rows were worded in.
+var _locale := ""
 var _curse_tick := -1
 var _cleanse_tick := -1
 var _note_left := 0.0
@@ -18,22 +29,12 @@ var _note_left := 0.0
 func _init() -> void:
 	name = "Threat"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.03, 0.03, 0.05, 0.8)
-	box.set_corner_radius_all(0)
-	box.border_color = Color(CurseLook.COLOR, 0.7)
-	box.border_width_top = 2
-	box.content_margin_left = 14
-	box.content_margin_right = 14
-	box.content_margin_top = 8
-	box.content_margin_bottom = 10
-	add_theme_stylebox_override("panel", box)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 5)
 	add_child(col)
-	_title.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.35))
 	_note.add_theme_color_override("font_color", Color(1, 1, 1, 0.8))
+	_apply_look()
 	for l: Label in [_title, _note]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -45,6 +46,30 @@ func _init() -> void:
 	col.add_child(_rows)
 
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PARENTED and get_parent() is MenuPanel and not in_menu:
+		in_menu = true
+		_apply_look()
+	elif what == NOTIFICATION_TRANSLATION_CHANGED and _reader != null:
+		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
+
+
+## The panel's box and title colour for where it is: Cold glass in a menu, the HUD's slab otherwise.
+func _apply_look() -> void:
+	if in_menu:
+		add_theme_stylebox_override("panel", MenuStyle.glass_panel(MARGIN))
+		_title.add_theme_color_override("font_color", MenuStyle.TEXT)
+	else:
+		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, CurseLook.COLOR))
+		_title.add_theme_color_override("font_color", CurseLook.COLOR.lerp(Color.WHITE, 0.35))
+	queue_redraw()
+
+
+func _draw() -> void:
+	if not in_menu:
+		HudStyle.draw_side_panel(self, CurseLook.COLOR)
+
+
 ## Anchors the panel to the top-left corner, `top` px down.
 func place_top_left(top: float) -> void:
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
@@ -53,6 +78,7 @@ func place_top_left(top: float) -> void:
 
 
 func sync(reader: WorldReader) -> void:
+	_reader = reader
 	_title.text = tr("UI_THREAT") % reader.threat()
 	if reader.curse_tick() != _curse_tick:
 		_curse_tick = reader.curse_tick()
@@ -70,9 +96,10 @@ func sync(reader: WorldReader) -> void:
 				)
 			)
 	var now := reader.curses_owned()
-	if now == _shown:
+	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
 		return
 	_shown = now.duplicate()
+	_locale = TranslationServer.get_locale()
 	for c in _rows.get_children():
 		_rows.remove_child(c)
 		c.queue_free()
@@ -106,6 +133,17 @@ func row_count() -> int:
 	return n
 
 
+## Line k's text (a curse's line, or the "no curses" line), for tests.
+func row_text(k: int) -> String:
+	var r := _rows.get_child(k)
+	return (r as Label).text if r is Label else (r.get_child(1) as Label).text
+
+
+## The panel's width once laid out (tests: it stays clear of the top plate).
+func panel_width() -> float:
+	return get_combined_minimum_size().x
+
+
 func title_text() -> String:
 	return _title.text
 
@@ -124,6 +162,9 @@ func _line(text: String, c: Color) -> Label:
 	var l := HudStyle.label(15)
 	l.text = text
 	l.add_theme_color_override("font_color", c)
+	if l.get_theme_font("font").get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x > LINE_W:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		l.custom_minimum_size = Vector2(LINE_W, 0)
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l

@@ -5,6 +5,8 @@ extends VBoxContainer
 ## seconds a brighter line when a new phase begins or an enemy kind the run hasn't met yet first appears ("New:
 ## Sniper"). Reads WorldReader only (phase, phase_name_key, new_kinds, kind_alive); it decides nothing. Hidden on a
 ## floor without a curve.
+## v0.6.0 UP: the queue and the line on screen keep translation keys, not text, and are translated again on every
+## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
 
 const ANNOUNCE_SECONDS := 4.0
 const NEW_COLOR := Color("#FFD27A")
@@ -13,7 +15,10 @@ var phase_label := HudStyle.label(14)
 var announce := HudStyle.label(18, true)
 var _phase := -1
 var _announced := {}
-var _queue: PackedStringArray = []
+## Waiting announcements, each [format key, argument key] ("" when the key is the whole line).
+var _queue: Array[PackedStringArray] = []
+## The announcement on screen (empty when none).
+var _current := PackedStringArray()
 var _left := 0.0
 
 
@@ -43,17 +48,27 @@ func sync(reader: WorldReader) -> void:
 	phase_label.text = tr(reader.phase_name_key())
 	if p != _phase:
 		if _phase >= 0 and p > _phase:
-			_queue.append(tr(reader.phase_name_key()))
+			_queue.append(PackedStringArray([String(reader.phase_name_key()), ""]))
 		_phase = p
 	for kind in reader.new_kinds():
 		if not _announced.has(kind) and reader.kind_alive(kind):
 			_announced[kind] = true
-			_queue.append(tr("HUD_NEW_ENEMY") % tr(reader.enemy_name_key(kind)))
+			_queue.append(PackedStringArray(["HUD_NEW_ENEMY", String(reader.enemy_name_key(kind))]))
 	if _left <= 0.0 and not _queue.is_empty():
-		announce.text = _queue[0]
-		_queue.remove_at(0)
+		_current = _queue.pop_front()
 		_left = ANNOUNCE_SECONDS
 	announce.visible = _left > 0.0
+	if announce.visible:
+		announce.text = line(_current)
+
+
+## An announcement's text in the language now: [key, ""] is tr(key); [format key, name key] fills the name in.
+func line(entry: PackedStringArray) -> String:
+	if entry.is_empty():
+		return ""
+	if entry[1].is_empty():
+		return tr(entry[0])
+	return tr(entry[0]) % tr(entry[1])
 
 
 ## The announcement on screen now ("" when none).
@@ -61,6 +76,16 @@ func announcement() -> String:
 	return announce.text if announce.visible else ""
 
 
+## The keys of the announcement on screen ([key, name key]; empty when none), for tests.
+func current_entry() -> PackedStringArray:
+	return _current if announce.visible else PackedStringArray()
+
+
 func _process(delta: float) -> void:
 	if _left > 0.0:
 		_left -= delta
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and announce != null and not _current.is_empty():
+		announce.text = line(_current)  # the language changed between syncs (a menu over a paused run)

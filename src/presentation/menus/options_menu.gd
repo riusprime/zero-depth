@@ -110,6 +110,7 @@ func _build_frame() -> void:
 			var gap := Control.new()
 			gap.size_flags_vertical = Control.SIZE_EXPAND_FILL
 			side.add_child(gap)
+			_back.alignment = HORIZONTAL_ALIGNMENT_LEFT  # v0.6.0 UP: under the categories, left-aligned like them
 			side.add_child(_back)
 			row.add_child(VSeparator.new())
 			row.add_child(_scroll)
@@ -370,6 +371,12 @@ func _refresh_bindings() -> void:
 		else:
 			var spec := InputRebind.binding(action, device)
 			b.text = InputLabels.text(spec) if not spec.is_empty() else tr("UI_REMAP_NONE")
+
+
+## v0.6.0 UP: the binding cells hold translated names ("Left click"), so a language switch words them again.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and not bind_buttons.is_empty() and not capturing():
+		_refresh_bindings()
 
 
 # --- remapping ------------------------------------------------------------------------------------------------

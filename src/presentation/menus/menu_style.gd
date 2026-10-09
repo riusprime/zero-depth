@@ -79,11 +79,7 @@ static func theme() -> Theme:
 	t.set_constant("shadow_offset_y", "Label", 2)
 	t.set_color("default_color", "RichTextLabel", Color(TEXT, 0.85))
 	# Panels (Options, credits): dark glass with a thin cold top edge.
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = PANEL
-	panel.border_width_top = 1
-	panel.border_color = Color(GLASS, 0.55)
-	t.set_stylebox("panel", "PanelContainer", panel)
+	t.set_stylebox("panel", "PanelContainer", glass_panel())
 	var sep := StyleBoxLine.new()
 	sep.color = Color(GLASS, 0.22)
 	sep.thickness = 1
@@ -103,6 +99,22 @@ static func theme() -> Theme:
 	t.set_stylebox("grabber_area_highlight", "HSlider", fill)
 	_theme = t
 	return t
+
+
+## A dark glass panel with a thin cold top edge (Options, the credits, and v0.6.0 UP the shrine stats and threat
+## panels shown in the pause menu); `margin` (left / right, top / bottom) pads its content.
+static func glass_panel(margin: Vector2 = Vector2.ZERO) -> StyleBoxFlat:
+	var panel := StyleBoxFlat.new()
+	panel.bg_color = PANEL
+	panel.border_width_top = 1
+	panel.border_color = Color(GLASS, 0.55)
+	if margin == Vector2.ZERO:
+		return panel  # the menus' own panels pad themselves
+	panel.content_margin_left = margin.x
+	panel.content_margin_right = margin.x
+	panel.content_margin_top = margin.y
+	panel.content_margin_bottom = margin.y
+	return panel
 
 
 ## The focused row's highlight: a cold cyan wash fading to the right, a bright hairline along the bottom that fades

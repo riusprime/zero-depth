@@ -2,36 +2,34 @@ class_name GambleStatsPanel
 extends PanelContainer
 ## The stats won at the gamble shrine this run (v0.3.0 L19): one row per stat with its icon, the total it adds and
 ## its wins / cap. On the HUD it shows while you stand at the shrine; the pause menu shows it too.
+## v0.6.0 UP: on the HUD it is an Ember stone slab (HudStyle) with the shrine's colour along its top; inside a menu
+## (the pause screen) it takes the menu's Cold glass look (MenuStyle), so the pause screen reads as one style.
 
 const ICON := 28.0
+const MARGIN := Vector2(14, 9)
 
+## Whether it wears the menus' Cold glass (set when it is added to a MenuPanel).
+var in_menu := false
+## The reader last shown (read only), to word the panel again on a language switch.
+var _reader: WorldReader
 var _rows := VBoxContainer.new()
 var _title := Label.new()
 var _none := Label.new()
 ## The state last shown (stacks per stat), so rows are rebuilt only on a change.
 var _shown := PackedInt32Array()
+## The language the rows were worded in.
+var _locale := ""
 
 
 func _init() -> void:
 	name = "GambleStats"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var box := StyleBoxFlat.new()
-	box.bg_color = Color(0.03, 0.04, 0.07, 0.8)
-	box.set_corner_radius_all(0)  # v0.3.5 F16: square, like the cards
-	box.border_color = Color(GambleIcons.CORE, 0.6)
-	box.border_width_top = 2
-	box.content_margin_left = 14
-	box.content_margin_right = 14
-	box.content_margin_top = 8
-	box.content_margin_bottom = 10
-	add_theme_stylebox_override("panel", box)
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 6)
 	add_child(col)
 	_title.add_theme_font_size_override("font_size", 16)
-	_title.add_theme_color_override("font_color", GambleIcons.CORE.lerp(Color.WHITE, 0.4))
 	_none.add_theme_font_size_override("font_size", 15)
-	_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	_apply_look()
 	for l: Label in [_title, _none]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -39,6 +37,32 @@ func _init() -> void:
 	col.add_child(_none)
 	_rows.add_theme_constant_override("separation", 4)
 	col.add_child(_rows)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PARENTED and get_parent() is MenuPanel and not in_menu:
+		in_menu = true
+		_apply_look()
+	elif what == NOTIFICATION_TRANSLATION_CHANGED and _reader != null:
+		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
+
+
+## The panel's box and title colours for where it is: Cold glass in a menu, the HUD's slab otherwise.
+func _apply_look() -> void:
+	if in_menu:
+		add_theme_stylebox_override("panel", MenuStyle.glass_panel(MARGIN))
+		_title.add_theme_color_override("font_color", MenuStyle.GLASS)
+		_none.add_theme_color_override("font_color", MenuStyle.DIM)
+	else:
+		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, GambleIcons.CORE))
+		_title.add_theme_color_override("font_color", GambleIcons.CORE.lerp(Color.WHITE, 0.4))
+		_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
+	queue_redraw()
+
+
+func _draw() -> void:
+	if not in_menu:
+		HudStyle.draw_side_panel(self, GambleIcons.CORE)
 
 
 ## Anchors the panel to the top-right corner, `top` px down.
@@ -51,14 +75,16 @@ func place_top_right(top: float) -> void:
 
 
 func sync(reader: WorldReader) -> void:
+	_reader = reader
 	_title.text = tr("UI_GAMBLE_STATS")
 	_none.text = tr("UI_GAMBLE_STATS_NONE")
 	var now := PackedInt32Array()
 	for s in reader.gamble_stat_count():
 		now.append(reader.gamble_stacks(s))
-	if now == _shown:
+	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
 		return
 	_shown = now
+	_locale = TranslationServer.get_locale()
 	for c in _rows.get_children():
 		_rows.remove_child(c)
 		c.queue_free()

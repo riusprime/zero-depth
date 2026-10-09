@@ -622,6 +622,39 @@ UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir
+HUD_KEY_MOUSE_LEFT,LMB,Clic izq.
+HUD_KEY_MOUSE_RIGHT,RMB,Clic der.
+HUD_KEY_MOUSE_MIDDLE,MMB,Clic cen.
+HUD_KEY_MOUSE_WHEEL_UP,Wheel+,Rueda+
+HUD_KEY_MOUSE_WHEEL_DOWN,Wheel-,Rueda-
+HUD_KEY_MOUSE_BACK,M4,M4
+HUD_KEY_MOUSE_FORWARD,M5,M5
+HUD_KEY_MOUSE_OTHER,Mouse,Ratón
+HUD_KEY_PAD_A,A,A
+HUD_KEY_PAD_B,B,B
+HUD_KEY_PAD_X,X,X
+HUD_KEY_PAD_Y,Y,Y
+HUD_KEY_PAD_BACK,Back,Back
+HUD_KEY_PAD_START,Start,Start
+HUD_KEY_PAD_L3,L3,L3
+HUD_KEY_PAD_R3,R3,R3
+HUD_KEY_PAD_LB,LB,LB
+HUD_KEY_PAD_RB,RB,RB
+HUD_KEY_PAD_LT,LT,LT
+HUD_KEY_PAD_RT,RT,RT
+HUD_KEY_PAD_DPAD_UP,D-up,Cr. arr.
+HUD_KEY_PAD_DPAD_DOWN,D-down,Cr. abj.
+HUD_KEY_PAD_DPAD_LEFT,D-left,Cr. izq.
+HUD_KEY_PAD_DPAD_RIGHT,D-right,Cr. der.
+HUD_KEY_PAD_LS_UP,LS up,SI arr.
+HUD_KEY_PAD_LS_DOWN,LS down,SI abj.
+HUD_KEY_PAD_LS_LEFT,LS left,SI izq.
+HUD_KEY_PAD_LS_RIGHT,LS right,SI der.
+HUD_KEY_PAD_RS_UP,RS up,SD arr.
+HUD_KEY_PAD_RS_DOWN,RS down,SD abj.
+HUD_KEY_PAD_RS_LEFT,RS left,SD izq.
+HUD_KEY_PAD_RS_RIGHT,RS right,SD der.
+HUD_KEY_PAD_OTHER,Pad,Mando
 ITEM_STORM_CORE,Storm Core,Núcleo de Tormenta
 ITEM_STORM_CORE_DESC,Hits chain lightning to 2 more enemies (50% damage).,Tus golpes encadenan un rayo a 2 enemigos más (50%).
 ITEM_EMBER_CORE,Ember Core,Núcleo de Brasa

@@ -93,6 +93,8 @@ var _floor_card_biome := HudStyle.label(22)
 var _floor_card_shards := HudStyle.label(18)  # v0.5.5 EC (Q-S4)
 var _floor_card_left := 0.0
 var _biome_key := ""
+## The floor card's [floor, deep, shards lost], so a language switch can word it again (v0.6.0 UP).
+var _floor_card_args := []
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
@@ -244,13 +246,29 @@ func show_floor(
 	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0
 ) -> void:
 	_biome_key = biome_key
-	_floor_card_title.text = tr("HUD_FLOOR_CARD_DEEP" if deep else "HUD_FLOOR_CARD") % floor_index
-	_floor_card_biome.text = tr(biome_key)
-	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
+	_floor_card_args = [floor_index, deep, shards_lost]
+	_word_floor_card()
 	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
+
+
+## The floor-title card's words in the language now (v0.6.0 UP: again on a language switch while it shows).
+func _word_floor_card() -> void:
+	if _floor_card_args.is_empty():
+		return
+	var floor_index: int = _floor_card_args[0]
+	var shards_lost: int = _floor_card_args[2]
+	var card_key := "HUD_FLOOR_CARD_DEEP" if _floor_card_args[1] else "HUD_FLOOR_CARD"
+	_floor_card_title.text = tr(card_key) % floor_index
+	_floor_card_biome.text = tr(_biome_key)
+	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_word_floor_card()
 
 
 func floor_card_showing() -> bool:

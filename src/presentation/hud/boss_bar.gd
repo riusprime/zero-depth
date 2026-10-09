@@ -66,8 +66,8 @@ func sync(reader: WorldReader) -> void:
 	var key := reader.boss_name_key(i)
 	if key != _boss_key:
 		_boss_key = key
-		_name.text = tr(key)
 		_build_marks(reader.boss_phase_thresholds(i))
+	_name.text = tr(key)  # every sync, so a language switch renames the boss at once (v0.6.0 UP)
 	var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
 	frac *= reader.boss_intro_permille(i) / 1000.0
 	_hp_fill.size = Vector2(BAR.x * frac, BAR.y)
