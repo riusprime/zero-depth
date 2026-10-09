@@ -1,13 +1,14 @@
 extends GutTest
-## v0.6.1 Step SD (owner R4): crystal-shard clusters dress the start room (a hero cluster) and the generated rooms
-## (small clusters), presentation only. Step SD2 (owner A3: "Very frequent on the starting room and be an element of
-## all rooms, but disparity not all equally distributid some zones have more density than others, specially walls at
-## smaller rooms"): every room but the boss arena has crystals, the start room is crystal-rich, density follows a
-## vein field (uneven across a floor), smaller rooms get more per wall metre, bigger and brighter in the veins, low
-## on the camera-side walls. Properties over generated floors: the same seed gives the same clusters; looks solid =
-## is solid (a crystal taller than the decoration limit grows out of a structural wall); clusters hug a wall and
-## keep the v0.5.9 spacing (doorways, rewards and gates, spawn spots, the start, the slab gap, each other); none in a
-## boss arena; the start room's hero cluster with its cold light; the meshes build; the sim is untouched.
+## v0.6.1 Step SD (owner R4): crystal-shard clusters dress the start room (a hero cluster) and the generated rooms,
+## presentation only. Step SD2 (owner A3: "Very frequent on the starting room and be an element of all rooms, but
+## disparity not all equally distributid some zones have more density than others, specially walls at smaller
+## rooms"): every room but the boss arena has crystals, the start room is crystal-rich, density follows a vein field
+## (uneven across a floor), smaller rooms get more per wall metre, bigger and brighter in the veins. Step SD3 (owner
+## A3b: "not on top of the walls it should be floor closed to the walls, corners of some rooms, and other obstacle
+## like they grow from the ground"): every crystal grows from the floor, hugging a wall, a corner or an obstacle;
+## camera-side faces stay low. Properties over generated floors: the same seed gives the same clusters; the
+## clearances (doorways, rewards and gates, spawn spots, the start, the paths, each other); none in a boss arena;
+## the start room's hero cluster with its cold light; the meshes build; the sim is untouched.
 
 const SEEDS := 60
 
@@ -57,15 +58,10 @@ func _from_layout(layout: FloorLayout, seed_value: int) -> Dictionary:
 
 
 func _in_structure(f: Dictionary, p: Vector2) -> bool:
-	for d: Rect2 in f["doors"]:
-		if d.has_point(p):
-			return false
 	for w: Array in f["walls"]:
-		if w[3] != 0:
-			continue
 		var local := (p - (w[0] as Vector2)).rotated(-(w[2] as float))
 		var half: Vector2 = w[1]
-		if absf(local.x) <= half.x + 0.01 and absf(local.y) <= half.y + 0.01:
+		if absf(local.x) <= half.x and absf(local.y) <= half.y:
 			return true
 	return false
 
@@ -87,52 +83,70 @@ func test_the_same_seed_gives_the_same_clusters() -> void:
 	)
 
 
-func test_tall_crystals_grow_from_walls_and_the_rest_stays_low() -> void:
+## SD3 (owner A3b): every crystal grows from open floor in its room, hugging a wall or an obstacle (its far edge
+## within HUG, a tall one within TALL_HUG); nothing in or on a wall; camera-side faces stay under their cap with no
+## fragments; low shards stay low; fragments float above the hero.
+func test_crystals_grow_from_the_floor_hugging_walls_and_obstacles() -> void:
+	var broken := {}
+	var kinds := {}
 	for s in SEEDS:
 		var f := _floor(300 + s)
 		var rooms: Array = f["rooms"]
 		for c: Dictionary in ShardDressing.place(f):
+			kinds[c["kind"]] = kinds.get(c["kind"], 0) + 1
 			var room: Rect2 = rooms[c["room"]]
 			for x: Dictionary in c["crystals"]:
 				var base: Vector2 = x["base"]
 				var rad: float = x["radius"]
-				var xform: Transform3D = x["xform"]
 				# The unit crystal's top (y = 1) under the transform: the crystal's real height.
-				var top := (xform * Vector3(0, 1, 0)).y
+				var top := ((x["xform"] as Transform3D) * Vector3(0, 1, 0)).y
+				var d := ShardDressing.near_structure(f, base)
+				_count(broken, "on the room's floor", not room.has_point(base))
+				_count(broken, "not in a wall or an obstacle", _in_structure(f, base))
+				_count(broken, "the base clear of structures", d < rad * 0.8 - 0.001)
+				var hug := ShardDressing.TALL_HUG if x["tall"] else ShardDressing.HUG
+				_count(broken, "hugs a wall or an obstacle", d + rad > hug + 0.001)
 				if not x["tall"]:
-					assert_lte(
-						top,
-						StageDresser.DECOR_MAX_HEIGHT + 0.0001,
-						"seed %d: low shards stay low" % (300 + s)
+					_count(
+						broken, "low shards stay low", top > StageDresser.DECOR_MAX_HEIGHT + 0.0001
 					)
-					assert_true(
-						room.has_point(base), "seed %d: a low shard on the room's floor" % (300 + s)
-					)
-					continue
-				if c["front"]:
-					assert_lte(
-						top,
-						ShardDressing.FRONT_MAX_HEIGHT + 0.0001,
-						"seed %d: low on a camera-side wall" % (300 + s)
-					)
-				for p in [
-					base, base + Vector2(rad, 0), base - Vector2(rad, 0), base + Vector2(0, rad)
-				]:
-					if not _in_structure(f, p):
-						fail_test(
-							"seed %d: a tall crystal's base leaves the wall at %s" % [300 + s, p]
-						)
-						return
+				_count(broken, "under the face's cap", top > float(c["cap"]) + 0.0001)
 			for fr: Transform3D in c["fragments"]:
-				assert_gte(
-					fr.origin.y, ShardDressing.FRAGMENT_MIN_Y, "fragments float above the hero"
-				)
+				_count(broken, "fragments float", fr.origin.y < ShardDressing.FRAGMENT_MIN_Y)
 			if c["front"]:
-				assert_eq(c["fragments"].size(), 0, "no fragments in front of the fight")
+				_count(broken, "no fragments on a camera-side face", c["fragments"].size() > 0)
+				_count(broken, "a camera-side cap", float(c["cap"]) > ShardDressing.MID_HEIGHT)
+	for rule in [
+		"on the room's floor",
+		"not in a wall or an obstacle",
+		"the base clear of structures",
+		"hugs a wall or an obstacle",
+		"low shards stay low",
+		"under the face's cap",
+		"fragments float",
+		"no fragments on a camera-side face",
+		"a camera-side cap"
+	]:
+		assert_eq(broken.get(rule, 0), 0, rule)
+	gut.p("clusters by kind: %s" % kinds)
+	assert_gt(kinds.get(&"wall", 0), 0, "along the walls")
+	assert_gt(kinds.get(&"corner", 0), 0, "in some corners")
+	assert_gt(kinds.get(&"obstacle", 0), 0, "round obstacles")
 
 
-func test_clusters_keep_the_spacing_rules() -> void:
-	# Broken rules are counted (one assert per rule, not one per pair: SD2 floors hold ~100 clusters).
+func test_camera_side_faces_get_the_low_cap() -> void:
+	assert_eq(
+		ShardDressing._cap(Vector2(1, 0)), INF, "the -X wall's base faces the camera: full height"
+	)
+	assert_eq(ShardDressing._cap(Vector2(0, -1)), INF, "the +Y wall's base faces the camera")
+	assert_eq(ShardDressing._cap(Vector2(-1, 0)), ShardDressing.LOW_HEIGHT, "the +X wall: low")
+	assert_eq(ShardDressing._cap(Vector2(0, 1)), ShardDressing.LOW_HEIGHT, "the -Y wall: low")
+	assert_eq(ShardDressing._cap(Vector2(-1, -1)), ShardDressing.MID_HEIGHT, "side-on: medium")
+	assert_lt(ShardDressing.LOW_HEIGHT, 1.0, "under the 1 m wall")
+
+
+func test_clusters_keep_the_clearances_and_the_paths() -> void:
+	# Broken rules are counted (one assert per rule, not one per crystal).
 	var broken := {}
 	var seen := 0
 	for s in SEEDS:
@@ -141,63 +155,64 @@ func test_clusters_keep_the_spacing_rules() -> void:
 		seen += placed.size()
 		for k in placed.size():
 			var c: Dictionary = placed[k]
-			var foot: Vector2 = c["foot"]
-			var rad: float = c["radius"]
-			var room: Rect2 = f["rooms"][c["room"]]
-			# Hugs a wall: the cluster's foot is within reach of one of the room's faces (the back ones for the
-			# hero, any face for the rest).
-			var to_back := minf(foot.x - room.position.x, room.end.y - foot.y)
-			var to_front := minf(room.end.x - foot.x, foot.y - room.position.y)
-			var to_wall := to_back if c["hero"] else minf(to_back, to_front)
-			_count(broken, "hugs a wall", to_wall > ShardDressing.HERO_REACH * 1.5 + 0.01)
-			for d: Rect2 in f["doors"]:
-				_count(
-					broken,
-					"out of doorways",
-					d.grow(ShardDressing.DOOR_CLEAR + rad - 0.01).has_point(foot)
-				)
-			for q: Vector2 in f["keep_clear"]:
-				_count(
-					broken,
-					"off rewards",
-					foot.distance_to(q) < ShardDressing.KEEP_CLEAR + rad - 0.01
-				)
-			for q: Vector2 in f["spawns"]:
-				_count(
-					broken,
-					"off spawns",
-					foot.distance_to(q) < ShardDressing.SPAWN_CLEAR + rad - 0.01
-				)
-			_count(
-				broken,
-				"off the start",
-				foot.distance_to(f["start"]) < ShardDressing.START_CLEAR + rad - 0.01
-			)
-			for w: Array in f["walls"]:
-				if w[3] == 1:
+			for x: Dictionary in c["crystals"]:
+				var base: Vector2 = x["base"]
+				var rad: float = x["radius"]
+				for d: Rect2 in f["doors"]:
 					_count(
 						broken,
-						"the slab gap from cover",
-						ShardDressing._dist_to_box(foot, w) < ShardDressing.SLAB_GAP + rad - 0.01
+						"out of doorways",
+						d.grow(ShardDressing.DOOR_CLEAR + rad - 0.01).has_point(base)
 					)
+				for q: Vector2 in f["keep_clear"]:
+					_count(
+						broken,
+						"off rewards",
+						base.distance_to(q) < ShardDressing.KEEP_CLEAR + rad - 0.01
+					)
+				for q: Vector2 in f["spawns"]:
+					_count(
+						broken,
+						"off spawns",
+						base.distance_to(q) < ShardDressing.SPAWN_CLEAR + rad - 0.01
+					)
+				_count(
+					broken,
+					"off the start",
+					base.distance_to(f["start"]) < ShardDressing.START_CLEAR + rad - 0.01
+				)
+			# The path: free floor straight out past the footprint (no structure).
+			if c["kind"] != &"corner":
+				var inward: Vector2 = c["inward"]
+				var past: Vector2 = (
+					(c["foot"] as Vector2)
+					+ (
+						inward
+						* (
+							ShardDressing.HUG
+							- ShardDressing.FOOT_OFF
+							+ ShardDressing.PATH_CLEAR * 0.5
+						)
+					)
+				)
+				_count(broken, "a path past it", _in_structure(f, past))
 			for j in range(k + 1, placed.size()):
 				var o: Dictionary = placed[j]
 				_count(
 					broken,
-					"clusters' feet keep apart",
+					"cluster feet keep apart",
 					(
-						foot.distance_to(o["foot"])
-						< ShardDressing.CLUSTER_GAP + rad + float(o["radius"]) - 0.01
+						(c["foot"] as Vector2).distance_to(o["foot"])
+						< ShardDressing.FOOT_SPACING - 0.01
 					)
 				)
 	for rule in [
-		"hugs a wall",
 		"out of doorways",
 		"off rewards",
 		"off spawns",
 		"off the start",
-		"the slab gap from cover",
-		"clusters' feet keep apart"
+		"a path past it",
+		"cluster feet keep apart"
 	]:
 		assert_eq(broken.get(rule, 0), 0, rule)
 	assert_gt(seen, SEEDS, "the rooms get clusters")

@@ -1,5 +1,5 @@
 extends SceneTree
-## v0.6.1 Step SD / SD2 shots: the crystal-shard dressing on a real generated floor, drawn by the game's own
+## v0.6.1 Step SD / SD2 / SD3 shots: the crystal-shard dressing on a real generated floor, drawn by the game's own
 ## WorldViewRoot (the biome's v0.5.9 mood, the kit, the dresser, then the shards): the whole start room, its hero
 ## cluster's wall, and two ordinary rooms of different sizes (SD2: the small room with the most clusters per wall
 ## metre and the large room with the most clusters). The world is never stepped (a still floor, no enemies yet).
@@ -56,7 +56,7 @@ func _initialize() -> void:
 		per_room[c["room"]] = per_room.get(c["room"], 0) + 1
 		if c["hero"]:
 			var at: Vector2 = c["foot"]
-			_shots.append(["2_hero_wall", at + Vector2(3.5, -3.5), 14.0])
+			_shots.append(["2_hero_corner", at + Vector2(3.5, -3.5), 14.0])
 	var start_rect := _reader.floor_room(start)
 	_shots.push_front(["1_start_room", start_rect.get_center(), 30.0])
 	var small := -1
