@@ -36,8 +36,8 @@ func test_summoning_the_boss_dissolves_the_floor_and_its_bar_fills_over_the_rise
 	await e.tap(KEY_QUOTELEFT)
 	# Walk to the boss door with the stick; enemies keep arriving meanwhile.
 	var nav := NavField.new()
-	nav.build(w.walls)
 	var target := f.boss_door_inside(2.0)
+	nav.build(E2e.walk_walls(w, target))
 	nav.flood(target)
 	var into := Kin.dir(f.boss_door_angle)
 	var before := 0

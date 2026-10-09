@@ -1,15 +1,18 @@
 class_name OverrunHud
 extends VBoxContainer
-## The Overrun banner (v0.4.0 AB): while you're in the Overrun room, a red "OVERRUN" title near the top of the screen
-## with the kills that clear it; when it clears, a line saying what it paid, for a few seconds. Reads
-## WorldReader.overrun() only; it decides nothing.
+## The arena banner (v0.4.0 AB for the Overrun; v0.5.5 AR for every sealed arena). While you're sealed in, a title
+## near the top of the screen (red "OVERRUN" in the Overrun, amber "ARENA" elsewhere) with the wave you're on and how
+## many enemies are left; when it clears, a line saying the doors and the reward are open (the Overrun: what it paid),
+## for a few seconds. Reads WorldReader.arenas() and overrun() only; it decides nothing.
 
 const CLEARED_SECONDS := 4.0
 const RED := Color("#FF4A5A")
+const AMBER := Color("#FFB020")
 
 var title := HudStyle.label(30, true)
 var progress := HudStyle.label(18)
-var _cleared_shown := false
+var _cleared_seen := 0
+var _cleared_overrun := false
 var _left := 0.0
 
 
@@ -24,28 +27,36 @@ func _init() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		add_child(l)
-	title.add_theme_color_override("font_color", RED)
 	visible = false
 
 
 func sync(reader: WorldReader) -> void:
-	var o := reader.overrun()
-	if not o["active"]:
+	var a := reader.arenas()
+	if not a["active"]:
 		visible = false
 		return
-	if o["cleared"] and not _cleared_shown:
-		_cleared_shown = true
+	var cleared: PackedInt32Array = a["cleared"]
+	if cleared.size() > _cleared_seen:
+		_cleared_seen = cleared.size()
+		_cleared_overrun = cleared[cleared.size() - 1] == int(a["overrun"])
 		_left = CLEARED_SECONDS
-	if o["inside"]:
-		title.text = tr("HUD_OVERRUN")
-		progress.text = tr("HUD_OVERRUN_PROGRESS") % [o["kills"], o["needed"]]
+	if int(a["sealed"]) >= 0:
+		var over: bool = a["overrun_sealed"]
+		_set_title(over)
+		var wave := maxi(1, int(a["wave"]))
+		progress.text = tr("HUD_ARENA_WAVE") % [wave, int(a["waves"]), int(a["alive"])]
 		visible = true
 	elif _left > 0.0:
-		title.text = tr("HUD_OVERRUN")
-		progress.text = tr("HUD_OVERRUN_CLEARED")
+		_set_title(_cleared_overrun)
+		progress.text = tr("HUD_OVERRUN_CLEARED" if _cleared_overrun else "HUD_ARENA_CLEARED")
 		visible = true
 	else:
 		visible = false
+
+
+func _set_title(over: bool) -> void:
+	title.text = tr("HUD_OVERRUN" if over else "HUD_ARENA")
+	title.add_theme_color_override("font_color", RED if over else AMBER)
 
 
 func _process(delta: float) -> void:

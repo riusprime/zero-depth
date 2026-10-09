@@ -133,7 +133,7 @@ func stick_toward(dir: Vector2) -> void:
 static func nearest_reward(w: World, kind: int) -> int:
 	var best := -1
 	for i in w.rewards.size():
-		if w.rewards.kind[i] != kind:
+		if w.rewards.kind[i] != kind or Arenas.locked(w, i):  # v0.5.5 AR: a locked one can't be opened
 			continue
 		if (
 			best < 0
@@ -164,12 +164,31 @@ static func _free_goal(nav: NavField, target: Vector2) -> Vector2:
 	return target
 
 
+## v0.5.5 AR: the walls a walk plans around: the floor's, plus a stand-in barrier in each doorway of every arena that
+## isn't cleared and doesn't hold `target`, so a walk to the boss, a shop or an event never seals an arena on the way
+## (they're skippable; the player would walk around too). A read for planning only: the sim is untouched.
+static func walk_walls(w: World, target: Vector2) -> Array[Obb]:
+	var out: Array[Obb] = w.walls.duplicate()
+	var f := w.floor_layout
+	if f == null:
+		return out
+	var rooms := f.arena_rooms.duplicate()
+	if f.overrun_room >= 0 and Overrun.enabled(w):
+		rooms.append(f.overrun_room)
+	for room in rooms:
+		if Arenas.is_cleared(w, room) or f.room_of(target) == room or w.arenas.room == room:
+			continue
+		for d in ArenaRooms.doors_of(f, room):
+			out.append(ArenaRooms.barrier(f, d))
+	return out
+
+
 ## Walks with the left stick only (a flow field toward `target`, then straight in) until within `within` m, then
 ## lets go and waits for the player to stop. False if it didn't get there (or died).
 func walk_to(target: Vector2, within: float) -> bool:
 	var w := world()
 	var nav := NavField.new()
-	nav.build(w.walls)
+	nav.build(walk_walls(w, target))
 	nav.flood(_free_goal(nav, target))
 	var ok := false
 	for k in WALK_FRAMES:

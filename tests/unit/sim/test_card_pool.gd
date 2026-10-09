@@ -65,14 +65,14 @@ func test_the_rule_cards_compile_with_their_side_numbers_and_limits() -> void:
 	var glass := t[Stats.Stat.GLASS_CANNON]
 	assert_eq(
 		[glass.amounts, glass.side],
-		[PackedInt32Array([150, 250, 400]), PackedInt32Array([80, 100, 120])]
+		[PackedInt32Array([150, 250, 400, 640]), PackedInt32Array([80, 100, 120, 192])]  # v0.5.5 AR: + legendary
 	)
 	assert_eq(
 		[glass.cap, glass.limit_permille], [3000, 400], "damage at most x3, max HP at least x0.4"
 	)
 	assert_eq(
 		[t[Stats.Stat.ONRUSH].amounts, t[Stats.Stat.ONRUSH].cap],
-		[PackedInt32Array([100, 180, 300]), 900]
+		[PackedInt32Array([100, 180, 300, 480]), 900]
 	)
 	var ok := t[Stats.Stat.OVERKILL]
 	assert_eq(

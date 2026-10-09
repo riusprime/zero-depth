@@ -1,7 +1,7 @@
 extends GutTest
-## The Overrun threat branch (v0.4.0 AB): where its room goes (a property over 1,000 floor seeds), and in play the
-## x1.5 HP and damage, the +50 % spawns while you're inside, the kill count that clears it, the ability-card altar
-## and the doubled shards.
+## The Overrun threat branch (v0.4.0 AB): where its room goes (a property over 1,000 floor seeds), and in play (v0.5.5
+## AR, owner S8) the sealed room: its 3-5 waves of 4 / 8 / 12 spawning inside with x1.5 HP and damage, the horde
+## paused, the doors and the ability-card altar and the doubled shards after the last wave.
 
 const SEEDS := 1000
 
@@ -94,56 +94,99 @@ func test_the_pick_is_deterministic_and_leaves_the_layout_alone() -> void:
 		assert_eq(a.walls.size(), walls, "no wall added")
 
 
-# --- In play ------------------------------------------------------------------------------------------------------
-func test_inside_only_in_the_room_and_spawns_are_raised() -> void:
+# --- In play (v0.5.5 AR, owner S8: the hardest sealed arena) ------------------------------------------------------
+## Kills every enemy inside the sealed room (the waves' only way to end in a unit test).
+func _kill_inside(w: World) -> void:
+	if not w.arenas.sealed():
+		return
+	var rect := w.floor_layout.rooms[w.arenas.room].grow(Arenas.ROOM_MARGIN_M)
+	for i in range(1, w.actors.size()):
+		var at := w.actors.pos(i)
+		if w.actors.dead[i] == 0 and w.actors.invuln[i] == 0 and rect.has_point(at):
+			Damage.hit(w, i, 100000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, at, at)
+
+
+func _fight_to_clear(w: World, limit: int = 12000) -> int:
+	var waves_seen := PackedInt32Array()
+	var guard := 0
+	while not w.overrun.cleared() and guard < limit:
+		guard += 1
+		w.actors.invuln[0] = 5
+		_kill_inside(w)
+		w.step(InputFrame.new())
+		if w.arenas.sealed() and w.arenas.wave > 0 and not waves_seen.has(w.arenas.wave):
+			waves_seen.append(w.arenas.wave)
+	return waves_seen.size()
+
+
+func test_walking_in_seals_it_and_the_horde_pauses() -> void:
 	var w := _floor(21)
 	assert_true(Overrun.enabled(w))
 	w.step(InputFrame.new())
 	assert_false(w.overrun.inside, "the start hall is not the Overrun")
 	assert_false(w.overrun.touched(), "nor hashed before it is entered")
-	assert_eq([Overrun.cap(w, 10), Overrun.interval(w, 60)], [10, 60])
+	assert_false(w.arenas.touched())
 	_enter(w)
-	assert_true(w.overrun.inside)
-	assert_eq([Overrun.cap(w, 10), Overrun.interval(w, 60)], [15, 40], "+50 % spawns")
+	assert_true(w.overrun.inside, "sealed in")
+	assert_eq(w.arenas.room, w.floor_layout.overrun_room)
+	assert_eq(
+		w.arenas.barriers.size(), w.floor_layout.overrun_doors.size(), "a barrier in every doorway"
+	)
+	assert_between(w.arenas.waves, 3, 5, "3-5 waves, drawn per room")
+	var cd := w.spawn_cd
+	var ticks := w.run_ticks
+	for n in 20:
+		w.actors.invuln[0] = 5
+		w.step(InputFrame.new())
+	assert_eq(w.spawn_cd, cd, "the open floor's horde waits")
+	assert_eq(w.run_ticks, ticks + 20, "the clock runs on")
 	w.actors.set_pos(0, w.floor_layout.start_pos)
 	w.step(InputFrame.new())
-	assert_false(w.overrun.inside, "leaving it ends it")
+	assert_true(w.overrun.inside, "a teleport out doesn't unseal it: only the clear does")
 
 
-func test_overrun_enemies_have_more_hp_and_hit_harder() -> void:
+func test_waves_of_four_spawn_inside_with_more_hp_and_damage() -> void:
 	var w := _floor(21)
 	_enter(w)
 	var guard := 0
-	while w.overrun.boosted.is_empty() and guard < 1200:
+	while w.arenas.wave == 0 and guard < 600:
 		w.actors.invuln[0] = 5
 		w.step(InputFrame.new())
 		guard += 1
-	assert_false(w.overrun.boosted.is_empty(), "an enemy arrived while inside")
+	assert_eq(w.arenas.wave, 1, "the first wave came")
+	var room := w.floor_layout.rooms[w.floor_layout.overrun_room]
+	assert_eq(w.overrun.boosted.size(), 4, "floor 1: waves of 4")
+	for id in w.overrun.boosted:
+		var i := w.actors.index_of(id)
+		assert_true(room.grow(0.1).has_point(w.actors.pos(i)), "spawned inside the room")
 	var i := w.actors.index_of(w.overrun.boosted[0])
-	var base := _spawning.scaled_hp(w.enemy_table(w.actors.kinds[i]).hp, 0)
+	var base := _spawning.hp_now(w.enemy_table(w.actors.kinds[i]).hp, w.run_ticks - 1)
 	assert_eq(w.actors.max_hp[i], base * 1500 / 1000, "x1.5 HP")
-	assert_eq(w.actors.hp[i], w.actors.max_hp[i])
-	var tier_power := _spawning.damage_permille(0)
-	assert_eq(w.actors.power[i], tier_power * 1500 / 1000, "x1.5 on the tier's damage")
-	assert_eq(EnemyAi.powered(w, i, 100), SpawnTable.scale(100, tier_power * 1500 / 1000))
+	assert_eq(w.actors.power[i], _spawning.power_now(w.run_ticks - 1) * 1500 / 1000, "x1.5 damage")
 
 
-func test_clearing_pays_an_ability_card_altar_and_double_shards() -> void:
+func test_wave_sizes_follow_the_floor() -> void:
+	var t := ContentCompiler.compile_overrun(_repo.get_def(&"overrun", &"overrun"))
+	assert_eq(t.wave_sizes, PackedInt32Array([4, 8, 12]), "4, 8 or 12 by floor (S8)")
+	assert_eq([t.waves_min, t.waves_max], [3, 5])
+	assert_eq(ArenaTable.size_on(t.wave_sizes, 2), 8)
+	assert_eq(ArenaTable.size_on(t.wave_sizes, 5), 12, "the last repeats")
+
+
+func test_clearing_every_wave_opens_the_doors_and_pays() -> void:
 	var w := _floor(21)
+	var walls := w.walls.size()
 	_enter(w)
+	assert_eq(w.walls.size(), walls + w.arenas.barriers.size(), "the barriers stand")
+	var waves := w.arenas.waves
 	var shards_before := w.shards
-	var guard := 0
-	while not w.overrun.cleared() and guard < 6000:
-		guard += 1
-		w.actors.invuln[0] = 5
-		for id in w.overrun.boosted:
-			var i := w.actors.index_of(id)
-			if i > 0 and w.actors.invuln[i] == 0 and w.actors.dead[i] == 0:
-				var at := w.actors.pos(i)
-				Damage.hit(w, i, 100000, w.actors.ids[0], w.actors.ids[0], w.take_root(), 0, at, at)
-		w.step(InputFrame.new())
-	assert_true(w.overrun.cleared(), "twelve Overrun kills clear it")
-	assert_gte(w.overrun.kills, 12, "packs can die together: the tick that reaches 12 clears it")
+	var seen := _fight_to_clear(w)
+	assert_true(w.overrun.cleared(), "the last wave's death clears it")
+	assert_eq(seen, waves, "every wave came, one after the other")
+	assert_eq(w.walls.size(), walls, "the doors open")
+	assert_false(w.arenas.sealed())
+	assert_true(w.arenas.cleared.has(w.floor_layout.overrun_room))
+	assert_eq(w.overrun.kills, waves * 4, "every Overrun kill counted")
 	assert_gt(w.overrun.shards_in, 0)
 	assert_eq(w.overrun.bonus, w.overrun.shards_in, "their shards paid again: x2")
 	assert_eq(w.shards - shards_before, w.overrun.shards_in * 2)
@@ -156,7 +199,8 @@ func test_clearing_pays_an_ability_card_altar_and_double_shards() -> void:
 		assert_eq(Offers.type_of(code), Offers.ABILITY, "ability cards only")
 	assert_true(Abilities.owned(w, Offers.ability_of(offer[0])), "a level-up of what you own first")
 	assert_false(w.overrun.inside, "a cleared room is a normal room")
-	assert_eq(Overrun.cap(w, 10), 10)
+	w.step(InputFrame.new())
+	assert_false(w.arenas.sealed(), "and never seals again")
 
 
 func test_overrun_play_replays_to_the_same_hash() -> void:
@@ -168,5 +212,6 @@ func test_overrun_play_replays_to_the_same_hash() -> void:
 			w.actors.invuln[0] = 5
 			w.step(InputFrame.new())
 		assert_true(w.overrun.touched())
+		assert_true(w.arenas.touched())
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1])

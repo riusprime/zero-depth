@@ -47,6 +47,8 @@ func _init(p_api: DebugApi) -> void:
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
 		["CurseChest", "UI_DEV_CURSE_CHEST", api.curse_next_chest],  # v0.5.0 EV
 		["GoOverrun", "UI_DEV_GO_OVERRUN", api.go_overrun],  # v0.4.0 AB
+		["GoArena", "UI_DEV_GO_ARENA", api.go_arena],  # v0.5.5 AR
+		["ClearWave", "UI_DEV_CLEAR_WAVE", api.clear_wave],
 		["NextPhase", "UI_DEV_NEXT_PHASE", api.next_phase],  # v0.4.0 TU
 	]:
 		var b := Button.new()

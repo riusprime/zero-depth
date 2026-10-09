@@ -53,6 +53,11 @@ breaks. The contrast figures below were computed from colours sampled out of the
 - **Health bars** float above actors (white for the player, red for enemies), as in the image, and also show in
   the HUD for the player. Bars never overlap the actor's body.
 
+**Sealed arenas (v0.5.5 AR).** While an arena is sealed the rest of the floor goes dark (owner X1: "Others go dark
+when sealed") as a separate layer (`ArenaViews`: an unshaded dark veil box over every other room, faded in and out);
+the biome's lighting mood (sun, ambient, fog, SSAO, the kit's lights) is never written, so v0.5.9's look comes back
+unchanged at the clear. The minimap keeps showing the whole layout and marks each arena (amber) once discovered.
+
 ## 4. Telegraphs
 
 - Every enemy attack shows its area on the ground for its full windup. The windup is at least
