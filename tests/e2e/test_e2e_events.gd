@@ -44,7 +44,8 @@ func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	assert_eq(panel.card_count(), n + 1, "one card per choice and Leave")
 	assert_eq(panel.card_text(n, "Title"), tr("UI_EVENT_LEAVE"))
 	assert_false(panel.card_text(0, "Cost").is_empty(), "the cost is on the card")
-	assert_true(CardStyle.is_plain(panel.card_box(0)), "the pick cards' look")
+	assert_true(panel.card_box(0) is PlaqueBox, "v0.6.1 R1: a crystal plaque")
+	assert_true(panel.card_fits(0), "its text fits the plaque")
 	var run := w.run_ticks
 	await e.frames(20)
 	assert_eq(w.run_ticks, run, "the world waits")

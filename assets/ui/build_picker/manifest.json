@@ -1,0 +1,88 @@
+{
+  "generator": "scripts/art/crop_build_art.py",
+  "sources": [
+    {
+      "path": "docs/roadmap/v0.6.1/refs/build_title_plaque.webp",
+      "sha256": "dea850f9d16d6260b3401ae860ba6cd6b651dd31179a638c624e8534c0d8234d"
+    },
+    {
+      "path": "docs/roadmap/v0.6.1/refs/build_card_frames.webp",
+      "sha256": "83545609b07834dec160540e6da26685c29101fef071c8d5315040678085d5a1"
+    },
+    {
+      "path": "docs/roadmap/v0.6.1/refs/build_emblems.webp",
+      "sha256": "1639b69cbdd2d0bcc9f74fd3ba35c47c5b172f25119fcaf2cd19ad36ecf1ecf7"
+    }
+  ],
+  "licence": "The owner's own art (Rius, delivered 2026-10-09 for v0.6.1 R2b); no third-party art",
+  "pieces": [
+    {
+      "id": "title_plaque",
+      "path": "assets/ui/build_picker/title_plaque.png",
+      "source": "docs/roadmap/v0.6.1/refs/build_title_plaque.webp",
+      "sha256": "6f607b5701c8dfa7d9cba3de9f0eb6a73720cb599f1cb6ae466ecd4d8944ca0e",
+      "size": [
+        1971,
+        499
+      ],
+      "panel": [
+        307,
+        195,
+        1350,
+        203
+      ]
+    },
+    {
+      "id": "frame_blade",
+      "path": "assets/ui/build_picker/frame_blade.png",
+      "source": "docs/roadmap/v0.6.1/refs/build_card_frames.webp",
+      "sha256": "3f748d9a989c977f7153682c4b76706ffd692ba1958da4fc9e8f3edde27f1b04",
+      "size": [
+        695,
+        980
+      ],
+      "panel": [
+        142,
+        190,
+        410,
+        655
+      ]
+    },
+    {
+      "id": "frame_gun",
+      "path": "assets/ui/build_picker/frame_gun.png",
+      "source": "docs/roadmap/v0.6.1/refs/build_card_frames.webp",
+      "sha256": "ab2928f8a444d42b21746ee93bf091ebc325fc9ecb8041d1cfb490dc7d4791b9",
+      "size": [
+        695,
+        980
+      ],
+      "panel": [
+        145,
+        224,
+        399,
+        627
+      ]
+    },
+    {
+      "id": "emblem_blade",
+      "path": "assets/ui/build_picker/emblem_blade.png",
+      "source": "docs/roadmap/v0.6.1/refs/build_emblems.webp",
+      "sha256": "1bd361ba9a1729640ae8a8f1d6424fb136110deb7c4a900686bb401007893356",
+      "size": [
+        812,
+        788
+      ]
+    },
+    {
+      "id": "emblem_gun",
+      "path": "assets/ui/build_picker/emblem_gun.png",
+      "source": "docs/roadmap/v0.6.1/refs/build_emblems.webp",
+      "sha256": "f3299498297ea429b466155124b750b49594c77918875f33b9e34c2fb6dade6c",
+      "size": [
+        812,
+        788
+      ]
+    }
+  ]
+}
