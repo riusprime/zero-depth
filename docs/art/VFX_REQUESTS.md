@@ -42,15 +42,15 @@ minimalistic, that matches the style of the game". The owner generates the textu
 
 | # | id | element | size | prompt (after the prefix) | status |
 |---|---|---|---|---|---|
-| 1 | `fx_flame_shapes` | fire | 1024, 2 × 2 | four different single flame tongues, each a tall stylized teardrop flame with a bright pale-yellow core, an orange middle band and a red-orange outer band, slightly different shapes and lean, each centred in its own quarter of the image | received raw |
-| 2 | `fx_fire_noise` | fire | 512 | seamless tileable texture, wispy upward-stretched flame noise in white and grey on black, vertical streaks, even coverage, no focal point | received raw |
-| 3 | `fx_smoke_puffs` | fire, bombs | 1024, 2 × 2 | four different chunky stylized smoke puffs, rounded cauliflower clusters in white and light grey with 2-3 flat grey bands, each centred in its own quarter | received raw |
-| 4 | `fx_explosion_burst` | bombs | 1024, 2 × 2 | four different stylized explosion fireballs seen from the side, chunky rounded fire clouds with a white-yellow core, orange middle and dark red edge, each centred in its own quarter | received raw |
-| 5 | `fx_debris_chunks` | bombs | 1024, 2 × 2 | four small groups of chunky rock and metal debris fragments, flat-shaded grey and rust colours, each group centred in its own quarter | received raw |
-| 6 | `fx_scorch_mark` | fire, bombs | 1024 | top-down view of an irregular charred scorch mark on the ground, dark black-brown burnt blotch with jagged cracks and soot spikes radiating outward, NOT a circle, uneven ragged outline, shown light grey on black (the engine darkens it) | received raw |
-| 7 | `fx_lightning_bolts` | electric | 1024, 2 × 2 | four different jagged horizontal lightning bolts running left to right across their quarter, a thin bright white core with a pale cyan-blue glow, a few small side forks, each centred in its own quarter | received raw (delivered as 4 rows, not 2 × 2: fine) |
-| 8 | `fx_electric_noise` | electric | 512 | seamless tileable texture, crackling electric web of thin bright branching lines in white and pale blue on black, even coverage, no focal point | received raw |
-| 9 | `fx_spark_shapes` | all | 512, 2 × 2 | four tiny bright spark shapes: a four-point star, a thin streak, a small diamond and a small cross, white with a soft glow, each centred in its own quarter | received raw |
+| 1 | `fx_flame_shapes` | fire | 1024, 2 × 2 | four different single flame tongues, each a tall stylized teardrop flame with a bright pale-yellow core, an orange middle band and a red-orange outer band, slightly different shapes and lean, each centred in its own quarter of the image | prepared (`281e4f1`) |
+| 2 | `fx_fire_noise` | fire | 512 | seamless tileable texture, wispy upward-stretched flame noise in white and grey on black, vertical streaks, even coverage, no focal point | prepared (`281e4f1`) |
+| 3 | `fx_smoke_puffs` | fire, bombs | 1024, 2 × 2 | four different chunky stylized smoke puffs, rounded cauliflower clusters in white and light grey with 2-3 flat grey bands, each centred in its own quarter | prepared (`281e4f1`) |
+| 4 | `fx_explosion_burst` | bombs | 1024, 2 × 2 | four different stylized explosion fireballs seen from the side, chunky rounded fire clouds with a white-yellow core, orange middle and dark red edge, each centred in its own quarter | prepared (`281e4f1`) |
+| 5 | `fx_debris_chunks` | bombs | 1024, 2 × 2 | four small groups of chunky rock and metal debris fragments, flat-shaded grey and rust colours, each group centred in its own quarter | prepared (`281e4f1`) |
+| 6 | `fx_scorch_mark` | fire, bombs | 1024 | top-down view of an irregular charred scorch mark on the ground, dark black-brown burnt blotch with jagged cracks and soot spikes radiating outward, NOT a circle, uneven ragged outline, shown light grey on black (the engine darkens it) | prepared (`281e4f1`) |
+| 7 | `fx_lightning_bolts` | electric | 1024, 2 × 2 | four different jagged horizontal lightning bolts running left to right across their quarter, a thin bright white core with a pale cyan-blue glow, a few small side forks, each centred in its own quarter | prepared (`281e4f1`; delivered as 4 rows, used as a 1 × 4 sheet) |
+| 8 | `fx_electric_noise` | electric | 512 | seamless tileable texture, crackling electric web of thin bright branching lines in white and pale blue on black, even coverage, no focal point | prepared (`281e4f1`) |
+| 9 | `fx_spark_shapes` | all | 512, 2 × 2 | four tiny bright spark shapes: a four-point star, a thin streak, a small diamond and a small cross, white with a soft glow, each centred in its own quarter | prepared (`281e4f1`) |
 
 **Later (frost, venom, others):** requested once fire, explosions and electric are in and picked.
 
@@ -61,3 +61,30 @@ minimalistic, that matches the style of the game". The owner generates the textu
 2. Effects are built for fire (burning hits, fire bursts, Flame Trail, Ember Trail), bombs (Bomb Lobber, Bomb
    Rounds, Aftershock blasts) and electric (Storm Core chains, Arc Field, Shock Circles).
 3. A before/after mockup goes to the owner to pick, then the rollout.
+
+## Built (first pass, 2026-10-09)
+
+`src/presentation/world_view/vfx/vfx_layer.gd` (VfxLayer). WorldViewRoot creates it when the new look is on
+(the biome has a mood) and the textures are installed. AttackFormCanvas then sends these to it instead of drawing
+flat shapes; without it, the canvas draws as before.
+
+| Element on a form | Before (v0.6.0) | Now |
+|---|---|---|
+| Fire (ember) patch | a flat disc and rim on the ground, box particles | upright flames that breathe and swap shape, rising embers, a little smoke, warm light on floor and walls, a scorch decal |
+| Bomb in flight | the bomb over a ground circle that fills | the bomb and its lit fuse only |
+| Bomb landing | a flat flash disc and front (12 ticks) | a fireball that blooms and burns away, debris thrown out, a smoke cloud, a light flash, a scorch (70 ticks) |
+| Electric (storm) patch | a flat disc and rim | lightning strikes inside the patch, sparks, a cold flicker of light |
+| Electric ring | a flat ring growing | lightning running round the ring's edge, no fill |
+| Electric beam or chain | a flat core and edge quad | a jagged bolt that re-strikes every few ticks, sparks at its end, light |
+
+- **Kept as they were:** the sword; enemy telegraphs (gameplay readability); frost, venom, void and bleed (later
+  pass); attacks that mix fire and electric take the fire look.
+- **Budget:** fixed sprite pools per texture, 8 pooled lights (the brightest win), 48 scorch decals that fade after 7 s.
+  Presentation only: it reads the canvas's effects and decides nothing (EI-07).
+- **Tests:** `tests/unit/presentation/test_vfx_layer.gd`.
+- **Mockup:** `scripts/shots/mock_vfx.gd` (before/after in a lit Ruins room: fire, bomb landing, bomb smoke,
+  electric, all together) → `build/shots/<version>/vfx/`.
+
+| Gate | Asked | Answer | Date |
+|---|---|---|---|
+| G2 Effects (before / after, mock_vfx.gd) | 2026-10-09 | OWNER ONLY | — |

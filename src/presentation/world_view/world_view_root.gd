@@ -97,6 +97,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(attack_forms)  # v0.6.0 MX3
+	if stage.mood != null and VfxLayer.available():  # v0.5.9 art: real fire, explosions and lightning
+		var layer := VfxLayer.new()
+		add_child(layer)
+		attack_forms.vfx = layer
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4

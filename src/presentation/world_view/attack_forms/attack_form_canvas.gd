@@ -65,7 +65,16 @@ const PARTICLE_MESH := {
 	&"smear": &"quad"
 }
 
+## How long a landing lasts when the VfxLayer draws it (the smoke needs time to rise).
+const VFX_LANDING_TICKS := 70.0
+const WARM := Color(1.0, 0.6, 0.28)
+const COLD := Color(0.55, 0.75, 1.0)
+
 var density := "high"
+## v0.5.9-art (owner, 2026-10-09: "fire should be fire … not a circle with bad made particles on top"): with the
+## new look, WorldViewRoot hands the canvas a VfxLayer. Fire and electric then draw as real flames and lightning, and
+## bomb landings as explosions, instead of flat ground shapes; without it the canvas draws as before.
+var vfx: VfxLayer = null
 var pools := {}
 var particle_pools := {}
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
@@ -210,6 +219,12 @@ func clear() -> void:
 
 
 func _push(e: Dictionary) -> void:
+	if vfx != null and e.get("kind") == &"landing":
+		e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
+	elif vfx != null and e.get("kind") == &"form" and int(e["look"]["form"]) == AttackFormLooks.LOB:
+		var flight := float(e["life"]) * 0.75
+		e["flight"] = flight
+		e["life"] = flight + maxf(float(e["life"]) - flight, VFX_LANDING_TICKS)
 	_effects.append(e)
 	while _effects.size() > MAX_EFFECTS:
 		_effects.pop_front()
@@ -233,6 +248,9 @@ func draw_at(now: float) -> void:
 		p.begin()
 	_mesh_left = mesh_cap()
 	_part_left = particle_cap()
+	if vfx != null:
+		vfx.density = particle_scale()
+		vfx.begin(now)
 	for b in _live:
 		_draw_live_bolt(b, now)
 	for f in _live_forms:
@@ -251,12 +269,14 @@ func draw_at(now: float) -> void:
 		elif e["kind"] == &"landing":
 			var pts: Array[Vector3] = []
 			var u := clampf(age / float(e["life"]), 0.0, 1.0)
-			_landing_at(e["origin"], float(e["radius"]), u, e["look"], pts)
+			_landing_at(e["origin"], float(e["radius"]), u, e["look"], pts, int(e["seed"]))
 			_emit(e, e["look"], pts, age, 1.0 - u)
 		else:
 			_draw_form(e, age)
 	keep.reverse()
 	_effects = keep
+	if vfx != null:
+		vfx.finish()
 	_drawn_meshes = mesh_cap() - _mesh_left
 	_drawn_particles = particle_cap() - _part_left
 	for p: AttackFormPool in pools.values():
@@ -291,6 +311,18 @@ static func lit_color(c: Color, a: float, energy: float) -> Color:
 ## A flat piece at `p` turned to `yaw` (radians, sim angle), `sx` along it, `sz` across it, `sy` tall.
 static func flat(p: Vector3, yaw: float, sx: float, sz: float, sy: float = 1.0) -> Transform3D:
 	return Transform3D(Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(sx, sy, sz)), p)
+
+
+## The look's element for the VfxLayer: &"fire", &"storm" or &"" (the flat look, also when there is no layer).
+func _vfx_kind(look: Dictionary) -> StringName:
+	if vfx == null:
+		return &""
+	var els: Array = look.get("elements", [])
+	if els.has("ember"):
+		return &"fire"
+	if els.has("storm"):
+		return &"storm"
+	return &""
 
 
 static func _dir(a: float) -> Vector2:
@@ -497,6 +529,10 @@ func _draw_ring(e: Dictionary, look: Dictionary, age: float) -> void:
 ## and its raised front in the heat edge.
 func _ring_at(c: Vector3, r: float, look: Dictionary, fade: float, points: Array[Vector3]) -> void:
 	r = maxf(r, 0.05)
+	if _vfx_kind(look) == &"storm":
+		var sd := int(c.x * 97.0) * 31 + int(c.z * 89.0)
+		vfx.storm_ring(c, r, fade, vfx._now, sd, COLD)
+		return
 	_put(
 		&"ring_fill",
 		Transform3D(Basis.from_scale(Vector3(r, 1, r)), c),
@@ -527,6 +563,9 @@ func _draw_beam(e: Dictionary, look: Dictionary, age: float) -> void:
 		var a := SimPlane.to_3d(e["origin"], BODY_H)
 		var b := SimPlane.to_3d(_beam_end(e, look, off), BODY_H)
 		var thick: float = look["thick"]
+		if _vfx_kind(look) == &"storm":
+			vfx.lightning(a, b, fade, age, int(e["seed"]) + int(off * 100.0), COLD)
+			continue
 		_put(
 			&"beam_core",
 			segment(a, b, thick),
@@ -566,6 +605,13 @@ func _draw_zone(e: Dictionary, look: Dictionary, age: float) -> void:
 func _zone_at(
 	c: Vector3, r: float, look: Dictionary, fade: float, age: float, sd: int, points: Array[Vector3]
 ) -> void:
+	match _vfx_kind(look):
+		&"fire":
+			vfx.fire(c, r, fade, age, sd, WARM)
+			return
+		&"storm":
+			vfx.storm_field(c, r, fade, age, sd, COLD)
+			return
 	var pulse := 0.5 + 0.5 * sin(age * 0.15 + float(sd))
 	_put(
 		&"zone_fill",
@@ -626,7 +672,7 @@ func _orbiter_at(
 
 func _draw_lob(e: Dictionary, look: Dictionary, age: float) -> void:
 	var life: float = e["life"]
-	var flight := life * 0.75
+	var flight: float = e.get("flight", life * 0.75)
 	var origin: Vector2 = e["origin"]
 	var points: Array[Vector3] = []
 	var fade := 1.0
@@ -637,7 +683,7 @@ func _draw_lob(e: Dictionary, look: Dictionary, age: float) -> void:
 		else:
 			var u := clampf((age - flight) / maxf(life - flight, 1.0), 0.0, 1.0)
 			fade = 1.0 - u
-			_landing_at(target, float(look["radius"]), u, look, points)
+			_landing_at(target, float(look["radius"]), u, look, points, int(e["seed"]))
 	_emit(e, look, points, age, fade)
 
 
@@ -659,6 +705,9 @@ func _lob_at(
 		Transform3D(Basis.from_scale(Vector3.ONE * 0.12), p + Vector3(0, 0.17, 0)),
 		lit_color(look["core"], 1.0, 1.8)
 	)
+	if vfx != null:
+		points.append(p)
+		return  # the new look: no ground circle, only the bomb and its lit fuse
 	_put(
 		&"lob_ground",
 		Transform3D(Basis.from_scale(Vector3(blast, 1, blast)), g),
@@ -674,9 +723,12 @@ func _lob_at(
 
 ## The landing flash `u` (0..1) through it: a ground-safe disc and a raised front out to the blast radius.
 func _landing_at(
-	target: Vector2, blast: float, u: float, look: Dictionary, points: Array[Vector3]
+	target: Vector2, blast: float, u: float, look: Dictionary, points: Array[Vector3], sd: int = 0
 ) -> void:
 	var g := SimPlane.to_3d(target, GROUND_H)
+	if vfx != null:
+		vfx.explosion(g, blast, u, sd * 7 + int(target.x * 131.0 + target.y * 71.0), WARM)
+		return
 	var fade := 1.0 - u
 	var r := blast * (0.6 + 0.4 * u)
 	_put(
@@ -759,6 +811,8 @@ func _emit(
 	var parts: Array = look["particles"]
 	if parts.is_empty() or points.is_empty() or fade <= 0.0:
 		return
+	if _vfx_kind(look) != &"":
+		return  # the VfxLayer draws this element's embers and sparks
 	var total := int(
 		round(PARTICLES[int(look["form"])] * particle_scale() * maxf(1.0, points.size() / 4.0))
 	)
