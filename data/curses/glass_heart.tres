@@ -4,15 +4,13 @@
 
 [resource]
 script = ExtResource("1_curse")
-name_key = &"CURSE_MARKED"
-desc_key = &"CURSE_MARKED_DESC"
-effect = &"elite_hunt"
+name_key = &"CURSE_GLASS_HEART"
+desc_key = &"CURSE_GLASS_HEART_DESC"
+effect = &"max_hp_cut"
 amount = 30.0
-effect_2 = &"elite_chance"
-amount_2 = 12.0
-up_effect = &"elite_rare_drop"
-up_amount = 1.0
-up_desc_key = &"CURSE_MARKED_UP"
+up_effect = &"crit_chance"
+up_amount = 15.0
+up_desc_key = &"CURSE_GLASS_HEART_UP"
 threat = 1
 weight = 10
-id = &"marked_hunt"
+id = &"glass_heart"

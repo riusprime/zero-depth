@@ -365,7 +365,9 @@ func _rewards(reader: WorldReader, out: Array) -> void:
 	var choosing := reader.choosing()
 	if choosing and not _choosing:
 		var r := reader.choice_reward()
-		var altar := r >= 0 and reader.reward_kind(r) == WorldReader.REWARD_ALTAR
+		var altar := (
+			r >= 0 and reader.reward_kind(r) in [WorldReader.REWARD_ALTAR, WorldReader.REWARD_DROP]
+		)
 		out.append([&"altar_open" if altar else &"chest_open", null, 1.0])
 	_choosing = choosing
 	var denied := reader.reward_denied_tick()

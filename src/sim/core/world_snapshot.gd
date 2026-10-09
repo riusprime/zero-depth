@@ -103,6 +103,8 @@ const STATE_CLASSES: Array[StringName] = [
 	&"AttackBook",
 	&"AttackSpec",
 	&"AttackHook",
+	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
+	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.

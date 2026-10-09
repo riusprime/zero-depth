@@ -47,6 +47,7 @@ static func setup(
 		return
 	s.rng = RngStream.derive(w.seed_value, "loot:event")
 	s.rng_elite = RngStream.derive(w.seed_value, "ai:elite")
+	Curses.after_setup(w)  # v0.6.0 CU: a held Glass Heart cuts the fresh floor's max HP
 	if w.floor_layout != null and not events.is_empty():
 		place(w, w.floor_layout)
 
@@ -212,7 +213,7 @@ static func roll(w: World, k: int) -> void:
 		w.ev.roll_card[k * MAX_CHOICES + c] = code
 		var curse := t.curse[c]
 		if curse == CURSE_RANDOM:
-			curse = Curses.roll(w, cursed)
+			curse = Curses.roll(w, cursed, Curses.Pool.PLAIN)  # v0.6.0 CU: an event's price is a plain curse
 		elif curse >= 0 and Curses.owned(w, curse):
 			curse = CURSE_NONE  # the panel shows the choice blocked (curse_block)
 		if curse >= 0:
@@ -537,3 +538,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_int(w.threat_peak)
 	h.add_int(w.deep_threat)
 	w.ev.hash_into(h)
+	if w.cs.touched():  # v0.6.0 CU: the trade-off curses' state and core theft, once touched
+		w.cs.hash_into(h)
+	if w.cores.touched():
+		w.cores.hash_into(h)

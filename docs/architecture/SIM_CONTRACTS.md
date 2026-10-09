@@ -56,7 +56,7 @@ the order is part of the contract:
 | 6 | **Hits** | Active hitboxes and projectile sweeps produce `HIT` events in a fixed order: attacker id, then hitbox index, then target id. |
 | 7 | **Drain the effect queue** | All events and triggered payoffs resolve (§7–§8). |
 | 8 | **Statuses** | Status timers tick; damage-over-time emits `DAMAGE` (never `HIT`, proc 0) and drains through the queue again. |
-| 9 | **Deaths and waves** | Entities marked dead are removed. Spawns queued this tick are added with new ids. The encounter checks its wave and clear conditions. v0.5.0 EV: right after the removal, `Events.advance` drops dead elites, opens an Ambush Cache's chest once its pack is gone and counts a Wandering Drone defence (paying its shards when held). |
+| 9 | **Deaths and waves** | Entities marked dead are removed (v0.6.0 CU: as each leaves, `CoreTheft.on_death` drops a core stolen in its window, and Marked's rare card). Spawns queued this tick are added with new ids. The encounter checks its wave and clear conditions. v0.5.0 EV: right after the removal, `Events.advance` drops dead elites, opens an Ambush Cache's chest once its pack is gone and counts a Wandering Drone defence (paying its shards when held); v0.6.0 CU: then `CoreTheft.advance` runs the staggers and steal windows down. |
 | 10 | **Publish cues** | The tick's events are appended to the event log that presentation reads (§9). |
 | 11 | **Optional hash** | When a checkpoint is due (§10), the `StateHasher` runs. |
 
@@ -169,6 +169,12 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   and spots, the cursed-chest roll and its card and curse) and `ai:elite` (`World.ev.rng_elite`: one roll per spawn
   while an elite curse is held). They are sub-streams of `map`, `loot` and `ai` like `ai:enemy`; EI-05 lists them
   (owner approval 2026-10-08). Both world states join the hash with the event block (§10).
+- **v0.6.0 CU** draws only on named streams that already exist: `combat` (Rooted's dodge: one draw per enemy hit that
+  would land on the player, only while a dodge chance is held; `Curses.dodges`), `ai:elite` (core theft: the card an
+  elite's or a boss's core holds, drawn when it becomes an elite (`Curses.make_elite`) or rises (`World.spawn_boss`);
+  `CoreTheft.on_elite`, `on_boss`) and `loot:event` (the cursed chest's roll and its trade-off curse; a core redrawn at
+  its drop when its card no longer applies; Marked's rare card from a slain elite). Cores exist only in worlds with
+  the event streams (`World.ev.rng_elite`), so older worlds draw nothing new.
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
@@ -448,7 +454,11 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   - the event block (v0.5.0 EV; `Events.hash_into`, after the gamble shrine, before the run flow): `curses_owned`,
     `threat_peak`, then `EventState.hash_into` (the two stream states, the pedestals and their rolls, the open panel,
     ambush, defence, Overclock bonus, elites, cursed offers and the last-result ticks), only in worlds set up with
-    event or curse tables or holding a curse (`EventState.touched`).
+    event or curse tables or holding a curse (`EventState.touched`). v0.6.0 CU appends to it, each only once touched:
+    the trade-off curses' state (`CurseState`: Brittle's stun ticks and start, Rooted's last dodge and count, Heavy
+    Hands' shot count and last boosted hit, Blood Price's last cost) and core theft (`CoreState`: each carrier's id,
+    card, boss flag, stagger meter, stagger and window ticks; the drops on the floor and their kinds; the last window
+    and steal). Both are in WorldSnapshot.STATE_CLASSES.
   - the shop (v0.5.0 SH; `ShopState`: id, room, open, rolled, heal used, rerolls, last action, tick and value, the
     refusal tick, the stock, the position), after the gamble shrine, only on floors with a shop; the stat cards taken
     (`World.stat_cards`, the `Offers` codes in order) with the build block, once it is touched.
@@ -663,6 +673,28 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`EnemyAi.move`), both regen sources, heat decay, the spawn director's arrival size and elite roll, and every shard
   price (`Curses.price`: chests, the gamble shrine, event costs, shops). `Curses.cleanse` lifts one (T falls; the
   peak stays). The T-indexed `ThreatModifier` tables (CONTENT_SCHEMA §7) are not built yet.
+- **Trade-off curses** (v0.6.0 CU, PLAN v0.5.5 S6, S7, C1-C8): a curse may carry a second drawback and an upside
+  (`CurseTable.effect_2`, `up_effect`); `Curses.total` sums all three. A cursed chest's cursed card is now the curse
+  itself (`Offers.CURSE`, code 3000 + curse; rare-level, drawn among the trade-off curses you don't hold); the epic
+  stat card it used to carry is gone. Event choices' random curses draw plain curses only. Each effect is read at one
+  hook: no dash (`World._advance_actions`), dodge (`Damage.hit`, before any damage: the hurt i-frames and a
+  STATUS_APPLY `dodge`), attack speed (`Stats.period`, `Stats.swing_end`), the 4th Blade combo step and every 4th Gun
+  shot (`PlayerKit` through `Curses.swing_damage` / `shot_damage`), max HP (`Stats.max_hp`; taking or lifting it moves
+  `actors.max_hp[0]` by the difference, and `Events.setup` applies a carried one), crit chance (`Stats.crit_chance`),
+  the Skill's and Blink's HP cost (`Curses.on_ability_use`, never below 1 HP, no DAMAGE event) and skill/ability hit
+  damage (`Stats.outgoing`), heat decay and Overclock damage (`Heat`), the minimap (`WorldReader.minimap_blind`),
+  shards (`Stats.shards`), Brittle's stun (`Damage._apply` on an enemy hit that hurt, not a DoT tick: no move, swing,
+  shot, dash, skill or blink while it runs; `Curses.advance` in phase 4) and move speed, Marked's elite hunt
+  (`EnemyAi.move`: elites within `hunt_range_m` × (1 + amount)) and its rare card on an elite's death.
+- **Core theft** (v0.6.0 CU, PLAN X2; `CoreTheft`): every elite and boss carries a core (one card, drawn on
+  `ai:elite`; a boss's from the legendary tier). An elite's direct damage (never DoT) fills its meter; at
+  `core_stagger_permille` of its max HP it staggers for `core_stagger_ticks` (its attack is cancelled, `EnemyAi.think`
+  and `move` skip it) and the meter resets. A boss staggers by its own meter (BossAi, only read). A stagger while the
+  carrier lives opens its steal window for `core_window_ticks`. In phase 9 (`World._remove_dead`) a carrier dying with
+  its window open drops its core: `CoreTheft.grant` (the one grant function) puts a free one-card reward
+  (`RewardStore.Kind.DROP`, offer set at once) at the body, opened like an altar through the pick. A core whose card
+  no longer applies is redrawn on `loot:event`. Then `CoreTheft.advance` (after `Events.advance`) drops gone carriers
+  and runs the staggers and windows down.
 - There is no time-based scaling: no global clock and no enrage timer.
 - **Overrun (v0.4.0 AB, the first T branch).** `OverrunRooms.mark` picks one room per floor after the boss room is
   attached, from the `map:overrun` sub-stream (the `map` stream itself and the walls never change): any room but the

@@ -84,6 +84,8 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
+	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
+		return 0
 	var m := target_mult(w, target, from)
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
 		var c := BossChallenge.hit_mult(w, target)  # BX (L17): ranged armour, the weak point.
@@ -183,6 +185,9 @@ static func _apply(
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
+		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
 	if target == 0:
 		ItemProcs.on_player_hurt(w)  # Items: Thorn Mantle.
+		if applied > 0 and not (tags & SimEvent.TAG_DOT) and owner_id != a.ids[0]:
+			Curses.on_player_hit(w)  # v0.6.0 CU: Brittle
 	return applied

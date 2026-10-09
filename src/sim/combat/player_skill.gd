@@ -76,7 +76,8 @@ static func ready(w: World) -> bool:
 		and not w.guarding()
 		and not w.player_dead()
 		and Heat.can_attack(w)
-	)
+		and not Curses.stunned(w)
+	)  # v0.6.0 CU: Brittle
 
 
 static func _vent(w: World) -> void:
@@ -103,6 +104,7 @@ static func _start(w: World, t: SkillTable) -> void:
 	var e := w.emit_event(SimEvent.Kind.SKILL_USED, pid, pid, pid, k.skill_from)
 	e.root_id = k.skill_root
 	e.amount = t.kind
+	Curses.on_ability_use(w)  # v0.6.0 CU: Blood Price
 	if not lunge:
 		_blast(w, t)
 
