@@ -13,3 +13,11 @@ var elite_hp_bonus_permille := 1000
 var ambush_min_distance_m := 4.0
 var defend_radius_m := 4.5
 var cleanse_price := 60
+## v0.6.0 CU core theft: an elite's stagger (per mille of its max HP in direct damage), its length and the steal
+## window (ticks), a mod core's draw weight; Marked's hunt range and the spacing of drops at one spot.
+var core_stagger_permille := 300
+var core_stagger_ticks := 45
+var core_window_ticks := 120
+var core_mod_weight := 10
+var hunt_range_m := 16.0
+var drop_offset_m := 0.9

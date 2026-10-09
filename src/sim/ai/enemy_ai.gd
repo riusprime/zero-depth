@@ -120,6 +120,8 @@ static func think(w: World, i: int) -> void:
 		plan(w, i)
 	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
 		return
+	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands
+		return
 	var t := w.enemy_table(a.kinds[i])
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
@@ -278,7 +280,10 @@ static func move(w: World, i: int) -> void:
 	var t := w.enemy_table(a.kinds[i])
 	var at := a.pos(i)
 	# Items (v0.2.0 J): a Frost Core slow scales both the walk and the charge (1.0 when not slowed).
+	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands
+		return
 	var slow := ItemProcs.slow_factor(w, i) * Curses.enemy_speed_factor(w)  # v0.5.0 EV curse
+	slow *= Curses.hunt_factor(w, i)  # v0.6.0 CU: Marked's elites hunt you
 	var hovering := a.kinds[i] == ActorStore.Kind.BOMB_DRONE and a.state[i] == State.WINDUP
 	if a.state[i] == State.MOVE and a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
 		_relocate(w, i, t, slow)

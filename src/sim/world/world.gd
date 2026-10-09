@@ -295,6 +295,9 @@ var curses_owned := PackedInt32Array()
 var threat_peak := 0
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0
+## v0.6.0 CU: the trade-off curses' state in play (Curses) and core theft (CoreTheft), per floor.
+var cs := CurseState.new()
+var cores := CoreState.new()
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).
@@ -471,6 +474,7 @@ func step(frame: InputFrame) -> void:
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
+	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
 	ItemEffects.collect_pickups(self)  # Items: walking over a pickup takes it.
 	HealOrbs.advance(self)  # v0.4.0 TU (D8): walking over a heal orb heals
@@ -728,6 +732,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
 	boss_id = id
+	CoreTheft.on_boss(self, i)  # v0.6.0 CU: the boss's legendary core
 	CatchUp.on_boss(self, i)  # v0.5.5 DS (D7): the boss's own hidden catch-up, fixed for the fight
 	return id
 
@@ -1082,6 +1087,7 @@ func _advance_actions() -> void:
 		swing_t = 0
 		shot_cd = 0
 		return
+	Curses.advance(self)  # v0.6.0 CU: Brittle's stun runs down
 	PlayerKit.advance_utility(self)
 	PlayerKit.advance(self)
 	PlayerSkill.advance(self)  # Kit (v0.3.5 K): Vent, and the build's skill.
@@ -1092,6 +1098,8 @@ func _advance_actions() -> void:
 		if dash_ticks_left == 0:
 			ItemProcs.on_dash_end(self)  # Items: Momentum.
 		return
+	if input_buffer[DASH_SLOT] > 0 and (Curses.no_dash(self) or Curses.stunned(self)):
+		input_buffer[DASH_SLOT] = 0  # v0.6.0 CU: Rooted (no dash), Brittle (stunned)
 	if input_buffer[DASH_SLOT] > 0 and dash_cooldown_left == 0 and not PlayerSkill.busy(self):
 		input_buffer[DASH_SLOT] = 0
 		dash_dir = PlayerKit.move_or_aim(self)
@@ -1119,6 +1127,7 @@ func _move_and_collide() -> void:
 			if len > 1.0:
 				mv /= len
 			var speed := ItemProcs.move_speed(self) * Heat.move_factor(self)  # Swift Feet; the overheat stall.
+			speed *= Curses.move_factor(self)  # v0.6.0 CU: Brittle (the stun, + move speed)
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
@@ -1327,6 +1336,7 @@ func _remove_dead() -> void:
 				if boss_id == actors.ids[i]:
 					boss_id = -1
 			Rewards.on_kill(self, i)  # Rewards: shards.
+			CoreTheft.on_death(self, i)  # v0.6.0 CU: a core stolen in its window, Marked's rare card
 	actors.remove_sorted(gone)
 
 

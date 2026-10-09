@@ -222,7 +222,7 @@ the owner's answers on X1, D4/D7, G1 (M, C) and the mockups.
 | DS | Difficulty scaling with a cap (D4), boss caps and phase mechanics (D6, D7), Deep that bites (S5), principle in the blueprint (D8) | D3–D8, D10, S5, B1 | 2 |
 | UI | The UI restyle from the A5 pick: menus in C, HUD/heat/health/minimap in B, no minimap black background | A5 | 2 |
 | MX | The attack-modifier engine and the approved modifiers (B2–B6) | B2–B6 | 2 |
-| CU | Trade-off curses (S6, S7) | S6, S7 | 2 |
+| CU | Trade-off curses (S6, S7), and core theft (X2). **Built** (`949b32f`, [`evidence/CURSES.md`](evidence/CURSES.md)) | S6, S7, X2 | 2 |
 
 Each step: tests (unit + an e2e through `main.tscn` with real input where it's player-facing), an evidence file in
 `evidence/`, docs touched, strings en + es, full suite green before the merge. No bot balance sims (P1).

@@ -152,6 +152,8 @@ static func _apply(w: World, code: int) -> void:
 			Abilities.grant(w, Offers.ability_of(code))
 		Offers.STAT:
 			Stats.add_card(w, Offers.stat_of(code), Offers.rarity_of(code))
+		Offers.CURSE:
+			Curses.add(w, Offers.curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
 	sync(w)
 
 

@@ -554,18 +554,36 @@ class_name CurseDefinition extends ContentDef          # data/curses/*.tres, cat
 @export var effect: StringName                         # enemy_speed, regen, heat_decay, extra_enemy, prices,
                                                        # elite_chance
 @export var amount := 15.0                             # percent (a count for extra_enemy)
+@export var effect_2: StringName = &""                 # v0.6.0 CU: a second drawback ("" = none)
+@export var amount_2 := 0.0
+@export var up_effect: StringName = &""                # v0.6.0 CU: a trade-off's upside ("" = a plain curse)
+@export var up_amount := 0.0
+@export var up_desc_key: StringName                    # one %s (or none for an on/off effect)
 @export var threat := 1                                # added to T while held
 @export var weight := 10
 
 class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.tres, category "event_rules"
 # rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
 # walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
-# defend_radius_m
+# defend_radius_m; v0.6.0 CU: core_stagger_share (%), core_stagger_seconds, core_window_seconds, core_mod_weight,
+# hunt_range_m, drop_offset_m
 ```
 
 Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
 below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
-`threat >= 1`. Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
+`threat >= 1`. v0.6.0 CU (PLAN v0.5.5 S6, S7): a curse may add `effect_2` / `amount_2` (a second drawback) and
+`up_effect` / `up_amount` / `up_desc_key` (the upside of a trade-off curse; `&""` = a plain curse). The effects list
+grows (appended, never renumbered): `no_dash`, `dodge`, `attack_slow`, `fourth_hit`, `max_hp_cut`, `crit_chance`,
+`ability_hp_cost`, `ability_damage`, `heat_linger`, `overclock_damage`, `no_minimap`, `shard_gain`, `hit_stun`,
+`move_speed`, `elite_hunt`, `elite_rare_drop`. Amounts are percent, except the counts (`extra_enemy`, and 1 for the
+on/off `no_dash`, `no_minimap`, `elite_rare_drop`) and `hit_stun` in seconds; a cut (`attack_slow`, `max_hp_cut`,
+`heat_linger`) is at most 90 %. A trade-off needs `up_desc_key`. Shipped: five plain curses (`leaky_core`,
+`price_gouge`, `swarm_call`, `swift_foes`, `withering`) and the eight trade-offs C1-C8 (`rooted`, `heavy_hands`,
+`glass_heart`, `blood_price`, `fevered`, `tunnel_vision`, `brittle`, and `marked_hunt`, which became C8 Marked: it
+keeps its id and its 12 % elite chance as `effect_2`). The event rules add core theft's numbers: `core_stagger_share`
+(%, 30), `core_stagger_seconds` (0.75), `core_window_seconds` (2), `core_mod_weight` (10), `hunt_range_m` (16) and
+`drop_offset_m` (0.9).
+Curses differ from the T-indexed `ThreatModifier` above: each has one fixed amount (no table by T);
 the `ThreatModifier` tables are still unbuilt.
 
 ## 8. Player

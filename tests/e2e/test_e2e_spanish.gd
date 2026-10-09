@@ -13,7 +13,7 @@ func test_menu_in_spanish() -> void:
 	var main: Main = await e.boot(profile)
 	var play: Button = main.get_node("UI/MainMenu").find_child("Play", true, false)
 	assert_eq(play.text, "UI_PLAY", "the button holds a key")
-	assert_eq(tr(play.text), "JUGAR", "and shows its Spanish text")
+	assert_eq(tr(play.text), "Jugar", "and shows its Spanish text")
 	assert_eq(TranslationServer.get_locale(), "es")
 
 

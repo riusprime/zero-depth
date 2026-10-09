@@ -87,6 +87,7 @@ func _init(builds: Array, last_id: StringName) -> void:
 	_back.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_back.add_theme_font_size_override("font_size", 20)
 	_back.pressed.connect(func() -> void: back_pressed.emit())
+	MenuStyle.apply(_back)  # v0.5.5 A5: the Cold glass row look; the build cards keep their own
 	col.add_child(_back)
 
 

@@ -109,4 +109,4 @@ func _check_spanish() -> void:
 	var es := TranslationServer.translate("UI_PLAY")
 	TranslationServer.set_locale("en")
 	var en := TranslationServer.translate("UI_PLAY")
-	_check(es != en and es == "JUGAR", "UI_PLAY is %s / %s" % [en, es])
+	_check(es != en and es == "Jugar", "UI_PLAY is %s / %s" % [en, es])

@@ -43,6 +43,7 @@ func _init(p_api: DebugApi) -> void:
 		["KillBoss", "UI_DEV_KILL_BOSS", api.kill_boss],
 		["NextEnemy", "UI_DEV_NEXT_ENEMY", api.next_enemy],
 		["SpawnEnemy", "UI_DEV_SPAWN_ENEMY", api.request_enemy],
+		["SpawnElite", "UI_DEV_SPAWN_ELITE", api.request_elite],  # v0.6.0 CU: TEST HELPER (core theft)
 		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
 		["GrantMod", "UI_DEV_GRANT_MOD", api.grant_mod],  # v0.6.0 MX2

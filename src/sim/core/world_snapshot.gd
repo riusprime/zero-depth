@@ -104,6 +104,8 @@ const STATE_CLASSES: Array[StringName] = [
 	&"AttackBook",
 	&"AttackSpec",
 	&"AttackHook",
+	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
+	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the

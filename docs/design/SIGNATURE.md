@@ -83,6 +83,24 @@ modifier engine (`MODIFIER_ENGINE.md`): Echo Slash (M5), Twin Cast (M12), Long S
 Decided 2026-10-08: elites and bosses carry a visible **core** (a modifier). Kill them during a short window
 after a stagger to steal it as a free pick (it goes through the 6-slot Swap like any modifier).
 
+Built in v0.6.0 Step CU (`CoreTheft`, `CoreState`, `CoreViews`). Starting values, in `data/event_rules/floor.tres`:
+
+| Rule | Starting value |
+|---|---|
+| Who carries one | every elite (an Ambush pack, an elite curse's spawn, a Deep room's elite) and every boss |
+| What it holds | an elite: a mod still in the pool (weight 10 each) or a rare stat card under its cap (its card weight); a boss: a card of the legendary tier (`data/legendary/boss.tres`). Drawn on `ai:elite` when it becomes an elite or rises |
+| An elite's stagger | 30 % of its max HP in direct damage since its last stagger; it stands 0.75 s (its attack is cancelled) |
+| A boss's stagger | its own stagger meter (unchanged; the phase gates of Step DS stay) |
+| The steal window | 2 s from the stagger (a new stagger restarts it); a stagger from the killing blow opens nothing |
+| Killed inside it | the core drops at the body: a free one-card pick ("Stolen core"), walked to and opened like an altar; a boss's shows as legendary |
+| Killed outside it | the normal drops only (shards; the boss's legendary altar comes either way) |
+| A core that no longer applies | (a mod you took meanwhile, a stat at its cap) is redrawn from the same pool when it drops |
+
+The grant is one function (`CoreTheft.grant`): when Step MX's 6-slot build lands, only it changes to go through the
+Swap. What you see: a faceted crystal floating over the carrier, glowing its card family's frame colour
+(`CardFrames`); it flares while the carrier is staggered; a bright ring on the floor shrinks around it while the
+window is open; a steal throws a burst of the core's colour, and the drop is the same crystal turning over a ring.
+
 ## Depth descent
 
 Decided 2026-10-08: it is the Deep route (v0.5.5 S5). Each Deep floor taken raises threat, so it raises the

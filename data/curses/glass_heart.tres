@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CurseDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/curse_definition.gd" id="1_curse"]
+
+[resource]
+script = ExtResource("1_curse")
+name_key = &"CURSE_GLASS_HEART"
+desc_key = &"CURSE_GLASS_HEART_DESC"
+effect = &"max_hp_cut"
+amount = 30.0
+up_effect = &"crit_chance"
+up_amount = 15.0
+up_desc_key = &"CURSE_GLASS_HEART_UP"
+threat = 1
+weight = 10
+id = &"glass_heart"

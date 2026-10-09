@@ -112,6 +112,11 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
 const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR (X1b)
+const REWARD_DROP := RewardStore.Kind.DROP  # v0.6.0 CU: a free one-card drop (a stolen core, Marked's card)
+## v0.6.0 CU: a drop's kind (CoreState.Drop).
+const DROP_CORE := CoreState.Drop.CORE
+const DROP_BOSS_CORE := CoreState.Drop.BOSS_CORE
+const DROP_ELITE_CARD := CoreState.Drop.ELITE_CARD
 const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
@@ -125,6 +130,7 @@ const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
+const CARD_CURSE := Offers.CURSE  # v0.6.0 CU: a trade-off curse card
 ## v0.5.0 SH: a shop salvage entry's kind, and the shop's last action (ShopState.Action).
 const SHOP_SELL_MOD := Shop.SELL_MOD
 const SHOP_SELL_STAT := Shop.SELL_STAT
@@ -965,7 +971,18 @@ func reward_is_epic(i: int) -> bool:
 
 ## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
 func reward_is_legendary(i: int) -> bool:
-	return BossReward.is_legendary(_w, i)
+	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
+
+
+## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
+func reward_drop_kind(i: int) -> int:
+	return CoreTheft.drop_kind(_w, _w.rewards.ids[i])
+
+
+## v0.6.0 CU: the card a drop holds (an Offers code for card_info), or -1 when it holds none.
+func reward_drop_card(i: int) -> int:
+	var offer := _w.rewards.offer_of(i)
+	return offer[0] if _w.rewards.kind[i] == REWARD_DROP and not offer.is_empty() else -1
 
 
 ## v0.5.5 AR: reward i stands in an arena that isn't cleared (it can't be opened yet).
@@ -1771,6 +1788,97 @@ func event_defend_radius_m() -> float:
 ## Actor i is an elite (an ambush pack or an elite curse's spawn).
 func actor_elite(i: int) -> bool:
 	return Curses.is_elite(_w, _w.actors.ids[i])
+
+
+# --- v0.6.0 CU: core theft and the trade-off curses ---------------------------------------------------------------
+## The card actor i's core holds (an Offers code for card_info), or -1 when it carries none.
+func actor_core(i: int) -> int:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return _w.cores.card[k] if k >= 0 else -1
+
+
+## Actor i carries a boss's (legendary) core.
+func actor_core_boss(i: int) -> bool:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return k >= 0 and _w.cores.boss[k] == 1
+
+
+## Actor i's steal window: ticks left (0 = shut), and its length.
+func actor_steal_ticks(i: int) -> int:
+	var k := CoreTheft.entry_of(_w, _w.actors.ids[i])
+	return _w.cores.window_t[k] if k >= 0 else 0
+
+
+func steal_window_ticks() -> int:
+	return _w.ev.rules.core_window_ticks
+
+
+## Elite actor i stands staggered (its own stagger; a boss's is boss_staggered).
+func actor_core_staggered(i: int) -> bool:
+	return CoreTheft.staggered(_w, i)
+
+
+## The last steal (tick, card); -1 when none yet.
+func steal_tick() -> int:
+	return _w.cores.steal_tick
+
+
+func steal_card() -> int:
+	return _w.cores.steal_card
+
+
+## Tunnel Vision: the minimap is off.
+func minimap_blind() -> bool:
+	return Curses.no_minimap(_w)
+
+
+## Rooted's last dodge and Brittle's stun (ticks left; the tick it started); -1 when none yet.
+func dodge_tick() -> int:
+	return _w.cs.dodge_tick
+
+
+func stun_ticks() -> int:
+	return _w.cs.stun_t
+
+
+func stun_tick() -> int:
+	return _w.cs.stun_tick
+
+
+## Curse c is a trade-off (it has an upside), and its upside's sentence key.
+func curse_is_trade_off(c: int) -> bool:
+	return c < _w.ev.curses.size() and _w.ev.curses[c].is_trade_off()
+
+
+func curse_up_desc_key(c: int) -> StringName:
+	return _w.ev.curses[c].up_desc_key if c < _w.ev.curses.size() else &""
+
+
+## The numbers the curse sentences show (CurseLook): the drawback's and the upside's, as text (a percent, a count,
+## or seconds for a stun).
+func curse_value_text(c: int) -> String:
+	if c >= _w.ev.curses.size():
+		return ""
+	var t := _w.ev.curses[c]
+	return _effect_text(t.effect, t.amount)
+
+
+func curse_up_value_text(c: int) -> String:
+	if c >= _w.ev.curses.size() or not _w.ev.curses[c].is_trade_off():
+		return ""
+	var t := _w.ev.curses[c]
+	return _effect_text(t.up_effect, t.up_amount)
+
+
+static func _effect_text(effect: int, amount: int) -> String:
+	match effect:
+		Curses.Effect.EXTRA_ENEMY, Curses.Effect.NO_DASH, Curses.Effect.NO_MINIMAP:
+			return str(amount)
+		Curses.Effect.ELITE_RARE_DROP:
+			return str(amount)
+		Curses.Effect.HIT_STUN:
+			return str(snappedf(float(amount) / SimTick.TICKS_PER_SECOND, 0.01))
+	return str(amount / 10)
 
 
 ## Threat T now (the curses held) and the run's peak so far (PD-05; M-THREAT).

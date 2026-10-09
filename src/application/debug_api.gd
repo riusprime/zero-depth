@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name DebugApi
 extends RefCounted
 ## Debug commands for the dev panel, applied at tick boundaries by SimDriver, never by touching World from a
@@ -31,6 +32,8 @@ var _steps := 0
 var _boss_pending := -1
 var _enemy_pending := -1
 var _curse_chest := false
+## v0.6.0 CU (TEST HELPER, dev runs only): the chosen enemy spawns as an elite carrying a core.
+var _elite_pending := false
 
 
 func _init(p_world: World) -> void:
@@ -110,12 +113,23 @@ func request_enemy() -> void:
 		_enemy_pending = enemy_choice % enemy_kinds().size()
 
 
+## v0.6.0 CU, TEST HELPER (dev runs only): queues the chosen enemy to spawn as an elite (with its core) about 6 m
+## from the player at the next tick boundary, so core theft can be seen without waiting for an elite.
+func request_elite() -> void:
+	if not enemy_kinds().is_empty():
+		_enemy_pending = enemy_choice % enemy_kinds().size()
+		_elite_pending = true
+
+
 ## Applies queued commands between ticks. Returns the spawned boss's actor id, or -1.
 func apply_pending() -> int:
 	if _enemy_pending >= 0:
 		var kind := enemy_kinds()[_enemy_pending]
 		_enemy_pending = -1
 		world.add_enemy(kind, boss_spot(world, world.enemy_table(kind).radius_m))
+		if _elite_pending:
+			_elite_pending = false
+			Curses.make_elite(world, world.actors.size() - 1)
 	if _boss_pending < 0:
 		return -1
 	var k := _boss_pending

@@ -1,6 +1,8 @@
 class_name AbilitySlot
 extends Control
 ## One ability slot on the HUD (v0.4.0 BS; AbilityHud): the symbol, a cooldown sweep, level pips and the key.
+## v0.5.5 A5 (Ember stone): in HudStyle.EMBER the slot is a chipped stone slab with the ability's colour as a line
+## along its bottom (the B mockup); other styles keep CardStyle's square.
 
 const LEVELS := WorldReader.ABILITY_MAX_LEVEL
 
@@ -69,15 +71,23 @@ func show_ability(
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	var box := CardStyle.box(Vector4.ZERO)
 	var c := AbilityIcons.color(ability_id)
-	if ability_id == &"":
-		box.bg_color = Color(CardStyle.BG, 0.4)
+	if HudStyle.current == HudStyle.Style.EMBER:
+		if ability_id == &"":
+			HudStyle.draw_plate(self, r, false, HudStyle.STONE_EDGE, Color(HudStyle.STONE, 0.55))
+			return
+		HudStyle.draw_plate(self, r)
+		var line := Rect2(Vector2(7, size.y - 5), Vector2(size.x - 14, 2.5))
+		draw_rect(line, Color(c, 0.95 if is_ready else 0.4))
+	else:
+		var box := CardStyle.box(Vector4.ZERO)
+		if ability_id == &"":
+			box.bg_color = Color(CardStyle.BG, 0.4)
+			draw_style_box(box, r)
+			return
+		CardStyle.apply(box, c, is_ready)
+		box.border_color = Color(c, 0.9 if is_ready else 0.45)
 		draw_style_box(box, r)
-		return
-	CardStyle.apply(box, c, is_ready)
-	box.border_color = Color(c, 0.9 if is_ready else 0.45)
-	draw_style_box(box, r)
 	var icon_c := c if is_ready else c.darkened(0.35)
 	ItemIcons.draw(self, ability_id, r.grow(-size.x * 0.2), icon_c)
 	if fill < 1.0:

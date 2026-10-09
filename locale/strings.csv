@@ -1,15 +1,15 @@
 keys,en,es
 UI_TITLE,{{TITLE}},{{TITLE}}
-UI_PLAY,PLAY,JUGAR
-UI_CONTINUE,CONTINUE,CONTINUAR
-UI_OPTIONS,OPTIONS,OPCIONES
-UI_CREDITS,CREDITS,CRÉDITOS
-UI_GALLERIES,GALLERIES,GALERÍAS
-UI_QUIT,QUIT,SALIR
+UI_PLAY,Play,Jugar
+UI_CONTINUE,Continue,Continuar
+UI_OPTIONS,Options,Opciones
+UI_CREDITS,Credits,Créditos
+UI_GALLERIES,Galleries,Galerías
+UI_QUIT,Quit,Salir
 UI_PAUSED,PAUSED,PAUSA
-UI_RESUME,RESUME,CONTINUAR
-UI_MAIN_MENU,MAIN MENU,MENÚ PRINCIPAL
-UI_BACK,BACK,VOLVER
+UI_RESUME,Resume,Continuar
+UI_MAIN_MENU,Main menu,Menú principal
+UI_BACK,Back,Volver
 UI_LANGUAGE,Language,Idioma
 UI_VOLUME_MASTER,Master volume,Volumen general
 UI_VOLUME_MUSIC,Music,Música
@@ -47,7 +47,7 @@ HUD_WAVE,Wave %d / %d,Oleada %d / %d
 HUD_ENEMIES,Enemies left: %d,Enemigos restantes: %d
 UI_YOU_DIED,You died,Has muerto
 UI_ARENA_CLEARED,Arena cleared,Arena despejada
-UI_RESTART,RESTART,REINICIAR
+UI_RESTART,Restart,Reiniciar
 CAUSE_CHARGER,A Charger ran you down.,Un Embestidor te arrolló.
 CAUSE_WARDEN,A Warden's slam crushed you.,El golpe de un Guardián te aplastó.
 CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaron.
@@ -163,7 +163,7 @@ HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
 HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
-UI_RESTART_RUN,RESTART RUN,REINICIAR PARTIDA
+UI_RESTART_RUN,Restart run,Reiniciar partida
 UI_RUN_COMPLETE,Run complete,Partida completada
 UI_RECAP_FLOOR,Floor reached: %d / %d,Piso alcanzado: %d / %d
 UI_RECAP_TIME,Time: %02d:%02d,Tiempo: %02d:%02d
@@ -499,8 +499,37 @@ CURSE_SWARM_CALL,Swarm Call,Llamada del enjambre
 CURSE_SWARM_CALL_DESC,+%s enemy in every pack,+%s enemigo en cada grupo
 CURSE_PRICE_GOUGE,Price Gouge,Precios abusivos
 CURSE_PRICE_GOUGE_DESC,Shard prices +%s %%,Precios en fragmentos +%s %%
-CURSE_MARKED_HUNT,Marked Hunt,Caza marcada
-CURSE_MARKED_HUNT_DESC,%s %% chance a new enemy is an elite,Un %s %% de probabilidad de que un enemigo nuevo sea élite
+CURSE_MARKED,Marked,Marcado
+CURSE_MARKED_DESC,"Elites hunt you: +%s %% speed toward you, and more enemies are elites","Las élites te cazan: +%s %% de velocidad hacia ti, y más enemigos son élite"
+CURSE_MARKED_UP,A slain elite drops a free rare card,Una élite abatida suelta una carta rara gratis
+CURSE_ROOTED,Rooted,Enraizado
+CURSE_ROOTED_DESC,You can't dash,No puedes esprintar
+CURSE_ROOTED_UP,%s %% chance to dodge a hit,Un %s %% de probabilidad de esquivar un golpe
+CURSE_HEAVY_HANDS,Heavy Hands,Manos pesadas
+CURSE_HEAVY_HANDS_DESC,Attack speed −%s %%,Velocidad de ataque −%s %%
+CURSE_HEAVY_HANDS_UP,"Every 4th hit (combo or shot) deals +%s %%","Cada 4.º golpe (combo o disparo) hace +%s %%"
+CURSE_GLASS_HEART,Glass Heart,Corazón de cristal
+CURSE_GLASS_HEART_DESC,Max HP −%s %%,Vida máxima −%s %%
+CURSE_GLASS_HEART_UP,+%s %% crit chance,+%s %% de probabilidad de crítico
+CURSE_BLOOD_PRICE,Blood Price,Precio de sangre
+CURSE_BLOOD_PRICE_DESC,"Each Skill or Blink costs %s %% of max HP (never lethal)","Cada Técnica o Destello cuesta un %s %% de la vida máxima (nunca letal)"
+CURSE_BLOOD_PRICE_UP,Skills and abilities deal +%s %%,Técnicas y habilidades hacen +%s %%
+CURSE_FEVERED,Fevered,Febril
+CURSE_FEVERED_DESC,Heat fades %s %% slower,El calor se disipa un %s %% más lento
+CURSE_FEVERED_UP,Overclock deals +%s %%,La sobrecarga hace +%s %%
+CURSE_TUNNEL_VISION,Tunnel Vision,Visión de túnel
+CURSE_TUNNEL_VISION_DESC,The minimap is off,El minimapa está apagado
+CURSE_TUNNEL_VISION_UP,+%s %% shards,+%s %% de fragmentos
+CURSE_BRITTLE,Brittle,Quebradizo
+CURSE_BRITTLE_DESC,A hit taken stuns you for %s s,Un golpe recibido te aturde %s s
+CURSE_BRITTLE_UP,Move %s %% faster,Te mueves un %s %% más rápido
+UI_CURSE_UPSIDE,Trade-off,Compensación
+UI_CARD_CURSE,Curse,Maldición
+HUD_DODGE,DODGE,ESQUIVA
+HUD_STUNNED,STUNNED,ATURDIDO
+PICK_TITLE_CORE,Stolen core · take it,Núcleo robado · tómalo
+PICK_TITLE_ELITE_DROP,Elite's card · take it,Carta de élite · tómala
+UI_DEV_SPAWN_ELITE,Spawn elite (core),Invocar élite (núcleo)
 UI_EVENT_OPEN,[E / X] Inspect: %s,[E / X] Examinar: %s
 UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leave,←/→ o 1-3 para elegir · Intro o A para aceptar · Esc o B para irte
 UI_EVENT_COST,Cost,Coste
@@ -557,6 +586,7 @@ HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
 HUD_SHARDS_HALVED,The portal kept half your shards: -%d,El portal se quedó con la mitad de tus fragmentos: -%d
 HUD_PORTALS_OPEN,"Two portals are open: blue goes on, violet goes Deep (harder, richer).","Hay dos portales abiertos: el azul sigue, el violeta baja a lo Profundo (más duro, más botín)."
 REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
+REWARD_OPEN_DROP,[E / X] Take the card,[E / X] Tomar la carta
 PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno
 MAP_LEGEND_PORTAL_DEEP,Deep portal (violet in red),Portal profundo (violeta en rojo)
 UI_RECAP_ROUTE,Route: %s,Ruta: %s
@@ -587,3 +617,6 @@ UI_SWAP_SKIP,Skip,Saltar
 UI_SWAP_SKIP_KEY,Esc,Esc
 UI_SWAP_LEVEL,Level %d,Nivel %d
 UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
+UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
+UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
+UI_MENU_HINT,Enter / A to choose,Intro / A para elegir

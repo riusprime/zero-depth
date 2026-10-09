@@ -89,6 +89,8 @@ func sync(reader: WorldReader) -> void:
 			var kind := reader.reward_kind(i)
 			if kind == WorldReader.REWARD_LEGENDARY:  # v0.5.5 AR (X1b)
 				n = make_altar(false, true)
+			elif kind == WorldReader.REWARD_DROP:  # v0.6.0 CU: a stolen core, Marked's card
+				n = make_drop(CoreViews.card_color(reader, reader.reward_drop_card(i)))
 			elif kind == WorldReader.REWARD_ALTAR:
 				n = make_altar(reader.reward_is_epic(i))
 			else:
@@ -240,6 +242,42 @@ func make_altar(epic: bool = false, legendary: bool = false) -> Node3D:
 	root.set_meta(&"energy", 0.9)
 	root.set_meta(&"epic", epic)
 	root.set_meta(&"legendary", legendary)
+	return root
+
+
+## v0.6.0 CU: a free card drop (a stolen core, Marked's rare card): the core's crystal floating low over the floor,
+## glowing its card family's frame colour, turning, with a small light. No plinth: it fell from the body.
+func make_drop(color: Color) -> Node3D:
+	var root := Node3D.new()
+	var body := Node3D.new()
+	root.add_child(body)
+	var mat := CoreViews.glow_material(color, 2.6)
+	var spin := Node3D.new()
+	spin.position.y = 0.9
+	root.add_child(spin)
+	var gem := _mesh(bipyramid(6, 0.2, 0.34, 0.34), mat)
+	gem.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	spin.add_child(gem)
+	var ring := MeshInstance3D.new()
+	var t := TorusMesh.new()
+	t.inner_radius = 0.42
+	t.outer_radius = 0.48
+	ring.mesh = t
+	ring.position.y = 0.05
+	ring.material_override = mat
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	body.add_child(ring)
+	var light := OmniLight3D.new()
+	light.light_color = color
+	light.light_energy = 0.8
+	light.omni_range = 2.5
+	light.position.y = 0.9
+	root.add_child(light)
+	root.set_meta(&"body", body)
+	root.set_meta(&"spin", spin)
+	root.set_meta(&"light", light)
+	root.set_meta(&"energy", 0.8)
+	root.set_meta(&"drop", true)
 	return root
 
 
