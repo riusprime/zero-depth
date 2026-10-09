@@ -84,7 +84,12 @@ func sync(reader: WorldReader) -> void:
 			v = _build(node, reader.actor_radius(i))
 			_views[id] = v
 		_update(v, on, reader.actor_radius(i))
-		_on[id] = {"on": on, "r": reader.actor_radius(i), "node": node}
+		_on[id] = {
+			"on": on,
+			"r": reader.actor_radius(i),
+			"node": node,
+			"top": maxf(0.5, float(v["bar_y"]) - 0.4)
+		}
 	for id in _views.keys():
 		if not alive.has(id):
 			var v: Dictionary = _views[id]
@@ -282,7 +287,7 @@ func _draw_vfx(layer: VfxCore) -> void:
 		if not is_instance_valid(node) or not node.is_inside_tree():
 			continue
 		var p := node.global_position
-		fx.status(Vector3(p.x, 0.0, p.z), float(s["r"]), s["on"], id)
+		fx.status(Vector3(p.x, 0.0, p.z), float(s["r"]), s["on"], id, float(s["top"]))
 	var keep: Array = []
 	for shot: Array in _shots:
 		var u := (fx.now() - float(shot[3])) / float(shot[4])

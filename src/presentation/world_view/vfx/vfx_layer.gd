@@ -99,17 +99,19 @@ func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 			_explosion(c, r, u, sd)
 
 
-## An enemy's statuses at `p` (its feet), body radius `r`: {burn, shock, bleed, frost, frozen, poison: stacks}.
+## An enemy's statuses at `p` (its feet), body radius `r`, body `top` (m above its feet): {burn, shock, bleed, frost,
+## frozen, poison: stacks}. Everything sits on the body's outside or above it, never inside it (the body hides it).
 ## Burning: flames on the body; shocked: arcs over it; bleeding: red drips; poisoned: bubbles and green drips;
 ## frost: ice crystals at its feet, frozen: a crystal cage and frost under it.
-func status(p: Vector3, r: float, on: Dictionary, sd: int) -> void:
+func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> void:
 	var age := _now
 	var burn: int = on.get(&"burn", 0)
 	if burn > 0:
 		var n := clampi(1 + burn / 2, 1, 4)
 		for k in n:
 			var a := TAU * (k / float(n) + h(sd, k))
-			var q := p + Vector3(cos(a) * r * 0.45, 0.25 + 0.2 * h(sd + 1, k), sin(a) * r * 0.45)
+			# Round the body's top edge, licking up past it.
+			var q := p + Vector3(cos(a) * r, top * (0.5 + 0.35 * h(sd + 1, k)), sin(a) * r)
 			var beat := 0.85 + 0.15 * sin(age * 0.4 + TAU * h(sd + 2, k))
 			var hgt := (0.45 + 0.25 * h(sd + 3, k) + 0.04 * burn) * beat
 			var cell := (k + int(age / 11.0)) % 4
@@ -121,8 +123,8 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int) -> void:
 				0.0,
 				h(sd, k) * 10.0
 			)
-		_embers(p + Vector3(0, 0.4, 0), age, sd, 2, 1.0)
-		_light(p + Vector3(0, 0.8, 0), WARM, 0.7 + 0.1 * burn, 3.0)
+		_embers(p + Vector3(0, top, 0), age, sd, 2, 1.0)
+		_light(p + Vector3(0, top + 0.4, 0), WARM, 0.7 + 0.1 * burn, 3.0)
 	var shock: int = on.get(&"shock", 0)
 	if shock > 0 and (int(age / 3.0) + sd) % 3 != 0:
 		var strike := int(age / 3.0)
@@ -140,7 +142,7 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int) -> void:
 		)
 	var bleed: int = on.get(&"bleed", 0)
 	if bleed > 0:
-		_drips(p, r, age, sd, mini(3, 1 + bleed / 3), BLOOD)
+		_drips(p, r, top, age, sd, mini(3, 1 + bleed / 3), BLOOD)
 		mark(
 			_status_key(sd, 1, int(age / 120.0)),
 			_splat(sd + int(age / 120.0)),
@@ -150,9 +152,9 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int) -> void:
 		)
 	var poison: int = on.get(&"poison", 0)
 	if poison > 0:
-		_drips(p, r, age, sd + 3, mini(2, 1 + poison / 4), VENOM)
+		_drips(p, r, top, age, sd + 3, mini(2, 1 + poison / 4), VENOM)
 		for k in mini(4, 1 + poison / 2):
-			_bubble(p + Vector3(0, 0.3, 0), r * 0.8, age, sd + 9 * k, 0.16, 1.0, 40.0, VENOM)
+			_bubble(p + Vector3(0, top * 0.8, 0), r * 0.6, age, sd + 9 * k, 0.2, 1.0, 40.0, VENOM)
 	var frozen := on.has(&"frozen")
 	var frost: int = 6 if frozen else mini(on.get(&"frost", 0), 4)
 	for k in frost:
@@ -708,12 +710,12 @@ func _bubble(
 	_put(&"bubble", _facing(q, s, s, true), Color(col.lightened(0.25), fade * 0.9), cell, 0.0, 0.0)
 
 
-## Drips falling from a body of radius `r` at `p`.
-func _drips(p: Vector3, r: float, age: float, sd: int, n: int, col: Color) -> void:
+## Drips running down the outside of a body of radius `r` and height `top` at `p`, to the floor.
+func _drips(p: Vector3, r: float, top: float, age: float, sd: int, n: int, col: Color) -> void:
 	for k in n:
 		var u := fposmod(age / 40.0 + k / float(n) + h(sd, k), 1.0)
 		var a := TAU * h(sd + 1, k)
-		var q := p + Vector3(cos(a) * r * 0.7, 0.85 * (1.0 - u * u), sin(a) * r * 0.7)
+		var q := p + Vector3(cos(a) * r * 1.08, top * 0.9 * (1.0 - u * u), sin(a) * r * 1.08)
 		_put(&"splash", _facing(q, 0.22, 0.3, true), Color(col, 1.0 - u * 0.5), 3, 0.0, 0.0)
 
 
@@ -799,5 +801,10 @@ func _tendril(p: Vector3, age: float, sd: int, size: float, fade: float, period:
 	var flip := 1.0 if h(sd, 5) < 0.5 else -1.0
 	var xf := _facing(p, s * 0.6 * flip, s, false, (h(sd, 4) - 0.5) * 0.4)
 	_put(
-		&"tendril", xf, Color(VOID_TENDRIL, fade * sin(PI * u)), int(h(sd, 3) * 4.0), u * 0.3, h(sd, 6)
+		&"tendril",
+		xf,
+		Color(VOID_TENDRIL, fade * sin(PI * u)),
+		int(h(sd, 3) * 4.0),
+		u * 0.3,
+		h(sd, 6)
 	)
