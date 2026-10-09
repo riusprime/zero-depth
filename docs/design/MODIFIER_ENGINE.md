@@ -182,8 +182,11 @@ Nobody wrote "Echo Slash + Ember + Split + Halo + Drone + Storm" anywhere. The r
 2. The build model: weapon + utility + 6 modifier slots with Swap; the six old abilities become modifiers; the
    skills, vent and dash launch from specs. Saves migrate (old ability ids map to their modifiers).
 3. The form / element art layers (8 forms, 5 elements), the edge heat tint.
-4. The first new cards from the approved M-list, stat cards as modifiers, the smoke test.
-5. The legendary tier for the boss reward (X1b) from the same engine.
+4. The first new cards from the approved M-list, stat cards as modifiers, the smoke test. **Built in v0.6.0 Step MX4
+   (M1–M30, three legendary versions, the smoke test over the cards; stat cards as modifiers not yet):
+   [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_4.md).**
+5. The legendary tier for the boss reward (X1b) from the same engine. **MX4: the boss tier offers legendary modifiers
+   (three stronger versions and the five trinkets) and the legendary stat cards.**
 
 ## Open questions for the owner
 - None for the build model. The M-list was approved in full ("keep all M1–M30", 2026-10-08).

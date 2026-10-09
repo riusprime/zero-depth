@@ -90,7 +90,17 @@ func test_the_reader_gives_plain_data() -> void:
 	assert_eq(
 		r.attack_ids(),
 		PackedStringArray(
-			["blade_step_0", "blade_step_1", "blade_step_2", "blade_step_3", "gun_bolt"]
+			[
+				"blade_step_0",
+				"blade_step_1",
+				"blade_step_2",
+				"blade_step_3",
+				"gun_bolt",
+				"dash",  # v0.6.0 MX4: the moments' specs
+				"move",
+				"blink",
+				"body",
+			]
 		)
 	)
 	var bolt := r.attack_spec(WorldReader.ATTACK_BOLT)
