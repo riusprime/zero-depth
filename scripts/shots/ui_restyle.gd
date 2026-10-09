@@ -17,6 +17,8 @@ const HEAT := 58
 var _main: Main
 var _frame := 0
 var _size := ""
+## The frame the run started on (-1 until then).
+var _base := -1
 
 
 func _initialize() -> void:
@@ -32,42 +34,46 @@ func _process(_delta: float) -> bool:
 	if _size.is_empty():
 		var s := root.get_window().size
 		_size = "%dx%d" % [s.x, s.y]
+	if _frame == 10 or _frame == 20:
+		_tap(KEY_ENTER)  # Play, then Blade
+	if _main.driver != null and _base < 0:
+		_base = _frame  # the run has started (a software renderer may take a while)
+	if _base < 0:
+		return false
 	if _main.driver != null:
 		_main.driver.world.actors.invuln[0] = 2  # shot setup: the hero can't be hurt
 		var w := _main.driver.world
-		if _frame > 40 and w.heat != null:
+		if _frame - _base > 20 and w.heat != null:
 			w.heat.milli = HEAT * HeatTable.MILLI  # shot setup: hold the heat at Hot
 			w.heat.idle = 0
-	match _frame:
-		10, 20:
-			_tap(KEY_ENTER)  # Play, then Blade
-		40:
+	match _frame - _base:
+		20:
 			_pose()
-		100:
+		80:
 			_shot("ui_hud_en_" + _size)
 			TranslationServer.set_locale("es")
-		130:
+		110:
 			_shot("ui_hud_es_" + _size)
 			_tap(KEY_ESCAPE)
-		170:
+		150:
 			_shot("ui_pause_es_" + _size)
 			_tap(KEY_ESCAPE)
 			TranslationServer.set_locale("en")
-		180:
+		160:
 			_tap(KEY_ESCAPE)
-		220:
+		200:
 			_shot("ui_pause_en_" + _size)
-		222, 224:
+		202, 204:
 			_tap(KEY_DOWN)  # to Options
-		226:
+		206:
 			_tap(KEY_ENTER)
-		270:
+		250:
 			_shot("ui_options_en_" + _size)
 			_main.show_main_menu()
-		310:
+		290:
 			_shot("ui_menu_en_" + _size)
 			TranslationServer.set_locale("es")
-		340:
+		320:
 			_shot("ui_menu_es_" + _size)
 			TranslationServer.set_locale("en")
 			quit(0)
