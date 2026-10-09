@@ -125,10 +125,14 @@ static func end(w: World) -> void:
 ## A player hit landed on enemy `i` (Damage.hit, got > 0). Adds the stacks its source feeds, once per
 ## (root, status, source, target). v0.6.0 MX1: a melee hit feeds the current combo step spec's statuses (shock,
 ## bleed, frost; its burn is ItemEffects.on_melee_hit's), a projectile hit the bolt spec's (each every N landed
-## bolts); the other sources keep their items' numbers.
+## bolts; v0.6.0 MX2: the projectile's own spec, World.hit_spec); the other sources keep their items' numbers. An
+## ability's attack that isn't a projectile feeds its own spec's statuses instead (Attacks._feed).
 static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName) -> void:
 	var a := w.actors
 	if a.dead[i] == 1 or tags & SimEvent.TAG_DOT or effect_id in PAYOFFS:
+		return
+	var hs := w.hit_spec  # v0.6.0 MX2: an ability's own attack (not a bolt) feeds in Attacks._feed
+	if hs != null and hs.has_tag(&"ability") and hs.form != AttackSpec.Form.BOLT:
 		return
 	var m := w.item_mods
 	var src := source_of(tags, effect_id)
@@ -143,7 +147,7 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			bleed = sp.stacks_of(&"bleed")
 			frost = sp.stacks_of(&"frost")
 		SRC_BOLT:
-			var b := Modifiers.bolt(w)
+			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
 			var fed := 0
 			for st: StringName in [&"burn", &"shock", &"bleed", &"frost"]:
 				fed += b.stacks_of(st)

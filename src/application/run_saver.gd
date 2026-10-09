@@ -9,8 +9,10 @@ extends RefCounted
 ## The payload: the run (RunState's fields and the stage seed; its RunTable is compiled again from content), the
 ## rooms entered on this floor (the minimap's discovery) and the world's canonical snapshot (WorldSnapshot).
 
-## 2: v0.5.0 RT adds the run's route per floor (`run.routes`).
-const PAYLOAD_VERSION := 2
+## 2: v0.5.0 RT adds the run's route per floor (`run.routes`). 3: v0.6.0 MX2, the build's modifier slots (the
+## carry's mod_slots, the world's); a version-2 payload still loads and migrates (RunCarry, WorldSnapshot).
+const PAYLOAD_VERSION := 3
+const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3]
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
@@ -90,7 +92,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 ## A payload Continue can use: the right version and every part present.
 static func is_usable(payload: Dictionary) -> bool:
 	return (
-		int(payload.get("version", -1)) == PAYLOAD_VERSION
+		PAYLOAD_VERSIONS_READ.has(int(payload.get("version", -1)))
 		and typeof(payload.get("run")) == TYPE_DICTIONARY
 		and typeof(payload.get("world")) == TYPE_DICTIONARY
 		and typeof(payload.get("rooms")) == TYPE_PACKED_BYTE_ARRAY

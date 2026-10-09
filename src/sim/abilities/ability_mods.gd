@@ -1,13 +1,17 @@
 class_name AbilityMods
 extends RefCounted
 ## The ability mods (v0.5.0 CP, owner F13: "more objects or upgrades and combos"): items that change an ability
-## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). Their numbers live in
+## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). v0.6.0 MX2: each is a
+## modifier card that takes one of the six slots (BuildSlots.is_slot_item); Razor Orbit is a modifier on the orbit
+## spec (data/modifiers/razor_orbit.tres: bleed on the orbiters' hits), the other three keep their numbers here.
+## Their numbers live in
 ## ItemMods (built from the owned items); every hook is a no-op without the item.
 ## - Cluster Payload (Bomb Lobber): a thrown bomb splits on landing into `bomblets` bomblets, evenly around the
 ##   blast at its edge, each landing bomblet_delay ticks later for a share of the bomb's damage in a share of its
 ##   radius. Bomblets never split again. No randomness.
 ## - Overclocked Drone (Drone Buddy): the drones fire faster with heat: + per mille per heat point held.
-## - Razor Orbit (Orbit Blades): a blade's touch adds bleed stacks (Engines.on_hit, the bleed engine's numbers).
+## - Razor Orbit (Orbit Blades): a blade's touch adds bleed stacks (MX2: its modifier's STATUS op on the orbit spec;
+##   the bleed engine's numbers from the item).
 ## - Afterimage (Blink): a blink leaves an echo where it started that bursts afterimage_delay ticks later for
 ##   afterimage_damage in afterimage_radius_m (area applies). A blink while an echo waits bursts that one first.
 
@@ -16,7 +20,7 @@ const EFFECT_AFTERIMAGE := &"afterimage"
 
 
 ## Cluster Payload: a bomb of radius `r` and damage `dmg` landed at `at`; queue its bomblets.
-static func split(w: World, at: Vector2, r: float, dmg: int, root: int) -> void:
+static func split(w: World, at: Vector2, r: float, dmg: int, root: int, key: String = "") -> void:
 	var m := w.item_mods
 	var n := m.bomblets
 	if n <= 0:
@@ -34,6 +38,9 @@ static func split(w: World, at: Vector2, r: float, dmg: int, root: int) -> void:
 		s.bomb_r.append(br)
 		s.bomb_dmg.append(bd)
 		s.bomb_split.append(0)
+		s.bomb_spec.append(key)  # v0.6.0 MX2: a bomblet runs its bomb's spec (its statuses, its hooks)
+		s.bomb_depth.append(0)
+		s.bomb_proc.append(100)
 
 
 ## Overclocked Drone: a drone period of `ticks` under the heat held now (never under 1 tick).

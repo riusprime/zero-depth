@@ -20,6 +20,11 @@ var step := -1
 var exclude := -1
 ## SimEvent tag bits its hits or bolts carry.
 var tags := 0
+## v0.6.0 MX2: where a lob lands (has_target; else reach_m along the angle), and how far past the origin a bolt
+## leaves (-1: the player's muzzle, past the player's edge; a drone fires from its own position, 0).
+var target := Vector2.ZERO
+var has_target := false
+var muzzle_m := -1.0
 ## Scatter Blast only: per landed pellet, the damage (the build's bolt factor carries a remainder, so it's taken
 ## per hit as before MX1), what follows a landed hit (the knockback), and each ray's end (the view's pellet ends).
 var damage_fn := Callable()

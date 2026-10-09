@@ -5,9 +5,16 @@ extends RefCounted
 ## the cache) and the first time a spec is read after that, never every tick; the result is cached on
 ## World.attack_book and its digest is hashed.
 ##
-## The build's modifiers are the owned items' (ItemTable.modifiers), in pick order. Each base spec (the Blade's combo
-## steps, the Gun's bolt, the Skill) goes through every modifier stage by stage (FORM, PATTERN, BEHAVIOUR, PAYLOAD,
-## HOOK, SCALE); inside a stage, modifiers in pick order and each one's ops in order. A modifier rewrites a spec only
+## The build's modifiers are the modifier slots' (World.mod_slots, v0.6.0 MX2: an item's ItemTable.modifiers, an
+## ability's AbilityTable.modifiers), in slot order (the pick order). Each base spec (the Blade's combo steps, the
+## Gun's bolt, the Skill, MX2 each held ability modifier's attack) goes through every modifier stage by stage (FORM,
+## PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE); inside a stage, modifiers in pick order and each one's ops in order.
+##
+## v0.6.0 MX2, the ability modifiers carry the build (owner B7: "each carries your other modifiers"): after its own
+## compile, an ability's spec takes the weapon's statuses (not the riders), elements and ON_HIT / ON_KILL hooks
+## (inherit: the Blade's first step, or the Gun's bolt), and the drone's copy of a Gun also takes the bolt's pattern
+## and behaviour (count, spread, split share, bounces, pierce). So a burning sword makes burning bombs, and a
+## ricochet gun gives its drone ricochet shots. A modifier rewrites a spec only
 ## when the spec carries every tag of its target. So the result never depends on luck, and a seed replays exactly
 ## (no randomness here: EI-05).
 ##
@@ -28,6 +35,13 @@ const TAG_MELEE := "melee"
 const TAG_PROJECTILE := "projectile"
 const TAG_SKILL := "skill"
 const TAG_HOOK := "hook"
+const TAG_ABILITY := "ability"
+## v0.6.0 MX2: Frost Nova's ring grows to its radius over this many ticks (a starting value).
+const RING_TICKS := 18
+## v0.6.0 MX2: a hook's lingering child when its op names no time: a lob's flight, a zone's life and its hit gap.
+const HOOK_LOB_TICKS := 30
+const HOOK_ZONE_TICKS := 90
+const HOOK_ZONE_GAP := 30
 
 
 ## The cached book, compiled now if the build changed since the last read.
@@ -60,12 +74,22 @@ static func skill(w: World) -> AttackSpec:
 	return book(w).spec(SKILL)
 
 
-## The build's modifiers in pick order: each owned item's, in the item's order.
+## The build's modifiers in slot order (v0.6.0 MX2: World.mod_slots; each slot's card's modifiers in its order).
 static func build_modifiers(w: World) -> Array[ModifierTable]:
 	var out: Array[ModifierTable] = []
-	for idx in w.items_owned:
-		out.append_array(w.item_tables[idx].modifiers)
+	for code in w.mod_slots:
+		if Offers.type_of(code) == Offers.ABILITY:
+			var idx := Offers.ability_of(code)
+			if idx < w.ability_tables.size():
+				out.append_array(w.ability_tables[idx].modifiers)
+		elif code < w.item_tables.size():
+			out.append_array(w.item_tables[code].modifiers)
 	return out
+
+
+## v0.6.0 MX2: an owned ability modifier's compiled spec (by its ability id), or null.
+static func ability(w: World, t: AbilityTable) -> AttackSpec:
+	return book(w).spec(t.id) if t != null else null
 
 
 static func compile(w: World) -> AttackBook:
@@ -84,8 +108,117 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	if sk != null:
 		b.add(compile_spec(sk, mods))
 	_riders(w, b)
+	var root := _weapon_root(w, b)
+	for idx in w.ability_owned:  # v0.6.0 MX2: the ability modifiers' attacks, carrying the weapon's
+		var t := w.ability_tables[idx]
+		var base := _base_ability(w, t, Abilities.level_of(w, idx))
+		if base == null:
+			continue
+		var s := compile_spec(base, mods)
+		inherit(s, root, t.kind == AbilityTable.Kind.DRONE_BUDDY)
+		b.add(s)
+	b.register()
 	b.seal()
 	return b
+
+
+## The weapon's own attack the abilities copy: the Gun's bolt on a Gun build, else the Blade's first step.
+static func _weapon_root(w: World, b: AttackBook) -> AttackSpec:
+	if PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
+		return b.spec(GUN_BOLT)
+	return b.spec(step_id(0)) if w.player.combo.size() > 0 else b.spec(GUN_BOLT)
+
+
+## v0.6.0 MX2: `s` takes `root`'s statuses (not its riders; a status `s` already has stays), elements and ON_HIT /
+## ON_KILL hooks (shared, as compiled for the weapon); with `copy`, a bolt root's pattern and behaviour too.
+static func inherit(s: AttackSpec, root: AttackSpec, copy: bool) -> void:
+	if root == null:
+		return
+	for k in root.status_ids.size():
+		if root.status_rider[k] == 0 and not s.has_status(StringName(root.status_ids[k])):
+			s.set_status(
+				StringName(root.status_ids[k]), root.status_stacks[k], root.status_every[k]
+			)
+	for e in root.elements:
+		if not s.elements.has(e):
+			s.elements.append(e)
+	for m in root.modifier_ids:
+		if not s.modifier_ids.has(m):
+			s.modifier_ids.append(m)
+	if s.depth < MAX_DEPTH:
+		for h in root.hooks:
+			if h.trigger == AttackSpec.Trigger.ON_HIT or h.trigger == AttackSpec.Trigger.ON_KILL:
+				s.hooks.append(h)
+	if copy and root.form == AttackSpec.Form.BOLT:
+		s.count = maxi(s.count, root.count)
+		s.spread = root.spread
+		s.damage_permille = root.damage_permille
+		s.bounces = maxi(s.bounces, root.bounces)
+		s.pierce = maxi(s.pierce, root.pierce)
+
+
+## v0.6.0 MX2: ability `t` at `level` as an attack spec (null for the weapon and the utility). Its numbers are the
+## ability's v0.5 numbers at that level; the runtime factors (the area stat, Blade Dance, the cooldowns) stay with
+## the ability's driver (Abilities, ModifierAbilities).
+static func _base_ability(_w: World, t: AbilityTable, level: int) -> AttackSpec:
+	if not t.is_modifier():
+		return null
+	var s := AttackSpec.new()
+	s.id = t.id
+	s.effect_id = t.id
+	s.damage = Abilities.damage_at(t, level)
+	s.tags = PackedStringArray([TAG_ABILITY, "auto"])
+	var lvl_r := t.radius_m * t.radius_permille(level) / 1000.0
+	match t.kind:
+		AbilityTable.Kind.BOMB_LOBBER:
+			s.form = AttackSpec.Form.LOB
+			s.tags.append_array(["bomb", "area"])
+			s.radius_m = lvl_r
+			s.reach_m = t.range_m
+			s.life_ticks = t.duration_ticks
+			s.count = t.count(level)
+			s.period_ticks = t.cooldown_ticks
+		AbilityTable.Kind.DRONE_BUDDY:
+			s.form = AttackSpec.Form.BOLT
+			s.tags.append_array(["drone", "projectile"])
+			s.radius_m = Abilities.BOLT_RADIUS_M
+			s.speed = t.speed
+			s.reach_m = t.range_m
+			s.life_ticks = int(ceil(t.range_m / t.speed)) + 2
+			s.period_ticks = maxi(1, t.period_ticks * 1000 / t.rate_permille(level))
+		AbilityTable.Kind.ORBIT_BLADES:
+			s.form = AttackSpec.Form.ORBITER
+			s.tags.append_array(["orbit", "melee"])
+			s.count = t.count(level)
+			s.reach_m = lvl_r
+			s.radius_m = Abilities.BLADE_R
+			s.period_ticks = t.period_ticks
+		AbilityTable.Kind.ARC_FIELD:
+			s.form = AttackSpec.Form.ZONE
+			s.tags.append_array(["field", "area"])
+			s.radius_m = t.radius_m
+			s.reach_m = t.range_m
+			s.life_ticks = t.duration_ticks
+			s.period_ticks = t.hit_ticks
+			s.count = t.count(level)
+			s.set_status(&"shock", t.extra(level), 0)
+			s.elements.append("storm")
+		AbilityTable.Kind.FROST_NOVA:
+			s.form = AttackSpec.Form.RING
+			s.tags.append_array(["nova", "area"])
+			s.radius_m = lvl_r
+			s.life_ticks = RING_TICKS
+			s.set_status(&"frost", t.extra(level), 0)
+			s.elements.append("frost")
+		AbilityTable.Kind.FLAME_TRAIL:
+			s.form = AttackSpec.Form.ZONE
+			s.tags.append_array(["trail", "area"])
+			s.radius_m = lvl_r
+			s.life_ticks = maxi(1, t.duration_ticks * t.rate_permille(level) / 1000)
+			s.period_ticks = t.hit_ticks
+			s.set_status(&"burn", t.extra(level), 0)
+			s.elements.append("ember")
+	return s
 
 
 ## Hashes the build's specs once it has a modifier (worlds without one, the kernel goldens among them, keep their
@@ -187,6 +320,16 @@ static func _hook(
 	c.reach_m = op.reach_m
 	c.seek = op.form == AttackSpec.Form.BEAM
 	c.effect_id = op.effect_id
+	match op.form:  # v0.6.0 MX2: the lingering forms' times (an op names only a radius and a reach)
+		AttackSpec.Form.LOB:
+			c.life_ticks = HOOK_LOB_TICKS
+		AttackSpec.Form.ZONE:
+			c.life_ticks = HOOK_ZONE_TICKS
+			c.period_ticks = HOOK_ZONE_GAP
+		AttackSpec.Form.RING:
+			c.life_ticks = RING_TICKS
+		AttackSpec.Form.ORBITER:
+			c.count = maxi(1, c.count)
 	var k := AttackHook.new()
 	k.id = m.id
 	k.trigger = op.trigger

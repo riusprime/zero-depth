@@ -60,6 +60,15 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 		for k in step[1]:
 			await _press(e, JOY_BUTTON_DPAD_RIGHT)
 		await _press(e, JOY_BUTTON_A)
+		if BuildSlots.swapping(w):  # v0.6.0 MX2: the held items fill the six slots: swap out one not of the pair
+			await e.frames(2)
+			var t: ComboTable = w.combo_tables[plan[0]]
+			var slot := 0
+			while w.mod_slots[slot] == t.item_a or w.mod_slots[slot] == t.item_b:
+				slot += 1
+			for n in slot:
+				await _press(e, JOY_BUTTON_DPAD_RIGHT)
+			await _press(e, JOY_BUTTON_A)
 		assert_eq(w.choosing, -1, "took a card")
 	assert_false(w.player_dead(), "survived the walks")
 	var combo: int = plan[0]

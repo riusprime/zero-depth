@@ -88,6 +88,10 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   a ring or burst pass through `AttackFormLooks.ground_safe`, which leans a colour in the telegraphs' red-orange /
   red / magenta band toward the player's cool core; only light that rises off the floor carries the heat edge.
   Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and dart.
+- **The ability modifiers' attacks** (v0.6.0 MX2) draw through the existing ability views from sim numbers: bombs and
+  their ground circles (`AbilityVisuals`), the drones and orbit blades, the patches by kind (`ElementVisuals`: fire
+  orange, Napalm red, Arc Field's shock field pale blue, a hook's zone pale white) and each growing ring (the RING
+  form) as a frost torus at its radius now. Their per-form art is MX stage 3.
 
 ## 5. Occlusion cutaway
 
@@ -163,6 +167,11 @@ the mode's colour vision on the tokens and asserts:
 
 ## 9. UI
 
+- **The build and the Swap** (v0.6.0 MX2): `BuildHud` (its own node) shows the weapon, the utility pick and six
+  modifier slot pips in the card family's frame colour (`CardFrames`) with the level on an ability modifier;
+  `SwapPanel` (its own node, over the pick panel and the shop) shows the incoming card and the six held modifiers
+  while `WorldReader.swapping()`; its answer goes out as input (`InputFrame.PICK_SWAP_BASE + n`, `PICK_SWAP_SKIP`):
+  keyboard 1–6 / arrows and Enter, Esc to skip; a mouse click; pad d-pad, A, B.
 - **Theme tokens** come from `ThemePalette` (adapted from Deathventory): colours, font sizes, a spacing scale and
   corner radii. No view hard-codes a colour or size.
 - **Layout:** the UI sits on a `CanvasLayer`. The base resolution is 1920×1080 with `canvas_items` stretch and

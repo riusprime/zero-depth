@@ -265,6 +265,19 @@ var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
 var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
+## v0.6.0 MX2 (BuildSlots; owner B7): the modifier slots in pick order (the layer order), as Offers card codes (an item
+## index, or ABILITY_BASE + an ability index), at most BuildSlots.SLOTS; run-long (RunCarry). A pending swap: the
+## card waiting for a slot (-1 = none), where it came from (BuildSlots.Source) and its offer index there.
+var mod_slots := PackedInt32Array()
+var swap_code := -1
+var swap_source := 0
+var swap_ref := -1
+## v0.6.0 MX2: a carry from before MX2 arrived (RunCarry.apply); Abilities.start_floor migrates it into the slots
+## (BuildSlots.migrate) once the abilities' tables are set, and clears it.
+var migrate_slots := false
+## v0.6.0 MX2: the spec of the player hit resolving now (Attacks, the projectile sweep; null between hits), which the
+## engines read for its statuses. Transient within a tick (WorldSnapshot.WORLD_KEPT).
+var hit_spec: AttackSpec = null
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
@@ -377,9 +390,12 @@ func queue_projectile(
 	radius_m: float,
 	life: int,
 	tags: int,
-	bounces: int = 0
+	bounces: int = 0,
+	spec_key: String = ""
 ) -> void:
-	_pending_projectiles.append([owner_id, team, at, vel, damage, radius_m, life, tags, bounces])
+	_pending_projectiles.append(
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key]
+	)
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
@@ -392,8 +408,12 @@ func step(frame: InputFrame) -> void:
 		return
 	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
 	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
-	if choosing >= 0:
-		Rewards.choose(self, frame)
+	var granting := swap_code >= 0 and swap_source == BuildSlots.Source.GRANT
+	if granting or choosing >= 0:
+		if granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
+			BuildSlots.choose_grant(self, frame)
+		else:
+			Rewards.choose(self, frame)
 		tick += 1
 		return
 	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
@@ -531,6 +551,7 @@ func add_item(item_index: int) -> bool:
 	if items_owned.has(item_index):
 		return false
 	items_owned.append(item_index)
+	BuildSlots.sync(self)  # v0.6.0 MX2: an attack item takes the next modifier slot
 	_build_mods()
 	_refresh_combos(true)
 	return true
@@ -546,6 +567,7 @@ func set_combo_tables(tables: Array[ComboTable]) -> void:
 ## Sets the items owned (carrying a run's items to a new floor): modifiers and combos follow, no events.
 func set_items_owned(owned: PackedInt32Array) -> void:
 	items_owned = owned.duplicate()
+	BuildSlots.sync(self)  # v0.6.0 MX2
 	_build_mods()
 	_refresh_combos(false)
 
@@ -875,6 +897,7 @@ func state_hash() -> String:
 	PlayerBuild.hash_into(self, h)  # Builds and regen (v0.3.0 P), once touched.
 	Heat.hash_into(self, h)  # Overclock heat (v0.3.0 L18): only worlds with heat.
 	Abilities.hash_into(self, h)  # v0.4.0 BS: only once a slot, a stat or crit is in play.
+	BuildSlots.hash_into(self, h)  # v0.6.0 MX2: only once a modifier slot is filled or a swap waits.
 	Modifiers.hash_into(self, h)  # v0.6.0 MX1: the compiled specs, once the build has a modifier.
 	if overrun.touched():  # v0.4.0 AB: only once the player entered an Overrun room.
 		overrun.hash_into(h)
@@ -1252,6 +1275,7 @@ func _projectile_hits() -> void:
 				best_actor = k
 		if best_t <= 1.0:
 			if best_actor >= 0:
+				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
 				var got := Damage.hit(
 					self,
 					best_actor,
@@ -1264,6 +1288,7 @@ func _projectile_hits() -> void:
 					a + v * best_t,
 					ItemProcs.bolt_effect(projectiles.tags[i])
 				)
+				hit_spec = null
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
 				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
@@ -1275,14 +1300,17 @@ func _projectile_hits() -> void:
 				projectiles.life[i] -= 1
 				if projectiles.life[i] <= 0:
 					dead.append(i)
+					Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2
 				continue
 			dead.append(i)
+			Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2: ON_END, Flame Trail
 			continue
 		projectiles.pos_x[i] = b.x
 		projectiles.pos_y[i] = b.y
 		projectiles.life[i] -= 1
 		if projectiles.life[i] <= 0:
 			dead.append(i)
+			Attacks.on_projectile_end(self, i, b)  # v0.6.0 MX2
 	projectiles.remove_sorted(dead)
 
 
@@ -1316,6 +1344,7 @@ func _apply_spawns() -> void:
 	for s in _pending_projectiles:
 		var id := _take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
+		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.

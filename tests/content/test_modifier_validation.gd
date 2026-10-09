@@ -14,7 +14,7 @@ func _codes(d: ModifierDefinition) -> Array:
 
 func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
-	assert_eq(repo.count(&"modifiers"), 14)
+	assert_eq(repo.count(&"modifiers"), 16, "MX1's 14, MX2's frost_nova and razor_orbit")
 	assert_true(
 		repo.paths.has("res://data/modifiers/static_chain.tres"), "the scanner finds the folder"
 	)
@@ -29,8 +29,10 @@ func test_each_attack_item_names_its_own_modifier() -> void:
 		if def.kind in ItemDefinition.MODIFIER_KINDS:
 			assert_eq(def.modifiers, [def.id] as Array[StringName], String(def.id))
 			assert_not_null(repo.get_def(&"modifiers", def.id), String(def.id))
+		elif def.id == &"razor_orbit":  # v0.6.0 MX2: the orbit spec's bleed
+			assert_eq(def.modifiers, [&"razor_orbit"] as Array[StringName])
 		else:
-			assert_true(def.modifiers.is_empty(), "%s: no attack rewrite in MX1" % def.id)
+			assert_true(def.modifiers.is_empty(), "%s: no attack rewrite" % def.id)
 
 
 func test_values_convert_with_the_item_compilers_functions() -> void:

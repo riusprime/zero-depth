@@ -35,8 +35,12 @@ const INT_FIELDS: Array[StringName] = [
 ]
 const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed"]
 
-## Which attack this is (Modifiers' ids: blade_step_<n>, gun_bolt, skill; a hook's child: its hook id).
+## Which attack this is (Modifiers' ids: blade_step_<n>, gun_bolt, skill, MX2 the ability modifiers' ids; a hook's
+## child: its hook id).
 var id := &""
+## v0.6.0 MX2: where the book files it (AttackBook.register: a root's id, a hook child's "<parent key>/<n>"), so a
+## projectile, a bomb or a patch names the spec it runs. Not copied, not hashed (derived from the book).
+var key := ""
 var form: int = Form.ARC
 ## What it is, for target filters (ModifierDefinition.TAGS).
 var tags := PackedStringArray()

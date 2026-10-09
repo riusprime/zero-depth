@@ -344,11 +344,11 @@ ABILITY_COMBO_SWORD_DESC,Your four-slash combo and Lunge Cleave. +12% damage per
 ABILITY_PULSE_GUN,Pulse Gun,Pistola de pulsos
 ABILITY_PULSE_GUN_DESC,Your held bolts and Scatter Blast. +12% damage per level; level 3 bolts pierce one enemy; level 5 fires twin bolts.,Tus disparos sostenidos y la Ráfaga dispersa. +12 % de daño por nivel; en el nivel 3 los disparos atraviesan a un enemigo; en el nivel 5 disparas dobles.
 ABILITY_BOMB_LOBBER,Bomb Lobber,Lanzabombas
-ABILITY_BOMB_LOBBER_DESC,"Every 2.5 s lobs a bomb at the thickest crowd within 8 m: 22 damage in 2 m, its landing circle shown. More bombs at levels 2 and 4, bigger at 3 and 5.","Cada 2,5 s lanza una bomba a la multitud más densa a 8 m: 22 de daño en 2 m, con su círculo marcado. Más bombas en los niveles 2 y 4, más grandes en el 3 y el 5."
+ABILITY_BOMB_LOBBER_DESC,"Modifier: every 4th weapon attack also lobs a bomb at the thickest crowd within 8 m (at most every 2.5 s): 22 damage in 2 m, carrying your weapon's elements and effects. More bombs at levels 2 and 4, bigger at 3 and 5.","Modificador: cada 4.º ataque del arma también lanza una bomba a la multitud más densa a 8 m (como mucho cada 2,5 s): 22 de daño en 2 m, con los elementos y efectos de tu arma. Más bombas en los niveles 2 y 4, más grandes en el 3 y el 5."
 ABILITY_DRONE_BUDDY,Drone Buddy,Dron compañero
-ABILITY_DRONE_BUDDY_DESC,A little robot follows you and shoots the nearest enemy within 9 m three times a second for 5. +20% fire rate per level; a second drone at level 3; chaining bolts at level 5.,Un pequeño robot te sigue y dispara al enemigo más cercano a 9 m tres veces por segundo por 5. +20 % de cadencia por nivel; un segundo dron en el nivel 3; disparos encadenados en el nivel 5.
+ABILITY_DRONE_BUDDY_DESC,"Modifier: a little drone follows you and fires a copy of your weapon's attack at the nearest enemy within 9 m three times a second for 5, with your elements and effects. +20% fire rate per level; a second drone at level 3; chaining bolts at level 5.","Modificador: un pequeño dron te sigue y dispara una copia del ataque de tu arma al enemigo más cercano a 9 m tres veces por segundo por 5, con tus elementos y efectos. +20 % de cadencia por nivel; un segundo dron en el nivel 3; disparos encadenados en el nivel 5."
 ABILITY_ORBIT_BLADES,Orbit Blades,Cuchillas orbitales
-ABILITY_ORBIT_BLADES_DESC,"Three blades circle you at 1.6 m, 8 damage per touch (each enemy at most every 0.5 s). +1 blade per level; a wider ring at level 5.","Tres cuchillas giran a tu alrededor a 1,6 m, 8 de daño por toque (cada enemigo como mucho cada 0,5 s). +1 cuchilla por nivel; un anillo más ancho en el nivel 5."
+ABILITY_ORBIT_BLADES_DESC,"Modifier: three copies of your attack orbit you at 1.6 m, 8 damage per touch with your elements and effects (each enemy at most every 0.5 s). +1 blade per level; a wider ring at level 5.","Modificador: tres copias de tu ataque orbitan a tu alrededor a 1,6 m, 8 de daño por toque con tus elementos y efectos (cada enemigo como mucho cada 0,5 s). +1 cuchilla por nivel; un anillo más ancho en el nivel 5."
 ABILITY_BLINK,Blink,Destello
 ABILITY_BLINK_DESC,"Utility button: teleport up to 5 m the way you move, through thin walls, and land with a 2 m shock for 15. Faster recharge per level; 2 charges at level 3; a wider shock at level 5.","Botón de utilidad: teletranspórtate hasta 5 m hacia donde te mueves, a través de muros finos, y aterriza con una onda de 2 m de 15. Recarga más rápida por nivel; 2 cargas en el nivel 3; una onda más ancha en el nivel 5."
 ABILITY_AEGIS,Aegis,Égida
@@ -409,11 +409,11 @@ CAUSE_SHIELD_BEARER,A Shield Bearer's bash crushed you.,El golpe de escudo de un
 CAUSE_MINE_LAYER,A Mine Layer's mine blew you up.,Una mina de un Minador te hizo volar.
 CAUSE_SNIPER,A Sniper's shot took you down.,El disparo de un Francotirador te abatió.
 ABILITY_ARC_FIELD,Arc Field,Campo de arco
-ABILITY_ARC_FIELD_DESC,"Every 1.5 s lightning strikes 3 enemies within 6 m: 12 damage and a shock stack each. One more target and a faster strike every level.","Cada 1,5 s un rayo golpea a 3 enemigos a 6 m: 12 de daño y una carga de choque a cada uno. Un objetivo más y un rayo más rápido por nivel."
+ABILITY_ARC_FIELD_DESC,Modifier: your attacks leave a 1.6 m shock field where they end (at most every 1.5 s) for 2 s: 12 damage and a shock stack to enemies in it every 0.5 s. One more target a tick and a faster field every level.,"Modificador: tus ataques dejan un campo de choque de 1,6 m donde terminan (como mucho cada 1,5 s) durante 2 s: 12 de daño y una carga de choque a los enemigos dentro cada 0,5 s. Un objetivo más por tic y un campo más rápido por nivel."
 ABILITY_FROST_NOVA,Frost Nova,Nova de escarcha
-ABILITY_FROST_NOVA_DESC,"Every 4 s a 3 m nova around you: 10 damage and 2 frost stacks. Wider every level; from level 3 a nova freezes on its own; every 3 s at level 5.","Cada 4 s una nova de 3 m a tu alrededor: 10 de daño y 2 cargas de escarcha. Más amplia por nivel; desde el nivel 3 una nova congela por sí sola; cada 3 s en el nivel 5."
+ABILITY_FROST_NOVA_DESC,"Modifier: your weapon gains the frost element (frost stacks on hit), and 4 kills in a row send a 3 m frost ring: 10 damage and 2 frost stacks (at most every 4 s). Wider every level; 4 frost stacks from level 3; every 3 s at level 5.",Modificador: tu arma gana el elemento escarcha (cargas de escarcha al golpear) y 4 muertes seguidas lanzan un anillo de escarcha de 3 m: 10 de daño y 2 cargas de escarcha (como mucho cada 4 s). Más amplio por nivel; 4 cargas desde el nivel 3; cada 3 s en el nivel 5.
 ABILITY_FLAME_TRAIL,Flame Trail,Rastro de llamas
-ABILITY_FLAME_TRAIL_DESC,"While you move you leave fire for 2 s: 6 damage a second and burn to enemies in it. +25 % duration and damage every level.","Mientras te mueves dejas fuego 2 s: 6 de daño por segundo y quemadura a los enemigos en él. +25 % de duración y daño por nivel."
+ABILITY_FLAME_TRAIL_DESC,Modifier: your dash and your projectiles leave fire for 2 s: 6 damage a second and burn to enemies in it. +25 % duration and damage every level.,Modificador: tu esquiva y tus proyectiles dejan fuego 2 s: 6 de daño por segundo y quemadura a los enemigos en él. +25 % de duración y daño por nivel.
 ABILITY_COMBO_STORM_BOMBS,Storm Bombs,Bombas de Tormenta
 ABILITY_COMBO_STORM_BOMBS_DESC,Each bomb blast chains lightning to 3 enemies.,Cada explosión encadena rayos a 3 enemigos.
 ABILITY_COMBO_NAPALM_DRONE,Napalm Drone,Dron de Napalm
@@ -611,6 +611,14 @@ UI_DEV_GO_ARENA,Go to an arena door,Ir a la puerta de una arena
 UI_DEV_CLEAR_WAVE,Clear the arena wave,Despejar la oleada de la arena
 PICK_TITLE_LEGENDARY,Pick a legendary card,Elige una carta legendaria
 RARITY_LEGENDARY,Legendary,Legendaria
+UI_CARD_MODIFIER,Modifier,Modificador
+UI_CARD_MODIFIER_NEW,New modifier,Modificador nuevo
+UI_SWAP_TITLE,Your %d modifier slots are full: swap one?,Tus %d huecos de modificador están llenos: ¿cambiar uno?
+UI_SWAP_HINT,1–6 / ←→ choose · Enter swap · Esc skip,1–6 / ←→ elegir · Intro cambiar · Esc saltar
+UI_SWAP_SKIP,Skip,Saltar
+UI_SWAP_SKIP_KEY,Esc,Esc
+UI_SWAP_LEVEL,Level %d,Nivel %d
+UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir

@@ -118,6 +118,15 @@ static func choose(w: World, frame: InputFrame) -> void:
 	var v := frame.pick
 	if v == InputFrame.PICK_NONE:
 		return
+	if BuildSlots.swapping(w) and w.swap_source == BuildSlots.Source.SHOP:  # v0.6.0 MX2: the swap's answer
+		var s := BuildSlots.swap_answer(w, frame)
+		if s == -2:
+			return
+		var k := w.swap_ref
+		BuildSlots.close_swap(w)
+		if s >= 0:
+			buy(w, k, s)
+		return
 	if v == InputFrame.PICK_CANCEL:
 		close(w)
 	elif v >= 1 and v <= w.shop.offer.size():
@@ -186,8 +195,9 @@ static func can_apply(w: World, code: int) -> bool:
 
 
 # --- Actions -----------------------------------------------------------------------------------------------------
-## Buys stock slot k. True if bought.
-static func buy(w: World, k: int) -> bool:
+## Buys stock slot k. True if bought. v0.6.0 MX2: a new modifier with the six slots full opens the swap first
+## (BuildSlots; the answer comes back here with the slot it replaces, `replace`), and nothing is paid until then.
+static func buy(w: World, k: int, replace: int = -1) -> bool:
 	if k < 0 or k >= w.shop.offer.size():
 		return _deny(w)
 	var code := w.shop.offer[k]
@@ -197,6 +207,9 @@ static func buy(w: World, k: int) -> bool:
 		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3)
 	if not can_apply(w, code) or w.shards < price(w, code):
 		return _deny(w)
+	if replace < 0 and BuildSlots.needs_swap(w, code):
+		BuildSlots.open_swap(w, code, BuildSlots.Source.SHOP, k)
+		return false
 	var cost := price(w, code)
 	w.shards -= cost
 	w.shop.offer[k] = ShopState.SOLD
@@ -205,7 +218,7 @@ static func buy(w: World, k: int) -> bool:
 	var pid := w.actors.ids[0]
 	var e := w.emit_event(SimEvent.Kind.PICKUP, w.shop.id, pid, pid, w.shop.pos)
 	e.amount = code
-	Offers.apply(w, code)
+	Offers.apply(w, code, replace)
 	_note(w, ShopState.Action.BUY, code)
 	return true
 
@@ -350,24 +363,10 @@ static func rebuild_stats(w: World, cards: PackedInt32Array) -> void:
 	w.actors.hp[0] = clampi(hp, 1, w.actors.max_hp[0])
 
 
-## Frees ability slot `s` (never the weapon): its level, cooldown and its own floor state go.
+## Frees ability `s` (World.ability_owned order; never the weapon): its level, cooldown and its own floor state go
+## (v0.6.0 MX2: a modifier's slot frees; Abilities.remove_slot).
 static func salvage_ability(w: World, s: int) -> void:
-	var t := w.ability_tables[w.ability_owned[s]]
-	w.ability_owned.remove_at(s)
-	w.ability_levels.remove_at(s)
-	if s < w.ab.cd.size():
-		w.ab.cd.remove_at(s)
-	match t.kind:
-		AbilityTable.Kind.DRONE_BUDDY:
-			w.ab.drone_pos = PackedVector2Array()
-			w.ab.drone_cd = PackedInt32Array()
-			w.ab.drone_fire = PackedInt32Array()
-		AbilityTable.Kind.BLINK:
-			w.ab.blink_charges = 0
-			w.blink_cd = 0
-		AbilityTable.Kind.ORBIT_BLADES:
-			w.ab.orbit_ids = PackedInt32Array()
-			w.ab.orbit_next = PackedInt32Array()
+	Abilities.remove_slot(w, s)
 
 
 # --- Read (WorldReader.shop) ------------------------------------------------------------------------------------

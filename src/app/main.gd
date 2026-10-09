@@ -92,6 +92,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not driver.reader.choosing()  # Rewards: the pick's own cancel comes first.
 		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
+		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -305,6 +306,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	ui.move_child(_hud, 0)
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
+	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.
 	_hud.sync(driver.reader)
 	_hud.show_floor(
 		run.floor_index,

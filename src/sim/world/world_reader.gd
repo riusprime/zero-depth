@@ -149,7 +149,12 @@ const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
 const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
-const ABILITY_SLOTS := Abilities.SLOTS
+## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
+const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
+## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values.
+const MOD_SLOTS := BuildSlots.SLOTS
+const PICK_SWAP_BASE := InputFrame.PICK_SWAP_BASE
+const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
 ## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events), and the curse counted, not in percent.
 const EVENT_READY := Events.State.READY
@@ -173,6 +178,9 @@ const EVENT_BLOCK_BUSY := Events.NEED_BUSY
 const CURSE_EXTRA_ENEMY := Curses.Effect.EXTRA_ENEMY
 ## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
 const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
+## v0.6.0 MX2: Arc Field's shock field, and any other spec's patch (a hook's zone).
+const FIRE_FIELD := ElementAbilities.FIRE_FIELD
+const FIRE_ZONE := ElementAbilities.FIRE_ZONE
 
 var _w: World
 
@@ -1587,6 +1595,32 @@ func overrun() -> Dictionary:
 ## v0.4.0 AB: a combo pairs two abilities (combo_item_ids then gives the ability ids).
 func combo_is_ability(combo_index: int) -> bool:
 	return _w.combo_tables[combo_index].ability_a >= 0
+
+
+## v0.6.0 MX2: the build (BuildSlots.read): the modifier slots in pick order (code, id, name_key, type, level), the
+## slot count (max), and the pending swap's card (swap_code, -1 for none) and source.
+func build() -> Dictionary:
+	return BuildSlots.read(_w)
+
+
+## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).
+func swapping() -> bool:
+	return BuildSlots.swapping(_w)
+
+
+## v0.6.0 MX2: the build's weapon (the starting weapon ability's id, &"" outside a build) and the utility pick's id.
+func weapon_id() -> StringName:
+	for idx in _w.ability_owned:
+		if _w.ability_tables[idx].start_weapon != 0:
+			return _w.ability_tables[idx].id
+	return &""
+
+
+func utility_id() -> StringName:
+	for idx in _w.ability_owned:
+		if _w.ability_tables[idx].is_utility():
+			return _w.ability_tables[idx].id
+	return &""
 
 
 ## A card code's face (Offers.info: type CARD_*, id, kind, name_key, desc_key, rarity 0..2, level, amount).

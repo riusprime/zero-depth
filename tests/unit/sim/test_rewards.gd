@@ -321,7 +321,8 @@ func test_offers_are_deterministic_and_never_repeat_across_rewards() -> void:
 
 func test_owned_items_are_never_offered() -> void:
 	var w := _world()
-	var keep := [_index(&"long_edge"), _index(&"twin_arc")]
+	# v0.6.0 MX2: two items without a modifier slot (with every slot item held, a new slot item would ask for a swap)
+	var keep := [_index(&"swift_feet"), _index(&"vampiric_core")]
 	for k in _items.size():
 		if not k in keep:
 			w.add_item(k)

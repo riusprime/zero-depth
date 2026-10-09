@@ -193,6 +193,7 @@ static func applies(w: World, code: int) -> bool:
 
 ## THE grant (one function, so Step MX's 6-slot Swap replaces only this): a free one-card drop of `code` near `at`
 ## (each further drop at the same spot rules.drop_offset_m along x), opened like an altar through the pick panel.
+## v0.6.0 MX2: so a stolen modifier with the six slots full asks for the Swap there (Rewards.choose, BuildSlots).
 ## Returns its reward id.
 static func grant(w: World, code: int, at: Vector2, kind: int) -> int:
 	var spot := at

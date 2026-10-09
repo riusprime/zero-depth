@@ -861,6 +861,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 		var item: ItemDefinition = repo.get_def(&"items", def.engine_item)
 		if item != null:
 			t.engine = compile_item(item)
+	ModifierCompiler.compile_ability_extras(t, def, repo)  # v0.6.0 MX2
 	return t
 
 

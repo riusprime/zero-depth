@@ -47,17 +47,26 @@ func test_every_altar_offers_a_new_ability_while_a_slot_is_free() -> void:
 			seen[key] = true
 
 
-func test_full_slots_offer_only_level_ups() -> void:
+## v0.6.0 MX2: with the six ability modifiers held, an ability card is a level-up, or the utility (outside the slots).
+func test_full_slots_offer_level_ups_or_the_utility() -> void:
 	var w := _world(3)
 	for kind in [
-		AbilityTable.Kind.BOMB_LOBBER, AbilityTable.Kind.DRONE_BUDDY, AbilityTable.Kind.ORBIT_BLADES
+		AbilityTable.Kind.BOMB_LOBBER,
+		AbilityTable.Kind.DRONE_BUDDY,
+		AbilityTable.Kind.ORBIT_BLADES,
+		AbilityTable.Kind.ARC_FIELD,
+		AbilityTable.Kind.FROST_NOVA,
+		AbilityTable.Kind.FLAME_TRAIL,
 	]:
 		Abilities.grant(w, Abilities.index_of_kind(w, kind))
+	assert_true(BuildSlots.full(w))
 	for s in 60:
 		for c in _roll(w, RewardStore.Kind.ALTAR if s % 2 == 0 else RewardStore.Kind.CHEST):
 			if Offers.type_of(c) == Offers.ABILITY:
+				var t := w.ability_tables[Offers.ability_of(c)]
 				assert_true(
-					Abilities.owned(w, Offers.ability_of(c)), "only owned abilities level up"
+					Abilities.owned(w, Offers.ability_of(c)) or t.is_utility(),
+					"a level-up, or the utility"
 				)
 
 

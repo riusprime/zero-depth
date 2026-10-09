@@ -65,15 +65,16 @@ static func on_bolt_hit(w: World, i: int, pi: int, got: int, at: Vector2) -> voi
 	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER or got <= 0:
 		return
 	var root := w.projectiles.root_id[pi]
-	_frost(w, i, root)
+	_frost(w, i, pi, root)
 	Attacks.on_projectile_hit(w, i, pi, at)
 
 
 ## Frost Core: slow the enemy for slow_ticks (refreshed by each hit, never stacked), when the bolt spec slows.
-static func _frost(w: World, i: int, root: int) -> void:
+static func _frost(w: World, i: int, pi: int, root: int) -> void:
 	var m := w.item_mods
 	var a := w.actors
-	if m.slow_ticks <= 0 or a.dead[i] == 1 or not Modifiers.bolt(w).has_status(&"slow"):
+	var spec := Attacks.projectile_spec(w, pi)  # v0.6.0 MX2: the bolt's own spec
+	if m.slow_ticks <= 0 or a.dead[i] == 1 or spec == null or not spec.has_status(&"slow"):
 		return
 	a.slow_t[i] = m.slow_ticks
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[0], a.ids[0], a.ids[i], a.pos(i))

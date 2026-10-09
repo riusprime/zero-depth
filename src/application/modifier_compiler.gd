@@ -83,3 +83,20 @@ static func compile_modifiers(repo: ContentRepository) -> Array[ModifierTable]:
 	for def: ModifierDefinition in repo.all_of(&"modifiers"):
 		out.append(compile_modifier(def))
 	return out
+
+
+## v0.6.0 MX2: the ability's modifier numbers (AbilityDefinition: every_attacks, the kill streak) and its modifiers
+## (AbilityDefinition.modifiers, compiled; an unknown id is a validation error and is left out here).
+static func compile_ability_extras(
+	t: AbilityTable, def: AbilityDefinition, repo: ContentRepository
+) -> void:
+	t.every_attacks = def.every_attacks
+	t.streak_kills = def.streak_kills
+	t.streak_ticks = SimTick.seconds_to_ticks(def.streak_seconds)
+	t.modifiers = []
+	if repo == null:
+		return
+	for id in def.modifiers:
+		var md: ModifierDefinition = repo.get_def(&"modifiers", id)
+		if md != null:
+			t.modifiers.append(compile_modifier(md))

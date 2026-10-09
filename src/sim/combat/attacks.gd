@@ -7,8 +7,14 @@ extends RefCounted
 ## views' forecasts read too (EI-07).
 ##
 ## Forms with a runner in MX1: ARC (the Blade's steps, Lunge Cleave), BOLT (the Gun's shots, queued for phase 9),
-## BURST (Overcharge's shockwave), BEAM (a seeking jump: Static Chain; a fan of rays: Scatter Blast). RING, ZONE,
-## ORBITER and LOB come with the cards that use them (MX stage 2+); launching one does nothing.
+## BURST (Overcharge's shockwave), BEAM (a seeking jump: Static Chain; a fan of rays: Scatter Blast). v0.6.0 MX2 adds
+## the rest: LOB (a bomb in flight, landing life_ticks later as a blast of radius_m: Bomb Lobber), ZONE (a patch of
+## radius_m for life_ticks that hits an enemy in it once every period_ticks, at most `count` a tick when count > 1:
+## Arc Field, Flame Trail), RING (a ring growing to radius_m over life_ticks, hitting each enemy as its edge passes:
+## Frost Nova) and ORBITER (blades circling the origin at reach_m: Orbit Blades drives its own each tick; a launched
+## one sweeps once). Every player projectile carries its spec (ProjectileStore.spec_key: its hits, its statuses and
+## its hooks are its own spec's, and ON_END runs where it ends); a bomb, a patch and a ring do too. The area stat
+## scales the lingering forms' radii (LOB, ZONE, RING) when they launch.
 ##
 ## Hooks (AttackHook) recurse with the guard of the design's §2: a hook's child launches one level deeper, at most
 ## MAX_HOOK_DEPTH, with half its parent's proc coefficient (HIT.proc_pct 100 → 50 → 25); a hook never runs inside a
@@ -41,6 +47,17 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			return _burst(w, spec, ctx)
 		AttackSpec.Form.BEAM:
 			return _seek(w, spec, ctx) if spec.seek else _rays(w, spec, ctx)
+		AttackSpec.Form.LOB:  # v0.6.0 MX2
+			_lob(w, spec, ctx)
+			return true
+		AttackSpec.Form.ZONE:
+			_zone(w, spec, ctx)
+			return true
+		AttackSpec.Form.RING:
+			_ring(w, spec, ctx)
+			return true
+		AttackSpec.Form.ORBITER:
+			return _orbiter(w, spec, ctx)
 	return false
 
 
@@ -135,9 +152,13 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 
 static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var t := w.player
-	for off in Abilities.shot_offsets(w, shot_offsets(spec)):  # Pulse Gun L5: twin bolts
+	var offsets := shot_offsets(spec)
+	if spec.has_tag(&"weapon"):
+		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
+	var gap := t.radius_m + spec.radius_m + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
+	for off in offsets:
 		var dir := Kin.dir(ctx.angle + off)
-		var muzzle := ctx.origin + dir * (t.radius_m + spec.radius_m + MUZZLE_GAP_M)
+		var muzzle := ctx.origin + dir * gap
 		w.queue_projectile(
 			w.actors.ids[0],
 			ActorStore.TEAM_PLAYER,
@@ -145,9 +166,10 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			dir * spec.speed,
 			ctx.damage,
 			spec.radius_m,
-			spec.life_ticks,
+			maxi(1, spec.life_ticks),
 			ctx.tags,
-			spec.bounces
+			spec.bounces,
+			spec.key
 		)
 
 
@@ -241,6 +263,98 @@ static func _hit(w: World, i: int, ctx: AttackContext, from: Vector2, at: Vector
 	)
 
 
+## v0.6.0 MX2: one hit of `spec` on actor `i` at `at` from `from` (an orbiter's touch, a patch's, a ring's, a bomb's
+## blast): the hit under World.hit_spec (the engines read the spec's statuses), then what a landed hit sets off
+## (statuses, ON_HIT / ON_KILL hooks). Returns the HP removed.
+static func land(
+	w: World, spec: AttackSpec, ctx: AttackContext, i: int, from: Vector2, at: Vector2
+) -> int:
+	var before := w.hit_spec
+	w.hit_spec = spec
+	var got := _hit(w, i, ctx, from, at)
+	w.hit_spec = before
+	if got > 0:
+		_landed(w, spec, ctx, i, at, 1)
+	return got
+
+
+## The SimEvent tags a lingering spec's hits carry: area (an orbiter's: none, or melee for a hook's), plus
+## TAG_ABILITY on an ability's (v0.5's ability hits: area | ability, the orbit blades' ability alone).
+static func lingering_tags(spec: AttackSpec) -> int:
+	var tags := SimEvent.TAG_AREA
+	if spec.form == AttackSpec.Form.ORBITER:
+		tags = 0 if spec.has_tag(&"ability") else SimEvent.TAG_MELEE
+	return tags | (SimEvent.TAG_ABILITY if spec.has_tag(&"ability") else 0)
+
+
+## The area stat on a lingering form's radius (a bomb, a patch, a ring), as v0.5's abilities had it.
+static func area_radius(w: World, spec: AttackSpec) -> float:
+	return Stats.area(w, spec.radius_m)
+
+
+# --- v0.6.0 MX2: the lingering forms ----------------------------------------------------------------------
+## A bomb from ctx.origin to ctx.target (or reach_m along ctx.angle), landing life_ticks later (Abilities lands it in
+## phase 6 through land_lob).
+static func _lob(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
+	var to := ctx.target if ctx.has_target else ctx.origin + Kin.dir(ctx.angle) * spec.reach_m
+	var flight := spec.life_ticks if spec.life_ticks > 0 else Modifiers.HOOK_LOB_TICKS
+	Abilities.drop_bomb(w, to, ctx.origin, area_radius(w, spec), ctx.damage, flight, spec.key, ctx)
+
+
+## A bomb of `spec` landed at `at` (radius `r`, damage `dmg`, root `root`, hook level `depth` / `proc`): every enemy
+## in the blast takes the hit (effect `effect`), then its ON_END hooks run from the blast.
+static func land_lob(
+	w: World,
+	spec: AttackSpec,
+	at: Vector2,
+	r: float,
+	dmg: int,
+	root: int,
+	depth: int,
+	proc: int,
+	effect: StringName
+) -> void:
+	var ctx := AttackContext.make(at, 0, dmg, root, lingering_tags(spec), effect)
+	ctx.depth = depth
+	ctx.proc_pct = proc
+	for i in w.enemies_near(at, r):
+		land(w, spec, ctx, i, at, w.actors.pos(i))
+	_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
+
+
+## A patch at ctx.origin (ElementAbilities keeps it and burns what stands in it, phase 6).
+static func _zone(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
+	var life := spec.life_ticks if spec.life_ticks > 0 else Modifiers.HOOK_ZONE_TICKS
+	ElementAbilities.add_zone(w, ctx.origin, area_radius(w, spec), life, spec, ctx)
+
+
+## A ring from ctx.origin (ModifierAbilities grows it, phase 6).
+static func _ring(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
+	ModifierAbilities.add_ring(w, ctx.origin, area_radius(w, spec), spec, ctx)
+
+
+## Blade k of an orbiter of `spec` around `center`, its first blade at angle `ang` (1/4096 turns), ring radius `r`.
+static func orbiter_pos(spec: AttackSpec, center: Vector2, ang: int, r: float, k: int) -> Vector2:
+	var n := maxi(1, spec.count)
+	return center + Kin.dir((ang + k * SimTick.ANGLE_UNITS / n) & 4095) * r
+
+
+## A launched orbiter (a hook's): one sweep of its blades around ctx.origin, each enemy hit once.
+static func _orbiter(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	var a := w.actors
+	var r := spec.reach_m if spec.reach_m > 0.0 else 1.5
+	var br := spec.radius_m if spec.radius_m > 0.0 else Abilities.BLADE_R
+	var landed := false
+	for i in w.enemies_near(ctx.origin, r + br):
+		for k in maxi(1, spec.count):
+			var b := orbiter_pos(spec, ctx.origin, ctx.angle, r, k)
+			if AttackShapes.disc_touches(b, br, a.pos(i), a.radius[i]):
+				landed = land(w, spec, ctx, i, b, a.pos(i)) > 0 or landed
+				break
+	_run(w, spec, AttackSpec.Trigger.ON_END, ctx, ctx.origin, -1, 0)
+	return landed
+
+
 ## A hit of `spec` landed on actor `i` at `at` (the `nth` landed hit of this launch): a weapon step's burn (Ember
 ## Edge, as before MX1), a hook attack's own statuses at its proc coefficient, then its ON_HIT and ON_KILL hooks.
 static func _landed(
@@ -249,8 +363,8 @@ static func _landed(
 	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
 		if spec.has_tag(&"weapon"):
 			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
-	if ctx.depth > 0:
-		_feed(w, spec, ctx, i)
+	if ctx.depth > 0 or (spec.has_tag(&"ability") and spec.form != AttackSpec.Form.BOLT):
+		_feed(w, spec, ctx, i)  # v0.6.0 MX2: an ability's own attack (not a projectile) feeds here
 	_run(w, spec, AttackSpec.Trigger.ON_HIT, ctx, at, i, nth)
 	if w.actors.dead[i] == 1:
 		_run(w, spec, AttackSpec.Trigger.ON_KILL, ctx, at, i, nth)
@@ -258,7 +372,8 @@ static func _landed(
 
 ## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0), once per root per target
 ## and status. Root attacks feed through their sources instead (Engines.on_hit, ItemEffects.on_melee_hit,
-## ItemProcs.on_bolt_hit), as before MX1.
+## ItemProcs.on_bolt_hit), as before MX1; v0.6.0 MX2: so does every projectile (Engines reads World.hit_spec), while
+## an ability's other attacks (a bomb, an orbiter, a patch, a ring) feed here, at proc 100 for the ability's own.
 static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	var a := w.actors
 	for k in spec.status_ids.size():
@@ -298,6 +413,11 @@ static func _run(
 		if k.every > 0 and nth > 0 and nth % k.every != 0:
 			continue
 		run_hook(w, k, ctx, at, exclude)
+
+
+## v0.6.0 MX2: `spec`'s ON_END hooks from `at` (a ring that reached its radius).
+static func run_on_end(w: World, spec: AttackSpec, ctx: AttackContext, at: Vector2) -> void:
+	_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 
 
 ## Launches hook `k`'s child from `at` under the guard (class doc). Returns true if it landed.
@@ -344,13 +464,33 @@ static func on_nth(w: World, spec: AttackSpec, base: int, root: int) -> int:
 	return first
 
 
-## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): the Gun bolt spec's ON_HIT
-## hooks. MX1: a projectile doesn't carry its spec, so every player projectile reads the bolt's, which is v0.5's rule
-## (Static Chain read every landed player bolt). A hook with an `every` fires on every Nth landed bolt, counted once
-## per landed bolt on World.chain_count, at most once per root (World.chain_root, set when it fires).
+## The spec player projectile `pi` runs (v0.6.0 MX2: its own, ProjectileStore.spec_key); a projectile without one (a
+## Wingman volley, a Thorn Mantle bolt, a spec gone with a build change) reads the Gun bolt's, v0.5's rule. Null for
+## an enemy's.
+static func projectile_spec(w: World, pi: int) -> AttackSpec:
+	var p := w.projectiles
+	if p.team[pi] != ActorStore.TEAM_PLAYER:
+		return null
+	var key := p.spec_key[pi] if pi < p.spec_key.size() else ""
+	if key != "":
+		var s := Modifiers.book(w).find(key)
+		if s != null:
+			return s
+	return Modifiers.bolt(w)
+
+
+## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): its spec's ON_HIT hooks
+## (v0.6.0 MX2: the projectile's own spec, and its ON_KILL hooks on a kill; MX1 read the Gun bolt's for every player
+## projectile, v0.5's rule, which stays for a projectile without a spec). A hook with an `every` fires on every Nth
+## landed bolt, counted once per landed bolt on World.chain_count, at most once per root (World.chain_root, set when
+## it fires). A projectile's hook child launches one level below the projectile's spec.
 static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
-	var spec := Modifiers.bolt(w)
+	var spec := projectile_spec(w, pi)
+	if spec == null:
+		return
 	var hooks := spec.hooks_on(AttackSpec.Trigger.ON_HIT)
+	if w.actors.dead[i] == 1:
+		hooks.append_array(spec.hooks_on(AttackSpec.Trigger.ON_KILL))
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]
@@ -362,10 +502,27 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	var ctx := AttackContext.make(
 		at, 0, w.projectiles.damage[pi], root, w.projectiles.tags[pi], &""
 	)
+	ctx.depth = spec.depth
+	ctx.proc_pct = maxi(1, 100 >> spec.depth)
 	for k in hooks:
 		if k.every > 0 and (w.chain_count % k.every != 0 or w.chain_root == root):
 			continue
 		run_hook(w, k, ctx, at, i)
+
+
+## v0.6.0 MX2: player projectile `pi` ended at `at` (a hit that stopped it, a wall, its life): its spec's ON_END hooks
+## from there, then what an ending projectile leaves (Flame Trail's fire).
+static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
+	if w.projectiles.team[pi] != ActorStore.TEAM_PLAYER:
+		return
+	var spec := projectile_spec(w, pi)
+	if spec != null and not spec.hooks.is_empty():
+		var p := w.projectiles
+		var ctx := AttackContext.make(at, 0, p.damage[pi], p.root_id[pi], p.tags[pi], &"")
+		ctx.depth = spec.depth
+		ctx.proc_pct = maxi(1, 100 >> spec.depth)
+		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
+	ModifierAbilities.on_projectile_end(w, at)
 
 
 ## The next landed bolt fires the bolt's first every-N ON_HIT hook (Static Chain's "ready" mark).

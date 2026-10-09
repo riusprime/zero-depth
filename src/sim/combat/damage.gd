@@ -183,6 +183,7 @@ static func _apply(
 		if target != 0 and owner_id == a.ids[0]:
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
+			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
 		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window

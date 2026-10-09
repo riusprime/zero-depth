@@ -125,10 +125,13 @@ func test_the_stock_follows_the_chest_rules_and_the_slot_rules() -> void:
 	for s in 60:
 		var w := _world(300 + s)
 		if s % 2 == 1:
-			for kind in [
+			for kind in [  # v0.6.0 MX2: the six modifier slots full
 				AbilityTable.Kind.BOMB_LOBBER,
 				AbilityTable.Kind.DRONE_BUDDY,
-				AbilityTable.Kind.ORBIT_BLADES
+				AbilityTable.Kind.ORBIT_BLADES,
+				AbilityTable.Kind.ARC_FIELD,
+				AbilityTable.Kind.FROST_NOVA,
+				AbilityTable.Kind.FLAME_TRAIL,
 			]:
 				Abilities.grant(w, Abilities.index_of_kind(w, kind))
 		_open(w)
@@ -143,8 +146,10 @@ func test_the_stock_follows_the_chest_rules_and_the_slot_rules() -> void:
 			assert_false(seen.has(key), "no card repeats")
 			seen[key] = true
 			if Offers.type_of(code) == Offers.ABILITY and s % 2 == 1:
+				var t := w.ability_tables[Offers.ability_of(code)]
 				assert_true(
-					Abilities.owned(w, Offers.ability_of(code)), "full slots: level-ups only"
+					Abilities.owned(w, Offers.ability_of(code)) or t.is_utility(),
+					"six held: a level-up, or the utility outside the slots"
 				)
 			if Offers.type_of(code) == Offers.MOD:
 				assert_true(ItemPool.usable(w, code), "a mod only with its ability and weapon")
@@ -339,7 +344,7 @@ func test_salvage_an_ability_frees_its_slot() -> void:
 		Abilities.grant(w, idx)
 	Abilities.grant(w, drone)
 	Abilities.grant(w, drone)
-	assert_false(Abilities.can_take(w, blink), "four slots full: no new ability")
+	assert_true(Abilities.can_take(w, blink), "v0.6.0 MX2: the utility pick sits outside the slots")
 	_open(w)
 	var list := Shop.sell_list(w)
 	var kinds := []

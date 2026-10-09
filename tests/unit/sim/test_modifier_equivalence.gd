@@ -5,6 +5,10 @@ extends GutTest
 ## recorded on 6a83bae before any engine code (tests/golden/generate_modifier_equivalence.gd). The digest covers
 ## every event's outcome fields (kind, tick, ids, root, parent, depth, amounts, tags, effect, ancestry, position)
 ## and the attack state (actors, projectiles, the proc ledger, the streams, the swing / echo / chain counters).
+## v0.6.0 MX2: the abilities became weapon modifiers on purpose (owner B7), so the two cases that hold abilities
+## (blade_all: Flame Trail and Orbit Blades; gun_all: Drone Buddy and Arc Field) were re-recorded on the MX2 code with
+## the same generator; the other 20 cases still match their v0.5 recording, unchanged (PROGRESS "Goldens changed on
+## purpose").
 
 const FIXTURE := "res://tests/golden/fixtures/modifier_equivalence.json"
 

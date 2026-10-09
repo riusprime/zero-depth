@@ -46,6 +46,7 @@ func _init(p_api: DebugApi) -> void:
 		["SpawnElite", "UI_DEV_SPAWN_ELITE", api.request_elite],  # v0.6.0 CU: TEST HELPER (core theft)
 		["NextAbility", "UI_DEV_NEXT_ABILITY", api.next_ability],  # v0.4.0 BS
 		["GrantAbility", "UI_DEV_GRANT_ABILITY", api.grant_ability],
+		["GrantMod", "UI_DEV_GRANT_MOD", api.grant_mod],  # v0.6.0 MX2
 		["CurseChest", "UI_DEV_CURSE_CHEST", api.curse_next_chest],  # v0.5.0 EV
 		["GoOverrun", "UI_DEV_GO_OVERRUN", api.go_overrun],  # v0.4.0 AB
 		["GoArena", "UI_DEV_GO_ARENA", api.go_arena],  # v0.5.5 AR

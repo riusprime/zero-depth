@@ -181,18 +181,34 @@ static func interact(w: World) -> bool:
 	return true
 
 
-## While choosing: a pick takes that card, a cancel closes the choice; anything else waits.
+## While choosing: a pick takes that card, a cancel closes the choice; anything else waits. v0.6.0 MX2 (owner B7):
+## picking a new modifier with the six slots full opens the swap (BuildSlots): the next answer names the held
+## modifier it replaces (then the card is taken as a pick), or skips back to the cards.
 static func choose(w: World, frame: InputFrame) -> void:
 	var i := w.rewards.index_of(w.choosing)
 	if i < 0:
-		_resume(w)
-		return
-	if frame.pick == InputFrame.PICK_CANCEL:
+		BuildSlots.close_swap(w)
 		_resume(w)
 		return
 	var offer := w.rewards.offer_of(i)
+	var replace := -1
 	var k := frame.pick - 1
+	if BuildSlots.swapping(w) and w.swap_source == BuildSlots.Source.REWARD:
+		var s := BuildSlots.swap_answer(w, frame)
+		if s == -2:
+			return
+		k = w.swap_ref
+		BuildSlots.close_swap(w)
+		if s < 0:
+			return  # skipped: back to the cards
+		replace = s
+	elif frame.pick == InputFrame.PICK_CANCEL:
+		_resume(w)
+		return
 	if k < 0 or k >= offer.size() or not can_afford(w, i):
+		return
+	if replace < 0 and BuildSlots.needs_swap(w, offer[k]):
+		BuildSlots.open_swap(w, offer[k], BuildSlots.Source.REWARD, k)
 		return
 	w.shards -= price_of(w, i)
 	var idx := offer[k]
@@ -201,7 +217,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 		SimEvent.Kind.PICKUP, w.rewards.ids[i], w.actors.ids[0], w.actors.ids[0], at
 	)
 	e.amount = idx
-	Offers.apply(w, idx)  # v0.4.0 BS: an item (mod), an ability or a stat card
+	Offers.apply(w, idx, replace)  # v0.4.0 BS: an item (mod), an ability or a stat card
 	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
 	w.rewards.remove_at(i)
 	_resume(w)

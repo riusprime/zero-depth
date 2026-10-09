@@ -97,7 +97,7 @@ only adds numbers, menus or breadth fails the filter.
 | Aim | Mouse ray to the ground plane, or the right stick. Aim assist on the pad only (about a 12° cone) | GA §5; GA: input |
 | Primary | **Melee and shooting on separate buttons** (owner, 2026-10-07): melee = a four-slash combo (owner, 2026-10-07, v0.3.0 L11: a horizontal slash, a backhand, a narrow forward thrust, a heavy spinning finisher; replaced the 3-hit swing combo); shooting = hold for continuous low-damage bolts (replaced the 2026-10-06 charged shot) | v0.1.0 PLAN L9–L10; v0.3.0 PLAN L11 (starting values) |
 | Utility (v0.4.0 BS, owner F11: none at the start; PD-01 flipped) | An ability card on the utility button: **Aegis** (the guard: hits from the front cut to 20 %, blocks store guard charges for the next swing) **or Blink** (a teleport the way you're moving, through walls by range, with a 2 m landing shock), never both | v0.1.0 PLAN; v0.4.0 PLAN (starting values) |
-| Abilities (v0.4.0 BS, owner F8) | **Four slots.** Slot 1 is the build's weapon as an ability (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5. Slots 2–4 take ability cards (Bomb Lobber, Drone Buddy, Orbit Blades, Blink, Aegis); once full, ability cards only level up | v0.4.0 PLAN table (starting values) |
+| The build (v0.6.0 MX2, owner B7; was v0.4.0's four ability slots, F8) | **The weapon, one utility pick and six modifier slots.** The weapon is the build's (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5, outside the slots, with the dash and Vent. The utility (Blink or Aegis) is one pick outside the slots. **Six modifier slots**, filled in pick order (the layer order): the six old abilities as weapon modifiers (Bomb Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail; each carries the weapon's elements and effects; taking one you hold levels it 1–5 without a slot) and the attack items (the 14 MX1 items and the four ability mods). With the six full, a new modifier offers **Swap**: pick the one it replaces, or skip. Stat cards are unlimited (no slot) | [`MODIFIER_ENGINE.md`](MODIFIER_ENGINE.md) "The build"; [`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §8c |
 | Builds (v0.3.0 L15) | **Blade** (melee only) or **Gun** (shooting only), picked before the run. Blade hits ×1.15 (L16); the Gun hits ×1.00 since 2026-10-08 (owner: "do not make gun -15% it is actually unplayable with that debuff"; L16's ×0.85 is gone) | `data/builds/*.tres` `damage_permille` |
 | Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
@@ -152,16 +152,19 @@ value or by an owner decision, and the change is noted here.
   - a watchdog stops any chain past its limits, and sims require 0 `LIMIT` events.
 - **No flat per-hit damage reduction**, on either side. Reductions are per-mille multipliers or structural (block,
   guard arc, dodge).
-- **Slot cap** (PD-08, flipped in v0.4.0 BS by owner F8): the build is **four ability slots**, always on (§C). The
-  6 + 3 mechanism-slot prototype is dropped.
+- **Slot cap** (PD-08, flipped in v0.4.0 BS by owner F8; v0.6.0 MX2, owner B7): the build is the weapon, one utility
+  pick and **six modifier slots** with a Swap when full (§C). The items that change attacks take a slot; the other
+  items (engines, dash, guard, heat, sustain) and the stat cards take none.
 - **Rewards (v0.4.0 BS, owner F9, F13).** Altars and chests offer pick 1 of 3 from three card types: **ability
   cards** (a free altar's first card is a new ability while a slot is free), **stat cards** (most cards: 12 stats ×
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts.
-- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field (lightning on 3 enemies, shock), Frost
-  Nova (a nova around you, frost) and Flame Trail (fire where you walk, burn) bring the shock, frost and burn engines
-  to any build without an item. Owning two paired abilities at level 3 evolves them into one of eight ability combos
+- **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field, Frost Nova and Flame Trail bring the
+  shock, frost and burn engines to any build without an item (v0.6.0 MX2, as weapon modifiers: Arc Field's attacks
+  leave a shock field, Frost Nova gives the weapon frost and rings on a kill streak, Flame Trail's dash and
+  projectiles leave fire; Bomb Lobber lobs on every 4th attack; the drone fires a copy of your attack; the orbit
+  blades are copies of your attack). Owning two paired abilities at level 3 evolves them into one of eight ability combos
   (Storm Bombs, Napalm Drone, Glacier Ring, Blink Charge, Blade Dance, Wingman, Superconductor, Ember Ward), each with
   a card, a badge and a look ([`INTERACTIONS.md`](INTERACTIONS.md) "Ability combos").
 - **The card pool (v0.5.0 CP; ROADMAP v0.5.0: 40–50 candidate cards, moved from v0.6.0 by the owner).** A distinct
@@ -179,8 +182,8 @@ value or by an owner decision, and the change is noted here.
   opens it and the world waits: **4 cards** from the chests' pools (slot rules hold; mods only with their ability)
   priced by rarity × floor (30 / 55 / 90 × 1, 1.5, 2), a **heal** (30 % max HP, once, 40 × floor) and a **reroll**
   (20, +50 % per use). A bought card applies exactly as a picked one. **Salvage** at the same panel: sell a mod or
-  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to
-  free its slot for a later ability card: a way to change a build's direction, paid for. Starting values; evidence:
+  a stat card (one stack) for 40 % of its price, or salvage an ability (not the weapon; v0.6.0 MX2: a modifier, or the
+  utility) for 10 shards per level (was 25; M-LOOP, v0.4.0 TU) to free its slot for a later card: a way to change a build's direction, paid for. Starting values; evidence:
   `docs/roadmap/v0.5.0/evidence/SHOP.md`.
 
 ## E. Enemies and the stress matrix

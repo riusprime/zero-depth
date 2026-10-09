@@ -116,16 +116,23 @@ func test_slot_one_is_the_builds_weapon() -> void:
 	assert_true(none.ability_owned.is_empty(), "no build, no weapon ability (the lab worlds)")
 
 
-func test_cards_fill_three_slots_then_only_level_up() -> void:
+## v0.6.0 MX2: the six modifier slots (BuildSlots; test_build_slots covers the swap); the utility sits outside.
+func test_cards_fill_six_modifier_slots_then_need_a_swap() -> void:
 	var w := _world()
 	for kind in [
-		AbilityTable.Kind.BOMB_LOBBER, AbilityTable.Kind.DRONE_BUDDY, AbilityTable.Kind.BLINK
+		AbilityTable.Kind.BOMB_LOBBER,
+		AbilityTable.Kind.DRONE_BUDDY,
+		AbilityTable.Kind.ARC_FIELD,
+		AbilityTable.Kind.FROST_NOVA,
+		AbilityTable.Kind.FLAME_TRAIL,
+		AbilityTable.Kind.BLINK,
 	]:
-		assert_true(Abilities.grant(w, _idx(w, kind)), "kind %d takes a slot" % kind)
-	assert_eq(w.ability_owned.size(), 4, "four slots full")
+		assert_true(Abilities.grant(w, _idx(w, kind)), "kind %d is taken" % kind)
+	assert_eq(w.mod_slots.size(), 5, "five modifier slots; Blink is the utility")
 	var orbit := _idx(w, AbilityTable.Kind.ORBIT_BLADES)
-	assert_false(Abilities.can_take(w, orbit), "a fifth ability can't be offered")
-	assert_false(Abilities.grant(w, orbit), "nor taken")
+	assert_true(Abilities.grant(w, orbit), "the sixth slot")
+	assert_true(BuildSlots.full(w))
+	assert_true(Abilities.can_take(w, orbit), "a level-up still applies")
 	var bomb := _idx(w, AbilityTable.Kind.BOMB_LOBBER)
 	for lvl in [2, 3, 4, 5]:
 		assert_true(Abilities.grant(w, bomb))
@@ -194,17 +201,26 @@ func test_blink_level_three_holds_two_charges() -> void:
 
 
 # --- Bomb Lobber --------------------------------------------------------------------------------------------
+## v0.6.0 MX2: Bomb Lobber lobs on the weapon's attacks (every 4th; PlayerKit reports each to ModifierAbilities).
+func _attacks(w: World, n: int) -> void:
+	for k in n:
+		ModifierAbilities.on_attack(w, w.player_pos())
+
+
 func test_bomb_lobber_hits_the_densest_cluster() -> void:
 	# A lone dummy is nearer; three stand together farther away (within 8 m).
 	var w := _world(
 		&"blade", [Vector2(2.5, 0.0), Vector2(-6.0, 0.0), Vector2(-6.6, 0.5), Vector2(-6.4, -0.6)]
 	)
 	Abilities.grant(w, _idx(w, AbilityTable.Kind.BOMB_LOBBER))
-	w.step(_f())
-	assert_eq(w.ab.bomb_pos.size(), 1, "one bomb thrown at once (L1)")
+	w.step(_f())  # the grid holds the bodies
+	_attacks(w, 3)
+	assert_eq(w.ab.bomb_pos.size(), 0, "three attacks: none yet")
+	_attacks(w, 1)
+	assert_eq(w.ab.bomb_pos.size(), 1, "one bomb on the fourth attack (L1)")
 	assert_lt(w.ab.bomb_pos[0].x, -5.0, "at the cluster, not the nearest")
 	assert_almost_eq(w.ab.bomb_r[0], 2.0, 1e-5, "the 2 m ground circle")
-	_run(w, 35)
+	_run(w, 36)
 	assert_eq(_damage(w, Abilities.EFFECT_BOMB).size(), 0, "still in the air")
 	w.step(_f())
 	var hits := _damage(w, Abilities.EFFECT_BOMB)
@@ -220,15 +236,18 @@ func test_bomb_lobber_waits_for_a_target_and_keeps_its_cadence() -> void:
 	var s := w.ability_owned.size()
 	Abilities.grant(w, _idx(w, AbilityTable.Kind.BOMB_LOBBER))
 	_run(w, 200)
+	_attacks(w, 8)
 	assert_eq(w.ab.bomb_pos.size() + w.ab.blast_tick.size(), 0, "nothing in range: no throw")
 	assert_eq(w.ab.cd[s], 0, "ready, waiting")
 	w.add_dummy(Vector2(3, 0), 0.35, 5000)
 	w.step(_f())
-	assert_eq(w.ab.bomb_pos.size(), 1)
-	assert_eq(w.ab.cd[s], 150, "then every 2.5 s")
+	_attacks(w, 1)
+	assert_eq(w.ab.bomb_pos.size(), 1, "the count waited: the next attack lobs")
+	assert_eq(w.ab.cd[s], 150, "then at most every 2.5 s")
 	var throws := 0
-	for k in 600:
+	for k in 601:  # an attack every tick (before the tick): the cooldown sets the cadence
 		var before := w.ab.bomb_throw.size()
+		_attacks(w, 1)
 		w.step(_f())
 		throws += 1 if w.ab.bomb_throw.size() > before else 0
 	assert_eq(throws, 4, "four more in 10 s")
@@ -240,6 +259,7 @@ func test_bomb_lobber_levels_add_bombs_and_radius() -> void:
 	for k in 5:
 		Abilities.grant(w, b)
 	w.step(_f())
+	_attacks(w, 4)
 	assert_eq(w.ab.bomb_pos.size(), 3, "L5: three bombs")
 	assert_almost_eq(w.ab.bomb_r[0], 2.0 * 1.3225, 1e-3, "L5: +32 % radius")
 	assert_ne(w.ab.bomb_pos[0], w.ab.bomb_pos[1], "the second goes to the other cluster")

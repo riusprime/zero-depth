@@ -5,7 +5,9 @@ extends Node3D
 ## radius, bolt ends). Materials are unshaded and transparent, made once; nothing toggles emission at runtime.
 ## - Arc Field: a jagged pale-blue bolt from the hero to each enemy struck (Superconductor: cyan-white and thicker).
 ## - Frost Nova: a frost ring and a pale disc out to the nova's radius.
-## - Fire patches: flat orange discs (Napalm Drone's deeper red) that shrink as they burn out.
+## - Fire patches: flat orange discs (Napalm Drone's deeper red) that shrink as they burn out. v0.6.0 MX2: Arc Field's
+##   shock field is a pale-blue disc, another spec's zone a pale-white one; a growing ring (the RING form: Frost Nova)
+##   is a frost torus at its radius now.
 ## - Storm Bombs: violet bolts from the blast to each enemy chained. Ember Ward: an orange ring burst. Blink Charge: a
 ##   violet flash where you left. Wingman: a cyan flash at each drone.
 
@@ -26,6 +28,10 @@ var _fx: Array = []
 var _template := SkillVisuals._make_template()
 var _fire_mat := _template.duplicate() as StandardMaterial3D
 var _napalm_mat := _template.duplicate() as StandardMaterial3D
+var _field_mat := _template.duplicate() as StandardMaterial3D
+var _zone_mat := _template.duplicate() as StandardMaterial3D
+var _rings: Array[MeshInstance3D] = []
+var _ring_mat := _template.duplicate() as StandardMaterial3D
 var _disc_mesh := CylinderMesh.new()
 var _last := {}
 
@@ -34,6 +40,9 @@ func _init() -> void:
 	name = "ElementVisuals"
 	_fire_mat.albedo_color = Color(FIRE_COLOR, 0.55)
 	_napalm_mat.albedo_color = Color(NAPALM_COLOR, 0.6)
+	_field_mat.albedo_color = Color(ARC_COLOR, 0.5)
+	_zone_mat.albedo_color = Color(Color.WHITE, 0.35)
+	_ring_mat.albedo_color = Color(NOVA_COLOR, 0.8)
 	_disc_mesh.height = 0.01
 	_disc_mesh.top_radius = 1.0
 	_disc_mesh.bottom_radius = 1.0
@@ -45,6 +54,7 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	var fx := reader.element_fx()
 	_sync_fires(fx)
+	_sync_rings(fx.get("rings", []))
 	if _edge(&"arc", fx["arc_tick"]):
 		var sup: bool = fx["arc_super"]
 		for to: Vector2 in fx["arc_to"]:
@@ -105,11 +115,45 @@ func _sync_fires(fx: Dictionary) -> void:
 		f.visible = k < pos.size()
 		if not f.visible:
 			continue
-		var napalm := kind[k] == WorldReader.FIRE_NAPALM
-		f.material_override = _napalm_mat if napalm else _fire_mat
+		match kind[k]:
+			WorldReader.FIRE_NAPALM:
+				f.material_override = _napalm_mat
+			WorldReader.FIRE_FIELD:
+				f.material_override = _field_mat
+			WorldReader.FIRE_ZONE:
+				f.material_override = _zone_mat
+			_:
+				f.material_override = _fire_mat
 		var s := r[k] * (0.55 + 0.45 * left[k] / 1000.0)
 		f.position = SimPlane.to_3d(pos[k], FIRE_Y + 0.002 * (k % 4))
 		f.scale = Vector3(s, 1, s)
+
+
+## v0.6.0 MX2: each growing ring as a thin torus at its radius now (the sim's number).
+func _sync_rings(rings: Array) -> void:
+	while _rings.size() < rings.size():
+		var m := MeshInstance3D.new()
+		var torus := TorusMesh.new()
+		torus.inner_radius = 0.88
+		torus.outer_radius = 1.0
+		torus.rings = 40
+		m.mesh = torus
+		m.material_override = _ring_mat
+		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(m)
+		_rings.append(m)
+	for k in _rings.size():
+		var m := _rings[k]
+		m.visible = k < rings.size()
+		if not m.visible:
+			continue
+		var r := maxf(0.05, float(rings[k][1]))
+		m.position = SimPlane.to_3d(rings[k][0], FIRE_Y + 0.04)
+		m.scale = Vector3(r, 0.08, r)
+
+
+func ring_count() -> int:
+	return _rings.filter(func(m: MeshInstance3D) -> bool: return m.visible).size()
 
 
 # --- Flashes ------------------------------------------------------------------------------------------------------

@@ -17,3 +17,4 @@ bleed_max_stacks = 8
 bleed_burst_per_stack = 5
 tags = PackedStringArray("ability", "bleed")
 id = &"razor_orbit"
+modifiers = Array[StringName]([&"razor_orbit"])

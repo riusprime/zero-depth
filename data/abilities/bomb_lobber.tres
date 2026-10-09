@@ -17,4 +17,5 @@ duration_seconds = 0.6
 damage = 22
 level_radius = PackedFloat32Array(1, 1, 1.15, 1.15, 1.3225)
 level_count = PackedInt32Array(1, 2, 2, 3, 3)
+every_attacks = 4
 id = &"bomb_lobber"
