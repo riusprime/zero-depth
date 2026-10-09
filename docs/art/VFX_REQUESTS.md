@@ -121,3 +121,41 @@ as the attack circles.
 
 **Also in phase 2, no textures needed:** the fading fireball (fades without streaks), visible smoke after a blast,
 and more strikes in a storm patch.
+
+## Built (phase 2, 2026-10-09, `a2eb4da`)
+
+`VfxCore` (`src/presentation/world_view/vfx/vfx_core.gd`) holds the pools, the low-poly ice crystals, the lights
+and the floor marks; `VfxLayer` draws the elements on each form through `field`, `ring`, `line`, `burst` and
+`status`. An attack with several elements takes the first of fire, storm, frost, venom, void, bleed.
+
+| Element | Patch | Ring | Beam / chain | Burst (bomb landing, blast form) |
+|---|---|---|---|---|
+| Fire | flames, embers, smoke, light, scorch | flames along the edge | flames along the floor under it | fireball, debris, smoke, light, scorch |
+| Storm | bolts arcing from the middle to the edge | lightning round the edge | a re-striking bolt | bolts striking out from the middle |
+| Frost | ice crystals growing out of the floor, cold mist, glints, frost mark | ice spikes along the edge | ice spikes along the floor | crystals erupting, shards, frost burst mark |
+| Venom | bubbles, green gas, splatter | splashes along the edge | a spray, a splash and a splatter where it ends | a crown splash, drops, bubbles, gas, splatter |
+| Bleed | splashes, red splatter | splashes along the edge | a spray, a splash and a splatter where it ends | a crown splash, drops, splatter |
+| Void | dark tendrils, a rift in the middle, violet light, dark mark | tendrils along the edge | a rift torn along it | a rift tears open and closes, tendrils, dark mark |
+
+- **Enemy statuses** (StatusVisuals draws into the layer instead of boxes and a sphere shell):
+  - burning: flames on the body and a warm light;
+  - shocked: arcs over it;
+  - bleeding: red drips and a splatter under it;
+  - poisoned: bubbles and green drips;
+  - frost: crystals at the feet (one per stack, up to 4);
+  - frozen: a crystal cage and frost under it.
+
+  The shock pips and the guard orbs stay as they were (they show counts).
+- **Payoffs:** bleed burst and Blood Harvest burst red, Shatter Dash bursts into ice, Wildfire bursts into fire,
+  discharges and Plasma Arc strike as lightning. The Resonance, Frozen Bastion and Slipstream rings stay (they show
+  a radius).
+- **Fixes from the G2 pick:** the fireball fades and darkens instead of breaking into streaks, the smoke after a
+  blast is lighter and lasts, a storm patch arcs out to its edge.
+- **Reader:** `WorldReader.poison_stacks(i)` (read-only, for the poisoned look).
+- **Tests:** `tests/unit/presentation/test_vfx_layer.gd` (every element on every form, floor marks, a frost bomb,
+  enemy statuses).
+- **Mockup:** `mock_vfx.gd -- scenes=frost,venom,void,bleed,status`.
+
+| Gate | Asked | Answer | Date |
+|---|---|---|---|
+| G2 Effects phase 2 (mock_vfx.gd: frost, venom, void, bleed, statuses) | 2026-10-09 | OWNER ONLY | — |
