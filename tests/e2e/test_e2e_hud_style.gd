@@ -33,7 +33,7 @@ func test_the_danger_meter_and_the_low_hp_warning_in_a_real_run() -> void:
 	assert_eq(texts[0], hud.floor_text())
 	assert_false(hud.low_hp_warning(), "a fresh run: no warning")
 	var nav := NavField.new()
-	nav.build(E2e.walk_walls(w, target))
+	nav.build(E2e.walk_walls(w, w.player_pos()))
 	var mx := w.actors.max_hp[0]
 	for k in MAX_FRAMES:
 		if w.player_dead() or HudStyle.low_hp(w.actors.hp[0], mx):
