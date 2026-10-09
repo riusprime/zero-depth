@@ -17,7 +17,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 
 | DS | Hidden catch-up: each floor reads the build's power at entry and scales enemies' HP × m and damage × √m (m = √(P/E), ×1 to ×1.5 / ×2 / ×2.5, +0.25 per T), never shown (D3–D6, D10, B1); bosses take their own m with the boss cap (×2 / ×3 / ×4) and all six get phase gates at 66 % and 33 % (a burst stops there, a 1 s invulnerable PHASE SHIFT, 2–4 adds of the floor's kinds, then a new or faster phase; D7); Deep floors bite: violet haze over the v0.5.9 mood, an elite in every combat room, +1 T raising the caps, the epic altar by the boss door, the Deep-only event Whispering Deep (S5); the D8 principle in GAME_BLUEPRINT. Evidence: [`evidence/DIFFICULTY.md`](evidence/DIFFICULTY.md) (suite 1134/1135: `test_e2e_heal_orbs` fails on the base too) | v0.5.5 Step DS commit |
 
+| UI | The A5 restyle: the in-game HUD in B "Ember stone" (stone slabs with an ember line under HP, the top plate, heat and the boss bar; a red HP bar; danger as ember teeth; ability slots as stone with their colour line; skill and vent hints on small slabs) with the **corner minimap floating over the game, no black background** (dark halo under its lines, ember corner ticks); every menu (main, pause, Options, credits, run recap / death, build picker's Back) in C "Cold glass" (the game blurred and dimmed behind, left-aligned title and list, glass highlight and diamond on the focused row, run line and key hints small) with **no build cards beside it**; menu buttons in plain sentence case. Heat colours (`HeatLooks`), the straight heat bar, 52 px cooldown slots, minimap orientation and the crystal pick cards unchanged; nothing in the v0.5.9 world look touched. Evidence: [`evidence/UI_RESTYLE.md`](evidence/UI_RESTYLE.md) | v0.6.0 Step UI commit |
+
 ## Goldens changed on purpose
+- none (Step UI: presentation only)
 - none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
 - none (Step DS: the replay and export-smoke goldens are the kernel's and still match)
 
@@ -50,3 +53,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
   "Embers" (the Deep haze layers on the biome moods); full suite 1134/1135, the one failure (`test_e2e_heal_orbs`)
   also fails on `85084e9` without DS; export smoke green. Open for the owner: every catch-up and gate number (starting
   values), and whether the Deep "epic chest" should stay the free epic altar moved to the boss door (as built).
+- 2026-10-09: Step UI built (A5 pick: HUD in B "Ember stone" without the minimap's black background, menus in C
+  "Cold glass" without the build cards); suite and export smoke in [`evidence/UI_RESTYLE.md`](evidence/UI_RESTYLE.md).

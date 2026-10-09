@@ -190,6 +190,11 @@ replaces a code body (whole-body motion until rigged).
    colour is the card's family, one table in `src/presentation/hud/card_frames.gd` (red damage, blue projectiles
    and frost, amber economy and stats, purple dash and void, green healing, silver time and slow, pink crit, cyan
    area, orange fire, violet curses, gold epic, indigo trinkets; the owner may remap).
+   **HUD and menus (v0.5.5 A5, owner pick).** The in-game HUD is "Ember stone": dark chipped stone slabs (fill
+   `#1B1715` at 90 %), warm type `#F3E9DD`, an ember line `#F28A3A` with a soft glow under the important slabs, a
+   red HP bar `#E0503F`; the minimap floats over the game with no background. The menus are "Cold glass": the game
+   blurred and dimmed behind, plain type `#EEF3F6`, a cold glass accent `#7FE3F2` for the focused row and panel
+   edges. Both are drawn in code (no image assets): `HudStyle` and `MenuStyle`.
 3. **2D art** (item icons, key art, the app icon): agents write prompts, the owner generates the images, and the
    lead installs them. This is Deathventory's `ART_PROMPTS.json` flow. Prompts live in
    `docs/art/ART_PROMPTS.json` with `id`, `kind`, `size`, `prompt`, `style_ref` and `status`. Delivered images go

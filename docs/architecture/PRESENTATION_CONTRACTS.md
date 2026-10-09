@@ -154,6 +154,17 @@ the mode's colour vision on the tokens and asserts:
   bar whose ticks come from the sim's heat table (F2). The minimap is oriented like the screen: up, left and right on
   the map are up, left and right through the iso camera (`MinimapView.turn`, checked against `IsoRig`'s projection
   in `test_minimap_orientation.gd`, F14).
+- **v0.5.5 A5 restyle (owner pick, 2026-10-08):** the in-game HUD is **B "Ember stone"** (`HudStyle.DEFAULT =
+  EMBER`): chipped dark stone slabs (`HudStyle.draw_plate`), a warm ember line and glow under the HP, top, heat and
+  boss slabs, warm type, a red HUD HP bar, danger marks drawn as ember teeth. The heat meter keeps its straight bar,
+  ticks and `HeatLooks` colours, set in a slab. The **corner minimap has no background** (owner: "we should remove
+  the black background"): it floats over the game, every line over a dark halo, every room over a faint dark wash,
+  four ember corner ticks mark its window (`MinimapStyle.CORNER_PANEL = false`); the held full map keeps its panel.
+  Every full-screen menu (main menu, pause, Options, credits, the run recap and death screen, the build picker's Back)
+  is **C "Cold glass"** (`MenuStyle`, one Theme set on each menu root): the game blurred and dimmed behind
+  (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
+  thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
+  build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

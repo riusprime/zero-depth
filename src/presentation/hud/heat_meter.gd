@@ -11,10 +11,14 @@ extends Control
 ## - a small word over the bar's left end names the zone, and "VENT: DASH" shows over its middle while a dash (or
 ##   blink) would vent.
 ## Reads WorldReader.heat_state() only (EI-07); hidden when the world has no heat.
+## v0.5.5 A5 (owner pick B "Ember stone"): the same straight bar, ticks and colours (HeatLooks, unchanged), set in
+## a chipped stone slab with the ember line under it (HudStyle.draw_plate); the bar is inset by PAD.
 
-const SIZE := Vector2(360, 44)
+const SIZE := Vector2(420, 46)
+## The bar's inset from the slab's sides (px).
+const PAD := 16.0
 ## The bar's thickness and the ticks' / cap's height (px).
-const BAR_H := 5.0
+const BAR_H := 7.0
 const TICK_H := 11.0
 const FLASH_S := 0.45
 const WARN_SHARE := 0.88
@@ -120,7 +124,7 @@ func fill() -> float:
 
 ## The bar's rect in the meter's own pixels.
 func bar_rect() -> Rect2:
-	return Rect2(0, SIZE.y - BAR_H - 3.0, SIZE.x, BAR_H)
+	return Rect2(PAD, SIZE.y - BAR_H - 10.0, SIZE.x - PAD * 2.0, BAR_H)
 
 
 ## Where `h` heat points land along the bar (x, px), scaled by the sim's max heat.
@@ -148,7 +152,9 @@ func _draw() -> void:
 	var mx := float(_s["max"])
 	var h := heat()
 	var pulse := HudStyle.pulse(_t * 1.5)
-	var track := Color(0, 0, 0, 0.45)
+	if HudStyle.current == HudStyle.Style.EMBER:
+		HudStyle.draw_plate(self, Rect2(Vector2.ZERO, SIZE), true)
+	var track := Color(0, 0, 0, 0.6)
 	if stalled():
 		track = Color(HeatLooks.OVERHEAT_MARK, 0.25 + 0.25 * pulse)
 	draw_rect(r, track)
@@ -166,11 +172,13 @@ func _draw() -> void:
 	var cap := Color(HeatLooks.OVERHEAT_MARK, (0.45 + 0.55 * pulse) if near else 0.9)
 	var mid := r.get_center().y
 	draw_rect(Rect2(r.end.x - 1.0, mid - TICK_H * 0.5 - 1.0, 3.0, TICK_H + 2.0), cap)
-	var top := r.position.y - TICK_H * 0.5 - 6.0
-	_text(Vector2(0, top), tier_text(), _tier_color(), HORIZONTAL_ALIGNMENT_LEFT)
+	var top := r.position.y - TICK_H * 0.5 - 4.0
+	_text(Vector2(PAD, top), tier_text(), _tier_color(), HORIZONTAL_ALIGNMENT_LEFT)
 	var vent := vent_text()
 	if not vent.is_empty():
-		_text(Vector2(0, top), vent, Color(HeatLooks.WHITE_HOT, 0.95), HORIZONTAL_ALIGNMENT_CENTER)
+		_text(
+			Vector2(PAD, top), vent, Color(HeatLooks.WHITE_HOT, 0.95), HORIZONTAL_ALIGNMENT_CENTER
+		)
 
 
 ## A threshold tick across the bar: dim until heat reaches it, then its zone's colour.
@@ -196,5 +204,6 @@ func _text(baseline: Vector2, text: String, col: Color, align: HorizontalAlignme
 	if text.is_empty():
 		return
 	var font := HudStyle.font(true)
-	draw_string_outline(font, baseline, text, align, SIZE.x, FONT_SIZE, 3, Color(0, 0, 0, 0.6))
-	draw_string(font, baseline, text, align, SIZE.x, FONT_SIZE, col)
+	var w := SIZE.x - PAD * 2.0
+	draw_string_outline(font, baseline, text, align, w, FONT_SIZE, 3, Color(0, 0, 0, 0.6))
+	draw_string(font, baseline, text, align, w, FONT_SIZE, col)

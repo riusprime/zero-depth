@@ -419,6 +419,11 @@ func open_pause() -> void:
 	_pause.options_pressed.connect(open_pause_options)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
+	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
+	if not recap.is_empty():
+		_pause.show_run(
+			recap["floor"], recap["seconds"], recap["kills"], int(recap.get("shards", 0))
+		)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()
 		_pause.add_child(stats)

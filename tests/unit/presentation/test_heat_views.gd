@@ -107,7 +107,9 @@ func test_the_straight_bar_places_its_ticks_from_the_sim_table() -> void:
 	for k: Array in m.marks():
 		var want := bar.position.x + bar.size.x * float(k[0]) / mx
 		assert_almost_eq(m.x_of(float(k[0])), want, 0.01, "%s at its sim threshold" % k[1])
-	assert_almost_eq(m.x_of(float(s["hot"])), bar.size.x * 0.4, 0.01, "Hot at 40 of 100")
+	assert_almost_eq(
+		m.x_of(float(s["hot"])), bar.position.x + bar.size.x * 0.4, 0.01, "Hot at 40 of 100"
+	)
 	assert_almost_eq(m.x_of(mx), bar.end.x, 0.01, "the overheat point is the bar's end")
 	assert_eq(
 		m.find_children("*", "", true, false).size(),

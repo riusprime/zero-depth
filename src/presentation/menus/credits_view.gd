@@ -2,6 +2,7 @@ class_name CreditsView
 extends Control
 ## Credits: the owner's line, "Made with Godot Engine", the Godot licence, third-party notices and the font's
 ## licence. GUT is not shipped (the export smoke and zip audit check that).
+## v0.5.5 A5: in the Cold glass look (MenuStyle) over the dark gradient backdrop.
 
 signal back_pressed
 
@@ -11,16 +12,20 @@ var text := RichTextLabel.new()
 func _init(credits: CreditsDefinition) -> void:
 	name = "CreditsView"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	MenuStyle.apply(self)
+	add_child(MenuBackdrop.new())
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + side, 80)
+	margin.add_theme_constant_override("margin_left", int(MenuStyle.LIST_LEFT))
 	add_child(margin)
 	var col := VBoxContainer.new()
 	margin.add_child(col)
 	var title := Label.new()
 	title.text = "UI_CREDITS"
-	title.add_theme_font_size_override("font_size", 40)
+	title.add_theme_font_override("font", HudStyle.font(true))
+	title.add_theme_font_size_override("font_size", 44)
 	col.add_child(title)
 	var lines := Label.new()
 	lines.text = "%s\n%s" % [tr(credits.owner_key), tr(credits.made_with_key)]

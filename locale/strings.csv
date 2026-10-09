@@ -1,15 +1,15 @@
 keys,en,es
 UI_TITLE,{{TITLE}},{{TITLE}}
-UI_PLAY,PLAY,JUGAR
-UI_CONTINUE,CONTINUE,CONTINUAR
-UI_OPTIONS,OPTIONS,OPCIONES
-UI_CREDITS,CREDITS,CRÉDITOS
-UI_GALLERIES,GALLERIES,GALERÍAS
-UI_QUIT,QUIT,SALIR
+UI_PLAY,Play,Jugar
+UI_CONTINUE,Continue,Continuar
+UI_OPTIONS,Options,Opciones
+UI_CREDITS,Credits,Créditos
+UI_GALLERIES,Galleries,Galerías
+UI_QUIT,Quit,Salir
 UI_PAUSED,PAUSED,PAUSA
-UI_RESUME,RESUME,CONTINUAR
-UI_MAIN_MENU,MAIN MENU,MENÚ PRINCIPAL
-UI_BACK,BACK,VOLVER
+UI_RESUME,Resume,Continuar
+UI_MAIN_MENU,Main menu,Menú principal
+UI_BACK,Back,Volver
 UI_LANGUAGE,Language,Idioma
 UI_VOLUME_MASTER,Master volume,Volumen general
 UI_VOLUME_MUSIC,Music,Música
@@ -47,7 +47,7 @@ HUD_WAVE,Wave %d / %d,Oleada %d / %d
 HUD_ENEMIES,Enemies left: %d,Enemigos restantes: %d
 UI_YOU_DIED,You died,Has muerto
 UI_ARENA_CLEARED,Arena cleared,Arena despejada
-UI_RESTART,RESTART,REINICIAR
+UI_RESTART,Restart,Reiniciar
 CAUSE_CHARGER,A Charger ran you down.,Un Embestidor te arrolló.
 CAUSE_WARDEN,A Warden's slam crushed you.,El golpe de un Guardián te aplastó.
 CAUSE_NEEDLE,A Needle's bolts got you.,Los proyectiles de una Aguja te alcanzaron.
@@ -163,7 +163,7 @@ HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
 HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
-UI_RESTART_RUN,RESTART RUN,REINICIAR PARTIDA
+UI_RESTART_RUN,Restart run,Reiniciar partida
 UI_RUN_COMPLETE,Run complete,Partida completada
 UI_RECAP_FLOOR,Floor reached: %d / %d,Piso alcanzado: %d / %d
 UI_RECAP_TIME,Time: %02d:%02d,Tiempo: %02d:%02d
@@ -572,3 +572,6 @@ PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
 HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."
+UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
+UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
+UI_MENU_HINT,Enter / A to choose,Intro / A para elegir

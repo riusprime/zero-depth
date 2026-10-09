@@ -2,6 +2,8 @@ extends GutTest
 ## v0.3.0 UI (PLAN L21, L23, L24): the HUD style helper builds every piece in every style; the danger meter maps
 ## tiers and progress to lit marks and progress with no text; the low-HP warning turns on below 30 % of max HP
 ## and off again above it. v0.3.5 F15: the calm HUD; plain labels (no ghost copies, no glitch), thin bars.
+## v0.5.5 A5 (owner pick): the HUD ships in B "Ember stone" (stone slabs, ember line, red HP bar), the corner minimap
+## has no black background, and the menus wear C "Cold glass" (MenuStyle) with no build cards beside them.
 
 
 func after_each() -> void:
@@ -129,7 +131,7 @@ func test_every_style_builds_every_piece() -> void:
 
 
 func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
-	assert_eq(HudStyle.DEFAULT, HudStyle.Style.BARE, "the owner's pick (2026-10-07)")
+	assert_eq(HudStyle.DEFAULT, HudStyle.Style.EMBER, "the owner's A5 pick B (2026-10-08)")
 	var hud := Hud.new()
 	add_child_autofree(hud)
 	hud.sync(WorldReader.new(_world()))
@@ -149,3 +151,66 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 	var f := HudStyle.font(true)
 	assert_eq(f.spacing_glyph, 0, "no wide tracking")
 	assert_eq(f.variation_transform, Transform2D.IDENTITY, "no slant or stretch")
+
+
+## v0.5.5 A5: "ingame UI, heat, health and minimap from B": the HP and top plates are ember-lit stone slabs, HP is a
+## red bar, and the warning still visibly changes the fill.
+func test_the_ember_stone_hud() -> void:
+	var hud := Hud.new()
+	add_child_autofree(hud)
+	hud.sync(WorldReader.new(_world()))
+	var hp := hud.find_child("HpPlate", true, false) as HudFrame
+	var top := hud.find_child("TopPlate", true, false) as HudFrame
+	assert_eq(hp.style, HudStyle.Style.EMBER)
+	assert_true(hp.ember, "the HP slab carries the ember line")
+	assert_true(top.ember, "so does the top slab")
+	assert_eq(hud.hp_bar().color, HudStyle.HP_RED, "HP is a red bar (B)")
+	assert_eq(HudStyle.text_color(), HudStyle.EMBER_TEXT, "warm type")
+	hud.hp_bar().warn = true
+	assert_ne(hud.hp_bar().fill_color(), HudStyle.HP_RED, "the low-HP pulse shows on a red bar")
+	var pts := HudStyle.plate_points(Rect2(0, 0, 200, 60))
+	assert_eq(pts.size(), 8, "a chamfered (chipped) slab, not a rectangle")
+
+
+## v0.5.5 A5 (owner: "we should remove the black background tho"): the corner minimap draws no panel; the full map
+## (held) keeps its backdrop. Its lines draw over a dark halo so they read on light floors.
+func test_the_corner_minimap_has_no_black_background() -> void:
+	var m := Minimap.new()
+	add_child_autofree(m)
+	assert_false(m.corner.draws_backdrop(), "the corner map floats over the game")
+	assert_true(m.full_map.draws_backdrop(), "the held full map keeps its dimmed panel")
+	assert_gt(MinimapStyle.SHADOW.a, 0.0, "a dark halo under the lines")
+
+
+## v0.5.5 A5: the heat meter keeps its straight bar, ticks and colours (HeatLooks is the shared table other steps
+## read); only its frame changed.
+func test_the_heat_bar_keeps_its_colours() -> void:
+	assert_eq(HeatLooks.HOT, Color("#FFA63A"))
+	assert_eq(HeatLooks.OVERCLOCK, Color("#FF4A1A"))
+	assert_eq(HeatLooks.COOL, Color("#4E6A80"))
+	assert_lte(HeatMeter.BAR_H, 8.0, "still a thin straight bar")
+
+
+## v0.5.5 A5: "Menu from C": the pause menu is a left-aligned list over the blurred game, with a key hint, the run's
+## line, and no build cards beside it.
+func test_the_cold_glass_pause_menu() -> void:
+	var m := PauseMenu.new()
+	add_child_autofree(m)
+	assert_eq(m.theme, MenuStyle.theme(), "the Cold glass theme")
+	assert_not_null(m.find_child("MenuBackdrop", true, false), "the game blurred and dimmed behind")
+	assert_eq(
+		m.find_children("*", "CrystalCard", true, false).size(), 0, "no crystal cards beside it"
+	)
+	assert_eq(m.find_children("*", "BuildCard", true, false).size(), 0, "no build cards beside it")
+	for c in m.box.get_children():
+		if c is Button:
+			assert_eq(
+				(c as Button).alignment, HORIZONTAL_ALIGNMENT_LEFT, "%s left-aligned" % c.name
+			)
+	assert_eq((m.footer.get_node("Hint") as Label).text, "UI_PAUSE_HINT")
+	m.show_run(2, 222.0, 87, 146)
+	assert_eq(m.run_line.text, tr("UI_PAUSE_RUN") % [2, 3, 42, 87, 146])
+	m.focus_first()
+	await wait_frames(2)
+	assert_true(m.marker.visible, "the glass diamond marks the focused row")
+	assert_lt(m.marker.global_position.x, (m.box.get_node("Resume") as Button).global_position.x)

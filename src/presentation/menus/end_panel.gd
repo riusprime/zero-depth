@@ -3,6 +3,7 @@ extends MenuPanel
 ## Shown when the fight ends (PLAN v0.1.0 Step 5): "You died" with what killed you, or "Arena cleared". Restart has
 ## focus. On a run (v0.3.0 B) it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
+## v0.5.5 A5 (Cold glass, MenuStyle): the game blurred behind, the title, recap and buttons left-aligned.
 
 signal restart_pressed
 signal main_menu_pressed
@@ -36,12 +37,7 @@ func _init(
 	super()
 	name = "EndPanel"
 	recap = p_recap
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.5)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(dim)
-	move_child(dim, 0)
+	add_backdrop()
 	var title := "UI_YOU_DIED"
 	if won:
 		title = "UI_RUN_COMPLETE" if not recap.is_empty() else "UI_ARENA_CLEARED"
@@ -58,6 +54,7 @@ func _init(
 		_add_recap()
 	add_button("UI_RESTART", func() -> void: restart_pressed.emit()).name = "Restart"
 	add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"
+	add_hint("UI_MENU_HINT")
 
 
 ## The recap's text lines, by node name (tests and the shot script read them).
@@ -110,7 +107,7 @@ func _line(line_name: String, text: String, font_size: int = 24) -> Label:
 	l.name = line_name
 	l.text = text
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	l.add_theme_font_size_override("font_size", font_size)
 	box.add_child(l)
 	return l

@@ -3,6 +3,10 @@ extends RefCounted
 ## The minimap's look in one place (PLAN v0.3.0 MM), so a HUD restyle touches only this file. Thin lines with a
 ## soft glow: cyan for you, dim grey rooms, amber stubs where a doorway leads somewhere you haven't been, red for
 ## the boss door, blue for the open portal. Every number here is a starting value.
+## v0.5.5 A5 (owner: "minimap from B (we should remove the black background tho)"): the corner map has no panel; it
+## floats over the game. Every line draws over a soft dark halo (SHADOW) and every room over a faint dark wash, so
+## the map reads over light and dark floors alike; four small ember corner ticks mark the window's extent. The
+## full map (held) keeps its dimmed backdrop and panel.
 
 const PANEL := Color(0.02, 0.04, 0.07, 0.93)
 const PANEL_EDGE := Color(0.80, 0.84, 0.88, 0.30)
@@ -34,6 +38,16 @@ const PORTAL_DEEP := Color("#8B3DFF")
 const PORTAL_DEEP_RIM := Color("#FF2A3D")
 const TEXT := Color(0.85, 0.95, 1.0, 0.95)
 const TEXT_DIM := Color(0.70, 0.80, 0.88, 0.75)
+
+## The corner map draws a panel behind itself (false since v0.5.5 A5: no black background).
+const CORNER_PANEL := false
+## The halo under every map line and icon, and the wash under every room (corner map).
+const SHADOW := Color(0.0, 0.0, 0.0, 0.5)
+const SHADOW_WIDTH := 3.0
+const ROOM_WASH := Color(0.02, 0.02, 0.03, 0.3)
+## The corner ticks (B's ember accent): their arm length and colour.
+const TICK_ARM := 16.0
+const TICK := Color(0.95, 0.56, 0.25, 0.85)
 
 ## Line widths in pixels; the glow is the same line drawn this much wider and this transparent beneath it.
 const LINE := 1.5
@@ -67,10 +81,11 @@ const ICON := 6.0
 const PLAYER_ICON := 11.0
 
 
-## Draws a line twice: a wide faint glow, then the line.
+## Draws a line three times: a dark halo (v0.5.5 A5), a wide faint glow, then the line.
 static func glow_line(
 	ci: CanvasItem, a: Vector2, b: Vector2, color: Color, width: float = LINE
 ) -> void:
+	ci.draw_line(a, b, Color(SHADOW, SHADOW.a * color.a), width + SHADOW_WIDTH, true)
 	ci.draw_line(a, b, Color(color, color.a * GLOW_ALPHA), width + GLOW_WIDTH, true)
 	ci.draw_line(a, b, color, width, true)
 
@@ -78,5 +93,6 @@ static func glow_line(
 static func glow_polyline(
 	ci: CanvasItem, pts: PackedVector2Array, color: Color, width: float = LINE
 ) -> void:
+	ci.draw_polyline(pts, Color(SHADOW, SHADOW.a * color.a), width + SHADOW_WIDTH, true)
 	ci.draw_polyline(pts, Color(color, color.a * GLOW_ALPHA), width + GLOW_WIDTH, true)
 	ci.draw_polyline(pts, color, width, true)

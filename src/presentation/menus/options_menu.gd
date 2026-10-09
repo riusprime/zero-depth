@@ -8,6 +8,8 @@ extends Control
 ## profile on the way out (GameSettings, InputRebind).
 ## Three layouts share the same sections: SIDEBAR (the default: categories on the left, one section at a time),
 ## TABS (categories across the top) and LIST (every section in one scrolling column).
+## v0.5.5 A5 (Cold glass, MenuStyle): the blurred, dimmed game (or the dark gradient) behind, a dark glass panel with a
+## thin cold top edge set to the left, plain type, the focused row and the open category lit by the glass highlight.
 
 signal back_pressed
 ## A setting changed (its GameSettings key); Main applies what lives in the view (shake, outline, view prefs).
@@ -50,17 +52,14 @@ var _scroll := ScrollContainer.new()
 var _back: Button
 
 
-func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, over_game: bool = false) -> void:
+func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, _over_game: bool = false) -> void:
 	name = "OptionsMenu"
 	_profile = profile
 	layout = p_layout
 	set_anchors_preset(Control.PRESET_FULL_RECT)
-	if over_game:
-		var dim := ColorRect.new()
-		dim.color = Color(0, 0, 0, 0.6)
-		dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-		dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		add_child(dim)
+	MenuStyle.apply(self)
+	var backdrop := MenuBackdrop.new()  # over the game it blurs it; over the main menu, the gradient alone
+	add_child(backdrop)
 	for id in SECTIONS:
 		sections[id] = _build_section(id)
 	_build_frame()
@@ -71,12 +70,14 @@ func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, over_game: boo
 
 
 func _build_frame() -> void:
-	var center := CenterContainer.new()
-	center.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(1180, 680) if layout != Layout.LIST else Vector2(900, 760)
-	center.add_child(panel)
+	panel.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	panel.offset_left = MenuStyle.LIST_LEFT - 24.0
+	panel.offset_top = -panel.custom_minimum_size.y * 0.5
+	panel.offset_bottom = panel.custom_minimum_size.y * 0.5
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	add_child(panel)
 	var pad := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
 		pad.add_theme_constant_override("margin_" + side, 24)
@@ -138,7 +139,8 @@ func _build_frame() -> void:
 func _title() -> Label:
 	var l := Label.new()
 	l.text = "UI_OPTIONS"
-	l.add_theme_font_size_override("font_size", 40)
+	l.add_theme_font_override("font", HudStyle.font(true))
+	l.add_theme_font_size_override("font_size", 44)
 	l.horizontal_alignment = (
 		HORIZONTAL_ALIGNMENT_LEFT if layout == Layout.SIDEBAR else HORIZONTAL_ALIGNMENT_CENTER
 	)
@@ -152,6 +154,8 @@ func _tab(id: StringName) -> Button:
 	b.focus_entered.connect(func() -> void: _select(id))
 	if layout == Layout.TABS:
 		b.custom_minimum_size = Vector2(200, 48)
+	else:
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	tabs[id] = b
 	return b
 
