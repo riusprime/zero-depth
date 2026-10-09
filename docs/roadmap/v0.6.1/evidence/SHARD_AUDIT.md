@@ -4,7 +4,12 @@ Owner line R3 (2026-10-09): "we'd have to also modify some renders in game to ma
 altars or other elements". This is the G1 list: every world piece the player interacts with or that marks a place,
 how it is drawn now, whether it fits the shard style, and the change proposed. The owner approves, edits or cuts each
 row. Rows marked **applied** were built in step SW (the altars, named by the owner, and three small code-built
-pieces); every other row is **awaiting owner**.
+pieces); every other row was **awaiting owner**.
+
+**Owner answer (2026-10-09, PLAN A1):** "the shop terminal is fine, the portals could have some of them around
+matching the color of the portal". So W10/W11 got shard clusters in the portal's own colour (step SW2, evidence
+[`SHARD_WORLD_2.md`](SHARD_WORLD_2.md)); the shop terminal (W8) and every other awaiting row stay as they are
+(**kept, owner A1**). A2 ("no"): the epic altar stays violet.
 
 ## The style the pieces are judged against
 
@@ -40,30 +45,30 @@ pieces are **lit by the scene**; only light (a glow, a flash) is additive; no fl
 
 ## Every world piece
 
-Status: **applied** (built in SW), **keep** (no change proposed), **awaiting owner**.
+Status: **applied** (built in SW or SW2), **keep** (no change proposed), **kept (owner A1)** (was awaiting owner; the owner kept it as it is).
 
 | # | Piece | File | Drawn now | Fits the shard style? | Proposed change | Status |
 |---|---|---|---|---|---|---|
 | W1 | Altar (plain) | `world_view/reward_views.gd` (`make_altar`) | Was: flat-colour hex stone plinth, one bipyramid "rune" spinning over it, three orbiting chips, cold light | Partly (a crystal, but a single gem on a pedestal, no outline, flat stone) | Code-built shard altar: two-step stone base on the same 0.62 m footprint, a cluster of 8 outlined faceted shards in the **blue** frame colour `#4FA8F0`, soft additive glow, 4 fragments floating and bobbing; lit by the mood; brighter (emission, glow, light) in reach | **applied** |
-| W2 | Altar (epic; the Deep floor's) | same | Was: W1 in violet `#B47CFF` | as W1 | W1 in the **purple** frame colour `#B36BFF` (the Deep gate's violet, PickSlot.EPIC). Note: the card frames give an *epic card* the gold frame; the altar keeps violet so it still matches the Deep gate. Owner may switch it to gold | **applied** (colour: owner may remap) |
+| W2 | Altar (epic; the Deep floor's) | same | Was: W1 in violet `#B47CFF` | as W1 | W1 in the **purple** frame colour `#B36BFF` (the Deep gate's violet, PickSlot.EPIC). Note: the card frames give an *epic card* the gold frame; the altar keeps violet so it still matches the Deep gate. Owner may switch it to gold | **applied** (owner A2: stays violet) |
 | W3 | Altar (legendary, the boss's) | same | Was: W1 in gold `#FFD84A` | as W1 | W1 in the **gold** frame colour `#F0D85A`, the tall shard a little taller (0.95 m vs 0.85 m) | **applied** |
 | W4 | Arena seal on a locked reward | `reward_views.gd` (`_add_seal`) | Amber torus round the foot + two crossed bars, unshaded-emissive | Yes as a warning cue (a ring of light) | Keep (its ring, 0.72–0.8 m, still circles the new base) | keep |
-| W5 | Chest | `reward_views.gd` (`_kit_chest`) | **The owner's model** (v0.5.9), red lock glow, lid opens with a flare | It is the owner's art (not shards) | Keep the model. Optional accent: one small outlined red shard (`ShardMesh.fragment`) as the lock instead of the plain bipyramid | awaiting owner (accent only) |
+| W5 | Chest | `reward_views.gd` (`_kit_chest`) | **The owner's model** (v0.5.9), red lock glow, lid opens with a flare | It is the owner's art (not shards) | Keep the model. Optional accent: one small outlined red shard (`ShardMesh.fragment`) as the lock instead of the plain bipyramid | kept (owner A1) |
 | W6 | Chest price tag gem | `reward_views.gd` (`_finish_chest`), `ShardViews.shared_material` | Unshaded violet bipyramid next to the number | UI-like (floats with the label) | Keep unshaded (it reads as an icon) | keep |
-| W7 | Reward pedestals (item pickups) | `world_view/pickup_views.gd` | 8-sided grey cylinder, a **cube** gem in the item colour turning over it, a light | **No** (a cube on a cylinder; the plainest piece left) | Code-built: `ShardMesh.rock` base + one outlined shard in the item colour floating and turning, 2 fragments, glow. Small, same pattern as W1 | awaiting owner |
-| W8 | Shop terminal | `world_view/shop_terminal_view.gd` | Code-built vending console (metal boxes, violet screen, gem) | **No** (a machine; the screen was the brightest object, V46) | Model request (it carries a screen and a slot: better as art). Prompt P1 below. Until then keep | awaiting owner (model) |
-| W9 | Event pedestals | `world_view/event_pedestal_views.gd` | Stepped stone base, slanted lectern, violet glyph bipyramid + 2 chips, light | Partly (a crystal over a lectern) | Code-built: keep base and lectern, glyph → outlined shard cluster (`ShardMesh.cluster`, 3 shards) in its state colour (ready violet / fight red / guard cyan / spent dark) | awaiting owner |
-| W10 | Portal (normal) | `world_view/portal_gate.gd` | Stacked-stone pillars and lintel round a visor-blue swirl | Partly (the stone is flat colour, V43) | Code-built: crystal shards growing from the pillars' feet and the lintel in the swirl's blue (2 clusters + fragments). Or a model: prompt P2 | awaiting owner |
-| W11 | Portal (Deep) | same (`set_deep`) | W10 in violet with red frame strips | as W10 | As W10 in violet shards with red tips | awaiting owner |
-| W12 | Boss-room door / seal | `world_view/boss_door_view.gd` | Stone slab between jambs, red disc seal and studs on both faces; sinks into the floor | Partly (seal is a disc) | Code-built: the red seal disc → a ring of outlined red shards round a central shard on each face; jambs keep stone. Or a model: prompt P3 | awaiting owner |
-| W13 | Arena doorway frames | `world_view/arena_views.gd` (`_frame`) | Amber emissive box frames (jambs + lintel) | No (flat boxes) | Code-built: a small amber shard cluster at each jamb's foot; the lintel stays a bar of light | awaiting owner |
-| W14 | Arena door barriers | `arena_views.gd` (`_build_barriers`) | Amber / red emissive box filling the doorway while sealed | It is a wall of light (a warning) | Keep the sim-sized box (it shows the real barrier); optional: additive with vertical crystal streaks | awaiting owner |
+| W7 | Reward pedestals (item pickups) | `world_view/pickup_views.gd` | 8-sided grey cylinder, a **cube** gem in the item colour turning over it, a light | **No** (a cube on a cylinder; the plainest piece left) | Code-built: `ShardMesh.rock` base + one outlined shard in the item colour floating and turning, 2 fragments, glow. Small, same pattern as W1 | kept (owner A1) |
+| W8 | Shop terminal | `world_view/shop_terminal_view.gd` | Code-built vending console (metal boxes, violet screen, gem) | **No** (a machine; the screen was the brightest object, V46) | Model request (it carries a screen and a slot: better as art). Prompt P1 below. Until then keep | kept (owner A1: "the shop terminal is fine") |
+| W9 | Event pedestals | `world_view/event_pedestal_views.gd` | Stepped stone base, slanted lectern, violet glyph bipyramid + 2 chips, light | Partly (a crystal over a lectern) | Code-built: keep base and lectern, glyph → outlined shard cluster (`ShardMesh.cluster`, 3 shards) in its state colour (ready violet / fight red / guard cyan / spent dark) | kept (owner A1) |
+| W10 | Portal (normal) | `world_view/portal_gate.gd` | Stacked-stone pillars and lintel round a visor-blue swirl | Partly (the stone is flat colour, V43) | Code-built: crystal shards growing from the pillars' feet and the lintel in the swirl's blue (2 clusters + fragments). Or a model: prompt P2 | **applied in SW2** (owner A1: code-built clusters at both pillars' feet and on the lintel's ends + 4 fragments, in the portal's own colour) |
+| W11 | Portal (Deep) | same (`set_deep`) | W10 in violet with red frame strips | as W10 | As W10 in violet shards with red tips | **applied in SW2** (owner A1: "matching the color of the portal": violet `DEEP_VIOLET` shards, no red tips) |
+| W12 | Boss-room door / seal | `world_view/boss_door_view.gd` | Stone slab between jambs, red disc seal and studs on both faces; sinks into the floor | Partly (seal is a disc) | Code-built: the red seal disc → a ring of outlined red shards round a central shard on each face; jambs keep stone. Or a model: prompt P3 | kept (owner A1) |
+| W13 | Arena doorway frames | `world_view/arena_views.gd` (`_frame`) | Amber emissive box frames (jambs + lintel) | No (flat boxes) | Code-built: a small amber shard cluster at each jamb's foot; the lintel stays a bar of light | kept (owner A1) |
+| W14 | Arena door barriers | `arena_views.gd` (`_build_barriers`) | Amber / red emissive box filling the doorway while sealed | It is a wall of light (a warning) | Keep the sim-sized box (it shows the real barrier); optional: additive with vertical crystal streaks | kept (owner A1) |
 | W15 | Heal orbs | `world_view/heal_orb_views.gd` | Was: unshaded green sphere, pulsing | No (a ball) | Outlined faceted green shard, lit + emission 1.4, turning slowly in a soft additive green glow; same colour, height (0.45 m) and pulse | **applied** |
 | W16 | Shard pickups (gems flying to the hero) | `world_view/shard_views.gd` | Was: unshaded violet bipyramids | Partly (crystals without outline, unshaded) | Outlined faceted violet shards, lit + emission 1.6; same burst and flight | **applied** |
-| W17 | Core crystals over elites/bosses (Core theft) | `world_view/core_views.gd` (`_make_gem`) | Emissive bipyramid in the card's family colour, light, flares when staggered | Partly (no outline) | Code-built: `ShardMesh.outlined` shard + 2 fragments, same colour and flare. Small; left for the owner's pick because the core sits over enemy models (readability) | awaiting owner |
+| W17 | Core crystals over elites/bosses (Core theft) | `world_view/core_views.gd` (`_make_gem`) | Emissive bipyramid in the card's family colour, light, flares when staggered | Partly (no outline) | Code-built: `ShardMesh.outlined` shard + 2 fragments, same colour and flare. Small; left for the owner's pick because the core sits over enemy models (readability) | kept (owner A1) |
 | W18 | Dropped core (a stolen core / Marked's card) | `reward_views.gd` (`make_drop`) | Was: emissive bipyramid floating over a ring | Partly | Outlined faceted shard in the card colour (lit, emission 1.1) with 2 bobbing chips and a soft glow; the floor ring kept. Floats at 1.0 m (it used to be built at 0.9 and lifted to 1.25 by the shared bob) | **applied** |
 | W19 | Gamble shrine | `world_view/gamble_shrine_view.gd` | **The owner's model** (v0.6.0 SR), magenta crystal light, orbiting shards | The owner's art | Keep | keep |
-| W20 | Overrun doorways | `world_view/overrun_door_views.gd` | Red emissive jambs, lintel and floor strip | No (flat boxes), but a warning | As W13 in red | awaiting owner |
+| W20 | Overrun doorways | `world_view/overrun_door_views.gd` | Red emissive jambs, lintel and floor strip | No (flat boxes), but a warning | As W13 in red | kept (owner A1) |
 
 ## Model requests (prompts in the shared style)
 
@@ -95,6 +100,10 @@ For the rows where a model is better than code (the owner's kit flow: image → 
 are in [`SHARD_WORLD.md`](SHARD_WORLD.md).
 
 ## Open questions for the owner (G1)
+
+Answered 2026-10-09 (PLAN "Owner answers" A1, A2): questions 1 and 3 by A1 (portals: code-built clusters in their
+colour; the shop terminal and the other rows kept), question 2 by A2 (the epic altar stays violet). The original
+questions, for the record:
 
 1. Approve, edit or cut each **awaiting owner** row (W5, W7–W14, W17, W20), and the **applied** ones (W1–W3, W15,
    W16, W18).

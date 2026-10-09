@@ -228,6 +228,15 @@ func test_build_cards_and_title_fit_in_english_and_spanish() -> void:
 	TranslationServer.set_locale(_locale)
 
 
+## v0.6.1 SW2 (owner A5: "yes, choose weapon"): the picker's title.
+func test_the_build_picker_title_is_choose_your_weapon() -> void:
+	TranslationServer.set_locale("en")
+	assert_eq(tr("UI_CHOOSE_BUILD"), "CHOOSE YOUR WEAPON")
+	TranslationServer.set_locale("es")
+	assert_eq(tr("UI_CHOOSE_BUILD"), "ELIGE TU ARMA")
+	TranslationServer.set_locale(_locale)
+
+
 func test_the_build_picker_wears_the_owners_art_and_no_glitch() -> void:
 	var picker := BuildPicker.new(_defs(["res://data/builds"]), &"blade")
 	add_child_autofree(picker)

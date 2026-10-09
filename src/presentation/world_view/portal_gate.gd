@@ -11,6 +11,12 @@ extends Node3D
 ## v0.5.0 RT: set_deep() makes it the Deep gate: a violet swirl, light and glow, a red rim on the swirl and red-lit
 ## strips framing the opening, so the two gates read apart at a glance (by hue, brightness and the frame).
 ##
+## v0.6.1 SW2 (owner A1: "the portals could have some of them around matching the color of the portal"): crystal
+## shard clusters (ShardMesh) grow from both pillars' feet and from the lintel's ends, with a few floating fragments,
+## in the portal's own colour (the visor blue; DEEP_VIOLET once set_deep()). Lit by the scene, a little emission that
+## rises when the gate opens and with the flare (energies only, flash-safe). They stay outside the opening and the
+## walk-in path (|z| >= SHARD_CLEAR_Z below the lintel), in front of the wall line (x >= -GATE_HALF_DEPTH).
+##
 ## Local frame: the opening spans local Z, the gate faces local +X; setup() turns +X to the sim facing angle.
 
 const OPENING_W := 2.4
@@ -28,6 +34,38 @@ const FLARE_SECONDS := 1.2
 const DEEP_VIOLET := Color("#8B3DFF")
 const DEEP_RIM := Color("#FF2A3D")
 const RIM_STRIP := 0.09
+## v0.6.1 SW2: the portal shards. Nothing solid below the lintel comes closer to the centre line than SHARD_CLEAR_Z
+## (the 2.4 m opening, and the 3.0 m clear square the hero walks in from, plus a margin), nor behind the wall line.
+const SHARD_CLEAR_Z := 1.6
+const WALL_X := -0.4
+## Foot clusters, per side (z is mirrored, salts differ so the two sides are not twins):
+## [x, z, shard count, height, spread, salt].
+const FOOT_CLUSTERS := [
+	[0.12, 2.0, 7, 1.15, 0.4, 11],
+	[0.98, 1.92, 4, 0.5, 0.26, 23],
+]
+## Lintel clusters on its ends (on the cap slab's top): [x, y, z, shard count, height, spread, salt]. The -z end
+## gets the bigger one.
+const LINTEL_CLUSTERS := [
+	[0.0, 3.76, -1.36, 5, 0.62, 0.32, 31],
+	[0.05, 3.76, 1.48, 3, 0.36, 0.22, 37],
+]
+## Floating fragments: [x, y, z, radius]; each bobs on its own beat.
+const FRAGMENTS := [
+	[0.45, 1.55, -2.25, 0.085],
+	[0.2, 2.45, -1.98, 0.06],
+	[0.55, 1.85, 2.2, 0.075],
+	[0.15, 2.7, 1.95, 0.055],
+]
+const FRAGMENT_BOB := 0.08
+## The shards' emission: sealed, open, and the extra at the flare's peak.
+const SHARD_ENERGY_SEALED := 0.35
+const SHARD_ENERGY_OPEN := 0.8
+const SHARD_ENERGY_FLARE := 0.9
+## The soft glow at each foot cluster (additive sprite): size and strength sealed / open.
+const SHARD_GLOW_SIZE := 1.1
+const SHARD_GLOW_SEALED := 0.16
+const SHARD_GLOW_OPEN := 0.3
 
 ## Stacked blocks of one pillar, bottom to top: [height, width, depth, z offset, y-rotation°, z-roll°].
 ## Hand-picked (not random) so every gate looks the same and the opening stays clear.
@@ -140,6 +178,12 @@ var stone_blocks: Array[MeshInstance3D] = []
 ## v0.5.0 RT: the Deep gate's look is on, and its red frame strips (empty on the gate).
 var deep := false
 var rim_strips: Array[MeshInstance3D] = []
+## v0.6.1 SW2: the shard clusters, the floating fragments, their glows, and the one material they all share.
+var shard_clusters: Array[Node3D] = []
+var shard_fragments: Array[Node3D] = []
+var shard_glows: Array[MeshInstance3D] = []
+var shard_material: StandardMaterial3D
+var _bob_t := 0.0
 var _sealed := true
 var _flare := 0.0
 var _stone := StandardMaterial3D.new()
@@ -164,6 +208,7 @@ func _init() -> void:
 	_build_stone()
 	_build_portal()
 	_build_glow()
+	_build_shards()
 	set_sealed(true)
 
 
@@ -185,6 +230,7 @@ func set_deep() -> void:
 	portal_material.set_shader_parameter("rim_color", Color(DEEP_RIM, 1.0))
 	light.light_color = DEEP_VIOLET
 	glow_material.set_shader_parameter("glow_color", DEEP_VIOLET)
+	_tint_shards(DEEP_VIOLET)
 	var red := StandardMaterial3D.new()
 	red.albedo_color = DEEP_RIM
 	red.emission_enabled = true
@@ -219,6 +265,12 @@ func set_sealed(sealed: bool) -> void:
 	portal_material.set_shader_parameter("sealed", 1.0 if sealed else 0.0)
 	light.light_energy = LIGHT_ENERGY_SEALED if sealed else LIGHT_ENERGY_OPEN
 	glow_material.set_shader_parameter("strength", 0.32 if sealed else 0.55)
+	_light_shards(0.0)
+
+
+## v0.6.1 SW2: the colour the portal's shards wear (the portal's own: its light's colour).
+func shard_color() -> Color:
+	return light.light_color
 
 
 func is_sealed() -> bool:
@@ -231,12 +283,14 @@ func flare() -> void:
 
 
 func _process(delta: float) -> void:
+	_bob(delta)
 	if _flare <= 0.0:
 		return
 	_flare = maxf(0.0, _flare - delta)
 	var k := _flare / FLARE_SECONDS
 	light.light_energy = LIGHT_ENERGY_OPEN + FLARE_ENERGY * k * k
 	glow_material.set_shader_parameter("strength", 0.55 + 0.6 * k)
+	_light_shards(k * k)
 
 
 ## Optional: tint the stone from a biome palette's `cover` token (a little darker, so the gate stands apart).
@@ -348,3 +402,70 @@ func _build_glow() -> void:
 	# Mostly in front of the gate (+X), a little behind it.
 	disc.position = Vector3(0.7, 0.02, 0)
 	add_child(disc)
+
+
+## v0.6.1 SW2: the shard clusters and fragments round the gate (see the header), in the visor blue until set_deep().
+func _build_shards() -> void:
+	var c := visor_blue()
+	shard_material = ShardMesh.crystal_material(c, SHARD_ENERGY_SEALED)
+	for side in [-1.0, 1.0]:
+		for i in FOOT_CLUSTERS.size():
+			var f: Array = FOOT_CLUSTERS[i]
+			var salt: int = f[5] + (0 if side < 0.0 else 50)
+			var cl := ShardMesh.cluster(shard_material, f[2], f[3], f[4], salt)
+			cl.name = "PortalShards"
+			cl.position = Vector3(f[0], 0.0, side * f[1])
+			cl.rotation.y = fmod(salt * 0.77, TAU)
+			cl.set_meta(&"spread", f[4])
+			add_child(cl)
+			shard_clusters.append(cl)
+			if i == 0:
+				var g := ShardMesh.glow(c, SHARD_GLOW_SIZE, SHARD_GLOW_SEALED)
+				g.position = Vector3(f[0] + 0.15, f[3] * 0.45, side * (f[1] + 0.15))
+				add_child(g)
+				shard_glows.append(g)
+	for l: Array in LINTEL_CLUSTERS:
+		var cl := ShardMesh.cluster(shard_material, l[3], l[4], l[5], l[6])
+		cl.name = "PortalShards"
+		cl.position = Vector3(l[0], l[1], l[2])
+		cl.rotation.y = fmod(l[6] * 0.77, TAU)
+		cl.set_meta(&"spread", l[5])
+		add_child(cl)
+		shard_clusters.append(cl)
+	for k in FRAGMENTS.size():
+		var fr: Array = FRAGMENTS[k]
+		var piece := ShardMesh.fragment(shard_material, fr[3], 70 + k)
+		piece.name = "PortalFragment"
+		piece.position = Vector3(fr[0], fr[1], fr[2])
+		piece.rotation = Vector3(0.3, k * 1.3, 0.2)
+		piece.set_meta(&"base_y", fr[1])
+		add_child(piece)
+		shard_fragments.append(piece)
+
+
+func _tint_shards(c: Color) -> void:
+	shard_material.albedo_color = c
+	shard_material.emission = c
+	for g in shard_glows:
+		var m := g.material_override as StandardMaterial3D
+		m.albedo_color = Color(c.r, c.g, c.b, m.albedo_color.a)
+
+
+## The shards' emission and glow for the sealed state, plus `flare` (0..1, the flare's strength).
+func _light_shards(flare_k: float) -> void:
+	var base := SHARD_ENERGY_SEALED if _sealed else SHARD_ENERGY_OPEN
+	shard_material.emission_energy_multiplier = base + SHARD_ENERGY_FLARE * flare_k
+	var a := (SHARD_GLOW_SEALED if _sealed else SHARD_GLOW_OPEN) + 0.25 * flare_k
+	for g in shard_glows:
+		var m := g.material_override as StandardMaterial3D
+		m.albedo_color.a = a
+
+
+## The fragments float up and down, each on its own beat, and turn slowly (presentation clock only).
+func _bob(delta: float) -> void:
+	_bob_t += delta
+	for k in shard_fragments.size():
+		var piece := shard_fragments[k]
+		var y: float = piece.get_meta(&"base_y")
+		piece.position.y = y + FRAGMENT_BOB * sin(_bob_t * (1.6 + 0.3 * k) + k * 1.7)
+		piece.rotation.y += delta * (0.5 + 0.15 * k)
