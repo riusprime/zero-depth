@@ -39,7 +39,7 @@ func test_two_elements_core_of_one_rim_of_the_other() -> void:
 		kinds.append([p[0], p[2]])
 	assert_eq(kinds, [[&"crackle", 0.5], [&"sparks", 0.5]], "half of each element's particles")
 	var one := AttackFormLooks.compose({"form": 1, "elements": PackedStringArray(["frost"])})
-	assert_eq(one["rim"], AttackFormLooks.ELEMENT_CORE[&"frost"].lerp(Color.WHITE, 0.35))
+	assert_eq(one["rim"], AttackFormLooks.ELEMENT_CORE[&"frost"].lerp(Color.WHITE, 0.2))
 	var plain := AttackFormLooks.compose({"form": 1})
 	assert_eq(plain["core"], ThemePalette.color(&"player_core"), "no element: the plain cyan")
 	assert_true((plain["particles"] as Array).is_empty())

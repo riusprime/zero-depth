@@ -92,6 +92,13 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   their ground circles (`AbilityVisuals`), the drones and orbit blades, the patches by kind (`ElementVisuals`: fire
   orange, Napalm red, Arc Field's shock field pale blue, a hook's zone pale white) and each growing ring (the RING
   form) as a frost torus at its radius now. Their per-form art is MX stage 3.
+- **MX3 takes over the spec forms of MX2's runners** in the game (`WorldViewRoot` sets `forms_drawn` on
+  `ElementVisuals` and `AbilityVisuals`): `AttackFormView` reads each live ring (`WorldReader.rings_live`: drawn at the
+  runner's radius now, so the drawn front is the hit front), each patch that names a spec (`fire_spec_keys`), each bomb
+  (`bomb_spec_keys`: the shell on its arc over its blast circle, then its landing), the orbit blades' ORBITER spec
+  (an element glow and trail over the steel blades, which `AbilityVisuals` keeps) and every player projectile in its
+  own spec's look (`projectile_spec_key`, `attack_spec_at`). What names no spec (Napalm Drone's patches, the drones)
+  stays with the older views.
 
 ## 5. Occlusion cutaway
 

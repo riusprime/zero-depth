@@ -40,11 +40,11 @@ const DIR_CIRCLE := 2
 
 ## The element cores (art: per element, not per card). Bleed keeps MX1's tint (bleed_core()).
 const ELEMENT_CORE := {
-	&"storm": Color("#B8D4FF"),
-	&"ember": Color("#FFB347"),
-	&"frost": Color("#E6FCFF"),
-	&"venom": Color("#7EE65A"),
-	&"void": Color("#9A62FF"),
+	&"storm": Color("#7FB2FF"),
+	&"ember": Color("#FFAA33"),
+	&"frost": Color("#B5F2FF"),
+	&"venom": Color("#5FE03C"),
+	&"void": Color("#8B55FF"),
 }
 ## Each element's particles: the kind (AttackFormView.PARTICLE_KINDS) and colour.
 const ELEMENT_PARTICLE := {
@@ -59,7 +59,7 @@ const ELEMENT_PARTICLE := {
 const BLEED_TINT := 0.7
 
 ## Base glow (the colour multiplier the additive layers draw at; > 1 feeds the environment's glow) per form.
-const ENERGY: Array[float] = [1.1, 1.4, 1.1, 1.3, 0.8, 1.2, 1.1, 1.2]
+const ENERGY: Array[float] = [0.9, 1.2, 0.9, 1.1, 0.7, 1.0, 0.9, 1.0]
 ## Display life in ticks per form when the spec doesn't say (a bolt, a zone and an orbiter use life_ticks).
 const LIFE: Array[int] = [10, 40, 20, 9, 150, 240, 36, 12]
 ## Defaults for a spec without the size field (metres).
@@ -125,7 +125,7 @@ static func core_of(elements: Array) -> Color:
 static func rim_of(elements: Array) -> Color:
 	if elements.size() >= 2:
 		return element_color(StringName(elements[1]))
-	return core_of(elements).lerp(Color.WHITE, 0.35)
+	return core_of(elements).lerp(Color.WHITE, 0.2)
 
 
 static func element_color(element: StringName) -> Color:

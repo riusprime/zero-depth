@@ -575,7 +575,7 @@ func _zone_at(
 	_put(
 		&"zone_rim",
 		Transform3D(Basis.from_scale(Vector3(r, 1, r)), c + Vector3(0, 0.01, 0)),
-		lit_color(look["ground_edge"], 0.7 * fade, look["energy"] * 1.4)
+		lit_color(look["ground_edge"], 0.7 * fade, look["energy"] * 1.1)
 	)
 	for j in 10:
 		var h := _hash(sd, j)

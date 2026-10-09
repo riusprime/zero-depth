@@ -2,9 +2,9 @@ extends SceneTree
 ## v0.6.0 MX3: the attack forms' shots under the real renderer and the v0.5.9 look. Boots the real game (main.tscn),
 ## starts a Blade run and, in the first room under the floor's own lighting mood, draws each of the 8 forms in a few
 ## elements through the game's own AttackFormView (constructed specs through spawn()), one tile per (form, element)
-## round the hero, then a contact sheet; then two in-game shots: the Blade with Ember Edge and Conductor swinging among
-## Chargers at Hot heat (the live arc layer), and the same fight later with MX2's Orbit Blades, Arc Field and Bomb
-## Lobber granted (their live forms, read from the sim, in the weapon's elements). Needs a renderer:
+## round the hero, then a contact sheet; then two in-game shots: the Blade with Ember Edge and Conductor swinging
+## among training dummies at Hot heat (the live arc layer), and the same fight later with MX2's Orbit Blades, Arc
+## Field and Bomb Lobber granted (their live forms, read from the sim, in the weapon's elements). Needs a renderer:
 ##   XDG_DATA_HOME=<empty dir> xvfb-run -a godot --path . --fixed-fps 60 --audio-driver Dummy \
 ##     --resolution 1280x720 -s scripts/shots/attack_forms.gd
 ## Shot setup only (the hero can't be hurt, items, heat and enemies are set as the dev panel would). Writes
@@ -12,7 +12,7 @@ extends SceneTree
 
 const OUT := "res://build/shots/v0.6.0/attack_forms/"
 const TILE := 260
-const CROP := 600
+const CROP := 480
 ## The sheet's columns: elements (and a heat tier for the last).
 const COLUMNS := [
 	[["ember"], HeatLooks.TIER_COOL],
@@ -40,7 +40,7 @@ func _initialize() -> void:
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	root.add_child(_main)
 	_script = [[6, _tap.bind(KEY_ENTER)], [14, _tap.bind(KEY_ENTER)], [40, _setup]]
-	var f := 44
+	var f := 200  # after the floor banner
 	var rows := _rows_list()
 	_rows = rows.size()
 	for r in rows.size():
@@ -164,11 +164,10 @@ func _ingame_setup() -> void:
 			if w.ability_tables[k].id == id:
 				Abilities.grant(w, k)
 	var p := w.player_pos()
+	# Still training dummies (no telegraphs over the attacks), tough enough not to die.
+	w.dummy_speed = 0.0
 	for k in 6:
-		w.add_enemy(ActorStore.Kind.CHARGER, p + Kin.dir(k * 683 + 200) * (2.2 + 0.4 * (k % 2)))
-	for i in range(1, w.actors.size()):
-		w.actors.hp[i] = 9999
-		w.actors.max_hp[i] = 9999
+		w.add_dummy(p + Kin.dir(k * 683 + 200) * (2.2 + 0.5 * (k % 2)), 0.35, 99999)
 
 
 func _set_heat(points: int) -> void:
