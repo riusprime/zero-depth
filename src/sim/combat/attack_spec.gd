@@ -6,12 +6,14 @@ extends RefCounted
 ## the view draws it (WorldReader.attack_spec). Sim units: ticks, metres, metres per tick, 1/4096 turns, per mille.
 ## A spec is rebuilt by every compile and never written in play, so a launch can't change the next one.
 
-## ModifierOpDefinition.Form, same numbers.
-enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST }
-## ModifierOpDefinition.Trigger, same numbers, plus ON_END: when an instant attack (an arc, a burst) has resolved,
-## from where it ends. Only the form-layering rule makes ON_END hooks (Modifiers: a second form fires where the first
-## one ends).
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END }
+## ModifierOpDefinition.Form, same numbers. v0.6.0 MX4: WEAPON, a hook child that launches a copy of the weapon's
+## last attack (Attacks.launch resolves it).
+enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
+## ModifierOpDefinition.Trigger, same numbers. ON_END: where an attack ends (an arc's tip, a burst, a bolt's end, a
+## bomb's blast, a ring at its radius, the dash's end); the form-layering rule makes them too (Modifiers: a second
+## form fires where the first one ends). v0.6.0 MX4: ON_LAUNCH as the attack launches (and the dash's start, a walk
+## step, a blink, a vent), EVERY_NTH: every Nth launch of the spec launches the child instead.
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
 ## them are floats.
@@ -32,8 +34,26 @@ const INT_FIELDS: Array[StringName] = [
 	&"life_ticks",
 	&"period_ticks",
 	&"rate_bonus_permille",
+	# v0.6.0 MX4 (appended: the hash order)
+	&"mirror",
+	&"directions",
+	&"back_permille",
+	&"aim_offset",
+	&"chains",
+	&"homing",
+	&"returns",
+	&"orbit_ticks",
+	&"intangible",
+	&"barrier_ticks",
+	&"charge_ticks",
+	&"charge_permille",
+	&"resonance_permille",
+	&"heat_rate_permille",
 ]
-const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed"]
+const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed", &"pull_m"]
+## v0.6.0 MX4: directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
+const DIR_FORWARD := 0
+const DIR_CIRCLE := 1
 
 ## Which attack this is (Modifiers' ids: blade_step_<n>, gun_bolt, skill, MX2 the ability modifiers' ids; a hook's
 ## child: its hook id).
@@ -94,6 +114,39 @@ var bounces := 0
 var pierce := 0
 ## A beam that jumps from the hit to the nearest other enemy within reach_m (Static Chain).
 var seek := false
+
+# --- v0.6.0 MX4 (the M-list's runner features; Attacks, ProjectileMoves, ModifierRuntime read them)
+## Pattern: DIR_FORWARD or DIR_CIRCLE (Halo Shot: `count` evenly round; an arc: the full circle); also fired straight
+## back at this share of its damage (Rearguard; 0 = not); every bolt's aim turned by this (1/4096 turns).
+var directions := DIR_FORWARD
+var back_permille := 0
+var aim_offset := 0
+## Behaviour: a seeking beam jumps on to this many more enemies (Storm Core); a projectile turns toward the nearest
+## enemy by this much a tick, an arc snaps to it (Seeker); a projectile flies back to the player at half its life
+## (Boomerang, 1); circles the player for this many ticks before it leaves (Orbit Rounds); the dash passes through
+## bodies untouchable (Phase Dash, 1).
+var chains := 0
+var homing := 0
+var returns := 0
+var orbit_ticks := 0
+var intangible := 0
+## Ability merges (Modifiers.mirror): 1 the spec copies the weapon's form, pattern and every hook (Mirror Drone); 2
+## it takes every hook of the weapon (Blade Orbit).
+var mirror := 0
+## Payload: a burst pulls the enemies it touches this far toward its centre (Gravity Well).
+var pull_m := 0.0
+## The body spec's rules (never launched): out of combat this long, a barrier absorbs one hit (Aether Shell); after
+## this long without attacking the next attack deals × charge_permille (Ascension); each status on an enemy adds
+## this to the damage it takes (Resonance).
+var barrier_ticks := 0
+var charge_ticks := 0
+var charge_permille := 1000
+var resonance_permille := 0
+## The drone's fire rate + this per mille per heat point held (Overclocked Drone).
+var heat_rate_permille := 0
+## v0.6.0 MX4: the modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
+## to a spec its own hook made (Split Shot's shards never split again; the ancestry guard, at compile time).
+var lineage := PackedStringArray()
 
 # --- hooks
 var hooks: Array[AttackHook] = []
@@ -170,6 +223,7 @@ func copy() -> AttackSpec:
 		&"status_every",
 		&"status_rider",
 		&"elements",
+		&"lineage",
 	]:
 		s.set(f, get(f).duplicate())
 	s.hooks = hooks.duplicate()
@@ -188,7 +242,7 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(get(f))
 	for f in FLOAT_FIELDS:
 		h.add_f32(get(f))
-	for arr: PackedStringArray in [tags, modifier_ids, status_ids, elements]:
+	for arr: PackedStringArray in [tags, modifier_ids, status_ids, elements, lineage]:
 		h.add_string(",".join(arr))
 	h.add_ints(status_stacks)
 	h.add_ints(status_every)
@@ -202,8 +256,18 @@ func hash_into(h: StateHasher) -> void:
 func read() -> Dictionary:
 	var hooks_out := []
 	for k in hooks:
-		hooks_out.append(
-			{"id": k.id, "trigger": k.trigger, "every": k.every, "child": k.child.read()}
+		(
+			hooks_out
+			. append(
+				{
+					"id": k.id,
+					"trigger": k.trigger,
+					"every": k.every,
+					"delay_ticks": k.delay_ticks,
+					"when": k.when,
+					"child": k.child.read(),
+				}
+			)
 		)
 	return {
 		"id": id,
@@ -228,4 +292,18 @@ func read() -> Dictionary:
 		"pierce": pierce,
 		"seek": seek,
 		"hooks": hooks_out,
+		# v0.6.0 MX4
+		"directions": directions,
+		"back_permille": back_permille,
+		"chains": chains,
+		"homing": homing,
+		"returns": returns,
+		"orbit_ticks": orbit_ticks,
+		"intangible": intangible,
+		"mirror": mirror,
+		"pull_m": pull_m,
+		"barrier_ticks": barrier_ticks,
+		"charge_ticks": charge_ticks,
+		"charge_permille": charge_permille,
+		"resonance_permille": resonance_permille,
 	}

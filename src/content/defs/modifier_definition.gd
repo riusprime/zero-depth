@@ -10,8 +10,8 @@ extends ContentDef
 
 ## The fixed stage order (appended, never renumbered: it is the compile order).
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
-## Appended, never renumbered.
-enum Rarity { COMMON, RARE }
+## Appended, never renumbered. v0.6.0 MX4: LEGENDARY (the boss's tier only).
+enum Rarity { COMMON, RARE, LEGENDARY }
 
 ## Spec tags a target filter (and a hook's attack) may name. weapon: the run's weapon attacks; melee / projectile:
 ## what they physically are; skill: the Skill button; area / chain: a burst or a jump; hook: an attack a hook spawned.
@@ -34,6 +34,14 @@ const TAGS: Array[StringName] = [
 	&"field",
 	&"nova",
 	&"trail",
+	# v0.6.0 MX4: the moments that launch from specs too: the dash (its start and end), Vent's blast, walking (every
+	# Modifiers.MOVE_STEP_M), a blink's start, and the player's body (the defence and charge rules: Aether Shell,
+	# Ascension, Resonance read its numbers; it never launches).
+	&"dash",
+	&"vent",
+	&"move",
+	&"blink",
+	&"body",
 ]
 ## The card families (CardFrames.FRAME's keys: the frame colour a card of this modifier wears).
 const FAMILIES: Array[StringName] = [
@@ -69,8 +77,10 @@ func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if not family in FAMILIES:
 		issues.append(ValidationIssue.new(&"range", resource_path, "unknown family %s" % family))
-	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
-		issues.append(ValidationIssue.new(&"range", resource_path, "rarity is common or rare"))
+	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")
+		)
 	if stage < Stage.FORM or stage > Stage.SCALE:
 		issues.append(ValidationIssue.new(&"range", resource_path, "unknown stage %d" % stage))
 	_check_tag_list(issues, "target", target)
@@ -140,7 +150,7 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 				)
 		ModifierOpDefinition.Op.HOOK:
 			_check_hook(issues, where, o)
-	if o.op in [ModifierOpDefinition.Op.SET_FORM, ModifierOpDefinition.Op.HOOK]:
+	if o.op == ModifierOpDefinition.Op.SET_FORM:
 		if o.form < ModifierOpDefinition.Form.ARC or o.form > ModifierOpDefinition.Form.BURST:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
 
@@ -151,10 +161,45 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
 	if (
 		o.hook_trigger < ModifierOpDefinition.Trigger.ON_HIT
-		or o.hook_trigger > ModifierOpDefinition.Trigger.ON_NTH
+		or o.hook_trigger > ModifierOpDefinition.Trigger.EVERY_NTH
 	):
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown trigger" % where))
+	if o.hook_trigger == ModifierOpDefinition.Trigger.EVERY_NTH and o.hook_every < 2:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "%s: every_nth needs hook_every >= 2" % where
+			)
+		)
+	if o.hook_delay_seconds < 0.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: a delay >= 0" % where))
+	if (
+		o.hook_when < ModifierOpDefinition.When.ALWAYS
+		or o.hook_when > ModifierOpDefinition.When.OVERCLOCK
+	):
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown when" % where))
 	_check_tag_list(issues, "%s.hook_tags" % where, o.hook_tags)
+	for k in o.hook_ops.size():  # v0.6.0 MX4: the child's shaping ops (any op but a hook)
+		var c := o.hook_ops[k]
+		var cw := "%s.hook_ops[%d]" % [where, k]
+		if (
+			c == null
+			or c.op == ModifierOpDefinition.Op.HOOK
+			or c.op == ModifierOpDefinition.Op.SET_FORM
+		):
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "%s: not a hook or a form" % cw)
+			)
+		elif c.is_numeric() and not ModifierOpDefinition.FIELD_STAGE.has(c.field):
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown field" % cw))
+		elif (
+			c.op == ModifierOpDefinition.Op.STATUS and not c.status in ModifierOpDefinition.STATUSES
+		):
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown status" % cw))
+		elif (
+			c.op == ModifierOpDefinition.Op.ELEMENT
+			and not c.element in ModifierOpDefinition.ELEMENTS
+		):
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown element" % cw))
 	match o.form:
 		ModifierOpDefinition.Form.BURST, ModifierOpDefinition.Form.ZONE:
 			check_positive(issues, "%s.hook_radius_m" % where, o.hook_radius_m)
@@ -162,12 +207,29 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 			check_positive(issues, "%s.hook_radius_m" % where, o.hook_radius_m)
 		ModifierOpDefinition.Form.BEAM:
 			check_positive(issues, "%s.hook_reach_m" % where, o.hook_reach_m)
+		ModifierOpDefinition.Form.BOLT, ModifierOpDefinition.Form.ARC:  # v0.6.0 MX4: a shot, a slash
+			check_positive(
+				issues,
+				"%s.hook_radius_m or hook_reach_m" % where,
+				maxf(o.hook_radius_m, o.hook_reach_m)
+			)
+		ModifierOpDefinition.Form.WEAPON:  # v0.6.0 MX4: a copy of the weapon's attack (its own sizes)
+			pass
 		_:
-			issues.append(
-				ValidationIssue.new(
-					&"range",
-					resource_path,
-					"%s: a hook spawns a burst, a beam, a lob, a zone or a ring" % where
+			(
+				issues
+				. append(
+					(
+						ValidationIssue
+						. new(
+							&"range",
+							resource_path,
+							(
+								"%s: a hook spawns a burst, a beam, a lob, a zone, a ring, a bolt, an arc or a weapon copy"
+								% where
+							)
+						)
+					)
 				)
 			)
 	if o.hook_damage <= 0 and o.hook_damage_permille <= 0:

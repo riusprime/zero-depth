@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 31
+name_key = &"ITEM_VENOM_CORE"
+desc_key = &"ITEM_VENOM_CORE_DESC"
+poison_damage = 2
+poison_period_seconds = 0.5
+poison_seconds = 4.0
+poison_max_stacks = 8
+poison_spread_m = 2.5
+tags = PackedStringArray("venom")
+modifiers = Array[StringName]([&"venom_core"])
+id = &"venom_core"

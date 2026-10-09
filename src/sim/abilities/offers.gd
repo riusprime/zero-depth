@@ -175,8 +175,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 			if t.stats.has(s) and w.stat_tables[s].amounts.size() > LEGENDARY:
 				stats.append(s)
 		var mods := PackedInt32Array()
-		for idx in _mods(w, out):
-			if t.mods.has(idx):
+		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
+			if t.mods.has(idx) and not out.has(idx):
 				mods.append(idx)
 		var wts := PackedInt32Array(
 			[
@@ -306,6 +306,9 @@ static func info(w: World, code: int) -> Dictionary:
 				"curse": curse_of(code),
 			}
 	var it := w.item_tables[code]
+	var rarity := 1 if it.rarity == ItemTable.RARE else 0
+	if it.rarity == ItemTable.LEGENDARY:
+		rarity = LEGENDARY  # v0.6.0 MX4: a legendary modifier
 	return {
 		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot
 		"type": MOD,
@@ -313,7 +316,7 @@ static func info(w: World, code: int) -> Dictionary:
 		"kind": it.kind,
 		"name_key": it.name_key,
 		"desc_key": it.desc_key,
-		"rarity": 1 if it.rarity == ItemTable.RARE else 0,
+		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
 	}

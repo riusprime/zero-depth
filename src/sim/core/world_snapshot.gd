@@ -106,6 +106,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"AttackHook",
 	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
 	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
+	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -123,8 +124,22 @@ const ADDED_SINCE_V05 := {
 		&"swap_source",
 		&"swap_ref",
 		&"migrate_slots",
+		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
 	],
-	&"ProjectileStore": [&"spec_key"],
+	&"ProjectileStore":
+	[
+		&"spec_key",
+		&"pierce_left",  # v0.6.0 MX4 (ProjectileMoves; padded with "no behaviour")
+		&"ret",
+		&"home",
+		&"orbit_t",
+		&"orbit_n",
+		&"orbit_a",
+		&"life0",
+		&"speed",
+		&"moves",
+	],
+	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	&"AbilityState":
 	[
 		&"bomb_spec",
@@ -225,6 +240,24 @@ static func _pad_added(w: World) -> void:
 	var p := w.projectiles
 	while p.spec_key.size() < p.ids.size():
 		p.spec_key.append("")
+	if p.speed.size() != p.ids.size():  # v0.6.0 MX4: an older save's projectiles have no behaviour
+		var zeros := PackedInt32Array()
+		zeros.resize(p.ids.size())
+		zeros.fill(0)
+		for f in ProjectileStore.MOVE_INT_FIELDS:
+			p.set(f, zeros.duplicate())
+		var none := PackedFloat32Array()
+		none.resize(p.ids.size())
+		none.fill(0.0)
+		p.speed = none
+		p.moves = false
+	var a := w.actors
+	if a.poison_stacks.size() != a.ids.size():  # v0.6.0 MX4: an older save's actors carry no poison
+		var zero := PackedInt32Array()
+		zero.resize(a.ids.size())
+		zero.fill(0)
+		for f in ActorStore.VENOM_FIELDS:
+			a.set(f, zero.duplicate())
 	var s := w.ab
 	while s.bomb_spec.size() < s.bomb_pos.size():
 		s.bomb_spec.append("")

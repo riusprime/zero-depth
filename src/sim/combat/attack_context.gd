@@ -28,6 +28,11 @@ var muzzle_m := -1.0
 ## Scatter Blast only: per landed pellet, the damage (the build's bolt factor carries a remainder, so it's taken
 ## per hit as before MX1), what follows a landed hit (the knockback), and each ray's end (the view's pellet ends).
 var damage_fn := Callable()
+## v0.6.0 MX4: a repeat (Twin Cast's again) or a back copy (Rearguard) never repeats or turns back again; a burst's
+## radius when the caller sizes it at run time (Vent's blast, an echo with the area stat; 0 = the spec's).
+var repeat := false
+var back := false
+var radius_m := 0.0
 var on_landed := Callable()
 var on_ray := Callable()
 

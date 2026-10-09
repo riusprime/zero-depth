@@ -6,6 +6,9 @@ extends RefCounted
 ## depth at most Attacks.MAX_HOOK_DEPTH, the proc coefficient halving at each level (100 → 50 → 25), a hook never
 ## inside its own chain (ancestry), and the per-tick launch cap.
 
+const WHEN_ALWAYS := 0
+const WHEN_OVERCLOCK := 1
+
 ## The modifier that added it (its ancestry key: a hook never runs inside a chain it already opened).
 var id := &""
 var trigger: int = AttackSpec.Trigger.ON_HIT
@@ -15,6 +18,10 @@ var every := 0
 var damage := 0
 var damage_permille := 0
 var child: AttackSpec
+## v0.6.0 MX4: ticks between the trigger and the launch (ModifierRuntime queues it; 0 = at once), and when it may
+## fire (WHEN_ALWAYS, or WHEN_OVERCLOCK: only while the heat is at Overclock).
+var delay_ticks := 0
+var when := 0
 
 
 ## The damage the child deals when the parent's base damage is `base`.
@@ -26,6 +33,6 @@ func damage_for(base: int) -> int:
 
 func hash_into(h: StateHasher) -> void:
 	h.add_string(String(id))
-	for v in [trigger, every, damage, damage_permille]:
+	for v in [trigger, every, damage, damage_permille, delay_ticks, when]:
 		h.add_int(v)
 	child.hash_into(h)

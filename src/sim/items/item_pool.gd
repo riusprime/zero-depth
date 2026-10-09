@@ -34,12 +34,14 @@ static func draw_weighted(w: World, count: int, rare_weight: int) -> PackedInt32
 	return out
 
 
-## The item indices that may still be drawn, ascending.
-static func available(w: World) -> PackedInt32Array:
+## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the
+## boss's tier and a boss's core; altars, chests, shops and elites never draw one).
+static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 	var left := PackedInt32Array()
 	for idx in w.item_tables.size():
 		if (
-			not w.items_owned.has(idx)
+			(legendary or w.item_tables[idx].rarity != ItemTable.LEGENDARY)
+			and not w.items_owned.has(idx)
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows

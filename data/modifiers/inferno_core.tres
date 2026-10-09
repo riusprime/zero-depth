@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 6
+stage = 3
+status = &"burn"
+stacks = 2
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 7
+stage = 3
+element = &"ember"
+
+[sub_resource type="Resource" id="Op_3"]
+script = ExtResource("2_op")
+op = 7
+stage = 3
+element = &"ember"
+
+[sub_resource type="Resource" id="Op_4"]
+script = ExtResource("2_op")
+op = 6
+stage = 3
+status = &"burn"
+stacks = 1
+
+[sub_resource type="Resource" id="Op_5"]
+script = ExtResource("2_op")
+op = 8
+stage = 4
+form = 7
+hook_trigger = 1
+hook_tags = PackedStringArray("area")
+hook_radius_m = 2.5
+hook_damage_permille = 1000
+hook_effect = &"inferno_core"
+hook_ops = Array[ExtResource("2_op")]([SubResource("Op_3"), SubResource("Op_4")])
+
+[resource]
+script = ExtResource("1_mod")
+family = &"fire"
+rarity = 2
+target = PackedStringArray()
+stage = 3
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_5")])
+id = &"inferno_core"

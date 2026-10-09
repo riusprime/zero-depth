@@ -251,6 +251,7 @@ static func on_blink(w: World) -> void:
 		w.blink_cd = blink_cooldown(w)
 	w.ab.shock_pending = w.tick
 	AbilityMods.on_blink(w)  # v0.5.0 CP: Afterimage
+	ModifierRuntime.on_blink(w)  # v0.6.0 MX4: the blink spec's other hooks
 	AbilityCombos.on_blink(w)  # v0.4.0 AB: Blink Charge
 
 
@@ -377,6 +378,7 @@ static func advance(w: World) -> void:
 				_orbit(w, t, w.ability_levels[s])
 	ModifierAbilities.advance(w)  # v0.6.0 MX2: Flame Trail's dash fire, the rings
 	ElementAbilities.advance_fire(w)
+	ModifierRuntime.advance(w)  # v0.6.0 MX4: the queued launches (Twin Cast, delayed hooks), the walk's trail
 
 
 ## An ability's damage at `level`, rounded half up (v0.4.0 AB: public for ElementAbilities, AbilityCombos).
@@ -475,8 +477,8 @@ static func throw_bombs(w: World, t: AbilityTable, level: int) -> bool:
 
 
 ## A bomb in flight from `from` to `at`, landing `flight` ticks from now (a throw, a hook's lob, or Blink Charge's
-## drop), running spec `key` at the hook level of `ctx` (none: a root bomb). Cluster Payload's bomblets are queued by
-## AbilityMods.split (they never split again).
+## drop), running spec `key` at the hook level of `ctx` (none: a root bomb). v0.6.0 MX4: only a root bomb counts as
+## a thrown one (bomb_split 1: Storm Bombs chains from it); a hook's (Cluster Payload's bomblets, Bomb Rounds) is 0.
 static func drop_bomb(
 	w: World,
 	at: Vector2,
@@ -495,7 +497,7 @@ static func drop_bomb(
 	s.bomb_root.append(w.take_root() if ctx == null or ctx.depth == 0 else ctx.root)
 	s.bomb_r.append(r)
 	s.bomb_dmg.append(dmg)
-	s.bomb_split.append(1)  # v0.5.0 CP: a Bomb Lobber bomb may split (Cluster Payload), Blink Charge's too
+	s.bomb_split.append(1 if ctx == null or ctx.depth == 0 else 0)  # v0.6.0 MX4: a hook's bomb is 0
 	s.bomb_spec.append(key)  # v0.6.0 MX2
 	s.bomb_depth.append(ctx.depth if ctx != null else 0)
 	s.bomb_proc.append(ctx.proc_pct if ctx != null else 100)
@@ -523,7 +525,9 @@ static func _land_bombs(w: World) -> void:
 		var spec := Modifiers.book(w).find(key) if key != "" else null
 		var bomb := spec == null or spec.has_tag(&"bomb")
 		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
-		if spec != null and not spec.has_tag(&"bomb"):
+		if spec != null and (not spec.has_tag(&"bomb") or not split) and spec.effect_id != &"":
+			effect = spec.effect_id  # v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets)
+		elif spec != null and not spec.has_tag(&"bomb"):
 			effect = spec.effect_id
 		if spec != null:
 			Attacks.land_lob(w, spec, at, r, dmg, root, depth, proc, effect)
@@ -539,8 +543,6 @@ static func _land_bombs(w: World) -> void:
 			s.blast_tick.remove_at(0)
 			s.blast_r.remove_at(0)
 		_remove_bomb(s, k)
-		if split and bomb:
-			AbilityMods.split(w, at, r, dmg, root, key)  # v0.5.0 CP: Cluster Payload's bomblets
 
 
 ## Packed arrays are values: each is removed from in place, by name.

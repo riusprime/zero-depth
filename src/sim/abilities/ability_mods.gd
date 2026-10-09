@@ -2,64 +2,52 @@ class_name AbilityMods
 extends RefCounted
 ## The ability mods (v0.5.0 CP, owner F13: "more objects or upgrades and combos"): items that change an ability
 ## rather than a weapon, offered only while you own that ability (ItemTable.requires_ability). v0.6.0 MX2: each is a
-## modifier card that takes one of the six slots (BuildSlots.is_slot_item); Razor Orbit is a modifier on the orbit
-## spec (data/modifiers/razor_orbit.tres: bleed on the orbiters' hits), the other three keep their numbers here.
-## Their numbers live in
-## ItemMods (built from the owned items); every hook is a no-op without the item.
-## - Cluster Payload (Bomb Lobber): a thrown bomb splits on landing into `bomblets` bomblets, evenly around the
-##   blast at its edge, each landing bomblet_delay ticks later for a share of the bomb's damage in a share of its
-##   radius. Bomblets never split again. No randomness.
-## - Overclocked Drone (Drone Buddy): the drones fire faster with heat: + per mille per heat point held.
-## - Razor Orbit (Orbit Blades): a blade's touch adds bleed stacks (MX2: its modifier's STATUS op on the orbit spec;
-##   the bleed engine's numbers from the item).
-## - Afterimage (Blink): a blink leaves an echo where it started that bursts afterimage_delay ticks later for
-##   afterimage_damage in afterimage_radius_m (area applies). A blink while an echo waits bursts that one first.
+## modifier card that takes one of the six slots (BuildSlots.is_slot_item). v0.6.0 MX4: all four are modifiers built
+## from ops (data/modifiers/), so each carries the rest of the build:
+## - Cluster Payload (Bomb Lobber): an ON_END hook on the bomb spec, three bomblets lobbed evenly round the blast at
+##   its edge (Attacks._lob), each a share of the bomb's damage in a share of its radius; its hook never rides its
+##   own bomblets (lineage), so bomblets never split again.
+## - Overclocked Drone (Drone Buddy): the drone spec's heat_rate_permille: + per mille fire rate per heat point held.
+## - Razor Orbit (Orbit Blades): a STATUS op on the orbit spec (bleed; the engine's numbers from the item).
+## - Afterimage (Blink): an ON_LAUNCH hook on the blink spec that waits (its delay): the blink leaves an echo where it
+##   started that bursts that much later (the hook's burst, the area stat applied), drawn as before (World.ab.echo_*).
+##   A blink while an echo waits bursts that one first.
 
 const EFFECT_CLUSTER := &"cluster_payload"
 const EFFECT_AFTERIMAGE := &"afterimage"
 
 
-## Cluster Payload: a bomb of radius `r` and damage `dmg` landed at `at`; queue its bomblets.
-static func split(w: World, at: Vector2, r: float, dmg: int, root: int, key: String = "") -> void:
-	var m := w.item_mods
-	var n := m.bomblets
-	if n <= 0:
-		return
-	var s := w.ab
-	var br := r * m.bomblet_radius_permille / 1000.0
-	var bd := maxi(1, (dmg * m.bomblet_damage_permille + 500) / 1000)
-	for k in n:
-		var p := at + Kin.dir((k * SimTick.ANGLE_UNITS / n) & 4095) * r
-		s.bomb_pos.append(p)
-		s.bomb_from.append(at)
-		s.bomb_throw.append(w.tick)
-		s.bomb_land.append(w.tick + m.bomblet_delay_ticks)
-		s.bomb_root.append(root)
-		s.bomb_r.append(br)
-		s.bomb_dmg.append(bd)
-		s.bomb_split.append(0)
-		s.bomb_spec.append(key)  # v0.6.0 MX2: a bomblet runs its bomb's spec (its statuses, its hooks)
-		s.bomb_depth.append(0)
-		s.bomb_proc.append(100)
-
-
-## Overclocked Drone: a drone period of `ticks` under the heat held now (never under 1 tick).
+## Overclocked Drone: a drone period of `ticks` under the heat held now (never under 1 tick): the drone spec's rate
+## per heat point.
 static func drone_period(w: World, ticks: int) -> int:
-	var per := w.item_mods.drone_rate_per_heat_permille
+	var spec := Modifiers.ability(w, Abilities.owned_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
+	var per := spec.heat_rate_permille if spec != null else 0
 	var heat := Heat.points(w)
 	if per <= 0 or heat <= 0:
 		return ticks
 	return maxi(1, (ticks * 1000 + (1000 + per * heat) / 2) / (1000 + per * heat))
 
 
+## The blink spec's waiting hook (Afterimage's echo), or null.
+static func echo_hook(w: World) -> AttackHook:
+	var spec := Modifiers.blink(w)
+	if spec == null:
+		return null
+	for k in spec.hooks_on(AttackSpec.Trigger.ON_LAUNCH):
+		if k.delay_ticks > 0:
+			return k
+	return null
+
+
 ## Afterimage: a blink just left w.blink_from.
 static func on_blink(w: World) -> void:
-	if w.item_mods.afterimage_damage <= 0:
+	var k := echo_hook(w)
+	if k == null:
 		return
 	if w.ab.echo_at >= 0:
 		_burst(w)
 	w.ab.echo_pos = w.blink_from
-	w.ab.echo_at = w.tick + w.item_mods.afterimage_delay_ticks
+	w.ab.echo_at = w.tick + k.delay_ticks
 
 
 ## Tick phase 6 (Abilities.advance): a waiting echo bursts on its tick.
@@ -70,11 +58,17 @@ static func advance(w: World) -> void:
 
 static func _burst(w: World) -> void:
 	var s := w.ab
-	var r := Stats.area(w, w.item_mods.afterimage_radius_m)
 	s.echo_at = -1
+	var k := echo_hook(w)
+	if k == null:
+		return
+	var r := Stats.area(w, k.child.radius_m)
 	s.echo_tick = w.tick
 	s.echo_burst_pos = s.echo_pos
 	s.echo_r = r
-	Abilities.hit_disc(
-		w, s.echo_pos, r, w.item_mods.afterimage_damage, w.take_root(), EFFECT_AFTERIMAGE
+	var tags := Attacks.lingering_tags(k.child)
+	var c := AttackContext.make(
+		s.echo_pos, 0, k.damage_for(0), w.take_root(), tags, k.child.effect_id
 	)
+	c.radius_m = r
+	Attacks.launch(w, k.child, c)

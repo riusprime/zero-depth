@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_leg")
 stat_cards = Array[StringName]([&"damage", &"crit_chance", &"crit_damage", &"attack_speed", &"area", &"max_hp", &"cooldowns", &"move_speed", &"armour", &"regen"])
-mods = Array[StringName]([&"afterimage", &"bulwark", &"cluster_payload", &"cold_snap", &"conductor", &"meltdown", &"overclocked_drone", &"razor_orbit", &"wildfire"])
+mods = Array[StringName]([&"tempest_core", &"inferno_core", &"echo_storm", &"shock_circles", &"halo_shot", &"boomerang", &"orbit_rounds", &"short_fuse"])
 stat_weight = 60
 mod_weight = 40
 offer_size = 3

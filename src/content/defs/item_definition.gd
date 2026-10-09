@@ -36,10 +36,12 @@ enum Kind {
 	OVERCLOCKED_DRONE,
 	RAZOR_ORBIT,
 	AFTERIMAGE,
+	MODIFIER,
 }
 
-## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered.
-enum Rarity { COMMON, RARE }
+## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
+## LEGENDARY, offered only by the boss's legendary tier (and a boss's core), never by altars, chests or shops.
+enum Rarity { COMMON, RARE, LEGENDARY }
 
 ## v0.6.0 MX1: the kinds whose attack effects live in their modifiers (each must name at least one).
 const MODIFIER_KINDS: Array[Kind] = [
@@ -57,13 +59,29 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.SERRATED_EDGE,
 	Kind.BARBED_BOLTS,
 	Kind.GLACIAL_EDGE,
+	# v0.6.0 MX4: the ability mods' effects are modifiers now, and the M-list's cards are all modifier cards.
+	Kind.CLUSTER_PAYLOAD,
+	Kind.OVERCLOCKED_DRONE,
+	Kind.AFTERIMAGE,
+	Kind.MODIFIER,
 ]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
 ## v0.3.0 L18: &"heat" marks the Overclock heat items (offered only when the run has heat).
 ## v0.5.0 CP: &"ability" marks the ability mods (each needs its ability: requires_ability).
+## v0.6.0 MX4: &"venom" (Venom Core's poison engine).
 const TAGS: Array[StringName] = [
-	&"fire", &"shock", &"frost", &"bleed", &"blade", &"bolt", &"dash", &"guard", &"heat", &"ability"
+	&"fire",
+	&"shock",
+	&"frost",
+	&"bleed",
+	&"blade",
+	&"bolt",
+	&"dash",
+	&"guard",
+	&"heat",
+	&"ability",
+	&"venom",
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -155,20 +173,16 @@ const TAGS: Array[StringName] = [
 @export var heat_hot_threshold := 0
 ## Meltdown: reaching the overheat point blows up as a full-heat vent blast at this share (per mille), no stall.
 @export var meltdown_damage_permille := 0
-# --- Ability mods (v0.5.0 CP; AbilityMods).
-## Cluster Payload: a thrown bomb splits into this many bomblets at its edge, each landing this long after it, for
-## this share of its damage in this share of its radius.
-@export var bomblets := 0
-@export var bomblet_damage_permille := 0
-@export var bomblet_radius_permille := 0
-@export var bomblet_delay_seconds := 0.0
-## Overclocked Drone: drone fire rate + this per mille for each heat point held.
-@export var drone_rate_per_heat_permille := 0
-## Razor Orbit: a blade's touch adds stacks_per_hit bleed (with the bleed fields, like Serrated Edge).
-## Afterimage: a blink's echo bursts this long after for this damage in this radius.
-@export var afterimage_damage := 0
-@export var afterimage_radius_m := 0.0
-@export var afterimage_delay_seconds := 0.0
+# --- Ability mods (v0.5.0 CP; AbilityMods). Razor Orbit: a blade's touch adds bleed (its modifier's STATUS op; the
+## bleed fields here, like Serrated Edge). v0.6.0 MX4: Cluster Payload's bomblets, Overclocked Drone's heat rate and
+## Afterimage's echo are their modifiers' ops (data/modifiers/), no longer fields here.
+# --- v0.6.0 MX4: Venom Core's poison engine (Venom): damage per stack per period, how long stacks last (refreshed by
+# each new one), the stack cap, and the radius a poisoned enemy's death spreads its stacks over.
+@export var poison_damage := 0
+@export var poison_period_seconds := 0.0
+@export var poison_seconds := 0.0
+@export var poison_max_stacks := 0
+@export var poison_spread_m := 0.0
 
 
 func category() -> StringName:
@@ -181,8 +195,10 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
-	if rarity < Rarity.COMMON or rarity > Rarity.RARE:
-		issues.append(ValidationIssue.new(&"range", resource_path, "rarity is common or rare"))
+	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")
+		)
 	if not requires_utility in [&"", &"guard", &"blink"]:
 		issues.append(
 			ValidationIssue.new(
@@ -294,24 +310,29 @@ static func ability_kind(id: StringName) -> int:
 	return -1 if id == &"" else AbilityDefinition.Kind.keys().find(String(id).to_upper())
 
 
-## The ability mods (v0.5.0 CP).
+## The ability mods (v0.5.0 CP; v0.6.0 MX4: Cluster Payload, Overclocked Drone and Afterimage are their modifiers),
+## and the M-list's modifier cards (v0.6.0 MX4): the engine numbers a card's modifier feeds are checked when present.
 func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 	match kind:
-		Kind.CLUSTER_PAYLOAD:
-			check_positive(issues, "bomblets", bomblets)
-			check_positive(issues, "bomblet_damage_permille", bomblet_damage_permille)
-			check_positive(issues, "bomblet_radius_permille", bomblet_radius_permille)
-			check_positive(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
-			check_duration(issues, "bomblet_delay_seconds", bomblet_delay_seconds)
-		Kind.OVERCLOCKED_DRONE:
-			check_positive(issues, "drone_rate_per_heat_permille", drone_rate_per_heat_permille)
 		Kind.RAZOR_ORBIT:
 			_check_bleed(issues)
-		Kind.AFTERIMAGE:
-			check_positive(issues, "afterimage_damage", afterimage_damage)
-			check_positive(issues, "afterimage_radius_m", afterimage_radius_m)
-			check_positive(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
-			check_duration(issues, "afterimage_delay_seconds", afterimage_delay_seconds)
+		Kind.MODIFIER:
+			if burn_max_stacks > 0:
+				_check_burn(issues)
+			if poison_max_stacks > 0 or poison_damage > 0:
+				_check_poison(issues)
+
+
+## v0.6.0 MX4: Venom Core's poison engine.
+func _check_poison(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "poison_damage", poison_damage)
+	check_positive(issues, "poison_period_seconds", poison_period_seconds)
+	check_duration(issues, "poison_period_seconds", poison_period_seconds)
+	check_positive(issues, "poison_seconds", poison_seconds)
+	check_duration(issues, "poison_seconds", poison_seconds)
+	check_positive(issues, "poison_max_stacks", poison_max_stacks)
+	if poison_spread_m < 0.0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "poison_spread_m >= 0"))
 
 
 func _check_tags(issues: Array[ValidationIssue]) -> void:

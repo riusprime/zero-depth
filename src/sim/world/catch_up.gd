@@ -33,7 +33,7 @@ static func power(w: World) -> int:
 	# utility's level at the table's per-level weight; the items without a slot at the item weight.
 	var levels := 0
 	for s in w.mod_slots.size():
-		levels += BuildSlots.level_at(w, s)
+		levels += power_level(w, s)
 	for s in w.ability_owned.size():
 		if w.ability_tables[w.ability_owned[s]].is_utility():
 			levels += w.ability_levels[s]
@@ -47,6 +47,23 @@ static func power(w: World) -> int:
 		+ t.combo_permille * w.combos_owned.size()
 	)
 	return maxi(1, p * (1000 + extra) / 1000)
+
+
+## v0.6.0 MX4: what slot `s`'s card counts in levels: an ability modifier its level; a v0.5 item 1; an M-list card
+## 1, a rare one (the trinkets, the ability merges) 2, a legendary one (the boss's tier) 3.
+static func power_level(w: World, s: int) -> int:
+	var code := w.mod_slots[s]
+	if Offers.type_of(code) != Offers.MOD or code >= w.item_tables.size():
+		return BuildSlots.level_at(w, s)
+	var t := w.item_tables[code]
+	if t.kind != ItemTable.Kind.MODIFIER:
+		return 1
+	match t.rarity:
+		ItemTable.RARE:
+			return 2
+		ItemTable.LEGENDARY:
+			return 3
+	return 1
 
 
 ## A hit's expected multiplier with crit chance c and crit multiplier k (per mille): 1000 + c × (k − 1000) / 1000.

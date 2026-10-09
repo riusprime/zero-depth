@@ -261,9 +261,12 @@ static func vent_ready(w: World) -> bool:
 	return hot(w) and not w.player_dead()
 
 
-## The blast's radius: the table's, with Heat Sink's bonus.
+## The blast's radius: the vent spec's (v0.6.0 MX4: the table's, as the build's modifiers left it), with Heat Sink's
+## bonus.
 static func vent_radius_m(w: World) -> float:
-	var r := w.heat.table.vent_radius_m * (1000 + w.item_mods.vent_radius_bonus_permille) / 1000.0
+	var spec := Modifiers.vent(w)
+	var base := spec.radius_m if spec != null else w.heat.table.vent_radius_m
+	var r := base * (1000 + w.item_mods.vent_radius_bonus_permille) / 1000.0
 	return Stats.area(w, r)  # v0.4.0 BS: area
 
 
@@ -288,6 +291,13 @@ static func _blast(w: World, heat: int, share: int, root: int, effect: StringNam
 	s.vent_heat = heat
 	s.vent_radius = radius
 	var dmg := vent_damage(w, heat, share)
+	var spec := Modifiers.vent(w)
+	if spec != null:  # v0.6.0 MX4: the blast launches from the vent spec (its hooks: Meltdown Edge)
+		var ctx := AttackContext.make(center, w.aim_angle, dmg, root, SimEvent.TAG_AREA, effect)
+		ctx.radius_m = radius
+		Attacks.launch(w, spec, ctx)
+		Engines.end(w)
+		return
 	var pid := a.ids[0]
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:

@@ -29,3 +29,8 @@ var damage := 0
 var damage_permille := 0
 var hook_every := 0
 var effect_id := &""
+## v0.6.0 MX4 (HOOK): the child launches this many ticks after its trigger (0 = at once), only when `when` holds
+## (ModifierOpDefinition.When: 0 always, 1 at Overclock), shaped by `child_ops` before the build compiles it.
+var delay_ticks := 0
+var when := 0
+var child_ops: Array[ModifierOp] = []

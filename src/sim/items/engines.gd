@@ -62,6 +62,8 @@ const CODE_RESONANCE := 37
 const CODE_SHRAPNEL := 38
 const CODE_BLOOD := 39
 const CODE_SPIKED := 40
+## v0.6.0 MX4: Venom Core's poison feed (+ source; after the hook feeds' 48..53).
+const CODE_FEED_POISON := 56
 
 ## What made a hit (on_hit): a swing (or its echo), a landed bolt, a Static Chain jump, a shockwave.
 const SRC_NONE := 0
@@ -140,16 +142,18 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 	var shock := 0
 	var bleed := 0
 	var frost := 0
+	var poison := 0  # v0.6.0 MX4: Venom Core
 	match src:
 		SRC_MELEE:
 			var sp := Modifiers.step(w, w.combo_step)
 			shock = sp.stacks_of(&"shock")
 			bleed = sp.stacks_of(&"bleed")
 			frost = sp.stacks_of(&"frost")
+			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
 			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
 			var fed := 0
-			for st: StringName in [&"burn", &"shock", &"bleed", &"frost"]:
+			for st: StringName in [&"burn", &"shock", &"bleed", &"frost", &"poison"]:
 				fed += b.stacks_of(st)
 			if fed > 0:
 				w.engine_bolt_hits += 1
@@ -158,6 +162,7 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 				shock = b.stacks_of(&"shock") if _every(n, b.every_of(&"shock")) else 0
 				bleed = b.stacks_of(&"bleed") if _every(n, b.every_of(&"bleed")) else 0
 				frost = b.stacks_of(&"frost") if _every(n, b.every_of(&"frost")) else 0
+				poison = b.stacks_of(&"poison") if _every(n, b.every_of(&"poison")) else 0
 		SRC_CHAIN:
 			shock = m.shock_chain
 		SRC_WAVE:
@@ -173,6 +178,8 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		add_frost(w, i, frost, root, EFFECT_FROST)
 	if shock > 0 and w.proc_ledger.try_mark(root, CODE_FEED_SHOCK + src, id, w.tick):
 		add_shock(w, i, shock, root)
+	if poison > 0 and w.proc_ledger.try_mark(root, CODE_FEED_POISON + src, id, w.tick):
+		Venom.add(w, i, poison, root)
 
 
 static func source_of(tags: int, effect_id: StringName) -> int:

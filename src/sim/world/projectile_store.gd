@@ -2,6 +2,11 @@ class_name ProjectileStore
 extends RefCounted
 ## Projectiles as structure-of-arrays in ascending id order. Each carries its provenance.
 
+## v0.6.0 MX4: the behaviour columns (ProjectileMoves), ints.
+const MOVE_INT_FIELDS: Array[StringName] = [
+	&"pierce_left", &"ret", &"home", &"orbit_t", &"orbit_n", &"orbit_a", &"life0"
+]
+
 var ids := PackedInt32Array()
 var owner := PackedInt32Array()
 var team := PackedInt32Array()
@@ -21,6 +26,18 @@ var bounces := PackedInt32Array()
 var bounce_tick := PackedInt32Array()
 ## v0.6.0 MX2: the spec a player projectile runs (an AttackBook key; "" = none: an enemy's, or one from before MX2).
 var spec_key := PackedStringArray()
+## v0.6.0 MX4 (ProjectileMoves): pierces left, return (0 none, 1 out, 2 coming back), homing turn per tick, the orbit
+## (ticks left, its length, the angle it began at), the life it left with, its speed; `moves` once any had one
+## (so stores whose projectiles never had a behaviour hash and step as before).
+var pierce_left := PackedInt32Array()
+var ret := PackedInt32Array()
+var home := PackedInt32Array()
+var orbit_t := PackedInt32Array()
+var orbit_n := PackedInt32Array()
+var orbit_a := PackedInt32Array()
+var life0 := PackedInt32Array()
+var speed := PackedFloat32Array()
+var moves := false
 
 
 func size() -> int:
@@ -55,6 +72,14 @@ func add(
 	bounces.append(p_bounces)
 	bounce_tick.append(-1)
 	spec_key.append("")  # v0.6.0 MX2: World._apply_spawns names a player bolt's spec
+	pierce_left.append(0)  # v0.6.0 MX4: ProjectileMoves.on_spawn sets them from the spec
+	ret.append(0)
+	home.append(0)
+	orbit_t.append(0)
+	orbit_n.append(0)
+	orbit_a.append(0)
+	life0.append(0)
+	speed.append(0.0)
 
 
 ## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own
@@ -74,6 +99,15 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 		bounce_tick.remove_at(i)
 		if i < spec_key.size():
 			spec_key.remove_at(i)
+		if i < speed.size():  # v0.6.0 MX4
+			pierce_left.remove_at(i)
+			ret.remove_at(i)
+			home.remove_at(i)
+			orbit_t.remove_at(i)
+			orbit_n.remove_at(i)
+			orbit_a.remove_at(i)
+			life0.remove_at(i)
+			speed.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)

@@ -36,11 +36,13 @@ enum Kind {
 	OVERCLOCKED_DRONE,
 	RAZOR_ORBIT,
 	AFTERIMAGE,
+	MODIFIER,
 }
 
-## ItemDefinition.Rarity (v0.3.0 E).
+## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).
 const COMMON := 0
 const RARE := 1
+const LEGENDARY := 2
 
 var id := &""
 var kind := Kind.LONG_EDGE
@@ -115,12 +117,9 @@ var vent_damage_bonus_permille := 0
 var vent_radius_bonus_permille := 0
 var heat_hot_threshold := 0
 var meltdown_damage_permille := 0
-## Ability mods (v0.5.0 CP; see ItemDefinition and AbilityMods).
-var bomblets := 0
-var bomblet_damage_permille := 0
-var bomblet_radius_permille := 0
-var bomblet_delay_ticks := 0
-var drone_rate_per_heat_permille := 0
-var afterimage_damage := 0
-var afterimage_radius_m := 0.0
-var afterimage_delay_ticks := 0
+## v0.6.0 MX4: Venom Core's poison engine (see ItemDefinition; Venom).
+var poison_damage := 0
+var poison_period_ticks := 1
+var poison_ticks := 0
+var poison_max_stacks := 0
+var poison_spread_m := 0.0

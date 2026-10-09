@@ -82,7 +82,7 @@ ITEM_STATIC_CHAIN_DESC,Bolts shock; every 3rd bolt hit arcs to another for 5.,Tu
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,A swing within 1 s of a dash deals +60% damage.,Un tajo hasta 1 s tras el esprint hace +60% de daño.
 ITEM_FROST_CORE,Frost Core,Núcleo de Escarcha
-ITEM_FROST_CORE_DESC,Bolt hits slow 30%; every 3rd adds a frost stack.,Tus impactos ralentizan un 30%; cada 3.º añade escarcha.
+ITEM_FROST_CORE_DESC,Hits slow; the 3rd hit on a slowed enemy freezes it 1 s.,Ralentizas; el 3.er golpe a un ralentizado lo congela 1 s.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Taking damage fires a ring of 6 bolts.,Al recibir daño lanzas un anillo de 6 proyectiles.
 ITEM_EXECUTIONER,Executioner,Verdugo
@@ -620,3 +620,67 @@ UI_DEV_GRANT_MOD,Grant attack mod,Dar mod de ataque
 UI_PAUSE_RUN,Floor %d · %02d:%02d · %d kills · %d shards,Piso %d · %02d:%02d · %d bajas · %d fragmentos
 UI_PAUSE_HINT,Enter / A to choose · Esc / B to resume,Intro / A para elegir · Esc / B para continuar
 UI_MENU_HINT,Enter / A to choose,Intro / A para elegir
+ITEM_STORM_CORE,Storm Core,Núcleo de Tormenta
+ITEM_STORM_CORE_DESC,Hits chain lightning to 2 more enemies (50% damage).,Tus golpes encadenan un rayo a 2 enemigos más (50%).
+ITEM_EMBER_CORE,Ember Core,Núcleo de Brasa
+ITEM_EMBER_CORE_DESC,Hits burn; kills explode in a small fire burst.,Tus golpes queman; las bajas estallan en llamas.
+ITEM_VENOM_CORE,Venom Core,Núcleo de Veneno
+ITEM_VENOM_CORE_DESC,Hits stack poison that spreads when the enemy dies.,Tus golpes envenenan; el veneno salta al morir.
+ITEM_ECHO_SLASH,Echo Slash,Tajo Eco
+ITEM_ECHO_SLASH_DESC,Every slash also flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
+ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
+ITEM_EDGE_ROUNDS_DESC,Projectiles pierce once and slash where they hit.,Los proyectiles atraviesan una vez y cortan al impactar.
+ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
+ITEM_SHOCK_CIRCLES_DESC,Trinket: projectiles become shock rings at half range.,Baratija: los proyectiles son anillos de choque cortos.
+ITEM_HALO_SHOT,Halo Shot,Disparo Halo
+ITEM_HALO_SHOT_DESC,"Trinket: shots go all round, ×3 count, half range.","Baratija: disparas en círculo, ×3 balas, media distancia."
+ITEM_BOOMERANG,Boomerang,Bumerán
+ITEM_BOOMERANG_DESC,"Trinket: projectiles come back, hitting again.",Baratija: los proyectiles vuelven y golpean otra vez.
+ITEM_ORBIT_ROUNDS,Orbit Rounds,Balas en Órbita
+ITEM_ORBIT_ROUNDS_DESC,Trinket: projectiles circle you once before they fly.,Baratija: los proyectiles orbitan una vez antes de salir.
+ITEM_SPLIT_SHOT,Split Shot,Disparo Dividido
+ITEM_SPLIT_SHOT_DESC,Projectiles split in 3 on their first hit (50% damage).,Los proyectiles se parten en 3 al impactar (50%).
+ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
+ITEM_TWIN_CAST_DESC,Every attack repeats once 0.2 s later at 50%.,"Cada ataque se repite 0,2 s después al 50%."
+ITEM_REARGUARD,Rearguard,Retaguardia
+ITEM_REARGUARD_DESC,Every attack also fires backwards at 60%.,Cada ataque también sale hacia atrás al 60%.
+ITEM_WIDE_ARC,Wide Arc,Arco Amplio
+ITEM_WIDE_ARC_DESC,Arcs 40° wider; projectiles and blasts 30% bigger.,Arcos 40° más anchos; balas y ondas un 30% mayores.
+ITEM_GRAVITY_WELL,Gravity Well,Pozo Gravitatorio
+ITEM_GRAVITY_WELL_DESC,Hits pull nearby enemies toward the point of hit.,Tus golpes atraen a los enemigos cercanos.
+ITEM_SHATTER,Shatter,Estallido
+ITEM_SHATTER_DESC,Kills burst into 4 shards that hit nearby enemies.,Las bajas estallan en 4 esquirlas que golpean cerca.
+ITEM_AFTERSHOCK,Aftershock,Réplica
+ITEM_AFTERSHOCK_DESC,"Where an attack ends, a small blast.","Donde termina un ataque, una pequeña explosión."
+ITEM_SEEKER,Seeker,Buscador
+ITEM_SEEKER_DESC,Projectiles home in; arcs snap to the nearest enemy.,Los proyectiles persiguen; los arcos giran al más cercano.
+ITEM_LONG_SHADOW,Long Shadow,Sombra Larga
+ITEM_LONG_SHADOW_DESC,Dashing leaves an afterimage that repeats your attack.,Al esquivar dejas una sombra que repite tu ataque.
+ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
+ITEM_PHASE_DASH_DESC,Your dash is intangible and ends in 6 shards.,Tu esquiva es intangible y acaba en 6 esquirlas.
+ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
+ITEM_EMBER_TRAIL_DESC,Walking leaves burning crystals on the ground.,Al caminar dejas cristales ardientes en el suelo.
+ITEM_AETHER_SHELL,Aether Shell,Coraza de Éter
+ITEM_AETHER_SHELL_DESC,3 s out of combat: a barrier absorbs the next hit.,3 s sin combatir: una barrera absorbe el siguiente golpe.
+ITEM_ASCENSION,Ascension,Ascensión
+ITEM_ASCENSION_DESC,"After 3 s without attacking, your next attack deals ×3.","Tras 3 s sin atacar, tu siguiente ataque hace ×3."
+ITEM_RESONANCE_CORE,Resonance,Resonancia
+ITEM_RESONANCE_CORE_DESC,Each status on an enemy: +15% damage taken.,Cada estado en un enemigo: +15% de daño recibido.
+ITEM_HEAT_SINK_ROUNDS,Heat Sink Rounds,Balas Disipadoras
+ITEM_HEAT_SINK_ROUNDS_DESC,"At Overclock, every attack fires one extra projectile.","En Sobrecarga, cada ataque dispara un proyectil extra."
+ITEM_MELTDOWN_EDGE,Meltdown Edge,Filo de Fusión
+ITEM_MELTDOWN_EDGE_DESC,Venting fires your weapon's attack in a full circle.,Ventilar lanza el ataque de tu arma en círculo.
+ITEM_MIRROR_DRONE,Mirror Drone,Dron Espejo
+ITEM_MIRROR_DRONE_DESC,"Your drone copies your weapon's attack, modifiers too.",Tu dron copia el ataque de tu arma y sus modificadores.
+ITEM_BOMB_ROUNDS,Bomb Rounds,Balas Bomba
+ITEM_BOMB_ROUNDS_DESC,Every 5th shot is a bomb (150% damage).,Cada 5.º disparo es una bomba (150% de daño).
+ITEM_BLADE_ORBIT,Blade Orbit,Órbita de Hojas
+ITEM_BLADE_ORBIT_DESC,"Orbit Blades carry all your weapon does, +1 blade.","Las Hojas Orbitales llevan todo lo de tu arma, +1."
+ITEM_SHORT_FUSE,Short Fuse,Mecha Corta
+ITEM_SHORT_FUSE_DESC,"Trinket: all ranges ×0.6, all damage ×1.4.","Baratija: todo alcance ×0,6, todo daño ×1,4."
+ITEM_TEMPEST_CORE,Tempest Core,Núcleo de Tempestad
+ITEM_TEMPEST_CORE_DESC,Legendary: lightning chains to 4 more enemies (75%).,Legendario: el rayo salta a 4 enemigos más (75%).
+ITEM_INFERNO_CORE,Inferno Core,Núcleo Infernal
+ITEM_INFERNO_CORE_DESC,Legendary: hits burn twice; kills burst in big flames.,Legendario: quemas el doble; las bajas arden en grande.
+ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
+ITEM_ECHO_STORM_DESC,Legendary: every slash flies on as 3 crescents (80%).,Legendario: cada tajo vuela como 3 medias lunas (80%).

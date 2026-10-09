@@ -71,7 +71,7 @@ static func draw_legendary(w: World, rng: RngStream) -> int:
 		var st := w.stat_tables[s] if s < w.stat_tables.size() else null
 		if st != null and not Stats.at_cap(w, s) and st.amounts.size() > Offers.LEGENDARY:
 			stats.append(s)
-	var pool := ItemPool.available(w)
+	var pool := ItemPool.available(w, true)  # v0.6.0 MX4: the tier's legendary modifiers too
 	for idx in t.mods:
 		if pool.has(idx):
 			mods.append(idx)

@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
+[ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
+
+[sub_resource type="Resource" id="Op_1"]
+script = ExtResource("2_op")
+op = 1
+field = &"pierce"
+value = 1.0
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 0
+field = &"arc_degrees"
+value = 100.0
+
+[sub_resource type="Resource" id="Op_3"]
+script = ExtResource("2_op")
+op = 8
+stage = 4
+form = 0
+hook_trigger = 0
+hook_tags = PackedStringArray("melee")
+hook_reach_m = 1.1
+hook_damage_permille = 500
+hook_effect = &"edge_rounds"
+hook_ops = Array[ExtResource("2_op")]([SubResource("Op_2")])
+
+[resource]
+script = ExtResource("1_mod")
+family = &"damage"
+target = PackedStringArray("projectile")
+stage = 2
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_3")])
+id = &"edge_rounds"

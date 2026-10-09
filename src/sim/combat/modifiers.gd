@@ -36,6 +36,18 @@ const TAG_PROJECTILE := "projectile"
 const TAG_SKILL := "skill"
 const TAG_HOOK := "hook"
 const TAG_ABILITY := "ability"
+## v0.6.0 MX4: the moments that launch from specs (the dash, walking, a blink, the body's rules; Vent's blast is an
+## attack). A moment's spec is rewritten only by a modifier whose target names its tag (an empty target means every
+## attack, not every moment).
+const TAG_MOMENT := "moment"
+const DASH := &"dash"
+const VENT := &"vent"
+const MOVE := &"move"
+const BLINK := &"blink"
+const BODY := &"body"
+## v0.6.0 MX4: walking this far (not dashing) launches the move spec's ON_LAUNCH hooks (Ember Trail; a starting
+## value).
+const MOVE_STEP_M := 1.4
 ## v0.6.0 MX2: Frost Nova's ring grows to its radius over this many ticks (a starting value).
 const RING_TICKS := 18
 ## v0.6.0 MX2: a hook's lingering child when its op names no time: a lob's flight, a zone's life and its hit gap.
@@ -87,6 +99,50 @@ static func build_modifiers(w: World) -> Array[ModifierTable]:
 	return out
 
 
+## v0.6.0 MX4: the moments' specs (never null once compiled: every book has them) and Vent's (null without heat).
+static func dash(w: World) -> AttackSpec:
+	return book(w).spec(DASH)
+
+
+static func move(w: World) -> AttackSpec:
+	return book(w).spec(MOVE)
+
+
+static func blink(w: World) -> AttackSpec:
+	return book(w).spec(BLINK)
+
+
+static func body(w: World) -> AttackSpec:
+	return book(w).spec(BODY)
+
+
+static func vent(w: World) -> AttackSpec:
+	return book(w).spec(VENT)
+
+
+## v0.6.0 MX4: the weapon's last attack, which a WEAPON hook child copies (Long Shadow, Meltdown Edge): the Blade's
+## current combo step on a run with the Blade, else the Gun's shot.
+static func weapon_attack(w: World) -> AttackSpec:
+	var n := w.player.combo.size()
+	if PlayerBuild.has_blade(w) and n > 0:
+		return step(w, clampi(w.combo_step, 0, n - 1))
+	return bolt(w)
+
+
+## v0.6.0 MX4: that attack's damage under the build's weapon factor (rounded down, no remainder carried: a copy
+## never shifts the weapon's own numbers).
+static func weapon_damage(w: World) -> int:
+	var s := weapon_attack(w)
+	if s == null:
+		return 1
+	var pm := Abilities.weapon_permille(w)
+	if s.form == AttackSpec.Form.ARC and s.has_tag(&"melee"):
+		pm = w.player.melee_damage_permille * pm / 1000
+		return maxi(1, s.damage * pm / 1000)
+	pm = w.player.bolt_damage_permille * pm / 1000
+	return maxi(1, Attacks.bolt_base_damage(s) * pm / 1000)
+
+
 ## v0.6.0 MX2: an owned ability modifier's compiled spec (by its ability id), or null.
 static func ability(w: World, t: AbilityTable) -> AttackSpec:
 	return book(w).spec(t.id) if t != null else null
@@ -107,6 +163,10 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	var sk := _base_skill(w)
 	if sk != null:
 		b.add(compile_spec(sk, mods))
+	for id: StringName in [DASH, MOVE, BLINK, BODY]:  # v0.6.0 MX4: the moments
+		b.add(compile_spec(_base_moment(id), mods))
+	if w.heat != null:  # v0.6.0 MX4: Vent's blast
+		b.add(compile_spec(_base_vent(w), mods))
 	_riders(w, b)
 	var root := _weapon_root(w, b)
 	for idx in w.ability_owned:  # v0.6.0 MX2: the ability modifiers' attacks, carrying the weapon's
@@ -116,6 +176,7 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 			continue
 		var s := compile_spec(base, mods)
 		inherit(s, root, t.kind == AbilityTable.Kind.DRONE_BUDDY)
+		SpecForms.mirror(s, root)  # v0.6.0 MX4: Mirror Drone, Blade Orbit
 		b.add(s)
 	b.register()
 	b.seal()
@@ -228,6 +289,26 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	if b.modifier_ids.is_empty():
 		return
 	h.add_string(b.digest)
+	ModifierRuntime.hash_into(w, h)  # v0.6.0 MX4: the queue, the counters, poison, projectile behaviours
+
+
+## v0.6.0 MX4: a moment's spec (the dash, walking, a blink, the body): no damage of its own, only hooks and rules.
+static func _base_moment(id: StringName) -> AttackSpec:
+	var s := AttackSpec.new()
+	s.id = id
+	s.form = AttackSpec.Form.BURST
+	s.tags = PackedStringArray([String(id), TAG_MOMENT])
+	return s
+
+
+## v0.6.0 MX4: Vent's blast (Heat.vent): a burst of the heat table's radius; its damage is the heat vented.
+static func _base_vent(w: World) -> AttackSpec:
+	var s := AttackSpec.new()
+	s.id = VENT
+	s.form = AttackSpec.Form.BURST
+	s.tags = PackedStringArray([String(VENT), "area"])
+	s.radius_m = w.heat.table.vent_radius_m
+	return s
 
 
 ## `base` rewritten by `mods` in the stage order from `first_stage` on (a fresh spec; `base` is not written).
@@ -235,9 +316,10 @@ static func compile_spec(
 	base: AttackSpec, mods: Array[ModifierTable], first_stage: int = 0
 ) -> AttackSpec:
 	var s := base.copy()
+	var moment := s.has_tag(TAG_MOMENT)
 	for stage in range(first_stage, ModifierTable.STAGE_COUNT):
 		for m in mods:
-			if not s.matches(m.target):
+			if not s.matches(m.target) or (moment and m.target.is_empty()):
 				continue
 			var applied := false
 			for op in m.ops:
@@ -246,6 +328,7 @@ static func compile_spec(
 					applied = true
 			if applied and not s.modifier_ids.has(String(m.id)):
 				s.modifier_ids.append(String(m.id))
+	SpecForms.settle(s)
 	return s
 
 
@@ -255,7 +338,7 @@ static func _apply(
 	match op.op:
 		ModifierOp.Op.SET_FORM:
 			if s.form_layers == 0:
-				s.form = op.form
+				SpecForms.change_form(s, op.form)  # v0.6.0 MX4: keeps its range
 				s.form_layers = 1
 			elif s.depth < MAX_DEPTH:
 				s.hooks.append(_layer(s, m, op, mods))
@@ -266,13 +349,17 @@ static func _apply(
 			if not s.elements.has(String(op.element)):
 				s.elements.append(String(op.element))
 		ModifierOp.Op.HOOK:
-			if s.depth < MAX_DEPTH:
+			if s.depth < MAX_DEPTH and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
 				s.hooks.append(_hook(s, m, op, mods))
 		_:
 			_numeric(s, op)
 
 
 static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
+	if op.field == &"range":  # v0.6.0 MX4: the form's own range field (SpecForms.range_of)
+		if op.op == ModifierOp.Op.MUL_PERMILLE:
+			SpecForms.scale_range(s, op.value)
+		return
 	if op.field in AttackSpec.FLOAT_FIELDS:
 		var cur: float = s.get(op.field)
 		var v := op.value
@@ -320,22 +407,19 @@ static func _hook(
 	c.reach_m = op.reach_m
 	c.seek = op.form == AttackSpec.Form.BEAM
 	c.effect_id = op.effect_id
-	match op.form:  # v0.6.0 MX2: the lingering forms' times (an op names only a radius and a reach)
-		AttackSpec.Form.LOB:
-			c.life_ticks = HOOK_LOB_TICKS
-		AttackSpec.Form.ZONE:
-			c.life_ticks = HOOK_ZONE_TICKS
-			c.period_ticks = HOOK_ZONE_GAP
-		AttackSpec.Form.RING:
-			c.life_ticks = RING_TICKS
-		AttackSpec.Form.ORBITER:
-			c.count = maxi(1, c.count)
+	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
+	for o in op.child_ops:  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
+		_apply(c, m, o, [])
+	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
+	c.lineage.append(String(m.id))
 	var k := AttackHook.new()
 	k.id = m.id
 	k.trigger = op.trigger
 	k.every = op.hook_every
 	k.damage = op.damage
 	k.damage_permille = op.damage_permille
+	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
+	k.when = op.when
 	k.child = compile_spec(c, mods)
 	return k
 
@@ -348,7 +432,7 @@ static func _layer(
 ) -> AttackHook:
 	var c := s.copy()
 	c.id = m.id
-	c.form = op.form
+	SpecForms.change_form(c, op.form)  # v0.6.0 MX4: keeps the range it ends at
 	c.form_layers = 1
 	c.depth = s.depth + 1
 	c.hooks = []

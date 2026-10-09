@@ -298,6 +298,9 @@ var deep_threat := 0
 ## v0.6.0 CU: the trade-off curses' state in play (Curses) and core theft (CoreTheft), per floor.
 var cs := CurseState.new()
 var cores := CoreState.new()
+## v0.6.0 MX4: the modifier engine's state in play (ModifierRuntime), per floor: queued launches, every-N counters,
+## the moments' and body rules' marks. Hashed with the build's specs (Modifiers.hash_into).
+var mx := ModifierState.new()
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).
@@ -470,6 +473,7 @@ func step(frame: InputFrame) -> void:
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
 	Engines.tick_statuses(self)  # Engines: shock, bleed, frost, freezes.
+	Venom.tick(self)  # v0.6.0 MX4: Venom Core's poison
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	_remove_dead()
@@ -803,8 +807,14 @@ func consume_buffered(bit: int) -> void:
 # --- end Rewards --------------------------------------------------------------------------------------------
 
 
+## v0.6.0 MX4: Phase Dash's intangible dash keeps the i-frames for the whole dash.
 func dash_iframes_active() -> bool:
-	return dash_ticks_left > 0 and player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
+	if dash_ticks_left <= 0:
+		return false
+	return (
+		player.dash_ticks - dash_ticks_left < player.dash_iframe_ticks
+		or ModifierRuntime.intangible(self)
+	)
 
 
 func is_dashing() -> bool:
@@ -1097,6 +1107,7 @@ func _advance_actions() -> void:
 		dash_ticks_left -= 1
 		if dash_ticks_left == 0:
 			ItemProcs.on_dash_end(self)  # Items: Momentum.
+			ModifierRuntime.on_dash_end(self)  # v0.6.0 MX4: the dash spec's ON_END hooks (Phase Dash)
 		return
 	if input_buffer[DASH_SLOT] > 0 and (Curses.no_dash(self) or Curses.stunned(self)):
 		input_buffer[DASH_SLOT] = 0  # v0.6.0 CU: Rooted (no dash), Brittle (stunned)
@@ -1107,6 +1118,7 @@ func _advance_actions() -> void:
 		dash_hit_ids = PackedInt32Array()
 		dash_ticks_left = player.dash_ticks
 		dash_cooldown_left = ItemProcs.dash_cooldown_ticks(self)  # Items: Swift Feet.
+		ModifierRuntime.on_dash_start(self)  # v0.6.0 MX4: the dash spec's ON_LAUNCH hooks (Long Shadow)
 
 
 func _move_and_collide() -> void:
@@ -1198,7 +1210,10 @@ func _move_and_collide() -> void:
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
 			actors.set_pos(i, ap)
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
+		var ghost := dash_ticks_left > 0 and ModifierRuntime.intangible(self)  # v0.6.0 MX4: Phase Dash
 		for a in actors.size():
+			if ghost and a == 0:
+				continue
 			var ra := actors.radius[a]
 			var pa := Vector2(actors.pos_x[a], actors.pos_y[a])
 			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
@@ -1242,6 +1257,7 @@ func _move_and_collide() -> void:
 func _projectile_hits() -> void:
 	var dead := PackedInt32Array()
 	for i in projectiles.size():
+		ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
 		var a := Vector2(projectiles.pos_x[i], projectiles.pos_y[i])
 		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
 		var b := a + v
@@ -1294,6 +1310,8 @@ func _projectile_hits() -> void:
 				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
 					continue
+				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
+					continue
 			elif projectiles.bounces[i] > 0:
 				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
 				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])
@@ -1345,6 +1363,7 @@ func _apply_spawns() -> void:
 		var id := _take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
+		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.

@@ -433,6 +433,7 @@ static func compile_item(def: ItemDefinition, repo: ContentRepository = null) ->
 		ItemDefinition.Kind.OVERCLOCKED_DRONE: ItemTable.Kind.OVERCLOCKED_DRONE,
 		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
 		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
+		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -513,22 +514,15 @@ static func _compile_item_engines(def: ItemDefinition, t: ItemTable) -> void:
 	t.vent_radius_bonus_permille = def.vent_radius_bonus_permille
 	t.heat_hot_threshold = def.heat_hot_threshold
 	t.meltdown_damage_permille = def.meltdown_damage_permille
-	# Ability mods (v0.5.0 CP).
-	t.bomblets = def.bomblets
-	t.bomblet_damage_permille = def.bomblet_damage_permille
-	t.bomblet_radius_permille = def.bomblet_radius_permille
-	t.bomblet_delay_ticks = SimTick.seconds_to_ticks(def.bomblet_delay_seconds)
-	t.drone_rate_per_heat_permille = def.drone_rate_per_heat_permille
-	t.afterimage_damage = def.afterimage_damage
-	t.afterimage_radius_m = def.afterimage_radius_m
-	t.afterimage_delay_ticks = SimTick.seconds_to_ticks(def.afterimage_delay_seconds)
+	ModifierCompiler.compile_item_extras(def, t)  # v0.6.0 MX4: Venom Core's poison, a heat card
 
 
-## Every item in a repository, compiled, in id order (the order of item indices). Give it to the world with
-## World.set_item_tables.
+## Every item in a repository, compiled, in the order of item indices (ModifierCompiler.item_defs: the v0.5 items in
+## id order, then the v0.6.0 MX4 modifier cards in id order, so a save's item indices keep naming the same items).
+## Give it to the world with World.set_item_tables.
 static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
-	for def: ItemDefinition in repo.all_of(&"items"):
+	for def: ItemDefinition in ModifierCompiler.item_defs(repo):
 		out.append(compile_item(def, repo))
 	return out
 
@@ -777,7 +771,7 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 ## or ability are left out (the validator reports them).
 static func compile_combos(repo: ContentRepository) -> Array[ComboTable]:
 	var index := {}
-	var items := repo.all_of(&"items")
+	var items := ModifierCompiler.item_defs(repo)  # v0.6.0 MX4: the item index order
 	for k in items.size():
 		index[(items[k] as ItemDefinition).id] = k
 	var abilities := {}  # v0.4.0 AB: ability combos name abilities (compile_abilities order: by id)

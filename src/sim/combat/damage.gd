@@ -70,6 +70,8 @@ static func hit(
 		amount = amount * exec / 1000
 		tags |= SimEvent.TAG_EXECUTE
 	amount = amount * Engines.attacker_mult(w, target, owner_id) / 1000  # Engines: Cold Snap.
+	if target != 0 and owner_id == a.ids[0]:  # v0.6.0 MX4: Resonance
+		amount = amount * ModifierRuntime.resonance_mult(w, target, owner_id) / 1000
 	var heat := Heat.attacker_mult(w, target, owner_id, tags, effect_id)  # Heat: Overclock.
 	if heat != 1000:
 		amount = amount * heat / 1000
@@ -85,6 +87,8 @@ static func hit(
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
+		return 0
+	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
 		return 0
 	var m := target_mult(w, target, from)
 	if owner_id == a.ids[0] and BossAi.is_boss_kind(a.kinds[target]):
@@ -184,6 +188,7 @@ static func _apply(
 			ItemProcs.on_kill(w, k)  # Items: Vampiric Core.
 			Engines.on_kill(w, k, target, tags)  # Engines: Wildfire, Blood Harvest.
 			ModifierAbilities.on_kill(w)  # v0.6.0 MX2: Frost Nova's kill streak
+			Venom.on_kill(w, target, root_id)  # v0.6.0 MX4: Venom Core's spread
 	if target != 0 and not (tags & SimEvent.TAG_DOT):
 		BossAi.on_damage(w, target, applied, tags)  # Bosses (v0.3.0 C): hits fill the stagger meter.
 		CoreTheft.on_damage(w, target, applied, tags)  # v0.6.0 CU: a stagger opens the steal window
