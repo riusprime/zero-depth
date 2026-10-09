@@ -120,7 +120,12 @@ static func attacker_mult(
 		return 1000
 	if not is_attack(tags, effect_id) or not overclocked(w):
 		return 1000
-	return 1000 + w.heat.table.overclock_damage_permille + Events.overclock_bonus(w)  # + EV vent
+	return (
+		1000
+		+ w.heat.table.overclock_damage_permille
+		+ Events.overclock_bonus(w)  # + EV vent
+		+ Curses.overclock_bonus(w)
+	)  # + v0.6.0 CU: Fevered
 
 
 ## The player's hit on enemy `i` landed (Damage.hit, got > 0): an Overclock hit leaves an ember and feeds the fire

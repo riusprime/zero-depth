@@ -179,6 +179,9 @@ static func total(w: World, s: int) -> int:
 ## the shrine doesn't pay in stats.
 static func max_hp(w: World) -> int:
 	var base := (w.player.hp * value(w, Stat.MAX_HP) + 500) / 1000
+	var cut := Curses.max_hp_permille(w)  # v0.6.0 CU: Glass Heart
+	if cut != 1000:
+		base = maxi(1, (base * cut + 500) / 1000)
 	return base + Gamble.hook_bonus(w, GambleTable.Stat.MAX_HP)
 
 
@@ -186,7 +189,7 @@ static func max_hp(w: World) -> int:
 ## Crit chance now, per mille (base + cards, at most the cap).
 static func crit_chance(w: World) -> int:
 	var t := table(w, Stat.CRIT_CHANCE)
-	var c := total(w, Stat.CRIT_CHANCE)
+	var c := total(w, Stat.CRIT_CHANCE) + Curses.crit_chance(w)  # v0.6.0 CU: Glass Heart
 	return mini(c, t.cap) if t != null and t.cap > 0 else c
 
 
@@ -201,6 +204,9 @@ static func crit_mult(w: World) -> int:
 ## [amount, extra tags]. The roll draws the `crit` stream only when the chance is above 0.
 static func outgoing(w: World, amount: int, tags: int) -> Array[int]:
 	var m := damage_permille(w)
+	var ab := Curses.ability_damage_permille(w, tags)  # v0.6.0 CU: Blood Price
+	if ab != 1000:
+		m = (m * ab + 500) / 1000
 	if m != 1000:
 		amount = (amount * m + 500) / 1000
 	if tags & SimEvent.TAG_DOT:
@@ -297,7 +303,7 @@ static func _fast(w: World, ticks: int) -> int:
 
 ## A firing period of `ticks` under attack speed (never under 1 tick).
 static func period(w: World, ticks: int) -> int:
-	var m := value(w, Stat.ATTACK_SPEED)
+	var m := Curses.attack_speed(w, value(w, Stat.ATTACK_SPEED))  # v0.6.0 CU: Heavy Hands
 	if m == 1000:
 		return ticks
 	return maxi(1, (ticks * 1000 + m / 2) / m)
@@ -305,7 +311,7 @@ static func period(w: World, ticks: int) -> int:
 
 ## The tick a swing of `step` ends: its recovery shortens under attack speed (its hit tick doesn't move).
 static func swing_end(w: World, step: SwingStep) -> int:
-	var m := value(w, Stat.ATTACK_SPEED)
+	var m := Curses.attack_speed(w, value(w, Stat.ATTACK_SPEED))  # v0.6.0 CU: Heavy Hands
 	if m == 1000:
 		return step.ticks
 	var rec := step.ticks - step.active_tick
@@ -323,6 +329,9 @@ static func move_permille(w: World) -> int:
 
 static func shards(w: World, amount: int) -> int:
 	var m := value(w, Stat.SHARDS)
+	var c := Curses.shard_permille(w)  # v0.6.0 CU: Tunnel Vision
+	if c != 1000:
+		m = (m * c + 500) / 1000
 	return amount if m == 1000 else (amount * m + 500) / 1000
 
 

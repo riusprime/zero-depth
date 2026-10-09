@@ -4,7 +4,8 @@ extends RefCounted
 ## PICKUP event and the hash need no new shape:
 ## - 0..ABILITY_BASE-1: a mod (the v0.3.0 items; the item index, as before);
 ## - ABILITY_BASE + i: ability i (a new one into a free slot, or a level-up of one you own);
-## - STAT_BASE + stat x 10 + rarity: a stat card.
+## - STAT_BASE + stat x 10 + rarity: a stat card;
+## - CURSE_BASE + c (v0.6.0 CU, owner S6): trade-off curse c, a cursed chest's cursed card (Curses.on_offer_rolled).
 ## Rolling (once per reward, on its first open, from the loot stream only): a free altar's first card is a new
 ## ability while a slot is free and one can be offered; every other card picks its type by the source's weights
 ## (RewardTable: [ability, stat, mod] for altars and chests), then an ability card uniformly among those that can
@@ -16,9 +17,11 @@ extends RefCounted
 
 const ABILITY_BASE := 1000
 const STAT_BASE := 2000
+const CURSE_BASE := 3000
 const MOD := 0
 const ABILITY := 1
 const STAT := 2
+const CURSE := 3
 ## A stat card's rarity: epic (v0.5.0 RT's epic altar offers only these).
 const EPIC := 2
 ## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
@@ -30,6 +33,8 @@ static func enabled(w: World) -> bool:
 
 
 static func type_of(code: int) -> int:
+	if code >= CURSE_BASE:
+		return CURSE
 	if code >= STAT_BASE:
 		return STAT
 	if code >= ABILITY_BASE:
@@ -43,6 +48,15 @@ static func ability_code(idx: int) -> int:
 
 static func stat_code(stat: int, rarity: int) -> int:
 	return STAT_BASE + stat * 10 + rarity
+
+
+## v0.6.0 CU: the card for trade-off curse c.
+static func curse_code(c: int) -> int:
+	return CURSE_BASE + c
+
+
+static func curse_of(code: int) -> int:
+	return code - CURSE_BASE
 
 
 static func ability_of(code: int) -> int:
@@ -242,6 +256,8 @@ static func apply(w: World, code: int) -> void:
 			Abilities.grant(w, ability_of(code))
 		STAT:
 			Stats.add_card(w, stat_of(code), rarity_of(code))
+		CURSE:
+			Curses.add(w, curse_of(code))  # v0.6.0 CU: the trade-off curse, drawback and upside
 
 
 ## What the pick panel shows for card `code` (WorldReader.card_info): its type, id, name and description keys,
@@ -276,6 +292,19 @@ static func info(w: World, code: int) -> Dictionary:
 				"amount": st.amounts[rarity_of(code)],
 				# v0.5.0 CP: a rule card's second number
 				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
+			}
+		CURSE:  # v0.6.0 CU: a trade-off curse card, rare-level: its face is the upside (the panel adds the drawback)
+			var ct := w.ev.curses[curse_of(code)]
+			return {
+				"type": CURSE,
+				"id": ct.id,
+				"kind": ct.up_effect,
+				"name_key": ct.name_key,
+				"desc_key": ct.up_desc_key,
+				"rarity": 1,
+				"level": 0,
+				"amount": ct.up_amount,
+				"curse": curse_of(code),
 			}
 	var it := w.item_tables[code]
 	return {

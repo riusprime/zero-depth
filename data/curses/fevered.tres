@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CurseDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/curse_definition.gd" id="1_curse"]
+
+[resource]
+script = ExtResource("1_curse")
+name_key = &"CURSE_FEVERED"
+desc_key = &"CURSE_FEVERED_DESC"
+effect = &"heat_linger"
+amount = 50.0
+up_effect = &"overclock_damage"
+up_amount = 40.0
+up_desc_key = &"CURSE_FEVERED_UP"
+threat = 1
+weight = 10
+id = &"fevered"

@@ -443,6 +443,8 @@ func _sync_rewards(reader: WorldReader) -> void:
 		var price := reader.reward_price(i)
 		if reader.reward_is_epic(i):  # v0.5.0 RT
 			_prompt.text = tr("REWARD_OPEN_EPIC_ALTAR")
+		elif reader.reward_kind(i) == WorldReader.REWARD_DROP:  # v0.6.0 CU: a free card drop
+			_prompt.text = tr("REWARD_OPEN_DROP")
 		elif reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
 			_prompt.text = tr("REWARD_OPEN_ALTAR")
 		elif reader.reward_affordable(i):

@@ -40,7 +40,7 @@ func full_map_showing() -> bool:
 
 
 func _show() -> void:
-	var on_floor := _reader != null and _reader.has_floor()
+	var on_floor := _reader != null and _reader.has_floor() and not _reader.minimap_blind()  # CU
 	var held := on_floor and InputMap.has_action(ACTION) and Input.is_action_pressed(ACTION)
 	full_map.visible = held
 	corner.visible = on_floor and not held

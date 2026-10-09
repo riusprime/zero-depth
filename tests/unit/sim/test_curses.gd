@@ -1,9 +1,11 @@
 # gdlint: disable=max-public-methods
 extends GutTest
-## v0.5.0 EV (PLAN R4; PD-05): the six curses, each one's effect where the sim computes it; threat T (one per curse,
+## v0.5.0 EV (PLAN R4; PD-05): the plain curses, each one's effect where the sim computes it; threat T (one per curse,
 ## its peak, the carry to the next floor, the run's record per floor); cursed chest offers (how many, what they hold,
 ## taking the cursed card takes the curse, the other cards are clean); the shop's cleanse hook; and the Ambush Cache
 ## fight, plus an elite curse floor, pass the readable-cause check with the same bars as test_readable_cause.gd.
+## v0.6.0 CU (owner S6): a cursed offer's card is a trade-off curse card (no epic stat card); the eight trade-off
+## curses themselves are tested in test_trade_off_curses.gd. Marked Hunt became C8 Marked (same id, same elite chance).
 
 const SEED := 515
 
@@ -20,8 +22,30 @@ func test_the_shipped_curses() -> void:
 		assert_eq(c.threat, 1, "%s raises T by 1" % c.id)
 	ids.sort()
 	assert_eq(
-		ids, ["leaky_core", "marked_hunt", "price_gouge", "swarm_call", "swift_foes", "withering"]
+		ids,
+		[
+			"blood_price",
+			"brittle",
+			"fevered",
+			"glass_heart",
+			"heavy_hands",
+			"leaky_core",
+			"marked_hunt",
+			"price_gouge",
+			"rooted",
+			"swarm_call",
+			"swift_foes",
+			"tunnel_vision",
+			"withering",
+		],
+		"five plain curses and the eight trade-offs (v0.6.0 CU)"
 	)
+	var plain := []
+	for c in w.ev.curses:
+		if not c.is_trade_off():
+			plain.append(String(c.id))
+	plain.sort()
+	assert_eq(plain, ["leaky_core", "price_gouge", "swarm_call", "swift_foes", "withering"])
 
 
 func test_swift_foes_enemies_move_15_percent_faster() -> void:
@@ -174,7 +198,7 @@ func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:
 	assert_eq(next.threat_peak, 2, "and so does the peak")
 
 
-func test_cursed_chest_offers_hold_one_cursed_epic_card() -> void:
+func test_cursed_chest_offers_hold_one_trade_off_curse_card() -> void:
 	var cursed := 0
 	var rolled := 0
 	for s in 120:
@@ -194,15 +218,13 @@ func test_cursed_chest_offers_hold_one_cursed_epic_card() -> void:
 			cursed += 1
 			assert_eq(marks, 1, "one cursed card")
 			var card := offer[Curses.CURSED_SLOT]
-			assert_eq(Offers.type_of(card), Offers.STAT, "a stat card")
-			assert_eq(Offers.rarity_of(card), Stats.Rarity.EPIC, "always epic")
+			assert_eq(Offers.type_of(card), Offers.CURSE, "S6: a trade-off curse card")
+			var c := Curses.offer_curse(w, w.rewards.ids[i], Curses.CURSED_SLOT)
+			assert_eq(Offers.curse_of(card), c, "the card is its curse")
+			assert_true(w.ev.curses[c].is_trade_off(), "a trade-off, never a plain curse")
+			assert_eq(int(Offers.info(w, card)["rarity"]), 1, "rare-level, not epic")
 			for k in range(1, offer.size()):
-				var other := offer[k]
-				var same := (
-					Offers.type_of(other) == Offers.STAT
-					and Offers.stat_of(other) == Offers.stat_of(card)
-				)
-				assert_false(same, "its stat isn't offered twice")
+				assert_ne(Offers.type_of(offer[k]), Offers.CURSE, "the other cards are clean")
 		for i in w.rewards.size():
 			assert_true(
 				(

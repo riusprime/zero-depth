@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 class_name ContentCompiler
 extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).

@@ -105,7 +105,7 @@ func sync(reader: WorldReader) -> void:
 			face = legendary_face(self, face)
 		s.show_card(face)
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
-		s.show_curse(CurseLook.line(self, reader, curse) if curse >= 0 else "")
+		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
 	var chest := reader.reward_kind(r) == WorldReader.REWARD_CHEST
 	_title.text = (
 		tr("PICK_TITLE_CHEST") % reader.reward_price(r) if chest else tr("PICK_TITLE_ALTAR")
@@ -114,6 +114,11 @@ func sync(reader: WorldReader) -> void:
 		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
 	if legendary:  # v0.5.5 AR (X1b): the boss's reward
 		_title.text = tr("PICK_TITLE_LEGENDARY")
+	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
+	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
+		_title.text = tr("PICK_TITLE_CORE")
+	elif drop == WorldReader.DROP_ELITE_CARD:
+		_title.text = tr("PICK_TITLE_ELITE_DROP")
 	_price_icon.visible = chest
 	_hint.text = tr("PICK_HINT")
 	_set_focus(0)
@@ -151,6 +156,10 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			)
 			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
 				face["tier"] = CardFrames.LEGENDARY_TIER
+		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
+			face["sentence"] = CurseLook.up_sentence(ci, reader, int(info["curse"]))
+			face["color"] = CurseLook.COLOR
+			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_CURSE"), ci.tr("RARITY_RARE")]
 		_:
 			face["color"] = ItemLooks.color_of_id(id)
 			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")

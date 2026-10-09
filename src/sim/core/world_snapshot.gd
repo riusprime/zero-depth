@@ -95,6 +95,8 @@ const STATE_CLASSES: Array[StringName] = [
 	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
 	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
 	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
+	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
+	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
 ]
 
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.

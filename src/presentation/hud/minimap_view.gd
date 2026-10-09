@@ -295,7 +295,7 @@ func _draw_icons() -> void:
 	var k := _icon_scale()
 	for i in state.visible_rewards(reader):
 		var p := to_map(reader.reward_pos(i))
-		if reader.reward_kind(i) == WorldReader.REWARD_ALTAR:
+		if reader.reward_kind(i) in [WorldReader.REWARD_ALTAR, WorldReader.REWARD_DROP]:
 			draw_icon(&"altar", p, k)
 		else:
 			draw_icon(&"chest" if reader.reward_affordable(i) else &"chest_poor", p, k)

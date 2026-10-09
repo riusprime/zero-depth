@@ -25,7 +25,8 @@ static func advance_utility(w: World) -> void:
 		or not Abilities.blink_ready(w)
 		or w.is_dashing()
 		or PlayerSkill.busy(w)
-	):
+		or Curses.stunned(w)
+	):  # v0.6.0 CU: Brittle
 		return
 	w.input_buffer[UTILITY_SLOT] = 0
 	w.blink_from = w.player_pos()
@@ -34,6 +35,7 @@ static func advance_utility(w: World) -> void:
 	w.actors.invuln[0] = maxi(w.actors.invuln[0], Abilities.blink_iframes(w))
 	Abilities.on_blink(w)  # v0.4.0 BS: the cooldown or a charge, and the landing shock.
 	ItemProcs.on_blink(w)  # Items: Phase Strike.
+	Curses.on_ability_use(w)  # v0.6.0 CU: Blood Price
 
 
 ## The way a blink (or a dash) goes: the move direction, or the aim when standing still.
@@ -78,6 +80,7 @@ static func advance(w: World) -> void:
 	Heat.advance(w)  # Overclock heat: the decay and the overheat stall run first.
 	var t := w.player
 	var can_attack := not w.guarding() and not w.is_dashing() and Heat.can_attack(w)  # Heat: the stall
+	can_attack = can_attack and not Curses.stunned(w)  # v0.6.0 CU: Brittle
 	can_attack = can_attack and not PlayerSkill.busy(w)  # Kit (v0.3.5 K): a skill commits
 	ItemEffects.advance_echo(w)
 	# Swing in progress: hit on its step's active tick, then end and open the combo window (none after the last
@@ -175,6 +178,7 @@ static func _resolve_swing(w: World) -> void:
 	var dmg := ItemProcs.momentum_damage(w, ItemEffects.swing_damage(w, base))
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
 	dmg = Gamble.melee_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
+	dmg = Curses.swing_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' 4th hit
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
 	if landed:
 		w.add_freeze(s.hitstop_ticks)
@@ -219,6 +223,7 @@ static func _fire_bolt(w: World) -> void:
 	var t := w.player
 	var dmg := PlayerBuild.bolt_damage(w, ItemEffects.bolt_damage(w))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
+	dmg = Curses.shot_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' every 4th shot
 	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
 	for off in Abilities.shot_offsets(w, ItemEffects.shot_offsets(w)):  # Pulse Gun L5: twin bolts
 		var dir := Kin.dir(w.aim_angle + off)
