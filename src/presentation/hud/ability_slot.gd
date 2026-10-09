@@ -5,6 +5,9 @@ extends Control
 ## along its bottom (the B mockup); other styles keep CardStyle's square.
 
 const LEVELS := WorldReader.ABILITY_MAX_LEVEL
+## The key corner's width (px) and the smallest size a long key name shrinks to.
+const KEY_W := AbilityHud.SLOT - 6.0
+const KEY_FONT_MIN := 9
 
 var ability_id := &""
 var level := 0
@@ -24,9 +27,30 @@ func _init() -> void:
 	_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	HudStyle.style_label(_key, AbilityHud.KEY_FONT, true)
 	_key.position = Vector2(3, -2)
-	_key.clip_text = true  # a long binding ("Left click") stays inside the slot
-	_key.size = Vector2(AbilityHud.SLOT - 6, AbilityHud.KEY_FONT + 4)
+	_key.clip_text = true  # the last resort; the short name (InputLabels.short_text) and fit_key() come first
+	_key.size = Vector2(KEY_W, AbilityHud.KEY_FONT + 4)
 	add_child(_key)
+
+
+## The key's font size for `text`: KEY_FONT, or smaller (down to KEY_FONT_MIN) until it fits KEY_W (v0.6.0 UP: the
+## owner saw "Left clic" cut off; long key names such as "Backspace" shrink instead).
+static func fit_key(text: String) -> int:
+	var f := HudStyle.font(true)
+	for s in range(AbilityHud.KEY_FONT, KEY_FONT_MIN - 1, -1):
+		if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= KEY_W:
+			return s
+	return KEY_FONT_MIN
+
+
+## Whether `text` fits the slot's key corner at its fitted size (tests).
+static func key_fits(text: String) -> bool:
+	var f := HudStyle.font(true)
+	return f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fit_key(text)).x <= KEY_W
+
+
+## The key label's font size now (tests).
+func key_font_size() -> int:
+	return _key.get_theme_font_size("font_size")
 
 
 func show_empty() -> void:
@@ -65,7 +89,9 @@ func show_ability(
 	key_text = key
 	charges = p_charges
 	seconds = p_seconds
-	_key.text = key
+	if _key.text != key:
+		_key.text = key
+		_key.add_theme_font_size_override("font_size", fit_key(key))
 	queue_redraw()
 
 

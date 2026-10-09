@@ -11,6 +11,8 @@ signal restart_pressed
 signal main_menu_pressed
 
 var run_line: Label
+## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
+var _run := []
 
 
 func _init() -> void:
@@ -31,5 +33,11 @@ func _init() -> void:
 ## The run so far under the list: "Floor 1 · 03:42 · 87 kills · 146 shards" (Main passes the recap's numbers).
 func show_run(floor_index: int, seconds: float, kills: int, shards: int) -> void:
 	var secs := int(seconds)
-	run_line.text = tr("UI_PAUSE_RUN") % [floor_index, secs / 60, secs % 60, kills, shards]
+	_run = [floor_index, secs / 60, secs % 60, kills, shards]
+	run_line.text = tr("UI_PAUSE_RUN") % _run
 	run_line.visible = true
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and not _run.is_empty():
+		run_line.text = tr("UI_PAUSE_RUN") % _run

@@ -9,6 +9,9 @@ extends Control
 ## - Keyboard: 1–6 focus a held modifier, ←/→ (↑/↓) move the focus (Skip is the last), Enter answers, Esc skips.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) answers, B (Circle) skips.
 ## It sits over the pick panel and the shop (their input waits while it is open).
+## v0.6.0 UP: a modal choice, so it wears the menus' Cold glass (MenuStyle): the game blurred and dimmed behind
+## (MenuBackdrop), plain type, each held modifier on a glass tile with its family's colour along the top, the focused
+## tile lit by the glass wash and a cold rim. The incoming card keeps the pick cards' look.
 
 signal picked(value: int)
 
@@ -16,7 +19,7 @@ const TILE := Vector2(150, 92)
 const SKIP := 6
 
 var input_enabled := true
-var _dim := ColorRect.new()
+var _dim := MenuBackdrop.new()
 var _title := Label.new()
 var _hint := Label.new()
 var _card: PickSlot
@@ -25,6 +28,10 @@ var _tiles: Array[PanelContainer] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
 var _skip: PanelContainer
+var _skip_key: Label
+var _skip_name: Label
+## The reader last shown (read only), so a language switch words the open panel again (v0.6.0 UP).
+var _reader: WorldReader
 var _count := 0
 var _focus := 0
 var _open := false
@@ -36,9 +43,7 @@ func _init() -> void:
 	name = "SwapPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.55)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_dim.mouse_filter = Control.MOUSE_FILTER_STOP  # the game under it takes no clicks
 	add_child(_dim)
 	var centre := CenterContainer.new()
 	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -49,9 +54,14 @@ func _init() -> void:
 	col.alignment = BoxContainer.ALIGNMENT_CENTER
 	col.add_theme_constant_override("separation", 14)
 	centre.add_child(col)
-	HudStyle.style_label(_title, 26, true)
-	HudStyle.style_label(_hint, 15)
-	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
+	_title.add_theme_font_override("font", HudStyle.font(true))
+	_title.add_theme_font_size_override("font_size", 26)
+	_title.add_theme_color_override("font_color", MenuStyle.TEXT)
+	for l: Label in [_title, _hint]:  # the menus' soft outline, readable over the blurred game
+		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+		l.add_theme_constant_override("outline_size", 4)
+	_hint.add_theme_font_size_override("font_size", MenuStyle.HINT_SIZE)
+	_hint.add_theme_color_override("font_color", MenuStyle.HINT)
 	for l: Label in [_title, _hint]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -61,6 +71,7 @@ func _init() -> void:
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card = PickSlot.new(0, 0.8)
 	_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_card.set_key_visible(false)  # v0.6.0 UP: the incoming card has no number key here
 	card_box.add_child(_card)
 	col.add_child(card_box)
 	_row.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -83,10 +94,10 @@ func _make_tile(k: int) -> PanelContainer:
 	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	t.add_child(box)
-	var key := HudStyle.label(13)
+	var key := _tile_label(13, false, MenuStyle.DIM)
 	key.text = tr("UI_SWAP_SKIP_KEY") if k == SKIP else str(k + 1)
-	var nm := HudStyle.label(15, true)
-	var lv := HudStyle.label(13)
+	var nm := _tile_label(15, true, MenuStyle.TEXT)
+	var lv := _tile_label(13, false, MenuStyle.DIM)
 	for l: Label in [key, nm, lv]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -98,14 +109,28 @@ func _make_tile(k: int) -> PanelContainer:
 		_levels.append(lv)
 	else:
 		nm.text = tr("UI_SWAP_SKIP")
+		_skip_key = key
+		_skip_name = nm
 	t.gui_input.connect(_on_tile_input.bind(k))
 	t.mouse_entered.connect(_set_focus.bind(k))
 	_row.add_child(t)
 	return t
 
 
+## A tile's plain-type label (the menus' font, sized and coloured).
+static func _tile_label(px: int, bold: bool, c: Color) -> Label:
+	var l := Label.new()
+	l.add_theme_font_override("font", HudStyle.font(bold))
+	l.add_theme_font_size_override("font_size", px)
+	l.add_theme_color_override("font_color", c)
+	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
+	l.add_theme_constant_override("outline_size", 4)
+	return l
+
+
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
+	_reader = reader
 	if not reader.swapping():
 		if _open:
 			_open = false
@@ -139,6 +164,25 @@ func sync(reader: WorldReader) -> void:
 	_title.text = tr("UI_SWAP_TITLE") % _count
 	_hint.text = tr("UI_SWAP_HINT")
 	_set_focus(0)
+
+
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_TRANSLATION_CHANGED or _skip_name == null:
+		return
+	_skip_key.text = tr("UI_SWAP_SKIP_KEY")
+	_skip_name.text = tr("UI_SWAP_SKIP")
+	if _open and _reader != null:  # word the open choice again, keeping its focus and answer
+		var f := _focus
+		var sent := _sent
+		_open = false
+		sync(_reader)
+		_set_focus(f)
+		_sent = sent
+
+
+## The Skip tile's name (tests).
+func skip_text() -> String:
+	return _skip_name.text
 
 
 func is_open() -> bool:
@@ -227,11 +271,15 @@ func _set_focus(k: int) -> void:
 
 
 func _style(t: PanelContainer, on: bool) -> void:
-	var tint: Color = t.get_meta(&"tint", HudStyle.accent())
-	var box := CardStyle.box(Vector4(8, 6, 8, 6), tint)
-	CardStyle.apply(box, tint, on)
-	if on:
-		box.border_color = tint
+	var tint: Color = t.get_meta(&"tint", MenuStyle.GLASS)
+	var box := MenuStyle.glass_panel(Vector2(8, 6))
+	box.border_color = Color(tint, 0.9)
+	box.border_width_top = 2
+	if on:  # the focused tile: the glass wash and a cold rim
+		box.bg_color = Color(MenuStyle.GLASS, 0.16)
+		box.border_color = MenuStyle.GLASS
+		box.set_border_width_all(1)
+		box.border_width_top = 2
 	t.add_theme_stylebox_override("panel", box)
 
 

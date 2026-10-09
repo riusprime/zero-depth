@@ -174,6 +174,36 @@ static func plate_points(r: Rect2, cut: float = CHAMFER) -> PackedVector2Array:
 	)
 
 
+## A HUD side panel's box (v0.6.0 UP: the shrine stats, the threat panel): in EMBER an empty box (the panel draws
+## its slab with draw_side_panel) padded by `margin`; the older styles keep the flat dark box with an `accent` top.
+static func side_panel_box(margin: Vector2, accent: Color, s: Style = current) -> StyleBox:
+	var box: StyleBox
+	if s == Style.EMBER:
+		box = StyleBoxEmpty.new()
+	else:
+		var flat := StyleBoxFlat.new()
+		flat.bg_color = Color(0.03, 0.04, 0.07, 0.8)
+		flat.border_color = Color(accent, 0.65)
+		flat.border_width_top = 2
+		box = flat
+	box.content_margin_left = margin.x
+	box.content_margin_right = margin.x
+	box.content_margin_top = margin.y
+	box.content_margin_bottom = margin.y
+	return box
+
+
+## EMBER: a side panel's stone slab over its whole rect, with its `accent` (the shrine's or the curses' colour) as a
+## short line along the top, the way an ability slot carries its colour.
+static func draw_side_panel(c: Control, accent: Color, s: Style = current) -> void:
+	if s != Style.EMBER:
+		return
+	draw_plate(c, Rect2(Vector2.ZERO, c.size))
+	c.draw_rect(
+		Rect2(Vector2(CHAMFER + 4.0, 2.0), Vector2(c.size.x * 0.4, 2.0)), Color(accent, 0.9)
+	)
+
+
 ## EMBER's stone slab on `ci` in `r`: the stone fill, a faint lit top edge, a dark rim (`edge` tints it, for the
 ## low-HP warning) and, when `ember`, the warm ember line with its glow along the bottom.
 static func draw_plate(

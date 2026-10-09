@@ -150,6 +150,11 @@ func _build_curse(s: float) -> void:
 	add_child(_curse)
 
 
+## Shows or hides the number key under the card (v0.6.0 UP: the Swap panel's single card has none).
+func set_key_visible(v: bool) -> void:
+	_key.visible = v
+
+
 func _apply() -> void:
 	card.set_focused(focused)
 	_key.add_theme_color_override("font_color", Color(1, 1, 1, 0.95 if focused else 0.5))

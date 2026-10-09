@@ -90,11 +90,16 @@ func sync(reader: WorldReader) -> void:
 
 ## The bound key's name for `action`: the pad's when a pad is connected, else the keyboard's.
 static func key_text(action: StringName) -> String:
+	return InputLabels.text(key_spec(action))
+
+
+## The binding shown for `action`: the pad's when a pad is connected, else the keyboard's.
+static func key_spec(action: StringName) -> Array:
 	var pad := not Input.get_connected_joypads().is_empty()
 	var spec := InputRebind.binding(action, InputRebind.PAD if pad else InputRebind.KBM)
 	if spec.is_empty():
 		spec = InputRebind.binding(action, InputRebind.KBM)
-	return InputLabels.text(spec)
+	return spec
 
 
 func _place() -> void:
