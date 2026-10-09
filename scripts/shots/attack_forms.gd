@@ -1,10 +1,10 @@
 extends SceneTree
 ## v0.6.0 MX3: the attack forms' shots under the real renderer and the v0.5.9 look. Boots the real game (main.tscn),
 ## starts a Blade run and, in the first room under the floor's own lighting mood, draws each of the 8 forms in a few
-## elements through the game's own AttackFormView (constructed specs, the way MX stage 2's runners will spawn them),
-## one tile per (form, element) round the hero, then a contact sheet; then two in-game shots: the Blade with Ember Edge
-## and Conductor swinging among Chargers at Hot heat (the live arc layer), and the same scene with a ring of orbiters,
-## a zone and a lob drawn from constructed specs. Needs a renderer:
+## elements through the game's own AttackFormView (constructed specs through spawn()), one tile per (form, element)
+## round the hero, then a contact sheet; then two in-game shots: the Blade with Ember Edge and Conductor swinging among
+## Chargers at Hot heat (the live arc layer), and the same fight later with MX2's Orbit Blades, Arc Field and Bomb
+## Lobber granted (their live forms, read from the sim, in the weapon's elements). Needs a renderer:
 ##   XDG_DATA_HOME=<empty dir> xvfb-run -a godot --path . --fixed-fps 60 --audio-driver Dummy \
 ##     --resolution 1280x720 -s scripts/shots/attack_forms.gd
 ## Shot setup only (the hero can't be hurt, items, heat and enemies are set as the dev panel would). Writes
@@ -53,10 +53,9 @@ func _initialize() -> void:
 	_script.append([f + 20, _set_heat.bind(55)])
 	_script.append([f + 24, _mouse.bind(MOUSE_BUTTON_LEFT, true)])
 	_script.append([f + 28, _full.bind("attack_forms_ingame_blade")])
-	_script.append([f + 40, _mouse.bind(MOUSE_BUTTON_LEFT, false)])
-	_script.append([f + 44, _spawn_mx2_forms])
-	_script.append([f + 64, _full.bind("attack_forms_ingame_forms")])
-	_script.append([f + 66, quit.bind(0)])
+	_script.append([f + 66, _full.bind("attack_forms_ingame_forms")])
+	_script.append([f + 70, _mouse.bind(MOUSE_BUTTON_LEFT, false)])
+	_script.append([f + 72, quit.bind(0)])
 
 
 ## [label, spec extras, display age (ticks)] per row: the 8 forms, then the motion cues on bolts.
@@ -119,10 +118,9 @@ func _spawn_tile(row: Array, col: Array) -> void:
 
 func _take_tile(label: String) -> void:
 	var img := root.get_viewport().get_texture().get_image()
-	var cam := _main.view.rig.camera
-	var p := cam.unproject_position(SimPlane.to_3d(_main.driver.world.player_pos(), 0.5))
-	var x := clampi(int(p.x) - CROP / 2, 0, img.get_width() - CROP)
-	var y := clampi(int(p.y) - CROP / 2, 0, img.get_height() - CROP)
+	# The rig keeps the hero at the screen's centre (a little above it for the iso pitch).
+	var x := clampi(img.get_width() / 2 - CROP / 2, 0, img.get_width() - CROP)
+	var y := clampi(img.get_height() / 2 - 10 - CROP / 2, 0, img.get_height() - CROP)
 	var tile := img.get_region(Rect2i(x, y, CROP, CROP))
 	tile.resize(TILE, TILE, Image.INTERPOLATE_LANCZOS)
 	tile.save_png(ProjectSettings.globalize_path(OUT + "tiles/" + label + ".png"))
@@ -160,6 +158,11 @@ func _ingame_setup() -> void:
 		for k in w.item_tables.size():
 			if w.item_tables[k].id == id:
 				w.add_item(k)
+	# MX2's ability modifiers, granted as the dev panel would: their live forms (orbiters, shock fields, bombs).
+	for id: StringName in [&"orbit_blades", &"arc_field", &"bomb_lobber"]:
+		for k in w.ability_tables.size():
+			if w.ability_tables[k].id == id:
+				Abilities.grant(w, k)
 	var p := w.player_pos()
 	for k in 6:
 		w.add_enemy(ActorStore.Kind.CHARGER, p + Kin.dir(k * 683 + 200) * (2.2 + 0.4 * (k % 2)))
@@ -170,37 +173,6 @@ func _ingame_setup() -> void:
 
 func _set_heat(points: int) -> void:
 	_heat = points
-
-
-func _spawn_mx2_forms() -> void:
-	var v := _forms()
-	var r := WorldReader.new(_main.driver.world)
-	var p := r.player_pos()
-	var t := float(r.tick())
-	v.spawn(
-		{"form": 5, "count": 4, "reach_m": 1.5, "elements": PackedStringArray(["frost", "storm"])},
-		p,
-		0.0,
-		{"start": t - 10.0}
-	)
-	v.spawn(
-		{"form": 4, "radius_m": 1.8, "life_ticks": 240, "elements": PackedStringArray(["venom"])},
-		p + Vector2(-3.0, -1.0),
-		0.0,
-		{"start": t - 30.0}
-	)
-	v.spawn(
-		{"form": 6, "reach_m": 4.0, "radius_m": 1.4, "elements": PackedStringArray(["ember"])},
-		p,
-		0.6,
-		{"start": t - 4.0}
-	)
-	v.spawn(
-		{"form": 2, "radius_m": 3.0, "elements": PackedStringArray(["void"])},
-		p,
-		0.0,
-		{"start": t - 4.0}
-	)
 
 
 func _full(label: String) -> void:

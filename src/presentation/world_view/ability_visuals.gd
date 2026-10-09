@@ -22,6 +22,9 @@ const STEEL := Color("#D6E4F0")
 const ICE := Color("#A8F0FF")
 const DANCE_SCALE := 1.35
 
+## v0.6.0 MX3: AttackFormView draws the bombs that name a spec (the LOB form) and every landing (WorldViewRoot sets
+## it); this view keeps the drones, the orbit blades' steel and the rest.
+var forms_drawn := false
 var _drones: Array[Node3D] = []
 var _blades: Array[MeshInstance3D] = []
 var _bombs: Array[Node3D] = []
@@ -35,6 +38,7 @@ var _bomb_mat := StandardMaterial3D.new()
 var _shell_mat := StandardMaterial3D.new()
 var _core_mat := StandardMaterial3D.new()
 var _last_blast := -1
+var _bomb_keys := PackedStringArray()
 var _last_shock := -1
 var _last_chain := -1
 var _last_echo_at := -1
@@ -69,12 +73,13 @@ func sync(reader: WorldReader) -> void:
 	var big := DANCE_SCALE if el["dancing"] else 1.0
 	for b in _blades:
 		b.scale = Vector3(big, big, big)
+	_bomb_keys = reader.bomb_spec_keys() if forms_drawn else PackedStringArray()
 	_sync_bombs(fx, reader.tick())
 	var bt: PackedInt32Array = fx["blast_tick"]
 	var bp: PackedVector2Array = fx["blast_pos"]
 	var br: PackedFloat32Array = fx["blast_r"]
 	for k in bt.size():
-		if bt[k] > _last_blast:
+		if bt[k] > _last_blast and not forms_drawn:
 			_flash_disc(bp[k], br[k], BOMB_COLOR, &"blast")
 	if not bt.is_empty():
 		_last_blast = maxi(_last_blast, bt[bt.size() - 1])
@@ -239,7 +244,7 @@ func _sync_bombs(fx: Dictionary, tick: int) -> void:
 		_bombs.append(b)
 	for k in _bombs.size():
 		var b := _bombs[k]
-		b.visible = k < at.size()
+		b.visible = k < at.size() and (k >= _bomb_keys.size() or _bomb_keys[k] == "")
 		if not b.visible:
 			continue
 		var p := clampf(float(tick - thrown[k]) / maxf(1.0, float(land[k] - thrown[k])), 0.0, 1.0)

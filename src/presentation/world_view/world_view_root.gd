@@ -96,6 +96,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(attack_forms)  # v0.6.0 MX3
+	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
+	ability_fx.forms_drawn = true
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
