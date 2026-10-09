@@ -31,7 +31,7 @@ func _init() -> void:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_row.add_child(l)
-	for k in BuildSlots.SLOTS:
+	for k in WorldReader.MOD_SLOTS:
 		var p := Panel.new()
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)

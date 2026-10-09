@@ -24,7 +24,7 @@ var _row := HBoxContainer.new()
 var _tiles: Array[PanelContainer] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
-var _skip := PanelContainer.new()
+var _skip: PanelContainer
 var _count := 0
 var _focus := 0
 var _open := false
@@ -67,7 +67,7 @@ func _init() -> void:
 	_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_row.add_theme_constant_override("separation", 10)
 	col.add_child(_row)
-	for k in BuildSlots.SLOTS:
+	for k in WorldReader.MOD_SLOTS:
 		_tiles.append(_make_tile(k))
 	_skip = _make_tile(SKIP)
 	col.add_child(_hint)
