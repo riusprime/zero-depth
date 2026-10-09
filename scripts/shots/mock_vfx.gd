@@ -21,9 +21,8 @@ var _phase := 0
 var _scenes: Array = [
 	"fire", "bomb", "bomb_smoke", "electric", "all", "frost", "venom", "void", "bleed", "status"
 ]
-## Scene "status": the nearest enemies are drawn burning, frozen, poisoned and bleeding (the layer's status look;
-## the sim isn't touched). Only the "after" shot shows them.
-var _status_on := false
+## Scene "status": the dummies added by the hero (their ids), given statuses each frame.
+var _dummies: Array[int] = []
 var _layer: VfxLayer
 ## This scene's effects and the age each is held at: [effect, age]. The clock runs on (software rendering is slow),
 ## so each frame sets every effect's start back to hold its age.
@@ -69,8 +68,6 @@ func _process(_delta: float) -> bool:
 			_wait -= 1
 			if _wait <= 0:
 				_layer = _main.view.attack_forms.vfx
-				if _layer != null:
-					_layer.drawers.append(_draw_statuses)
 				_phase = 2
 		2:
 			if _jobs.is_empty():
@@ -82,6 +79,8 @@ func _process(_delta: float) -> bool:
 			_phase = 3
 		3:
 			var forms: AttackFormView = _main.view.attack_forms
+			if _jobs[0][0] == "status":
+				_hold_statuses()
 			for pair: Array in _held:
 				(pair[0] as Dictionary)["start"] = float(forms._tick) - float(pair[1])
 			_wait -= 1
@@ -99,7 +98,7 @@ func _stage(scene: String, after: bool) -> void:
 	_held.clear()
 	if _layer != null:
 		_layer.clear_marks()
-		_status_on = scene == "status" and after
+		_main.view.status_fx.vfx = _layer if after else null
 		_layer.visible = after
 		forms.vfx = _layer if after else null
 	var hero := _main.view.reader.player_pos()
@@ -137,6 +136,12 @@ func _stage(scene: String, after: bool) -> void:
 			40.0
 		)
 
+	if scene == "status" and _dummies.is_empty():
+		var w: World = _main.driver.world
+		for off: Vector2 in [
+			Vector2(2.2, 0.6), Vector2(-2.2, 0.8), Vector2(0.6, 2.4), Vector2(-0.4, -2.4)
+		]:
+			_dummies.append(w.add_dummy(hero + off, 0.4, 100000))
 	for el: String in ["frost", "venom", "void", "bleed"]:
 		if scene == el:
 			_element_scene(forms, el, hero, now)
@@ -173,24 +178,25 @@ func _element_scene(forms: AttackFormView, el: String, hero: Vector2, now: float
 	_held[-1][1] = float(e.get("flight", float(e["life"]) * 0.75)) + 8.0
 
 
-## Scene "status": the four nearest enemies burning, frozen, poisoned, and bleeding and shocked.
-func _draw_statuses(layer: VfxCore) -> void:
-	if not _status_on:
-		return
-	var reader := _main.view.reader
-	var hero := reader.player_pos()
-	var near: Array = []
-	for i in range(1, reader.actor_count()):
-		near.append([reader.actor_pos(i).distance_to(hero), i])
-	near.sort()
-	var looks: Array = [{&"burn": 6}, {&"frozen": 1}, {&"poison": 6}, {&"bleed": 7, &"shock": 3}]
-	for k in mini(4, near.size()):
-		var i: int = near[k][1]
-		var node := _main.view.actors.actor_node(reader.actor_id(i))
-		if node == null:
+## Scene "status": four dummies by the hero, burning, frozen, poisoned, and bleeding and shocked. The stacks are set
+## on the world each frame (the sim would let them run out); StatusVisuals draws them through its real path.
+func _hold_statuses() -> void:
+	var w: World = _main.driver.world
+	var a := w.actors
+	var looks: Array = [
+		{"burn_stacks": 6},
+		{"frozen_t": 30},
+		{"poison_stacks": 6},
+		{"bleed_stacks": 7, "shock_stacks": 3},
+	]
+	for k in _dummies.size():
+		var i := a.ids.find(_dummies[k])
+		if i < 0:
 			continue
-		var p := node.global_position
-		(layer as VfxLayer).status(Vector3(p.x, 0, p.z), reader.actor_radius(i), looks[k], i)
+		for field: String in looks[k]:
+			var arr: PackedInt32Array = a.get(field)
+			arr[i] = int(looks[k][field])
+			a.set(field, arr)
 
 
 func _at(

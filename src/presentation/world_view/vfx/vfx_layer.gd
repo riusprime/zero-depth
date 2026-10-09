@@ -13,7 +13,7 @@ const COLD := Color(0.55, 0.75, 1.0)
 const ICE := Color(0.72, 0.9, 1.0)
 const VENOM := Color(0.45, 0.92, 0.3)
 const VOID_GLOW := Color(0.62, 0.32, 1.0)
-const VOID_DARK := Color(0.24, 0.1, 0.42)
+const VOID_TENDRIL := Color(0.5, 0.26, 0.9)
 const BLOOD := Color(0.58, 0.05, 0.09)
 const SCORCH := Color(0.05, 0.04, 0.035, 0.85)
 const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
@@ -268,7 +268,7 @@ func _smoke(
 		_facing(q, s, s, true, h(sd, 4) * TAU),
 		Color(tint, a),
 		int(h(sd, 5) * 4.0),
-		u * 0.5,
+		0.0,  # alpha fades it: a dissolve broke the puff into streaks
 		h(sd, 6)
 	)
 
@@ -325,7 +325,7 @@ func _explosion(c: Vector3, r: float, u: float, sd: int) -> void:
 			_facing(q, s, s, true, TAU * h(sd + 9, k)),
 			Color(0.52, 0.48, 0.45, al),
 			(sd + k) % 4,
-			u * 0.4,
+			0.0,
 			h(sd, k + 9)
 		)
 	for k in int(round(10 * density)):
@@ -735,7 +735,7 @@ func _void_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> void
 	var open := 0.75 + 0.25 * sin(age * 0.2 + sd)
 	_put(
 		&"rift",
-		_facing(c + Vector3(0, 0.1, 0), r * 0.35 * open, r * 0.9, false),
+		_facing(c + Vector3(0, 0.1, 0), r * 0.5 * open, r * 1.1, false),
 		Color(VOID_GLOW * 1.6, fade),
 		int(age / 20.0 + sd) % 4,
 		0.0,
@@ -756,7 +756,7 @@ func _void_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 
 ## A rift torn along a beam, tendrils where it ends.
 func _void_line(a: Vector3, b: Vector3, fade: float, age: float, sd: int) -> void:
-	var w := 0.5 * (0.85 + 0.15 * sin(age * 0.5 + sd))
+	var w := 0.8 * (0.85 + 0.15 * sin(age * 0.5 + sd))
 	_put(
 		&"rift",
 		_ribbon_tall(a, b, w),
@@ -799,5 +799,5 @@ func _tendril(p: Vector3, age: float, sd: int, size: float, fade: float, period:
 	var flip := 1.0 if h(sd, 5) < 0.5 else -1.0
 	var xf := _facing(p, s * 0.6 * flip, s, false, (h(sd, 4) - 0.5) * 0.4)
 	_put(
-		&"tendril", xf, Color(VOID_DARK, fade * sin(PI * u)), int(h(sd, 3) * 4.0), u * 0.6, h(sd, 6)
+		&"tendril", xf, Color(VOID_TENDRIL, fade * sin(PI * u)), int(h(sd, 3) * 4.0), u * 0.3, h(sd, 6)
 	)
