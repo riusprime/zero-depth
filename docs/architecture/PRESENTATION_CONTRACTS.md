@@ -76,6 +76,18 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   elements → the core colour, behaviour → trail and brightness, heat → the edge via `HeatLooks.attack_color`). No
   view asks which cards are held for an attack's look. MX1 keeps the v0.5 looks exactly
   (`tests/unit/presentation/test_attack_view.gd`); the 8-form / 5-element art layers are MX stage 3.
+- **MX3: the form and element layers** (`src/presentation/world_view/attack_forms/`). `AttackFormLooks.compose(spec,
+  heat tier)` turns a spec into a look: the form picks the pools, size / reach / count / spread / directions the
+  meshes' scale, number and layout (a halo of 12 shots is 12 darts evenly round); the first element sets the core
+  colour and particles (storm white-blue crackle, ember orange sparks, frost pale shards, venom green drip, void violet
+  smear, bleed MX1's tint), a second element the rim; the heat edge is `HeatLooks.attack_color` over the rim (values
+  untouched); behaviour cues (pierce a streak, bounce a flash, home a curved trail, return a tether); a damage
+  multiplier (`damage_mul_permille`) thickens and brightens, a crit adds a white-hot flash. `AttackFormView` draws
+  them in MultiMesh pools per form layer and per particle kind, additive light (lit matter for the lob's bomb), timed
+  by sim ticks. **Ground marks never take a hostile hue:** a zone's patch, a lob's landing circle and the flat fill of
+  a ring or burst pass through `AttackFormLooks.ground_safe`, which leans a colour in the telegraphs' red-orange /
+  red / magenta band toward the player's cool core; only light that rises off the floor carries the heat edge.
+  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and dart.
 
 ## 5. Occlusion cutaway
 
@@ -116,6 +128,11 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   `emission_enabled` or another feature flag at runtime. Enemy models are not MultiMesh instances: each kind's model
   animates its own parts, so a crowd stays one node tree per enemy (measured in `docs/roadmap/v0.4.0/evidence/
   HORDES.md`).
+- **Attack forms (v0.6.0 MX3):** at most `AttackFormView.MAX_ATTACK_MESHES` (1,024) form meshes and
+  `MAX_PARTICLES` (1,200, inside the 2,000 below) attack particles a frame, the live attacks first, then the newest
+  effects; every pool has a fixed size (384 per layer, 600 per particle kind) and at most 256 effects live. Options >
+  Display > **Effects density** (low / medium / high, `ViewPrefs.effects_density`; default high) scales the particles
+  (× 0.25 / 0.55 / 1) and the mesh cap (384 / 640 / 1,024); a pattern's own copies are never thinned below the cap.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;
