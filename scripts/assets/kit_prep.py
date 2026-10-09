@@ -11,6 +11,8 @@
   ground_b.png.
 
 Run from the repo root: python3 -I scripts/assets/kit_prep.py   (needs Pillow and numpy)
+With file names (python3 -I scripts/assets/kit_prep.py gamble_shrine.glb) it prepares only those uploads and leaves
+every other piece and the ground textures untouched (v0.6.0 Step SR: one new piece without rewriting the kit).
 Then update assets/models/manifest.json with the new sha256 values (the script prints them).
 """
 
@@ -96,14 +98,19 @@ def seamless_blend(img: np.ndarray) -> np.ndarray:
 
 
 def main() -> int:
+    only = sys.argv[1:]
     os.makedirs(OUT_MODELS, exist_ok=True)
     os.makedirs(OUT_TEX, exist_ok=True)
     written = []
-    for f in sorted(os.listdir(SRC)):
+    for f in sorted(only or os.listdir(SRC)):
         if f.endswith(".glb"):
             dst = os.path.join(OUT_MODELS, f)
             shrink_glb(os.path.join(SRC, f), dst)
             written.append(dst)
+    if only:
+        for p in written:
+            print("%s  %8d  %s" % (hashlib.sha256(open(p, "rb").read()).hexdigest(), os.path.getsize(p), p))
+        return 0
     a = Image.open(os.path.join(SRC, "ground-a.png")).convert("RGB").crop(GROUND_A_CROP)
     a = a.resize((GROUND_PX, GROUND_PX), Image.LANCZOS)
     neutralise(a).save(os.path.join(OUT_TEX, "ground_a.png"))

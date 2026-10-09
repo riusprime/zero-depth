@@ -115,6 +115,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		)
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
+		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
 	if reader.has_shop():
