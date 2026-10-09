@@ -578,6 +578,11 @@ dying root (`ProcLedger` code 70; the poison feed is `Engines.CODE_FEED_POISON` 
 strongest held (Venom Core's card). Actor columns `poison_stacks`, `poison_t`, `poison_cd`, hashed with the modifier
 engine's state.
 
+**What the views read** (`AttackSpec.read`, for MX3's `AttackFormLooks`): `directions` as a name (`"circle"`,
+`"back"` when the spec also fires back, else `"forward"`), the motion cues `home` and `return` (bools), and
+`damage_mul_permille` (the product of the `MUL_PERMILLE` ops on `damage`: the attack's weight), besides the numbers
+above. What no spec shows is `WorldReader.modifier_marks` (`ModifierOverlays`).
+
 **Hash, saves.** `Modifiers.hash_into` adds, after the book's digest and only once the build has a modifier, the
 queue and counters (`ModifierState`), the poison columns while poison runs and the projectile behaviour columns once
 used; worlds without a modifier (the kernel goldens) hash as before. `World.mx`, the projectile columns and the poison

@@ -102,4 +102,96 @@ at 800 ‰). The ability mods' modifiers: `cluster_payload` (bomb: ON_END LOB 3 
   v0.3 items, not the M-list's cards), `test_card_pool` (Cluster Payload's bomblets deal 8, the hook rule's round-down
   of 40 % of 22; the bomblet fields left the item).
 
-NOT YET RUN: the results below are filled from the runs.
+- Also (after merging MX3 `4a05e57`): `AttackSpec.read` carries `directions` as a name ("circle", "back" when the
+  spec also fires back, "forward"), `home`, `return` and `damage_mul_permille` (the product of the MUL ops on
+  damage), so MX3's form views light the pattern, the cues and the weight for Halo Shot, Rearguard, Seeker, Boomerang
+  and Short Fuse (`test_mx4_engine.gd`: the read carries them); `tests/unit/presentation/test_modifier_overlays.gd`
+  (the overlay shows the shell, the charge, the phase, poison drops and queued marks, nothing without the cards).
+- Updated for the bigger pool: `test_items`, `test_items_j` (pool counts 48 / 47, Frost Core's slow event filtered),
+  `test_engines` (Frost Core's stack on every hit), `test_player_builds` (Echo Slash and Echo Storm need the Blade,
+  Bomb Rounds the Gun, Frost Core both), `test_rewards` (the rare list, the rare-share draw on v0.3.0's 24),
+  `test_modifiers` (the moments in the book; lineage: a hook's child carries no copy of its own hook, the run-time
+  ancestry still refuses one forced in), `test_modifier_smoke` (pairs and the ability runs over the 16 MX1/MX2
+  modifiers, the all-51-at-once runs may hit the launch cap or the per-tick event watchdog: only those LIMITs),
+  `test_card_pool_reach` (300 seeds; the pool size, below), `test_attack_view` (the moments in the reader's ids).
+
+## Goldens
+- `tests/golden/fixtures/modifier_equivalence.json`, changed on purpose: three cases, because M3 Frost Core is the
+  v0.5 item generalised (every attack, a stack every hit, the 3rd freezes) and an inherited every-N status now counts
+  its own form's hits (Arc Field's patches with Cinder Shot / Barbed Bolts / Static Chain). Command and raw output (the
+  three changed lines; hits, damage and kills unchanged in all three):
+  ```
+  godot --headless --path . -s tests/golden/generate_modifier_equivalence.gd
+  GOLD| gun_frost_core 625e97c8f9548153e07e3e5ec916e56bbef604f7a0e3e894ac7432767365a522 hits=81 damage=384 kills=0
+  GOLD| gun_all 0d4ad4294f173684a64df140193ff5a7eda7f5472bf83e840c5671b0a803c131 hits=472 damage=4160 kills=14
+  GOLD| both_all 947d3402d0bcbfc4433514d1c82b292cb1a87da9d091917eb83eb35e1cd8fd49 hits=199 damage=4160 kills=14
+  ```
+  (were gun_frost_core `18e57d8b…`, gun_all `ce0f34c7…`, both_all `5a364556…`; `git diff` of the fixture: those 3
+  digest lines only). The other 19 cases match their recording.
+- The replay golden and the export-smoke hash did not change (`test_replay_ground_plane` 2/2; export smoke "600-tick
+  World run hash e5365ddb6dcb matches").
+
+## Full suite
+Command: `bash /tmp/claude-0/vd.sh <worktree> mx4` (import, gdformat/gdlint, `scripts/verify.sh`) on `f2034b6` (MX4
+merged with `claude/lucid-fermat-9wv2tf` at `4a05e57`, MX3; translations regenerated), worktree clean but for this
+docs change. Raw summary:
+```
+verify exit 0
+Tests              1333
+Passing Tests      1333
+check_gut_log: ok (1333 passing, minimum 1283)
+```
+From the clean log (`/tmp/claude-0/vd_mx4.clean.log`): `Scripts 207`, `Time 2567.937s`; 0 "SCRIPT ERROR", 0
+"Ignoring script"; `test_mx4_modifiers.gd` 15/15, `test_mx4_modifiers_2.gd` 15/15, `test_mx4_engine.gd` 7/7,
+`test_modifier_smoke_mx4.gd` 6/6, `test_modifier_smoke.gd` 8/8, `test_modifier_equivalence.gd` 3/3,
+`test_modifier_validation.gd` 7/7, `test_card_pool_reach.gd` 3/3, `test_modifier_overlays.gd` 4/4,
+`test_e2e_modifiers_mx4.gd` 1/1, `test_replay_ground_plane.gd` 2/2 passed. MIN_TEST_COUNT 1283 → 1333.
+
+An earlier full run on `3c02690` stopped at the import check (`verify: import reported errors`: "ERROR: 1 resources
+still in use at exit"): `ModifierOpDefinition.hook_ops` was typed with its own class; it is `Array[Resource]` now
+(`f2034b6`) and the import is clean. Earlier partial runs (unit/sim alone, before the test updates) failed 19 tests,
+all old expectations of the pool's size, Frost Core's v0.5 numbers and MX1's "a child carries its own hook"; each is
+updated above.
+
+## Export smoke
+Command: `cd /tmp && bash <worktree>/scripts/ci/export_smoke.sh` (on `f2034b6`). Raw output (the check list):
+```
+manifest: c315e054fd34f4b9c8ed1cec4fa032f4976aa0d7d2cf2763f4bde95c1cb54fed (315 files, 0 errors)
+  ok    running inside the exported pack (run from outside the project folder)
+  ok    the main scene ships
+  ok    600-tick World run hash e5365ddb6dcb matches the project's
+  ok    content player: 1
+  ok    content biomes: 3
+  ok    content validates inside the pack (0 errors)
+  ok    manifest hash c315e054fd34 matches the project's
+  ok    Spanish translation is loaded
+  ok    UI_PLAY is Play / Jugar
+  ok    boss model stone_sentinel loads from the pack
+  ok    boss model crawler_queen loads from the pack
+  ok    boss model fortress_turret loads from the pack
+  ok    audio cues: 87
+  ok    every cue's sound loads from the pack (missing: [])
+  ok    the test framework is not shipped
+  ok    tests are not shipped
+0 miss(es)
+exit 0
+```
+
+## Not done (honest list)
+- Stat cards as modifiers (design "Order of work" 4 names them): not built; they stay numbers.
+- The new cards' icons are the generic gem (`ItemIcons` has no shapes for them); their frames follow `FAMILY_OF`.
+- A Skill's own statuses: Lunge Cleave and Scatter Blast take the cards' statuses into their specs, but their hits
+  still feed through v0.5's sources (a melee hit reads the current combo step's statuses), as MX1 kept it.
+- A hook's 1-stack status feeds 0 at the hook's 50 % proc (the MX1 rule): Ember Trail and Inferno Core's burst carry 2
+  so they burn 1; Ember Core's kill burst and a crescent inherit 1 and feed none of their own.
+- Cluster Payload's bomblets now deal 8 (40 % of 22 rounded down, the hook rule) instead of v0.5's 9, and land at a
+  fixed 2 m (v0.5: the bomb's area-scaled radius).
+- Bot balance: none (owner P1). Every number in the M table is a starting value.
+
+## Owner only / owner questions
+- Feel, readability, every starting value: `OWNER ONLY`.
+- The card pool is now 80 (Blade) / 77 (Gun) distinct cards (`test_card_pool_reach`, raised from 51 with this note):
+  the ROADMAP v0.5.0 aim was 40–50 and EC said "the pruning is v0.6.0's". Prune, or keep all? (PROGRESS gate.)
+- M24 "Resonance" shares its name with the v0.3 combo Resonance (Overcharge + Twin Arc): rename one?
+- The readings in the M table's last column (e.g. Aftershock on every attack's end, Blade Orbit's addition, Long
+  Shadow's angle, Halo's ×3 of a single shot = 3).
