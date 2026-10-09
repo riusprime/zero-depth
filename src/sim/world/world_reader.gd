@@ -111,6 +111,8 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
+const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR (X1b)
+const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
@@ -953,6 +955,30 @@ func reward_is_epic(i: int) -> bool:
 	return Routes.is_epic_altar(_w, i)
 
 
+## v0.5.5 AR (X1b): reward i is the boss's legendary altar.
+func reward_is_legendary(i: int) -> bool:
+	return BossReward.is_legendary(_w, i)
+
+
+## v0.5.5 AR: reward i stands in an arena that isn't cleared (it can't be opened yet).
+func reward_locked(i: int) -> bool:
+	return Arenas.locked(_w, i)
+
+
+## v0.5.5 AR: the sealed arenas (Arenas.read: active, rooms, overrun, cleared, sealed, overrun_sealed, wave, waves,
+## alive, next_wave_tick, sealed_tick, clear_tick, last_cleared).
+func arenas() -> Dictionary:
+	return Arenas.read(_w)
+
+
+## v0.5.5 AR: the barriers of the sealed arena now (centre and half extents, axis-aligned), for the door views.
+func arena_barriers() -> Array[Rect2]:
+	var out: Array[Rect2] = []
+	for o in _w.arenas.barriers:
+		out.append(Rect2(o.center - o.half, o.half * 2.0))
+	return out
+
+
 ## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
 func entered_portal_pos() -> Vector2:
 	return deep_portal_pos() if route_taken() == Routes.Route.DEEP else portal_pos()
@@ -1135,7 +1161,7 @@ func reward_pos(i: int) -> Vector2:
 	return _w.rewards.pos(i)
 
 
-## REWARD_ALTAR or REWARD_CHEST.
+## REWARD_ALTAR, REWARD_CHEST or (v0.5.5 AR) REWARD_LEGENDARY.
 func reward_kind(i: int) -> int:
 	return _w.rewards.kind[i]
 

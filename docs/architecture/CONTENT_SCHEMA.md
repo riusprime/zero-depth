@@ -629,8 +629,23 @@ and that no ability pair repeats. Compiled with the item combos (`ComboTable.abi
 `compile_abilities` order; `item_a/b` stay −1).
 
 `OverrunDefinition` (v0.4.0 AB; `data/overrun/overrun.tres`, category `overrun`): the Overrun threat branch.
-`hp_multiplier`, `damage_multiplier`, `spawn_multiplier` (≥ 1; data 1.5 each), `kills_to_clear` (> 0; data 12) and
-`shard_multiplier` (≥ 1; data 2.0). Compiled by `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
+`hp_multiplier`, `damage_multiplier` (≥ 1; data 1.5 each), `shard_multiplier` (≥ 1; data 2.0) and, since v0.5.5 AR
+(owner S8, replacing `spawn_multiplier` and `kills_to_clear`), `waves_min` / `waves_max` (> 0, max ≥ min; data 3 / 5)
+and `wave_sizes` (one positive size per floor, the last repeats; data 4, 8, 12). Compiled by
+`ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
+
+`ArenaDefinition` (v0.5.5 AR, PLAN D2 / X1; `data/arenas/arena.tres`, category `arena`): the sealed arenas. `share`
+(0..1; data 0.33: the share of a floor's combat rooms that are arenas), `waves_min` / `waves_max` (data 2 / 3),
+`wave_sizes` (per floor; data 3, 5, 7), `first_wave_seconds` (data 0.75), `wave_gap_seconds` (data 1.0) and
+`min_spawn_distance` (m; data 3.0). Compiled by `ContentCompiler.compile_arena` into `ArenaTable` (ticks, per mille).
+Without the definition a floor has no regular arenas (the Overrun still seals).
+
+`LegendaryDefinition` (v0.5.5 AR, owner X1b "Pick a legendary card"; `data/legendary/boss.tres`, category
+`legendary`): the boss-only legendary tier. `stat_cards` (stat card ids offered at the legendary rarity), `mods` (item
+ids), `stat_weight` / `mod_weight` (data 60 / 40), `offer_size` (1..3; data 3) and `stat_multiplier` (≥ 1; data 1.6:
+a legendary stat card is its epic amount × this; `compile_stat_cards` appends that fourth rarity to every
+`StatTable`). Compiled by `ContentCompiler.compile_legendary` into `LegendaryTable` (indices into the compiled stat
+cards and items). Step MX swaps this pool for legendary modifiers.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

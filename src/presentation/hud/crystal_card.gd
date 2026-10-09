@@ -19,8 +19,9 @@ const ICON := 30.0
 const GEM := 20.0
 const TIER_SIZE := 13
 const TEXT := Color(0.86, 0.88, 0.92)
-## Glow strength behind the frame by tier (PickSlot.TIERS: common, rare, epic, ability); focus adds FOCUS_GLOW.
-const GLOW := [0.0, 0.26, 0.4, 0.26]
+## Glow strength behind the frame by tier (PickSlot.TIERS: common, rare, epic, ability, v0.5.5 AR legendary); focus
+## adds FOCUS_GLOW.
+const GLOW := [0.0, 0.26, 0.4, 0.26, 0.62]
 const FOCUS_GLOW := 0.14
 const FADE_S := 0.15
 const LIFT_PX := 8.0
@@ -123,6 +124,8 @@ func show_face(
 	tier = p_tier
 	_set_frame(CardFrames.frame_of(fam))
 	var c := CardFrames.tint(frame_id)
+	if tier == CardFrames.LEGENDARY_TIER:  # v0.5.5 AR (X1b): a paler, brighter gold
+		c = CardFrames.LEGENDARY_TINT
 	_title.text = title
 	_title.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.15))
 	_desc.text = sentence
@@ -234,7 +237,7 @@ func _apply() -> void:
 	var g: float = GLOW[clampi(tier, 0, GLOW.size() - 1)] + (FOCUS_GLOW if focused else 0.0)
 	var gc := gem.color if tier > 0 else Color.WHITE
 	_glow.modulate = Color(gc, g)
-	_frame.self_modulate = Color(1, 1, 1) if focused else Color(0.8, 0.8, 0.82)
+	_frame.self_modulate = CardFrames.frame_modulate(tier, focused)  # v0.5.5 AR: legendary overbright
 	_root.position = Vector2(0, -LIFT_PX * scale_factor if focused else 0.0)
 	CardStyle.apply(_box, CardFrames.tint(frame_id), focused)
 	_box.bg_color = Color(0.015, 0.018, 0.026, 0.62 if focused else 0.55)

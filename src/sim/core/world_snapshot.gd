@@ -34,6 +34,8 @@ const WORLD_KEPT := {
 	&"overrun_table": "loadout",  # v0.4.0 AB
 	&"shop_table": "loadout",  # v0.5.0 SH
 	&"catch_up_table": "loadout",  # v0.5.5 DS
+	&"arena_table": "loadout",  # v0.5.5 AR
+	&"legendary_table": "loadout",  # v0.5.5 AR
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
@@ -62,6 +64,9 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"SkillTable",
 	&"OverrunTable",  # v0.4.0 AB
 	&"ShopTable",  # v0.5.0 SH
+	&"ArenaTable",  # v0.5.5 AR
+	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
+	&"LegendaryTable",
 	&"EventTable",  # v0.5.0 EV
 	&"CurseTable",
 	&"EventRules",
@@ -92,6 +97,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ShopState",  # v0.5.0 SH
 	&"EventState",  # v0.5.0 EV: pedestals, rolls, ambush, defence, elites, cursed offers (its tables are loadout)
 	&"CatchUpState",  # v0.5.5 DS: the floor's hidden catch-up
+	&"ArenaState",  # v0.5.5 AR: the sealed arena, its waves, streams and barriers; the arenas cleared
 	# v0.6.0 MX1: the compiled specs (World.attack_book is kept out and compiled again on restore; listed so the
 	# guard knows them).
 	&"AttackBook",
@@ -143,7 +149,12 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if err != "":
 		return err
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
-	if base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
+	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
+	# so only the wall grid is rebuilt for them.
+	var barriers := base.arenas.barriers.size()
+	if base.walls.size() == walls_before + barriers and barriers > 0:
+		base.rebuild_wall_grid()
+	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
 		base.set_walls(base.walls)
 	var nav: Dictionary = data.get(&"nav", {})
 	if nav.get("size") != base.nav.size:
@@ -356,6 +367,8 @@ static func _make(cls: StringName) -> Object:
 			return DenseGrid.new()
 		&"CatchUpState":
 			return CatchUpState.new()
+		&"ArenaState":
+			return ArenaState.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 
