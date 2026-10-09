@@ -38,7 +38,7 @@ func _stick(e: E2e, x_axis: JoyAxis, y_axis: JoyAxis, dir: Vector2) -> void:
 func _sticks_off(e: E2e) -> void:
 	for axis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
 		e.joy_axis(axis, 0.0)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 
 
@@ -76,11 +76,11 @@ func test_pick_gun_with_the_pad_then_melee_does_nothing_and_shooting_works() -> 
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_GUN, "a Gun run")
 	assert_eq(main.run.build_id, &"gun", "the run holds the build")
 	assert_eq(main.profile.section("loadout")["build"], "gun", "remembered")
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	await e.frames(2)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	await e.frames(10)
-	assert_eq(w.swing_t, 0, "the melee trigger does nothing")
+	assert_eq(w.swing_t, 0, "a Gun run never swings, even on the shared trigger")
 	assert_eq(w.combo_step, 0)
 	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 	await e.frames(20)
@@ -160,11 +160,11 @@ func test_melee_follows_the_move_stick_and_shots_the_aim_stick() -> void:
 			_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, walk * (0.4 if to.length() < 1.6 else 1.0))
 			_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, -to.normalized())
 			if trigger:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 				trigger = false
 			elif r.swing_tick() == 0 and to.length() < 1.9:
 				var seq := r.last_event_seq()
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 				trigger = true
 				await e.frames(1)
 				if r.swing_tick() > 0:

@@ -60,15 +60,15 @@ func test_a_kill_drops_a_heal_orb_and_walking_onto_it_heals() -> void:
 			_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, walk)
 			_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, to.normalized())
 			if trigger:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 				trigger = false
 			elif to.length() < 2.0:
-				e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+				e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 				trigger = true
 		await e.frames(1)
 	for axis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
 		e.joy_axis(axis, 0.0)
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	assert_gte(kills_without, 5, "five kills before the card")
 	assert_false(
 		r.heal_orbs().is_empty(),

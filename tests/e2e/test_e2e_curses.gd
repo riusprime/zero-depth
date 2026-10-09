@@ -5,7 +5,7 @@ extends GutTest
 ##    trade-off curse card (the curse's name, its upside on the face, rare; its drawback under it); take it with A:
 ##    the curse is held, T shows 1 and the HUD lists drawback and upside; the curse's effect shows in play;
 ## 2. the dev panel's TEST HELPER spawns an elite carrying a core (the crystal glows its card family's colour); walk
-##    up and swing (left trigger) until it staggers: the steal ring shows; keep swinging and kill it inside the
+##    up and swing (right trigger) until it staggers: the steal ring shows; keep swinging and kill it inside the
 ##    window: its core drops; walk to it, E opens the pick ("Stolen core"), Enter takes it and the card is yours.
 
 const MAX_FRAMES := 3600
@@ -146,16 +146,16 @@ func test_steal_a_core_from_an_elite() -> void:
 		_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, walk)
 		_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, to.normalized())
 		if trigger:
-			e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+			e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 			trigger = false
 		elif r.swing_tick() == 0 and to.length() < CLOSE_M + 0.6:
-			e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 1.0)
+			e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 1.0)
 			trigger = true
 		await e.frames(1)
 		var j := w.actors.index_of(id)
 		if j >= 0 and CoreTheft.window_open(w, j):
 			saw_ring = saw_ring or main.view.cores.ring_count() == 1
-	e.joy_axis(JOY_AXIS_TRIGGER_LEFT, 0.0)
+	e.joy_axis(JOY_AXIS_TRIGGER_RIGHT, 0.0)
 	_stick(e, JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, Vector2.ZERO)
 	_stick(e, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y, Vector2.ZERO)
 	await e.frames(3)

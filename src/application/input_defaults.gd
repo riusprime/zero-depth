@@ -14,7 +14,9 @@ const ACTIONS := {
 	&"aim_right": [[&"axis", JOY_AXIS_RIGHT_X, 1.0]],
 	# Owner, 2026-10-07: the triggers attack, the bumpers dash and use the utility; melee and shooting
 	# have separate buttons. The keyboard side (Shift for the utility) is the lead's pick, remappable.
-	&"primary": [[&"mouse", MOUSE_BUTTON_LEFT], [&"axis", JOY_AXIS_TRIGGER_LEFT, 1.0]],
+	# v0.6.0 (owner, 2026-10-09): the Blade swings on the right trigger too ("it should be right trigger by
+	# default"); a Blade run never shoots and a Gun run never swings, so both share it.
+	&"primary": [[&"mouse", MOUSE_BUTTON_LEFT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
 	&"shoot": [[&"mouse", MOUSE_BUTTON_RIGHT], [&"axis", JOY_AXIS_TRIGGER_RIGHT, 1.0]],
 	&"utility": [[&"key", KEY_SHIFT], [&"button", JOY_BUTTON_LEFT_SHOULDER]],
 	&"dash": [[&"key", KEY_SPACE], [&"button", JOY_BUTTON_RIGHT_SHOULDER]],

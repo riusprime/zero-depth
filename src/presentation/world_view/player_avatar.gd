@@ -21,6 +21,10 @@ extends Node3D
 ##   back, peaking on the blast's tick and easing out over the sim's recoil step-back) while the legs ride the real
 ##   step back.
 
+## v0.6.0 (owner, 2026-10-09): the body faces the movement, not the aim ("we have him running backwards most of the
+## time"). It turns to the aim only while an attack needs it: the Blade during a swing or a skill, the Gun while
+## shooting and for GUN_AIM_HOLD_TICKS after the last shot, then back to the movement.
+const GUN_AIM_HOLD_TICKS := 30
 const HIP_Y := 0.42
 const LEG_LEN := 0.42
 ## Leg centres sit this far either side of the middle: a gap about one leg wide between them.
@@ -112,6 +116,10 @@ var _sweep := 0.0
 var _spin_target := 0.0
 var _guarding := false
 var _dead := false
+## v0.6.0: the Gun build (faces the aim while shooting), the last tick it shot, and whether the body faces the aim.
+var _gun := false
+var _last_shot_tick := -1000000
+var _face_aim := false
 ## v0.5.5 LK (A1): the skill pose targets from the last sync: the lunge (0..1), the cleave's sweep (0..1, -1 when
 ## not cleaving), the brace (0..1) and the recoil kick (0..1).
 var _lunge_target := 0.0
@@ -230,6 +238,8 @@ func sync(reader: WorldReader) -> void:
 			"sweep_ticks": reader.swing_sweep_ticks(),
 			"guarding": reader.guarding(),
 			"dead": reader.player_dead(),
+			"gun": reader.weapon_id() == &"pulse_gun",
+			"shooting": reader.shooting(),
 		}
 	)
 
@@ -249,6 +259,9 @@ func apply_state(s: Dictionary) -> void:
 	_dashing = s["dashing"]
 	_guarding = s["guarding"]
 	_dead = s["dead"]
+	_gun = s.get("gun", false)
+	if s.get("shooting", false):
+		_last_shot_tick = tick
 	var st: int = s["swing_t"]
 	_swing = 0.0
 	_sweep = 0.0
@@ -265,7 +278,11 @@ func apply_state(s: Dictionary) -> void:
 		_spin_target = 0.0
 		if _spin > PI:
 			_spin -= TAU  # a full turn is the same pose: settle back from just under 0
-	_apply_skill(s, tick)
+	_face_aim = _apply_skill(s, tick) or st > 0 or _guarding
+	if _gun and tick - _last_shot_tick < GUN_AIM_HOLD_TICKS:
+		_face_aim = true
+	if not s.has("gun"):
+		_face_aim = true  # plain-value tests that predate the rule keep the old aim-facing body
 	if _fresh:
 		_fresh = false
 		_body_yaw = _aim_yaw
@@ -275,14 +292,15 @@ func apply_state(s: Dictionary) -> void:
 
 
 ## v0.5.5 LK (A1): the skill pose targets from the skill's ticks (optional keys; tests may leave them out).
-func _apply_skill(s: Dictionary, tick: int) -> void:
+## Returns true while the skill turns the body to its angle.
+func _apply_skill(s: Dictionary, tick: int) -> bool:
 	_lunge_target = 0.0
 	_cleave_p = -1.0
 	_brace_target = 0.0
 	_recoil_target = 0.0
 	var kind: int = s.get("skill_kind", -1)
 	if kind < 0 or _dead:
-		return
+		return false
 	var running: int = s.get("skill_running", 0)
 	var hit: int = s.get("skill_hit_tick", -1)
 	var since := tick - hit if hit >= 0 else -1
@@ -295,12 +313,15 @@ func _apply_skill(s: Dictionary, tick: int) -> void:
 			var rec := 0.0 if running > 0 else float(since) / SKILL_RECOVER_TICKS
 			_lunge_target = 1.0 - rec * rec
 			_aim_yaw = SimPlane.yaw_of(s.get("skill_angle", 0))
+			return true
 	elif kind == WorldReader.SKILL_SCATTER_BLAST:
 		if since >= 0 and since < BLAST_RECOVER_TICKS:
 			var move: int = maxi(1, s.get("skill_move_ticks", 1))
 			_brace_target = 1.0 - smoothstep(0.6, 1.0, float(since) / BLAST_RECOVER_TICKS)
 			_recoil_target = 1.0 - clampf(float(since) / float(move + 2), 0.0, 1.0)
 			_aim_yaw = SimPlane.yaw_of(s.get("skill_angle", 0))
+			return true
+	return false
 
 
 func _process(delta: float) -> void:
@@ -437,7 +458,11 @@ func _pose(dt: float) -> void:
 	_stab = lerpf(_stab, stab_target, _rate(25.0, dt))
 	_spin = lerpf(_spin, _spin_target, _rate(40.0, dt))
 	if not _dead:
-		_body_yaw = _turn_toward(_body_yaw, _aim_yaw, _rate(16.0, dt))
+		var face_yaw := _aim_yaw
+		if not _face_aim:
+			# Toward the movement; standing still keeps the last facing.
+			face_yaw = atan2(-_vel_s.z, _vel_s.x) if speed > 0.4 else _body_yaw
+		_body_yaw = _turn_toward(_body_yaw, face_yaw, _rate(16.0, dt))
 	# Legs and cloak: toward the movement; walking backwards keeps them facing the aim and backpedals.
 	var back := 1.0
 	var leg_target := _body_yaw
