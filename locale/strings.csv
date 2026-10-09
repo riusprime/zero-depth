@@ -246,6 +246,8 @@ UI_RENDER_SCALE,Resolution scale,Escala de resolución
 UI_LIGHTING,Lighting quality,Calidad de iluminación
 UI_OPT_HIGH,High,Alta
 UI_OPT_LOW,Low,Baja
+UI_OPT_MEDIUM,Medium,Media
+UI_EFFECTS_DENSITY,Effects density,Densidad de efectos
 UI_OPT_50,50 %,50 %
 UI_OPT_67,67 %,67 %
 UI_OPT_75,75 %,75 %

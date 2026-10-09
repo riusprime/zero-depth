@@ -389,6 +389,8 @@ static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
 			c = mini(c, iv)
 		ModifierOp.Op.MUL_PERMILLE:
 			c = c * iv / 1000
+			if op.field == &"damage":  # v0.6.0 MX4: the weight the view draws
+				s.damage_mul_permille = s.damage_mul_permille * iv / 1000
 	s.set(op.field, c)
 
 

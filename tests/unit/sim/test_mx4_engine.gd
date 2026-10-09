@@ -68,3 +68,22 @@ func test_an_inherited_every_n_status_counts_its_own_form() -> void:
 		if ModifierRuntime.every_hit(w, field, &"burn", 3):
 			applied += 1
 	assert_eq(applied, 2, "every third of the field's own hits")
+
+
+## v0.6.0 MX4 for MX3's views: the read carries the pattern's way, the motion cues and the weight.
+func test_the_spec_read_carries_what_the_views_draw() -> void:
+	var cases := [
+		[&"halo_shot", "directions", "circle"],
+		[&"rearguard", "directions", "back"],
+		[&"seeker", "home", true],
+		[&"boomerang", "return", true],
+		[&"short_fuse", "damage_mul_permille", 1400],
+	]
+	for c: Array in cases:
+		var read := Modifiers.bolt(W.world(&"gun", [c[0]])).read()
+		assert_eq(read[c[1]], c[2], "%s: %s" % [c[0], c[1]])
+	var plain := Modifiers.bolt(W.world(&"gun")).read()
+	assert_eq(
+		[plain["directions"], plain["home"], plain["return"], plain["damage_mul_permille"]],
+		["forward", false, false, 1000]
+	)

@@ -181,6 +181,14 @@ One table (`HeatLooks`) feeds the meter and the attacks.
 of light (a vent's disc, a skill's flash) is additive; debris and vapour (death shards, steam) are lit by the scene;
 telegraphs stay unshaded (PRESENTATION §4).
 
+**Attack forms and elements (v0.6.0 MX3; owner pick "Element core, heat edge").** Every player attack is drawn from
+its spec: the art cost is per form (arc, bolt, ring, beam, zone, orbiter, lob, burst) and per element, never per card.
+Element cores: storm `#7FB2FF` (white-blue, crackle), ember `#FFAA33` (orange sparks `#FF9440`), frost `#B5F2FF` (pale
+shards), venom `#5FE03C` (green drip), void `#8B55FF` (violet smear); bleed keeps MX1's blade tint. Two elements:
+the first one's core, the second one's rim; heat colours the edge only. All of it is additive light (the A3 rule),
+except the lob's bomb shell, which is lit matter. Player ground marks keep out of the telegraphs' hostile hues
+(PRESENTATION §4, `AttackFormLooks.ground_safe`).
+
 ## 5. Pipeline
 
 1. **Primitives first.** Godot primitive meshes (`BoxMesh`, `CylinderMesh`) plus a seeded procedural generator

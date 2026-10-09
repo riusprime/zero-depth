@@ -763,6 +763,58 @@ func attack_digest() -> String:
 	return Modifiers.book(_w).digest
 
 
+## v0.6.0 MX3: the final spec an AttackBook key names (a root's id, a hook child's "<parent key>/<n>"; MX2), as
+## plain data ({} for "" or a key the current build doesn't have). AttackFormView draws the live attacks from it.
+func attack_spec_at(key: String) -> Dictionary:
+	if key == "":
+		return {}
+	var s := Modifiers.book(_w).find(key)
+	return s.read() if s != null else {}
+
+
+## v0.6.0 MX3: the spec key player projectile i runs ("" = none: an enemy's, or one from before MX2).
+func projectile_spec_key(i: int) -> String:
+	var keys := _w.projectiles.spec_key
+	return keys[i] if i < keys.size() else ""
+
+
+## v0.6.0 MX3: the spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
+## element_fx()["fire_pos"] ("" = one without a spec: Napalm Drone's patches).
+func bomb_spec_keys() -> PackedStringArray:
+	return _padded(_w.ab.bomb_spec, _w.ab.bomb_pos.size())
+
+
+func fire_spec_keys() -> PackedStringArray:
+	return _padded(_w.ab.fire_spec, _w.ab.fire_pos.size())
+
+
+## v0.6.0 MX3: the RING form's live rings: {key, pos, radius (full), start, end} (the radius now grows linearly from
+## start to end, ModifierAbilities.ring_radius).
+func rings_live() -> Array[Dictionary]:
+	var st := _w.ab
+	var out: Array[Dictionary] = []
+	for k in st.ring_pos.size():
+		(
+			out
+			. append(
+				{
+					"key": st.ring_spec[k] if k < st.ring_spec.size() else "",
+					"pos": st.ring_pos[k],
+					"radius": st.ring_r[k],
+					"start": st.ring_start[k],
+					"end": st.ring_end[k],
+				}
+			)
+		)
+	return out
+
+
+static func _padded(keys: PackedStringArray, n: int) -> PackedStringArray:
+	var out := keys.duplicate()
+	out.resize(n)
+	return out
+
+
 ## Ticks between bolts while shooting (Rapid Coil applied).
 func shot_period_ticks() -> int:
 	return ItemEffects.shot_period_ticks(_w)

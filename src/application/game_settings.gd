@@ -20,6 +20,8 @@ const VOLUME_BUSES := {
 const WINDOW_MODES: Array[String] = ["windowed", "fullscreen"]
 const RENDER_SCALES: Array[String] = ["50", "67", "75", "85", "100"]
 const COLOUR_MODES: Array[String] = ["off", "protanopia", "deuteranopia", "tritanopia"]
+## v0.6.0 MX3: the attack effects' density (ViewPrefs.effects_density, AttackFormView).
+const EFFECTS_DENSITIES: Array[String] = ["low", "medium", "high"]
 ## Starting values (v0.3.0 O); the shipped look stays the default.
 const DEFAULTS := {
 	"audio/master": 80,
@@ -34,6 +36,7 @@ const DEFAULTS := {
 	"shake": "on",
 	"outline": "ink",
 	"lighting": "high",
+	"effects_density": "high",
 	"frame_cap": "off",
 	"language": "en",
 }

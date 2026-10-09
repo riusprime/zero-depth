@@ -49,6 +49,7 @@ const INT_FIELDS: Array[StringName] = [
 	&"charge_permille",
 	&"resonance_permille",
 	&"heat_rate_permille",
+	&"damage_mul_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed", &"pull_m"]
 ## v0.6.0 MX4: directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
@@ -144,6 +145,8 @@ var charge_permille := 1000
 var resonance_permille := 0
 ## The drone's fire rate + this per mille per heat point held (Overclocked Drone).
 var heat_rate_permille := 0
+## v0.6.0 MX4: the product of the MUL_PERMILLE ops on `damage` (the view's weight: Short Fuse ×1.4; 1000 = none).
+var damage_mul_permille := 1000
 ## v0.6.0 MX4: the modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
 ## to a spec its own hook made (Split Shot's shards never split again; the ancestry guard, at compile time).
 var lineage := PackedStringArray()
@@ -293,7 +296,13 @@ func read() -> Dictionary:
 		"seek": seek,
 		"hooks": hooks_out,
 		# v0.6.0 MX4
-		"directions": directions,
+		# v0.6.0 MX4, for MX3's AttackFormLooks: "circle", "back" (fired back too: Rearguard) or "forward"; the
+		# motion cues "home" and "return"; the weight, damage_mul_permille (1000 = none).
+		"directions":
+		"circle" if directions == DIR_CIRCLE else ("back" if back_permille > 0 else "forward"),
+		"home": homing > 0,
+		"return": returns > 0,
+		"damage_mul_permille": damage_mul_permille,
 		"back_permille": back_permille,
 		"chains": chains,
 		"homing": homing,

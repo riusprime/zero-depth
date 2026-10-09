@@ -23,6 +23,9 @@ const FX_FRAMES := 16
 const FIRE_Y := 0.025
 const BOLT_SEGMENTS := 4
 
+## v0.6.0 MX3: AttackFormView draws the RING form's rings and every patch that names a spec (WorldViewRoot sets
+## it); this view keeps the patches without one (Napalm Drone's).
+var forms_drawn := false
 var _fires: Array[MeshInstance3D] = []
 var _fx: Array = []
 var _template := SkillVisuals._make_template()
@@ -34,6 +37,7 @@ var _rings: Array[MeshInstance3D] = []
 var _ring_mat := _template.duplicate() as StandardMaterial3D
 var _disc_mesh := CylinderMesh.new()
 var _last := {}
+var _spec_keys := PackedStringArray()
 
 
 func _init() -> void:
@@ -53,8 +57,9 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	var fx := reader.element_fx()
+	_spec_keys = reader.fire_spec_keys() if forms_drawn else PackedStringArray()
 	_sync_fires(fx)
-	_sync_rings(fx.get("rings", []))
+	_sync_rings([] if forms_drawn else fx.get("rings", []))
 	if _edge(&"arc", fx["arc_tick"]):
 		var sup: bool = fx["arc_super"]
 		for to: Vector2 in fx["arc_to"]:
@@ -112,7 +117,7 @@ func _sync_fires(fx: Dictionary) -> void:
 		_fires.append(m)
 	for k in _fires.size():
 		var f := _fires[k]
-		f.visible = k < pos.size()
+		f.visible = k < pos.size() and (k >= _spec_keys.size() or _spec_keys[k] == "")
 		if not f.visible:
 			continue
 		match kind[k]:
