@@ -29,6 +29,7 @@ var _focus := 0
 var _reward := -1
 var _sent := false
 var _open := false
+var _swap_seen := false
 
 
 func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
@@ -86,6 +87,14 @@ func sync(reader: WorldReader) -> void:
 		return
 	var r := reader.choice_reward()
 	var rid := reader.reward_id(r)
+	if reader.swapping():  # v0.6.0 MX2: the Swap choice (SwapPanel) sits over the cards
+		_swap_seen = true
+		return
+	if _swap_seen and _open and rid == _reward:  # a skipped swap: back to the cards
+		_swap_seen = false
+		_sent = false
+		return
+	_swap_seen = false
 	if _open and rid == _reward:
 		return
 	_open = true
@@ -138,8 +147,9 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		WorldReader.CARD_ABILITY:
 			face["tier"] = 3
 			var lvl := int(info["level"])
+			var new_key := "UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
 			face["tier_text"] = (
-				ci.tr("UI_CARD_ABILITY_NEW") if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
+				ci.tr(new_key) if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)
 		WorldReader.CARD_STAT:
 			var args := [GambleIcons.percent(int(info["amount"]))]
@@ -155,7 +165,8 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["color"] = ItemLooks.color_of_id(id)
 			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
-			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), rarity] if run else rarity
+			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
+			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
 	return face
 
 

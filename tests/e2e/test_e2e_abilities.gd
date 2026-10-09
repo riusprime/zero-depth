@@ -1,8 +1,11 @@
 extends GutTest
 ## The build system through real input (v0.4.0 BS, owner F8, F9, F11): start a run (slot 1 = the Blade's Combo
 ## Sword), walk (left stick only) to the nearest altar, open it with E: its first card is a new ability; take an
-## auto ability with the keyboard (arrows, Enter). The HUD gains its slot, and the ability fires on its own at the
-## enemies that come (its hits reach the damage numbers). Then the dev panel grants Blink, and Shift blinks.
+## auto ability with the keyboard (arrows, Enter). The HUD gains its slot, and the ability fires at the enemies that
+## come (its hits reach the damage numbers). v0.6.0 MX2: the six auto abilities are weapon modifiers, so the player
+## attacks (left mouse) and dashes while waiting: Bomb Lobber lobs on every 4th attack, Arc Field leaves its field
+## where an attack ends, Flame Trail's dash leaves fire, Frost Nova's frost element rides the swings (its stacks, or
+## its ring on a kill streak). Then the dev panel grants Blink, and Shift blinks.
 
 
 func after_each() -> void:
@@ -56,7 +59,7 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	await e.frames(3)
 	var idx := Offers.ability_of(offer[pick])
 	var t := w.ability_tables[idx]
-	assert_true(Abilities.owned(w, idx), "the ability took slot 2")
+	assert_true(Abilities.owned(w, idx), "the ability is held")
 	assert_eq(reader.abilities().size(), 2)
 	assert_eq(hud.ability_hud.filled_count(), 2, "the HUD shows it")
 	assert_eq(hud.ability_hud.slot(1).ability_id, t.id)
@@ -77,8 +80,16 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	var numbers := false
 	for k in 3600:
 		await e.frames(1)
+		if k % 20 == 0:  # v0.6.0 MX2: attack (the modifiers ride the weapon's attacks)
+			await e.mouse_button(MOUSE_BUTTON_LEFT, true)
+			await e.mouse_button(MOUSE_BUTTON_LEFT, false)
+		if k % 90 == 45:
+			await e.tap(KEY_SPACE)  # a dash (Flame Trail)
 		for ev in w.events_since(seq):
 			fired = fired or (ev.kind == SimEvent.Kind.DAMAGE and ev.effect_id == effect)
+		if t.kind == AbilityTable.Kind.FROST_NOVA and not fired:  # the frost element on the swings
+			for i in range(1, w.actors.size()):
+				fired = fired or w.actors.frost_stacks[i] > 0 or w.actors.frozen_t[i] > 0
 		seq = w.last_event_seq()
 		numbers = numbers or main.view.damage_numbers.showing() > 0
 		if fired and numbers:
@@ -87,7 +98,7 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 			var near := _nearest_enemy(w)
 			if near >= 0:
 				await e.walk_to(w.actors.pos(near), 2.0)
-	assert_true(fired, "%s hit an enemy on its own" % t.id)
+	assert_true(fired, "%s hit an enemy" % t.id)
 	assert_true(numbers, "and its damage floated up")
 
 

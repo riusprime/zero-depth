@@ -413,6 +413,86 @@ feed). The other 17 items (dash, guard, kill, heat, sustain and the ability mods
 stage 2). The equivalence test (`test_modifier_equivalence`, fixture recorded on the v0.5 code) holds every outcome
 equal; the one event-level change is `HIT.proc_pct` on Overcharge's shockwave and Static Chain's jump (now 50).
 
+## 8c. The build model and the ability modifiers (v0.6.0 MX2)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) "The build" (owner B7, B8) and "Order of work"
+step 2. Evidence: [`../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_2.md`](../roadmap/v0.5.5/evidence/MODIFIER_ENGINE_2.md).
+
+**The build** (`BuildSlots`, `src/sim/abilities/build_slots.gd`): the starting weapon (Combo Sword / Pulse Gun, with
+its Skill, the dash and Vent; it still levels with its cards), one utility pick (Blink or Aegis, on the utility button,
+outside the slots), up to `BuildSlots.SLOTS` = 6 modifier slots and unlimited stat cards (no slot). v0.4.0's four
+ability slots are gone. A **modifier card** is one of the six auto abilities (`AbilityTable.is_modifier`: Bomb
+Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail) or an item that changes attacks
+(`BuildSlots.is_slot_item`: it names modifiers, or it is an ability's mod: Cluster Payload, Overclocked Drone, Razor
+Orbit, Afterimage). The other 13 items take no slot (they don't rewrite attacks: Afterimage's, Cluster Payload's and
+Overclocked Drone's numbers stay in `ItemMods`, see the evidence's list). `World.mod_slots` holds the modifier cards
+in pick order as `Offers` codes (an item index, or `ABILITY_BASE` + an ability index), the layer order
+`Modifiers.build_modifiers` compiles in; `BuildSlots.sync` keeps it after every change of what is held (a listed card
+stays in place, a new one is appended, one not held leaves), and it is carried (`RunCarry.FIELDS`).
+
+**Taking a card** goes through `BuildSlots.take(w, code, replace)` (`Offers.apply`): a held modifier levels up (an
+ability, levels 1..5) and uses no slot; a new one takes the next slot; with the six full it needs a **swap**: it
+replaces slot `replace` in place (that card leaves the build: an item with its combos, `Shop.remove_item`; an ability
+with its level, cooldown and floor state, `Abilities.remove_slot`, and the ability combos it no longer earns). The
+swap is a choice the world waits on, like an altar's pick: `World.swap_code` (the card), `swap_source`
+(`BuildSlots.Source`: `REWARD` the altar or chest pick, `SHOP` a buy, `GRANT` a card with no panel: an event's card,
+a floor pickup, the dev panel), `swap_ref` (its offer index). `InputFrame.pick` answers it: `PICK_SWAP_BASE + n`
+(30..35) replaces slot n, `PICK_SWAP_SKIP` (39) or `PICK_CANCEL` skips. A skip at an altar or the shop goes back to its
+cards (nothing paid; a chest's price and a shop's price are paid only when the swap is answered); a skipped grant
+leaves the card. A `GRANT` swap runs in `World.step` before the altar's pick (only the answer runs; the tick counts).
+`World.add_item` and `Abilities.grant` stay uncapped for tests and labs (the scenario worlds of MX1 hold up to 11
+attack items); every player-facing path caps. Hash: `mod_slots` and the swap fields once touched (worlds without a
+slot, the kernel goldens among them, hash as before).
+
+**The ability modifiers' attacks.** `Modifiers.compile` adds a spec per held ability modifier, id = the ability id,
+tags `[ability, auto, <bomb|drone|orbit|field|nova|trail>, <area|projectile|melee>]`, its v0.5 numbers at its level
+(damage × level, radius × level, count, flight / life, cooldown or period); compiled through every modifier (a target
+filter reaches it by those tags: Razor Orbit targets `orbit`), then `Modifiers.inherit` gives it the weapon's own
+attack's statuses (not the riders), elements and `ON_HIT` / `ON_KILL` hooks (the Blade's first step, or the Gun's
+bolt); the drone's copy of a Gun also takes the bolt's count, spread, split share, bounces and pierce. When they fire
+(`ModifierAbilities`; Drone Buddy and Orbit Blades keep their v0.5 drivers in `Abilities`):
+
+| Ability | Form | When (owner pick) | Starting values |
+|---|---|---|---|
+| Bomb Lobber | `LOB` | every `every_attacks`-th weapon attack (a step resolving, a shot), once its cooldown is ready; the count waits for an enemy in range | every 4th attack, 2.5 s cooldown; targets, damage, radius, count, flight as v0.5 |
+| Drone Buddy | `BOLT` | each drone's period, at the nearest enemy (v0.5) | a copy of the weapon's attack: its payload and hooks (and a Gun's pattern and behaviour), v0.5 damage and period |
+| Orbit Blades | `ORBITER` | each touch of a blade (v0.5: once per enemy per `hit_seconds`) | copies of your attack: the weapon's payload and hooks |
+| Arc Field | `ZONE` | a weapon attack leaves a shock field where it ends (the arc's tip; a shot's aim point, 1.5 m to `range_m`), at most once per `level_cooldown` | 1.6 m, 2 s, a hit every 0.5 s, at most `level_count` enemies a tick, 12 damage and `level_extra` shock |
+| Frost Nova | `RING` | its modifier (`data/modifiers/frost_nova.tres`) gives the weapon the frost element and 1 frost stack a hit; `streak_kills` kills each within `streak_seconds` send a ring from the player, at most once per `level_cooldown` | 4 kills within 2 s of each other; the ring grows to the v0.5 nova radius over 0.3 s; 10 damage and `level_extra` frost |
+| Flame Trail | `ZONE` | a patch every 0.8 m of a dash; a patch where a player projectile ends, at most once per `period_seconds` | v0.5 radius, life, damage and burn per level |
+
+**Runners** (`Attacks.launch`): `LOB` queues a bomb (`AbilityState.bomb_*`, with its spec key and hook level) that
+lands `life_ticks` later through `Attacks.land_lob` (every enemy in the blast: a hit of the spec, then its `ON_END`
+hooks; Storm Bombs and Cluster Payload as before); `ZONE` lights a patch (`ElementAbilities.add_zone`: the fire
+patches, now with a spec key, a hook level and a per-tick cap; an enemy is hit once per the spec's `period_ticks` per
+patch kind); `RING` grows a ring (`ModifierAbilities.add_ring`: an enemy is hit when the ring's edge crosses its near
+edge; `ON_END` when it reaches its radius); `ORBITER` from a hook sweeps its blades once. The area stat scales a
+lingering form's radius at launch (`Attacks.area_radius`, as v0.5's abilities had it). A hook's lingering child takes
+the times an op can't name: `Modifiers.HOOK_LOB_TICKS`, `HOOK_ZONE_TICKS`, `HOOK_ZONE_GAP`, `RING_TICKS`.
+`Attacks.land(spec, ctx, i)` is one hit of a spec (an orbiter's touch, a patch's, a ring's, a blast's) under
+`World.hit_spec`.
+
+**Projectiles carry their spec.** `ProjectileStore.spec_key` names the spec a player projectile runs (`AttackBook`
+files every spec and every hook child by key: a root by id, a child under `"<parent key>/<n>"`). Its hit feeds that
+spec's statuses (`Engines.on_hit` reads `World.hit_spec`, set around the projectile's `Damage.hit`), its slow
+(`ItemProcs`), its `ON_HIT` and (on a kill) `ON_KILL` hooks, and where it ends (a hit that stops it, a wall, its life)
+its `ON_END` hooks and Flame Trail's fire (`Attacks.on_projectile_end`). A projectile without a key (Wingman's
+volley, Thorn Mantle's bolts, a save from before MX2, a spec gone with a build change) reads the Gun bolt's, v0.5's
+rule. Statuses: a projectile and a weapon attack feed through `Engines.on_hit` (as MX1); an ability's other attacks
+(a bomb, an orbiter, a patch, a ring) feed their spec's statuses at proc 100 in `Attacks._feed` and `Engines.on_hit`
+skips them (no double feed). `spec_key` is hashed only once a projectile names one.
+
+**Saves.** `RunSaver.PAYLOAD_VERSION` 3 (reads 2 and 3). A carry without `mod_slots` (v0.5) sets
+`World.migrate_slots`; `Abilities.start_floor`, once the abilities' tables are set, runs `BuildSlots.migrate`: the
+held modifier cards in a fixed order (the abilities in their v0.5 slot order, then the attack items in pickup order),
+the first six kept and the rest leaving the build (last first); levels are kept. A snapshot from before MX1/MX2 may
+lack the fields listed in `WorldSnapshot.ADDED_SINCE_V05`; they keep the base world's values, the per-entry arrays
+are padded (`_pad_added`) and the slots migrate the same way. The ability ids are the modifier ids, so no id maps.
+
+**CatchUp.power** (§11) reads the new build: the modifier slots' levels (an ability modifier's level, an attack item
+1) and the utility's level at `ability_level_permille` each, the items without a slot at `item_permille`, the combos
+at `combo_permille`.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

@@ -4,8 +4,9 @@ extends ContentDef
 ## data/modifiers/, discovered by ContentScanner like every definition. It rewrites the attack specs whose tags
 ## include every tag of `target` (empty: every spec), at `stage` (an op may name another), with `ops` in order.
 ## Modifiers apply stage by stage (FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE), each stage in pick order
-## (Modifiers.compile). In MX1 a modifier enters the build through the item that names it
-## (ItemDefinition.modifiers); MX stage 2 gives it its own slot.
+## (Modifiers.compile). A modifier enters the build through the card that names it (ItemDefinition.modifiers, v0.6.0
+## MX2 also AbilityDefinition.modifiers); MX2: that card takes one of the six modifier slots (BuildSlots), and the
+## slot order is the layer order.
 
 ## The fixed stage order (appended, never renumbered: it is the compile order).
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
@@ -14,8 +15,25 @@ enum Rarity { COMMON, RARE }
 
 ## Spec tags a target filter (and a hook's attack) may name. weapon: the run's weapon attacks; melee / projectile:
 ## what they physically are; skill: the Skill button; area / chain: a burst or a jump; hook: an attack a hook spawned.
+## v0.6.0 MX2: the six ability modifiers' own attacks (Modifiers.ability specs): bomb (Bomb Lobber's lob), drone (the
+## drone's copy), orbit (Orbit Blades' orbiters), field (Arc Field's shock zone), nova (Frost Nova's ring), trail
+## (Flame Trail's fire).
 const TAGS: Array[StringName] = [
-	&"weapon", &"melee", &"projectile", &"skill", &"ability", &"area", &"chain", &"hook", &"auto"
+	&"weapon",
+	&"melee",
+	&"projectile",
+	&"skill",
+	&"ability",
+	&"area",
+	&"chain",
+	&"hook",
+	&"auto",
+	&"bomb",
+	&"drone",
+	&"orbit",
+	&"field",
+	&"nova",
+	&"trail",
 ]
 ## The card families (CardFrames.FRAME's keys: the frame colour a card of this modifier wears).
 const FAMILIES: Array[StringName] = [
@@ -127,8 +145,9 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
 
 
-## A hook spawns a burst (needs a radius) or a beam that jumps (needs a reach); MX1 runs only those two forms from a
-## hook, on the triggers Trigger names.
+## A hook spawns a burst (needs a radius) or a beam that jumps (needs a reach); v0.6.0 MX2 adds the lingering forms:
+## a lob (a bomb thrown hook_reach_m along the parent's way, landing for hook_radius_m), a zone (a patch of
+## hook_radius_m) and a ring (expanding to hook_radius_m). On the triggers Trigger names.
 func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
 	if (
 		o.hook_trigger < ModifierOpDefinition.Trigger.ON_HIT
@@ -137,14 +156,18 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown trigger" % where))
 	_check_tag_list(issues, "%s.hook_tags" % where, o.hook_tags)
 	match o.form:
-		ModifierOpDefinition.Form.BURST:
+		ModifierOpDefinition.Form.BURST, ModifierOpDefinition.Form.ZONE:
+			check_positive(issues, "%s.hook_radius_m" % where, o.hook_radius_m)
+		ModifierOpDefinition.Form.RING, ModifierOpDefinition.Form.LOB:
 			check_positive(issues, "%s.hook_radius_m" % where, o.hook_radius_m)
 		ModifierOpDefinition.Form.BEAM:
 			check_positive(issues, "%s.hook_reach_m" % where, o.hook_reach_m)
 		_:
 			issues.append(
 				ValidationIssue.new(
-					&"range", resource_path, "%s: a hook spawns a burst or a beam in MX1" % where
+					&"range",
+					resource_path,
+					"%s: a hook spawns a burst, a beam, a lob, a zone or a ring" % where
 				)
 			)
 	if o.hook_damage <= 0 and o.hook_damage_permille <= 0:
@@ -157,7 +180,8 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: hook_every >= 0" % where))
 
 
-## v0.6.0 MX1: every item's modifiers exist (ItemDefinition.modifiers names ModifierDefinition ids).
+## v0.6.0 MX1: every item's modifiers exist (ItemDefinition.modifiers names ModifierDefinition ids); MX2: every
+## ability's too (AbilityDefinition.modifiers).
 static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var issues: Array[ValidationIssue] = []
 	var mods := {}
@@ -165,14 +189,16 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 		if d is ModifierDefinition:
 			mods[d.id] = true
 	for d in defs:
-		var it := d as ItemDefinition
-		if it == null:
-			continue
-		for id in it.modifiers:
+		var names: Array[StringName] = []
+		if d is ItemDefinition:
+			names = (d as ItemDefinition).modifiers
+		elif d is AbilityDefinition:
+			names = (d as AbilityDefinition).modifiers
+		for id in names:
 			if not mods.has(id):
 				issues.append(
 					ValidationIssue.new(
-						&"unknown_modifier", it.resource_path, "no modifier %s" % id
+						&"unknown_modifier", d.resource_path, "no modifier %s" % id
 					)
 				)
 	return issues

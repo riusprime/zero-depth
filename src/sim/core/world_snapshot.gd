@@ -37,6 +37,7 @@ const WORLD_KEPT := {
 	&"arena_table": "loadout",  # v0.5.5 AR
 	&"legendary_table": "loadout",  # v0.5.5 AR
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
+	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -105,6 +106,47 @@ const STATE_CLASSES: Array[StringName] = [
 	&"AttackHook",
 ]
 
+## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
+## base world's value (its default, or what the carry gave it) instead of failing the restore; apply() then pads
+## the per-entry arrays to their store's size and migrates the build into the slots (BuildSlots.migrate). Any other
+## missing field still fails.
+const ADDED_SINCE_V05 := {
+	&"World":
+	[
+		&"hook_chain",
+		&"launch_tick",
+		&"launch_count",
+		&"mod_slots",
+		&"swap_code",
+		&"swap_source",
+		&"swap_ref",
+		&"migrate_slots",
+	],
+	&"ProjectileStore": [&"spec_key"],
+	&"AbilityState":
+	[
+		&"bomb_spec",
+		&"bomb_depth",
+		&"bomb_proc",
+		&"fire_spec",
+		&"fire_depth",
+		&"fire_proc",
+		&"fire_cap",
+		&"ring_pos",
+		&"ring_r",
+		&"ring_start",
+		&"ring_end",
+		&"ring_dmg",
+		&"ring_root",
+		&"ring_spec",
+		&"ring_depth",
+		&"ring_proc",
+		&"lob_count",
+		&"streak_n",
+		&"streak_last",
+	],
+}
+
 ## script_fields' cache (Script -> Array[StringName]); derived from the class declarations only.
 static var _fields := {}
 
@@ -148,6 +190,10 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var err := _apply_object(base, data, WORLD_KEPT, "World")
 	if err != "":
 		return err
+	_pad_added(base)  # v0.6.0 MX2: an older save's stores get their new per-entry arrays
+	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
+		base.mod_slots = PackedInt32Array()
+		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
@@ -169,6 +215,24 @@ static func apply(base: World, snap: Dictionary) -> String:
 		elif base.get(f) == null:
 			return "World.%s: pending in the snapshot, missing in the base" % f
 	return ""
+
+
+## v0.6.0 MX2: per-entry arrays an older save didn't have, padded to their store's size with the "none" value (a
+## projectile, a bomb or a patch without a spec runs as before MX2).
+static func _pad_added(w: World) -> void:
+	var p := w.projectiles
+	while p.spec_key.size() < p.ids.size():
+		p.spec_key.append("")
+	var s := w.ab
+	while s.bomb_spec.size() < s.bomb_pos.size():
+		s.bomb_spec.append("")
+		s.bomb_depth.append(0)
+		s.bomb_proc.append(100)
+	while s.fire_spec.size() < s.fire_pos.size():
+		s.fire_spec.append("")
+		s.fire_depth.append(0)
+		s.fire_proc.append(100)
+		s.fire_cap.append(0)
 
 
 ## The script variables of `obj`, in declaration order (cached per script: a class's fields don't change).
@@ -275,6 +339,8 @@ static func _apply_object(obj: Object, data: Dictionary, kept: Dictionary, where
 		if kept.has(f):
 			continue
 		if not data.has(f):
+			if (ADDED_SINCE_V05.get(class_of(obj), []) as Array).has(f):
+				continue  # v0.6.0 MX2: an older save; apply() fills it in
 			return "%s.%s: not in the snapshot" % [where, f]
 		var cur: Variant = obj.get(f)
 		var r: Array = _decode(cur, data[f], "%s.%s" % [where, f])

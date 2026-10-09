@@ -19,6 +19,8 @@ var enemy_choice := 0
 var ability_choice := 0
 var _kill_boss := false
 var _grants := PackedInt32Array()
+## v0.6.0 MX2: attack-item modifiers queued by grant_mod (each the first one not held that the build may take).
+var _mod_grants := 0
 ## v0.4.0 AB: a dev route to the Overrun door waiting for the tick boundary.
 var _to_overrun := false
 ## v0.5.5 AR: dev routes to an arena door and to clear the sealed arena's wave, waiting for the tick boundary.
@@ -151,6 +153,12 @@ func grant_ability() -> void:
 		_grants.append(ability_choice)
 
 
+## v0.6.0 MX2: queues the next attack-item modifier (the first slot item not held that the build may use) for the next
+## tick boundary; with the six slots full it opens the Swap, as a found card would (Offers.apply).
+func grant_mod() -> void:
+	_mod_grants += 1
+
+
 ## v0.4.0 AB (dev route): puts the player just outside the Overrun room's first doorway at the next tick boundary,
 ## so walking on goes through the red frame.
 func go_overrun() -> void:
@@ -246,8 +254,19 @@ func _apply_commands() -> void:
 		if at != Vector2.INF:
 			world.actors.set_pos(0, at)
 	for idx in _grants:
-		Abilities.grant(world, idx)
+		Offers.apply(world, Offers.ability_code(idx))  # v0.6.0 MX2: a seventh modifier opens the Swap
 	_grants.clear()
+	while _mod_grants > 0 and not BuildSlots.swapping(world):
+		_mod_grants -= 1
+		for k in world.item_tables.size():
+			if (
+				BuildSlots.is_slot_item(world.item_tables[k])
+				and not world.items_owned.has(k)
+				and ItemPool.usable(world, k)
+			):
+				Offers.apply(world, k)
+				break
+	_mod_grants = 0
 	if god and world.actors.invuln[0] < 2:
 		world.actors.invuln[0] = 2
 	if _kill_boss:

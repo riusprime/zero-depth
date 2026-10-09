@@ -237,5 +237,7 @@ static func collect_pickups(w: World) -> void:
 			SimEvent.Kind.PICKUP, p.ids[i], w.actors.ids[0], w.actors.ids[0], p.pos(i)
 		)
 		e.amount = idx
-		w.add_item(idx)
+		Offers.apply(w, idx)  # v0.6.0 MX2: a modifier with the six slots full asks for a swap
 		p.remove_at(i)
+		if BuildSlots.swapping(w):
+			return  # one swap at a time: the next pickup waits for the next tick

@@ -176,6 +176,8 @@ static func _resolve_swing(w: World) -> void:
 	ItemEffects.after_swing(w, base, dmg)
 	Abilities.after_swing(w, landed)  # v0.4.0 BS: Combo Sword L5's finisher shockwave.
 	Engines.after_swing(w, landed)  # Engines: Slipstream.
+	var tip := w.player.radius_m + Attacks.arc_reach_m(w, spec)
+	ModifierAbilities.on_attack(w, w.player_pos() + Kin.dir(w.swing_angle) * tip)  # v0.6.0 MX2
 
 
 ## Launches combo step `step`'s spec (-1 = the current one) at `angle` for `dmg` from where the player is (melee;
@@ -199,3 +201,4 @@ static func _fire_bolt(w: World) -> void:
 	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
 	var tags := SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w)  # Hot, Pulse Gun L3
 	Attacks.launch(w, spec, AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &""))
+	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

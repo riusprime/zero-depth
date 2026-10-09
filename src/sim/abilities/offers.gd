@@ -233,15 +233,14 @@ static func _mods(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	return left
 
 
-## Takes card `code` (Rewards.choose).
-static func apply(w: World, code: int) -> void:
-	match type_of(code):
-		MOD:
-			w.add_item(code)
-		ABILITY:
-			Abilities.grant(w, ability_of(code))
-		STAT:
-			Stats.add_card(w, stat_of(code), rarity_of(code))
+## Takes card `code` (Rewards.choose, Shop.buy, an event's card). v0.6.0 MX2: through BuildSlots.take; a new
+## modifier with the six slots full replaces slot `replace`, and without one it opens the swap choice by itself
+## (BuildSlots.Source.GRANT: the world waits for the answer; a skip leaves the card).
+static func apply(w: World, code: int, replace: int = -1) -> void:
+	if BuildSlots.needs_swap(w, code) and replace < 0:
+		BuildSlots.open_swap(w, code, BuildSlots.Source.GRANT, -1)
+		return
+	BuildSlots.take(w, code, replace)
 
 
 ## What the pick panel shows for card `code` (WorldReader.card_info): its type, id, name and description keys,
@@ -262,6 +261,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"rarity": 1 if t.rare else 0,
 				"level": mini(Abilities.level_of(w, idx) + 1, AbilityTable.MAX_LEVEL),
 				"amount": 0,
+				"modifier": t.is_modifier(),  # v0.6.0 MX2: it takes a modifier slot
 			}
 		STAT:
 			var st := w.stat_tables[stat_of(code)]
@@ -279,6 +279,7 @@ static func info(w: World, code: int) -> Dictionary:
 			}
 	var it := w.item_tables[code]
 	return {
+		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot
 		"type": MOD,
 		"id": it.id,
 		"kind": it.kind,

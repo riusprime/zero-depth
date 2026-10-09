@@ -5,9 +5,9 @@ extends RefCounted
 ## Deep) stays; on top of it:
 ## - power(w): the build's power P, per mille of a fresh build (1000), a pure function of the loadout and never of
 ##   how well it is played: weapon level × damage stat × Glass Cannon × (1 + Onrush) × expected crit (relative to the
-##   base crit) × attack speed × (1 + ability levels besides the weapon, items and combos at their table weights).
-##   The one place the build's power is read, so the modifier engine (Step MX: weapon + 6 modifier slots) adds its
-##   terms here.
+##   base crit) × attack speed × (1 + the modifier slots' levels and the utility's level, the items without a slot
+##   and the combos, at their table weights). The one place the build's power is read (v0.6.0 MX2: the weapon, the
+##   utility and the six modifier slots, BuildSlots).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
 ## - start_floor(w), at floor entry (after the carry, the abilities, the heat and the events are set up): reads P,
 ##   E(floor), cap(floor) + threat_cap × T and stores m in World.catch_up; m is fixed for the floor (no rubber band).
@@ -29,13 +29,21 @@ static func power(w: World) -> int:
 	p = p * (1000 + Stats.value(w, Stats.Stat.ONRUSH)) / 1000
 	p = p * expected_crit(w, Stats.crit_chance(w), Stats.crit_mult(w)) / base_crit(w)
 	p = p * Stats.value(w, Stats.Stat.ATTACK_SPEED) / 1000
+	# v0.6.0 MX2: per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
+	# utility's level at the table's per-level weight; the items without a slot at the item weight.
 	var levels := 0
+	for s in w.mod_slots.size():
+		levels += BuildSlots.level_at(w, s)
 	for s in w.ability_owned.size():
-		if w.ability_tables[w.ability_owned[s]].start_weapon == 0:
+		if w.ability_tables[w.ability_owned[s]].is_utility():
 			levels += w.ability_levels[s]
+	var plain := 0
+	for idx in w.items_owned:
+		if not BuildSlots.is_modifier(w, idx):
+			plain += 1
 	var extra := (
 		t.ability_level_permille * levels
-		+ t.item_permille * w.items_owned.size()
+		+ t.item_permille * plain
 		+ t.combo_permille * w.combos_owned.size()
 	)
 	return maxi(1, p * (1000 + extra) / 1000)

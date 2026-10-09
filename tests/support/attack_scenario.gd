@@ -216,7 +216,7 @@ static func _digest_event(h: StateHasher, e: SimEvent) -> void:
 ## The state attacks touch, without the build's spec digest.
 static func _digest_state(h: StateHasher, w: World) -> void:
 	w.actors.hash_into(h)
-	w.projectiles.hash_into(h)
+	w.projectiles.hash_into(h, false)  # v0.6.0 MX2: without the spec keys (outcomes only)
 	w.proc_ledger.hash_into(h)
 	for s in [w.rng_map, w.rng_loot, w.rng_combat, w.rng_ai, w.rng_crit, w.rng_ability]:
 		h.add_int(s.state)

@@ -93,6 +93,32 @@ var ward_r := 0.0
 var charge_tick := -1
 var charge_pos := Vector2.ZERO
 var glacier_tick := -1
+# --- v0.6.0 MX2 (the ability modifiers run from specs; ModifierAbilities). Hashed after the fields above, once any
+# leaves its default (touched_mx2).
+## Bombs in flight: the spec each runs (AttackBook key) and its hook level (depth, proc coefficient in percent).
+var bomb_spec := PackedStringArray()
+var bomb_depth := PackedInt32Array()
+var bomb_proc := PackedInt32Array()
+## Patches: the spec each runs ("" = Napalm Drone's, the combo's own numbers), its hook level, and the most enemies
+## it hits in a tick (0 = no cap).
+var fire_spec := PackedStringArray()
+var fire_depth := PackedInt32Array()
+var fire_proc := PackedInt32Array()
+var fire_cap := PackedInt32Array()
+## Rings (RING form): centre, full radius, the tick it starts and ends, damage, root, spec key, hook level.
+var ring_pos := PackedVector2Array()
+var ring_r := PackedFloat32Array()
+var ring_start := PackedInt32Array()
+var ring_end := PackedInt32Array()
+var ring_dmg := PackedInt32Array()
+var ring_root := PackedInt32Array()
+var ring_spec := PackedStringArray()
+var ring_depth := PackedInt32Array()
+var ring_proc := PackedInt32Array()
+## Bomb Lobber: weapon attacks counted toward its next lob. Frost Nova: the kill streak (kills, the last kill's tick).
+var lob_count := 0
+var streak_n := 0
+var streak_last := -1
 
 
 func touched() -> bool:
@@ -126,6 +152,19 @@ func touched_ab() -> bool:
 		or ward_next != 0
 		or charge_tick != -1
 		or glacier_tick != -1
+		or touched_mx2()
+	)
+
+
+## Any v0.6.0 MX2 field away from its default.
+func touched_mx2() -> bool:
+	return (
+		not bomb_spec.is_empty()
+		or not fire_spec.is_empty()
+		or not ring_pos.is_empty()
+		or lob_count != 0
+		or streak_n != 0
+		or streak_last != -1
 	)
 
 
@@ -172,3 +211,18 @@ func hash_into(h: StateHasher) -> void:
 	h.add_f32s(fire_r)
 	for arr: PackedInt32Array in [fire_end, fire_dmg, fire_stacks, fire_kind, fire_ids, fire_next]:
 		h.add_ints(arr)
+	if not touched_mx2():
+		return
+	for arr: PackedStringArray in [bomb_spec, fire_spec, ring_spec]:
+		h.add_string(",".join(arr))
+	for arr: PackedInt32Array in [bomb_depth, bomb_proc, fire_depth, fire_proc, fire_cap]:
+		h.add_ints(arr)
+	for arr: PackedInt32Array in [ring_start, ring_end, ring_dmg, ring_root, ring_depth, ring_proc]:
+		h.add_ints(arr)
+	h.add_int(ring_pos.size())
+	for p in ring_pos:
+		h.add_f32(p.x)
+		h.add_f32(p.y)
+	h.add_f32s(ring_r)
+	for v in [lob_count, streak_n, streak_last]:
+		h.add_int(v)

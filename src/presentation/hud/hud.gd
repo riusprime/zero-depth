@@ -52,6 +52,9 @@ var overrun_hud := OverrunHud.new()
 var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
+## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
+var build_hud := BuildHud.new()
+var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -156,6 +159,9 @@ func _init() -> void:
 	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
 	events.panel.picked.connect(_pick.picked.emit)
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
+	add_child(build_hud)  # v0.6.0 MX2
+	build_hud.anchor = _hp_frame
+	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
 
 
 func sync(reader: WorldReader) -> void:
@@ -207,6 +213,9 @@ func sync(reader: WorldReader) -> void:
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
+	build_hud.sync(reader)  # v0.6.0 MX2
+	swap.sync(reader)
+	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
 
 
 func _process(delta: float) -> void:

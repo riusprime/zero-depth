@@ -19,6 +19,8 @@ var tags := PackedInt32Array()
 ## Ricochet Core (v0.2.0): wall bounces left, and the tick of the last bounce (-1 = none) for the view.
 var bounces := PackedInt32Array()
 var bounce_tick := PackedInt32Array()
+## v0.6.0 MX2: the spec a player projectile runs (an AttackBook key; "" = none: an enemy's, or one from before MX2).
+var spec_key := PackedStringArray()
 
 
 func size() -> int:
@@ -35,7 +37,8 @@ func add(
 	p_life: int,
 	p_damage: int = 0,
 	p_tags: int = SimEvent.TAG_PROJECTILE,
-	p_bounces: int = 0
+	p_bounces: int = 0,
+	p_spec: String = ""
 ) -> void:
 	ids.append(id)
 	owner.append(p_owner)
@@ -52,6 +55,7 @@ func add(
 	tags.append(p_tags)
 	bounces.append(p_bounces)
 	bounce_tick.append(-1)
+	spec_key.append(p_spec)
 
 
 ## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own
@@ -69,6 +73,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 		tags.remove_at(i)
 		bounces.remove_at(i)
 		bounce_tick.remove_at(i)
+		if i < spec_key.size():
+			spec_key.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)
@@ -76,7 +82,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 		radius.remove_at(i)
 
 
-func hash_into(h: StateHasher) -> void:
+## `with_specs` false leaves the spec keys out (the MX1 equivalence digest compares outcomes only).
+func hash_into(h: StateHasher, with_specs: bool = true) -> void:
 	h.add_ints(ids)
 	h.add_ints(owner)
 	h.add_ints(team)
@@ -92,3 +99,9 @@ func hash_into(h: StateHasher) -> void:
 	h.add_ints(tags)
 	h.add_ints(bounces)
 	h.add_ints(bounce_tick)
+	if not with_specs:
+		return
+	for k in spec_key:  # v0.6.0 MX2: only once a projectile names a spec (the kernel golden's never do)
+		if k != "":
+			h.add_string(",".join(spec_key))
+			break
