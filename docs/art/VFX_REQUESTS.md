@@ -42,15 +42,15 @@ minimalistic, that matches the style of the game". The owner generates the textu
 
 | # | id | element | size | prompt (after the prefix) | status |
 |---|---|---|---|---|---|
-| 1 | `fx_flame_shapes` | fire | 1024, 2 × 2 | four different single flame tongues, each a tall stylized teardrop flame with a bright pale-yellow core, an orange middle band and a red-orange outer band, slightly different shapes and lean, each centred in its own quarter of the image | requested |
-| 2 | `fx_fire_noise` | fire | 512 | seamless tileable texture, wispy upward-stretched flame noise in white and grey on black, vertical streaks, even coverage, no focal point | requested |
-| 3 | `fx_smoke_puffs` | fire, bombs | 1024, 2 × 2 | four different chunky stylized smoke puffs, rounded cauliflower clusters in white and light grey with 2-3 flat grey bands, each centred in its own quarter | requested |
-| 4 | `fx_explosion_burst` | bombs | 1024, 2 × 2 | four different stylized explosion fireballs seen from the side, chunky rounded fire clouds with a white-yellow core, orange middle and dark red edge, each centred in its own quarter | requested |
-| 5 | `fx_debris_chunks` | bombs | 1024, 2 × 2 | four small groups of chunky rock and metal debris fragments, flat-shaded grey and rust colours, each group centred in its own quarter | requested |
-| 6 | `fx_scorch_mark` | fire, bombs | 1024 | top-down view of an irregular charred scorch mark on the ground, dark black-brown burnt blotch with jagged cracks and soot spikes radiating outward, NOT a circle, uneven ragged outline, shown light grey on black (the engine darkens it) | requested |
-| 7 | `fx_lightning_bolts` | electric | 1024, 2 × 2 | four different jagged horizontal lightning bolts running left to right across their quarter, a thin bright white core with a pale cyan-blue glow, a few small side forks, each centred in its own quarter | requested |
-| 8 | `fx_electric_noise` | electric | 512 | seamless tileable texture, crackling electric web of thin bright branching lines in white and pale blue on black, even coverage, no focal point | requested |
-| 9 | `fx_spark_shapes` | all | 512, 2 × 2 | four tiny bright spark shapes: a four-point star, a thin streak, a small diamond and a small cross, white with a soft glow, each centred in its own quarter | requested |
+| 1 | `fx_flame_shapes` | fire | 1024, 2 × 2 | four different single flame tongues, each a tall stylized teardrop flame with a bright pale-yellow core, an orange middle band and a red-orange outer band, slightly different shapes and lean, each centred in its own quarter of the image | received raw |
+| 2 | `fx_fire_noise` | fire | 512 | seamless tileable texture, wispy upward-stretched flame noise in white and grey on black, vertical streaks, even coverage, no focal point | received raw |
+| 3 | `fx_smoke_puffs` | fire, bombs | 1024, 2 × 2 | four different chunky stylized smoke puffs, rounded cauliflower clusters in white and light grey with 2-3 flat grey bands, each centred in its own quarter | received raw |
+| 4 | `fx_explosion_burst` | bombs | 1024, 2 × 2 | four different stylized explosion fireballs seen from the side, chunky rounded fire clouds with a white-yellow core, orange middle and dark red edge, each centred in its own quarter | received raw |
+| 5 | `fx_debris_chunks` | bombs | 1024, 2 × 2 | four small groups of chunky rock and metal debris fragments, flat-shaded grey and rust colours, each group centred in its own quarter | received raw |
+| 6 | `fx_scorch_mark` | fire, bombs | 1024 | top-down view of an irregular charred scorch mark on the ground, dark black-brown burnt blotch with jagged cracks and soot spikes radiating outward, NOT a circle, uneven ragged outline, shown light grey on black (the engine darkens it) | received raw |
+| 7 | `fx_lightning_bolts` | electric | 1024, 2 × 2 | four different jagged horizontal lightning bolts running left to right across their quarter, a thin bright white core with a pale cyan-blue glow, a few small side forks, each centred in its own quarter | received raw (delivered as 4 rows, not 2 × 2: fine) |
+| 8 | `fx_electric_noise` | electric | 512 | seamless tileable texture, crackling electric web of thin bright branching lines in white and pale blue on black, even coverage, no focal point | received raw |
+| 9 | `fx_spark_shapes` | all | 512, 2 × 2 | four tiny bright spark shapes: a four-point star, a thin streak, a small diamond and a small cross, white with a soft glow, each centred in its own quarter | received raw |
 
 **Later (frost, venom, others):** requested once fire, explosions and electric are in and picked.
 
