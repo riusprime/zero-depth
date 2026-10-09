@@ -65,6 +65,13 @@ breaks. The contrast figures below were computed from colours sampled out of the
 - **No damage without a readable cause.** Every `DAMAGE` event against the player maps to a telegraph, a visible
   projectile, a visible field or a status icon. v0.1.0's exit gate tests this from the event log.
 
+- **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
+  [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
+  and composes the look by layer (form → what draws it, size → the blade's arc and reach and the dart's length,
+  elements → the core colour, behaviour → trail and brightness, heat → the edge via `HeatLooks.attack_color`). No
+  view asks which cards are held for an attack's look. MX1 keeps the v0.5 looks exactly
+  (`tests/unit/presentation/test_attack_view.gd`); the 8-form / 5-element art layers are MX stage 3.
+
 ## 5. Occlusion cutaway
 
 - A wall whose box lies between the camera and a focus point (the player, enemies within a radius, active

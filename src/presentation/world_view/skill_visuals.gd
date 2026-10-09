@@ -156,7 +156,7 @@ func fx_count_of(kind: StringName) -> int:
 
 ## The colour the skill's effects take now (HeatLooks.attack_color of the heat tier).
 func fx_color() -> Color:
-	return HeatLooks.attack_color(COLOR, _tier)
+	return AttackView.edge_color(COLOR, _tier)  # v0.6.0 MX1: the attacks' one edge rule
 
 
 ## The colour of the newest live effect of a kind (its material's albedo, alpha 1), or transparent black.

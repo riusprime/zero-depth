@@ -338,6 +338,80 @@ Hitting any of them stops that chain, emits one `LIMIT` event naming the guard, 
 sims assert that the `LIMIT` count is 0. The fuzz test is deliberately stricter: ≤ 256 events per tick, so normal
 play stays well under the watchdog ([`TEST_MATRIX.md`](TEST_MATRIX.md) T-FUZZ).
 
+## 8b. Attack specs and modifiers (v0.6.0 MX1)
+
+Design: [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) (owner B2–B9). MX1 is its "order of work"
+step 1: the spec, the compile and one launch for the weapon attacks, with the v0.5 items that touch them moved into
+modifier data and no change in what the game does.
+
+**`AttackSpec`** (`src/sim/combat/attack_spec.gd`): one attack as data, in sim units. `form` (`ARC`, `BOLT`, `RING`,
+`BEAM`, `ZONE`, `ORBITER`, `LOB`, `BURST`); `tags` for target filters (`weapon`, `melee`, `projectile`, `skill`,
+`ability`, `area`, `chain`, `hook`, `auto`); pattern (`count` over the full fan `spread`, `repeat_delay_ticks` /
+`repeat_damage_permille`); size (`half_arc`, `reach_m` × (1000 + `reach_bonus_permille`) / 1000, `radius_m`, `speed`,
+`life_ticks`, `period_ticks`, `rate_bonus_permille`); payload (`damage`, `damage_permille` when the shot splits,
+`nth_every` / `nth_damage_permille`, `hitstop_ticks`, statuses with stacks and `every`, `elements` for the view);
+behaviour (`bounces`, `pierce`, `seek`); `hooks` (`AttackHook`: a trigger `ON_HIT`, `ON_KILL`, `ON_NTH` or `ON_END`,
+an `every`, flat damage or a per-mille share of the parent's base damage, and a `child` spec); `depth` (0 root, at
+most 2); `modifier_ids` (what rewrote it, in order).
+
+**Compile** (`Modifiers.compile(w)`): base specs come from the player table: `blade_step_0..3` (the combo steps,
+`[weapon, melee]`), `gun_bolt` (`[weapon, projectile]`), and `skill` (Lunge Cleave `[skill, melee]`, Scatter Blast a
+`BEAM` fan `[skill, projectile]`). Both weapons' specs are compiled in every run (the build only enables one, L15).
+The build's modifiers are the owned items' `ItemTable.modifiers`, in pick order. Each base spec goes through
+**`FORM → PATTERN → BEHAVIOUR → PAYLOAD → HOOK → SCALE`**; inside a stage the modifiers run in pick order and each
+one's ops in order; a modifier touches a spec only if the spec carries every tag of its `target` (empty = all).
+Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
+`STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
+spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
+(design §2, owner B8): the first `SET_FORM` sets the form; each later one never replaces it but adds an `ON_END`
+hook whose child is a copy of the spec in the new form, compiled through the stages after `FORM`. **Riders** keep two
+v0.5 rules exact: a weapon step's hits burn whenever the burn engine runs (Wildfire, Flame Trail's borrowed engine),
+and the bolt's hits slow whenever the slow runs (Glacial Edge, Cold Snap); a rider is a status, never an element.
+No randomness is drawn (EI-05).
+
+**Cache and hash.** The book (`AttackBook`) is cached on `World.attack_book`; `World._build_mods` (an item picked, an
+ability granted or levelled, a floor's carry) and a snapshot restore set it to null, and the next read compiles it.
+So a compile happens on pick and on load, never per tick. `World.state_hash` adds the book's SHA-256 digest
+(`Modifiers.hash_into`) once the build has a modifier; worlds without one (the kernel goldens) hash as before.
+Saves store the build's item ids (as before); the snapshot keeps `attack_book` out and the restore recompiles it
+(`WorldSnapshot.WORLD_KEPT`).
+
+**Launch** (`Attacks.launch(w, spec, ctx)`): the one entry point that runs a spec. The drivers keep their timing
+(`PlayerKit`: the combo's ticks and the shot period; `PlayerSkill`: the lunge) and the runtime factors (the build's
+per mille with its carried remainder, Overcharge, Momentum, Bulwark, the gamble shrine, crit and the damage stat in
+`Damage.hit`), and pass the damage, angle, root, tags and effect id in an `AttackContext`. Runners in MX1: `ARC`
+(the steps and the cleave; reach = `Attacks.arc_reach_m`: a weapon step's base × its reach bonus × Combo Sword's
+level, then area, then Hot; a Skill's base × area), `BOLT` (queued for phase 9 as before, one per offset of
+`count` / `spread` plus Pulse Gun's twins), `BURST` (a disc), `BEAM` (`seek`: a jump to the nearest other enemy
+within `reach_m`; otherwise a fan of rays that stop at the first wall or enemy). The other forms do nothing until the
+cards that use them (MX stage 2+). The shape functions (`arc_touches`, `ray_touches`) are the ones the views'
+forecasts call (EI-07).
+
+**Hooks and their guard** (design §2): `ON_HIT` and `ON_KILL` run after a landed hit (`every` counts the landed hits
+of one launch); `ON_NTH` when an Nth combo step resolves (Overcharge's shockwave); `ON_END` after an arc or a burst
+resolves, from where it ends. A player projectile's hit runs the bolt spec's `ON_HIT` hooks (MX1: a projectile does
+not carry its spec, so every player projectile reads the Gun bolt's, which is v0.5's Static Chain rule); an `every`
+there counts landed bolts on `World.chain_count`, at most once per root (`World.chain_root`). Every hook launch goes
+through `Attacks.run_hook`: its child runs at `depth + 1` (at most `MAX_HOOK_DEPTH` = 2) with half the parent's proc
+coefficient, so `HIT.proc_pct` is 100 for a root attack, 50 for a hook's attack and 25 below that (`Damage.hit`'s new
+`proc_pct` argument; `DAMAGE` keeps 100, `DOT` 0); a hook never runs while its own id is in `World.hook_chain`
+(ancestry; empty between ticks); at most `MAX_LAUNCHES_PER_TICK` = 256 launches run in one tick, then one `LIMIT`
+(effect `attack_launch_cap`) and the tick's other launches are dropped. A hook attack's own statuses feed at stacks ×
+its proc coefficient (rounded down), once per root per target (`ProcLedger` codes 48–52); a root attack's statuses
+feed through their v0.5 sources (`Engines.on_hit` by source: a melee hit reads the current step spec, a projectile
+hit the bolt spec; `ItemEffects.on_melee_hit` for a step's burn; `ItemProcs.on_bolt_hit` for the slow). The engines'
+own guards (`ProcLedger`, `Engines.begin` ancestry and the watchdog) are unchanged; MX1's hook guard keeps its own
+chain so v0.5's event provenance (`depth`, `ancestry`) is unchanged.
+
+**What MX1 moved, exactly.** Long Edge (reach bonus), Twin Arc (repeat), Ember Edge (burn status), Splinter Shot
+(count, spread, damage share), Rapid Coil (rate bonus), Ricochet Core (bounces), Overcharge (Nth step and its
+`ON_NTH` burst), Static Chain (shock status and the bolt's `ON_HIT` seeking beam), Frost Core (slow and frost
+statuses), Cinder Shot, Conductor, Serrated Edge, Barbed Bolts, Glacial Edge (their statuses). The items keep their
+cards and engine numbers (burn, shock, bleed, frost, slow; the shock Static Chain's jumps and Overcharge's shockwave
+feed). The other 17 items (dash, guard, kill, heat, sustain and the ability mods) are not attack rewrites yet (MX
+stage 2). The equivalence test (`test_modifier_equivalence`, fixture recorded on the v0.5 code) holds every outcome
+equal; the one event-level change is `HIT.proc_pct` on Overcharge's shockwave and Static Chain's jump (now 50).
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
@@ -351,6 +425,10 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
   hold the game; that is gone (see [`ARCHITECTURE.md`](ARCHITECTURE.md) §12).
 - **Forecasts:** any preview number or area is computed by calling the same sim function the real outcome uses,
   on the current state, without mutating it (EI-07).
+- **Attack specs** (v0.6.0 MX1, §8b): `attack_ids()`, `attack_spec(id)` (the final spec as plain data, hooks and
+  children included), `step_attack_id(step)` and `attack_digest()`. The views draw the weapon attacks from these
+  (`AttackView`), never from which cards are held. Reading compiles the cached book when the build just changed:
+  the same compile the sim would run, so it never changes an outcome or the hash.
 
 ## 10. Hashing and checkpoints
 

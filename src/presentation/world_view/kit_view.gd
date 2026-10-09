@@ -127,7 +127,7 @@ func set_heat_tier(tier: int) -> void:
 
 ## The blade's light as drawn: its own colour below Hot, the heat meter's tier colour from Hot up.
 func hue() -> Color:
-	return HeatLooks.attack_color(color, heat_tier)
+	return AttackView.edge_color(color, heat_tier)
 
 
 func _apply_colors() -> void:

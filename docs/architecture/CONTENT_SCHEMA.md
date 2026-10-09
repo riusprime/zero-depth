@@ -182,6 +182,82 @@ v0.5.0 CP: `@export var requires_ability: StringName` (empty, or an `AbilityDefi
 bleed fields, as Serrated Edge) and `AFTERIMAGE` (`afterimage_damage`, `afterimage_radius_m`,
 `afterimage_delay_seconds`). Each validates the fields it reads (positive; seconds at least one tick).
 
+**Modifiers** (v0.6.0 MX1, category `modifiers`, `data/modifiers/*.tres`; design
+[`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §2; sim side
+[`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8b). A modifier rewrites attack specs. `ModifierDefinition` (a
+`ContentDef`, discovered by `ContentScanner` like every definition):
+
+```gdscript
+class_name ModifierDefinition extends ContentDef
+enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed compile order; appended, never renumbered
+@export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
+@export var rarity: Rarity                # COMMON, RARE
+@export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
+                                          # chain, hook, auto); empty = every spec
+@export var stage: Stage                  # the stage its ops run in, unless an op names another
+@export var ops: Array[ModifierOpDefinition]
+@export var overlay: StringName           # optional visual overlay id (design §4); empty in MX1
+```
+
+```gdscript
+class_name ModifierOpDefinition extends Resource   # a sub-resource of ops
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST }
+enum Trigger { ON_HIT, ON_KILL, ON_NTH }
+@export var op: Op
+@export var stage: int = -1               # -1: the modifier's stage
+@export var field: StringName             # numeric ops: one of FIELD_STAGE's keys, in content units
+@export var value: float                  # MUL_PERMILLE: per mille
+@export var form: Form                    # SET_FORM, and a HOOK's attack
+@export var status: StringName            # STATUS: burn, shock, bleed, frost, slow
+@export var stacks: int                   #   stacks a landed hit feeds
+@export var every: int                    #   one application every N landed hits (0 = each)
+@export var element: StringName           # ELEMENT: ember, storm, frost, venom, void, bleed
+@export var hook_trigger: Trigger         # HOOK: when
+@export var hook_tags: PackedStringArray  #   the spawned attack's tags (it also gets `hook`)
+@export var hook_radius_m: float          #   a BURST's radius
+@export var hook_reach_m: float           #   a BEAM's jump reach
+@export var hook_damage: int              #   flat damage, or
+@export var hook_damage_permille: int     #   a share of the parent's base damage (at least 1)
+@export var hook_every: int               #   fires every Nth time (0 = each)
+@export var hook_effect: StringName       #   the effect id its hits carry
+```
+
+- **Fields and stages** (`ModifierOpDefinition.FIELD_STAGE`): PATTERN `count`, `spread_degrees`,
+  `repeat_delay_seconds`, `repeat_damage_permille`; BEHAVIOUR `bounces`, `pierce`; PAYLOAD `damage`,
+  `damage_permille`, `nth_every`, `nth_damage_permille`, `hitstop_seconds`; SCALE `arc_degrees` (the full width),
+  `reach_m`, `reach_bonus_permille`, `radius_m`, `speed_mps`, `life_seconds`, `period_seconds`,
+  `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK.
+- **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
+  known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
+  belongs to; `MUL_PERMILLE` > 0; a known status with stacks > 0 and every >= 0; a known element; a known form; a
+  hook on a known trigger with known tags, spawning a `BURST` (radius > 0) or a `BEAM` (reach > 0; the two forms with
+  a hook runner in MX1), with damage or a damage share > 0, every >= 0.
+- **Compile** (`ModifierCompiler`, application): seconds to ticks (`SimTick.seconds_to_ticks`), degrees to 1/4096
+  turns (`ContentCompiler.degrees_to_units`; `arc_degrees` to the half width), m/s to m per tick, integer fields
+  rounded once; `MUL_PERMILLE` values stay per mille. The same functions the item compiler used, so a migrated item
+  keeps its exact numbers.
+- **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
+  into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
+  item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
+  Splinter Shot, Rapid Coil, Ricochet Core, Overcharge, Static Chain, Frost Core, Cinder Shot, Conductor, Serrated
+  Edge, Barbed Bolts, Glacial Edge) must name at least one (`missing`), and `ContentValidator` checks every named id
+  exists (`unknown_modifier`). Each ships a modifier of its own id. Their attack fields left the item
+  (`reach_bonus_permille`, `echo_*`, `split_*`, `fire_rate_bonus_permille`, `bounces`, `overcharge_*`,
+  `shockwave_*`, `chain_*`, `stack_every`, and `stacks_per_hit` where only a weapon hit used it); the engine numbers
+  stay on the item (`stacks_per_hit` stays on Static Chain and Overcharge: their jump and shockwave feed shock).
+  Shipped values (MX1, migrated unchanged): Long Edge `ADD reach_bonus_permille 350` (SCALE); Twin Arc
+  `SET repeat_delay_seconds 0.1`, `MAX repeat_damage_permille 500` (PATTERN); Splinter Shot `MAX count 3`,
+  `MAX spread_degrees 12` (PATTERN), `SET damage_permille 600` (PAYLOAD); Rapid Coil `ADD rate_bonus_permille 400`;
+  Ricochet Core `ADD bounces 1`; Overcharge `SET nth_every 4`, `SET nth_damage_permille 2000`, a `HOOK` `ON_NTH`
+  `BURST` radius 2 m at 500 ‰ (`overcharge`); Static Chain `STATUS shock 1 every 2`, `ELEMENT storm`, a `HOOK`
+  `ON_HIT` `BEAM` reach 4 m, 5 damage, every 3 (`static_chain`); Frost Core `STATUS slow`, `STATUS frost 1 every 3`,
+  `ELEMENT frost`; Cinder Shot `STATUS burn 1 every 3`, `ELEMENT ember`; Conductor `STATUS shock 1`,
+  `ELEMENT storm`; Serrated Edge `STATUS bleed 1`, `ELEMENT bleed`; Barbed Bolts `STATUS bleed 1 every 2`,
+  `ELEMENT bleed`; Glacial Edge `STATUS frost 1`, `ELEMENT frost`; Ember Edge `STATUS burn 1`, `ELEMENT ember`.
+  Melee ones target `[weapon, melee]`, bolt ones `[weapon, projectile]`, so none touches the Skills (as in v0.5).
+- No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
+
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
 later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),

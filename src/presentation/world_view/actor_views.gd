@@ -446,7 +446,7 @@ func _add_core_panels(root: Node3D, size: float) -> void:
 
 ## The colour a player bolt fired now takes: the bolt look's own (ItemVisuals), or the heat tier's from Hot up.
 func bolt_color() -> Color:
-	return HeatLooks.attack_color(
+	return AttackView.edge_color(
 		bolt_look.get("color", ThemePalette.color(&"player_core")), heat_tier
 	)
 

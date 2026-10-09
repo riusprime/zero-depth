@@ -185,7 +185,7 @@ func test_static_chain_fires_once_per_root_and_never_from_dot() -> void:
 	assert_gt(_events(w, SimEvent.Kind.DAMAGE, SimEvent.TAG_DOT).size(), 0, "the burn ticked")
 	assert_eq(w.chain_count, 0, "melee and DoT never count")
 	# Two landed hits of the same bolt (same root) with a chain due each time: only the first chains.
-	w.item_mods.chain_every = 1
+	Modifiers.bolt(w).hooks[0].every = 1  # v0.6.0 MX1: Static Chain's jump is the bolt spec's ON_HIT hook
 	w.projectiles.add(
 		900, w.actors.ids[0], ActorStore.TEAM_PLAYER, Vector2.ZERO, Vector2.ZERO, 0.1, 10, 4
 	)

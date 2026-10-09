@@ -439,7 +439,7 @@ func test_validation() -> void:
 	it.name_key = &"A"
 	it.desc_key = &"B"
 	it.kind = ItemDefinition.Kind.LONG_EDGE
-	it.reach_bonus_permille = 1
+	it.modifiers.append(&"long_edge")
 	it.tags = PackedStringArray(["blade"])
 	assert_eq(it.validate().size(), 0)
 	it.set("rarity", 7)
