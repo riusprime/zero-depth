@@ -26,6 +26,9 @@ const SPECS := {
 	&"rubble_small": {"yaw": 0.0, "height": 0.25, "role": &"decor"},
 	&"grass_tuft": {"yaw": 0.0, "height": 0.4, "role": &"decor"},
 	&"debris_low": {"yaw": PI * 0.5, "height": 0.2, "role": &"decor"},
+	# v0.6.0 Step SR: the gamble shrine (GambleShrineView), its front (the slot window) on +Z. 1.7 m tall puts its
+	# footprint at 1.58 x 1.12 m, the old obelisk's plinth width over the sim's 1 m square (Gamble.collider).
+	&"gamble_shrine": {"yaw": 0.0, "height": 1.7, "role": &"shrine"},
 }
 
 ## The chest's lid seam, as a fraction of its height (an empty band in its vertex heights at 0.55-0.575; the

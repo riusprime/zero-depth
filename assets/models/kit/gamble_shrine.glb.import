@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://den0jqfe1rr4g"
-path="res://.godot/imported/gamble-shrine.glb-fe7e5b0a5632958f6931b918d98c0a71.scn"
+uid="uid://djm7iyqarit6b"
+path="res://.godot/imported/gamble_shrine.glb-f9a0b4751c57839acabe48a57cb2ecfd.scn"
 
 [deps]
 
-source_file="res://assets/models/gamble-shrine.glb"
-dest_files=["res://.godot/imported/gamble-shrine.glb-fe7e5b0a5632958f6931b918d98c0a71.scn"]
+source_file="res://assets/models/kit/gamble_shrine.glb"
+dest_files=["res://.godot/imported/gamble_shrine.glb-f9a0b4751c57839acabe48a57cb2ecfd.scn"]
 
 [params]
 

@@ -20,6 +20,8 @@ func test_walk_to_the_shrine_and_gamble_with_keyboard_and_pad() -> void:
 	assert_eq(w.floor_layout.room_of(w.gamble_pos), w.floor_layout.start_room, "in the start hall")
 	var shrine := main.view.gamble_shrine
 	assert_not_null(shrine, "the shrine is drawn")
+	assert_true(shrine.uses_model(), "v0.6.0 SR: as the owner's model")
+	assert_eq(shrine.root.position, SimPlane.to_3d(w.gamble_pos), "at the sim's shrine position")
 	assert_true(await e.walk_to(_front(w), 0.35), "walked to the shrine")
 	await e.frames(2)
 	assert_eq(w.shards, 0, "no shards yet")

@@ -2,19 +2,19 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://be76smu1me1ni"
-path="res://.godot/imported/gamble-shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg-13c7674f1f7663e44d821d8b21a364fa.ctex"
+uid="uid://b2p5qoshjbuh4"
+path="res://.godot/imported/gamble_shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg-6eb1c478779a698d2eea306e1d7d9b33.ctex"
 metadata={
 "vram_texture": false
 }
 generator_parameters={
-"md5": "8167b6014dd499ee2c8889e85fc8174a"
+"md5": "c888c32cb6cd79fc9a0baa59f85c021d"
 }
 
 [deps]
 
-source_file="res://assets/models/gamble-shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg"
-dest_files=["res://.godot/imported/gamble-shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg-13c7674f1f7663e44d821d8b21a364fa.ctex"]
+source_file="res://assets/models/kit/gamble_shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg"
+dest_files=["res://.godot/imported/gamble_shrine_Color_52ba2512-e9d8-48b6-b34f-e7559de420ad.jpg-6eb1c478779a698d2eea306e1d7d9b33.ctex"]
 
 [params]
 

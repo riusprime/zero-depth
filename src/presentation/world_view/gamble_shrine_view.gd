@@ -5,6 +5,13 @@ extends Node3D
 ## it (shard gem + number), red when you can't afford it. A use spins the core fast for the card's spin and lands
 ## with a flash; a refused use shakes it and dims the core. Glowing materials have emission on from creation and the
 ## body is ActorViews.flashable: only energies and the light change at runtime (flash-safe). Reads only.
+## v0.6.0 Step SR: with the v0.5.9 look (WorldViewRoot sets kit_model when the floor has a lighting mood) the body is
+## the owner's model (assets/models/kit/gamble_shrine.glb, a slot-machine shrine under a magenta crystal, through
+## KitModels like the kit: scaled, bottom on the floor, LODs), its front turned to the camera and lined up with the
+## sim's square footprint (Gamble.collider, turned 45°). The cues stay: shards orbit its crystal (spinning fast on a
+## use), the crystal's light brightens in reach, the body flashes on the landing and shakes on a refusal, the price
+## floats above. A missing model draws the code-built obelisk (L15). Presentation only: the sim's spot and footprint
+## are unchanged.
 
 const CORE := Color("#3FF2D0")
 const METAL := Color("#3B4250")
@@ -19,9 +26,23 @@ const CORE_ENERGY := 2.4
 const LIGHT_ENERGY := 1.1
 const SHAKE_S := 0.35
 const LAND_FLASH_S := 0.35
+## The owner's model (KitModels id) and its look.
+const MODEL_ID := &"gamble_shrine"
+## The model's front (its slot window, glTF +Z) turned to the iso camera (IsoRig.YAW_DEG), which also lines its
+## sides up with Gamble.collider's square (turned 45°).
+const MODEL_YAW := PI * 0.25
+## Where the model's crystal sits in its unit box (x and z from the centre, y up from the floor; read from the mesh:
+## the vertices of its top band).
+const MODEL_CRYSTAL := Vector3(0.07, 0.86, -0.2)
+## The model's crystal is magenta: its glow, shards and light take the shrine's map colour (MinimapStyle.SHRINE).
+const MODEL_GLOW := Color("#D46BFF")
+## How far the shards orbit the model's crystal (m).
+const MODEL_ORBIT_M := 0.3
 
 var root: Node3D
 var price_label: Label3D
+## Use the owner's model (set before setup; WorldViewRoot turns it on with the v0.5.9 look).
+var kit_model := false
 var _body: Node3D
 var _core: Node3D
 var _light: OmniLight3D
@@ -35,6 +56,9 @@ var _spin_left := 0.0
 var _flash_left := 0.0
 var _shake_left := 0.0
 var _hot := false
+var _glow := CORE
+var _core_y := CORE_Y
+var _model: MeshInstance3D
 
 
 func _init() -> void:
@@ -51,7 +75,13 @@ func _init() -> void:
 
 ## Builds the shrine at its sim position (once; the shrine never moves).
 func setup(at: Vector2) -> void:
-	root = make_shrine()
+	root = null
+	if kit_model:
+		var piece := KitModels.get_piece(MODEL_ID)
+		if not piece.is_empty():
+			root = _make_model(piece)
+	if root == null:
+		root = make_shrine()
 	root.position = SimPlane.to_3d(at)
 	add_child(root)
 
@@ -87,6 +117,16 @@ func shaking() -> bool:
 
 
 ## The glowing materials and the flashable body materials (tests check they keep their shader).
+## True when the body is the owner's model (false: the code-built obelisk).
+func uses_model() -> bool:
+	return _model != null
+
+
+## The owner's model as placed (null with the code-built obelisk).
+func model() -> MeshInstance3D:
+	return _model
+
+
 func materials() -> Array[StandardMaterial3D]:
 	var out: Array[StandardMaterial3D] = [_core_mat, _strip_mat]
 	out.append_array(_metal_mats)
@@ -108,7 +148,7 @@ func _process(delta: float) -> void:
 		if before > 0.0 and _spin_left == 0.0:
 			_flash_left = LAND_FLASH_S
 	_core.rotation.y += turn * delta
-	_core.position.y = CORE_Y + sin(_t * 2.2) * 0.05
+	_core.position.y = _core_y + sin(_t * 2.2) * 0.05
 	var flash := 0.0
 	if _flash_left > 0.0:
 		_flash_left = maxf(0.0, _flash_left - delta)
@@ -121,10 +161,10 @@ func _process(delta: float) -> void:
 		var s := _shake_left / SHAKE_S
 		_body.position.x = sin(_shake_left * 70.0) * 0.07 * s
 		energy = CORE_ENERGY * (1.0 - 0.7 * s)
-		_light.light_color = CORE.lerp(DENY, s)
+		_light.light_color = _glow.lerp(DENY, s)
 	else:
 		_body.position.x = 0.0
-		_light.light_color = CORE
+		_light.light_color = _glow
 	_core_mat.emission_energy_multiplier = energy
 	_light.light_energy = LIGHT_ENERGY * energy / CORE_ENERGY
 
@@ -181,6 +221,53 @@ func make_shrine() -> Node3D:
 	_light.omni_range = 4.0
 	_light.position.y = CORE_Y
 	n.add_child(_light)
+	_add_price(n)
+	return n
+
+
+## The owner's model (v0.6.0 Step SR) at its natural size (KitModels: bottom on the floor, centred), turned to the
+## camera; shards orbit its crystal with the crystal's light; the price floats above.
+func _make_model(piece: Dictionary) -> Node3D:
+	_glow = MODEL_GLOW
+	for m in [_core_mat, _strip_mat]:
+		m.albedo_color = _glow
+		m.emission = _glow
+	var size: Vector3 = piece["size"]
+	var n := Node3D.new()
+	_body = Node3D.new()
+	_body.rotation.y = MODEL_YAW
+	n.add_child(_body)
+	var mat := (piece["material"] as StandardMaterial3D).duplicate() as StandardMaterial3D
+	ActorViews.flashable(mat)
+	mat.emission = _glow.lerp(Color.WHITE, 0.6)
+	_metal_mats.append(mat)
+	_model = _mesh(piece["mesh"], mat)
+	_model.name = "Model"
+	_model.scale = size
+	_body.add_child(_model)
+	var crystal := Basis(Vector3.UP, MODEL_YAW) * (MODEL_CRYSTAL * size)
+	_core_y = crystal.y
+	_core = Node3D.new()
+	_core.position = crystal
+	n.add_child(_core)
+	for k in 3:
+		var a := TAU * k / 3.0
+		var bit := _mesh(RewardViews.bipyramid(3, 0.045, 0.08, 0.08), _core_mat)
+		bit.position = Vector3(cos(a) * MODEL_ORBIT_M, 0.0, sin(a) * MODEL_ORBIT_M)
+		bit.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_core.add_child(bit)
+	_light = OmniLight3D.new()
+	_light.light_color = _glow
+	_light.light_energy = LIGHT_ENERGY
+	_light.omni_range = 4.0
+	_light.position = crystal
+	n.add_child(_light)
+	_add_price(n)
+	return n
+
+
+## The next price, floating above the shrine (hidden until near).
+func _add_price(n: Node3D) -> void:
 	price_label = Label3D.new()
 	price_label.name = "Price"
 	price_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -194,7 +281,6 @@ func make_shrine() -> Node3D:
 	var gem := _mesh(RewardViews.bipyramid(4, 0.08, 0.12, 0.12), ShardViews.shared_material())
 	gem.position = Vector3(-0.55, 0.0, 0)
 	price_label.add_child(gem)
-	return n
 
 
 func _metal(c: Color) -> StandardMaterial3D:
