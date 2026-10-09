@@ -156,6 +156,46 @@
       "id": "fx_spark_shapes",
       "path": "assets/textures/vfx/fx_spark_shapes.png",
       "sha256": "2050a43067ffb9fd058bd03fd3572b63b777451b97dced8df7258980a02aa934"
+    },
+    {
+      "id": "fx_frost_mark",
+      "path": "assets/textures/vfx/fx_frost_mark.png",
+      "sha256": "751e54abbe5fc9610e84070aee629aefd1dc71334f44d627cee1f05ec7faaaa9"
+    },
+    {
+      "id": "fx_frost_burst",
+      "path": "assets/textures/vfx/fx_frost_burst.png",
+      "sha256": "22b5ed8e76d947088fb654e6c6dfa175f9076798c95a47672558abdb09fb7b97"
+    },
+    {
+      "id": "fx_liquid_splash",
+      "path": "assets/textures/vfx/fx_liquid_splash.png",
+      "sha256": "8fa11b478ab2c61755c11a7decf4446bef493a4762c6d99617ef37758e98e235"
+    },
+    {
+      "id": "fx_splatter_mark",
+      "path": "assets/textures/vfx/fx_splatter_mark.png",
+      "sha256": "89011942933e23ad37a820fb3de1aacf94052dd7de57669e61db0588c641be7f"
+    },
+    {
+      "id": "fx_bubbles",
+      "path": "assets/textures/vfx/fx_bubbles.png",
+      "sha256": "2c102e2d7f49bf44ebd76d697c56ad595bbfcce8192ee1401ff411e669d82f23"
+    },
+    {
+      "id": "fx_void_tendrils",
+      "path": "assets/textures/vfx/fx_void_tendrils.png",
+      "sha256": "378368df4c2d7c8ddeb4dd541fda5ea5d7db0381d316988d00067982e1d57b50"
+    },
+    {
+      "id": "fx_void_rift",
+      "path": "assets/textures/vfx/fx_void_rift.png",
+      "sha256": "eb49743f47275a92c1fd4da490e57e858acd0a849820359a25297fcb467f940a"
+    },
+    {
+      "id": "fx_void_noise",
+      "path": "assets/textures/vfx/fx_void_noise.png",
+      "sha256": "23991586870a58e1f5bd6e79c8216863575f8e84fcdac3d33760be95fbecb3a0"
     }
   ]
 }
