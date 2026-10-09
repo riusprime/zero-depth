@@ -107,7 +107,7 @@ func test_bad_ability_mods_are_rejected() -> void:
 	c.requires_ability = &""
 	assert_eq(c.validate().size(), 1, "an ability mod names its ability")
 	c.requires_ability = &"bomb_lobber"
-	c.modifiers = []  # v0.6.0 MX4: the bomblets are its modifier's ops now
+	c.modifiers.clear()  # v0.6.0 MX4: the bomblets are its modifier's ops now
 	assert_eq(c.validate().size(), 1, "it names its modifier")
 	assert_eq(ItemDefinition.ability_kind(&"orbit_blades"), AbilityDefinition.Kind.ORBIT_BLADES)
 

@@ -82,7 +82,17 @@ func test_without_modifiers_the_specs_are_the_player_tables() -> void:
 	assert_eq(
 		b.order,
 		PackedStringArray(
-			["blade_step_0", "blade_step_1", "blade_step_2", "blade_step_3", "gun_bolt"]
+			[
+				"blade_step_0",
+				"blade_step_1",
+				"blade_step_2",
+				"blade_step_3",
+				"gun_bolt",
+				"dash",  # v0.6.0 MX4: the moments
+				"move",
+				"blink",
+				"body",
+			]
 		)
 	)
 	for k in w.player.combo.size():
@@ -155,7 +165,11 @@ func test_a_target_filter_needs_every_tag() -> void:
 		skill.modifier_ids, PackedStringArray(["all", "melee_only"]), "PAYLOAD after BEHAVIOUR"
 	)
 	for id in b.order:
-		assert_eq(b.spec(StringName(id)).pierce, 1, "%s: an empty target is every spec" % id)
+		var s := b.spec(StringName(id))
+		if s.has_tag(&"moment"):  # v0.6.0 MX4: a moment needs its tag named
+			assert_eq(s.pierce, 0, "%s: an empty target is every attack, not a moment" % id)
+		else:
+			assert_eq(s.pierce, 1, "%s: an empty target is every attack" % id)
 
 
 # --- The form-layering rule (design §2) -----------------------------------------------------------------------
@@ -249,12 +263,16 @@ func test_a_hook_never_runs_inside_its_own_chain() -> void:
 	base.tags = PackedStringArray(["area"])
 	base.radius_m = 4.0
 	var s := Modifiers.compile_spec(base, [loop] as Array[ModifierTable])
-	assert_eq(s.hooks[0].child.hooks.size(), 1, "the child carries the same hook (depth allows it)")
+	# v0.6.0 MX4: lineage, the compile-time guard: the child never carries the hook that made it.
+	assert_eq(s.hooks[0].child.hooks.size(), 0, "the child carries no copy of its own hook")
+	assert_true(s.hooks[0].child.lineage.has("loop"))
+	# The run-time guard (ancestry) still refuses a hook inside its own chain: forced here past the lineage.
+	s.hooks[0].child.hooks.append(s.hooks[0])
 	var ctx := AttackContext.make(Vector2.ZERO, 0, 10, w.take_root(), SimEvent.TAG_AREA, &"probe")
 	assert_true(Attacks.launch(w, s, ctx))
 	assert_eq(_hits(w, &"probe").size(), 2)
 	# Each of the probe's two hits runs the hook once (its burst hits both dummies); inside that burst the same hook
-	# is refused (ancestry), so no depth-2 burst ever launches although the compile allowed one.
+	# is refused (ancestry), so no depth-2 burst ever launches.
 	assert_eq(_hits(w, &"loop").size(), 4)
 	for e in _hits(w, &"loop"):
 		assert_eq(e.proc_pct, 50, "all at depth 1: never again inside itself")

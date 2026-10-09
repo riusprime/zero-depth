@@ -79,8 +79,11 @@ func test_the_shipped_data() -> void:
 	assert_eq(_rewards.rare_weight_chest, 3)
 	assert_eq(_rewards.shard_tier_bonus_permille, 250)
 	var rare := []
+	var rare_cards := []
 	for it in _items:
-		if it.rarity == ItemTable.RARE:
+		if it.rarity == ItemTable.RARE and it.kind == ItemTable.Kind.MODIFIER:
+			rare_cards.append(String(it.id))  # v0.6.0 MX4
+		elif it.rarity == ItemTable.RARE:
 			rare.append(String(it.id))
 		var need := PlayerTable.Utility.GUARD if it.id == &"bulwark" else -1
 		assert_eq(it.requires_utility, need, "%s: utility requirement" % it.id)
@@ -99,6 +102,29 @@ func test_the_shipped_data() -> void:
 			"wildfire"
 		],
 		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP)"
+	)
+	rare_cards.sort()
+	assert_eq(
+		rare_cards,
+		[
+			"aether_shell",
+			"ascension",
+			"blade_orbit",
+			"bomb_rounds",
+			"boomerang",
+			"halo_shot",
+			"heat_sink_rounds",
+			"long_shadow",
+			"meltdown_edge",
+			"mirror_drone",
+			"orbit_rounds",
+			"phase_dash",
+			"resonance_core",
+			"seeker",
+			"shock_circles",
+			"short_fuse",
+		],
+		"v0.6.0 MX4: the trinkets, the merges and the rare M-list cards"
 	)
 
 
@@ -375,7 +401,7 @@ func test_chests_weight_rare_items() -> void:
 		for kind in ["chest", "altar"]:
 			var w := _world(s + 1)
 			var tables: Array[ItemTable] = []
-			for k in _items.size():
+			for k in 24:  # the v0.3.0 pool of 24 (v0.6.0 MX4: the shipped list is longer now)
 				var t := ItemTable.new()
 				t.id = _items[k].id
 				t.rarity = ItemTable.RARE if k < 2 else ItemTable.COMMON

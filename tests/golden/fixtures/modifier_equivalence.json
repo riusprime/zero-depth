@@ -61,7 +61,7 @@
   },
   "both_all": {
     "damage": 4160,
-    "digest": "5a3645560a47ccf51a76f9ba9ca0b28128b5d7e0a2d6c2bb6432c3a1d16f70e0",
+    "digest": "947d3402d0bcbfc4433514d1c82b292cb1a87da9d091917eb83eb35e1cd8fd49",
     "hits": 199,
     "kills": 14
   },
@@ -73,7 +73,7 @@
   },
   "gun_all": {
     "damage": 4160,
-    "digest": "ce0f34c75d4f3ff4d0eb5d6d12b685e68aadca8a9246bceae3d8f5fd74c1a516",
+    "digest": "0d4ad4294f173684a64df140193ff5a7eda7f5472bf83e840c5671b0a803c131",
     "hits": 472,
     "kills": 14
   },
@@ -91,7 +91,7 @@
   },
   "gun_frost_core": {
     "damage": 384,
-    "digest": "18e57d8bad9c567f33ee70db44048b97a188533a677cbfc7ef9c739a4f5086e0",
+    "digest": "625e97c8f9548153e07e3e5ec916e56bbef604f7a0e3e894ac7432767365a522",
     "hits": 81,
     "kills": 0
   },

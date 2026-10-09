@@ -215,6 +215,8 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		[
 			"bulwark",
 			"conductor",
+			"echo_slash",  # v0.6.0 MX4: Echo Slash and its legendary need the Blade's arcs
+			"echo_storm",
 			"ember_edge",
 			"glacial_edge",
 			"long_edge",
@@ -228,8 +230,8 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		gun,
 		[
 			"barbed_bolts",
+			"bomb_rounds",  # v0.6.0 MX4: every 5th shot (M3 Frost Core left: it is every attack's now)
 			"cinder_shot",
-			"frost_core",
 			"rapid_coil",
 			"ricochet_core",
 			"splinter_shot",
