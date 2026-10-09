@@ -6,6 +6,7 @@ extends Control
 ## Colours run cool to hot as the tier rises; when the tier goes up the lit marks brighten for a moment. Past the
 ## last mark it reads "overdrive": every mark lit red. It shows what WorldReader says (tier, tier_progress) and
 ## decides nothing.
+## v0.5.5 A5 (Ember stone): in HudStyle.EMBER the marks are small ember teeth (triangles), as in the B mockup.
 
 ## The tier marks (named chevrons in v0.3.0; the API keeps the name).
 const CHEVRONS := 6
@@ -92,7 +93,14 @@ func _draw() -> void:
 			c = HudStyle.WARN
 		if on and p > 0.0:
 			c = c.lerp(Color.WHITE, 0.5 * p)
-		draw_rect(Rect2(k * (MARK.x + gap), 0, MARK.x, MARK.y), c)
+		var x := k * (MARK.x + gap)
+		if style == HudStyle.Style.EMBER:
+			var tooth := PackedVector2Array(
+				[Vector2(x + 1, 10), Vector2(x + MARK.x * 0.5, 0), Vector2(x + MARK.x - 1, 10)]
+			)
+			draw_colored_polygon(tooth, c)
+		else:
+			draw_rect(Rect2(x, 0, MARK.x, MARK.y), c)
 	var y := SIZE.y - 2.0
 	draw_rect(Rect2(0, y, SIZE.x, 2), Color(0, 0, 0, 0.4))
 	draw_rect(Rect2(0, y, SIZE.x * _progress, 2), Color(hot, 0.85))

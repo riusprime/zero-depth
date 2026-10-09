@@ -20,7 +20,10 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | MX1 | v0.6.0 Step MX1, the modifier engine's first stage (design "Order of work" 1; B2–B9): every Blade step, the Twin Arc echo, the Gun's bolt and both Skills are now attack specs compiled from the build (stage order form → pattern → behaviour → payload → hooks → scale, pick order inside a stage, tag filters, form layering, hooks to depth 2 with proc 100 → 50 → 25 and the ancestry guard, 256 launches a tick) and launched through one `Attacks.launch`; the 14 items that touch those attacks became `data/modifiers/*.tres` with their exact numbers; the blade and bolts are drawn from the final spec (`AttackView`, heat edge from LK). Same feel, no new cards: all 22 scripted equivalence fights match the outcome digests recorded on the v0.5 code. Full suite 1191/1191, export smoke green. Evidence: [`evidence/MODIFIER_ENGINE_1.md`](evidence/MODIFIER_ENGINE_1.md) | v0.6.0 Step MX1 commit |
 | CU | Cursed chests offer a trade-off curse card (rare-level upside, no epic stat card; S6); eight trade-off curses C1–C8 (Rooted, Heavy Hands, Glass Heart, Blood Price, Fevered, Tunnel Vision, Brittle, Marked), each +1 T, lifted whole by the cleanse; Marked Hunt became C8 Marked, the other five stay as event curses (S7); core theft: elites and bosses carry a glowing core in their card family's colour, a stagger opens a 2 s steal window, a kill inside it drops the core as a free pick (a boss's from the legendary tier) (X2). Evidence: [`evidence/CURSES.md`](evidence/CURSES.md) (suite 1178/1178, export smoke green) | `af1a206`, `949b32f` |
 
+| UI | The A5 restyle: the in-game HUD in B "Ember stone" (stone slabs with an ember line under HP, the top plate, heat and the boss bar; a red HP bar; danger as ember teeth; ability slots as stone with their colour line; skill and vent hints on small slabs) with the **corner minimap floating over the game, no black background** (dark halo under its lines, ember corner ticks); every menu (main, pause, Options, credits, run recap / death, build picker's Back) in C "Cold glass" (the game blurred and dimmed behind, left-aligned title and list, glass highlight and diamond on the focused row, run line and key hints small) with **no build cards beside it**; menu buttons in plain sentence case. Heat colours (`HeatLooks`), the straight heat bar, 52 px cooldown slots, minimap orientation and the crystal pick cards unchanged; nothing in the v0.5.9 world look touched. Evidence: [`evidence/UI_RESTYLE.md`](evidence/UI_RESTYLE.md) | v0.6.0 Step UI commit |
+
 ## Goldens changed on purpose
+- none (Step UI: presentation only)
 - none (Step EC: the replay and export-smoke goldens did not change; the full suite passed against them)
 - none (Step DS: the replay and export-smoke goldens are the kernel's and still match)
 - none (Step AR: the same goldens held; full suite 1122/1122 and export smoke green)
@@ -50,6 +53,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
 | A3 VFX audit rows marked "awaiting owner" and Q-A3 ([`evidence/VFX_AUDIT.md`](evidence/VFX_AUDIT.md)) | 2026-10-08 | pending | |
 | Overclock attack colour: the bar's red-orange `#FF4A1A`, or a redder red (changes the bar too) | 2026-10-08 | pending | |
 
+| C4 Blood Price "abilities" = Skill + Blink; C8 Marked = elites within 16 m move 30 % faster; a boss's stolen core comes on top of its legendary altar; a killing-blow stagger opens no window (Step CU readings) | 2026-10-09 | pending | |
+
 ## History
 - 2026-10-08: plan written from the owner's v0.5.0 playtest; wave 1 (EC, CD, LK) started.
 - 2026-10-08: Step CD done: crystal pick cards and the A5 mockups (the in-game HUD is unchanged until the pick).
@@ -66,3 +71,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`; a PR into `mai
   normal values until MX (evidence/ARENAS.md).
 - 2026-10-09: Step MX1 built (attack specs, modifiers, `Attacks.launch`, the 14 attack items migrated, `AttackView`), merged with the session branch (DS, LK, AR); equivalence 22/22, full suite 1191/1191, export smoke green; MIN_TEST_COUNT 1159 → 1191. Known limits for MX stage 2 (projectiles don't carry their spec; two v0.5 quirks kept as riders; hooks now carry proc 50): evidence/MODIFIER_ENGINE_1.md.
 - 2026-10-09: Step CU built (`af1a206`, `949b32f`): trade-off curses C1–C8 on cursed chests, core theft; full suite 1178/1178 at `949b32f`, export smoke green. Open for the owner: every CU number, and the readings in evidence/CURSES.md (C4 "abilities" = Skill and Blink; Marked's hunt = +30 % elite speed within 16 m; a boss core adds to its legendary altar).
+- 2026-10-09: Step UI built (A5 pick: HUD in B "Ember stone" without the minimap's black background, menus in C
+  "Cold glass" without the build cards); suite and export smoke in [`evidence/UI_RESTYLE.md`](evidence/UI_RESTYLE.md).
