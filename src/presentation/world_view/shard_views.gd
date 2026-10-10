@@ -3,6 +3,8 @@ extends Node3D
 ## Shard gems (v0.3.0 E): when a kill pays shards (a SHARDS event), up to MAX_PER_KILL small violet crystals burst
 ## from the body, hang for a moment, then fly into the player and vanish. Cosmetic and in frame time: the sim
 ## already counted the shards. Jitter comes from a presentation RNG seeded per event, so shots look the same.
+## v0.6.1 SW (owner R3, the shard look): each gem is an outlined faceted shard (ShardMesh) lit by the scene with its
+## own violet emission, instead of a flat unshaded crystal. The chest's price gem keeps shared_material().
 
 const COLOR := Color("#B48CFF")
 const MAX_PER_KILL := 8
@@ -13,6 +15,7 @@ const HEIGHT := 0.8
 
 static var _material: StandardMaterial3D
 static var _mesh: ArrayMesh
+static var _gem_material: StandardMaterial3D
 
 var _last_seq := 0
 var _target := Vector3.ZERO
@@ -30,6 +33,13 @@ static func shared_material() -> StandardMaterial3D:
 		_material.emission_energy_multiplier = 2.4
 		_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	return _material
+
+
+## v0.6.1 SW: the flying gems' material: the shard look (lit, toned facets, emission on from creation).
+static func gem_material() -> StandardMaterial3D:
+	if _gem_material == null:
+		_gem_material = ShardMesh.crystal_material(COLOR, 1.6)
+	return _gem_material
 
 
 func _init() -> void:
@@ -51,17 +61,17 @@ func count() -> int:
 
 func _burst(at: Vector2, n: int, salt: int) -> void:
 	if _mesh == null:
-		_mesh = RewardViews.bipyramid(4, 0.1, 0.17, 0.17)
+		_mesh = ShardMesh.shard(4, 0.1, 0.18, 0.15, 51)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = salt
 	var origin := SimPlane.to_3d(at) + Vector3(0, HEIGHT, 0)
 	for k in n:
 		if _gems.size() >= MAX_ALIVE:
 			return
-		var gem := MeshInstance3D.new()
-		gem.mesh = _mesh
-		gem.material_override = shared_material()
-		gem.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var gem := ShardMesh.outlined(_mesh, gem_material(), Vector3.ZERO, 0.2)
+		(gem.get_meta(&"crystal") as MeshInstance3D).cast_shadow = (
+			GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		)
 		gem.position = origin
 		add_child(gem)
 		var a := TAU * (k + rng.randf() * 0.6) / maxf(1.0, n)
@@ -73,7 +83,7 @@ func _process(delta: float) -> void:
 	var i := 0
 	while i < _gems.size():
 		var g := _gems[i]
-		var gem: MeshInstance3D = g[0]
+		var gem: Node3D = g[0]
 		g[2] += delta
 		if g[2] < BURST_S:
 			g[1] *= maxf(0.0, 1.0 - delta * 5.0)

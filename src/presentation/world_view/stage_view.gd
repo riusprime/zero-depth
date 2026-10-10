@@ -49,6 +49,8 @@ var contact_shadows: MeshInstance3D
 ## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
 ## loads; otherwise the boxes and primitive props draw as before.
 var kit: StageKit
+## v0.6.1 SD (owner R4): the crystal-shard clusters dressing the floor (null without the kit or a floor).
+var shards: ShardCluster
 ## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
@@ -408,6 +410,57 @@ func _build_kit(reader: WorldReader) -> void:
 	add_child(kit)
 	kit.build(placements, wall_specs.size(), palette["cover"], mood)
 	kit.set_shadows(lighting == "high")
+	_build_shards(reader, walls, rooms, doors, keep, placements)
+
+
+## v0.6.1 SD (owner R4): crystal-shard clusters on top of the kit (ShardDressing's rules; ShardCluster draws them).
+## Presentation only: the same walls, doorways and keep-clear spots the dresser used, plus its light props, the
+## other interactables, the enemy spawn spots and the hero's start.
+func _build_shards(
+	reader: WorldReader, walls: Array, rooms: Array, doors: Array, keep: Array, placements: Array
+) -> void:
+	if not reader.has_floor():
+		return
+	var clear: Array = keep.duplicate()
+	var special: Array = []  # v0.6.1 SD4: rooms holding these are never crystal rooms
+	for p: Dictionary in placements:
+		if p["kind"] == &"light":
+			clear.append(SimPlane.to_sim((p["xform"] as Transform3D).origin))
+	if reader.has_deep_portal():
+		clear.append(reader.deep_portal_pos())
+	if reader.has_shop():
+		clear.append(reader.shop_pos())
+		special.append(reader.shop_pos())
+	if reader.has_gamble():
+		clear.append(reader.gamble_pos())
+		special.append(reader.gamble_pos())
+	for k in reader.event_count():
+		clear.append(reader.event_pos(k))
+		special.append(reader.event_pos(k))
+	var blocked: Array = doors.duplicate()
+	blocked.append_array(reader.arena_barriers())
+	var placed := (
+		ShardDressing
+		. place(
+			{
+				"walls": walls,
+				"pieces": placements,
+				"rooms": rooms,
+				"special": special,
+				"start_room": reader.floor_start_room(),
+				"boss_room": reader.boss_room(),
+				"doors": blocked,
+				"keep_clear": clear,
+				"spawns": Array(reader.spawn_spots()),
+				"start": reader.floor_start_pos(),
+				"seed": reader.seed_value(),
+			}
+		)
+	)
+	shards = ShardCluster.new()
+	shards.name = "Shards"
+	add_child(shards)
+	shards.build(placed, ShardCluster.tint_key(prop_style, deep), lighting == "high")
 
 
 ## Fades the walls at the given indices (dithered alpha) and restores the rest.

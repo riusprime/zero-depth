@@ -1,0 +1,162 @@
+# VFX requests: textures for fire, explosions and electric effects
+
+**Owner, 2026-10-09:** "let's start with the fire and main abilities, sword animation stays as is for now I like
+it, but for example fire, bombs, electrical, there is a lot of combinations now and none of them work visually,
+they look like test like … a lot of effects make a circle on the ground and I don't want that I want them to feel
+real within the game and art direction, not a circle with bad made particles on top, fire should be fire, even if
+minimalistic, that matches the style of the game". The owner generates the textures.
+
+## How they're used
+
+- **One look per element, not per combo.** The v0.6.0 modifier engine builds every attack from elements (fire,
+  storm, frost, venom) on forms (projectile, burst, ring, lob, chain, trail). Each element gets one look that works on
+  every form, so every combination, including future ones, looks right.
+- **Real 3D.** The textures sit on 3D particles and meshes in the lit scene:
+  - flames rise and flicker;
+  - explosions bloom with debris and smoke;
+  - lightning arcs through the air;
+  - each one flashes real light on the floor and walls;
+  - scorch marks stay behind.
+- **No ground circles as the effect.** A flat, bright marker stays only where the player must read a danger zone
+  (an enemy telegraph). Those are gameplay, not decoration.
+- **Single images, animated in the engine.** Image generators can't keep an animation consistent frame to frame, so
+  these are still shapes and seamless noise. Shaders animate them (scroll, distort, dissolve).
+
+## Rules for every texture
+
+- **Pure black background** (#000000). The engine uses brightness as transparency, so black means invisible.
+- **Square PNG,** 1024 × 1024 unless the row says 512.
+- **Sheets of 4** (2 × 2) where the row says so: four separate variants, each centred in its quarter, with nothing
+  crossing the middle lines or touching the edges.
+- **Style:** chunky, stylized, low-detail to match the low-poly kit. Cel-shaded with 2–3 flat tone bands and crisp
+  shapes, no photo realism, no fine wisps. Think the stylized flame in the look reference.
+- **No text, no frame, no ground, no scene.**
+- **Name the file by its id** (`fx_flame_shapes.png`) and upload it to `unprocessed_images/vfx/`.
+
+**Prompt prefix** (paste before each prompt):
+
+> stylized game VFX texture, chunky low-poly game art style, cel shaded with 2-3 flat tone bands, crisp simple
+> shapes, no photo realism, centered, isolated on a pure black background, no text, no frame, no ground,
+
+## The list
+
+| # | id | element | size | prompt (after the prefix) | status |
+|---|---|---|---|---|---|
+| 1 | `fx_flame_shapes` | fire | 1024, 2 × 2 | four different single flame tongues, each a tall stylized teardrop flame with a bright pale-yellow core, an orange middle band and a red-orange outer band, slightly different shapes and lean, each centred in its own quarter of the image | prepared (`281e4f1`) |
+| 2 | `fx_fire_noise` | fire | 512 | seamless tileable texture, wispy upward-stretched flame noise in white and grey on black, vertical streaks, even coverage, no focal point | prepared (`281e4f1`) |
+| 3 | `fx_smoke_puffs` | fire, bombs | 1024, 2 × 2 | four different chunky stylized smoke puffs, rounded cauliflower clusters in white and light grey with 2-3 flat grey bands, each centred in its own quarter | prepared (`281e4f1`) |
+| 4 | `fx_explosion_burst` | bombs | 1024, 2 × 2 | four different stylized explosion fireballs seen from the side, chunky rounded fire clouds with a white-yellow core, orange middle and dark red edge, each centred in its own quarter | prepared (`281e4f1`) |
+| 5 | `fx_debris_chunks` | bombs | 1024, 2 × 2 | four small groups of chunky rock and metal debris fragments, flat-shaded grey and rust colours, each group centred in its own quarter | prepared (`281e4f1`) |
+| 6 | `fx_scorch_mark` | fire, bombs | 1024 | top-down view of an irregular charred scorch mark on the ground, dark black-brown burnt blotch with jagged cracks and soot spikes radiating outward, NOT a circle, uneven ragged outline, shown light grey on black (the engine darkens it) | prepared (`281e4f1`) |
+| 7 | `fx_lightning_bolts` | electric | 1024, 2 × 2 | four different jagged horizontal lightning bolts running left to right across their quarter, a thin bright white core with a pale cyan-blue glow, a few small side forks, each centred in its own quarter | prepared (`281e4f1`; delivered as 4 rows, used as a 1 × 4 sheet) |
+| 8 | `fx_electric_noise` | electric | 512 | seamless tileable texture, crackling electric web of thin bright branching lines in white and pale blue on black, even coverage, no focal point | prepared (`281e4f1`) |
+| 9 | `fx_spark_shapes` | all | 512, 2 × 2 | four tiny bright spark shapes: a four-point star, a thin streak, a small diamond and a small cross, white with a soft glow, each centred in its own quarter | prepared (`281e4f1`) |
+
+**Later (frost, venom, others):** requested once fire, explosions and electric are in and picked.
+
+## After upload
+
+1. Textures are prepared into `assets/textures/vfx/` (cropped into variants, brightness to alpha) and listed in the
+   manifest.
+2. Effects are built for fire (burning hits, fire bursts, Flame Trail, Ember Trail), bombs (Bomb Lobber, Bomb
+   Rounds, Aftershock blasts) and electric (Storm Core chains, Arc Field, Shock Circles).
+3. A before/after mockup goes to the owner to pick, then the rollout.
+
+## Built (first pass, 2026-10-09)
+
+`src/presentation/world_view/vfx/vfx_layer.gd` (VfxLayer). WorldViewRoot creates it when the new look is on
+(the biome has a mood) and the textures are installed. AttackFormCanvas then sends these to it instead of drawing
+flat shapes; without it, the canvas draws as before.
+
+| Element on a form | Before (v0.6.0) | Now |
+|---|---|---|
+| Fire (ember) patch | a flat disc and rim on the ground, box particles | upright flames that breathe and swap shape, rising embers, a little smoke, warm light on floor and walls, a scorch decal |
+| Bomb in flight | the bomb over a ground circle that fills | the bomb and its lit fuse only |
+| Bomb landing | a flat flash disc and front (12 ticks) | a fireball that blooms and burns away, debris thrown out, a smoke cloud, a light flash, a scorch (70 ticks) |
+| Electric (storm) patch | a flat disc and rim | lightning strikes inside the patch, sparks, a cold flicker of light |
+| Electric ring | a flat ring growing | lightning running round the ring's edge, no fill |
+| Electric beam or chain | a flat core and edge quad | a jagged bolt that re-strikes every few ticks, sparks at its end, light |
+
+- **Kept as they were:** the sword; enemy telegraphs (gameplay readability); frost, venom, void and bleed (later
+  pass); attacks that mix fire and electric take the fire look.
+- **Budget:** fixed sprite pools per texture, 8 pooled lights (the brightest win), 48 scorch decals that fade after 7 s.
+  Presentation only: it reads the canvas's effects and decides nothing (EI-07).
+- **Tests:** `tests/unit/presentation/test_vfx_layer.gd`.
+- **Mockup:** `scripts/shots/mock_vfx.gd` (before/after in a lit Ruins room: fire, bomb landing, bomb smoke,
+  electric, all together) → `build/shots/<version>/vfx/`.
+
+| Gate | Asked | Answer | Date |
+|---|---|---|---|
+| G2 Effects (before / after, mock_vfx.gd) | 2026-10-09 | **After** ("Yep I love the after this is the direction I want") | 2026-10-09 |
+
+## Phase 2: frost, venom, void, bleed and status effects on enemies (requested 2026-10-09)
+
+**Owner, 2026-10-09:** "Let's go for the next phase then, send me requirements for textures".
+
+Same rules and prompt prefix as above. Two kinds this time:
+- **Glow** (bright on black): the bright parts become light, black becomes see-through.
+- **Mask** (light grey and white on black): the engine colours it in the element's colour, so blood, venom and
+  void match the game's palette. Keep the 2–3 tone bands as grey levels.
+
+Phase 1's sparks, smoke, scorch and noise are reused. No new textures for the burning-enemy flames: they reuse
+`fx_flame_shapes`.
+
+| # | id | element | size | kind | prompt (after the prefix) | used for | status |
+|---|---|---|---|---|---|---|---|
+| 10 | `fx_ice_shards` | frost | 1024, 2 × 2 | glow | four different clusters of sharp ice crystal shards jutting upward, seen from the side, faceted low-poly crystals in pale cyan and white with a brighter white edge, each cluster centred in its own quarter | ice spikes bursting from the ground (frost bursts, Frost Nova rings), frozen enemies, shatter on hit | not delivered: the upload "Cel-Shaded Frost Crystal Burst" is a top-down frost patch, kept as `fx_frost_burst` (a second frost floor mark). Ice shards are built as 3D low-poly crystals in code instead |
+| 11 | `fx_frost_mark` | frost | 1024 | mask | top-down view of an irregular patch of frost and rime on the ground, feathery ice crystals branching outward from the middle, NOT a circle, uneven ragged outline, light grey and white on black | frost left on the floor where frost lands (fades like the scorch) | prepared (from "Jagged Frost Crystal Patch") |
+| 12 | `fx_liquid_splash` | venom, bleed | 1024, 2 × 2 | mask | four different chunky stylized liquid splashes seen from the side: a crown splash, a spray of droplets thrown sideways, a rising splash with globs, a few falling drips, light grey and white with 2-3 flat grey bands, each centred in its own quarter | venom and bleed hits, venom bomb landings, drips from poisoned and bleeding enemies (tinted green or red) | prepared (from a 3:2 sheet, re-gridded 2 × 2) |
+| 13 | `fx_splatter_mark` | venom, bleed | 1024, 2 × 2 | mask | four different top-down liquid splatter stains on the ground, an irregular puddle with droplets around it, NOT circles, ragged uneven outlines, light grey and white on black, each centred in its own quarter | puddles and splatters left on the floor (tinted green or red, fade like the scorch) | prepared (from a 3:2 sheet, re-gridded 2 × 2) |
+| 14 | `fx_bubbles` | venom | 512, 2 × 2 | mask | four tiny stylized bubble shapes: a single round bubble with a highlight, a cluster of three small bubbles, a bubble popping into a ring of droplets, a small puff of gas, white and light grey, each centred in its own quarter | toxic patches bubbling, poisoned enemies, gas puffs | prepared |
+| 15 | `fx_void_tendrils` | void | 1024, 2 × 2 | mask | four different curling smoky tendrils of dark energy rising and twisting, wispy but chunky shapes with a bright rim along one edge, light grey with a white rim on black, each centred in its own quarter | void patches and hits: tendrils curling up from the ground (tinted deep purple) | prepared (from a 3:2 sheet, re-gridded 2 × 2; alpha gain 1.7) |
+| 16 | `fx_void_rift` | void | 1024, 2 × 2 | glow | four different jagged vertical tears in space, each a narrow crack with a bright violet and magenta glowing edge and an empty black middle, small fragments floating near the edges, each centred in its own quarter | the void form's core: a rift opening where it hits, then closing | prepared (delivered 4 in a row, re-gridded 2 × 2) |
+| 17 | `fx_void_noise` | void | 512 | mask | seamless tileable texture, slow swirling smoke and spiral noise in white and grey on black, even coverage, no focal point | moving the tendrils and rifts so they swirl, not flicker | prepared (made seamless) |
+
+Received 2026-10-09 (8 files, renamed to ids). `fx_frost_burst` (extra): the second frost floor mark, for frost
+bursts and rings.
+
+**Enemy status looks built from these:** burning (flames on the body), frozen (ice shards round the feet, a pale
+tint), poisoned (bubbles and green drips), bleeding (red drips). The flat discs under status effects go the same way
+as the attack circles.
+
+**Also in phase 2, no textures needed:** the fading fireball (fades without streaks), visible smoke after a blast,
+and more strikes in a storm patch.
+
+## Built (phase 2, 2026-10-09, `a2eb4da`)
+
+`VfxCore` (`src/presentation/world_view/vfx/vfx_core.gd`) holds the pools, the low-poly ice crystals, the lights
+and the floor marks; `VfxLayer` draws the elements on each form through `field`, `ring`, `line`, `burst` and
+`status`. An attack with several elements takes the first of fire, storm, frost, venom, void, bleed.
+
+| Element | Patch | Ring | Beam / chain | Burst (bomb landing, blast form) |
+|---|---|---|---|---|
+| Fire | flames, embers, smoke, light, scorch | flames along the edge | flames along the floor under it | fireball, debris, smoke, light, scorch |
+| Storm | bolts arcing from the middle to the edge | lightning round the edge | a re-striking bolt | bolts striking out from the middle |
+| Frost | ice crystals growing out of the floor, cold mist, glints, frost mark | ice spikes along the edge | ice spikes along the floor | crystals erupting, shards, frost burst mark |
+| Venom | bubbles, green gas, splatter | splashes along the edge | a spray, a splash and a splatter where it ends | a crown splash, drops, bubbles, gas, splatter |
+| Bleed | splashes, red splatter | splashes along the edge | a spray, a splash and a splatter where it ends | a crown splash, drops, splatter |
+| Void | dark tendrils, a rift in the middle, violet light, dark mark | tendrils along the edge | a rift torn along it | a rift tears open and closes, tendrils, dark mark |
+
+- **Enemy statuses** (StatusVisuals draws into the layer instead of boxes and a sphere shell):
+  - burning: flames on the body and a warm light;
+  - shocked: arcs over it;
+  - bleeding: red drips and a splatter under it;
+  - poisoned: bubbles and green drips;
+  - frost: crystals at the feet (one per stack, up to 4);
+  - frozen: a crystal cage and frost under it.
+
+  The shock pips and the guard orbs stay as they were (they show counts).
+- **Payoffs:** bleed burst and Blood Harvest burst red, Shatter Dash bursts into ice, Wildfire bursts into fire,
+  discharges and Plasma Arc strike as lightning. The Resonance, Frozen Bastion and Slipstream rings stay (they show
+  a radius).
+- **Fixes from the G2 pick:** the fireball fades and darkens instead of breaking into streaks, the smoke after a
+  blast is lighter and lasts, a storm patch arcs out to its edge.
+- **Reader:** `WorldReader.poison_stacks(i)` (read-only, for the poisoned look).
+- **Tests:** `tests/unit/presentation/test_vfx_layer.gd` (every element on every form, floor marks, a frost bomb,
+  enemy statuses).
+- **Mockup:** `mock_vfx.gd -- scenes=frost,venom,void,bleed,status` (status: four dummies by the hero with real statuses).
+- **Full suite** at `a2eb4da`: 1358/1358 passing.
+
+| Gate | Asked | Answer | Date |
+|---|---|---|---|
+| G2 Effects phase 2 (mock_vfx.gd: frost, venom, void, bleed, statuses) | 2026-10-09 | OWNER ONLY | — |

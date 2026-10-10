@@ -1338,6 +1338,12 @@ func frost_stacks(actor_i: int) -> int:
 	return _w.actors.frost_stacks[actor_i]
 
 
+## Venom poison stacks on actor i (0 = not poisoned).
+func poison_stacks(actor_i: int) -> int:
+	var a := _w.actors
+	return a.poison_stacks[actor_i] if actor_i < a.poison_stacks.size() else 0
+
+
 func actor_frozen(actor_i: int) -> bool:
 	return Engines.frozen(_w, actor_i)
 
@@ -1581,6 +1587,31 @@ func floor_start_room() -> int:
 ## The room the portal gate stands in (-1 without a floor).
 func floor_portal_room() -> int:
 	return _w.floor_layout.portal_room if _w.floor_layout != null else -1
+
+
+## v0.6.1 SD: room i's interior template by name (FloorLayout.TEMPLATE_NAMES: "ruined_hall", "camp", …), for the
+## shard dressing's density; &"" without one. Read only, for presentation.
+func floor_room_theme(i: int) -> StringName:
+	var f := _w.floor_layout
+	if f == null or i >= f.room_template.size():
+		return &""
+	var t := f.room_template[i]
+	return StringName(FloorLayout.TEMPLATE_NAMES[t]) if t < FloorLayout.TEMPLATE_COUNT else &""
+
+
+## v0.6.1 SD: where the hero starts the floor (the player's position without a floor).
+func floor_start_pos() -> Vector2:
+	return _w.floor_layout.start_pos if _w.floor_layout != null else _w.player_pos()
+
+
+## v0.6.1 SD: every open spot enemies may spawn on (the floor's per-room spots and the world's list), so the
+## dressing keeps off them. Read only, for presentation.
+func spawn_spots() -> PackedVector2Array:
+	var out := PackedVector2Array(_w.spawn_points)
+	if _w.floor_layout != null:
+		for pts in _w.floor_layout.spawn_points:
+			out.append_array(pts)
+	return out
 
 
 ## Doorways of the floor: door i joins rooms floor_door_rooms(i).x and .y; its passage through the wall; its index

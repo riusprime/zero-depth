@@ -47,11 +47,10 @@ func test_every_kit_texture_is_listed_with_its_hash() -> void:
 		assert_true(FileAccess.file_exists(path), path)
 		assert_eq(FileAccess.get_sha256(path), t["sha256"], "%s matches its hash" % t["id"])
 		listed[path] = true
-	for f in DirAccess.get_files_at("res://assets/textures/kit"):
-		if f.ends_with(".png"):
-			assert_true(
-				listed.has("res://assets/textures/kit".path_join(f)), "%s is in the manifest" % f
-			)
+	for dir in ["res://assets/textures/kit", "res://assets/textures/vfx"]:
+		for f in DirAccess.get_files_at(dir):
+			if f.ends_with(".png"):
+				assert_true(listed.has(dir.path_join(f)), "%s is in the manifest" % f)
 
 
 func test_the_kit_models_are_the_ids_the_dresser_asks_for() -> void:

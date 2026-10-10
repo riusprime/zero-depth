@@ -3,16 +3,25 @@ extends PanelContainer
 ## The gamble shrine's result card (v0.3.0 L19). The sim grants the stat at once; this card replays it: a short spin
 ## through the stats the shrine could still give (slowing down, frame time, cosmetic only), landing on the one won,
 ## then its line ("+6 % melee damage") for a moment before it fades. It decides nothing about the game.
+## v0.6.1 R1: the card is one of the owner's crystal plaques (PlaqueBox) in the stat's family colour
+## (Plaques.GAMBLE_FAMILY → the card frames' table), dimmer while it spins; the line steps down in size to fit.
 
 const SPIN_S := 0.9
 const HOLD_S := 2.4
 const FADE_S := 0.25
-const ICON := 64.0
+const ICON := 56.0
+const WIDTH := 560.0
+const HEIGHT := 140.0
+const GAP := 14
+const TITLE_SIZE := 14
+const LINE_SIZES := [24, 23, 22, 21, 20, 19, 18, 17, 16]
 
 var icon := GambleIconView.new(&"", ICON)
+## The line's size picked by the last landing (tests check it fits).
+var line_size := 0
 var _title := Label.new()
 var _line := Label.new()
-var _box := CardStyle.box(Vector4(12, 8, 16, 8))
+var _box := Plaques.box(&"amber", HEIGHT)
 var _reel: Array[StringName] = []
 var _result := &""
 var _text := ""
@@ -23,10 +32,11 @@ var _t := -1.0
 func _init() -> void:
 	name = "GambleCard"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	custom_minimum_size = Vector2(340, 84)
+	custom_minimum_size = Vector2(WIDTH, HEIGHT)
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	add_theme_stylebox_override("panel", _box)
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 14)
+	row.add_theme_constant_override("separation", GAP)
 	add_child(row)
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	icon.pivot_offset = Vector2(ICON, ICON) * 0.5
@@ -35,9 +45,11 @@ func _init() -> void:
 	text.alignment = BoxContainer.ALIGNMENT_CENTER
 	text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(text)
-	_title.add_theme_font_size_override("font_size", 14)
+	_title.add_theme_font_override("font", HudStyle.font(false))
+	_title.add_theme_font_size_override("font_size", TITLE_SIZE)
 	_title.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
-	_line.add_theme_font_size_override("font_size", 24)
+	_line.add_theme_font_override("font", HudStyle.font(true))
+	_line.add_theme_font_size_override("font_size", LINE_SIZES[0])
 	for l: Label in [_title, _line]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -123,8 +135,39 @@ func _land() -> void:
 func _show(id: StringName, landed: bool) -> void:
 	icon.set_stat(id)
 	var c := GambleIcons.color(id)
-	CardStyle.apply(_box, c, landed)  # v0.3.5 F16: the card's flat square panel, brighter once it lands
+	_box.set_plaque(Plaques.of_gamble(id))
+	_box.set_focused(landed)  # brighter once it lands
 	_line.text = _text if landed else ""
+	if landed:
+		line_size = fit_line(_text)
+		_line.add_theme_font_size_override("font_size", line_size)
 	_line.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.35))
 	if not landed:
 		icon.scale = Vector2.ONE
+
+
+## The plaque this card is drawn on.
+func plaque_box() -> PlaqueBox:
+	return _box
+
+
+## The text column's width (px): the plaque's text box less the icon.
+static func text_width() -> float:
+	return Plaques.content_size(HEIGHT, WIDTH).x - ICON - GAP
+
+
+## The largest line size at which `text` fits one line of the text column.
+static func fit_line(text: String) -> int:
+	var f := HudStyle.font(true)
+	for s: int in LINE_SIZES:
+		if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= text_width():
+			return s
+	return LINE_SIZES[LINE_SIZES.size() - 1]
+
+
+## True when `text` fits one line of the text column at its fitted size, under the title (tests).
+static func line_fits(text: String) -> bool:
+	var f := HudStyle.font(true)
+	var w := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fit_line(text)).x
+	var h := f.get_height(fit_line(text)) + HudStyle.font(false).get_height(TITLE_SIZE)
+	return w <= text_width() + 0.5 and h <= Plaques.content_size(HEIGHT, WIDTH).y + 0.5

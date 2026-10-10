@@ -111,6 +111,91 @@
       "id": "ground_b",
       "path": "assets/textures/kit/ground_b.png",
       "sha256": "3ee735cf33e8bff2e66ab565e2e8bbcd70908d7270785dfe6e79e17a423efc9c"
+    },
+    {
+      "id": "fx_debris_chunks",
+      "path": "assets/textures/vfx/fx_debris_chunks.png",
+      "sha256": "03f6cee928f46d90842354e9597c97f0529feb43a4f810ae5740d92d889553cd"
+    },
+    {
+      "id": "fx_electric_noise",
+      "path": "assets/textures/vfx/fx_electric_noise.png",
+      "sha256": "57defd3c3b3f92a1c7cca9e8b67bfeecdb32c9f4a42d2a4c1c53891313b140d3"
+    },
+    {
+      "id": "fx_explosion_burst",
+      "path": "assets/textures/vfx/fx_explosion_burst.png",
+      "sha256": "e2ef62f5a04ee6c2f4af46e65dca20f08235321360763f5ed415293469c45235"
+    },
+    {
+      "id": "fx_fire_noise",
+      "path": "assets/textures/vfx/fx_fire_noise.png",
+      "sha256": "ad49ddb8427afcea1d2ec025138e9b7cd37b54ad810a4f0fe1d43c2bf1c748ed"
+    },
+    {
+      "id": "fx_flame_shapes",
+      "path": "assets/textures/vfx/fx_flame_shapes.png",
+      "sha256": "53ab5ada8a3a7740f8eb3d77936349f4d4f180383428e8690ce6fc7c8e016150"
+    },
+    {
+      "id": "fx_lightning_bolts",
+      "path": "assets/textures/vfx/fx_lightning_bolts.png",
+      "sha256": "5402609883d0fce328ccedabfb9f42b83b4d114e961a22ebf80c88519de19b07"
+    },
+    {
+      "id": "fx_scorch_mark",
+      "path": "assets/textures/vfx/fx_scorch_mark.png",
+      "sha256": "a85d878911c5eb3151a04ed4b8940f226fb9956b5274b55541e19d179cd6bf63"
+    },
+    {
+      "id": "fx_smoke_puffs",
+      "path": "assets/textures/vfx/fx_smoke_puffs.png",
+      "sha256": "fa94c15aac90cfec8bf64df0ce02c817f3b28107f865dd529bdfa70832b43292"
+    },
+    {
+      "id": "fx_spark_shapes",
+      "path": "assets/textures/vfx/fx_spark_shapes.png",
+      "sha256": "2050a43067ffb9fd058bd03fd3572b63b777451b97dced8df7258980a02aa934"
+    },
+    {
+      "id": "fx_frost_mark",
+      "path": "assets/textures/vfx/fx_frost_mark.png",
+      "sha256": "751e54abbe5fc9610e84070aee629aefd1dc71334f44d627cee1f05ec7faaaa9"
+    },
+    {
+      "id": "fx_frost_burst",
+      "path": "assets/textures/vfx/fx_frost_burst.png",
+      "sha256": "22b5ed8e76d947088fb654e6c6dfa175f9076798c95a47672558abdb09fb7b97"
+    },
+    {
+      "id": "fx_liquid_splash",
+      "path": "assets/textures/vfx/fx_liquid_splash.png",
+      "sha256": "8fa11b478ab2c61755c11a7decf4446bef493a4762c6d99617ef37758e98e235"
+    },
+    {
+      "id": "fx_splatter_mark",
+      "path": "assets/textures/vfx/fx_splatter_mark.png",
+      "sha256": "89011942933e23ad37a820fb3de1aacf94052dd7de57669e61db0588c641be7f"
+    },
+    {
+      "id": "fx_bubbles",
+      "path": "assets/textures/vfx/fx_bubbles.png",
+      "sha256": "2c102e2d7f49bf44ebd76d697c56ad595bbfcce8192ee1401ff411e669d82f23"
+    },
+    {
+      "id": "fx_void_tendrils",
+      "path": "assets/textures/vfx/fx_void_tendrils.png",
+      "sha256": "378368df4c2d7c8ddeb4dd541fda5ea5d7db0381d316988d00067982e1d57b50"
+    },
+    {
+      "id": "fx_void_rift",
+      "path": "assets/textures/vfx/fx_void_rift.png",
+      "sha256": "eb49743f47275a92c1fd4da490e57e858acd0a849820359a25297fcb467f940a"
+    },
+    {
+      "id": "fx_void_noise",
+      "path": "assets/textures/vfx/fx_void_noise.png",
+      "sha256": "23991586870a58e1f5bd6e79c8216863575f8e84fcdac3d33760be95fbecb3a0"
     }
   ]
 }

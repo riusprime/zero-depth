@@ -102,6 +102,7 @@ static func compose(
 		"ground": ground_safe(core),
 		"ground_edge": ground_safe(rim),
 		"particles": particles_of(els),
+		"elements": els,
 		"cues": cues_of(spec),
 		"energy": ENERGY[form] * w,
 		"width": w,

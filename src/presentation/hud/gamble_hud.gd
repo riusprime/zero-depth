@@ -34,7 +34,7 @@ func _init() -> void:
 	add_child(_prompt)
 	# The card rises above the player (the screen's centre): over the shrine, where you stand to use it.
 	card.set_anchors_preset(Control.PRESET_CENTER)
-	card.position = Vector2(-170, -250)
+	card.position = Vector2(-GambleCard.WIDTH * 0.5, -280)  # v0.6.1 R1: the wider plaque, centred
 	add_child(card)
 	stats.place_top_right(84)
 	stats.visible = false

@@ -181,6 +181,13 @@ One table (`HeatLooks`) feeds the meter and the attacks.
 of light (a vent's disc, a skill's flash) is additive; debris and vapour (death shards, steam) are lit by the scene;
 telegraphs stay unshaded (PRESENTATION §4).
 
+**Shard look in the world (v0.6.1 SW, owner R3).** World pieces that take the crystal-shard look of the owner's card
+and plaque art are built by one builder, `ShardMesh` (`src/presentation/world_view/shard_mesh.gd`): faceted shards
+with cel facet tones, a dark inverted-hull outline, lit by the scene with a little emission, a soft additive glow, and
+floating fragments, coloured from the card-frame table. Applied to the altars (blue / Deep epic purple / legendary
+gold), heal orbs, shard gems and dropped cores; the rest wait for the G1 pick in
+[`../roadmap/v0.6.1/evidence/SHARD_AUDIT.md`](../roadmap/v0.6.1/evidence/SHARD_AUDIT.md).
+
 **Attack forms and elements (v0.6.0 MX3; owner pick "Element core, heat edge").** Every player attack is drawn from
 its spec: the art cost is per form (arc, bolt, ring, beam, zone, orbiter, lob, burst) and per element, never per card.
 Element cores: storm `#7FB2FF` (white-blue, crackle), ember `#FFAA33` (orange sparks `#FF9440`), frost `#B5F2FF` (pale

@@ -7,12 +7,18 @@ extends VBoxContainer
 ## floor without a curve.
 ## v0.6.0 UP: the queue and the line on screen keep translation keys, not text, and are translated again on every
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
+## v0.6.1 R1: the announcement sits in one of the owner's crystal plaques (the banner's gold, Plaques.USE_FAMILY); the
+## plaque's plain middle stretches to the line's width.
 
 const ANNOUNCE_SECONDS := 4.0
 const NEW_COLOR := Color("#FFD27A")
+## The banner plaque's height (px at the 1920 x 1080 base).
+const BANNER_H := 96.0
 
 var phase_label := HudStyle.label(14)
 var announce := HudStyle.label(18, true)
+## The plaque behind the announcement (shown with it).
+var banner := PanelContainer.new()
 var _phase := -1
 var _announced := {}
 ## Waiting announcements, each [format key, argument key] ("" when the key is the whole line).
@@ -31,8 +37,19 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for l: Label in [phase_label, announce]:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		add_child(l)
+	add_child(phase_label)
+	banner.name = "Banner"
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	banner.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	banner.add_theme_stylebox_override(
+		"panel", Plaques.box(Plaques.of_use(&"banner"), BANNER_H, 6.0)
+	)
+	banner.add_child(announce)
+	banner.visible = false
+	add_child(banner)
 	phase_label.add_theme_color_override("font_color", Color(HudStyle.text_color(), 0.7))
 	announce.add_theme_color_override("font_color", NEW_COLOR)
 	announce.visible = false
@@ -58,6 +75,7 @@ func sync(reader: WorldReader) -> void:
 		_current = _queue.pop_front()
 		_left = ANNOUNCE_SECONDS
 	announce.visible = _left > 0.0
+	banner.visible = announce.visible
 	if announce.visible:
 		announce.text = line(_current)
 
