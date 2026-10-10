@@ -9,6 +9,10 @@ extends Node3D
 ## - Bulwark's guard charges: gold orbs circling the player;
 ## - combo payoffs: Plasma Arc (an orange arc), Shatter Dash, Wildfire, Blood Harvest and Frozen Bastion rings,
 ##   Resonance's second wave.
+## With the new look (v0.5.9 art, VFX phase 2: `vfx` set) the enemy statuses draw into the VfxLayer instead of the
+## boxes: flames on a burning body, arcs over a shocked one, red drips, bubbles and green drips for poison, ice
+## crystals and a crystal cage for frost and frozen; the bleed, shatter, wildfire and harvest payoffs burst in
+## their element and a discharge strikes as lightning. The shock pips and guard orbs stay (they are counts).
 ## Materials are made once and kept (never emission toggles at runtime: the v0.2.0 DAMAGE_LAG rule); each actor's
 ## pieces are children of its ActorViews node, so they move and go with it.
 
@@ -20,6 +24,8 @@ const ORBS := 3
 const FX_FRAMES := 16
 
 var actors: ActorViews
+## The new look's effects layer (null: the boxes and rings as before).
+var vfx: VfxLayer
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
@@ -32,6 +38,10 @@ var _frame := 0
 var _seen := {}
 var _fx: Array = []
 var _fx_template := _make_template()
+## Actor id -> {on, r, node} for the vfx drawer.
+var _on := {}
+## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
+var _shots: Array = []
 
 
 func _init(p_actors: ActorViews) -> void:
@@ -50,8 +60,15 @@ func _init(p_actors: ActorViews) -> void:
 	_mats[&"shell"] = _material(ItemLooks.status_color(&"frozen"), 0.38, false)
 
 
+## Hands the statuses to the new look's effects layer (WorldViewRoot, when the new look is on).
+func use_vfx(layer: VfxLayer) -> void:
+	vfx = layer
+	layer.drawers.append(_draw_vfx)
+
+
 func sync(reader: WorldReader) -> void:
 	_frame += 1
+	_on.clear()
 	var alive := {}
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
@@ -67,6 +84,12 @@ func sync(reader: WorldReader) -> void:
 			v = _build(node, reader.actor_radius(i))
 			_views[id] = v
 		_update(v, on, reader.actor_radius(i))
+		_on[id] = {
+			"on": on,
+			"r": reader.actor_radius(i),
+			"node": node,
+			"top": maxf(0.5, float(v["bar_y"]) - 0.4)
+		}
 	for id in _views.keys():
 		if not alive.has(id):
 			var v: Dictionary = _views[id]
@@ -94,6 +117,8 @@ func _statuses(reader: WorldReader, i: int) -> Dictionary:
 		out[&"frost"] = reader.frost_stacks(i)
 	if reader.actor_frozen(i):
 		out[&"frozen"] = 1
+	if reader.poison_stacks(i) > 0:
+		out[&"poison"] = reader.poison_stacks(i)
 	return out
 
 
@@ -161,6 +186,11 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		var a := (_frame / 3) * 1.7 + k * 3.1
 		s.position = Vector3(cos(a) * r * 0.6, 0.4 + 0.3 * k, sin(a) * r * 0.6)
 		s.rotation = Vector3(0.4 * k, a, 0.6)
+	if vfx != null:  # the new look draws these in the effects layer (_draw_vfx)
+		for kind: String in ["embers", "drips", "crystals", "sparks"]:
+			for p: Node3D in v[kind]:
+				p.visible = false
+		(v["shell"] as Node3D).visible = false
 	var charges: int = on.get(&"guard", 0)
 	for k in ORBS:
 		var o: Node3D = v["orbs"][k]
@@ -200,6 +230,9 @@ func fx_count() -> int:
 
 # --- Combo and engine payoffs --------------------------------------------------------------------------------
 func _sync_payoffs(reader: WorldReader) -> void:
+	if vfx != null:
+		_sync_payoff_shots(reader)
+		return
 	if _changed(&"discharge", reader.discharge_tick()):
 		for to in reader.discharge_to():
 			_bolt_line(reader.discharge_from(), to, ItemLooks.status_color(&"shock"))
@@ -216,6 +249,68 @@ func _sync_payoffs(reader: WorldReader) -> void:
 		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
 	if _changed(&"slipstream", reader.slipstream_tick()):
 		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
+
+
+## The new look's payoffs: element bursts and lightning in the effects layer, the radius rings kept for the rest.
+func _sync_payoff_shots(reader: WorldReader) -> void:
+	var now := vfx.now()
+	if _changed(&"discharge", reader.discharge_tick()):
+		var to: Array = []
+		for p: Vector2 in reader.discharge_to():
+			to.append(SimPlane.to_3d(p, 0.6))
+		_shots.append(
+			[&"discharge", SimPlane.to_3d(reader.discharge_from(), 0.6), 0.8, now, 18.0, _frame, to]
+		)
+	if _changed(&"plasma", reader.plasma_tick()):
+		var to: Array = [SimPlane.to_3d(reader.plasma_to(), 0.6)]
+		_shots.append(
+			[&"discharge", SimPlane.to_3d(reader.plasma_from(), 0.6), 0.8, now, 18.0, _frame, to]
+		)
+	for kind: StringName in [&"shatter", &"burst", &"wildfire", &"harvest"]:
+		var p: Array = reader.payoff(kind)
+		if _changed(kind, p[0]):
+			_shots.append([kind, SimPlane.to_3d(p[1], 0.07), 1.6, now, 60.0, _frame + p[0], []])
+	if _changed(&"resonance", reader.resonance_tick()):
+		_ring(reader.player_pos(), reader.shockwave_radius_m(), ItemLooks.combo_color(&"resonance"))
+	if _changed(&"bastion", reader.bastion_tick()):
+		_ring(reader.player_pos(), 1.2, ItemLooks.combo_color(&"frozen_bastion"))
+	if _changed(&"slipstream", reader.slipstream_tick()):
+		_ring(reader.player_pos(), 0.9, ItemLooks.combo_color(&"slipstream"))
+
+
+## Draws the statuses and payoffs into the effects layer (called inside its frame).
+func _draw_vfx(layer: VfxCore) -> void:
+	var fx := layer as VfxLayer
+	for id: int in _on:
+		var s: Dictionary = _on[id]
+		var node: Node3D = s["node"]
+		if not is_instance_valid(node) or not node.is_inside_tree():
+			continue
+		var p := node.global_position
+		fx.status(Vector3(p.x, 0.0, p.z), float(s["r"]), s["on"], id, float(s["top"]))
+	var keep: Array = []
+	for shot: Array in _shots:
+		var u := (fx.now() - float(shot[3])) / float(shot[4])
+		if u > 1.0:
+			continue
+		keep.append(shot)
+		u = maxf(u, 0.0)
+		match shot[0]:
+			&"discharge":
+				for to: Vector3 in shot[6]:
+					fx.line(&"storm", shot[1], to, 1.0 - u, u * float(shot[4]), int(shot[5]))
+			&"shatter":
+				fx.burst(&"frost", shot[1], shot[2], u, int(shot[5]))
+			&"wildfire":
+				fx.burst(&"fire", shot[1], shot[2], u, int(shot[5]))
+			_:
+				fx.burst(&"bleed", shot[1], shot[2], u, int(shot[5]))
+	_shots = keep
+
+
+## The payoffs the effects layer is drawing (tests).
+func shot_count() -> int:
+	return _shots.size()
 
 
 static func _payoff_color(kind: StringName) -> Color:
