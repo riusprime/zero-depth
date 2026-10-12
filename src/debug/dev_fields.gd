@@ -27,6 +27,7 @@ const GROUPS := [
 			"res://data/scaling",
 			"res://data/arenas",
 			"res://data/overrun",
+			"res://data/map",
 		],
 		"",
 	],

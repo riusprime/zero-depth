@@ -42,6 +42,8 @@ var elite_ids := PackedInt32Array()
 var cursed_ids := PackedInt32Array()
 var cursed_slot := PackedInt32Array()
 var cursed_curse := PackedInt32Array()
+## v0.7.5 MG (N10): cursed chest offers rolled on this floor (EventRules.cursed_chests_per_floor caps it).
+var cursed_rolled := 0
 ## For the views: the last choice taken (tick, pedestal, choice), a refused pick, a curse gained (tick, curse), a
 ## curse lifted (tick, curse) and an ambush or defence finished (tick, pedestal).
 var result_tick := -1
@@ -104,3 +106,4 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	for v in [cleanse_tick, cleanse_last, done_tick, done_pedestal, 1 if force_curse else 0]:
 		h.add_int(v)
+	h.add_int(cursed_rolled)  # v0.7.5 MG

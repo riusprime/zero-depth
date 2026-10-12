@@ -1,9 +1,10 @@
 extends GutTest
 ## v0.2.0 B, floor v2 (PLAN L14-L15): the seeded floor generator is deterministic, and every floor is whole. A floor
-## has 10-12 rooms: a 3 x 3-cell start hall with no partitions and one exit, then rooms with footprints from the
+## has 15-19 rooms (v0.7.5 MG, owner N9: was 10-12; 20 with the boss room): a 3 x 3-cell start hall with no partitions and one exit, then rooms with footprints from the
 ## allowed set, without overlaps, joined by doorways. Every room, item spot, spawn point and the gate's front is
 ## reachable from the start; spots keep their clearance; item counts follow the rule (none in the hall, 1 in a
-## 1 x 1 room, 1-2 in bigger rooms); the portal room is the farthest.
+## 1 x 1 room, 1-2 in bigger rooms); the portal room is the farthest. v0.7.5 MG: the footprints go up to the
+## extra-large 4 x 4, and the run's floors take the room numbers from data/map, whose values are the defaults.
 
 const SEEDS := 50
 const PLAYER_RADIUS := 0.35
@@ -17,6 +18,9 @@ const ALLOWED: Array[Vector2i] = [
 	Vector2i(3, 2),
 	Vector2i(2, 3),
 	Vector2i(3, 3),
+	Vector2i(4, 3),  # v0.7.5 MG (N9): the large and extra-large rooms
+	Vector2i(3, 4),
+	Vector2i(4, 4),
 ]
 
 
@@ -56,6 +60,26 @@ func test_same_seed_same_floor() -> void:
 		assert_eq(_signature(a), _signature(b), "seed %d" % s)
 
 
+## v0.7.5 MG (N9): data/map holds the generator's room numbers; its shipped values are FloorParams' defaults, so a
+## floor built without content (the labs) is the floor the run builds.
+func test_the_map_data_is_the_generators_defaults() -> void:
+	var def: MapDefinition = ContentRepository.load_all().get_def(&"map", &"floor")
+	assert_not_null(def, "data/map/floor.tres")
+	var p := RunContentCompiler.compile_map(def)
+	var d := FloorParams.defaults()
+	assert_eq([p.rooms_min, p.rooms_max, p.max_span, p.place_attempts], [15, 19, 11, 600])
+	assert_eq(p.rooms_min, d.rooms_min)
+	assert_eq(p.rooms_max, d.rooms_max)
+	assert_eq(p.footprints, d.footprints)
+	assert_eq(p.footprint_weights, d.footprint_weights)
+	assert_eq(p.max_span, d.max_span)
+	assert_eq(p.place_attempts, d.place_attempts)
+	assert_eq(_signature(FloorGenerator.generate(77, p)), _signature(FloorGenerator.generate(77)))
+	var big: MapDefinition = def.duplicate()
+	big.rooms_max = 30
+	assert_false(big.validate().is_empty(), "more than 20 rooms with the boss room is refused")
+
+
 func test_different_seeds_differ() -> void:
 	var seen := {}
 	for s in 10:
@@ -66,7 +90,7 @@ func test_different_seeds_differ() -> void:
 func test_shape_of_a_floor() -> void:
 	var f := FloorGenerator.generate(5)
 	var n := f.room_count()
-	assert_between(n, 10, 12)
+	assert_between(n, 15, 19)
 	assert_eq(f.room_cells.size(), n)
 	assert_eq(f.room_template.size(), n)
 	assert_eq(f.spawn_points.size(), n)
@@ -134,6 +158,7 @@ func test_fifty_floors_are_whole() -> void:
 		)
 	assert_eq(hall_sides.size(), 4, "the hall's exit is on every side across 50 floors")
 	assert_gte(footprints.size(), 6, "the footprints vary")
+	assert_true(footprints.has(Vector2i(4, 4)), "v0.7.5 MG: the extra-large room shows up")
 	var names := PackedStringArray()
 	for t in templates:
 		names.append(FloorLayout.TEMPLATE_NAMES[t])
@@ -171,7 +196,7 @@ func _hall_exit_side(f: FloorLayout) -> int:
 
 func _check_floor(f: FloorLayout, tag: String) -> void:
 	var n := f.room_count()
-	assert_between(n, 10, 12, tag + ": 10-12 rooms")
+	assert_between(n, 15, 19, tag + ": 15-19 rooms")
 	_check_grid(f, tag)
 	_check_enclosed(f, tag)
 	assert_ne(f.start_room, f.portal_room, tag)
@@ -213,8 +238,8 @@ func _check_floor(f: FloorLayout, tag: String) -> void:
 
 func _check_grid(f: FloorLayout, tag: String) -> void:
 	assert_eq(f.room_cells[0].size, Vector2i(3, 3), tag + ": the hall is 3 x 3 cells")
-	assert_lte(f.cols, 8, tag)
-	assert_lte(f.rows, 8, tag)
+	assert_lte(f.cols, 11, tag)
+	assert_lte(f.rows, 11, tag)
 	for room in range(1, f.room_count()):
 		assert_true(f.room_cells[room].size in ALLOWED, tag + ": footprint %s" % f.room_cells[room])
 	for a in f.room_count():

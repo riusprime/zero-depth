@@ -273,7 +273,8 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		run,
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
-		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR: the sealed arenas
+		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena")),  # v0.5.5 AR: the sealed arenas
+		RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))  # v0.7.5 MG: rooms, footprints (N9)
 	)
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.

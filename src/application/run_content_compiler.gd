@@ -74,5 +74,23 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	return t
 
 
+## v0.7.5 MG (owner N9): the generator's room counts, footprints and span from data/map over FloorParams' defaults
+## (null: the defaults, which equal the shipped file).
+static func compile_map(def: MapDefinition) -> FloorParams:
+	var p := FloorParams.defaults()
+	if def == null:
+		return p
+	p.rooms_min = def.rooms_min
+	p.rooms_max = def.rooms_max
+	var feet: Array[Vector2i] = []
+	for k in def.footprint_weights.size():
+		feet.append(Vector2i(def.footprint_x[k], def.footprint_y[k]))
+	p.footprints = feet
+	p.footprint_weights = def.footprint_weights.duplicate()
+	p.max_span = def.max_span
+	p.place_attempts = def.place_attempts
+	return p
+
+
 static func _ticks(seconds: float) -> int:
 	return int(round(seconds * SimTick.TICKS_PER_SECOND))

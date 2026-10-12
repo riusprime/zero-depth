@@ -88,6 +88,9 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.clear_radius_m = def.clear_radius_m
 	t.reward_gap_m = def.reward_gap_m
 	t.cursed_chest_permille = int(round(def.cursed_chest_chance * 10.0))
+	t.cursed_chest_first_floor = def.cursed_chest_first_floor  # v0.7.5 MG (N10)
+	t.cursed_chest_every_floors = def.cursed_chest_every_floors
+	t.cursed_chests_per_floor = def.cursed_chests_per_floor
 	t.elite_hp_bonus_permille = int(round(def.elite_hp_bonus * 10.0))
 	t.ambush_min_distance_m = def.ambush_min_distance_m
 	t.defend_radius_m = def.defend_radius_m
