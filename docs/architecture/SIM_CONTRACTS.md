@@ -652,12 +652,23 @@ shop open, hit-stop), then the rest of the tick reads a copy of the frame with n
 choice. A move from or to an empty slot, or to the same slot, changes nothing. The book compiles again on its next
 read (`Modifiers.invalidate`); `mod_slots` is hashed (§8c), so a replay with the same moves is the same run.
 
+**How the views' moves reach the sim** (v0.6.5 WN2). The pause menu stops the ticks (EI-03: no tick, no move), so the
+Build page edits a preview only and, when it closes, queues the fewest moves that give its order (`Wand.plan_moves`,
+at most one per slot) in `InputLatch.queue_wand_move`; the latch delivers its queue one pick per frame after a pick
+already latched, and a pick noted while moves wait goes after them (so a Swap answer given after a reorder arrives
+after it). The moves land on the first ticks after the pause closes. The Swap panel (the sim ticks while it waits)
+sends each reorder as it is made, and an insert as its answer `PICK_SWAP_BASE + leave` then the move `leave → at`
+(`Wand.swap_picks`). Previews use the sim's own pure rules (`Wand.moved_order` / `moved_read` / `swapped_read`,
+through `WorldReader.wand_moved` / `wand_swapped`; EI-07). While a swap waits, `WorldReader.wand()["incoming"]` is
+the card offered (same shape; `{}` otherwise). Stepping the world a tick per move while paused was rejected: a tick
+moves the whole world (enemies, timers), which a pause must not do.
+
 **Reads.** `WorldReader.wand()` (`Wand.read`): the weapon (`&"gun"` or `&"blade"`), the slot count, each card in
 slot order (code, id, name key, type, level, `trigger`: -1 or the `AttackSpec.Trigger` it cuts on for this run) and
 the cuts (the trigger slots). `WorldReader.wand_read_back()` (`Wand.describe`, pure): the plain-words read-back as
 translation keys and their arguments (`WAND_READ_*`, the card name keys): "You fire a bolt shaped by Split Shot.
 Each hit casts a small bolt shaped by Ember Core." (`Wand.render(lines, translate)` words it with any translation
-Callable; the Build page renders it, WN2).
+Callable; the Build page and the Swap panel render it, WN2).
 
 **Saves.** `RunSaver.PAYLOAD_VERSION` 4 (reads 2, 3 and 4): `mod_slots` is the slot order the player arranged. A
 version-3 payload's slots are in pick order, which is its wand order as it stands; the slot count comes from the

@@ -35,3 +35,47 @@ func test_quantize_curve_and_clamp() -> void:
 	assert_eq(InputLatch.quantize_move(Vector2(1.0, 0.0)), Vector2i(127, 0))
 	var diag := InputLatch.quantize_move(Vector2(1.0, 1.0))
 	assert_eq(diag, Vector2i(90, 90), "length clamped to 1")
+
+
+func test_wand_moves_queue_one_per_frame_in_order_after_a_latched_pick() -> void:
+	# v0.6.5 WN2: the Build page's and the Swap's moves wait in the latch and reach the sim one per tick, in order.
+	var latch := InputLatch.new()
+	latch.note_pick(InputFrame.PICK_SWAP_BASE + 2)  # a pick latched first goes first
+	latch.queue_wand_move(InputFrame.wand_move(0, 2))
+	latch.queue_wand_move(InputFrame.wand_move(3, 1))
+	latch.note_pick(InputFrame.PICK_SWAP_SKIP)  # a pick noted while moves wait goes after them
+	assert_eq(
+		latch.pending_picks(),
+		PackedInt32Array(
+			[
+				InputFrame.PICK_SWAP_BASE + 2,
+				InputFrame.wand_move(0, 2),
+				InputFrame.wand_move(3, 1),
+				InputFrame.PICK_SWAP_SKIP
+			]
+		)
+	)
+	var got := []
+	for k in 5:
+		got.append(latch.close_frame(Vector2.ZERO, Vector2.RIGHT, 1.0).pick)
+	assert_eq(
+		got,
+		[
+			InputFrame.PICK_SWAP_BASE + 2,
+			InputFrame.wand_move(0, 2),
+			InputFrame.wand_move(3, 1),
+			InputFrame.PICK_SWAP_SKIP,
+			InputFrame.PICK_NONE
+		]
+	)
+	assert_eq(latch.pending_picks().size(), 0)
+
+
+func test_presses_from_a_paused_menu_can_be_dropped() -> void:
+	var latch := InputLatch.new()
+	latch.note_pressed(InputFrame.PRIMARY)
+	latch.note_released(InputFrame.PRIMARY)
+	latch.drop_presses()
+	var f := latch.close_frame(Vector2.ZERO, Vector2.RIGHT, 1.0)
+	assert_eq(f.pressed, 0, "a click on the Build page is not a swing")
+	assert_eq(f.held, 0)

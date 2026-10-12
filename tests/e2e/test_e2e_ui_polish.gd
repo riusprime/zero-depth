@@ -23,11 +23,11 @@ func test_a_language_switch_words_the_live_banner_again() -> void:
 	var entry := hud.phase_hud.current_entry()
 	assert_eq(shown, hud.phase_hud.line(entry), "worded in English")
 	assert_eq(hud.ability_hud.slot(0).key_text, "LMB", "the weapon's key, short")
-	# Options from the pause menu (Esc, Down, Down, Enter), the Language category (Down x4), into it (Right) and
-	# one step to Spanish (Right).
+	# Options from the pause menu (Esc, Down x3: past Build, v0.6.5 WN2; Enter), the Language category (Down x4),
+	# into it (Right) and one step to Spanish (Right).
 	await e.tap(KEY_ESCAPE)
 	await e.frames(2)
-	for k in 2:
+	for k in 3:
 		await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)

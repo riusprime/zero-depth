@@ -20,7 +20,8 @@ func test_menu_play_pause_and_back() -> void:
 	var paused_tick := e.world().tick
 	await e.frames(5)
 	assert_eq(e.world().tick, paused_tick, "the sim is paused")
-	await e.tap(KEY_DOWN)  # Resume -> Restart run
+	await e.tap(KEY_DOWN)  # Resume -> Build (v0.6.5 WN2)
+	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_DOWN)  # -> Options (v0.3.0 O)
 	await e.tap(KEY_DOWN)  # -> Main menu
 	await e.tap(KEY_ENTER)

@@ -26,6 +26,8 @@ var _menu: Control
 var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
 var _pause_options: OptionsMenu
+## v0.6.5 WN2: the Build page opened from the pause menu, over the paused stage.
+var _pause_build: BuildPage
 var _dev: DevPanel
 var _hud: Hud
 var _end: EndPanel
@@ -308,6 +310,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.
+	_hud.swap.moved.connect(driver.latch.queue_wand_move)  # v0.6.5 WN2: and its reorders and inserts.
 	_hud.sync(driver.reader)
 	_hud.show_floor(
 		run.floor_index,
@@ -424,6 +427,7 @@ func open_pause() -> void:
 	_pause = PauseMenu.new()
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
+	_pause.build_pressed.connect(_open_pause_build)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
@@ -449,11 +453,55 @@ func close_pause() -> void:
 	if _pause_options != null:
 		_pause_options.queue_free()
 		_pause_options = null
+	if _pause_build != null:
+		_queue_build_moves()
+		_pause_build.queue_free()
+		_pause_build = null
 	if _pause != null:
 		_pause.queue_free()
 		_pause = null
 	if driver != null:
+		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
 		driver.paused = false
+
+
+## v0.6.5 WN2: the Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on
+## Back. The page starts from the sim's wand with the moves still waiting in the latch applied (the page may open
+## twice in one pause), and the sim gets its change as input when the page closes (_queue_build_moves).
+func _open_pause_build() -> void:
+	if _pause == null or _pause_build != null:
+		return
+	_pause.visible = false
+	var wand := driver.reader.wand()
+	for v in driver.latch.pending_picks():
+		var n := v - WorldReader.PICK_WAND_MOVE_BASE
+		if n >= 0 and n < WorldReader.WAND_MOVE_STRIDE * WorldReader.WAND_MOVE_STRIDE:
+			wand = WorldReader.wand_moved(
+				wand, n / WorldReader.WAND_MOVE_STRIDE, n % WorldReader.WAND_MOVE_STRIDE
+			)
+	_pause_build = BuildPage.new()
+	_pause_build.back_pressed.connect(_close_pause_build)
+	ui.add_child(_pause_build)
+	_pause_build.open(wand, int(wand["slots"]))
+
+
+func _close_pause_build() -> void:
+	if _pause_build != null:
+		_queue_build_moves()
+		_pause_build.queue_free()
+		_pause_build = null
+	if _pause != null:
+		_pause.visible = true
+		(_pause.box.get_node("Build") as Button).grab_focus()
+
+
+## The Build page's change as wand moves, queued as input: the pause stops the ticks, so they reach the sim one per
+## tick when the game runs again (EI-03, EI-04).
+func _queue_build_moves() -> void:
+	if driver == null or _pause_build == null:
+		return
+	for v in _pause_build.planned_moves():
+		driver.latch.queue_wand_move(v)
 
 
 func _set_menu(m: Control) -> void:

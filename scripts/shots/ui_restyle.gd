@@ -63,8 +63,8 @@ func _process(_delta: float) -> bool:
 			_tap(KEY_ESCAPE)
 		200:
 			_shot("ui_pause_en_" + _size)
-		202, 204:
-			_tap(KEY_DOWN)  # to Options
+		202, 203, 204:
+			_tap(KEY_DOWN)  # to Options (past Build, v0.6.5 WN2)
 		206:
 			_tap(KEY_ENTER)
 		250:
