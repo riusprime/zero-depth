@@ -604,7 +604,7 @@ a v0.5 item 1, an M-list card 1, 2 if rare, 3 if legendary.
 ## 8e. The wand (v0.6.5 WN1)
 
 Design: [`../design/WAND.md`](../design/WAND.md) (owner-approved; W3, W6). Evidence:
-[`../roadmap/v0.6.5/evidence/WAND_1.md`](../roadmap/v0.6.5/evidence/WAND_1.md). The wand is the build's modifier
+[`../roadmap/v0.7.0/evidence/WAND_1.md`](../roadmap/v0.7.0/evidence/WAND_1.md). The wand is the build's modifier
 slots (`World.mod_slots`, §8c) read left to right; this section replaces §8b's fixed stage order for the compile.
 
 **The compile reads left to right** (`WandCompile`, `src/sim/combat/wand_compile.gd`; `Modifiers.compile_for` builds
@@ -682,7 +682,7 @@ reorder never changes P.
 ## 8f. The Gun pool (v0.6.5 WN3)
 
 Design: [`../design/WAND.md`](../design/WAND.md) G1–G16 (owner "Approve all", PLAN v0.6.5 W7). Evidence:
-[`../roadmap/v0.6.5/evidence/WAND_GUN.md`](../roadmap/v0.6.5/evidence/WAND_GUN.md). Every Gun card is a modifier of
+[`../roadmap/v0.7.0/evidence/WAND_GUN.md`](../roadmap/v0.7.0/evidence/WAND_GUN.md). Every Gun card is a modifier of
 the bolt (target `projectile`), compiled left to right by §8e's wand, so its place in the wand decides which spells
 it reaches (a card reaches the children built to its left, never those to its right).
 
@@ -738,7 +738,7 @@ charged shot, `AttackFormView.live_scale`); while the Gun charges, an orb at the
 ## 8g. The Blade pool (v0.6.5 WN4)
 
 Design: [`../design/WAND.md`](../design/WAND.md) B1–B16 (owner-approved, G1 "Approve all"; W5: "the slash becomes a
-spell"). Evidence: [`../roadmap/v0.6.5/evidence/WAND_BLADE.md`](../roadmap/v0.6.5/evidence/WAND_BLADE.md). Each card is
+spell"). Evidence: [`../roadmap/v0.7.0/evidence/WAND_BLADE.md`](../roadmap/v0.7.0/evidence/WAND_BLADE.md). Each card is
 modifier data that rewrites the Blade's combo steps (target `[weapon, melee]`, so a trigger's child slash too) in slot
 order (§8e); the runner features below are in `BladeForms` (`src/sim/combat/blade_forms.gd`, state `World.blade`:
 `BladeState`), each read from the compiled spec, none drawing randomness, on the one clock.
@@ -795,7 +795,7 @@ draw from them.
 ## 8h. The shared pool and the triggers offered (v0.6.5 WN5a)
 
 Design: [`../design/WAND.md`](../design/WAND.md) S1–S7, T1–T4 (owner-approved, G1 "Approve all"). Evidence:
-[`../roadmap/v0.6.5/evidence/WAND_SHARED.md`](../roadmap/v0.6.5/evidence/WAND_SHARED.md). The shared cards are
+[`../roadmap/v0.7.0/evidence/WAND_SHARED.md`](../roadmap/v0.7.0/evidence/WAND_SHARED.md). The shared cards are
 modifiers on every attack (empty target), compiled left to right by §8e, offered in both weapons' runs; the trigger
 cards (§8e) are offered too.
 
@@ -844,7 +844,7 @@ from its own spec; a cast bolt flies with the `cast` cue. `AttackFormLooks.cues_
 ## 8i. The old cards' migration and the legendary tier (v0.6.5 WN5b)
 
 Design: [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards" (the mapping table). Evidence:
-[`../roadmap/v0.6.5/evidence/WAND_MIGRATION.md`](../roadmap/v0.6.5/evidence/WAND_MIGRATION.md).
+[`../roadmap/v0.7.0/evidence/WAND_MIGRATION.md`](../roadmap/v0.7.0/evidence/WAND_MIGRATION.md).
 
 **Retired cards.** `data/wand/migration.tres` (CONTENT_SCHEMA "the wand") lists 43 v0.6 cards: 13 of the 14 v0.5 attack
 items, the four ability mods, the 17 M-list cards that did not keep their id (as a wand card, WN3/WN4, or as a shared

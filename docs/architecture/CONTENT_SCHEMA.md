@@ -331,7 +331,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `double_slash`, B6 `thrust`, B7 `heavy`, B8 `flurry`, B9 `fissure`, B10 `chain_cut`, B11 `parry_edge`, B13
   `lunge_step`, B14 `finisher_plus`, B16 `counter` are new `WAND` items; all 16 `requires_weapon = blade`, tag
   `blade` and `wand` (levels 1–5). Each card's ops and numbers: the table in
-  [`../roadmap/v0.6.5/evidence/WAND_BLADE.md`](../roadmap/v0.6.5/evidence/WAND_BLADE.md). With WN3's Gun pool: 79
+  [`../roadmap/v0.7.0/evidence/WAND_BLADE.md`](../roadmap/v0.7.0/evidence/WAND_BLADE.md). With WN3's Gun pool: 79
   modifiers, 91 items.
 - **v0.6.5 WN4: `BladeFormsDefinition`** (category `wand`, id `blade_forms`, `data/wand/blade_forms.tres`; compiled
   by `BladeCompiler` into `BladeTable`, `World.blade_table`): the runner numbers no card's ops name.

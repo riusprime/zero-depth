@@ -2,7 +2,7 @@ extends GutTest
 ## v0.6.5 WN5b (docs/design/WAND.md "What happens to the v0.6 cards": "Old saves load: each held card maps to its new
 ## card, in pick order. A card without a match is refunded as shards"): two run saves recorded with v0.6.1's own code
 ## (main 950add4, payload 3; tests/fixtures/saves/, recorded by the script quoted in
-## docs/roadmap/v0.6.5/evidence/WAND_MIGRATION.md) load the way Main.continue_run loads them (the run from the payload,
+## docs/roadmap/v0.7.0/evidence/WAND_MIGRATION.md) load the way Main.continue_run loads them (the run from the payload,
 ## the floor rebuilt with its carry, the world snapshot written over it, then WandMigration) and hold the new cards.
 
 const DIR := "res://tests/fixtures/saves/"

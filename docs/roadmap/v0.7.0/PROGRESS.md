@@ -1,4 +1,4 @@
-# v0.6.5 — progress
+# v0.7.0 — progress (planned as v0.6.5)
 
 Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 
@@ -28,12 +28,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| Version number for this pass | — | pending (lead's pick v0.6.5) | |
+| Version number for this pass | 2026-10-12 | "yeah go ahead for v0.7 naming" (v0.6.5 → **v0.7.0**) | 2026-10-12 |
 | G1: the wand's modifier lists (WAND.md) | 2026-10-12 | "Approve all" | 2026-10-12 |
 | Wand slots | 2026-10-12 | "Grows during the run" (4 → 6 → 8) | 2026-10-12 |
 | Card pool size (WN3): the Gun pool is 86 cards (Blade 76) while the v0.6 cards wait for WN5's migration; the pool test's ceiling went 80 → 90 in the open (`tests/support/card_pool_survey.gd`). Keep, or prune old cards now? | — | pending (lead / owner) | |
 | Card pool size (WN3 + WN4 merged): measured on the merged tree (`test_card_pool_reach.gd`: "blade pool: 88 in the data + 0 planned ([]) = 88", "gun pool: 83 in the data + 0 planned ([]) = 83"); the ceiling is 88 (WN3 had 90, WN4 92). Keep, or prune old cards now (WN5 prunes)? | — | pending (owner) | |
 | Card pool size (WN5b): after the migration retired 43 v0.6 cards, measured on a trial merge with WN5a (`7e88f80`): `test_card_pool_reach.gd` "blade pool: 61 in the data + 0 planned ([]) = 61", "gun pool: 59 in the data + 0 planned ([]) = 59" (on the WN5b branch alone 55 / 53); `POOL_MAX` 88 → 61. The owner's target was 40–50. Not pruned past WAND.md: the 13 passives outside the wand (Bulwark, Cold Snap, Executioner, …) stay. Keep, or prune further? | — | pending (owner) | |
+| Card pool size (final): 61 (Blade) / 59 (Gun) offered per run, against the 40–50 target | 2026-10-12 | "keep the pool size" | 2026-10-12 |
 
 ## History
 - 2026-10-12: plan from the owner's v0.6.1 playtest.
@@ -97,3 +98,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   53, the item draw 52. Files re-run: test_item_validation 7/7, test_modifier_validation 8/8, test_items 19/19,
   test_items_j 18/18, test_old_saves 3/3, test_card_pool_reach 3/3, test_wand_shared_order 11/11, test_wand_migration
   12/12, test_wand_migration_validation 4/4. The wave's full suite next.
+- 2026-10-12: owner: "yeah go ahead for v0.7 naming and keep the pool size". The pass is v0.7.0 (folder renamed
+  from `docs/roadmap/v0.6.5/`; commits and code comments before the rename say "v0.6.5"); the pools stay at 61 / 59.

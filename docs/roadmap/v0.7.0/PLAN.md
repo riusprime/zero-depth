@@ -1,8 +1,8 @@
-# v0.6.5 — Feedback pass: the wand (plan, owner-directed 2026-10-12)
+# v0.7.0 — The Wand (planned as v0.6.5; plan, owner-directed 2026-10-12)
 
 The owner played v0.6.1 (`main` `950add4`) and finished the run on the normal route ("completed it, from the easy
-side, right at the blue portal"). Their message is quoted line by line below. The version number is the lead's
-pick for a feedback pass (ROADMAP §4); the owner may rename it. Progress: [`PROGRESS.md`](PROGRESS.md).
+side, right at the blue portal"). Their message is quoted line by line below. Planned as the feedback pass v0.6.5; the owner named it **v0.7.0**
+(2026-10-12: "yeah go ahead for v0.7 naming"). Step commits before the rename say "v0.6.5". Progress: [`PROGRESS.md`](PROGRESS.md).
 
 ## The owner's feedback (2026-10-12, verbatim)
 | # | Owner line | Decision | Status | Where |

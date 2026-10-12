@@ -4,7 +4,7 @@ extends SceneTree
 ##   XDG_DATA_HOME=<empty folder> VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
 ##     xvfb-run -a -s "-screen 0 1920x1080x24" timeout 300 \
 ##     godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/wand_build.gd
-## (repeat with --resolution 1280x720; the files carry the window size). Writes to build/shots/v0.6.5/wand/:
+## (repeat with --resolution 1280x720; the files carry the window size). Writes to build/shots/v0.7.0/wand/:
 ##   build_<lang>_<w>x<h>.png  - a Blade run from the menu (Enter, Enter), posed by the script (a tool, not a test:
 ##                               floor 3's eight slots filled with eight cards, two of them triggers; the hero can't
 ##                               be hurt), the pause menu opened with Esc and the Build page with Down, Enter;
@@ -13,7 +13,7 @@ extends SceneTree
 ##   swap_insert_en_<w>x<h>.png - X (the new card placed in the row; pad X as the key I), Right, Enter: which leaves.
 ## It quits on every path (the frame budget below). Evidence copies are made by hand.
 
-const OUT := "res://build/shots/v0.6.5/wand/"
+const OUT := "res://build/shots/v0.7.0/wand/"
 const EIGHT: Array[StringName] = [
 	&"ember_edge",
 	&"trigger_on_hit",
