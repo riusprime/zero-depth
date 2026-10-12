@@ -35,6 +35,7 @@ var _devm: DevMasterPanel
 var _biome_path := ""
 ## A balance edit waits to go into the running World until the panel closes (the run is paused while it is open).
 var _balance_pending := false
+var _dev_mark: Label
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -294,6 +295,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		if err != "":
 			return err
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
+	_tweaked_run_check()
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -452,6 +454,7 @@ func _close_master_panel() -> void:
 	if _balance_pending and driver != null and run != null:  # Step 4: balance edits go live as the run resumes
 		LiveTuning.apply(driver.world, run, _content())
 	_balance_pending = false
+	_tweaked_run_check()
 	if driver != null and _pause == null:
 		driver.paused = false
 
@@ -464,6 +467,24 @@ func _restart_floor() -> void:
 	_close_master_panel()
 	_end_floor()
 	_start_floor()
+
+
+## Step 5 (owner: tweaked runs don't count): while any balance value is off the shipped game the run has no save
+## (Continue can't resume it) and a DEV mark shows. Unlocks and records, when they come, check tuning the same way.
+func _tweaked_run_check() -> void:
+	var tweaked := tuning.balance_tweaked()
+	if tweaked and run != null:
+		saves.discard()
+	if _dev_mark == null:
+		_dev_mark = Label.new()
+		_dev_mark.name = "DevMark"
+		_dev_mark.text = "UI_DEVM_MARK"
+		_dev_mark.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
+		_dev_mark.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		_dev_mark.position.y = 4
+		_dev_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(_dev_mark)
+	_dev_mark.visible = tweaked
 
 
 ## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the

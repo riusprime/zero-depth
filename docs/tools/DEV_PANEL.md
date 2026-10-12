@@ -1,6 +1,6 @@
 # Dev panel (lighting and balance tuning in the running game)
 
-Status: **PLAN written 2026-10-12; building from Step 1.**
+Status: **Steps 1–5 built 2026-10-12** (`f26b541`, `713aaa3`, `00b3a04`, `daa7411`, Step 5 commit); Step 6 next.
 
 ## Owner lines (2026-10-12)
 
@@ -68,8 +68,10 @@ Each step is one commit, with tests of the folders it touches; one full suite at
    into the running World (with the floor scaling re-applied), then the build refreshes (`refresh_build`, max HP,
    catch-up). Values fixed at spawn apply to the next spawns; the page says which. Restart floor rebuilds the floor
    from the tweaked content.
-5. **DEV mark and no counting.** Any balance override: a DEV tag on screen, and the run saves no progress, unlocks or
-   records. e2e: a tweaked run leaves the profile unchanged.
+5. **DEV mark and no counting.** Any balance override: a DEV tag on screen, and the run has no save (Continue can't
+   resume it). The game writes no unlocks or records yet (the profile's `unlocks` section is unused); when they come,
+   they check `tuning.balance_tweaked()` the same way. e2e: a tweaked run's save is gone and DEV shows; lighting alone
+   changes neither.
 6. **Sim constants.** The designer-relevant `const`s move into a `SimTuning` resource (`data/tuning/sim.tres`) that
    the sim reads through the World; same values, so the goldens don't change. Then they get a page.
 7. **Release checklist line** (ROADMAP §0.4): remove or lock the panel before a public release.

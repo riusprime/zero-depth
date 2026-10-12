@@ -55,3 +55,27 @@ func test_an_edit_goes_live_when_the_panel_closes() -> void:
 	assert_ne(_arc_caster(_e.world()).damage, dmg)
 	assert_eq(_e.world().spawner.cap_by_floor[0], 3)
 	assert_false(main.driver.paused, "the run goes on")
+
+
+## Step 5 (owner: tweaked runs don't count): a balance edit drops the run's save and shows the DEV mark; a lighting
+## edit alone doesn't.
+func test_a_tweaked_run_is_not_saved_and_shows_dev() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	main.tuning.save_path = SAVE
+	await _e.start_from_menu()
+	assert_true(main.saves.store.has_save(), "a normal run saves its start hall")
+	var mark := main.get_node("UI/DevMark") as Label
+	assert_false(mark.visible)
+	await _e.tap(KEY_F10)
+	var panel := main.get_node("UI/DevMasterPanel") as DevMasterPanel
+	panel.set_value(DevTuning.key_of(main._biome_path, "mood/glow_intensity"), 1.7)
+	await _e.tap(KEY_F10)
+	assert_false(mark.visible, "lighting alone keeps the run counting")
+	assert_true(main.saves.store.has_save())
+	await _e.tap(KEY_F10)
+	panel = main.get_node("UI/DevMasterPanel") as DevMasterPanel
+	panel.set_value(DevTuning.key_of(ENEMY, "hp"), 200)
+	await _e.tap(KEY_F10)
+	assert_true(mark.visible, "DEV")
+	assert_false(main.saves.store.has_save(), "no save to continue a tweaked run")
