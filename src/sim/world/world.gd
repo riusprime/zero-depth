@@ -278,6 +278,12 @@ var migrate_slots := false
 ## v0.6.0 MX2: the spec of the player hit resolving now (Attacks, the projectile sweep; null between hits), which the
 ## engines read for its statuses. Transient within a tick (WorldSnapshot.WORLD_KEPT).
 var hit_spec: AttackSpec = null
+## v0.6.5 WN1: whether the last player hit Damage.hit resolved was a crit (the wand's On Crit reads it right after).
+## Transient within a hit (WorldSnapshot.WORLD_KEPT).
+var last_hit_crit := false
+## v0.6.5 WN1 (Wand): the wand's numbers, the slots per floor and the trigger's child spell (loadout, not hashed; null
+## = a lab world: six slots, the class defaults for the child spell).
+var wand_table: WandTable
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
@@ -403,6 +409,9 @@ func queue_projectile(
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
 func step(frame: InputFrame) -> void:
+	# 0. v0.6.5 WN1: a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first
+	# in any state (a choice open, the shop, hit-stop); the rest of the tick sees no pick.
+	frame = Wand.take_move(self, frame)
 	# 1. Freeze check: hit-stop holds everything except buffering new presses.
 	if freeze_ticks > 0:
 		freeze_ticks -= 1

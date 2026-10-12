@@ -21,10 +21,14 @@ const PICK_SHOP_REROLL := 21
 ## v0.5.0 EV: while the shop is open and a curse is held, pay to lift the latest curse (Shop.cleanse).
 const PICK_SHOP_CLEANSE := 22
 const PICK_SHOP_SELL := 100
-## v0.6.0 MX2 (BuildSlots): while a swap choice is open (a modifier offered with the six slots full), replace held
-## modifier slot n (PICK_SWAP_BASE + n, n = 0..5), or skip it.
+## v0.6.0 MX2 (BuildSlots): while a swap choice is open (a modifier offered with every slot full), replace held
+## modifier slot n (PICK_SWAP_BASE + n; v0.6.5 WN1: n = 0..7, the wand grows to 8), or skip it.
 const PICK_SWAP_BASE := 30
 const PICK_SWAP_SKIP := 39
+## v0.6.5 WN1 (Wand): move the wand's card in slot `from` to slot `to` (the cards between shift by one), at any tick:
+## PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to, from and to in 0..WAND_MOVE_STRIDE − 1 (wand_move()).
+const PICK_WAND_MOVE_BASE := 1000
+const WAND_MOVE_STRIDE := 16
 
 ## World-plane move, -127..127 per axis, deadzone applied.
 var move := Vector2i.ZERO
@@ -38,6 +42,11 @@ var held := 0
 var pressed := 0
 ## The 3-card pick (v0.3.0 E): PICK_NONE, 1..3 (take that card), or PICK_CANCEL. Delivered once, like a press.
 var pick := PICK_NONE
+
+
+## v0.6.5 WN1: the pick value that moves the wand's card in slot `from` to slot `to`.
+static func wand_move(from: int, to: int) -> int:
+	return PICK_WAND_MOVE_BASE + from * WAND_MOVE_STRIDE + to
 
 
 static func make(

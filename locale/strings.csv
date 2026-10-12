@@ -614,7 +614,7 @@ RARITY_LEGENDARY,Legendary,Legendaria
 UI_CARD_MODIFIER,Modifier,Modificador
 UI_CARD_MODIFIER_NEW,New modifier,Modificador nuevo
 UI_SWAP_TITLE,Your %d modifier slots are full: swap one?,Tus %d huecos de modificador están llenos: ¿cambiar uno?
-UI_SWAP_HINT,1–6 / ←→ choose · Enter swap · Esc skip,1–6 / ←→ elegir · Intro cambiar · Esc saltar
+UI_SWAP_HINT,1–8 / ←→ choose · Enter swap · Esc skip,1–8 / ←→ elegir · Intro cambiar · Esc saltar
 UI_SWAP_SKIP,Skip,Saltar
 UI_SWAP_SKIP_KEY,Esc,Esc
 UI_SWAP_LEVEL,Level %d,Nivel %d
@@ -720,3 +720,23 @@ ITEM_INFERNO_CORE_DESC,Legendary: hits burn twice; kills burst in big flames.,Le
 ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
 ITEM_ECHO_STORM_DESC,Legendary: every slash flies on as 3 crescents (80%).,Legendario: cada tajo vuela como 3 medias lunas (80%).
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
+ITEM_TRIGGER_ON_HIT,On Hit,Al Impactar
+ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast a small spell on each hit.,Las cartas a su derecha lanzan un hechizo al impactar.
+ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
+ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast a small spell on each kill.,Las cartas a su derecha lanzan un hechizo al matar.
+ITEM_TRIGGER_ON_END,On End,Al Terminar
+ITEM_TRIGGER_ON_END_DESC,Cards to its right cast a small spell where it ends.,Las cartas a su derecha lanzan un hechizo al terminar.
+ITEM_TRIGGER_ON_FINISHER,On Finisher / On Crit,Al Rematar / Al Crítico
+ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on the finisher or a crit.,Las cartas a su derecha se lanzan al rematar o al crítico.
+WAND_READ_FIRE,You fire %s.,Disparas %s.
+WAND_READ_BOLT,a bolt,un proyectil
+WAND_READ_SLASH,a slash,un tajo
+WAND_READ_SMALL_BOLT,a small bolt,un proyectil pequeño
+WAND_READ_SMALL_SLASH,a small slash,un tajo pequeño
+WAND_READ_SHAPED,%s shaped by %s,%s moldeado por %s
+WAND_READ_ON_HIT,Each hit casts %s.,Cada impacto lanza %s.
+WAND_READ_ON_KILL,Each kill casts %s.,Cada baja lanza %s.
+WAND_READ_ON_END,"Where it ends, it casts %s.","Donde termina, lanza %s."
+WAND_READ_ON_FINISHER,The combo's last hit casts %s.,El último golpe del combo lanza %s.
+WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
+WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.

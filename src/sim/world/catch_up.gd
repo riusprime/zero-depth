@@ -7,7 +7,7 @@ extends RefCounted
 ##   how well it is played: weapon level × damage stat × Glass Cannon × (1 + Onrush) × expected crit (relative to the
 ##   base crit) × attack speed × (1 + the modifier slots' levels and the utility's level, the items without a slot
 ##   and the combos, at their table weights). The one place the build's power is read (v0.6.0 MX2: the weapon, the
-##   utility and the six modifier slots, BuildSlots).
+##   utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand, Wand.cards).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
 ## - start_floor(w), at floor entry (after the carry, the abilities, the heat and the events are set up): reads P,
 ##   E(floor), cap(floor) + threat_cap × T and stores m in World.catch_up; m is fixed for the floor (no rubber band).
@@ -30,9 +30,10 @@ static func power(w: World) -> int:
 	p = p * expected_crit(w, Stats.crit_chance(w), Stats.crit_mult(w)) / base_crit(w)
 	p = p * Stats.value(w, Stats.Stat.ATTACK_SPEED) / 1000
 	# v0.6.0 MX2: per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
-	# utility's level at the table's per-level weight; the items without a slot at the item weight.
+	# utility's level at the table's per-level weight; the items without a slot at the item weight. v0.6.5 WN1: the
+	# wand's cards (Wand.cards, whatever their order: a reorder never changes P), a trigger card 1.
 	var levels := 0
-	for s in w.mod_slots.size():
+	for s in Wand.size(w):
 		levels += power_level(w, s)
 	for s in w.ability_owned.size():
 		if w.ability_tables[w.ability_owned[s]].is_utility():

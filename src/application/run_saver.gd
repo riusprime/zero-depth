@@ -11,8 +11,12 @@ extends RefCounted
 
 ## 2: v0.5.0 RT adds the run's route per floor (`run.routes`). 3: v0.6.0 MX2, the build's modifier slots (the
 ## carry's mod_slots, the world's); a version-2 payload still loads and migrates (RunCarry, WorldSnapshot).
-const PAYLOAD_VERSION := 3
-const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3]
+## 4: v0.6.5 WN1, the wand: mod_slots is the slot order the player arranged (the compile reads it left to right). A
+## version-3 payload's slots are in pick order, which is its wand order as it stands (nothing to rewrite); its slot
+## count comes from the floor reached (Wand.slots), and a wand holding more cards than that keeps them all (the next
+## new card needs a Swap).
+const PAYLOAD_VERSION := 4
+const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.

@@ -111,6 +111,7 @@ static func hit(
 		Heat.on_hit(w, target, root_id, h.tags, effect_id)  # Heat: gain, Overclock embers.
 		if a.dead[target] == 1 and not splash:
 			Stats.overkill(w, target, scaled - got, root_id)  # v0.5.0 CP: the Overkill card
+	w.last_hit_crit = (h.tags & SimEvent.TAG_CRIT) != 0  # v0.6.5 WN1: ON_CRIT reads it (after any nested hit)
 	return got
 
 
