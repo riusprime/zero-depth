@@ -283,7 +283,8 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   and looks until WN5): `trigger_on_hit` (On Hit / Al Impactar), `trigger_on_kill` (On Kill / Al Matar),
   `trigger_on_end` (On End / Al Terminar), `trigger_on_finisher` (On Finisher / On Crit; Al Rematar / Al Crítico:
   `ON_FINISHER`, the Gun's `ON_CRIT`); each an item of kind `TRIGGER` tagged `trigger` (a new item tag), family
-  `epic`, common. Trigger cards are never offered yet (`ItemPool` skips the kind; WN5 opens their pool); item indices
+  `time` (silver, a placeholder frame), common. Trigger cards are never offered yet (`ItemPool` skips the kind; WN5
+  opens their pool); item indices
   put them after the `MODIFIER` cards (`ModifierCompiler.item_defs`: v0.5 kinds by id, `MODIFIER` by id, `TRIGGER`
   by id), so every earlier index names the same card. 55 modifiers, 67 items.
 - **v0.6.5 WN1: `WandDefinition`** (category `wand`, `data/wand/wand.tres`, its own file so the dev panel's tuning

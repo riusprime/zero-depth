@@ -11,7 +11,7 @@ hook_trigger = 3
 
 [resource]
 script = ExtResource("1_mod")
-family = &"epic"
+family = &"time"
 stage = 4
 ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
 id = &"trigger_on_end"

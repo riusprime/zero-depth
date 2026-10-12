@@ -116,6 +116,11 @@ const FAMILY_OF := {
 	&"twin_cast": &"time",
 	&"venom_core": &"damage",
 	&"wide_arc": &"area",
+	# v0.6.5 WN1: the wand's trigger cards (placeholder frame until WN5 gives them their look)
+	&"trigger_on_end": &"time",
+	&"trigger_on_finisher": &"time",
+	&"trigger_on_hit": &"time",
+	&"trigger_on_kill": &"time",
 	# Stat cards
 	&"area": &"area",
 	&"armour": &"economy",
