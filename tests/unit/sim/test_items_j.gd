@@ -76,13 +76,16 @@ func _kill(w: World, i: int) -> void:
 func test_the_data_has_distinct_kinds() -> void:
 	assert_eq(
 		_tables.size(),
-		63,
-		"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
+		67,
+		(
+			"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
+			+ " + the wand's 4 trigger cards (v0.6.5 WN1)"
+		)
 	)
 	var kinds := {}
 	for t in _tables:
 		kinds[t.kind] = true
-	assert_eq(kinds.size(), 32, "the 31 v0.5 kinds and MODIFIER")
+	assert_eq(kinds.size(), 33, "the 31 v0.5 kinds, MODIFIER and (v0.6.5 WN1) TRIGGER")
 	for k in range(K.VAMPIRIC_CORE, K.PHASE_STRIKE + 1):
 		assert_ne(_index(k), -1, "kind %d is shipped" % k)
 
