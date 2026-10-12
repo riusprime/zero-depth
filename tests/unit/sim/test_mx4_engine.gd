@@ -17,7 +17,8 @@ func test_the_legendary_versions_are_stronger() -> void:
 	assert_eq(t.rarity, ItemTable.LEGENDARY)
 	var inferno := W.item(w, &"inferno_core")
 	assert_false(ItemPool.available(w).has(inferno), "never in a chest's pool")
-	assert_true(ItemPool.available(w, true).has(inferno), "the boss's tier draws it")
+	# v0.6.5 WN5b: retired (WAND.md: Inferno Core → S1 Fire at level 5): the boss's tier no longer draws it either.
+	assert_false(ItemPool.available(w, true).has(inferno), "retired: not even the boss's tier")
 
 
 func test_cluster_payload_is_an_on_end_lob_of_three_that_never_splits_again() -> void:

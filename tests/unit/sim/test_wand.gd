@@ -5,7 +5,8 @@ extends GutTest
 ## (WorldReader.wand) and the plain-words read-back (Wand.describe, en + es); saves keep the order and older saves
 ## migrate; CatchUp.power reads the wand whatever its order.
 
-const FOUR: Array = [&"ember_edge", &"trigger_on_hit", &"long_edge", &"twin_arc"]
+## v0.6.5 WN5b: Blade wand cards (the v0.6 cards these tests held are retired and migrate at a floor's start).
+const FOUR: Array = [&"heavy", &"trigger_on_hit", &"wide_arc", &"double_slash"]
 
 var _repo: ContentRepository
 
@@ -310,7 +311,9 @@ func test_a_snapshot_keeps_the_order_with_equal_hashes() -> void:
 
 
 func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
-	# A v0.6.0 save (payload 3): six cards in pick order on floor 1, where the wand now has four.
+	# A v0.6.0 save (payload 3): six cards in pick order on floor 1, where the wand now has four. v0.6.5 WN5b: they
+	# are v0.6 cards, so each maps onto its wand card in that order or is refunded (WandMigration; test_old_saves
+	# loads saves recorded with v0.6.1's code).
 	var old := _world(1)
 	old.wand_table = null  # v0.6.0: six slots
 	var six := [
@@ -320,10 +323,14 @@ func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 	var carry := RunCarry.take(old, 0)
 	var w := _world(1)
 	RunCarry.apply(w, carry)
+	var shards := w.shards
 	Abilities.start_floor(w)
-	assert_eq(_ids(w), six, "pick order is the wand's order; no card is lost")
-	assert_true(BuildSlots.full(w), "over floor 1's four: full")
-	assert_true(BuildSlots.needs_swap(w, _it(w, &"glacial_edge")), "a new card needs a Swap")
+	assert_eq(
+		_ids(w),
+		[&"wide_arc", &"double_slash", &"finisher_plus"],
+		"Long Edge, Twin Arc, Overcharge in pick order; Ember Edge, Conductor, Serrated Edge wait for S1/S2/S5"
+	)
+	assert_gt(w.shards, shards, "the three without a card yet are refunded")
 	assert_true(RunSaver.PAYLOAD_VERSIONS_READ.has(3), "a version-3 payload still loads")
 
 
@@ -331,9 +338,7 @@ func test_a_v0_5_carry_migrates_into_the_floor_reached_slot_count() -> void:
 	for f in [1, 2]:
 		var probe := _world(f)
 		var items := PackedInt32Array()
-		for id: StringName in [
-			&"long_edge", &"ember_edge", &"twin_arc", &"overcharge", &"conductor"
-		]:
+		for id: StringName in [&"heavy", &"whirl", &"flurry", &"thrust", &"wide_arc"]:  # v0.6.5 WN5b
 			items.append(_it(probe, id))
 		var w := _world(f)
 		RunCarry.apply(w, {&"items_owned": items, &"hp": 50})

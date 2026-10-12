@@ -278,11 +278,8 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 		assert_has(gun_pool, "mod:" + id, "%s in the Gun's pool" % id)
 		assert_does_not_have(blade_pool, "mod:" + id, "%s never in the Blade's" % id)
 	for id: String in ["seeker", "twin_cast", "rearguard"]:
-		assert_has(
-			blade_pool,
-			"mod:" + id,
-			"%s stays with the Blade (G8, G14, G15 replace it on the Gun)" % id
-		)
+		# v0.6.5 WN5b: retired (WAND.md: → G8, G14, G15 on the Gun; Twin Cast → B5 on the Blade): in no pool.
+		assert_does_not_have(blade_pool, "mod:" + id, "%s retired" % id)
 		assert_does_not_have(gun_pool, "mod:" + id)
 	var b := _world(&"blade")
 	assert_false(ItemPool.usable(b, _it(b, &"gun_big_shot")))
