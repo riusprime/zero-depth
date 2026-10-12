@@ -134,6 +134,7 @@ const ADDED_SINCE_V05 := {
 		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
 		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
 		&"blade",  # v0.6.5 WN4 (the base's fresh state)
+		&"tuning",  # the dev panel's Step 6 (loadout, SimTuning; a v0.6.1 save keeps the base's, v0.6.5 WN5b)
 	],
 	&"ProjectileStore":
 	[
