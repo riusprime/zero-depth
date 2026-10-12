@@ -100,3 +100,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   12/12, test_wand_migration_validation 4/4. The wave's full suite next.
 - 2026-10-12: owner: "yeah go ahead for v0.7 naming and keep the pool size". The pass is v0.7.0 (folder renamed
   from `docs/roadmap/v0.6.5/`; commits and code comments before the rename say "v0.6.5"); the pools stay at 61 / 59.
+- 2026-10-12: wave WN5a + WN5b, the lead's one full suite on `8c20d4b` from a clean worktree (`bash scripts/verify.sh`):
+  `verify exit 1`, `Tests 1598`, `Passing Tests 1597`, `Failing Tests 1`: `test_wand.gd`
+  "an older save keeps its pick order" still expected Serrated Edge to wait for S5 (in the data since the merge);
+  the test now uses Shatter (no wand row) for the refund; `test_wand.gd` 16/16. The every-card soak:
+  `SOAK| kills=265 events=6696 most_in_a_tick=188 limits=0`. MIN_TEST_COUNT 1550 → 1598. Pushed; the PR into `main`.

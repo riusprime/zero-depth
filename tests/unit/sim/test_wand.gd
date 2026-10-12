@@ -315,9 +315,7 @@ func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 	# loads saves recorded with v0.6.1's code).
 	var old := _world(1)
 	old.wand_table = null  # v0.6.0: six slots
-	var six := [
-		&"ember_edge", &"long_edge", &"twin_arc", &"overcharge", &"conductor", &"serrated_edge"
-	]
+	var six := [&"ember_edge", &"long_edge", &"twin_arc", &"overcharge", &"conductor", &"shatter"]
 	_take(old, six)
 	var carry := RunCarry.take(old, 0)
 	var w := _world(1)
@@ -327,9 +325,9 @@ func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 	assert_eq(
 		_ids(w),
 		[&"ember_core", &"wide_arc", &"double_slash", &"finisher_plus", &"storm_core"],
-		"each in its pick order: S1, B1, B5, B14, S2; Serrated Edge waits for S5 (shared_bleed, WN5a)"
+		"each in its pick order: S1, B1, B5, B14, S2; Shatter has no wand row (refunded)"
 	)
-	assert_gt(w.shards, shards, "the one without a card yet is refunded")
+	assert_gt(w.shards, shards, "the one without a wand row is refunded")
 	assert_true(RunSaver.PAYLOAD_VERSIONS_READ.has(3), "a version-3 payload still loads")
 
 
