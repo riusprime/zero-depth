@@ -178,6 +178,15 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   `CoreTheft.on_elite`, `on_boss`) and `loot:event` (the cursed chest's roll and its trade-off curse; a core redrawn at
   its drop when its card no longer applies; Marked's rare card from a slain elite). Cores exist only in worlds with
   the event streams (`World.ev.rng_elite`), so older worlds draw nothing new.
+- **v0.7.5 NB1** adds the sub-stream `map:ice`, derived the same way from the floor seed (`World.seed_value`), like
+  `map:overrun` and `map:event`: Frozen Shore's ice patches (`IcePatches.lay`, a pure function of the layout, the
+  walls and the seed; every room draws its chance and count, so skipping one room never shifts another). No other
+  stream draws more, and floors of other biomes draw nothing. The ice (`World.ice`, an `IceField`) is loadout: laid
+  at setup, never written in play, kept from the base on restore (`WorldSnapshot.WORLD_KEPT`) and not hashed (like
+  the layout); its effect is: while the hero's position at the start of the move is on a patch, the hero eases with
+  the ice's `accel_permille` / `decel_permille` instead of the player's own (a slide). The dash, skills and enemies
+  are unchanged on ice. EI-05's list names the streams of LOCKED_DECISIONS; `map:ice` is a sub-stream of `map` the
+  way `map:overrun` is (flagged for the owner in the v0.7.5 PLAN).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the

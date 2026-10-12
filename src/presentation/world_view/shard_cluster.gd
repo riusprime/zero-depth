@@ -17,6 +17,8 @@ const TINTS := {
 	&"ruins": [Color("#B8F4EC"), Color("#5CD6C4")],
 	&"night_rocks": [Color("#C8DAFF"), Color("#7C9EFF")],
 	&"red_canyon": [Color("#FFE6C8"), Color("#EDB46A")],
+	## v0.7.5 NB1: Frozen Shore's ice, whiter and colder than the default (still off the player-core cyan).
+	&"frozen_shore": [Color("#EAF6FF"), Color("#8CC8F0")],
 	## Deep floors (v0.5.5 DS): the Deep haze's violet.
 	&"deep": [Color("#D6C2FF"), Color("#8A5CFF")],
 }

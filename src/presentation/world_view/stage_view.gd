@@ -41,6 +41,12 @@ var palette := {}
 ## The biome's lighting mood (v0.5.9 Step 1). Null keeps the pre-v0.5.9 look (one bright sun, linear tonemap), the
 ## G2 mockup's variant A. Set before build().
 var mood: BiomeMood = null
+## v0.7.5 NB1: the biome's own look (BiomeLook: square cover, decoration swaps, the edge); null for the first three
+## biomes, which keep their hand-written look. Set before build().
+var look: BiomeLook = null
+## v0.7.5 NB1: the floor's ice patches (null without any) and what lies past the floor's edge (null: the void).
+var ice: IceViews
+var edge: BiomeEdge
 var lighting := "high"
 var environment: Environment
 var sun: DirectionalLight3D
@@ -89,6 +95,30 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 		_build_kit(reader)
 	else:
 		_build_props(reader.seed_value(), arena_half)
+	_build_ice(reader)
+	_build_edge(reader)
+
+
+## v0.7.5 NB1: the sim's ice patches, wherever the floor has them (Frozen Shore's surface).
+func _build_ice(reader: WorldReader) -> void:
+	if reader.ice_patch_count() == 0:
+		return
+	ice = IceViews.new()
+	ice.name = "Ice"
+	add_child(ice)
+	ice.build(reader, reader.seed_value())
+
+
+## v0.7.5 NB1: the biome's edge past the floor (BiomeLook.edge; Frozen Shore's frozen sea), on generated floors.
+func _build_edge(reader: WorldReader) -> void:
+	if look == null or not BiomeEdge.has_style(look.edge) or _ground_rects.is_empty():
+		return
+	edge = BiomeEdge.new()
+	edge.name = "Edge"
+	add_child(edge)
+	edge.build(
+		look.edge, _ground_rects, reader.floor_bounds(), palette["edge"], reader.seed_value()
+	)
 
 
 func _mat(c: Color, unshaded := false) -> StandardMaterial3D:
@@ -432,26 +462,34 @@ func _build_kit(reader: WorldReader) -> void:
 	var keep: Array = [reader.portal_pos()]
 	for i in reader.reward_count():
 		keep.append(reader.reward_pos(i))
-	var placements := (
-		StageDresser
-		. dress(
-			{
-				"walls": walls,
-				"rooms": rooms,
-				"start_room": reader.floor_start_room(),
-				"doors": doors,
-				"keep_clear": keep,
-				"biome": prop_style,
-				"seed": reader.seed_value(),
-			}
-		)
-	)
+	var dressing := {
+		"walls": walls,
+		"rooms": rooms,
+		"start_room": reader.floor_start_room(),
+		"doors": doors,
+		"keep_clear": keep,
+		"biome": prop_style,
+		"seed": reader.seed_value(),
+	}
+	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration
+		dressing["square_cover"] = _names(look.square_cover)
+		dressing["decor_swap"] = _names(look.decor_swap)
+	var placements := StageDresser.dress(dressing)
 	kit = StageKit.new()
 	kit.name = "Kit"
 	add_child(kit)
 	kit.build(placements, wall_specs.size(), palette["cover"], mood)
 	kit.set_shadows(lighting == "high")
 	_build_shards(reader, walls, rooms, doors, keep, placements)
+
+
+## A look dictionary with StringName keys (and values, when they are text), whatever the .tres wrote.
+static func _names(d: Dictionary) -> Dictionary:
+	var out := {}
+	for k: Variant in d:
+		var v: Variant = d[k]
+		out[StringName(str(k))] = StringName(str(v)) if v is String or v is StringName else v
+	return out
 
 
 ## v0.6.1 SD (owner R4): crystal-shard clusters on top of the kit (ShardDressing's rules; ShardCluster draws them).

@@ -582,6 +582,8 @@ class_name BiomeDefinition extends Resource
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
 @export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
+@export var surface: BiomeSurface         # v0.7.5 NB1: ground that plays differently (ice); null for none
+@export var look: BiomeLook               # v0.7.5 NB1: own dressing, edge and enemy cast; null = hand-written look
 ```
 
 - `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
@@ -598,6 +600,33 @@ class_name BiomeDefinition extends Resource
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
 
+- `BiomeSurface` (v0.7.5 NB1, `src/content/defs/biome_surface.gd`; Frozen Shore's ice) is the one biome field the
+  sim reads, compiled by `BiomeCompiler.compile_ice` into an `IceField` and laid per floor by `IcePatches` from the
+  `map:ice` sub-stream (SIM_CONTRACTS §5):
+  - `kind` (`&"ice"`, the only kind);
+  - `room_share_permille`: the share of rooms that get patches (never the start hall, the boss room, the portal's
+    room or the shop's room); `patches_min`..`patches_max` per chosen room;
+  - `size_min_m`..`size_max_m`: a patch's sides (0.5 m steps); `clearance_m`: kept from walls, doorways, item spots,
+    the start and the gates;
+  - `accel_seconds`, `stop_seconds`: the hero's easing on ice (seconds to 90 %), in place of the player's own.
+
+  A value out of range is a `surface_invalid` `ERROR`. Mild flavour only (PD-04): ice never hurts and the dash is
+  unchanged on it.
+- `BiomeLook` (v0.7.5 NB1, `src/content/defs/biome_look.gd`) is presentation only, never read by the sim:
+  - `square_cover`: kit piece id -> int weight, what square cover footprints are drawn with (empty: the dresser's
+    own rule);
+  - `decor_swap`: kit decoration piece -> the piece drawn instead (a kit piece or a code-made `CodeProps` piece);
+  - `edge`: what lies past the floor's edge (`&""` the void, `&"water"` the frozen sea, `BiomeEdge`);
+  - `enemy_tint`: the cast enemies' grey parts take (alpha = strength, at most 0.8; red parts, rings and bars never
+    change).
+
+  A value out of range or an unknown edge is a `look_invalid` `ERROR`; that every named piece resolves is a
+  presentation test (`tests/unit/presentation/test_frozen_shore.gd`). A biome without a look keeps its hand-written
+  look (Ruins, Night Rocks, Red Canyon).
+- A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id in
+  `data/run/three_floors.tres` `biomes`, an ambience cue `data/audio/cues/<id>.tres` and its loop
+  (`scripts/audio/generate_sfx.py`), a `BIOME_<ID>` locale key, and optionally a `ShardCluster.TINTS` row and a
+  `BiomeEdge` style.
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
 - `palette` must define exactly the seven biome tokens listed in

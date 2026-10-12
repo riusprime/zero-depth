@@ -159,6 +159,7 @@ ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
+BIOME_FROZEN_SHORE,Frozen Shore,Costa Helada
 HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
