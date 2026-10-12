@@ -11,6 +11,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | WN2 | The wand can be rearranged: a Build row in the pause menu opens the Build page (the wand as a row of slots with each card's frame colour, icon, name and level, trigger cards cutting it with "cast on hit →", and the plain-words read-back, en + es); cards move with the keyboard, the mouse (drag or click-click) and the pad; the moves reach the sim as input on the first ticks after the pause. The Swap panel fits 8 slots at 1280 × 720 and can replace, insert or reorder; the HUD pips show the cuts. Evidence [`evidence/WAND_2.md`](evidence/WAND_2.md) (screenshots NOT YET RUN) | `e46995a` (WIP), then `v0.6.5 Step WN2` |
 | WN3 | The Gun pool G1–G16: Big Shot, Rapid Fire, Twin, Spread, Split, Pierce, Ricochet, Homing, Boomerang, Orbit, Spiral, Mine, Charge (hold to grow, release to fire), Echo, Backfire, Halo; each rewrites the bolt left to right in the wand and shows on it (size, count, path, trail, the charge orb, the mine's ring); a duplicate levels a card 1–5 without a slot; Gun runs only. Evidence [`evidence/WAND_GUN.md`](evidence/WAND_GUN.md) | WIP commits, then `v0.6.5 Step WN3` |
 | WN4 | The Blade pool B1–B16: every Blade card rebuilds the slash, left to right, and shows on it (Wide Arc's sweep, Wave's flying crescent, Split Wave, Whirl's spin, Double Slash's criss-cross, Thrust's stab, Heavy's slow crushing arcs with knockback, Flurry, Fissure's crack and eruption, Chain Cut, Parry Edge cutting shots, Afterimage's ghost slash, Lunge Step, Finisher+'s shockwave carrying every card, Orbit Blades, Counter's dash-slash wave); offered only in Blade runs; a duplicate levels a card up 1–5. Wide Arc, Echo Slash (Wave), Long Shadow (Afterimage) and Blade Orbit (Orbit Blades) became B1, B2, B12, B15 with their ids; 12 new cards; for WN5: `twin_arc` → `double_slash`. Evidence [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md) | `ddb6e0a`…final (WIP commits, then this step's commit) |
+| WN5a | The shared pool S1–S7 in both runs, each in the spell's look: Fire (`ember_core`), Lightning (`storm_core`), Frost (`frost_core`), Venom (`venom_core`), Void (`gravity_well`) keep their v0.6 ids and indices; Bleed (`shared_bleed`, ticks twice as fast while you move) and Explosive (`shared_explosive`, blasts where the spell ends) are new; all level 1–5. The triggers T1–T4 are offered in both runs with their final names (T4: On Finisher with the Blade, On Crit with the Gun); a trigger's small spell is drawn where it is cast (a sigil, the small slash or blast). Order fixes: no v0.5 rider from a wand card, a child slash feeds its own statuses, a cast feeds its stacks whole, a hook's bolt leaves past the enemy. Evidence [`evidence/WAND_SHARED.md`](evidence/WAND_SHARED.md) (screenshots NOT YET RUN) | WIP commits `588db57`…`3df5865`, then `v0.6.5 Step WN5a` |
 
 ## Goldens changed on purpose
 - none (BR: the replay golden runs a boss-free kernel world; `test_replay_ground_plane.gd` passes unchanged)
@@ -19,6 +20,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - none (WN2: no golden or fixture changed).
 - none (WN3: no fixture regenerated; see `evidence/WAND_GUN.md` for the golden runs).
 - none (WN4: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
+- none (WN5a: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -28,6 +30,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | Wand slots | 2026-10-12 | "Grows during the run" (4 → 6 → 8) | 2026-10-12 |
 | Card pool size (WN3): the Gun pool is 86 cards (Blade 76) while the v0.6 cards wait for WN5's migration; the pool test's ceiling went 80 → 90 in the open (`tests/support/card_pool_survey.gd`). Keep, or prune old cards now? | — | pending (lead / owner) | |
 | Card pool size (WN3 + WN4 merged): measured on the merged tree (`test_card_pool_reach.gd`: "blade pool: 88 in the data + 0 planned ([]) = 88", "gun pool: 83 in the data + 0 planned ([]) = 83"); the ceiling is 88 (WN3 had 90, WN4 92). Keep, or prune old cards now (WN5 prunes)? | — | pending (owner) | |
+| Card pool size (WN5a): the triggers offered and the two new shared cards give 94 (Blade) / 89 (Gun) against `POOL_MAX` 88 (`test_card_pool_reach.gd` fails until WN5b prunes or the bound moves; not changed here) | — | pending (lead / owner, with WN5b) | |
 
 ## History
 - 2026-10-12: plan from the owner's v0.6.1 playtest.
@@ -67,3 +70,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   `test_dev_master_panel.gd` "data/wand is in the panel" (the two branches met: the dev panel didn't know the wand's
   new folder; fixed, `data/wand` is under Build pieces; `tests/unit/debug` 10/10) and the every-card soak, 385 ≥ 256
   (bound changed with the owner, line above; `test_combos.gd` 13/13). MIN_TEST_COUNT 1442 → 1550. Pushed.
+- 2026-10-12: WN5a built on a session branch (agent, `wn5a` from `4787b38`; WN5b works in parallel on the old cards'
+  migration, the legendary tier and the pools): the shared pool S1–S7, the triggers offered with their final names,
+  the cast marks and their view. Folder runs: tests/unit/sim 895/897 on `5a87ad2` (the card-pool bound, 94 / 89 against
+  `POOL_MAX` 88: WN5b's, reported, not changed; and a test fixed after, run again), content/arch/golden 114/114,
+  presentation + application + debug 457/457, 18 e2e files 37/38 then the fixed one 1/1. Not pushed; the lead's full
+  suite pending.
