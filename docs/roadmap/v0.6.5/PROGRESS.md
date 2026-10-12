@@ -77,3 +77,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   59 (Gun) on a trial merge with WN5a (55 / 53 alone). WN5a's ids are in the table (lead's message); S5 and S7 are
   pending until the merge. Not pushed; the lead's one full suite per wave is
   pending.
+- 2026-10-12: WN5b folder runs on `ea03123` (agent): tests/unit/sim 887/887; content + arch + golden +
+  unit/application 150/150; unit/presentation + unit/debug 423/423; 23 e2e files 48/48; lint clean. On a trial merge
+  with WN5a the recorded v0.6.1 saves need WN5a's new state fields in `WorldSnapshot.ADDED_SINCE_V05` (merge note in
+  `evidence/WAND_MIGRATION.md`). The full suite is the lead's. Not pushed.
