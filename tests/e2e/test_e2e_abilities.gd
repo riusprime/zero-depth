@@ -5,7 +5,9 @@ extends GutTest
 ## come (its hits reach the damage numbers). v0.6.0 MX2: the six auto abilities are weapon modifiers, so the player
 ## attacks (left mouse) and dashes while waiting: Bomb Lobber lobs on every 4th attack, Arc Field leaves its field
 ## where an attack ends, Flame Trail's dash leaves fire, Frost Nova's frost element rides the swings (its stacks, or
-## its ring on a kill streak). Then the dev panel grants Blink, and Shift blinks.
+## its ring on a kill streak). Then the dev panel grants Blink, and Shift blinks. v0.6.5 WN5b: the six auto abilities
+## are retired (WAND.md "What happens to the v0.6 cards"), so the altar's ability card is now Blink or Aegis; the
+## auto branch below stays for a dev-panel build that still holds one.
 
 
 func after_each() -> void:
@@ -64,8 +66,13 @@ func test_pick_an_ability_card_at_an_altar_and_see_it_fire() -> void:
 	assert_eq(hud.ability_hud.filled_count(), 2, "the HUD shows it")
 	assert_eq(hud.ability_hud.slot(1).ability_id, t.id)
 	gut.p("took %s" % t.id)
-	if not t.auto:
-		pending("the altar offered only a utility ability: its use is test_e2e_utility")
+	for c in offer:  # v0.6.5 WN5b: the six auto abilities are retired (WAND.md): never offered
+		assert_false(
+			Offers.type_of(c) == Offers.ABILITY and w.ability_tables[Offers.ability_of(c)].retired,
+			"no retired ability card"
+		)
+	if not t.auto:  # v0.6.5 WN5b: the only new abilities left are the utilities (their use: test_e2e_utility)
+		assert_true(t.is_utility(), "%s is Blink or Aegis" % t.id)
 		return
 	var effect: StringName = {
 		AbilityTable.Kind.BOMB_LOBBER: Abilities.EFFECT_BOMB,

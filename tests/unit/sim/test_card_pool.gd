@@ -201,7 +201,8 @@ func test_ability_mods_are_offered_only_with_their_ability() -> void:
 		var v := _world()  # a fresh run each: four slots can't hold them all
 		Heat.enable(v, ContentCompiler.compile_heat(_repo.get_def(&"heat", &"overclock")))
 		_grant(v, pairs[id])
-		assert_true(ItemPool.available(v).has(_item(v, id)), "%s: once owned" % id)
+		# v0.6.5 WN5b: the four mods are retired with the abilities (WAND.md): never offered, even then.
+		assert_false(ItemPool.available(v).has(_item(v, id)), "%s: retired" % id)
 
 
 func test_cluster_payload_splits_each_bomb_into_bomblets_that_never_split() -> void:
