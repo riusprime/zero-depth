@@ -73,6 +73,7 @@ func test_other_sizes_and_templates() -> void:
 		BossArenaSpec.make(Vector2i(3, 1), FloorLayout.Template.LINES),
 		BossArenaSpec.make(Vector2i(2, 2), FloorLayout.Template.PILLARS),
 		BossArenaSpec.make(Vector2i(3, 3), FloorLayout.Template.PILLARS),
+		BossArenaSpec.make(Vector2i(3, 3), FloorLayout.Template.LINES),  # v0.6.5 BR: the Siege Engine's
 		BossArenaSpec.make(Vector2i(1, 1), FloorLayout.Template.OPEN),
 	]
 	var pieces := 0

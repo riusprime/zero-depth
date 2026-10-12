@@ -37,10 +37,39 @@ func test_arena_accessors() -> void:
 	assert_eq(g.arena_cells, Vector2i(3, 3))
 	assert_eq(g.arena_template, FloorLayout.Template.PILLARS)
 	var s := w.boss_tables[BossLab.table_index(w, &"siege_engine")]
-	assert_eq(s.arena_cells, Vector2i(3, 1))
+	assert_eq(
+		s.arena_cells,
+		Vector2i(3, 3),
+		"v0.6.5 BR (owner W2): the cannon boss fights in a 3 x 3 room"
+	)
 	assert_eq(s.arena_template, FloorLayout.Template.LINES)
 	var b := w.boss_tables[BossLab.table_index(w, &"brood_mother")]
 	assert_eq(b.arena_cells, Vector2i(2, 2))
+
+
+## v0.6.5 BR (owner W2, "3×3"): the Siege Engine's room is 3 x 3 cells on every seed; the closing band now closes
+## on both axes (the 3 x 1 room was too narrow for it to close across), and its punish move still reaches the room's
+## far corners from where it appears.
+func test_the_siege_engine_fights_in_a_3x3_room() -> void:
+	var w := BossLab.world()
+	var k := BossLab.table_index(w, &"siege_engine")
+	var t := w.boss_tables[k]
+	var shock := t.attacks[t.punish_attack]
+	for s in 40:
+		var f := FloorGenerator.generate(7000 + s * 31)
+		BossRoomBuilder.attach(f, BossArenaSpec.make(t.arena_cells, t.arena_template, k))
+		var tag := "seed %d" % (7000 + s * 31)
+		assert_eq(f.room_cells[f.boss_room].size, Vector2i(3, 3), tag + ": a 3 x 3 room")
+		var arena := f.rooms[f.boss_room]
+		var deep := BossChallenge.band_depth(arena, t, 1000)
+		assert_gt(deep.x, 0.0, tag + ": the band closes across x")
+		assert_gt(deep.y, 0.0, tag + ": the band closes across y")
+		var a := arena.position
+		var e := arena.end
+		for c in [a, e, Vector2(e.x, a.y), Vector2(a.x, e.y)]:
+			assert_lt(Kin.length(c - f.boss_spawn), shock.radius_m, tag + ": the shockwave reaches")
+		if is_failing():
+			return
 
 
 ## v0.4.0 BO: each pool now holds a second boss (tests/unit/sim/test_bosses_2.gd); the first is still there.
