@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §1–§2, §7): the attack specs and their compile. The slot order (v0.6.5
-## WN1: the wand, left to right; tests/unit/sim/test_wand*.gd prove it), target filters, the form-layering rule, the v0.5 riders, the hook recursion guard
+## WN1: the wand, left to right; tests/unit/sim/test_wand*.gd prove it), target filters, the form-layering rule,
+## the v0.5 riders, the hook recursion guard
 ## (depth, proc coefficient, ancestry, the per-tick launch cap), the spec digest in the state hash, and a save that
 ## recompiles the specs on load with equal hashes.
 
@@ -118,9 +119,7 @@ func test_the_slot_order_runs_across_cards_whatever_their_stage() -> void:
 	var form := _mod(&"form_second", [], [_form(FORM.BOLT)])
 	var b := Modifiers.compile_for(w, [pattern, form] as Array[ModifierTable])
 	var s := b.spec(&"blade_step_0")
-	assert_eq(
-		s.modifier_ids, PackedStringArray(["pattern_first", "form_second"]), "slot order"
-	)
+	assert_eq(s.modifier_ids, PackedStringArray(["pattern_first", "form_second"]), "slot order")
 	assert_eq([s.form, s.count], [FORM.BOLT, 3])
 
 
