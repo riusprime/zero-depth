@@ -62,3 +62,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   one tick (5861 over 5000 ticks; the watchdog, 512, never fires). Owner, after the numbers: "It's okay let's leave it
   like that then". The soak's bound is now the real watchdog (`Engines.MAX_EVENTS_PER_TICK`, 512); T-FUZZ keeps ≤ 256
   for builds of 10–30 stacks (TEST_MATRIX unchanged). Tick time at the peak: NOT YET RUN.
+- 2026-10-12: wave WN2 + WN3 + WN4 + keen-volta (`cc843cb`), the lead's one full suite on `e31705e` from a clean
+  worktree (`bash scripts/verify.sh`): `verify exit 1`, `Tests 1550`, `Passing Tests 1548`, `Failing Tests 2`:
+  `test_dev_master_panel.gd` "data/wand is in the panel" (the two branches met: the dev panel didn't know the wand's
+  new folder; fixed, `data/wand` is under Build pieces; `tests/unit/debug` 10/10) and the every-card soak, 385 ≥ 256
+  (bound changed with the owner, line above; `test_combos.gd` 13/13). MIN_TEST_COUNT 1442 → 1550. Pushed.
