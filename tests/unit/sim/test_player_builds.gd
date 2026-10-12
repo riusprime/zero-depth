@@ -213,17 +213,32 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 	assert_eq(
 		blade,
 		[
+			"blade_orbit",  # v0.6.5 WN4: the Blade pool B1–B16 (WAND.md) is Blade-only
 			"bulwark",
+			"chain_cut",
 			"conductor",
+			"counter",
+			"double_slash",
 			"echo_slash",  # v0.6.0 MX4: Echo Slash and its legendary need the Blade's arcs
 			"echo_storm",
 			"ember_edge",
+			"finisher_plus",
+			"fissure",
+			"flurry",
 			"glacial_edge",
+			"heavy",
 			"long_edge",
+			"long_shadow",
+			"lunge_step",
 			"momentum",
 			"overcharge",
+			"parry_edge",
 			"serrated_edge",
-			"twin_arc"
+			"split_wave",
+			"thrust",
+			"twin_arc",
+			"whirl",
+			"wide_arc",
 		]
 	)
 	assert_eq(

@@ -185,7 +185,9 @@ func test_m29_blade_orbit_takes_every_hook_of_the_weapon() -> void:
 	var t := Abilities.owned_of_kind(w, AbilityTable.Kind.ORBIT_BLADES)
 	var plain := W.world(&"blade", [], [], [&"orbit_blades"])
 	var orbit := Modifiers.ability(w, t)
-	assert_eq(orbit.count, Modifiers.ability(plain, t).count, "the ability's blades: no merge any more")
+	assert_eq(
+		orbit.count, Modifiers.ability(plain, t).count, "the ability's blades: no merge any more"
+	)
 	var thrown := W.hook_of(Modifiers.step(w, 0), &"blade_orbit")
 	assert_not_null(thrown, "the slash throws a blade")
 	assert_eq(thrown.child.form, AttackSpec.Form.ORBITER)

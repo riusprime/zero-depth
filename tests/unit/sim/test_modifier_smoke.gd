@@ -94,10 +94,11 @@ func _check(label: String, r: Dictionary, cap_ok: bool = false) -> void:
 func test_every_modifier_is_shipped_and_compiled() -> void:
 	assert_eq(
 		_mods.size(),
-		55,
+		67,
 		(
 			"the 14 migrated attack items (MX1), Frost Nova's frost, Razor Orbit (MX2); MX4: the M-list's"
-			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers"
+			+ " 29 new, 3 legendary, Cluster Payload, Overclocked Drone, Afterimage; v0.6.5 WN1: 4 triggers;"
+			+ " WN4: the Blade pool's 12 new"
 		)
 	)
 
