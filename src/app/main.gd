@@ -260,6 +260,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
+	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB

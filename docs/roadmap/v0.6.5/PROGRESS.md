@@ -10,6 +10,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | WN1 | The wand compiler: the cards apply in slot order (left to right), trigger cards (On Hit, On Kill, On End, On Finisher / On Crit; placeholder names, not offered yet) cut the wand and cast a small copy of the basic attack, the wand grows 4 → 6 → 8 by floor, a reorder is an input (`InputFrame.wand_move`), saves keep the order (payload 4), `WorldReader.wand()` and `Wand.describe()`. Evidence [`evidence/WAND_1.md`](evidence/WAND_1.md) | `8e50eb3`…final (WIP commits, then this step's commit) |
 | WN2 | The wand can be rearranged: a Build row in the pause menu opens the Build page (the wand as a row of slots with each card's frame colour, icon, name and level, trigger cards cutting it with "cast on hit →", and the plain-words read-back, en + es); cards move with the keyboard, the mouse (drag or click-click) and the pad; the moves reach the sim as input on the first ticks after the pause. The Swap panel fits 8 slots at 1280 × 720 and can replace, insert or reorder; the HUD pips show the cuts. Evidence [`evidence/WAND_2.md`](evidence/WAND_2.md) (screenshots NOT YET RUN) | `e46995a` (WIP), then `v0.6.5 Step WN2` |
 | WN3 | The Gun pool G1–G16: Big Shot, Rapid Fire, Twin, Spread, Split, Pierce, Ricochet, Homing, Boomerang, Orbit, Spiral, Mine, Charge (hold to grow, release to fire), Echo, Backfire, Halo; each rewrites the bolt left to right in the wand and shows on it (size, count, path, trail, the charge orb, the mine's ring); a duplicate levels a card 1–5 without a slot; Gun runs only. Evidence [`evidence/WAND_GUN.md`](evidence/WAND_GUN.md) | WIP commits, then `v0.6.5 Step WN3` |
+| WN4 | The Blade pool B1–B16: every Blade card rebuilds the slash, left to right, and shows on it (Wide Arc's sweep, Wave's flying crescent, Split Wave, Whirl's spin, Double Slash's criss-cross, Thrust's stab, Heavy's slow crushing arcs with knockback, Flurry, Fissure's crack and eruption, Chain Cut, Parry Edge cutting shots, Afterimage's ghost slash, Lunge Step, Finisher+'s shockwave carrying every card, Orbit Blades, Counter's dash-slash wave); offered only in Blade runs; a duplicate levels a card up 1–5. Wide Arc, Echo Slash (Wave), Long Shadow (Afterimage) and Blade Orbit (Orbit Blades) became B1, B2, B12, B15 with their ids; 12 new cards; for WN5: `twin_arc` → `double_slash`. Evidence [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md) | `ddb6e0a`…final (WIP commits, then this step's commit) |
 
 ## Goldens changed on purpose
 - none (BR: the replay golden runs a boss-free kernel world; `test_replay_ground_plane.gd` passes unchanged)
@@ -17,6 +18,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   replay golden 2/2; no fixture regenerated).
 - none (WN2: no golden or fixture changed).
 - none (WN3: no fixture regenerated; see `evidence/WAND_GUN.md` for the golden runs).
+- none (WN4: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -25,6 +27,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | G1: the wand's modifier lists (WAND.md) | 2026-10-12 | "Approve all" | 2026-10-12 |
 | Wand slots | 2026-10-12 | "Grows during the run" (4 → 6 → 8) | 2026-10-12 |
 | Card pool size (WN3): the Gun pool is 86 cards (Blade 76) while the v0.6 cards wait for WN5's migration; the pool test's ceiling went 80 → 90 in the open (`tests/support/card_pool_survey.gd`). Keep, or prune old cards now? | — | pending (lead / owner) | |
+| Card pool size (WN3 + WN4 merged): measured on the merged tree (`test_card_pool_reach.gd`: "blade pool: 88 in the data + 0 planned ([]) = 88", "gun pool: 83 in the data + 0 planned ([]) = 83"); the ceiling is 88 (WN3 had 90, WN4 92). Keep, or prune old cards now (WN5 prunes)? | — | pending (owner) | |
 
 ## History
 - 2026-10-12: plan from the owner's v0.6.1 playtest.
@@ -40,3 +43,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - 2026-10-12: WN3 built on a session branch (agent): the 16 Gun cards (12 new, 4 v0.6 cards turned Gun cards with
   their ids), card levels 1–5, the twin / spiral / mine / charge runners and their looks. Not pushed; the lead's one
   full suite per wave is pending.
+- 2026-10-12: WN4 built on a session branch (agent): the Blade pool B1–B16, card levels 1–5, BladeFormView. Open for
+  the lead: the every-card soak (`test_combos`) peaks at 385 events a tick against its bound of 256 (reported, not
+  changed: WAND_BLADE.md); the card-pool bound raised 80 → 92 in the open (the old cards leave in WN5). Not pushed.
+- 2026-10-12: WN3 + WN4 merged (agent, branch `wn34-merge`, the merge commit "Merge v0.6.5 Step WN4: the Blade pool
+  B1-B16"): one card-level system (WN3's `CardLevels`: the item tag `wand`, `World.card_levels`, `ModifierTable.at`;
+  WN4's `ItemDefinition.max_level`, `World.item_levels` and precompiled `ModifierTable.levels` dropped, the 16 Blade
+  cards tagged `wand`); `WAND` cards indexed pool by pool (`ModifierCompiler.WAND_POOL_ORDER`: Gun, then Blade), so
+  the Gun's indices stay; SIM_CONTRACTS §8f Gun, §8g Blade. Card pool measured 88 (Blade) / 83 (Gun), ceiling 88.
+  Folder runs on the merge tree: tests/unit/sim 874/875 (the every-card soak in `test_combos.gd` still peaks at 385
+  events a tick against 256: reported, not changed), content 107/107, arch 4/4, golden 2/2, unit/application 29/29,
+  unit/presentation 408/408, 12 e2e files 28/28; lint clean. The full suite is the lead's. Not pushed.

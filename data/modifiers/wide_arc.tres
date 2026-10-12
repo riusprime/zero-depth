@@ -7,18 +7,20 @@
 script = ExtResource("2_op")
 op = 1
 field = &"arc_degrees"
-value = 40.0
+value = 60.0
+per_level = 15.0
 
 [sub_resource type="Resource" id="Op_2"]
 script = ExtResource("2_op")
-op = 4
-field = &"radius_m"
-value = 1300.0
+op = 1
+field = &"reach_bonus_permille"
+value = 300.0
+per_level = 75.0
 
 [resource]
 script = ExtResource("1_mod")
 family = &"area"
-target = PackedStringArray()
+target = PackedStringArray("weapon", "melee")
 stage = 5
 ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
 id = &"wide_arc"

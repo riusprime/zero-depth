@@ -34,6 +34,13 @@ const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
 const MOTION_THRUST := SwingStep.Motion.THRUST
 const MOTION_SPIN := SwingStep.Motion.SPIN
+## v0.6.5 WN4: the Blade pool's view marks (blade_forms()["fx"][k]["kind"]; BladeForms.FX_*).
+const BLADE_FX_ARC := BladeForms.FX_ARC
+const BLADE_FX_ARC_MIRROR := BladeForms.FX_ARC_MIRROR
+const BLADE_FX_LINE := BladeForms.FX_LINE
+const BLADE_FX_PARRY := BladeForms.FX_PARRY
+const BLADE_FX_BURST := BladeForms.FX_BURST
+const BLADE_FX_COUNTER := BladeForms.FX_COUNTER
 ## v0.6.0 MX1: attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
 const FORM_ARC := AttackSpec.Form.ARC
 const FORM_BOLT := AttackSpec.Form.BOLT
@@ -766,6 +773,18 @@ func modifier_marks() -> Dictionary:
 		"poisoned": poisoned,
 		"queued": _w.mx.q_pos.duplicate(),
 	}
+
+
+## v0.6.5 WN4: the Blade pool's marks for the views (BladeForms.read: ghost slashes, fissure cracks and eruptions,
+## cut shots, a counter, the orbiting blades).
+func blade_forms() -> Dictionary:
+	return BladeForms.read(_w)
+
+
+## v0.6.5 WN4: how the current swing's cards change the swing itself, for the blade and the hero's pose
+## (BladeForms.swing_read: weight, rate, lunge, knockback, parry).
+func blade_swing() -> Dictionary:
+	return BladeForms.swing_read(_w)
 
 
 ## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.

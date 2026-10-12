@@ -59,6 +59,7 @@ static func apply(w: World, carry: Dictionary) -> void:
 	# The abilities' tables come after the carry (Main, the labs), so the migration runs in Abilities.start_floor.
 	if not carry.has(&"mod_slots"):
 		w.migrate_slots = true
+	Modifiers.invalidate(w)  # v0.6.5 WN4: the cards' levels came after the items
 	Gamble.after_carry(w)  # the shrine's max HP wins, before the HP is clamped to max
 	if carry.has(HP):
 		w.actors.hp[0] = clampi(int(carry[HP]), 1, w.actors.max_hp[0])

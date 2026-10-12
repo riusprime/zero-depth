@@ -114,6 +114,7 @@ static func advance(w: World) -> void:
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
 	_walk(w)
+	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 
 
 # --- The moments ----------------------------------------------------------------------------------------------------
@@ -126,6 +127,7 @@ static func on_dash_start(w: World) -> void:
 ## The dash just ended: its ON_END hooks from where it ends (Phase Dash's shard burst).
 static func on_dash_end(w: World) -> void:
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_END, w.player_pos())
+	BladeForms.on_dash_end(w)  # v0.6.5 WN4: Counter's window
 
 
 ## A blink just left w.blink_from: the blink spec's hooks that don't wait (Afterimage's waiting echo is AbilityMods').
@@ -262,3 +264,4 @@ static func hash_into(w: World, h: StateHasher) -> void:
 		w.mx.hash_into(h)
 	Venom.hash_into(w, h)
 	ProjectileMoves.hash_into(w, h)
+	BladeForms.hash_into(w, h)  # v0.6.5 WN4

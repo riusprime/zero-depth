@@ -12,6 +12,7 @@ hook_trigger = 4
 hook_damage_permille = 800
 hook_effect = &"long_shadow"
 hook_delay_seconds = 0.15
+per_level = 100.0
 
 [resource]
 script = ExtResource("1_mod")
