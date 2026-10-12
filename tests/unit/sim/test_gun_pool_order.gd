@@ -154,7 +154,7 @@ func test_levels_stop_at_five_and_the_card_leaves_the_offers() -> void:
 	assert_eq(Modifiers.bolt(w).pierce, 2 + 4, "+1 a level")
 	assert_does_not_have(ItemPool.available(w), k, "at level 5 it's no longer offered")
 	assert_false(Shop.can_apply(w, k))
-	var old := _it(w, &"ember_core")
+	var old := _it(w, &"splinter_shot")  # v0.6.5 WN5a: Ember Core is S1 Fire now (it levels)
 	BuildSlots.take(w, old)
 	assert_does_not_have(ItemPool.available(w), old, "a card without levels still leaves once held")
 
