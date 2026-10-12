@@ -18,6 +18,7 @@ damage = 16
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_BOMB_DRONE"
+desc_key = &"ENEMY_BOMB_DRONE_DESC"
 behaviour_id = &"bomb_drone"
 behaviour_params = {
 "attack_range_m": 10.0,

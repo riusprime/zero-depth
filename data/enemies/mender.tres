@@ -6,6 +6,7 @@
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_MENDER"
+desc_key = &"ENEMY_MENDER_DESC"
 behaviour_id = &"mender"
 behaviour_params = {
 "heal_amount": 5,

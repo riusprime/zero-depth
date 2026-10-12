@@ -20,6 +20,7 @@ damage = 20
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_CHARGER"
+desc_key = &"ENEMY_CHARGER_DESC"
 behaviour_id = &"charger"
 behaviour_params = {
 "attack_range_m": 6.0,

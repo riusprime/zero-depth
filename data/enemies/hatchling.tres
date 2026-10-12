@@ -20,6 +20,7 @@ damage = 8
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_HATCHLING"
+desc_key = &"ENEMY_HATCHLING_DESC"
 behaviour_id = &"hatchling"
 behaviour_params = {
 "attack_range_m": 4.5,

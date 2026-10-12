@@ -18,6 +18,7 @@ damage = 18
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_MINE_LAYER"
+desc_key = &"ENEMY_MINE_LAYER_DESC"
 behaviour_id = &"mine_layer"
 behaviour_params = {
 "attack_range_m": 12.0,

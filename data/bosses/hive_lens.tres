@@ -179,6 +179,7 @@ cooldown_permille = 487
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_HIVE_LENS"
+desc_key = &"BOSS_HIVE_LENS_DESC"
 hp = 1650
 radius_m = 1.0
 move_speed_mps = 2.6

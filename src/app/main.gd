@@ -21,6 +21,9 @@ var run: RunState
 var audio := AudioDirector.new()
 ## v0.4.0 SV: the run save (room entries, close, Continue).
 var saves: RunSaver
+## v0.7.5 CX: the Codex's counters (in the profile) and the recorder that reads each floor's ticks into them.
+var codex: CodexStore
+var codex_recorder: CodexRecorder
 
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
 ## every run and floor is compiled.
@@ -31,6 +34,9 @@ var _pause: PauseMenu
 var _pause_options: OptionsMenu
 ## v0.6.5 WN2: the Build page opened from the pause menu, over the paused stage.
 var _pause_build: BuildPage
+## v0.7.5 CX: the Codex opened from the pause menu, and its catalog (from the content, built on first use).
+var _pause_codex: CodexView
+var _codex_catalog: CodexCatalog
 var _dev: DevPanel
 var _devm: DevMasterPanel
 ## The current floor's biome file (the dev panel's lighting edits re-read its mood).
@@ -54,6 +60,7 @@ func _ready() -> void:
 	get_window().theme = load(ThemePalette.UI_THEME)
 	InputDefaults.apply()
 	profile = ProfileStore.shared()
+	codex = CodexStore.new(profile)
 	saves = RunSaver.new(RunSaveStore.shared())
 	InputRemap.apply(profile)
 	GameSettings.apply_all(profile)
@@ -135,6 +142,7 @@ func show_main_menu() -> void:
 	m.play_pressed.connect(show_build_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
+	m.codex_pressed.connect(show_codex)
 	m.galleries_pressed.connect(show_gallery)
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
@@ -202,6 +210,24 @@ func show_credits() -> void:
 	_set_menu(c)
 
 
+## v0.7.5 CX: the Codex from the main menu; Back returns to the menu with the Codex row focused.
+func show_codex() -> void:
+	var c := CodexView.new(codex_catalog(), codex)
+	c.back_pressed.connect(
+		func() -> void:
+			show_main_menu()
+			(_menu as MainMenu).box.get_node("Codex").grab_focus()
+	)
+	_set_menu(c)
+
+
+## The Codex's entries, read from the shipped content once (CodexCatalog).
+func codex_catalog(repo: ContentRepository = null) -> CodexCatalog:
+	if _codex_catalog == null:
+		_codex_catalog = CodexCatalog.build(repo if repo != null else ContentRepository.load_all())
+	return _codex_catalog
+
+
 func show_gallery() -> void:
 	_set_menu(null)
 	var g := Gallery.new()
@@ -246,6 +272,8 @@ func continue_run() -> void:
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	if repo == null:
 		repo = _content()
+	if codex_recorder == null:  # v0.7.5 CX: built on the first floor, from the content already loaded
+		codex_recorder = CodexRecorder.new(codex, codex_catalog(repo))
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
@@ -302,6 +330,8 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		WandMigration.run(world)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	_tweaked_run_check()
+	if resume.is_empty():
+		codex_recorder.enter_biome(biome.id)  # v0.7.5 CX: a visit (not when Continue resumes the floor)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -324,6 +354,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view.add_child(player_input)
 	driver.input_source = player_input.sample
 	driver.ticked.connect(view.sync)
+	codex_recorder.attach(driver.reader)  # v0.7.5 CX: the Codex reads every tick (after the save's entry check)
 	audio.attach(driver.reader, biome.id)
 	driver.ticked.connect(audio.sync.bind(driver.reader))
 	_hud = Hud.new()
@@ -355,6 +386,7 @@ func _on_tick(from: SimDriver) -> void:
 	if from != driver or _hud == null:
 		return  # a stage that already ended, ticking once more before it's freed
 	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
+	codex_recorder.observe(driver.reader)  # v0.7.5 CX
 	_hud.sync(driver.reader)
 	var outcome := driver.reader.outcome()
 	if outcome == 3 and _end == null:
@@ -482,6 +514,8 @@ func _tweaked_run_check() -> void:
 	var tweaked := tuning.balance_tweaked()
 	if tweaked and run != null:
 		saves.discard()
+	if codex_recorder != null:
+		codex_recorder.enabled = not tweaked  # v0.7.5 CX: a tweaked run fills no Codex
 	if _dev_mark == null:
 		_dev_mark = Label.new()
 		_dev_mark.name = "DevMark"
@@ -522,6 +556,7 @@ func open_pause() -> void:
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
 	_pause.build_pressed.connect(_open_pause_build)
+	_pause.codex_pressed.connect(_open_pause_codex)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
@@ -551,6 +586,9 @@ func close_pause() -> void:
 		_queue_build_moves()
 		_pause_build.queue_free()
 		_pause_build = null
+	if _pause_codex != null:
+		_pause_codex.queue_free()
+		_pause_codex = null
 	if _pause != null:
 		_pause.queue_free()
 		_pause = null
@@ -589,6 +627,27 @@ func _close_pause_build() -> void:
 		(_pause.box.get_node("Build") as Button).grab_focus()
 
 
+## v0.7.5 CX: the Codex from the pause menu, over the paused stage; the pause menu hides under it and comes back on
+## Back. What this run has met is already in it (the recorder writes as the run goes).
+func _open_pause_codex() -> void:
+	if _pause == null or _pause_codex != null:
+		return
+	_pause.visible = false
+	_pause_codex = CodexView.new(codex_catalog(), codex)
+	_pause_codex.back_pressed.connect(_close_pause_codex)
+	ui.add_child(_pause_codex)
+	_pause_codex.focus_first()
+
+
+func _close_pause_codex() -> void:
+	if _pause_codex != null:
+		_pause_codex.queue_free()
+		_pause_codex = null
+	if _pause != null:
+		_pause.visible = true
+		(_pause.box.get_node("Codex") as Button).grab_focus()
+
+
 ## The Build page's change as wand moves, queued as input: the pause stops the ticks, so they reach the sim one per
 ## tick when the game runs again (EI-03, EI-04).
 func _queue_build_moves() -> void:
@@ -617,6 +676,10 @@ func _end_stage() -> void:
 func _end_floor() -> void:
 	close_pause()
 	audio.detach()
+	if codex_recorder != null:
+		codex_recorder.detach()
+	if codex.dirty:  # v0.7.5 CX: the floor's Codex counts reach the profile file
+		codex.dirty = not profile.save_file() and not profile.path.is_empty()
 	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
