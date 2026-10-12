@@ -20,6 +20,9 @@ const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
 const VENOM_MARK := Color(0.2, 0.55, 0.12, 0.85)
 const BLOOD_MARK := Color(0.32, 0.02, 0.04, 0.9)
 const VOID_MARK := Color(0.12, 0.04, 0.2, 0.85)
+## The closest two flames of different patches stand in one frame (m): overlapping patches (a dash's Flame Trail)
+## thin out to about one layer of flames (owner, 2026-10-12: "that's too much fire").
+const FLAME_SPACING := 0.8
 ## Mark keys: an effect's seed times MARK_KINDS plus its kind, so two marks of one effect never collide.
 const MARK_KINDS := 8
 
@@ -178,7 +181,7 @@ static func _splat(k: int) -> StringName:
 # --- Fire -------------------------------------------------------------------------------------------------------
 ## Fire over a patch: upright flames with a taller core, rising embers, a little smoke, warm light, a scorch.
 func _fire(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(round((4.0 + r * r * 2.5) * density)), 3, 20)
+	var n := clampi(int(round((3.0 + r * r * 2.0) * density)), 3, 16)
 	for k in n:
 		var a := TAU * h(sd, k)
 		# The first three flames make a taller core near the centre, so the patch reads as one blaze.
@@ -187,26 +190,30 @@ func _fire(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
 		# Each flame breathes on its own beat and swaps its shape now and then.
 		var beat := 0.85 + 0.15 * sin(age * (0.35 + 0.2 * h(sd + 5, k)) + TAU * h(sd + 7, k))
 		var hgt := (
-			(0.9 + 0.9 * h(sd + 9, k))
+			(0.6 + 0.55 * h(sd + 9, k))
 			* (0.6 + 0.4 * (1.0 - d / maxf(r, 0.01)))
 			* beat
 			* fade
-			* (1.35 if k < 3 else 1.0)
+			* (1.25 if k < 3 else 1.0)
 		)
-		_flame(p, hgt, k, age, sd, fade)
-		_embers(p, age, sd + k * 13, 2, fade)
-	for k in maxi(1, int(n / 4)):
-		_smoke(c + Vector3(0, 0.5, 0), age, sd + 77 + k, 0.35 + r * 0.25, fade * 0.5, 70.0)
-	_light(
+		if _flame(p, hgt, k, age, sd, fade) and k % 2 == 0:
+			_embers(p, age, sd + k * 13, 1, fade)
+	if _claim(&"fire_smoke", c, 1.6):
+		_smoke(c + Vector3(0, 0.5, 0), age, sd + 77, 0.35 + r * 0.25, fade * 0.45, 70.0)
+	_light_merged(
 		c + Vector3(0, 0.9, 0),
 		WARM,
-		(3.0 + r) * fade * (0.85 + 0.15 * sin(age * 0.9 + sd)),
-		r + 3.5
+		(2.6 + r) * fade * (0.85 + 0.15 * sin(age * 0.9 + sd)),
+		r + 3.5,
+		2.5
 	)
 	mark(sd * MARK_KINDS, &"scorch", c, r * 1.1, SCORCH)
 
 
-func _flame(p: Vector3, hgt: float, k: int, age: float, sd: int, fade: float) -> void:
+## A flame at `p`, unless one already burns within FLAME_SPACING this frame; true when drawn.
+func _flame(p: Vector3, hgt: float, k: int, age: float, sd: int, fade: float) -> bool:
+	if not _claim(&"flame", p, FLAME_SPACING, sd):
+		return false
 	var cell := (k + int(age / (9.0 + 5.0 * h(sd, k + 40)))) % 4
 	_put(
 		&"flame",
@@ -216,6 +223,7 @@ func _flame(p: Vector3, hgt: float, k: int, age: float, sd: int, fade: float) ->
 		0.0,
 		h(sd, k) * 10.0
 	)
+	return true
 
 
 ## Flames along a ring's edge.

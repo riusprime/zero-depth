@@ -174,7 +174,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"pos": fire_pos[k],
 					"radius": fire_r[k],
 					"fade": clampf(fire_left[k] / 150.0, 0.0, 1.0),
-					"seed": _seed_at(fire_pos[k], k),
+					# By place only: a patch's index in the sim's list shifts when an older one goes out, and an
+					# index seed made every later patch's flames jump (owner, 2026-10-12: "it goes buggy all around").
+					"seed": _seed_at(fire_pos[k], 0),
 				}
 			)
 		)
@@ -197,7 +199,7 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"throw": ab["bomb_throw"][k],
 					"land": ab["bomb_land"][k],
 					"radius": ab["bomb_r"][k],
-					"seed": _seed_at(bomb_pos[k], k),
+					"seed": _seed_at(bomb_pos[k], int(ab["bomb_throw"][k])),
 				}
 			)
 		)
