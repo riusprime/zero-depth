@@ -164,6 +164,15 @@ func _apply(i: int, faded: bool) -> void:
 			node.material_override = node.get_meta(&"solid")
 
 
+## Re-applies the mood's fire-light colour, energy and range to every light prop (the dev panel's lighting page).
+func retune(mood: BiomeMood) -> void:
+	for k in lights.size():
+		lights[k].light_color = mood.warm_light_color
+		lights[k].omni_range = mood.warm_light_range
+		_light_energy[k] = mood.warm_light_energy
+		lights[k].light_energy = mood.warm_light_energy
+
+
 func set_shadows(on: bool) -> void:
 	shadows = on
 	if not on:

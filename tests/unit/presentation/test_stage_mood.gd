@@ -91,3 +91,22 @@ func test_the_grade_tints_shadows_and_highlights() -> void:
 	m.glow_spread = 0.7
 	var wide := _stage(m).environment
 	assert_gt(wide.get_glow_level(4), 0.0, "a wide glow level is on")
+
+
+## The dev panel's lighting page (docs/tools/DEV_PANEL.md Step 3): a mood edit re-applies to the running stage.
+func test_apply_mood_updates_the_running_stage() -> void:
+	var m := BiomeMood.new()
+	var stage := _stage(m)
+	m.ambient_energy = 0.11
+	m.glow_spread = 0.8
+	m.sun_energy = 0.33
+	m.grade_strength = 0.5
+	m.grade_shadows = Color(0.2, 0.4, 0.6)
+	stage.apply_mood()
+	assert_almost_eq(stage.environment.ambient_light_energy, 0.11, 0.0001)
+	assert_gt(stage.environment.get_glow_level(4), 0.0)
+	assert_true(stage.environment.adjustment_enabled, "the grade turns on live")
+	assert_almost_eq(stage.sun.light_energy, 0.33, 0.0001, "a fresh sun at the new energy")
+	m.grade_strength = 0.0
+	stage.apply_mood()
+	assert_false(stage.environment.adjustment_enabled, "and off again")

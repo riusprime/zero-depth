@@ -31,6 +31,8 @@ var _pause: PauseMenu
 var _pause_options: OptionsMenu
 var _dev: DevPanel
 var _devm: DevMasterPanel
+## The current floor's biome file (the dev panel's lighting edits re-read its mood).
+var _biome_path := ""
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -298,6 +300,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view.name = "WorldView"
 	view.stage.prop_style = biome.id
 	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	_biome_path = biome.resource_path
 	view.stage.lighting = GameSettings.get_value(profile, "lighting")
 	add_child(view)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
@@ -459,8 +462,12 @@ func _restart_floor() -> void:
 
 ## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the
 ## next spawns or Restart floor.
-func _on_tuning_changed(_key: String) -> void:
-	pass
+func _on_tuning_changed(key: String) -> void:
+	if DevTuning.is_lighting(key) and view != null and _biome_path != "":  # Step 3: live
+		# The store writes into the loaded biome it holds; the stage takes that biome's mood and re-applies it.
+		view.stage.mood = (load(_biome_path) as BiomeDefinition).mood
+		view.stage.apply_mood()
+		view.actors.retune_hero_light(view.stage.mood)
 
 
 func is_dev_panel_open() -> bool:

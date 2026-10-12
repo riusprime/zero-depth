@@ -68,7 +68,15 @@ func test_f10_edit_restart_floor() -> void:
 	assert_eq(_arc_caster_hp(_e.world()), 97, "the rebuilt floor uses it (floor 1 scaling is x1)")
 	assert_null(main.get_node_or_null("UI/DevMasterPanel"), "restart closes the panel")
 	await _e.tap(KEY_F10)
-	assert_not_null(main.get_node_or_null("UI/DevMasterPanel"))
+	var again := main.get_node_or_null("UI/DevMasterPanel") as DevMasterPanel
+	assert_not_null(again)
+	# Step 3: a lighting edit shows at once on the running floor (the panel's API; typing is covered above).
+	var biome := main._biome_path
+	again.set_value(DevTuning.key_of(biome, "mood/ambient_energy"), 0.07)
+	assert_almost_eq(main.view.stage.environment.ambient_light_energy, 0.07, 0.0001, "live")
+	assert_true(
+		DevTuning.is_lighting(DevTuning.key_of(biome, "mood/ambient_energy")), "not a balance tweak"
+	)
 	await _e.tap(KEY_F10)
 	assert_null(main.get_node_or_null("UI/DevMasterPanel"), "F10 closes it")
 	assert_false(main.driver.paused)
