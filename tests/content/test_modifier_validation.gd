@@ -164,6 +164,10 @@ func test_wn3_values_and_levels_convert() -> void:
 	var at3 := mine.at(3)
 	assert_eq([at3.ops[0].value, at3.ops[1].damage_permille], [240.0, 1200], "level 3")
 	assert_eq(mine.at(1), mine, "level 1 is the card itself")
-	var bad := (load("res://data/modifiers/ember_edge.tres") as ModifierDefinition).duplicate(true)
+	var bad := (load("res://data/modifiers/gun_spiral.tres") as ModifierDefinition).duplicate(true)
+	bad.ops[0].op = ModifierOpDefinition.Op.ELEMENT
+	bad.ops[0].stage = 3
+	bad.ops[0].element = &"storm"
+	assert_does_not_have(_codes(bad), &"range", "a plain element op is fine")
 	bad.ops[0].per_level = 1.0
-	assert_has(_codes(bad), &"range", "a status doesn't level")
+	assert_has(_codes(bad), &"range", "an element doesn't level")
