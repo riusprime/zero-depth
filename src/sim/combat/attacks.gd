@@ -265,6 +265,7 @@ static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var landed := false
 	var hits := 0
 	var r := ctx.radius_m if ctx.radius_m > 0.0 else spec.radius_m  # v0.6.0 MX4: Vent's, an echo's
+	BladeForms.on_burst(w, spec, ctx.origin, r)  # v0.6.5 WN4: Finisher+'s shockwave, for the view
 	if spec.pull_m > 0.0:  # v0.6.0 MX4: Gravity Well
 		ModifierRuntime.pull(w, ctx.origin, r, spec.pull_m)
 	for i in range(1, a.size()):

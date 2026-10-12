@@ -91,7 +91,9 @@ func hash_into(h: StateHasher) -> void:
 	for f in k_step:
 		h.add_f32(f)
 	h.add_string(",".join(o_key))
-	for arr: PackedInt32Array in [o_start, o_end, o_phase, o_damage, o_root, o_depth, o_proc, o_ready]:
+	for arr: PackedInt32Array in [
+		o_start, o_end, o_phase, o_damage, o_root, o_depth, o_proc, o_ready
+	]:
 		h.add_ints(arr)
 	for f in o_reach:
 		h.add_f32(f)

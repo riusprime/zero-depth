@@ -219,8 +219,9 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if max_level < 1 or max_level > 5:
 		issues.append(ValidationIssue.new(&"range", resource_path, "max_level is 1..5"))
+	# v0.6.5 WN4: a Blade pool card is offered only in Blade runs
 	if kind == Kind.WAND and tags.has("blade") != (requires_weapon == &"blade"):
-		issues.append(  # v0.6.5 WN4: a Blade pool card is offered only in Blade runs
+		issues.append(
 			ValidationIssue.new(&"range", resource_path, "a blade pool card requires the blade")
 		)
 	if requires_ability != &"" and ability_kind(requires_ability) < 0:

@@ -172,6 +172,12 @@ static func parry(w: World, spec: AttackSpec, center: Vector2, angle: int) -> vo
 	p.remove_sorted(cut)
 
 
+## A burst of `spec` from `at`, radius `r` (Attacks._burst): a carrying shockwave (Finisher+) leaves the view's mark.
+static func on_burst(w: World, spec: AttackSpec, at: Vector2, r: float) -> void:
+	if spec.carry > 0:
+		_fx(w, FX_BURST, at, 0, r, 0.0)
+
+
 # --- Fissure and Orbit Blades (Attacks' BURST and ORBITER runners hand these over) ---------------------------------
 ## Burst `spec` with a length: a line from ctx.origin along ctx.angle, line_m long, radius_m wide. Its ON_END hooks
 ## fire at the line's far end. True if it landed a hit.
@@ -267,7 +273,12 @@ static func _advance_orbit(w: World) -> void:
 				if not AttackShapes.disc_touches(at, r, a.pos(i), a.radius[i]):
 					continue
 				var ctx := AttackContext.make(
-					at, b.o_phase[j], b.o_damage[j], b.o_root[j], Attacks.lingering_tags(spec), spec.effect_id
+					at,
+					b.o_phase[j],
+					b.o_damage[j],
+					b.o_root[j],
+					Attacks.lingering_tags(spec),
+					spec.effect_id
 				)
 				ctx.depth = b.o_depth[j]
 				ctx.proc_pct = b.o_proc[j]
@@ -337,6 +348,21 @@ static func read(w: World) -> Dictionary:
 		"parried": b.parried,
 		"counter_tick": b.counter_tick,
 		"knocked": b.k_ids.size(),
+	}
+
+
+## The current combo step's swing as its cards change it: the damage weight (× 1), the swing speed bonus (per mille),
+## and whether it lunges forward, knocks back or parries.
+static func swing_read(w: World) -> Dictionary:
+	if w.player.combo.is_empty() or not PlayerBuild.has_blade(w):
+		return {"weight": 1.0, "rate": 0, "lunge": false, "knockback": false, "parry": false}
+	var s := Modifiers.step(w, clampi(w.combo_step, 0, w.player.combo.size() - 1))
+	return {
+		"weight": s.damage_mul_permille / 1000.0,
+		"rate": s.rate_bonus_permille,
+		"lunge": s.step_m > 0.0,
+		"knockback": s.knockback_m > 0.0,
+		"parry": s.parry > 0,
 	}
 
 

@@ -162,8 +162,19 @@ static func particles_of(elements: Array) -> Array:
 
 
 ## Behaviour → motion cues: &"streak" (pierce), &"bounce_flash" (bounces), &"curve" (home), &"tether" (return).
+## v0.6.5 WN4 (the Blade pool): &"crescent" (a flying slash: a bolt with an arc's width; BladeFormView bows it),
+## &"spin" (an arc all round: Whirl), &"stab" (a thrust's motion), &"cut" (Parry Edge).
 static func cues_of(spec: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
+	var form := int(spec.get("form", -1))
+	if form == BOLT and int(spec.get("half_arc", 0)) > 0:
+		out.append(&"crescent")
+	if form == ARC and directions_of(spec) == DIR_CIRCLE:
+		out.append(&"spin")
+	if form == ARC and int(spec.get("motion", -1)) == WorldReader.MOTION_THRUST:
+		out.append(&"stab")
+	if form == ARC and int(spec.get("parry", 0)) > 0:
+		out.append(&"cut")
 	if int(spec.get("pierce", 0)) > 0:
 		out.append(&"streak")
 	if int(spec.get("bounces", 0)) > 0:

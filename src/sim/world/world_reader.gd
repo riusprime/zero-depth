@@ -774,6 +774,12 @@ func blade_forms() -> Dictionary:
 	return BladeForms.read(_w)
 
 
+## v0.6.5 WN4: how the current swing's cards change the swing itself, for the blade and the hero's pose
+## (BladeForms.swing_read: weight, rate, lunge, knockback, parry).
+func blade_swing() -> Dictionary:
+	return BladeForms.swing_read(_w)
+
+
 ## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
 func attack_digest() -> String:
 	return Modifiers.book(_w).digest
