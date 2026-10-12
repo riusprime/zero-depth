@@ -261,14 +261,12 @@ func test_the_read_back_renders_in_english_and_spanish() -> void:
 	TranslationServer.set_locale("es")
 	var es := Wand.render(lines, tr_now)
 	TranslationServer.set_locale(was)
-	assert_eq(
-		en, "You fire a bolt shaped by Split. Each hit casts a small bolt shaped by Ember Core."
-	)
+	assert_eq(en, "You fire a bolt shaped by Split. Each hit casts a small bolt shaped by Fire.")
 	assert_eq(
 		es,
 		(
 			"Disparas un proyectil moldeado por División. Cada impacto lanza un proyectil pequeño"
-			+ " moldeado por Núcleo de Brasa."
+			+ " moldeado por Fuego."
 		)
 	)
 
