@@ -26,3 +26,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - 2026-10-12: BR done (Siege Engine arena 3×1 → 3×3; data only, plus tests).
 - 2026-10-12: WN1 built on a session branch (agent): the wand compiler, the four trigger cards, slots 4 → 6 → 8, the
   reorder input, payload 4. Not pushed; the lead's one full suite per wave is pending.
+- 2026-10-12: wave BR + WN1, the lead's one full suite on `fb7dab3` from a clean worktree (`bash scripts/verify.sh`):
+  `verify exit 0`, `Tests 1442`, `Passing Tests 1442`, `check_gut_log: ok (1442 passing, minimum 1405)`.
+  MIN_TEST_COUNT 1405 → 1442. Pushed.
