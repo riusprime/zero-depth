@@ -452,17 +452,17 @@ func test_the_pool_draws_every_item_without_repeats() -> void:
 	var all := ItemPool.draw(w, 99)
 	assert_eq(
 		all.size(),
-		41,
+		46,
 		(
 			"everything but the owned one (v0.6.0 MX4: the M-list's 24 usable here too; v0.6.5 WN3: the Gun"
 			+ " pool's 12; WN4: the Blade pool's 12 new cards and Blade Orbit, no longer an ability merge): 72;"
-			+ " v0.6.5 WN5b: − the 31 retired v0.6 cards usable here"
+			+ " v0.6.5 WN5b: − the 26 retired v0.6 cards usable here"
 		)
 	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
 		w.add_pickup(i, Vector2(5, 5))
-	assert_eq(seen.size(), 41)
+	assert_eq(seen.size(), 46)
 	assert_false(seen.has(_index(K.MOMENTUM)))
 	assert_eq(ItemPool.draw(w, 3).size(), 0, "all placed: nothing left to draw")
