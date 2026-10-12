@@ -22,6 +22,9 @@ var audio := AudioDirector.new()
 ## v0.4.0 SV: the run save (room entries, close, Continue).
 var saves: RunSaver
 
+## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
+## every run and floor is compiled.
+var tuning := DevTuning.load_saved()
 var _menu: Control
 var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
@@ -193,7 +196,7 @@ func show_gallery() -> void:
 ## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor.
 func start_stage() -> void:
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	var build := StringName(profile.section("loadout").get("build", "blade"))
@@ -210,7 +213,7 @@ func continue_run() -> void:
 		show_main_menu()
 		return
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	_stage_seed = int(save["run"]["stage_seed"])
@@ -225,7 +228,7 @@ func continue_run() -> void:
 ## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	if repo == null:
-		repo = ContentRepository.load_all()
+		repo = _content()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
@@ -491,3 +494,9 @@ static func _drop(n: Node) -> void:
 	if n.get_parent() != null:
 		n.get_parent().remove_child(n)
 	n.queue_free()
+
+
+## The content with the dev panel's overrides written in (none: the shipped game).
+func _content() -> ContentRepository:
+	tuning.apply()
+	return ContentRepository.load_all()
