@@ -40,3 +40,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - 2026-10-12: WN3 built on a session branch (agent): the 16 Gun cards (12 new, 4 v0.6 cards turned Gun cards with
   their ids), card levels 1–5, the twin / spiral / mine / charge runners and their looks. Not pushed; the lead's one
   full suite per wave is pending.
+- 2026-10-12: owner: "Before the final push to main there is another branch with other updates that you need to merge
+  with both and keep all the changes and then push to main the two versions merged, the branch is
+  claude/keen-volta-ht74pz". Plan: merge keen-volta (at `cc843cb`: the dev panel Steps 1–6, the lighting pass, fire
+  patches) into this branch in the WN2–WN4 wave, so the wave's one full suite covers both; then the PR into `main`.
