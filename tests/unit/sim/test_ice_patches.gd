@@ -130,7 +130,7 @@ func test_patches_keep_their_rules_over_1000_seeds() -> void:
 		)
 	)
 	assert_eq(broken, {}, "no rule broken (rule -> first seed)")
-	assert_gt(floors_with_ice, SEEDS * 0.8, "most Frozen Shore floors have ice")
+	assert_gt(floors_with_ice, SEEDS * 8 / 10, "most Frozen Shore floors have ice")
 	assert_lt(total, SEEDS * 12, "ice stays a few patches a floor, not a rink")
 
 

@@ -1,12 +1,13 @@
 extends GutTest
-## v0.7.5 NB1 (owner N2) in the real game, by input events only (Input.parse_input_event): Play, then Restart run twice
-## from the pause menu, reaches run seed 20261008, whose first floor is Frozen Shore (the run's biome draw from four).
-## The HUD names it, the floor is lit by its cold mood and dressed with its look (the frozen sea past the edge, snow
-## and ice instead of grass and rubble), its ambience loop plays, and its ice is in the sim. Walking onto a patch with
-## the stick puts the hero on ice, and letting go there slides: the hero is still moving after the time a stop takes
-## on dry ground. Reads of nodes are fine.
+## v0.7.5 NB1 (owner N2) in the real game, by input events only (Input.parse_input_event): Play, then Restart run from
+## the pause menu until a run's first floor is Frozen Shore (the run's biome draw; run seed 20261008 today, two
+## restarts, and the loop keeps the test right when another biome joins the draw). The HUD names it, the floor is lit
+## by its cold mood and dressed with its look (the frozen sea past the edge, snow and ice instead of grass and
+## rubble), its ambience loop plays, and its ice is in the sim. Walking onto a patch with the stick puts the hero on
+## ice, and letting go there slides: the hero is still moving after the time a stop takes on dry ground. Reads of
+## nodes are fine.
 
-const FROZEN_SEED := 20261008
+const MAX_RESTARTS := 12
 
 
 func after_each() -> void:
@@ -28,10 +29,11 @@ func test_frozen_shore_is_reached_drawn_and_its_ice_slides() -> void:
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	await e.frames(3)
-	await _restart(e)
-	await _restart(e)
-	assert_eq(main.run.run_seed, FROZEN_SEED, "two restarts: the run seed this test knows")
-	assert_eq(main.run_biome_id(), &"frozen_shore", "floor 1 is Frozen Shore")
+	for k in MAX_RESTARTS:
+		if main.run_biome_id() == &"frozen_shore":
+			break
+		await _restart(e)
+	assert_eq(main.run_biome_id(), &"frozen_shore", "a run whose floor 1 is Frozen Shore")
 	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"frozen_shore")
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_eq(hud.floor_text(), tr("HUD_FLOOR") % [1, tr("BIOME_FROZEN_SHORE")], "the HUD names it")

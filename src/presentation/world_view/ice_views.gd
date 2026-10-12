@@ -6,16 +6,16 @@ extends Node3D
 ## glance, and a few dark hairline cracks. Lit by the scene (it is ground, not a warning: ice never hurts), never
 ## casts a shadow. Its facet shades and cracks come from the cosmetic stream. Presentation only.
 
-const ICE := Color("#A9D6EE")
+const ICE := Color("#C8E8F6")
 const RIM := Color("#F2FAFF")
 const CRACK := Color("#4F7FA6")
 const GLOW := Color("#7FC2E8")
 ## Height above the ground (the rim a hair higher, the cracks higher still), so nothing z-fights.
 const LIFT := 0.014
-const RIM_W := 0.09
+const RIM_W := 0.12
 const FACET_M := 1.0
 ## Facet shade spread (±) and cracks per square metre.
-const SHADE := 0.07
+const SHADE := 0.12
 const CRACKS_PER_M2 := 0.12
 
 var patch_count := 0
@@ -49,12 +49,12 @@ static func sheet_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.vertex_color_use_as_albedo = true
 	m.albedo_color = Color.WHITE
-	m.roughness = 0.08
-	m.metallic_specular = 1.0
+	m.roughness = 0.28
+	m.metallic_specular = 0.9
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.emission_enabled = true
 	m.emission = GLOW
-	m.emission_energy_multiplier = 0.12
+	m.emission_energy_multiplier = 0.3
 	return m
 
 

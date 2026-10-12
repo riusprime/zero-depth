@@ -13,7 +13,7 @@ const STYLES: Array[StringName] = [&"water"]
 const WATER_Y := -0.45
 const BANK_FOOT := -0.6
 const BANK_LIP := 0.14
-const SEA_MARGIN := 40.0
+const SEA_MARGIN := 150.0
 ## Floes: how many per square metre of open water near the floor, how far out they float, their sizes (m).
 const FLOE_DENSITY := 0.05
 const FLOE_REACH := 9.0
@@ -44,11 +44,11 @@ void fragment() {
 	vec2 p = floor(world.xz * 1.5) / 1.5;
 	float a = sin(p.x * 0.9 + t) + sin(p.y * 1.3 - t * 0.8) + sin((p.x + p.y) * 0.6 + t * 0.5);
 	float b = cos(p.x * 1.1 - t * 0.7) + cos(p.y * 0.8 + t * 0.6);
-	vec3 n = normalize(vec3(a * 0.06, 1.0, b * 0.06));
+	vec3 n = normalize(vec3(a * 0.035, 1.0, b * 0.035));
 	NORMAL = normalize((VIEW_MATRIX * vec4(n, 0.0)).xyz);
 	ALBEDO = mix(deep.rgb, shallow.rgb, clamp(0.5 + a * 0.12, 0.0, 1.0));
-	ROUGHNESS = 0.18;
-	SPECULAR = 0.7;
+	ROUGHNESS = 0.3;
+	SPECULAR = 0.45;
 }
 """
 
