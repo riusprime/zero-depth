@@ -60,14 +60,101 @@ static func take_move(w: World, frame: InputFrame) -> InputFrame:
 ## Moves the card in slot `from` to slot `to` (the cards between shift one slot toward `from`); the build compiles
 ## again on the next read. False (nothing changes) when either slot is empty or they are the same.
 static func move(w: World, from: int, to: int) -> bool:
-	var n := w.mod_slots.size()
-	if from < 0 or to < 0 or from >= n or to >= n or from == to:
+	if not can_move(w.mod_slots.size(), from, to):
 		return false
-	var code := w.mod_slots[from]
-	w.mod_slots.remove_at(from)
-	w.mod_slots.insert(to, code)
+	w.mod_slots = moved_order(w.mod_slots, from, to)
 	Modifiers.invalidate(w)
 	return true
+
+
+## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (both held, not the same).
+static func can_move(n: int, from: int, to: int) -> bool:
+	return from >= 0 and to >= 0 and from < n and to < n and from != to
+
+
+## v0.6.5 WN2: `order` with the card in slot `from` moved to slot `to` (a copy; the cards between shift by one): the
+## one rule move() applies, so the Build page's preview and the sim's outcome are the same function (EI-07). A move
+## that changes nothing (can_move) gives an unchanged copy.
+static func moved_order(order: PackedInt32Array, from: int, to: int) -> PackedInt32Array:
+	var out := order.duplicate()
+	if not can_move(out.size(), from, to):
+		return out
+	var code := out[from]
+	out.remove_at(from)
+	out.insert(to, code)
+	return out
+
+
+## v0.6.5 WN2: a wand read (read()) with the card in slot `from` moved to slot `to` (moved_order's rule), its cuts
+## found again: what read() gives after the move, for the Build page's live preview and read-back (describe).
+static func moved_read(wand: Dictionary, from: int, to: int) -> Dictionary:
+	var cards: Array = wand.get("cards", [])
+	var idx := PackedInt32Array()
+	for k in cards.size():
+		idx.append(k)
+	idx = moved_order(idx, from, to)
+	var moved: Array[Dictionary] = []
+	for k in idx:
+		moved.append(cards[k])
+	return _with_cards(wand, moved)
+
+
+## A copy of the wand read `wand` holding `cards` (in slot order), its cuts found again.
+static func _with_cards(wand: Dictionary, cards: Array[Dictionary]) -> Dictionary:
+	var out := wand.duplicate()
+	var cuts := PackedInt32Array()
+	for k in cards.size():
+		if int(cards[k]["trigger"]) >= 0:
+			cuts.append(k)
+	out["cards"] = cards
+	out["cuts"] = cuts
+	return out
+
+
+## v0.6.5 WN2 (the Swap panel): a wand read (read(), with its "incoming" card) after the swap answer "the card in
+## slot `leave` leaves" and then the move of the new card from that slot to `at`: BuildSlots.take's rule (the new card
+## takes the slot it replaces) and moved_order's, so the panel's preview is what the sim will hold. `at` = `leave` is a
+## plain replace; another `at` inserts the new card there. An unchanged copy without an incoming card or a held `leave`.
+static func swapped_read(wand: Dictionary, leave: int, at: int) -> Dictionary:
+	var cards: Array = wand.get("cards", [])
+	var incoming: Dictionary = wand.get("incoming", {})
+	var out := wand.duplicate()
+	if incoming.is_empty() or leave < 0 or leave >= cards.size():
+		return out
+	var replaced: Array[Dictionary] = []
+	for c: Dictionary in cards:
+		replaced.append(c)
+	replaced[leave] = incoming
+	out = _with_cards(out, replaced)
+	out["incoming"] = {}
+	return moved_read(out, leave, clampi(at, 0, cards.size() - 1))
+
+
+## v0.6.5 WN2: the picks (in order, one per tick) that give swapped_read(leave, at): the answer that replaces slot
+## `leave`, then the move of the new card to `at` when it goes elsewhere.
+static func swap_picks(leave: int, at: int) -> PackedInt32Array:
+	var out := PackedInt32Array([InputFrame.PICK_SWAP_BASE + leave])
+	if at != leave:
+		out.append(InputFrame.wand_move(leave, at))
+	return out
+
+
+## v0.6.5 WN2: the fewest wand moves (pick values, InputFrame.wand_move) that turn the order `from` into `to` (the
+## same cards; each card's code appears once): at most one per slot, applied in turn by move(). Empty when they are
+## already equal or hold different cards.
+static func plan_moves(from: PackedInt32Array, to: PackedInt32Array) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if from.size() != to.size():
+		return out
+	var cur := from.duplicate()
+	for k in to.size():
+		var at := cur.find(to[k])
+		if at < 0:
+			return PackedInt32Array()
+		if at != k:
+			out.append(InputFrame.wand_move(at, k))
+			cur = moved_order(cur, at, k)
+	return out
 
 
 # --- Reads ------------------------------------------------------------------------------------------------------
@@ -91,31 +178,37 @@ static func trigger_of(w: World, code: int) -> int:
 
 ## The wand as the views read it (WorldReader.wand): the weapon (&"gun" or &"blade": what the spell is), the slot
 ## count, every card in slot order (code, id, name_key, type, level, trigger: -1 or the AttackSpec.Trigger it cuts
-## on) and the cuts (the slots holding a trigger, in order).
+## on) and the cuts (the slots holding a trigger, in order). v0.6.5 WN2: while a swap waits, "incoming" is the card
+## offered, in the same shape (level 1; empty otherwise), so the Swap panel can preview it in the row.
 static func read(w: World) -> Dictionary:
 	var out: Array[Dictionary] = []
 	var cuts := PackedInt32Array()
 	for s in w.mod_slots.size():
-		var code := w.mod_slots[s]
-		var info := Offers.info(w, code)
-		var trig := trigger_of(w, code)
-		if trig >= 0:
+		var c := _card(w, w.mod_slots[s], BuildSlots.level_at(w, s))
+		if int(c["trigger"]) >= 0:
 			cuts.append(s)
-		(
-			out
-			. append(
-				{
-					"code": code,
-					"id": info["id"],
-					"name_key": info["name_key"],
-					"type": info["type"],
-					"level": BuildSlots.level_at(w, s),
-					"trigger": trig,
-				}
-			)
-		)
+		out.append(c)
 	var gun := PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w)
-	return {"weapon": &"gun" if gun else &"blade", "slots": slots(w), "cards": out, "cuts": cuts}
+	var incoming := _card(w, w.swap_code, 1) if BuildSlots.swapping(w) else {}
+	return {
+		"weapon": &"gun" if gun else &"blade",
+		"slots": slots(w),
+		"cards": out,
+		"cuts": cuts,
+		"incoming": incoming,
+	}
+
+
+static func _card(w: World, code: int, level: int) -> Dictionary:
+	var info := Offers.info(w, code)
+	return {
+		"code": code,
+		"id": info["id"],
+		"name_key": info["name_key"],
+		"type": info["type"],
+		"level": level,
+		"trigger": trigger_of(w, code),
+	}
 
 
 ## The plain-words read-back of a wand read (read()): an Array of lines, each {"key": a translation key, "args": its

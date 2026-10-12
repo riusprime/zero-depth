@@ -740,3 +740,21 @@ WAND_READ_ON_END,"Where it ends, it casts %s.","Donde termina, lanza %s."
 WAND_READ_ON_FINISHER,The combo's last hit casts %s.,El último golpe del combo lanza %s.
 WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
 WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.
+UI_BUILD,Build,Construcción
+UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
+UI_BUILD_SLOTS,%d of %d slots · the wand reads left to right,%d de %d huecos · la varita se lee de izquierda a derecha
+UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
+UI_WAND_LEVEL,Lv %d,Nv %d
+UI_WAND_NEW,New,Nueva
+UI_WAND_EMPTY,Empty,Vacío
+UI_WAND_CUT_FIRE,the shot you fire,el disparo que lanzas
+UI_WAND_CUT_ON_HIT,cast on hit →,se lanza al impactar →
+UI_WAND_CUT_ON_KILL,cast on kill →,se lanza al matar →
+UI_WAND_CUT_ON_END,cast where it ends →,se lanza donde termina →
+UI_WAND_CUT_ON_FINISHER,cast on the finisher →,se lanza en el remate →
+UI_WAND_CUT_ON_CRIT,cast on a crit →,se lanza en un crítico →
+UI_WAND_CUT_UNUSED,too deep to cast,demasiado profundo para lanzarse
+UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿dónde va?
+UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
+UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro
+UI_SWAP_HINT_MORE,I / X insert the new card · R / Y move a card · mouse: drag a card,I / X insertar la carta nueva · R / Y mover una carta · ratón: arrastra una carta

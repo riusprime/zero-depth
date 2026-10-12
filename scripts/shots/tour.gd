@@ -50,8 +50,10 @@ func _initialize() -> void:
 		[342, _shot.bind("05_pause")],
 		[344, _key.bind(KEY_DOWN, true)],
 		[345, _key.bind(KEY_DOWN, false)],
-		[346, _key.bind(KEY_ENTER, true)],
-		[347, _key.bind(KEY_ENTER, false)],
+		[346, _key.bind(KEY_DOWN, true)],  # v0.6.5 WN2: past Build
+		[347, _key.bind(KEY_DOWN, false)],
+		[348, _key.bind(KEY_ENTER, true)],
+		[349, _key.bind(KEY_ENTER, false)],
 		[354, _key.bind(KEY_DOWN, true)],
 		[355, _key.bind(KEY_DOWN, false)],
 		[356, _key.bind(KEY_ENTER, true)],

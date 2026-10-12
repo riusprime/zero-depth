@@ -11,6 +11,9 @@ const FULL_TILT := 0.85
 var _pressed := 0
 var _held := 0
 var _pick := InputFrame.PICK_NONE
+## v0.6.5 WN2: picks waiting their turn, one per frame, in the order noted: the wand moves (queue_wand_move) and any
+## pick noted while a move still waits (so a Swap answer given after a reorder reaches the sim after it).
+var _queue := PackedInt32Array()
 
 
 ## Records a press edge (from an input event); it is delivered on the next frame only.
@@ -25,7 +28,33 @@ func note_released(bit: int) -> void:
 
 ## Records a 3-card pick (1..3) or InputFrame.PICK_CANCEL (v0.3.0 E); delivered on the next frame only.
 func note_pick(value: int) -> void:
-	_pick = value
+	if _queue.is_empty():
+		_pick = value
+	else:
+		_queue.append(value)
+
+
+## v0.6.5 WN2 (the Build page and the Swap panel's reorder): queues a wand move (InputFrame.wand_move); the queue is
+## delivered one pick per frame, after a pick already latched. The pause menu stops the ticks, so moves made there
+## wait here and reach the sim on the first ticks after it closes (EI-03, EI-04).
+func queue_wand_move(value: int) -> void:
+	_queue.append(value)
+
+
+## v0.6.5 WN2: the picks not yet delivered (the latched one first, then the queue), so a view can show what the sim
+## will get (the Build page opened again before the ticks resume).
+func pending_picks() -> PackedInt32Array:
+	var out := PackedInt32Array()
+	if _pick != InputFrame.PICK_NONE:
+		out.append(_pick)
+	out.append_array(_queue)
+	return out
+
+
+## v0.6.5 WN2: forgets the button presses latched while the game was paused (a click on the Build page is not a
+## swing); held buttons stay as the device says.
+func drop_presses() -> void:
+	_pressed = 0
 
 
 ## Builds this tick's frame and clears the latched presses.
@@ -41,6 +70,9 @@ func close_frame(move_screen: Vector2, aim_world: Vector2, aim_dist_m: float) ->
 	_pressed = 0
 	f.pick = _pick
 	_pick = InputFrame.PICK_NONE
+	if f.pick == InputFrame.PICK_NONE and not _queue.is_empty():
+		f.pick = _queue[0]
+		_queue.remove_at(0)
 	return f
 
 

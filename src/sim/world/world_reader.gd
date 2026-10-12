@@ -1728,6 +1728,42 @@ func wand_read_back() -> Array[Dictionary]:
 	return Wand.describe(Wand.read(_w))
 
 
+## v0.6.5 WN2: a wand read (wand()) with the card in slot `from` moved to slot `to`: the rule the sim's reorder
+## applies (Wand.moved_read), so the Build page's preview is the outcome it will get (EI-07).
+static func wand_moved(wand_read: Dictionary, from: int, to: int) -> Dictionary:
+	return Wand.moved_read(wand_read, from, to)
+
+
+## v0.6.5 WN2: the plain-words read-back of any wand read (Wand.describe), e.g. a preview from wand_moved.
+static func wand_describe(wand_read: Dictionary) -> Array[Dictionary]:
+	return Wand.describe(wand_read)
+
+
+## v0.6.5 WN2: describe()'s lines in words (Wand.render; `translate` is the view's tr).
+static func wand_render(lines: Array[Dictionary], translate: Callable) -> String:
+	return Wand.render(lines, translate)
+
+
+## v0.6.5 WN2: the wand moves (pick values) that turn the card order `from` into `to` (Wand.plan_moves).
+static func wand_plan_moves(from: PackedInt32Array, to: PackedInt32Array) -> PackedInt32Array:
+	return Wand.plan_moves(from, to)
+
+
+## v0.6.5 WN2: a wand read with its incoming card swapped in for slot `leave` and moved to `at` (Wand.swapped_read:
+## the rules the sim's swap answer and reorder apply), and the picks that do it (Wand.swap_picks).
+static func wand_swapped(wand_read: Dictionary, leave: int, at: int) -> Dictionary:
+	return Wand.swapped_read(wand_read, leave, at)
+
+
+static func wand_swap_picks(leave: int, at: int) -> PackedInt32Array:
+	return Wand.swap_picks(leave, at)
+
+
+## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (Wand.can_move).
+static func wand_can_move(n: int, from: int, to: int) -> bool:
+	return Wand.can_move(n, from, to)
+
+
 ## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).
 func swapping() -> bool:
 	return BuildSlots.swapping(_w)
