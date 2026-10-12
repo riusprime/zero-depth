@@ -58,3 +58,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   with both and keep all the changes and then push to main the two versions merged, the branch is
   claude/keen-volta-ht74pz". Plan: merge keen-volta (at `cc843cb`: the dev panel Steps 1–6, the lighting pass, fire
   patches) into this branch in the WN2–WN4 wave, so the wave's one full suite covers both; then the PR into `main`.
+- 2026-10-12: the every-card soak (`tests/unit/sim/test_combos.gd`, now all 91 items at once) peaks at 385 events in
+  one tick (5861 over 5000 ticks; the watchdog, 512, never fires). Owner, after the numbers: "It's okay let's leave it
+  like that then". The soak's bound is now the real watchdog (`Engines.MAX_EVENTS_PER_TICK`, 512); T-FUZZ keeps ≤ 256
+  for builds of 10–30 stacks (TEST_MATRIX unchanged). Tick time at the peak: NOT YET RUN.
