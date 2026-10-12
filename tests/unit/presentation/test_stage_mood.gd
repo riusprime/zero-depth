@@ -88,3 +88,6 @@ func test_the_grade_tints_shadows_and_highlights() -> void:
 	assert_almost_eq(env.adjustment_contrast, 1.12, 0.001)
 	assert_almost_eq(env.glow_hdr_threshold, 0.85, 0.001)
 	assert_false(_stage(BiomeMood.new()).environment.adjustment_enabled, "no grade, no adjustment")
+	m.glow_spread = 0.7
+	var wide := _stage(m).environment
+	assert_gt(wide.get_glow_level(4), 0.0, "a wide glow level is on")

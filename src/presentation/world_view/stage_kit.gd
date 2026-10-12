@@ -113,7 +113,8 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	flame.mesh = m
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = mood.warm_light_color
+	# HDR (over 1) so it crosses the glow threshold and blooms (lighting pass, 2026-10-12).
+	mat.albedo_color = mood.warm_light_color * 2.4
 	mat.emission_enabled = true
 	mat.emission = mood.warm_light_color
 	mat.emission_energy_multiplier = 3.0

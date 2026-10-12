@@ -170,6 +170,28 @@ func status(p: Vector3, r: float, on: Dictionary, sd: int, top: float = 0.9) -> 
 		mark(_status_key(sd, 2, 0), &"frost", p, r * 2.4, FROST_MARK)
 
 
+## A fire prop's flames (a barrel or a brazier) at `p`, the top of its fire: three tongues swapping shape and a few
+## embers. The prop has its own light (StageKit); this is the flame you see, bright enough to bloom (owner,
+## 2026-10-12: the torch flames should halo, not stay flat).
+func prop_fire(p: Vector3, sd: int) -> void:
+	var age := _now
+	for k in 3:
+		var a := TAU * (k / 3.0 + h(sd, k))
+		var q := p + Vector3(cos(a), 0, sin(a)) * 0.07 * float(k > 0)
+		var beat := 0.85 + 0.15 * sin(age * (0.4 + 0.15 * h(sd + 1, k)) + TAU * h(sd + 2, k))
+		var hgt := (0.62 if k == 0 else 0.42 + 0.12 * h(sd + 3, k)) * beat
+		var cell := (k + int(age / (8.0 + 4.0 * h(sd, k + 40)))) % 4
+		_put(
+			&"flame",
+			_facing(q, hgt * 0.7, hgt, false),
+			Color(2.2, 1.8, 1.4, 1.0),
+			cell,
+			0.0,
+			h(sd, k) * 10.0
+		)
+	_embers(p, age, sd, 2, 1.0)
+
+
 static func _status_key(sd: int, kind: int, slot: int) -> int:
 	return -((sd * 4096 + slot) * MARK_KINDS + kind) - 1
 

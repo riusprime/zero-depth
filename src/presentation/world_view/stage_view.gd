@@ -121,6 +121,11 @@ func _build_environment() -> void:
 		env.glow_intensity = mood.glow_intensity
 		env.glow_hdr_threshold = mood.glow_threshold
 		env.glow_bloom = mood.glow_bloom
+		if mood.glow_spread > 0.0:  # wider levels: bright sources halo, not just their own pixels
+			for lv: Array in [[2, 1.0], [3, 0.9], [4, 0.75], [5, 0.55]]:
+				env.set_glow_level(
+					int(lv[0]), float(lv[1]) * (1.0 if lv[0] == 2 else mood.glow_spread)
+				)
 		var grade := mood.grade_texture()
 		if grade != null or mood.contrast != 1.0 or mood.saturation != 1.0:
 			env.adjustment_enabled = true

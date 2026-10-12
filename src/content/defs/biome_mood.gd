@@ -47,6 +47,8 @@ extends Resource
 ## blooms) and how much of the whole image bleeds into it.
 @export var glow_threshold := 1.0
 @export var glow_bloom := 0.0
+## How wide the glow spreads (0: Godot's narrow default levels; 1: wide halos round bright sources).
+@export var glow_spread := 0.0
 ## The grade: shadows pulled toward `grade_shadows`, highlights toward `grade_highlights` (a teal-orange split tone),
 ## by `grade_strength` (0: none). Contrast and saturation over the whole image (1: unchanged).
 @export var grade_shadows := Color(0.5, 0.5, 0.5)
@@ -78,6 +80,7 @@ func problems() -> PackedStringArray:
 		["hero_light_range", hero_light_range, 0.5, 15.0],
 		["glow_threshold", glow_threshold, 0.0, 4.0],
 		["glow_bloom", glow_bloom, 0.0, 1.0],
+		["glow_spread", glow_spread, 0.0, 1.0],
 		["grade_strength", grade_strength, 0.0, 1.0],
 		["contrast", contrast, 0.5, 2.0],
 		["saturation", saturation, 0.0, 2.0],

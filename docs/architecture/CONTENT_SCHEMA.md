@@ -466,7 +466,7 @@ class_name BiomeDefinition extends Resource
   - ambient colour and energy;
   - void colour and AgX exposure;
   - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
-  - fog, glow (intensity, threshold, bloom) and the vignette;
+  - fog, glow (intensity, threshold, bloom, spread) and the vignette;
   - the warm light colour, energy and range that fire props use;
   - the hero light's energy and range;
   - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass

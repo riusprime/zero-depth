@@ -50,6 +50,21 @@ The 4 fire props nearest the camera already cast shadows on High (StageKit.SHADO
 - **Test:** `test_the_grade_tints_shadows_and_highlights` (test_stage_mood.gd).
 - **Mockup:** `mock_look.gd -- variants=B` (and `focus=light`), before at `4f4e644` and after.
 
+**Owner, 2026-10-12, on the first proposal:** "the last 10–15%: the reference pushes it further in two places. One,
+the light sources themselves bloom — the torch flames and glowing objects halo a bit, yours pool light on the
+ground but the sources stay flat. Two, the corners go properly black; yours still holds detail everywhere, which
+flattens the depth. A touch more glow in the WorldEnvironment and dropping the ambient a hair would get you there."
+
+Second proposal:
+- **Sources bloom:**
+  - each fire prop now carries real flames from the effects layer (`VfxLayer.prop_fire`, HDR so they bloom);
+  - the prop's core is HDR;
+  - a new `glow_spread` (0.7) turns on Godot's wider glow levels, so bright sources halo;
+  - glow 1.2, threshold 0.8.
+- **Corners black:** ambient 0.15 (Ruins), 0.17 (Night Rocks), 0.2 (Red Canyon); contrast 1.18 (Red Canyon 1.15);
+  vignette 0.55 (Red Canyon 0.5).
+
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| G2 Lighting pass (before / after, mock_look.gd) | 2026-10-12 | OWNER ONLY | — |
+| G2 Lighting pass (before / after, mock_look.gd) | 2026-10-12 | direction kept; "the last 10–15%": sources bloom, corners black | 2026-10-12 |
+| G2 Lighting pass, second proposal | 2026-10-12 | OWNER ONLY | — |

@@ -219,3 +219,11 @@ func test_overlapping_fire_patches_thin_out() -> void:
 	)
 	assert_lte(_vfx.lights_on(), 2, "one light per cluster")
 	assert_lte(_vfx.marks_of(&"scorch"), 3, "no stack of scorches")
+
+
+## Lighting pass (owner, 2026-10-12): a fire prop draws real flames (bright enough to bloom).
+func test_a_fire_prop_draws_flames_that_bloom() -> void:
+	_vfx.begin(10.0)
+	_vfx.prop_fire(Vector3(1, 1, 1), 5)
+	_vfx.finish()
+	assert_eq(_vfx.used(&"flame"), 3, "three tongues (their HDR colour is not readable headless)")
