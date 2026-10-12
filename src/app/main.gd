@@ -30,6 +30,7 @@ var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
 var _pause_options: OptionsMenu
 var _dev: DevPanel
+var _devm: DevMasterPanel
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -78,6 +79,15 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (  # the master dev panel (docs/tools/DEV_PANEL.md): every build, anywhere
+		event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and event.physical_keycode == KEY_F10
+	):
+		get_viewport().set_input_as_handled()
+		_toggle_master_panel()
+		return
 	if (
 		driver != null
 		and event is InputEventKey
@@ -411,6 +421,48 @@ func toggle_dev_panel() -> void:
 	ui.add_child(_dev)
 
 
+## Opens or closes the master dev panel (F10). In a run it pauses the sim and carries the debug tools.
+func _toggle_master_panel() -> void:
+	if _devm != null:
+		_close_master_panel()
+		return
+	var tools: Control = null
+	if driver != null:
+		if driver.debug == null:
+			driver.debug = DebugApi.new(driver.world)
+			driver.debug.reseed_requested.connect(_reseed)
+		tools = DevPanel.new(driver.debug)
+		driver.paused = true
+	_devm = DevMasterPanel.new(tuning, tools)
+	_devm.changed.connect(_on_tuning_changed)
+	_devm.restart_requested.connect(_restart_floor)
+	_devm.close_requested.connect(_close_master_panel)
+	ui.add_child(_devm)
+
+
+func _close_master_panel() -> void:
+	if _devm != null:
+		_drop(_devm)
+		_devm = null
+	if driver != null and _pause == null:
+		driver.paused = false
+
+
+## Rebuilds the run's current floor from the (tweaked) content: the dev panel's Restart floor.
+func _restart_floor() -> void:
+	if run == null:
+		return
+	_close_master_panel()
+	_end_floor()
+	_start_floor()
+
+
+## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the
+## next spawns or Restart floor.
+func _on_tuning_changed(_key: String) -> void:
+	pass
+
+
 func is_dev_panel_open() -> bool:
 	return _dev != null
 
@@ -477,11 +529,12 @@ func _end_stage() -> void:
 func _end_floor() -> void:
 	close_pause()
 	audio.detach()
-	for n in [_hud, _end, _dev, driver, view, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
 	_end = null
 	_dev = null
+	_devm = null
 	driver = null
 	view = null
 

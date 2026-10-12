@@ -720,3 +720,20 @@ ITEM_INFERNO_CORE_DESC,Legendary: hits burn twice; kills burst in big flames.,Le
 ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
 ITEM_ECHO_STORM_DESC,Legendary: every slash flies on as 3 crescents (80%).,Legendario: cada tajo vuela como 3 medias lunas (80%).
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
+UI_DEVM_TITLE,Dev panel (F10),Panel de desarrollo (F10)
+UI_DEVM_SEARCH,Search,Buscar
+UI_DEVM_RESTART,Restart floor,Reiniciar piso
+UI_DEVM_RESET_ALL,Reset all,Restablecer todo
+UI_DEVM_COPY,Copy changes,Copiar cambios
+UI_DEVM_CLOSE,Close,Cerrar
+UI_DEVM_RESET,Reset,Restablecer
+UI_DEVM_COPIED,Copied %d changes,%d cambios copiados
+UI_DEVM_CHANGES,%d changes,%d cambios
+UI_DEVM_G_LIGHTING,Lighting,Iluminación
+UI_DEVM_G_PLAYER,Player,Jugador
+UI_DEVM_G_ENEMIES,Enemies,Enemigos
+UI_DEVM_G_BOSSES,Bosses,Jefes
+UI_DEVM_G_DIFFICULTY,Spawning and difficulty,Aparición y dificultad
+UI_DEVM_G_ECONOMY,Economy,Economía
+UI_DEVM_G_BUILD,Build pieces,Piezas de build
+UI_DEVM_G_TOOLS,Tools,Herramientas
