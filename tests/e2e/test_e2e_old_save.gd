@@ -3,7 +3,7 @@ extends GutTest
 ## without a match is refunded as shards") through main.tscn with real input only: a run save recorded with v0.6.1's
 ## code (tests/fixtures/saves/v061_blade_floor1.save: Long Edge, Orbit Blades level 2, Ember Core, Twin Cast, Drone
 ## Buddy, Echo Storm) is in the save store; the menu offers Continue, Enter resumes it, and the wand holds the new
-## cards in pick order with the rest refunded as shards.
+## cards in pick order (Ember Core stays: WN5a kept it as S1 Fire) with the Drone refunded as shards.
 
 const SAVE := "res://tests/fixtures/saves/v061_blade_floor1.save"
 
@@ -35,14 +35,16 @@ func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
 	for c: Dictionary in main.driver.reader.wand()["cards"]:
 		ids.append(c["id"])
 		levels.append(int(c["level"]))
-	assert_eq(ids, [&"wide_arc", &"blade_orbit", &"double_slash", &"echo_slash"], "in pick order")
-	assert_eq(levels, [1, 2, 1, 5], "Orbit Blades' level 2 carries; Echo Storm is Wave at level 5")
-	var refund := (
-		w.shop_table.sell_price(0, w.floor_index) + w.shop_table.ability_refund_per_level * 1
+	assert_eq(
+		ids,
+		[&"wide_arc", &"blade_orbit", &"ember_core", &"double_slash", &"echo_slash"],
+		"in pick order"
 	)
 	assert_eq(
-		w.shards, saved_shards + refund, "Ember Core and the Drone refunded at the salvage price"
+		levels, [1, 2, 1, 1, 5], "Orbit Blades' level 2 carries; Echo Storm is Wave at level 5"
 	)
+	var refund := w.shop_table.ability_refund_per_level * 1  # the Drone (no row); Ember Core is S1
+	assert_eq(w.shards, saved_shards + refund, "the Drone refunded at the salvage price")
 	var t0 := w.tick
 	await e.frames(10)
 	assert_gt(w.tick, t0, "and the run goes on")

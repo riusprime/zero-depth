@@ -47,7 +47,7 @@ func _retired_code(w: World, code: int) -> bool:
 
 
 # --- Retired: never offered ----------------------------------------------------------------------------------------
-func test_the_table_retires_48_cards_and_marks_them() -> void:
+func test_the_table_retires_43_cards_and_marks_them() -> void:
 	var w := _floor(&"blade")
 	var items := 0
 	var abilities := 0
@@ -55,10 +55,14 @@ func test_the_table_retires_48_cards_and_marks_them() -> void:
 		items += 1 if t.retired else 0
 	for t in w.ability_tables:
 		abilities += 1 if t.retired else 0
-	assert_eq([items, abilities], [42, 6], "48 rows: 42 items and the six old ability modifiers")
+	assert_eq([items, abilities], [37, 6], "43 rows: 37 items and the six old ability modifiers")
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
 	for id: StringName in [&"echo_slash", &"split_shot", &"wide_arc", &"blade_orbit"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept its id as a wand card" % id)
+	for id: StringName in [
+		&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
+	]:
+		assert_false(w.item_tables[_it(w, id)].retired, "%s kept as a shared-pool card (WN5a)" % id)
 
 
 func test_no_source_offers_a_retired_card() -> void:
@@ -88,7 +92,7 @@ func test_no_source_offers_a_retired_card() -> void:
 
 func test_the_dev_panel_can_still_grant_a_retired_card() -> void:
 	var w := _floor(&"gun")
-	var k := _it(w, &"storm_core")
+	var k := _it(w, &"conductor")
 	assert_false(ItemPool.usable(w, k), "not offered")
 	Offers.apply(w, k)
 	assert_true(w.items_owned.has(k), "a direct grant still takes it (the dev panel's TEST HELPER)")
@@ -100,23 +104,20 @@ func test_a_blade_build_maps_in_pick_order_and_refunds_the_rest() -> void:
 	w.shards = 0
 	w.wand_table.slots_per_floor = PackedInt32Array([8])  # room for the old build's six
 	_take(
-		w,
-		[&"long_edge", &"storm_core", &"overcharge", &"orbit_blades", &"rearguard", &"echo_storm"]
+		w, [&"long_edge", &"conductor", &"overcharge", &"orbit_blades", &"rearguard", &"echo_storm"]
 	)
 	_take(w, [&"orbit_blades", &"orbit_blades"])  # Orbit Blades to level 3
-	var expect := 0
-	for id: StringName in [&"storm_core", &"rearguard"]:
-		expect += WandMigration.refund_of(w, WandLab.code(w, id))
+	var expect := WandMigration.refund_of(w, WandLab.code(w, &"rearguard"))
 	var refund := WandMigration.run(w)
 	assert_eq(
 		_ids(w),
-		[&"wide_arc", &"finisher_plus", &"blade_orbit", &"echo_slash"],
-		"Long Edge → B1, Overcharge → B14, Orbit Blades → B15, Echo Storm → B2"
+		[&"wide_arc", &"storm_core", &"finisher_plus", &"blade_orbit", &"echo_slash"],
+		"Long Edge → B1, Conductor → S2, Overcharge → B14, Orbit Blades → B15, Echo Storm → B2"
 	)
 	assert_eq(
-		_levels(w), [1, 1, 3, 5], "the ability's level 3 carries; a legendary version is level 5"
+		_levels(w), [1, 1, 1, 3, 5], "the ability's level 3 carries; a legendary version is level 5"
 	)
-	assert_eq(refund, expect, "Storm Core (S2, pending) and Rearguard (no Blade row) refunded")
+	assert_eq(refund, expect, "Rearguard (no Blade row) refunded")
 	assert_eq(w.shards, refund)
 	assert_gt(refund, 0)
 
@@ -148,10 +149,10 @@ func test_a_held_target_or_two_old_cards_level_it_up() -> void:
 
 func test_a_pending_target_maps_once_it_is_in_the_data() -> void:
 	var w := _floor(&"blade")
-	_take(w, [&"storm_core"])
-	var row := w.wand_table.migrate_ids.find(&"storm_core")
-	assert_eq(w.wand_table.migrate_blade[row], &"shared_lightning", "S2, built by WN5a")
-	assert_eq(_it(w, &"shared_lightning"), -1, "not on this branch: a refund for now")
+	_take(w, [&"serrated_edge"])
+	var row := w.wand_table.migrate_ids.find(&"serrated_edge")
+	assert_eq(w.wand_table.migrate_blade[row], &"shared_bleed", "S5, built by WN5a")
+	assert_eq(_it(w, &"shared_bleed"), -1, "not on this branch: a refund for now")
 	w.wand_table.migrate_blade[row] = &"heavy"  # any card of the data stands in for it
 	assert_eq(WandMigration.run(w), 0, "no refund once the target exists")
 	assert_eq(_ids(w), [&"heavy"])

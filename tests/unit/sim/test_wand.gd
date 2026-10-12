@@ -328,10 +328,10 @@ func test_an_older_save_keeps_its_pick_order_and_every_card() -> void:
 	Abilities.start_floor(w)
 	assert_eq(
 		_ids(w),
-		[&"wide_arc", &"double_slash", &"finisher_plus"],
-		"Long Edge, Twin Arc, Overcharge in pick order; Ember Edge, Conductor, Serrated Edge wait for S1/S2/S5"
+		[&"ember_core", &"wide_arc", &"double_slash", &"finisher_plus", &"storm_core"],
+		"each in its pick order: S1, B1, B5, B14, S2; Serrated Edge waits for S5 (shared_bleed, WN5a)"
 	)
-	assert_gt(w.shards, shards, "the three without a card yet are refunded")
+	assert_gt(w.shards, shards, "the one without a card yet is refunded")
 	assert_true(RunSaver.PAYLOAD_VERSIONS_READ.has(3), "a version-3 payload still loads")
 
 

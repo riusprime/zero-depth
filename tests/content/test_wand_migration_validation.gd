@@ -15,6 +15,11 @@ const KEPT: Array[StringName] = [
 	&"long_shadow",
 	&"blade_orbit",
 ]
+## The v0.6 cards WN5a kept as the shared pool's S cards (S1 Fire, S2 Lightning, S3 Frost, S4 Venom, S6 Void; lead,
+## 2026-10-12): never retired, and targets of the table. They become wand cards with WN5a's merge.
+const KEPT_AS_SHARED: Array[StringName] = [
+	&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
+]
 const SIX: Array[StringName] = [
 	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
 ]
@@ -38,7 +43,7 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	defs.assign(_repo.all_of(&"wand") + _all())
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
-		m.old_ids.size(), 48, "the v0.6 cards it retires: 14 + 4 + 21 + 3 + 6 (WAND.md table)"
+		m.old_ids.size(), 43, "the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table)"
 	)
 
 
@@ -53,7 +58,9 @@ func test_every_v0_6_card_has_a_row_or_kept_its_id() -> void:
 		if not slot:
 			assert_false(m.old_ids.has(def.id), "%s takes no slot: not a wand card, kept" % def.id)
 			continue
-		if KEPT.has(def.id):
+		if KEPT_AS_SHARED.has(def.id):
+			assert_false(m.old_ids.has(def.id), "%s is a shared-pool card (WN5a)" % def.id)
+		elif KEPT.has(def.id):
 			assert_true(def.tags.has("wand"), "%s kept its id as a wand card" % def.id)
 			assert_false(m.old_ids.has(def.id))
 		else:
@@ -73,7 +80,9 @@ func test_every_target_fits_its_weapon() -> void:
 			var d := _repo.get_def(&"items", id) as ItemDefinition
 			assert_not_null(d, "%s → %s" % [m.old_ids[k], id])
 			if d != null:
-				assert_true(d.tags.has("wand"), "%s is a wand card" % id)
+				assert_true(
+					d.tags.has("wand") or KEPT_AS_SHARED.has(id), "%s is a wand or shared card" % id
+				)
 				assert_ne(
 					d.requires_weapon, pair[1], "%s → %s fits the weapon" % [m.old_ids[k], id]
 				)

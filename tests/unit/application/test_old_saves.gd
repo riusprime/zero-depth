@@ -61,21 +61,18 @@ func test_a_v0_6_1_blade_save_maps_each_card_in_pick_order() -> void:
 		[&"long_edge", &"orbit_blades", &"ember_core", &"twin_cast", &"drone_buddy", &"echo_storm"],
 		"the recorded wand, before the migration"
 	)
-	var ember := _item(w, &"ember_core")
 	var drone := Offers.ability_code(Abilities.index_of_kind(w, AbilityTable.Kind.DRONE_BUDDY))
-	var expect := WandMigration.refund_of(w, ember) + WandMigration.refund_of(w, drone)
+	var expect := WandMigration.refund_of(w, drone)
 	var refund := WandMigration.run(w)
 	assert_eq(
 		_ids(w),
-		[&"wide_arc", &"blade_orbit", &"double_slash", &"echo_slash"],
-		"Long Edge → Wide Arc, Orbit Blades → B15, Twin Cast → Double Slash, Echo Storm → Wave, in pick order"
+		[&"wide_arc", &"blade_orbit", &"ember_core", &"double_slash", &"echo_slash"],
+		"Long Edge → B1, Orbit Blades → B15, Ember Core stays (S1), Twin Cast → B5, Echo Storm → B2"
 	)
 	assert_eq(
-		_levels(w), [1, 2, 1, 5], "the ability's level carries; the legendary version is level 5"
+		_levels(w), [1, 2, 1, 1, 5], "the ability's level carries; the legendary version is level 5"
 	)
-	assert_eq(
-		refund, expect, "Ember Core (S1, pending) and the Drone are refunded at the salvage price"
-	)
+	assert_eq(refund, expect, "the Drone (no row) is refunded at the salvage price")
 	assert_gt(refund, 0)
 	assert_eq(w.shards, int(got[2]) + refund, "into the shards")
 	_no_retired(w)
@@ -94,16 +91,14 @@ func test_a_v0_6_1_gun_save_from_its_carry_maps_and_levels_up_duplicates() -> vo
 	var p: Dictionary = got[0]
 	var w: World = got[1]
 	assert_eq(int(p["run"]["floor_index"]), 2)
-	var storm := _item(w, &"storm_core")
-	var expect := WandMigration.refund_of(w, storm)
 	var refund := WandMigration.run(w)
 	assert_eq(
 		_ids(w),
-		[&"gun_spread", &"gun_homing", &"gun_mine", &"gun_rapid_fire"],
-		"Splinter Shot → Spread, Seeker → Homing, Bomb Lobber + Cluster Payload → Mine, Rapid Coil → Rapid Fire"
+		[&"gun_spread", &"gun_homing", &"gun_mine", &"storm_core", &"gun_rapid_fire"],
+		"Splinter Shot → G4, Seeker → G8, Bomb Lobber + Cluster Payload → G12, Storm Core stays (S2)"
 	)
-	assert_eq(_levels(w), [1, 1, 3, 1])
-	assert_eq(refund, expect, "Storm Core (S2, pending) at floor 2's salvage price")
+	assert_eq(_levels(w), [1, 1, 3, 1, 1])
+	assert_eq(refund, 0, "every card has a match (Storm Core is WN5a's S2)")
 	assert_eq(w.shards, int(got[2]) + refund)
 	_no_retired(w)
 	for t in 120:
