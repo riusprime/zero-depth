@@ -46,9 +46,27 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | NB1 | Biome 4: Frozen Shore | N2 | |
 | NB2 | Biome 5: the cosmic biome | N3 | |
 | AP | The Ascension portal and the endless loop | N4 | |
-| CX | The Codex | N6 | |
+| CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | |
+
+### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
+- **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold
+  glass, four pages: Cards, Enemies, Bosses, Biomes. No G2 round (the owner asked for no interventions); built in the
+  owner's Cold glass and crystal-card looks.
+- **Cards** by pool: Gun, Blade, shared, triggers, legendary (the unique triggers), then stat cards, utilities (Blink,
+  Aegis) and passives (the v0.5 items outside the wand that are still offered). The cards `data/wand/migration.tres`
+  retires, the starting weapons and curse cards are not listed.
+- **An entry unlocks** the first time you meet it: a card when a pick, the shop or an event shows it, or you take it;
+  an enemy when a living one stands within 18 m of you (about the camera's view); a boss once it has risen near you;
+  a biome when a floor of it starts. Locked entries are dark silhouettes named "???".
+- **Counts** (the profile, outside the run): cards offered / taken / highest level (wand cards and abilities);
+  enemies killed / times it killed you; bosses fought / killed / times it killed you; biomes floors entered. A run
+  with the dev panel's balance tweaks records nothing (the owner's "tweaked runs don't count").
+- **Text:** cards use the game's own keys; enemies, bosses and biomes had no description, so each gets a Codex line
+  (`desc_key`, en + es, written by the agent; the owner may rewrite any).
+- **Art:** an enemy's or boss's emblem and a biome's landscape are drawn in code; the wand cards that have no symbol
+  of their own yet show the card gem in their frame colour, as in the game (an art request, not a blocker).
 
 At most 3 agents at once; one full suite per wave by the lead (CLAUDE.md). The PR into `main` with a version bump and
 a playtest sheet when every step is Done.
