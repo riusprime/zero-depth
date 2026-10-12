@@ -40,6 +40,16 @@ static func level_up(w: World, idx: int) -> bool:
 	return true
 
 
+## Sets held wand card `idx` to `lvl` (1..MAX_LEVEL; the dev panel's TEST HELPER and the labs). False if `idx` isn't a
+## held wand card.
+static func set_level(w: World, idx: int, lvl: int) -> bool:
+	if not w.items_owned.has(idx) or not is_card(w, idx):
+		return false
+	_store(w, idx, clampi(lvl, 1, MAX_LEVEL))
+	Modifiers.invalidate(w)
+	return true
+
+
 ## Item `idx` enters the build fresh (or leaves it): back to level 1.
 static func reset(w: World, idx: int) -> void:
 	if idx >= 0 and idx < w.card_levels.size() and w.card_levels[idx] > 1:

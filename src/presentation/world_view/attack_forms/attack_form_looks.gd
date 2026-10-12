@@ -162,6 +162,8 @@ static func particles_of(elements: Array) -> Array:
 
 
 ## Behaviour → motion cues: &"streak" (pierce), &"bounce_flash" (bounces), &"curve" (home), &"tether" (return).
+## v0.6.5 WN3 (the Gun pool): &"twin" (side by side), &"helix" (a corkscrew: the live trail shows the path), &"mine"
+## (a waiting mine's ground ring), &"swell" (a charging shot's orb in the barrel).
 static func cues_of(spec: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
 	if int(spec.get("pierce", 0)) > 0:
@@ -172,6 +174,11 @@ static func cues_of(spec: Dictionary) -> Array[StringName]:
 		out.append(&"curve")
 	if bool(spec.get("return", false)):
 		out.append(&"tether")
+	for cue: Array in [["twin", &"twin"], ["spiral", &"helix"], ["mine_ticks", &"mine"]]:
+		if int(spec.get(cue[0], 0)) > 0:
+			out.append(cue[1])
+	if int(spec.get("hold_ticks", 0)) > 0:
+		out.append(&"swell")
 	return out
 
 

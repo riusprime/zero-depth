@@ -788,6 +788,16 @@ func projectile_spec_key(i: int) -> String:
 	return keys[i] if i < keys.size() else ""
 
 
+## v0.6.5 WN3: projectile `i`'s radius (a charged shot is bigger than its spec, G13), and how far the Gun's shot in
+## the barrel has charged (0..1; 0 when the Gun doesn't charge: GunForms).
+func projectile_radius(i: int) -> float:
+	return _w.projectiles.radius[i]
+
+
+func gun_charge() -> float:
+	return GunForms.charge_fraction(_w)
+
+
 ## v0.6.0 MX3: the spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
 ## element_fx()["fire_pos"] ("" = one without a spec: Napalm Drone's patches).
 func bomb_spec_keys() -> PackedStringArray:

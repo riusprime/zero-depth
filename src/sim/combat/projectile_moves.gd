@@ -31,8 +31,8 @@ static func on_spawn(w: World, pi: int) -> void:
 			and s.homing <= 0
 			and s.orbit_ticks <= 0
 			and not GunForms.moves(s)
-		)  # v0.6.5 WN3: spiral, mine
-	):
+		)
+	):  # v0.6.5 WN3: spiral, mine
 		return
 	p.moves = true
 	GunForms.on_spawn(w, pi, s)  # v0.6.5 WN3: before the orbit, so life0 counts the mine's wait

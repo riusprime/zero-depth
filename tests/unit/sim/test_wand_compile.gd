@@ -36,7 +36,9 @@ func test_big_then_split_is_one_big_shot_whose_splits_are_normal() -> void:
 	var k := _hook(s, &"split_shot")
 	assert_not_null(k, "it splits")
 	assert_eq(k.child.count, 3)
-	assert_almost_eq(k.child.radius_m, 0.12, 1e-5, "the splits are the card's normal size")
+	assert_almost_eq(
+		k.child.radius_m, 0.08, 1e-5, "the splits are the card's normal size (half the bolt)"
+	)
 
 
 func test_split_then_big_makes_the_splits_big_too() -> void:
@@ -44,7 +46,7 @@ func test_split_then_big_makes_the_splits_big_too() -> void:
 	var s := _bolt([WandLab.card(&"split_shot"), WandLab.big()])
 	assert_almost_eq(s.radius_m, w.player.bolt_radius_m * 2.0, 1e-5, "the shot is big")
 	var k := _hook(s, &"split_shot")
-	assert_almost_eq(k.child.radius_m, 0.24, 1e-5, "Big reaches the splits built to its left")
+	assert_almost_eq(k.child.radius_m, 0.16, 1e-5, "Big reaches the splits built to its left")
 	assert_eq(k.child.damage_mul_permille, 1600, "and their damage weight")
 
 

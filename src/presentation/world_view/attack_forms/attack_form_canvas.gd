@@ -25,6 +25,8 @@ const TAIL_SEGMENTS := 4
 const STREAK_SEGMENTS := 9
 const ORBIT_TURN := 0.09
 const HOME_TURN := 0.035
+## v0.6.5 WN3: a waiting mine's ground ring (metres; G12 Mine).
+const MINE_RING_M := 0.45
 const RING_STAGGER := 4.0
 const FLASH_TICKS := 8
 const LANDING_TICKS := 12
@@ -482,7 +484,8 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 	var trail: PackedVector2Array = b["trail"]
 	var cues: Array = look["cues"]
 	var segs := mini(trail.size() - 1, STREAK_SEGMENTS if cues.has(&"streak") else TAIL_SEGMENTS)
-	var w: float = float(look["thick"]) * 2.2
+	var size := float(b.get("scale", 1.0))  # v0.6.5 WN3: a charged shot, the charging orb
+	var w: float = float(look["thick"]) * 2.2 * size
 	var n := trail.size()
 	for j in segs:
 		var a := SimPlane.to_3d(trail[n - 1 - j], BOLT_H)
@@ -502,7 +505,7 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 			(
 				Basis(Vector3.UP, heading)
 				* Basis.from_scale(
-					Vector3(look["length"] * 1.25, look["thick"] * 1.8, look["thick"] * 1.8)
+					Vector3(look["length"] * 1.25, look["thick"] * 1.8, look["thick"] * 1.8) * size
 				)
 			),
 			at
@@ -516,6 +519,8 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 			lit_color(look["edge"], 0.4, 1.4)
 		)
 	var pts: Array[Vector3] = [at]
+	if cues.has(&"mine") and (b["vel"] as Vector2).length() < 0.0001:  # v0.6.5 WN3: a waiting mine
+		_ring_at(SimPlane.to_3d(b["pos"], GROUND_H), MINE_RING_M, look, 0.6, pts)
 	_emit({"seed": int(b["id"]), "look": look}, look, pts, now, 1.0)
 
 
