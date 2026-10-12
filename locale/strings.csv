@@ -737,3 +737,7 @@ UI_DEVM_G_DIFFICULTY,Spawning and difficulty,Aparición y dificultad
 UI_DEVM_G_ECONOMY,Economy,Economía
 UI_DEVM_G_BUILD,Build pieces,Piezas de build
 UI_DEVM_G_TOOLS,Tools,Herramientas
+UI_DEVM_HINT_LIVE,Changes show at once.,Los cambios se ven al instante.
+UI_DEVM_HINT_CLOSE,"Applies when you close the panel (F10); what the floor lays out (chests, altars, rooms) needs Restart floor.","Se aplica al cerrar el panel (F10); lo que el piso coloca (cofres, altares, salas) necesita Reiniciar piso."
+UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for the next ones to spawn (Restart floor for all).","Se aplica al cerrar el panel; la vida y los fragmentos cambian para los siguientes en aparecer (Reiniciar piso para todos)."
+UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.

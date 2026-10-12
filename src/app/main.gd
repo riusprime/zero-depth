@@ -33,6 +33,8 @@ var _dev: DevPanel
 var _devm: DevMasterPanel
 ## The current floor's biome file (the dev panel's lighting edits re-read its mood).
 var _biome_path := ""
+## A balance edit waits to go into the running World until the panel closes (the run is paused while it is open).
+var _balance_pending := false
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -447,6 +449,9 @@ func _close_master_panel() -> void:
 	if _devm != null:
 		_drop(_devm)
 		_devm = null
+	if _balance_pending and driver != null and run != null:  # Step 4: balance edits go live as the run resumes
+		LiveTuning.apply(driver.world, run, _content())
+	_balance_pending = false
 	if driver != null and _pause == null:
 		driver.paused = false
 
@@ -455,6 +460,7 @@ func _close_master_panel() -> void:
 func _restart_floor() -> void:
 	if run == null:
 		return
+	_balance_pending = false  # the rebuilt floor reads everything anyway
 	_close_master_panel()
 	_end_floor()
 	_start_floor()
@@ -468,6 +474,8 @@ func _on_tuning_changed(key: String) -> void:
 		view.stage.mood = (load(_biome_path) as BiomeDefinition).mood
 		view.stage.apply_mood()
 		view.actors.retune_hero_light(view.stage.mood)
+	elif not DevTuning.is_lighting(key):
+		_balance_pending = true
 
 
 func is_dev_panel_open() -> bool:

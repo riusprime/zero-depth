@@ -21,6 +21,7 @@ var _tree := Tree.new()
 var _search := LineEdit.new()
 var _fields := VBoxContainer.new()
 var _title := Label.new()
+var _hint := Label.new()
 var _status := Label.new()
 var _source := ""
 var _filter := ""
@@ -60,6 +61,9 @@ func _init(p_tuning: DevTuning, p_tools: Control = null) -> void:
 	split.add_child(right)
 	_title.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	right.add_child(_title)
+	_hint.modulate = Color(1, 1, 1, 0.65)
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	right.add_child(_hint)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -142,12 +146,14 @@ func show_source(path: String, filter: String = "") -> void:
 		c.queue_free()
 	if path == "tools":
 		_title.text = tr("UI_DEVM_G_TOOLS")
+		_hint.text = ""
 		if tools != null:
 			if tools.get_parent() != null:
 				tools.get_parent().remove_child(tools)
 			_fields.add_child(tools)
 		return
 	_title.text = path.trim_prefix("res://")
+	_hint.text = hint_key(path)
 	var res: Resource = load(path)
 	for row: Dictionary in DevFields.rows(res, filter):
 		_fields.add_child(_row(path, row["path"], row["value"]))
@@ -204,6 +210,21 @@ func _editor(key: String, value: Variant) -> Control:
 	s.update_on_text_changed = true  # live while typing, not only on Enter
 	s.value_changed.connect(func(v: float) -> void: set_value(key, v))
 	return s
+
+
+## When a file's numbers take effect (LiveTuning): lighting at once; most balance when the panel closes; HP and
+## shards of enemies and bosses on the next spawns; what the floor lays out, and the run's per-floor numbers, on
+## Restart floor.
+static func hint_key(path: String) -> String:
+	var dir := path.trim_prefix("res://data/").get_slice("/", 0)
+	match dir:
+		"biomes":
+			return "UI_DEVM_HINT_LIVE"
+		"enemies", "bosses", "boss_pools":
+			return "UI_DEVM_HINT_SPAWN"
+		"run", "events", "event_rules", "curses":
+			return "UI_DEVM_HINT_RESTART"
+	return "UI_DEVM_HINT_CLOSE"
 
 
 # --- Edits --------------------------------------------------------------------------------------------------------
