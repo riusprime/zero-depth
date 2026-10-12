@@ -222,7 +222,11 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			continue
 		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
 			continue
+		var before := w.hit_spec
+		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
+			w.hit_spec = spec
 		var got := _hit(w, i, ctx, ctx.origin, a.pos(i))
+		w.hit_spec = before
 		if got > 0:
 			landed = true
 			hits += 1
@@ -598,6 +602,7 @@ static func run_hook(
 	if k.delay_ticks > 0:  # v0.6.0 MX4: Long Shadow's afterimage waits
 		ModifierRuntime.queue_hook(w, k, c)
 		return false
+	WandCasts.note(w, k, at, c.angle)  # v0.6.5 WN5a: the views draw the small spell where it is cast
 	w.hook_chain.append(String(k.id))
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)

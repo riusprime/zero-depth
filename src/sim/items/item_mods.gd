@@ -71,6 +71,9 @@ var poison_period_ticks := 1
 var poison_ticks := 0
 var poison_max_stacks := 0
 var poison_spread_m := 0.0
+## v0.6.5 WN5a (S5 Bleed): the bleed's period while the player moves, the shortest owned (0 = none: the same as
+## standing).
+var bleed_move_period_ticks := 0
 
 
 static func build(tables: Array[ItemTable], owned: PackedInt32Array) -> ItemMods:
@@ -180,6 +183,12 @@ static func _build_engines(m: ItemMods, t: ItemTable) -> void:
 	m.bleed_ticks = maxi(m.bleed_ticks, t.bleed_ticks)
 	m.bleed_max_stacks = maxi(m.bleed_max_stacks, t.bleed_max_stacks)
 	m.bleed_burst_per_stack = maxi(m.bleed_burst_per_stack, t.bleed_burst_per_stack)
+	if t.bleed_move_period_ticks > 0:  # v0.6.5 WN5a: S5 Bleed ticks faster while you move
+		m.bleed_move_period_ticks = (
+			t.bleed_move_period_ticks
+			if m.bleed_move_period_ticks <= 0
+			else mini(m.bleed_move_period_ticks, t.bleed_move_period_ticks)
+		)
 	m.frost_threshold = maxi(m.frost_threshold, t.frost_threshold)
 	m.frost_ticks = maxi(m.frost_ticks, t.frost_ticks)
 	m.freeze_ticks = maxi(m.freeze_ticks, t.freeze_ticks)

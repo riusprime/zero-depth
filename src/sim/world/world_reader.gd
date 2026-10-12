@@ -647,11 +647,11 @@ func item_id(item_index: int) -> StringName:
 
 ## Locale keys (tr() them in the view).
 func item_name_key(item_index: int) -> StringName:
-	return _w.item_tables[item_index].name_key
+	return Offers.item_keys(_w, _w.item_tables[item_index])[0]  # v0.6.5 WN5a: T4's face per weapon
 
 
 func item_desc_key(item_index: int) -> StringName:
-	return _w.item_tables[item_index].desc_key
+	return Offers.item_keys(_w, _w.item_tables[item_index])[1]
 
 
 func pickup_count() -> int:
@@ -779,6 +779,12 @@ func modifier_marks() -> Dictionary:
 ## cut shots, a counter, the orbiting blades).
 func blade_forms() -> Dictionary:
 	return BladeForms.read(_w)
+
+
+## v0.6.5 WN5a: the wand's small spells cast lately, oldest first (WandCasts.read: tick, key, pos, angle in 1/4096
+## turns, cast: a trigger's child spell). AttackFormView draws each once.
+func wand_casts() -> Array[Dictionary]:
+	return WandCasts.read(_w)
 
 
 ## v0.6.5 WN4: how the current swing's cards change the swing itself, for the blade and the hero's pose

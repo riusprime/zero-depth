@@ -177,6 +177,9 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.poison_ticks = SimTick.seconds_to_ticks(def.poison_seconds)
 	t.poison_max_stacks = def.poison_max_stacks
 	t.poison_spread_m = def.poison_spread_m
+	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
+	t.name_key_gun = def.name_key_gun
+	t.desc_key_gun = def.desc_key_gun
 
 
 ## Every modifier in a repository, compiled, in id order (the combinatorial smoke test and the views' tests use it).

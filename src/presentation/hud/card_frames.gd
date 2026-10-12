@@ -177,6 +177,9 @@ const FAMILY_OF := {
 	&"frost_nova": &"projectile",
 	&"orbit_blades": &"damage",
 	&"pulse_gun": &"projectile",
+	# v0.6.5 WN5a: the shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
+	&"shared_bleed": &"damage",
+	&"shared_explosive": &"area",
 }
 
 ## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold frame, overbright, its title a paler gold.

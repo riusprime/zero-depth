@@ -309,14 +309,23 @@ static func info(w: World, code: int) -> Dictionary:
 	var rarity := 1 if it.rarity == ItemTable.RARE else 0
 	if it.rarity == ItemTable.LEGENDARY:
 		rarity = LEGENDARY  # v0.6.0 MX4: a legendary modifier
+	var face := item_keys(w, it)  # v0.6.5 WN5a: T4's face per weapon
 	return {
 		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot
 		"type": MOD,
 		"id": it.id,
 		"kind": it.kind,
-		"name_key": it.name_key,
-		"desc_key": it.desc_key,
+		"name_key": face[0],
+		"desc_key": face[1],
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
 	}
+
+
+## v0.6.5 WN5a (WAND.md T4): item `it`'s name and description keys for this run: its Gun face on a Gun run when it
+## has one (On Crit), else its own (On Finisher). Pure.
+static func item_keys(w: World, it: ItemTable) -> Array[StringName]:
+	if it.name_key_gun != &"" and PlayerBuild.has_gun(w) and not PlayerBuild.has_blade(w):
+		return [it.name_key_gun, it.desc_key_gun]
+	return [it.name_key, it.desc_key]

@@ -196,6 +196,8 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 	c.id = m.id
 	c.effect_id = m.id
 	c.depth = s.depth + 1
+	if not c.tags.has(WandCasts.TAG_CAST):  # v0.6.5 WN5a: a trigger's cast (the views draw it as one)
+		c.tags.append(WandCasts.TAG_CAST)
 	c.lineage = s.lineage.duplicate()
 	c.lineage.append(String(m.id))
 	var k := AttackHook.new()
