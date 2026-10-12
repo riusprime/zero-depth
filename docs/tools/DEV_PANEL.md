@@ -1,6 +1,6 @@
 # Dev panel (lighting and balance tuning in the running game)
 
-Status: **owner decisions recorded; PLAN below is a draft until the knob inventory is in.** Not built yet.
+Status: **PLAN written 2026-10-12; building from Step 1.**
 
 ## Owner lines (2026-10-12)
 
@@ -27,7 +27,48 @@ Status: **owner decisions recorded; PLAN below is a draft until the knob invento
   before (the goldens don't change).
 - **EI-10:** the panel's labels go through `tr()` like every visible string.
 
-## Plan (draft)
+## What it covers ("add everything")
 
-Written after the knob inventory: every balance table and constant, where the sim reads it, and whether an edit
-applies live or at spawn.
+The knob inventory (2026-10-12) found these sources. Every one gets a page in the panel.
+
+| Group | Sources | Applies |
+|---|---|---|
+| Lighting | the current biome's BiomeMood (all fields, the grade included) and the 3 biome moods | live |
+| Player | player (hp, speed, crit, regen, iframes), dash, primary, the 4 combo swings, the 2 builds and their skills | live; max HP on Restart floor |
+| Enemies | 14 enemies: hp, speed, radius, behaviour params, each attack (damage, telegraph, active, recovery, shape) | damage, speed, AI live; HP at next spawn |
+| Bosses | 6 bosses with their attacks and phases; the 3 boss pools | live except HP (next spawn) |
+| Spawning and difficulty | the spawn director (caps, intervals, per-tier HP/damage/interval, packs, mix), the 3 difficulty curves | live |
+| Run scaling | per-floor enemy HP/damage, boss scaling, heal and shard carry, Deep scale and extras, boss ease | Restart floor |
+| Hidden catch-up | expected power, caps, threat bonus, per-ability/item/combo weights | Restart floor |
+| Arenas and Overrun | arena share, waves and sizes; Overrun multipliers, waves, shards | next arena / Overrun |
+| Economy | rewards (chests, altars, prices, shards, heal orbs), shop, gamble shrine, legendary, events and event rules, curses | live (counts placed at floor start: Restart floor) |
+| Build pieces | 63 items, 51 modifiers, 10 abilities (L1–L5), 16 combos, 18 stat cards, heat | live (owned pieces refresh) |
+| Map generation | floor params (rooms, spawn rooms, links, spots) | Restart floor |
+| Sim constants | the designer-relevant `const`s (telegraph minimum, spawn-in, boss intro and gates, fire cap, heal orb cap, slots, curse caps …) | Step 6: moved into a tuning resource first |
+| Tools | the existing debug buttons (pause, step, spawn, god mode, kill boss, grant, go to arena/Overrun …) | — |
+
+## Plan
+
+Each step is one commit, with tests of the folders it touches; one full suite at the end (one run per wave).
+
+1. **Tuning store.** `DevTuning`: overrides keyed by `<content path>:<property path>` (nested resources, arrays and
+   dictionaries included); applied to the loaded definitions after `ContentRepository.load_all()` and before every
+   compile (start, continue, every floor); saved to `user://dev_tuning.json`; Reset all; Copy changes (one line per
+   change: file, field, shipped → new). Tests: an override reaches the compiled table; reset restores; save and load
+   round-trip; no overrides, the content hash and the goldens don't change.
+2. **The panel (F10).** A full-screen overlay in all builds: groups on the left (above), a search box, the selected
+   source's fields built from its exported properties (numbers, arrays, dictionaries, nested resources), each with
+   its shipped value and a reset. Buttons: Restart floor, Reset all, Copy changes. Pauses the game while open.
+   The old debug buttons move into a Tools page; the backtick panel goes. e2e: F10 opens it from `main.tscn`.
+3. **Lighting live.** `StageView.apply_mood()` re-applies the environment, the grade, the fire and hero lights
+   while playing; the lighting page edits the current biome's mood and saves per biome. Not a balance tweak (no DEV
+   mark).
+4. **Balance live.** At the tick boundary (SimDriver's pending commands), a changed source is recompiled and swapped
+   into the running World (with the floor scaling re-applied), then the build refreshes (`refresh_build`, max HP,
+   catch-up). Values fixed at spawn apply to the next spawns; the page says which. Restart floor rebuilds the floor
+   from the tweaked content.
+5. **DEV mark and no counting.** Any balance override: a DEV tag on screen, and the run saves no progress, unlocks or
+   records. e2e: a tweaked run leaves the profile unchanged.
+6. **Sim constants.** The designer-relevant `const`s move into a `SimTuning` resource (`data/tuning/sim.tres`) that
+   the sim reads through the World; same values, so the goldens don't change. Then they get a page.
+7. **Release checklist line** (ROADMAP §0.4): remove or lock the panel before a public release.
