@@ -74,6 +74,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
+	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
