@@ -145,6 +145,8 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 	var poison := 0  # v0.6.0 MX4: Venom Core
 	match src:
 		SRC_MELEE:
+			if hs != null and hs.depth > 0 and hs.form == AttackSpec.Form.ARC:
+				return  # v0.6.5 WN5a: a trigger's child slash feeds its own statuses (Attacks._feed)
 			var sp := Modifiers.step(w, w.combo_step)
 			shock = sp.stacks_of(&"shock")
 			bleed = sp.stacks_of(&"bleed")
@@ -322,6 +324,7 @@ static func _status(w: World, i: int, root: int, amount: int, effect: StringName
 static func tick_statuses(w: World) -> void:
 	var a := w.actors
 	var m := w.item_mods
+	var period := bleed_period(w)  # v0.6.5 WN5a: S5 Bleed ticks faster while you move
 	for i in range(1, a.size()):
 		if a.shock_stacks[i] > 0:
 			a.shock_t[i] -= 1
@@ -329,9 +332,11 @@ static func tick_statuses(w: World) -> void:
 				a.shock_stacks[i] = 0
 		if a.bleed_stacks[i] > 0:
 			a.bleed_t[i] -= 1
+			if period < m.bleed_period_ticks:
+				a.bleed_cd[i] = mini(a.bleed_cd[i], period)
 			a.bleed_cd[i] -= 1
 			if a.bleed_cd[i] <= 0:
-				a.bleed_cd[i] = m.bleed_period_ticks
+				a.bleed_cd[i] = period
 				Damage.tick_dot(
 					w, i, m.bleed_damage * a.bleed_stacks[i], a.ids[0], a.ids[0], EFFECT_BLEED
 				)
@@ -345,6 +350,15 @@ static func tick_statuses(w: World) -> void:
 		if a.frozen_t[i] > 0:
 			a.frozen_t[i] -= 1
 	w.proc_ledger.prune(w.tick)
+
+
+## v0.6.5 WN5a (WAND.md S5, "bleed stacks that tick faster when you move"): the bleed's period this tick: the moving
+## period (ItemMods.bleed_move_period_ticks) while the player walks or dashes, else the standing one.
+static func bleed_period(w: World) -> int:
+	var m := w.item_mods
+	if m.bleed_move_period_ticks > 0 and (w.move_intent != Vector2i.ZERO or w.is_dashing()):
+		return mini(m.bleed_period_ticks, m.bleed_move_period_ticks)
+	return m.bleed_period_ticks
 
 
 ## Up to `n` living enemies other than `skip` whose centre is within `reach` of `at`, nearest first (ties go to the

@@ -792,6 +792,56 @@ waiting to erupt, the shots cut, the last counter's tick, the enemies being push
 (the current swing's weight, speed bonus, lunge, knockback, parry): `BladeFormView`, `KitView` and the hero's avatar
 draw from them.
 
+## 8h. The shared pool and the triggers offered (v0.6.5 WN5a)
+
+Design: [`../design/WAND.md`](../design/WAND.md) S1–S7, T1–T4 (owner-approved, G1 "Approve all"). Evidence:
+[`../roadmap/v0.6.5/evidence/WAND_SHARED.md`](../roadmap/v0.6.5/evidence/WAND_SHARED.md). The shared cards are
+modifiers on every attack (empty target), compiled left to right by §8e, offered in both weapons' runs; the trigger
+cards (§8e) are offered too.
+
+**The cards** (CONTENT_SCHEMA "v0.6.5 WN5a"; starting values): S1 Fire `ember_core` (burn 1, ember; an `ON_KILL`
+burst 1.5 m at 60 %), S2 Lightning `storm_core` (storm; an `ON_HIT` seeking beam within 4 m at 50 % that jumps once
+more: 2 more enemies), S3 Frost `frost_core` (slow, frost 1, frost element: the frost engine's threshold 3 freezes
+for 1 s), S4 Venom `venom_core` (poison 1, venom; the poison spreads on death, §8d), S5 Bleed `shared_bleed` (bleed
+1, bleed element), S6 Void `gravity_well` (void on the spell; an `ON_HIT` burst 2.5 m at 20 % that pulls 0.8 m), S7
+Explosive `shared_explosive` (an `ON_END` burst 1.4 m at 60 % where the spell ends: an arc's tip, a projectile's end,
+a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everything else is the v0.3 / v0.6 engines.
+
+**S5's moving bleed.** `ItemMods.bleed_move_period_ticks` (the shortest owned; 0 = none). `Engines.bleed_period(w)`:
+while the player moves (`World.move_intent` not zero, or dashing) the bleed ticks every `min(bleed_period,
+bleed_move_period)` ticks, else every `bleed_period`; a bleeding enemy's countdown is clamped to the moving period
+when it applies. Without the card the bleed is v0.5's exactly.
+
+**Order fixes the shared cards needed** (WN1's known limits):
+- **Riders** (§8b) ride only on an engine something outside the wand runs: an owned item that is not a wand card
+  (`CardLevels.is_card`) bringing burn (or the slow), or none (an ability's borrow). So Fire right of a trigger no
+  longer burns the slash (it burns the child), Frost right of one no longer slows the bolt; Wildfire or Glacial Edge
+  (v0.5) still ride every root attack as before.
+- **A child slash** (an `ARC` at depth > 0: a trigger's cast) hits under `World.hit_spec`, and `Engines.on_hit`
+  no longer feeds it the combo step's statuses: it feeds its own (`Attacks._feed`).
+- **A trigger's cast feeds its statuses whole** (a spec tagged `cast`, below): `_feed` takes its stacks, not stacks ×
+  proc (1 × 50 % rounded down was 0, so ON HIT · Fire never burned on the Blade); a cast bolt already fed whole
+  through `Engines.on_hit`. The proc coefficient (§8e: 100 → 50 → 25 on `HIT.proc_pct`) is unchanged.
+- **A hook's bolt leaves past the enemy it hit** (§8d's rule) measured from the enemy's centre: the hit point is the
+  projectile's centre at contact, so the child spawned inside the enemy and hit it again (Split's shards, a trigger's
+  cast bolt). The Blade's child slash still starts on the hit and sweeps that enemy too.
+
+**T4's face per weapon.** `ItemTable.name_key_gun` / `desc_key_gun` (empty: one face); `Offers.item_keys(w, it)`
+gives the Gun face on a Gun-only run. `Offers.info`, `WorldReader.item_name_key` / `item_desc_key` and so the wand's
+read (`Wand.read`), the pick cards, the Swap and the Build page show On Finisher with the Blade and On Crit with the
+Gun.
+
+**The casts the views draw** (`WandCasts`, `src/sim/combat/wand_casts.gd`; EI-07). WandCompile tags a trigger's child
+spell `cast` (`WandCasts.TAG_CAST`). `Attacks.run_hook` notes each child it launches at once (not a delayed one) when
+it is a cast (any form) or a `BURST` / `ARC` no other view draws (not an `ON_NTH` wave, a Fissure line or a carried
+shockwave): the tick, the child's book key, where from, which way, and whether it is a cast, in `World.mx`
+(`ModifierState.cast_*`), at most `WandCasts.MAX` (32), none older than 60 ticks at the next note. View data only:
+no outcome reads it, `ModifierState.hash_into` and `touched()` leave it out, the snapshot copies it.
+`WorldReader.wand_casts()` reads it; AttackFormView draws each mark once: a cast's sigil (a flash in
+`AttackFormLooks.CAST_SIGIL` and a small ring in the child's elements) and, for a slash or a blast, the child spell
+from its own spec; a cast bolt flies with the `cast` cue. `AttackFormLooks.cues_of` adds `cast` (a spec tagged
+`cast`) and `blast` (an `ON_END` burst hook: Explosive). No randomness anywhere (EI-05).
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

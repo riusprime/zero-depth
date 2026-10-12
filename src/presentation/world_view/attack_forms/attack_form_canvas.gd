@@ -34,6 +34,10 @@ const LANDING_TICKS := 12
 const TRIGGER_ON_HIT := 0
 const TRIGGER_ON_NTH := 2
 const PLAYER_RADIUS := 0.35
+## v0.6.5 WN5a: a trigger's cast sigil (its small ring) and a cast slash's own edge, from the point where it fires.
+const CAST_RING_M := 0.7
+const CAST_RING_TICKS := 16
+const CAST_OWN_M := 0.1
 
 ## The layer pools: name → [mesh id, lit].
 const LAYERS := {
@@ -86,6 +90,10 @@ var density := "high"
 var vfx: VfxLayer = null
 var pools := {}
 var particle_pools := {}
+## v0.6.5 WN5a (AttackFormView._sync_casts): what was drawn of the wand's casts (read by the tests): the trigger casts'
+## sigils, and the cast forms by name.
+var casts_drawn := 0
+var cast_forms := {}
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
 var _effects: Array[Dictionary] = []
 ## The player's live bolts that carry a layer this frame: {id, pos, vel, look, trail: PackedVector2Array}.
@@ -111,6 +119,9 @@ var _bomb_looks := {}
 var _last_blast := -1
 var _orbit_sig := ""
 var _orbit_look := {}
+## v0.6.5 WN5a (AttackFormView._sync_casts): the newest cast mark drawn (its tick, and how many of that tick).
+var _cast_tick := -1
+var _cast_n := 0
 
 
 func _init() -> void:
@@ -220,6 +231,8 @@ func flash(at: Vector2, c: Color, size: float, start: float = -1.0) -> void:
 
 
 func clear() -> void:
+	_cast_tick = -1  # v0.6.5 WN5a
+	_cast_n = 0
 	_effects.clear()
 	_live.clear()
 	_trails.clear()

@@ -16,12 +16,13 @@ func test_every_item_is_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"items"),
-		91,
+		93,
 		(
 			"24 + the three heat items (L18) + four ability mods (v0.5.0 CP) + the M-list's 29 new cards"
 			+ " (Frost Core was one) + 3 legendary (v0.6.0 MX4) + the wand's 4 triggers (v0.6.5 WN1)"
 			+ " + the Gun pool's 12 new cards (v0.6.5 WN3; G5, G9, G10, G16 are M-list cards)"
-			+ " + the Blade pool's 12 new cards (v0.6.5 WN4)"
+			+ " + the Blade pool's 12 new cards (v0.6.5 WN4) + the shared pool's 2 new (v0.6.5 WN5a:"
+			+ " S5 Bleed, S7 Explosive; S1-S4 and S6 are M-list cards)"
 		)
 	)
 	for def: ItemDefinition in repo.all_of(&"items"):

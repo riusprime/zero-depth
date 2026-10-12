@@ -222,7 +222,11 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			continue
 		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
 			continue
+		var before := w.hit_spec
+		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
+			w.hit_spec = spec
 		var got := _hit(w, i, ctx, ctx.origin, a.pos(i))
+		w.hit_spec = before
 		if got > 0:
 			landed = true
 			hits += 1
@@ -513,14 +517,18 @@ static func _landed(
 		_run(w, spec, AttackSpec.Trigger.ON_CRIT, ctx, at, i, nth)
 
 
-## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0), once per root per target
+## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0; v0.6.5 WN5a: a trigger's cast
+## feeds them whole), once per root per target
 ## and status. Root attacks feed through their sources instead (Engines.on_hit, ItemEffects.on_melee_hit,
 ## ItemProcs.on_bolt_hit), as before MX1; v0.6.0 MX2: so does every projectile (Engines reads World.hit_spec), while
 ## an ability's other attacks (a bomb, an orbiter, a patch, a ring) feed here, at proc 100 for the ability's own.
 static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	var a := w.actors
+	var cast := spec.has_tag(WandCasts.TAG_CAST)  # v0.6.5 WN5a: a trigger's child spell is a spell of its own
 	for k in spec.status_ids.size():
-		var n := spec.status_stacks[k] * ctx.proc_pct / 100
+		# A trigger's cast feeds its cards' stacks whole (as a cast bolt does through Engines.on_hit): ON HIT · Fire
+		# burns; its proc coefficient still halves what its hits set off (HIT.proc_pct).
+		var n := spec.status_stacks[k] if cast else spec.status_stacks[k] * ctx.proc_pct / 100
 		var st := StringName(spec.status_ids[k])
 		var code := CODE_HOOK_FEED + FEED_ORDER.find(st)
 		if n <= 0 or a.dead[i] == 1:
@@ -595,9 +603,13 @@ static func run_hook(
 	c.exclude = exclude
 	if k.child.form == AttackSpec.Form.BOLT and exclude >= 0:  # v0.6.0 MX4: from past the enemy it hit
 		c.muzzle_m = w.actors.radius[exclude] + k.child.radius_m + MUZZLE_GAP_M
+		# v0.6.5 WN5a: measured from the enemy's centre (a projectile's hit point is its own centre at contact,
+		# a bolt's radius short of the enemy's edge, so the child spawned inside the enemy and hit it again)
+		c.origin = w.actors.pos(exclude)
 	if k.delay_ticks > 0:  # v0.6.0 MX4: Long Shadow's afterimage waits
 		ModifierRuntime.queue_hook(w, k, c)
 		return false
+	WandCasts.note(w, k, at, c.angle)  # v0.6.5 WN5a: the views draw the small spell where it is cast
 	w.hook_chain.append(String(k.id))
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)

@@ -81,7 +81,7 @@ ITEM_STATIC_CHAIN,Static Chain,Cadena Estática
 ITEM_STATIC_CHAIN_DESC,Bolts shock; every 3rd bolt hit arcs to another for 5.,Tus proyectiles electrizan; cada 3.º salta a otro: 5.
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,A swing within 1 s of a dash deals +60% damage.,Un tajo hasta 1 s tras el esprint hace +60% de daño.
-ITEM_FROST_CORE,Frost Core,Núcleo de Escarcha
+ITEM_FROST_CORE,Frost,Escarcha
 ITEM_FROST_CORE_DESC,Hits slow; the 3rd hit on a slowed enemy freezes it 1 s.,Ralentizas; el 3.er golpe a un ralentizado lo congela 1 s.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Taking damage fires a ring of 6 bolts.,Al recibir daño lanzas un anillo de 6 proyectiles.
@@ -655,11 +655,11 @@ HUD_KEY_PAD_RS_DOWN,RS down,SD abj.
 HUD_KEY_PAD_RS_LEFT,RS left,SD izq.
 HUD_KEY_PAD_RS_RIGHT,RS right,SD der.
 HUD_KEY_PAD_OTHER,Pad,Mando
-ITEM_STORM_CORE,Storm Core,Núcleo de Tormenta
+ITEM_STORM_CORE,Lightning,Rayo
 ITEM_STORM_CORE_DESC,Hits chain lightning to 2 more enemies (50% damage).,Tus golpes encadenan un rayo a 2 enemigos más (50%).
-ITEM_EMBER_CORE,Ember Core,Núcleo de Brasa
+ITEM_EMBER_CORE,Fire,Fuego
 ITEM_EMBER_CORE_DESC,Hits burn; kills explode in a small fire burst.,Tus golpes queman; las bajas estallan en llamas.
-ITEM_VENOM_CORE,Venom Core,Núcleo de Veneno
+ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Hits stack poison that spreads when the enemy dies.,Tus golpes envenenan; el veneno salta al morir.
 ITEM_ECHO_SLASH,Wave,Onda
 ITEM_ECHO_SLASH_DESC,Every slash flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
@@ -681,7 +681,7 @@ ITEM_REARGUARD,Rearguard,Retaguardia
 ITEM_REARGUARD_DESC,Every attack also fires backwards at 60%.,Cada ataque también sale hacia atrás al 60%.
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
 ITEM_WIDE_ARC_DESC,Slashes sweep 60° wider and reach 30% farther.,Tus tajos barren 60° más y llegan un 30% más lejos.
-ITEM_GRAVITY_WELL,Gravity Well,Pozo Gravitatorio
+ITEM_GRAVITY_WELL,Void,Vacío
 ITEM_GRAVITY_WELL_DESC,Hits pull nearby enemies toward the point of hit.,Tus golpes atraen a los enemigos cercanos.
 ITEM_SHATTER,Shatter,Estallido
 ITEM_SHATTER_DESC,Kills burst into 4 shards that hit nearby enemies.,Las bajas estallan en 4 esquirlas que golpean cerca.
@@ -726,8 +726,8 @@ ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
 ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast a small spell on each kill.,Las cartas a su derecha lanzan un hechizo al matar.
 ITEM_TRIGGER_ON_END,On End,Al Terminar
 ITEM_TRIGGER_ON_END_DESC,Cards to its right cast a small spell where it ends.,Las cartas a su derecha lanzan un hechizo al terminar.
-ITEM_TRIGGER_ON_FINISHER,On Finisher / On Crit,Al Rematar / Al Crítico
-ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on the finisher or a crit.,Las cartas a su derecha se lanzan al rematar o al crítico.
+ITEM_TRIGGER_ON_FINISHER,On Finisher,Al Rematar
+ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast a small spell on the finisher.,Las cartas a su derecha lanzan un hechizo al rematar.
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Gun: ×2 size, ×1.6 damage, −25% speed.","Pistola: ×2 tamaño, ×1,6 daño, −25% velocidad."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
@@ -829,3 +829,9 @@ UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for t
 UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
 UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
 UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
+ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
+ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast a small spell on each critical hit.,Las cartas a su derecha lanzan un hechizo en cada crítico.
+ITEM_SHARED_BLEED,Bleed,Sangrado
+ITEM_SHARED_BLEED_DESC,Hits bleed; the bleed ticks twice as fast while you move.,Desangras; sangra el doble de rápido si te mueves.
+ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
+ITEM_SHARED_EXPLOSIVE_DESC,The spell explodes where it ends.,El hechizo estalla donde termina.

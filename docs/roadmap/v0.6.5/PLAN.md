@@ -25,3 +25,4 @@ pick for a feedback pass (ROADMAP §4); the owner may rename it. Progress: [`PRO
 | WN3 | The Gun pool G1–G16 | W4, W7 | Done (agent; [`evidence/WAND_GUN.md`](evidence/WAND_GUN.md); the lead's full suite pending) |
 | WN4 | The Blade pool B1–B16 (the slash as a spell) | W4, W5, W7 | Done (agent; [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md); merged with WN3; the lead's full suite pending) |
 | WN5 | The shared pool S1–S7, the triggers T1–T4 and their visuals; the old cards migrated; legendary tier and offer pools | W4, W7 |
+| WN5a | WN5's first half: the shared pool S1–S7 in both runs (Fire, Lightning, Frost, Venom, Bleed, Void, Explosive; the v0.6 cards that do the job keep their ids), the triggers T1–T4 offered with their final names (T4: On Finisher with the Blade, On Crit with the Gun) and the child spell drawn where it is cast | W4, W7 | Done (agent; [`evidence/WAND_SHARED.md`](evidence/WAND_SHARED.md); the lead's full suite pending) |

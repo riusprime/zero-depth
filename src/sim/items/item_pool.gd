@@ -62,8 +62,7 @@ static func usable(w: World, idx: int) -> bool:
 
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
-	if it.kind == ItemTable.Kind.TRIGGER:
-		return false  # v0.6.5 WN1: the wand's trigger cards join the offers with their pool (WN5)
+	# v0.6.5 WN5a: the wand's trigger cards (WAND.md T1–T4) are offered in both weapons' runs.
 	if it.requires_heat and w.heat == null:
 		return false
 	var need := it.requires_utility

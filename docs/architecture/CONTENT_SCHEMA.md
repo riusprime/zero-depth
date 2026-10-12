@@ -348,6 +348,24 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 
   Validation: the counts and shares in range (`range`), the times positive (`not_positive`). Every number is a starting
   value.
+- **v0.6.5 WN5a: the shared pool and the triggers offered** (design [`../design/WAND.md`](../design/WAND.md) S1–S7,
+  T1–T4; sim side [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8h). New `ItemDefinition` fields (appended):
+  `bleed_move_period_seconds: float` (S5: the bleed's period while the player moves; 0 = none; when set, under
+  `bleed_period_seconds`: `range`), `name_key_gun` / `desc_key_gun: StringName` (T4: the card's face on a Gun run;
+  empty = the same face; both or neither: `missing`). A `WAND` card may bring an engine's numbers like a `MODIFIER`
+  card (burn, poison, and the bleed's without a dash burst). The shared pool's cards are `requires_weapon = ""`
+  (offered in both runs) and tagged `wand` (levels 1–5). Five v0.6 cards that already did the job keep their ids,
+  kinds and item indices and become the shared cards: S1 Fire `ember_core` (its kill burst + 10 % a level), S2
+  Lightning `storm_core` (its chain + 10 % a level), S3 Frost `frost_core` (a new `MUL_PERMILLE damage 1000`,
+  + 50 ‰ a level), S4 Venom `venom_core` (the same), S6 Void `gravity_well` (a new `ELEMENT void` on the spell; its
+  pull + 10 % a level); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
+  Vacío. Two new `WAND` items and modifiers: S5 `shared_bleed` (`STATUS bleed 1`, `ELEMENT bleed`,
+  `MUL_PERMILLE damage 1000` + 50 ‰ a level; the bleed 1 a stack every 0.5 s, 0.25 s while moving, 4 s, 8 stacks;
+  Bleed / Sangrado) and S7 `shared_explosive` (a `HOOK ON_END BURST` 1.4 m at 600 ‰, + 100 ‰ a level, effect
+  `shared_explosive`, its child `ELEMENT ember`; Explosive / Explosivo), both target every attack, indexed in the
+  shared pool (`WAND_POOL_ORDER`'s `""`, after the Blade's) by id. Triggers: `ItemPool` offers kind `TRIGGER` now;
+  `trigger_on_finisher` is On Finisher / Al Rematar, with `name_key_gun` On Crit / Al Crítico. 81 modifiers, 93 items.
+  Every number is a starting value.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,

@@ -43,6 +43,13 @@ var shell_tick := -1
 var trail_tick := -1
 ## v0.6.5 WN3 (GunForms, G13 Charge): the ticks the shot in the barrel has charged (0 = none).
 var hold_t := 0
+## v0.6.5 WN5a (WandCasts): the small spells cast for the views (parallel arrays, oldest first): the tick, the child
+## spec's book key, where from, which way, and 1 for a trigger's cast. View data only: not hashed, not in touched().
+var cast_tick := PackedInt32Array()
+var cast_key := PackedStringArray()
+var cast_pos := PackedVector2Array()
+var cast_angle := PackedInt32Array()
+var cast_flag := PackedInt32Array()
 
 
 func touched() -> bool:

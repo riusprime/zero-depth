@@ -46,6 +46,7 @@ func sync(reader: WorldReader) -> void:
 	_sync_chain(reader)
 	_sync_crits(reader)
 	_sync_mx2_forms(reader)
+	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -352,3 +353,49 @@ static func hook_child(spec: Dictionary, trigger: int, form: int) -> Dictionary:
 		if int(h.get("trigger", -1)) == trigger and int(c.get("form", -1)) == form:
 			return c
 	return {}
+
+
+# --- v0.6.5 WN5a: the wand's casts ----------------------------------------------------------------------------
+## Each small spell the sim cast since the last sync (WorldReader.wand_casts, WandCasts), drawn once from its own
+## spec: a trigger's cast flashes a sigil (CAST_SIGIL) and a small ring where it fires, then the child spell itself
+## when it is a slash or a blast (a cast bolt flies as a live projectile, drawn by _sync_bolts with its &"cast" cue);
+## a shared card's blast (Fire's kill burst, Void's pull, Explosive's blast) draws as its burst in its element.
+func _sync_casts(reader: WorldReader) -> void:
+	var marks := reader.wand_casts()
+	if not marks.is_empty() and int(marks[marks.size() - 1]["tick"]) < _cast_tick:
+		_cast_tick = -1  # a new floor's world: its ticks start again
+		_cast_n = 0
+	var at_tick := 0
+	var last := -1
+	for m: Dictionary in marks:
+		var t := int(m["tick"])
+		at_tick = at_tick + 1 if t == last else 1
+		last = t
+		if t < _cast_tick or (t == _cast_tick and at_tick <= _cast_n):
+			continue
+		_draw_cast(reader, m)
+	if last >= 0:
+		_cast_tick = last
+		_cast_n = at_tick
+
+
+func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
+	var spec := reader.attack_spec_at(String(m["key"]))
+	if spec.is_empty():
+		return
+	var pos: Vector2 = m["pos"]
+	var start := float(m["tick"])
+	if bool(m["cast"]):
+		casts_drawn += 1
+		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start)
+		spawn(
+			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": spec["elements"]},
+			pos,
+			0.0,
+			{"start": start, "life": float(CAST_RING_TICKS), "radius": CAST_RING_M}
+		)
+	var form := int(spec.get("form", -1))
+	if form == AttackFormLooks.ARC or form == AttackFormLooks.BURST:
+		var name: StringName = AttackFormLooks.FORM_NAMES[form]
+		cast_forms[name] = int(cast_forms.get(name, 0)) + 1
+		spawn(spec, pos, SimPlane.yaw_of(int(m["angle"])), {"start": start, "own": CAST_OWN_M})

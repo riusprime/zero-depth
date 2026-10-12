@@ -42,6 +42,9 @@ func test_pick_a_combo_pair_from_altars_and_chests() -> void:
 		if not paired.has(k):
 			held.append(k)
 	w.set_items_owned(held)
+	# v0.6.5 WN3–WN5a: a held wand card below level 5 is still offered (its level-up); held at level 5 it leaves too.
+	for k in held:
+		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)
 	var left := Array(w.rewards.ids)
 	while not left.is_empty() and not w.player_dead():
 		var id: int = _nearest(w, left)

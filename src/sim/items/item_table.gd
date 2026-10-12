@@ -125,3 +125,8 @@ var poison_period_ticks := 1
 var poison_ticks := 0
 var poison_max_stacks := 0
 var poison_spread_m := 0.0
+## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
+## desc_key; Offers.item_keys picks the run's).
+var bleed_move_period_ticks := 0
+var name_key_gun := &""
+var desc_key_gun := &""

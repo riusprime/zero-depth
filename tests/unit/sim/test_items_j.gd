@@ -76,11 +76,11 @@ func _kill(w: World, i: int) -> void:
 func test_the_data_has_distinct_kinds() -> void:
 	assert_eq(
 		_tables.size(),
-		91,
+		93,
 		(
 			"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
 			+ " + the wand's 4 trigger cards (v0.6.5 WN1) + the Gun pool's 12 new cards (v0.6.5 WN3)"
-			+ " + the Blade pool's 12 new cards (v0.6.5 WN4)"
+			+ " + the Blade pool's 12 new cards (v0.6.5 WN4) + the shared pool's 2 new cards (v0.6.5 WN5a)"
 		)
 	)
 	var kinds := {}
@@ -452,16 +452,17 @@ func test_the_pool_draws_every_item_without_repeats() -> void:
 	var all := ItemPool.draw(w, 99)
 	assert_eq(
 		all.size(),
-		72,
+		78,
 		(
 			"everything but the owned one (v0.6.0 MX4: the M-list's 24 usable here too; v0.6.5 WN3: the Gun"
-			+ " pool's 12; WN4: the Blade pool's 12 new cards and Blade Orbit, no longer an ability merge)"
+			+ " pool's 12; WN4: the Blade pool's 12 new cards and Blade Orbit, no longer an ability merge;"
+			+ " WN5a: the 4 triggers, offered now, and the shared pool's 2 new cards)"
 		)
 	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
 		w.add_pickup(i, Vector2(5, 5))
-	assert_eq(seen.size(), 72)
+	assert_eq(seen.size(), 78)
 	assert_false(seen.has(_index(K.MOMENTUM)))
 	assert_eq(ItemPool.draw(w, 3).size(), 0, "all placed: nothing left to draw")

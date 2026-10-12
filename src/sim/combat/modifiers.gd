@@ -369,16 +369,35 @@ static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
 
 
 ## The v0.5 riders (see the class doc), after every modifier: statuses the engines already running bring.
+## v0.6.5 WN5a: a rider rides only on an engine something outside the wand runs (a v0.5 item, an ability's borrow):
+## a wand card's own status (Fire's burn, Frost's slow) goes where the card sits, so Fire right of a trigger burns
+## the child and not the slash.
 static func _riders(w: World, b: AttackBook) -> void:
 	var m := w.item_mods
+	var burn := m.burn_max_stacks > 0 and _engine_outside_wand(w, true)
+	var slow := m.slow_ticks > 0 and _engine_outside_wand(w, false)
 	for id in b.order:
 		var s: AttackSpec = b.specs[StringName(id)]
 		if s.depth != 0 or not s.has_tag(TAG_WEAPON):
 			continue
-		if s.has_tag(TAG_MELEE) and m.burn_max_stacks > 0 and not s.has_status(&"burn"):
+		if s.has_tag(TAG_MELEE) and burn and not s.has_status(&"burn"):
 			s.set_status(&"burn", 1, 0, true)
-		if s.has_tag(TAG_PROJECTILE) and m.slow_ticks > 0 and not s.has_status(&"slow"):
+		if s.has_tag(TAG_PROJECTILE) and slow and not s.has_status(&"slow"):
 			s.set_status(&"slow", 1, 0, true)
+
+
+## v0.6.5 WN5a: the burn (`burn`) or the slow engine runs from something other than a wand card (CardLevels.is_card):
+## an owned item that isn't one brings its numbers, or no owned item does (an ability borrows it).
+static func _engine_outside_wand(w: World, burn: bool) -> bool:
+	var from_item := false
+	for idx in w.items_owned:
+		var t := w.item_tables[idx]
+		if (t.burn_max_stacks if burn else t.slow_ticks) <= 0:
+			continue
+		if not CardLevels.is_card(w, idx):
+			return true
+		from_item = true
+	return not from_item
 
 
 ## Combo step `k` as the player table has it (v0.6.5 WN1: public, the wand's child spell copies it).

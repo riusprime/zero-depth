@@ -7,6 +7,6 @@ script = ExtResource("1_item")
 kind = 31
 name_key = &"ITEM_STORM_CORE"
 desc_key = &"ITEM_STORM_CORE_DESC"
-tags = PackedStringArray("shock")
+tags = PackedStringArray("shock", "wand")
 modifiers = Array[StringName]([&"storm_core"])
 id = &"storm_core"
