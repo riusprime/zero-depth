@@ -37,6 +37,7 @@ static func compile_legendary(
 	t.weights = PackedInt32Array([def.stat_weight, def.mod_weight])
 	t.offer_size = def.offer_size
 	t.stat_permille = int(round(def.stat_multiplier * 1000.0))
+	t.wand_level = def.wand_level  # v0.6.5 WN5b
 	return t
 
 

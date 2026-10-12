@@ -13,3 +13,6 @@ var weights := PackedInt32Array([60, 40])
 var offer_size := 3
 ## The legendary stat amount: the epic amount x this per mille.
 var stat_permille := 1600
+## v0.6.5 WN5b: 0, or every wand card (CardLevels.is_card) is a mod of the tier and a legendary pick takes it at this
+## level (BossReward.on_pick).
+var wand_level := 0

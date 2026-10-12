@@ -299,6 +299,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
 			return err
+		WandMigration.run(world)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	_tweaked_run_check()
 	driver = SimDriver.new()

@@ -50,6 +50,8 @@ func test_rule_cards_and_ability_mods_show_up_often_enough_to_matter() -> void:
 	for id in ["glass_cannon", "onrush", "overkill", "hoarder", "fast_hands"]:
 		var c: Array = counts.get("stat:" + id, [0, 0])
 		assert_gt(c[0] + c[1], SEEDS / 4, "%s: offered in more than one roll in 16" % id)
+	# v0.6.5 WN5b: the ability mods retired with their abilities (WAND.md; data/wand/migration.tres): never offered.
 	for id in ["cluster_payload", "overclocked_drone", "razor_orbit", "afterimage"]:
-		var c: Array = counts.get("mod:" + id, [0, 0])
-		assert_gt(c[1], c[0], "%s: mostly from chests" % id)
+		assert_false(counts.has("mod:" + id), "%s: retired, never offered" % id)
+	for id in ["bomb_lobber", "drone_buddy", "orbit_blades", "arc_field", "frost_nova", "flame_trail"]:
+		assert_false(counts.has("ability:" + id), "%s: retired, never offered" % id)

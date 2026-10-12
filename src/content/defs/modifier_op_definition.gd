@@ -135,6 +135,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up 1–5): added to `value` per level above 1, in the same
 ## units (a numeric op; a HOOK op: to hook_damage_permille). 0 = the op is the same at every level.
 @export var per_level := 0.0
+## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
+## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
+@export var hook_casts := 1
 
 
 ## The stage this op runs in, given its modifier's.

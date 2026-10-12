@@ -26,6 +26,8 @@ extends RefCounted
 ##   1, the child's child at 2; the run-time guard keeps the proc 100 → 50 → 25, the ancestry chain and the 256
 ##   launches a tick). A spec the trigger's target doesn't reach (a moment: the dash, walking, a blink, the body)
 ##   reads past it, so a dash card right of a trigger still rewrites the dash.
+## - v0.6.5 WN5b: a legendary trigger (ModifierOp.casts > 1, "On Hit ×2") casts its child that many times per trigger,
+##   each delay_ticks after the one before (the later ones through the launch queue, ModifierRuntime).
 
 const MAX_DEPTH := 2
 
@@ -192,17 +194,19 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 		if s.depth != 0 or s.id != finisher_id:
 			return  # only the combo's last step finishes; the cut still ends every other spec
 		trig = AttackSpec.Trigger.ON_HIT
-	var c := child_base.copy()
-	c.id = m.id
-	c.effect_id = m.id
-	c.depth = s.depth + 1
-	c.lineage = s.lineage.duplicate()
-	c.lineage.append(String(m.id))
-	var k := AttackHook.new()
-	k.id = m.id
-	k.trigger = trig
-	k.damage_permille = child_damage_permille
-	k.child = run(c, i + 1)
-	s.hooks.append(k)
+	for n in maxi(1, op.casts):  # v0.6.5 WN5b: a legendary trigger casts again, delay_ticks apart
+		var c := child_base.copy()
+		c.id = m.id
+		c.effect_id = m.id
+		c.depth = s.depth + 1
+		c.lineage = s.lineage.duplicate()
+		c.lineage.append(String(m.id))
+		var k := AttackHook.new()
+		k.id = m.id
+		k.trigger = trig
+		k.damage_permille = child_damage_permille
+		k.delay_ticks = op.delay_ticks * n
+		k.child = run(c, i + 1)
+		s.hooks.append(k)
 	if not s.modifier_ids.has(String(m.id)):
 		s.modifier_ids.append(String(m.id))

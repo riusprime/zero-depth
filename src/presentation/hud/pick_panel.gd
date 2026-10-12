@@ -111,7 +111,7 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var face := card_face(self, reader, items[k])  # v0.4.0 BS: a mod, an ability or a stat card
 		if legendary:
-			face = legendary_face(self, face)
+			face = legendary_face(self, face, reader.legendary_card_level(r))
 		s.show_card(face)
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
 		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
@@ -147,6 +147,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"tier": int(info["rarity"]),
 		"tier_text": "",
 		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
+		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
@@ -182,8 +183,9 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
-## it on a mod).
-static func legendary_face(ci: Object, face: Dictionary) -> Dictionary:
+## it on a mod). v0.6.5 WN5b: a wand card taken there goes to `wand_level` (the tier's level-5 version): the line says
+## "Level 5" after it.
+static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) -> Dictionary:
 	var out := face.duplicate()
 	out["tier"] = CardFrames.LEGENDARY_TIER
 	var word: String = ci.tr("RARITY_LEGENDARY")
@@ -192,6 +194,8 @@ static func legendary_face(ci: Object, face: Dictionary) -> Dictionary:
 		if int(face["type"]) == WorldReader.CARD_MOD
 		else word
 	)
+	if wand_level > 0 and bool(face.get("wand", false)):
+		out["tier_text"] += " · " + ci.tr("UI_CARD_ABILITY_LEVEL") % wand_level
 	return out
 
 

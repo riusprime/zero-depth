@@ -121,6 +121,9 @@ const FAMILY_OF := {
 	&"trigger_on_finisher": &"time",
 	&"trigger_on_hit": &"time",
 	&"trigger_on_kill": &"time",
+	&"trigger_on_hit_twice": &"time",  # v0.6.5 WN5b: the legendary triggers
+	&"trigger_on_kill_twice": &"time",
+	&"trigger_on_end_twice": &"time",
 	# v0.6.5 WN3: the Gun pool's new cards (G5, G9, G10, G16 keep theirs above)
 	&"gun_backfire": &"projectile",
 	&"gun_big_shot": &"damage",

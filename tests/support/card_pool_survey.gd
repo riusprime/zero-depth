@@ -26,7 +26,12 @@ const POOL_MIN := 40
 ## branch. Merged with WN3: measured 88 (Blade) / 83 (Gun) (Wide Arc, Wave, Afterimage and Orbit Blades went
 ## Blade-only; Split, Boomerang, Orbit and Halo Gun-only), so 88. Raised in the open, not a balance target: PROGRESS
 ## v0.6.5 "Gates" asks the owner; WN5 prunes.
-const POOL_MAX := 88
+## v0.6.5 WN5b: 50, measured (test_card_pool_reach.gd: "blade pool: 50 in the data + 0 planned", "gun pool: 48 in
+## the data + 0 planned") after the v0.6 cards' migration retired 48 cards (WAND.md "What happens to the v0.6 cards";
+## data/wand/migration.tres): per build 3 abilities (the weapon, Blink, Aegis), 18 stat cards, the weapon's 16 wand
+## cards and the passive items that take no slot (13 Blade, 11 Gun). Not pruned past WAND.md; the shared pool S1–S7
+## and the offered triggers (WN5a) add to it at the merge, where the lead measures again (PROGRESS v0.6.5 "Gates").
+const POOL_MAX := 50
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [
@@ -72,6 +77,8 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 	var w := world(repo, 1, build, [])
 	var have := PackedStringArray()
 	for t in w.ability_tables:
+		if t.retired:
+			continue  # v0.6.5 WN5b: the six old ability modifiers retired (WAND.md; data/wand/migration.tres)
 		if t.start_weapon == 0 or (t.start_weapon & w.player.weapons) != 0:
 			have.append("ability:%s" % t.id)
 	for t in w.stat_tables:
@@ -82,12 +89,17 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 			continue  # v0.6.0 MX4: the boss's legendary tier only, never an altar's or a chest's
 		if t.kind == ItemTable.Kind.TRIGGER:
 			continue  # v0.6.5 WN1: the wand's trigger cards join the offers with their pool (WN5)
+		if t.retired:
+			continue  # v0.6.5 WN5b: a retired v0.6 card is never offered
 		if t.requires_weapon == 0 or (t.requires_weapon & w.player.weapons) != 0:
 			have.append("mod:%s" % t.id)
 	have.sort()
 	var planned := PackedStringArray()
+	var in_data := PackedStringArray()  # v0.6.5 WN5b: a retired ability is in the data, not planned
+	for t in w.ability_tables:
+		in_data.append(String(t.id))
 	for id in PLANNED_ABILITIES:
-		if not have.has("ability:%s" % id):
+		if not in_data.has(String(id)):
 			planned.append("ability:%s" % id)
 	return [have, planned]
 

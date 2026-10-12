@@ -1085,6 +1085,13 @@ func reward_is_legendary(i: int) -> bool:
 	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
 
 
+## v0.6.5 WN5b: the level a wand card taken from reward i goes to (the boss's legendary altar: the tier's wand_level,
+## WAND.md "level-5 versions"), or 0.
+func legendary_card_level(i: int) -> int:
+	var t := _w.legendary_table
+	return t.wand_level if t != null and BossReward.is_legendary(_w, i) else 0
+
+
 ## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
 func reward_drop_kind(i: int) -> int:
 	return CoreTheft.drop_kind(_w, _w.rewards.ids[i])

@@ -55,14 +55,16 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
-## v0.5.0 CP: an ability mod only while the player owns its ability.
+## v0.5.0 CP: an ability mod only while the player owns its ability. v0.6.5 WN5b: never a retired v0.6 card.
 static func usable(w: World, idx: int) -> bool:
 	return _usable(w, idx)
 
 
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
-	if it.kind == ItemTable.Kind.TRIGGER:
+	if it.retired:
+		return false  # v0.6.5 WN5b: a retired v0.6 card (WAND.md; data/wand/migration.tres)
+	if it.kind == ItemTable.Kind.TRIGGER and it.rarity != ItemTable.LEGENDARY:
 		return false  # v0.6.5 WN1: the wand's trigger cards join the offers with their pool (WN5)
 	if it.requires_heat and w.heat == null:
 		return false

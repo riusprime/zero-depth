@@ -163,6 +163,15 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 	if o.op == ModifierOpDefinition.Op.SET_FORM:
 		if o.form < ModifierOpDefinition.Form.ARC or o.form > ModifierOpDefinition.Form.BURST:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
+	if (
+		o.hook_casts != 1
+		and (o.op != ModifierOpDefinition.Op.TRIGGER or o.hook_casts < 1 or o.hook_casts > 3)
+	):
+		issues.append(  # v0.6.5 WN5b: a legendary trigger casts its spell 1..3 times
+			ValidationIssue.new(
+				&"range", resource_path, "%s: hook_casts is 1..3, on a trigger" % where
+			)
+		)
 	if o.per_level != 0.0 and not (o.is_numeric() or o.op == ModifierOpDefinition.Op.HOOK):
 		issues.append(  # v0.6.5 WN3: a level grows a number (or a hook's damage share)
 			ValidationIssue.new(
