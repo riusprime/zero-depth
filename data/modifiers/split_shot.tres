@@ -8,6 +8,7 @@ script = ExtResource("2_op")
 op = 0
 field = &"count"
 value = 3.0
+per_level = 1.0
 
 [sub_resource type="Resource" id="Op_2"]
 script = ExtResource("2_op")
@@ -22,7 +23,7 @@ stage = 4
 form = 1
 hook_trigger = 0
 hook_tags = PackedStringArray("projectile")
-hook_radius_m = 0.12
+hook_radius_m = 0.08
 hook_reach_m = 4.0
 hook_damage_permille = 500
 hook_effect = &"split_shot"

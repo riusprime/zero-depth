@@ -41,7 +41,7 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 	for idx in w.item_tables.size():
 		if (
 			(legendary or w.item_tables[idx].rarity != ItemTable.LEGENDARY)
-			and not w.items_owned.has(idx)
+			and CardLevels.can_take(w, idx)  # v0.6.5 WN3: a held wand card below level 5 too
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows

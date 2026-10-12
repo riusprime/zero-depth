@@ -326,7 +326,7 @@ static func _card_applies(w: World, code: int) -> bool:
 			return not Stats.at_cap(w, Offers.stat_of(code))
 		Offers.ABILITY:
 			return Abilities.can_take(w, Offers.ability_of(code))
-	return not w.items_owned.has(code)
+	return CardLevels.can_take(w, code)  # v0.6.5 WN3: a held wand card levels up
 
 
 ## While a panel is open (tick phase 1c): a pick takes that choice, a cancel leaves; anything else waits.

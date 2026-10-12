@@ -37,3 +37,50 @@ var child_ops: Array[ModifierOp] = []
 ## v0.6.5 WN1 (TRIGGER): `trigger` is the cut's trigger (ModifierOpDefinition.Trigger: ON_HIT, ON_KILL, ON_END,
 ## ON_FINISHER, ON_CRIT); on a Gun run `trigger_gun` instead when it is not -1.
 var trigger_gun := -1
+## v0.6.5 WN3 (WAND.md rule 6): added to `value` (a HOOK op: to damage_permille) per level above 1 (ModifierTable.at).
+var per_level := 0.0
+
+
+## v0.6.5 WN3: a copy at card level `level` (1..5): its value, a hook's damage share and its child ops' values each
+## grown by their per_level × (level − 1). Compile-time only (Modifiers.build_modifiers).
+func at_level(level: int) -> ModifierOp:
+	var o := ModifierOp.new()
+	for f: StringName in [
+		&"op", &"stage", &"field", &"value", &"form", &"status", &"stacks", &"every", &"element"
+	]:
+		o.set(f, get(f))
+	for f: StringName in [
+		&"trigger",
+		&"radius_m",
+		&"reach_m",
+		&"damage",
+		&"damage_permille",
+		&"hook_every",
+		&"effect_id",
+		&"delay_ticks",
+		&"when",
+		&"trigger_gun",
+		&"per_level",
+	]:
+		o.set(f, get(f))
+	o.hook_tags = hook_tags.duplicate()
+	var n := level - 1
+	if op == Op.HOOK:
+		o.damage_permille = damage_permille + roundi(per_level * n)
+	elif field in AttackSpec.INT_FIELDS:
+		o.value = value + roundi(per_level * n)
+	else:
+		o.value = value + per_level * n
+	for c in child_ops:
+		o.child_ops.append(c.at_level(level))
+	return o
+
+
+## v0.6.5 WN3: true if this op or a child op grows with the level.
+func levels() -> bool:
+	if per_level != 0.0:
+		return true
+	for c in child_ops:
+		if c.levels():
+			return true
+	return false

@@ -52,6 +52,12 @@ const INT_FIELDS: Array[StringName] = [
 	&"resonance_permille",
 	&"heat_rate_permille",
 	&"damage_mul_permille",
+	# v0.6.5 WN3 (the Gun pool; appended: the hash order): GunForms reads them
+	&"twin",
+	&"spiral",
+	&"mine_ticks",
+	&"hold_ticks",
+	&"hold_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed", &"pull_m"]
 ## v0.6.0 MX4: directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
@@ -152,6 +158,18 @@ var damage_mul_permille := 1000
 ## v0.6.0 MX4: the modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
 ## to a spec its own hook made (Split Shot's shards never split again; the ancestry guard, at compile time).
 var lineage := PackedStringArray()
+
+# --- v0.6.5 WN3 (docs/design/WAND.md, the Gun pool; GunForms runs them)
+## Pattern: every bolt fires with this many more beside it, side by side (G3 Twin; 0 = one). Behaviour: a
+## projectile's heading swings this far either side of its line, a corkscrew (G11 Spiral; 1/4096 turns, 0 = none);
+## it stops where its flight ends and waits this many ticks, ending on the first enemy it touches (G12 Mine).
+## Payload: the root shot charges while the shoot button is held, up to hold_ticks, growing to × hold_permille in
+## size and damage (G13 Charge; 0 = no charge).
+var twin := 0
+var spiral := 0
+var mine_ticks := 0
+var hold_ticks := 0
+var hold_permille := 1000
 
 # --- hooks
 var hooks: Array[AttackHook] = []
@@ -317,4 +335,10 @@ func read() -> Dictionary:
 		"charge_ticks": charge_ticks,
 		"charge_permille": charge_permille,
 		"resonance_permille": resonance_permille,
+		# v0.6.5 WN3 (AttackFormLooks' cues: twin, helix, mine, swell)
+		"twin": twin,
+		"spiral": spiral,
+		"mine_ticks": mine_ticks,
+		"hold_ticks": hold_ticks,
+		"hold_permille": hold_permille,
 	}

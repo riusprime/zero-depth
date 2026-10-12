@@ -16,10 +16,11 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		55,
+		67,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
-			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers"
+			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
+			+ " v0.6.5 WN3: the Gun pool's 12 new"
 		)
 	)
 	assert_true(

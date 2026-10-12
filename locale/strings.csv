@@ -667,14 +667,14 @@ ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
 ITEM_EDGE_ROUNDS_DESC,Projectiles pierce once and slash where they hit.,Los proyectiles atraviesan una vez y cortan al impactar.
 ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
 ITEM_SHOCK_CIRCLES_DESC,Trinket: projectiles become shock rings at half range.,Baratija: los proyectiles son anillos de choque cortos.
-ITEM_HALO_SHOT,Halo Shot,Disparo Halo
-ITEM_HALO_SHOT_DESC,"Trinket: shots go all round, ×3 count, half range.","Baratija: disparas en círculo, ×3 balas, media distancia."
+ITEM_HALO_SHOT,Halo,Halo
+ITEM_HALO_SHOT_DESC,"Gun: fires in a full ring, ×3 count, half range.","Pistola: dispara en anillo, ×3 balas, media distancia."
 ITEM_BOOMERANG,Boomerang,Bumerán
-ITEM_BOOMERANG_DESC,"Trinket: projectiles come back, hitting again.",Baratija: los proyectiles vuelven y golpean otra vez.
-ITEM_ORBIT_ROUNDS,Orbit Rounds,Balas en Órbita
-ITEM_ORBIT_ROUNDS_DESC,Trinket: projectiles circle you once before they fly.,Baratija: los proyectiles orbitan una vez antes de salir.
-ITEM_SPLIT_SHOT,Split Shot,Disparo Dividido
-ITEM_SPLIT_SHOT_DESC,Projectiles split in 3 on their first hit (50% damage).,Los proyectiles se parten en 3 al impactar (50%).
+ITEM_BOOMERANG_DESC,"Gun: flies out, then comes back through you.",Pistola: sale y vuelve pasando por ti.
+ITEM_ORBIT_ROUNDS,Orbit,Órbita
+ITEM_ORBIT_ROUNDS_DESC,Gun: circles you once before it flies out.,Pistola: te rodea una vez antes de salir.
+ITEM_SPLIT_SHOT,Split,División
+ITEM_SPLIT_SHOT_DESC,"Gun: on its first hit, splits into 3 at half size.",Pistola: al impactar se parte en 3 a media talla.
 ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
 ITEM_TWIN_CAST_DESC,Every attack repeats once 0.2 s later at 50%.,"Cada ataque se repite 0,2 s después al 50%."
 ITEM_REARGUARD,Rearguard,Retaguardia
@@ -728,6 +728,30 @@ ITEM_TRIGGER_ON_END,On End,Al Terminar
 ITEM_TRIGGER_ON_END_DESC,Cards to its right cast a small spell where it ends.,Las cartas a su derecha lanzan un hechizo al terminar.
 ITEM_TRIGGER_ON_FINISHER,On Finisher / On Crit,Al Rematar / Al Crítico
 ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on the finisher or a crit.,Las cartas a su derecha se lanzan al rematar o al crítico.
+ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
+ITEM_GUN_BIG_SHOT_DESC,"Gun: ×2 size, ×1.6 damage, −25% speed.","Pistola: ×2 tamaño, ×1,6 daño, −25% velocidad."
+ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
+ITEM_GUN_RAPID_FIRE_DESC,"Gun: ×0.6 size, +60% fire rate, −30% damage.","Pistola: ×0,6 tamaño, +60% cadencia, −30% daño."
+ITEM_GUN_TWIN,Twin,Gemelo
+ITEM_GUN_TWIN_DESC,"Gun: fires the spell twice, side by side.","Pistola: dispara dos veces, lado a lado."
+ITEM_GUN_SPREAD,Spread,Abanico
+ITEM_GUN_SPREAD_DESC,Gun: becomes a 3-shot fan (+2 per level).,Pistola: un abanico de 3 balas (+2 por nivel).
+ITEM_GUN_PIERCE,Pierce,Perforación
+ITEM_GUN_PIERCE_DESC,Gun: passes through 2 enemies (+1 per level).,Pistola: atraviesa 2 enemigos (+1 por nivel).
+ITEM_GUN_RICOCHET,Ricochet,Rebote
+ITEM_GUN_RICOCHET_DESC,Gun: bounces off walls twice (+1 per level).,Pistola: rebota dos veces en paredes (+1 por nivel).
+ITEM_GUN_HOMING,Homing,Teledirigido
+ITEM_GUN_HOMING_DESC,Gun: curves toward the nearest enemy.,Pistola: se curva hacia el enemigo más cercano.
+ITEM_GUN_SPIRAL,Spiral,Espiral
+ITEM_GUN_SPIRAL_DESC,Gun: travels in a corkscrew.,Pistola: avanza en espiral.
+ITEM_GUN_MINE,Mine,Mina
+ITEM_GUN_MINE_DESC,"Gun: stops at its range, waits 3 s, blows on contact.","Pistola: se para, espera 3 s y estalla al contacto."
+ITEM_GUN_CHARGE,Charge,Carga
+ITEM_GUN_CHARGE_DESC,"Gun: hold to grow it, up to ×3 size and damage.","Pistola: mantén para crecer, hasta ×3 tamaño y daño."
+ITEM_GUN_ECHO,Echo,Eco
+ITEM_GUN_ECHO_DESC,Gun: fires again 0.3 s later at 60%.,"Pistola: dispara otra vez 0,3 s después al 60%."
+ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
+ITEM_GUN_BACKFIRE_DESC,Gun: also fires behind you.,Pistola: también dispara hacia atrás.
 WAND_READ_FIRE,You fire %s.,Disparas %s.
 WAND_READ_BOLT,a bolt,un proyectil
 WAND_READ_SLASH,a slash,un tajo

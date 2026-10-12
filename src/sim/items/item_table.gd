@@ -38,6 +38,7 @@ enum Kind {
 	AFTERIMAGE,
 	MODIFIER,
 	TRIGGER,  # v0.6.5 WN1: a wand trigger card (Wand; ItemPool never draws one yet)
+	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (CardLevels)
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).

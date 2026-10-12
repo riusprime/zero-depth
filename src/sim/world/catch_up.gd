@@ -51,20 +51,22 @@ static func power(w: World) -> int:
 
 
 ## v0.6.0 MX4: what slot `s`'s card counts in levels: an ability modifier its level; a v0.5 item 1; an M-list card
-## 1, a rare one (the trinkets, the ability merges) 2, a legendary one (the boss's tier) 3.
+## 1, a rare one (the trinkets, the ability merges) 2, a legendary one (the boss's tier) 3; v0.6.5 WN3: a wand card
+## (CardLevels) one more per level past the first.
 static func power_level(w: World, s: int) -> int:
 	var code := w.mod_slots[s]
 	if Offers.type_of(code) != Offers.MOD or code >= w.item_tables.size():
 		return BuildSlots.level_at(w, s)
 	var t := w.item_tables[code]
-	if t.kind != ItemTable.Kind.MODIFIER:
+	var up := CardLevels.level(w, code) - 1  # v0.6.5 WN3: a wand card's levels past the first
+	if t.kind != ItemTable.Kind.MODIFIER and t.kind != ItemTable.Kind.WAND:
 		return 1
 	match t.rarity:
 		ItemTable.RARE:
-			return 2
+			return 2 + up
 		ItemTable.LEGENDARY:
-			return 3
-	return 1
+			return 3 + up
+	return 1 + up
 
 
 ## A hit's expected multiplier with crit chance c and crit multiplier k (per mille): 1000 + c × (k − 1000) / 1000.

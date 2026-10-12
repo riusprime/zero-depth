@@ -74,6 +74,12 @@ const FIELD_STAGE := {
 	&"resonance_permille": 3,
 	&"heat_rate_permille": 5,
 	&"range": 5,
+	# v0.6.5 WN3 (the Gun pool: GunForms)
+	&"twin": 1,
+	&"spiral_degrees": 2,
+	&"mine_seconds": 2,
+	&"hold_seconds": 3,
+	&"hold_permille": 3,
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -115,6 +121,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.6.5 WN1 (TRIGGER): the trigger on a Gun run when it differs from hook_trigger (-1: the same). T4 is On Finisher
 ## with the Blade and On Crit with the Gun.
 @export var hook_trigger_gun := -1
+## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up 1–5): added to `value` per level above 1, in the same
+## units (a numeric op; a HOOK op: to hook_damage_permille). 0 = the op is the same at every level.
+@export var per_level := 0.0
 
 
 ## The stage this op runs in, given its modifier's.

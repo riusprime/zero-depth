@@ -23,9 +23,19 @@ static func on_spawn(w: World, pi: int) -> void:
 	if p.team[pi] != ActorStore.TEAM_PLAYER or p.spec_key[pi] == "":
 		return
 	var s := Modifiers.book(w).find(p.spec_key[pi])
-	if s == null or (s.pierce <= 0 and s.returns <= 0 and s.homing <= 0 and s.orbit_ticks <= 0):
+	if (
+		s == null
+		or (
+			s.pierce <= 0
+			and s.returns <= 0
+			and s.homing <= 0
+			and s.orbit_ticks <= 0
+			and not GunForms.moves(s)
+		)  # v0.6.5 WN3: spiral, mine
+	):
 		return
 	p.moves = true
+	GunForms.on_spawn(w, pi, s)  # v0.6.5 WN3: before the orbit, so life0 counts the mine's wait
 	p.pierce_left[pi] = s.pierce
 	p.ret[pi] = 1 if s.returns > 0 else 0
 	p.home[pi] = s.homing
@@ -44,6 +54,14 @@ static func steer(w: World, pi: int) -> void:
 	var p := w.projectiles
 	if not p.moves or pi >= p.ret.size():
 		return
+	if GunForms.mine_waits(w, pi):  # v0.6.5 WN3: G12 Mine, still until touched
+		return
+	_steer(w, pi)
+	GunForms.spiral_turn(w, pi)  # v0.6.5 WN3: G11 Spiral, after homing and the way back
+
+
+static func _steer(w: World, pi: int) -> void:
+	var p := w.projectiles
 	var at := Vector2(p.pos_x[pi], p.pos_y[pi])
 	if p.orbit_n[pi] > 0:
 		if p.orbit_t[pi] > 0:  # one step round: this tick's chord to the next point of the circle
@@ -137,3 +155,8 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	]:
 		h.add_ints(arr)
 	h.add_f32s(p.speed)
+	for k in p.mine_t.size():  # v0.6.5 WN3: only once a projectile spiralled or waited
+		if p.spiral[k] != 0 or p.mine_t[k] != 0:
+			h.add_ints(p.spiral)
+			h.add_ints(p.mine_t)
+			break

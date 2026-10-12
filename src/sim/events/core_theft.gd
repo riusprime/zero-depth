@@ -187,7 +187,7 @@ static func applies(w: World, code: int) -> bool:
 		Offers.STAT:
 			return not Stats.at_cap(w, Offers.stat_of(code))
 		Offers.MOD:
-			return not w.items_owned.has(code)
+			return CardLevels.can_take(w, code)  # v0.6.5 WN3
 	return true
 
 

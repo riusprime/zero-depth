@@ -38,6 +38,7 @@ enum Kind {
 	AFTERIMAGE,
 	MODIFIER,
 	TRIGGER,  # v0.6.5 WN1: a wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
+	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (tag wand: levels 1–5; requires_weapon: its pool)
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
@@ -66,6 +67,7 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.AFTERIMAGE,
 	Kind.MODIFIER,
 	Kind.TRIGGER,  # v0.6.5 WN1
+	Kind.WAND,  # v0.6.5 WN3
 ]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
@@ -85,6 +87,7 @@ const TAGS: Array[StringName] = [
 	&"ability",
 	&"venom",
 	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
+	&"wand",  # v0.6.5 WN3: a wand card that levels up 1–5 (CardLevels)
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -223,6 +226,10 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	_check_tags(issues)
+	if kind == Kind.WAND and not tags.has("wand"):
+		issues.append(ValidationIssue.new(&"tags", resource_path, "a WAND card is tagged wand"))
+	if tags.has("wand") and modifiers.is_empty():
+		issues.append(ValidationIssue.new(&"missing", resource_path, "a wand card names modifiers"))
 	if kind in MODIFIER_KINDS and modifiers.is_empty():
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "this kind names its modifiers")

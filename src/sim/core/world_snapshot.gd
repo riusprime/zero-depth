@@ -128,6 +128,7 @@ const ADDED_SINCE_V05 := {
 		&"swap_ref",
 		&"migrate_slots",
 		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
+		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
 	],
 	&"ProjectileStore":
 	[
@@ -141,8 +142,11 @@ const ADDED_SINCE_V05 := {
 		&"life0",
 		&"speed",
 		&"moves",
+		&"spiral",  # v0.6.5 WN3 (GunForms; padded with "none")
+		&"mine_t",
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
+	&"ModifierState": [&"hold_t"],  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)
 	&"AbilityState":
 	[
 		&"bomb_spec",
@@ -254,6 +258,12 @@ static func _pad_added(w: World) -> void:
 		none.fill(0.0)
 		p.speed = none
 		p.moves = false
+	if p.mine_t.size() != p.ids.size():  # v0.6.5 WN3: an older save's projectiles neither spiral nor wait
+		var none_i := PackedInt32Array()
+		none_i.resize(p.ids.size())
+		none_i.fill(0)
+		p.spiral = none_i.duplicate()
+		p.mine_t = none_i.duplicate()
 	var a := w.actors
 	if a.poison_stacks.size() != a.ids.size():  # v0.6.0 MX4: an older save's actors carry no poison
 		var zero := PackedInt32Array()
