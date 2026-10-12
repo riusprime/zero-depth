@@ -43,3 +43,8 @@ Plan: [`PLAN.md`](PLAN.md). Local on `claude/lucid-fermat-9wv2tf` until v0.6.0's
   buggy all around" and "work a bit more into the lighting". Fire fixed (`4f4e644`: stable patch seeds, overlapping
   patches thin out); lighting pass proposed with before/after shots, G2 pending
   ([`docs/art/LIGHTING_PASS.md`](../../art/LIGHTING_PASS.md)).
+- 2026-10-12: lighting pass, second proposal (`2ae8266`: sources bloom, darker corners; full suite 1409/1409 at
+  `2ae8266`), G2 pending. The owner asked for a master dev panel to tune lighting and balance in the game
+  ([`docs/tools/DEV_PANEL.md`](../../tools/DEV_PANEL.md)): built (F10, every balance file, live lighting, balance live on
+  close, Restart floor, DEV mark and no save, the sim's designer constants as content); full suite at `ef8894c`:
+  1425/1425; MIN_TEST_COUNT 1425.

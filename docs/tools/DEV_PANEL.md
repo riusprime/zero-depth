@@ -1,6 +1,6 @@
 # Dev panel (lighting and balance tuning in the running game)
 
-Status: **built 2026-10-12** (Steps 1–7: `f26b541`, `713aaa3`, `00b3a04`, `daa7411`, `d10bb05`, Step 6 commit).
+Status: **built 2026-10-12** (Steps 1–7: `f26b541`, `713aaa3`, `00b3a04`, `daa7411`, `d10bb05`, `d18c0cb` + `ef8894c`). Full suite (`bash scripts/verify.sh`, clean worktree at `ef8894c`): 1425/1425 passing.
 
 ## Owner lines (2026-10-12)
 
