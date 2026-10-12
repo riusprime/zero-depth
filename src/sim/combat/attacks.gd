@@ -644,6 +644,12 @@ static func projectile_effect(spec: AttackSpec, tags: int) -> StringName:
 	return fx
 
 
+## v0.6.5 WN1: the proc coefficient a projectile's hit carries (HIT.proc_pct): 100 at depth 0, halving per hook
+## level of its spec (a trigger's child spell, a split: 50, then 25), as a launched hook attack's hits do.
+static func projectile_proc(spec: AttackSpec) -> int:
+	return 100 if spec == null else maxi(1, 100 >> spec.depth)
+
+
 ## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): its spec's ON_HIT hooks
 ## (v0.6.0 MX2: the projectile's own spec, and its ON_KILL hooks on a kill; MX1 read the Gun bolt's for every player
 ## projectile, v0.5's rule, which stays for a projectile without a spec). A hook with an `every` fires on every Nth
