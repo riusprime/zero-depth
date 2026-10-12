@@ -668,6 +668,62 @@ hashes (`WandTable` and `last_hit_crit` are kept out: loadout and transient).
 **CatchUp.power** (§11) reads the wand's cards (`Wand.size`; a trigger card counts 1), whatever their order: a
 reorder never changes P.
 
+## 8f. The Gun pool (v0.6.5 WN3)
+
+Design: [`../design/WAND.md`](../design/WAND.md) G1–G16 (owner "Approve all", PLAN v0.6.5 W7). Evidence:
+[`../roadmap/v0.6.5/evidence/WAND_GUN.md`](../roadmap/v0.6.5/evidence/WAND_GUN.md). Every Gun card is a modifier of
+the bolt (target `projectile`), compiled left to right by §8e's wand, so its place in the wand decides which spells
+it reaches (a card reaches the children built to its left, never those to its right).
+
+**The cards.** G1 Big Shot (`gun_big_shot`: radius × 2, speed × 0.75, flight × 1.333 so the range holds, damage ×
+1.6), G2 Rapid Fire (`gun_rapid_fire`: radius × 0.6, rate + 600 ‰, damage × 0.7), G3 Twin (`gun_twin`: `twin` + 1),
+G4 Spread (`gun_spread`: count + 2, spread + 30°), G5 Split (`split_shot`: an `ON_HIT` hook, 3 bolts of radius
+0.08 m, half the bolt, at 50 %), G6 Pierce (`gun_pierce`: pierce + 2), G7 Ricochet (`gun_ricochet`: bounces + 2),
+G8 Homing (`gun_homing`: + 360°/s), G9 Boomerang (`boomerang`), G10 Orbit (`orbit_rounds`: 0.5 s round you), G11
+Spiral (`gun_spiral`: `spiral` 35°), G12 Mine (`gun_mine`: `mine_ticks` 3 s and an `ON_END` burst of 1.2 m at 100 %,
+effect `gun_mine`), G13 Charge (`gun_charge`: `hold_ticks` 1 s, `hold_permille` 3000), G14 Echo (`gun_echo`: again
+after 0.3 s at 60 %, the MX4 repeat), G15 Backfire (`gun_backfire`: back at 100 %, the MX4 back copy), G16 Halo
+(`halo_shot`: count × 3, a circle, range × 0.5). Starting values. G5, G9, G10 and G16 are the v0.6 cards of those
+ids, turned Gun-only (their ids stay, so saves name them); Seeker, Twin Cast and Rearguard stay with the Blade
+(`requires_weapon` blade): on a Gun run G8, G14 and G15 do their job. The rest of the v0.6 cards migrate in WN5.
+
+**Runner features** (`GunForms`, `src/sim/combat/gun_forms.gd`; the spec fields appended to `AttackSpec.INT_FIELDS`,
+the hash order):
+- `twin` (PATTERN): each bolt of a shot fires with `twin` more beside it, parallel, `GunForms.TWIN_GAP_RADII` (2.6)
+  of its radius apart, each a full bolt (`Attacks._bolts`, `GunForms.lanes`).
+- `spiral` (BEHAVIOUR, 1/4096 turns): the projectile's heading is its line's plus `spiral × cos(2π age /
+  SPIRAL_TICKS)` (24 ticks a turn), applied each tick as a turn of its velocity by the swing's change, after homing
+  and the way back (`ProjectileMoves.steer` → `GunForms.spiral_turn`); `age` = ticks since it left (after an orbit).
+- `mine_ticks` (BEHAVIOUR): on spawn the projectile's life grows by it; once its life is down to it, it stands still
+  (velocity 0, nothing else steers it) until an enemy touches it (the hit ends it: its `ON_END` hooks, the card's
+  blast) or the wait runs out (it ends there, its `ON_END` too). A still projectile's sweep is its own disc
+  (`Collide.sweep_vs_circle` at t = 0 on overlap).
+- `hold_ticks` / `hold_permille` (PAYLOAD): with a charging bolt (`Modifiers.bolt(w).hold_ticks > 0`) `PlayerKit` no
+  longer fires on the period while SHOOT is held: each held tick that could fire charges `World.mx.hold_t` (up to
+  `hold_ticks`); a release, or a full charge, fires one shot whose damage and bolt radius are × (1000 +
+  (hold_permille − 1000) × held / hold_ticks) ‰ (`AttackContext.size_permille`), then the period's cooldown. The
+  button is read from `World.held_buttons` (the input frame's held bits, EI-04); nothing else times it.
+ProjectileStore columns `spiral` and `mine_t` (hashed with the behaviour columns once a projectile used one);
+`ModifierState.hold_t` (hashed only while non-zero). Older snapshots lack them (`WorldSnapshot.ADDED_SINCE_V05`:
+padded with 0).
+
+**Levels** (WAND.md rule 6, "A duplicate levels up"): a wand card is an item tagged `wand` (`CardLevels`). Taking one
+you hold raises its level (1–5, `World.card_levels` by item index, run-long: `RunCarry`, hashed with the build's
+slots once a card levelled) and uses no slot; while below 5 it stays in the offers (altars, chests, the shop,
+events, cores: `CardLevels.can_take`). Its modifiers compile at that level (`ModifierTable.at`: each op's value +
+`per_level` × (level − 1), a hook's damage share likewise, a hook's child ops too). `CatchUp.power` counts a card's
+levels past the first. No randomness anywhere (EI-05).
+
+**The pool.** Gun cards carry `requires_weapon` gun (L15's filter): offered only in Gun runs. The 12 new ones are a
+new item kind `WAND` (33, appended), whose indices come after the trigger cards (`ModifierCompiler.item_defs`), so
+every earlier index names the same card.
+
+**The views** (EI-07, read only): `AttackFormLooks.cues_of` adds `twin`, `helix`, `mine`, `swell`; the size is the
+spec's radius and weight (Big Shot ×1.6 thicker), the count and pattern the spec's; a live bolt is drawn from its own
+trail (so a homing, spiralling or bouncing path shows as it flies) and scaled by its own radius over its spec's (a
+charged shot, `AttackFormView.live_scale`); while the Gun charges, an orb at the muzzle grows with
+`WorldReader.gun_charge()`; a waiting mine draws a ground ring.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
