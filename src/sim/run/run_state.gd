@@ -5,6 +5,14 @@ extends RefCounted
 ## scaling per floor, the carry between floors and the totals the recap shows. Pure sim code; the app owns one per
 ## run and builds a fresh World per floor.
 
+## v0.7.5 MG: the floor rules the current floor was built with. FLOOR_RULES (2): v0.7.5's bigger floors, fewer arenas,
+## the shop every two floors (data/map, data/arenas, data/shop). 1: v0.7.0's (FloorParams.v070(), a third of the
+## combat rooms as arenas, a shop on every floor), only for a floor resumed from a save made before v0.7.5 (its
+## payload has no floor_rules), so the floor rebuilt under its snapshot is the floor it was saved on. The next floor
+## is always built with FLOOR_RULES.
+const FLOOR_RULES := 2
+const FLOOR_RULES_V070 := 1
+
 var run_seed := 0
 var table: RunTable
 ## 1-based floor number.
@@ -24,6 +32,8 @@ var build_id := &""
 var routes := PackedInt32Array([Routes.Route.NORMAL])
 ## v0.5.0 EV (M-THREAT): threat T at the end of each finished floor.
 var threat_by_floor := PackedInt32Array()
+## v0.7.5 MG: see FLOOR_RULES.
+var floor_rules := FLOOR_RULES
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -126,6 +136,11 @@ func prepare(w: World) -> void:
 		RunCarry.apply(w, carry)
 
 
+## v0.7.5 MG: whether the current floor is a v0.7.0 floor resumed from an older save.
+func v070_floor() -> bool:
+	return floor_rules == FLOOR_RULES_V070
+
+
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor.
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
@@ -133,6 +148,7 @@ func finish_floor(w: World) -> void:
 	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
 	floor_index += 1
+	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
 	routes.resize(floor_index - 1)  # v0.5.0 RT: the next floor's route, the one walked into
 	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)

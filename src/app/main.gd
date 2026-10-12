@@ -261,6 +261,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		if boss >= 0
 		else null
 	)
+	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's floor)
 	var world := FloorScenario.build(
 		run.floor_seed(),
 		table,
@@ -273,10 +274,10 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		run,
 		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
-		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena")),  # v0.5.5 AR: the sealed arenas
-		RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))  # v0.7.5 MG: rooms, footprints (N9)
+		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
+		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
 	)
-	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
+	FloorScenario.add_shop(world, rules[&"shop"])  # v0.5.0 SH; v0.7.5 MG: every two floors (N12)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
 	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers

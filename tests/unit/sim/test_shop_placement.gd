@@ -108,3 +108,37 @@ func _check_floor_reach(f: FloorLayout, walls: Array[Obb], tag: String) -> void:
 		home,
 		tag + ": the shop is reachable from the start"
 	)
+
+
+## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the data puts the shop on floors 1, 3,
+## 5 … (FloorCadence, by the run's floor number, so an endless loop keeps the rhythm); a 3-floor run gets two.
+func test_the_shop_stands_every_two_floors() -> void:
+	var shop := ContentCompiler.compile_shop(
+		ContentRepository.load_all().get_def(&"shop", &"terminal")
+	)
+	assert_eq([shop.first_floor, shop.every_floors], [1, 2], "the data's starting values")
+	var on := []
+	for f in range(1, 13):
+		if shop.on_floor(f):
+			on.append(f)
+	assert_eq(on, [1, 3, 5, 7, 9, 11])
+	var in_run := 0
+	for f in range(1, 4):
+		in_run += 1 if shop.on_floor(f) else 0
+	assert_gte(in_run, 1, "a 3-floor run still has a shop")
+	for f in range(1, 40):
+		assert_false(shop.on_floor(f) and shop.on_floor(f + 1), "never two floors in a row")
+	assert_true(FloorCadence.on(4, 2, 2) and not FloorCadence.on(3, 2, 2), "another first floor")
+	assert_false(FloorCadence.on(1, 1, 0), "every 0: never")
+	assert_true(FloorCadence.on(2, 1, 1), "every 1: every floor")
+
+
+## As Main builds them: floors 1 and 3 have the terminal, floor 2 has none (no shop table, no shop room).
+func test_floor_two_has_no_shop_as_main_builds_it() -> void:
+	for s in [11, 12]:
+		for f in [1, 2, 3]:
+			var w := SaveLab.floor_world(s, f)
+			assert_eq(w.shop.present(), f != 2, "run %d floor %d" % [s, f])
+			assert_eq(w.shop_table != null, f != 2)
+			if f == 2:
+				assert_eq(w.floor_layout.shop_room, -1, "no shop room on floor 2")

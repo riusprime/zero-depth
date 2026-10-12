@@ -1,10 +1,11 @@
 extends GutTest
-## v0.2.0 B, floor v2 (PLAN L14-L15): the seeded floor generator is deterministic, and every floor is whole. A floor
-## has 15-19 rooms (v0.7.5 MG, owner N9: was 10-12; 20 with the boss room): a 3 x 3-cell start hall with no partitions and one exit, then rooms with footprints from the
-## allowed set, without overlaps, joined by doorways. Every room, item spot, spawn point and the gate's front is
-## reachable from the start; spots keep their clearance; item counts follow the rule (none in the hall, 1 in a
-## 1 x 1 room, 1-2 in bigger rooms); the portal room is the farthest. v0.7.5 MG: the footprints go up to the
-## extra-large 4 x 4, and the run's floors take the room numbers from data/map, whose values are the defaults.
+## v0.2.0 B, floor v2 (PLAN L14-L15): the seeded floor generator is deterministic, and every floor is whole. A floor has
+## 15-19 rooms (v0.7.5 MG, owner N9: was 10-12; 20 with the boss room): a 3 x 3-cell start hall with no partitions and
+## one exit, then rooms with footprints from the allowed set, without overlaps, joined by doorways. Every room, item
+## spot, spawn point and the gate's front is reachable from the start; spots keep their clearance; item counts follow
+## the rule (none in the hall, 1 in a 1 x 1 room, 1-2 in bigger rooms); the portal room is the farthest. v0.7.5 MG: the
+## footprints go up to the extra-large 4 x 4, and the run's floors take the room numbers from data/map, whose values are
+## the defaults.
 
 const SEEDS := 50
 const PLAYER_RADIUS := 0.35

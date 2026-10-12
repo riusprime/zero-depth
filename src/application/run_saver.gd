@@ -15,6 +15,8 @@ extends RefCounted
 ## version-3 payload's slots are in pick order, which is its wand order as it stands (nothing to rewrite); its slot
 ## count comes from the floor reached (Wand.slots), and a wand holding more cards than that keeps them all (the next
 ## new card needs a Swap).
+## v0.7.5 MG adds `run.floor_rules` (RunState.FLOOR_RULES) without a new version: a version-4 payload without it was
+## saved on a v0.7.0 floor, which floor_tables() then rebuilds with v0.7.0's rules.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 
@@ -79,6 +81,23 @@ func discard() -> void:
 	store.delete()
 
 
+## v0.7.5 MG: the floor tables a floor of `run` is built with, compiled from `repo`: {map: FloorParams, arena:
+## ArenaTable, shop: ShopTable}. A v0.7.0 floor resumed from an older save (RunState.v070_floor) gets v0.7.0's rules
+## on top: FloorParams.v070(), arena share 330 per mille, a shop on every floor (Main and the save tests).
+static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
+	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
+	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
+	if run != null and run.v070_floor():
+		map = FloorParams.v070()
+		if arena != null:
+			arena.share_permille = ArenaTable.V070_SHARE_PERMILLE
+		if shop != null:
+			shop.first_floor = 1
+			shop.every_floors = 1
+	return {&"map": map, &"arena": arena, &"shop": shop}
+
+
 ## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's).
 static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	var r: Dictionary = payload.get("run", {})
@@ -90,6 +109,8 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.kills_done = int(r["kills_done"])
 	run.routes = PackedInt32Array(r["routes"])  # v0.5.0 RT
 	run.threat_by_floor = PackedInt32Array(r.get("threat_by_floor", PackedInt32Array()))  # v0.5.0 EV
+	# v0.7.5 MG: a payload without floor rules was saved on a v0.7.0 floor (rebuilt with those rules).
+	run.floor_rules = int(r.get("floor_rules", RunState.FLOOR_RULES_V070))
 	return run
 
 
@@ -120,6 +141,7 @@ static func payload_of(
 			"kills_done": run.kills_done,
 			"routes": run.routes.duplicate(),  # v0.5.0 RT: each floor's route
 			"threat_by_floor": run.threat_by_floor.duplicate(),  # v0.5.0 EV (M-THREAT)
+			"floor_rules": run.floor_rules,  # v0.7.5 MG: the floor's generation rules
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

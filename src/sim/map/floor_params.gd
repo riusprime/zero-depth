@@ -95,3 +95,26 @@ var door_clear_radius := 3.0
 
 static func defaults() -> FloorParams:
 	return FloorParams.new()
+
+
+## v0.7.5 MG: v0.7.0's room numbers (10-12 rooms, footprints up to 3 x 3, span 8, 400 attempts), for a v0.7.0 floor
+## resumed from a save made before v0.7.5 (RunState.v070_floor): its walls must come out as they were saved.
+static func v070() -> FloorParams:
+	var p := FloorParams.new()
+	p.rooms_min = 10
+	p.rooms_max = 12
+	p.footprints = [
+		Vector2i(1, 1),
+		Vector2i(2, 1),
+		Vector2i(1, 2),
+		Vector2i(3, 1),
+		Vector2i(1, 3),
+		Vector2i(2, 2),
+		Vector2i(3, 2),
+		Vector2i(2, 3),
+		Vector2i(3, 3),
+	]
+	p.footprint_weights = PackedInt32Array([30, 14, 14, 8, 8, 10, 5, 5, 3])
+	p.max_span = 8
+	p.place_attempts = 400
+	return p

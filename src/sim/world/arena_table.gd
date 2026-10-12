@@ -3,6 +3,9 @@ extends RefCounted
 ## The sealed arenas' numbers in sim units (v0.5.5 AR; RunContentCompiler.compile_arena from ArenaDefinition). The
 ## defaults equal the data's starting values; a world without the table still times the Overrun's waves by them.
 
+## v0.7.0's share, for a v0.7.0 floor resumed from an older save (RunSaver.floor_tables).
+const V070_SHARE_PERMILLE := 330
+
 ## The share of a floor's combat rooms that are arenas, per mille (ArenaRooms.mark; v0.7.5 MG, N11: 110, was 330).
 var share_permille := 110
 ## Waves per arena, drawn per room in waves_min..waves_max, and each wave's size by floor (1-based; the last
