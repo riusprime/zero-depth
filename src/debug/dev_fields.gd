@@ -53,6 +53,7 @@ const GROUPS := [
 			"res://data/abilities",
 			"res://data/combos",
 			"res://data/stat_cards",
+			"res://data/wand",
 		],
 		"",
 	],
