@@ -23,5 +23,5 @@ pick for a feedback pass (ROADMAP §4); the owner may rename it. Progress: [`PRO
 | WN1 | The wand compiler: left-to-right slot order, triggers that cut the wand, child specs, slots 4 → 6 → 8, the reorder action as an input, save migration, the combinatorial smoke test | W3, W6 | Done (agent; [`evidence/WAND_1.md`](evidence/WAND_1.md); the lead's full suite pending) |
 | WN2 | The Build page and Swap-panel reorder with the plain-words read-back (en + es) | W3 |
 | WN3 | The Gun pool G1–G16 | W4, W7 |
-| WN4 | The Blade pool B1–B16 (the slash as a spell) | W4, W5, W7 |
+| WN4 | The Blade pool B1–B16 (the slash as a spell) | W4, W5, W7 | Done (agent; [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md); the lead's full suite pending) |
 | WN5 | The shared pool S1–S7, the triggers T1–T4 and their visuals; the old cards migrated; legendary tier and offer pools | W4, W7 |

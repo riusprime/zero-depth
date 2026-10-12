@@ -178,19 +178,18 @@ func test_m28_bomb_rounds_make_every_fifth_shot_a_bomb() -> void:
 	assert_eq(bombs, shots / 5, "one bomb per five shots")
 
 
+## v0.6.5 WN4: Blade Orbit is the Blade pool's B15, Orbit Blades (WAND.md): no longer the Orbit Blades ability's
+## merge; each slash throws off a blade that circles you (test_wand_blade.gd has its fight).
 func test_m29_blade_orbit_takes_every_hook_of_the_weapon() -> void:
 	var w := W.world(&"blade", [&"aftershock", &"blade_orbit"], [], [&"orbit_blades"])
 	var t := Abilities.owned_of_kind(w, AbilityTable.Kind.ORBIT_BLADES)
 	var plain := W.world(&"blade", [], [], [&"orbit_blades"])
 	var orbit := Modifiers.ability(w, t)
-	assert_eq(orbit.count, Modifiers.ability(plain, t).count + 1, "+1 blade")
-	var on_touch := false
-	for k in orbit.hooks:
-		on_touch = on_touch or (k.id == &"aftershock" and k.trigger == TRIG.ON_HIT)
-	assert_true(on_touch, "the weapon's ON_END hook fires on each touch")
-	var bare := Modifiers.ability(W.world(&"blade", [&"aftershock"], [], [&"orbit_blades"]), t)
-	for k in bare.hooks:
-		assert_false(k.id == &"aftershock" and k.trigger == TRIG.ON_HIT, "not without Blade Orbit")
+	assert_eq(orbit.count, Modifiers.ability(plain, t).count, "the ability's blades: no merge any more")
+	var thrown := W.hook_of(Modifiers.step(w, 0), &"blade_orbit")
+	assert_not_null(thrown, "the slash throws a blade")
+	assert_eq(thrown.child.form, AttackSpec.Form.ORBITER)
+	assert_gt(thrown.child.orbit_ticks, 0, "that lingers round you")
 
 
 func test_m30_short_fuse_trades_range_for_damage() -> void:
