@@ -792,6 +792,41 @@ waiting to erupt, the shots cut, the last counter's tick, the enemies being push
 (the current swing's weight, speed bonus, lunge, knockback, parry): `BladeFormView`, `KitView` and the hero's avatar
 draw from them.
 
+## 8h. The old cards' migration and the legendary tier (v0.6.5 WN5b)
+
+Design: [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards" (the mapping table). Evidence:
+[`../roadmap/v0.6.5/evidence/WAND_MIGRATION.md`](../roadmap/v0.6.5/evidence/WAND_MIGRATION.md).
+
+**Retired cards.** `data/wand/migration.tres` (CONTENT_SCHEMA "the wand") lists 48 v0.6 cards: the 14 v0.5 attack
+items, the four ability mods, the 21 M-list cards that did not keep their id as a wand card, the three MX4 legendary
+versions and the six ability modifiers. Each compiles `ItemTable.retired` / `AbilityTable.retired`: `ItemPool` never
+draws a retired item (altars, chests, the shop, events, cores, the legendary tier) and `Abilities.can_take` refuses a
+retired ability (altars, the shop, events, the overrun); `World.add_item`, `Abilities.grant` and the dev panel still
+take one. Nothing is deleted, so item and ability indices and old saves resolve.
+
+**The migration** (`WandMigration.run`, `src/sim/abilities/wand_migration.gd`): a build that still holds a retired
+card is rewritten once, at `Abilities.start_floor` (after the carry: a new floor from an old save's carry) and after a
+save's snapshot is written (`Main._start_floor`). The cards in wand order (`World.mod_slots`: a v0.6 save's pick order;
+then held retired cards outside a slot) are read; a retired card becomes its row's target for the run's weapon
+(`WandTable.migrate_blade` / `migrate_gun`, by id) in its place in the wand; a target already held, or met twice,
+levels up instead: the levels add (an ability its level, a `LEGENDARY` item `CardLevels.MAX_LEVEL`, any other card 1),
+at most 5. A card without a match (an empty target, or a target not in the data yet: WN5a's shared pool until it
+merges) is refunded as shards, the shop's salvage price on this floor (`ShopTable.sell_price` by its rarity for an
+item; `ability_refund_per_level` × its level for an ability; `Shop.sell_list`'s numbers). The old card leaves as a sale
+does (`Shop.remove_item` with its combos; `Abilities.remove_slot`). Deterministic, idempotent, no randomness; a world
+without `World.wand_table` (a lab) changes nothing. A wand that ends up larger than the floor's slots keeps every card
+(§8e). The payload stays version 4: the migration reads the content, not the version. v0.6.1 snapshots (payload 3)
+lacked `World.tuning` (the dev panel's Step 6); it is in `WorldSnapshot.ADDED_SINCE_V05` now (the base's loadout), so
+they load.
+
+**The legendary tier** (`LegendaryTable.wand_level`, data 5): `Offers.roll_legendary` draws, besides the tier's
+`mods`, every wand card of the run's pool still in `ItemPool.available(w, true)`; a wand card picked at the boss's
+legendary altar is raised to `wand_level` after it is taken (`BossReward.on_pick` from `Rewards.choose`; a held card
+rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp.casts` 2 (`trigger_on_hit_twice`,
+`trigger_on_kill_twice`, `trigger_on_end_twice`): `WandCompile._cut` files the child spell `casts` times as hooks of
+the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
+of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`
