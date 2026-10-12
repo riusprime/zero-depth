@@ -16,10 +16,11 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		55,
+		67,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
-			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers"
+			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
+			+ " WN4: the Blade pool's 12 new cards (B3–B11, B13, B14, B16)"
 		)
 	)
 	assert_true(
@@ -96,7 +97,10 @@ func test_bad_modifiers_are_rejected() -> void:
 	assert_has(_codes(h), &"not_positive", "a burst hook needs a radius")
 	h = oc.duplicate(true)
 	h.ops[2].form = ModifierOpDefinition.Form.ORBITER
-	assert_has(_codes(h), &"range", "MX1 hooks spawn bursts and beams")
+	assert_has(_codes(h), &"not_positive", "v0.6.5 WN4: an orbiter hook needs its orbit's reach")
+	h = oc.duplicate(true)
+	h.ops[2].form = 99 as ModifierOpDefinition.Form
+	assert_has(_codes(h), &"range", "a hook spawns one of the forms")
 
 
 ## v0.6.0 MX4: the new hook parts (EVERY_NTH's count, a delay, the condition, the child's ops) are checked too.

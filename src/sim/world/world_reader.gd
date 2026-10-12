@@ -768,6 +768,12 @@ func modifier_marks() -> Dictionary:
 	}
 
 
+## v0.6.5 WN4: the Blade pool's marks for the views (BladeForms.read: ghost slashes, fissure cracks and eruptions,
+## cut shots, a counter, the orbiting blades).
+func blade_forms() -> Dictionary:
+	return BladeForms.read(_w)
+
+
 ## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
 func attack_digest() -> String:
 	return Modifiers.book(_w).digest

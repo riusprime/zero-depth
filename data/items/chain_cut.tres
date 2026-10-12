@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 33
+name_key = &"ITEM_CHAIN_CUT"
+desc_key = &"ITEM_CHAIN_CUT_DESC"
+requires_weapon = &"blade"
+tags = PackedStringArray("blade")
+modifiers = Array[StringName]([&"chain_cut"])
+max_level = 5
+id = &"chain_cut"

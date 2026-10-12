@@ -307,6 +307,11 @@ var cores := CoreState.new()
 ## v0.6.0 MX4: the modifier engine's state in play (ModifierRuntime), per floor: queued launches, every-N counters,
 ## the moments' and body rules' marks. Hashed with the build's specs (Modifiers.hash_into).
 var mx := ModifierState.new()
+## v0.6.5 WN4: each held card's level by item index (CardLevels; 0 or 1 = level 1; run-long, RunCarry), and the
+## Blade pool's state in play (BladeForms), per floor: knocked enemies, orbiting blades, the last dash, what the view
+## draws. Both hashed once touched (BuildSlots.hash_into, ModifierRuntime.hash_into).
+var item_levels := PackedInt32Array()
+var blade := BladeState.new()
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).

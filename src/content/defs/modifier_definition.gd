@@ -42,6 +42,10 @@ const TAGS: Array[StringName] = [
 	&"move",
 	&"blink",
 	&"body",
+	# v0.6.5 WN4 (the Blade pool): a flying slash (Wave's crescent, Counter's: Split Wave targets it) and the combo's
+	# last step (Finisher+).
+	&"wave",
+	&"finisher",
 ]
 ## The card families (CardFrames.FRAME's keys: the frame colour a card of this modifier wears).
 const FAMILIES: Array[StringName] = [
@@ -202,7 +206,7 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: a delay >= 0" % where))
 	if (
 		o.hook_when < ModifierOpDefinition.When.ALWAYS
-		or o.hook_when > ModifierOpDefinition.When.OVERCLOCK
+		or o.hook_when > ModifierOpDefinition.When.COUNTER
 	):
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown when" % where))
 	_check_tag_list(issues, "%s.hook_tags" % where, o.hook_tags)
@@ -243,6 +247,8 @@ func _check_hook(issues: Array[ValidationIssue], where: String, o: ModifierOpDef
 			)
 		ModifierOpDefinition.Form.WEAPON:  # v0.6.0 MX4: a copy of the weapon's attack (its own sizes)
 			pass
+		ModifierOpDefinition.Form.ORBITER:  # v0.6.5 WN4: Orbit Blades' blade (its orbit's radius)
+			check_positive(issues, "%s.hook_reach_m" % where, o.hook_reach_m)
 		_:
 			(
 				issues

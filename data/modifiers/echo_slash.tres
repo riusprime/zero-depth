@@ -3,35 +3,37 @@
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
 
-[sub_resource type="Resource" id="Op_1"]
+[sub_resource type="Resource" id="Child_1"]
 script = ExtResource("2_op")
 op = 0
 field = &"speed_mps"
 value = 14.0
 
-[sub_resource type="Resource" id="Op_2"]
+[sub_resource type="Resource" id="Child_2"]
 script = ExtResource("2_op")
 op = 0
 field = &"life_seconds"
 value = 0.5
+per_level = 0.1
 
-[sub_resource type="Resource" id="Op_3"]
+[sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
 op = 8
 stage = 4
 form = 1
 hook_trigger = 4
-hook_tags = PackedStringArray("projectile")
+hook_tags = PackedStringArray("projectile", "wave")
 hook_radius_m = 0.35
 hook_reach_m = 7.0
 hook_damage_permille = 600
 hook_effect = &"echo_slash"
-hook_ops = Array[Resource]([SubResource("Op_1"), SubResource("Op_2")])
+hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2")])
+per_level = 100.0
 
 [resource]
 script = ExtResource("1_mod")
 family = &"time"
-target = PackedStringArray("melee")
+target = PackedStringArray("weapon", "melee")
 stage = 4
-ops = Array[ExtResource("2_op")]([SubResource("Op_3")])
+ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
 id = &"echo_slash"

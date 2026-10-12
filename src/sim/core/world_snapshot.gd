@@ -92,6 +92,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"KitState",
 	&"HeatState",
 	&"PlayerBuildState",
+	&"BladeState",  # v0.6.5 WN4
 	&"ProcLedger",
 	&"BossFlow",
 	&"ItemMods",
@@ -128,6 +129,8 @@ const ADDED_SINCE_V05 := {
 		&"swap_ref",
 		&"migrate_slots",
 		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
+		&"item_levels",  # v0.6.5 WN4 (every card at level 1)
+		&"blade",  # v0.6.5 WN4 (the base's fresh state)
 	],
 	&"ProjectileStore":
 	[

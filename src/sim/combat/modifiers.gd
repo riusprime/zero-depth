@@ -97,7 +97,9 @@ static func build_modifiers(w: World) -> Array[ModifierTable]:
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
 		elif code < w.item_tables.size():
-			out.append_array(w.item_tables[code].modifiers)
+			var lv := CardLevels.level_of(w, code)  # v0.6.5 WN4: a levelled card's ops have grown
+			for m in w.item_tables[code].modifiers:
+				out.append(m.at_level(lv))
 	return out
 
 
@@ -161,7 +163,7 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 		b.modifier_ids.append(String(m.id))
 	var wand := WandCompile.for_world(w, mods)  # v0.6.5 WN1: slot order, triggers cut the wand
 	for k in w.player.combo.size():
-		b.add(wand.spec(base_step(w, k)))
+		b.add(BladeForms.settle(wand.spec(base_step(w, k))))  # v0.6.5 WN4: Finisher+'s carry
 	b.add(wand.spec(base_bolt(w)))
 	var sk := _base_skill(w)
 	if sk != null:
@@ -386,6 +388,8 @@ static func base_step(w: World, k: int) -> AttackSpec:
 	s.id = step_id(k)
 	s.form = AttackSpec.Form.ARC
 	s.tags = PackedStringArray([TAG_WEAPON, TAG_MELEE])
+	if k == w.player.combo.size() - 1:
+		s.tags.append("finisher")  # v0.6.5 WN4: the combo's last step (Finisher+ targets it)
 	s.half_arc = st.half_arc
 	s.reach_m = st.reach_m
 	s.damage = st.damage

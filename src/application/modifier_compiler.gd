@@ -44,13 +44,26 @@ const MODIFIER_FIELDS := {
 	&"resonance_permille": [&"resonance_permille", ""],
 	&"heat_rate_permille": [&"heat_rate_permille", ""],
 	&"range": [&"range", ""],
+	# v0.6.5 WN4 (the Blade pool).
+	&"motion": [&"motion", ""],
+	&"echo_mirror": [&"echo_mirror", ""],
+	&"step_m": [&"step_m", ""],
+	&"parry": [&"parry", ""],
+	&"counter_seconds": [&"counter_ticks", "ticks"],
+	&"counter_permille": [&"counter_permille", ""],
+	&"carry": [&"carry", ""],
+	&"knockback_m": [&"knockback_m", ""],
+	&"line_m": [&"line_m", ""],
 }
+## v0.6.5 WN4 (WAND.md rule 6): the highest level a card reaches (a card's ItemDefinition.max_level is at most this).
+const MAX_LEVEL := 5
 
 
 ## One modifier in sim units. Each op takes its effective stage; values convert with the item compiler's functions
 ## (seconds_to_ticks, degrees_to_units), so a migrated item keeps its exact numbers. MUL_PERMILLE values stay per
-## mille.
-static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
+## mille. v0.6.5 WN4: at `level` (1–5) every op's value has grown by its per_level for each level above 1; at level 1,
+## a card whose ops grow also gets its levels 2..MAX_LEVEL compiled (ModifierTable.levels).
+static func compile_modifier(def: ModifierDefinition, level: int = 1) -> ModifierTable:
 	var t := ModifierTable.new()
 	t.id = def.id
 	t.family = def.family
@@ -59,12 +72,26 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	t.stage = int(def.stage)
 	t.overlay = def.overlay
 	for d: ModifierOpDefinition in def.ops:
-		t.ops.append(compile_op(d, d.stage_in(def.stage)))
+		t.ops.append(compile_op(d, d.stage_in(def.stage), level))
+	if level == 1 and _grows(def.ops):
+		for n in range(2, MAX_LEVEL + 1):
+			t.levels.append(compile_modifier(def, n))
 	return t
 
 
-## One op in sim units, at `stage` (v0.6.0 MX4: a hook's child ops, its delay and its condition too).
-static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
+## v0.6.5 WN4: any op (or a hook's child op) grows with the card's level.
+static func _grows(ops: Array) -> bool:
+	for r: Resource in ops:
+		var d := r as ModifierOpDefinition
+		if d != null and (d.per_level != 0.0 or _grows(d.hook_ops)):
+			return true
+	return false
+
+
+## One op in sim units, at `stage` (v0.6.0 MX4: a hook's child ops, its delay and its condition too; v0.6.5 WN4: at
+## the card's `level`, the value grown by per_level for each level above 1).
+static func compile_op(d: ModifierOpDefinition, stage: int, level: int = 1) -> ModifierOp:
+	var grow := d.per_level * (level - 1)
 	var o := ModifierOp.new()
 	o.op = int(d.op)
 	o.stage = stage
@@ -77,8 +104,9 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.hook_tags = d.hook_tags.duplicate()
 	o.radius_m = d.hook_radius_m
 	o.reach_m = d.hook_reach_m
-	o.damage = d.hook_damage
-	o.damage_permille = d.hook_damage_permille
+	var hook_grow := roundi(grow) if d.op == ModifierOpDefinition.Op.HOOK else 0
+	o.damage = d.hook_damage + (hook_grow if d.hook_damage > 0 else 0)
+	o.damage_permille = d.hook_damage_permille + (hook_grow if d.hook_damage <= 0 else 0)
 	o.hook_every = d.hook_every
 	o.effect_id = d.hook_effect
 	o.delay_ticks = SimTick.seconds_to_ticks(d.hook_delay_seconds)  # v0.6.0 MX4
@@ -87,25 +115,24 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
-			o.child_ops.append(compile_op(c, c.stage_in(stage)))
+			o.child_ops.append(compile_op(c, c.stage_in(stage), level))
 	if d.is_numeric() and MODIFIER_FIELDS.has(d.field):
 		var map: Array = MODIFIER_FIELDS[d.field]
+		var v := d.value + grow
 		o.field = map[0]
-		o.value = d.value
+		o.value = v
 		if d.op != ModifierOpDefinition.Op.MUL_PERMILLE:
 			match String(map[1]):
 				"ticks":
-					o.value = SimTick.seconds_to_ticks(d.value)
+					o.value = SimTick.seconds_to_ticks(v)
 				"half_turns":
-					o.value = ContentCompiler.degrees_to_units(d.value * 0.5)
+					o.value = ContentCompiler.degrees_to_units(v * 0.5)
 				"turns":
-					o.value = ContentCompiler.degrees_to_units(d.value)
+					o.value = ContentCompiler.degrees_to_units(v)
 				"per_tick":
-					o.value = d.value / SimTick.TICKS_PER_SECOND
+					o.value = v / SimTick.TICKS_PER_SECOND
 				"turn_rate":
-					o.value = (
-						ContentCompiler.degrees_to_units(d.value) / float(SimTick.TICKS_PER_SECOND)
-					)
+					o.value = ContentCompiler.degrees_to_units(v) / float(SimTick.TICKS_PER_SECOND)
 		if o.field in AttackSpec.INT_FIELDS:
 			o.value = roundi(o.value)
 	return o
@@ -114,19 +141,23 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 ## v0.6.0 MX4: the item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
 ## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
 ## then the wand's trigger cards (Kind.TRIGGER) in id order, so every earlier index still names the same card.
+## v0.6.5 WN4: then the wand's pool cards (Kind.WAND) in id order.
 static func item_defs(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
+	var pool := []
 	for def: ItemDefinition in repo.all_of(&"items"):
 		match def.kind:
 			ItemDefinition.Kind.MODIFIER:
 				cards.append(def)
 			ItemDefinition.Kind.TRIGGER:
 				triggers.append(def)
+			ItemDefinition.Kind.WAND:
+				pool.append(def)
 			_:
 				old.append(def)
-	return old + cards + triggers
+	return old + cards + triggers + pool
 
 
 ## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a
@@ -134,6 +165,7 @@ static func item_defs(repo: ContentRepository) -> Array:
 static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	if def.kind == ItemDefinition.Kind.MODIFIER and def.tags.has("heat"):
 		t.requires_heat = true
+	t.max_level = clampi(def.max_level, 1, MAX_LEVEL)  # v0.6.5 WN4: a duplicate levels it up
 	t.poison_damage = def.poison_damage
 	t.poison_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.poison_period_seconds))
 	t.poison_ticks = SimTick.seconds_to_ticks(def.poison_seconds)

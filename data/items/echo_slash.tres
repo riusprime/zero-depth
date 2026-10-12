@@ -10,4 +10,5 @@ desc_key = &"ITEM_ECHO_SLASH_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade")
 modifiers = Array[StringName]([&"echo_slash"])
+max_level = 5
 id = &"echo_slash"

@@ -227,6 +227,8 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			landed = true
 			hits += 1
 			_landed(w, spec, ctx, i, a.pos(i), hits)
+			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
+	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
 	if not spec.hooks.is_empty():
 		var tip := ctx.origin + Kin.dir(ctx.angle) * (w.player.radius_m + arc_reach_m(w, spec))
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, tip, -1, 0)
@@ -257,6 +259,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 
 
 static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if spec.line_m > 0.0:  # v0.6.5 WN4: Fissure's line
+		return BladeForms.line(w, spec, ctx)
 	var a := w.actors
 	var landed := false
 	var hits := 0
@@ -465,6 +469,8 @@ static func orbiter_pos(spec: AttackSpec, center: Vector2, ang: int, r: float, k
 
 ## A launched orbiter (a hook's): one sweep of its blades around ctx.origin, each enemy hit once.
 static func _orbiter(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if spec.orbit_ticks > 0:  # v0.6.5 WN4: Orbit Blades' blade circles the player
+		return BladeForms.orbit(w, spec, ctx)
 	var a := w.actors
 	var r := spec.reach_m if spec.reach_m > 0.0 else 1.5
 	var br := spec.radius_m if spec.radius_m > 0.0 else Abilities.BLADE_R
@@ -576,6 +582,8 @@ static func run_hook(
 		return false
 	if k.when == AttackHook.WHEN_OVERCLOCK and not Heat.overclocked(w):
 		return false  # v0.6.0 MX4: Heat Sink Rounds
+	if k.when == AttackHook.WHEN_COUNTER and not BladeForms.countering(w):
+		return false  # v0.6.5 WN4: Counter's wave
 	var dmg := k.damage_for(parent.base_damage)
 	if k.child.form == AttackSpec.Form.WEAPON and k.damage <= 0:  # v0.6.0 MX4: a share of the weapon's
 		dmg = maxi(1, Modifiers.weapon_damage(w) * k.damage_permille / 1000)

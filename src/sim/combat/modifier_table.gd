@@ -16,6 +16,8 @@ var target := PackedStringArray()
 var stage: int = Stage.PAYLOAD
 var ops: Array[ModifierOp] = []
 var overlay := &""
+## v0.6.5 WN4 (WAND.md rule 6): the card at levels 2..5 (ModifierCompiler; empty when no op grows with the level).
+var levels: Array[ModifierTable] = []
 
 
 ## v0.6.5 WN1: the wand trigger's op (a trigger card's one op), or null for a modifier of rewrites.
@@ -28,3 +30,10 @@ func trigger_op() -> ModifierOp:
 
 func is_trigger() -> bool:
 	return trigger_op() != null
+
+
+## v0.6.5 WN4: this card at `level` (1 = itself; past its last compiled level, the last).
+func at_level(level: int) -> ModifierTable:
+	if level <= 1 or levels.is_empty():
+		return self
+	return levels[mini(level - 2, levels.size() - 1)]

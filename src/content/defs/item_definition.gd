@@ -38,6 +38,7 @@ enum Kind {
 	AFTERIMAGE,
 	MODIFIER,
 	TRIGGER,  # v0.6.5 WN1: a wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
+	WAND,  # v0.6.5 WN4: a wand pool card (WAND.md's B/G/S rows; its pool is requires_weapon: blade, gun, or both)
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
@@ -66,6 +67,7 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.AFTERIMAGE,
 	Kind.MODIFIER,
 	Kind.TRIGGER,  # v0.6.5 WN1
+	Kind.WAND,  # v0.6.5 WN4
 ]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
@@ -104,6 +106,9 @@ const TAGS: Array[StringName] = [
 ## brings into the build, in order. What an item does to the Blade's steps, the Gun's bolt and the Skills lives
 ## there; the item keeps its card fields and its engine numbers (burn, shock, bleed, frost, slow, guard, heat).
 @export var modifiers: Array[StringName] = []
+## v0.6.5 WN4 (WAND.md rule 6, "a duplicate levels up"): the card's highest level (1–5). A held card below it stays
+## in the offers, and taking it again raises its level (its modifiers' ops grow by their per_level) in its slot.
+@export var max_level := 1
 ## Ember Edge: damage per burn stack per period, the burn's length (refreshed by each new stack), the stack cap.
 @export var burn_damage := 0
 @export var burn_period_seconds := 0.0
@@ -211,6 +216,12 @@ func validate() -> Array[ValidationIssue]:
 	if not requires_weapon in [&"", &"blade", &"gun"]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
+		)
+	if max_level < 1 or max_level > 5:
+		issues.append(ValidationIssue.new(&"range", resource_path, "max_level is 1..5"))
+	if kind == Kind.WAND and tags.has("blade") != (requires_weapon == &"blade"):
+		issues.append(  # v0.6.5 WN4: a Blade pool card is offered only in Blade runs
+			ValidationIssue.new(&"range", resource_path, "a blade pool card requires the blade")
 		)
 	if requires_ability != &"" and ability_kind(requires_ability) < 0:
 		issues.append(

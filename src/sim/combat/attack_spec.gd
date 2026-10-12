@@ -52,8 +52,24 @@ const INT_FIELDS: Array[StringName] = [
 	&"resonance_permille",
 	&"heat_rate_permille",
 	&"damage_mul_permille",
+	# v0.6.5 WN4 (the Blade pool; BladeForms reads them; appended: the hash order)
+	&"motion",
+	&"parry",
+	&"counter_ticks",
+	&"counter_permille",
+	&"carry",
+	&"echo_mirror",
 ]
-const FLOAT_FIELDS: Array[StringName] = [&"reach_m", &"radius_m", &"speed", &"pull_m"]
+const FLOAT_FIELDS: Array[StringName] = [
+	&"reach_m",
+	&"radius_m",
+	&"speed",
+	&"pull_m",
+	# v0.6.5 WN4 (appended)
+	&"knockback_m",
+	&"line_m",
+	&"step_m",
+]
 ## v0.6.0 MX4: directions (the pattern's way): forward along the aim, or a full circle (count spread evenly).
 const DIR_FORWARD := 0
 const DIR_CIRCLE := 1
@@ -152,6 +168,24 @@ var damage_mul_permille := 1000
 ## v0.6.0 MX4: the modifier ids whose hooks made this spec (a hook child's parents'): a modifier never adds its hook
 ## to a spec its own hook made (Split Shot's shards never split again; the ancestry guard, at compile time).
 var lineage := PackedStringArray()
+
+# --- v0.6.5 WN4 (docs/design/WAND.md B1–B16, "the slash becomes a spell"; BladeForms runs them)
+## The swing's motion when a card changes it (SwingStep.Motion: Thrust a stab, Whirl a spin; -1 = the step's own).
+var motion := -1
+## The arc cuts the enemy shots it touches (Parry Edge).
+var parry := 0
+## A slash within counter_ticks of a dash's end deals × counter_permille and casts its WHEN_COUNTER hooks (Counter).
+var counter_ticks := 0
+var counter_permille := 1000
+## A hook child that carries its parent's statuses, elements and hit hooks (Finisher+'s shockwave).
+var carry := 0
+## Its echo (repeat_delay_ticks) sweeps the other way (Double Slash; the view's).
+var echo_mirror := 0
+## A landed hit pushes the enemy this far away (Heavy); a burst is a line this long along its angle (Fissure); each
+## swing steps the player this far forward (Lunge Step).
+var knockback_m := 0.0
+var line_m := 0.0
+var step_m := 0.0
 
 # --- hooks
 var hooks: Array[AttackHook] = []
@@ -317,4 +351,13 @@ func read() -> Dictionary:
 		"charge_ticks": charge_ticks,
 		"charge_permille": charge_permille,
 		"resonance_permille": resonance_permille,
+		# v0.6.5 WN4 (the Blade pool's looks: BladeFormView, KitView)
+		"motion": motion,
+		"parry": parry,
+		"counter_ticks": counter_ticks,
+		"carry": carry,
+		"echo_mirror": echo_mirror,
+		"knockback_m": knockback_m,
+		"line_m": line_m,
+		"step_m": step_m,
 	}

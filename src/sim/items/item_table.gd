@@ -38,6 +38,7 @@ enum Kind {
 	AFTERIMAGE,
 	MODIFIER,
 	TRIGGER,  # v0.6.5 WN1: a wand trigger card (Wand; ItemPool never draws one yet)
+	WAND,  # v0.6.5 WN4: a wand pool card (the Blade's B1–B16)
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).
@@ -61,6 +62,8 @@ var requires_ability := -1
 ## v0.6.0 MX1: the item's modifiers (compiled ModifierDefinitions), in its order: what it does to the weapon attacks
 ## and the Skills (Modifiers.compile). Empty for items whose effects are not attack rewrites yet.
 var modifiers: Array[ModifierTable] = []
+## v0.6.5 WN4: the card's highest level (1: a duplicate is never offered; CardLevels).
+var max_level := 1
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1

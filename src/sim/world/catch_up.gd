@@ -57,14 +57,15 @@ static func power_level(w: World, s: int) -> int:
 	if Offers.type_of(code) != Offers.MOD or code >= w.item_tables.size():
 		return BuildSlots.level_at(w, s)
 	var t := w.item_tables[code]
-	if t.kind != ItemTable.Kind.MODIFIER:
-		return 1
+	var up := CardLevels.level_of(w, code) - 1  # v0.6.5 WN4: each level above 1 counts one more
+	if t.kind != ItemTable.Kind.MODIFIER and t.kind != ItemTable.Kind.WAND:
+		return 1 + up
 	match t.rarity:
 		ItemTable.RARE:
-			return 2
+			return 2 + up
 		ItemTable.LEGENDARY:
-			return 3
-	return 1
+			return 3 + up
+	return 1 + up
 
 
 ## A hit's expected multiplier with crit chance c and crit multiplier k (per mille): 1000 + c × (k − 1000) / 1000.

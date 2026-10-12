@@ -68,7 +68,7 @@ static func level_at(w: World, s: int) -> int:
 	var code := w.mod_slots[s]
 	if Offers.type_of(code) == Offers.ABILITY:
 		return Abilities.level_of(w, Offers.ability_of(code))
-	return 1
+	return CardLevels.level_of(w, code)  # v0.6.5 WN4: an item card's level
 
 
 ## Taking `code` now needs a swap: a modifier you don't hold, with every slot full.
@@ -131,6 +131,7 @@ static func drop(w: World, s: int) -> void:
 			Abilities.remove_slot(w, slot)
 	elif w.items_owned.has(code):
 		Shop.remove_item(w, code)
+		CardLevels.forget(w, code)  # v0.6.5 WN4
 	sync(w)
 
 
@@ -157,7 +158,10 @@ static func take(w: World, code: int, replace: int = -1) -> bool:
 static func _apply(w: World, code: int) -> void:
 	match Offers.type_of(code):
 		Offers.MOD:
-			w.add_item(code)
+			if CardLevels.can_level(w, code):  # v0.6.5 WN4: a duplicate levels up in its slot
+				CardLevels.level_up(w, code)
+			else:
+				w.add_item(code)
 		Offers.ABILITY:
 			Abilities.grant(w, Offers.ability_of(code))
 		Offers.STAT:
@@ -222,6 +226,7 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	h.add_ints(w.mod_slots)
 	for v in [w.swap_code, w.swap_source, w.swap_ref]:
 		h.add_int(v)
+	CardLevels.hash_into(w, h)  # v0.6.5 WN4
 
 
 ## Per slot (in slot order): the card code, its id, name key, type (Offers.MOD / ABILITY), level, family (the card

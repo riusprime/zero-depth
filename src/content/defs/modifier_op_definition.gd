@@ -27,8 +27,9 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## TRIGGER op only: Modifiers compiles it into the last step's ON_HIT).
 enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
 
-## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds).
-enum When { ALWAYS, OVERCLOCK }
+## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds). v0.6.5 WN4:
+## COUNTER, only on a slash that counters (within its counter window after a dash: Counter, B16).
+enum When { ALWAYS, OVERCLOCK, COUNTER }
 
 ## v0.6.5 WN1: the triggers a TRIGGER op may cut on (WAND.md T1–T4).
 const WAND_TRIGGERS: Array[int] = [
@@ -74,6 +75,16 @@ const FIELD_STAGE := {
 	&"resonance_permille": 3,
 	&"heat_rate_permille": 5,
 	&"range": 5,
+	# v0.6.5 WN4 (the Blade pool; AttackSpec names each).
+	&"motion": 0,
+	&"echo_mirror": 1,
+	&"step_m": 2,
+	&"parry": 3,
+	&"counter_seconds": 3,
+	&"counter_permille": 3,
+	&"carry": 3,
+	&"knockback_m": 3,
+	&"line_m": 5,
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -115,6 +126,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.6.5 WN1 (TRIGGER): the trigger on a Gun run when it differs from hook_trigger (-1: the same). T4 is On Finisher
 ## with the Blade and On Crit with the Gun.
 @export var hook_trigger_gun := -1
+## v0.6.5 WN4 (WAND.md rule 6, "a duplicate levels up", levels 1–5): what the op grows by per level above 1: a numeric
+## op's value, a HOOK op's hook_damage_permille (or hook_damage when that is flat). Its hook_ops grow by their own.
+@export var per_level := 0.0
 
 
 ## The stage this op runs in, given its modifier's.
