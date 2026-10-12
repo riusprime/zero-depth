@@ -12,9 +12,16 @@ pick for a feedback pass (ROADMAP §4); the owner may rename it. Progress: [`PRO
 | W3 | "we've got the modifiers, but it kind of works the same as it did before, and we are not getting it right. So the point of the modifiers is to actually be a modifier of the basic attack that we are running on the game. So this happens in other roguelike games, like... Binding of Isaac or Magic Craft that you have the different items that you're getting that modify how your basic attack interacts, right? So, for example, the splitting balls in Binding of Isaac, the shooting the bigger balls, then whatever, or at Magic Craft, the different ways that all items interact in the order that you put them in the wand. So we need to change the modifiers and get it to work more in that way. So like almost everything that you take modifies how your basic attack looks and interacts and shoots and the idea is to be able to have a lot of different combinations that destroy the enemies, right?" | The wand: every pickup modifies the basic attack (looks, interaction, how it shoots); the order of the modifiers matters and the player can rearrange them (owner pick: "Order matters, rearrangeable"). Design in [`../../design/WAND.md`](../../design/WAND.md), G1 list for the owner before any build | Design (G1) | WD |
 | W4 | (Q: should every pickup change the basic attack, no side attacks?) "We need to have different pools of modifiers tho blade and gun are different interactions and the modifiers should be unique, unless it doesn't matter and could apply to both like bleed or lightning" | Two pools: Blade-only and Gun-only modifiers, each unique to that weapon's interaction; a small shared pool only for what works the same on both (elements and statuses such as bleed, lightning) | Decided | WD |
 | W5 | (Q: what do Blade modifiers act on?) "The slash becomes a spell" | Each slash is the Blade's spell: its modifiers make it bigger, split it, throw it as a wave, trigger on hit, and so on | Decided | WD |
+| W6 | (Q: how many wand slots?) "Grows during the run" | The wand starts with **4 slots** and gains 2 after each boss: 4 → 6 → 8 (floors 1/2/3). Replaces v0.6.0's fixed 6 (PD-08) | Decided | WN1 |
+| W7 | (Q: approve the G1 list in WAND.md?) "Approve all" | G1–G16, B1–B16, S1–S7, T1–T4 approved as the first set; the owner tunes and cuts after playing | Decided | WN2–WN5 |
 
 ## Steps
-| Step | Scope | Rows |
-|---|---|---|
+| Step | Scope | Rows | Status |
+|---|---|---|---|
 | BR | The Siege Engine's arena 3×3 (data + generation tests) | W2 |
-| WD | The wand design and the G1 modifier lists (Blade, Gun, shared) for the owner; build steps planned after the pick | W3–W5 |
+| WD | The wand design and the G1 lists (`../../design/WAND.md`) | W3–W5 | Done |
+| WN1 | The wand compiler: left-to-right slot order, triggers that cut the wand, child specs, slots 4 → 6 → 8, the reorder action as an input, save migration, the combinatorial smoke test | W3, W6 |
+| WN2 | The Build page and Swap-panel reorder with the plain-words read-back (en + es) | W3 |
+| WN3 | The Gun pool G1–G16 | W4, W7 |
+| WN4 | The Blade pool B1–B16 (the slash as a spell) | W4, W5, W7 |
+| WN5 | The shared pool S1–S7, the triggers T1–T4 and their visuals; the old cards migrated; legendary tier and offer pools | W4, W7 |

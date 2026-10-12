@@ -1,4 +1,4 @@
-# The wand: modifiers that rebuild your basic attack (design, v0.6.5 Step WD; status: G1, waiting for the owner)
+# The wand: modifiers that rebuild your basic attack (design, v0.6.5 Step WD; status: approved by the owner 2026-10-12, "Approve all")
 
 Owner (2026-10-12, PLAN v0.6.5 W3): "the point of the modifiers is to actually be a modifier of the basic attack …
 like Binding of Isaac or Magic Craft … the splitting balls in Binding of Isaac, the shooting the bigger balls … or at
@@ -44,12 +44,14 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 
    Keyboard, mouse and pad all work. The panel reads the wand back in plain words ("A big bolt that splits into 3
    burning bolts; each hit releases a shock ring").
-5. **A duplicate levels up.** Taking a card you already hold makes it stronger (levels 1–5) and uses no new slot.
-6. **Every card is visible on the attack itself:** its size, number, path, colour, trail or burst. No card is only a
+5. **The wand grows** (owner: "Grows during the run"): 4 slots on floor 1, 6 after the first boss, 8 after the
+   second. With every slot full, a new card opens Swap.
+6. **A duplicate levels up.** Taking a card you already hold makes it stronger (levels 1–5) and uses no new slot.
+7. **Every card is visible on the attack itself:** its size, number, path, colour, trail or burst. No card is only a
    number. Stat cards stay unlimited numbers outside the wand, as decided in v0.6.0.
-7. **Two pools and a shared one.** Blade cards are offered only in Blade runs and Gun cards only in Gun runs. Shared
+8. **Two pools and a shared one.** Blade cards are offered only in Blade runs and Gun cards only in Gun runs. Shared
    cards (elements and statuses) appear in both.
-8. **The difficulty catch-up reads the wand** through `CatchUp.power`. A strong wand raises the hidden scaling up to
+9. **The difficulty catch-up reads the wand** through `CatchUp.power`. A strong wand raises the hidden scaling up to
    its cap, so a broken wand still melts the floor but a normal one meets a fair fight.
 
 ## The pools (G1: the owner keeps, cuts or edits rows)
@@ -144,6 +146,6 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 5. **The shared pool and the triggers' visuals.**
 6. **Migration of the old cards, the legendary tier and the offer pools.**
 
-## Open questions for the owner
-- Slot count: keep 6, or a bigger wand (Magicraft wands hold 6–10)?
-- Keep, cut or edit the rows above (G1).
+## Owner decisions
+- Slots: "Grows during the run" (4 → 6 → 8).
+- G1: "Approve all".
