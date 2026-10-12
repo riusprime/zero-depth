@@ -56,12 +56,12 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 	for def: ItemDefinition in repo.all_of(&"items"):
 		if not retired.has(def.id):
 			sorted[item_section(def)].append(_item_entry(def))
-	for def: AbilityDefinition in repo.all_of(&"abilities"):
+	for def: AbilityDefinition in repo.all_of(&"ability"):
 		if retired.has(def.id) or def.start_weapon != &"":
 			continue
 		var util := def.tags.has(&"utility")
 		sorted[&"utilities" if util else &"abilities"].append(_ability_entry(def, util))
-	for def: StatCardDefinition in repo.all_of(&"stat_cards"):
+	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		sorted[&"stats"].append(_stat_entry(def))
 	for s: StringName in SECTIONS[&"cards"]:
 		for e: Dictionary in sorted[s]:

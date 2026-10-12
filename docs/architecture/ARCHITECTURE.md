@@ -226,6 +226,12 @@ the whole `World`.
   A "Can't load this save" message in the menu is not built (v0.4.0 SV open item).
 - **Profile.** Port `ProfileStore`: atomic writes, per-section merge on load, and a corrupt file renamed to
   `profile.bad.json`. It holds settings, bindings, unlocks and seen hints.
+  - **The Codex** (v0.7.5 CX) is the profile's `codex` section, `{version, cards, enemies, bosses, biomes}`, each
+    page `{id: {counter: n}}` (an entry exists once met). `CodexStore` (application) owns it; `CodexRecorder`
+    (application) fills it from each floor's `WorldReader` and `SimEvent`s after every tick (Main wires it), and
+    `CodexCatalog` lists the entries from the content. None of it is in `RunState`, a save or a hash; a run with
+    the dev panel's balance tweaks records nothing. A profile without the section reads as an empty Codex. Main
+    saves the profile at the end of every floor when the Codex changed.
 
 ## 11. Localization, renderer, CI
 

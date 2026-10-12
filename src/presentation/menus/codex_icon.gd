@@ -26,14 +26,15 @@ func show_entry(p_entry: Dictionary, p_locked: bool) -> void:
 ## The entry's colour when unlocked (a card's own colour, the hostile reds).
 static func color_of(e: Dictionary) -> Color:
 	var page: StringName = e.get("page", &"")
-	if page == &"cards":
-		var id: StringName = e["id"]
-		return (
-			AbilityIcons.color(id)
-			if int(e["type"]) != WorldReader.CARD_MOD
-			else ItemLooks.color_of_id(id)
-		)
-	return CodexGlyphs.color(page)
+	if page != &"cards":
+		return CodexGlyphs.color(page)
+	var id: StringName = e["id"]
+	if int(e["type"]) != WorldReader.CARD_MOD:
+		return AbilityIcons.color(id)
+	var c := ItemLooks.color_of_id(id)
+	if c == ItemLooks.FALLBACK:  # a card without its own colour wears its frame's (the wand cards' gems)
+		c = CardFrames.tint(CardFrames.frame_of(CardFrames.family(id, int(e["type"]))))
+	return c
 
 
 func _draw() -> void:

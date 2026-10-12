@@ -210,6 +210,15 @@ the mode's colour vision on the tokens and asserts:
   (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
   thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
   build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
+- **The Codex** (v0.7.5 CX, owner N6): `CodexView`, a full-screen Cold glass menu from the main menu (a row after
+  Credits) and the pause menu (a row after Options). Four pages (Cards by pool, Enemies, Bosses, Biomes) of
+  `CodexTile`s, and the focused entry beside them: a card in its crystal frame (`CrystalCard`, its family's frame) or
+  an emblem (`CodexGlyphs`: an enemy by its behaviour, a boss by its id, a biome as a landscape in its palette), the
+  game's own name and sentence keys, and the profile's counts. An entry not met is a dark silhouette named "???".
+  Keyboard arrows / Q E / Esc, pad d-pad / LB RB / B, mouse hover, tab click and Back. It reads `CodexCatalog` and
+  `CodexStore` only; it fits the 1920×1080 base in en and es (`test_codex_view.gd`). It was built straight in the
+  owner's Cold glass look without a G2 round (v0.7.5: the owner asked for no interventions); the owner corrects it
+  at the playtest.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

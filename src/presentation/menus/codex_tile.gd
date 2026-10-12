@@ -63,6 +63,9 @@ static func tint_of(e: Dictionary) -> Color:
 		if e.get("section", &"") == &"legendary":
 			return CardFrames.LEGENDARY_TINT
 		return CardFrames.tint(CardFrames.frame_of(fam))
+	if e.get("page", &"") == &"biomes":
+		var palette: Array = e.get("palette", [])
+		return palette[3] if palette.size() > 3 else MenuStyle.GLASS  # its accent
 	return CodexIcon.color_of(e)
 
 

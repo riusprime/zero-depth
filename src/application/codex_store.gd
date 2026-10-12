@@ -129,10 +129,13 @@ func total(page: StringName, counter: StringName) -> int:
 
 
 func unlocked_ids(page: StringName) -> Array[StringName]:
-	var out: Array[StringName] = []
+	var keys := PackedStringArray()
 	for k: Variant in _page(page).keys():
-		out.append(StringName(str(k)))
-	out.sort()
+		keys.append(str(k))
+	keys.sort()
+	var out: Array[StringName] = []
+	for k in keys:
+		out.append(StringName(k))
 	return out
 
 

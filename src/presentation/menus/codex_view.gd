@@ -252,6 +252,7 @@ func _build_page() -> void:
 		_list.remove_child(c)
 		c.queue_free()
 	tiles.clear()
+	_scroll.scroll_vertical = 0
 	var found := 0
 	for s: StringName in catalog.sections(page):
 		var rows: Array = catalog.section_entries(page, s)
@@ -273,10 +274,11 @@ func _build_page() -> void:
 		grid.add_theme_constant_override("h_separation", GAP)
 		grid.add_theme_constant_override("v_separation", GAP)
 		_list.add_child(grid)
-		for e: Dictionary in rows:
+		for k in rows.size():
+			var e: Dictionary = rows[k]
 			var t := CodexTile.new()
 			t.show_entry(e, title_of(self, e), not store.is_unlocked(page, e["id"]))
-			t.focus_entered.connect(_show.bind(e))
+			t.focus_entered.connect(_on_tile_focus.bind(t, head if k < COLUMNS else null))
 			grid.add_child(t)
 			tiles.append(t)
 	progress.text = tr("UI_CODEX_FOUND") % [found, catalog.size(page)]
@@ -320,12 +322,23 @@ func counts_text(e: Dictionary) -> String:
 	return "\n".join(lines)
 
 
+## A tile took the focus: show its entry; a tile in a section's first row also brings the section's title into view
+## (the scroll follows the focus to the tile itself).
+func _on_tile_focus(t: CodexTile, head: Label) -> void:
+	_show(t.entry)
+	if head != null:
+		_scroll.ensure_control_visible.call_deferred(head)
+
+
 func _show(e: Dictionary) -> void:
 	_shown = e
 	var locked := not store.is_unlocked(page, e["id"])
 	var is_card := page == &"cards"
 	card.visible = is_card
 	_emblem_box.visible = not is_card
+	_visual.custom_minimum_size = (
+		CardFrames.SIZE if is_card else Vector2(CardFrames.SIZE.x, EMBLEM + 28.0)
+	)
 	var section_text: String = tr(SECTION_KEYS.get(e["section"], "UI_CODEX_TITLE"))
 	if is_card:
 		var fam := CardFrames.family(e["id"], int(e["type"]))
