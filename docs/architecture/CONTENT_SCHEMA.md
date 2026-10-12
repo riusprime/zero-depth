@@ -544,8 +544,11 @@ class_name BiomeDefinition extends Resource
   - ambient colour and energy;
   - void colour and AgX exposure;
   - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
-  - fog, glow and the vignette;
-  - the warm light colour, energy and range that fire props use.
+  - fog, glow (intensity, threshold, bloom, spread) and the vignette;
+  - the warm light colour, energy and range that fire props use;
+  - the hero light's energy and range;
+  - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass
+    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md)).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
@@ -832,6 +835,16 @@ back, 2.5 heat, 3.5 s. `ContentCompiler.compile_skill` turns it into `SkillTable
 Values come from GA §5 (player kit). Until the gap analysis report is in the repo, v0.0.1 uses starting values,
 listed in [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C. The owner tunes them during the v0.0.1
 Windows check.
+
+### Sim tuning (`data/tuning/sim.tres`, the dev panel's Step 6)
+
+`SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
+spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
+spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
+Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
+as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
+`range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
 
 ## 9. Compiled tables
 

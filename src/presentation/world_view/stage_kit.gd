@@ -113,7 +113,8 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	flame.mesh = m
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.albedo_color = mood.warm_light_color
+	# HDR (over 1) so it crosses the glow threshold and blooms (lighting pass, 2026-10-12).
+	mat.albedo_color = mood.warm_light_color * 2.4
 	mat.emission_enabled = true
 	mat.emission = mood.warm_light_color
 	mat.emission_energy_multiplier = 3.0
@@ -161,6 +162,15 @@ func _apply(i: int, faded: bool) -> void:
 			node.material_override = _faded.get(node.material_override, node.material_override)
 		elif node.has_meta(&"solid"):
 			node.material_override = node.get_meta(&"solid")
+
+
+## Re-applies the mood's fire-light colour, energy and range to every light prop (the dev panel's lighting page).
+func retune(mood: BiomeMood) -> void:
+	for k in lights.size():
+		lights[k].light_color = mood.warm_light_color
+		lights[k].omni_range = mood.warm_light_range
+		_light_energy[k] = mood.warm_light_energy
+		lights[k].light_energy = mood.warm_light_energy
 
 
 func set_shadows(on: bool) -> void:

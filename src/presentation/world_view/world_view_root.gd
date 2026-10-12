@@ -103,6 +103,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		add_child(layer)
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
+		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -203,3 +204,15 @@ func sync() -> void:
 		)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
+
+
+## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in
+## StageKit.
+func _draw_prop_fires(layer: VfxCore) -> void:
+	if stage == null or stage.kit == null:
+		return
+	var fx := layer as VfxLayer
+	for k in stage.kit.lights.size():
+		var l := stage.kit.lights[k]
+		if is_instance_valid(l) and l.is_inside_tree():
+			fx.prop_fire(l.global_position - Vector3(0, 0.36, 0), k * 7919 + 13)

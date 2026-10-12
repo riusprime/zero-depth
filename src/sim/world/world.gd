@@ -319,6 +319,9 @@ var blade_table: BladeTable
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).
 var catch_up_table: CatchUpTable
+## The designer numbers once fixed in the sim's code (dev panel Step 6): shipped values unless Main sets them from
+## data/tuning/sim.tres. Loadout, not state (not hashed).
+var tuning := SimTuning.new()
 var catch_up := CatchUpState.new()
 var deep_elite_rooms := PackedInt32Array()
 var _next_id := 1
@@ -553,7 +556,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 	var t := enemy_table(kind)
 	var id := _take_id()
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
-	actors.invuln[i] = SimTick.SPAWN_IN_TICKS
+	actors.invuln[i] = tuning.spawn_in_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
 	actors.power[i] = 1000  # v0.4.0 SC: full damage; the spawn director scales it by tier
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
@@ -748,7 +751,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	var t := boss_tables[boss_table_index]
 	var id := _take_id()
 	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
-	actors.invuln[i] = BossAi.INTRO_TICKS
+	actors.invuln[i] = tuning.boss_intro_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - pos)
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)

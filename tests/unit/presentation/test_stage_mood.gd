@@ -63,3 +63,50 @@ func test_a_mood_lights_the_stage_and_quality_toggles_ssao_and_ssil() -> void:
 	stage.set_lighting("nonsense")
 	assert_eq(stage.lighting, "high", "an unknown quality falls back to high")
 	assert_true(env.ssao_enabled)
+
+
+## v0.6.1 lighting pass (owner, 2026-10-12): a mood's grade pulls the darks toward its shadow colour and the lights
+## toward its highlight colour, and the environment applies it with the contrast, saturation and glow.
+func test_the_grade_tints_shadows_and_highlights() -> void:
+	var m := BiomeMood.new()
+	assert_null(m.grade_texture(), "no grade by default")
+	m.grade_shadows = Color(0.2, 0.45, 0.55)
+	m.grade_highlights = Color(1.0, 0.62, 0.32)
+	m.grade_strength = 0.7
+	m.contrast = 1.12
+	m.glow_threshold = 0.85
+	var g := m.grade_texture().gradient
+	var dark := g.sample(0.25)
+	var light := g.sample(0.75)
+	assert_gt(dark.b, dark.r, "darks lean teal")
+	assert_gt(light.r, light.b, "lights lean orange")
+	assert_almost_eq(g.sample(0.0).r, 0.0, 0.001, "black stays black")
+	assert_almost_eq(g.sample(1.0).b, 1.0, 0.001, "white stays white")
+	var env := _stage(m).environment
+	assert_true(env.adjustment_enabled)
+	assert_not_null(env.adjustment_color_correction)
+	assert_almost_eq(env.adjustment_contrast, 1.12, 0.001)
+	assert_almost_eq(env.glow_hdr_threshold, 0.85, 0.001)
+	assert_false(_stage(BiomeMood.new()).environment.adjustment_enabled, "no grade, no adjustment")
+	m.glow_spread = 0.7
+	var wide := _stage(m).environment
+	assert_gt(wide.get_glow_level(4), 0.0, "a wide glow level is on")
+
+
+## The dev panel's lighting page (docs/tools/DEV_PANEL.md Step 3): a mood edit re-applies to the running stage.
+func test_apply_mood_updates_the_running_stage() -> void:
+	var m := BiomeMood.new()
+	var stage := _stage(m)
+	m.ambient_energy = 0.11
+	m.glow_spread = 0.8
+	m.sun_energy = 0.33
+	m.grade_strength = 0.5
+	m.grade_shadows = Color(0.2, 0.4, 0.6)
+	stage.apply_mood()
+	assert_almost_eq(stage.environment.ambient_light_energy, 0.11, 0.0001)
+	assert_gt(stage.environment.get_glow_level(4), 0.0)
+	assert_true(stage.environment.adjustment_enabled, "the grade turns on live")
+	assert_almost_eq(stage.sun.light_energy, 0.33, 0.0001, "a fresh sun at the new energy")
+	m.grade_strength = 0.0
+	stage.apply_mood()
+	assert_false(stage.environment.adjustment_enabled, "and off again")

@@ -28,7 +28,7 @@ static func on_kill(w: World, i: int) -> void:
 		return
 	if not w.rng_loot.chance_permille(chance):
 		return
-	if w.orbs.size() >= MAX_ON_FLOOR:
+	if w.orbs.size() >= w.tuning.heal_orbs_max:
 		w.orbs.remove_at(0)
 	var id := w.take_id()
 	w.orbs.add(id, w.actors.pos(i))

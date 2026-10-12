@@ -105,7 +105,21 @@ func _build_environment() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.glow_enabled = true
+	_mood_environment(env)
+	environment = env
+	set_lighting(lighting)
+	var we := WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+
+
+## The mood's (or the old look's) settings on `env`; run again by apply_mood() while playing.
+func _mood_environment(env: Environment) -> void:
 	env.glow_hdr_threshold = 1.0
+	env.glow_bloom = 0.0
+	for lv in 7:  # Godot's default glow levels
+		env.set_glow_level(lv, 1.0 if lv in [2, 4] else 0.0)
+	env.adjustment_enabled = false
 	if mood == null:
 		env.background_color = palette["edge"]
 		env.ambient_light_color = palette["ambient"]
@@ -119,6 +133,19 @@ func _build_environment() -> void:
 		env.tonemap_mode = Environment.TONE_MAPPER_AGX
 		env.tonemap_exposure = mood.exposure
 		env.glow_intensity = mood.glow_intensity
+		env.glow_hdr_threshold = mood.glow_threshold
+		env.glow_bloom = mood.glow_bloom
+		if mood.glow_spread > 0.0:  # wider levels: bright sources halo, not just their own pixels
+			for lv: Array in [[2, 1.0], [3, 0.9], [4, 0.75], [5, 0.55]]:
+				env.set_glow_level(
+					int(lv[0]), float(lv[1]) * (1.0 if lv[0] == 2 else mood.glow_spread)
+				)
+		var grade := mood.grade_texture()
+		if grade != null or mood.contrast != 1.0 or mood.saturation != 1.0:
+			env.adjustment_enabled = true
+			env.adjustment_contrast = mood.contrast
+			env.adjustment_saturation = mood.saturation
+			env.adjustment_color_correction = grade
 		env.ssao_radius = mood.ssao_radius
 		env.ssao_intensity = mood.ssao_intensity
 		env.ssao_light_affect = mood.ssao_light_affect
@@ -129,11 +156,22 @@ func _build_environment() -> void:
 		_build_vignette(mood.vignette)
 	if deep:
 		_apply_deep(env)
-	environment = env
+
+
+## Re-applies the mood to the running stage (the dev panel's lighting page, docs/tools/DEV_PANEL.md Step 3): the
+## environment, the grade and glow, the sun or moon, the vignette and the fire props' lights. The contact shadow
+## under blocks is built with the floor: its two numbers take a Restart floor.
+func apply_mood() -> void:
+	if environment == null:
+		return
+	_mood_environment(environment)
 	set_lighting(lighting)
-	var we := WorldEnvironment.new()
-	we.environment = env
-	add_child(we)
+	if sun != null:
+		sun.queue_free()
+		sun = null
+	_build_light()
+	if kit != null and mood != null:
+		kit.retune(mood)
 
 
 ## v0.5.5 DS (S5): the Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
@@ -163,6 +201,9 @@ func set_lighting(quality: String) -> void:
 
 ## Darkens the screen's edges (a radial gradient on a full-screen rect, under the HUD and the portal transit).
 func _build_vignette(strength: float) -> void:
+	if vignette != null:  # apply_mood() again: replace the old one
+		vignette.get_parent().queue_free()
+		vignette = null
 	if strength <= 0.0:
 		return
 	var g := Gradient.new()

@@ -22,6 +22,9 @@ var audio := AudioDirector.new()
 ## v0.4.0 SV: the run save (room entries, close, Continue).
 var saves: RunSaver
 
+## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
+## every run and floor is compiled.
+var tuning := DevTuning.load_saved()
 var _menu: Control
 var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
@@ -29,6 +32,12 @@ var _pause_options: OptionsMenu
 ## v0.6.5 WN2: the Build page opened from the pause menu, over the paused stage.
 var _pause_build: BuildPage
 var _dev: DevPanel
+var _devm: DevMasterPanel
+## The current floor's biome file (the dev panel's lighting edits re-read its mood).
+var _biome_path := ""
+## A balance edit waits to go into the running World until the panel closes (the run is paused while it is open).
+var _balance_pending := false
+var _dev_mark: Label
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -77,6 +86,15 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (  # the master dev panel (docs/tools/DEV_PANEL.md): every build, anywhere
+		event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and event.physical_keycode == KEY_F10
+	):
+		get_viewport().set_input_as_handled()
+		_toggle_master_panel()
+		return
 	if (
 		driver != null
 		and event is InputEventKey
@@ -195,7 +213,7 @@ func show_gallery() -> void:
 ## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor.
 func start_stage() -> void:
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	var build := StringName(profile.section("loadout").get("build", "blade"))
@@ -212,7 +230,7 @@ func continue_run() -> void:
 		show_main_menu()
 		return
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	_stage_seed = int(save["run"]["stage_seed"])
@@ -227,7 +245,7 @@ func continue_run() -> void:
 ## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	if repo == null:
-		repo = ContentRepository.load_all()
+		repo = _content()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
@@ -276,11 +294,13 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(world)
+	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
 			return err
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
+	_tweaked_run_check()
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -289,6 +309,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view.name = "WorldView"
 	view.stage.prop_style = biome.id
 	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	_biome_path = biome.resource_path
 	view.stage.lighting = GameSettings.get_value(profile, "lighting")
 	add_child(view)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
@@ -413,6 +434,77 @@ func toggle_dev_panel() -> void:
 	ui.add_child(_dev)
 
 
+## Opens or closes the master dev panel (F10). In a run it pauses the sim and carries the debug tools.
+func _toggle_master_panel() -> void:
+	if _devm != null:
+		_close_master_panel()
+		return
+	var tools: Control = null
+	if driver != null:
+		if driver.debug == null:
+			driver.debug = DebugApi.new(driver.world)
+			driver.debug.reseed_requested.connect(_reseed)
+		tools = DevPanel.new(driver.debug)
+		driver.paused = true
+	_devm = DevMasterPanel.new(tuning, tools)
+	_devm.changed.connect(_on_tuning_changed)
+	_devm.restart_requested.connect(_restart_floor)
+	_devm.close_requested.connect(_close_master_panel)
+	ui.add_child(_devm)
+
+
+func _close_master_panel() -> void:
+	if _devm != null:
+		_drop(_devm)
+		_devm = null
+	if _balance_pending and driver != null and run != null:  # Step 4: balance edits go live as the run resumes
+		LiveTuning.apply(driver.world, run, _content())
+	_balance_pending = false
+	_tweaked_run_check()
+	if driver != null and _pause == null:
+		driver.paused = false
+
+
+## Rebuilds the run's current floor from the (tweaked) content: the dev panel's Restart floor.
+func _restart_floor() -> void:
+	if run == null:
+		return
+	_balance_pending = false  # the rebuilt floor reads everything anyway
+	_close_master_panel()
+	_end_floor()
+	_start_floor()
+
+
+## Step 5 (owner: tweaked runs don't count): while any balance value is off the shipped game the run has no save
+## (Continue can't resume it) and a DEV mark shows. Unlocks and records, when they come, check tuning the same way.
+func _tweaked_run_check() -> void:
+	var tweaked := tuning.balance_tweaked()
+	if tweaked and run != null:
+		saves.discard()
+	if _dev_mark == null:
+		_dev_mark = Label.new()
+		_dev_mark.name = "DevMark"
+		_dev_mark.text = "UI_DEVM_MARK"
+		_dev_mark.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
+		_dev_mark.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		_dev_mark.position.y = 4
+		_dev_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(_dev_mark)
+	_dev_mark.visible = tweaked
+
+
+## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the
+## next spawns or Restart floor.
+func _on_tuning_changed(key: String) -> void:
+	if DevTuning.is_lighting(key) and view != null and _biome_path != "":  # Step 3: live
+		# The store writes into the loaded biome it holds; the stage takes that biome's mood and re-applies it.
+		view.stage.mood = (load(_biome_path) as BiomeDefinition).mood
+		view.stage.apply_mood()
+		view.actors.retune_hero_light(view.stage.mood)
+	elif not DevTuning.is_lighting(key):
+		_balance_pending = true
+
+
 func is_dev_panel_open() -> bool:
 	return _dev != null
 
@@ -524,11 +616,12 @@ func _end_stage() -> void:
 func _end_floor() -> void:
 	close_pause()
 	audio.detach()
-	for n in [_hud, _end, _dev, driver, view, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
 	_end = null
 	_dev = null
+	_devm = null
 	driver = null
 	view = null
 
@@ -541,3 +634,9 @@ static func _drop(n: Node) -> void:
 	if n.get_parent() != null:
 		n.get_parent().remove_child(n)
 	n.queue_free()
+
+
+## The content with the dev panel's overrides written in (none: the shipped game).
+func _content() -> ContentRepository:
+	tuning.apply()
+	return ContentRepository.load_all()

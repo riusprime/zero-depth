@@ -198,3 +198,32 @@ func test_enemy_statuses_draw_in_the_layer_not_as_boxes() -> void:
 	assert_gt(_vfx.used(&"splash"), 0, "bleeding drips")
 	assert_gt(_vfx.used(&"ice"), 5, "a frozen enemy's crystal cage")
 	assert_eq(_vfx.marks_of(&"frost"), 1, "frost under it")
+
+
+## Owner, 2026-10-12 ("that's too much fire"): a dash's overlapping Flame Trail patches draw one layer of flames, one
+## light for the cluster and one scorch per spot, not a set per patch.
+func test_overlapping_fire_patches_thin_out() -> void:
+	_vfx.begin(40.0)
+	_vfx.field(&"fire", Vector3.ZERO, 0.9, 1.0, 40.0, 11)
+	_vfx.finish()
+	var one := _vfx.used(&"flame")
+	_vfx.clear_marks()
+	_vfx.begin(40.0)
+	for k in 6:
+		_vfx.field(&"fire", Vector3(k * 0.8, 0, 0), 0.9, 1.0, 40.0, 11 + k)
+	_vfx.finish()
+	assert_lt(
+		_vfx.used(&"flame"),
+		one * 4,
+		"six overlapping patches, far fewer than six patches of flames"
+	)
+	assert_lte(_vfx.lights_on(), 2, "one light per cluster")
+	assert_lte(_vfx.marks_of(&"scorch"), 3, "no stack of scorches")
+
+
+## Lighting pass (owner, 2026-10-12): a fire prop draws real flames (bright enough to bloom).
+func test_a_fire_prop_draws_flames_that_bloom() -> void:
+	_vfx.begin(10.0)
+	_vfx.prop_fire(Vector3(1, 1, 1), 5)
+	_vfx.finish()
+	assert_eq(_vfx.used(&"flame"), 3, "three tongues (their HDR colour is not readable headless)")

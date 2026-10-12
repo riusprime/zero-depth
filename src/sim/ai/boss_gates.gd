@@ -53,12 +53,12 @@ static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
 static func begin(w: World, i: int, b: int, gate: int) -> void:
 	var a := w.actors
 	var bs := w.bosses
-	bs.gate_t[b] = GATE_TICKS
+	bs.gate_t[b] = w.tuning.gate_ticks
 	bs.attack[b] = -1
 	bs.stagger_t[b] = 0
 	bs.meter[b] = 0
 	a.lock_len[i] = 0.0
-	a.invuln[i] = maxi(a.invuln[i], GATE_TICKS)
+	a.invuln[i] = maxi(a.invuln[i], w.tuning.gate_ticks)
 	a.state[i] = BossAi.GATE
 	a.state_t[i] = 0
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[i], a.ids[i], a.pos(i))
@@ -67,16 +67,16 @@ static func begin(w: World, i: int, b: int, gate: int) -> void:
 	var kinds := add_kinds(w)
 	if kinds.is_empty():
 		return
-	var n := adds_for(w.floor_index, gate)
+	var n := adds_for(w.floor_index, gate, w.tuning.gate_adds_min, w.tuning.gate_adds_max)
 	for k in n:
 		var kind := kinds[(k + gate) % kinds.size()]
-		var at := BossAi.spot(w, a.pos(i), k * 4096 / n + gate * 512, ADD_RING_M)
+		var at := BossAi.spot(w, a.pos(i), k * 4096 / n + gate * 512, w.tuning.gate_add_ring_m)
 		w.queue_enemy(kind, at)
 
 
 ## How many adds gate `gate` brings on floor f.
-static func adds_for(f: int, gate: int) -> int:
-	return clampi(f + gate - 1, ADDS_MIN, ADDS_MAX)
+static func adds_for(f: int, gate: int, lo: int = ADDS_MIN, hi: int = ADDS_MAX) -> int:
+	return clampi(f + gate - 1, lo, hi)
 
 
 ## Tick phase 3 (BossAi.think), during the gate: the clock runs down, then the boss fights again (its entry attack
@@ -115,4 +115,6 @@ static func progress(w: World, i: int) -> int:
 	var b := BossAi.entry_of(w, i)
 	if b < 0 or w.actors.state[i] != BossAi.GATE:
 		return 0
-	return clampi((GATE_TICKS - w.bosses.gate_t[b]) * 1000 / GATE_TICKS, 0, 1000)
+	return clampi(
+		(w.tuning.gate_ticks - w.bosses.gate_t[b]) * 1000 / maxi(1, w.tuning.gate_ticks), 0, 1000
+	)

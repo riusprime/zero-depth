@@ -87,6 +87,8 @@ var _mark_keys := {}
 var _mark_tex := {}
 var _now := 0.0
 var _shaders := {}
+## This frame's taken spots, per kind: kind -> {grid cell (Vector2i) -> [[Vector3, owner]]} (see _claim).
+var _spots := {}
 
 
 func _init() -> void:
@@ -219,6 +221,7 @@ func begin(now: float) -> void:
 	for p: Dictionary in pools.values():
 		p["used"] = 0
 	_light_wants.clear()
+	_spots.clear()
 
 
 ## Ends the frame: lets the drawers add theirs, shows the used pieces, gives the lights to the brightest requests,
@@ -308,6 +311,44 @@ func _light(p: Vector3, c: Color, energy: float, rng: float) -> void:
 		_light_wants.append([p, c, energy, rng])
 
 
+## One light for a cluster: when a light of colour `c` already stands within `merge` m, it takes the stronger
+## energy and the wider range instead of a second light (overlapping fire patches light the room once, not once
+## each: owner, 2026-10-12, "that's too much fire").
+func _light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
+	if energy <= 0.02:
+		return
+	for w: Array in _light_wants:
+		if (w[1] as Color).is_equal_approx(c) and (w[0] as Vector3).distance_to(p) < merge:
+			w[2] = maxf(float(w[2]), energy) * 1.08
+			w[3] = maxf(float(w[3]), rng)
+			return
+	_light_wants.append([p, c, energy, rng])
+
+
+## Takes the spot `p` for `kind` this frame unless a piece of that kind from another effect (`owner`) already
+## stands within `spacing` m (on the floor plane). Overlapping patches then draw one layer of flames, not one per
+## patch; one patch's own flames never thin each other.
+func _claim(kind: StringName, p: Vector3, spacing: float, owner: int = -1) -> bool:
+	var grid: Dictionary = _spots.get(kind, {})
+	if grid.is_empty():
+		_spots[kind] = grid
+	var cell := Vector2i(floori(p.x / spacing), floori(p.z / spacing))
+	var flat := Vector2(p.x, p.z)
+	for dx in range(-1, 2):
+		for dz in range(-1, 2):
+			for q: Array in grid.get(cell + Vector2i(dx, dz), []):
+				var at: Vector3 = q[0]
+				if (
+					(owner < 0 or int(q[1]) != owner)
+					and Vector2(at.x, at.z).distance_to(flat) < spacing
+				):
+					return false
+	if not grid.has(cell):
+		grid[cell] = []
+	(grid[cell] as Array).append([p, owner])
+	return true
+
+
 static func h(a: int, b: int) -> float:
 	return AttackFormCanvas._hash(a, b)
 
@@ -318,6 +359,10 @@ static func h(a: int, b: int) -> float:
 func mark(key: int, tex: StringName, p: Vector3, r: float, c: Color) -> void:
 	if _mark_keys.has(key):
 		return
+	for s: Array in _marks:  # an overlapping mark of the same kind is enough (stacked decals go black)
+		if s[1] == tex and (s[2] as Vector3).distance_to(p) < maxf(float(s[3]), r) * 0.9:
+			_mark_keys[key] = true
+			return
 	_mark_keys[key] = true
 	_marks.append([key, tex, p, r, _now, TAU * h(key, 99), c])
 	while _marks.size() > DECALS:

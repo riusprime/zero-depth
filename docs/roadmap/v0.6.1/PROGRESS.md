@@ -39,3 +39,12 @@ Plan: [`PLAN.md`](PLAN.md). Local on `claude/lucid-fermat-9wv2tf` until v0.6.0's
 - 2026-10-09: SD4 done (agent, owner A3c): a fifth of a room, mostly corners, only on stone, and crystal rooms. Targeted tests 33/33, lint clean. The shards2_* shots were replaced. Open owner question: should crystal rooms follow a specific room template ("a themed one")?
 - 2026-10-10: wave 2 merged (SW2, SD2→SD4); the wave's one full suite on `cbb530e`: 1395/1395, no SCRIPT ERROR; MIN_TEST_COUNT 1395.
 - 2026-10-10: merged `claude/keen-volta-ht74pz` (`ec58132`, VFX pass + phase 2) at the owner's request ("merge it with your making shure everything stays from both branch updates and then push it to main"); the only conflict MIN_TEST_COUNT; full suite on `689defd`: 1405/1405, no SCRIPT ERROR. Version 0.6.1-dev, [`PLAYTEST.md`](PLAYTEST.md), PR into `main`.
+- 2026-10-12: owner feedback on the playtest build, art (this session's lead, art only): "too much fire … it goes
+  buggy all around" and "work a bit more into the lighting". Fire fixed (`4f4e644`: stable patch seeds, overlapping
+  patches thin out); lighting pass proposed with before/after shots, G2 pending
+  ([`docs/art/LIGHTING_PASS.md`](../../art/LIGHTING_PASS.md)).
+- 2026-10-12: lighting pass, second proposal (`2ae8266`: sources bloom, darker corners; full suite 1409/1409 at
+  `2ae8266`), G2 pending. The owner asked for a master dev panel to tune lighting and balance in the game
+  ([`docs/tools/DEV_PANEL.md`](../../tools/DEV_PANEL.md)): built (F10, every balance file, live lighting, balance live on
+  close, Restart floor, DEV mark and no save, the sim's designer constants as content); full suite at `ef8894c`:
+  1425/1425; MIN_TEST_COUNT 1425.

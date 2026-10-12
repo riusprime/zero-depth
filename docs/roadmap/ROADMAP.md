@@ -82,6 +82,8 @@ current version. Those changes ship as patch versions.
 - [ ] §4 row status and the History entry below updated.
 - [ ] README status line updated. CLAUDE.md re-read and corrected if anything it says is no longer true.
 - [ ] `PLAYTEST.md` written for the owner ([`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §5).
+- [ ] **Public releases only:** the dev panel (F10) removed or locked
+  ([`../tools/DEV_PANEL.md`](../tools/DEV_PANEL.md); owner, 2026-10-12: "All builds, hidden key" until then).
 
 ### 0.5 Testing before a push
 

@@ -806,3 +806,26 @@ UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿
 UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
 UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro
 UI_SWAP_HINT_MORE,I / X insert the new card · R / Y move a card · mouse: drag a card,I / X insertar la carta nueva · R / Y mover una carta · ratón: arrastra una carta
+UI_DEVM_TITLE,Dev panel (F10),Panel de desarrollo (F10)
+UI_DEVM_SEARCH,Search,Buscar
+UI_DEVM_RESTART,Restart floor,Reiniciar piso
+UI_DEVM_RESET_ALL,Reset all,Restablecer todo
+UI_DEVM_COPY,Copy changes,Copiar cambios
+UI_DEVM_CLOSE,Close,Cerrar
+UI_DEVM_RESET,Reset,Restablecer
+UI_DEVM_COPIED,Copied %d changes,%d cambios copiados
+UI_DEVM_CHANGES,%d changes,%d cambios
+UI_DEVM_G_LIGHTING,Lighting,Iluminación
+UI_DEVM_G_PLAYER,Player,Jugador
+UI_DEVM_G_ENEMIES,Enemies,Enemigos
+UI_DEVM_G_BOSSES,Bosses,Jefes
+UI_DEVM_G_DIFFICULTY,Spawning and difficulty,Aparición y dificultad
+UI_DEVM_G_ECONOMY,Economy,Economía
+UI_DEVM_G_BUILD,Build pieces,Piezas de build
+UI_DEVM_G_TOOLS,Tools,Herramientas
+UI_DEVM_HINT_LIVE,Changes show at once.,Los cambios se ven al instante.
+UI_DEVM_HINT_CLOSE,"Applies when you close the panel (F10); what the floor lays out (chests, altars, rooms) needs Restart floor.","Se aplica al cerrar el panel (F10); lo que el piso coloca (cofres, altares, salas) necesita Reiniciar piso."
+UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for the next ones to spawn (Restart floor for all).","Se aplica al cerrar el panel; la vida y los fragmentos cambian para los siguientes en aparecer (Reiniciar piso para todos)."
+UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
+UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
+UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"

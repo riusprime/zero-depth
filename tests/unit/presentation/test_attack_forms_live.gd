@@ -181,3 +181,32 @@ func test_the_reader_reads_keys_as_plain_data() -> void:
 	assert_eq(r.bomb_spec_keys().size(), w.ab.bomb_pos.size())
 	assert_eq(r.fire_spec_keys().size(), w.ab.fire_pos.size())
 	assert_true(r.rings_live().is_empty())
+
+
+## Owner, 2026-10-12 ("it goes buggy all around"): a patch keeps its seed for its whole life, so its flames, scorch and
+## light stay put when an older patch goes out and the sim's list shifts.
+func test_a_fire_patch_keeps_its_seed_when_an_older_one_goes_out() -> void:
+	var w := _world(&"blade", [&"flame_trail"])
+	var r := WorldReader.new(w)
+	var key := ""
+	for t: AbilityTable in w.ability_tables:
+		if t.id == &"flame_trail":
+			key = Modifiers.ability(w, t).key
+	assert_ne(key, "", "Flame Trail has a spec")
+	for k in 3:
+		ElementAbilities.add_fire(w, Vector2(k * 0.8, 1.0), 0.9, w.tick + 300, 1, 1, 0)
+		w.ab.fire_spec[k] = key
+	_view.sync(r)
+	var before := {}
+	for f: Dictionary in _view._live_forms:
+		if f["kind"] == &"zone":
+			before[f["pos"]] = f["seed"]
+	assert_eq(before.size(), 3)
+	ElementAbilities._remove_fire(w.ab, 0)
+	_view.sync(r)
+	var after := 0
+	for f: Dictionary in _view._live_forms:
+		if f["kind"] == &"zone":
+			assert_eq(f["seed"], before[f["pos"]], "same patch, same seed")
+			after += 1
+	assert_eq(after, 2)

@@ -69,7 +69,7 @@ static func add_fire(
 	w: World, at: Vector2, r: float, end_tick: int, dmg: int, stacks: int, kind: int
 ) -> void:
 	var s := w.ab
-	if s.fire_pos.size() >= FIRE_CAP:
+	if s.fire_pos.size() >= w.tuning.fire_cap:
 		_remove_fire(s, 0)
 	s.fire_pos.append(at)
 	s.fire_r.append(r)
@@ -156,7 +156,7 @@ static func advance_fire(w: World) -> void:
 ## Ticks between two fire hits on one enemy without a spec gap: Flame Trail's hit_ticks.
 static func fire_hit_ticks(w: World) -> int:
 	var t := Abilities.owned_of_kind(w, AbilityTable.Kind.FLAME_TRAIL)
-	return t.hit_ticks if t != null and t.hit_ticks > 0 else FIRE_HIT_TICKS
+	return t.hit_ticks if t != null and t.hit_ticks > 0 else w.tuning.fire_hit_ticks
 
 
 # --- Reads --------------------------------------------------------------------------------------------------------
