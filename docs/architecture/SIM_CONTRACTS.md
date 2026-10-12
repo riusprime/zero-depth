@@ -668,6 +668,66 @@ hashes (`WandTable` and `last_hit_crit` are kept out: loadout and transient).
 **CatchUp.power** (§11) reads the wand's cards (`Wand.size`; a trigger card counts 1), whatever their order: a
 reorder never changes P.
 
+## 8f. The Blade pool (v0.6.5 WN4)
+
+Design: [`../design/WAND.md`](../design/WAND.md) B1–B16 (owner-approved, G1 "Approve all"; W5: "the slash becomes a
+spell"). Evidence: [`../roadmap/v0.6.5/evidence/WAND_BLADE.md`](../roadmap/v0.6.5/evidence/WAND_BLADE.md). Each card is
+modifier data that rewrites the Blade's combo steps (target `[weapon, melee]`, so a trigger's child slash too) in slot
+order (§8e); the runner features below are in `BladeForms` (`src/sim/combat/blade_forms.gd`, state `World.blade`:
+`BladeState`), each read from the compiled spec, none drawing randomness, on the one clock.
+
+**Spec fields added** (`AttackSpec`, appended to the hash order; content names in `ModifierOpDefinition.FIELD_STAGE`):
+`motion` (-1, or a `SwingStep.Motion`: Thrust's stab, Whirl's spin), `parry`, `counter_ticks` / `counter_permille`,
+`carry`, `echo_mirror`, `knockback_m`, `line_m`, `step_m`. Tags `wave` (a flying slash: Wave's and Counter's crescents)
+and `finisher` (the combo's last step, `Modifiers.base_step`). `AttackHook.WHEN_COUNTER` (2). An `ORBITER` hook needs
+its orbit's reach.
+
+**The swing itself** (`BladeForms.step`, read by `PlayerKit.current_step`): a step whose spec sets `motion`, a swing
+speed (`rate_bonus_permille`, which the arc never read before: Flurry +500, Heavy −300; every tick of the swing, its hit
+tick too, scales by 1000 / (1000 + bonus), never under `BladeTable.rate_min`) or `step_m` (Lunge Step, added to the
+step's lunge and spread over at least `BladeTable.lunge_ticks`, `SwingStep.lunge_over`) swings as a copy of its
+`SwingStep`. The combo window, the hit and the views all read that copy (EI-07).
+
+**Runners.** An arc's landed hit with `knockback_m` pushes the enemy (not a boss) straight away over
+`knock_ticks` (Heavy). An arc with `parry` removes every enemy projectile its shape touches when it resolves and on
+every later tick of the swing (Parry Edge; `BladeState.parried` counts them). A `BURST` with `line_m` is a line from
+its origin along its angle (Fissure: an `ON_END` hook from the arc's tip, waiting 0.3 s in the launch queue, its crack;
+every enemy within `radius_m` of the line is hit, then its `ON_END` hooks from the far end). An `ORBITER` with
+`orbit_ticks` lingers (Orbit Blades): a blade circles the player at `reach_m`, turning `orbit_turn` a tick, hits what
+it touches and rests `orbit_gap`; at most `orbit_max` blades (the oldest leaves). A slash within `counter_ticks` of the
+last dash's end deals × `counter_permille` (once per dash) and that tick its `WHEN_COUNTER` hooks fire (Counter's wave).
+**Compile-time:** a carry child (Finisher+'s shockwave) takes its slash's statuses, elements and hit hooks after the
+compile (`BladeForms.settle` → `Modifiers.inherit`), so it carries cards on either side of it; a bolt hook of a
+full-circle arc flies as a ring of `CRESCENT_RING` (4) crescents (`BladeForms.hook_base`: Whirl·Wave throws a ring,
+Wave·Whirl one crescent).
+
+**The cards** (data `data/modifiers/` + `data/items/`; numbers are starting values): B1 `wide_arc`, B2 `echo_slash`
+(Wave), B12 `long_shadow` (Afterimage) and B15 `blade_orbit` (Orbit Blades) keep their v0.6 ids and item indices and
+become the Blade cards; B3 `split_wave`, B4 `whirl`, B5 `double_slash`, B6 `thrust`, B7 `heavy`, B8 `flurry`, B9
+`fissure`, B10 `chain_cut`, B11 `parry_edge`, B13 `lunge_step`, B14 `finisher_plus`, B16 `counter` are new items of kind
+`WAND` (`ItemDefinition.Kind.WAND`, 33), indexed after the trigger cards (`ModifierCompiler.item_defs`). Their pool is
+`requires_weapon = blade` (with the item tag `blade`; validated for `WAND` cards): offered only in Blade runs.
+
+**Levels** (WAND.md rule 6; `CardLevels`, `src/sim/abilities/card_levels.gd`): an item card with
+`ItemDefinition.max_level` > 1 (the 16 Blade cards: 5) stays in the offers while held below it; taking it again
+(`BuildSlots.take`) raises `World.item_levels[code]` (run-long: `RunCarry`; hashed with the slots once a card levelled;
+a v0.6 save lacks it: level 1) and uses no slot. The compile reads the card's `ModifierTable.at_level(n)`: every op
+grown by its `per_level` for each level above 1 (`ModifierCompiler` compiles levels 2–5 at load). `CatchUp.power`
+counts each level above 1 once more.
+
+**Tunables** no card's ops name: `World.blade_table` (`BladeTable`, from `data/wand/blade_forms.tres`; a lab world
+without it reads the class defaults).
+
+**Hash, saves.** `BladeState` is hashed (`ModifierRuntime.hash_into`, inside `Modifiers.hash_into`) once touched, and
+copied by the snapshot (`STATE_CLASSES`; a save from before WN4 lacks it and `item_levels`: `ADDED_SINCE_V05`, the
+base's fresh state). The view's marks (`fx_*`) are in it: what the views draw of slashes no blade draws (a ghost slash,
+a mirrored echo, a fissure's eruption, a cut shot, a counter, a carry shockwave), at most 24, kept 40 ticks.
+
+**Reads.** `WorldReader.blade_forms()` (`BladeForms.read`: the marks, the orbiting blades' positions, the cracks
+waiting to erupt, the shots cut, the last counter's tick, the enemies being pushed) and `WorldReader.blade_swing()`
+(the current swing's weight, speed bonus, lunge, knockback, parry): `BladeFormView`, `KitView` and the hero's avatar
+draw from them.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

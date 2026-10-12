@@ -312,6 +312,8 @@ var mx := ModifierState.new()
 ## draws. Both hashed once touched (BuildSlots.hash_into, ModifierRuntime.hash_into).
 var item_levels := PackedInt32Array()
 var blade := BladeState.new()
+## v0.6.5 WN4: the Blade pool's runner numbers (loadout, not hashed; null = a lab world: BladeTable's defaults).
+var blade_table: BladeTable
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).

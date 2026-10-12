@@ -119,13 +119,13 @@ func _fx(f: Dictionary, tick: int, hero: Vector2) -> bool:
 	var at: Vector2 = f["pos"]
 	var yaw := TAU * float(f["angle"]) / 4096.0
 	match int(f["kind"]):
-		BladeForms.FX_ARC, BladeForms.FX_ARC_MIRROR:
+		WorldReader.BLADE_FX_ARC, WorldReader.BLADE_FX_ARC_MIRROR:
 			return _ghost(f, age, at, yaw)
-		BladeForms.FX_LINE:
+		WorldReader.BLADE_FX_LINE:
 			return _eruption(f, age, at, yaw)
-		BladeForms.FX_PARRY:
+		WorldReader.BLADE_FX_PARRY:
 			return _spark(age, at, yaw)
-		BladeForms.FX_COUNTER, BladeForms.FX_BURST:
+		WorldReader.BLADE_FX_COUNTER, WorldReader.BLADE_FX_BURST:
 			return _ring(f, age, at, hero)
 	return false
 
@@ -140,7 +140,7 @@ func _ghost(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
 	var reach := 0.45 + float(f["b"])
 	var from := yaw - half
 	var to := yaw - half + 2.0 * half * sweep
-	if int(f["kind"]) == BladeForms.FX_ARC_MIRROR:
+	if int(f["kind"]) == WorldReader.BLADE_FX_ARC_MIRROR:
 		from = yaw + half - 2.0 * half * sweep
 		to = yaw + half
 	_arc_band(at, from, to, reach * 0.45, reach, HEIGHT, _core.lerp(Color.WHITE, 0.3), 0.45 * fade)
@@ -185,7 +185,7 @@ func _ring(f: Dictionary, age: int, at: Vector2, hero: Vector2) -> bool:
 	if age > RING_TICKS:
 		return false
 	var p := float(age) / RING_TICKS
-	var big := int(f["kind"]) == BladeForms.FX_BURST
+	var big := int(f["kind"]) == WorldReader.BLADE_FX_BURST
 	var r := (float(f["a"]) if big else 1.2) * (0.3 + 0.7 * p)
 	_arc_band(
 		at if big else hero, 0.0, TAU, maxf(r - 0.15, 0.0), r, FLOOR + 0.02, _core, 0.6 * (1.0 - p)

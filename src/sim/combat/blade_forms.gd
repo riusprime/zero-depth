@@ -8,12 +8,13 @@ extends RefCounted
 ##   (rate_bonus_permille: Flurry faster, Heavy slower; the whole swing's ticks scale, its hit tick too) or steps the
 ##   player forward (step_m: Lunge Step) swings as a copy of its SwingStep with those changes; PlayerKit and the views
 ##   read that copy, so what you see is what hits.
-## - Hits: a landed arc hit with knockback_m pushes the enemy away over KNOCK_TICKS (Heavy; not a boss).
+## - Hits: a landed arc hit with knockback_m pushes the enemy away over the table's knock_ticks (Heavy; not a boss).
 ## - Parry Edge (parry): the arc cuts every enemy shot it touches when it hits, and through the rest of the swing.
 ## - Fissure (line_m): a burst with a length is a line from where it fires along its angle, hitting every enemy within
 ##   its radius of the line (its crack waits in the launch queue first: the hook's delay).
 ## - Orbit Blades (an ORBITER with orbit_ticks): the blade circles the player for orbit_ticks, hitting what it touches,
-##   then rests ORBIT_GAP ticks; at most ORBIT_MAX blades (the oldest leaves).
+##   then rests the table's orbit_gap; at most orbit_max blades (the oldest leaves).
+## The runner numbers no card's ops name are World.blade_table (BladeTable, data/wand/blade_forms.tres).
 ## - Counter (counter_ticks): a slash within counter_ticks of a dash's end deals × counter_permille, once per dash, and
 ##   its WHEN_COUNTER hooks (the dash-slash wave) fire on that tick only.
 ## - Finisher+ (carry): after the compile, a hook child with carry takes its slash's statuses, elements and hit hooks
@@ -31,17 +32,17 @@ const FX_COUNTER := 5
 ## The view's marks kept (newest last) and for how long (ticks).
 const FX_MAX := 24
 const FX_TICKS := 40
-## Orbit Blades: blades at once, their turn per tick (1/4096 turns: about one turn a second), the rest after a hit.
-const ORBIT_MAX := 6
-const ORBIT_TURN := 68
-const ORBIT_GAP := 12
-## Heavy's push lasts this many ticks.
-const KNOCK_TICKS := 8
-## A spinning slash's flying copy: this many crescents round the player.
+## A spinning slash's flying copy: this many crescents round the player (a shape rule, read at compile time).
 const CRESCENT_RING := 4
-## The fastest a swing may get (per mille of its own speed, a floor for stacked slow cards) and Lunge Step's stride.
-const RATE_MIN := 250
-const LUNGE_TICKS := 6
+## The runner numbers of a world without World.blade_table (a lab): BladeTable's defaults, which mirror
+## data/wand/blade_forms.tres (Orbit Blades' count, turn and rest, Heavy's push, Lunge Step's stride, the slowest
+## swing).
+static var _defaults := BladeTable.new()
+
+
+## The runner numbers (data/wand/blade_forms.tres; a lab world: the defaults).
+static func table(w: World) -> BladeTable:
+	return w.blade_table if w.blade_table != null else _defaults
 
 
 # --- Compile time ---------------------------------------------------------------------------------------------
@@ -73,7 +74,8 @@ static func step(w: World, k: int) -> SwingStep:
 	var s := Modifiers.step(w, k)
 	if s == null or (s.motion < 0 and s.rate_bonus_permille == 0 and s.step_m <= 0.0):
 		return base
-	var rate := maxi(RATE_MIN, 1000 + s.rate_bonus_permille)
+	var t := table(w)
+	var rate := maxi(t.rate_min, 1000 + s.rate_bonus_permille)
 	var out := SwingStep.new()
 	out.motion = base.motion if s.motion < 0 else (s.motion as SwingStep.Motion)
 	out.active_tick = maxi(1, _scaled(base.active_tick, rate))
@@ -85,7 +87,7 @@ static func step(w: World, k: int) -> SwingStep:
 	out.hitstop_ticks = base.hitstop_ticks
 	out.lunge_m = base.lunge_m + s.step_m
 	if s.step_m > 0.0:
-		out.lunge_over = maxi(out.active_tick - 1, LUNGE_TICKS)
+		out.lunge_over = maxi(out.active_tick - 1, t.lunge_ticks)
 	return out
 
 
@@ -150,8 +152,9 @@ static func _knock(w: World, i: int, from: Vector2, metres: float) -> void:
 	var len := Kin.length(away)
 	b.k_ids.append(a.ids[i])
 	b.k_dirs.append(away / len if len > 0.0 else Kin.dir(w.swing_angle))
-	b.k_step.append(metres / KNOCK_TICKS)
-	b.k_left.append(KNOCK_TICKS)
+	var n := table(w).knock_ticks
+	b.k_step.append(metres / n)
+	b.k_left.append(n)
 
 
 ## Every enemy shot touching arc `spec` from `center` facing `angle` is cut (removed; a spark where it was).
@@ -200,7 +203,7 @@ static func line(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 ## Orbiter `spec` with orbit_ticks: one blade starts circling the player (class doc).
 static func orbit(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var b := w.blade
-	if b.o_key.size() >= ORBIT_MAX:
+	if b.o_key.size() >= table(w).orbit_max:
 		b.remove_orbit(0)
 	b.o_key.append(spec.key)
 	b.o_start.append(w.tick)
@@ -219,7 +222,7 @@ static func orbit(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 ## Blade `j`'s position now.
 static func blade_pos(w: World, j: int) -> Vector2:
 	var b := w.blade
-	var ang := (b.o_phase[j] + (w.tick - b.o_start[j]) * ORBIT_TURN) & 4095
+	var ang := (b.o_phase[j] + (w.tick - b.o_start[j]) * table(w).orbit_turn) & 4095
 	return w.player_pos() + Kin.dir(ang) * b.o_reach[j]
 
 
@@ -283,7 +286,7 @@ static func _advance_orbit(w: World) -> void:
 				ctx.depth = b.o_depth[j]
 				ctx.proc_pct = b.o_proc[j]
 				if Attacks.land(w, spec, ctx, i, at, a.pos(i)) > 0:
-					b.o_ready[j] = w.tick + ORBIT_GAP
+					b.o_ready[j] = w.tick + table(w).orbit_gap
 					break
 		j += 1
 

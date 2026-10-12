@@ -18,7 +18,10 @@ const POOL_MIN := 40
 ## v0.6.0 MX4: 80 (Blade) / 77 (Gun): the owner's M-list, approved in full ("keep all M1–M30", PLAN v0.5.5, which
 ## outranks the roadmap's 40-50), adds 29 modifier cards (the 3 legendary ones are the boss's tier, not counted).
 ## Whether to prune is an owner question (PROGRESS v0.5.5 "Gates"), not decided here.
-const POOL_MAX := 80
+## v0.6.5 WN4: 92 (Blade): the Blade pool's 12 new cards (WAND.md B3–B11, B13, B14, B16; owner G1 "Approve all") on
+## top of the 80, while the old cards stay until WN5 migrates or retires them (WAND.md "What happens to the v0.6
+## cards"). Raised in the open, not a balance target: PROGRESS v0.6.5 names it.
+const POOL_MAX := 92
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

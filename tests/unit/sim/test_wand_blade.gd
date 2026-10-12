@@ -242,7 +242,7 @@ func test_b15_orbit_blades_circle_you() -> void:
 	assert_eq(k.child.orbit_ticks, 180, "for 3 s")
 	var r := _run(w)
 	assert_gt(r["most"]["blades"], 1, "blades orbit you")
-	assert_lte(r["most"]["blades"], BladeForms.ORBIT_MAX)
+	assert_lte(r["most"]["blades"], w.blade_table.orbit_max)
 	assert_gt(int(r["effects"].get(&"blade_orbit", 0)), 0, "they hit")
 
 

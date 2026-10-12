@@ -40,6 +40,7 @@ const WORLD_KEPT := {
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
 	&"wand_table": "loadout",  # v0.6.5 WN1
+	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -77,6 +78,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
 	&"WandTable",  # v0.6.5 WN1
+	&"BladeTable",  # v0.6.5 WN4
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
