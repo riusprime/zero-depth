@@ -82,7 +82,7 @@ func test_with_every_slot_full_a_new_card_opens_the_swap() -> void:
 	Offers.apply(w, next)
 	assert_true(BuildSlots.swapping(w), "the Swap opens")
 	w.step(_pick(InputFrame.PICK_SWAP_BASE + 3))
-	assert_eq(_ids(w), [&"ember_edge", &"trigger_on_hit", &"long_edge", &"overcharge"], "in place")
+	assert_eq(_ids(w), [&"heavy", &"trigger_on_hit", &"wide_arc", &"overcharge"], "in place")
 	var f2 := _world(2)
 	_take(f2, FOUR)
 	assert_false(BuildSlots.needs_swap(f2, _it(f2, &"overcharge")), "floor 2 has six slots")
@@ -112,7 +112,8 @@ func test_utility_and_stat_cards_stay_outside_the_wand() -> void:
 # --- The reorder is input ---------------------------------------------------------------------------------------
 func test_a_reorder_is_an_input_applied_at_its_tick() -> void:
 	var w := _world(1)
-	_take(w, FOUR)
+	# The v0.6 cards on purpose (Ember Edge's element and rider; a lab take, no migration): retired, still in the data.
+	_take(w, [&"ember_edge", &"trigger_on_hit", &"long_edge", &"twin_arc"])
 	var before := Modifiers.book(w).digest
 	var t0 := w.tick
 	w.step(_pick(InputFrame.wand_move(0, 2)))
@@ -152,9 +153,9 @@ func test_a_reorder_while_a_choice_waits_moves_and_answers_nothing() -> void:
 	assert_true(BuildSlots.swapping(w))
 	w.step(_pick(InputFrame.wand_move(3, 0)))
 	assert_true(BuildSlots.swapping(w), "the Swap still waits: the move is not its answer")
-	assert_eq(_ids(w), [&"twin_arc", &"ember_edge", &"trigger_on_hit", &"long_edge"])
+	assert_eq(_ids(w), [&"double_slash", &"heavy", &"trigger_on_hit", &"wide_arc"])
 	w.step(_pick(InputFrame.PICK_SWAP_BASE + 0))
-	assert_eq(_ids(w), [&"overcharge", &"ember_edge", &"trigger_on_hit", &"long_edge"])
+	assert_eq(_ids(w), [&"overcharge", &"heavy", &"trigger_on_hit", &"wide_arc"])
 
 
 func test_a_run_with_reorders_replays_exactly() -> void:
