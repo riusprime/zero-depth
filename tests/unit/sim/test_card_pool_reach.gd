@@ -53,5 +53,7 @@ func test_rule_cards_and_ability_mods_show_up_often_enough_to_matter() -> void:
 	# v0.6.5 WN5b: the ability mods retired with their abilities (WAND.md; data/wand/migration.tres): never offered.
 	for id in ["cluster_payload", "overclocked_drone", "razor_orbit", "afterimage"]:
 		assert_false(counts.has("mod:" + id), "%s: retired, never offered" % id)
-	for id in ["bomb_lobber", "drone_buddy", "orbit_blades", "arc_field", "frost_nova", "flame_trail"]:
+	for id in [
+		"bomb_lobber", "drone_buddy", "orbit_blades", "arc_field", "frost_nova", "flame_trail"
+	]:
 		assert_false(counts.has("ability:" + id), "%s: retired, never offered" % id)
