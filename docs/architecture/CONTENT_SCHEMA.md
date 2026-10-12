@@ -356,7 +356,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 
   ```gdscript
   class_name WandMigrationDefinition extends ContentDef
-  @export var old_ids: Array[StringName] = []     # the retired cards: item ids or ability ids (48 in the data)
+  @export var old_ids: Array[StringName] = []     # the retired cards: item ids or ability ids (43 in the data)
   @export var blade_into: Array[StringName] = []  # what each becomes on a Blade run (&"": refunded as shards)
   @export var gun_into: Array[StringName] = []    # ... on a Gun run
   @export var pending: Array[StringName] = []     # targets another step brings (WN5a's S1–S7), allowed to be missing
@@ -366,9 +366,9 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `duplicate_id`), no target that is itself retired (`retired_target`); cross-check: every old id names an item or an
   ability, every non-empty target an item or a `pending` id (`unknown_item`). A retired card is never offered (altars,
   chests, the shop, events, cores, the legendary tier, the overrun); it is not deleted, so old saves and item indices
-  still resolve and the dev panel can still grant it. The shared-pool targets are written as `shared_fire`,
-  `shared_lightning`, `shared_frost`, `shared_venom`, `shared_bleed`, `shared_void`, `shared_explosive` (listed in
-  `pending`); the merge with WN5a puts its ids there.
+  still resolve and the dev panel can still grant it. The shared-pool targets are WN5a's ids: `ember_core` (S1),
+  `storm_core` (S2), `frost_core` (S3), `venom_core` (S4), `gravity_well` (S6), kept v0.6 cards and never retired, and
+  `shared_bleed` (S5), `shared_explosive` (S7), new cards listed in `pending` until WN5a merges.
 - **v0.6.5 WN5b: legendary triggers.** `ModifierOpDefinition.hook_casts` (TRIGGER only, 1..3; else `range`): the
   cut's child spell is cast that many times per trigger, each `hook_delay_seconds` after the one before. Three
   `TRIGGER` items of rarity `LEGENDARY` (`trigger_on_hit_twice`, `trigger_on_kill_twice`, `trigger_on_end_twice`;

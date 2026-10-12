@@ -797,9 +797,10 @@ draw from them.
 Design: [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards" (the mapping table). Evidence:
 [`../roadmap/v0.6.5/evidence/WAND_MIGRATION.md`](../roadmap/v0.6.5/evidence/WAND_MIGRATION.md).
 
-**Retired cards.** `data/wand/migration.tres` (CONTENT_SCHEMA "the wand") lists 48 v0.6 cards: the 14 v0.5 attack
-items, the four ability mods, the 21 M-list cards that did not keep their id as a wand card, the three MX4 legendary
-versions and the six ability modifiers. Each compiles `ItemTable.retired` / `AbilityTable.retired`: `ItemPool` never
+**Retired cards.** `data/wand/migration.tres` (CONTENT_SCHEMA "the wand") lists 43 v0.6 cards: 13 of the 14 v0.5 attack
+items, the four ability mods, the 17 M-list cards that did not keep their id (as a wand card, WN3/WN4, or as a shared
+card, WN5a: Ember, Storm, Frost and Venom Core and Gravity Well are S1–S4 and S6), the three MX4 legendary versions and
+the six ability modifiers. Each compiles `ItemTable.retired` / `AbilityTable.retired`: `ItemPool` never
 draws a retired item (altars, chests, the shop, events, cores, the legendary tier) and `Abilities.can_take` refuses a
 retired ability (altars, the shop, events, the overrun); `World.add_item`, `Abilities.grant` and the dev panel still
 take one. Nothing is deleted, so item and ability indices and old saves resolve.
@@ -810,8 +811,8 @@ save's snapshot is written (`Main._start_floor`). The cards in wand order (`Worl
 then held retired cards outside a slot) are read; a retired card becomes its row's target for the run's weapon
 (`WandTable.migrate_blade` / `migrate_gun`, by id) in its place in the wand; a target already held, or met twice,
 levels up instead: the levels add (an ability its level, a `LEGENDARY` item `CardLevels.MAX_LEVEL`, any other card 1),
-at most 5. A card without a match (an empty target, or a target not in the data yet: WN5a's shared pool until it
-merges) is refunded as shards, the shop's salvage price on this floor (`ShopTable.sell_price` by its rarity for an
+at most 5. A card without a match (an empty target, or a target not in the data yet: S5 `shared_bleed` and S7
+`shared_explosive` until WN5a merges) is refunded as shards, the shop's salvage price on this floor (`ShopTable.sell_price` by its rarity for an
 item; `ability_refund_per_level` × its level for an ability; `Shop.sell_list`'s numbers). The old card leaves as a sale
 does (`Shop.remove_item` with its combos; `Abilities.remove_slot`). Deterministic, idempotent, no randomness; a world
 without `World.wand_table` (a lab) changes nothing. A wand that ends up larger than the floor's slots keeps every card

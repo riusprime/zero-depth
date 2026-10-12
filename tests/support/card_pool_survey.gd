@@ -26,12 +26,14 @@ const POOL_MIN := 40
 ## branch. Merged with WN3: measured 88 (Blade) / 83 (Gun) (Wide Arc, Wave, Afterimage and Orbit Blades went
 ## Blade-only; Split, Boomerang, Orbit and Halo Gun-only), so 88. Raised in the open, not a balance target: PROGRESS
 ## v0.6.5 "Gates" asks the owner; WN5 prunes.
-## v0.6.5 WN5b: 50, measured (test_card_pool_reach.gd: "blade pool: 50 in the data + 0 planned", "gun pool: 48 in
-## the data + 0 planned") after the v0.6 cards' migration retired 48 cards (WAND.md "What happens to the v0.6 cards";
-## data/wand/migration.tres): per build 3 abilities (the weapon, Blink, Aegis), 18 stat cards, the weapon's 16 wand
-## cards and the passive items that take no slot (13 Blade, 11 Gun). Not pruned past WAND.md; the shared pool S1–S7
-## and the offered triggers (WN5a) add to it at the merge, where the lead measures again (PROGRESS v0.6.5 "Gates").
-const POOL_MAX := 50
+## v0.6.5 WN5b: 61, measured after the v0.6 cards' migration retired 43 cards (WAND.md "What happens to the v0.6
+## cards"; data/wand/migration.tres), on a trial merge of WN5b with WN5a (`7e88f80`, the shared pool S1–S7 and the
+## offered triggers): test_card_pool_reach.gd "blade pool: 61 in the data + 0 planned ([]) = 61", "gun pool: 59 in the
+## data + 0 planned ([]) = 59". On the WN5b branch alone: 55 (Blade) / 53 (Gun). Per build: 3 abilities (the weapon,
+## Blink, Aegis), 18 stat cards, the weapon's 16 wand cards, the passives that take no slot (13 Blade, 11 Gun) and,
+## with WN5a, the 7 shared cards and the 4 triggers. Not pruned past WAND.md; the owner's target was 40–50
+## (PROGRESS v0.6.5 "Gates": the owner decides).
+const POOL_MAX := 61
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

@@ -146,7 +146,9 @@ that weapon's run; "—" means a refund.
 
 **Kept their ids** (WN3, WN4; nothing to map): Echo Slash → B2 Wave (`echo_slash`), Halo Shot → G16 Halo, Boomerang →
 G9, Orbit Rounds → G10 Orbit, Split Shot → G5 Split, Wide Arc → B1, Long Shadow → B12 Afterimage, Blade Orbit → B15
-Orbit Blades.
+Orbit Blades; and (WN5a, the shared pool) Ember Core → S1 Fire, Storm Core → S2 Lightning, Frost Core → S3 Frost,
+Venom Core → S4 Venom, Gravity Well → S6 Void. The S targets below are those ids; S5 Bleed is `shared_bleed` and S7
+Explosive `shared_explosive` (new cards of WN5a).
 
 | Old card (id) | What it was | Blade run | Gun run |
 |---|---|---|---|
@@ -158,7 +160,6 @@ Orbit Blades.
 | Ricochet Core (`ricochet_core`, v0.5) | bolts bounce once | — | G7 Ricochet |
 | Overcharge (`overcharge`, v0.5) | the finisher hits double with a wave | B14 Finisher+ | — |
 | Static Chain (`static_chain`, v0.5) | bolts shock and arc | S2 Lightning | S2 Lightning |
-| Frost Core (`frost_core`, v0.5 / M3) | slow; the 3rd hit freezes | S3 Frost | S3 Frost |
 | Cinder Shot (`cinder_shot`, v0.5) | bolt burn | S1 Fire | S1 Fire |
 | Conductor (`conductor`, v0.5) | swings shock, jump to 2 | S2 Lightning | S2 Lightning |
 | Serrated Edge (`serrated_edge`, v0.5) | swing bleed | S5 Bleed | S5 Bleed |
@@ -168,14 +169,10 @@ Orbit Blades.
 | Overclocked Drone (`overclocked_drone`, the Drone's mod) | drones fire faster with heat | — | — |
 | Razor Orbit (`razor_orbit`, Orbit Blades' mod) | orbit touches bleed | S5 Bleed | S5 Bleed |
 | Blink Echo (`afterimage`, Blink's mod; was "Afterimage") | a blink leaves a bursting echo | — | — |
-| Storm Core (`storm_core`, M1) | hits chain lightning | S2 Lightning | S2 Lightning |
-| Ember Core (`ember_core`, M2) | burn; kills burst | S1 Fire | S1 Fire |
-| Venom Core (`venom_core`, M4) | poison that spreads | S4 Venom | S4 Venom |
 | Edge Rounds (`edge_rounds`, M6) | shots slash where they hit | — | — |
 | Shock Circles (`shock_circles`, M7) | shots become shock rings | — | — |
 | Twin Cast (`twin_cast`, M12) | every attack repeats at 50 % | B5 Double Slash | G14 Echo |
 | Rearguard (`rearguard`, M13) | also fires backwards | — | G15 Backfire |
-| Gravity Well (`gravity_well`, M15) | hits pull enemies in | S6 Void | S6 Void |
 | Shatter (`shatter`, M16) | kills burst into shards | — | — |
 | Aftershock (`aftershock`, M17) | a blast where an attack ends | S7 Explosive | S7 Explosive |
 | Seeker (`seeker`, M18) | shots home; arcs snap | — | G8 Homing |
@@ -199,12 +196,11 @@ Orbit Blades.
 | Frost Nova (ability) | frost element, a nova on a kill streak | S3 Frost | S3 Frost |
 | Flame Trail (ability) | dash and shots leave fire | S1 Fire | S1 Fire |
 
-- **48 retired:** 14 v0.5 attack items, 4 ability mods, 21 M-list cards, 3 legendary versions, 6 abilities. 20 have
+- **43 retired:** 13 v0.5 attack items, 4 ability mods, 17 M-list cards, 3 legendary versions, 6 abilities. 20 have
   no row at all (refunded on both weapons); a few more have a row on one weapon only.
-- **The S1–S7 targets are pending** on the WN5b branch: WN5a builds the shared pool in parallel. The table writes them
-  as `shared_fire`, `shared_lightning`, `shared_frost`, `shared_venom`, `shared_bleed`, `shared_void`,
-  `shared_explosive`; the merge puts WN5a's ids there. Until then a held card mapped to one is refunded. If WN5a keeps
-  an old id for an S card (as WN3 and WN4 did), that row leaves the table.
+- **S5 and S7 are pending on the WN5b branch alone:** `shared_bleed` and `shared_explosive` come with WN5a's merge
+  (the table lists them in `pending`); until then a held card mapped to one is refunded. The five other S cards are
+  the v0.6 cards WN5a kept (lead, 2026-10-12), so they exist on both branches.
 - **Bomb Lobber** "becomes S7 Explosive with G12 Mine": S7 on the Blade, G12 Mine on the Gun (its bombs become the
   Gun's mine field); its two merges follow it.
 - **Name clashes:** B12 is "Afterimage" (`long_shadow`); the old Blink card (`afterimage`) is renamed "Blink Echo" /
