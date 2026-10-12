@@ -74,6 +74,14 @@ func test_pages_switch_and_list_the_data() -> void:
 	v.open(&"bosses")
 	await wait_physics_frames(1)
 	assert_true(v.tiles.all(func(t: CodexTile) -> bool: return t.locked), "no boss met yet")
+	var first := v.tiles[0]
+	assert_eq(
+		first.get_node(first.focus_neighbor_top),
+		v.tabs[&"bosses"],
+		"up from the top row: this page's tab"
+	)
+	var tab := v.tabs[&"bosses"] as Button
+	assert_eq(tab.get_node(tab.focus_neighbor_bottom), first, "and down from it, the first tile")
 
 
 func test_it_fits_1080p_in_english_and_spanish() -> void:

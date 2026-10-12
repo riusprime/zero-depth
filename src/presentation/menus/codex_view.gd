@@ -280,10 +280,13 @@ func _build_page() -> void:
 			t.show_entry(e, title_of(self, e), not store.is_unlocked(page, e["id"]))
 			t.focus_entered.connect(_on_tile_focus.bind(t, head if k < COLUMNS else null))
 			grid.add_child(t)
+			if tiles.is_empty() or (k < COLUMNS and s == catalog.sections(page)[0]):
+				t.focus_neighbor_top = t.get_path_to(tabs[page])  # up goes to this page's tab, not another
 			tiles.append(t)
 	progress.text = tr("UI_CODEX_FOUND") % [found, catalog.size(page)]
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
+		b.focus_neighbor_bottom = b.get_path_to(tiles[0]) if not tiles.is_empty() else NodePath()
 		var lit := MenuStyle.GLASS.lerp(Color.WHITE, 0.35)
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 	if not tiles.is_empty():
