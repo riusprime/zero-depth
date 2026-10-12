@@ -50,7 +50,20 @@ const MODIFIER_FIELDS := {
 	&"mine_seconds": [&"mine_ticks", "ticks"],
 	&"hold_seconds": [&"hold_ticks", "ticks"],
 	&"hold_permille": [&"hold_permille", ""],
+	# v0.6.5 WN4 (the Blade pool; AttackSpec names each)
+	&"motion": [&"motion", ""],
+	&"echo_mirror": [&"echo_mirror", ""],
+	&"step_m": [&"step_m", ""],
+	&"parry": [&"parry", ""],
+	&"counter_seconds": [&"counter_ticks", "ticks"],
+	&"counter_permille": [&"counter_permille", ""],
+	&"carry": [&"carry", ""],
+	&"knockback_m": [&"knockback_m", ""],
+	&"line_m": [&"line_m", ""],
 }
+## v0.6.5 WN3/WN4: the wand pools in the order they shipped (ItemDefinition.requires_weapon): their cards take item
+## indices pool by pool, so a later pool never moves an earlier one's indices. A new pool appends its weapon here.
+const WAND_POOL_ORDER: Array[StringName] = [&"gun", &"blade", &""]
 
 
 ## One modifier in sim units. Each op takes its effective stage; values convert with the item compiler's functions
@@ -128,13 +141,16 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 
 ## v0.6.0 MX4: the item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
 ## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
-## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3: then the wand's pool cards (Kind.WAND) in id
-## order, so every earlier index still names the same card.
+## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
+## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
+## index still names the same card.
 static func item_defs(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
-	var wand := []
+	var pools := []
+	for _p in WAND_POOL_ORDER:
+		pools.append([])
 	for def: ItemDefinition in repo.all_of(&"items"):
 		match def.kind:
 			ItemDefinition.Kind.MODIFIER:
@@ -142,10 +158,13 @@ static func item_defs(repo: ContentRepository) -> Array:
 			ItemDefinition.Kind.TRIGGER:
 				triggers.append(def)
 			ItemDefinition.Kind.WAND:
-				wand.append(def)
+				pools[WAND_POOL_ORDER.find(def.requires_weapon)].append(def)  # validated: "", blade, gun
 			_:
 				old.append(def)
-	return old + cards + triggers + wand
+	var out := old + cards + triggers
+	for p: Array in pools:
+		out += p
+	return out
 
 
 ## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a

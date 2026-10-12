@@ -661,8 +661,8 @@ ITEM_EMBER_CORE,Ember Core,Núcleo de Brasa
 ITEM_EMBER_CORE_DESC,Hits burn; kills explode in a small fire burst.,Tus golpes queman; las bajas estallan en llamas.
 ITEM_VENOM_CORE,Venom Core,Núcleo de Veneno
 ITEM_VENOM_CORE_DESC,Hits stack poison that spreads when the enemy dies.,Tus golpes envenenan; el veneno salta al morir.
-ITEM_ECHO_SLASH,Echo Slash,Tajo Eco
-ITEM_ECHO_SLASH_DESC,Every slash also flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
+ITEM_ECHO_SLASH,Wave,Onda
+ITEM_ECHO_SLASH_DESC,Every slash flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
 ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
 ITEM_EDGE_ROUNDS_DESC,Projectiles pierce once and slash where they hit.,Los proyectiles atraviesan una vez y cortan al impactar.
 ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
@@ -680,7 +680,7 @@ ITEM_TWIN_CAST_DESC,Every attack repeats once 0.2 s later at 50%.,"Cada ataque s
 ITEM_REARGUARD,Rearguard,Retaguardia
 ITEM_REARGUARD_DESC,Every attack also fires backwards at 60%.,Cada ataque también sale hacia atrás al 60%.
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
-ITEM_WIDE_ARC_DESC,Arcs 40° wider; projectiles and blasts 30% bigger.,Arcos 40° más anchos; balas y ondas un 30% mayores.
+ITEM_WIDE_ARC_DESC,Slashes sweep 60° wider and reach 30% farther.,Tus tajos barren 60° más y llegan un 30% más lejos.
 ITEM_GRAVITY_WELL,Gravity Well,Pozo Gravitatorio
 ITEM_GRAVITY_WELL_DESC,Hits pull nearby enemies toward the point of hit.,Tus golpes atraen a los enemigos cercanos.
 ITEM_SHATTER,Shatter,Estallido
@@ -689,8 +689,8 @@ ITEM_AFTERSHOCK,Aftershock,Réplica
 ITEM_AFTERSHOCK_DESC,"Where an attack ends, a small blast.","Donde termina un ataque, una pequeña explosión."
 ITEM_SEEKER,Seeker,Buscador
 ITEM_SEEKER_DESC,Projectiles home in; arcs snap to the nearest enemy.,Los proyectiles persiguen; los arcos giran al más cercano.
-ITEM_LONG_SHADOW,Long Shadow,Sombra Larga
-ITEM_LONG_SHADOW_DESC,Dashing leaves an afterimage that repeats your attack.,Al esquivar dejas una sombra que repite tu ataque.
+ITEM_LONG_SHADOW,Afterimage,Imagen Fantasma
+ITEM_LONG_SHADOW_DESC,Dashing leaves a ghost that repeats your last slash.,Al esquivar dejas un fantasma que repite tu último tajo.
 ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
 ITEM_PHASE_DASH_DESC,Your dash is intangible and ends in 6 shards.,Tu esquiva es intangible y acaba en 6 esquirlas.
 ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
@@ -709,8 +709,8 @@ ITEM_MIRROR_DRONE,Mirror Drone,Dron Espejo
 ITEM_MIRROR_DRONE_DESC,"Your drone copies your weapon's attack, modifiers too.",Tu dron copia el ataque de tu arma y sus modificadores.
 ITEM_BOMB_ROUNDS,Bomb Rounds,Balas Bomba
 ITEM_BOMB_ROUNDS_DESC,Every 5th shot is a bomb (150% damage).,Cada 5.º disparo es una bomba (150% de daño).
-ITEM_BLADE_ORBIT,Blade Orbit,Órbita de Hojas
-ITEM_BLADE_ORBIT_DESC,"Orbit Blades carry all your weapon does, +1 blade.","Las Hojas Orbitales llevan todo lo de tu arma, +1."
+ITEM_BLADE_ORBIT,Orbit Blades,Hojas en Órbita
+ITEM_BLADE_ORBIT_DESC,Each slash throws off a blade that circles you for 3 s.,Cada tajo suelta una hoja que gira a tu alrededor 3 s.
 ITEM_SHORT_FUSE,Short Fuse,Mecha Corta
 ITEM_SHORT_FUSE_DESC,"Trinket: all ranges ×0.6, all damage ×1.4.","Baratija: todo alcance ×0,6, todo daño ×1,4."
 ITEM_TEMPEST_CORE,Tempest Core,Núcleo de Tempestad
@@ -752,6 +752,30 @@ ITEM_GUN_ECHO,Echo,Eco
 ITEM_GUN_ECHO_DESC,Gun: fires again 0.3 s later at 60%.,"Pistola: dispara otra vez 0,3 s después al 60%."
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
 ITEM_GUN_BACKFIRE_DESC,Gun: also fires behind you.,Pistola: también dispara hacia atrás.
+ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
+ITEM_SPLIT_WAVE_DESC,A flying slash splits into 3 small crescents when it hits.,Un tajo volador se divide en 3 medias lunas al impactar.
+ITEM_WHIRL,Whirl,Remolino
+ITEM_WHIRL_DESC,Every slash becomes a full 360° spin.,Cada tajo se vuelve un giro completo de 360°.
+ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
+ITEM_DOUBLE_SLASH_DESC,"Every slash repeats, mirrored, 0.15 s later.","Cada tajo se repite, en espejo, 0,15 s después."
+ITEM_THRUST,Thrust,Estocada
+ITEM_THRUST_DESC,"A long stab: reach ×2, arc ×0.4, +30% damage.","Una estocada: alcance ×2, arco ×0,4, +30% de daño."
+ITEM_HEAVY,Heavy,Pesado
+ITEM_HEAVY_DESC,×1.7 damage and a big knockback; 30% slower swings.,"×1,7 de daño y gran empuje; tajos un 30% más lentos."
+ITEM_FLURRY,Flurry,Ráfaga
+ITEM_FLURRY_DESC,Swings 50% faster for 25% less damage.,"Tajos un 50% más rápidos, con un 25% menos de daño."
+ITEM_FISSURE,Fissure,Fisura
+ITEM_FISSURE_DESC,Each slash cracks the ground ahead; the crack erupts.,Cada tajo agrieta el suelo delante; la grieta estalla.
+ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
+ITEM_CHAIN_CUT_DESC,A slash hit leaps to the next enemy within 4 m.,Un golpe de tajo salta al siguiente enemigo a 4 m.
+ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
+ITEM_PARRY_EDGE_DESC,Your slashes destroy the enemy shots they touch.,Tus tajos destruyen los disparos enemigos que tocan.
+ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
+ITEM_LUNGE_STEP_DESC,Each slash steps you 1 m forward.,Cada tajo te adelanta 1 m.
+ITEM_FINISHER_PLUS,Finisher+,Remate+
+ITEM_FINISHER_PLUS_DESC,The 4th slash bursts in a big shockwave with every card.,El 4.º tajo estalla en una gran onda con todas tus cartas.
+ITEM_COUNTER,Counter,Contraataque
+ITEM_COUNTER_DESC,A slash within 0.5 s of a dash deals ×2 and flies as a wave.,"Un tajo 0,5 s tras esquivar hace ×2 y vuela como onda."
 WAND_READ_FIRE,You fire %s.,Disparas %s.
 WAND_READ_BOLT,a bolt,un proyectil
 WAND_READ_SLASH,a slash,un tajo

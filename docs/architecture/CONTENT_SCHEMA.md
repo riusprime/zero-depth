@@ -315,6 +315,39 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 
   Validation: `slots_per_floor` 1..64 entries, each 1..`MAX_SLOTS` and never lower than the one before
   (`table_size`, `range`, `table_order`); the three shares 1..10000 (`range`). Every number is a starting value.
+- **v0.6.5 WN4: the Blade pool** (design [`../design/WAND.md`](../design/WAND.md) B1–B16; sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8g). New op fields (`ModifierOpDefinition.FIELD_STAGE`): `motion` (FORM;
+  `SwingStep.Motion`: 2 thrust, 3 spin), `echo_mirror` (PATTERN), `step_m` (BEHAVIOUR), `parry`, `counter_seconds`,
+  `counter_permille`, `carry`, `knockback_m` (PAYLOAD), `line_m` (SCALE). `ModifierOpDefinition.When.COUNTER` (2: the
+  hook fires only on a slash that counters). New target tags `wave` (a flying slash) and `finisher` (the combo's last
+  step). An `ORBITER` hook is allowed (it needs `hook_reach_m`, its orbit's radius; with `orbit_seconds` in its
+  `hook_ops` it lingers). **Levels:** WN3's (`ModifierOpDefinition.per_level`, the item tag `wand`; the WN3/WN4 merge
+  kept one system: a hook's `hook_ops` carry their own `per_level`). **Pool cards:** `ItemDefinition.Kind.WAND` (33,
+  as WN3), indexed after the Gun pool's cards (`ModifierCompiler.item_defs`: v0.5 kinds, `MODIFIER`, `TRIGGER`, then
+  `WAND` pool by pool in `ModifierCompiler.WAND_POOL_ORDER` (gun, blade, both), each by id); a `WAND` card tagged
+  `blade` requires the blade and the other way round (`range`). Shipped: B1 `wide_arc` (now Blade-only, +60° arc
+  +30 % reach), B2 `echo_slash` (Wave), B12 `long_shadow` (Afterimage, Blade-only) and B15 `blade_orbit` (Orbit
+  Blades: no longer an Orbit Blades merge) keep their ids, kinds and indices; B3 `split_wave`, B4 `whirl`, B5
+  `double_slash`, B6 `thrust`, B7 `heavy`, B8 `flurry`, B9 `fissure`, B10 `chain_cut`, B11 `parry_edge`, B13
+  `lunge_step`, B14 `finisher_plus`, B16 `counter` are new `WAND` items; all 16 `requires_weapon = blade`, tag
+  `blade` and `wand` (levels 1–5). Each card's ops and numbers: the table in
+  [`../roadmap/v0.6.5/evidence/WAND_BLADE.md`](../roadmap/v0.6.5/evidence/WAND_BLADE.md). With WN3's Gun pool: 79
+  modifiers, 91 items.
+- **v0.6.5 WN4: `BladeFormsDefinition`** (category `wand`, id `blade_forms`, `data/wand/blade_forms.tres`; compiled
+  by `BladeCompiler` into `BladeTable`, `World.blade_table`): the runner numbers no card's ops name.
+
+  ```gdscript
+  class_name BladeFormsDefinition extends ContentDef
+  @export var orbit_max := 6                  # Orbit Blades: blades at once (the oldest leaves); 1..32
+  @export var orbit_turns_per_second := 1.0   #   their turn round the hero
+  @export var orbit_gap_seconds := 0.2        #   a blade rests this long after a hit
+  @export var knock_seconds := 0.13           # Heavy: the knockback slides over this long
+  @export var lunge_seconds := 0.1            # Lunge Step: its step is spread over at least this long
+  @export var min_rate_permille := 250        # a swing is never slower than this share of its speed; 50..1000
+  ```
+
+  Validation: the counts and shares in range (`range`), the times positive (`not_positive`). Every number is a starting
+  value.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,

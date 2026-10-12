@@ -19,6 +19,8 @@ var damage := 10
 var hitstop_ticks := 3
 var lunge_m := 0.0
 var sweep_ticks := 5
+## v0.6.5 WN4 (Lunge Step, BladeForms.step): the lunge's ticks when a card sets them (0: the ticks before the hit).
+var lunge_over := 0
 
 
 static func make(
@@ -47,7 +49,7 @@ static func make(
 
 ## Ticks the lunge is spread over: the ones before the hit (at least one).
 func lunge_ticks() -> int:
-	return maxi(1, active_tick - 1)
+	return lunge_over if lunge_over > 0 else maxi(1, active_tick - 1)
 
 
 func recovery_ticks() -> int:

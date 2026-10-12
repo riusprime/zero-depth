@@ -262,7 +262,11 @@ func test_interact_by_an_altar_opens_three_different_items_and_the_world_waits()
 	assert_eq(picks[0].source_id, id)
 	var pool := ItemPool.available(w)
 	assert_true(offer[0] in pool and offer[2] in pool, "the other two went back to the pool")
-	assert_false(offer[1] in pool, "the taken one did not")
+	assert_eq(
+		offer[1] in pool,
+		CardLevels.can_take(w, offer[1]),
+		"the taken one did not (v0.6.5 WN4: unless it levels up, WAND.md rule 6)"
+	)
 
 
 func test_too_far_does_nothing() -> void:

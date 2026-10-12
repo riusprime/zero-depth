@@ -21,7 +21,12 @@ const POOL_MIN := 40
 ## v0.6.5 WN3: 90. The owner's Gun pool (WAND.md G1–G16, PLAN v0.6.5 W7 "Approve all") adds 12 new Gun cards on top
 ## of the v0.6 ones they replace until WN5 migrates and retires the old cards: measured 86 (Gun) / 76 (Blade) on the
 ## WN3 branch. Raised in the open, not tuned: PROGRESS v0.6.5 "Gates" asks the owner; WN5 brings the count back down.
-const POOL_MAX := 90
+## v0.6.5 WN4: the Blade pool's 12 new cards (WAND.md B3–B11, B13, B14, B16; owner G1 "Approve all"), while the old
+## cards stay until WN5 migrates or retires them (WAND.md "What happens to the v0.6 cards"): 92 (Blade) on the WN4
+## branch. Merged with WN3: measured 88 (Blade) / 83 (Gun) (Wide Arc, Wave, Afterimage and Orbit Blades went
+## Blade-only; Split, Boomerang, Orbit and Halo Gun-only), so 88. Raised in the open, not a balance target: PROGRESS
+## v0.6.5 "Gates" asks the owner; WN5 prunes.
+const POOL_MAX := 88
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

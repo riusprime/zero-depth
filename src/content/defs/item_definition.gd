@@ -215,6 +215,11 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)
+	# v0.6.5 WN4: a Blade pool card is offered only in Blade runs
+	if kind == Kind.WAND and tags.has("blade") != (requires_weapon == &"blade"):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a blade pool card requires the blade")
+		)
 	if requires_ability != &"" and ability_kind(requires_ability) < 0:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "unknown ability %s" % requires_ability)

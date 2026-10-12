@@ -90,6 +90,7 @@ static func world(weapon: StringName) -> World:
 	var w := World.new(3, t)
 	w.set_item_tables(tables())
 	w.wand_table = WandCompiler.from_repo(r)
+	w.blade_table = BladeCompiler.from_repo(r)  # v0.6.5 WN4
 	return w
 
 
@@ -117,6 +118,7 @@ static func fight(weapon: StringName, ids: Array, heat: bool = true) -> World:
 	for id: StringName in items:
 		w.add_item(AttackScenario.item_index(w.item_tables, id))
 	w.wand_table = WandCompiler.from_repo(repo())
+	w.blade_table = BladeCompiler.from_repo(repo())  # v0.6.5 WN4
 	set_order(w, ids)
 	return w
 

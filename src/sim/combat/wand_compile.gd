@@ -143,6 +143,7 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	c.seek = op.form == AttackSpec.Form.BEAM
 	c.effect_id = op.effect_id
 	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
+	BladeForms.hook_base(c, s)  # v0.6.5 WN4: a spin's wave flies all round
 	var shape := WandCompile.new()  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
 	for o in op.child_ops:
 		shape.apply(c, m, o, -1)

@@ -129,8 +129,9 @@ static func shooting(w: World) -> bool:
 
 
 ## The step the current (or last) swing is: w.combo_step.
+## v0.6.5 WN4: as its spec swings it (BladeForms.step: Thrust, Whirl, Heavy, Flurry, Lunge Step).
 static func current_step(w: World) -> SwingStep:
-	return w.player.combo[w.combo_step]
+	return BladeForms.step(w, w.combo_step)
 
 
 ## The step a press would start now: the next one while a swing runs or the combo window is open, else the first.
@@ -176,6 +177,7 @@ static func _resolve_swing(w: World) -> void:
 	dmg = Engines.charged_damage(w, dmg)  # Engines: Bulwark.
 	dmg = Gamble.melee_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	dmg = Curses.swing_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' 4th hit
+	dmg = BladeForms.counter_damage(w, spec, dmg)  # v0.6.5 WN4: Counter
 	var landed := swing_arc(w, w.swing_angle, dmg, w.swing_root, &"")
 	if landed:
 		w.add_freeze(spec.hitstop_ticks)
