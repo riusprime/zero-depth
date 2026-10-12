@@ -18,3 +18,15 @@ static func advance(w: World) -> void:
 
 static func is_legendary(w: World, i: int) -> bool:
 	return w.rewards.kind[i] == RewardStore.Kind.LEGENDARY
+
+
+## v0.6.5 WN5b (WAND.md: "The legendary tier offers level-5 versions"): card `code` was just taken from reward i. On
+## the legendary altar a wand card goes to the tier's wand_level (a held one rises to it; never down).
+static func on_pick(w: World, i: int, code: int) -> void:
+	var t := w.legendary_table
+	if t == null or t.wand_level <= 0 or not is_legendary(w, i):
+		return
+	if Offers.type_of(code) != Offers.MOD or not CardLevels.is_card(w, code):
+		return
+	if CardLevels.level(w, code) < t.wand_level:
+		CardLevels.set_level(w, code, t.wand_level)

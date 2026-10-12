@@ -218,6 +218,7 @@ static func choose(w: World, frame: InputFrame) -> void:
 	)
 	e.amount = idx
 	Offers.apply(w, idx, replace)  # v0.4.0 BS: an item (mod), an ability or a stat card
+	BossReward.on_pick(w, i, idx)  # v0.6.5 WN5b: the legendary tier's level-5 wand card
 	Curses.on_pick(w, w.rewards.ids[i], k)  # v0.5.0 EV: the cursed card brings its curse
 	w.rewards.remove_at(i)
 	_resume(w)

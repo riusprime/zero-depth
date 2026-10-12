@@ -11,13 +11,14 @@ extends GutTest
 ##   insert with the pad (X, d-pad, A, then the card that leaves, A) gives the order the panel previewed.
 
 const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
+## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued).
 const EIGHT: Array = [
-	&"ember_edge",
+	&"heavy",
 	&"trigger_on_hit",
-	&"long_edge",
-	&"twin_arc",
+	&"whirl",
+	&"flurry",
 	&"trigger_on_kill",
-	&"serrated_edge",
+	&"thrust",
 	&"wide_arc",
 	&"echo_slash",
 ]

@@ -103,6 +103,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.delay_ticks = SimTick.seconds_to_ticks(d.hook_delay_seconds)  # v0.6.0 MX4
 	o.when = int(d.hook_when)
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
+	o.casts = d.hook_casts  # v0.6.5 WN5b
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
@@ -143,11 +144,12 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 ## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
 ## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
 ## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
-## index still names the same card.
+## index still names the same card. v0.6.5 WN5b: the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
 static func item_defs(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
+	var legend := []  # v0.6.5 WN5b: the legendary triggers, after every pool (no earlier index moves)
 	var pools := []
 	for _p in WAND_POOL_ORDER:
 		pools.append([])
@@ -156,7 +158,10 @@ static func item_defs(repo: ContentRepository) -> Array:
 			ItemDefinition.Kind.MODIFIER:
 				cards.append(def)
 			ItemDefinition.Kind.TRIGGER:
-				triggers.append(def)
+				if def.rarity == ItemDefinition.Rarity.LEGENDARY:
+					legend.append(def)
+				else:
+					triggers.append(def)
 			ItemDefinition.Kind.WAND:
 				pools[WAND_POOL_ORDER.find(def.requires_weapon)].append(def)  # validated: "", blade, gun
 			_:
@@ -164,7 +169,7 @@ static func item_defs(repo: ContentRepository) -> Array:
 	var out := old + cards + triggers
 	for p: Array in pools:
 		out += p
-	return out
+	return out + legend
 
 
 ## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a

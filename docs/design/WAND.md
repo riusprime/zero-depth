@@ -134,6 +134,93 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 - The legendary tier offers level-5 versions and a few unique triggers (for example "On Hit ×2": the cast repeats
   twice).
 
+### The mapping (v0.6.5 WN5b)
+The data is one table, [`data/wand/migration.tres`](../../data/wand/migration.tres) (CONTENT_SCHEMA "the wand"). A
+retired card is never offered again (altars, chests, the shop, events, cores, the legendary tier, the overrun). It is
+not deleted, so old saves still name it, and the dev panel can still grant it. A save that holds one maps it when it
+loads, in its place in the wand: a target you already hold, or one that two old cards both map to, levels up instead
+(the levels add: an ability's level, 5 for a legendary version, else 1). A card with no target, or whose target isn't
+in the data yet, is refunded at the shop's salvage price for it on that floor (a mod: 40 % of its shop price by
+rarity, 12 / 22 / 36 shards on floor 1; an ability: 10 shards a level). Blade-only and Gun-only targets apply only on
+that weapon's run; "—" means a refund.
+
+**Kept their ids** (WN3, WN4; nothing to map): Echo Slash → B2 Wave (`echo_slash`), Halo Shot → G16 Halo, Boomerang →
+G9, Orbit Rounds → G10 Orbit, Split Shot → G5 Split, Wide Arc → B1, Long Shadow → B12 Afterimage, Blade Orbit → B15
+Orbit Blades; and (WN5a, the shared pool) Ember Core → S1 Fire, Storm Core → S2 Lightning, Frost Core → S3 Frost,
+Venom Core → S4 Venom, Gravity Well → S6 Void. The S targets below are those ids; S5 Bleed is `shared_bleed` and S7
+Explosive `shared_explosive` (new cards of WN5a).
+
+| Old card (id) | What it was | Blade run | Gun run |
+|---|---|---|---|
+| Long Edge (`long_edge`, v0.5) | +35 % blade reach | B1 Wide Arc | — |
+| Twin Arc (`twin_arc`, v0.5) | swings echo 0.1 s later | B5 Double Slash | — |
+| Ember Edge (`ember_edge`, v0.5) | melee burn | S1 Fire | S1 Fire |
+| Splinter Shot (`splinter_shot`, v0.5) | a 3-bolt fan | — | G4 Spread |
+| Rapid Coil (`rapid_coil`, v0.5) | +40 % fire rate | — | G2 Rapid Fire |
+| Ricochet Core (`ricochet_core`, v0.5) | bolts bounce once | — | G7 Ricochet |
+| Overcharge (`overcharge`, v0.5) | the finisher hits double with a wave | B14 Finisher+ | — |
+| Static Chain (`static_chain`, v0.5) | bolts shock and arc | S2 Lightning | S2 Lightning |
+| Cinder Shot (`cinder_shot`, v0.5) | bolt burn | S1 Fire | S1 Fire |
+| Conductor (`conductor`, v0.5) | swings shock, jump to 2 | S2 Lightning | S2 Lightning |
+| Serrated Edge (`serrated_edge`, v0.5) | swing bleed | S5 Bleed | S5 Bleed |
+| Barbed Bolts (`barbed_bolts`, v0.5) | bolt bleed | S5 Bleed | S5 Bleed |
+| Glacial Edge (`glacial_edge`, v0.5) | swing frost, freeze at 4 | S3 Frost | S3 Frost |
+| Cluster Payload (`cluster_payload`, Bomb Lobber's mod) | bombs split | S7 Explosive | G12 Mine |
+| Overclocked Drone (`overclocked_drone`, the Drone's mod) | drones fire faster with heat | — | — |
+| Razor Orbit (`razor_orbit`, Orbit Blades' mod) | orbit touches bleed | S5 Bleed | S5 Bleed |
+| Blink Echo (`afterimage`, Blink's mod; was "Afterimage") | a blink leaves a bursting echo | — | — |
+| Edge Rounds (`edge_rounds`, M6) | shots slash where they hit | — | — |
+| Shock Circles (`shock_circles`, M7) | shots become shock rings | — | — |
+| Twin Cast (`twin_cast`, M12) | every attack repeats at 50 % | B5 Double Slash | G14 Echo |
+| Rearguard (`rearguard`, M13) | also fires backwards | — | G15 Backfire |
+| Shatter (`shatter`, M16) | kills burst into shards | — | — |
+| Aftershock (`aftershock`, M17) | a blast where an attack ends | S7 Explosive | S7 Explosive |
+| Seeker (`seeker`, M18) | shots home; arcs snap | — | G8 Homing |
+| Phase Dash (`phase_dash`, M20) | intangible dash, shard burst | — | — |
+| Ember Trail (`ember_trail`, M21) | walking leaves fire | — | — |
+| Aether Shell (`aether_shell`, M22) | a barrier out of combat | — | — |
+| Ascension (`ascension`, M23) | after 3 s idle, the next attack ×3 | — | G13 Charge |
+| Resonance (`resonance_core`, M24) | +15 % per status | — | — |
+| Heat Sink Rounds (`heat_sink_rounds`, M25) | an extra shot at Overclock | — | — |
+| Meltdown Edge (`meltdown_edge`, M26) | venting fires a full circle | — | — |
+| Mirror Drone (`mirror_drone`, M27) | the drone copies your attack | — | — |
+| Bomb Rounds (`bomb_rounds`, M28) | every 5th shot a bomb | S7 Explosive | G12 Mine |
+| Short Fuse (`short_fuse`, M30) | ranges ×0.6, damage ×1.4 | — | — |
+| Tempest Core (`tempest_core`, legendary M1) | lightning to 4 more | S2 Lightning, level 5 | S2 Lightning, level 5 |
+| Inferno Core (`inferno_core`, legendary M2) | double burn, big bursts | S1 Fire, level 5 | S1 Fire, level 5 |
+| Echo Storm (`echo_storm`, legendary M5) | every slash flies as 3 crescents | B2 Wave, level 5 | — |
+| Bomb Lobber (ability) | every 4th attack lobs a bomb | S7 Explosive | G12 Mine |
+| Drone Buddy (ability) | a drone fires copies (a side attack) | — | — |
+| Orbiting Copies (ability `orbit_blades`; was "Orbit Blades") | copies of your attack orbit you | B15 Orbit Blades | G10 Orbit |
+| Arc Field (ability) | a shock field where attacks end | S2 Lightning | S2 Lightning |
+| Frost Nova (ability) | frost element, a nova on a kill streak | S3 Frost | S3 Frost |
+| Flame Trail (ability) | dash and shots leave fire | S1 Fire | S1 Fire |
+
+- **43 retired:** 13 v0.5 attack items, 4 ability mods, 17 M-list cards, 3 legendary versions, 6 abilities. 20 have
+  no row at all (refunded on both weapons); a few more have a row on one weapon only.
+- **S5 and S7 are pending on the WN5b branch alone:** `shared_bleed` and `shared_explosive` come with WN5a's merge
+  (the table lists them in `pending`); until then a held card mapped to one is refunded. The five other S cards are
+  the v0.6 cards WN5a kept (lead, 2026-10-12), so they exist on both branches.
+- **Bomb Lobber** "becomes S7 Explosive with G12 Mine": S7 on the Blade, G12 Mine on the Gun (its bombs become the
+  Gun's mine field); its two merges follow it.
+- **Name clashes:** B12 is "Afterimage" (`long_shadow`); the old Blink card (`afterimage`) is renamed "Blink Echo" /
+  "Eco del Salto". B15 is "Orbit Blades" (`blade_orbit`); the old ability (`orbit_blades`) is renamed "Orbiting
+  Copies" / "Copias orbitales" (and Razor Orbit's text with it). Both old cards are retired; the names only show in
+  the dev panel.
+- **Not in the table:** the 13 v0.5 items that take no wand slot (Bulwark, Cold Snap, Executioner, Heat Sink, Kinetic
+  Dash, Meltdown, Momentum, Phase Strike, Swift Feet, Thermal Edge, Thorn Mantle, Vampiric Core, Wildfire). They are
+  passives outside the wand, like stat cards, and stay offered: WAND.md says nothing about them, and pruning them is the
+  owner's call (PROGRESS v0.6.5 "Gates").
+
+### The legendary tier (v0.6.5 WN5b)
+- **Level-5 versions:** the boss's legendary altar offers every wand card of the run's pool (Gun runs G1–G16, Blade
+  runs B1–B16; S1–S7 once merged) besides the legendary stat cards. A wand card picked there is taken at level 5 (a
+  held one rises to 5). Its card reads "Mod · Level 5 · Legendary".
+- **Unique triggers:** On Hit ×2, On Kill ×2, On End ×2 (`trigger_on_*_twice`). They cut the wand like T1–T3, and the
+  cards to their right cast twice each time, the second cast 0.15 s after the first. They are legendary only (the
+  boss's altar, a boss's core).
+- The pick stays one of three, 60 % stat cards / 40 % mods by weight (data `data/legendary/boss.tres`).
+
 ## How it's built (after G1)
 1. **The wand compiler.**
    - The fixed stage order is replaced by left-to-right slot order with triggers that cut the wand. It builds one

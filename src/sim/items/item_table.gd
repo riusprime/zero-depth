@@ -62,6 +62,9 @@ var requires_ability := -1
 ## v0.6.0 MX1: the item's modifiers (compiled ModifierDefinitions), in its order: what it does to the weapon attacks
 ## and the Skills (Modifiers.compile). Empty for items whose effects are not attack rewrites yet.
 var modifiers: Array[ModifierTable] = []
+## v0.6.5 WN5b (WAND.md "What happens to the v0.6 cards"): a retired v0.6 card. Never offered (ItemPool); kept so
+## old saves and item indices still resolve; a held one maps onto its new card on load (WandMigration).
+var retired := false
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1

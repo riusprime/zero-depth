@@ -14,10 +14,11 @@ func _init(p_test: GutTest) -> void:
 	test = p_test
 
 
-## Boots main.tscn with a memory-only profile (optionally pre-filled) and waits for the menu.
-func boot(profile: ProfileStore = null) -> Main:
+## Boots main.tscn with a memory-only profile (optionally pre-filled) and waits for the menu. v0.6.5 WN5b: `saves`, a
+## memory-only run save store already holding a save (an old one to Continue), else an empty one.
+func boot(profile: ProfileStore = null, saves: RunSaveStore = null) -> Main:
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
-	RunSaveStore.use_shared(RunSaveStore.new(""))  # v0.4.0 SV: no run save from an earlier test
+	RunSaveStore.use_shared(saves if saves != null else RunSaveStore.new(""))  # v0.4.0 SV: none from an earlier test
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
 	test.add_child_autofree(main)
 	await frames(2)

@@ -366,6 +366,33 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   shared pool (`WAND_POOL_ORDER`'s `""`, after the Blade's) by id. Triggers: `ItemPool` offers kind `TRIGGER` now;
   `trigger_on_finisher` is On Finisher / Al Rematar, with `name_key_gun` On Crit / Al Crítico. 81 modifiers, 93 items.
   Every number is a starting value.
+- **v0.6.5 WN5b: `WandMigrationDefinition`** (category `wand`, id `migration`, `data/wand/migration.tres`; design
+  [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards", the full table there): the one table that
+  retires the v0.6 cards and says what each becomes. Read by `WandCompiler.from_repo` into `WandTable.migrate_*`
+  (sim: `WandMigration`, SIM_CONTRACTS §8i) and by `ContentCompiler.compile_items` / `compile_abilities`
+  (`WandCompiler.retire_items` / `retire_abilities`: `ItemTable.retired`, `AbilityTable.retired`).
+
+  ```gdscript
+  class_name WandMigrationDefinition extends ContentDef
+  @export var old_ids: Array[StringName] = []     # the retired cards: item ids or ability ids (43 in the data)
+  @export var blade_into: Array[StringName] = []  # what each becomes on a Blade run (&"": refunded as shards)
+  @export var gun_into: Array[StringName] = []    # ... on a Gun run
+  @export var pending: Array[StringName] = []     # targets another step brings (WN5a's S1–S7), allowed to be missing
+  ```
+
+  Validation: the three arrays one entry each (`table_size`), no empty or repeated old id (`missing`,
+  `duplicate_id`), no target that is itself retired (`retired_target`); cross-check: every old id names an item or an
+  ability, every non-empty target an item or a `pending` id (`unknown_item`). A retired card is never offered (altars,
+  chests, the shop, events, cores, the legendary tier, the overrun); it is not deleted, so old saves and item indices
+  still resolve and the dev panel can still grant it. The shared-pool targets are WN5a's ids: `ember_core` (S1),
+  `storm_core` (S2), `frost_core` (S3), `venom_core` (S4), `gravity_well` (S6), kept v0.6 cards and never retired, and
+  `shared_bleed` (S5), `shared_explosive` (S7), new cards listed in `pending` until WN5a merges.
+- **v0.6.5 WN5b: legendary triggers.** `ModifierOpDefinition.hook_casts` (TRIGGER only, 1..3; else `range`): the
+  cut's child spell is cast that many times per trigger, each `hook_delay_seconds` after the one before. Three
+  `TRIGGER` items of rarity `LEGENDARY` (`trigger_on_hit_twice`, `trigger_on_kill_twice`, `trigger_on_end_twice`;
+  `ITEM_TRIGGER_ON_*_TWICE` en + es; 2 casts, 0.15 s apart, starting values), indexed after every pool
+  (`ModifierCompiler.item_defs`), offered only by the legendary tier (and a boss's core, which draws from its `mods`).
+  Content: 82 modifiers, 94 items.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
@@ -808,6 +835,11 @@ a legendary stat card is its epic amount × this; `compile_stat_cards` appends t
 cards and items). v0.6.0 MX4: `mods` are the legendary modifiers: the three legendary versions (Tempest Core,
 Inferno Core, Echo Storm; rarity `LEGENDARY`, never in another pool) and the five trinkets (Shock Circles, Halo Shot,
 Boomerang, Orbit Rounds, Short Fuse); a boss's core draws from the same list.
+v0.6.5 WN5b (WAND.md "The legendary tier offers level-5 versions and a few unique triggers"): `wand_level` (0..5;
+data 5): with it every wand card (an item tagged `wand`, of the run's pool) is a pool mod too, and a pick at the
+boss's legendary altar takes it at that level (a held one rises to it; `BossReward.on_pick`); `mods` are now the three
+legendary triggers (the MX4 legendary versions and trinkets were retired or are wand cards). The pool needs cards:
+`stat_cards`, `mods` or `wand_level` (`missing`).
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

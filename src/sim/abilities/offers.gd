@@ -161,7 +161,8 @@ static func roll_epic(w: World) -> PackedInt32Array:
 
 ## v0.5.5 AR (X1b): the boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
 ## each a legendary stat card (a pool stat under its cap, by its card weight) or a pool mod still in the item pool;
-## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats.
+## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats. v0.6.5 WN5b: with the
+## tier's wand_level, every wand card of the run's pool is a pool mod too, taken at that level (BossReward.on_pick).
 static func roll_legendary(w: World) -> PackedInt32Array:
 	var t := w.legendary_table
 	var out := PackedInt32Array()
@@ -176,7 +177,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 				stats.append(s)
 		var mods := PackedInt32Array()
 		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
-			if t.mods.has(idx) and not out.has(idx):
+			var wand := t.wand_level > 0 and CardLevels.is_card(w, idx)  # v0.6.5 WN5b: level-5 versions
+			if (t.mods.has(idx) or wand) and not out.has(idx):
 				mods.append(idx)
 		var wts := PackedInt32Array(
 			[
@@ -320,6 +322,7 @@ static func info(w: World, code: int) -> Dictionary:
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
+		"wand": CardLevels.is_card(w, code),  # v0.6.5 WN5b: a wand card (the legendary tier's level-5 version)
 	}
 
 

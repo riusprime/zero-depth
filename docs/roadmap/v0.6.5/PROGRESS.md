@@ -12,6 +12,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | WN3 | The Gun pool G1–G16: Big Shot, Rapid Fire, Twin, Spread, Split, Pierce, Ricochet, Homing, Boomerang, Orbit, Spiral, Mine, Charge (hold to grow, release to fire), Echo, Backfire, Halo; each rewrites the bolt left to right in the wand and shows on it (size, count, path, trail, the charge orb, the mine's ring); a duplicate levels a card 1–5 without a slot; Gun runs only. Evidence [`evidence/WAND_GUN.md`](evidence/WAND_GUN.md) | WIP commits, then `v0.6.5 Step WN3` |
 | WN4 | The Blade pool B1–B16: every Blade card rebuilds the slash, left to right, and shows on it (Wide Arc's sweep, Wave's flying crescent, Split Wave, Whirl's spin, Double Slash's criss-cross, Thrust's stab, Heavy's slow crushing arcs with knockback, Flurry, Fissure's crack and eruption, Chain Cut, Parry Edge cutting shots, Afterimage's ghost slash, Lunge Step, Finisher+'s shockwave carrying every card, Orbit Blades, Counter's dash-slash wave); offered only in Blade runs; a duplicate levels a card up 1–5. Wide Arc, Echo Slash (Wave), Long Shadow (Afterimage) and Blade Orbit (Orbit Blades) became B1, B2, B12, B15 with their ids; 12 new cards; for WN5: `twin_arc` → `double_slash`. Evidence [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md) | `ddb6e0a`…final (WIP commits, then this step's commit) |
 | WN5a | The shared pool S1–S7 in both runs, each in the spell's look: Fire (`ember_core`), Lightning (`storm_core`), Frost (`frost_core`), Venom (`venom_core`), Void (`gravity_well`) keep their v0.6 ids and indices; Bleed (`shared_bleed`, ticks twice as fast while you move) and Explosive (`shared_explosive`, blasts where the spell ends) are new; all level 1–5. The triggers T1–T4 are offered in both runs with their final names (T4: On Finisher with the Blade, On Crit with the Gun); a trigger's small spell is drawn where it is cast (a sigil, the small slash or blast). Order fixes: no v0.5 rider from a wand card, a child slash feeds its own statuses, a cast feeds its stacks whole, a hook's bolt leaves past the enemy. Evidence [`evidence/WAND_SHARED.md`](evidence/WAND_SHARED.md) (screenshots NOT YET RUN) | WIP commits `588db57`…`3df5865`, then `v0.6.5 Step WN5a` |
+| WN5b | The v0.6 cards leave the offers and old builds turn into wand cards: 43 old cards (13 v0.5 attack items, the 4 ability mods, 17 M-list cards, the 3 MX4 legendary versions, the six old abilities; Ember, Storm, Frost and Venom Core and Gravity Well stay as WN5a's S cards) are retired by one table (`data/wand/migration.tres`; the mapping in WAND.md) and never offered again; a save or carry that holds one maps each onto its WAND.md card in pick order (a duplicate levels up; Orbit Blades level 3 → B15 at level 3; a legendary version → level 5) and refunds the rest at the shop's salvage price; v0.6.1 saves load again (they failed on `World.tuning`); the boss's legendary altar offers the run's wand cards at level 5 ("Mod · Level 5 · Legendary") and three ×2 triggers (On Hit, On Kill, On End: the spell cast twice); names: the old Blink card is "Blink Echo", the old ability "Orbiting Copies". S5 `shared_bleed` and S7 `shared_explosive` targets pending WN5a's merge. Evidence [`evidence/WAND_MIGRATION.md`](evidence/WAND_MIGRATION.md) | WIP commits, then `v0.6.5 Step WN5b` |
 
 ## Goldens changed on purpose
 - none (BR: the replay golden runs a boss-free kernel world; `test_replay_ground_plane.gd` passes unchanged)
@@ -21,6 +22,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - none (WN3: no fixture regenerated; see `evidence/WAND_GUN.md` for the golden runs).
 - none (WN4: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
 - none (WN5a: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
+- none (WN5b: no golden or fixture regenerated; the replay golden passes unchanged. New test fixtures, not goldens:
+  `tests/fixtures/saves/v061_blade_floor1.save` and `v061_gun_floor2.save`, recorded with v0.6.1's code, `950add4`).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -30,7 +33,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | Wand slots | 2026-10-12 | "Grows during the run" (4 → 6 → 8) | 2026-10-12 |
 | Card pool size (WN3): the Gun pool is 86 cards (Blade 76) while the v0.6 cards wait for WN5's migration; the pool test's ceiling went 80 → 90 in the open (`tests/support/card_pool_survey.gd`). Keep, or prune old cards now? | — | pending (lead / owner) | |
 | Card pool size (WN3 + WN4 merged): measured on the merged tree (`test_card_pool_reach.gd`: "blade pool: 88 in the data + 0 planned ([]) = 88", "gun pool: 83 in the data + 0 planned ([]) = 83"); the ceiling is 88 (WN3 had 90, WN4 92). Keep, or prune old cards now (WN5 prunes)? | — | pending (owner) | |
-| Card pool size (WN5a): the triggers offered and the two new shared cards give 94 (Blade) / 89 (Gun) against `POOL_MAX` 88 (`test_card_pool_reach.gd` fails until WN5b prunes or the bound moves; not changed here) | — | pending (lead / owner, with WN5b) | |
+| Card pool size (WN5b): after the migration retired 43 v0.6 cards, measured on a trial merge with WN5a (`7e88f80`): `test_card_pool_reach.gd` "blade pool: 61 in the data + 0 planned ([]) = 61", "gun pool: 59 in the data + 0 planned ([]) = 59" (on the WN5b branch alone 55 / 53); `POOL_MAX` 88 → 61. The owner's target was 40–50. Not pruned past WAND.md: the 13 passives outside the wand (Bulwark, Cold Snap, Executioner, …) stay. Keep, or prune further? | — | pending (owner) | |
 
 ## History
 - 2026-10-12: plan from the owner's v0.6.1 playtest.
@@ -76,3 +79,21 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   `POOL_MAX` 88: WN5b's, reported, not changed; and a test fixed after, run again), content/arch/golden 114/114,
   presentation + application + debug 457/457, 18 e2e files 37/38 then the fixed one 1/1. Not pushed; the lead's full
   suite pending.
+- 2026-10-12: WN5b built on a session branch (agent, `wn5b` from `4787b38`): the old cards' migration table (43 retired,
+  mapping in WAND.md), the load-time migration (`WandMigration`), v0.6.1 saves loading again (`World.tuning` in
+  `ADDED_SINCE_V05`), the legendary tier's level-5 wand cards and the three ×2 triggers, the pools measured 61 (Blade) /
+  59 (Gun) on a trial merge with WN5a (55 / 53 alone). WN5a's ids are in the table (lead's message); S5 and S7 are
+  pending until the merge. Not pushed; the lead's one full suite per wave is
+  pending.
+- 2026-10-12: WN5b folder runs on `ea03123` (agent): tests/unit/sim 887/887; content + arch + golden +
+  unit/application 150/150; unit/presentation + unit/debug 423/423; 23 e2e files 48/48; lint clean. On a trial merge
+  with WN5a the recorded v0.6.1 saves need WN5a's new state fields in `WorldSnapshot.ADDED_SINCE_V05` (merge note in
+  `evidence/WAND_MIGRATION.md`). The full suite is the lead's. Not pushed.
+- 2026-10-12: WN5a + WN5b merged by the lead: conflicts resolved keeping both (a legendary trigger's repeated casts
+  are each tagged `cast`; retired cards never offered, triggers offered; SIM_CONTRACTS §8h WN5a, §8i WN5b); the
+  migration's `pending` list emptied (S5 Bleed and S7 Explosive are in the data now: Aftershock → `shared_explosive`,
+  Serrated Edge → `shared_bleed`, no refund), its tests updated; WN5a's fields added to `WorldSnapshot.ADDED_SINCE_V05`
+  so the v0.6.1 saves load (WN5b's merge note). Counts from the merged data: items 96, modifiers 84, the Blade-run draw
+  53, the item draw 52. Files re-run: test_item_validation 7/7, test_modifier_validation 8/8, test_items 19/19,
+  test_items_j 18/18, test_old_saves 3/3, test_card_pool_reach 3/3, test_wand_shared_order 11/11, test_wand_migration
+  12/12, test_wand_migration_validation 4/4. The wave's full suite next.

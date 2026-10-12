@@ -429,8 +429,11 @@ func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
 			Offers.STAT:
 				assert_eq(Offers.rarity_of(code), Offers.LEGENDARY, "legendary stat cards only")
 				assert_true(w.legendary_table.stats.has(Offers.stat_of(code)), "from its pool")
-			Offers.MOD:
-				assert_true(w.legendary_table.mods.has(code), "pool mods only")
+			Offers.MOD:  # v0.6.5 WN5b: or a wand card of the run's pool (its level-5 version)
+				assert_true(
+					w.legendary_table.mods.has(code) or CardLevels.is_card(w, code),
+					"pool mods only"
+				)
 			_:
 				fail_test("no other card types")
 	var pick := InputFrame.new()
