@@ -8,5 +8,6 @@ kind = 31
 name_key = &"ITEM_TWIN_CAST"
 desc_key = &"ITEM_TWIN_CAST_DESC"
 tags = PackedStringArray("blade", "bolt")
+requires_weapon = &"blade"
 modifiers = Array[StringName]([&"twin_cast"])
 id = &"twin_cast"

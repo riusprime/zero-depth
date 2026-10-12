@@ -275,6 +275,9 @@ var swap_ref := -1
 ## v0.6.0 MX2: a carry from before MX2 arrived (RunCarry.apply); Abilities.start_floor migrates it into the slots
 ## (BuildSlots.migrate) once the abilities' tables are set, and clears it.
 var migrate_slots := false
+## v0.6.5 WN3 (CardLevels; WAND.md rule 6): the level of each held wand card by item index (0 or absent = level 1;
+## sized on the first level-up, so a world that never levels a card hashes as before); run-long (RunCarry).
+var card_levels := PackedInt32Array()
 ## v0.6.0 MX2: the spec of the player hit resolving now (Attacks, the projectile sweep; null between hits), which the
 ## engines read for its statuses. Transient within a tick (WorldSnapshot.WORLD_KEPT).
 var hit_spec: AttackSpec = null

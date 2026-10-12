@@ -28,3 +28,25 @@ func trigger_op() -> ModifierOp:
 
 func is_trigger() -> bool:
 	return trigger_op() != null
+
+
+## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up): this card at `level` (1..5): itself when no op grows
+## with the level (or at level 1), else a copy whose ops are at that level (ModifierOp.at_level). Compile-time only.
+func at(level: int) -> ModifierTable:
+	if level <= 1:
+		return self
+	var grows := false
+	for o in ops:
+		grows = grows or o.levels()
+	if not grows:
+		return self
+	var t := ModifierTable.new()
+	t.id = id
+	t.family = family
+	t.rarity = rarity
+	t.target = target.duplicate()
+	t.stage = stage
+	t.overlay = overlay
+	for o in ops:
+		t.ops.append(o.at_level(level))
+	return t

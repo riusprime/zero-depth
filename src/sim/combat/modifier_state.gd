@@ -41,6 +41,8 @@ var last_attack := 0
 var charge_tick := -1
 var shell_tick := -1
 var trail_tick := -1
+## v0.6.5 WN3 (GunForms, G13 Charge): the ticks the shot in the barrel has charged (0 = none).
+var hold_t := 0
 
 
 func touched() -> bool:
@@ -52,6 +54,7 @@ func touched() -> bool:
 		or charge_tick != -1
 		or shell_tick != -1
 		or trail_tick != -1
+		or hold_t != 0
 	)
 
 
@@ -97,3 +100,5 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(p.y)
 	for v in [1 if trail_on else 0, last_attack, charge_tick, shell_tick, trail_tick]:
 		h.add_int(v)
+	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
+		h.add_int(hold_t)

@@ -19,6 +19,7 @@ const FIELDS: Array[StringName] = [
 	&"threat_peak",
 	&"stat_cards",  # v0.5.0 SH: the stat cards taken, so the shop can sell one back
 	&"mod_slots",  # v0.6.0 MX2: the six modifier slots in pick order (the layer order)
+	&"card_levels",  # v0.6.5 WN3: the wand cards' levels
 ]
 const HP := &"hp"
 ## v0.5.5 EC (owner Q-S4): the shards the portal left behind, written to the next floor's World.shards_left_behind

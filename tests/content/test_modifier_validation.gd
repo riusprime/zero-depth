@@ -16,10 +16,11 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		55,
+		67,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
-			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers"
+			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
+			+ " v0.6.5 WN3: the Gun pool's 12 new"
 		)
 	)
 	assert_true(
@@ -139,3 +140,34 @@ func test_mx4_values_convert() -> void:
 	assert_eq(split.ops[0].child_ops.size(), 2, "the child's count and spread")
 	var fuse: ModifierTable = by_id[&"short_fuse"]
 	assert_eq([fuse.ops[0].field, fuse.ops[0].value], [&"range", 600.0])
+
+
+## v0.6.5 WN3: the Gun pool's new fields convert like the rest, a level's step converts in the same units, and a
+## level only grows a number or a hook's damage share.
+func test_wn3_values_and_levels_convert() -> void:
+	var by_id := {}
+	for t in ModifierCompiler.compile_modifiers(_repo()):
+		by_id[t.id] = t
+	var mine: ModifierTable = by_id[&"gun_mine"]
+	assert_eq(
+		[mine.ops[0].field, mine.ops[0].value, mine.ops[0].per_level], [&"mine_ticks", 180.0, 30.0]
+	)
+	assert_eq(mine.ops[1].per_level, 100.0, "the blast's share +100 ‰ a level")
+	var spiral: ModifierTable = by_id[&"gun_spiral"]
+	assert_eq([spiral.ops[0].field, spiral.ops[0].value], [&"spiral", 398.0], "35° in 1/4096 turns")
+	var charge: ModifierTable = by_id[&"gun_charge"]
+	assert_eq([charge.ops[0].field, charge.ops[0].value], [&"hold_ticks", 60.0], "1 s")
+	var spread: ModifierTable = by_id[&"gun_spread"]
+	assert_eq(
+		spread.ops[1].per_level, float(ContentCompiler.degrees_to_units(40.0) - 341), "+10° a level"
+	)
+	var at3 := mine.at(3)
+	assert_eq([at3.ops[0].value, at3.ops[1].damage_permille], [240.0, 1200], "level 3")
+	assert_eq(mine.at(1), mine, "level 1 is the card itself")
+	var bad := (load("res://data/modifiers/gun_spiral.tres") as ModifierDefinition).duplicate(true)
+	bad.ops[0].op = ModifierOpDefinition.Op.ELEMENT
+	bad.ops[0].stage = 3
+	bad.ops[0].element = &"storm"
+	assert_does_not_have(_codes(bad), &"range", "a plain element op is fine")
+	bad.ops[0].per_level = 1.0
+	assert_has(_codes(bad), &"range", "an element doesn't level")

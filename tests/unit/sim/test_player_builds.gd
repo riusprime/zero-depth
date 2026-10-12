@@ -222,8 +222,11 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"long_edge",
 			"momentum",
 			"overcharge",
+			"rearguard",  # v0.6.5 WN3: on the Gun, G15 Backfire / G14 Echo / G8 Homing do their job
+			"seeker",
 			"serrated_edge",
-			"twin_arc"
+			"twin_arc",
+			"twin_cast",
 		]
 	)
 	assert_eq(
@@ -231,11 +234,27 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		[
 			"barbed_bolts",
 			"bomb_rounds",  # v0.6.0 MX4: every 5th shot (M3 Frost Core left: it is every attack's now)
+			"boomerang",  # v0.6.5 WN3: the Gun pool G1–G16 (G9, G10, G5, G16 keep their v0.6 ids)
 			"cinder_shot",
+			"gun_backfire",
+			"gun_big_shot",
+			"gun_charge",
+			"gun_echo",
+			"gun_homing",
+			"gun_mine",
+			"gun_pierce",
+			"gun_rapid_fire",
+			"gun_ricochet",
+			"gun_spiral",
+			"gun_spread",
+			"gun_twin",
+			"halo_shot",
+			"orbit_rounds",
 			"rapid_coil",
 			"ricochet_core",
 			"splinter_shot",
-			"static_chain"
+			"split_shot",
+			"static_chain",
 		]
 	)
 

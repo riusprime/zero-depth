@@ -238,22 +238,25 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var offsets := shot_offsets(spec)
 	if spec.has_tag(&"weapon"):
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
-	var gap := t.radius_m + spec.radius_m + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
+	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
+	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
+	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	for off in offsets:
 		var dir := Kin.dir(ctx.angle + off)
-		var muzzle := ctx.origin + dir * gap
-		w.queue_projectile(
-			w.actors.ids[0],
-			ActorStore.TEAM_PLAYER,
-			muzzle,
-			dir * spec.speed,
-			ctx.damage,
-			spec.radius_m,
-			maxi(1, spec.life_ticks),
-			ctx.tags,
-			spec.bounces,
-			spec.key
-		)
+		for side in lanes:
+			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
+			w.queue_projectile(
+				w.actors.ids[0],
+				ActorStore.TEAM_PLAYER,
+				muzzle,
+				dir * spec.speed,
+				ctx.damage,
+				r,
+				maxi(1, spec.life_ticks),
+				ctx.tags,
+				spec.bounces,
+				spec.key
+			)
 
 
 static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:

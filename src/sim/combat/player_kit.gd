@@ -113,7 +113,9 @@ static func advance(w: World) -> void:
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
-	if shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
+	if GunForms.charging(w):  # v0.6.5 WN3: G13 Charge, hold to grow the shot, release to fire
+		GunForms.hold(w, can_attack, func(pm: int) -> void: _fire_bolt(w, pm))
+	elif shooting(w) and can_attack and w.swing_t == 0 and w.shot_cd == 0:
 		_fire_bolt(w)
 		w.shot_cd = ItemEffects.shot_period_ticks(w)
 	ItemProcs.advance_momentum(w)
@@ -198,12 +200,18 @@ static func swing_arc(
 
 ## One shot: the bolt spec launched along the aim (a Splinter fan, Ricochet's bounces: its spec's pattern and
 ## behaviour).
-static func _fire_bolt(w: World) -> void:
+## v0.6.5 WN3: `charge` (per mille) sizes a charged shot (G13 Charge: its damage and its bolts' radius).
+static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	var spec := Modifiers.bolt(w)
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16).
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	dmg = Curses.shot_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' every 4th shot
 	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
 	var tags := SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w)  # Hot, Pulse Gun L3
-	Attacks.launch(w, spec, AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &""))
+	var ctx := AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &"")
+	if charge != 1000:
+		ctx.damage = maxi(1, dmg * charge / 1000)
+		ctx.base_damage = ctx.damage
+		ctx.size_permille = charge
+	Attacks.launch(w, spec, ctx)
 	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

@@ -76,16 +76,16 @@ func _kill(w: World, i: int) -> void:
 func test_the_data_has_distinct_kinds() -> void:
 	assert_eq(
 		_tables.size(),
-		67,
+		79,
 		(
 			"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
-			+ " + the wand's 4 trigger cards (v0.6.5 WN1)"
+			+ " + the wand's 4 trigger cards (v0.6.5 WN1) + the Gun pool's 12 new cards (v0.6.5 WN3)"
 		)
 	)
 	var kinds := {}
 	for t in _tables:
 		kinds[t.kind] = true
-	assert_eq(kinds.size(), 33, "the 31 v0.5 kinds, MODIFIER and (v0.6.5 WN1) TRIGGER")
+	assert_eq(kinds.size(), 34, "the 31 v0.5 kinds, MODIFIER, (v0.6.5 WN1) TRIGGER and (WN3) WAND")
 	for k in range(K.VAMPIRIC_CORE, K.PHASE_STRIKE + 1):
 		assert_ne(_index(k), -1, "kind %d is shipped" % k)
 
@@ -448,12 +448,14 @@ func test_the_pool_draws_every_item_without_repeats() -> void:
 	w.player.utility = PlayerTable.Utility.GUARD  # v0.3.0 E: Bulwark is drawn only with the guard.
 	var all := ItemPool.draw(w, 99)
 	assert_eq(
-		all.size(), 47, "everything but the owned one (v0.6.0 MX4: the M-list's 24 usable here too)"
+		all.size(),
+		59,
+		"everything but the owned one (v0.6.0 MX4: the M-list's 24 usable here too; v0.6.5 WN3: the Gun pool's 12)"
 	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
 		w.add_pickup(i, Vector2(5, 5))
-	assert_eq(seen.size(), 47)
+	assert_eq(seen.size(), 59)
 	assert_false(seen.has(_index(K.MOMENTUM)))
 	assert_eq(ItemPool.draw(w, 3).size(), 0, "all placed: nothing left to draw")

@@ -159,6 +159,12 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 	if o.op == ModifierOpDefinition.Op.SET_FORM:
 		if o.form < ModifierOpDefinition.Form.ARC or o.form > ModifierOpDefinition.Form.BURST:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
+	if o.per_level != 0.0 and not (o.is_numeric() or o.op == ModifierOpDefinition.Op.HOOK):
+		issues.append(  # v0.6.5 WN3: a level grows a number (or a hook's damage share)
+			ValidationIssue.new(
+				&"range", resource_path, "%s: per_level on a numeric op or a hook" % where
+			)
+		)
 
 
 ## v0.6.5 WN1: the modifier is a wand trigger (its op is TRIGGER).

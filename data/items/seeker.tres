@@ -9,5 +9,6 @@ name_key = &"ITEM_SEEKER"
 desc_key = &"ITEM_SEEKER_DESC"
 rarity = 1
 tags = PackedStringArray("bolt")
+requires_weapon = &"blade"
 modifiers = Array[StringName]([&"seeker"])
 id = &"seeker"

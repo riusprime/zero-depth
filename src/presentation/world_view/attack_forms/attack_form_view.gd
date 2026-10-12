@@ -41,6 +41,7 @@ func sync(reader: WorldReader) -> void:
 	set_density(ViewPrefs.effects_density)
 	_sync_swing(reader)
 	_sync_bolts(reader)
+	_sync_charge(reader)  # v0.6.5 WN3: G13 Charge's orb
 	_sync_burst(reader)
 	_sync_chain(reader)
 	_sync_crits(reader)
@@ -125,9 +126,9 @@ func _sync_bolts(reader: WorldReader) -> void:
 		while trail.size() > STREAK_SEGMENTS + 1:
 			trail.remove_at(0)
 		_trails[id] = trail
-		_live.append(
-			{"id": id, "pos": p, "vel": reader.projectile_vel(i), "look": look, "trail": trail}
-		)
+		var b := {"id": id, "pos": p, "vel": reader.projectile_vel(i), "look": look, "trail": trail}
+		b["scale"] = live_scale(look, reader.projectile_radius(i))  # v0.6.5 WN3: a charged shot
+		_live.append(b)
 		var bt := reader.projectile_bounce_tick(i)
 		if bt >= 0 and _bounce_ticks.get(id, -1) != bt:
 			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55)
@@ -136,6 +137,31 @@ func _sync_bolts(reader: WorldReader) -> void:
 		for id in d.keys():
 			if not seen.has(id):
 				d.erase(id)
+
+
+## v0.6.5 WN3: a live bolt drawn bigger than its spec's look by its own radius (a charged shot, G13), 0.5–4×.
+static func live_scale(look: Dictionary, radius: float) -> float:
+	var r := float(look.get("radius", 0.0))
+	return clampf(radius / r, 0.5, 4.0) if r > 0.0 else 1.0
+
+
+## v0.6.5 WN3 (G13 Charge, WAND.md "it swells in the barrel"): while the Gun's shot charges, an orb at the muzzle
+## grows from the bolt's size to its full charge (the sim's GunForms numbers, read; nothing decided here).
+func _sync_charge(reader: WorldReader) -> void:
+	var frac := reader.gun_charge()
+	if frac <= 0.0 or reader.player_dead():
+		return
+	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
+	var look := _look_of(reader, String(WorldReader.ATTACK_BOLT))
+	if look.is_empty():
+		return
+	var full := float(spec.get("hold_permille", 1000)) / 1000.0
+	var dir := Kin.dir(reader.aim_angle())
+	var at := _player + dir * 0.55
+	var orb := {"id": -1, "pos": at, "vel": dir * 0.001, "look": look}
+	orb["trail"] = PackedVector2Array([at])
+	orb["scale"] = 1.0 + (full - 1.0) * frac
+	_live.append(orb)
 
 
 ## A stable seed for a live attack from where it is (presentation only).

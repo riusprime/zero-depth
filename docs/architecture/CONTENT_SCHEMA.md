@@ -287,6 +287,20 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   opens their pool); item indices
   put them after the `MODIFIER` cards (`ModifierCompiler.item_defs`: v0.5 kinds by id, `MODIFIER` by id, `TRIGGER`
   by id), so every earlier index names the same card. 55 modifiers, 67 items.
+- **v0.6.5 WN3: the Gun pool** (WAND.md G1–G16; sim side [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8f). New op
+  fields: PATTERN `twin` (more bolts side by side); BEHAVIOUR `spiral_degrees` (the corkscrew's swing),
+  `mine_seconds` (a mine's wait after its flight); PAYLOAD `hold_seconds`, `hold_permille` (Charge: the time to a
+  full charge and the size and damage it reaches). `ModifierOpDefinition.per_level: float` (default 0): added to the
+  op's value per card level above 1, in the op's own units (a `HOOK` op: to `hook_damage_permille`); only a numeric
+  op or a hook may carry one (`range`). Items: a new kind `WAND` (33, appended; a wand card of a weapon's pool) and a
+  new item tag `wand` (a card that levels up 1–5: `CardLevels`); a `WAND` item is tagged `wand` (`tags`) and a `wand`
+  card names modifiers (`missing`). `requires_weapon` is the pool: the Gun's cards say `gun`. Shipped: 12 new
+  modifiers and `WAND` items (`gun_big_shot`, `gun_rapid_fire`, `gun_twin`, `gun_spread`, `gun_pierce`,
+  `gun_ricochet`, `gun_homing`, `gun_spiral`, `gun_mine`, `gun_charge`, `gun_echo`, `gun_backfire`; names
+  `ITEM_GUN_*` in en and es) and four v0.6 cards turned Gun wand cards with their ids kept (`split_shot` G5, its
+  shards 0.08 m and + 1 a level; `boomerang` G9; `orbit_rounds` G10; `halo_shot` G16), each with its level steps;
+  `seeker`, `twin_cast`, `rearguard` now `requires_weapon` blade. Item indices: v0.5 kinds by id, `MODIFIER` by id,
+  `TRIGGER` by id, then `WAND` by id. 67 modifiers, 79 items. Every number is a starting value.
 - **v0.6.5 WN1: `WandDefinition`** (category `wand`, `data/wand/wand.tres`, its own file so the dev panel's tuning
   data merges beside it; compiled by `WandCompiler` into `WandTable`, `World.wand_table`):
 
