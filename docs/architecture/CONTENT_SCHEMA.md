@@ -466,8 +466,11 @@ class_name BiomeDefinition extends Resource
   - ambient colour and energy;
   - void colour and AgX exposure;
   - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
-  - fog, glow and the vignette;
-  - the warm light colour, energy and range that fire props use.
+  - fog, glow (intensity, threshold, bloom) and the vignette;
+  - the warm light colour, energy and range that fire props use;
+  - the hero light's energy and range;
+  - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass
+    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md)).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.

@@ -119,6 +119,14 @@ func _build_environment() -> void:
 		env.tonemap_mode = Environment.TONE_MAPPER_AGX
 		env.tonemap_exposure = mood.exposure
 		env.glow_intensity = mood.glow_intensity
+		env.glow_hdr_threshold = mood.glow_threshold
+		env.glow_bloom = mood.glow_bloom
+		var grade := mood.grade_texture()
+		if grade != null or mood.contrast != 1.0 or mood.saturation != 1.0:
+			env.adjustment_enabled = true
+			env.adjustment_contrast = mood.contrast
+			env.adjustment_saturation = mood.saturation
+			env.adjustment_color_correction = grade
 		env.ssao_radius = mood.ssao_radius
 		env.ssao_intensity = mood.ssao_intensity
 		env.ssao_light_affect = mood.ssao_light_affect
