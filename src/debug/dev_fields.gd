@@ -15,6 +15,7 @@ const GROUPS := [
 		""
 	],
 	["enemies", "UI_DEVM_G_ENEMIES", ["res://data/enemies"], ""],
+	["sim", "UI_DEVM_G_SIM", ["res://data/tuning"], ""],
 	["bosses", "UI_DEVM_G_BOSSES", ["res://data/bosses", "res://data/boss_pools"], ""],
 	[
 		"difficulty",

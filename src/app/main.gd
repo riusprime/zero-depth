@@ -290,6 +290,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(world)
+	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":

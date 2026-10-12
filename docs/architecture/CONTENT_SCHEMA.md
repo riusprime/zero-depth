@@ -758,6 +758,16 @@ Values come from GA §5 (player kit). Until the gap analysis report is in the re
 listed in [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C. The owner tunes them during the v0.0.1
 Windows check.
 
+### Sim tuning (`data/tuning/sim.tres`, the dev panel's Step 6)
+
+`SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
+spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
+spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
+Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
+as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
+`range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
+
 ## 9. Compiled tables
 
 At encounter start, `ContentCompiler` turns the definitions an encounter needs into plain typed arrays and

@@ -43,4 +43,5 @@ static func apply(w: World, run: RunState, repo: ContentRepository) -> void:
 	w.actors.hp[0] = mini(w.actors.hp[0], max_hp)
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)
+	w.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))
 	run.table = ContentCompiler.compile_run(repo.get_def(&"run", Main.RUN_ID))

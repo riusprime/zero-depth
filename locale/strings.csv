@@ -742,3 +742,4 @@ UI_DEVM_HINT_CLOSE,"Applies when you close the panel (F10); what the floor lays 
 UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for the next ones to spawn (Restart floor for all).","Se aplica al cerrar el panel; la vida y los fragmentos cambian para los siguientes en aparecer (Reiniciar piso para todos)."
 UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
 UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
+UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"

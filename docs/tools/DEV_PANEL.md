@@ -1,6 +1,6 @@
 # Dev panel (lighting and balance tuning in the running game)
 
-Status: **Steps 1–5 built 2026-10-12** (`f26b541`, `713aaa3`, `00b3a04`, `daa7411`, Step 5 commit); Step 6 next.
+Status: **built 2026-10-12** (Steps 1–7: `f26b541`, `713aaa3`, `00b3a04`, `daa7411`, `d10bb05`, Step 6 commit).
 
 ## Owner lines (2026-10-12)
 
@@ -72,6 +72,11 @@ Each step is one commit, with tests of the folders it touches; one full suite at
    resume it). The game writes no unlocks or records yet (the profile's `unlocks` section is unused); when they come,
    they check `tuning.balance_tweaked()` the same way. e2e: a tweaked run's save is gone and DEV shows; lighting alone
    changes neither.
-6. **Sim constants.** The designer-relevant `const`s move into a `SimTuning` resource (`data/tuning/sim.tres`) that
-   the sim reads through the World; same values, so the goldens don't change. Then they get a page.
-7. **Release checklist line** (ROADMAP §0.4): remove or lock the panel before a public release.
+6. **Sim constants.** 24 designer-relevant `const`s (spawn-in, boss rise and stagger wait, phase gates and adds,
+   enemy AI commit, strafe, flank, spread, Sniper relocation, Mender scan, heal-orb cap, pickup radius, fire cap,
+   hit rate and trail spacing, field throw) now come from `data/tuning/sim.tres` through `World.tuning`; the old
+   constants stay as the defaults and the shipped file equals them (`tests/content/test_sim_tuning.gd`), so the
+   goldens don't change. Their page: "Timings, AI and caps". Not yet in: the map generation's `FloorParams` (rooms
+   per floor, spawn rooms, links), engine limits (hitstop cap, input buffer, chain depth) and the few inline caps
+   in curses and events.
+7. **Release checklist line** (ROADMAP §0.4): added; remove or lock the panel before a public release.

@@ -656,7 +656,7 @@ func pickup_id(i: int) -> int:
 
 ## Walking within this distance of a pickup takes it.
 func pickup_radius_m() -> float:
-	return ItemEffects.PICKUP_RADIUS_M
+	return _w.tuning.pickup_radius_m
 
 
 ## Ember Edge burn stacks on actor i (0 = not burning).
@@ -1201,7 +1201,7 @@ func boss_table_name_key(k: int) -> StringName:
 func boss_intro_permille(i: int) -> int:
 	if _w.actors.state[i] != EnemyAi.State.SPAWN:
 		return 1000
-	return clampi(_w.actors.state_t[i] * 1000 / BossAi.INTRO_TICKS, 0, 1000)
+	return clampi(_w.actors.state_t[i] * 1000 / maxi(1, _w.tuning.boss_intro_ticks), 0, 1000)
 
 
 ## Boss i's weak point: how much of its open time is left, 0..1000 (0 = closed).

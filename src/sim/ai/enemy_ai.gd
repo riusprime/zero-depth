@@ -103,7 +103,7 @@ static func is_priority(kind: int) -> bool:
 static func tracking(w: World, i: int) -> bool:
 	var a := w.actors
 	var sniper := a.kinds[i] == ActorStore.Kind.SNIPER
-	var commit := SNIPE_COMMIT_TICKS if sniper else COMMIT_TICKS
+	var commit := w.tuning.ai_snipe_commit_ticks if sniper else w.tuning.ai_commit_ticks
 	if a.state[i] != State.WINDUP or a.state_t[i] >= a.windup[i] - commit:
 		return false
 	return (
@@ -129,7 +129,7 @@ static func think(w: World, i: int) -> void:
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
-			if a.state_t[i] >= SimTick.SPAWN_IN_TICKS:
+			if a.state_t[i] >= w.tuning.spawn_in_ticks:
 				_enter(a, i, State.MOVE)
 		State.MOVE:
 			var to_player := w.player_pos() - a.pos(i)
@@ -149,7 +149,7 @@ static func think(w: World, i: int) -> void:
 				_mend(w, i)  # v0.4.0 EN: heals instead of attacking.
 				return
 			if a.kinds[i] == ActorStore.Kind.SNIPER and a.pick[i] == 1:
-				_end_relocation(a, i)
+				_end_relocation(w, a, i)
 			if attack and _may_attack(w, i):
 				_start_windup(w, i, Kin.angle_of(to_player))
 		State.WINDUP:
@@ -193,9 +193,9 @@ static func _may_attack(w: World, i: int) -> bool:
 
 
 ## A relocating Sniper (v0.4.0 EN) is done once within RELOCATE_DONE_M of its spot or after RELOCATE_MAX_TICKS.
-static func _end_relocation(a: ActorStore, i: int) -> void:
+static func _end_relocation(w: World, a: ActorStore, i: int) -> void:
 	var near := Kin.length(Vector2(a.lock_x[i], a.lock_y[i]) - a.pos(i)) <= RELOCATE_DONE_M
-	if near or a.state_t[i] >= RELOCATE_MAX_TICKS:
+	if near or a.state_t[i] >= w.tuning.ai_relocate_max_ticks:
 		a.pick[i] = 0
 
 
@@ -223,7 +223,7 @@ static func _mend(w: World, i: int) -> void:
 	var j := a.index_of(a.pick[i]) if a.pick[i] > 0 else -1
 	if j >= 0 and (a.dead[j] == 1 or a.hp[j] >= a.max_hp[j] or not _near(a, i, j, t.heal_range_m)):
 		j = -1
-	if j < 0 and (w.tick + a.ids[i]) % MEND_SCAN_TICKS == 0:
+	if j < 0 and (w.tick + a.ids[i]) % w.tuning.ai_mend_scan_ticks == 0:
 		j = _patient(w, i, t.heal_range_m)
 	if j < 0:
 		a.pick[i] = 0
@@ -327,16 +327,16 @@ static func _walk_dir(w: World, i: int, t: EnemyTable) -> Vector2:
 		if dist < t.flee_distance_m:
 			dir = -dir
 		elif dist <= t.keep_distance_m + 1.0:
-			dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
+			dir = Vector2(-dir.y, dir.x) * side * (w.tuning.ai_strafe_permille / 1000.0)
 	elif _keeps_away(a.kinds[i]):
 		if dist < t.keep_min_m:
 			dir = -dir
 		elif dist <= t.keep_distance_m:
-			dir = Vector2(-dir.y, dir.x) * side * (STRAFE_PERMILLE / 1000.0)
+			dir = Vector2(-dir.y, dir.x) * side * (w.tuning.ai_strafe_permille / 1000.0)
 	elif dist <= t.radius_m + w.player.radius_m + 0.1:
 		return Vector2.ZERO
-	elif dist > FLANK_MIN_M and dist < FLANK_RANGE_M:
-		dir = _unit(dir + Vector2(-dir.y, dir.x) * side * (FLANK_PERMILLE / 1000.0))
+	elif dist > w.tuning.ai_flank_min_m and dist < w.tuning.ai_flank_range_m:
+		dir = _unit(dir + Vector2(-dir.y, dir.x) * side * (w.tuning.ai_flank_permille / 1000.0))
 	return dir
 
 
@@ -356,9 +356,9 @@ static func plan(w: World, i: int) -> void:
 	var at := a.pos(i)
 	var dir := _walk_dir(w, i, t)
 	if dir != Vector2.ZERO:
-		var reach := Vector2(SPREAD_RADIUS_M, SPREAD_RADIUS_M)
+		var reach := Vector2(w.tuning.ai_spread_radius_m, w.tuning.ai_spread_radius_m)
 		var push := _spread_over(w, i, w.actors_near(Rect2(at - reach, reach * 2.0)))
-		dir = _unit(dir + push * SPREAD_WEIGHT) * Kin.length(dir)
+		dir = _unit(dir + push * w.tuning.ai_spread_weight) * Kin.length(dir)
 		if posmod(w.tick, PLAN_PERIOD * 2) == posmod(a.ids[i], PLAN_PERIOD * 2):
 			a.plan_block[i] = 1 if _blocked(w, at, dir, t.radius_m) else 0
 		if a.plan_block[i] == 1:
@@ -377,7 +377,7 @@ static func _relocate(w: World, i: int, t: EnemyTable, slow: float) -> void:
 	var d := Kin.length(to)
 	if d <= 0.0001:
 		return
-	var step := minf(t.speed * slow * RELOCATE_SPEED_PERMILLE / 1000.0, d)
+	var step := minf(t.speed * slow * w.tuning.ai_relocate_speed_permille / 1000.0, d)
 	a.set_pos(i, at + steer(w, at, to / d, t.radius_m) * step)
 
 
@@ -396,7 +396,8 @@ static func _spread_over(w: World, i: int, js: PackedInt32Array) -> Vector2:
 	var a := w.actors
 	var at := a.pos(i)
 	var push := Vector2.ZERO
-	var far := SPREAD_RADIUS_M + 0.001
+	var spread := w.tuning.ai_spread_radius_m
+	var far := spread + 0.001
 	for j in js:
 		# v0.4.0 SC: the cheap distance test first (with a margin over rounding; the tests below repeat it exactly).
 		if absf(a.pos_x[j] - at.x) >= far or absf(a.pos_y[j] - at.y) >= far:
@@ -404,15 +405,15 @@ static func _spread_over(w: World, i: int, js: PackedInt32Array) -> Vector2:
 		if j == 0 or j == i or a.dead[j] == 1 or a.kinds[j] < ActorStore.Kind.CHARGER:
 			continue
 		var d := at - a.pos(j)
-		if absf(d.x) >= SPREAD_RADIUS_M or absf(d.y) >= SPREAD_RADIUS_M:
+		if absf(d.x) >= spread or absf(d.y) >= spread:
 			continue
 		var l := Kin.length(d)
-		if l >= SPREAD_RADIUS_M:
+		if l >= spread:
 			continue
 		if l <= 0.0001:  # stacked exactly: the higher id steps aside, along +x or -x
 			push += Vector2(1.0 if a.ids[i] > a.ids[j] else -1.0, 0.0)
 			continue
-		push += d / l * (1.0 - l / SPREAD_RADIUS_M)
+		push += d / l * (1.0 - l / spread)
 	return push
 
 
