@@ -67,7 +67,9 @@ func test_g1_big_shot_is_a_fat_slow_orb() -> void:
 	assert_eq(s.damage_mul_permille, 1600, "the view's weight")
 	W.run(w, 1, 0, W.S)
 	W.run(w, 1)
-	assert_almost_eq(w.projectiles.radius[_mine(w)[0]], p.radius_m * 2.0, 1e-5, "the bolt in flight")
+	assert_almost_eq(
+		w.projectiles.radius[_mine(w)[0]], p.radius_m * 2.0, 1e-5, "the bolt in flight"
+	)
 	W.run(w, 30)
 	var d := W.damage(w, &"")
 	assert_gt(d.size(), 0)
@@ -102,7 +104,9 @@ func test_g3_twin_fires_two_side_by_side() -> void:
 		"parallel"
 	)
 	var gap := absf(_pos(w, m[0]).y - _pos(w, m[1]).y)
-	assert_almost_eq(gap, Modifiers.bolt(w).radius_m * GunForms.TWIN_GAP_RADII, 1e-4, "side by side")
+	assert_almost_eq(
+		gap, Modifiers.bolt(w).radius_m * GunForms.TWIN_GAP_RADII, 1e-4, "side by side"
+	)
 
 
 func test_g4_spread_becomes_a_three_shot_fan() -> void:
