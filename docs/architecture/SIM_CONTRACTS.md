@@ -100,6 +100,9 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   `-1` closes. The shop panel sends them through `InputLatch.note_pick`. Prices, refunds and the rules are in
   [`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §3 (Shop); a refusal (unaffordable, sold out, can't apply, nothing to
   do) changes only `ShopState.denied_tick`.
+- **The wand's reorder** (v0.6.5 WN1, §8e) rides on `pick` at any tick: `PICK_WAND_MOVE_BASE` (1000) + from × 16 +
+  to moves the wand's card in slot `from` to slot `to`. `World.step` applies it first; the rest of the tick sees no
+  pick. The swap answers (§8c) go up to `PICK_SWAP_BASE + 7` (the wand grows to 8 slots).
 - **Latching.** The application layer's `InputLatch` collects device events between ticks. A press and release
   that both happen between two ticks still set the `pressed` bit on the next frame, so a tap shorter than one
   frame is never lost. Each `pressed` bit is delivered exactly once.
@@ -366,7 +369,8 @@ most 2); `modifier_ids` (what rewrote it, in order).
 `BEAM` fan `[skill, projectile]`). Both weapons' specs are compiled in every run (the build only enables one, L15).
 The build's modifiers are the owned items' `ItemTable.modifiers`, in pick order. Each base spec goes through
 **`FORM → PATTERN → BEHAVIOUR → PAYLOAD → HOOK → SCALE`**; inside a stage the modifiers run in pick order and each
-one's ops in order; a modifier touches a spec only if the spec carries every tag of its `target` (empty = all).
+one's ops in order (**v0.6.5 WN1: replaced by the wand's left-to-right slot order, §8e**); a modifier touches a
+spec only if the spec carries every tag of its `target` (empty = all).
 Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
 `STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
 spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
@@ -596,6 +600,73 @@ names its ability (`requires_ability`); a card tagged `heat` needs a run with he
 (the items of v0.5's kinds by id, then the `MODIFIER` cards by id: `ModifierCompiler.item_defs`), so a save's item
 codes still name the same cards. **CatchUp.power** counts a slot's card as levels: an ability modifier its level,
 a v0.5 item 1, an M-list card 1, 2 if rare, 3 if legendary.
+
+## 8e. The wand (v0.6.5 WN1)
+
+Design: [`../design/WAND.md`](../design/WAND.md) (owner-approved; W3, W6). Evidence:
+[`../roadmap/v0.6.5/evidence/WAND_1.md`](../roadmap/v0.6.5/evidence/WAND_1.md). The wand is the build's modifier
+slots (`World.mod_slots`, §8c) read left to right; this section replaces §8b's fixed stage order for the compile.
+
+**The compile reads left to right** (`WandCompile`, `src/sim/combat/wand_compile.gd`; `Modifiers.compile_for` builds
+one per world). Each card rewrites the spell built so far, in slot order; inside one card its ops still run in stage
+order (`ModifierTable.Stage`). The readings where an op's meaning depended on v0.6.0's stage sort:
+- a numeric op changes the field as the spell has it at that slot (Big·Split: one big shot whose splits are normal;
+  Split·Big: the splits are big too);
+- a hook's child (a card's own child attack: Split Shot's splits, Ember Core's kill burst) is built where its card
+  sits and compiled by its own card (never its own hook again: lineage) and the cards to its right, never the ones
+  to its left;
+- a second form op layers as before (an `ON_END` copy in the new form), the copy carrying the spell's shape and
+  payload so far but not its hooks, compiled by its card's other ops and the cards to its right; a third form op
+  layers on the attack and on the first layer (the depth guard bounds it);
+- the riders (§8b) still run after the compile: a v0.5 engine the build runs (Ember Edge's burn, the slow) keeps
+  riding the weapon's root attacks whatever the order (a known limit until the old cards migrate, WN5).
+
+**Triggers** (`ModifierOp.Op.TRIGGER`, a trigger card's one op; WAND.md T1–T4) cut the wand. On every spec the
+trigger's target reaches (the four cards target every attack), the trigger ends the spell: the cards to its right
+don't rewrite it, they build a **child spell** filed as an `AttackHook` (id and effect id: the trigger card's;
+damage `WandTable.child_damage_permille` of the hit that set it off). The child starts as a **small copy of the
+basic attack** (`WandTable`, data): on a Gun run the Gun's bolt with its radius × `child_size_permille` and its life
+× `child_range_permille`, else the Blade's first slash with its reach × `child_size_permille`; tags the weapon's plus
+`hook`. Triggers: `ON_HIT` (where a hit lands), `ON_KILL` (where an enemy dies), `ON_END` (where the spell ends: an
+arc's tip, a projectile's end, a burst, a bomb, a ring), `ON_FINISHER` (the Blade's T4: compiled into the combo's
+last step's `ON_HIT`; no other spec gets a child but the cut still ends it) and `ON_CRIT` (the Gun's T4,
+`hook_trigger_gun`: `Attacks` runs it after a landed hit whose `HIT` carried `TAG_CRIT`, read from
+`World.last_hit_crit`, which `Damage.hit` sets as it returns). A trigger reaches every spec built to its left (an
+earlier Split card's splits get the cut too). A second trigger nests once more: the attack at depth 0, its child at
+1, the child's child at 2; a third casts nothing and the cards past it reach nothing. The run-time guard is §8b's:
+depth ≤ 2, proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
+`Attacks.projectile_proc`), the ancestry chain, 256 launches a tick. A spec the trigger's target doesn't reach (the
+moments: the dash, walking, a blink, the body) reads past it, so a dash card right of a trigger still rewrites the
+dash. No randomness is drawn (EI-05).
+
+**The slots grow** (`Wand.slots`): `WandTable.slots_at(World.floor_index)`: 4 on floor 1, 6 after the first boss, 8
+after the second (`data/wand/wand.tres`, starting values; the last entry repeats). A world without
+`World.wand_table` (a lab, the unit worlds) keeps `BuildSlots.SLOTS` = 6. `BuildSlots.full` is "as many cards as the
+wand's slots"; with every slot full a new card opens the Swap (§8c; the answers `PICK_SWAP_BASE + n`, n up to 7). The
+held cards keep their order across floors (the carry). Utility (Blink, Aegis) and stat cards stay outside the wand.
+
+**The reorder is input** (owner W3: "the order that you put them in the wand"; WAND.md rule 4). `InputFrame.pick` =
+`PICK_WAND_MOVE_BASE` (1000) + from × `WAND_MOVE_STRIDE` (16) + to (`InputFrame.wand_move`) moves the card in slot
+`from` to slot `to`; the cards between shift by one. `World.step` applies it first, in any state (a choice or the
+shop open, hit-stop), then the rest of the tick reads a copy of the frame with no pick, so a move never answers a
+choice. A move from or to an empty slot, or to the same slot, changes nothing. The book compiles again on its next
+read (`Modifiers.invalidate`); `mod_slots` is hashed (§8c), so a replay with the same moves is the same run.
+
+**Reads.** `WorldReader.wand()` (`Wand.read`): the weapon (`&"gun"` or `&"blade"`), the slot count, each card in
+slot order (code, id, name key, type, level, `trigger`: -1 or the `AttackSpec.Trigger` it cuts on for this run) and
+the cuts (the trigger slots). `WorldReader.wand_read_back()` (`Wand.describe`, pure): the plain-words read-back as
+translation keys and their arguments (`WAND_READ_*`, the card name keys): "You fire a bolt shaped by Split Shot.
+Each hit casts a small bolt shaped by Ember Core." (`Wand.render(lines, translate)` words it with any translation
+Callable; the Build page renders it, WN2).
+
+**Saves.** `RunSaver.PAYLOAD_VERSION` 4 (reads 2, 3 and 4): `mod_slots` is the slot order the player arranged. A
+version-3 payload's slots are in pick order, which is its wand order as it stands; the slot count comes from the
+floor reached, and a wand holding more cards than that keeps them all (the next new card needs a Swap). A v0.5 carry
+(no slots) migrates as in §8c into the floor reached's slot count. A snapshot round-trips the order with equal
+hashes (`WandTable` and `last_hit_crit` are kept out: loadout and transient).
+
+**CatchUp.power** (§11) reads the wand's cards (`Wand.size`; a trigger card counts 1), whatever their order: a
+reorder never changes P.
 
 ## 9. What presentation receives
 

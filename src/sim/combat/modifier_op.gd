@@ -2,8 +2,8 @@ class_name ModifierOp
 extends RefCounted
 ## v0.6.0 MX1: one compiled ModifierOpDefinition in sim units (its field named as AttackSpec names it). Loadout.
 
-## ModifierOpDefinition.Op, same numbers.
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+## ModifierOpDefinition.Op, same numbers. v0.6.5 WN1: TRIGGER, a wand trigger card's cut (Modifiers).
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }
 
 var op: int = Op.ADD
 ## The stage it runs in (ModifierTable.Stage).
@@ -34,3 +34,6 @@ var effect_id := &""
 var delay_ticks := 0
 var when := 0
 var child_ops: Array[ModifierOp] = []
+## v0.6.5 WN1 (TRIGGER): `trigger` is the cut's trigger (ModifierOpDefinition.Trigger: ON_HIT, ON_KILL, ON_END,
+## ON_FINISHER, ON_CRIT); on a Gun run `trigger_gun` instead when it is not -1.
+var trigger_gun := -1

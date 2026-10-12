@@ -1,6 +1,7 @@
 extends GutTest
-## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §1–§2, §7): the attack specs and their compile. The fixed stage order and
-## pick order inside a stage, target filters, the form-layering rule, the v0.5 riders, the hook recursion guard
+## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md §1–§2, §7): the attack specs and their compile. The slot order (v0.6.5
+## WN1: the wand, left to right; tests/unit/sim/test_wand*.gd prove it), target filters, the form-layering rule,
+## the v0.5 riders, the hook recursion guard
 ## (depth, proc coefficient, ancestry, the per-tick launch cap), the spec digest in the state hash, and a save that
 ## recompiles the specs on load with equal hashes.
 
@@ -111,15 +112,14 @@ func test_without_modifiers_the_specs_are_the_player_tables() -> void:
 	assert_true(b.modifier_ids.is_empty())
 
 
-func test_stages_run_in_the_fixed_order_whatever_the_pick_order() -> void:
+## v0.6.5 WN1: the wand reads left to right; the v0.6.0 stage sort across cards is gone (this test asserted it).
+func test_the_slot_order_runs_across_cards_whatever_their_stage() -> void:
 	var w := _world()
 	var pattern := _mod(&"pattern_first", [], [_num(OP.ADD, STAGE.PATTERN, &"count", 2)])
 	var form := _mod(&"form_second", [], [_form(FORM.BOLT)])
 	var b := Modifiers.compile_for(w, [pattern, form] as Array[ModifierTable])
 	var s := b.spec(&"blade_step_0")
-	assert_eq(
-		s.modifier_ids, PackedStringArray(["form_second", "pattern_first"]), "FORM before PATTERN"
-	)
+	assert_eq(s.modifier_ids, PackedStringArray(["pattern_first", "form_second"]), "slot order")
 	assert_eq([s.form, s.count], [FORM.BOLT, 3])
 
 
@@ -162,7 +162,7 @@ func test_a_target_filter_needs_every_tag() -> void:
 	var skill := b.spec(Modifiers.SKILL)
 	assert_eq(skill.damage, w.player.skill.damage + 1, "Lunge Cleave is melee too")
 	assert_eq(
-		skill.modifier_ids, PackedStringArray(["all", "melee_only"]), "PAYLOAD after BEHAVIOUR"
+		skill.modifier_ids, PackedStringArray(["melee_only", "all"]), "v0.6.5 WN1: slot order"
 	)
 	for id in b.order:
 		var s := b.spec(StringName(id))

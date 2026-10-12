@@ -2,11 +2,12 @@ class_name SwapPanel
 extends Control
 ## The Swap choice (v0.6.0 MX2; owner B7: "you have a swap button for the next you get and you can decide which one
 ## to swap"). While the sim waits on a swap (a new modifier offered with the six slots full; WorldReader.swapping),
-## it shows the incoming card and the six held modifiers, each with its level, plus Skip. It sends the player's
+## it shows the incoming card and the held modifiers, each with its level, plus Skip. It sends the player's
 ## answer as input (`picked` → InputLatch.note_pick → InputFrame.pick: PICK_SWAP_BASE + n replaces slot n,
 ## PICK_SWAP_SKIP skips); it decides nothing (EI-07).
 ## - Mouse: hover focuses a tile, a click answers with it.
-## - Keyboard: 1–6 focus a held modifier, ←/→ (↑/↓) move the focus (Skip is the last), Enter answers, Esc skips.
+## - Keyboard: 1–8 focus a held modifier (v0.6.5 WN1: the wand grows to 8), ←/→ (↑/↓) move the focus (Skip is
+##   the last), Enter answers, Esc skips.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) answers, B (Circle) skips.
 ## It sits over the pick panel and the shop (their input waits while it is open).
 ## v0.6.0 UP: a modal choice, so it wears the menus' Cold glass (MenuStyle): the game blurred and dimmed behind
@@ -16,7 +17,8 @@ extends Control
 signal picked(value: int)
 
 const TILE := Vector2(150, 92)
-const SKIP := 6
+## The Skip tile's index (past the held slots; v0.6.5 WN1: the wand has up to WorldReader.MOD_SLOTS = 8).
+const SKIP := WorldReader.MOD_SLOTS
 
 var input_enabled := true
 var _dim := MenuBackdrop.new()
@@ -212,7 +214,7 @@ func _input(event: InputEvent) -> void:
 	var step := 0
 	if event is InputEventKey and event.pressed:
 		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:
+			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
 				_set_focus(event.physical_keycode - KEY_1)
 			KEY_ENTER, KEY_KP_ENTER:
 				_answer(_focus)

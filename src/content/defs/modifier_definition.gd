@@ -86,6 +86,10 @@ func validate() -> Array[ValidationIssue]:
 	_check_tag_list(issues, "target", target)
 	if ops.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a modifier needs ops"))
+	if is_trigger() and ops.size() != 1:  # v0.6.5 WN1: a trigger card is its cut, nothing else
+		issues.append(
+			ValidationIssue.new(&"trigger", resource_path, "a trigger modifier has its one op only")
+		)
 	for k in ops.size():
 		if ops[k] == null:
 			issues.append(ValidationIssue.new(&"missing", resource_path, "ops[%d] is empty" % k))
@@ -111,7 +115,7 @@ func _check_tag_list(issues: Array[ValidationIssue], what: String, tags: PackedS
 func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) -> void:
 	var where := "ops[%d]" % k
 	var at := o.stage_in(stage)
-	if o.op < ModifierOpDefinition.Op.SET or o.op > ModifierOpDefinition.Op.HOOK:
+	if o.op < ModifierOpDefinition.Op.SET or o.op > ModifierOpDefinition.Op.TRIGGER:
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown op" % where))
 		return
 	if o.is_numeric() and not ModifierOpDefinition.FIELD_STAGE.has(o.field):
@@ -150,9 +154,33 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 				)
 		ModifierOpDefinition.Op.HOOK:
 			_check_hook(issues, where, o)
+		ModifierOpDefinition.Op.TRIGGER:
+			_check_trigger(issues, where, o)
 	if o.op == ModifierOpDefinition.Op.SET_FORM:
 		if o.form < ModifierOpDefinition.Form.ARC or o.form > ModifierOpDefinition.Form.BURST:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
+
+
+## v0.6.5 WN1: the modifier is a wand trigger (its op is TRIGGER).
+func is_trigger() -> bool:
+	for o in ops:
+		if o != null and o.op == ModifierOpDefinition.Op.TRIGGER:
+			return true
+	return false
+
+
+## v0.6.5 WN1: a trigger cuts on one of the wand's triggers (and its Gun trigger, when set, is one too).
+func _check_trigger(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
+	if not int(o.hook_trigger) in ModifierOpDefinition.WAND_TRIGGERS:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "%s: not a wand trigger" % where)
+		)
+	if o.hook_trigger_gun != -1 and not o.hook_trigger_gun in ModifierOpDefinition.WAND_TRIGGERS:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "%s: the Gun's trigger is not a wand trigger" % where
+			)
+		)
 
 
 ## A hook spawns a burst (needs a radius) or a beam that jumps (needs a reach); v0.6.0 MX2 adds the lingering forms:
@@ -249,11 +277,13 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 	var mods := {}
 	for d in defs:
 		if d is ModifierDefinition:
-			mods[d.id] = true
+			mods[d.id] = (d as ModifierDefinition).is_trigger()
 	for d in defs:
 		var names: Array[StringName] = []
+		var trigger_card := false
 		if d is ItemDefinition:
 			names = (d as ItemDefinition).modifiers
+			trigger_card = (d as ItemDefinition).kind == ItemDefinition.Kind.TRIGGER
 		elif d is AbilityDefinition:
 			names = (d as AbilityDefinition).modifiers
 		for id in names:
@@ -261,4 +291,27 @@ static func cross_check(defs: Array[ContentDef]) -> Array[ValidationIssue]:
 				issues.append(
 					ValidationIssue.new(&"unknown_modifier", d.resource_path, "no modifier %s" % id)
 				)
+			elif bool(mods[id]) != trigger_card:  # v0.6.5 WN1: a trigger only on a trigger card
+				(
+					issues
+					. append(
+						(
+							ValidationIssue
+							. new(
+								&"trigger",
+								d.resource_path,
+								(
+									"a trigger card names one trigger modifier, no other card names one (%s)"
+									% id
+								)
+							)
+						)
+					)
+				)
+		if trigger_card and names.size() != 1:
+			issues.append(
+				ValidationIssue.new(
+					&"trigger", d.resource_path, "a trigger card names one modifier"
+				)
+			)
 	return issues

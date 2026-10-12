@@ -72,6 +72,8 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 	for t in w.item_tables:
 		if t.rarity == ItemTable.LEGENDARY:
 			continue  # v0.6.0 MX4: the boss's legendary tier only, never an altar's or a chest's
+		if t.kind == ItemTable.Kind.TRIGGER:
+			continue  # v0.6.5 WN1: the wand's trigger cards join the offers with their pool (WN5)
 		if t.requires_weapon == 0 or (t.requires_weapon & w.player.weapons) != 0:
 			have.append("mod:%s" % t.id)
 	have.sort()

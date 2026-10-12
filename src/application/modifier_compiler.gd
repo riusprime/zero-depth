@@ -83,6 +83,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.effect_id = d.hook_effect
 	o.delay_ticks = SimTick.seconds_to_ticks(d.hook_delay_seconds)  # v0.6.0 MX4
 	o.when = int(d.hook_when)
+	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
@@ -111,13 +112,21 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 
 
 ## v0.6.0 MX4: the item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
-## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order.
+## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
+## then the wand's trigger cards (Kind.TRIGGER) in id order, so every earlier index still names the same card.
 static func item_defs(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
+	var triggers := []
 	for def: ItemDefinition in repo.all_of(&"items"):
-		(cards if def.kind == ItemDefinition.Kind.MODIFIER else old).append(def)
-	return old + cards
+		match def.kind:
+			ItemDefinition.Kind.MODIFIER:
+				cards.append(def)
+			ItemDefinition.Kind.TRIGGER:
+				triggers.append(def)
+			_:
+				old.append(def)
+	return old + cards + triggers
 
 
 ## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a

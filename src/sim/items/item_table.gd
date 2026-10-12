@@ -37,6 +37,7 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
+	TRIGGER,  # v0.6.5 WN1: a wand trigger card (Wand; ItemPool never draws one yet)
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).

@@ -484,6 +484,7 @@ static func _orbiter(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _landed(
 	w: World, spec: AttackSpec, ctx: AttackContext, i: int, at: Vector2, nth: int
 ) -> void:
+	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
 	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
 		if spec.has_tag(&"weapon"):
 			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
@@ -498,6 +499,8 @@ static func _landed(
 	_run(w, spec, AttackSpec.Trigger.ON_HIT, ctx, at, i, nth)
 	if w.actors.dead[i] == 1:
 		_run(w, spec, AttackSpec.Trigger.ON_KILL, ctx, at, i, nth)
+	if crit:  # v0.6.5 WN1: the wand's On Crit (the Gun's T4)
+		_run(w, spec, AttackSpec.Trigger.ON_CRIT, ctx, at, i, nth)
 
 
 ## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0), once per root per target
@@ -641,6 +644,12 @@ static func projectile_effect(spec: AttackSpec, tags: int) -> StringName:
 	return fx
 
 
+## v0.6.5 WN1: the proc coefficient a projectile's hit carries (HIT.proc_pct): 100 at depth 0, halving per hook
+## level of its spec (a trigger's child spell, a split: 50, then 25), as a launched hook attack's hits do.
+static func projectile_proc(spec: AttackSpec) -> int:
+	return 100 if spec == null else maxi(1, 100 >> spec.depth)
+
+
 ## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): its spec's ON_HIT hooks
 ## (v0.6.0 MX2: the projectile's own spec, and its ON_KILL hooks on a kill; MX1 read the Gun bolt's for every player
 ## projectile, v0.5's rule, which stays for a projectile without a spec). A hook with an `every` fires on every Nth
@@ -653,6 +662,8 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	var hooks := spec.hooks_on(AttackSpec.Trigger.ON_HIT)
 	if w.actors.dead[i] == 1:
 		hooks.append_array(spec.hooks_on(AttackSpec.Trigger.ON_KILL))
+	if w.last_hit_crit:  # v0.6.5 WN1: the wand's On Crit (Damage.hit set it for this projectile's hit)
+		hooks.append_array(spec.hooks_on(AttackSpec.Trigger.ON_CRIT))
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]

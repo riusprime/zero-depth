@@ -13,7 +13,9 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## bomb's blast, a ring at its radius, the dash's end); the form-layering rule makes them too (Modifiers: a second
 ## form fires where the first one ends). v0.6.0 MX4: ON_LAUNCH as the attack launches (and the dash's start, a walk
 ## step, a blink, a vent), EVERY_NTH: every Nth launch of the spec launches the child instead.
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }
+## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
+## (WandCompile turns it into the combo's last step's ON_HIT).
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
 ## them are floats.

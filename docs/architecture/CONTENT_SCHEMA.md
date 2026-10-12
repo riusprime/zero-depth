@@ -198,7 +198,8 @@ order: the items of the v0.5 kinds by id, then the `MODIFIER` cards by id (`Modi
 
 ```gdscript
 class_name ModifierDefinition extends ContentDef
-enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed compile order; appended, never renumbered
+enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # appended, never renumbered; v0.6.5 WN1: one card's
+                                                                # own op order (across cards: the wand's slot order)
 @export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
 @export var rarity: Rarity                # COMMON, RARE (v0.6.0 MX4: LEGENDARY)
 @export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
@@ -212,9 +213,10 @@ enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed comp
 
 ```gdscript
 class_name ModifierOpDefinition extends Resource   # a sub-resource of ops
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }   # v0.6.5 WN1: TRIGGER
 enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }   # MX4: WEAPON, a hook's child only
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }   # MX4: the last three
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }   # MX4: ON_END..
+                                                                # EVERY_NTH; v0.6.5 WN1: ON_CRIT, ON_FINISHER
 enum When { ALWAYS, OVERCLOCK }                                         # MX4
 @export var op: Op
 @export var stage: int = -1               # -1: the modifier's stage
@@ -236,6 +238,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 @export var hook_delay_seconds: float     #   MX4: the child waits this long after its trigger (0 = at once)
 @export var hook_when: When               #   MX4: ALWAYS, or only at Overclock
 @export var hook_ops: Array[ModifierOpDefinition]  # MX4: shape the child before the build compiles it (no HOOK, no SET_FORM)
+@export var hook_trigger_gun: int = -1    # v0.6.5 WN1 (TRIGGER): the trigger on a Gun run, when it differs (-1: same)
 ```
 
 - **Fields and stages** (`ModifierOpDefinition.FIELD_STAGE`): PATTERN `count`, `spread_degrees`,
@@ -270,6 +273,34 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   51 modifiers in all. Each card's ops, target and numbers are the table in
   [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md); every number
   is a starting value.
+- **v0.6.5 WN1: the wand** (design [`../design/WAND.md`](../design/WAND.md); sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8e). The compile reads the slots left to right; a card's own ops keep
+  their stage order. **Triggers:** a modifier whose one op is `TRIGGER` (stage HOOK) is a trigger: `hook_trigger` is
+  one of `ON_HIT`, `ON_KILL`, `ON_END`, `ON_FINISHER`, `ON_CRIT` (`ModifierOpDefinition.WAND_TRIGGERS`), and
+  `hook_trigger_gun` (-1, or one of those) the trigger on a Gun run. Validation (`trigger`, `range`): a trigger
+  modifier has its one op only; a wand trigger; only a trigger card (`ItemDefinition.Kind.TRIGGER`, 32, appended)
+  names a trigger modifier, and it names exactly one (`ModifierDefinition.cross_check`). Shipped (placeholder names
+  and looks until WN5): `trigger_on_hit` (On Hit / Al Impactar), `trigger_on_kill` (On Kill / Al Matar),
+  `trigger_on_end` (On End / Al Terminar), `trigger_on_finisher` (On Finisher / On Crit; Al Rematar / Al Crítico:
+  `ON_FINISHER`, the Gun's `ON_CRIT`); each an item of kind `TRIGGER` tagged `trigger` (a new item tag), family
+  `time` (silver, a placeholder frame), common. Trigger cards are never offered yet (`ItemPool` skips the kind; WN5
+  opens their pool); item indices
+  put them after the `MODIFIER` cards (`ModifierCompiler.item_defs`: v0.5 kinds by id, `MODIFIER` by id, `TRIGGER`
+  by id), so every earlier index names the same card. 55 modifiers, 67 items.
+- **v0.6.5 WN1: `WandDefinition`** (category `wand`, `data/wand/wand.tres`, its own file so the dev panel's tuning
+  data merges beside it; compiled by `WandCompiler` into `WandTable`, `World.wand_table`):
+
+  ```gdscript
+  class_name WandDefinition extends ContentDef
+  const MAX_SLOTS := 8
+  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats)
+  @export var child_size_permille := 600                       # a trigger's child spell: the basic attack's size (a
+  @export var child_range_permille := 600                      #   bolt's radius, a slash's reach), a bolt's flight
+  @export var child_damage_permille := 500                     #   and the share of the hit that set it off
+  ```
+
+  Validation: `slots_per_floor` 1..64 entries, each 1..`MAX_SLOTS` and never lower than the one before
+  (`table_size`, `range`, `table_order`); the three shares 1..10000 (`range`). Every number is a starting value.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,

@@ -1,6 +1,7 @@
 class_name BuildHud
 extends Control
-## The build at a glance (v0.6.0 MX2; owner B7): the weapon, the utility pick and the six modifier slot pips, a
+## The build at a glance (v0.6.0 MX2; owner B7): the weapon, the utility pick and the modifier slot pips (v0.6.5 WN1:
+## as many as the wand has now, 4 → 6 → 8), a
 ## small row above the ability row. A filled pip wears its card family's frame colour (CardFrames) with the card's
 ## level on it (an attack item: no number); an empty pip is a dim outline. Minimal on purpose (Step UI restyles the
 ## HUD); reads WorldReader only (EI-07).
@@ -66,9 +67,12 @@ func sync(reader: WorldReader) -> void:
 	var util := reader.utility_id()
 	_utility.text = "· %s" % tr(names[util]) if util != &"" and names.has(util) else ""
 	_utility.visible = _utility.text != ""
-	var slots: Array = reader.build()["slots"]
+	var b := reader.build()
+	var slots: Array = b["slots"]
 	_filled = mini(slots.size(), _pips.size())
+	var shown := maxi(int(b["max"]), slots.size())  # v0.6.5 WN1: the wand's slots now (4 → 6 → 8)
 	for k in _pips.size():
+		_pips[k].visible = k < shown
 		var box := StyleBoxFlat.new()
 		box.set_border_width_all(1)
 		if k < slots.size():

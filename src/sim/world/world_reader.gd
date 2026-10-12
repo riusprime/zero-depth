@@ -151,8 +151,18 @@ const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
 const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
-## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values.
-const MOD_SLOTS := BuildSlots.SLOTS
+## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values. v0.6.5 WN1: the most slots the
+## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
+## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
+const MOD_SLOTS := Wand.MAX_SLOTS
+const PICK_WAND_MOVE_BASE := InputFrame.PICK_WAND_MOVE_BASE
+const WAND_MOVE_STRIDE := InputFrame.WAND_MOVE_STRIDE
+## v0.6.5 WN1: the triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).
+const WAND_ON_HIT := AttackSpec.Trigger.ON_HIT
+const WAND_ON_KILL := AttackSpec.Trigger.ON_KILL
+const WAND_ON_END := AttackSpec.Trigger.ON_END
+const WAND_ON_FINISHER := AttackSpec.Trigger.ON_FINISHER
+const WAND_ON_CRIT := AttackSpec.Trigger.ON_CRIT
 const PICK_SWAP_BASE := InputFrame.PICK_SWAP_BASE
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
@@ -1704,6 +1714,18 @@ func combo_is_ability(combo_index: int) -> bool:
 ## slot count (max), and the pending swap's card (swap_code, -1 for none) and source.
 func build() -> Dictionary:
 	return BuildSlots.read(_w)
+
+
+## v0.6.5 WN1 (Wand.read): the wand in slot order: the weapon (&"gun" / &"blade"), the slot count, each card (code,
+## id, name_key, type, level, trigger: -1 or the AttackSpec.Trigger it cuts on) and the cuts (the trigger slots).
+func wand() -> Dictionary:
+	return Wand.read(_w)
+
+
+## v0.6.5 WN1 (Wand.describe): the wand's plain-words read-back as translation keys and their arguments (the Build
+## page renders it, WN2).
+func wand_read_back() -> Array[Dictionary]:
+	return Wand.describe(Wand.read(_w))
 
 
 ## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).

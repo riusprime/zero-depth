@@ -57,6 +57,7 @@ static func build_floor(run: RunState) -> World:
 	)
 	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
 	w.set_boss_tables(bosses)
+	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main

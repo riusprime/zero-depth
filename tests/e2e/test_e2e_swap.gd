@@ -1,13 +1,11 @@
 extends GutTest
 ## v0.6.0 MX2 (owner B7: "if you don't like one you have a swap button for the next you get and you can decide which
-## one to swap"): through main.tscn and real input only. The dev panel (real clicks) fills the six modifier slots
-## with the six ability modifiers, then grants an attack item: the Swap panel opens over the play. The player picks
-## the held modifier it replaces with the keyboard (1–6, Enter), the mouse (a click) or the pad (d-pad, A), or skips
-## (Esc, B). The HUD's six pips follow.
+## one to swap"): through main.tscn and real input only. The dev panel (real clicks) fills the wand's slots (v0.6.5
+## WN1: four on floor 1, owner W6) with four ability modifiers, then grants an attack item: the Swap panel opens over
+## the play. The player picks the held modifier it replaces with the keyboard (1–8, Enter), the mouse (a click) or
+## the pad (d-pad, A), or skips (Esc, B). The HUD's four pips follow.
 
-const SIX: Array = [
-	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
-]
+const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
 
 
 func _click(e: E2e, main: Main, button: String) -> void:
@@ -15,31 +13,31 @@ func _click(e: E2e, main: Main, button: String) -> void:
 	await e.click_at(b.get_global_rect().get_center())
 
 
-## Boots a Blade run, fills the six slots and grants an attack item: returns with the Swap panel open.
+## Boots a Blade run, fills floor 1's four slots and grants an attack item: returns with the Swap panel open.
 func _to_swap(e: E2e) -> Main:
 	var main: Main = await e.boot()
 	await e.start_from_menu()
 	var w := e.world()
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
-	for id: StringName in SIX:
+	for id: StringName in FOUR:
 		var guard := 0
 		while w.ability_tables[main.driver.debug.ability_choice].id != id and guard < 20:
 			await _click(e, main, "NextAbility")
 			guard += 1
 		await _click(e, main, "GrantAbility")
 		await e.frames(2)
-	assert_eq(w.mod_slots.size(), 6, "the six ability modifiers fill the slots")
+	assert_eq(w.mod_slots.size(), 4, "four ability modifiers fill floor 1's wand")
 	var hud: Hud = main.get_node("UI/Hud")
 	await e.frames(2)
-	assert_eq(hud.build_hud.filled_pips(), 6, "six pips on the HUD")
+	assert_eq(hud.build_hud.filled_pips(), 4, "four pips on the HUD")
 	await _click(e, main, "GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)  # the dev panel closes; the swap waits
 	await e.frames(2)
-	assert_true(hud.swap.is_open(), "a seventh modifier: the Swap panel")
+	assert_true(hud.swap.is_open(), "a fifth modifier: the Swap panel")
 	assert_true(BuildSlots.swapping(w))
-	assert_eq(hud.swap.slot_count(), 6)
+	assert_eq(hud.swap.slot_count(), 4)
 	return main
 
 
@@ -60,7 +58,7 @@ func test_swap_with_the_keyboard() -> void:
 	assert_false(hud.swap.is_open(), "answered")
 	assert_eq(w.mod_slots[2], code, "the new modifier took slot 3")
 	assert_false(BuildSlots.held(w, gone), "the replaced one left the build")
-	assert_eq(hud.build_hud.filled_pips(), 6)
+	assert_eq(hud.build_hud.filled_pips(), 4)
 	assert_true(Modifiers.book(w).modifier_ids.size() > 0, "the build recompiled with it")
 
 
@@ -70,10 +68,10 @@ func test_swap_with_the_mouse() -> void:
 	var w := e.world()
 	var hud: Hud = main.get_node("UI/Hud")
 	var code := w.swap_code
-	await e.click_at(hud.swap.tile(4).get_global_rect().get_center())
+	await e.click_at(hud.swap.tile(3).get_global_rect().get_center())
 	await e.frames(3)
 	assert_false(hud.swap.is_open())
-	assert_eq(w.mod_slots[4], code, "a click on slot 5 swapped it")
+	assert_eq(w.mod_slots[3], code, "a click on slot 4 swapped it")
 
 
 func test_swap_with_the_pad_and_skip() -> void:

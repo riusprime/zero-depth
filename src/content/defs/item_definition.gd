@@ -37,6 +37,7 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
+	TRIGGER,  # v0.6.5 WN1: a wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
@@ -64,6 +65,7 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.OVERCLOCKED_DRONE,
 	Kind.AFTERIMAGE,
 	Kind.MODIFIER,
+	Kind.TRIGGER,  # v0.6.5 WN1
 ]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
@@ -82,6 +84,7 @@ const TAGS: Array[StringName] = [
 	&"heat",
 	&"ability",
 	&"venom",
+	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
 ]
 
 @export var kind := Kind.LONG_EDGE

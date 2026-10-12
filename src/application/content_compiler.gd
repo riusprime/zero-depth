@@ -434,6 +434,7 @@ static func compile_item(def: ItemDefinition, repo: ContentRepository = null) ->
 		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
 		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
 		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
+		ItemDefinition.Kind.TRIGGER: ItemTable.Kind.TRIGGER,  # v0.6.5 WN1
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
