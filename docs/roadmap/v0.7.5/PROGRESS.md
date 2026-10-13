@@ -135,3 +135,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   the EF agent, reproduced on the base `81a07b5`): `test_e2e_dev_master_panel.gd` "test_f10_edit_restart_floor" fails
   when it runs after `test_e2e_difficulty_curve.gd` in one process (GitHub's alphabetical e2e order runs it first);
   a test-isolation leak to fix.
+- 2026-10-13: the dev-panel e2e order leak does not reproduce on `6922e18` with the two files alone in either order
+  (difficulty_curve then dev_master_panel, forced by file names in one GUT process: 3/3). The EF agent saw it inside a
+  longer 18-file e2e run; left open until a run shows it again.
