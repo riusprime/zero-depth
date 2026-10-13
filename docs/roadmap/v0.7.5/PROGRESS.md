@@ -153,3 +153,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   and a boss's fireballs carry their attack so the death recap names the pattern that killed. `test_readable_cause.gd`
   added to `scripts/ci/seams.sh`. Runs in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md) "Fix after the merge".
   Goldens: none changed (the cause column is hashed only once a boss's fireball has flown). Not pushed.
+- 2026-10-13: GitHub `gut (sim_b)` red on `21a8ea1` (`test_readable_cause`: a Web Spiral shot fired after an 11-tick
+  telegraph; the recap named CAUSE_HIVE_SPIRAL for a CAUSE_HIVE_BLOOM kill). Fixed (`13ded33`, merged `96bb7ea`):
+  every pattern shows a cast telegraph (no ground mark) for its windup and firing; a boss shot carries its attack
+  (`ProjectileStore.cause`). Seams on `96bb7ea` then failed 4 old-save tests (the new column not in
+  `WorldSnapshot.ADDED_SINCE_V05`); fixed (`c238045`). Local re-runs: the sim_b shard `Tests 439`, `Passing Tests
+  439`; seams on `c238045` green. `test_readable_cause.gd` joins `scripts/ci/seams.sh`. Pushed.
