@@ -131,3 +131,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   conflicted, both kept). Its owner line was numbered N19 like the outline line, so it is N20 here (PLAN, PROGRESS,
   docs/tools/PLAYGROUND.md and its code comments). Playground tests on the merge 29/29.
 - 2026-10-13: EF (agent, branch `v075-ef` from `81a07b5`): the three fireball enemies (`data/bullet_patterns/*` x4, `EnemyTable.patterns`, `EnemyAi` cast/lob telegraphs with `ground: false`, FireballViews looks + the lob); the readings are in PLAN "EF"; evidence [`evidence/ENEMY_FIREBALLS.md`](evidence/ENEMY_FIREBALLS.md). Run by the agent: lint; content + arch + golden + application + debug 219/219; 16 sim files incl. the every-card soak 249/249; 14 presentation files 90/90; 18 e2e files 28/29, the one failure `test_e2e_dev_master_panel.gd` after `test_e2e_difficulty_curve.gd` in one process, the same on the base `81a07b5` (pre-existing, order-dependent; passes alone). Not run: the full suite, seams, bot sims. Not pushed.
+- 2026-10-13: EF merged (`cceb3c9`). Seams on it (`bash scripts/ci/seams.sh`, clean worktree) green. Open (found by
+  the EF agent, reproduced on the base `81a07b5`): `test_e2e_dev_master_panel.gd` "test_f10_edit_restart_floor" fails
+  when it runs after `test_e2e_difficulty_curve.gd` in one process (GitHub's alphabetical e2e order runs it first);
+  a test-isolation leak to fix.
