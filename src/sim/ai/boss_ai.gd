@@ -748,7 +748,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"shape": &"disc",
 					"center": d[0],
 					"radius": d[1],
-					"progress": clampi(a.state_t[i] * 1000 / atk.erupt_ticks, 0, 1000),
+					"progress": clampi(a.state_t[i] * 1000 / maxi(1, atk.erupt_ticks), 0, 1000),  # audit G-20
 					"move": atk.move
 				}
 			return {}
