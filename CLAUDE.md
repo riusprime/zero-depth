@@ -113,7 +113,7 @@ Supersedes the "one full run per wave" rule (owner, 2026-10-09).
 godot --headless --path . --editor --import --quit                     # import (after clone / new class_name)
 bash scripts/verify.sh                                                 # import + full suite + CI guards
 bash scripts/ci/seams.sh                                               # the lead's check after a merge (no full suite locally)
-bash scripts/ci/gut_shard.sh <sim_a|sim_b|e2e|presentation|rest>       # one shard of the full suite, as GitHub runs it
+bash scripts/ci/gut_shard.sh <sim_a|sim_b|sim_c|e2e|presentation|rest> # one shard of the full suite, as GitHub runs it
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule

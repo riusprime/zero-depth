@@ -2,19 +2,31 @@
 # Runs one shard of the GUT suite, so GitHub can run the suite as parallel jobs (owner, 2026-10-13: the full run
 # "takes a lot of time"; CLAUDE.md "Testing before a push"). Every test_*.gd under tests/ belongs to exactly one
 # shard; `--check` proves it.
-# Usage: bash scripts/ci/gut_shard.sh <sim_a|sim_b|e2e|presentation|rest>   (writes build/gut_<shard>.log)
+# Usage: bash scripts/ci/gut_shard.sh <sim_a|sim_b|sim_c|e2e|presentation|rest>   (writes build/gut_<shard>.log)
 #        bash scripts/ci/gut_shard.sh --check                                   (every test file in exactly one shard)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
-SHARDS=(sim_a sim_b e2e presentation rest)
+SHARDS=(sim_a sim_b sim_c e2e presentation rest)
+# The slowest sim files get a shard of their own (the 2026-10-13 run: sim_b took 68 of its 71 minutes; local
+# JUnit times: these five 2,074 s, the rest of i-z 2,086 s, a-h 2,122 s). Rebalance from build/gut.xml when one
+# shard runs much longer than the others.
+HEAVY_SIM=(test_modifier_smoke_mx4.gd test_modifier_smoke.gd test_wand_smoke.gd test_wand_migration.gd
+	test_starglow_patches.gd)
+
+_not_heavy() {
+	local pat
+	pat="$(printf '/%s$|' "${HEAVY_SIM[@]}")"
+	grep -Ev "${pat%|}"
+}
 
 # The test scripts of one shard, one res:// path per line.
 files_of() {
 	case "$1" in
-	sim_a) find tests/unit/sim -maxdepth 1 -name 'test_[a-h]*.gd' ;;
-	sim_b) find tests/unit/sim -maxdepth 1 -name 'test_*.gd' ! -name 'test_[a-h]*.gd' ;;
+	sim_a) find tests/unit/sim -maxdepth 1 -name 'test_[a-h]*.gd' | _not_heavy ;;
+	sim_b) find tests/unit/sim -maxdepth 1 -name 'test_*.gd' ! -name 'test_[a-h]*.gd' | _not_heavy ;;
+	sim_c) for f in "${HEAVY_SIM[@]}"; do echo "tests/unit/sim/$f"; done ;;
 	e2e) find tests/e2e -name 'test_*.gd' ;;
 	presentation) find tests/unit/presentation -name 'test_*.gd' ;;
 	rest)

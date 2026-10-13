@@ -85,7 +85,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [ sim_a, sim_b, e2e, presentation, rest ]
+        shard: [ sim_a, sim_b, sim_c, e2e, presentation, rest ]
     steps:
       - uses: actions/checkout@v4
 
