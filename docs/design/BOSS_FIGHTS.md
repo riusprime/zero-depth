@@ -1,4 +1,4 @@
-# Boss fights and enemy shots: dodge-first (design, v0.7.5 BF; G1 for the owner)
+# Boss fights and enemy shots: dodge-first (design, v0.7.5 BF; status: approved by the owner 2026-10-13, "Approve all")
 
 Owner, 2026-10-13 (verbatim): "let's also change how boss fights are, they will have more HP, and their attacks will
 be most oriented in dodging, the circles on the ground and the attacks they proyect should now follow exact position
