@@ -3,64 +3,6 @@ extends RefCounted
 ## v0.6.0 MX1 (docs/design/MODIFIER_ENGINE.md; CONTENT_SCHEMA "Modifiers"): ModifierDefinition → ModifierTable in sim
 ## units. ContentCompiler.compile_item compiles an item's modifiers with it.
 
-## Content field (ModifierOpDefinition.FIELD_STAGE) -> the AttackSpec field it changes, and how its value converts
-## to sim units: "" as is, "ticks" seconds to ticks, "half_turns" a full width in degrees to a half width in 1/4096
-## turns, "turns" degrees to 1/4096 turns, "per_tick" metres per second to metres per tick.
-const MODIFIER_FIELDS := {
-	&"count": [&"count", ""],
-	&"spread_degrees": [&"spread", "turns"],
-	&"repeat_delay_seconds": [&"repeat_delay_ticks", "ticks"],
-	&"repeat_damage_permille": [&"repeat_damage_permille", ""],
-	&"bounces": [&"bounces", ""],
-	&"pierce": [&"pierce", ""],
-	&"damage": [&"damage", ""],
-	&"damage_permille": [&"damage_permille", ""],
-	&"nth_every": [&"nth_every", ""],
-	&"nth_damage_permille": [&"nth_damage_permille", ""],
-	&"hitstop_seconds": [&"hitstop_ticks", "ticks"],
-	&"arc_degrees": [&"half_arc", "half_turns"],
-	&"reach_m": [&"reach_m", ""],
-	&"reach_bonus_permille": [&"reach_bonus_permille", ""],
-	&"radius_m": [&"radius_m", ""],
-	&"speed_mps": [&"speed", "per_tick"],
-	&"life_seconds": [&"life_ticks", "ticks"],
-	&"period_seconds": [&"period_ticks", "ticks"],
-	&"rate_bonus_permille": [&"rate_bonus_permille", ""],
-	# v0.6.0 MX4 (AttackSpec names each; "turn_rate" degrees per second to 1/4096 turns per tick; "range" is the
-	# virtual field Modifiers scales per form).
-	&"mirror": [&"mirror", ""],
-	&"directions": [&"directions", ""],
-	&"back_damage_permille": [&"back_permille", ""],
-	&"aim_offset_degrees": [&"aim_offset", "turns"],
-	&"chains": [&"chains", ""],
-	&"homing_dps": [&"homing", "turn_rate"],
-	&"returns": [&"returns", ""],
-	&"orbit_seconds": [&"orbit_ticks", "ticks"],
-	&"intangible": [&"intangible", ""],
-	&"pull_m": [&"pull_m", ""],
-	&"barrier_seconds": [&"barrier_ticks", "ticks"],
-	&"charge_seconds": [&"charge_ticks", "ticks"],
-	&"charge_permille": [&"charge_permille", ""],
-	&"resonance_permille": [&"resonance_permille", ""],
-	&"heat_rate_permille": [&"heat_rate_permille", ""],
-	&"range": [&"range", ""],
-	# v0.6.5 WN3 (the Gun pool; AttackSpec names each)
-	&"twin": [&"twin", ""],
-	&"spiral_degrees": [&"spiral", "turns"],
-	&"mine_seconds": [&"mine_ticks", "ticks"],
-	&"hold_seconds": [&"hold_ticks", "ticks"],
-	&"hold_permille": [&"hold_permille", ""],
-	# v0.6.5 WN4 (the Blade pool; AttackSpec names each)
-	&"motion": [&"motion", ""],
-	&"echo_mirror": [&"echo_mirror", ""],
-	&"step_m": [&"step_m", ""],
-	&"parry": [&"parry", ""],
-	&"counter_seconds": [&"counter_ticks", "ticks"],
-	&"counter_permille": [&"counter_permille", ""],
-	&"carry": [&"carry", ""],
-	&"knockback_m": [&"knockback_m", ""],
-	&"line_m": [&"line_m", ""],
-}
 ## v0.6.5 WN3/WN4: the wand pools in the order they shipped (ItemDefinition.requires_weapon): their cards take item
 ## indices pool by pool, so a later pool never moves an earlier one's indices. A new pool appends its weapon here.
 const WAND_POOL_ORDER: Array[StringName] = [&"gun", &"blade", &""]
@@ -110,9 +52,9 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
 	if d.op == ModifierOpDefinition.Op.HOOK:
 		o.per_level = d.per_level  # v0.6.5 WN3: per mille of the hook's damage share
-	if d.is_numeric() and MODIFIER_FIELDS.has(d.field):
-		var map: Array = MODIFIER_FIELDS[d.field]
-		o.field = map[0]
+	if d.is_numeric() and ModifierOpDefinition.FIELD_STAGE.has(d.field):
+		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
+		o.field = map[1]
 		o.value = _units(d, map, d.value)
 		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
@@ -124,7 +66,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 	var out := v
 	if d.op != ModifierOpDefinition.Op.MUL_PERMILLE:
-		match String(map[1]):
+		match String(map[2]):
 			"ticks":
 				out = SimTick.seconds_to_ticks(v)
 			"half_turns":
@@ -135,7 +77,7 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 				out = v / SimTick.TICKS_PER_SECOND
 			"turn_rate":
 				out = ContentCompiler.degrees_to_units(v) / float(SimTick.TICKS_PER_SECOND)
-	if map[0] in AttackSpec.INT_FIELDS:
+	if map[1] in AttackSpec.INT_FIELDS:
 		out = roundi(out)
 	return out
 
