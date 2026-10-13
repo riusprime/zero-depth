@@ -161,6 +161,7 @@ const ADDED_SINCE_V05 := {
 		&"spiral",  # v0.6.5 WN3 (GunForms; padded with "none")
 		&"mine_t",
 		&"look",  # v0.7.5 BF1 (fireball looks; empty = none, as a store that never held one)
+		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	&"ModifierState":
