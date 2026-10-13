@@ -23,6 +23,9 @@ const CRYSTALS := 4
 const ORBS := 3
 const FX_FRAMES := 16
 
+## P-9: the pieces the effects layer draws instead (hidden under the new look).
+const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
+
 var actors: ActorViews
 ## The new look's effects layer (null: the boxes and rings as before).
 var vfx: VfxLayer
@@ -155,6 +158,29 @@ func _build(node: Node3D, r: float) -> Dictionary:
 
 func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 	var t := _frame / 60.0
+	if vfx == null:
+		_update_pieces(v, on, r, t)
+	else:  # the new look draws these in the effects layer (_draw_vfx); P-9: nothing to lay out, only hidden
+		for kind: String in VFX_DRAWN:
+			for p: Node3D in v[kind]:
+				p.visible = false
+		(v["shell"] as Node3D).visible = false
+	var shock: int = on.get(&"shock", 0)
+	var shock_max: int = mini(on.get(&"shock_max", PIPS), PIPS)
+	for k in PIPS:
+		var p: MeshInstance3D = v["pips"][k]
+		p.visible = shock > 0 and k < shock_max
+		p.material_override = _mats[&"pip_on" if k < shock else &"pip_off"]
+	var charges: int = on.get(&"guard", 0)
+	for k in ORBS:
+		var o: Node3D = v["orbs"][k]
+		o.visible = k < charges
+		var a := t * 3.0 + TAU * k / ORBS
+		o.position = Vector3(cos(a) * (r + 0.35), 0.7, sin(a) * (r + 0.35))
+
+
+## The old look's embers, drips, ice crystals, shell and shock sparks (without the effects layer).
+func _update_pieces(v: Dictionary, on: Dictionary, r: float, t: float) -> void:
 	var burn: int = on.get(&"burn", 0)
 	for k in EMBERS:
 		var e: Node3D = v["embers"][k]
@@ -175,28 +201,12 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		(v["crystals"][k] as Node3D).visible = frozen or k < frost
 	(v["shell"] as Node3D).visible = frozen
 	var shock: int = on.get(&"shock", 0)
-	var shock_max: int = mini(on.get(&"shock_max", PIPS), PIPS)
-	for k in PIPS:
-		var p: MeshInstance3D = v["pips"][k]
-		p.visible = shock > 0 and k < shock_max
-		p.material_override = _mats[&"pip_on" if k < shock else &"pip_off"]
 	for k in 2:
 		var s: Node3D = v["sparks"][k]
 		s.visible = shock > 0 and (_frame / 3 + k) % 2 == 0
 		var a := (_frame / 3) * 1.7 + k * 3.1
 		s.position = Vector3(cos(a) * r * 0.6, 0.4 + 0.3 * k, sin(a) * r * 0.6)
 		s.rotation = Vector3(0.4 * k, a, 0.6)
-	if vfx != null:  # the new look draws these in the effects layer (_draw_vfx)
-		for kind: String in ["embers", "drips", "crystals", "sparks"]:
-			for p: Node3D in v[kind]:
-				p.visible = false
-		(v["shell"] as Node3D).visible = false
-	var charges: int = on.get(&"guard", 0)
-	for k in ORBS:
-		var o: Node3D = v["orbs"][k]
-		o.visible = k < charges
-		var a := t * 3.0 + TAU * k / ORBS
-		o.position = Vector3(cos(a) * (r + 0.35), 0.7, sin(a) * (r + 0.35))
 
 
 ## The number of actors showing at least one status piece (tests read it).
