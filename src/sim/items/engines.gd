@@ -569,10 +569,12 @@ static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
 static func plasma_arc(w: World, i: int, root: int) -> void:
 	var a := w.actors
 	var c := combo(w, ComboTable.Effect.PLASMA_ARC)
+	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
+	if to.is_empty():
+		return  # nobody in reach: the chain keeps its arc for a later shock (audit G-5)
 	if not w.proc_ledger.try_mark(root, CODE_PLASMA, a.ids[i], w.tick):
 		return
-	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
-	if to.is_empty() or not begin(w, EFFECT_PLASMA_ARC):
+	if not begin(w, EFFECT_PLASMA_ARC):
 		return
 	var j := to[0]
 	var pid := a.ids[0]
