@@ -174,7 +174,8 @@ four short heavy legs. Their flood telegraphs stand drawn while active: the Warl
 each lane, the Foundry's as a hot orange core with cross bars. Every body piece is outlined and flashable
 (`ActorViews.flashable`); glows change energy only. A model file `assets/models/bosses/<warlord|hive_lens|foundry>.glb`
 replaces a code body (whole-body motion until rigged). v0.5.5 LK (A6): the model request in the new style, with an image
-prompt and a 3D model prompt per boss, is [`requests/v0.5.5_bosses_2_models.md`](requests/v0.5.5_bosses_2_models.md).
+prompt and a 3D model prompt per boss, is [`requests/v0.5.5_bosses_2_models.md`](requests/v0.5.5_bosses_2_models.md). Its v0.7.5 update (the Embers light, the crystal-shard parts, biome-tinted greys) is
+[`requests/v0.7.5_bosses_2_models.md`](requests/v0.7.5_bosses_2_models.md).
 
 **Heat-coloured attacks (owner, v0.5.5 A2).** The hero's attacks (the blade and its trail, the bolts, the Lunge
 Cleave and the Scatter Blast) wear the Overclock meter's tier colour (`HeatLooks.attack_color`): their own colour

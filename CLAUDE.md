@@ -89,7 +89,7 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, ~15–20 min), then push. **No local full suite** |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 10 min: 260 tests in 619 s on 2026-10-13), then push. **No local full suite** |
 
 **The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
 change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
