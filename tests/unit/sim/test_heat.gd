@@ -183,6 +183,25 @@ func test_hot_reaches_farther_and_bolts_pierce_one_enemy() -> void:
 	assert_eq(_events(c, SimEvent.Kind.HIT).size(), 1, "a cool bolt stops at the first enemy")
 
 
+## Audit G-2: the hit that tips Hot doesn't stretch the same swing; the fan is measured once, before its hits.
+func test_the_swing_that_tips_hot_keeps_its_reach() -> void:
+	var probe := _world([], [])
+	var base := ItemEffects.swing_reach_m(probe, 0)
+	var far := probe.player.radius_m + 0.35 + base * 1.1  # inside a Hot reach, outside a cool one
+	var w := _world([], [Vector2(1.2, 0), Vector2(far, 0)])
+	w.heat.milli = 37500
+	w.heat.idle = 0
+	_swing(w)
+	assert_eq(Heat.tier_of(w), Heat.TIER_HOT, "the first hit tipped Hot")
+	var hit := []
+	for e in _events(w, SimEvent.Kind.HIT):
+		hit.append(e.target_id)
+	assert_eq(hit, [w.actors.ids[1]], "only the near enemy; the far one was outside the drawn fan")
+	var cool := _world([], [Vector2(1.2, 0), Vector2(far, 0)])
+	_swing(cool)
+	assert_eq(_events(cool, SimEvent.Kind.HIT).size(), 1, "a cool swing doesn't reach it either")
+
+
 func test_overclock_hits_harder_leaves_embers_and_feeds_the_fire_engine() -> void:
 	var w := _world([&"cinder_shot"])
 	w.heat.milli = 80 * M

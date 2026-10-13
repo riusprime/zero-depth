@@ -217,10 +217,15 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var landed := false
 	var hits := 0
+	# Measured once (audit G-2): a hit that tips Hot mid-loop must not stretch this swing for the actors after it.
+	var reach := arc_reach_m(w, spec)
+	var edge := w.player.radius_m
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
+		if not AttackShapes.arc_touches(
+			ctx.origin, edge, ctx.angle, spec.half_arc, reach, a.pos(i), a.radius[i]
+		):
 			continue
 		var before := w.hit_spec
 		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
