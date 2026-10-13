@@ -52,14 +52,6 @@ func region_at(p: Vector2) -> int:
 	return region[c.y * size.x + c.x]
 
 
-func free_cells() -> int:
-	var n := 0
-	for b in blocked:
-		if b == 0:
-			n += 1
-	return n
-
-
 func _label() -> void:
 	var sx := size.x
 	var sy := size.y

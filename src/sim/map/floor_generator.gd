@@ -576,26 +576,13 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 	if RoomThemes.is_themed(template):
 		_furnish_themed(f, p, rng, room, walls)
 		return
-	if template == FloorLayout.Template.SCATTER:
-		var cells := f.room_cell_count(room)
-		var count := mini(
-			p.scatter_cap,
-			rng.range_int(cells * p.scatter_per_cell_min, cells * p.scatter_per_cell_max)
-		)
-		for s in count:
-			for attempt in p.slab_attempts:
-				var slab := _random_slab(f.rooms[room], p, rng)
-				if _group_fits(f, p, room, walls, [slab]):
-					walls.append(slab)
-					pieces.append(slab)
-					break
-	else:
-		var hall := room == f.start_room
-		for group: Array in RoomInterior.groups(template, f.rooms[room], rng, p, hall):
-			if _group_fits(f, p, room, walls, group):
-				for piece: Obb in group:
-					walls.append(piece)
-					pieces.append(piece)
+	# SCATTER is a boss arena's only (BossRoomBuilder): RoomInterior.pick never draws it for a room (audit G-8).
+	var hall := room == f.start_room
+	for group: Array in RoomInterior.groups(template, f.rooms[room], rng, p, hall):
+		if _group_fits(f, p, room, walls, group):
+			for piece: Obb in group:
+				walls.append(piece)
+				pieces.append(piece)
 	f.walls.append_array(pieces)
 
 
@@ -673,14 +660,6 @@ static func _rect_gap(a: Rect2, b: Rect2) -> float:
 	if dx < -0.005 and dy < -0.005:
 		return -1.0
 	return Kin.length(Vector2(maxf(dx, 0.0), maxf(dy, 0.0)))
-
-
-static func _random_slab(r: Rect2, p: FloorParams, rng: RngStream) -> Obb:
-	var half_len := rng.range_int(_cm(p.slab_half_len_min), _cm(p.slab_half_len_max)) / 100.0
-	var angle := rng.range_int(0, 7) * 512
-	var cx := rng.range_int(_cm(r.position.x + 1.0), _cm(r.end.x - 1.0)) / 100.0
-	var cy := rng.range_int(_cm(r.position.y + 1.0), _cm(r.end.y - 1.0)) / 100.0
-	return Obb.make(Vector2(cx, cy), Vector2(half_len, p.slab_half_thickness), angle)
 
 
 # --- spots ---

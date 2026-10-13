@@ -48,8 +48,8 @@ var extra_links_max := 2
 ## Interior templates: the chance (permille) that a template is mirrored or turned a quarter turn where that
 ## changes it (v0.3.0 L2; RoomInterior).
 var template_flip_permille := 500
-## Scattered-slab template: slabs per cell, inclusive range, capped; their shape. Angles are multiples of 512.
-var scatter_per_cell_min := 1
+## Scattered-slab template (a boss arena's, BossRoomBuilder): slabs per cell at most, capped; their shape. Angles
+## are multiples of 512.
 var scatter_per_cell_max := 2
 var scatter_cap := 10
 var slab_half_thickness := 0.25
@@ -57,8 +57,6 @@ var slab_half_len_min := 1.2
 var slab_half_len_max := 2.0
 ## Free space every interior piece keeps from every other wall and piece, so no narrow pocket forms behind it.
 var slab_gap := 2.2
-## Random placements tried per scattered slab before that slab is dropped.
-var slab_attempts := 30
 ## Spawn points per room: base + per_extra_cell * (cells - 1), inclusive range, capped.
 var spawn_min := 5
 var spawn_max := 8
