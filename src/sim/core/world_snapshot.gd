@@ -83,6 +83,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
+	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -159,6 +160,7 @@ const ADDED_SINCE_V05 := {
 		&"moves",
 		&"spiral",  # v0.6.5 WN3 (GunForms; padded with "none")
 		&"mine_t",
+		&"look",  # v0.7.5 BF1 (fireball looks; empty = none, as a store that never held one)
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	&"ModifierState":

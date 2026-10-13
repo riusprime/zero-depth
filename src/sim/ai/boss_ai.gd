@@ -13,6 +13,11 @@ extends RefCounted
 ## the player during its windup, and the closing band hurts in phase 6.
 ## v0.5.5 DS (D7): each phase after the first opens with a gate (BossGates: a short invulnerable transition, the HP
 ## can't fall past it in one burst, adds rise); the hidden catch-up scales the boss (CatchUp.on_boss, powered).
+## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md; SIM_CONTRACTS §10d): dodge-first fights. A `pattern` attack fires a bullet
+## pattern (BulletPatterns) over its active time; `marks` and `row_lanes` lay ground markers that follow the player's
+## exact position, lock for the attack's lock_ticks and strike (mark_of, row_lanes_of); any aimed attack with a lock
+## tracks the exact position the same way (no lead) and its telegraph says when it locked; a shielded attack (the
+## signature pattern) keeps the boss shielded while it runs (BossDodge: hits spark off, Damage).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -37,6 +42,7 @@ const TRACKING_MOVES: Array[int] = [
 	BossAttackTable.Move.RAIL,
 	BossAttackTable.Move.BOLT_FAN,
 	BossAttackTable.Move.FLOOD,
+	BossAttackTable.Move.PATTERN,  # v0.7.5 BF1: a pattern's aim (and a burst's landing) follows until it commits
 ]
 
 
@@ -114,7 +120,9 @@ static func think(w: World, i: int) -> void:
 					start_attack(w, i, k)
 		S.WINDUP:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
-			if tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
+			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: each marker tracks, then locks
+				BossDodge.track_marks(w, b, atk, a.state_t[i])
+			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
 				EnemyAi.enter_state(a, i, S.ACTIVE)
@@ -122,7 +130,10 @@ static func think(w: World, i: int) -> void:
 				if atk.move == M.LEAP or atk.move == M.BURROW:
 					a.invuln[i] = maxi(a.invuln[i], 2)
 		S.ACTIVE:
-			_think_active(w, i, b, t.attacks[bs.attack[b]])
+			var atk: BossAttackTable = t.attacks[bs.attack[b]]
+			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: the later markers keep tracking
+				BossDodge.track_marks(w, b, atk, atk.windup_ticks + a.state_t[i])
+			_think_active(w, i, b, atk)
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if a.state_t[i] >= atk.recover_ticks:
@@ -260,7 +271,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var a := w.actors
 	var bs := w.bosses
 	var at := a.pos(i)
-	var target := BossChallenge.aim_point(w, b, atk.move)  # BX (L26): aimed moves lead the player.
+	var target := _target(w, b, atk)  # BX (L26): aimed moves lead the player (v0.7.5 BF1: not a locked one).
 	var aim := Kin.angle_of(target - at)
 	a.lock_x[i] = at.x
 	a.lock_y[i] = at.y
@@ -310,16 +321,28 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
 			bs.span[b] = dir * atk.half_arc * 2
+		M.PATTERN:  # v0.7.5 BF1: a burst's shell lands where the windup last tracked
+			bs.set_pt(b, 0, target)
+		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
+			for k in atk.count:
+				bs.set_pt(b, k, w.player_pos())
 
 
 ## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
 ## commit_ticks.
 static func tracking(w: World, i: int, t: BossTable, atk: BossAttackTable) -> bool:
-	if t.commit_ticks <= 0 or w.player_dead() or w.actors.state[i] != S.WINDUP:
+	var commit := atk.lock_ticks if atk.lock_ticks > 0 else t.commit_ticks  # v0.7.5 BF1: the attack's lock
+	if commit <= 0 or w.player_dead() or w.actors.state[i] != S.WINDUP:
 		return false
-	if w.actors.state_t[i] >= atk.windup_ticks - t.commit_ticks:
+	if w.actors.state_t[i] >= atk.windup_ticks - commit:
 		return false
 	return TRACKING_MOVES.has(atk.move)
+
+
+## v0.7.5 BF1: where an attack aims: the player's exact position for a locked attack (owner N15: "follow exact
+## position of the player"), else BossChallenge.aim_point (the lead and the dash read).
+static func _target(w: World, b: int, atk: BossAttackTable) -> Vector2:
+	return w.player_pos() if atk.lock_ticks > 0 else BossChallenge.aim_point(w, b, atk.move)
 
 
 ## Re-aims the windup in progress at the player (aim_point), keeping what was drawn at random: a barrage's
@@ -329,11 +352,11 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 	var bs := w.bosses
 	match atk.move:
 		M.BARRAGE:
-			var shift := BossChallenge.aim_point(w, b, atk.move) - bs.pt(b, 0)
+			var shift := _target(w, b, atk) - bs.pt(b, 0)
 			for k in atk.count:
 				bs.set_pt(b, k, bs.pt(b, k) + shift)
 		M.RAIL:
-			var aim := Kin.angle_of(BossChallenge.aim_point(w, b, atk.move) - a.pos(i))
+			var aim := Kin.angle_of(_target(w, b, atk) - a.pos(i))
 			var dir := 1 if bs.span[b] > 0 else -1
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
@@ -440,36 +463,36 @@ static func resolve(w: World, i: int) -> void:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
 			if st == 0 and AttackShapes.ring_touches(r[0], r[1], r[2], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
 		M.LANES:
 			if st < atk.active_ticks:
 				for k in atk.count:
 					var s := lane_slice(w, i, k, st)
 					if s != null and Collide.circle_vs_obb(p, pr, s) != Vector2.ZERO:
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
 		M.SWEEP:
 			var c := arc_of(w, i)
 			if st == 0 and AttackShapes.arc_touches(c[0], c[1], c[2], c[3], c[4], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_MELEE, c[0])
+				hit_player(w, i, atk, SimEvent.TAG_MELEE, c[0])
 		M.CHARGE:
 			# v0.3.5 AI: within a contact slop, because phase 5 has already pushed the bodies exactly apart.
 			if Kin.length(p - a.pos(i)) <= a.radius[i] + pr + EnemyAi.CONTACT_SLOP_M:
-				_hit_player(w, i, atk, SimEvent.TAG_MELEE, a.pos(i))
+				hit_player(w, i, atk, SimEvent.TAG_MELEE, a.pos(i))
 		M.LEAP:
 			var d := leap_disc(w, i)
 			if st == atk.active_ticks - 1 and AttackShapes.disc_touches(d[0], d[1], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
 		M.BURROW:
 			var d := burrow_disc(w, i)
 			if w.bosses.step[b] == 2 and st == 0 and AttackShapes.disc_touches(d[0], d[1], p, pr):
-				_hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			if st == 0:
 				var spots := spots_of(w, i)
 				for c: Vector2 in spots:
 					if AttackShapes.disc_touches(c, atk.radius_m, p, pr):
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, c)
+						hit_player(w, i, atk, SimEvent.TAG_AREA, c)
 						break
 				if atk.move != M.BARRAGE:
 					_hatch(w, atk, spots)
@@ -479,19 +502,23 @@ static func resolve(w: World, i: int) -> void:
 				var a0 := rail_angle(w, i, st)
 				var a1 := rail_angle(w, i, st + 1)
 				if AttackShapes.span_touches(r[0], r[1], a0, a1 - a0, r[4], p, pr):
-					_hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
+					hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
 		M.FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt again every burn_ticks.
 			if st < atk.active_ticks:
 				if st % atk.burn_ticks == 0:
 					w.bosses.hit[b] = 0
 				for k in atk.count:
 					if Collide.circle_vs_obb(p, pr, flood_lane_of(w, i, k)) != Vector2.ZERO:
-						_hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
+						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
 		M.BOLT_FAN:
 			if w.bosses.step[b] < atk.volleys and st % atk.gap_ticks == 0:
 				w.bosses.step[b] += 1
 				_fire_fan(w, i, b, atk)
+		M.PATTERN:  # v0.7.5 BF1
+			BossDodge.resolve_pattern(w, i, b, atk, st)
+		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: each marker strikes once, where it locked
+			BossDodge.resolve_marks(w, i, b, atk, st)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -532,7 +559,8 @@ static func _alive_of(w: World, kind: int) -> int:
 	return n
 
 
-static func _hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: Vector2) -> void:
+## Hits the player with boss i's attack, once per attack (BossStore.hit); public for BossDodge (v0.7.5 BF1).
+static func hit_player(w: World, i: int, atk: BossAttackTable, tags: int, from: Vector2) -> void:
 	var b := entry_of(w, i)
 	if w.bosses.hit[b] == 1:
 		return
@@ -695,6 +723,11 @@ static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 ## &"ripple" (center, radius) that marks a burrowing boss; a flood (v0.4.0 BO) draws &"lanes", and while its lanes
 ## stand a "style" (&"spears" or &"molten"). A pull (BX) draws a &"ring" with "pull_m", the vortex's
 ## reach from the boss's centre. "move" names the attack's move (BossAttackTable.Move).
+## v0.7.5 BF1: a locked attack's telegraph carries "tracked" (true) and "locked" (it stopped following and flashes);
+## marker moves draw &"marks": "items", one {"shape" (&"disc" with center and radius, or &"lanes" with obbs),
+## "locked", "progress"} per marker showing now; a burst pattern draws its landing &"disc" (tracked, then locked)
+## and, while its shell flies, "lob" {from, to, progress}. Other patterns draw nothing on the ground (owner: "Shots
+## draw no line on the ground"); their shots are the readable cause.
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -704,6 +737,10 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	var windup := a.state[i] == S.WINDUP
 	var progress := clampi(a.state_t[i] * 1000 / maxi(1, atk.windup_ticks), 0, 1000)
 	var out := {}
+	if BossDodge.is_marker_move(atk.move):
+		return BossDodge.marks_telegraph(w, i, atk)
+	if atk.move == M.PATTERN:
+		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
@@ -782,6 +819,11 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {}
 	out["progress"] = progress
 	out["move"] = atk.move
+	if atk.lock_ticks > 0:  # v0.7.5 BF1: dull while it tracks, bright once it locks
+		out["tracked"] = true
+		out["locked"] = (
+			a.state[i] != S.WINDUP or a.state_t[i] >= atk.windup_ticks - atk.lock_ticks
+		)
 	return out
 
 
@@ -795,7 +837,10 @@ static func cause_key(w: World) -> StringName:
 		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
 		return t.attacks[w.killer_attack].cause_key
-	for atk in t.attacks:
-		if atk.move == M.BOLT_FAN and w.killer_tags & SimEvent.TAG_PROJECTILE:
+	for atk in t.attacks:  # v0.7.5 BF1: a fireball's, the boss's first pattern (or bolt fan)
+		if (
+			(atk.move == M.BOLT_FAN or atk.move == M.PATTERN)
+			and w.killer_tags & SimEvent.TAG_PROJECTILE
+		):
 			return atk.cause_key
 	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""

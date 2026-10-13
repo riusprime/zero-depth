@@ -31,13 +31,15 @@ func _boss(id: StringName, player_at: Vector2) -> Array:
 	return [w, i, w.actors.ids[i]]
 
 
+## v0.7.5 BF1: on the Warlord's shield bash (an aimed move without a lock; the Gatekeeper's lanes lock now, their own
+## test is tests/unit/sim/test_boss_markers.gd).
 func test_a_windup_tracks_the_player_then_commits() -> void:
-	var s := _boss(&"gatekeeper", Vector2(8, 0))
+	var s := _boss(&"warlord", Vector2(8, 0))
 	var w: World = s[0]
 	var aid: int = s[2]
 	var t := BossAi.table_of(w, s[1])
-	var k := t.attack_index(&"shock_lanes")
-	BossLab.start(w, s[1], &"shock_lanes")
+	var k := t.attack_index(&"shield_bash")
+	BossLab.start(w, s[1], &"shield_bash")
 	var windup := t.attacks[k].windup_ticks
 	var aims := []
 	for n in windup:

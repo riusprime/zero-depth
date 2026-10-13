@@ -41,6 +41,9 @@ var moves := false
 ## v0.6.5 WN3 (GunForms): the corkscrew's swing (1/4096 turns; 0 = none) and a mine's wait (ticks; 0 = not a mine).
 var spiral := PackedInt32Array()
 var mine_t := PackedInt32Array()
+## v0.7.5 BF1 (BulletPatterns): a hostile fireball's look key ("" = a plain shot), so each boss's and enemy's shots
+## look its own; empty until the first fireball (set_look), so stores that never held one step and hash as before.
+var look := PackedStringArray()
 
 
 func size() -> int:
@@ -85,6 +88,20 @@ func add(
 	speed.append(0.0)
 	spiral.append(0)  # v0.6.5 WN3: GunForms.on_spawn sets them from the spec
 	mine_t.append(0)
+	if not look.is_empty():  # v0.7.5 BF1
+		look.append("")
+
+
+## v0.7.5 BF1: projectile i is a fireball of look `key` (the column fills the first time).
+func set_look(i: int, key: StringName) -> void:
+	if look.size() < ids.size():
+		look.resize(ids.size())
+	look[i] = String(key)
+
+
+## v0.7.5 BF1: projectile i's look key ("" = a plain shot).
+func look_of(i: int) -> String:
+	return look[i] if i < look.size() else ""
 
 
 ## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own
@@ -116,6 +133,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 		if i < mine_t.size():  # v0.6.5 WN3
 			spiral.remove_at(i)
 			mine_t.remove_at(i)
+		if i < look.size():  # v0.7.5 BF1
+			look.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)
@@ -140,6 +159,8 @@ func hash_into(h: StateHasher, with_specs: bool = true) -> void:
 	h.add_ints(tags)
 	h.add_ints(bounces)
 	h.add_ints(bounce_tick)
+	if not look.is_empty():  # v0.7.5 BF1: only once a fireball has flown (the kernel golden's never do)
+		h.add_string(",".join(look))
 	if not with_specs:
 		return
 	for k in spec_key:  # v0.6.0 MX2: only once a projectile names a spec (the kernel golden's never do)

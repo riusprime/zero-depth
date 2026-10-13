@@ -117,6 +117,11 @@ func test_every_attack_telegraphs_at_least_the_minimum_before_it_lands() -> void
 		var i := BossLab.ready_boss(w, id, Vector2(40, 40))
 		var t := BossAi.table_of(w, i)
 		for atk in t.attacks:
+			if (
+				atk.move == BossAttackTable.Move.PATTERN
+				and atk.pattern.kind != BulletPatternTable.Kind.BURST
+			):
+				continue  # v0.7.5 BF1: shots draw no ground line, they are the cause (test_bullet_patterns.gd)
 			var stand := Vector2(3.0, 0.0)
 			match atk.move:
 				BossAttackTable.Move.BROOD:
