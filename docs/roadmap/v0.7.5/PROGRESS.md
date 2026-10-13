@@ -89,3 +89,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   `Tests 266`, `Passing Tests 266`, `check_gut_log: ok`. The first sharded GitHub run (PR #6 at `8199c3e`): every
   job green; `verify` finished 71 min after the start (sim_b 68 min, sim_a 21, presentation 8, e2e 7, checks 3,
   rest 2). sim_b's five slowest files (local JUnit times) move to a shard of their own, `sim_c`.
+- 2026-10-13: owner: "some lighting adjustments have been made, so before pushing this one into main also merge this
+  branch into yours to make a complete merge claude/optimistic-ride-x1sdnu". Merged (`3bb043a`, look pass v3: warm
+  dusk Ruins lighting, tamed glow and fire lights; built on the audit branch; no conflicts).
