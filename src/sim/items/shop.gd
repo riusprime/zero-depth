@@ -182,7 +182,8 @@ static func heal_amount(w: World) -> int:
 	return maxi(0, mini(add, a.max_hp[0] - a.hp[0]))
 
 
-## Card `code` would do something if bought now.
+## Card `code` would do something if taken now: the one rule for the shop, an event's cards and a core's drop
+## (Events.block, CoreTheft.on_death; audit G-6).
 static func can_apply(w: World, code: int) -> bool:
 	if code < 0:
 		return false

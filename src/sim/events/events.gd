@@ -311,22 +311,12 @@ static func _reward_applies(w: World, k: int, c: int) -> bool:
 	var code := w.ev.roll_card[k * MAX_CHOICES + c]
 	match table(w, k).reward[c]:
 		Reward.STAT_EPIC, Reward.STAT_ECHO, Reward.MOD, Reward.ABILITY_LEVEL:
-			return code >= 0 and _card_applies(w, code)
+			return Shop.can_apply(w, code)  # the shop's rule, the one rule (audit G-6)
 		Reward.CLEANSE:
 			return not w.curses_owned.is_empty()
 		Reward.OVERCLOCK:
 			return w.heat != null
 	return true
-
-
-## A rolled card still does something (a stat under its cap, a mod not owned, an ability below its top level).
-static func _card_applies(w: World, code: int) -> bool:
-	match Offers.type_of(code):
-		Offers.STAT:
-			return not Stats.at_cap(w, Offers.stat_of(code))
-		Offers.ABILITY:
-			return Abilities.can_take(w, Offers.ability_of(code))
-	return CardLevels.can_take(w, code)  # v0.6.5 WN3: a held wand card levels up
 
 
 ## While a panel is open (tick phase 1c): a pick takes that choice, a cancel leaves; anything else waits.
