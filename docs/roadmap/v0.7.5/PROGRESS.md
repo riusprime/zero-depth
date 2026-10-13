@@ -55,5 +55,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   `assets/models/manifest.json`), the app icon on the credits, the accessibility fixes, `DevGate` (ON). The lead's
   readings are in PLAN "SM"; evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md). Run by the agent:
   lint; content + arch + unit/application + unit/app 193/193; 13 presentation unit files 88/88; 31 e2e files 61/61;
-  a re-run 14/14. Not run by the agent: the full suite, goldens, the bot sims. Shared files touched additively:
-  `main.gd`, `options_menu.gd`, `strings.csv` (27 rows), `project.godot` (a `[game]` section). Not pushed.
+  re-runs 14/14, the dev switch e2e 1/1 and a final 16 files 52/52 on `191dbcd`; screenshots en + es at 1280×720.
+  Not run by the agent: the full suite, goldens, the bot sims. Shared files touched additively:
+  `main.gd`, `options_menu.gd`, `strings.csv` (26 rows), `project.godot` (a `[game]` section). Not pushed.
