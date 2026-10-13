@@ -67,4 +67,34 @@ Second proposal:
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | G2 Lighting pass (before / after, mock_look.gd) | 2026-10-12 | direction kept; "the last 10–15%": sources bloom, corners black | 2026-10-12 |
-| G2 Lighting pass, second proposal | 2026-10-12 | OWNER ONLY | — |
+| G2 Lighting pass, second proposal | 2026-10-12 | "the light source on the actual game glows too much, and it is not that close" (§3) | 2026-10-13 |
+| G2 Look pass v3, lighting (§3) | 2026-10-13 | OWNER ONLY | — |
+
+## 3. Look pass v3: lighting (2026-10-13)
+
+**Owner, 2026-10-13** (the same target image beside a Ruins screenshot): "the light source on the actual game glows
+to much, and it is not that close, we could add more elements maybe, the pool of models is not to big so we could
+make those, I could generate textures for you". On the findings list: "Plan is right … just go for the lighting
+for now, we'll work the rest after".
+
+Findings, reference vs. Ruins (biggest gap first). Only F1–F3 and F10 are in this pass; the rest wait for the owner.
+
+| # | Gap | Reference | Before | This pass |
+|---|---|---|---|---|
+| F1 | Palette temperature | one warm family; warm brown shadows, no blue | blue moon, cool ambient, teal shadow grade 0.7 | Ruins: dim warm dusk sun (0.95,0.82,0.72) at 0.3, warm ambient (0.38,0.3,0.27), brown shadow grade 0.35, saturation 0.85, exposure 1.0 |
+| F2 | Glow | sources barely halo; light pools on the floor | glow 1.2, threshold 0.8, spread 0.7, bloom 0.04; fire light 7.0 / 9 m | all biomes: glow 0.7, threshold 1.0, spread 0.25, bloom 0; fire light 4.5 / 7.5 m; flame core ×1.6, emission 2.0 |
+| F3 | Darks | dark but readable, low contrast | ambient 0.15, SSAO 6.0, contrast 1.18, vignette 0.55 | Ruins: ambient 0.22, SSAO 3.5, contrast 1.06, vignette 0.4 |
+| F10 | Haze | warm dust haze | fog 0.003 neutral | Ruins: fog 0.005, warm brown |
+| F4 | Texture style | chunky low-res texels, big ground squares | smooth 1024 px dirt | later: owner textures (128 px, nearest filter) |
+| F5 | Wall shape | few tall standalone blocks | long low cobble runs | later |
+| F6 | Teal crystals | none; only warm accents | teal clusters on 20% of wall bases | later |
+| F7 | Camera | closer (view about 13–14 m) | 17 m | later (gameplay reach: owner decides) |
+| F8 | Ink outlines | none drawn | ink strength 0.8 | later |
+| F9 | Set dressing | car, barrels, facade with ladder, poles, clutter | 17 kit pieces, sparse mid-size clutter | later: owner models |
+
+Night Rocks and Red Canyon keep their own colours; they only take the F2 glow and fire-light change.
+
+- **Mockup:** `mock_look.gd -- variants=B biomes=ruins` (and `focus=light`), before (base `7eb460a`) and after;
+  shots in `build/shots/`, not tracked. A first try (sun 0.55, ambient 0.3, saturation 1.0) came out bright orange,
+  not dusk; the values above are the second.
+- **Tuning live:** the dev panel's lighting page changes every value here while playing.
