@@ -57,10 +57,9 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
-| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 Done (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); the Siege Engine and the Foundry next (BF3) |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | Done: BF1 (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); BF3 (the Siege Engine and the Foundry; [evidence](evidence/BOSS_FIGHTS_3.md)) |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | Done ([evidence](evidence/ENEMY_FIREBALLS.md)) |
 | PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N20 | Done ([evidence](evidence/PLAYGROUND.md)) |
-| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF3 Done (the Siege Engine and the Foundry; [evidence](evidence/BOSS_FIGHTS_3.md)) |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
