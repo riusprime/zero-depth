@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"trigger_kill"
+name_key = &"ACH_TRIGGER_KILL_NAME"
+desc_key = &"ACH_TRIGGER_KILL_DESC"
+glyph = &"chain"
+group = &"build"
+order = 3
+stat = &"kills:child_spell"

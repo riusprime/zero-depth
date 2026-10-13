@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"win_run"
+name_key = &"ACH_WIN_RUN_NAME"
+desc_key = &"ACH_WIN_RUN_DESC"
+glyph = &"crown"
+group = &"run"
+order = 3
+stat = &"runs:won"

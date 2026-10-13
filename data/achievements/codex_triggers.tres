@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"codex_triggers"
+name_key = &"ACH_CODEX_TRIGGERS_NAME"
+desc_key = &"ACH_CODEX_TRIGGERS_DESC"
+glyph = &"book"
+group = &"codex"
+order = 3
+kind = 4
+page = &"cards"
+section = &"triggers"

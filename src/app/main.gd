@@ -24,6 +24,11 @@ var saves: RunSaver
 ## v0.7.5 CX: the Codex's counters (in the profile) and the recorder that reads each floor's ticks into them.
 var codex: CodexStore
 var codex_recorder: CodexRecorder
+## v0.7.5 AC: the achievements (in the profile), the tracker that unlocks them from each floor's ticks and the Codex,
+## and the toast that shows an unlock (on the UI layer, so it outlives a floor).
+var achievements: AchievementStore
+var achievement_tracker: AchievementTracker
+var toast := AchievementToast.new()
 
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
 ## every run and floor is compiled.
@@ -37,6 +42,7 @@ var _pause_build: BuildPage
 ## v0.7.5 CX: the Codex opened from the pause menu, and its catalog (from the content, built on first use).
 var _pause_codex: CodexView
 var _codex_catalog: CodexCatalog
+var _achievement_book: AchievementBook
 var _dev: DevPanel
 var _devm: DevMasterPanel
 ## The current floor's biome file (the dev panel's lighting edits re-read its mood).
@@ -61,6 +67,7 @@ func _ready() -> void:
 	InputDefaults.apply()
 	profile = ProfileStore.shared()
 	codex = CodexStore.new(profile)
+	achievements = AchievementStore.new(profile)  # v0.7.5 AC
 	saves = RunSaver.new(RunSaveStore.shared())
 	InputRemap.apply(profile)
 	GameSettings.apply_all(profile)
@@ -75,6 +82,7 @@ func _ready() -> void:
 	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_fade.visible = false
 	ui.add_child(_fade)
+	ui.add_child(toast)  # v0.7.5 AC
 	show_main_menu()
 
 
@@ -210,9 +218,10 @@ func show_credits() -> void:
 	_set_menu(c)
 
 
-## v0.7.5 CX: the Codex from the main menu; Back returns to the menu with the Codex row focused.
+## v0.7.5 CX: the Codex from the main menu; Back returns to the menu with the Codex row focused. v0.7.5 AC: with the
+## Achievements page.
 func show_codex() -> void:
-	var c := CodexView.new(codex_catalog(), codex)
+	var c := CodexView.new(codex_catalog(), codex, _achievements_book())
 	c.back_pressed.connect(
 		func() -> void:
 			show_main_menu()
@@ -226,6 +235,16 @@ func codex_catalog(repo: ContentRepository = null) -> CodexCatalog:
 	if _codex_catalog == null:
 		_codex_catalog = CodexCatalog.build(repo if repo != null else ContentRepository.load_all())
 	return _codex_catalog
+
+
+## v0.7.5 AC: every achievement (the content's definitions, the Codex's entries for the per-boss and per-biome
+## ones), built once.
+func _achievements_book(repo: ContentRepository = null) -> AchievementBook:
+	if _achievement_book == null:
+		if repo == null:
+			repo = ContentRepository.load_all()
+		_achievement_book = AchievementBook.build(repo, achievements, codex, codex_catalog(repo))
+	return _achievement_book
 
 
 func show_gallery() -> void:
@@ -274,6 +293,9 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		repo = _content()
 	if codex_recorder == null:  # v0.7.5 CX: built on the first floor, from the content already loaded
 		codex_recorder = CodexRecorder.new(codex, codex_catalog(repo))
+	if achievement_tracker == null:  # v0.7.5 AC: before the biome's visit, so its Codex write is heard
+		achievement_tracker = AchievementTracker.new(_achievements_book(repo))
+		achievement_tracker.achieved.connect(toast.push)
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
@@ -359,6 +381,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	driver.input_source = player_input.sample
 	driver.ticked.connect(view.sync)
 	codex_recorder.attach(driver.reader)  # v0.7.5 CX: the Codex reads every tick (after the save's entry check)
+	achievement_tracker.attach(driver.reader)  # v0.7.5 AC: and the achievements
 	audio.attach(driver.reader, biome.id)
 	driver.ticked.connect(audio.sync.bind(driver.reader))
 	_hud = Hud.new()
@@ -383,6 +406,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_fade.color.a = 1.0
 	_fade.visible = true
 	ui.move_child(_fade, ui.get_child_count() - 1)
+	ui.move_child(toast, ui.get_child_count() - 1)  # v0.7.5 AC: a toast reads over the fade-in
 	return ""
 
 
@@ -391,6 +415,7 @@ func _on_tick(from: SimDriver) -> void:
 		return  # a stage that already ended, ticking once more before it's freed
 	saves.after_tick(driver.world, run, _stage_seed)  # v0.4.0 SV: a first entry into a room saves
 	codex_recorder.observe(driver.reader)  # v0.7.5 CX
+	achievement_tracker.observe(driver.reader)  # v0.7.5 AC
 	_hud.sync(driver.reader)
 	var outcome := driver.reader.outcome()
 	if outcome == 3 and _end == null:
@@ -520,6 +545,8 @@ func _tweaked_run_check() -> void:
 		saves.discard()
 	if codex_recorder != null:
 		codex_recorder.enabled = not tweaked  # v0.7.5 CX: a tweaked run fills no Codex
+	if achievement_tracker != null:
+		achievement_tracker.enabled = not tweaked  # v0.7.5 AC: and unlocks no achievement
 	if _dev_mark == null:
 		_dev_mark = Label.new()
 		_dev_mark.name = "DevMark"
@@ -637,7 +664,7 @@ func _open_pause_codex() -> void:
 	if _pause == null or _pause_codex != null:
 		return
 	_pause.visible = false
-	_pause_codex = CodexView.new(codex_catalog(), codex)
+	_pause_codex = CodexView.new(codex_catalog(), codex, _achievements_book())
 	_pause_codex.back_pressed.connect(_close_pause_codex)
 	ui.add_child(_pause_codex)
 	_pause_codex.focus_first()
@@ -682,8 +709,12 @@ func _end_floor() -> void:
 	audio.detach()
 	if codex_recorder != null:
 		codex_recorder.detach()
-	if codex.dirty:  # v0.7.5 CX: the floor's Codex counts reach the profile file
-		codex.dirty = not profile.save_file() and not profile.path.is_empty()
+	if achievement_tracker != null:
+		achievement_tracker.detach()
+	if codex.dirty or achievements.dirty:  # v0.7.5 CX, AC: the floor's counts and unlocks reach the file
+		var kept := profile.save_file() or profile.path.is_empty()
+		codex.dirty = not kept
+		achievements.dirty = not kept
 	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
