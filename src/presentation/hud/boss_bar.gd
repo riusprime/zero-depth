@@ -107,6 +107,7 @@ func _draw() -> void:
 
 func _build_marks(thresholds: PackedInt32Array) -> void:
 	for m in _marks:
+		_hp_back.remove_child(m)  # out now, so the last boss's marks don't draw beside the new ones this frame
 		m.queue_free()
 	_marks.clear()
 	for k in range(1, thresholds.size()):

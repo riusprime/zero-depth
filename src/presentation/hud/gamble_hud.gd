@@ -59,7 +59,7 @@ func sync(reader: WorldReader) -> void:
 			_prompt.text = tr("UI_GAMBLE_USE") % price
 		else:
 			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
-		_prompt.add_theme_color_override("font_color", Color.WHITE if ok else POOR)
+		HudStyle.font_color(_prompt, Color.WHITE if ok else POOR)
 	var t := reader.gamble_tick()
 	if t != _seen_tick:
 		_seen_tick = t

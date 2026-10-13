@@ -19,7 +19,7 @@ extends RefCounted
 ##   HudStyle.style_label(label, size, bold)  - the style's font, size, colour and soft outline on a Label;
 ##   HudStyle.label(size, bold)                - a new Label styled that way (translated text is set by the caller);
 ##   HudStyle.font(bold)                       - the style's FontVariation (built on the bundled Atkinson TTFs);
-##   HudStyle.accent() / text_color() / dim() / panel_bg() / line() / warn_color() - the colour tokens;
+##   HudStyle.accent() / text_color() / dim() / panel_bg() / line() - the colour tokens;
 ##   HudStyle.danger_color(heat)               - cool (0) to hot (1), for meters that heat up;
 ##   HudFrame.new()                            - a PanelContainer drawn as the style's plate (a hairline, or nothing);
 ##   HudBar.new()                              - a thin fill bar with a damage echo and a warn pulse;
@@ -84,6 +84,14 @@ static func panel_bg(s: Style = current) -> Color:
 	return STONE if s == Style.EMBER else Color(0.03, 0.035, 0.045, 0.5)
 
 
+## P-7: sets a label's font colour override only when it differs (an override invalidates the label's theme cache and
+## re-shapes its text, so a per-tick sync of an unchanged colour costs a re-layout for nothing).
+static func font_color(l: Control, c: Color) -> void:
+	if l.has_theme_color_override(&"font_color") and l.get_theme_color(&"font_color") == c:
+		return
+	l.add_theme_color_override(&"font_color", c)
+
+
 ## The HUD HP bar's fill: EMBER's red, else the player's bar token.
 static func hp_color(s: Style = current) -> Color:
 	return HP_RED if s == Style.EMBER else ThemePalette.color(&"player_bar")
@@ -97,10 +105,6 @@ static func warn_pulse(s: Style = current) -> Color:
 ## The hairline under a group (LINE) and a bar's track edge.
 static func line(_s: Style = current) -> Color:
 	return Color(TEXT, 0.28)
-
-
-static func warn_color() -> Color:
-	return WARN
 
 
 ## 0 (cool) .. 1 (hot), through HEAT.

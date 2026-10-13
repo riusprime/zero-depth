@@ -18,7 +18,7 @@ var kit: KitView
 var actors: ActorViews
 ## Kept for the view's life so item effects (echo, ring, afterimages) compile their shader once, not on the first
 ## effect after a quiet spell (the v0.2.0 H rule).
-var _fx_template := _make_fx_template()
+var _fx_template := HeatVisuals._make_fx_template()
 var _sig := ""
 var _last_echo := -1
 var _last_shock := -1
@@ -100,14 +100,6 @@ func _sync_burns(reader: WorldReader) -> void:
 func _unshaded(c: Color, a: float) -> StandardMaterial3D:
 	var m := _fx_template.duplicate() as StandardMaterial3D
 	m.albedo_color = Color(c, a)
-	return m
-
-
-static func _make_fx_template() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m
 
 

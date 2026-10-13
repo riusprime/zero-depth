@@ -117,9 +117,3 @@ static func box(plaque: StringName, height: float, pad: float = 0.0) -> PlaqueBo
 static func content_size(height: float, width: float, pad: float = 0.0) -> Vector2:
 	var s := height / SIZE.y
 	return Vector2(width - (SIZE.x - CONTENT.size.x) * s - pad * 2.0, CONTENT.size.y * s)
-
-
-## The narrowest plaque (px) whose text box is `content_w` wide at `height`.
-static func width_for(content_w: float, height: float, pad: float = 0.0) -> float:
-	var s := height / SIZE.y
-	return maxf(SIZE.x * s, content_w + (SIZE.x - CONTENT.size.x) * s + pad * 2.0)

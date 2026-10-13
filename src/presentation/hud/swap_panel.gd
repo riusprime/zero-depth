@@ -1,5 +1,5 @@
 class_name SwapPanel
-extends Control
+extends ModalPanel
 ## The Swap choice (v0.6.0 MX2; owner B7: "you have a swap button for the next you get and you can decide which one
 ## to swap"). While the sim waits on a swap (a new modifier offered with every wand slot full; WorldReader.swapping),
 ## it shows the incoming card, the wand (WandRow: its cards in slot order, the trigger cuts) and Skip. It sends the
@@ -18,10 +18,12 @@ extends Control
 ## (MenuBackdrop), plain type, glass tiles with their family's colour along the top, the focused tile lit by the glass
 ## wash and a cold rim. The incoming card keeps the pick cards' look.
 
-signal picked(value: int)
 signal moved(value: int)
 
 enum Mode { CHOOSE, CARRY, PLACE, LEAVE }
+
+## Key repeats (PanelInput.Echo): only the arrows repeat.
+const ECHO := PanelInput.Echo.ARROWS
 
 ## A held card's tile (the row's) and the Skip tile.
 const TILE := WandRow.TILE
@@ -29,7 +31,6 @@ const SKIP_TILE := Vector2(140, 52)
 ## The Skip tile's index (past the held slots; the wand has up to WorldReader.MOD_SLOTS = 8).
 const SKIP := WorldReader.MOD_SLOTS
 
-var input_enabled := true
 var row := WandRow.new()
 var _dim := MenuBackdrop.new()
 var _title := Label.new()
@@ -46,13 +47,10 @@ var _reader: WorldReader
 ## The wand as the panel shows it: the sim's read with this panel's reorders applied (they reach the sim a tick later).
 var _wand := {}
 var _count := 0
-var _focus := 0
 var _mode := Mode.CHOOSE
 ## CARRY: where the card was picked up; PLACE / LEAVE: where the new card sits in the row (0.._count).
 var _from := -1
 var _place := -1
-var _open := false
-var _sent := false
 var _code := -1
 var _drag_card := false
 
@@ -63,16 +61,9 @@ func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP  # the game under it takes no clicks
 	add_child(_dim)
-	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
-	var col := _col
-	col.name = "Column"
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.alignment = BoxContainer.ALIGNMENT_CENTER
-	col.add_theme_constant_override("separation", 12)
-	centre.add_child(col)
+	_col.name = "Column"
+	_col.alignment = BoxContainer.ALIGNMENT_CENTER
+	var col := _centred_column(_col, 12)
 	_title.add_theme_font_override("font", HudStyle.font(true))
 	_title.add_theme_font_size_override("font_size", 26)
 	_title.add_theme_color_override("font_color", MenuStyle.TEXT)
@@ -87,9 +78,7 @@ func _init() -> void:
 	for l: Label in [_title, _hint, _hint2, _read_back]:  # the menus' soft outline, readable over the blurred game
 		l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.55))
 		l.add_theme_constant_override("outline_size", 4)
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_labels([_title, _hint, _hint2, _read_back])
 	col.add_child(_title)
 	var card_box := CenterContainer.new()
 	card_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -145,11 +134,7 @@ func _make_skip() -> void:
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
 	_reader = reader
-	if not reader.swapping():
-		if _open:
-			_open = false
-			_sent = false
-			visible = false
+	if _closed(reader.swapping()):
 		return
 	var b := reader.build()
 	var code := int(b["swap_code"])
@@ -182,14 +167,6 @@ func skip_text() -> String:
 	return _skip_name.text
 
 
-func is_open() -> bool:
-	return _open
-
-
-func focus_index() -> int:
-	return _focus
-
-
 func slot_count() -> int:
 	return _count
 
@@ -201,15 +178,6 @@ func mode() -> int:
 ## The tile of held slot k (SKIP: the Skip tile), for tests.
 func tile(k: int) -> PanelContainer:
 	return _skip if k == SKIP else row.tile(k)
-
-
-## The incoming card (tests: drag it onto a slot to insert).
-func incoming_card() -> Control:
-	return _card
-
-
-func slot_name(k: int) -> String:
-	return row.card_name(k)
 
 
 func read_back_text() -> String:
@@ -287,56 +255,37 @@ func _refresh() -> void:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed:
-		if event.echo and event.physical_keycode not in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
-			get_viewport().set_input_as_handled()
+	var d := PanelInput.decode(event, WorldReader.MOD_SLOTS, ECHO)
+	match d.kind:
+		PanelInput.Kind.SWALLOW:
+			pass
+		PanelInput.Kind.DIGIT:
+			if _mode == Mode.CHOOSE:
+				_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_confirm()
+		PanelInput.Kind.CANCEL:
+			_back()
+		PanelInput.Kind.STEP:
+			_step(d.line())
+		PanelInput.Kind.KEY:
+			match d.code:
+				KEY_R:
+					_carry_toggle()
+				KEY_I:
+					_start_place()
+				_:
+					return
+		PanelInput.Kind.BUTTON:
+			match d.code:
+				JOY_BUTTON_Y:
+					_carry_toggle()
+				JOY_BUTTON_X:
+					_start_place()
+				_:
+					return
+		_:
 			return
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
-				if _mode == Mode.CHOOSE:
-					_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_confirm()
-			KEY_ESCAPE:
-				_back()
-			KEY_R:
-				_carry_toggle()
-			KEY_I:
-				_start_place()
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_confirm()
-			JOY_BUTTON_B:
-				_back()
-			JOY_BUTTON_Y:
-				_carry_toggle()
-			JOY_BUTTON_X:
-				_start_place()
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
-			return
-	else:
-		return
-	if step != 0:
-		_step(step)
 	# The pick panel and the shop below don't see what the swap answered.
 	get_viewport().set_input_as_handled()
 
@@ -461,7 +410,7 @@ func _leave(r: int) -> void:
 	if r == _place or r < 0 or r > _count:
 		return
 	var a := _answer_of(r)
-	_send(WorldReader.wand_swap_picks(a.x, a.y))
+	_send_picks(WorldReader.wand_swap_picks(a.x, a.y))
 
 
 func _on_click(k: int) -> void:
@@ -540,13 +489,13 @@ func _answer(k: int) -> void:
 	if k != SKIP and (k < 0 or k >= _count):
 		return
 	if k == SKIP:
-		_send(PackedInt32Array([WorldReader.PICK_SWAP_SKIP]))
+		_send_picks(PackedInt32Array([WorldReader.PICK_SWAP_SKIP]))
 	else:
-		_send(WorldReader.wand_swap_picks(k, k))
+		_send_picks(WorldReader.wand_swap_picks(k, k))
 
 
 ## Sends the answer (then the new card's move, for an insert) as input, in order.
-func _send(picks: PackedInt32Array) -> void:
+func _send_picks(picks: PackedInt32Array) -> void:
 	_sent = true
 	picked.emit(picks[0])
 	for k in range(1, picks.size()):

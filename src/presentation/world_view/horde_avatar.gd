@@ -1,5 +1,5 @@
 class_name HordeAvatar
-extends Node3D
+extends AvatarBase
 ## The six horde kinds (v0.4.0 EN), code-built low-poly in the enemy sheet's red and grey (no concept sheet yet; the
 ## agent's reading of the enemy style, ART_DIRECTION "Horde enemies"). One class builds each kind:
 ## - Swarmer: a tiny red beetle on six grey legs with bone mandibles that open through its windup.
@@ -40,16 +40,13 @@ var height := 1.0
 ## The pivot every part hangs from (the rise-in and the lean), and the kind's moving parts, by name.
 var body: Node3D
 var parts := {}
-var body_materials: Array[StandardMaterial3D] = []
 
 ## The glowing accent (eye, seam, crystal, scope): its own material, emission on from the start.
 var _glow_mat := StandardMaterial3D.new()
-var _fresh := true
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
 var _healing := false
-var _t := 0.0
 var _rise := 0.0
 var _wind := 0.0
 var _strike := 0.0
@@ -97,7 +94,7 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	_glow_mat.emission_enabled = true
 	_glow_mat.emission = glow
 	_glow_mat.emission_energy_multiplier = 1.5
-	NeedleAvatar._write_stencil(_glow_mat)
+	write_stencil(_glow_mat)
 	_pose()
 
 
@@ -124,10 +121,6 @@ func apply_state(s: Dictionary) -> void:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
 		_pose()
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 func advance(delta: float) -> void:
@@ -398,27 +391,6 @@ func _glow(parent: Node3D, size: Vector3, at: Vector3) -> void:
 
 ## An outlined, flashable body piece (and its X-ray twin while the technique is xray).
 func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = _outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if _technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+	_outlined(
+		parent, mesh, at, c, _outline, ThemePalette.color(&"enemy_body"), _technique, OUTLINE_M
+	)

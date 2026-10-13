@@ -556,7 +556,7 @@ func close_pause() -> void:
 		_pause = null
 	if driver != null:
 		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
-		driver.paused = false
+		driver.paused = _devm != null  # the master dev panel (F10) keeps the run paused behind it
 
 
 ## v0.6.5 WN2: the Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on

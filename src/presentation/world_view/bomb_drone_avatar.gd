@@ -1,5 +1,5 @@
 class_name BombDroneAvatar
-extends Node3D
+extends AvatarBase
 ## The Bomb Drone (v0.3.5 AI, owner F6): a low-poly quad-rotor in the enemy sheet's red and grey, hovering
 ## HOVER_Y up with a soft bob. A faceted red hull with a red slit eye in front, four grey arms with spinning rotor
 ## blades, and a dark bomb slung under its belly whose fuse glows. The bomb drops away as the drone lobs it (the
@@ -31,15 +31,12 @@ var hull: Node3D
 var bomb: Node3D
 var shadow: MeshInstance3D
 var rotors: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _fuse_mat := StandardMaterial3D.new()
-var _fresh := true
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
-var _t := 0.0
 var _rise := 0.0
 var _armed := 1.0
 var _fuse := 0.0
@@ -74,7 +71,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = EYE
 	_eye_mat.emission_energy_multiplier = 2.2
-	NeedleAvatar._write_stencil(_eye_mat)
+	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
 	var sb := BoxMesh.new()
 	sb.size = Vector3(0.01, 0.04, 0.2)
@@ -155,10 +152,6 @@ func apply_state(s: Dictionary) -> void:
 		_pose()
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or hull == null:
@@ -205,27 +198,4 @@ func _piece(
 	team: Color,
 	technique: StringName
 ) -> void:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+	_outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
