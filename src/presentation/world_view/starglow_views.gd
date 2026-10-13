@@ -7,8 +7,8 @@ extends Node3D
 ## is ground, not a telegraph: none of the hostile hues, no pulse. Never casts a shadow. Its facet shades come from
 ## the cosmetic stream. Presentation only.
 
-const DEEP := Color("#2A1E5C")
-const LIGHT := Color("#5A44B0")
+const DEEP := Color("#1B1046")
+const LIGHT := Color("#3F2C96")
 const RIM := Color("#C4A6FF")
 const STAR := Color("#FFE6FA")
 ## Height above the ground (the rim a hair higher), so nothing z-fights.
@@ -17,7 +17,7 @@ const RIM_W := 0.1
 const FACET_M := 0.75
 ## Stars per square metre cell grid (cells per metre) and the share of cells that hold a star.
 const STAR_CELLS_PER_M := 3.0
-const STAR_SHARE := 0.09
+const STAR_SHARE := 0.16
 
 const POOL_SHADER := """
 shader_type spatial;
@@ -50,8 +50,8 @@ void fragment() {
 	vec2 off = vec2(hash(c + 7.3), hash(c + 3.1)) * 0.5 + 0.25;
 	float d = length(fract(g) - off);
 	float tw = mix(1.0, 0.45 + 0.55 * sin(TIME * (1.2 + h * 2.4) + h * 40.0), motion);
-	float s = step(1.0 - share, h) * smoothstep(0.16, 0.0, d) * tw;
-	ALBEDO = base + star.rgb * s * 2.2;
+	float s = step(1.0 - share, h) * smoothstep(0.2, 0.0, d) * tw;
+	ALBEDO = base + star.rgb * s * 3.0;
 }
 """
 
@@ -100,7 +100,7 @@ static func rim_material() -> StandardMaterial3D:
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	m.emission_enabled = true
 	m.emission = RIM
-	m.emission_energy_multiplier = 0.9
+	m.emission_energy_multiplier = 1.3
 	return m
 
 

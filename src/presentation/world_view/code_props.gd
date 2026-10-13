@@ -213,7 +213,7 @@ static func meteor_material() -> StandardMaterial3D:
 	m.roughness = 0.8
 	m.emission_enabled = true
 	m.emission = METEOR_GLOW
-	m.emission_energy_multiplier = 0.08
+	m.emission_energy_multiplier = 0.03
 	return m
 
 

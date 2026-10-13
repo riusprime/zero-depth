@@ -11,29 +11,29 @@ extends RefCounted
 ## The rock under the floor: how far it reaches past the ground and how deep it goes (m).
 const ROCK_LIP := 0.12
 const ROCK_FOOT := -2.2
-const ROCK := Color("#3A3252")
+const ROCK := Color("#4A4270")
 ## Spikes hanging from the floor's rim: one every SPIKE_STEP metres of open edge, their top radius and length (m).
 const SPIKE_STEP := 1.4
 const SPIKE_RADIUS := Vector2(0.45, 1.0)
 const SPIKE_LENGTH := Vector2(1.2, 3.4)
 ## Stars: per square metre of the void around the floor, how far out, between which depths, their sizes (m). The
-## camera's far plane (IsoRig: 100 m, 60 m out) keeps the visible void within about 15 m under the ground.
+## camera's far plane (IsoRig: 100 m, 60 m out) keeps the void in view to about 11 m under the ground at the screen top.
 const STAR_DENSITY := 0.1
 const STAR_REACH := 45.0
-const STAR_Y := Vector2(-15.0, -3.5)
-const STAR_SIZE := Vector2(0.05, 0.16)
+const STAR_Y := Vector2(-10.5, -3.0)
+const STAR_SIZE := Vector2(0.08, 0.2)
 const STAR_BIG_SHARE := 0.06
-const STAR_BIG := Vector2(0.22, 0.34)
+const STAR_BIG := Vector2(0.28, 0.42)
 ## Star colours and their weights.
 const STAR_COLORS := [
 	[Color("#FFFFFF"), 60], [Color("#B8FFF4"), 15], [Color("#D8C4FF"), 15], [Color("#FFC8EE"), 10]
 ]
 ## Nebula clouds: one per this many square metres of the floor's area (clamped), their sizes and depth (m).
 const NEBULA_AREA := 500.0
-const NEBULA_MIN := 4
-const NEBULA_MAX := 14
-const NEBULA_SIZE := Vector2(18.0, 44.0)
-const NEBULA_Y := -16.0
+const NEBULA_MIN := 6
+const NEBULA_MAX := 16
+const NEBULA_SIZE := Vector2(28.0, 64.0)
+const NEBULA_Y := -11.0
 const NEBULA_REACH := 30.0
 const NEBULA_COLORS := [Color("#7A3CFF"), Color("#2AB8A8"), Color("#E040B0")]
 ## Floating islands: per square metre of the void near the floor, how far out, how far they keep from the floor's
@@ -44,6 +44,9 @@ const ISLAND_KEEP := 2.0
 const ISLAND_RADIUS := Vector2(0.6, 2.4)
 const ISLAND_Y := Vector2(-7.0, -1.2)
 const CRYSTAL_SHARE := 0.45
+## A crystal's tip keeps this far under the ground's level (m); one shorter than GEM_MIN is left off.
+const GEM_CLEAR := 0.1
+const GEM_MIN := 0.4
 ## The drift: how far (m) and how fast (radians per second) the islands bob.
 const DRIFT_M := 0.18
 const DRIFT_SPEED := 0.45
@@ -76,7 +79,7 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 
 uniform vec4 tint : source_color = vec4(0.48, 0.24, 1.0, 1.0);
 uniform float seed_value = 0.0;
-uniform float strength = 0.55;
+uniform float strength = 0.32;
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -96,7 +99,7 @@ void fragment() {
 	float n = noise(UV * 3.0 + seed_value) * 0.6 + noise(UV * 7.0 - seed_value) * 0.4;
 	float a = smoothstep(1.0, 0.05, length(uv) * 2.0 + (n - 0.5) * 0.8);
 	ALBEDO = tint.rgb * strength;
-	ALPHA = a * a;
+	ALPHA = a * a * smoothstep(1.0, 0.75, length(uv) * 2.0);
 }
 """
 
@@ -125,6 +128,8 @@ void fragment() {
 	ROUGHNESS = rough;
 	SPECULAR = spec;
 	EMISSION = glow.rgb * glow_energy;
+	RIM = 0.45;
+	RIM_TINT = 0.5;
 }
 """
 
@@ -134,6 +139,9 @@ static func rock_material(edge_color: Color) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = ROCK.lerp(edge_color, 0.3)
 	m.roughness = 0.9
+	m.rim_enabled = true
+	m.rim = 0.45
+	m.rim_tint = 0.5
 	return m
 
 
@@ -274,7 +282,8 @@ static func island_xforms(ground: Array, bounds: Rect2, rng: RandomNumberGenerat
 		var y := rng.randf_range(ISLAND_Y.x, ISLAND_Y.y)
 		var yaw := rng.randf() * TAU
 		var gem := rng.randf() < CRYSTAL_SHARE
-		var gem_h := r * rng.randf_range(0.9, 1.7)
+		# A crystal's tip stays under the ground's level even at the top of its bob (nothing rises beside the floor).
+		var gem_h := minf(r * rng.randf_range(0.9, 1.7), -y - DRIFT_M - GEM_CLEAR)
 		if _in_any(p, ground, r + ISLAND_KEEP):
 			continue
 		var at := SimPlane.to_3d(p, y)
@@ -283,7 +292,7 @@ static func island_xforms(ground: Array, bounds: Rect2, rng: RandomNumberGenerat
 				Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(r * 2.0, depth, r * 2.0)), at
 			)
 		)
-		if gem:
+		if gem and gem_h >= GEM_MIN:
 			gems.append(
 				Transform3D(
 					Basis(Vector3.UP, yaw) * Basis.from_scale(Vector3(r * 0.9, gem_h, r * 0.9)), at
