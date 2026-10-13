@@ -202,6 +202,9 @@ static func _door_rect(f: FloorLayout, host: int, side: int, interior: Rect2) ->
 	var margin := FloorParams.defaults().door_corner_margin
 	var width := minf(DOOR_WIDTH, floorf((hi - lo - 2.0 * margin) * 100.0) / 100.0)
 	assert(width >= FloorParams.defaults().door_width_min, "the boss door has no room")
+	if width < FloorParams.defaults().door_width_min:  # the stripped assert's release path (audit G-7)
+		push_error("BossRoomBuilder: the boss door has no room")
+		width = maxf(width, 0.0)
 	var half := width * 0.5
 	if along_x:
 		return Rect2(mid - half, a, width, b - a)

@@ -108,9 +108,12 @@ static func _place_rooms(plan: Plan, p: FloorParams, rng: RngStream) -> void:
 	while plan.cells.size() < 2:
 		attempts += 1
 		assert(attempts <= p.place_attempts, "the hall's exit never fit")
+		if attempts > p.place_attempts:  # a release build strips the assert (audit G-7): stop, never loop forever
+			push_error("FloorGenerator: the hall's exit never fit")
+			break
 		_try_attach(plan, p, rng, 0, side)
 	attempts = 0
-	while plan.cells.size() < target and attempts < p.place_attempts:
+	while plan.cells.size() < target and plan.cells.size() > 1 and attempts < p.place_attempts:
 		attempts += 1
 		var parent := rng.range_int(1, plan.cells.size() - 1)
 		_try_attach(plan, p, rng, parent, rng.range_int(0, 3))
@@ -251,7 +254,12 @@ static func _place_doors(f: FloorLayout, p: FloorParams, plan: Plan, rng: RngStr
 		var width := rng.range_int(_cm(p.door_width_min), _cm(p.door_width_max)) / 100.0
 		width = minf(width, floorf((hi - lo) * 100.0) / 100.0)
 		assert(width >= p.door_width_min, "two rooms share too little wall for a doorway")
-		var c := rng.range_int(_cm(lo + width * 0.5), _cm(hi - width * 0.5)) / 100.0
+		var c_lo := _cm(lo + width * 0.5)
+		var c_hi := _cm(hi - width * 0.5)
+		if width < p.door_width_min or c_hi < c_lo:  # the stripped assert's release path (audit G-7)
+			push_error("FloorGenerator: two rooms share too little wall for a doorway")
+			c_hi = maxi(c_lo, c_hi)
+		var c := rng.range_int(c_lo, c_hi) / 100.0
 		var face_a := _edge(ra, side)
 		var face_b := _edge(rb, (side + 2) % 4)
 		var across := (face_a + face_b) * 0.5
