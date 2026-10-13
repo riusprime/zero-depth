@@ -180,8 +180,10 @@ func set_pos(i: int, p: Vector2) -> void:
 	pos_y[i] = p.y
 
 
+## The entry for an actor id, or -1. Ids are ascending and never reused, so one binary search finds it.
 func index_of(id: int) -> int:
-	return ids.bsearch(id) if ids.has(id) else -1
+	var k := ids.bsearch(id)
+	return k if k < ids.size() and ids[k] == id else -1
 
 
 ## Removes the entries at the given ascending indices, keeping order.
