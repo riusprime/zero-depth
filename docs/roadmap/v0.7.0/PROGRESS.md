@@ -14,6 +14,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | WN5a | The shared pool S1–S7 in both runs, each in the spell's look: Fire (`ember_core`), Lightning (`storm_core`), Frost (`frost_core`), Venom (`venom_core`), Void (`gravity_well`) keep their v0.6 ids and indices; Bleed (`shared_bleed`, ticks twice as fast while you move) and Explosive (`shared_explosive`, blasts where the spell ends) are new; all level 1–5. The triggers T1–T4 are offered in both runs with their final names (T4: On Finisher with the Blade, On Crit with the Gun); a trigger's small spell is drawn where it is cast (a sigil, the small slash or blast). Order fixes: no v0.5 rider from a wand card, a child slash feeds its own statuses, a cast feeds its stacks whole, a hook's bolt leaves past the enemy. Evidence [`evidence/WAND_SHARED.md`](evidence/WAND_SHARED.md) (screenshots NOT YET RUN) | WIP commits `588db57`…`3df5865`, then `v0.6.5 Step WN5a` |
 | WN5b | The v0.6 cards leave the offers and old builds turn into wand cards: 43 old cards (13 v0.5 attack items, the 4 ability mods, 17 M-list cards, the 3 MX4 legendary versions, the six old abilities; Ember, Storm, Frost and Venom Core and Gravity Well stay as WN5a's S cards) are retired by one table (`data/wand/migration.tres`; the mapping in WAND.md) and never offered again; a save or carry that holds one maps each onto its WAND.md card in pick order (a duplicate levels up; Orbit Blades level 3 → B15 at level 3; a legendary version → level 5) and refunds the rest at the shop's salvage price; v0.6.1 saves load again (they failed on `World.tuning`); the boss's legendary altar offers the run's wand cards at level 5 ("Mod · Level 5 · Legendary") and three ×2 triggers (On Hit, On Kill, On End: the spell cast twice); names: the old Blink card is "Blink Echo", the old ability "Orbiting Copies". S5 `shared_bleed` and S7 `shared_explosive` targets pending WN5a's merge. Evidence [`evidence/WAND_MIGRATION.md`](evidence/WAND_MIGRATION.md) | WIP commits, then `v0.6.5 Step WN5b` |
 
+| AU | Code audit fixes (audit of `a20850f`, 78 findings; owner 2026-10-13: "Fix everything the audit shows, do not break anything in the game"). Four agents, one per domain, merged on `claude/sharp-lovelace-74ii7v`. Bug fixes that change play: the shop's Reroll no longer repeats while Enter is held (P-12); an altar with an empty roll rolls again later instead of never opening (G-1); a swing tipping Hot keeps one reach (G-2); the boss door seal overlaps the wall faces (G-4); Plasma Arc keeps its mark when nobody is in reach (G-5); event and core-drop panels refuse a mod the build can't use (G-6); scaled boss attacks round half up (G-12); Seeker arcs see past 8 m (G-19); selling a mod keeps the combo order (G-23); the shock ring follows Effects density (P-13); no one-frame icon flicker (P-14); the dev master panel stays paused after the pause menu (P-16); two VFX looks fixed (P-19); a 2,000-sprite VFX budget (P-20a); content sanity checks and a corrupt-save size guard (A-13, A-14, A-16). Everything else is behaviour-identical clean-up. Kept on purpose: AimAssist (A-5 reverted: GAME_BLUEPRINT still promises it), stage/cube fallbacks (P-17/P-18), wave encounters (A-17), reference pathfinding (G-22). Not done: G-3 (save-format change), G-13 merge, G-14 (not identical by construction), P-15 (not a bug). Full suite on `7eb460a`: `bash scripts/verify.sh` → `Scripts 248 / Tests 1630 / Passing Tests 1630 / Asserts 1334839 / Time 6608.797s / All tests passed!`, `check_gut_log: ok (1630 passing, minimum 1598)`; `MIN_TEST_COUNT` 1598 → 1630 | `v0.7.0 audit …` commits, merged |
 ## Goldens changed on purpose
 - none (BR: the replay golden runs a boss-free kernel world; `test_replay_ground_plane.gd` passes unchanged)
 - none (WN1: `tests/golden/fixtures/modifier_equivalence.json` still matches under the slot-order compile, 3/3; the
@@ -24,6 +25,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 - none (WN5a: the modifier equivalence fixture and the replay golden pass unchanged; no fixture regenerated).
 - none (WN5b: no golden or fixture regenerated; the replay golden passes unchanged. New test fixtures, not goldens:
   `tests/fixtures/saves/v061_blade_floor1.save` and `v061_gun_floor2.save`, recorded with v0.6.1's code, `950add4`).
+- none (AU: the replay golden, the modifier-equivalence fixture and the export-smoke hash pass unchanged; no fixture
+  regenerated).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -35,6 +38,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
 | Card pool size (WN3 + WN4 merged): measured on the merged tree (`test_card_pool_reach.gd`: "blade pool: 88 in the data + 0 planned ([]) = 88", "gun pool: 83 in the data + 0 planned ([]) = 83"); the ceiling is 88 (WN3 had 90, WN4 92). Keep, or prune old cards now (WN5 prunes)? | — | pending (owner) | |
 | Card pool size (WN5b): after the migration retired 43 v0.6 cards, measured on a trial merge with WN5a (`7e88f80`): `test_card_pool_reach.gd` "blade pool: 61 in the data + 0 planned ([]) = 61", "gun pool: 59 in the data + 0 planned ([]) = 59" (on the WN5b branch alone 55 / 53); `POOL_MAX` 88 → 61. The owner's target was 40–50. Not pruned past WAND.md: the 13 passives outside the wand (Bulwark, Cold Snap, Executioner, …) stay. Keep, or prune further? | — | pending (owner) | |
 | Card pool size (final): 61 (Blade) / 59 (Gun) offered per run, against the 40–50 target | 2026-10-12 | "keep the pool size" | 2026-10-12 |
+| AU A-18: ARCHITECTURE.md names five things that don't exist (run_session/encounter_session/replay/CueBuffer modules, scripts/sim encounter_sim/run_sim/policies + bake_rooms, a nightly 10,000-seed job, a CI room re-bake, 200 seeds per biome per PR). Delete each claim, or file it as missing work? | 2026-10-13 | pending (owner) | |
+| AU A-5: aim assist — retire it in GAME_BLUEPRINT/ARCHITECTURE/SIM_CONTRACTS, or build it? (the unwired stub stays until then) | 2026-10-13 | pending (owner) | |
+| AU A-14: CONTENT_SCHEMA §0 says a content ERROR blocks starting a run; the game logs instead. Block, or fix the doc? | 2026-10-13 | pending (owner) | |
+| AU G-8: delete the CROSS room template too (drops "cross" from BossSchemas.ARENA_TEMPLATES)? | 2026-10-13 | pending (owner) | |
+| AU G-17: the two max-HP stat pushes floor differently (one at 1, one not). Which rule? | 2026-10-13 | pending (owner) | |
+| AU C-12: the curse-total cache fills lazily, so a WorldReader read can fill it (derived, unhashed). Keep, or rebuild eagerly at each write? | 2026-10-13 | pending (owner) | |
+| AU P-15: the swap panel's arrow at the row edge next to the placement slot does nothing. Keep, or move the other way? | 2026-10-13 | pending (owner) | |
+| AU G-3: a ProcLedger index (perf) needs a save-format change. Do it? | 2026-10-13 | pending (owner) | |
 
 ## History
 - 2026-10-12: plan from the owner's v0.6.1 playtest.
@@ -105,3 +116,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   "an older save keeps its pick order" still expected Serrated Edge to wait for S5 (in the data since the merge);
   the test now uses Shatter (no wand row) for the refund; `test_wand.gd` 16/16. The every-card soak:
   `SOAK| kills=265 events=6696 most_in_a_tick=188 limits=0`. MIN_TEST_COUNT 1550 → 1598. Pushed; the PR into `main`.
+- 2026-10-13: code audit fixes (AU) merged; one full suite on the merged result passed (1630/1630). Owner playtest
+  still needed: the shop reroll hold (P-12) and the boss damage rounding (G-12) are the feel changes.
