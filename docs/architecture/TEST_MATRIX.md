@@ -73,9 +73,9 @@ The same rule that worked in Deathventory (its ROADMAP §0.6):
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests (`tests/content/test_assets*.gd`) |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | The full suite, from a clean worktree of the commit |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + its folders and their e2e. The lead, after a merge: `scripts/ci/seams.sh`. The full suite: once per version, on the PR into `main` (GitHub, sharded) |
 
-A release always runs the full suite, the export smoke and the screenshot tour.
+Since 2026-10-13 (owner; CLAUDE.md "Testing before a push" and LOCKED_DECISIONS) there is no local full suite. GitHub's `verify` runs the full suite as parallel shards (`scripts/ci/gut_shard.sh`: every test file in exactly one shard, checked) and sums their passing tests against `tests/MIN_TEST_COUNT` (`scripts/ci/check_gut_total.sh`). A release always runs the full suite, the export smoke and the screenshot tour.
 
 ## 6. A review rejects a step when
 

@@ -149,6 +149,7 @@ add a row here and a change-log row in
 |---|---|---|---|
 | Exit gates and bands checked by **sims** (bot policies) | §4, SCORECARD | Bot balance sims are not run; balance is checked by the **owner** (owner: "From now on not run bot tests, because they do not represent reality") | 2026-10-08, v0.5.5 |
 | Waves of at most 4 agents | v0.3.5 PLAN | At most 3 agents at once | 2026-10-08, v0.5.5 |
+| One full suite per wave, by the lead (2026-10-09) | CLAUDE.md | No local full suite: the seams (`scripts/ci/seams.sh`) after a merge; the full suite once per version on the PR into `main`, sharded on GitHub | 2026-10-13, v0.7.5 |
 
 ---
 
