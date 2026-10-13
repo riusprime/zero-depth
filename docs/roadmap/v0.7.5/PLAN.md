@@ -38,6 +38,10 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N11 | "we're gonna reduce the amount of challenge rooms … like 20% less" | Challenge rooms (the sealed arenas and Overrun rooms): **20 % fewer**. MG: counted per floor; arena share 0.33 → 0.11; 3.23 → 2.42 a floor (−25 %) on the bigger floors | Done (MG) | MG |
 | N12 | "the shop is also gonna be there every two … floors" | **The shop appears every two floors**. MG (lead's reading): floors 1, 3, 5 … (a 3-floor run has two), by the run's floor number (`data/shop`: first floor 1, every 2) | Done (MG) | MG |
 | N13 | "I'll keep balancing the game while playing with the menu" | The owner balances v0.7.0 with the F10 dev panel; v0.7.5 doesn't retune numbers the owner is tuning. Values the owner sends ("Copy changes") are applied as data when they arrive | Decided | — |
+| N14 | "Warlord and Hive lens are rigged so you can animate, you will have to slice foundry's legs for animations" (with the three models) | The owner's Warlord, Hive Lens and Foundry models replace the code bodies; Warlord and Hive Lens animated in code from their bones; Foundry's legs cut into parts in code | Decided | BM |
+| N15 | "change how boss fights are, they will have more HP, and their attacks will be most oriented in dodging … tdlr: slower fights, centered around dodging spells, and make each fight different for each boss" (verbatim in [`../../design/BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md)) | Picks: "About 1.5×"; "Track, then lock 0.8 s"; "Shielded during big patterns". Per-boss design in BOSS_FIGHTS.md (G1 for the owner) | Design (G1) | BF |
+| N16 | "All normal enemies, besides the turrets and snipers should change into this kind of attacks, not bullets going fast but slower attacks, make them look like fireballs, but different for each enemy/boss, and the ones that change don't have the trayectory drawn in the ground anymore, only the turrets, the melee enemies keep the red thingy" | Arc Caster, Lens Drone and Bomb Drone fire slow fireball patterns with no ground line; Needle and Sniper unchanged; melee telegraphs unchanged (BOSS_FIGHTS.md "Normal enemies") | Design (G1) | EF |
+| N17 | "there is a branch claude/sharp-lovelace-74ii7v that you should start from, because we fixed some code bugs from there" | The audit branch (79 commits of v0.7.0 fixes) merged into this branch, both kept (`01c1e2f`) | Done | — |
 
 ## Steps
 | Step | Scope | Rows | Status |
@@ -49,6 +53,9 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
+| BM | The owner's Warlord, Hive Lens and Foundry models in game, animated | N14 | |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
 - **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold

@@ -81,3 +81,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
     the test's not-balance list (with audio, credits, patch notes). `tests/unit/debug` 10/10.
   The every-card soak: `SOAK| kills=265 events=6696 most_in_a_tick=188 limits=0`. MIN_TEST_COUNT 1598 → 1724. Pushed;
   the PR into `main`.
+- 2026-10-13: owner: the audit branch `claude/sharp-lovelace-74ii7v` is the base to build on; merged into this branch
+  (6 conflicts, both sides kept; import and lint clean; the six files' tests 45/45; seams NOT YET RUN at this line).
+  Owner N14–N16: the three boss models, the dodge-first boss fights and the enemy fireballs; design for the owner in
+  `docs/design/BOSS_FIGHTS.md`.
