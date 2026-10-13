@@ -28,6 +28,19 @@ var legs: Array[Node3D] = []
 var _mortar_glow: Array[MeshInstance3D] = []
 
 
+## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Turret Cross as its cannon's volleys (it recoils), the
+## Mortar Grid and the Barrage's tracked circles as its mortar tubes, the Rail lane as its rail's charge.
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	match _move:
+		WorldReader.MOVE_PATTERN:
+			_move = WorldReader.MOVE_BOLT_FAN
+		WorldReader.MOVE_GRID, WorldReader.MOVE_MARKS:
+			_move = WorldReader.MOVE_BARRAGE
+		WorldReader.MOVE_LANES:
+			_move = WorldReader.MOVE_RAIL
+
+
 ## The sheet's name for this boss: its imported model would be fortress_turret.glb.
 func model_id() -> StringName:
 	return &"fortress_turret"

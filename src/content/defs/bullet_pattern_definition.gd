@@ -15,7 +15,10 @@ extends ContentDef
 ##   adds a second wall at right angles.
 ## - FLOWER: `count` shots round whose speed follows a rose of `petals` petals (|cos(petals × angle / 2)|, a table
 ##   lookup), from `petal_min_permille` of the speed in a valley to the full speed on a petal; shots under
-##   `petal_cut_permille` are left out, which opens the gaps between the petals.
+##   `petal_cut_permille` are left out, which opens the gaps between the petals. v0.7.5 BF3: with `rain_seconds`
+##   > 0 the flower rains: each wave's drops are thrown up from the body and land `rain_seconds` later, `rain_m`
+##   (× the petal's factor) out from its edge, in the flower's shape round it, then roll on outward as the shots
+##   (in the air they draw and don't hurt; a drop landing on the player or in a wall is left out).
 ## - BURST: a lobbed shell lands after `lob_seconds` on the attack's locked target (a marker of `land_radius_m`
 ##   that hurts as it lands) and bursts into a star of `count` shots.
 ## Every kind: `waves` waves `wave_gap_seconds` apart; each wave turns by `turn_per_wave_degrees` (with `alternate`,
@@ -72,6 +75,10 @@ const GAP_CHECK_M := 4.0
 ## BURST.
 @export var lob_seconds := 0.8
 @export var land_radius_m := 1.4
+## FLOWER (v0.7.5 BF3): the drops' flight before they land (0 = no rain: the shots leave the body), and how far out
+## a petal's tip lands.
+@export var rain_seconds := 0.0
+@export var rain_m := 0.0
 
 
 func category() -> StringName:
@@ -140,12 +147,23 @@ func validate() -> Array[ValidationIssue]:
 				issues.append(ValidationIssue.new(&"no_gap", p, "petal_cut_permille: 100..900"))
 			if petal_min_permille < 100 or petal_min_permille > 1000:
 				issues.append(ValidationIssue.new(&"range", p, "petal_min_permille: 100..1000"))
+			if rain_seconds < 0.0 or rain_m < 0.0:
+				issues.append(ValidationIssue.new(&"range", p, "rain_seconds and rain_m >= 0"))
+			elif rain_seconds > 0.0 and int(round(rain_seconds * 60.0)) < 1:
+				issues.append(ValidationIssue.new(&"duration", p, "rain_seconds is under a tick"))
 	return issues
 
 
 ## Seconds from the first wave to the last shot leaving (the lob too): what the attack's active time covers.
 func duration_seconds() -> float:
-	return (lob_seconds if kind == Kind.BURST else 0.0) + wave_gap_seconds * (waves - 1)
+	return _lob_seconds() + wave_gap_seconds * (waves - 1)
+
+
+## The flight before the first wave's shots exist: a burst's shell, a raining flower's drops (v0.7.5 BF3).
+func _lob_seconds() -> float:
+	if kind == Kind.BURST:
+		return lob_seconds
+	return rain_seconds if kind == Kind.FLOWER else 0.0
 
 
 func _check_count(issues: Array[ValidationIssue], n: int) -> void:

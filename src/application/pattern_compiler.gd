@@ -17,6 +17,8 @@ static func compile_boss_attack(
 	t.mark_gap_ticks = SimTick.seconds_to_ticks(float(sp.get("stagger_seconds", 0.0)))
 	if t.move == BossAttackTable.Move.MARKS or t.move == BossAttackTable.Move.ROW_LANES:
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
+	if t.move == BossAttackTable.Move.GRID:  # v0.7.5 BF3: until its last volley strikes
+		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.mark_gap_ticks + 1)
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])
@@ -63,4 +65,8 @@ static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 		else 0
 	)
 	t.land_radius_m = def.land_radius_m
+	if def.kind == BulletPatternDefinition.Kind.FLOWER and def.rain_seconds > 0.0:  # v0.7.5 BF3
+		t.rain_ticks = maxi(1, SimTick.seconds_to_ticks(def.rain_seconds))
+		t.lob_ticks = t.rain_ticks
+		t.rain_m = def.rain_m
 	return t

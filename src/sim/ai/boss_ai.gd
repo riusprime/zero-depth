@@ -18,6 +18,8 @@ extends RefCounted
 ## exact position, lock for the attack's lock_ticks and strike (mark_of, row_lanes_of); any aimed attack with a lock
 ## tracks the exact position the same way (no lead) and its telegraph says when it locked; a shielded attack (the
 ## signature pattern) keeps the boss shielded while it runs (BossDodge: hits spark off, Damage).
+## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
+## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -43,6 +45,8 @@ const TRACKING_MOVES: Array[int] = [
 	BossAttackTable.Move.BOLT_FAN,
 	BossAttackTable.Move.FLOOD,
 	BossAttackTable.Move.PATTERN,  # v0.7.5 BF1: a pattern's aim (and a burst's landing) follows until it commits
+	BossAttackTable.Move.GRID,  # v0.7.5 BF3: the board's centre, then the flood's row, follow until they lock
+	BossAttackTable.Move.ROW_FLOOD,
 ]
 
 
@@ -321,7 +325,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			a.lock_a[i] = (aim - dir * atk.half_arc) & 4095
 			a.facing[i] = a.lock_a[i]
 			bs.span[b] = dir * atk.half_arc * 2
-		M.PATTERN:  # v0.7.5 BF1: a burst's shell lands where the windup last tracked
+		M.PATTERN, M.GRID, M.ROW_FLOOD:  # v0.7.5 BF1/BF3: a burst's landing, a board's or a row's centre
 			bs.set_pt(b, 0, target)
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
 			for k in atk.count:
@@ -503,12 +507,17 @@ static func resolve(w: World, i: int) -> void:
 				var a1 := rail_angle(w, i, st + 1)
 				if AttackShapes.span_touches(r[0], r[1], a0, a1 - a0, r[4], p, pr):
 					hit_player(w, i, atk, SimEvent.TAG_AREA, r[0])
-		M.FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt again every burn_ticks.
+		M.FLOOD, M.ROW_FLOOD:  # v0.4.0 BO: the lanes stay for the active time and hurt every burn_ticks.
 			if st < atk.active_ticks:
 				if st % atk.burn_ticks == 0:
 					w.bosses.hit[b] = 0
 				for k in atk.count:
-					if Collide.circle_vs_obb(p, pr, flood_lane_of(w, i, k)) != Vector2.ZERO:
+					var o := (
+						flood_lane_of(w, i, k)
+						if atk.move == M.FLOOD
+						else BossDodge.row_flood_of(w, i, k)
+					)
+					if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
 						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
 		M.BOLT_FAN:
@@ -519,6 +528,8 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_pattern(w, i, b, atk, st)
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: each marker strikes once, where it locked
 			BossDodge.resolve_marks(w, i, b, atk, st)
+		M.GRID:  # v0.7.5 BF3: each volley strikes its colour of the locked board
+			BossDodge.resolve_grid(w, i, b, atk, st)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -741,6 +752,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossDodge.marks_telegraph(w, i, atk)
 	if atk.move == M.PATTERN:
 		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
+	if atk.move == M.GRID:
+		return BossDodge.grid_telegraph(w, i, atk)
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
@@ -791,10 +804,16 @@ static func telegraph(w: World, i: int) -> Dictionary:
 			return {}
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			out = {"shape": &"discs", "centers": spots_of(w, i), "radius": atk.radius_m}
-		M.FLOOD:  # v0.4.0 BO: marked for the windup, then standing (spears, molten floor) while active.
+		M.FLOOD, M.ROW_FLOOD:  # v0.4.0 BO: marked for the windup, then standing (spears, molten floor).
 			var obbs: Array[Obb] = []
 			for k in atk.count:
-				obbs.append(flood_lane_of(w, i, k))
+				obbs.append(
+					(
+						flood_lane_of(w, i, k)
+						if atk.move == M.FLOOD
+						else BossDodge.row_flood_of(w, i, k)
+					)
+				)
 			out = {"shape": &"lanes", "obbs": obbs}
 			if not windup:
 				out["style"] = &"spears" if a.kinds[i] == ActorStore.Kind.WARLORD else &"molten"

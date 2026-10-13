@@ -37,6 +37,10 @@ var petal_min_permille := 450
 var petal_cut_permille := 300
 var lob_ticks := 0
 var land_radius_m := 0.0
+## v0.7.5 BF3: a raining FLOWER's drop flight (also its lob_ticks, so its waves land then) and how far out a petal's
+## tip lands (0 = no rain).
+var rain_ticks := 0
+var rain_m := 0.0
 
 
 ## Ticks from the pattern's start to its last shot (inclusive), plus one: the attack's active time.

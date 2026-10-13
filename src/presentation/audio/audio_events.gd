@@ -299,6 +299,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_laser"
 		WorldReader.MOVE_PATTERN:
 			return &"boss_mortar"
+		WorldReader.MOVE_GRID:  # v0.7.5 BF3: the board's shells land; the molten rows burst up
+			return &"boss_mortar"
+		WorldReader.MOVE_ROW_FLOOD:
+			return &"boss_floor_burst"
 	return &""
 
 

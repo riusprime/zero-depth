@@ -19,6 +19,8 @@ enum Move {
 	PATTERN,
 	MARKS,
 	ROW_LANES,
+	GRID,
+	ROW_FLOOD,
 }
 
 var id := &""
@@ -78,3 +80,6 @@ var lock_ticks := 0
 var mark_gap_ticks := 0
 var shielded := false
 var pattern: BulletPatternTable = null
+## v0.7.5 BF3: a `grid` attack's cells stand cell_m apart (centre to centre), `count` a side, struck in `volleys`
+## alternating colours of the checkerboard, mark_gap_ticks apart.
+var cell_m := 0.0

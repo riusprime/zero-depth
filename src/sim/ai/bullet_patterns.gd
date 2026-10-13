@@ -71,7 +71,8 @@ static func wave_shots(
 				if int(c * 1000.0) < p.petal_cut_permille:
 					continue
 				var f := (p.petal_min_permille + (1000 - p.petal_min_permille) * c) / 1000.0
-				_radial(pos, vel, origin, origin_r, base + rel, p.speed * f)
+				# v0.7.5 BF3: a raining flower's drops land rain_m × f out (0 = from the body's edge)
+				_radial(pos, vel, origin, origin_r + p.rain_m * f, base + rel, p.speed * f)
 		K.BURST:
 			for j in p.count:
 				_radial(pos, vel, origin, origin_r, base + j * 4096 / p.count, p.speed)
