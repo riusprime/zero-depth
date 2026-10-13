@@ -89,11 +89,7 @@ static func fit_sizes(name_text: String, desc_text: String) -> Vector2i:
 	var r := text_rect()
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
-	var ns: int = NAME_SIZES[NAME_SIZES.size() - 1]
-	for s: int in NAME_SIZES:
-		if bold.get_string_size(name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= r.size.x:
-			ns = s
-			break
+	var ns := CrystalCard.fit_width(bold, name_text, r.size.x, NAME_SIZES)
 	var room := r.size.y - bold.get_height(ns) - 12.0 - regular.get_height(DAMAGE_SIZE) - 8.0
 	var ds := CrystalCard.fit_size(regular, desc_text, r.size.x, room, DESC_SIZES, DESC_LINES)
 	return Vector2i(ns, ds)

@@ -1,5 +1,5 @@
 class_name ShopPanel
-extends Control
+extends ModalPanel
 ## The shop panel (v0.5.0 SH): while the sim waits on the open shop, the stock (the pick's cards, PickSlot, in the
 ## current CardStyle, with a price and the shard icon under each), the heal and the reroll, and the salvage list
 ## (every mod, stat card and ability but the weapon you can sell, with its refund). It shows what the sim offers and
@@ -16,8 +16,6 @@ extends Control
 ## v0.6.1 R1: the services and the salvage rows are the owner's crystal plaques (ShopTile); the stock keeps the
 ## crystal card frames.
 
-signal picked(value: int)
-
 ## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
 const ECHO := PanelInput.Echo.ARROWS
 const SALVAGE_COLUMNS := 4
@@ -28,8 +26,6 @@ const POOR := Color("#FF5A4D")
 ## v0.6.1 R1: a salvage plaque's width (px; four fit across at 1080p).
 const SELL_W := 340.0
 
-## Off while a menu sits over the panel.
-var input_enabled := true
 var heal_tile := ShopTile.new("ShopHeal", 360.0)
 var reroll_tile := ShopTile.new("ShopReroll", 360.0)
 ## v0.5.0 EV: lift your latest curse (shown only while you hold one).
@@ -45,14 +41,11 @@ var _cards := HBoxContainer.new()
 var _salvage := GridContainer.new()
 ## Focusable entries in reading order: {value, enabled, row, focus (Callable), node}.
 var _entries: Array[Dictionary] = []
-var _focus := 0
-var _open := false
 var _sig := ""
 var _shards_cache := 0
 var _limit := false
-## Audit P-12: one action per sim answer (the swap panel's latch). Set when an action is sent; cleared once the sim
-## has stepped past the tick it was sent on (the pick has been read, answered or refused) or the panel closes.
-var _sent := false
+## Audit P-12: one action per sim answer (the swap panel's latch, ModalPanel._sent). Set when an action is sent;
+## cleared once the sim has stepped past the tick it was sent on (the pick read, answered or refused) or on a close.
 var _sent_tick := 0
 var _tick := 0
 
@@ -61,18 +54,8 @@ func _init() -> void:
 	name = "ShopPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.5)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
-	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
-	var col := VBoxContainer.new()
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_theme_constant_override("separation", 14)
-	centre.add_child(col)
+	_add_dim(_dim, 0.5)
+	var col := _centred_column(VBoxContainer.new(), 14)
 	var head := HBoxContainer.new()
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -116,10 +99,7 @@ func _init() -> void:
 	HudStyle.style_label(_buys, 16)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	_salvage_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
-	for l: Label in [_title, _shards, _buys, _hint, _salvage_title, _salvage_none]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_labels([_title, _shards, _buys, _hint, _salvage_title, _salvage_none])
 	visible = false
 
 
@@ -128,12 +108,7 @@ func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	if _sent and _tick > _sent_tick:
 		_sent = false
-	if not reader.has_shop() or not reader.shop_open():
-		if _open:
-			_open = false
-			_sent = false
-			_sig = ""
-			visible = false
+	if _closed(reader.has_shop() and reader.shop_open()):
 		return
 	var s := reader.shop()
 	var sig := var_to_str(
@@ -160,12 +135,8 @@ func sync(reader: WorldReader) -> void:
 	_set_focus(0 if first else clampi(_focus, 0, _entries.size() - 1))
 
 
-func is_open() -> bool:
-	return _open
-
-
-func focus_index() -> int:
-	return _focus
+func _on_closed() -> void:
+	_sig = ""
 
 
 ## The focused entry's pick value (InputFrame.PICK_*), or PICK_NONE.

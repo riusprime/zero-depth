@@ -1,5 +1,5 @@
 class_name PickPanel
-extends Control
+extends ModalPanel
 ## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three cards
 ## (PickSlot: the owner's crystal frames since v0.5.5 A4, coloured by the card's family), a title (the chest's
 ## price) and a hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
@@ -10,8 +10,6 @@ extends Control
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
 ## Layouts (G2 mockups for the owner): ROW_CENTRE ships as the default.
 
-signal picked(value: int)
-
 enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 
 ## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
@@ -19,18 +17,13 @@ const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
 
 var layout := Layout.ROW_CENTRE
-## Off while a menu (pause) sits over the panel.
-var input_enabled := true
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _price_icon := ShardIcon.new(26.0)
 var _hint := Label.new()
 var _slots: Array[PickSlot] = []
 var _count := 0
-var _focus := 0
 var _reward := -1
-var _sent := false
-var _open := false
 var _swap_seen := false
 
 
@@ -39,10 +32,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	name = "PickPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.18 if layout == Layout.ROW_LOW else 0.45)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
+	_add_dim(_dim, 0.18 if layout == Layout.ROW_LOW else 0.45)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 14)
@@ -65,10 +55,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	HudStyle.style_label(_title, 26, true)  # v0.3.5 F16: the HUD's plain type
 	HudStyle.style_label(_hint, 15)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	for l: Label in [_title, _hint]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_labels([_title, _hint])
 	for k in SLOTS:
 		var s := PickSlot.new(k)
 		s.clicked.connect(_on_clicked)
@@ -81,11 +68,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
-	if not reader.choosing():
-		if _open:
-			_open = false
-			_sent = false
-			visible = false
+	if _closed(reader.choosing()):
 		return
 	var r := reader.choice_reward()
 	var rid := reader.reward_id(r)
@@ -206,14 +189,6 @@ func is_legendary() -> bool:
 	return _open and _slots[0].tier == CardFrames.LEGENDARY_TIER
 
 
-func is_open() -> bool:
-	return _open
-
-
-func focus_index() -> int:
-	return _focus
-
-
 func card_count() -> int:
 	return _count
 
@@ -257,11 +232,6 @@ func _on_clicked(k: int) -> void:
 		return
 	_set_focus(k)
 	_send(k + 1)
-
-
-func _send(value: int) -> void:
-	_sent = true
-	picked.emit(value)
 
 
 func _place(col: VBoxContainer) -> void:

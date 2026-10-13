@@ -35,11 +35,9 @@ func _init() -> void:
 ## The key's font size for `text`: KEY_FONT, or smaller (down to KEY_FONT_MIN) until it fits KEY_W (v0.6.0 UP: the
 ## owner saw "Left clic" cut off; long key names such as "Backspace" shrink instead).
 static func fit_key(text: String) -> int:
-	var f := HudStyle.font(true)
-	for s in range(AbilityHud.KEY_FONT, KEY_FONT_MIN - 1, -1):
-		if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= KEY_W:
-			return s
-	return KEY_FONT_MIN
+	return CrystalCard.fit_width(
+		HudStyle.font(true), text, KEY_W, range(AbilityHud.KEY_FONT, KEY_FONT_MIN - 1, -1)
+	)
 
 
 ## Whether `text` fits the slot's key corner at its fitted size (tests).
