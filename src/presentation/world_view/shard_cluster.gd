@@ -19,6 +19,8 @@ const TINTS := {
 	&"red_canyon": [Color("#FFE6C8"), Color("#EDB46A")],
 	## v0.7.5 NB1: Frozen Shore's ice, whiter and colder than the default (still off the player-core cyan).
 	&"frozen_shore": [Color("#EAF6FF"), Color("#8CC8F0")],
+	## v0.7.5 NB2: Starfall's nebula crystals, magenta-pink (off the player-core cyan and the Deep's violet).
+	&"starfall": [Color("#FFD8F6"), Color("#E26AD0")],
 	## Deep floors (v0.5.5 DS): the Deep haze's violet.
 	&"deep": [Color("#D6C2FF"), Color("#8A5CFF")],
 }

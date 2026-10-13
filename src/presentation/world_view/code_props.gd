@@ -5,15 +5,25 @@ extends RefCounted
 ## x and z in -0.5..0.5, bottom at y = 0, top at y = 1), its material and its natural size. StageKit draws them
 ## where a kit piece would go; a delivered .glb (docs/art/requests/v0.7.5_frozen_shore.md) replaces one by id
 ## through KitModels. Presentation only.
+## v0.7.5 NB2 (Starfall): star crystals (a small glowing cluster), meteorites (low dark faceted stones with a faint
+## glow) and the star monolith (a leaning faceted obelisk, square cover); docs/art/requests/v0.7.5_starfall.md.
 
 ## Per piece: natural height (m), footprint (m) and role, like KitModels.SPECS.
 const SPECS := {
 	&"snow_drift": {"height": 0.28, "foot": Vector2(0.9, 0.6), "role": &"decor"},
 	&"ice_shard": {"height": 0.4, "foot": Vector2(0.5, 0.5), "role": &"decor"},
+	&"star_crystal": {"height": 0.4, "foot": Vector2(0.5, 0.5), "role": &"decor"},
+	&"meteorite": {"height": 0.26, "foot": Vector2(0.6, 0.5), "role": &"decor"},
+	&"star_monolith": {"height": 1.6, "foot": Vector2(1.0, 1.0), "role": &"cover"},
 }
 const SNOW := Color("#E6EEF8")
 const ICE := Color("#BFE3F2")
 const ICE_GLOW := Color("#8FCFEA")
+## Starfall's pieces: the nebula crystal and its glow, the meteorite stone and its faint teal glow.
+const STAR_CRYSTAL := Color("#E9C8FF")
+const STAR_GLOW := Color("#C060F0")
+const METEOR := Color("#4A4260")
+const METEOR_GLOW := Color("#3FB8B0")
 
 static var _cache := {}
 
@@ -28,6 +38,12 @@ static func get_piece(id: StringName) -> Dictionary:
 			out = {"mesh": snow_drift_mesh(), "material": snow_material()}
 		&"ice_shard":
 			out = {"mesh": ice_shard_mesh(), "material": ice_material()}
+		&"star_crystal":
+			out = {"mesh": star_crystal_mesh(), "material": star_crystal_material()}
+		&"meteorite":
+			out = {"mesh": meteorite_mesh(), "material": meteor_material()}
+		&"star_monolith":
+			out = {"mesh": star_monolith_mesh(), "material": meteor_material()}
 	if not out.is_empty():
 		var spec: Dictionary = SPECS[id]
 		var foot: Vector2 = spec["foot"]
@@ -92,6 +108,113 @@ static func _spike(st: SurfaceTool, at: Vector3, h: float, w: float, lean: Vecto
 		_tri(st, ring[k], shoulder[k], ring[k2], inside)
 		_tri(st, ring[k2], shoulder[k], shoulder[k2], inside)
 		_tri(st, shoulder[k], tip, shoulder[k2], inside)
+
+
+## v0.7.5 NB2: a small cluster of hexagonal crystals from one root, the tallest near upright, three leaning out.
+static func star_crystal_mesh() -> ArrayMesh:
+	var st := _begin()
+	for spec: Array in [
+		[Vector3(0.0, 0.0, 0.0), 1.0, 0.12, Vector3(0.05, 0.0, -0.08)],
+		[Vector3(0.14, 0.0, -0.1), 0.66, 0.09, Vector3(-0.2, 0.0, -0.45)],
+		[Vector3(-0.12, 0.0, 0.12), 0.52, 0.08, Vector3(0.4, 0.0, 0.3)],
+		[Vector3(-0.15, 0.0, -0.14), 0.36, 0.07, Vector3(-0.45, 0.0, 0.1)],
+	]:
+		_prism(st, spec[0], spec[1], spec[2], spec[3], 6)
+	return _end(st)
+
+
+## v0.7.5 NB2: a low lumpy stone: a jittered eight-sided base, a bulging shoulder ring and a flattened top, faceted.
+static func meteorite_mesh() -> ArrayMesh:
+	var n := 8
+	var jitter := [1.0, 0.82, 0.94, 0.78, 0.97, 0.86, 0.92, 0.8]
+	var base: Array[Vector3] = []
+	var mid: Array[Vector3] = []
+	var top: Array[Vector3] = []
+	for k in n:
+		var a := TAU * k / n
+		var r: float = 0.5 * jitter[k]
+		base.append(Vector3(cos(a) * r * 0.85, 0.0, sin(a) * r * 0.85))
+		mid.append(Vector3(cos(a + 0.2) * r, 0.5 + 0.1 * (k % 3), sin(a + 0.2) * r))
+		top.append(Vector3(cos(a + 0.4) * r * 0.5, 0.86 + 0.06 * (k % 2), sin(a + 0.4) * r * 0.5))
+	var crown := Vector3(0.05, 1.0, 0.02)
+	var inside := Vector3(0.0, 0.45, 0.0)
+	var st := _begin()
+	for k in n:
+		var k2 := (k + 1) % n
+		_tri(st, base[k], mid[k], base[k2], inside)
+		_tri(st, base[k2], mid[k], mid[k2], inside)
+		_tri(st, mid[k], top[k], mid[k2], inside)
+		_tri(st, mid[k2], top[k], top[k2], inside)
+		_tri(st, top[k], crown, top[k2], inside)
+	return _end(st)
+
+
+## v0.7.5 NB2: a faceted obelisk of dark star stone, five-sided, tapering and leaning a little to an off-centre
+## point (square cover: its base fills the footprint).
+static func star_monolith_mesh() -> ArrayMesh:
+	var n := 5
+	var base: Array[Vector3] = []
+	var shoulder: Array[Vector3] = []
+	for k in n:
+		var a := TAU * k / n + 0.3
+		base.append(Vector3(cos(a) * 0.5, 0.0, sin(a) * 0.5))
+		var h := 0.72 + 0.1 * cos(a - 0.8)
+		shoulder.append(Vector3(cos(a) * 0.3 + 0.04, h, sin(a) * 0.3 - 0.03))
+	var tip := Vector3(0.08, 1.0, -0.05)
+	var inside := Vector3(0.02, 0.4, 0.0)
+	var st := _begin()
+	for k in n:
+		var k2 := (k + 1) % n
+		_tri(st, base[k], shoulder[k], base[k2], inside)
+		_tri(st, base[k2], shoulder[k], shoulder[k2], inside)
+		_tri(st, shoulder[k], tip, shoulder[k2], inside)
+	return _end(st)
+
+
+## A `sides`-sided crystal prism with a pointed tip at `at`, `h` tall and `w` across, tilted by `lean`.
+static func _prism(
+	st: SurfaceTool, at: Vector3, h: float, w: float, lean: Vector3, sides: int
+) -> void:
+	var b := Basis.from_euler(lean)
+	var ring: Array[Vector3] = []
+	var shoulder: Array[Vector3] = []
+	for k in sides:
+		var a := TAU * k / sides
+		var o := Vector3(cos(a) * w, 0.0, sin(a) * w)
+		ring.append(at + b * (o + Vector3(0, -0.05, 0)))
+		shoulder.append(at + b * (o + Vector3(0, h * 0.72, 0)))
+	var tip := at + b * Vector3(0, h, 0)
+	var inside := at + b * Vector3(0, h * 0.45, 0)
+	for k in sides:
+		var k2 := (k + 1) % sides
+		_tri(st, ring[k], shoulder[k], ring[k2], inside)
+		_tri(st, ring[k2], shoulder[k], shoulder[k2], inside)
+		_tri(st, shoulder[k], tip, shoulder[k2], inside)
+
+
+## v0.7.5 NB2: Starfall's crystal: pale violet, glossy, a magenta-violet glow from within.
+static func star_crystal_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = STAR_CRYSTAL
+	m.roughness = 0.15
+	m.metallic_specular = 0.8
+	m.rim_enabled = true
+	m.rim = 0.5
+	m.emission_enabled = true
+	m.emission = STAR_GLOW
+	m.emission_energy_multiplier = 0.55
+	return m
+
+
+## v0.7.5 NB2: meteorite stone: dark violet-grey, rough, a faint teal glow as if still warm from the fall.
+static func meteor_material() -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = METEOR
+	m.roughness = 0.8
+	m.emission_enabled = true
+	m.emission = METEOR_GLOW
+	m.emission_energy_multiplier = 0.08
+	return m
 
 
 static func snow_material() -> StandardMaterial3D:

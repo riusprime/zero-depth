@@ -6,14 +6,15 @@ extends Resource
 ## StageView, StageDresser and ActorViews read it, the sim never does. A biome without one (Ruins, Night Rocks,
 ## Red Canyon) keeps its hand-written look unchanged.
 
-const EDGES: Array[StringName] = [&"", &"water"]
+const EDGES: Array[StringName] = [&"", &"water", &"stars"]
 
 ## What a square cover footprint is drawn with: kit piece id -> weight (empty: the dresser's own rule).
 @export var square_cover: Dictionary = {}
 ## Floor decoration swaps: kit decor piece id -> the piece drawn instead (a kit or a code-made piece, CodeProps).
 @export var decor_swap: Dictionary = {}
 ## What lies beyond the floor's edge: &"" the void (the mood's void colour), &"water" a frozen sea with ice floes
-## and a snow bank under the floor (BiomeEdge).
+## and a snow bank under the floor (BiomeEdge); v0.7.5 NB2 &"stars" a starry void (Starfall: the floor a floating
+## island over twinkling stars, nebula light, and drifting rock and crystal islands).
 @export var edge := &""
 ## Enemies' grey and bone parts pulled toward this colour by its alpha (0: none). Their red, rings and bars never
 ## change (PRESENTATION_CONTRACTS §3).

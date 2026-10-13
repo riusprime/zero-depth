@@ -6,6 +6,12 @@ extends RefCounted
 ## comes from, it is not hashed: it is a pure function of the floor seed and the biome, and what it does (the hero's
 ## slide) shows in the hashed position and velocity. World.ice is null on every other biome: nothing is placed or
 ## drawn there.
+## v0.7.5 NB2: the same field carries Starfall's starglow pools (kind &"starglow"): the same placement rules, drawn
+## from their own `map:starglow` sub-stream, and on them the hero runs faster (speed_permille) with a short drift.
+## A field's kind says which it is; World.ice holds whichever surface the floor's biome has (one at most).
+
+## The surface: &"ice" (Frozen Shore) or &"starglow" (Starfall). Its sub-stream is `map:<kind>` (IcePatches).
+var kind := &"ice"
 
 ## Placement (per mille, counts, decimetres).
 var room_share_permille := 0
@@ -17,6 +23,8 @@ var clearance_m := 1.2
 ## The hero's easing on ice (PlayerTable.accel_permille / decel_permille's meaning).
 var accel_permille := 1000
 var decel_permille := 1000
+## v0.7.5 NB2: the hero's top walking speed on the surface, per mille of their own (1000 on ice: unchanged).
+var speed_permille := 1000
 ## The patches, axis-aligned on the sim plane.
 var rects: Array[Rect2] = []
 

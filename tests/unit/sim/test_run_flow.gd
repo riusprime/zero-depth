@@ -64,7 +64,7 @@ func _into(w: World) -> Vector2:
 func test_the_run_data_compiles() -> void:
 	var t := _run_table()
 	assert_eq(t.floors, 3)
-	assert_eq(t.biome_count, 4)  # v0.7.5 NB1: Frozen Shore joins the draw
+	assert_eq(t.biome_count, 5)  # v0.7.5 NB1: Frozen Shore joins the draw; NB2: Starfall
 	assert_eq(
 		t.enemy_hp_floor_permille, PackedInt32Array([1000, 1900, 3610]), "v0.4.0 SC: 1.9^(f - 1)"
 	)

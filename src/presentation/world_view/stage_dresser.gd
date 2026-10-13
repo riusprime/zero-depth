@@ -189,7 +189,9 @@ static func _dress_slab(
 		return
 	if length / depth < 1.6 and not square.is_empty():  # v0.7.5 NB1: the biome's own square cover
 		var choice := _pick(rng, square)
-		var spec: Dictionary = KitModels.SPECS.get(choice, {"height": 1.2})
+		var spec: Dictionary = KitModels.SPECS.get(
+			choice, CodeProps.SPECS.get(choice, {"height": 1.2})
+		)
 		var size := Vector3(length, _jitter(rng, float(spec["height"])), depth)
 		_add(out, choice, _place(fr, 0.0, 0.0, size), i, &"cover")
 		return

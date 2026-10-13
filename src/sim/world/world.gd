@@ -298,7 +298,8 @@ var arenas := ArenaState.new()  # v0.5.5 AR: the arena sealed now and those clea
 var legendary_table: LegendaryTable
 var legendary_id := -1
 ## v0.7.5 NB1: the floor's ice (Frozen Shore; IcePatches): loadout, null on every other biome (not hashed: laid from
-## the floor seed like the layout; its slide shows in the hashed position and velocity).
+## the floor seed like the layout; its slide shows in the hashed position and velocity). v0.7.5 NB2: or Starfall's
+## starglow pools (IceField.kind), the same way.
 var ice: IceField
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
@@ -1166,10 +1167,13 @@ func _move_and_collide() -> void:
 			if guarding():
 				speed = speed * player.guard_move_permille / 1000.0
 			target = mv * speed
+		var on_patch := ice != null and ice.covers(p)
+		if on_patch and ice.speed_permille != 1000:  # v0.7.5 NB2: Starfall's starglow speeds the hero's step
+			target = target * (ice.speed_permille / 1000.0)
 		var k := (
 			player.accel_permille if Kin.length(target) > Kin.length(vel) else player.decel_permille
 		)
-		if ice != null and ice.covers(p):  # v0.7.5 NB1: on ice the hero speeds up and stops slowly
+		if on_patch:  # v0.7.5 NB1: on ice the hero speeds up and stops slowly (NB2: starglow drifts a little)
 			k = ice.accel_permille if Kin.length(target) > Kin.length(vel) else ice.decel_permille
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:

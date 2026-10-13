@@ -1055,11 +1055,27 @@ def a_frozen_shore(r):
     return loop_echo(pale * 0.35 + waves + wind + ticks + creak, 0.61, 0.38)
 
 
+def a_starfall(r):
+    """v0.7.5 NB2: the starry void: a wide, slow-breathing chord of pure partials (a fifth and an octave over a
+    low root), a soft airy shimmer, and small high star chimes twinkling in and out, all in a long echo."""
+    n = n_of(AMB_SECONDS)
+    chord = drone(n, 65.4, [(1, 0.7), (1.5, 0.45), (2, 0.4), (3, 0.18), (4, 0.1)], 1, 0.35)
+    breath = 0.55 + 0.45 * loop_sine(n, 1, 0.9)
+    shimmer = loop_noise(r, n, 3000, 9000, 0.1) * (0.4 + 0.6 * np.maximum(0.0, loop_sine(n, 2, 0.4))) * 0.06
+    void = loop_noise(r, n, 40, 160, 0.0) * 0.18
+    chimes = sum(
+        loop_sine(n, cyc(f)) * np.maximum(0.0, loop_sine(n, k + 2, k * 1.9)) ** 30 * 0.09
+        for k, f in enumerate((1318.5, 1567.98, 1975.53, 2349.32))
+    )
+    return loop_echo(chord * breath * 0.4 + shimmer + void + chimes, 0.73, 0.5)
+
+
 AMBIENCE = [
     ("ruins", a_ruins),
     ("night_rocks", a_night_rocks),
     ("red_canyon", a_red_canyon),
     ("frozen_shore", a_frozen_shore),
+    ("starfall", a_starfall),
 ]
 
 # --- output ------------------------------------------------------------------------------------------------------

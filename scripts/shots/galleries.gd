@@ -17,6 +17,7 @@ const SHOTS := [
 	["biome_night_rocks", &"night_rocks", 35.26, &"xray", true],
 	["biome_red_canyon", &"red_canyon", 35.26, &"xray", true],
 	["biome_frozen_shore", &"frozen_shore", 35.26, &"xray", true],
+	["biome_starfall", &"starfall", 35.26, &"xray", true],
 ]
 
 var _index := -1
