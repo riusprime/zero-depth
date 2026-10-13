@@ -158,11 +158,7 @@ static func text_width() -> float:
 
 ## The largest line size at which `text` fits one line of the text column.
 static func fit_line(text: String) -> int:
-	var f := HudStyle.font(true)
-	for s: int in LINE_SIZES:
-		if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= text_width():
-			return s
-	return LINE_SIZES[LINE_SIZES.size() - 1]
+	return CrystalCard.fit_width(HudStyle.font(true), text, text_width(), LINE_SIZES)
 
 
 ## True when `text` fits one line of the text column at its fitted size, under the title (tests).

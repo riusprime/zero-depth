@@ -14,9 +14,7 @@ var _tag := "shot"
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("tag="):
-			_tag = arg.trim_prefix("tag=")
+	_tag = ScriptArgs.parse().get("tag", _tag)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/shadows"))
 	var profile := ProfileStore.new("")
 	profile.section("settings")["outline"] = "ink"

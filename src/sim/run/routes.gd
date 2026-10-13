@@ -216,12 +216,17 @@ static func end_first(layout: FloorLayout, spots: PackedVector2Array) -> PackedV
 		var d := Kin.length(spots[k] - layout.boss_door_center)
 		if best < 0 or d < Kin.length(spots[best] - layout.boss_door_center):
 			best = k
+	return to_front(spots, best)
+
+
+## `arr` (a packed array) with entry `best` moved to the front, the rest in order; `arr` itself when best <= 0
+## (Rewards.start_first's and end_first's one rule; audit G-17).
+static func to_front(arr: Variant, best: int) -> Variant:
 	if best <= 0:
-		return spots
-	var out := PackedVector2Array([spots[best]])
-	for k in spots.size():
-		if k != best:
-			out.append(spots[k])
+		return arr
+	var out: Variant = arr.duplicate()
+	out.remove_at(best)
+	out.insert(0, arr[best])
 	return out
 
 

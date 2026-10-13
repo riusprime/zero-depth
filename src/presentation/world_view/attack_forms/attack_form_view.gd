@@ -214,7 +214,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 		var look := _look_of(reader, bomb_keys[k])
 		if look.is_empty():
 			look = AttackFormLooks.compose({"form": AttackFormLooks.LOB}, _tier)
-		_bomb_looks[_pos_key(bomb_pos[k])] = look
+		var bomb_key := _pos_key(bomb_pos[k])
+		_bomb_looks.erase(bomb_key)  # P-19a: re-inserted last, so the cache's order is newest last
+		_bomb_looks[bomb_key] = look
 		(
 			_live_forms
 			. append(
@@ -263,8 +265,10 @@ func _sync_blasts(ab: Dictionary) -> void:
 			}
 		)
 	_last_blast = newest
-	if _bomb_looks.size() > 64:
-		_bomb_looks.clear()
+	if _bomb_looks.size() > 64:  # P-19a: drop the oldest, never a bomb still in flight (a flush lost its look)
+		var old := _bomb_looks.keys()
+		for i in old.size() - 64:
+			_bomb_looks.erase(old[i])
 
 
 ## The orbit blades (AbilityVisuals draws their steel): the ORBITER spec's element glow and trail round each.

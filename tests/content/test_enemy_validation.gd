@@ -166,3 +166,17 @@ func test_bad_warden_armour_is_rejected() -> void:
 		d.behaviour_params[b[0]] = b[1]
 		assert_has(_codes(d), &"armour", "%s = %s" % b)
 	assert_eq(_warden().validate(), [], "the shipped Warden passes")
+
+
+## v0.7.0 audit A-13: a shape param the compiler divides by or turns into ticks must be > 0 (a 0 speed made the
+## bolt's life an undefined tick count); every shipped enemy passes (test_the_shipped_enemies_are_valid_and_compile).
+func test_a_zero_shape_param_is_rejected() -> void:
+	for k in ["speed_mps", "length_m"]:
+		var d := _def()
+		var atk: AttackDefinition = d.attacks[0].duplicate()
+		atk.shape_params = atk.shape_params.duplicate()
+		atk.shape_params[k] = 0.0
+		d.attacks[0] = atk
+		assert_has(_codes(d), &"not_positive", k)
+	var ok := _def()
+	assert_eq(_codes(ok), [], "the shipped charger passes")

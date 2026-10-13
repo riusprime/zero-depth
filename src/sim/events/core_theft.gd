@@ -162,7 +162,7 @@ static func on_death(w: World, i: int) -> void:
 	if k >= 0 and w.cores.window_t[k] > 0:
 		var code := w.cores.card[k]
 		var boss := w.cores.boss[k] == 1
-		if not applies(w, code):
+		if not Shop.can_apply(w, code):  # the shop's rule, the one rule (audit G-6)
 			code = (
 				draw_legendary(w, w.ev.rng) if boss else draw_card(w, w.ev.rng, Stats.Rarity.RARE)
 			)
@@ -179,16 +179,6 @@ static func on_death(w: World, i: int) -> void:
 		var rare := draw_card(w, w.ev.rng, Stats.Rarity.RARE)
 		if rare >= 0:
 			grant(w, rare, a.pos(i), CoreState.Drop.ELITE_CARD)
-
-
-## A card would still do something (a mod you don't hold, a stat under its cap).
-static func applies(w: World, code: int) -> bool:
-	match Offers.type_of(code):
-		Offers.STAT:
-			return not Stats.at_cap(w, Offers.stat_of(code))
-		Offers.MOD:
-			return CardLevels.can_take(w, code)  # v0.6.5 WN3
-	return true
 
 
 ## THE grant (one function, so Step MX's 6-slot Swap replaces only this): a free one-card drop of `code` near `at`

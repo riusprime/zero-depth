@@ -163,6 +163,10 @@ static func _blast(w: World, t: SkillTable) -> void:
 	Attacks.launch(w, spec, ctx)
 
 
+## Twin: BladeForms._knock / _advance_knock (the Heavy card's push, BladeState.k_*). Kept apart on purpose (audit
+## G-13): merging moves this push from tick phase 5 to 6 and changes the hash layout. Differences: this one keeps
+## no per-entry step (push reads the live SkillTable each tick), appends a target already dead (push drops it), and
+## push rejects a gone actor with i >= 0 (the same as BladeForms' i > 0: index 0 is always the player).
 static func _knock(w: World, i: int, origin: Vector2, t: SkillTable) -> void:
 	var k := w.kit
 	var a := w.actors

@@ -26,6 +26,8 @@ var _row := HBoxContainer.new()
 var _weapon := HudStyle.label(14, true)
 var _utility := HudStyle.label(14)
 var _pips: Array[Panel] = []
+## P-3: each pip's own StyleBoxFlat, set once; sync recolours it (a bound StyleBox redraws its panel itself).
+var _boxes: Array[StyleBoxFlat] = []
 var _levels: Array[Label] = []
 ## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
@@ -50,6 +52,10 @@ func _init() -> void:
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var box := StyleBoxFlat.new()
+		box.set_border_width_all(1)
+		p.add_theme_stylebox_override("panel", box)
+		_boxes.append(box)
 		var lv := HudStyle.label(12, true)
 		lv.set_anchors_preset(Control.PRESET_FULL_RECT)
 		lv.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -73,11 +79,12 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	var weapon := reader.weapon_id()
-	visible = weapon != &"" or not reader.abilities().is_empty()
+	var abilities := reader.abilities()
+	visible = weapon != &"" or not abilities.is_empty()
 	if not visible:
 		return
 	var names := {}
-	for a: Dictionary in reader.abilities():
+	for a: Dictionary in abilities:
 		names[a["id"]] = a["name_key"]
 	_weapon.text = tr(names.get(weapon, &"")) if weapon != &"" else ""
 	var util := reader.utility_id()
@@ -90,8 +97,7 @@ func sync(reader: WorldReader) -> void:
 	var cuts: PackedInt32Array = reader.wand()["cuts"]  # v0.6.5 WN2: the trigger cards' slots
 	for k in _pips.size():
 		_pips[k].visible = k < shown
-		var box := StyleBoxFlat.new()
-		box.set_border_width_all(1)
+		var box := _boxes[k]
 		if k < slots.size():
 			var s: Dictionary = slots[k]
 			var tint := CardFrames.tint(
@@ -109,7 +115,6 @@ func sync(reader: WorldReader) -> void:
 			box.bg_color = Color(HudStyle.STONE_EDGE, 0.55)
 			box.border_color = Color(HudStyle.EMBER_TEXT, 0.22)
 			_levels[k].text = ""
-		_pips[k].add_theme_stylebox_override("panel", box)
 		_cuts[k].visible = k in cuts and k < shown - 1
 	_place()
 
@@ -120,11 +125,6 @@ func _place() -> void:
 		origin = anchor.get_global_rect().position - Vector2(0, LIFT + PIP)
 	_plate.size = _plate.get_combined_minimum_size()
 	_plate.global_position = origin - Vector2(0, (_plate.size.y - PIP) * 0.5)
-
-
-## The slab's rect on screen (tests: it stays inside the left part of the HUD in every language).
-func plate_rect() -> Rect2:
-	return _plate.get_global_rect()
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------
@@ -143,7 +143,3 @@ func cut_slots() -> PackedInt32Array:
 		if _cuts[k].visible:
 			out.append(k)
 	return out
-
-
-func weapon_text() -> String:
-	return _weapon.text

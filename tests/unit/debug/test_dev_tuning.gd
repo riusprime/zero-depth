@@ -89,6 +89,20 @@ func test_copy_lists_each_change_with_its_shipped_value() -> void:
 
 
 func test_no_overrides_change_nothing() -> void:
-	var before := ContentRepository.load_all().manifest_hash
+	var before := ContentRepository.load_all().manifest_hash()
 	_t.apply()
-	assert_eq(ContentRepository.load_all().manifest_hash, before)
+	assert_eq(ContentRepository.load_all().manifest_hash(), before)
+
+
+## v0.7.0 audit A-14: an edit that breaks the content is checked again on the next load (and logged as a warning:
+## a dev tweak may break a rule on purpose), instead of reaching the compiler unseen; the shipped content loads with
+## no errors.
+func test_a_broken_edit_is_checked_on_the_next_load() -> void:
+	_t.set_value(ENEMY, "hp", 0)
+	_t.apply()
+	var repo := ContentRepository.load_all()
+	assert_eq(repo.errors().size(), 1, "hp 0 is one content error")
+	assert_push_error_count(0, "a dev edit logs a warning, not an error")
+	_t.reset_all()
+	_t.apply()
+	assert_eq(ContentRepository.load_all().errors(), [], "shipped content: no errors")

@@ -90,11 +90,3 @@ static func glow_line(
 	ci.draw_line(a, b, Color(SHADOW, SHADOW.a * color.a), width + SHADOW_WIDTH, true)
 	ci.draw_line(a, b, Color(color, color.a * GLOW_ALPHA), width + GLOW_WIDTH, true)
 	ci.draw_line(a, b, color, width, true)
-
-
-static func glow_polyline(
-	ci: CanvasItem, pts: PackedVector2Array, color: Color, width: float = LINE
-) -> void:
-	ci.draw_polyline(pts, Color(SHADOW, SHADOW.a * color.a), width + SHADOW_WIDTH, true)
-	ci.draw_polyline(pts, Color(color, color.a * GLOW_ALPHA), width + GLOW_WIDTH, true)
-	ci.draw_polyline(pts, color, width, true)

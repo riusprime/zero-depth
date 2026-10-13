@@ -22,6 +22,4 @@ var min_spawn_distance_m := 3.0
 
 ## The wave size on floor `floor_index` from `sizes` (1-based; the last repeats).
 static func size_on(sizes: PackedInt32Array, floor_index: int) -> int:
-	if sizes.is_empty():
-		return 0
-	return sizes[clampi(floor_index - 1, 0, sizes.size() - 1)]
+	return SpawnTable.at(sizes, floor_index - 1, 0)

@@ -47,11 +47,17 @@ var casts := 1
 ## grown by their per_level × (level − 1). Compile-time only (Modifiers.build_modifiers).
 func at_level(level: int) -> ModifierOp:
 	var o := ModifierOp.new()
+	# Every field but hook_tags and child_ops (copied below), in one list (audit G-17).
 	for f: StringName in [
-		&"op", &"stage", &"field", &"value", &"form", &"status", &"stacks", &"every", &"element"
-	]:
-		o.set(f, get(f))
-	for f: StringName in [
+		&"op",
+		&"stage",
+		&"field",
+		&"value",
+		&"form",
+		&"status",
+		&"stacks",
+		&"every",
+		&"element",
 		&"trigger",
 		&"radius_m",
 		&"reach_m",

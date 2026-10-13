@@ -97,8 +97,8 @@ func _check_content() -> void:
 		return
 	var want := FileAccess.get_file_as_string(path).strip_edges()
 	_check(
-		repo.manifest_hash == want,
-		"manifest hash %s matches the project's" % repo.manifest_hash.left(12)
+		repo.manifest_hash() == want,
+		"manifest hash %s matches the project's" % repo.manifest_hash().left(12)
 	)
 
 

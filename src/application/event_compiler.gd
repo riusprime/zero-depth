@@ -32,7 +32,7 @@ static func curse_amount(effect: StringName, amount: float) -> int:
 	if CurseDefinition.COUNTS.has(effect):
 		return int(round(amount))
 	if CurseDefinition.SECONDS.has(effect):
-		return int(round(amount * SimTick.TICKS_PER_SECOND))
+		return SimTick.seconds_to_ticks(amount)
 	return int(round(amount * 10.0))
 
 
@@ -74,7 +74,7 @@ static func _cost_amount(cost: int, amount: float) -> int:
 		Events.Cost.HP, Events.Cost.MAX_HP:
 			return int(round(amount * 10.0))
 		Events.Cost.DEFEND:
-			return int(round(amount * SimTick.TICKS_PER_SECOND))
+			return SimTick.seconds_to_ticks(amount)
 	return int(round(amount))
 
 
@@ -96,8 +96,8 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.defend_radius_m = def.defend_radius_m
 	t.cleanse_price = def.cleanse_price
 	t.core_stagger_permille = int(round(def.core_stagger_share * 10.0))  # v0.6.0 CU: core theft
-	t.core_stagger_ticks = int(round(def.core_stagger_seconds * SimTick.TICKS_PER_SECOND))
-	t.core_window_ticks = int(round(def.core_window_seconds * SimTick.TICKS_PER_SECOND))
+	t.core_stagger_ticks = SimTick.seconds_to_ticks(def.core_stagger_seconds)
+	t.core_window_ticks = SimTick.seconds_to_ticks(def.core_window_seconds)
 	t.core_mod_weight = def.core_mod_weight
 	t.hunt_range_m = def.hunt_range_m
 	t.drop_offset_m = def.drop_offset_m

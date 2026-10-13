@@ -30,9 +30,7 @@ var _only := ""
 func _initialize() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	_suffix = "_" + RenderingServer.get_current_rendering_method()
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("only="):
-			_only = arg.trim_prefix("only=")
+	_only = ScriptArgs.parse().get("only", _only)
 	print(
 		(
 			"galleries: renderer=%s device=%s"

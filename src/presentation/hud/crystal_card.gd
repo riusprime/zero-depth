@@ -236,6 +236,15 @@ static func fit_size(
 	return sizes[sizes.size() - 1]
 
 
+## The largest size in `sizes` (largest first) at which `text` fits one line `width` wide, or the smallest when none
+## fits (P-11: the cards' and slots' one-line fits).
+static func fit_width(font: Font, text: String, width: float, sizes: Array) -> int:
+	for s: int in sizes:
+		if font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= width:
+			return s
+	return sizes[sizes.size() - 1]
+
+
 static func text_height(font: Font, text: String, width: float, s: int) -> float:
 	if text.is_empty():
 		return 0.0

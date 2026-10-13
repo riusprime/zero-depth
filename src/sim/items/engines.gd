@@ -154,17 +154,19 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
 			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
-			var fed := 0
-			for st: StringName in [&"burn", &"shock", &"bleed", &"frost", &"poison"]:
-				fed += b.stacks_of(st)
-			if fed > 0:
+			var b_burn := b.stacks_of(&"burn")  # each read once (audit G-16)
+			var b_shock := b.stacks_of(&"shock")
+			var b_bleed := b.stacks_of(&"bleed")
+			var b_frost := b.stacks_of(&"frost")
+			var b_poison := b.stacks_of(&"poison")
+			if b_burn + b_shock + b_bleed + b_frost + b_poison > 0:
 				w.engine_bolt_hits += 1
 				var n := w.engine_bolt_hits
-				burn = b.stacks_of(&"burn") if _every(n, b.every_of(&"burn")) else 0
-				shock = b.stacks_of(&"shock") if _every(n, b.every_of(&"shock")) else 0
-				bleed = b.stacks_of(&"bleed") if _every(n, b.every_of(&"bleed")) else 0
-				frost = b.stacks_of(&"frost") if _every(n, b.every_of(&"frost")) else 0
-				poison = b.stacks_of(&"poison") if _every(n, b.every_of(&"poison")) else 0
+				burn = b_burn if _every(n, b.every_of(&"burn")) else 0
+				shock = b_shock if _every(n, b.every_of(&"shock")) else 0
+				bleed = b_bleed if _every(n, b.every_of(&"bleed")) else 0
+				frost = b_frost if _every(n, b.every_of(&"frost")) else 0
+				poison = b_poison if _every(n, b.every_of(&"poison")) else 0
 		SRC_CHAIN:
 			shock = m.shock_chain
 		SRC_WAVE:
@@ -541,19 +543,10 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 ## Blood Harvest's heal, inside Vampiric Core's per-window cap (the same ledger as its kill heal). The HEAL event
 ## logs the request and what was applied.
 static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
-	var m := w.item_mods
 	var a := w.actors
 	if w.player_dead():
 		return
-	if w.heal_window_start < 0 or w.tick - w.heal_window_start >= m.heal_window_ticks:
-		w.heal_window_start = w.tick
-		w.heal_window_used = 0
-	var cap_left := maxi(0, m.heal_cap - w.heal_window_used)
-	var applied := maxi(0, mini(heal, mini(cap_left, a.max_hp[0] - a.hp[0])))
-	a.hp[0] += applied
-	w.heal_window_used += applied
-	if applied > 0:
-		w.heal_tick = w.tick
+	var applied := ItemProcs.heal_in_window(w, heal)  # the one window rule (audit G-17)
 	var h := w.emit_event(SimEvent.Kind.HEAL, a.ids[0], a.ids[0], a.ids[0], w.player_pos())
 	h.root_id = kill.root_id
 	h.parent_seq = kill.seq
@@ -569,10 +562,12 @@ static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
 static func plasma_arc(w: World, i: int, root: int) -> void:
 	var a := w.actors
 	var c := combo(w, ComboTable.Effect.PLASMA_ARC)
+	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
+	if to.is_empty():
+		return  # nobody in reach: the chain keeps its arc for a later shock (audit G-5)
 	if not w.proc_ledger.try_mark(root, CODE_PLASMA, a.ids[i], w.tick):
 		return
-	var to := nearest_enemies(w, i, a.pos(i), c.radius_m, 1)
-	if to.is_empty() or not begin(w, EFFECT_PLASMA_ARC):
+	if not begin(w, EFFECT_PLASMA_ARC):
 		return
 	var j := to[0]
 	var pid := a.ids[0]

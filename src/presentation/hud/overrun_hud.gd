@@ -56,7 +56,7 @@ func sync(reader: WorldReader) -> void:
 
 func _set_title(over: bool) -> void:
 	title.text = tr("HUD_OVERRUN" if over else "HUD_ARENA")
-	title.add_theme_color_override("font_color", RED if over else AMBER)
+	HudStyle.font_color(title, RED if over else AMBER)
 
 
 func _process(delta: float) -> void:

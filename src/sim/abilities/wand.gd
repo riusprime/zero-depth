@@ -29,11 +29,6 @@ static func slots(w: World) -> int:
 	return mini(MAX_SLOTS, w.wand_table.slots_at(w.run_floor_index()))
 
 
-## The cards held, in slot order (Offers codes).
-static func cards(w: World) -> PackedInt32Array:
-	return w.mod_slots
-
-
 static func size(w: World) -> int:
 	return w.mod_slots.size()
 

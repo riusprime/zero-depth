@@ -52,11 +52,9 @@ var _step_allowed := true
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("mode="):
-			_mode = arg.trim_prefix("mode=")
-		if arg.begins_with("ref="):
-			_ref = arg.trim_prefix("ref=")
+	var args := ScriptArgs.parse()
+	_mode = args.get("mode", _mode)
+	_ref = args.get("ref", _ref)
 	_dir = "res://build/shots/%s/character/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	if _mode == "motion":

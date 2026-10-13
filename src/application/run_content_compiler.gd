@@ -13,8 +13,8 @@ static func compile_arena(def: ArenaDefinition) -> ArenaTable:
 	t.waves_min = def.waves_min
 	t.waves_max = def.waves_max
 	t.wave_sizes = def.wave_sizes.duplicate()
-	t.first_wave_ticks = int(round(def.first_wave_seconds * SimTick.TICKS_PER_SECOND))
-	t.wave_gap_ticks = int(round(def.wave_gap_seconds * SimTick.TICKS_PER_SECOND))
+	t.first_wave_ticks = SimTick.seconds_to_ticks(def.first_wave_seconds)
+	t.wave_gap_ticks = SimTick.seconds_to_ticks(def.wave_gap_seconds)
 	t.min_spawn_distance_m = def.min_spawn_distance
 	return t
 
@@ -47,15 +47,15 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	var t := SimTuning.new()
 	if def == null:
 		return t
-	t.spawn_in_ticks = _ticks(def.spawn_in_seconds)
-	t.boss_intro_ticks = _ticks(def.boss_intro_seconds)
-	t.boss_after_stagger_cd = _ticks(def.boss_after_stagger_seconds)
-	t.gate_ticks = _ticks(def.gate_seconds)
+	t.spawn_in_ticks = SimTick.seconds_to_ticks(def.spawn_in_seconds)
+	t.boss_intro_ticks = SimTick.seconds_to_ticks(def.boss_intro_seconds)
+	t.boss_after_stagger_cd = SimTick.seconds_to_ticks(def.boss_after_stagger_seconds)
+	t.gate_ticks = SimTick.seconds_to_ticks(def.gate_seconds)
 	t.gate_adds_min = def.gate_adds_min
 	t.gate_adds_max = def.gate_adds_max
 	t.gate_add_ring_m = def.gate_add_ring_m
-	t.ai_commit_ticks = _ticks(def.ai_commit_seconds)
-	t.ai_snipe_commit_ticks = _ticks(def.ai_snipe_commit_seconds)
+	t.ai_commit_ticks = SimTick.seconds_to_ticks(def.ai_commit_seconds)
+	t.ai_snipe_commit_ticks = SimTick.seconds_to_ticks(def.ai_snipe_commit_seconds)
 	t.ai_strafe_permille = def.ai_strafe_permille
 	t.ai_flank_permille = def.ai_flank_permille
 	t.ai_flank_min_m = def.ai_flank_min_m
@@ -63,12 +63,12 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.ai_spread_radius_m = def.ai_spread_radius_m
 	t.ai_spread_weight = def.ai_spread_weight
 	t.ai_relocate_speed_permille = def.ai_relocate_speed_permille
-	t.ai_relocate_max_ticks = _ticks(def.ai_relocate_max_seconds)
-	t.ai_mend_scan_ticks = maxi(1, _ticks(def.ai_mend_scan_seconds))
+	t.ai_relocate_max_ticks = SimTick.seconds_to_ticks(def.ai_relocate_max_seconds)
+	t.ai_mend_scan_ticks = maxi(1, SimTick.seconds_to_ticks(def.ai_mend_scan_seconds))
 	t.heal_orbs_max = def.heal_orbs_max
 	t.pickup_radius_m = def.pickup_radius_m
 	t.fire_cap = def.fire_cap
-	t.fire_hit_ticks = maxi(1, _ticks(def.fire_hit_seconds))
+	t.fire_hit_ticks = maxi(1, SimTick.seconds_to_ticks(def.fire_hit_seconds))
 	t.fire_trail_spacing_m = def.fire_trail_spacing_m
 	t.field_min_m = def.field_min_m
 	return t
@@ -90,7 +90,3 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.max_span = def.max_span
 	p.place_attempts = def.place_attempts
 	return p
-
-
-static func _ticks(seconds: float) -> int:
-	return int(round(seconds * SimTick.TICKS_PER_SECOND))

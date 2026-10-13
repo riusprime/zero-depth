@@ -95,9 +95,10 @@ func add(id: int, table_index: int) -> int:
 	return b
 
 
-## The entry for an actor id, or -1.
+## The entry for an actor id, or -1. Ids are ascending (bosses are added in spawn order), so one binary search.
 func index_of(id: int) -> int:
-	return ids.bsearch(id) if ids.has(id) else -1
+	var k := ids.bsearch(id)
+	return k if k < ids.size() and ids[k] == id else -1
 
 
 func pt(b: int, k: int) -> Vector2:

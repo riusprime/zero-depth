@@ -89,7 +89,7 @@ static func _steer(w: World, pi: int) -> void:
 			p.vel_y[pi] = v.y
 		return
 	if p.home[pi] > 0:
-		var best := _nearest(w, at)
+		var best := _nearest(w, at, HOME_M)
 		if best >= 0:
 			var want := Kin.angle_of(w.actors.pos(best) - at)
 			var cur := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -98,11 +98,12 @@ static func _steer(w: World, pi: int) -> void:
 			p.vel_y[pi] = v.y
 
 
-static func _nearest(w: World, at: Vector2) -> int:
+## The nearest enemy whose body is within `r` of `at` (not invulnerable), or -1.
+static func _nearest(w: World, at: Vector2, r: float) -> int:
 	var a := w.actors
 	var best := -1
 	var best_d := 0.0
-	for i in w.enemies_near(at, HOME_M):
+	for i in w.enemies_near(at, r):
 		if a.invuln[i] > 0:
 			continue
 		var d := Kin.length(a.pos(i) - at)
@@ -137,9 +138,11 @@ static func pierce(w: World, pi: int, k: int, from: Vector2) -> bool:
 	return true
 
 
-## An enemy's angle seen from `origin` within `reach` (the nearest; Seeker's arcs snap to it), or `angle`.
+## An enemy's angle seen from `origin` within `reach` (the nearest; Seeker's arcs snap to it), or `angle`. The search
+## covers the reach itself, past HOME_M too (audit G-19); its centre must be within the reach (the search counts the
+## body's radius).
 static func snap_angle(w: World, origin: Vector2, angle: int, reach: float) -> int:
-	var best := _nearest(w, origin)
+	var best := _nearest(w, origin, reach)
 	if best < 0 or Kin.length(w.actors.pos(best) - origin) > reach:
 		return angle
 	return Kin.angle_of(w.actors.pos(best) - origin)

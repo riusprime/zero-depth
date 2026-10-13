@@ -81,7 +81,7 @@ func test_one_reachable_shop_in_a_side_room_over_1000_seeds() -> void:
 		reach.build(f.rooms[room], walls, PLAYER_RADIUS)
 		var front_region := reach.region_at(ShopPlacement.front(f))
 		assert_gte(front_region, 0, tag + ": the front is open")
-		for a in ShopPlacement.door_approaches(f, room):
+		for a in f.door_approaches(room):
 			assert_eq(reach.region_at(a), front_region, tag + ": a doorway reaches the terminal")
 		if s % 25 == 0:
 			_check_floor_reach(f, walls, tag)

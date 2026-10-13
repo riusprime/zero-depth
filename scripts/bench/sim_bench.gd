@@ -39,9 +39,9 @@ const HORDE_KINDS: Array[int] = [
 ## `-- --only=horde,stress_ai` runs only the named scenes (quick checks); the evidence runs them all.
 func _initialize() -> void:
 	var only := PackedStringArray()
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--only="):
-			only = arg.trim_prefix("--only=").split(",")
+	var args := ScriptArgs.parse()
+	if args.has("--only"):
+		only = String(args["--only"]).split(",")
 	var scenes := {
 		"stress": func() -> Dictionary: return _run("stress", _scene(11, 60, 5, 360, 36), null),
 		"reference":

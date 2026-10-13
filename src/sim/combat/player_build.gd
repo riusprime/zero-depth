@@ -34,20 +34,22 @@ static func melee_angle(w: World) -> int:
 ## A swing's damage under the build (the melee remainder carries over).
 static func melee_damage(w: World, base: int) -> int:
 	var pm := w.player.melee_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Combo Sword level
-	if pm == 1000:
-		return base
-	var total := base * pm + w.build_state.melee_residue
-	w.build_state.melee_residue = total % 1000
-	return total / 1000
+	return _exact_share(w, base, pm, &"melee_residue")
 
 
 ## A shot's damage per bolt under the build (the bolt remainder carries over, once per shot).
 static func bolt_damage(w: World, base: int) -> int:
 	var pm := w.player.bolt_damage_permille * Abilities.weapon_permille(w) / 1000  # v0.4.0: Pulse Gun level
+	return _exact_share(w, base, pm, &"bolt_residue")
+
+
+## `base` x `pm` per mille, exact on average: the remainder in build_state field `residue` carries to the next
+## call (the Blade's and the Gun's one rule; audit G-17).
+static func _exact_share(w: World, base: int, pm: int, residue: StringName) -> int:
 	if pm == 1000:
 		return base
-	var total := base * pm + w.build_state.bolt_residue
-	w.build_state.bolt_residue = total % 1000
+	var total: int = base * pm + int(w.build_state.get(residue))
+	w.build_state.set(residue, total % 1000)
 	return total / 1000
 
 

@@ -29,7 +29,3 @@ var loop_boss_damage_permille := 1000
 var loop_scale_cap_permille := 100000
 var loop_threat := 0
 var loop_catch_up_cap_permille := 0
-
-
-static func starting_values() -> RunTable:
-	return RunTable.new()

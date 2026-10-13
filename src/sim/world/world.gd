@@ -311,7 +311,15 @@ var ice: IceField
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
-var curses_owned := PackedInt32Array()
+## Every whole-value write (RunCarry.apply, WorldSnapshot.apply) drops Curses.total's cache; Curses.add and cleanse,
+## which change it in place, drop it themselves.
+var curses_owned := PackedInt32Array():
+	set(v):
+		curses_owned = v
+		curse_totals = PackedInt32Array()
+## v0.7.0 audit C-12: Curses.total's cache, one sum per Curses.Effect; empty = stale (rebuilt on the next read).
+## Derived from curses_owned and World.ev.curses: not hashed, not snapshotted (WorldSnapshot.WORLD_KEPT).
+var curse_totals := PackedInt32Array()
 var threat_peak := 0
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0
@@ -362,7 +370,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
 	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
-	var id := _take_id()
+	var id := take_id()
 	actors.add(
 		id,
 		ActorStore.Kind.PLAYER,
@@ -378,10 +386,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
 	nav.build(walls)
-	var rects: Array[Rect2] = []
-	for o in walls:
-		rects.append(o.bounds())
-	_wall_grid.build(rects)
+	rebuild_wall_grid()
 
 
 ## Indices of the walls that may touch `rect` (ascending; a superset), for sweeps that would test every wall (SC).
@@ -404,7 +409,7 @@ func actors_near(rect: Rect2) -> PackedInt32Array:
 
 ## Adds a dummy mover immediately (setup only; during a tick, spawns are queued).
 func add_dummy(p: Vector2, radius_m: float, hp: int) -> int:
-	var id := _take_id()
+	var id := take_id()
 	var first_shot := dummy_fire_period + (id % maxi(dummy_fire_period, 1))
 	actors.add(id, ActorStore.Kind.DUMMY, ActorStore.TEAM_ENEMY, p, radius_m, hp, first_shot)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
@@ -574,7 +579,7 @@ func set_enemy_tables(tables: Array[EnemyTable]) -> void:
 ## SPAWN_IN_TICKS.
 func add_enemy(kind: int, p: Vector2) -> int:
 	var t := enemy_table(kind)
-	var id := _take_id()
+	var id := take_id()
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
 	actors.invuln[i] = tuning.spawn_in_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
@@ -652,7 +657,7 @@ func _refresh_combos(announce: bool) -> void:
 
 ## Puts a pickup for item `item_index` on the floor at `pos` (setup, or a spawner in phase 9). Returns its id.
 func add_pickup(item_index: int, pos: Vector2) -> int:
-	var id := _take_id()
+	var id := take_id()
 	pickups.add(id, pos, item_index)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
@@ -676,15 +681,27 @@ func add_barrier(o: Obb) -> void:
 	_wall_grid.add(o.bounds())
 
 
-## v0.5.5 AR: removes a barrier (matched by its shape; a restored world holds copies) and rebuilds the wall grid.
-func remove_barrier(o: Obb) -> void:
-	var k := walls.size() - 1
-	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
-		k -= 1
-	if k < 0:
-		return
-	walls.remove_at(k)
-	rebuild_wall_grid()
+## v0.5.5 AR: removes barriers (each matched by its shape; a restored world holds copies), then rebuilds the wall
+## grid once (an arena's doorways all open on the same tick).
+func remove_barriers(list: Array[Obb]) -> void:
+	var removed := false
+	for o in list:
+		var k := _find_wall(o)
+		if k >= 0:
+			walls.remove_at(k)
+			removed = true
+	if removed:
+		rebuild_wall_grid()
+
+
+## The last wall with o's shape (centre, half-extents and angle), or -1. Walls added in play are matched by shape,
+## not identity: a restored world holds copies of them.
+func _find_wall(o: Obb) -> int:
+	for k in range(walls.size() - 1, -1, -1):
+		var x := walls[k]
+		if x.center == o.center and x.half == o.half and x.angle == o.angle:
+			return k
+	return -1
 
 
 ## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
@@ -729,16 +746,11 @@ func add_wall_now(o: Obb) -> void:
 ## matched by its shape (a restored world holds copies of the walls); the grid is rebuilt, and the flow field from
 ## before add_wall_now swaps back in (or is rebuilt if there is none) and floods from the player at once.
 func remove_wall_now(o: Obb) -> void:
-	var k := walls.size() - 1
-	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
-		k -= 1
+	var k := _find_wall(o)
 	if k < 0:
 		return
 	walls.remove_at(k)
-	var rects: Array[Rect2] = []
-	for x in walls:
-		rects.append(x.bounds())
-	_wall_grid.build(rects)
+	rebuild_wall_grid()
 	if _nav_open != null:
 		nav = _nav_open
 	else:
@@ -769,7 +781,7 @@ func boss_table_of_kind(kind: int) -> BossTable:
 ## with its own kind) and then BOSS_DEFEATED once.
 func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	var t := boss_tables[boss_table_index]
-	var id := _take_id()
+	var id := take_id()
 	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
 	actors.invuln[i] = tuning.boss_intro_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - pos)
@@ -784,7 +796,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
 ## Puts an altar (price 0) or a chest on the floor (setup). Returns its id.
 func add_reward(kind: int, pos: Vector2, price: int) -> int:
-	var id := _take_id()
+	var id := take_id()
 	rewards.add(id, pos, kind, price)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
@@ -870,12 +882,17 @@ func last_event_seq() -> int:
 
 
 ## Events with seq > after_seq, oldest first. The log keeps the most recent EVENT_LOG_CAP events.
+## The log is ascending by seq (emit_event appends, the trim drops the oldest), so a binary search finds the first.
 func events_since(after_seq: int) -> Array[SimEvent]:
-	var out: Array[SimEvent] = []
-	for e in _events:
-		if e.seq > after_seq:
-			out.append(e)
-	return out
+	var lo := 0
+	var hi := _events.size()
+	while lo < hi:
+		var mid := (lo + hi) >> 1
+		if _events[mid].seq > after_seq:
+			hi = mid
+		else:
+			lo = mid + 1
+	return _events.slice(lo)
 
 
 func state_hash() -> String:
@@ -1043,20 +1060,16 @@ func snapshot() -> Dictionary:
 	}
 
 
-## A fresh root id for a new chain (a player action or an enemy attack).
-## A fresh entity id (v0.4.0 TU: heal orbs).
+## A fresh entity id (actors, projectiles, v0.4.0 TU: heal orbs). Entity ids and chain roots share one counter.
 func take_id() -> int:
-	return _take_id()
-
-
-func take_root() -> int:
-	return _take_id()
-
-
-func _take_id() -> int:
 	var id := _next_id
 	_next_id += 1
 	return id
+
+
+## A fresh root id for a new chain (a player action or an enemy attack): an id from the same counter.
+func take_root() -> int:
+	return take_id()
 
 
 func emit_event(kind: SimEvent.Kind, source: int, owner: int, target: int, at: Vector2) -> SimEvent:
@@ -1276,7 +1289,8 @@ func _move_and_collide() -> void:
 					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
 				):
 					continue
-				# v0.4.0 TU: Collide.circle_vs_circle inlined (the same operations in the same order).
+				# The circle-circle push, applied half to each (a gets it, b its negation; coincident centres part
+				# along x). Inlined here for speed (v0.4.0 TU); test_collision drives it through this pass.
 				var d := (
 					Vector2(actors.pos_x[a], actors.pos_y[a])
 					- Vector2(actors.pos_x[b], actors.pos_y[b])
@@ -1319,7 +1333,6 @@ func _projectile_hits() -> void:
 			var t := Collide.sweep_vs_obb(a, b, r, walls[w])
 			if t >= 0.0 and t < best_t:
 				best_t = t
-				best_actor = -1
 				best_wall = w
 		for k in _actor_grid.query_rect(span):
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
@@ -1334,7 +1347,8 @@ func _projectile_hits() -> void:
 			):
 				continue
 			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
-			if t >= 0.0 and (t < best_t or (t == best_t and best_actor >= 0 and k < best_actor)):
+			# A tie keeps the earlier find: the wall, else the lower actor index (the grid returns them ascending).
+			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_actor = k
 		if best_t <= 1.0:
@@ -1409,7 +1423,7 @@ func _remove_dead() -> void:
 
 func _apply_spawns() -> void:
 	for s in _pending_projectiles:
-		var id := _take_id()
+		var id := take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4

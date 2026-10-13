@@ -41,6 +41,7 @@ static func setup(
 	var s := w.ev
 	s.events = events
 	s.curses = curses
+	Curses.invalidate(w)  # the curse sums follow the floor's curse tables
 	if rules != null:
 		s.rules = rules
 	if events.is_empty() and curses.is_empty():
@@ -69,10 +70,11 @@ static func place(
 
 
 ## The floor's event rooms, ascending (the generator side; property-tested over 1,000 seeds). Candidates are side
-## rooms: not the start hall, not the boss room, not the boss door's host room, not the Overrun room (AB) or the shop
-## room (SH; both marked on the layout before this runs), not in `taken` (any other side-room kind), and with a
-## clear pedestal spot. The count is drawn in rules.rooms_min..rooms_max from `map:event`, then
-## that many rooms by a partial shuffle of the candidates from the same stream.
+## rooms: not the start hall, not the boss room, not the boss door's host room, not the portal room, not the
+## Overrun room (AB) or the shop room (SH; both marked on the layout before this runs), not an arena (AR), not in
+## `taken` (any other side-room kind), and with a clear pedestal spot. The count is drawn in
+## rules.rooms_min..rooms_max from `map:event`, then that many rooms by a partial shuffle of the candidates from the
+## same stream.
 static func pick_rooms(
 	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array
 ) -> PackedInt32Array:
@@ -311,22 +313,12 @@ static func _reward_applies(w: World, k: int, c: int) -> bool:
 	var code := w.ev.roll_card[k * MAX_CHOICES + c]
 	match table(w, k).reward[c]:
 		Reward.STAT_EPIC, Reward.STAT_ECHO, Reward.MOD, Reward.ABILITY_LEVEL:
-			return code >= 0 and _card_applies(w, code)
+			return Shop.can_apply(w, code)  # the shop's rule, the one rule (audit G-6)
 		Reward.CLEANSE:
 			return not w.curses_owned.is_empty()
 		Reward.OVERCLOCK:
 			return w.heat != null
 	return true
-
-
-## A rolled card still does something (a stat under its cap, a mod not owned, an ability below its top level).
-static func _card_applies(w: World, code: int) -> bool:
-	match Offers.type_of(code):
-		Offers.STAT:
-			return not Stats.at_cap(w, Offers.stat_of(code))
-		Offers.ABILITY:
-			return Abilities.can_take(w, Offers.ability_of(code))
-	return CardLevels.can_take(w, code)  # v0.6.5 WN3: a held wand card levels up
 
 
 ## While a panel is open (tick phase 1c): a pick takes that choice, a cancel leaves; anything else waits.

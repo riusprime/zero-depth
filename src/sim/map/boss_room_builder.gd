@@ -37,14 +37,16 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	var host: int = place[0]
 	var rect: Rect2i = place[1]
 	var side: int = place[2]
-	var cell := _cell_rect(f, rect)
+	var cell := f.cell_rect(rect)
 	var structural: Array[Obb] = []
 	for i in f.slab_first:
 		structural.append(f.walls[i])
 	# Halves: drawn, the host side's from the host, then thickened past any wall already in the cells.
 	var halves := PackedFloat64Array()
 	for k in 4:
-		halves.append(rng.range_int(_cm(p.wall_half_min), _cm(p.wall_half_max)) / 100.0)
+		halves.append(
+			rng.range_int(FloorLayout.cm(p.wall_half_min), FloorLayout.cm(p.wall_half_max)) / 100.0
+		)
 	var back := (side + 2) % 4
 	halves[back] = f.room_halves[host * 4 + side]
 	halves = _thicken(cell, halves, structural)
@@ -98,11 +100,12 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	f.boss_door_angle = side * 1024
 	f.boss_door_width = width
 	f.boss_cells_rect = cell
+	# A hair deeper through the wall so it meets both faces (ArenaRooms.barrier's rule; audit G-4).
 	var seal := door.grow_individual(
-		0.05 if side % 2 == 1 else 0.0,
 		0.05 if side % 2 == 0 else 0.0,
 		0.05 if side % 2 == 1 else 0.0,
-		0.05 if side % 2 == 0 else 0.0
+		0.05 if side % 2 == 0 else 0.0,
+		0.05 if side % 2 == 1 else 0.0
 	)
 	f.boss_door_wall = Obb.make(seal.get_center(), seal.size * 0.5, 0)
 	_place_gate(f, interior, side)
@@ -120,17 +123,6 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	f.bounds = f.bounds.merge(cell.grow(m))
 	_grid_extent(f)
 	return boss
-
-
-static func _cm(metres: float) -> int:
-	return roundi(metres * 100.0)
-
-
-## A room's cells in metres, grid line to grid line.
-static func _cell_rect(f: FloorLayout, cells: Rect2i) -> Rect2:
-	var a := f.grid_origin + Vector2(cells.position) * f.cell_pitch
-	var b := f.grid_origin + Vector2(cells.end) * f.cell_pitch
-	return Rect2(a, b - a)
 
 
 static func _inset(cell: Rect2, halves: PackedFloat64Array) -> Rect2:
@@ -201,6 +193,9 @@ static func _door_rect(f: FloorLayout, host: int, side: int, interior: Rect2) ->
 	var margin := FloorParams.defaults().door_corner_margin
 	var width := minf(DOOR_WIDTH, floorf((hi - lo - 2.0 * margin) * 100.0) / 100.0)
 	assert(width >= FloorParams.defaults().door_width_min, "the boss door has no room")
+	if width < FloorParams.defaults().door_width_min:  # the stripped assert's release path (audit G-7)
+		push_error("BossRoomBuilder: the boss door has no room")
+		width = maxf(width, 0.0)
 	var half := width * 0.5
 	if along_x:
 		return Rect2(mid - half, a, width, b - a)
@@ -247,8 +242,8 @@ static func _skins(
 			var k1 := k
 			while k1 < n and _room_at(f, first + along * k1 + step) == _NONE:
 				k1 += 1
-			var c0 := _cell_rect(f, Rect2i(first + along * k, Vector2i.ONE))
-			var c1 := _cell_rect(f, Rect2i(first + along * (k1 - 1), Vector2i.ONE))
+			var c0 := f.cell_rect(Rect2i(first + along * k, Vector2i.ONE))
+			var c1 := f.cell_rect(Rect2i(first + along * (k1 - 1), Vector2i.ONE))
 			var lo := c0.position.x if along_x else c0.position.y
 			var hi := c1.end.x if along_x else c1.end.y
 			if along_x:
@@ -407,7 +402,7 @@ static func _shares_enough(
 	f: FloorLayout, p: FloorParams, host: int, rect: Rect2i, side: int
 ) -> bool:
 	var hr := f.rooms[host]
-	var c := _cell_rect(f, rect).grow(-p.wall_half_max)
+	var c := f.cell_rect(rect).grow(-p.wall_half_max)
 	var along_x := side % 2 == 1
 	var lo := maxf(hr.position.x, c.position.x) if along_x else maxf(hr.position.y, c.position.y)
 	var hi := minf(hr.end.x, c.end.x) if along_x else minf(hr.end.y, c.end.y)
@@ -417,7 +412,7 @@ static func _shares_enough(
 ## Where the door will meet the host's face (the middle of the shared stretch of the host's interior edge).
 static func _host_face(f: FloorLayout, host: int, rect: Rect2i, side: int) -> Vector2:
 	var hr := f.rooms[host]
-	var c := _cell_rect(f, rect)
+	var c := f.cell_rect(rect)
 	var along_x := side % 2 == 1
 	var lo := maxf(hr.position.x, c.position.x) if along_x else maxf(hr.position.y, c.position.y)
 	var hi := minf(hr.end.x, c.end.x) if along_x else minf(hr.end.y, c.end.y)
@@ -465,16 +460,6 @@ static func _place_gate(f: FloorLayout, r: Rect2, side: int) -> void:
 	f.portal_pos = face + f.portal_facing() * FloorLayout.GATE_HALF_DEPTH
 
 
-## The gate's footprint, its clear front square and a margin: kept free of interior pieces.
-static func _gate_zone(f: FloorLayout) -> Rect2:
-	var n := f.portal_facing()
-	var t := Vector2(-n.y, n.x)
-	var face := f.portal_pos - n * FloorLayout.GATE_HALF_DEPTH
-	var half_w := FloorLayout.GATE_WIDTH * 0.5 + 1.0
-	var depth := FloorLayout.GATE_HALF_DEPTH * 2.0 + FloorLayout.GATE_FRONT + 1.0
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
-
-
 ## The door's approach point just inside the boss room.
 static func _inner_approach(f: FloorLayout) -> Vector2:
 	var into := Kin.dir(f.boss_door_angle)
@@ -485,10 +470,7 @@ static func _inner_approach(f: FloorLayout) -> Vector2:
 ## The template's pieces that keep the door, the gate and the middle clear and leave the room one region.
 static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, template: int) -> Array[Obb]:
 	var r := f.rooms[f.boss_room]
-	var walls: Array[Obb] = []
-	for w in f.walls:
-		if w.bounds().intersects(r.grow(1.0)):
-			walls.append(w)
+	var walls := f.room_walls(f.boss_room)
 	var kept: Array[Obb] = []
 	var groups: Array = RoomInterior.groups(template, r, rng, p, false)
 	if template == FloorLayout.Template.SCATTER:
@@ -496,11 +478,20 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, template: i
 		var cells := f.room_cell_count(f.boss_room)
 		for k in mini(p.scatter_cap, cells * p.scatter_per_cell_max * 2):
 			var half_len := (
-				rng.range_int(_cm(p.slab_half_len_min), _cm(p.slab_half_len_max)) / 100.0
+				rng.range_int(
+					FloorLayout.cm(p.slab_half_len_min), FloorLayout.cm(p.slab_half_len_max)
+				)
+				/ 100.0
 			)
 			var angle := rng.range_int(0, 7) * 512
-			var cx := rng.range_int(_cm(r.position.x + 1.0), _cm(r.end.x - 1.0)) / 100.0
-			var cy := rng.range_int(_cm(r.position.y + 1.0), _cm(r.end.y - 1.0)) / 100.0
+			var cx := (
+				rng.range_int(FloorLayout.cm(r.position.x + 1.0), FloorLayout.cm(r.end.x - 1.0))
+				/ 100.0
+			)
+			var cy := (
+				rng.range_int(FloorLayout.cm(r.position.y + 1.0), FloorLayout.cm(r.end.y - 1.0))
+				/ 100.0
+			)
 			groups.append(
 				[Obb.make(Vector2(cx, cy), Vector2(half_len, p.slab_half_thickness), angle)]
 			)
@@ -524,7 +515,7 @@ static func _piece_allowed(
 	f: FloorLayout, p: FloorParams, r: Rect2, piece: Obb, walls: Array[Obb]
 ) -> bool:
 	var b := piece.bounds()
-	if not r.encloses(b) or b.intersects(_gate_zone(f)):
+	if not r.encloses(b) or b.intersects(f.gate_zone()):
 		return false
 	if Collide.circle_vs_obb(_inner_approach(f), p.door_clear_radius, piece) != Vector2.ZERO:
 		return false
@@ -536,20 +527,14 @@ static func _piece_allowed(
 
 ## The boss room's floor is one region holding the door's approach and the gate's front.
 static func _whole(f: FloorLayout, p: FloorParams, r: Rect2, walls: Array[Obb]) -> bool:
-	var reach := FloorReach.new()
-	reach.build(r, walls, p.nav_clearance)
-	if reach.region_count != 1:
-		return false
-	return reach.region_at(_inner_approach(f)) == 0 and reach.region_at(f.portal_front_point()) == 0
+	var must := PackedVector2Array([_inner_approach(f), f.portal_front_point()])
+	return FloorReach.whole(r, walls, p.nav_clearance, must)
 
 
 ## Where the boss appears: the room's middle, or the open cell nearest it.
 static func _spawn_spot(f: FloorLayout, p: FloorParams) -> Vector2:
 	var r := f.rooms[f.boss_room]
-	var walls: Array[Obb] = []
-	for w in f.walls:
-		if w.bounds().intersects(r.grow(1.0)):
-			walls.append(w)
+	var walls := f.room_walls(f.boss_room)
 	walls.append(_gate_box(f))
 	if _clear(r.get_center(), walls):
 		return r.get_center()

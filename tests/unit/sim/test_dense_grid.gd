@@ -102,6 +102,17 @@ func test_empty_grids_answer_empty() -> void:
 	assert_eq(g.query_segment(Vector2.ZERO, Vector2(5, 5), 0.5).size(), 0)
 
 
+func test_a_segment_query_on_a_circle_grid_is_refused() -> void:
+	var g := DenseGrid.new()
+	g.build_circles(
+		PackedFloat32Array([0.0, 3.0]),
+		PackedFloat32Array([0.0, 0.0]),
+		PackedFloat32Array([0.5, 0.5])
+	)
+	assert_eq(g.query_segment(Vector2(-1, 0), Vector2(4, 0), 0.5).size(), 0)
+	assert_push_error("box mode only")
+
+
 func test_adding_a_box_finds_it() -> void:
 	var g := DenseGrid.new()
 	g.build(_boxes(20, 2))

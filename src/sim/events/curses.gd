@@ -88,8 +88,29 @@ static func threat(w: World) -> int:
 
 
 ## The summed amount of every held curse's drawbacks and upsides with `effect` (per mille; a count for the count
-## effects, ticks for HIT_STUN).
+## effects, ticks for HIT_STUN); 0 without curses. v0.7.0 audit C-12: the hooks run per enemy per tick, so the sums
+## are kept in World.curse_totals, summed again after anything that changes them: add, cleanse, a whole new
+## curses_owned (World's setter: the run's carry, a restore), a floor's curse tables (Events.setup) and a restore
+## (WorldSnapshot.apply).
 static func total(w: World, effect: int) -> int:
+	if effect < 0 or effect >= Effect.size():
+		return _sum(w, effect)
+	if w.curse_totals.is_empty():
+		var sums := PackedInt32Array()
+		sums.resize(Effect.size())
+		sums.fill(0)
+		for e in Effect.size():
+			sums[e] = _sum(w, e)
+		w.curse_totals = sums
+	return w.curse_totals[effect]
+
+
+## Drops the cached sums (they are summed again on the next read).
+static func invalidate(w: World) -> void:
+	w.curse_totals = PackedInt32Array()
+
+
+static func _sum(w: World, effect: int) -> int:
 	var n := 0
 	for c in w.curses_owned:
 		if c >= w.ev.curses.size():
@@ -105,7 +126,7 @@ static func total(w: World, effect: int) -> int:
 
 
 static func has(w: World, effect: int) -> bool:
-	return not w.curses_owned.is_empty() and total(w, effect) > 0
+	return total(w, effect) > 0
 
 
 ## Takes curse c (no-op when already held). T and its peak follow; a max HP cut moves max HP (v0.6.0 CU).
@@ -114,6 +135,7 @@ static func add(w: World, c: int) -> bool:
 		return false
 	var hp_before := Stats.max_hp(w)
 	w.curses_owned.append(c)
+	invalidate(w)
 	_follow_max_hp(w, hp_before)
 	w.threat_peak = maxi(w.threat_peak, threat(w))
 	w.ev.curse_tick = w.tick
@@ -134,6 +156,7 @@ static func cleanse(w: World, c: int = -1) -> bool:
 	w.ev.cleanse_tick = w.tick
 	var hp_before := Stats.max_hp(w)
 	w.curses_owned.remove_at(at)
+	invalidate(w)
 	_follow_max_hp(w, hp_before)
 	return true
 
@@ -184,8 +207,6 @@ static func regen(w: World, rate_permille: int) -> int:
 
 ## Overclock heat's decay per tick: Leaky Core speeds it up, Fevered (v0.6.0 CU) slows it down.
 static func heat_decay(w: World, per_tick: int) -> int:
-	if w.curses_owned.is_empty():
-		return per_tick
 	var a := total(w, Effect.HEAT_DECAY)
 	var d := per_tick if a == 0 else per_tick * (1000 + a) / 1000
 	var linger := mini(total(w, Effect.HEAT_LINGER), 1000)
@@ -294,7 +315,7 @@ static func no_dash(w: World) -> bool:
 ## would land, only while a dodge chance is held. A dodge gives the hurt i-frames (one dodge negates one hit) and the
 ## cue (STATUS_APPLY effect &"dodge" on the player; CurseState.dodge_tick).
 static func dodges(w: World, owner_id: int, at: Vector2) -> bool:
-	var chance := total(w, Effect.DODGE) if not w.curses_owned.is_empty() else 0
+	var chance := total(w, Effect.DODGE)
 	if chance <= 0 or not w.rng_combat.chance_permille(chance):
 		return false
 	var pid := w.actors.ids[0]
@@ -308,15 +329,13 @@ static func dodges(w: World, owner_id: int, at: Vector2) -> bool:
 
 ## Heavy Hands: the attack speed stat's value (per mille) under its cut.
 static func attack_speed(w: World, m: int) -> int:
-	if w.curses_owned.is_empty():
-		return m
 	var cut := mini(total(w, Effect.ATTACK_SLOW), 900)
 	return m if cut == 0 else maxi(1, (m * (1000 - cut) + 500) / 1000)
 
 
 ## Heavy Hands: a Blade swing's damage (PlayerKit._resolve_swing): the combo's 4th step deals + amount.
 static func swing_damage(w: World, dmg: int) -> int:
-	if w.curses_owned.is_empty() or w.combo_step != FOURTH_STEP:
+	if w.combo_step != FOURTH_STEP:
 		return dmg
 	var a := total(w, Effect.FOURTH_HIT)
 	if a == 0:
@@ -327,8 +346,6 @@ static func swing_damage(w: World, dmg: int) -> int:
 
 ## Heavy Hands: a Gun shot's damage per bolt (PlayerKit._fire_bolt): every 4th shot deals + amount.
 static func shot_damage(w: World, dmg: int) -> int:
-	if w.curses_owned.is_empty():
-		return dmg
 	var a := total(w, Effect.FOURTH_HIT)
 	if a == 0:
 		return dmg
@@ -341,19 +358,17 @@ static func shot_damage(w: World, dmg: int) -> int:
 
 ## Glass Heart: the max HP multiplier, per mille.
 static func max_hp_permille(w: World) -> int:
-	if w.curses_owned.is_empty():
-		return 1000
 	return 1000 - mini(total(w, Effect.MAX_HP_CUT), 900)
 
 
 ## Glass Heart: + crit chance, per mille.
 static func crit_chance(w: World) -> int:
-	return 0 if w.curses_owned.is_empty() else total(w, Effect.CRIT_CHANCE)
+	return total(w, Effect.CRIT_CHANCE)
 
 
 ## Blood Price: a hit's damage multiplier for its tags, per mille (skill and ability hits).
 static func ability_damage_permille(w: World, tags: int) -> int:
-	if w.curses_owned.is_empty() or not (tags & (SimEvent.TAG_SKILL | SimEvent.TAG_ABILITY)):
+	if not (tags & (SimEvent.TAG_SKILL | SimEvent.TAG_ABILITY)):
 		return 1000
 	return 1000 + total(w, Effect.ABILITY_DAMAGE)
 
@@ -361,8 +376,6 @@ static func ability_damage_permille(w: World, tags: int) -> int:
 ## Blood Price: a Skill or Blink was used (PlayerSkill._start, PlayerKit.advance_utility): it costs `amount` per
 ## mille of max HP (at least 1), never below 1 HP. No DAMAGE event: it isn't a hit (CurseState.blood_tick).
 static func on_ability_use(w: World) -> void:
-	if w.curses_owned.is_empty():
-		return
 	var cost := total(w, Effect.ABILITY_HP_COST)
 	if cost <= 0:
 		return
@@ -374,7 +387,7 @@ static func on_ability_use(w: World) -> void:
 
 ## Fevered: + Overclock damage, per mille.
 static func overclock_bonus(w: World) -> int:
-	return 0 if w.curses_owned.is_empty() else total(w, Effect.OVERCLOCK_DAMAGE)
+	return total(w, Effect.OVERCLOCK_DAMAGE)
 
 
 ## Tunnel Vision: the minimap is off.
@@ -384,13 +397,11 @@ static func no_minimap(w: World) -> bool:
 
 ## Tunnel Vision: the shard gain multiplier, per mille.
 static func shard_permille(w: World) -> int:
-	return 1000 if w.curses_owned.is_empty() else 1000 + total(w, Effect.SHARD_GAIN)
+	return 1000 + total(w, Effect.SHARD_GAIN)
 
 
 ## Brittle (Damage._apply): an enemy's hit hurt the player (not a DoT tick): the stun starts (or restarts).
 static func on_player_hit(w: World) -> void:
-	if w.curses_owned.is_empty():
-		return
 	var t := total(w, Effect.HIT_STUN)
 	if t <= 0:
 		return
@@ -413,15 +424,13 @@ static func advance(w: World) -> void:
 static func move_factor(w: World) -> float:
 	if w.cs.stun_t > 0:
 		return 0.0
-	if w.curses_owned.is_empty():
-		return 1.0
 	var a := total(w, Effect.MOVE_SPEED)
 	return 1.0 if a == 0 else (1000 + a) / 1000.0
 
 
 ## Marked: elite actor i's move factor: x (1 + amount) while within the hunt range of the player.
 static func hunt_factor(w: World, i: int) -> float:
-	if w.curses_owned.is_empty() or w.ev.elite_ids.is_empty():
+	if w.ev.elite_ids.is_empty():
 		return 1.0
 	var a := total(w, Effect.ELITE_HUNT)
 	if a == 0 or not is_elite(w, w.actors.ids[i]):

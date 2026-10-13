@@ -270,3 +270,20 @@ func test_a_save_mid_ambush_with_a_curse_restores_the_same_world() -> void:
 		w.step(InputFrame.new())
 		base.step(InputFrame.new())
 	assert_eq(base.state_hash(), w.state_hash(), "and it plays on the same")
+
+
+## Audit G-6: a rolled mod that stopped working with the build (its ability is gone) is nothing to gain, by the
+## shop's rule (Shop.can_apply).
+func test_a_rolled_mod_that_no_longer_works_is_nothing_to_gain() -> void:
+	var w := _world(&"scrap_heap")
+	w.shards = 50  # test setup
+	EventLab.open(w)
+	assert_eq(Events.block(w, 0, 0), Events.OK, "the rolled mod works")
+	var dead := -1
+	for k in w.item_tables.size():
+		if not ItemPool.usable(w, k) and CardLevels.can_take(w, k):
+			dead = k
+			break
+	assert_gte(dead, 0, "a mod this build can't use (e.g. its ability was sold)")
+	w.ev.roll_card[0] = dead  # test setup: e.g. its ability was sold since the roll
+	assert_eq(Events.block(w, 0, 0), Events.NEED_NOTHING_TO_GAIN)

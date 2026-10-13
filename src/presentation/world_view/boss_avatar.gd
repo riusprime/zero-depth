@@ -129,11 +129,6 @@ func _weak_point_at() -> Vector3:
 	return Vector3(0.75, 1.55, 0)
 
 
-## 0..1: how open the weak point shows (tests).
-func weak_amount() -> float:
-	return _weak_shown
-
-
 ## Reads boss i's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
 	var tg := reader.telegraph(i)

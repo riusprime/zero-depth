@@ -668,7 +668,7 @@ func close_pause() -> void:
 		_pause = null
 	if driver != null:
 		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
-		driver.paused = false
+		driver.paused = _devm != null  # the master dev panel (F10) keeps the run paused behind it
 	if _end == null:
 		hints.set_covered(false)  # v0.7.5 SM
 

@@ -1,5 +1,5 @@
 class_name EventPanel
-extends Control
+extends ModalPanel
 ## An event room's panel (v0.5.0 EV, PLAN R3): while the sim waits on an open pedestal, the event's name and line,
 ## then one card per choice and a last "Leave it" card, in the pick cards' look (CardStyle.current, FACET). Each
 ## choice card names its cost (red), its reward (the rolled card's own face for a card reward) and, when it carries
@@ -12,8 +12,8 @@ extends Control
 ## table; Plaques.USE_FAMILY for shards, a chest, overclock, a cleanse and Leave); a choice that carries a curse wears
 ## the curse colour. The text steps down in size until it fits the plaque's dark panel (en and es).
 
-signal picked(value: int)
-
+## Key repeats (PanelInput.Echo): a held key's repeats are not the panel's.
+const ECHO := PanelInput.Echo.IGNORE
 ## The plaque's size (px at the 1920 x 1080 base) and its two text columns.
 const CARD_W := 1060.0
 const CARD_H := 180.0
@@ -38,7 +38,6 @@ const MIN_SIZE := 10
 const COST := Color("#FF7A6B")
 const GAIN := Color("#8FE3A1")
 
-var input_enabled := true
 var _dim := ColorRect.new()
 var _title := HudStyle.label(28, true)
 var _desc := HudStyle.label(16)
@@ -51,9 +50,6 @@ var _steps := PackedInt32Array()
 ## Per card: the value sent (1..n or PICK_CANCEL) and whether the sim would take it.
 var _values := PackedInt32Array()
 var _ok: Array[bool] = []
-var _focus := 0
-var _open := false
-var _sent := false
 var _pedestal := -1
 
 
@@ -61,22 +57,9 @@ func _init() -> void:
 	name = "EventPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.5)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
-	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
-	var col := VBoxContainer.new()
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_theme_constant_override("separation", 12)
-	centre.add_child(col)
-	for l: Label in [_title, _desc, _hint]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_add_dim(_dim, 0.5)
+	var col := _centred_column(VBoxContainer.new(), 12)
+	style_labels([_title, _desc, _hint])
 	_title.add_theme_color_override("font_color", EventPedestalViews.GLOW.lerp(Color.WHITE, 0.35))
 	_desc.add_theme_color_override("font_color", Color(1, 1, 1, 0.75))
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.6))
@@ -92,11 +75,7 @@ func _init() -> void:
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
-	if not reader.event_open():
-		if _open:
-			_open = false
-			_sent = false
-			visible = false
+	if _closed(reader.event_open()):
 		return
 	var k := reader.event_open_index()
 	if _open and k == _pedestal:
@@ -205,16 +184,8 @@ static func leave_lines(ci: Object) -> Dictionary:
 	}
 
 
-func is_open() -> bool:
-	return _open
-
-
 func card_count() -> int:
 	return _cards.size()
-
-
-func focus_index() -> int:
-	return _focus
 
 
 ## Card k's texts, by line name (title, cost, reward, curse, block), for tests and the shot script.
@@ -400,44 +371,18 @@ func _width(l: Label) -> float:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3:
-				_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_take(_focus)
-			KEY_ESCAPE:
-				_send(InputFrame.PICK_CANCEL)
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_take(_focus)
-			JOY_BUTTON_B:
-				_send(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
+	var d := PanelInput.decode(event, 3, ECHO)
+	match d.kind:
+		PanelInput.Kind.DIGIT:
+			_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_take(_focus)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			_set_focus(clampi(_focus + d.line(), 0, maxi(0, _cards.size() - 1)))
+		_:
 			return
-	else:
-		return
-	if step != 0:
-		_set_focus(clampi(_focus + step, 0, maxi(0, _cards.size() - 1)))
 	get_viewport().set_input_as_handled()
 
 
@@ -461,8 +406,3 @@ func _set_focus(k: int) -> void:
 func _take(k: int) -> void:
 	if k >= 0 and k < _cards.size() and _ok[k]:
 		_send(_values[k])
-
-
-func _send(value: int) -> void:
-	_sent = true
-	picked.emit(value)

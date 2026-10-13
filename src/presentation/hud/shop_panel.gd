@@ -1,5 +1,5 @@
 class_name ShopPanel
-extends Control
+extends ModalPanel
 ## The shop panel (v0.5.0 SH): while the sim waits on the open shop, the stock (the pick's cards, PickSlot, in the
 ## current CardStyle, with a price and the shard icon under each), the heal and the reroll, and the salvage list
 ## (every mod, stat card and ability but the weapon you can sell, with its refund). It shows what the sim offers and
@@ -16,8 +16,8 @@ extends Control
 ## v0.6.1 R1: the services and the salvage rows are the owner's crystal plaques (ShopTile); the stock keeps the
 ## crystal card frames.
 
-signal picked(value: int)
-
+## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
+const ECHO := PanelInput.Echo.ARROWS
 const SALVAGE_COLUMNS := 4
 ## v0.5.5 A4: the stock's crystal cards are drawn a little smaller than the pick's, so the services and the salvage
 ## list still fit under them at 1080p.
@@ -26,8 +26,6 @@ const POOR := Color("#FF5A4D")
 ## v0.6.1 R1: a salvage plaque's width (px; four fit across at 1080p).
 const SELL_W := 340.0
 
-## Off while a menu sits over the panel.
-var input_enabled := true
 var heal_tile := ShopTile.new("ShopHeal", 360.0)
 var reroll_tile := ShopTile.new("ShopReroll", 360.0)
 ## v0.5.0 EV: lift your latest curse (shown only while you hold one).
@@ -43,29 +41,21 @@ var _cards := HBoxContainer.new()
 var _salvage := GridContainer.new()
 ## Focusable entries in reading order: {value, enabled, row, focus (Callable), node}.
 var _entries: Array[Dictionary] = []
-var _focus := 0
-var _open := false
 var _sig := ""
 var _shards_cache := 0
 var _limit := false
+## Audit P-12: one action per sim answer (the swap panel's latch, ModalPanel._sent). Set when an action is sent;
+## cleared once the sim has stepped past the tick it was sent on (the pick read, answered or refused) or on a close.
+var _sent_tick := 0
+var _tick := 0
 
 
 func _init() -> void:
 	name = "ShopPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.5)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
-	var centre := CenterContainer.new()
-	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centre)
-	var col := VBoxContainer.new()
-	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_theme_constant_override("separation", 14)
-	centre.add_child(col)
+	_add_dim(_dim, 0.5)
+	var col := _centred_column(VBoxContainer.new(), 14)
 	var head := HBoxContainer.new()
 	head.alignment = BoxContainer.ALIGNMENT_CENTER
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -109,20 +99,16 @@ func _init() -> void:
 	HudStyle.style_label(_buys, 16)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	_salvage_none.add_theme_color_override("font_color", Color(1, 1, 1, 0.55))
-	for l: Label in [_title, _shards, _buys, _hint, _salvage_title, _salvage_none]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_labels([_title, _shards, _buys, _hint, _salvage_title, _salvage_none])
 	visible = false
 
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
-	if not reader.has_shop() or not reader.shop_open():
-		if _open:
-			_open = false
-			_sig = ""
-			visible = false
+	_tick = reader.tick()
+	if _sent and _tick > _sent_tick:
+		_sent = false
+	if _closed(reader.has_shop() and reader.shop_open()):
 		return
 	var s := reader.shop()
 	var sig := var_to_str(
@@ -149,21 +135,13 @@ func sync(reader: WorldReader) -> void:
 	_set_focus(0 if first else clampi(_focus, 0, _entries.size() - 1))
 
 
-func is_open() -> bool:
-	return _open
-
-
-func focus_index() -> int:
-	return _focus
+func _on_closed() -> void:
+	_sig = ""
 
 
 ## The focused entry's pick value (InputFrame.PICK_*), or PICK_NONE.
 func focused_value() -> int:
 	return int(_entries[_focus]["value"]) if _focus < _entries.size() else InputFrame.PICK_NONE
-
-
-func entry_count() -> int:
-	return _entries.size()
 
 
 ## Entry k: {value, enabled, row, node}.
@@ -427,60 +405,24 @@ func _shards_now() -> int:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _entries.is_empty():
 		return
-	var step := Vector2i.ZERO
-	if event is InputEventKey and event.pressed:
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4:
-				var k: int = event.physical_keycode - KEY_1
-				if k < _cards.get_child_count():
-					_set_focus(k)
-			KEY_ENTER, KEY_KP_ENTER:
-				_act(_focus)
-			KEY_ESCAPE:
-				picked.emit(InputFrame.PICK_CANCEL)
-			KEY_LEFT:
-				step = Vector2i(-1, 0)
-			KEY_RIGHT:
-				step = Vector2i(1, 0)
-			KEY_UP:
-				step = Vector2i(0, -1)
-			KEY_DOWN:
-				step = Vector2i(0, 1)
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_act(_focus)
-			JOY_BUTTON_B:
-				picked.emit(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT:
-				step = Vector2i(-1, 0)
-			JOY_BUTTON_DPAD_RIGHT:
-				step = Vector2i(1, 0)
-			JOY_BUTTON_DPAD_UP:
-				step = Vector2i(0, -1)
-			JOY_BUTTON_DPAD_DOWN:
-				step = Vector2i(0, 1)
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left"):
-			step = Vector2i(-1, 0)
-		elif event.is_action_pressed(&"ui_right"):
-			step = Vector2i(1, 0)
-		elif event.is_action_pressed(&"ui_up"):
-			step = Vector2i(0, -1)
-		elif event.is_action_pressed(&"ui_down"):
-			step = Vector2i(0, 1)
-		else:
+	var d := PanelInput.decode(event, 4, ECHO)
+	match d.kind:
+		PanelInput.Kind.SWALLOW:
+			pass
+		PanelInput.Kind.DIGIT:
+			if d.digit < _cards.get_child_count():
+				_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_act(_focus)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			if d.step.x != 0:
+				_set_focus(clampi(_focus + d.step.x, 0, _entries.size() - 1))
+			else:
+				_set_focus(_vertical(d.step.y))
+		_:
 			return
-	else:
-		return
-	if step.x != 0:
-		_set_focus(clampi(_focus + step.x, 0, _entries.size() - 1))
-	elif step.y != 0:
-		_set_focus(_vertical(step.y))
 	get_viewport().set_input_as_handled()
 
 
@@ -518,4 +460,13 @@ func _act(k: int) -> void:
 		return
 	_set_focus(k)
 	if _entries[k]["enabled"]:
-		picked.emit(int(_entries[k]["value"]))
+		_send(int(_entries[k]["value"]))
+
+
+## Sends one action as input, then waits for the sim to step past it before sending another (P-12).
+func _send(value: int) -> void:
+	if _sent:
+		return
+	_sent = true
+	_sent_tick = _tick
+	picked.emit(value)

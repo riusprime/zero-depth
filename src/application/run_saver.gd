@@ -25,12 +25,10 @@ const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
 var rooms := PackedByteArray()
-## Room-entry saves taken this session (the e2e test and the dev panel read it).
+## Room-entry saves taken this session (the save unit and e2e tests read it).
 var entries := 0
 ## The last room-entry payload: what Continue resumes from, and what close makes sure is on disk.
 var last := {}
-## Microseconds the last entry save held the frame (the snapshot; the encode and write are off the frame).
-var last_cost_usec := 0
 var _active := false
 
 
@@ -156,8 +154,6 @@ static func payload_of(
 
 
 func _save(w: World, run: RunState, stage_seed: int) -> void:
-	var t0 := Time.get_ticks_usec()
 	last = payload_of(w, run, stage_seed, rooms)
-	last_cost_usec = Time.get_ticks_usec() - t0
 	entries += 1
 	store.write_async(last)

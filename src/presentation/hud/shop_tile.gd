@@ -146,14 +146,7 @@ func _fit() -> void:
 		if wide <= box.x and bold.get_height(s) + row_h <= box.y:
 			title_size = s
 			break
-	detail_size = DETAIL_SIZES[DETAIL_SIZES.size() - 1]
-	for s: int in DETAIL_SIZES:
-		if (
-			regular.get_string_size(detail.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
-			<= box.x - _price_w()
-		):
-			detail_size = s
-			break
+	detail_size = CrystalCard.fit_width(regular, detail.text, box.x - _price_w(), DETAIL_SIZES)
 	title.add_theme_font_size_override("font_size", title_size)
 	detail.add_theme_font_size_override("font_size", detail_size)
 	title.custom_minimum_size = Vector2(box.x, 0)
