@@ -49,7 +49,7 @@ const LOOKS := {
 	&"molten_drop":
 	{
 		"core": Color("#FFF07A"),
-		"edge": Color("#3A2808"),
+		"edge": Color("#2A1C06"),
 		"trail": Color("#FFB830"),
 		"size": 1.05,
 		"tip": 1.3,
