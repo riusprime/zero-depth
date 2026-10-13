@@ -8,7 +8,7 @@ extends Button
 const SIZE := Vector2(792, 92)
 const ICON := 56.0
 const NAME_SIZE := 21
-const DESC_SIZE := 16
+const DESC_SIZE := 17
 const STATE_W := 150.0
 const UNLOCKED := Color("#F2C46A")
 

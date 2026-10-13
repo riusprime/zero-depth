@@ -132,6 +132,8 @@ func test_the_toast_shows_queues_and_fits_every_achievement_in_english_and_spani
 		toast.push(book.get_entry(&"kills_1"))
 		toast.push(book.get_entry(&"biome_frozen_shore"))
 		assert_eq(toast.current_id(), &"kills_1", "the first shows")
+		assert_eq(toast.header.text, tr("UI_ACH_TOAST"), "%s: its line, translated" % lang)
+		assert_eq(toast.name_label.text, tr("ACH_KILLS_1_NAME"), "%s: and its name" % lang)
 		assert_eq(
 			toast.queued_ids(), [&"biome_frozen_shore"] as Array[StringName], "the next waits"
 		)

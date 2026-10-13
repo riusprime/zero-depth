@@ -20,7 +20,7 @@ const TEXT_W := W - PAD.x * 2.0 - ICON - 14.0
 var icon := AchievementIcon.new()
 var header := HudStyle.label(14, true)
 var name_label := HudStyle.label(21, true)
-var desc_label := HudStyle.label(16)
+var desc_label := HudStyle.label(17)
 var _queue: Array[Dictionary] = []
 var _current := {}
 var _t := 0.0
@@ -50,7 +50,7 @@ func _init() -> void:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(col)
 	header.name = "Header"
-	header.text = "UI_ACH_TOAST"
+	header.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	header.add_theme_color_override("font_color", HudStyle.EMBER_ACCENT)
 	name_label.name = "Name"
 	desc_label.name = "Desc"
@@ -85,6 +85,7 @@ func _next() -> void:
 func _word() -> void:
 	if _current.is_empty():
 		return
+	header.text = tr("UI_ACH_TOAST")
 	name_label.text = AchievementsPage.title_of(self, _current)
 	desc_label.text = AchievementsPage.desc_of(self, _current)
 	_fit.call_deferred()
