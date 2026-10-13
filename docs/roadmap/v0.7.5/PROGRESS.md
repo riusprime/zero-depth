@@ -103,3 +103,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   e2e (bosses, bosses_2, boss_challenge, after_boss) 6/6; screenshots under xvfb + llvmpipe. Not run by the agent:
   the full suite, export smoke, goldens. Shared files touched: `actor_views.gd` (the death hand-off, the boss
   height), `data/credits/licences.tres`. Not pushed.
+- 2026-10-13: seams (`bash scripts/ci/seams.sh`, clean worktree): on the lighting merge `36a4d71` `Tests 266`,
+  `Passing Tests 266`; on the BM merge `ed5b447` `Tests 266`, `Passing Tests 266`. GitHub `verify` on `f388716`
+  (six shards): green, 15:42:53 → 16:10:25 UTC (27.5 min; sim_a 27, sim_c 25.5, sim_b 22, e2e 11, presentation 9,
+  checks 2, rest 1.5). Pushed.
