@@ -100,7 +100,9 @@ func sync(reader: WorldReader) -> void:
 			box.bg_color = Color(tint, 0.85)
 			box.border_color = HudStyle.STONE_EDGE
 			var ability := int(s["type"]) == WorldReader.CARD_ABILITY
-			_levels[k].text = str(int(s["level"])) if ability else ""
+			# v0.7.5 SM (N8): a wand card shows its level (1–5) on its pip too
+			var levels := ability or bool(reader.card_info(int(s["code"])).get("wand", false))
+			_levels[k].text = str(int(s["level"])) if levels else ""
 			if k in cuts:
 				_levels[k].text = TRIGGER_MARK
 		else:

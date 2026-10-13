@@ -148,11 +148,15 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"tier_text": "",
 		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
 		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
+		"level_text": "",  # v0.7.5 SM: the level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
+		"held_level": 0,  # v0.7.5 SM: the level held now (0: not held)
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
 			face["tier"] = 3
 			var lvl := int(info["level"])
+			face["held_level"] = lvl - 1 if lvl > 1 else 0
+			face["level_text"] = level_text(ci, face["held_level"], lvl)
 			var new_key := (
 				"UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
 			)
@@ -179,7 +183,26 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
 			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
+			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
+				face["held_level"] = held_level(reader, code)
+				face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
 	return face
+
+
+## v0.7.5 SM (N8): the level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.
+static func held_level(reader: WorldReader, code: int) -> int:
+	for s: Dictionary in reader.build()["slots"]:
+		if int(s["code"]) == code:
+			return int(s["level"])
+	return 0
+
+
+## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
+## taking it raises a held card from N to M.
+static func level_text(ci: Object, held: int, to: int) -> String:
+	if held <= 0 or held >= to:
+		return ci.tr("UI_WAND_LEVEL") % maxi(held, to)
+	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
 
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
@@ -191,6 +214,7 @@ static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) ->
 	var word: String = ci.tr("RARITY_LEGENDARY")
 	if wand_level > 0 and bool(face.get("wand", false)):
 		word = "%s · %s" % [ci.tr("UI_CARD_ABILITY_LEVEL") % wand_level, word]
+		out["level_text"] = level_text(ci, int(face.get("held_level", 0)), wand_level)  # v0.7.5 SM
 	out["tier_text"] = (
 		"%s · %s" % [ci.tr("UI_CARD_MOD"), word]
 		if int(face["type"]) == WorldReader.CARD_MOD

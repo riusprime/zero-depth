@@ -109,6 +109,8 @@ func _process(delta: float) -> void:
 	var a := minf(1.0, _t / FADE_IN_S) if _t < FADE_IN_S else minf(1.0, left / FADE_OUT_S)
 	modulate.a = a
 	var slide := (1.0 - minf(1.0, _t / FADE_IN_S)) * SLIDE_PX
+	if HudStyle.reduced_motion:  # v0.7.5 SM (accessibility pass): a fade, no slide
+		slide = 0.0
 	offset_left = -RIGHT - W + slide
 	offset_right = -RIGHT + slide
 

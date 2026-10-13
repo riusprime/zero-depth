@@ -126,7 +126,8 @@ func _render() -> void:
 		fam,
 		tier,
 		rarity_color(),
-		_face.get("tier_text", "")
+		_face.get("tier_text", ""),
+		_face.get("level_text", "")  # v0.7.5 SM: the level badge
 	)
 	_apply()
 

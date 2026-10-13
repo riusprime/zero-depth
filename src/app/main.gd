@@ -31,10 +31,14 @@ var codex_recorder: CodexRecorder
 var achievements: AchievementStore
 var achievement_tracker: AchievementTracker
 var toast := AchievementToast.new()
+## v0.7.5 SM (N8): the first-run hints (seen ones in the profile's hints section), on the UI layer like the toast.
+var hint_store: HintStore
+var hints := OnboardingHints.new()
 
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
 ## every run and floor is compiled.
-var tuning := DevTuning.load_saved()
+## v0.7.5 SM: a build with the panel locked (DevGate) ignores any tuning file left on the PC.
+var tuning := DevTuning.load_saved() if DevGate.enabled() else DevTuning.new()
 var _menu: Control
 var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
@@ -85,6 +89,9 @@ func _ready() -> void:
 	_fade.visible = false
 	ui.add_child(_fade)
 	ui.add_child(toast)  # v0.7.5 AC
+	hint_store = HintStore.new(profile)  # v0.7.5 SM
+	hints.setup(hint_store)
+	ui.add_child(hints)
 	show_main_menu()
 
 
@@ -108,7 +115,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		and event.pressed
 		and not event.echo
 		and event.physical_keycode == KEY_F10
-	):
+		and DevGate.enabled()
+	):  # v0.7.5 SM: one switch locks it for a public release (ROADMAP §0.4)
 		get_viewport().set_input_as_handled()
 		_toggle_master_panel()
 		return
@@ -119,6 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not event.echo
 		and event.physical_keycode == KEY_QUOTELEFT
 		and DevPanel.unlocked()
+		and DevGate.enabled()
 	):
 		get_viewport().set_input_as_handled()
 		toggle_dev_panel()
@@ -215,8 +224,9 @@ func _on_setting_changed(_key: String) -> void:
 
 
 func show_credits() -> void:
-	var credits: CreditsDefinition = ContentRepository.load_all().get_def(&"credits", &"main")
-	var c := CreditsView.new(credits)
+	var repo := ContentRepository.load_all()
+	var credits: CreditsDefinition = repo.get_def(&"credits", &"main")
+	var c := CreditsView.new(credits, repo.get_def(&"licences", &"generated"))  # v0.7.5 SM: with the licence list
 	c.back_pressed.connect(show_main_menu)
 	_set_menu(c)
 
@@ -412,7 +422,9 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_fade.color.a = 1.0
 	_fade.visible = true
 	ui.move_child(_fade, ui.get_child_count() - 1)
+	ui.move_child(hints, ui.get_child_count() - 1)  # v0.7.5 SM: the hints read over the fade-in too
 	ui.move_child(toast, ui.get_child_count() - 1)  # v0.7.5 AC: a toast reads over the fade-in
+	hints.begin_floor(run.floor_index, driver.reader)  # v0.7.5 SM
 	return ""
 
 
@@ -423,6 +435,7 @@ func _on_tick(from: SimDriver) -> void:
 	codex_recorder.observe(driver.reader)  # v0.7.5 CX
 	achievement_tracker.observe(driver.reader)  # v0.7.5 AC
 	_hud.sync(driver.reader)
+	hints.observe(driver.reader)  # v0.7.5 SM
 	var outcome := driver.reader.outcome()
 	if outcome == 3 and _end == null:
 		_next_floor()
@@ -461,6 +474,7 @@ func _record_ascension(loop: int) -> void:
 
 func show_end_panel(won: bool) -> void:
 	close_pause()
+	hints.set_covered(true)  # v0.7.5 SM: the recap is over the game
 	_end = EndPanel.new(
 		won, driver.reader.killer_kind(), driver.reader.killer_cause_key(), run_recap()
 	)
@@ -607,6 +621,7 @@ func _reseed(seed_value: int) -> void:
 
 func open_pause() -> void:
 	driver.paused = true
+	hints.set_covered(true)  # v0.7.5 SM: a hint waits under the pause menu
 	_pause = PauseMenu.new()
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
@@ -654,6 +669,8 @@ func close_pause() -> void:
 	if driver != null:
 		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
 		driver.paused = false
+	if _end == null:
+		hints.set_covered(false)  # v0.7.5 SM
 
 
 ## v0.6.5 WN2: the Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on
@@ -737,6 +754,10 @@ func _end_floor() -> void:
 	audio.detach()
 	if codex_recorder != null:
 		codex_recorder.detach()
+	hints.end_floor()  # v0.7.5 SM
+	hints.set_covered(false)
+	if hint_store.dirty:  # v0.7.5 SM: the hints seen reach the file
+		hint_store.dirty = not (profile.save_file() or profile.path.is_empty())
 	if achievement_tracker != null:
 		achievement_tracker.detach()
 	if codex.dirty or achievements.dirty:  # v0.7.5 CX, AC: the floor's counts and unlocks reach the file

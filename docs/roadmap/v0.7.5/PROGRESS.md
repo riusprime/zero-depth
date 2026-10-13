@@ -12,6 +12,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | MG | Floors of 16-20 rooms (was 11-13) with bigger rooms and an extra-large 4×4; 20 % fewer challenge rooms (3.23 → 2.42 a floor); the shop on floors 1, 3, 5 …; cursed chests only on floors 1, 3, 5 …, at most one a floor; all tunable in data (F10); a save made before v0.7.5 resumes on its v0.7.0 floor ([`evidence/MAPS.md`](evidence/MAPS.md)) | the `v0.7.5 Step MG` commit on `v075-mg` |
 | AC | Local achievements: 37 to unlock (floors, wins, each boss and biome from the data, the wand, kills, sealed rooms, risks, the Codex, Ascension), a toast when one unlocks, an Achievements page in the Codex from both menus, kept in the profile ([evidence](evidence/ACHIEVEMENTS.md)) | `v0.7.5 Step AC` commit (branch `v075-ac`) |
 | NB2 | Biome 5, Starfall: a cosmic biome, the floor a floating island in a starry void with nebula light and drifting rock and crystal islands, starglow pools that speed your step, in the run's biome draw (3 floors from 5) ([evidence](evidence/STARFALL.md)) | `v0.7.5 Step NB2` commit (branch `v075-nb2`) |
+| SM | The small things: a card's level on every pick card ("Lv 1", "Lv 2 → 3", the legendary "Lv N → 5") and on the HUD's wand pips and the Build page; ten first-run hints, each once, never blocking, with the keys of the device you use (Options: Show hints, Reset hints); the credits generated from the repo's manifests, fonts and addons, with the app icon; an Interface size option and reduced-motion / colour-blind fixes from an accessibility pass; the dev panel behind one release switch, left ON ([evidence](evidence/SMALL_THINGS.md)) | `v0.7.5 Step SM` commit (branch `v075-sm`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -21,12 +22,15 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - NB2: none. `tests/golden` passes unchanged; starglow is laid only on Starfall floors and is not hashed itself. (A
   fifth biome changes every run seed's biome draw; no golden pins one.)
 - AP: none. `tests/golden` passes unchanged: the loop and Ascension fields are hashed only past loop 1 / on the Ascension floor, so every loop-1 floor other than the last hashes as before (the last floor's hash changes on purpose; no golden fixture holds one)
+- SM: none. The one sim edit is a read key (`Wand.read`'s `wand`), nothing hashed; `tests/golden` not run by the agent (the lead's full suite).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
 | The lead's readings in PLAN (the Ascension loop, the cosmic biome's name, the achievement list) | — | the owner asked for no interventions; corrected at the playtest | |
 | EI-05: the sub-streams `map:ice` (NB1), `map:starglow` (NB2) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
+| SM: the owner's credit line (`CREDITS_OWNER`, "…" since v0.0.1, O4); the AI 3D generator's terms for shipping the kit models | — | pending (OWNER ONLY) | |
+| EI-05: the sub-streams `map:ice` (NB1) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
 
 ## History
 - 2026-10-12: plan from the owner's message (verbatim in PLAN), written while the v0.7.0 suite ran.
@@ -57,3 +61,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   (Achievements); `runs:ascended` is left for AP to report. Not run by the agent: the full suite and the bot sims
   (the lead's, once per wave). Not pushed.
 - 2026-10-13: NB2 Starfall built on `v075-nb2` (from `fa70fcb`, CX and NB1 merged): biome data, starglow pools in the sim (`map:starglow`), the starry void edge, code-made pieces, its look, tests; evidence [`evidence/STARFALL.md`](evidence/STARFALL.md). Not pushed. Not run by the agent: the full suite and bot sims (the lead's, once per wave).
+- 2026-10-13: SM (agent, branch `v075-sm` from `0e58966`): card levels on the pick cards and wand pips, the first-run
+  hints (`HintStore`, `OnboardingHints`; Options → Accessibility: Interface size, Show hints, Reset hints), the
+  generated licence list (`scripts/content/build_credits.gd` → `data/credits/licences.tres`; a licence line added to
+  `assets/models/manifest.json`), the app icon on the credits, the accessibility fixes, `DevGate` (ON). The lead's
+  readings are in PLAN "SM"; evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md). Run by the agent:
+  lint; content + arch + unit/application + unit/app 193/193; 13 presentation unit files 88/88; 31 e2e files 61/61;
+  re-runs 14/14, the dev switch e2e 1/1 and a final 16 files 52/52 on `191dbcd`; screenshots en + es at 1280×720.
+  Not run by the agent: the full suite, goldens, the bot sims. Shared files touched additively:
+  `main.gd`, `options_menu.gd`, `strings.csv` (26 rows), `project.godot` (a `[game]` section). Not pushed.

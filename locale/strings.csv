@@ -977,3 +977,29 @@ UI_ASCEND_NOT_YET,Not yet,Todavía no
 UI_ASCEND_NOT_YET_LINE,Step back and keep exploring the floor.,Retrocede y sigue explorando el piso.
 UI_ASCEND_HINT,↑/↓ or 1-3 to choose · Enter or A to take · Esc or B: not yet,↑/↓ o 1-3 para elegir · Intro o A para aceptar · Esc o B: todavía no
 UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
+UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
+UI_UI_SCALE,Interface size,Tamaño de la interfaz
+UI_OPT_90,90 %,90 %
+UI_OPT_110,110 %,110 %
+UI_SHOW_HINTS,Show hints,Mostrar consejos
+UI_RESET_HINTS_LABEL,First-run hints,Consejos de la primera partida
+UI_RESET_HINTS,Reset hints,Reiniciar consejos
+UI_HINTS_RESET_DONE,They will show again,Volverán a mostrarse
+HINT_HEADER,TIP,CONSEJO
+HINT_MOVE,Move with %s · aim with %s,Muévete con %s · apunta con %s
+HINT_MOUSE,the mouse,el ratón
+HINT_PAD_LEFT_STICK,Left stick,Stick izquierdo
+HINT_PAD_RIGHT_STICK,the right stick,el stick derecho
+HINT_ATTACK,Attack with %s,Ataca con %s
+HINT_DASH,Dash with %s to get out of danger,Usa el impulso con %s para salir del peligro
+HINT_VENT,Your heat is high: %s vents it in a blast around you,Tu calor está alto: %s lo purga en una explosión a tu alrededor
+HINT_PICK,"Each card joins your wand, which reads left to right","Cada carta va a tu varita, que se lee de izquierda a derecha"
+HINT_BUILD,"Reorder your wand any time: %s, then Build",Reordena tu varita cuando quieras: %s y luego Construcción
+HINT_TRIGGER,"A trigger card casts the cards to its right as a small spell (On Hit, On Kill …)","Una carta disparadora lanza las cartas a su derecha como un pequeño hechizo (Al Impactar, Al Matar …)"
+HINT_SHOP,"The shop: buy cards with shards, or sell the ones you don't need",La tienda: compra cartas con fragmentos o vende las que sobren
+HINT_PORTAL,The portal is open: step in to leave the floor,El portal está abierto: entra para salir del piso
+HINT_CODEX,"Everything you meet goes into the Codex: %s, then Codex",Todo lo que encuentras va al Códice: %s y luego Códice
+UI_CREDITS_ASSETS,"Art, models and sound","Arte, modelos y sonido"
+UI_CREDITS_FONT,Font,Fuente
+UI_CREDITS_ADDON,Addon,Complemento
+UI_CREDITS_NOT_SHIPPED,(a development tool: not shipped in the game),(una herramienta de desarrollo: no se incluye en el juego)
