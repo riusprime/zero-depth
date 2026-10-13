@@ -56,6 +56,10 @@ static func build_floor(run: RunState) -> World:
 		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR, as Main
 	)
 	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
+	var biome: BiomeDefinition = repo.get_def(
+		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
+	)
+	IcePatches.place(w, BiomeCompiler.compile_ice(biome))  # v0.7.5 NB1, as Main: Frozen Shore's ice
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main

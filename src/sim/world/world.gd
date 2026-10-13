@@ -297,6 +297,9 @@ var arenas := ArenaState.new()  # v0.5.5 AR: the arena sealed now and those clea
 ## death left (its reward id; -1 until then; it stays set after the pick so one boss pays once). BossReward.
 var legendary_table: LegendaryTable
 var legendary_id := -1
+## v0.7.5 NB1: the floor's ice (Frozen Shore; IcePatches): loadout, null on every other biome (not hashed: laid from
+## the floor seed like the layout; its slide shows in the hashed position and velocity).
+var ice: IceField
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
@@ -1166,6 +1169,8 @@ func _move_and_collide() -> void:
 		var k := (
 			player.accel_permille if Kin.length(target) > Kin.length(vel) else player.decel_permille
 		)
+		if ice != null and ice.covers(p):  # v0.7.5 NB1: on ice the hero speeds up and stops slowly
+			k = ice.accel_permille if Kin.length(target) > Kin.length(vel) else ice.decel_permille
 		vel += (target - vel) * (k / 1000.0)
 		if Kin.length(vel - target) < 0.0001:
 			vel = target

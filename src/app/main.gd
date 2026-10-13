@@ -304,6 +304,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR: the sealed arenas
 	)
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
+	IcePatches.place(world, BiomeCompiler.compile_ice(biome))  # v0.7.5 NB1: Frozen Shore's ice (else nothing)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
 	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
@@ -340,6 +341,9 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view.name = "WorldView"
 	view.stage.prop_style = biome.id
 	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	view.stage.look = biome.look  # v0.7.5 NB1: the biome's own dressing and edge (null: the hand-written look)
+	if biome.look != null:
+		view.actors.enemy_tint = biome.look.enemy_tint
 	_biome_path = biome.resource_path
 	view.stage.lighting = GameSettings.get_value(profile, "lighting")
 	add_child(view)

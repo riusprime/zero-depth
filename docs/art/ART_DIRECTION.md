@@ -51,7 +51,7 @@ Each of these became a rule in [`../architecture/PRESENTATION_CONTRACTS.md`](../
 Values marked *sampled* are medians of the reference PNG's pixels (lit faces where it matters). Values marked
 *proposal* aren't visible in the image. The owner confirms or changes all of them at the v0.1.0 G2 gate.
 
-| Token | Ruins | Night Rocks | Red Canyon | Frozen Shore (later) |
+| Token | Ruins | Night Rocks | Red Canyon | Frozen Shore (v0.7.5 NB1) |
 |---|---|---|---|---|
 | `ground` | `#CBAD91` sampled | `#486796` sampled | `#C55946` sampled | `#D1DAE4` sampled |
 | `ground_alt` (tile tone) | `#D0B396` sampled | `#50709F` sampled | `#D0614B` sampled | `#C7D3E1` sampled |
@@ -188,6 +188,33 @@ floating fragments, coloured from the card-frame table. Applied to the altars (b
 gold), heal orbs, shard gems and dropped cores; the rest wait for the G1 pick in
 [`../roadmap/v0.6.1/evidence/SHARD_AUDIT.md`](../roadmap/v0.6.1/evidence/SHARD_AUDIT.md).
 
+**Frozen Shore, biome 4 (v0.7.5 NB1, owner N2: "create the new ground, the fourth biome, the frozen shore").**
+Data: [`../../data/biomes/frozen_shore.tres`](../../data/biomes/frozen_shore.tres) (palette as §2's sampled column,
+mood, surface, look). The first three biomes' looks are untouched; everything below comes from the biome's data.
+- **Mood:** a cold pale moon (`sun_color` blue-white, energy 0.6, pitch −48°), a dark navy void, cool blue ambient,
+  icy fog (density 0.006, pale blue-grey), a grade toward blue shadows and white-blue highlights, saturation a
+  little down. The fire props keep the warm light, so fires pool orange on the snow.
+- **Ground and walls:** the shared kit ground tinted with the snow `ground`; the kit walls and cover take the dark
+  slate `cover` hue (`#303C52`); square cover is slate rocks and bare dead trees (`rock_large` 3 : `dead_tree` 1,
+  `BiomeLook.square_cover`).
+- **Floor decoration** (`BiomeLook.decor_swap`): the kit's grass tufts and debris become code-made **snow drifts**
+  (low faceted mounds), its rubble code-made **ice shards** (three faceted spikes), both from `CodeProps` in the
+  faceted shard style.
+- **Past the edge** (`BiomeLook.edge = water`, `BiomeEdge`): the void becomes a dark frozen sea (the `edge` water
+  colour, darkened; slow faceted glints; still with reduced motion), the floor stands on a snow bank whose lip shows
+  at every edge, and white hexagonal **ice floes** float on the water. Decoration only: the edge stays impassable.
+- **Ice patches** (`IceViews`, drawn exactly where the sim's `IcePatches` put them): flat glossy pale-blue sheets of
+  1 m facets in close shades, a bright frosted rim on the exact edge so the slippery area reads at a glance, a few
+  dark hairline cracks; lit by the scene (ice never hurts, so it is ground, not a telegraph), no shadow.
+- **Crystals:** the room shards take an icy white-blue tint (`ShardCluster.TINTS.frozen_shore`, off the reserved
+  player-core cyan); a Deep floor still turns violet.
+- **Enemies** (`BiomeLook.enemy_tint`): their grey and bone parts take a cold blue cast (alpha 0.45); the enemy red,
+  the team rings, outlines and bars never change (PRESENTATION_CONTRACTS §3).
+- **Ambience:** `frozen_shore` loop (slow waves, a thin high wind, a pale drone, ice ticks and creaks;
+  `scripts/audio/generate_sfx.py`).
+- **Art the kit lacks:** [`requests/v0.7.5_frozen_shore.md`](requests/v0.7.5_frozen_shore.md) (snow drift, ice shard,
+  an ice rock, a floe, a snow ground texture); the code-made pieces draw until they arrive.
+
 **Attack forms and elements (v0.6.0 MX3; owner pick "Element core, heat edge").** Every player attack is drawn from
 its spec: the art cost is per form (arc, bolt, ring, beam, zone, orbiter, lob, burst) and per element, never per card.
 Element cores: storm `#7FB2FF` (white-blue, crackle), ember `#FFAA33` (orange sparks `#FF9440`), frost `#B5F2FF` (pale
@@ -237,6 +264,10 @@ Each version's PLAN lists its art needs in a short table and adds the prompts to
 | `icon_bleed_edge` | item icon 128×128 | v0.2.0 Step 5 | generated letter icon | requested |
 
 A delivery moves the row to `delivered` with the commit SHA.
+
+**v0.7.5 Frozen Shore:** the kit pieces the biome lacks are requested in
+[`requests/v0.7.5_frozen_shore.md`](requests/v0.7.5_frozen_shore.md); code-made placeholders (`CodeProps`,
+`BiomeEdge`) draw meanwhile.
 
 **v0.5.9 "Embers" kit:** the modular `.glb` pieces and ground textures are requested in
 [`KIT_REQUESTS.md`](KIT_REQUESTS.md) (target image [`look_reference.webp`](look_reference.webp)). Until the v0.5.9 G2

@@ -1371,6 +1371,20 @@ func floor_ground() -> Array[Rect2]:
 	return out
 
 
+# --- Ice (v0.7.5 NB1, Frozen Shore) ---------------------------------------------------------------------------
+## The floor's ice patches (none on other biomes), for the stage, and whether the hero stands on one now.
+func ice_patch_count() -> int:
+	return _w.ice.rects.size() if _w.ice != null else 0
+
+
+func ice_patch(i: int) -> Rect2:
+	return _w.ice.rects[i]
+
+
+func player_on_ice() -> bool:
+	return IcePatches.on_ice(_w)
+
+
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
 ## An item's tags (fire, shock, frost, bleed, blade, bolt, dash, guard).
 func item_tags(item_index: int) -> PackedStringArray:

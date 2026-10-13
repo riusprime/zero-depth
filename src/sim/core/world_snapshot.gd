@@ -41,6 +41,7 @@ const WORLD_KEPT := {
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
+	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -80,6 +81,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
+	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [

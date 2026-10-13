@@ -36,7 +36,7 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 	var tint := _hue_tint(cover_hue)
 	var decor := {}
 	for p: Dictionary in placements:
-		var piece := KitModels.get_piece(p["piece"])
+		var piece := piece_of(p["piece"])
 		if piece.is_empty():
 			continue
 		if p["kind"] == &"decor":
@@ -58,7 +58,7 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 		if p["kind"] == &"light":
 			_add_light(p["piece"], (p["xform"] as Transform3D).origin, mood)
 	for id: StringName in decor:
-		var piece := KitModels.get_piece(id)
+		var piece := piece_of(id)
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = piece["mesh"]
@@ -70,6 +70,12 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 		mmi.multimesh = mm
 		mmi.material_override = piece["material"]
 		add_child(mmi)
+
+
+## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
+static func piece_of(id: StringName) -> Dictionary:
+	var piece := KitModels.get_piece(id)
+	return piece if not piece.is_empty() else CodeProps.get_piece(id)
 
 
 ## The biome hue at full brightness, mixed with white: walls keep their texture's light and dark and take the hue.

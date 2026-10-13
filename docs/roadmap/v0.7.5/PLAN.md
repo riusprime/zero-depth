@@ -43,7 +43,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | Step | Scope | Rows | Status |
 |---|---|---|---|
 | MG | Map generation: up to 20 rooms, bigger rooms; curse, challenge-room and shop frequencies | N9–N12 | |
-| NB1 | Biome 4: Frozen Shore | N2 | |
+| NB1 | Biome 4: Frozen Shore | N2 | Done ([evidence](evidence/FROZEN_SHORE.md)) |
 | NB2 | Biome 5: the cosmic biome | N3 | |
 | AP | The Ascension portal and the endless loop | N4 | |
 | CX | The Codex | N6 | Done |
@@ -70,3 +70,21 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 
 At most 3 agents at once; one full suite per wave by the lead (CLAUDE.md). The PR into `main` with a version bump and
 a playtest sheet when every step is Done.
+
+## NB1 decisions (lead's readings, 2026-10-12; the owner corrects them at the playtest)
+- **Gameplay touch: ice that slides, nothing that hurts.** Frozen Shore floors get ice patches (45 % of rooms, 1-2
+  patches of 2.5-5 m each; never in the start hall, the boss room, the portal's room or the shop's room). On ice the
+  hero takes 0.35 s to speed up and 0.6 s to stop (0.1 s and 0.083 s on dry ground): a slide. The dash, skills and
+  enemies are unchanged on ice, so a fair escape always exists. Data: `BiomeSurface` in
+  `data/biomes/frozen_shore.tres` (PD-04: mild flavour, no difficulty table changes).
+- **Frozen-water edges are a look, not a hazard.** The floor's edge is already impassable (its outer walls); past it
+  the void becomes a frozen sea with floes and a snow bank (`BiomeLook.edge`). Nothing hurts, so nothing needs a
+  telegraph.
+- **The biome draw:** three floors drawn from four biomes, never the same biome twice in a run. Frozen Shore is
+  appended last in `three_floors.tres`, so a save's stored biome order keeps its biomes.
+- **`map:ice`**, a sub-stream of `map` like `map:overrun` (SIM_CONTRACTS §5). EI-05's list in LOCKED_DECISIONS names
+  neither; flagged here for the owner rather than changing a locked row.
+- **Enemy tint:** the enemies' grey and bone parts take a cold cast; the enemy red, rings, outlines and bars never
+  change (PRESENTATION §3).
+- **Art:** built from the kit plus code-made pieces; the pieces the kit lacks are requested in
+  [`../../art/requests/v0.7.5_frozen_shore.md`](../../art/requests/v0.7.5_frozen_shore.md).

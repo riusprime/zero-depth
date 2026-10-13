@@ -64,7 +64,7 @@ func _into(w: World) -> Vector2:
 func test_the_run_data_compiles() -> void:
 	var t := _run_table()
 	assert_eq(t.floors, 3)
-	assert_eq(t.biome_count, 3)
+	assert_eq(t.biome_count, 4)  # v0.7.5 NB1: Frozen Shore joins the draw
 	assert_eq(
 		t.enemy_hp_floor_permille, PackedInt32Array([1000, 1900, 3610]), "v0.4.0 SC: 1.9^(f - 1)"
 	)
@@ -77,19 +77,26 @@ func test_the_run_data_compiles() -> void:
 		assert_not_null(_repo().get_def(&"biomes", id), "biome %s exists" % id)
 
 
+## v0.7.5 NB1: four biomes for three floors, so a run draws three different ones in a random order, and every biome
+## (Frozen Shore too) turns up across runs.
 func test_biome_order_is_a_shuffle_per_run() -> void:
 	var t := _run_table()
 	var orders := {}
+	var seen := {}
 	for s in 40:
 		var r := RunState.start(100 + s, t)
 		var o := r.biome_order
 		assert_eq(o.size(), 3)
-		var sorted := o.duplicate()
-		sorted.sort()
-		assert_eq(sorted, PackedInt32Array([0, 1, 2]), "each biome once")
+		var distinct := {}
+		for b in o:
+			assert_between(b, 0, t.biome_count - 1)
+			distinct[b] = true
+			seen[b] = true
+		assert_eq(distinct.size(), 3, "never the same biome twice in a run")
 		orders[str(o)] = true
 		assert_eq(RunState.start(100 + s, t).biome_order, o, "same run seed, same order")
 	assert_gte(orders.size(), 4, "the order varies between runs")
+	assert_eq(seen.size(), t.biome_count, "every biome turns up across runs")
 
 
 func test_floor_seeds_derive_from_the_run_seed() -> void:
