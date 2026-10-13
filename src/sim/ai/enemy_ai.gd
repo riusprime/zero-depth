@@ -4,8 +4,7 @@ extends RefCounted
 ## walks: once it starts a slam it is committed, so baiting the slam opens its back (the way to flank it).
 ## Each enemy is a small state machine in ActorStore (state, state_t, facing, lock_*, cd, fire_cd, windup, pick).
 ## think() runs in tick phase 3, move() in phase 5, resolve() in phase 6. Every attack's area comes from one function
-## here, which the telegraph view also draws (EI-07): charge_lane, slam_disc, burst_lines, bolt_lanes, rune_disc,
-## bomb_disc.
+## here, which the telegraph view also draws (EI-07): charge_lane, locked_disc, burst_lines, bolt_lanes, rune_disc.
 ## v0.3.5 AI (owner F4-F6): each windup's length is drawn per attack (the ai:enemy stream); aimed shots lead the
 ## player by its velocity and keep tracking until the last COMMIT_TICKS of the windup; a charge turns toward the
 ## player at a limited rate; the Needle's burst fans out; enemies spread around the player instead of stacking.
@@ -15,7 +14,7 @@ extends RefCounted
 ## disc ahead of it; dies into Splitlings, which swipe too and never split), the Shield Bearer (blocks from the front,
 ## turns slowly, bashes a short lane), the Mender (keeps away and heals hurt allies through a beam, no attack), the
 ## Mine Layer (drops mines; Mines) and the Sniper (a 60-tick line, a hit down it, then a walk to a new spot). Their
-## shapes: swipe_disc, bash_lane, snipe_lane, Mines.telegraph.
+## shapes: locked_disc, bash_lane, snipe_lane, Mines.telegraph.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -130,7 +129,7 @@ static func think(w: World, i: int) -> void:
 	match a.state[i]:
 		State.SPAWN:
 			if a.state_t[i] >= w.tuning.spawn_in_ticks:
-				_enter(a, i, State.MOVE)
+				enter_state(a, i, State.MOVE)
 		State.MOVE:
 			var to_player := w.player_pos() - a.pos(i)
 			var dist := Kin.length(to_player)
@@ -156,7 +155,7 @@ static func think(w: World, i: int) -> void:
 			if tracking(w, i) and alive:
 				_aim(w, i)
 			if a.state_t[i] >= a.windup[i]:
-				_enter(a, i, State.ACTIVE)
+				enter_state(a, i, State.ACTIVE)
 				a.fire_cd[i] = 0
 		State.ACTIVE:
 			var done := false
@@ -168,10 +167,10 @@ static func think(w: World, i: int) -> void:
 				_:
 					done = a.state_t[i] >= t.active_ticks
 			if done:
-				_enter(a, i, State.RECOVER)
+				enter_state(a, i, State.RECOVER)
 		State.RECOVER:
 			if a.state_t[i] >= t.recover_ticks:
-				_enter(a, i, State.MOVE)
+				enter_state(a, i, State.MOVE)
 				a.cd[i] = t.cooldown_ticks
 				if a.kinds[i] == ActorStore.Kind.SNIPER:
 					_plan_relocation(w, i)
@@ -437,7 +436,7 @@ static func resolve(w: World, i: int) -> void:
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
 		ActorStore.Kind.WARDEN:
 			if a.state_t[i] == 0:
-				var disc := slam_disc(w, i)
+				var disc := locked_disc(w, i)
 				if AttackShapes.disc_touches(disc[0], disc[1], p, pr):
 					_hit_player(w, i, t.damage, SimEvent.TAG_AREA)
 		ActorStore.Kind.NEEDLE:
@@ -478,7 +477,7 @@ static func resolve(w: World, i: int) -> void:
 						_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
 		ActorStore.Kind.BOMB_DRONE:
 			if a.state_t[i] == 0:
-				var d := bomb_disc(w, i)
+				var d := locked_disc(w, i)
 				if AttackShapes.disc_touches(d[0], d[1], p, pr):
 					_hit_player(w, i, t.damage, SimEvent.TAG_AREA, d[0])
 		_:
@@ -490,7 +489,7 @@ static func resolve(w: World, i: int) -> void:
 static func _resolve_horde(w: World, i: int, t: EnemyTable, p: Vector2, pr: float) -> void:
 	match w.actors.kinds[i]:
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var d := swipe_disc(w, i)
+			var d := locked_disc(w, i)
 			if AttackShapes.disc_touches(d[0], d[1], p, pr):
 				_hit_player(w, i, t.damage, SimEvent.TAG_MELEE)
 		ActorStore.Kind.SHIELD_BEARER:
@@ -562,8 +561,10 @@ static func running_lane(w: World, i: int) -> Obb:
 	return AttackShapes.lane(a.pos(i), a.lock_a[i], a.lock_len[i] + a.radius[i], a.radius[i])
 
 
-## [center, radius] of a Warden's slam.
-static func slam_disc(w: World, i: int) -> Array:
+## [center, radius] of a locked disc: where enemy i locked its attack, slam_radius_m wide. A Warden's slam, the Bomb
+## Drone's bomb (v0.3.5 AI: where the player stood when it was lobbed) and a Splitter's or Splitling's swipe (v0.4.0
+## EN: reach_m ahead of it when it wound up) are all this disc.
+static func locked_disc(w: World, i: int) -> Array:
 	var a := w.actors
 	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
 
@@ -622,18 +623,6 @@ static func rune_disc(w: World, i: int) -> Array:
 	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).rune_radius_m]
 
 
-## [center, radius] of the Bomb Drone's bomb (v0.3.5 AI): where the player stood when it was lobbed.
-static func bomb_disc(w: World, i: int) -> Array:
-	var a := w.actors
-	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
-
-
-## [center, radius] of a Splitter's (or Splitling's) swipe (v0.4.0 EN): reach_m ahead of it when it wound up.
-static func swipe_disc(w: World, i: int) -> Array:
-	var a := w.actors
-	return [Vector2(a.lock_x[i], a.lock_y[i]), w.enemy_table(a.kinds[i]).slam_radius_m]
-
-
 ## A Shield Bearer's bash (v0.4.0 EN): a lane from its centre along its locked facing, reach_m past its body.
 static func bash_lane(w: World, i: int) -> Obb:
 	var a := w.actors
@@ -668,7 +657,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
 			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
-			var s := swipe_disc(w, i)
+			var s := locked_disc(w, i)
 			return {"shape": &"disc", "center": s[0], "radius": s[1], "progress": progress}
 		ActorStore.Kind.SHIELD_BEARER:
 			return {
@@ -679,7 +668,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"shape": &"lane", "obb": snipe_lane(w, i), "progress": progress, "style": &"snipe"
 			}
 		ActorStore.Kind.WARDEN:
-			var d := slam_disc(w, i)
+			var d := locked_disc(w, i)
 			return {"shape": &"disc", "center": d[0], "radius": d[1], "progress": progress}
 		ActorStore.Kind.NEEDLE:
 			return {"shape": &"lanes", "obbs": burst_lines(w, i), "progress": progress}
@@ -698,7 +687,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				return {"shape": &"lane", "obb": lanes[0], "progress": progress, "style": &"bolt"}
 			return {"shape": &"lanes", "obbs": lanes, "progress": progress, "style": &"bolt"}
 		ActorStore.Kind.BOMB_DRONE:
-			var b := bomb_disc(w, i)
+			var b := locked_disc(w, i)
 			return {
 				"shape": &"disc",
 				"center": b[0],
@@ -713,7 +702,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 static func _start_windup(w: World, i: int, aim: int) -> void:
 	var a := w.actors
 	var t := w.enemy_table(a.kinds[i])
-	_enter(a, i, State.WINDUP)
+	enter_state(a, i, State.WINDUP)
 	a.lock_x[i] = a.pos_x[i]
 	a.lock_y[i] = a.pos_y[i]
 	a.lock_a[i] = aim
@@ -804,6 +793,7 @@ static func powered(w: World, i: int, amount: int) -> int:
 	return amount if pm == 1000 or pm <= 0 else SpawnTable.scale(amount, pm)
 
 
-static func _enter(a: ActorStore, i: int, s: int) -> void:
+## Actor i enters state s (its state clock restarts); the bosses' too (BossAi).
+static func enter_state(a: ActorStore, i: int, s: int) -> void:
 	a.state[i] = s
 	a.state_t[i] = 0
