@@ -454,7 +454,7 @@ func _storm_field(c: Vector3, r: float, fade: float, age: float, sd: int) -> voi
 
 ## A shock ring: lightning running round its edge at waist height, no ground fill.
 func _storm_ring(c: Vector3, r: float, fade: float, age: float, sd: int) -> void:
-	var n := clampi(int(r * 3.0), 6, 18)
+	var n := clampi(int(r * 3.0 * density), 6, 18)  # P-13: Effects density, as its siblings
 	var y := Vector3(0, 0.35, 0)
 	for k in n:
 		var a0 := TAU * k / n
