@@ -409,7 +409,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var glow := StageKit.hero_light(hero_mood)  # v0.5.9: the hero's warm light
 			if glow != null:
 				root.add_child(glow)
-		_:
+		_:  # kept deliberately: the grey-cube fallback draws a kind without its own model (a new enemy kind; P-18)
 			var size := CUBE if is_player else CUBE * 0.85
 			height = size
 			_piece(

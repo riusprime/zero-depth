@@ -87,7 +87,7 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 	_build_contact_shadows()
 	if use_kit:
 		_build_kit(reader)
-	else:
+	else:  # kept deliberately: the box-wall fallback keeps the game runnable before the art kit is imported (P-17)
 		_build_props(reader.seed_value(), arena_half)
 
 
