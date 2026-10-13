@@ -4,11 +4,15 @@ extends RefCounted
 ## the manifest hash over canonical property values (CONTENT_SCHEMA §1) are computed on first ask and cached:
 ## errors() and manifest_hash(). It lives in application because the hash uses the sim's CanonicalValue, and
 ## content may not import upward.
-## The game reads the errors once per root per process, at the first load (each one is pushed to the log); a dev
-## panel edit (DevTuning.apply) asks for a fresh check, since it writes into the loaded definitions.
+## The game reads the errors once per root per process, at the first load (each one is pushed to the log as an
+## error); a dev panel edit (DevTuning.apply) asks for a fresh check, since it writes into the loaded definitions, and
+## what that check finds is logged as a warning (a deliberate balance tweak, such as one Arc Caster spell's damage,
+## may break a content rule on purpose).
 
 ## Roots whose content the game has checked (and logged) since the last content edit.
 static var _checked_roots := {}
+## True once a dev panel edit has written into the loaded definitions (DevTuning.apply).
+static var _dev_edited := false
 
 var by_category := {}
 var paths := PackedStringArray()
@@ -47,12 +51,18 @@ static func load_all(root: String = "res://data") -> ContentRepository:
 ## writes into the loaded definitions.
 static func recheck() -> void:
 	_checked_roots.clear()
+	_dev_edited = true
 
 
-## Pushes each content error to the log (the shipped content has none; a test asserts it).
+## Pushes each content error to the log (the shipped content has none; a test asserts it): an error, or a warning
+## once the dev panel has edited the content.
 func log_errors() -> void:
 	for i in errors():
-		push_error("content: %s %s: %s" % [i.path, i.code, i.message])
+		var line := "content: %s %s: %s" % [i.path, i.code, i.message]
+		if _dev_edited:
+			push_warning(line + " (after a dev panel edit)")
+		else:
+			push_error(line)
 
 
 func get_def(category: StringName, id: StringName) -> ContentDef:
