@@ -39,6 +39,10 @@ var _proj_meshes := {}
 ## v0.4.0 SC: idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
 var _proj_pool := {}
 var _proj_pooled := 0
+## P-6: the last look key per side (0 hostile, 1 player) and the [size, colour, energy] it was built from, so a shot of
+## an unchanged look doesn't format its key again (a horde fires hundreds a second).
+var _proj_key: Array[String] = ["", ""]
+var _proj_key_of: Array = [[], []]
 
 
 func sync(reader: WorldReader) -> void:
@@ -477,7 +481,12 @@ func _make_projectile(is_player: bool = false) -> Node3D:
 	if is_player:
 		c = bolt_color()
 	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
-	var key := "%s|%s|%s" % [size, c.to_html(), energy]
+	var side := 1 if is_player else 0
+	var of := [size, c, energy]
+	if of != _proj_key_of[side]:
+		_proj_key_of[side] = of
+		_proj_key[side] = "%s|%s|%s" % [size, c.to_html(), energy]
+	var key := _proj_key[side]
 	var idle: Array = _proj_pool.get(key, [])
 	if not idle.is_empty():
 		var reused: Node3D = idle.pop_back()
