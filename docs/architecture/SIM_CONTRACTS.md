@@ -1043,6 +1043,50 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
   150 ticks.
 
+## 10d. Dodge-first boss fights (v0.7.5 BF1; owner N15, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md))
+
+Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `data/bullet_patterns` and
+`data/bosses` the numbers.
+- **Bullet patterns.** A `pattern` attack fires its `BulletPatternTable` over its active time from the boss's body
+  (`BossDodge.resolve_pattern`, tick phase 6). On each wave tick (`BulletPatterns.wave_at`: the lob, then every
+  `wave_gap_ticks`), `BulletPatterns.wave_shots(pattern, wave, origin, aim, origin_r)` gives the wave's spawn points
+  and velocities: a pure function of its arguments (no stream is drawn; angles in 1/4096 turns through `Kin`, a
+  flower's rose a `Kin.dir` lookup), so the shape a test or view computes is the shape fired. Kinds: ring (count,
+  gaps, turn per wave), spiral (arms, spin, reverse), fan (count, spread, alternate offset), cross (arms, spin), wall
+  (a marching line with a bouncing gap; crossing), flower (petal speeds, cut gaps) and burst (a lobbed shell that
+  lands on the attack's locked target as a hurting disc, then a star). The aim is the attack's `lock_a`, tracked
+  until it commits like any aimed attack.
+- **Fair.** A shot whose spawn point is within `safe_radius_m` + the player's radius of the player, or touches a wall,
+  is left out. Shots are ordinary hostile projectiles (`World.queue_projectile`, TAG_PROJECTILE, the attack's damage
+  × the boss's power, no bounces), so they stop at walls and hit once. At most `MAX_SHOTS_PER_TICK` (160) are queued
+  in a tick (`World.pending_projectiles`) and `MAX_ALIVE` (900) projectiles live; past either the wave's other shots
+  are dropped with one `LIMIT` event (`effect_id` `bullet_cap`). Every shipped pattern keeps a gap the hero fits
+  (the content validation and `test_bullet_patterns.gd`). One attack at a time per boss, so a pattern never starts
+  while that boss's marker is locking.
+- **Fireball looks.** Each shot carries its pattern's `look` (`ProjectileStore.look`, `WorldReader.projectile_look`;
+  the column fills the first time a fireball flies and is hashed only then, so a world that never fired one hashes
+  as before). An old save lacks it: none.
+- **Tracked, then locked.** An attack with `lock_ticks` (from `lock_seconds`) aims at the player's exact position
+  (`BossAi._target`, no lead and no dash read) and tracks until its windup's last `lock_ticks`, then holds. The
+  `marks` and `row_lanes` moves lay `count` markers `mark_gap_ticks` apart: marker k starts at k × gap, sits on the
+  player's position (BossStore points, set in phase 3 from the position before this tick's move) until
+  k × gap + windup − lock, holds, and strikes once at k × gap + windup (active tick k × gap), where it locked
+  (`BossDodge.mark_of`, `row_lanes_of`: one shape function each, drawn and hit alike). Each marker may hit (the
+  hurt iframes still apply). A telegraph with a lock carries `tracked` and `locked` (the view: a dull outline, then a
+  bright flash). Applied to the Gatekeeper's Fist Slam (1/2/3 circles by phase) and Shock Lanes (row and column) and
+  the Warlord's Spear Lines (flood), Lunge (charge) and Javelin Rain (barrage); 0.8 s each.
+- **Shielded signature.** While a `shielded` attack winds up or runs (`BossDodge.shielded`,
+  `WorldReader.boss_shielded`), a hit on the boss emits its `HIT` with `TAG_BLOCKED` and deals nothing; damage over
+  time does nothing; the world's own hits (owner 0, the dev panel's Kill boss) pass. It opens between patterns (the
+  Gatekeeper's Rock Rings and the Warlord's Shield Wall open the weak point when they end). The 66 / 33 % gates stay.
+- **Reads for the views and avatars.** `WorldReader.boss_shielded(i)`, `boss_pattern(i)` (`{}` or id, kind, look,
+  shielded, winding, progress), `projectile_look(i)`, `MOVE_PATTERN` / `MOVE_MARKS` / `MOVE_ROW_LANES`.
+- **Big boss rooms (owner N18).** Every boss's room is 4 x 4 and its body 1.3x (data). `RunState.FLOOR_RULES` is 3;
+  a floor resumed from a payload with rules 1 or 2 rebuilds its boss room at `legacy_arena_cells`
+  (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
+- **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
+  only the fireballs' look column is new (above). The kernel replay golden is boss-free.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

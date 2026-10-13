@@ -119,8 +119,8 @@ script = ExtResource("1_atk")
 id = &"shockwave"
 shape = 3
 shape_params = {
-"inner_radius_m": 4.0,
-"radius_m": 40.0
+"inner_radius_m": 4.4,
+"radius_m": 50.0
 }
 telegraph_seconds = 1.2
 active_seconds = 0.0167
@@ -163,7 +163,7 @@ script = ExtResource("3_boss")
 name_key = &"BOSS_SIEGE_ENGINE"
 desc_key = &"BOSS_SIEGE_ENGINE_DESC"
 hp = 1800
-radius_m = 1.4
+radius_m = 1.8
 move_speed_mps = 1.43
 turn_rate_dps = 90.0
 keep_distance_m = 7.0
@@ -176,7 +176,8 @@ stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_barrage"), SubResource("A_barrage_7"), SubResource("A_rail_sweep"), SubResource("A_bolt_fan"), SubResource("A_deploy"), SubResource("A_shockwave")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
-arena_cells = Vector2i(3, 3)
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(3, 3)
 arena_template = 5
 ranged_full_m = 5.0
 ranged_far_m = 12.0

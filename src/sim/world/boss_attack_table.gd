@@ -15,7 +15,10 @@ enum Move {
 	BOLT_FAN,
 	DEPLOY,
 	PULL,
-	FLOOD
+	FLOOD,
+	PATTERN,
+	MARKS,
+	ROW_LANES,
 }
 
 var id := &""
@@ -66,3 +69,12 @@ var follow_up_permille := 0
 ## v0.4.0 BO: a flood's lanes stand gap_m apart (centre to centre) and hurt again every burn_ticks while active.
 var gap_m := 0.0
 var burn_ticks := 1
+## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): a tracked attack follows the player's exact position until its
+## last lock_ticks of windup (0 = the boss's track_commit rule, with lead), then holds; a `marks` or `row_lanes`
+## attack's later markers start mark_gap_ticks apart, each with the same track and lock. A shielded attack (the
+## signature pattern) keeps the boss shielded through its windup and active time (BossDodge.shielded). A `pattern`
+## attack fires `pattern` (BulletPatterns) over its active time.
+var lock_ticks := 0
+var mark_gap_ticks := 0
+var shielded := false
+var pattern: BulletPatternTable = null

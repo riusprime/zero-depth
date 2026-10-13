@@ -106,6 +106,10 @@ const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
 const MOVE_PULL := BossAttackTable.Move.PULL
 ## v0.4.0 BO: parallel lanes that stand while active (spears, molten floor).
 const MOVE_FLOOD := BossAttackTable.Move.FLOOD
+## v0.7.5 BF1: a bullet pattern, tracked ground circles, tracked row-and-column lanes.
+const MOVE_PATTERN := BossAttackTable.Move.PATTERN
+const MOVE_MARKS := BossAttackTable.Move.MARKS
+const MOVE_ROW_LANES := BossAttackTable.Move.ROW_LANES
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -498,6 +502,11 @@ func projectile_vel(i: int) -> Vector2:
 
 func projectile_id(i: int) -> int:
 	return _w.projectiles.ids[i]
+
+
+## v0.7.5 BF1: projectile i's fireball look key (BulletPatterns; "" = a plain shot, drawn by ActorViews).
+func projectile_look(i: int) -> String:
+	return _w.projectiles.look_of(i)
 
 
 func wall_count() -> int:
@@ -1218,6 +1227,18 @@ func boss_leap(i: int) -> Array:
 	):
 		return [false, 0.0]
 	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
+
+
+## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): boss i is shielded now (its signature pattern runs): the
+## player's hits spark off it. For the shell view and the avatars' shield pose.
+func boss_shielded(i: int) -> bool:
+	return BossDodge.shielded(_w, i)
+
+
+## v0.7.5 BF1: the bullet pattern boss i is winding up or firing: {} or {"id", "kind" (BulletPatternTable.Kind),
+## "look", "shielded", "winding", "progress" 0..1000} (BossAi.pattern_state), for the avatars' poses.
+func boss_pattern(i: int) -> Dictionary:
+	return BossDodge.pattern_state(_w, i)
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

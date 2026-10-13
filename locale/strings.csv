@@ -103,7 +103,9 @@ HUD_BOSS_STAGGER,Stagger,Aturdimiento
 HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
-CAUSE_GATEKEEPER_SLAM,The Gatekeeper's ring of spikes crushed you.,El anillo de púas del Guardián de la Puerta te aplastó.
+CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo del Guardián de la Puerta te aplastó.
+CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca del Guardián de la Puerta te sepultaron.
+CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz del Guardián de la Puerta te alcanzó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque del Guardián de la Puerta te derribó.
 CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido del Guardián de la Puerta te destrozó.
 CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida del Guardián de la Puerta te aplastó.
@@ -447,6 +449,8 @@ CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escud
 CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas del Señor de la Guerra te atravesaron.
 CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida del Señor de la Guerra te arrolló.
 CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas del Señor de la Guerra llovieron sobre ti.
+CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos del Señor de la Guerra te arrolló.
+CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas del Señor de la Guerra te abatió.
 CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de la Lente Enjambre te barrió.
 CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de la Lente Enjambre te abatieron.
 CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de la Lente Enjambre te quemó.

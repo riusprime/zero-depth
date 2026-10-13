@@ -430,8 +430,18 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &""]
 	)
+
+
+## v0.7.5 BF1: the projectile queued last is a fireball of look `look` (BulletPatterns).
+func set_pending_look(look: StringName) -> void:
+	_pending_projectiles[-1][10] = look
+
+
+## v0.7.5 BF1: projectiles queued this tick, not spawned yet (BulletPatterns' per-tick cap reads it).
+func pending_projectiles() -> int:
+	return _pending_projectiles.size()
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
@@ -1426,6 +1436,8 @@ func _apply_spawns() -> void:
 		var id := take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
+		if s[10] != &"":  # v0.7.5 BF1: a fireball's look (BulletPatterns)
+			projectiles.set_look(projectiles.size() - 1, s[10])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()

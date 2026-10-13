@@ -56,7 +56,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
-| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); the other four bosses next |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
@@ -160,6 +160,29 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
   bodies had no telegraph anchors before; telegraphs are still drawn from the sim.
 - **Reduced motion:** the Hive Lens's idle roll, crown spin and tail sway stop (the existing boss avatars had no
   reduced-motion handling); the moves still pose.
+
+### BF1: the dodge-first engine, the Gatekeeper and the Warlord (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (verbatim in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); evidence and the "how to add a
+boss's patterns" guide in [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.md).
+- **The engine is data:** `BulletPatternDefinition` (`data/bullet_patterns`, in the F10 panel's Bosses page) with
+  seven kinds (ring, spiral, fan, cross, wall, flower, burst-on-land); a boss attack fires one with move `pattern`
+  (`pattern_id`). Markers that track then lock are the attack field `lock_seconds` (0.8 s) on any aimed move, plus
+  two new moves, `marks` (circles in turn) and `row_lanes` (the player's row and column). `shielded` marks the
+  signature.
+- **Kept melee answers:** the design table lists no melee; the Gatekeeper keeps its Sweep and the Warlord its Shield
+  Bash (red telegraphs, close range only), so standing inside a boss during its open window isn't free. Dropped: the
+  Gatekeeper's charge, vortex and spike ring (the pull move stays in code, tested on a fixture, for later bosses).
+- **Punish and gap-closer:** the Gatekeeper punishes staying far with its Shock Lanes and has no gap-closer (a tracked
+  circle as gap-closer repeated forever on a far player); the Warlord keeps the Lunge as its gap-closer and Javelin
+  Rain as its punish (both tracked and locked now).
+- **The open window:** the signature patterns (Rock Rings, Shield Wall) open the weak point when they end, so "between
+  patterns" is when hits count double up close.
+- **Fireballs ignore no fairness rule but one reading:** a shot that would spawn within 1.4 m (+ the hero's radius) of
+  the hero is left out, so hugging the boss thins a ring near you; the Sweep / Bash answer that.
+- **Looks:** Gatekeeper ember stones (pale orange core, dark stone edge, an orange-brown trail), Warlord spear embers
+  (salmon-red core stretched into a tip, a wine edge, a crimson trail); the crystal shell in the boss's colour. A test
+  keeps every hostile core 0.2+ (RGB) from the hero's cyan and heat colours. Effects density Low: every other trail,
+  shorter.
 
 ### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).

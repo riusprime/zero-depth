@@ -30,6 +30,8 @@ func _attack(id: StringName, attack_id: StringName, aim_at: Vector2, stand: Vect
 			tg = now
 		var atk := BossAi.attack_of(w, j)
 		var aiming := atk != null and BossAi.tracking(w, j, t_b, atk)
+		if atk != null and BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: until its first marker locks
+			aiming = BossDodge.mark_state(atk, 0, BossDodge.attack_ticks(w, j, atk)) == 0
 		w.actors.set_pos(0, aim_at if aiming else stand)
 		w.step(InputFrame.new())
 	for t in 120:  # bolts still in flight
@@ -44,16 +46,17 @@ func _pr() -> float:
 	return PlayerTable.starting_values().radius_m
 
 
-func test_gatekeeper_ring() -> void:
+## v0.7.5 BF1: the Fist Slam is a tracked circle now; it strikes where it locked, as drawn.
+func test_gatekeeper_fist_slam_circle() -> void:
 	var pr := _pr()
-	var tg: Dictionary = _attack(&"gatekeeper", &"fist_slam", Vector2(3, 0), Vector2(3, 0))[1]
-	assert_eq(tg["shape"], &"ring")
-	var inner: float = tg["inner"]
-	var outer: float = tg["outer"]
-	for d in [inner - pr - EPS, inner - pr + EPS, 3.0, outer + pr - EPS, outer + pr + EPS]:
-		var got: Array = _attack(&"gatekeeper", &"fist_slam", Vector2(3, 0), Vector2(0, d))
-		var drawn: bool = d + pr >= inner and d - pr <= outer
-		assert_eq(got[0], drawn, "distance %.2f: hit iff inside the drawn ring" % d)
+	var tg: Dictionary = _attack(&"gatekeeper", &"fist_slam", Vector2(6, 0), Vector2(6, 0))[1]
+	assert_eq(tg["shape"], &"marks")
+	var c: Vector2 = tg["items"][0]["center"]
+	var r: float = tg["items"][0]["radius"]
+	assert_eq(c, Vector2(6, 0), "on the player")
+	for d in [0.0, r + pr - EPS, r + pr + EPS, r + 2.0]:
+		var got: Array = _attack(&"gatekeeper", &"fist_slam", Vector2(6, 0), c + Vector2(0, d))
+		assert_eq(got[0], d <= r + pr, "offset %.2f: hit iff inside the drawn circle" % d)
 
 
 func _in_any_lane(obbs: Array, p: Vector2, r: float) -> bool:
@@ -66,11 +69,11 @@ func _in_any_lane(obbs: Array, p: Vector2, r: float) -> bool:
 func test_gatekeeper_lanes() -> void:
 	var pr := _pr()
 	var tg: Dictionary = _attack(&"gatekeeper", &"shock_lanes", Vector2(8, 0), Vector2(8, 0))[1]
-	var obbs: Array = tg["obbs"]
-	assert_eq(obbs.size(), 3)
-	var side: Obb = obbs[2]
-	# Points across the upper lane at 8 m, and between the lanes.
-	var c := side.center + side.axis_u * 1.0
+	var obbs: Array = tg["items"][0]["obbs"]  # v0.7.5 BF1: the player's row and column
+	assert_eq(obbs.size(), 2)
+	var side: Obb = obbs[0]
+	# Points across the row 3 m along it, and off it.
+	var c := side.center + side.axis_u * 3.0
 	for off in [0.0, side.half.y + pr - EPS, side.half.y + pr + EPS, -side.half.y - pr - EPS, 2.0]:
 		var p: Vector2 = c + side.axis_v * off
 		var got: Array = _attack(&"gatekeeper", &"shock_lanes", Vector2(8, 0), p)
@@ -97,13 +100,14 @@ func test_gatekeeper_sweep_arc() -> void:
 		assert_eq(got[0], drawn, "%s: hit iff inside the drawn arc" % p)
 
 
-func test_gatekeeper_charge_lane() -> void:
+## v0.7.5 BF1: on the Warlord's lunge (the Gatekeeper no longer charges), tracked then locked.
+func test_warlord_lunge_lane() -> void:
 	var pr := _pr()
-	var tg: Dictionary = _attack(&"gatekeeper", &"charge", Vector2(8, 0), Vector2(8, 0))[1]
+	var tg: Dictionary = _attack(&"warlord", &"lunge_dash", Vector2(8, 0), Vector2(8, 0))[1]
 	var o: Obb = tg["obb"]
 	for d in [0.0, o.half.y + pr - EPS, o.half.y + pr + EPS, 3.0]:
 		var p := Vector2(8, d)
-		var got: Array = _attack(&"gatekeeper", &"charge", Vector2(8, 0), p)
+		var got: Array = _attack(&"warlord", &"lunge_dash", Vector2(8, 0), p)
 		assert_eq(got[0], _in_any_lane([o], p, pr), "lateral %.2f: hit iff inside the lane" % d)
 
 

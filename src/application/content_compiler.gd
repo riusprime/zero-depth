@@ -46,6 +46,9 @@ const BOSS_MOVES := {
 	&"deploy": BossAttackTable.Move.DEPLOY,
 	&"pull": BossAttackTable.Move.PULL,
 	&"flood": BossAttackTable.Move.FLOOD,
+	&"pattern": BossAttackTable.Move.PATTERN,  # v0.7.5 BF1
+	&"marks": BossAttackTable.Move.MARKS,
+	&"row_lanes": BossAttackTable.Move.ROW_LANES,
 }
 
 
@@ -559,6 +562,9 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		t.phase_speed_permille.append(ph.speed_permille)
 		t.phase_cd_permille.append(ph.cooldown_permille)
 	t.arena_cells = def.arena_cells
+	t.legacy_arena_cells = (
+		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
+	)  # v0.7.5 BF1 (N18)
 	t.arena_template = def.arena_template
 	_compile_boss_challenge(def, t)
 	return t
@@ -649,6 +655,7 @@ static func compile_boss_attack(
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
+	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 
 

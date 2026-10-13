@@ -81,6 +81,8 @@ func sync(reader: WorldReader) -> void:
 				d.erase(id)
 	var live := {}
 	for i in reader.projectile_count():
+		if reader.projectile_look(i) != "":
+			continue  # v0.7.5 BF1: a fireball (FireballViews draws them)
 		var id := reader.projectile_id(i)
 		live[id] = true
 		var p := reader.projectile_pos(i)

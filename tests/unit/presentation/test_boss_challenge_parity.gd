@@ -18,6 +18,8 @@ func _ring(id: StringName, attack_id: StringName, stand: Vector2) -> Array:
 	var i := BossLab.ready_boss(w, id)
 	var aid := w.actors.ids[i]
 	var reader := WorldReader.new(w)
+	if attack_id == &"vortex_slam":  # v0.7.5 BF1: the pull, kept as a fixture (no shipped boss has it now)
+		BossLab.with_attack(w, id, BossLab.vortex_def())
 	w.actors.hp[0] = 100000
 	w.actors.set_pos(0, stand)
 	BossLab.start(w, i, attack_id)

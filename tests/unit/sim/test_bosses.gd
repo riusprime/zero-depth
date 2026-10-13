@@ -34,23 +34,23 @@ func test_spawn_boss_returns_its_id_and_it_rises_untouchable() -> void:
 func test_arena_accessors() -> void:
 	var w := BossLab.world()
 	var g := w.boss_tables[BossLab.table_index(w, &"gatekeeper")]
-	assert_eq(g.arena_cells, Vector2i(3, 3))
+	assert_eq(g.arena_cells, Vector2i(4, 4), "v0.7.5 N18: every boss in the big room")
 	assert_eq(g.arena_template, FloorLayout.Template.PILLARS)
 	var s := w.boss_tables[BossLab.table_index(w, &"siege_engine")]
 	assert_eq(
 		s.arena_cells,
-		Vector2i(3, 3),
-		"v0.6.5 BR (owner W2): the cannon boss fights in a 3 x 3 room"
+		Vector2i(4, 4),
+		'v0.7.5 N18 (owner: "always put them in the big rooms"; was 3 x 3, W2)'
 	)
 	assert_eq(s.arena_template, FloorLayout.Template.LINES)
 	var b := w.boss_tables[BossLab.table_index(w, &"brood_mother")]
-	assert_eq(b.arena_cells, Vector2i(2, 2))
+	assert_eq(b.arena_cells, Vector2i(4, 4))
 
 
-## v0.6.5 BR (owner W2, "3×3"): the Siege Engine's room is 3 x 3 cells on every seed; the closing band now closes
-## on both axes (the 3 x 1 room was too narrow for it to close across), and its punish move still reaches the room's
-## far corners from where it appears.
-func test_the_siege_engine_fights_in_a_3x3_room() -> void:
+## v0.6.5 BR (owner W2, "3×3"), v0.7.5 N18 ("always put them in the big rooms"): the Siege Engine's room is 4 x 4
+## cells on every seed; the closing band closes on both axes, and its punish move still reaches the room's far
+## corners from where it appears.
+func test_the_siege_engine_fights_in_a_4x4_room() -> void:
 	var w := BossLab.world()
 	var k := BossLab.table_index(w, &"siege_engine")
 	var t := w.boss_tables[k]
@@ -59,7 +59,7 @@ func test_the_siege_engine_fights_in_a_3x3_room() -> void:
 		var f := FloorGenerator.generate(7000 + s * 31)
 		BossRoomBuilder.attach(f, BossArenaSpec.make(t.arena_cells, t.arena_template, k))
 		var tag := "seed %d" % (7000 + s * 31)
-		assert_eq(f.room_cells[f.boss_room].size, Vector2i(3, 3), tag + ": a 3 x 3 room")
+		assert_eq(f.room_cells[f.boss_room].size, Vector2i(4, 4), tag + ": a 4 x 4 room")
 		var arena := f.rooms[f.boss_room]
 		var deep := BossChallenge.band_depth(arena, t, 1000)
 		assert_gt(deep.x, 0.0, tag + ": the band closes across x")
@@ -113,6 +113,11 @@ func test_every_attack_telegraphs_at_least_the_minimum_before_it_lands() -> void
 		var i := BossLab.ready_boss(w, id, Vector2(40, 40))
 		for attack_id in _attack_ids(w, i):
 			var atk := BossAi.table_of(w, i).attacks[BossAi.table_of(w, i).attack_index(attack_id)]
+			if (
+				atk.move == BossAttackTable.Move.PATTERN
+				and atk.pattern.kind != BulletPatternTable.Kind.BURST
+			):
+				continue  # v0.7.5 BF1: shots draw no ground line, they are the cause (test_bullet_patterns.gd)
 			var stand := Vector2(3.0, 0.0)  # inside a ring, a lane, a sweep, a fan, a leap or a barrage
 			if atk.move == BossAttackTable.Move.BROOD or atk.move == BossAttackTable.Move.DEPLOY:
 				stand = (
@@ -200,18 +205,34 @@ func test_phase_two_starts_at_its_gate_with_its_entry_attack() -> void:
 	BossLab.through_gate(w, aid)
 	i = w.actors.index_of(aid)
 	var t := BossAi.table_of(w, i)
-	assert_eq(w.bosses.attack[b], t.attack_index(&"charge"), "phase two opens with the charge")
+	assert_eq(
+		w.bosses.attack[b], t.attack_index(&"rock_rings_4"), "phase two opens with four rings"
+	)
 	assert_eq(w.actors.state[i], S.WINDUP)
 
 
-func test_phase_two_lanes_are_five() -> void:
+## v0.7.5 BF1 (BOSS_FIGHTS.md): the Fist Slam's tracked circles are 1, 2 and 3 by phase.
+func test_the_fist_slam_lays_one_two_then_three_circles() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"gatekeeper")
+	var aid := w.actors.ids[i]
 	w.actors.set_pos(0, Vector2(8, 0))
-	BossLab.start(w, i, &"shock_lanes")
-	assert_eq((BossAi.telegraph(w, i)["obbs"] as Array).size(), 3)
-	BossLab.start(w, i, &"shock_lanes_5")
-	assert_eq((BossAi.telegraph(w, i)["obbs"] as Array).size(), 5)
+	w.actors.invuln[0] = 1 << 20
+	var t := BossAi.table_of(w, i)
+	for spec in [[&"fist_slam", 1, 0], [&"fist_slam_2", 2, 1], [&"fist_slam_3", 3, 2]]:
+		assert_true(
+			t.phase_attacks[spec[2]].has(t.attack_index(spec[0])), "%s in its phase" % spec[0]
+		)
+		BossLab.start(w, w.actors.index_of(aid), spec[0])
+		var most := 0
+		for n in 300:
+			var tg := BossAi.telegraph(w, w.actors.index_of(aid))
+			if not tg.is_empty():
+				most = maxi(most, (tg["items"] as Array).size())
+			w.step(InputFrame.new())
+			if w.actors.state[w.actors.index_of(aid)] == S.RECOVER:
+				break
+		assert_eq(most, spec[1], "%s: %d circles" % [spec[0], spec[1]])
 
 
 func test_boss_defeated_fires_exactly_once_after_a_normal_kill() -> void:
@@ -310,7 +331,7 @@ func test_a_boss_kill_names_the_attack_in_the_recap() -> void:
 	w.actors.set_pos(0, Vector2(3, 0))
 	w.actors.hp[0] = 5
 	BossLab.start(w, i, &"fist_slam")
-	CombatLab.idle(w, 80)
+	CombatLab.idle(w, 120)  # v0.7.5 BF1: it tracks 0.8 s, then locks 0.8 s
 	assert_true(w.player_dead())
 	assert_eq(w.killer_kind, ActorStore.Kind.GATEKEEPER)
 	assert_eq(WorldReader.new(w).killer_cause_key(), &"CAUSE_GATEKEEPER_SLAM")

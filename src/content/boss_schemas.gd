@@ -51,7 +51,21 @@ const MOVES := {
 	## then for the whole active time the lanes stay (the Warlord's spears, the Foundry's molten floor) and hurt
 	## a player standing in them once every burn_seconds.
 	&"flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
+	## v0.7.5 BF1 (owner N15): fires a bullet pattern (data/bullet_patterns, by id) over the active time: slow fireballs
+	## in a shape (BulletPatterns). A BURST pattern's shell lands on the target its windup tracked.
+	&"pattern": {"shape": 4, "params": ["pattern_id"]},
+	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
+	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
+	&"marks": {"shape": 0, "params": ["count", "radius_m", "stagger_seconds"]},
+	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
+	## tracked then locked like `marks`; cut short by walls.
+	&"row_lanes": {"shape": 2, "params": ["count", "length_m", "width_m", "stagger_seconds"]},
 }
+
+## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
+const LOCKED_MOVES: Array[StringName] = [&"marks", &"row_lanes"]
+## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
+const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 
 ## Params that name an enemy (resolved by the compiler; a content test checks they exist).
 const ENEMY_PARAMS: Array[String] = ["enemy_id"]

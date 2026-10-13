@@ -148,3 +148,21 @@ func test_an_old_save_keeps_its_v070_floor_and_the_next_floor_is_new() -> void:
 	var new := RunSaver.floor_tables(fresh, repo)
 	assert_eq((new[&"map"] as FloorParams).rooms_max, 19)
 	assert_false((new[&"shop"] as ShopTable).on_floor(2), "v0.7.5: no shop on floor 2")
+
+
+## v0.7.5 BF1 (owner N18): today's boss rooms are 4 x 4; a floor saved before (floor rules 1 or 2) is rebuilt with the
+## boss's room of then, so its snapshot still fits; the next floor is today's.
+func test_a_save_from_before_the_big_boss_rooms_keeps_its_room() -> void:
+	for rules in [RunState.FLOOR_RULES_V070, RunState.FLOOR_RULES_V075_MG]:
+		var run := SaveLab.run_state(41, 1)
+		run.floor_rules = rules
+		assert_true(run.legacy_boss_room())
+		var w := SaveLab.build_floor(run)
+		var cells := w.floor_layout.room_cells[w.floor_layout.boss_room].size
+		assert_ne(cells, Vector2i(4, 4), "rules %d: the room of then" % rules)
+		var now := SaveLab.run_state(41, 1)
+		assert_false(now.legacy_boss_room())
+		var fresh := SaveLab.build_floor(now)
+		assert_eq(fresh.floor_layout.room_cells[fresh.floor_layout.boss_room].size, Vector2i(4, 4))
+		run.finish_floor(w)
+		assert_false(run.legacy_boss_room(), "the next floor: the big room")

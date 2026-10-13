@@ -54,3 +54,39 @@ static func through_gate(w: World, aid: int) -> void:
 			break
 		w.step(InputFrame.new())
 	w.step(InputFrame.new())
+
+
+## v0.7.5 BF1: steps the world until boss `aid`'s shield is down (its signature pattern over), at most `limit` ticks.
+static func until_open(w: World, aid: int, limit: int = 900) -> void:
+	for k in limit:
+		var i := w.actors.index_of(aid)
+		if i < 0 or not BossDodge.shielded(w, i):
+			return
+		w.step(InputFrame.new())
+
+
+## v0.7.5 BF1: appends attack `def` (compiled) to boss `id`'s table in this world and returns its index. The tests of
+## a move no shipped boss uses any more (the Gatekeeper's old vortex) build it here.
+static func with_attack(w: World, id: StringName, def: BossAttackDefinition) -> int:
+	var t := w.boss_tables[table_index(w, id)]
+	var atk := ContentCompiler.compile_boss_attack(def, ContentRepository.load_all())
+	atk.opens_weak = def.opens_weak_point
+	atk.recover_ticks = atk.recover_ticks * 600 / 1000
+	t.attacks.append(atk)
+	return t.attacks.size() - 1
+
+
+## v0.7.5 BF1: the Gatekeeper's vortex slam before BF1 (the pull move's test fixture; its v0.3.0 BX numbers).
+static func vortex_def() -> BossAttackDefinition:
+	var d := BossAttackDefinition.new()
+	d.id = &"vortex_slam"
+	d.shape = AttackDefinition.Shape.RING
+	d.shape_params = {"inner_radius_m": 0.0, "pull_mps": 5.5, "pull_range_m": 30.0, "radius_m": 4.5}
+	d.telegraph_seconds = 1.3
+	d.active_seconds = 0.0167
+	d.recovery_seconds = 1.5
+	d.damage = 24
+	d.move = &"pull"
+	d.cause_key = &"CAUSE_GATEKEEPER_PULL"
+	d.opens_weak_point = true
+	return d

@@ -135,10 +135,10 @@ func test_hatchlings_use_a_small_crawler() -> void:
 
 func test_telegraph_views_draw_every_boss_shape() -> void:
 	var specs := [
-		[&"gatekeeper", &"fist_slam", &"ring"],
-		[&"gatekeeper", &"shock_lanes_5", &"lanes"],
+		[&"gatekeeper", &"fist_slam", &"marks"],  # v0.7.5 BF1: tracked circles
+		[&"gatekeeper", &"shock_lanes", &"marks"],  # v0.7.5 BF1: a tracked row and column
 		[&"gatekeeper", &"sweep", &"arc"],
-		[&"gatekeeper", &"charge", &"lane"],
+		[&"warlord", &"lunge_dash", &"lane"],  # v0.7.5 BF1: the Gatekeeper's charge is gone; the Warlord's lunge
 		[&"brood_mother", &"leap", &"disc"],
 		[&"brood_mother", &"burrow", &"ripple"],
 		[&"brood_mother", &"brood_4", &"discs"],

@@ -25,11 +25,7 @@ func floor_world() -> World:
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
 	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
-	var arena := (
-		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
-		if boss >= 0
-		else null
-	)
+	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,

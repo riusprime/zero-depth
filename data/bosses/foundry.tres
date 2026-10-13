@@ -54,7 +54,7 @@ id = &"vent_blast"
 shape = 3
 shape_params = {
 "inner_radius_m": 0.0,
-"radius_m": 4.2
+"radius_m": 4.65
 }
 telegraph_seconds = 0.8
 active_seconds = 0.0167
@@ -62,7 +62,7 @@ recovery_seconds = 1.3
 damage = 20
 move = &"slam_ring"
 min_range_m = 0.0
-max_range_m = 4.5
+max_range_m = 4.95
 weight = 3
 cooldown_seconds = 0.7
 cause_key = &"CAUSE_FOUNDRY_VENT"
@@ -188,7 +188,7 @@ script = ExtResource("3_boss")
 name_key = &"BOSS_FOUNDRY"
 desc_key = &"BOSS_FOUNDRY_DESC"
 hp = 1900
-radius_m = 1.5
+radius_m = 1.95
 move_speed_mps = 1.5
 turn_rate_dps = 60.0
 keep_distance_m = 0.0
@@ -201,7 +201,8 @@ stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_molten_flood"), SubResource("A_slag_mortar"), SubResource("A_vent_blast"), SubResource("A_bomb_launch"), SubResource("A_molten_flood_5"), SubResource("A_bomb_launch_3"), SubResource("A_firestorm")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
-arena_cells = Vector2i(3, 2)
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(3, 2)
 arena_template = 6
 ranged_full_m = 5.0
 ranged_far_m = 12.0

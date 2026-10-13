@@ -40,6 +40,13 @@ func _reach(id: StringName, kind: int, avatar_class: String) -> void:
 	var hud := main.ui.find_child("Hud", true, false) as Hud
 	assert_true(hud.boss_bar.visible)
 	assert_eq(hud.boss_bar.boss_name(), name, "the bar names it")
+	# v0.7.5 BF1: the boss rises 6 m off with a pillar of the start hall between (its fireballs stop at walls); a few
+	# steps to the side with the stick put the player in its sight.
+	await e.tap(KEY_QUOTELEFT)  # the panel closes, the game takes the stick
+	var to_boss := (reader.actor_pos(i) - reader.player_pos()).normalized()
+	e.stick_toward(Vector2(-to_boss.y, to_boss.x))
+	await e.frames(25)
+	e.stick_toward(Vector2.ZERO)
 	var drawn := false
 	var hit := false
 	var seq := w.last_event_seq()

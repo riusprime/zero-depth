@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 2
+look = &"spear_ember"
+speed_mps = 5.0
+radius_m = 0.16
+range_m = 18.0
+waves = 4
+wave_gap_seconds = 0.3
+count = 7
+spread_degrees = 60.0
+turn_per_wave_degrees = 5.0
+alternate = true
+id = &"warlord_javelin_fan_fast"

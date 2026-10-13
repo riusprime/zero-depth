@@ -293,6 +293,12 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_mortar"
 		WorldReader.MOVE_FLOOD:  # v0.4.0 BO: spears or molten floor bursting up along the lanes.
 			return &"boss_floor_burst"
+		WorldReader.MOVE_MARKS:  # v0.7.5 BF1: the tracked circle strikes; the lanes crack; the pattern fires
+			return &"boss_slam"
+		WorldReader.MOVE_ROW_LANES:
+			return &"boss_laser"
+		WorldReader.MOVE_PATTERN:
+			return &"boss_mortar"
 	return &""
 
 

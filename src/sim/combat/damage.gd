@@ -86,6 +86,9 @@ static func hit(
 	h.ancestry = w.engine_chain.duplicate()
 	if amount <= 0 or a.invuln[target] > 0 or (target == 0 and w.dash_iframes_active()):
 		return 0
+	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: it sparks off the shield
+		h.tags |= SimEvent.TAG_BLOCKED
+		return 0
 	if target == 0 and owner_id != a.ids[0] and Curses.dodges(w, owner_id, at):  # v0.6.0 CU: Rooted
 		return 0
 	if target == 0 and owner_id != a.ids[0] and ModifierRuntime.absorb(w):  # v0.6.0 MX4: Aether Shell
@@ -123,6 +126,8 @@ static func tick_dot(
 ) -> int:
 	var a := w.actors
 	if a.dead[target] == 1 or a.invuln[target] > 0 or amount <= 0:
+		return 0
+	if owner_id != 0 and target != 0 and BossDodge.shielded(w, target):  # v0.7.5 BF1: the shield holds
 		return 0
 	if owner_id == a.ids[0] and target != 0:
 		amount = Stats.dot(w, amount)  # v0.4.0 BS: the damage stat (a DoT tick never crits)

@@ -16,8 +16,12 @@ extends RefCounted
 ## combat rooms as arenas, a shop on every floor), only for a floor resumed from a save made before v0.7.5 (its
 ## payload has no floor_rules), so the floor rebuilt under its snapshot is the floor it was saved on. The next floor
 ## is always built with FLOOR_RULES.
-const FLOOR_RULES := 2
+## v0.7.5 BF1 (owner N18, "always put them in the big rooms"): 3 is today's, every boss room 4 x 4; a floor saved under
+## rules 1 or 2 rebuilds its boss room at the boss's legacy_arena_cells (legacy_boss_room), so it is the floor it was
+## saved on.
+const FLOOR_RULES := 3
 const FLOOR_RULES_V070 := 1
+const FLOOR_RULES_V075_MG := 2
 
 var run_seed := 0
 var table: RunTable
@@ -200,6 +204,12 @@ func prepare(w: World) -> void:
 ## v0.7.5 MG: whether the current floor is a v0.7.0 floor resumed from an older save.
 func v070_floor() -> bool:
 	return floor_rules == FLOOR_RULES_V070
+
+
+## v0.7.5 BF1 (N18): whether the current floor's boss room is the one before the 4 x 4 rooms (a floor resumed from a
+## save made before BF1).
+func legacy_boss_room() -> bool:
+	return floor_rules < 3
 
 
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:

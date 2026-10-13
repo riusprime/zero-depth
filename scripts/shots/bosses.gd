@@ -19,7 +19,7 @@ const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engin
 const BOSSES_2: Array[StringName] = [&"warlord", &"hive_lens", &"foundry"]
 ## Two attacks shown per boss in the sheet.
 const SHOWN := {
-	&"gatekeeper": [&"fist_slam", &"shock_lanes_5"],
+	&"gatekeeper": [&"fist_slam_2", &"shock_lanes"],  # v0.7.5 BF1
 	&"brood_mother": [&"leap", &"brood_4"],
 	&"siege_engine": [&"barrage_7", &"rail_sweep"],
 	&"warlord": [&"spear_lines@active", &"lunge_dash"],
