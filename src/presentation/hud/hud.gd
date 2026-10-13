@@ -103,6 +103,10 @@ var _vignette := LowHpVignette.new()
 var _top_frame := HudFrame.new(Vector2(20, 8))
 var _hp_frame := HudFrame.new(Vector2(16, 10))
 var _t := 0.0
+## P-7: what each per-tick label last rendered from (slot -> value), so an unchanged one skips its format and its
+## theme override; cleared on a language switch.
+var _shown := {}
+var _shown_locale := ""
 
 
 func _init() -> void:
@@ -171,43 +175,60 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
+	var locale := TranslationServer.get_locale()
+	if locale != _shown_locale:  # P-7: words again in a new language
+		_shown_locale = locale
+		_shown.clear()
 	var hp := reader.player_hp()
 	var mx := maxi(1, reader.player_max_hp())
 	_hp_bar.set_fraction(float(hp) / mx)
-	_hp_text.text = tr("HUD_HP") % [hp, mx]
 	var low := HudStyle.low_hp(hp, mx)
 	_hp_bar.warn = low
 	_vignette.active = low
-	_hp_text.add_theme_color_override("font_color", HudStyle.WARN if low else HudStyle.text_color())
+	var hp_color := HudStyle.WARN if low else HudStyle.text_color()
+	if _changed(&"hp", [hp, mx, hp_color]):
+		_hp_text.text = tr("HUD_HP") % [hp, mx]
+		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.fraction(), _hp_bar.size.y))
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
-		(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
+		if _changed(&"util", &"UTIL_BLINK"):
+			(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
 		_set_pip(_util, reader.blink_cooldown(), reader.blink_cooldown_total())
 	elif reader.has_guard():
-		(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
+		if _changed(&"util", &"UTIL_GUARD"):
+			(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
 		_set_pip(_util, 0, 1, reader.guarding())
 	_util.visible = reader.has_blink() or reader.has_guard()
 	if reader.has_floor():
 		var secs := int(reader.run_seconds())
-		_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
+		if _changed(&"wave", [&"HUD_TIME", secs]):
+			_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
 		_danger.set_danger(reader.tier(), reader.tier_progress())
-		_left.text = tr("HUD_KILLS") % reader.kills()
+		var kills := reader.kills()
+		if _changed(&"left", [&"HUD_KILLS", kills]):
+			_left.text = tr("HUD_KILLS") % kills
 		_sync_items(reader)
 		_sync_combos(reader)
 	else:
-		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
-		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
+		var wave := [&"HUD_WAVE", maxi(reader.wave_number(), 1), reader.wave_count()]
+		if _changed(&"wave", wave):
+			_wave.text = tr("HUD_WAVE") % [wave[1], wave[2]]
+		var alive := reader.enemies_alive()
+		if _changed(&"left", [&"HUD_ENEMIES", alive]):
+			_left.text = tr("HUD_ENEMIES") % alive
 	_danger.visible = reader.has_floor()
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
 		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
-		_floor.text = (
-			tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
-		)
-		if deep:
-			_floor.add_theme_color_override("font_color", DEEP_TEXT)
+		var floor_index := reader.floor_index()
+		if _changed(&"floor", [floor_index, deep, _biome_key]):
+			_floor.text = (
+				tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [floor_index, tr(_biome_key)]
+			)
+			if deep:
+				_floor.add_theme_color_override("font_color", DEEP_TEXT)
 	boss_bar.sync(reader)
 	heat_meter.sync(reader)
 	minimap.sync(reader)
@@ -237,9 +258,9 @@ func _process(delta: float) -> void:
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
 		_floor_card.visible = _floor_card_left > 0.0
-	if _shard_pulse > 0.0:
+	if _shard_pulse > 0.0:  # P-7: at rest the box keeps scale 1 (the last step of a pulse writes it)
 		_shard_pulse = maxf(0.0, _shard_pulse - delta)
-	_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
+		_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
 
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
@@ -270,7 +291,16 @@ func _word_floor_card() -> void:
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_shown.clear()
 		_word_floor_card()
+
+
+## P-7: true (and remembered) when `value` differs from what label `slot` last rendered from.
+func _changed(slot: StringName, value: Variant) -> bool:
+	if _shown.has(slot) and typeof(_shown[slot]) == typeof(value) and _shown[slot] == value:
+		return false
+	_shown[slot] = value
+	return true
 
 
 func floor_card_showing() -> bool:
@@ -484,9 +514,7 @@ func _sync_rewards(reader: WorldReader) -> void:
 			_prompt.text = tr("REWARD_OPEN_CHEST") % price
 		else:
 			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
-		_prompt.add_theme_color_override(
-			"font_color", HudStyle.text_color() if reader.reward_affordable(i) else POOR
-		)
+		HudStyle.font_color(_prompt, HudStyle.text_color() if reader.reward_affordable(i) else POOR)
 	_pick.sync(reader)
 
 

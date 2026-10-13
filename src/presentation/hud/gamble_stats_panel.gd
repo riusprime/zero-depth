@@ -76,13 +76,13 @@ func place_top_right(top: float) -> void:
 
 func sync(reader: WorldReader) -> void:
 	_reader = reader
-	_title.text = tr("UI_GAMBLE_STATS")
-	_none.text = tr("UI_GAMBLE_STATS_NONE")
 	var now := PackedInt32Array()
 	for s in reader.gamble_stat_count():
 		now.append(reader.gamble_stacks(s))
 	if now == _shown and TranslationServer.get_locale() == _locale:  # v0.6.0 UP: worded again on a switch
 		return
+	_title.text = tr("UI_GAMBLE_STATS")  # P-7: after the early return (unchanged words then)
+	_none.text = tr("UI_GAMBLE_STATS_NONE")
 	_shown = now
 	_locale = TranslationServer.get_locale()
 	for c in _rows.get_children():

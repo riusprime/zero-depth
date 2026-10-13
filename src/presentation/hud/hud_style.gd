@@ -84,6 +84,14 @@ static func panel_bg(s: Style = current) -> Color:
 	return STONE if s == Style.EMBER else Color(0.03, 0.035, 0.045, 0.5)
 
 
+## P-7: sets a label's font colour override only when it differs (an override invalidates the label's theme cache and
+## re-shapes its text, so a per-tick sync of an unchanged colour costs a re-layout for nothing).
+static func font_color(l: Control, c: Color) -> void:
+	if l.has_theme_color_override(&"font_color") and l.get_theme_color(&"font_color") == c:
+		return
+	l.add_theme_color_override(&"font_color", c)
+
+
 ## The HUD HP bar's fill: EMBER's red, else the player's bar token.
 static func hp_color(s: Style = current) -> Color:
 	return HP_RED if s == Style.EMBER else ThemePalette.color(&"player_bar")
