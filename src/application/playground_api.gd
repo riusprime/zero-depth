@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 class_name PlaygroundApi
 extends RefCounted
 ## v0.7.5 PG (owner N19, docs/tools/PLAYGROUND.md): the Playground's commands. The panel queues them and SimDriver
@@ -13,6 +14,19 @@ const ENDLESS_HP := 100_000_000
 const DUMMY_RADIUS_M := 0.5
 ## How far past a body's edge a delete click still picks it, in metres.
 const PICK_SLACK_M := 0.6
+## After a death the player is back at once, unhurtable for a second.
+const REVIVE_INVULN_TICKS := 60
+## The panel's card groups, in its order.
+const GROUP_WAND := &"wand"
+const GROUP_ABILITY_MOD := &"ability_mod"
+const GROUP_PASSIVE := &"passive"
+const GROUP_ABILITY := &"ability"
+const GROUP_STAT := &"stat"
+const GROUPS: Array[StringName] = [
+	GROUP_WAND, GROUP_ABILITY, GROUP_ABILITY_MOD, GROUP_PASSIVE, GROUP_STAT
+]
+## Stat cards are offered as common, rare and epic (their amounts).
+const STAT_RARITIES := 3
 
 var world: World
 ## The player can't be hurt (as DebugApi.god).
@@ -234,6 +248,90 @@ func clear_spot(at: Vector2, r: float) -> bool:
 	return true
 
 
+# --- Reads (the panel's lists) ---------------------------------------------------------------------------------
+
+
+## Every card the build can take now, as {code, group, name_key, rarity, levels (it has levels 1-5), held, level}:
+## wand cards, abilities (not the starting weapons), ability mods (only while you own their ability), passives (items
+## outside the wand) and stat cards (common, rare, epic). Retired cards and the other weapon's cards are left out.
+func catalog() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for k in world.item_tables.size():
+		if not ItemPool.usable(world, k):
+			continue
+		var it := world.item_tables[k]
+		var group := GROUP_PASSIVE
+		if CardLevels.is_card(world, k):
+			group = GROUP_WAND
+		elif it.requires_ability >= 0:
+			group = GROUP_ABILITY_MOD
+		_add_entry(out, k, group, CardLevels.is_card(world, k))
+	for a in world.ability_tables.size():
+		if world.ability_tables[a].start_weapon == 0:
+			_add_entry(out, Offers.ability_code(a), GROUP_ABILITY, true)
+	for s in world.stat_tables.size():
+		for r in STAT_RARITIES:
+			_add_entry(out, Offers.stat_code(s, r), GROUP_STAT, false)
+	return out
+
+
+## The cards held now, in the order the panel lists them: the wand left to right, then the other abilities, the
+## passives and the stat cards (one row per copy). Same fields as catalog().
+func held() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for code in world.mod_slots:
+		var levels := Offers.type_of(code) == Offers.ABILITY or CardLevels.is_card(world, code)
+		_add_entry(out, code, GROUP_WAND, levels)
+	for a in world.ability_owned:
+		var code := Offers.ability_code(a)
+		if not world.mod_slots.has(code) and world.ability_tables[a].start_weapon == 0:
+			_add_entry(out, code, GROUP_ABILITY, true)
+	for k in world.items_owned:
+		if not world.mod_slots.has(k):
+			_add_entry(out, k, GROUP_PASSIVE, false)
+	for code in world.stat_cards:
+		_add_entry(out, code, GROUP_STAT, false)
+	return out
+
+
+## The enemy kinds that can be placed, as {kind, name_key}, in kind order.
+func enemy_choices() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for k in range(ActorStore.Kind.CHARGER, ActorStore.Kind.size()):
+		var t := world.enemy_table(k)
+		if t != null and not BossAi.is_boss_kind(k):
+			out.append({"kind": k, "name_key": t.name_key})
+	return out
+
+
+## The bosses that can be placed, as {index (into World.boss_tables), name_key}.
+func boss_choices() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for b in world.boss_tables.size():
+		out.append({"index": b, "name_key": world.boss_tables[b].name_key})
+	return out
+
+
+func _add_entry(out: Array[Dictionary], code: int, group: StringName, levels: bool) -> void:
+	var info := Offers.info(world, code)
+	var level := 0
+	match Offers.type_of(code):
+		Offers.MOD:
+			level = CardLevels.level(world, code) if world.items_owned.has(code) else 0
+		Offers.ABILITY:
+			level = Abilities.level_of(world, Offers.ability_of(code))
+	var entry := {
+		"code": code,
+		"group": group,
+		"name_key": info["name_key"],
+		"rarity": info["rarity"],
+		"levels": levels,
+		"held": BuildSlots.held(world, code) or world.stat_cards.has(code),
+		"level": level,
+	}
+	out.append(entry)
+
+
 # --- Inside -----------------------------------------------------------------------------------------------------
 
 
@@ -257,8 +355,13 @@ func _remove(gone: PackedInt32Array) -> void:
 		world.boss_id = world.bosses.ids[world.bosses.size() - 1]
 
 
+## The player never stays dead in the Playground: back at full HP before the next tick, where it fell.
 func _upkeep() -> void:
 	var a := world.actors
+	if a.dead[0] == 1:
+		a.dead[0] = 0
+		a.hp[0] = a.max_hp[0]
+		a.invuln[0] = maxi(a.invuln[0], REVIVE_INVULN_TICKS)
 	for i in range(1, a.size()):
 		if endless.has(a.ids[i]) and a.dead[i] == 0:
 			a.hp[i] = a.max_hp[i]

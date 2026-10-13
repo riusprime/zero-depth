@@ -60,3 +60,25 @@ branch `claude/playground` (cut from `claude/v0.7.5-new-ground` at `d5a5602`, af
 | PG3 | The F1 panel: Build, Spawn, Biome, Player tabs; click to place and delete | debug UI, e2e |
 | PG4 | The DPS meter (total, 5 s window, per source, Reset) | presentation, unit + e2e |
 | PG5 | Biome switching (redraw the room, lay the biome's surface) | app + presentation, e2e |
+
+## How to use it
+
+1. Main menu → **Playground** (under Codex) → pick the weapon (Gun / Blade, ←/→ and Enter).
+2. You're in one big 4×4 room. A **DPS meter** sits on the right; **F1** opens the panel (bottom-left reminder).
+3. While the panel is open the game waits:
+   - **Build:** set the **Level** (1–5), search, select a card and press **Add at level** (or double-click it). A card
+     you hold shows its level; adding it again at another level re-levels it. **Your build** lists what you hold;
+     double-click a row (or **Remove**) to take it out. **Change weapon** goes back to the weapon pick. The wand has
+     all 8 slots; a 9th card is refused (remove one first). Ability mods appear once you hold their ability.
+   - **Spawn:** pick a tool (Dummy that never dies, Dummy with HP, an Enemy, a Boss, Delete), then **left-click the
+     floor**. **Right-click** anything to delete it. **Clear enemies and bosses** keeps the dummies; **Clear
+     everything** removes them too.
+   - **Biome:** redraws the room in that biome (its look, light, sounds, and its ice or starglow patches). The build,
+     the dummies and the spawns stay.
+   - **Player:** God mode, Full heal, Reset DPS meter, Show DPS meter.
+4. **F1** (or **Esc**, or Close) shuts the panel and the game runs. Esc then pauses as in a run (Restart rebuilds the
+   room with the same weapon and biome; Main menu leaves). If you die you're back at once at full HP.
+
+**The DPS meter:** DPS over the last 5 s, the average since the first hit, the total and the time, and the sources by
+damage (basic attack, each card's child spell or trigger, each ability, bleed / shock / frost / poison ticks, combos
+and engines by their card's name). It counts the HP the target really lost, from the sim's DAMAGE events.

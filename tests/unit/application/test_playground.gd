@@ -1,3 +1,4 @@
+# gdlint: disable=max-public-methods
 extends GutTest
 ## v0.7.5 PG (owner N19, docs/tools/PLAYGROUND.md): the Playground's one room, its World and its commands.
 
@@ -254,3 +255,52 @@ func test_god_mode_keeps_the_player_unhurt() -> void:
 	var at := w.player_pos()
 	Damage.hit(w, 0, 50, 0, 0, w.take_root(), 0, at, at)
 	assert_eq(w.actors.hp[0], hp)
+
+
+func test_the_catalog_lists_every_group_and_marks_what_is_held() -> void:
+	var w := _world()
+	var pg := PlaygroundApi.new(w)
+	var groups := {}
+	for e: Dictionary in pg.catalog():
+		groups[e["group"]] = true
+		assert_ne(String(e["name_key"]), "", "a name for every row")
+	for g in [
+		PlaygroundApi.GROUP_WAND,
+		PlaygroundApi.GROUP_ABILITY,
+		PlaygroundApi.GROUP_PASSIVE,
+		PlaygroundApi.GROUP_STAT
+	]:
+		assert_true(groups.has(g), String(g))
+	var k := _wand_card(w)
+	pg.grant_now(k, 4)
+	var row: Dictionary = {}
+	for e: Dictionary in pg.catalog():
+		if e["code"] == k:
+			row = e
+	assert_true(row["held"])
+	assert_eq(row["level"], 4)
+	var mine := pg.held()
+	assert_eq(mine.size(), 1)
+	assert_eq(mine[0]["code"], k)
+	assert_true(mine[0]["levels"])
+
+
+func test_the_starting_weapon_is_not_in_the_catalog() -> void:
+	var w := _world()
+	for e: Dictionary in PlaygroundApi.new(w).catalog():
+		if Offers.type_of(e["code"]) == Offers.ABILITY:
+			assert_eq(w.ability_tables[Offers.ability_of(e["code"])].start_weapon, 0)
+
+
+func test_the_player_comes_back_after_a_death() -> void:
+	var w := _world()
+	var pg := PlaygroundApi.new(w)
+	var at := w.player_pos()
+	Damage.hit(w, 0, w.actors.max_hp[0] * 10, 0, 0, w.take_root(), 0, at, at)
+	w.step(InputFrame.new())
+	assert_true(w.player_dead())
+	pg.apply_pending()
+	assert_false(w.player_dead(), "back before the next tick")
+	assert_eq(w.actors.hp[0], w.actors.max_hp[0])
+	w.step(InputFrame.new())
+	assert_false(w.player_dead())

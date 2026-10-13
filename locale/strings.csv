@@ -1003,3 +1003,52 @@ UI_CREDITS_ASSETS,"Art, models and sound","Arte, modelos y sonido"
 UI_CREDITS_FONT,Font,Fuente
 UI_CREDITS_ADDON,Addon,Complemento
 UI_CREDITS_NOT_SHIPPED,(a development tool: not shipped in the game),(una herramienta de desarrollo: no se incluye en el juego)
+UI_PLAYGROUND,Playground,Zona de pruebas
+UI_PG_TITLE,Playground,Zona de pruebas
+UI_PG_F1_HINT,F1: Playground panel,F1: panel de la zona de pruebas
+UI_PG_CLOSE,Close (F1),Cerrar (F1)
+UI_PG_TAB_BUILD,Build,Build
+UI_PG_TAB_SPAWN,Spawn,Aparecer
+UI_PG_TAB_BIOME,Biome,Bioma
+UI_PG_TAB_PLAYER,Player,Jugador
+UI_PG_LEVEL,Level,Nivel
+UI_PG_SEARCH,Search cards…,Buscar cartas…
+UI_PG_ADD,Add at level,Añadir con nivel
+UI_PG_WEAPON,Change weapon,Cambiar arma
+UI_PG_YOUR_BUILD,Your build (double-click to remove),Tu build (doble clic para quitar)
+UI_PG_REMOVE,Remove,Quitar
+UI_PG_SPAWN_HINT,Left-click the floor to use the tool. Right-click anything to delete it.,Clic izquierdo en el suelo para usar la herramienta. Clic derecho sobre algo para borrarlo.
+UI_PG_TOOL_DUMMY,Dummy (never dies),Muñeco (nunca muere)
+UI_PG_TOOL_DUMMY_HP,Dummy with HP,Muñeco con vida
+UI_PG_TOOL_ENEMY,Enemy,Enemigo
+UI_PG_TOOL_BOSS,Boss,Jefe
+UI_PG_TOOL_DELETE,Delete,Borrar
+UI_PG_CLEAR_ENEMIES,Clear enemies and bosses,Quitar enemigos y jefes
+UI_PG_CLEAR_ALL,Clear everything,Quitarlo todo
+UI_PG_GOD,God mode,Modo dios
+UI_PG_HEAL,Full heal,Curar del todo
+UI_PG_DPS_RESET,Reset DPS meter,Reiniciar medidor de DPS
+UI_PG_DPS_SHOW,Show DPS meter,Mostrar medidor de DPS
+UI_PG_GROUP_WAND,Wand cards,Cartas de varita
+UI_PG_GROUP_ABILITY,Abilities,Habilidades
+UI_PG_GROUP_ABILITY_MOD,Ability mods,Mejoras de habilidad
+UI_PG_GROUP_PASSIVE,Passives,Pasivas
+UI_PG_GROUP_STAT,Stat cards,Cartas de estadística
+UI_PG_RARITY_0,Common,Común
+UI_PG_RARITY_1,Rare,Rara
+UI_PG_RARITY_2,Epic,Épica
+UI_PG_RARITY_3,Legendary,Legendaria
+UI_PG_LV,Lv %d,Nv %d
+UI_PG_ADDED,Added: %s,Añadida: %s
+UI_PG_DPS_TITLE,DPS meter,Medidor de DPS
+UI_PG_DPS_RECENT,DPS (last 5 s),DPS (últimos 5 s)
+UI_PG_DPS_AVERAGE,Avg,Media
+UI_PG_DPS_TOTAL,Total,Total
+UI_PG_DPS_TIME,Time,Tiempo
+UI_PG_DPS_MORE,… and %d more,… y %d más
+UI_PG_SRC_BASIC,Basic attack,Ataque básico
+UI_PG_SRC_OTHER,Other (%s),Otro (%s)
+UI_PG_SRC_BLEED,Bleed,Sangrado
+UI_PG_SRC_SHOCK,Shock,Choque
+UI_PG_SRC_FROST,Frost,Escarcha
+UI_PG_SRC_POISON,Poison,Veneno
