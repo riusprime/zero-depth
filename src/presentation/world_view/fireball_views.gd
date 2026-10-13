@@ -14,9 +14,9 @@ const LOOKS := {
 	## Gatekeeper: grey-orange ember stones.
 	&"ember_stone":
 	{
-		"core": Color("#F2C79A"),
-		"edge": Color("#241F1C"),
-		"trail": Color("#9C7A5E"),
+		"core": Color("#FFBE85"),
+		"edge": Color("#2A211C"),
+		"trail": Color("#C0703A"),
 		"size": 1.0,
 		"tip": 1.0,
 		"trail_m": 0.55,
@@ -133,7 +133,7 @@ func _draw(f: float) -> void:
 			cores.append_array(
 				_row(Transform3D(_scaled(basis, Vector3(r * float(look["tip"]), r, r)), at))
 			)
-			edges.append_array(_row(Transform3D(_scaled(basis, Vector3.ONE * r * 1.45), at)))
+			edges.append_array(_row(Transform3D(_scaled(basis, Vector3.ONE * r * 1.3), at)))
 			if thin and n % 2 == 1:
 				continue
 			var len: float = look["trail_m"] * trail_scale

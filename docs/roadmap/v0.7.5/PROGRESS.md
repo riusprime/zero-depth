@@ -13,6 +13,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | AC | Local achievements: 37 to unlock (floors, wins, each boss and biome from the data, the wand, kills, sealed rooms, risks, the Codex, Ascension), a toast when one unlocks, an Achievements page in the Codex from both menus, kept in the profile ([evidence](evidence/ACHIEVEMENTS.md)) | `v0.7.5 Step AC` commit (branch `v075-ac`) |
 | NB2 | Biome 5, Starfall: a cosmic biome, the floor a floating island in a starry void with nebula light and drifting rock and crystal islands, starglow pools that speed your step, in the run's biome draw (3 floors from 5) ([evidence](evidence/STARFALL.md)) | `v0.7.5 Step NB2` commit (branch `v075-nb2`) |
 | SM | The small things: a card's level on every pick card ("Lv 1", "Lv 2 → 3", the legendary "Lv N → 5") and on the HUD's wand pips and the Build page; ten first-run hints, each once, never blocking, with the keys of the device you use (Options: Show hints, Reset hints); the credits generated from the repo's manifests, fonts and addons, with the app icon; an Interface size option and reduced-motion / colour-blind fixes from an accessibility pass; the dev panel behind one release switch, left ON ([evidence](evidence/SMALL_THINGS.md)) | `v0.7.5 Step SM` commit (branch `v075-sm`) |
+| BF1 | Boss fights, part 1: the Gatekeeper and the Warlord fight dodge-first: slow fireball patterns in their own looks (Rock Rings, Cross Quake; Shield Wall, crossing walls, Javelin Fan), ground circles and lanes that follow you then lock and flash for 0.8 s before they strike (move after the lock and you're out), a crystal shield while the signature pattern runs, open between patterns; HP ×1.25; phases add and speed patterns. All six bosses 1.3× bigger and fought in the 4×4 room (N18). The pattern engine is data for the next bosses ([evidence](evidence/BOSS_FIGHTS_1.md)) | `v0.7.5 Step BF1` commit (branch `v075-bf1`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -23,6 +24,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   fifth biome changes every run seed's biome draw; no golden pins one.)
 - AP: none. `tests/golden` passes unchanged: the loop and Ascension fields are hashed only past loop 1 / on the Ascension floor, so every loop-1 floor other than the last hashes as before (the last floor's hash changes on purpose; no golden fixture holds one)
 - SM: none. The one sim edit is a read key (`Wand.read`'s `wand`), nothing hashed; `tests/golden` not run by the agent (the lead's full suite).
+- BF1: none. `tests/golden` passes unchanged (the kernel replay is boss-free; the fireball look column is hashed only once a fireball has flown). The boss fights' own hashes change on purpose (new attacks, patterns, HP, radius, rooms); no golden fixture holds one
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -85,3 +87,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   (6 conflicts, both sides kept; import and lint clean; the six files' tests 45/45; seams NOT YET RUN at this line).
   Owner N14–N16: the three boss models, the dodge-first boss fights and the enemy fireballs; design for the owner in
   `docs/design/BOSS_FIGHTS.md`.
+- 2026-10-13: BF1 (agent, branch `v075-bf1` from `edda87e`): the bullet pattern engine (`BulletPatternDefinition`,
+  `BulletPatterns`, `PatternCompiler`), tracked-then-locked markers (`lock_seconds`, moves `marks` and `row_lanes`,
+  `BossDodge`), the shielded signature (`Damage`), the Gatekeeper's and the Warlord's fights rebuilt, fireball /
+  marker / shield views (`FireballViews`, `TelegraphViews`, `BossShieldView`); N18 (lead's message): all six bosses
+  radius ×1.3 and 4×4 rooms. Reads for BM's avatars: `WorldReader.boss_shielded`, `boss_pattern`. Evidence
+  [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.md). Not run by the agent: the full suite, bot sims. Not pushed.

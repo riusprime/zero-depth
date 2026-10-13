@@ -540,6 +540,57 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
   `count` is at most 8, as every count.
 
+- **v0.7.5 BF1 (owner N15, dodge-first fights; [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md)).** Boss attacks also
+  take `lock_seconds: float` (0 = as before) and `shielded: bool`. With a lock, the marker follows the player's exact
+  position (no lead) for `telegraph_seconds - lock_seconds`, then holds and flashes for `lock_seconds` (at least
+  `MIN_TELEGRAPH_TICKS`, and under the telegraph) before it strikes. `shielded` (the signature pattern) keeps the boss
+  shielded through its windup and active time. Three new moves:
+  - `pattern` (PROJECTILE): `pattern_id`, a `BulletPatternDefinition` id (§4b). The attack is active for the
+    pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
+  - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
+    (`lock_seconds` required). Active until the last strikes.
+  - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
+    `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+
+### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
+
+```gdscript
+class_name BulletPatternDefinition extends ContentDef   # category bullet_patterns; in the F10 panel's Bosses page
+enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
+@export var kind: Kind
+@export var look: StringName            # the fireball's look key (FireballViews.LOOKS; required): each boss/enemy its own
+@export var speed_mps: float            # 1.5..7 ("slow": about 3-5)
+@export var radius_m: float             # each shot's radius
+@export var range_m: float              # how far a shot flies (life = range / speed); shots stop at walls
+@export var waves: int                  # >= 1 ...
+@export var wave_gap_seconds: float     # ... this far apart (>= a tick when waves > 1)
+@export var turn_per_wave_degrees: float  # each wave turns by this from the last ...
+@export var alternate: bool             # ... or, set, every other wave only (a fan's "offset each wave")
+@export var aim_offset_degrees: float   # the first wave's base angle from the aim at the player
+@export var safe_radius_m: float        # no shot spawns within this (+ the player's radius) of the player (>= 0.5)
+@export var count: int                  # RING / FAN / FLOWER / BURST: shots a wave (1..64; a burst's star <= 16)
+@export var gap_count: int              # RING: gaps (>= 1) ...
+@export var gap_width: int              # ... each this many shots left out; the gap must be >= 1 m wide 4 m out
+@export var spread_degrees: float       # FAN: 0 < spread <= 300
+@export var arms: int                   # SPIRAL / CROSS: streams (1..8)
+@export var spin_dps: float             # SPIRAL / CROSS: their turn (degrees a second; negative = clockwise)
+@export var reverse_at_seconds: float   # SPIRAL: the turn reverses this long after the first wave (0 = never)
+@export var wall_length_m: float        # WALL: shots spacing_m apart across the aim, marching along it ...
+@export var spacing_m: float            #   (<= 64 shots a wall)
+@export var gap_m: float                # ... with a gap (>= 1 m) gap_offset_m off the aim line, moving
+@export var gap_offset_m: float         #   gap_shift_m a wave and bouncing between the wall's ends
+@export var gap_shift_m: float
+@export var crossing: bool              # WALL: a second wall at right angles (the Warlord's phase 3)
+@export var petals: int                 # FLOWER: speed follows |cos(petals × angle / 2)| (a table lookup), 2..12 ...
+@export var petal_min_permille: int     # ... from this share of the speed in a valley ...
+@export var petal_cut_permille: int     # ... and shots under this are left out (100..900): the gaps between petals
+@export var lob_seconds: float          # BURST: the shell flies this long to the attack's locked target ...
+@export var land_radius_m: float        # ... lands as a marker of this radius (it hurts), and bursts into its star
+```
+
+Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim units) that the boss attack carries
+(`BossAttackTable.pattern`); `BulletPatterns` fires it (SIM_CONTRACTS §10d). Every number is a starting value (F10).
+
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
   missing or unknown keys are `ERROR`s. Every attack's `telegraph_seconds`, and a burrow's `erupt_seconds` (the

@@ -89,7 +89,8 @@ func test_after_a_dash_the_aim_goes_to_its_landing_point() -> void:
 
 
 func test_out_of_reach_for_two_seconds_brings_the_gap_closer() -> void:
-	for id: StringName in [&"gatekeeper", &"brood_mother", &"siege_engine"]:
+	# v0.7.5 BF1: the Gatekeeper has no gap-closer now (its tracked marks reach you anywhere); the Warlord's lunge.
+	for id: StringName in [&"warlord", &"brood_mother", &"siege_engine"]:
 		var t := BossLab.tables()[BossLab.table_index(BossLab.world(), id)]
 		var far := t.radius_m + t.gap_distance_m + 1.0
 		var s := _boss(id, Vector2(far, 0))
@@ -110,7 +111,7 @@ func test_out_of_reach_for_two_seconds_brings_the_gap_closer() -> void:
 
 
 func test_coming_into_reach_resets_the_gap_clock() -> void:
-	var s := _boss(&"gatekeeper", Vector2(9, 0))
+	var s := _boss(&"warlord", Vector2(9, 0))
 	var w: World = s[0]
 	var b := BossAi.entry_of(w, s[1])
 	for n in 100:
