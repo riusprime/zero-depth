@@ -18,6 +18,8 @@ extends Control
 
 signal picked(value: int)
 
+## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
+const ECHO := PanelInput.Echo.ARROWS
 const SALVAGE_COLUMNS := 4
 ## v0.5.5 A4: the stock's crystal cards are drawn a little smaller than the pick's, so the services and the salvage
 ## list still fit under them at 1080p.
@@ -432,68 +434,24 @@ func _shards_now() -> int:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _entries.is_empty():
 		return
-	var step := Vector2i.ZERO
-	if event is InputEventKey and event.pressed:
-		# P-12 (the swap panel's rule): a held key acts once; only the arrows repeat.
-		if event.echo and event.physical_keycode not in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
-			if (
-				event.physical_keycode
-				in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]
-			):
-				get_viewport().set_input_as_handled()
+	var d := PanelInput.decode(event, 4, ECHO)
+	match d.kind:
+		PanelInput.Kind.SWALLOW:
+			pass
+		PanelInput.Kind.DIGIT:
+			if d.digit < _cards.get_child_count():
+				_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_act(_focus)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			if d.step.x != 0:
+				_set_focus(clampi(_focus + d.step.x, 0, _entries.size() - 1))
+			else:
+				_set_focus(_vertical(d.step.y))
+		_:
 			return
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4:
-				var k: int = event.physical_keycode - KEY_1
-				if k < _cards.get_child_count():
-					_set_focus(k)
-			KEY_ENTER, KEY_KP_ENTER:
-				_act(_focus)
-			KEY_ESCAPE:
-				_send(InputFrame.PICK_CANCEL)
-			KEY_LEFT:
-				step = Vector2i(-1, 0)
-			KEY_RIGHT:
-				step = Vector2i(1, 0)
-			KEY_UP:
-				step = Vector2i(0, -1)
-			KEY_DOWN:
-				step = Vector2i(0, 1)
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_act(_focus)
-			JOY_BUTTON_B:
-				_send(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT:
-				step = Vector2i(-1, 0)
-			JOY_BUTTON_DPAD_RIGHT:
-				step = Vector2i(1, 0)
-			JOY_BUTTON_DPAD_UP:
-				step = Vector2i(0, -1)
-			JOY_BUTTON_DPAD_DOWN:
-				step = Vector2i(0, 1)
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left"):
-			step = Vector2i(-1, 0)
-		elif event.is_action_pressed(&"ui_right"):
-			step = Vector2i(1, 0)
-		elif event.is_action_pressed(&"ui_up"):
-			step = Vector2i(0, -1)
-		elif event.is_action_pressed(&"ui_down"):
-			step = Vector2i(0, 1)
-		else:
-			return
-	else:
-		return
-	if step.x != 0:
-		_set_focus(clampi(_focus + step.x, 0, _entries.size() - 1))
-	elif step.y != 0:
-		_set_focus(_vertical(step.y))
 	get_viewport().set_input_as_handled()
 
 

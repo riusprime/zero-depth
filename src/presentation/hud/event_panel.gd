@@ -15,6 +15,8 @@ extends Control
 signal picked(value: int)
 
 ## The plaque's size (px at the 1920 x 1080 base) and its two text columns.
+## Key repeats (PanelInput.Echo): a held key's repeats are not the panel's.
+const ECHO := PanelInput.Echo.IGNORE
 const CARD_W := 1060.0
 const CARD_H := 180.0
 const LEFT_W := 280.0
@@ -400,44 +402,18 @@ func _width(l: Label) -> float:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed and not event.echo:
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3:
-				_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_take(_focus)
-			KEY_ESCAPE:
-				_send(InputFrame.PICK_CANCEL)
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_take(_focus)
-			JOY_BUTTON_B:
-				_send(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
+	var d := PanelInput.decode(event, 3, ECHO)
+	match d.kind:
+		PanelInput.Kind.DIGIT:
+			_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_take(_focus)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			_set_focus(clampi(_focus + d.line(), 0, maxi(0, _cards.size() - 1)))
+		_:
 			return
-	else:
-		return
-	if step != 0:
-		_set_focus(clampi(_focus + step, 0, maxi(0, _cards.size() - 1)))
 	get_viewport().set_input_as_handled()
 
 

@@ -23,6 +23,9 @@ signal moved(value: int)
 
 enum Mode { CHOOSE, CARRY, PLACE, LEAVE }
 
+## Key repeats (PanelInput.Echo): only the arrows repeat.
+const ECHO := PanelInput.Echo.ARROWS
+
 ## A held card's tile (the row's) and the Skip tile.
 const TILE := WandRow.TILE
 const SKIP_TILE := Vector2(140, 52)
@@ -278,56 +281,37 @@ func _refresh() -> void:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed:
-		if event.echo and event.physical_keycode not in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
-			get_viewport().set_input_as_handled()
+	var d := PanelInput.decode(event, WorldReader.MOD_SLOTS, ECHO)
+	match d.kind:
+		PanelInput.Kind.SWALLOW:
+			pass
+		PanelInput.Kind.DIGIT:
+			if _mode == Mode.CHOOSE:
+				_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_confirm()
+		PanelInput.Kind.CANCEL:
+			_back()
+		PanelInput.Kind.STEP:
+			_step(d.line())
+		PanelInput.Kind.KEY:
+			match d.code:
+				KEY_R:
+					_carry_toggle()
+				KEY_I:
+					_start_place()
+				_:
+					return
+		PanelInput.Kind.BUTTON:
+			match d.code:
+				JOY_BUTTON_Y:
+					_carry_toggle()
+				JOY_BUTTON_X:
+					_start_place()
+				_:
+					return
+		_:
 			return
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8:
-				if _mode == Mode.CHOOSE:
-					_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_confirm()
-			KEY_ESCAPE:
-				_back()
-			KEY_R:
-				_carry_toggle()
-			KEY_I:
-				_start_place()
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_confirm()
-			JOY_BUTTON_B:
-				_back()
-			JOY_BUTTON_Y:
-				_carry_toggle()
-			JOY_BUTTON_X:
-				_start_place()
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
-			return
-	else:
-		return
-	if step != 0:
-		_step(step)
 	# The pick panel and the shop below don't see what the swap answered.
 	get_viewport().set_input_as_handled()
 

@@ -14,6 +14,8 @@ signal picked(value: int)
 
 enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 
+## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
+const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
 
 var layout := Layout.ROW_CENTRE
@@ -227,44 +229,18 @@ func title_text() -> String:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed:
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3:
-				_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_send(_focus + 1)
-			KEY_ESCAPE:
-				_send(InputFrame.PICK_CANCEL)
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_send(_focus + 1)
-			JOY_BUTTON_B:
-				_send(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
+	var d := PanelInput.decode(event, 3, ECHO)
+	match d.kind:
+		PanelInput.Kind.DIGIT:
+			_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_send(_focus + 1)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			_set_focus(clampi(_focus + d.line(), 0, maxi(0, _count - 1)))
+		_:
 			return
-	else:
-		return
-	if step != 0:
-		_set_focus(clampi(_focus + step, 0, maxi(0, _count - 1)))
 	get_viewport().set_input_as_handled()
 
 
