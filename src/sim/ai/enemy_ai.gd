@@ -613,7 +613,7 @@ static func bolt_lanes(w: World, i: int) -> Array[Obb]:
 static func _shot_lane(w: World, i: int, angle: int, length: float, r: float) -> Obb:
 	var a := w.actors
 	var start := Vector2(a.lock_x[i], a.lock_y[i]) + Kin.dir(angle) * a.radius[i]
-	return AttackShapes.lane(start, angle, maxf(_clear_run(w, start, angle, length, r), 0.01), r)
+	return AttackShapes.lane(start, angle, maxf(clear_run(w, start, angle, length, r), 0.01), r)
 
 
 ## [center, radius] of the Arc Caster's rune (v0.3.5 AI): where the player stood when it was cast.
@@ -725,7 +725,7 @@ static func _start_windup(w: World, i: int, aim: int) -> void:
 		a.windup[i] = w.rng_enemy.range_int(t.windup_ticks, t.windup_max_ticks)
 	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			a.lock_len[i] = _clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
+			a.lock_len[i] = clear_run(w, a.pos(i), aim, t.charge_distance_m, t.radius_m)
 		ActorStore.Kind.NEEDLE, ActorStore.Kind.SNIPER:
 			_aim(w, i)
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
@@ -769,8 +769,9 @@ static func lead_angle(w: World, from: Vector2, speed: float, max_ticks: int) ->
 	return Kin.angle_of(p + w.vel * ticks - from)
 
 
-## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall.
-static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
+## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall: the one rule
+## for the enemies' and the bosses' lanes (audit G-10).
+static func clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
 	var to := from + Kin.dir(angle) * length
 	var best := 1.0
 	for k in w.walls_along(from, to, r):  # v0.4.0 SC: the grid cells along the run, not every wall
@@ -778,6 +779,15 @@ static func _clear_run(w: World, from: Vector2, angle: int, length: float, r: fl
 		if hit >= 0.0 and hit < best:
 			best = hit
 	return length * best
+
+
+## True when a circle of radius r at `at` touches no wall. The wall grid gives an ascending superset of the walls that
+## can touch it (rebuilt on every wall change), so this is the every-wall test without the sweep (audit G-10).
+static func clear_of_walls(w: World, at: Vector2, r: float) -> bool:
+	for k in w.walls_near(Rect2(at.x - r, at.y - r, r * 2.0, r * 2.0)):
+		if Collide.circle_vs_obb(at, r, w.walls[k]) != Vector2.ZERO:
+			return false
+	return true
 
 
 static func _hit_player(w: World, i: int, amount: int, tags: int, from := Vector2.INF) -> void:

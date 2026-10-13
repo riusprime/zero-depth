@@ -362,8 +362,8 @@ static func _rays(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		var to := from + dir * spec.reach_m
 		var best := 2.0
 		var target := -1
-		for wall in w.walls:
-			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, wall)
+		for k in w.walls_along(from, to, spec.radius_m):  # the grid's superset of the walls (audit G-10)
+			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, w.walls[k])
 			if s >= 0.0 and s < best:
 				best = s
 		for i in range(1, a.size()):

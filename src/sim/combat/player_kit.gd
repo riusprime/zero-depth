@@ -63,19 +63,12 @@ static func blink_target(w: World) -> Vector2:
 	for k in range(steps, 0, -1):
 		var at := from + dir * (BLINK_STEP_M * k)
 		if (
-			_clear(w, at, t.radius_m)
+			EnemyAi.clear_of_walls(w, at, t.radius_m)
 			and w.nav.region_near(at) == home
 			and w.blink_may_land(from, at)
 		):
 			return at
 	return from
-
-
-static func _clear(w: World, at: Vector2, r: float) -> bool:
-	for wall in w.walls:
-		if Collide.circle_vs_obb(at, r, wall) != Vector2.ZERO:
-			return false
-	return true
 
 
 static func advance(w: World) -> void:

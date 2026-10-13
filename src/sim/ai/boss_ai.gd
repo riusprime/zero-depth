@@ -272,23 +272,23 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * a.radius[i]
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.length_m, atk.half_width_m
 				)
 		M.FLOOD:  # v0.4.0 BO: each parallel lane's length, cut short by walls.
 			for k in atk.count:
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, _flood_start(w, i, atk, aim, k), aim, atk.length_m, atk.half_width_m
 				)
 		M.BOLT_FAN:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * (a.radius[i] + atk.radius_m + 0.05)
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.speed * atk.bolt_life_ticks, atk.radius_m
 				)
 		M.CHARGE:
-			a.lock_len[i] = clear_run(w, at, aim, atk.length_m, a.radius[i])
+			a.lock_len[i] = EnemyAi.clear_run(w, at, aim, atk.length_m, a.radius[i])
 		M.LEAP:
 			var to := target - at
 			var d := Kin.length(to)
@@ -356,12 +356,7 @@ static func spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
 static func _spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
 	for k in 4:
 		var p := at + Kin.dir(angle) * (dist * (4 - k) / 4.0)
-		var clear := true
-		for wall in w.walls:
-			if Collide.circle_vs_obb(p, SPOT_CLEARANCE, wall) != Vector2.ZERO:
-				clear = false
-				break
-		if clear:
+		if EnemyAi.clear_of_walls(w, p, SPOT_CLEARANCE):
 			return p
 	return at
 
@@ -699,7 +694,7 @@ static func _flood_start(w: World, i: int, atk: BossAttackTable, aim: int, k: in
 	return Vector2(w.actors.lock_x[i], w.actors.lock_y[i]) + d * w.actors.radius[i] + side
 
 
-## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as clear_run allowed when it locked.
+## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as EnemyAi.clear_run allowed when it locked.
 static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -819,17 +814,6 @@ static func cause_key(w: World) -> StringName:
 		if atk.move == M.BOLT_FAN and w.killer_tags & SimEvent.TAG_PROJECTILE:
 			return atk.cause_key
 	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
-
-
-## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall.
-static func clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
-	var to := from + Kin.dir(angle) * length
-	var best := 1.0
-	for wall in w.walls:
-		var hit := Collide.sweep_vs_obb(from, to, r, wall)
-		if hit >= 0.0 and hit < best:
-			best = hit
-	return length * best
 
 
 static func _enter(a: ActorStore, i: int, s: int) -> void:
