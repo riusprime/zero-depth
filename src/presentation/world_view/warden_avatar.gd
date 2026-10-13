@@ -508,26 +508,6 @@ static func _noise(n: int) -> float:
 	return float(h & 0xFFFF) / 65536.0
 
 
-## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
-static func _tri(
-	verts: PackedVector3Array,
-	normals: PackedVector3Array,
-	a: Vector3,
-	b: Vector3,
-	c: Vector3,
-	centre: Vector3
-) -> void:
-	var n := (b - a).cross(c - a)
-	if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-		var t := b
-		b = c
-		c = t
-		n = -n
-	n = n.normalized()
-	verts.append_array([a, c, b])
-	normals.append_array([n, n, n])
-
-
 ## Flat-shaded triangles facing away from `centre`, each facet tinted by a fixed amount from `salt` (FACET_TINT)
 ## and the downward ones shaded, so neighbouring planes read apart as on the sheet.
 static func _mesh_from(tris: Array, centre: Vector3, salt: int) -> ArrayMesh:

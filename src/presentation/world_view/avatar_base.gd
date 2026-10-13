@@ -116,6 +116,26 @@ static func write_stencil(m: StandardMaterial3D) -> void:
 	m.stencil_reference = 1
 
 
+## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
+static func _tri(
+	verts: PackedVector3Array,
+	normals: PackedVector3Array,
+	a: Vector3,
+	b: Vector3,
+	c: Vector3,
+	centre: Vector3
+) -> void:
+	var n := (b - a).cross(c - a)
+	if n.dot((a + b + c) / 3.0 - centre) < 0.0:
+		var t := b
+		b = c
+		c = t
+		n = -n
+	n = n.normalized()
+	verts.append_array([a, c, b])
+	normals.append_array([n, n, n])
+
+
 ## Flat-shaded triangles of a solid around `centre`, each turned to face away from it (Godot's front faces wind
 ## clockwise); degenerate ones are dropped.
 static func flat_mesh(tris: Array, centre: Vector3) -> ArrayMesh:

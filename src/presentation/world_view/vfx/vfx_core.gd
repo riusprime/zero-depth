@@ -82,6 +82,8 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
+## The same pools in a list (begin and finish walk it every frame without allocating).
+var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
 var _light_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
@@ -143,6 +145,7 @@ func _pool(id: StringName, mesh: Mesh, mat: Material, cap: int) -> void:
 	node.extra_cull_margin = 16384.0
 	add_child(node)
 	pools[id] = {"node": node, "mm": mm, "used": 0, "cap": cap}
+	_pool_list.append(pools[id])
 
 
 func _shader(additive: bool) -> Shader:
@@ -223,7 +226,7 @@ func begin(now: float) -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	if cam != null:
 		_cam_basis = cam.global_transform.basis
-	for p: Dictionary in pools.values():
+	for p: Dictionary in _pool_list:
 		p["used"] = 0
 	_sprite_left = MAX_SPRITES
 	_light_wants.clear()
@@ -236,9 +239,9 @@ func finish() -> void:
 	for d in drawers:
 		if d.is_valid():
 			d.call(self)
-	for p: Dictionary in pools.values():
+	for p: Dictionary in _pool_list:
 		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
-	_light_wants.sort_custom(func(a: Array, b: Array) -> bool: return a[2] > b[2])
+	_light_wants.sort_custom(_brighter)
 	for k in lights.size():
 		var l := lights[k]
 		if k < _light_wants.size():
@@ -251,6 +254,11 @@ func finish() -> void:
 		else:
 			l.visible = false
 	_lay_marks()
+
+
+## The light sort: the brighter request first.
+static func _brighter(a: Array, b: Array) -> bool:
+	return a[2] > b[2]
 
 
 func now() -> float:

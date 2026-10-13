@@ -40,7 +40,7 @@ var _views := {}
 var _frame := 0
 var _seen := {}
 var _fx: Array = []
-var _fx_template := _make_template()
+var _fx_template := SkillVisuals._make_template()
 ## Actor id -> {on, r, node} for the vfx drawer.
 var _on := {}
 ## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
@@ -431,12 +431,4 @@ static func _material(c: Color, a: float, billboard: bool) -> StandardMaterial3D
 		m.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
 		m.billboard_keep_scale = true
 		m.no_depth_test = true
-	return m
-
-
-static func _make_template() -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.cull_mode = BaseMaterial3D.CULL_DISABLED
 	return m

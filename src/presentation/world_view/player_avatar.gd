@@ -679,26 +679,6 @@ static func _tri2(
 		colors.append(NECK_SHADE if at_neck else UNDER_COLOR)
 
 
-## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
-static func _tri(
-	verts: PackedVector3Array,
-	normals: PackedVector3Array,
-	a: Vector3,
-	b: Vector3,
-	c: Vector3,
-	centre: Vector3
-) -> void:
-	var n := (b - a).cross(c - a)
-	if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-		var t := b
-		b = c
-		c = t
-		n = -n
-	n = n.normalized()
-	verts.append_array([a, c, b])
-	normals.append_array([n, n, n])
-
-
 static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
