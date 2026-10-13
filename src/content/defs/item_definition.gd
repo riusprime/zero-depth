@@ -219,7 +219,7 @@ func validate() -> Array[ValidationIssue]:
 				&"range", resource_path, "requires_utility is empty, guard or blink"
 			)
 		)
-	if not requires_weapon in [&"", &"blade", &"gun"]:
+	if requires_weapon != &"" and not BuildDefinition.WEAPON_IDS.has(requires_weapon):
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)

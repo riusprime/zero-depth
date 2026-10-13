@@ -3,6 +3,8 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## In v0.0.1 it compiles only the player.
 
+## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
+const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
 ## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves.
 const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
@@ -407,8 +409,7 @@ static func compile_item(def: ItemDefinition, repo: ContentRepository = null) ->
 	t.rarity = def.rarity
 	var needs := {&"guard": PlayerTable.Utility.GUARD, &"blink": PlayerTable.Utility.BLINK}
 	t.requires_utility = needs.get(def.requires_utility, -1)
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.requires_weapon = weapons.get(def.requires_weapon, 0)
+	t.requires_weapon = WEAPON_BITS.get(def.requires_weapon, 0)
 	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
 	if repo != null:
 		for id in def.modifiers:
@@ -706,10 +707,7 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 		t.amount[s] = int(round(e.amount * scale))
 		t.weight[s] = e.weight
 		t.cap[s] = e.max_stacks
-		t.requires_weapon[s] = (
-			{&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-			. get(e.requires_weapon, 0)
-		)
+		t.requires_weapon[s] = WEAPON_BITS.get(e.requires_weapon, 0)
 	return t
 
 
@@ -794,8 +792,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	t.rare = def.rarity == AbilityDefinition.Rarity.RARE
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.start_weapon = weapons.get(def.start_weapon, 0)
+	t.start_weapon = WEAPON_BITS.get(def.start_weapon, 0)
 	t.tags = PackedStringArray()
 	for tag in def.tags:
 		t.tags.append(String(tag))
