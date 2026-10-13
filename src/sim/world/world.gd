@@ -854,12 +854,17 @@ func last_event_seq() -> int:
 
 
 ## Events with seq > after_seq, oldest first. The log keeps the most recent EVENT_LOG_CAP events.
+## The log is ascending by seq (emit_event appends, the trim drops the oldest), so a binary search finds the first.
 func events_since(after_seq: int) -> Array[SimEvent]:
-	var out: Array[SimEvent] = []
-	for e in _events:
-		if e.seq > after_seq:
-			out.append(e)
-	return out
+	var lo := 0
+	var hi := _events.size()
+	while lo < hi:
+		var mid := (lo + hi) >> 1
+		if _events[mid].seq > after_seq:
+			hi = mid
+		else:
+			lo = mid + 1
+	return _events.slice(lo)
 
 
 func state_hash() -> String:
