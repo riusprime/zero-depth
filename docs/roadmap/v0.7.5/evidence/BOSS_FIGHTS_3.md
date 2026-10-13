@@ -30,7 +30,8 @@ Foundry's Slag Mortar. N18's radius and rooms (1.8 m / 1.95 m, 4 × 4) and the V
   are unchanged): each wave lands `rain_seconds` after it is thrown, `rain_m` × the petal's share out from the body,
   through `BulletPatterns.fire` (its fairness rules). In the air the drops are a read only: `BossDodge.rain_drops`,
   `WorldReader.boss_rain(i)`; `FireballViews` draws them on an arc (`rain_point`).
-- `FireballViews.LOOKS`: `cannon_ember` (core #FFB878, edge #2E1A0E, grey smoke trail with no glow: a new optional
+- `FireballViews.LOOKS`: `cannon_ember` (core #D79000 since the merge, was #FFB878; edge #2E1A0E, a grey smoke
+  trail with no glow: a new optional
   `smoke` key, size 1.2) and `molten_drop` (core #FFF07A, edge #2A1C06, gold trail). `WorldReader.MOVE_GRID`,
   `MOVE_ROW_FLOOD`; audio cues (`boss_mortar`, `boss_floor_burst`); the Siege and Foundry avatars map the new moves
   to their old poses; the Foundry's shielded pose now shows during the fountain (BM's hook, BF1's read).
@@ -79,6 +80,33 @@ on a shared machine (other agents' runs alongside). The GUT totals as printed:
 | e2e: `test_e2e_boss_dodge_3`, `test_e2e_boss_dodge`, `test_e2e_bosses`, `test_e2e_bosses_2`, `test_e2e_boss_challenge`, `test_e2e_after_boss`, `test_e2e_ascension`, `test_e2e_audio`, `test_e2e_dev_master_panel` | `e903a88`'s code | `Scripts 9`, `Tests 15`, `Passing Tests 15` |
 | `tests/unit/sim` (the whole folder) | `e903a88`'s code | `Scripts 95`, `Tests 991`, `Passing Tests 991` (`test_readable_cause.gd` 4/4 among them; the every-card soak: `SOAK\| kills=265 events=6696 most_in_a_tick=188 limits=0 (watchdog 0, heal cap 0)`) |
 
+### After merging `claude/v0.7.5-new-ground` at `96bb7ea` (BF2, its fix, EF) into `v075-bf3`
+The lead's heads-up (2026-10-13): BF2's fix made every non-burst pattern show a `cast` telegraph (`ground: false`)
+and added `ProjectileStore.cause`. Conflicts were append-only (both sides added functions, looks, strings, doc
+paragraphs); kept both, with BF2's `cast` form of `pattern_telegraph` (BF3 never relied on its old `{}`; a raining
+flower shows the cast too). Every BF3 pattern windup is ≥ 0.8 s, over `MIN_TELEGRAPH_TICKS`. Two failures the merged
+tree showed, both fixed in the merge commit:
+- `tests/unit/application` `test_old_saves.gd` / `test_ascension_saves.gd`: `["World.projectiles.cause: not in the
+  snapshot"] expected to equal [""]` (3 tests, with cascades). BF2's fix added the `cause` column without listing it
+  among the fields an older snapshot may lack; added to `WorldSnapshot.ADDED_SINCE_V05` (`ProjectileStore`, empty =
+  none, as `look`). A shared-engine fix outside BF3's own code: the lead should know (on `96bb7ea` alone this would
+  fail the same way; not run there by me).
+- `test_boss_fights_2_views.gd`: `[0.05614833906293] expected to be > than [0.15]: ember_stone and cannon_ember read
+  apart` (BF2's test that every pair of looks differs). The cannon embers' core #FFB878 → #D79000 (amber orange):
+  0.29 from the hero's colours, 0.24+ from every other look.
+
+| Run (merged tree) | Raw totals |
+|---|---|
+| `tests/golden`, `tests/arch`, `tests/content`, `tests/unit/application`, `tests/unit/debug`, before the snapshot fix | `Tests 241`, `Passing Tests 238`, `Failing Tests 3` (above) |
+| `test_old_saves.gd`, `test_ascension_saves.gd` after it | `Scripts 2`, `Tests 8`, `Passing Tests 8` |
+| `tests/golden`, `tests/arch`, `tests/content`, `tests/unit/application`, `tests/unit/debug` after it | `Scripts 43`, `Tests 241`, `Passing Tests 241` |
+| boss sim files (BF3's list + `test_boss_fights_2`, `test_readable_cause`, `test_enemy_fireballs`) | `Scripts 13`, `Tests 167`, `Passing Tests 167` |
+| `tests/unit/presentation`, before the colour change | `Tests 513`, `Passing Tests 512`, `Failing Tests 1` (above) |
+| `tests/unit/presentation`, after it | `Scripts 80`, `Tests 513`, `Passing Tests 513` |
+| e2e: `test_e2e_boss_dodge_3`, `_2`, `test_e2e_boss_dodge`, `test_e2e_bosses`, `_2`, `test_e2e_boss_challenge`, `test_e2e_after_boss`, `test_e2e_ascension`, `test_e2e_audio` | `Scripts 9`, `Tests 14`, `Passing Tests 14` |
+
+Not re-run on the merged tree: the whole `tests/unit/sim` folder (its pre-merge run is above).
+
 First runs that failed and were fixed (raw): `test_bosses_2.gd` "the foundry's phase two opens with five molten
 lanes" (`[1] expected to equal [5]`: phase 2 opens with the fountain now) and "flood windups track then commit"
 (angle-based; the rows run along x); `test_boss_pressure.gd` "foundry / siege_engine has a gap-closer" and
@@ -97,19 +125,20 @@ numbers from the same bots are at hand here, so these are not a fight-length rat
 ## Screenshots
 `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" godot --path .
 --audio-driver Dummy --resolution 1600x900 -s scripts/shots/boss_fights.gd` (xvfb + llvmpipe, exit 0), copied from
-`build/shots/v0.7.5-dev/boss_fights/`:
-- [`10_siege_turret_cross_shielded.jpg`](shots/boss_fights/10_siege_turret_cross_shielded.jpg) (the four arms trail
+`build/shots/v0.7.5-dev/boss_fights/` (re-run on the merged tree after the cannon-ember colour change, below; BF2's
+rows come first in the script, so the Siege Engine's and the Foundry's are 20–30; named `bf3_*` as BF2 named its):
+- [`bf3_20_siege_turret_cross_shielded.jpg`](shots/boss_fights/bf3_20_siege_turret_cross_shielded.jpg) (the four arms trail
   as spirals; the shell up)
-- [`12_siege_mortar_grid_locked.jpg`](shots/boss_fights/12_siege_mortar_grid_locked.jpg) (the first colour flashing,
+- [`bf3_22_siege_mortar_grid_locked.jpg`](shots/boss_fights/bf3_22_siege_mortar_grid_locked.jpg) (the first colour flashing,
   the hero on its centre square; cells in walls left out)
-- [`13_siege_mortar_grid_second_colour.jpg`](shots/boss_fights/13_siege_mortar_grid_second_colour.jpg)
-- [`14_siege_barrage_in_turn.jpg`](shots/boss_fights/14_siege_barrage_in_turn.jpg)
-- [`15_siege_rail_locked.jpg`](shots/boss_fights/15_siege_rail_locked.jpg)
-- [`16_foundry_slag_fountain_raining.jpg`](shots/boss_fights/16_foundry_slag_fountain_raining.jpg) (the first wave
+- [`bf3_23_siege_mortar_grid_second_colour.jpg`](shots/boss_fights/bf3_23_siege_mortar_grid_second_colour.jpg)
+- [`bf3_24_siege_barrage_in_turn.jpg`](shots/boss_fights/bf3_24_siege_barrage_in_turn.jpg)
+- [`bf3_25_siege_rail_locked.jpg`](shots/boss_fights/bf3_25_siege_rail_locked.jpg)
+- [`bf3_26_foundry_slag_fountain_raining.jpg`](shots/boss_fights/bf3_26_foundry_slag_fountain_raining.jpg) (the first wave
   in the air over the shut Foundry)
-- [`17_foundry_slag_fountain_flower.jpg`](shots/boss_fights/17_foundry_slag_fountain_flower.jpg)
-- [`18_foundry_furnace_waves.jpg`](shots/boss_fights/18_foundry_furnace_waves.jpg)
-- [`19_foundry_molten_flood_locked.jpg`](shots/boss_fights/19_foundry_molten_flood_locked.jpg) (the rows cut short by
+- [`bf3_27_foundry_slag_fountain_flower.jpg`](shots/boss_fights/bf3_27_foundry_slag_fountain_flower.jpg)
+- [`bf3_28_foundry_furnace_waves.jpg`](shots/boss_fights/bf3_28_foundry_furnace_waves.jpg)
+- [`bf3_29_foundry_molten_flood_locked.jpg`](shots/boss_fights/bf3_29_foundry_molten_flood_locked.jpg) (the rows cut short by
   the stage's pillars and wall)
 
 ## Not measured / open

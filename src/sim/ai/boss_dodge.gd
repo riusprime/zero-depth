@@ -111,6 +111,13 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 			item["shape"] = &"disc"
 			item["center"] = mark_of(w, i, k)
 			item["radius"] = atk.radius_m
+			if atk.pattern != null and st == 1:  # v0.7.5 BF2: the egg flies onto its locked circle
+				var t_lock := k * atk.mark_gap_ticks + atk.windup_ticks - atk.lock_ticks
+				item["lob"] = {
+					"from": w.actors.pos(i),
+					"to": item["center"],
+					"progress": clampi((t - t_lock) * 1000 / maxi(1, atk.lock_ticks), 0, 1000)
+				}
 		else:
 			item["shape"] = &"lanes"
 			item["obbs"] = row_lanes_of(w, i, k)
@@ -127,16 +134,31 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 	}
 
 
-## v0.7.5 BF1: a pattern draws nothing on the ground but a burst's landing marker (and its flying shell).
+## v0.7.5 BF2: a pattern's cast, for its windup and its whole firing: {"shape": &"cast", "ground": false, "progress",
+## "move", "look"}. Nothing on the ground (owner N15/N16: no line for shots; TelegraphViews skips it); the boss's body
+## winds up and holds its cast pose from it (the avatar reads the progress), so every wave's shots come from a cast
+## the player saw for at least the windup (the readable-cause rule; windups are >= MIN_TELEGRAPH_TICKS).
+static func cast_telegraph(atk: BossAttackTable, windup: bool, progress: int) -> Dictionary:
+	return {
+		"shape": &"cast",
+		"ground": false,
+		"progress": progress if windup else 1000,
+		"move": atk.move,
+		"look": atk.pattern.look
+	}
+
+
+## v0.7.5 BF1: a pattern draws nothing on the ground but a burst's landing marker (and its flying shell); v0.7.5 BF2:
+## the rest of a pattern's time is its cast (cast_telegraph).
 static func pattern_telegraph(
 	w: World, i: int, b: int, atk: BossAttackTable, windup: bool, progress: int
 ) -> Dictionary:
 	var pat := atk.pattern
-	if pat == null or pat.kind != BulletPatternTable.Kind.BURST:
+	if pat == null:
 		return {}
 	var st := w.actors.state_t[i]
-	if not windup and st > pat.lob_ticks:
-		return {}
+	if pat.kind != BulletPatternTable.Kind.BURST or (not windup and st > pat.lob_ticks):
+		return cast_telegraph(atk, windup, progress)
 	var commit := atk.lock_ticks if atk.lock_ticks > 0 else BossAi.table_of(w, i).commit_ticks
 	var out := {
 		"shape": &"disc",
@@ -186,6 +208,8 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 	var p := w.player_pos()
 	var pr := w.player.radius_m
 	for k in atk.count:
+		if atk.pattern != null:
+			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)
 		if st != k * atk.mark_gap_ticks:
 			continue
 		w.bosses.hit[b] = 0
@@ -198,6 +222,69 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
 					BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, o.center)
 					break
+
+
+## v0.7.5 BF2 (the Brood Mother's Egg Storm): marker k of a `marks` attack with a pattern is an egg's landing; `local`
+## ticks after it struck (0 = the strike) the pattern's waves burst from it (its lob was the marker's lock), aimed
+## at where the player stands then (the pattern's aim offset puts the player in a gap), from egg_r out of its
+## centre. BulletPatterns.fire leaves out the shots that would spawn on the player.
+static func burst_mark(w: World, i: int, atk: BossAttackTable, k: int, local: int) -> void:
+	var pat := atk.pattern
+	if local < 0:
+		return
+	var kw := BulletPatterns.wave_at(pat, local + pat.lob_ticks)
+	if kw < 0:
+		return
+	var c := mark_of(w, i, k)
+	BulletPatterns.fire(
+		w,
+		i,
+		pat,
+		kw,
+		c,
+		Kin.angle_of(w.player_pos() - c),
+		egg_r(atk),
+		BossAi.powered(w, i, atk.damage)
+	)
+
+
+## v0.7.5 BF2: how far from a landing's (or an eruption's) centre its burst's shots appear: half its circle.
+static func egg_r(atk: BossAttackTable) -> float:
+	return atk.radius_m * 0.5
+
+
+## v0.7.5 BF2: a burrow with a lock (the Brood Mother's): its eruption circle follows the player's exact position
+## while the ripple tracks (BossStore point 0); it locks there for the lock.
+static func tracked_burrow(atk: BossAttackTable) -> bool:
+	return atk.move == BossAttackTable.Move.BURROW and atk.lock_ticks > 0
+
+
+## v0.7.5 BF2: a burrow's eruption burst (its pattern, a ring), `st` ticks after it erupted at `c`, aimed at the
+## player (a ring's gap is centred on its aim).
+static func burst_eruption(w: World, i: int, atk: BossAttackTable, c: Vector2, st: int) -> void:
+	var pat := atk.pattern
+	if pat == null:
+		return
+	var kw := BulletPatterns.wave_at(pat, st + pat.lob_ticks)
+	if kw < 0:
+		return
+	BulletPatterns.fire(
+		w,
+		i,
+		pat,
+		kw,
+		c,
+		Kin.angle_of(w.player_pos() - c),
+		egg_r(atk),
+		BossAi.powered(w, i, atk.damage)
+	)
+
+
+## v0.7.5 BF2: ticks a burrow's eruption lasts (its burst's waves; 1 without a pattern).
+static func eruption_ticks(atk: BossAttackTable) -> int:
+	if atk.pattern == null:
+		return 1
+	return atk.pattern.duration_ticks() - atk.pattern.lob_ticks
 
 
 ## v0.7.5 BF3: the circles of volley k of a `grid` attack: the cells of the count × count board (cell_m apart,

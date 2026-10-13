@@ -44,8 +44,9 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for k: String in schema["params"]:
 		if not shape_params.has(k):
 			issues.append(ValidationIssue.new(&"param_missing", path, where + "%s is missing" % k))
+	var optional: Array = schema.get("optional", [])  # v0.7.5 BF2: params a move may take
 	for k in shape_params:
-		if not (schema["params"] as Array).has(k):
+		if not (schema["params"] as Array).has(k) and not optional.has(k):
 			issues.append(ValidationIssue.new(&"param_unknown", path, where + "%s is unknown" % k))
 	if int(round(telegraph_seconds * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
 		issues.append(

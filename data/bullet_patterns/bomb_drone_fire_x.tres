@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 6
+look = &"bomb_cinder"
+speed_mps = 4.0
+radius_m = 0.15
+range_m = 7.0
+aim_offset_degrees = 45.0
+safe_radius_m = 0.6
+count = 4
+lob_seconds = 0.6
+land_radius_m = 0.5
+id = &"bomb_drone_fire_x"

@@ -100,8 +100,16 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	)
 
 
-## An enemy's numbers in sim units. The behaviour id picks the actor kind.
-static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
+## An enemy's numbers in sim units. The behaviour id picks the actor kind. v0.7.5 EF: with `repo`, the slow
+## fireball patterns its attacks name (shape_params "pattern_id") are resolved too (PatternCompiler).
+static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) -> EnemyTable:
+	var t := _compile_enemy_numbers(def)
+	if repo != null:
+		PatternCompiler.compile_enemy_patterns(def, repo, t)
+	return t
+
+
+static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	var t := EnemyTable.new()
 	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
@@ -139,7 +147,10 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
 			t.slam_radius_m = sp["radius_m"]
-		&"needle", &"lens_drone":
+		&"lens_drone":  # v0.7.5 EF: the Needle's walk; its ring is a pattern (compile_enemy_patterns)
+			t.keep_distance_m = bp["keep_distance_m"]
+			t.flee_distance_m = bp["flee_distance_m"]
+		&"needle":
 			t.keep_distance_m = bp["keep_distance_m"]
 			t.flee_distance_m = bp["flee_distance_m"]
 			t.burst_count = int(sp["count"])
@@ -152,10 +163,9 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.burst_spread = degrees_to_units(float(sp["spread_degrees"]))
 		&"arc_caster":
 			_compile_arc_caster(def, t)
-		&"bomb_drone":
+		&"bomb_drone":  # v0.7.5 EF: its lobbed fireball is a pattern (compile_enemy_patterns)
 			t.keep_min_m = bp["keep_min_m"]
 			t.keep_distance_m = bp["keep_max_m"]
-			t.slam_radius_m = sp["radius_m"]
 		_:
 			_compile_horde(def, t, sp)
 	return t
@@ -196,26 +206,14 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.lane_half_m = sp["half_width_m"]
 
 
-## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune).
+## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune). v0.7.5 EF: the bolt
+## and the spread are slow fireball fans (compile_enemy_patterns); the rune stays a disc that erupts under you.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
 	t.keep_distance_m = bp["keep_max_m"]
 	t.spell_weights = PackedInt32Array(
 		[int(bp["bolt_weight"]), int(bp["spread_weight"]), int(bp["rune_weight"])]
-	)
-	var bolt := def.attacks[0].shape_params
-	t.burst_count = 1
-	t.bolt_speed = float(bolt["speed_mps"]) / SimTick.TICKS_PER_SECOND
-	t.bolt_radius_m = bolt["radius_m"]
-	t.bolt_life_ticks = SimTick.seconds_to_ticks(float(bolt["range_m"]) / float(bolt["speed_mps"]))
-	var spread := def.attacks[1].shape_params
-	t.spread_count = int(spread["count"])
-	t.spread_angle = degrees_to_units(float(spread["spread_degrees"]))
-	t.spread_speed = float(spread["speed_mps"]) / SimTick.TICKS_PER_SECOND
-	t.spread_radius_m = spread["radius_m"]
-	t.spread_life_ticks = SimTick.seconds_to_ticks(
-		float(spread["range_m"]) / float(spread["speed_mps"])
 	)
 	t.rune_radius_m = def.attacks[2].shape_params["radius_m"]
 	t.rune_windup_ticks = SimTick.seconds_to_ticks(def.attacks[2].telegraph_seconds)
@@ -330,7 +328,7 @@ static func compile_curve(
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
-		out.append(compile_enemy(def))
+		out.append(compile_enemy(def, repo))
 	return out
 
 

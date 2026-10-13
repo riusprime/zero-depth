@@ -72,3 +72,7 @@ var heal_range_m := 0.0
 var max_mines := 0
 var mine_life_ticks := 0
 var fuse_ticks := 24
+## v0.7.5 EF (owner N16): the slow fireball pattern each attack fires, by attack index (null where an attack fires
+## none; empty for kinds with none): the Arc Caster's bolt and spread (fans of plasma balls), the Lens Drone's ring
+## of orbs, the Bomb Drone's lobbed fireball that bursts into an X. EnemyAi.pattern_of picks the one in play.
+var patterns: Array[BulletPatternTable] = []

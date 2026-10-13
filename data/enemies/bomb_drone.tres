@@ -6,9 +6,9 @@
 [sub_resource type="Resource" id="Resource_atk"]
 script = ExtResource("1_atk")
 id = &"bomb"
-shape = 0
+shape = 4
 shape_params = {
-"radius_m": 1.8
+"pattern_id": "bomb_drone_fire_x"
 }
 telegraph_seconds = 0.8
 active_seconds = 0.0167

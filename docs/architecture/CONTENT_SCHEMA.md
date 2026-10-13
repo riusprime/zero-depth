@@ -138,6 +138,17 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.7.5 EF (owner N16) — the fireball enemies.** The Arc Caster's `bolt` and `spread`, the Lens Drone's attack and
+  the Bomb Drone's `bomb` are PROJECTILE attacks whose only shape param is `pattern_id`, a `BulletPatternDefinition`
+  id (§4b); `ContentCompiler.compile_enemy(def, repo)` resolves it into `EnemyTable.patterns` (one per attack, null
+  where none: the rune) through `PatternCompiler.compile_enemy_patterns`, and the attack is active until the
+  pattern's last wave. The old bolt/burst/circle params are gone from those schemas. The attack's `damage` is each
+  fireball's (and the Bomb Drone's landing's). **Starting values** (`data/bullet_patterns/`):
+  `arc_caster_plasma_fan` (FAN 3 over 30 deg, 4 m/s, r 0.18, 13 m, look `arc_plasma`), `arc_caster_plasma_fan_wide`
+  (FAN 3 over 56 deg, 3.5 m/s), `lens_drone_orb_ring` (RING 12 with 6 one-shot gaps = 6 orbs, offset 30 deg so one
+  flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
+  = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
+  cooldowns, HP, damage and shards are unchanged.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
@@ -165,7 +176,8 @@ class_name AttackDefinition extends Resource
 - **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
   `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
   (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
-  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
+  of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
@@ -553,6 +565,15 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     (`lock_seconds` required). Active until the last strikes.
   - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
     `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+- **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
+  ["optional"]`; any other unknown key is still an `ERROR`):
+  - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,
+    and as it strikes the pattern's waves burst from it (the pattern's lob is the circle's lock; `land_radius_m` is
+    unused, the circle's `radius_m` is the landing). Active until the last egg's burst has fired.
+  - `burrow` + `pattern_id` (a RING): a ring of shots bursts from the eruption, its gap on the player. A `burrow`
+    with `lock_seconds` lays its eruption circle on the player's exact position while the ripple tracks
+    (`track_seconds`), then holds it for `erupt_seconds` (set it to the lock, 0.8 s) and erupts there.
+  - The Hive Lens's Focus Beam is a `lanes` attack (count 1, or 3 in phase 3) with `lock_seconds`.
 - **v0.7.5 BF3 (the Siege Engine and the Foundry).** Two more moves, both needing `lock_seconds`:
   - `grid` (CIRCLE): `count` (odd) × `count` circles of `radius_m`, `cell_m` apart centre to centre (`cell_m` >=
     2 × `radius_m`, so neighbours never overlap), centred on the player's exact position until the lock; `volleys`
@@ -601,6 +622,9 @@ enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
 @export var rain_m: float               #   long later, rain_m x the petal's speed share out from the body's edge (a
                                         #   flower round it), then roll on as the shots; in the air they don't hurt
 ```
+
+v0.7.5 EF: enemies fire patterns too (§3, "the fireball enemies"): an enemy attack names one with `pattern_id`. A
+Bomb Drone's BURST draws no landing marker (owner N16): its flying fireball is the cue.
 
 Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim units) that the boss attack carries
 (`BossAttackTable.pattern`); `BulletPatterns` fires it (SIM_CONTRACTS §10d). Every number is a starting value (F10).

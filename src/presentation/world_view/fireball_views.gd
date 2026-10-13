@@ -9,6 +9,8 @@ extends Node3D
 ##   new pattern draws before its look is made): colour, size, a spear tip (a longer core) and a trail.
 ## - Hostile fireballs never use the hero's attack colours (the cyan core, the heat tiers; a test pins the distance).
 ## - Effects density (ViewPrefs.effects_density): Low thins the trails (every other ball, shorter); the balls stay.
+## - v0.7.5 EF (owner N16): the enemies' looks (Arc Caster, Lens Drone, Bomb Drone), and the Bomb Drone's lobbed
+##   fireball in the air (its telegraph's "lob", drawn as a bigger ball of its look on an arc; no ground circle).
 ## - v0.7.5 BF3: a look with "smoke" draws its trail as unlit smoke (no glow; the Siege Engine's cannon embers), and
 ##   a raining pattern's drops in the air (WorldReader.boss_rain: the Foundry's Slag Fountain) are drawn in their
 ##   pattern's look on an arc up from the boss and down to where they land (they hurt only once landed).
@@ -34,10 +36,60 @@ const LOOKS := {
 		"tip": 1.9,
 		"trail_m": 0.7,
 	},
+	## v0.7.5 EF. Arc Caster: blue-white plasma balls, a long cold trail.
+	&"arc_plasma":
+	{
+		"core": Color("#C8DCFF"),
+		"edge": Color("#0C1830"),
+		"trail": Color("#6E9CFF"),
+		"size": 1.0,
+		"tip": 1.15,
+		"trail_m": 0.65,
+	},
+	## v0.7.5 EF. Lens Drone: small red orbs, a rose-white core and a short crimson trail.
+	&"lens_orb":
+	{
+		"core": Color("#FFA0A8"),
+		"edge": Color("#2A0008"),
+		"trail": Color("#D0102A"),
+		"size": 0.8,
+		"tip": 1.0,
+		"trail_m": 0.3,
+	},
+	## v0.7.5 EF. Bomb Drone: violet fuse-fire cinders (and the lobbed fireball they burst from).
+	&"bomb_cinder":
+	{
+		"core": Color("#E9B8FF"),
+		"edge": Color("#1E0A2A"),
+		"trail": Color("#9A4AE0"),
+		"size": 1.05,
+		"tip": 1.0,
+		"trail_m": 0.45,
+	},
+	## v0.7.5 BF2: Brood Mother: sickly green acid globs (fat, a short dripping trail).
+	&"acid_glob":
+	{
+		"core": Color("#C8FF6A"),
+		"edge": Color("#142A08"),
+		"trail": Color("#6FA02A"),
+		"size": 1.1,
+		"tip": 1.0,
+		"trail_m": 0.4,
+	},
+	## v0.7.5 BF2: Hive Lens: magenta-red prism orbs (small, a long bright trail).
+	&"prism_orb":
+	{
+		"core": Color("#FF78D0"),
+		"edge": Color("#3A0626"),
+		"trail": Color("#C02A78"),
+		"size": 0.9,
+		"tip": 1.0,
+		"trail_m": 0.75,
+	},
 	## v0.7.5 BF3: Siege Engine: orange cannon embers with a smoke trail.
 	&"cannon_ember":
 	{
-		"core": Color("#FFB878"),
+		"core": Color("#D79000"),
 		"edge": Color("#2E1A0E"),
 		"trail": Color("#5A524C"),
 		"size": 1.2,
@@ -67,6 +119,10 @@ const DEFAULT_LOOK := {
 ## Trail length and share by Effects density (low: every other ball, shorter).
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
 const HEIGHT := 0.55
+## v0.7.5 EF: a lobbed fireball's radius (metres) and how high its arc rises over HEIGHT at the middle of its flight.
+const LOB_RADIUS := 0.3
+const LOB_RISE := 1.4
+
 ## v0.7.5 BF3: a raining drop leaves the boss this high and peaks this much above its straight path.
 const RAIN_FROM_Y := 2.6
 const RAIN_ARC_Y := 2.2
@@ -82,6 +138,9 @@ var _vel := {}
 ## Balls and trails drawn per look in the last draw (kept here: a headless renderer keeps no MultiMesh state).
 var _balls := {}
 var _trails := {}
+## v0.7.5 EF: the lobbed fireballs in the air this tick, per look (3D positions).
+var _lobs := {}
+
 ## v0.7.5 BF3: the raining drops this tick, per look: [from, to, progress, progress a tick, radius] each.
 var _rain := {}
 
@@ -108,6 +167,7 @@ func sync(reader: WorldReader) -> void:
 		if not _now.has(id):
 			_vel.erase(id)
 			_radius.erase(id)
+	_sync_lobs(reader)
 	_rain = {}
 	var b := reader.boss_index()
 	if b >= 0:
@@ -128,13 +188,41 @@ func sync(reader: WorldReader) -> void:
 
 
 func _process(_delta: float) -> void:
-	if not _now.is_empty() or not _rain.is_empty():
+	if not _now.is_empty() or not _lobs.is_empty() or not _rain.is_empty():
 		_draw(Engine.get_physics_interpolation_fraction())
 
 
 ## How many fireballs are drawn now (tests and the tour).
 func count() -> int:
 	return _now.size()
+
+
+## v0.7.5 EF: how many lobbed fireballs are in the air now (tests).
+func lob_count() -> int:
+	var n := 0
+	for key in _lobs:
+		n += (_lobs[key] as Array).size()
+	return n
+
+
+## v0.7.5 EF: the Bomb Drones' fireballs in the air (their telegraph's "lob": from the drone to where it lands, on an
+## arc), each a bigger ball of its look.
+func _sync_lobs(reader: WorldReader) -> void:
+	_lobs = {}
+	for i in reader.actor_count():
+		if reader.actor_kind(i) != WorldReader.KIND_BOMB_DRONE:
+			continue
+		var tg := reader.telegraph(i)
+		if tg.get("shape", &"") != &"lob":
+			continue
+		var key := StringName(tg.get("look", &""))
+		var p := float(tg["progress"]) / 1000.0
+		var at := (tg["from"] as Vector2).lerp(tg["to"], p)
+		var list: Array = _lobs.get(key, [])
+		list.append(SimPlane.to_3d(at, HEIGHT + LOB_RISE * 4.0 * p * (1.0 - p)))
+		_lobs[key] = list
+		if not _drawn.has(key):
+			_drawn[key] = PackedInt32Array()
 
 
 ## The look a key draws with (tests): LOOKS[key] or DEFAULT_LOOK.
@@ -196,6 +284,10 @@ func _draw(f: float) -> void:
 			trails.append_array(
 				_row(Transform3D(_scaled(basis, Vector3(len, r * 0.9, r * 0.9)), back))
 			)
+		for at: Vector3 in _lobs.get(key, []):
+			var lr := LOB_RADIUS * size
+			cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
+			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * 1.3), at)))
 		for d: Array in _rain.get(key, []):  # v0.7.5 BF3: the drops in the air, on their arc
 			var r: float = 0.22 * size
 			var at := rain_point(d[0], d[1], d[2] + d[3] * f)

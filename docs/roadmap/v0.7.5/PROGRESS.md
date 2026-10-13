@@ -15,6 +15,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | SM | The small things: a card's level on every pick card ("Lv 1", "Lv 2 → 3", the legendary "Lv N → 5") and on the HUD's wand pips and the Build page; ten first-run hints, each once, never blocking, with the keys of the device you use (Options: Show hints, Reset hints); the credits generated from the repo's manifests, fonts and addons, with the app icon; an Interface size option and reduced-motion / colour-blind fixes from an accessibility pass; the dev panel behind one release switch, left ON ([evidence](evidence/SMALL_THINGS.md)) | `v0.7.5 Step SM` commit (branch `v075-sm`) |
 | BM | The owner's Warlord, Hive Lens and Foundry models replace their code bodies and move from their bones: the Warlord walks, carries and lifts its shield, raises and plants, couches and thrusts, draws and throws its spear, flinches, reels and falls when it dies; the Hive Lens bobs and rolls, its tails sway and trail, its eye turns to you, it opens, closes, splits and dives; the Foundry's legs (cut from its mesh) step in pairs as it pours, vents and launches. Every boss is drawn 1.3× bigger (owner N18) ([evidence](evidence/BOSS_MODELS.md)) | `v0.7.5 Step BM` commit (branch `v075-bm`) |
 | BF1 | Boss fights, part 1: the Gatekeeper and the Warlord fight dodge-first: slow fireball patterns in their own looks (Rock Rings, Cross Quake; Shield Wall, crossing walls, Javelin Fan), ground circles and lanes that follow you then lock and flash for 0.8 s before they strike (move after the lock and you're out), a crystal shield while the signature pattern runs, open between patterns; HP ×1.25; phases add and speed patterns. All six bosses 1.3× bigger and fought in the 4×4 room (N18). The pattern engine is data for the next bosses ([evidence](evidence/BOSS_FIGHTS_1.md)) | `v0.7.5 Step BF1` commit (branch `v075-bf1`) |
+| PG | The Playground (owner N20): a main-menu row into one big 4×4 room with your weapon; F1 opens a panel (the game waits) to add any card at any level or remove it, place dummies (never die, or a set HP), any enemy or boss with a click and delete with a right click, switch between the five biomes, god mode and heal; a DPS meter (last 5 s, average, total, time, every source by its card's name); nothing saved or recorded ([evidence](evidence/PLAYGROUND.md)) | `f612776`, `f85657f`, `519a445`, `431b543`, `d1ed9ac` (branch `claude/playground`) |
+| EF | Enemy fireballs: the Arc Caster casts fans of 3 slow blue-white plasma balls, the Lens Drone fires rings of 6 small red orbs, the Bomb Drone lobs a violet fireball (seen in the air) that bursts into an X of 4 cinders; none of the three draws a line or circle on the ground any more (the Arc Caster's rune keeps its circle); Needle, Sniper and the melee kinds unchanged; elites of the three fire the same ([evidence](evidence/ENEMY_FIREBALLS.md)) | `v0.7.5 Step EF` commit (branch `v075-ef`) |
+| BF2 | Boss fights, part 2: the Brood Mother and the Hive Lens fight dodge-first. The Brood Mother lobs eggs onto circles that follow you then lock, each bursting into an 8-point star of green acid globs (shielded); she spins 2-arm acid webs that turn back, and her leaps and her burrow's eruption follow your exact position and lock 0.8 s, the eruption bursting into a ring; her Hatchlings stay. The Hive Lens fires 3-arm prism spirals that reverse halfway with its eye closed (shielded), 5-petal blooms, rings with two gaps, and a focus beam that follows you then locks; its Lens Drones still break off. Magenta prism orbs; HP ×1.25; phase 3 the hardest mix ([evidence](evidence/BOSS_FIGHTS_2.md)) | `v0.7.5 Step BF2` commit (branch `v075-bf2`) |
 | BF3 | Boss fights, part 3: the Siege Engine and the Foundry fight dodge-first. The Siege Engine braces behind its shield and turns a cross of orange cannon embers trailing smoke, shells a checkerboard of circles that follows you and strikes its two colours in turn, drops three circles on you one after another and fires a rail down your lane, all locking 0.8 s before they hit; it still deploys its turrets. The Foundry shuts its door and rains white-yellow molten drops in a flower around it, sends out rings with shifting gaps, floods your row with molten lanes that follow you then lock, and keeps launching Bomb Drones. HP ×1.25; phases add and speed patterns ([evidence](evidence/BOSS_FIGHTS_3.md)) | `v0.7.5 Step BF3` commit (branch `v075-bf3`) |
 
 ## Goldens changed on purpose
@@ -28,6 +31,9 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - SM: none. The one sim edit is a read key (`Wand.read`'s `wand`), nothing hashed; `tests/golden` not run by the agent (the lead's full suite).
 - BM: none. No sim file changed (presentation, assets and docs only); `tests/golden` not run by the agent.
 - BF1: none. `tests/golden` passes unchanged (the kernel replay is boss-free; the fireball look column is hashed only once a fireball has flown). The boss fights' own hashes change on purpose (new attacks, patterns, HP, radius, rooms); no golden fixture holds one
+- PG: none. One sim file gained a function (`FloorGenerator.one_room`) and one a read (`WorldReader.has_gate`); `tests/golden` passed in the seams run.
+- EF: none. `tests/golden` passes unchanged (its replays fire no Arc Caster, Lens Drone or Bomb Drone shot). Fights with those three hash differently on purpose (new attacks); no golden fixture holds one
+- BF2: none. `tests/golden` passes unchanged (boss-free replay). The Brood Mother's and the Hive Lens's fight hashes change on purpose (new attacks, patterns, HP); no golden fixture holds one
 - BF3: none. `tests/golden` passes unchanged. The Siege Engine's and the Foundry's fight hashes change on purpose (new attacks, patterns, HP); no golden fixture holds one
 
 ## Gates (owner)
@@ -37,6 +43,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | EI-05: the sub-streams `map:ice` (NB1), `map:starglow` (NB2) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
 | SM: the owner's credit line (`CREDITS_OWNER`, "…" since v0.0.1, O4); the AI 3D generator's terms for shipping the kit models | — | pending (OWNER ONLY) | |
 | EI-05: the sub-streams `map:ice` (NB1) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
+| PG: the Playground's entry, dummies, DPS meter and panel look | 2026-10-13 | "Main menu row"; "Never die + optional HP"; "Total + per-source"; "Dev-tool style, no mockups" (G2 waived for this tool) | 2026-10-13 |
 
 ## History
 - 2026-10-12: plan from the owner's message (verbatim in PLAN), written while the v0.7.0 suite ran.
@@ -117,9 +124,44 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   marker / shield views (`FireballViews`, `TelegraphViews`, `BossShieldView`); N18 (lead's message): all six bosses
   radius ×1.3 and 4×4 rooms. Reads for BM's avatars: `WorldReader.boss_shielded`, `boss_pattern`. Evidence
   [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.md). Not run by the agent: the full suite, bot sims. Not pushed.
+- 2026-10-13: BF1 merged (`4d772cc`); the lead wired BF1's `WorldReader.boss_shielded` into BM's shielded pose
+  (`81a07b5`; boss model views + boss e2e 27/27). Seams on `81a07b5` (`bash scripts/ci/seams.sh`, clean worktree):
+  `Tests 275`, `Passing Tests 275`. Pushed. BF2, BF3 and EF started from `81a07b5`.
+- 2026-10-13: owner N20, the Playground (a creative mode to test builds, dummies, bosses and biomes); plan in
+  [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md), built on `claude/playground` from `d5a5602`.
+- 2026-10-13: PG built on `claude/playground` (PG1-PG5, evidence [`evidence/PLAYGROUND.md`](evidence/PLAYGROUND.md)): seams 288/288, presentation units + 11 e2e 516/516; a BM bug in `ActorViews._drop_missing` (get_meta with a null default) fixed on the way. Not merged into `claude/v0.7.5-new-ground` yet (that branch's lead merges it, so BF's boss changes reach the Playground).
+- 2026-10-13: owner: "Can you merge this branch claude/playground with yours? It adds a playground to test the combat
+  features, so I could try new bosses fights and adjust easier". Merged (`344b99e`, PG1–PG5; docs and translations
+  conflicted, both kept). Its owner line was numbered N19 like the outline line, so it is N20 here (PLAN, PROGRESS,
+  docs/tools/PLAYGROUND.md and its code comments). Playground tests on the merge 29/29.
+- 2026-10-13: EF (agent, branch `v075-ef` from `81a07b5`): the three fireball enemies (`data/bullet_patterns/*` x4, `EnemyTable.patterns`, `EnemyAi` cast/lob telegraphs with `ground: false`, FireballViews looks + the lob); the readings are in PLAN "EF"; evidence [`evidence/ENEMY_FIREBALLS.md`](evidence/ENEMY_FIREBALLS.md). Run by the agent: lint; content + arch + golden + application + debug 219/219; 16 sim files incl. the every-card soak 249/249; 14 presentation files 90/90; 18 e2e files 28/29, the one failure `test_e2e_dev_master_panel.gd` after `test_e2e_difficulty_curve.gd` in one process, the same on the base `81a07b5` (pre-existing, order-dependent; passes alone). Not run: the full suite, seams, bot sims. Not pushed.
+- 2026-10-13: EF merged (`cceb3c9`). Seams on it (`bash scripts/ci/seams.sh`, clean worktree) green. Open (found by
+  the EF agent, reproduced on the base `81a07b5`): `test_e2e_dev_master_panel.gd` "test_f10_edit_restart_floor" fails
+  when it runs after `test_e2e_difficulty_curve.gd` in one process (GitHub's alphabetical e2e order runs it first);
+  a test-isolation leak to fix.
+- 2026-10-13: the dev-panel e2e order leak does not reproduce on `6922e18` with the two files alone in either order
+  (difficulty_curve then dev_master_panel, forced by file names in one GUT process: 3/3). The EF agent saw it inside a
+  longer 18-file e2e run; left open until a run shows it again.
+- 2026-10-13: BF2 (agent, branch `v075-bf2` from `81a07b5`): the Brood Mother's and the Hive Lens's fights rebuilt
+  (12 bullet patterns, both boss files, HP ×1.25). Engine additions, additive: `marks` + `pattern_id` (eggs that burst
+  from their locked circles), a tracked `burrow` with an eruption ring, optional move params; looks `acid_glob` /
+  `prism_orb`, the egg lob, avatar move mapping. Two tests changed on purpose (the leap's lead now on a fixture, the far
+  burrow now reaches). Lint, the boss sim files, presentation, content/arch/golden, application/debug and the boss
+  e2e (new `test_e2e_boss_dodge_2`) green; screenshots under xvfb + llvmpipe. Evidence
+  [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md). Not run by the agent: the rest of `tests/unit/sim`, the
+  full suite, bot sims. Not pushed.
+- 2026-10-13: BF2 fix (agent, branch `v075-bf2-fix` from `21a8ea1`): GitHub's sim_b failed `test_readable_cause.gd`
+  on the BF2 merge. Pattern attacks now show a `cast` telegraph (`ground: false`) through their windup and firing,
+  and a boss's fireballs carry their attack so the death recap names the pattern that killed. `test_readable_cause.gd`
+  added to `scripts/ci/seams.sh`. Runs in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md) "Fix after the merge".
+  Goldens: none changed (the cause column is hashed only once a boss's fireball has flown). Not pushed.
 - 2026-10-13: BF3 (agent, branch `v075-bf3` from `81a07b5`): the Siege Engine's and the Foundry's fights rebuilt per
   BOSS_FIGHTS.md (Turret Cross, Mortar Grid, Barrage, Rail; Slag Fountain, Furnace Waves, Molten Flood), HP ×1.25;
   engine additions: moves `grid` and `row_flood`, the raining FLOWER (`rain_seconds` / `rain_m`,
   `WorldReader.boss_rain`), looks `cannon_ember` / `molten_drop`. Readings in PLAN "BF3". Evidence
   [`evidence/BOSS_FIGHTS_3.md`](evidence/BOSS_FIGHTS_3.md). Not run by the agent: the full suite, bot sims, seams.
   Not pushed.
+- 2026-10-13: BF3 merged with `claude/v0.7.5-new-ground` at `96bb7ea` (BF2, its fix, EF) on `v075-bf3`, after the
+  lead's heads-up: conflicts append-only, BF2's `cast` pattern telegraph kept; two fixes in the merge commit: the new
+  `ProjectileStore.cause` column listed in `WorldSnapshot.ADDED_SINCE_V05` (old saves failed to restore without it),
+  the cannon embers' core #FFB878 → #D79000 (BF2's looks-apart test). Runs in the evidence. Not pushed.

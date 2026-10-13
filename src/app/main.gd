@@ -34,6 +34,8 @@ var toast := AchievementToast.new()
 ## v0.7.5 SM (N8): the first-run hints (seen ones in the profile's hints section), on the UI layer like the toast.
 var hint_store: HintStore
 var hints := OnboardingHints.new()
+## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground while it runs (null otherwise).
+var playground: PlaygroundSession
 
 ## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
 ## every run and floor is compiled.
@@ -65,6 +67,9 @@ var _run_biomes: Array[StringName] = []
 var _fade := ColorRect.new()
 var _fade_left := 0.0
 var _fade_len := FADE_SECONDS
+## v0.7.5 PG: the Playground's weapon and biome (kept across Restart and Change weapon).
+var _pg_build := &"gun"
+var _pg_biome := &"ruins"
 
 
 func _ready() -> void:
@@ -157,12 +162,15 @@ func show_main_menu() -> void:
 	saves.close()  # v0.4.0 SV: leaving a run (pause -> Main menu) keeps its last room entry
 	_end_stage()
 	audio.set_ambience(&"")
-	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build(), saves.store.has_save())
+	var m := MainMenu.new(
+		GameVersion.label(), OS.is_debug_build(), saves.store.has_save(), DevGate.enabled()
+	)
 	m.continue_pressed.connect(continue_run)
 	m.play_pressed.connect(show_build_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
 	m.codex_pressed.connect(show_codex)
+	m.playground_pressed.connect(_show_playground_picker)  # v0.7.5 PG
 	m.galleries_pressed.connect(show_gallery)
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
@@ -513,6 +521,10 @@ func run_biome_id() -> StringName:
 
 ## A new run with the next seed and the same build.
 func restart() -> void:
+	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
+		_end_stage()
+		_start_playground(_pg_build, _pg_biome)
+		return
 	_stage_seed += 1
 	_end_stage()
 	start_stage()
@@ -557,8 +569,7 @@ func _close_master_panel() -> void:
 		LiveTuning.apply(driver.world, run, _content())
 	_balance_pending = false
 	_tweaked_run_check()
-	if driver != null and _pause == null:
-		driver.paused = false
+	_sync_pause()
 
 
 ## Rebuilds the run's current floor from the (tweaked) content: the dev panel's Restart floor.
@@ -664,7 +675,8 @@ func close_pause() -> void:
 		_pause = null
 	if driver != null:
 		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
-		driver.paused = _devm != null  # the master dev panel (F10) keeps the run paused behind it
+		driver.paused = false
+		_sync_pause()  # the master dev panel (F10) and the Playground's panel keep the run paused behind it
 	if _end == null:
 		hints.set_covered(false)  # v0.7.5 SM
 
@@ -729,6 +741,132 @@ func _queue_build_moves() -> void:
 		driver.latch.queue_wand_move(v)
 
 
+## Holds the sim while a menu or panel is over it (the pause menu, F10, the Playground's panel), else lets it run.
+func _sync_pause() -> void:
+	if driver != null:
+		driver.paused = (
+			_pause != null or _devm != null or (playground != null and playground.is_panel_open())
+		)
+
+
+# --- v0.7.5 PG: the Playground (owner N20, docs/tools/PLAYGROUND.md) ------------------------------------------------
+
+
+## Playground -> pick the weapon (as Play) -> the room.
+func _show_playground_picker() -> void:
+	var p := BuildPicker.new(ContentRepository.load_all().all_of(&"build"), _pg_build)
+	p.picked.connect(func(id: StringName) -> void: _start_playground(id, _pg_biome))
+	p.back_pressed.connect(show_main_menu)
+	_set_menu(p)
+
+
+## The Playground's room with weapon `build_id` in biome `biome_id`: no run, save, Codex, achievements or hints.
+func _start_playground(build_id: StringName, biome_id: StringName) -> void:
+	_set_menu(null)
+	_end_stage()
+	_pg_build = build_id
+	_pg_biome = biome_id
+	var repo := _content()
+	var biome: BiomeDefinition = repo.get_def(&"biomes", biome_id)
+	driver = SimDriver.new()
+	driver.name = "SimDriver"
+	driver.setup(PlaygroundScenario.build(repo, build_id, biome))
+	add_child(driver)
+	playground = PlaygroundSession.new(
+		driver, ui, _playground_biomes(repo), biome_id, _playground_names(repo)
+	)
+	playground.on_pause_change = _sync_pause
+	playground.biome_requested.connect(_set_playground_biome)
+	playground.weapon_requested.connect(
+		func() -> void:
+			_end_stage()
+			_show_playground_picker()
+	)
+	add_child(playground)
+	_playground_view(biome)
+	_hud = Hud.new()
+	ui.add_child(_hud)
+	ui.move_child(_hud, 0)
+	_hud.sync(driver.reader)
+	driver.ticked.connect(_on_playground_tick)
+	driver.edited.connect(_on_playground_tick)
+	_tweaked_run_check()
+
+
+## Redraws the room in biome `id` (its look, light and sounds) and lays its ice or starglow; the build, the dummies
+## and the spawns stay. The sim waits for this between ticks (the panel holds it, or it runs on the main thread).
+func _set_playground_biome(id: StringName) -> void:
+	if playground == null:
+		return
+	var biome: BiomeDefinition = _content().get_def(&"biomes", id)
+	_pg_biome = id
+	PlaygroundScenario.lay_surface(driver.world, biome)
+	driver.ticked.disconnect(view.sync)
+	driver.edited.disconnect(view.sync)
+	_drop(view)
+	_playground_view(biome)
+
+
+func _playground_view(biome: BiomeDefinition) -> void:
+	view = WorldViewRoot.new()
+	view.name = "WorldView"
+	view.stage.prop_style = biome.id
+	view.stage.mood = biome.mood
+	view.stage.look = biome.look
+	if biome.look != null:
+		view.actors.enemy_tint = biome.look.enemy_tint
+	_biome_path = biome.resource_path
+	view.stage.lighting = GameSettings.get_value(profile, "lighting")
+	add_child(view)
+	var b := driver.reader.floor_bounds()
+	var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
+	view.setup(driver.reader, biome.palette, half + 4.0)
+	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
+	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
+	var player_input := PlayerInput.new(view.rig, driver.reader)
+	player_input.name = "PlayerInput"
+	view.add_child(player_input)
+	driver.input_source = player_input.sample
+	driver.ticked.connect(view.sync)
+	driver.edited.connect(view.sync)
+	audio.detach()
+	audio.attach(driver.reader, biome.id)
+	playground.set_biome(biome.id, player_input.mouse_world)
+
+
+func _on_playground_tick() -> void:
+	if _hud != null and driver != null:
+		_hud.sync(driver.reader)
+
+
+## The biomes the Playground offers: the run's, in its order, with their names.
+func _playground_biomes(repo: ContentRepository) -> Array:
+	var out := []
+	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
+	for id: StringName in run_def.biomes:
+		out.append(
+			{"id": id, "name_key": (repo.get_def(&"biomes", id) as BiomeDefinition).name_key}
+		)
+	return out
+
+
+## The DPS meter's source names: an effect id -> the name key of the card, ability, combo or curse with that id, and
+## the statuses' own names.
+static func _playground_names(repo: ContentRepository) -> Dictionary:
+	var out := {
+		&"bleed": &"UI_PG_SRC_BLEED",
+		&"bleed_burst": &"UI_PG_SRC_BLEED",
+		&"shock": &"UI_PG_SRC_SHOCK",
+		&"frost": &"UI_PG_SRC_FROST",
+		&"venom": &"UI_PG_SRC_POISON",
+	}
+	for cat: StringName in [&"items", &"ability", &"combos", &"curses"]:
+		for d: Resource in repo.all_of(cat):
+			if &"id" in d and &"name_key" in d and not out.has(d.get(&"id")):
+				out[d.get(&"id")] = d.get(&"name_key")
+	return out
+
+
 func _set_menu(m: Control) -> void:
 	if _menu != null:
 		_menu.queue_free()
@@ -760,8 +898,9 @@ func _end_floor() -> void:
 		var kept := profile.save_file() or profile.path.is_empty()
 		codex.dirty = not kept
 		achievements.dirty = not kept
-	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, playground, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
+	playground = null
 	_hud = null
 	_end = null
 	_dev = null

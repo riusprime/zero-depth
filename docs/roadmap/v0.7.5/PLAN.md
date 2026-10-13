@@ -44,6 +44,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N17 | "there is a branch claude/sharp-lovelace-74ii7v that you should start from, because we fixed some code bugs from there" | The audit branch (79 commits of v0.7.0 fixes) merged into this branch, both kept (`01c1e2f`) | Done | — |
 | N18 | "Bosses could be a bit bigger so we could see the model better and always put them in the big rooms" | Every boss about **1.3×** bigger: its model height and its body radius together, so what you see is what hits (starting value). Every boss fights in a **4×4** room, the new extra-large size (was 2×2 to 3×3). Both are data the owner can tune in F10 | Decided (lead's reading) | BM, BF1 |
 | N19 | "Can you before the final push remove the stroke outline around the bosses model, it is ugly" | The owner's boss models (all six) draw no outline: the outline stencil stays at zero thickness so the X-ray twin behind walls is unchanged. Code-built fallback bodies and normal enemies keep theirs | Done | — |
+| N20 | "playtest like a playground where I have the creative mode as in Minecraft … dummies I can spawn and delete … a DPS meter … spawn the bosses … a big 4x4 room and I can change between biomes" (verbatim in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | **The Playground**: a main-menu row into one 4×4 room; any card at any level, dummies (∞ or a set HP) placed and deleted by click, any boss or enemy, a DPS meter by source, five biomes. Picks: "Main menu row", "Never die + optional HP", "Total + per-source", "Dev-tool style, no mockups" (2026-10-13) | Decided | PG |
 
 ## Steps
 | Step | Scope | Rows | Status |
@@ -56,6 +57,9 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 Done (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); the Siege Engine and the Foundry next (BF3) |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | Done ([evidence](evidence/ENEMY_FIREBALLS.md)) |
+| PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N20 | Done ([evidence](evidence/PLAYGROUND.md)) |
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF3 Done (the Siege Engine and the Foundry; [evidence](evidence/BOSS_FIGHTS_3.md)) |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
@@ -184,6 +188,64 @@ boss's patterns" guide in [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.m
   keeps every hostile core 0.2+ (RGB) from the hero's cyan and heat colours. Effects density Low: every other trail,
   shorter.
 
+### EF: enemy fireballs (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N16 (verbatim above; [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md) "Normal enemies", "Approve all"); evidence in
+[`evidence/ENEMY_FIREBALLS.md`](evidence/ENEMY_FIREBALLS.md). Every number is a starting value (F10, the Bosses page
+lists `data/bullet_patterns`).
+- **Arc Caster:** both of its fast lined shots change, since both drew a trajectory: the bolt is a fan of 3 plasma
+  balls over 30 deg at 4 m/s, the spread a wider fan of 3 over 56 deg at 3.5 m/s (same weights 3 : 2, same 0.5 s
+  windup, tracked as before). The **rune stays**: a circle that erupts under you is an area marker, not a trajectory,
+  and the design table names only the bolt.
+- **Lens Drone:** a ring of 6 red orbs at 3.5 m/s, evenly round with one flying at you (a RING of 12 with 6 one-shot
+  gaps: the validation wants a gap, and every gap is about 3.9 m wide 4 m out), one wave. It still flies the Needle's
+  walk; wherever it appears (the Hive Lens's split) it fires the same.
+- **Bomb Drone:** a lobbed fireball (0.6 s in the air, drawn as a ball of its look on an arc) that lands where you
+  stood when its windup committed (your exact position, no lead, tracked like the aimed shots until 12 ticks before
+  the throw) and bursts into an X of 4 cinders at 45 deg to the throw, 4 m/s. The landing itself hurts within 0.5 m
+  (the falling fireball is the cue: no circle). The X spawns no cinder within 0.6 m (+ the hero's radius) of you, so
+  a hero hit by the landing is not hit by the X too; one who stepped out meets the X.
+- **No ground line:** the three draw nothing on the ground; their windup is the body's cue (the caster's crystal, the
+  drones' glow) and the readable-cause check counts it. Needle and Sniper keep their lines; the melee kinds (Charger,
+  Warden, Splitter, Splitling, Shield Bearer, Swarmer, Hatchling) their red telegraphs; Mine Layer and Mender are
+  unchanged.
+- **Damage:** each fireball (and the drone's landing) deals the attack's damage as before (12 / 8 / 16), scaled per
+  floor and loop by RunState and by the danger tier and the hidden catch-up (`EnemyAi.powered`), like every enemy hit.
+- **Elites:** an elite is its kind's AI, so elite Arc Casters, Lens Drones and Bomb Drones (the Ambush Cache, Marked)
+  fire the same new patterns; no other elite changes.
+- **Looks** (each its own, off the hero's colours and the bosses'): Arc Caster `arc_plasma` (blue-white core, a navy
+  edge, a cold blue trail, slightly long); Lens Drone `lens_orb` (small, a rose-white core, a near-black red edge, a
+  short crimson trail); Bomb Drone `bomb_cinder` (violet fuse-fire: a lavender core, a dark plum edge, a purple trail;
+  the lobbed ball the same look, bigger).
+- **Not done (open for the owner):** no shadow under the lobbed fireball (a shadow is a mark on the ground; the owner
+  said "no ground circle"); the colour-blind modes don't recolour the looks (as BF1's).
+### BF2: the Brood Mother and the Hive Lens (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (verbatim in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); built on BF1's engine;
+evidence in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md).
+- **Egg Storm is tracked circles that become eggs.** The design's "eggs land on tracked circles and each bursts into
+  an 8-point star" is the `marks` move with a BURST pattern (an optional `pattern_id`): each circle follows you, locks
+  for 0.8 s while its egg flies onto it, then lands (the circle hurts) and bursts into 8 acid globs aimed so you stand
+  in a gap (the star is turned half a step off the line to you). 3 eggs, 0.45 s apart; 5 eggs with a second star in
+  phases 2–3. It is the shielded signature. A later egg may still be locking when an earlier one bursts: that is the
+  Egg Storm itself (rule 5's "that boss's named combo").
+- **Burrow's "tracked eruption ring".** The eruption circle (not the boss's ripple) sits on your exact position while
+  she tracks underground, locks for 0.8 s (she burrows to it), erupts there, and a ring of 14 globs bursts out of it
+  with its gap toward you (two rings, turned 90°, in phase 3). The Leap, the Leap chain and the Pounce chain (her
+  punish) track you exactly and lock 0.8 s on each leap.
+- **Web Spiral:** 2 arms of slow globs turning one way, reversing at 1.5 s; phase 3's is faster and turns the other
+  way. The Hatchling summons stay as they were.
+- **The Hive Lens's sweeps are gone.** Its rail sweeps and prism bolt fans became the design's patterns: the Prism
+  Spiral (3 arms reversing halfway, shielded: the model's eye-closed pose reads `WorldReader.boss_shielded`), the
+  Petal Bloom (a 5-petal flower, three blooms turned 36° each), the Glare Ring (rings of 20 with 2 gaps, turned 30° a
+  ring), and the Focus Beam, a single line (`lanes`) that tracks you and locks 0.8 s (3 lines in phase 3; also its
+  punish on a far player). Its close Glare slam ring stays as `lens_flare` (a melee answer, like BF1's Sweep and
+  Bash), and the dive stays its gap-closer, now tracked and locked. The Lens Drones still break off at the 66 % gate
+  (their own attack is EF's).
+- **HP ×1.25 from v0.7.0:** Brood Mother 1600 → 2000, Hive Lens 1650 → 2063 (2062.5, rounded up). The 66 / 33 % gates
+  stay; phase 2 adds (eggs, the fast rings), phase 3 the hardest mix (the fast web or spiral, two-ring eruptions,
+  the fast bloom, three focus lines). N18's radius and 4×4 room stay as BF1 set them.
+- **Looks:** the Brood Mother's sickly green acid globs (`acid_glob`: a pale lime core, a near-black green edge, a
+  short trail) and her eggs (a pale shell glowing green); the Hive Lens's magenta-red prism orbs (`prism_orb`: a pink
+  core, a wine edge, a long trail). Both kept off the hero's colours (BF1's test) and apart from the other looks.
 ### BF3: the Siege Engine and the Foundry (agent's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N15 (the design table in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); evidence in
 [`evidence/BOSS_FIGHTS_3.md`](evidence/BOSS_FIGHTS_3.md). Built on BF1's engine; two new moves and one pattern field.
@@ -220,7 +282,7 @@ Owner N15 (the design table in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), 
   the patterns come.
 - **HP ×1.25:** Siege Engine 1800 → 2250, Foundry 1900 → 2375. Gates 66 / 33 % kept; BF1's N18 radius, rooms,
   shockwave and vent values kept. Fireball damage 14 (the Warlord's), markers 20–26 as before.
-- **Looks:** Siege `cannon_ember` (a light orange core #FFB878, a dark edge, a grey smoke trail that doesn't glow,
+- **Looks:** Siege `cannon_ember` (an amber-orange core #D79000, a dark edge, a grey smoke trail that doesn't glow,
   bigger balls); Foundry `molten_drop` (a white-yellow core #FFF07A, a dark edge, a short gold trail). Both keep
   0.2+ (RGB) off the hero's cyan and heat colours (the BF1 test covers every look). The avatars pose the new moves
   as their old ones (Siege: the cross as its cannon volleys, the grid and barrage as its mortars, the rail lane as its

@@ -1088,6 +1088,51 @@ Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `dat
   (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
 - **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
   only the fireballs' look column is new (above). The kernel replay golden is boss-free.
+- **v0.7.5 BF2: eggs and a tracked burrow.** A `marks` attack with a pattern (the Brood Mother's Egg Storm) fires it
+  from each circle as it strikes (`BossDodge.burst_mark`): `local` ticks after circle k struck, wave
+  `wave_at(pattern, local + lob)` fires from the circle's centre, `egg_r` (half its radius) out, aimed at the
+  player's position then (the pattern's aim offset puts the player in a gap), under the same fairness and caps. While
+  a circle is locked its telegraph item carries `lob` (from the boss to the circle; the view's egg). A `burrow` with
+  a lock (`BossDodge.tracked_burrow`) keeps BossStore point 0 on the player's exact position from its windup's end
+  through `track_ticks` (the telegraph: a tracked `disc`), then locks it (`lock_x/y`), burrows to it at its speed while
+  the circle is locked for `erupt_ticks`, erupts there (the disc), and fires its pattern from it over
+  `BossDodge.eruption_ticks` before it finishes. No new state: the points, the lock and the attack's clock.
+  The Hive Lens's Focus Beam is `lanes` with a lock (no new rule).
+- **v0.7.5 BF2 fix: readable patterns and their recap.** A pattern attack's telegraph is its cast for its whole
+  windup and firing (`BossDodge.cast_telegraph`: `{"shape": &"cast", "ground": false, "progress", "move", "look"}`;
+  a burst's landing disc until it lands, then the cast). Nothing is drawn on the ground; the avatar poses from it. So
+  every wave's shots come from a cast visible for at least the windup (>= `MIN_TELEGRAPH_TICKS`), which the
+  readable-cause check reads. A boss's fireball carries the attack that fired it (`ProjectileStore.cause`, filled
+  the first time a boss's fireball flies and hashed only then; -1 for others); a shot that kills the player sets
+  `World.killer_attack` to it, so the recap names that pattern, not the boss's attack at the time of death.
+
+## 10e. Enemy fireballs (v0.7.5 EF; owner N16, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md) "Normal enemies")
+
+Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds the rules.
+- **Who.** The Arc Caster's bolt and spread (a fan of 3 slow plasma balls, narrow and wide), the Lens Drone's attack
+  (a ring of 6 orbs; it still flies the Needle's walk) and the Bomb Drone's bomb (a lobbed fireball that bursts into an
+  X of 4). The Needle's burst, the Sniper's line, the melee kinds' attacks, the Arc Caster's rune, the Mine Layer and
+  the Mender are unchanged. Elites of the three kinds (the Ambush Cache, Marked) fire the same patterns: an elite is
+  its kind's AI.
+- **How.** `EnemyAi.pattern_of(w, i)` is the pattern in play (`EnemyTable.patterns`: the Arc Caster's by its spell,
+  the others' first; null otherwise). The windup aims as before (tracked, committing `ai_commit_ticks` before it
+  fires), led at the pattern's own speed; the Bomb Drone's landing is the player's exact position (no lead), tracked
+  the same way, its X turned to the throw (`lock_a`). In ACTIVE, `_resolve_pattern` (tick phase 6) fires each wave on
+  `BulletPatterns.wave_at` ticks through `BulletPatterns.fire` (the caps, no spawn on the player or in a wall, shots
+  stop at walls), from the body, or for the BURST from the landing point once it has flown `lob_ticks`, where the
+  landing itself hurts within `land_radius_m` (TAG_AREA). ACTIVE lasts until the pattern's last wave. No stream is
+  drawn by a pattern (the windup's length draw is the same as before).
+- **Damage and scaling.** Each fireball (and the landing) deals the attack's `damage` (RunState's per-floor and loop
+  scaling of `EnemyTable.damage`), powered by the danger tier and the hidden catch-up (`EnemyAi.powered`,
+  `ActorStore.power`), as every enemy hit.
+- **Nothing on the ground.** Their `telegraph()` is `{"shape": &"cast", "ground": false, "progress", "look"}` in the
+  windup and, for the Bomb Drone in the air, `{"shape": &"lob", "ground": false, "from", "to", "progress", "look"}`.
+  TelegraphViews draws no `ground: false` telegraph; the bodies' own windups (the caster's crystal, the drones' glow)
+  and FireballViews' lobbed ball are the cues. The readable-cause check counts the windup (the shots then fly
+  slowly on screen).
+- **Hashing.** No new state: the patterns use the actor's own clock and lock fields; the fireballs' look column
+  (§10d) fills the first time one flies. `tests/golden` is unchanged (its replays have no Arc Caster, Lens Drone or
+  Bomb Drone shot).
 - **v0.7.5 BF3: the board, the molten rows and the rain.** `grid`: the board's centre (BossStore point 0) tracks the
   player's exact position like any locked attack and holds at windup − lock; volley k strikes once at active tick
   k × `mark_gap_ticks` on the circles of `BossDodge.grid_discs(w, i, k)` (the cells whose (x + y) parity is k's,

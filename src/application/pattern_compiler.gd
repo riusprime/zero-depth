@@ -7,7 +7,8 @@ extends RefCounted
 
 ## v0.7.5 BF1: the tracked lock, the shield, the markers' spacing and the bullet pattern. A `marks` or `row_lanes`
 ## attack is active until its last marker strikes; a `pattern` attack for its pattern's whole duration (the data's
-## active_seconds is a floor under both).
+## active_seconds is a floor under both). v0.7.5 BF2: a `marks` attack with a pattern (eggs) until its last marker's
+## burst has fired; a `burrow` may name one too (its eruption's ring; BossAi times that from the eruption).
 static func compile_boss_attack(
 	def: BossAttackDefinition, repo: ContentRepository, t: BossAttackTable
 ) -> void:
@@ -26,6 +27,37 @@ static func compile_boss_attack(
 		if pd != null:
 			t.pattern = compile_pattern(pd)
 			t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
+			if t.move == BossAttackTable.Move.MARKS:  # v0.7.5 BF2: the last egg's burst, from its landing
+				t.active_ticks = maxi(
+					t.active_ticks,
+					(
+						(t.count - 1) * t.mark_gap_ticks
+						+ t.pattern.duration_ticks()
+						- t.pattern.lob_ticks
+					)
+				)
+
+
+## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc
+## Caster's bolt and spread fans, the Lens Drone's ring, the Bomb Drone's lobbed burst. A pattern attack is active
+## until its last wave (its pattern's duration; the data's active_seconds is a floor).
+static func compile_enemy_patterns(
+	def: EnemyDefinition, repo: ContentRepository, t: EnemyTable
+) -> void:
+	t.patterns.clear()
+	var any := false
+	for atk in def.attacks:
+		var pat: BulletPatternTable = null
+		if atk != null and atk.shape_params.has("pattern_id"):
+			var pd: BulletPatternDefinition = repo.get_def(
+				&"bullet_patterns", StringName(atk.shape_params["pattern_id"])
+			)
+			if pd != null:
+				pat = compile_pattern(pd)
+				any = true
+		t.patterns.append(pat)
+	if not any:
+		t.patterns.clear()
 
 
 ## v0.7.5 BF1: a bullet pattern in sim units (BulletPatterns fires it).

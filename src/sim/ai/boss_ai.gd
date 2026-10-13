@@ -18,6 +18,9 @@ extends RefCounted
 ## exact position, lock for the attack's lock_ticks and strike (mark_of, row_lanes_of); any aimed attack with a lock
 ## tracks the exact position the same way (no lead) and its telegraph says when it locked; a shielded attack (the
 ## signature pattern) keeps the boss shielded while it runs (BossDodge: hits spark off, Damage).
+## v0.7.5 BF2: a burrow with a lock lays its eruption circle on the player's exact position while it tracks, locks it,
+## burrows to it and may burst a ring of shots from it; a `marks` attack with a pattern bursts it from each circle
+## as it strikes (eggs; BossDodge.burst_mark).
 ## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
 ## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
 
@@ -133,6 +136,8 @@ static func think(w: World, i: int) -> void:
 				a.fire_cd[i] = 0
 				if atk.move == M.LEAP or atk.move == M.BURROW:
 					a.invuln[i] = maxi(a.invuln[i], 2)
+				if BossDodge.tracked_burrow(atk):  # v0.7.5 BF2: its eruption circle starts on you
+					bs.set_pt(b, 0, w.player_pos())
 		S.ACTIVE:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: the later markers keep tracking
@@ -167,17 +172,21 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 		M.BURROW:
 			if bs.step[b] < 2:
 				a.invuln[i] = maxi(a.invuln[i], 2)  # underground
+			var tracked := BossDodge.tracked_burrow(atk)
+			if tracked and bs.step[b] == 0 and not w.player_dead():
+				bs.set_pt(b, 0, w.player_pos())  # v0.7.5 BF2: the eruption circle is on you
 			if bs.step[b] == 0 and a.state_t[i] >= atk.track_ticks:
 				bs.step[b] = 1
 				a.state_t[i] = 0
-				a.lock_x[i] = a.pos_x[i]
-				a.lock_y[i] = a.pos_y[i]
+				var at := bs.pt(b, 0) if tracked else a.pos(i)
+				a.lock_x[i] = at.x
+				a.lock_y[i] = at.y
 			elif bs.step[b] == 1 and a.state_t[i] >= atk.erupt_ticks:
 				bs.step[b] = 2
 				a.state_t[i] = 0
 				a.invuln[i] = 0
-			elif bs.step[b] == 2:
-				_finish(w, i, b, atk)
+			elif bs.step[b] == 2 and a.state_t[i] >= BossDodge.eruption_ticks(atk):
+				_finish(w, i, b, atk)  # v0.7.5 BF2: after its eruption's burst
 		M.RAIL:
 			a.facing[i] = rail_angle(w, i, mini(a.state_t[i] + 1, atk.active_ticks)) & 4095
 			if a.state_t[i] >= atk.active_ticks:
@@ -420,7 +429,13 @@ static func move(w: World, i: int) -> void:
 					var f := minf(1.0, float(a.state_t[i] + 1) / atk.active_ticks)
 					a.set_pos(i, from + (leap_disc(w, i)[0] - from) * f)
 				M.BURROW:
-					if w.bosses.step[entry_of(w, i)] == 0 and not w.player_dead():
+					var step := w.bosses.step[entry_of(w, i)]
+					if step == 1 and BossDodge.tracked_burrow(atk):  # v0.7.5 BF2: to its locked eruption
+						var to := Vector2(a.lock_x[i], a.lock_y[i]) - at
+						var dist := Kin.length(to)
+						if dist > 0.0001:
+							a.set_pos(i, at + to * (minf(atk.speed * slow, dist) / dist))
+					elif step == 0 and not w.player_dead():
 						var to := w.player_pos() - at
 						var dist := Kin.length(to)
 						if dist > 0.0001:
@@ -491,6 +506,8 @@ static func resolve(w: World, i: int) -> void:
 			var d := burrow_disc(w, i)
 			if w.bosses.step[b] == 2 and st == 0 and AttackShapes.disc_touches(d[0], d[1], p, pr):
 				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+			if w.bosses.step[b] == 2:  # v0.7.5 BF2: its ring of globs bursts out of the eruption
+				BossDodge.burst_eruption(w, i, atk, d[0], st)
 		M.BROOD, M.DEPLOY, M.BARRAGE:
 			if st == 0:
 				var spots := spots_of(w, i)
@@ -738,7 +755,7 @@ static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 ## marker moves draw &"marks": "items", one {"shape" (&"disc" with center and radius, or &"lanes" with obbs),
 ## "locked", "progress"} per marker showing now; a burst pattern draws its landing &"disc" (tracked, then locked)
 ## and, while its shell flies, "lob" {from, to, progress}. Other patterns draw nothing on the ground (owner: "Shots
-## draw no line on the ground"); their shots are the readable cause.
+## draw no line on the ground"): v0.7.5 BF2: their windup and firing are a &"cast" with "ground": false (BossDodge).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -784,6 +801,27 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				progress = 1000
 				windup = true
 		M.BURROW:
+			if not windup and BossDodge.tracked_burrow(atk) and w.bosses.step[b] < 2:
+				# v0.7.5 BF2: the eruption circle on the player (dull), then locked where it will erupt.
+				var tracking_now := w.bosses.step[b] == 0
+				return {
+					"shape": &"disc",
+					"center": w.bosses.pt(b, 0) if tracking_now else burrow_disc(w, i)[0],
+					"radius": atk.radius_m,
+					"progress":
+					clampi(
+						(
+							a.state_t[i]
+							* 1000
+							/ maxi(1, atk.track_ticks if tracking_now else atk.erupt_ticks)
+						),
+						0,
+						1000
+					),
+					"move": atk.move,
+					"tracked": true,
+					"locked": not tracking_now
+				}
 			if windup or w.bosses.step[b] == 0:
 				return {
 					"shape": &"ripple",

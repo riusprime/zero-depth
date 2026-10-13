@@ -119,7 +119,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		ascension = AscensionPortal.new()
 		add_child(ascension)
 		ascension.setup(reader.portal_pos(), reader.portal_angle())
-	elif reader.has_floor():
+	elif reader.has_gate():  # v0.7.5 PG: not in the Playground's room (a floor without a gate)
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
