@@ -173,7 +173,14 @@ swings open on the weak point), two chimneys glowing inside, glowing side vents,
 four short heavy legs. Their flood telegraphs stand drawn while active: the Warlord's as a row of spear heads down
 each lane, the Foundry's as a hot orange core with cross bars. Every body piece is outlined and flashable
 (`ActorViews.flashable`); glows change energy only. A model file `assets/models/bosses/<warlord|hive_lens|foundry>.glb`
-replaces a code body (whole-body motion until rigged). v0.5.5 LK (A6): the model request in the new style, with an image
+replaces a code body. **v0.7.5 BM: the owner's three models are installed** (`assets/models/bosses/warlord.glb`,
+`hive_lens.glb`, `foundry.glb`, textures as delivered): the Warlord and the Hive Lens keep the owner's own rigs and
+are animated in code from their bones (the Warlord's walk, shield, spear moves, lunge, flinch, stagger and death
+fall; the Hive Lens's bob, roll and crown spin, tails swaying with a lag, its eye turning to the player, open and
+closed poses, split and dive), and the Foundry's single mesh is cut into four legs and its body in code (`BossRig`)
+for its step cycle and moves, with a warm light in its grate. The code bodies stay as the fallback when a file is
+missing. **Every boss is drawn 1.3× its earlier height** (owner N18, `BossModels.SIZE_SCALE`). The Lens Drone
+stays code-built. v0.5.5 LK (A6): the model request in the new style, with an image
 prompt and a 3D model prompt per boss, is [`requests/v0.5.5_bosses_2_models.md`](requests/v0.5.5_bosses_2_models.md). Its v0.7.5 update (the Embers light, the crystal-shard parts, biome-tinted greys) is
 [`requests/v0.7.5_bosses_2_models.md`](requests/v0.7.5_bosses_2_models.md).
 

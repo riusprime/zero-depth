@@ -26,6 +26,12 @@ const SPECS := {
 	&"foundry": {"yaw": 0.0, "height": 2.6},
 }
 
+## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss
+## draws this much bigger than its SPECS height. The one place the scale lives: BossAvatar scales its whole model
+## node by it (the owner's model or the code-built fallback, the weak point's core, the Hive Lens's hover, the
+## anchors), so SPECS keep the heights the renders were measured at.
+const SIZE_SCALE := 1.3
+
 ## Where models are looked up (tests point it elsewhere to see the fallback).
 static var dir := DIR
 static var _cache := {}

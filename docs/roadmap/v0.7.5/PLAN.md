@@ -38,10 +38,11 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N11 | "we're gonna reduce the amount of challenge rooms … like 20% less" | Challenge rooms (the sealed arenas and Overrun rooms): **20 % fewer**. MG: counted per floor; arena share 0.33 → 0.11; 3.23 → 2.42 a floor (−25 %) on the bigger floors | Done (MG) | MG |
 | N12 | "the shop is also gonna be there every two … floors" | **The shop appears every two floors**. MG (lead's reading): floors 1, 3, 5 … (a 3-floor run has two), by the run's floor number (`data/shop`: first floor 1, every 2) | Done (MG) | MG |
 | N13 | "I'll keep balancing the game while playing with the menu" | The owner balances v0.7.0 with the F10 dev panel; v0.7.5 doesn't retune numbers the owner is tuning. Values the owner sends ("Copy changes") are applied as data when they arrive | Decided | — |
-| N14 | "Warlord and Hive lens are rigged so you can animate, you will have to slice foundry's legs for animations" (with the three models) | The owner's Warlord, Hive Lens and Foundry models replace the code bodies; Warlord and Hive Lens animated in code from their bones; Foundry's legs cut into parts in code | Decided | BM |
+| N14 | "Warlord and Hive lens are rigged so you can animate, you will have to slice foundry's legs for animations" (with the three models) | The owner's Warlord, Hive Lens and Foundry models replace the code bodies; Warlord and Hive Lens animated in code from their bones; Foundry's legs cut into parts in code | Done (BM) | BM |
 | N15 | "change how boss fights are, they will have more HP, and their attacks will be most oriented in dodging … tdlr: slower fights, centered around dodging spells, and make each fight different for each boss" (verbatim in [`../../design/BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md)) | Picks: "About 1.5×"; "Track, then lock 0.8 s"; "Shielded during big patterns". Per-boss design in BOSS_FIGHTS.md (G1 for the owner) | Design (G1) | BF |
 | N16 | "All normal enemies, besides the turrets and snipers should change into this kind of attacks, not bullets going fast but slower attacks, make them look like fireballs, but different for each enemy/boss, and the ones that change don't have the trayectory drawn in the ground anymore, only the turrets, the melee enemies keep the red thingy" | Arc Caster, Lens Drone and Bomb Drone fire slow fireball patterns with no ground line; Needle and Sniper unchanged; melee telegraphs unchanged (BOSS_FIGHTS.md "Normal enemies") | Design (G1) | EF |
 | N17 | "there is a branch claude/sharp-lovelace-74ii7v that you should start from, because we fixed some code bugs from there" | The audit branch (79 commits of v0.7.0 fixes) merged into this branch, both kept (`01c1e2f`) | Done | — |
+| N18 | "Bosses could be a bit bigger so we could see the model better" | Every boss about 1.3× its in-game height: the drawn body (model or fallback, its core and anchors) in BM (`BossModels.SIZE_SCALE`); the sim radius ×1.3 and the 4×4 boss rooms in BF1 (`data/bosses`) | Done (BM's part) | BM, BF1 |
 
 ## Steps
 | Step | Scope | Rows | Status |
@@ -53,7 +54,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
-| BM | The owner's Warlord, Hive Lens and Foundry models in game, animated | N14 | |
+| BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
@@ -132,6 +133,32 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 - **Achievements hook (AC):** through the Codex store's counter API (`Main.codex`): page `runs`, entry `ascended`,
   counter `times` (+1 per Ascend) and entry `loop`, counter `best` (the highest loop reached). A tweaked run records
   nothing. "runs" is not a Codex page you browse (CodexStore.PAGES is unchanged).
+
+### BM: the owner's three boss models (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **Installed as the first three were:** `assets/models/bosses/{warlord,hive_lens,foundry}.glb`, the textures the
+  import extracted (kept as delivered), manifest rows with sha256. Each faces +X as delivered (yaw 0, from the raw
+  renders, `scripts/shots/boss_models.gd mode=raw`).
+- **Sizes (SPECS, before N18's scale):** Warlord 2.7 m to its spear's tip; Hive Lens 1.9 m across its two side pods
+  (2.08 m tall), its sphere's centre 1.75 m up (read "1.9 m across" as the model's whole width, which is also the sim
+  body's 2 m: the sphere alone at 1.9 m would put the cable tails under the floor); Foundry 2.6 m. N18 then draws
+  every boss 1.3× (`BossModels.SIZE_SCALE`, the one place): Warlord 3.5 m, Hive Lens 2.5 m across with its centre
+  2.3 m up, Foundry 3.4 m, Sentinel 3.8 m, Queen 3.1 m, Turret 3.25 m.
+- **Rigged models kept as delivered:** the Warlord's 41 and the Hive Lens's 23 Tripo joints and skins are instanced
+  as they are, under a node that turns, scales and lifts them; poses go through `BonePoser`, turns in the model frame
+  whatever the bones' own axes. The Foundry is one mesh: `BossRig` cuts four legs (below the belly, outside its
+  middle in x and z, blended over a hip band) and the body.
+- **Poses, one function per layer** (idle, walk, attack moves, guard/open, flinch, stagger, death), from the read
+  state the code bodies used plus three reads: the HP (a drop flinches), the player's bearing (the Hive Lens's eye
+  turns to it) and the facing (the local velocity the tails trail). **A `shielded` hook** (`apply_state`'s
+  "shielded", not read from the sim yet) poses each: the Warlord braced behind its shield, the Hive Lens closed (the
+  crown folds over the eye, the tails curl), the Foundry hunkered; BF reads the sim's shield into it.
+- **The Warlord falls when it dies:** the sim removes a boss the tick it dies, so `ActorViews` keeps the Warlord's
+  node 1.6 s for its fall (`BossAvatar.die()`), then frees it; the others go at once as before.
+- **Anchors:** `BossAvatar.anchor(name)` gives points on the posed body (the core; the Warlord's spear tip and
+  shield; the Hive Lens's eye; the Foundry's door, chimneys and launcher) for BF's markers and fireballs. The code
+  bodies had no telegraph anchors before; telegraphs are still drawn from the sim.
+- **Reduced motion:** the Hive Lens's idle roll, crown spin and tail sway stop (the existing boss avatars had no
+  reduced-motion handling); the moves still pose.
 
 ### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).

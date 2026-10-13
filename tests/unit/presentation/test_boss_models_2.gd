@@ -396,3 +396,30 @@ func test_anchors_name_points_on_each_body() -> void:
 	var f := _avatar(FoundryAvatar)
 	assert_gt(f.anchor(&"door").x, 0.7, "the Foundry's door in front")
 	assert_gt(f.anchor(&"chimney_l").y, 2.2, "its chimneys on top")
+
+
+func test_every_boss_draws_at_the_bigger_scale() -> void:
+	# v0.7.5 BM (owner N18): one scale for all six bosses, model or fallback, core and anchors with it.
+	assert_eq(BossModels.SIZE_SCALE, 1.3)
+	var all := [
+		GatekeeperAvatar,
+		BroodMotherAvatar,
+		SiegeEngineAvatar,
+		WarlordAvatar,
+		HiveLensAvatar,
+		FoundryAvatar,
+	]
+	for cls in all:
+		var a := _avatar(cls)
+		assert_eq(a.model.scale, Vector3.ONE * 1.3, "%s at 1.3x" % a.model_id())
+		assert_true(a.model.is_ancestor_of(a.weak_core), "its core scales with it")
+	var w := _avatar(WarlordAvatar)
+	_drive(w, {"state": WorldReader.STATE_MOVE}, 5)
+	assert_gt(w.anchor(&"spear_tip").y, 2.7 * 1.2, "the spear's tip at the bigger height")
+	var h := _avatar(HiveLensAvatar)
+	_drive(h, {"state": WorldReader.STATE_MOVE}, 5)
+	assert_gt(
+		h.anchor(&"eye").y, HiveLensAvatar.HOVER_Y * 1.2, "it floats higher, clear of the hero"
+	)
+	BossModels.dir = "res://tests/no_such_models/"
+	assert_eq(_avatar(WarlordAvatar).model.scale, Vector3.ONE * 1.3, "the fallback too")

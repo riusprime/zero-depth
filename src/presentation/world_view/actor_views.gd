@@ -417,7 +417,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			boss.setup(outline_color, technique)
 			facing.add_child(boss)
-			height = 2.6
+			height = 2.6 * BossModels.SIZE_SCALE
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())

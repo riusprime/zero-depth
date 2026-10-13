@@ -102,6 +102,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	parts = BossParts.new(outline_color, technique)
 	model.name = "Model"
+	model.scale = Vector3.ONE * BossModels.SIZE_SCALE  # v0.7.5 BM (owner N18): every boss 1.3x
 	add_child(model)
 	_build_body()
 	body_materials = parts.body_materials
