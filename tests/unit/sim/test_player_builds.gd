@@ -213,17 +213,35 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 	assert_eq(
 		blade,
 		[
+			"blade_orbit",  # v0.6.5 WN4: the Blade pool B1–B16 (WAND.md) is Blade-only
 			"bulwark",
+			"chain_cut",
 			"conductor",
+			"counter",
+			"double_slash",
 			"echo_slash",  # v0.6.0 MX4: Echo Slash and its legendary need the Blade's arcs
 			"echo_storm",
 			"ember_edge",
+			"finisher_plus",
+			"fissure",
+			"flurry",
 			"glacial_edge",
+			"heavy",
 			"long_edge",
+			"long_shadow",
+			"lunge_step",
 			"momentum",
 			"overcharge",
+			"parry_edge",
+			"rearguard",  # v0.6.5 WN3: on the Gun, G15 Backfire / G14 Echo / G8 Homing do their job
+			"seeker",
 			"serrated_edge",
-			"twin_arc"
+			"split_wave",
+			"thrust",
+			"twin_arc",
+			"twin_cast",
+			"whirl",
+			"wide_arc",
 		]
 	)
 	assert_eq(
@@ -231,11 +249,27 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		[
 			"barbed_bolts",
 			"bomb_rounds",  # v0.6.0 MX4: every 5th shot (M3 Frost Core left: it is every attack's now)
+			"boomerang",  # v0.6.5 WN3: the Gun pool G1–G16 (G9, G10, G5, G16 keep their v0.6 ids)
 			"cinder_shot",
+			"gun_backfire",
+			"gun_big_shot",
+			"gun_charge",
+			"gun_echo",
+			"gun_homing",
+			"gun_mine",
+			"gun_pierce",
+			"gun_rapid_fire",
+			"gun_ricochet",
+			"gun_spiral",
+			"gun_spread",
+			"gun_twin",
+			"halo_shot",
+			"orbit_rounds",
 			"rapid_coil",
 			"ricochet_core",
 			"splinter_shot",
-			"static_chain"
+			"split_shot",
+			"static_chain",
 		]
 	)
 

@@ -213,13 +213,16 @@ func test_m13_rearguard_fires_back_at_sixty_percent() -> void:
 	assert_gt(hit.size(), 0, "the enemy behind is hit")
 
 
+## v0.6.5 WN4: Wide Arc is the Blade pool's B1 (WAND.md): +60° and +30 % reach on the slash, the Gun untouched
+## (test_wand_blade.gd has its fight).
 func test_m14_wide_arc_widens_arcs_and_grows_projectiles() -> void:
 	var plain := W.world(&"blade")
 	var w := W.world(&"blade", [&"wide_arc"])
 	var a := Modifiers.step(plain, 0)
 	var b := Modifiers.step(w, 0)
-	assert_eq(b.half_arc - a.half_arc, ContentCompiler.degrees_to_units(20.0), "+40° wide")
-	assert_almost_eq(Modifiers.bolt(w).radius_m, Modifiers.bolt(plain).radius_m * 1.3, 1e-5)
+	assert_eq(b.half_arc - a.half_arc, ContentCompiler.degrees_to_units(30.0), "+60° wide")
+	assert_eq(b.reach_bonus_permille, 300, "+30 % reach")
+	assert_almost_eq(Modifiers.bolt(w).radius_m, Modifiers.bolt(plain).radius_m, 1e-5, "Blade-only")
 
 
 func test_m15_gravity_well_pulls_enemies_toward_the_hit() -> void:

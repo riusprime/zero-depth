@@ -33,6 +33,11 @@ const FORM_NAMES: Array[StringName] = [
 	&"arc", &"bolt", &"ring", &"beam", &"zone", &"orbiter", &"lob", &"burst"
 ]
 
+## v0.6.5 WN5a: AttackSpec.Trigger.ON_END (a test pins it), and the sigil a trigger's cast flashes where it fires (a
+## pale gold, never a telegraph hue: the trigger cards' own colour, the cut on the Build page).
+const TRIGGER_ON_END := 3
+const CAST_SIGIL := Color("#FFE6A0")
+
 ## `directions` in a spec (MX stage 2+ may carry it as one of these ints or names; absent = forward).
 const DIR_FORWARD := 0
 const DIR_BACK := 1
@@ -162,8 +167,21 @@ static func particles_of(elements: Array) -> Array:
 
 
 ## Behaviour → motion cues: &"streak" (pierce), &"bounce_flash" (bounces), &"curve" (home), &"tether" (return).
+## v0.6.5 WN3 (the Gun pool): &"twin" (side by side), &"helix" (a corkscrew: the live trail shows the path), &"mine"
+## (a waiting mine's ground ring), &"swell" (a charging shot's orb in the barrel).
+## v0.6.5 WN4 (the Blade pool): &"crescent" (a flying slash: a bolt with an arc's width; BladeFormView bows it),
+## &"spin" (an arc all round: Whirl), &"stab" (a thrust's motion), &"cut" (Parry Edge).
 static func cues_of(spec: Dictionary) -> Array[StringName]:
 	var out: Array[StringName] = []
+	var form := int(spec.get("form", -1))
+	if form == BOLT and int(spec.get("half_arc", 0)) > 0:
+		out.append(&"crescent")
+	if form == ARC and directions_of(spec) == DIR_CIRCLE:
+		out.append(&"spin")
+	if form == ARC and int(spec.get("motion", -1)) == WorldReader.MOTION_THRUST:
+		out.append(&"stab")
+	if form == ARC and int(spec.get("parry", 0)) > 0:
+		out.append(&"cut")
 	if int(spec.get("pierce", 0)) > 0:
 		out.append(&"streak")
 	if int(spec.get("bounces", 0)) > 0:
@@ -172,7 +190,26 @@ static func cues_of(spec: Dictionary) -> Array[StringName]:
 		out.append(&"curve")
 	if bool(spec.get("return", false)):
 		out.append(&"tether")
+	for cue: Array in [["twin", &"twin"], ["spiral", &"helix"], ["mine_ticks", &"mine"]]:
+		if int(spec.get(cue[0], 0)) > 0:
+			out.append(cue[1])
+	if int(spec.get("hold_ticks", 0)) > 0:
+		out.append(&"swell")
+	_wand_cues(spec, out)  # v0.6.5 WN5a
 	return out
+
+
+## v0.6.5 WN5a (WAND.md, the shared pool and the triggers): &"cast" (a trigger's child spell: its own small spell,
+## AttackFormView marks where it is cast with a sigil) and &"blast" (the spell explodes where it ends: an ON_END
+## burst, S7 Explosive).
+static func _wand_cues(spec: Dictionary, out: Array[StringName]) -> void:
+	if Array(spec.get("tags", [])).has("cast"):
+		out.append(&"cast")
+	for h: Dictionary in spec.get("hooks", []):
+		var c: Dictionary = h.get("child", {})
+		if int(h.get("trigger", -1)) == TRIGGER_ON_END and int(c.get("form", -1)) == BURST:
+			out.append(&"blast")
+			return
 
 
 ## The damage multiplier the spec carries (damage_mul_permille, 1000 = none; a stat card's mul(damage)).

@@ -345,7 +345,9 @@ func test_all_24_items_for_5000_ticks_raise_no_limit_and_repeat_exactly() -> voi
 		)
 	)
 	assert_eq(watchdog.size(), 0, "no chain hit the watchdog")
-	assert_lt(a[2], 256, "well under the per-tick watchdog (T-FUZZ's stricter bound)")
+	# Every card at once (91 since v0.6.5) is past any real wand; owner 2026-10-12 accepted its peak (385) under the
+	# real watchdog. T-FUZZ keeps its stricter 256 for real-sized builds.
+	assert_lt(a[2], Engines.MAX_EVENTS_PER_TICK, "under the per-tick watchdog")
 	assert_gt(w.kills, 20, "it really fought")
 	for fx: StringName in [&"shock_discharge", &"bleed", &"freeze", &"plasma_arc", &"resonance"]:
 		var n := 0

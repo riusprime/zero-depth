@@ -57,6 +57,7 @@ var cores := CoreViews.new()  # v0.6.0 CU: cores on elites and bosses, the steal
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
 var attack_forms := AttackFormView.new()
 var modifier_marks := ModifierOverlays.new()  # v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks
+var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -102,9 +103,11 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		add_child(layer)
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
+		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
+	add_child(blade_forms)  # v0.6.5 WN4
 	if reader.has_floor():
 		gate = PortalGate.new()
 		add_child(gate)
@@ -172,6 +175,7 @@ func sync() -> void:
 	cores.sync(reader)  # v0.6.0 CU
 	attack_forms.sync(reader)  # v0.6.0 MX3
 	modifier_marks.sync(reader)  # v0.6.0 MX4
+	blade_forms.sync(reader)  # v0.6.5 WN4
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
@@ -200,3 +204,15 @@ func sync() -> void:
 		)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
+
+
+## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in
+## StageKit.
+func _draw_prop_fires(layer: VfxCore) -> void:
+	if stage == null or stage.kit == null:
+		return
+	var fx := layer as VfxLayer
+	for k in stage.kit.lights.size():
+		var l := stage.kit.lights[k]
+		if is_instance_valid(l) and l.is_inside_tree():
+			fx.prop_fire(l.global_position - Vector3(0, 0.36, 0), k * 7919 + 13)

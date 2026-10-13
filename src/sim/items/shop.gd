@@ -191,7 +191,7 @@ static func can_apply(w: World, code: int) -> bool:
 			return Abilities.can_take(w, Offers.ability_of(code))
 		Offers.STAT:
 			return not Stats.at_cap(w, Offers.stat_of(code))
-	return not w.items_owned.has(code) and ItemPool.usable(w, code)
+	return CardLevels.can_take(w, code) and ItemPool.usable(w, code)  # v0.6.5 WN3: a level-up
 
 
 # --- Actions -----------------------------------------------------------------------------------------------------

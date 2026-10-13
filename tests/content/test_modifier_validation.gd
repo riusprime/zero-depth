@@ -16,10 +16,13 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		51,
+		84,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
-			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage"
+			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
+			+ " v0.6.5 WN3: the Gun pool's 12 new; WN4: the Blade pool's 12 new cards (B3–B11, B13, B14,"
+			+ " B16); WN5a: the shared pool's 2 new (S5 Bleed, S7 Explosive); v0.6.5 WN5b: the 3 legendary"
+			+ " triggers (On Hit, On Kill, On End ×2)"
 		)
 	)
 	assert_true(
@@ -96,7 +99,10 @@ func test_bad_modifiers_are_rejected() -> void:
 	assert_has(_codes(h), &"not_positive", "a burst hook needs a radius")
 	h = oc.duplicate(true)
 	h.ops[2].form = ModifierOpDefinition.Form.ORBITER
-	assert_has(_codes(h), &"range", "MX1 hooks spawn bursts and beams")
+	assert_has(_codes(h), &"not_positive", "v0.6.5 WN4: an orbiter hook needs its orbit's reach")
+	h = oc.duplicate(true)
+	h.ops[2].form = 99 as ModifierOpDefinition.Form
+	assert_has(_codes(h), &"range", "a hook spawns one of the forms")
 
 
 ## v0.6.0 MX4: the new hook parts (EVERY_NTH's count, a delay, the condition, the child's ops) are checked too.
@@ -139,3 +145,34 @@ func test_mx4_values_convert() -> void:
 	assert_eq(split.ops[0].child_ops.size(), 2, "the child's count and spread")
 	var fuse: ModifierTable = by_id[&"short_fuse"]
 	assert_eq([fuse.ops[0].field, fuse.ops[0].value], [&"range", 600.0])
+
+
+## v0.6.5 WN3: the Gun pool's new fields convert like the rest, a level's step converts in the same units, and a
+## level only grows a number or a hook's damage share.
+func test_wn3_values_and_levels_convert() -> void:
+	var by_id := {}
+	for t in ModifierCompiler.compile_modifiers(_repo()):
+		by_id[t.id] = t
+	var mine: ModifierTable = by_id[&"gun_mine"]
+	assert_eq(
+		[mine.ops[0].field, mine.ops[0].value, mine.ops[0].per_level], [&"mine_ticks", 180.0, 30.0]
+	)
+	assert_eq(mine.ops[1].per_level, 100.0, "the blast's share +100 ‰ a level")
+	var spiral: ModifierTable = by_id[&"gun_spiral"]
+	assert_eq([spiral.ops[0].field, spiral.ops[0].value], [&"spiral", 398.0], "35° in 1/4096 turns")
+	var charge: ModifierTable = by_id[&"gun_charge"]
+	assert_eq([charge.ops[0].field, charge.ops[0].value], [&"hold_ticks", 60.0], "1 s")
+	var spread: ModifierTable = by_id[&"gun_spread"]
+	assert_eq(
+		spread.ops[1].per_level, float(ContentCompiler.degrees_to_units(40.0) - 341), "+10° a level"
+	)
+	var at3 := mine.at(3)
+	assert_eq([at3.ops[0].value, at3.ops[1].damage_permille], [240.0, 1200], "level 3")
+	assert_eq(mine.at(1), mine, "level 1 is the card itself")
+	var bad := (load("res://data/modifiers/gun_spiral.tres") as ModifierDefinition).duplicate(true)
+	bad.ops[0].op = ModifierOpDefinition.Op.ELEMENT
+	bad.ops[0].stage = 3
+	bad.ops[0].element = &"storm"
+	assert_does_not_have(_codes(bad), &"range", "a plain element op is fine")
+	bad.ops[0].per_level = 1.0
+	assert_has(_codes(bad), &"range", "an element doesn't level")

@@ -6,9 +6,11 @@ extends RefCounted
 ## World.attack_book and its digest is hashed.
 ##
 ## The build's modifiers are the modifier slots' (World.mod_slots, v0.6.0 MX2: an item's ItemTable.modifiers, an
-## ability's AbilityTable.modifiers), in slot order (the pick order). Each base spec (the Blade's combo steps, the
-## Gun's bolt, the Skill, MX2 each held ability modifier's attack) goes through every modifier stage by stage (FORM,
-## PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE); inside a stage, modifiers in pick order and each one's ops in order.
+## ability's AbilityTable.modifiers), in slot order (v0.6.5 WN1: the wand's order, which the player rearranges). Each
+## base spec (the Blade's combo steps, the Gun's bolt, the Skill, MX2 each held ability modifier's attack) is
+## rewritten by the cards left to right (WandCompile: each card changes the spell built so far, a trigger card ends it
+## and the cards to its right build the child spell it casts); v0.6.0's fixed stage sort across cards is gone (inside
+## one card its ops still run in stage order).
 ##
 ## v0.6.0 MX2, the ability modifiers carry the build (owner B7: "each carries your other modifiers"): after its own
 ## compile, an ability's spec takes the weapon's statuses (not the riders), elements and ON_HIT / ON_KILL hooks
@@ -19,9 +21,9 @@ extends RefCounted
 ## (no randomness here: EI-05).
 ##
 ## Rules (design §2): numeric ops change one field (SET, ADD, MAX, MIN, MUL_PERMILLE); SET_FORM changes the form (a
-## later form op layers: MX1 has none, the rule lands with the first form cards); STATUS sets a status the spec's hits
-## feed; ELEMENT adds an element the view draws (stacking, no repeats); HOOK adds a child attack, itself compiled
-## through every modifier at depth + 1 (none below MAX_DEPTH, so compiling always ends).
+## later form op layers); STATUS sets a status the spec's hits feed; ELEMENT adds an element the view draws
+## (stacking, no repeats); HOOK adds a child attack at depth + 1, compiled by its own card and the cards to its right
+## (v0.6.5 WN1; none below MAX_DEPTH, so compiling always ends).
 ##
 ## Riders (the v0.5 rules kept exact): a Blade step's hits burn whenever the burn engine runs (Wildfire or Flame
 ## Trail with no Ember Edge did that before MX1), and the bolt's hits slow whenever the slow runs (Glacial Edge or
@@ -95,7 +97,9 @@ static func build_modifiers(w: World) -> Array[ModifierTable]:
 			if idx < w.ability_tables.size():
 				out.append_array(w.ability_tables[idx].modifiers)
 		elif code < w.item_tables.size():
-			out.append_array(w.item_tables[code].modifiers)
+			var lvl := CardLevels.level(w, code)  # v0.6.5 WN3: a wand card at its level
+			for m in w.item_tables[code].modifiers:
+				out.append(m.at(lvl))
 	return out
 
 
@@ -157,16 +161,17 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 	var b := AttackBook.new()
 	for m in mods:
 		b.modifier_ids.append(String(m.id))
+	var wand := WandCompile.for_world(w, mods)  # v0.6.5 WN1: slot order, triggers cut the wand
 	for k in w.player.combo.size():
-		b.add(compile_spec(_base_step(w, k), mods))
-	b.add(compile_spec(_base_bolt(w), mods))
+		b.add(BladeForms.settle(wand.spec(base_step(w, k))))  # v0.6.5 WN4: Finisher+'s carry
+	b.add(wand.spec(base_bolt(w)))
 	var sk := _base_skill(w)
 	if sk != null:
-		b.add(compile_spec(sk, mods))
+		b.add(wand.spec(sk))
 	for id: StringName in [DASH, MOVE, BLINK, BODY]:  # v0.6.0 MX4: the moments
-		b.add(compile_spec(_base_moment(id), mods))
+		b.add(wand.spec(_base_moment(id)))
 	if w.heat != null:  # v0.6.0 MX4: Vent's blast
-		b.add(compile_spec(_base_vent(w), mods))
+		b.add(wand.spec(_base_vent(w)))
 	_riders(w, b)
 	var root := _weapon_root(w, b)
 	for idx in w.ability_owned:  # v0.6.0 MX2: the ability modifiers' attacks, carrying the weapon's
@@ -174,7 +179,7 @@ static func compile_for(w: World, mods: Array[ModifierTable]) -> AttackBook:
 		var base := _base_ability(w, t, Abilities.level_of(w, idx))
 		if base == null:
 			continue
-		var s := compile_spec(base, mods)
+		var s := wand.spec(base)
 		inherit(s, root, t.kind == AbilityTable.Kind.DRONE_BUDDY)
 		SpecForms.mirror(s, root)  # v0.6.0 MX4: Mirror Drone, Blade Orbit
 		b.add(s)
@@ -311,48 +316,17 @@ static func _base_vent(w: World) -> AttackSpec:
 	return s
 
 
-## `base` rewritten by `mods` in the stage order from `first_stage` on (a fresh spec; `base` is not written).
-static func compile_spec(
-	base: AttackSpec, mods: Array[ModifierTable], first_stage: int = 0
-) -> AttackSpec:
-	var s := base.copy()
-	var moment := s.has_tag(TAG_MOMENT)
-	for stage in range(first_stage, ModifierTable.STAGE_COUNT):
-		for m in mods:
-			if not s.matches(m.target) or (moment and m.target.is_empty()):
-				continue
-			var applied := false
-			for op in m.ops:
-				if op.stage == stage:
-					_apply(s, m, op, mods)
-					applied = true
-			if applied and not s.modifier_ids.has(String(m.id)):
-				s.modifier_ids.append(String(m.id))
-	SpecForms.settle(s)
-	return s
+## `base` rewritten by `mods` in slot order (v0.6.5 WN1: WandCompile, left to right; a fresh spec, `base` is not
+## written). Without a world a trigger card still ends the spell but casts nothing (no basic attack to copy).
+static func compile_spec(base: AttackSpec, mods: Array[ModifierTable]) -> AttackSpec:
+	var c := WandCompile.new()
+	c.mods = mods
+	return c.spec(base)
 
 
-static func _apply(
-	s: AttackSpec, m: ModifierTable, op: ModifierOp, mods: Array[ModifierTable]
-) -> void:
-	match op.op:
-		ModifierOp.Op.SET_FORM:
-			if s.form_layers == 0:
-				SpecForms.change_form(s, op.form)  # v0.6.0 MX4: keeps its range
-				s.form_layers = 1
-			elif s.depth < MAX_DEPTH:
-				s.hooks.append(_layer(s, m, op, mods))
-				s.form_layers += 1
-		ModifierOp.Op.STATUS:
-			s.set_status(op.status, op.stacks, op.every)
-		ModifierOp.Op.ELEMENT:
-			if not s.elements.has(String(op.element)):
-				s.elements.append(String(op.element))
-		ModifierOp.Op.HOOK:
-			if s.depth < MAX_DEPTH and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
-				s.hooks.append(_hook(s, m, op, mods))
-		_:
-			_numeric(s, op)
+## One numeric op on `s` (SET, ADD, MAX, MIN, MUL_PERMILLE on an AttackSpec field, or the virtual `range`).
+static func numeric(s: AttackSpec, op: ModifierOp) -> void:
+	_numeric(s, op)
 
 
 static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
@@ -394,80 +368,47 @@ static func _numeric(s: AttackSpec, op: ModifierOp) -> void:
 	s.set(op.field, c)
 
 
-## The hook `op` of modifier `m` adds to `s`: its child spec, compiled through every modifier one level deeper.
-static func _hook(
-	s: AttackSpec, m: ModifierTable, op: ModifierOp, mods: Array[ModifierTable]
-) -> AttackHook:
-	var c := AttackSpec.new()
-	c.id = m.id
-	c.form = op.form
-	c.tags = op.hook_tags.duplicate()
-	if not c.tags.has(TAG_HOOK):
-		c.tags.append(TAG_HOOK)
-	c.depth = s.depth + 1
-	c.radius_m = op.radius_m
-	c.reach_m = op.reach_m
-	c.seek = op.form == AttackSpec.Form.BEAM
-	c.effect_id = op.effect_id
-	SpecForms.hook_base(c, s)  # v0.6.0 MX2: the lingering forms' times; MX4: a bolt's flight, an arc's width
-	for o in op.child_ops:  # v0.6.0 MX4: the child's own shape (a count, a status, an element...)
-		_apply(c, m, o, [])
-	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
-	c.lineage.append(String(m.id))
-	var k := AttackHook.new()
-	k.id = m.id
-	k.trigger = op.trigger
-	k.every = op.hook_every
-	k.damage = op.damage
-	k.damage_permille = op.damage_permille
-	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
-	k.when = op.when
-	k.child = compile_spec(c, mods)
-	return k
-
-
-## The form-layering rule (design §2, owner B8): a second form op never replaces the first; it adds an attack in its
-## own form that fires where the spec ends (ON_END), carrying everything the spec carries so far, then compiled
-## through the stages after FORM (so it layers once and every later pattern, payload and hook op reaches it too).
-static func _layer(
-	s: AttackSpec, m: ModifierTable, op: ModifierOp, mods: Array[ModifierTable]
-) -> AttackHook:
-	var c := s.copy()
-	c.id = m.id
-	SpecForms.change_form(c, op.form)  # v0.6.0 MX4: keeps the range it ends at
-	c.form_layers = 1
-	c.depth = s.depth + 1
-	c.hooks = []
-	c.seek = false
-	if not c.tags.has(TAG_HOOK):
-		c.tags.append(TAG_HOOK)
-	var k := AttackHook.new()
-	k.id = m.id
-	k.trigger = AttackSpec.Trigger.ON_END
-	k.damage_permille = 1000
-	k.child = compile_spec(c, mods, ModifierTable.Stage.PATTERN)
-	return k
-
-
 ## The v0.5 riders (see the class doc), after every modifier: statuses the engines already running bring.
+## v0.6.5 WN5a: a rider rides only on an engine something outside the wand runs (a v0.5 item, an ability's borrow):
+## a wand card's own status (Fire's burn, Frost's slow) goes where the card sits, so Fire right of a trigger burns
+## the child and not the slash.
 static func _riders(w: World, b: AttackBook) -> void:
 	var m := w.item_mods
+	var burn := m.burn_max_stacks > 0 and _engine_outside_wand(w, true)
+	var slow := m.slow_ticks > 0 and _engine_outside_wand(w, false)
 	for id in b.order:
 		var s: AttackSpec = b.specs[StringName(id)]
 		if s.depth != 0 or not s.has_tag(TAG_WEAPON):
 			continue
-		if s.has_tag(TAG_MELEE) and m.burn_max_stacks > 0 and not s.has_status(&"burn"):
+		if s.has_tag(TAG_MELEE) and burn and not s.has_status(&"burn"):
 			s.set_status(&"burn", 1, 0, true)
-		if s.has_tag(TAG_PROJECTILE) and m.slow_ticks > 0 and not s.has_status(&"slow"):
+		if s.has_tag(TAG_PROJECTILE) and slow and not s.has_status(&"slow"):
 			s.set_status(&"slow", 1, 0, true)
 
 
-static func _base_step(w: World, k: int) -> AttackSpec:
+## v0.6.5 WN5a: the burn (`burn`) or the slow engine runs from something other than a wand card (CardLevels.is_card):
+## an owned item that isn't one brings its numbers, or no owned item does (an ability borrows it).
+static func _engine_outside_wand(w: World, burn: bool) -> bool:
+	var from_item := false
+	for idx in w.items_owned:
+		var t := w.item_tables[idx]
+		if (t.burn_max_stacks if burn else t.slow_ticks) <= 0:
+			continue
+		if not CardLevels.is_card(w, idx):
+			return true
+		from_item = true
+	return not from_item
+
+
+## Combo step `k` as the player table has it (v0.6.5 WN1: public, the wand's child spell copies it).
+static func base_step(w: World, k: int) -> AttackSpec:
 	var st: SwingStep = w.player.combo[k]
 	var s := AttackSpec.new()
 	s.id = step_id(k)
 	s.form = AttackSpec.Form.ARC
 	s.tags = PackedStringArray([TAG_WEAPON, TAG_MELEE])
+	if k == w.player.combo.size() - 1:
+		s.tags.append("finisher")  # v0.6.5 WN4: the combo's last step (Finisher+ targets it)
 	s.half_arc = st.half_arc
 	s.reach_m = st.reach_m
 	s.damage = st.damage
@@ -475,7 +416,8 @@ static func _base_step(w: World, k: int) -> AttackSpec:
 	return s
 
 
-static func _base_bolt(w: World) -> AttackSpec:
+## The Gun's bolt as the player table has it.
+static func base_bolt(w: World) -> AttackSpec:
 	var t := w.player
 	var s := AttackSpec.new()
 	s.id = GUN_BOLT

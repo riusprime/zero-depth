@@ -38,6 +38,9 @@ var orbit_a := PackedInt32Array()
 var life0 := PackedInt32Array()
 var speed := PackedFloat32Array()
 var moves := false
+## v0.6.5 WN3 (GunForms): the corkscrew's swing (1/4096 turns; 0 = none) and a mine's wait (ticks; 0 = not a mine).
+var spiral := PackedInt32Array()
+var mine_t := PackedInt32Array()
 
 
 func size() -> int:
@@ -80,6 +83,8 @@ func add(
 	orbit_a.append(0)
 	life0.append(0)
 	speed.append(0.0)
+	spiral.append(0)  # v0.6.5 WN3: GunForms.on_spawn sets them from the spec
+	mine_t.append(0)
 
 
 ## Removes the entries at the given ascending indices, keeping order. In place, last first, with the arrays' own
@@ -108,6 +113,9 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 			orbit_a.remove_at(i)
 			life0.remove_at(i)
 			speed.remove_at(i)
+		if i < mine_t.size():  # v0.6.5 WN3
+			spiral.remove_at(i)
+			mine_t.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)

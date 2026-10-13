@@ -1,0 +1,29 @@
+# v0.7.0 — The Wand (planned as v0.6.5; plan, owner-directed 2026-10-12)
+
+The owner played v0.6.1 (`main` `950add4`) and finished the run on the normal route ("completed it, from the easy
+side, right at the blue portal"). Their message is quoted line by line below. Planned as the feedback pass v0.6.5; the owner named it **v0.7.0**
+(2026-10-12: "yeah go ahead for v0.7 naming"). Step commits before the rename say "v0.6.5". Progress: [`PROGRESS.md`](PROGRESS.md).
+
+## The owner's feedback (2026-10-12, verbatim)
+| # | Owner line | Decision | Status | Where |
+|---|---|---|---|---|
+| W1 | "So the lightning is a little bit buggy. There is a branch that we worked on that's called Gene Volta HT74PZ. And we changed the lightning. We are adding a dev mod menu where I will be able to adjust the balancing and also the lightning from inside the game so I can get what I'm looking for." | Handled on `claude/keen-volta-ht74pz` (the F10 dev panel: balance and lighting edits live; it is at "Dev panel Step 6"). This branch doesn't touch it; it merges in when that work is done | Other branch | keen-volta |
+| W2 | "we have different bosses and different rooms based on the kind of boss. So right now we have the shooting boss, the one that's big and it looks like a cannon. And he does have the smaller room and he shouldn't have the room that small." | The Siege Engine's arena goes from 3×1 cells to **3×3** (owner pick: "3×3") | Decided | BR |
+| W3 | "we've got the modifiers, but it kind of works the same as it did before, and we are not getting it right. So the point of the modifiers is to actually be a modifier of the basic attack that we are running on the game. So this happens in other roguelike games, like... Binding of Isaac or Magic Craft that you have the different items that you're getting that modify how your basic attack interacts, right? So, for example, the splitting balls in Binding of Isaac, the shooting the bigger balls, then whatever, or at Magic Craft, the different ways that all items interact in the order that you put them in the wand. So we need to change the modifiers and get it to work more in that way. So like almost everything that you take modifies how your basic attack looks and interacts and shoots and the idea is to be able to have a lot of different combinations that destroy the enemies, right?" | The wand: every pickup modifies the basic attack (looks, interaction, how it shoots); the order of the modifiers matters and the player can rearrange them (owner pick: "Order matters, rearrangeable"). Design in [`../../design/WAND.md`](../../design/WAND.md), G1 list for the owner before any build | Design (G1) | WD |
+| W4 | (Q: should every pickup change the basic attack, no side attacks?) "We need to have different pools of modifiers tho blade and gun are different interactions and the modifiers should be unique, unless it doesn't matter and could apply to both like bleed or lightning" | Two pools: Blade-only and Gun-only modifiers, each unique to that weapon's interaction; a small shared pool only for what works the same on both (elements and statuses such as bleed, lightning) | Decided | WD |
+| W5 | (Q: what do Blade modifiers act on?) "The slash becomes a spell" | Each slash is the Blade's spell: its modifiers make it bigger, split it, throw it as a wave, trigger on hit, and so on | Decided | WD |
+| W6 | (Q: how many wand slots?) "Grows during the run" | The wand starts with **4 slots** and gains 2 after each boss: 4 → 6 → 8 (floors 1/2/3). Replaces v0.6.0's fixed 6 (PD-08) | Decided | WN1 |
+| W7 | (Q: approve the G1 list in WAND.md?) "Approve all" | G1–G16, B1–B16, S1–S7, T1–T4 approved as the first set; the owner tunes and cuts after playing | Decided | WN2–WN5 |
+
+## Steps
+| Step | Scope | Rows | Status |
+|---|---|---|---|
+| BR | The Siege Engine's arena 3×3 (data + generation tests) | W2 |
+| WD | The wand design and the G1 lists (`../../design/WAND.md`) | W3–W5 | Done |
+| WN1 | The wand compiler: left-to-right slot order, triggers that cut the wand, child specs, slots 4 → 6 → 8, the reorder action as an input, save migration, the combinatorial smoke test | W3, W6 | Done (agent; [`evidence/WAND_1.md`](evidence/WAND_1.md); the lead's full suite pending) |
+| WN2 | The Build page and Swap-panel reorder with the plain-words read-back (en + es) | W3 | Done (agent; [`evidence/WAND_2.md`](evidence/WAND_2.md); the lead's full suite pending) |
+| WN3 | The Gun pool G1–G16 | W4, W7 | Done (agent; [`evidence/WAND_GUN.md`](evidence/WAND_GUN.md); the lead's full suite pending) |
+| WN4 | The Blade pool B1–B16 (the slash as a spell) | W4, W5, W7 | Done (agent; [`evidence/WAND_BLADE.md`](evidence/WAND_BLADE.md); merged with WN3; the lead's full suite pending) |
+| WN5 | The shared pool S1–S7, the triggers T1–T4 and their visuals; the old cards migrated; legendary tier and offer pools | W4, W7 |
+| WN5a | WN5's first half: the shared pool S1–S7 in both runs (Fire, Lightning, Frost, Venom, Bleed, Void, Explosive; the v0.6 cards that do the job keep their ids), the triggers T1–T4 offered with their final names (T4: On Finisher with the Blade, On Crit with the Gun) and the child spell drawn where it is cast | W4, W7 | Done (agent; [`evidence/WAND_SHARED.md`](evidence/WAND_SHARED.md); the lead's full suite pending) |
+| WN5b | The old v0.6 cards migrated onto their WAND.md rows or retired (one table, `data/wand/migration.tres`; the mapping in [`../../design/WAND.md`](../../design/WAND.md)); old saves load and map in pick order, a card without a match refunded at the salvage price; the legendary tier offers the run's wand cards at level 5 and three ×2 triggers; the offer pools measured | W4, W7 | Done (agent; [`evidence/WAND_MIGRATION.md`](evidence/WAND_MIGRATION.md); S5/S7 targets pending WN5a's merge; the lead's full suite pending) |

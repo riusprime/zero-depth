@@ -240,6 +240,7 @@ func sync(reader: WorldReader) -> void:
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
+			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}
 	)
 
@@ -279,6 +280,7 @@ func apply_state(s: Dictionary) -> void:
 		if _spin > PI:
 			_spin -= TAU  # a full turn is the same pose: settle back from just under 0
 	_face_aim = _apply_skill(s, tick) or st > 0 or _guarding
+	_apply_swing_form(s.get("swing_form", {}), st)
 	if _gun and tick - _last_shot_tick < GUN_AIM_HOLD_TICKS:
 		_face_aim = true
 	if not s.has("gun"):
@@ -289,6 +291,17 @@ func apply_state(s: Dictionary) -> void:
 		_leg_yaw = _aim_yaw
 		_pose(0.0)
 		_reset_springs()
+
+
+## v0.6.5 WN4: the Blade cards that change the swing itself (WorldReader.blade_swing): Lunge Step leans into the
+## step it drives, Heavy braces for its slow crushing arc. Optional (tests may leave it out); never during a skill.
+func _apply_swing_form(form: Dictionary, st: int) -> void:
+	if st <= 0 or form.is_empty() or _cleave_p >= 0.0:
+		return
+	if bool(form.get("lunge", false)):
+		_lunge_target = maxf(_lunge_target, 1.0 - _sweep * 0.6)
+	if float(form.get("weight", 1.0)) > 1.0 or bool(form.get("knockback", false)):
+		_brace_target = maxf(_brace_target, 1.0 - _sweep)
 
 
 ## v0.5.5 LK (A1): the skill pose targets from the skill's ticks (optional keys; tests may leave them out).

@@ -34,6 +34,13 @@ const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
 const MOTION_THRUST := SwingStep.Motion.THRUST
 const MOTION_SPIN := SwingStep.Motion.SPIN
+## v0.6.5 WN4: the Blade pool's view marks (blade_forms()["fx"][k]["kind"]; BladeForms.FX_*).
+const BLADE_FX_ARC := BladeForms.FX_ARC
+const BLADE_FX_ARC_MIRROR := BladeForms.FX_ARC_MIRROR
+const BLADE_FX_LINE := BladeForms.FX_LINE
+const BLADE_FX_PARRY := BladeForms.FX_PARRY
+const BLADE_FX_BURST := BladeForms.FX_BURST
+const BLADE_FX_COUNTER := BladeForms.FX_COUNTER
 ## v0.6.0 MX1: attack spec forms (attack_spec()["form"]) and the weapon attacks' ids.
 const FORM_ARC := AttackSpec.Form.ARC
 const FORM_BOLT := AttackSpec.Form.BOLT
@@ -151,8 +158,18 @@ const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
 const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
 const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
-## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values.
-const MOD_SLOTS := BuildSlots.SLOTS
+## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values. v0.6.5 WN1: the most slots the
+## wand ever has (it grows 4 → 6 → 8; build()["max"] is the count now), and the reorder's pick values
+## (PICK_WAND_MOVE_BASE + from × WAND_MOVE_STRIDE + to).
+const MOD_SLOTS := Wand.MAX_SLOTS
+const PICK_WAND_MOVE_BASE := InputFrame.PICK_WAND_MOVE_BASE
+const WAND_MOVE_STRIDE := InputFrame.WAND_MOVE_STRIDE
+## v0.6.5 WN1: the triggers a wand card cuts on (wand()["cards"][n]["trigger"]; -1 for a card of rewrites).
+const WAND_ON_HIT := AttackSpec.Trigger.ON_HIT
+const WAND_ON_KILL := AttackSpec.Trigger.ON_KILL
+const WAND_ON_END := AttackSpec.Trigger.ON_END
+const WAND_ON_FINISHER := AttackSpec.Trigger.ON_FINISHER
+const WAND_ON_CRIT := AttackSpec.Trigger.ON_CRIT
 const PICK_SWAP_BASE := InputFrame.PICK_SWAP_BASE
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
@@ -630,11 +647,11 @@ func item_id(item_index: int) -> StringName:
 
 ## Locale keys (tr() them in the view).
 func item_name_key(item_index: int) -> StringName:
-	return _w.item_tables[item_index].name_key
+	return Offers.item_keys(_w, _w.item_tables[item_index])[0]  # v0.6.5 WN5a: T4's face per weapon
 
 
 func item_desc_key(item_index: int) -> StringName:
-	return _w.item_tables[item_index].desc_key
+	return Offers.item_keys(_w, _w.item_tables[item_index])[1]
 
 
 func pickup_count() -> int:
@@ -656,7 +673,7 @@ func pickup_id(i: int) -> int:
 
 ## Walking within this distance of a pickup takes it.
 func pickup_radius_m() -> float:
-	return ItemEffects.PICKUP_RADIUS_M
+	return _w.tuning.pickup_radius_m
 
 
 ## Ember Edge burn stacks on actor i (0 = not burning).
@@ -758,6 +775,24 @@ func modifier_marks() -> Dictionary:
 	}
 
 
+## v0.6.5 WN4: the Blade pool's marks for the views (BladeForms.read: ghost slashes, fissure cracks and eruptions,
+## cut shots, a counter, the orbiting blades).
+func blade_forms() -> Dictionary:
+	return BladeForms.read(_w)
+
+
+## v0.6.5 WN5a: the wand's small spells cast lately, oldest first (WandCasts.read: tick, key, pos, angle in 1/4096
+## turns, cast: a trigger's child spell). AttackFormView draws each once.
+func wand_casts() -> Array[Dictionary]:
+	return WandCasts.read(_w)
+
+
+## v0.6.5 WN4: how the current swing's cards change the swing itself, for the blade and the hero's pose
+## (BladeForms.swing_read: weight, rate, lunge, knockback, parry).
+func blade_swing() -> Dictionary:
+	return BladeForms.swing_read(_w)
+
+
 ## The compiled build's digest (Modifiers: hashed once the build has a modifier); views key caches on it.
 func attack_digest() -> String:
 	return Modifiers.book(_w).digest
@@ -776,6 +811,16 @@ func attack_spec_at(key: String) -> Dictionary:
 func projectile_spec_key(i: int) -> String:
 	var keys := _w.projectiles.spec_key
 	return keys[i] if i < keys.size() else ""
+
+
+## v0.6.5 WN3: projectile `i`'s radius (a charged shot is bigger than its spec, G13), and how far the Gun's shot in
+## the barrel has charged (0..1; 0 when the Gun doesn't charge: GunForms).
+func projectile_radius(i: int) -> float:
+	return _w.projectiles.radius[i]
+
+
+func gun_charge() -> float:
+	return GunForms.charge_fraction(_w)
 
 
 ## v0.6.0 MX3: the spec keys of the bombs in flight and of the patches, parallel to ability_fx()["bomb_pos"] and
@@ -1046,6 +1091,13 @@ func reward_is_legendary(i: int) -> bool:
 	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
 
 
+## v0.6.5 WN5b: the level a wand card taken from reward i goes to (the boss's legendary altar: the tier's wand_level,
+## WAND.md "level-5 versions"), or 0.
+func legendary_card_level(i: int) -> int:
+	var t := _w.legendary_table
+	return t.wand_level if t != null and BossReward.is_legendary(_w, i) else 0
+
+
 ## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
 func reward_drop_kind(i: int) -> int:
 	return CoreTheft.drop_kind(_w, _w.rewards.ids[i])
@@ -1201,7 +1253,7 @@ func boss_table_name_key(k: int) -> StringName:
 func boss_intro_permille(i: int) -> int:
 	if _w.actors.state[i] != EnemyAi.State.SPAWN:
 		return 1000
-	return clampi(_w.actors.state_t[i] * 1000 / BossAi.INTRO_TICKS, 0, 1000)
+	return clampi(_w.actors.state_t[i] * 1000 / maxi(1, _w.tuning.boss_intro_ticks), 0, 1000)
 
 
 ## Boss i's weak point: how much of its open time is left, 0..1000 (0 = closed).
@@ -1704,6 +1756,54 @@ func combo_is_ability(combo_index: int) -> bool:
 ## slot count (max), and the pending swap's card (swap_code, -1 for none) and source.
 func build() -> Dictionary:
 	return BuildSlots.read(_w)
+
+
+## v0.6.5 WN1 (Wand.read): the wand in slot order: the weapon (&"gun" / &"blade"), the slot count, each card (code,
+## id, name_key, type, level, trigger: -1 or the AttackSpec.Trigger it cuts on) and the cuts (the trigger slots).
+func wand() -> Dictionary:
+	return Wand.read(_w)
+
+
+## v0.6.5 WN1 (Wand.describe): the wand's plain-words read-back as translation keys and their arguments (the Build
+## page renders it, WN2).
+func wand_read_back() -> Array[Dictionary]:
+	return Wand.describe(Wand.read(_w))
+
+
+## v0.6.5 WN2: a wand read (wand()) with the card in slot `from` moved to slot `to`: the rule the sim's reorder
+## applies (Wand.moved_read), so the Build page's preview is the outcome it will get (EI-07).
+static func wand_moved(wand_read: Dictionary, from: int, to: int) -> Dictionary:
+	return Wand.moved_read(wand_read, from, to)
+
+
+## v0.6.5 WN2: the plain-words read-back of any wand read (Wand.describe), e.g. a preview from wand_moved.
+static func wand_describe(wand_read: Dictionary) -> Array[Dictionary]:
+	return Wand.describe(wand_read)
+
+
+## v0.6.5 WN2: describe()'s lines in words (Wand.render; `translate` is the view's tr).
+static func wand_render(lines: Array[Dictionary], translate: Callable) -> String:
+	return Wand.render(lines, translate)
+
+
+## v0.6.5 WN2: the wand moves (pick values) that turn the card order `from` into `to` (Wand.plan_moves).
+static func wand_plan_moves(from: PackedInt32Array, to: PackedInt32Array) -> PackedInt32Array:
+	return Wand.plan_moves(from, to)
+
+
+## v0.6.5 WN2: a wand read with its incoming card swapped in for slot `leave` and moved to `at` (Wand.swapped_read:
+## the rules the sim's swap answer and reorder apply), and the picks that do it (Wand.swap_picks).
+static func wand_swapped(wand_read: Dictionary, leave: int, at: int) -> Dictionary:
+	return Wand.swapped_read(wand_read, leave, at)
+
+
+static func wand_swap_picks(leave: int, at: int) -> PackedInt32Array:
+	return Wand.swap_picks(leave, at)
+
+
+## v0.6.5 WN2: whether a move from slot `from` to slot `to` changes a wand of `n` cards (Wand.can_move).
+static func wand_can_move(n: int, from: int, to: int) -> bool:
+	return Wand.can_move(n, from, to)
 
 
 ## v0.6.0 MX2: a swap choice is open (a new modifier with the six slots full waits for its slot or a skip).

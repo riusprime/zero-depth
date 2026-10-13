@@ -9,8 +9,9 @@ extends Resource
 ## Appended, never renumbered. Numeric ops change one spec field: SET, ADD, MAX, MIN (by value) and MUL_PERMILLE
 ## (field × value / 1000). SET_FORM changes what the attack is. STATUS feeds an engine status on hit (stacks, one
 ## application every `every` landed hits; 0 = every hit). ELEMENT names an element the view draws. HOOK adds an
-## attack the spec spawns (its trigger, form, tags, size and damage below).
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+## attack the spec spawns (its trigger, form, tags, size and damage below). v0.6.5 WN1: TRIGGER, a wand trigger card's
+## one op: it cuts the wand (the cards to its right build the child spell cast on `hook_trigger`; Modifiers).
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }
 
 ## The forms of the design's §1 (AttackSpec.Form mirrors these numbers). v0.6.0 MX4: WEAPON, a hook's child only: a
 ## copy of the weapon's last attack (the Blade's current combo step, or the Gun's shot), resolved when it launches
@@ -22,10 +23,18 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## attack ends (an arc's tip, a bolt's end, a burst, a bomb's blast, a ring at its radius; the dash's end);
 ## ON_LAUNCH: as the attack launches, from where it leaves (the dash's start, every MOVE step walked, a blink's
 ## start, a vent); EVERY_NTH: every hook_every-th launch of the spec launches the child instead (Bomb Rounds).
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }
+## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit; ON_FINISHER, the combo's last step's hits (a
+## TRIGGER op only: Modifiers compiles it into the last step's ON_HIT).
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
 
-## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds).
-enum When { ALWAYS, OVERCLOCK }
+## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds). v0.6.5 WN4:
+## COUNTER, only on a slash that counters (within its counter window after a dash: Counter, B16).
+enum When { ALWAYS, OVERCLOCK, COUNTER }
+
+## v0.6.5 WN1: the triggers a TRIGGER op may cut on (WAND.md T1–T4).
+const WAND_TRIGGERS: Array[int] = [
+	Trigger.ON_HIT, Trigger.ON_KILL, Trigger.ON_END, Trigger.ON_FINISHER, Trigger.ON_CRIT
+]
 
 ## The spec fields a numeric op may change, in content units, and the stage each belongs to
 ## (ModifierDefinition.Stage numbers: FORM 0, PATTERN 1, BEHAVIOUR 2, PAYLOAD 3, HOOK 4, SCALE 5).
@@ -66,6 +75,22 @@ const FIELD_STAGE := {
 	&"resonance_permille": 3,
 	&"heat_rate_permille": 5,
 	&"range": 5,
+	# v0.6.5 WN3 (the Gun pool: GunForms)
+	&"twin": 1,
+	&"spiral_degrees": 2,
+	&"mine_seconds": 2,
+	&"hold_seconds": 3,
+	&"hold_permille": 3,
+	# v0.6.5 WN4 (the Blade pool; AttackSpec names each).
+	&"motion": 0,
+	&"echo_mirror": 1,
+	&"step_m": 2,
+	&"parry": 3,
+	&"counter_seconds": 3,
+	&"counter_permille": 3,
+	&"carry": 3,
+	&"knockback_m": 3,
+	&"line_m": 5,
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -104,6 +129,15 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 @export var hook_delay_seconds := 0.0
 @export var hook_when := When.ALWAYS
 @export var hook_ops: Array[Resource] = []  # ModifierOpDefinitions (Resource: a script never types itself)
+## v0.6.5 WN1 (TRIGGER): the trigger on a Gun run when it differs from hook_trigger (-1: the same). T4 is On Finisher
+## with the Blade and On Crit with the Gun.
+@export var hook_trigger_gun := -1
+## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up 1–5): added to `value` per level above 1, in the same
+## units (a numeric op; a HOOK op: to hook_damage_permille). 0 = the op is the same at every level.
+@export var per_level := 0.0
+## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
+## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
+@export var hook_casts := 1
 
 
 ## The stage this op runs in, given its modifier's.
@@ -118,7 +152,7 @@ func required_stage() -> int:
 			return 0
 		Op.STATUS, Op.ELEMENT:
 			return 3
-		Op.HOOK:
+		Op.HOOK, Op.TRIGGER:
 			return 4
 	return int(FIELD_STAGE.get(field, -1))
 

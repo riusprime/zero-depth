@@ -11,6 +11,6 @@ burn_damage = 2
 burn_period_seconds = 0.5
 burn_duration_seconds = 3.0
 burn_max_stacks = 5
-tags = PackedStringArray("fire")
+tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"ember_core"])
 id = &"ember_core"

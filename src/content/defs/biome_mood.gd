@@ -42,6 +42,20 @@ extends Resource
 @export var hero_light_range := 4.5
 ## Screen-edge darkening, 0 (none) to 1.
 @export var vignette := 0.35
+## v0.6.1 lighting pass (owner, 2026-10-12: "we need to work a bit more into the lighting of the game"; deep dark
+## shadows, warm light pooling round fires and the chest). Glow: what brightness starts to bloom (lower: more
+## blooms) and how much of the whole image bleeds into it.
+@export var glow_threshold := 1.0
+@export var glow_bloom := 0.0
+## How wide the glow spreads (0: Godot's narrow default levels; 1: wide halos round bright sources).
+@export var glow_spread := 0.0
+## The grade: shadows pulled toward `grade_shadows`, highlights toward `grade_highlights` (a teal-orange split tone),
+## by `grade_strength` (0: none). Contrast and saturation over the whole image (1: unchanged).
+@export var grade_shadows := Color(0.5, 0.5, 0.5)
+@export var grade_highlights := Color(0.5, 0.5, 0.5)
+@export var grade_strength := 0.0
+@export var contrast := 1.0
+@export var saturation := 1.0
 
 
 ## Problems as "field: why" strings (BiomeDefinition turns them into ValidationIssues).
@@ -64,9 +78,49 @@ func problems() -> PackedStringArray:
 		["vignette", vignette, 0.0, 1.0],
 		["hero_light_energy", hero_light_energy, 0.0, 8.0],
 		["hero_light_range", hero_light_range, 0.5, 15.0],
+		["glow_threshold", glow_threshold, 0.0, 4.0],
+		["glow_bloom", glow_bloom, 0.0, 1.0],
+		["glow_spread", glow_spread, 0.0, 1.0],
+		["grade_strength", grade_strength, 0.0, 1.0],
+		["contrast", contrast, 0.5, 2.0],
+		["saturation", saturation, 0.0, 2.0],
 	]:
 		if f[1] < f[2] or f[1] > f[3]:
 			out.append("%s: %s is outside %s..%s" % f)
 	if sun_pitch_deg >= 0.0 or sun_pitch_deg < -90.0:
 		out.append("sun_pitch_deg: %s must point down (-90..0)" % sun_pitch_deg)
 	return out
+
+
+## The grade as a per-channel 1D colour-correction curve (Environment.adjustment_color_correction): each channel
+## bends toward the shadow colour's in the darks and the highlight colour's in the lights, weighted by strength.
+## Null when there is no grade.
+func grade_texture() -> GradientTexture1D:
+	if grade_strength <= 0.0:
+		return null
+	var offsets := PackedFloat32Array()
+	var colors := PackedColorArray()
+	var n := 17
+	for k in n:
+		var x := k / float(n - 1)
+		var ws := (1.0 - x) * (1.0 - x) * x * 4.0  # peaks in the darks, 0 at black and white
+		var wh := x * x * (1.0 - x) * 4.0  # peaks in the lights
+		offsets.append(x)
+		colors.append(
+			Color(
+				_bend(x, grade_shadows.r, grade_highlights.r, ws, wh),
+				_bend(x, grade_shadows.g, grade_highlights.g, ws, wh),
+				_bend(x, grade_shadows.b, grade_highlights.b, ws, wh)
+			)
+		)
+	var g := Gradient.new()
+	g.offsets = offsets
+	g.colors = colors
+	var t := GradientTexture1D.new()
+	t.gradient = g
+	t.width = 256
+	return t
+
+
+func _bend(x: float, s: float, h: float, ws: float, wh: float) -> float:
+	return clampf(x + grade_strength * 0.35 * (ws * (s - 0.5) + wh * (h - 0.5)), 0.0, 1.0)

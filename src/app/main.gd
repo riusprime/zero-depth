@@ -22,11 +22,22 @@ var audio := AudioDirector.new()
 ## v0.4.0 SV: the run save (room entries, close, Continue).
 var saves: RunSaver
 
+## The dev panel's tuning (docs/tools/DEV_PANEL.md): the owner's saved overrides, written into the content before
+## every run and floor is compiled.
+var tuning := DevTuning.load_saved()
 var _menu: Control
 var _pause: PauseMenu
 ## Options opened from the pause menu (v0.3.0 O), over the paused stage.
 var _pause_options: OptionsMenu
+## v0.6.5 WN2: the Build page opened from the pause menu, over the paused stage.
+var _pause_build: BuildPage
 var _dev: DevPanel
+var _devm: DevMasterPanel
+## The current floor's biome file (the dev panel's lighting edits re-read its mood).
+var _biome_path := ""
+## A balance edit waits to go into the running World until the panel closes (the run is paused while it is open).
+var _balance_pending := false
+var _dev_mark: Label
 var _hud: Hud
 var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
@@ -75,6 +86,15 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (  # the master dev panel (docs/tools/DEV_PANEL.md): every build, anywhere
+		event is InputEventKey
+		and event.pressed
+		and not event.echo
+		and event.physical_keycode == KEY_F10
+	):
+		get_viewport().set_input_as_handled()
+		_toggle_master_panel()
+		return
 	if (
 		driver != null
 		and event is InputEventKey
@@ -193,7 +213,7 @@ func show_gallery() -> void:
 ## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor.
 func start_stage() -> void:
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	var build := StringName(profile.section("loadout").get("build", "blade"))
@@ -210,7 +230,7 @@ func continue_run() -> void:
 		show_main_menu()
 		return
 	_set_menu(null)
-	var repo := ContentRepository.load_all()
+	var repo := _content()
 	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
 	_run_biomes = run_def.biomes.duplicate()
 	_stage_seed = int(save["run"]["stage_seed"])
@@ -225,7 +245,7 @@ func continue_run() -> void:
 ## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
 func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
 	if repo == null:
-		repo = ContentRepository.load_all()
+		repo = _content()
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
@@ -257,6 +277,8 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	)
 	FloorScenario.add_shop(world, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
+	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
@@ -272,11 +294,14 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(world)
+	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
 			return err
+		WandMigration.run(world)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
+	_tweaked_run_check()
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
@@ -285,6 +310,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	view.name = "WorldView"
 	view.stage.prop_style = biome.id
 	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	_biome_path = biome.resource_path
 	view.stage.lighting = GameSettings.get_value(profile, "lighting")
 	add_child(view)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
@@ -307,6 +333,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	_hud.pick_panel().picked.connect(driver.latch.note_pick)  # Rewards: a pick is input.
 	_hud.shop.panel.picked.connect(driver.latch.note_pick)  # v0.5.0 SH: so is a shop action.
 	_hud.swap.picked.connect(driver.latch.note_pick)  # v0.6.0 MX2: so is a swap answer.
+	_hud.swap.moved.connect(driver.latch.queue_wand_move)  # v0.6.5 WN2: and its reorders and inserts.
 	_hud.sync(driver.reader)
 	_hud.show_floor(
 		run.floor_index,
@@ -408,6 +435,77 @@ func toggle_dev_panel() -> void:
 	ui.add_child(_dev)
 
 
+## Opens or closes the master dev panel (F10). In a run it pauses the sim and carries the debug tools.
+func _toggle_master_panel() -> void:
+	if _devm != null:
+		_close_master_panel()
+		return
+	var tools: Control = null
+	if driver != null:
+		if driver.debug == null:
+			driver.debug = DebugApi.new(driver.world)
+			driver.debug.reseed_requested.connect(_reseed)
+		tools = DevPanel.new(driver.debug)
+		driver.paused = true
+	_devm = DevMasterPanel.new(tuning, tools)
+	_devm.changed.connect(_on_tuning_changed)
+	_devm.restart_requested.connect(_restart_floor)
+	_devm.close_requested.connect(_close_master_panel)
+	ui.add_child(_devm)
+
+
+func _close_master_panel() -> void:
+	if _devm != null:
+		_drop(_devm)
+		_devm = null
+	if _balance_pending and driver != null and run != null:  # Step 4: balance edits go live as the run resumes
+		LiveTuning.apply(driver.world, run, _content())
+	_balance_pending = false
+	_tweaked_run_check()
+	if driver != null and _pause == null:
+		driver.paused = false
+
+
+## Rebuilds the run's current floor from the (tweaked) content: the dev panel's Restart floor.
+func _restart_floor() -> void:
+	if run == null:
+		return
+	_balance_pending = false  # the rebuilt floor reads everything anyway
+	_close_master_panel()
+	_end_floor()
+	_start_floor()
+
+
+## Step 5 (owner: tweaked runs don't count): while any balance value is off the shipped game the run has no save
+## (Continue can't resume it) and a DEV mark shows. Unlocks and records, when they come, check tuning the same way.
+func _tweaked_run_check() -> void:
+	var tweaked := tuning.balance_tweaked()
+	if tweaked and run != null:
+		saves.discard()
+	if _dev_mark == null:
+		_dev_mark = Label.new()
+		_dev_mark.name = "DevMark"
+		_dev_mark.text = "UI_DEVM_MARK"
+		_dev_mark.add_theme_color_override("font_color", Color(1.0, 0.55, 0.2))
+		_dev_mark.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		_dev_mark.position.y = 4
+		_dev_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ui.add_child(_dev_mark)
+	_dev_mark.visible = tweaked
+
+
+## A dev panel edit: applied live where it can be (Steps 3-4 of docs/tools/DEV_PANEL.md); the rest waits for the
+## next spawns or Restart floor.
+func _on_tuning_changed(key: String) -> void:
+	if DevTuning.is_lighting(key) and view != null and _biome_path != "":  # Step 3: live
+		# The store writes into the loaded biome it holds; the stage takes that biome's mood and re-applies it.
+		view.stage.mood = (load(_biome_path) as BiomeDefinition).mood
+		view.stage.apply_mood()
+		view.actors.retune_hero_light(view.stage.mood)
+	elif not DevTuning.is_lighting(key):
+		_balance_pending = true
+
+
 func is_dev_panel_open() -> bool:
 	return _dev != null
 
@@ -423,6 +521,7 @@ func open_pause() -> void:
 	_pause = PauseMenu.new()
 	_pause.resume_pressed.connect(close_pause)
 	_pause.options_pressed.connect(open_pause_options)
+	_pause.build_pressed.connect(_open_pause_build)
 	_pause.restart_pressed.connect(restart)
 	_pause.main_menu_pressed.connect(show_main_menu)
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
@@ -448,11 +547,55 @@ func close_pause() -> void:
 	if _pause_options != null:
 		_pause_options.queue_free()
 		_pause_options = null
+	if _pause_build != null:
+		_queue_build_moves()
+		_pause_build.queue_free()
+		_pause_build = null
 	if _pause != null:
 		_pause.queue_free()
 		_pause = null
 	if driver != null:
+		driver.latch.drop_presses()  # v0.6.5 WN2: a click in a menu is not a swing once the game runs
 		driver.paused = false
+
+
+## v0.6.5 WN2: the Build page (the wand's order) from the pause menu; the pause menu hides under it and comes back on
+## Back. The page starts from the sim's wand with the moves still waiting in the latch applied (the page may open
+## twice in one pause), and the sim gets its change as input when the page closes (_queue_build_moves).
+func _open_pause_build() -> void:
+	if _pause == null or _pause_build != null:
+		return
+	_pause.visible = false
+	var wand := driver.reader.wand()
+	for v in driver.latch.pending_picks():
+		var n := v - WorldReader.PICK_WAND_MOVE_BASE
+		if n >= 0 and n < WorldReader.WAND_MOVE_STRIDE * WorldReader.WAND_MOVE_STRIDE:
+			wand = WorldReader.wand_moved(
+				wand, n / WorldReader.WAND_MOVE_STRIDE, n % WorldReader.WAND_MOVE_STRIDE
+			)
+	_pause_build = BuildPage.new()
+	_pause_build.back_pressed.connect(_close_pause_build)
+	ui.add_child(_pause_build)
+	_pause_build.open(wand, int(wand["slots"]))
+
+
+func _close_pause_build() -> void:
+	if _pause_build != null:
+		_queue_build_moves()
+		_pause_build.queue_free()
+		_pause_build = null
+	if _pause != null:
+		_pause.visible = true
+		(_pause.box.get_node("Build") as Button).grab_focus()
+
+
+## The Build page's change as wand moves, queued as input: the pause stops the ticks, so they reach the sim one per
+## tick when the game runs again (EI-03, EI-04).
+func _queue_build_moves() -> void:
+	if driver == null or _pause_build == null:
+		return
+	for v in _pause_build.planned_moves():
+		driver.latch.queue_wand_move(v)
 
 
 func _set_menu(m: Control) -> void:
@@ -474,11 +617,12 @@ func _end_stage() -> void:
 func _end_floor() -> void:
 	close_pause()
 	audio.detach()
-	for n in [_hud, _end, _dev, driver, view, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, driver, view, get_node_or_null("Gallery")]:
 		_drop(n)
 	_hud = null
 	_end = null
 	_dev = null
+	_devm = null
 	driver = null
 	view = null
 
@@ -491,3 +635,9 @@ static func _drop(n: Node) -> void:
 	if n.get_parent() != null:
 		n.get_parent().remove_child(n)
 	n.queue_free()
+
+
+## The content with the dev panel's overrides written in (none: the shipped game).
+func _content() -> ContentRepository:
+	tuning.apply()
+	return ContentRepository.load_all()

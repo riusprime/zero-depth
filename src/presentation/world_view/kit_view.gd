@@ -47,6 +47,10 @@ const THRUST_PULLBACK := 0.55
 ## Arc segments across a thrust's streak.
 const STREAK_SEGMENTS := 8
 const SPIN_SUBSTEPS := 8
+## v0.6.5 WN4 (the Blade pool, WorldReader.blade_swing): Heavy's blade thickens with its damage weight (up to this),
+## and a faster swing (Flurry) keeps this many more trail samples: a blur of slashes.
+const HEAVY_WIDTH_MAX := 1.8
+const FLURRY_TRAIL := 5
 
 var color := ThemePalette.color(&"player_core")
 var length_scale := 1.0
@@ -76,6 +80,9 @@ var _streak: Array = [0.0, 0.0, 0.0]
 var _history: Array = []
 var _last_t := 0
 var _pivot_base := Vector3.ZERO
+## v0.6.5 WN4: the current swing's weight and speed bonus as drawn (WorldReader.blade_swing).
+var _form_weight := 1.0
+var _form_rate := 0
 
 
 func _init() -> void:
@@ -186,6 +193,11 @@ func blade_offset() -> float:
 	return _pivot.position.distance_to(_pivot_base)
 
 
+## v0.6.5 WN4: the swing's blade thickness factor from its damage weight (Heavy), as of the last sync.
+func form_weight() -> float:
+	return _form_weight
+
+
 ## The current swing's motion as drawn (WorldReader.MOTION_*).
 func motion() -> int:
 	return _motion
@@ -211,6 +223,9 @@ func sync(reader: WorldReader) -> void:
 		_trail_mesh.clear_surfaces()
 		return
 	var finisher := reader.is_finisher()
+	var form := reader.blade_swing()
+	_form_weight = clampf(float(form.get("weight", 1.0)), 1.0, HEAVY_WIDTH_MAX)
+	_form_rate = int(form.get("rate", 0))
 	_motion = reader.swing_motion()
 	var sweep := reader.swing_sweep_ticks()
 	var half: float = TAU * float(shape[0]) / 4096.0
@@ -234,7 +249,7 @@ func sync(reader: WorldReader) -> void:
 	_pivot_base = at
 	_pivot.position = at - Vector3(cos(yaw), 0, -sin(yaw)) * pull
 	_pivot.rotation = Vector3(0, yaw, 0)
-	var thick := (FINISHER_WIDTH if finisher else 1.0) * lerpf(0.4, 1.0, fade)
+	var thick := (FINISHER_WIDTH if finisher else 1.0) * lerpf(0.4, 1.0, fade) * _form_weight
 	_pivot.scale = Vector3(1, thick, thick)
 	var since_hit := t - reader.swing_active_tick()
 	var flare := (
@@ -255,6 +270,8 @@ func sync(reader: WorldReader) -> void:
 	if t != _last_t or _history.is_empty():  # hit-stop holds the tick: the trail holds too
 		_history.append([at, yaw, fade * (1.3 if finisher else 1.0)])
 		var keep := sweep + 2 if _motion == WorldReader.MOTION_SPIN else trail_count + 1
+		if _form_rate > 0:
+			keep += FLURRY_TRAIL
 		while _history.size() > keep:
 			_history.pop_front()
 	_last_t = t

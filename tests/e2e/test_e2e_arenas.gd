@@ -174,10 +174,16 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 		assert_eq(s.frame_id(), &"gold", "in the gold frame")
 		assert_true(s.card.tier_text().ends_with(tr("RARITY_LEGENDARY")))
 	var before := w.stat_cards.size() + w.items_owned.size()
+	var first := w.rewards.offer_of(r)[0]  # v0.6.5 WN5b: a wand card is its level-5 version
+	var wand := bool(main.driver.reader.card_info(first).get("wand", false))
+	if wand:
+		assert_string_contains(panel.slot(0).card.tier_text(), tr("UI_CARD_ABILITY_LEVEL") % 5)
 	await e.tap(KEY_ENTER)
 	await e.frames(3)
 	assert_eq(w.choosing, -1, "Enter took the focused card")
 	assert_eq(
 		w.stat_cards.size() + w.items_owned.size(), before + 1, "a legendary card joined the build"
 	)
+	if wand:
+		assert_eq(CardLevels.level(w, first), 5, "the wand card at level 5")
 	assert_eq(w.rewards.index_of(w.legendary_id), -1)

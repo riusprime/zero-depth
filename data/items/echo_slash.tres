@@ -8,6 +8,6 @@ kind = 31
 name_key = &"ITEM_ECHO_SLASH"
 desc_key = &"ITEM_ECHO_SLASH_DESC"
 requires_weapon = &"blade"
-tags = PackedStringArray("blade")
+tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"echo_slash"])
 id = &"echo_slash"

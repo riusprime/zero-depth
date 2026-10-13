@@ -41,10 +41,12 @@ func sync(reader: WorldReader) -> void:
 	set_density(ViewPrefs.effects_density)
 	_sync_swing(reader)
 	_sync_bolts(reader)
+	_sync_charge(reader)  # v0.6.5 WN3: G13 Charge's orb
 	_sync_burst(reader)
 	_sync_chain(reader)
 	_sync_crits(reader)
 	_sync_mx2_forms(reader)
+	_sync_casts(reader)  # v0.6.5 WN5a: the wand's small spells where they are cast
 
 
 ## A look adds something over the v0.5 blade or dart only with an element, a cue or a damage weight.
@@ -125,9 +127,9 @@ func _sync_bolts(reader: WorldReader) -> void:
 		while trail.size() > STREAK_SEGMENTS + 1:
 			trail.remove_at(0)
 		_trails[id] = trail
-		_live.append(
-			{"id": id, "pos": p, "vel": reader.projectile_vel(i), "look": look, "trail": trail}
-		)
+		var b := {"id": id, "pos": p, "vel": reader.projectile_vel(i), "look": look, "trail": trail}
+		b["scale"] = live_scale(look, reader.projectile_radius(i))  # v0.6.5 WN3: a charged shot
+		_live.append(b)
 		var bt := reader.projectile_bounce_tick(i)
 		if bt >= 0 and _bounce_ticks.get(id, -1) != bt:
 			flash(p, (look["edge"] as Color).lerp(Color.WHITE, 0.5), 0.55)
@@ -136,6 +138,31 @@ func _sync_bolts(reader: WorldReader) -> void:
 		for id in d.keys():
 			if not seen.has(id):
 				d.erase(id)
+
+
+## v0.6.5 WN3: a live bolt drawn bigger than its spec's look by its own radius (a charged shot, G13), 0.5–4×.
+static func live_scale(look: Dictionary, radius: float) -> float:
+	var r := float(look.get("radius", 0.0))
+	return clampf(radius / r, 0.5, 4.0) if r > 0.0 else 1.0
+
+
+## v0.6.5 WN3 (G13 Charge, WAND.md "it swells in the barrel"): while the Gun's shot charges, an orb at the muzzle
+## grows from the bolt's size to its full charge (the sim's GunForms numbers, read; nothing decided here).
+func _sync_charge(reader: WorldReader) -> void:
+	var frac := reader.gun_charge()
+	if frac <= 0.0 or reader.player_dead():
+		return
+	var spec := reader.attack_spec(WorldReader.ATTACK_BOLT)
+	var look := _look_of(reader, String(WorldReader.ATTACK_BOLT))
+	if look.is_empty():
+		return
+	var full := float(spec.get("hold_permille", 1000)) / 1000.0
+	var dir := Kin.dir(reader.aim_angle())
+	var at := _player + dir * 0.55
+	var orb := {"id": -1, "pos": at, "vel": dir * 0.001, "look": look}
+	orb["trail"] = PackedVector2Array([at])
+	orb["scale"] = 1.0 + (full - 1.0) * frac
+	_live.append(orb)
 
 
 ## A stable seed for a live attack from where it is (presentation only).
@@ -174,7 +201,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"pos": fire_pos[k],
 					"radius": fire_r[k],
 					"fade": clampf(fire_left[k] / 150.0, 0.0, 1.0),
-					"seed": _seed_at(fire_pos[k], k),
+					# By place only: a patch's index in the sim's list shifts when an older one goes out, and an
+					# index seed made every later patch's flames jump (owner, 2026-10-12: "it goes buggy all around").
+					"seed": _seed_at(fire_pos[k], 0),
 				}
 			)
 		)
@@ -197,7 +226,7 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 					"throw": ab["bomb_throw"][k],
 					"land": ab["bomb_land"][k],
 					"radius": ab["bomb_r"][k],
-					"seed": _seed_at(bomb_pos[k], k),
+					"seed": _seed_at(bomb_pos[k], int(ab["bomb_throw"][k])),
 				}
 			)
 		)
@@ -324,3 +353,49 @@ static func hook_child(spec: Dictionary, trigger: int, form: int) -> Dictionary:
 		if int(h.get("trigger", -1)) == trigger and int(c.get("form", -1)) == form:
 			return c
 	return {}
+
+
+# --- v0.6.5 WN5a: the wand's casts ----------------------------------------------------------------------------
+## Each small spell the sim cast since the last sync (WorldReader.wand_casts, WandCasts), drawn once from its own
+## spec: a trigger's cast flashes a sigil (CAST_SIGIL) and a small ring where it fires, then the child spell itself
+## when it is a slash or a blast (a cast bolt flies as a live projectile, drawn by _sync_bolts with its &"cast" cue);
+## a shared card's blast (Fire's kill burst, Void's pull, Explosive's blast) draws as its burst in its element.
+func _sync_casts(reader: WorldReader) -> void:
+	var marks := reader.wand_casts()
+	if not marks.is_empty() and int(marks[marks.size() - 1]["tick"]) < _cast_tick:
+		_cast_tick = -1  # a new floor's world: its ticks start again
+		_cast_n = 0
+	var at_tick := 0
+	var last := -1
+	for m: Dictionary in marks:
+		var t := int(m["tick"])
+		at_tick = at_tick + 1 if t == last else 1
+		last = t
+		if t < _cast_tick or (t == _cast_tick and at_tick <= _cast_n):
+			continue
+		_draw_cast(reader, m)
+	if last >= 0:
+		_cast_tick = last
+		_cast_n = at_tick
+
+
+func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
+	var spec := reader.attack_spec_at(String(m["key"]))
+	if spec.is_empty():
+		return
+	var pos: Vector2 = m["pos"]
+	var start := float(m["tick"])
+	if bool(m["cast"]):
+		casts_drawn += 1
+		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start)
+		spawn(
+			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": spec["elements"]},
+			pos,
+			0.0,
+			{"start": start, "life": float(CAST_RING_TICKS), "radius": CAST_RING_M}
+		)
+	var form := int(spec.get("form", -1))
+	if form == AttackFormLooks.ARC or form == AttackFormLooks.BURST:
+		var name: StringName = AttackFormLooks.FORM_NAMES[form]
+		cast_forms[name] = int(cast_forms.get(name, 0)) + 1
+		spawn(spec, pos, SimPlane.yaw_of(int(m["angle"])), {"start": start, "own": CAST_OWN_M})

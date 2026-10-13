@@ -8,5 +8,6 @@ kind = 31
 name_key = &"ITEM_REARGUARD"
 desc_key = &"ITEM_REARGUARD_DESC"
 tags = PackedStringArray("blade", "bolt")
+requires_weapon = &"blade"
 modifiers = Array[StringName]([&"rearguard"])
 id = &"rearguard"

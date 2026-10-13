@@ -241,7 +241,7 @@ func _run_plan(w: World) -> void:
 			else:
 				_fight(w, _nearest_enemy(w))
 		"paused":
-			if _stage_frame == 5:
+			if _stage_frame == 5 or _stage_frame == 6:  # past Build (v0.6.5 WN2)
 				_tap_key(KEY_DOWN)
 			elif _stage_frame == 8:
 				_tap_key(KEY_ENTER)  # Restart run

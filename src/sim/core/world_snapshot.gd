@@ -38,6 +38,9 @@ const WORLD_KEPT := {
 	&"legendary_table": "loadout",  # v0.5.5 AR
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
+	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
+	&"wand_table": "loadout",  # v0.6.5 WN1
+	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
@@ -74,6 +77,9 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
+	&"WandTable",  # v0.6.5 WN1
+	&"BladeTable",  # v0.6.5 WN4
+	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -89,6 +95,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"KitState",
 	&"HeatState",
 	&"PlayerBuildState",
+	&"BladeState",  # v0.6.5 WN4
 	&"ProcLedger",
 	&"BossFlow",
 	&"ItemMods",
@@ -125,6 +132,9 @@ const ADDED_SINCE_V05 := {
 		&"swap_ref",
 		&"migrate_slots",
 		&"mx",  # v0.6.0 MX4 (a v0.6.0 MX2 save lacks it too: the base's fresh state)
+		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
+		&"blade",  # v0.6.5 WN4 (the base's fresh state)
+		&"tuning",  # the dev panel's Step 6 (loadout, SimTuning; a v0.6.1 save keeps the base's, v0.6.5 WN5b)
 	],
 	&"ProjectileStore":
 	[
@@ -138,8 +148,20 @@ const ADDED_SINCE_V05 := {
 		&"life0",
 		&"speed",
 		&"moves",
+		&"spiral",  # v0.6.5 WN3 (GunForms; padded with "none")
+		&"mine_t",
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
+	&"ModifierState":
+	[
+		&"hold_t",  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)
+		&"cast_tick",  # v0.6.5 WN5a (WandCasts: view-only marks; an older save has none)
+		&"cast_key",
+		&"cast_pos",
+		&"cast_angle",
+		&"cast_flag",
+	],
+	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	&"AbilityState":
 	[
 		&"bomb_spec",
@@ -251,6 +273,12 @@ static func _pad_added(w: World) -> void:
 		none.fill(0.0)
 		p.speed = none
 		p.moves = false
+	if p.mine_t.size() != p.ids.size():  # v0.6.5 WN3: an older save's projectiles neither spiral nor wait
+		var none_i := PackedInt32Array()
+		none_i.resize(p.ids.size())
+		none_i.fill(0)
+		p.spiral = none_i.duplicate()
+		p.mine_t = none_i.duplicate()
 	var a := w.actors
 	if a.poison_stacks.size() != a.ids.size():  # v0.6.0 MX4: an older save's actors carry no poison
 		var zero := PackedInt32Array()

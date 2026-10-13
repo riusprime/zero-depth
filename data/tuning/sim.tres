@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="SimTuningDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/sim_tuning_definition.gd" id="1_tun"]
+
+[resource]
+script = ExtResource("1_tun")
+id = &"sim"

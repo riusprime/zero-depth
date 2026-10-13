@@ -434,6 +434,8 @@ static func compile_item(def: ItemDefinition, repo: ContentRepository = null) ->
 		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
 		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
 		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
+		ItemDefinition.Kind.TRIGGER: ItemTable.Kind.TRIGGER,  # v0.6.5 WN1
+		ItemDefinition.Kind.WAND: ItemTable.Kind.WAND,  # v0.6.5 WN3
 	}[def.kind]
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
@@ -524,7 +526,7 @@ static func compile_items(repo: ContentRepository) -> Array[ItemTable]:
 	var out: Array[ItemTable] = []
 	for def: ItemDefinition in ModifierCompiler.item_defs(repo):
 		out.append(compile_item(def, repo))
-	return out
+	return WandCompiler.retire_items(repo, out)  # v0.6.5 WN5b: the old cards leave the offers
 
 
 # --- Bosses (v0.3.0 C) --------------------------------------------------------------------------------------
@@ -814,7 +816,7 @@ static func compile_abilities(repo: ContentRepository) -> Array[AbilityTable]:
 	var out: Array[AbilityTable] = []
 	for def: AbilityDefinition in repo.all_of(&"ability"):
 		out.append(compile_ability(def, repo))
-	return out
+	return WandCompiler.retire_abilities(repo, out)  # v0.6.5 WN5b: the six old abilities too
 
 
 ## v0.4.0 AB: with `repo`, the ability's engine_item is compiled too (AbilityTable.engine).

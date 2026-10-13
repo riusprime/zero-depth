@@ -184,7 +184,8 @@ func test_restart_run_from_the_pause_menu() -> void:
 	var w := e.world()
 	var run_seed := main.run.run_seed
 	await e.tap(KEY_ESCAPE)
-	await e.tap(KEY_DOWN)  # Resume -> Restart run
+	await e.tap(KEY_DOWN)  # Resume -> Build (v0.6.5 WN2)
+	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_ENTER)
 	await e.frames(3)
 	assert_null(main.get_node_or_null("UI/PauseMenu"), "the pause menu closed")

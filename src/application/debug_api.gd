@@ -287,9 +287,9 @@ func _apply_commands() -> void:
 		if (
 			mod_choice >= 0
 			and mod_choice < world.item_tables.size()
-			and not world.items_owned.has(mod_choice)
+			and CardLevels.can_take(world, mod_choice)
 		):
-			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card
+			Offers.apply(world, mod_choice)  # v0.6.0 MX4: the chosen card (v0.6.5 WN3: or its level-up)
 			continue
 		for k in world.item_tables.size():
 			if (

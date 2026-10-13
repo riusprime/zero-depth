@@ -76,6 +76,8 @@ static func level_of_kind(w: World, kind: int) -> int:
 ## (never a starting weapon, never a second utility). v0.6.0 MX2: a new modifier is offered with the six slots full
 ## too: taking it opens the swap (BuildSlots).
 static func can_take(w: World, idx: int) -> bool:
+	if w.ability_tables[idx].retired:
+		return false  # v0.6.5 WN5b: a retired ability modifier is never offered (Abilities.grant still takes it)
 	var s := w.ability_owned.find(idx)
 	if s >= 0:
 		return w.ability_levels[s] < AbilityTable.MAX_LEVEL
@@ -161,6 +163,7 @@ static func start_floor(w: World) -> void:
 		BuildSlots.migrate(w)
 	else:
 		BuildSlots.sync(w)
+	WandMigration.run(w)  # v0.6.5 WN5b: an old save's retired cards become their wand cards (or shards)
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():
 		w.ab.cd.append(0)

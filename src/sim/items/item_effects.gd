@@ -229,7 +229,7 @@ static func collect_pickups(w: World) -> void:
 	var at := w.player_pos()
 	var i := 0
 	while i < p.size():
-		if Kin.length(p.pos(i) - at) > Stats.reach(w, PICKUP_RADIUS_M):  # v0.4.0: pickup range
+		if Kin.length(p.pos(i) - at) > Stats.reach(w, w.tuning.pickup_radius_m):  # v0.4.0: pickup range
 			i += 1
 			continue
 		var idx := p.item[i]

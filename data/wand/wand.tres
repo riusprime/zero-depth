@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="WandDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/wand_definition.gd" id="1_wand"]
+
+[resource]
+script = ExtResource("1_wand")
+slots_per_floor = PackedInt32Array(4, 6, 8)
+child_size_permille = 600
+child_range_permille = 600
+child_damage_permille = 500
+id = &"wand"

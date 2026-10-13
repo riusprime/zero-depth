@@ -12,6 +12,6 @@ poison_period_seconds = 0.5
 poison_seconds = 4.0
 poison_max_stacks = 8
 poison_spread_m = 2.5
-tags = PackedStringArray("venom")
+tags = PackedStringArray("venom", "wand")
 modifiers = Array[StringName]([&"venom_core"])
 id = &"venom_core"

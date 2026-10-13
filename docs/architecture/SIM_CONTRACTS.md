@@ -100,6 +100,9 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   `-1` closes. The shop panel sends them through `InputLatch.note_pick`. Prices, refunds and the rules are in
   [`CONTENT_SCHEMA.md`](CONTENT_SCHEMA.md) §3 (Shop); a refusal (unaffordable, sold out, can't apply, nothing to
   do) changes only `ShopState.denied_tick`.
+- **The wand's reorder** (v0.6.5 WN1, §8e) rides on `pick` at any tick: `PICK_WAND_MOVE_BASE` (1000) + from × 16 +
+  to moves the wand's card in slot `from` to slot `to`. `World.step` applies it first; the rest of the tick sees no
+  pick. The swap answers (§8c) go up to `PICK_SWAP_BASE + 7` (the wand grows to 8 slots).
 - **Latching.** The application layer's `InputLatch` collects device events between ticks. A press and release
   that both happen between two ticks still set the `pressed` bit on the next frame, so a tap shorter than one
   frame is never lost. Each `pressed` bit is delivered exactly once.
@@ -366,7 +369,8 @@ most 2); `modifier_ids` (what rewrote it, in order).
 `BEAM` fan `[skill, projectile]`). Both weapons' specs are compiled in every run (the build only enables one, L15).
 The build's modifiers are the owned items' `ItemTable.modifiers`, in pick order. Each base spec goes through
 **`FORM → PATTERN → BEHAVIOUR → PAYLOAD → HOOK → SCALE`**; inside a stage the modifiers run in pick order and each
-one's ops in order; a modifier touches a spec only if the spec carries every tag of its `target` (empty = all).
+one's ops in order (**v0.6.5 WN1: replaced by the wand's left-to-right slot order, §8e**); a modifier touches a
+spec only if the spec carries every tag of its `target` (empty = all).
 Ops: `SET`, `ADD`, `MAX`, `MIN`, `MUL_PERMILLE` (integer fields stay integers: `c × v / 1000`), `SET_FORM`,
 `STATUS` (the last op in pick order sets a status's stacks and `every`), `ELEMENT` (appended once), `HOOK` (a child
 spec built from the op and compiled through every modifier at `depth + 1`; none at depth 2). **Form layering**
@@ -596,6 +600,282 @@ names its ability (`requires_ability`); a card tagged `heat` needs a run with he
 (the items of v0.5's kinds by id, then the `MODIFIER` cards by id: `ModifierCompiler.item_defs`), so a save's item
 codes still name the same cards. **CatchUp.power** counts a slot's card as levels: an ability modifier its level,
 a v0.5 item 1, an M-list card 1, 2 if rare, 3 if legendary.
+
+## 8e. The wand (v0.6.5 WN1)
+
+Design: [`../design/WAND.md`](../design/WAND.md) (owner-approved; W3, W6). Evidence:
+[`../roadmap/v0.7.0/evidence/WAND_1.md`](../roadmap/v0.7.0/evidence/WAND_1.md). The wand is the build's modifier
+slots (`World.mod_slots`, §8c) read left to right; this section replaces §8b's fixed stage order for the compile.
+
+**The compile reads left to right** (`WandCompile`, `src/sim/combat/wand_compile.gd`; `Modifiers.compile_for` builds
+one per world). Each card rewrites the spell built so far, in slot order; inside one card its ops still run in stage
+order (`ModifierTable.Stage`). The readings where an op's meaning depended on v0.6.0's stage sort:
+- a numeric op changes the field as the spell has it at that slot (Big·Split: one big shot whose splits are normal;
+  Split·Big: the splits are big too);
+- a hook's child (a card's own child attack: Split Shot's splits, Ember Core's kill burst) is built where its card
+  sits and compiled by its own card (never its own hook again: lineage) and the cards to its right, never the ones
+  to its left;
+- a second form op layers as before (an `ON_END` copy in the new form), the copy carrying the spell's shape and
+  payload so far but not its hooks, compiled by its card's other ops and the cards to its right; a third form op
+  layers on the attack and on the first layer (the depth guard bounds it);
+- the riders (§8b) still run after the compile: a v0.5 engine the build runs (Ember Edge's burn, the slow) keeps
+  riding the weapon's root attacks whatever the order (a known limit until the old cards migrate, WN5).
+
+**Triggers** (`ModifierOp.Op.TRIGGER`, a trigger card's one op; WAND.md T1–T4) cut the wand. On every spec the
+trigger's target reaches (the four cards target every attack), the trigger ends the spell: the cards to its right
+don't rewrite it, they build a **child spell** filed as an `AttackHook` (id and effect id: the trigger card's;
+damage `WandTable.child_damage_permille` of the hit that set it off). The child starts as a **small copy of the
+basic attack** (`WandTable`, data): on a Gun run the Gun's bolt with its radius × `child_size_permille` and its life
+× `child_range_permille`, else the Blade's first slash with its reach × `child_size_permille`; tags the weapon's plus
+`hook`. Triggers: `ON_HIT` (where a hit lands), `ON_KILL` (where an enemy dies), `ON_END` (where the spell ends: an
+arc's tip, a projectile's end, a burst, a bomb, a ring), `ON_FINISHER` (the Blade's T4: compiled into the combo's
+last step's `ON_HIT`; no other spec gets a child but the cut still ends it) and `ON_CRIT` (the Gun's T4,
+`hook_trigger_gun`: `Attacks` runs it after a landed hit whose `HIT` carried `TAG_CRIT`, read from
+`World.last_hit_crit`, which `Damage.hit` sets as it returns). A trigger reaches every spec built to its left (an
+earlier Split card's splits get the cut too). A second trigger nests once more: the attack at depth 0, its child at
+1, the child's child at 2; a third casts nothing and the cards past it reach nothing. The run-time guard is §8b's:
+depth ≤ 2, proc 100 → 50 → 25 (v0.6.5 WN1: a hook's projectile now carries it on its `HIT` too,
+`Attacks.projectile_proc`), the ancestry chain, 256 launches a tick. A spec the trigger's target doesn't reach (the
+moments: the dash, walking, a blink, the body) reads past it, so a dash card right of a trigger still rewrites the
+dash. No randomness is drawn (EI-05).
+
+**The slots grow** (`Wand.slots`): `WandTable.slots_at(World.floor_index)`: 4 on floor 1, 6 after the first boss, 8
+after the second (`data/wand/wand.tres`, starting values; the last entry repeats). A world without
+`World.wand_table` (a lab, the unit worlds) keeps `BuildSlots.SLOTS` = 6. `BuildSlots.full` is "as many cards as the
+wand's slots"; with every slot full a new card opens the Swap (§8c; the answers `PICK_SWAP_BASE + n`, n up to 7). The
+held cards keep their order across floors (the carry). Utility (Blink, Aegis) and stat cards stay outside the wand.
+
+**The reorder is input** (owner W3: "the order that you put them in the wand"; WAND.md rule 4). `InputFrame.pick` =
+`PICK_WAND_MOVE_BASE` (1000) + from × `WAND_MOVE_STRIDE` (16) + to (`InputFrame.wand_move`) moves the card in slot
+`from` to slot `to`; the cards between shift by one. `World.step` applies it first, in any state (a choice or the
+shop open, hit-stop), then the rest of the tick reads a copy of the frame with no pick, so a move never answers a
+choice. A move from or to an empty slot, or to the same slot, changes nothing. The book compiles again on its next
+read (`Modifiers.invalidate`); `mod_slots` is hashed (§8c), so a replay with the same moves is the same run.
+
+**How the views' moves reach the sim** (v0.6.5 WN2). The pause menu stops the ticks (EI-03: no tick, no move), so the
+Build page edits a preview only and, when it closes, queues the fewest moves that give its order (`Wand.plan_moves`,
+at most one per slot) in `InputLatch.queue_wand_move`; the latch delivers its queue one pick per frame after a pick
+already latched, and a pick noted while moves wait goes after them (so a Swap answer given after a reorder arrives
+after it). The moves land on the first ticks after the pause closes. The Swap panel (the sim ticks while it waits)
+sends each reorder as it is made, and an insert as its answer `PICK_SWAP_BASE + leave` then the move `leave → at`
+(`Wand.swap_picks`). Previews use the sim's own pure rules (`Wand.moved_order` / `moved_read` / `swapped_read`,
+through `WorldReader.wand_moved` / `wand_swapped`; EI-07). While a swap waits, `WorldReader.wand()["incoming"]` is
+the card offered (same shape; `{}` otherwise). Stepping the world a tick per move while paused was rejected: a tick
+moves the whole world (enemies, timers), which a pause must not do.
+
+**Reads.** `WorldReader.wand()` (`Wand.read`): the weapon (`&"gun"` or `&"blade"`), the slot count, each card in
+slot order (code, id, name key, type, level, `trigger`: -1 or the `AttackSpec.Trigger` it cuts on for this run) and
+the cuts (the trigger slots). `WorldReader.wand_read_back()` (`Wand.describe`, pure): the plain-words read-back as
+translation keys and their arguments (`WAND_READ_*`, the card name keys): "You fire a bolt shaped by Split Shot.
+Each hit casts a small bolt shaped by Ember Core." (`Wand.render(lines, translate)` words it with any translation
+Callable; the Build page and the Swap panel render it, WN2).
+
+**Saves.** `RunSaver.PAYLOAD_VERSION` 4 (reads 2, 3 and 4): `mod_slots` is the slot order the player arranged. A
+version-3 payload's slots are in pick order, which is its wand order as it stands; the slot count comes from the
+floor reached, and a wand holding more cards than that keeps them all (the next new card needs a Swap). A v0.5 carry
+(no slots) migrates as in §8c into the floor reached's slot count. A snapshot round-trips the order with equal
+hashes (`WandTable` and `last_hit_crit` are kept out: loadout and transient).
+
+**CatchUp.power** (§11) reads the wand's cards (`Wand.size`; a trigger card counts 1), whatever their order: a
+reorder never changes P.
+
+## 8f. The Gun pool (v0.6.5 WN3)
+
+Design: [`../design/WAND.md`](../design/WAND.md) G1–G16 (owner "Approve all", PLAN v0.6.5 W7). Evidence:
+[`../roadmap/v0.7.0/evidence/WAND_GUN.md`](../roadmap/v0.7.0/evidence/WAND_GUN.md). Every Gun card is a modifier of
+the bolt (target `projectile`), compiled left to right by §8e's wand, so its place in the wand decides which spells
+it reaches (a card reaches the children built to its left, never those to its right).
+
+**The cards.** G1 Big Shot (`gun_big_shot`: radius × 2, speed × 0.75, flight × 1.333 so the range holds, damage ×
+1.6), G2 Rapid Fire (`gun_rapid_fire`: radius × 0.6, rate + 600 ‰, damage × 0.7), G3 Twin (`gun_twin`: `twin` + 1),
+G4 Spread (`gun_spread`: count + 2, spread + 30°), G5 Split (`split_shot`: an `ON_HIT` hook, 3 bolts of radius
+0.08 m, half the bolt, at 50 %), G6 Pierce (`gun_pierce`: pierce + 2), G7 Ricochet (`gun_ricochet`: bounces + 2),
+G8 Homing (`gun_homing`: + 360°/s), G9 Boomerang (`boomerang`), G10 Orbit (`orbit_rounds`: 0.5 s round you), G11
+Spiral (`gun_spiral`: `spiral` 35°), G12 Mine (`gun_mine`: `mine_ticks` 3 s and an `ON_END` burst of 1.2 m at 100 %,
+effect `gun_mine`), G13 Charge (`gun_charge`: `hold_ticks` 1 s, `hold_permille` 3000), G14 Echo (`gun_echo`: again
+after 0.3 s at 60 %, the MX4 repeat), G15 Backfire (`gun_backfire`: back at 100 %, the MX4 back copy), G16 Halo
+(`halo_shot`: count × 3, a circle, range × 0.5). Starting values. G5, G9, G10 and G16 are the v0.6 cards of those
+ids, turned Gun-only (their ids stay, so saves name them); Seeker, Twin Cast and Rearguard stay with the Blade
+(`requires_weapon` blade): on a Gun run G8, G14 and G15 do their job. The rest of the v0.6 cards migrate in WN5.
+
+**Runner features** (`GunForms`, `src/sim/combat/gun_forms.gd`; the spec fields appended to `AttackSpec.INT_FIELDS`,
+the hash order):
+- `twin` (PATTERN): each bolt of a shot fires with `twin` more beside it, parallel, `GunForms.TWIN_GAP_RADII` (2.6)
+  of its radius apart, each a full bolt (`Attacks._bolts`, `GunForms.lanes`).
+- `spiral` (BEHAVIOUR, 1/4096 turns): the projectile's heading is its line's plus `spiral × cos(2π age /
+  SPIRAL_TICKS)` (24 ticks a turn), applied each tick as a turn of its velocity by the swing's change, after homing
+  and the way back (`ProjectileMoves.steer` → `GunForms.spiral_turn`); `age` = ticks since it left (after an orbit).
+- `mine_ticks` (BEHAVIOUR): on spawn the projectile's life grows by it; once its life is down to it, it stands still
+  (velocity 0, nothing else steers it) until an enemy touches it (the hit ends it: its `ON_END` hooks, the card's
+  blast) or the wait runs out (it ends there, its `ON_END` too). A still projectile's sweep is its own disc
+  (`Collide.sweep_vs_circle` at t = 0 on overlap).
+- `hold_ticks` / `hold_permille` (PAYLOAD): with a charging bolt (`Modifiers.bolt(w).hold_ticks > 0`) `PlayerKit` no
+  longer fires on the period while SHOOT is held: each held tick that could fire charges `World.mx.hold_t` (up to
+  `hold_ticks`); a release, or a full charge, fires one shot whose damage and bolt radius are × (1000 +
+  (hold_permille − 1000) × held / hold_ticks) ‰ (`AttackContext.size_permille`), then the period's cooldown. The
+  button is read from `World.held_buttons` (the input frame's held bits, EI-04); nothing else times it.
+ProjectileStore columns `spiral` and `mine_t` (hashed with the behaviour columns once a projectile used one);
+`ModifierState.hold_t` (hashed only while non-zero). Older snapshots lack them (`WorldSnapshot.ADDED_SINCE_V05`:
+padded with 0).
+
+**Levels** (WAND.md rule 6, "A duplicate levels up"): a wand card is an item tagged `wand` (`CardLevels`). Taking one
+you hold raises its level (1–5, `World.card_levels` by item index, run-long: `RunCarry`, hashed with the build's
+slots once a card levelled) and uses no slot; while below 5 it stays in the offers (altars, chests, the shop,
+events, cores: `CardLevels.can_take`). Its modifiers compile at that level (`ModifierTable.at`: each op's value +
+`per_level` × (level − 1), a hook's damage share likewise, a hook's child ops too). `CatchUp.power` counts a card's
+levels past the first. No randomness anywhere (EI-05).
+
+**The pool.** Gun cards carry `requires_weapon` gun (L15's filter): offered only in Gun runs. The 12 new ones are a
+new item kind `WAND` (33, appended), whose indices come after the trigger cards, pool by pool
+(`ModifierCompiler.WAND_POOL_ORDER`: the Gun's, then the Blade's §8g, each in id order; `ModifierCompiler.item_defs`),
+so every earlier index names the same card.
+
+**The views** (EI-07, read only): `AttackFormLooks.cues_of` adds `twin`, `helix`, `mine`, `swell`; the size is the
+spec's radius and weight (Big Shot ×1.6 thicker), the count and pattern the spec's; a live bolt is drawn from its own
+trail (so a homing, spiralling or bouncing path shows as it flies) and scaled by its own radius over its spec's (a
+charged shot, `AttackFormView.live_scale`); while the Gun charges, an orb at the muzzle grows with
+`WorldReader.gun_charge()`; a waiting mine draws a ground ring.
+## 8g. The Blade pool (v0.6.5 WN4)
+
+Design: [`../design/WAND.md`](../design/WAND.md) B1–B16 (owner-approved, G1 "Approve all"; W5: "the slash becomes a
+spell"). Evidence: [`../roadmap/v0.7.0/evidence/WAND_BLADE.md`](../roadmap/v0.7.0/evidence/WAND_BLADE.md). Each card is
+modifier data that rewrites the Blade's combo steps (target `[weapon, melee]`, so a trigger's child slash too) in slot
+order (§8e); the runner features below are in `BladeForms` (`src/sim/combat/blade_forms.gd`, state `World.blade`:
+`BladeState`), each read from the compiled spec, none drawing randomness, on the one clock.
+
+**Spec fields added** (`AttackSpec`, appended to the hash order; content names in `ModifierOpDefinition.FIELD_STAGE`):
+`motion` (-1, or a `SwingStep.Motion`: Thrust's stab, Whirl's spin), `parry`, `counter_ticks` / `counter_permille`,
+`carry`, `echo_mirror`, `knockback_m`, `line_m`, `step_m`. Tags `wave` (a flying slash: Wave's and Counter's crescents)
+and `finisher` (the combo's last step, `Modifiers.base_step`). `AttackHook.WHEN_COUNTER` (2). An `ORBITER` hook needs
+its orbit's reach.
+
+**The swing itself** (`BladeForms.step`, read by `PlayerKit.current_step`): a step whose spec sets `motion`, a swing
+speed (`rate_bonus_permille`, which the arc never read before: Flurry +500, Heavy −300; every tick of the swing, its hit
+tick too, scales by 1000 / (1000 + bonus), never under `BladeTable.rate_min`) or `step_m` (Lunge Step, added to the
+step's lunge and spread over at least `BladeTable.lunge_ticks`, `SwingStep.lunge_over`) swings as a copy of its
+`SwingStep`. The combo window, the hit and the views all read that copy (EI-07).
+
+**Runners.** An arc's landed hit with `knockback_m` pushes the enemy (not a boss) straight away over
+`knock_ticks` (Heavy). An arc with `parry` removes every enemy projectile its shape touches when it resolves and on
+every later tick of the swing (Parry Edge; `BladeState.parried` counts them). A `BURST` with `line_m` is a line from
+its origin along its angle (Fissure: an `ON_END` hook from the arc's tip, waiting 0.3 s in the launch queue, its crack;
+every enemy within `radius_m` of the line is hit, then its `ON_END` hooks from the far end). An `ORBITER` with
+`orbit_ticks` lingers (Orbit Blades): a blade circles the player at `reach_m`, turning `orbit_turn` a tick, hits what
+it touches and rests `orbit_gap`; at most `orbit_max` blades (the oldest leaves). A slash within `counter_ticks` of the
+last dash's end deals × `counter_permille` (once per dash) and that tick its `WHEN_COUNTER` hooks fire (Counter's wave).
+**Compile-time:** a carry child (Finisher+'s shockwave) takes its slash's statuses, elements and hit hooks after the
+compile (`BladeForms.settle` → `Modifiers.inherit`), so it carries cards on either side of it; a bolt hook of a
+full-circle arc flies as a ring of `CRESCENT_RING` (4) crescents (`BladeForms.hook_base`: Whirl·Wave throws a ring,
+Wave·Whirl one crescent).
+
+**The cards** (data `data/modifiers/` + `data/items/`; numbers are starting values): B1 `wide_arc`, B2 `echo_slash`
+(Wave), B12 `long_shadow` (Afterimage) and B15 `blade_orbit` (Orbit Blades) keep their v0.6 ids and item indices and
+become the Blade cards; B3 `split_wave`, B4 `whirl`, B5 `double_slash`, B6 `thrust`, B7 `heavy`, B8 `flurry`, B9
+`fissure`, B10 `chain_cut`, B11 `parry_edge`, B13 `lunge_step`, B14 `finisher_plus`, B16 `counter` are new items of kind
+`WAND` (`ItemDefinition.Kind.WAND`, 33, as §8f), indexed after the Gun pool's cards (`ModifierCompiler.WAND_POOL_ORDER`),
+so no Gun index moves. Their pool is `requires_weapon = blade` (with the item tag `blade`; validated for `WAND` cards):
+offered only in Blade runs. All 16 are tagged `wand`.
+
+**Levels**: §8f's (`CardLevels`, the item tag `wand`, `World.card_levels`, `ModifierTable.at`): one system for every
+pool. Each Blade card's ops name their own `per_level` (a hook's child ops too: Split Wave's count, Chain Cut's jumps).
+
+**Tunables** no card's ops name: `World.blade_table` (`BladeTable`, from `data/wand/blade_forms.tres`; a lab world
+without it reads the class defaults).
+
+**Hash, saves.** `BladeState` is hashed (`ModifierRuntime.hash_into`, inside `Modifiers.hash_into`) once touched, and
+copied by the snapshot (`STATE_CLASSES`; a save from before WN4 lacks it: `ADDED_SINCE_V05`, the base's fresh
+state). The view's marks (`fx_*`) are in it: what the views draw of slashes no blade draws (a ghost slash,
+a mirrored echo, a fissure's eruption, a cut shot, a counter, a carry shockwave), at most 24, kept 40 ticks.
+
+**Reads.** `WorldReader.blade_forms()` (`BladeForms.read`: the marks, the orbiting blades' positions, the cracks
+waiting to erupt, the shots cut, the last counter's tick, the enemies being pushed) and `WorldReader.blade_swing()`
+(the current swing's weight, speed bonus, lunge, knockback, parry): `BladeFormView`, `KitView` and the hero's avatar
+draw from them.
+
+## 8h. The shared pool and the triggers offered (v0.6.5 WN5a)
+
+Design: [`../design/WAND.md`](../design/WAND.md) S1–S7, T1–T4 (owner-approved, G1 "Approve all"). Evidence:
+[`../roadmap/v0.7.0/evidence/WAND_SHARED.md`](../roadmap/v0.7.0/evidence/WAND_SHARED.md). The shared cards are
+modifiers on every attack (empty target), compiled left to right by §8e, offered in both weapons' runs; the trigger
+cards (§8e) are offered too.
+
+**The cards** (CONTENT_SCHEMA "v0.6.5 WN5a"; starting values): S1 Fire `ember_core` (burn 1, ember; an `ON_KILL`
+burst 1.5 m at 60 %), S2 Lightning `storm_core` (storm; an `ON_HIT` seeking beam within 4 m at 50 % that jumps once
+more: 2 more enemies), S3 Frost `frost_core` (slow, frost 1, frost element: the frost engine's threshold 3 freezes
+for 1 s), S4 Venom `venom_core` (poison 1, venom; the poison spreads on death, §8d), S5 Bleed `shared_bleed` (bleed
+1, bleed element), S6 Void `gravity_well` (void on the spell; an `ON_HIT` burst 2.5 m at 20 % that pulls 0.8 m), S7
+Explosive `shared_explosive` (an `ON_END` burst 1.4 m at 60 % where the spell ends: an arc's tip, a projectile's end,
+a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everything else is the v0.3 / v0.6 engines.
+
+**S5's moving bleed.** `ItemMods.bleed_move_period_ticks` (the shortest owned; 0 = none). `Engines.bleed_period(w)`:
+while the player moves (`World.move_intent` not zero, or dashing) the bleed ticks every `min(bleed_period,
+bleed_move_period)` ticks, else every `bleed_period`; a bleeding enemy's countdown is clamped to the moving period
+when it applies. Without the card the bleed is v0.5's exactly.
+
+**Order fixes the shared cards needed** (WN1's known limits):
+- **Riders** (§8b) ride only on an engine something outside the wand runs: an owned item that is not a wand card
+  (`CardLevels.is_card`) bringing burn (or the slow), or none (an ability's borrow). So Fire right of a trigger no
+  longer burns the slash (it burns the child), Frost right of one no longer slows the bolt; Wildfire or Glacial Edge
+  (v0.5) still ride every root attack as before.
+- **A child slash** (an `ARC` at depth > 0: a trigger's cast) hits under `World.hit_spec`, and `Engines.on_hit`
+  no longer feeds it the combo step's statuses: it feeds its own (`Attacks._feed`).
+- **A trigger's cast feeds its statuses whole** (a spec tagged `cast`, below): `_feed` takes its stacks, not stacks ×
+  proc (1 × 50 % rounded down was 0, so ON HIT · Fire never burned on the Blade); a cast bolt already fed whole
+  through `Engines.on_hit`. The proc coefficient (§8e: 100 → 50 → 25 on `HIT.proc_pct`) is unchanged.
+- **A hook's bolt leaves past the enemy it hit** (§8d's rule) measured from the enemy's centre: the hit point is the
+  projectile's centre at contact, so the child spawned inside the enemy and hit it again (Split's shards, a trigger's
+  cast bolt). The Blade's child slash still starts on the hit and sweeps that enemy too.
+
+**T4's face per weapon.** `ItemTable.name_key_gun` / `desc_key_gun` (empty: one face); `Offers.item_keys(w, it)`
+gives the Gun face on a Gun-only run. `Offers.info`, `WorldReader.item_name_key` / `item_desc_key` and so the wand's
+read (`Wand.read`), the pick cards, the Swap and the Build page show On Finisher with the Blade and On Crit with the
+Gun.
+
+**The casts the views draw** (`WandCasts`, `src/sim/combat/wand_casts.gd`; EI-07). WandCompile tags a trigger's child
+spell `cast` (`WandCasts.TAG_CAST`). `Attacks.run_hook` notes each child it launches at once (not a delayed one) when
+it is a cast (any form) or a `BURST` / `ARC` no other view draws (not an `ON_NTH` wave, a Fissure line or a carried
+shockwave): the tick, the child's book key, where from, which way, and whether it is a cast, in `World.mx`
+(`ModifierState.cast_*`), at most `WandCasts.MAX` (32), none older than 60 ticks at the next note. View data only:
+no outcome reads it, `ModifierState.hash_into` and `touched()` leave it out, the snapshot copies it.
+`WorldReader.wand_casts()` reads it; AttackFormView draws each mark once: a cast's sigil (a flash in
+`AttackFormLooks.CAST_SIGIL` and a small ring in the child's elements) and, for a slash or a blast, the child spell
+from its own spec; a cast bolt flies with the `cast` cue. `AttackFormLooks.cues_of` adds `cast` (a spec tagged
+`cast`) and `blast` (an `ON_END` burst hook: Explosive). No randomness anywhere (EI-05).
+## 8i. The old cards' migration and the legendary tier (v0.6.5 WN5b)
+
+Design: [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards" (the mapping table). Evidence:
+[`../roadmap/v0.7.0/evidence/WAND_MIGRATION.md`](../roadmap/v0.7.0/evidence/WAND_MIGRATION.md).
+
+**Retired cards.** `data/wand/migration.tres` (CONTENT_SCHEMA "the wand") lists 43 v0.6 cards: 13 of the 14 v0.5 attack
+items, the four ability mods, the 17 M-list cards that did not keep their id (as a wand card, WN3/WN4, or as a shared
+card, WN5a: Ember, Storm, Frost and Venom Core and Gravity Well are S1–S4 and S6), the three MX4 legendary versions and
+the six ability modifiers. Each compiles `ItemTable.retired` / `AbilityTable.retired`: `ItemPool` never
+draws a retired item (altars, chests, the shop, events, cores, the legendary tier) and `Abilities.can_take` refuses a
+retired ability (altars, the shop, events, the overrun); `World.add_item`, `Abilities.grant` and the dev panel still
+take one. Nothing is deleted, so item and ability indices and old saves resolve.
+
+**The migration** (`WandMigration.run`, `src/sim/abilities/wand_migration.gd`): a build that still holds a retired
+card is rewritten once, at `Abilities.start_floor` (after the carry: a new floor from an old save's carry) and after a
+save's snapshot is written (`Main._start_floor`). The cards in wand order (`World.mod_slots`: a v0.6 save's pick order;
+then held retired cards outside a slot) are read; a retired card becomes its row's target for the run's weapon
+(`WandTable.migrate_blade` / `migrate_gun`, by id) in its place in the wand; a target already held, or met twice,
+levels up instead: the levels add (an ability its level, a `LEGENDARY` item `CardLevels.MAX_LEVEL`, any other card 1),
+at most 5. A card without a match (an empty target, or a target not in the data yet: S5 `shared_bleed` and S7
+`shared_explosive` until WN5a merges) is refunded as shards, the shop's salvage price on this floor (`ShopTable.sell_price` by its rarity for an
+item; `ability_refund_per_level` × its level for an ability; `Shop.sell_list`'s numbers). The old card leaves as a sale
+does (`Shop.remove_item` with its combos; `Abilities.remove_slot`). Deterministic, idempotent, no randomness; a world
+without `World.wand_table` (a lab) changes nothing. A wand that ends up larger than the floor's slots keeps every card
+(§8e). The payload stays version 4: the migration reads the content, not the version. v0.6.1 snapshots (payload 3)
+lacked `World.tuning` (the dev panel's Step 6); it is in `WorldSnapshot.ADDED_SINCE_V05` now (the base's loadout), so
+they load.
+
+**The legendary tier** (`LegendaryTable.wand_level`, data 5): `Offers.roll_legendary` draws, besides the tier's
+`mods`, every wand card of the run's pool still in `ItemPool.available(w, true)`; a wand card picked at the boss's
+legendary altar is raised to `wand_level` after it is taken (`BossReward.on_pick` from `Rewards.choose`; a held card
+rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp.casts` 2 (`trigger_on_hit_twice`,
+`trigger_on_kill_twice`, `trigger_on_end_twice`): `WandCompile._cut` files the child spell `casts` times as hooks of
+the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
+of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
 
 ## 9. What presentation receives
 

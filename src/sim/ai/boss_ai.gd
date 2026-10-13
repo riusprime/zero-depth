@@ -86,7 +86,7 @@ static func think(w: World, i: int) -> void:
 	var aim := Kin.angle_of(to_player)
 	match a.state[i]:
 		S.SPAWN:
-			if a.state_t[i] >= INTRO_TICKS:
+			if a.state_t[i] >= w.tuning.boss_intro_ticks:
 				_enter(a, i, S.MOVE)
 		GATE:
 			BossGates.advance(w, i, b)
@@ -95,7 +95,7 @@ static func think(w: World, i: int) -> void:
 			if bs.stagger_t[b] <= 0:
 				bs.stagger_t[b] = 0
 				_enter(a, i, S.MOVE)
-				a.cd[i] = maxi(a.cd[i], AFTER_STAGGER_CD)
+				a.cd[i] = maxi(a.cd[i], w.tuning.boss_after_stagger_cd)
 		S.MOVE:
 			a.facing[i] = (
 				aim if t.turn_rate <= 0 else Kin.turn_toward(a.facing[i], aim, t.turn_rate)

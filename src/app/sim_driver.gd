@@ -15,6 +15,8 @@ var paused := false
 var debug: DebugApi
 ## Where input comes from: a Callable returning [move_screen: Vector2, aim_world: Vector2, aim_dist_m: float].
 var input_source: Callable
+## v0.6.5 WN2: the frame the last tick stepped with (read only: the e2e tests record a run's frames to replay it).
+var last_frame: InputFrame
 
 
 func setup(p_world: World) -> void:
@@ -59,6 +61,7 @@ func step_once() -> void:
 		move = v
 	if debug != null:
 		debug.apply_pending()  # dev-panel commands land between ticks
-	world.step(latch.close_frame(move, aim, dist))
+	last_frame = latch.close_frame(move, aim, dist)
+	world.step(last_frame)
 	ticks_this_frame += 1
 	ticked.emit()

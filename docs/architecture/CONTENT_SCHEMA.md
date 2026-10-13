@@ -198,7 +198,8 @@ order: the items of the v0.5 kinds by id, then the `MODIFIER` cards by id (`Modi
 
 ```gdscript
 class_name ModifierDefinition extends ContentDef
-enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed compile order; appended, never renumbered
+enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # appended, never renumbered; v0.6.5 WN1: one card's
+                                                                # own op order (across cards: the wand's slot order)
 @export var family: StringName            # the card family (CardFrames.FRAME keys: damage, projectile, area, fire, time, ...)
 @export var rarity: Rarity                # COMMON, RARE (v0.6.0 MX4: LEGENDARY)
 @export var target: PackedStringArray     # tags a spec must all carry (weapon, melee, projectile, skill, ability, area,
@@ -212,9 +213,10 @@ enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }   # the fixed comp
 
 ```gdscript
 class_name ModifierOpDefinition extends Resource   # a sub-resource of ops
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK }
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }   # v0.6.5 WN1: TRIGGER
 enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }   # MX4: WEAPON, a hook's child only
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH }   # MX4: the last three
+enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }   # MX4: ON_END..
+                                                                # EVERY_NTH; v0.6.5 WN1: ON_CRIT, ON_FINISHER
 enum When { ALWAYS, OVERCLOCK }                                         # MX4
 @export var op: Op
 @export var stage: int = -1               # -1: the modifier's stage
@@ -236,6 +238,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 @export var hook_delay_seconds: float     #   MX4: the child waits this long after its trigger (0 = at once)
 @export var hook_when: When               #   MX4: ALWAYS, or only at Overclock
 @export var hook_ops: Array[ModifierOpDefinition]  # MX4: shape the child before the build compiles it (no HOOK, no SET_FORM)
+@export var hook_trigger_gun: int = -1    # v0.6.5 WN1 (TRIGGER): the trigger on a Gun run, when it differs (-1: same)
 ```
 
 - **Fields and stages** (`ModifierOpDefinition.FIELD_STAGE`): PATTERN `count`, `spread_degrees`,
@@ -270,6 +273,126 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   51 modifiers in all. Each card's ops, target and numbers are the table in
   [`../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md`](../roadmap/v0.6.0/evidence/MODIFIER_ENGINE_4.md); every number
   is a starting value.
+- **v0.6.5 WN1: the wand** (design [`../design/WAND.md`](../design/WAND.md); sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8e). The compile reads the slots left to right; a card's own ops keep
+  their stage order. **Triggers:** a modifier whose one op is `TRIGGER` (stage HOOK) is a trigger: `hook_trigger` is
+  one of `ON_HIT`, `ON_KILL`, `ON_END`, `ON_FINISHER`, `ON_CRIT` (`ModifierOpDefinition.WAND_TRIGGERS`), and
+  `hook_trigger_gun` (-1, or one of those) the trigger on a Gun run. Validation (`trigger`, `range`): a trigger
+  modifier has its one op only; a wand trigger; only a trigger card (`ItemDefinition.Kind.TRIGGER`, 32, appended)
+  names a trigger modifier, and it names exactly one (`ModifierDefinition.cross_check`). Shipped (placeholder names
+  and looks until WN5): `trigger_on_hit` (On Hit / Al Impactar), `trigger_on_kill` (On Kill / Al Matar),
+  `trigger_on_end` (On End / Al Terminar), `trigger_on_finisher` (On Finisher / On Crit; Al Rematar / Al Crítico:
+  `ON_FINISHER`, the Gun's `ON_CRIT`); each an item of kind `TRIGGER` tagged `trigger` (a new item tag), family
+  `time` (silver, a placeholder frame), common. Trigger cards are never offered yet (`ItemPool` skips the kind; WN5
+  opens their pool); item indices
+  put them after the `MODIFIER` cards (`ModifierCompiler.item_defs`: v0.5 kinds by id, `MODIFIER` by id, `TRIGGER`
+  by id), so every earlier index names the same card. 55 modifiers, 67 items.
+- **v0.6.5 WN3: the Gun pool** (WAND.md G1–G16; sim side [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8f). New op
+  fields: PATTERN `twin` (more bolts side by side); BEHAVIOUR `spiral_degrees` (the corkscrew's swing),
+  `mine_seconds` (a mine's wait after its flight); PAYLOAD `hold_seconds`, `hold_permille` (Charge: the time to a
+  full charge and the size and damage it reaches). `ModifierOpDefinition.per_level: float` (default 0): added to the
+  op's value per card level above 1, in the op's own units (a `HOOK` op: to `hook_damage_permille`); only a numeric
+  op or a hook may carry one (`range`). Items: a new kind `WAND` (33, appended; a wand card of a weapon's pool) and a
+  new item tag `wand` (a card that levels up 1–5: `CardLevels`); a `WAND` item is tagged `wand` (`tags`) and a `wand`
+  card names modifiers (`missing`). `requires_weapon` is the pool: the Gun's cards say `gun`. Shipped: 12 new
+  modifiers and `WAND` items (`gun_big_shot`, `gun_rapid_fire`, `gun_twin`, `gun_spread`, `gun_pierce`,
+  `gun_ricochet`, `gun_homing`, `gun_spiral`, `gun_mine`, `gun_charge`, `gun_echo`, `gun_backfire`; names
+  `ITEM_GUN_*` in en and es) and four v0.6 cards turned Gun wand cards with their ids kept (`split_shot` G5, its
+  shards 0.08 m and + 1 a level; `boomerang` G9; `orbit_rounds` G10; `halo_shot` G16), each with its level steps;
+  `seeker`, `twin_cast`, `rearguard` now `requires_weapon` blade. Item indices: v0.5 kinds by id, `MODIFIER` by id,
+  `TRIGGER` by id, then `WAND` by id. 67 modifiers, 79 items. Every number is a starting value.
+- **v0.6.5 WN1: `WandDefinition`** (category `wand`, `data/wand/wand.tres`, its own file so the dev panel's tuning
+  data merges beside it; compiled by `WandCompiler` into `WandTable`, `World.wand_table`):
+
+  ```gdscript
+  class_name WandDefinition extends ContentDef
+  const MAX_SLOTS := 8
+  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats)
+  @export var child_size_permille := 600                       # a trigger's child spell: the basic attack's size (a
+  @export var child_range_permille := 600                      #   bolt's radius, a slash's reach), a bolt's flight
+  @export var child_damage_permille := 500                     #   and the share of the hit that set it off
+  ```
+
+  Validation: `slots_per_floor` 1..64 entries, each 1..`MAX_SLOTS` and never lower than the one before
+  (`table_size`, `range`, `table_order`); the three shares 1..10000 (`range`). Every number is a starting value.
+- **v0.6.5 WN4: the Blade pool** (design [`../design/WAND.md`](../design/WAND.md) B1–B16; sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8g). New op fields (`ModifierOpDefinition.FIELD_STAGE`): `motion` (FORM;
+  `SwingStep.Motion`: 2 thrust, 3 spin), `echo_mirror` (PATTERN), `step_m` (BEHAVIOUR), `parry`, `counter_seconds`,
+  `counter_permille`, `carry`, `knockback_m` (PAYLOAD), `line_m` (SCALE). `ModifierOpDefinition.When.COUNTER` (2: the
+  hook fires only on a slash that counters). New target tags `wave` (a flying slash) and `finisher` (the combo's last
+  step). An `ORBITER` hook is allowed (it needs `hook_reach_m`, its orbit's radius; with `orbit_seconds` in its
+  `hook_ops` it lingers). **Levels:** WN3's (`ModifierOpDefinition.per_level`, the item tag `wand`; the WN3/WN4 merge
+  kept one system: a hook's `hook_ops` carry their own `per_level`). **Pool cards:** `ItemDefinition.Kind.WAND` (33,
+  as WN3), indexed after the Gun pool's cards (`ModifierCompiler.item_defs`: v0.5 kinds, `MODIFIER`, `TRIGGER`, then
+  `WAND` pool by pool in `ModifierCompiler.WAND_POOL_ORDER` (gun, blade, both), each by id); a `WAND` card tagged
+  `blade` requires the blade and the other way round (`range`). Shipped: B1 `wide_arc` (now Blade-only, +60° arc
+  +30 % reach), B2 `echo_slash` (Wave), B12 `long_shadow` (Afterimage, Blade-only) and B15 `blade_orbit` (Orbit
+  Blades: no longer an Orbit Blades merge) keep their ids, kinds and indices; B3 `split_wave`, B4 `whirl`, B5
+  `double_slash`, B6 `thrust`, B7 `heavy`, B8 `flurry`, B9 `fissure`, B10 `chain_cut`, B11 `parry_edge`, B13
+  `lunge_step`, B14 `finisher_plus`, B16 `counter` are new `WAND` items; all 16 `requires_weapon = blade`, tag
+  `blade` and `wand` (levels 1–5). Each card's ops and numbers: the table in
+  [`../roadmap/v0.7.0/evidence/WAND_BLADE.md`](../roadmap/v0.7.0/evidence/WAND_BLADE.md). With WN3's Gun pool: 79
+  modifiers, 91 items.
+- **v0.6.5 WN4: `BladeFormsDefinition`** (category `wand`, id `blade_forms`, `data/wand/blade_forms.tres`; compiled
+  by `BladeCompiler` into `BladeTable`, `World.blade_table`): the runner numbers no card's ops name.
+
+  ```gdscript
+  class_name BladeFormsDefinition extends ContentDef
+  @export var orbit_max := 6                  # Orbit Blades: blades at once (the oldest leaves); 1..32
+  @export var orbit_turns_per_second := 1.0   #   their turn round the hero
+  @export var orbit_gap_seconds := 0.2        #   a blade rests this long after a hit
+  @export var knock_seconds := 0.13           # Heavy: the knockback slides over this long
+  @export var lunge_seconds := 0.1            # Lunge Step: its step is spread over at least this long
+  @export var min_rate_permille := 250        # a swing is never slower than this share of its speed; 50..1000
+  ```
+
+  Validation: the counts and shares in range (`range`), the times positive (`not_positive`). Every number is a starting
+  value.
+- **v0.6.5 WN5a: the shared pool and the triggers offered** (design [`../design/WAND.md`](../design/WAND.md) S1–S7,
+  T1–T4; sim side [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8h). New `ItemDefinition` fields (appended):
+  `bleed_move_period_seconds: float` (S5: the bleed's period while the player moves; 0 = none; when set, under
+  `bleed_period_seconds`: `range`), `name_key_gun` / `desc_key_gun: StringName` (T4: the card's face on a Gun run;
+  empty = the same face; both or neither: `missing`). A `WAND` card may bring an engine's numbers like a `MODIFIER`
+  card (burn, poison, and the bleed's without a dash burst). The shared pool's cards are `requires_weapon = ""`
+  (offered in both runs) and tagged `wand` (levels 1–5). Five v0.6 cards that already did the job keep their ids,
+  kinds and item indices and become the shared cards: S1 Fire `ember_core` (its kill burst + 10 % a level), S2
+  Lightning `storm_core` (its chain + 10 % a level), S3 Frost `frost_core` (a new `MUL_PERMILLE damage 1000`,
+  + 50 ‰ a level), S4 Venom `venom_core` (the same), S6 Void `gravity_well` (a new `ELEMENT void` on the spell; its
+  pull + 10 % a level); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
+  Vacío. Two new `WAND` items and modifiers: S5 `shared_bleed` (`STATUS bleed 1`, `ELEMENT bleed`,
+  `MUL_PERMILLE damage 1000` + 50 ‰ a level; the bleed 1 a stack every 0.5 s, 0.25 s while moving, 4 s, 8 stacks;
+  Bleed / Sangrado) and S7 `shared_explosive` (a `HOOK ON_END BURST` 1.4 m at 600 ‰, + 100 ‰ a level, effect
+  `shared_explosive`, its child `ELEMENT ember`; Explosive / Explosivo), both target every attack, indexed in the
+  shared pool (`WAND_POOL_ORDER`'s `""`, after the Blade's) by id. Triggers: `ItemPool` offers kind `TRIGGER` now;
+  `trigger_on_finisher` is On Finisher / Al Rematar, with `name_key_gun` On Crit / Al Crítico. 81 modifiers, 93 items.
+  Every number is a starting value.
+- **v0.6.5 WN5b: `WandMigrationDefinition`** (category `wand`, id `migration`, `data/wand/migration.tres`; design
+  [`../design/WAND.md`](../design/WAND.md) "What happens to the v0.6 cards", the full table there): the one table that
+  retires the v0.6 cards and says what each becomes. Read by `WandCompiler.from_repo` into `WandTable.migrate_*`
+  (sim: `WandMigration`, SIM_CONTRACTS §8i) and by `ContentCompiler.compile_items` / `compile_abilities`
+  (`WandCompiler.retire_items` / `retire_abilities`: `ItemTable.retired`, `AbilityTable.retired`).
+
+  ```gdscript
+  class_name WandMigrationDefinition extends ContentDef
+  @export var old_ids: Array[StringName] = []     # the retired cards: item ids or ability ids (43 in the data)
+  @export var blade_into: Array[StringName] = []  # what each becomes on a Blade run (&"": refunded as shards)
+  @export var gun_into: Array[StringName] = []    # ... on a Gun run
+  @export var pending: Array[StringName] = []     # targets another step brings (WN5a's S1–S7), allowed to be missing
+  ```
+
+  Validation: the three arrays one entry each (`table_size`), no empty or repeated old id (`missing`,
+  `duplicate_id`), no target that is itself retired (`retired_target`); cross-check: every old id names an item or an
+  ability, every non-empty target an item or a `pending` id (`unknown_item`). A retired card is never offered (altars,
+  chests, the shop, events, cores, the legendary tier, the overrun); it is not deleted, so old saves and item indices
+  still resolve and the dev panel can still grant it. The shared-pool targets are WN5a's ids: `ember_core` (S1),
+  `storm_core` (S2), `frost_core` (S3), `venom_core` (S4), `gravity_well` (S6), kept v0.6 cards and never retired, and
+  `shared_bleed` (S5), `shared_explosive` (S7), new cards listed in `pending` until WN5a merges.
+- **v0.6.5 WN5b: legendary triggers.** `ModifierOpDefinition.hook_casts` (TRIGGER only, 1..3; else `range`): the
+  cut's child spell is cast that many times per trigger, each `hook_delay_seconds` after the one before. Three
+  `TRIGGER` items of rarity `LEGENDARY` (`trigger_on_hit_twice`, `trigger_on_kill_twice`, `trigger_on_end_twice`;
+  `ITEM_TRIGGER_ON_*_TWICE` en + es; 2 casts, 0.15 s apart, starting values), indexed after every pool
+  (`ModifierCompiler.item_defs`), offered only by the legendary tier (and a boss's core, which draws from its `mods`).
+  Content: 82 modifiers, 94 items.
 - **Items name their modifiers.** `ItemDefinition.modifiers: Array[StringName]` lists the modifier ids an item brings
   into the build, in order; `ContentCompiler.compile_item(def, repo)` compiles them into `ItemTable.modifiers`. The 14
   item kinds whose effects are attack rewrites (`ItemDefinition.MODIFIER_KINDS`: Long Edge, Twin Arc, Ember Edge,
@@ -466,8 +589,11 @@ class_name BiomeDefinition extends Resource
   - ambient colour and energy;
   - void colour and AgX exposure;
   - SSAO, SSIL and the geometric contact shadow (`contact_radius`, `contact_strength`);
-  - fog, glow and the vignette;
-  - the warm light colour, energy and range that fire props use.
+  - fog, glow (intensity, threshold, bloom, spread) and the vignette;
+  - the warm light colour, energy and range that fire props use;
+  - the hero light's energy and range;
+  - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass
+    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md)).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
@@ -709,6 +835,11 @@ a legendary stat card is its epic amount × this; `compile_stat_cards` appends t
 cards and items). v0.6.0 MX4: `mods` are the legendary modifiers: the three legendary versions (Tempest Core,
 Inferno Core, Echo Storm; rarity `LEGENDARY`, never in another pool) and the five trinkets (Shock Circles, Halo Shot,
 Boomerang, Orbit Rounds, Short Fuse); a boss's core draws from the same list.
+v0.6.5 WN5b (WAND.md "The legendary tier offers level-5 versions and a few unique triggers"): `wand_level` (0..5;
+data 5): with it every wand card (an item tagged `wand`, of the run's pool) is a pool mod too, and a pick at the
+boss's legendary altar takes it at that level (a held one rises to it; `BossReward.on_pick`); `mods` are now the three
+legendary triggers (the MX4 legendary versions and trinkets were retired or are wand cards). The pool needs cards:
+`stat_cards`, `mods` or `wand_level` (`missing`).
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
@@ -754,6 +885,16 @@ back, 2.5 heat, 3.5 s. `ContentCompiler.compile_skill` turns it into `SkillTable
 Values come from GA §5 (player kit). Until the gap analysis report is in the repo, v0.0.1 uses starting values,
 listed in [`../design/GAME_BLUEPRINT.md`](../design/GAME_BLUEPRINT.md) §C. The owner tunes them during the v0.0.1
 Windows check.
+
+### Sim tuning (`data/tuning/sim.tres`, the dev panel's Step 6)
+
+`SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
+spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
+spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
+Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
+as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
+`range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
 
 ## 9. Compiled tables
 

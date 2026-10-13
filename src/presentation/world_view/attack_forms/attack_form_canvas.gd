@@ -25,6 +25,8 @@ const TAIL_SEGMENTS := 4
 const STREAK_SEGMENTS := 9
 const ORBIT_TURN := 0.09
 const HOME_TURN := 0.035
+## v0.6.5 WN3: a waiting mine's ground ring (metres; G12 Mine).
+const MINE_RING_M := 0.45
 const RING_STAGGER := 4.0
 const FLASH_TICKS := 8
 const LANDING_TICKS := 12
@@ -32,6 +34,10 @@ const LANDING_TICKS := 12
 const TRIGGER_ON_HIT := 0
 const TRIGGER_ON_NTH := 2
 const PLAYER_RADIUS := 0.35
+## v0.6.5 WN5a: a trigger's cast sigil (its small ring) and a cast slash's own edge, from the point where it fires.
+const CAST_RING_M := 0.7
+const CAST_RING_TICKS := 16
+const CAST_OWN_M := 0.1
 
 ## The layer pools: name → [mesh id, lit].
 const LAYERS := {
@@ -84,6 +90,10 @@ var density := "high"
 var vfx: VfxLayer = null
 var pools := {}
 var particle_pools := {}
+## v0.6.5 WN5a (AttackFormView._sync_casts): what was drawn of the wand's casts (read by the tests): the trigger casts'
+## sigils, and the cast forms by name.
+var casts_drawn := 0
+var cast_forms := {}
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
 var _effects: Array[Dictionary] = []
 ## The player's live bolts that carry a layer this frame: {id, pos, vel, look, trail: PackedVector2Array}.
@@ -109,6 +119,9 @@ var _bomb_looks := {}
 var _last_blast := -1
 var _orbit_sig := ""
 var _orbit_look := {}
+## v0.6.5 WN5a (AttackFormView._sync_casts): the newest cast mark drawn (its tick, and how many of that tick).
+var _cast_tick := -1
+var _cast_n := 0
 
 
 func _init() -> void:
@@ -218,6 +231,8 @@ func flash(at: Vector2, c: Color, size: float, start: float = -1.0) -> void:
 
 
 func clear() -> void:
+	_cast_tick = -1  # v0.6.5 WN5a
+	_cast_n = 0
 	_effects.clear()
 	_live.clear()
 	_trails.clear()
@@ -482,7 +497,8 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 	var trail: PackedVector2Array = b["trail"]
 	var cues: Array = look["cues"]
 	var segs := mini(trail.size() - 1, STREAK_SEGMENTS if cues.has(&"streak") else TAIL_SEGMENTS)
-	var w: float = float(look["thick"]) * 2.2
+	var size := float(b.get("scale", 1.0))  # v0.6.5 WN3: a charged shot, the charging orb
+	var w: float = float(look["thick"]) * 2.2 * size
 	var n := trail.size()
 	for j in segs:
 		var a := SimPlane.to_3d(trail[n - 1 - j], BOLT_H)
@@ -502,7 +518,7 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 			(
 				Basis(Vector3.UP, heading)
 				* Basis.from_scale(
-					Vector3(look["length"] * 1.25, look["thick"] * 1.8, look["thick"] * 1.8)
+					Vector3(look["length"] * 1.25, look["thick"] * 1.8, look["thick"] * 1.8) * size
 				)
 			),
 			at
@@ -516,6 +532,8 @@ func _draw_live_bolt(b: Dictionary, now: float) -> void:
 			lit_color(look["edge"], 0.4, 1.4)
 		)
 	var pts: Array[Vector3] = [at]
+	if cues.has(&"mine") and (b["vel"] as Vector2).length() < 0.0001:  # v0.6.5 WN3: a waiting mine
+		_ring_at(SimPlane.to_3d(b["pos"], GROUND_H), MINE_RING_M, look, 0.6, pts)
 	_emit({"seed": int(b["id"]), "look": look}, look, pts, now, 1.0)
 
 

@@ -37,6 +37,8 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
+	TRIGGER,  # v0.6.5 WN1: a wand trigger card (its modifier is a TRIGGER op; not offered until WN5)
+	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (tag wand: levels 1–5; requires_weapon: its pool)
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
@@ -64,6 +66,8 @@ const MODIFIER_KINDS: Array[Kind] = [
 	Kind.OVERCLOCKED_DRONE,
 	Kind.AFTERIMAGE,
 	Kind.MODIFIER,
+	Kind.TRIGGER,  # v0.6.5 WN1
+	Kind.WAND,  # v0.6.5 WN3
 ]
 
 ## The closed set of item tags (v0.3.0 G): engines (fire, shock, frost, bleed, guard) and attack families.
@@ -82,6 +86,8 @@ const TAGS: Array[StringName] = [
 	&"heat",
 	&"ability",
 	&"venom",
+	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
+	&"wand",  # v0.6.5 WN3: a wand card that levels up 1–5 (CardLevels)
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -183,6 +189,14 @@ const TAGS: Array[StringName] = [
 @export var poison_seconds := 0.0
 @export var poison_max_stacks := 0
 @export var poison_spread_m := 0.0
+# --- v0.6.5 WN5a (docs/design/WAND.md, the shared pool and the triggers).
+## S5 Bleed: the bleed's period while you move (walking or dashing; 0 = the same as standing). Shorter: it ticks
+## faster while you move.
+@export var bleed_move_period_seconds := 0.0
+## T4: the card's face on a Gun run when it differs (On Finisher with the Blade, On Crit with the Gun); empty = the
+## same face on both weapons. Both or neither.
+@export var name_key_gun: StringName = &""
+@export var desc_key_gun: StringName = &""
 
 
 func category() -> StringName:
@@ -209,6 +223,11 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "requires_weapon is empty, blade or gun")
 		)
+	# v0.6.5 WN4: a Blade pool card is offered only in Blade runs
+	if kind == Kind.WAND and tags.has("blade") != (requires_weapon == &"blade"):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a blade pool card requires the blade")
+		)
 	if requires_ability != &"" and ability_kind(requires_ability) < 0:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "unknown ability %s" % requires_ability)
@@ -220,6 +239,11 @@ func validate() -> Array[ValidationIssue]:
 			)
 		)
 	_check_tags(issues)
+	if kind == Kind.WAND and not tags.has("wand"):
+		issues.append(ValidationIssue.new(&"tags", resource_path, "a WAND card is tagged wand"))
+	if tags.has("wand") and modifiers.is_empty():
+		issues.append(ValidationIssue.new(&"missing", resource_path, "a wand card names modifiers"))
+	_check_wand_extras(issues)  # v0.6.5 WN5a
 	if kind in MODIFIER_KINDS and modifiers.is_empty():
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "this kind names its modifiers")
@@ -316,11 +340,13 @@ func _validate_ability_mods(issues: Array[ValidationIssue]) -> void:
 	match kind:
 		Kind.RAZOR_ORBIT:
 			_check_bleed(issues)
-		Kind.MODIFIER:
+		Kind.MODIFIER, Kind.WAND:  # v0.6.5 WN5a: a shared wand card brings its engine's numbers too
 			if burn_max_stacks > 0:
 				_check_burn(issues)
 			if poison_max_stacks > 0 or poison_damage > 0:
 				_check_poison(issues)
+			if bleed_max_stacks > 0:
+				_check_bleed_engine(issues)
 
 
 ## v0.6.0 MX4: Venom Core's poison engine.
@@ -403,3 +429,32 @@ func _check_slow(issues: Array[ValidationIssue]) -> void:
 func _check_permille_below_1000(issues: Array[ValidationIssue], field: String, v: int) -> void:
 	if v <= 0 or v >= 1000:
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s is in 1..999" % field))
+
+
+## v0.6.5 WN5a: a shared card's bleed (S5): the engine's numbers (no dash burst needed).
+func _check_bleed_engine(issues: Array[ValidationIssue]) -> void:
+	check_positive(issues, "bleed_damage", bleed_damage)
+	check_positive(issues, "bleed_period_seconds", bleed_period_seconds)
+	check_duration(issues, "bleed_period_seconds", bleed_period_seconds)
+	check_positive(issues, "bleed_seconds", bleed_seconds)
+	check_duration(issues, "bleed_seconds", bleed_seconds)
+	check_positive(issues, "bleed_max_stacks", bleed_max_stacks)
+
+
+## v0.6.5 WN5a: the moving bleed is shorter than the standing one; a Gun face has both keys.
+func _check_wand_extras(issues: Array[ValidationIssue]) -> void:
+	if (
+		bleed_move_period_seconds < 0.0
+		or (bleed_move_period_seconds > 0.0 and bleed_move_period_seconds >= bleed_period_seconds)
+	):
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"bleed_move_period_seconds is 0 or under the bleed's period"
+			)
+		)
+	if String(name_key_gun).is_empty() != String(desc_key_gun).is_empty():
+		issues.append(
+			ValidationIssue.new(&"missing", resource_path, "name_key_gun and desc_key_gun together")
+		)

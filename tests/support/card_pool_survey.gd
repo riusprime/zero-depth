@@ -18,7 +18,22 @@ const POOL_MIN := 40
 ## v0.6.0 MX4: 80 (Blade) / 77 (Gun): the owner's M-list, approved in full ("keep all M1–M30", PLAN v0.5.5, which
 ## outranks the roadmap's 40-50), adds 29 modifier cards (the 3 legendary ones are the boss's tier, not counted).
 ## Whether to prune is an owner question (PROGRESS v0.5.5 "Gates"), not decided here.
-const POOL_MAX := 80
+## v0.6.5 WN3: 90. The owner's Gun pool (WAND.md G1–G16, PLAN v0.6.5 W7 "Approve all") adds 12 new Gun cards on top
+## of the v0.6 ones they replace until WN5 migrates and retires the old cards: measured 86 (Gun) / 76 (Blade) on the
+## WN3 branch. Raised in the open, not tuned: PROGRESS v0.6.5 "Gates" asks the owner; WN5 brings the count back down.
+## v0.6.5 WN4: the Blade pool's 12 new cards (WAND.md B3–B11, B13, B14, B16; owner G1 "Approve all"), while the old
+## cards stay until WN5 migrates or retires them (WAND.md "What happens to the v0.6 cards"): 92 (Blade) on the WN4
+## branch. Merged with WN3: measured 88 (Blade) / 83 (Gun) (Wide Arc, Wave, Afterimage and Orbit Blades went
+## Blade-only; Split, Boomerang, Orbit and Halo Gun-only), so 88. Raised in the open, not a balance target: PROGRESS
+## v0.6.5 "Gates" asks the owner; WN5 prunes.
+## v0.6.5 WN5b: 61, measured after the v0.6 cards' migration retired 43 cards (WAND.md "What happens to the v0.6
+## cards"; data/wand/migration.tres), on a trial merge of WN5b with WN5a (`7e88f80`, the shared pool S1–S7 and the
+## offered triggers): test_card_pool_reach.gd "blade pool: 61 in the data + 0 planned ([]) = 61", "gun pool: 59 in the
+## data + 0 planned ([]) = 59". On the WN5b branch alone: 55 (Blade) / 53 (Gun). Per build: 3 abilities (the weapon,
+## Blink, Aegis), 18 stat cards, the weapon's 16 wand cards, the passives that take no slot (13 Blade, 11 Gun) and,
+## with WN5a, the 7 shared cards and the 4 triggers. Not pruned past WAND.md; the owner's target was 40–50
+## (PROGRESS v0.6.5 "Gates": the owner decides).
+const POOL_MAX := 61
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [
@@ -64,6 +79,8 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 	var w := world(repo, 1, build, [])
 	var have := PackedStringArray()
 	for t in w.ability_tables:
+		if t.retired:
+			continue  # v0.6.5 WN5b: the six old ability modifiers retired (WAND.md; data/wand/migration.tres)
 		if t.start_weapon == 0 or (t.start_weapon & w.player.weapons) != 0:
 			have.append("ability:%s" % t.id)
 	for t in w.stat_tables:
@@ -72,12 +89,18 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 	for t in w.item_tables:
 		if t.rarity == ItemTable.LEGENDARY:
 			continue  # v0.6.0 MX4: the boss's legendary tier only, never an altar's or a chest's
+		# v0.6.5 WN5a: the wand's trigger cards are offered now (both weapons), so they count
+		if t.retired:
+			continue  # v0.6.5 WN5b: a retired v0.6 card is never offered
 		if t.requires_weapon == 0 or (t.requires_weapon & w.player.weapons) != 0:
 			have.append("mod:%s" % t.id)
 	have.sort()
 	var planned := PackedStringArray()
+	var in_data := PackedStringArray()  # v0.6.5 WN5b: a retired ability is in the data, not planned
+	for t in w.ability_tables:
+		in_data.append(String(t.id))
 	for id in PLANNED_ABILITIES:
-		if not have.has("ability:%s" % id):
+		if not in_data.has(String(id)):
 			planned.append("ability:%s" % id)
 	return [have, planned]
 

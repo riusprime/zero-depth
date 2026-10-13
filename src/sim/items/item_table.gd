@@ -37,6 +37,8 @@ enum Kind {
 	RAZOR_ORBIT,
 	AFTERIMAGE,
 	MODIFIER,
+	TRIGGER,  # v0.6.5 WN1: a wand trigger card (Wand; ItemPool never draws one yet)
+	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (CardLevels)
 }
 
 ## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).
@@ -60,6 +62,9 @@ var requires_ability := -1
 ## v0.6.0 MX1: the item's modifiers (compiled ModifierDefinitions), in its order: what it does to the weapon attacks
 ## and the Skills (Modifiers.compile). Empty for items whose effects are not attack rewrites yet.
 var modifiers: Array[ModifierTable] = []
+## v0.6.5 WN5b (WAND.md "What happens to the v0.6 cards"): a retired v0.6 card. Never offered (ItemPool); kept so
+## old saves and item indices still resolve; a held one maps onto its new card on load (WandMigration).
+var retired := false
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1
@@ -123,3 +128,8 @@ var poison_period_ticks := 1
 var poison_ticks := 0
 var poison_max_stacks := 0
 var poison_spread_m := 0.0
+## v0.6.5 WN5a: S5 Bleed's period while the player moves (0 = none), and T4's face on a Gun run (empty = name_key /
+## desc_key; Offers.item_keys picks the run's).
+var bleed_move_period_ticks := 0
+var name_key_gun := &""
+var desc_key_gun := &""

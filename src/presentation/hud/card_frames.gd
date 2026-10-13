@@ -116,6 +116,40 @@ const FAMILY_OF := {
 	&"twin_cast": &"time",
 	&"venom_core": &"damage",
 	&"wide_arc": &"area",
+	# v0.6.5 WN1: the wand's trigger cards (placeholder frame until WN5 gives them their look)
+	&"trigger_on_end": &"time",
+	&"trigger_on_finisher": &"time",
+	&"trigger_on_hit": &"time",
+	&"trigger_on_kill": &"time",
+	&"trigger_on_hit_twice": &"time",  # v0.6.5 WN5b: the legendary triggers
+	&"trigger_on_kill_twice": &"time",
+	&"trigger_on_end_twice": &"time",
+	# v0.6.5 WN3: the Gun pool's new cards (G5, G9, G10, G16 keep theirs above)
+	&"gun_backfire": &"projectile",
+	&"gun_big_shot": &"damage",
+	&"gun_charge": &"crit",
+	&"gun_echo": &"time",
+	&"gun_homing": &"projectile",
+	&"gun_mine": &"area",
+	&"gun_pierce": &"damage",
+	&"gun_rapid_fire": &"projectile",
+	&"gun_ricochet": &"projectile",
+	&"gun_spiral": &"trinket",
+	&"gun_spread": &"projectile",
+	&"gun_twin": &"time",
+	# v0.6.5 WN4: the Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
+	&"chain_cut": &"damage",
+	&"counter": &"dash",
+	&"double_slash": &"time",
+	&"finisher_plus": &"area",
+	&"fissure": &"area",
+	&"flurry": &"time",
+	&"heavy": &"damage",
+	&"lunge_step": &"dash",
+	&"parry_edge": &"damage",
+	&"split_wave": &"projectile",
+	&"thrust": &"damage",
+	&"whirl": &"area",
 	# Stat cards
 	&"area": &"area",
 	&"armour": &"economy",
@@ -146,6 +180,9 @@ const FAMILY_OF := {
 	&"frost_nova": &"projectile",
 	&"orbit_blades": &"damage",
 	&"pulse_gun": &"projectile",
+	# v0.6.5 WN5a: the shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
+	&"shared_bleed": &"damage",
+	&"shared_explosive": &"area",
 }
 
 ## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold frame, overbright, its title a paler gold.

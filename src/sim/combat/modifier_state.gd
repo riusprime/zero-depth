@@ -41,6 +41,15 @@ var last_attack := 0
 var charge_tick := -1
 var shell_tick := -1
 var trail_tick := -1
+## v0.6.5 WN3 (GunForms, G13 Charge): the ticks the shot in the barrel has charged (0 = none).
+var hold_t := 0
+## v0.6.5 WN5a (WandCasts): the small spells cast for the views (parallel arrays, oldest first): the tick, the child
+## spec's book key, where from, which way, and 1 for a trigger's cast. View data only: not hashed, not in touched().
+var cast_tick := PackedInt32Array()
+var cast_key := PackedStringArray()
+var cast_pos := PackedVector2Array()
+var cast_angle := PackedInt32Array()
+var cast_flag := PackedInt32Array()
 
 
 func touched() -> bool:
@@ -52,6 +61,7 @@ func touched() -> bool:
 		or charge_tick != -1
 		or shell_tick != -1
 		or trail_tick != -1
+		or hold_t != 0
 	)
 
 
@@ -97,3 +107,5 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(p.y)
 	for v in [1 if trail_on else 0, last_attack, charge_tick, shell_tick, trail_tick]:
 		h.add_int(v)
+	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
+		h.add_int(hold_t)

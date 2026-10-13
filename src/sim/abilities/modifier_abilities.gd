@@ -58,7 +58,9 @@ static func on_attack(w: World, end: Vector2) -> void:
 
 ## Where a shot's attack ends for the field: the aim point, between FIELD_MIN_M and `range_m` from the player.
 static func shot_end(w: World, range_m: float) -> Vector2:
-	var d := clampf(w.aim_dist_cm / 100.0, FIELD_MIN_M, maxf(FIELD_MIN_M, range_m))
+	var d := clampf(
+		w.aim_dist_cm / 100.0, w.tuning.field_min_m, maxf(w.tuning.field_min_m, range_m)
+	)
 	return w.player_pos() + Kin.dir(w.aim_angle) * d
 
 
@@ -114,7 +116,7 @@ static func _dash_trail(w: World, t: AbilityTable) -> void:
 		st.trail_tick = w.tick
 		st.trail_at = p
 		return
-	if Kin.length(p - st.trail_at) < ElementAbilities.TRAIL_SPACING_M:
+	if Kin.length(p - st.trail_at) < w.tuning.fire_trail_spacing_m:
 		return
 	st.trail_tick = w.tick
 	st.trail_at = p

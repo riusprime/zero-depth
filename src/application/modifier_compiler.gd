@@ -44,7 +44,26 @@ const MODIFIER_FIELDS := {
 	&"resonance_permille": [&"resonance_permille", ""],
 	&"heat_rate_permille": [&"heat_rate_permille", ""],
 	&"range": [&"range", ""],
+	# v0.6.5 WN3 (the Gun pool; AttackSpec names each)
+	&"twin": [&"twin", ""],
+	&"spiral_degrees": [&"spiral", "turns"],
+	&"mine_seconds": [&"mine_ticks", "ticks"],
+	&"hold_seconds": [&"hold_ticks", "ticks"],
+	&"hold_permille": [&"hold_permille", ""],
+	# v0.6.5 WN4 (the Blade pool; AttackSpec names each)
+	&"motion": [&"motion", ""],
+	&"echo_mirror": [&"echo_mirror", ""],
+	&"step_m": [&"step_m", ""],
+	&"parry": [&"parry", ""],
+	&"counter_seconds": [&"counter_ticks", "ticks"],
+	&"counter_permille": [&"counter_permille", ""],
+	&"carry": [&"carry", ""],
+	&"knockback_m": [&"knockback_m", ""],
+	&"line_m": [&"line_m", ""],
 }
+## v0.6.5 WN3/WN4: the wand pools in the order they shipped (ItemDefinition.requires_weapon): their cards take item
+## indices pool by pool, so a later pool never moves an earlier one's indices. A new pool appends its weapon here.
+const WAND_POOL_ORDER: Array[StringName] = [&"gun", &"blade", &""]
 
 
 ## One modifier in sim units. Each op takes its effective stage; values convert with the item compiler's functions
@@ -83,41 +102,74 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.effect_id = d.hook_effect
 	o.delay_ticks = SimTick.seconds_to_ticks(d.hook_delay_seconds)  # v0.6.0 MX4
 	o.when = int(d.hook_when)
+	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
+	o.casts = d.hook_casts  # v0.6.5 WN5b
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
+	if d.op == ModifierOpDefinition.Op.HOOK:
+		o.per_level = d.per_level  # v0.6.5 WN3: per mille of the hook's damage share
 	if d.is_numeric() and MODIFIER_FIELDS.has(d.field):
 		var map: Array = MODIFIER_FIELDS[d.field]
 		o.field = map[0]
-		o.value = d.value
-		if d.op != ModifierOpDefinition.Op.MUL_PERMILLE:
-			match String(map[1]):
-				"ticks":
-					o.value = SimTick.seconds_to_ticks(d.value)
-				"half_turns":
-					o.value = ContentCompiler.degrees_to_units(d.value * 0.5)
-				"turns":
-					o.value = ContentCompiler.degrees_to_units(d.value)
-				"per_tick":
-					o.value = d.value / SimTick.TICKS_PER_SECOND
-				"turn_rate":
-					o.value = (
-						ContentCompiler.degrees_to_units(d.value) / float(SimTick.TICKS_PER_SECOND)
-					)
-		if o.field in AttackSpec.INT_FIELDS:
-			o.value = roundi(o.value)
+		o.value = _units(d, map, d.value)
+		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
+			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 	return o
 
 
+## A numeric op's content value `v` in sim units (its field's conversion; MUL_PERMILLE stays per mille; an int
+## field rounded once).
+static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
+	var out := v
+	if d.op != ModifierOpDefinition.Op.MUL_PERMILLE:
+		match String(map[1]):
+			"ticks":
+				out = SimTick.seconds_to_ticks(v)
+			"half_turns":
+				out = ContentCompiler.degrees_to_units(v * 0.5)
+			"turns":
+				out = ContentCompiler.degrees_to_units(v)
+			"per_tick":
+				out = v / SimTick.TICKS_PER_SECOND
+			"turn_rate":
+				out = ContentCompiler.degrees_to_units(v) / float(SimTick.TICKS_PER_SECOND)
+	if map[0] in AttackSpec.INT_FIELDS:
+		out = roundi(out)
+	return out
+
+
 ## v0.6.0 MX4: the item definitions in item index order: the items of kinds before MODIFIER in id order (v0.5's
-## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order.
+## order, which saves name by index), then the modifier cards (ItemDefinition.Kind.MODIFIER) in id order; v0.6.5 WN1:
+## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
+## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
+## index still names the same card. v0.6.5 WN5b: the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
 static func item_defs(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
+	var triggers := []
+	var legend := []  # v0.6.5 WN5b: the legendary triggers, after every pool (no earlier index moves)
+	var pools := []
+	for _p in WAND_POOL_ORDER:
+		pools.append([])
 	for def: ItemDefinition in repo.all_of(&"items"):
-		(cards if def.kind == ItemDefinition.Kind.MODIFIER else old).append(def)
-	return old + cards
+		match def.kind:
+			ItemDefinition.Kind.MODIFIER:
+				cards.append(def)
+			ItemDefinition.Kind.TRIGGER:
+				if def.rarity == ItemDefinition.Rarity.LEGENDARY:
+					legend.append(def)
+				else:
+					triggers.append(def)
+			ItemDefinition.Kind.WAND:
+				pools[WAND_POOL_ORDER.find(def.requires_weapon)].append(def)  # validated: "", blade, gun
+			_:
+				old.append(def)
+	var out := old + cards + triggers
+	for p: Array in pools:
+		out += p
+	return out + legend
 
 
 ## v0.6.0 MX4: an item's numbers past the v0.5 ones: Venom Core's poison engine; a modifier card tagged heat needs a
@@ -130,6 +182,9 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.poison_ticks = SimTick.seconds_to_ticks(def.poison_seconds)
 	t.poison_max_stacks = def.poison_max_stacks
 	t.poison_spread_m = def.poison_spread_m
+	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
+	t.name_key_gun = def.name_key_gun
+	t.desc_key_gun = def.desc_key_gun
 
 
 ## Every modifier in a repository, compiled, in id order (the combinatorial smoke test and the views' tests use it).

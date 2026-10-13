@@ -81,7 +81,7 @@ ITEM_STATIC_CHAIN,Static Chain,Cadena Estática
 ITEM_STATIC_CHAIN_DESC,Bolts shock; every 3rd bolt hit arcs to another for 5.,Tus proyectiles electrizan; cada 3.º salta a otro: 5.
 ITEM_MOMENTUM,Momentum,Inercia
 ITEM_MOMENTUM_DESC,A swing within 1 s of a dash deals +60% damage.,Un tajo hasta 1 s tras el esprint hace +60% de daño.
-ITEM_FROST_CORE,Frost Core,Núcleo de Escarcha
+ITEM_FROST_CORE,Frost,Escarcha
 ITEM_FROST_CORE_DESC,Hits slow; the 3rd hit on a slowed enemy freezes it 1 s.,Ralentizas; el 3.er golpe a un ralentizado lo congela 1 s.
 ITEM_THORN_MANTLE,Thorn Mantle,Manto de Espinas
 ITEM_THORN_MANTLE_DESC,Taking damage fires a ring of 6 bolts.,Al recibir daño lanzas un anillo de 6 proyectiles.
@@ -204,8 +204,8 @@ ITEM_CLUSTER_PAYLOAD_DESC,Bomb Lobber's bombs split into 3 bomblets (40% damage 
 ITEM_OVERCLOCKED_DRONE,Overclocked Drone,Dron sobrealimentado
 ITEM_OVERCLOCKED_DRONE_DESC,Your drones fire 0.8% faster per point of heat.,"Tus drones disparan un 0,8% más rápido por punto de calor."
 ITEM_RAZOR_ORBIT,Razor Orbit,Órbita afilada
-ITEM_RAZOR_ORBIT_DESC,Orbit Blades make enemies bleed (+1 per touch).,Las Cuchillas orbitales hacen sangrar (+1 por toque).
-ITEM_AFTERIMAGE,Afterimage,Imagen residual
+ITEM_RAZOR_ORBIT_DESC,Orbiting Copies make enemies bleed (+1 per touch).,Las Copias orbitales hacen sangrar (+1 por toque).
+ITEM_AFTERIMAGE,Blink Echo,Eco del Salto
 ITEM_AFTERIMAGE_DESC,Blinking leaves an echo that bursts for 18 soon after.,Al teletransportarte dejas un eco que estalla por 18.
 HUD_HEAT,HEAT,CALOR
 HUD_HEAT_HOT,HOT,CALIENTE
@@ -347,7 +347,7 @@ ABILITY_BOMB_LOBBER,Bomb Lobber,Lanzabombas
 ABILITY_BOMB_LOBBER_DESC,"Modifier: every 4th weapon attack also lobs a bomb at the thickest crowd within 8 m (at most every 2.5 s): 22 damage in 2 m, carrying your weapon's elements and effects. More bombs at levels 2 and 4, bigger at 3 and 5.","Modificador: cada 4.º ataque del arma también lanza una bomba a la multitud más densa a 8 m (como mucho cada 2,5 s): 22 de daño en 2 m, con los elementos y efectos de tu arma. Más bombas en los niveles 2 y 4, más grandes en el 3 y el 5."
 ABILITY_DRONE_BUDDY,Drone Buddy,Dron compañero
 ABILITY_DRONE_BUDDY_DESC,"Modifier: a little drone follows you and fires a copy of your weapon's attack at the nearest enemy within 9 m three times a second for 5, with your elements and effects. +20% fire rate per level; a second drone at level 3; chaining bolts at level 5.","Modificador: un pequeño dron te sigue y dispara una copia del ataque de tu arma al enemigo más cercano a 9 m tres veces por segundo por 5, con tus elementos y efectos. +20 % de cadencia por nivel; un segundo dron en el nivel 3; disparos encadenados en el nivel 5."
-ABILITY_ORBIT_BLADES,Orbit Blades,Cuchillas orbitales
+ABILITY_ORBIT_BLADES,Orbiting Copies,Copias orbitales
 ABILITY_ORBIT_BLADES_DESC,"Modifier: three copies of your attack orbit you at 1.6 m, 8 damage per touch with your elements and effects (each enemy at most every 0.5 s). +1 blade per level; a wider ring at level 5.","Modificador: tres copias de tu ataque orbitan a tu alrededor a 1,6 m, 8 de daño por toque con tus elementos y efectos (cada enemigo como mucho cada 0,5 s). +1 cuchilla por nivel; un anillo más ancho en el nivel 5."
 ABILITY_BLINK,Blink,Destello
 ABILITY_BLINK_DESC,"Utility button: teleport up to 5 m the way you move, through thin walls, and land with a 2 m shock for 15. Faster recharge per level; 2 charges at level 3; a wider shock at level 5.","Botón de utilidad: teletranspórtate hasta 5 m hacia donde te mueves, a través de muros finos, y aterriza con una onda de 2 m de 15. Recarga más rápida por nivel; 2 cargas en el nivel 3; una onda más ancha en el nivel 5."
@@ -614,7 +614,7 @@ RARITY_LEGENDARY,Legendary,Legendaria
 UI_CARD_MODIFIER,Modifier,Modificador
 UI_CARD_MODIFIER_NEW,New modifier,Modificador nuevo
 UI_SWAP_TITLE,Your %d modifier slots are full: swap one?,Tus %d huecos de modificador están llenos: ¿cambiar uno?
-UI_SWAP_HINT,1–6 / ←→ choose · Enter swap · Esc skip,1–6 / ←→ elegir · Intro cambiar · Esc saltar
+UI_SWAP_HINT,1–8 / ←→ choose · Enter swap · Esc skip,1–8 / ←→ elegir · Intro cambiar · Esc saltar
 UI_SWAP_SKIP,Skip,Saltar
 UI_SWAP_SKIP_KEY,Esc,Esc
 UI_SWAP_LEVEL,Level %d,Nivel %d
@@ -655,33 +655,33 @@ HUD_KEY_PAD_RS_DOWN,RS down,SD abj.
 HUD_KEY_PAD_RS_LEFT,RS left,SD izq.
 HUD_KEY_PAD_RS_RIGHT,RS right,SD der.
 HUD_KEY_PAD_OTHER,Pad,Mando
-ITEM_STORM_CORE,Storm Core,Núcleo de Tormenta
+ITEM_STORM_CORE,Lightning,Rayo
 ITEM_STORM_CORE_DESC,Hits chain lightning to 2 more enemies (50% damage).,Tus golpes encadenan un rayo a 2 enemigos más (50%).
-ITEM_EMBER_CORE,Ember Core,Núcleo de Brasa
+ITEM_EMBER_CORE,Fire,Fuego
 ITEM_EMBER_CORE_DESC,Hits burn; kills explode in a small fire burst.,Tus golpes queman; las bajas estallan en llamas.
-ITEM_VENOM_CORE,Venom Core,Núcleo de Veneno
+ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Hits stack poison that spreads when the enemy dies.,Tus golpes envenenan; el veneno salta al morir.
-ITEM_ECHO_SLASH,Echo Slash,Tajo Eco
-ITEM_ECHO_SLASH_DESC,Every slash also flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
+ITEM_ECHO_SLASH,Wave,Onda
+ITEM_ECHO_SLASH_DESC,Every slash flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
 ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
 ITEM_EDGE_ROUNDS_DESC,Projectiles pierce once and slash where they hit.,Los proyectiles atraviesan una vez y cortan al impactar.
 ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
 ITEM_SHOCK_CIRCLES_DESC,Trinket: projectiles become shock rings at half range.,Baratija: los proyectiles son anillos de choque cortos.
-ITEM_HALO_SHOT,Halo Shot,Disparo Halo
-ITEM_HALO_SHOT_DESC,"Trinket: shots go all round, ×3 count, half range.","Baratija: disparas en círculo, ×3 balas, media distancia."
+ITEM_HALO_SHOT,Halo,Halo
+ITEM_HALO_SHOT_DESC,"Gun: fires in a full ring, ×3 count, half range.","Pistola: dispara en anillo, ×3 balas, media distancia."
 ITEM_BOOMERANG,Boomerang,Bumerán
-ITEM_BOOMERANG_DESC,"Trinket: projectiles come back, hitting again.",Baratija: los proyectiles vuelven y golpean otra vez.
-ITEM_ORBIT_ROUNDS,Orbit Rounds,Balas en Órbita
-ITEM_ORBIT_ROUNDS_DESC,Trinket: projectiles circle you once before they fly.,Baratija: los proyectiles orbitan una vez antes de salir.
-ITEM_SPLIT_SHOT,Split Shot,Disparo Dividido
-ITEM_SPLIT_SHOT_DESC,Projectiles split in 3 on their first hit (50% damage).,Los proyectiles se parten en 3 al impactar (50%).
+ITEM_BOOMERANG_DESC,"Gun: flies out, then comes back through you.",Pistola: sale y vuelve pasando por ti.
+ITEM_ORBIT_ROUNDS,Orbit,Órbita
+ITEM_ORBIT_ROUNDS_DESC,Gun: circles you once before it flies out.,Pistola: te rodea una vez antes de salir.
+ITEM_SPLIT_SHOT,Split,División
+ITEM_SPLIT_SHOT_DESC,"Gun: on its first hit, splits into 3 at half size.",Pistola: al impactar se parte en 3 a media talla.
 ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
 ITEM_TWIN_CAST_DESC,Every attack repeats once 0.2 s later at 50%.,"Cada ataque se repite 0,2 s después al 50%."
 ITEM_REARGUARD,Rearguard,Retaguardia
 ITEM_REARGUARD_DESC,Every attack also fires backwards at 60%.,Cada ataque también sale hacia atrás al 60%.
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
-ITEM_WIDE_ARC_DESC,Arcs 40° wider; projectiles and blasts 30% bigger.,Arcos 40° más anchos; balas y ondas un 30% mayores.
-ITEM_GRAVITY_WELL,Gravity Well,Pozo Gravitatorio
+ITEM_WIDE_ARC_DESC,Slashes sweep 60° wider and reach 30% farther.,Tus tajos barren 60° más y llegan un 30% más lejos.
+ITEM_GRAVITY_WELL,Void,Vacío
 ITEM_GRAVITY_WELL_DESC,Hits pull nearby enemies toward the point of hit.,Tus golpes atraen a los enemigos cercanos.
 ITEM_SHATTER,Shatter,Estallido
 ITEM_SHATTER_DESC,Kills burst into 4 shards that hit nearby enemies.,Las bajas estallan en 4 esquirlas que golpean cerca.
@@ -689,8 +689,8 @@ ITEM_AFTERSHOCK,Aftershock,Réplica
 ITEM_AFTERSHOCK_DESC,"Where an attack ends, a small blast.","Donde termina un ataque, una pequeña explosión."
 ITEM_SEEKER,Seeker,Buscador
 ITEM_SEEKER_DESC,Projectiles home in; arcs snap to the nearest enemy.,Los proyectiles persiguen; los arcos giran al más cercano.
-ITEM_LONG_SHADOW,Long Shadow,Sombra Larga
-ITEM_LONG_SHADOW_DESC,Dashing leaves an afterimage that repeats your attack.,Al esquivar dejas una sombra que repite tu ataque.
+ITEM_LONG_SHADOW,Afterimage,Imagen Fantasma
+ITEM_LONG_SHADOW_DESC,Dashing leaves a ghost that repeats your last slash.,Al esquivar dejas un fantasma que repite tu último tajo.
 ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
 ITEM_PHASE_DASH_DESC,Your dash is intangible and ends in 6 shards.,Tu esquiva es intangible y acaba en 6 esquirlas.
 ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
@@ -709,8 +709,8 @@ ITEM_MIRROR_DRONE,Mirror Drone,Dron Espejo
 ITEM_MIRROR_DRONE_DESC,"Your drone copies your weapon's attack, modifiers too.",Tu dron copia el ataque de tu arma y sus modificadores.
 ITEM_BOMB_ROUNDS,Bomb Rounds,Balas Bomba
 ITEM_BOMB_ROUNDS_DESC,Every 5th shot is a bomb (150% damage).,Cada 5.º disparo es una bomba (150% de daño).
-ITEM_BLADE_ORBIT,Blade Orbit,Órbita de Hojas
-ITEM_BLADE_ORBIT_DESC,"Orbit Blades carry all your weapon does, +1 blade.","Las Hojas Orbitales llevan todo lo de tu arma, +1."
+ITEM_BLADE_ORBIT,Orbit Blades,Hojas en Órbita
+ITEM_BLADE_ORBIT_DESC,Each slash throws off a blade that circles you for 3 s.,Cada tajo suelta una hoja que gira a tu alrededor 3 s.
 ITEM_SHORT_FUSE,Short Fuse,Mecha Corta
 ITEM_SHORT_FUSE_DESC,"Trinket: all ranges ×0.6, all damage ×1.4.","Baratija: todo alcance ×0,6, todo daño ×1,4."
 ITEM_TEMPEST_CORE,Tempest Core,Núcleo de Tempestad
@@ -720,3 +720,124 @@ ITEM_INFERNO_CORE_DESC,Legendary: hits burn twice; kills burst in big flames.,Le
 ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
 ITEM_ECHO_STORM_DESC,Legendary: every slash flies on as 3 crescents (80%).,Legendario: cada tajo vuela como 3 medias lunas (80%).
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
+ITEM_TRIGGER_ON_HIT,On Hit,Al Impactar
+ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast a small spell on each hit.,Las cartas a su derecha lanzan un hechizo al impactar.
+ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
+ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast a small spell on each kill.,Las cartas a su derecha lanzan un hechizo al matar.
+ITEM_TRIGGER_ON_END,On End,Al Terminar
+ITEM_TRIGGER_ON_END_DESC,Cards to its right cast a small spell where it ends.,Las cartas a su derecha lanzan un hechizo al terminar.
+ITEM_TRIGGER_ON_FINISHER,On Finisher,Al Rematar
+ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast a small spell on the finisher.,Las cartas a su derecha lanzan un hechizo al rematar.
+ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
+ITEM_GUN_BIG_SHOT_DESC,"Gun: ×2 size, ×1.6 damage, −25% speed.","Pistola: ×2 tamaño, ×1,6 daño, −25% velocidad."
+ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
+ITEM_GUN_RAPID_FIRE_DESC,"Gun: ×0.6 size, +60% fire rate, −30% damage.","Pistola: ×0,6 tamaño, +60% cadencia, −30% daño."
+ITEM_GUN_TWIN,Twin,Gemelo
+ITEM_GUN_TWIN_DESC,"Gun: fires the spell twice, side by side.","Pistola: dispara dos veces, lado a lado."
+ITEM_GUN_SPREAD,Spread,Abanico
+ITEM_GUN_SPREAD_DESC,Gun: becomes a 3-shot fan (+2 per level).,Pistola: un abanico de 3 balas (+2 por nivel).
+ITEM_GUN_PIERCE,Pierce,Perforación
+ITEM_GUN_PIERCE_DESC,Gun: passes through 2 enemies (+1 per level).,Pistola: atraviesa 2 enemigos (+1 por nivel).
+ITEM_GUN_RICOCHET,Ricochet,Rebote
+ITEM_GUN_RICOCHET_DESC,Gun: bounces off walls twice (+1 per level).,Pistola: rebota dos veces en paredes (+1 por nivel).
+ITEM_GUN_HOMING,Homing,Teledirigido
+ITEM_GUN_HOMING_DESC,Gun: curves toward the nearest enemy.,Pistola: se curva hacia el enemigo más cercano.
+ITEM_GUN_SPIRAL,Spiral,Espiral
+ITEM_GUN_SPIRAL_DESC,Gun: travels in a corkscrew.,Pistola: avanza en espiral.
+ITEM_GUN_MINE,Mine,Mina
+ITEM_GUN_MINE_DESC,"Gun: stops at its range, waits 3 s, blows on contact.","Pistola: se para, espera 3 s y estalla al contacto."
+ITEM_GUN_CHARGE,Charge,Carga
+ITEM_GUN_CHARGE_DESC,"Gun: hold to grow it, up to ×3 size and damage.","Pistola: mantén para crecer, hasta ×3 tamaño y daño."
+ITEM_GUN_ECHO,Echo,Eco
+ITEM_GUN_ECHO_DESC,Gun: fires again 0.3 s later at 60%.,"Pistola: dispara otra vez 0,3 s después al 60%."
+ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
+ITEM_GUN_BACKFIRE_DESC,Gun: also fires behind you.,Pistola: también dispara hacia atrás.
+ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
+ITEM_SPLIT_WAVE_DESC,A flying slash splits into 3 small crescents when it hits.,Un tajo volador se divide en 3 medias lunas al impactar.
+ITEM_WHIRL,Whirl,Remolino
+ITEM_WHIRL_DESC,Every slash becomes a full 360° spin.,Cada tajo se vuelve un giro completo de 360°.
+ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
+ITEM_DOUBLE_SLASH_DESC,"Every slash repeats, mirrored, 0.15 s later.","Cada tajo se repite, en espejo, 0,15 s después."
+ITEM_THRUST,Thrust,Estocada
+ITEM_THRUST_DESC,"A long stab: reach ×2, arc ×0.4, +30% damage.","Una estocada: alcance ×2, arco ×0,4, +30% de daño."
+ITEM_HEAVY,Heavy,Pesado
+ITEM_HEAVY_DESC,×1.7 damage and a big knockback; 30% slower swings.,"×1,7 de daño y gran empuje; tajos un 30% más lentos."
+ITEM_FLURRY,Flurry,Ráfaga
+ITEM_FLURRY_DESC,Swings 50% faster for 25% less damage.,"Tajos un 50% más rápidos, con un 25% menos de daño."
+ITEM_FISSURE,Fissure,Fisura
+ITEM_FISSURE_DESC,Each slash cracks the ground ahead; the crack erupts.,Cada tajo agrieta el suelo delante; la grieta estalla.
+ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
+ITEM_CHAIN_CUT_DESC,A slash hit leaps to the next enemy within 4 m.,Un golpe de tajo salta al siguiente enemigo a 4 m.
+ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
+ITEM_PARRY_EDGE_DESC,Your slashes destroy the enemy shots they touch.,Tus tajos destruyen los disparos enemigos que tocan.
+ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
+ITEM_LUNGE_STEP_DESC,Each slash steps you 1 m forward.,Cada tajo te adelanta 1 m.
+ITEM_FINISHER_PLUS,Finisher+,Remate+
+ITEM_FINISHER_PLUS_DESC,The 4th slash bursts in a big shockwave with every card.,El 4.º tajo estalla en una gran onda con todas tus cartas.
+ITEM_COUNTER,Counter,Contraataque
+ITEM_COUNTER_DESC,A slash within 0.5 s of a dash deals ×2 and flies as a wave.,"Un tajo 0,5 s tras esquivar hace ×2 y vuela como onda."
+WAND_READ_FIRE,You fire %s.,Disparas %s.
+WAND_READ_BOLT,a bolt,un proyectil
+WAND_READ_SLASH,a slash,un tajo
+WAND_READ_SMALL_BOLT,a small bolt,un proyectil pequeño
+WAND_READ_SMALL_SLASH,a small slash,un tajo pequeño
+WAND_READ_SHAPED,%s shaped by %s,%s moldeado por %s
+WAND_READ_ON_HIT,Each hit casts %s.,Cada impacto lanza %s.
+WAND_READ_ON_KILL,Each kill casts %s.,Cada baja lanza %s.
+WAND_READ_ON_END,"Where it ends, it casts %s.","Donde termina, lanza %s."
+WAND_READ_ON_FINISHER,The combo's last hit casts %s.,El último golpe del combo lanza %s.
+WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
+WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.
+UI_BUILD,Build,Construcción
+UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
+UI_BUILD_SLOTS,%d of %d slots · the wand reads left to right,%d de %d huecos · la varita se lee de izquierda a derecha
+UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
+UI_WAND_LEVEL,Lv %d,Nv %d
+UI_WAND_NEW,New,Nueva
+UI_WAND_EMPTY,Empty,Vacío
+UI_WAND_CUT_FIRE,the shot you fire,el disparo que lanzas
+UI_WAND_CUT_ON_HIT,cast on hit →,se lanza al impactar →
+UI_WAND_CUT_ON_KILL,cast on kill →,se lanza al matar →
+UI_WAND_CUT_ON_END,cast where it ends →,se lanza donde termina →
+UI_WAND_CUT_ON_FINISHER,cast on the finisher →,se lanza en el remate →
+UI_WAND_CUT_ON_CRIT,cast on a crit →,se lanza en un crítico →
+UI_WAND_CUT_UNUSED,too deep to cast,demasiado profundo para lanzarse
+UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿dónde va?
+UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
+UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro
+UI_SWAP_HINT_MORE,I / X insert the new card · R / Y move a card · mouse: drag a card,I / X insertar la carta nueva · R / Y mover una carta · ratón: arrastra una carta
+UI_DEVM_TITLE,Dev panel (F10),Panel de desarrollo (F10)
+UI_DEVM_SEARCH,Search,Buscar
+UI_DEVM_RESTART,Restart floor,Reiniciar piso
+UI_DEVM_RESET_ALL,Reset all,Restablecer todo
+UI_DEVM_COPY,Copy changes,Copiar cambios
+UI_DEVM_CLOSE,Close,Cerrar
+UI_DEVM_RESET,Reset,Restablecer
+UI_DEVM_COPIED,Copied %d changes,%d cambios copiados
+UI_DEVM_CHANGES,%d changes,%d cambios
+UI_DEVM_G_LIGHTING,Lighting,Iluminación
+UI_DEVM_G_PLAYER,Player,Jugador
+UI_DEVM_G_ENEMIES,Enemies,Enemigos
+UI_DEVM_G_BOSSES,Bosses,Jefes
+UI_DEVM_G_DIFFICULTY,Spawning and difficulty,Aparición y dificultad
+UI_DEVM_G_ECONOMY,Economy,Economía
+UI_DEVM_G_BUILD,Build pieces,Piezas de build
+UI_DEVM_G_TOOLS,Tools,Herramientas
+UI_DEVM_HINT_LIVE,Changes show at once.,Los cambios se ven al instante.
+UI_DEVM_HINT_CLOSE,"Applies when you close the panel (F10); what the floor lays out (chests, altars, rooms) needs Restart floor.","Se aplica al cerrar el panel (F10); lo que el piso coloca (cofres, altares, salas) necesita Reiniciar piso."
+UI_DEVM_HINT_SPAWN,"Applies when you close the panel; HP and shards change for the next ones to spawn (Restart floor for all).","Se aplica al cerrar el panel; la vida y los fragmentos cambian para los siguientes en aparecer (Reiniciar piso para todos)."
+UI_DEVM_HINT_RESTART,Applies on Restart floor or the next floor.,Se aplica al reiniciar el piso o en el siguiente piso.
+UI_DEVM_MARK,DEV (tweaked balance: this run is not saved),DEV (balance modificado: esta partida no se guarda)
+UI_DEVM_G_SIM,"Timings, AI and caps","Tiempos, IA y límites"
+ITEM_TRIGGER_ON_CRIT,On Crit,Al Crítico
+ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast a small spell on each critical hit.,Las cartas a su derecha lanzan un hechizo en cada crítico.
+ITEM_SHARED_BLEED,Bleed,Sangrado
+ITEM_SHARED_BLEED_DESC,Hits bleed; the bleed ticks twice as fast while you move.,Desangras; sangra el doble de rápido si te mueves.
+ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
+ITEM_SHARED_EXPLOSIVE_DESC,The spell explodes where it ends.,El hechizo estalla donde termina.
+ITEM_TRIGGER_ON_HIT_TWICE,On Hit ×2,Al Impactar ×2
+ITEM_TRIGGER_ON_HIT_TWICE_DESC,Legendary: cards to its right cast twice on each hit.,Legendario: lo de su derecha se lanza 2 veces por impacto.
+ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
+ITEM_TRIGGER_ON_KILL_TWICE_DESC,Legendary: cards to its right cast twice on each kill.,Legendario: lo de su derecha se lanza 2 veces por baja.
+ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
+ITEM_TRIGGER_ON_END_TWICE_DESC,Legendary: cards to its right cast twice where it ends.,Legendario: lo de su derecha se lanza 2 veces al terminar.

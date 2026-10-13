@@ -275,9 +275,18 @@ var swap_ref := -1
 ## v0.6.0 MX2: a carry from before MX2 arrived (RunCarry.apply); Abilities.start_floor migrates it into the slots
 ## (BuildSlots.migrate) once the abilities' tables are set, and clears it.
 var migrate_slots := false
+## v0.6.5 WN3 (CardLevels; WAND.md rule 6): the level of each held wand card by item index (0 or absent = level 1;
+## sized on the first level-up, so a world that never levels a card hashes as before); run-long (RunCarry).
+var card_levels := PackedInt32Array()
 ## v0.6.0 MX2: the spec of the player hit resolving now (Attacks, the projectile sweep; null between hits), which the
 ## engines read for its statuses. Transient within a tick (WorldSnapshot.WORLD_KEPT).
 var hit_spec: AttackSpec = null
+## v0.6.5 WN1: whether the last player hit Damage.hit resolved was a crit (the wand's On Crit reads it right after).
+## Transient within a hit (WorldSnapshot.WORLD_KEPT).
+var last_hit_crit := false
+## v0.6.5 WN1 (Wand): the wand's numbers, the slots per floor and the trigger's child spell (loadout, not hashed; null
+## = a lab world: six slots, the class defaults for the child spell).
+var wand_table: WandTable
 var rng_crit: RngStream  # crit rolls (Stats.outgoing)
 var rng_ability: RngStream  # auto-ability randomness (Abilities)
 var overrun_table: OverrunTable  # v0.4.0 AB: the Overrun branch's numbers (null = off; not hashed)
@@ -301,10 +310,18 @@ var cores := CoreState.new()
 ## v0.6.0 MX4: the modifier engine's state in play (ModifierRuntime), per floor: queued launches, every-N counters,
 ## the moments' and body rules' marks. Hashed with the build's specs (Modifiers.hash_into).
 var mx := ModifierState.new()
+## v0.6.5 WN4: the Blade pool's state in play (BladeForms), per floor: knocked enemies, orbiting blades, the last
+## dash, what the view draws. Hashed once touched (ModifierRuntime.hash_into). The cards' levels are card_levels.
+var blade := BladeState.new()
+## v0.6.5 WN4: the Blade pool's runner numbers (loadout, not hashed; null = a lab world: BladeTable's defaults).
+var blade_table: BladeTable
 ## v0.5.5 DS (D4, D7): the hidden catch-up's numbers (loadout, not hashed; null = off) and the floor's m (CatchUp),
 ## hashed only with the table. S5: the rooms of a Deep floor whose first pack already brought its elite (hashed once
 ## one did).
 var catch_up_table: CatchUpTable
+## The designer numbers once fixed in the sim's code (dev panel Step 6): shipped values unless Main sets them from
+## data/tuning/sim.tres. Loadout, not state (not hashed).
+var tuning := SimTuning.new()
 var catch_up := CatchUpState.new()
 var deep_elite_rooms := PackedInt32Array()
 var _next_id := 1
@@ -403,6 +420,9 @@ func queue_projectile(
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
 func step(frame: InputFrame) -> void:
+	# 0. v0.6.5 WN1: a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first
+	# in any state (a choice open, the shop, hit-stop); the rest of the tick sees no pick.
+	frame = Wand.take_move(self, frame)
 	# 1. Freeze check: hit-stop holds everything except buffering new presses.
 	if freeze_ticks > 0:
 		freeze_ticks -= 1
@@ -536,7 +556,7 @@ func add_enemy(kind: int, p: Vector2) -> int:
 	var t := enemy_table(kind)
 	var id := _take_id()
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
-	actors.invuln[i] = SimTick.SPAWN_IN_TICKS
+	actors.invuln[i] = tuning.spawn_in_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
 	actors.power[i] = 1000  # v0.4.0 SC: full damage; the spawn director scales it by tier
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
@@ -731,7 +751,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	var t := boss_tables[boss_table_index]
 	var id := _take_id()
 	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
-	actors.invuln[i] = BossAi.INTRO_TICKS
+	actors.invuln[i] = tuning.boss_intro_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - pos)
 	actors.freeze_immune[i] = 1  # Engines: frost only slows a boss, it never freezes it.
 	bosses.add(id, boss_table_index)
@@ -1302,7 +1322,8 @@ func _projectile_hits() -> void:
 					projectiles.tags[i],
 					a,
 					a + v * best_t,
-					Attacks.projectile_effect(hit_spec, projectiles.tags[i])  # v0.6.0 MX4: a hook's names it
+					Attacks.projectile_effect(hit_spec, projectiles.tags[i]),  # v0.6.0 MX4: a hook's names it
+					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
 				hit_spec = null
 				# Items: Frost Core and Static Chain react to the player's landed bolts.

@@ -33,6 +33,8 @@ var damage_fn := Callable()
 var repeat := false
 var back := false
 var radius_m := 0.0
+## v0.6.5 WN3: a charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
+var size_permille := 1000
 var on_landed := Callable()
 var on_ray := Callable()
 

@@ -189,7 +189,7 @@ func test_the_shop_buy_swaps_and_pays_only_then() -> void:
 	var w := _world()
 	w.shop_table = ContentCompiler.compile_shop(_repo.get_def(&"shop", &"terminal"))
 	_fill(w)
-	var ember := _it(w, &"ember_edge")
+	var ember := _it(w, &"heavy")  # v0.6.5 WN5b: a card the shop sells (Ember Edge is retired)
 	w.shop.offer = PackedInt32Array([ember])
 	w.shop.rolled = true
 	w.shop.open = true

@@ -8,6 +8,7 @@ extends RefCounted
 
 const WHEN_ALWAYS := 0
 const WHEN_OVERCLOCK := 1
+const WHEN_COUNTER := 2  # v0.6.5 WN4: only on a slash that counters (BladeForms.countering)
 
 ## The modifier that added it (its ancestry key: a hook never runs inside a chain it already opened).
 var id := &""

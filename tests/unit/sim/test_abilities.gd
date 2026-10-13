@@ -132,7 +132,9 @@ func test_cards_fill_six_modifier_slots_then_need_a_swap() -> void:
 	var orbit := _idx(w, AbilityTable.Kind.ORBIT_BLADES)
 	assert_true(Abilities.grant(w, orbit), "the sixth slot")
 	assert_true(BuildSlots.full(w))
-	assert_true(Abilities.can_take(w, orbit), "a level-up still applies")
+	# v0.6.5 WN5b: the six ability modifiers are retired (WAND.md): never offered, not even a level-up; a grant still
+	# levels one (the dev panel's, below).
+	assert_false(Abilities.can_take(w, orbit), "retired: never offered")
 	var bomb := _idx(w, AbilityTable.Kind.BOMB_LOBBER)
 	for lvl in [2, 3, 4, 5]:
 		assert_true(Abilities.grant(w, bomb))

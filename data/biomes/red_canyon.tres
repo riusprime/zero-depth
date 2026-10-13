@@ -6,14 +6,14 @@
 
 [sub_resource type="Resource" id="Resource_mood"]
 script = ExtResource("2_mood")
-sun_color = Color(1.0, 0.62, 0.4, 1)
-sun_energy = 0.9
+sun_color = Color(1, 0.6, 0.38, 1)
+sun_energy = 0.65
 sun_pitch_deg = -22.0
 sun_yaw_deg = 168.0
-ambient_color = Color(0.45, 0.38, 0.45, 1)
-ambient_energy = 0.6
-void_color = Color(0.12, 0.06, 0.05, 1)
-exposure = 1.0
+ambient_color = Color(0.38, 0.32, 0.42, 1)
+ambient_energy = 0.2
+void_color = Color(0.08, 0.04, 0.04, 1)
+exposure = 1.1
 ssao_radius = 3.0
 ssao_light_affect = 0.6
 ssao_intensity = 6.0
@@ -23,11 +23,21 @@ ssil_enabled = true
 ssil_intensity = 1.0
 fog_density = 0.0025
 fog_color = Color(0.3, 0.15, 0.1, 1)
-glow_intensity = 0.7
+glow_intensity = 1.2
 warm_light_color = Color(1.0, 0.6, 0.3, 1)
-warm_light_energy = 5.0
-warm_light_range = 10.0
-vignette = 0.35
+warm_light_energy = 7.0
+warm_light_range = 9.0
+vignette = 0.5
+hero_light_energy = 1.8
+hero_light_range = 5.0
+glow_threshold = 0.8
+glow_bloom = 0.04
+grade_shadows = Color(0.3, 0.35, 0.55, 1)
+grade_highlights = Color(1, 0.6, 0.3, 1)
+grade_strength = 0.55
+contrast = 1.15
+saturation = 1.06
+glow_spread = 0.7
 
 [resource]
 script = ExtResource("1_pvo31")

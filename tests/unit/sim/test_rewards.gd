@@ -262,7 +262,11 @@ func test_interact_by_an_altar_opens_three_different_items_and_the_world_waits()
 	assert_eq(picks[0].source_id, id)
 	var pool := ItemPool.available(w)
 	assert_true(offer[0] in pool and offer[2] in pool, "the other two went back to the pool")
-	assert_false(offer[1] in pool, "the taken one did not")
+	assert_eq(
+		offer[1] in pool,
+		CardLevels.can_take(w, offer[1]),
+		"the taken one did not (v0.6.5 WN4: unless it levels up, WAND.md rule 6)"
+	)
 
 
 func test_too_far_does_nothing() -> void:
@@ -352,6 +356,7 @@ func test_owned_items_are_never_offered() -> void:
 	for k in _items.size():
 		if not k in keep:
 			w.add_item(k)
+			CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)  # v0.6.5 WN3: a wand card offers its level-ups
 	w.add_reward(RewardStore.Kind.ALTAR, Vector2(1.0, 0), 0)
 	_press(w, I)
 	var offer := w.rewards.offer_of(0)
@@ -387,6 +392,7 @@ func test_an_empty_pool_doesnt_open() -> void:
 	var w := _world()
 	for k in _items.size():
 		w.add_item(k)
+		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)  # v0.6.5 WN3: a wand card offers its level-ups
 	var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(1.0, 0), 0)
 	_press(w, I)
 	assert_eq(w.choosing, -1)

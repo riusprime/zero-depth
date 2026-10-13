@@ -94,6 +94,21 @@ func sync(reader: WorldReader) -> void:
 			_proj_last.erase(id)
 
 
+## Re-applies the mood to the hero's carried light (the dev panel's lighting page).
+func retune_hero_light(mood: BiomeMood) -> void:
+	hero_mood = mood
+	for n in find_children("HeroLight", "OmniLight3D", true, false):
+		var fresh := StageKit.hero_light(mood)
+		if fresh == null:
+			(n as OmniLight3D).light_energy = 0.0
+			continue
+		var l := n as OmniLight3D
+		l.light_color = fresh.light_color
+		l.light_energy = fresh.light_energy
+		l.omni_range = fresh.omni_range
+		fresh.free()
+
+
 func actor_node(id: int) -> Node3D:
 	return _actors.get(id)
 

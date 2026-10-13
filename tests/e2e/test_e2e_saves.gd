@@ -44,7 +44,7 @@ func _walk(e: E2e, target: Vector2, done: Callable) -> bool:
 
 func _to_main_menu(e: E2e) -> void:
 	await e.tap(KEY_ESCAPE)
-	for k in 3:  # Resume -> Restart run -> Options -> Main menu
+	for k in 4:  # Resume -> Build (v0.6.5 WN2) -> Restart run -> Options -> Main menu
 		await e.tap(KEY_DOWN)
 	await e.tap(KEY_ENTER)
 	await e.frames(2)

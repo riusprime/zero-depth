@@ -222,11 +222,17 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 			continue
 		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
 			continue
+		var before := w.hit_spec
+		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
+			w.hit_spec = spec
 		var got := _hit(w, i, ctx, ctx.origin, a.pos(i))
+		w.hit_spec = before
 		if got > 0:
 			landed = true
 			hits += 1
 			_landed(w, spec, ctx, i, a.pos(i), hits)
+			BladeForms.on_arc_hit(w, spec, ctx, i)  # v0.6.5 WN4: Heavy's push
+	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
 	if not spec.hooks.is_empty():
 		var tip := ctx.origin + Kin.dir(ctx.angle) * (w.player.radius_m + arc_reach_m(w, spec))
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, tip, -1, 0)
@@ -238,29 +244,35 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var offsets := shot_offsets(spec)
 	if spec.has_tag(&"weapon"):
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
-	var gap := t.radius_m + spec.radius_m + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
+	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
+	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
+	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	for off in offsets:
 		var dir := Kin.dir(ctx.angle + off)
-		var muzzle := ctx.origin + dir * gap
-		w.queue_projectile(
-			w.actors.ids[0],
-			ActorStore.TEAM_PLAYER,
-			muzzle,
-			dir * spec.speed,
-			ctx.damage,
-			spec.radius_m,
-			maxi(1, spec.life_ticks),
-			ctx.tags,
-			spec.bounces,
-			spec.key
-		)
+		for side in lanes:
+			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
+			w.queue_projectile(
+				w.actors.ids[0],
+				ActorStore.TEAM_PLAYER,
+				muzzle,
+				dir * spec.speed,
+				ctx.damage,
+				r,
+				maxi(1, spec.life_ticks),
+				ctx.tags,
+				spec.bounces,
+				spec.key
+			)
 
 
 static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if spec.line_m > 0.0:  # v0.6.5 WN4: Fissure's line
+		return BladeForms.line(w, spec, ctx)
 	var a := w.actors
 	var landed := false
 	var hits := 0
 	var r := ctx.radius_m if ctx.radius_m > 0.0 else spec.radius_m  # v0.6.0 MX4: Vent's, an echo's
+	BladeForms.on_burst(w, spec, ctx.origin, r)  # v0.6.5 WN4: Finisher+'s shockwave, for the view
 	if spec.pull_m > 0.0:  # v0.6.0 MX4: Gravity Well
 		ModifierRuntime.pull(w, ctx.origin, r, spec.pull_m)
 	for i in range(1, a.size()):
@@ -465,6 +477,8 @@ static func orbiter_pos(spec: AttackSpec, center: Vector2, ang: int, r: float, k
 
 ## A launched orbiter (a hook's): one sweep of its blades around ctx.origin, each enemy hit once.
 static func _orbiter(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	if spec.orbit_ticks > 0:  # v0.6.5 WN4: Orbit Blades' blade circles the player
+		return BladeForms.orbit(w, spec, ctx)
 	var a := w.actors
 	var r := spec.reach_m if spec.reach_m > 0.0 else 1.5
 	var br := spec.radius_m if spec.radius_m > 0.0 else Abilities.BLADE_R
@@ -484,6 +498,7 @@ static func _orbiter(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 static func _landed(
 	w: World, spec: AttackSpec, ctx: AttackContext, i: int, at: Vector2, nth: int
 ) -> void:
+	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
 	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
 		if spec.has_tag(&"weapon"):
 			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
@@ -498,16 +513,22 @@ static func _landed(
 	_run(w, spec, AttackSpec.Trigger.ON_HIT, ctx, at, i, nth)
 	if w.actors.dead[i] == 1:
 		_run(w, spec, AttackSpec.Trigger.ON_KILL, ctx, at, i, nth)
+	if crit:  # v0.6.5 WN1: the wand's On Crit (the Gun's T4)
+		_run(w, spec, AttackSpec.Trigger.ON_CRIT, ctx, at, i, nth)
 
 
-## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0), once per root per target
+## A hook attack's own statuses: stacks × its proc coefficient (rounded down; none at 0; v0.6.5 WN5a: a trigger's cast
+## feeds them whole), once per root per target
 ## and status. Root attacks feed through their sources instead (Engines.on_hit, ItemEffects.on_melee_hit,
 ## ItemProcs.on_bolt_hit), as before MX1; v0.6.0 MX2: so does every projectile (Engines reads World.hit_spec), while
 ## an ability's other attacks (a bomb, an orbiter, a patch, a ring) feed here, at proc 100 for the ability's own.
 static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	var a := w.actors
+	var cast := spec.has_tag(WandCasts.TAG_CAST)  # v0.6.5 WN5a: a trigger's child spell is a spell of its own
 	for k in spec.status_ids.size():
-		var n := spec.status_stacks[k] * ctx.proc_pct / 100
+		# A trigger's cast feeds its cards' stacks whole (as a cast bolt does through Engines.on_hit): ON HIT · Fire
+		# burns; its proc coefficient still halves what its hits set off (HIT.proc_pct).
+		var n := spec.status_stacks[k] if cast else spec.status_stacks[k] * ctx.proc_pct / 100
 		var st := StringName(spec.status_ids[k])
 		var code := CODE_HOOK_FEED + FEED_ORDER.find(st)
 		if n <= 0 or a.dead[i] == 1:
@@ -573,6 +594,8 @@ static func run_hook(
 		return false
 	if k.when == AttackHook.WHEN_OVERCLOCK and not Heat.overclocked(w):
 		return false  # v0.6.0 MX4: Heat Sink Rounds
+	if k.when == AttackHook.WHEN_COUNTER and not BladeForms.countering(w):
+		return false  # v0.6.5 WN4: Counter's wave
 	var dmg := k.damage_for(parent.base_damage)
 	if k.child.form == AttackSpec.Form.WEAPON and k.damage <= 0:  # v0.6.0 MX4: a share of the weapon's
 		dmg = maxi(1, Modifiers.weapon_damage(w) * k.damage_permille / 1000)
@@ -580,9 +603,13 @@ static func run_hook(
 	c.exclude = exclude
 	if k.child.form == AttackSpec.Form.BOLT and exclude >= 0:  # v0.6.0 MX4: from past the enemy it hit
 		c.muzzle_m = w.actors.radius[exclude] + k.child.radius_m + MUZZLE_GAP_M
+		# v0.6.5 WN5a: measured from the enemy's centre (a projectile's hit point is its own centre at contact,
+		# a bolt's radius short of the enemy's edge, so the child spawned inside the enemy and hit it again)
+		c.origin = w.actors.pos(exclude)
 	if k.delay_ticks > 0:  # v0.6.0 MX4: Long Shadow's afterimage waits
 		ModifierRuntime.queue_hook(w, k, c)
 		return false
+	WandCasts.note(w, k, at, c.angle)  # v0.6.5 WN5a: the views draw the small spell where it is cast
 	w.hook_chain.append(String(k.id))
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)
@@ -641,6 +668,12 @@ static func projectile_effect(spec: AttackSpec, tags: int) -> StringName:
 	return fx
 
 
+## v0.6.5 WN1: the proc coefficient a projectile's hit carries (HIT.proc_pct): 100 at depth 0, halving per hook
+## level of its spec (a trigger's child spell, a split: 50, then 25), as a launched hook attack's hits do.
+static func projectile_proc(spec: AttackSpec) -> int:
+	return 100 if spec == null else maxi(1, 100 >> spec.depth)
+
+
 ## A player projectile landed on actor `i` at `at` (World phase 9, ItemProcs.on_bolt_hit): its spec's ON_HIT hooks
 ## (v0.6.0 MX2: the projectile's own spec, and its ON_KILL hooks on a kill; MX1 read the Gun bolt's for every player
 ## projectile, v0.5's rule, which stays for a projectile without a spec). A hook with an `every` fires on every Nth
@@ -653,6 +686,8 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	var hooks := spec.hooks_on(AttackSpec.Trigger.ON_HIT)
 	if w.actors.dead[i] == 1:
 		hooks.append_array(spec.hooks_on(AttackSpec.Trigger.ON_KILL))
+	if w.last_hit_crit:  # v0.6.5 WN1: the wand's On Crit (Damage.hit set it for this projectile's hit)
+		hooks.append_array(spec.hooks_on(AttackSpec.Trigger.ON_CRIT))
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]

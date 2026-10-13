@@ -3,24 +3,31 @@
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
 
-[sub_resource type="Resource" id="Op_1"]
+[sub_resource type="Resource" id="Child_1"]
 script = ExtResource("2_op")
 op = 0
-field = &"mirror"
-value = 2.0
+field = &"orbit_seconds"
+value = 3.0
 
-[sub_resource type="Resource" id="Op_2"]
+[sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
-op = 1
-stage = 1
-field = &"count"
-value = 1.0
+op = 8
+stage = 4
+form = 5
+hook_trigger = 4
+hook_tags = PackedStringArray("melee")
+hook_radius_m = 0.3
+hook_reach_m = 1.6
+hook_damage_permille = 400
+hook_effect = &"blade_orbit"
+hook_ops = Array[Resource]([SubResource("Child_1")])
+per_level = 75.0
 
 [resource]
 script = ExtResource("1_mod")
 family = &"damage"
 rarity = 1
-target = PackedStringArray("orbit")
-stage = 0
-ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+target = PackedStringArray("weapon", "melee")
+stage = 4
+ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
 id = &"blade_orbit"

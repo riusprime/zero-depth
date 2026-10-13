@@ -41,7 +41,7 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 	for idx in w.item_tables.size():
 		if (
 			(legendary or w.item_tables[idx].rarity != ItemTable.LEGENDARY)
-			and not w.items_owned.has(idx)
+			and CardLevels.can_take(w, idx)  # v0.6.5 WN3: a held wand card below level 5 too
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows
@@ -55,13 +55,16 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 
 ## The item works with the player's utility (v0.3.0 E: Bulwark needs the guard) and weapon (v0.3.0 L15: a Gun run
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
-## v0.5.0 CP: an ability mod only while the player owns its ability.
+## v0.5.0 CP: an ability mod only while the player owns its ability. v0.6.5 WN5b: never a retired v0.6 card.
 static func usable(w: World, idx: int) -> bool:
 	return _usable(w, idx)
 
 
 static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
+	# v0.6.5 WN5a: the wand's trigger cards (WAND.md T1–T4) are offered in both weapons' runs.
+	if it.retired:
+		return false  # v0.6.5 WN5b: a retired v0.6 card (WAND.md; data/wand/migration.tres)
 	if it.requires_heat and w.heat == null:
 		return false
 	var need := it.requires_utility
