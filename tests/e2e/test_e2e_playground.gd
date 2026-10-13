@@ -72,6 +72,7 @@ func test_the_playground_from_the_menu() -> void:
 	assert_eq(w.floor_layout.room_count(), 1, "one room")
 	assert_eq(w.floor_layout.room_cells[0].size, Vector2i(4, 4))
 	assert_null(main.run, "not a run: nothing is saved or recorded")
+	assert_null(main.view.gate, "no gate is drawn: the room has none")
 	assert_not_null(main.get_node_or_null("UI/DpsMeter"), "the DPS meter")
 
 	# F1: the panel, and the sim waits.

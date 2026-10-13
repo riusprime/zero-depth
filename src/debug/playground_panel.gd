@@ -64,6 +64,11 @@ func _init(p_api: PlaygroundApi, p_pick_world: Callable, biomes: Array, biome: S
 	offset_top = 12
 	offset_bottom = -12
 	offset_right = 12 + WIDTH
+	var bg := StyleBoxFlat.new()  # opaque: the HUD under it must not show through
+	bg.bg_color = Color(0.07, 0.08, 0.11, 0.96)
+	bg.set_corner_radius_all(6)
+	bg.set_content_margin_all(10)
+	add_theme_stylebox_override("panel", bg)
 	var col := VBoxContainer.new()
 	add_child(col)
 	var bar := HBoxContainer.new()
