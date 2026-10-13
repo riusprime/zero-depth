@@ -72,9 +72,16 @@ static func weighted_index(state: int, weights: PackedInt32Array) -> RngStep:
 	return result
 
 
-## A uniform int in [0, n) with no modulo bias: draws above the largest multiple of n are rejected.
+## A uniform int in [0, n) with no modulo bias: draws above the largest multiple of n are rejected. An empty range
+## (n <= 0) is a caller's bug: debug builds stop on the assert; a release build (asserts stripped) gets 0 and the
+## state unchanged, the same answer on every build, instead of a modulo by zero.
 static func below(state: int, n: int) -> RngStep:
 	assert(n > 0)
+	if n <= 0:
+		var none := RngStep.new()
+		none.value = 0
+		none.next_state = state
+		return none
 	var limit: int = 0x100000000 - (0x100000000 % n)
 	var step := next_u32(state)
 	while step.value >= limit:
