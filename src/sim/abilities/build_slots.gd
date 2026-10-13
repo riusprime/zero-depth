@@ -229,27 +229,11 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	CardLevels.hash_into(w, h)  # v0.6.5 WN3: once a card levelled
 
 
-## Per slot (in slot order): the card code, its id, name key, type (Offers.MOD / ABILITY), level, family (the card
-## frame's, CardFrames.FAMILY_OF); and the slot count (WorldReader.build).
+## Per slot (in slot order): the card as Wand.read gives it (code, id, name key, type: Offers.MOD / ABILITY, level,
+## trigger); the slot count, and the swap waiting (WorldReader.build). One slot walk: Wand.read's (audit G-18).
 static func read(w: World) -> Dictionary:
-	var slots: Array[Dictionary] = []
-	for s in w.mod_slots.size():
-		var code := w.mod_slots[s]
-		var info := Offers.info(w, code)
-		(
-			slots
-			. append(
-				{
-					"code": code,
-					"id": info["id"],
-					"name_key": info["name_key"],
-					"type": info["type"],
-					"level": level_at(w, s),
-				}
-			)
-		)
 	return {
-		"slots": slots,
+		"slots": Wand.read(w)["cards"],
 		"max": Wand.slots(w),  # v0.6.5 WN1: the wand's count now
 		"swap_code": w.swap_code,
 		"swap_source": w.swap_source,
