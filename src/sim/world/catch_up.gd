@@ -7,7 +7,7 @@ extends RefCounted
 ##   how well it is played: weapon level × damage stat × Glass Cannon × (1 + Onrush) × expected crit (relative to the
 ##   base crit) × attack speed × (1 + the modifier slots' levels and the utility's level, the items without a slot
 ##   and the combos, at their table weights). The one place the build's power is read (v0.6.0 MX2: the weapon, the
-##   utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand, Wand.cards).
+##   utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand's slots).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
 ## - start_floor(w), at floor entry (after the carry, the abilities, the heat and the events are set up): reads P,
 ##   E(floor), cap(floor) + threat_cap × T and stores m in World.catch_up; m is fixed for the floor (no rubber band).
