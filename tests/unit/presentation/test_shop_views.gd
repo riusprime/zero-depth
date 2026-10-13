@@ -121,6 +121,9 @@ func test_the_panel_navigates_and_sends_actions() -> void:
 	assert_eq(got, [], "Space (dash) never confirms")
 	p._input(_key(KEY_ENTER))
 	assert_eq(got, [3], "Enter buys the third card")
+	p._input(_key(KEY_ENTER))
+	assert_eq(got, [3], "audit P-12: one action until the sim steps past it")
+	_stepped(w, p, r)
 	p._input(_pad(JOY_BUTTON_DPAD_DOWN))
 	assert_eq(
 		p.focused_value(), InputFrame.PICK_SHOP_REROLL, "down: the services row, nearest place"
@@ -134,15 +137,25 @@ func test_the_panel_navigates_and_sends_actions() -> void:
 	p._input(_pad(JOY_BUTTON_DPAD_RIGHT))
 	p._input(_pad(JOY_BUTTON_A))
 	assert_eq(got, [3, InputFrame.PICK_SHOP_SELL + 1], "A salvages the focused entry")
+	_stepped(w, p, r)
 	p._input(_pad(JOY_BUTTON_DPAD_UP))
 	p._input(_pad(JOY_BUTTON_DPAD_UP))
 	assert_eq(int(p.entry(p.focus_index())["row"]), 0, "up twice: back to the cards")
 	p.salvage_tile(0).clicked.emit()
 	assert_eq(got[-1], InputFrame.PICK_SHOP_SELL, "a click acts")
+	_stepped(w, p, r)
 	p._input(_pad(JOY_BUTTON_B))
 	assert_eq(got[-1], InputFrame.PICK_CANCEL, "B leaves")
+	_stepped(w, p, r)
 	p._input(_key(KEY_ESCAPE))
 	assert_eq(got[-1], InputFrame.PICK_CANCEL, "so does Esc")
+
+
+## TEST HELPER (labelled): the sim stepped past the tick an action was sent on (its pick read), with nothing applied,
+## so the panel takes the next action (audit P-12's latch).
+func _stepped(w: World, p: ShopPanel, r: WorldReader) -> void:
+	w.tick += 1
+	p.sync(r)
 
 
 func test_the_panel_follows_the_sim_and_closes() -> void:

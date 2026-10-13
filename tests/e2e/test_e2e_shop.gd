@@ -202,3 +202,68 @@ func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
 	await e.tap(KEY_ESCAPE)
 	await e.frames(2)
 	assert_false(w.shop.open, "Esc closes the shop")
+
+
+## Audit P-12, real input only: holding Enter on Reroll rerolls once (the OS key-repeat echoes act on nothing), two
+## presses inside one tick send one action, and the arrows still repeat.
+func test_held_enter_on_reroll_rerolls_once() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu()
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	await e.tap(KEY_QUOTELEFT)
+	await _click(e, main, "God")
+	await e.tap(KEY_QUOTELEFT)
+	assert_true(await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked to the terminal")
+	# TEST HELPER (labelled): grant the shards directly, as in the tests above.
+	w.shards = 5000
+	await e.tap(KEY_E)
+	await e.frames(2)
+	var panel := hud.shop.panel
+	assert_true(panel.is_open(), "the shop is open")
+	var r := panel.index_of_value(InputFrame.PICK_SHOP_REROLL)
+	await _focus_to(e, panel, r)
+	assert_eq(panel.focus_index(), r, "Reroll focused")
+	var rolls := w.shop.rerolls
+	# Hold Enter: one press, then the OS's key-repeat echoes over many frames.
+	e.key(KEY_ENTER, true)
+	await e.frames(2)
+	for i in 12:
+		var ev := InputEventKey.new()
+		ev.physical_keycode = KEY_ENTER
+		ev.keycode = KEY_ENTER
+		ev.pressed = true
+		ev.echo = true
+		e.send(ev)
+		await e.frames(2)
+	e.key(KEY_ENTER, false)
+	await e.frames(2)
+	assert_eq(w.shop.rerolls, rolls + 1, "a held Enter rerolls once")
+	# Two separate presses inside one frame: one action.
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	assert_eq(w.shop.rerolls, rolls + 2, "a fresh press rerolls again")
+	e.key(KEY_ENTER, true)
+	e.key(KEY_ENTER, false)
+	e.key(KEY_ENTER, true)
+	e.key(KEY_ENTER, false)
+	await e.frames(3)
+	assert_eq(w.shop.rerolls, rolls + 3, "two presses in one tick send one action")
+	# The arrows still repeat: a held Left's echoes move the focus.
+	var f := panel.focus_index()
+	e.key(KEY_LEFT, true)
+	await e.frames(1)
+	var echo := InputEventKey.new()
+	echo.physical_keycode = KEY_LEFT
+	echo.keycode = KEY_LEFT
+	echo.pressed = true
+	echo.echo = true
+	e.send(echo)
+	await e.frames(1)
+	e.key(KEY_LEFT, false)
+	await e.frames(1)
+	assert_eq(panel.focus_index(), f - 2, "the arrow's echo moved the focus too")
+	await e.tap(KEY_ESCAPE)
+	await e.frames(2)
+	assert_false(w.shop.open, "Esc closes the shop")

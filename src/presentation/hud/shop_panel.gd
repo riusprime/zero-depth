@@ -48,6 +48,11 @@ var _open := false
 var _sig := ""
 var _shards_cache := 0
 var _limit := false
+## Audit P-12: one action per sim answer (the swap panel's latch). Set when an action is sent; cleared once the sim
+## has stepped past the tick it was sent on (the pick has been read, answered or refused) or the panel closes.
+var _sent := false
+var _sent_tick := 0
+var _tick := 0
 
 
 func _init() -> void:
@@ -118,9 +123,13 @@ func _init() -> void:
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
+	_tick = reader.tick()
+	if _sent and _tick > _sent_tick:
+		_sent = false
 	if not reader.has_shop() or not reader.shop_open():
 		if _open:
 			_open = false
+			_sent = false
 			_sig = ""
 			visible = false
 		return
@@ -429,6 +438,14 @@ func _input(event: InputEvent) -> void:
 		return
 	var step := Vector2i.ZERO
 	if event is InputEventKey and event.pressed:
+		# P-12 (the swap panel's rule): a held key acts once; only the arrows repeat.
+		if event.echo and event.physical_keycode not in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN]:
+			if (
+				event.physical_keycode
+				in [KEY_1, KEY_2, KEY_3, KEY_4, KEY_ENTER, KEY_KP_ENTER, KEY_ESCAPE]
+			):
+				get_viewport().set_input_as_handled()
+			return
 		match event.physical_keycode:
 			KEY_1, KEY_2, KEY_3, KEY_4:
 				var k: int = event.physical_keycode - KEY_1
@@ -437,7 +454,7 @@ func _input(event: InputEvent) -> void:
 			KEY_ENTER, KEY_KP_ENTER:
 				_act(_focus)
 			KEY_ESCAPE:
-				picked.emit(InputFrame.PICK_CANCEL)
+				_send(InputFrame.PICK_CANCEL)
 			KEY_LEFT:
 				step = Vector2i(-1, 0)
 			KEY_RIGHT:
@@ -453,7 +470,7 @@ func _input(event: InputEvent) -> void:
 			JOY_BUTTON_A:
 				_act(_focus)
 			JOY_BUTTON_B:
-				picked.emit(InputFrame.PICK_CANCEL)
+				_send(InputFrame.PICK_CANCEL)
 			JOY_BUTTON_DPAD_LEFT:
 				step = Vector2i(-1, 0)
 			JOY_BUTTON_DPAD_RIGHT:
@@ -518,4 +535,13 @@ func _act(k: int) -> void:
 		return
 	_set_focus(k)
 	if _entries[k]["enabled"]:
-		picked.emit(int(_entries[k]["value"]))
+		_send(int(_entries[k]["value"]))
+
+
+## Sends one action as input, then waits for the sim to step past it before sending another (P-12).
+func _send(value: int) -> void:
+	if _sent:
+		return
+	_sent = true
+	_sent_tick = _tick
+	picked.emit(value)
