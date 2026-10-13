@@ -502,11 +502,7 @@ func card_mode() -> StringName:
 
 ## The number of item icons in the carried row.
 func item_icon_count() -> int:
-	var n := 0
-	for c in _items.get_children():
-		if not c.is_queued_for_deletion():
-			n += 1
-	return n
+	return _items.get_child_count()
 
 
 ## The pickup whose item to preview: the nearest pedestal within `reach_m` of the player, or -1.
@@ -549,6 +545,7 @@ func _sync_items(reader: WorldReader) -> void:
 		return
 	_items_shown = owned.size()
 	for c in _items.get_children():
+		_items.remove_child(c)  # out of the row now: queue_free alone leaves it drawn and laid out this frame
 		c.queue_free()
 	for idx in owned:
 		var id := reader.item_id(idx)
@@ -574,11 +571,7 @@ func combo_card() -> ComboCard:
 
 ## The number of combo badges in the row.
 func combo_badge_count() -> int:
-	var n := 0
-	for c in _combos.get_children():
-		if not c.is_queued_for_deletion():
-			n += 1
-	return n
+	return _combos.get_child_count()
 
 
 ## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
@@ -604,6 +597,7 @@ func _sync_combos(reader: WorldReader) -> void:
 		return
 	_combos_shown = owned.size()
 	for c in _combos.get_children():
+		_combos.remove_child(c)
 		c.queue_free()
 	for c in owned:
 		var pair := reader.combo_item_ids(c)
