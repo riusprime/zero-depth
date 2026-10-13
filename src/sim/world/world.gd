@@ -430,13 +430,18 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &""]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1]
 	)
 
 
 ## v0.7.5 BF1: the projectile queued last is a fireball of look `look` (BulletPatterns).
 func set_pending_look(look: StringName) -> void:
 	_pending_projectiles[-1][10] = look
+
+
+## v0.7.5 BF2: the projectile queued last was fired by its boss's attack `attack` (the recap's cause, BulletPatterns).
+func set_pending_cause(attack: int) -> void:
+	_pending_projectiles[-1][11] = attack
 
 
 ## v0.7.5 BF1: projectiles queued this tick, not spawned yet (BulletPatterns' per-tick cap reads it).
@@ -1378,6 +1383,8 @@ func _projectile_hits() -> void:
 					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
 				hit_spec = null
+				if best_actor == 0 and player_dead() and killer_attack < 0:
+					killer_attack = projectiles.cause_of(i)  # v0.7.5 BF2: the recap names the shot's attack
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
 				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
@@ -1438,6 +1445,8 @@ func _apply_spawns() -> void:
 		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
 		if s[10] != &"":  # v0.7.5 BF1: a fireball's look (BulletPatterns)
 			projectiles.set_look(projectiles.size() - 1, s[10])
+		if s[11] >= 0:  # v0.7.5 BF2: the boss attack that fired it
+			projectiles.set_cause(projectiles.size() - 1, s[11])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()

@@ -744,7 +744,7 @@ static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 ## marker moves draw &"marks": "items", one {"shape" (&"disc" with center and radius, or &"lanes" with obbs),
 ## "locked", "progress"} per marker showing now; a burst pattern draws its landing &"disc" (tracked, then locked)
 ## and, while its shell flies, "lob" {from, to, progress}. Other patterns draw nothing on the ground (owner: "Shots
-## draw no line on the ground"); their shots are the readable cause.
+## draw no line on the ground"): v0.7.5 BF2: their windup and firing are a &"cast" with "ground": false (BossDodge).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	var atk := attack_of(w, i)

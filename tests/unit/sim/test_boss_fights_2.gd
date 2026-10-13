@@ -450,3 +450,48 @@ func test_both_bosses_patterns_fire_slow_shots_in_their_looks() -> void:
 			assert_eq(reader.projectile_look(k), spec[2])
 			var v := reader.projectile_vel(k).length() * SimTick.TICKS_PER_SECOND
 			assert_between(v, 1.5, 5.0, "%s: slow" % spec[1])
+
+
+# --- readable (the BF2 fix: test_readable_cause found both) -------------------------------------------------
+
+
+func test_a_pattern_shows_its_cast_for_its_windup_and_whole_firing() -> void:
+	for spec in [[&"brood_mother", &"web_spiral"], [&"hive_lens", &"petal_bloom"]]:
+		var s := _fight(spec[0], Vector2(9, 0))
+		var w: World = s[0]
+		var aid: int = s[1]
+		BossLab.start(w, _i(w, aid), spec[1])
+		var atk := BossAi.attack_of(w, _i(w, aid))
+		assert_gte(atk.windup_ticks, SimTick.MIN_TELEGRAPH_TICKS, "%s: a readable windup" % spec[1])
+		var seen := 0
+		while w.actors.state[_i(w, aid)] != S.RECOVER and seen < 2000:
+			var tg := BossAi.telegraph(w, _i(w, aid))
+			assert_eq(
+				tg.get("shape", &""), &"cast", "%s: its cast shows, tick %d" % [spec[1], seen]
+			)
+			assert_false(tg.get("ground", true), "nothing on the ground")
+			w.step(InputFrame.new())
+			seen += 1
+		assert_gt(seen, atk.windup_ticks + 10, "through the later waves too")
+
+
+func test_the_recap_names_the_pattern_whose_shot_killed() -> void:
+	var s := _fight(&"hive_lens", Vector2(6, 0))
+	var w: World = s[0]
+	var aid: int = s[1]
+	w.actors.hp[0] = 1
+	w.actors.max_hp[0] = 100
+	var t := BossAi.table_of(w, _i(w, aid))
+	BossLab.start(w, _i(w, aid), &"petal_bloom")
+	CombatLab.until(w, func(x: World) -> bool: return x.projectiles.size() > 0)
+	# The bloom's orbs are in flight; the boss moves on to its spiral before one lands.
+	BossLab.start(w, _i(w, aid), &"prism_spiral")
+	var p := w.projectiles
+	w.actors.set_pos(0, Vector2(p.pos_x[0], p.pos_y[0]) + Vector2(p.vel_x[0], p.vel_y[0]) * 3.0)
+	CombatLab.until(w, func(x: World) -> bool: return x.player_dead(), 60)
+	assert_true(w.player_dead(), "an orb killed")
+	assert_eq(
+		WorldReader.new(w).killer_cause_key(),
+		t.attacks[t.attack_index(&"petal_bloom")].cause_key,
+		"the recap names the bloom that fired it, not the spiral it is on now"
+	)

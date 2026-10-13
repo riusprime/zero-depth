@@ -44,6 +44,9 @@ var mine_t := PackedInt32Array()
 ## v0.7.5 BF1 (BulletPatterns): a hostile fireball's look key ("" = a plain shot), so each boss's and enemy's shots
 ## look its own; empty until the first fireball (set_look), so stores that never held one step and hash as before.
 var look := PackedStringArray()
+## v0.7.5 BF2: a boss fireball's attack (the boss table's attack index that fired it; -1 = none), so the death recap
+## names the pattern that killed, not the one the boss is on now. Empty until a boss's fireball flies (set_cause).
+var cause := PackedInt32Array()
 
 
 func size() -> int:
@@ -90,6 +93,8 @@ func add(
 	mine_t.append(0)
 	if not look.is_empty():  # v0.7.5 BF1
 		look.append("")
+	if not cause.is_empty():  # v0.7.5 BF2
+		cause.append(-1)
 
 
 ## v0.7.5 BF1: projectile i is a fireball of look `key` (the column fills the first time).
@@ -97,6 +102,21 @@ func set_look(i: int, key: StringName) -> void:
 	if look.size() < ids.size():
 		look.resize(ids.size())
 	look[i] = String(key)
+
+
+## v0.7.5 BF2: projectile i was fired by its boss's attack `attack` (the column fills the first time, -1 elsewhere).
+func set_cause(i: int, attack: int) -> void:
+	if cause.size() < ids.size():
+		var was := cause.size()
+		cause.resize(ids.size())
+		for k in range(was, ids.size()):
+			cause[k] = -1
+	cause[i] = attack
+
+
+## v0.7.5 BF2: the boss attack that fired projectile i (-1 = none or not a boss's).
+func cause_of(i: int) -> int:
+	return cause[i] if i < cause.size() else -1
 
 
 ## v0.7.5 BF1: projectile i's look key ("" = a plain shot).
@@ -135,6 +155,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 			mine_t.remove_at(i)
 		if i < look.size():  # v0.7.5 BF1
 			look.remove_at(i)
+		if i < cause.size():  # v0.7.5 BF2
+			cause.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)
@@ -161,6 +183,8 @@ func hash_into(h: StateHasher, with_specs: bool = true) -> void:
 	h.add_ints(bounce_tick)
 	if not look.is_empty():  # v0.7.5 BF1: only once a fireball has flown (the kernel golden's never do)
 		h.add_string(",".join(look))
+	if not cause.is_empty():  # v0.7.5 BF2: only once a boss's fireball has flown
+		h.add_ints(cause)
 	if not with_specs:
 		return
 	for k in spec_key:  # v0.6.0 MX2: only once a projectile names a spec (the kernel golden's never do)
