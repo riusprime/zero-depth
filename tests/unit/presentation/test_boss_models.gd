@@ -101,7 +101,7 @@ func test_phase_two_glows_steadily() -> void:
 func test_models_are_read_once_per_type() -> void:
 	BossModels.preload_all()
 	var n := BossModels.loaded_count()
-	assert_eq(n, 3)
+	assert_eq(n, BossModels.SPECS.size(), "v0.7.5 BM: all six bosses")
 	var m1 := BossModels.get_model(&"stone_sentinel")
 	_avatar(GatekeeperAvatar)
 	_avatar(GatekeeperAvatar)

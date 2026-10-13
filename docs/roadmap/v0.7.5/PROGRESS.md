@@ -13,6 +13,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | AC | Local achievements: 37 to unlock (floors, wins, each boss and biome from the data, the wand, kills, sealed rooms, risks, the Codex, Ascension), a toast when one unlocks, an Achievements page in the Codex from both menus, kept in the profile ([evidence](evidence/ACHIEVEMENTS.md)) | `v0.7.5 Step AC` commit (branch `v075-ac`) |
 | NB2 | Biome 5, Starfall: a cosmic biome, the floor a floating island in a starry void with nebula light and drifting rock and crystal islands, starglow pools that speed your step, in the run's biome draw (3 floors from 5) ([evidence](evidence/STARFALL.md)) | `v0.7.5 Step NB2` commit (branch `v075-nb2`) |
 | SM | The small things: a card's level on every pick card ("Lv 1", "Lv 2 → 3", the legendary "Lv N → 5") and on the HUD's wand pips and the Build page; ten first-run hints, each once, never blocking, with the keys of the device you use (Options: Show hints, Reset hints); the credits generated from the repo's manifests, fonts and addons, with the app icon; an Interface size option and reduced-motion / colour-blind fixes from an accessibility pass; the dev panel behind one release switch, left ON ([evidence](evidence/SMALL_THINGS.md)) | `v0.7.5 Step SM` commit (branch `v075-sm`) |
+| BM | The owner's Warlord, Hive Lens and Foundry models replace their code bodies and move from their bones: the Warlord walks, carries and lifts its shield, raises and plants, couches and thrusts, draws and throws its spear, flinches, reels and falls when it dies; the Hive Lens bobs and rolls, its tails sway and trail, its eye turns to you, it opens, closes, splits and dives; the Foundry's legs (cut from its mesh) step in pairs as it pours, vents and launches. Every boss is drawn 1.3× bigger (owner N18) ([evidence](evidence/BOSS_MODELS.md)) | `v0.7.5 Step BM` commit (branch `v075-bm`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -23,6 +24,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   fifth biome changes every run seed's biome draw; no golden pins one.)
 - AP: none. `tests/golden` passes unchanged: the loop and Ascension fields are hashed only past loop 1 / on the Ascension floor, so every loop-1 floor other than the last hashes as before (the last floor's hash changes on purpose; no golden fixture holds one)
 - SM: none. The one sim edit is a read key (`Wand.read`'s `wand`), nothing hashed; `tests/golden` not run by the agent (the lead's full suite).
+- BM: none. No sim file changed (presentation, assets and docs only); `tests/golden` not run by the agent.
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -92,3 +94,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - 2026-10-13: owner: "some lighting adjustments have been made, so before pushing this one into main also merge this
   branch into yours to make a complete merge claude/optimistic-ride-x1sdnu". Merged (`3bb043a`, look pass v3: warm
   dusk Ruins lighting, tamed glow and fire lights; built on the audit branch; no conflicts).
+- 2026-10-13: BM (agent, branch `v075-bm` from `67c9af9`): the owner's three boss models installed (manifest,
+  sha256, extracted textures, the credits list regenerated), SPECS read from the committed raw render
+  (`scripts/shots/boss_models.gd mode=raw`), the rigged Warlord and Hive Lens posed from their own bones
+  (`BonePoser`), the Foundry's legs cut in code (`BossRig`), a `shielded` pose hook and `anchor()` points for BF,
+  the Warlord's death fall (ActorViews keeps it 1.6 s). Owner N18 (sent by the lead): every boss drawn 1.3×
+  (`BossModels.SIZE_SCALE`). Run by the agent: lint; `tests/unit/presentation` + `tests/content` 610/610; the boss
+  e2e (bosses, bosses_2, boss_challenge, after_boss) 6/6; screenshots under xvfb + llvmpipe. Not run by the agent:
+  the full suite, export smoke, goldens. Shared files touched: `actor_views.gd` (the death hand-off, the boss
+  height), `data/credits/licences.tres`. Not pushed.

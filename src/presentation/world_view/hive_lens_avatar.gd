@@ -9,6 +9,14 @@ extends BossAvatar
 ## for the dive (the leap). At half HP it splits (the deploy): the three pods drift off its rim during the windup and
 ## are gone once the drones are out. While its weak point is open the iris core shows gold; staggered, it sags and
 ## wobbles.
+## v0.7.5 BM: the owner's model (assets/models/bosses/hive_lens.glb, rigged by the owner: a 23-joint Tripo skeleton)
+## replaces the code-built body, which stays as the fallback when the file is missing. 1.9 m across its two side pods,
+## floating with its sphere's centre HOVER_Y up, it is posed from its bones, one function per layer (_pose_rig): a
+## bob and a slow roll, the crown spinning, the three cable tails swaying with a lag down each chain and trailing its
+## motion, the body turning its eye to the player, an "open" pose while the weak point is open (the crown tips back
+## and the pods spread), the split (the pods spread and lift through the deploy and stay apart after it), the dive,
+## the glare's swell, the beam's recoil, a flinch, the stagger's sag, and the "shielded" hook: the closed pose (the
+## crown folds down over the eye, the pods draw in, the tails curl up). Its ground shadow stays with the model.
 
 const HEIGHT := 2.6
 const HOVER_Y := 1.75
@@ -22,6 +30,40 @@ const RED := Color("#D8433A")
 const IRIS := Color("#FF2A22")
 const PUPIL := Color("#1B1C20")
 const TIP := Color("#FF3A26")
+## v0.7.5 BM: the owner's model's bones (Tripo names as Godot imports them) and its eye's front at rest (metres,
+## model frame; evidence/BOSS_MODELS.md).
+const SPINE_0 := &"tripo__Spine_0"
+const SPINE_1 := &"tripo__Spine_1"
+const CROWN_BASE := &"tripo__Spine_2"
+const CROWN := &"tripo__Head_0"
+const SHELL_TOP := &"bone_21"
+const PODS := &"bone_22"
+## The three cable tails, root first: the middle one under the back, the right one and the left one.
+const TAILS: Array[Array] = [
+	[
+		&"tripo__1_Left_Limb_0",
+		&"tripo__1_Left_Limb_1",
+		&"tripo__1_Left_Limb_2",
+		&"tripo__1_Left_Limb_3"
+	],
+	[
+		&"tripo__0_Right_Limb_0",
+		&"tripo__0_Right_Limb_1",
+		&"tripo__0_Right_Limb_2",
+		&"tripo__0_Right_Limb_3"
+	],
+	[
+		&"tripo__0_Left_Limb_0",
+		&"tripo__0_Left_Limb_1",
+		&"tripo__0_Left_Limb_2",
+		&"tripo__0_Left_Limb_3"
+	],
+]
+## Each tail's side: -1 under the back (it curls and splays fore and aft), +1 right, -1 left (they splay sideways).
+const TAIL_SIDE := [0, 1, -1]
+const MODEL_EYE := Vector3(0.6, 1.84, 0)
+## The most the body turns its eye toward the player beyond its facing (radians).
+const AIM_MAX := 0.6
 
 var eye := Node3D.new()
 var iris: MeshInstance3D
@@ -30,9 +72,12 @@ var pods: Array[Node3D] = []
 var tails: Array[Node3D] = []
 var _pod_glow: Array[MeshInstance3D] = []
 var _split := 0.0
+# v0.7.5 BM: the cables' lagged drag (one per chain segment, model frame x/z) and the crown's spin angle.
+var _drag: Array[Vector2] = []
+var _spin := 0.0
 
 
-## Its imported model, when the owner sends one: assets/models/bosses/hive_lens.glb (whole-body motion).
+## The owner's model: assets/models/bosses/hive_lens.glb (posed from its own bones).
 func model_id() -> StringName:
 	return &"hive_lens"
 
@@ -42,7 +87,32 @@ func _code_nodes() -> Array[Node]:
 
 
 func _weak_point_at() -> Vector3:
-	return Vector3(EYE_R + 0.1, HOVER_Y, 0)
+	return MODEL_EYE if imported != null else Vector3(EYE_R + 0.1, HOVER_Y, 0)
+
+
+func _weak_bone() -> StringName:
+	return SPINE_1
+
+
+## The model keeps the code body's ground shadow (where the sim has it).
+func _build_body() -> void:
+	super()
+	if imported != null:
+		_build_shadow()
+
+
+func anchor_names() -> Array[StringName]:
+	return [&"weak", &"eye"]
+
+
+func _anchor(point: StringName) -> Vector3:
+	if point == &"eye":
+		return (
+			_on_bone(SPINE_1, MODEL_EYE)
+			if imported != null
+			else eye.position + Vector3(EYE_R, 0, 0)
+		)
+	return weak_core.position
 
 
 ## 0..1: how far the drone pods have split off (tests).
@@ -52,6 +122,12 @@ func split_amount() -> float:
 
 func _build() -> void:
 	var p := parts
+	_build_shadow()
+	_build_eye(p)
+
+
+## The soft dark disc on the ground under it.
+func _build_shadow() -> void:
 	shadow = MeshInstance3D.new()
 	shadow.name = "Shadow"
 	var disc := CylinderMesh.new()
@@ -68,6 +144,9 @@ func _build() -> void:
 	shadow.position.y = 0.012
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	model.add_child(shadow)
+
+
+func _build_eye(p: BossParts) -> void:
 	eye.name = "Eye"
 	eye.position.y = HOVER_Y
 	model.add_child(eye)
@@ -188,3 +267,151 @@ func _pose(dt: float) -> void:
 		)
 	var s := 1.0 - (bob + 0.35 * stag) * 0.4
 	shadow.scale = Vector3(s, 1, s)
+
+
+# --- The owner's model (v0.7.5 BM), posed from its bones -------------------------------------------------------
+# Turns are in the model frame: +Z tips a part's top back (a hanging tail forward), +X tips it toward the left (a
+# hanging tail out to the left, -Z), +Y turns it to its left.
+
+
+func _pose_rig(dt: float) -> void:
+	var p := poser
+	var attack := _attack_amounts()
+	var splitting := _state == WorldReader.STATE_WINDUP and _move == WorldReader.MOVE_DEPLOY
+	var target := 1.0 if _boss_phase > 0 and not splitting else (_wind if splitting else 0.0)
+	_split = move_toward(_split, target, dt * 3.0)
+	var calm := 0.0 if ViewPrefs.reduced_motion else 1.0
+	_spin = wrapf(
+		_spin + dt * (0.5 + 4.0 * attack["prism"]) * maxf(calm, attack["prism"]), 0.0, TAU
+	)
+	_pose_hover(p, attack, calm)
+	_pose_aim(p)
+	_pose_tails(p, dt, attack, calm)
+	_pose_open(p, _weak_shown)
+	_pose_split(p, _split)
+	_pose_shielded(p, _shield_hold)
+	_pose_flinch(p, _flinch)
+	_pose_stagger(p, _stagger)
+	# It floats: every tip, roll and swell of the body turns about its sphere's centre, not the ground under it.
+	var centre := Vector3(0, HOVER_Y, 0)
+	pivot.position += centre - pivot.transform.basis * centre
+
+
+## This frame's attack inputs, 0..1 each, from the move and its phase.
+func _attack_amounts() -> Dictionary:
+	var windup := _state == WorldReader.STATE_WINDUP
+	var fade := _act_fade()
+	var out := {"beam": 0.0, "prism": 0.0, "glare": 0.0, "dive": 0.0}
+	match _move:
+		WorldReader.MOVE_RAIL:
+			out["beam"] = _wind if windup else fade
+		WorldReader.MOVE_BOLT_FAN:
+			out["prism"] = _wind if windup else fade
+		WorldReader.MOVE_SLAM_RING:
+			out["glare"] = _wind if windup else fade
+		WorldReader.MOVE_LEAP:
+			out["dive"] = _wind if windup else 0.0
+	return out
+
+
+## The hover: a bob, a slow roll about its eye's axis, the crown turning; the dive pitches it forward and down, the
+## beam rocks it back, the glare swells it. The shadow shrinks as it rises.
+func _pose_hover(p: BonePoser, attack: Dictionary, calm: float) -> void:
+	var bob := sin(_t * TAU * 0.6) * BOB_M * (1.0 - _stagger) * maxf(calm, 0.3)
+	pivot.position.y += bob - 0.25 * attack["dive"]
+	pivot.rotation.x += sin(_t * 0.8) * 0.1 * calm
+	pivot.rotation.z += -attack["dive"] * 0.45 + attack["beam"] * 0.1
+	pivot.scale *= 1.0 + attack["glare"] * 0.12
+	p.turn(CROWN, Vector3.UP, _spin)
+	if shadow != null:
+		var s := 1.0 - (bob + 0.35 * _stagger) * 0.4
+		shadow.scale = Vector3(s, 1, s)
+
+
+## The body turns its eye toward the player (beyond its facing, which already turns to it), with a lag.
+func _pose_aim(_p: BonePoser) -> void:
+	pivot.rotation.y += clampf(_aim_shown, -AIM_MAX, AIM_MAX)
+
+
+## The three cable tails: each segment sways a little later than the one above it and trails the body's motion
+## (more toward the tip); the glare splays them out, the dive sweeps them back.
+func _pose_tails(p: BonePoser, dt: float, attack: Dictionary, calm: float) -> void:
+	var n := TAILS.size() * 4
+	if _drag.size() != n:
+		_drag.resize(n)
+		_drag.fill(Vector2.ZERO)
+	var want := Vector2(_local_vel.x, _local_vel.z)
+	for c in TAILS.size():
+		var chain: Array = TAILS[c]
+		var side: int = TAIL_SIDE[c]
+		for k in chain.size():
+			var j := c * 4 + k
+			_drag[j] = _drag[j].lerp(want, _rate(6.0 - 1.2 * k, dt))
+			var lag := float(k) * 0.7 + float(c) * 2.1
+			var sway := Vector2(sin(_t * 1.7 - lag), sin(_t * 1.3 - lag)) * 0.09 * calm
+			# Trailing: moving forward (+x) swings a hanging tail back (-Z turn); moving right (+z) swings it left.
+			var trail := Vector2(-_drag[j].x, _drag[j].y) * 0.06
+			var splay: float = attack["glare"] * 0.5 * (1.0 if k == 0 else 0.3)
+			var tz: float = sway.x + trail.x - attack["dive"] * 0.25 - (splay if side == 0 else 0.0)
+			var tx: float = sway.y + trail.y - splay * side
+			p.turn(StringName(chain[k]), Vector3.BACK, clampf(tz, -0.7, 0.7))
+			p.turn(StringName(chain[k]), Vector3.RIGHT, clampf(tx, -0.7, 0.7))
+
+
+## The "open" pose while the weak point is open: the crown tips back, the shell lifts and the pods spread.
+func _pose_open(p: BonePoser, amount: float) -> void:
+	if amount <= 0.001:
+		return
+	p.turn(CROWN_BASE, Vector3.BACK, amount * 0.45)
+	p.shift(SHELL_TOP, Vector3(0, amount * 0.08, 0))
+	p.shift(PODS, Vector3(0, amount * 0.06, 0))
+	p.stretch(PODS, 1.0 + amount * 0.1)
+
+
+## The split (the deploy): the pods spread and lift off its rim through the windup, and stay apart after it.
+func _pose_split(p: BonePoser, amount: float) -> void:
+	if amount <= 0.001:
+		return
+	p.shift(PODS, Vector3(0, amount * 0.16, 0))
+	p.stretch(PODS, 1.0 + amount * 0.35)
+	p.turn(CROWN_BASE, Vector3.BACK, -amount * 0.1)
+
+
+## The "shielded" hook (v0.7.5 BM; apply_state's "shielded", which a later step reads from the sim): the closed
+## pose. The crown folds down over the eye, the shell and pods draw in, the tails curl up under it.
+func _pose_shielded(p: BonePoser, amount: float) -> void:
+	if amount <= 0.001:
+		return
+	p.turn(CROWN_BASE, Vector3.BACK, -amount * 0.85)
+	p.turn(CROWN, Vector3.BACK, -amount * 0.35)
+	p.shift(SHELL_TOP, Vector3(0.06, -0.04, 0) * amount)
+	p.stretch(PODS, 1.0 - amount * 0.12)
+	for c in TAILS.size():
+		var chain: Array = TAILS[c]
+		var side: int = TAIL_SIDE[c]
+		for k in chain.size():
+			var curl := amount * (0.35 if k == 0 else 0.55)
+			if side == 0:
+				p.turn(StringName(chain[k]), Vector3.BACK, curl)
+			else:
+				p.turn(StringName(chain[k]), Vector3.RIGHT, curl * side)
+
+
+## A hit taken: it jolts back and its tails whip.
+func _pose_flinch(p: BonePoser, amount: float) -> void:
+	if amount <= 0.001:
+		return
+	var k := amount * amount
+	pivot.rotation.z += k * 0.18
+	pivot.position.x -= k * 0.1
+	for chain: Array in TAILS:
+		p.turn(StringName(chain[0]), Vector3.BACK, k * 0.3)
+
+
+## Staggered: it sags toward the ground and wobbles, its tails limp and its crown drooping.
+func _pose_stagger(p: BonePoser, amount: float) -> void:
+	if amount <= 0.001:
+		return
+	pivot.position.y -= 0.35 * amount
+	pivot.rotation += Vector3(sin(_t * 9.0) * 0.1, 0, 0.3) * amount
+	p.turn(CROWN_BASE, Vector3.BACK, -amount * 0.3)

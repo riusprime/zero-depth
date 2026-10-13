@@ -217,8 +217,15 @@ func pooled_projectiles() -> int:
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 	for id in nodes.keys():
 		if not alive.has(id):
-			nodes[id].queue_free()
+			var node: Node3D = nodes[id]
 			nodes.erase(id)
+			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
+			var boss: Variant = node.get_meta(&"enemy_avatar", null)
+			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
+				(boss as Node).set_process(true)
+				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			else:
+				node.queue_free()
 
 
 func _unshaded(c: Color) -> StandardMaterial3D:
@@ -410,7 +417,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			boss.setup(outline_color, technique)
 			facing.add_child(boss)
-			height = 2.6
+			height = 2.6 * BossModels.SIZE_SCALE
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())

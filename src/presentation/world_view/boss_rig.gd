@@ -8,12 +8,24 @@ extends RefCounted
 ## - Stone Sentinel: torso, head and crown, left and right upper arm and forearm with fist, left and right leg.
 ## - Crawler Queen: body and hood, egg sac, and eight legs found as clusters of the vertices outside the body.
 ## - Fortress Turret: hull, main cannon, two mortar tubes, and four legs, each with an upper and a lower bone.
+## - Foundry (v0.7.5 BM; owner N14: "you will have to slice foundry's legs"): the body and four legs. Below the
+##   belly only the legs reach the ground; each is the vertices outside the body's middle in its corner, blended into
+##   the body over the hip band, and swung from a hip found from its own foot.
 
 ## The Crawler Queen's body centre (x) and its egg sac's centre (x, z), in metres.
 const QUEEN_BODY_X := -0.2
 const QUEEN_SAC := Vector2(-1.1, 0.0)
 ## The Fortress Turret's front (1) and back (-1) legs' x, in metres (its feet, from the mesh).
 const TURRET_LEG_X := {1: 0.65, -1: -1.95}
+
+## The Foundry's hip band (metres; from the vertex slices in evidence/BOSS_MODELS.md): fully leg below LEG_LOW,
+## fully body above LEG_HIGH. A leg is outside the body's middle in both x and z (its inner edges, metres).
+const FOUNDRY_LEG_LOW := 0.36
+const FOUNDRY_LEG_HIGH := 0.54
+const FOUNDRY_LEG_X := Vector2(0.22, 0.36)
+const FOUNDRY_LEG_Z := Vector2(0.28, 0.40)
+## The Foundry's four legs, in the order of its bones: front left, front right, back left, back right.
+const FOUNDRY_LEGS: Array[StringName] = [&"leg_fl", &"leg_fr", &"leg_bl", &"leg_br"]
 
 ## How many rigs were built (tests check it is once per boss type).
 static var builds := 0
@@ -35,6 +47,8 @@ static func build(id: StringName, verts: PackedVector3Array) -> BossRig:
 			r._queen(verts)
 		&"fortress_turret":
 			r._turret(verts)
+		&"foundry":
+			r._foundry(verts)
 		_:
 			r.bones = [[&"root", -1, Vector3.ZERO]]
 			for v in verts:
@@ -255,5 +269,50 @@ func _turret(verts: PackedVector3Array) -> void:
 		s[mortar[-1]] = tube_l
 		s[mortar[1]] = tube - tube_l
 		s[hull] = maxf(0.0, 1.0 - leg - gun - tube)
+		s[root] = 0.0
+		_store(s)
+
+
+# --- Foundry ----------------------------------------------------------------------------------------------------
+
+
+## 0..1: how much of a vertex is leg (outside the body's middle, below the hip band).
+static func _foundry_leg(v: Vector3) -> float:
+	return (
+		_ss(FOUNDRY_LEG_HIGH, FOUNDRY_LEG_LOW, v.y)
+		* _ss(FOUNDRY_LEG_X.x, FOUNDRY_LEG_X.y, absf(v.x))
+		* _ss(FOUNDRY_LEG_Z.x, FOUNDRY_LEG_Z.y, absf(v.z))
+	)
+
+
+## Which leg a vertex's corner is (an index into FOUNDRY_LEGS).
+static func _foundry_corner(v: Vector3) -> int:
+	return (0 if v.x >= 0.0 else 2) + (0 if v.z < 0.0 else 1)
+
+
+func _foundry(verts: PackedVector3Array) -> void:
+	var root := _add(&"root", &"", Vector3.ZERO)
+	var body := _add(&"body", &"root", Vector3(0, 1.1, 0))
+	# Each hip: above the middle of its foot (the leg's vertices near the ground), at the top of the hip band.
+	var sums := [Vector3.ZERO, Vector3.ZERO, Vector3.ZERO, Vector3.ZERO]
+	var counts := [0, 0, 0, 0]
+	for v in verts:
+		if v.y < FOUNDRY_LEG_LOW and _foundry_leg(v) > 0.99:
+			var c := _foundry_corner(v)
+			sums[c] += v
+			counts[c] += 1
+	var legs := []
+	for c in 4:
+		var foot: Vector3 = (
+			sums[c] / counts[c]
+			if counts[c] > 0
+			else Vector3(0.75 if c < 2 else -0.75, 0, -0.75 if c % 2 == 0 else 0.75)
+		)
+		legs.append(_add(FOUNDRY_LEGS[c], &"root", Vector3(foot.x, FOUNDRY_LEG_HIGH, foot.z)))
+	for v in verts:
+		var leg := _foundry_leg(v)
+		var s := {}
+		s[legs[_foundry_corner(v)]] = leg
+		s[body] = 1.0 - leg
 		s[root] = 0.0
 		_store(s)
