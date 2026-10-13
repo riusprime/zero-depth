@@ -70,3 +70,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   re-runs 14/14, the dev switch e2e 1/1 and a final 16 files 52/52 on `191dbcd`; screenshots en + es at 1280×720.
   Not run by the agent: the full suite, goldens, the bot sims. Shared files touched additively:
   `main.gd`, `options_menu.gd`, `strings.csv` (26 rows), `project.godot` (a `[game]` section). Not pushed.
+- 2026-10-13: the wave's suite on `5641b0f` was stopped before its end (the 2-hour limit, then superseded); one full
+  suite on every step (MG, NB1, NB2, AP, CX, AC, SM) at `0410800`, from a clean worktree (`bash scripts/verify.sh`):
+  `verify exit 1`, `Tests 1724`, `Passing Tests 1722`, `Failing Tests 2`:
+  - `test_e2e_damage_soak.gd` "no orphan nodes" 90 ≠ 0: the F10 panel's Tools page (a `DevPanel` Main builds for it)
+    was left an orphan when the panel closed without visiting Tools (30 nodes per open; `test_e2e_ascension` opens it 3
+    times). Fixed in `DevMasterPanel` (freed with the panel; kept, not freed, when another page is shown). Ascension +
+    card levels + damage soak in one process: 6/6; the four dev-panel e2e 6/6.
+  - `test_dev_master_panel.gd` "data/achievements is in the panel": achievements aren't balance, so the folder joins
+    the test's not-balance list (with audio, credits, patch notes). `tests/unit/debug` 10/10.
+  The every-card soak: `SOAK| kills=265 events=6696 most_in_a_tick=188 limits=0`. MIN_TEST_COUNT 1598 → 1724. Pushed;
+  the PR into `main`.

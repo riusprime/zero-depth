@@ -5,7 +5,7 @@ extends GutTest
 ## store, are saved and announced; Reset all and Copy changes work.
 
 ## Folders that hold no balance: sounds, text, and two legacy folders the run never reads (the knob inventory).
-const NOT_BALANCE := ["audio", "credits", "patch_notes", "utilities", "encounters"]
+const NOT_BALANCE := ["audio", "credits", "patch_notes", "utilities", "encounters", "achievements"]
 const ENEMY := "res://data/enemies/arc_caster.tres"
 const SAVE := "user://test_dev_master_panel.json"
 
