@@ -1253,7 +1253,8 @@ func _move_and_collide() -> void:
 					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
 				):
 					continue
-				# v0.4.0 TU: Collide.circle_vs_circle inlined (the same operations in the same order).
+				# The circle-circle push, applied half to each (a gets it, b its negation; coincident centres part
+				# along x). Inlined here for speed (v0.4.0 TU); test_collision drives it through this pass.
 				var d := (
 					Vector2(actors.pos_x[a], actors.pos_y[a])
 					- Vector2(actors.pos_x[b], actors.pos_y[b])

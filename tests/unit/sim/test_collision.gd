@@ -22,10 +22,37 @@ func test_rotated_box() -> void:
 	assert_eq(Collide.circle_vs_obb(Vector2(1.9, 0), 0.3, box), Vector2.ZERO)
 
 
+## The actor-pair push lives inlined in World._move_and_collide (the hot path), so it is tested there: two still
+## bodies, far from the player and with no walls.
+func _two_bodies(a: Vector2, b: Vector2) -> World:
+	var w := World.new(9, PlayerTable.starting_values())
+	var none: Array[Obb] = []
+	w.set_walls(none)
+	w.dummy_speed = 0.0
+	w.add_dummy(a, 0.5, 10)
+	w.add_dummy(b, 0.5, 10)
+	return w
+
+
 func test_circles_separate_symmetrically() -> void:
-	var push := Collide.circle_vs_circle(Vector2(0, 0), 0.5, Vector2(0.8, 0), 0.5)
-	assert_almost_eq(push.x, -0.1, 1e-5)
-	assert_eq(Collide.circle_vs_circle(Vector2(0, 0), 0.5, Vector2(2, 0), 0.5), Vector2.ZERO)
+	var w := _two_bodies(Vector2(5, 0), Vector2(5.8, 0))
+	w._move_and_collide()
+	assert_almost_eq(w.actors.pos_x[1], 4.9, 1e-5)
+	assert_almost_eq(w.actors.pos_x[2], 5.9, 1e-5)
+	assert_eq(w.actors.pos_y[1], 0.0)
+	assert_eq(w.actors.pos_y[2], 0.0)
+	var apart := _two_bodies(Vector2(5, 0), Vector2(7, 0))
+	apart._move_and_collide()
+	assert_eq(apart.actors.pos(1), Vector2(5, 0))
+	assert_eq(apart.actors.pos(2), Vector2(7, 0))
+
+
+func test_coincident_circles_part_along_x() -> void:
+	var w := _two_bodies(Vector2(5, 3), Vector2(5, 3))
+	w._move_and_collide()
+	assert_almost_eq(w.actors.pos_x[1], 5.5, 1e-5)
+	assert_almost_eq(w.actors.pos_x[2], 4.5, 1e-5)
+	assert_eq(w.actors.pos_y[1], 3.0)
 
 
 func test_sweep_hits_first_contact() -> void:

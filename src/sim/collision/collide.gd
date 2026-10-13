@@ -29,19 +29,6 @@ static func circle_vs_obb(p: Vector2, r: float, box: Obb) -> Vector2:
 	return box.axis_u * (ox * k) + box.axis_v * (oy * k)
 
 
-## The push that separates circle a from circle b, applied half to each (returned for a; b gets the negation).
-static func circle_vs_circle(pa: Vector2, ra: float, pb: Vector2, rb: float) -> Vector2:
-	var d := pa - pb
-	var rr := ra + rb
-	var dist2 := float(d.x) * d.x + float(d.y) * d.y
-	if dist2 >= rr * rr:
-		return Vector2.ZERO
-	if dist2 == 0.0:
-		return Vector2(rr * 0.5, 0.0)
-	var dist := sqrt(dist2)
-	return d * ((rr - dist) * 0.5 / dist)
-
-
 ## The first t in [0, 1] where a segment from a to b, thickened by r, touches a circle; NO_HIT otherwise.
 static func sweep_vs_circle(a: Vector2, b: Vector2, r: float, c: Vector2, cr: float) -> float:
 	var d := b - a
