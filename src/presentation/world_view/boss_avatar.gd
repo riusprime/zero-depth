@@ -173,6 +173,7 @@ func sync(reader: WorldReader, i: int) -> void:
 			"hp": reader.actor_hp(i),
 			"facing": SimPlane.yaw_of(reader.actor_facing(i)),
 			"aim": bearing(reader.actor_pos(i), reader.actor_facing(i), reader.player_pos()),
+			"shielded": reader.boss_shielded(i),  # v0.7.5 BF1: its signature pattern (the shell and the pose)
 		}
 	)
 
@@ -212,8 +213,8 @@ func apply_state(s: Dictionary) -> void:
 	_hidden = s.get("hidden", false)
 	_boss_phase = s.get("phase", 0)
 	_weak = s.get("weak", 0.0)
-	# v0.7.5 BM: a drop in HP flinches; the bearing to the player, the facing, and the shielded hook (a later step
-	# reads the sim's shield into "shielded"; nothing sets it yet).
+	# v0.7.5 BM: a drop in HP flinches; the bearing to the player, the facing, and "shielded" (BF1's
+	# WorldReader.boss_shielded: the boss is firing its shielded signature).
 	var hp: int = s.get("hp", -1)
 	if hp >= 0 and _last_hp >= 0 and hp < _last_hp:
 		_flinch = 1.0
@@ -296,7 +297,7 @@ func flinch_amount() -> float:
 	return _flinch
 
 
-## 0..1: the "shielded" pose (v0.7.5 BM hook: apply_state's "shielded"; a later step reads the sim's shield).
+## 0..1: the "shielded" pose (v0.7.5 BM; apply_state's "shielded", read from the sim by sync()).
 func shielded_amount() -> float:
 	return _shield_hold
 
