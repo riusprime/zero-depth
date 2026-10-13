@@ -166,3 +166,24 @@ func test_a_boss_core_is_legendary_and_its_own_stagger_opens_the_window() -> voi
 	assert_eq(drops.size(), 1, "the boss's core dropped")
 	assert_eq(w.rewards.offer_of(drops[0]), PackedInt32Array([card]))
 	assert_true(WorldReader.new(w).reward_is_legendary(drops[0]), "the pick shows it legendary")
+
+
+## Audit G-6: a core whose mod stopped working with the build (its ability is gone) is redrawn, by the shop's rule.
+func test_a_core_mod_that_no_longer_works_is_redrawn() -> void:
+	var w := _world()
+	var i := _elite(w)
+	var dead := -1
+	for k in w.item_tables.size():
+		if not ItemPool.usable(w, k) and CardLevels.can_take(w, k):
+			dead = k
+			break
+	assert_gte(dead, 0, "a mod this build can't use (e.g. its ability was sold)")
+	w.cores.card[CoreTheft.entry_of(w, w.actors.ids[i])] = dead  # test setup: e.g. its ability was sold since
+	assert_false(Shop.can_apply(w, dead))
+	_hit(w, i, w.actors.max_hp[i] * 400 / 1000)
+	_hit(w, i, w.actors.max_hp[i] * 10)
+	w.step(InputFrame.new())
+	var drops := _drops(w, CoreState.Drop.CORE)
+	assert_eq(drops.size(), 1, "a core still drops")
+	if drops.size() == 1:
+		assert_false(dead in w.rewards.offer_of(drops[0]), "not the inert mod")

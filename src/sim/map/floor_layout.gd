@@ -161,6 +161,54 @@ func room_cell_count(room: int) -> int:
 	return room_cells[room].size.x * room_cells[room].size.y
 
 
+## Metres in whole centimetres (the generators' draws).
+static func cm(metres: float) -> int:
+	return roundi(metres * 100.0)
+
+
+## A room's cells in metres, grid line to grid line.
+func cell_rect(cells: Rect2i) -> Rect2:
+	var a := grid_origin + Vector2(cells.position) * cell_pitch
+	var b := grid_origin + Vector2(cells.end) * cell_pitch
+	return Rect2(a, b - a)
+
+
+## The walls that can touch a room: its partitions and outer walls, and the pieces inside it (walls order).
+func room_walls(room: int) -> Array[Obb]:
+	var near := rooms[room].grow(1.0)
+	var out: Array[Obb] = []
+	for w in walls:
+		if w.bounds().intersects(near):
+			out.append(w)
+	return out
+
+
+## A room's doorways as points `m` metres in from the wall face (doorway order).
+func door_approaches(room: int, m: float = 1.0) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for d in door_rooms.size():
+		var into := 0
+		if door_rooms[d].x == room:
+			into = -1  # the doorway points from x to y: into x is backwards
+		elif door_rooms[d].y == room:
+			into = 1
+		else:
+			continue
+		var step := Kin.dir(door_angles[d]) * float(into)
+		out.append(door_centers[d] + step * (door_depths[d] * 0.5 + m))
+	return out
+
+
+## The gate's footprint, its clear front square and a margin: kept free of interior pieces and spots.
+func gate_zone() -> Rect2:
+	var n := portal_facing()
+	var t := Vector2(-n.y, n.x)
+	var face := portal_pos - n * GATE_HALF_DEPTH
+	var half_w := GATE_WIDTH * 0.5 + 1.0
+	var depth := GATE_HALF_DEPTH * 2.0 + GATE_FRONT + 1.0
+	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+
+
 ## The open passage of doorway i through the wall, from one room's face to the other's.
 func door_rect(i: int) -> Rect2:
 	var c := door_centers[i]

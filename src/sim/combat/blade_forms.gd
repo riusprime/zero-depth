@@ -143,6 +143,10 @@ static func on_arc(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	_fx(w, kind, ctx.origin, ctx.angle, float(spec.half_arc), Attacks.arc_reach_m(w, spec))
 
 
+## Twin: PlayerSkill._knock / push (Scatter Blast's push, KitState.knock_*). Kept apart on purpose (audit G-13):
+## merging moves Scatter Blast's push from tick phase 5 to 6 and changes the hash layout. Differences: this one
+## stores metres per tick per entry (k_step), never appends a dead target, and _advance_knock rejects a gone actor
+## with i > 0 (the same as PlayerSkill's i >= 0: index 0 is always the player, never a knocked enemy).
 static func _knock(w: World, i: int, from: Vector2, metres: float) -> void:
 	var a := w.actors
 	var b := w.blade

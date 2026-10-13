@@ -114,13 +114,7 @@ static func start_first(layout: FloorLayout, order: PackedInt32Array) -> PackedI
 		var hops := layout.hops[layout.item_rooms[order[k]]]
 		if best < 0 or hops < layout.hops[layout.item_rooms[order[best]]]:
 			best = k
-	if best <= 0:
-		return order
-	var out := PackedInt32Array([order[best]])
-	for k in order.size():
-		if k != best:
-			out.append(order[k])
-	return out
+	return Routes.to_front(order, best)
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
@@ -175,6 +169,7 @@ static func interact(w: World) -> bool:
 		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
 		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
+		w.rewards.rolled[i] = 0  # an empty roll isn't kept: a later press rolls again (audit G-1)
 		_deny(w, i)
 		return false
 	w.choosing = w.rewards.ids[i]

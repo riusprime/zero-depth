@@ -399,6 +399,28 @@ func test_an_empty_pool_doesnt_open() -> void:
 	assert_eq(w.reward_denied_id, id)
 
 
+## Audit G-1: an empty roll doesn't brick the altar; once a card is back in the pool, the next press opens it.
+func test_an_empty_roll_rolls_again_on_a_later_press() -> void:
+	var w := _world()
+	for k in _items.size():
+		w.add_item(k)
+		CardLevels.set_level(w, k, CardLevels.MAX_LEVEL)
+	var id := w.add_reward(RewardStore.Kind.ALTAR, Vector2(1.0, 0), 0)
+	_press(w, I)
+	assert_eq(w.choosing, -1, "nothing to offer yet")
+	assert_eq(w.rewards.rolled[0], 0, "the empty roll is not kept")
+	var freed := -1
+	for k in _items.size():
+		if _items[k].rarity != ItemTable.LEGENDARY and ItemPool.usable(w, k):
+			freed = k
+			break
+	Shop.remove_item(w, freed)
+	assert_eq(ItemPool.available(w), PackedInt32Array([freed]), "one card back in the pool")
+	_press(w, I)
+	assert_eq(w.choosing, id, "the freed card is offered now")
+	assert_false(w.rewards.offer_of(0).is_empty())
+
+
 func test_chests_weight_rare_items() -> void:
 	# Two rare items among all of them: over many single-card draws a chest (× 3) shows them about 3× as often as an
 	# altar (× 1). Counts are from the loot stream, so they are exact for these seeds.

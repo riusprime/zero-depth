@@ -43,6 +43,21 @@ func test_m18_seeker_bolts_home_and_arcs_snap() -> void:
 	assert_gt(W.damage(b, &"").size(), 0, "the swing snaps to the enemy beside the player")
 
 
+## Audit G-19: an arc's snap searches its own reach, not the homing bolts' 8 m; within 8 m nothing changes.
+func test_m18_an_arc_snaps_as_far_as_its_reach() -> void:
+	var w := W.world(&"blade", [], [[Vector2(9.0, 3.0), 2000]])
+	W.run(w, 1)  # tick phase 3 builds the actor grid
+	var at := w.actors.pos(1)
+	var want := Kin.angle_of(at)
+	assert_eq(ProjectileMoves.snap_angle(w, Vector2.ZERO, 0, 12.0), want, "9.5 m away, 12 m reach")
+	assert_eq(ProjectileMoves.snap_angle(w, Vector2.ZERO, 0, 9.0), 0, "out of a 9 m reach")
+	assert_eq(
+		ProjectileMoves.snap_angle(w, at - Vector2(0, 4), 0, 6.0),
+		Kin.angle_of(Vector2(0, 4)),
+		"4 m away, 6 m reach"
+	)
+
+
 func test_m19_long_shadow_repeats_the_last_attack_where_the_dash_began() -> void:
 	var w := W.world(&"blade", [&"long_shadow"], [[Vector2(-1.2, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.dash(w), &"long_shadow")

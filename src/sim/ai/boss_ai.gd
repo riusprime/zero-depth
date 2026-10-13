@@ -4,7 +4,7 @@ extends RefCounted
 ## entry. Movements: pursuit (MOVE), an attack (WINDUP -> ACTIVE) and recovery (RECOVER, the punish window). Hits
 ## fill a stagger meter; a full meter staggers it (STAGGERED) and resets. Phases start at HP thresholds; a phase may
 ## open with an entry attack. think() runs in tick phase 3, move() in 5, resolve() in 6.
-## Every attack's area comes from one function here (ring_of, lane_of, arc_of, charge_lane, leap_disc,
+## Every attack's area comes from one function here (ring_of, lane_of, arc_of, EnemyAi.charge_lane, leap_disc,
 ## burrow_disc, spots_of, rail_of, fan_lane_of, flood_lane_of), which telegraph() hands the view and resolve() hits
 ## with (EI-07).
 ## Randomness only from the ai stream.
@@ -87,14 +87,14 @@ static func think(w: World, i: int) -> void:
 	match a.state[i]:
 		S.SPAWN:
 			if a.state_t[i] >= w.tuning.boss_intro_ticks:
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 		GATE:
 			BossGates.advance(w, i, b)
 		STAGGERED:
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
 				bs.stagger_t[b] = 0
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = maxi(a.cd[i], w.tuning.boss_after_stagger_cd)
 		S.MOVE:
 			a.facing[i] = (
@@ -117,7 +117,7 @@ static func think(w: World, i: int) -> void:
 			if tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
-				_enter(a, i, S.ACTIVE)
+				EnemyAi.enter_state(a, i, S.ACTIVE)
 				a.fire_cd[i] = 0
 				if atk.move == M.LEAP or atk.move == M.BURROW:
 					a.invuln[i] = maxi(a.invuln[i], 2)
@@ -126,7 +126,7 @@ static func think(w: World, i: int) -> void:
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if a.state_t[i] >= atk.recover_ticks:
-				_enter(a, i, S.MOVE)
+				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = atk.cooldown_ticks * t.phase_cd_permille[bs.phase[b]] / 1000
 				bs.attack[b] = -1
 
@@ -144,7 +144,7 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 				if bs.step[b] + 1 < atk.chain and not w.player_dead():
 					bs.step[b] += 1
 					bs.hit[b] = 0
-					_enter(a, i, S.WINDUP)
+					EnemyAi.enter_state(a, i, S.WINDUP)
 					_lock(w, i, b, atk)
 				else:
 					a.invuln[i] = 0
@@ -193,7 +193,7 @@ static func _finish(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			start_attack(w, i, atk.follow_up)
 			bs.chained[b] = 1
 			return
-	_enter(a, i, S.RECOVER)
+	EnemyAi.enter_state(a, i, S.RECOVER)
 	if atk.opens_weak and t.weak_ticks > 0:
 		bs.exposed_t[b] = t.weak_ticks
 
@@ -246,7 +246,7 @@ static func start_attack(w: World, i: int, k: int) -> void:
 	var bs := w.bosses
 	var b := entry_of(w, i)
 	var atk: BossAttackTable = w.boss_tables[bs.table[b]].attacks[k]
-	_enter(a, i, S.WINDUP)
+	EnemyAi.enter_state(a, i, S.WINDUP)
 	bs.attack[b] = k
 	bs.last_attack[b] = k
 	bs.step[b] = 0
@@ -272,23 +272,23 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * a.radius[i]
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.length_m, atk.half_width_m
 				)
 		M.FLOOD:  # v0.4.0 BO: each parallel lane's length, cut short by walls.
 			for k in atk.count:
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, _flood_start(w, i, atk, aim, k), aim, atk.length_m, atk.half_width_m
 				)
 		M.BOLT_FAN:
 			for k in atk.count:
 				var ang := lane_angle(atk, aim, k)
 				var start := at + Kin.dir(ang) * (a.radius[i] + atk.radius_m + 0.05)
-				bs.pts_x[b * BossStore.MAX_PTS + k] = clear_run(
+				bs.pts_x[b * BossStore.MAX_PTS + k] = EnemyAi.clear_run(
 					w, start, ang, atk.speed * atk.bolt_life_ticks, atk.radius_m
 				)
 		M.CHARGE:
-			a.lock_len[i] = clear_run(w, at, aim, atk.length_m, a.radius[i])
+			a.lock_len[i] = EnemyAi.clear_run(w, at, aim, atk.length_m, a.radius[i])
 		M.LEAP:
 			var to := target - at
 			var d := Kin.length(to)
@@ -298,7 +298,7 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 		M.BROOD, M.DEPLOY:
 			var base := aim + 1024 if atk.move == M.DEPLOY else aim + 2048 / atk.count
 			for k in atk.count:
-				bs.set_pt(b, k, _spot(w, at, base + k * 4096 / atk.count, atk.distance_m))
+				bs.set_pt(b, k, spot(w, at, base + k * 4096 / atk.count, atk.distance_m))
 		M.BARRAGE:
 			bs.set_pt(b, 0, target)
 			var s := int(atk.spread_m * 100.0)
@@ -342,27 +342,17 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 
 
 ## v0.5.5 DS (D4, D7): an attack's damage under boss i's hidden catch-up (ActorStore.power, per mille; CatchUp.on_boss
-## sets it, 0 = unscaled).
+## sets it, 0 = unscaled). The enemies' rule, rounded half up (audit G-12).
 static func powered(w: World, i: int, amount: int) -> int:
-	var pm := w.actors.power[i]
-	return amount if pm <= 0 or pm == 1000 else amount * pm / 1000
+	return EnemyAi.powered(w, i, amount)
 
 
-## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (public: BossGates' adds).
+## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself). Public:
+## BossGates' adds use it too.
 static func spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
-	return _spot(w, at, angle, dist)
-
-
-## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself).
-static func _spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:
 	for k in 4:
 		var p := at + Kin.dir(angle) * (dist * (4 - k) / 4.0)
-		var clear := true
-		for wall in w.walls:
-			if Collide.circle_vs_obb(p, SPOT_CLEARANCE, wall) != Vector2.ZERO:
-				clear = false
-				break
-		if clear:
+		if EnemyAi.clear_of_walls(w, p, SPOT_CLEARANCE):
 			return p
 	return at
 
@@ -574,7 +564,7 @@ static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 	w.bosses.stagger_t[b] = t.stagger_ticks
 	w.bosses.attack[b] = -1
 	a.lock_len[i] = 0.0
-	_enter(a, i, STAGGERED)
+	EnemyAi.enter_state(a, i, STAGGERED)
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, a.ids[i], a.ids[0], a.ids[i], a.pos(i))
 	e.effect_id = &"boss_stagger"
 	e.amount = t.stagger_ticks
@@ -629,17 +619,6 @@ static func arc_of(w: World, i: int) -> Array:
 	var a := w.actors
 	var atk := attack_of(w, i)
 	return [Vector2(a.lock_x[i], a.lock_y[i]), a.radius[i], a.lock_a[i], atk.half_arc, atk.reach_m]
-
-
-## The lane a charge runs: the body's path to its front at the end of the run (as EnemyAi.charge_lane).
-static func charge_lane(w: World, i: int) -> Obb:
-	var a := w.actors
-	return AttackShapes.lane(
-		Vector2(a.lock_x[i], a.lock_y[i]),
-		a.lock_a[i],
-		maxf(a.lock_len[i], 0.0) + a.radius[i],
-		a.radius[i]
-	)
 
 
 ## [center, radius] where a leap lands.
@@ -700,7 +679,7 @@ static func _flood_start(w: World, i: int, atk: BossAttackTable, aim: int, k: in
 	return Vector2(w.actors.lock_x[i], w.actors.lock_y[i]) + d * w.actors.radius[i] + side
 
 
-## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as clear_run allowed when it locked.
+## Flood lane k, whole (v0.4.0 BO): parallel to the aim, as long as EnemyAi.clear_run allowed when it locked.
 static func flood_lane_of(w: World, i: int, k: int) -> Obb:
 	var a := w.actors
 	var atk := attack_of(w, i)
@@ -747,7 +726,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"reach": c[4]
 			}
 		M.CHARGE:
-			out = {"shape": &"lane", "obb": charge_lane(w, i)}
+			out = {"shape": &"lane", "obb": EnemyAi.charge_lane(w, i)}
 		M.LEAP:
 			var d := leap_disc(w, i)
 			out = {"shape": &"disc", "center": d[0], "radius": d[1]}
@@ -769,7 +748,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 					"shape": &"disc",
 					"center": d[0],
 					"radius": d[1],
-					"progress": clampi(a.state_t[i] * 1000 / atk.erupt_ticks, 0, 1000),
+					"progress": clampi(a.state_t[i] * 1000 / maxi(1, atk.erupt_ticks), 0, 1000),  # audit G-20
 					"move": atk.move
 				}
 			return {}
@@ -820,19 +799,3 @@ static func cause_key(w: World) -> StringName:
 		if atk.move == M.BOLT_FAN and w.killer_tags & SimEvent.TAG_PROJECTILE:
 			return atk.cause_key
 	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
-
-
-## How far a circle of radius r can travel from `from` along `angle` (up to `length`) before a wall.
-static func clear_run(w: World, from: Vector2, angle: int, length: float, r: float) -> float:
-	var to := from + Kin.dir(angle) * length
-	var best := 1.0
-	for wall in w.walls:
-		var hit := Collide.sweep_vs_obb(from, to, r, wall)
-		if hit >= 0.0 and hit < best:
-			best = hit
-	return length * best
-
-
-static func _enter(a: ActorStore, i: int, s: int) -> void:
-	a.state[i] = s
-	a.state_t[i] = 0
