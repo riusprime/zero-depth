@@ -120,7 +120,6 @@ static func advance(w: World) -> void:
 # --- The moments ----------------------------------------------------------------------------------------------------
 ## The dash just started (World phase 4): its ON_LAUNCH hooks from where it starts (Long Shadow).
 static func on_dash_start(w: World) -> void:
-	w.mx.dash_from = w.player_pos()
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_LAUNCH, w.player_pos())
 
 
