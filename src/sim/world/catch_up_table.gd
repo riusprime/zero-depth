@@ -16,6 +16,4 @@ var combo_permille := 150
 
 ## Floor f's entry of a per-floor table (the last entry past its end; 1000 for an empty table).
 static func at_floor(table: PackedInt32Array, f: int) -> int:
-	if table.is_empty():
-		return 1000
-	return table[clampi(f - 1, 0, table.size() - 1)]
+	return SpawnTable.at(table, f - 1, 1000)
