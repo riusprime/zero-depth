@@ -138,6 +138,17 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.7.5 EF (owner N16) — the fireball enemies.** The Arc Caster's `bolt` and `spread`, the Lens Drone's attack and
+  the Bomb Drone's `bomb` are PROJECTILE attacks whose only shape param is `pattern_id`, a `BulletPatternDefinition`
+  id (§4b); `ContentCompiler.compile_enemy(def, repo)` resolves it into `EnemyTable.patterns` (one per attack, null
+  where none: the rune) through `PatternCompiler.compile_enemy_patterns`, and the attack is active until the
+  pattern's last wave. The old bolt/burst/circle params are gone from those schemas. The attack's `damage` is each
+  fireball's (and the Bomb Drone's landing's). **Starting values** (`data/bullet_patterns/`):
+  `arc_caster_plasma_fan` (FAN 3 over 30 deg, 4 m/s, r 0.18, 13 m, look `arc_plasma`), `arc_caster_plasma_fan_wide`
+  (FAN 3 over 56 deg, 3.5 m/s), `lens_drone_orb_ring` (RING 12 with 6 one-shot gaps = 6 orbs, offset 30 deg so one
+  flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
+  = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
+  cooldowns, HP, damage and shards are unchanged.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
@@ -165,7 +176,8 @@ class_name AttackDefinition extends Resource
 - **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
   `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
   (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
-  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
+  of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
@@ -589,6 +601,9 @@ enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
 @export var lob_seconds: float          # BURST: the shell flies this long to the attack's locked target ...
 @export var land_radius_m: float        # ... lands as a marker of this radius (it hurts), and bursts into its star
 ```
+
+v0.7.5 EF: enemies fire patterns too (§3, "the fireball enemies"): an enemy attack names one with `pattern_id`. A
+Bomb Drone's BURST draws no landing marker (owner N16): its flying fireball is the cue.
 
 Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim units) that the boss attack carries
 (`BossAttackTable.pattern`); `BulletPatterns` fires it (SIM_CONTRACTS §10d). Every number is a starting value (F10).
