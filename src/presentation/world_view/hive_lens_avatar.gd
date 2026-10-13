@@ -77,6 +77,17 @@ var _drag: Array[Vector2] = []
 var _spin := 0.0
 
 
+## v0.7.5 BF2: its dodge-first moves pose as the old ones: a pattern (the spiral, the petals, the rings) as its prism
+## fan (the crown spins up), the Focus Beam's tracked lines as its beam (the iris stretches, the body rocks back).
+## The Prism Spiral's eye closing is the "shielded" pose (WorldReader.boss_shielded).
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	if _move == WorldReader.MOVE_PATTERN:
+		_move = WorldReader.MOVE_BOLT_FAN
+	elif _move == WorldReader.MOVE_LANES:
+		_move = WorldReader.MOVE_RAIL
+
+
 ## The owner's model: assets/models/bosses/hive_lens.glb (posed from its own bones).
 func model_id() -> StringName:
 	return &"hive_lens"

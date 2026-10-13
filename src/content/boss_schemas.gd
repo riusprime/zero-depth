@@ -28,7 +28,14 @@ const MOVES := {
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
 	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"]},
 	## Dives under, a ripple tracks the player, stops, and erupts after erupt_seconds (its own telegraph).
-	&"burrow": {"shape": 0, "params": ["radius_m", "track_seconds", "erupt_seconds", "speed_mps"]},
+	## v0.7.5 BF2: with lock_seconds its eruption circle follows the player's exact position while it tracks, then
+	## holds for the lock; an optional pattern_id (a RING) bursts from the eruption.
+	&"burrow":
+	{
+		"shape": 0,
+		"params": ["radius_m", "track_seconds", "erupt_seconds", "speed_mps"],
+		"optional": ["pattern_id"],
+	},
 	## Spits `count` eggs around itself; each lands on a marked disc and hatches an enemy (at most max_alive).
 	&"brood": {"shape": 0, "params": ["count", "radius_m", "distance_m", "enemy_id", "max_alive"]},
 	## Mortar shells on marked discs: the first on the player, the rest within spread_m of them.
@@ -56,8 +63,11 @@ const MOVES := {
 	&"pattern": {"shape": 4, "params": ["pattern_id"]},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
-	&"marks": {"shape": 0, "params": ["count", "radius_m", "stagger_seconds"]},
+	## v0.7.5 BF2: an optional pattern_id makes each circle an egg's landing (the Brood Mother's Egg Storm): a shell
+	## lobbed onto it while it is locked, and the pattern (a BURST's star) bursting from it as it strikes.
+	&"marks":
 	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
+	{"shape": 0, "params": ["count", "radius_m", "stagger_seconds"], "optional": ["pattern_id"]},
 	## tracked then locked like `marks`; cut short by walls.
 	&"row_lanes": {"shape": 2, "params": ["count", "length_m", "width_m", "stagger_seconds"]},
 }

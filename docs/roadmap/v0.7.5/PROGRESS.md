@@ -17,6 +17,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | BF1 | Boss fights, part 1: the Gatekeeper and the Warlord fight dodge-first: slow fireball patterns in their own looks (Rock Rings, Cross Quake; Shield Wall, crossing walls, Javelin Fan), ground circles and lanes that follow you then lock and flash for 0.8 s before they strike (move after the lock and you're out), a crystal shield while the signature pattern runs, open between patterns; HP ×1.25; phases add and speed patterns. All six bosses 1.3× bigger and fought in the 4×4 room (N18). The pattern engine is data for the next bosses ([evidence](evidence/BOSS_FIGHTS_1.md)) | `v0.7.5 Step BF1` commit (branch `v075-bf1`) |
 | PG | The Playground (owner N20): a main-menu row into one big 4×4 room with your weapon; F1 opens a panel (the game waits) to add any card at any level or remove it, place dummies (never die, or a set HP), any enemy or boss with a click and delete with a right click, switch between the five biomes, god mode and heal; a DPS meter (last 5 s, average, total, time, every source by its card's name); nothing saved or recorded ([evidence](evidence/PLAYGROUND.md)) | `f612776`, `f85657f`, `519a445`, `431b543`, `d1ed9ac` (branch `claude/playground`) |
 | EF | Enemy fireballs: the Arc Caster casts fans of 3 slow blue-white plasma balls, the Lens Drone fires rings of 6 small red orbs, the Bomb Drone lobs a violet fireball (seen in the air) that bursts into an X of 4 cinders; none of the three draws a line or circle on the ground any more (the Arc Caster's rune keeps its circle); Needle, Sniper and the melee kinds unchanged; elites of the three fire the same ([evidence](evidence/ENEMY_FIREBALLS.md)) | `v0.7.5 Step EF` commit (branch `v075-ef`) |
+| BF2 | Boss fights, part 2: the Brood Mother and the Hive Lens fight dodge-first. The Brood Mother lobs eggs onto circles that follow you then lock, each bursting into an 8-point star of green acid globs (shielded); she spins 2-arm acid webs that turn back, and her leaps and her burrow's eruption follow your exact position and lock 0.8 s, the eruption bursting into a ring; her Hatchlings stay. The Hive Lens fires 3-arm prism spirals that reverse halfway with its eye closed (shielded), 5-petal blooms, rings with two gaps, and a focus beam that follows you then locks; its Lens Drones still break off. Magenta prism orbs; HP ×1.25; phase 3 the hardest mix ([evidence](evidence/BOSS_FIGHTS_2.md)) | `v0.7.5 Step BF2` commit (branch `v075-bf2`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -31,6 +32,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - BF1: none. `tests/golden` passes unchanged (the kernel replay is boss-free; the fireball look column is hashed only once a fireball has flown). The boss fights' own hashes change on purpose (new attacks, patterns, HP, radius, rooms); no golden fixture holds one
 - PG: none. One sim file gained a function (`FloorGenerator.one_room`) and one a read (`WorldReader.has_gate`); `tests/golden` passed in the seams run.
 - EF: none. `tests/golden` passes unchanged (its replays fire no Arc Caster, Lens Drone or Bomb Drone shot). Fights with those three hash differently on purpose (new attacks); no golden fixture holds one
+- BF2: none. `tests/golden` passes unchanged (boss-free replay). The Brood Mother's and the Hive Lens's fight hashes change on purpose (new attacks, patterns, HP); no golden fixture holds one
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -138,3 +140,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - 2026-10-13: the dev-panel e2e order leak does not reproduce on `6922e18` with the two files alone in either order
   (difficulty_curve then dev_master_panel, forced by file names in one GUT process: 3/3). The EF agent saw it inside a
   longer 18-file e2e run; left open until a run shows it again.
+- 2026-10-13: BF2 (agent, branch `v075-bf2` from `81a07b5`): the Brood Mother's and the Hive Lens's fights rebuilt
+  (12 bullet patterns, both boss files, HP ×1.25). Engine additions, additive: `marks` + `pattern_id` (eggs that burst
+  from their locked circles), a tracked `burrow` with an eruption ring, optional move params; looks `acid_glob` /
+  `prism_orb`, the egg lob, avatar move mapping. Two tests changed on purpose (the leap's lead now on a fixture, the far
+  burrow now reaches). Lint, the boss sim files, presentation, content/arch/golden, application/debug and the boss
+  e2e (new `test_e2e_boss_dodge_2`) green; screenshots under xvfb + llvmpipe. Evidence
+  [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md). Not run by the agent: the rest of `tests/unit/sim`, the
+  full suite, bot sims. Not pushed.

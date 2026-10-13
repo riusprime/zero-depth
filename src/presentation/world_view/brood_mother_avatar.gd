@@ -31,6 +31,14 @@ var eggs: Array[MeshInstance3D] = []
 var legs: Array[Node3D] = []
 
 
+## v0.7.5 BF2: its dodge-first moves (the Egg Storm's tracked circles and the Web Spiral) pose as its brood: the egg
+## sac swells for the windup and pulses while the eggs and the acid fly.
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	if _move == WorldReader.MOVE_MARKS or _move == WorldReader.MOVE_PATTERN:
+		_move = WorldReader.MOVE_BROOD
+
+
 ## The sheet's name for this boss: its imported model would be crawler_queen.glb.
 func model_id() -> StringName:
 	return &"crawler_queen"

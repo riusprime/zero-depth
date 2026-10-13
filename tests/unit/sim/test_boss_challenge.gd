@@ -282,6 +282,13 @@ func test_aimed_attacks_lead_a_moving_player() -> void:
 	var t := BossAi.table_of(w, s[1])
 	assert_eq(t.lead_ticks, 21, "0.35 s")
 	w.vel = Vector2(0, 0.1)  # 6 m/s across
+	# v0.7.5 BF2: the shipped leap tracks then locks on the exact position (no lead); the lead rule is for an aimed
+	# attack without a lock, so the leap here is one (a fixture).
+	var leap := t.attacks[t.attack_index(&"leap")]
+	assert_eq(leap.lock_ticks, 48, "the shipped leap locks 0.8 s")
+	BossLab.start(w, s[1], &"leap")
+	assert_eq((BossAi.leap_disc(w, s[1])[0] as Vector2).y, 0.0, "locked: exact, not led")
+	leap.lock_ticks = 0
 	BossLab.start(w, s[1], &"leap")
 	var d: Array = BossAi.leap_disc(w, s[1])
 	assert_almost_eq((d[0] as Vector2).y, 0.1 * 21, 0.001, "the leap lands where you're going")

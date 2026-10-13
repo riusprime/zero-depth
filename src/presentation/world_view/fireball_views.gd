@@ -63,6 +63,26 @@ const LOOKS := {
 		"tip": 1.0,
 		"trail_m": 0.45,
 	},
+	## v0.7.5 BF2: Brood Mother: sickly green acid globs (fat, a short dripping trail).
+	&"acid_glob":
+	{
+		"core": Color("#C8FF6A"),
+		"edge": Color("#142A08"),
+		"trail": Color("#6FA02A"),
+		"size": 1.1,
+		"tip": 1.0,
+		"trail_m": 0.4,
+	},
+	## v0.7.5 BF2: Hive Lens: magenta-red prism orbs (small, a long bright trail).
+	&"prism_orb":
+	{
+		"core": Color("#FF78D0"),
+		"edge": Color("#3A0626"),
+		"trail": Color("#C02A78"),
+		"size": 0.9,
+		"tip": 1.0,
+		"trail_m": 0.75,
+	},
 }
 const DEFAULT_LOOK := {
 	"core": Color("#F0A890"),

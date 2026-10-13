@@ -4,55 +4,167 @@
 [ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
 [ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
 
-[sub_resource type="Resource" id="A_lens_sweep"]
+[sub_resource type="Resource" id="A_prism_spiral"]
 script = ExtResource("1_atk")
-id = &"lens_sweep"
-shape = 1
-shape_params = {
-"arc_degrees": 100.0,
-"reach_m": 12.0
-}
-telegraph_seconds = 0.9
-active_seconds = 1.0
-recovery_seconds = 1.1
-damage = 20
-move = &"rail"
-min_range_m = 0.0
-max_range_m = 13.0
-weight = 3
-cooldown_seconds = 0.9
-cause_key = &"CAUSE_HIVE_SWEEP"
-opens_weak_point = true
-
-[sub_resource type="Resource" id="A_prism_fan"]
-script = ExtResource("1_atk")
-id = &"prism_fan"
+id = &"prism_spiral"
 shape = 4
 shape_params = {
-"count": 5,
-"gap_seconds": 0.3,
-"radius_m": 0.25,
-"range_m": 12.0,
-"speed_mps": 11.0,
-"spread_degrees": 14.0,
-"volleys": 2
+"pattern_id": "hive_prism_spiral"
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 1.5
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_SPIRAL"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_prism_spiral_fast"]
+script = ExtResource("1_atk")
+id = &"prism_spiral_fast"
+shape = 4
+shape_params = {
+"pattern_id": "hive_prism_spiral_fast"
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 1.4
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_SPIRAL"
+opens_weak_point = true
+shielded = true
+
+[sub_resource type="Resource" id="A_petal_bloom"]
+script = ExtResource("1_atk")
+id = &"petal_bloom"
+shape = 4
+shape_params = {
+"pattern_id": "hive_petal_bloom"
 }
 telegraph_seconds = 0.7
-active_seconds = 0.6
-recovery_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 1.1
 damage = 12
-move = &"bolt_fan"
-min_range_m = 3.0
-max_range_m = 16.0
-weight = 3
-cooldown_seconds = 1.0
-cause_key = &"CAUSE_HIVE_PRISM"
-follow_up = &"lens_sweep"
-follow_up_permille = 350
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_BLOOM"
+
+[sub_resource type="Resource" id="A_petal_bloom_fast"]
+script = ExtResource("1_atk")
+id = &"petal_bloom_fast"
+shape = 4
+shape_params = {
+"pattern_id": "hive_petal_bloom_fast"
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_BLOOM"
 
 [sub_resource type="Resource" id="A_glare_ring"]
 script = ExtResource("1_atk")
 id = &"glare_ring"
+shape = 4
+shape_params = {
+"pattern_id": "hive_glare_ring"
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_GLARE"
+
+[sub_resource type="Resource" id="A_glare_ring_fast"]
+script = ExtResource("1_atk")
+id = &"glare_ring_fast"
+shape = 4
+shape_params = {
+"pattern_id": "hive_glare_ring_fast"
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.0
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_HIVE_GLARE"
+
+[sub_resource type="Resource" id="A_focus_beam"]
+script = ExtResource("1_atk")
+id = &"focus_beam"
+shape = 2
+shape_params = {
+"count": 1,
+"length_m": 30.0,
+"spread_degrees": 0.0,
+"width_m": 1.0
+}
+telegraph_seconds = 1.6
+active_seconds = 0.3
+recovery_seconds = 1.2
+damage = 22
+move = &"lanes"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_HIVE_FOCUS"
+opens_weak_point = true
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_focus_beam_3"]
+script = ExtResource("1_atk")
+id = &"focus_beam_3"
+shape = 2
+shape_params = {
+"count": 3,
+"length_m": 30.0,
+"spread_degrees": 28.0,
+"width_m": 1.0
+}
+telegraph_seconds = 1.6
+active_seconds = 0.3
+recovery_seconds = 1.2
+damage = 22
+move = &"lanes"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_HIVE_FOCUS"
+opens_weak_point = true
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_lens_flare"]
+script = ExtResource("1_atk")
+id = &"lens_flare"
 shape = 3
 shape_params = {
 "inner_radius_m": 1.5,
@@ -65,7 +177,7 @@ damage = 18
 move = &"slam_ring"
 min_range_m = 0.0
 max_range_m = 4.1
-weight = 3
+weight = 2
 cooldown_seconds = 0.7
 cause_key = &"CAUSE_HIVE_GLARE"
 opens_weak_point = true
@@ -79,7 +191,7 @@ shape_params = {
 "radius_m": 2.2,
 "range_m": 10.0
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 1.4
 active_seconds = 0.5
 recovery_seconds = 1.2
 damage = 20
@@ -90,6 +202,7 @@ weight = 1
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_HIVE_DIVE"
 opens_weak_point = true
+lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_split"]
 script = ExtResource("1_atk")
@@ -112,50 +225,10 @@ weight = 1
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_HIVE_SPLIT"
 
-[sub_resource type="Resource" id="A_twin_sweep"]
-script = ExtResource("1_atk")
-id = &"twin_sweep"
-shape = 1
-shape_params = {
-"arc_degrees": 150.0,
-"reach_m": 13.0
-}
-telegraph_seconds = 0.9
-active_seconds = 1.1
-recovery_seconds = 1.0
-damage = 20
-move = &"rail"
-min_range_m = 0.0
-max_range_m = 14.0
-weight = 3
-cooldown_seconds = 0.8
-cause_key = &"CAUSE_HIVE_SWEEP"
-opens_weak_point = true
-
-[sub_resource type="Resource" id="A_focus_beam"]
-script = ExtResource("1_atk")
-id = &"focus_beam"
-shape = 1
-shape_params = {
-"arc_degrees": 70.0,
-"reach_m": 30.0
-}
-telegraph_seconds = 1.2
-active_seconds = 1.0
-recovery_seconds = 1.4
-damage = 24
-move = &"rail"
-min_range_m = 0.0
-max_range_m = 99.0
-weight = 1
-cooldown_seconds = 0.8
-cause_key = &"CAUSE_HIVE_FOCUS"
-opens_weak_point = true
-
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("lens_sweep", "prism_fan", "glare_ring", "dive")
+attack_ids = PackedStringArray("prism_spiral", "petal_bloom", "glare_ring", "focus_beam", "lens_flare", "dive")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -163,7 +236,7 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("twin_sweep", "prism_fan", "glare_ring", "dive")
+attack_ids = PackedStringArray("prism_spiral", "petal_bloom", "glare_ring_fast", "focus_beam", "lens_flare", "dive")
 entry_attack = &"split"
 speed_permille = 1250
 cooldown_permille = 650
@@ -171,8 +244,8 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("twin_sweep", "prism_fan", "glare_ring", "dive", "focus_beam")
-entry_attack = &"focus_beam"
+attack_ids = PackedStringArray("prism_spiral_fast", "petal_bloom_fast", "glare_ring_fast", "focus_beam_3", "lens_flare", "dive")
+entry_attack = &"prism_spiral_fast"
 speed_permille = 1375
 cooldown_permille = 487
 
@@ -180,7 +253,7 @@ cooldown_permille = 487
 script = ExtResource("3_boss")
 name_key = &"BOSS_HIVE_LENS"
 desc_key = &"BOSS_HIVE_LENS_DESC"
-hp = 1650
+hp = 2063
 radius_m = 1.3
 move_speed_mps = 2.6
 turn_rate_dps = 0.0
@@ -192,7 +265,7 @@ rear_mult_permille = 1000
 stagger_size = 240
 stagger_decay_per_second = 13.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_lens_sweep"), SubResource("A_prism_fan"), SubResource("A_glare_ring"), SubResource("A_dive"), SubResource("A_split"), SubResource("A_twin_sweep"), SubResource("A_focus_beam")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_prism_spiral"), SubResource("A_prism_spiral_fast"), SubResource("A_petal_bloom"), SubResource("A_petal_bloom_fast"), SubResource("A_glare_ring"), SubResource("A_glare_ring_fast"), SubResource("A_focus_beam"), SubResource("A_focus_beam_3"), SubResource("A_lens_flare"), SubResource("A_dive"), SubResource("A_split")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(2, 2)

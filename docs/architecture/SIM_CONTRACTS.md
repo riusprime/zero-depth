@@ -1086,6 +1086,16 @@ Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `dat
   (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
 - **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
   only the fireballs' look column is new (above). The kernel replay golden is boss-free.
+- **v0.7.5 BF2: eggs and a tracked burrow.** A `marks` attack with a pattern (the Brood Mother's Egg Storm) fires it
+  from each circle as it strikes (`BossDodge.burst_mark`): `local` ticks after circle k struck, wave
+  `wave_at(pattern, local + lob)` fires from the circle's centre, `egg_r` (half its radius) out, aimed at the
+  player's position then (the pattern's aim offset puts the player in a gap), under the same fairness and caps. While
+  a circle is locked its telegraph item carries `lob` (from the boss to the circle; the view's egg). A `burrow` with
+  a lock (`BossDodge.tracked_burrow`) keeps BossStore point 0 on the player's exact position from its windup's end
+  through `track_ticks` (the telegraph: a tracked `disc`), then locks it (`lock_x/y`), burrows to it at its speed while
+  the circle is locked for `erupt_ticks`, erupts there (the disc), and fires its pattern from it over
+  `BossDodge.eruption_ticks` before it finishes. No new state: the points, the lock and the attack's clock.
+  The Hive Lens's Focus Beam is `lanes` with a lock (no new rule).
 
 ## 10e. Enemy fireballs (v0.7.5 EF; owner N16, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md) "Normal enemies")
 

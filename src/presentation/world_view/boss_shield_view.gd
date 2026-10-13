@@ -4,7 +4,8 @@ extends Node3D
 ## pattern (WorldReader.boss_shielded) a clear crystal shell in the boss's colour stands round it: low-poly facets that
 ## turn slowly, a brighter rim, rising in over SHOW_S as the shield comes up and gone when it opens. The player's hits
 ## spark off it (HitFeel already bursts on TAG_BLOCKED). Also the shell a burst pattern lobs (its telegraph's "lob",
-## from the boss to its locked landing circle). Looks only (EI-07).
+## from the boss to its locked landing circle; v0.7.5 BF2: an egg onto each locked circle of a marks attack with a
+## pattern, the Brood Mother's Egg Storm). Looks only (EI-07).
 
 ## The shell's colour by boss kind (each boss its own; a test pins that it is never the hero's cyan).
 const COLORS := {
@@ -18,12 +19,16 @@ const COLORS := {
 const DEFAULT_COLOR := Color("#E6E0FF")
 const SHOW_S := 0.15
 const SPIN := 0.5
+## v0.7.5 BF2: lobbed shells are keyed boss id × LOB_KEYS (a burst's), + 1 + k (marker k's egg).
+const LOB_KEYS := 16
 
 ## Boss id -> {"shell", "rim": MeshInstance3D, "shown": 0..1, "at", "radius"}.
 var _shells := {}
 ## Boss id -> the lobbed shell's node.
 var _lobs := {}
 var _lob_mat := StandardMaterial3D.new()
+## v0.7.5 BF2: the Brood Mother's eggs: a pale shell glowing acid green.
+var _egg_mat := StandardMaterial3D.new()
 var _t := 0.0
 
 
@@ -34,6 +39,10 @@ func _init() -> void:
 	_lob_mat.emission_enabled = true
 	_lob_mat.emission = Color("#FF8A4A")
 	_lob_mat.emission_energy_multiplier = 0.8
+	_egg_mat.albedo_color = Color("#E6E2B8")
+	_egg_mat.emission_enabled = true
+	_egg_mat.emission = Color("#9BE05A")
+	_egg_mat.emission_energy_multiplier = 0.9
 
 
 func sync(reader: WorldReader) -> void:
@@ -51,7 +60,12 @@ func sync(reader: WorldReader) -> void:
 			_shells[id]["radius"] = reader.actor_radius(i)
 		var tg := reader.telegraph(i)
 		if not tg.is_empty() and tg.has("lob"):
-			lobs[id] = tg["lob"]
+			lobs[id * LOB_KEYS] = tg["lob"]
+		if not tg.is_empty() and tg.has("items"):  # v0.7.5 BF2: an egg per locked circle
+			var items: Array = tg["items"]
+			for k in items.size():
+				if (items[k] as Dictionary).has("lob"):
+					lobs[id * LOB_KEYS + 1 + k] = items[k]["lob"]
 	for id in _shells.keys():
 		if not seen.has(id):
 			(_shells[id]["shell"] as Node).queue_free()
@@ -69,7 +83,7 @@ func sync(reader: WorldReader) -> void:
 			s.radial_segments = 8
 			s.rings = 4
 			n.mesh = s
-			n.material_override = _lob_mat
+			n.material_override = _lob_mat if id % LOB_KEYS == 0 else _egg_mat
 			n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(n)
 			_lobs[id] = n

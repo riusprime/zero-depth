@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 0
+look = &"prism_orb"
+speed_mps = 4.0
+radius_m = 0.18
+range_m = 18.0
+waves = 4
+wave_gap_seconds = 0.5
+turn_per_wave_degrees = -30.0
+alternate = true
+count = 20
+gap_count = 2
+gap_width = 3
+id = &"hive_glare_ring_fast"

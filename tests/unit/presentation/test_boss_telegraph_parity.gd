@@ -133,9 +133,11 @@ func test_brood_burrow_erupts_where_it_marked() -> void:
 	assert_true(
 		_attack(&"brood_mother", &"burrow", Vector2(3, 0), Vector2(3, 0))[0], "near: caught"
 	)
-	assert_false(
+	# v0.7.5 BF2: the eruption circle tracks the exact position and locks (it no longer falls short of a far
+	# player): standing still is hit from anywhere, and the drawn circle is still the hit (the loop above).
+	assert_true(
 		_attack(&"brood_mother", &"burrow", Vector2(16, 0), Vector2(16, 0))[0],
-		"far: it falls short"
+		"far: the tracked eruption still finds you"
 	)
 
 
