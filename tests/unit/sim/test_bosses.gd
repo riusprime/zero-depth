@@ -34,23 +34,23 @@ func test_spawn_boss_returns_its_id_and_it_rises_untouchable() -> void:
 func test_arena_accessors() -> void:
 	var w := BossLab.world()
 	var g := w.boss_tables[BossLab.table_index(w, &"gatekeeper")]
-	assert_eq(g.arena_cells, Vector2i(3, 3))
+	assert_eq(g.arena_cells, Vector2i(4, 4), "v0.7.5 N18: every boss in the big room")
 	assert_eq(g.arena_template, FloorLayout.Template.PILLARS)
 	var s := w.boss_tables[BossLab.table_index(w, &"siege_engine")]
 	assert_eq(
 		s.arena_cells,
-		Vector2i(3, 3),
-		"v0.6.5 BR (owner W2): the cannon boss fights in a 3 x 3 room"
+		Vector2i(4, 4),
+		'v0.7.5 N18 (owner: "always put them in the big rooms"; was 3 x 3, W2)'
 	)
 	assert_eq(s.arena_template, FloorLayout.Template.LINES)
 	var b := w.boss_tables[BossLab.table_index(w, &"brood_mother")]
-	assert_eq(b.arena_cells, Vector2i(2, 2))
+	assert_eq(b.arena_cells, Vector2i(4, 4))
 
 
-## v0.6.5 BR (owner W2, "3×3"): the Siege Engine's room is 3 x 3 cells on every seed; the closing band now closes
-## on both axes (the 3 x 1 room was too narrow for it to close across), and its punish move still reaches the room's
-## far corners from where it appears.
-func test_the_siege_engine_fights_in_a_3x3_room() -> void:
+## v0.6.5 BR (owner W2, "3×3"), v0.7.5 N18 ("always put them in the big rooms"): the Siege Engine's room is 4 x 4
+## cells on every seed; the closing band closes on both axes, and its punish move still reaches the room's far
+## corners from where it appears.
+func test_the_siege_engine_fights_in_a_4x4_room() -> void:
 	var w := BossLab.world()
 	var k := BossLab.table_index(w, &"siege_engine")
 	var t := w.boss_tables[k]
@@ -59,7 +59,7 @@ func test_the_siege_engine_fights_in_a_3x3_room() -> void:
 		var f := FloorGenerator.generate(7000 + s * 31)
 		BossRoomBuilder.attach(f, BossArenaSpec.make(t.arena_cells, t.arena_template, k))
 		var tag := "seed %d" % (7000 + s * 31)
-		assert_eq(f.room_cells[f.boss_room].size, Vector2i(3, 3), tag + ": a 3 x 3 room")
+		assert_eq(f.room_cells[f.boss_room].size, Vector2i(4, 4), tag + ": a 4 x 4 room")
 		var arena := f.rooms[f.boss_room]
 		var deep := BossChallenge.band_depth(arena, t, 1000)
 		assert_gt(deep.x, 0.0, tag + ": the band closes across x")

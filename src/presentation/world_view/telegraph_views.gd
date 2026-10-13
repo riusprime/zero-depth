@@ -12,9 +12,17 @@ extends Node3D
 ## pointing down its lane; a Mine Layer's armed mines ("mine") a spiked star in each filling circle.
 ## v0.4.0 BO: a flood's standing lanes carry a style too: the Warlord's spears a row of spear heads down each lane,
 ## the Foundry's molten floor a hot core with cross bars (a fixed colour; nothing toggles emission at run time).
+## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): a telegraph with "tracked" is drawn as a dull red outline (no
+## fill) while it follows the player, and once "locked" as a bright filled flash that pulses until it strikes (steady
+## with reduced motion). &"marks" draws each of its markers (circles, or a row and a column of lanes) in its own state.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
-const MESH_SHAPES: Array[StringName] = [&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple"]
+const MESH_SHAPES: Array[StringName] = [
+	&"ring", &"lanes", &"arc", &"discs", &"sweep", &"ripple", &"marks"
+]
+## v0.7.5 BF1: the lock flash's pulse (per second) and its fill's alpha range.
+const FLASH_HZ := 7.0
+const FLASH_ALPHA := Vector2(0.45, 0.8)
 const ARC_STEPS := 40
 
 const Y := 0.035
@@ -26,6 +34,11 @@ var _edge_mat := StandardMaterial3D.new()
 var _core_mat := StandardMaterial3D.new()
 var _bomb_mat := StandardMaterial3D.new()
 var _molten_mat := StandardMaterial3D.new()
+## v0.7.5 BF1: a tracking marker's dull outline, a locked one's bright fill and edge.
+var _dull_mat := StandardMaterial3D.new()
+var _flash_fill_mat := StandardMaterial3D.new()
+var _flash_edge_mat := StandardMaterial3D.new()
+var _t := 0.0
 
 
 func _ready() -> void:
@@ -46,6 +59,32 @@ func _ready() -> void:
 	_bomb_mat.emission_enabled = true
 	_bomb_mat.emission = c
 	_bomb_mat.emission_energy_multiplier = 0.6
+	for m: StandardMaterial3D in [_dull_mat, _flash_fill_mat, _flash_edge_mat]:
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.cull_mode = BaseMaterial3D.CULL_DISABLED
+		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	_dull_mat.albedo_color = Color(c.darkened(0.45), 0.85)
+	_flash_fill_mat.albedo_color = Color(c.lightened(0.15), FLASH_ALPHA.y)
+	_flash_edge_mat.albedo_color = Color(c.lightened(0.55), 1.0)
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	var a := FLASH_ALPHA.y
+	if not ViewPrefs.reduced_motion:
+		var wave := 0.5 + 0.5 * cos(_t * TAU * FLASH_HZ)
+		a = lerpf(FLASH_ALPHA.x, FLASH_ALPHA.y, wave)
+	_flash_fill_mat.albedo_color.a = a
+
+
+## v0.7.5 BF1: [fill, edge] materials for a telegraph: a tracking one has no fill and the dull edge, a locked one
+## the flash; any other the usual pair.
+func _mats(tg: Dictionary) -> Array:
+	if not tg.get("tracked", false):
+		return [_fill_mat, _edge_mat]
+	if tg.get("locked", false):
+		return [_flash_fill_mat, _flash_edge_mat]
+	return [null, _dull_mat]
 
 
 func sync(reader: WorldReader) -> void:
@@ -153,6 +192,15 @@ func _update(n: Node3D, tg: Dictionary) -> void:
 	if MESH_SHAPES.has(tg["shape"]):
 		_update_mesh(n, tg, p)
 		return
+	var mats := _mats(tg)
+	if tg.get("tracked", false):  # v0.7.5 BF1: no fill while tracking, a full flash once locked
+		p = 1.0 if tg.get("locked", false) else 0.0
+	for c in n.get_children():
+		if c.name.begins_with("Edge"):
+			(c as GeometryInstance3D).material_override = mats[1]
+		elif c.name == "Fill":
+			(c as GeometryInstance3D).material_override = mats[0] if mats[0] != null else _fill_mat
+			(c as Node3D).visible = mats[0] != null
 	if tg["shape"] == &"disc":
 		var r: float = tg["radius"]
 		n.position = SimPlane.to_3d(tg["center"], Y)
@@ -304,7 +352,13 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 	edge.clear_surfaces()
 	var ft := []
 	var et := []
+	var mats := _mats(tg)
+	if tg.get("tracked", false):
+		p = 1.0
 	match tg["shape"]:
+		&"marks":  # v0.7.5 BF1: each marker in its own state (dull while tracking, flashing once locked)
+			_update_marks(n, tg)
+			return
 		&"ring":
 			var c: Vector2 = tg["center"]
 			var r0: float = tg["inner"]
@@ -341,8 +395,39 @@ func _update_mesh(n: Node3D, tg: Dictionary, p: float) -> void:
 			for k in 3:
 				var rr := r * (0.45 + 0.3 * k)
 				_sector(et, c, rr - EDGE * 0.6, rr, 0.0, TAU)
-	_emit(fill, ft, _fill_mat)
-	_emit(edge, et, _edge_mat)
+	if mats[0] != null:
+		_emit(fill, ft, mats[0])
+	_emit(edge, et, mats[1])
+
+
+## v0.7.5 BF1: a marks telegraph: the locked markers' flash in the fill mesh (and their bright edges), the tracking
+## ones' dull outlines in the edge mesh.
+func _update_marks(n: Node3D, tg: Dictionary) -> void:
+	var fill: ImmediateMesh = (n.get_node("Fill") as MeshInstance3D).mesh
+	var edge: ImmediateMesh = (n.get_node("Edge") as MeshInstance3D).mesh
+	var flash_f := []
+	var flash_e := []
+	var dull := []
+	for item: Dictionary in tg["items"]:
+		var locked: bool = item["locked"]
+		var f := []
+		var e := []
+		if item["shape"] == &"disc":
+			var c: Vector2 = item["center"]
+			var r: float = item["radius"]
+			_sector(f, c, 0.0, r, 0.0, TAU)
+			_sector(e, c, r - EDGE, r, 0.0, TAU)
+		else:
+			for o: Obb in item["obbs"]:
+				_lane(f, e, o, 1.0)
+		if locked:
+			flash_f.append_array(f)
+			flash_e.append_array(e)
+		else:
+			dull.append_array(e)
+	_emit(fill, flash_f, _flash_fill_mat)
+	_emit(edge, flash_e, _flash_edge_mat)
+	_emit(edge, dull, _dull_mat)
 
 
 func _rad(units: int) -> float:

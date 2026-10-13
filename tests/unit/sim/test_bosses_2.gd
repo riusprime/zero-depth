@@ -79,9 +79,9 @@ func test_the_new_kinds_are_bosses() -> void:
 func test_arenas_come_from_data() -> void:
 	var w := BossLab.world()
 	var want := {
-		&"warlord": [Vector2i(3, 2), FloorLayout.Template.OPEN],
-		&"hive_lens": [Vector2i(2, 2), FloorLayout.Template.CENTRE],
-		&"foundry": [Vector2i(3, 2), FloorLayout.Template.BUNKERS],
+		&"warlord": [Vector2i(4, 4), FloorLayout.Template.OPEN],  # v0.7.5 N18: the big room
+		&"hive_lens": [Vector2i(4, 4), FloorLayout.Template.CENTRE],
+		&"foundry": [Vector2i(4, 4), FloorLayout.Template.BUNKERS],
 	}
 	for id: StringName in want:
 		var t := w.boss_tables[BossLab.table_index(w, id)]

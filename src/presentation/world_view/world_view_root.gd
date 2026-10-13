@@ -60,6 +60,9 @@ var cores := CoreViews.new()  # v0.6.0 CU: cores on elites and bosses, the steal
 var attack_forms := AttackFormView.new()
 var modifier_marks := ModifierOverlays.new()  # v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks
 var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades
+## v0.7.5 BF1: the hostile fireballs (pooled per look in MultiMeshes) and the bosses' crystal shields and lobbed shells.
+var fireballs := FireballViews.new()
+var boss_shields := BossShieldView.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -110,6 +113,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
+	add_child(fireballs)  # v0.7.5 BF1
+	add_child(boss_shields)
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -183,6 +188,8 @@ func sync() -> void:
 	attack_forms.sync(reader)  # v0.6.0 MX3
 	modifier_marks.sync(reader)  # v0.6.0 MX4
 	blade_forms.sync(reader)  # v0.6.5 WN4
+	fireballs.sync(reader)  # v0.7.5 BF1
+	boss_shields.sync(reader)
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
