@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"core_stolen"
+name_key = &"ACH_CORE_STOLEN_NAME"
+desc_key = &"ACH_CORE_STOLEN_DESC"
+glyph = &"core"
+group = &"risk"
+order = 2
+stat = &"cores:stolen"

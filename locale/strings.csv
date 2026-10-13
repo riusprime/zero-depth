@@ -891,3 +891,75 @@ BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de 
 BIOME_FROZEN_SHORE_DESC,"A moonlit shore locked in ice: snow, slate and frozen sea. The ice patches make you slide.","Una costa helada bajo la luna: nieve, pizarra y mar congelado. Las placas de hielo te hacen resbalar."
 BIOME_NIGHT_ROCKS_DESC,Dark stone fields under a night sky.,Campos de piedra oscura bajo un cielo nocturno.
 BIOME_RED_CANYON_DESC,Sun-baked red rock and narrow passes.,Roca roja tostada por el sol y pasos estrechos.
+UI_ACH_TAB,Achievements,Logros
+UI_ACH_TOAST,ACHIEVEMENT UNLOCKED,LOGRO DESBLOQUEADO
+UI_ACH_PROGRESS,Unlocked %d / %d,Desbloqueados %d / %d
+UI_ACH_UNLOCKED,Unlocked,Desbloqueado
+UI_ACH_LOCKED,Locked,Bloqueado
+UI_ACH_HIDDEN,A hidden achievement. Keep playing to find it.,Un logro oculto. Sigue jugando para descubrirlo.
+UI_ACH_GROUP_RUN,The run,La partida
+UI_ACH_GROUP_BOSSES,Bosses,Jefes
+UI_ACH_GROUP_BIOMES,Biomes,Biomas
+UI_ACH_GROUP_BUILD,The wand,La varita
+UI_ACH_GROUP_COMBAT,Combat,Combate
+UI_ACH_GROUP_RISK,Risk and reward,Riesgo y recompensa
+UI_ACH_GROUP_CODEX,The Codex,El Códice
+UI_ACH_GROUP_ASCENSION,Ascension,Ascensión
+ACH_CLEAR_FLOOR_1_NAME,First Steps Down,Primeros pasos
+ACH_CLEAR_FLOOR_1_DESC,Clear floor 1: take its portal.,Supera el piso 1: cruza su portal.
+ACH_CLEAR_FLOOR_2_NAME,Halfway Down,A medio camino
+ACH_CLEAR_FLOOR_2_DESC,Clear floor 2.,Supera el piso 2.
+ACH_WIN_RUN_NAME,Bottom of the World,El fondo del mundo
+ACH_WIN_RUN_DESC,Win a run: beat the last floor's boss.,Gana una partida: derrota al jefe del último piso.
+ACH_WIN_GUN_NAME,Steady Aim,Pulso firme
+ACH_WIN_GUN_DESC,Win a run with the Gun.,Gana una partida con la pistola.
+ACH_WIN_BLADE_NAME,Clean Cut,Corte limpio
+ACH_WIN_BLADE_DESC,Win a run with the Blade.,Gana una partida con la hoja.
+ACH_WIN_5_NAME,Old Hand,Veterano
+ACH_WIN_5_DESC,Win 5 runs.,Gana 5 partidas.
+ACH_BOSS_NAME,Victory: %s,Victoria: %s
+ACH_BOSS_DESC,Defeat this boss: %s.,Derrota a este jefe: %s.
+ACH_BOSSES_ALL_NAME,Monster Hunter,Cazamonstruos
+ACH_BOSSES_ALL_DESC,Defeat every boss at least once.,Derrota a cada jefe al menos una vez.
+ACH_BIOME_NAME,Footprints: %s,Huellas: %s
+ACH_BIOME_DESC,Enter a floor of this biome: %s.,Entra en un piso de este bioma: %s.
+ACH_BIOMES_ALL_NAME,World Walker,Trotamundos
+ACH_BIOMES_ALL_DESC,Enter a floor of every biome.,Entra en un piso de cada bioma.
+ACH_WAND_FULL_NAME,Full Wand,Varita completa
+ACH_WAND_FULL_DESC,Hold 8 cards in your wand.,Lleva 8 cartas en tu varita.
+ACH_CARD_LEVEL_5_NAME,Mastered,Maestría
+ACH_CARD_LEVEL_5_DESC,Raise a card to level 5.,Sube una carta al nivel 5.
+ACH_TRIGGER_KILL_NAME,Chain Reaction,Reacción en cadena
+ACH_TRIGGER_KILL_DESC,Kill an enemy with a child spell: one a trigger card or a split casts.,Mata a un enemigo con un hechizo hijo: el que lanza una carta disparadora o una división.
+ACH_TRIGGER_KILLS_100_NAME,Clockwork,Mecanismo de relojería
+ACH_TRIGGER_KILLS_100_DESC,Kill 100 enemies with child spells.,Mata a 100 enemigos con hechizos hijos.
+ACH_KILLS_1_NAME,First Blood,Primera sangre
+ACH_KILLS_1_DESC,Kill an enemy.,Mata a un enemigo.
+ACH_KILLS_100_NAME,Culling,Escabechina
+ACH_KILLS_100_DESC,Kill 100 enemies.,Mata a 100 enemigos.
+ACH_KILLS_1000_NAME,Legion's End,El fin de la legión
+ACH_KILLS_1000_DESC,"Kill 1,000 enemies.",Mata a 1.000 enemigos.
+ACH_NO_HIT_ROOM_NAME,Untouched,Intacto
+ACH_NO_HIT_ROOM_DESC,Clear a sealed room without losing any HP.,Supera una sala sellada sin perder vida.
+ACH_SEALED_ROOMS_10_NAME,Gatecrasher,Revientapuertas
+ACH_SEALED_ROOMS_10_DESC,Clear 10 sealed rooms.,Supera 10 salas selladas.
+ACH_OVERRUN_CLEARED_NAME,Hold the Line,Resistir el asedio
+ACH_OVERRUN_CLEARED_DESC,Clear an Overrun room.,Supera una sala de Asedio.
+ACH_CURSED_CARD_NAME,Devil's Bargain,Pacto con el diablo
+ACH_CURSED_CARD_DESC,Take a cursed chest's card.,Toma la carta de un cofre maldito.
+ACH_CORE_STOLEN_NAME,Heist,Golpe maestro
+ACH_CORE_STOLEN_DESC,Steal a core from an elite or a boss.,Roba el núcleo de un élite o de un jefe.
+ACH_SHARDS_500_NAME,Big Spender,A lo grande
+ACH_SHARDS_500_DESC,Spend 500 shards in shops.,Gasta 500 fragmentos en tiendas.
+ACH_CODEX_GUN_NAME,Gunsmith's Ledger,Libro del armero
+ACH_CODEX_GUN_DESC,See every card of the Gun pool in the Codex.,Descubre en el Códice todas las cartas del mazo de la Pistola.
+ACH_CODEX_BLADE_NAME,Bladesmith's Ledger,Libro del espadero
+ACH_CODEX_BLADE_DESC,See every card of the Blade pool in the Codex.,Descubre en el Códice todas las cartas del mazo de la Espada.
+ACH_CODEX_TRIGGERS_NAME,Every Trigger,Todos los disparadores
+ACH_CODEX_TRIGGERS_DESC,See every trigger card in the Codex.,Descubre en el Códice todas las cartas disparadoras.
+ACH_CODEX_ENEMIES_NAME,Field Guide,Guía de campo
+ACH_CODEX_ENEMIES_DESC,Meet every enemy.,Encuentra a todos los enemigos.
+ACH_ASCEND_1_NAME,Ascension,Ascensión
+ACH_ASCEND_1_DESC,Take the Ascension portal and start a new loop.,Toma el portal de la Ascensión y empieza un nuevo ciclo.
+ACH_ASCEND_5_NAME,Endless,Sin fin
+ACH_ASCEND_5_DESC,Ascend 5 times.,Asciende 5 veces.

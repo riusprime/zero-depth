@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"shards_500"
+name_key = &"ACH_SHARDS_500_NAME"
+desc_key = &"ACH_SHARDS_500_DESC"
+glyph = &"shard"
+group = &"risk"
+order = 3
+stat = &"shards:spent"
+target = 500

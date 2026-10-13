@@ -235,6 +235,16 @@ the whole `World`.
     `CodexCatalog` lists the entries from the content. None of it is in `RunState`, a save or a hash; a run with
     the dev panel's balance tweaks records nothing. A profile without the section reads as an empty Codex. Main
     saves the profile at the end of every floor when the Codex changed.
+  - **The achievements** (v0.7.5 AC, owner N7; local, no platform API) are the profile's `achievements` section,
+    `{version, unlocked: {id: n}, stats: {key: value}}` (`n` the unlock's place in the order; `stats` the run
+    counters the Codex doesn't keep). `AchievementStore` (application) owns it; `AchievementBook` lists every
+    achievement from `data/achievements/` (one per boss and per biome expanded from the Codex's entries) and
+    evaluates each condition from `CodexStore` and the stats; `AchievementTracker` records the stats from each
+    floor's `WorldReader` and `SimEvent`s after every tick, listens to the Codex's writes and unlocks (Main wires
+    it beside `CodexRecorder`, and its `achieved` signal to the HUD toast). A tweaked dev-panel run records and
+    unlocks nothing. Other steps report a counter through `AchievementTracker.report(key)`: the Ascension portal
+    (AP) reports `runs:ascended`. A profile without the section reads as none unlocked; Main saves the profile at
+    the end of every floor when either changed.
 
 ## 11. Localization, renderer, CI
 

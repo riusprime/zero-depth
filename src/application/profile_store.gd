@@ -3,8 +3,8 @@
 # migration cut; quarantine keeps every bad file (timestamped) instead of overwriting profile.bad.json.
 class_name ProfileStore
 extends RefCounted
-## The player profile: settings, key bindings, unlocks, seen hints and (v0.7.5 CX) the Codex in one
-## `user://profile.json`. Never part of a run's state or any sim hash. Headless runs (tests, sims, CI) keep it in
+## The player profile: settings, key bindings, unlocks, seen hints, (v0.7.5 CX) the Codex and (AC) the achievements
+## in one `user://profile.json`. Never part of a run's state or any sim hash. Headless runs (tests, sims, CI) keep it in
 ## memory only. Saves are atomic (write a .tmp, then rename). A corrupt file is kept as profile.bad.<time>.json and
 ## a fresh profile starts.
 
@@ -55,6 +55,7 @@ static func fresh() -> Dictionary:
 		"unlocks": {},
 		"hints": {"seen": []},
 		"codex": CodexStore.fresh(),  # v0.7.5 CX: the Codex's unlocks and counters (its own version inside)
+		"achievements": AchievementStore.fresh(),  # v0.7.5 AC: unlocks and run counters (its own version)
 	}
 
 

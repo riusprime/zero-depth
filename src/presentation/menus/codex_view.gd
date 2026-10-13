@@ -8,6 +8,7 @@ extends Control
 ## with its line, and your counts from the profile (CodexStore). An entry you haven't met is a silhouette, "???".
 ## Keyboard: arrows move, Q / E change the page, Esc goes back. Pad: d-pad or stick, LB / RB, B. Mouse: hover a tile,
 ## click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing.
+## v0.7.5 AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four.
 
 signal back_pressed
 
@@ -16,7 +17,10 @@ const TAB_KEYS := {
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
 	&"biomes": "UI_CODEX_TAB_BIOMES",
+	&"achievements": "UI_ACH_TAB",  # v0.7.5 AC
 }
+## v0.7.5 AC: the Achievements page's id (not a CodexStore page: it reads the AchievementBook).
+const ACHIEVEMENTS := &"achievements"
 const SECTION_KEYS := {
 	&"gun": "UI_CODEX_SECTION_GUN",
 	&"blade": "UI_CODEX_SECTION_BLADE",
@@ -51,6 +55,11 @@ const EMBLEM := 220.0
 var catalog: CodexCatalog
 var store: CodexStore
 var page := &"cards"
+## The pages shown, in order: CodexStore.PAGES, then Achievements when there is a book (v0.7.5 AC).
+var pages: Array[StringName] = []
+## v0.7.5 AC: the achievements (null: no Achievements page) and their page.
+var achievements: AchievementBook
+var achievements_page: AchievementsPage
 var tabs := {}
 var tiles: Array[CodexTile] = []
 var progress := Label.new()
@@ -63,15 +72,22 @@ var counts_label := Label.new()
 var back := Button.new()
 var _scroll := ScrollContainer.new()
 var _list := VBoxContainer.new()
+var _body: HBoxContainer
 var _visual := Control.new()
 var _emblem_box := PanelContainer.new()
 var _shown := {}
 
 
-func _init(p_catalog: CodexCatalog, p_store: CodexStore) -> void:
+func _init(
+	p_catalog: CodexCatalog, p_store: CodexStore, p_achievements: AchievementBook = null
+) -> void:
 	name = "CodexView"
 	catalog = p_catalog
 	store = p_store
+	achievements = p_achievements
+	pages = CodexStore.PAGES.duplicate()
+	if achievements != null:
+		pages.append(ACHIEVEMENTS)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	MenuStyle.apply(self)
 	add_child(MenuBackdrop.new())
@@ -91,10 +107,15 @@ func _init(p_catalog: CodexCatalog, p_store: CodexStore) -> void:
 	col.add_child(_header())
 	col.add_child(_tab_row())
 	var body := HBoxContainer.new()
+	_body = body
 	body.name = "Body"
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 40)
 	col.add_child(body)
+	if achievements != null:  # v0.7.5 AC: shown in the body's place on its own page
+		achievements_page = AchievementsPage.new(achievements)
+		achievements_page.visible = false
+		col.add_child(achievements_page)
 	_scroll.name = "Scroll"
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.follow_focus = true
@@ -144,7 +165,7 @@ func _tab_row() -> Control:
 	var row := HBoxContainer.new()
 	row.name = "Tabs"
 	row.add_theme_constant_override("separation", 6)
-	for p: StringName in CodexStore.PAGES:
+	for p: StringName in pages:
 		var b := Button.new()
 		b.name = "Tab%s" % String(p).capitalize()
 		b.text = TAB_KEYS[p]
@@ -210,7 +231,9 @@ func open(p: StringName) -> void:
 
 
 func focus_first() -> void:
-	if not tiles.is_empty():
+	if page == ACHIEVEMENTS and achievements_page != null and not achievements_page.rows.is_empty():
+		achievements_page.focus_first()
+	elif not tiles.is_empty():
 		tiles[0].grab_focus()
 	else:
 		back.grab_focus()
@@ -238,13 +261,15 @@ func content_rect() -> Rect2:
 func _set_page(p: StringName) -> void:
 	if p == page and not tiles.is_empty():
 		return
+	if p == page and p == ACHIEVEMENTS and not achievements_page.rows.is_empty():
+		return  # v0.7.5 AC: the Achievements page is already built
 	page = p
 	_build_page()
 
 
 func _cycle(step: int) -> void:
-	var k := CodexStore.PAGES.find(page)
-	open(CodexStore.PAGES[(k + step + CodexStore.PAGES.size()) % CodexStore.PAGES.size()])
+	var k := pages.find(page)
+	open(pages[(k + step + pages.size()) % pages.size()])
 
 
 func _build_page() -> void:
@@ -253,6 +278,12 @@ func _build_page() -> void:
 		c.queue_free()
 	tiles.clear()
 	_scroll.scroll_vertical = 0
+	if page == ACHIEVEMENTS:
+		_build_achievements()
+		return
+	_body.visible = true
+	if achievements_page != null:
+		achievements_page.visible = false
 	var found := 0
 	for s: StringName in catalog.sections(page):
 		var rows: Array = catalog.section_entries(page, s)
@@ -291,6 +322,23 @@ func _build_page() -> void:
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 	if not tiles.is_empty():
 		_show(tiles[0].entry)
+
+
+## v0.7.5 AC: the Achievements page in the body's place; up from its first line goes to its tab.
+func _build_achievements() -> void:
+	_body.visible = false
+	achievements_page.visible = true
+	achievements_page.top_neighbor = tabs[ACHIEVEMENTS]
+	achievements_page.refresh()
+	progress.text = achievements_page.progress_text()
+	var first: Control = (
+		achievements_page.rows[0] if not achievements_page.rows.is_empty() else back
+	)
+	for p: StringName in tabs:
+		var b: Button = tabs[p]
+		b.focus_neighbor_bottom = b.get_path_to(first)
+		var lit := MenuStyle.GLASS.lerp(Color.WHITE, 0.35)
+		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 
 
 ## An entry's name: its own key, and a card with a Gun face shows both ("On Finisher / On Crit").
@@ -393,6 +441,13 @@ func _unhandled_input(event: InputEvent) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and catalog != null and is_inside_tree():
 		var at := tiles.find(get_viewport().gui_get_focus_owner() as CodexTile)
+		var row_at := -1
+		if achievements_page != null:
+			row_at = achievements_page.rows.find(
+				get_viewport().gui_get_focus_owner() as AchievementRow
+			)
 		_build_page()
 		if at >= 0 and at < tiles.size():
 			tiles[at].grab_focus()
+		elif row_at >= 0 and row_at < achievements_page.rows.size():
+			achievements_page.rows[row_at].grab_focus()
