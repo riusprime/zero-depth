@@ -1291,7 +1291,6 @@ func _projectile_hits() -> void:
 			var t := Collide.sweep_vs_obb(a, b, r, walls[w])
 			if t >= 0.0 and t < best_t:
 				best_t = t
-				best_actor = -1
 				best_wall = w
 		for k in _actor_grid.query_rect(span):
 			if actors.teams[k] == projectiles.team[i] or actors.dead[k] == 1:
@@ -1306,7 +1305,8 @@ func _projectile_hits() -> void:
 			):
 				continue
 			var t := Collide.sweep_vs_circle(a, b, r, actors.pos(k), actors.radius[k])
-			if t >= 0.0 and (t < best_t or (t == best_t and best_actor >= 0 and k < best_actor)):
+			# A tie keeps the earlier find: the wall, else the lower actor index (the grid returns them ascending).
+			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_actor = k
 		if best_t <= 1.0:
