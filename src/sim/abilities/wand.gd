@@ -208,6 +208,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"type": info["type"],
 		"level": level,
 		"trigger": trigger_of(w, code),
+		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
 	}
 
 

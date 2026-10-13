@@ -45,6 +45,9 @@ var _box := CardStyle.box(Vector4(0, 0, 0, 0))
 var _title := Label.new()
 var _desc := Label.new()
 var _tier := Label.new()
+## v0.7.5 SM (N8): the card's level badge on the panel's top edge ("Lv 1", "Lv 2 → 3"); hidden for a card with none.
+var _level := Label.new()
+var _level_box := StyleBoxFlat.new()
 var _rule_top := ColorRect.new()
 var _rule_bottom := ColorRect.new()
 var _icons := HBoxContainer.new()
@@ -93,9 +96,24 @@ func _init(p_scale: float = 1.0) -> void:
 	_desc.add_theme_color_override("font_color", TEXT)
 	for r: ColorRect in [_rule_top, _rule_bottom]:
 		_root.add_child(r)
+	_level.name = "Level"
+	_level.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_level.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_level.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_level.add_theme_font_override("font", HudStyle.font(true))
+	_level.add_theme_constant_override("outline_size", 0)
+	_level_box.set_border_width_all(1)
+	_level_box.set_corner_radius_all(3)
+	_level_box.content_margin_left = 7
+	_level_box.content_margin_right = 7
+	_level_box.content_margin_top = 1
+	_level_box.content_margin_bottom = 1
+	_level.add_theme_stylebox_override("normal", _level_box)
+	_level.visible = false
 	_icons.name = "Icons"
 	_icons.alignment = BoxContainer.ALIGNMENT_CENTER
 	_root.add_child(_icons)
+	_root.add_child(_level)
 	icon.custom_minimum_size = Vector2(ICON, ICON) * scale_factor
 	gem.custom_minimum_size = Vector2(GEM, GEM) * scale_factor
 	icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -117,7 +135,8 @@ func show_face(
 	fam: StringName,
 	p_tier: int,
 	tier_color: Color,
-	tier_text: String
+	tier_text: String,
+	level_text: String = ""
 ) -> void:
 	_id = id
 	family = fam
@@ -131,6 +150,11 @@ func show_face(
 	_desc.text = sentence
 	_tier.text = tier_text
 	_tier.add_theme_color_override("font_color", Color(tier_color, 0.9))
+	_level.text = level_text  # v0.7.5 SM
+	_level.visible = level_text != ""
+	_level.add_theme_color_override("font_color", c.lerp(Color.WHITE, 0.45))
+	_level_box.bg_color = Color(0.02, 0.025, 0.035, 0.92)
+	_level_box.border_color = Color(c, 0.75)
 	icon.set_item(id, c.lerp(Color.WHITE, 0.2))
 	icon.visible = id != &""
 	gem.color = tier_color
@@ -159,6 +183,16 @@ func desc_text() -> String:
 
 func tier_text() -> String:
 	return _tier.text
+
+
+## v0.7.5 SM: the level badge's text ("" when the card shows none).
+func level_text() -> String:
+	return _level.text if _level.visible else ""
+
+
+## v0.7.5 SM: the level badge's rect in this card's pixels (tests: it stays on the card).
+func level_rect() -> Rect2:
+	return Rect2(_level.position + _root.position, _level.size)
 
 
 func icon_id() -> StringName:
@@ -295,6 +329,15 @@ func _layout() -> void:
 	_rule_bottom.size = Vector2(w * 0.7, maxf(1.0, s))
 	var desc_h := rule_y - 3.0 * s - y
 	desc_size = fit_size(regular, _desc.text, w, desc_h, _scaled(DESC_SIZES))
+	# v0.7.5 SM: the level badge sits centred just above the panel's top edge, on the frame (clear of the title).
+	var level_size := maxi(10, roundi(TIER_SIZE * s))
+	_level.add_theme_font_size_override("font_size", level_size)
+	_level.reset_size()
+	var ls := _level.get_combined_minimum_size()
+	_level.size = ls
+	_level.position = Vector2(
+		box.position.x + (box.size.x - ls.x) * 0.5, box.position.y - ls.y - 2.0 * s
+	)
 	_desc.add_theme_font_size_override("font_size", desc_size)
 	_desc.position = Vector2(inner.position.x, y)
 	_desc.size = Vector2(w, desc_h)

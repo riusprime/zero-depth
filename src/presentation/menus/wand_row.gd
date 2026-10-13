@@ -207,7 +207,8 @@ func _refresh() -> void:
 			var id: StringName = c["id"]
 			_names[k].text = tr(c["name_key"])
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
-			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if ability else ""
+			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
+			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
 			if k == fresh:
 				_levels[k].text = tr("UI_WAND_NEW")
 			var col := AbilityIcons.color(id) if ability else ItemLooks.color_of_id(id)

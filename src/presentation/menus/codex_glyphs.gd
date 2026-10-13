@@ -11,8 +11,12 @@ const ENEMY := Color("#FF6A5A")
 const BOSS := Color("#FFB347")
 
 
+## v0.7.5 SM (accessibility pass): under a colour-blind mode an enemy's emblem wears that mode's enemy colour
+## (ThemePalette), as the enemies do in the game.
 static func color(page: StringName) -> Color:
-	return BOSS if page == &"bosses" else ENEMY
+	if page == &"bosses":
+		return BOSS
+	return ENEMY if ThemePalette.mode == &"off" else ThemePalette.color(&"enemy_body")
 
 
 ## The shapes of an enemy (by behaviour id) or a boss (by id).

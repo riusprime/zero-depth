@@ -109,6 +109,8 @@ func _ready() -> void:
 		c.focus_neighbor_bottom = c.get_path_to(_back)
 	if not cards.is_empty():
 		_back.focus_neighbor_top = _back.get_path_to(cards[_focus_index])
+	if HudStyle.reduced_motion:  # v0.7.5 SM (accessibility pass): reduced motion shows the cards in place
+		settle()
 
 
 func focus_first() -> void:
