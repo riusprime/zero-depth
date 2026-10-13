@@ -20,7 +20,8 @@ func next_u32() -> int:
 	return step.value
 
 
-## A uniform int in [lo, hi], both inclusive.
+## A uniform int in [lo, hi], both inclusive. hi < lo is a caller's bug: a release build gets lo and the stream
+## unmoved (DeterministicRng.below).
 func range_int(lo: int, hi: int) -> int:
 	assert(hi >= lo)
 	var step := DeterministicRng.below(state, hi - lo + 1)

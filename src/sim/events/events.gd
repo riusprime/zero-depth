@@ -41,6 +41,7 @@ static func setup(
 	var s := w.ev
 	s.events = events
 	s.curses = curses
+	Curses.invalidate(w)  # the curse sums follow the floor's curse tables
 	if rules != null:
 		s.rules = rules
 	if events.is_empty() and curses.is_empty():
@@ -69,10 +70,11 @@ static func place(
 
 
 ## The floor's event rooms, ascending (the generator side; property-tested over 1,000 seeds). Candidates are side
-## rooms: not the start hall, not the boss room, not the boss door's host room, not the Overrun room (AB) or the shop
-## room (SH; both marked on the layout before this runs), not in `taken` (any other side-room kind), and with a
-## clear pedestal spot. The count is drawn in rules.rooms_min..rooms_max from `map:event`, then
-## that many rooms by a partial shuffle of the candidates from the same stream.
+## rooms: not the start hall, not the boss room, not the boss door's host room, not the portal room, not the
+## Overrun room (AB) or the shop room (SH; both marked on the layout before this runs), not an arena (AR), not in
+## `taken` (any other side-room kind), and with a clear pedestal spot. The count is drawn in
+## rules.rooms_min..rooms_max from `map:event`, then that many rooms by a partial shuffle of the candidates from the
+## same stream.
 static func pick_rooms(
 	layout: FloorLayout, seed_value: int, rules: EventRules, taken: PackedInt32Array
 ) -> PackedInt32Array:
