@@ -98,11 +98,12 @@ static func attach(f: FloorLayout, spec: BossArenaSpec = null, params: FloorPara
 	f.boss_door_angle = side * 1024
 	f.boss_door_width = width
 	f.boss_cells_rect = cell
+	# A hair deeper through the wall so it meets both faces (ArenaRooms.barrier's rule; audit G-4).
 	var seal := door.grow_individual(
-		0.05 if side % 2 == 1 else 0.0,
 		0.05 if side % 2 == 0 else 0.0,
 		0.05 if side % 2 == 1 else 0.0,
-		0.05 if side % 2 == 0 else 0.0
+		0.05 if side % 2 == 0 else 0.0,
+		0.05 if side % 2 == 1 else 0.0
 	)
 	f.boss_door_wall = Obb.make(seal.get_center(), seal.size * 0.5, 0)
 	_place_gate(f, interior, side)
