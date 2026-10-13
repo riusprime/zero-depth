@@ -17,6 +17,7 @@ signal main_menu_pressed
 var run_line: Label
 ## The run line's numbers, so a language switch (Options opened from here) words it again (v0.6.0 UP).
 var _run := []
+var _loop := 1  # v0.7.5 AP
 
 
 func _init() -> void:
@@ -37,13 +38,15 @@ func _init() -> void:
 
 
 ## The run so far under the list: "Floor 1 · 03:42 · 87 kills · 146 shards" (Main passes the recap's numbers).
-func show_run(floor_index: int, seconds: float, kills: int, shards: int) -> void:
+## v0.7.5 AP: `loop` > 1 puts "Loop N · " first.
+func show_run(floor_index: int, seconds: float, kills: int, shards: int, loop: int = 1) -> void:
 	var secs := int(seconds)
 	_run = [floor_index, secs / 60, secs % 60, kills, shards]
-	run_line.text = tr("UI_PAUSE_RUN") % _run
+	_loop = loop
+	run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run
 	run_line.visible = true
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and not _run.is_empty():
-		run_line.text = tr("UI_PAUSE_RUN") % _run
+		run_line.text = Hud.loop_prefix(self, _loop) + tr("UI_PAUSE_RUN") % _run

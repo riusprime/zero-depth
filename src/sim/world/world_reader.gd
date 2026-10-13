@@ -128,6 +128,12 @@ const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
+## v0.7.5 AP: the Ascension portal's choices (ascension_choice) and the picks that send them (InputFrame.pick).
+const ASCEND_NONE := Ascension.Choice.NONE
+const ASCEND_END := Ascension.Choice.END
+const ASCEND_ASCEND := Ascension.Choice.ASCEND
+const PICK_ASCEND_END := Ascension.PICK_END
+const PICK_ASCEND_ASCEND := Ascension.PICK_ASCEND
 const RARITY_COMMON := ItemTable.COMMON
 const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
@@ -465,6 +471,8 @@ func armour_half_arcs(i: int) -> Vector2i:
 ## 3 when the portal of a floor before the last was taken (the app loads the next floor).
 func outcome() -> int:
 	if _w.boss_flow != null and _w.boss_flow.exited():
+		if _w.boss_flow.ascension:  # v0.7.5 AP: End the run wins it; Ascend goes on to the next loop
+			return 3 if Ascension.ascended(_w) else 1
 		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
 		return 2
@@ -990,6 +998,30 @@ func floor_index() -> int:
 
 func floor_count() -> int:
 	return _w.floor_count
+
+
+## v0.7.5 AP: the run's loop (1 until the first Ascend) and its floor counted across loops.
+func loop() -> int:
+	return _w.loop
+
+
+func run_floor() -> int:
+	return _w.run_floor_index()
+
+
+## v0.7.5 AP: this floor's gate is the Ascension portal (the loop's last floor of a run).
+func ascension_floor() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.ascension
+
+
+## v0.7.5 AP: the Ascension portal's choice is open (the world waits; AscensionPanel shows it).
+func ascension_open() -> bool:
+	return Ascension.waiting(_w)
+
+
+## v0.7.5 AP: the choice taken: ASCEND_NONE, ASCEND_END or ASCEND_ASCEND.
+func ascension_choice() -> int:
+	return _w.boss_flow.ascend_choice if _w.boss_flow != null else ASCEND_NONE
 
 
 func has_boss_room() -> bool:

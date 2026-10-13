@@ -18,6 +18,10 @@ extends RefCounted
 ## Routes (v0.5.0 RT): on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
 ##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
 ##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
+## Ascension (v0.7.5 AP, Ascension): on a run's last floor of a loop (`ascension`) the gate is the Ascension portal.
+##   Walking into its opening opens the choice (ascend_open; the world waits); End the run or Ascend send the hero
+##   in (enter_ascension: ENTERING, ascend_choice), Not yet closes it until the hero has left the opening
+##   (ascend_declined).
 ## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed
 ## (the fight); once the boss is dead the door is open both ways (v0.5.0 PB).
 ## Run time keeps counting while spawns are stopped (count_time), so the floor's clock covers the boss fight.
@@ -54,6 +58,12 @@ var routes := false
 var route_taken := -1
 var deep := false
 var epic_altar_id := -1
+## v0.7.5 AP: the gate is the Ascension portal, its choice is open, the hero said Not yet (until it steps out), and
+## the choice taken (Ascension.Choice).
+var ascension := false
+var ascend_open := false
+var ascend_declined := false
+var ascend_choice := 0
 
 
 static func create(p_boss_index: int) -> BossFlow:
@@ -180,6 +190,9 @@ func advance(w: World) -> void:
 				e.amount = 1 if routes else 0  # v0.5.0 RT: 1 when the Deep gate opened too
 				w.remove_wall_now(f.boss_door_wall)  # v0.5.0 PB (D10): the door opens both ways
 		State.OPEN:
+			if ascension:  # v0.7.5 AP: the Ascension portal asks first
+				_advance_ascension(f, p)
+				return
 			var route := -1
 			if in_portal(f, p):
 				route = Routes.Route.NORMAL
@@ -190,6 +203,27 @@ func advance(w: World) -> void:
 				enter_tick = w.tick
 				route_taken = route
 				w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, p).amount = route
+
+
+## v0.7.5 AP: in the open Ascension portal's opening the choice opens, unless the hero said Not yet and hasn't
+## stepped out since.
+func _advance_ascension(f: FloorLayout, p: Vector2) -> void:
+	if not in_portal(f, p):
+		ascend_declined = false
+		return
+	if not ascend_declined:
+		ascend_open = true
+
+
+## v0.7.5 AP: the Ascension portal's choice was taken (Ascension.Choice.END or ASCEND): the hero goes in, as through
+## the gate (FLOOR_EXIT, amount Routes.Route.NORMAL; the next floor's route is normal).
+func enter_ascension(w: World, choice: int) -> void:
+	ascend_open = false
+	ascend_choice = choice
+	state = State.ENTERING
+	enter_tick = w.tick
+	route_taken = Routes.Route.NORMAL
+	w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, w.player_pos()).amount = Routes.Route.NORMAL
 
 
 ## Whether a blink from `from` may land at `at` (PlayerKit.blink_target asks): crossing the boss room's boundary
@@ -231,3 +265,6 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	for v in [1 if routes else 0, route_taken, 1 if deep else 0, epic_altar_id]:  # v0.5.0 RT
 		h.add_int(v)
+	if ascension:  # v0.7.5 AP: only the Ascension portal's floors, so every other floor hashes as before
+		for v in [1, 1 if ascend_open else 0, 1 if ascend_declined else 0, ascend_choice]:
+			h.add_int(v)

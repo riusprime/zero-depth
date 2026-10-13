@@ -81,7 +81,7 @@ static func build(
 ## Routes keep it out either way, so the floor's other choices don't move).
 static func add_shop(w: World, shop: ShopTable) -> void:
 	var layout := w.floor_layout
-	if shop == null or layout == null or not shop.on_floor(w.floor_index):
+	if shop == null or layout == null or not shop.on_floor(w.run_floor_index()):  # AP: across loops
 		return
 	if ShopPlacement.pick(layout) < 0:
 		return

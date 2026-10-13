@@ -59,6 +59,8 @@ var shop := ShopHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 var swap := SwapPanel.new()
+## v0.7.5 AP: the Ascension portal's choice (End the run, Ascend, Not yet).
+var ascension := AscensionPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -167,6 +169,8 @@ func _init() -> void:
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
+	add_child(ascension)  # v0.7.5 AP: the Ascension portal's choice; its answer is input, like a pick
+	ascension.picked.connect(_pick.picked.emit)
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
 
 
@@ -204,8 +208,12 @@ func sync(reader: WorldReader) -> void:
 	if _floor.visible:
 		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
 		_floor.text = (
-			tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
-		)
+			loop_prefix(self, reader.loop())
+			+ (
+				tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR")
+				% [reader.floor_index(), tr(_biome_key)]
+			)
+		)  # v0.7.5 AP: "Loop 2 · Floor 1 · <biome>" past the first loop
 		if deep:
 			_floor.add_theme_color_override("font_color", DEEP_TEXT)
 	boss_bar.sync(reader)
@@ -222,6 +230,7 @@ func sync(reader: WorldReader) -> void:
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
 	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
+	ascension.sync(reader)  # v0.7.5 AP
 
 
 func _process(delta: float) -> void:
@@ -244,11 +253,12 @@ func _process(delta: float) -> void:
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
 ## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
+## v0.7.5 AP: `loop` > 1 puts "Loop N · " before the card's title.
 func show_floor(
-	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0
+	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0, loop: int = 1
 ) -> void:
 	_biome_key = biome_key
-	_floor_card_args = [floor_index, deep, shards_lost]
+	_floor_card_args = [floor_index, deep, shards_lost, loop]
 	_word_floor_card()
 	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_left = FLOOR_CARD_SECONDS
@@ -263,7 +273,7 @@ func _word_floor_card() -> void:
 	var floor_index: int = _floor_card_args[0]
 	var shards_lost: int = _floor_card_args[2]
 	var card_key := "HUD_FLOOR_CARD_DEEP" if _floor_card_args[1] else "HUD_FLOOR_CARD"
-	_floor_card_title.text = tr(card_key) % floor_index
+	_floor_card_title.text = loop_prefix(self, _floor_card_args[3]) + tr(card_key) % floor_index
 	_floor_card_biome.text = tr(_biome_key)
 	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
 
@@ -271,6 +281,12 @@ func _word_floor_card() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
 		_word_floor_card()
+
+
+## v0.7.5 AP: "Loop N · " (translated through `ci`) past the first loop; "" on loop 1, so a run that never ascended
+## reads as before.
+static func loop_prefix(ci: Object, loop: int) -> String:
+	return ci.tr("HUD_LOOP") % loop + " · " if loop > 1 else ""
 
 
 func floor_card_showing() -> bool:
@@ -381,6 +397,8 @@ func _gate_note(reader: WorldReader) -> String:
 			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
 				return ""
 			var open := tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
+			if reader.ascension_floor():  # v0.7.5 AP
+				open = tr("HUD_ASCENSION_OPEN")
 			return open + "\n" + tr("HUD_EXPLORE_AFTER_BOSS")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())

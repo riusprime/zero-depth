@@ -137,7 +137,13 @@ const ADDED_SINCE_V05 := {
 		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
 		&"blade",  # v0.6.5 WN4 (the base's fresh state)
 		&"tuning",  # the dev panel's Step 6 (loadout, SimTuning; a v0.6.1 save keeps the base's, v0.6.5 WN5b)
+		&"loop",  # v0.7.5 AP: the loop fields (an older save is loop 1: the base's, from RunState.prepare)
+		&"run_floor",
+		&"loop_threat",
+		&"loop_cap_permille",
 	],
+	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
+	&"BossFlow": [&"ascension", &"ascend_open", &"ascend_declined", &"ascend_choice"],
 	&"ProjectileStore":
 	[
 		&"spec_key",

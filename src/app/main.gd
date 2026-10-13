@@ -10,6 +10,8 @@ const RUN_ID := &"three_floors"
 const FADE_SECONDS := 0.45
 ## v0.3.5 PT: a floor that opens on the arrival column fades in faster, so the column shows.
 const ARRIVAL_FADE_SECONDS := 0.2
+## v0.7.5 AP: the Codex profile page the Ascension counters live on (_record_ascension; not a Codex page you browse).
+const ASCENSION_PAGE := &"runs"
 
 var profile: ProfileStore
 var driver: SimDriver
@@ -120,6 +122,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
+		and not driver.reader.ascension_open()  # v0.7.5 AP: so does the Ascension portal's Not yet
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -319,7 +322,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(world)
 	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
-		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.floor_index > 1)
+		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.run_floor() > 1)  # AP: every loop
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
@@ -376,11 +379,12 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		run.floor_index,
 		String(biome.name_key),
 		run.is_deep(),  # v0.5.0 RT: "Floor 2 · Deep"
-		driver.reader.shards_left_behind() if resume.is_empty() else 0  # v0.5.5 EC (Q-S4)
+		driver.reader.shards_left_behind() if resume.is_empty() else 0,  # v0.5.5 EC (Q-S4)
+		run.loop  # v0.7.5 AP: "Loop 2 · Floor 1"
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
-	_fade_len = FADE_SECONDS if run.floor_index == 1 else ARRIVAL_FADE_SECONDS
+	_fade_len = FADE_SECONDS if run.run_floor() == 1 else ARRIVAL_FADE_SECONDS
 	_fade_left = _fade_len
 	_fade.color.a = 1.0
 	_fade.visible = true
@@ -407,11 +411,25 @@ func _on_tick(from: SimDriver) -> void:
 		show_end_panel(outcome == 1)
 
 
-## The run's portal was taken: carry over, then the next floor (with its card and a fade-in).
+## The run's portal was taken: carry over, then the next floor (with its card and a fade-in). v0.7.5 AP: through the
+## Ascension portal's Ascend the next floor is the next loop's first, and the Codex counts it (_record_ascension).
 func _next_floor() -> void:
+	var ascended := driver.reader.ascension_choice() == WorldReader.ASCEND_ASCEND
 	run.finish_floor(driver.world)
+	if ascended:
+		_record_ascension(run.loop)
 	_end_floor()
 	_start_floor()
+
+
+## v0.7.5 AP: the Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
+## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend, `runs` / `loop` /
+## `best` keeps the highest loop reached. A tweaked run (the dev panel's balance edits) records nothing, as the Codex.
+func _record_ascension(loop: int) -> void:
+	if codex == null or (codex_recorder != null and not codex_recorder.enabled):
+		return
+	codex.add(ASCENSION_PAGE, &"ascended", &"times")
+	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
 
 
 func show_end_panel(won: bool) -> void:
@@ -441,6 +459,8 @@ func run_recap() -> Dictionary:
 		"kills": run.total_kills(w),
 		"items": names,
 		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
+		"loop": run.loop,  # v0.7.5 AP: the loop reached and the loops cleared
+		"loops_cleared": run.loops_cleared(w),
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
@@ -568,7 +588,11 @@ func open_pause() -> void:
 	var recap := run_recap()  # v0.5.5 A5: the run's line under the pause list
 	if not recap.is_empty():
 		_pause.show_run(
-			recap["floor"], recap["seconds"], recap["kills"], int(recap.get("shards", 0))
+			recap["floor"],
+			recap["seconds"],
+			recap["kills"],
+			int(recap.get("shards", 0)),
+			int(recap.get("loop", 1))  # v0.7.5 AP
 		)
 	if driver.reader.has_gamble():  # v0.3.0 L19: the stats won at the gamble shrine.
 		var stats := GambleStatsPanel.new()

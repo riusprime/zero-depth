@@ -1207,6 +1207,44 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   snapshotted; a pre-MG snapshot restores it as 0) is under `cursed_chests_per_floor` (1): at most one cursed chest
   every two floors; the 25 % draw on `loot:event` is taken first, so the stream only moves where a chest is refused.
   A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's rules (`RunState.floor_rules`).
+- **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
+  run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
+  boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that
+  floor). It opens with the boss's death like any gate (`PORTAL_OPENED`). In state `OPEN`, standing in its opening sets
+  `BossFlow.ascend_open` unless `ascend_declined`; leaving the opening clears `ascend_declined`. While `ascend_open`
+  the world waits (`World.step`, beside the shop's and the event panel's waits: only the pick runs, the tick counts).
+  The pick (`InputFrame.pick`): `Ascension.PICK_END` (1) or `PICK_ASCEND` (2) call `BossFlow.enter_ascension`
+  (`ascend_choice` = `Ascension.Choice.END` 1 / `ASCEND` 2, state `ENTERING`, `route_taken` `NORMAL`, `FLOOR_EXIT`
+  amount 0, then the usual transit); `PICK_CANCEL` is Not yet (`ascend_open` false, `ascend_declined` true); any
+  other pick is ignored. `WorldReader.outcome` on an exited Ascension floor: 1 (won) for End, 3 (next floor) for
+  Ascend. `BossFlow` hashes `1, ascend_open, ascend_declined, ascend_choice` after its RT fields only when
+  `ascension` (every other floor hashes as before).
+  - **Floor numbers.** `RunState.floor_index` stays the floor within the loop (1..`floors`): the per-floor tables,
+    boss pools, curves, arena wave sizes, prices and reward scaling read it (`World.floor_index`).
+    `RunState.run_floor(f) = loop_floors + f` counts the run's floors across loops: the floor seeds
+    (`floor_<run floor>`), the boss drawn (`boss_<run floor>`), `routes` (one entry per run floor) and Deep, the biome
+    order (one entry per run floor), the boss's floor-1 ease and the boss-room heal (only the run's first floor), and,
+    through `World.run_floor` / `run_floor_index()` (0 outside a run: `floor_index`), `FloorCadence`'s shop
+    (`FloorScenario.add_shop`) and cursed-chest floors (`Curses.curse_floor_open`) and `Wand.slots`. So shops and
+    curses keep "every two floors" across a loop's seam (run floors 1, 3, 5 …: loop 2's floor 2 when floors = 3) and a
+    wand never shrinks.
+  - **Ascend** (`RunState.finish_floor` when `Ascension.ascended(w)`): totals and the carry as through any portal
+    (`RunCarry`: the build, the 40 % heal, half the shards), then `loop_floors += floor_index`, `loop += 1`,
+    `floor_index = 1`, and the next loop's biomes are drawn: every biome of the run's list shuffled from the stream
+    `biomes_loop_<loop>` (a sub-stream of the run seed like `biomes`), appended for the loop's floors; its first floor
+    never repeats the floor before it (swap with the second when it would).
+  - **Harder each loop** (data, `RunDefinition` → `RunTable`): `RunState.loop_permille(step)` = 1000 × (step / 1000)
+    ^ (loop − 1), computed by repeated integer multiplication and capped at `loop_scale_cap_permille` (EI-02: no
+    `pow`). Normal enemies' HP and damage per mille × `loop_enemy_hp_permille` / `loop_enemy_damage_permille`'s loop
+    factor (`scale_enemies`, after the floor and Deep factors: one more `SpawnTable.scale` each); bosses' HP and
+    attack damage × `loop_boss_hp_permille` / `loop_boss_damage_permille`'s (`scale_bosses`, integer division).
+    `prepare` sets `World.loop`, `World.run_floor`, `World.loop_threat` = `loop_threat` × (loop − 1) (added to
+    `Curses.threat`, so it shows as T and raises the catch-up caps through `threat_cap`) and `World.loop_cap_permille`
+    = `loop_catch_up_cap_permille` × (loop − 1), added to both catch-up caps (`CatchUp.start_floor`, `on_boss`).
+    World hashes `loop, run_floor, loop_threat, loop_cap_permille` (after the run-flow fields) only when loop > 1.
+  - **Saves.** `WorldSnapshot` copies the new World and BossFlow fields; a snapshot without them (any save before AP)
+    keeps the base world's (`ADDED_SINCE_V05`: loop 1, or the Ascension portal on an old save's last floor, from
+    `prepare`). The run payload's `loop` / `loop_floors` (ARCHITECTURE §10) default to 1 / 0.
 - **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
   `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
   `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
