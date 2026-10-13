@@ -115,3 +115,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   marker / shield views (`FireballViews`, `TelegraphViews`, `BossShieldView`); N18 (lead's message): all six bosses
   radius ×1.3 and 4×4 rooms. Reads for BM's avatars: `WorldReader.boss_shielded`, `boss_pattern`. Evidence
   [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.md). Not run by the agent: the full suite, bot sims. Not pushed.
+- 2026-10-13: BF1 merged (`4d772cc`); the lead wired BF1's `WorldReader.boss_shielded` into BM's shielded pose
+  (`81a07b5`; boss model views + boss e2e 27/27). Seams on `81a07b5` (`bash scripts/ci/seams.sh`, clean worktree):
+  `Tests 275`, `Passing Tests 275`. Pushed. BF2, BF3 and EF started from `81a07b5`.
