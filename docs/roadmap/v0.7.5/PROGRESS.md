@@ -171,3 +171,6 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   lead's heads-up: conflicts append-only, BF2's `cast` pattern telegraph kept; two fixes in the merge commit: the new
   `ProjectileStore.cause` column listed in `WorldSnapshot.ADDED_SINCE_V05` (old saves failed to restore without it),
   the cannon embers' core #FFB878 → #D79000 (BF2's looks-apart test). Runs in the evidence. Not pushed.
+- 2026-10-13: BF3 merged (`565bfef`); every boss fights dodge-first (BF1–BF3) with the enemy fireballs (EF). Seams on
+  the merge (`bash scripts/ci/seams.sh`, clean worktree) green. Pushed; the PR's sharded GitHub `verify` is the full
+  suite.
