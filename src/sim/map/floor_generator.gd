@@ -96,6 +96,36 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	return f
 
 
+## v0.7.5 PG (owner N19, the Playground): one walled room of `cells` with no doorway, portal, items or spawn
+## points; its interior is the start hall's open floor. The cell size and the wall halves are drawn as for a floor.
+static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = null) -> FloorLayout:
+	var p := params if params != null else FloorParams.defaults()
+	var rng := RngStream.derive(seed_value, "map")
+	var f := FloorLayout.new()
+	f.seed_value = seed_value
+	f.cell_size = Vector2(
+		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
+		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
+	)
+	var plan := Plan.new()
+	plan.add_room(Rect2i(Vector2i.ZERO, cells))
+	for side in 4:
+		f.room_halves.append(
+			rng.range_int(FloorLayout.cm(p.wall_half_min), FloorLayout.cm(p.wall_half_max)) / 100.0
+		)
+	_lay_out(f, p, plan)
+	f.start_room = 0
+	f.start_pos = f.rooms[0].get_center()
+	f.hops = PackedInt32Array([0])
+	f.portal_room = 0
+	_make_walls(f, plan)
+	f.slab_first = f.walls.size()
+	f.room_template.append(RoomInterior.pick(rng, cells, true))
+	f.spawn_points.resize(1)
+	f.spawn_points[0] = PackedVector2Array()
+	return f
+
+
 # --- the plan on the cell grid ---
 
 
