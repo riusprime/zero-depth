@@ -26,7 +26,8 @@ const CAUSES := {
 
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
 ## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
-## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV).
+## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
+## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared).
 var recap := {}
 
 
@@ -65,7 +66,15 @@ func recap_line(line_name: String) -> String:
 
 func _add_recap() -> void:
 	if recap.has("floor"):
-		_line("Floor", tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])])
+		_line(
+			"Floor",
+			(
+				Hud.loop_prefix(self, int(recap.get("loop", 1)))
+				+ tr("UI_RECAP_FLOOR") % [recap["floor"], recap.get("floors", recap["floor"])]
+			)
+		)
+	if recap.has("loops_cleared"):  # v0.7.5 AP: the Ascension loop
+		_line("Loops", tr("UI_RECAP_LOOPS") % recap["loops_cleared"])
 	if recap.has("seconds"):
 		var secs := int(recap["seconds"])
 		_line("Time", tr("UI_RECAP_TIME") % [secs / 60, secs % 60])

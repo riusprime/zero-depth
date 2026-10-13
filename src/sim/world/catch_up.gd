@@ -9,6 +9,8 @@ extends RefCounted
 ##   and the combos, at their table weights). The one place the build's power is read (v0.6.0 MX2: the weapon, the
 ##   utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand, Wand.cards).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
+## - v0.7.5 AP: past the first loop both caps get World.loop_cap_permille more (and the loop's threat raises them
+##   through threat_cap like any T).
 ## - start_floor(w), at floor entry (after the carry, the abilities, the heat and the events are set up): reads P,
 ##   E(floor), cap(floor) + threat_cap × T and stores m in World.catch_up; m is fixed for the floor (no rubber band).
 ## - on_enemy(w, i): every enemy as it arrives (SpawnDirector.scale_arrival, the ambush): max HP × m, damage (its
@@ -114,7 +116,7 @@ static func start_floor(w: World) -> void:
 	var s := w.catch_up
 	s.power = power(w)
 	s.expected = CatchUpTable.at_floor(t.expected_permille, w.floor_index)
-	s.cap = cap_at(t.cap_permille, t, w.floor_index, Curses.threat(w))
+	s.cap = cap_at(t.cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille  # v0.7.5 AP
 	s.enemy = multiplier(s.power, s.expected, s.cap)
 
 
@@ -139,7 +141,9 @@ static func on_boss(w: World, i: int) -> void:
 	var s := w.catch_up
 	s.boss_power = power(w)
 	s.boss_expected = CatchUpTable.at_floor(t.boss_expected_permille, w.floor_index)
-	s.boss_cap = cap_at(t.boss_cap_permille, t, w.floor_index, Curses.threat(w))
+	s.boss_cap = (
+		cap_at(t.boss_cap_permille, t, w.floor_index, Curses.threat(w)) + w.loop_cap_permille
+	)  # v0.7.5 AP: each loop past the first raises the caps
 	s.boss = multiplier(s.boss_power, s.boss_expected, s.boss_cap)
 	var a := w.actors
 	var hp := maxi(1, a.max_hp[i] * s.boss / 1000)

@@ -208,7 +208,9 @@ the whole `World`.
     compiled again from content); v0.7.5 MG: `floor_rules` (`RunState.FLOOR_RULES`, the rules the floor was built
     with). A payload without it was saved on a v0.7.0 floor: Continue rebuilds that floor with v0.7.0's rules
     (`RunSaver.floor_tables`: `FloorParams.v070()`, a third of the combat rooms as arenas, a shop on every floor), so
-    a save made before the update still fits; the floors after it are built with today's rules;
+    a save made before the update still fits; the floors after it are built with today's rules; v0.7.5 AP: `loop`
+    and `loop_floors` (the Ascension loop, `RunState`), no version bump: a payload without them is loop 1 (every
+    older save), and Continue resumes a later loop at its saved room entry;
   - the rooms entered on this floor (the minimap's discovery comes back with them);
   - the tick, and the world's canonical snapshot (`WorldSnapshot`, [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10a).
 - **Load (Continue).** The main menu shows **Continue** (first, focused) while a save reads. Continue rebuilds the run

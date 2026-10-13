@@ -8,6 +8,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | — | Plan | this commit |
 | CX | The Codex: a journal of every card (by pool), enemy, boss and biome, from the main menu and the pause menu; an entry unlocks the first time you meet it and shows its card or emblem, its text and your counts, kept in the profile ([evidence](evidence/CODEX.md)) | `v0.7.5 Step CX` commit (branch `v075-cx`) |
 | NB1 | Biome 4, Frozen Shore: a cold moonlit snow biome over a frozen sea, ice patches you slide on, in the run's biome draw (3 floors from 4) | `v0.7.5 Step NB1` commit |
+| AP | The Ascension portal: after the last floor's boss a rising column of golden light stands where the gate was; walking in offers End the run (a victory, the recap now counts loops cleared) or Ascend (floor 1 of the next loop with your whole build, new biomes, harder each loop, endless), or Not yet; "Loop 2 · Floor 1" on the HUD; shops and curses keep every two floors across loops; Continue works mid-loop and old saves load as loop 1 ([evidence](evidence/ASCENSION.md)) | the `v0.7.5 Step AP` commit on `v075-ap` |
 | MG | Floors of 16-20 rooms (was 11-13) with bigger rooms and an extra-large 4×4; 20 % fewer challenge rooms (3.23 → 2.42 a floor); the shop on floors 1, 3, 5 …; cursed chests only on floors 1, 3, 5 …, at most one a floor; all tunable in data (F10); a save made before v0.7.5 resumes on its v0.7.0 floor ([`evidence/MAPS.md`](evidence/MAPS.md)) | the `v0.7.5 Step MG` commit on `v075-mg` |
 | AC | Local achievements: 37 to unlock (floors, wins, each boss and biome from the data, the wand, kills, sealed rooms, risks, the Codex, Ascension), a toast when one unlocks, an Achievements page in the Codex from both menus, kept in the profile ([evidence](evidence/ACHIEVEMENTS.md)) | `v0.7.5 Step AC` commit (branch `v075-ac`) |
 | NB2 | Biome 5, Starfall: a cosmic biome, the floor a floating island in a starry void with nebula light and drifting rock and crystal islands, starglow pools that speed your step, in the run's biome draw (3 floors from 5) ([evidence](evidence/STARFALL.md)) | `v0.7.5 Step NB2` commit (branch `v075-nb2`) |
@@ -19,6 +20,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - AC: none. No sim file changed; `tests/golden` passed in its units run (evidence/ACHIEVEMENTS.md).
 - NB2: none. `tests/golden` passes unchanged; starglow is laid only on Starfall floors and is not hashed itself. (A
   fifth biome changes every run seed's biome draw; no golden pins one.)
+- AP: none. `tests/golden` passes unchanged: the loop and Ascension fields are hashed only past loop 1 / on the Ascension floor, so every loop-1 floor other than the last hashes as before (the last floor's hash changes on purpose; no golden fixture holds one)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -35,6 +37,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   (after Credits); the menu e2e that count rows were updated. Not run by the agent: the full suite (the lead's, once
   per wave).
 - 2026-10-12: NB1 Frozen Shore built on `v075-nb1` (from `6381fcb`): biome data, ice in the sim (`map:ice`), its look, tests; evidence [`evidence/FROZEN_SHORE.md`](evidence/FROZEN_SHORE.md). Not pushed.
+- 2026-10-13: AP (agent, branch `v075-ap` from `9bbe930`): the Ascension portal and the endless loop; the lead's
+  readings are in PLAN "AP"; evidence [`evidence/ASCENSION.md`](evidence/ASCENSION.md) (with "For the merge": AC's
+  `achievement_tracker.report(&"runs:ascended")` is called, guarded, and End the run is outcome 1). The shop and curse
+  cadence now read the run's floor across loops (MG's open item). Not run by the agent: the full suite, bot sims, the
+  save bench. Open for the lead: MIN_TEST_COUNT (AP adds 21 tests), the per-loop numbers (owner tuning).
 - 2026-10-13: MG (agent, branch `v075-mg` from `6381fcb`): `data/map` (new `MapDefinition`, in the F10 panel's
   Difficulty page), `FloorCadence` for the shop and cursed chests, arena share 0.11, `RunState.floor_rules` so an
   old save keeps its floor. Measured before/after with `scripts/checks/map_stats.gd` (evidence/MAPS.md). Tests run by

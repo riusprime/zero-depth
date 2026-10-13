@@ -912,6 +912,13 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.deep_extra_chests = def.deep_extra_chests
 	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
 	t.boss_room_heal_floor_permille = def.boss_room_heal_floor_permille.duplicate()
+	t.loop_enemy_hp_permille = def.loop_enemy_hp_permille  # v0.7.5 AP: the Ascension loop
+	t.loop_enemy_damage_permille = def.loop_enemy_damage_permille
+	t.loop_boss_hp_permille = def.loop_boss_hp_permille
+	t.loop_boss_damage_permille = def.loop_boss_damage_permille
+	t.loop_scale_cap_permille = def.loop_scale_cap_permille
+	t.loop_threat = def.loop_threat
+	t.loop_catch_up_cap_permille = def.loop_catch_up_cap_permille
 	return t
 
 

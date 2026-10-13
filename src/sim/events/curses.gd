@@ -81,6 +81,7 @@ static func owned(w: World, c: int) -> bool:
 ## Threat T now: the held curses' threat.
 static func threat(w: World) -> int:
 	var t := w.deep_threat  # v0.5.0 RT: each Deep floor taken adds 1
+	t += w.loop_threat  # v0.7.5 AP: each loop past the first adds RunTable.loop_threat
 	for c in w.curses_owned:
 		t += w.ev.curses[c].threat if c < w.ev.curses.size() else 1
 	return t
@@ -255,10 +256,11 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	s.cursed_rolled += 1
 
 
-## v0.7.5 MG (N10): whether this floor may still turn a chest cursed (a curse floor under its cap).
+## v0.7.5 MG (N10): whether this floor may still turn a chest cursed (a curse floor under its cap). v0.7.5 AP: by the
+## run's floor across loops (World.run_floor_index), so the rhythm holds where loops meet.
 static func curse_floor_open(w: World) -> bool:
 	var r := w.ev.rules
-	return r.curse_floor(w.floor_index) and w.ev.cursed_rolled < r.cursed_chests_per_floor
+	return r.curse_floor(w.run_floor_index()) and w.ev.cursed_rolled < r.cursed_chests_per_floor
 
 
 ## The curse on card k of reward `reward_id`'s offer, or -1.

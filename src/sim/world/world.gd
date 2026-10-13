@@ -249,6 +249,13 @@ var tick_seq0 := 0
 ## (RunState sets it, and floor_index above). The boss itself is C's (boss_id, bosses).
 var boss_flow: BossFlow
 var floor_count := 1
+## v0.7.5 AP (the Ascension loop; RunState.prepare sets them): the loop (1 outside a run), the run's floor counted
+## across loops (0: floor_index, a world without a run; run_floor_index()), the threat T the loop adds
+## (Curses.threat) and the per mille it adds to the hidden catch-up's caps (CatchUp).
+var loop := 1
+var run_floor := 0
+var loop_threat := 0
+var loop_cap_permille := 0
 # --- end Run flow ------------------------------------------------------------------------------------------
 var build_state := PlayerBuildState.new()  # v0.3.0 P: facing, damage remainders, combat and regen (PlayerBuild).
 var regen_bonus_permille := 0  # v0.3.0 L25 hook: extra per mille of max HP a second out of combat (PlayerRegen).
@@ -443,12 +450,15 @@ func step(frame: InputFrame) -> void:
 			Rewards.choose(self, frame)
 		tick += 1
 		return
-	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
-	if shop.open or ev.open >= 0:
+	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice;
+	# v0.7.5 AP: so does the Ascension portal's.
+	if shop.open or ev.open >= 0 or Ascension.waiting(self):
 		if shop.open:
 			Shop.choose(self, frame)
-		else:
+		elif ev.open >= 0:
 			Events.choose(self, frame)
+		else:
+			Ascension.choose(self, frame)
 		tick += 1
 		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).
@@ -528,6 +538,12 @@ func add_freeze(ticks: int) -> void:
 
 func player_pos() -> Vector2:
 	return actors.pos(0)
+
+
+## v0.7.5 AP: the run's floor counted across loops (FloorCadence's shop and curse floors, the wand's slots read it);
+## floor_index for a world without a run.
+func run_floor_index() -> int:
+	return run_floor if run_floor > 0 else floor_index
 
 
 func player_dead() -> bool:
@@ -958,6 +974,9 @@ func state_hash() -> String:
 		boss_flow.hash_into(h)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
+		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
+			for v in [loop, run_floor, loop_threat, loop_cap_permille]:
+				h.add_int(v)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())

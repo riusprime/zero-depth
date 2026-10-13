@@ -17,6 +17,8 @@ extends RefCounted
 ## new card needs a Swap).
 ## v0.7.5 MG adds `run.floor_rules` (RunState.FLOOR_RULES) without a new version: a version-4 payload without it was
 ## saved on a v0.7.0 floor, which floor_tables() then rebuilds with v0.7.0's rules.
+## v0.7.5 AP adds `run.loop` and `run.loop_floors` (the Ascension loop) the same way: a payload without them is a
+## loop-1 run (every save made before v0.7.5 AP), and its biome order, routes and floor seeds read as before.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 
@@ -111,6 +113,8 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.threat_by_floor = PackedInt32Array(r.get("threat_by_floor", PackedInt32Array()))  # v0.5.0 EV
 	# v0.7.5 MG: a payload without floor rules was saved on a v0.7.0 floor (rebuilt with those rules).
 	run.floor_rules = int(r.get("floor_rules", RunState.FLOOR_RULES_V070))
+	run.loop = maxi(1, int(r.get("loop", 1)))  # v0.7.5 AP: an older payload is loop 1
+	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
 	return run
 
 
@@ -142,6 +146,8 @@ static func payload_of(
 			"routes": run.routes.duplicate(),  # v0.5.0 RT: each floor's route
 			"threat_by_floor": run.threat_by_floor.duplicate(),  # v0.5.0 EV (M-THREAT)
 			"floor_rules": run.floor_rules,  # v0.7.5 MG: the floor's generation rules
+			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
+			"loop_floors": run.loop_floors,
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

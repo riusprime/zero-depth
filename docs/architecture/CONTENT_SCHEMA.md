@@ -715,6 +715,12 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
 - **`RunDefinition`, v0.5.5 EC (owner Q-S4, "Keep half"):** `shard_carry` (0.5: the share of unspent shards a
   portal carries to the next floor, rounded down; the rest is shown as left behind on the arrival card; 0..1,
   `range`).
+- **`RunDefinition`, v0.7.5 AP (owner N4, the Ascension loop; starting values, the owner tunes):** each loop past the
+  first multiplies, compounding per loop, normal enemies' HP and damage by `loop_enemy_hp_permille` (4000) and
+  `loop_enemy_damage_permille` (2000), bosses' HP and attack damage by `loop_boss_hp_permille` (2000) and
+  `loop_boss_damage_permille` (1500), each 1000..`loop_scale_cap_permille` (`range`), the factor never past
+  `loop_scale_cap_permille` (100000, × 100); and adds `loop_threat` (2, threat T, ≥ 0, `negative`) and
+  `loop_catch_up_cap_permille` (500, to both hidden catch-up caps, ≥ 0, `negative`). `floors` is a loop's length.
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier

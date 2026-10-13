@@ -45,7 +45,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | NB1 | Biome 4: Frozen Shore | N2 | Done ([evidence](evidence/FROZEN_SHORE.md)) |
 | MG | Map generation: up to 20 rooms, bigger rooms; curse, challenge-room and shop frequencies | N9–N12 | Done ([`evidence/MAPS.md`](evidence/MAPS.md)) |
 | NB2 | Biome 5: the cosmic biome | N3 | Done ([evidence](evidence/STARFALL.md)) |
-| AP | The Ascension portal and the endless loop | N4 | |
+| AP | The Ascension portal and the endless loop | N4 | Done ([evidence](evidence/ASCENSION.md)) |
 | CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | |
@@ -93,6 +93,38 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
   "End the run" ends a run some other way, AP reports `runs:won` (and `runs:won_<weapon>`) the same way.
 - **"A trigger chain":** read as a kill by a hook's attack (`HIT.proc_pct` under 100): a trigger card's child spell,
   and also a split or an echo; the sim's events don't say which card made a hook.
+### AP: the Ascension portal and the endless loop (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **Where it stands:** on the run's last floor of every loop (floor 3 today) the boss room's gate *is* the Ascension
+  portal: the same spot, footprint and walk-in opening as the gate, no blue gate and no Deep gate on that floor. The
+  owner's line reads as one portal whose job is "end the run or start over", so it replaces the last floor's winning
+  gate rather than standing beside a second winning gate. Floors 1-2 keep the blue gate (and the Deep gate) as before.
+- **The look (its own, the blue gate untouched):** a hexagonal pale dais, a gold-white crystal spire over the gate's
+  footprint between two lavender obelisks, and a tall additive column of golden-white light with lavender edges and
+  climbing bands, rising motes and circling fragments. Dormant (no column, dim shards) while the boss lives; when the
+  portal opens the column rises from the dais over 1.4 s with a flare (reduced motion: there at once). The way in
+  flashes gold instead of the visor blue. No G2 round (the owner asked for no interventions).
+- **The choice:** walking into the light opens a panel (the world waits, like the event panel): **End the run**
+  (gold plaque; a victory: the existing recap), **Ascend** (violet plaque; "Loop N: new biomes, stronger enemies, more
+  threat. Your wand, cards, levels and stats come with you."), **Not yet** (silver; step back: the panel stays shut
+  until you leave the light and walk in again). Keys 1-3 / arrows, Enter, Esc = Not yet; pad A/B; mouse.
+- **Ascend:** floor 1 of the next loop, the build carried exactly as through any portal (abilities and levels, wand
+  and card levels, items, stats, curses, half the shards, a 40 % heal), new biomes drawn from every biome in the run's
+  data (a new shuffle per loop; the loop never opens on the biome it left), new floor seeds and bosses (by the run's
+  floor number). The loop's floor 1 is not eased (the D9 ease and the boss-room heal are the run's first floor only).
+- **Harder each loop (data, `data/run/three_floors.tres`, starting values):** per loop past the first, compounding:
+  enemies' HP ×4.0 and damage ×2.0, bosses' HP ×2.0 and damage ×1.5 (capped at ×100); threat T +2; the hidden
+  catch-up's caps +0.5. Loop 2's floor 1 then sits a little above loop 1's floor 3 (enemy HP 4.0× vs 3.61×). Endless:
+  nothing ends the loop but a death or End the run. These numbers are the owner's to tune (F10, `run`).
+- **Floor numbers:** the floor within the loop drives the floor tables (curves, boss pools, prices, rewards); the
+  run's floor counted across loops drives the floor seeds, bosses, routes, biome order, the shop and cursed-chest
+  cadence (MG: run floors 1, 3, 5 …, so loop 2's shop is on its floor 2 after loop 1's floor 3) and the wand's slots
+  (never shrink). The HUD, pause line and recap say "Loop 2 · Floor 1" from loop 2 on; a run that never ascended reads
+  as before. The recap adds "Loops cleared: N" (End the run counts the loop it ends).
+- **Saves:** the payload gains `loop` and `loop_floors` without a version bump; an older payload is loop 1, and an
+  older save on floor 3 resumes with the Ascension portal. Continue resumes mid-loop.
+- **Achievements hook (AC):** through the Codex store's counter API (`Main.codex`): page `runs`, entry `ascended`,
+  counter `times` (+1 per Ascend) and entry `loop`, counter `best` (the highest loop reached). A tweaked run records
+  nothing. "runs" is not a Codex page you browse (CodexStore.PAGES is unchanged).
 
 At most 3 agents at once; one full suite per wave by the lead (CLAUDE.md). The PR into `main` with a version bump and
 a playtest sheet when every step is Done.
