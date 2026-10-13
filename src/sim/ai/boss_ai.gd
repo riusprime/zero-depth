@@ -342,10 +342,9 @@ static func _track(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 
 
 ## v0.5.5 DS (D4, D7): an attack's damage under boss i's hidden catch-up (ActorStore.power, per mille; CatchUp.on_boss
-## sets it, 0 = unscaled).
+## sets it, 0 = unscaled). The enemies' rule, rounded half up (audit G-12).
 static func powered(w: World, i: int, amount: int) -> int:
-	var pm := w.actors.power[i]
-	return amount if pm <= 0 or pm == 1000 else amount * pm / 1000
+	return EnemyAi.powered(w, i, amount)
 
 
 ## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (public: BossGates' adds).
