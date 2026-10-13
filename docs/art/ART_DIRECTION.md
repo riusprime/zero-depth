@@ -51,15 +51,20 @@ Each of these became a rule in [`../architecture/PRESENTATION_CONTRACTS.md`](../
 Values marked *sampled* are medians of the reference PNG's pixels (lit faces where it matters). Values marked
 *proposal* aren't visible in the image. The owner confirms or changes all of them at the v0.1.0 G2 gate.
 
-| Token | Ruins | Night Rocks | Red Canyon | Frozen Shore (v0.7.5 NB1) |
-|---|---|---|---|---|
-| `ground` | `#CBAD91` sampled | `#486796` sampled | `#C55946` sampled | `#D1DAE4` sampled |
-| `ground_alt` (tile tone) | `#D0B396` sampled | `#50709F` sampled | `#D0614B` sampled | `#C7D3E1` sampled |
-| `cover` | `#8C8C90` eyedrop (lit slab) | `#395077` sampled | `#7A3D36` sampled | `#303C52` sampled |
-| `accent` (grass, props) | `#9D6B4C` sampled (grass) | `#3C3A44` proposal (fence) | `#9D6B4C` proposal (grass) | `#455B77` sampled |
-| `edge` (void, cliff, water) | `#A08A74` proposal (no edge in image) | `#253043` sampled (void) | `#4C3032` sampled (cliff) | `#436C8E` sampled (water) |
-| `ambient` (light tint) | `#FFF1DC` proposal | `#B8C8F0` proposal | `#FFD2C0` proposal | `#E8F0FF` proposal |
-| `outline` (actor rim + contact ring) | `#1A1A22` (8.2:1) | `#EEF2F8` light (5.1:1) | `#1A1A22` (4.0:1) | `#1A1A22` (12.2:1) |
+| Token | Ruins | Night Rocks | Red Canyon | Frozen Shore (v0.7.5 NB1) | Starfall (v0.7.5 NB2) |
+|---|---|---|---|---|---|
+| `ground` | `#CBAD91` sampled | `#486796` sampled | `#C55946` sampled | `#D1DAE4` sampled | `#7E779C` proposal (star dust) |
+| `ground_alt` (tile tone) | `#D0B396` sampled | `#50709F` sampled | `#D0614B` sampled | `#C7D3E1` sampled | `#857EA3` proposal |
+| `cover` | `#8C8C90` eyedrop (lit slab) | `#395077` sampled | `#7A3D36` sampled | `#303C52` sampled | `#3B3358` proposal (star stone) |
+| `accent` (grass, props) | `#9D6B4C` sampled (grass) | `#3C3A44` proposal (fence) | `#9D6B4C` proposal (grass) | `#455B77` sampled | `#6B4FA0` proposal |
+| `edge` (void, cliff, water) | `#A08A74` proposal (no edge in image) | `#253043` sampled (void) | `#4C3032` sampled (cliff) | `#436C8E` sampled (water) | `#2B1F55` proposal (void) |
+| `ambient` (light tint) | `#FFF1DC` proposal | `#B8C8F0` proposal | `#FFD2C0` proposal | `#E8F0FF` proposal | `#E4DCFF` proposal |
+| `outline` (actor rim + contact ring) | `#1A1A22` (8.2:1) | `#EEF2F8` light (5.1:1) | `#1A1A22` (4.0:1) | `#1A1A22` (12.2:1) | `#1A1A22` (4.1:1) |
+
+Starfall has no panel in the reference image (owner N3 came after it), so its column is all *proposal*. Its ground
+is kept mid-light on purpose: the dark outline reaches 4.1:1 and the white player (`#F2F2F2`) 3.75:1 against it
+(the tests ask 3:1 for both). The enemy red is about 1.2:1 against it in luminance (as on Red Canyon), so there too
+the team rings and outlines carry identity, not hue (PRESENTATION_CONTRACTS §3); the hues differ (violet, red).
 
 **Why `outline` changes per biome.** A dark outline on Night Rocks' blue reaches only 3.0:1, right at the limit,
 so that biome uses a light rim. The ratio after each value is its contrast against that biome's `ground`. The
@@ -92,8 +97,8 @@ Rules:
 |---|---|---|
 | Player | Cube, about 0.7 m, with an inset emissive core on each side | Must read as "the player" in greyscale, through the core panels |
 | Enemies | Cubes and boxy variants, about the player's size; bosses larger | One distinct silhouette per behaviour: a wedge for a charger, a shield plate for a guard, a long box for a shooter, and so on. Decided per enemy at its G2 |
-| Walls and cover | Thin tall slabs (Ruins), faceted boulders (Night Rocks), mesa blocks (Red Canyon), slate blocks (Frozen Shore) | Generated from boxes plus seeded faceting |
-| Props | Small cubes (rubble), grass tufts, crates, fences, dead trees, barrels, ice floes | Seeded procedural meshes; never block movement unless they are cover |
+| Walls and cover | Thin tall slabs (Ruins), faceted boulders (Night Rocks), mesa blocks (Red Canyon), slate blocks (Frozen Shore), violet star stone and leaning star monoliths (Starfall) | Generated from boxes plus seeded faceting |
+| Props | Small cubes (rubble), grass tufts, crates, fences, dead trees, barrels, ice floes, star crystals, meteorites, floating islands | Seeded procedural meshes; never block movement unless they are cover |
 | Projectiles | Streaks: a thin emissive box plus a dashed trail | Hostile yellow, player cyan or white |
 
 ## 4. Lighting and rendering
@@ -215,6 +220,54 @@ mood, surface, look). The first three biomes' looks are untouched; everything be
 - **Art the kit lacks:** [`requests/v0.7.5_frozen_shore.md`](requests/v0.7.5_frozen_shore.md) (snow drift, ice shard,
   an ice rock, a floe, a snow ground texture); the code-made pieces draw until they arrive.
 
+**Starfall, biome 5 (v0.7.5 NB2, owner N3: "a fifth one. That's gonna be kind of like a cosmic or universe feel
+with different stars and things like that"; working name, the owner may rename it).**
+Data: [`../../data/biomes/starfall.tres`](../../data/biomes/starfall.tres) (palette as §2's Starfall column, mood,
+surface, look). The first four biomes' looks are untouched; everything below comes from the biome's data and the
+new `stars` edge.
+- **Mood:** a pale lavender starlight (`sun_color` violet-white, energy 0.7, pitch −52°), a near-black night-violet
+  void (`#05030B`), violet ambient, **no fog** (fog would wash the void and the stars out), a grade toward teal
+  shadows and magenta-white highlights, saturation a touch up, a wide glow so the stars and crystals halo. The fire
+  props burn with a violet flame (`warm_light_color` lilac), so their light pools violet on the ground.
+- **Ground and walls:** the shared kit ground tinted with the star-dust `ground`; the kit walls and cover take the
+  dark violet `cover` hue (`#3B3358`); square cover is rocks and code-made leaning **star monoliths**
+  (`rock_large` 3 : `star_monolith` 1, `BiomeLook.square_cover`).
+- **Floor decoration** (`BiomeLook.decor_swap`): the kit's grass tufts become code-made **star crystals** (small
+  glowing violet clusters), its rubble and debris code-made **meteorites** (low dark faceted stones with a faint teal
+  glow), all from `CodeProps` in the faceted shard style.
+- **Past the edge** (`BiomeLook.edge = stars`, `BiomeEdge` + `StarVoid`): the floor is a **floating island**: dark star
+  stone under every ground rect and faceted spikes hanging from its rim. Below it, **twinkling stars** (tiny
+  octahedra, white, pale teal, lavender, pink; each twinkles at its own rate), soft **nebula clouds** (violet, teal,
+  magenta; additive), and small **rock islands drifting** in the void, about half carrying a **crystal cluster**
+  (the twinkle and the slow bob are frame time; still with reduced motion). Everything stays under the ground's
+  level and clear of the floor, so nothing rises beside the play area. Decoration only: the edge stays impassable.
+- **Starglow pools** (`StarglowViews`, drawn exactly where the sim's `IcePatches` put them for the `starglow`
+  surface): flat sheets of deep night-violet facets with small stars twinkling in them (a piece of the sky in the
+  floor) and a bright lavender rim on the exact edge so the fast area reads at a glance. They only help (the hero runs
+  faster on them), so they are ground, not a telegraph: none of the hostile hues, no pulse, no shadow.
+- **Crystals:** the room shards take a nebula magenta-pink tint (`ShardCluster.TINTS.starfall`, off the reserved
+  player-core cyan and the Deep violet); a Deep floor still turns violet.
+- **Enemies** (`BiomeLook.enemy_tint`): their grey and bone parts take a violet cast (alpha 0.4); the enemy red, the
+  team rings, outlines and bars never change (PRESENTATION_CONTRACTS §3).
+- **Ambience:** `starfall` loop (a wide slow-breathing chord, an airy high shimmer, a low void rumble and small star
+  chimes twinkling in and out, in a long echo; `scripts/audio/generate_sfx.py`).
+- **Art the kit lacks:** [`requests/v0.7.5_starfall.md`](requests/v0.7.5_starfall.md) (star crystal, meteorite, star
+  monolith, a floating island, a void spike, a star-dust ground texture); the code-made pieces draw until they arrive.
+
+**Biomes at a glance (v0.7.5).**
+
+| | Ruins | Night Rocks | Red Canyon | Frozen Shore | Starfall |
+|---|---|---|---|---|---|
+| Ground (kit ground, tinted) | sand | blue | red | snow | lavender star dust |
+| Square cover | the dresser's own rule | the dresser's own rule | the dresser's own rule | slate rocks, dead trees | rocks, star monoliths |
+| Floor decoration | kit grass, rubble, debris | kit grass, rubble, debris | kit grass, rubble, debris | snow drifts, ice shards | star crystals, meteorites |
+| Past the edge | the mood's void colour | the mood's void colour | the mood's void colour | frozen sea, floes, snow bank | starry void, nebula, floating islands, hanging spikes |
+| Light (mood) | cool blue moon | blue moon | warm orange sun | cold pale moon | lavender starlight, violet flames |
+| Surface (sim) | — | — | — | ice (slide) | starglow (faster step) |
+| Crystal tint | default teal | blue | amber | icy white | nebula magenta |
+| Enemy cast | — | — | — | cold blue | violet |
+| Ambience | `ruins` | `night_rocks` | `red_canyon` | `frozen_shore` | `starfall` |
+
 **Attack forms and elements (v0.6.0 MX3; owner pick "Element core, heat edge").** Every player attack is drawn from
 its spec: the art cost is per form (arc, bolt, ring, beam, zone, orbiter, lob, burst) and per element, never per card.
 Element cores: storm `#7FB2FF` (white-blue, crackle), ember `#FFAA33` (orange sparks `#FF9440`), frost `#B5F2FF` (pale
@@ -264,6 +317,10 @@ Each version's PLAN lists its art needs in a short table and adds the prompts to
 | `icon_bleed_edge` | item icon 128×128 | v0.2.0 Step 5 | generated letter icon | requested |
 
 A delivery moves the row to `delivered` with the commit SHA.
+
+**v0.7.5 Starfall:** the kit pieces the biome lacks are requested in
+[`requests/v0.7.5_starfall.md`](requests/v0.7.5_starfall.md); code-made placeholders (`CodeProps`, `StarVoid`,
+`StarglowViews`) draw meanwhile.
 
 **v0.7.5 Frozen Shore:** the kit pieces the biome lacks are requested in
 [`requests/v0.7.5_frozen_shore.md`](requests/v0.7.5_frozen_shore.md); code-made placeholders (`CodeProps`,

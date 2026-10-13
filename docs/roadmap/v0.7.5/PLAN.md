@@ -44,7 +44,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 |---|---|---|---|
 | MG | Map generation: up to 20 rooms, bigger rooms; curse, challenge-room and shop frequencies | N9–N12 | |
 | NB1 | Biome 4: Frozen Shore | N2 | Done ([evidence](evidence/FROZEN_SHORE.md)) |
-| NB2 | Biome 5: the cosmic biome | N3 | |
+| NB2 | Biome 5: the cosmic biome | N3 | Done ([evidence](evidence/STARFALL.md)) |
 | AP | The Ascension portal and the endless loop | N4 | |
 | CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | |
@@ -88,3 +88,30 @@ a playtest sheet when every step is Done.
   change (PRESENTATION §3).
 - **Art:** built from the kit plus code-made pieces; the pieces the kit lacks are requested in
   [`../../art/requests/v0.7.5_frozen_shore.md`](../../art/requests/v0.7.5_frozen_shore.md).
+
+## NB2 decisions (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N3, verbatim: "a fifth one. That's gonna be kind of like a cosmic or universe feel with different stars and
+things like that".
+- **Name:** "Starfall" / es "Caída Estelar" (`BIOME_STARFALL`; a string, the owner may rename it). Id `starfall`.
+- **The look, from the line:** "cosmic or universe feel" read as a floor floating in space: a near-black violet void
+  full of twinkling stars and soft nebula clouds (violet, teal, magenta), the floor itself a floating island (dark
+  star stone and hanging spikes under its rim), small rock and crystal islands drifting around it. "Different stars"
+  read as stars of several colours and sizes, each twinkling at its own rate. Look only: the edge stays impassable
+  (the floor's outer walls), and everything in the void stays under the ground's level and clear of the floor.
+- **Gameplay touch: starglow pools that speed you up.** Starfall floors get starglow pools (40 % of rooms, 1-2 pools
+  of 2-4 m; never in the start hall, the boss room, the portal's room or the shop's room). On a pool the hero's top
+  walking speed is ×1.25 and they ease 0.1 s up / 0.2 s down (a short drift, not a slide). Nothing hurts, so no
+  telegraph; the dash, skills and enemies are unchanged. It reuses NB1's surface machinery (`BiomeSurface` kind
+  `starglow`, `IcePatches` placement) on its own sub-stream `map:starglow`. Starting values (PD-04: mild flavour,
+  no difficulty table changes); the owner may turn it off by removing the surface from `starfall.tres`.
+- **No fog on Starfall:** a fog washed the void into flat violet in the first shots; the mood has fog 0 so the stars
+  read. Light: a pale lavender starlight, violet flames on the fire props, a grade toward teal shadows and
+  magenta-white highlights.
+- **The biome draw:** three floors drawn from five biomes, never the same biome twice in a run. Starfall is appended
+  last in `three_floors.tres` (saves keep their indices). Every run's draw changes with a fifth biome (the shuffle
+  is over five now); a save's stored order still resolves to the same biomes.
+- **`map:starglow`**, a sub-stream of `map` like `map:ice`; flagged with it for the owner (EI-05).
+- **Crystals and enemies:** room crystals take a nebula magenta-pink (off the player-core cyan and the Deep violet);
+  enemies' grey and bone parts a violet cast (the red, rings, outlines and bars never change).
+- **Art:** built from the kit plus code-made pieces (star crystals, meteorites, star monoliths, the void); the pieces
+  the kit lacks are requested in [`../../art/requests/v0.7.5_starfall.md`](../../art/requests/v0.7.5_starfall.md).
