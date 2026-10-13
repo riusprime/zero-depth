@@ -219,6 +219,18 @@ the mode's colour vision on the tokens and asserts:
   `CodexStore` only; it fits the 1920×1080 base in en and es (`test_codex_view.gd`). It was built straight in the
   owner's Cold glass look without a G2 round (v0.7.5: the owner asked for no interventions); the owner corrects it
   at the playtest.
+- **The achievements** (v0.7.5 AC, owner N7): a fifth Codex page, **Achievements** (`AchievementsPage` in
+  `CodexView`, after Biomes; Q E / LB RB, the tab by mouse), the achievements in their groups, two
+  `AchievementRow`s a line: a code-drawn glyph (`AchievementGlyphs`), the name, the sentence and the state. An
+  unlocked one is lit in gold with "Unlocked"; a **locked one is dimmed but keeps its name, its sentence and its
+  progress** ("2 / 5"), so the page says what to aim for; a **hidden** one (today the two Ascension ones) is "???"
+  with the hidden line until it unlocks. The unlock **toast** (`AchievementToast`) is a small Ember-stone slab under
+  the corner minimap (top 404, right 28 at the 1920×1080 base): "ACHIEVEMENT UNLOCKED", the glyph, the name and the
+  sentence, 4 s with a short slide and fade, more unlocks queued; it ignores the mouse and the focus (never
+  blocks), lives on the UI layer outside the HUD so it outlives a floor change, and reads its clock from the frame
+  (a look, never an outcome). Both fit the 1920×1080 base in en and es for every achievement
+  (`test_achievements_view.gd`). Built straight in the owner's looks without a G2 round (v0.7.5: no
+  interventions); the owner corrects it at the playtest.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

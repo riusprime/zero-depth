@@ -10,10 +10,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
+| AC | Local achievements: 37 to unlock (floors, wins, each boss and biome from the data, the wand, kills, sealed rooms, risks, the Codex, Ascension), a toast when one unlocks, an Achievements page in the Codex from both menus, kept in the profile ([evidence](evidence/ACHIEVEMENTS.md)) | `v0.7.5 Step AC` commit (branch `v075-ac`) |
 | NB1 | Biome 4, Frozen Shore: a cold moonlit snow biome over a frozen sea, ice patches you slide on, in the run's biome draw (3 floors from 4) | `v0.7.5 Step NB1` commit |
 
 ## Goldens changed on purpose
 - NB1: none. `tests/golden` passes unchanged; ice is laid only on Frozen Shore floors and is not hashed itself.
+- AC: none. No sim file changed; `tests/golden` passed in its units run (evidence/ACHIEVEMENTS.md).
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -30,3 +32,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   (after Credits); the menu e2e that count rows were updated. Not run by the agent: the full suite (the lead's, once
   per wave).
 - 2026-10-12: NB1 Frozen Shore built on `v075-nb1` (from `6381fcb`): biome data, ice in the sim (`map:ice`), its look, tests; evidence [`evidence/FROZEN_SHORE.md`](evidence/FROZEN_SHORE.md). Not pushed.
+- 2026-10-13: AC (local achievements) built on `v075-ac` from `fa70fcb` (CX and NB1 merged); the lead's readings are in
+  PLAN "AC"; evidence in [`evidence/ACHIEVEMENTS.md`](evidence/ACHIEVEMENTS.md). The Codex gained a fifth page
+  (Achievements); `runs:ascended` is left for AP to report. Not run by the agent: the full suite and the bot sims
+  (the lead's, once per wave). Not pushed.

@@ -932,6 +932,33 @@ turns it into `SimTuning` on `World.tuning`. The shipped file equals the old con
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
 
+### Achievements (`data/achievements/*.tres`, v0.7.5 AC)
+
+`AchievementDefinition` (category `achievements`) is one local achievement, read by the app layer only (the sim
+never sees it):
+
+```gdscript
+@export var name_key: StringName   # ACH_<ID>_NAME; a CODEX_EACH one has a %s for the entry's name
+@export var desc_key: StringName   # ACH_<ID>_DESC; the same %s rule
+@export var glyph: StringName      # a code-drawn picture (AchievementDefinition.GLYPHS)
+@export var group: StringName      # the page's section (GROUPS: run, bosses, biomes, build, combat, risk, codex, ascension)
+@export var order := 0             # its place in the group
+@export var hidden := false        # "???" until unlocked
+@export var kind: Kind             # STAT, CODEX_TOTAL, CODEX_MAX, CODEX_EACH, CODEX_EVERY
+@export var stat: StringName       # STAT: a run counter from AchievementDefinition.STATS (e.g. runs:won, runs:ascended)
+@export var page: StringName       # CODEX_*: cards / enemies / bosses / biomes
+@export var section: StringName    # CODEX_EACH / CODEX_EVERY: one section of the page (e.g. the Gun pool), or all
+@export var counter: StringName    # CODEX_*: the page's counter (empty for EACH / EVERY: the entry is met)
+@export var target := 1
+```
+
+- `CODEX_EACH` expands into one achievement per Codex entry of its page or section, id `<id>_<entry id>`
+  (`boss_warlord`, `biome_frozen_shore`), so a new boss or biome in the data has its own with no new file;
+  `CODEX_EVERY` needs every entry of its scope (the scope grows with the data).
+- `ERROR`s (`achievement`): a missing key, an unknown glyph, group, stat, page or counter, a target under 1, a
+  section on a kind that reads none. `tests/content/test_achievement_content.gd` also checks the keys in en and es
+  (with the `%s` exactly on the per-entry ones) and that the pages and counters match `CodexStore`.
+
 ## 9. Compiled tables
 
 At encounter start, `ContentCompiler` turns the definitions an encounter needs into plain typed arrays and
@@ -944,7 +971,8 @@ The sim reads these compiled tables, never `Resource`s. In v0.0.1 the compiler h
 
 - `locale/strings.csv` has the columns `keys,en,es`. Godot imports it as two `Translation`s, which are listed in
   `project.godot` under `internationalization/locale/translations` and ship with the export.
-- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`.
+- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`
+  (v0.7.5 AC: `ACH_` for the achievements' names and sentences).
 - `tests/content/test_locale_coverage.gd` fails if:
   - a `*_key` in any definition is missing from the CSV;
   - a CSV row has an empty `en` or `es` cell;

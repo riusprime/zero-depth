@@ -47,7 +47,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | NB2 | Biome 5: the cosmic biome | N3 | |
 | AP | The Ascension portal and the endless loop | N4 | |
 | CX | The Codex | N6 | Done |
-| AC | Local achievements | N7 | |
+| AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
@@ -67,6 +67,32 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
   (`desc_key`, en + es, written by the agent; the owner may rewrite any).
 - **Art:** an enemy's or boss's emblem and a biome's landscape are drawn in code; the wand cards that have no symbol
   of their own yet show the card gem in their frame colour, as in the game (an art request, not a blocker).
+
+### AC: local achievements (lead's readings, 2026-10-13; the owner corrects them at the playtest)
+- **What:** 37 local achievements from 29 definitions (`data/achievements/*.tres`, `AchievementDefinition`; the
+  full list is in [`evidence/ACHIEVEMENTS.md`](evidence/ACHIEVEMENTS.md)): clear floors 1 and 2, win (any, Gun,
+  Blade, 5 times), beat each boss and every boss, enter each biome and every biome, a full wand of 8, a card at level
+  5, child-spell kills (1, 100), kills (1, 100, 1,000), a sealed room without losing HP, 10 sealed rooms, an Overrun
+  cleared, a cursed chest's card, a core stolen, 500 shards spent in shops, every Gun / Blade / trigger card and
+  every enemy seen in the Codex, Ascend once and 5 times. Names and sentences in en and es written by the agent.
+- **From the data:** "each boss" and "each biome" are one definition each that expands to one achievement per Codex
+  entry, so NB2's biome (and any new boss) gets its own and joins "every biome" with no new file.
+- **Kept in the profile** (`achievements` section with its own `version`; an old profile reads as none unlocked),
+  no platform API. Conditions are evaluated by the app layer from the Codex's counters and run counters the
+  tracker records from `WorldReader` and `SimEvent`s; no sim change. What the profile already meets (an older
+  Codex) unlocks at the next floor's start.
+- **Locked vs hidden:** a locked achievement is shown **dimmed with its name, sentence and progress** (the page says
+  what to aim for); only the two Ascension ones are **hidden** ("???" and a hidden line) until they unlock, so the
+  page doesn't spoil the loop before the player has seen the portal.
+- **The toast:** an Ember-stone slab under the corner minimap, 4 s, queued, never blocking (no mouse, no focus).
+  **The page:** a fifth Codex tab, Achievements, after Biomes (so from the main and pause menus through the Codex;
+  Q E / LB RB, a tab click).
+- **Tweaked runs:** a run with the dev panel's balance tweaks records and unlocks nothing (the Codex's rule).
+- **Ascension hook (for AP):** `runs:ascended` is a run counter nothing in AC writes; AP calls
+  `main.achievement_tracker.report(&"runs:ascended")` once per Ascend. A won run is the floor's outcome 1; if AP's
+  "End the run" ends a run some other way, AP reports `runs:won` (and `runs:won_<weapon>`) the same way.
+- **"A trigger chain":** read as a kill by a hook's attack (`HIT.proc_pct` under 100): a trigger card's child spell,
+  and also a split or an echo; the sim's events don't say which card made a hook.
 
 At most 3 agents at once; one full suite per wave by the lead (CLAUDE.md). The PR into `main` with a version bump and
 a playtest sheet when every step is Done.
