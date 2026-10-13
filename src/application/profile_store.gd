@@ -14,7 +14,6 @@ static var _shared: ProfileStore = null
 
 var path := ""
 var data := {}
-var _unsaved := false
 
 
 func _init(p_path: String = "") -> void:
@@ -97,10 +96,6 @@ func _quarantine() -> void:
 	push_warning("ProfileStore: %s was unreadable; kept as %s and started fresh." % [path, bad])
 
 
-func has_unsaved() -> bool:
-	return _unsaved
-
-
 ## Writes the profile atomically. Memory-only profiles return false.
 func save_file() -> bool:
 	if path.is_empty():
@@ -112,7 +107,6 @@ func save_file() -> bool:
 	var tmp := path + ".tmp"
 	var file := FileAccess.open(tmp, FileAccess.WRITE)
 	if file == null:
-		_unsaved = true
 		push_warning(
 			(
 				"ProfileStore: could not write %s (%s)."
@@ -123,7 +117,5 @@ func save_file() -> bool:
 	file.store_string(JSON.stringify(data, "\t"))
 	file.close()
 	if DirAccess.rename_absolute(tmp, path) != OK:
-		_unsaved = true
 		return false
-	_unsaved = false
 	return true

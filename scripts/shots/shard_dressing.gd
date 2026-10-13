@@ -23,13 +23,10 @@ var _step := -1
 
 
 func _initialize() -> void:
-	for a in OS.get_cmdline_user_args():
-		if a.begins_with("seed="):
-			_seed = int(a.trim_prefix("seed="))
-		elif a.begins_with("floor="):
-			_floor = int(a.trim_prefix("floor="))
-		elif a.begins_with("biome="):
-			_biome = StringName(a.trim_prefix("biome="))
+	var args := ScriptArgs.parse()
+	_seed = int(args.get("seed", _seed))
+	_floor = int(args.get("floor", _floor))
+	_biome = StringName(args.get("biome", _biome))
 	_dir = "res://build/shots/%s/shards/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", _biome)

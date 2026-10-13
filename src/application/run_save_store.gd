@@ -12,6 +12,10 @@ const PLAYER_PATH := "user://saves/run.save"
 const SAVE_VERSION := 1
 const MAGIC := "ZDSV"
 const HEADER := 4 + 4 + 4 + 32
+## v0.7.0 audit A-16: the largest uncompressed size decode() will allocate. The size field sits outside the checksum,
+## so a damaged one (up to 4 GB) is refused as a decompression failure (the reject path) before any allocation. A
+## real run save is a small fraction of this.
+const MAX_RAW_BYTES := 64 * 1024 * 1024
 
 static var _shared: RunSaveStore = null
 
@@ -79,8 +83,11 @@ static func decode(bytes: PackedByteArray) -> Array:
 	ctx.update(body)
 	if ctx.finish() != bytes.slice(12, HEADER):
 		return [{}, "checksum mismatch (a damaged file)"]
-	var raw := body.decompress(bytes.decode_u32(8), FileAccess.COMPRESSION_ZSTD)
-	if raw.size() != bytes.decode_u32(8):
+	var raw_size := bytes.decode_u32(8)
+	if raw_size == 0 or raw_size > MAX_RAW_BYTES:
+		return [{}, "can't decompress (size field %d)" % raw_size]
+	var raw := body.decompress(raw_size, FileAccess.COMPRESSION_ZSTD)
+	if raw.size() != raw_size:
 		return [{}, "can't decompress"]
 	var env: Variant = bytes_to_var(raw)
 	if (

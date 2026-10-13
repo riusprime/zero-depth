@@ -89,9 +89,7 @@ var _hold := {}
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("frames="):
-			_frames = int(arg.trim_prefix("frames="))
+	_frames = int(ScriptArgs.parse().get("frames", _frames))
 	OS.add_logger(_log)
 	ProfileStore.use_shared(ProfileStore.new(""))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()

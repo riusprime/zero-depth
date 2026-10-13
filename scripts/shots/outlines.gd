@@ -14,9 +14,7 @@ var _dir := ""
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("style="):
-			_style = arg.trim_prefix("style=")
+	_style = ScriptArgs.parse().get("style", _style)
 	_dir = "res://build/shots/%s/outlines/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	var profile := ProfileStore.new("")

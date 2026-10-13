@@ -72,8 +72,6 @@ const TAGS: Array[StringName] = [
 ]
 ## v0.4.0 AB: the kinds that feed a status engine (they need engine_item).
 const ENGINE_KINDS: Array[int] = [Kind.ARC_FIELD, Kind.FROST_NOVA, Kind.FLAME_TRAIL]
-## The build weapon ids (BuildDefinition.WEAPON_IDS) a starting ability may name.
-const WEAPONS: Array[StringName] = [&"blade", &"gun"]
 
 @export var kind := Kind.BOMB_LOBBER
 @export var activation := Activation.AUTO
@@ -134,7 +132,7 @@ func validate() -> Array[ValidationIssue]:
 				&"mismatch", resource_path, "a manual ability names a button; an auto one doesn't"
 			)
 		)
-	if is_start() and not WEAPONS.has(start_weapon):
+	if is_start() and not BuildDefinition.WEAPON_IDS.has(start_weapon):
 		issues.append(
 			ValidationIssue.new(&"unknown", resource_path, "start_weapon is blade, gun or empty")
 		)

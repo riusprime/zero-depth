@@ -29,11 +29,9 @@ var _objects := PackedFloat64Array()
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("--enemies="):
-			_enemies = int(arg.trim_prefix("--enemies="))
-		if arg.begins_with("--frames="):
-			_frames = int(arg.trim_prefix("--frames="))
+	var args := ScriptArgs.parse()
+	_enemies = int(args.get("--enemies", _enemies))
+	_frames = int(args.get("--frames", _frames))
 	Engine.max_fps = 0
 	var repo := ContentRepository.load_all()
 	_world = SimBench._floor_world(repo, SimBench.RUN_SEED, 3)

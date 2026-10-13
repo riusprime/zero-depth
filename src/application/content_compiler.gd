@@ -3,7 +3,27 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## In v0.0.1 it compiles only the player.
 
-## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves.
+## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
+const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
+const ENEMY_KINDS := {
+	&"charger": ActorStore.Kind.CHARGER,
+	&"warden": ActorStore.Kind.WARDEN,
+	&"needle": ActorStore.Kind.NEEDLE,
+	&"hatchling": ActorStore.Kind.HATCHLING,
+	&"arc_caster": ActorStore.Kind.ARC_CASTER,
+	&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+	&"swarmer": ActorStore.Kind.SWARMER,
+	&"splitter": ActorStore.Kind.SPLITTER,
+	&"splitling": ActorStore.Kind.SPLITLING,
+	&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
+	&"mender": ActorStore.Kind.MENDER,
+	&"mine_layer": ActorStore.Kind.MINE_LAYER,
+	&"sniper": ActorStore.Kind.SNIPER,
+	&"lens_drone": ActorStore.Kind.LENS_DRONE,
+}
+## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves (BossSchemas.KINDS and MOVES;
+## a test checks the key sets match).
 const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
@@ -78,22 +98,7 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 ## An enemy's numbers in sim units. The behaviour id picks the actor kind.
 static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	var t := EnemyTable.new()
-	t.kind = {
-		&"charger": ActorStore.Kind.CHARGER,
-		&"warden": ActorStore.Kind.WARDEN,
-		&"needle": ActorStore.Kind.NEEDLE,
-		&"hatchling": ActorStore.Kind.HATCHLING,
-		&"arc_caster": ActorStore.Kind.ARC_CASTER,
-		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
-		&"swarmer": ActorStore.Kind.SWARMER,
-		&"splitter": ActorStore.Kind.SPLITTER,
-		&"splitling": ActorStore.Kind.SPLITLING,
-		&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
-		&"mender": ActorStore.Kind.MENDER,
-		&"mine_layer": ActorStore.Kind.MINE_LAYER,
-		&"sniper": ActorStore.Kind.SNIPER,
-		&"lens_drone": ActorStore.Kind.LENS_DRONE,
-	}[def.behaviour_id]
+	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m
@@ -395,55 +400,19 @@ static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
 
 
-## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name. v0.6.0 MX1: with
-## `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation error and is
-## left out here); without it the item has none (offer and pool tests that never fight).
+## One item's numbers in sim units (v0.2.0 E). The definition's kind is the sim kind (same names, same numbers).
+## v0.6.0 MX1: with `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation
+## error and is left out here); without it the item has none (offer and pool tests that never fight).
 static func compile_item(def: ItemDefinition, repo: ContentRepository = null) -> ItemTable:
 	var t := ItemTable.new()
 	t.id = def.id
-	t.kind = {
-		ItemDefinition.Kind.LONG_EDGE: ItemTable.Kind.LONG_EDGE,
-		ItemDefinition.Kind.TWIN_ARC: ItemTable.Kind.TWIN_ARC,
-		ItemDefinition.Kind.EMBER_EDGE: ItemTable.Kind.EMBER_EDGE,
-		ItemDefinition.Kind.SPLINTER_SHOT: ItemTable.Kind.SPLINTER_SHOT,
-		ItemDefinition.Kind.RAPID_COIL: ItemTable.Kind.RAPID_COIL,
-		ItemDefinition.Kind.RICOCHET_CORE: ItemTable.Kind.RICOCHET_CORE,
-		ItemDefinition.Kind.KINETIC_DASH: ItemTable.Kind.KINETIC_DASH,
-		ItemDefinition.Kind.OVERCHARGE: ItemTable.Kind.OVERCHARGE,
-		ItemDefinition.Kind.VAMPIRIC_CORE: ItemTable.Kind.VAMPIRIC_CORE,
-		ItemDefinition.Kind.STATIC_CHAIN: ItemTable.Kind.STATIC_CHAIN,
-		ItemDefinition.Kind.MOMENTUM: ItemTable.Kind.MOMENTUM,
-		ItemDefinition.Kind.FROST_CORE: ItemTable.Kind.FROST_CORE,
-		ItemDefinition.Kind.THORN_MANTLE: ItemTable.Kind.THORN_MANTLE,
-		ItemDefinition.Kind.EXECUTIONER: ItemTable.Kind.EXECUTIONER,
-		ItemDefinition.Kind.SWIFT_FEET: ItemTable.Kind.SWIFT_FEET,
-		ItemDefinition.Kind.PHASE_STRIKE: ItemTable.Kind.PHASE_STRIKE,
-		ItemDefinition.Kind.CINDER_SHOT: ItemTable.Kind.CINDER_SHOT,
-		ItemDefinition.Kind.WILDFIRE: ItemTable.Kind.WILDFIRE,
-		ItemDefinition.Kind.CONDUCTOR: ItemTable.Kind.CONDUCTOR,
-		ItemDefinition.Kind.SERRATED_EDGE: ItemTable.Kind.SERRATED_EDGE,
-		ItemDefinition.Kind.BARBED_BOLTS: ItemTable.Kind.BARBED_BOLTS,
-		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
-		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
-		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
-		ItemDefinition.Kind.HEAT_SINK: ItemTable.Kind.HEAT_SINK,
-		ItemDefinition.Kind.THERMAL_EDGE: ItemTable.Kind.THERMAL_EDGE,
-		ItemDefinition.Kind.MELTDOWN: ItemTable.Kind.MELTDOWN,
-		ItemDefinition.Kind.CLUSTER_PAYLOAD: ItemTable.Kind.CLUSTER_PAYLOAD,
-		ItemDefinition.Kind.OVERCLOCKED_DRONE: ItemTable.Kind.OVERCLOCKED_DRONE,
-		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
-		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
-		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
-		ItemDefinition.Kind.TRIGGER: ItemTable.Kind.TRIGGER,  # v0.6.5 WN1
-		ItemDefinition.Kind.WAND: ItemTable.Kind.WAND,  # v0.6.5 WN3
-	}[def.kind]
+	t.kind = def.kind as ItemTable.Kind  # the two enums match name for name (test_item_validation asserts it)
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
 	t.rarity = def.rarity
 	var needs := {&"guard": PlayerTable.Utility.GUARD, &"blink": PlayerTable.Utility.BLINK}
 	t.requires_utility = needs.get(def.requires_utility, -1)
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.requires_weapon = weapons.get(def.requires_weapon, 0)
+	t.requires_weapon = WEAPON_BITS.get(def.requires_weapon, 0)
 	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
 	if repo != null:
 		for id in def.modifiers:
@@ -741,10 +710,7 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 		t.amount[s] = int(round(e.amount * scale))
 		t.weight[s] = e.weight
 		t.cap[s] = e.max_stacks
-		t.requires_weapon[s] = (
-			{&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-			. get(e.requires_weapon, 0)
-		)
+		t.requires_weapon[s] = WEAPON_BITS.get(e.requires_weapon, 0)
 	return t
 
 
@@ -829,8 +795,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	t.rare = def.rarity == AbilityDefinition.Rarity.RARE
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.start_weapon = weapons.get(def.start_weapon, 0)
+	t.start_weapon = WEAPON_BITS.get(def.start_weapon, 0)
 	t.tags = PackedStringArray()
 	for tag in def.tags:
 		t.tags.append(String(tag))

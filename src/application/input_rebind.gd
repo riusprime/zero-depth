@@ -42,17 +42,18 @@ static func device_of(spec: Array) -> StringName:
 
 
 ## The spec of an input event that could become a binding ([] if it can't: a release, an echo, a small stick move).
-static func spec_of(ev: InputEvent) -> Array:
-	if ev is InputEventKey and ev.pressed and not ev.echo:
-		var k := (ev as InputEventKey).physical_keycode
-		return [&"key", k if k != KEY_NONE else (ev as InputEventKey).keycode]
-	if ev is InputEventMouseButton and ev.pressed:
+## With `require_press` false, the spec of an event already bound in InputMap (no press, echo or threshold check).
+static func spec_of(ev: InputEvent, require_press := true) -> Array:
+	if ev is InputEventKey and (not require_press or (ev.pressed and not ev.echo)):
+		var k := ev as InputEventKey
+		return [&"key", k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode]
+	if ev is InputEventMouseButton and (not require_press or ev.pressed):
 		return [&"mouse", (ev as InputEventMouseButton).button_index]
-	if ev is InputEventJoypadButton and ev.pressed:
+	if ev is InputEventJoypadButton and (not require_press or ev.pressed):
 		return [&"button", (ev as InputEventJoypadButton).button_index]
 	if (
 		ev is InputEventJoypadMotion
-		and absf((ev as InputEventJoypadMotion).axis_value) >= AXIS_PRESS
+		and (not require_press or absf((ev as InputEventJoypadMotion).axis_value) >= AXIS_PRESS)
 	):
 		var m := ev as InputEventJoypadMotion
 		return [&"axis", m.axis, 1.0 if m.axis_value > 0.0 else -1.0]
@@ -64,7 +65,7 @@ static func binding(action: StringName, device: StringName) -> Array:
 	if not InputMap.has_action(action):
 		return []
 	for ev in InputMap.action_get_events(action):
-		var spec := _spec_of_bound(ev)
+		var spec := spec_of(ev, false)
 		if not spec.is_empty() and device_of(spec) == device:
 			return spec
 	return []
@@ -118,17 +119,3 @@ static func _store(
 	InputMap.action_erase_events(action)
 	for s: Array in specs:
 		InputMap.action_add_event(action, InputDefaults.make_event(s))
-
-
-static func _spec_of_bound(ev: InputEvent) -> Array:
-	if ev is InputEventKey:
-		var k := ev as InputEventKey
-		return [&"key", k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode]
-	if ev is InputEventMouseButton:
-		return [&"mouse", (ev as InputEventMouseButton).button_index]
-	if ev is InputEventJoypadButton:
-		return [&"button", (ev as InputEventJoypadButton).button_index]
-	if ev is InputEventJoypadMotion:
-		var m := ev as InputEventJoypadMotion
-		return [&"axis", m.axis, 1.0 if m.axis_value > 0.0 else -1.0]
-	return []
