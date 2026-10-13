@@ -98,6 +98,16 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	return {&"map": map, &"arena": arena, &"shop": shop}
 
 
+## v0.7.5 BF1 (N18): the boss room floor `run` builds for boss `boss` (an index into `bosses`; -1 = none): today's
+## 4 x 4, or the boss's legacy room on a floor resumed from a save made before BF1 (Main and the labs).
+static func boss_arena(run: RunState, bosses: Array[BossTable], boss: int) -> BossArenaSpec:
+	if boss < 0:
+		return null
+	var t := bosses[boss]
+	var cells := t.legacy_arena_cells if run != null and run.legacy_boss_room() else t.arena_cells
+	return BossArenaSpec.make(cells, t.arena_template, boss)
+
+
 ## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's).
 static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	var r: Dictionary = payload.get("run", {})

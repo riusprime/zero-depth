@@ -1081,6 +1081,9 @@ Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `dat
   Gatekeeper's Rock Rings and the Warlord's Shield Wall open the weak point when they end). The 66 / 33 % gates stay.
 - **Reads for the views and avatars.** `WorldReader.boss_shielded(i)`, `boss_pattern(i)` (`{}` or id, kind, look,
   shielded, winding, progress), `projectile_look(i)`, `MOVE_PATTERN` / `MOVE_MARKS` / `MOVE_ROW_LANES`.
+- **Big boss rooms (owner N18).** Every boss's room is 4 x 4 and its body 1.3x (data). `RunState.FLOOR_RULES` is 3;
+  a floor resumed from a payload with rules 1 or 2 rebuilds its boss room at `legacy_arena_cells`
+  (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
 - **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
   only the fireballs' look column is new (above). The kernel replay golden is boss-free.
 

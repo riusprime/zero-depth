@@ -237,6 +237,7 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_wall"), SubResource("A_shield_wall_cross"), SubResource("A_javelin_fan"), SubResource("A_javelin_fan_fast"), SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash"), SubResource("A_javelin_rain")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(3, 2)
 arena_template = 0
 ranged_full_m = 5.0
 ranged_far_m = 12.0

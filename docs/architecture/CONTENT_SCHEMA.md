@@ -500,6 +500,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
                                                    # v0.5.5 DS: every shipped boss has 1000 / 660 / 330 (each later phase opens with a gate)
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
+@export var legacy_arena_cells: Vector2i           # v0.7.5 BF1 (N18): the room before every boss went 4 x 4; a floor of an
+                                                   # older save (floor rules 1-2) is rebuilt with it ((0, 0) = arena_cells)
 # Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
 @export var ranged_full_m: float                   # ranged armour: full damage up to here...
 @export var ranged_far_m: float                    # ...falling linearly to ranged_far_permille here and beyond

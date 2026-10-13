@@ -19,7 +19,10 @@ func test_the_new_numbers_compile() -> void:
 		assert_eq(t.commit_ticks, 12, "%s commits 12 ticks before it strikes" % t.id)
 		assert_eq(t.dash_read_ticks, 30, String(t.id))
 		assert_eq(t.gap_ticks, 120, "%s: 2 s out of reach" % t.id)
-		assert_gte(t.gap_attack, 0, "%s has a gap-closer" % t.id)
+		if t.id != &"gatekeeper":  # v0.7.5 BF1: none (its tracked circles reach a far player anyway)
+			assert_gte(t.gap_attack, 0, "%s has a gap-closer" % t.id)
+		else:
+			assert_eq(t.gap_attack, -1, "the Gatekeeper: no gap-closer")
 
 
 func _boss(id: StringName, player_at: Vector2) -> Array:

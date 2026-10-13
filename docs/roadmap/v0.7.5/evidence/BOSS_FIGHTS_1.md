@@ -83,10 +83,11 @@ Sweeps, charges and leaps measure from the body (`arc_of`'s own radius, the cont
    names; nothing else is needed for the look, the caps and the fairness rules.
 
 ## Tests (raw)
-Lint, at `—` (filled at the final commit):
+Lint, on the final tree (the `v0.7.5 Step BF1` commit):
 ```
 $ gdformat --check src scripts tests && gdlint src scripts tests
-NOT YET RUN at this line
+777 files would be left unchanged
+Success: no problems found
 ```
 New tests: `tests/unit/sim/test_bullet_patterns.gd` (each shape's counts and gap, turn per wave, determinism of a
 pattern fight, no spawn on the player or in a wall, wall stop, the per-tick cap, looks), `tests/unit/sim/
@@ -105,7 +106,29 @@ Warlord), `test_boss_views.gd`, `test_boss_telegraph_parity.gd`, `test_boss_chal
 `test_boss_validation.gd`, `test_e2e_bosses_2.gd` (a step aside out of a pillar's shadow before waiting for a hit:
 the dev panel puts the boss 6 m off with a start-hall pillar between, and fireballs stop at walls).
 
-Runs: see "Runs" below (filled from the raw output at the final commit).
+### Runs
+`godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd <-gtest / -gdir ...> -ginclude_subdirs -gexit`,
+on a shared machine (another agent's run alongside). The GUT totals as printed:
+
+| Run | Tree | Raw totals |
+|---|---|---|
+| `tests/unit/sim` (first part), with golden/application/debug/content/arch queued after | `b45ac0b` | `578/578` in the 52 scripts that finished before my wrapper's 3000 s `timeout` stopped the run (`exit 124`) inside `test_modifier_smoke_mx4.gd`; the every-card soak (`test_combos.gd`) among them: `SOAK\| kills=265 events=6696 most_in_a_tick=188 limits=0 (watchdog 0, heal cap 0)` |
+| the rest of `tests/unit/sim` (from `test_modifier_smoke_mx4.gd`) + the boss files again + `tests/golden`, `unit/application`, `unit/debug`, `content`, `arch` | `2dcaf02`'s code (the N18 legacy-room fix landed while it ran) | `Scripts 93`, `Tests 725`, `Passing Tests 721`, `Failing Tests 4`: `test_ascension_saves.gd` "its snapshot still restores" and `test_old_saves.gd` (3 asserts) — `"World.walls: the snapshot's floor differs from the one generated from its inputs"`: an old save's floor rebuilt with today's 4×4 boss room; fixed (floor rules 3, `legacy_arena_cells`, below); `test_boss_pressure.gd` "gatekeeper has a gap-closer" — fixed (the Gatekeeper has none now, by design) |
+| `tests/unit/application` + `tests/content` after the fix | final code | `Scripts 37`, `Tests 201`, `Passing Tests 201` |
+| `test_boss_pressure.gd`, `test_boss_fights.gd`, `test_boss_challenge.gd`, `tests/golden`, `tests/arch`, `tests/unit/debug` after the fixes | final code | `Scripts 8`, `Tests 50`, `Passing Tests 50` |
+| `tests/unit/presentation` | `2dcaf02` | `Scripts 75`, `Tests 473`, `Passing Tests 473` |
+| e2e: `test_e2e_boss_dodge`, `test_e2e_bosses`, `test_e2e_bosses_2`, `test_e2e_boss_challenge`, `test_e2e_after_boss`, `test_e2e_ascension`, `test_e2e_dev_master_panel` | `2dcaf02` | `Scripts 7`, `Tests 12`, `Passing Tests 12` |
+| e2e after the legacy-room fix: `test_e2e_old_save`, `test_e2e_saves`, `test_e2e_boss_dodge`, `test_e2e_after_boss` | final code | `Scripts 4`, `Tests 5`, `Passing Tests 5` |
+
+`tests/golden` passed unchanged (no golden fixture changed). Not run: the full suite (the lead's, on GitHub), the bot
+sims, `scripts/ci/seams.sh` (the lead's after the merge), the sim bench and the hitch probe with hundreds of
+fireballs (NOT YET RUN; the caps hold the worst case at 160 new shots a tick and 900 alive).
+
+### N18 and old saves
+Moving every boss room to 4×4 changed the floor a save rebuilds under its snapshot. `RunState.FLOOR_RULES` is 3
+now; a payload with floor rules 1 (v0.7.0) or 2 (v0.7.5 MG) rebuilds its boss room at the boss's
+`legacy_arena_cells` (its room before N18, in data) through `RunSaver.boss_arena` (Main and the labs), and the next
+floor is today's. Test: `test_old_saves.gd` "a save from before the big boss rooms keeps its room".
 
 ## Screenshots
 `VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" godot --path .

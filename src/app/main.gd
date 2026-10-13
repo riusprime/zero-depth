@@ -319,11 +319,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
 	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
-	var arena := (
-		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
-		if boss >= 0
-		else null
-	)
+	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's floor)
 	var world := FloorScenario.build(
 		run.floor_seed(),

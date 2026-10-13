@@ -254,6 +254,7 @@ stagger_seconds = 2.5
 attacks = Array[ExtResource("1_atk")]([SubResource("A_rock_rings"), SubResource("A_rock_rings_4"), SubResource("A_cross_quake"), SubResource("A_cross_quake_fast"), SubResource("A_fist_slam"), SubResource("A_fist_slam_2"), SubResource("A_fist_slam_3"), SubResource("A_shock_lanes"), SubResource("A_shock_lanes_2"), SubResource("A_sweep")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(3, 3)
 arena_template = 2
 ranged_full_m = 5.0
 ranged_far_m = 12.0
