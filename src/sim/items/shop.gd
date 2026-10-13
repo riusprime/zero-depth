@@ -206,12 +206,14 @@ static func buy(w: World, k: int, replace: int = -1) -> bool:
 		return _deny(w)
 	if buys_left(w) == 0:
 		return _deny(w, ShopState.Deny.LIMIT)  # v0.5.5 EC (S3)
-	if not can_apply(w, code) or w.shards < price(w, code):
+	if not can_apply(w, code):
+		return _deny(w)
+	var cost := price(w, code)  # once (audit G-16)
+	if w.shards < cost:
 		return _deny(w)
 	if replace < 0 and BuildSlots.needs_swap(w, code):
 		BuildSlots.open_swap(w, code, BuildSlots.Source.SHOP, k)
 		return false
-	var cost := price(w, code)
 	w.shards -= cost
 	w.shop.offer[k] = ShopState.SOLD
 	w.shop.bought += 1
@@ -384,6 +386,7 @@ static func read(w: World) -> Dictionary:
 			c["can_apply"] = can_apply(w, code)
 			c["affordable"] = w.shards >= c["price"]
 		stock.append(c)
+	var latest := _latest_curse(w)  # once (audit G-16)
 	var sells: Array[Dictionary] = []
 	for e in sell_list(w):
 		sells.append({"kind": e[0], "ref": e[1], "code": e[2], "refund": e[3]})
@@ -395,9 +398,8 @@ static func read(w: World) -> Dictionary:
 		"heal_used": w.shop.heal_used,
 		"reroll_price": reroll_price(w),
 		"cleanse_price": cleanse_price(w),  # v0.5.0 EV
-		"cleanse_curse": _latest_curse(w),
-		"cleanse_name_key":
-		w.ev.curses[_latest_curse(w)].name_key if _latest_curse(w) >= 0 else &"",
+		"cleanse_curse": latest,
+		"cleanse_name_key": w.ev.curses[latest].name_key if latest >= 0 else &"",
 		"rerolls": w.shop.rerolls,
 		"unsold": unsold(w),  # v0.5.5 EC (S2)
 		"bought": w.shop.bought,  # v0.5.5 EC (S3)

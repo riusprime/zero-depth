@@ -113,12 +113,13 @@ static func advance_fire(w: World) -> void:
 	var a := w.actors
 	var pid := a.ids[0]
 	var book := Modifiers.book(w) if not s.fire_spec.is_empty() else null
+	var fire_gap := fire_hit_ticks(w)  # one value for every patch this tick (audit G-16)
 	for k in s.fire_pos.size():
 		var at := s.fire_pos[k]
 		var key := s.fire_spec[k] if k < s.fire_spec.size() else ""
 		var spec := book.find(key) if key != "" else null
 		var kind := s.fire_kind[k]
-		var gap := fire_hit_ticks(w)
+		var gap := fire_gap
 		if spec != null and spec.period_ticks > 0:
 			gap = spec.period_ticks
 		var cap := s.fire_cap[k] if k < s.fire_cap.size() else 0

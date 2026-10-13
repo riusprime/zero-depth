@@ -154,17 +154,19 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 			poison = sp.stacks_of(&"poison")
 		SRC_BOLT:
 			var b := hs if hs != null else Modifiers.bolt(w)  # v0.6.0 MX2: the projectile's own spec
-			var fed := 0
-			for st: StringName in [&"burn", &"shock", &"bleed", &"frost", &"poison"]:
-				fed += b.stacks_of(st)
-			if fed > 0:
+			var b_burn := b.stacks_of(&"burn")  # each read once (audit G-16)
+			var b_shock := b.stacks_of(&"shock")
+			var b_bleed := b.stacks_of(&"bleed")
+			var b_frost := b.stacks_of(&"frost")
+			var b_poison := b.stacks_of(&"poison")
+			if b_burn + b_shock + b_bleed + b_frost + b_poison > 0:
 				w.engine_bolt_hits += 1
 				var n := w.engine_bolt_hits
-				burn = b.stacks_of(&"burn") if _every(n, b.every_of(&"burn")) else 0
-				shock = b.stacks_of(&"shock") if _every(n, b.every_of(&"shock")) else 0
-				bleed = b.stacks_of(&"bleed") if _every(n, b.every_of(&"bleed")) else 0
-				frost = b.stacks_of(&"frost") if _every(n, b.every_of(&"frost")) else 0
-				poison = b.stacks_of(&"poison") if _every(n, b.every_of(&"poison")) else 0
+				burn = b_burn if _every(n, b.every_of(&"burn")) else 0
+				shock = b_shock if _every(n, b.every_of(&"shock")) else 0
+				bleed = b_bleed if _every(n, b.every_of(&"bleed")) else 0
+				frost = b_frost if _every(n, b.every_of(&"frost")) else 0
+				poison = b_poison if _every(n, b.every_of(&"poison")) else 0
 		SRC_CHAIN:
 			shock = m.shock_chain
 		SRC_WAVE:

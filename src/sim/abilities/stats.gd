@@ -253,10 +253,12 @@ static func overkill(w: World, target: int, excess: int, root: int) -> void:
 	if share <= 0 or excess <= 0 or t == null:
 		return
 	var amount := (excess * share + 500) / 1000
+	if amount <= 0:
+		return  # before the scan (audit G-16)
 	var a := w.actors
 	var at := a.pos(target)
 	var near := Engines.nearest_enemies(w, target, at, t.limit_permille / 1000.0, 1)
-	if amount <= 0 or near.is_empty():
+	if near.is_empty():
 		return
 	var best := near[0]
 	var pid := a.ids[0]

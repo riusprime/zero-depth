@@ -228,17 +228,13 @@ static func resonance_mult(w: World, target: int, owner_id: int) -> int:
 	if b == null or b.resonance_permille <= 0:
 		return 1000
 	var a := w.actors
-	var n := 0
-	for on: bool in [
-		a.burn_stacks[target] > 0,
-		a.shock_stacks[target] > 0,
-		a.bleed_stacks[target] > 0,
-		a.frost_stacks[target] > 0 or a.frozen_t[target] > 0,
-		a.slow_t[target] > 0,
-		a.poison_stacks[target] > 0,
-	]:
-		if on:
-			n += 1
+	var n := 0  # counted without a per-hit array (audit G-16)
+	n += 1 if a.burn_stacks[target] > 0 else 0
+	n += 1 if a.shock_stacks[target] > 0 else 0
+	n += 1 if a.bleed_stacks[target] > 0 else 0
+	n += 1 if a.frost_stacks[target] > 0 or a.frozen_t[target] > 0 else 0
+	n += 1 if a.slow_t[target] > 0 else 0
+	n += 1 if a.poison_stacks[target] > 0 else 0
 	return 1000 + n * b.resonance_permille
 
 
