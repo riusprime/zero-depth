@@ -175,6 +175,7 @@ static func interact(w: World) -> bool:
 		w.rewards.set_offer(i, Offers.roll(w, i))  # v0.4.0 BS: abilities, stat cards and mods
 		Curses.on_offer_rolled(w, i)  # v0.5.0 EV: a chest may turn cursed
 	if w.rewards.offer_of(i).is_empty():
+		w.rewards.rolled[i] = 0  # an empty roll isn't kept: a later press rolls again (audit G-1)
 		_deny(w, i)
 		return false
 	w.choosing = w.rewards.ids[i]
