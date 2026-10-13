@@ -504,9 +504,9 @@ static func _landed(
 	w: World, spec: AttackSpec, ctx: AttackContext, i: int, at: Vector2, nth: int
 ) -> void:
 	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
-	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
-		if spec.has_tag(&"weapon"):
-			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
+	var arc := spec.depth == 0 and spec.form == AttackSpec.Form.ARC
+	if arc and spec.has_status(&"burn") and spec.has_tag(&"weapon"):
+		ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
 	var direct := (
 		spec.form == AttackSpec.Form.ARC
 		or spec.form == AttackSpec.Form.BOLT
@@ -696,11 +696,10 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]
-	var counted := false
 	for k in hooks:
-		if k.every > 0 and not counted:
-			w.chain_count += 1
-			counted = true
+		if k.every > 0:
+			w.chain_count += 1  # once per landed bolt, however many counted hooks
+			break
 	var p := w.projectiles
 	var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))  # v0.6.0 MX4: a hook's slash, split, way
 	var ctx := AttackContext.make(at, ang, p.damage[pi], root, p.tags[pi], &"")

@@ -528,9 +528,9 @@ static func _land_bombs(w: World) -> void:
 		var spec := Modifiers.book(w).find(key) if key != "" else null
 		var bomb := spec == null or spec.has_tag(&"bomb")
 		var effect := EFFECT_BOMB if split else AbilityMods.EFFECT_CLUSTER
-		if spec != null and (not spec.has_tag(&"bomb") or not split) and spec.effect_id != &"":
-			effect = spec.effect_id  # v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets)
-		elif spec != null and not spec.has_tag(&"bomb"):
+		# v0.6.0 MX4: a hook's bomb names its own (Bomb Rounds, the bomblets): any non-bomb spec's (even none), or a
+		# bomb spec's own when it isn't splitting.
+		if spec != null and (not spec.has_tag(&"bomb") or (not split and spec.effect_id != &"")):
 			effect = spec.effect_id
 		if spec != null:
 			Attacks.land_lob(w, spec, at, r, dmg, root, depth, proc, effect)

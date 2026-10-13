@@ -192,7 +192,7 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 		if kind == 0:
 			var sw := PackedInt32Array()
 			for st in stats:
-				sw.append(maxi(1, w.stat_tables[st].weight))
+				sw.append(w.stat_tables[st].weight)  # _stats already leaves out a weight under 1
 			out.append(stat_code(stats[w.rng_loot.pick_weighted(sw)], LEGENDARY))
 		else:
 			out.append(mods[w.rng_loot.range_int(0, mods.size() - 1)])
