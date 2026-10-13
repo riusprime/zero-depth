@@ -274,3 +274,21 @@ func test_the_pools_share_one_sprite_budget() -> void:
 	assert_true(
 		_vfx._put(&"spark", Transform3D(), Color.WHITE, 0, 0.0, 0.0), "a new frame draws again"
 	)
+
+
+## Audit P-19b: a payoff already on the floor's first sync (a resumed save) is stamped with the sim's tick, so the
+## effects layer's first frame draws it instead of dropping it as long gone.
+func test_a_payoff_on_the_first_sync_draws() -> void:
+	var w := World.new(3, PlayerTable.starting_values())
+	w.tick = 5000
+	w.wildfire_tick = 4995
+	w.wildfire_pos = Vector2(1, 1)
+	var reader := WorldReader.new(w)
+	var actors: ActorViews = add_child_autofree(ActorViews.new())
+	var fx: StatusVisuals = add_child_autofree(StatusVisuals.new(actors))
+	fx.use_vfx(_vfx)
+	assert_eq(_vfx.now(), 0.0, "the layer has not drawn a frame yet")
+	fx.sync(reader)
+	_vfx.begin(5000.5)
+	_vfx.finish()
+	assert_eq(fx.shot_count(), 1, "the wildfire burst is still drawing")

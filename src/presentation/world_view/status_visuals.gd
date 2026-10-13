@@ -253,7 +253,9 @@ func _sync_payoffs(reader: WorldReader) -> void:
 
 ## The new look's payoffs: element bursts and lightning in the effects layer, the radius rings kept for the rest.
 func _sync_payoff_shots(reader: WorldReader) -> void:
-	var now := vfx.now()
+	# P-19b: the sim's tick, not the effects layer's clock (0.0 until its first frame, so a payoff on a floor's first
+	# sync, as a resumed save gives, was stamped 0 and dropped at once). The layer's clock is this tick + a fraction.
+	var now := float(reader.tick())
 	if _changed(&"discharge", reader.discharge_tick()):
 		var to: Array = []
 		for p: Vector2 in reader.discharge_to():
