@@ -43,16 +43,13 @@ func test_the_arc_caster_and_the_bomb_drone_compile_to_the_plan() -> void:
 	assert_eq(arc.kind, ActorStore.Kind.ARC_CASTER)
 	assert_eq([arc.hp, arc.damage, arc.shards], [40, 12, 4])
 	assert_eq([arc.keep_min_m, arc.keep_distance_m], [6.0, 9.0])
-	assert_almost_eq(arc.bolt_speed * 60.0, 22.0, 0.001, "a 22 m/s bolt")
-	assert_eq(arc.windup_ticks, 30, "the bolt's line shows for 30 ticks")
-	assert_eq(arc.spread_count, 3)
+	assert_eq(arc.windup_ticks, 30, "the bolt winds up for 30 ticks")
 	assert_eq(arc.rune_windup_ticks, 36, "the rune erupts after 36 ticks")
 	var drone := ContentCompiler.compile_enemy(repo.get_def(&"enemies", &"bomb_drone"))
 	assert_eq(drone.kind, ActorStore.Kind.BOMB_DRONE)
 	assert_eq([drone.hp, drone.damage, drone.shards], [30, 16, 4])
 	assert_eq([drone.keep_min_m, drone.keep_distance_m], [5.0, 8.0])
-	assert_eq(drone.slam_radius_m, 1.8)
-	assert_eq(drone.windup_ticks, 48, "the bomb's circle fills for 48 ticks")
+	assert_eq(drone.windup_ticks, 48, "the bomb winds up for 48 ticks")
 
 
 ## v0.4.0 EN: the horde kinds' starting values (docs/roadmap/v0.4.0/evidence/ENEMIES_12.md).
@@ -180,3 +177,29 @@ func test_a_zero_shape_param_is_rejected() -> void:
 		assert_has(_codes(d), &"not_positive", k)
 	var ok := _def()
 	assert_eq(_codes(ok), [], "the shipped charger passes")
+
+
+## v0.7.5 EF (owner N16): the three fireball enemies name patterns that exist, each slow (the design's 3-5 m/s) and in
+## its own look; the Needle, the Sniper and the melee kinds keep their own attacks (no pattern).
+func test_the_fireball_enemies_name_slow_patterns_in_their_own_looks() -> void:
+	var repo := ContentRepository.load_all()
+	var want := {
+		&"arc_caster": [[2, &"arc_plasma"], [2, &"arc_plasma"], null],
+		&"lens_drone": [[0, &"lens_orb"]],
+		&"bomb_drone": [[6, &"bomb_cinder"]],
+	}
+	for id: StringName in want:
+		var t := ContentCompiler.compile_enemy(repo.get_def(&"enemies", id), repo)
+		var specs: Array = want[id]
+		assert_eq(t.patterns.size(), specs.size(), String(id))
+		for k in specs.size():
+			var pat: BulletPatternTable = t.patterns[k]
+			if specs[k] == null:
+				assert_null(pat, "%s attack %d fires no pattern (the rune)" % [id, k])
+				continue
+			assert_not_null(pat, "%s attack %d names a pattern that exists" % [id, k])
+			assert_eq([pat.kind, pat.look], specs[k], String(id))
+			assert_between(pat.speed * 60.0, 3.0, 5.0, "%s: slow" % id)
+	for id: StringName in [&"needle", &"sniper", &"charger", &"warden"]:
+		var t := ContentCompiler.compile_enemy(repo.get_def(&"enemies", id), repo)
+		assert_true(t.patterns.is_empty(), "%s keeps its own attack" % id)

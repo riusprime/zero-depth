@@ -2,7 +2,8 @@ extends GutTest
 ## The Arc Caster and the Bomb Drone reach the real game (v0.3.5 AI; owner lines F5, F6). On a run they join the
 ## spawner's mix at danger tiers 1 and 2 (30 s and 60 s in; tests/unit/sim/test_spawn_director.gd); here the dev
 ## panel, opened with backtick and clicked with the mouse, brings each one in at once: its model appears, it winds
-## up a spell with its telegraph on the ground (the drone's bomb circle filling), and the spell lands on the player.
+## up a spell, and the spell lands on the player. v0.7.5 EF (owner N16): the bolts and the bomb draw nothing on the
+## ground now (a body cue, "cast", and the drone's fireball in the air, "lob"); the Arc Caster's rune keeps its circle.
 ## God mode (also clicked) keeps the player standing; the hits still show as DAMAGE events (0 applied is fine: the
 ## point is that the attack reached the player through the real loop).
 
@@ -29,8 +30,8 @@ func test_the_dev_panel_brings_in_both_new_enemies_and_they_attack() -> void:
 	assert_true(main.driver.debug.god, "God mode")
 	var choice := main.get_node("UI/DevPanel").find_child("EnemyChoice", true, false) as Label
 	for spec in [
-		[ActorStore.Kind.ARC_CASTER, "ENEMY_ARC_CASTER", [&"bolt", &"rune"]],
-		[ActorStore.Kind.BOMB_DRONE, "ENEMY_BOMB_DRONE", [&"bomb"]],
+		[ActorStore.Kind.ARC_CASTER, "ENEMY_ARC_CASTER", [&"cast", &"disc"]],
+		[ActorStore.Kind.BOMB_DRONE, "ENEMY_BOMB_DRONE", [&"cast", &"lob"]],
 	]:
 		for k in 8:
 			if choice.text == tr(spec[1]):
@@ -54,8 +55,9 @@ func test_the_dev_panel_brings_in_both_new_enemies_and_they_attack() -> void:
 			if i < 0:
 				break
 			var tg := main.driver.reader.telegraph(i)
-			if (spec[2] as Array).has(tg.get("style", &"")) and main.view.telegraphs.count() > 0:
-				styled = true
+			if (spec[2] as Array).has(tg.get("shape", &"")):
+				var ground: bool = tg.get("ground", true)
+				styled = styled or not ground or main.view.telegraphs.count() > 0
 			for ev in w.events_since(seq):
 				seq = ev.seq
 				if ev.kind == SimEvent.Kind.HIT and ev.target_id == w.actors.ids[0]:

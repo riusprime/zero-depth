@@ -58,7 +58,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); the other four bosses next |
-| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | Done ([evidence](evidence/ENEMY_FIREBALLS.md)) |
 | PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N20 | Done ([evidence](evidence/PLAYGROUND.md)) |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
@@ -185,6 +185,37 @@ boss's patterns" guide in [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.m
   (salmon-red core stretched into a tip, a wine edge, a crimson trail); the crystal shell in the boss's colour. A test
   keeps every hostile core 0.2+ (RGB) from the hero's cyan and heat colours. Effects density Low: every other trail,
   shorter.
+
+### EF: enemy fireballs (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N16 (verbatim above; [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md) "Normal enemies", "Approve all"); evidence in
+[`evidence/ENEMY_FIREBALLS.md`](evidence/ENEMY_FIREBALLS.md). Every number is a starting value (F10, the Bosses page
+lists `data/bullet_patterns`).
+- **Arc Caster:** both of its fast lined shots change, since both drew a trajectory: the bolt is a fan of 3 plasma
+  balls over 30 deg at 4 m/s, the spread a wider fan of 3 over 56 deg at 3.5 m/s (same weights 3 : 2, same 0.5 s
+  windup, tracked as before). The **rune stays**: a circle that erupts under you is an area marker, not a trajectory,
+  and the design table names only the bolt.
+- **Lens Drone:** a ring of 6 red orbs at 3.5 m/s, evenly round with one flying at you (a RING of 12 with 6 one-shot
+  gaps: the validation wants a gap, and every gap is about 3.9 m wide 4 m out), one wave. It still flies the Needle's
+  walk; wherever it appears (the Hive Lens's split) it fires the same.
+- **Bomb Drone:** a lobbed fireball (0.6 s in the air, drawn as a ball of its look on an arc) that lands where you
+  stood when its windup committed (your exact position, no lead, tracked like the aimed shots until 12 ticks before
+  the throw) and bursts into an X of 4 cinders at 45 deg to the throw, 4 m/s. The landing itself hurts within 0.5 m
+  (the falling fireball is the cue: no circle). The X spawns no cinder within 0.6 m (+ the hero's radius) of you, so
+  a hero hit by the landing is not hit by the X too; one who stepped out meets the X.
+- **No ground line:** the three draw nothing on the ground; their windup is the body's cue (the caster's crystal, the
+  drones' glow) and the readable-cause check counts it. Needle and Sniper keep their lines; the melee kinds (Charger,
+  Warden, Splitter, Splitling, Shield Bearer, Swarmer, Hatchling) their red telegraphs; Mine Layer and Mender are
+  unchanged.
+- **Damage:** each fireball (and the drone's landing) deals the attack's damage as before (12 / 8 / 16), scaled per
+  floor and loop by RunState and by the danger tier and the hidden catch-up (`EnemyAi.powered`), like every enemy hit.
+- **Elites:** an elite is its kind's AI, so elite Arc Casters, Lens Drones and Bomb Drones (the Ambush Cache, Marked)
+  fire the same new patterns; no other elite changes.
+- **Looks** (each its own, off the hero's colours and the bosses'): Arc Caster `arc_plasma` (blue-white core, a navy
+  edge, a cold blue trail, slightly long); Lens Drone `lens_orb` (small, a rose-white core, a near-black red edge, a
+  short crimson trail); Bomb Drone `bomb_cinder` (violet fuse-fire: a lavender core, a dark plum edge, a purple trail;
+  the lobbed ball the same look, bigger).
+- **Not done (open for the owner):** no shadow under the lobbed fireball (a shadow is a mark on the ground; the owner
+  said "no ground circle"); the colour-blind modes don't recolour the looks (as BF1's).
 
 ### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).

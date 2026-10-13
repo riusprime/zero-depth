@@ -340,7 +340,7 @@ SKILL_SCATTER_BLAST_DESC,"Skill: a close-range spray of 7 pellets toward your ai
 ENEMY_ARC_CASTER,Arc Caster,Lanzarrayos
 ENEMY_BOMB_DRONE,Bomb Drone,Dron Bombardero
 CAUSE_ARC_CASTER,An Arc Caster's spell struck you down.,Un hechizo de un Lanzarrayos te abatió.
-CAUSE_BOMB_DRONE,A Bomb Drone's bomb blew you up.,La bomba de un Dron Bombardero te hizo volar.
+CAUSE_BOMB_DRONE,A Bomb Drone's fireball burst on you.,La bola de fuego de un Dron Bombardero estalló sobre ti.
 UI_DEV_NEXT_ENEMY,Next enemy,Siguiente enemigo
 UI_DEV_SPAWN_ENEMY,Spawn enemy,Invocar enemigo
 ABILITY_COMBO_SWORD,Combo Sword,Espada de combo
@@ -444,7 +444,7 @@ BOSS_WARLORD,The Warlord,El Señor de la Guerra
 BOSS_HIVE_LENS,The Hive Lens,La Lente Enjambre
 BOSS_FOUNDRY,The Foundry,La Fundición
 ENEMY_LENS_DRONE,Lens Drone,Dron Lente
-CAUSE_LENS_DRONE,A Lens Drone's pulses got you.,Los pulsos de un Dron Lente te alcanzaron.
+CAUSE_LENS_DRONE,A Lens Drone's ring of orbs got you.,El anillo de orbes de un Dron Lente te alcanzó.
 CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo del Señor de la Guerra te derribó.
 CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas del Señor de la Guerra te atravesaron.
 CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida del Señor de la Guerra te arrolló.
@@ -876,8 +876,8 @@ ENEMY_CHARGER_DESC,"Runs at you, locks a straight lane and charges along it, the
 ENEMY_WARDEN_DESC,A slow rock golem that slams the ground around itself. Its front is armoured; hit it from behind.,Un gólem de roca lento que golpea el suelo a su alrededor. Su frente está blindado: atácalo por la espalda.
 ENEMY_NEEDLE_DESC,"A walking turret that keeps its distance and fires a burst down a locked line, backing off when you close in.",Una torreta andante que mantiene la distancia y dispara una ráfaga por una línea fija; retrocede si te acercas.
 ENEMY_HATCHLING_DESC,"The Brood Mother's young: small, quick, and they lunge in straight lines.","Las crías de la Madre de la Prole: pequeñas, rápidas, embisten en línea recta."
-ENEMY_ARC_CASTER_DESC,"Keeps its range and casts: a fast bolt, a fan of bolts, or a rune that erupts under you.","Mantiene la distancia y lanza: un rayo veloz, un abanico de rayos o una runa que estalla bajo tus pies."
-ENEMY_BOMB_DRONE_DESC,Hovers out of reach and lobs bombs; the circle on the ground shows where each one lands.,Flota fuera de tu alcance y lanza bombas; el círculo en el suelo muestra dónde cae cada una.
+ENEMY_ARC_CASTER_DESC,"Keeps its range and casts: a fan of three slow plasma balls, a wider fan, or a rune that erupts under you.","Mantiene la distancia y lanza: un abanico de tres bolas de plasma lentas, un abanico más abierto o una runa que estalla bajo tus pies."
+ENEMY_BOMB_DRONE_DESC,"Hovers out of reach and lobs a fireball that lands where you stand and bursts into an X of four small ones.","Flota fuera de tu alcance y lanza una bola de fuego que cae donde estás y estalla en una X de cuatro más pequeñas."
 ENEMY_SWARMER_DESC,"Weak alone, dangerous in packs: it bites with a short lunge.","Débil a solas, peligroso en manada: muerde con una embestida corta."
 ENEMY_SPLITTER_DESC,Swipes the ground ahead of it and splits into two Splitlings when it dies.,Barre el suelo frente a sí y se divide en dos Fragmentos al morir.
 ENEMY_SPLITLING_DESC,"What is left of a Splitter: smaller, weaker, and it never splits again.","Lo que queda de un Divisor: más pequeño, más débil, y ya no se divide."
@@ -885,7 +885,7 @@ ENEMY_SHIELD_BEARER_DESC,Turns its big shield toward you and bashes whoever stan
 ENEMY_MENDER_DESC,Never attacks: it keeps away and heals its most hurt ally. Take it down first.,Nunca ataca: se mantiene lejos y cura al aliado más herido. Acaba con él primero.
 ENEMY_MINE_LAYER_DESC,Drops mines as it moves; a mine arms when you touch it and blows a moment later.,Suelta minas al moverse; una mina se arma al tocarla y estalla un instante después.
 ENEMY_SNIPER_DESC,"Shows a long line, then fires down it for heavy damage, and walks to a new spot.","Muestra una línea larga, dispara por ella con mucho daño y cambia de posición."
-ENEMY_LENS_DRONE_DESC,Breaks off the Hive Lens's rim and fires short bursts from a distance.,Se desprende del borde de la Lente Enjambre y dispara ráfagas cortas a distancia.
+ENEMY_LENS_DRONE_DESC,"Breaks off the Hive Lens's rim and fires slow rings of six red orbs from a distance.","Se desprende del borde de la Lente Enjambre y dispara, a distancia, anillos lentos de seis orbes rojos."
 BOSS_GATEKEEPER_DESC,"A giant stone sentinel, the Warden's big brother: fist slams, shock lanes, sweeps and charges.","Un centinela de piedra gigante, el hermano mayor del Guardián: puñetazos al suelo, carriles de choque, barridos y embestidas."
 BOSS_BROOD_MOTHER_DESC,"Leaps, burrows and pounces, and calls her Hatchlings to the fight.","Salta, se entierra y se abalanza, y llama a sus Crías a la pelea."
 BOSS_SIEGE_ENGINE_DESC,"A war machine that rains barrages, sweeps rails, fans out bolts and deploys its drones.","Una máquina de guerra que lanza descargas, barre con raíles, dispara abanicos de proyectiles y despliega sus drones."

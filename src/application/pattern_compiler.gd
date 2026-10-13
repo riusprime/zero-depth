@@ -26,6 +26,28 @@ static func compile_boss_attack(
 			t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
 
 
+## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc
+## Caster's bolt and spread fans, the Lens Drone's ring, the Bomb Drone's lobbed burst. A pattern attack is active
+## until its last wave (its pattern's duration; the data's active_seconds is a floor).
+static func compile_enemy_patterns(
+	def: EnemyDefinition, repo: ContentRepository, t: EnemyTable
+) -> void:
+	t.patterns.clear()
+	var any := false
+	for atk in def.attacks:
+		var pat: BulletPatternTable = null
+		if atk != null and atk.shape_params.has("pattern_id"):
+			var pd: BulletPatternDefinition = repo.get_def(
+				&"bullet_patterns", StringName(atk.shape_params["pattern_id"])
+			)
+			if pd != null:
+				pat = compile_pattern(pd)
+				any = true
+		t.patterns.append(pat)
+	if not any:
+		t.patterns.clear()
+
+
 ## v0.7.5 BF1: a bullet pattern in sim units (BulletPatterns fires it).
 static func compile_pattern(def: BulletPatternDefinition) -> BulletPatternTable:
 	var t := BulletPatternTable.new()

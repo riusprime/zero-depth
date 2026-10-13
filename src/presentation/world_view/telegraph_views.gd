@@ -15,6 +15,8 @@ extends Node3D
 ## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): a telegraph with "tracked" is drawn as a dull red outline (no
 ## fill) while it follows the player, and once "locked" as a bright filled flash that pulses until it strikes (steady
 ## with reduced motion). &"marks" draws each of its markers (circles, or a row and a column of lanes) in its own state.
+## v0.7.5 EF (owner N16: "the ones that change don't have the trayectory drawn in the ground anymore"): a telegraph
+## with "ground": false (the Arc Caster's, Lens Drone's and Bomb Drone's fireball windups and lobs) is not drawn here.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [
@@ -91,8 +93,8 @@ func sync(reader: WorldReader) -> void:
 	var seen := {}
 	for i in reader.actor_count():
 		var tg := reader.telegraph(i)
-		if tg.is_empty():
-			continue
+		if tg.is_empty() or not tg.get("ground", true):
+			continue  # v0.7.5 EF: a body or air cue ("cast", "lob") draws nothing on the ground
 		var id := reader.actor_id(i)
 		seen[id] = true
 		var n: Node3D = _nodes.get(id)

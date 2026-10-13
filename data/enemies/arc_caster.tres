@@ -8,9 +8,7 @@ script = ExtResource("1_atk")
 id = &"bolt"
 shape = 4
 shape_params = {
-"radius_m": 0.14,
-"range_m": 16.0,
-"speed_mps": 22.0
+"pattern_id": "arc_caster_plasma_fan"
 }
 telegraph_seconds = 0.5
 active_seconds = 0.0167
@@ -22,11 +20,7 @@ script = ExtResource("1_atk")
 id = &"spread"
 shape = 4
 shape_params = {
-"count": 3,
-"radius_m": 0.14,
-"range_m": 14.0,
-"speed_mps": 16.0,
-"spread_degrees": 14.0
+"pattern_id": "arc_caster_plasma_fan_wide"
 }
 telegraph_seconds = 0.5
 active_seconds = 0.0167

@@ -94,14 +94,24 @@ func test_the_telegraph_view_draws_the_spells() -> void:
 	add_child_autofree(view)
 	var reader := WorldReader.new(w)
 	var styles := {}
-	for k in 600:
+	var air := {}
+	for k in 1800:
 		w.step(InputFrame.new())
 		w.actors.hp[0] = 100000
 		view.sync(reader)
+		var ground := 0
 		for i in reader.actor_count():
 			var tg := reader.telegraph(i)
 			if tg.has("style"):
 				styles[tg["style"]] = true
-	assert_true(styles.has(&"bomb"), "the bomb's circle")
-	assert_true(styles.has(&"bolt") or styles.has(&"rune"), "a spell's mark")
+			if not tg.is_empty() and tg.get("ground", true):
+				ground += 1
+			elif not tg.is_empty():
+				air[tg["shape"]] = true
+		assert_eq(view.count(), ground, "only ground telegraphs are drawn on the ground")
+	# v0.7.5 EF (owner N16): the bomb and the bolts draw nothing on the ground; the rune keeps its circle.
+	assert_false(styles.has(&"bomb"), "no bomb circle")
+	assert_false(styles.has(&"bolt"), "no bolt line")
+	assert_true(styles.has(&"rune"), "the rune's mark")
+	assert_true(air.has(&"cast") and air.has(&"lob"), "the windups and the lob: %s" % [air.keys()])
 	assert_gte(w.actors.index_of(drone) + w.actors.index_of(caster), 0)
