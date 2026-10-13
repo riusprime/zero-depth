@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_arena")
-share = 0.33
+share = 0.11
 waves_min = 2
 waves_max = 3
 wave_sizes = PackedInt32Array(3, 5, 7)

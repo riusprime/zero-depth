@@ -41,6 +41,7 @@ static func build_floor(run: RunState) -> World:
 		if boss >= 0
 		else null
 	)
+	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,
@@ -53,9 +54,10 @@ static func build_floor(run: RunState) -> World:
 		run,
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
-		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR, as Main
+		rules[&"arena"],  # v0.5.5 AR, as Main
+		rules[&"map"]  # v0.7.5 MG, as Main
 	)
-	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
+	FloorScenario.add_shop(w, rules[&"shop"])  # v0.5.0 SH, as Main
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
 	)

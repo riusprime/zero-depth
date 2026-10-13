@@ -35,6 +35,9 @@ extends RefCounted
 ## trade-off curse card (Offers.curse_code) for a trade-off curse you don't hold. Taking it takes the curse, upside
 ## and drawback; the other cards are clean. The epic stat card it used to carry is gone. Event choices' random curses
 ## draw plain curses only (Pool.PLAIN).
+## v0.7.5 MG (owner N10, "one every two floors"): the roll above counts only on a curse floor (EventRules.curse_floor:
+## floors 1, 3, 5 ... as shipped) and while the floor's cursed offers are under rules.cursed_chests_per_floor (1):
+## at most one cursed chest every two floors. The dev route (force_curse) skips both.
 
 enum Effect {
 	ENEMY_SPEED,
@@ -231,6 +234,10 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	var forced := s.force_curse
 	if not forced and not s.rng.chance_permille(s.rules.cursed_chest_permille):
 		return
+	# v0.7.5 MG (N10): only on a curse floor, and at most cursed_chests_per_floor a floor. The chance above is drawn
+	# first on every floor, so `loot:event` moves as before up to the first chest this refuses.
+	if not forced and not curse_floor_open(w):
+		return
 	var curse := roll(w, PackedInt32Array(), Pool.TRADE_OFF)
 	if curse < 0:
 		return
@@ -245,6 +252,13 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	s.cursed_ids.append(w.rewards.ids[i])
 	s.cursed_slot.append(CURSED_SLOT)
 	s.cursed_curse.append(curse)
+	s.cursed_rolled += 1
+
+
+## v0.7.5 MG (N10): whether this floor may still turn a chest cursed (a curse floor under its cap).
+static func curse_floor_open(w: World) -> bool:
+	var r := w.ev.rules
+	return r.curse_floor(w.floor_index) and w.ev.cursed_rolled < r.cursed_chests_per_floor
 
 
 ## The curse on card k of reward `reward_id`'s offer, or -1.

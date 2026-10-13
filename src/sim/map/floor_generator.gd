@@ -9,6 +9,8 @@ extends RefCounted
 ## v0.3.0 (L1-L2): the cell size is drawn per floor; every room side draws its own wall half, so walls are 0.6-3.0 m
 ## thick and room interiors give way to them; doorways are 2.2-3.4 m wide, anywhere along the stretch the two rooms
 ## share, and cut through the full thickness.
+## v0.7.5 MG (owner N9): 15-19 rooms (20 with the boss room), footprints up to the extra-large 4 x 4, on a span of
+## 11 cells (FloorParams; the run's floors read them from data/map).
 ## Every draw comes from the `map` stream in a fixed order, so a seed always gives the same floor. Pure sim code:
 ## integer draws, floats from whole centimetres, no trig.
 

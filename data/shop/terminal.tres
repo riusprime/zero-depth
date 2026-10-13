@@ -17,3 +17,5 @@ reroll_step = 0.5
 sell_share = 0.4
 ability_refund_per_level = 10
 interact_radius_m = 1.8
+first_floor = 1
+every_floors = 2

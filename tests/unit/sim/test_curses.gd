@@ -201,8 +201,10 @@ func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:
 func test_cursed_chest_offers_hold_one_trade_off_curse_card() -> void:
 	var cursed := 0
 	var rolled := 0
+	var floors_cursed := 0
 	for s in 120:
 		var w := _world([], 900 + s)
+		var on_floor := 0
 		for i in w.rewards.size():
 			if w.rewards.kind[i] != RewardStore.Kind.CHEST:
 				continue
@@ -216,6 +218,7 @@ func test_cursed_chest_offers_hold_one_trade_off_curse_card() -> void:
 			if marks == 0:
 				continue
 			cursed += 1
+			on_floor += 1
 			assert_eq(marks, 1, "one cursed card")
 			var card := offer[Curses.CURSED_SLOT]
 			assert_eq(Offers.type_of(card), Offers.CURSE, "S6: a trade-off curse card")
@@ -233,8 +236,68 @@ func test_cursed_chest_offers_hold_one_trade_off_curse_card() -> void:
 				),
 				"altars are never cursed"
 			)
-	gut.p("cursed chest offers: %d of %d" % [cursed, rolled])
-	assert_between(cursed * 1000 / maxi(1, rolled), 150, 350, "about 25 % of chests")
+		assert_lte(on_floor, 1, "v0.7.5 MG (N10): at most one cursed chest on a floor")
+		assert_eq(w.ev.cursed_rolled, on_floor, "counted")
+		floors_cursed += on_floor
+	gut.p(
+		(
+			"cursed chest offers: %d of %d; floors with one: %d of 120"
+			% [cursed, rolled, floors_cursed]
+		)
+	)
+	# Floor 1 is a curse floor: each chest rolls 25 % until one is cursed (about 3 chests: about 58 % of floors).
+	assert_between(floors_cursed, 40, 100, "most curse floors have one")
+
+
+## v0.7.5 MG (owner N10, "the curse appear too often we're gonna have one every two floors"): chests roll the curse
+## only on floors 1, 3, 5 … (the data's cursed_chest_first_floor 1, every 2) and at most once a floor; floor 2 has
+## none even with every chest rolled; the dev route still forces one there. The 25 % draw is taken on every floor, so
+## `loot:event` moves as before until a chest is refused.
+func test_cursed_chests_every_two_floors_at_most_one() -> void:
+	var rules := EventCompiler.compile_rules(EventLab.repo().get_def(&"event_rules", &"floor"))
+	assert_eq(
+		[
+			rules.cursed_chest_first_floor,
+			rules.cursed_chest_every_floors,
+			rules.cursed_chests_per_floor
+		],
+		[1, 2, 1]
+	)
+	var on := []
+	for f in range(1, 10):
+		if rules.curse_floor(f):
+			on.append(f)
+	assert_eq(on, [1, 3, 5, 7, 9])
+	var by_floor := [0, 0, 0, 0]
+	for s in 40:
+		for f in [1, 2, 3]:
+			var w := EventLab.world(700 + s, f)
+			var here := 0
+			for i in w.rewards.size():
+				if w.rewards.kind[i] != RewardStore.Kind.CHEST:
+					continue
+				w.rewards.set_offer(i, Offers.roll(w, i))
+				Curses.on_offer_rolled(w, i)
+				here += 1 if w.ev.cursed_ids.has(w.rewards.ids[i]) else 0
+			assert_lte(here, 1, "seed %d floor %d: at most one" % [700 + s, f])
+			by_floor[f] += here
+	gut.p(
+		(
+			"cursed chests over 40 runs, floors 1/2/3: %d/%d/%d"
+			% [by_floor[1], by_floor[2], by_floor[3]]
+		)
+	)
+	assert_eq(by_floor[2], 0, "floor 2 never has one")
+	assert_gt(by_floor[1], 0)
+	assert_gt(by_floor[3], 0)
+	var w2 := EventLab.world(701, 2)
+	var chest := E2e.nearest_reward(w2, RewardStore.Kind.CHEST)
+	w2.ev.force_curse = true  # the dev route (DebugApi.curse_next_chest)
+	w2.rewards.set_offer(chest, Offers.roll(w2, chest))
+	Curses.on_offer_rolled(w2, chest)
+	assert_true(
+		w2.ev.cursed_ids.has(w2.rewards.ids[chest]), "the dev route still curses one on floor 2"
+	)
 
 
 func test_taking_the_cursed_card_takes_its_curse_and_the_others_are_clean() -> void:

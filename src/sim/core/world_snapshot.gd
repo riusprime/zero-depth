@@ -164,6 +164,7 @@ const ADDED_SINCE_V05 := {
 		&"cast_flag",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
+	&"EventState": [&"cursed_rolled"],  # v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0)
 	&"AbilityState":
 	[
 		&"bomb_spec",
