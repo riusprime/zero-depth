@@ -228,8 +228,7 @@ static func _open_spot(w: World, q: Vector2) -> bool:
 static func _clear(w: World) -> void:
 	var s := w.arenas
 	var room := s.room
-	for o in s.barriers:
-		w.remove_barrier(o)
+	w.remove_barriers(s.barriers)
 	s.barriers.clear()
 	s.cleared.append(room)
 	s.clear_tick = w.tick

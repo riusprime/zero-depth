@@ -367,10 +367,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 func set_walls(p_walls: Array[Obb]) -> void:
 	walls = p_walls
 	nav.build(walls)
-	var rects: Array[Rect2] = []
-	for o in walls:
-		rects.append(o.bounds())
-	_wall_grid.build(rects)
+	rebuild_wall_grid()
 
 
 ## Indices of the walls that may touch `rect` (ascending; a superset), for sweeps that would test every wall (SC).
@@ -656,15 +653,27 @@ func add_barrier(o: Obb) -> void:
 	_wall_grid.add(o.bounds())
 
 
-## v0.5.5 AR: removes a barrier (matched by its shape; a restored world holds copies) and rebuilds the wall grid.
-func remove_barrier(o: Obb) -> void:
-	var k := walls.size() - 1
-	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
-		k -= 1
-	if k < 0:
-		return
-	walls.remove_at(k)
-	rebuild_wall_grid()
+## v0.5.5 AR: removes barriers (each matched by its shape; a restored world holds copies), then rebuilds the wall
+## grid once (an arena's doorways all open on the same tick).
+func remove_barriers(list: Array[Obb]) -> void:
+	var removed := false
+	for o in list:
+		var k := _find_wall(o)
+		if k >= 0:
+			walls.remove_at(k)
+			removed = true
+	if removed:
+		rebuild_wall_grid()
+
+
+## The last wall with o's shape (centre, half-extents and angle), or -1. Walls added in play are matched by shape,
+## not identity: a restored world holds copies of them.
+func _find_wall(o: Obb) -> int:
+	for k in range(walls.size() - 1, -1, -1):
+		var x := walls[k]
+		if x.center == o.center and x.half == o.half and x.angle == o.angle:
+			return k
+	return -1
 
 
 ## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
@@ -709,16 +718,11 @@ func add_wall_now(o: Obb) -> void:
 ## matched by its shape (a restored world holds copies of the walls); the grid is rebuilt, and the flow field from
 ## before add_wall_now swaps back in (or is rebuilt if there is none) and floods from the player at once.
 func remove_wall_now(o: Obb) -> void:
-	var k := walls.size() - 1
-	while k >= 0 and not (walls[k].center == o.center and walls[k].half == o.half):
-		k -= 1
+	var k := _find_wall(o)
 	if k < 0:
 		return
 	walls.remove_at(k)
-	var rects: Array[Rect2] = []
-	for x in walls:
-		rects.append(x.bounds())
-	_wall_grid.build(rects)
+	rebuild_wall_grid()
 	if _nav_open != null:
 		nav = _nav_open
 	else:
