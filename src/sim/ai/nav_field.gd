@@ -67,7 +67,8 @@ func build(walls: Array[Obb]) -> void:
 	_build_adjacency()
 
 
-## The reference build (every wall at every cell), kept for the test that the fast build matches it.
+## The reference build (every wall at every cell), kept for the test that the fast build matches it. Kept on
+## purpose as the parity oracle for build (owner keeps safety nets; audit G-22): change it with build, never drop it.
 func build_reference(walls: Array[Obb]) -> void:
 	_flooded = Vector3i(-1, -1, -1)
 	if walls.is_empty():
@@ -236,7 +237,8 @@ func _build_adjacency() -> void:
 	_adj = out
 
 
-## The reference flood (the original loop over STEPS), kept for the test that the fast flood matches it.
+## The reference flood (the original loop over STEPS), kept for the test that the fast flood matches it. Kept on
+## purpose as the parity oracle for flood (owner keeps safety nets; audit G-22).
 func flood_reference(goal: Vector2) -> void:
 	_flooded = Vector3i(-1, -1, -1)
 	if size == Vector2i.ZERO:
