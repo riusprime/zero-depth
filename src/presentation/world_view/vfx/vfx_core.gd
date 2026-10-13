@@ -377,6 +377,13 @@ func clear_marks() -> void:
 
 
 func _lay_marks() -> void:
+	# P-8: a mark suppressed by an overlapping one keeps its key here but never joins _marks, the list keys are erased
+	# through, so on a long floor the keys pile up; past a few times the cap the cache is rebuilt from the live marks
+	# (a still-overlapping key is suppressed again by the same test on its next call).
+	if _mark_keys.size() > DECALS * 4:
+		_mark_keys.clear()
+		for s: Array in _marks:
+			_mark_keys[s[0]] = true
 	var keep: Array = []
 	for s: Array in _marks:
 		if _now - float(s[4]) < MARK_TICKS:

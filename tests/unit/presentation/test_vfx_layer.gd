@@ -227,3 +227,31 @@ func test_a_fire_prop_draws_flames_that_bloom() -> void:
 	_vfx.prop_fire(Vector3(1, 1, 1), 5)
 	_vfx.finish()
 	assert_eq(_vfx.used(&"flame"), 3, "three tongues (their HDR colour is not readable headless)")
+
+
+## Audit P-13: the shock ring draws fewer bolt segments at a lower Effects density, like every other element ring.
+func test_the_shock_ring_follows_effects_density() -> void:
+	_vfx.density = 1.0
+	_vfx.begin(0.0)
+	_vfx.ring(&"storm", Vector3.ZERO, 4.0, 1.0, 0.0, 7)
+	var full := _vfx.used(&"bolt")
+	_vfx.density = 0.5
+	_vfx.begin(0.0)
+	_vfx.ring(&"storm", Vector3.ZERO, 4.0, 1.0, 0.0, 7)
+	var half := _vfx.used(&"bolt")
+	assert_eq(full, 12, "r 4 m at full density: 12 segments")
+	assert_eq(half, 6, "half density: half the segments")
+
+
+## Audit P-8: marks suppressed by an overlapping one don't pile up in the de-duplication cache for the whole floor;
+## the overlap still suppresses them (one decal on screen).
+func test_suppressed_marks_dont_grow_the_cache_forever() -> void:
+	_vfx.begin(0.0)
+	_vfx.mark(1, &"scorch", Vector3.ZERO, 1.0, Color.WHITE)
+	for k in 2000:
+		_vfx.mark(100 + k, &"scorch", Vector3(0.01, 0, 0), 1.0, Color.WHITE)
+		if k % 50 == 0:
+			_vfx.finish()
+	_vfx.finish()
+	assert_eq(_vfx.marks_of(&"scorch"), 1, "the overlap still suppresses them")
+	assert_lte(_vfx._mark_keys.size(), VfxCore.DECALS * 4 + 50, "the cache is trimmed")
