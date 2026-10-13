@@ -27,7 +27,7 @@ const BOLT_SEGMENTS := 4
 ## it); this view keeps the patches without one (Napalm Drone's).
 var forms_drawn := false
 var _fires: Array[MeshInstance3D] = []
-var _fx: Array = []
+var _fx := FxFade.new()
 var _template := SkillVisuals._make_template()
 var _fire_mat := _template.duplicate() as StandardMaterial3D
 var _napalm_mat := _template.duplicate() as StandardMaterial3D
@@ -88,7 +88,7 @@ func fire_count() -> int:
 
 
 func fx_count_of(kind: StringName) -> int:
-	return _fx.filter(func(f: Array) -> bool: return f[4] == kind).size()
+	return _fx.count_of(kind)
 
 
 func _edge(kind: StringName, tick: int) -> bool:
@@ -205,20 +205,8 @@ func _disc(
 
 
 func _add(n: MeshInstance3D, c: Color, alpha: float, kind: StringName) -> void:
-	var m := _template.duplicate() as StandardMaterial3D
-	m.albedo_color = Color(c, alpha)
-	n.material_override = m
-	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	add_child(n)
-	_fx.append([n, m, FX_FRAMES, FX_FRAMES, kind, alpha])
+	_fx.add(self, n, _template, c, alpha, kind, FX_FRAMES)
 
 
 func _process(_delta: float) -> void:
-	for k in range(_fx.size() - 1, -1, -1):
-		var fx: Array = _fx[k]
-		fx[2] -= 1
-		(fx[1] as StandardMaterial3D).albedo_color.a = fx[5] * float(fx[2]) / fx[3]
-		if fx[2] <= 0:
-			(fx[0] as Node).queue_free()
-			_fx.remove_at(k)
+	_fx.step(1)

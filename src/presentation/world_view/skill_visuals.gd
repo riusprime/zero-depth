@@ -36,7 +36,7 @@ const COLOR := Color("#7FE9FF")
 const HOT := Color("#FFFFFF")
 
 ## Live effects: [node, material, ticks left, ticks, kind, base alpha].
-var _fx: Array = []
+var _fx := FxFade.new()
 var _fx_template := _make_template()
 ## v0.5.5 LK (A3 VFX audit): the cleave's and the blast's flashes are light, added to the floor (HeatVisuals' glow
 ## template); mixed, their pale unshaded fans read as flat sheets over a dark lit floor.
@@ -151,7 +151,7 @@ func forecast_shape() -> Vector2:
 
 
 func fx_count_of(kind: StringName) -> int:
-	return _fx.filter(func(f: Array) -> bool: return f[4] == kind).size()
+	return _fx.count_of(kind)
 
 
 ## The colour the skill's effects take now (HeatLooks.attack_color of the heat tier).
@@ -161,9 +161,9 @@ func fx_color() -> Color:
 
 ## The colour of the newest live effect of a kind (its material's albedo, alpha 1), or transparent black.
 func fx_color_of(kind: StringName) -> Color:
-	for k in range(_fx.size() - 1, -1, -1):
-		if _fx[k][4] == kind:
-			return Color((_fx[k][1] as StandardMaterial3D).albedo_color, 1.0)
+	for k in range(_fx.list.size() - 1, -1, -1):
+		if _fx.list[k][4] == kind:
+			return Color((_fx.list[k][1] as StandardMaterial3D).albedo_color, 1.0)
 	return Color(0, 0, 0, 0)
 
 
@@ -302,24 +302,12 @@ func _add(
 	ticks: int,
 	template: StandardMaterial3D = null
 ) -> void:
-	var m := (template if template != null else _fx_template).duplicate() as StandardMaterial3D
-	m.albedo_color = Color(c, alpha)
-	n.material_override = m
-	n.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	n.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	add_child(n)
-	_fx.append([n, m, ticks, ticks, kind, alpha])
+	_fx.add(self, n, template if template != null else _fx_template, c, alpha, kind, ticks)
 
 
 ## Ages every effect by `ticks` sim ticks: it fades with its life and goes when the life is out.
 func _age(ticks: int) -> void:
-	for k in range(_fx.size() - 1, -1, -1):
-		var fx: Array = _fx[k]
-		fx[2] -= ticks
-		(fx[1] as StandardMaterial3D).albedo_color.a = fx[5] * maxf(0.0, float(fx[2])) / fx[3]
-		if fx[2] <= 0:
-			(fx[0] as Node).queue_free()
-			_fx.remove_at(k)
+	_fx.step(ticks)
 
 
 static func _make_template() -> StandardMaterial3D:
