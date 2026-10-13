@@ -1,5 +1,5 @@
 class_name WardenAvatar
-extends Node3D
+extends AvatarBase
 ## The Warden (owner, v0.2.0 L17; docs/art/enemies_visual_reference.png, the third creature): a hulking grey rock
 ## golem. A long faceted red shell covers its head and back, with a dark visor frame and a glowing red slot at the
 ## front; big boulder shoulders, heavy forearm rocks and fists that hang almost to the ground; a dark chest under the
@@ -82,7 +82,6 @@ var weak_spot: Node3D
 var arms: Array[Node3D] = []
 var fists: Array[Node3D] = []
 var legs: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _body := Node3D.new()
 var _chest := Node3D.new()
@@ -92,15 +91,10 @@ var _crack_mat := StandardMaterial3D.new()
 var _technique := &"xray"
 var _outline := Color.BLACK
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _state := WorldReader.STATE_MOVE
 var _state_ticks := 0
 var _windup := 0.0
 # Smoothed animation state.
-var _t := 0.0
 var _speed := 0.0
 var _walk := 0.0
 var _phase := 0.0
@@ -149,17 +143,11 @@ func apply_state(s: Dictionary) -> void:
 	var pos: Vector2 = s["pos"]
 	var state: int = s["state"]
 	var dt_ticks := tick - _last_tick
-	if not _fresh and dt_ticks > 0:
-		var v := (pos - _last_pos) * (60.0 / float(dt_ticks))
-		_vel = v if v.length() <= TELEPORT_SPEED and dt_ticks <= 30 else Vector2.ZERO
-	elif dt_ticks < 0:
-		_vel = Vector2.ZERO
 	if _fresh or state != _state:
 		_state_ticks = 0
 	elif dt_ticks > 0:
 		_state_ticks += dt_ticks
-	_last_tick = tick
-	_last_pos = pos
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	_state = state
 	_windup = clampf(s.get("windup", 0.0), 0.0, 1.0)
 	if state == WorldReader.STATE_ACTIVE:
@@ -169,10 +157,6 @@ func apply_state(s: Dictionary) -> void:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
 		_pose(0.0)
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 ## Advances the animation by `delta` seconds of frame time.
@@ -222,10 +206,6 @@ func fist_height() -> float:
 	for f in fists:
 		sum += (global_transform.affine_inverse() * f.global_position).y
 	return sum / maxf(1.0, fists.size())
-
-
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
 
 
 func _pose(dt: float) -> void:
@@ -285,7 +265,7 @@ func _build_visor() -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = VISOR_COLOR
 	_visor_mat.emission_energy_multiplier = 2.4
-	_write_stencil(_visor_mat)
+	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.445, 0.37, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -304,7 +284,7 @@ func _build_weak_spot() -> void:
 	_crack_mat.emission_enabled = true
 	_crack_mat.emission = CRACK_COLOR
 	_crack_mat.emission_energy_multiplier = 1.8
-	_write_stencil(_crack_mat)
+	write_stencil(_crack_mat)
 	var cracks := MeshInstance3D.new()
 	cracks.mesh = _crack_mesh()
 	cracks.material_override = _crack_mat
@@ -357,33 +337,18 @@ func _piece(
 		else:
 			mesh = _rock(size, salt)
 		_meshes[key] = mesh
-	var body := MeshInstance3D.new()
-	body.name = String(key).capitalize().replace(" ", "")
-	body.mesh = mesh
-	body.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = _outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	mat.vertex_color_use_as_albedo = key != &"visor_frame"
-	body.material_override = mat
-	parent.add_child(body)
-	body_materials.append(ActorViews.flashable(mat))
-	if _technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
-	return body
+	return _outlined(
+		parent,
+		mesh,
+		at,
+		c,
+		_outline,
+		ThemePalette.color(&"enemy_body"),
+		_technique,
+		OUTLINE_M,
+		key != &"visor_frame",
+		String(key).capitalize().replace(" ", "")
+	)
 
 
 # --- meshes -----------------------------------------------------------------------------------------------------
@@ -585,11 +550,3 @@ static func _mesh_from(tris: Array, centre: Vector3, salt: int) -> ArrayMesh:
 	var m := ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	return m
-
-
-## The visor and the cracks mark the stencil like the body pieces do, so the X-ray twins behind them stay hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
