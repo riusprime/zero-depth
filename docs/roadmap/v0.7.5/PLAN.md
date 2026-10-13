@@ -32,7 +32,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N5 | "we are gonna not create a second character yet" | No second character in v0.7.5 | Decided | — |
 | N6 | "you're gonna do the journal of codex cards" | **The Codex**: a journal of every card, enemy, boss and biome; an entry unlocks the first time you meet it and shows its art, text and your counts (taken, kills, deaths to). Reachable from the main menu and the pause menu. Kept in the profile, not the run | Decided | CX |
 | N7 | "you're gonna work also on the local achievements" | **Local achievements**: a list in the profile (no platform API yet), a toast when one unlocks, a page in the Codex/menu. Starting set drawn from the run (clear a floor, beat each boss, win, Ascend N times, a wand of 8, a level-5 card, each biome, no-hit room…) | Decided | AC |
-| N8 | "go for the small things that are left … let's just try to leave the game for almost ready … just the things that need my feedback are gonna be left basically the gameplay" | Also in v0.7.5 (ROADMAP v0.8.0/v0.9.x items that need no owner taste): onboarding (first-run hints for move, attack, dash, the wand and the Build page), the card level on pick cards and wand pips, credits and licences filled from the manifests, an accessibility pass of the options already there. Not in v0.7.5: a second character, the final audio, Steam, trailers, balance | Decided | SM |
+| N8 | "go for the small things that are left … let's just try to leave the game for almost ready … just the things that need my feedback are gonna be left basically the gameplay" | Also in v0.7.5 (ROADMAP v0.8.0/v0.9.x items that need no owner taste): onboarding (first-run hints for move, attack, dash, the wand and the Build page), the card level on pick cards and wand pips, credits and licences filled from the manifests, an accessibility pass of the options already there. Not in v0.7.5: a second character, the final audio, Steam, trailers, balance | Done (SM) | SM |
 | N9 | "you're gonna make maps bigger the rooms maybe we could add maybe even bigger rooms at some point and we will add up to 20 rooms" | Floors grow to **up to 20 rooms** (from today's count), with larger room sizes in the generator's mix, including a new extra-large room size. MG: 15-19 rooms plus the boss room (16-20; was 11-13), more weight on big footprints, new 4×3, 3×4 and the extra-large 4×4, span 11 cells; all in `data/map/floor.tres` (F10) | Done (MG) | MG |
 | N10 | "the curse appear too often we're gonna have one every two floors" | Cursed chests: **at most one every two floors**. MG (lead's reading): chests roll the curse (25 %, unchanged) only on floors 1, 3, 5 … and at most once a floor (`data/event_rules`: first floor 1, every 2, per floor 1). Counted by the run's floor number, so an endless loop keeps the rhythm | Done (MG) | MG |
 | N11 | "we're gonna reduce the amount of challenge rooms … like 20% less" | Challenge rooms (the sealed arenas and Overrun rooms): **20 % fewer**. MG: counted per floor; arena share 0.33 → 0.11; 3.23 → 2.42 a floor (−25 %) on the bigger floors | Done (MG) | MG |
@@ -48,7 +48,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | AP | The Ascension portal and the endless loop | N4 | |
 | CX | The Codex | N6 | Done |
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
-| SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | |
+| SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
 - **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold
@@ -106,7 +106,8 @@ Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`]
   reads left to right"); the Build page (pause → Build) after the first card joins the wand; the first trigger card;
   the first shop; the first open portal; the Codex (pause → Codex) at the second floor's start (lead's reading of
   "the Codex": when the player has met enough to fill it). One small Ember-stone slab with a cold top line at the
-  top centre, never blocking (no mouse, no focus, no pause), a hint about a moment first, at least 2 s and at most
+  top centre (low, over the heat meter, while a pick, shop or event panel is open, so it never covers the panel),
+  never blocking (no mouse, no focus, no pause), a hint about a moment first, at least 2 s and at most
   9 s up, the keys of the device used last from the live bindings. **Skippable** = Options → Accessibility "Show
   hints" (on by default; off hides one at once) and "Reset hints" (all show again); no dismiss key, since every
   key is already a game key and a hint closes on its own.
@@ -118,7 +119,9 @@ Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`]
   own credit line (`CREDITS_OWNER`, "…" since v0.0.1, owner action O4) stays the owner's to write.
 - **Accessibility pass** (findings in the evidence): the achievement toast's slide and the build picker's card rise
   now honour reduced motion; the Codex's enemy emblems follow the colour-blind mode; a new **Interface size** option
-  (90 / 100 / 110 / 125 %, the window's content scale) was missing and is added under Accessibility.
+  (90 / 100 / 110 %, the window's content scale) was missing and is added under Accessibility; 125 % was tried and
+  dropped: the pick panel, built for 1080 px, overflows the 864 px it gets (screenshot in the evidence); a bigger
+  size needs the 1080-built panels to adapt (open).
 - **Release checklist, the code part.** The dev panels have one switch, `DevGate` (`game/dev/panel_enabled`, ON):
   an export preset with the custom feature `public_release` ships them locked (project.godot's override) and ignores
   a saved tuning file. No preset has it; the owner's playtest builds keep F10 (owner, 2026-10-12: "All builds, hidden

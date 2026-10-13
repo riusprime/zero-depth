@@ -14,9 +14,13 @@ extends Control
 
 signal shown(id: StringName)
 
-const W := 640.0
+const W := 720.0
 const PAD := Vector2(20, 12)
 const TOP := 150.0
+## While a centre panel is open (a pick, the Swap, the shop, an event) the slab sits low instead, its bottom this far
+## above the screen's bottom edge: under the panel's key line, over the heat meter, so it never covers the panel's
+## title or its cards.
+const LOW_BOTTOM := 82.0
 ## A hint stays up at least this long, so a quick player still reads it, and closes on its own after MAX_S.
 const MIN_S := 2.0
 const MAX_S := 9.0
@@ -47,6 +51,8 @@ var _moment := {}
 var _was_choosing := false
 ## A floor is running (between begin_floor and end_floor): only then does a hint show and its clock run.
 var _live := false
+## A centre panel is open (the last observed tick): the slab sits low.
+var _panel_open := false
 
 
 func _init() -> void:
@@ -98,6 +104,7 @@ func begin_floor(floor_index: int, reader: WorldReader) -> void:
 ## The floor's nodes are going: a hint about this floor's moment goes too; the first-run steps carry over.
 func end_floor() -> void:
 	_live = false
+	_panel_open = false
 	_moment = {}
 	if _current in CONTEXT:
 		_close_now()
@@ -110,6 +117,7 @@ func observe(reader: WorldReader) -> void:
 	if store == null or not store.enabled():
 		return
 	var choosing := reader.choosing() and not reader.swapping()
+	_panel_open = reader.choosing() or reader.shop_open() or reader.event_open()
 	_moment = {
 		&"pick": choosing,
 		&"shop": reader.shop_open(),
@@ -214,6 +222,22 @@ func _process(delta: float) -> void:
 		return
 	var left := MAX_S - _t
 	modulate.a = minf(1.0, _t / FADE_S) if _t < FADE_S else minf(1.0, left / FADE_S)
+	_place()
+
+
+## Top centre, or low while a centre panel is open (LOW_BOTTOM).
+func _place() -> void:
+	var h := size.y  # read first: moving one offset resizes the box
+	var y := TOP
+	if _panel_open:
+		y = get_viewport_rect().size.y - LOW_BOTTOM - h
+	offset_top = y
+	offset_bottom = y + h
+
+
+## The slab sits low (a centre panel is open).
+func is_low() -> bool:
+	return _panel_open
 
 
 func _input(event: InputEvent) -> void:

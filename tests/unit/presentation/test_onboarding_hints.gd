@@ -41,8 +41,25 @@ func test_every_hint_has_its_line_in_both_languages_and_fits() -> void:
 				var lines := ceili(
 					CrystalCard.text_height(font, t, width, size) / font.get_height(size) - 0.01
 				)
-				assert_lte(lines, 2, "%s %s (%s): %d lines" % [lang, id, dev, lines])
+				# the hints shown over a centre panel (low, between its key line and the heat meter): one line
+				var most := 1 if id in [&"pick", &"shop"] else 2
+				assert_lte(lines, most, "%s %s (%s): %d lines" % [lang, id, dev, lines])
 	TranslationServer.set_locale("en")
+
+
+func test_over_a_centre_panel_the_slab_sits_low() -> void:
+	var h := OnboardingHints.new()
+	add_child_autofree(h)
+	h.setup(HintStore.new(ProfileStore.new("")))
+	h.begin_floor(1, _reader())
+	await wait_physics_frames(2)
+	h._place()
+	assert_eq(h.offset_top, OnboardingHints.TOP, "top centre in play")
+	h._panel_open = true
+	h._place()
+	var bottom := h.get_viewport_rect().size.y - OnboardingHints.LOW_BOTTOM
+	assert_true(h.is_low())
+	assert_almost_eq(h.offset_top + h.size.y, bottom, 0.5, "low over a panel: clear of its title")
 
 
 func test_the_keys_named_are_the_live_bindings_of_the_last_device() -> void:
@@ -111,8 +128,8 @@ func test_the_interface_size_scales_the_window_content() -> void:
 	var root := get_tree().root
 	var before := root.content_scale_factor
 	assert_eq(GameSettings.get_value(p, "ui_scale"), "100", "100 % by default")
-	GameSettings.set_value(p, "ui_scale", "125")
-	assert_almost_eq(root.content_scale_factor, 1.25, 0.001)
+	GameSettings.set_value(p, "ui_scale", "110")
+	assert_almost_eq(root.content_scale_factor, 1.1, 0.001)
 	GameSettings.set_value(p, "ui_scale", "90")
 	assert_almost_eq(root.content_scale_factor, 0.9, 0.001)
 	GameSettings.set_value(p, "ui_scale", "100")

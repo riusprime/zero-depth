@@ -23,8 +23,9 @@ const COLOUR_MODES: Array[String] = ["off", "protanopia", "deuteranopia", "trita
 ## v0.6.0 MX3: the attack effects' density (ViewPrefs.effects_density, AttackFormView).
 const EFFECTS_DENSITIES: Array[String] = ["low", "medium", "high"]
 ## v0.7.5 SM (N8, accessibility): the interface scale (%): every menu, the HUD and their text grow or shrink with it
-## (the window's content scale; the 3D view is not scaled). Layouts are built for 1920×1080 at 100 and checked at 125.
-const UI_SCALES: Array[String] = ["90", "100", "110", "125"]
+## (the window's content scale; the 3D view is not scaled). Layouts are built for 1920×1080 at 100; 110 is the most the
+## pick panel takes at 1280×720 (at 125 its column overflows the 864 px it is given: v0.7.5 evidence/SMALL_THINGS.md).
+const UI_SCALES: Array[String] = ["90", "100", "110"]
 ## Starting values (v0.3.0 O); the shipped look stays the default.
 const DEFAULTS := {
 	"audio/master": 80,

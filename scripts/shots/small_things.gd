@@ -2,9 +2,9 @@ extends SceneTree
 ## v0.7.5 SM screenshots (needs a renderer, not --headless), in one language and size: a first run's opening with the
 ## move hint; an altar's pick with a held wand card ("Lv 2 → 3"), a new one ("Lv 1") and the HUD's wand pips with
 ## their levels; Options → Accessibility (interface size, Show hints, Reset hints); the credits with the generated
-## licence list; and the pick again at the 125 % interface size. Shot setup only: a memory-only profile, the run started
-## by Main.start_stage, the wand cards and the altar's offer written into the world directly (the real input paths
-## are tests/e2e/test_e2e_hints.gd and test_e2e_card_levels.gd).
+## licence list; then at the 110 % interface size the pick, Options, the Codex and the Build page. Shot setup only: a
+## memory-only profile, each run started by Main.start_stage from the main menu, the wand cards and the altar's offer
+## written into the world directly (the real input paths are tests/e2e/test_e2e_hints.gd and test_e2e_card_levels.gd).
 ##   godot --path . --fixed-fps 60 --resolution 1280x720 -s scripts/shots/small_things.gd -- lang=es size=1280x720
 ##   -> build/shots/v0.7.5/small_things/<lang>_<size>_<shot>.png
 
@@ -81,7 +81,8 @@ func _process(_delta: float) -> bool:
 		5:
 			if _frame >= _wait:
 				_shot("credits")
-				GameSettings.set_value(_profile, "ui_scale", "125")
+				GameSettings.set_value(_profile, "ui_scale", "110")
+				_main.show_main_menu()
 				_main.start_stage()
 				_step = 6
 				_wait = _frame + 50
@@ -92,19 +93,20 @@ func _process(_delta: float) -> bool:
 				_wait = _frame + 30
 		7:
 			if _frame >= _wait:
-				_shot("pick_levels_ui125")
+				_shot("pick_levels_ui110")
 				_main.show_options()
 				_step = 8
 				_wait = _frame + 10
 		8:
 			if _frame >= _wait:
-				_shot("options_ui125")
+				_shot("options_ui110")
 				_main.show_codex()
 				_step = 9
 				_wait = _frame + 10
 		9:
 			if _frame >= _wait:
-				_shot("codex_ui125")
+				_shot("codex_ui110")
+				_main.show_main_menu()
 				_main.start_stage()
 				_step = 10
 				_wait = _frame + 50
@@ -121,7 +123,7 @@ func _process(_delta: float) -> bool:
 				_wait = _frame + 20
 		11:
 			if _frame >= _wait:
-				_shot("build_page_ui125")
+				_shot("build_page_ui110")
 				quit(0)
 	return false
 

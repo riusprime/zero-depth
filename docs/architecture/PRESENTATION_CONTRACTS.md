@@ -165,7 +165,7 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
 | Captions for sounds | v0.1.0 | Every gameplay SFX has a caption key ([`../audio/SFX_NEEDS.md`](../audio/SFX_NEEDS.md)). |
 | Text size floor | v0.0.1 | Body text is at least 18 px at 1080p (**starting value**). |
 | Flash safety | v0.1.0 | No full-screen flash more than 3 times per second. |
-| Interface size | v0.7.5 SM | Options → Accessibility "Interface size" 90 / 100 / 110 / 125 % (`ui_scale`): the window's content scale, so every menu, the HUD and their text grow or shrink together; the 3D view is not scaled. |
+| Interface size | v0.7.5 SM | Options → Accessibility "Interface size" 90 / 100 / 110 % (`ui_scale`): the window's content scale, so every menu, the HUD and their text grow or shrink together; the 3D view is not scaled. 110 % is the most the 1080-built pick panel takes at 1280×720. |
 | First-run hints | v0.7.5 SM | Options → Accessibility "Show hints" (on by default) and "Reset hints". A hint never blocks: no mouse, no focus, no pause; the keys it names follow the last-used device and the live bindings. |
 
 **Palette test** (`tests/unit/presentation/test_palette_contrast.gd`). For each colour-blind mode, it simulates
@@ -241,7 +241,9 @@ the mode's colour vision on the tokens and asserts:
   card's level as they show an ability modifier's. The badge fits on the card at the pick's and the shop's scales
   in en and es (`test_card_level_views.gd`).
 - **First-run hints** (v0.7.5 SM, owner N8): `OnboardingHints`, one small Ember-stone slab with a cold top line at
-  the top centre (top 150 at the 1920×1080 base, 640 wide, "TIP" and one line). Each hint shows once
+  the top centre (top 150 at the 1920×1080 base, 720 wide, "TIP" and one line); while a centre panel is open (a pick, the
+  Swap, the shop, an event) it sits low instead (its bottom 82 px above the screen's, between the panel's key line and
+  the heat meter), so it never covers the panel's title or cards. Each hint shows once
   (`HintStore`, the profile's `hints` section): move and aim, attack, dash at a first run's start (each closes when
   you do it); vent when the heat first reads Hot; the first card pick (the wand reads left to right); the Build page
   (pause → Build) after the first card joins the wand; the first trigger card; the first shop; the first open
