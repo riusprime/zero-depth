@@ -64,14 +64,16 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	var f := FloorLayout.new()
 	f.seed_value = seed_value
 	f.cell_size = Vector2(
-		rng.range_int(_cm(p.cell_size_min.x), _cm(p.cell_size_max.x)) / 100.0,
-		rng.range_int(_cm(p.cell_size_min.y), _cm(p.cell_size_max.y)) / 100.0
+		rng.range_int(FloorLayout.cm(p.cell_size_min.x), FloorLayout.cm(p.cell_size_max.x)) / 100.0,
+		rng.range_int(FloorLayout.cm(p.cell_size_min.y), FloorLayout.cm(p.cell_size_max.y)) / 100.0
 	)
 	var plan := Plan.new()
 	_place_rooms(plan, p, rng)
 	_link_extra(plan, p, rng)
 	for k in plan.cells.size() * 4:
-		f.room_halves.append(rng.range_int(_cm(p.wall_half_min), _cm(p.wall_half_max)) / 100.0)
+		f.room_halves.append(
+			rng.range_int(FloorLayout.cm(p.wall_half_min), FloorLayout.cm(p.wall_half_max)) / 100.0
+		)
 	_lay_out(f, p, plan)
 	_place_doors(f, p, plan, rng)
 	f.start_room = 0
@@ -90,10 +92,6 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	for room in f.room_count():
 		_place_spots(f, p, rng, room)
 	return f
-
-
-static func _cm(metres: float) -> int:
-	return roundi(metres * 100.0)
 
 
 # --- the plan on the cell grid ---
@@ -206,7 +204,7 @@ static func _lay_out(f: FloorLayout, p: FloorParams, plan: Plan) -> void:
 	var m := p.wall_half_max
 	f.bounds = Rect2(edge - Vector2(m, m), Vector2(hi - lo) * f.cell_pitch + Vector2(m, m) * 2.0)
 	for room in plan.cells.size():
-		var c := _cell_rect(f, plan.cells[room])
+		var c := f.cell_rect(plan.cells[room])
 		var a := c.position + Vector2(_half(f, room, 2), _half(f, room, 3))
 		var b := c.end - Vector2(_half(f, room, 0), _half(f, room, 1))
 		f.rooms.append(Rect2(a, b - a))
@@ -215,13 +213,6 @@ static func _lay_out(f: FloorLayout, p: FloorParams, plan: Plan) -> void:
 
 static func _half(f: FloorLayout, room: int, side: int) -> float:
 	return f.room_halves[room * 4 + side]
-
-
-## A room's cells in metres, grid line to grid line.
-static func _cell_rect(f: FloorLayout, cells: Rect2i) -> Rect2:
-	var a := f.grid_origin + Vector2(cells.position) * f.cell_pitch
-	var b := f.grid_origin + Vector2(cells.end) * f.cell_pitch
-	return Rect2(a, b - a)
 
 
 ## The coordinate of a rect's edge on side (0 +X, 1 +Y, 2 -X, 3 -Y).
@@ -251,11 +242,14 @@ static func _place_doors(f: FloorLayout, p: FloorParams, plan: Plan, rng: RngStr
 		var hi := minf(ra.end.x, rb.end.x) if along_x else minf(ra.end.y, rb.end.y)
 		lo += p.door_corner_margin
 		hi -= p.door_corner_margin
-		var width := rng.range_int(_cm(p.door_width_min), _cm(p.door_width_max)) / 100.0
+		var width := (
+			rng.range_int(FloorLayout.cm(p.door_width_min), FloorLayout.cm(p.door_width_max))
+			/ 100.0
+		)
 		width = minf(width, floorf((hi - lo) * 100.0) / 100.0)
 		assert(width >= p.door_width_min, "two rooms share too little wall for a doorway")
-		var c_lo := _cm(lo + width * 0.5)
-		var c_hi := _cm(hi - width * 0.5)
+		var c_lo := FloorLayout.cm(lo + width * 0.5)
+		var c_hi := FloorLayout.cm(hi - width * 0.5)
 		if width < p.door_width_min or c_hi < c_lo:  # the stripped assert's release path (audit G-7)
 			push_error("FloorGenerator: two rooms share too little wall for a doorway")
 			c_hi = maxi(c_lo, c_hi)
@@ -372,16 +366,6 @@ static func _gate_fits(f: FloorLayout) -> bool:
 	return r.encloses(Rect2(f.portal_pos - half, half * 2.0)) and r.encloses(f.portal_front())
 
 
-## The area kept free of slabs and spots around the gate: its footprint, the clear front square, and a margin.
-static func _portal_zone(f: FloorLayout) -> Rect2:
-	var n := f.portal_facing()
-	var t := Vector2(-n.y, n.x)
-	var face := f.portal_pos - n * FloorLayout.GATE_HALF_DEPTH
-	var half_w := FloorLayout.GATE_WIDTH * 0.5 + 1.0
-	var depth := FloorLayout.GATE_HALF_DEPTH * 2.0 + FloorLayout.GATE_FRONT + 1.0
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
-
-
 # --- walls ---
 
 
@@ -392,7 +376,7 @@ static func _portal_zone(f: FloorLayout) -> Rect2:
 ## The ground is each room's cells plus the skins.
 static func _make_walls(f: FloorLayout, plan: Plan) -> void:
 	for room in plan.cells.size():
-		var c := _cell_rect(f, plan.cells[room])
+		var c := f.cell_rect(plan.cells[room])
 		var r := f.rooms[room]
 		f.ground.append(c)
 		var top := r.position.y - c.position.y
@@ -446,7 +430,7 @@ static func _emit_skins(f: FloorLayout, plan: Plan, room: int, side: int) -> voi
 		first.y = cells.end.y - 1
 	var n := cells.size.x if along_x else cells.size.y
 	var h := _half(f, room, side)
-	var line := _edge(_cell_rect(f, cells), side)
+	var line := _edge(f.cell_rect(cells), side)
 	var k := 0
 	while k < n:
 		if plan.room_at(first + along * k + step) != _NONE:
@@ -455,8 +439,8 @@ static func _emit_skins(f: FloorLayout, plan: Plan, room: int, side: int) -> voi
 		var k1 := k
 		while k1 < n and plan.room_at(first + along * k1 + step) == _NONE:
 			k1 += 1
-		var c0 := _cell_rect(f, Rect2i(first + along * k, Vector2i.ONE))
-		var c1 := _cell_rect(f, Rect2i(first + along * (k1 - 1), Vector2i.ONE))
+		var c0 := f.cell_rect(Rect2i(first + along * k, Vector2i.ONE))
+		var c1 := f.cell_rect(Rect2i(first + along * (k1 - 1), Vector2i.ONE))
 		var lo := c0.position.x if along_x else c0.position.y
 		var hi := c1.end.x if along_x else c1.end.y
 		if along_x:
@@ -482,43 +466,14 @@ static func _free_corner(plan: Plan, cell: Vector2i, out: Vector2i, side_step: V
 # --- interiors ---
 
 
-## The walls that can touch a room: its partitions and outer walls, and the pieces inside it.
-static func _room_walls(f: FloorLayout, room: int) -> Array[Obb]:
-	var near := f.rooms[room].grow(1.0)
-	var out: Array[Obb] = []
-	for w in f.walls:
-		if w.bounds().intersects(near):
-			out.append(w)
-	return out
-
-
-## The doorways of a room, as approach points just inside it.
-static func _door_approaches(f: FloorLayout, room: int) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for d in f.door_rooms.size():
-		var side := _door_side(f, d, room)
-		if side < 0:
-			continue
-		var inward := -Kin.dir(side * 1024)
-		out.append(f.door_centers[d] + inward * (f.door_depths[d] * 0.5 + _DOOR_APPROACH))
-	return out
-
-
 ## The room's open floor is one region, and every place that must be reached is in it.
 static func _room_is_whole(f: FloorLayout, p: FloorParams, room: int, walls: Array[Obb]) -> bool:
-	var reach := FloorReach.new()
-	reach.build(f.rooms[room], walls, p.nav_clearance)
-	if reach.region_count != 1:
-		return false
-	var must := _door_approaches(f, room)
+	var must := f.door_approaches(room, _DOOR_APPROACH)
 	if room == f.start_room:
 		must.append(f.start_pos)
 	if room == f.portal_room:
 		must.append(f.portal_front_point())
-	for q in must:
-		if reach.region_at(q) != 0:
-			return false
-	return true
+	return FloorReach.whole(f.rooms[room], walls, p.nav_clearance, must)
 
 
 static func _slab_allowed(
@@ -532,7 +487,7 @@ static func _slab_allowed(
 		and Collide.circle_vs_obb(f.start_pos, p.start_clear_radius, slab) != Vector2.ZERO
 	):
 		return false
-	if room == f.portal_room and b.intersects(_portal_zone(f)):
+	if room == f.portal_room and b.intersects(f.gate_zone()):
 		return false
 	for d in f.door_centers:
 		if Collide.circle_vs_obb(d, p.door_clear_radius, slab) != Vector2.ZERO:
@@ -570,7 +525,7 @@ static func _group_fits(
 
 
 static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) -> void:
-	var walls := _room_walls(f, room)
+	var walls := f.room_walls(room)
 	var pieces: Array[Obb] = []
 	var template := f.room_template[room]
 	if RoomThemes.is_themed(template):
@@ -685,7 +640,7 @@ static func _spot_ok(
 ) -> bool:
 	if reach.region_at(q) != 0 or not _clear_of(q, clear, walls):
 		return false
-	if f.room_of(q) == f.portal_room and _portal_zone(f).has_point(q):
+	if f.room_of(q) == f.portal_room and f.gate_zone().has_point(q):
 		return false
 	if not _far_from_all(q, f.door_centers, 2.0 + clear):
 		return false
@@ -710,7 +665,7 @@ static func _item_count(f: FloorLayout, p: FloorParams, rng: RngStream, room: in
 
 
 static func _place_spots(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) -> void:
-	var walls := _room_walls(f, room)
+	var walls := f.room_walls(room)
 	var reach := FloorReach.new()
 	reach.build(f.rooms[room], walls, p.nav_clearance)
 	var items := PackedVector2Array()

@@ -73,7 +73,7 @@ static func collider(at: Vector2, angle: int) -> Obb:
 
 static func _place_in(f: FloorLayout, p: FloorParams, room: int) -> bool:
 	var r := f.rooms[room]
-	var approaches := door_approaches(f, room)
+	var approaches := f.door_approaches(room, _DOOR_APPROACH)
 	if approaches.is_empty():
 		return false
 	var centre := r.get_center()
@@ -88,7 +88,7 @@ static func _place_in(f: FloorLayout, p: FloorParams, room: int) -> bool:
 	)
 	for q: Vector2 in order:
 		spots.append(q)
-	var walls := _room_walls(f, room)
+	var walls := f.room_walls(room)
 	for q in spots:
 		if not _spot_ok(f, room, q, walls, approaches):
 			continue
@@ -100,7 +100,7 @@ static func _place_in(f: FloorLayout, p: FloorParams, room: int) -> bool:
 		for i in f.item_spots.size():
 			if f.item_rooms[i] == room:
 				must.append(f.item_spots[i])
-		if _whole(r, with, p.nav_clearance, must):
+		if FloorReach.whole(r, with, p.nav_clearance, must):
 			f.shop_room = room
 			f.shop_pos = q
 			f.shop_angle = angle
@@ -123,41 +123,3 @@ static func _spot_ok(
 		if Kin.length(a - q) < DOOR_GAP_M:
 			return false
 	return true
-
-
-## The room's open floor at `clearance` is one region holding every point in `must`.
-static func _whole(r: Rect2, walls: Array[Obb], clearance: float, must: PackedVector2Array) -> bool:
-	var reach := FloorReach.new()
-	reach.build(r, walls, clearance)
-	if reach.region_count != 1:
-		return false
-	for q in must:
-		if reach.region_at(q) != 0:
-			return false
-	return true
-
-
-## The walls that can touch a room.
-static func _room_walls(f: FloorLayout, room: int) -> Array[Obb]:
-	var near := f.rooms[room].grow(1.0)
-	var out: Array[Obb] = []
-	for o in f.walls:
-		if o.bounds().intersects(near):
-			out.append(o)
-	return out
-
-
-## The room's doorways as points just inside it (door order).
-static func door_approaches(f: FloorLayout, room: int) -> PackedVector2Array:
-	var out := PackedVector2Array()
-	for d in f.door_rooms.size():
-		var into := 0
-		if f.door_rooms[d].x == room:
-			into = -1  # the doorway points from x to y: into x is backwards
-		elif f.door_rooms[d].y == room:
-			into = 1
-		else:
-			continue
-		var step := Kin.dir(f.door_angles[d]) * float(into)
-		out.append(f.door_centers[d] + step * (f.door_depths[d] * 0.5 + _DOOR_APPROACH))
-	return out
