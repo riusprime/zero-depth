@@ -458,7 +458,12 @@ ends first. Validation: prices, the heal and reroll prices, the refund and the r
 the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
 bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
 and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
-by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1).
+by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1). v0.7.5 MG (owner N12, "the shop is
+also gonna be there every two … floors"): `first_floor` (1) and `every_floors` (2), both > 0: the shop stands on
+floor `first_floor` and every `every_floors` floors after it (`FloorCadence.on`, `ShopTable.on_floor`: floors 1, 3,
+5 …; a 3-floor run has two). The floor number keeps counting past the run's last floor, so an endless loop keeps
+the rhythm. On a floor without the shop, `FloorScenario.add_shop` places nothing; the room `ShopPlacement` would take
+stays an ordinary room (still never an arena, so the floor's other picks don't move).
 
 ## 4. Encounters and bosses
 
@@ -569,6 +574,20 @@ class_name RoomTemplate extends Resource
 - Validation: at least one entry and one exit, every slot inside the room bounds, and no spawn slot closer than
   6 m to any entry. The generator's own checks are in
   [`ARCHITECTURE.md`](ARCHITECTURE.md) §9.
+
+### Floor generation (`data/map/floor.tres`, v0.7.5 MG)
+
+`MapDefinition` (category `map`; owner N9, "make maps bigger the rooms … even bigger rooms … up to 20 rooms"): the
+generator's room numbers, compiled by `RunContentCompiler.compile_map` over `FloorParams.defaults()` (whose values
+equal the file's; a test keeps them equal, so a floor built without content is the floor the run builds).
+`rooms_min` / `rooms_max` (15 / 19: rooms before the boss room, the start hall included; the boss room makes 16-20),
+`footprint_x` / `footprint_y` / `footprint_weights` (parallel arrays: footprint k is x × y cells, drawn with its
+weight; 1×1 22, 2×1 14, 1×2 14, 3×1 8, 1×3 8, 2×2 12, 3×2 7, 2×3 7, 3×3 5, 4×3 2, 3×4 2 and the extra-large 4×4 2),
+`max_span` (11 cells: the floor's extent either way, the boss room aside) and `place_attempts` (600). The rest of
+`FloorParams` (cell size, walls, doorways, spots) stays code. Validation: 2 ≤ min ≤ max ≤ 19, the three arrays the
+same non-empty length, footprints 1-4 cells a side, weights ≥ 0 with a positive sum, span 5-16, attempts > 0.
+A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's numbers (`FloorParams.v070()`, an arena share
+of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.floor_tables`), so its snapshot fits.
 
 ## 6. Biomes
 
@@ -725,8 +744,16 @@ class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.
 # rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
 # walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
 # defend_radius_m; v0.6.0 CU: core_stagger_share (%), core_stagger_seconds, core_window_seconds, core_mod_weight,
-# hunt_range_m, drop_offset_m
+# hunt_range_m, drop_offset_m; v0.7.5 MG: cursed_chest_first_floor (1), cursed_chest_every_floors (2),
+# cursed_chests_per_floor (1)
 ```
+
+v0.7.5 MG (owner N10, "the curse appear too often we're gonna have one every two floors"): a chest's offer rolls
+`cursed_chest_chance` only on a curse floor (`EventRules.curse_floor`, `FloorCadence.on`: `cursed_chest_first_floor`,
+then every `cursed_chest_every_floors` floors: 1, 3, 5 …), and only while the floor's cursed offers are under
+`cursed_chests_per_floor` (`EventState.cursed_rolled`, snapshotted). So at most one cursed chest every two floors.
+The chance is still drawn from `loot:event` on every floor before the check, so the stream moves as before until a
+chest is refused. Validation: first and every ≥ 1, per floor ≥ 0. The dev route (`force_curse`) skips the rule.
 
 Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
 below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
@@ -822,7 +849,8 @@ and `wave_sizes` (one positive size per floor, the last repeats; data 4, 8, 12).
 `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
 
 `ArenaDefinition` (v0.5.5 AR, PLAN D2 / X1; `data/arenas/arena.tres`, category `arena`): the sealed arenas. `share`
-(0..1; data 0.33: the share of a floor's combat rooms that are arenas), `waves_min` / `waves_max` (data 2 / 3),
+(0..1; data 0.11, was 0.33 until v0.7.5 MG, owner N11 "reduce the amount of challenge rooms … like 20% less": the
+share of a floor's combat rooms that are arenas; with the Overrun room a floor averages 2.4 challenge rooms, was 3.2), `waves_min` / `waves_max` (data 2 / 3),
 `wave_sizes` (per floor; data 3, 5, 7), `first_wave_seconds` (data 0.75), `wave_gap_seconds` (data 1.0) and
 `min_spawn_distance` (m; data 3.0). Compiled by `ContentCompiler.compile_arena` into `ArenaTable` (ticks, per mille).
 Without the definition a floor has no regular arenas (the Overrun still seals).

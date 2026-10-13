@@ -205,7 +205,10 @@ the whole `World`.
   room's entry. A death or a win deletes the save; a new run overwrites it. `RunSaver` (`src/application/`) decides.
 - **What** (a payload, `RunSaver.PAYLOAD_VERSION`):
   - the run: `RunState`'s seed, floor, biome order, carry, totals and build, plus the stage seed (the `RunTable` is
-    compiled again from content);
+    compiled again from content); v0.7.5 MG: `floor_rules` (`RunState.FLOOR_RULES`, the rules the floor was built
+    with). A payload without it was saved on a v0.7.0 floor: Continue rebuilds that floor with v0.7.0's rules
+    (`RunSaver.floor_tables`: `FloorParams.v070()`, a third of the combat rooms as arenas, a shop on every floor), so
+    a save made before the update still fits; the floors after it are built with today's rules;
   - the rooms entered on this floor (the minimap's discovery comes back with them);
   - the tick, and the world's canonical snapshot (`WorldSnapshot`, [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §10a).
 - **Load (Continue).** The main menu shows **Continue** (first, focused) while a save reads. Continue rebuilds the run

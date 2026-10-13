@@ -3,7 +3,8 @@ extends GutTest
 ## real boss's arena (in turn), as the game builds a floor: FloorGenerator.generate, BossRoomBuilder.attach, then
 ## ShopPlacement.pick. The shop is never in the start hall, the boss room or the room before the boss door; its
 ## terminal stands in its room clear of walls; its room stays one region with the terminal in it; and (every 25th
-## seed, on the whole floor) its front is reachable from the start at the player's radius.
+## seed, on the whole floor) its front is reachable from the start at the player's radius. v0.7.5 MG (owner N12): the
+## shop stands every two floors (1, 3, 5 ...), so floor 2 has none.
 
 const SEEDS := 1000
 const PLAYER_RADIUS := 0.35

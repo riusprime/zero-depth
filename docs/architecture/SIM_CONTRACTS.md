@@ -1187,6 +1187,17 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`Rewards.arena_first`); a reward in an uncleared arena is locked (`Arenas.locked`; `Rewards.nearest` skips it).
   `ArenaState` is hashed once an arena sealed and is snapshotted (STATE_CLASSES); a restore rebuilds only the wall
   grid for the barriers.
+- **Floor rules (v0.7.5 MG; owner N9-N12).** A floor is 15-19 rooms before the boss room (16-20 with it; was 10-12),
+  footprints up to the extra-large 4×4, on a span of 11 cells (`FloorParams`, from `data/map` through
+  `RunContentCompiler.compile_map`; the same `map` stream draws, in the same order). The arena share is 0.11 (was
+  0.33): with the Overrun room a floor averages 2.4 challenge rooms (was 3.2). Two features follow a floor cadence,
+  `FloorCadence.on(floor, first, every)`: a pure function of the run's floor number (counted from 1, and on past the
+  run's last floor for an endless loop), no draw. The shop stands on `ShopTable.on_floor` floors (1, 3, 5 …;
+  `FloorScenario.add_shop` places nothing on the others). Chests roll the cursed offer only on
+  `EventRules.curse_floor` floors (1, 3, 5 …) and while `EventState.cursed_rolled` (hashed with the event state,
+  snapshotted; a pre-MG snapshot restores it as 0) is under `cursed_chests_per_floor` (1): at most one cursed chest
+  every two floors; the 25 % draw on `loot:event` is taken first, so the stream only moves where a chest is refused.
+  A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's rules (`RunState.floor_rules`).
 - **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
   `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
   `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
