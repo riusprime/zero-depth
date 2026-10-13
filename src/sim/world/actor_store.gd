@@ -79,6 +79,9 @@ const AI_FLOAT_FIELDS: Array[StringName] = [&"plan_x", &"plan_y"]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"pos_x", &"pos_y", &"radius", &"lock_x", &"lock_y", &"lock_len", &"jitter_x", &"jitter_y"
 ]
+## Every int and every float column, in that order: add and remove_sorted walk them (concatenated once, not per call).
+const ALL_INT_FIELDS := INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS
+const ALL_FLOAT_FIELDS := FLOAT_FIELDS + AI_FLOAT_FIELDS
 
 var ids := PackedInt32Array()
 var kinds := PackedInt32Array()
@@ -150,11 +153,11 @@ func size() -> int:
 
 func add(id: int, kind: int, team: int, p: Vector2, r: float, p_hp: int, p_fire_cd: int) -> int:
 	# Packed arrays are values: get() returns a copy, so append to it and set it back.
-	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS:
+	for f in ALL_INT_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		ai.append(0)
 		set(f, ai)
-	for f in FLOAT_FIELDS + AI_FLOAT_FIELDS:
+	for f in ALL_FLOAT_FIELDS:
 		var af: PackedFloat32Array = get(f)
 		af.append(0.0)
 		set(f, af)
@@ -191,12 +194,12 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 	if indices.is_empty():
 		return
 	# v0.4.0 SC: in place, last first, with the arrays' own remove_at (a native move, not a rebuild).
-	for f in INT_FIELDS + STATUS_FIELDS + AI_FIELDS + VENOM_FIELDS:
+	for f in ALL_INT_FIELDS:
 		var ai: PackedInt32Array = get(f)
 		for k in range(indices.size() - 1, -1, -1):
 			ai.remove_at(indices[k])
 		set(f, ai)
-	for f in FLOAT_FIELDS + AI_FLOAT_FIELDS:
+	for f in ALL_FLOAT_FIELDS:
 		var af: PackedFloat32Array = get(f)
 		for k in range(indices.size() - 1, -1, -1):
 			af.remove_at(indices[k])
