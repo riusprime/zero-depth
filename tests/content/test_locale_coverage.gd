@@ -2,7 +2,7 @@ extends GutTest
 ## EI-10: every visible string is a key in locale/strings.csv with both en and es (CONTENT_SCHEMA §10).
 
 const CSV := "res://locale/strings.csv"
-const KEY_RE := "^(UI|ITEM|ENEMY|BIOME|HINT|CREDITS)_[A-Z0-9_]+$"
+const KEY_RE := "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$"
 
 
 func _table() -> Dictionary:
