@@ -164,6 +164,7 @@ cooldown_permille = 487
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_BROOD_MOTHER"
+desc_key = &"BOSS_BROOD_MOTHER_DESC"
 hp = 1600
 radius_m = 1.2
 move_speed_mps = 3.12

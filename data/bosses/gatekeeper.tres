@@ -160,6 +160,7 @@ cooldown_permille = 487
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_GATEKEEPER"
+desc_key = &"BOSS_GATEKEEPER_DESC"
 hp = 1400
 radius_m = 1.3
 move_speed_mps = 1.95

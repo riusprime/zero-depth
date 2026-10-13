@@ -42,6 +42,7 @@ glow_spread = 0.7
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_RED_CANYON"
+desc_key = &"BIOME_RED_CANYON_DESC"
 palette = {
 "accent": Color(0.61568627, 0.41960784, 0.29803922, 1),
 "ambient": Color(1, 0.82352941, 0.75294118, 1),

@@ -161,6 +161,7 @@ cooldown_permille = 412
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_SIEGE_ENGINE"
+desc_key = &"BOSS_SIEGE_ENGINE_DESC"
 hp = 1800
 radius_m = 1.4
 move_speed_mps = 1.43

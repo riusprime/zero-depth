@@ -42,6 +42,7 @@ glow_spread = 0.7
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_NIGHT_ROCKS"
+desc_key = &"BIOME_NIGHT_ROCKS_DESC"
 palette = {
 "accent": Color(0.23529412, 0.22745098, 0.26666667, 1),
 "ambient": Color(0.72156863, 0.78431373, 0.94117647, 1),

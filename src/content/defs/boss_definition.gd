@@ -6,6 +6,8 @@ extends ContentDef
 ## floor generator reads). Every number is a starting value the owner tunes after playing.
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this boss (a locale key; empty shows no line).
+@export var desc_key: StringName
 @export var hp := 1000
 @export var radius_m := 1.2
 @export var move_speed_mps := 1.5

@@ -141,6 +141,7 @@ cooldown_permille = 487
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_WARLORD"
+desc_key = &"BOSS_WARLORD_DESC"
 hp = 1400
 radius_m = 1.1
 move_speed_mps = 2.1

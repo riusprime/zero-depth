@@ -5,10 +5,12 @@ extends MenuPanel
 ## v0.5.5 A5 (Cold glass): the game blurred behind, the list on the left, the run's line and the key hint under it;
 ## no build cards beside it (owner: not needed).
 ## v0.6.5 WN2: a Build row under Resume opens the Build page (BuildPage: the wand's order, rearranged here).
+## v0.7.5 CX: a Codex row after Options opens the Codex (CodexView) over the paused game.
 
 signal resume_pressed
 signal build_pressed
 signal options_pressed
+signal codex_pressed
 signal restart_pressed
 signal main_menu_pressed
 
@@ -26,6 +28,7 @@ func _init() -> void:
 	add_button("UI_BUILD", func() -> void: build_pressed.emit()).name = "Build"  # v0.6.5 WN2
 	add_button("UI_RESTART_RUN", func() -> void: restart_pressed.emit()).name = "Restart"
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"  # v0.3.0 O
+	add_button("UI_CODEX", func() -> void: codex_pressed.emit()).name = "Codex"  # v0.7.5 CX
 	add_button("UI_MAIN_MENU", func() -> void: main_menu_pressed.emit()).name = "MainMenu"
 	run_line = add_note("")
 	run_line.name = "RunLine"

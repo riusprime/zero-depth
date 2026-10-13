@@ -20,6 +20,7 @@ damage = 18
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_SHIELD_BEARER"
+desc_key = &"ENEMY_SHIELD_BEARER_DESC"
 behaviour_id = &"shield_bearer"
 behaviour_params = {
 "attack_range_m": 2.4,

@@ -3,6 +3,8 @@ extends ContentDef
 ## An enemy (CONTENT_SCHEMA §3): numbers, a behaviour (src/sim/ai/) with its params, and its attacks.
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this enemy (a locale key; empty shows no line).
+@export var desc_key: StringName
 @export var behaviour_id: StringName
 @export var behaviour_params := {}
 @export var hp := 10

@@ -8,6 +8,8 @@ const PALETTE_KEYS: Array[String] = [
 const MIN_OUTLINE_CONTRAST := 3.0
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this biome (a locale key; empty shows no line).
+@export var desc_key: StringName
 ## Exactly PALETTE_KEYS (docs/art/ART_DIRECTION.md §2): token -> Color.
 @export var palette: Dictionary = {}
 @export var hazard_flavour: StringName

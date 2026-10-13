@@ -186,6 +186,7 @@ cooldown_permille = 487
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_FOUNDRY"
+desc_key = &"BOSS_FOUNDRY_DESC"
 hp = 1900
 radius_m = 1.5
 move_speed_mps = 1.5

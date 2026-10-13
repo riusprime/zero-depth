@@ -48,6 +48,7 @@ damage = 12
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_ARC_CASTER"
+desc_key = &"ENEMY_ARC_CASTER_DESC"
 behaviour_id = &"arc_caster"
 behaviour_params = {
 "attack_range_m": 11.0,

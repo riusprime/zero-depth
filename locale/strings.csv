@@ -841,3 +841,51 @@ ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
 ITEM_TRIGGER_ON_KILL_TWICE_DESC,Legendary: cards to its right cast twice on each kill.,Legendario: lo de su derecha se lanza 2 veces por baja.
 ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
 ITEM_TRIGGER_ON_END_TWICE_DESC,Legendary: cards to its right cast twice where it ends.,Legendario: lo de su derecha se lanza 2 veces al terminar.
+UI_CODEX,Codex,Códice
+UI_CODEX_TITLE,Codex,Códice
+UI_CODEX_TAB_CARDS,Cards,Cartas
+UI_CODEX_TAB_ENEMIES,Enemies,Enemigos
+UI_CODEX_TAB_BOSSES,Bosses,Jefes
+UI_CODEX_TAB_BIOMES,Biomes,Biomas
+UI_CODEX_SECTION_GUN,Gun pool,Mazo de la Pistola
+UI_CODEX_SECTION_BLADE,Blade pool,Mazo de la Espada
+UI_CODEX_SECTION_SHARED,Shared pool,Mazo compartido
+UI_CODEX_SECTION_TRIGGERS,Triggers,Disparadores
+UI_CODEX_SECTION_LEGENDARY,Legendary,Legendarias
+UI_CODEX_SECTION_STATS,Stat cards,Cartas de estadística
+UI_CODEX_SECTION_UTILITIES,Utilities,Utilidades
+UI_CODEX_SECTION_ABILITIES,Abilities,Habilidades
+UI_CODEX_SECTION_PASSIVES,Passives,Pasivas
+UI_CODEX_OFFERED,Offered,Ofrecida
+UI_CODEX_TAKEN,Taken,Elegida
+UI_CODEX_LEVEL,Highest level,Nivel máximo
+UI_CODEX_KILLS,Killed,Abatidos
+UI_CODEX_DEATHS,Times it killed you,Veces que te mató
+UI_CODEX_FIGHTS,Fought,Combates
+UI_CODEX_VISITS,Floors entered,Pisos visitados
+UI_CODEX_FOUND,Found %d / %d,Descubierto %d / %d
+UI_CODEX_LOCKED,Not met yet. Meet it in a run to fill this page.,Aún no lo has encontrado. Encuéntralo en una partida para llenar esta página.
+UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
+ENEMY_CHARGER_DESC,"Runs at you, locks a straight lane and charges along it, then stands dazed: the moment to punish it.","Corre hacia ti, fija un carril recto y embiste por él; después queda aturdido: el momento de castigarlo."
+ENEMY_WARDEN_DESC,A slow rock golem that slams the ground around itself. Its front is armoured; hit it from behind.,Un gólem de roca lento que golpea el suelo a su alrededor. Su frente está blindado: atácalo por la espalda.
+ENEMY_NEEDLE_DESC,"A walking turret that keeps its distance and fires a burst down a locked line, backing off when you close in.",Una torreta andante que mantiene la distancia y dispara una ráfaga por una línea fija; retrocede si te acercas.
+ENEMY_HATCHLING_DESC,"The Brood Mother's young: small, quick, and they lunge in straight lines.","Las crías de la Madre de la Prole: pequeñas, rápidas, embisten en línea recta."
+ENEMY_ARC_CASTER_DESC,"Keeps its range and casts: a fast bolt, a fan of bolts, or a rune that erupts under you.","Mantiene la distancia y lanza: un rayo veloz, un abanico de rayos o una runa que estalla bajo tus pies."
+ENEMY_BOMB_DRONE_DESC,Hovers out of reach and lobs bombs; the circle on the ground shows where each one lands.,Flota fuera de tu alcance y lanza bombas; el círculo en el suelo muestra dónde cae cada una.
+ENEMY_SWARMER_DESC,"Weak alone, dangerous in packs: it bites with a short lunge.","Débil a solas, peligroso en manada: muerde con una embestida corta."
+ENEMY_SPLITTER_DESC,Swipes the ground ahead of it and splits into two Splitlings when it dies.,Barre el suelo frente a sí y se divide en dos Fragmentos al morir.
+ENEMY_SPLITLING_DESC,"What is left of a Splitter: smaller, weaker, and it never splits again.","Lo que queda de un Divisor: más pequeño, más débil, y ya no se divide."
+ENEMY_SHIELD_BEARER_DESC,Turns its big shield toward you and bashes whoever stands in front. Get around it.,Gira su gran escudo hacia ti y embiste a quien tenga delante. Rodéalo.
+ENEMY_MENDER_DESC,Never attacks: it keeps away and heals its most hurt ally. Take it down first.,Nunca ataca: se mantiene lejos y cura al aliado más herido. Acaba con él primero.
+ENEMY_MINE_LAYER_DESC,Drops mines as it moves; a mine arms when you touch it and blows a moment later.,Suelta minas al moverse; una mina se arma al tocarla y estalla un instante después.
+ENEMY_SNIPER_DESC,"Shows a long line, then fires down it for heavy damage, and walks to a new spot.","Muestra una línea larga, dispara por ella con mucho daño y cambia de posición."
+ENEMY_LENS_DRONE_DESC,Breaks off the Hive Lens's rim and fires short bursts from a distance.,Se desprende del borde de la Lente Enjambre y dispara ráfagas cortas a distancia.
+BOSS_GATEKEEPER_DESC,"A giant stone sentinel, the Warden's big brother: fist slams, shock lanes, sweeps and charges.","Un centinela de piedra gigante, el hermano mayor del Guardián: puñetazos al suelo, carriles de choque, barridos y embestidas."
+BOSS_BROOD_MOTHER_DESC,"Leaps, burrows and pounces, and calls her Hatchlings to the fight.","Salta, se entierra y se abalanza, y llama a sus Crías a la pelea."
+BOSS_SIEGE_ENGINE_DESC,"A war machine that rains barrages, sweeps rails, fans out bolts and deploys its drones.","Una máquina de guerra que lanza descargas, barre con raíles, dispara abanicos de proyectiles y despliega sus drones."
+BOSS_WARLORD_DESC,"A shielded knight that plants spear lines, dashes and rains javelins. Planting and dashing lower its shield.","Un caballero con escudo que planta líneas de lanzas, embiste y lanza jabalinas. Al plantar y embestir baja el escudo."
+BOSS_HIVE_LENS_DESC,"A floating eye that sweeps beams and fires prism fans. At half health, Lens Drones break off its rim.",Un ojo flotante que barre con rayos y dispara abanicos de prismas. A media vida se desprenden Drones Lente de su borde.
+BOSS_FOUNDRY_DESC,"A walking furnace that floods lanes with molten floor, lobs slag and launches Bomb Drones.","Un horno andante que inunda carriles de suelo fundido, lanza escoria y suelta Drones Bombarderos."
+BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de piedra antigua bajo una luz fría.
+BIOME_NIGHT_ROCKS_DESC,Dark stone fields under a night sky.,Campos de piedra oscura bajo un cielo nocturno.
+BIOME_RED_CANYON_DESC,Sun-baked red rock and narrow passes.,Roca roja tostada por el sol y pasos estrechos.

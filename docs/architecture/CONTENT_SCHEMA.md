@@ -92,6 +92,7 @@ serves. The reward-schedule rules (PD-07) read pools; they don't live in them.
 class_name EnemyDefinition extends Resource
 @export var id: StringName
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (a locale key; empty = no line)
 @export var behaviour_id: StringName      # selects a behaviour script in src/sim/ai/
 @export var behaviour_params: Dictionary  # checked against the behaviour's param schema
 @export var hp: int
@@ -476,6 +477,7 @@ class_name EncounterDefinition extends Resource
 class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3.0 C)
 @export var id: StringName                         # one of BossSchemas.KINDS: each boss has its own actor kind and model
 @export var name_key: StringName
+@export var desc_key: StringName                   # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var hp: int
 @export var radius_m: float
 @export var move_speed_mps: float
@@ -576,6 +578,7 @@ class_name RoomTemplate extends Resource
 class_name BiomeDefinition extends Resource
 @export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, …
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var palette: Dictionary           # token -> Color; keys from docs/art/ART_DIRECTION.md §2
 @export var props: Array[PropDefinition]  # rocks, grass, trees, fences, barrels; mesh + placement rules
 @export var enemy_weights: Dictionary     # enemy_id -> weight for this biome's encounter fill
@@ -584,6 +587,10 @@ class_name BiomeDefinition extends Resource
 @export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
 ```
 
+- **The Codex (v0.7.5 CX)** lists every biome definition on its Biomes page (`CodexCatalog`), drawn as a small
+  landscape in the biome's `palette`, so a new biome shows there with no code. Its `desc_key` (`BIOME_<ID>_DESC`,
+  en and es) is the page's line; the shipped biomes, enemies and bosses each have one
+  (`tests/content/test_codex_content.gd`).
 - `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
   - sun colour, energy and angle;
   - ambient colour and energy;
