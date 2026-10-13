@@ -328,7 +328,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
 	)
 	FloorScenario.add_shop(world, rules[&"shop"])  # v0.5.0 SH; v0.7.5 MG: every two floors (N12)
-	IcePatches.place(world, BiomeCompiler.compile_ice(biome))  # v0.7.5 NB1: Frozen Shore's ice (else nothing)
+	IcePatches.place(world, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow (else none)
 	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
 	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers

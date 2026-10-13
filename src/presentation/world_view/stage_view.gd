@@ -47,6 +47,8 @@ var look: BiomeLook = null
 ## v0.7.5 NB1: the floor's ice patches (null without any) and what lies past the floor's edge (null: the void).
 var ice: IceViews
 var edge: BiomeEdge
+## v0.7.5 NB2: the floor's starglow pools (Starfall's surface; null without any).
+var glow: StarglowViews
 var lighting := "high"
 var environment: Environment
 var sun: DirectionalLight3D
@@ -102,6 +104,12 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 ## v0.7.5 NB1: the sim's ice patches, wherever the floor has them (Frozen Shore's surface).
 func _build_ice(reader: WorldReader) -> void:
 	if reader.ice_patch_count() == 0:
+		return
+	if reader.surface_kind() == &"starglow":  # v0.7.5 NB2: Starfall's pools, not ice
+		glow = StarglowViews.new()
+		glow.name = "Starglow"
+		add_child(glow)
+		glow.build(reader, reader.seed_value())
 		return
 	ice = IceViews.new()
 	ice.name = "Ice"

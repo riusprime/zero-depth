@@ -160,6 +160,7 @@ UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
 BIOME_FROZEN_SHORE,Frozen Shore,Costa Helada
+BIOME_STARFALL,Starfall,Caída Estelar
 HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
@@ -889,6 +890,7 @@ BOSS_HIVE_LENS_DESC,"A floating eye that sweeps beams and fires prism fans. At h
 BOSS_FOUNDRY_DESC,"A walking furnace that floods lanes with molten floor, lobs slag and launches Bomb Drones.","Un horno andante que inunda carriles de suelo fundido, lanza escoria y suelta Drones Bombarderos."
 BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de piedra antigua bajo una luz fría.
 BIOME_FROZEN_SHORE_DESC,"A moonlit shore locked in ice: snow, slate and frozen sea. The ice patches make you slide.","Una costa helada bajo la luna: nieve, pizarra y mar congelado. Las placas de hielo te hacen resbalar."
+BIOME_STARFALL_DESC,"Floating rock and crystal islands over a field of stars. The starglow pools speed your step.","Islas flotantes de roca y cristal sobre un campo de estrellas. Los charcos de luz estelar aceleran tu paso."
 BIOME_NIGHT_ROCKS_DESC,Dark stone fields under a night sky.,Campos de piedra oscura bajo un cielo nocturno.
 BIOME_RED_CANYON_DESC,Sun-baked red rock and narrow passes.,Roca roja tostada por el sol y pasos estrechos.
 UI_ACH_TAB,Achievements,Logros

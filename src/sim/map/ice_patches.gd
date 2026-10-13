@@ -16,6 +16,12 @@ const ATTEMPTS := 8
 const STREAM := "map:ice"
 
 
+## v0.7.5 NB2: a surface's own sub-stream, `map:<kind>` (ice: STREAM, unchanged; Starfall's starglow:
+## `map:starglow`), so two surfaces never share draws and neither moves any other stream.
+static func stream_of(kind: StringName) -> String:
+	return STREAM if kind == &"ice" else "map:" + String(kind)
+
+
 ## Places `field`'s patches on `w`'s floor and sets World.ice. No floor or no field: nothing happens.
 static func place(w: World, field: IceField) -> void:
 	if field == null or w.floor_layout == null:
@@ -28,7 +34,7 @@ static func place(w: World, field: IceField) -> void:
 ## seed. A pure function: the same inputs give the same patches.
 static func lay(layout: FloorLayout, walls: Array[Obb], seed_value: int, field: IceField) -> void:
 	field.rects.clear()
-	var rng := RngStream.derive(seed_value, STREAM)
+	var rng := RngStream.derive(seed_value, stream_of(field.kind))
 	var keep: Array[Vector2] = [layout.start_pos, layout.portal_pos]
 	if layout.has_deep_portal:
 		keep.append(layout.deep_portal_pos)

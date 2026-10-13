@@ -61,7 +61,7 @@ static func build_floor(run: RunState) -> World:
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
 	)
-	IcePatches.place(w, BiomeCompiler.compile_ice(biome))  # v0.7.5 NB1, as Main: Frozen Shore's ice
+	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main

@@ -7,7 +7,7 @@ func test_all_data_validates() -> void:
 	for i in repo.errors():
 		fail_test("%s: %s (%s)" % [i.path, i.message, i.code])
 	assert_eq(repo.count(&"player"), 1)
-	assert_eq(repo.count(&"biomes"), 4)  # v0.7.5 NB1: Frozen Shore
+	assert_eq(repo.count(&"biomes"), 5)  # v0.7.5 NB1: Frozen Shore; NB2: Starfall
 	assert_eq(repo.count(&"credits"), 1)
 	assert_eq(repo.count(&"utility"), 2, "guard and blink")
 

@@ -8,6 +8,7 @@ const BIOMES := {
 	&"night_rocks": ["#486796", "#50709F", "#395077", "#3C3A44", "#253043", "#B8C8F0", "#EEF2F8"],
 	&"red_canyon": ["#C55946", "#D0614B", "#7A3D36", "#9D6B4C", "#4C3032", "#FFD2C0", "#1A1A22"],
 	&"frozen_shore": ["#D1DAE4", "#C7D3E1", "#303C52", "#455B77", "#436C8E", "#E8F0FF", "#1A1A22"],
+	&"starfall": ["#7E779C", "#857EA3", "#3B3358", "#6B4FA0", "#2B1F55", "#E4DCFF", "#1A1A22"],
 }
 
 var world: World

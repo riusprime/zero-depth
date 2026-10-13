@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.7.5 NB1 (owner N2) in the real game, by input events only (Input.parse_input_event): Play, then Restart run from
-## the pause menu until a run's first floor is Frozen Shore (the run's biome draw; run seed 20261008 today, two
-## restarts, and the loop keeps the test right when another biome joins the draw). The HUD names it, the floor is lit
+## the pause menu until a run's first floor is Frozen Shore (the run's biome draw; the loop keeps the test right when
+## another biome joins the draw, as Starfall did in NB2: 3 floors from 5 since then). The HUD names it, the floor is lit
 ## by its cold mood and dressed with its look (the frozen sea past the edge, snow and ice instead of grass and
 ## rubble), its ambience loop plays, and its ice is in the sim. Walking onto a patch with the stick puts the hero on
 ## ice, and letting go there slides: the hero is still moving after the time a stop takes on dry ground. Reads of

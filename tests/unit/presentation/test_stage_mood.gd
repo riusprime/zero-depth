@@ -16,7 +16,7 @@ func _stage(mood: BiomeMood, quality := "high") -> StageView:
 
 func test_every_shipped_biome_has_a_valid_mood() -> void:
 	var biomes := ContentRepository.load_all().all_of(&"biomes")
-	assert_eq(biomes.size(), 4)  # v0.7.5 NB1: Frozen Shore
+	assert_eq(biomes.size(), 5)  # v0.7.5 NB1: Frozen Shore; NB2: Starfall
 	for b: BiomeDefinition in biomes:
 		assert_not_null(b.mood, "%s has a mood" % b.id)
 		assert_eq(b.mood.problems().size(), 0, "%s mood: %s" % [b.id, b.mood.problems()])

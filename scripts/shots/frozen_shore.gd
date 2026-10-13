@@ -5,7 +5,8 @@ extends SceneTree
 ## The world is never stepped (a still floor, no enemies yet).
 ## Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/frozen_shore.gd
-## Options after `--`: seed=<run seed> (default 20261008, whose floor 1 is Frozen Shore), floor=<index> (default 1).
+## Options after `--`: seed=<run seed> (default 20261008; its floor 1 drew Frozen Shore until NB2 added a fifth biome,
+## and the floor is drawn and laid as Frozen Shore whatever the run drew), floor=<index> (default 1).
 ## Writes build/shots/<version>/frozen_shore/. Quits on every path.
 
 const SETTLE := 10

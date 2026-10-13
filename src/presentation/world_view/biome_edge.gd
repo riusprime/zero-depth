@@ -5,10 +5,14 @@ extends Node3D
 ## - &"water" (Frozen Shore): a dark frozen sea under the void, the floor standing on a snow bank whose lip shows at
 ##   every edge, and white ice floes drifting on the water (cosmetic stream). The sea shimmers slowly (frame time;
 ##   still with reduced motion).
+## - &"stars" (v0.7.5 NB2, Starfall): a starry void. The floor is a floating island (dark star stone under every
+##   ground rect, faceted spikes hanging from its rim), twinkling stars and soft nebula light (violet, teal, magenta)
+##   far below, and small rock and crystal islands drifting in the void around it (cosmetic stream; the twinkle and
+##   the drift are frame time, still with reduced motion). Its meshes and shaders are in StarVoid.
 ## The void stays impassable in the sim (the floor's outer walls); this is only what you see there. No collision.
 ## Presentation only.
 
-const STYLES: Array[StringName] = [&"water"]
+const STYLES: Array[StringName] = [&"water", &"stars"]
 ## The sea's surface below the ground, the snow bank's foot, and how far the sea reaches past the floor (m).
 const WATER_Y := -0.45
 const BANK_FOOT := -0.6
@@ -57,6 +61,19 @@ var floe_count := 0
 var water: MeshInstance3D
 var bank: MeshInstance3D
 var floes: MultiMeshInstance3D
+## v0.7.5 NB2 (&"stars"): the rock under the floor, its hanging spikes, the stars, the nebula clouds, the floating
+## islands and the crystals on some of them, and their counts.
+var underside: MeshInstance3D
+var spikes: MultiMeshInstance3D
+var stars: MultiMeshInstance3D
+var nebula: Node3D
+var islands: MultiMeshInstance3D
+var crystals: MultiMeshInstance3D
+var star_count := 0
+var spike_count := 0
+var island_count := 0
+var crystal_count := 0
+var nebula_count := 0
 
 
 static func has_style(s: StringName) -> bool:
@@ -71,6 +88,79 @@ func build(
 	style = p_style
 	if style == &"water":
 		_build_water(ground, bounds, edge_color, seed_value)
+	elif style == &"stars":
+		_build_stars(ground, bounds, edge_color, seed_value)
+
+
+## v0.7.5 NB2: Starfall's starry void (StarVoid's rules and meshes).
+func _build_stars(ground: Array, bounds: Rect2, edge_color: Color, seed_value: int) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value * 7919 + 3301  # the cosmetic stream: presentation only
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for r: Rect2 in ground:
+		_box(st, r.grow(StarVoid.ROCK_LIP), StarVoid.ROCK_FOOT, -0.004)
+	underside = MeshInstance3D.new()
+	underside.name = "Underside"
+	underside.mesh = st.commit()
+	underside.material_override = StarVoid.rock_material(edge_color)
+	underside.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(underside)
+	var hang := StarVoid.spike_xforms(ground, rng)
+	spike_count = hang.size()
+	spikes = _multi("Spikes", StarVoid.spike_mesh(), hang, StarVoid.rock_material(edge_color))
+	var sky := StarVoid.star_xforms(ground, bounds, rng)
+	star_count = sky[0].size()
+	stars = _multi("Stars", StarVoid.star_mesh(), sky[0], StarVoid.star_material(), sky[1])
+	nebula = Node3D.new()
+	nebula.name = "Nebula"
+	add_child(nebula)
+	for cloud: Dictionary in StarVoid.nebula_clouds(bounds, rng):
+		var mi := MeshInstance3D.new()
+		var q := PlaneMesh.new()
+		q.size = Vector2.ONE * float(cloud["size"])
+		mi.mesh = q
+		mi.position = cloud["at"]
+		mi.material_override = StarVoid.nebula_material(cloud["color"], cloud["seed"])
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		nebula.add_child(mi)
+	nebula_count = nebula.get_child_count()
+	var isles := StarVoid.island_xforms(ground, bounds, rng)
+	island_count = isles[0].size()
+	crystal_count = isles[1].size()
+	islands = _multi(
+		"Islands", StarVoid.island_mesh(), isles[0], StarVoid.drift_material(edge_color, false)
+	)
+	crystals = _multi(
+		"Crystals",
+		CodeProps.star_crystal_mesh(),
+		isles[1],
+		StarVoid.drift_material(edge_color, true)
+	)
+
+
+## A MultiMeshInstance3D of `mesh` at `xforms` (null when there are none), coloured per instance by `colors`.
+func _multi(
+	n: String, mesh: Mesh, xforms: Array, mat: Material, colors: Array = []
+) -> MultiMeshInstance3D:
+	if xforms.is_empty():
+		return null
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = not colors.is_empty()
+	mm.mesh = mesh
+	mm.instance_count = xforms.size()
+	for k in xforms.size():
+		mm.set_instance_transform(k, xforms[k])
+		if mm.use_colors:
+			mm.set_instance_color(k, colors[k])
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = n
+	mmi.multimesh = mm
+	mmi.material_override = mat
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+	return mmi
 
 
 func _build_water(ground: Array, bounds: Rect2, edge_color: Color, seed_value: int) -> void:

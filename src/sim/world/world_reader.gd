@@ -1385,6 +1385,12 @@ func player_on_ice() -> bool:
 	return IcePatches.on_ice(_w)
 
 
+## v0.7.5 NB2: which surface the floor's patches are (&"ice", Starfall's &"starglow"; &"" for none): the stage draws
+## each its own way. The patches themselves are ice_patch_count / ice_patch either way.
+func surface_kind() -> StringName:
+	return _w.ice.kind if _w.ice != null else &""
+
+
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
 ## An item's tags (fire, shock, frost, bleed, blade, bolt, dash, guard).
 func item_tags(item_index: int) -> PackedStringArray:

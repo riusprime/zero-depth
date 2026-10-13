@@ -187,6 +187,14 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   the ice's `accel_permille` / `decel_permille` instead of the player's own (a slide). The dash, skills and enemies
   are unchanged on ice. EI-05's list names the streams of LOCKED_DECISIONS; `map:ice` is a sub-stream of `map` the
   way `map:overrun` is (flagged for the owner in the v0.7.5 PLAN).
+- **v0.7.5 NB2** adds the sub-stream `map:starglow` the same way (`IcePatches.stream_of(kind)`: `map:<kind>`; ice
+  keeps `map:ice`): Starfall's starglow pools, laid by the same `IcePatches.lay` rules into the same `World.ice`
+  (an `IceField` whose `kind` is `&"starglow"`; a floor has one surface at most). Its effect: while the hero's
+  position at the start of the move is on a pool, the hero's target walking velocity is scaled by the field's
+  `speed_permille` (1250: a quarter faster) and they ease with its `accel_permille` / `decel_permille` (Starfall:
+  0.1 s up, 0.2 s down, a short drift). Ice's `speed_permille` is 1000, and at 1000 the scale is skipped, so the
+  target is untouched and Frozen Shore plays exactly as in NB1. Loadout, not hashed, kept on restore, like the ice; dash, skills and enemies
+  unchanged. Not in EI-05's list either (flagged with `map:ice`).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the

@@ -595,7 +595,7 @@ of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.fl
 
 ```gdscript
 class_name BiomeDefinition extends Resource
-@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, …
+@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, starfall, …
 @export var name_key: StringName
 @export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var palette: Dictionary           # token -> Color; keys from docs/art/ART_DIRECTION.md §2
@@ -604,7 +604,7 @@ class_name BiomeDefinition extends Resource
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
 @export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
-@export var surface: BiomeSurface         # v0.7.5 NB1: ground that plays differently (ice); null for none
+@export var surface: BiomeSurface         # v0.7.5 NB1/NB2: ground that plays differently (ice, starglow); null for none
 @export var look: BiomeLook               # v0.7.5 NB1: own dressing, edge and enemy cast; null = hand-written look
 ```
 
@@ -638,21 +638,34 @@ class_name BiomeDefinition extends Resource
 
   A value out of range is a `surface_invalid` `ERROR`. Mild flavour only (PD-04): ice never hurts and the dash is
   unchanged on it.
+
+  v0.7.5 NB2 adds a second kind and one field:
+  - `kind` is one of `BiomeSurface.KINDS`: `&"ice"` (Frozen Shore) or `&"starglow"` (Starfall's starglow pools);
+  - `speed_scale` (0.5..1.5, default 1.0): the hero's top walking speed on the surface, times their own (Starfall
+    1.25; ice keeps 1.0, so Frozen Shore plays exactly as in NB1).
+
+  `BiomeCompiler.compile_surface` compiles any kind into an `IceField` (its `kind` and `speed_permille` set);
+  `compile_ice` still answers for ice only. `IcePatches` draws each kind from its own sub-stream, `map:<kind>`
+  (`map:ice`, `map:starglow`; SIM_CONTRACTS §5). Starglow only helps (never hurts), and the dash is unchanged on it.
 - `BiomeLook` (v0.7.5 NB1, `src/content/defs/biome_look.gd`) is presentation only, never read by the sim:
   - `square_cover`: kit piece id -> int weight, what square cover footprints are drawn with (empty: the dresser's
     own rule);
   - `decor_swap`: kit decoration piece -> the piece drawn instead (a kit piece or a code-made `CodeProps` piece);
-  - `edge`: what lies past the floor's edge (`&""` the void, `&"water"` the frozen sea, `BiomeEdge`);
+  - `edge`: what lies past the floor's edge (`&""` the void, `&"water"` the frozen sea, v0.7.5 NB2 `&"stars"` the
+    starry void with floating islands; `BiomeLook.EDGES`, drawn by `BiomeEdge`, the stars' pieces in `StarVoid`);
+  - v0.7.5 NB2: a `square_cover` piece may be a code-made `CodeProps` piece of role cover (Starfall's
+    `star_monolith`), drawn at its own height;
   - `enemy_tint`: the cast enemies' grey parts take (alpha = strength, at most 0.8; red parts, rings and bars never
     change).
 
   A value out of range or an unknown edge is a `look_invalid` `ERROR`; that every named piece resolves is a
-  presentation test (`tests/unit/presentation/test_frozen_shore.gd`). A biome without a look keeps its hand-written
-  look (Ruins, Night Rocks, Red Canyon).
-- A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id in
-  `data/run/three_floors.tres` `biomes`, an ambience cue `data/audio/cues/<id>.tres` and its loop
-  (`scripts/audio/generate_sfx.py`), a `BIOME_<ID>` locale key, and optionally a `ShardCluster.TINTS` row and a
-  `BiomeEdge` style.
+  presentation test (`tests/unit/presentation/test_frozen_shore.gd`, `test_starfall.gd`). A biome without a look
+  keeps its hand-written look (Ruins, Night Rocks, Red Canyon).
+- A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id appended to
+  `data/run/three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
+  its loop (`scripts/audio/generate_sfx.py`), `BIOME_<ID>` and `BIOME_<ID>_DESC` locale keys (en and es), and
+  optionally a `ShardCluster.TINTS` row and a `BiomeEdge` style. Shipped (v0.7.5): `ruins`, `night_rocks`,
+  `red_canyon`, `frozen_shore` (NB1), `starfall` (NB2; a working name, the owner may rename it).
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
 - `palette` must define exactly the seven biome tokens listed in
