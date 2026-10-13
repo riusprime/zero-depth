@@ -255,10 +255,37 @@ func _build_section(id: StringName) -> VBoxContainer:
 			_cycler(box, "UI_REDUCED_MOTION", "reduced_motion", ["off", "on"])
 			_cycler(box, "UI_COLOUR_MODE", "colour_mode", GameSettings.COLOUR_MODES)
 			_cycler(box, "UI_CAPTIONS", "captions", ["off", "on"])
+			_cycler(box, "UI_UI_SCALE", "ui_scale", GameSettings.UI_SCALES)  # v0.7.5 SM
+			_cycler(box, "UI_SHOW_HINTS", HintStore.SETTING, ["on", "off"])  # v0.7.5 SM: the first-run hints
+			_hints_reset(box)
 			_note(box, "UI_COLOUR_MODE_NOTE")
 		&"language":
 			_cycler(box, "UI_LANGUAGE", "language", GameSettings.LANGUAGES)
 	return box
+
+
+## v0.7.5 SM: "Reset hints": every first-run hint shows again (HintStore.reset), with a line that says so.
+func _hints_reset(box: Control) -> void:
+	var row := _row(box, "UI_RESET_HINTS_LABEL")
+	var b := _button("UI_RESET_HINTS", func() -> void: pass)
+	b.name = "ResetHints"
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.add_theme_font_size_override("font_size", 20)
+	b.custom_minimum_size = Vector2(0, 40)
+	var done := Label.new()
+	done.name = "HintsResetDone"
+	done.text = "UI_HINTS_RESET_DONE"
+	done.add_theme_font_size_override("font_size", 18)
+	done.modulate = Color(1.0, 0.85, 0.45)
+	done.visible = false
+	b.pressed.connect(
+		func() -> void:
+			HintStore.new(_profile).reset()
+			done.visible = true
+			setting_changed.emit("hints_reset")
+	)
+	row.add_child(b)
+	row.add_child(done)
 
 
 func _row(box: Control, label_key: String) -> HBoxContainer:

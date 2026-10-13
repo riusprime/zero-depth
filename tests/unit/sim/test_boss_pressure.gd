@@ -19,7 +19,10 @@ func test_the_new_numbers_compile() -> void:
 		assert_eq(t.commit_ticks, 12, "%s commits 12 ticks before it strikes" % t.id)
 		assert_eq(t.dash_read_ticks, 30, String(t.id))
 		assert_eq(t.gap_ticks, 120, "%s: 2 s out of reach" % t.id)
-		assert_gte(t.gap_attack, 0, "%s has a gap-closer" % t.id)
+		if t.id != &"gatekeeper":  # v0.7.5 BF1: none (its tracked circles reach a far player anyway)
+			assert_gte(t.gap_attack, 0, "%s has a gap-closer" % t.id)
+		else:
+			assert_eq(t.gap_attack, -1, "the Gatekeeper: no gap-closer")
 
 
 func _boss(id: StringName, player_at: Vector2) -> Array:
@@ -31,13 +34,15 @@ func _boss(id: StringName, player_at: Vector2) -> Array:
 	return [w, i, w.actors.ids[i]]
 
 
+## v0.7.5 BF1: on the Warlord's shield bash (an aimed move without a lock; the Gatekeeper's lanes lock now, their own
+## test is tests/unit/sim/test_boss_markers.gd).
 func test_a_windup_tracks_the_player_then_commits() -> void:
-	var s := _boss(&"gatekeeper", Vector2(8, 0))
+	var s := _boss(&"warlord", Vector2(8, 0))
 	var w: World = s[0]
 	var aid: int = s[2]
 	var t := BossAi.table_of(w, s[1])
-	var k := t.attack_index(&"shock_lanes")
-	BossLab.start(w, s[1], &"shock_lanes")
+	var k := t.attack_index(&"shield_bash")
+	BossLab.start(w, s[1], &"shield_bash")
 	var windup := t.attacks[k].windup_ticks
 	var aims := []
 	for n in windup:
@@ -87,7 +92,8 @@ func test_after_a_dash_the_aim_goes_to_its_landing_point() -> void:
 
 
 func test_out_of_reach_for_two_seconds_brings_the_gap_closer() -> void:
-	for id: StringName in [&"gatekeeper", &"brood_mother", &"siege_engine"]:
+	# v0.7.5 BF1: the Gatekeeper has no gap-closer now (its tracked marks reach you anywhere); the Warlord's lunge.
+	for id: StringName in [&"warlord", &"brood_mother", &"siege_engine"]:
 		var t := BossLab.tables()[BossLab.table_index(BossLab.world(), id)]
 		var far := t.radius_m + t.gap_distance_m + 1.0
 		var s := _boss(id, Vector2(far, 0))
@@ -108,7 +114,7 @@ func test_out_of_reach_for_two_seconds_brings_the_gap_closer() -> void:
 
 
 func test_coming_into_reach_resets_the_gap_clock() -> void:
-	var s := _boss(&"gatekeeper", Vector2(9, 0))
+	var s := _boss(&"warlord", Vector2(9, 0))
 	var w: World = s[0]
 	var b := BossAi.entry_of(w, s[1])
 	for n in 100:

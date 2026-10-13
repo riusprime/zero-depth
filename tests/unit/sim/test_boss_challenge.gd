@@ -151,6 +151,7 @@ func test_coming_close_resets_the_far_timer() -> void:
 	var s := _boss(&"gatekeeper", Vector2(30, 0))
 	var w: World = s[0]
 	var b := BossAi.entry_of(w, s[1])
+	w.actors.invuln[0] = 1 << 20  # v0.7.5 BF1: its tracked lanes reach you far off; a hit's freeze would hold the clock
 	CombatLab.idle(w, 100)
 	assert_gt(w.bosses.far_t[b], 90)
 	w.actors.set_pos(0, Vector2(5, 0))
@@ -158,13 +159,15 @@ func test_coming_close_resets_the_far_timer() -> void:
 	assert_eq(w.bosses.far_t[b], 0)
 
 
+## v0.7.5 BF1: the Gatekeeper fights dodge-first now (no vortex); the pull move is kept and tested on its old numbers.
 func test_the_gatekeepers_vortex_drags_you_in_then_slams() -> void:
 	var s := _boss(&"gatekeeper", Vector2(9, 0))
 	var w: World = s[0]
 	var aid: int = s[2]
 	var t := BossAi.table_of(w, s[1])
+	var k := BossLab.with_attack(w, &"gatekeeper", BossLab.vortex_def())
 	BossLab.start(w, s[1], &"vortex_slam")
-	var atk := t.attacks[t.punish_attack]
+	var atk := t.attacks[k]
 	assert_eq(atk.id, &"vortex_slam")
 	assert_gte(atk.windup_ticks, SimTick.MIN_TELEGRAPH_TICKS)
 	var x0 := w.player_pos().x
@@ -181,6 +184,7 @@ func test_a_dash_or_walking_away_escapes_the_vortex() -> void:
 	var s := _boss(&"gatekeeper", Vector2(12, 0))
 	var w: World = s[0]
 	var aid: int = s[2]
+	BossLab.with_attack(w, &"gatekeeper", BossLab.vortex_def())
 	BossLab.start(w, s[1], &"vortex_slam")
 	for k in 200:
 		if w.actors.state[w.actors.index_of(aid)] == S.RECOVER:
@@ -278,6 +282,13 @@ func test_aimed_attacks_lead_a_moving_player() -> void:
 	var t := BossAi.table_of(w, s[1])
 	assert_eq(t.lead_ticks, 21, "0.35 s")
 	w.vel = Vector2(0, 0.1)  # 6 m/s across
+	# v0.7.5 BF2: the shipped leap tracks then locks on the exact position (no lead); the lead rule is for an aimed
+	# attack without a lock, so the leap here is one (a fixture).
+	var leap := t.attacks[t.attack_index(&"leap")]
+	assert_eq(leap.lock_ticks, 48, "the shipped leap locks 0.8 s")
+	BossLab.start(w, s[1], &"leap")
+	assert_eq((BossAi.leap_disc(w, s[1])[0] as Vector2).y, 0.0, "locked: exact, not led")
+	leap.lock_ticks = 0
 	BossLab.start(w, s[1], &"leap")
 	var d: Array = BossAi.leap_disc(w, s[1])
 	assert_almost_eq((d[0] as Vector2).y, 0.1 * 21, 0.001, "the leap lands where you're going")

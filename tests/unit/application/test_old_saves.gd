@@ -111,3 +111,58 @@ func test_the_payload_version_stays_and_older_ones_still_load() -> void:
 	assert_eq(RunSaver.PAYLOAD_VERSION, 4)
 	for v in [2, 3, 4]:
 		assert_true(RunSaver.PAYLOAD_VERSIONS_READ.has(v), "payload %d still loads" % v)
+
+
+## v0.7.5 MG: a save made before v0.7.5 has no floor rules: its floor is rebuilt with v0.7.0's (10-12 rooms, a third
+## of the combat rooms as arenas, a shop on every floor), so its snapshot fits (the two v0.6.1 saves above, floor 1
+## and floor 2, the second one with a v0.7.0 shop on floor 2). A save made now records today's rules, and the next
+## floor after an old one is always built with them.
+func test_an_old_save_keeps_its_v070_floor_and_the_next_floor_is_new() -> void:
+	var r := RunSaveStore.decode(FileAccess.get_file_as_bytes(DIR + "v061_gun_floor2.save"))
+	var p: Dictionary = (r[0] as Dictionary).get("payload", {})
+	assert_false((p["run"] as Dictionary).has("floor_rules"), "recorded before v0.7.5")
+	var repo := ContentRepository.load_all()
+	var table := ContentCompiler.compile_run(repo.get_def(&"run", SaveLab.RUN_ID))
+	var run := RunSaver.run_from(p, table)
+	assert_true(run.v070_floor(), "rebuilt with v0.7.0's rules")
+	var old := RunSaver.floor_tables(run, repo)
+	assert_eq((old[&"map"] as FloorParams).rooms_max, 12)
+	assert_eq((old[&"arena"] as ArenaTable).share_permille, 330)
+	assert_true((old[&"shop"] as ShopTable).on_floor(2), "v0.7.0: a shop on every floor")
+	var w := SaveLab.build_floor(run)
+	assert_true(w.shop.present(), "the saved floor 2 keeps its shop")
+	var now := RunSaver.payload_of(w, run, 1, PackedByteArray())
+	assert_eq(
+		int(now["run"]["floor_rules"]),
+		RunState.FLOOR_RULES_V070,
+		"re-saved on the old floor: still old"
+	)
+	run.finish_floor(w)
+	assert_false(run.v070_floor(), "the next floor is built with today's rules")
+	assert_eq(
+		int(RunSaver.payload_of(w, run, 1, PackedByteArray())["run"]["floor_rules"]),
+		RunState.FLOOR_RULES
+	)
+	var fresh := RunState.start(5, table, &"blade")
+	assert_false(fresh.v070_floor(), "a new run: today's rules")
+	var new := RunSaver.floor_tables(fresh, repo)
+	assert_eq((new[&"map"] as FloorParams).rooms_max, 19)
+	assert_false((new[&"shop"] as ShopTable).on_floor(2), "v0.7.5: no shop on floor 2")
+
+
+## v0.7.5 BF1 (owner N18): today's boss rooms are 4 x 4; a floor saved before (floor rules 1 or 2) is rebuilt with the
+## boss's room of then, so its snapshot still fits; the next floor is today's.
+func test_a_save_from_before_the_big_boss_rooms_keeps_its_room() -> void:
+	for rules in [RunState.FLOOR_RULES_V070, RunState.FLOOR_RULES_V075_MG]:
+		var run := SaveLab.run_state(41, 1)
+		run.floor_rules = rules
+		assert_true(run.legacy_boss_room())
+		var w := SaveLab.build_floor(run)
+		var cells := w.floor_layout.room_cells[w.floor_layout.boss_room].size
+		assert_ne(cells, Vector2i(4, 4), "rules %d: the room of then" % rules)
+		var now := SaveLab.run_state(41, 1)
+		assert_false(now.legacy_boss_room())
+		var fresh := SaveLab.build_floor(now)
+		assert_eq(fresh.floor_layout.room_cells[fresh.floor_layout.boss_room].size, Vector2i(4, 4))
+		run.finish_floor(w)
+		assert_false(run.legacy_boss_room(), "the next floor: the big room")

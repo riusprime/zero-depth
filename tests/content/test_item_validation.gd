@@ -27,6 +27,11 @@ func test_every_item_is_valid() -> void:
 	)
 	for def: ItemDefinition in repo.all_of(&"items"):
 		assert_eq(def.validate(), [], String(def.id))
+	# ContentCompiler.compile_item casts the content kind to the sim kind: the enums must match name for name.
+	assert_eq(
+		ItemDefinition.Kind.keys(), ItemTable.Kind.keys(), "item kinds: content and sim enums match"
+	)
+	assert_eq(ItemDefinition.Kind.values(), ItemTable.Kind.values(), "item kinds: same numbers")
 
 
 ## The compiled specs of the runner holding item `id` alone.

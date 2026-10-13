@@ -873,6 +873,26 @@
       "peak_dbfs": -6.0,
       "rms_dbfs": -16.69,
       "loop": true
+    },
+    {
+      "id": "frozen_shore",
+      "kind": "ambience",
+      "path": "assets/audio/ambience/frozen_shore.wav",
+      "sha256": "4b5382742a08501c817bf888e1762704d4dc0e190e046989452d52146f643432",
+      "seconds": 10.0,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -19.04,
+      "loop": true
+    },
+    {
+      "id": "starfall",
+      "kind": "ambience",
+      "path": "assets/audio/ambience/starfall.wav",
+      "sha256": "18652b16d84309428b1613a2ba00de817bac057458bc754870cbd3c4966c7e6d",
+      "seconds": 10.0,
+      "peak_dbfs": -6.0,
+      "rms_dbfs": -19.49,
+      "loop": true
     }
   ]
 }

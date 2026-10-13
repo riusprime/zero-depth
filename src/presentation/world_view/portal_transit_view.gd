@@ -65,10 +65,14 @@ var light := OmniLight3D.new()
 var overlay := ColorRect.new()
 ## v0.5.0 RT: the Deep gate (null without one); the way in flares and draws the hero to the gate taken.
 var deep_gate: PortalGate
+## v0.7.5 AP: the Ascension portal (null on other floors); the way in flares it and flashes in its gold.
+var ascension: AscensionPortal
 
 var _actors: ActorViews
 var _gate: PortalGate
 var _blue := PortalGate.visor_blue()
+## v0.7.5 AP: the way in's flash colour (the visor blue; the Ascension portal's gold through it).
+var _flash := PortalGate.visor_blue()
 var _column_mat := ShaderMaterial.new()
 var _flash_mat := StandardMaterial3D.new()
 var _mote_mat := StandardMaterial3D.new()
@@ -108,6 +112,10 @@ func sync(reader: WorldReader) -> void:
 		var taken := deep_gate if deep else _gate
 		if phase == Phase.ENTER and taken != null:
 			taken.flare()
+		_flash = PortalGate.visor_blue()
+		if phase == Phase.ENTER and ascension != null:  # v0.7.5 AP
+			ascension.flare()
+			_flash = AscensionPortal.flash_color()
 	var node := _player_node(reader)
 	var avatar := (
 		node.get_meta(&"avatar") as Node3D if node != null and node.has_meta(&"avatar") else null
@@ -162,10 +170,11 @@ func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 	flash_ball.visible = f > 0.0
 	flash_ball.position = at
 	flash_ball.scale = Vector3.ONE * (0.2 + 1.1 * f)
-	_flash_mat.albedo_color = Color(_blue.lightened(0.6), 0.85 * f)
+	_flash_mat.albedo_color = Color(_flash.lightened(0.6), 0.85 * f)
 	light.position = at
+	light.light_color = _flash
 	_set_light(LIGHT_ENERGY * f)
-	_set_overlay(_blue.lightened(0.5), SCREEN_FLASH * f * f)
+	_set_overlay(_flash.lightened(0.5), SCREEN_FLASH * f * f)
 
 
 func _arrive(node: Node3D, avatar: Node3D) -> void:

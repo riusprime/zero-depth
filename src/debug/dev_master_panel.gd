@@ -137,11 +137,20 @@ func _on_pick() -> void:
 	show_source(meta[0], meta[1])
 
 
+## The Tools page is built by Main for this panel; freed with it whether or not it was ever shown (v0.7.5: it was
+## left as an orphan when the panel closed without visiting Tools).
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(tools) and tools.get_parent() == null:
+		tools.free()
+
+
 ## Shows the fields of the content file `path` (only those under `filter`, "" = all), or the Tools page.
 func show_source(path: String, filter: String = "") -> void:
 	_source = path
 	_filter = filter
 	_editors.clear()
+	if tools != null and tools.get_parent() == _fields:
+		_fields.remove_child(tools)  # the Tools page is kept for the next visit, not freed with the rows
 	for c in _fields.get_children():
 		c.queue_free()
 	if path == "tools":

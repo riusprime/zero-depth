@@ -1,5 +1,5 @@
 class_name PickPanel
-extends Control
+extends ModalPanel
 ## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three cards
 ## (PickSlot: the owner's crystal frames since v0.5.5 A4, coloured by the card's family), a title (the chest's
 ## price) and a hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
@@ -10,25 +10,20 @@ extends Control
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
 ## Layouts (G2 mockups for the owner): ROW_CENTRE ships as the default.
 
-signal picked(value: int)
-
 enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 
+## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
+const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
 
 var layout := Layout.ROW_CENTRE
-## Off while a menu (pause) sits over the panel.
-var input_enabled := true
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _price_icon := ShardIcon.new(26.0)
 var _hint := Label.new()
 var _slots: Array[PickSlot] = []
 var _count := 0
-var _focus := 0
 var _reward := -1
-var _sent := false
-var _open := false
 var _swap_seen := false
 
 
@@ -37,10 +32,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	name = "PickPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_dim.color = Color(0, 0, 0, 0.18 if layout == Layout.ROW_LOW else 0.45)
-	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
+	_add_dim(_dim, 0.18 if layout == Layout.ROW_LOW else 0.45)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 14)
@@ -63,10 +55,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	HudStyle.style_label(_title, 26, true)  # v0.3.5 F16: the HUD's plain type
 	HudStyle.style_label(_hint, 15)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
-	for l: Label in [_title, _hint]:
-		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	style_labels([_title, _hint])
 	for k in SLOTS:
 		var s := PickSlot.new(k)
 		s.clicked.connect(_on_clicked)
@@ -79,11 +68,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
-	if not reader.choosing():
-		if _open:
-			_open = false
-			_sent = false
-			visible = false
+	if _closed(reader.choosing()):
 		return
 	var r := reader.choice_reward()
 	var rid := reader.reward_id(r)
@@ -148,11 +133,15 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"tier_text": "",
 		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
 		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
+		"level_text": "",  # v0.7.5 SM: the level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
+		"held_level": 0,  # v0.7.5 SM: the level held now (0: not held)
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
 			face["tier"] = 3
 			var lvl := int(info["level"])
+			face["held_level"] = lvl - 1 if lvl > 1 else 0
+			face["level_text"] = level_text(ci, face["held_level"], lvl)
 			var new_key := (
 				"UI_CARD_MODIFIER_NEW" if info.get("modifier", false) else "UI_CARD_ABILITY_NEW"
 			)
@@ -179,7 +168,26 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
 			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
+			if face["wand"]:  # v0.7.5 SM (N8): a wand card's level, and the level taking it gives
+				face["held_level"] = held_level(reader, code)
+				face["level_text"] = level_text(ci, face["held_level"], face["held_level"] + 1)
 	return face
+
+
+## v0.7.5 SM (N8): the level of card `code` in the wand now (BuildSlots' slots), or 0 when it isn't held.
+static func held_level(reader: WorldReader, code: int) -> int:
+	for s: Dictionary in reader.build()["slots"]:
+		if int(s["code"]) == code:
+			return int(s["level"])
+	return 0
+
+
+## v0.7.5 SM (N8): the level badge: "Lv N" for a card not held (N is the level it arrives at), "Lv N → M" when
+## taking it raises a held card from N to M.
+static func level_text(ci: Object, held: int, to: int) -> String:
+	if held <= 0 or held >= to:
+		return ci.tr("UI_WAND_LEVEL") % maxi(held, to)
+	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
 
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
@@ -191,6 +199,7 @@ static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) ->
 	var word: String = ci.tr("RARITY_LEGENDARY")
 	if wand_level > 0 and bool(face.get("wand", false)):
 		word = "%s · %s" % [ci.tr("UI_CARD_ABILITY_LEVEL") % wand_level, word]
+		out["level_text"] = level_text(ci, int(face.get("held_level", 0)), wand_level)  # v0.7.5 SM
 	out["tier_text"] = (
 		"%s · %s" % [ci.tr("UI_CARD_MOD"), word]
 		if int(face["type"]) == WorldReader.CARD_MOD
@@ -202,14 +211,6 @@ static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) ->
 ## Whether the open choice is the boss's legendary pick.
 func is_legendary() -> bool:
 	return _open and _slots[0].tier == CardFrames.LEGENDARY_TIER
-
-
-func is_open() -> bool:
-	return _open
-
-
-func focus_index() -> int:
-	return _focus
 
 
 func card_count() -> int:
@@ -227,44 +228,18 @@ func title_text() -> String:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
-	var step := 0
-	if event is InputEventKey and event.pressed:
-		match event.physical_keycode:
-			KEY_1, KEY_2, KEY_3:
-				_set_focus(event.physical_keycode - KEY_1)
-			KEY_ENTER, KEY_KP_ENTER:
-				_send(_focus + 1)
-			KEY_ESCAPE:
-				_send(InputFrame.PICK_CANCEL)
-			KEY_LEFT, KEY_UP:
-				step = -1
-			KEY_RIGHT, KEY_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadButton and event.pressed:
-		match event.button_index:
-			JOY_BUTTON_A:
-				_send(_focus + 1)
-			JOY_BUTTON_B:
-				_send(InputFrame.PICK_CANCEL)
-			JOY_BUTTON_DPAD_LEFT, JOY_BUTTON_DPAD_UP:
-				step = -1
-			JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_DPAD_DOWN:
-				step = 1
-			_:
-				return
-	elif event is InputEventJoypadMotion:
-		if event.is_action_pressed(&"ui_left") or event.is_action_pressed(&"ui_up"):
-			step = -1
-		elif event.is_action_pressed(&"ui_right") or event.is_action_pressed(&"ui_down"):
-			step = 1
-		else:
+	var d := PanelInput.decode(event, 3, ECHO)
+	match d.kind:
+		PanelInput.Kind.DIGIT:
+			_set_focus(d.digit)
+		PanelInput.Kind.CONFIRM:
+			_send(_focus + 1)
+		PanelInput.Kind.CANCEL:
+			_send(InputFrame.PICK_CANCEL)
+		PanelInput.Kind.STEP:
+			_set_focus(clampi(_focus + d.line(), 0, maxi(0, _count - 1)))
+		_:
 			return
-	else:
-		return
-	if step != 0:
-		_set_focus(clampi(_focus + step, 0, maxi(0, _count - 1)))
 	get_viewport().set_input_as_handled()
 
 
@@ -281,11 +256,6 @@ func _on_clicked(k: int) -> void:
 		return
 	_set_focus(k)
 	_send(k + 1)
-
-
-func _send(value: int) -> void:
-	_sent = true
-	picked.emit(value)
 
 
 func _place(col: VBoxContainer) -> void:

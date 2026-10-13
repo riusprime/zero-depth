@@ -51,7 +51,6 @@ const FORM_ORBITER := AttackSpec.Form.ORBITER
 const FORM_LOB := AttackSpec.Form.LOB
 const FORM_BURST := AttackSpec.Form.BURST
 const ATTACK_BOLT := Modifiers.GUN_BOLT
-const ATTACK_SKILL := Modifiers.SKILL
 ## Item kinds, for views (presentation may not name ItemTable).
 const ITEM_LONG_EDGE := ItemTable.Kind.LONG_EDGE
 const ITEM_TWIN_ARC := ItemTable.Kind.TWIN_ARC
@@ -87,16 +86,8 @@ const STATE_RECOVER := EnemyAi.State.RECOVER
 const SPELL_BOLT := EnemyAi.Spell.BOLT
 const SPELL_SPREAD := EnemyAi.Spell.SPREAD
 const SPELL_RUNE := EnemyAi.Spell.RUNE
-## Run flow (v0.3.0 B): boss flow states, for views (BossFlow.State is the source).
-const BOSS_WAITING := BossFlow.State.WAITING
-const BOSS_FIGHT := BossFlow.State.FIGHT
-const BOSS_OPEN := BossFlow.State.OPEN
-const BOSS_EXITED := BossFlow.State.EXITED
-const BOSS_ENTERING := BossFlow.State.ENTERING
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
-## v0.5.5 DS (D7): a boss in a phase gate's transition (BossGates).
-const STATE_GATE := BossAi.GATE
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -115,6 +106,12 @@ const MOVE_DEPLOY := BossAttackTable.Move.DEPLOY
 const MOVE_PULL := BossAttackTable.Move.PULL
 ## v0.4.0 BO: parallel lanes that stand while active (spears, molten floor).
 const MOVE_FLOOD := BossAttackTable.Move.FLOOD
+## v0.7.5 BF1: a bullet pattern, tracked ground circles, tracked row-and-column lanes.
+const MOVE_PATTERN := BossAttackTable.Move.PATTERN
+const MOVE_MARKS := BossAttackTable.Move.MARKS
+const MOVE_ROW_LANES := BossAttackTable.Move.ROW_LANES
+const MOVE_GRID := BossAttackTable.Move.GRID  # v0.7.5 BF3
+const MOVE_ROW_FLOOD := BossAttackTable.Move.ROW_FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -128,12 +125,17 @@ const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
-const RARITY_COMMON := ItemTable.COMMON
+## v0.7.5 AP: the Ascension portal's choices (ascension_choice) and the picks that send them (InputFrame.pick).
+const ASCEND_NONE := Ascension.Choice.NONE
+const ASCEND_END := Ascension.Choice.END
+const ASCEND_ASCEND := Ascension.Choice.ASCEND
+const PICK_ASCEND_END := Ascension.PICK_END
+const PICK_ASCEND_ASCEND := Ascension.PICK_ASCEND
 const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
 const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
 const SKILL_SCATTER_BLAST := SkillTable.Kind.SCATTER_BLAST
-## Build (v0.4.0 BS): card types, ability kinds and buttons, slots and levels.
+## Build (v0.4.0 BS): card types, ability kinds, slots and levels.
 const CARD_MOD := Offers.MOD
 const CARD_ABILITY := Offers.ABILITY
 const CARD_STAT := Offers.STAT
@@ -154,8 +156,6 @@ const ABILITY_DRONE_BUDDY := AbilityTable.Kind.DRONE_BUDDY
 const ABILITY_ORBIT_BLADES := AbilityTable.Kind.ORBIT_BLADES
 const ABILITY_BLINK := AbilityTable.Kind.BLINK
 const ABILITY_AEGIS := AbilityTable.Kind.AEGIS
-const ABILITY_BUTTON_PRIMARY := AbilityTable.Binding.PRIMARY
-const ABILITY_BUTTON_UTILITY := AbilityTable.Binding.UTILITY
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slots' abilities at most.
 const ABILITY_SLOTS := 2 + BuildSlots.SLOTS
 ## v0.6.0 MX2 (BuildSlots): the modifier slots, and the swap answers' pick values. v0.6.5 WN1: the most slots the
@@ -170,14 +170,12 @@ const WAND_ON_KILL := AttackSpec.Trigger.ON_KILL
 const WAND_ON_END := AttackSpec.Trigger.ON_END
 const WAND_ON_FINISHER := AttackSpec.Trigger.ON_FINISHER
 const WAND_ON_CRIT := AttackSpec.Trigger.ON_CRIT
-const PICK_SWAP_BASE := InputFrame.PICK_SWAP_BASE
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
-## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events), and the curse counted, not in percent.
+## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events).
 const EVENT_READY := Events.State.READY
 const EVENT_ACTIVE := Events.State.ACTIVE
 const EVENT_DONE := Events.State.DONE
-const EVENT_COST_NONE := Events.Cost.NONE
 const EVENT_COST_HP := Events.Cost.HP
 const EVENT_COST_MAX_HP := Events.Cost.MAX_HP
 const EVENT_COST_SHARDS := Events.Cost.SHARDS
@@ -192,7 +190,6 @@ const EVENT_BLOCK_OK := Events.OK
 const EVENT_BLOCK_SHARDS := Events.NEED_SHARDS
 const EVENT_BLOCK_NOTHING := Events.NEED_NOTHING_TO_GAIN
 const EVENT_BLOCK_BUSY := Events.NEED_BUSY
-const CURSE_EXTRA_ENEMY := Curses.Effect.EXTRA_ENEMY
 ## v0.4.0 AB: a Napalm Drone fire patch (element_fx()["fire_kind"]).
 const FIRE_NAPALM := ElementAbilities.FIRE_NAPALM
 ## v0.6.0 MX2: Arc Field's shock field, and any other spec's patch (a hook's zone).
@@ -312,11 +309,7 @@ func swing_active_tick() -> int:
 	return PlayerKit.current_step(_w).active_tick
 
 
-## Steps in the melee combo, and whether step `step` (-1 = the current swing's) is its finisher.
-func combo_length() -> int:
-	return _w.player.combo.size()
-
-
+## Whether step `step` (-1 = the current swing's) is the melee combo's finisher.
 func is_finisher(step: int = -1) -> bool:
 	return PlayerKit.is_finisher(_w, _step_index(step))
 
@@ -452,19 +445,12 @@ func mine_fuse(k: int) -> int:
 	return -1 if m.fuse[k] < 0 else clampi(m.fuse[k] * 1000 / maxi(1, m.fuse_total[k]), 0, 1000)
 
 
-## A Warden's armour half-arcs (1/4096 turns either side of its facing): x = front, y = rear. (0, 0) for others.
-func armour_half_arcs(i: int) -> Vector2i:
-	if BossAi.is_boss_kind(_w.actors.kinds[i]):
-		var bt := BossAi.table_of(_w, i)
-		return Vector2i(bt.front_half_arc, bt.rear_half_arc)
-	var t := _w.enemy_table(_w.actors.kinds[i])
-	return Vector2i(t.front_half_arc, t.rear_half_arc) if t != null else Vector2i.ZERO
-
-
 ## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead,
 ## 3 when the portal of a floor before the last was taken (the app loads the next floor).
 func outcome() -> int:
 	if _w.boss_flow != null and _w.boss_flow.exited():
+		if _w.boss_flow.ascension:  # v0.7.5 AP: End the run wins it; Ascend goes on to the next loop
+			return 3 if Ascension.ascended(_w) else 1
 		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
 		return 2
@@ -518,6 +504,11 @@ func projectile_vel(i: int) -> Vector2:
 
 func projectile_id(i: int) -> int:
 	return _w.projectiles.ids[i]
+
+
+## v0.7.5 BF1: projectile i's fireball look key (BulletPatterns; "" = a plain shot, drawn by ActorViews).
+func projectile_look(i: int) -> String:
+	return _w.projectiles.look_of(i)
 
 
 func wall_count() -> int:
@@ -729,11 +720,7 @@ func dash_hit_tick() -> int:
 	return _w.dash_hit_tick
 
 
-## Ricochet Core: wall bounces a projectile has left, and the tick of its last bounce (-1 = none).
-func projectile_bounces(i: int) -> int:
-	return _w.projectiles.bounces[i]
-
-
+## Ricochet Core: the tick of a projectile's last wall bounce (-1 = none).
 func projectile_bounce_tick(i: int) -> int:
 	return _w.projectiles.bounce_tick[i]
 
@@ -870,6 +857,11 @@ func has_floor() -> bool:
 	return _w.floor_layout != null
 
 
+## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
+func has_gate() -> bool:
+	return _w.floor_layout != null and _w.boss_flow != null
+
+
 func floor_bounds() -> Rect2:
 	return _w.floor_layout.bounds if _w.floor_layout != null else Rect2()
 
@@ -992,6 +984,30 @@ func floor_count() -> int:
 	return _w.floor_count
 
 
+## v0.7.5 AP: the run's loop (1 until the first Ascend) and its floor counted across loops.
+func loop() -> int:
+	return _w.loop
+
+
+func run_floor() -> int:
+	return _w.run_floor_index()
+
+
+## v0.7.5 AP: this floor's gate is the Ascension portal (the loop's last floor of a run).
+func ascension_floor() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.ascension
+
+
+## v0.7.5 AP: the Ascension portal's choice is open (the world waits; AscensionPanel shows it).
+func ascension_open() -> bool:
+	return Ascension.waiting(_w)
+
+
+## v0.7.5 AP: the choice taken: ASCEND_NONE, ASCEND_END or ASCEND_ASCEND.
+func ascension_choice() -> int:
+	return _w.boss_flow.ascend_choice if _w.boss_flow != null else ASCEND_NONE
+
+
 func has_boss_room() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.boss_room >= 0 and _w.boss_flow != null
 
@@ -1024,18 +1040,9 @@ func boss_door_sealed() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.door_sealed()
 
 
-func boss_state() -> int:
-	return _w.boss_flow.state if _w.boss_flow != null else BOSS_WAITING
-
-
 ## The gate's portal is active: the boss is dead, and walking in leaves the floor.
 func portal_active() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.portal_active()
-
-
-## The tick the portal opened (-1 = not yet).
-func portal_opened_tick() -> int:
-	return _w.boss_flow.opened_tick if _w.boss_flow != null else -1
 
 
 ## Portal transit (v0.3.5 PT): 0..1 through the hero's way into the portal and through the arrival on a new floor
@@ -1191,13 +1198,9 @@ func boss_in_gate(i: int) -> bool:
 	return _w.actors.state[i] == BossAi.GATE
 
 
-## Boss i's phase (0 = the first) and how many it has.
+## Boss i's phase (0 = the first).
 func boss_phase(i: int) -> int:
 	return _w.bosses.phase[BossAi.entry_of(_w, i)]
-
-
-func boss_phase_count(i: int) -> int:
-	return BossAi.table_of(_w, i).phase_threshold.size()
 
 
 ## HP thresholds (per mille of max) where boss i's later phases start, for marks on the bar.
@@ -1233,18 +1236,27 @@ func boss_leap(i: int) -> Array:
 	return [true, clampf(float(_w.actors.state_t[i] + 1) / atk.active_ticks, 0.0, 1.0)]
 
 
+## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): boss i is shielded now (its signature pattern runs): the
+## player's hits spark off it. For the shell view and the avatars' shield pose.
+func boss_shielded(i: int) -> bool:
+	return BossDodge.shielded(_w, i)
+
+
+## v0.7.5 BF1: the bullet pattern boss i is winding up or firing: {} or {"id", "kind" (BulletPatternTable.Kind),
+## "look", "shielded", "winding", "progress" 0..1000} (BossAi.pattern_state), for the avatars' poses.
+func boss_pattern(i: int) -> Dictionary:
+	return BossDodge.pattern_state(_w, i)
+
+
+## v0.7.5 BF3: the drops boss i's raining pattern (the Foundry's Slag Fountain) has in the air now, each [from, to
+## (sim-plane points), progress 0..1, progress a tick]; they land as fireballs where `to` is (BossDodge.rain_drops).
+func boss_rain(i: int) -> Array:
+	return BossDodge.rain_drops(_w, i)
+
+
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".
 func killer_cause_key() -> StringName:
 	return BossAi.cause_key(_w)
-
-
-## Number of compiled bosses (indices for the dev panel's spawn), and boss k's name key.
-func boss_table_count() -> int:
-	return _w.boss_tables.size()
-
-
-func boss_table_name_key(k: int) -> StringName:
-	return _w.boss_tables[k].name_key
 
 
 # --- Boss challenge (v0.3.0 BX) ----------------------------------------------------------------------------------
@@ -1273,15 +1285,6 @@ func boss_weak_range_m(i: int) -> float:
 ## The closing arena's band (BossChallenge.band): {} or "arena", "depth", "next", "warn" (-1 or 0..1000).
 func boss_arena_band() -> Dictionary:
 	return BossChallenge.band(_w)
-
-
-## How long the player has stayed too far from boss i, 0..1000 of the time that starts its punish (0 = none).
-func boss_punish_permille(i: int) -> int:
-	var b := BossAi.entry_of(_w, i)
-	var t := BossAi.table_of(_w, i)
-	if b < 0 or t.punish_attack < 0 or t.punish_ticks <= 0:
-		return 0
-	return clampi(_w.bosses.far_t[b] * 1000 / t.punish_ticks, 0, 1000)
 
 
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
@@ -1371,12 +1374,27 @@ func floor_ground() -> Array[Rect2]:
 	return out
 
 
+# --- Ice (v0.7.5 NB1, Frozen Shore) ---------------------------------------------------------------------------
+## The floor's ice patches (none on other biomes), for the stage, and whether the hero stands on one now.
+func ice_patch_count() -> int:
+	return _w.ice.rects.size() if _w.ice != null else 0
+
+
+func ice_patch(i: int) -> Rect2:
+	return _w.ice.rects[i]
+
+
+func player_on_ice() -> bool:
+	return IcePatches.on_ice(_w)
+
+
+## v0.7.5 NB2: which surface the floor's patches are (&"ice", Starfall's &"starglow"; &"" for none): the stage draws
+## each its own way. The patches themselves are ice_patch_count / ice_patch either way.
+func surface_kind() -> StringName:
+	return _w.ice.kind if _w.ice != null else &""
+
+
 # --- Engines and combos (v0.3.0 G) --------------------------------------------------------------------------
-## An item's tags (fire, shock, frost, bleed, blade, bolt, dash, guard).
-func item_tags(item_index: int) -> PackedStringArray:
-	return _w.item_tables[item_index].tags
-
-
 ## Shock, bleed and frost stacks on actor i, and whether it is frozen.
 func shock_stacks(actor_i: int) -> int:
 	return _w.actors.shock_stacks[actor_i]
@@ -1409,13 +1427,9 @@ func frost_threshold() -> int:
 	return _w.item_mods.frost_threshold
 
 
-## Bulwark: guard charges stored now, and the most it stores.
+## Bulwark: guard charges stored now.
 func guard_charges() -> int:
 	return _w.guard_charges
-
-
-func guard_charge_max() -> int:
-	return Abilities.charge_max(_w)  # Bulwark's, or Aegis's (v0.4.0)
 
 
 ## Owned combos in unlock order, as indices into the combo tables.
@@ -1429,10 +1443,6 @@ func combo_table_count() -> int:
 
 func combo_id(combo_index: int) -> StringName:
 	return _w.combo_tables[combo_index].id
-
-
-func combo_effect(combo_index: int) -> int:
-	return _w.combo_tables[combo_index].effect
 
 
 ## Locale keys (tr() them in the view).
@@ -1560,10 +1570,6 @@ func gamble_in_reach() -> bool:
 	return Gamble.in_reach(_w) and Rewards.nearest(_w) < 0
 
 
-func gamble_interact_radius_m() -> float:
-	return _w.gamble_table.interact_radius_m
-
-
 ## The last win: its tick (-1 = none yet on this floor) and its stat (an index below gamble_stat_count()).
 func gamble_tick() -> int:
 	return _w.gamble_tick
@@ -1610,16 +1616,6 @@ func gamble_bonus(stat: int) -> int:
 	return Gamble.bonus(_w, stat)
 
 
-## The stats the shrine can still draw, in stat order (the view's spin shows these).
-func gamble_candidates() -> PackedInt32Array:
-	var out := PackedInt32Array()
-	var weights := Gamble.weights(_w)
-	for s in weights.size():
-		if weights[s] > 0:
-			out.append(s)
-	return out
-
-
 func tier_progress() -> float:  # v0.3.0 UI (L23): 0 .. <1 through the danger tier
 	if _w.spawner == null:
 		return 0.0
@@ -1639,16 +1635,6 @@ func floor_start_room() -> int:
 ## The room the portal gate stands in (-1 without a floor).
 func floor_portal_room() -> int:
 	return _w.floor_layout.portal_room if _w.floor_layout != null else -1
-
-
-## v0.6.1 SD: room i's interior template by name (FloorLayout.TEMPLATE_NAMES: "ruined_hall", "camp", …), for the
-## shard dressing's density; &"" without one. Read only, for presentation.
-func floor_room_theme(i: int) -> StringName:
-	var f := _w.floor_layout
-	if f == null or i >= f.room_template.size():
-		return &""
-	var t := f.room_template[i]
-	return StringName(FloorLayout.TEMPLATE_NAMES[t]) if t < FloorLayout.TEMPLATE_COUNT else &""
 
 
 ## v0.6.1 SD: where the hero starts the floor (the player's position without a floor).
@@ -1711,11 +1697,6 @@ func skill_pellet_angles(angle: int) -> PackedInt32Array:
 	return AttackShapes.pellet_angles(angle, t.half_cone, t.pellets)
 
 
-## The melee facing now (the angle a Lunge Cleave would take).
-func melee_facing() -> int:
-	return PlayerBuild.melee_angle(_w)
-
-
 ## The last Vent press that found no heat to vent (the cold click), as a tick (-1 = never).
 func vent_cold_tick() -> int:
 	return _w.kit.cold_tick
@@ -1745,11 +1726,6 @@ func element_fx() -> Dictionary:
 ## clear_tick, bonus, reward_id, boosted).
 func overrun() -> Dictionary:
 	return Overrun.read(_w)
-
-
-## v0.4.0 AB: a combo pairs two abilities (combo_item_ids then gives the ability ids).
-func combo_is_ability(combo_index: int) -> bool:
-	return _w.combo_tables[combo_index].ability_a >= 0
 
 
 ## v0.6.0 MX2: the build (BuildSlots.read): the modifier slots in pick order (code, id, name_key, type, level), the
@@ -1840,11 +1816,6 @@ func crit_mult_permille() -> int:
 	return Stats.crit_mult(_w)
 
 
-## A stat's raw value (Stats.value: per mille; base 1000 for multipliers, 0 for added points).
-func stat_value(stat: int) -> int:
-	return Stats.value(_w, stat)
-
-
 # --- v0.5.0 EV: event rooms, curses and threat T (Events, Curses) ----------------------------------------------
 
 
@@ -1865,10 +1836,6 @@ func event_state(k: int) -> int:
 	return _w.ev.state[k]
 
 
-func event_id(k: int) -> StringName:
-	return Events.table(_w, k).id
-
-
 func event_name_key(k: int) -> StringName:
 	return Events.table(_w, k).name_key
 
@@ -1880,10 +1847,6 @@ func event_desc_key(k: int) -> StringName:
 ## The pedestal the interact button would open now (the sim's own choice), or -1.
 func event_in_reach() -> int:
 	return Events.nearest(_w) if not choosing() else -1
-
-
-func event_interact_radius_m() -> float:
-	return _w.ev.rules.interact_radius_m
 
 
 ## True while an event panel is open (the world waits for the choice).
@@ -1950,15 +1913,7 @@ func event_choice_block(k: int, c: int) -> int:
 	return Events.block(_w, k, c)
 
 
-## The last choice taken (tick; -1 none), a refused pick, a fight or defence finished.
-func event_result_tick() -> int:
-	return _w.ev.result_tick
-
-
-func event_denied_tick() -> int:
-	return _w.ev.denied_tick
-
-
+## The tick a fight or defence last finished (-1 none).
 func event_done_tick() -> int:
 	return _w.ev.done_tick
 
@@ -2098,24 +2053,12 @@ func curses_owned() -> PackedInt32Array:
 	return _w.curses_owned
 
 
-func curse_id(c: int) -> StringName:
-	return _w.ev.curses[c].id if c < _w.ev.curses.size() else &""
-
-
 func curse_name_key(c: int) -> StringName:
 	return _w.ev.curses[c].name_key if c < _w.ev.curses.size() else &""
 
 
 func curse_desc_key(c: int) -> StringName:
 	return _w.ev.curses[c].desc_key if c < _w.ev.curses.size() else &""
-
-
-## The curse's number as its sentence shows it: percent, or a count (CURSE_EXTRA_ENEMY).
-func curse_value(c: int) -> int:
-	if c >= _w.ev.curses.size():
-		return 0
-	var t := _w.ev.curses[c]
-	return t.amount if t.effect == Curses.Effect.EXTRA_ENEMY else t.amount / 10
 
 
 ## The last curse taken (tick, curse) and lifted (tick, curse); -1 when none yet.

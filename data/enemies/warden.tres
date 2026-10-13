@@ -19,6 +19,7 @@ damage = 25
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_WARDEN"
+desc_key = &"ENEMY_WARDEN_DESC"
 behaviour_id = &"warden"
 behaviour_params = {
 "attack_range_m": 2.2,

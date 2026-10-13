@@ -271,8 +271,8 @@ func _enemy_cue(reader: WorldReader, i: int, kind: int, st: int, at: Vector2, ou
 	elif st == WorldReader.STATE_ACTIVE:
 		var target: Vector2 = _targets.get(reader.actor_id(i), at)
 		_targets.erase(reader.actor_id(i))
-		if kind == WorldReader.KIND_BOMB_DRONE:
-			out.append([&"bomb_blast", target, 1.0])
+		if kind == WorldReader.KIND_BOMB_DRONE:  # v0.7.5 EF: the fireball's throw, toward where it lands
+			out.append([&"bomb_blast", reader.telegraph(i).get("to", target), 1.0])
 		elif kind == WorldReader.KIND_ARC_CASTER:
 			var rune := reader.actor_spell(i) == WorldReader.SPELL_RUNE
 			out.append([&"rune_erupt" if rune else &"arc_bolt", target if rune else at, 1.0])
@@ -292,6 +292,16 @@ static func attack_cue(move: int) -> StringName:
 		WorldReader.MOVE_BARRAGE, WorldReader.MOVE_BOLT_FAN, WorldReader.MOVE_DEPLOY, WorldReader.MOVE_BROOD:
 			return &"boss_mortar"
 		WorldReader.MOVE_FLOOD:  # v0.4.0 BO: spears or molten floor bursting up along the lanes.
+			return &"boss_floor_burst"
+		WorldReader.MOVE_MARKS:  # v0.7.5 BF1: the tracked circle strikes; the lanes crack; the pattern fires
+			return &"boss_slam"
+		WorldReader.MOVE_ROW_LANES:
+			return &"boss_laser"
+		WorldReader.MOVE_PATTERN:
+			return &"boss_mortar"
+		WorldReader.MOVE_GRID:  # v0.7.5 BF3: the board's shells land; the molten rows burst up
+			return &"boss_mortar"
+		WorldReader.MOVE_ROW_FLOOD:
 			return &"boss_floor_burst"
 	return &""
 

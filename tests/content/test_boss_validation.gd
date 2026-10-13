@@ -60,10 +60,10 @@ func test_a_short_telegraph_is_rejected() -> void:
 
 func test_moves_and_params_are_checked() -> void:
 	var d := _def()
-	d.attacks[0].shape_params.erase("radius_m")
-	d.attacks[0].shape_params["mystery"] = 1
-	d.attacks[1].move = &"dragon_breath"
-	d.attacks[2].shape = AttackDefinition.Shape.PROJECTILE
+	d.attack(&"fist_slam").shape_params.erase("radius_m")
+	d.attack(&"fist_slam").shape_params["mystery"] = 1
+	d.attack(&"cross_quake").move = &"dragon_breath"
+	d.attack(&"shock_lanes").shape = AttackDefinition.Shape.PROJECTILE
 	var codes := _codes(d)
 	assert_has(codes, &"param_missing")
 	assert_has(codes, &"param_unknown")

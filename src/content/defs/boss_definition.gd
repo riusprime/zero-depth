@@ -6,6 +6,8 @@ extends ContentDef
 ## floor generator reads). Every number is a starting value the owner tunes after playing.
 
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this boss (a locale key; empty shows no line).
+@export var desc_key: StringName
 @export var hp := 1000
 @export var radius_m := 1.2
 @export var move_speed_mps := 1.5
@@ -28,6 +30,9 @@ extends ContentDef
 @export var arena_cells := Vector2i(2, 2)
 @export_enum("open", "scatter", "pillars", "centre", "cross", "lines", "bunkers")
 var arena_template := 0
+## v0.7.5 BF1 (owner N18): the room size before every boss moved to the big room; a floor resumed from a save made
+## before then (RunState.legacy_boss_room) is rebuilt with it, so it is the floor it was saved on. (0, 0) = arena_cells.
+@export var legacy_arena_cells := Vector2i.ZERO
 ## Boss challenge (v0.3.0 BX, PLAN L17 and L26). Distances are from the boss's edge to the player.
 ## Ranged armour: the player's hits deal full damage up to ranged_full_m away, falling linearly to
 ## ranged_far_permille at ranged_far_m and beyond (1000 = no ranged armour).

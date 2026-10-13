@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 0
+look = &"acid_glob"
+speed_mps = 3.4
+radius_m = 0.2
+range_m = 14.0
+waves = 1
+wave_gap_seconds = 0.4
+count = 14
+gap_count = 1
+gap_width = 3
+id = &"brood_eruption_ring"

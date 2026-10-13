@@ -46,14 +46,15 @@ const SCHEMAS := {
 		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
 	},
 	## v0.4.0 BO: the Hive Lens's drones, split off at half HP; they fly the Needle's behaviour (EnemyAi.behaviour_of).
+	## v0.7.5 EF (owner N16): they fire a slow fireball pattern (data/bullet_patterns, a ring of orbs), not a burst.
 	&"lens_drone":
 	{
 		"params": ["attack_range_m", "cooldown_seconds", "keep_distance_m", "flee_distance_m"],
 		"shape": 4,
-		"shape_params":
-		["count", "gap_seconds", "speed_mps", "radius_m", "range_m", "spread_degrees"],
+		"shape_params": ["pattern_id"],
 	},
 	## v0.3.5 AI (owner F5): keeps keep_min_m..keep_max_m away and casts one of three spells, picked by weight.
+	## v0.7.5 EF (owner N16): the bolt and the spread each fire a slow fireball pattern (a fan of plasma balls).
 	&"arc_caster":
 	{
 		"params":
@@ -68,21 +69,18 @@ const SCHEMAS := {
 		],
 		"attacks":
 		[
-			{"id": &"bolt", "shape": 4, "shape_params": ["speed_mps", "radius_m", "range_m"]},
-			{
-				"id": &"spread",
-				"shape": 4,
-				"shape_params": ["count", "spread_degrees", "speed_mps", "radius_m", "range_m"],
-			},
+			{"id": &"bolt", "shape": 4, "shape_params": ["pattern_id"]},
+			{"id": &"spread", "shape": 4, "shape_params": ["pattern_id"]},
 			{"id": &"rune", "shape": 0, "shape_params": ["radius_m"]},
 		],
 	},
 	## v0.3.5 AI (owner F6): hovers keep_min_m..keep_max_m away and lobs a bomb whose circle fills for the windup.
+	## v0.7.5 EF (owner N16): it lobs a fireball (a BURST pattern) that bursts into small ones; no ground circle.
 	&"bomb_drone":
 	{
 		"params": ["attack_range_m", "cooldown_seconds", "keep_min_m", "keep_max_m"],
-		"shape": 0,
-		"shape_params": ["radius_m"],
+		"shape": 4,
+		"shape_params": ["pattern_id"],
 	},
 	## v0.4.0 EN, the horde kinds. A Swarmer is a tiny Charger whose charge is a short lunge bite.
 	&"swarmer":

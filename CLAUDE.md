@@ -89,19 +89,31 @@ Deathventory once shipped an agent-written "human playtest" and a smoke test wit
 |---|---|
 | Only docs, or scripts that write only under `docs/` | Nothing local; CI covers it |
 | Installed assets or manifests (`assets/`) | The asset tests |
-| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead: **one** full suite per wave, on the merged result of the wave's agents, from a clean worktree |
+| Code (`src/`), data (`data/`), tests, goldens, sims, the version or project files | An agent: lint + the tests of the folders it touched and their e2e. The lead, after merging agents' branches: `bash scripts/ci/seams.sh` (the seams, about 10 min: 260 tests in 619 s on 2026-10-13), then push. **No local full suite** |
 
-**One full run per wave** (owner, 2026-10-09: "i like the testing workflow so we ensure everything works but I think
-we are having too many, and double checking overall"; pick "One run per wave"). Agents don't run the full suite; the
-lead runs it once after merging a wave (up to 3 agents), fixes what breaks, and pushes. The PR into `main` runs it
-once more on GitHub; the lead doesn't run it locally again before opening the PR. A release runs everything
-(ROADMAP §0.4).
+**The full suite runs once per version, on GitHub** (owner, 2026-10-13: "does the full run suite make sense for every
+change? … just testing what the changes need to be tested right?"; then "make those changes statement so every
+session on this proyect gets them"):
+- **Agents** test what they changed: lint, the test folders they touched, and the e2e that reach their change.
+- **The lead**, after merging branches, runs `scripts/ci/seams.sh` from a clean worktree, fixes what breaks, and
+  pushes. The seams are the tests where separate changes meet: content, arch, goldens, application, debug (the dev
+  panel's folder list), old saves, the every-card soak, and the run/save/menu/dev-panel e2e. When a cross-step bug
+  gets past the seams, add the test that caught it to `seams.sh`.
+- **The PR into `main`** runs the full suite once on GitHub, as parallel shards (`scripts/ci/gut_shard.sh`; every
+  test file is in exactly one shard, and the `verify` job sums them against `tests/MIN_TEST_COUNT`). A red shard is
+  fixed on the branch, and only that shard's files are re-run locally before the push.
+- **`tests/MIN_TEST_COUNT`** is raised from the green `verify` total of the PR.
+- **A release** runs everything (ROADMAP §0.4).
+
+Supersedes the "one full run per wave" rule (owner, 2026-10-09).
 
 ## Commands
 
 ```bash
 godot --headless --path . --editor --import --quit                     # import (after clone / new class_name)
 bash scripts/verify.sh                                                 # import + full suite + CI guards
+bash scripts/ci/seams.sh                                               # the lead's check after a merge (no full suite locally)
+bash scripts/ci/gut_shard.sh <sim_a|sim_b|sim_c|e2e|presentation|rest> # one shard of the full suite, as GitHub runs it
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests -ginclude_subdirs -gexit
 godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit/sim -ginclude_subdirs -gexit   # one folder
 godot --headless --path . -s scripts/checks/hitch_probe.gd             # real-time hitch rule

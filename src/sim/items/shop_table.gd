@@ -27,6 +27,15 @@ var sell_permille := 400
 var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 var interact_radius_m := 1.8
+## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the shop stands on floor `first_floor`
+## and every `every_floors` floors after it (FloorCadence: 1, 3, 5 ... as shipped; a 3-floor run has two).
+var first_floor := 1
+var every_floors := 2
+
+
+## Whether floor `floor_index` (the run's floor number, counted on past the run's last floor) has the shop.
+func on_floor(floor_index: int) -> bool:
+	return FloorCadence.on(floor_index, first_floor, every_floors)
 
 
 ## The floor's price multiplier, per mille (1000 on floor 1): the floor step, and from floor 2 the late-floor

@@ -32,6 +32,21 @@ func build(rect: Rect2, walls: Array[Obb], clearance: float) -> void:
 	_label()
 
 
+## True when `rect`'s open floor at `clearance` is one region holding every point in `must` (the generators' "the
+## room stays whole" rule).
+static func whole(
+	rect: Rect2, walls: Array[Obb], clearance: float, must: PackedVector2Array
+) -> bool:
+	var reach := FloorReach.new()
+	reach.build(rect, walls, clearance)
+	if reach.region_count != 1:
+		return false
+	for q in must:
+		if reach.region_at(q) != 0:
+			return false
+	return true
+
+
 func cell_of(p: Vector2) -> Vector2i:
 	return Vector2i(int(floor((p.x - origin.x) / CELL)), int(floor((p.y - origin.y) / CELL)))
 
@@ -50,14 +65,6 @@ func region_at(p: Vector2) -> int:
 	if not inside(c):
 		return -1
 	return region[c.y * size.x + c.x]
-
-
-func free_cells() -> int:
-	var n := 0
-	for b in blocked:
-		if b == 0:
-			n += 1
-	return n
 
 
 func _label() -> void:

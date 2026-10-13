@@ -79,9 +79,9 @@ func test_the_new_kinds_are_bosses() -> void:
 func test_arenas_come_from_data() -> void:
 	var w := BossLab.world()
 	var want := {
-		&"warlord": [Vector2i(3, 2), FloorLayout.Template.OPEN],
-		&"hive_lens": [Vector2i(2, 2), FloorLayout.Template.CENTRE],
-		&"foundry": [Vector2i(3, 2), FloorLayout.Template.BUNKERS],
+		&"warlord": [Vector2i(4, 4), FloorLayout.Template.OPEN],  # v0.7.5 N18: the big room
+		&"hive_lens": [Vector2i(4, 4), FloorLayout.Template.CENTRE],
+		&"foundry": [Vector2i(4, 4), FloorLayout.Template.BUNKERS],
 	}
 	for id: StringName in want:
 		var t := w.boss_tables[BossLab.table_index(w, id)]
@@ -117,6 +117,11 @@ func test_every_attack_telegraphs_at_least_the_minimum_before_it_lands() -> void
 		var i := BossLab.ready_boss(w, id, Vector2(40, 40))
 		var t := BossAi.table_of(w, i)
 		for atk in t.attacks:
+			if (
+				atk.move == BossAttackTable.Move.PATTERN
+				and atk.pattern.kind != BulletPatternTable.Kind.BURST
+			):
+				continue  # v0.7.5 BF1: shots draw no ground line, they are the cause (test_bullet_patterns.gd)
 			var stand := Vector2(3.0, 0.0)
 			match atk.move:
 				BossAttackTable.Move.BROOD:
@@ -260,12 +265,13 @@ func test_lens_drones_fly_the_needles_behaviour() -> void:
 		w.step(InputFrame.new())
 		var i := w.actors.index_of(id)
 		var tg := EnemyAi.telegraph(w, i)
-		if not tg.is_empty():
-			marked = marked or tg["shape"] == &"lanes"
+		if not tg.is_empty():  # v0.7.5 EF (owner N16): a body cue, no ground line
+			marked = marked or (tg["shape"] == &"cast" and tg["ground"] == false)
+			assert_ne(tg["shape"], &"lanes", "no lane drawn on the ground")
 	for e in w.events_since(seq):
 		if e.kind == SimEvent.Kind.SPAWN and e.owner_id == id and e.source_id != id:
 			fired += 1
-	assert_true(marked, "its shots are marked as lanes first")
+	assert_true(marked, "it winds up before it fires its ring")
 	assert_gt(fired, 0, "it fires")
 	assert_eq(EnemyAi.behaviour_of(ActorStore.Kind.LENS_DRONE), ActorStore.Kind.NEEDLE)
 	assert_eq(EnemyAi.behaviour_of(ActorStore.Kind.CHARGER), ActorStore.Kind.CHARGER)
@@ -285,7 +291,7 @@ func test_the_foundry_launches_bomb_drones_capped() -> void:
 	)
 
 
-func test_the_foundrys_phase_two_opens_with_five_molten_lanes() -> void:
+func test_the_foundrys_phase_two_opens_with_its_fountain_and_floods_five_rows() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"foundry", Vector2(0, 0))
 	var aid := w.actors.ids[i]
@@ -296,7 +302,13 @@ func test_the_foundrys_phase_two_opens_with_five_molten_lanes() -> void:
 	i = w.actors.index_of(aid)
 	var t := BossAi.table_of(w, i)
 	assert_eq(w.bosses.phase[BossAi.entry_of(w, i)], 1)
-	assert_eq(w.bosses.attack[BossAi.entry_of(w, i)], t.attack_index(&"molten_flood_5"))
+	# v0.7.5 BF3: phase 2 opens with the bigger Slag Fountain (shielded); its flood has five molten rows.
+	assert_eq(w.bosses.attack[BossAi.entry_of(w, i)], t.attack_index(&"slag_fountain_2"))
+	assert_true(BossDodge.shielded(w, i))
+	assert_true(t.phase_attacks[1].has(t.attack_index(&"molten_flood_5")))
+	BossLab.until_open(w, aid)
+	i = w.actors.index_of(aid)
+	BossLab.start(w, i, &"molten_flood_5")
 	assert_eq((BossAi.telegraph(w, i)["obbs"] as Array).size(), 5)
 
 
@@ -333,25 +345,29 @@ func test_staying_far_brings_the_punish_move() -> void:
 
 
 func test_flood_windups_track_then_commit() -> void:
+	# v0.7.5 BF3: the Foundry's Molten Flood follows the player's row (its lanes run along x) until its lock.
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"foundry", Vector2(0, 0))
 	var aid := w.actors.ids[i]
 	w.actors.set_pos(0, Vector2(8, 0))
 	BossLab.start(w, i, &"molten_flood")
-	var first: int = (BossAi.telegraph(w, i)["obbs"][0] as Obb).angle
-	w.actors.set_pos(0, Vector2(0, 8))
+	var first: Vector2 = (BossAi.telegraph(w, i)["obbs"][1] as Obb).center
+	w.actors.set_pos(0, Vector2(8, 4))
 	w.step(InputFrame.new())
 	i = w.actors.index_of(aid)
-	assert_ne((BossAi.telegraph(w, i)["obbs"][0] as Obb).angle, first, "it follows the player")
+	var tg := BossAi.telegraph(w, i)
+	assert_almost_eq((tg["obbs"][1] as Obb).center.y, 4.0, 0.01, "it follows the player's row")
+	assert_ne((tg["obbs"][1] as Obb).center, first)
+	assert_eq((tg["obbs"][1] as Obb).angle, 0, "along the row")
 	var atk := BossAi.attack_of(w, i)
-	var t := BossAi.table_of(w, i)
-	CombatLab.idle(w, atk.windup_ticks - t.commit_ticks)
+	CombatLab.idle(w, atk.windup_ticks - atk.lock_ticks)
 	i = w.actors.index_of(aid)
-	var locked: int = (BossAi.telegraph(w, i)["obbs"][0] as Obb).angle
-	w.actors.set_pos(0, Vector2(-8, 0))
+	var locked: Vector2 = (BossAi.telegraph(w, i)["obbs"][1] as Obb).center
+	assert_true(BossAi.telegraph(w, i)["locked"])
+	w.actors.set_pos(0, Vector2(-8, -3))
 	w.step(InputFrame.new())
 	i = w.actors.index_of(aid)
-	assert_eq((BossAi.telegraph(w, i)["obbs"][0] as Obb).angle, locked, "committed: the lanes hold")
+	assert_eq((BossAi.telegraph(w, i)["obbs"][1] as Obb).center, locked, "locked: the rows hold")
 
 
 func test_recap_causes_name_the_new_attacks() -> void:

@@ -194,14 +194,6 @@ func core_color_of(id: int) -> Color:
 	return (gem.get_meta(&"mat") as StandardMaterial3D).albedo_color if gem != null else Color.BLACK
 
 
-func dodge_showing() -> bool:
-	return _dodge.visible
-
-
-func stun_showing() -> bool:
-	return _stun.visible
-
-
 func _process(delta: float) -> void:
 	_t += delta
 	for id in _gems:

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"kills_1"
+name_key = &"ACH_KILLS_1_NAME"
+desc_key = &"ACH_KILLS_1_DESC"
+glyph = &"blade"
+group = &"combat"
+order = 1
+kind = 1
+page = &"enemies"
+counter = &"kills"

@@ -41,12 +41,14 @@ const WORLD_KEPT := {
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
+	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
 	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
+	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
@@ -80,6 +82,8 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
+	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
+	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
@@ -135,7 +139,13 @@ const ADDED_SINCE_V05 := {
 		&"card_levels",  # v0.6.5 WN3 (an older save's cards are all level 1)
 		&"blade",  # v0.6.5 WN4 (the base's fresh state)
 		&"tuning",  # the dev panel's Step 6 (loadout, SimTuning; a v0.6.1 save keeps the base's, v0.6.5 WN5b)
+		&"loop",  # v0.7.5 AP: the loop fields (an older save is loop 1: the base's, from RunState.prepare)
+		&"run_floor",
+		&"loop_threat",
+		&"loop_cap_permille",
 	],
+	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
+	&"BossFlow": [&"ascension", &"ascend_open", &"ascend_declined", &"ascend_choice"],
 	&"ProjectileStore":
 	[
 		&"spec_key",
@@ -150,6 +160,8 @@ const ADDED_SINCE_V05 := {
 		&"moves",
 		&"spiral",  # v0.6.5 WN3 (GunForms; padded with "none")
 		&"mine_t",
+		&"look",  # v0.7.5 BF1 (fireball looks; empty = none, as a store that never held one)
+		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	&"ModifierState":
@@ -162,6 +174,7 @@ const ADDED_SINCE_V05 := {
 		&"cast_flag",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
+	&"EventState": [&"cursed_rolled"],  # v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0)
 	&"AbilityState":
 	[
 		&"bomb_spec",
@@ -234,6 +247,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
+	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size()

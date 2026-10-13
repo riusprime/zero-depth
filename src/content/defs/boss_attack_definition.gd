@@ -19,6 +19,14 @@ extends AttackDefinition
 @export var opens_weak_point := false
 @export var follow_up: StringName
 @export var follow_up_permille := 0
+## v0.7.5 BF1 (owner N15, "Track, then lock 0.8 s"): > 0 makes the attack's marker follow the player's exact
+## position for the windup's first (telegraph_seconds - lock_seconds), then lock in place and flash for its last
+## lock_seconds before it strikes (a dodge window: at least the telegraph minimum). 0 = as before (the boss's
+## track_commit rule).
+@export var lock_seconds := 0.0
+## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): the boss is shielded while it winds up and performs this
+## attack (its signature pattern): hits spark off and deal nothing; it opens between patterns.
+@export var shielded := false
 
 
 func validate_into(issues: Array[ValidationIssue], path: String) -> void:
@@ -36,8 +44,9 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for k: String in schema["params"]:
 		if not shape_params.has(k):
 			issues.append(ValidationIssue.new(&"param_missing", path, where + "%s is missing" % k))
+	var optional: Array = schema.get("optional", [])  # v0.7.5 BF2: params a move may take
 	for k in shape_params:
-		if not (schema["params"] as Array).has(k):
+		if not (schema["params"] as Array).has(k) and not optional.has(k):
 			issues.append(ValidationIssue.new(&"param_unknown", path, where + "%s is unknown" % k))
 	if int(round(telegraph_seconds * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
 		issues.append(
@@ -95,6 +104,43 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(
 			ValidationIssue.new(&"duration", path, where + "burn_seconds is under a tick")
 		)
-	for k: String in BossSchemas.ENEMY_PARAMS:
+	for k: String in BossSchemas.ENEMY_PARAMS + BossSchemas.PATTERN_PARAMS:
 		if shape_params.has(k) and String(shape_params[k]).is_empty():
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))
+	_validate_lock(issues, path, where)
+
+
+## v0.7.5 BF1: a lock leaves tracking time before it and a dodge window of at least the telegraph minimum; marks and
+## row lanes must lock; their markers' spacing is at least a tick when there are several.
+func _validate_lock(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var lock := int(round(lock_seconds * 60.0))
+	if lock_seconds < 0.0:
+		issues.append(ValidationIssue.new(&"duration", path, where + "lock_seconds < 0"))
+	elif lock_seconds > 0.0:
+		if lock < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"telegraph_short", path, where + "lock_seconds is under the telegraph minimum"
+				)
+			)
+		if lock >= int(round(telegraph_seconds * 60.0)):
+			issues.append(
+				ValidationIssue.new(&"duration", path, where + "lock_seconds must be < telegraph")
+			)
+	if BossSchemas.LOCKED_MOVES.has(move) and lock_seconds <= 0.0:
+		issues.append(ValidationIssue.new(&"missing", path, where + "%s needs lock_seconds" % move))
+	if move == &"grid" and int(shape_params.get("count", 1)) % 2 == 0:
+		issues.append(ValidationIssue.new(&"range", path, where + "a grid's count must be odd"))
+	if (
+		move == &"grid"
+		and float(shape_params.get("cell_m", 0.0)) < 2.0 * float(shape_params.get("radius_m", 0.0))
+	):
+		issues.append(ValidationIssue.new(&"no_gap", path, where + "a grid's circles overlap"))
+	if (
+		shape_params.has("stagger_seconds")
+		and int(shape_params.get("count", 1)) > 1
+		and int(round(float(shape_params["stagger_seconds"]) * 60.0)) < 1
+	):
+		issues.append(
+			ValidationIssue.new(&"duration", path, where + "stagger_seconds is under a tick")
+		)

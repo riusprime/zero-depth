@@ -2,7 +2,15 @@ class_name EnemyDefinition
 extends ContentDef
 ## An enemy (CONTENT_SCHEMA §3): numbers, a behaviour (src/sim/ai/) with its params, and its attacks.
 
+## v0.7.0 audit A-13: the attack shape params that must be > 0 when an attack has them (sizes, speeds, ranges and
+## counts the compiler divides by or turns into ticks). spread_degrees and gap_seconds may be 0.
+const POSITIVE_SHAPE_PARAMS: Array[String] = [
+	"count", "half_width_m", "length_m", "radius_m", "range_m", "reach_m", "speed_mps"
+]
+
 @export var name_key: StringName
+## v0.7.5 CX: the Codex's line about this enemy (a locale key; empty shows no line).
+@export var desc_key: StringName
 @export var behaviour_id: StringName
 @export var behaviour_params := {}
 @export var hp := 10
@@ -83,6 +91,13 @@ func _check_attack(
 			)
 		)
 	_check_keys(issues, "shape_params", atk.shape_params, params)
+	for k in POSITIVE_SHAPE_PARAMS:  # v0.7.0 audit A-13: a 0 speed or range compiles to an undefined tick count
+		if atk.shape_params.has(k) and float(atk.shape_params[k]) <= 0.0:
+			issues.append(
+				ValidationIssue.new(
+					&"not_positive", resource_path, "%s shape_params.%s must be > 0" % [atk.id, k]
+				)
+			)
 	if int(round(atk.telegraph_seconds * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
 		issues.append(
 			ValidationIssue.new(

@@ -1038,7 +1038,45 @@ def a_red_canyon(r):
     return loop_echo(warm * 0.5 + dust + hum, 0.52, 0.35)
 
 
-AMBIENCE = [("ruins", a_ruins), ("night_rocks", a_night_rocks), ("red_canyon", a_red_canyon)]
+def a_frozen_shore(r):
+    """v0.7.5 NB1: a cold shore at night: slow waves washing in under a thin, high wind, a pale drone, and ice
+    ticking and creaking now and then."""
+    n = n_of(AMB_SECONDS)
+    pale = drone(n, 82.4, [(1, 0.7), (2, 0.45), (3, 0.2), (5, 0.08)], 1, 0.25)
+    surf = loop_noise(r, n, 150, 1400, 0.6)
+    swell = np.maximum(0.0, loop_sine(n, 2, 0.3)) ** 2 * 0.8 + np.maximum(0.0, loop_sine(n, 3, 2.1)) ** 3 * 0.4
+    waves = surf * (0.12 + swell) * 0.5
+    wind = loop_noise(r, n, 2200, 7000, 0.2) * (0.5 + 0.5 * loop_sine(n, 1, 1.3)) * 0.12
+    ticks = sum(
+        loop_sine(n, cyc(f)) * np.maximum(0.0, loop_sine(n, k + 2, k * 2.3)) ** 24 * 0.07
+        for k, f in enumerate((2093.0, 2637.0, 3136.0))
+    )
+    creak = loop_noise(r, n, 60, 220, 0.0) * np.maximum(0.0, loop_sine(n, 1, 4.0)) ** 16 * 0.35
+    return loop_echo(pale * 0.35 + waves + wind + ticks + creak, 0.61, 0.38)
+
+
+def a_starfall(r):
+    """v0.7.5 NB2: the starry void: a wide, slow-breathing chord of pure partials (a fifth and an octave over a
+    low root), a soft airy shimmer, and small high star chimes twinkling in and out, all in a long echo."""
+    n = n_of(AMB_SECONDS)
+    chord = drone(n, 65.4, [(1, 0.7), (1.5, 0.45), (2, 0.4), (3, 0.18), (4, 0.1)], 1, 0.35)
+    breath = 0.55 + 0.45 * loop_sine(n, 1, 0.9)
+    shimmer = loop_noise(r, n, 3000, 9000, 0.1) * (0.4 + 0.6 * np.maximum(0.0, loop_sine(n, 2, 0.4))) * 0.06
+    void = loop_noise(r, n, 40, 160, 0.0) * 0.18
+    chimes = sum(
+        loop_sine(n, cyc(f)) * np.maximum(0.0, loop_sine(n, k + 2, k * 1.9)) ** 30 * 0.09
+        for k, f in enumerate((1318.5, 1567.98, 1975.53, 2349.32))
+    )
+    return loop_echo(chord * breath * 0.4 + shimmer + void + chimes, 0.73, 0.5)
+
+
+AMBIENCE = [
+    ("ruins", a_ruins),
+    ("night_rocks", a_night_rocks),
+    ("red_canyon", a_red_canyon),
+    ("frozen_shore", a_frozen_shore),
+    ("starfall", a_starfall),
+]
 
 # --- output ------------------------------------------------------------------------------------------------------
 

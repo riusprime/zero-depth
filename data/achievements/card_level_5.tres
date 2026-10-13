@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="AchievementDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/achievement_definition.gd" id="1_ach"]
+
+[resource]
+script = ExtResource("1_ach")
+id = &"card_level_5"
+name_key = &"ACH_CARD_LEVEL_5_NAME"
+desc_key = &"ACH_CARD_LEVEL_5_DESC"
+glyph = &"star"
+group = &"build"
+order = 2
+kind = 2
+page = &"cards"
+counter = &"level"
+target = 5

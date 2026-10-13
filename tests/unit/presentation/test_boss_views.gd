@@ -135,21 +135,26 @@ func test_hatchlings_use_a_small_crawler() -> void:
 
 func test_telegraph_views_draw_every_boss_shape() -> void:
 	var specs := [
-		[&"gatekeeper", &"fist_slam", &"ring"],
-		[&"gatekeeper", &"shock_lanes_5", &"lanes"],
+		[&"gatekeeper", &"fist_slam", &"marks"],  # v0.7.5 BF1: tracked circles
+		[&"gatekeeper", &"shock_lanes", &"marks"],  # v0.7.5 BF1: a tracked row and column
 		[&"gatekeeper", &"sweep", &"arc"],
-		[&"gatekeeper", &"charge", &"lane"],
+		[&"warlord", &"lunge_dash", &"lane"],  # v0.7.5 BF1: the Gatekeeper's charge is gone; the Warlord's lunge
 		[&"brood_mother", &"leap", &"disc"],
 		[&"brood_mother", &"burrow", &"ripple"],
 		[&"brood_mother", &"brood_4", &"discs"],
-		[&"siege_engine", &"barrage_7", &"discs"],
+		[&"siege_engine", &"barrage_7", &"discs"],  # v0.7.5 BF3: the v0.7.0 moves, as fixtures
 		[&"siege_engine", &"rail_sweep", &"sweep"],
 		[&"siege_engine", &"bolt_fan", &"lanes"],
 		[&"siege_engine", &"deploy", &"discs"],
+		[&"siege_engine", &"mortar_grid", &"marks"],  # v0.7.5 BF3: a tracked checkerboard
+		[&"siege_engine", &"barrage", &"marks"],  # v0.7.5 BF3: three tracked circles
+		[&"siege_engine", &"rail", &"lanes"],  # v0.7.5 BF3: a tracked rail lane
+		[&"foundry", &"molten_flood", &"lanes"],  # v0.7.5 BF3: tracked molten rows
 	]
 	for spec in specs:
 		var w := BossLab.world()
 		var i := BossLab.ready_boss(w, spec[0])
+		BossLab.ensure_attack(w, spec[0], spec[1])
 		w.actors.set_pos(0, Vector2(7, 0))
 		BossLab.start(w, i, spec[1])
 		var reader := WorldReader.new(w)

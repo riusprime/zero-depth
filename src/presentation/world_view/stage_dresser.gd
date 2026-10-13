@@ -41,7 +41,10 @@ const SLAB_HEIGHT := 1.8
 ##   structural, 1 cover slab; a slab that names its piece is drawn with it), the same order and yaw as
 ##   StageView.wall_specs;
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
-## - "biome": StringName; "seed": int.
+## - "biome": StringName; "seed": int;
+## - v0.7.5 NB1, a biome's look (BiomeLook; both optional, absent for the first three biomes): "square_cover"
+##   {piece: int weight} draws square cover footprints with those pieces, and "decor_swap" {piece: piece} draws a
+##   decoration piece as another (a kit or a code-made piece, CodeProps).
 ## Returns [{"piece": StringName, "xform": Transform3D (scales the unit-box piece), "wall": the wall index it
 ## belongs to (-1 for none), "kind": &"wall" | &"cover" | &"light" | &"decor"}].
 static func dress(f: Dictionary) -> Array:
@@ -55,7 +58,7 @@ static func dress(f: Dictionary) -> Array:
 		if w[3] == 0:
 			_dress_wall(out, i, w, slots.get(i, []), rng)
 		else:
-			_dress_slab(out, i, w, f.get("biome", &""), rng)
+			_dress_slab(out, i, w, f.get("biome", &""), rng, f.get("square_cover", {}))
 	_decorate(out, f, rng)
 	return out
 
@@ -171,13 +174,26 @@ static func _light(
 
 
 static func _dress_slab(
-	out: Array, i: int, w: Array, biome: StringName, rng: RandomNumberGenerator
+	out: Array,
+	i: int,
+	w: Array,
+	biome: StringName,
+	rng: RandomNumberGenerator,
+	square: Dictionary = {}
 ) -> void:
 	var fr := _frame(w)
 	var length: float = fr["length"]
 	var depth: float = fr["depth"]
 	if w.size() > 4 and StringName(w[4]) != &"":
 		_named(out, i, fr, StringName(w[4]), rng)
+		return
+	if length / depth < 1.6 and not square.is_empty():  # v0.7.5 NB1: the biome's own square cover
+		var choice := _pick(rng, square)
+		var spec: Dictionary = KitModels.SPECS.get(
+			choice, CodeProps.SPECS.get(choice, {"height": 1.2})
+		)
+		var size := Vector3(length, _jitter(rng, float(spec["height"])), depth)
+		_add(out, choice, _place(fr, 0.0, 0.0, size), i, &"cover")
 		return
 	if length / depth < 1.6:
 		var pick: StringName
@@ -290,6 +306,7 @@ static func _light_slots(f: Dictionary, rng: RandomNumberGenerator) -> Dictionar
 
 
 static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> void:
+	var swap: Dictionary = f.get("decor_swap", {})
 	var doors: Array = f.get("doors", [])
 	var keep: Array = f.get("keep_clear", [])
 	# Grass at the bases of cover pieces (the reference's tufts around every block), just outside each footprint.
@@ -307,7 +324,7 @@ static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> 
 			if _near_any_rect(p, doors, KEEP_CLEAR) or _near_any_point(p, keep, KEEP_CLEAR):
 				continue
 			if rng.randf() < BASE_GRASS_CHANCE:
-				_decor(out, &"grass_tuft", p, rng.randf_range(0.6, 1.0), rng)
+				_decor(out, &"grass_tuft", p, rng.randf_range(0.6, 1.0), rng, swap)
 	for room: Rect2 in f.get("rooms", []):
 		# Grass along the room's four walls.
 		var inner := room.grow(-0.3)
@@ -329,7 +346,7 @@ static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> 
 				var p := a.lerp(b, (k + rng.randf()) / maxf(n, 1))
 				if _near_any_rect(p, doors, KEEP_CLEAR) or _near_any_point(p, keep, KEEP_CLEAR):
 					continue
-				_decor(out, &"grass_tuft", p, rng.randf_range(0.6, 1.0), rng)
+				_decor(out, &"grass_tuft", p, rng.randf_range(0.6, 1.0), rng, swap)
 		# Rubble and debris on open floor.
 		var count := int(room.get_area() * SCATTER_DENSITY)
 		var open := room.grow(-1.0)
@@ -343,13 +360,28 @@ static func _decorate(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> 
 			if _near_any_rect(p, doors, KEEP_CLEAR) or _near_any_point(p, keep, KEEP_CLEAR):
 				continue
 			var piece := &"rubble_small" if rng.randf() < 0.65 else &"debris_low"
-			_decor(out, piece, p, rng.randf_range(0.7, 1.2), rng)
+			_decor(out, piece, p, rng.randf_range(0.7, 1.2), rng, swap)
 
 
 ## A low decoration piece at its natural size × s, turned at random; its height never passes DECOR_MAX_HEIGHT.
 static func _decor(
-	out: Array, piece: StringName, p: Vector2, s: float, rng: RandomNumberGenerator
+	out: Array,
+	piece: StringName,
+	p: Vector2,
+	s: float,
+	rng: RandomNumberGenerator,
+	swap: Dictionary = {}
 ) -> void:
+	piece = StringName(swap.get(piece, piece))  # v0.7.5 NB1: the biome's own decoration
+	if CodeProps.has(piece):
+		var cp: Dictionary = CodeProps.SPECS[piece]
+		var cf: Vector2 = cp["foot"]
+		var ch := minf(float(cp["height"]) * s, DECOR_MAX_HEIGHT)
+		var cb := (
+			Basis(Vector3.UP, rng.randf() * TAU) * Basis.from_scale(Vector3(cf.x * s, ch, cf.y * s))
+		)
+		_add(out, piece, Transform3D(cb, SimPlane.to_3d(p)), -1, &"decor")
+		return
 	var spec: Dictionary = KitModels.SPECS[piece]
 	var h := minf(float(spec["height"]) * s, DECOR_MAX_HEIGHT)
 	# Footprints from KIT_REQUESTS (the loaded piece's own proportions replace these in StageView).
@@ -388,6 +420,22 @@ static func _near_any_point(p: Vector2, points: Array, d: float) -> bool:
 		if p.distance_to(q) < d:
 			return true
 	return false
+
+
+## v0.7.5 NB1: a key of {key: int weight}, in proportion to its weight (one draw; keys in sorted order so the pick
+## never depends on how the dictionary was written).
+static func _pick(rng: RandomNumberGenerator, weights: Dictionary) -> StringName:
+	var keys := weights.keys()
+	keys.sort_custom(func(a: Variant, b: Variant) -> bool: return str(a) < str(b))
+	var total := 0
+	for k: Variant in keys:
+		total += int(weights[k])
+	var x := rng.randf() * total
+	for k: Variant in keys:
+		x -= int(weights[k])
+		if x < 0.0:
+			return StringName(k)
+	return StringName(keys[keys.size() - 1])
 
 
 static func _weighted(rng: RandomNumberGenerator, weights: Array) -> int:

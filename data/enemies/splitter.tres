@@ -20,6 +20,7 @@ damage = 12
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_SPLITTER"
+desc_key = &"ENEMY_SPLITTER_DESC"
 behaviour_id = &"splitter"
 behaviour_params = {
 "attack_range_m": 1.8,

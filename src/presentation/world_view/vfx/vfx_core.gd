@@ -36,6 +36,9 @@ const DIR := "res://assets/textures/vfx/"
 const LIGHTS := 10
 const DECALS := 64
 const ICE_CAP := 256
+## P-20: every pool's pieces together a frame (the pools' own caps sum to 2,480), PRESENTATION §7's 2,000 live
+## particles; past it the last pieces of the frame drop, as the attack-form canvas's MAX_PARTICLES does.
+const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
@@ -79,6 +82,8 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
+## The same pools in a list (begin and finish walk it every frame without allocating).
+var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
 var _light_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
@@ -89,6 +94,8 @@ var _now := 0.0
 var _shaders := {}
 ## This frame's taken spots, per kind: kind -> {grid cell (Vector2i) -> [[Vector3, owner]]} (see _claim).
 var _spots := {}
+## P-20: pieces left under MAX_SPRITES this frame.
+var _sprite_left := MAX_SPRITES
 
 
 func _init() -> void:
@@ -138,6 +145,7 @@ func _pool(id: StringName, mesh: Mesh, mat: Material, cap: int) -> void:
 	node.extra_cull_margin = 16384.0
 	add_child(node)
 	pools[id] = {"node": node, "mm": mm, "used": 0, "cap": cap}
+	_pool_list.append(pools[id])
 
 
 func _shader(additive: bool) -> Shader:
@@ -218,8 +226,9 @@ func begin(now: float) -> void:
 	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
 	if cam != null:
 		_cam_basis = cam.global_transform.basis
-	for p: Dictionary in pools.values():
+	for p: Dictionary in _pool_list:
 		p["used"] = 0
+	_sprite_left = MAX_SPRITES
 	_light_wants.clear()
 	_spots.clear()
 
@@ -230,9 +239,9 @@ func finish() -> void:
 	for d in drawers:
 		if d.is_valid():
 			d.call(self)
-	for p: Dictionary in pools.values():
+	for p: Dictionary in _pool_list:
 		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
-	_light_wants.sort_custom(func(a: Array, b: Array) -> bool: return a[2] > b[2])
+	_light_wants.sort_custom(_brighter)
 	for k in lights.size():
 		var l := lights[k]
 		if k < _light_wants.size():
@@ -247,6 +256,11 @@ func finish() -> void:
 	_lay_marks()
 
 
+## The light sort: the brighter request first.
+static func _brighter(a: Array, b: Array) -> bool:
+	return a[2] > b[2]
+
+
 func now() -> float:
 	return _now
 
@@ -256,8 +270,9 @@ func _put(
 ) -> bool:
 	var p: Dictionary = pools[pool]
 	var i: int = p["used"]
-	if i >= int(p["cap"]):
+	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
+	_sprite_left -= 1
 	var mm: MultiMesh = p["mm"]
 	mm.set_instance_transform(i, xf)
 	mm.set_instance_color(i, c)
@@ -377,6 +392,13 @@ func clear_marks() -> void:
 
 
 func _lay_marks() -> void:
+	# P-8: a mark suppressed by an overlapping one keeps its key here but never joins _marks, the list keys are erased
+	# through, so on a long floor the keys pile up; past a few times the cap the cache is rebuilt from the live marks
+	# (a still-overlapping key is suppressed again by the same test on its next call).
+	if _mark_keys.size() > DECALS * 4:
+		_mark_keys.clear()
+		for s: Array in _marks:
+			_mark_keys[s[0]] = true
 	var keep: Array = []
 	for s: Array in _marks:
 		if _now - float(s[4]) < MARK_TICKS:

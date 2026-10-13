@@ -23,25 +23,26 @@ ssil_enabled = true
 ssil_intensity = 1.0
 fog_density = 0.003
 fog_color = Color(0.08, 0.1, 0.16, 1)
-glow_intensity = 1.2
+glow_intensity = 0.7
 warm_light_color = Color(1.0, 0.6, 0.3, 1)
-warm_light_energy = 7.0
-warm_light_range = 9.0
+warm_light_energy = 4.5
+warm_light_range = 7.5
 vignette = 0.55
 hero_light_energy = 1.8
 hero_light_range = 5.0
-glow_threshold = 0.8
-glow_bloom = 0.04
+glow_threshold = 1.0
+glow_bloom = 0.0
 grade_shadows = Color(0.18, 0.35, 0.65, 1)
 grade_highlights = Color(1, 0.62, 0.32, 1)
 grade_strength = 0.7
 contrast = 1.18
 saturation = 1.08
-glow_spread = 0.7
+glow_spread = 0.25
 
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_NIGHT_ROCKS"
+desc_key = &"BIOME_NIGHT_ROCKS_DESC"
 palette = {
 "accent": Color(0.23529412, 0.22745098, 0.26666667, 1),
 "ambient": Color(0.72156863, 0.78431373, 0.94117647, 1),

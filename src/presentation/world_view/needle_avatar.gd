@@ -1,5 +1,5 @@
 class_name NeedleAvatar
-extends Node3D
+extends AvatarBase
 ## The Needle (owner, v0.2.0 L17; docs/art/enemies_visual_reference.png, middle row): a walking turret. A red
 ## faceted cube body (each face a shallow pyramid) with grey octagonal pods on its flanks, a dark collar on its
 ## front with a red slit eye on each side, a square grey cannon barrel pointing forward, and four grey mechanical
@@ -56,7 +56,6 @@ var body: Node3D
 var barrel: Node3D
 var legs: Array[Node3D] = []
 var feet: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _hole_mat := StandardMaterial3D.new()
@@ -66,16 +65,11 @@ var _ankles: Array[Node3D] = []
 var _hips: Array[Vector3] = []
 var _rests: Array[Vector3] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
 var _shots := 0
 # Smoothed animation state.
-var _t := 0.0
 var _vel_s := Vector3.ZERO
 var _phase := 0.0
 var _walk := 0.0
@@ -113,7 +107,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_eye_mat.emission_enabled = true
 	_eye_mat.emission = EYE
 	_eye_mat.emission_energy_multiplier = 2.0
-	_write_stencil(_eye_mat)
+	write_stencil(_eye_mat)
 	var slit := BoxMesh.new()
 	slit.size = Vector3(0.035, 0.11, 0.01)
 	for side in [-1.0, 1.0]:
@@ -139,13 +133,7 @@ func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
 	var state: int = s["state"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	if _fresh or state != _state:
 		_state = state
 		_state_tick = tick
@@ -161,10 +149,6 @@ func apply_state(s: Dictionary) -> void:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
 		_pose(0.0)
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 ## Advances the animation by `delta` seconds of frame time.
@@ -210,10 +194,6 @@ func foot_positions() -> Array[Vector3]:
 	for f in feet:
 		out.append(to_local(f.global_position) if is_inside_tree() else Vector3.ZERO)
 	return out
-
-
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
 
 
 ## Recoil curve: a sharp kick back, then an eased return.
@@ -304,7 +284,7 @@ func _build_barrel(outline_color: Color, team: Color, technique: StringName) -> 
 	_hole_mat.emission_enabled = true
 	_hole_mat.emission = shot
 	_hole_mat.emission_energy_multiplier = 0.0
-	_write_stencil(_hole_mat)
+	write_stencil(_hole_mat)
 	var hole := MeshInstance3D.new()
 	var hb := BoxMesh.new()
 	hb.size = Vector3(0.01, BARREL_W * 0.72, BARREL_W * 0.72)
@@ -352,14 +332,6 @@ func _build_leg(k: int, outline_color: Color, team: Color) -> void:
 	feet.append(foot)
 
 
-## The eyes and the bore mark the stencil like the body pieces do, so the X-ray twins behind them stay hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
-
-
 func _piece(
 	parent: Node3D,
 	mesh: Mesh,
@@ -369,31 +341,7 @@ func _piece(
 	team: Color,
 	technique: StringName
 ) -> MeshInstance3D:
-	var piece := MeshInstance3D.new()
-	piece.mesh = mesh
-	piece.position = at
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	piece.material_override = mat
-	parent.add_child(piece)
-	body_materials.append(ActorViews.flashable(mat))
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.position = at
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
-	return piece
+	return _outlined(parent, mesh, at, c, outline, team, technique, OUTLINE_M)
 
 
 ## A box with bevelled edges and cut corners, centred on the origin, flat-shaded. With `bulge` each of the six faces

@@ -36,11 +36,8 @@ static func build_floor(run: RunState) -> World:
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
 	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
-	var arena := (
-		BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
-		if boss >= 0
-		else null
-	)
+	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
 		run.floor_seed(),
 		table,
@@ -53,9 +50,14 @@ static func build_floor(run: RunState) -> World:
 		run,
 		ContentCompiler.compile_combos(repo),
 		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),
-		RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))  # v0.5.5 AR, as Main
+		rules[&"arena"],  # v0.5.5 AR, as Main
+		rules[&"map"]  # v0.7.5 MG, as Main
 	)
-	FloorScenario.add_shop(w, ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal")))  # v0.5.0 SH, as Main
+	FloorScenario.add_shop(w, rules[&"shop"])  # v0.5.0 SH, as Main
+	var biome: BiomeDefinition = repo.get_def(
+		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
+	)
+	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main

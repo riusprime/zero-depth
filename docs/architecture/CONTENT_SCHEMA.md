@@ -92,6 +92,7 @@ serves. The reward-schedule rules (PD-07) read pools; they don't live in them.
 class_name EnemyDefinition extends Resource
 @export var id: StringName
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (a locale key; empty = no line)
 @export var behaviour_id: StringName      # selects a behaviour script in src/sim/ai/
 @export var behaviour_params: Dictionary  # checked against the behaviour's param schema
 @export var hp: int
@@ -137,6 +138,17 @@ class_name AttackDefinition extends Resource
   Caster HP 40, damage 12, 4 shards, bolt 22 m/s after a 0.5 s line, rune after 0.6 s; Bomb Drone HP 30, damage 16,
   4 shards, circle 1.8 m over 0.8 s. The spawner adds the Arc Caster from danger tier 1 and the Bomb Drone from
   tier 2 (`data/spawning/floor_1.tres`, weight 2 each).
+- **v0.7.5 EF (owner N16) — the fireball enemies.** The Arc Caster's `bolt` and `spread`, the Lens Drone's attack and
+  the Bomb Drone's `bomb` are PROJECTILE attacks whose only shape param is `pattern_id`, a `BulletPatternDefinition`
+  id (§4b); `ContentCompiler.compile_enemy(def, repo)` resolves it into `EnemyTable.patterns` (one per attack, null
+  where none: the rune) through `PatternCompiler.compile_enemy_patterns`, and the attack is active until the
+  pattern's last wave. The old bolt/burst/circle params are gone from those schemas. The attack's `damage` is each
+  fireball's (and the Bomb Drone's landing's). **Starting values** (`data/bullet_patterns/`):
+  `arc_caster_plasma_fan` (FAN 3 over 30 deg, 4 m/s, r 0.18, 13 m, look `arc_plasma`), `arc_caster_plasma_fan_wide`
+  (FAN 3 over 56 deg, 3.5 m/s), `lens_drone_orb_ring` (RING 12 with 6 one-shot gaps = 6 orbs, offset 30 deg so one
+  flies at the player, 3.5 m/s, r 0.13, 10 m, look `lens_orb`), `bomb_drone_fire_x` (BURST 4 at 45 deg to the throw
+  = an X, lob 0.6 s, landing radius 0.5 m, 4 m/s, r 0.15, 7 m, safe radius 0.6 m, look `bomb_cinder`). Windups,
+  cooldowns, HP, damage and shards are unchanged.
 - **v0.4.0 EN horde behaviours and params** (starting values, `data/enemies/<id>.tres`):
   - `swarmer` (as `charger`; one LINE `bite`, `length_m`/`speed_mps`): HP 8 (one sword slash), damage 5, 1 shard,
     4.6 m/s, a 2 m lunge at 12 m/s after a 24-30 tick lane.
@@ -164,7 +176,8 @@ class_name AttackDefinition extends Resource
 - **v0.4.0 BO:** `lens_drone` takes the `needle` schema (`attack_range_m`, `cooldown_seconds`, `keep_distance_m`,
   `flee_distance_m`; one PROJECTILE burst) and flies the Needle's behaviour under its own actor kind
   (`EnemyAi.behaviour_of`). It is the Hive Lens's split, never spawned by a floor. **Starting values:** HP 45,
-  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m.
+  damage 8, 3 shards, 2 pulses 10 m/s after a 0.5-0.67 s line, keeps 6 m. v0.7.5 EF: its attack is a pattern (a ring
+  of 6 slow orbs, `pattern_id` only; above), its windup still 0.5-0.67 s, with no line drawn.
 - `stress_tags` feed the enemy × archetype stress matrix in [`../balance/SCORECARD.md`](../balance/SCORECARD.md).
 - **Shards** (v0.3.0 E): `@export var shards: int` (>= 0; Charger 3, Needle 4, Warden 6) is what a kill pays,
   × (1 + `shard_tier_bonus` × danger tier) rounded half up (v0.4.0 TU: the floor's plain 30 s tier, so shards keep
@@ -458,7 +471,12 @@ ends first. Validation: prices, the heal and reroll prices, the refund and the r
 the steps non-negative; the shares in (0, 1]; `offer_size` 1–9. v0.5.5 EC: a reroll draws only the unsold slots (a
 bought slot stays sold for the floor, owner S2); `max_buys` (4, owner S3: cards bought at the floor's shop, the heal
 and rerolls don't count; 0 = no limit; ≥ 0); `late_floor_price` (1.5, owner S4: floors 2+ multiply the floor step
-by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1).
+by this: × 1, 2.25, 3; salvage refunds stay on the floor step alone; ≥ 1). v0.7.5 MG (owner N12, "the shop is
+also gonna be there every two … floors"): `first_floor` (1) and `every_floors` (2), both > 0: the shop stands on
+floor `first_floor` and every `every_floors` floors after it (`FloorCadence.on`, `ShopTable.on_floor`: floors 1, 3,
+5 …; a 3-floor run has two). The floor number keeps counting past the run's last floor, so an endless loop keeps
+the rhythm. On a floor without the shop, `FloorScenario.add_shop` places nothing; the room `ShopPlacement` would take
+stays an ordinary room (still never an arena, so the floor's other picks don't move).
 
 ## 4. Encounters and bosses
 
@@ -476,6 +494,7 @@ class_name EncounterDefinition extends Resource
 class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3.0 C)
 @export var id: StringName                         # one of BossSchemas.KINDS: each boss has its own actor kind and model
 @export var name_key: StringName
+@export var desc_key: StringName                   # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var hp: int
 @export var radius_m: float
 @export var move_speed_mps: float
@@ -493,6 +512,8 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
                                                    # v0.5.5 DS: every shipped boss has 1000 / 660 / 330 (each later phase opens with a gate)
 @export var arena_cells: Vector2i                  # the boss room's size in cells
 @export var arena_template: int                    # its interior (FloorLayout.Template; BossSchemas.ARENA_TEMPLATES)
+@export var legacy_arena_cells: Vector2i           # v0.7.5 BF1 (N18): the room before every boss went 4 x 4; a floor of an
+                                                   # older save (floor rules 1-2) is rebuilt with it ((0, 0) = arena_cells)
 # Boss challenge (v0.3.0 BX, PLAN L17/L26). Distances run from the boss's edge to the player.
 @export var ranged_full_m: float                   # ranged armour: full damage up to here...
 @export var ranged_far_m: float                    # ...falling linearly to ranged_far_permille here and beyond
@@ -533,6 +554,81 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   spears, the Foundry's molten floor) and hurt a player in them at most once every `burn_seconds` (at least a tick).
   `count` is at most 8, as every count.
 
+- **v0.7.5 BF1 (owner N15, dodge-first fights; [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md)).** Boss attacks also
+  take `lock_seconds: float` (0 = as before) and `shielded: bool`. With a lock, the marker follows the player's exact
+  position (no lead) for `telegraph_seconds - lock_seconds`, then holds and flashes for `lock_seconds` (at least
+  `MIN_TELEGRAPH_TICKS`, and under the telegraph) before it strikes. `shielded` (the signature pattern) keeps the boss
+  shielded through its windup and active time. Three new moves:
+  - `pattern` (PROJECTILE): `pattern_id`, a `BulletPatternDefinition` id (§4b). The attack is active for the
+    pattern's whole duration (`active_seconds` is a floor). `damage` is each fireball's.
+  - `marks` (CIRCLE): `count` ground circles of `radius_m`, `stagger_seconds` apart, each tracked then locked
+    (`lock_seconds` required). Active until the last strikes.
+  - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
+    `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+- **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
+  ["optional"]`; any other unknown key is still an `ERROR`):
+  - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,
+    and as it strikes the pattern's waves burst from it (the pattern's lob is the circle's lock; `land_radius_m` is
+    unused, the circle's `radius_m` is the landing). Active until the last egg's burst has fired.
+  - `burrow` + `pattern_id` (a RING): a ring of shots bursts from the eruption, its gap on the player. A `burrow`
+    with `lock_seconds` lays its eruption circle on the player's exact position while the ripple tracks
+    (`track_seconds`), then holds it for `erupt_seconds` (set it to the lock, 0.8 s) and erupts there.
+  - The Hive Lens's Focus Beam is a `lanes` attack (count 1, or 3 in phase 3) with `lock_seconds`.
+- **v0.7.5 BF3 (the Siege Engine and the Foundry).** Two more moves, both needing `lock_seconds`:
+  - `grid` (CIRCLE): `count` (odd) × `count` circles of `radius_m`, `cell_m` apart centre to centre (`cell_m` >=
+    2 × `radius_m`, so neighbours never overlap), centred on the player's exact position until the lock; `volleys`
+    strikes `stagger_seconds` apart alternate the checkerboard's two colours (the first holds the player's square);
+    each later colour shows only for its own lock before it strikes. A cell whose centre is in a wall is left out.
+    Active until the last volley strikes.
+  - `row_flood` (LINE): `count` lanes along the room's rows (x), `gap_m` apart centre to centre and centred on the
+    player's row, `length_m` long centred on the player (cut short by walls), `width_m` wide; tracked then locked,
+    then standing for `active_seconds` and hurting at most once every `burn_seconds`, like `flood` (drawn molten).
+
+### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
+
+```gdscript
+class_name BulletPatternDefinition extends ContentDef   # category bullet_patterns; in the F10 panel's Bosses page
+enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
+@export var kind: Kind
+@export var look: StringName            # the fireball's look key (FireballViews.LOOKS; required): each boss/enemy its own
+@export var speed_mps: float            # 1.5..7 ("slow": about 3-5)
+@export var radius_m: float             # each shot's radius
+@export var range_m: float              # how far a shot flies (life = range / speed); shots stop at walls
+@export var waves: int                  # >= 1 ...
+@export var wave_gap_seconds: float     # ... this far apart (>= a tick when waves > 1)
+@export var turn_per_wave_degrees: float  # each wave turns by this from the last ...
+@export var alternate: bool             # ... or, set, every other wave only (a fan's "offset each wave")
+@export var aim_offset_degrees: float   # the first wave's base angle from the aim at the player
+@export var safe_radius_m: float        # no shot spawns within this (+ the player's radius) of the player (>= 0.5)
+@export var count: int                  # RING / FAN / FLOWER / BURST: shots a wave (1..64; a burst's star <= 16)
+@export var gap_count: int              # RING: gaps (>= 1) ...
+@export var gap_width: int              # ... each this many shots left out; the gap must be >= 1 m wide 4 m out
+@export var spread_degrees: float       # FAN: 0 < spread <= 300
+@export var arms: int                   # SPIRAL / CROSS: streams (1..8)
+@export var spin_dps: float             # SPIRAL / CROSS: their turn (degrees a second; negative = clockwise)
+@export var reverse_at_seconds: float   # SPIRAL: the turn reverses this long after the first wave (0 = never)
+@export var wall_length_m: float        # WALL: shots spacing_m apart across the aim, marching along it ...
+@export var spacing_m: float            #   (<= 64 shots a wall)
+@export var gap_m: float                # ... with a gap (>= 1 m) gap_offset_m off the aim line, moving
+@export var gap_offset_m: float         #   gap_shift_m a wave and bouncing between the wall's ends
+@export var gap_shift_m: float
+@export var crossing: bool              # WALL: a second wall at right angles (the Warlord's phase 3)
+@export var petals: int                 # FLOWER: speed follows |cos(petals × angle / 2)| (a table lookup), 2..12 ...
+@export var petal_min_permille: int     # ... from this share of the speed in a valley ...
+@export var petal_cut_permille: int     # ... and shots under this are left out (100..900): the gaps between petals
+@export var lob_seconds: float          # BURST: the shell flies this long to the attack's locked target ...
+@export var land_radius_m: float        # ... lands as a marker of this radius (it hurts), and bursts into its star
+@export var rain_seconds: float         # FLOWER (v0.7.5 BF3; 0 = none): each wave's drops are thrown up and land this
+@export var rain_m: float               #   long later, rain_m x the petal's speed share out from the body's edge (a
+                                        #   flower round it), then roll on as the shots; in the air they don't hurt
+```
+
+v0.7.5 EF: enemies fire patterns too (§3, "the fireball enemies"): an enemy attack names one with `pattern_id`. A
+Bomb Drone's BURST draws no landing marker (owner N16): its flying fireball is the cue.
+
+Compiled by `PatternCompiler.compile_pattern` into a `BulletPatternTable` (sim units) that the boss attack carries
+(`BossAttackTable.pattern`); `BulletPatterns` fires it (SIM_CONTRACTS §10d). Every number is a starting value (F10).
+
 - Phases are ordered by descending `hp_threshold_permille`. The first phase starts at 1000.
 - Each attack's `move` has a param schema in `src/content/boss_schemas.gd` (the shape and the `shape_params` keys);
   missing or unknown keys are `ERROR`s. Every attack's `telegraph_seconds`, and a burrow's `erupt_seconds` (the
@@ -570,20 +666,41 @@ class_name RoomTemplate extends Resource
   6 m to any entry. The generator's own checks are in
   [`ARCHITECTURE.md`](ARCHITECTURE.md) §9.
 
+### Floor generation (`data/map/floor.tres`, v0.7.5 MG)
+
+`MapDefinition` (category `map`; owner N9, "make maps bigger the rooms … even bigger rooms … up to 20 rooms"): the
+generator's room numbers, compiled by `RunContentCompiler.compile_map` over `FloorParams.defaults()` (whose values
+equal the file's; a test keeps them equal, so a floor built without content is the floor the run builds).
+`rooms_min` / `rooms_max` (15 / 19: rooms before the boss room, the start hall included; the boss room makes 16-20),
+`footprint_x` / `footprint_y` / `footprint_weights` (parallel arrays: footprint k is x × y cells, drawn with its
+weight; 1×1 22, 2×1 14, 1×2 14, 3×1 8, 1×3 8, 2×2 12, 3×2 7, 2×3 7, 3×3 5, 4×3 2, 3×4 2 and the extra-large 4×4 2),
+`max_span` (11 cells: the floor's extent either way, the boss room aside) and `place_attempts` (600). The rest of
+`FloorParams` (cell size, walls, doorways, spots) stays code. Validation: 2 ≤ min ≤ max ≤ 19, the three arrays the
+same non-empty length, footprints 1-4 cells a side, weights ≥ 0 with a positive sum, span 5-16, attempts > 0.
+A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's numbers (`FloorParams.v070()`, an arena share
+of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.floor_tables`), so its snapshot fits.
+
 ## 6. Biomes
 
 ```gdscript
 class_name BiomeDefinition extends Resource
-@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, …
+@export var id: StringName                # ruins, night_rocks, red_canyon, frozen_shore, starfall, …
 @export var name_key: StringName
+@export var desc_key: StringName          # v0.7.5 CX: the Codex's line about it (empty = no line)
 @export var palette: Dictionary           # token -> Color; keys from docs/art/ART_DIRECTION.md §2
 @export var props: Array[PropDefinition]  # rocks, grass, trees, fences, barrels; mesh + placement rules
 @export var enemy_weights: Dictionary     # enemy_id -> weight for this biome's encounter fill
 @export var hazard_flavour: StringName    # mild flavour only, e.g. &"ice_edge"; never a difficulty step
 @export var template_tags: PackedStringArray
 @export var mood: BiomeMood               # v0.5.9: the lighting mood StageView lights the floor with
+@export var surface: BiomeSurface         # v0.7.5 NB1/NB2: ground that plays differently (ice, starglow); null for none
+@export var look: BiomeLook               # v0.7.5 NB1: own dressing, edge and enemy cast; null = hand-written look
 ```
 
+- **The Codex (v0.7.5 CX)** lists every biome definition on its Biomes page (`CodexCatalog`), drawn as a small
+  landscape in the biome's `palette`, so a new biome shows there with no code. Its `desc_key` (`BIOME_<ID>_DESC`,
+  en and es) is the page's line; the shipped biomes, enemies and bosses each have one
+  (`tests/content/test_codex_content.gd`).
 - `BiomeMood` (v0.5.9 Step 1, `src/content/defs/biome_mood.gd`) holds presentation only, never read by the sim:
   - sun colour, energy and angle;
   - ambient colour and energy;
@@ -598,6 +715,46 @@ class_name BiomeDefinition extends Resource
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
 
+- `BiomeSurface` (v0.7.5 NB1, `src/content/defs/biome_surface.gd`; Frozen Shore's ice) is the one biome field the
+  sim reads, compiled by `BiomeCompiler.compile_ice` into an `IceField` and laid per floor by `IcePatches` from the
+  `map:ice` sub-stream (SIM_CONTRACTS §5):
+  - `kind` (`&"ice"`, the only kind);
+  - `room_share_permille`: the share of rooms that get patches (never the start hall, the boss room, the portal's
+    room or the shop's room); `patches_min`..`patches_max` per chosen room;
+  - `size_min_m`..`size_max_m`: a patch's sides (0.5 m steps); `clearance_m`: kept from walls, doorways, item spots,
+    the start and the gates;
+  - `accel_seconds`, `stop_seconds`: the hero's easing on ice (seconds to 90 %), in place of the player's own.
+
+  A value out of range is a `surface_invalid` `ERROR`. Mild flavour only (PD-04): ice never hurts and the dash is
+  unchanged on it.
+
+  v0.7.5 NB2 adds a second kind and one field:
+  - `kind` is one of `BiomeSurface.KINDS`: `&"ice"` (Frozen Shore) or `&"starglow"` (Starfall's starglow pools);
+  - `speed_scale` (0.5..1.5, default 1.0): the hero's top walking speed on the surface, times their own (Starfall
+    1.25; ice keeps 1.0, so Frozen Shore plays exactly as in NB1).
+
+  `BiomeCompiler.compile_surface` compiles any kind into an `IceField` (its `kind` and `speed_permille` set);
+  `compile_ice` still answers for ice only. `IcePatches` draws each kind from its own sub-stream, `map:<kind>`
+  (`map:ice`, `map:starglow`; SIM_CONTRACTS §5). Starglow only helps (never hurts), and the dash is unchanged on it.
+- `BiomeLook` (v0.7.5 NB1, `src/content/defs/biome_look.gd`) is presentation only, never read by the sim:
+  - `square_cover`: kit piece id -> int weight, what square cover footprints are drawn with (empty: the dresser's
+    own rule);
+  - `decor_swap`: kit decoration piece -> the piece drawn instead (a kit piece or a code-made `CodeProps` piece);
+  - `edge`: what lies past the floor's edge (`&""` the void, `&"water"` the frozen sea, v0.7.5 NB2 `&"stars"` the
+    starry void with floating islands; `BiomeLook.EDGES`, drawn by `BiomeEdge`, the stars' pieces in `StarVoid`);
+  - v0.7.5 NB2: a `square_cover` piece may be a code-made `CodeProps` piece of role cover (Starfall's
+    `star_monolith`), drawn at its own height;
+  - `enemy_tint`: the cast enemies' grey parts take (alpha = strength, at most 0.8; red parts, rings and bars never
+    change).
+
+  A value out of range or an unknown edge is a `look_invalid` `ERROR`; that every named piece resolves is a
+  presentation test (`tests/unit/presentation/test_frozen_shore.gd`, `test_starfall.gd`). A biome without a look
+  keeps its hand-written look (Ruins, Night Rocks, Red Canyon).
+- A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id appended to
+  `data/run/three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
+  its loop (`scripts/audio/generate_sfx.py`), `BIOME_<ID>` and `BIOME_<ID>_DESC` locale keys (en and es), and
+  optionally a `ShardCluster.TINTS` row and a `BiomeEdge` style. Shipped (v0.7.5): `ruins`, `night_rocks`,
+  `red_canyon`, `frozen_shore` (NB1), `starfall` (NB2; a working name, the owner may rename it).
 - A biome never changes the difficulty tables (PD-04). The validator rejects an `enemy_weights` table that adds an
   enemy outside the floor's allowed list.
 - `palette` must define exactly the seven biome tokens listed in
@@ -647,6 +804,12 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
 - **`RunDefinition`, v0.5.5 EC (owner Q-S4, "Keep half"):** `shard_carry` (0.5: the share of unspent shards a
   portal carries to the next floor, rounded down; the rest is shown as left behind on the arrival card; 0..1,
   `range`).
+- **`RunDefinition`, v0.7.5 AP (owner N4, the Ascension loop; starting values, the owner tunes):** each loop past the
+  first multiplies, compounding per loop, normal enemies' HP and damage by `loop_enemy_hp_permille` (4000) and
+  `loop_enemy_damage_permille` (2000), bosses' HP and attack damage by `loop_boss_hp_permille` (2000) and
+  `loop_boss_damage_permille` (1500), each 1000..`loop_scale_cap_permille` (`range`), the factor never past
+  `loop_scale_cap_permille` (100000, × 100); and adds `loop_threat` (2, threat T, ≥ 0, `negative`) and
+  `loop_catch_up_cap_permille` (500, to both hidden catch-up caps, ≥ 0, `negative`). `floors` is a loop's length.
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier
@@ -725,8 +888,16 @@ class_name EventRulesDefinition extends ContentDef     # data/event_rules/floor.
 # rooms_min/max (1-2 per floor), interact_radius_m, clear_radius_m, reward_gap_m (the pedestal's clearance from
 # walls and from altar and chest spots), cursed_chest_chance (%), elite_hp_bonus (%), ambush_min_distance_m,
 # defend_radius_m; v0.6.0 CU: core_stagger_share (%), core_stagger_seconds, core_window_seconds, core_mod_weight,
-# hunt_range_m, drop_offset_m
+# hunt_range_m, drop_offset_m; v0.7.5 MG: cursed_chest_first_floor (1), cursed_chest_every_floors (2),
+# cursed_chests_per_floor (1)
 ```
+
+v0.7.5 MG (owner N10, "the curse appear too often we're gonna have one every two floors"): a chest's offer rolls
+`cursed_chest_chance` only on a curse floor (`EventRules.curse_floor`, `FloorCadence.on`: `cursed_chest_first_floor`,
+then every `cursed_chest_every_floors` floors: 1, 3, 5 …), and only while the floor's cursed offers are under
+`cursed_chests_per_floor` (`EventState.cursed_rolled`, snapshotted). So at most one cursed chest every two floors.
+The chance is still drawn from `loot:event` on every floor before the check, so the stream moves as before until a
+chest is refused. Validation: first and every ≥ 1, per floor ≥ 0. The dev route (`force_curse`) skips the rule.
 
 Validation: known costs, rewards, effects and requirements; amounts where a cost or reward needs one (an HP cost
 below 100 %); a chest reward only after a fight; a choice that costs nothing must carry a curse; 1-2 choices;
@@ -822,7 +993,8 @@ and `wave_sizes` (one positive size per floor, the last repeats; data 4, 8, 12).
 `ContentCompiler.compile_overrun` into `OverrunTable` (per mille).
 
 `ArenaDefinition` (v0.5.5 AR, PLAN D2 / X1; `data/arenas/arena.tres`, category `arena`): the sealed arenas. `share`
-(0..1; data 0.33: the share of a floor's combat rooms that are arenas), `waves_min` / `waves_max` (data 2 / 3),
+(0..1; data 0.11, was 0.33 until v0.7.5 MG, owner N11 "reduce the amount of challenge rooms … like 20% less": the
+share of a floor's combat rooms that are arenas; with the Overrun room a floor averages 2.4 challenge rooms, was 3.2), `waves_min` / `waves_max` (data 2 / 3),
 `wave_sizes` (per floor; data 3, 5, 7), `first_wave_seconds` (data 0.75), `wave_gap_seconds` (data 1.0) and
 `min_spawn_distance` (m; data 3.0). Compiled by `ContentCompiler.compile_arena` into `ArenaTable` (ticks, per mille).
 Without the definition a floor has no regular arenas (the Overrun still seals).
@@ -896,6 +1068,33 @@ turns it into `SimTuning` on `World.tuning`. The shipped file equals the old con
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.
 
+### Achievements (`data/achievements/*.tres`, v0.7.5 AC)
+
+`AchievementDefinition` (category `achievements`) is one local achievement, read by the app layer only (the sim
+never sees it):
+
+```gdscript
+@export var name_key: StringName   # ACH_<ID>_NAME; a CODEX_EACH one has a %s for the entry's name
+@export var desc_key: StringName   # ACH_<ID>_DESC; the same %s rule
+@export var glyph: StringName      # a code-drawn picture (AchievementDefinition.GLYPHS)
+@export var group: StringName      # the page's section (GROUPS: run, bosses, biomes, build, combat, risk, codex, ascension)
+@export var order := 0             # its place in the group
+@export var hidden := false        # "???" until unlocked
+@export var kind: Kind             # STAT, CODEX_TOTAL, CODEX_MAX, CODEX_EACH, CODEX_EVERY
+@export var stat: StringName       # STAT: a run counter from AchievementDefinition.STATS (e.g. runs:won, runs:ascended)
+@export var page: StringName       # CODEX_*: cards / enemies / bosses / biomes
+@export var section: StringName    # CODEX_EACH / CODEX_EVERY: one section of the page (e.g. the Gun pool), or all
+@export var counter: StringName    # CODEX_*: the page's counter (empty for EACH / EVERY: the entry is met)
+@export var target := 1
+```
+
+- `CODEX_EACH` expands into one achievement per Codex entry of its page or section, id `<id>_<entry id>`
+  (`boss_warlord`, `biome_frozen_shore`), so a new boss or biome in the data has its own with no new file;
+  `CODEX_EVERY` needs every entry of its scope (the scope grows with the data).
+- `ERROR`s (`achievement`): a missing key, an unknown glyph, group, stat, page or counter, a target under 1, a
+  section on a kind that reads none. `tests/content/test_achievement_content.gd` also checks the keys in en and es
+  (with the `%s` exactly on the per-entry ones) and that the pages and counters match `CodexStore`.
+
 ## 9. Compiled tables
 
 At encounter start, `ContentCompiler` turns the definitions an encounter needs into plain typed arrays and
@@ -908,7 +1107,8 @@ The sim reads these compiled tables, never `Resource`s. In v0.0.1 the compiler h
 
 - `locale/strings.csv` has the columns `keys,en,es`. Godot imports it as two `Translation`s, which are listed in
   `project.godot` under `internationalization/locale/translations` and ship with the export.
-- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`.
+- Keys are `UPPER_SNAKE` with a domain prefix: `UI_`, `ITEM_`, `ENEMY_`, `BIOME_`, `HINT_`, `CREDITS_`
+  (v0.7.5 AC: `ACH_` for the achievements' names and sentences).
 - `tests/content/test_locale_coverage.gd` fails if:
   - a `*_key` in any definition is missing from the CSV;
   - a CSV row has an empty `en` or `es` cell;

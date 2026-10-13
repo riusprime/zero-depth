@@ -1,5 +1,5 @@
 class_name ChargerAvatar
-extends Node3D
+extends AvatarBase
 ## The Charger (v0.2.0 L17; docs/art/enemies_visual_reference.png, first creature): a long red hood with a ridged,
 ## faceted roof that peaks over a dark shield-shaped face with a glowing red gem visor, a back flap that juts out
 ## behind, and a charcoal body under it, carried spider-like on four grey segmented legs: a big front pair that
@@ -51,7 +51,6 @@ var body: Node3D
 var visor: MeshInstance3D
 ## Hip nodes, front right, front left, back right, back left.
 var legs: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _visor_mat := StandardMaterial3D.new()
 # Everything hangs from this node, which sinks into the ground before the rise; this node itself is never moved.
@@ -60,13 +59,8 @@ var _femurs: Array[Node3D] = []
 var _tibias: Array[Node3D] = []
 var _talons: Array[Node3D] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _state := WorldReader.STATE_MOVE
 # Smoothed animation state.
-var _t := 0.0
 var _speed := 0.0
 var _walk := 0.0
 var _phase := 0.0
@@ -93,7 +87,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	var fm := StandardMaterial3D.new()
 	fm.albedo_color = FACE_COLOR
 	fm.roughness = 1.0
-	_write_stencil(fm)
+	write_stencil(fm)
 	face.material_override = fm
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(face)
@@ -103,7 +97,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = VISOR_COLOR
 	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
-	_write_stencil(_visor_mat)
+	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -124,13 +118,7 @@ func sync(reader: WorldReader, i: int) -> void:
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	var prev := _state
 	_state = s["state"]
 	if _state == WorldReader.STATE_SPAWN:
@@ -138,10 +126,6 @@ func apply_state(s: Dictionary) -> void:
 	elif _fresh and prev != WorldReader.STATE_SPAWN:
 		_rise = 1.0
 	_fresh = false
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 ## Advances the animation by `delta` seconds of frame time.
@@ -191,10 +175,6 @@ func leg_tips() -> Array[Vector3]:
 ## The body's height above its rest pose, in metres (negative when it sinks: dazed, or before the rise).
 func body_lift() -> float:
 	return _model.position.y + body.position.y
-
-
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
 
 
 func _pose() -> void:
@@ -357,7 +337,7 @@ static func _hood_mesh() -> ArrayMesh:
 		tris.append([back[k], back[k + 1], tail])
 	tris.append([back[0], low, tail])
 	tris.append([back[back.size() - 1], tail, low])
-	return _mesh_from(tris, Vector3(-0.08, 0.6, 0))
+	return flat_mesh(tris, Vector3(-0.08, 0.6, 0))
 
 
 ## Key rings with `n` in-between rings after each, each point pushed in or out a little: the cloth crumples into
@@ -437,7 +417,7 @@ static func _flap_mesh() -> ArrayMesh:
 	var tail := Vector3(-0.64, 0.5, 0)
 	for k in back.size() - 1:
 		tris.append([back[k], back[k + 1], tail])
-	return _mesh_from(tris, Vector3(-0.2, 0.62, 0))
+	return flat_mesh(tris, Vector3(-0.2, 0.62, 0))
 
 
 ## The dark body under the hood: a squat faceted lump that closes the hood's open bottom.
@@ -457,7 +437,7 @@ static func _core_mesh() -> ArrayMesh:
 	var tris := []
 	for k in range(0, idx.size(), 3):
 		tris.append([verts[idx[k]], verts[idx[k + 1]], verts[idx[k + 2]]])
-	return _mesh_from(tris, Vector3(-0.1, 0.46, 0))
+	return flat_mesh(tris, Vector3(-0.1, 0.46, 0))
 
 
 ## The face: the roof's front arch set back into the hood, a dark collar joining the two, and a chin point under
@@ -480,7 +460,7 @@ static func _face_mesh() -> ArrayMesh:
 	for k in n:
 		tris.append([inner[k], inner[(k + 1) % n], centre])
 	tris.append([rim[0], inner[n - 1], rim[rim.size() - 1]])
-	return _mesh_from(tris, Vector3(-0.2, 0.52, 0))
+	return flat_mesh(tris, Vector3(-0.2, 0.52, 0))
 
 
 ## The visor: a tall hexagonal gem, its point toward the front.
@@ -503,7 +483,7 @@ static func _visor_mesh() -> ArrayMesh:
 		var b: Vector3 = ring[(k + 1) % ring.size()]
 		tris.append([a, b, tip])
 		tris.append([a, back, b])
-	return _mesh_from(tris, Vector3.ZERO)
+	return flat_mesh(tris, Vector3.ZERO)
 
 
 ## An armoured limb segment along +X: a six-sided plate, uneven round its sides, narrow at the joint, swelling to
@@ -537,7 +517,7 @@ static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
 	for k in 6:
 		tris.append([rings[0][k], e0, rings[0][(k + 1) % 6]])
 		tris.append([rings[3][k], rings[3][(k + 1) % 6], e1])
-	return _mesh_from(tris, Vector3(length * 0.5, 0, 0))
+	return flat_mesh(tris, Vector3(length * 0.5, 0, 0))
 
 
 ## A low-poly joint knuckle at the pivot.
@@ -555,7 +535,7 @@ static func _ball(r: float) -> ArrayMesh:
 	var tris := []
 	for k in range(0, idx.size(), 3):
 		tris.append([verts[idx[k]], verts[idx[k + 1]], verts[idx[k + 2]]])
-	return _mesh_from(tris, Vector3.ZERO)
+	return flat_mesh(tris, Vector3.ZERO)
 
 
 ## A talon along +X that curls toward -Y: a five-sided base, a bent middle ring and a sharp point.
@@ -589,44 +569,7 @@ static func _talon_mesh(length: float, r: float) -> ArrayMesh:
 	for k in n:
 		tris.append([last[k], last[(k + 1) % n], tip])
 		tris.append([rings[0][k], base, rings[0][(k + 1) % n]])
-	return _mesh_from(tris, Vector3(length * 0.4, -0.01, 0))
-
-
-## Flat-shaded triangles, each wound to face away from `centre`.
-static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
-	var verts := PackedVector3Array()
-	var normals := PackedVector3Array()
-	for t: Array in tris:
-		var a: Vector3 = t[0]
-		var b: Vector3 = t[1]
-		var c: Vector3 = t[2]
-		var n := (b - a).cross(c - a)
-		if n.length_squared() < 1e-12:
-			continue
-		if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-			var tmp := b
-			b = c
-			c = tmp
-			n = -n
-		n = n.normalized()
-		# Godot's front faces wind clockwise.
-		verts.append_array([a, c, b])
-		normals.append_array([n, n, n])
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = verts
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	var m := ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return m
-
-
-## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
+	return flat_mesh(tris, Vector3(length * 0.4, -0.01, 0))
 
 
 ## One mesh node from several [mesh, colour] parts, a surface each with its own outlined, flashable material;
@@ -641,25 +584,11 @@ func _piece(
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
 	for k in parts.size():
-		var mat := StandardMaterial3D.new()
-		mat.albedo_color = parts[k][1]
-		mat.roughness = 1.0
+		var mat := outline_material(parts[k][1], outline, OUTLINE_M)
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-		mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-		mat.stencil_color = outline
-		mat.stencil_outline_thickness = OUTLINE_M
 		mi.set_surface_override_material(k, mat)
 		body_materials.append(ActorViews.flashable(mat))
 	parent.add_child(mi)
 	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = merged
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = parts[0][1]
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
+		xray_twin(parent, merged, parts[0][1], team)
 	return mi

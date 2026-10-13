@@ -217,10 +217,15 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var landed := false
 	var hits := 0
+	# Measured once (audit G-2): a hit that tips Hot mid-loop must not stretch this swing for the actors after it.
+	var reach := arc_reach_m(w, spec)
+	var edge := w.player.radius_m
 	for i in range(1, a.size()):
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
-		if not arc_touches(w, spec, ctx.origin, ctx.angle, a.pos(i), a.radius[i]):
+		if not AttackShapes.arc_touches(
+			ctx.origin, edge, ctx.angle, spec.half_arc, reach, a.pos(i), a.radius[i]
+		):
 			continue
 		var before := w.hit_spec
 		if spec.depth > 0:  # v0.6.5 WN5a: a child slash feeds its own statuses (_feed), not the combo step's
@@ -357,8 +362,8 @@ static func _rays(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		var to := from + dir * spec.reach_m
 		var best := 2.0
 		var target := -1
-		for wall in w.walls:
-			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, wall)
+		for k in w.walls_along(from, to, spec.radius_m):  # the grid's superset of the walls (audit G-10)
+			var s := Collide.sweep_vs_obb(from, to, spec.radius_m, w.walls[k])
 			if s >= 0.0 and s < best:
 				best = s
 		for i in range(1, a.size()):
@@ -499,9 +504,9 @@ static func _landed(
 	w: World, spec: AttackSpec, ctx: AttackContext, i: int, at: Vector2, nth: int
 ) -> void:
 	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
-	if spec.depth == 0 and spec.form == AttackSpec.Form.ARC and spec.has_status(&"burn"):
-		if spec.has_tag(&"weapon"):
-			ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
+	var arc := spec.depth == 0 and spec.form == AttackSpec.Form.ARC
+	if arc and spec.has_status(&"burn") and spec.has_tag(&"weapon"):
+		ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
 	var direct := (
 		spec.form == AttackSpec.Form.ARC
 		or spec.form == AttackSpec.Form.BOLT
@@ -691,11 +696,10 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	if hooks.is_empty():
 		return
 	var root := w.projectiles.root_id[pi]
-	var counted := false
 	for k in hooks:
-		if k.every > 0 and not counted:
-			w.chain_count += 1
-			counted = true
+		if k.every > 0:
+			w.chain_count += 1  # once per landed bolt, however many counted hooks
+			break
 	var p := w.projectiles
 	var ang := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))  # v0.6.0 MX4: a hook's slash, split, way
 	var ctx := AttackContext.make(at, ang, p.damage[pi], root, p.tags[pi], &"")

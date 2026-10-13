@@ -28,6 +28,11 @@ extends ContentDef
 @export var ability_refund_per_level := 10
 ## The interact button opens the shop within this distance of the terminal.
 @export var interact_radius_m := 1.8
+## v0.7.5 MG (owner N12, "the shop is also gonna be there every two … floors"): the floors with a shop are
+## first_floor, then every every_floors floors (1, 3, 5 ... as shipped; every_floors 1 = every floor). The floor count
+## keeps going past the run's last floor, so an endless loop keeps the rhythm.
+@export var first_floor := 1
+@export var every_floors := 2
 
 
 func category() -> StringName:
@@ -58,4 +63,6 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "reroll_price", reroll_price)
 	check_positive(issues, "ability_refund_per_level", ability_refund_per_level)
 	check_positive(issues, "interact_radius_m", interact_radius_m)
+	check_positive(issues, "first_floor", first_floor)
+	check_positive(issues, "every_floors", every_floors)
 	return issues

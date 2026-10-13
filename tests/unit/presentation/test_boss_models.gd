@@ -53,6 +53,7 @@ func test_the_model_material_is_flashable_outlined_and_keeps_its_texture() -> vo
 		assert_true(m.emission_enabled, "flashable: emission on")
 		assert_eq(m.emission_energy_multiplier, 0.0, "dark until hit")
 		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE)
+		assert_eq(m.stencil_outline_thickness, 0.0, "no drawn outline (owner, v0.7.5)")
 		assert_not_null(m.albedo_texture, "%s keeps its albedo texture" % id)
 		assert_eq(a.imported.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_ON)
 		var o := _avatar(classes[id], &"outline")
@@ -101,7 +102,7 @@ func test_phase_two_glows_steadily() -> void:
 func test_models_are_read_once_per_type() -> void:
 	BossModels.preload_all()
 	var n := BossModels.loaded_count()
-	assert_eq(n, 3)
+	assert_eq(n, BossModels.SPECS.size(), "v0.7.5 BM: all six bosses")
 	var m1 := BossModels.get_model(&"stone_sentinel")
 	_avatar(GatekeeperAvatar)
 	_avatar(GatekeeperAvatar)

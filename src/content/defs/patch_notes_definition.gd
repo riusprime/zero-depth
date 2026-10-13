@@ -3,6 +3,9 @@ extends ContentDef
 ## One version's patch notes for the in-game What's New panel. Exports drop *.md, so
 ## scripts/content/build_patch_notes.gd copies docs/patch-notes/vX.Y.Z(.es).md into data/patch_notes/.
 
+## The version pattern, compiled once per process.
+static var _version_re := RegEx.create_from_string("^\\d+\\.\\d+\\.\\d+$")
+
 @export var version := ""
 @export_multiline var body_en := ""
 @export_multiline var body_es := ""
@@ -18,7 +21,7 @@ static func id_for(p_version: String) -> StringName:
 
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
-	if not RegEx.create_from_string("^\\d+\\.\\d+\\.\\d+$").search(version):
+	if not _version_re.search(version):
 		issues.append(
 			ValidationIssue.new(&"version_format", resource_path, "bad version: %s" % version)
 		)

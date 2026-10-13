@@ -4,16 +4,100 @@
 [ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
 [ext_resource type="Script" path="res://src/content/defs/boss_definition.gd" id="3_boss"]
 
+[sub_resource type="Resource" id="A_egg_storm"]
+script = ExtResource("1_atk")
+id = &"egg_storm"
+shape = 0
+shape_params = {
+"count": 3,
+"pattern_id": "brood_egg_star",
+"radius_m": 1.5,
+"stagger_seconds": 0.45
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.4
+damage = 14
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_BROOD_EGGS"
+opens_weak_point = true
+lock_seconds = 0.8
+shielded = true
+
+[sub_resource type="Resource" id="A_egg_storm_5"]
+script = ExtResource("1_atk")
+id = &"egg_storm_5"
+shape = 0
+shape_params = {
+"count": 5,
+"pattern_id": "brood_egg_star_2",
+"radius_m": 1.5,
+"stagger_seconds": 0.4
+}
+telegraph_seconds = 1.6
+active_seconds = 0.0167
+recovery_seconds = 1.3
+damage = 14
+move = &"marks"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_BROOD_EGGS"
+opens_weak_point = true
+lock_seconds = 0.8
+shielded = true
+
+[sub_resource type="Resource" id="A_web_spiral"]
+script = ExtResource("1_atk")
+id = &"web_spiral"
+shape = 4
+shape_params = {
+"pattern_id": "brood_web_spiral"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_BROOD_WEB"
+
+[sub_resource type="Resource" id="A_web_spiral_fast"]
+script = ExtResource("1_atk")
+id = &"web_spiral_fast"
+shape = 4
+shape_params = {
+"pattern_id": "brood_web_spiral_fast"
+}
+telegraph_seconds = 0.7
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 12
+move = &"pattern"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.9
+cause_key = &"CAUSE_BROOD_WEB"
+
 [sub_resource type="Resource" id="A_leap"]
 script = ExtResource("1_atk")
 id = &"leap"
 shape = 0
 shape_params = {
 "chain": 1,
-"radius_m": 2.4,
+"radius_m": 2.2,
 "range_m": 12.0
 }
-telegraph_seconds = 0.8
+telegraph_seconds = 1.6
 active_seconds = 0.5
 recovery_seconds = 1.0
 damage = 24
@@ -24,6 +108,7 @@ weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_LEAP"
 opens_weak_point = true
+lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_leap_chain"]
 script = ExtResource("1_atk")
@@ -31,10 +116,10 @@ id = &"leap_chain"
 shape = 0
 shape_params = {
 "chain": 2,
-"radius_m": 2.4,
+"radius_m": 2.2,
 "range_m": 12.0
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 1.4
 active_seconds = 0.5
 recovery_seconds = 1.0
 damage = 24
@@ -47,21 +132,23 @@ cause_key = &"CAUSE_BROOD_LEAP"
 opens_weak_point = true
 follow_up = &"brood_4"
 follow_up_permille = 300
+lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_burrow"]
 script = ExtResource("1_atk")
 id = &"burrow"
 shape = 0
 shape_params = {
-"erupt_seconds": 0.6,
-"radius_m": 2.2,
+"erupt_seconds": 0.8,
+"pattern_id": "brood_eruption_ring",
+"radius_m": 2.0,
 "speed_mps": 5.0,
 "track_seconds": 1.6
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 1.0
 active_seconds = 0.0167
 recovery_seconds = 1.2
-damage = 26
+damage = 24
 move = &"burrow"
 min_range_m = 0.0
 max_range_m = 30.0
@@ -71,6 +158,33 @@ cause_key = &"CAUSE_BROOD_BURROW"
 opens_weak_point = true
 follow_up = &"leap"
 follow_up_permille = 350
+lock_seconds = 0.8
+
+[sub_resource type="Resource" id="A_burrow_2"]
+script = ExtResource("1_atk")
+id = &"burrow_2"
+shape = 0
+shape_params = {
+"erupt_seconds": 0.8,
+"pattern_id": "brood_eruption_ring_2",
+"radius_m": 2.0,
+"speed_mps": 5.5,
+"track_seconds": 1.4
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 1.1
+damage = 24
+move = &"burrow"
+min_range_m = 0.0
+max_range_m = 30.0
+weight = 2
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_BROOD_BURROW"
+opens_weak_point = true
+follow_up = &"leap"
+follow_up_permille = 350
+lock_seconds = 0.8
 
 [sub_resource type="Resource" id="A_brood"]
 script = ExtResource("1_atk")
@@ -112,7 +226,7 @@ damage = 8
 move = &"brood"
 min_range_m = 0.0
 max_range_m = 30.0
-weight = 3
+weight = 2
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_BROOD"
 
@@ -122,10 +236,10 @@ id = &"pounce_chain"
 shape = 0
 shape_params = {
 "chain": 3,
-"radius_m": 2.4,
+"radius_m": 2.2,
 "range_m": 12.0
 }
-telegraph_seconds = 0.5
+telegraph_seconds = 1.2
 active_seconds = 0.45
 recovery_seconds = 1.5
 damage = 22
@@ -136,11 +250,12 @@ weight = 1
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_BROOD_POUNCE"
 opens_weak_point = true
+lock_seconds = 0.8
 
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("leap", "burrow", "brood")
+attack_ids = PackedStringArray("egg_storm", "web_spiral", "leap", "burrow", "brood")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -148,24 +263,25 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 660
-attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4")
-entry_attack = &""
+attack_ids = PackedStringArray("egg_storm_5", "web_spiral", "leap_chain", "burrow", "brood_4")
+entry_attack = &"egg_storm_5"
 speed_permille = 1250
 cooldown_permille = 650
 
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("leap_chain", "burrow", "brood_4", "pounce_chain")
-entry_attack = &"pounce_chain"
+attack_ids = PackedStringArray("egg_storm_5", "web_spiral_fast", "leap_chain", "burrow_2", "brood_4", "pounce_chain")
+entry_attack = &"web_spiral_fast"
 speed_permille = 1375
 cooldown_permille = 487
 
 [resource]
 script = ExtResource("3_boss")
 name_key = &"BOSS_BROOD_MOTHER"
-hp = 1600
-radius_m = 1.2
+desc_key = &"BOSS_BROOD_MOTHER_DESC"
+hp = 2000
+radius_m = 1.55
 move_speed_mps = 3.12
 turn_rate_dps = 0.0
 keep_distance_m = 0.0
@@ -176,9 +292,10 @@ rear_mult_permille = 1000
 stagger_size = 260
 stagger_decay_per_second = 14.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_brood"), SubResource("A_brood_4"), SubResource("A_pounce_chain")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_egg_storm"), SubResource("A_egg_storm_5"), SubResource("A_web_spiral"), SubResource("A_web_spiral_fast"), SubResource("A_leap"), SubResource("A_leap_chain"), SubResource("A_burrow"), SubResource("A_burrow_2"), SubResource("A_brood"), SubResource("A_brood_4"), SubResource("A_pounce_chain")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
-arena_cells = Vector2i(2, 2)
+arena_cells = Vector2i(4, 4)
+legacy_arena_cells = Vector2i(2, 2)
 arena_template = 1
 ranged_full_m = 5.0
 ranged_far_m = 12.0

@@ -3,7 +3,27 @@ extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
 ## In v0.0.1 it compiles only the player.
 
-## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves.
+## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
+const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
+## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
+const ENEMY_KINDS := {
+	&"charger": ActorStore.Kind.CHARGER,
+	&"warden": ActorStore.Kind.WARDEN,
+	&"needle": ActorStore.Kind.NEEDLE,
+	&"hatchling": ActorStore.Kind.HATCHLING,
+	&"arc_caster": ActorStore.Kind.ARC_CASTER,
+	&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+	&"swarmer": ActorStore.Kind.SWARMER,
+	&"splitter": ActorStore.Kind.SPLITTER,
+	&"splitling": ActorStore.Kind.SPLITLING,
+	&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
+	&"mender": ActorStore.Kind.MENDER,
+	&"mine_layer": ActorStore.Kind.MINE_LAYER,
+	&"sniper": ActorStore.Kind.SNIPER,
+	&"lens_drone": ActorStore.Kind.LENS_DRONE,
+}
+## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves (BossSchemas.KINDS and MOVES;
+## a test checks the key sets match).
 const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
@@ -26,6 +46,11 @@ const BOSS_MOVES := {
 	&"deploy": BossAttackTable.Move.DEPLOY,
 	&"pull": BossAttackTable.Move.PULL,
 	&"flood": BossAttackTable.Move.FLOOD,
+	&"pattern": BossAttackTable.Move.PATTERN,  # v0.7.5 BF1
+	&"marks": BossAttackTable.Move.MARKS,
+	&"row_lanes": BossAttackTable.Move.ROW_LANES,
+	&"grid": BossAttackTable.Move.GRID,  # v0.7.5 BF3
+	&"row_flood": BossAttackTable.Move.ROW_FLOOD,
 }
 
 
@@ -75,25 +100,18 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 	)
 
 
-## An enemy's numbers in sim units. The behaviour id picks the actor kind.
-static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
+## An enemy's numbers in sim units. The behaviour id picks the actor kind. v0.7.5 EF: with `repo`, the slow
+## fireball patterns its attacks name (shape_params "pattern_id") are resolved too (PatternCompiler).
+static func compile_enemy(def: EnemyDefinition, repo: ContentRepository = null) -> EnemyTable:
+	var t := _compile_enemy_numbers(def)
+	if repo != null:
+		PatternCompiler.compile_enemy_patterns(def, repo, t)
+	return t
+
+
+static func _compile_enemy_numbers(def: EnemyDefinition) -> EnemyTable:
 	var t := EnemyTable.new()
-	t.kind = {
-		&"charger": ActorStore.Kind.CHARGER,
-		&"warden": ActorStore.Kind.WARDEN,
-		&"needle": ActorStore.Kind.NEEDLE,
-		&"hatchling": ActorStore.Kind.HATCHLING,
-		&"arc_caster": ActorStore.Kind.ARC_CASTER,
-		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
-		&"swarmer": ActorStore.Kind.SWARMER,
-		&"splitter": ActorStore.Kind.SPLITTER,
-		&"splitling": ActorStore.Kind.SPLITLING,
-		&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
-		&"mender": ActorStore.Kind.MENDER,
-		&"mine_layer": ActorStore.Kind.MINE_LAYER,
-		&"sniper": ActorStore.Kind.SNIPER,
-		&"lens_drone": ActorStore.Kind.LENS_DRONE,
-	}[def.behaviour_id]
+	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m
@@ -129,7 +147,10 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 				1, degrees_to_units(float(bp["turn_rate_dps"]) / SimTick.TICKS_PER_SECOND)
 			)
 			t.slam_radius_m = sp["radius_m"]
-		&"needle", &"lens_drone":
+		&"lens_drone":  # v0.7.5 EF: the Needle's walk; its ring is a pattern (compile_enemy_patterns)
+			t.keep_distance_m = bp["keep_distance_m"]
+			t.flee_distance_m = bp["flee_distance_m"]
+		&"needle":
 			t.keep_distance_m = bp["keep_distance_m"]
 			t.flee_distance_m = bp["flee_distance_m"]
 			t.burst_count = int(sp["count"])
@@ -142,10 +163,9 @@ static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 			t.burst_spread = degrees_to_units(float(sp["spread_degrees"]))
 		&"arc_caster":
 			_compile_arc_caster(def, t)
-		&"bomb_drone":
+		&"bomb_drone":  # v0.7.5 EF: its lobbed fireball is a pattern (compile_enemy_patterns)
 			t.keep_min_m = bp["keep_min_m"]
 			t.keep_distance_m = bp["keep_max_m"]
-			t.slam_radius_m = sp["radius_m"]
 		_:
 			_compile_horde(def, t, sp)
 	return t
@@ -186,26 +206,14 @@ static func _compile_horde(def: EnemyDefinition, t: EnemyTable, sp: Dictionary) 
 			t.lane_half_m = sp["half_width_m"]
 
 
-## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune).
+## The Arc Caster (v0.3.5 AI): its three spells, in the schema's order (bolt, spread, rune). v0.7.5 EF: the bolt
+## and the spread are slow fireball fans (compile_enemy_patterns); the rune stays a disc that erupts under you.
 static func _compile_arc_caster(def: EnemyDefinition, t: EnemyTable) -> void:
 	var bp := def.behaviour_params
 	t.keep_min_m = bp["keep_min_m"]
 	t.keep_distance_m = bp["keep_max_m"]
 	t.spell_weights = PackedInt32Array(
 		[int(bp["bolt_weight"]), int(bp["spread_weight"]), int(bp["rune_weight"])]
-	)
-	var bolt := def.attacks[0].shape_params
-	t.burst_count = 1
-	t.bolt_speed = float(bolt["speed_mps"]) / SimTick.TICKS_PER_SECOND
-	t.bolt_radius_m = bolt["radius_m"]
-	t.bolt_life_ticks = SimTick.seconds_to_ticks(float(bolt["range_m"]) / float(bolt["speed_mps"]))
-	var spread := def.attacks[1].shape_params
-	t.spread_count = int(spread["count"])
-	t.spread_angle = degrees_to_units(float(spread["spread_degrees"]))
-	t.spread_speed = float(spread["speed_mps"]) / SimTick.TICKS_PER_SECOND
-	t.spread_radius_m = spread["radius_m"]
-	t.spread_life_ticks = SimTick.seconds_to_ticks(
-		float(spread["range_m"]) / float(spread["speed_mps"])
 	)
 	t.rune_radius_m = def.attacks[2].shape_params["radius_m"]
 	t.rune_windup_ticks = SimTick.seconds_to_ticks(def.attacks[2].telegraph_seconds)
@@ -320,7 +328,7 @@ static func compile_curve(
 static func compile_enemies(repo: ContentRepository) -> Array[EnemyTable]:
 	var out: Array[EnemyTable] = []
 	for def: EnemyDefinition in repo.all_of(&"enemies"):
-		out.append(compile_enemy(def))
+		out.append(compile_enemy(def, repo))
 	return out
 
 
@@ -395,55 +403,19 @@ static func degrees_to_units(deg: float) -> int:
 	return int(round(deg * SimTick.ANGLE_UNITS / 360.0))
 
 
-## One item's numbers in sim units (v0.2.0 E). The definition's kind maps to the sim kind by name. v0.6.0 MX1: with
-## `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation error and is
-## left out here); without it the item has none (offer and pool tests that never fight).
+## One item's numbers in sim units (v0.2.0 E). The definition's kind is the sim kind (same names, same numbers).
+## v0.6.0 MX1: with `repo`, the item's modifiers are compiled too (ItemTable.modifiers; an unknown id is a validation
+## error and is left out here); without it the item has none (offer and pool tests that never fight).
 static func compile_item(def: ItemDefinition, repo: ContentRepository = null) -> ItemTable:
 	var t := ItemTable.new()
 	t.id = def.id
-	t.kind = {
-		ItemDefinition.Kind.LONG_EDGE: ItemTable.Kind.LONG_EDGE,
-		ItemDefinition.Kind.TWIN_ARC: ItemTable.Kind.TWIN_ARC,
-		ItemDefinition.Kind.EMBER_EDGE: ItemTable.Kind.EMBER_EDGE,
-		ItemDefinition.Kind.SPLINTER_SHOT: ItemTable.Kind.SPLINTER_SHOT,
-		ItemDefinition.Kind.RAPID_COIL: ItemTable.Kind.RAPID_COIL,
-		ItemDefinition.Kind.RICOCHET_CORE: ItemTable.Kind.RICOCHET_CORE,
-		ItemDefinition.Kind.KINETIC_DASH: ItemTable.Kind.KINETIC_DASH,
-		ItemDefinition.Kind.OVERCHARGE: ItemTable.Kind.OVERCHARGE,
-		ItemDefinition.Kind.VAMPIRIC_CORE: ItemTable.Kind.VAMPIRIC_CORE,
-		ItemDefinition.Kind.STATIC_CHAIN: ItemTable.Kind.STATIC_CHAIN,
-		ItemDefinition.Kind.MOMENTUM: ItemTable.Kind.MOMENTUM,
-		ItemDefinition.Kind.FROST_CORE: ItemTable.Kind.FROST_CORE,
-		ItemDefinition.Kind.THORN_MANTLE: ItemTable.Kind.THORN_MANTLE,
-		ItemDefinition.Kind.EXECUTIONER: ItemTable.Kind.EXECUTIONER,
-		ItemDefinition.Kind.SWIFT_FEET: ItemTable.Kind.SWIFT_FEET,
-		ItemDefinition.Kind.PHASE_STRIKE: ItemTable.Kind.PHASE_STRIKE,
-		ItemDefinition.Kind.CINDER_SHOT: ItemTable.Kind.CINDER_SHOT,
-		ItemDefinition.Kind.WILDFIRE: ItemTable.Kind.WILDFIRE,
-		ItemDefinition.Kind.CONDUCTOR: ItemTable.Kind.CONDUCTOR,
-		ItemDefinition.Kind.SERRATED_EDGE: ItemTable.Kind.SERRATED_EDGE,
-		ItemDefinition.Kind.BARBED_BOLTS: ItemTable.Kind.BARBED_BOLTS,
-		ItemDefinition.Kind.GLACIAL_EDGE: ItemTable.Kind.GLACIAL_EDGE,
-		ItemDefinition.Kind.COLD_SNAP: ItemTable.Kind.COLD_SNAP,
-		ItemDefinition.Kind.BULWARK: ItemTable.Kind.BULWARK,
-		ItemDefinition.Kind.HEAT_SINK: ItemTable.Kind.HEAT_SINK,
-		ItemDefinition.Kind.THERMAL_EDGE: ItemTable.Kind.THERMAL_EDGE,
-		ItemDefinition.Kind.MELTDOWN: ItemTable.Kind.MELTDOWN,
-		ItemDefinition.Kind.CLUSTER_PAYLOAD: ItemTable.Kind.CLUSTER_PAYLOAD,
-		ItemDefinition.Kind.OVERCLOCKED_DRONE: ItemTable.Kind.OVERCLOCKED_DRONE,
-		ItemDefinition.Kind.RAZOR_ORBIT: ItemTable.Kind.RAZOR_ORBIT,
-		ItemDefinition.Kind.AFTERIMAGE: ItemTable.Kind.AFTERIMAGE,
-		ItemDefinition.Kind.MODIFIER: ItemTable.Kind.MODIFIER,  # v0.6.0 MX4
-		ItemDefinition.Kind.TRIGGER: ItemTable.Kind.TRIGGER,  # v0.6.5 WN1
-		ItemDefinition.Kind.WAND: ItemTable.Kind.WAND,  # v0.6.5 WN3
-	}[def.kind]
+	t.kind = def.kind as ItemTable.Kind  # the two enums match name for name (test_item_validation asserts it)
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
 	t.rarity = def.rarity
 	var needs := {&"guard": PlayerTable.Utility.GUARD, &"blink": PlayerTable.Utility.BLINK}
 	t.requires_utility = needs.get(def.requires_utility, -1)
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.requires_weapon = weapons.get(def.requires_weapon, 0)
+	t.requires_weapon = WEAPON_BITS.get(def.requires_weapon, 0)
 	t.requires_ability = ItemDefinition.ability_kind(def.requires_ability)  # v0.5.0 CP
 	if repo != null:
 		for id in def.modifiers:
@@ -590,6 +562,9 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 		t.phase_speed_permille.append(ph.speed_permille)
 		t.phase_cd_permille.append(ph.cooldown_permille)
 	t.arena_cells = def.arena_cells
+	t.legacy_arena_cells = (
+		def.legacy_arena_cells if def.legacy_arena_cells != Vector2i.ZERO else def.arena_cells
+	)  # v0.7.5 BF1 (N18)
 	t.arena_template = def.arena_template
 	_compile_boss_challenge(def, t)
 	return t
@@ -680,6 +655,8 @@ static func compile_boss_attack(
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
+	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
+	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 
 
@@ -741,10 +718,7 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 		t.amount[s] = int(round(e.amount * scale))
 		t.weight[s] = e.weight
 		t.cap[s] = e.max_stacks
-		t.requires_weapon[s] = (
-			{&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-			. get(e.requires_weapon, 0)
-		)
+		t.requires_weapon[s] = WEAPON_BITS.get(e.requires_weapon, 0)
 	return t
 
 
@@ -765,6 +739,8 @@ static func compile_shop(def: ShopDefinition) -> ShopTable:
 	t.sell_permille = int(round(def.sell_share * 1000.0))
 	t.ability_refund_per_level = def.ability_refund_per_level
 	t.interact_radius_m = def.interact_radius_m
+	t.first_floor = def.first_floor  # v0.7.5 MG (N12)
+	t.every_floors = def.every_floors
 	return t
 
 
@@ -829,8 +805,7 @@ static func compile_ability(def: AbilityDefinition, repo: ContentRepository = nu
 	t.rare = def.rarity == AbilityDefinition.Rarity.RARE
 	t.name_key = def.name_key
 	t.desc_key = def.desc_key
-	var weapons := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-	t.start_weapon = weapons.get(def.start_weapon, 0)
+	t.start_weapon = WEAPON_BITS.get(def.start_weapon, 0)
 	t.tags = PackedStringArray()
 	for tag in def.tags:
 		t.tags.append(String(tag))
@@ -910,6 +885,13 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.deep_extra_chests = def.deep_extra_chests
 	t.boss_ease_floor_permille = def.boss_ease_floor_permille.duplicate()  # v0.4.0 TU (D9)
 	t.boss_room_heal_floor_permille = def.boss_room_heal_floor_permille.duplicate()
+	t.loop_enemy_hp_permille = def.loop_enemy_hp_permille  # v0.7.5 AP: the Ascension loop
+	t.loop_enemy_damage_permille = def.loop_enemy_damage_permille
+	t.loop_boss_hp_permille = def.loop_boss_hp_permille
+	t.loop_boss_damage_permille = def.loop_boss_damage_permille
+	t.loop_scale_cap_permille = def.loop_scale_cap_permille
+	t.loop_threat = def.loop_threat
+	t.loop_catch_up_cap_permille = def.loop_catch_up_cap_permille
 	return t
 
 

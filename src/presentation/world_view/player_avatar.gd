@@ -1,5 +1,5 @@
 class_name PlayerAvatar
-extends Node3D
+extends AvatarBase
 ## The player's hooded wanderer (owner, 2026-10-07; docs/art/main-character-sheet.png, the primary reference): a
 ## forward-tipped hood that tapers from a wide, square back to a shield-shaped front (flat top, a point at the
 ## chin), a recessed black face of the same shape with a centred landscape cyan visor; a diamond poncho (its hem
@@ -86,7 +86,6 @@ var visor: MeshInstance3D
 var face: MeshInstance3D
 var cloak: MeshInstance3D
 var legs: Array[Node3D] = []
-var body_materials: Array[StandardMaterial3D] = []
 
 var _pelvis := Node3D.new()
 var _head_yaw := Node3D.new()
@@ -102,10 +101,6 @@ var _spring_pos: Array[Vector3] = []
 var _spring_vel: Array[Vector3] = []
 var _spring_target: Array[Vector3] = []
 # Sim state from the last sync.
-var _fresh := true
-var _last_tick := -1
-var _last_pos := Vector2.ZERO
-var _vel := Vector2.ZERO
 var _aim_yaw := 0.0
 var _dashing := false
 var _swing := 0.0
@@ -127,7 +122,6 @@ var _cleave_p := -1.0
 var _brace_target := 0.0
 var _recoil_target := 0.0
 # Smoothed animation state.
-var _t := 0.0
 var _vel_s := Vector3.ZERO
 var _body_yaw := 0.0
 var _leg_yaw := 0.0
@@ -163,7 +157,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	var fm := StandardMaterial3D.new()
 	fm.albedo_color = FACE_COLOR
 	fm.roughness = 1.0
-	_write_stencil(fm)
+	write_stencil(fm)
 	face.material_override = fm
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	hood.add_child(face)
@@ -175,7 +169,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = team
 	_visor_mat.emission_energy_multiplier = 2.4
-	_write_stencil(_visor_mat)
+	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -249,13 +243,7 @@ func sync(reader: WorldReader) -> void:
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
-	if not _fresh and tick > _last_tick:
-		var v := (pos - _last_pos) * (60.0 / float(tick - _last_tick))
-		_vel = v if v.length() <= TELEPORT_SPEED and tick - _last_tick <= 30 else Vector2.ZERO
-	elif tick < _last_tick:
-		_vel = Vector2.ZERO
-	_last_tick = tick
-	_last_pos = pos
+	_track_motion(tick, pos, TELEPORT_SPEED)
 	_aim_yaw = SimPlane.yaw_of(s["aim"])
 	_dashing = s["dashing"]
 	_guarding = s["guarding"]
@@ -335,10 +323,6 @@ func _apply_skill(s: Dictionary, tick: int) -> bool:
 			_aim_yaw = SimPlane.yaw_of(s.get("skill_angle", 0))
 			return true
 	return false
-
-
-func _process(delta: float) -> void:
-	advance(delta)
 
 
 ## Advances the animation and the cloak springs by `delta` seconds of frame time.
@@ -435,10 +419,6 @@ func twist_amount() -> float:
 
 func stab_amount() -> float:
 	return _stab
-
-
-func _rate(per_second: float, dt: float) -> float:
-	return 1.0 - exp(-per_second * dt)
 
 
 func _turn_toward(from: float, to: float, k: float) -> float:
@@ -699,26 +679,6 @@ static func _tri2(
 		colors.append(NECK_SHADE if at_neck else UNDER_COLOR)
 
 
-## Appends one flat-shaded triangle facing away from `centre` (Godot's front faces wind clockwise).
-static func _tri(
-	verts: PackedVector3Array,
-	normals: PackedVector3Array,
-	a: Vector3,
-	b: Vector3,
-	c: Vector3,
-	centre: Vector3
-) -> void:
-	var n := (b - a).cross(c - a)
-	if n.dot((a + b + c) / 3.0 - centre) < 0.0:
-		var t := b
-		b = c
-		c = t
-		n = -n
-	n = n.normalized()
-	verts.append_array([a, c, b])
-	normals.append_array([n, n, n])
-
-
 static func _mesh_from(tris: Array, centre: Vector3) -> ArrayMesh:
 	var verts := PackedVector3Array()
 	var normals := PackedVector3Array()
@@ -789,38 +749,7 @@ static func _face_mesh() -> ArrayMesh:
 	return mesh
 
 
-## The face and visor mark the stencil like the body pieces do, so the hood's X-ray twin behind them stays hidden.
-static func _write_stencil(m: StandardMaterial3D) -> void:
-	m.stencil_mode = BaseMaterial3D.STENCIL_MODE_CUSTOM
-	m.stencil_flags = BaseMaterial3D.STENCIL_FLAG_WRITE
-	m.stencil_compare = BaseMaterial3D.STENCIL_COMPARE_ALWAYS
-	m.stencil_reference = 1
-
-
 func _mesh_piece(
 	parent: Node3D, mesh: Mesh, c: Color, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
-	var body := MeshInstance3D.new()
-	body.mesh = mesh
-	var mat := StandardMaterial3D.new()
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = outline
-	mat.stencil_outline_thickness = OUTLINE_M
-	ActorViews.flashable(mat)  # the hit flash changes only parameters, never the shader
-	body.material_override = mat
-	parent.add_child(body)
-	body_materials.append(mat)
-	if technique == &"xray":
-		var ghost := MeshInstance3D.new()
-		ghost.mesh = mesh
-		var gm := StandardMaterial3D.new()
-		gm.albedo_color = c
-		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-		gm.stencil_color = Color(team, 0.85)
-		ghost.material_override = gm
-		ghost.scale = Vector3.ONE * 0.96
-		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		parent.add_child(ghost)
-	return body
+	return _outlined(parent, mesh, Vector3.ZERO, c, outline, team, technique, OUTLINE_M)

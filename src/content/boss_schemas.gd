@@ -28,7 +28,14 @@ const MOVES := {
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
 	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"]},
 	## Dives under, a ripple tracks the player, stops, and erupts after erupt_seconds (its own telegraph).
-	&"burrow": {"shape": 0, "params": ["radius_m", "track_seconds", "erupt_seconds", "speed_mps"]},
+	## v0.7.5 BF2: with lock_seconds its eruption circle follows the player's exact position while it tracks, then
+	## holds for the lock; an optional pattern_id (a RING) bursts from the eruption.
+	&"burrow":
+	{
+		"shape": 0,
+		"params": ["radius_m", "track_seconds", "erupt_seconds", "speed_mps"],
+		"optional": ["pattern_id"],
+	},
 	## Spits `count` eggs around itself; each lands on a marked disc and hatches an enemy (at most max_alive).
 	&"brood": {"shape": 0, "params": ["count", "radius_m", "distance_m", "enemy_id", "max_alive"]},
 	## Mortar shells on marked discs: the first on the player, the rest within spread_m of them.
@@ -51,7 +58,33 @@ const MOVES := {
 	## then for the whole active time the lanes stay (the Warlord's spears, the Foundry's molten floor) and hurt
 	## a player standing in them once every burn_seconds.
 	&"flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
+	## v0.7.5 BF1 (owner N15): fires a bullet pattern (data/bullet_patterns, by id) over the active time: slow fireballs
+	## in a shape (BulletPatterns). A BURST pattern's shell lands on the target its windup tracked.
+	&"pattern": {"shape": 4, "params": ["pattern_id"]},
+	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
+	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
+	## v0.7.5 BF2: an optional pattern_id makes each circle an egg's landing (the Brood Mother's Egg Storm): a shell
+	## lobbed onto it while it is locked, and the pattern (a BURST's star) bursting from it as it strikes.
+	&"marks":
+	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
+	{"shape": 0, "params": ["count", "radius_m", "stagger_seconds"], "optional": ["pattern_id"]},
+	## tracked then locked like `marks`; cut short by walls.
+	&"row_lanes": {"shape": 2, "params": ["count", "length_m", "width_m", "stagger_seconds"]},
+	## v0.7.5 BF3: a checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
+	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
+	## apart, alternating the board's two colours (the first holds the player's cell). Each colour shows only for
+	## its own lock before it strikes.
+	&"grid": {"shape": 0, "params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"]},
+	## v0.7.5 BF3: `count` lanes along the room's rows (x), gap_m apart and centred on the player's row, length_m
+	## long centred on the player (cut short by walls); tracked then locked like `marks`, then standing for the
+	## active time and hurting once every burn_seconds, like `flood` (the Foundry's molten floor).
+	&"row_flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
 }
+
+## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
+const LOCKED_MOVES: Array[StringName] = [&"marks", &"row_lanes", &"grid", &"row_flood"]
+## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
+const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 
 ## Params that name an enemy (resolved by the compiler; a content test checks they exist).
 const ENEMY_PARAMS: Array[String] = ["enemy_id"]

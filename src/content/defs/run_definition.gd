@@ -31,6 +31,20 @@ extends ContentDef
 ## boss room seals.
 @export var boss_ease_floor_permille := PackedInt32Array([800, 1000, 1000])
 @export var boss_room_heal_floor_permille := PackedInt32Array([1000, 0, 0])
+## v0.7.5 AP (owner N4, the Ascension loop): after the last floor's boss the Ascension portal ends the run or starts a
+## new loop of `floors` floors with the build carried. Each loop past the first makes the run harder (starting values
+## the owner tunes; integers, so the scaling stays deterministic, EI-02):
+## - normal enemies' HP and damage, and bosses' HP and attack damage, × these per mille once per loop past the first,
+##   compounding (loop 3 = the factor twice), never past loop_scale_cap_permille; on top of the floor's own scaling;
+## - threat T + loop_threat per loop past the first (Curses.threat: the curses' and Deep's threat, shown as T);
+## - the hidden catch-up's caps (enemies' and the boss's) + loop_catch_up_cap_permille per loop past the first.
+@export var loop_enemy_hp_permille := 4000
+@export var loop_enemy_damage_permille := 2000
+@export var loop_boss_hp_permille := 2000
+@export var loop_boss_damage_permille := 1500
+@export var loop_scale_cap_permille := 100000
+@export var loop_threat := 2
+@export var loop_catch_up_cap_permille := 500
 
 
 func category() -> StringName:
@@ -81,4 +95,24 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "boss_room_heal_floor_permille: 0..1000"
 				)
 			)
+	for pair: Array in [  # v0.7.5 AP: a loop never makes anything weaker
+		["loop_enemy_hp_permille", loop_enemy_hp_permille],
+		["loop_enemy_damage_permille", loop_enemy_damage_permille],
+		["loop_boss_hp_permille", loop_boss_hp_permille],
+		["loop_boss_damage_permille", loop_boss_damage_permille],
+	]:
+		if int(pair[1]) < 1000 or int(pair[1]) > loop_scale_cap_permille:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: 1000..loop_scale_cap_permille" % pair[0]
+				)
+			)
+	if loop_threat < 0:
+		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
+	if loop_catch_up_cap_permille < 0:
+		issues.append(
+			ValidationIssue.new(
+				&"negative", resource_path, "loop_catch_up_cap_permille is negative"
+			)
+		)
 	return issues

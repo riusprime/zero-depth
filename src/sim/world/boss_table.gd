@@ -33,6 +33,8 @@ var phase_cd_permille := PackedInt32Array()
 ## The boss room: size in cells and its interior template (a FloorLayout.Template value).
 var arena_cells := Vector2i(2, 2)
 var arena_template := 0
+## v0.7.5 BF1 (N18): the room an older save's floor is rebuilt with (BossDefinition.legacy_arena_cells).
+var legacy_arena_cells := Vector2i(2, 2)
 ## Boss challenge (v0.3.0 BX, L17 and L26; BossChallenge). Distances are from the boss's edge to the player's centre.
 ## Ranged armour: the player's hits deal 1000 per mille up to ranged_full_m, falling linearly to ranged_far_permille
 ## at ranged_far_m and beyond.

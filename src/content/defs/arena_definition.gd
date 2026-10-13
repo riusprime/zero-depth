@@ -5,8 +5,10 @@ extends ContentDef
 ## until the last wave dies; the rest of the floor goes dark while you're sealed. The Overrun room is the hardest
 ## arena (OverrunDefinition has its own waves). Every number is a starting value the owner tunes after playing.
 
-## The share of a floor's combat rooms that are arenas (0..1).
-@export var share := 0.33
+## The share of a floor's combat rooms that are arenas (0..1). v0.7.5 MG (owner N11, "reduce the amount of challenge
+## rooms … like 20% less"): 0.11 (was 0.33): on the bigger floors (15-19 rooms) a floor's challenge rooms, the
+## Overrun room and the arenas, average 2.4 (was 3.2 on 10-12 rooms; docs/roadmap/v0.7.5/evidence/MAPS.md).
+@export var share := 0.11
 ## Waves per arena (drawn per room), and each wave's size on floors 1, 2, 3 (the last repeats on later floors).
 @export var waves_min := 2
 @export var waves_max := 3

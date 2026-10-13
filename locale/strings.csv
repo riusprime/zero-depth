@@ -103,17 +103,23 @@ HUD_BOSS_STAGGER,Stagger,Aturdimiento
 HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
-CAUSE_GATEKEEPER_SLAM,The Gatekeeper's ring of spikes crushed you.,El anillo de púas del Guardián de la Puerta te aplastó.
+CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo del Guardián de la Puerta te aplastó.
+CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca del Guardián de la Puerta te sepultaron.
+CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz del Guardián de la Puerta te alcanzó.
 CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque del Guardián de la Puerta te derribó.
 CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido del Guardián de la Puerta te destrozó.
 CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida del Guardián de la Puerta te aplastó.
 CAUSE_BROOD_LEAP,The Brood Mother landed on you.,La Madre de la Prole cayó sobre ti.
 CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,La Madre de la Prole surgió bajo tus pies.
 CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de la Madre de la Prole te aplastaron.
+CAUSE_BROOD_EGGS,The Brood Mother's egg storm burst over you.,La tormenta de huevos de la Madre de la Prole estalló sobre ti.
+CAUSE_BROOD_WEB,The Brood Mother's web spiral of acid caught you.,La espiral de telaraña ácida de la Madre de la Prole te atrapó.
 CAUSE_SIEGE_BARRAGE,The Siege Engine's shells blew you apart.,Los proyectiles de la Máquina de Asedio te destrozaron.
 CAUSE_SIEGE_RAIL,The Siege Engine's rail beam burned through you.,El rayo de la Máquina de Asedio te atravesó.
 CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyectiles de la Máquina de Asedio te abatió.
 CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
+CAUSE_SIEGE_CROSS,The Siege Engine's turret cross burned you down.,La cruz de torretas de la Máquina de Asedio te abrasó.
+CAUSE_SIEGE_GRID,The Siege Engine's mortar grid caught you on the wrong square.,La cuadrícula de morteros de la Máquina de Asedio te pilló en la casilla equivocada.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
 REWARD_OPEN_ALTAR,[E / X] Open the altar,[E / X] Abrir el altar
@@ -159,6 +165,8 @@ ITEM_COMBO_FROZEN_BASTION_DESC,Guard blocks chill the attacker: 2 frost stacks.,
 UI_COMBO_UNLOCKED,Combo,Combo
 BIOME_NIGHT_ROCKS,Night Rocks,Rocas Nocturnas
 BIOME_RED_CANYON,Red Canyon,Cañón Rojo
+BIOME_FROZEN_SHORE,Frozen Shore,Costa Helada
+BIOME_STARFALL,Starfall,Caída Estelar
 HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
 HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
@@ -336,7 +344,7 @@ SKILL_SCATTER_BLAST_DESC,"Skill: a close-range spray of 7 pellets toward your ai
 ENEMY_ARC_CASTER,Arc Caster,Lanzarrayos
 ENEMY_BOMB_DRONE,Bomb Drone,Dron Bombardero
 CAUSE_ARC_CASTER,An Arc Caster's spell struck you down.,Un hechizo de un Lanzarrayos te abatió.
-CAUSE_BOMB_DRONE,A Bomb Drone's bomb blew you up.,La bomba de un Dron Bombardero te hizo volar.
+CAUSE_BOMB_DRONE,A Bomb Drone's fireball burst on you.,La bola de fuego de un Dron Bombardero estalló sobre ti.
 UI_DEV_NEXT_ENEMY,Next enemy,Siguiente enemigo
 UI_DEV_SPAWN_ENEMY,Spawn enemy,Invocar enemigo
 ABILITY_COMBO_SWORD,Combo Sword,Espada de combo
@@ -440,22 +448,28 @@ BOSS_WARLORD,The Warlord,El Señor de la Guerra
 BOSS_HIVE_LENS,The Hive Lens,La Lente Enjambre
 BOSS_FOUNDRY,The Foundry,La Fundición
 ENEMY_LENS_DRONE,Lens Drone,Dron Lente
-CAUSE_LENS_DRONE,A Lens Drone's pulses got you.,Los pulsos de un Dron Lente te alcanzaron.
+CAUSE_LENS_DRONE,A Lens Drone's ring of orbs got you.,El anillo de orbes de un Dron Lente te alcanzó.
 CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo del Señor de la Guerra te derribó.
 CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas del Señor de la Guerra te atravesaron.
 CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida del Señor de la Guerra te arrolló.
 CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas del Señor de la Guerra llovieron sobre ti.
+CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos del Señor de la Guerra te arrolló.
+CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas del Señor de la Guerra te abatió.
 CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de la Lente Enjambre te barrió.
 CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de la Lente Enjambre te abatieron.
 CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de la Lente Enjambre te quemó.
 CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,La Lente Enjambre se lanzó sobre ti.
 CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de la Lente Enjambre te aplastó.
 CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concentrado de la Lente Enjambre te encontró a lo lejos.
+CAUSE_HIVE_SPIRAL,The Hive Lens's prism spiral cut you down.,La espiral de prismas de la Lente Enjambre te abatió.
+CAUSE_HIVE_BLOOM,The Hive Lens's petal bloom closed around you.,La flor de pétalos de la Lente Enjambre se cerró sobre ti.
 CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de la Fundición te quemó.
 CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de la Fundición te destrozaron.
 CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de la Fundición te abrasó.
 CAUSE_FOUNDRY_LAUNCH,A Bomb Drone launched by the Foundry crushed you.,Un Dron Bombardero lanzado por la Fundición te aplastó.
 CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición inundó la sala de fuego.
+CAUSE_FOUNDRY_FOUNTAIN,The Foundry's slag fountain rained down on you.,La fuente de escoria de la Fundición te llovió encima.
+CAUSE_FOUNDRY_WAVES,The Foundry's furnace waves washed over you.,Las oleadas del horno de la Fundición te arrasaron.
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
@@ -841,3 +855,212 @@ ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
 ITEM_TRIGGER_ON_KILL_TWICE_DESC,Legendary: cards to its right cast twice on each kill.,Legendario: lo de su derecha se lanza 2 veces por baja.
 ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
 ITEM_TRIGGER_ON_END_TWICE_DESC,Legendary: cards to its right cast twice where it ends.,Legendario: lo de su derecha se lanza 2 veces al terminar.
+UI_CODEX,Codex,Códice
+UI_CODEX_TITLE,Codex,Códice
+UI_CODEX_TAB_CARDS,Cards,Cartas
+UI_CODEX_TAB_ENEMIES,Enemies,Enemigos
+UI_CODEX_TAB_BOSSES,Bosses,Jefes
+UI_CODEX_TAB_BIOMES,Biomes,Biomas
+UI_CODEX_SECTION_GUN,Gun pool,Mazo de la Pistola
+UI_CODEX_SECTION_BLADE,Blade pool,Mazo de la Espada
+UI_CODEX_SECTION_SHARED,Shared pool,Mazo compartido
+UI_CODEX_SECTION_TRIGGERS,Triggers,Disparadores
+UI_CODEX_SECTION_LEGENDARY,Legendary,Legendarias
+UI_CODEX_SECTION_STATS,Stat cards,Cartas de estadística
+UI_CODEX_SECTION_UTILITIES,Utilities,Utilidades
+UI_CODEX_SECTION_ABILITIES,Abilities,Habilidades
+UI_CODEX_SECTION_PASSIVES,Passives,Pasivas
+UI_CODEX_OFFERED,Offered,Ofrecida
+UI_CODEX_TAKEN,Taken,Elegida
+UI_CODEX_LEVEL,Highest level,Nivel máximo
+UI_CODEX_KILLS,Killed,Abatidos
+UI_CODEX_DEATHS,Times it killed you,Veces que te mató
+UI_CODEX_FIGHTS,Fought,Combates
+UI_CODEX_VISITS,Floors entered,Pisos visitados
+UI_CODEX_FOUND,Found %d / %d,Descubierto %d / %d
+UI_CODEX_LOCKED,Not met yet. Meet it in a run to fill this page.,Aún no lo has encontrado. Encuéntralo en una partida para llenar esta página.
+UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
+ENEMY_CHARGER_DESC,"Runs at you, locks a straight lane and charges along it, then stands dazed: the moment to punish it.","Corre hacia ti, fija un carril recto y embiste por él; después queda aturdido: el momento de castigarlo."
+ENEMY_WARDEN_DESC,A slow rock golem that slams the ground around itself. Its front is armoured; hit it from behind.,Un gólem de roca lento que golpea el suelo a su alrededor. Su frente está blindado: atácalo por la espalda.
+ENEMY_NEEDLE_DESC,"A walking turret that keeps its distance and fires a burst down a locked line, backing off when you close in.",Una torreta andante que mantiene la distancia y dispara una ráfaga por una línea fija; retrocede si te acercas.
+ENEMY_HATCHLING_DESC,"The Brood Mother's young: small, quick, and they lunge in straight lines.","Las crías de la Madre de la Prole: pequeñas, rápidas, embisten en línea recta."
+ENEMY_ARC_CASTER_DESC,"Keeps its range and casts: a fan of three slow plasma balls, a wider fan, or a rune that erupts under you.","Mantiene la distancia y lanza: un abanico de tres bolas de plasma lentas, un abanico más abierto o una runa que estalla bajo tus pies."
+ENEMY_BOMB_DRONE_DESC,"Hovers out of reach and lobs a fireball that lands where you stand and bursts into an X of four small ones.","Flota fuera de tu alcance y lanza una bola de fuego que cae donde estás y estalla en una X de cuatro más pequeñas."
+ENEMY_SWARMER_DESC,"Weak alone, dangerous in packs: it bites with a short lunge.","Débil a solas, peligroso en manada: muerde con una embestida corta."
+ENEMY_SPLITTER_DESC,Swipes the ground ahead of it and splits into two Splitlings when it dies.,Barre el suelo frente a sí y se divide en dos Fragmentos al morir.
+ENEMY_SPLITLING_DESC,"What is left of a Splitter: smaller, weaker, and it never splits again.","Lo que queda de un Divisor: más pequeño, más débil, y ya no se divide."
+ENEMY_SHIELD_BEARER_DESC,Turns its big shield toward you and bashes whoever stands in front. Get around it.,Gira su gran escudo hacia ti y embiste a quien tenga delante. Rodéalo.
+ENEMY_MENDER_DESC,Never attacks: it keeps away and heals its most hurt ally. Take it down first.,Nunca ataca: se mantiene lejos y cura al aliado más herido. Acaba con él primero.
+ENEMY_MINE_LAYER_DESC,Drops mines as it moves; a mine arms when you touch it and blows a moment later.,Suelta minas al moverse; una mina se arma al tocarla y estalla un instante después.
+ENEMY_SNIPER_DESC,"Shows a long line, then fires down it for heavy damage, and walks to a new spot.","Muestra una línea larga, dispara por ella con mucho daño y cambia de posición."
+ENEMY_LENS_DRONE_DESC,"Breaks off the Hive Lens's rim and fires slow rings of six red orbs from a distance.","Se desprende del borde de la Lente Enjambre y dispara, a distancia, anillos lentos de seis orbes rojos."
+BOSS_GATEKEEPER_DESC,"A giant stone sentinel, the Warden's big brother: fist slams, shock lanes, sweeps and charges.","Un centinela de piedra gigante, el hermano mayor del Guardián: puñetazos al suelo, carriles de choque, barridos y embestidas."
+BOSS_BROOD_MOTHER_DESC,"Lobs eggs onto circles that follow you, each bursting into a star of acid, and spins webs of acid globs. Her leaps and burrows lock where you stood: keep moving. Shielded while her eggs fly; she calls her Hatchlings too.","Lanza huevos sobre círculos que te siguen, y cada uno estalla en una estrella de ácido; teje espirales de gotas ácidas. Sus saltos y sus excavaciones se fijan donde estabas: no te quedes quieto. Se protege mientras vuelan sus huevos; también llama a sus Crías."
+BOSS_SIEGE_ENGINE_DESC,"A war machine that braces behind its shield and turns a cross of cannon embers, shells a checkerboard of circles, drops shells that follow you, fires a rail down your lane and deploys its turrets.","Una máquina de guerra que se atrinchera tras su escudo y gira una cruz de brasas de cañón, bombardea un tablero de círculos, lanza proyectiles que te siguen, dispara un raíl por tu carril y despliega sus torretas."
+BOSS_WARLORD_DESC,"A shielded knight that plants spear lines, dashes and rains javelins. Planting and dashing lower its shield.","Un caballero con escudo que planta líneas de lanzas, embiste y lanza jabalinas. Al plantar y embestir baja el escudo."
+BOSS_HIVE_LENS_DESC,"A floating eye that fires prism spirals that turn back halfway, blooming petals and rings with two gaps, and a focus beam that follows you, then locks. Its eye closes, shielded, while the spiral turns. Once hurt, Lens Drones break off its rim.","Un ojo flotante que dispara espirales de prismas que giran al revés a mitad, flores de pétalos y anillos con dos huecos, y un rayo concentrado que te sigue y luego se fija. Cierra el ojo, protegido, mientras gira la espiral. Al quedar herido, se desprenden Drones Lente de su borde."
+BOSS_FOUNDRY_DESC,"A walking furnace that shuts its door and rains slag in a flower around it, sends out rings of molten drops with shifting gaps, floods your row with molten floor and launches Bomb Drones.","Un horno andante que cierra su puerta y hace llover escoria en forma de flor a su alrededor, lanza anillos de gotas fundidas con huecos que se desplazan, inunda tu fila de suelo fundido y suelta Drones Bombarderos."
+BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de piedra antigua bajo una luz fría.
+BIOME_FROZEN_SHORE_DESC,"A moonlit shore locked in ice: snow, slate and frozen sea. The ice patches make you slide.","Una costa helada bajo la luna: nieve, pizarra y mar congelado. Las placas de hielo te hacen resbalar."
+BIOME_STARFALL_DESC,"Floating rock and crystal islands over a field of stars. The starglow pools speed your step.","Islas flotantes de roca y cristal sobre un campo de estrellas. Los charcos de luz estelar aceleran tu paso."
+BIOME_NIGHT_ROCKS_DESC,Dark stone fields under a night sky.,Campos de piedra oscura bajo un cielo nocturno.
+BIOME_RED_CANYON_DESC,Sun-baked red rock and narrow passes.,Roca roja tostada por el sol y pasos estrechos.
+UI_ACH_TAB,Achievements,Logros
+UI_ACH_TOAST,ACHIEVEMENT UNLOCKED,LOGRO DESBLOQUEADO
+UI_ACH_PROGRESS,Unlocked %d / %d,Desbloqueados %d / %d
+UI_ACH_UNLOCKED,Unlocked,Desbloqueado
+UI_ACH_LOCKED,Locked,Bloqueado
+UI_ACH_HIDDEN,A hidden achievement. Keep playing to find it.,Un logro oculto. Sigue jugando para descubrirlo.
+UI_ACH_GROUP_RUN,The run,La partida
+UI_ACH_GROUP_BOSSES,Bosses,Jefes
+UI_ACH_GROUP_BIOMES,Biomes,Biomas
+UI_ACH_GROUP_BUILD,The wand,La varita
+UI_ACH_GROUP_COMBAT,Combat,Combate
+UI_ACH_GROUP_RISK,Risk and reward,Riesgo y recompensa
+UI_ACH_GROUP_CODEX,The Codex,El Códice
+UI_ACH_GROUP_ASCENSION,Ascension,Ascensión
+ACH_CLEAR_FLOOR_1_NAME,First Steps Down,Primeros pasos
+ACH_CLEAR_FLOOR_1_DESC,Clear floor 1: take its portal.,Supera el piso 1: cruza su portal.
+ACH_CLEAR_FLOOR_2_NAME,Halfway Down,A medio camino
+ACH_CLEAR_FLOOR_2_DESC,Clear floor 2.,Supera el piso 2.
+ACH_WIN_RUN_NAME,Bottom of the World,El fondo del mundo
+ACH_WIN_RUN_DESC,Win a run: beat the last floor's boss.,Gana una partida: derrota al jefe del último piso.
+ACH_WIN_GUN_NAME,Steady Aim,Pulso firme
+ACH_WIN_GUN_DESC,Win a run with the Gun.,Gana una partida con la pistola.
+ACH_WIN_BLADE_NAME,Clean Cut,Corte limpio
+ACH_WIN_BLADE_DESC,Win a run with the Blade.,Gana una partida con la hoja.
+ACH_WIN_5_NAME,Old Hand,Veterano
+ACH_WIN_5_DESC,Win 5 runs.,Gana 5 partidas.
+ACH_BOSS_NAME,Victory: %s,Victoria: %s
+ACH_BOSS_DESC,Defeat this boss: %s.,Derrota a este jefe: %s.
+ACH_BOSSES_ALL_NAME,Monster Hunter,Cazamonstruos
+ACH_BOSSES_ALL_DESC,Defeat every boss at least once.,Derrota a cada jefe al menos una vez.
+ACH_BIOME_NAME,Footprints: %s,Huellas: %s
+ACH_BIOME_DESC,Enter a floor of this biome: %s.,Entra en un piso de este bioma: %s.
+ACH_BIOMES_ALL_NAME,World Walker,Trotamundos
+ACH_BIOMES_ALL_DESC,Enter a floor of every biome.,Entra en un piso de cada bioma.
+ACH_WAND_FULL_NAME,Full Wand,Varita completa
+ACH_WAND_FULL_DESC,Hold 8 cards in your wand.,Lleva 8 cartas en tu varita.
+ACH_CARD_LEVEL_5_NAME,Mastered,Maestría
+ACH_CARD_LEVEL_5_DESC,Raise a card to level 5.,Sube una carta al nivel 5.
+ACH_TRIGGER_KILL_NAME,Chain Reaction,Reacción en cadena
+ACH_TRIGGER_KILL_DESC,Kill an enemy with a child spell: one a trigger card or a split casts.,Mata a un enemigo con un hechizo hijo: el que lanza una carta disparadora o una división.
+ACH_TRIGGER_KILLS_100_NAME,Clockwork,Mecanismo de relojería
+ACH_TRIGGER_KILLS_100_DESC,Kill 100 enemies with child spells.,Mata a 100 enemigos con hechizos hijos.
+ACH_KILLS_1_NAME,First Blood,Primera sangre
+ACH_KILLS_1_DESC,Kill an enemy.,Mata a un enemigo.
+ACH_KILLS_100_NAME,Culling,Escabechina
+ACH_KILLS_100_DESC,Kill 100 enemies.,Mata a 100 enemigos.
+ACH_KILLS_1000_NAME,Legion's End,El fin de la legión
+ACH_KILLS_1000_DESC,"Kill 1,000 enemies.",Mata a 1.000 enemigos.
+ACH_NO_HIT_ROOM_NAME,Untouched,Intacto
+ACH_NO_HIT_ROOM_DESC,Clear a sealed room without losing any HP.,Supera una sala sellada sin perder vida.
+ACH_SEALED_ROOMS_10_NAME,Gatecrasher,Revientapuertas
+ACH_SEALED_ROOMS_10_DESC,Clear 10 sealed rooms.,Supera 10 salas selladas.
+ACH_OVERRUN_CLEARED_NAME,Hold the Line,Resistir el asedio
+ACH_OVERRUN_CLEARED_DESC,Clear an Overrun room.,Supera una sala de Asedio.
+ACH_CURSED_CARD_NAME,Devil's Bargain,Pacto con el diablo
+ACH_CURSED_CARD_DESC,Take a cursed chest's card.,Toma la carta de un cofre maldito.
+ACH_CORE_STOLEN_NAME,Heist,Golpe maestro
+ACH_CORE_STOLEN_DESC,Steal a core from an elite or a boss.,Roba el núcleo de un élite o de un jefe.
+ACH_SHARDS_500_NAME,Big Spender,A lo grande
+ACH_SHARDS_500_DESC,Spend 500 shards in shops.,Gasta 500 fragmentos en tiendas.
+ACH_CODEX_GUN_NAME,Gunsmith's Ledger,Libro del armero
+ACH_CODEX_GUN_DESC,See every card of the Gun pool in the Codex.,Descubre en el Códice todas las cartas del mazo de la Pistola.
+ACH_CODEX_BLADE_NAME,Bladesmith's Ledger,Libro del espadero
+ACH_CODEX_BLADE_DESC,See every card of the Blade pool in the Codex.,Descubre en el Códice todas las cartas del mazo de la Espada.
+ACH_CODEX_TRIGGERS_NAME,Every Trigger,Todos los disparadores
+ACH_CODEX_TRIGGERS_DESC,See every trigger card in the Codex.,Descubre en el Códice todas las cartas disparadoras.
+ACH_CODEX_ENEMIES_NAME,Field Guide,Guía de campo
+ACH_CODEX_ENEMIES_DESC,Meet every enemy.,Encuentra a todos los enemigos.
+ACH_ASCEND_1_NAME,Ascension,Ascensión
+ACH_ASCEND_1_DESC,Take the Ascension portal and start a new loop.,Toma el portal de la Ascensión y empieza un nuevo ciclo.
+ACH_ASCEND_5_NAME,Endless,Sin fin
+ACH_ASCEND_5_DESC,Ascend 5 times.,Asciende 5 veces.
+HUD_LOOP,Loop %d,Ciclo %d
+HUD_ASCENSION_OPEN,The Ascension portal is open. Walk into the light to end the run or Ascend.,El portal de la Ascensión está abierto. Entra en la luz para terminar la partida o ascender.
+UI_ASCEND_TITLE,Ascension,Ascensión
+UI_ASCEND_LINE,"The last boss has fallen. End the run here, or Ascend: start again from floor 1 with everything you carry.","El último jefe ha caído. Termina la partida aquí o asciende: vuelve a empezar desde el piso 1 con todo lo que llevas."
+UI_ASCEND_END,End the run,Terminar la partida
+UI_ASCEND_END_LINE,A victory: the run ends and its recap shows.,Una victoria: la partida termina y se muestra su resumen.
+UI_ASCEND_GO,Ascend,Ascender
+UI_ASCEND_GO_LINE,"Loop %d: new biomes, stronger enemies, more threat. Your wand, cards, levels and stats come with you.","Ciclo %d: biomas nuevos, enemigos más fuertes, más amenaza. Tu varita, cartas, niveles y estadísticas vienen contigo."
+UI_ASCEND_NOT_YET,Not yet,Todavía no
+UI_ASCEND_NOT_YET_LINE,Step back and keep exploring the floor.,Retrocede y sigue explorando el piso.
+UI_ASCEND_HINT,↑/↓ or 1-3 to choose · Enter or A to take · Esc or B: not yet,↑/↓ o 1-3 para elegir · Intro o A para aceptar · Esc o B: todavía no
+UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
+UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
+UI_UI_SCALE,Interface size,Tamaño de la interfaz
+UI_OPT_90,90 %,90 %
+UI_OPT_110,110 %,110 %
+UI_SHOW_HINTS,Show hints,Mostrar consejos
+UI_RESET_HINTS_LABEL,First-run hints,Consejos de la primera partida
+UI_RESET_HINTS,Reset hints,Reiniciar consejos
+UI_HINTS_RESET_DONE,They will show again,Volverán a mostrarse
+HINT_HEADER,TIP,CONSEJO
+HINT_MOVE,Move with %s · aim with %s,Muévete con %s · apunta con %s
+HINT_MOUSE,the mouse,el ratón
+HINT_PAD_LEFT_STICK,Left stick,Stick izquierdo
+HINT_PAD_RIGHT_STICK,the right stick,el stick derecho
+HINT_ATTACK,Attack with %s,Ataca con %s
+HINT_DASH,Dash with %s to get out of danger,Usa el impulso con %s para salir del peligro
+HINT_VENT,Your heat is high: %s vents it in a blast around you,Tu calor está alto: %s lo purga en una explosión a tu alrededor
+HINT_PICK,"Each card joins your wand, which reads left to right","Cada carta va a tu varita, que se lee de izquierda a derecha"
+HINT_BUILD,"Reorder your wand any time: %s, then Build",Reordena tu varita cuando quieras: %s y luego Construcción
+HINT_TRIGGER,"A trigger card casts the cards to its right as a small spell (On Hit, On Kill …)","Una carta disparadora lanza las cartas a su derecha como un pequeño hechizo (Al Impactar, Al Matar …)"
+HINT_SHOP,"The shop: buy cards with shards, or sell the ones you don't need",La tienda: compra cartas con fragmentos o vende las que sobren
+HINT_PORTAL,The portal is open: step in to leave the floor,El portal está abierto: entra para salir del piso
+HINT_CODEX,"Everything you meet goes into the Codex: %s, then Codex",Todo lo que encuentras va al Códice: %s y luego Códice
+UI_CREDITS_ASSETS,"Art, models and sound","Arte, modelos y sonido"
+UI_CREDITS_FONT,Font,Fuente
+UI_CREDITS_ADDON,Addon,Complemento
+UI_CREDITS_NOT_SHIPPED,(a development tool: not shipped in the game),(una herramienta de desarrollo: no se incluye en el juego)
+UI_PLAYGROUND,Playground,Zona de pruebas
+UI_PG_TITLE,Playground,Zona de pruebas
+UI_PG_F1_HINT,F1: Playground panel,F1: panel de la zona de pruebas
+UI_PG_CLOSE,Close (F1),Cerrar (F1)
+UI_PG_TAB_BUILD,Build,Build
+UI_PG_TAB_SPAWN,Spawn,Aparecer
+UI_PG_TAB_BIOME,Biome,Bioma
+UI_PG_TAB_PLAYER,Player,Jugador
+UI_PG_LEVEL,Level,Nivel
+UI_PG_SEARCH,Search cards…,Buscar cartas…
+UI_PG_ADD,Add at level,Añadir con nivel
+UI_PG_WEAPON,Change weapon,Cambiar arma
+UI_PG_YOUR_BUILD,Your build (double-click to remove),Tu build (doble clic para quitar)
+UI_PG_REMOVE,Remove,Quitar
+UI_PG_SPAWN_HINT,Left-click the floor to use the tool. Right-click anything to delete it.,Clic izquierdo en el suelo para usar la herramienta. Clic derecho sobre algo para borrarlo.
+UI_PG_TOOL_DUMMY,Dummy (never dies),Muñeco (nunca muere)
+UI_PG_TOOL_DUMMY_HP,Dummy with HP,Muñeco con vida
+UI_PG_TOOL_ENEMY,Enemy,Enemigo
+UI_PG_TOOL_BOSS,Boss,Jefe
+UI_PG_TOOL_DELETE,Delete,Borrar
+UI_PG_CLEAR_ENEMIES,Clear enemies and bosses,Quitar enemigos y jefes
+UI_PG_CLEAR_ALL,Clear everything,Quitarlo todo
+UI_PG_GOD,God mode,Modo dios
+UI_PG_HEAL,Full heal,Curar del todo
+UI_PG_DPS_RESET,Reset DPS meter,Reiniciar medidor de DPS
+UI_PG_DPS_SHOW,Show DPS meter,Mostrar medidor de DPS
+UI_PG_GROUP_WAND,Wand cards,Cartas de varita
+UI_PG_GROUP_ABILITY,Abilities,Habilidades
+UI_PG_GROUP_ABILITY_MOD,Ability mods,Mejoras de habilidad
+UI_PG_GROUP_PASSIVE,Passives,Pasivas
+UI_PG_GROUP_STAT,Stat cards,Cartas de estadística
+UI_PG_RARITY_0,Common,Común
+UI_PG_RARITY_1,Rare,Rara
+UI_PG_RARITY_2,Epic,Épica
+UI_PG_RARITY_3,Legendary,Legendaria
+UI_PG_LV,Lv %d,Nv %d
+UI_PG_ADDED,Added: %s,Añadida: %s
+UI_PG_DPS_TITLE,DPS meter,Medidor de DPS
+UI_PG_DPS_RECENT,DPS (last 5 s),DPS (últimos 5 s)
+UI_PG_DPS_AVERAGE,Avg,Media
+UI_PG_DPS_TOTAL,Total,Total
+UI_PG_DPS_TIME,Time,Tiempo
+UI_PG_DPS_MORE,… and %d more,… y %d más
+UI_PG_SRC_BASIC,Basic attack,Ataque básico
+UI_PG_SRC_OTHER,Other (%s),Otro (%s)
+UI_PG_SRC_BLEED,Bleed,Sangrado
+UI_PG_SRC_SHOCK,Shock,Choque
+UI_PG_SRC_FROST,Frost,Escarcha
+UI_PG_SRC_POISON,Poison,Veneno

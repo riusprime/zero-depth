@@ -105,3 +105,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`.
   "an older save keeps its pick order" still expected Serrated Edge to wait for S5 (in the data since the merge);
   the test now uses Shatter (no wand row) for the refund; `test_wand.gd` 16/16. The every-card soak:
   `SOAK| kills=265 events=6696 most_in_a_tick=188 limits=0`. MIN_TEST_COUNT 1550 → 1598. Pushed; the PR into `main`.
+- 2026-10-13: PR riusprime/zero-depth#5 into `main`: GitHub `verify` green on `6381fcb` (23:04 → 00:14 UTC); merged by
+  the lead as the owner asked ("you push it and merge the PR into main"), merge commit `a20850f`.

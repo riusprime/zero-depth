@@ -178,6 +178,23 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   `CoreTheft.on_elite`, `on_boss`) and `loot:event` (the cursed chest's roll and its trade-off curse; a core redrawn at
   its drop when its card no longer applies; Marked's rare card from a slain elite). Cores exist only in worlds with
   the event streams (`World.ev.rng_elite`), so older worlds draw nothing new.
+- **v0.7.5 NB1** adds the sub-stream `map:ice`, derived the same way from the floor seed (`World.seed_value`), like
+  `map:overrun` and `map:event`: Frozen Shore's ice patches (`IcePatches.lay`, a pure function of the layout, the
+  walls and the seed; every room draws its chance and count, so skipping one room never shifts another). No other
+  stream draws more, and floors of other biomes draw nothing. The ice (`World.ice`, an `IceField`) is loadout: laid
+  at setup, never written in play, kept from the base on restore (`WorldSnapshot.WORLD_KEPT`) and not hashed (like
+  the layout); its effect is: while the hero's position at the start of the move is on a patch, the hero eases with
+  the ice's `accel_permille` / `decel_permille` instead of the player's own (a slide). The dash, skills and enemies
+  are unchanged on ice. EI-05's list names the streams of LOCKED_DECISIONS; `map:ice` is a sub-stream of `map` the
+  way `map:overrun` is (flagged for the owner in the v0.7.5 PLAN).
+- **v0.7.5 NB2** adds the sub-stream `map:starglow` the same way (`IcePatches.stream_of(kind)`: `map:<kind>`; ice
+  keeps `map:ice`): Starfall's starglow pools, laid by the same `IcePatches.lay` rules into the same `World.ice`
+  (an `IceField` whose `kind` is `&"starglow"`; a floor has one surface at most). Its effect: while the hero's
+  position at the start of the move is on a pool, the hero's target walking velocity is scaled by the field's
+  `speed_permille` (1250: a quarter faster) and they ease with its `accel_permille` / `decel_permille` (Starfall:
+  0.1 s up, 0.2 s down, a short drift). Ice's `speed_permille` is 1000, and at 1000 the scale is skipped, so the
+  target is untouched and Frozen Shore plays exactly as in NB1. Loadout, not hashed, kept on restore, like the ice; dash, skills and enemies
+  unchanged. Not in EI-05's list either (flagged with `map:ice`).
 - **Per-room streams.** Each room derives its own `combat:room:k` and `ai:room:k` streams from the run seed and
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
@@ -1026,6 +1043,109 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   from `rng_enemy`) in the middle of its band (`pick` = 1), and shoots again only once there (within 0.5 m) or after
   150 ticks.
 
+## 10d. Dodge-first boss fights (v0.7.5 BF1; owner N15, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md))
+
+Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `data/bullet_patterns` and
+`data/bosses` the numbers.
+- **Bullet patterns.** A `pattern` attack fires its `BulletPatternTable` over its active time from the boss's body
+  (`BossDodge.resolve_pattern`, tick phase 6). On each wave tick (`BulletPatterns.wave_at`: the lob, then every
+  `wave_gap_ticks`), `BulletPatterns.wave_shots(pattern, wave, origin, aim, origin_r)` gives the wave's spawn points
+  and velocities: a pure function of its arguments (no stream is drawn; angles in 1/4096 turns through `Kin`, a
+  flower's rose a `Kin.dir` lookup), so the shape a test or view computes is the shape fired. Kinds: ring (count,
+  gaps, turn per wave), spiral (arms, spin, reverse), fan (count, spread, alternate offset), cross (arms, spin), wall
+  (a marching line with a bouncing gap; crossing), flower (petal speeds, cut gaps) and burst (a lobbed shell that
+  lands on the attack's locked target as a hurting disc, then a star). The aim is the attack's `lock_a`, tracked
+  until it commits like any aimed attack.
+- **Fair.** A shot whose spawn point is within `safe_radius_m` + the player's radius of the player, or touches a wall,
+  is left out. Shots are ordinary hostile projectiles (`World.queue_projectile`, TAG_PROJECTILE, the attack's damage
+  × the boss's power, no bounces), so they stop at walls and hit once. At most `MAX_SHOTS_PER_TICK` (160) are queued
+  in a tick (`World.pending_projectiles`) and `MAX_ALIVE` (900) projectiles live; past either the wave's other shots
+  are dropped with one `LIMIT` event (`effect_id` `bullet_cap`). Every shipped pattern keeps a gap the hero fits
+  (the content validation and `test_bullet_patterns.gd`). One attack at a time per boss, so a pattern never starts
+  while that boss's marker is locking.
+- **Fireball looks.** Each shot carries its pattern's `look` (`ProjectileStore.look`, `WorldReader.projectile_look`;
+  the column fills the first time a fireball flies and is hashed only then, so a world that never fired one hashes
+  as before). An old save lacks it: none.
+- **Tracked, then locked.** An attack with `lock_ticks` (from `lock_seconds`) aims at the player's exact position
+  (`BossAi._target`, no lead and no dash read) and tracks until its windup's last `lock_ticks`, then holds. The
+  `marks` and `row_lanes` moves lay `count` markers `mark_gap_ticks` apart: marker k starts at k × gap, sits on the
+  player's position (BossStore points, set in phase 3 from the position before this tick's move) until
+  k × gap + windup − lock, holds, and strikes once at k × gap + windup (active tick k × gap), where it locked
+  (`BossDodge.mark_of`, `row_lanes_of`: one shape function each, drawn and hit alike). Each marker may hit (the
+  hurt iframes still apply). A telegraph with a lock carries `tracked` and `locked` (the view: a dull outline, then a
+  bright flash). Applied to the Gatekeeper's Fist Slam (1/2/3 circles by phase) and Shock Lanes (row and column) and
+  the Warlord's Spear Lines (flood), Lunge (charge) and Javelin Rain (barrage); 0.8 s each. v0.7.5 BF3: the Siege
+  Engine's Barrage (marks), Mortar Grid (grid) and Rail (lanes), the Foundry's Molten Flood (row_flood) and Firestorm
+  (flood).
+- **Shielded signature.** While a `shielded` attack winds up or runs (`BossDodge.shielded`,
+  `WorldReader.boss_shielded`), a hit on the boss emits its `HIT` with `TAG_BLOCKED` and deals nothing; damage over
+  time does nothing; the world's own hits (owner 0, the dev panel's Kill boss) pass. It opens between patterns (the
+  Gatekeeper's Rock Rings and the Warlord's Shield Wall open the weak point when they end). The 66 / 33 % gates stay.
+- **Reads for the views and avatars.** `WorldReader.boss_shielded(i)`, `boss_pattern(i)` (`{}` or id, kind, look,
+  shielded, winding, progress), `projectile_look(i)`, `MOVE_PATTERN` / `MOVE_MARKS` / `MOVE_ROW_LANES`.
+- **Big boss rooms (owner N18).** Every boss's room is 4 x 4 and its body 1.3x (data). `RunState.FLOOR_RULES` is 3;
+  a floor resumed from a payload with rules 1 or 2 rebuilds its boss room at `legacy_arena_cells`
+  (`RunState.legacy_boss_room`, `RunSaver.boss_arena`), so the snapshot fits the floor it was saved on.
+- **Hashing.** The patterns and the lock add no state: markers use the BossStore points, patterns the attack's clock;
+  only the fireballs' look column is new (above). The kernel replay golden is boss-free.
+- **v0.7.5 BF2: eggs and a tracked burrow.** A `marks` attack with a pattern (the Brood Mother's Egg Storm) fires it
+  from each circle as it strikes (`BossDodge.burst_mark`): `local` ticks after circle k struck, wave
+  `wave_at(pattern, local + lob)` fires from the circle's centre, `egg_r` (half its radius) out, aimed at the
+  player's position then (the pattern's aim offset puts the player in a gap), under the same fairness and caps. While
+  a circle is locked its telegraph item carries `lob` (from the boss to the circle; the view's egg). A `burrow` with
+  a lock (`BossDodge.tracked_burrow`) keeps BossStore point 0 on the player's exact position from its windup's end
+  through `track_ticks` (the telegraph: a tracked `disc`), then locks it (`lock_x/y`), burrows to it at its speed while
+  the circle is locked for `erupt_ticks`, erupts there (the disc), and fires its pattern from it over
+  `BossDodge.eruption_ticks` before it finishes. No new state: the points, the lock and the attack's clock.
+  The Hive Lens's Focus Beam is `lanes` with a lock (no new rule).
+- **v0.7.5 BF2 fix: readable patterns and their recap.** A pattern attack's telegraph is its cast for its whole
+  windup and firing (`BossDodge.cast_telegraph`: `{"shape": &"cast", "ground": false, "progress", "move", "look"}`;
+  a burst's landing disc until it lands, then the cast). Nothing is drawn on the ground; the avatar poses from it. So
+  every wave's shots come from a cast visible for at least the windup (>= `MIN_TELEGRAPH_TICKS`), which the
+  readable-cause check reads. A boss's fireball carries the attack that fired it (`ProjectileStore.cause`, filled
+  the first time a boss's fireball flies and hashed only then; -1 for others); a shot that kills the player sets
+  `World.killer_attack` to it, so the recap names that pattern, not the boss's attack at the time of death.
+
+## 10e. Enemy fireballs (v0.7.5 EF; owner N16, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md) "Normal enemies")
+
+Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds the rules.
+- **Who.** The Arc Caster's bolt and spread (a fan of 3 slow plasma balls, narrow and wide), the Lens Drone's attack
+  (a ring of 6 orbs; it still flies the Needle's walk) and the Bomb Drone's bomb (a lobbed fireball that bursts into an
+  X of 4). The Needle's burst, the Sniper's line, the melee kinds' attacks, the Arc Caster's rune, the Mine Layer and
+  the Mender are unchanged. Elites of the three kinds (the Ambush Cache, Marked) fire the same patterns: an elite is
+  its kind's AI.
+- **How.** `EnemyAi.pattern_of(w, i)` is the pattern in play (`EnemyTable.patterns`: the Arc Caster's by its spell,
+  the others' first; null otherwise). The windup aims as before (tracked, committing `ai_commit_ticks` before it
+  fires), led at the pattern's own speed; the Bomb Drone's landing is the player's exact position (no lead), tracked
+  the same way, its X turned to the throw (`lock_a`). In ACTIVE, `_resolve_pattern` (tick phase 6) fires each wave on
+  `BulletPatterns.wave_at` ticks through `BulletPatterns.fire` (the caps, no spawn on the player or in a wall, shots
+  stop at walls), from the body, or for the BURST from the landing point once it has flown `lob_ticks`, where the
+  landing itself hurts within `land_radius_m` (TAG_AREA). ACTIVE lasts until the pattern's last wave. No stream is
+  drawn by a pattern (the windup's length draw is the same as before).
+- **Damage and scaling.** Each fireball (and the landing) deals the attack's `damage` (RunState's per-floor and loop
+  scaling of `EnemyTable.damage`), powered by the danger tier and the hidden catch-up (`EnemyAi.powered`,
+  `ActorStore.power`), as every enemy hit.
+- **Nothing on the ground.** Their `telegraph()` is `{"shape": &"cast", "ground": false, "progress", "look"}` in the
+  windup and, for the Bomb Drone in the air, `{"shape": &"lob", "ground": false, "from", "to", "progress", "look"}`.
+  TelegraphViews draws no `ground: false` telegraph; the bodies' own windups (the caster's crystal, the drones' glow)
+  and FireballViews' lobbed ball are the cues. The readable-cause check counts the windup (the shots then fly
+  slowly on screen).
+- **Hashing.** No new state: the patterns use the actor's own clock and lock fields; the fireballs' look column
+  (§10d) fills the first time one flies. `tests/golden` is unchanged (its replays have no Arc Caster, Lens Drone or
+  Bomb Drone shot).
+- **v0.7.5 BF3: the board, the molten rows and the rain.** `grid`: the board's centre (BossStore point 0) tracks the
+  player's exact position like any locked attack and holds at windup − lock; volley k strikes once at active tick
+  k × `mark_gap_ticks` on the circles of `BossDodge.grid_discs(w, i, k)` (the cells whose (x + y) parity is k's,
+  centred cells' centres clear of walls; drawn and hit alike), each volley may hit; the telegraph (`&"marks"`, one
+  disc item per circle) shows volley 0 for the whole windup and each later one only for its lock
+  (`BossDodge.grid_state`). `row_flood`: `BossDodge.row_flood_of(w, i, k)` (lanes along x through point 0, offset
+  `gap_m` in y, cut by walls) tracked then locked, then standing and burning like `flood` (`burn_ticks`). A raining
+  flower (`BulletPatternTable.rain_ticks` > 0, also its `lob_ticks`): wave k's drops are thrown at active tick
+  k × `wave_gap_ticks` and land (`fire()`, with its fairness rules: none on the player or in a wall) `rain_ticks`
+  later at `wave_shots`' points, `rain_m` × the petal's share out from the body's edge; in the air they are only a
+  read (`BossDodge.rain_drops`, `WorldReader.boss_rain(i)`: from, to, progress) and hurt nothing. No new state is
+  hashed. `MOVE_GRID` / `MOVE_ROW_FLOOD` for the views.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×
@@ -1187,6 +1307,55 @@ rule (a windup of at least 24 ticks, the drawn shape is the hit) and has a recap
   (`Rewards.arena_first`); a reward in an uncleared arena is locked (`Arenas.locked`; `Rewards.nearest` skips it).
   `ArenaState` is hashed once an arena sealed and is snapshotted (STATE_CLASSES); a restore rebuilds only the wall
   grid for the barriers.
+- **Floor rules (v0.7.5 MG; owner N9-N12).** A floor is 15-19 rooms before the boss room (16-20 with it; was 10-12),
+  footprints up to the extra-large 4×4, on a span of 11 cells (`FloorParams`, from `data/map` through
+  `RunContentCompiler.compile_map`; the same `map` stream draws, in the same order). The arena share is 0.11 (was
+  0.33): with the Overrun room a floor averages 2.4 challenge rooms (was 3.2). Two features follow a floor cadence,
+  `FloorCadence.on(floor, first, every)`: a pure function of the run's floor number (counted from 1, and on past the
+  run's last floor for an endless loop), no draw. The shop stands on `ShopTable.on_floor` floors (1, 3, 5 …;
+  `FloorScenario.add_shop` places nothing on the others). Chests roll the cursed offer only on
+  `EventRules.curse_floor` floors (1, 3, 5 …) and while `EventState.cursed_rolled` (hashed with the event state,
+  snapshotted; a pre-MG snapshot restores it as 0) is under `cursed_chests_per_floor` (1): at most one cursed chest
+  every two floors; the 25 % draw on `loot:event` is taken first, so the stream only moves where a chest is refused.
+  A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's rules (`RunState.floor_rules`).
+- **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
+  run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
+  boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that
+  floor). It opens with the boss's death like any gate (`PORTAL_OPENED`). In state `OPEN`, standing in its opening sets
+  `BossFlow.ascend_open` unless `ascend_declined`; leaving the opening clears `ascend_declined`. While `ascend_open`
+  the world waits (`World.step`, beside the shop's and the event panel's waits: only the pick runs, the tick counts).
+  The pick (`InputFrame.pick`): `Ascension.PICK_END` (1) or `PICK_ASCEND` (2) call `BossFlow.enter_ascension`
+  (`ascend_choice` = `Ascension.Choice.END` 1 / `ASCEND` 2, state `ENTERING`, `route_taken` `NORMAL`, `FLOOR_EXIT`
+  amount 0, then the usual transit); `PICK_CANCEL` is Not yet (`ascend_open` false, `ascend_declined` true); any
+  other pick is ignored. `WorldReader.outcome` on an exited Ascension floor: 1 (won) for End, 3 (next floor) for
+  Ascend. `BossFlow` hashes `1, ascend_open, ascend_declined, ascend_choice` after its RT fields only when
+  `ascension` (every other floor hashes as before).
+  - **Floor numbers.** `RunState.floor_index` stays the floor within the loop (1..`floors`): the per-floor tables,
+    boss pools, curves, arena wave sizes, prices and reward scaling read it (`World.floor_index`).
+    `RunState.run_floor(f) = loop_floors + f` counts the run's floors across loops: the floor seeds
+    (`floor_<run floor>`), the boss drawn (`boss_<run floor>`), `routes` (one entry per run floor) and Deep, the biome
+    order (one entry per run floor), the boss's floor-1 ease and the boss-room heal (only the run's first floor), and,
+    through `World.run_floor` / `run_floor_index()` (0 outside a run: `floor_index`), `FloorCadence`'s shop
+    (`FloorScenario.add_shop`) and cursed-chest floors (`Curses.curse_floor_open`) and `Wand.slots`. So shops and
+    curses keep "every two floors" across a loop's seam (run floors 1, 3, 5 …: loop 2's floor 2 when floors = 3) and a
+    wand never shrinks.
+  - **Ascend** (`RunState.finish_floor` when `Ascension.ascended(w)`): totals and the carry as through any portal
+    (`RunCarry`: the build, the 40 % heal, half the shards), then `loop_floors += floor_index`, `loop += 1`,
+    `floor_index = 1`, and the next loop's biomes are drawn: every biome of the run's list shuffled from the stream
+    `biomes_loop_<loop>` (a sub-stream of the run seed like `biomes`), appended for the loop's floors; its first floor
+    never repeats the floor before it (swap with the second when it would).
+  - **Harder each loop** (data, `RunDefinition` → `RunTable`): `RunState.loop_permille(step)` = 1000 × (step / 1000)
+    ^ (loop − 1), computed by repeated integer multiplication and capped at `loop_scale_cap_permille` (EI-02: no
+    `pow`). Normal enemies' HP and damage per mille × `loop_enemy_hp_permille` / `loop_enemy_damage_permille`'s loop
+    factor (`scale_enemies`, after the floor and Deep factors: one more `SpawnTable.scale` each); bosses' HP and
+    attack damage × `loop_boss_hp_permille` / `loop_boss_damage_permille`'s (`scale_bosses`, integer division).
+    `prepare` sets `World.loop`, `World.run_floor`, `World.loop_threat` = `loop_threat` × (loop − 1) (added to
+    `Curses.threat`, so it shows as T and raises the catch-up caps through `threat_cap`) and `World.loop_cap_permille`
+    = `loop_catch_up_cap_permille` × (loop − 1), added to both catch-up caps (`CatchUp.start_floor`, `on_boss`).
+    World hashes `loop, run_floor, loop_threat, loop_cap_permille` (after the run-flow fields) only when loop > 1.
+  - **Saves.** `WorldSnapshot` copies the new World and BossFlow fields; a snapshot without them (any save before AP)
+    keeps the base world's (`ADDED_SINCE_V05`: loop 1, or the Ascension portal on an old save's last floor, from
+    `prepare`). The run payload's `loop` / `loop_floors` (ARCHITECTURE §10) default to 1 / 0.
 - **The boss's legendary altar (v0.5.5 AR, owner X1b; `BossReward`).** Tick phase 9 after the boss flow: the tick
   `BossFlow.opened_tick` is set (the boss died) and the loadout has a `LegendaryTable`, a free
   `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it

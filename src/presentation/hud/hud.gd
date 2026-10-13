@@ -59,6 +59,8 @@ var shop := ShopHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 var swap := SwapPanel.new()
+## v0.7.5 AP: the Ascension portal's choice (End the run, Ascend, Not yet).
+var ascension := AscensionPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -103,6 +105,10 @@ var _vignette := LowHpVignette.new()
 var _top_frame := HudFrame.new(Vector2(20, 8))
 var _hp_frame := HudFrame.new(Vector2(16, 10))
 var _t := 0.0
+## P-7: what each per-tick label last rendered from (slot -> value), so an unchanged one skips its format and its
+## theme override; cleared on a language switch.
+var _shown := {}
+var _shown_locale := ""
 
 
 func _init() -> void:
@@ -167,47 +173,68 @@ func _init() -> void:
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
+	add_child(ascension)  # v0.7.5 AP: the Ascension portal's choice; its answer is input, like a pick
+	ascension.picked.connect(_pick.picked.emit)
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
 
 
 func sync(reader: WorldReader) -> void:
+	var locale := TranslationServer.get_locale()
+	if locale != _shown_locale:  # P-7: words again in a new language
+		_shown_locale = locale
+		_shown.clear()
 	var hp := reader.player_hp()
 	var mx := maxi(1, reader.player_max_hp())
 	_hp_bar.set_fraction(float(hp) / mx)
-	_hp_text.text = tr("HUD_HP") % [hp, mx]
 	var low := HudStyle.low_hp(hp, mx)
 	_hp_bar.warn = low
 	_vignette.active = low
-	_hp_text.add_theme_color_override("font_color", HudStyle.WARN if low else HudStyle.text_color())
+	var hp_color := HudStyle.WARN if low else HudStyle.text_color()
+	if _changed(&"hp", [hp, mx, hp_color]):
+		_hp_text.text = tr("HUD_HP") % [hp, mx]
+		_hp_text.add_theme_color_override("font_color", hp_color)
 	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.fraction(), _hp_bar.size.y))
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
-		(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
+		if _changed(&"util", &"UTIL_BLINK"):
+			(_util.get_child(1) as Label).text = tr("UTIL_BLINK")
 		_set_pip(_util, reader.blink_cooldown(), reader.blink_cooldown_total())
 	elif reader.has_guard():
-		(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
+		if _changed(&"util", &"UTIL_GUARD"):
+			(_util.get_child(1) as Label).text = tr("UTIL_GUARD")
 		_set_pip(_util, 0, 1, reader.guarding())
 	_util.visible = reader.has_blink() or reader.has_guard()
 	if reader.has_floor():
 		var secs := int(reader.run_seconds())
-		_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
+		if _changed(&"wave", [&"HUD_TIME", secs]):
+			_wave.text = tr("HUD_TIME") % [secs / 60, secs % 60]
 		_danger.set_danger(reader.tier(), reader.tier_progress())
-		_left.text = tr("HUD_KILLS") % reader.kills()
+		var kills := reader.kills()
+		if _changed(&"left", [&"HUD_KILLS", kills]):
+			_left.text = tr("HUD_KILLS") % kills
 		_sync_items(reader)
 		_sync_combos(reader)
 	else:
-		_wave.text = tr("HUD_WAVE") % [maxi(reader.wave_number(), 1), reader.wave_count()]
-		_left.text = tr("HUD_ENEMIES") % reader.enemies_alive()
+		var wave := [&"HUD_WAVE", maxi(reader.wave_number(), 1), reader.wave_count()]
+		if _changed(&"wave", wave):
+			_wave.text = tr("HUD_WAVE") % [wave[1], wave[2]]
+		var alive := reader.enemies_alive()
+		if _changed(&"left", [&"HUD_ENEMIES", alive]):
+			_left.text = tr("HUD_ENEMIES") % alive
 	_danger.visible = reader.has_floor()
 	_gate.text = _gate_note(reader)
 	_floor.visible = reader.has_boss_room()
 	if _floor.visible:
 		var deep := reader.floor_is_deep()  # v0.5.0 RT: a Deep floor says so, in the Deep gate's violet
-		_floor.text = (
-			tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [reader.floor_index(), tr(_biome_key)]
-		)
-		if deep:
-			_floor.add_theme_color_override("font_color", DEEP_TEXT)
+		var floor_index := reader.floor_index()
+		var loop := reader.loop()
+		if _changed(&"floor", [floor_index, deep, _biome_key, loop]):
+			_floor.text = (
+				loop_prefix(self, loop)
+				+ tr("HUD_FLOOR_DEEP" if deep else "HUD_FLOOR") % [floor_index, tr(_biome_key)]
+			)  # v0.7.5 AP: "Loop 2 · Floor 1 · <biome>" past the first loop
+			if deep:
+				_floor.add_theme_color_override("font_color", DEEP_TEXT)
 	boss_bar.sync(reader)
 	heat_meter.sync(reader)
 	minimap.sync(reader)
@@ -222,6 +249,7 @@ func sync(reader: WorldReader) -> void:
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
 	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
+	ascension.sync(reader)  # v0.7.5 AP
 
 
 func _process(delta: float) -> void:
@@ -237,18 +265,19 @@ func _process(delta: float) -> void:
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
 		_floor_card.visible = _floor_card_left > 0.0
-	if _shard_pulse > 0.0:
+	if _shard_pulse > 0.0:  # P-7: at rest the box keeps scale 1 (the last step of a pulse writes it)
 		_shard_pulse = maxf(0.0, _shard_pulse - delta)
-	_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
+		_shard_box.scale = Vector2.ONE * (1.0 + 0.25 * _shard_pulse / SHARD_PULSE_S)
 
 
 ## Run flow: names the floor's biome (a locale key) and shows the floor-title card ("Floor 2 · Deep" on a Deep
 ## floor, v0.5.0 RT). v0.5.5 EC (owner Q-S4): `shards_lost` > 0 adds a line that the portal kept half your shards.
+## v0.7.5 AP: `loop` > 1 puts "Loop N · " before the card's title.
 func show_floor(
-	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0
+	floor_index: int, biome_key: String, deep: bool = false, shards_lost: int = 0, loop: int = 1
 ) -> void:
 	_biome_key = biome_key
-	_floor_card_args = [floor_index, deep, shards_lost]
+	_floor_card_args = [floor_index, deep, shards_lost, loop]
 	_word_floor_card()
 	_floor_card_shards.visible = shards_lost > 0
 	_floor_card_left = FLOOR_CARD_SECONDS
@@ -263,14 +292,29 @@ func _word_floor_card() -> void:
 	var floor_index: int = _floor_card_args[0]
 	var shards_lost: int = _floor_card_args[2]
 	var card_key := "HUD_FLOOR_CARD_DEEP" if _floor_card_args[1] else "HUD_FLOOR_CARD"
-	_floor_card_title.text = tr(card_key) % floor_index
+	_floor_card_title.text = loop_prefix(self, _floor_card_args[3]) + tr(card_key) % floor_index
 	_floor_card_biome.text = tr(_biome_key)
 	_floor_card_shards.text = tr("HUD_SHARDS_HALVED") % shards_lost if shards_lost > 0 else ""
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED:
+		_shown.clear()
 		_word_floor_card()
+
+
+## v0.7.5 AP: "Loop N · " (translated through `ci`) past the first loop; "" on loop 1, so a run that never ascended
+## reads as before.
+static func loop_prefix(ci: Object, loop: int) -> String:
+	return ci.tr("HUD_LOOP") % loop + " · " if loop > 1 else ""
+
+
+## P-7: true (and remembered) when `value` differs from what label `slot` last rendered from.
+func _changed(slot: StringName, value: Variant) -> bool:
+	if _shown.has(slot) and typeof(_shown[slot]) == typeof(value) and _shown[slot] == value:
+		return false
+	_shown[slot] = value
+	return true
 
 
 func floor_card_showing() -> bool:
@@ -381,6 +425,8 @@ func _gate_note(reader: WorldReader) -> String:
 			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
 				return ""
 			var open := tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
+			if reader.ascension_floor():  # v0.7.5 AP
+				open = tr("HUD_ASCENSION_OPEN")
 			return open + "\n" + tr("HUD_EXPLORE_AFTER_BOSS")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())
@@ -484,9 +530,7 @@ func _sync_rewards(reader: WorldReader) -> void:
 			_prompt.text = tr("REWARD_OPEN_CHEST") % price
 		else:
 			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
-		_prompt.add_theme_color_override(
-			"font_color", HudStyle.text_color() if reader.reward_affordable(i) else POOR
-		)
+		HudStyle.font_color(_prompt, HudStyle.text_color() if reader.reward_affordable(i) else POOR)
 	_pick.sync(reader)
 
 
@@ -502,11 +546,7 @@ func card_mode() -> StringName:
 
 ## The number of item icons in the carried row.
 func item_icon_count() -> int:
-	var n := 0
-	for c in _items.get_children():
-		if not c.is_queued_for_deletion():
-			n += 1
-	return n
+	return _items.get_child_count()
 
 
 ## The pickup whose item to preview: the nearest pedestal within `reach_m` of the player, or -1.
@@ -549,6 +589,7 @@ func _sync_items(reader: WorldReader) -> void:
 		return
 	_items_shown = owned.size()
 	for c in _items.get_children():
+		_items.remove_child(c)  # out of the row now: queue_free alone leaves it drawn and laid out this frame
 		c.queue_free()
 	for idx in owned:
 		var id := reader.item_id(idx)
@@ -574,11 +615,7 @@ func combo_card() -> ComboCard:
 
 ## The number of combo badges in the row.
 func combo_badge_count() -> int:
-	var n := 0
-	for c in _combos.get_children():
-		if not c.is_queued_for_deletion():
-			n += 1
-	return n
+	return _combos.get_child_count()
 
 
 ## v0.3.0 G: a combo that just unlocked shows its card; the badge row follows the combos owned.
@@ -604,6 +641,7 @@ func _sync_combos(reader: WorldReader) -> void:
 		return
 	_combos_shown = owned.size()
 	for c in _combos.get_children():
+		_combos.remove_child(c)
 		c.queue_free()
 	for c in owned:
 		var pair := reader.combo_item_ids(c)

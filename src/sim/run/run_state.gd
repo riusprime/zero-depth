@@ -4,6 +4,24 @@ extends RefCounted
 ## the `biomes` stream), each floor's seed (floor 1 uses the run seed, later floors one derived from it), the enemy
 ## scaling per floor, the carry between floors and the totals the recap shows. Pure sim code; the app owns one per
 ## run and builds a fresh World per floor.
+## v0.7.5 AP (owner N4, the Ascension loop): after the last floor's boss the Ascension portal ends the run or starts
+## loop + 1 at floor 1 with the build carried (finish_floor). `floor_index` stays the floor within the loop (1..
+## floors: the floor tables, boss pools, curves and prices read it); run_floor() counts the run's floors across
+## loops (the floor seeds, the bosses drawn, the routes, the biome order, the boss's floor-1 ease and FloorCadence's
+## shop and curse floors read it, so loop 2 is new ground and two featured floors never meet at a seam). Each loop
+## past the first scales enemies and bosses (loop_permille) and adds threat and catch-up cap (prepare).
+
+## v0.7.5 MG: the floor rules the current floor was built with. FLOOR_RULES (2): v0.7.5's bigger floors, fewer arenas,
+## the shop every two floors (data/map, data/arenas, data/shop). 1: v0.7.0's (FloorParams.v070(), a third of the
+## combat rooms as arenas, a shop on every floor), only for a floor resumed from a save made before v0.7.5 (its
+## payload has no floor_rules), so the floor rebuilt under its snapshot is the floor it was saved on. The next floor
+## is always built with FLOOR_RULES.
+## v0.7.5 BF1 (owner N18, "always put them in the big rooms"): 3 is today's, every boss room 4 x 4; a floor saved under
+## rules 1 or 2 rebuilds its boss room at the boss's legacy_arena_cells (legacy_boss_room), so it is the floor it was
+## saved on.
+const FLOOR_RULES := 3
+const FLOOR_RULES_V070 := 1
+const FLOOR_RULES_V075_MG := 2
 
 var run_seed := 0
 var table: RunTable
@@ -24,6 +42,12 @@ var build_id := &""
 var routes := PackedInt32Array([Routes.Route.NORMAL])
 ## v0.5.0 EV (M-THREAT): threat T at the end of each finished floor.
 var threat_by_floor := PackedInt32Array()
+## v0.7.5 MG: see FLOOR_RULES.
+var floor_rules := FLOOR_RULES
+## v0.7.5 AP: the loop (1 until the first Ascend) and the floors of the loops before it (run_floor()). A saved run
+## keeps both (RunSaver; a payload without them is loop 1).
+var loop := 1
+var loop_floors := 0
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -46,15 +70,51 @@ static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &
 	return r
 
 
-## The seed of floor f (1-based): the run seed on floor 1, then one derived from it per floor.
-func floor_seed(f: int = floor_index) -> int:
+## v0.7.5 AP: the run's floor number counted across loops (1-based): floor f of the current loop.
+func run_floor(f: int = floor_index) -> int:
+	return loop_floors + f
+
+
+## v0.7.5 AP: the next loop's biomes (N4, "new biomes drawn from all"): every biome of the run's list shuffled from
+## the stream `biomes_loop_<loop>`, appended for its floors; the loop's first floor never repeats the floor before it
+## (when there are two biomes or more).
+func _draw_loop_biomes() -> void:
+	var n := maxi(1, table.biome_count)
+	var order := PackedInt32Array()
+	for i in n:
+		order.append(i)
+	var rng := RngStream.derive(run_seed, "biomes_loop_%d" % loop)
+	for i in range(n - 1, 0, -1):
+		var j := rng.range_int(0, i)
+		var t := order[i]
+		order[i] = order[j]
+		order[j] = t
+	var last := biome_order[biome_order.size() - 1] if not biome_order.is_empty() else -1
+	if n > 1 and order[0] == last:
+		order[0] = order[1]
+		order[1] = last
+	for f in table.floors:
+		biome_order.append(order[f % n])
+
+
+## v0.7.5 AP: a loop factor per mille: `step` once per loop past the first, compounding, capped (1000 on loop 1).
+func loop_permille(step: int, p_loop: int = loop) -> int:
+	var m := 1000
+	for k in maxi(0, p_loop - 1):
+		m = mini(table.loop_scale_cap_permille, m * maxi(1000, step) / 1000)
+	return m
+
+
+## The seed of floor f (1-based): the run seed on floor 1, then one derived from it per floor. v0.7.5 AP: f is the
+## run's floor (run_floor()), so every loop's floors are new.
+func floor_seed(f: int = run_floor()) -> int:
 	if f <= 1:
 		return run_seed
 	return RngStream.derive(run_seed, "floor_%d" % f).next_u32()
 
 
-## The biome (an index into the run's biome list) of floor f.
-func biome_of(f: int = floor_index) -> int:
+## The biome (an index into the run's biome list) of floor f (v0.7.5 AP: the run's floor).
+func biome_of(f: int = run_floor()) -> int:
 	return biome_order[clampi(f - 1, 0, biome_order.size() - 1)]
 
 
@@ -62,17 +122,18 @@ func is_last_floor() -> bool:
 	return floor_index >= table.floors
 
 
-## v0.5.0 RT: floor f's route (Routes.Route; NORMAL past the floors reached) and whether it is Deep.
-func route_of(f: int = floor_index) -> int:
+## v0.5.0 RT: floor f's route (Routes.Route; NORMAL past the floors reached) and whether it is Deep. v0.7.5 AP: f is
+## the run's floor (run_floor()); routes holds one entry per floor of the run, across loops.
+func route_of(f: int = run_floor()) -> int:
 	return routes[f - 1] if f >= 1 and f <= routes.size() else Routes.Route.NORMAL
 
 
-func is_deep(f: int = floor_index) -> bool:
+func is_deep(f: int = run_floor()) -> bool:
 	return route_of(f) == Routes.Route.DEEP
 
 
-## Floor f's extra scaling in per mille: the Deep factor on a Deep floor, else 1000.
-func route_permille(f: int = floor_index) -> int:
+## Run floor f's extra scaling in per mille: the Deep factor on a Deep floor, else 1000.
+func route_permille(f: int = run_floor()) -> int:
 	return table.deep_scale_permille if is_deep(f) else 1000
 
 
@@ -80,10 +141,14 @@ func route_permille(f: int = floor_index) -> int:
 ## tables, rounded (SpawnTable.scale). The danger tier's scaling comes on top as each enemy arrives (SpawnDirector);
 ## the tier restarts with each floor's World. Enemies a boss brings in (eggs, turrets) get the floor's only.
 ## v0.5.0 RT: on a Deep floor the per-floor factor is first multiplied by the Deep factor (one rounding, one scale).
+## v0.7.5 AP: f is the floor within the current loop; past loop 1, × the loop's factor (loop_permille).
 func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
-	var deep := route_permille(f)
+	var deep := route_permille(run_floor(f))
 	var hp_pm := SpawnTable.scale(SpawnTable.per_floor(table.enemy_hp_floor_permille, f), deep)
 	var dmg_pm := SpawnTable.scale(SpawnTable.per_floor(table.enemy_damage_floor_permille, f), deep)
+	if loop > 1:
+		hp_pm = SpawnTable.scale(hp_pm, loop_permille(table.loop_enemy_hp_permille))
+		dmg_pm = SpawnTable.scale(dmg_pm, loop_permille(table.loop_enemy_damage_permille))
 	for t in tables:
 		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
@@ -91,12 +156,17 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 
 ## Scales freshly compiled boss tables for floor f by the bosses' own factors (not the enemies' tables, so nothing
 ## applies twice): HP, and every attack's damage. v0.5.0 RT: × the Deep factor on a Deep floor, in the same step.
+## v0.7.5 AP: f is the floor within the current loop; past loop 1, × the loop's boss factor, and the floor-1 ease
+## reads the run's floor (only the run's first floor is eased).
 func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
-	var deep := route_permille(f)
+	var deep := route_permille(run_floor(f))
 	var hp_pm := (1000 + table.boss_hp_per_floor_permille * (f - 1)) * deep / 1000
 	var dmg_pm := (1000 + table.boss_damage_per_floor_permille * (f - 1)) * deep / 1000
+	if loop > 1:
+		hp_pm = hp_pm * loop_permille(table.loop_boss_hp_permille) / 1000
+		dmg_pm = dmg_pm * loop_permille(table.loop_boss_damage_permille) / 1000
 	# v0.4.0 TU (owner D9): floor 1's bosses are eased (-20 % HP and damage), in the same step.
-	var ease := SpawnTable.per_floor(table.boss_ease_floor_permille, f)
+	var ease := SpawnTable.per_floor(table.boss_ease_floor_permille, run_floor(f))
 	if ease > 0 and ease != 1000:
 		hp_pm = hp_pm * ease / 1000
 		dmg_pm = dmg_pm * ease / 1000
@@ -107,8 +177,8 @@ func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 
 
 ## Floor f's boss: one of its pool (indices into the compiled bosses), drawn from a stream of the run seed
-## (`boss_<f>`), so a run always meets the same bosses. -1 for an empty pool.
-func pick_boss(pool: PackedInt32Array, f: int = floor_index) -> int:
+## (`boss_<f>`), so a run always meets the same bosses. -1 for an empty pool. v0.7.5 AP: f is the run's floor.
+func pick_boss(pool: PackedInt32Array, f: int = run_floor()) -> int:
 	return BossTable.pick(pool, RngStream.derive(run_seed, "boss_%d" % f))
 
 
@@ -117,25 +187,58 @@ func prepare(w: World) -> void:
 	w.floor_index = floor_index
 	w.floor_count = table.floors
 	w.boss_room_heal_permille = SpawnTable.per_floor(
-		table.boss_room_heal_floor_permille, floor_index
-	)  # TU (D9)
+		table.boss_room_heal_floor_permille, run_floor()
+	)  # TU (D9); v0.7.5 AP: the run's first floor only
+	w.loop = loop  # v0.7.5 AP: the loop, the run's floor, the loop's threat and catch-up cap
+	w.run_floor = run_floor()
+	w.loop_threat = table.loop_threat * (loop - 1)
+	w.loop_cap_permille = table.loop_catch_up_cap_permille * (loop - 1)
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
+		w.boss_flow.ascension = is_last_floor()  # v0.7.5 AP: the loop's last floor has the Ascension portal
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
 
 
-## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor.
+## v0.7.5 MG: whether the current floor is a v0.7.0 floor resumed from an older save.
+func v070_floor() -> bool:
+	return floor_rules == FLOOR_RULES_V070
+
+
+## v0.7.5 BF1 (N18): whether the current floor's boss room is the one before the 4 x 4 rooms (a floor resumed from a
+## save made before BF1).
+func legacy_boss_room() -> bool:
+	return floor_rules < 3
+
+
+## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:
+## when the Ascension portal's Ascend took it, the next floor is floor 1 of the next loop (new biomes drawn).
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
-	floor_index += 1
+	if Ascension.ascended(w):
+		loop_floors += floor_index
+		loop += 1
+		floor_index = 1
+		_draw_loop_biomes()
+	else:
+		floor_index += 1
+	floor_rules = FLOOR_RULES  # v0.7.5 MG: a new floor, always on today's rules
 	var taken := w.boss_flow.route_taken if w.boss_flow != null else -1
-	routes.resize(floor_index - 1)  # v0.5.0 RT: the next floor's route, the one walked into
+	routes.resize(run_floor() - 1)  # v0.5.0 RT: the next floor's route, the one walked into
 	routes.append(taken if taken >= 0 else Routes.Route.NORMAL)
+
+
+## v0.7.5 AP: the loops the run cleared, with `w` the current floor's world (null: the finished floors only): the
+## loops left by Ascend, and the current one when its Ascension portal ended the run.
+func loops_cleared(w: World = null) -> int:
+	var done := loop - 1
+	if w != null and Ascension.ended(w):
+		done += 1
+	return done
 
 
 ## Run totals including the current floor's world (null = only the finished floors).

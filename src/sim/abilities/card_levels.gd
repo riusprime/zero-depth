@@ -59,10 +59,7 @@ static func reset(w: World, idx: int) -> void:
 
 static func _store(w: World, idx: int, v: int) -> void:
 	if w.card_levels.size() <= idx:
-		var old := w.card_levels.size()
-		w.card_levels.resize(maxi(idx + 1, w.item_tables.size()))
-		for k in range(old, w.card_levels.size()):
-			w.card_levels[k] = 0
+		w.card_levels.resize(maxi(idx + 1, w.item_tables.size()))  # a packed resize fills with 0
 	w.card_levels[idx] = v
 
 

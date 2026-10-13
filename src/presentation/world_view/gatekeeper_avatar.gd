@@ -37,6 +37,18 @@ var _elbows: Array[Node3D] = []
 
 
 ## The sheet's name for this boss: its imported model would be stone_sentinel.glb.
+## v0.7.5 BF1: its dodge-first moves (tracked fist slams, shock lanes, the rock rings and the cross quake) pose as
+## its slam: the fists rise for the windup and come down as it strikes.
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	if (
+		_move == WorldReader.MOVE_MARKS
+		or _move == WorldReader.MOVE_ROW_LANES
+		or _move == WorldReader.MOVE_PATTERN
+	):
+		_move = WorldReader.MOVE_SLAM_RING
+
+
 func model_id() -> StringName:
 	return &"stone_sentinel"
 

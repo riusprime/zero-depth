@@ -30,6 +30,8 @@ var heat_fx: HeatVisuals
 var gate: PortalGate
 ## v0.5.0 RT: the Deep gate beside it (null on floors without the choice).
 var deep_gate: PortalGate
+## v0.7.5 AP: the Ascension portal where the gate stands on a run's last floor of a loop (`gate` is null there).
+var ascension: AscensionPortal
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit := PortalTransitView.new()
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
@@ -58,6 +60,9 @@ var cores := CoreViews.new()  # v0.6.0 CU: cores on elites and bosses, the steal
 var attack_forms := AttackFormView.new()
 var modifier_marks := ModifierOverlays.new()  # v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks
 var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades
+## v0.7.5 BF1: the hostile fireballs (pooled per look in MultiMeshes) and the bosses' crystal shields and lobbed shells.
+var fireballs := FireballViews.new()
+var boss_shields := BossShieldView.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -108,7 +113,13 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
-	if reader.has_floor():
+	add_child(fireballs)  # v0.7.5 BF1
+	add_child(boss_shields)
+	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
+		ascension = AscensionPortal.new()
+		add_child(ascension)
+		ascension.setup(reader.portal_pos(), reader.portal_angle())
+	elif reader.has_gate():  # v0.7.5 PG: not in the Playground's room (a floor without a gate)
 		gate = PortalGate.new()
 		add_child(gate)
 		gate.setup(reader.portal_pos(), reader.portal_angle())
@@ -140,6 +151,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(transit)
 	transit.setup(actors, gate)
 	transit.deep_gate = deep_gate
+	transit.ascension = ascension  # v0.7.5 AP
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -176,6 +188,8 @@ func sync() -> void:
 	attack_forms.sync(reader)  # v0.6.0 MX3
 	modifier_marks.sync(reader)  # v0.6.0 MX4
 	blade_forms.sync(reader)  # v0.6.5 WN4
+	fireballs.sync(reader)  # v0.7.5 BF1
+	boss_shields.sync(reader)
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
@@ -186,6 +200,8 @@ func sync() -> void:
 	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:
 		gate.set_sealed(not open)
+	if ascension != null and ascension.is_sealed() == open:  # v0.7.5 AP: the column rises
+		ascension.set_sealed(not open)
 	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
 	if deep_gate != null and deep_gate.is_sealed() == deep_open:
 		deep_gate.set_sealed(not deep_open)

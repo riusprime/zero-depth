@@ -15,18 +15,20 @@ extends RefCounted
 ## version-3 payload's slots are in pick order, which is its wand order as it stands (nothing to rewrite); its slot
 ## count comes from the floor reached (Wand.slots), and a wand holding more cards than that keeps them all (the next
 ## new card needs a Swap).
+## v0.7.5 MG adds `run.floor_rules` (RunState.FLOOR_RULES) without a new version: a version-4 payload without it was
+## saved on a v0.7.0 floor, which floor_tables() then rebuilds with v0.7.0's rules.
+## v0.7.5 AP adds `run.loop` and `run.loop_floors` (the Ascension loop) the same way: a payload without them is a
+## loop-1 run (every save made before v0.7.5 AP), and its biome order, routes and floor seeds read as before.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
 var rooms := PackedByteArray()
-## Room-entry saves taken this session (the e2e test and the dev panel read it).
+## Room-entry saves taken this session (the save unit and e2e tests read it).
 var entries := 0
 ## The last room-entry payload: what Continue resumes from, and what close makes sure is on disk.
 var last := {}
-## Microseconds the last entry save held the frame (the snapshot; the encode and write are off the frame).
-var last_cost_usec := 0
 var _active := false
 
 
@@ -79,6 +81,33 @@ func discard() -> void:
 	store.delete()
 
 
+## v0.7.5 MG: the floor tables a floor of `run` is built with, compiled from `repo`: {map: FloorParams, arena:
+## ArenaTable, shop: ShopTable}. A v0.7.0 floor resumed from an older save (RunState.v070_floor) gets v0.7.0's rules
+## on top: FloorParams.v070(), arena share 330 per mille, a shop on every floor (Main and the save tests).
+static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
+	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
+	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
+	if run != null and run.v070_floor():
+		map = FloorParams.v070()
+		if arena != null:
+			arena.share_permille = ArenaTable.V070_SHARE_PERMILLE
+		if shop != null:
+			shop.first_floor = 1
+			shop.every_floors = 1
+	return {&"map": map, &"arena": arena, &"shop": shop}
+
+
+## v0.7.5 BF1 (N18): the boss room floor `run` builds for boss `boss` (an index into `bosses`; -1 = none): today's
+## 4 x 4, or the boss's legacy room on a floor resumed from a save made before BF1 (Main and the labs).
+static func boss_arena(run: RunState, bosses: Array[BossTable], boss: int) -> BossArenaSpec:
+	if boss < 0:
+		return null
+	var t := bosses[boss]
+	var cells := t.legacy_arena_cells if run != null and run.legacy_boss_room() else t.arena_cells
+	return BossArenaSpec.make(cells, t.arena_template, boss)
+
+
 ## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's).
 static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	var r: Dictionary = payload.get("run", {})
@@ -90,6 +119,10 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.kills_done = int(r["kills_done"])
 	run.routes = PackedInt32Array(r["routes"])  # v0.5.0 RT
 	run.threat_by_floor = PackedInt32Array(r.get("threat_by_floor", PackedInt32Array()))  # v0.5.0 EV
+	# v0.7.5 MG: a payload without floor rules was saved on a v0.7.0 floor (rebuilt with those rules).
+	run.floor_rules = int(r.get("floor_rules", RunState.FLOOR_RULES_V070))
+	run.loop = maxi(1, int(r.get("loop", 1)))  # v0.7.5 AP: an older payload is loop 1
+	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
 	return run
 
 
@@ -120,6 +153,9 @@ static func payload_of(
 			"kills_done": run.kills_done,
 			"routes": run.routes.duplicate(),  # v0.5.0 RT: each floor's route
 			"threat_by_floor": run.threat_by_floor.duplicate(),  # v0.5.0 EV (M-THREAT)
+			"floor_rules": run.floor_rules,  # v0.7.5 MG: the floor's generation rules
+			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
+			"loop_floors": run.loop_floors,
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,
@@ -128,8 +164,6 @@ static func payload_of(
 
 
 func _save(w: World, run: RunState, stage_seed: int) -> void:
-	var t0 := Time.get_ticks_usec()
 	last = payload_of(w, run, stage_seed, rooms)
-	last_cost_usec = Time.get_ticks_usec() - t0
 	entries += 1
 	store.write_async(last)

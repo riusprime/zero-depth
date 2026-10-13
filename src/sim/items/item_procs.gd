@@ -20,16 +20,9 @@ static func on_kill(w: World, kill: SimEvent) -> void:
 	var m := w.item_mods
 	if m.heal_per_kill <= 0 or w.player_dead():
 		return
-	if w.heal_window_start < 0 or w.tick - w.heal_window_start >= m.heal_window_ticks:
-		w.heal_window_start = w.tick
-		w.heal_window_used = 0
 	var a := w.actors
-	var cap_left := m.heal_cap - w.heal_window_used
-	var applied := maxi(0, mini(m.heal_per_kill, mini(cap_left, a.max_hp[0] - a.hp[0])))
-	a.hp[0] += applied
-	w.heal_window_used += applied
-	if applied > 0:
-		w.heal_tick = w.tick
+	var applied := heal_in_window(w, m.heal_per_kill)
+	var cap_left := m.heal_cap - (w.heal_window_used - applied)  # what the window had before this heal
 	var h := w.emit_event(SimEvent.Kind.HEAL, a.ids[0], a.ids[0], a.ids[0], w.player_pos())
 	h.root_id = kill.root_id
 	h.parent_seq = kill.seq
@@ -45,6 +38,24 @@ static func on_kill(w: World, kill: SimEvent) -> void:
 		lim.amount = m.heal_per_kill
 		lim.amount_applied = maxi(cap_left, 0)
 		lim.effect_id = EFFECT_VAMPIRIC_CORE
+
+
+## The per-window heal cap (Vampiric Core's kill heal and Blood Harvest's share it; audit G-17): a fresh window
+## opens when the last one ran out, then up to `heal` HP within what the window has left and the HP missing.
+## Returns the HP applied (it spends the window).
+static func heal_in_window(w: World, heal: int) -> int:
+	var m := w.item_mods
+	if w.heal_window_start < 0 or w.tick - w.heal_window_start >= m.heal_window_ticks:
+		w.heal_window_start = w.tick
+		w.heal_window_used = 0
+	var a := w.actors
+	var cap_left := m.heal_cap - w.heal_window_used
+	var applied := maxi(0, mini(heal, mini(cap_left, a.max_hp[0] - a.hp[0])))
+	a.hp[0] += applied
+	w.heal_window_used += applied
+	if applied > 0:
+		w.heal_tick = w.tick
+	return applied
 
 
 ## HP Vampiric Core can still heal in the current window.

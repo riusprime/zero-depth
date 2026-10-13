@@ -36,61 +36,66 @@ const WAND_TRIGGERS: Array[int] = [
 	Trigger.ON_HIT, Trigger.ON_KILL, Trigger.ON_END, Trigger.ON_FINISHER, Trigger.ON_CRIT
 ]
 
-## The spec fields a numeric op may change, in content units, and the stage each belongs to
-## (ModifierDefinition.Stage numbers: FORM 0, PATTERN 1, BEHAVIOUR 2, PAYLOAD 3, HOOK 4, SCALE 5).
+## The spec fields a numeric op may change, in content units: [stage, sim field, unit]. The stage each belongs to
+## (ModifierDefinition.Stage numbers: FORM 0, PATTERN 1, BEHAVIOUR 2, PAYLOAD 3, HOOK 4, SCALE 5); the AttackSpec
+## field it changes (ModifierCompiler applies it); and how its value converts to sim units: "" as is, "ticks" seconds
+## to ticks, "half_turns" a full width in degrees to a half width in 1/4096 turns, "turns" degrees to 1/4096 turns,
+## "per_tick" metres per second to metres per tick, "turn_rate" degrees per second to 1/4096 turns per tick ("range"
+## is the virtual field Modifiers scales per form). One table, so a field the validator accepts is always one the
+## compiler applies (plain strings and ints: content imports nothing from the sim).
 const FIELD_STAGE := {
-	&"count": 1,
-	&"spread_degrees": 1,
-	&"repeat_delay_seconds": 1,
-	&"repeat_damage_permille": 1,
-	&"bounces": 2,
-	&"pierce": 2,
-	&"damage": 3,
-	&"damage_permille": 3,
-	&"nth_every": 3,
-	&"nth_damage_permille": 3,
-	&"hitstop_seconds": 3,
-	&"arc_degrees": 5,
-	&"reach_m": 5,
-	&"reach_bonus_permille": 5,
-	&"radius_m": 5,
-	&"speed_mps": 5,
-	&"life_seconds": 5,
-	&"period_seconds": 5,
-	&"rate_bonus_permille": 5,
+	&"count": [1, &"count", ""],
+	&"spread_degrees": [1, &"spread", "turns"],
+	&"repeat_delay_seconds": [1, &"repeat_delay_ticks", "ticks"],
+	&"repeat_damage_permille": [1, &"repeat_damage_permille", ""],
+	&"bounces": [2, &"bounces", ""],
+	&"pierce": [2, &"pierce", ""],
+	&"damage": [3, &"damage", ""],
+	&"damage_permille": [3, &"damage_permille", ""],
+	&"nth_every": [3, &"nth_every", ""],
+	&"nth_damage_permille": [3, &"nth_damage_permille", ""],
+	&"hitstop_seconds": [3, &"hitstop_ticks", "ticks"],
+	&"arc_degrees": [5, &"half_arc", "half_turns"],
+	&"reach_m": [5, &"reach_m", ""],
+	&"reach_bonus_permille": [5, &"reach_bonus_permille", ""],
+	&"radius_m": [5, &"radius_m", ""],
+	&"speed_mps": [5, &"speed", "per_tick"],
+	&"life_seconds": [5, &"life_ticks", "ticks"],
+	&"period_seconds": [5, &"period_ticks", "ticks"],
+	&"rate_bonus_permille": [5, &"rate_bonus_permille", ""],
 	# v0.6.0 MX4 (the M-list's runner features; AttackSpec names each).
-	&"mirror": 0,
-	&"directions": 1,
-	&"back_damage_permille": 1,
-	&"aim_offset_degrees": 1,
-	&"chains": 2,
-	&"homing_dps": 2,
-	&"returns": 2,
-	&"orbit_seconds": 2,
-	&"intangible": 2,
-	&"pull_m": 3,
-	&"barrier_seconds": 3,
-	&"charge_seconds": 3,
-	&"charge_permille": 3,
-	&"resonance_permille": 3,
-	&"heat_rate_permille": 5,
-	&"range": 5,
+	&"mirror": [0, &"mirror", ""],
+	&"directions": [1, &"directions", ""],
+	&"back_damage_permille": [1, &"back_permille", ""],
+	&"aim_offset_degrees": [1, &"aim_offset", "turns"],
+	&"chains": [2, &"chains", ""],
+	&"homing_dps": [2, &"homing", "turn_rate"],
+	&"returns": [2, &"returns", ""],
+	&"orbit_seconds": [2, &"orbit_ticks", "ticks"],
+	&"intangible": [2, &"intangible", ""],
+	&"pull_m": [3, &"pull_m", ""],
+	&"barrier_seconds": [3, &"barrier_ticks", "ticks"],
+	&"charge_seconds": [3, &"charge_ticks", "ticks"],
+	&"charge_permille": [3, &"charge_permille", ""],
+	&"resonance_permille": [3, &"resonance_permille", ""],
+	&"heat_rate_permille": [5, &"heat_rate_permille", ""],
+	&"range": [5, &"range", ""],
 	# v0.6.5 WN3 (the Gun pool: GunForms)
-	&"twin": 1,
-	&"spiral_degrees": 2,
-	&"mine_seconds": 2,
-	&"hold_seconds": 3,
-	&"hold_permille": 3,
+	&"twin": [1, &"twin", ""],
+	&"spiral_degrees": [2, &"spiral", "turns"],
+	&"mine_seconds": [2, &"mine_ticks", "ticks"],
+	&"hold_seconds": [3, &"hold_ticks", "ticks"],
+	&"hold_permille": [3, &"hold_permille", ""],
 	# v0.6.5 WN4 (the Blade pool; AttackSpec names each).
-	&"motion": 0,
-	&"echo_mirror": 1,
-	&"step_m": 2,
-	&"parry": 3,
-	&"counter_seconds": 3,
-	&"counter_permille": 3,
-	&"carry": 3,
-	&"knockback_m": 3,
-	&"line_m": 5,
+	&"motion": [0, &"motion", ""],
+	&"echo_mirror": [1, &"echo_mirror", ""],
+	&"step_m": [2, &"step_m", ""],
+	&"parry": [3, &"parry", ""],
+	&"counter_seconds": [3, &"counter_ticks", "ticks"],
+	&"counter_permille": [3, &"counter_permille", ""],
+	&"carry": [3, &"carry", ""],
+	&"knockback_m": [3, &"knockback_m", ""],
+	&"line_m": [5, &"line_m", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -154,7 +159,7 @@ func required_stage() -> int:
 			return 3
 		Op.HOOK, Op.TRIGGER:
 			return 4
-	return int(FIELD_STAGE.get(field, -1))
+	return int(FIELD_STAGE[field][0]) if FIELD_STAGE.has(field) else -1
 
 
 func is_numeric() -> bool:

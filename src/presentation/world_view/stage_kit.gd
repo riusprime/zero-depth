@@ -36,7 +36,7 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 	var tint := _hue_tint(cover_hue)
 	var decor := {}
 	for p: Dictionary in placements:
-		var piece := KitModels.get_piece(p["piece"])
+		var piece := piece_of(p["piece"])
 		if piece.is_empty():
 			continue
 		if p["kind"] == &"decor":
@@ -58,7 +58,7 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 		if p["kind"] == &"light":
 			_add_light(p["piece"], (p["xform"] as Transform3D).origin, mood)
 	for id: StringName in decor:
-		var piece := KitModels.get_piece(id)
+		var piece := piece_of(id)
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
 		mm.mesh = piece["mesh"]
@@ -70,6 +70,12 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 		mmi.multimesh = mm
 		mmi.material_override = piece["material"]
 		add_child(mmi)
+
+
+## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
+static func piece_of(id: StringName) -> Dictionary:
+	var piece := KitModels.get_piece(id)
+	return piece if not piece.is_empty() else CodeProps.get_piece(id)
 
 
 ## The biome hue at full brightness, mixed with white: walls keep their texture's light and dark and take the hue.
@@ -114,10 +120,10 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	# HDR (over 1) so it crosses the glow threshold and blooms (lighting pass, 2026-10-12).
-	mat.albedo_color = mood.warm_light_color * 2.4
+	mat.albedo_color = mood.warm_light_color * 1.6
 	mat.emission_enabled = true
 	mat.emission = mood.warm_light_color
-	mat.emission_energy_multiplier = 3.0
+	mat.emission_energy_multiplier = 2.0
 	flame.material_override = mat
 	flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	flame.position = light.position - Vector3(0, 0.22, 0)

@@ -14,6 +14,8 @@ const BAR_W := 0.55
 const PROJECTILE_POOL_MAX := 400
 ## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation.
 const ANIMATE_RADIUS_M := 24.0
+## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
+const GREY_SATURATION := 0.3
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
 ## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
@@ -27,6 +29,9 @@ var bolt_look := {}
 ## v0.5.5 LK (owner A2): the heat tier (HeatLooks.TIER_*) read each sync; a new player bolt takes its colour
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
+## v0.7.5 NB1: the biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
+## by its alpha (0: none). Red parts, rings and bars keep their colours, so identity never changes (PRESENTATION §3).
+var enemy_tint := Color(0, 0, 0, 0)
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -39,6 +44,10 @@ var _proj_meshes := {}
 ## v0.4.0 SC: idle projectile nodes by look key (hidden, kept as children), reused before building new ones.
 var _proj_pool := {}
 var _proj_pooled := 0
+## P-6: the last look key per side (0 hostile, 1 player) and the [size, colour, energy] it was built from, so a shot of
+## an unchanged look doesn't format its key again (a horde fires hundreds a second).
+var _proj_key: Array[String] = ["", ""]
+var _proj_key_of: Array = [[], []]
 
 
 func sync(reader: WorldReader) -> void:
@@ -56,6 +65,8 @@ func sync(reader: WorldReader) -> void:
 			)
 			_actors[id] = node
 			add_child(node)
+			if reader.actor_team(i) != 0:
+				tint_greys(node, enemy_tint)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
@@ -70,6 +81,8 @@ func sync(reader: WorldReader) -> void:
 				d.erase(id)
 	var live := {}
 	for i in reader.projectile_count():
+		if reader.projectile_look(i) != "":
+			continue  # v0.7.5 BF1: a fireball (FireballViews draws them)
 		var id := reader.projectile_id(i)
 		live[id] = true
 		var p := reader.projectile_pos(i)
@@ -206,8 +219,18 @@ func pooled_projectiles() -> int:
 func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 	for id in nodes.keys():
 		if not alive.has(id):
-			nodes[id].queue_free()
+			var node: Node3D = nodes[id]
 			nodes.erase(id)
+			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
+			# (has_meta first: get_meta with a null default still reports a missing key, e.g. for a dummy)
+			var boss: Variant = (
+				node.get_meta(&"enemy_avatar") if node.has_meta(&"enemy_avatar") else null
+			)
+			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
+				(boss as Node).set_process(true)
+				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			else:
+				node.queue_free()
 
 
 func _unshaded(c: Color) -> StandardMaterial3D:
@@ -215,6 +238,19 @@ func _unshaded(c: Color) -> StandardMaterial3D:
 	m.albedo_color = c
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	return m
+
+
+## v0.7.5 NB1: pulls an actor's grey and bone body materials (saturation under GREY_SATURATION, untextured) toward
+## `tint` by its alpha. Each avatar builds its own materials, so no other actor or biome is touched.
+static func tint_greys(node: Node3D, tint: Color) -> void:
+	if tint.a <= 0.0:
+		return
+	for m: StandardMaterial3D in node.get_meta(&"mats", []):
+		if m.albedo_texture != null or m.albedo_color.s >= GREY_SATURATION:
+			continue
+		var c := m.albedo_color
+		var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
+		m.albedo_color = Color(c.lerp(cold, tint.a), c.a)
 
 
 ## Makes a body material ready for the hit flash and tints: emission on, dark (energy 0), so a flash changes
@@ -386,7 +422,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			)
 			boss.setup(outline_color, technique)
 			facing.add_child(boss)
-			height = 2.6
+			height = 2.6 * BossModels.SIZE_SCALE
 			root.set_meta(&"enemy_avatar", boss)
 			root.set_meta(&"boss", true)
 			root.set_meta(&"mats", boss.body_materials.duplicate())
@@ -409,7 +445,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 			var glow := StageKit.hero_light(hero_mood)  # v0.5.9: the hero's warm light
 			if glow != null:
 				root.add_child(glow)
-		_:
+		_:  # kept deliberately: the grey-cube fallback draws a kind without its own model (a new enemy kind; P-18)
 			var size := CUBE if is_player else CUBE * 0.85
 			height = size
 			_piece(
@@ -477,7 +513,12 @@ func _make_projectile(is_player: bool = false) -> Node3D:
 	if is_player:
 		c = bolt_color()
 	var energy: float = bolt_look.get("energy", 2.5) if is_player else 2.5
-	var key := "%s|%s|%s" % [size, c.to_html(), energy]
+	var side := 1 if is_player else 0
+	var of := [size, c, energy]
+	if of != _proj_key_of[side]:
+		_proj_key_of[side] = of
+		_proj_key[side] = "%s|%s|%s" % [size, c.to_html(), energy]
+	var key := _proj_key[side]
 	var idle: Array = _proj_pool.get(key, [])
 	if not idle.is_empty():
 		var reused: Node3D = idle.pop_back()

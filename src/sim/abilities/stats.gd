@@ -114,6 +114,8 @@ static func _side(w: World, t: StatTable, s: int, a: int) -> void:
 			var v := (w.stat_values[Stat.MAX_HP] * (1000 - a) + 500) / 1000
 			w.stat_values[Stat.MAX_HP] = maxi(v, t.limit_permille)
 			var gain := max_hp(w) - before
+			# The max-HP push, twin of add_amount's: this one floors max HP at 1 and keeps HP at least 1; that one
+			# doesn't floor. They have drifted, so they stay apart: merging would change one call site (audit G-17).
 			w.actors.max_hp[0] = maxi(1, w.actors.max_hp[0] + gain)
 			w.actors.hp[0] = clampi(w.actors.hp[0], 1, w.actors.max_hp[0])
 		Stat.HOARDER:
@@ -144,6 +146,7 @@ static func add_amount(w: World, s: int, a: int) -> void:
 	w.stat_values[s] = v
 	if s == Stat.MAX_HP:
 		var gain := max_hp(w) - before_hp
+		# Twin of _side's Glass Cannon push, without its floor of 1 (see there; audit G-17).
 		w.actors.max_hp[0] += gain
 		w.actors.hp[0] = mini(w.actors.max_hp[0], w.actors.hp[0] + maxi(0, gain))
 
@@ -253,10 +256,12 @@ static func overkill(w: World, target: int, excess: int, root: int) -> void:
 	if share <= 0 or excess <= 0 or t == null:
 		return
 	var amount := (excess * share + 500) / 1000
+	if amount <= 0:
+		return  # before the scan (audit G-16)
 	var a := w.actors
 	var at := a.pos(target)
 	var near := Engines.nearest_enemies(w, target, at, t.limit_permille / 1000.0, 1)
-	if amount <= 0 or near.is_empty():
+	if near.is_empty():
 		return
 	var best := near[0]
 	var pid := a.ids[0]
@@ -278,7 +283,13 @@ static func heal_orb_chance(w: World) -> int:
 # --- Times, areas, speeds --------------------------------------------------------------------------------------
 ## A cooldown of `ticks` under the cooldowns stat (never under 1 tick when it was above 0).
 static func cooldown(w: World, ticks: int) -> int:
-	var m := value(w, Stat.COOLDOWNS)
+	return _scaled_ticks(w, Stat.COOLDOWNS, ticks)
+
+
+## `ticks` x stat `s` per mille, rounded half up, never under 1 tick when it was above 0 (Cooldowns and Fast Hands'
+## one rule; audit G-17).
+static func _scaled_ticks(w: World, s: int, ticks: int) -> int:
+	var m := value(w, s)
 	if m == 1000 or ticks <= 0:
 		return ticks
 	return maxi(1, (ticks * m + 500) / 1000)
@@ -295,10 +306,7 @@ static func auto_period(w: World, ticks: int) -> int:
 
 
 static func _fast(w: World, ticks: int) -> int:
-	var f := value(w, Stat.FAST_HANDS)
-	if f == 1000 or ticks <= 0:
-		return ticks
-	return maxi(1, (ticks * f + 500) / 1000)
+	return _scaled_ticks(w, Stat.FAST_HANDS, ticks)
 
 
 ## A firing period of `ticks` under attack speed (never under 1 tick).
@@ -319,7 +327,12 @@ static func swing_end(w: World, step: SwingStep) -> int:
 
 
 static func area(w: World, metres: float) -> float:
-	var m := value(w, Stat.AREA)
+	return _scaled_m(w, Stat.AREA, metres)
+
+
+## `metres` x stat `s` per mille (Area and Pickup range's one rule; audit G-17).
+static func _scaled_m(w: World, s: int, metres: float) -> float:
+	var m := value(w, s)
 	return metres if m == 1000 else metres * m / 1000.0
 
 
@@ -337,8 +350,7 @@ static func shards(w: World, amount: int) -> int:
 
 ## An interact or pickup reach under pickup range.
 static func reach(w: World, metres: float) -> float:
-	var m := value(w, Stat.PICKUP)
-	return metres if m == 1000 else metres * m / 1000.0
+	return _scaled_m(w, Stat.PICKUP, metres)
 
 
 ## Tick phase 6 (Abilities.advance): regen heals regen per mille of max HP a second, in and out of combat.

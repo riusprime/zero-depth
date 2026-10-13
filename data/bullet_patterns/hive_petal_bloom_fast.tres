@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 5
+look = &"prism_orb"
+speed_mps = 4.0
+radius_m = 0.18
+range_m = 16.0
+waves = 4
+wave_gap_seconds = 0.45
+turn_per_wave_degrees = 36.0
+count = 40
+petals = 5
+petal_min_permille = 450
+petal_cut_permille = 400
+id = &"hive_petal_bloom_fast"

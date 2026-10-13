@@ -23,6 +23,7 @@ func test_menu_play_pause_and_back() -> void:
 	await e.tap(KEY_DOWN)  # Resume -> Build (v0.6.5 WN2)
 	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_DOWN)  # -> Options (v0.3.0 O)
+	await e.tap(KEY_DOWN)  # -> Codex (v0.7.5 CX)
 	await e.tap(KEY_DOWN)  # -> Main menu
 	await e.tap(KEY_ENTER)
 	await e.frames(2)

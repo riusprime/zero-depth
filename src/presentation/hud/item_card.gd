@@ -161,11 +161,6 @@ func plaque_height() -> float:
 	return _height
 
 
-## The plaque's width now (px).
-func plaque_width() -> float:
-	return _width
-
-
 ## Picks the smallest plaque (GROW) at which the text fits, and the sizes that fit it.
 func _fit() -> void:
 	for g: Vector2 in GROW:
@@ -191,11 +186,7 @@ func _fit_sizes() -> void:
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
 	var name_w := box.x - _caption_w()
-	name_size = NAME_SIZES[NAME_SIZES.size() - 1]
-	for s: int in NAME_SIZES:
-		if bold.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= name_w:
-			name_size = s
-			break
+	name_size = CrystalCard.fit_width(bold, _name.text, name_w, NAME_SIZES)
 	var room := box.y - bold.get_height(name_size)
 	desc_size = CrystalCard.fit_size(regular, _desc.text, box.x, room, DESC_SIZES)
 	_name.add_theme_font_size_override("font_size", name_size)

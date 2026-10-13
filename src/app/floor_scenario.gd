@@ -14,6 +14,9 @@ extends RefCounted
 ## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
 ## v0.5.5 AR: with an arena table, the sealed arenas (ArenaRooms.mark, after the Overrun room), whose item spots the
 ## rewards fill first.
+## v0.7.5 MG: `map` (RunContentCompiler.compile_map, data/map) sets the generator's room counts and footprints (null:
+## FloorParams' defaults, the same numbers); the shop stands only on the floors its table names (ShopTable.on_floor,
+## owner N12: every two floors).
 
 
 static func build(
@@ -28,9 +31,10 @@ static func build(
 	run: RunState = null,
 	combos: Array[ComboTable] = [],
 	gamble: GambleTable = null,
-	arenas: ArenaTable = null
+	arenas: ArenaTable = null,
+	map: FloorParams = null
 ) -> World:
-	var layout := FloorGenerator.generate(seed_value)
+	var layout := FloorGenerator.generate(seed_value, map)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
 	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
@@ -71,10 +75,15 @@ static func build(
 
 
 ## v0.5.0 SH: the floor's shop (after build): ShopPlacement picks its side room and spot, the terminal's footprint
-## becomes a wall (the flow fields are rebuilt with it), and Shop.place puts it on the floor. No-op without a table.
+## becomes a wall (the flow fields are rebuilt with it), and Shop.place puts it on the floor. No-op without a table,
+## and (v0.7.5 MG, owner N12) on a floor the table skips (ShopTable.on_floor: floors 1, 3, 5 ... as shipped). On a
+## floor without a shop, the room ShopPlacement would take stays an ordinary room (never an arena: ArenaRooms and
+## Routes keep it out either way, so the floor's other choices don't move).
 static func add_shop(w: World, shop: ShopTable) -> void:
 	var layout := w.floor_layout
-	if shop == null or layout == null or ShopPlacement.pick(layout) < 0:
+	if shop == null or layout == null or not shop.on_floor(w.run_floor_index()):  # AP: across loops
+		return
+	if ShopPlacement.pick(layout) < 0:
 		return
 	var walls: Array[Obb] = w.walls.duplicate()
 	walls.append(ShopPlacement.collider(layout.shop_pos, layout.shop_angle))

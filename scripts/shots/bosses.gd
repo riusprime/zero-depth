@@ -19,9 +19,9 @@ const BOSSES: Array[StringName] = [&"gatekeeper", &"brood_mother", &"siege_engin
 const BOSSES_2: Array[StringName] = [&"warlord", &"hive_lens", &"foundry"]
 ## Two attacks shown per boss in the sheet.
 const SHOWN := {
-	&"gatekeeper": [&"fist_slam", &"shock_lanes_5"],
+	&"gatekeeper": [&"fist_slam_2", &"shock_lanes"],  # v0.7.5 BF1
 	&"brood_mother": [&"leap", &"brood_4"],
-	&"siege_engine": [&"barrage_7", &"rail_sweep"],
+	&"siege_engine": [&"mortar_grid", &"rail"],  # v0.7.5 BF3
 	&"warlord": [&"spear_lines@active", &"lunge_dash"],
 	&"hive_lens": [&"lens_sweep@active", &"split@half"],
 	&"foundry": [&"molten_flood@active", &"bomb_launch"],
@@ -86,11 +86,9 @@ var _rig_rows: Array[Image] = []
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("mode="):
-			_mode = arg.trim_prefix("mode=")
-		if arg.begins_with("set="):
-			_set = int(arg.trim_prefix("set="))
+	var args := ScriptArgs.parse()
+	_mode = args.get("mode", _mode)
+	_set = int(args.get("set", _set))
 	_dir = "res://build/shots/%s/bosses/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_repo = ContentRepository.load_all()

@@ -21,16 +21,12 @@ const TRIGGER_KEYS := {
 }
 
 
-## The wand's slot count now (the floor's, WandTable.slots_at; six without a table).
+## The wand's slot count now (the floor's, WandTable.slots_at; six without a table). v0.7.5 AP: by the run's floor
+## across loops (World.run_floor_index), so a wand never shrinks when a new loop starts.
 static func slots(w: World) -> int:
 	if w.wand_table == null:
 		return BuildSlots.SLOTS
-	return mini(MAX_SLOTS, w.wand_table.slots_at(w.floor_index))
-
-
-## The cards held, in slot order (Offers codes).
-static func cards(w: World) -> PackedInt32Array:
-	return w.mod_slots
+	return mini(MAX_SLOTS, w.wand_table.slots_at(w.run_floor_index()))
 
 
 static func size(w: World) -> int:
@@ -208,6 +204,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"type": info["type"],
 		"level": level,
 		"trigger": trigger_of(w, code),
+		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
 	}
 
 

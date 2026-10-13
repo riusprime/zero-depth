@@ -12,6 +12,12 @@ extends ContentDef
 @export var reward_gap_m := 3.0
 ## The share of chest offers that are cursed (v0.6.0 CU, owner S6: one card becomes a trade-off curse card).
 @export var cursed_chest_chance := 25.0
+## v0.7.5 MG (owner N10, "one every two floors"): chests roll that chance only on curse floors: the first, then every
+## cursed_chest_every_floors floors (1, 3, 5 ... as shipped; the floor count keeps going past the run's last floor);
+## at most cursed_chests_per_floor cursed chest offers on one floor.
+@export var cursed_chest_first_floor := 1
+@export var cursed_chest_every_floors := 2
+@export var cursed_chests_per_floor := 1
 ## An elite: +this % HP (Ambush Cache packs, and spawns under an elite curse).
 @export var elite_hp_bonus := 100.0
 ## Ambush Cache: the pack arrives at least this far from you, inside the room.
@@ -57,6 +63,14 @@ func validate() -> Array[ValidationIssue]:
 		check_positive(issues, f[0], f[1])
 	if cursed_chest_chance < 0.0 or cursed_chest_chance > 100.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "cursed_chest_chance 0..100"))
+	if cursed_chest_first_floor < 1 or cursed_chest_every_floors < 1 or cursed_chests_per_floor < 0:
+		issues.append(
+			ValidationIssue.new(
+				&"range",
+				resource_path,
+				"cursed_chest_first_floor and _every_floors >= 1, _per_floor >= 0"
+			)
+		)
 	if cleanse_price <= 0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "cleanse_price must be > 0"))
 	if core_mod_weight < 0:

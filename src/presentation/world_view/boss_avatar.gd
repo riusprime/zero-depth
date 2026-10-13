@@ -14,9 +14,17 @@ extends Node3D
 ## The weak point (v0.3.0 BX, L17): a glowing core on the boss's chest while it is open (WorldReader
 ## .boss_weak_point_permille), a kept material with emission on from the start, so only its energy changes, and a
 ## small light; hidden while shut.
+## v0.7.5 BM: the owner's rigged models (the Warlord, the Hive Lens; BossModels "skinned") keep their own skeleton
+## and skin, and the Foundry is cut in code (BossRig). Their bodies pose bone by bone through a BonePoser in the
+## model frame, one function per pose layer (idle, walk, attack, guard, flinch, stagger, death, and a "shielded"
+## hook a later step drives). More read state: the HP (a drop flinches), the player's bearing from the facing (the
+## Hive Lens's eye turns to it) and the facing (the local velocity that trails the cables). The weak point's core
+## follows its bone. All of it reads the sim and writes only this node's own children (EI-07).
 
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 40.0
+## v0.7.5 BM: seconds a boss that falls when it dies (has_death_pose) keeps drawing after the sim removed it.
+const DEATH_SECONDS := 1.6
 ## Seconds to rise out of the ground once the intro ends; seconds to sink when burrowing.
 const RISE_SECONDS := 0.8
 const SINK_SECONDS := 0.3
@@ -41,6 +49,8 @@ var glow_overlay: StandardMaterial3D
 ## The owner's model's skeleton (v0.3.0 L13: rigged in code, BossRig) and its rig.
 var skeleton: Skeleton3D
 var rig: BossRig
+## v0.7.5 BM: poses the model's bones in the model frame (the skinned models and the Foundry).
+var poser: BonePoser
 ## The weak point (BX): its core, its halo, their kept material and the light.
 var weak_core := MeshInstance3D.new()
 var weak_material := StandardMaterial3D.new()
@@ -72,6 +82,19 @@ var _rise := 1.0
 var _stagger := 0.0
 var _sink := 0.0
 var _late := 0.0
+# v0.7.5 BM: more read state and its smoothed animation inputs.
+var _last_hp := -1
+var _aim := 0.0
+var _facing_yaw := 0.0
+var _shielded := false
+var _flinch := 0.0
+var _aim_shown := 0.0
+var _shield_hold := 0.0
+var _death := 0.0
+var _dying := false
+var _local_vel := Vector3.ZERO
+# The weak point's rest position in the skeleton's space (it follows _weak_bone()).
+var _weak_rest_skel := Vector3.ZERO
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
@@ -79,6 +102,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	parts = BossParts.new(outline_color, technique)
 	model.name = "Model"
+	model.scale = Vector3.ONE * BossModels.SIZE_SCALE  # v0.7.5 BM (owner N18): every boss 1.3x
 	add_child(model)
 	_build_body()
 	body_materials = parts.body_materials
@@ -129,11 +153,6 @@ func _weak_point_at() -> Vector3:
 	return Vector3(0.75, 1.55, 0)
 
 
-## 0..1: how open the weak point shows (tests).
-func weak_amount() -> float:
-	return _weak_shown
-
-
 ## Reads boss i's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
 	var tg := reader.telegraph(i)
@@ -151,8 +170,21 @@ func sync(reader: WorldReader, i: int) -> void:
 			"hidden": reader.boss_hidden(i),
 			"phase": reader.boss_phase(i),
 			"weak": reader.boss_weak_point_permille(i) / 1000.0,
+			"hp": reader.actor_hp(i),
+			"facing": SimPlane.yaw_of(reader.actor_facing(i)),
+			"aim": bearing(reader.actor_pos(i), reader.actor_facing(i), reader.player_pos()),
+			"shielded": reader.boss_shielded(i),  # v0.7.5 BF1: its signature pattern (the shell and the pose)
 		}
 	)
+
+
+## The player's bearing from a boss at `pos` facing `facing` (1/4096 turns): radians, + toward the boss's left
+## (counter-clockwise seen from above, like the facing's yaw), in -PI..PI.
+static func bearing(pos: Vector2, facing: int, target: Vector2) -> float:
+	var d := target - pos
+	if d.length_squared() < 0.0001:
+		return 0.0
+	return wrapf(atan2(d.y, d.x) - SimPlane.yaw_of(facing), -PI, PI)
 
 
 ## The same as sync(), from plain values (tests and the render scripts drive the model with this): tick, pos,
@@ -181,6 +213,16 @@ func apply_state(s: Dictionary) -> void:
 	_hidden = s.get("hidden", false)
 	_boss_phase = s.get("phase", 0)
 	_weak = s.get("weak", 0.0)
+	# v0.7.5 BM: a drop in HP flinches; the bearing to the player, the facing, and "shielded" (BF1's
+	# WorldReader.boss_shielded: the boss is firing its shielded signature).
+	var hp: int = s.get("hp", -1)
+	if hp >= 0 and _last_hp >= 0 and hp < _last_hp:
+		_flinch = 1.0
+	_last_hp = hp
+	_aim = s.get("aim", 0.0)
+	_facing_yaw = s.get("facing", 0.0)
+	_shielded = s.get("shielded", false)
+	_local_vel = Basis(Vector3.UP, _facing_yaw).inverse() * SimPlane.to_3d(_vel)
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
@@ -209,8 +251,14 @@ func advance(delta: float) -> void:
 	var stag := 1.0 if _state == WorldReader.STATE_STAGGERED else 0.0
 	_stagger = lerpf(_stagger, stag, _rate(7.0, dt))
 	_late = move_toward(_late, 1.0 if _boss_phase > 0 else 0.0, dt)
+	_flinch = move_toward(_flinch, 0.0, dt * 3.5)
+	_aim_shown = lerpf(_aim_shown, _aim, _rate(3.0, dt))
+	_shield_hold = lerpf(_shield_hold, 1.0 if _shielded else 0.0, _rate(8.0, dt))
+	if _dying:
+		_death = move_toward(_death, 1.0, dt / (DEATH_SECONDS * 0.75))
 	_pose_weak_point(dt)
 	_pose_any(dt)
+	_follow_weak_bone()
 	# The rise from the ground, a leap's arc, the burrow's sink, the stagger's slump.
 	var rise := 1.0 - _rise
 	rise = rise * rise * (3.0 - 2.0 * rise)
@@ -225,7 +273,7 @@ func advance(delta: float) -> void:
 func _pose_weak_point(dt: float) -> void:
 	var target := 1.0 if _weak > 0.0 else 0.0
 	_weak_shown = move_toward(_weak_shown, target, dt * (10.0 if target > _weak_shown else 4.0))
-	weak_core.visible = _weak_shown > 0.01 and not _hidden
+	weak_core.visible = _weak_shown > 0.01 and not _hidden and not _dying
 	var fade := clampf(_weak * 5.0, 0.0, 1.0)
 	var pulse := 0.75 + 0.25 * sin(_t * 14.0)
 	weak_material.emission_energy_multiplier = WEAK_ENERGY * _weak_shown * fade * pulse
@@ -242,6 +290,84 @@ func windup_amount() -> float:
 ## 0..1: the stagger slump.
 func stagger_amount() -> float:
 	return _stagger
+
+
+## 0..1: the flinch of the last hit taken (v0.7.5 BM).
+func flinch_amount() -> float:
+	return _flinch
+
+
+## 0..1: the "shielded" pose (v0.7.5 BM; apply_state's "shielded", read from the sim by sync()).
+func shielded_amount() -> float:
+	return _shield_hold
+
+
+## 0..1: how far the death fall has played.
+func death_amount() -> float:
+	return _death
+
+
+## True when this boss's body plays a fall after the sim removes it (the Warlord's model).
+func has_death_pose() -> bool:
+	return false
+
+
+## The sim removed this boss: start the death fall. False when the body has none (ActorViews frees it at once).
+func die() -> bool:
+	if not has_death_pose():
+		return false
+	_dying = true
+	return true
+
+
+## Where a named point on the body is now (v0.7.5 BM: for telegraphs and fireballs to start from), in this node's
+## space: &"weak" is the weak point's core; bodies add their own (anchor_names()). Unknown names give the core.
+func anchor(point: StringName) -> Vector3:
+	return model.transform * _anchor(point)
+
+
+## The points anchor() knows on this body.
+func anchor_names() -> Array[StringName]:
+	return [&"weak"]
+
+
+## A body's own anchors, in the model's space (+X front, Y up); the weak point's core otherwise.
+func _anchor(_point: StringName) -> Vector3:
+	return weak_core.position
+
+
+## The bone the weak point's core rides on (the owner's rigged models), or &"" to keep it still.
+func _weak_bone() -> StringName:
+	return &""
+
+
+## The core rides on its bone: the rest position moved by how far the bone has turned and shifted from its rest.
+func _follow_weak_bone() -> void:
+	var bone := _weak_bone()
+	if poser == null or bone == &"" or not poser.has_bone(bone):
+		return
+	var k := poser.index_of(bone)
+	var delta := (
+		skeleton.get_bone_global_pose(k) * skeleton.get_bone_global_rest(k).affine_inverse()
+	)
+	weak_core.position = _skel_to_model() * (delta * _weak_rest_skel)
+
+
+## The skeleton node's space in the model's space now (the pivot's breath and lean included).
+func _skel_to_model() -> Transform3D:
+	return pivot.transform * BossModels.relative_transform(pivot, skeleton)
+
+
+## A point in the skeleton's space moved with `bone` from its rest, in the model's space (the anchors).
+func _on_bone(bone: StringName, rest_model: Vector3) -> Vector3:
+	if poser == null or not poser.has_bone(bone):
+		return rest_model
+	var k := poser.index_of(bone)
+	var rest_skel := BossModels.relative_transform(pivot, skeleton).affine_inverse() * rest_model
+	var delta := (
+		skeleton.get_bone_global_pose(k) * skeleton.get_bone_global_rest(k).affine_inverse()
+	)
+	return _skel_to_model() * (delta * rest_skel)
 
 
 func _rate(per_second: float, dt: float) -> float:
@@ -270,10 +396,40 @@ func _build_body() -> void:
 	if m.is_empty():
 		_build()
 		return
-	_build_imported(m)
+	if m.get("skinned", false):
+		_build_skinned(m)
+	else:
+		_build_imported(m)
+	_weak_rest_skel = (
+		BossModels.relative_transform(pivot, skeleton).affine_inverse() * _weak_point_at()
+	)
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
+
+
+## v0.7.5 BM: the owner's rigged model as delivered, its own skeleton and skin, under a node that turns, scales and
+## lifts it into our frame; dressed like the others (flashable, outlined, the glow overlay, the X-ray twin).
+func _build_skinned(m: Dictionary) -> void:
+	pivot = Node3D.new()
+	pivot.name = "Body"
+	model.add_child(pivot)
+	var holder := Node3D.new()
+	holder.name = "Normalise"
+	holder.transform = m["transform"]
+	pivot.add_child(holder)
+	var inst: Node3D = (m["scene"] as PackedScene).instantiate()
+	holder.add_child(inst)
+	skeleton = inst.find_children("*", "Skeleton3D", true, false)[0]
+	for n: Node in inst.find_children("*", "MeshInstance3D", true, false):
+		if (n as MeshInstance3D).skin != null:
+			imported = n
+			break
+	imported.name = "Imported"
+	# Poses move parts past the rest pose's bounds (a raised shield, a thrown spear, a folded head): never cull early.
+	imported.extra_cull_margin = 2.0
+	_dress(imported, m["material"], m["scale"])
+	poser = BonePoser.new(skeleton, m["frame"], m["scale"])
 
 
 ## The owner's model: its mesh with the model's albedo kept, made flashable and outlined, a glow overlay, and an
@@ -299,41 +455,51 @@ func _build_imported(m: Dictionary) -> void:
 	imported.name = "Imported"
 	imported.mesh = m["mesh"]
 	imported.skin = m["skin"]
+	skeleton.add_child(imported)
+	imported.skeleton = NodePath("..")
+	_dress(imported, m["material"])
+	poser = BonePoser.new(skeleton)
+
+
+## Dresses the owner's skinned mesh: its own material kept (texture and all), duplicated, made flashable (no drawn
+## outline since v0.7.5), the glow overlay, shadows on, and with the X-ray technique a twin on the same skeleton.
+## `units` is the mesh's metres per unit (the twin shrinks by 4 cm along its normals in metres).
+func _dress(mi: MeshInstance3D, material: StandardMaterial3D, units: float = 1.0) -> void:
 	var mat: StandardMaterial3D = (
-		(m["material"] as StandardMaterial3D).duplicate()
-		if m["material"] != null
-		else StandardMaterial3D.new()
+		material.duplicate() as StandardMaterial3D if material != null else StandardMaterial3D.new()
 	)
+	# v0.7.5 (owner: "remove the stroke outline around the bosses model, it is ugly"): no drawn outline on the
+	# owner's models. The outline stencil mode stays, at zero thickness, so the X-ray twin's stencil is unchanged.
 	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
 	mat.stencil_color = parts.outline_color()
-	mat.stencil_outline_thickness = 0.03
-	imported.material_override = ActorViews.flashable(mat)
+	mat.stencil_outline_thickness = 0.0
+	mi.material_override = ActorViews.flashable(mat)
 	glow_overlay = StandardMaterial3D.new()
 	glow_overlay.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	glow_overlay.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	glow_overlay.blend_mode = BaseMaterial3D.BLEND_MODE_MIX
 	glow_overlay.albedo_color = Color(1.0, 0.06, 0.03, 0.0)
-	imported.material_overlay = glow_overlay
-	imported.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	skeleton.add_child(imported)
-	imported.skeleton = NodePath("..")
+	mi.material_overlay = glow_overlay
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	parts.body_materials.append(mat)
 	if parts.technique() == &"xray":
 		var ghost := MeshInstance3D.new()
 		ghost.name = "XrayTwin"
-		ghost.mesh = m["mesh"]
-		ghost.skin = m["skin"]
+		ghost.mesh = mi.mesh
+		ghost.skin = mi.skin
 		var gm := StandardMaterial3D.new()
 		gm.albedo_color = Color("#6B5F5B")
 		gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
 		# Shrunk along its normals (the skinned twin shares the body's surface, so it would z-fight with it).
 		gm.grow = true
-		gm.grow_amount = -0.04
+		gm.grow_amount = -0.04 / maxf(units, 0.0001)
 		gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
 		ghost.material_override = gm
 		ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		skeleton.add_child(ghost)
-		ghost.skeleton = NodePath("..")
+		ghost.extra_cull_margin = mi.extra_cull_margin
+		mi.get_parent().add_child(ghost)
+		ghost.transform = mi.transform
+		ghost.skeleton = mi.skeleton  # a sibling: the same path reaches the skeleton
 
 
 ## Nodes the code-built body creates up front (freed when the owner's model is used instead).
@@ -387,6 +553,8 @@ func _pose_imported(dt: float) -> void:
 	pivot.scale = Vector3(sxz, sy, sxz)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 	_pose_rig(dt)
+	if poser != null:
+		poser.commit()
 	glow_overlay.albedo_color.a = clampf(
 		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse), 0.0, 0.06
 	)

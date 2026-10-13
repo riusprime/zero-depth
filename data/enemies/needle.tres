@@ -24,6 +24,7 @@ damage = 8
 [resource]
 script = ExtResource("2_enm")
 name_key = &"ENEMY_NEEDLE"
+desc_key = &"ENEMY_NEEDLE_DESC"
 behaviour_id = &"needle"
 behaviour_params = {
 "attack_range_m": 12.0,

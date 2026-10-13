@@ -31,10 +31,9 @@ var q_radius := PackedFloat32Array()
 var q_muzzle := PackedFloat32Array()
 ## The every-N counters, by name (ModifierRuntime.count).
 var counts := {}
-## The dash's start (Long Shadow's afterimage stands there), the walk's last trail drop (and whether one is set), the
-## tick of the last root attack (Ascension's charge waits charge_ticks after it), the last charged attack, the last
-## hit Aether Shell absorbed, the last trail drop (the views).
-var dash_from := Vector2.ZERO
+## The walk's last trail drop (and whether one is set), the tick of the last root attack (Ascension's charge waits
+## charge_ticks after it), the last charged attack, the last hit Aether Shell absorbed, the last trail drop (the
+## views). (The dash's start was kept here too, written and hashed but never read: gone, audit G-15.)
 var trail_at := Vector2.ZERO
 var trail_on := false
 var last_attack := 0
@@ -102,9 +101,8 @@ func hash_into(h: StateHasher) -> void:
 	for k: String in keys:
 		h.add_string(k)
 		h.add_int(int(counts[k]))
-	for p: Vector2 in [dash_from, trail_at]:
-		h.add_f32(p.x)
-		h.add_f32(p.y)
+	h.add_f32(trail_at.x)
+	h.add_f32(trail_at.y)
 	for v in [1 if trail_on else 0, last_attack, charge_tick, shell_tick, trail_tick]:
 		h.add_int(v)
 	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)

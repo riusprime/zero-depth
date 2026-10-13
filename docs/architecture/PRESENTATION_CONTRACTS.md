@@ -165,6 +165,8 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
 | Captions for sounds | v0.1.0 | Every gameplay SFX has a caption key ([`../audio/SFX_NEEDS.md`](../audio/SFX_NEEDS.md)). |
 | Text size floor | v0.0.1 | Body text is at least 18 px at 1080p (**starting value**). |
 | Flash safety | v0.1.0 | No full-screen flash more than 3 times per second. |
+| Interface size | v0.7.5 SM | Options → Accessibility "Interface size" 90 / 100 / 110 % (`ui_scale`): the window's content scale, so every menu, the HUD and their text grow or shrink together; the 3D view is not scaled. 110 % is the most the 1080-built pick panel takes at 1280×720. |
+| First-run hints | v0.7.5 SM | Options → Accessibility "Show hints" (on by default) and "Reset hints". A hint never blocks: no mouse, no focus, no pause; the keys it names follow the last-used device and the live bindings. |
 
 **Palette test** (`tests/unit/presentation/test_palette_contrast.gd`). For each colour-blind mode, it simulates
 the mode's colour vision on the tokens and asserts:
@@ -210,6 +212,46 @@ the mode's colour vision on the tokens and asserts:
   (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
   thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
   build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
+- **The Codex** (v0.7.5 CX, owner N6): `CodexView`, a full-screen Cold glass menu from the main menu (a row after
+  Credits) and the pause menu (a row after Options). Four pages (Cards by pool, Enemies, Bosses, Biomes) of
+  `CodexTile`s, and the focused entry beside them: a card in its crystal frame (`CrystalCard`, its family's frame) or
+  an emblem (`CodexGlyphs`: an enemy by its behaviour, a boss by its id, a biome as a landscape in its palette), the
+  game's own name and sentence keys, and the profile's counts. An entry not met is a dark silhouette named "???".
+  Keyboard arrows / Q E / Esc, pad d-pad / LB RB / B, mouse hover, tab click and Back. It reads `CodexCatalog` and
+  `CodexStore` only; it fits the 1920×1080 base in en and es (`test_codex_view.gd`). It was built straight in the
+  owner's Cold glass look without a G2 round (v0.7.5: the owner asked for no interventions); the owner corrects it
+  at the playtest.
+- **The achievements** (v0.7.5 AC, owner N7): a fifth Codex page, **Achievements** (`AchievementsPage` in
+  `CodexView`, after Biomes; Q E / LB RB, the tab by mouse), the achievements in their groups, two
+  `AchievementRow`s a line: a code-drawn glyph (`AchievementGlyphs`), the name, the sentence and the state. An
+  unlocked one is lit in gold with "Unlocked"; a **locked one is dimmed but keeps its name, its sentence and its
+  progress** ("2 / 5"), so the page says what to aim for; a **hidden** one (today the two Ascension ones) is "???"
+  with the hidden line until it unlocks. The unlock **toast** (`AchievementToast`) is a small Ember-stone slab under
+  the corner minimap (top 404, right 28 at the 1920×1080 base): "ACHIEVEMENT UNLOCKED", the glyph, the name and the
+  sentence, 4 s with a short slide and fade, more unlocks queued; it ignores the mouse and the focus (never
+  blocks), lives on the UI layer outside the HUD so it outlives a floor change, and reads its clock from the frame
+  (a look, never an outcome). Both fit the 1920×1080 base in en and es for every achievement
+  (`test_achievements_view.gd`). Built straight in the owner's looks without a G2 round (v0.7.5: no
+  interventions); the owner corrects it at the playtest.
+- **Card levels** (v0.7.5 SM, owner N8): a card that levels (a wand card, 1–5, and an ability card) wears a small
+  badge centred just above its text panel on every pick card (`CrystalCard` via `PickPanel.card_face`, so the altar
+  and chest pick, the shop's stock, the event panel and the Swap): "Lv 1" when not held, "Lv N → N+1" when taking it
+  levels a held card, and on the boss's legendary altar "Lv N → 5" (its level-5 version; "Lv 5" when not held). The
+  rarity line is unchanged. The HUD's wand pips (`BuildHud`) and the Build page's tiles (`WandRow`) show a wand
+  card's level as they show an ability modifier's. The badge fits on the card at the pick's and the shop's scales
+  in en and es (`test_card_level_views.gd`).
+- **First-run hints** (v0.7.5 SM, owner N8): `OnboardingHints`, one small Ember-stone slab with a cold top line at
+  the top centre (top 150 at the 1920×1080 base, 720 wide, "TIP" and one line); while a centre panel is open (a pick, the
+  Swap, the shop, an event) it sits low instead (its bottom 82 px above the screen's, between the panel's key line and
+  the heat meter), so it never covers the panel's title or cards. Each hint shows once
+  (`HintStore`, the profile's `hints` section): move and aim, attack, dash at a first run's start (each closes when
+  you do it); vent when the heat first reads Hot; the first card pick (the wand reads left to right); the Build page
+  (pause → Build) after the first card joins the wand; the first trigger card; the first shop; the first open
+  portal; the Codex (pause → Codex) at the second floor's start. A hint about a moment (pick, shop, portal, vent)
+  comes before a waiting first-run step; a hint stays at least 2 s and at most 9 s, fades in and out (no slide), and
+  waits under the pause menu, Options, the Build page, the Codex and the run recap. Its clock is the frame's (a look,
+  never an outcome); it reads `WorldReader` only. Built straight in the HUD's look without a G2 round (v0.7.5: no
+  interventions); the owner corrects it at the playtest.
 - **New screens go through gate G2** (2–3 mockups, the owner picks; see
   [`../process/OWNER_GATES.md`](../process/OWNER_GATES.md) §3).
   - **Exemption:** v0.0.1's functional stubs (main menu, pause, options stub, credits, dev panel) use the default

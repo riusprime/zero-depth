@@ -38,11 +38,15 @@ static func active(w: World) -> bool:
 
 
 static func advance(w: World) -> void:
-	if not active(w):
+	var a := w.actors
+	# active(), with the rate computed once (audit G-16)
+	var rate := 0
+	if not w.player_dead() and a.hp[0] < a.max_hp[0]:
+		rate = rate_permille(w)
+	if rate <= 0 or not out_of_combat(w):
 		w.build_state.regen_acc = 0
 		return
-	var a := w.actors
-	w.build_state.regen_acc += a.max_hp[0] * rate_permille(w)
+	w.build_state.regen_acc += a.max_hp[0] * rate
 	while w.build_state.regen_acc >= REGEN_UNIT and a.hp[0] < a.max_hp[0]:
 		a.hp[0] += 1
 		w.build_state.regen_acc -= REGEN_UNIT
