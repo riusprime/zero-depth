@@ -114,7 +114,8 @@ func observe(reader: WorldReader) -> void:
 		&"pick": choosing,
 		&"shop": reader.shop_open(),
 		&"portal": reader.portal_active(),
-		&"vent": _vent_ready(reader),
+		# the heat read builds a dictionary: only while the vent hint is due or showing
+		&"vent": (store.due(&"vent") or _current == &"vent") and _vent_ready(reader),
 	}
 	for id: StringName in CONTEXT:
 		if _moment[id]:

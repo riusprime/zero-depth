@@ -81,14 +81,14 @@ static func legal_text(
 			)
 		)
 	out.append("— Third-party notices (Godot Engine) —")
-	var licences: Dictionary = Engine.get_license_info()
+	var engine_licences: Dictionary = Engine.get_license_info()
 	for entry: Dictionary in Engine.get_copyright_info():
 		for part: Dictionary in entry["parts"]:
 			out.append(
 				"%s: %s (%s)" % [entry["name"], ", ".join(part["copyright"]), part["license"]]
 			)
-	for name: String in licences:
-		out.append("— %s —\n%s" % [name, licences[name]])
+	for name: String in engine_licences:
+		out.append("— %s —\n%s" % [name, engine_licences[name]])
 	return "\n\n".join(out)
 
 
@@ -114,7 +114,7 @@ static func licence_sections(l: LicenceListDefinition) -> PackedStringArray:
 					)
 				)
 			LicenceListDefinition.KIND_ADDON:
-				var note := (
+				var note: String = (
 					""
 					if l.shipped[k] == 1
 					else TranslationServer.translate("UI_CREDITS_NOT_SHIPPED")
