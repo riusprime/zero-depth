@@ -31,7 +31,7 @@ static func power(w: World) -> int:
 	p = p * Stats.value(w, Stats.Stat.ATTACK_SPEED) / 1000
 	# v0.6.0 MX2: per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
 	# utility's level at the table's per-level weight; the items without a slot at the item weight. v0.6.5 WN1: the
-	# wand's cards (Wand.cards, whatever their order: a reorder never changes P), a trigger card 1.
+	# wand's cards (its slots, whatever their order: a reorder never changes P), a trigger card 1.
 	var levels := 0
 	for s in Wand.size(w):
 		levels += power_level(w, s)
