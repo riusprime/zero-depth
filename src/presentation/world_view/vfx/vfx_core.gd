@@ -36,6 +36,9 @@ const DIR := "res://assets/textures/vfx/"
 const LIGHTS := 10
 const DECALS := 64
 const ICE_CAP := 256
+## P-20: every pool's pieces together a frame (the pools' own caps sum to 2,480), PRESENTATION §7's 2,000 live
+## particles; past it the last pieces of the frame drop, as the attack-form canvas's MAX_PARTICLES does.
+const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
@@ -89,6 +92,8 @@ var _now := 0.0
 var _shaders := {}
 ## This frame's taken spots, per kind: kind -> {grid cell (Vector2i) -> [[Vector3, owner]]} (see _claim).
 var _spots := {}
+## P-20: pieces left under MAX_SPRITES this frame.
+var _sprite_left := MAX_SPRITES
 
 
 func _init() -> void:
@@ -220,6 +225,7 @@ func begin(now: float) -> void:
 		_cam_basis = cam.global_transform.basis
 	for p: Dictionary in pools.values():
 		p["used"] = 0
+	_sprite_left = MAX_SPRITES
 	_light_wants.clear()
 	_spots.clear()
 
@@ -256,8 +262,9 @@ func _put(
 ) -> bool:
 	var p: Dictionary = pools[pool]
 	var i: int = p["used"]
-	if i >= int(p["cap"]):
+	if i >= int(p["cap"]) or _sprite_left <= 0:
 		return false
+	_sprite_left -= 1
 	var mm: MultiMesh = p["mm"]
 	mm.set_instance_transform(i, xf)
 	mm.set_instance_color(i, c)

@@ -255,3 +255,22 @@ func test_suppressed_marks_dont_grow_the_cache_forever() -> void:
 	_vfx.finish()
 	assert_eq(_vfx.marks_of(&"scorch"), 1, "the overlap still suppresses them")
 	assert_lte(_vfx._mark_keys.size(), VfxCore.DECALS * 4 + 50, "the cache is trimmed")
+
+
+## Audit P-20: every pool together stays within PRESENTATION §7's 2,000 live particles a frame (the pools' own caps
+## sum to more), and a new frame starts with the whole budget again.
+func test_the_pools_share_one_sprite_budget() -> void:
+	_vfx.begin(0.0)
+	for id: StringName in VfxCore.POOLS:
+		for k in int(VfxCore.POOLS[id][4]):
+			_vfx._put(id, Transform3D(), Color.WHITE, 0, 0.0, 0.0)
+	for k in VfxCore.ICE_CAP:
+		_vfx._put(&"ice", Transform3D(), Color.WHITE, 0, 0.0, 0.0)
+	var total := 0
+	for id: StringName in _vfx.pools:
+		total += _vfx.used(id)
+	assert_eq(total, VfxCore.MAX_SPRITES, "capped at the budget")
+	_vfx.begin(1.0)
+	assert_true(
+		_vfx._put(&"spark", Transform3D(), Color.WHITE, 0, 0.0, 0.0), "a new frame draws again"
+	)
