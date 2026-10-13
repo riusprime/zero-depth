@@ -5,7 +5,25 @@ extends RefCounted
 
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
-## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves.
+## Enemy behaviour ids (BehaviourSchemas.SCHEMAS) to actor kinds (a test checks the two key sets match).
+const ENEMY_KINDS := {
+	&"charger": ActorStore.Kind.CHARGER,
+	&"warden": ActorStore.Kind.WARDEN,
+	&"needle": ActorStore.Kind.NEEDLE,
+	&"hatchling": ActorStore.Kind.HATCHLING,
+	&"arc_caster": ActorStore.Kind.ARC_CASTER,
+	&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
+	&"swarmer": ActorStore.Kind.SWARMER,
+	&"splitter": ActorStore.Kind.SPLITTER,
+	&"splitling": ActorStore.Kind.SPLITLING,
+	&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
+	&"mender": ActorStore.Kind.MENDER,
+	&"mine_layer": ActorStore.Kind.MINE_LAYER,
+	&"sniper": ActorStore.Kind.SNIPER,
+	&"lens_drone": ActorStore.Kind.LENS_DRONE,
+}
+## Bosses (v0.3.0 C): boss ids to actor kinds, move names to BossAttackTable moves (BossSchemas.KINDS and MOVES;
+## a test checks the key sets match).
 const BOSS_KINDS := {
 	&"gatekeeper": ActorStore.Kind.GATEKEEPER,
 	&"brood_mother": ActorStore.Kind.BROOD_MOTHER,
@@ -80,22 +98,7 @@ static func compile_swing_step(sd: SwingStepDefinition) -> SwingStep:
 ## An enemy's numbers in sim units. The behaviour id picks the actor kind.
 static func compile_enemy(def: EnemyDefinition) -> EnemyTable:
 	var t := EnemyTable.new()
-	t.kind = {
-		&"charger": ActorStore.Kind.CHARGER,
-		&"warden": ActorStore.Kind.WARDEN,
-		&"needle": ActorStore.Kind.NEEDLE,
-		&"hatchling": ActorStore.Kind.HATCHLING,
-		&"arc_caster": ActorStore.Kind.ARC_CASTER,
-		&"bomb_drone": ActorStore.Kind.BOMB_DRONE,
-		&"swarmer": ActorStore.Kind.SWARMER,
-		&"splitter": ActorStore.Kind.SPLITTER,
-		&"splitling": ActorStore.Kind.SPLITLING,
-		&"shield_bearer": ActorStore.Kind.SHIELD_BEARER,
-		&"mender": ActorStore.Kind.MENDER,
-		&"mine_layer": ActorStore.Kind.MINE_LAYER,
-		&"sniper": ActorStore.Kind.SNIPER,
-		&"lens_drone": ActorStore.Kind.LENS_DRONE,
-	}[def.behaviour_id]
+	t.kind = ENEMY_KINDS[def.behaviour_id]
 	t.name_key = def.name_key
 	t.hp = def.hp
 	t.radius_m = def.radius_m

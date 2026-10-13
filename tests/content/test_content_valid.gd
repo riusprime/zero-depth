@@ -88,3 +88,21 @@ func test_the_run_validates_and_catches_bad_values() -> void:
 	assert_has(codes, "negative", "scaling can't be negative")
 	assert_has(codes, "table_order", "the per-floor HP table never falls (v0.4.0 SC)")
 	assert_has(codes, "range", "the heal is a share of max HP")
+
+
+## v0.7.0 audit A-15: the content schemas (what validation accepts) and the compiler's name-to-enum maps (what it
+## can compile) name the same enemy behaviours, boss ids and boss moves, so a schema entry the compiler lacks fails
+## here instead of crashing the floor that first compiles it.
+func test_the_schemas_and_the_compiler_name_the_same_ids() -> void:
+	var pairs := [
+		["enemy behaviours", BehaviourSchemas.SCHEMAS.keys(), ContentCompiler.ENEMY_KINDS.keys()],
+		["boss ids", Array(BossSchemas.KINDS), ContentCompiler.BOSS_KINDS.keys()],
+		["boss moves", BossSchemas.MOVES.keys(), ContentCompiler.BOSS_MOVES.keys()],
+	]
+	for p: Array in pairs:
+		var schema: Array = p[1].map(func(k: Variant) -> String: return String(k))
+		var compiler: Array = p[2].map(func(k: Variant) -> String: return String(k))
+		schema.sort()
+		compiler.sort()
+		assert_eq(schema, compiler, p[0])
+		assert_gt(schema.size(), 0, p[0])
