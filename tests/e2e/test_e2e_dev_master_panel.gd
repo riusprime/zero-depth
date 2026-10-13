@@ -82,6 +82,30 @@ func test_f10_edit_restart_floor() -> void:
 	assert_false(main.driver.paused)
 
 
+## Audit P-16: Esc over the open master panel opens the pause menu; its Resume must not run the sim behind the panel.
+func test_resume_from_pause_keeps_the_master_panel_paused() -> void:
+	_e = E2e.new(self)
+	var main := await _e.boot()
+	main.tuning.save_path = SAVE
+	await _e.start_from_menu()
+	await _e.tap(KEY_F10)
+	assert_not_null(main.get_node_or_null("UI/DevMasterPanel"), "F10 opens the panel")
+	assert_true(main.driver.paused, "the run waits")
+	# Esc reaches the game while the panel is open (the panel has no input handler) and opens the pause menu.
+	await _e.tap(KEY_ESCAPE)
+	await _e.frames(2)
+	assert_not_null(main._pause, "the pause menu opened over the panel")
+	await _e.tap(KEY_ESCAPE)  # Esc again: the pause menu's Resume path (close_pause)
+	await _e.frames(2)
+	assert_null(main._pause, "the pause menu closed")
+	assert_true(main.driver.paused, "the master panel keeps the run paused behind it")
+	var t := main.driver.world.tick
+	await _e.frames(10)
+	assert_eq(main.driver.world.tick, t, "no tick ran behind the master panel")
+	await _e.tap(KEY_F10)
+	assert_false(main.driver.paused, "closing the panel resumes the run")
+
+
 ## Types `text` as key presses that carry their characters (a text field reads the unicode, not the key).
 func _type(text: String) -> void:
 	for ch in text:
