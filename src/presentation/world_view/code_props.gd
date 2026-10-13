@@ -110,14 +110,14 @@ static func _spike(st: SurfaceTool, at: Vector3, h: float, w: float, lean: Vecto
 		_tri(st, shoulder[k], tip, shoulder[k2], inside)
 
 
-## v0.7.5 NB2: a small cluster of hexagonal crystals from one root, the tallest near upright, three leaning out.
+## v0.7.5 NB2: a small cluster of hexagonal crystals from one root, the tallest near upright, two leaning out
+## (three six-sided prisms, 162 vertices: under the 200 low-poly cap).
 static func star_crystal_mesh() -> ArrayMesh:
 	var st := _begin()
 	for spec: Array in [
 		[Vector3(0.0, 0.0, 0.0), 1.0, 0.12, Vector3(0.05, 0.0, -0.08)],
 		[Vector3(0.14, 0.0, -0.1), 0.66, 0.09, Vector3(-0.2, 0.0, -0.45)],
 		[Vector3(-0.12, 0.0, 0.12), 0.52, 0.08, Vector3(0.4, 0.0, 0.3)],
-		[Vector3(-0.15, 0.0, -0.14), 0.36, 0.07, Vector3(-0.45, 0.0, 0.1)],
 	]:
 		_prism(st, spec[0], spec[1], spec[2], spec[3], 6)
 	return _end(st)
