@@ -126,7 +126,7 @@ static func grant_start(w: World) -> void:
 
 
 ## v0.6.0 MX2: ability slot `s` (World.ability_owned order) leaves the build: its level, cooldown and its own floor
-## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.salvage_ability).
+## state go; the combos it completed go too, and the build refreshes (BuildSlots.drop, Shop.sell).
 static func remove_slot(w: World, s: int) -> void:
 	var t := w.ability_tables[w.ability_owned[s]]
 	w.ability_owned.remove_at(s)

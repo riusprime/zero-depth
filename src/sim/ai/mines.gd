@@ -33,11 +33,6 @@ static func drop(w: World, i: int) -> void:
 	)
 
 
-## [center, radius] of mine k: the disc that arms it and that its blast hits.
-static func disc(w: World, k: int) -> Array:
-	return [w.mines.pos(k), w.mines.radius[k]]
-
-
 static func advance(w: World) -> void:
 	var m := w.mines
 	if m.size() == 0:

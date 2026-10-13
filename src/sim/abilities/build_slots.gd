@@ -54,10 +54,6 @@ static func held(w: World, code: int) -> bool:
 	return false
 
 
-static func count(w: World) -> int:
-	return w.mod_slots.size()
-
-
 ## Every slot of the wand holds a card (v0.6.5 WN1: the floor's count, Wand.slots; a migrated wand may hold more).
 static func full(w: World) -> bool:
 	return w.mod_slots.size() >= Wand.slots(w)

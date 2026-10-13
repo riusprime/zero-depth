@@ -139,19 +139,6 @@ static func is_finisher(w: World, step: int) -> bool:
 	return step == w.player.combo.size() - 1
 
 
-static func swing_hits(w: World, i: int) -> bool:
-	return arc_hits(w, i, w.swing_angle)
-
-
-## True if the arc of combo step `step` (-1 = the current one) at `angle` touches actor i: its compiled spec's
-## (Attacks.arc_touches), the same numbers WorldReader.swing_shape draws (EI-07).
-static func arc_hits(w: World, i: int, angle: int, step: int = -1) -> bool:
-	var s := step if step >= 0 else w.combo_step
-	return Attacks.arc_touches(
-		w, Modifiers.step(w, s), w.player_pos(), angle, w.actors.pos(i), w.actors.radius[i]
-	)
-
-
 ## The lunge for this tick (phase 5): the current step's lunge_m spread over the ticks before its hit, along the
 ## swing angle. Zero when no swing is running or the step doesn't lunge.
 static func lunge_offset(w: World) -> Vector2:

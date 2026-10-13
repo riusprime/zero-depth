@@ -214,7 +214,7 @@ func test_salvage_frees_a_modifier_slot() -> void:
 			n = k
 			break
 	assert_gt(n, -1, "a modifier on the salvage list")
-	Shop.salvage_ability(w, sells[n][1])
+	Abilities.remove_slot(w, sells[n][1])  # what Shop.sell does for an ability
 	assert_eq(w.mod_slots.size(), 5, "its slot is free")
 	assert_false(BuildSlots.full(w))
 

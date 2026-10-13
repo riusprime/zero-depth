@@ -262,7 +262,9 @@ func test_a_hook_never_runs_inside_its_own_chain() -> void:
 	base.form = FORM.BURST
 	base.tags = PackedStringArray(["area"])
 	base.radius_m = 4.0
-	var s := Modifiers.compile_spec(base, [loop] as Array[ModifierTable])
+	var c := WandCompile.new()
+	c.mods = [loop] as Array[ModifierTable]
+	var s := c.spec(base)
 	# v0.6.0 MX4: lineage, the compile-time guard: the child never carries the hook that made it.
 	assert_eq(s.hooks[0].child.hooks.size(), 0, "the child carries no copy of its own hook")
 	assert_true(s.hooks[0].child.lineage.has("loop"))

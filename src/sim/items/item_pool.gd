@@ -47,7 +47,7 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows
 			and not w.shop.offer.has(idx)  # v0.5.0 SH: a mod in the shop's stock
 			and not w.cores.card.has(idx)  # v0.6.0 CU: a mod an elite's or boss's core holds
-			and _usable(w, idx)
+			and usable(w, idx)
 		):
 			left.append(idx)
 	return left
@@ -57,10 +57,6 @@ static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 ## is never offered blade items, nor a Blade run bolt items), and a heat item only in a world with heat (L18).
 ## v0.5.0 CP: an ability mod only while the player owns its ability. v0.6.5 WN5b: never a retired v0.6 card.
 static func usable(w: World, idx: int) -> bool:
-	return _usable(w, idx)
-
-
-static func _usable(w: World, idx: int) -> bool:
 	var it := w.item_tables[idx]
 	# v0.6.5 WN5a: the wand's trigger cards (WAND.md T1–T4) are offered in both weapons' runs.
 	if it.retired:

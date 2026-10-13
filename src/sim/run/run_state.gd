@@ -58,10 +58,6 @@ func biome_of(f: int = floor_index) -> int:
 	return biome_order[clampi(f - 1, 0, biome_order.size() - 1)]
 
 
-func is_last_floor() -> bool:
-	return floor_index >= table.floors
-
-
 ## v0.5.0 RT: floor f's route (Routes.Route; NORMAL past the floors reached) and whether it is Deep.
 func route_of(f: int = floor_index) -> int:
 	return routes[f - 1] if f >= 1 and f <= routes.size() else Routes.Route.NORMAL

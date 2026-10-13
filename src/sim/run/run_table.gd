@@ -20,7 +20,3 @@ var deep_extra_chests := 1
 ## v0.4.0 TU (owner D9): per floor, the boss's HP and damage per mille and the HP restored when its room seals.
 var boss_ease_floor_permille := PackedInt32Array([1000])
 var boss_room_heal_floor_permille := PackedInt32Array([0])
-
-
-static func starting_values() -> RunTable:
-	return RunTable.new()

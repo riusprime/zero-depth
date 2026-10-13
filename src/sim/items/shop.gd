@@ -313,7 +313,7 @@ static func sell(w: World, n: int) -> bool:
 		SELL_STAT:
 			remove_stat_card(w, code)
 		SELL_ABILITY:
-			salvage_ability(w, entry[1])
+			Abilities.remove_slot(w, entry[1])  # its level, cooldown and floor state go
 	w.shards += entry[3]
 	var pid := w.actors.ids[0]
 	var e := w.emit_event(SimEvent.Kind.SHOP_SALVAGE, w.shop.id, pid, code, w.shop.pos)
@@ -365,12 +365,6 @@ static func rebuild_stats(w: World, cards: PackedInt32Array) -> void:
 			Stats.add_amount(w, stat, Gamble.gamble_permille(w, s))
 	w.actors.max_hp[0] = maxi(1, Stats.max_hp(w))
 	w.actors.hp[0] = clampi(hp, 1, w.actors.max_hp[0])
-
-
-## Frees ability `s` (World.ability_owned order; never the weapon): its level, cooldown and its own floor state go
-## (v0.6.0 MX2: a modifier's slot frees; Abilities.remove_slot).
-static func salvage_ability(w: World, s: int) -> void:
-	Abilities.remove_slot(w, s)
 
 
 # --- Read (WorldReader.shop) ------------------------------------------------------------------------------------
