@@ -135,6 +135,7 @@ func test_the_models_are_flashable_outlined_textured_with_an_xray_twin() -> void
 		assert_true(m.emission_enabled, "flashable: emission on")
 		assert_eq(m.emission_energy_multiplier, 0.0, "dark until hit")
 		assert_eq(m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "%s outlined" % id)
+		assert_eq(m.stencil_outline_thickness, 0.0, "%s: no drawn outline (owner, v0.7.5)" % id)
 		assert_not_null(m.albedo_texture, "%s keeps its texture" % id)
 		var twins := a.find_children("XrayTwin", "MeshInstance3D", true, false)
 		assert_eq(twins.size(), 1, "%s has its X-ray twin" % id)
