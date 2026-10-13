@@ -265,12 +265,13 @@ func test_lens_drones_fly_the_needles_behaviour() -> void:
 		w.step(InputFrame.new())
 		var i := w.actors.index_of(id)
 		var tg := EnemyAi.telegraph(w, i)
-		if not tg.is_empty():
-			marked = marked or tg["shape"] == &"lanes"
+		if not tg.is_empty():  # v0.7.5 EF (owner N16): a body cue, no ground line
+			marked = marked or (tg["shape"] == &"cast" and tg["ground"] == false)
+			assert_ne(tg["shape"], &"lanes", "no lane drawn on the ground")
 	for e in w.events_since(seq):
 		if e.kind == SimEvent.Kind.SPAWN and e.owner_id == id and e.source_id != id:
 			fired += 1
-	assert_true(marked, "its shots are marked as lanes first")
+	assert_true(marked, "it winds up before it fires its ring")
 	assert_gt(fired, 0, "it fires")
 	assert_eq(EnemyAi.behaviour_of(ActorStore.Kind.LENS_DRONE), ActorStore.Kind.NEEDLE)
 	assert_eq(EnemyAi.behaviour_of(ActorStore.Kind.CHARGER), ActorStore.Kind.CHARGER)
