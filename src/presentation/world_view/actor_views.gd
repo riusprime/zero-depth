@@ -222,7 +222,10 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 			var node: Node3D = nodes[id]
 			nodes.erase(id)
 			# v0.7.5 BM: a boss whose body falls when it dies keeps drawing its fall a moment, then goes.
-			var boss: Variant = node.get_meta(&"enemy_avatar", null)
+			# (has_meta first: get_meta with a null default still reports a missing key, e.g. for a dummy)
+			var boss: Variant = (
+				node.get_meta(&"enemy_avatar") if node.has_meta(&"enemy_avatar") else null
+			)
 			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
 				(boss as Node).set_process(true)
 				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)

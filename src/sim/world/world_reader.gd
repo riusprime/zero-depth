@@ -855,6 +855,11 @@ func has_floor() -> bool:
 	return _w.floor_layout != null
 
 
+## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
+func has_gate() -> bool:
+	return _w.floor_layout != null and _w.boss_flow != null
+
+
 func floor_bounds() -> Rect2:
 	return _w.floor_layout.bounds if _w.floor_layout != null else Rect2()
 
