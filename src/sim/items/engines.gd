@@ -543,19 +543,10 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 ## Blood Harvest's heal, inside Vampiric Core's per-window cap (the same ledger as its kill heal). The HEAL event
 ## logs the request and what was applied.
 static func _harvest_heal(w: World, heal: int, kill: SimEvent) -> void:
-	var m := w.item_mods
 	var a := w.actors
 	if w.player_dead():
 		return
-	if w.heal_window_start < 0 or w.tick - w.heal_window_start >= m.heal_window_ticks:
-		w.heal_window_start = w.tick
-		w.heal_window_used = 0
-	var cap_left := maxi(0, m.heal_cap - w.heal_window_used)
-	var applied := maxi(0, mini(heal, mini(cap_left, a.max_hp[0] - a.hp[0])))
-	a.hp[0] += applied
-	w.heal_window_used += applied
-	if applied > 0:
-		w.heal_tick = w.tick
+	var applied := ItemProcs.heal_in_window(w, heal)  # the one window rule (audit G-17)
 	var h := w.emit_event(SimEvent.Kind.HEAL, a.ids[0], a.ids[0], a.ids[0], w.player_pos())
 	h.root_id = kill.root_id
 	h.parent_seq = kill.seq
