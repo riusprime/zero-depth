@@ -124,3 +124,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - 2026-10-13: owner N20, the Playground (a creative mode to test builds, dummies, bosses and biomes); plan in
   [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md), built on `claude/playground` from `d5a5602`.
 - 2026-10-13: PG built on `claude/playground` (PG1-PG5, evidence [`evidence/PLAYGROUND.md`](evidence/PLAYGROUND.md)): seams 288/288, presentation units + 11 e2e 516/516; a BM bug in `ActorViews._drop_missing` (get_meta with a null default) fixed on the way. Not merged into `claude/v0.7.5-new-ground` yet (that branch's lead merges it, so BF's boss changes reach the Playground).
+- 2026-10-13: owner: "Can you merge this branch claude/playground with yours? It adds a playground to test the combat
+  features, so I could try new bosses fights and adjust easier". Merged (`344b99e`, PG1–PG5; docs and translations
+  conflicted, both kept). Its owner line was numbered N19 like the outline line, so it is N20 here (PLAN, PROGRESS,
+  docs/tools/PLAYGROUND.md and its code comments). Playground tests on the merge 29/29.
