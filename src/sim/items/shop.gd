@@ -329,6 +329,7 @@ static func remove_item(w: World, idx: int) -> void:
 	var owned := w.items_owned.duplicate()
 	owned.remove_at(owned.find(idx))
 	var still := Engines.combos_for(w.combo_tables, owned)
+	still.append_array(AbilityCombos.earned(w))  # as Abilities.remove_slot: an ability combo keeps its place (G-23)
 	var keep := PackedInt32Array()
 	for c in w.combos_owned:
 		if still.has(c):
