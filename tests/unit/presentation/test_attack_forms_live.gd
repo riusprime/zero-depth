@@ -210,3 +210,28 @@ func test_a_fire_patch_keeps_its_seed_when_an_older_one_goes_out() -> void:
 			assert_eq(f["seed"], before[f["pos"]], "same patch, same seed")
 			after += 1
 	assert_eq(after, 2)
+
+
+## Audit P-19a: the bomb-look cache drops its oldest entries past 64, never wholesale, so a bomb in flight when the
+## cache fills still lands in its own look (not the plain one).
+func test_a_full_bomb_look_cache_keeps_the_newest_bomb() -> void:
+	var view: AttackFormView = add_child_autofree(AttackFormView.new())
+	for k in 64:
+		view._bomb_looks[AttackFormView._pos_key(Vector2(k, 50))] = {"old": k}
+	var mine := {"form": "mine", "colour": Color.RED}
+	view._bomb_looks[AttackFormView._pos_key(Vector2(3, 4))] = mine
+	var none := {
+		"blast_tick": PackedInt32Array(),
+		"blast_pos": PackedVector2Array(),
+		"blast_r": PackedFloat32Array()
+	}
+	view._sync_blasts(none)  # the sync it was cached on: the cache is past 64
+	assert_eq(view._bomb_looks.size(), 64, "trimmed to 64")
+	assert_false(view._bomb_looks.has(AttackFormView._pos_key(Vector2(0, 50))), "the oldest went")
+	var landed := {
+		"blast_tick": PackedInt32Array([10]),
+		"blast_pos": PackedVector2Array([Vector2(3, 4)]),
+		"blast_r": PackedFloat32Array([1.5])
+	}
+	view._sync_blasts(landed)
+	assert_eq(view._effects[-1]["look"], mine, "it lands in its own look")
