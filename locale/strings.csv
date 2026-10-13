@@ -118,6 +118,8 @@ CAUSE_SIEGE_BARRAGE,The Siege Engine's shells blew you apart.,Los proyectiles de
 CAUSE_SIEGE_RAIL,The Siege Engine's rail beam burned through you.,El rayo de la Máquina de Asedio te atravesó.
 CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyectiles de la Máquina de Asedio te abatió.
 CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
+CAUSE_SIEGE_CROSS,The Siege Engine's turret cross burned you down.,La cruz de torretas de la Máquina de Asedio te abrasó.
+CAUSE_SIEGE_GRID,The Siege Engine's mortar grid caught you on the wrong square.,La cuadrícula de morteros de la Máquina de Asedio te pilló en la casilla equivocada.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
 REWARD_OPEN_ALTAR,[E / X] Open the altar,[E / X] Abrir el altar
@@ -466,6 +468,8 @@ CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de 
 CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de la Fundición te abrasó.
 CAUSE_FOUNDRY_LAUNCH,A Bomb Drone launched by the Foundry crushed you.,Un Dron Bombardero lanzado por la Fundición te aplastó.
 CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición inundó la sala de fuego.
+CAUSE_FOUNDRY_FOUNTAIN,The Foundry's slag fountain rained down on you.,La fuente de escoria de la Fundición te llovió encima.
+CAUSE_FOUNDRY_WAVES,The Foundry's furnace waves washed over you.,Las oleadas del horno de la Fundición te arrasaron.
 CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
 CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
 CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
@@ -892,10 +896,10 @@ ENEMY_SNIPER_DESC,"Shows a long line, then fires down it for heavy damage, and w
 ENEMY_LENS_DRONE_DESC,"Breaks off the Hive Lens's rim and fires slow rings of six red orbs from a distance.","Se desprende del borde de la Lente Enjambre y dispara, a distancia, anillos lentos de seis orbes rojos."
 BOSS_GATEKEEPER_DESC,"A giant stone sentinel, the Warden's big brother: fist slams, shock lanes, sweeps and charges.","Un centinela de piedra gigante, el hermano mayor del Guardián: puñetazos al suelo, carriles de choque, barridos y embestidas."
 BOSS_BROOD_MOTHER_DESC,"Lobs eggs onto circles that follow you, each bursting into a star of acid, and spins webs of acid globs. Her leaps and burrows lock where you stood: keep moving. Shielded while her eggs fly; she calls her Hatchlings too.","Lanza huevos sobre círculos que te siguen, y cada uno estalla en una estrella de ácido; teje espirales de gotas ácidas. Sus saltos y sus excavaciones se fijan donde estabas: no te quedes quieto. Se protege mientras vuelan sus huevos; también llama a sus Crías."
-BOSS_SIEGE_ENGINE_DESC,"A war machine that rains barrages, sweeps rails, fans out bolts and deploys its drones.","Una máquina de guerra que lanza descargas, barre con raíles, dispara abanicos de proyectiles y despliega sus drones."
+BOSS_SIEGE_ENGINE_DESC,"A war machine that braces behind its shield and turns a cross of cannon embers, shells a checkerboard of circles, drops shells that follow you, fires a rail down your lane and deploys its turrets.","Una máquina de guerra que se atrinchera tras su escudo y gira una cruz de brasas de cañón, bombardea un tablero de círculos, lanza proyectiles que te siguen, dispara un raíl por tu carril y despliega sus torretas."
 BOSS_WARLORD_DESC,"A shielded knight that plants spear lines, dashes and rains javelins. Planting and dashing lower its shield.","Un caballero con escudo que planta líneas de lanzas, embiste y lanza jabalinas. Al plantar y embestir baja el escudo."
 BOSS_HIVE_LENS_DESC,"A floating eye that fires prism spirals that turn back halfway, blooming petals and rings with two gaps, and a focus beam that follows you, then locks. Its eye closes, shielded, while the spiral turns. Once hurt, Lens Drones break off its rim.","Un ojo flotante que dispara espirales de prismas que giran al revés a mitad, flores de pétalos y anillos con dos huecos, y un rayo concentrado que te sigue y luego se fija. Cierra el ojo, protegido, mientras gira la espiral. Al quedar herido, se desprenden Drones Lente de su borde."
-BOSS_FOUNDRY_DESC,"A walking furnace that floods lanes with molten floor, lobs slag and launches Bomb Drones.","Un horno andante que inunda carriles de suelo fundido, lanza escoria y suelta Drones Bombarderos."
+BOSS_FOUNDRY_DESC,"A walking furnace that shuts its door and rains slag in a flower around it, sends out rings of molten drops with shifting gaps, floods your row with molten floor and launches Bomb Drones.","Un horno andante que cierra su puerta y hace llover escoria en forma de flor a su alrededor, lanza anillos de gotas fundidas con huecos que se desplazan, inunda tu fila de suelo fundido y suelta Drones Bombarderos."
 BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de piedra antigua bajo una luz fría.
 BIOME_FROZEN_SHORE_DESC,"A moonlit shore locked in ice: snow, slate and frozen sea. The ice patches make you slide.","Una costa helada bajo la luna: nieve, pizarra y mar congelado. Las placas de hielo te hacen resbalar."
 BIOME_STARFALL_DESC,"Floating rock and crystal islands over a field of stars. The starglow pools speed your step.","Islas flotantes de roca y cristal sobre un campo de estrellas. Los charcos de luz estelar aceleran tu paso."

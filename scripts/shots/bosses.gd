@@ -21,7 +21,7 @@ const BOSSES_2: Array[StringName] = [&"warlord", &"hive_lens", &"foundry"]
 const SHOWN := {
 	&"gatekeeper": [&"fist_slam_2", &"shock_lanes"],  # v0.7.5 BF1
 	&"brood_mother": [&"leap", &"brood_4"],
-	&"siege_engine": [&"barrage_7", &"rail_sweep"],
+	&"siege_engine": [&"mortar_grid", &"rail"],  # v0.7.5 BF3
 	&"warlord": [&"spear_lines@active", &"lunge_dash"],
 	&"hive_lens": [&"lens_sweep@active", &"split@half"],
 	&"foundry": [&"molten_flood@active", &"bomb_launch"],

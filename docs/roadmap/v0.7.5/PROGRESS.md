@@ -18,6 +18,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | PG | The Playground (owner N20): a main-menu row into one big 4×4 room with your weapon; F1 opens a panel (the game waits) to add any card at any level or remove it, place dummies (never die, or a set HP), any enemy or boss with a click and delete with a right click, switch between the five biomes, god mode and heal; a DPS meter (last 5 s, average, total, time, every source by its card's name); nothing saved or recorded ([evidence](evidence/PLAYGROUND.md)) | `f612776`, `f85657f`, `519a445`, `431b543`, `d1ed9ac` (branch `claude/playground`) |
 | EF | Enemy fireballs: the Arc Caster casts fans of 3 slow blue-white plasma balls, the Lens Drone fires rings of 6 small red orbs, the Bomb Drone lobs a violet fireball (seen in the air) that bursts into an X of 4 cinders; none of the three draws a line or circle on the ground any more (the Arc Caster's rune keeps its circle); Needle, Sniper and the melee kinds unchanged; elites of the three fire the same ([evidence](evidence/ENEMY_FIREBALLS.md)) | `v0.7.5 Step EF` commit (branch `v075-ef`) |
 | BF2 | Boss fights, part 2: the Brood Mother and the Hive Lens fight dodge-first. The Brood Mother lobs eggs onto circles that follow you then lock, each bursting into an 8-point star of green acid globs (shielded); she spins 2-arm acid webs that turn back, and her leaps and her burrow's eruption follow your exact position and lock 0.8 s, the eruption bursting into a ring; her Hatchlings stay. The Hive Lens fires 3-arm prism spirals that reverse halfway with its eye closed (shielded), 5-petal blooms, rings with two gaps, and a focus beam that follows you then locks; its Lens Drones still break off. Magenta prism orbs; HP ×1.25; phase 3 the hardest mix ([evidence](evidence/BOSS_FIGHTS_2.md)) | `v0.7.5 Step BF2` commit (branch `v075-bf2`) |
+| BF3 | Boss fights, part 3: the Siege Engine and the Foundry fight dodge-first. The Siege Engine braces behind its shield and turns a cross of orange cannon embers trailing smoke, shells a checkerboard of circles that follows you and strikes its two colours in turn, drops three circles on you one after another and fires a rail down your lane, all locking 0.8 s before they hit; it still deploys its turrets. The Foundry shuts its door and rains white-yellow molten drops in a flower around it, sends out rings with shifting gaps, floods your row with molten lanes that follow you then lock, and keeps launching Bomb Drones. HP ×1.25; phases add and speed patterns ([evidence](evidence/BOSS_FIGHTS_3.md)) | `v0.7.5 Step BF3` commit (branch `v075-bf3`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -33,6 +34,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - PG: none. One sim file gained a function (`FloorGenerator.one_room`) and one a read (`WorldReader.has_gate`); `tests/golden` passed in the seams run.
 - EF: none. `tests/golden` passes unchanged (its replays fire no Arc Caster, Lens Drone or Bomb Drone shot). Fights with those three hash differently on purpose (new attacks); no golden fixture holds one
 - BF2: none. `tests/golden` passes unchanged (boss-free replay). The Brood Mother's and the Hive Lens's fight hashes change on purpose (new attacks, patterns, HP); no golden fixture holds one
+- BF3: none. `tests/golden` passes unchanged. The Siege Engine's and the Foundry's fight hashes change on purpose (new attacks, patterns, HP); no golden fixture holds one
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -159,3 +161,13 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   (`ProjectileStore.cause`). Seams on `96bb7ea` then failed 4 old-save tests (the new column not in
   `WorldSnapshot.ADDED_SINCE_V05`); fixed (`c238045`). Local re-runs: the sim_b shard `Tests 439`, `Passing Tests
   439`; seams on `c238045` green. `test_readable_cause.gd` joins `scripts/ci/seams.sh`. Pushed.
+- 2026-10-13: BF3 (agent, branch `v075-bf3` from `81a07b5`): the Siege Engine's and the Foundry's fights rebuilt per
+  BOSS_FIGHTS.md (Turret Cross, Mortar Grid, Barrage, Rail; Slag Fountain, Furnace Waves, Molten Flood), HP ×1.25;
+  engine additions: moves `grid` and `row_flood`, the raining FLOWER (`rain_seconds` / `rain_m`,
+  `WorldReader.boss_rain`), looks `cannon_ember` / `molten_drop`. Readings in PLAN "BF3". Evidence
+  [`evidence/BOSS_FIGHTS_3.md`](evidence/BOSS_FIGHTS_3.md). Not run by the agent: the full suite, bot sims, seams.
+  Not pushed.
+- 2026-10-13: BF3 merged with `claude/v0.7.5-new-ground` at `96bb7ea` (BF2, its fix, EF) on `v075-bf3`, after the
+  lead's heads-up: conflicts append-only, BF2's `cast` pattern telegraph kept; two fixes in the merge commit: the new
+  `ProjectileStore.cause` column listed in `WorldSnapshot.ADDED_SINCE_V05` (old saves failed to restore without it),
+  the cannon embers' core #FFB878 → #D79000 (BF2's looks-apart test). Runs in the evidence. Not pushed.

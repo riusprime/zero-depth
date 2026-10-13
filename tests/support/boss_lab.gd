@@ -90,3 +90,66 @@ static func vortex_def() -> BossAttackDefinition:
 	d.cause_key = &"CAUSE_GATEKEEPER_PULL"
 	d.opens_weak_point = true
 	return d
+
+
+## v0.7.5 BF3: the Siege Engine's v0.7.0 attacks that BF3 replaced (a scattered barrage, the rail sweep, the fast
+## bolt fan), as fixtures for the tests of their moves (the Hive Lens's own may change in BF2). Their v0.7.0 numbers.
+static func siege_v070_def(attack_id: StringName) -> BossAttackDefinition:
+	var d := BossAttackDefinition.new()
+	d.id = attack_id
+	d.active_seconds = 0.0167
+	d.min_range_m = 0.0
+	match attack_id:
+		&"barrage_7":
+			d.shape = AttackDefinition.Shape.CIRCLE
+			d.shape_params = {"count": 7, "radius_m": 1.6, "spread_m": 4.0}
+			d.telegraph_seconds = 1.0
+			d.recovery_seconds = 0.6
+			d.damage = 20
+			d.move = &"barrage"
+			d.max_range_m = 30.0
+			d.cause_key = &"CAUSE_SIEGE_BARRAGE"
+		&"rail_sweep":
+			d.shape = AttackDefinition.Shape.CONE
+			d.shape_params = {"arc_degrees": 110.0, "reach_m": 13.0}
+			d.telegraph_seconds = 1.0
+			d.active_seconds = 1.2
+			d.recovery_seconds = 1.2
+			d.damage = 28
+			d.move = &"rail"
+			d.max_range_m = 13.0
+			d.cause_key = &"CAUSE_SIEGE_RAIL"
+			d.opens_weak_point = true
+		&"bolt_fan":
+			d.shape = AttackDefinition.Shape.PROJECTILE
+			d.shape_params = {
+				"count": 7,
+				"gap_seconds": 0.25,
+				"radius_m": 0.16,
+				"range_m": 16.0,
+				"speed_mps": 10.0,
+				"spread_degrees": 10.0,
+				"volleys": 3
+			}
+			d.telegraph_seconds = 0.7
+			d.active_seconds = 0.75
+			d.recovery_seconds = 0.6
+			d.damage = 10
+			d.move = &"bolt_fan"
+			d.max_range_m = 16.0
+			d.cause_key = &"CAUSE_SIEGE_BOLTS"
+			d.opens_weak_point = true
+		_:
+			return null
+	return d
+
+
+## v0.7.5 BF3: makes sure boss `id` in this world has attack `attack_id`: a v0.7.0 Siege Engine fixture
+## (siege_v070_def) is appended when its table has no attack by that id. Returns the attack's index (-1: none).
+static func ensure_attack(w: World, id: StringName, attack_id: StringName) -> int:
+	var t := w.boss_tables[table_index(w, id)]
+	var k := t.attack_index(attack_id)
+	if k >= 0:
+		return k
+	var d := siege_v070_def(attack_id)
+	return with_attack(w, id, d) if d != null else -1

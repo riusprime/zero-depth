@@ -574,6 +574,15 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     with `lock_seconds` lays its eruption circle on the player's exact position while the ripple tracks
     (`track_seconds`), then holds it for `erupt_seconds` (set it to the lock, 0.8 s) and erupts there.
   - The Hive Lens's Focus Beam is a `lanes` attack (count 1, or 3 in phase 3) with `lock_seconds`.
+- **v0.7.5 BF3 (the Siege Engine and the Foundry).** Two more moves, both needing `lock_seconds`:
+  - `grid` (CIRCLE): `count` (odd) × `count` circles of `radius_m`, `cell_m` apart centre to centre (`cell_m` >=
+    2 × `radius_m`, so neighbours never overlap), centred on the player's exact position until the lock; `volleys`
+    strikes `stagger_seconds` apart alternate the checkerboard's two colours (the first holds the player's square);
+    each later colour shows only for its own lock before it strikes. A cell whose centre is in a wall is left out.
+    Active until the last volley strikes.
+  - `row_flood` (LINE): `count` lanes along the room's rows (x), `gap_m` apart centre to centre and centred on the
+    player's row, `length_m` long centred on the player (cut short by walls), `width_m` wide; tracked then locked,
+    then standing for `active_seconds` and hurting at most once every `burn_seconds`, like `flood` (drawn molten).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
@@ -609,6 +618,9 @@ enum Kind { RING, SPIRAL, FAN, CROSS, WALL, FLOWER, BURST }
 @export var petal_cut_permille: int     # ... and shots under this are left out (100..900): the gaps between petals
 @export var lob_seconds: float          # BURST: the shell flies this long to the attack's locked target ...
 @export var land_radius_m: float        # ... lands as a marker of this radius (it hurts), and bursts into its star
+@export var rain_seconds: float         # FLOWER (v0.7.5 BF3; 0 = none): each wave's drops are thrown up and land this
+@export var rain_m: float               #   long later, rain_m x the petal's speed share out from the body's edge (a
+                                        #   flower round it), then roll on as the shots; in the air they don't hurt
 ```
 
 v0.7.5 EF: enemies fire patterns too (§3, "the fireball enemies"): an enemy attack names one with `pattern_id`. A

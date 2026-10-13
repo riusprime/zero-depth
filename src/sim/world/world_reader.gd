@@ -110,6 +110,8 @@ const MOVE_FLOOD := BossAttackTable.Move.FLOOD
 const MOVE_PATTERN := BossAttackTable.Move.PATTERN
 const MOVE_MARKS := BossAttackTable.Move.MARKS
 const MOVE_ROW_LANES := BossAttackTable.Move.ROW_LANES
+const MOVE_GRID := BossAttackTable.Move.GRID  # v0.7.5 BF3
+const MOVE_ROW_FLOOD := BossAttackTable.Move.ROW_FLOOD
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -1244,6 +1246,12 @@ func boss_shielded(i: int) -> bool:
 ## "look", "shielded", "winding", "progress" 0..1000} (BossAi.pattern_state), for the avatars' poses.
 func boss_pattern(i: int) -> Dictionary:
 	return BossDodge.pattern_state(_w, i)
+
+
+## v0.7.5 BF3: the drops boss i's raining pattern (the Foundry's Slag Fountain) has in the air now, each [from, to
+## (sim-plane points), progress 0..1, progress a tick]; they land as fireballs where `to` is (BossDodge.rain_drops).
+func boss_rain(i: int) -> Array:
+	return BossDodge.rain_drops(_w, i)
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

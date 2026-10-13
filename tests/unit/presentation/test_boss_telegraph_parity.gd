@@ -15,6 +15,7 @@ const EPS := 0.04
 func _attack(id: StringName, attack_id: StringName, aim_at: Vector2, stand: Vector2) -> Array:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, id)
+	BossLab.ensure_attack(w, id, attack_id)  # v0.7.5 BF3: the Siege Engine's v0.7.0 moves are fixtures now
 	var aid := w.actors.ids[i]
 	var reader := WorldReader.new(w)
 	var t_b := BossAi.table_of(w, i)
@@ -151,7 +152,7 @@ func _in_any_disc(tg: Dictionary, p: Vector2, r: float) -> bool:
 func test_discs_brood_barrage_deploy() -> void:
 	var pr := _pr()
 	for spec in [
-		[&"brood_mother", &"brood"], [&"siege_engine", &"barrage"], [&"siege_engine", &"deploy"]
+		[&"brood_mother", &"brood"], [&"siege_engine", &"barrage_7"], [&"siege_engine", &"deploy"]
 	]:
 		var tg: Dictionary = _attack(spec[0], spec[1], Vector2(6, 0), Vector2(6, 0))[1]
 		assert_eq(tg["shape"], &"discs")

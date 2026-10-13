@@ -46,6 +46,18 @@ var _launcher_glow: MeshInstance3D
 var _door_open := 0.0
 
 
+## v0.7.5 BF3: its dodge-first moves pose as the old ones: the Molten Flood's tracked rows as its pour, the Slag
+## Fountain and the Furnace Waves as its chimneys' mortar glow and kick (the fountain's shut door is the shielded
+## pose, from WorldReader.boss_shielded).
+func apply_state(s: Dictionary) -> void:
+	super(s)
+	match _move:
+		WorldReader.MOVE_ROW_FLOOD:
+			_move = WorldReader.MOVE_FLOOD
+		WorldReader.MOVE_PATTERN:
+			_move = WorldReader.MOVE_BARRAGE
+
+
 ## The owner's model: assets/models/bosses/foundry.glb (its legs cut in code, BossRig).
 func model_id() -> StringName:
 	return &"foundry"

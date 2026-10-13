@@ -129,6 +129,13 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 			)
 	if BossSchemas.LOCKED_MOVES.has(move) and lock_seconds <= 0.0:
 		issues.append(ValidationIssue.new(&"missing", path, where + "%s needs lock_seconds" % move))
+	if move == &"grid" and int(shape_params.get("count", 1)) % 2 == 0:
+		issues.append(ValidationIssue.new(&"range", path, where + "a grid's count must be odd"))
+	if (
+		move == &"grid"
+		and float(shape_params.get("cell_m", 0.0)) < 2.0 * float(shape_params.get("radius_m", 0.0))
+	):
+		issues.append(ValidationIssue.new(&"no_gap", path, where + "a grid's circles overlap"))
 	if (
 		shape_params.has("stagger_seconds")
 		and int(shape_params.get("count", 1)) > 1

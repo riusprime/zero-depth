@@ -1,7 +1,7 @@
 extends SceneTree
 ## v0.7.5 BF1: renders the dodge-first boss fights for the owner (BOSS_FIGHTS.md): the Gatekeeper's and the Warlord's
-## patterns in flight (v0.7.5 BF2: and the Brood Mother's and the Hive Lens's), the tracked circles and lanes (dull
-## while tracking, flashing once locked) and the crystal shield,
+## patterns in flight (v0.7.5 BF2: and the Brood Mother's and the Hive Lens's; BF3: the Siege Engine's and the
+## Foundry's), the tracked circles and lanes (dull while tracking, flashing once locked) and the crystal shield,
 ## in the real game view (WorldViewRoot on the Ruins stage, the iso camera) of a real World. Needs a renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/boss_fights.gd
@@ -29,6 +29,18 @@ const PLAN := [
 	[&"warlord", &"shield_wall_cross", 160, "warlord_crossing_walls", Vector2.ZERO],
 	[&"warlord", &"javelin_fan", 90, "warlord_javelin_fan", Vector2.ZERO],
 	[&"warlord", &"spear_lines", 70, "warlord_spear_lines_locked", Vector2.ZERO],
+	# v0.7.5 BF3: the Siege Engine and the Foundry.
+	[&"siege_engine", &"turret_cross", 150, "siege_turret_cross_shielded", Vector2.ZERO],
+	[&"siege_engine", &"mortar_grid", 30, "siege_mortar_grid_tracking", Vector2(0.03, 0.04)],
+	[&"siege_engine", &"mortar_grid", 80, "siege_mortar_grid_locked", Vector2.ZERO],
+	[&"siege_engine", &"mortar_grid", 140, "siege_mortar_grid_second_colour", Vector2.ZERO],
+	[&"siege_engine", &"barrage", 75, "siege_barrage_in_turn", Vector2(0.0, 0.05)],
+	[&"siege_engine", &"rail", 75, "siege_rail_locked", Vector2.ZERO],
+	[&"foundry", &"slag_fountain", 80, "foundry_slag_fountain_raining", Vector2.ZERO],
+	[&"foundry", &"slag_fountain", 170, "foundry_slag_fountain_flower", Vector2.ZERO],
+	[&"foundry", &"furnace_waves", 160, "foundry_furnace_waves", Vector2.ZERO],
+	[&"foundry", &"molten_flood", 70, "foundry_molten_flood_locked", Vector2.ZERO],
+	[&"foundry", &"molten_flood", 120, "foundry_molten_flood_burning", Vector2.ZERO],
 ]
 const SIZE := Vector2i(1280, 720)
 const PLAYER_AT := Vector2(6.5, -4.0)

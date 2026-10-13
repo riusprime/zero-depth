@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 1
+look = &"cannon_ember"
+speed_mps = 4.0
+radius_m = 0.22
+range_m = 20.0
+waves = 28
+wave_gap_seconds = 0.12
+arms = 4
+spin_dps = 48.0
+reverse_at_seconds = 1.6
+aim_offset_degrees = 45.0
+id = &"siege_turret_cross_reversing"

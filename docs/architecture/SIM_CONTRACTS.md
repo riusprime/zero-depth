@@ -1074,7 +1074,9 @@ Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `dat
   (`BossDodge.mark_of`, `row_lanes_of`: one shape function each, drawn and hit alike). Each marker may hit (the
   hurt iframes still apply). A telegraph with a lock carries `tracked` and `locked` (the view: a dull outline, then a
   bright flash). Applied to the Gatekeeper's Fist Slam (1/2/3 circles by phase) and Shock Lanes (row and column) and
-  the Warlord's Spear Lines (flood), Lunge (charge) and Javelin Rain (barrage); 0.8 s each.
+  the Warlord's Spear Lines (flood), Lunge (charge) and Javelin Rain (barrage); 0.8 s each. v0.7.5 BF3: the Siege
+  Engine's Barrage (marks), Mortar Grid (grid) and Rail (lanes), the Foundry's Molten Flood (row_flood) and Firestorm
+  (flood).
 - **Shielded signature.** While a `shielded` attack winds up or runs (`BossDodge.shielded`,
   `WorldReader.boss_shielded`), a hit on the boss emits its `HIT` with `TAG_BLOCKED` and deals nothing; damage over
   time does nothing; the world's own hits (owner 0, the dev panel's Kill boss) pass. It opens between patterns (the
@@ -1131,6 +1133,18 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
 - **Hashing.** No new state: the patterns use the actor's own clock and lock fields; the fireballs' look column
   (§10d) fills the first time one flies. `tests/golden` is unchanged (its replays have no Arc Caster, Lens Drone or
   Bomb Drone shot).
+- **v0.7.5 BF3: the board, the molten rows and the rain.** `grid`: the board's centre (BossStore point 0) tracks the
+  player's exact position like any locked attack and holds at windup − lock; volley k strikes once at active tick
+  k × `mark_gap_ticks` on the circles of `BossDodge.grid_discs(w, i, k)` (the cells whose (x + y) parity is k's,
+  centred cells' centres clear of walls; drawn and hit alike), each volley may hit; the telegraph (`&"marks"`, one
+  disc item per circle) shows volley 0 for the whole windup and each later one only for its lock
+  (`BossDodge.grid_state`). `row_flood`: `BossDodge.row_flood_of(w, i, k)` (lanes along x through point 0, offset
+  `gap_m` in y, cut by walls) tracked then locked, then standing and burning like `flood` (`burn_ticks`). A raining
+  flower (`BulletPatternTable.rain_ticks` > 0, also its `lob_ticks`): wave k's drops are thrown at active tick
+  k × `wave_gap_ticks` and land (`fire()`, with its fairness rules: none on the player or in a wall) `rain_ticks`
+  later at `wave_shots`' points, `rain_m` × the petal's share out from the body's edge; in the air they are only a
+  read (`BossDodge.rain_drops`, `WorldReader.boss_rain(i)`: from, to, progress) and hurt nothing. No new state is
+  hashed. `MOVE_GRID` / `MOVE_ROW_FLOOD` for the views.
 
 ## 11. Scaling and threat
 

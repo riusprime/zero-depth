@@ -49,6 +49,8 @@ const BOSS_MOVES := {
 	&"pattern": BossAttackTable.Move.PATTERN,  # v0.7.5 BF1
 	&"marks": BossAttackTable.Move.MARKS,
 	&"row_lanes": BossAttackTable.Move.ROW_LANES,
+	&"grid": BossAttackTable.Move.GRID,  # v0.7.5 BF3
+	&"row_flood": BossAttackTable.Move.ROW_FLOOD,
 }
 
 
@@ -653,6 +655,7 @@ static func compile_boss_attack(
 	t.pull_range_m = float(sp.get("pull_range_m", 0.0))
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
+	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 

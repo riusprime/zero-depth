@@ -70,10 +70,19 @@ const MOVES := {
 	{"shape": 0, "params": ["count", "radius_m", "stagger_seconds"], "optional": ["pattern_id"]},
 	## tracked then locked like `marks`; cut short by walls.
 	&"row_lanes": {"shape": 2, "params": ["count", "length_m", "width_m", "stagger_seconds"]},
+	## v0.7.5 BF3: a checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
+	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
+	## apart, alternating the board's two colours (the first holds the player's cell). Each colour shows only for
+	## its own lock before it strikes.
+	&"grid": {"shape": 0, "params": ["count", "cell_m", "radius_m", "volleys", "stagger_seconds"]},
+	## v0.7.5 BF3: `count` lanes along the room's rows (x), gap_m apart and centred on the player's row, length_m
+	## long centred on the player (cut short by walls); tracked then locked like `marks`, then standing for the
+	## active time and hurting once every burn_seconds, like `flood` (the Foundry's molten floor).
+	&"row_flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
 }
 
 ## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
-const LOCKED_MOVES: Array[StringName] = [&"marks", &"row_lanes"]
+const LOCKED_MOVES: Array[StringName] = [&"marks", &"row_lanes", &"grid", &"row_flood"]
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

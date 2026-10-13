@@ -285,3 +285,124 @@ static func eruption_ticks(atk: BossAttackTable) -> int:
 	if atk.pattern == null:
 		return 1
 	return atk.pattern.duration_ticks() - atk.pattern.lob_ticks
+
+
+## v0.7.5 BF3: the circles of volley k of a `grid` attack: the cells of the count × count board (cell_m apart,
+## centred where the windup locked, on the player) whose colour is k's (even volleys hold the centre cell, the
+## player's), leaving out a cell whose centre is in a wall. Drawn and struck alike (EI-07).
+static func grid_discs(w: World, i: int, k: int) -> PackedVector2Array:
+	var atk := BossAi.attack_of(w, i)
+	var c := mark_of(w, i, 0)
+	var h := atk.count / 2
+	var out := PackedVector2Array()
+	for y in range(-h, h + 1):
+		for x in range(-h, h + 1):
+			if absi(x + y) % 2 != k % 2:
+				continue
+			var at := c + Vector2(x, y) * atk.cell_m
+			if EnemyAi.clear_of_walls(w, at, 0.05):
+				out.append(at)
+	return out
+
+
+## v0.7.5 BF3: volley k's state `t` ticks into a grid attack (mark_state's codes): the first volley's board tracks the
+## player until the lock; each later volley (the board stays where it locked) shows only for its own lock_ticks
+## before it strikes, so one colour flashes at a time.
+static func grid_state(atk: BossAttackTable, k: int, t: int) -> int:
+	var strike := k * atk.mark_gap_ticks + atk.windup_ticks
+	if k > 0 and t < strike - atk.lock_ticks:
+		return -1
+	if t < atk.windup_ticks - atk.lock_ticks:
+		return 0
+	if t < strike:
+		return 1
+	return 2 if t == strike else 3
+
+
+## v0.7.5 BF3: a grid's telegraph: &"marks" with one disc item per circle of each volley showing now (its progress
+## over its own showing time: the whole windup for the first, the lock for the later ones).
+static func grid_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionary:
+	var t := attack_ticks(w, i, atk)
+	var items: Array[Dictionary] = []
+	var first := -1
+	var locked := false
+	for k in atk.volleys:
+		var st := grid_state(atk, k, t)
+		if st < 0 or st > 2:
+			continue
+		var span := atk.windup_ticks if k == 0 else atk.lock_ticks
+		var t0 := k * atk.mark_gap_ticks + atk.windup_ticks - span
+		var pr := clampi((t - t0) * 1000 / maxi(1, span), 0, 1000)
+		if first < 0:
+			first = pr
+			locked = st >= 1
+		for c: Vector2 in grid_discs(w, i, k):
+			items.append(
+				{
+					"shape": &"disc",
+					"center": c,
+					"radius": atk.radius_m,
+					"locked": st >= 1,
+					"progress": pr
+				}
+			)
+	if items.is_empty():
+		return {}
+	return {
+		"shape": &"marks",
+		"items": items,
+		"progress": first,
+		"move": atk.move,
+		"tracked": true,
+		"locked": locked
+	}
+
+
+## Tick phase 6 (v0.7.5 BF3): volley k of a grid strikes on active tick k × mark_gap_ticks, once, on its colour's
+## circles (each volley may hit; the hurt iframes still apply).
+static func resolve_grid(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
+	var gap := maxi(1, atk.mark_gap_ticks)
+	if st % gap != 0 or st / gap >= atk.volleys:
+		return
+	w.bosses.hit[b] = 0
+	var p := w.player_pos()
+	for c: Vector2 in grid_discs(w, i, st / gap):
+		if AttackShapes.disc_touches(c, atk.radius_m, p, w.player.radius_m):
+			BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
+			return
+
+
+## v0.7.5 BF3: molten flood lane k of a `row_flood` attack: along the row (x) through the tracked point, offset
+## gap_m × (k - (count - 1) / 2) in y, reaching length_m / 2 each way from the player's x unless a wall cuts it
+## short.
+static func row_flood_of(w: World, i: int, k: int) -> Obb:
+	var atk := BossAi.attack_of(w, i)
+	var c := mark_of(w, i, 0) + Vector2(0.0, atk.gap_m * (k - (atk.count - 1) * 0.5))
+	var fwd := EnemyAi.clear_run(w, c, 0, atk.length_m * 0.5, atk.half_width_m)
+	var back := EnemyAi.clear_run(w, c, 2048, atk.length_m * 0.5, atk.half_width_m)
+	return AttackShapes.lane(c - Vector2(back, 0.0), 0, maxf(fwd + back, 0.01), atk.half_width_m)
+
+
+## v0.7.5 BF3: a raining pattern's drops in the air now (a FLOWER with rain_ticks: each wave is thrown up from the
+## body as the wave starts and lands, as a shot, rain_ticks later): [from, to, progress 0..1, progress a tick] per
+## drop, where wave_shots puts it. Pure; for the views only (a drop hurts once it has landed).
+static func rain_drops(w: World, i: int) -> Array:
+	var out := []
+	var atk := BossAi.attack_of(w, i)
+	if atk == null or atk.pattern == null or w.actors.state[i] != EnemyAi.State.ACTIVE:
+		return out
+	var pat := atk.pattern
+	if pat.rain_ticks <= 0:
+		return out
+	var st := w.actors.state_t[i]
+	var from := w.actors.pos(i)
+	var r := w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
+	var step := 1.0 / pat.rain_ticks
+	for k in pat.waves:
+		var t := st - k * pat.wave_gap_ticks
+		if t < 0 or t >= pat.rain_ticks:
+			continue
+		var shots := BulletPatterns.wave_shots(pat, k, from, w.actors.lock_a[i], r)
+		for to: Vector2 in shots[0]:
+			out.append([from, to, float(t) / pat.rain_ticks, step])
+	return out

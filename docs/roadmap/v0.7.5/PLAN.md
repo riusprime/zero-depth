@@ -60,6 +60,8 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 Done (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); the Siege Engine and the Foundry next (BF3) |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | Done ([evidence](evidence/ENEMY_FIREBALLS.md)) |
 | PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N20 | Done ([evidence](evidence/PLAYGROUND.md)) |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF3 Done (the Siege Engine and the Foundry; [evidence](evidence/BOSS_FIGHTS_3.md)) |
+| EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
 - **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold
@@ -244,6 +246,47 @@ evidence in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md).
 - **Looks:** the Brood Mother's sickly green acid globs (`acid_glob`: a pale lime core, a near-black green edge, a
   short trail) and her eggs (a pale shell glowing green); the Hive Lens's magenta-red prism orbs (`prism_orb`: a pink
   core, a wine edge, a long trail). Both kept off the hero's colours (BF1's test) and apart from the other looks.
+### BF3: the Siege Engine and the Foundry (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (the design table in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); evidence in
+[`evidence/BOSS_FIGHTS_3.md`](evidence/BOSS_FIGHTS_3.md). Built on BF1's engine; two new moves and one pattern field.
+- **Turret Cross** (Siege signature, shielded "while it braces"): a 4-arm cross of cannon embers turning 30°/s
+  (phase 2: 42°/s the other way, more waves; phase 3: a cross that turns back halfway, a SPIRAL with 4 arms). The
+  shots fly straight once fired, so the turning arms trail as spirals you walk round with them.
+- **Mortar Grid, "alternating twice"** read as two strikes: the board's two colours one after the other (the first
+  holds your square, so you step to a neighbouring square, then back). Phase 3 strikes three times (A, B, A).
+  A 5 × 5 board of 1.1 m circles 2.4 m apart (new move `grid`): the board follows you, locks 0.8 s, and each later
+  colour shows only for its own 0.8 s lock, so one colour flashes at a time. The corners between circles are always
+  safe.
+- **Barrage**: `marks`, 3 circles 0.6 s apart (phase 3: 0.45 s). **Rail**: a tracked lane (`lanes`, one lane fired
+  down your exact position in 0.2 s; phase 3: three lanes 28° apart). The v0.7.0 scattered barrage, rail sweep and
+  fast bolt fan are gone from the Siege Engine (their moves stay in code, tested on fixtures, `BossLab.siege_v070_def`).
+- **Kept:** the needle deploy as phase 2's entry ("keep its drone deploy"), the shockwave (inner 4.4 m, outer 50 m)
+  as the punish and in phase 3.
+- **Slag Fountain** (Foundry signature, door shut = shielded, the model's hunkered pose): read as molten drops thrown
+  up from the body that land in a 6-petal flower around it (petal tips 2.6 m out, valleys nearer) and roll on outward
+  as slow drops; 4 waves turning half a petal (phase 2 and 3: 6 waves, faster). New pattern field `rain_seconds` /
+  `rain_m` on FLOWER: in the air (0.7 s) the drops are only drawn, on an arc, and hurt nothing; a drop that would land
+  on you (or in a wall) is left out, as every BF1 pattern.
+- **Furnace Waves**: rings of 20 with two gaps of three; each ring turns 1.5 shot-steps, so its shots sit between the
+  last ring's ("alternating") and the gaps shift a step and a half a ring. Phase 3: 6 rings, faster, shifting the other
+  way.
+- **Molten Flood, "track your row"**: new move `row_flood`: 3 molten lanes along the room's rows (x), 3 m apart,
+  centred on your row (the middle one on you), following you and locking for 0.8 s, then standing 1.6 s and burning
+  every 0.5 s like the old flood; phase 2 and 3: five rows 2.8 m apart. Between two lanes is safe (1.6 m clear).
+- **Kept:** the Vent Blast (close range, BF1's 4.65 m ring) as the melee answer like the Gatekeeper's Sweep; the
+  Bomb Drones (`bomb_launch`, unchanged; EF changes the drone's own attack); the Firestorm (7 flood lanes) as the
+  punish and in phase 3, now tracked then locked (0.8 s) and its lanes 1.4 m wide (was 2.0: with 2.6 m centres that
+  left 0.6 m between lanes, narrower than the hero; now 1.2 m). Dropped: the Slag Mortar (not in the design table).
+- **Gap-closers kept** (the anti-kite tests require one): the Siege Engine's Barrage, the Foundry's Molten Flood
+  (both tracked, so they reach a far player). A player who stays far keeps seeing them and the punish; up close
+  the patterns come.
+- **HP ×1.25:** Siege Engine 1800 → 2250, Foundry 1900 → 2375. Gates 66 / 33 % kept; BF1's N18 radius, rooms,
+  shockwave and vent values kept. Fireball damage 14 (the Warlord's), markers 20–26 as before.
+- **Looks:** Siege `cannon_ember` (an amber-orange core #D79000, a dark edge, a grey smoke trail that doesn't glow,
+  bigger balls); Foundry `molten_drop` (a white-yellow core #FFF07A, a dark edge, a short gold trail). Both keep
+  0.2+ (RGB) off the hero's cyan and heat colours (the BF1 test covers every look). The avatars pose the new moves
+  as their old ones (Siege: the cross as its cannon volleys, the grid and barrage as its mortars, the rail lane as its
+  rail; Foundry: the floods as its pour, the patterns as its chimneys).
 
 ### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).
