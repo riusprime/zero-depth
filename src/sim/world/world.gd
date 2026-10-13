@@ -351,7 +351,7 @@ func _init(p_seed: int, p_player: PlayerTable, player_pos: Vector2 = Vector2.ZER
 	rng_crit = RngStream.derive(p_seed, "crit")  # v0.4.0 BS
 	rng_ability = RngStream.derive(p_seed, "ability")
 	player = p_player
-	var id := _take_id()
+	var id := take_id()
 	actors.add(
 		id,
 		ActorStore.Kind.PLAYER,
@@ -390,7 +390,7 @@ func actors_near(rect: Rect2) -> PackedInt32Array:
 
 ## Adds a dummy mover immediately (setup only; during a tick, spawns are queued).
 func add_dummy(p: Vector2, radius_m: float, hp: int) -> int:
-	var id := _take_id()
+	var id := take_id()
 	var first_shot := dummy_fire_period + (id % maxi(dummy_fire_period, 1))
 	actors.add(id, ActorStore.Kind.DUMMY, ActorStore.TEAM_ENEMY, p, radius_m, hp, first_shot)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, p)
@@ -551,7 +551,7 @@ func set_enemy_tables(tables: Array[EnemyTable]) -> void:
 ## SPAWN_IN_TICKS.
 func add_enemy(kind: int, p: Vector2) -> int:
 	var t := enemy_table(kind)
-	var id := _take_id()
+	var id := take_id()
 	var i := actors.add(id, kind, ActorStore.TEAM_ENEMY, p, t.radius_m, t.hp, 0)
 	actors.invuln[i] = tuning.spawn_in_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - p)
@@ -629,7 +629,7 @@ func _refresh_combos(announce: bool) -> void:
 
 ## Puts a pickup for item `item_index` on the floor at `pos` (setup, or a spawner in phase 9). Returns its id.
 func add_pickup(item_index: int, pos: Vector2) -> int:
-	var id := _take_id()
+	var id := take_id()
 	pickups.add(id, pos, item_index)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
@@ -753,7 +753,7 @@ func boss_table_of_kind(kind: int) -> BossTable:
 ## with its own kind) and then BOSS_DEFEATED once.
 func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 	var t := boss_tables[boss_table_index]
-	var id := _take_id()
+	var id := take_id()
 	var i := actors.add(id, t.kind, ActorStore.TEAM_ENEMY, pos, t.radius_m, t.hp, 0)
 	actors.invuln[i] = tuning.boss_intro_ticks
 	actors.facing[i] = Kin.angle_of(player_pos() - pos)
@@ -768,7 +768,7 @@ func spawn_boss(boss_table_index: int, pos: Vector2) -> int:
 # --- Rewards (v0.3.0 E) -------------------------------------------------------------------------------------
 ## Puts an altar (price 0) or a chest on the floor (setup). Returns its id.
 func add_reward(kind: int, pos: Vector2, price: int) -> int:
-	var id := _take_id()
+	var id := take_id()
 	rewards.add(id, pos, kind, price)
 	emit_event(SimEvent.Kind.SPAWN, id, id, id, pos)
 	return id
@@ -1024,20 +1024,16 @@ func snapshot() -> Dictionary:
 	}
 
 
-## A fresh root id for a new chain (a player action or an enemy attack).
-## A fresh entity id (v0.4.0 TU: heal orbs).
+## A fresh entity id (actors, projectiles, v0.4.0 TU: heal orbs). Entity ids and chain roots share one counter.
 func take_id() -> int:
-	return _take_id()
-
-
-func take_root() -> int:
-	return _take_id()
-
-
-func _take_id() -> int:
 	var id := _next_id
 	_next_id += 1
 	return id
+
+
+## A fresh root id for a new chain (a player action or an enemy attack): an id from the same counter.
+func take_root() -> int:
+	return take_id()
 
 
 func emit_event(kind: SimEvent.Kind, source: int, owner: int, target: int, at: Vector2) -> SimEvent:
@@ -1385,7 +1381,7 @@ func _remove_dead() -> void:
 
 func _apply_spawns() -> void:
 	for s in _pending_projectiles:
-		var id := _take_id()
+		var id := take_id()
 		projectiles.add(id, s[0], s[1], s[2], s[3], s[5], s[6], s[4], s[7], s[8])
 		projectiles.spec_key[projectiles.size() - 1] = s[9]  # v0.6.0 MX2
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
