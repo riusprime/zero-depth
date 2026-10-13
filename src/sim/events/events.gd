@@ -41,6 +41,7 @@ static func setup(
 	var s := w.ev
 	s.events = events
 	s.curses = curses
+	Curses.invalidate(w)  # the curse sums follow the floor's curse tables
 	if rules != null:
 		s.rules = rules
 	if events.is_empty() and curses.is_empty():

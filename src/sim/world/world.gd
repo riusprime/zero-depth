@@ -300,7 +300,15 @@ var legendary_id := -1
 # --- end Build ----------------------------------------------------------------------------------------------
 # v0.5.0 EV (Events, Curses): the floor's event rooms and cursed offers; the curses held and the threat peak (carried).
 var ev := EventState.new()
-var curses_owned := PackedInt32Array()
+## Every whole-value write (RunCarry.apply, WorldSnapshot.apply) drops Curses.total's cache; Curses.add and cleanse,
+## which change it in place, drop it themselves.
+var curses_owned := PackedInt32Array():
+	set(v):
+		curses_owned = v
+		curse_totals = PackedInt32Array()
+## v0.7.0 audit C-12: Curses.total's cache, one sum per Curses.Effect; empty = stale (rebuilt on the next read).
+## Derived from curses_owned and World.ev.curses: not hashed, not snapshotted (WorldSnapshot.WORLD_KEPT).
+var curse_totals := PackedInt32Array()
 var threat_peak := 0
 ## v0.5.0 RT + EV: Deep floors taken so far this run, this one included (RunState.prepare): +1 threat T each.
 var deep_threat := 0

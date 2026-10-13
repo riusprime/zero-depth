@@ -47,6 +47,7 @@ const WORLD_KEPT := {
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
 	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
+	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
@@ -234,6 +235,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)
 	Modifiers.invalidate(base)  # v0.6.0 MX1: the restored build's specs compile on their next read
+	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
 	var barriers := base.arenas.barriers.size()
