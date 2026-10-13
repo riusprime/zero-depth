@@ -17,6 +17,21 @@
       "sha256": "a2a6d4bada8c38530c2ad7196a4cf7b6d55e7ab3ed00300fc4772adf4aec2c6d"
     },
     {
+      "id": "warlord",
+      "path": "assets/models/bosses/warlord.glb",
+      "sha256": "68652dd80f2a952a99eb3957474e06404532f37b067a21b5f2e477646d4d4bfa"
+    },
+    {
+      "id": "hive_lens",
+      "path": "assets/models/bosses/hive_lens.glb",
+      "sha256": "0225a4a4161c64036332568e576e48ccccd2387d1e2c2e94b89879d9a62fd93d"
+    },
+    {
+      "id": "foundry",
+      "path": "assets/models/bosses/foundry.glb",
+      "sha256": "8fee2116e7502a9c8454e8d56950bfa7b8fa61274661fe52cf5ca85386954db1"
+    },
+    {
       "id": "brazier_pole",
       "path": "assets/models/kit/brazier_pole.glb",
       "sha256": "25799d6236a3371af19caabcc7cec7cc277a402097a40b9fd2bf71024a502051"

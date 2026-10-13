@@ -10,6 +10,16 @@ const EPS := 0.04
 var avatars := [WarlordAvatar, HiveLensAvatar, FoundryAvatar]
 
 
+## v0.7.5 BM: the owner's models replaced these bodies (test_boss_models_2.gd); the code-built bodies are the
+## fallback when a model's file is missing, and these tests pin them there.
+func before_each() -> void:
+	BossModels.dir = "res://tests/no_such_models/"
+
+
+func after_each() -> void:
+	BossModels.dir = BossModels.DIR
+
+
 func _avatar(cls: Variant, technique: StringName = &"xray") -> BossAvatar:
 	var a: BossAvatar = cls.new()
 	a.setup(Color("#1A1A22"), technique)
@@ -35,7 +45,7 @@ func test_each_model_builds_flashable_outlined_pieces() -> void:
 	for cls in avatars:
 		var a := _avatar(cls)
 		var name: String = a.get_script().get_global_name()
-		assert_null(a.imported, "%s: code-built (no model file yet)" % name)
+		assert_null(a.imported, "%s: code-built (the fallback without its file)" % name)
 		assert_gt(a.body_materials.size(), 15, "%s has its body pieces" % name)
 		for m in a.body_materials:
 			assert_true(m.emission_enabled, "%s: flashable (emission on, energy only)" % name)
