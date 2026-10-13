@@ -1096,6 +1096,13 @@ Starting values; `BulletPatterns`, `BossDodge` and `BossAi` hold the rules, `dat
   the circle is locked for `erupt_ticks`, erupts there (the disc), and fires its pattern from it over
   `BossDodge.eruption_ticks` before it finishes. No new state: the points, the lock and the attack's clock.
   The Hive Lens's Focus Beam is `lanes` with a lock (no new rule).
+- **v0.7.5 BF2 fix: readable patterns and their recap.** A pattern attack's telegraph is its cast for its whole
+  windup and firing (`BossDodge.cast_telegraph`: `{"shape": &"cast", "ground": false, "progress", "move", "look"}`;
+  a burst's landing disc until it lands, then the cast). Nothing is drawn on the ground; the avatar poses from it. So
+  every wave's shots come from a cast visible for at least the windup (>= `MIN_TELEGRAPH_TICKS`), which the
+  readable-cause check reads. A boss's fireball carries the attack that fired it (`ProjectileStore.cause`, filled
+  the first time a boss's fireball flies and hashed only then; -1 for others); a shot that kills the player sets
+  `World.killer_attack` to it, so the recap names that pattern, not the boss's attack at the time of death.
 
 ## 10e. Enemy fireballs (v0.7.5 EF; owner N16, [`BOSS_FIGHTS.md`](../design/BOSS_FIGHTS.md) "Normal enemies")
 

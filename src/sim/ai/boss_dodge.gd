@@ -134,16 +134,31 @@ static func marks_telegraph(w: World, i: int, atk: BossAttackTable) -> Dictionar
 	}
 
 
-## v0.7.5 BF1: a pattern draws nothing on the ground but a burst's landing marker (and its flying shell).
+## v0.7.5 BF2: a pattern's cast, for its windup and its whole firing: {"shape": &"cast", "ground": false, "progress",
+## "move", "look"}. Nothing on the ground (owner N15/N16: no line for shots; TelegraphViews skips it); the boss's body
+## winds up and holds its cast pose from it (the avatar reads the progress), so every wave's shots come from a cast
+## the player saw for at least the windup (the readable-cause rule; windups are >= MIN_TELEGRAPH_TICKS).
+static func cast_telegraph(atk: BossAttackTable, windup: bool, progress: int) -> Dictionary:
+	return {
+		"shape": &"cast",
+		"ground": false,
+		"progress": progress if windup else 1000,
+		"move": atk.move,
+		"look": atk.pattern.look
+	}
+
+
+## v0.7.5 BF1: a pattern draws nothing on the ground but a burst's landing marker (and its flying shell); v0.7.5 BF2:
+## the rest of a pattern's time is its cast (cast_telegraph).
 static func pattern_telegraph(
 	w: World, i: int, b: int, atk: BossAttackTable, windup: bool, progress: int
 ) -> Dictionary:
 	var pat := atk.pattern
-	if pat == null or pat.kind != BulletPatternTable.Kind.BURST:
+	if pat == null:
 		return {}
 	var st := w.actors.state_t[i]
-	if not windup and st > pat.lob_ticks:
-		return {}
+	if pat.kind != BulletPatternTable.Kind.BURST or (not windup and st > pat.lob_ticks):
+		return cast_telegraph(atk, windup, progress)
 	var commit := atk.lock_ticks if atk.lock_ticks > 0 else BossAi.table_of(w, i).commit_ticks
 	var out := {
 		"shape": &"disc",

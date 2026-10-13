@@ -132,3 +132,35 @@ ring itself is covered by the unit test.
   - `scripts/shots/boss_fights.gd`'s PLAN gained ten rows between the Gatekeeper's and the Warlord's.
   - `FireballViews.LOOKS` gained two entries (EF and BF3 add theirs too).
   - The PLAN's BF row names BF2 Done.
+
+## Fix after the merge (branch `v075-bf2-fix`, from `21a8ea1`)
+GitHub's `gut (sim_b)` on the merge failed `tests/unit/sim/test_readable_cause.gd`
+`test_every_hit_on_each_floor_and_boss_has_a_readable_cause`, which this step had not run (lead's report, verbatim):
+- `unreadable hit: {"attack":2,"cause":"CAUSE_BROOD_WEB","floor":2,…,"problems":"projectile on screen 22 ticks, fired after a 11-tick telegraph",…}`
+- `["CAUSE_HIVE_SPIRAL"] expected to equal ["CAUSE_HIVE_BLOOM"]: floor 2: the recap names the killing hit`
+
+Root causes:
+1. A non-burst pattern attack had no telegraph at all (`BossDodge.pattern_telegraph` returned `{}`: "no line on
+   the ground"). The check therefore fell back to the boss's *previous* telegraph's length (11 ticks) for the Web
+   Spiral's globs. BF1's patterns had the same gap; its floor-1 runs just never took a fresh fireball hit. Fix: a
+   pattern's windup and whole firing is a `cast` telegraph with `"ground": false` (EF's form for enemy fireballs).
+   TelegraphViews draws nothing for it, and the boss avatar's windup pose now reads its progress (it read 0 before).
+   The rule and the test are unchanged.
+2. The recap read `World.killer_attack`, which only area hits set. A fireball's kill fell back to the boss's *first*
+   pattern attack (the Prism Spiral) whatever fired it. Fix: a boss's fireballs carry the attack that fired them
+   (`ProjectileStore.cause`), and a killing shot sets `killer_attack`. A probe confirmed it: with that one line
+   disabled, the new unit test fails with the same message as GitHub,
+   `[STRING_NAME(CAUSE_HIVE_SPIRAL)] expected to equal [STRING_NAME(CAUSE_HIVE_BLOOM)]`.
+
+New tests in `test_boss_fights_2.gd`: "a pattern shows its cast for its windup and whole firing", "the recap names
+the pattern whose shot killed". `scripts/ci/seams.sh` now runs `tests/unit/sim/test_readable_cause.gd`.
+
+| Run (final fix tree) | Raw totals |
+|---|---|
+| `test_readable_cause.gd` | `Scripts 1`, `Tests 4`, `Passing Tests 4` |
+| `tests/unit/sim/test_boss_*` (7 files), `test_bosses`, `test_bosses_2`, `test_bullet_patterns`, `test_readable_cause` | `Scripts 11`, `Tests 125`, `Passing Tests 125` |
+| presentation: `test_audio_director`, `test_boss_*` (9 files), `test_bosses_2_views`, `test_telegraph_parity` | `Scripts 12`, `Tests 97`, `Passing Tests 97` |
+| `tests/content`, `tests/arch`, `tests/golden` | `Scripts 29`, `Tests 139`, `Passing Tests 139` |
+| boss e2e (`boss_dodge_2`, `boss_dodge`, `bosses`, `bosses_2`, `boss_challenge`, `after_boss`) | first `Failing Tests 8` (`Parse Error: Could not find type "PlaygroundSession"`: the worktree's class cache was not re-imported after the merge's new classes); after `godot --headless --path . --editor --import --quit`: `Scripts 6`, `Tests 8`, `Passing Tests 8` |
+
+Lint: `797 files would be left unchanged` / `Success: no problems found`.

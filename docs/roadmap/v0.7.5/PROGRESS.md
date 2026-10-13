@@ -148,3 +148,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   e2e (new `test_e2e_boss_dodge_2`) green; screenshots under xvfb + llvmpipe. Evidence
   [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md). Not run by the agent: the rest of `tests/unit/sim`, the
   full suite, bot sims. Not pushed.
+- 2026-10-13: BF2 fix (agent, branch `v075-bf2-fix` from `21a8ea1`): GitHub's sim_b failed `test_readable_cause.gd`
+  on the BF2 merge. Pattern attacks now show a `cast` telegraph (`ground: false`) through their windup and firing,
+  and a boss's fireballs carry their attack so the death recap names the pattern that killed. `test_readable_cause.gd`
+  added to `scripts/ci/seams.sh`. Runs in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md) "Fix after the merge".
+  Goldens: none changed (the cause column is hashed only once a boss's fireball has flown). Not pushed.

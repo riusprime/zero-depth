@@ -104,6 +104,11 @@ static func fire(
 	var safe := p.safe_radius_m + w.player.radius_m
 	var player := w.player_pos()
 	var n := 0
+	# v0.7.5 BF2: a boss's shots carry the attack that fired them (the death recap's cause line).
+	var attack := -1
+	if BossAi.is_boss_kind(w.actors.kinds[owner_i]):
+		var b := BossAi.entry_of(w, owner_i)
+		attack = w.bosses.attack[b] if b >= 0 else -1
 	for j in pos.size():
 		var d := pos[j] - player
 		if d.x * d.x + d.y * d.y < safe * safe:
@@ -124,6 +129,8 @@ static func fire(
 			SimEvent.TAG_PROJECTILE
 		)
 		w.set_pending_look(p.look)
+		if attack >= 0:
+			w.set_pending_cause(attack)  # v0.7.5 BF2: the recap names the attack that fired it
 		n += 1
 	return n
 
