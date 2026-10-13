@@ -45,10 +45,6 @@ static func is_cleared(w: World, room: int) -> bool:
 	return w.arenas.cleared.has(room)
 
 
-static func sealed(w: World) -> bool:
-	return w.arenas.sealed()
-
-
 ## The open floor's spawning waits while an arena is sealed (World.step; the clock runs on with count_time).
 static func holds_spawns(w: World) -> bool:
 	return w.arenas.sealed()

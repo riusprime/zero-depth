@@ -91,11 +91,6 @@ func pack_cap_now(run_ticks: int) -> int:
 	return curve.pack_cap_at(run_ticks) if curve != null else 0
 
 
-## How far `run_ticks` is through its tier, 0 .. <1 (v0.3.0 UI: the HUD's danger meter, L23).
-func tier_progress(run_ticks: int) -> float:
-	return float(run_ticks % maxi(1, tier_ticks)) / maxi(1, tier_ticks)
-
-
 ## The alive cap on floor `floor_index` (1-based) at `tier`.
 func cap(floor_index: int, tier: int) -> int:
 	return mini(per_floor(cap_by_floor, floor_index) + cap_per_tier * tier, cap_max)
