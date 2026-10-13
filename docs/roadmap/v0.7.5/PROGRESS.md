@@ -174,3 +174,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - 2026-10-13: BF3 merged (`565bfef`); every boss fights dodge-first (BF1–BF3) with the enemy fireballs (EF). Seams on
   the merge (`bash scripts/ci/seams.sh`, clean worktree) green. Pushed; the PR's sharded GitHub `verify` is the full
   suite.
+- 2026-10-13: GitHub `verify` green on `2636e5f` (every boss dodge-first, EF, BM, the Playground, the audit and lighting
+  merges): 21:29:47 → 22:07:58 UTC (38 min). `check_gut_total`: e2e 126, presentation 513, rest 246, sim_a 546,
+  sim_b 439, sim_c 34 = `ok (1904 passing, minimum 1724)`. MIN_TEST_COUNT 1724 → 1904. The owner tests the branch
+  before it goes into `main`.
