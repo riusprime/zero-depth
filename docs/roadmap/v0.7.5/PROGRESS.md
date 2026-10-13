@@ -14,6 +14,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | NB2 | Biome 5, Starfall: a cosmic biome, the floor a floating island in a starry void with nebula light and drifting rock and crystal islands, starglow pools that speed your step, in the run's biome draw (3 floors from 5) ([evidence](evidence/STARFALL.md)) | `v0.7.5 Step NB2` commit (branch `v075-nb2`) |
 | SM | The small things: a card's level on every pick card ("Lv 1", "Lv 2 → 3", the legendary "Lv N → 5") and on the HUD's wand pips and the Build page; ten first-run hints, each once, never blocking, with the keys of the device you use (Options: Show hints, Reset hints); the credits generated from the repo's manifests, fonts and addons, with the app icon; an Interface size option and reduced-motion / colour-blind fixes from an accessibility pass; the dev panel behind one release switch, left ON ([evidence](evidence/SMALL_THINGS.md)) | `v0.7.5 Step SM` commit (branch `v075-sm`) |
 | BM | The owner's Warlord, Hive Lens and Foundry models replace their code bodies and move from their bones: the Warlord walks, carries and lifts its shield, raises and plants, couches and thrusts, draws and throws its spear, flinches, reels and falls when it dies; the Hive Lens bobs and rolls, its tails sway and trail, its eye turns to you, it opens, closes, splits and dives; the Foundry's legs (cut from its mesh) step in pairs as it pours, vents and launches. Every boss is drawn 1.3× bigger (owner N18) ([evidence](evidence/BOSS_MODELS.md)) | `v0.7.5 Step BM` commit (branch `v075-bm`) |
+| PG | The Playground (owner N19): a main-menu row into one big 4×4 room with your weapon; F1 opens a panel (the game waits) to add any card at any level or remove it, place dummies (never die, or a set HP), any enemy or boss with a click and delete with a right click, switch between the five biomes, god mode and heal; a DPS meter (last 5 s, average, total, time, every source by its card's name); nothing saved or recorded ([evidence](evidence/PLAYGROUND.md)) | `f612776`, `f85657f`, `519a445`, `431b543`, `d1ed9ac` (branch `claude/playground`) |
 
 ## Goldens changed on purpose
 - none yet (CX changed none: the Codex is outside the sim; the replay golden passed in its content / arch run)
@@ -25,6 +26,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 - AP: none. `tests/golden` passes unchanged: the loop and Ascension fields are hashed only past loop 1 / on the Ascension floor, so every loop-1 floor other than the last hashes as before (the last floor's hash changes on purpose; no golden fixture holds one)
 - SM: none. The one sim edit is a read key (`Wand.read`'s `wand`), nothing hashed; `tests/golden` not run by the agent (the lead's full suite).
 - BM: none. No sim file changed (presentation, assets and docs only); `tests/golden` not run by the agent.
+- PG: none. One sim file gained a function (`FloorGenerator.one_room`) and one a read (`WorldReader.has_gate`); `tests/golden` passed in the seams run.
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -110,3 +112,4 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   checks 2, rest 1.5). Pushed.
 - 2026-10-13: owner N19, the Playground (a creative mode to test builds, dummies, bosses and biomes); plan in
   [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md), built on `claude/playground` from `d5a5602`.
+- 2026-10-13: PG built on `claude/playground` (PG1-PG5, evidence [`evidence/PLAYGROUND.md`](evidence/PLAYGROUND.md)): seams 288/288, presentation units + 11 e2e 516/516; a BM bug in `ActorViews._drop_missing` (get_meta with a null default) fixed on the way. Not merged into `claude/v0.7.5-new-ground` yet (that branch's lead merges it, so BF's boss changes reach the Playground).

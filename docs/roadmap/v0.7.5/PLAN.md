@@ -58,7 +58,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
-| PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N19 | |
+| PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N19 | Done ([evidence](evidence/PLAYGROUND.md)) |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
 - **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold

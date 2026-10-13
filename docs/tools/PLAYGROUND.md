@@ -1,6 +1,6 @@
 # Playground (creative mode for testing builds, bosses and biomes)
 
-Status: **planned 2026-10-13**, owner line N19 in [`../roadmap/v0.7.5/PLAN.md`](../roadmap/v0.7.5/PLAN.md), built on
+Status: **built 2026-10-13** (PG1-PG5; [evidence](../roadmap/v0.7.5/evidence/PLAYGROUND.md)), owner line N19 in [`../roadmap/v0.7.5/PLAN.md`](../roadmap/v0.7.5/PLAN.md), built on
 branch `claude/playground` (cut from `claude/v0.7.5-new-ground` at `d5a5602`, after BM; before BF).
 
 ## Owner line (2026-10-13, verbatim)
