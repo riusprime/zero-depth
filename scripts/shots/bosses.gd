@@ -86,11 +86,9 @@ var _rig_rows: Array[Image] = []
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("mode="):
-			_mode = arg.trim_prefix("mode=")
-		if arg.begins_with("set="):
-			_set = int(arg.trim_prefix("set="))
+	var args := ScriptArgs.parse()
+	_mode = args.get("mode", _mode)
+	_set = int(args.get("set", _set))
 	_dir = "res://build/shots/%s/bosses/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_repo = ContentRepository.load_all()

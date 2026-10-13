@@ -30,13 +30,11 @@ var _held: Array = []
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("zoom="):
-			_zoom = float(arg.trim_prefix("zoom="))
-		elif arg.begins_with("scenes="):
-			_scenes = Array(arg.trim_prefix("scenes=").split(","))
-		elif arg.begins_with("biome="):
-			_biome = StringName(arg.trim_prefix("biome="))
+	var args := ScriptArgs.parse()
+	_zoom = float(args.get("zoom", _zoom))
+	if args.has("scenes"):
+		_scenes = Array(String(args["scenes"]).split(","))
+	_biome = StringName(args.get("biome", _biome))
 	_dir = "res://build/shots/%s/vfx/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_main = (load("res://src/app/main.tscn") as PackedScene).instantiate()

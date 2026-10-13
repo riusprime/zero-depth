@@ -11,10 +11,10 @@ var boss_ticks := 3600
 
 
 func _initialize() -> void:
-	for arg in OS.get_cmdline_user_args():
-		var kv := arg.split("=")
-		if kv.size() == 2 and kv[0] in ["seeds", "floor_ticks", "boss_ticks"]:
-			set(kv[0], int(kv[1]))
+	var args := ScriptArgs.parse()
+	seeds = int(args.get("seeds", seeds))
+	floor_ticks = int(args.get("floor_ticks", floor_ticks))
+	boss_ticks = int(args.get("boss_ticks", boss_ticks))
 	var runs := []
 	var damage := 0
 	var violations := []

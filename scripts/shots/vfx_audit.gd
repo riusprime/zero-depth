@@ -22,9 +22,7 @@ var _script: Array = []
 
 
 func _initialize() -> void:
-	for a in OS.get_cmdline_user_args():
-		if a.begins_with("build="):
-			_build = StringName(a.trim_prefix("build="))
+	_build = StringName(ScriptArgs.parse().get("build", _build))
 	_dir = OUT % _build
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	print("vfx_audit: renderer=%s" % RenderingServer.get_current_rendering_method())

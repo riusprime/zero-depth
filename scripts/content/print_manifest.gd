@@ -4,10 +4,7 @@ extends SceneTree
 
 
 func _initialize() -> void:
-	var out := ""
-	for arg in OS.get_cmdline_user_args():
-		if arg.begins_with("out="):
-			out = arg.trim_prefix("out=")
+	var out: String = ScriptArgs.parse().get("out", "")
 	var repo := ContentRepository.load_all()
 	print(
 		(
