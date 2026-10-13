@@ -161,11 +161,6 @@ func plaque_height() -> float:
 	return _height
 
 
-## The plaque's width now (px).
-func plaque_width() -> float:
-	return _width
-
-
 ## Picks the smallest plaque (GROW) at which the text fits, and the sizes that fit it.
 func _fit() -> void:
 	for g: Vector2 in GROW:

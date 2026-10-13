@@ -120,11 +120,6 @@ func _place() -> void:
 	_plate.global_position = origin - Vector2(0, (_plate.size.y - PIP) * 0.5)
 
 
-## The slab's rect on screen (tests: it stays inside the left part of the HUD in every language).
-func plate_rect() -> Rect2:
-	return _plate.get_global_rect()
-
-
 # --- Reads (tests) ------------------------------------------------------------------------------------------
 func filled_pips() -> int:
 	return _filled
@@ -141,7 +136,3 @@ func cut_slots() -> PackedInt32Array:
 		if _cuts[k].visible:
 			out.append(k)
 	return out
-
-
-func weapon_text() -> String:
-	return _weapon.text

@@ -203,15 +203,6 @@ func tile(k: int) -> PanelContainer:
 	return _skip if k == SKIP else row.tile(k)
 
 
-## The incoming card (tests: drag it onto a slot to insert).
-func incoming_card() -> Control:
-	return _card
-
-
-func slot_name(k: int) -> String:
-	return row.card_name(k)
-
-
 func read_back_text() -> String:
 	return _read_back.text
 

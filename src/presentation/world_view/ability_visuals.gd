@@ -107,21 +107,10 @@ func _sync_echo(fx: Dictionary) -> void:
 
 
 # --- Reads (tests) ------------------------------------------------------------------------------------------
-func drone_count() -> int:
-	return _drones.filter(func(d: Node3D) -> bool: return d.visible).size()
-
-
-func blade_count() -> int:
-	return _blades.filter(func(b: MeshInstance3D) -> bool: return b.visible).size()
 
 
 func bomb_count() -> int:
 	return _bombs.filter(func(b: Node3D) -> bool: return b.visible).size()
-
-
-## The ground circle's radius of bomb k as drawn (the sim's bomb radius).
-func bomb_ring_radius(k: int) -> float:
-	return ((_bombs[k].get_node("Ring") as MeshInstance3D).mesh as TorusMesh).outer_radius
 
 
 func fx_count_of(kind: StringName) -> int:

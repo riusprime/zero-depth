@@ -293,12 +293,6 @@ func _process(delta: float) -> void:
 	_light_shards(k * k)
 
 
-## Optional: tint the stone from a biome palette's `cover` token (a little darker, so the gate stands apart).
-func set_stone_color(c: Color) -> void:
-	_stone.albedo_color = c
-	_stone_top.albedo_color = c.lightened(0.12)
-
-
 func _block(size: Vector3, pos: Vector3, rot_deg: Vector3, mat: Material) -> void:
 	var box := BoxMesh.new()
 	box.size = size

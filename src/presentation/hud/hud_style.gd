@@ -19,7 +19,7 @@ extends RefCounted
 ##   HudStyle.style_label(label, size, bold)  - the style's font, size, colour and soft outline on a Label;
 ##   HudStyle.label(size, bold)                - a new Label styled that way (translated text is set by the caller);
 ##   HudStyle.font(bold)                       - the style's FontVariation (built on the bundled Atkinson TTFs);
-##   HudStyle.accent() / text_color() / dim() / panel_bg() / line() / warn_color() - the colour tokens;
+##   HudStyle.accent() / text_color() / dim() / panel_bg() / line() - the colour tokens;
 ##   HudStyle.danger_color(heat)               - cool (0) to hot (1), for meters that heat up;
 ##   HudFrame.new()                            - a PanelContainer drawn as the style's plate (a hairline, or nothing);
 ##   HudBar.new()                              - a thin fill bar with a damage echo and a warn pulse;
@@ -97,10 +97,6 @@ static func warn_pulse(s: Style = current) -> Color:
 ## The hairline under a group (LINE) and a bar's track edge.
 static func line(_s: Style = current) -> Color:
 	return Color(TEXT, 0.28)
-
-
-static func warn_color() -> Color:
-	return WARN
 
 
 ## 0 (cool) .. 1 (hot), through HEAT.

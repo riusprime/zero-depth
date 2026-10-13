@@ -91,11 +91,6 @@ func fx_count_of(kind: StringName) -> int:
 	return _fx.filter(func(f: Array) -> bool: return f[4] == kind).size()
 
 
-## The drawn radius of fire patch k.
-func fire_radius(k: int) -> float:
-	return _fires[k].scale.x
-
-
 func _edge(kind: StringName, tick: int) -> bool:
 	if tick == _last[kind]:
 		return false

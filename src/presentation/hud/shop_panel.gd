@@ -171,10 +171,6 @@ func focused_value() -> int:
 	return int(_entries[_focus]["value"]) if _focus < _entries.size() else InputFrame.PICK_NONE
 
 
-func entry_count() -> int:
-	return _entries.size()
-
-
 ## Entry k: {value, enabled, row, node}.
 func entry(k: int) -> Dictionary:
 	return _entries[k]
