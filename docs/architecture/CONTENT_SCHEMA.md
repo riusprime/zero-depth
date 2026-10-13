@@ -553,6 +553,15 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     (`lock_seconds` required). Active until the last strikes.
   - `row_lanes` (LINE): `count` crosses of two lanes (the player's row and column), `length_m` long, `width_m` wide,
     `stagger_seconds` apart, tracked then locked like `marks`; cut short by walls.
+- **v0.7.5 BF2 (the Brood Mother and the Hive Lens).** A move may take optional params (`BossSchemas.MOVES[move]
+  ["optional"]`; any other unknown key is still an `ERROR`):
+  - `marks` + `pattern_id` (a BURST, §4b): each circle is an egg's landing; while it is locked an egg flies onto it,
+    and as it strikes the pattern's waves burst from it (the pattern's lob is the circle's lock; `land_radius_m` is
+    unused, the circle's `radius_m` is the landing). Active until the last egg's burst has fired.
+  - `burrow` + `pattern_id` (a RING): a ring of shots bursts from the eruption, its gap on the player. A `burrow`
+    with `lock_seconds` lays its eruption circle on the player's exact position while the ripple tracks
+    (`track_seconds`), then holds it for `erupt_seconds` (set it to the lock, 0.8 s) and erupts there.
+  - The Hive Lens's Focus Beam is a `lanes` attack (count 1, or 3 in phase 3) with `lock_seconds`.
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

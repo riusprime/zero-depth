@@ -1,6 +1,7 @@
 extends SceneTree
 ## v0.7.5 BF1: renders the dodge-first boss fights for the owner (BOSS_FIGHTS.md): the Gatekeeper's and the Warlord's
-## patterns in flight, the tracked circles and lanes (dull while tracking, flashing once locked) and the crystal shield,
+## patterns in flight (v0.7.5 BF2: and the Brood Mother's and the Hive Lens's), the tracked circles and lanes (dull
+## while tracking, flashing once locked) and the crystal shield,
 ## in the real game view (WorldViewRoot on the Ruins stage, the iso camera) of a real World. Needs a renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/boss_fights.gd
@@ -13,6 +14,17 @@ const PLAN := [
 	[&"gatekeeper", &"fist_slam_3", 70, "gatekeeper_fist_slam_tracking", Vector2(0.0, 0.05)],
 	[&"gatekeeper", &"fist_slam", 84, "gatekeeper_fist_slam_locked", Vector2.ZERO],
 	[&"gatekeeper", &"shock_lanes", 80, "gatekeeper_shock_lanes_locked", Vector2.ZERO],
+	# v0.7.5 BF2: the Brood Mother and the Hive Lens.
+	[&"brood_mother", &"egg_storm", 125, "brood_egg_storm_shielded", Vector2(0.0, 0.05)],
+	[&"brood_mother", &"egg_storm_5", 160, "brood_egg_storm_5", Vector2(0.04, 0.03)],
+	[&"brood_mother", &"web_spiral", 150, "brood_web_spiral", Vector2.ZERO],
+	[&"brood_mother", &"leap", 84, "brood_leap_locked", Vector2.ZERO],
+	[&"brood_mother", &"burrow", 176, "brood_burrow_locked", Vector2.ZERO],
+	[&"brood_mother", &"burrow", 214, "brood_burrow_eruption_ring", Vector2.ZERO],
+	[&"hive_lens", &"prism_spiral", 164, "hive_prism_spiral_shielded", Vector2.ZERO],
+	[&"hive_lens", &"petal_bloom", 112, "hive_petal_bloom", Vector2.ZERO],
+	[&"hive_lens", &"glare_ring_fast", 122, "hive_glare_ring_fast", Vector2.ZERO],
+	[&"hive_lens", &"focus_beam_3", 84, "hive_focus_beam_locked", Vector2.ZERO],
 	[&"warlord", &"shield_wall", 150, "warlord_shield_wall_shielded", Vector2.ZERO],
 	[&"warlord", &"shield_wall_cross", 160, "warlord_crossing_walls", Vector2.ZERO],
 	[&"warlord", &"javelin_fan", 90, "warlord_javelin_fan", Vector2.ZERO],

@@ -56,7 +56,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | AC | Local achievements | N7 | Done ([evidence](evidence/ACHIEVEMENTS.md)) |
 | SM | Small things: onboarding, card levels shown, credits and licences, accessibility pass | N8 | Done ([evidence](evidence/SMALL_THINGS.md)) |
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
-| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); the other four bosses next |
+| BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | BF1 Done (the engine, the Gatekeeper and the Warlord; [evidence](evidence/BOSS_FIGHTS_1.md)); BF2 Done (the Brood Mother and the Hive Lens; [evidence](evidence/BOSS_FIGHTS_2.md)); the Siege Engine and the Foundry next (BF3) |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
@@ -183,6 +183,35 @@ boss's patterns" guide in [`evidence/BOSS_FIGHTS_1.md`](evidence/BOSS_FIGHTS_1.m
   (salmon-red core stretched into a tip, a wine edge, a crimson trail); the crystal shell in the boss's colour. A test
   keeps every hostile core 0.2+ (RGB) from the hero's cyan and heat colours. Effects density Low: every other trail,
   shorter.
+
+### BF2: the Brood Mother and the Hive Lens (agent's readings, 2026-10-13; the owner corrects them at the playtest)
+Owner N15 (verbatim in [`BOSS_FIGHTS.md`](../../design/BOSS_FIGHTS.md), "Approve all"); built on BF1's engine;
+evidence in [`evidence/BOSS_FIGHTS_2.md`](evidence/BOSS_FIGHTS_2.md).
+- **Egg Storm is tracked circles that become eggs.** The design's "eggs land on tracked circles and each bursts into
+  an 8-point star" is the `marks` move with a BURST pattern (an optional `pattern_id`): each circle follows you, locks
+  for 0.8 s while its egg flies onto it, then lands (the circle hurts) and bursts into 8 acid globs aimed so you stand
+  in a gap (the star is turned half a step off the line to you). 3 eggs, 0.45 s apart; 5 eggs with a second star in
+  phases 2–3. It is the shielded signature. A later egg may still be locking when an earlier one bursts: that is the
+  Egg Storm itself (rule 5's "that boss's named combo").
+- **Burrow's "tracked eruption ring".** The eruption circle (not the boss's ripple) sits on your exact position while
+  she tracks underground, locks for 0.8 s (she burrows to it), erupts there, and a ring of 14 globs bursts out of it
+  with its gap toward you (two rings, turned 90°, in phase 3). The Leap, the Leap chain and the Pounce chain (her
+  punish) track you exactly and lock 0.8 s on each leap.
+- **Web Spiral:** 2 arms of slow globs turning one way, reversing at 1.5 s; phase 3's is faster and turns the other
+  way. The Hatchling summons stay as they were.
+- **The Hive Lens's sweeps are gone.** Its rail sweeps and prism bolt fans became the design's patterns: the Prism
+  Spiral (3 arms reversing halfway, shielded: the model's eye-closed pose reads `WorldReader.boss_shielded`), the
+  Petal Bloom (a 5-petal flower, three blooms turned 36° each), the Glare Ring (rings of 20 with 2 gaps, turned 30° a
+  ring), and the Focus Beam, a single line (`lanes`) that tracks you and locks 0.8 s (3 lines in phase 3; also its
+  punish on a far player). Its close Glare slam ring stays as `lens_flare` (a melee answer, like BF1's Sweep and
+  Bash), and the dive stays its gap-closer, now tracked and locked. The Lens Drones still break off at the 66 % gate
+  (their own attack is EF's).
+- **HP ×1.25 from v0.7.0:** Brood Mother 1600 → 2000, Hive Lens 1650 → 2063 (2062.5, rounded up). The 66 / 33 % gates
+  stay; phase 2 adds (eggs, the fast rings), phase 3 the hardest mix (the fast web or spiral, two-ring eruptions,
+  the fast bloom, three focus lines). N18's radius and 4×4 room stay as BF1 set them.
+- **Looks:** the Brood Mother's sickly green acid globs (`acid_glob`: a pale lime core, a near-black green edge, a
+  short trail) and her eggs (a pale shell glowing green); the Hive Lens's magenta-red prism orbs (`prism_orb`: a pink
+  core, a wine edge, a long trail). Both kept off the hero's colours (BF1's test) and apart from the other looks.
 
 ### SM: the small things (lead's readings, 2026-10-13; the owner corrects them at the playtest)
 Owner N8 (verbatim in the table above); evidence in [`evidence/SMALL_THINGS.md`](evidence/SMALL_THINGS.md).
