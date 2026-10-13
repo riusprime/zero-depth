@@ -155,8 +155,8 @@ func _apply() -> void:
 	column.position.y = COLUMN_H * 0.5 * up
 	core.scale = column.scale
 	core.position.y = column.position.y
-	column_material.set_shader_parameter("strength", 1.1 + 1.6 * k * k)
-	core_material.set_shader_parameter("strength", 1.6 + 2.0 * k * k)
+	column_material.set_shader_parameter("strength", 0.8 + 1.6 * k * k)
+	core_material.set_shader_parameter("strength", 1.1 + 2.0 * k * k)
 	light.light_energy = (
 		(LIGHT_SEALED if _sealed else LIGHT_OPEN * (0.3 + 0.7 * up)) + FLARE_ENERGY * k * k
 	)

@@ -430,6 +430,10 @@ func _record_ascension(loop: int) -> void:
 		return
 	codex.add(ASCENSION_PAGE, &"ascended", &"times")
 	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
+	# FOR THE MERGE (v0.7.5 AC): AC's tracker is not on this base; once merged, this reports each Ascend to it.
+	var tracker: Variant = get(&"achievement_tracker")
+	if tracker != null:
+		tracker.call(&"report", &"runs:ascended")
 
 
 func show_end_panel(won: bool) -> void:

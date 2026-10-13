@@ -50,6 +50,12 @@ Stored as `{"version": 1, "cards": {id: {counter: n}}, "enemies": {…}, "bosses
 `count` / `total` when a run ends. `ProfileStore.PROFILE_VERSION` was not bumped: the section carries its own
 `version`, and a missing section is an empty Codex.
 
+v0.7.5 AP adds the Ascension counters through this API (`Main._record_ascension`, after each Ascend; nothing in a
+tweaked run): page `runs` (written by AP, not one of `CodexStore.PAGES`, so the Codex view never lists it), entry
+`ascended` counter `times` (`add`: every Ascend), entry `loop` counter `best` (`raise_to`: the highest loop reached,
+2 after the first Ascend). Read them with `count(&"runs", &"ascended", &"times")` and `count(&"runs", &"loop",
+&"best")`; `changed` fires for both ([`ASCENSION.md`](ASCENSION.md)).
+
 ## Command
 ```
 gdformat --check src scripts tests && gdlint src scripts tests
