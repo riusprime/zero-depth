@@ -13,8 +13,8 @@ func test_all_data_validates() -> void:
 
 
 func test_manifest_hash_is_stable_across_loads() -> void:
-	var a := ContentRepository.load_all().manifest_hash
-	var b := ContentRepository.load_all().manifest_hash
+	var a := ContentRepository.load_all().manifest_hash()
+	var b := ContentRepository.load_all().manifest_hash()
 	assert_eq(a.length(), 64)
 	assert_eq(a, b)
 

@@ -12,11 +12,11 @@ func _initialize() -> void:
 	print(
 		(
 			"manifest: %s (%d files, %d errors)"
-			% [repo.manifest_hash, repo.paths.size(), repo.errors().size()]
+			% [repo.manifest_hash(), repo.paths.size(), repo.errors().size()]
 		)
 	)
 	if not out.is_empty():
 		var f := FileAccess.open(out, FileAccess.WRITE)
-		f.store_string(repo.manifest_hash + "\n")
+		f.store_string(repo.manifest_hash() + "\n")
 		f.close()
 	quit(0 if repo.errors().is_empty() else 1)
