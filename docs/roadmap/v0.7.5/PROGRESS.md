@@ -33,6 +33,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
 | EI-05: the sub-streams `map:ice` (NB1), `map:starglow` (NB2) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
 | SM: the owner's credit line (`CREDITS_OWNER`, "…" since v0.0.1, O4); the AI 3D generator's terms for shipping the kit models | — | pending (OWNER ONLY) | |
 | EI-05: the sub-streams `map:ice` (NB1) and `map:overrun` (since v0.6.0) aren't named in the locked stream list; add them to EI-05? | — | pending (lead keeps them, the same pattern the owner approved for `map:event` on 2026-10-08) | |
+| PG: the Playground's entry, dummies, DPS meter and panel look | 2026-10-13 | "Main menu row"; "Never die + optional HP"; "Total + per-source"; "Dev-tool style, no mockups" (G2 waived for this tool) | 2026-10-13 |
 
 ## History
 - 2026-10-12: plan from the owner's message (verbatim in PLAN), written while the v0.7.0 suite ran.
@@ -107,3 +108,5 @@ Plan: [`PLAN.md`](PLAN.md). Branch: `claude/v0.7.5-new-ground`, cut from `main` 
   `Passing Tests 266`; on the BM merge `ed5b447` `Tests 266`, `Passing Tests 266`. GitHub `verify` on `f388716`
   (six shards): green, 15:42:53 → 16:10:25 UTC (27.5 min; sim_a 27, sim_c 25.5, sim_b 22, e2e 11, presentation 9,
   checks 2, rest 1.5). Pushed.
+- 2026-10-13: owner N19, the Playground (a creative mode to test builds, dummies, bosses and biomes); plan in
+  [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md), built on `claude/playground` from `d5a5602`.

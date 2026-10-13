@@ -43,6 +43,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | N16 | "All normal enemies, besides the turrets and snipers should change into this kind of attacks, not bullets going fast but slower attacks, make them look like fireballs, but different for each enemy/boss, and the ones that change don't have the trayectory drawn in the ground anymore, only the turrets, the melee enemies keep the red thingy" | Arc Caster, Lens Drone and Bomb Drone fire slow fireball patterns with no ground line; Needle and Sniper unchanged; melee telegraphs unchanged (BOSS_FIGHTS.md "Normal enemies"), G1 "Approve all" | Decided | EF |
 | N17 | "there is a branch claude/sharp-lovelace-74ii7v that you should start from, because we fixed some code bugs from there" | The audit branch (79 commits of v0.7.0 fixes) merged into this branch, both kept (`01c1e2f`) | Done | — |
 | N18 | "Bosses could be a bit bigger so we could see the model better and always put them in the big rooms" | Every boss about **1.3×** bigger: its model height and its body radius together, so what you see is what hits (starting value). Every boss fights in a **4×4** room, the new extra-large size (was 2×2 to 3×3). Both are data the owner can tune in F10 | Decided (lead's reading) | BM, BF1 |
+| N19 | "playtest like a playground where I have the creative mode as in Minecraft … dummies I can spawn and delete … a DPS meter … spawn the bosses … a big 4x4 room and I can change between biomes" (verbatim in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | **The Playground**: a main-menu row into one 4×4 room; any card at any level, dummies (∞ or a set HP) placed and deleted by click, any boss or enemy, a DPS meter by source, five biomes. Picks: "Main menu row", "Never die + optional HP", "Total + per-source", "Dev-tool style, no mockups" (2026-10-13) | Decided | PG |
 
 ## Steps
 | Step | Scope | Rows | Status |
@@ -57,6 +58,7 @@ The owner asked for no interventions: where a line leaves a choice, the lead dec
 | BM | The owner's Warlord, Hive Lens and Foundry models in game, animated; every boss drawn 1.3× | N14, N18 | Done ([evidence](evidence/BOSS_MODELS.md)) |
 | BF | Boss fights: tracked-then-locked markers, slow fireball patterns, shielded signatures, ~1.5× length, one fight per boss | N15 | |
 | EF | Enemy fireballs: Arc Caster, Lens Drone, Bomb Drone; no ground lines on those | N16 | |
+| PG | The Playground (branch `claude/playground`; design and steps PG1-PG5 in [`../../tools/PLAYGROUND.md`](../../tools/PLAYGROUND.md)) | N19 | |
 
 ### CX: the Codex (lead's readings, 2026-10-12; the owner corrects them at the playtest)
 - **Where:** a Codex row on the main menu (after Credits) and on the pause menu (after Options); full-screen Cold
