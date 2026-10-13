@@ -7,7 +7,8 @@ extends RefCounted
 
 ## v0.7.5 BF1: the tracked lock, the shield, the markers' spacing and the bullet pattern. A `marks` or `row_lanes`
 ## attack is active until its last marker strikes; a `pattern` attack for its pattern's whole duration (the data's
-## active_seconds is a floor under both).
+## active_seconds is a floor under both). v0.7.5 BF2: a `marks` attack with a pattern (eggs) until its last marker's
+## burst has fired; a `burrow` may name one too (its eruption's ring; BossAi times that from the eruption).
 static func compile_boss_attack(
 	def: BossAttackDefinition, repo: ContentRepository, t: BossAttackTable
 ) -> void:
@@ -24,6 +25,15 @@ static func compile_boss_attack(
 		if pd != null:
 			t.pattern = compile_pattern(pd)
 			t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
+			if t.move == BossAttackTable.Move.MARKS:  # v0.7.5 BF2: the last egg's burst, from its landing
+				t.active_ticks = maxi(
+					t.active_ticks,
+					(
+						(t.count - 1) * t.mark_gap_ticks
+						+ t.pattern.duration_ticks()
+						- t.pattern.lob_ticks
+					)
+				)
 
 
 ## v0.7.5 BF1: a bullet pattern in sim units (BulletPatterns fires it).
