@@ -23,6 +23,9 @@ const MAX_SLOTS := 8
 @export var blade_cast_gap_seconds := 0.1
 ## v0.8.0 BL (B6): the hook cards (modifier ids) whose children never split or explode again.
 @export var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+## v0.8.0 PF2 (owner O9: the Blade Storm build's lag): the hook cards (modifier ids) whose children cast no trigger's
+## spell (a Blade Storm blade's hits don't cast On Hit's slash; the trigger still ends their spell).
+@export var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## v0.8.0 BL (B6): past this many blasts of blast_merge_ids in one tick, a blast within its radius of an earlier one
 ## merges into it (0 = never).
 @export var blast_merge_after := 8

@@ -70,6 +70,7 @@ const INT_FIELDS: Array[StringName] = [
 ## name), so a spec that doesn't use them hashes exactly as before (no golden moves for a build without them).
 const LATE_INT_FIELDS: Array[StringName] = [
 	&"repeats",
+	&"alive_max",  # v0.8.0 PF2
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -111,6 +112,10 @@ var repeat_damage_permille := 0
 ## v0.8.0 BL (B1, Double Slash's level): how many repeats (0 = the one repeat above), the first repeat_delay_ticks
 ## after the attack and each next one ItemEffects.REPEAT_GAP_TICKS after the one before.
 var repeats := 0
+## v0.8.0 PF2 (owner O9; Blade Storm's blades): a bolt form's projectiles of this attack (its id, every key) alive and
+## queued at once, at most (0 = no cap of its own; SimTuning.player_shots_max still holds). Attacks._bolts doesn't
+## launch a bolt past it, and a launch cut short leaves one LIMIT event (Attacks.EFFECT_ALIVE_CAP).
+var alive_max := 0
 
 # --- size, speed, reach
 ## An arc: half its width (1/4096 turns) and its reach past the attacker's edge, × (1000 + bonus) / 1000.
@@ -352,6 +357,7 @@ func read() -> Dictionary:
 		"spread": spread,
 		"repeat_delay_ticks": repeat_delay_ticks,
 		"repeats": repeats,  # v0.8.0 BL
+		"alive_max": alive_max,  # v0.8.0 PF2
 		"half_arc": half_arc,
 		"reach_m": reach_m,
 		"reach_bonus_permille": reach_bonus_permille,

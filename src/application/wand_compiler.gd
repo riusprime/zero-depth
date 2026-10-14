@@ -15,6 +15,7 @@ static func compile(def: WandDefinition) -> WandTable:
 	t.blade_hit_casts = def.blade_hit_casts  # v0.8.0 BL (BLADE_AUDIT B3, B6)
 	t.blade_cast_gap_ticks = SimTick.seconds_to_ticks(def.blade_cast_gap_seconds)
 	t.once_per_line = def.once_per_line.duplicate()
+	t.cast_free_lines = def.cast_free_lines.duplicate()  # v0.8.0 PF2
 	t.blast_merge_after = def.blast_merge_after
 	t.blast_merge_ids = def.blast_merge_ids.duplicate()
 	return t

@@ -19,6 +19,7 @@ not in `main` yet).
 | AV (part 2) | Every other boss ground attack keeps its dull-then-bright marker but fills it with its own ground (stone cracks, steel scratches, bubbling acid, gold light, hazard stripes, molten seams) instead of flat red, and strikes in 3D on the sim's strike tick: the Gatekeeper's fist slams blow craters and its sweep kicks a dust arc; the Warlord's spears thrust up the lanes, its lunge scorches a skid, its bash swings a steel arc, its javelins plant in the circles; the Brood Mother's eggs cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts; the Hive Lens fires a 3D beam and a ring of light; the Siege Engine's shells fall and explode, its rail streaks and scorches, its shockwave rolls out as dust; the Foundry pours molten metal that cools to a crust, blasts steam and sets lanes burning. Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) part 2 | `2a39c6c` (branch `v080-av2`) |
 | BS part 2 (S4–S6) | The other three bosses get theirs: the Hive Lens turns its Gaze round the room, a beam that starts aimed away from you, turns a quarter turn every 2 s and reverses, stops at walls and burns what it touches while its orbs fly; the Siege Engine's Turret Cross embers bounce off the walls once and come back at you from behind (never onto you within 0.5 s), and in phase 3 its turrets' shots bounce too; the Foundry's Molten Flood leaves lava for 5 s (enemies walk round it, a way to the boss and the door always stays), and phase 3 opens with a roar while the room's outer ring glows, then melts for good and creeps in, never closer than 7 m to the centre. Glare Ring, Turret Cross Reversing and the fast Furnace Waves are gone. Deaths name the gaze, its orbs, the ricochets, the lava and the melt. Evidence [BOSS_SIGNATURES_2](evidence/BOSS_SIGNATURES_2.md), shots 7–12 in `evidence/bs_shots/`; the feel is OWNER ONLY | `ef919d3` (branch `v080-bs2`) |
 | BL | The Blade's cards multiply now: Double Slash adds a repeat a level (5 at level 5, 70 % each), Wave a crescent a level, Split Wave a split a level; Heavy, Flurry and Thrust lose their drawback from level 3 (none at 5); a Blade slash's hit casts On Hit / On Kill / On Finisher twice; two new Blade cards, Blade Storm (returning blades, 2 + 1 a level) and Riposte Chain (a kill slashes on, 2 + 1 a level); offers favour the run's own weapon's cards ×1.5; the Gun's Split shards no longer split or explode and Explosive's blasts past 8 a tick merge. Probe DPS: Gun Spread + Split + Explosive 1,432 → 778 per s, + Twin 1,694 → 1,015; Blade combo 1,870 → 10,304. With Blade Storm the Blade combo is over the frame budget (26.6 ms avg), reported. Evidence [`evidence/BLADE.md`](evidence/BLADE.md); feel OWNER ONLY | `cb7235f` (branch `v080-bl`) |
+| PF2 | The Blade Storm combo no longer halves the frame: a Blade Storm blade's hits cast no trigger's spell (the slash and Wave's crescents still do), at most 36 Blade Storm blades fly at once (one level-5 Double Slash swing; Blade Storm alone never reaches it; a cut throw leaves a LIMIT event), and the crescents and ghost slashes are drawn as instances of baked shapes (same look). Probe (Double Slash, Blade Storm, Wave, Split Wave, On Hit, Explosive, L5) tick + frame avg 22.8-26.5 → 11.6-13.0 ms (~12 ms met in 2 of 6 runs on a shared container: borderline, reported), p95 37.8-45.4 → 20.5-24.2 ms (missed); damage 13,691 → 10,999 per s. Evidence [`evidence/PERF.md`](evidence/PERF.md) PF2; feel and fps OWNER ONLY | this commit (branch `v080-pf2`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -34,6 +35,7 @@ not in `main` yet).
 - AV part 2: none (presentation only; `tests/golden` 2/2 unchanged)
 - BS2: none (no golden fixture holds a boss fight; the lava/melt lists hash only while molten floor is down; `tests/golden` 2/2 unchanged)
 - BL: none (`tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 unchanged: `AttackSpec.repeats` hashes only when set, the blast-merge marks are per tick and not hashed, no golden case holds a Blade pool card or a mod draw)
+- PF2: none (`tests/golden` 2/2 and `test_modifier_equivalence.gd` unchanged: `AttackSpec.alive_max` is a `LATE_INT_FIELDS` field hashed only when set, no golden case holds Blade Storm, and the cap's count is read on demand, never stored)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -59,6 +61,19 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: PF2 (agent, branch `v080-pf2` from `62b9ff7`): temporary per-phase timers and counters (not committed)
+  found the Blade Storm build's cost: 36 returning blades a Double Slash swing (~75 in flight), every blade hit casting
+  On Hit's slash (6.6 casts and 43.9 hits a tick against 1.3 and 23.6 without Blade Storm), 99 crescents a tick
+  rebuilt as ImmediateMesh vertices, AttackFormView at its mesh cap; Split Wave was not the cause. Fix:
+  `WandTable.cast_free_lines` (`blade_storm`), `AttackSpec.alive_max` (Blade Storm 36, LIMIT `attack_alive_cap`),
+  `BakedMeshPools` for BladeFormView's crescents and ghosts, AttackFormCanvas skips mesh-only effects past the cap; the
+  probe counts `alive_capped`. SIM_CONTRACTS §8j, CONTENT_SCHEMA, PRESENTATION §7 updated. New
+  `tests/unit/sim/test_blade_storm_cost.gd` (9), one test each in `test_blade_form_view.gd` and `test_attack_forms.gd`.
+  Run locally: lint clean (870 files); sim set (blade combos, Blade Storm cost, combos, four-slash, modifier
+  abilities / equivalence / smoke / smoke mx4, modifiers, mx4 engine / modifiers / modifiers 2, shot cap, the ten
+  wand files) 245/245; presentation (attack-form looks / forms / live, blade form view, vfx budget / layer, movement
+  vfx) 72/72; `tests/golden` + `tests/arch` + `tests/content` 127/127; e2e wand_blade, damage_soak, playground 3/3.
+  Not run locally: the full suite, seams (the lead's). Target: borderline (2 of 6 runs within 12 ms), reported.
 - 2026-10-14: BS part 2 (agent, branch `v080-bs2` from `94c691e`): `BossGaze` (S4, new `gaze` move), `BossRicochet`
   (S5: bounces on the Turret Cross, phase-3 turret shots, the 0.5 s fairness), `BossLava` (S6: lava with fords and a
   fairness flood, new `melt` move, `NavField.set_extra` melt shapes + `reach`), `BossStore` lava/melt lists (in

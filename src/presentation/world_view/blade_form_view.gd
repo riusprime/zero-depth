@@ -14,6 +14,10 @@ extends Node3D
 ## - Counter: a ring flash round the hero; Finisher+: its big shockwave ring;
 ## - Orbit Blades: a blade at each orbiting blade's place, turning.
 ## One ImmediateMesh, rebuilt each sync; flat marks on the floor use the hero's cool core, never a hostile hue.
+## v0.8.0 PF2 (owner O9, the Blade Storm build's frame): the crescents and the ghost slashes are instances of one mesh
+## per shape (a crescent's width and radius; a ghost's width, reach, way and age in ticks), baked once with the same
+## band, colours and height, in a MultiMesh each (BakedMeshPools): a crowd of them costs a transform each, not 84
+## vertices each. They look the same as before.
 
 const HEIGHT := 0.45
 const FLOOR := 0.04
@@ -27,6 +31,10 @@ const ARC_SEGMENTS := 14
 const CRESCENT_R := 0.45
 const CRESCENT_MAX_HALF := 1.2
 const SPARK := Color(1.0, 0.97, 0.85, 1.0)
+## v0.8.0 PF2: the baked shapes (BakedMeshPools keys' first value).
+const SHAPE_CRESCENT := 0
+const SHAPE_GHOST := 1
+const SHAPE_GHOST_MIRROR := 2
 
 ## What the last sync drew, by kind (the tests read it): crescent, ghost, crack, line, spark, ring, blade.
 var drawn := {}
@@ -35,6 +43,9 @@ var _node := MeshInstance3D.new()
 var _mat := StandardMaterial3D.new()
 var _core := ThemePalette.color(&"player_core")
 var _looks := {}
+## v0.8.0 PF2: the build digest read once a sync (the crescents' look cache keys on it), and the baked shapes' pools.
+var _digest := ""
+var _baked := BakedMeshPools.new()
 
 
 func _init() -> void:
@@ -50,14 +61,18 @@ func _init() -> void:
 	_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_node.extra_cull_margin = 16.0
 	add_child(_node)
+	_baked.name = "Baked"
+	add_child(_baked)
 
 
 func sync(reader: WorldReader) -> void:
 	_mesh.clear_surfaces()
 	drawn = {}
 	var tick := reader.tick()
+	_digest = reader.attack_digest()
 	var b := reader.blade_forms()
 	_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	_baked.begin()
 	var any := false
 	any = _crescents(reader) or any
 	for f: Dictionary in b["fx"]:
@@ -71,6 +86,7 @@ func sync(reader: WorldReader) -> void:
 			_mesh.surface_set_color(Color(0, 0, 0, 0))
 			_mesh.surface_add_vertex(Vector3.ZERO)
 	_mesh.surface_end()
+	_baked.finish()
 
 
 func _count(kind: StringName) -> void:
@@ -82,7 +98,7 @@ func _count(kind: StringName) -> void:
 func _crescent_of(reader: WorldReader, key: String) -> Vector2:
 	if key == "":
 		return Vector2.ZERO
-	var sig := reader.attack_digest() + "|" + key
+	var sig := _digest + "|" + key
 	if not _looks.has(sig):
 		if _looks.size() > 64:
 			_looks.clear()
@@ -95,7 +111,6 @@ func _crescent_of(reader: WorldReader, key: String) -> Vector2:
 
 
 func _crescents(reader: WorldReader) -> bool:
-	var any := false
 	for i in reader.projectile_count():
 		if reader.projectile_team(i) != 0:
 			continue
@@ -107,11 +122,70 @@ func _crescents(reader: WorldReader) -> bool:
 		var yaw := v.angle() if v.length() > 0.0001 else 0.0
 		var half := minf(TAU * look.x / 4096.0, CRESCENT_MAX_HALF)
 		var r := CRESCENT_R + look.y
-		var centre := p - Vector2(cos(yaw), sin(yaw)) * r * 0.7
-		_arc_band(centre, yaw - half, yaw + half, r - 0.12, r + 0.08, HEIGHT, _core, 0.9)
-		_count(&"crescent")
-		any = true
-	return any
+		var xf := Transform3D(Basis(Vector3.UP, yaw), SimPlane.to_3d(p))
+		if _baked.add(Vector4(SHAPE_CRESCENT, half, r, 0.0), xf, _bake):
+			_count(&"crescent")
+	return false  # the crescents are the pools' (the ImmediateMesh's surface doesn't hold them)
+
+
+## v0.8.0 PF2: shape `key` (SHAPE_*, half-width in radians, radius or reach, age) as a mesh round the origin, aimed
+## along +x, exactly the band _arc_band drew for it: a crescent round a centre 0.7 r behind its bolt, from r - 0.12 to
+## r + 0.08; a ghost slash swept and faded at its age.
+func _bake(key: Vector4) -> ArrayMesh:
+	var half := key.y
+	if int(key.x) == SHAPE_CRESCENT:
+		var r := key.z
+		return _band_mesh(Vector2(-r * 0.7, 0.0), -half, half, r - 0.12, r + 0.08, _core, 0.9)
+	var age := int(key.w)
+	var sweep := clampf(float(age + 1) / GHOST_SWEEP, 0.0, 1.0)
+	var fade := 1.0 - clampf(float(age - GHOST_SWEEP) / (GHOST_TICKS - GHOST_SWEEP), 0.0, 1.0)
+	var reach := key.z
+	var from := -half
+	var to := -half + 2.0 * half * sweep
+	if int(key.x) == SHAPE_GHOST_MIRROR:
+		from = half - 2.0 * half * sweep
+		to = half
+	return _band_mesh(
+		Vector2.ZERO, from, to, reach * 0.45, reach, _core.lerp(Color.WHITE, 0.3), 0.45 * fade
+	)
+
+
+## _arc_band's triangles at HEIGHT as an ArrayMesh (its vertex colours baked in).
+func _band_mesh(
+	centre: Vector2, a0: float, a1: float, r0: float, r1: float, c: Color, alpha: float
+) -> ArrayMesh:
+	var verts := PackedVector3Array()
+	var cols := PackedColorArray()
+	var inner := Color(c, alpha * 0.25)
+	var outer := Color(c.lerp(Color.WHITE, 0.25), alpha)
+	for k in ARC_SEGMENTS:
+		var t0 := lerpf(a0, a1, float(k) / ARC_SEGMENTS)
+		var t1 := lerpf(a0, a1, float(k + 1) / ARC_SEGMENTS)
+		var d0 := Vector2(cos(t0), sin(t0))
+		var d1 := Vector2(cos(t1), sin(t1))
+		for pair: Array in [
+			[d0 * r0, inner],
+			[d0 * r1, outer],
+			[d1 * r1, outer],
+			[d0 * r0, inner],
+			[d1 * r1, outer],
+			[d1 * r0, inner],
+		]:
+			verts.append(SimPlane.to_3d(centre + (pair[0] as Vector2), HEIGHT))
+			cols.append(pair[1])
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_COLOR] = cols
+	var m := ArrayMesh.new()
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	m.surface_set_material(0, _mat)
+	return m
+
+
+## v0.8.0 PF2: how many crescents and ghost slashes the last sync laid out as instances.
+func baked_drawn() -> int:
+	return _baked.used_total()
 
 
 func _fx(f: Dictionary, tick: int, hero: Vector2) -> bool:
@@ -135,17 +209,14 @@ func _ghost(f: Dictionary, age: int, at: Vector2, yaw: float) -> bool:
 	if age > GHOST_TICKS:
 		return false
 	var half := minf(TAU * float(f["a"]) / 4096.0, PI)
-	var sweep := clampf(float(age + 1) / GHOST_SWEEP, 0.0, 1.0)
-	var fade := 1.0 - clampf(float(age - GHOST_SWEEP) / (GHOST_TICKS - GHOST_SWEEP), 0.0, 1.0)
 	var reach := 0.45 + float(f["b"])
-	var from := yaw - half
-	var to := yaw - half + 2.0 * half * sweep
-	if int(f["kind"]) == WorldReader.BLADE_FX_ARC_MIRROR:
-		from = yaw + half - 2.0 * half * sweep
-		to = yaw + half
-	_arc_band(at, from, to, reach * 0.45, reach, HEIGHT, _core.lerp(Color.WHITE, 0.3), 0.45 * fade)
-	_count(&"ghost")
-	return true
+	var way := (
+		SHAPE_GHOST_MIRROR if int(f["kind"]) == WorldReader.BLADE_FX_ARC_MIRROR else SHAPE_GHOST
+	)
+	var xf := Transform3D(Basis(Vector3.UP, yaw), SimPlane.to_3d(at))
+	if _baked.add(Vector4(way, half, reach, maxi(age, 0)), xf, _bake):  # v0.8.0 PF2: a baked shape
+		_count(&"ghost")
+	return false  # the ghosts are the pools' (the ImmediateMesh's surface doesn't hold them)
 
 
 ## Fissure's eruption: the line lit on the floor and spikes of light rising along it.

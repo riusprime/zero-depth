@@ -15,6 +15,11 @@ var blade_cast_gap_ticks := 6
 ## v0.8.0 BL (B6): the hook cards whose child spells never split or explode again: a spec made by one of these hooks
 ## (its lineage holds one) takes none of their hooks (the first shot splits and explodes; its splits don't).
 var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+## v0.8.0 PF2 (owner O9; docs/roadmap/v0.8.0/evidence/PERF.md PF2): the hook cards whose child spells cast no trigger's
+## spell: a spec made by one of these hooks (its lineage holds one) takes no trigger cut (the trigger still ends it, so
+## the cards to its right don't rewrite it). Blade Storm's returning blades pass each enemy twice a throw and a Double
+## Slash swing throws up to 36; each hit casting On Hit's slash multiplied the tick's work.
+var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## v0.8.0 BL (B6): in one tick, past this many blasts of these hooks (Explosive's), a blast within its radius of one
 ## already set off that tick merges into it (it doesn't go off); one farther away still does. 0 = never merge.
 var blast_merge_after := 8

@@ -183,6 +183,10 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   frame's burst budget) and `BurstBudget.admit` for the live ones. Effects density thins the rocks and the sprites (not
   the blades or the ground marks, which show where it hit); reduced motion stills the tumbling, the overshoot and the
   shaders' flow. It adds no camera shake.
+- **Blade forms (v0.8.0 PF2, owner O9):** `BladeFormView`'s crescents and ghost slashes are MultiMesh instances of baked
+  shapes (`BakedMeshPools`: one mesh per shape, the same 14-segment band, colours and height the ImmediateMesh drew; a
+  ghost's shape is its age in ticks too), at most 256 instances of a shape and 96 shapes (then all are rebuilt), one
+  draw each. The cracks, eruptions, sparks, rings and orbiting blades stay in the one ImmediateMesh.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;

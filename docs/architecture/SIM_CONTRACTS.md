@@ -926,6 +926,18 @@ proposed). Evidence: [`../roadmap/v0.8.0/evidence/BLADE.md`](../roadmap/v0.8.0/e
   Riposte Chain (`riposte_chain`: an `ON_KILL` seeking beam, reach 4 m, `chains` = level, 80 %). Their items have
   `index_wave` 1: `ModifierCompiler.item_defs` puts every wave-0 card first in its v0.6.5 order, then wave 1, so no
   saved item index moves.
+- **The Blade Storm build's cost (v0.8.0 PF2, owner O9).** Evidence: [`../roadmap/v0.8.0/evidence/PERF.md`](
+  ../roadmap/v0.8.0/evidence/PERF.md) "PF2". Two rules, both data:
+  - *Cast-free line.* `WandTable.cast_free_lines` (data: `blade_storm`): `WandCompile._cut` files no trigger cut on a
+    spec whose `lineage` holds one of these cards (`WandCompile.cast_free`); the trigger still ends that spec (the cards
+    to its right don't rewrite it). A Blade Storm blade's hits cast no trigger's spell; the slash, Wave's crescents and
+    every other spec cast as before.
+  - *A cap of its own.* `AttackSpec.alive_max` (a `LATE_INT_FIELDS` field; content op field `alive_max`, PATTERN):
+    `Attacks._bolts` launches a bolt of such a spec only while `World.player_projectiles_of(spec.id)` (its projectiles
+    alive and queued, every key of that id, counted on demand at the launch) is under it; a launch cut short throws the
+    bolts that fit, in pattern order, and leaves one `LIMIT` event (`effect_id` `attack_alive_cap`, `amount` the cap).
+    Blade Storm's child sets it to 36 (6 slashes × 6 blades: a level-5 Double Slash swing). Nothing is stored per tick
+    (no `WorldSnapshot` field); a spec without it hashes as before. `SimTuning.player_shots_max` still holds.
 
 ## 9. What presentation receives
 

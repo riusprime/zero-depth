@@ -219,6 +219,24 @@ func test_the_budget_caps_meshes_and_particles() -> void:
 	assert_eq(_view.effect_count(), AttackFormView.MAX_EFFECTS, "the oldest effects drop")
 
 
+## v0.8.0 PF2 (owner O9): once the frame's meshes are spent, a plain form (no particles, no VfxLayer element, not a
+## bomb) is skipped whole; one with particles still emits them. The frame shows the same.
+func test_past_the_mesh_cap_plain_forms_are_skipped_and_particles_still_drawn() -> void:
+	var plain := AttackFormLooks.compose({"form": WorldReader.FORM_ARC}, 0)
+	assert_true(_view._meshes_only(plain), "a plain arc draws meshes only")
+	var ember := AttackFormLooks.compose(_spec(WorldReader.FORM_ARC), 0)
+	assert_false(_view._meshes_only(ember), "an ember arc emits particles")
+	var lob := AttackFormLooks.compose({"form": WorldReader.FORM_LOB}, 0)
+	assert_false(_view._meshes_only(lob), "a bomb is never skipped")
+	for k in 200:
+		_view.spawn({"form": WorldReader.FORM_ARC}, AT, 0.0, {"start": 0})
+		_view.spawn({"form": WorldReader.FORM_BOLT, "count": 6}, AT, 0.0, {"start": 0})
+	_view.spawn(_spec(WorldReader.FORM_ARC), AT, 0.0, {"start": 0})
+	_view.draw_at(2.0)
+	assert_eq(_view.meshes_drawn(), _view.mesh_cap(), "the cap still fills")
+	assert_gt(_view.particles_drawn(), 0, "the ember arc's particles still come")
+
+
 func test_effects_density_lowers_particles_and_the_cap() -> void:
 	var spec := _spec(7, {"elements": PackedStringArray(["ember"])})
 	var drawn := {}

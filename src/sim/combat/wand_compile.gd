@@ -32,6 +32,8 @@ extends RefCounted
 ##   On Kill, On Finisher) cast WandTable.blade_hit_casts times (2), blade_cast_gap_ticks apart (a legendary trigger's
 ##   own delay when it has one): a slash hits each enemy once, a Gun volley many times, so trigger builds work on
 ##   both weapons. The Gun's triggers, a slash's On End and every non-slash spec cast as before.
+## - v0.8.0 PF2 (owner O9): a spec a cast-free hook made (WandTable.cast_free_lines: Blade Storm's blades, and anything
+##   built from them) takes no trigger cut: the trigger still ends it, but its hits cast nothing.
 ## - v0.8.0 BL (B6): a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
 ##   anything built from them: its lineage holds one) takes none of those hooks again: the first shot splits and
 ##   explodes, its splits neither split nor explode (the lineage guard alone stopped only the same card).
@@ -54,6 +56,8 @@ var hit_casts := 2
 var cast_gap_ticks := 6
 ## v0.8.0 BL (B6): the hook cards a line takes once (WandTable.once_per_line).
 var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+## v0.8.0 PF2: the hook cards whose children cast no trigger (WandTable.cast_free_lines).
+var cast_free_lines: Array[StringName] = [&"blade_storm"]
 
 
 ## The compile for world `w`'s build `mods`: the run's weapon picks the child spell and T4's trigger.
@@ -71,6 +75,7 @@ static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	c.hit_casts = t.blade_hit_casts
 	c.cast_gap_ticks = t.blade_cast_gap_ticks
 	c.once_per_line = t.once_per_line
+	c.cast_free_lines = t.cast_free_lines  # v0.8.0 PF2
 	return c
 
 
@@ -158,6 +163,14 @@ func once_more(s: AttackSpec, id: StringName) -> bool:
 	return false
 
 
+## v0.8.0 PF2: whether `s` comes from a cast-free hook card (class doc): its lineage holds one.
+func cast_free(s: AttackSpec) -> bool:
+	for l in s.lineage:
+		if cast_free_lines.has(StringName(l)):
+			return true
+	return false
+
+
 ## The hook `op` of card `m` (slot `i`) adds to `s`: its child, compiled by `m` (but its own hook) and the cards to
 ## its right, one level deeper.
 func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHook:
@@ -215,6 +228,8 @@ func _layer(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHo
 ## Trigger card `m` at slot `i` ends `s` (class doc): the cards to its right build the child spell it casts.
 func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 	if child_base == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+		return
+	if cast_free(s):  # v0.8.0 PF2: Blade Storm's blades cast nothing
 		return
 	var op := m.trigger_op()
 	var trig := op.trigger_gun if gun and op.trigger_gun >= 0 else op.trigger

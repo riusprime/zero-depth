@@ -31,6 +31,10 @@ const EFFECT_LAUNCH_CAP := &"attack_launch_cap"
 ## (docs/roadmap/v0.8.0/evidence/PERF.md): a level-5 Spread + Split build kept up to 264 alive, with Twin 874.
 const MAX_PLAYER_SHOTS := 256
 const EFFECT_SHOT_CAP := &"player_shot_cap"
+## v0.8.0 PF2 (owner O9; docs/roadmap/v0.8.0/evidence/PERF.md PF2): a bolt attack with AttackSpec.alive_max keeps at
+## most that many of its projectiles alive (Blade Storm's blades: 36, data/modifiers/blade_storm.tres). A launch it
+## cuts short throws the bolts that fit (in pattern order) and leaves one LIMIT event (this effect id, amount: the cap).
+const EFFECT_ALIVE_CAP := &"attack_alive_cap"
 ## ProcLedger codes for a hook attack's own status feeds (Engines' codes end at 40; appended, never renumbered).
 const CODE_HOOK_FEED := 48
 ## The ledger code of each status a hook attack feeds: CODE_HOOK_FEED + its index here.
@@ -261,9 +265,14 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
+	var room := _alive_room(w, spec)  # v0.8.0 PF2
 	for off in offsets:
 		var dir := Kin.dir(ctx.angle + off)
 		for side in lanes:
+			if room == 0:
+				_alive_capped(w, spec)
+				return
+			room -= 1
 			if not _shot_room(w):
 				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
@@ -279,6 +288,22 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				spec.bounces,
 				spec.key
 			)
+
+
+## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
+static func _alive_room(w: World, spec: AttackSpec) -> int:
+	if spec.alive_max <= 0:
+		return -1
+	return maxi(0, spec.alive_max - w.player_projectiles_of(spec.id))
+
+
+## v0.8.0 PF2: a launch of `spec` cut short by its alive_max: one LIMIT event (EFFECT_ALIVE_CAP, amount = the cap).
+static func _alive_capped(w: World, spec: AttackSpec) -> void:
+	var pid := w.actors.ids[0]
+	var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
+	lim.effect_id = EFFECT_ALIVE_CAP
+	lim.amount = spec.alive_max
+	lim.ancestry = w.hook_chain.duplicate()
 
 
 ## v0.8.0 PF: whether one more player bolt fits under SimTuning.player_shots_max this tick (counting it); the first

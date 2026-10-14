@@ -477,6 +477,24 @@ func player_projectiles() -> int:
 	return n
 
 
+## v0.8.0 PF2: the player's projectiles alive and queued now whose spec is attack `id` (any key of it: each combo
+## step's Blade Storm is its own spec; Attacks._alive_room's count). Read on demand, never stored.
+func player_projectiles_of(id: StringName) -> int:
+	var book := Modifiers.book(self)
+	var n := 0
+	for key in projectiles.spec_key:
+		if key != "":
+			var s := book.find(key)
+			if s != null and s.id == id:
+				n += 1
+	for p in _pending_projectiles:
+		if p[1] == ActorStore.TEAM_PLAYER and p[9] != "":
+			var s := book.find(p[9])
+			if s != null and s.id == id:
+				n += 1
+	return n
+
+
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).
 func step(frame: InputFrame) -> void:
 	# 0. v0.6.5 WN1: a wand reorder (InputFrame.pick = PICK_WAND_MOVE_BASE + from × 16 + to) is input, applied first

@@ -14,6 +14,7 @@ extends SceneTree
 ## count from the event log) and prints it as damage per second, overall and per dummy, with the top sources.
 ## --weapon=blade runs the Blade (Primary pressed every tick, the dummies 1.4-2.3 m away); --cards=a,b,c grants these
 ## cards (in this wand order) instead of the default build.
+## v0.8.0 PF2: it also counts the ticks where a capped attack's throw was cut short (alive_capped: Blade Storm's 36).
 ## Writes only under build/ (build/perf/perf_probe.txt) and prints the same report.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
 ##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
@@ -215,6 +216,11 @@ func _count_tick() -> void:
 			and int(_world.get(&"shot_count")) > _world.tuning.get(&"player_shots_max")
 		)
 		_add("shots_capped", 1.0 if capped else 0.0)
+	var cut := 0.0  # v0.8.0 PF2: 1 on a tick where a capped attack's throw was cut short (AttackSpec.alive_max)
+	for e in _world.events_since(_world.tick_seq0):
+		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == Attacks.EFFECT_ALIVE_CAP:
+			cut = 1.0
+	_add("alive_capped", cut)
 	if _view == null:
 		return
 	var vfx := _view.attack_forms.vfx

@@ -11,6 +11,7 @@ child_damage_permille = 500
 blade_hit_casts = 2
 blade_cast_gap_seconds = 0.1
 once_per_line = Array[StringName]([&"split_shot", &"shared_explosive"])
+cast_free_lines = Array[StringName]([&"blade_storm"])
 blast_merge_after = 8
 blast_merge_ids = Array[StringName]([&"shared_explosive"])
 id = &"wand"
