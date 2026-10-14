@@ -52,12 +52,16 @@ func test_the_cannon_embers_draw_with_an_unlit_smoke_trail() -> void:
 	fb.sync(reader)
 	assert_gt(reader.projectile_count(), 0)
 	assert_eq(fb.ball_count(&"cannon_ember"), reader.projectile_count(), "every ember in its look")
+	# v0.8.0 AV: shaded 3D looks; the smoke trail is mixed (not added light) at plain brightness, the core glows.
 	var trail: MultiMeshInstance3D = fb.get_node("cannon_ember_trail")
-	var mat := trail.material_override as StandardMaterial3D
-	assert_false(mat.emission_enabled, "smoke doesn't glow")
-	var ember_trail: MultiMeshInstance3D = fb.get_node("cannon_ember_core")
-	assert_true(
-		(ember_trail.material_override as StandardMaterial3D).emission_enabled, "the core does"
+	var mat := trail.material_override as ShaderMaterial
+	assert_eq(mat.shader, FireballShaders.trail(false), "smoke doesn't glow")
+	assert_eq(float(mat.get_shader_parameter("glow")), 1.0)
+	var core: MultiMeshInstance3D = fb.get_node("cannon_ember_core")
+	assert_gt(
+		float((core.material_override as ShaderMaterial).get_shader_parameter("energy")),
+		1.0,
+		"the core does"
 	)
 
 

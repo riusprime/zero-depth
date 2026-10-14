@@ -63,6 +63,8 @@ var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, 
 ## v0.7.5 BF1: the hostile fireballs (pooled per look in MultiMeshes) and the bosses' crystal shields and lobbed shells.
 var fireballs := FireballViews.new()
 var boss_shields := BossShieldView.new()
+## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes strike as rows of stone spikes.
+var spikes := StoneSpikeViews.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -109,12 +111,17 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		attack_forms.vfx = layer
 		status_fx.use_vfx(layer)
 		layer.drawers.append(_draw_prop_fires)  # the fire props' flames (lighting pass, 2026-10-12)
+		fireballs.vfx = layer  # v0.8.0 AV: the big fireballs' lights
+		layer.drawers.append(fireballs.draw_lights)
+		spikes.vfx = layer  # v0.8.0 AV: the spikes' debris, dust, flash and cracks
+		layer.drawers.append(spikes.draw_fx)
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
 	add_child(fireballs)  # v0.7.5 BF1
 	add_child(boss_shields)
+	add_child(spikes)  # v0.8.0 AV
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -190,6 +197,7 @@ func sync() -> void:
 	blade_forms.sync(reader)  # v0.6.5 WN4
 	fireballs.sync(reader)  # v0.7.5 BF1
 	boss_shields.sync(reader)
+	spikes.sync(reader)  # v0.8.0 AV
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

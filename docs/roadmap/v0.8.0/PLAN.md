@@ -115,7 +115,7 @@ Answers go into the "Owner decisions" table below the same day.
 | EM | Enemy model prompts, then the owner's models in game | O3 | Q2, then the owner's files | art + presentation | |
 | BS | One signature mechanic per boss | O5 | G1 BOSS_SIGNATURES | sim + tests | |
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
-| AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | |
+| AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Part 1 done (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2: the other bosses' ground attacks |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
 | RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | |
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
