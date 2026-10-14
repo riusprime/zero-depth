@@ -23,7 +23,7 @@ not in `main` yet).
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | pending | |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | pending | |
 | G2 RT: the first 3 designed rooms | — | not yet made | |
-| G2 MU: 3 menu and card directions | — | not yet made | |
+| G2 MU: 3 menu and card directions ([MENU_G2](evidence/MENU_G2.md): A Salvage, B Ember stone, C Field kit × main menu, card pick, Build page) | 2026-10-14 | pending | |
 
 ## Open
 - v0.7.5 PR riusprime/zero-depth#6 not merged.
@@ -32,6 +32,12 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: MU G2 (agent, branch `v080-mu` from `34742a1`): three menu-and-card directions (A Salvage, B Ember stone,
+  C Field kit) drawn in code by tool scripts only (`scripts/shots/mu_kit.gd`, `mu_shaders.gd`, `mu_shots.gd`,
+  `mock_main_menu.gd`, `mock_pick.gd`, `mock_build.gd`), each on the main menu, the 3-card pick and the Build page at
+  1920 × 1080 in en and es from seed 20261010 with real cards and the live wand; shots in
+  [`evidence/mu_shots/`](evidence/mu_shots/), trade-offs and commands in [MENU_G2](evidence/MENU_G2.md). No shipped
+  code or strings changed. Asked the owner for the pick.
 - 2026-10-14: PF (agent, branch `v080-pf`): `scripts/checks/perf_probe.gd`; the explosions' drawing was 20-22 ms of a
   26-37 ms tick + frame (5,000 sprites asked, 995 shown); burst budget (VfxLayer, BurstBudget), live-bolt budget, look
   cache, and the sim cap `player_shots_max` 256 (the probe: the sim was 5 ms avg, 15 ms p95 with Twin). After: avg
