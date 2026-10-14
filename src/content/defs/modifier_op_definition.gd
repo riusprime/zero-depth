@@ -98,6 +98,8 @@ const FIELD_STAGE := {
 	&"line_m": [5, &"line_m", ""],
 	# v0.8.0 BL (BLADE_AUDIT B1: Double Slash +1 repeat a level)
 	&"repeats": [1, &"repeats", ""],
+	# v0.8.0 PF2 (owner O9): a bolt hook's projectiles alive at once, at most (Blade Storm's blades)
+	&"alive_max": [1, &"alive_max", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

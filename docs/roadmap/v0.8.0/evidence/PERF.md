@@ -251,3 +251,212 @@ Sim (the probe showed the sim is a real cost with Twin: 5 ms average, 15 ms p95)
   ONLY.**
 - The owner's call (OWNER ONLY): whether the thinned look under load still reads well, and whether 256 player shots
   at once is the right cap for gameplay (data: `data/tuning/sim.tres`, `player_shots_max`).
+
+# PF2: the Blade Storm build (v0.8.0 PF2, owner O9, direct fix)
+
+After BL, Blade Storm on the Blade combo was over the budget (BLADE.md: 26.6 ms avg; the lead: 23.5 ms avg, p95 39.0).
+Adding `split_wave` to `once_per_line` changed nothing (the lead's try): Split Wave only rides Wave's crescents
+(`target = wave`), not Blade Storm's blades.
+
+- **Status:** RUN (agent, headless CPU side). The owner's fps and the feel: **OWNER ONLY**.
+- **Build:** before = `62b9ff7` (`claude/lucid-fermat-9wv2tf`), run from an untouched copy of that tree
+  (`git archive`, imported); after = the tree of the `v0.8.0 Step PF2` commit on branch `v080-pf2` (the runs were
+  made on that tree before it was committed; only these docs were written after them). Godot
+  `4.7.2.stable.official.ed1daf0bf`; Linux 6.18.44 cloud container, 4 cores, no GPU. **The container was shared:**
+  three to four other Godot processes ran at the same time (1-minute load average 2.7-6.0 during the evidence runs,
+  logged per run below), so timings move by ±10 % or more run to run; before and after were run alternately.
+- **Date:** 2026-10-14. **Who ran it:** agent.
+
+## Command
+```
+godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --seconds=10 --weapon=blade --cards=double_slash,blade_storm,echo_slash,split_wave,trigger_on_hit,shared_explosive --tag=blade_storm
+```
+six times each side (alternating), and one to three times each side for the other PF / BL probes (commands in
+BLADE.md). The probe's new `alive_capped` row (after only) is 1 on a tick where a capped throw was cut short.
+
+## Where the time went (before; temporary probe-only timers and counters, not committed)
+Per tick on average, the Blade Storm build against the same build without Blade Storm (one run each, loaded
+container, so the milliseconds are rough; the counts are exact):
+- **Sim:** Blade Storm launches 0.26 times a tick: **every** slash throws its 6 blades at level 5, and Double Slash's
+  5 repeats are slashes too, so one swing throws 36 returning blades; ~75 were in flight (103 player projectiles in
+  all, against 26). A returning blade passes each dummy on the way out and on the way back, and each of those hits
+  cast On Hit's small slash (On Hit's depth-2 casts: 6.6 a tick against 1.3), each hitting 3-4 dummies:
+  `Damage.hit` 43.9 a tick against 23.6. The projectile phase was ~4.6 ms of the sim's ~6.5 (3.5 ms of it the
+  bolts' hits and what they cast).
+- **Sync:** `BladeFormView.sync` 4.7-4.9 ms: every Blade Storm blade inherits the slash's arc width, so it is drawn as
+  a crescent; 99 crescents a tick, each 84 ImmediateMesh vertices rebuilt (3.8 ms), plus 24 ghost slashes (0.9 ms).
+- **Frame:** `AttackFormView` 7.8-8.7 ms: at its 1,024-mesh cap every frame, 229 of 256 effects (the casts' slashes).
+- Not the cause: Split Wave (its damage and launches are the same with and without Blade Storm), Explosive (1.85
+  blasts a tick either way), the launch queue (no LIMIT), the 256-shot cap (never bound).
+
+## What changed
+Sim (data; deterministic; nothing stored per tick, so no `WorldSnapshot` field):
+- **Cast-free line** (`WandTable.cast_free_lines`, data `blade_storm` in `data/wand/wand.tres`): a spec whose lineage
+  holds Blade Storm takes no trigger cut, so a Blade Storm blade's hits cast no trigger's spell (B6's line rule, for
+  the triggers). The slash, Wave's crescents and everything else still cast (B3's double cast unchanged).
+- **A cap of its own** (`AttackSpec.alive_max`, op field `alive_max`, hashed only when set;
+  `data/modifiers/blade_storm.tres`: 36 = one level-5 Double Slash swing, 6 slashes × 6 blades): a throw that would
+  pass 36 Blade Storm blades alive and queued throws the ones that fit and leaves one LIMIT event
+  (`attack_alive_cap`). Blade Storm alone at level 5 keeps at most 18 in flight, so the cap binds only with a repeat
+  card (36.2 % of this probe's ticks had a cut throw).
+
+Presentation (the same look, cheaper):
+- `BladeFormView`: crescents and ghost slashes are MultiMesh instances of baked shapes (`BakedMeshPools`; the same
+  14-segment band, colours and height; a ghost's shape includes its age in ticks).
+- `AttackFormCanvas._draw_form`: once the frame's 1,024 form meshes are spent, an effect that draws only meshes (no
+  particles of its own, no VfxLayer element, not a bomb) is skipped instead of laid out for nothing.
+
+## Raw output: before (run 1)
+```
+grant double_slash L5 -> ok
+grant blade_storm L5 -> ok
+grant echo_slash L5 -> ok
+grant split_wave L5 -> ok
+grant trigger_on_hit L5 -> ok
+grant shared_explosive L5 -> ok
+perf_probe: blade + double_slash, blade_storm, echo_slash, split_wave, trigger_on_hit, shared_explosive, level 5, 6 dummies, 10 s of Primary pressed (+60 warm-up ticks), sim + WorldView (headless: CPU side only)
+metric          avg       p95       max
+sim_ms            6.470    16.811    33.808
+sync_ms           9.387    15.102    27.560
+frame_ms          8.306    12.289    15.591
+total_ms         24.163    38.564    59.654
+projectiles     103.343   155.000   202.000
+launches         12.643    37.000    47.000
+events          118.613   263.000   424.000
+shots_capped      0.000     0.000     0.000
+bursts_asked     10.462    13.000    15.000
+bursts_drawn     10.352    12.000    12.000
+sprites_asked   231.942   269.000   269.000
+sprites_drawn   231.942   269.000   269.000
+lights_asked     10.352    12.000    12.000
+lights_on         9.027    10.000    10.000
+decals            1.760     3.000     3.000
+form_effects    229.270   256.000   256.000
+form_meshes    1023.932  1024.000  1024.000
+frame cost by node (ms per tick, avg):
+  AttackFormView              7.847
+  PlayerAvatar                0.198
+  KitView                     0.057
+  DamageNumbers               0.047
+  HitFeel                     0.026
+  BossChallengeView           0.016
+  StageKit                    0.014
+  IsoRig                      0.012
+  TelegraphViews              0.010
+  ActorViews                  0.008
+  HeatVisuals                 0.008
+  HordeVisuals                0.006
+damage: 136911 over 10.0 s -> 13691.1 per s (2281.8 per s per dummy; DpsTally overall 13691.1)
+  trigger_on_hit                47135   34.4 %
+  split_wave                    36024   26.3 %
+  shared_explosive              20899   15.3 %
+  blade_storm                   15103   11.0 %
+  echo_slash                     9374    6.8 %
+  twin_arc                       6344    4.6 %
+  basic                          2032    1.5 %
+verdict: avg 24.16 ms per tick+frame against 12.0 ms -> OVER
+```
+
+## Raw output: after (run 1)
+```
+grant double_slash L5 -> ok
+grant blade_storm L5 -> ok
+grant echo_slash L5 -> ok
+grant split_wave L5 -> ok
+grant trigger_on_hit L5 -> ok
+grant shared_explosive L5 -> ok
+perf_probe: blade + double_slash, blade_storm, echo_slash, split_wave, trigger_on_hit, shared_explosive, level 5, 6 dummies, 10 s of Primary pressed (+60 warm-up ticks), sim + WorldView (headless: CPU side only)
+metric          avg       p95       max
+sim_ms            4.216    12.002    17.691
+sync_ms           3.897     6.751    11.493
+frame_ms          4.838     7.526    10.072
+total_ms         12.950    23.765    35.206
+projectiles      60.003   103.000   140.000
+launches          7.210    23.000    39.000
+events           76.095   175.000   276.000
+shots_capped      0.000     0.000     0.000
+alive_capped      0.362     1.000     1.000
+bursts_asked     12.997    16.000    21.000
+bursts_drawn     11.793    12.000    12.000
+sprites_asked   243.853   254.000   260.000
+sprites_drawn   243.853   254.000   260.000
+lights_asked     11.427    12.000    12.000
+lights_on         9.900    10.000    10.000
+decals            1.757     3.000     3.000
+form_effects    102.275   147.000   180.000
+form_meshes     808.467  1024.000  1024.000
+frame cost by node (ms per tick, avg):
+  AttackFormView              4.411
+  PlayerAvatar                0.187
+  KitView                     0.056
+  DamageNumbers               0.043
+  HitFeel                     0.022
+  BossChallengeView           0.015
+  StageKit                    0.013
+  IsoRig                      0.011
+  TelegraphViews              0.010
+  HeatVisuals                 0.008
+  ActorViews                  0.008
+  ItemVisuals                 0.005
+damage: 109991 over 10.0 s -> 10999.1 per s (1833.2 per s per dummy; DpsTally overall 10999.1)
+  split_wave                    36161   32.9 %
+  trigger_on_hit                28425   25.8 %
+  shared_explosive              20865   19.0 %
+  echo_slash                     9405    8.6 %
+  blade_storm                    6857    6.2 %
+  twin_arc                       6253    5.7 %
+  basic                          2025    1.8 %
+verdict: avg 12.95 ms per tick+frame against 12.0 ms -> OVER
+```
+
+## All Blade Storm runs (avg / p95 / max, ms; copied from each run's output; load: the 1-minute load average after it)
+| Run | sim | sync | frame | total | load |
+|---|---|---|---|---|---|
+| before 1 | 6.470 / 16.811 / 33.808 | 9.387 / 15.102 / 27.560 | 8.306 / 12.289 / 15.591 | 24.163 / 38.564 / 59.654 | 5.95 |
+| before 2 | 7.101 / 18.623 / 37.413 | 10.337 / 17.235 / 23.155 | 9.075 / 14.438 / 21.742 | 26.514 / 45.421 / 76.692 | 5.15 |
+| before 3 | 7.015 / 17.173 / 40.959 | 9.978 / 15.724 / 45.000 | 8.743 / 12.870 / 18.326 | 25.736 / 41.717 / 67.694 | 4.75 |
+| before 4 | 6.189 / 15.713 / 28.728 | 8.800 / 14.282 / 21.430 | 7.770 / 12.142 / 17.849 | 22.759 / 37.763 / 50.782 | 2.95 |
+| before 5 | 6.373 / 16.226 / 27.425 | 9.136 / 14.431 / 27.318 | 8.005 / 11.656 / 25.549 | 23.514 / 38.702 / 60.198 | 2.85 |
+| before 6 | 6.504 / 16.331 / 25.986 | 9.485 / 15.540 / 23.377 | 8.321 / 13.092 / 16.734 | 24.309 / 41.558 / 59.432 | 3.33 |
+| after 1 | 4.216 / 12.002 / 17.691 | 3.897 / 6.751 / 11.493 | 4.838 / 7.526 / 10.072 | 12.950 / 23.765 / 35.206 | 5.18 |
+| after 2 | 4.183 / 12.213 / 20.062 | 3.848 / 6.417 / 11.058 | 4.877 / 7.774 / 21.514 | 12.908 / 24.224 / 35.995 | 4.97 |
+| after 3 | 3.996 / 11.358 / 20.199 | 3.680 / 6.188 / 12.096 | 4.605 / 6.503 / 19.095 | 12.281 / 22.226 / 42.658 | 4.57 |
+| after 4 | 3.913 / 10.576 / 19.803 | 3.478 / 6.037 / 10.482 | 4.472 / 6.903 / 11.978 | 11.863 / 22.117 / 31.083 | 2.74 |
+| after 5 | 3.990 / 11.152 / 24.027 | 3.564 / 5.953 / 12.084 | 4.617 / 7.245 / 12.824 | 12.171 / 22.267 / 36.674 | 2.74 |
+| after 6 | 3.770 / 10.679 / 14.564 | 3.434 / 5.839 / 9.743 | 4.398 / 6.863 / 9.211 | 11.602 / 20.528 / 27.898 | 3.72 |
+
+Damage (deterministic, the same in every run of a side): before 136,911 over 10 s = **13,691.1 per s**; after
+109,991 = **10,999.1 per s** (−19.7 %). Blade Storm's own 15,103 → 6,857 (the cap); On Hit's 47,135 → 28,425 (the
+blades' casts gone; what is left is the slashes' and the crescents', 28,500 in the build without Blade Storm). That
+build does 10,303.5 per s, so Blade Storm still adds 6.8 % on this probe.
+
+## The other probes (total avg / p95 / max, ms)
+| Probe | Before | After |
+|---|---|---|
+| Gun base (3 runs) | 5.692 / 9.864 / 15.833; 5.972 / 11.228 / 19.025; 5.644 / 9.988 / 17.061 | 6.106 / 10.844 / 19.458; 5.839 / 10.280 / 21.051; 5.960 / 11.351 / 15.947 |
+| Gun + Twin (3 runs) | 6.945 / 13.349 / 33.585; 6.434 / 11.986 / 17.435; 6.585 / 12.255 / 23.902 | 7.231 / 14.540 / 23.457; 6.805 / 12.744 / 19.769; 6.516 / 12.751 / 18.332 |
+| Blade combo without Blade Storm (1 run) | 12.728 / 24.926 / 52.036 | 9.848 / 18.755 / 35.653 |
+| Blade trade-offs (1 run) | 2.150 / 3.639 / 14.803 | 1.983 / 2.910 / 12.400 |
+
+Damage per s, the same before and after: Gun base 778.1, + Twin 1,014.8, Blade combo 10,303.5, trade-offs 87.5.
+
+## Result
+| Metric | Target | Before (6 runs) | After (6 runs) | In band? |
+|---|---|---|---|---|
+| Blade Storm build, total avg | ≤ ~12 ms | 22.76-26.51 ms | 11.60-12.95 ms | **borderline: 2 of 6 runs within (11.60, 11.86); 4 over, by 0.17-0.95 ms** |
+| Blade Storm build, total p95 | reported | 37.76-45.42 ms | 20.53-24.22 ms | **no** |
+| The other probes | not worse | 5.64-12.73 ms | see the table | the Blade's better (12.73 → 9.85, 2.15 → 1.98); the Gun's within its run-to-run spread (5.64-5.97 → 5.84-6.11; Twin 6.43-6.95 → 6.52-7.23), not shown better or worse |
+
+## Interpretation
+- The cause was the Blade Storm × Double Slash × On Hit chain, plus the crescent drawing: 36 returning blades a swing,
+  each blade's hit (out and back) casting On Hit's slash, ~75 blades in flight each rebuilt as 84 vertices, and the
+  attack-form view at its mesh cap laying out the casts' slashes. Split Wave was not the cause.
+- After: the tick + frame average is about half (22.8-26.5 → 11.6-13.0 ms), close to the same combo without Blade
+  Storm (9.8-12.7 ms on this container). **The ~12 ms average is met in 2 of 6 runs only, on a container shared with
+  other jobs: reported as borderline, not widened, not retuned to fit.** The p95 is still about double the average
+  (missed, as PF's was): the volley ticks cost more.
+- Damage: 13,691 → 10,999 per s on the probe; Blade Storm's own blades 1,510 → 686 per s, because with Double Slash
+  at level 5 a swing's blades now stop at 36 in flight and their hits cast nothing. Without a repeat card the cap
+  never binds. Whether Blade Storm still feels strong: **OWNER ONLY** (data: `alive_max` in
+  `data/modifiers/blade_storm.tres`, `cast_free_lines` in `data/wand/wand.tres`; both starting values).
+- What it doesn't prove: the GPU's cost, the owner's fps (**OWNER ONLY**), a run with stats and loops.

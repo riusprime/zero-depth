@@ -435,6 +435,10 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   (`ModifierCompiler.item_defs`), so a card added to a pool never moves a saved index. Shipped: `blade_storm` (rare)
   and `riposte_chain`, `WAND` items of the Blade pool, `index_wave` 1. 86 modifiers, 98 items. Every number is a
   starting value.
+- **v0.8.0 PF2: the Blade Storm build's cost** (owner O9; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8j). New op field
+  `alive_max` (PATTERN, a whole number: the bolt hook's projectiles alive at once, at most; 0 = none of its own):
+  `blade_storm`'s child sets 36. `WandDefinition.cast_free_lines: Array[StringName]` (data: `blade_storm`): the hook
+  cards whose children cast no trigger's spell. Starting values.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's

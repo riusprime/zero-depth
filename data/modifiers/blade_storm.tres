@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -34,6 +34,12 @@ op = 0
 field = &"life_seconds"
 value = 0.6
 
+[sub_resource type="Resource" id="Child_6"]
+script = ExtResource("2_op")
+op = 0
+field = &"alive_max"
+value = 36.0
+
 [sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
 op = 8
@@ -45,7 +51,7 @@ hook_radius_m = 0.3
 hook_reach_m = 6.0
 hook_damage_permille = 450
 hook_effect = &"blade_storm"
-hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2"), SubResource("Child_3"), SubResource("Child_4"), SubResource("Child_5")])
+hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2"), SubResource("Child_3"), SubResource("Child_4"), SubResource("Child_5"), SubResource("Child_6")])
 
 [resource]
 script = ExtResource("1_mod")

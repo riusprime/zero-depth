@@ -111,3 +111,28 @@ func test_looks_carry_the_blade_cues() -> void:
 	assert_has(AttackFormLooks.cues_of(r.attack_spec(Modifiers.step_id(0))), &"spin")
 	var t := WorldReader.new(WandLab.fight(&"blade", [&"thrust"]))
 	assert_has(AttackFormLooks.cues_of(t.attack_spec(Modifiers.step_id(0))), &"stab")
+
+
+## v0.8.0 PF2 (owner O9): the crescents and the ghost slashes are instances of baked shapes (BakedMeshPools), each the
+## band the ImmediateMesh drew (14 segments, 84 vertices), so a crowd of them costs a transform each.
+func test_crescents_and_ghosts_are_baked_instances() -> void:
+	var w := WandLab.fight(&"blade", [&"double_slash", &"echo_slash"])
+	var r := WorldReader.new(w)
+	var view: BladeFormView = add_child_autofree(BladeFormView.new())
+	var most := 0
+	var counted := 0
+	for t in TICKS:
+		w.step(AttackScenario.frame(t))
+		view.sync(r)
+		most = maxi(most, view.baked_drawn())
+		counted = maxi(
+			counted, int(view.drawn.get(&"crescent", 0)) + int(view.drawn.get(&"ghost", 0))
+		)
+	assert_gt(most, 1, "crescents and ghosts laid out as instances")
+	assert_eq(most, counted, "each one counted is an instance")
+	var mesh: ArrayMesh = view._bake(Vector4(BladeFormView.SHAPE_CRESCENT, 0.6, 0.8, 0.0))
+	var arrays := mesh.surface_get_arrays(0)
+	assert_eq(
+		(arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(), 84, "the band's 14 segments"
+	)
+	assert_eq((arrays[Mesh.ARRAY_COLOR] as PackedColorArray).size(), 84, "its colours baked in")

@@ -388,6 +388,16 @@ func _vfx_kind(look: Dictionary) -> StringName:
 	return &""
 
 
+## v0.8.0 PF2: whether `look` draws only form meshes: no particles of its own (_emit), no VfxLayer element (its
+## rings, lines, fields, bursts) and not a bomb (the VfxLayer draws its fuse and landing).
+func _meshes_only(look: Dictionary) -> bool:
+	return (
+		(look["particles"] as Array).is_empty()
+		and _vfx_kind(look) == &""
+		and int(look["form"]) != AttackFormLooks.LOB
+	)
+
+
 static func _dir(a: float) -> Vector2:
 	return Vector2(cos(a), sin(a))
 
@@ -401,6 +411,8 @@ static func segment(a: Vector3, b: Vector3, width: float) -> Transform3D:
 
 func _draw_form(e: Dictionary, age: float) -> void:
 	var look: Dictionary = e["look"]
+	if _mesh_left <= 0 and _meshes_only(look):
+		return  # v0.8.0 PF2: the frame's meshes are spent and it draws nothing else: none of it would show
 	match int(look["form"]):
 		AttackFormLooks.ARC:
 			_draw_arc(e, look, age)
