@@ -17,6 +17,7 @@ not in `main` yet).
 | MU | The shard cards are gone: cards, plaques, wand tiles and pips, Codex tiles, achievement rows and toast, the shop, Swap and build picker are carved Ember stone tablets (element-coloured inlay ring round the icon, a groove in the family's colour, a carved rarity gem, a gold rim on epic and legendary, the level badge kept); every menu sits on a stone slab with an ember-lit focused row and an ember diamond; the main menu has its own ember-lit stone backdrop, sparks rising (still under reduced motion); long Spanish sentences reflow clear of the gem; the glow is kept apart from the Hot heat colour. Evidence [MENU](evidence/MENU.md); the look is OWNER ONLY | `c78bdbd` (branch `v080-mu2`) |
 | BS part 1 (S1–S3) | Three bosses each get a mechanic of their own: the Gatekeeper's shock lanes leave stone pillars standing for 6 s, real walls you take cover behind from its rock rings (never on you, never sealing you in); the Warlord's tower shield blocks every hit from the front, so you circle it, and its javelins stick in the floor then all fly back along the same lines; the Brood Mother's eggs sit 3 s to be broken, or they hatch (and in phase 3 burst into acid). Cross Quake, Javelin Rain and the fast Web Spiral are gone. Evidence [BOSS_SIGNATURES_1](evidence/BOSS_SIGNATURES_1.md), shots in `evidence/bs_shots/`; the feel is OWNER ONLY | `e34550e` (branch `v080-bs1`) |
 | AV (part 2) | Every other boss ground attack keeps its dull-then-bright marker but fills it with its own ground (stone cracks, steel scratches, bubbling acid, gold light, hazard stripes, molten seams) instead of flat red, and strikes in 3D on the sim's strike tick: the Gatekeeper's fist slams blow craters and its sweep kicks a dust arc; the Warlord's spears thrust up the lanes, its lunge scorches a skid, its bash swings a steel arc, its javelins plant in the circles; the Brood Mother's eggs cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts; the Hive Lens fires a 3D beam and a ring of light; the Siege Engine's shells fall and explode, its rail streaks and scorches, its shockwave rolls out as dust; the Foundry pours molten metal that cools to a crust, blasts steam and sets lanes burning. Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) part 2 | `2a39c6c` (branch `v080-av2`) |
+| BS part 2 (S4–S6) | The other three bosses get theirs: the Hive Lens turns its Gaze round the room, a beam that starts aimed away from you, turns a quarter turn every 2 s and reverses, stops at walls and burns what it touches while its orbs fly; the Siege Engine's Turret Cross embers bounce off the walls once and come back at you from behind (never onto you within 0.5 s), and in phase 3 its turrets' shots bounce too; the Foundry's Molten Flood leaves lava for 5 s (enemies walk round it, a way to the boss and the door always stays), and phase 3 opens with a roar while the room's outer ring glows, then melts for good and creeps in, never closer than 7 m to the centre. Glare Ring, Turret Cross Reversing and the fast Furnace Waves are gone. Deaths name the gaze, its orbs, the ricochets, the lava and the melt. Evidence [BOSS_SIGNATURES_2](evidence/BOSS_SIGNATURES_2.md), shots 7–12 in `evidence/bs_shots/`; the feel is OWNER ONLY | `ef919d3` (branch `v080-bs2`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -30,6 +31,7 @@ not in `main` yet).
 - MU: none (presentation only)
 - BS1: none (no golden fixture holds a boss fight; the new BossStore lists hash only while a pillar or javelin stands; `tests/golden` 2/2 unchanged)
 - AV part 2: none (presentation only; `tests/golden` 2/2 unchanged)
+- BS2: none (no golden fixture holds a boss fight; the lava/melt lists hash only while molten floor is down; `tests/golden` 2/2 unchanged)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -54,6 +56,16 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: BS part 2 (agent, branch `v080-bs2` from `94c691e`): `BossGaze` (S4, new `gaze` move), `BossRicochet`
+  (S5: bounces on the Turret Cross, phase-3 turret shots, the 0.5 s fairness), `BossLava` (S6: lava with fords and a
+  fairness flood, new `melt` move, `NavField.set_extra` melt shapes + `reach`), `BossStore` lava/melt lists (in
+  `ADDED_SINCE_V05`), six new `CAUSE_*` lines en + es and three `*_DESC`, the three boss files (trims, new params),
+  `BossSignatureViews` (beam, aim line, scorch, sparks, lava, meltdown) + `BossSignatureShaders`, clips (Hive `gaze`,
+  Siege `pattern_shielded`, Foundry `melt`); the readable-cause checker reads late causes and molten DoT; SIM_CONTRACTS
+  §10f, CONTENT_SCHEMA §4, BOSS_FIGHTS.md, BOSS_SIGNATURES "Built in". Run locally: lint clean (858 files); sim by
+  name 289/289; `tests/content` 121/121; `tests/arch` 4/4; `tests/golden` 2/2; presentation boss files 150/150;
+  application saves 20/20; `tests/unit/debug` 12/12; boss/playground/dev/save e2e 26/26. Shots 7–12 (llvmpipe). The
+  machine restarted mid-step; the cut runs were run again. Not run locally: the full suite, the bot sims, seams.
 - 2026-10-14: MU (agent, branch `v080-mu2` from `bace713`): direction B "Ember stone" shipped (owner G2 "menu style
   B"). New `src/presentation/theme/` `EmberStone` (tokens, the grain made from noise), `StoneBox` (the carved slab
   style box), `InlaySocket`, `TextFit`; `StoneCard` replaces `CrystalCard`; `PlaqueBox` / `Plaques`, `MenuStyle`,

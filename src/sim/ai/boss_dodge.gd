@@ -70,9 +70,10 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 		return
 	var origin := w.bosses.pt(b, 0) if burst else w.actors.pos(i)
 	var r := 0.0 if burst else w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
-	BulletPatterns.fire(
+	var n := BulletPatterns.fire(
 		w, i, pat, k, origin, w.actors.lock_a[i], r, BossAi.powered(w, i, atk.damage)
 	)
+	BossRicochet.arm_pattern(w, atk, n)  # v0.8.0 BS2 (S5): the Turret Cross's embers bounce once
 
 
 ## v0.7.5 BF1: where marker k of a `marks` attack stands (it follows the player until it locks).

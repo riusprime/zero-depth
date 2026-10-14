@@ -62,24 +62,6 @@ weight = 2
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_FOUNDRY_WAVES"
 
-[sub_resource type="Resource" id="A_furnace_waves_fast"]
-script = ExtResource("1_atk")
-id = &"furnace_waves_fast"
-shape = 4
-shape_params = {
-"pattern_id": "foundry_furnace_waves_fast"
-}
-telegraph_seconds = 0.8
-active_seconds = 0.0167
-recovery_seconds = 1.1
-damage = 14
-move = &"pattern"
-min_range_m = 0.0
-max_range_m = 99.0
-weight = 2
-cooldown_seconds = 0.9
-cause_key = &"CAUSE_FOUNDRY_WAVES"
-
 [sub_resource type="Resource" id="A_molten_flood"]
 script = ExtResource("1_atk")
 id = &"molten_flood"
@@ -89,6 +71,10 @@ shape_params = {
 "count": 3,
 "gap_m": 3.0,
 "length_m": 22.0,
+"ford_m": 2.0,
+"lava_burn_seconds": 0.5,
+"lava_damage": 6,
+"lava_seconds": 5.0,
 "width_m": 1.4
 }
 telegraph_seconds = 1.6
@@ -102,6 +88,7 @@ weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_FOUNDRY_FLOOD"
 lock_seconds = 0.8
+late_cause_key = &"CAUSE_FOUNDRY_LAVA"
 
 [sub_resource type="Resource" id="A_molten_flood_5"]
 script = ExtResource("1_atk")
@@ -112,6 +99,10 @@ shape_params = {
 "count": 5,
 "gap_m": 2.8,
 "length_m": 24.0,
+"ford_m": 2.0,
+"lava_burn_seconds": 0.5,
+"lava_damage": 6,
+"lava_seconds": 5.0,
 "width_m": 1.4
 }
 telegraph_seconds = 1.6
@@ -125,6 +116,7 @@ weight = 3
 cooldown_seconds = 0.8
 cause_key = &"CAUSE_FOUNDRY_FLOOD"
 lock_seconds = 0.8
+late_cause_key = &"CAUSE_FOUNDRY_LAVA"
 
 [sub_resource type="Resource" id="A_vent_blast"]
 script = ExtResource("1_atk")
@@ -216,6 +208,30 @@ cause_key = &"CAUSE_FOUNDRY_FIRESTORM"
 opens_weak_point = true
 lock_seconds = 0.8
 
+[sub_resource type="Resource" id="A_meltdown"]
+script = ExtResource("1_atk")
+id = &"meltdown"
+shape = 3
+shape_params = {
+"burn_seconds": 0.5,
+"ford_m": 2.0,
+"min_radius_m": 7.0,
+"ring_m": 4.0,
+"step_m": 2.0,
+"step_seconds": 8.0,
+"warn_seconds": 2.0
+}
+telegraph_seconds = 2.0
+active_seconds = 0.5
+recovery_seconds = 1.0
+damage = 8
+move = &"melt"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 1
+cooldown_seconds = 0.6
+cause_key = &"CAUSE_FOUNDRY_MELT"
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
@@ -235,8 +251,8 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("slag_fountain_2", "furnace_waves_fast", "molten_flood_5", "vent_blast", "bomb_launch_3", "firestorm")
-entry_attack = &"furnace_waves_fast"
+attack_ids = PackedStringArray("slag_fountain_2", "furnace_waves", "molten_flood_5", "vent_blast", "bomb_launch_3", "firestorm")
+entry_attack = &"meltdown"
 speed_permille = 990
 cooldown_permille = 487
 
@@ -256,7 +272,7 @@ rear_mult_permille = 1000
 stagger_size = 300
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_slag_fountain"), SubResource("A_slag_fountain_2"), SubResource("A_furnace_waves"), SubResource("A_furnace_waves_fast"), SubResource("A_molten_flood"), SubResource("A_molten_flood_5"), SubResource("A_vent_blast"), SubResource("A_bomb_launch"), SubResource("A_bomb_launch_3"), SubResource("A_firestorm")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_slag_fountain"), SubResource("A_slag_fountain_2"), SubResource("A_furnace_waves"), SubResource("A_molten_flood"), SubResource("A_molten_flood_5"), SubResource("A_vent_blast"), SubResource("A_bomb_launch"), SubResource("A_bomb_launch_3"), SubResource("A_firestorm"), SubResource("A_meltdown")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(3, 2)

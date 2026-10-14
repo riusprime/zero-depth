@@ -113,6 +113,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))
 	_validate_lock(issues, path, where)
 	_validate_signature(issues, path, where)
+	_validate_signature_2(issues, path, where)
 
 
 ## v0.8.0 BS1 (owner O5): the signature params. Pillars need a size and a step that leaves a gap between them; a
@@ -148,9 +149,72 @@ func _validate_signature(issues: Array[ValidationIssue], path: String, where: St
 			)
 		if sp.has("burst_phase") and int(sp["burst_phase"]) < 1:
 			issues.append(ValidationIssue.new(&"range", path, where + "burst_phase is 1-based"))
-	var late := sp.has("recall_seconds") or (sp.has("egg_seconds") and sp.has("pattern_id"))
+	var late := (
+		sp.has("recall_seconds")
+		or (sp.has("egg_seconds") and sp.has("pattern_id"))
+		or sp.has("bounces")  # v0.8.0 BS2 (S5): a ricochet's death line
+		or sp.has("bounce_phase")
+		or sp.has("lava_seconds")  # v0.8.0 BS2 (S6): the lava's
+		or (move == &"gaze" and sp.has("pattern_id"))
+	)  # v0.8.0 BS2 (S4): the gaze's orbs
 	if late and String(late_cause_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", path, where + "late_cause_key is required"))
+
+
+## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4-S6): the gaze turns (a quarter turn and a reversal of at least a
+## tick each, a beam with a length and a width), a ricochet bounces once and from a real phase, lava lasts at least
+## the telegraph minimum with damage and a ford wider than the hero, and a melt shrinks from its radius to a smaller
+## minimum in real steps, each warned for at least the telegraph minimum and shorter than the step.
+func _validate_signature_2(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	var pos := ["quarter_seconds", "reverse_seconds", "length_m", "width_m", "orb_every_seconds"]
+	if move == &"gaze":
+		for k: String in pos:
+			if sp.has(k) and float(sp[k]) <= 0.0:
+				issues.append(
+					ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k)
+				)
+	if sp.has("bounces") and (int(sp["bounces"]) < 1 or int(sp["bounces"]) > 1):
+		issues.append(ValidationIssue.new(&"range", path, where + "bounces must be 1 (once)"))
+	if sp.has("bounce_phase") and int(sp["bounce_phase"]) < 1:
+		issues.append(ValidationIssue.new(&"range", path, where + "bounce_phase is 1-based"))
+	if sp.has("lava_seconds"):
+		if int(round(float(sp["lava_seconds"]) * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"telegraph_short", path, where + "lava_seconds is under the telegraph minimum"
+				)
+			)
+		if int(sp.get("lava_damage", 0)) < 1:
+			issues.append(ValidationIssue.new(&"not_positive", path, where + "lava_damage >= 1"))
+		if int(round(float(sp.get("lava_burn_seconds", 0.0)) * 60.0)) < 1:
+			issues.append(
+				ValidationIssue.new(&"duration", path, where + "lava_burn_seconds is under a tick")
+			)
+	if sp.has("lava_seconds") or move == &"melt":
+		if float(sp.get("ford_m", 0.0)) < 1.2:
+			issues.append(
+				ValidationIssue.new(&"range", path, where + "ford_m must be >= 1.2 (the hero fits)")
+			)
+	if move == &"melt":
+		if float(sp.get("ring_m", 0.0)) <= 0.0 or float(sp.get("min_radius_m", 0.0)) <= 0.0:
+			issues.append(
+				ValidationIssue.new(&"not_positive", path, where + "ring_m and min_radius_m > 0")
+			)
+		var step := int(round(float(sp.get("step_seconds", 0.0)) * 60.0))
+		var warn := int(round(float(sp.get("warn_seconds", 0.0)) * 60.0))
+		if float(sp.get("step_m", 0.0)) <= 0.0 or step < 1:
+			issues.append(
+				ValidationIssue.new(&"not_positive", path, where + "step_m and step_seconds > 0")
+			)
+		if warn < BehaviourSchemas.MIN_TELEGRAPH_TICKS or warn >= step:
+			issues.append(
+				ValidationIssue.new(
+					&"telegraph_short",
+					path,
+					where + "warn_seconds: at least the telegraph minimum, under step_seconds"
+				)
+			)
 
 
 ## v0.7.5 BF1: a lock leaves tracking time before it and a dodge window of at least the telegraph minimum; marks and

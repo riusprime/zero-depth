@@ -19,6 +19,8 @@ extends RefCounted
 ##   burst_phase on it bursts into the attack's pattern (the acid star) instead and is gone, no kill. An egg whose
 ##   boss is gone crumbles.
 ## Pure: no stream is drawn here; everything follows from the locked markers, the shots' own paths and the clock.
+## v0.8.0 BS2 (rows S4-S6): the Hive Lens's Gaze (BossGaze), the Siege Engine's ricochet shells (BossRicochet), the
+## Foundry's lava and meltdown (BossLava); this class ticks them and keeps the flow field round every piece.
 
 ## A pillar never rises touching a body: this much clear round every living body.
 const BODY_MARGIN_M := 0.3
@@ -54,7 +56,7 @@ static func raise_pillars(w: World, i: int, atk: BossAttackTable, k: int) -> int
 				_add_pillar(w, w.actors.ids[i], p, h, atk.pillar_ticks)
 				n += 1
 	if n > 0:
-		_refresh_nav(w)
+		set_nav_extra(w)
 	return n
 
 
@@ -130,14 +132,23 @@ static func _drop_pillars(w: World, boss_id: int = -1) -> void:
 			bs.remove_pillar(k)
 	if not gone.is_empty():
 		w.remove_barriers(gone)
-		_refresh_nav(w)
+		set_nav_extra(w)
 
 
-## The flow field goes round the standing pillars (NavField.set_extra) from this tick.
-static func _refresh_nav(w: World) -> void:
-	w.nav.set_extra(pillar_obbs(w))
-	if not w.enemy_tables.is_empty():
+## The flow field goes round the standing pillars, the molten floor and the meltdowns (NavField.set_extra) from this
+## tick (v0.8.0 BS2: the lava and melt too); `flood` false leaves the flood to the caller (a snapshot's restore).
+static func set_nav_extra(w: World, flood: bool = true) -> void:
+	var boxes := pillar_obbs(w)
+	boxes.append_array(BossLava.lava_obbs(w))
+	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
+	if flood and not w.enemy_tables.is_empty():
 		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS)
+
+
+## v0.8.0 BS2: true while any piece the flow field goes round is down (pillars, lava, a meltdown).
+static func has_extra(w: World) -> bool:
+	var bs := w.bosses
+	return bs.pillar_x.size() + bs.lava_x.size() + bs.melt_boss.size() > 0
 
 
 # --- S2: the Warlord's javelins -----------------------------------------------------------------------------------
@@ -352,13 +363,15 @@ static func egg_permille(w: World, i: int) -> int:
 # --- the tick and the end of a fight ----------------------------------------------------------------------------
 
 
-## Tick phase 6 (before the projectile sweep): pillars whose time is up sink, javelins whose recall has come fly.
+## Tick phase 6 (before the projectile sweep): pillars whose time is up sink, javelins whose recall has come fly;
+## v0.8.0 BS2: molten floor cools, steps closer and burns (BossLava).
 static func advance(w: World) -> void:
 	var bs := w.bosses
 	if not bs.pillar_x.is_empty():
 		_drop_pillars(w)
 	if not bs.jav_x.is_empty():
 		_recall(w)
+	BossLava.advance(w)
 
 
 ## World._remove_dead: boss `boss_id` is gone: its pillars sink and its javelins go (its eggs crumble on their own).
@@ -369,6 +382,8 @@ static func on_boss_gone(w: World, boss_id: int) -> void:
 	for k in range(bs.jav_x.size() - 1, -1, -1):
 		if bs.jav_boss[k] == boss_id:
 			bs.remove_javelin(k)
+	if BossLava.on_boss_gone(w, boss_id):  # v0.8.0 BS2: its lava and melt cool at once
+		set_nav_extra(w)
 
 
 ## The recap's death line for a cause past LATE_CAUSE (a late part): its attack's late_cause_key (its own cause_key

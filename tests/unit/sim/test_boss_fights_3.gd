@@ -52,12 +52,15 @@ func test_the_siege_engines_phase_script() -> void:
 	assert_eq(t.hp, 2250, "1800 x 1.25")
 	assert_eq(_ids(t, 0), [&"turret_cross", &"mortar_grid", &"barrage", &"rail"])
 	assert_eq(_ids(t, 1), [&"turret_cross_fast", &"mortar_grid", &"barrage", &"rail"])
+	# v0.8.0 BS2 (owner O5, S5): the ricochet replaces the reversal (Turret Cross Reversing trimmed); phase 3 opens
+	# by deploying the turrets whose shots bounce.
 	assert_eq(
 		_ids(t, 2),
-		[&"turret_cross_reversing", &"mortar_grid_3", &"barrage_fast", &"rail_3", &"shockwave"]
+		[&"turret_cross_fast", &"mortar_grid_3", &"barrage_fast", &"rail_3", &"shockwave"]
 	)
 	assert_eq(t.attacks[t.phase_entry[1]].id, &"deploy", "phase 2 still deploys its turrets")
-	assert_eq(t.attacks[t.phase_entry[2]].id, &"turret_cross_reversing")
+	assert_eq(t.attacks[t.phase_entry[2]].id, &"deploy", "phase 3 deploys ricocheting turrets")
+	assert_eq(t.attack_index(&"turret_cross_reversing"), -1, "trimmed")
 	assert_eq(t.phase_threshold, PackedInt32Array([1000, 660, 330]), "the 66 / 33 % gates")
 	var cross := t.attacks[t.attack_index(&"turret_cross")]
 	assert_true(cross.shielded, "the Turret Cross is the shielded signature")
@@ -67,9 +70,8 @@ func test_the_siege_engines_phase_script() -> void:
 	var fast := t.attacks[t.attack_index(&"turret_cross_fast")].pattern
 	assert_gt(absi(fast.spin_milli), absi(cross.pattern.spin_milli), "phase 2 turns faster")
 	assert_gt(fast.waves, cross.pattern.waves)
-	var rev := t.attacks[t.attack_index(&"turret_cross_reversing")].pattern
-	assert_gt(rev.reverse_ticks, 0, "phase 3's cross turns back halfway")
-	assert_eq(rev.arms, 4)
+	assert_eq(cross.bounces, 1, "its embers bounce once")
+	assert_eq(t.attacks[t.attack_index(&"turret_cross_fast")].bounces, 1)
 	assert_eq(t.attacks[t.attack_index(&"mortar_grid")].volleys, 2, "alternating twice")
 	assert_eq(t.attacks[t.attack_index(&"mortar_grid_3")].volleys, 3, "phase 3: once more")
 	assert_eq(t.attacks[t.attack_index(&"barrage")].count, 3, "three circles in turn")
@@ -101,7 +103,7 @@ func test_the_foundrys_phase_script() -> void:
 		_ids(t, 2),
 		[
 			&"slag_fountain_2",
-			&"furnace_waves_fast",
+			&"furnace_waves",
 			&"molten_flood_5",
 			&"vent_blast",
 			&"bomb_launch_3",
@@ -109,7 +111,9 @@ func test_the_foundrys_phase_script() -> void:
 		]
 	)
 	assert_eq(t.attacks[t.phase_entry[1]].id, &"slag_fountain_2")
-	assert_eq(t.attacks[t.phase_entry[2]].id, &"furnace_waves_fast")
+	# v0.8.0 BS2 (owner O5, S6): phase 3 opens with the meltdown; Furnace Waves' fast ring is trimmed.
+	assert_eq(t.attacks[t.phase_entry[2]].id, &"meltdown")
+	assert_eq(t.attack_index(&"furnace_waves_fast"), -1, "trimmed")
 	assert_eq(t.phase_threshold, PackedInt32Array([1000, 660, 330]))
 	var fountain := t.attacks[t.attack_index(&"slag_fountain")]
 	assert_true(fountain.shielded, "the Slag Fountain is the shielded signature (door shut)")
@@ -117,10 +121,7 @@ func test_the_foundrys_phase_script() -> void:
 	assert_gt(fountain.pattern.rain_ticks, 0, "it rains")
 	assert_eq(fountain.pattern.look, &"molten_drop")
 	assert_gt(t.attacks[t.attack_index(&"slag_fountain_2")].pattern.waves, fountain.pattern.waves)
-	var waves := t.attacks[t.attack_index(&"furnace_waves")].pattern
-	var waves_fast := t.attacks[t.attack_index(&"furnace_waves_fast")].pattern
-	assert_gt(waves_fast.waves, waves.waves, "phase 3 adds rings")
-	assert_gt(waves_fast.speed, waves.speed, "and speeds them up")
+	assert_eq(t.attacks[t.attack_index(&"furnace_waves")].pattern.look, &"molten_drop")
 	assert_eq(t.attacks[t.attack_index(&"molten_flood")].count, 3)
 	assert_eq(t.attacks[t.attack_index(&"molten_flood_5")].count, 5, "phase 2: five rows")
 	for id: StringName in [&"molten_flood", &"molten_flood_5", &"firestorm"]:

@@ -1152,7 +1152,7 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
   read (`BossDodge.rain_drops`, `WorldReader.boss_rain(i)`: from, to, progress) and hurt nothing. No new state is
   hashed. `MOVE_GRID` / `MOVE_ROW_FLOOD` for the views.
 
-## 10f. Boss signature mechanics (v0.8.0 BS1; owner O5, [`BOSS_SIGNATURES.md`](../roadmap/v0.8.0/BOSS_SIGNATURES.md) S1-S3)
+## 10f. Boss signature mechanics (v0.8.0 BS1, BS2; owner O5, [`BOSS_SIGNATURES.md`](../roadmap/v0.8.0/BOSS_SIGNATURES.md) S1-S6)
 
 Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; all in the F10 Bosses page);
 `BossSignatures` holds the rules. Pure: no stream is drawn.
@@ -1200,6 +1200,47 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   pillars standing restores them as walls the way play added them (the door first, then the barriers and pillars:
   only the wall grid is rebuilt, never the flow field) and sets the field's extra cells again before its last flood
   is copied, so a restored fight steps exactly as the uninterrupted one (`test_boss_signatures.gd`).
+- **S4, the Hive Lens's Gaze (v0.8.0 BS2; `BossGaze`).** A new move, `gaze` (`BossAttackTable.Move.GAZE`, appended).
+  As its windup begins the beam's start angle is the angle to the player + 2048 (straight away; `actors.lock_a`) and
+  the ai stream picks the way it will turn (`BossStore.span`, ±1); every windup tick the start re-aims straight away
+  from the player, so on its first active tick the beam points away from where the player stands (it never starts
+  on you). Active tick `st`: its angle is `lock_a + way × along × 1024 / quarter_ticks` with `along` a triangle wave
+  of period `reverse_ticks` (`st % reverse` out, then back: integer maths), so it turns a quarter turn every
+  `quarter_ticks` and reverses every `reverse_ticks`. The beam is a lane from the boss's edge along that angle, as
+  long as `length_m` unless `EnemyAi.clear_run` (radius `half_width_m`) stops it on a wall (walls, pillars, the
+  door); it hurts a player it touches once every `burn_ticks` (`BossStore.hit` resets on each burn tick; the hurt
+  iframes apply). Its `pattern` (the orbs) fires again every `orb_every_ticks` from that tick on, from the body,
+  aimed at the player through `BulletPatterns.fire`, carrying `LATE_CAUSE` + the attack (the recap reads its
+  `late_cause_key`). The boss faces along the beam. No new state: the actor's lock and `BossStore.span`.
+- **S5, the Siege Engine's ricochets (BS2; `BossRicochet`).** A `pattern` attack with `bounces` (1) queues its shots
+  with that many wall bounces (`World.set_pending_bounces`); a `deploy` attack with `bounce_phase` makes the shots of
+  turrets of its `enemy_kind`, from that phase index on (the live boss's), bounce once too, carrying that attack as
+  their cause (`EnemyAi` after a turret's shot). The bounce is the projectile sweep's own (`World._projectile_hits`,
+  `ItemEffects.bounce`: reflected on the face normal of the wall hit, `v − 2(v·n)n`, an exact component flip for
+  axis-aligned walls). Fair: a hostile shot does not bounce when its reflected path over `SAFE_TICKS` (30, 0.5 s)
+  would touch the player (`BossRicochet.may_bounce`, a swept circle); it breaks on the wall instead. After a bounce
+  its cause becomes `LATE_CAUSE` + its attack (the recap names the ricochet; a turret's resolves through the live
+  boss's table). Bounces are the existing `ProjectileStore.bounces` column: no new state.
+- **S6, the Foundry's lava and meltdown (BS2; `BossLava`).** A `row_flood` attack with `lava_ticks`: on its last
+  standing tick (phase 6) each lane is cut by fords `ford_m` wide (at the boss's x, and where the line from the
+  room's centre to its exit crosses the lane, or the exit's x) and the pieces stay molten from the next tick for
+  `lava_ticks`, but only if `BossLava.fair` passes: with all molten floor down, a flood over the flow field's free
+  cells that keep the hero's radius from it, inside the room, joins the boss's edge to the player (within their
+  radius + 1.6 m) and to the exit (the boss door's inside, `FloorLayout.boss_door_inside(1.0)`; a room without one
+  checks the boss and the player only). Otherwise none of it is laid. A `melt` attack (`Move.MELT`) on its first
+  active tick melts the room for good (one meltdown per boss): beyond `r0` = the room's inscribed radius −
+  `melt_ring_m` (24 m − ring without a room) from its centre (the sealed boss room's, or the boss's spot); every
+  `melt_step_ticks` the radius drops `melt_step_m`, never under `melt_min_m`; a bridge `ford_m` wide from the centre
+  to the exit stays cool. Each step glows `melt_warn_ticks` before it (`BossLava.melt_warn`; the attack's windup is
+  the first ring's glow). Molten floor under the player's centre burns (phase 6, `BossLava.advance`, one clock
+  `BossStore.burn_cd`): lava `lava_damage` every `lava_burn_ticks` (cause `LATE_CAUSE` + its attack), the melt its
+  attack's `damage` every `burn_ticks` (cause its attack), as `Damage.tick_dot` × the boss's power. The flow field
+  goes round both (`NavField.set_extra` boxes + melt shapes, `BossSignatures.set_nav_extra`), refreshed when lava is
+  laid or cools and when a melt steps in. While its melt stands the Foundry keeps to cool ground (its centre its
+  radius inside the edge, `BossLava.keep_on_ground` after it walks). Its boss gone, its lava and melt go. State:
+  `BossStore.lava_*`, `melt_*`, `burn_cd` (hashed only while any is down; in `ADDED_SINCE_V05`).
+- **Reads (BS2).** `WorldReader.boss_gaze(i)`, `boss_lava()`, `boss_melts()`, `MOVE_GAZE`, `MOVE_MELT`, `TEAM_ENEMY`;
+  `BossAi.telegraph` draws nothing on the ground for `gaze` and `melt` (`"ground": false`).
 
 ## 11. Scaling and threat
 

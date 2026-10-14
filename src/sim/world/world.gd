@@ -449,6 +449,12 @@ func set_pending_cause(attack: int) -> void:
 	_pending_projectiles[-1][11] = attack
 
 
+## v0.8.0 BS2 (S5): the last `n` projectiles queued bounce off walls `bounces` times (BossRicochet).
+func set_pending_bounces(n: int, bounces: int) -> void:
+	for k in range(maxi(0, _pending_projectiles.size() - n), _pending_projectiles.size()):
+		_pending_projectiles[k][8] = bounces
+
+
 ## v0.7.5 BF1: projectiles queued this tick, not spawned yet (BulletPatterns' per-tick cap reads it).
 func pending_projectiles() -> int:
 	return _pending_projectiles.size()
@@ -1417,9 +1423,14 @@ func _projectile_hits() -> void:
 					continue
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
 					continue
-			elif projectiles.bounces[i] > 0:
-				# Items: Ricochet Core reflects the bolt off the wall instead of ending it.
+			elif (
+				projectiles.bounces[i] > 0
+				and BossRicochet.may_bounce(self, i, a + v * best_t, walls[best_wall])
+			):
+				# Items: Ricochet Core reflects the bolt off the wall instead of ending it. v0.8.0 BS2 (S5): so do the
+				# Siege Engine's shells, unless the way back would reach the player within 0.5 s.
 				ItemEffects.bounce(self, i, a + v * best_t, walls[best_wall])
+				BossRicochet.on_bounce(self, i)
 				projectiles.life[i] -= 1
 				if projectiles.life[i] <= 0:
 					dead.append(i)

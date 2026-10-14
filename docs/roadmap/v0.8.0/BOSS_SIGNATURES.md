@@ -42,6 +42,6 @@ spikes, 3D orbs; v0.8.0 O7, O8).
 | S1 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (branch `v080-bs1`; [evidence](evidence/BOSS_SIGNATURES_1.md)): pillars 1.0 m every 2.2 m for 6 s; Cross Quake trimmed |
 | S2 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (same): front 120° blocks (×0, sparks); javelins stick, recall 1.0 s; Javelin Rain trimmed |
 | S3 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (same): eggs 3 s, 20 HP, hatch a Hatchling or burst in phase 3; Web Spiral fast trimmed |
-| S4 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
-| S5 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
-| S6 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S4 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS2 (branch `v080-bs2`; [evidence](evidence/BOSS_SIGNATURES_2.md)): a new `gaze` move: starts straight away from you (re-aimed through its 0.8 s windup), a quarter turn every 2.0 s, reversing every 8.0 s, 12 s long, stopped by walls, a burn every 0.5 s, Petal Bloom orbs every 3.0 s; not shielded (the eye is open: the time to hit it); Glare Ring trimmed |
+| S5 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS2 (same): Turret Cross embers bounce once (range 26 m, was 20), never back onto you within 0.5 s; phase 3 opens by deploying turrets whose shots bounce once; Turret Cross Reversing trimmed |
+| S6 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS2 (same): Molten Flood lanes stay molten 5.0 s (6 every 0.5 s, 2.0 m fords at the boss and on the way to the door; refused if it would close every way); phase 3 opens with a `melt` move: the outer 4 m melts for good, 2 m closer every 8 s, never under 7 m from the centre, a cool bridge to the door; Furnace Waves' fast ring trimmed |

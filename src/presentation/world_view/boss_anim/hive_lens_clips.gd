@@ -43,6 +43,7 @@ static func library() -> Dictionary:
 			_slam_ring(),
 			_leap(),
 			_deploy(),
+			_gaze(),  # v0.8.0 BS2 (S4)
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -211,6 +212,48 @@ static func _deploy() -> BossClip:
 	c.param(&"tail_splay", [[0, 0], [0.42, 0.6], [0.5, 1.0, IN3], [0.62, 0.5], [1, 0]])
 	c.param(
 		&"tremble", [[0, 0], [0.15, 0], [0.42, 0.8], [0.5, 1, LIN], [0.62, 0.2], [0.68, 0], [1, 0]]
+	)
+	return c
+
+
+## v0.8.0 BS2 (owner O5, S4): the Gaze. Its windup (0..0.2, the 0.8 s the eye brightens): it draws back and up,
+## the crown thrown open wide round the eye, trembling harder as the charge builds; on the strike the beam kicks it
+## back a little and it then stares, steady, its body leaning against the beam's push, the crown spinning slowly and
+## the tails streaming back while the beam turns (0.2..0.9: the long active part); then it blinks and settles.
+static func _gaze() -> BossClip:
+	var c := BossClip.new(&"gaze")
+	c.strike = 0.2
+	c.hold = 0.9
+	c.turn(
+		CROWN_BASE,
+		Z,
+		[
+			[0, 0],
+			[0.18, 0.55, BACK],
+			[0.2, 0.62],
+			[0.25, 0.5],
+			[0.88, 0.5],
+			[0.93, -0.4, IN3],
+			[1, 0]
+		]
+	)
+	c.turn(CROWN, Z, [[0, 0], [0.18, 0.3], [0.88, 0.25], [1, 0]])
+	c.stretch(PODS, [[0, 0], [0.18, 0.18], [0.2, 0.24, IN3], [0.88, 0.16], [1, 0]])
+	c.stretch(SPINE, [[0, 0], [0.18, 0.06], [0.2, -0.05, IN3], [0.25, 0.02], [0.88, 0.02], [1, 0]])
+	c.shift(B, FWD, [[0, 0], [0.18, -0.2], [0.2, -0.32, IN3], [0.26, -0.22], [0.88, -0.2], [1, 0]])
+	c.shift(B, UP, [[0, 0], [0.18, 0.18, OUT], [0.26, 0.12], [0.88, 0.12], [1, 0]])
+	c.turn(B, Z, [[0, 0], [0.18, 0.12], [0.2, -0.1, IN3], [0.26, -0.04], [0.88, -0.05], [1, 0]])
+	c.turn(
+		B,
+		X,
+		[[0, 0], [0.3, 0.04, IO, S], [0.5, -0.04, IO, S], [0.7, 0.04, IO, S], [0.88, 0], [1, 0]]
+	)
+	c.param(&"spin", [[0, 0], [0.18, 3.0], [0.25, 1.2], [0.88, 1.2], [1, 0]])
+	c.param(&"tail_sweep", [[0, 0], [0.2, -0.2], [0.26, -0.7, IN3], [0.88, -0.6], [1, 0]])
+	c.param(&"tail_splay", [[0, 0], [0.18, 0.4], [0.88, 0.3], [1, 0]])
+	c.param(
+		&"tremble",
+		[[0, 0], [0.05, 0.1], [0.19, 0.9, LIN], [0.2, 0.4], [0.88, 0.25], [0.92, 0], [1, 0]]
 	)
 	return c
 

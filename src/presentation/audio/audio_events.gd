@@ -303,6 +303,10 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_mortar"
 		WorldReader.MOVE_ROW_FLOOD:
 			return &"boss_floor_burst"
+		WorldReader.MOVE_GAZE:  # v0.8.0 BS2: the beam opens; the ring melts
+			return &"boss_laser"
+		WorldReader.MOVE_MELT:
+			return &"boss_floor_burst"
 	return &""
 
 
