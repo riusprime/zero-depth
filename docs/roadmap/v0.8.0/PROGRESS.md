@@ -223,3 +223,4 @@ not in `main` yet).
   `FLOOR_RULES`; the lead orders the two (SR uses 5, `FLOOR_RULES_V080_RT` = 4). Run locally: see
   [SHOP](evidence/SHOP.md). Not run locally: the full suite.
 - 2026-10-14: SR merged after RT2. Both had raised FLOOR_RULES to 5; merged as one step (5: every layout + shop rooms; 4: RT1's three layouts and the terminal); SR's rules helper moved to `RunSaver.shop_rooms` (RunState hit gdlint's 20-public-method limit).
+- 2026-10-14: owner rule for this version: "if session limit is hit, set a reminder in 2 hours to keep going after the limit is reached": when agents stop on the usage limit, the lead schedules a self-reminder 2 h later (send_later) to resume them and the pending merges.
