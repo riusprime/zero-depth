@@ -67,6 +67,10 @@ var boss_shields := BossShieldView.new()
 var spikes := StoneSpikeViews.new()
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures := BossSignatureViews.new()
+
+
+## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
+var strikes := BossStrikeViews.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -117,6 +121,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		layer.drawers.append(fireballs.draw_lights)
 		spikes.vfx = layer  # v0.8.0 AV: the spikes' debris, dust, flash and cracks
 		layer.drawers.append(spikes.draw_fx)
+		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
+		layer.drawers.append(strikes.draw_fx)
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4
@@ -125,6 +131,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
+
+
+	add_child(strikes)  # v0.8.0 AV part 2
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -202,6 +211,9 @@ func sync() -> void:
 	boss_shields.sync(reader)
 	spikes.sync(reader)  # v0.8.0 AV
 	signatures.sync(reader)  # v0.8.0 BS1
+
+
+	strikes.sync(reader)  # v0.8.0 AV part 2
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

@@ -84,6 +84,16 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   hot cracks that pulse under the bright edge once locked (steady with reduced motion). On the strike tick (the lanes
   marker shows locked at progress 1000, `BossDodge.mark_state` 2) `StoneSpikeViews` raises stone spikes along the same
   lanes; they sink back within 0.6 s. Drawn, never decided: the hit is the sim's, the spikes only follow it.
+- **The other bosses' ground attacks in 3D** (v0.8.0 AV part 2, owner O7). Every boss ground attack has a look
+  (`BossStrikeLooks`, per boss kind and move; a test derives the move list from `data/bosses`). Its marker keeps the
+  dull outline and no fill while it tracks and the bright edge once locked (the lock flash stays the dodge cue), but
+  its fill is a ground pattern in the look's colours instead of flat red (stone cracks, steel scratches, bubbling acid,
+  shimmering light, hazard stripes, molten seams), burning hot and pulsing once locked (steady with reduced motion);
+  an untracked windup's fill warms as it fills. `BossStrikeViews` draws the strike on the tick the sim strikes, read
+  from WorldReader only: a marker or grid circle locked at progress 1000, a windup turning active (the hit resolves on
+  that tick), a leap at `boss_leap` 1.0, a burrow when `boss_hidden` turns false; the geometry is the telegraph's.
+  Sustained strikes (spears, beams, molten and burning lanes, a charge's skid) last while the boss stays active in
+  that move. The Gatekeeper's shock lanes stay `StoneSpikeViews`'.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
@@ -166,6 +176,13 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   MultiMesh of at most `StoneSpikeViews.MAX_SPIKES` (512), at most `MAX_STRIKES` (8) strikes alive; their debris and
   dust come out of VfxCore's sprite pools (inside the 2,000) and scale with the density, their crack marks out of its
   64 decals.
+- **Boss strikes (v0.8.0 AV part 2):** `BossStrikeViews` is six MultiMeshes with fixed caps (rocks 384, blades 384,
+  glowing bands 64, dust bands 48, beams 32, ground quads 160; one draw each) and two rebuilt arc meshes, at most
+  `MAX_STRIKES` (24) strikes alive. Its sprites come out of VfxCore's pools, its lights out of the 10-light pool
+  (merged per strike), its marks out of the 64 decals, its explosions and acid splats through `VfxLayer.burst` (the
+  frame's burst budget) and `BurstBudget.admit` for the live ones. Effects density thins the rocks and the sprites (not
+  the blades or the ground marks, which show where it hit); reduced motion stills the tumbling, the overshoot and the
+  shaders' flow. It adds no camera shake.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;

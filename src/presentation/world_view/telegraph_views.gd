@@ -24,6 +24,11 @@ extends Node3D
 ## instead of flat red: while they track the player, thin cracks glowing dimly along each lane (the dark outline kept);
 ## once locked, the ground chars and the cracks widen and glow hot, pulsing until the strike (steady with reduced
 ## motion), under the bright edge (the dodge cue). The strike itself is StoneSpikeViews' spikes.
+## v0.8.0 AV part 2 (owner O7): every other boss ground attack with a look (BossStrikeLooks: per boss kind and move)
+## fills with its own ground pattern instead of flat red: stone cracks, steel scratches, bubbling acid, shimmering
+## light, hazard stripes, molten seams. While it tracks it keeps the dull outline and no fill; once locked the pattern
+## burns hot and pulses (steady with reduced motion) under the same bright edge, so the lock flash stays the dodge
+## cue; an untracked windup's fill grows in the pattern, warming as it fills. The strike is BossStrikeViews'.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [
@@ -98,6 +103,10 @@ var _flash_edge_mat := StandardMaterial3D.new()
 ## v0.8.0 AV: the shock lanes' cracked ground, tracking and locked.
 var _crack_track_mat := ShaderMaterial.new()
 var _crack_lock_mat := ShaderMaterial.new()
+## v0.8.0 AV part 2: per look, [the windup fill, the lock flash] (BossStrikeLooks.mark_material).
+var _look_mats := {}
+## The look of the telegraph being updated (&"" for none: the flat look).
+var _look := &""
 var _t := 0.0
 
 
@@ -145,16 +154,39 @@ func _process(delta: float) -> void:
 		heat = lerpf(CRACK_LOCK_HEAT.x, CRACK_LOCK_HEAT.y, wave)
 	_flash_fill_mat.albedo_color.a = a
 	_crack_lock_mat.set_shader_parameter("heat", heat)
+	var motion := 0.0 if ViewPrefs.reduced_motion else 1.0
+	for pair: Array in _look_mats.values():
+		(pair[1] as ShaderMaterial).set_shader_parameter("heat", heat)
+		for m: ShaderMaterial in pair:
+			m.set_shader_parameter("motion", motion)
 
 
 ## v0.7.5 BF1: [fill, edge] materials for a telegraph: a tracking one has no fill and the dull edge, a locked one
 ## the flash; any other the usual pair.
 func _mats(tg: Dictionary) -> Array:
 	if not tg.get("tracked", false):
-		return [_fill_mat, _edge_mat]
+		return [_fill_mat if _look == &"" else _look_pair(_look)[0], _edge_mat]
 	if tg.get("locked", false):
-		return [_flash_fill_mat, _flash_edge_mat]
+		return [_flash_fill_mat if _look == &"" else _look_pair(_look)[1], _flash_edge_mat]
 	return [null, _dull_mat]
+
+
+## v0.8.0 AV part 2: [windup fill, lock flash] of `look`, made on first use.
+func _look_pair(look: StringName) -> Array:
+	if not _look_mats.has(look):
+		_look_mats[look] = [
+			BossStrikeLooks.mark_material(look, 0.3, 0.25),
+			BossStrikeLooks.mark_material(look, CRACK_LOCK_HEAT.y, 0.45)
+		]
+	return _look_mats[look]
+
+
+## v0.8.0 AV part 2: the look of actor i's telegraph `tg` (a boss's ground attack with a look), else &"".
+static func look_of(reader: WorldReader, i: int, tg: Dictionary) -> StringName:
+	var kind := reader.actor_kind(i)
+	if not WorldReader.is_boss_kind(kind):
+		return &""
+	return BossStrikeLooks.look_for(kind, int(tg.get("move", -1)))
 
 
 func sync(reader: WorldReader) -> void:
@@ -173,9 +205,14 @@ func sync(reader: WorldReader) -> void:
 			n = _make(tg["shape"], style)
 			_nodes[id] = n
 			add_child(n)
+		_look = look_of(reader, i, tg)
 		_update(n, tg)
+		if _look != &"" and not tg.get("tracked", false):  # a windup's fill warms as it fills
+			var heat := lerpf(0.15, 0.85, float(tg["progress"]) / 1000.0)
+			(_look_pair(_look)[0] as ShaderMaterial).set_shader_parameter("heat", heat)
 		if style != &"":
 			_update_style(n, tg)
+	_look = &""
 	for id in _nodes.keys():
 		if not seen.has(id):
 			_nodes[id].queue_free()
@@ -501,7 +538,7 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 			flash_e.append_array(e)
 		else:
 			dull.append_array(e)
-	_emit(fill, flash_f, _flash_fill_mat)
+	_emit(fill, flash_f, _flash_fill_mat if _look == &"" else _look_pair(_look)[1])
 	_emit(fill, crack_lock, _crack_lock_mat)
 	_emit(fill, crack_track, _crack_track_mat)
 	_emit(edge, flash_e, _flash_edge_mat)
