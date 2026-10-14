@@ -34,15 +34,12 @@ const OUTLINE_M := 0.02
 
 ## Colours sampled from the reference sheet (lit facets read lighter in game light). Each facet of the shell and the
 ## rocks is tinted a little lighter or darker (vertex colours), so the planes stay distinct under any light.
+## v0.8.0 EC: the shell (body), the visor frame (trim), the rocks (grey) and the visor (eye) come from EnemyPalettes.
 const FACET_TINT := 0.16
-const ROCK_COLOR := Color("#6E5B53")
 const FIST_COLOR := Color("#68564F")
 const CHEST_COLOR := Color("#2A2D33")
 const LEG_COLOR := Color("#3B383B")
 const FOOT_COLOR := Color("#705D55")
-const SHELL_COLOR := Color("#DA4036")
-const VISOR_FRAME_COLOR := Color("#2E2B2E")
-const VISOR_COLOR := Color("#FC2824")
 ## The weak spot's glow: hotter than the shell, so the back reads as the place to hit.
 const CRACK_COLOR := Color("#FF8A3C")
 
@@ -117,7 +114,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_body.add_child(_chest)
 	_piece(_chest, &"pelvis", Vector3(0.0, 0.02, 0), Vector3(0.42, 0.2, 0.44), CHEST_COLOR, 3)
 	_piece(_chest, &"chest", Vector3(0.02, 0.2, 0), Vector3(0.56, 0.42, 0.54), CHEST_COLOR, 4)
-	shell = _piece(_chest, &"shell", Vector3.ZERO, Vector3.ONE, SHELL_COLOR, 0)
+	shell = _piece(_chest, &"shell", Vector3.ZERO, Vector3.ONE, _color(&"body"), 0)
 	_build_visor()
 	_build_weak_spot()
 	for side in [-1.0, 1.0]:
@@ -268,20 +265,15 @@ func _pose(dt: float) -> void:
 
 func _build_visor() -> void:
 	_piece(
-		_chest,
-		&"visor_frame",
-		Vector3(0.39, 0.37, 0),
-		Vector3(0.1, 0.28, 0.17),
-		VISOR_FRAME_COLOR,
-		0
+		_chest, &"visor_frame", Vector3(0.39, 0.37, 0), Vector3(0.1, 0.28, 0.17), _color(&"trim"), 0
 	)
 	visor = MeshInstance3D.new()
 	var vb := BoxMesh.new()
 	vb.size = Vector3(0.02, 0.17, 0.075)
 	visor.mesh = vb
-	_visor_mat.albedo_color = VISOR_COLOR
+	_visor_mat.albedo_color = _color(&"eye")
 	_visor_mat.emission_enabled = true
-	_visor_mat.emission = VISOR_COLOR
+	_visor_mat.emission = _color(&"eye")
 	_visor_mat.emission_energy_multiplier = 2.4
 	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
@@ -315,12 +307,19 @@ func _build_arm(side: float) -> void:
 	var arm := Node3D.new()
 	arm.name = "Arm_" + tag
 	_chest.add_child(arm)
-	_piece(arm, &"shoulder", Vector3(0, 0, side * 0.01), Vector3(0.36, 0.38, 0.34), ROCK_COLOR, 11)
+	_piece(
+		arm, &"shoulder", Vector3(0, 0, side * 0.01), Vector3(0.36, 0.38, 0.34), _color(&"grey"), 11
+	)
 	var elbow := Node3D.new()
 	elbow.position = Vector3(0.0, -0.17, side * 0.03)
 	arm.add_child(elbow)
 	_piece(
-		elbow, &"forearm", Vector3(0.1, -0.19, side * 0.04), Vector3(0.46, 0.4, 0.5), ROCK_COLOR, 23
+		elbow,
+		&"forearm",
+		Vector3(0.1, -0.19, side * 0.04),
+		Vector3(0.46, 0.4, 0.5),
+		_color(&"grey"),
+		23
 	)
 	var fist := Node3D.new()
 	fist.name = "Fist_" + tag
@@ -339,6 +338,11 @@ func _build_leg(side: float) -> void:
 	_piece(pivot, &"leg", Vector3(0, -0.12, 0), Vector3(0.2, 0.22, 0.19), LEG_COLOR, 5)
 	_piece(pivot, &"foot", Vector3(0.03, -0.245, 0), Vector3(0.29, 0.11, 0.25), FOOT_COLOR, 7)
 	legs.append(pivot)
+
+
+## v0.8.0 EC: the Warden's colour in `slot` under the active palette.
+static func _color(slot: StringName) -> Color:
+	return EnemyPalettes.color(WorldReader.KIND_WARDEN, slot)
 
 
 ## One body piece: a faceted rock (or the shell) with an outline, its X-ray twin, and its material in

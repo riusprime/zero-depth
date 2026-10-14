@@ -20,10 +20,9 @@ const ROTOR_R := 0.17
 const SHADOW_R := 0.42
 const OUTLINE_M := 0.02
 
-const RED := Color("#D8433A")
-const GREY := Color("#5F5551")
+## v0.8.0 EC: the hull (body), the cap (trim), the arms (grey) and the eye slit (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_BOMB_DRONE
 const DARK := Color("#24272D")
-const EYE := Color("#FF2A22")
 const BOMB := Color("#1B1C20")
 
 ## Parts, read by tests and by ActorViews (flash materials; the eye, fuse and shadow are their own).
@@ -64,12 +63,16 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	hull = Node3D.new()
 	add_child(hull)
 	var body := NeedleAvatar._chamfer_box(Vector3(0.42, 0.18, 0.36), 0.06, 0.02)
-	_piece(hull, body, Vector3.ZERO, RED, outline_color, team, technique)
+	_piece(
+		hull, body, Vector3.ZERO, EnemyPalettes.color(KIND, &"body"), outline_color, team, technique
+	)
 	var cap := NeedleAvatar._chamfer_box(Vector3(0.24, 0.08, 0.22), 0.03, 0.01)
-	_piece(hull, cap, Vector3(-0.02, 0.12, 0), GREY, outline_color, team, &"outline")
-	_eye_mat.albedo_color = EYE
+	var trim := EnemyPalettes.color(KIND, &"trim")
+	_piece(hull, cap, Vector3(-0.02, 0.12, 0), trim, outline_color, team, &"outline")
+	var eye := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
 	_eye_mat.emission_enabled = true
-	_eye_mat.emission = EYE
+	_eye_mat.emission = eye
 	_eye_mat.emission_energy_multiplier = 2.2
 	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
@@ -93,7 +96,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 			holder,
 			arm,
 			Vector3(ARM_LEN * 0.5 + 0.1, 0.02, 0),
-			GREY,
+			EnemyPalettes.color(KIND, &"grey"),
 			outline_color,
 			team,
 			&"outline"

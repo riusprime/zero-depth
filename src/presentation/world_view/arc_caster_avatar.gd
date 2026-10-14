@@ -21,11 +21,10 @@ const CRYSTAL := 0.11
 const WINDUP_TICKS := 30
 const OUTLINE_M := 0.02
 
-const RED := Color("#D8433A")
-const RED_DARK := Color("#A9302B")
-const GREY := Color("#5F5551")
+## v0.8.0 EC: the robe and cowl (body), the hem (trim), the pauldrons and staff (grey) and the visor and rune shards
+## (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_ARC_CASTER
 const DARK := Color("#24272D")
-const EYE := Color("#FF2A22")
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor, crystal and shards glow on their own).
 var body: Node3D
@@ -47,13 +46,15 @@ var _kick := 0.0
 func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var team := ThemePalette.color(&"enemy_body")
+	var red := EnemyPalettes.color(KIND, &"body")
+	var grey := EnemyPalettes.color(KIND, &"grey")
 	body = Node3D.new()
 	add_child(body)
 	_piece(
 		body,
 		_frustum(HEM_R, SHOULDER_R, ROBE_H, 8),
 		Vector3.ZERO,
-		RED,
+		red,
 		outline_color,
 		team,
 		technique
@@ -63,7 +64,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		body,
 		_frustum(HEM_R + 0.02, HEM_R - 0.03, 0.12, 8),
 		Vector3.ZERO,
-		RED_DARK,
+		EnemyPalettes.color(KIND, &"trim"),
 		outline_color,
 		team,
 		&"outline"
@@ -74,7 +75,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 			body,
 			pauldron,
 			Vector3(0.0, ROBE_H - 0.02, side * 0.2),
-			GREY,
+			grey,
 			outline_color,
 			team,
 			technique
@@ -97,14 +98,15 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		hood,
 		_frustum(0.17, 0.02, 0.24, 6),
 		Vector3(-0.03, 0.04, 0.0),
-		RED,
+		red,
 		outline_color,
 		team,
 		&"outline"
 	)
-	_eye_mat.albedo_color = EYE
+	var eye := EnemyPalettes.color(KIND, &"eye")
+	_eye_mat.albedo_color = eye
 	_eye_mat.emission_enabled = true
-	_eye_mat.emission = EYE
+	_eye_mat.emission = eye
 	_eye_mat.emission_energy_multiplier = 2.0
 	write_stencil(_eye_mat)
 	var slit := MeshInstance3D.new()
@@ -123,7 +125,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		staff,
 		NeedleAvatar._chamfer_box(Vector3(0.05, STAFF_LEN, 0.05), 0.01),
 		Vector3(0, STAFF_LEN * 0.3, 0),
-		GREY,
+		grey,
 		outline_color,
 		team,
 		&"outline"
