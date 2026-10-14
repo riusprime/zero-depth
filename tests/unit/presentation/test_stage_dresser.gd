@@ -119,3 +119,99 @@ func test_decoration_keeps_clear_and_lights_avoid_doorways() -> void:
 				if start.grow(3.5).has_point(at):
 					lights_in_start += 1
 		assert_gte(lights_in_start, 1, "seed %d: the start hall has its light" % (900 + s))
+
+
+## v0.8.0 RT: the dresser's input for a run floor with the designed rooms, as StageView builds it from WorldReader
+## (each interior wall's piece and designed-room height; the designed rooms' drawn-only pieces).
+func _designed_floor(seed_value: int, biome: StringName) -> Dictionary:
+	var repo := ContentRepository.load_all()
+	var layout := FloorGenerator.generate(seed_value, RunSaver.floor_tables(null, repo)[&"map"])
+	var f := _floor(seed_value, biome)
+	var walls: Array = []
+	var index := {}
+	for i in layout.walls.size():
+		var w := layout.walls[i]
+		walls.append(
+			[
+				w.center,
+				w.half,
+				SimPlane.yaw_of(w.angle),
+				0 if i < layout.slab_first else 1,
+				layout.piece_tag(w),
+				layout.piece_height(w)
+			]
+		)
+		index[FloorLayout.piece_key(w)] = i
+	var props: Array = []
+	for p: Array in layout.layout_props:
+		var key: String = p[5]
+		props.append(
+			{
+				"piece": p[0],
+				"pos": p[1],
+				"angle": p[2],
+				"size": p[3],
+				"height": p[4],
+				"wall": -1 if key.is_empty() else int(index.get(key, -2))
+			}
+		)
+	var doors: Array = []
+	for i in layout.door_rooms.size():
+		doors.append(layout.door_rect(i))
+	f["walls"] = walls
+	f["rooms"] = layout.rooms.duplicate()
+	f["doors"] = doors
+	f["keep_clear"] = [layout.portal_pos]
+	f["props"] = props
+	var look: BiomeLook = (repo.get_def(&"biomes", biome) as BiomeDefinition).look
+	if look != null:
+		f["square_cover"] = StageView._names(look.square_cover)
+		f["decor_swap"] = StageView._names(look.decor_swap)
+	return f
+
+
+func test_designed_rooms_are_drawn_solid_where_solid_and_restyled_by_the_biome() -> void:
+	for biome: StringName in [&"ruins", &"frozen_shore"]:
+		var f := _designed_floor(4242, biome)
+		var walls: Array = f["walls"]
+		var square: Dictionary = f.get("square_cover", {})
+		var designed := 0
+		for w: Array in walls:
+			designed += 1 if float(w[5]) >= 0.0 else 0
+		assert_gt(designed, 20, "%s: the floor has designed rooms" % biome)
+		var crates := 0
+		for p: Dictionary in StageDresser.dress(f):
+			var xform: Transform3D = p["xform"]
+			if p["kind"] == &"decor":
+				assert_lte(xform.basis.y.length(), StageDresser.DECOR_MAX_HEIGHT + 0.0001)
+				continue
+			var wi: int = p["wall"]
+			if wi < 0:
+				fail_test("%s: a tall %s stands on no blocker" % [biome, p["piece"]])
+				return
+			var w: Array = walls[wi]
+			for c in _corners(xform):
+				if not _inside(c, w, 0.12):
+					fail_test("%s: %s leaves wall %d at %s" % [biome, p["piece"], wi, c])
+					return
+			if w.size() > 5 and float(w[5]) >= 0.0:
+				crates += 1 if p["piece"] == &"crate_stack" else 0
+				if StringName(w[4]) in [&"crate_stack", &"rock_large"] and not square.is_empty():
+					assert_has(square, p["piece"], "%s: square cover is the biome's" % biome)
+				elif StringName(w[4]) != p["piece"] and square.is_empty():
+					fail_test("%s: %s drawn as %s" % [biome, w[4], p["piece"]])
+					return
+		if square.is_empty():
+			assert_gt(crates, 0, "%s: the layout's crates stand" % biome)
+		else:
+			assert_eq(crates, 0, "%s: no crate stack in a biome that swaps them" % biome)
+	# A drawn piece whose blocker is gone (the boss door's way) is not drawn.
+	var gone := {
+		"piece": &"wall_pillar",
+		"pos": Vector2.ZERO,
+		"angle": 0,
+		"size": Vector2.ONE,
+		"height": 0.0,
+		"wall": -2
+	}
+	assert_eq(StageDresser.dress({"props": [gone]}).size(), 0)

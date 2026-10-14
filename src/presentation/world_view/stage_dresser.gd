@@ -34,12 +34,19 @@ const SCATTER_DENSITY := 0.03
 ## Heights of the walls the sim describes (StageView's EDGE_WALL_HEIGHT and SLAB_HEIGHT).
 const WALL_HEIGHT := 1.0
 const SLAB_HEIGHT := 1.8
+## v0.8.0 RT (owner O12): the square cover pieces a designed room names, restyled by the biome as the dresser's own
+## square cover is (BiomeLook.square_cover; Night Rocks: rocks and dead trees); other pieces keep their name. And the
+## decoration pieces (the biome's decor_swap, never past DECOR_MAX_HEIGHT).
+const LAYOUT_SQUARE: Array[StringName] = [&"crate_stack", &"rock_large"]
+const LAYOUT_DECOR: Array[StringName] = [&"grass_tuft", &"rubble_small", &"debris_low"]
 
 
 ## Places the kit over a floor. `f` keys:
-## - "walls": [[center: Vector2, half: Vector2, yaw: float, kind: int, piece (optional StringName)]] (kind 0
-##   structural, 1 cover slab; a slab that names its piece is drawn with it), the same order and yaw as
-##   StageView.wall_specs;
+## - "walls": [[center: Vector2, half: Vector2, yaw: float, kind: int, piece (optional StringName), layout height
+##   (optional float)]] (kind 0 structural, 1 cover slab; a slab that names its piece is drawn with it; v0.8.0 RT: a
+##   layout height >= 0 marks a designed room's blocker, drawn at that height (0: the kit's own) after the biome's
+##   swap), the same order and yaw as StageView.wall_specs;
+## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries);
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
 ## - "biome": StringName; "seed": int;
 ## - v0.7.5 NB1, a biome's look (BiomeLook; both optional, absent for the first three biomes): "square_cover"
@@ -57,8 +64,11 @@ static func dress(f: Dictionary) -> Array:
 		var w: Array = walls[i]
 		if w[3] == 0:
 			_dress_wall(out, i, w, slots.get(i, []), rng)
+		elif w.size() > 5 and float(w[5]) >= 0.0:  # v0.8.0 RT: a designed room's blocker
+			_layout_named(out, i, w, f, rng)
 		else:
 			_dress_slab(out, i, w, f.get("biome", &""), rng, f.get("square_cover", {}))
+	_layout_props(out, f, rng)
 	_decorate(out, f, rng)
 	return out
 
@@ -224,6 +234,74 @@ static func _dress_slab(
 		var h := _jitter(rng, SLAB_HEIGHT)
 		_add(out, piece, _place(fr, a + seg * 0.5, 0.0, Vector3(seg, h, depth)), i, &"cover")
 		a += seg
+
+
+static func _layout_swap(
+	piece: StringName, biome: StringName, square: Dictionary, rng: RandomNumberGenerator
+) -> StringName:
+	if not piece in LAYOUT_SQUARE:
+		return piece
+	if not square.is_empty():
+		return _pick(rng, square)
+	if biome == &"night_rocks" and piece == &"crate_stack":
+		return &"dead_tree" if rng.randf() < 0.25 else &"rock_large"
+	return piece
+
+
+static func _spec_of(piece: StringName) -> Dictionary:
+	if KitModels.SPECS.has(piece):
+		return KitModels.SPECS[piece]
+	var cp: Dictionary = CodeProps.SPECS.get(piece, {})
+	return {"height": float(cp.get("height", 1.2)), "role": &"cover"}
+
+
+## v0.8.0 RT: a designed room's blocker, its piece swapped for the biome, filling its footprint at the layout's height
+## (or the kit's own, jittered); a light piece carries its light.
+static func _layout_named(
+	out: Array, i: int, w: Array, f: Dictionary, rng: RandomNumberGenerator
+) -> void:
+	var fr := _frame(w)
+	var piece := _layout_swap(StringName(w[4]), f.get("biome", &""), f.get("square_cover", {}), rng)
+	var spec := _spec_of(piece)
+	var kind: StringName = &"light" if spec["role"] == &"light" else &"cover"
+	var h := float(w[5]) if float(w[5]) > 0.0 else _jitter(rng, float(spec["height"]))
+	_add(out, piece, _place(fr, 0.0, 0.0, Vector3(fr["length"], h, fr["depth"])), i, kind)
+
+
+## v0.8.0 RT: a designed room's drawn-only pieces: decoration (the biome's decor_swap; never past DECOR_MAX_HEIGHT,
+## kept KEEP_CLEAR from doorways, rewards and the portal) and the pieces standing on its blockers (fading with them).
+static func _layout_props(out: Array, f: Dictionary, rng: RandomNumberGenerator) -> void:
+	var swap: Dictionary = f.get("decor_swap", {})
+	var keep: Array = f.get("keep_clear", [])
+	var doors: Array = f.get("doors", [])
+	for p: Dictionary in f.get("props", []):
+		var wall: int = p["wall"]
+		if wall == -2:
+			continue  # its blocker was dropped (the boss door's way): it would float
+		var piece: StringName = p["piece"]
+		var size: Vector2 = p["size"]
+		var at: Vector2 = p["pos"]
+		var h := float(p["height"])
+		var kind: StringName
+		if piece in LAYOUT_DECOR:
+			if _near_any_point(at, keep, KEEP_CLEAR) or _near_any_rect(at, doors, KEEP_CLEAR):
+				continue
+			piece = StringName(swap.get(piece, piece))
+			if h <= 0.0:
+				h = float(_spec_of(piece)["height"])
+			h = minf(h, DECOR_MAX_HEIGHT)
+			kind = &"decor"
+		else:
+			piece = _layout_swap(piece, f.get("biome", &""), f.get("square_cover", {}), rng)
+			var spec := _spec_of(piece)
+			if h <= 0.0:
+				h = _jitter(rng, float(spec["height"]))
+			kind = &"light" if spec["role"] == &"light" else &"cover"
+		var basis := (
+			Basis(Vector3.UP, SimPlane.yaw_of(int(p["angle"])))
+			* Basis.from_scale(Vector3(size.x, h, size.y))
+		)
+		_add(out, piece, Transform3D(basis, SimPlane.to_3d(at)), wall, kind)
 
 
 ## A box that names its piece (a vignette's, PLAN L8): that piece fills the footprint at its natural height; a

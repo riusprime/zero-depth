@@ -82,12 +82,16 @@ func discard() -> void:
 
 
 ## v0.7.5 MG: the floor tables a floor of `run` is built with, compiled from `repo`: {map: FloorParams, arena:
-## ArenaTable, shop: ShopTable}. A v0.7.0 floor resumed from an older save (RunState.v070_floor) gets v0.7.0's rules
-## on top: FloorParams.v070(), arena share 330 per mille, a shop on every floor (Main and the save tests).
+## ArenaTable, shop: ShopTable}. v0.8.0 RT: the map carries the designed room layouts (data/room_layouts) unless the
+## floor was saved before RT (RunState.designed_rooms), which is rebuilt with its rule-built rooms. A v0.7.0 floor
+## resumed from an older save (RunState.v070_floor) gets v0.7.0's rules on top: FloorParams.v070(), arena share 330 per
+## mille, a shop on every floor (Main and the save tests).
 static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
 	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
+	if run == null or run.designed_rooms():  # v0.8.0 RT: a floor saved before RT keeps its rule-built rooms
+		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
 	if run != null and run.v070_floor():
 		map = FloorParams.v070()
 		if arena != null:

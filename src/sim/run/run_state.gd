@@ -19,9 +19,12 @@ extends RefCounted
 ## v0.7.5 BF1 (owner N18, "always put them in the big rooms"): 3 is today's, every boss room 4 x 4; a floor saved under
 ## rules 1 or 2 rebuilds its boss room at the boss's legacy_arena_cells (legacy_boss_room), so it is the floor it was
 ## saved on.
-const FLOOR_RULES := 3
+## v0.8.0 RT (owner O12): 4 is today's, with the designed room layouts (data/room_layouts); a floor saved under rules
+## 1-3 is rebuilt with the rule-built interiors it had (designed_rooms; RunSaver.floor_tables).
+const FLOOR_RULES := 4
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
+const FLOOR_RULES_V075_BF1 := 3
 
 var run_seed := 0
 var table: RunTable
@@ -210,6 +213,12 @@ func v070_floor() -> bool:
 ## save made before BF1).
 func legacy_boss_room() -> bool:
 	return floor_rules < 3
+
+
+## v0.8.0 RT: whether the current floor has the designed room layouts (false: a floor resumed from a save made before
+## RT, rebuilt with its rule-built rooms).
+func designed_rooms() -> bool:
+	return floor_rules >= 4
 
 
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:

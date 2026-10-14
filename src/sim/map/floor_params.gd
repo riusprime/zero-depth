@@ -89,6 +89,16 @@ var nav_clearance := 0.6
 var start_clear_radius := 3.5
 ## No interior piece within this radius of a doorway centre (on the wall line).
 var door_clear_radius := 3.0
+## v0.8.0 RT (owner O12): the designed room layouts, RoomLayouts.key(cells) -> Array of RoomLayoutTable
+## (RunContentCompiler.compile_room_layouts, data/room_layouts). Empty (the default, and a floor saved before RT:
+## RunSaver.floor_tables): every room keeps its rule-built interior (RoomInterior + RoomThemes) and the generator makes
+## no layout draw, so that floor comes out as it was. A room whose size has no layout keeps it too, as do the start
+## hall and the portal room.
+var room_layouts := {}
+## v0.8.0 RT: a designed room keeps its pieces out of a box in front of each doorway: the doorway's width plus this
+## either side, this deep into the room from the wall face.
+var layout_door_side := 1.0
+var layout_door_depth := 3.0
 
 
 static func defaults() -> FloorParams:

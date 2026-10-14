@@ -97,6 +97,19 @@ var item_spots := PackedVector2Array()
 ## only: the sim never reads it.
 var piece_tags := {}
 var item_rooms := PackedInt32Array()
+## v0.8.0 RT (owner O12): each room's designed layout (RoomLayoutTable.id; &"" for a rule-built room), its quarter
+## turn and whether it is mirrored (FloorGenerator, RoomLayouts). Plain data for tools and tests; the walls already
+## hold its blockers.
+var room_layout: Array[StringName] = []
+var room_turn := PackedInt32Array()
+var room_mirror := PackedInt32Array()
+## v0.8.0 RT: a designed room's drawn-only pieces, presentation only (the sim never reads them): [piece, centre:
+## Vector2, angle (1/4096), size: Vector2 (m), height (m; 0 = the kit's own), the piece_key of the blocker it stands on
+## or "" for decoration on open floor].
+var layout_props: Array = []
+## v0.8.0 RT: a designed room's blockers, keyed by piece_key: their drawn height (m; 0 = the kit's own). Presentation
+## only; a wall listed here is a designed room's piece (the biome's swap rules apply to it, StageDresser).
+var piece_heights := {}
 ## Open spots per room (index = room).
 var spawn_points: Array[PackedVector2Array] = []
 ## Doorway hops from the start room, per room.
@@ -271,3 +284,13 @@ static func piece_key(o: Obb) -> String:
 ## The kit piece wall `o` is drawn with (&"" when it names none).
 func piece_tag(o: Obb) -> StringName:
 	return piece_tags.get(piece_key(o), &"")
+
+
+## v0.8.0 RT: a designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall.
+func piece_height(o: Obb) -> float:
+	return float(piece_heights.get(piece_key(o), -1.0))
+
+
+## v0.8.0 RT: room `room`'s designed layout id (&"" for none, or a room added after the generator, like the boss's).
+func layout_of(room: int) -> StringName:
+	return room_layout[room] if room >= 0 and room < room_layout.size() else &""

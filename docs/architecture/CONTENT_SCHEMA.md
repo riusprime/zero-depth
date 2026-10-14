@@ -680,6 +680,26 @@ same non-empty length, footprints 1-4 cells a side, weights ≥ 0 with a positiv
 A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's numbers (`FloorParams.v070()`, an arena share
 of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.floor_tables`), so its snapshot fits.
 
+### Designed rooms (`data/room_layouts/<x>x<y>_<n>.tres`, v0.8.0 RT)
+
+`RoomLayoutDefinition` (category `room_layout`; owner O12, "design maybe two, three rooms of each size … procedural
+generation to place them as templates … a room that could be in different directions"): a hand-designed interior for
+rooms of `cells` (x ≥ y: the long side first; 3 per size planned, 24 in all). Drawn in its own frame: x along the
+room's long side, the room's corner at (0, 0). `groups: Array[RoomLayoutGroup]`, each an `anchor` (a fraction of the
+room, 0..1 each way: groups spread with the room's size) and `pieces: Array[RoomLayoutPiece]`: `piece` (a kit id,
+`RoomLayoutDefinition.KIT`), `at` and `size` in metres from the anchor, `solid` (a sim blocker, axis-aligned, drawn
+filling its footprint), `yaw` (degrees; drawn-only pieces), `height` (m; 0 = the kit's). `weight` (draw weight among
+its size's layouts) and `keep_clear: Array[Rect2i]` (open lanes, per mille of the room). Validation: cells
+1 ≤ y ≤ x ≤ 4; weight > 0; at least one group, each with a piece and its anchor in 0..1; known kit pieces; sizes
+0..12 m, heights 0..4 m; a solid is never decoration (grass, rubble, debris), never turned, 0.3 m+; a drawn piece
+taller than decoration stands inside one of its group's solids ("looks solid = is solid"); no slit in a group (two
+solids facing each other are at most 0.6 m apart, shut to the player, or at least 2.0 m, open to enemies on the 0.5 m
+walkability grid, unless the group's other solids fill the gap); lanes inside 0..1000.
+`RunContentCompiler.compile_room_layouts` turns them into `RoomLayoutTable`s (cm, per mille, 1/4096 turns) keyed by
+`RoomLayouts.key(cells)` into `FloorParams.room_layouts`; `RunSaver.floor_tables` adds them unless the floor was saved
+before RT (`RunState.designed_rooms`, floor rules < 4), which is rebuilt with its rule-built rooms. The F10 dev panel
+does not list the folder (geometry, not balance).
+
 ## 6. Biomes
 
 ```gdscript

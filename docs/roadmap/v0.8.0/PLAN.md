@@ -117,13 +117,52 @@ Answers go into the "Owner decisions" table below the same day.
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
-| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | |
+| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Part 1 done (system + 3 layouts); G2 asked |
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
 MU (after its G2), BS and BL (after their G1s), BA, EM (when the models arrive). The lead writes the G1s and G2s
 while agents run.
+
+### RT (designed rooms; the agent's reading, 2026-10-14)
+- **Sizes.** A layout is drawn for a size class with its long side first (`RoomLayouts.key`): 1×1, 2×1, 3×1, 2×2, 3×2,
+  3×3, 4×3, 4×4, 3 each (24). A long room (2×3, 3×2 …) takes its class's layouts turned so the layout's long side runs
+  along the room's long side (two of the four turns); a square room takes any of the four. Every layout may be
+  mirrored. So a 2×2 layout has 8 ways round, a 3×2 layout 4 per orientation of the room.
+- **Data.** `RoomLayoutDefinition` (`src/content/defs`, category `room_layout`, `data/room_layouts/<x>x<y>_<n>.tres`,
+  validated, found by `ContentScanner`): groups of pieces, each group at an anchor that is a fraction of the room (so
+  the groups spread with the room's size: a 2×2 room is 18.6-33 m a side) and its pieces in metres from it. A piece
+  is a sim blocker (`solid`: an axis-aligned footprint, drawn filling it with its kit piece at the layout's height) or
+  drawn only (decoration anywhere; anything taller standing inside one of its group's blockers: "looks solid = is
+  solid", validated). Lights are pieces too (a fire barrel blocker carries its light). `keep_clear` names the open
+  fighting lanes (checked by a test). The `.tres` files are written by `scripts/content/room_layouts.py` from prefab
+  clusters (corner, wall and free-standing clusters in metres); the three first layouts are built from them.
+- **Doorways.** Doorways can be anywhere on an edge, so no band is reserved: at generation each group is kept whole or
+  dropped whole. Dropped when a blocker would stand in a doorway's box (its width plus 1 m either side, 3 m deep), or
+  when it fails the checks the themed vignettes already pass (doorways, start and gate clear; flush with a wall or the
+  2.2 m slab gap from walls and other groups; the room one region at an enemy's clearance holding every doorway
+  approach). Before that, of the turns and mirrors the room allows, the one putting the fewest blockers in doorway
+  boxes is taken (the drawn one first, no extra draw). Over 40 run floors 78 % of the layouts' blockers stand (the
+  rest give way to doorways); every floor stays whole (`tests/unit/sim/test_room_layouts.gd`).
+- **Placement.** After the room templates are drawn, each room (in order) whose size has layouts draws a layout, a
+  turn and a mirror from the `map` stream (no new sub-stream, so no EI-05 question). The start hall and the portal
+  room keep their rules; so does the boss room (its own builder). The shop, the arenas and the Overrun room are chosen
+  afterwards, from the floor as generated, exactly as before: "keep their existing rules" read as their selection
+  rules, so such a room may hold a designed interior (SR redesigns the shop room). Rooms of a size with no layout yet
+  keep today's `RoomInterior` + `RoomThemes` interiors, so the game works throughout.
+- **Biomes.** Layouts name kit pieces; the dresser restyles a designed room's square cover (crate stacks, rocks) with
+  the biome's `square_cover` (Frozen Shore, Starfall) or Night Rocks' rocks and dead trees, and its decoration with the
+  biome's `decor_swap`. Car wrecks, slabs, broken walls and pillars stay the kit's in every biome until the owner's
+  biome pieces arrive (ART_LIST).
+- **Determinism and saves.** Same seed, same floor. Floors change on purpose: `RunState.FLOOR_RULES` 4; a floor saved
+  under rules 1-3 is rebuilt without layouts (`RunState.designed_rooms`, `RunSaver.floor_tables`) and makes no layout
+  draw, so it is the floor that was saved. Nothing new is hashed or saved (`WorldSnapshot.ADDED_SINCE_V05` unchanged).
+- **Density (starting values).** In a typical room (the middle cell size and wall halves) the three layouts block
+  14.7-16.5 % of the floor; with their own grass, rubble and debris (counted as 1 m² a piece) about 27-31 % is dressed,
+  before the dresser's own grass along the walls and rubble. A central lane is kept open in each.
+- **G2.** Shots of the three (Ruins, and two other biomes) in [`evidence/ROOMS.md`](evidence/ROOMS.md). After the
+  owner's pick, the other 21 follow the chosen direction.
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share

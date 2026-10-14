@@ -69,6 +69,8 @@ var _wall_faded: StandardMaterial3D
 var _wall_classes: Array[int] = []
 ## v0.5.9 L8: each drawn wall's kit piece from a themed room (&"" for none).
 var _wall_pieces: Array[StringName] = []
+## v0.8.0 RT: each drawn wall's designed-room height (m; 0 = the kit's own; -1 for a wall that isn't a designed room's).
+var _wall_layout_heights := PackedFloat64Array()
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
 
@@ -380,6 +382,7 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		wall_specs.append([w.center, w.half, SimPlane.yaw_of(w.angle), height])
 		_wall_classes.append(kind)
 		_wall_pieces.append(reader.wall_piece(i))
+		_wall_layout_heights.append(reader.wall_layout_height(i))
 		if not draw:
 			continue
 		var box := BoxMesh.new()
@@ -458,7 +461,8 @@ func _build_kit(reader: WorldReader) -> void:
 				wall_specs[i][1],
 				wall_specs[i][2],
 				_wall_classes[i],
-				_wall_pieces[i] if i < _wall_pieces.size() else &""
+				_wall_pieces[i] if i < _wall_pieces.size() else &"",
+				_wall_layout_heights[i] if i < _wall_layout_heights.size() else -1.0
 			]
 		)
 	var rooms: Array = []
@@ -478,6 +482,7 @@ func _build_kit(reader: WorldReader) -> void:
 		"keep_clear": keep,
 		"biome": prop_style,
 		"seed": reader.seed_value(),
+		"props": _layout_props(reader),
 	}
 	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration
 		dressing["square_cover"] = _names(look.square_cover)
@@ -489,6 +494,14 @@ func _build_kit(reader: WorldReader) -> void:
 	kit.build(placements, wall_specs.size(), palette["cover"], mood)
 	kit.set_shadows(lighting == "high")
 	_build_shards(reader, walls, rooms, doors, keep, placements)
+
+
+## v0.8.0 RT: the designed rooms' drawn-only pieces (WorldReader.layout_prop).
+static func _layout_props(reader: WorldReader) -> Array:
+	var out: Array = []
+	for i in reader.layout_prop_count():
+		out.append(reader.layout_prop(i))
+	return out
 
 
 ## A look dictionary with StringName keys (and values, when they are text), whatever the .tres wrote.
