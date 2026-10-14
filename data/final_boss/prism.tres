@@ -1,0 +1,94 @@
+[gd_resource type="Resource" script_class="FinalBossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/final_boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_prism_spiral"]
+script = ExtResource("1_atk")
+id = &"prism_spiral"
+shape = 4
+shape_params = {
+"pattern_id": "hive_prism_spiral"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 14
+move = &"pattern"
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_PRISM_ORBS"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_prism_bloom"]
+script = ExtResource("1_atk")
+id = &"prism_bloom"
+shape = 4
+shape_params = {
+"pattern_id": "hive_petal_bloom"
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 1.2
+damage = 14
+move = &"pattern"
+weight = 3
+cooldown_seconds = 0.8
+cause_key = &"CAUSE_PRISM_ORBS"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("prism_spiral", "prism_bloom")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_PRISM"
+desc_key = &"BOSS_PRISM_DESC"
+hp = 1400
+radius_m = 1.5
+move_speed_mps = 1.0
+turn_rate_dps = 0.0
+keep_distance_m = 6.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 300
+stagger_decay_per_second = 14.0
+stagger_seconds = 2.0
+arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 1000
+punish_distance_m = 10.0
+punish_seconds = 2.5
+punish_attack = &""
+weak_point_seconds = 1.5
+weak_point_range_m = 2.5
+weak_point_mult_permille = 1500
+weak_point_stagger_permille = 1500
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 0.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 0
+arena_hazard_seconds = 0.5
+recovery_permille = 1000
+lead_seconds = 0.0
+track_commit_seconds = 0.15
+dash_read_seconds = 0.0
+gap_close_attack = &""
+gap_close_distance_m = 5.0
+gap_close_seconds = 2.0
+attacks = Array[ExtResource("1_atk")]([SubResource("A_prism_spiral"), SubResource("A_prism_bloom")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
+id = &"prism"

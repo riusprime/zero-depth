@@ -31,6 +31,9 @@ const BOSS_KINDS := {
 	&"warlord": ActorStore.Kind.WARLORD,
 	&"hive_lens": ActorStore.Kind.HIVE_LENS,
 	&"foundry": ActorStore.Kind.FOUNDRY,
+	&"colossus": ActorStore.Kind.COLOSSUS,  # v0.8.0 FB1: the final boss's bodies (data/final_boss)
+	&"prism": ActorStore.Kind.PRISM,
+	&"nemesis": ActorStore.Kind.NEMESIS,
 }
 const BOSS_MOVES := {
 	&"slam_ring": BossAttackTable.Move.SLAM_RING,
@@ -53,6 +56,9 @@ const BOSS_MOVES := {
 	&"row_flood": BossAttackTable.Move.ROW_FLOOD,
 	&"gaze": BossAttackTable.Move.GAZE,  # v0.8.0 BS2 (S4)
 	&"melt": BossAttackTable.Move.MELT,  # v0.8.0 BS2 (S6)
+	&"combo": BossAttackTable.Move.COMBO,  # v0.8.0 FB1
+	&"spike_chase": BossAttackTable.Move.SPIKE_CHASE,
+	&"spike_burst": BossAttackTable.Move.SPIKE_BURST,
 }
 
 
@@ -513,6 +519,19 @@ static func compile_bosses(repo: ContentRepository) -> Array[BossTable]:
 	return out
 
 
+## v0.8.0 FB1: the final boss's bodies (FinalBossDefinition) in the run's order (RunTable.final_bosses), compiled; a
+## missing id is left out. A world holding the fight appends them after compile_bosses, so the floors' indices stay.
+static func compile_final_bosses(repo: ContentRepository, run: RunTable) -> Array[BossTable]:
+	var out: Array[BossTable] = []
+	if run == null:
+		return out
+	for id: StringName in run.final_bosses:
+		var def: BossDefinition = repo.get_def(&"final_bosses", id)
+		if def != null:
+			out.append(compile_boss(def, repo))
+	return out
+
+
 ## A floor's boss pool as indices into compile_bosses (empty if the floor has no pool).
 static func compile_boss_pool(repo: ContentRepository, floor_index: int) -> PackedInt32Array:
 	var ids: Array = repo.all_of(&"bosses").map(func(d: BossDefinition) -> StringName: return d.id)
@@ -658,6 +677,8 @@ static func compile_boss_attack(
 	t.gap_m = float(sp.get("gap_m", 0.0))  # v0.4.0 BO: a flood's lanes
 	t.burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("burn_seconds", 0.0))))
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
+	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes
+	t.step_m = float(sp.get("step_m", 0.0))
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 
@@ -895,6 +916,10 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.loop_scale_cap_permille = def.loop_scale_cap_permille
 	t.loop_threat = def.loop_threat
 	t.loop_catch_up_cap_permille = def.loop_catch_up_cap_permille
+	t.final_bosses = def.final_bosses.duplicate()  # v0.8.0 FB1: the final boss
+	t.final_name_key = def.final_name_key
+	t.final_arena = def.final_arena
+	t.final_shatter_ticks = maxi(1, SimTick.seconds_to_ticks(def.final_shatter_seconds))
 	return t
 
 

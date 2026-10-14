@@ -7,7 +7,7 @@ extends RefCounted
 ## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them, then the horde kinds (v0.4.0 EN; SPLITLING is what a
 ## Splitter splits into).
 ## Arc Caster and the Bomb Drone (v0.3.5 AI) come after them; then the second boss of each pool and the Hive Lens's
-## drones (v0.4.0 BO).
+## drones (v0.4.0 BO); then the final boss's bodies, the Colossus, the Prism and the Nemesis (v0.8.0 FB1).
 enum Kind {
 	PLAYER,
 	DUMMY,
@@ -31,6 +31,9 @@ enum Kind {
 	HIVE_LENS,
 	FOUNDRY,
 	LENS_DRONE,
+	COLOSSUS,  # v0.8.0 FB1: the final boss's three bodies (FinalBoss), one kind each
+	PRISM,
+	NEMESIS,
 }
 
 const TEAM_PLAYER := 0

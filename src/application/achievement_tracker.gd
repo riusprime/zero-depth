@@ -18,6 +18,10 @@ extends RefCounted
 ## - shards:spent: the shards each SHOP_BUY cost.
 ## - runs:ascended: reported by the Ascension portal (v0.7.5 AP) through `report(&"runs:ascended")`; nothing here
 ##   records it.
+## - v0.8.0 FB1 (FINAL_BOSS.md F8), in the final arena: final:won (the last body fell: the run won), final:won_looped
+##   (won on a loop past the first), final:no_hit_phase (a body's whole segment, from its rise to its fall, without the
+##   hero losing HP; a fight resumed from a save starts its body clean, the save being its start). The arena's win
+##   doesn't count its floor cleared again (End the run already did).
 ## Off (`enabled` false) in a run with the dev panel's balance tweaks (owner: tweaked runs don't count): nothing is
 ## recorded and nothing unlocks.
 
@@ -39,6 +43,9 @@ var _cleared_seen := 0
 var _overrun_done := false
 var _steal_tick := -1
 var _wand_due := 0
+## v0.8.0 FB1: the final fight's body being watched, and whether the hero lost HP since it rose.
+var _final_phase := -1
+var _final_hurt := false
 
 
 func _init(p_book: AchievementBook) -> void:
@@ -61,6 +68,8 @@ func attach(reader: WorldReader) -> void:
 	_overrun_done = bool(reader.overrun().get("cleared", false))
 	_steal_tick = reader.steal_tick()
 	_wand_due = 0
+	_final_phase = reader.final_phase()  # v0.8.0 FB1: saves are taken at a body's start, so it starts clean
+	_final_hurt = false
 	evaluate_all()
 
 
@@ -99,9 +108,11 @@ func observe(reader: WorldReader) -> void:
 		if n > store.stat(&"wand:cards_max"):
 			store.raise_stat(&"wand:cards_max", n)
 			_check(book.reading_stat(&"wand:cards_max"))
+	_final(reader)
 	if not _ended and reader.outcome() in [1, 3]:
 		_ended = true
-		report(StringName("floors:cleared_%d" % reader.floor_index()))
+		if not reader.final_arena():  # v0.8.0 FB1: End the run counted the floor
+			report(StringName("floors:cleared_%d" % reader.floor_index()))
 		if reader.outcome() == 1:
 			report(&"runs:won")
 			report(StringName("runs:won_%s" % reader.wand().get("weapon", &"blade")))
@@ -122,6 +133,8 @@ func _events(reader: WorldReader, events: Array[SimEvent]) -> bool:
 				damages[e.seq] = e.parent_seq
 				if e.target_id == me and e.amount_applied > 0 and _sealed_room >= 0:
 					_hurt = true
+				if e.target_id == me and e.amount_applied > 0:
+					_final_hurt = true  # v0.8.0 FB1
 			SimEvent.Kind.KILL:
 				if e.owner_id == me and e.target_id != me:
 					var pct: int = hits.get(damages.get(e.parent_seq, -2), 100)
@@ -138,6 +151,24 @@ func _events(reader: WorldReader, events: Array[SimEvent]) -> bool:
 				if e.amount > 0:
 					report(&"shards:spent", e.amount)
 	return took
+
+
+## v0.8.0 FB1: the final fight's achievements: a body beaten clean when the next rises (or the last falls), and the
+## win (a loop past the first too).
+func _final(reader: WorldReader) -> void:
+	if not reader.final_arena():
+		return
+	var ph := reader.final_phase()
+	var won := reader.final_won()
+	if ph > _final_phase or (won and _final_phase >= 0):
+		if not _final_hurt and _final_phase >= 0:
+			report(&"final:no_hit_phase")
+		_final_phase = -1 if won else ph
+		_final_hurt = false
+	if won and not _ended:
+		report(&"final:won")
+		if reader.loop() > 1:
+			report(&"final:won_looped")
 
 
 ## Sealed rooms: one sealing starts clean; a hit that costs HP spoils it; its clear counts (and counts clean).

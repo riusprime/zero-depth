@@ -3,7 +3,8 @@ extends PanelContainer
 ## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md; pick "Dev-tool style, no mockups"): the Playground's panel on the
 ## left of the screen, opened with F1 (the sim waits while it is open). Four tabs:
 ## - Build: every card the build can take, by group, with a search and a level; your build, with Remove; Change weapon.
-## - Spawn: the click tool (a dummy, endless or with an HP; an enemy; a boss; delete), Clear enemies, Clear all.
+## - Spawn: the click tool (a dummy, endless or with an HP; an enemy; a boss; delete), Clear enemies, Clear all; v0.8.0
+##   FB1: the final boss (its whole fight at the room's centre) and a button per phase that jumps to that body.
 ## - Biome: the five biomes.
 ## - Player: god mode, full heal, the DPS meter's reset and visibility.
 ## A left click on the floor (outside the panel) uses the tool; a right click always deletes. Commands go through
@@ -182,6 +183,20 @@ func _spawn_tab() -> Control:
 	box.add_child(HSeparator.new())
 	_button(box, "ClearEnemies", "UI_PG_CLEAR_ENEMIES", func() -> void: api.clear(false))
 	_button(box, "ClearAll", "UI_PG_CLEAR_ALL", func() -> void: api.clear(true))
+	if not api.final_tables.is_empty():  # v0.8.0 FB1
+		box.add_child(HSeparator.new())
+		var fh := Label.new()
+		fh.text = "UI_PG_FINAL_HINT"
+		fh.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		fh.modulate = Color(1, 1, 1, 0.7)
+		box.add_child(fh)
+		_button(box, "FinalBoss", "UI_PG_FINAL", func() -> void: api.summon_final(0))
+		var row := HBoxContainer.new()
+		box.add_child(row)
+		for k in api.final_tables.size():
+			var b := _button(row, "FinalPhase%d" % (k + 1), "", func() -> void: api.final_phase(k))
+			b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+			b.text = tr("UI_PG_FINAL_PHASE") % (k + 1)
 	return box
 
 

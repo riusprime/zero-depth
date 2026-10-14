@@ -27,6 +27,9 @@ extends RefCounted
 ## recalled javelins, the Brood Mother's eggs. v0.8.0 BS2: `gaze` (the Hive Lens's sweeping beam, BossGaze) and
 ## `melt` (the Foundry's meltdown, BossLava); the Siege Engine's ricochets (BossRicochet) and the Foundry's lava are
 ## params on `pattern`, `deploy` and `row_flood`.
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3-F4): the final boss's bodies are bosses (is_boss_kind); the Colossus's
+## `combo`, `spike_chase` and `spike_burst` (BossColossus), and a `leap` with a pattern fires it where it lands. A body
+## whose segment ran out shatters (FinalBoss.SHATTER): it stands still, invulnerable, until FinalBoss replaces it.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -62,8 +65,9 @@ static func is_boss_kind(kind: int) -> bool:
 		kind == ActorStore.Kind.GATEKEEPER
 		or kind == ActorStore.Kind.BROOD_MOTHER
 		or kind == ActorStore.Kind.SIEGE_ENGINE
-		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)
-	)  # v0.4.0 BO
+		or (kind >= ActorStore.Kind.WARLORD and kind <= ActorStore.Kind.FOUNDRY)  # v0.4.0 BO
+		or (kind >= ActorStore.Kind.COLOSSUS and kind <= ActorStore.Kind.NEMESIS)
+	)  # v0.8.0 FB1
 
 
 ## The BossStore entry of actor i (-1 if it isn't a boss).
@@ -94,8 +98,8 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
-	if a.state[i] != GATE and a.dead[i] == 0:  # v0.5.5 DS: a boss killed between ticks opens no gate
-		_update_phase(w, i, b, t)
+	if a.state[i] != GATE and a.state[i] != FinalBoss.SHATTER and a.dead[i] == 0:
+		_update_phase(w, i, b, t)  # v0.5.5 DS: a boss killed between ticks opens no gate (FB1: nor a shattering one)
 	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
@@ -107,6 +111,8 @@ static func think(w: World, i: int) -> void:
 				EnemyAi.enter_state(a, i, S.MOVE)
 		GATE:
 			BossGates.advance(w, i, b)
+		FinalBoss.SHATTER:
+			pass  # v0.8.0 FB1: FinalBoss runs the shatter (tick phase 9)
 		STAGGERED:
 			bs.stagger_t[b] -= 1
 			if bs.stagger_t[b] <= 0:
@@ -135,6 +141,10 @@ static func think(w: World, i: int) -> void:
 				BossDodge.track_marks(w, b, atk, a.state_t[i])
 			elif atk.move == M.GAZE:  # v0.8.0 BS2 (S4): it starts aimed away from you, wherever you go
 				BossGaze.keep_away(w, i)
+			elif atk.move == M.COMBO:  # v0.8.0 FB1: the swing follows you until it locks
+				BossColossus.combo_think(w, i, atk, a.state_t[i])
+			elif atk.move == M.SPIKE_CHASE:  # v0.8.0 FB1: the chasing spikes are laid
+				BossColossus.chase_think(w, i, b, atk, a.state_t[i])
 			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
@@ -148,6 +158,10 @@ static func think(w: World, i: int) -> void:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: the later markers keep tracking
 				BossDodge.track_marks(w, b, atk, atk.windup_ticks + a.state_t[i])
+			elif atk.move == M.COMBO:  # v0.8.0 FB1: each later swing (and the slam) follows, then locks
+				BossColossus.combo_think(w, i, atk, atk.windup_ticks + a.state_t[i])
+			elif atk.move == M.SPIKE_CHASE:
+				BossColossus.chase_think(w, i, b, atk, atk.windup_ticks + a.state_t[i])
 			_think_active(w, i, b, atk)
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
@@ -351,6 +365,8 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 				bs.set_pt(b, k, w.player_pos())
 		M.GAZE:  # v0.8.0 BS2 (S4): aimed away from the player; the way it turns
 			BossGaze.lock(w, i, b)
+		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: no chase line has stopped yet
+			BossColossus.spikes_lock(w, b)
 
 
 ## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
@@ -430,9 +446,13 @@ static func move(w: World, i: int) -> void:
 			var atk := attack_of(w, i)
 			if atk != null and atk.move == M.PULL:
 				BossChallenge.drag(w, i, atk)  # BX (L17): the vortex drags the player in.
+			elif atk != null and atk.move == M.COMBO:  # v0.8.0 FB1: it steps in as the swing follows
+				BossColossus.combo_move(w, i, atk, slow)
 		S.ACTIVE:
 			var atk := attack_of(w, i)
 			match atk.move:
+				M.COMBO:  # v0.8.0 FB1
+					BossColossus.combo_move(w, i, atk, slow)
 				M.CHARGE:
 					if a.lock_len[i] > 0.0:
 						var step := minf(atk.speed * slow, a.lock_len[i])
@@ -516,6 +536,8 @@ static func resolve(w: World, i: int) -> void:
 			var d := leap_disc(w, i)
 			if st == atk.active_ticks - 1 and AttackShapes.disc_touches(d[0], d[1], p, pr):
 				hit_player(w, i, atk, SimEvent.TAG_AREA, d[0])
+			if st == atk.active_ticks - 1 and atk.pattern != null:  # v0.8.0 FB1: its shockwave ring
+				BossColossus.leap_wave(w, i, atk, d[0])
 		M.BURROW:
 			var d := burrow_disc(w, i)
 			if w.bosses.step[b] == 2 and st == 0 and AttackShapes.disc_touches(d[0], d[1], p, pr):
@@ -568,6 +590,10 @@ static func resolve(w: World, i: int) -> void:
 		M.MELT:  # v0.8.0 BS2 (S6): the outer ring melts for good
 			if st == 0:
 				BossLava.begin_melt(w, i)
+		M.COMBO:  # v0.8.0 FB1: each swing, then the slam, where it locked
+			BossColossus.combo_resolve(w, i, b, atk, st)
+		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: the spikes due erupt
+			BossColossus.spikes_resolve(w, i, b, atk, st)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -636,6 +662,8 @@ static func on_damage(w: World, i: int, applied: int, tags: int = 0) -> void:
 	if not is_boss_kind(a.kinds[i]) or a.dead[i] == 1 or applied <= 0:
 		return
 	if a.state[i] == STAGGERED or a.state[i] == S.SPAWN or a.state[i] == GATE:
+		return
+	if a.state[i] == FinalBoss.SHATTER:  # v0.8.0 FB1
 		return
 	var b := entry_of(w, i)
 	var t: BossTable = w.boss_tables[w.bosses.table[b]]
@@ -797,6 +825,10 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
 	if atk.move == M.GRID:
 		return BossDodge.grid_telegraph(w, i, atk)
+	if atk.move == M.COMBO:  # v0.8.0 FB1: the swing (or the slam) pending
+		return BossColossus.combo_telegraph(w, i, atk)
+	if atk.move == M.SPIKE_CHASE or atk.move == M.SPIKE_BURST:  # v0.8.0 FB1: the spikes showing
+		return BossColossus.spikes_telegraph(w, i, b, atk)
 	if atk.move == M.GAZE or atk.move == M.MELT:
 		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
 		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews).

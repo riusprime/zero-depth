@@ -29,6 +29,10 @@ const KIND_WARLORD := ActorStore.Kind.WARLORD
 const KIND_HIVE_LENS := ActorStore.Kind.HIVE_LENS
 const KIND_FOUNDRY := ActorStore.Kind.FOUNDRY
 const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
+## v0.8.0 FB1: the final boss's bodies.
+const KIND_COLOSSUS := ActorStore.Kind.COLOSSUS
+const KIND_PRISM := ActorStore.Kind.PRISM
+const KIND_NEMESIS := ActorStore.Kind.NEMESIS
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -121,6 +125,13 @@ const MOVE_GRID := BossAttackTable.Move.GRID  # v0.7.5 BF3
 const MOVE_ROW_FLOOD := BossAttackTable.Move.ROW_FLOOD
 const MOVE_GAZE := BossAttackTable.Move.GAZE  # v0.8.0 BS2 (S4)
 const MOVE_MELT := BossAttackTable.Move.MELT  # v0.8.0 BS2 (S6)
+const MOVE_COMBO := BossAttackTable.Move.COMBO  # v0.8.0 FB1 (the Colossus)
+const MOVE_SPIKE_CHASE := BossAttackTable.Move.SPIKE_CHASE
+const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
+## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER), and its views' events (STATUS_APPLY effect ids).
+const STATE_SHATTER := FinalBoss.SHATTER
+const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
+const EFFECT_FINAL_RISE := FinalBoss.EFFECT_RISE
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -458,10 +469,14 @@ func mine_fuse(k: int) -> int:
 
 ## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead,
 ## 3 when the portal of a floor before the last was taken (the app loads the next floor).
+## v0.8.0 FB1 (F1): End the run goes on to the final arena (3) when the run has a final boss; the final arena's
+## outcome is 1 once its last body fell.
 func outcome() -> int:
+	if _w.final_fight != null and _w.final_fight.won and _w.boss_flow != null:
+		return 1
 	if _w.boss_flow != null and _w.boss_flow.exited():
 		if _w.boss_flow.ascension:  # v0.7.5 AP: End the run wins it; Ascend goes on to the next loop
-			return 3 if Ascension.ascended(_w) else 1
+			return 3 if Ascension.ascended(_w) or _w.boss_flow.final_next else 1
 		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
 		return 2
@@ -870,7 +885,7 @@ func has_floor() -> bool:
 
 ## The floor has the run's gate (its boss flow; v0.7.5 PG: the Playground's room has a floor and no gate).
 func has_gate() -> bool:
-	return _w.floor_layout != null and _w.boss_flow != null
+	return _w.floor_layout != null and _w.boss_flow != null and _w.final_fight == null  # FB1: not the arena
 
 
 func floor_bounds() -> Rect2:
@@ -1268,6 +1283,8 @@ func boss_attack_ticks(i: int) -> Vector4i:
 	if atk == null:
 		return Vector4i.ZERO
 	var gap := atk.mark_gap_ticks if atk.count > 1 and BossDodge.is_marker_move(atk.move) else 0
+	if atk.move == MOVE_COMBO:  # v0.8.0 FB1: a swing per gap, then the slam
+		gap = atk.mark_gap_ticks
 	return Vector4i(atk.windup_ticks, atk.active_ticks, atk.recover_ticks, gap)
 
 
@@ -1397,6 +1414,69 @@ func boss_melts() -> Array:
 	if atk != null and atk.move == MOVE_MELT and _w.actors.state[i] == EnemyAi.State.WINDUP:
 		out.append(BossLava.melt_windup(_w, i, atk))
 	return out
+
+
+# --- The final boss (v0.8.0 FB1; FinalBoss) ---------------------------------------------------------------------
+## The world holds the final boss's fight (the final arena, or the Playground's summon).
+func final_fight() -> bool:
+	return _w.final_fight != null
+
+
+## The world is the final arena (the run's last world: the fight and its arrival).
+func final_arena() -> bool:
+	return _w.final_fight != null and _w.boss_flow != null
+
+
+## The fight's name key (the boss bar's title over its segments; RunTable.final_name_key), &"" without one.
+func final_name_key() -> StringName:
+	return _w.final_fight.name_key if _w.final_fight != null else &""
+
+
+## The body fighting now (0 = the first), or -1 without a fight.
+func final_phase() -> int:
+	return _w.final_fight.phase if _w.final_fight != null else -1
+
+
+## How many bodies the fight has (its boss bar's segments).
+func final_phases() -> int:
+	return _w.final_fight.tables.size() if _w.final_fight != null else 0
+
+
+## Segment k's name key (its body's boss name).
+func final_segment_name_key(k: int) -> StringName:
+	var f := _w.final_fight
+	if f == null or k < 0 or k >= f.tables.size():
+		return &""
+	return _w.boss_tables[f.tables[k]].name_key
+
+
+## Segment k's fill, 0..1000 (FinalBoss.segment_permille).
+func final_segment_permille(k: int) -> int:
+	return FinalBoss.segment_permille(_w, k)
+
+
+## 0..1000 through the shatter between two bodies (0 when none runs).
+func final_shatter_permille() -> int:
+	return FinalBoss.shatter_permille(_w)
+
+
+func final_shattering() -> bool:
+	return FinalBoss.shattering(_w)
+
+
+## The last body fell (the fight is won).
+func final_won() -> bool:
+	return _w.final_fight != null and _w.final_fight.won
+
+
+## The final arena's radius (m, the wall ring's inner face; 0 elsewhere).
+func final_arena_radius() -> float:
+	return FinalArena.radius_of(_w.floor_layout) if final_arena() else 0.0
+
+
+## The tick the current body began (its rise).
+func final_phase_tick() -> int:
+	return _w.final_fight.phase_tick if _w.final_fight != null else -1
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

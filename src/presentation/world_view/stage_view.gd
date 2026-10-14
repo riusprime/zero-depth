@@ -49,6 +49,8 @@ var ice: IceViews
 var edge: BiomeEdge
 ## v0.7.5 NB2: the floor's starglow pools (Starfall's surface; null without any).
 var glow: StarglowViews
+## v0.8.0 FB1: the final arena's own stage (null on every other floor): its round floor, ring, seating, gate, void.
+var final_arena: FinalArenaStage
 var lighting := "high"
 var environment: Environment
 var sun: DirectionalLight3D
@@ -80,6 +82,9 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 	deep = reader.floor_is_deep()
 	_build_environment()
 	_build_light()
+	if reader.final_arena():  # v0.8.0 FB1 (F2): the final arena draws itself
+		_build_final_arena(reader)
+		return
 	_ground_rects.clear()
 	if reader.has_floor():
 		_ground_rects = reader.floor_ground()
@@ -101,6 +106,18 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 		_build_props(reader.seed_value(), arena_half)
 	_build_ice(reader)
 	_build_edge(reader)
+
+
+## v0.8.0 FB1: the final arena (FinalArenaStage): the walls' specs stay for the occlusion, its wall blocks are the
+## faded ones.
+func _build_final_arena(reader: WorldReader) -> void:
+	_build_walls(reader, false)
+	final_arena = FinalArenaStage.new()
+	add_child(final_arena)
+	final_arena.build(reader, palette, reader.final_arena_radius(), reader.seed_value())
+	_wall_nodes = final_arena.wall_nodes
+	_wall_solid = final_arena.wall_material
+	_wall_faded = final_arena.wall_faded
 
 
 ## v0.7.5 NB1: the sim's ice patches, wherever the floor has them (Frozen Shore's surface).

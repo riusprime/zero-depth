@@ -4,8 +4,8 @@ extends GutTest
 ## press) rebuilds it; the dev panel (backtick, mouse clicks: God mode for the long walk, Kill boss) stands in for the
 ## fight as in test_e2e_run_flow; the left stick walks through the boss door and into the Ascension portal, whose
 ## choice opens (the world waits). Ascend (2, Enter) carries the build into loop 2's floor 1, "Loop 2 · Floor 1" on the
-## HUD, the Codex counts it, and Continue after Main menu resumes loop 2. End the run (Enter on the first card) wins:
-## the victory recap counts one loop cleared. Not yet (Esc) closes the choice without opening the pause menu.
+## HUD, the Codex counts it, and Continue after Main menu resumes loop 2. End the run (Enter on the first card) leads to
+## the final arena (v0.8.0 FB1). Not yet (Esc) closes the choice without opening the pause menu.
 
 const LEG_FRAMES := 7000
 
@@ -181,7 +181,9 @@ func test_ascend_carries_the_build_into_loop_two() -> void:
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
-func test_end_the_run_shows_the_victory_recap() -> void:
+## v0.8.0 FB1 (owner, F1 "changed"): End the run takes the hero on to the final arena instead of the recap (the fight
+## and its victory recap: test_e2e_final_boss).
+func test_end_the_run_leads_to_the_final_arena() -> void:
 	var e := E2e.new(self)
 	var main := await _boot_on_last_floor(e)
 	if not await _to_the_choice(e, main):
@@ -190,22 +192,14 @@ func test_end_the_run_shows_the_victory_recap() -> void:
 	assert_eq(panel.focus_index(), 0, "End the run has the focus")
 	await e.tap(KEY_ENTER)
 	var frames := 0
-	while main.get_node_or_null("UI/EndPanel") == null and frames < 400:
+	while not main.run.final_fight and frames < 400:
 		await e.frames(1)
 		frames += 1
-	var end := main.get_node_or_null("UI/EndPanel") as EndPanel
-	assert_not_null(end, "the run's end panel")
-	if end == null:
-		return
-	assert_eq(main.driver.reader.outcome(), 1, "a victory")
-	assert_eq((end.box.find_child("Title", true, false) as Label).text, "UI_RUN_COMPLETE")
-	assert_eq(end.recap_line("Loops"), tr("UI_RECAP_LOOPS") % 1, "one loop cleared")
-	assert_eq(
-		end.recap_line("Floor"),
-		tr("UI_RECAP_FLOOR") % [main.run.table.floors, main.run.table.floors],
-		"the floor reached"
-	)
-	assert_false(main.saves.store.has_save(), "a won run leaves no save")
+	await e.frames(3)
+	assert_true(main.run.final_fight, "End the run: on to the final boss")
+	assert_true(main.driver.reader.final_arena(), "the final arena")
+	assert_null(main.get_node_or_null("UI/EndPanel"), "no recap yet")
+	assert_eq(main.run.loop, 1, "no new loop")
 	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 0, "no Ascend counted")
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 

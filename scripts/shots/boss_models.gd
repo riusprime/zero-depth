@@ -52,6 +52,8 @@ const POSES := {
 	],
 }
 
+## v0.8.0 FB1: `ids=a,b` renders other models in raw mode (the final boss's three: final_boss_colossus, ...).
+var _ids: Array[StringName] = IDS.duplicate()
 var _mode := "poses"
 var _view := "iso"
 var _dir := ""
@@ -67,6 +69,10 @@ func _initialize() -> void:
 	var args := ScriptArgs.parse()
 	_mode = args.get("mode", _mode)
 	_view = args.get("view", _view)
+	if args.has("ids"):
+		_ids.clear()
+		for id: String in String(args["ids"]).split(","):
+			_ids.append(StringName(id))
 	_dir = "res://build/shots/%s/boss_models/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	print(
@@ -122,12 +128,12 @@ func _scene(bg: Color) -> Node3D:
 
 func _build_raw(k: int) -> void:
 	var scene := _scene(Color("#30343C"))
-	var ps: PackedScene = load(BossModels.DIR + String(IDS[k]) + ".glb")
+	var ps: PackedScene = load(BossModels.DIR + String(_ids[k]) + ".glb")
 	var low := 0.0
 	var inst0: Node = ps.instantiate()
 	for mi: MeshInstance3D in inst0.find_children("*", "MeshInstance3D", true, false):
 		var box := mi.mesh.get_aabb()
-		print("boss_models: %s raw mesh bounds %s (skin: %s)" % [IDS[k], box, mi.skin != null])
+		print("boss_models: %s raw mesh bounds %s (skin: %s)" % [_ids[k], box, mi.skin != null])
 		low = box.position.y
 	inst0.free()
 	for v in 5:
@@ -163,11 +169,11 @@ func _build_raw(k: int) -> void:
 func _raw_process() -> bool:
 	if _frame < 30:
 		return false
-	var path := _dir + "raw_%s.png" % IDS[_k]
+	var path := _dir + "raw_%s.png" % _ids[_k]
 	_grab().save_png(path)
 	print("boss_models: ", path, " (views: yaw 0, 90, 180, 270 degrees, then from above)")
 	_k += 1
-	if _k >= IDS.size():
+	if _k >= _ids.size():
 		return true
 	_build_raw(_k)
 	return false

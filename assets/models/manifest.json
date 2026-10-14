@@ -32,6 +32,21 @@
       "sha256": "8fee2116e7502a9c8454e8d56950bfa7b8fa61274661fe52cf5ca85386954db1"
     },
     {
+      "id": "final_boss_colossus",
+      "path": "assets/models/bosses/final_boss_colossus.glb",
+      "sha256": "c9b01301a84cdad011e647be6ddca73311210d608a892b4838da11a2375c2948"
+    },
+    {
+      "id": "final_boss_prism",
+      "path": "assets/models/bosses/final_boss_prism.glb",
+      "sha256": "cc1f556569fc044e76e78f40db555c2f982d3edc630b3ae1f04e74b3a272b1b9"
+    },
+    {
+      "id": "final_boss_nemesis",
+      "path": "assets/models/bosses/final_boss_nemesis.glb",
+      "sha256": "eb11a0e6ef7ff87046721519605ab004d9c959885d831e3637cf663e1e20657a"
+    },
+    {
       "id": "brazier_pole",
       "path": "assets/models/kit/brazier_pole.glb",
       "sha256": "25799d6236a3371af19caabcc7cec7cc277a402097a40b9fd2bf71024a502051"

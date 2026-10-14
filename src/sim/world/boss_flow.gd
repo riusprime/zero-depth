@@ -64,6 +64,9 @@ var ascension := false
 var ascend_open := false
 var ascend_declined := false
 var ascend_choice := 0
+## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F1): End the run leads to the final boss (RunState.prepare, from the run's
+## content: setup, not hashed): WorldReader.outcome is then 3 (the app builds the final arena), not 1.
+var final_next := false
 
 
 static func create(p_boss_index: int) -> BossFlow:

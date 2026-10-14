@@ -70,13 +70,17 @@ var signatures := BossSignatureViews.new()
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes := BossStrikeViews.new()
+## v0.8.0 FB1 (owner O16): the final boss's shatter between its bodies (the burst, the shards the next rises from).
+var final_views := FinalBossViews.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
 
 func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> void:
 	reader = p_reader
-	BossModels.preload_all()  # v0.3.0 L13: the owner's boss models load with the stage, never on a spawn.
+	# v0.3.0 L13: the owner's boss models load with the stage, never on a spawn (v0.8.0 FB1: the final boss's three
+	# only where its fight is: the final arena, the Playground).
+	BossModels.preload_all(reader.final_fight() or not reader.has_gate())
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
@@ -132,6 +136,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(signatures)  # v0.8.0 BS1
 
 	add_child(strikes)  # v0.8.0 AV part 2
+	add_child(final_views)  # v0.8.0 FB1
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -211,6 +216,7 @@ func sync() -> void:
 	signatures.sync(reader)  # v0.8.0 BS1
 
 	strikes.sync(reader)  # v0.8.0 AV part 2
+	final_views.sync(reader)  # v0.8.0 FB1
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

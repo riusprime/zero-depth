@@ -24,6 +24,12 @@ const SPECS := {
 	&"warlord": {"yaw": 0.0, "height": 2.7, "skinned": true},
 	&"hive_lens": {"yaw": 0.0, "height": 2.08, "lift": 0.62, "skinned": true},
 	&"foundry": {"yaw": 0.0, "height": 2.6},
+	# v0.8.0 FB1 (FINAL_BOSS.md "The models"; evidence/FINAL_BOSS_1.md): the final boss's three bodies, split from the
+	# owner's one file, all facing +X as split (raw renders). The Colossus 3.2 m to its halo; the Prism 3.0 m to its
+	# crown, floating (lift) above its hanging shards; the Nemesis, the hero's small shadow, 1.5 m.
+	&"final_boss_colossus": {"yaw": 0.0, "height": 3.2, "final": true},
+	&"final_boss_prism": {"yaw": 0.0, "height": 3.0, "lift": 0.35, "final": true},
+	&"final_boss_nemesis": {"yaw": 0.0, "height": 1.5, "final": true},
 }
 
 ## v0.7.5 BM (owner N18, 2026-10-13: "Bosses could be a bit bigger so we could see the model better"): every boss
@@ -57,10 +63,12 @@ static func get_model(id: StringName) -> Dictionary:
 	return out
 
 
-## Reads every boss model now (the stage build), so no spawn waits on an import.
-static func preload_all() -> void:
+## Reads every boss model now (the stage build), so no spawn waits on an import. v0.8.0 FB1: the final boss's three
+## (their textures are big) only with `final` (a world that holds the fight: the final arena, the Playground).
+static func preload_all(final: bool = false) -> void:
 	for id: StringName in SPECS:
-		get_model(id)
+		if final or not (SPECS[id] as Dictionary).get("final", false):
+			get_model(id)
 
 
 ## How many models were read from disk (tests check each is read once).
@@ -85,7 +93,7 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 	var aabb: AABB = surface["aabb"]
 	var s: float = spec["height"] / maxf(aabb.size.y, 0.0001)
 	var turn := Basis(Vector3.UP, spec["yaw"])
-	var lift := -aabb.position.y * s
+	var lift := -aabb.position.y * s + float(spec.get("lift", 0.0))  # v0.8.0 FB1: the Prism floats
 	var centre := aabb.get_center()
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	for k in verts.size():
@@ -106,7 +114,7 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 			ts[k + 2] = t.z
 		arrays[Mesh.ARRAY_TANGENT] = ts
 	# The rig (v0.3.0 L13): bones and weights from the mesh's geometry, written into the mesh (4 per vertex).
-	var rig := BossRig.build(id, verts)
+	var rig := BossRig.build(id, verts, _indices(arrays))
 	arrays[Mesh.ARRAY_BONES] = rig.bone_ids
 	arrays[Mesh.ARRAY_WEIGHTS] = rig.weights
 	var out := ArrayMesh.new()
@@ -120,6 +128,16 @@ static func _convert(scene: PackedScene, spec: Dictionary, id: StringName) -> Di
 			String(rig.bones[k][0]), Transform3D(Basis(), -(rig.bones[k][2] as Vector3))
 		)
 	return {"mesh": out, "material": mat, "aabb": box, "arrays": arrays, "rig": rig, "skin": skin}
+
+
+## The surface's triangle indices (empty for a non-indexed surface: each three vertices a triangle).
+static func _indices(arrays: Array) -> PackedInt32Array:
+	if arrays[Mesh.ARRAY_INDEX] != null:
+		return arrays[Mesh.ARRAY_INDEX]
+	var out := PackedInt32Array()
+	for k in (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size():
+		out.append(k)
+	return out
 
 
 ## A rigged model kept as delivered: the transform that puts its skinned mesh (as its rest pose draws it) in our

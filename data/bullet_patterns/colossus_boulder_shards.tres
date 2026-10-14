@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 6
+look = &"ember_stone"
+speed_mps = 4.2
+radius_m = 0.22
+range_m = 9.0
+waves = 1
+wave_gap_seconds = 0.35
+aim_offset_degrees = 22.5
+count = 8
+lob_seconds = 0.5
+land_radius_m = 1.7
+id = &"colossus_boulder_shards"

@@ -14,6 +14,10 @@ extends Node3D
 ## spikes pause with the game. Reduced motion: no overshoot on the thrust.
 ## The mesh is code-made (spike_mesh); an owner model `stone_spike` listed in assets/models/manifest.json at
 ## MODEL_PATH replaces it (normalised to the same unit spike), as BossModels and KitModels do (L15).
+## v0.8.0 FB1 (FINAL_BOSS.md F4: "the Gatekeeper's stone spikes, bigger"): the Colossus's chasing spike lines and
+## radial bursts (`spike_chase`, `spike_burst`: a marks telegraph of disc items) erupt the same way, read the same way
+## (an item locked at progress 1000 is its strike tick): each disc throws up a cluster of DISC_SPIKES spikes, the tall
+## one in its middle DISC_TALL times a lane spike's height, the rest leaning out round it to the disc's edge.
 
 const LIFE_TICKS := 36.0
 const RISE_TICKS := 5.0
@@ -22,7 +26,11 @@ const HOLD_TICKS := 20.0
 const SPREAD_TICKS := 4.0
 const STEP_M := 0.5
 const MAX_SPIKES := 512
-const MAX_STRIKES := 8
+## v0.8.0 FB1: 48 (was 8): a Colossus burst raises a strike per spike disc, some thirty alive at once.
+const MAX_STRIKES := 48
+## v0.8.0 FB1: a Colossus spike disc's cluster: how many spikes, how much taller than a lane spike its middle one.
+const DISC_SPIKES := 6
+const DISC_TALL := 1.9
 ## The floor marks a lane leaves: at the crossing and every MARK_STEP m out, MARKS_EACH_WAY each way.
 const MARK_STEP := 2.0
 const MARKS_EACH_WAY := 2
@@ -123,7 +131,14 @@ func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	for i in reader.actor_count():
 		var tg := reader.telegraph(i)
-		if tg.get("shape", &"") != &"marks" or tg.get("move", -1) != WorldReader.MOVE_ROW_LANES:
+		var mv := int(tg.get("move", -1))
+		if (
+			tg.get("shape", &"") == &"marks"
+			and (mv == WorldReader.MOVE_SPIKE_CHASE or mv == WorldReader.MOVE_SPIKE_BURST)
+		):
+			_detect_discs(reader.actor_id(i), tg)  # v0.8.0 FB1: the Colossus's spikes
+			continue
+		if tg.get("shape", &"") != &"marks" or mv != WorldReader.MOVE_ROW_LANES:
 			continue
 		var items: Array = tg["items"]
 		for item: Dictionary in items:
@@ -259,6 +274,59 @@ static func _listed() -> bool:
 		if String(m.get("id", "")) == MODEL_ID:
 			return true
 	return false
+
+
+## v0.8.0 FB1: every spike disc striking now (locked at progress 1000) raises its cluster once.
+func _detect_discs(aid: int, tg: Dictionary) -> void:
+	for item: Dictionary in tg["items"]:
+		if not item.get("locked", false) or int(item.get("progress", 0)) < 1000:
+			continue
+		var c: Vector2 = item["center"]
+		var key := "%d:%s" % [aid, str(c)]
+		if _seen.has(key) and _tick - int(_seen[key]) < LIFE_TICKS:
+			continue
+		_seen[key] = _tick
+		_spawn_disc(c, float(item["radius"]), _tick)
+
+
+## v0.8.0 FB1: one disc's cluster at `tick`: a tall spike in the middle, the rest leaning out to the disc's edge, the
+## middle first.
+func _spawn_disc(c: Vector2, r: float, tick: int) -> void:
+	var sd := tick * 31 + int(absf(c.x) * 97.0) + int(absf(c.y) * 13.0)
+	var spikes := []
+	for j in DISC_SPIKES:
+		var hj := VfxCore.h(sd, j)
+		var at := c
+		var height := DISC_TALL * lerpf(0.9, 1.1, hj)
+		var width := r * 0.75
+		var turn := Basis(Vector3.UP, TAU * hj)
+		if j > 0:
+			var ang := TAU * (j - 1) / (DISC_SPIKES - 1) + 0.5 * VfxCore.h(sd + 1, j)
+			at = c + Vector2(cos(ang), sin(ang)) * r * 0.6
+			height *= lerpf(0.45, 0.7, VfxCore.h(sd + 2, j))
+			width *= 0.55
+			var out := (SimPlane.to_3d(at) - SimPlane.to_3d(c)).normalized()
+			turn = Basis(out.cross(Vector3.UP).normalized(), -0.35) * turn
+		var b := Basis(turn.x * width, turn.y * height, turn.z * width)
+		var delay := 0.0 if j == 0 else 1.0 + VfxCore.h(sd + 3, j)
+		spikes.append([SimPlane.to_3d(at, 0.0), b, height, delay, VfxCore.h(sd + 4, j)])
+	while _strikes.size() >= MAX_STRIKES:
+		_strikes.pop_front()
+	var room := MAX_SPIKES - pooled()
+	while room < spikes.size() and not _strikes.is_empty():
+		_strikes.pop_front()
+		room = MAX_SPIKES - pooled()
+	var mark := SimPlane.to_3d(c, 0.0)
+	_strikes.append(
+		{
+			"tick": tick,
+			"seed": sd,
+			"center": mark,
+			"spikes": spikes,
+			"marks": [mark],
+			"dust": [mark]
+		}
+	)
 
 
 ## Raises one marker's lanes at `tick`: spikes every STEP_M down each lane, zig-zagging across it, taller and earlier

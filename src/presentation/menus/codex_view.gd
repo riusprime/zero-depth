@@ -33,6 +33,7 @@ const SECTION_KEYS := {
 	&"passives": "UI_CODEX_SECTION_PASSIVES",
 	&"enemies": "UI_CODEX_TAB_ENEMIES",
 	&"bosses": "UI_CODEX_TAB_BOSSES",
+	&"final": "UI_CODEX_SECTION_FINAL",  # v0.8.0 FB1: the final boss's bodies
 	&"biomes": "UI_CODEX_TAB_BIOMES",
 }
 const COUNTER_KEYS := {

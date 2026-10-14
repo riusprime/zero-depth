@@ -51,6 +51,10 @@ var floor_rules := FLOOR_RULES
 ## keeps both (RunSaver; a payload without them is loop 1).
 var loop := 1
 var loop_floors := 0
+## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F1): End the run took the hero to the final boss: the run's next (and last)
+## world is the final arena (FinalArenaScenario), on the loop's last floor (floor_index stays). Saved (RunSaver; an
+## older payload has none).
+var final_fight := false
 
 
 static func start(p_run_seed: int, p_table: RunTable, p_build_id: StringName = &"") -> RunState:
@@ -199,6 +203,7 @@ func prepare(w: World) -> void:
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 		w.boss_flow.ascension = is_last_floor()  # v0.7.5 AP: the loop's last floor has the Ascension portal
+		w.boss_flow.final_next = is_last_floor() and _has_final()  # v0.8.0 FB1: End leads to the final boss
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	if not carry.is_empty():
 		RunCarry.apply(w, carry)
@@ -228,7 +233,9 @@ func finish_floor(w: World) -> void:
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
-	if Ascension.ascended(w):
+	if Ascension.ended(w) and _has_final():  # v0.8.0 FB1 (F1): End the run: to the final arena, same floor
+		final_fight = true
+	elif Ascension.ascended(w):
 		loop_floors += floor_index
 		loop += 1
 		floor_index = 1
@@ -242,12 +249,18 @@ func finish_floor(w: World) -> void:
 
 
 ## v0.7.5 AP: the loops the run cleared, with `w` the current floor's world (null: the finished floors only): the
-## loops left by Ascend, and the current one when its Ascension portal ended the run.
+## loops left by Ascend, and the current one when its Ascension portal ended the run. v0.8.0 FB1: with a final boss,
+## the current loop counts once the final boss is beaten (dying to it clears none).
 func loops_cleared(w: World = null) -> int:
 	var done := loop - 1
-	if w != null and Ascension.ended(w):
+	if w != null and (Ascension.ended(w) or (w.final_fight != null and w.final_fight.won)):
 		done += 1
 	return done
+
+
+## v0.8.0 FB1: the run has a final boss (End the run leads to it).
+func _has_final() -> bool:
+	return not table.final_bosses.is_empty()
 
 
 ## Run totals including the current floor's world (null = only the finished floors).
