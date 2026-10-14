@@ -70,6 +70,10 @@ Fireball looks:
 | Melee enemies (Charger, Warden, Splitter, Splitling, Shield Bearer, Swarmer, Hatchling) | red telegraphs | **unchanged**: they keep the red markings (owner: "the melee enemies keep the red thingy") |
 | Mine Layer, Mender | mines, heals | unchanged |
 
+**v0.8.0 (owner O4, Q3 "only things landing at range", 2026-10-14) supersedes the Needle, Sniper and melee rows'
+ground marks:** they keep their attacks but draw nothing on the ground; their bodies show the windup (a crouch, a
+glow that flashes just before the strike). Only the Arc Caster's rune and the Mine Layer's mines keep a ground mark.
+
 ## The models (same change)
 - **Warlord and Hive Lens:** the owner's rigged models (41 and 23 bones, no animations). They are animated in code
   from their bones: idle sway, walk, the attack wind-ups and the shield pose for the Warlord; the eye opening and

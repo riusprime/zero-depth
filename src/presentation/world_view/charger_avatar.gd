@@ -7,6 +7,9 @@ extends AvatarBase
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame
 ## time, and nothing here feeds back into the sim. ActorViews puts it under the actor's facing node, so +X is the
 ## front and +Z the right; it never turns itself.
+## v0.8.0 TG (owner O4, Q3): no lane on the ground any more; the windup reads from the body (AvatarBase "tell"): it
+## sinks into a crouch and draws back as the windup's progress climbs, the visor brightens and flashes just before
+## the charge, and the body holds the locked facing (the sim's) the whole time.
 
 ## The legs, right side (the left mirrors it): the hip, then per segment (femur, tibia, talon) its length, its yaw
 ## (0 is the front, negative turns toward +Z, the right) and its pitch (0 is level, negative points down). Each
@@ -68,6 +71,8 @@ var _wind := 0.0
 var _lunge := 0.0
 var _daze := 0.0
 var _rise := 1.0
+# v0.8.0 TG: the windup's progress (0..1) from the last sync.
+var _tell_p := 0.0
 
 
 ## Builds the model. technique "xray" adds an enemy-coloured silhouette twin to the hood and the body, as
@@ -111,13 +116,22 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 
 ## Reads the actor's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state({"tick": reader.tick(), "pos": reader.actor_pos(i), "state": reader.actor_state(i)})
+	apply_state(
+		{
+			"tick": reader.tick(),
+			"pos": reader.actor_pos(i),
+			"state": reader.actor_state(i),
+			"windup": windup_progress(reader, i),
+		}
+	)
 
 
-## The same as sync(), from plain values (tests drive the avatar with this).
+## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
+## windup's progress.
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
+	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
 	_track_motion(tick, pos, TELEPORT_SPEED)
 	var prev := _state
 	_state = s["state"]
@@ -153,6 +167,11 @@ func windup_amount() -> float:
 	return _wind
 
 
+## v0.8.0 TG: 0..1 how deep the windup crouch is (from the windup's progress).
+func crouch_amount() -> float:
+	return tell_crouch(_tell_p) if _state == WorldReader.STATE_WINDUP else 0.0
+
+
 func visor_energy() -> float:
 	return _visor_mat.emission_energy_multiplier
 
@@ -184,18 +203,20 @@ func _pose() -> void:
 	# shove forward on the lunge, slump and list to one side when dazed.
 	var bob := absf(sin(_phase * 2.0)) * 0.02 * _walk
 	var breath := sin(_t * 2.4) * 0.008 * (1.0 - _walk)
-	var tremble := sin(_t * 47.0) * 0.006 * _wind
-	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07
+	var calm := ViewPrefs.reduced_motion
+	var tremble := 0.0 if calm else sin(_t * 47.0) * 0.006 * _wind
+	var crouch := crouch_amount()
+	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07 + crouch * 0.09
 	var y := bob + breath + tremble - drop
 	_model.position = Vector3(0, -(1.0 - rise) * 0.45, 0)
 	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.
-	body.position = Vector3(-_wind * 0.06 + lunge * 0.16, y, 0)
+	body.position = Vector3(-_wind * 0.06 - crouch * 0.07 + lunge * 0.16, y, 0)
 	body.rotation = Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
 	body.scale = Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
+	var shimmer := 0.0 if calm else 0.5 * sin(_t * 30.0)
+	var tell := tell_glow(_tell_p, _t, calm) if _state == WorldReader.STATE_WINDUP else 1.0
 	var glow := (
-		VISOR_ENERGY
-		* (1.0 + _wind * (1.6 + 0.5 * sin(_t * 30.0)) + lunge * 1.2)
-		* (1.0 - _daze * 0.7)
+		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
 	)
 	_visor_mat.emission_energy_multiplier = glow
 	for k in legs.size():

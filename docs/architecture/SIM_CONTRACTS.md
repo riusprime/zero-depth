@@ -1130,6 +1130,12 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
   TelegraphViews draws no `ground: false` telegraph; the bodies' own windups (the caster's crystal, the drones' glow)
   and FireballViews' lobbed ball are the cues. The readable-cause check counts the windup (the shots then fly
   slowly on screen).
+- **v0.8.0 TG (owner O4, Q3): the melee kinds, the Sniper and the Needle off the ground too.** Their telegraphs keep
+  every field (shape, `obb` / `obbs` / `center` + `radius`, `progress`, `style`) and gain `"ground": false`: the
+  Charger / Hatchling / Swarmer windup lane and running lane, the Splitter / Splitling disc, the Shield Bearer's
+  `bash` lane, the Warden's slam disc, the Sniper's `snipe` line, the Needle's lanes. Only the Arc Caster's rune and
+  the Mine Layer's mines stay on the ground among normal enemies. `telegraph()` is computed, never stored or hashed:
+  no state, stream, golden or save changes.
 - **Hashing.** No new state: the patterns use the actor's own clock and lock fields; the fireballs' look column
   (§10d) fills the first time one flies. `tests/golden` is unchanged (its replays have no Arc Caster, Lens Drone or
   Bomb Drone shot).

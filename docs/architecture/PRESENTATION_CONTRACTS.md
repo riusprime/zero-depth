@@ -69,6 +69,15 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   attack shape.
 - **No damage without a readable cause.** Every `DAMAGE` event against the player maps to a telegraph, a visible
   projectile, a visible field or a status icon. v0.1.0's exit gate tests this from the event log.
+- **Body cues instead of ground marks** (owner, v0.7.5 N16 and v0.8.0 O4 / Q3, 2026-10-14: "only things landing at
+  range"). Among normal enemies only the Arc Caster's rune and the Mine Layer's armed mines are drawn on the ground.
+  Every other normal enemy's telegraph (the fireball casters' `cast` / `lob`; since v0.8.0 TG the Charger / Hatchling
+  / Swarmer lanes, the Splitter / Splitling disc, the Shield Bearer's bash, the Warden's slam, the Sniper's line and
+  the Needle's lanes) carries `"ground": false`: it keeps its shape and timing for the forecasts, the parity tests and
+  the readable-cause check, and its avatar tells the windup (AvatarBase `tell_crouch` / `tell_glow`: a crouch that
+  deepens with the progress, an accent glow that climbs and flashes over the last fifth, steady under reduced
+  motion; the body faces the locked attack). Elites follow their kind; the bosses' markers are unchanged.
+  `tests/unit/sim/test_enemy_ground_marks.gd` lists the ground marks per kind.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`

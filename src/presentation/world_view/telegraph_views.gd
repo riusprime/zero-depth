@@ -17,6 +17,9 @@ extends Node3D
 ## with reduced motion). &"marks" draws each of its markers (circles, or a row and a column of lanes) in its own state.
 ## v0.7.5 EF (owner N16: "the ones that change don't have the trayectory drawn in the ground anymore"): a telegraph
 ## with "ground": false (the Arc Caster's, Lens Drone's and Bomb Drone's fireball windups and lobs) is not drawn here.
+## v0.8.0 TG (owner O4, Q3): nor are the melee kinds' lanes and discs, the Sniper's line ("snipe"), the Shield
+## Bearer's bash ("bash") or the Needle's lanes; their avatars tell the windup. Among normal enemies only the Arc
+## Caster's rune and the Mine Layer's mines reach this view; the bosses' markers are unchanged.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [

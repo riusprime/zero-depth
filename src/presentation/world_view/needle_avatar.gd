@@ -8,6 +8,9 @@ extends AvatarBase
 ## back into the sim. The legs are solved by two-bone IK toward foot targets on the ground, so the feet stay planted
 ## while the body bobs, crouches or recoils. +X is the front (the cannon) and +Z the right; ActorViews parents this
 ## under the actor's facing node.
+## v0.8.0 TG (owner O4, Q3): its burst lanes are no longer drawn on the ground; the windup reads from the body
+## (AvatarBase "tell"): the cube squats and tips its nose down the aim as the windup's progress climbs, the eyes and
+## the muzzle charge up and flash just before the burst. The aim is the facing (the sim's, held through the windup).
 
 ## The cube body: edge length, centre height, edge bevel and how far each face's centre stands out (the facets).
 const BODY := 0.4
@@ -78,6 +81,8 @@ var _brace := 0.0
 var _charge := 0.0
 var _heat := 0.0
 var _kick := 0.0
+# v0.8.0 TG: the windup's progress (0..1) from the last sync; -1 when the caller gave none.
+var _tell_p := -1.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the cube, the pods and the barrel
@@ -125,14 +130,23 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 
 ## Reads the Needle's state after a sim tick.
 func sync(reader: WorldReader, i: int) -> void:
-	apply_state({"tick": reader.tick(), "pos": reader.actor_pos(i), "state": reader.actor_state(i)})
+	apply_state(
+		{
+			"tick": reader.tick(),
+			"pos": reader.actor_pos(i),
+			"state": reader.actor_state(i),
+			"windup": windup_progress(reader, i),
+		}
+	)
 
 
-## The same as sync(), from plain values (tests drive the avatar with this).
+## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
+## windup's progress (without it the glow paces itself on WINDUP_TICKS).
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var pos: Vector2 = s["pos"]
 	var state: int = s["state"]
+	_tell_p = clampf(float(s.get("windup", -1.0)), -1.0, 1.0)
 	_track_motion(tick, pos, TELEPORT_SPEED)
 	if _fresh or state != _state:
 		_state = state
@@ -165,6 +179,8 @@ func advance(delta: float) -> void:
 	var charge_target := 0.0
 	if _state == WorldReader.STATE_WINDUP:
 		charge_target = clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
+		if _tell_p >= 0.0:
+			charge_target = _tell_p
 	elif _state == WorldReader.STATE_ACTIVE:
 		charge_target = 1.0
 	_charge = lerpf(_charge, charge_target, _rate(14.0 if charge_target > _charge else 3.0, dt))
@@ -196,6 +212,18 @@ func foot_positions() -> Array[Vector3]:
 	return out
 
 
+## v0.8.0 TG: the windup's progress the tell reads (the sim's, else paced on WINDUP_TICKS); 0 outside the windup.
+func tell_progress() -> float:
+	if _state != WorldReader.STATE_WINDUP:
+		return 0.0
+	return _tell_p if _tell_p >= 0.0 else clampf(float(_ticks_in) / WINDUP_TICKS, 0.0, 1.0)
+
+
+## v0.8.0 TG: 0..1 how deep the windup crouch is.
+func crouch_amount() -> float:
+	return tell_crouch(tell_progress()) if _state == WorldReader.STATE_WINDUP else 0.0
+
+
 ## Recoil curve: a sharp kick back, then an eased return.
 func _kick_curve() -> float:
 	return _kick * _kick * (3.0 - 2.0 * _kick)
@@ -218,25 +246,32 @@ func _pose(dt: float) -> void:
 	# The body: an idle hum, a bob on each step, the crouch of the brace, the rise-in, the recoil.
 	var hum := sin(_t * 9.0) * 0.003 + sin(_t * 1.7) * 0.01 * (1.0 - _walk)
 	var bob := cos(_phase * TAU * 2.0) * 0.012 * _walk
-	var y := hum + bob - _brace * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
+	# v0.8.0 TG: the windup squats the cube lower and tips its nose down along the aim (no ground lines any more).
+	var calm := ViewPrefs.reduced_motion
+	var crouch := crouch_amount()
+	var y := hum + bob - _brace * 0.06 - crouch * 0.06 - (1.0 - _rise) * 0.24 + kick * 0.01
 	# Lean into the walk; brace leans back a little; each shot rocks the nose up.
 	var lean := (
 		Basis(Vector3.UP.cross(move_dir).normalized(), 0.07 * _walk) if _walk > 0.001 else Basis()
 	)
-	var pitch := Basis(Vector3.BACK, _brace * 0.05 + kick * 0.12 - (1.0 - _rise) * 0.2)
+	var pitch := Basis(
+		Vector3.BACK, _brace * 0.05 - crouch * 0.1 + kick * 0.12 - (1.0 - _rise) * 0.2
+	)
 	# Pivot about the hips, so a pitch rocks the cube instead of swinging it about the ground.
 	var b := lean * pitch
 	var pivot := Vector3(0, HIP.y, 0)
-	var at := Vector3(-kick * 0.035 - _brace * 0.015, y, 0)
+	var at := Vector3(-kick * 0.035 - _brace * 0.015 - crouch * 0.04, y, 0)
 	body.transform = Transform3D(b, at + pivot - b * pivot)
 	barrel.position.x = BODY * 0.5 + 0.06 - kick * 0.09
 	# Glow: the eyes and the muzzle brighten through the wind-up, flare on each shot, cool down after.
 	var cool := 1.0 if _state == WorldReader.STATE_RECOVER else 0.0
-	var pulse := 0.15 * sin(_t * 3.0)
+	var pulse := 0.0 if calm else 0.15 * sin(_t * 3.0)
+	var winding := _state == WorldReader.STATE_WINDUP
+	var tell := tell_glow(tell_progress(), _t, calm) if winding else 1.0
 	_eye_mat.emission_energy_multiplier = (
-		(2.0 + pulse + _charge * 4.0 + kick * 3.0 - cool * 0.8) * lerpf(0.2, 1.0, _rise)
+		((2.0 + pulse + _charge * 4.0) * tell + kick * 3.0 - cool * 0.8) * lerpf(0.2, 1.0, _rise)
 	)
-	_hole_mat.emission_energy_multiplier = maxf(_charge * 3.5, _heat * 2.0) + kick * 6.0
+	_hole_mat.emission_energy_multiplier = maxf(_charge * 3.5 * tell, _heat * 2.0) + kick * 6.0
 	# The legs: each foot steps around its rest spot, then IK from the hip (on the moving body) to the foot.
 	for k in legs.size():
 		var p := fposmod(_phase + (0.5 if k % 2 == 1 else 0.0), 1.0)

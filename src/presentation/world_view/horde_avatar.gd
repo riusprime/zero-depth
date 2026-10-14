@@ -13,6 +13,11 @@ extends AvatarBase
 ## - Sniper: a red box body on a grey tripod with a long grey barrel; its scope glows hotter through the windup.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
 ## Flash materials come from ActorViews.flashable; nothing toggles emission_enabled at runtime. +X is the front.
+## v0.8.0 TG (owner O4, Q3): the Swarmer's lane, the Splitter's and Splitling's disc, the Shield Bearer's bash lane and
+## the Sniper's line are no longer drawn on the ground; these kinds (TELL_KINDS) read their windup from the body
+## (AvatarBase "tell"): a crouch and draw-back that deepens with the windup's progress, the accent (eye, seam, visor,
+## scope) brightening and flashing just before the strike, and the Sniper's muzzle charging up at its barrel's tip (in
+## the air, never a line on the ground). The facing is the sim's, held through the windup.
 
 const RED := Color("#D8433A")
 const RED_DARK := Color("#A9302B")
@@ -33,6 +38,18 @@ const HEIGHTS := {
 	WorldReader.KIND_MINE_LAYER: 0.7,
 	WorldReader.KIND_SNIPER: 1.3,
 }
+## v0.8.0 TG: the kinds whose windup the body tells (no ground mark); the Mender has no attack and the Mine Layer's
+## mines keep theirs.
+const TELL_KINDS: Array[int] = [
+	WorldReader.KIND_SWARMER,
+	WorldReader.KIND_SPLITTER,
+	WorldReader.KIND_SPLITLING,
+	WorldReader.KIND_SHIELD_BEARER,
+	WorldReader.KIND_SNIPER,
+]
+## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
+const MUZZLE_ENERGY := 4.0
+const MUZZLE_AT := Vector3(0.92, 0, 0)
 
 var kind := WorldReader.KIND_SWARMER
 ## The model's top (for the health bar).
@@ -43,6 +60,9 @@ var parts := {}
 
 ## The glowing accent (eye, seam, crystal, scope): its own material, emission on from the start.
 var _glow_mat := StandardMaterial3D.new()
+## v0.8.0 TG: the Sniper's muzzle (emission on from the start at energy 0).
+var _muzzle_mat := StandardMaterial3D.new()
+var _tell_p := 0.0
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
 var _ticks_in := 0
@@ -104,15 +124,18 @@ func sync(reader: WorldReader, i: int) -> void:
 			"tick": reader.tick(),
 			"state": reader.actor_state(i),
 			"healing": reader.actor_heal_target(i) >= 0,
+			"windup": windup_progress(reader, i),
 		}
 	)
 
 
-## The same as sync(), from plain values (tests drive the avatar with this).
+## The same as sync(), from plain values (tests drive the avatar with this); "windup" (0..1, optional) is the
+## windup's progress.
 func apply_state(s: Dictionary) -> void:
 	var tick: int = s["tick"]
 	var state: int = s["state"]
 	_healing = bool(s.get("healing", false))
+	_tell_p = clampf(float(s.get("windup", 0.0)), 0.0, 1.0)
 	if _fresh or state != _state:
 		_state = state
 		_state_tick = tick
@@ -149,10 +172,32 @@ func glow_energy() -> float:
 	return _glow_mat.emission_energy_multiplier
 
 
+## v0.8.0 TG: 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
+func crouch_amount() -> float:
+	if not TELL_KINDS.has(kind) or _state != WorldReader.STATE_WINDUP:
+		return 0.0
+	return tell_crouch(_tell_p)
+
+
+## v0.8.0 TG: the Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
+func muzzle_energy() -> float:
+	return _muzzle_mat.emission_energy_multiplier if parts.has("muzzle") else 0.0
+
+
 func _pose() -> void:
-	var bob := sin(_t * 7.0) * 0.015
-	body.position = Vector3(-_wind * 0.06 + _strike * 0.12, bob - (1.0 - _rise) * height, 0)
-	var energy := 1.5 + _wind * 3.0 + _strike * 2.0
+	var calm := ViewPrefs.reduced_motion
+	var bob := 0.0 if calm else sin(_t * 7.0) * 0.015
+	var crouch := crouch_amount()
+	var telling := TELL_KINDS.has(kind) and _state == WorldReader.STATE_WINDUP
+	var tell := tell_glow(_tell_p, _t, calm) if telling else 1.0
+	# The crouch sinks the body by a share of its height and draws it back from the way it will strike.
+	body.position = Vector3(
+		-_wind * 0.06 - crouch * 0.08 * height + _strike * 0.12,
+		bob - (1.0 - _rise) * height - crouch * 0.1 * height,
+		0
+	)
+	body.rotation.z = crouch * 0.12
+	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
 	match kind:
 		WorldReader.KIND_SWARMER:
 			for k in 2:
@@ -176,7 +221,11 @@ func _pose() -> void:
 			(parts["hopper"] as Node3D).position.y = 0.42 - _wind * 0.25
 			(parts["mine"] as Node3D).visible = _strike < 0.5
 		WorldReader.KIND_SNIPER:
-			(parts["barrel"] as Node3D).rotation.z = -_wind * 0.04 + _strike * 0.12
+			(parts["barrel"] as Node3D).rotation.z = -_wind * 0.04 + _strike * 0.12 - crouch * 0.12
+			var charge := smoothstep(0.0, 1.0, _tell_p) if telling else 0.0
+			var muzzle := MUZZLE_ENERGY * charge * tell / (1.0 + TELL_GLOW_CLIMB + TELL_GLOW_FLASH)
+			_muzzle_mat.emission_energy_multiplier = maxf(muzzle, _strike * MUZZLE_ENERGY)
+			(parts["muzzle"] as Node3D).scale = Vector3.ONE * (0.4 + 0.6 * maxf(charge, _strike))
 	_glow_mat.emission_energy_multiplier = energy * lerpf(0.2, 1.0, _rise)
 
 
@@ -372,6 +421,20 @@ func _build_sniper() -> void:
 	)
 	_glow(barrel, Vector3(0.012, 0.05, 0.05), Vector3(0.115, 0.1, 0))
 	parts["barrel"] = barrel
+	# v0.8.0 TG: the muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
+	_muzzle_mat.albedo_color = EYE
+	_muzzle_mat.emission_enabled = true
+	_muzzle_mat.emission = EYE.lightened(0.3)
+	_muzzle_mat.emission_energy_multiplier = 0.0
+	write_stencil(_muzzle_mat)
+	var muzzle := MeshInstance3D.new()
+	muzzle.name = "Muzzle"
+	muzzle.mesh = ArcCasterAvatar._octahedron(0.06)
+	muzzle.material_override = _muzzle_mat
+	muzzle.position = MUZZLE_AT
+	muzzle.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	barrel.add_child(muzzle)
+	parts["muzzle"] = muzzle
 
 
 # --- pieces -------------------------------------------------------------------------------------------------------

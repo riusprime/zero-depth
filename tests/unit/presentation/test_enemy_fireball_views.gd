@@ -1,7 +1,8 @@
 extends GutTest
 ## v0.7.5 EF (owner N16): the Arc Caster's plasma balls, the Lens Drone's orbs and the Bomb Drone's cinders are drawn
 ## by FireballViews in their own looks (never as ActorViews' plain shots), the Bomb Drone's fireball is drawn in the
-## air while it flies, and none of the three draws anything on the ground (TelegraphViews); the Needle still does.
+## air while it flies, and none of the three draws anything on the ground (TelegraphViews); since v0.8.0 TG the
+## Needle doesn't either.
 
 const S := EnemyAi.State
 const K := ActorStore.Kind
@@ -84,17 +85,20 @@ func test_the_bomb_drones_fireball_is_drawn_in_the_air_while_it_flies() -> void:
 	assert_gt(flying, 30, "seen in the air for its flight")
 
 
-func test_the_needle_still_draws_its_lines() -> void:
+## v0.8.0 TG (owner O4, Q3): the Needle's lines are gone from the ground too; it still telegraphs (its body tells it).
+func test_the_needle_draws_no_lines_on_the_ground() -> void:
 	var s := _world(K.NEEDLE, Vector2(8, 0))
 	var w: World = s[0]
 	var tv: TelegraphViews = _views()[2]
 	var reader := WorldReader.new(w)
-	var drawn := false
+	var told := false
 	for k in 300:
 		w.step(InputFrame.new())
 		tv.sync(reader)
-		drawn = drawn or tv.count() > 0
-	assert_true(drawn, "the turret keeps its trajectory lines")
+		assert_eq(tv.count(), 0, "no trajectory lines on the ground")
+		var i := w.actors.index_of(s[1])
+		told = told or EnemyAi.telegraph(w, i).get("shape", &"") == &"lanes"
+	assert_true(told, "the turret still telegraphs its burst")
 
 
 func test_the_enemy_looks_differ_from_each_other_and_the_bosses() -> void:

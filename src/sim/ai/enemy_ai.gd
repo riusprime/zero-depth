@@ -21,6 +21,7 @@ extends RefCounted
 ## that bursts into an X of 4. They draw no line or circle on the ground: their windup is a body cue only ("cast",
 ## and the Bomb Drone's flying fireball "lob", both "ground": false). The Needle, the Sniper, the melee kinds, the
 ## Arc Caster's rune, the Mine Layer and the Mender are unchanged.
+## v0.8.0 TG (owner O4, Q3): the Needle, the Sniper and the melee kinds keep their shapes but go "ground": false too.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -661,6 +662,11 @@ static func snipe_lane(w: World, i: int) -> Obb:
 ## v0.7.5 EF (owner N16): a pattern enemy's windup is {"shape": &"cast", "ground": false, "progress", "look"} (its body
 ## winds up; nothing on the ground), and a Bomb Drone's fireball in the air {"shape": &"lob", "ground": false, "from",
 ## "to", "progress" (0..1000 of the flight), "look"}. TelegraphViews draws no "ground": false telegraph.
+## v0.8.0 TG (owner O4, Q3 "only things landing at range"): the melee kinds' lanes and discs (Charger / Hatchling /
+## Swarmer windup and running lane, Splitter / Splitling disc, Shield Bearer bash, Warden slam), the Sniper's line and
+## the Needle's lanes keep their shape and timings (forecasts, parity, the readable-cause recap) but are "ground":
+## false: the avatar's body shows the windup. Only the Arc Caster's rune and the Mine Layer's mines stay on the
+## ground among normal enemies (elites too: the rule is by kind). Bosses are BossAi's and unchanged.
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	if BossAi.is_boss_kind(a.kinds[i]):
@@ -668,7 +674,7 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	if not is_enemy_kind(a.kinds[i]):
 		return {}
 	if a.state[i] == State.ACTIVE and _charges(a.kinds[i]) and a.lock_len[i] > 0.0:
-		return {"shape": &"lane", "obb": running_lane(w, i), "progress": 1000}
+		return {"shape": &"lane", "ground": false, "obb": running_lane(w, i), "progress": 1000}
 	if a.kinds[i] == ActorStore.Kind.MINE_LAYER:
 		return Mines.telegraph(w, a.ids[i])  # v0.4.0 EN: its armed mines; the drop itself hurts nobody
 	if a.state[i] == State.ACTIVE:
@@ -681,23 +687,47 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return {"shape": &"cast", "ground": false, "progress": progress, "look": pat.look}
 	match behaviour_of(a.kinds[i]):
 		ActorStore.Kind.CHARGER, ActorStore.Kind.HATCHLING, ActorStore.Kind.SWARMER:
-			return {"shape": &"lane", "obb": charge_lane(w, i), "progress": progress}
+			return {
+				"shape": &"lane", "ground": false, "obb": charge_lane(w, i), "progress": progress
+			}
 		ActorStore.Kind.SPLITTER, ActorStore.Kind.SPLITLING:
 			var s := locked_disc(w, i)
-			return {"shape": &"disc", "center": s[0], "radius": s[1], "progress": progress}
+			return {
+				"shape": &"disc",
+				"ground": false,
+				"center": s[0],
+				"radius": s[1],
+				"progress": progress
+			}
 		ActorStore.Kind.SHIELD_BEARER:
 			return {
-				"shape": &"lane", "obb": bash_lane(w, i), "progress": progress, "style": &"bash"
+				"shape": &"lane",
+				"ground": false,
+				"obb": bash_lane(w, i),
+				"progress": progress,
+				"style": &"bash"
 			}
 		ActorStore.Kind.SNIPER:
 			return {
-				"shape": &"lane", "obb": snipe_lane(w, i), "progress": progress, "style": &"snipe"
+				"shape": &"lane",
+				"ground": false,
+				"obb": snipe_lane(w, i),
+				"progress": progress,
+				"style": &"snipe"
 			}
 		ActorStore.Kind.WARDEN:
 			var d := locked_disc(w, i)
-			return {"shape": &"disc", "center": d[0], "radius": d[1], "progress": progress}
+			return {
+				"shape": &"disc",
+				"ground": false,
+				"center": d[0],
+				"radius": d[1],
+				"progress": progress
+			}
 		ActorStore.Kind.NEEDLE:
-			return {"shape": &"lanes", "obbs": burst_lines(w, i), "progress": progress}
+			return {
+				"shape": &"lanes", "ground": false, "obbs": burst_lines(w, i), "progress": progress
+			}
 		ActorStore.Kind.ARC_CASTER:
 			if a.pick[i] == Spell.RUNE:
 				var r := rune_disc(w, i)
