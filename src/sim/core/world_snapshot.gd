@@ -130,6 +130,8 @@ const ADDED_SINCE_V05 := {
 		&"hook_chain",
 		&"launch_tick",
 		&"launch_count",
+		&"shot_tick",  # v0.8.0 PF: the player-shot cap's per-tick count
+		&"shot_count",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",

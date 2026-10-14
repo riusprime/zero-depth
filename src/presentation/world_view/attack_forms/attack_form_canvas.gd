@@ -11,6 +11,9 @@ const DENSITY_MESH_CAP := {"low": 384, "medium": 640, "high": 1024}
 const MAX_ATTACK_MESHES := 1024
 const MAX_PARTICLES := 1200
 const MAX_EFFECTS := 256
+## v0.8.0 PF (owner O9): at most this many of the player's live bolts get the element rim and trail a frame; the rest
+## fly as their plain dart (ActorViews). A level-5 Spread + Split build keeps 200-800 bolts alive.
+const LIVE_BOLTS_MAX := 96
 const POOL_CAP := 384
 const PARTICLE_POOL_CAP := 600
 const PARTICLE_KINDS: Array[StringName] = [&"sparks", &"crackle", &"shards", &"drip", &"smear"]
@@ -94,6 +97,9 @@ var particle_pools := {}
 ## sigils, and the cast forms by name.
 var casts_drawn := 0
 var cast_forms := {}
+## v0.8.0 PF: VfxLayer bursts merged into a live one, and the oldest dropped (BurstBudget), since the view began.
+var bursts_merged := 0
+var bursts_dropped := 0
 ## Live effects: {look, origin, angle, start, life, to, seed, own, kind, size, color}.
 var _effects: Array[Dictionary] = []
 ## The player's live bolts that carry a layer this frame: {id, pos, vel, look, trail: PackedVector2Array}.
@@ -113,6 +119,9 @@ var _last_chain := -1
 var _last_seq := 0
 var _player := Vector2.ZERO
 var _looks := {}
+## v0.8.0 PF: the digest and tier _looks holds looks for, and whether this sync has checked it.
+var _looks_sig := ""
+var _looks_checked := false
 ## MX2's live lingering forms this frame ({kind: ring / zone / lob / orbit, look, the sim's numbers}).
 var _live_forms: Array[Dictionary] = []
 var _bomb_looks := {}
@@ -188,12 +197,17 @@ func particle_pool(kind: StringName) -> AttackFormPool:
 # --- Spawning (constructed specs, the live wiring, MX stage 2's runners) ---------------------------------------
 ## Starts drawing `spec` (WorldReader.attack_spec's shape) from `origin` aimed at `angle` (radians, sim plane).
 ## `opts`: start (tick, default the last synced), tier (heat tier, default the hero's), crit, weight, to (a beam's
-## end), own (the attacker's radius), and overrides of the look's sizes (half_angle, reach, radius, length, life).
+## end), own (the attacker's radius), overrides of the look's sizes (half_angle, reach, radius, length, life), and
+## look (v0.8.0 PF: a look composed already, copied; `spec` is then not read).
 ## Returns the effect (its "look" is AttackFormLooks.compose's).
 func spawn(
 	spec: Dictionary, origin: Vector2, angle: float = 0.0, opts: Dictionary = {}
 ) -> Dictionary:
-	var look := AttackFormLooks.compose(spec, int(opts.get("tier", _tier)), opts)
+	var look: Dictionary
+	if opts.has("look"):  # v0.8.0 PF: a look composed already (shared: copied before an override)
+		look = (opts["look"] as Dictionary).duplicate()
+	else:
+		look = AttackFormLooks.compose(spec, int(opts.get("tier", _tier)), opts)
 	for k: String in ["half_angle", "reach", "radius", "length", "life"]:
 		if opts.has(k):
 			look[k] = opts[k]
@@ -243,6 +257,8 @@ func clear() -> void:
 func _push(e: Dictionary) -> void:
 	if vfx != null and e.get("kind") == &"landing":
 		e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
+		if not _admit_burst(e):
+			return
 	elif vfx != null and e.get("kind") == &"form" and int(e["look"]["form"]) == AttackFormLooks.LOB:
 		var flight := float(e["life"]) * 0.75
 		e["flight"] = flight
@@ -252,9 +268,24 @@ func _push(e: Dictionary) -> void:
 	):
 		if _vfx_kind(e["look"]) != &"":
 			e["life"] = maxf(float(e["life"]), VFX_LANDING_TICKS)
+			if not _admit_burst(e):
+				return
 	_effects.append(e)
 	while _effects.size() > MAX_EFFECTS:
 		_effects.pop_front()
+
+
+## v0.8.0 PF (owner O9): whether a VfxLayer burst `e` joins the live effects (BurstBudget: merged, or the oldest goes).
+func _admit_burst(e: Dictionary) -> bool:
+	var k := BurstBudget.admit(_effects, e)
+	if k == BurstBudget.MERGED:
+		bursts_merged += 1
+		return false
+	if k >= 0:
+		_effects.remove_at(k)
+		bursts_dropped += 1
+	e["vfx_burst"] = true
+	return true
 
 
 func _next_seed() -> int:
@@ -278,7 +309,13 @@ func draw_at(now: float) -> void:
 	if vfx != null:
 		vfx.density = particle_scale()
 		vfx.begin(now)
+	var bolts := 0
 	for b in _live:
+		# v0.8.0 PF: past LIVE_BOLTS_MAX a bolt keeps only its dart (ActorViews); the charging orb (id -1) always draws
+		if int(b["id"]) >= 0:
+			if bolts >= LIVE_BOLTS_MAX or _mesh_left <= 0:
+				continue
+			bolts += 1
 		_draw_live_bolt(b, now)
 	for f in _live_forms:
 		_draw_live_form(f, now)

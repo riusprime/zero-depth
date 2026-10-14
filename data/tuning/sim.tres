@@ -5,3 +5,4 @@
 [resource]
 script = ExtResource("1_tun")
 id = &"sim"
+player_shots_max = 256

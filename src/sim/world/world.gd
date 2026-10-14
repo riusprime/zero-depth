@@ -113,6 +113,11 @@ var attack_book: AttackBook = null
 var hook_chain := PackedStringArray()
 var launch_tick := -1
 var launch_count := 0
+## v0.8.0 PF (owner O9): the player's projectiles counted against SimTuning.player_shots_max in tick shot_tick: those
+## alive and queued at the tick's first player bolt, plus the bolts launched since (Attacks._shot_room). Derived per
+## tick, so not hashed.
+var shot_tick := -1
+var shot_count := 0
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the
@@ -447,6 +452,18 @@ func set_pending_cause(attack: int) -> void:
 ## v0.7.5 BF1: projectiles queued this tick, not spawned yet (BulletPatterns' per-tick cap reads it).
 func pending_projectiles() -> int:
 	return _pending_projectiles.size()
+
+
+## v0.8.0 PF: the player's projectiles alive and queued now (Attacks._shot_room's count).
+func player_projectiles() -> int:
+	var n := 0
+	for t in projectiles.team:
+		if t == ActorStore.TEAM_PLAYER:
+			n += 1
+	for s in _pending_projectiles:
+		if s[1] == ActorStore.TEAM_PLAYER:
+			n += 1
+	return n
 
 
 ## Advances exactly one tick. The phase order is part of the contract (SIM_CONTRACTS §2).

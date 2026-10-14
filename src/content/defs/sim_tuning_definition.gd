@@ -27,6 +27,8 @@ extends ContentDef
 @export var fire_hit_seconds := 0.5
 @export var fire_trail_spacing_m := 0.8
 @export var field_min_m := 1.5
+## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (the frame budget's sim cap).
+@export var player_shots_max := 256
 
 
 func category() -> StringName:
@@ -50,6 +52,7 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s > 0" % pair[0]))
 	check_positive(issues, "heal_orbs_max", heal_orbs_max)
 	check_positive(issues, "fire_cap", fire_cap)
+	check_positive(issues, "player_shots_max", player_shots_max)
 	if gate_adds_max < gate_adds_min:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "gate_adds_max >= gate_adds_min")
