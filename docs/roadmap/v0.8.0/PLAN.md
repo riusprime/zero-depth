@@ -35,6 +35,22 @@ The owner, 2026-10-14, after playing the v0.7.5 build (the Playground included),
 > needs to be a lot more HP growing than health because the player doesn't grow in health that much. We don't have
 > those items yet. And that's it for now."
 
+The owner, 2026-10-14 (second message, same day), verbatim:
+
+> "I forgot to give you some feedback about how the game looks. So we just currently do templates with procedural
+> generation. And I thought that we could design maybe two, three rooms of each size and have them like nicely looking
+> like the image we use for reference, like a little bit more populated and feel more real. Like right now, they still
+> feel a bit empty and not exactly what I want, so we can designed with new models, new rooms, and then we use
+> procedural generation to place them as templates, but every floor and every loop in every game is different because
+> of how they are placed. So we could like make a room that could be in different directions, that size has three
+> variations and we place them randomly generating each floor with it and with this change we are gonna be creating
+> this shop room that is gonna be designed in a way for each biome that will have like its own vendor like with a
+> model and it will be like in a tent shop with some stuff I will give you a model for that we are also reworking the
+> menu we're just throwing away the shard cards we're gonna be using a different style that matches more the game fine
+> I found that that's not exactly aligned with the game so add that to the plan we are currently working on and work as
+> far as you can without generating new models and give me the full list of things you need that I will be generating
+> this afternoon after work"
+
 ## Context
 - **`main`** is v0.7.0 (`a20850f`, PR riusprime/zero-depth#5). **v0.7.5** is built and green on GitHub
   (`claude/v0.7.5-new-ground` at `f1a9ab5`, PR riusprime/zero-depth#6) and is what the owner played; it is not merged
@@ -61,6 +77,10 @@ The owner, 2026-10-14, after playing the v0.7.5 build (the Playground included),
 | O9 | "a split and the other power that makes the attack divide when you hit an enemy. And they explode after it, and that causes hell of a lag … the game goes two, FPS. find a way of balancing with these animations … maybe we can stop applying some effects" | **Direct fix: a frame budget.** Spread (`gun_spread`) + Split (`split_shot`) + Explosive (`shared_explosive`): player shots have no alive cap and each explosion asks for blast, debris, smoke, sparks, a light and a decal (`vfx_layer.gd:310-371`). Measure the build in a repeatable probe first, then: merge and thin the effects past a budget (fewer sprites per explosion when many land together, no per-hit light past a few), and a sim cap only if the probe shows the sim is the cost. Target: 60 fps on the probe | PF |
 | O10 | "the combinations for gun are way better than … blade. Blade is way more difficult to get a good … combination … not getting that that many modifiers in the blade as you get in the gun" | **G1** [`BLADE_AUDIT.md`](BLADE_AUDIT.md): every Blade and Gun card, what it does to the attack, and why Gun stacks (cards that multiply shots × hooks); the offer rates per weapon (today: 18 Blade-only cards vs 16 Gun-only, no weapon weighting). Proposals row by row (new Blade multipliers, buffs, rate) | BL |
 | O11 | "the DPS is above 50K … per enemy … three enemies … over 150K … ultra omega deleting bosses … when you loop … it keeps being difficult … a lot more HP growing than health because the player doesn't grow in health that much" | **Ascension loop scaling**: enemy and boss HP grow much faster per loop, damage only a little (today per loop: enemy HP ×4, damage ×2; boss HP ×2, damage ×1.5; cap ×100). Q6: HP ×6, damage ×1.2 per loop, enemies and bosses. The 150K build itself: noted for BL/O10 (Gun stacking) | LS |
+| O12 | "design maybe two, three rooms of each size and have them like nicely looking like the image we use for reference … more populated and feel more real … procedural generation to place them as templates … a room that could be in different directions, that size has three variations and we place them randomly" | **Designed rooms.** Today a room's inside is built by rules (`RoomInterior` cover templates + `RoomThemes` vignettes + `StageDresser`), and reads empty next to [`../../art/look_reference.webp`](../../art/look_reference.webp). New: **3 hand-designed layouts per room size** (1×1, 2×1, 3×1, 2×2, 3×2, 3×3, 4×3, 4×4 cells: 8 sizes, 24 layouts; a size's long side turns with the room), each an authored data file of cover, walls, props and lights, dense like the reference. The generator still builds every floor's map; it picks a layout for each room by its size, then turns it (4 ways) and mirrors it, so floors, loops and runs all differ. Each biome swaps the pieces (Ruins wrecks and crates, Night Rocks boulders and trees, Red Canyon mesas, Frozen Shore ice, Starfall crystals). Doorways stay clear wherever the map puts them. Built first with the kit we have; the owner's new pieces (ART_LIST) slot in. **G2:** shots of the first 3 layouts before the other 21 | RT |
+| O13 | "this shop room that is gonna be designed in a way for each biome that will have like its own vendor like with a model and it will be like in a tent shop with some stuff I will give you a model for that" | **The shop room**: a designed room per biome (5), a tent stall with goods and a vendor character instead of today's terminal (`shop_terminal_view.gd`); the vendor idles, turns to you and reacts to a sale or a refusal. Code-made stand-ins until the owner's models arrive (tent, vendor per biome, goods; ART_LIST §1). Buying works as today | SR |
+| O14 | "we are also reworking the menu we're just throwing away the shard cards we're gonna be using a different style that matches more the game … I found that that's not exactly aligned with the game" | **The crystal-shard card look goes** (the pick cards, Build page, wand pips, Codex tiles, plaques: `crystal_card.gd`, `card_frames.gd`, `plaques.gd`), and the menus get a style that matches the world: the weathered kit, warm fire light, dark stone and metal. **G2:** 3 mockup directions (menu + a pick card + the Build page) before building | MU |
+| O15 | "work as far as you can without generating new models and give me the full list of things you need that I will be generating this afternoon" | Every step is built with code-made stand-ins where art is missing (L15); the full list of art is [`../../art/requests/v0.8.0_ART_LIST.md`](../../art/requests/v0.8.0_ART_LIST.md) | — |
 
 ## Design questions (owner, 2026-10-14)
 - **Q1 (O2) Enemy colours:** each kind its own hue / by role (melee, ranged, support) / by floor.
@@ -97,9 +117,13 @@ Answers go into the "Owner decisions" table below the same day.
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
+| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | |
+| SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
+| MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | |
 
-**Waves (3 agents; 4 when small):** wave 1 PF + LS + TG (as their gates clear); wave 2 EC + AV + BS; wave 3 BA + BL
-+ EM. The lead writes the G1 audits while wave 1 runs.
+**Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
+MU (after its G2), BS and BL (after their G1s), BA, EM (when the models arrive). The lead writes the G1s and G2s
+while agents run.
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share
