@@ -48,7 +48,7 @@ not in `main` yet).
 - 2026-10-14: the owner's v0.7.5 playtest message (O1–O11, verbatim in PLAN); three read-only audits of the live
   code; plan written.
 - 2026-10-14: Q1–Q6 answered (PLAN "Owner decisions"). PF (direct fix) started by an agent on `v080-pf`.
-- 2026-10-14: seams 302/302 on `deb87b4` (LS + TG merged) and 302/302 on `7944a9e` (+ PF).
+- 2026-10-14: seams 302/302 on `deb87b4` (LS + TG merged), 302/302 on `7944a9e` (+ PF) and 302/302 on `0dfa2c7` (+ EC, MU, AV1).
 - 2026-10-14: LS and TG started by agents (`v080-ls`, `v080-tg`); the lead wrote the G1 audits BOSS_SIGNATURES and BLADE_AUDIT and the enemy-model prompts (`docs/art/requests/v0.8.0_enemy_models.md`).
 - 2026-10-14: the owner's second message (O12–O15: designed rooms, the shop room per biome, the menu without shard cards, the art list) added to PLAN; the full art list is `docs/art/requests/v0.8.0_ART_LIST.md`.
 - 2026-10-14: LS (agent, branch `v080-ls` from `98698cb`): `data/run/three_floors.tres` and the `RunDefinition`
