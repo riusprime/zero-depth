@@ -109,6 +109,7 @@ Answers go into the "Owner decisions" table below the same day.
 | G1 BOSS_SIGNATURES | "boss OK" | Rows S1–S6 approved as proposed (the main column, not the alternatives) | 2026-10-14 |
 | G1 BLADE_AUDIT | "blade audit … OK" | Rows B1–B7 approved as proposed | 2026-10-14 |
 | Loop cap | "keep de x100 loop" | The ×100 per-stat cap stays: loop HP stops growing at loop 4 (×100) while damage keeps ×1.2 a loop | 2026-10-14 |
+| G2 RT | "New rooms are fine in density don't need anything else, follow the line of those to create the rest" | The 3 RT1 layouts are the model; the other 21 (3 per size for 1×1, 2×1, 3×1, 4×3, 4×4, and 2 more each for 2×2, 3×2, 3×3) follow their density and style | 2026-10-14 |
 
 ## Steps
 | Step | Scope | Rows | Gate | Kind | Status |
