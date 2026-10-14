@@ -5,12 +5,16 @@ extends GutTest
 ## caps, thinned with Low density, stilled with reduced motion, its explosions, lights and marks within VfxCore's
 ## budgets, its colours off the hero's.
 
-## Moves that are not ground attacks (shots and the vortex) or that have their own view (the shock lanes' spikes).
+## Moves that are not ground attacks (shots and the vortex) or that have their own view (the shock lanes' spikes; the
+## Hive Lens's Gaze and the Foundry's meltdown, v0.8.0 BS2, drawn by BossSignatureViews and tested in
+## test_boss_signature_views_2.gd).
 const NOT_GROUND := [
 	WorldReader.MOVE_PATTERN,
 	WorldReader.MOVE_BOLT_FAN,
 	WorldReader.MOVE_PULL,
-	WorldReader.MOVE_ROW_LANES
+	WorldReader.MOVE_ROW_LANES,
+	WorldReader.MOVE_GAZE,
+	WorldReader.MOVE_MELT
 ]
 
 
