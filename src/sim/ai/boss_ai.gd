@@ -30,6 +30,8 @@ extends RefCounted
 ## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F3-F4): the final boss's bodies are bosses (is_boss_kind); the Colossus's
 ## `combo`, `spike_chase` and `spike_burst` (BossColossus), and a `leap` with a pattern fires it where it lands. A body
 ## whose segment ran out shatters (FinalBoss.SHATTER): it stands still, invulnerable, until FinalBoss replaces it.
+## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's `cross` (BossPrism: the turning beams, her shards' orbs and bolts, the
+## window between spins); a body with a Cross floats home instead of pursuing (BossPrism.drift).
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -141,6 +143,8 @@ static func think(w: World, i: int) -> void:
 				BossDodge.track_marks(w, b, atk, a.state_t[i])
 			elif atk.move == M.GAZE:  # v0.8.0 BS2 (S4): it starts aimed away from you, wherever you go
 				BossGaze.keep_away(w, i)
+			elif atk.move == M.CROSS:  # v0.8.0 FB2: the arms keep you between two of them
+				BossPrism.keep_away(w, i)
 			elif atk.move == M.COMBO:  # v0.8.0 FB1: the swing follows you until it locks
 				BossColossus.combo_think(w, i, atk, a.state_t[i])
 			elif atk.move == M.SPIKE_CHASE:  # v0.8.0 FB1: the chasing spikes are laid
@@ -216,6 +220,11 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 				_finish(w, i, b, atk)
 		M.GAZE:  # v0.8.0 BS2 (S4): the eye looks along its beam
 			a.facing[i] = BossGaze.angle_at(w, i, mini(a.state_t[i] + 1, atk.active_ticks - 1))
+			if a.state_t[i] >= atk.active_ticks:
+				_finish(w, i, b, atk)
+		M.CROSS:  # v0.8.0 FB2: she watches the player while her Cross turns
+			if not w.player_dead():
+				a.facing[i] = Kin.angle_of(w.player_pos() - a.pos(i))
 			if a.state_t[i] >= atk.active_ticks:
 				_finish(w, i, b, atk)
 		_:
@@ -365,6 +374,8 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 				bs.set_pt(b, k, w.player_pos())
 		M.GAZE:  # v0.8.0 BS2 (S4): aimed away from the player; the way it turns
 			BossGaze.lock(w, i, b)
+		M.CROSS:  # v0.8.0 FB2: its way (the other way from her last), its speed (her HP), off the player
+			BossPrism.lock(w, i, b)
 		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: no chase line has stopped yet
 			BossColossus.spikes_lock(w, b)
 
@@ -428,6 +439,9 @@ static func move(w: World, i: int) -> void:
 	var a := w.actors
 	var at := a.pos(i)
 	var slow := ItemProcs.slow_factor(w, i)
+	if BossPrism.floats(w, i):  # v0.8.0 FB2: the Prism floats home, whatever she does
+		BossPrism.drift(w, i, slow)
+		return
 	match a.state[i]:
 		S.MOVE:
 			var b := entry_of(w, i)
@@ -587,6 +601,8 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_grid(w, i, b, atk, st)
 		M.GAZE:  # v0.8.0 BS2 (S4): the beam turns round the room; its orbs fly
 			BossGaze.resolve(w, i, b, atk, st)
+		M.CROSS:  # v0.8.0 FB2: the Cross turns, the orbs fly, the bolts aim and fire
+			BossPrism.resolve(w, i, b, atk, st)
 		M.MELT:  # v0.8.0 BS2 (S6): the outer ring melts for good
 			if st == 0:
 				BossLava.begin_melt(w, i)
@@ -829,9 +845,10 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossColossus.combo_telegraph(w, i, atk)
 	if atk.move == M.SPIKE_CHASE or atk.move == M.SPIKE_BURST:  # v0.8.0 FB1: the spikes showing
 		return BossColossus.spikes_telegraph(w, i, b, atk)
-	if atk.move == M.GAZE or atk.move == M.MELT:
+	if atk.move == M.GAZE or atk.move == M.MELT or atk.move == M.CROSS:
 		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
-		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews).
+		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews); v0.8.0 FB2: the Cross from boss_cross
+		# (PrismViews).
 		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	match atk.move:
 		M.SLAM_RING, M.PULL:

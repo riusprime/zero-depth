@@ -148,6 +148,44 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.1,
 	},
+	## v0.8.0 FB2: the Prism (the final boss's second body): her shards' orbs, deep red crystal gems turning as they
+	## drift, a crimson trail (redder and darker than the Hive Lens's magenta prism orbs).
+	&"crown_orb":
+	{
+		"core": Color("#F02848"),
+		"edge": Color("#2A0610"),
+		"trail": Color("#B81C38"),
+		"size": 1.0,
+		"tip": 1.0,
+		"trail_m": 0.6,
+		"mesh": &"gem",
+		"body": Color("#6A0E22"),
+		"energy": 2.8,
+		"crack": 0.2,
+		"swirl": 0.7,
+		"spin": 2.6,
+		"facets": 0.8,
+		"trail_style": &"glow",
+		"tail": 0.15,
+	},
+	## v0.8.0 FB2: the Prism's fast bolts: long white-hot crystal spears with a long red streak behind.
+	&"crown_bolt":
+	{
+		"core": Color("#FFD6DC"),
+		"edge": Color("#3A0814"),
+		"trail": Color("#FF3A58"),
+		"size": 0.95,
+		"tip": 2.4,
+		"trail_m": 1.6,
+		"mesh": &"spear",
+		"body": Color("#7A1A2A"),
+		"energy": 3.6,
+		"crack": 0.3,
+		"swirl": 1.6,
+		"spin": 6.0,
+		"trail_style": &"glow",
+		"tail": 0.1,
+	},
 	## v0.7.5 BF3: Siege Engine: orange cannon embers with a smoke trail.
 	&"cannon_ember":
 	{

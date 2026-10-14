@@ -214,6 +214,8 @@ const ADDED_SINCE_V05 := {
 		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
+	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
+	&"FinalFight": [&"home", &"dps_secs", &"dps_head", &"dps_closed", &"dps_acc", &"dps_t"],
 	&"ModifierState":
 	[
 		&"hold_t",  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)

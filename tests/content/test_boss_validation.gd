@@ -180,3 +180,37 @@ func test_the_signature_params_of_part_2_are_checked() -> void:
 	f = _def("foundry")
 	f.attack(&"meltdown").shape_params["min_radius_m"] = 0.0
 	assert_has(_codes(f), &"not_positive", "a minimum radius")
+
+
+## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's Cross and her DPS-based HP are checked.
+func test_the_prism_cross_and_dps_hp_are_checked() -> void:
+	var fresh := func() -> FinalBossDefinition:
+		return (load("res://data/final_boss/prism.tres") as FinalBossDefinition).duplicate(true)
+	assert_eq(_codes(fresh.call()), [], "the Prism ships valid")
+	var p: FinalBossDefinition = fresh.call()
+	p.attack(&"cross_ring").shape_params["fast_quarter_seconds"] = 3.0
+	assert_has(_codes(p), &"range", "it speeds up, never slows")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["window_seconds"] = 0.1
+	assert_has(_codes(p), &"telegraph_short", "a window you can see")
+	p = fresh.call()
+	p.attack(&"cross_ring").active_seconds = 3.0
+	assert_has(_codes(p), &"duration", "the spin and the window fit its active time")
+	p = fresh.call()
+	p.attack(&"cross_ring").shielded = false
+	assert_has(_codes(p), &"missing", "shielded but for its window")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["bolt_attack"] = "cross_spiral"
+	assert_has(_codes(p), &"unknown_attack", "its bolts are a bolt_fan with a lock")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["bolt_every_seconds"] = 0.3
+	assert_has(_codes(p), &"duration", "a bolt aims before the next one")
+	p = fresh.call()
+	p.dps_hp_max = 10
+	assert_has(_codes(p), &"range", "her clamps hold min <= max")
+	p = fresh.call()
+	p.dps_measure_seconds = 90
+	assert_has(_codes(p), &"range", "the meter holds 60 s")
+	p = fresh.call()
+	p.shard_orbit_m = 1.0
+	assert_has(_codes(p), &"range", "the shards orbit outside her body")

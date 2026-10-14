@@ -624,6 +624,20 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   - `row_flood` + `lava_seconds` (>= the telegraph minimum), `lava_damage` (>= 1), `lava_burn_seconds`, `ford_m`
     (>= 1.2): the lanes stay molten that long (the Foundry's Molten Flood, both: 5.0 s, 6 every 0.5 s, 2.0 m fords).
 
+- **v0.8.0 FB2 (owner O17, F7; SIM_CONTRACTS §10g).** One move, and the final body's own fields:
+  - `cross` (LINE): `count` (2..8 arms), `length_m`, `width_m`, `quarter_seconds`, `fast_quarter_seconds`
+    (≤ `quarter_seconds`), `reverse_seconds`, `burn_seconds`, `spin_seconds` and `window_seconds` (each ≥ the
+    telegraph minimum; `active_seconds` ≥ both together); optional `pattern_id` with `orb_every_seconds` (then
+    `late_cause_key` is required) and `bolt_attack` (a `bolt_fan` of the same boss with `lock_seconds`: the aim line)
+    with `bolt_every_seconds` (over the bolt's lock). Must be `shielded`. The Prism's three (ring, spiral, flower):
+    4 arms, 40 m, 0.9 m wide, a quarter turn every 2.4 s at full HP down to 1.2 s at none, reversing every 3.0 s,
+    14 damage every 0.5 s, a 1.0 s spin-up, 5.0 s of spin, a 2.5 s window; orbs every 1.6 s; a bolt every 1.1 s
+    (`prism_bolt`: 22 m/s, 0.22 m, 32 m, 12 damage, a 0.4 s aim line).
+  - `FinalBossDefinition`: `hp_from_dps` (needs a `cross`), `dps_measure_seconds` (1..60), `dps_min_measured_seconds`
+    (1..measure), `dps_target_seconds` (> 0), `dps_hp_min` ≤ `dps_hp_max`; `shard_count` (0..12), `shard_orbit_m`
+    (> `radius_m` when it has shards), `shard_turn_dps` (≥ 0). The Prism: 20 s measured, at least 5, 60 s, 600..250,000
+    HP; 6 shards 2.3 m out turning 50°/s. A `cross` that fires (orbs or bolts) needs `shard_count` ≥ 1.
+
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
 ```gdscript

@@ -128,6 +128,7 @@ const MOVE_MELT := BossAttackTable.Move.MELT  # v0.8.0 BS2 (S6)
 const MOVE_COMBO := BossAttackTable.Move.COMBO  # v0.8.0 FB1 (the Colossus)
 const MOVE_SPIKE_CHASE := BossAttackTable.Move.SPIKE_CHASE
 const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
+const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
 ## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER), and its views' events (STATUS_APPLY effect ids).
 const STATE_SHATTER := FinalBoss.SHATTER
 const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
@@ -1373,6 +1374,32 @@ func actor_egg_permille(i: int) -> int:
 ## "way", "hit"} (BossGaze.state): the eye brightening and its thin aim line in the windup, then the beam.
 func boss_gaze(i: int) -> Dictionary:
 	return BossGaze.state(_w, i)
+
+
+## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
+## beam), "angle", "half_width", "way", "quarter", "speed", "orb_shard", "bolt" ({} or {"from", "to", "angle",
+## "progress", "shard"})} (BossPrism.state): the spin-up's aim lines, the turning beams, the window, the bolt's aim
+## line.
+func boss_cross(i: int) -> Dictionary:
+	return BossPrism.state(_w, i)
+
+
+## v0.8.0 FB2: boss i's orbiting shards' places now (empty for a body without shards).
+func boss_shards(i: int) -> PackedVector2Array:
+	if i < 0 or i >= _w.actors.size() or not BossAi.is_boss_kind(_w.actors.kinds[i]):
+		return PackedVector2Array()
+	if BossAi.entry_of(_w, i) < 0:
+		return PackedVector2Array()
+	return BossPrism.shards(_w, i)
+
+
+## v0.8.0 FB2 (F7): the final fight's measured damage per second (the meter's last `seconds`, at most what it holds)
+## in thousandths, and how many seconds that is: [dps × 1000, seconds] ([0, 0] outside the fight).
+func final_dps(seconds: int = FinalFight.DPS_SECONDS) -> PackedInt32Array:
+	if _w.final_fight == null:
+		return PackedInt32Array([0, 0])
+	var m := _w.final_fight.measured(seconds)
+	return PackedInt32Array([m[0] * 1000 / maxi(1, m[1]) if m[1] > 0 else 0, m[1]])
 
 
 ## v0.8.0 BS2 (S6): the Foundry's molten floor down now: [rect (sim plane), the tick it was laid, the tick it cools]
