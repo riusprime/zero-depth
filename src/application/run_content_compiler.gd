@@ -71,6 +71,7 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.fire_hit_ticks = maxi(1, SimTick.seconds_to_ticks(def.fire_hit_seconds))
 	t.fire_trail_spacing_m = def.fire_trail_spacing_m
 	t.field_min_m = def.field_min_m
+	t.player_shots_max = def.player_shots_max  # v0.8.0 PF
 	return t
 
 

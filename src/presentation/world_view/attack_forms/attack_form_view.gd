@@ -37,6 +37,7 @@ extends AttackFormCanvas
 func sync(reader: WorldReader) -> void:
 	_tick = reader.tick()
 	_tier = HeatLooks.tier_of(reader.heat_state())
+	_looks_checked = false
 	_player = reader.player_pos()
 	set_density(ViewPrefs.effects_density)
 	_sync_swing(reader)
@@ -90,16 +91,23 @@ func _sync_swing(reader: WorldReader) -> void:
 
 
 ## The look of the spec a key names, cached per build digest and heat tier ({} for "" or an unknown key).
+## v0.8.0 PF: the cache is keyed by the spec key alone and emptied when the digest or the tier changes (checked once a
+## sync), so a crowd of bolts costs a lookup each, not a formatted string each.
 func _look_of(reader: WorldReader, key: String) -> Dictionary:
 	if key == "":
 		return {}
-	var sig := "%s|%s|%d" % [reader.attack_digest(), key, _tier]
-	if not _looks.has(sig):
+	if not _looks_checked:
+		_looks_checked = true
+		var sig := "%s|%d" % [reader.attack_digest(), _tier]
+		if sig != _looks_sig:
+			_looks_sig = sig
+			_looks.clear()
+	if not _looks.has(key):
 		if _looks.size() > 64:
 			_looks.clear()
 		var spec := reader.attack_spec_at(key)
-		_looks[sig] = AttackFormLooks.compose(spec, _tier) if not spec.is_empty() else {}
-	return _looks[sig]
+		_looks[key] = AttackFormLooks.compose(spec, _tier) if not spec.is_empty() else {}
+	return _looks[key]
 
 
 ## A live player projectile's look: its own spec (MX2: ProjectileStore.spec_key), else the Gun bolt's (a projectile
@@ -113,6 +121,8 @@ func _sync_bolts(reader: WorldReader) -> void:
 	_live.clear()
 	var seen := {}
 	for i in reader.projectile_count():
+		if _live.size() >= LIVE_BOLTS_MAX:
+			break  # v0.8.0 PF: the rest fly as their plain darts (draw_at's budget); their trails start when drawn
 		if reader.projectile_team(i) != 0 or reader.projectile_is_shard(i):
 			continue
 		var look := _projectile_look(reader, i)
@@ -384,8 +394,9 @@ func _sync_casts(reader: WorldReader) -> void:
 
 
 func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
-	var spec := reader.attack_spec_at(String(m["key"]))
-	if spec.is_empty():
+	# v0.8.0 PF: the spec's look from the per-key cache (_look_of), not composed again for every blast.
+	var look := _look_of(reader, String(m["key"]))
+	if look.is_empty():
 		return
 	var pos: Vector2 = m["pos"]
 	var start := float(m["tick"])
@@ -393,13 +404,18 @@ func _draw_cast(reader: WorldReader, m: Dictionary) -> void:
 		casts_drawn += 1
 		flash(pos, AttackFormLooks.CAST_SIGIL, 0.75, start)
 		spawn(
-			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": spec["elements"]},
+			{"form": AttackFormLooks.RING, "radius_m": CAST_RING_M, "elements": look["elements"]},
 			pos,
 			0.0,
 			{"start": start, "life": float(CAST_RING_TICKS), "radius": CAST_RING_M}
 		)
-	var form := int(spec.get("form", -1))
+	var form := int(look["form"])
 	if form == AttackFormLooks.ARC or form == AttackFormLooks.BURST:
 		var name: StringName = AttackFormLooks.FORM_NAMES[form]
 		cast_forms[name] = int(cast_forms.get(name, 0)) + 1
-		spawn(spec, pos, SimPlane.yaw_of(int(m["angle"])), {"start": start, "own": CAST_OWN_M})
+		spawn(
+			{},
+			pos,
+			SimPlane.yaw_of(int(m["angle"])),
+			{"start": start, "own": CAST_OWN_M, "look": look}
+		)

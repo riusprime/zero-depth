@@ -83,7 +83,7 @@ Answers go into the "Owner decisions" table below the same day.
 ## Steps
 | Step | Scope | Rows | Gate | Kind | Status |
 |---|---|---|---|---|---|
-| PF | Frame budget: a repeatable probe of Spread + Split + Explosive, then effect merging/thinning and caps until it holds 60 fps | O9 | none (direct fix) | presentation (+ sim cap only if measured) | |
+| PF | Frame budget: a repeatable probe of Spread + Split + Explosive, then effect merging/thinning and caps until it holds 60 fps | O9 | none (direct fix) | presentation (+ sim cap only if measured) || Done (avg in budget, p95 not: [`evidence/PERF.md`](evidence/PERF.md)) |
 | LS | Loop scaling: HP much faster than damage per Ascension loop | O11 | Q6 | sim + tests (data) | |
 | TG | Wind-up without red ground marks for melee enemies; their bodies show the wind-up | O4 | Q3 | sim (telegraph `ground`) + presentation | |
 | EC | Enemy colours per kind | O2 | Q1, then G2 | presentation only | |

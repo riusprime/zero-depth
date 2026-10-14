@@ -25,6 +25,16 @@ const VOID_MARK := Color(0.12, 0.04, 0.2, 0.85)
 const FLAME_SPACING := 0.8
 ## Mark keys: an effect's seed times MARK_KINDS plus its kind, so two marks of one effect never collide.
 const MARK_KINDS := 8
+## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS … maybe we can stop applying some effects"): the
+## bursts' frame budget. The first BURST_FULL bursts of a frame draw as before (each with its light); past them a
+## burst within BURST_MERGE_M of one already drawn this frame is merged into it (not drawn), the rest draw thinned
+## (BURST_THIN of the density, no light of their own), and past BURST_MAX none is drawn. The canvas draws the newest
+## effects first, so the fresh blasts keep their full look and the older smoke thins. Starting values (the probe:
+## docs/roadmap/v0.8.0/evidence/PERF.md); the pools (VfxCore.POOLS) saturate at about 21 full explosions anyway.
+const BURST_FULL := 12
+const BURST_MAX := 32
+const BURST_MERGE_M := 1.2
+const BURST_THIN := 0.3
 
 
 # --- Public: one call per form ----------------------------------------------------------------------------------
@@ -87,6 +97,25 @@ func line(kind: StringName, a: Vector3, b: Vector3, fade: float, age: float, sd:
 
 ## A burst of radius `r` at `c` (ground), `u` (0..1) through its life: a bomb landing or a blast.
 func burst(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
+	bursts_asked += 1
+	var full := bursts_drawn < BURST_FULL
+	if not _claim(&"burst", c, BURST_MERGE_M) and not full:
+		bursts_merged += 1
+		return
+	if bursts_drawn >= BURST_MAX:
+		bursts_skipped += 1
+		return
+	bursts_drawn += 1
+	var base := density
+	if not full:
+		density = base * BURST_THIN
+		_lights_off = true
+	_burst_kind(kind, c, r, u, sd)
+	density = base
+	_lights_off = false
+
+
+func _burst_kind(kind: StringName, c: Vector3, r: float, u: float, sd: int) -> void:
 	match kind:
 		&"storm":
 			_storm_burst(c, r, u, sd)

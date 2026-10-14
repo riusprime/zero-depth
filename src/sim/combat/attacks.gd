@@ -25,6 +25,12 @@ extends RefCounted
 const MAX_HOOK_DEPTH := 2
 const MAX_LAUNCHES_PER_TICK := 256
 const EFFECT_LAUNCH_CAP := &"attack_launch_cap"
+## v0.8.0 PF (owner O9: Spread + Split + Explosive "goes two FPS"): the player's projectiles alive at once, at most
+## (SimTuning.player_shots_max, data/tuning/sim.tres; this is its shipped value). A bolt past it is not launched, and
+## the tick's first such bolt leaves one LIMIT event (EFFECT_SHOT_CAP). Starting value from the probe
+## (docs/roadmap/v0.8.0/evidence/PERF.md): a level-5 Spread + Split build kept up to 264 alive, with Twin 874.
+const MAX_PLAYER_SHOTS := 256
+const EFFECT_SHOT_CAP := &"player_shot_cap"
 ## ProcLedger codes for a hook attack's own status feeds (Engines' codes end at 40; appended, never renumbered).
 const CODE_HOOK_FEED := 48
 ## The ledger code of each status a hook attack feeds: CODE_HOOK_FEED + its index here.
@@ -255,6 +261,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	for off in offsets:
 		var dir := Kin.dir(ctx.angle + off)
 		for side in lanes:
+			if not _shot_room(w):
+				return
 			var muzzle := ctx.origin + dir * gap + Vector2(-dir.y, dir.x) * side
 			w.queue_projectile(
 				w.actors.ids[0],
@@ -268,6 +276,26 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				spec.bounces,
 				spec.key
 			)
+
+
+## v0.8.0 PF: whether one more player bolt fits under SimTuning.player_shots_max this tick (counting it); the first
+## that doesn't leaves a LIMIT event.
+static func _shot_room(w: World) -> bool:
+	if w.shot_tick != w.tick:
+		w.shot_tick = w.tick
+		w.shot_count = w.player_projectiles()
+	var cap := w.tuning.player_shots_max
+	if w.shot_count < cap:
+		w.shot_count += 1
+		return true
+	if w.shot_count == cap:
+		w.shot_count += 1
+		var pid := w.actors.ids[0]
+		var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
+		lim.effect_id = EFFECT_SHOT_CAP
+		lim.amount = cap
+		lim.ancestry = w.hook_chain.duplicate()
+	return false
 
 
 static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:

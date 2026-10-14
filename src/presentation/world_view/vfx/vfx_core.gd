@@ -82,6 +82,13 @@ var decals: Array[Decal] = []
 var density := 1.0
 ## Drawn into each frame before it ends (StatusVisuals' enemy statuses): func(layer: VfxCore).
 var drawers: Array[Callable] = []
+## This frame's counts (the perf probe and the tests): sprites asked for; bursts asked for, drawn, merged into one
+## drawn nearby and skipped past the budget (VfxLayer.burst, v0.8.0 PF).
+var sprites_asked := 0
+var bursts_asked := 0
+var bursts_drawn := 0
+var bursts_merged := 0
+var bursts_skipped := 0
 ## The same pools in a list (begin and finish walk it every frame without allocating).
 var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
@@ -96,6 +103,8 @@ var _shaders := {}
 var _spots := {}
 ## P-20: pieces left under MAX_SPRITES this frame.
 var _sprite_left := MAX_SPRITES
+## While true, light requests are dropped (a thinned burst asks for none: VfxLayer.burst).
+var _lights_off := false
 
 
 func _init() -> void:
@@ -229,6 +238,12 @@ func begin(now: float) -> void:
 	for p: Dictionary in _pool_list:
 		p["used"] = 0
 	_sprite_left = MAX_SPRITES
+	sprites_asked = 0
+	bursts_asked = 0
+	bursts_drawn = 0
+	bursts_merged = 0
+	bursts_skipped = 0
+	_lights_off = false
 	_light_wants.clear()
 	_spots.clear()
 
@@ -268,6 +283,7 @@ func now() -> float:
 func _put(
 	pool: StringName, xf: Transform3D, c: Color, cell: int, dissolve: float, sd: float
 ) -> bool:
+	sprites_asked += 1
 	var p: Dictionary = pools[pool]
 	var i: int = p["used"]
 	if i >= int(p["cap"]) or _sprite_left <= 0:
@@ -322,7 +338,7 @@ func _ribbon_tall(a: Vector3, b: Vector3, w: float) -> Transform3D:
 
 
 func _light(p: Vector3, c: Color, energy: float, rng: float) -> void:
-	if energy > 0.02:
+	if energy > 0.02 and not _lights_off:
 		_light_wants.append([p, c, energy, rng])
 
 
@@ -434,6 +450,11 @@ func _lay_marks() -> void:
 ## How many pieces a pool drew this frame.
 func used(pool: StringName) -> int:
 	return int((pools[pool] as Dictionary)["used"])
+
+
+## The light requests this frame (before the LIGHTS brightest are kept).
+func lights_asked() -> int:
+	return _light_wants.size()
 
 
 func lights_on() -> int:

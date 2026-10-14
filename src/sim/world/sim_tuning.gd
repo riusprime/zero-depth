@@ -37,3 +37,5 @@ var fire_hit_ticks := ElementAbilities.FIRE_HIT_TICKS
 var fire_trail_spacing_m := ElementAbilities.TRAIL_SPACING_M
 ## The shortest throw of a shot's field (Arc Field and the like).
 var field_min_m := ModifierAbilities.FIELD_MIN_M
+## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (Attacks._shot_room).
+var player_shots_max := Attacks.MAX_PLAYER_SHOTS
