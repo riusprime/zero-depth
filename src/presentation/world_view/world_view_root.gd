@@ -68,7 +68,6 @@ var spikes := StoneSpikeViews.new()
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
 var signatures := BossSignatureViews.new()
 
-
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
 var strikes := BossStrikeViews.new()
 var rig := IsoRig.new()
@@ -131,7 +130,6 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
-
 
 	add_child(strikes)  # v0.8.0 AV part 2
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
@@ -211,7 +209,6 @@ func sync() -> void:
 	boss_shields.sync(reader)
 	spikes.sync(reader)  # v0.8.0 AV
 	signatures.sync(reader)  # v0.8.0 BS1
-
 
 	strikes.sync(reader)  # v0.8.0 AV part 2
 	if boss_door != null:
