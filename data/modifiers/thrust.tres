@@ -29,6 +29,8 @@ script = ExtResource("2_op")
 op = 4
 field = &"arc_degrees"
 value = 400.0
+per_level = 200.0
+per_level_after = 2
 
 [resource]
 script = ExtResource("1_mod")

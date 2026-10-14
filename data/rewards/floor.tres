@@ -12,6 +12,7 @@ chest_prices = PackedInt32Array(40, 60, 80)
 floor_price_step = 0.5
 rare_weight_chest = 3
 rare_weight_altar = 1
+own_weapon_card_permille = 1500
 offer_size = 3
 interact_radius_m = 1.6
 shard_tier_bonus = 0.25

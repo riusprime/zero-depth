@@ -25,13 +25,23 @@ static func draw_weighted(w: World, count: int, rare_weight: int) -> PackedInt32
 	while out.size() < count and not left.is_empty():
 		var weights := PackedInt32Array()
 		for idx in left:
-			weights.append(rare_weight if w.item_tables[idx].rarity == ItemTable.RARE else 1)
+			weights.append(card_weight(w, idx, rare_weight))
 		var k := w.rng_loot.pick_weighted(weights)
 		if k < 0:
 			break
 		out.append(left[k])
 		left.remove_at(k)
 	return out
+
+
+## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): item `idx`'s weight in a mod draw: `rare_weight` for a rare one
+## (1 for a common one), × RewardTable.own_weapon_card_permille when it is a wand card of the run's own weapon
+## (requires_weapon: the Blade's cards on a Blade run), × 1000 otherwise (a shared card, a trigger, a passive).
+static func card_weight(w: World, idx: int, rare_weight: int) -> int:
+	var it := w.item_tables[idx]
+	var base := rare_weight if it.rarity == ItemTable.RARE else 1
+	var own := it.requires_weapon != 0 and CardLevels.is_card(w, idx)
+	return base * (w.reward_table.own_weapon_card_permille if own else 1000)
 
 
 ## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the

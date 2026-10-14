@@ -894,6 +894,39 @@ rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp
 the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
 of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
 
+## 8j. Blade combinations and the Gun's top end (v0.8.0 BL)
+
+G1: [`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md) (owner, 2026-10-14: rows B1–B7 as
+proposed). Evidence: [`../roadmap/v0.8.0/evidence/BLADE.md`](../roadmap/v0.8.0/evidence/BLADE.md).
+- **Levels that start late (B2).** `ModifierOp.per_level_after` (content `ModifierOpDefinition.per_level_after`, 1..4,
+  default 1): the op's `per_level` counts only for the levels above it (`at_level`: value + per_level × max(0, level −
+  per_level_after)). A `MUL_PERMILLE` op's `per_level` is kept as a float and rounded per level (Flurry's 250 / 3).
+- **Repeats (B1).** `AttackSpec.repeats` (a `LATE_INT_FIELDS` field: hashed with its name only when not 0, so a spec
+  without it hashes as before): a root attack with `repeat_delay_ticks` repeats `max(1, repeats)` times, the first
+  `repeat_delay_ticks` after it, each next one `ModifierRuntime.REPEAT_GAP_TICKS` (5) after the one before. A combo
+  step's first repeat stays its echo (`World.echo_*`); the others go through the launch queue (§8d,
+  `ModifierRuntime.queue_echoes`: from where the player is then, the echo's effect id), so the next swing never
+  cancels them. Double Slash sets `repeats` = its level at 70 %.
+- **A slash hit casts twice (B3).** On a Blade run (`PlayerBuild.has_blade`, a combo), `WandCompile._cut` files an
+  `ON_HIT` / `ON_KILL` / `ON_FINISHER` cut on an `ARC` spec `WandTable.blade_hit_casts` (2) times its casts, the n-th
+  with `delay_ticks` = n × (the trigger's own delay, or `blade_cast_gap_ticks`: 6). `ON_END`, `ON_CRIT`, the Gun and
+  every non-arc spec are unchanged.
+- **Once per line (B6).** `WandTable.once_per_line` (data: `split_shot`, `shared_explosive`): a HOOK op of one of these
+  cards is not added to a spec whose `lineage` already holds one of them (`WandCompile.once_more`), so Split's splits,
+  Explosive's blast and anything cast from them neither split nor explode; the first shot does both.
+- **Blast merge (B6).** `Attacks.merged`, in `run_hook` before an undelayed child launches: for a hook in
+  `WandTable.blast_merge_ids` (Explosive), past `blast_merge_after` (8) such blasts set off in one tick, one within its
+  child's `radius_m` of a blast already set off that tick does not go off (`World.blast_merged` counts it); one farther
+  away still does. `World.blast_tick` / `blast_pos` / `blast_merged` are per-tick, not hashed, and in
+  `WorldSnapshot.ADDED_SINCE_V05`.
+- **Offer weight (B5).** `ItemPool.card_weight`: a mod draw (`ItemPool.draw_weighted`, `Offers.draw`'s mods) weighs a
+  card its rarity weight × `RewardTable.own_weapon_card_permille` (data 1500) when it is a wand card of the run's own
+  weapon, × 1000 otherwise. The loot stream is drawn the same number of times.
+- **New cards (B4).** Blade Storm (`blade_storm`, rare: an `ON_LAUNCH` hook of 1 + level returning bolts, 45 %) and
+  Riposte Chain (`riposte_chain`: an `ON_KILL` seeking beam, reach 4 m, `chains` = level, 80 %). Their items have
+  `index_wave` 1: `ModifierCompiler.item_defs` puts every wave-0 card first in its v0.6.5 order, then wave 1, so no
+  saved item index moves.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

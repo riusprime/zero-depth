@@ -28,6 +28,13 @@ extends RefCounted
 ##   reads past it, so a dash card right of a trigger still rewrites the dash.
 ## - v0.6.5 WN5b: a legendary trigger (ModifierOp.casts > 1, "On Hit ×2") casts its child that many times per trigger,
 ##   each delay_ticks after the one before (the later ones through the launch queue, ModifierRuntime).
+## - v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B3, owner 2026-10-14): on a Blade run a slash's hit triggers (On Hit,
+##   On Kill, On Finisher) cast WandTable.blade_hit_casts times (2), blade_cast_gap_ticks apart (a legendary trigger's
+##   own delay when it has one): a slash hits each enemy once, a Gun volley many times, so trigger builds work on
+##   both weapons. The Gun's triggers, a slash's On End and every non-slash spec cast as before.
+## - v0.8.0 BL (B6): a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
+##   anything built from them: its lineage holds one) takes none of those hooks again: the first shot splits and
+##   explodes, its splits neither split nor explode (the lineage guard alone stopped only the same card).
 
 const MAX_DEPTH := 2
 
@@ -41,6 +48,12 @@ var finisher_id := &""
 ## nothing), and its damage share.
 var child_base: AttackSpec
 var child_damage_permille := 500
+## v0.8.0 BL (B3): a Blade run (its slashes' hit triggers cast hit_casts times, cast_gap_ticks apart).
+var blade := false
+var hit_casts := 2
+var cast_gap_ticks := 6
+## v0.8.0 BL (B6): the hook cards a line takes once (WandTable.once_per_line).
+var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
 
 
 ## The compile for world `w`'s build `mods`: the run's weapon picks the child spell and T4's trigger.
@@ -54,6 +67,10 @@ static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	var t := w.wand_table if w.wand_table != null else WandTable.new()
 	c.child_damage_permille = t.child_damage_permille
 	c.child_base = _small_copy(w, t, c.gun or n == 0)
+	c.blade = PlayerBuild.has_blade(w) and n > 0  # v0.8.0 BL
+	c.hit_casts = t.blade_hit_casts
+	c.cast_gap_ticks = t.blade_cast_gap_ticks
+	c.once_per_line = t.once_per_line
 	return c
 
 
@@ -123,11 +140,22 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 				s.elements.append(String(op.element))
 		ModifierOp.Op.HOOK:
 			if s.depth < MAX_DEPTH and not s.lineage.has(String(m.id)):  # v0.6.0 MX4: lineage
-				s.hooks.append(_hook(s, m, op, i))
+				if not once_more(s, m.id):  # v0.8.0 BL (B6)
+					s.hooks.append(_hook(s, m, op, i))
 		ModifierOp.Op.TRIGGER:
 			pass  # a trigger is a card of its own (run cuts there)
 		_:
 			Modifiers.numeric(s, op)
+
+
+## v0.8.0 BL (B6): whether hook card `id` is a once-per-line card and `s` already comes from one (class doc).
+func once_more(s: AttackSpec, id: StringName) -> bool:
+	if not once_per_line.has(id):
+		return false
+	for l in s.lineage:
+		if once_per_line.has(StringName(l)):
+			return true
+	return false
 
 
 ## The hook `op` of card `m` (slot `i`) adds to `s`: its child, compiled by `m` (but its own hook) and the cards to
@@ -194,7 +222,13 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 		if s.depth != 0 or s.id != finisher_id:
 			return  # only the combo's last step finishes; the cut still ends every other spec
 		trig = AttackSpec.Trigger.ON_HIT
-	for n in maxi(1, op.casts):  # v0.6.5 WN5b: a legendary trigger casts again, delay_ticks apart
+	var casts := maxi(1, op.casts)
+	var gap := op.delay_ticks
+	var hit := trig == AttackSpec.Trigger.ON_HIT or trig == AttackSpec.Trigger.ON_KILL
+	if blade and hit and s.form == AttackSpec.Form.ARC:  # v0.8.0 BL (B3): a slash hit casts twice
+		casts *= maxi(1, hit_casts)
+		gap = gap if gap > 0 else cast_gap_ticks
+	for n in casts:  # v0.6.5 WN5b: a legendary trigger casts again, delay_ticks apart
 		var c := child_base.copy()
 		c.id = m.id
 		c.effect_id = m.id
@@ -207,7 +241,7 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 		k.id = m.id
 		k.trigger = trig
 		k.damage_permille = child_damage_permille
-		k.delay_ticks = op.delay_ticks * n
+		k.delay_ticks = gap * n
 		k.child = run(c, i + 1)
 		s.hooks.append(k)
 	if not s.modifier_ids.has(String(m.id)):

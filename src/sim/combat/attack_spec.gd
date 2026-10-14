@@ -66,6 +66,11 @@ const INT_FIELDS: Array[StringName] = [
 	&"carry",
 	&"echo_mirror",
 ]
+## v0.8.0 BL (BLADE_AUDIT B1): int fields added after the hash order closed. Hashed only when not 0 (each with its
+## name), so a spec that doesn't use them hashes exactly as before (no golden moves for a build without them).
+const LATE_INT_FIELDS: Array[StringName] = [
+	&"repeats",
+]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
 	&"radius_m",
@@ -103,6 +108,9 @@ var spread := 0
 ## Again after this many ticks (0 = no repeat) at this share of the first's damage (Twin Arc's echo).
 var repeat_delay_ticks := 0
 var repeat_damage_permille := 0
+## v0.8.0 BL (B1, Double Slash's level): how many repeats (0 = the one repeat above), the first repeat_delay_ticks
+## after the attack and each next one ItemEffects.REPEAT_GAP_TICKS after the one before.
+var repeats := 0
 
 # --- size, speed, reach
 ## An arc: half its width (1/4096 turns) and its reach past the attacker's edge, × (1000 + bonus) / 1000.
@@ -210,6 +218,11 @@ var hooks: Array[AttackHook] = []
 var effect_id := &""
 
 
+## v0.8.0 BL: whether `field` is a whole-number field (INT_FIELDS or LATE_INT_FIELDS).
+static func is_int_field(field: StringName) -> bool:
+	return field in INT_FIELDS or field in LATE_INT_FIELDS
+
+
 func has_tag(tag: StringName) -> bool:
 	return tags.has(String(tag))
 
@@ -269,7 +282,7 @@ func copy() -> AttackSpec:
 	var s := AttackSpec.new()
 	for f: StringName in [&"id", &"form", &"depth", &"form_layers", &"seek", &"effect_id"]:
 		s.set(f, get(f))
-	for f in INT_FIELDS + FLOAT_FIELDS:
+	for f in INT_FIELDS + LATE_INT_FIELDS + FLOAT_FIELDS:
 		s.set(f, get(f))
 	for f: StringName in [
 		&"tags",
@@ -298,6 +311,10 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(get(f))
 	for f in FLOAT_FIELDS:
 		h.add_f32(get(f))
+	for f in LATE_INT_FIELDS:  # v0.8.0 BL: only when used (class doc)
+		if get(f) != 0:
+			h.add_string(String(f))
+			h.add_int(get(f))
 	for arr: PackedStringArray in [tags, modifier_ids, status_ids, elements, lineage]:
 		h.add_string(",".join(arr))
 	h.add_ints(status_stacks)
@@ -334,6 +351,7 @@ func read() -> Dictionary:
 		"count": count,
 		"spread": spread,
 		"repeat_delay_ticks": repeat_delay_ticks,
+		"repeats": repeats,  # v0.8.0 BL
 		"half_arc": half_arc,
 		"reach_m": reach_m,
 		"reach_bonus_permille": reach_bonus_permille,

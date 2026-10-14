@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -13,8 +13,7 @@ value = 0.15
 script = ExtResource("2_op")
 op = 2
 field = &"repeat_damage_permille"
-value = 600.0
-per_level = 100.0
+value = 700.0
 
 [sub_resource type="Resource" id="Op_3"]
 script = ExtResource("2_op")
@@ -22,10 +21,17 @@ op = 0
 field = &"echo_mirror"
 value = 1.0
 
+[sub_resource type="Resource" id="Op_4"]
+script = ExtResource("2_op")
+op = 0
+field = &"repeats"
+value = 1.0
+per_level = 1.0
+
 [resource]
 script = ExtResource("1_mod")
 family = &"time"
 target = PackedStringArray("weapon", "melee")
 stage = 1
-ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3")])
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3"), SubResource("Op_4")])
 id = &"double_slash"

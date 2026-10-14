@@ -85,6 +85,7 @@ static func after_swing(w: World, base: int, dmg: int) -> void:
 		w.overcharge_tick = w.tick
 		wave = Attacks.on_nth(w, spec, base, w.swing_root)
 	if spec.repeat_delay_ticks > 0:
+		ModifierRuntime.queue_echoes(w, spec, w.swing_angle, w.swing_root, dmg)  # v0.8.0 BL
 		w.echo_t = spec.repeat_delay_ticks
 		w.echo_angle = w.swing_angle
 		w.echo_step = w.combo_step

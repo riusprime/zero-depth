@@ -11,7 +11,9 @@ extends GutTest
 const SOLO_TICKS := 300
 const PAIR_TICKS := 90
 const MAX_LIVE_PROJECTILES := 400
-const MAX_QUEUED := 64
+## v0.8.0 BL (BLADE_AUDIT B3): a Blade slash's hit triggers cast twice, the second through the queue (with a legendary
+## ×2 trigger: 4 casts, 3 queued), so a Blade build of triggers queues more than the 64 before (68 measured).
+const MAX_QUEUED := 96
 const ABILITY_MODS: Array = [
 	&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field", &"frost_nova", &"flame_trail"
 ]

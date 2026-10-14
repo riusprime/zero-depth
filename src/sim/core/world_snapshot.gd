@@ -132,6 +132,9 @@ const ADDED_SINCE_V05 := {
 		&"launch_count",
 		&"shot_tick",  # v0.8.0 PF: the player-shot cap's per-tick count
 		&"shot_count",
+		&"blast_tick",  # v0.8.0 BL: the blast merge's per-tick marks
+		&"blast_pos",
+		&"blast_merged",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",

@@ -684,7 +684,7 @@ ITEM_EMBER_CORE_DESC,Hits burn; kills explode in a small fire burst.,Tus golpes 
 ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Hits stack poison that spreads when the enemy dies.,Tus golpes envenenan; el veneno salta al morir.
 ITEM_ECHO_SLASH,Wave,Onda
-ITEM_ECHO_SLASH_DESC,Every slash flies on as a crescent (60% damage).,Cada tajo sale volando como media luna (60% de daño).
+ITEM_ECHO_SLASH_DESC,Slashes fly on as crescents (60%); +1 crescent a level.,Tus tajos vuelan como medias lunas (60%); +1 por nivel.
 ITEM_EDGE_ROUNDS,Edge Rounds,Balas Filo
 ITEM_EDGE_ROUNDS_DESC,Projectiles pierce once and slash where they hit.,Los proyectiles atraviesan una vez y cortan al impactar.
 ITEM_SHOCK_CIRCLES,Shock Circles,Círculos de Choque
@@ -696,7 +696,7 @@ ITEM_BOOMERANG_DESC,"Gun: flies out, then comes back through you.",Pistola: sale
 ITEM_ORBIT_ROUNDS,Orbit,Órbita
 ITEM_ORBIT_ROUNDS_DESC,Gun: circles you once before it flies out.,Pistola: te rodea una vez antes de salir.
 ITEM_SPLIT_SHOT,Split,División
-ITEM_SPLIT_SHOT_DESC,"Gun: on its first hit, splits into 3 at half size.",Pistola: al impactar se parte en 3 a media talla.
+ITEM_SPLIT_SHOT_DESC,Gun: splits in 3 on hit (+1 a level); splits don't explode.,Pistola: se parte en 3 al impactar (+1/nivel); no estallan.
 ITEM_TWIN_CAST,Twin Cast,Doble Lanzamiento
 ITEM_TWIN_CAST_DESC,Every attack repeats once 0.2 s later at 50%.,"Cada ataque se repite 0,2 s después al 50%."
 ITEM_REARGUARD,Rearguard,Retaguardia
@@ -743,13 +743,13 @@ ITEM_ECHO_STORM,Echo Storm,Tormenta de Ecos
 ITEM_ECHO_STORM_DESC,Legendary: every slash flies on as 3 crescents (80%).,Legendario: cada tajo vuela como 3 medias lunas (80%).
 UI_DEV_NEXT_MOD,Next mod,Siguiente mod
 ITEM_TRIGGER_ON_HIT,On Hit,Al Impactar
-ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast a small spell on each hit.,Las cartas a su derecha lanzan un hechizo al impactar.
+ITEM_TRIGGER_ON_HIT_DESC,Cards to its right cast on each hit (twice on a slash).,Lo de su derecha se lanza al impactar (2 veces con tajo).
 ITEM_TRIGGER_ON_KILL,On Kill,Al Matar
-ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast a small spell on each kill.,Las cartas a su derecha lanzan un hechizo al matar.
+ITEM_TRIGGER_ON_KILL_DESC,Cards to its right cast on each kill (twice on a slash).,Lo de su derecha se lanza al matar (2 veces con tajo).
 ITEM_TRIGGER_ON_END,On End,Al Terminar
 ITEM_TRIGGER_ON_END_DESC,Cards to its right cast a small spell where it ends.,Las cartas a su derecha lanzan un hechizo al terminar.
 ITEM_TRIGGER_ON_FINISHER,On Finisher,Al Rematar
-ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast a small spell on the finisher.,Las cartas a su derecha lanzan un hechizo al rematar.
+ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast twice on the finisher's hits.,Lo de su derecha se lanza 2 veces al rematar.
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Gun: ×2 size, ×1.6 damage, −25% speed.","Pistola: ×2 tamaño, ×1,6 daño, −25% velocidad."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
@@ -775,21 +775,25 @@ ITEM_GUN_ECHO_DESC,Gun: fires again 0.3 s later at 60%.,"Pistola: dispara otra v
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
 ITEM_GUN_BACKFIRE_DESC,Gun: also fires behind you.,Pistola: también dispara hacia atrás.
 ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
-ITEM_SPLIT_WAVE_DESC,A flying slash splits into 3 small crescents when it hits.,Un tajo volador se divide en 3 medias lunas al impactar.
+ITEM_SPLIT_WAVE_DESC,A flying slash splits into 3 crescents on hit; +1 a level.,Un tajo volador se parte en 3 medias lunas; +1 por nivel.
 ITEM_WHIRL,Whirl,Remolino
 ITEM_WHIRL_DESC,Every slash becomes a full 360° spin.,Cada tajo se vuelve un giro completo de 360°.
 ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
-ITEM_DOUBLE_SLASH_DESC,"Every slash repeats, mirrored, 0.15 s later.","Cada tajo se repite, en espejo, 0,15 s después."
+ITEM_DOUBLE_SLASH_DESC,"Every slash repeats, mirrored, at 70%; +1 repeat a level.","Cada tajo se repite, en espejo, al 70%; +1 por nivel."
 ITEM_THRUST,Thrust,Estocada
-ITEM_THRUST_DESC,"A long stab: reach ×2, arc ×0.4, +30% damage.","Una estocada: alcance ×2, arco ×0,4, +30% de daño."
+ITEM_THRUST_DESC,"Stab: reach ×2, +30% damage; arc ×0.4, wider from Lv 3.","Estocada: alcance ×2, +30% daño; arco ×0,4, más desde Nv 3."
 ITEM_HEAVY,Heavy,Pesado
-ITEM_HEAVY_DESC,×1.7 damage and a big knockback; 30% slower swings.,"×1,7 de daño y gran empuje; tajos un 30% más lentos."
+ITEM_HEAVY_DESC,"×1.7 damage, big knockback; 30% slower (less from Lv 3).","×1,7 daño, gran empuje; 30% más lento (menos desde Nv 3)."
 ITEM_FLURRY,Flurry,Ráfaga
-ITEM_FLURRY_DESC,Swings 50% faster for 25% less damage.,"Tajos un 50% más rápidos, con un 25% menos de daño."
+ITEM_FLURRY_DESC,"+50% swing speed; −25% damage, shrinking to 0 by Lv 5.","+50% velocidad de tajo; −25% daño, hasta 0 en el Nv 5."
 ITEM_FISSURE,Fissure,Fisura
 ITEM_FISSURE_DESC,Each slash cracks the ground ahead; the crack erupts.,Cada tajo agrieta el suelo delante; la grieta estalla.
 ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
 ITEM_CHAIN_CUT_DESC,A slash hit leaps to the next enemy within 4 m.,Un golpe de tajo salta al siguiente enemigo a 4 m.
+ITEM_BLADE_STORM,Blade Storm,Tormenta de Hojas
+ITEM_BLADE_STORM_DESC,Each slash throws 2 blades that fly out and back (+1/level).,Cada tajo lanza 2 hojas que van y vuelven; +1 por nivel.
+ITEM_RIPOSTE_CHAIN,Riposte Chain,Réplica en Cadena
+ITEM_RIPOSTE_CHAIN_DESC,"A slash kill slashes the next enemy in 4 m: 2, +1 a level.","Un tajo que mata tajea al siguiente a 4 m: 2, +1 por nivel."
 ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
 ITEM_PARRY_EDGE_DESC,Your slashes destroy the enemy shots they touch.,Tus tajos destruyen los disparos enemigos que tocan.
 ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
@@ -856,11 +860,11 @@ ITEM_TRIGGER_ON_CRIT_DESC,Cards to its right cast a small spell on each critical
 ITEM_SHARED_BLEED,Bleed,Sangrado
 ITEM_SHARED_BLEED_DESC,Hits bleed; the bleed ticks twice as fast while you move.,Desangras; sangra el doble de rápido si te mueves.
 ITEM_SHARED_EXPLOSIVE,Explosive,Explosivo
-ITEM_SHARED_EXPLOSIVE_DESC,The spell explodes where it ends.,El hechizo estalla donde termina.
+ITEM_SHARED_EXPLOSIVE_DESC,The spell explodes where it ends (its splits don't).,El hechizo estalla donde termina (sus divisiones no).
 ITEM_TRIGGER_ON_HIT_TWICE,On Hit ×2,Al Impactar ×2
-ITEM_TRIGGER_ON_HIT_TWICE_DESC,Legendary: cards to its right cast twice on each hit.,Legendario: lo de su derecha se lanza 2 veces por impacto.
+ITEM_TRIGGER_ON_HIT_TWICE_DESC,Legendary: cards to its right cast 2× a hit (4× a slash).,"Legendario: lo de su derecha, 2× por impacto (4× con tajo)."
 ITEM_TRIGGER_ON_KILL_TWICE,On Kill ×2,Al Matar ×2
-ITEM_TRIGGER_ON_KILL_TWICE_DESC,Legendary: cards to its right cast twice on each kill.,Legendario: lo de su derecha se lanza 2 veces por baja.
+ITEM_TRIGGER_ON_KILL_TWICE_DESC,Legendary: cards to its right cast 2× a kill (4× a slash).,"Legendario: lo de su derecha, 2× por baja (4× con tajo)."
 ITEM_TRIGGER_ON_END_TWICE,On End ×2,Al Terminar ×2
 ITEM_TRIGGER_ON_END_TWICE_DESC,Legendary: cards to its right cast twice where it ends.,Legendario: lo de su derecha se lanza 2 veces al terminar.
 UI_CODEX,Codex,Códice

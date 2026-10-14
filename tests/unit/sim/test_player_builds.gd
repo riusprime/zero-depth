@@ -214,6 +214,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 		blade,
 		[
 			"blade_orbit",  # v0.6.5 WN4: the Blade pool B1–B16 (WAND.md) is Blade-only
+			"blade_storm",  # v0.8.0 BL (BLADE_AUDIT B4)
 			"bulwark",
 			"chain_cut",
 			"conductor",
@@ -234,6 +235,7 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"overcharge",
 			"parry_edge",
 			"rearguard",  # v0.6.5 WN3: on the Gun, G15 Backfire / G14 Echo / G8 Homing do their job
+			"riposte_chain",  # v0.8.0 BL (BLADE_AUDIT B4)
 			"seeker",
 			"serrated_edge",
 			"split_wave",

@@ -676,6 +676,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.floor_price_step_permille = int(round(def.floor_price_step * 1000.0))
 	t.rare_weight_chest = def.rare_weight_chest
 	t.rare_weight_altar = def.rare_weight_altar
+	t.own_weapon_card_permille = def.own_weapon_card_permille  # v0.8.0 BL (B5)
 	t.offer_size = def.offer_size
 	t.interact_radius_m = def.interact_radius_m
 	t.shard_tier_bonus_permille = int(round(def.shard_tier_bonus * 1000.0))

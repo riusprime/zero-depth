@@ -10,9 +10,14 @@ extends SceneTree
 ## Headless has no GPU: "frame" is the CPU side only (building the MultiMesh buffers, lights and decals); the GPU's
 ## draw cost is not in it. It counts, per tick: live player projectiles, launches, sim events, explosion bursts drawn,
 ## VFX sprites asked for and drawn, light requests and lights on, floor marks.
+## v0.8.0 BL (BLADE_AUDIT B6): it also tallies the damage the dummies took (DpsTally, the Playground's DPS meter's
+## count from the event log) and prints it as damage per second, overall and per dummy, with the top sources.
+## --weapon=blade runs the Blade (Primary pressed every tick, the dummies 1.4-2.3 m away); --cards=a,b,c grants these
+## cards (in this wand order) instead of the default build.
 ## Writes only under build/ (build/perf/perf_probe.txt) and prints the same report.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
-##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N]
+##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
+##   [-- --tag=name]
 
 const OUT_DIR := "res://build/perf"
 const WARMUP_TICKS := 60
@@ -25,6 +30,11 @@ var _level := 5
 var _sim_only := false
 ## --cap=N: SimTuning.player_shots_max for this run (0: the shipped data/tuning/sim.tres).
 var _cap := 0
+## v0.8.0 BL: the weapon, the cards (empty: the default build) and the report's file tag.
+var _weapon := &"gun"
+var _cards: Array[StringName] = []
+var _tag := ""
+var _tally := DpsTally.new()
 var _world: World
 var _api: PlaygroundApi
 var _reader: WorldReader
@@ -53,16 +63,25 @@ func _initialize() -> void:
 			_level = int(a.get_slice("=", 1))
 		elif a.begins_with("--cap="):
 			_cap = int(a.get_slice("=", 1))
+		elif a.begins_with("--weapon="):
+			_weapon = StringName(a.get_slice("=", 1))
+		elif a.begins_with("--cards="):
+			for id in a.get_slice("=", 1).split(",", false):
+				_cards.append(StringName(id))
+		elif a.begins_with("--tag="):
+			_tag = a.get_slice("=", 1)
 	_total = WARMUP_TICKS + _seconds * 60
 	var repo := ContentRepository.load_all()
 	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", run_def.biomes[0])
-	_world = PlaygroundScenario.build(repo, &"gun", biome)
+	_world = PlaygroundScenario.build(repo, _weapon, biome)
 	if _cap > 0 and &"player_shots_max" in _world.tuning:
 		_world.tuning.set(&"player_shots_max", _cap)
 	_api = PlaygroundApi.new(_world)
 	_reader = WorldReader.new(_world)
 	var cards: Array[StringName] = [&"gun_spread", &"split_shot", &"shared_explosive"]
+	if not _cards.is_empty():
+		cards = _cards
 	if _twin:
 		cards.append(&"gun_twin")
 	for id in cards:
@@ -71,9 +90,11 @@ func _initialize() -> void:
 	var hero := _world.player_pos()
 	for k in _dummies:
 		var at := hero + Vector2(4.0 + 1.5 * (k / 3), -2.0 + 2.0 * (k % 3))
+		if _weapon == &"blade":  # v0.8.0 BL: within a slash's reach
+			at = hero + Vector2(1.4 + 0.9 * (k / 3), -1.0 + 1.0 * (k % 3))
 		if not _api.place_dummy_now(at):
 			_line("dummy %d at %s: no room" % [k, at])
-	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, InputFrame.SHOOT, InputFrame.SHOOT)
+	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, _button(), _button())
 	if not _sim_only:
 		_view = WorldViewRoot.new()
 		_view.name = "WorldView"
@@ -88,17 +109,24 @@ func _initialize() -> void:
 		_view.setup(_reader, biome.palette, half + 4.0)
 	_line(
 		(
-			"perf_probe: gun + %s, level %d, %d dummies, %d s held Shoot (+%d warm-up ticks), %s"
+			"perf_probe: %s + %s, level %d, %d dummies, %d s of %s (+%d warm-up ticks), %s"
 			% [
+				_weapon,
 				", ".join(cards),
 				_level,
 				_dummies,
 				_seconds,
+				"Primary pressed" if _weapon == &"blade" else "held Shoot",
 				WARMUP_TICKS,
 				"sim only" if _sim_only else "sim + WorldView (headless: CPU side only)"
 			]
 		)
 	)
+
+
+## The attack button: the Gun's Shoot held, or the Blade's Primary pressed every tick (v0.8.0 BL).
+func _button() -> int:
+	return InputFrame.PRIMARY if _weapon == &"blade" else InputFrame.SHOOT
 
 
 func _item(id: StringName) -> int:
@@ -117,7 +145,13 @@ func _process(delta: float) -> bool:
 	_api.apply_pending()  # the endless dummies' refill, as SimDriver runs it before every tick
 	_world.step(_frame_in)
 	var t1 := Time.get_ticks_usec()
-	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, InputFrame.SHOOT, 0)
+	var held := InputFrame.SHOOT if _weapon != &"blade" else 0
+	var pressed := InputFrame.PRIMARY if _weapon == &"blade" else 0
+	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, held, pressed)
+	if _tick_n == WARMUP_TICKS - 1:
+		_tally.reset(_reader)  # v0.8.0 BL: the damage counted over the measured ticks only
+	elif measured:
+		_tally.observe(_reader)
 	var sync_ms := 0.0
 	var frame_ms := 0.0
 	if _view != null:
@@ -230,6 +264,20 @@ func _finish() -> void:
 		_line("frame cost by node (ms per tick, avg):")
 		for k in keys.slice(0, 12):
 			_line("  %-24s %8.3f" % [k, float(_node_ms[k]) / n])
+	var now := _world.tick - 1
+	var secs := float(_total - WARMUP_TICKS) / SimTick.TICKS_PER_SECOND
+	var dps := float(_tally.total) / maxf(secs, 0.001)
+	_line(
+		(
+			"damage: %d over %.1f s -> %.1f per s (%.1f per s per dummy; DpsTally overall %.1f)"
+			% [_tally.total, secs, dps, dps / maxf(_dummies, 1), _tally.dps_overall(now)]
+		)
+	)
+	var ranked := _tally.ranked()
+	for pair: Array in ranked.slice(0, 8):
+		_line(
+			"  %-24s %10d  %5.1f %%" % [pair[0], pair[1], 100.0 * pair[1] / maxf(_tally.total, 1)]
+		)
 	var total: Array = _rows["total_ms"]
 	var sum := 0.0
 	for v: float in total:
@@ -243,6 +291,8 @@ func _finish() -> void:
 	)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
 	var tag := "twin" if _twin else "base"
+	if _tag != "":
+		tag = _tag
 	if _sim_only:
 		tag += "_sim"
 	var f := FileAccess.open(OUT_DIR + "/perf_probe_%s.txt" % tag, FileAccess.WRITE)

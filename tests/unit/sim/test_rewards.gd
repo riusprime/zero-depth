@@ -77,6 +77,9 @@ func test_the_shipped_data() -> void:
 	assert_eq([_rewards.altars_min, _rewards.altars_max], [2, 3])
 	assert_eq([_rewards.chests_min, _rewards.chests_max], [2, 3])
 	assert_eq(_rewards.rare_weight_chest, 3)
+	assert_eq(
+		_rewards.own_weapon_card_permille, 1500, "v0.8.0 BL (B5): the run's own wand cards ×1.5"
+	)
 	assert_eq(_rewards.shard_tier_bonus_permille, 250)
 	var rare := []
 	var rare_cards := []
@@ -92,6 +95,7 @@ func test_the_shipped_data() -> void:
 		rare,
 		[
 			"afterimage",
+			"blade_storm",  # v0.8.0 BL (B4): a rare Blade wand card
 			"bulwark",
 			"cluster_payload",
 			"cold_snap",

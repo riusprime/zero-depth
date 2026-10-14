@@ -46,6 +46,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.when = int(d.hook_when)
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	o.casts = d.hook_casts  # v0.6.5 WN5b
+	o.per_level_after = d.per_level_after  # v0.8.0 BL (B2)
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
@@ -58,6 +59,8 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 		o.value = _units(d, map, d.value)
 		if d.per_level != 0.0:  # v0.6.5 WN3: the step per level, in the same units
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
+			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
+				o.per_level = d.per_level  # v0.8.0 BL: per mille as is (Flurry's 250 / 3), rounded per level
 	return o
 
 
@@ -77,7 +80,7 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 				out = v / SimTick.TICKS_PER_SECOND
 			"turn_rate":
 				out = ContentCompiler.degrees_to_units(v) / float(SimTick.TICKS_PER_SECOND)
-	if map[1] in AttackSpec.INT_FIELDS:
+	if AttackSpec.is_int_field(map[1]):
 		out = roundi(out)
 	return out
 
@@ -87,7 +90,25 @@ static func _units(d: ModifierOpDefinition, map: Array, v: float) -> float:
 ## then the wand's trigger cards (Kind.TRIGGER) in id order; v0.6.5 WN3/WN4: then the wand's pool cards (Kind.WAND),
 ## pool by pool in WAND_POOL_ORDER (the Gun's G cards, then the Blade's B cards), each in id order, so every earlier
 ## index still names the same card. v0.6.5 WN5b: the legendary trigger cards (Kind.TRIGGER, rarity LEGENDARY) last.
+## v0.8.0 BL: then the cards of each later index wave (ItemDefinition.index_wave 1, 2, ...), wave by wave, each in id
+## order, whatever their kind or pool: a card added to a pool later never moves an index a save holds.
 static func item_defs(repo: ContentRepository) -> Array:
+	var waves := {}
+	for def: ItemDefinition in repo.all_of(&"items"):
+		if def.index_wave > 0:
+			if not waves.has(def.index_wave):
+				waves[def.index_wave] = []
+			waves[def.index_wave].append(def)
+	var late := []
+	var keys := waves.keys()
+	keys.sort()
+	for k: int in keys:
+		late += waves[k]
+	return _wave_zero(repo) + late
+
+
+## The cards of index wave 0 (every card before v0.8.0) in their order (item_defs).
+static func _wave_zero(repo: ContentRepository) -> Array:
 	var old := []
 	var cards := []
 	var triggers := []
@@ -96,6 +117,8 @@ static func item_defs(repo: ContentRepository) -> Array:
 	for _p in WAND_POOL_ORDER:
 		pools.append([])
 	for def: ItemDefinition in repo.all_of(&"items"):
+		if def.index_wave > 0:
+			continue  # v0.8.0 BL: a later wave's card (item_defs)
 		match def.kind:
 			ItemDefinition.Kind.MODIFIER:
 				cards.append(def)

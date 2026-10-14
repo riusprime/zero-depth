@@ -118,6 +118,11 @@ var launch_count := 0
 ## tick, so not hashed.
 var shot_tick := -1
 var shot_count := 0
+## v0.8.0 BL (BLADE_AUDIT B6): the merge-tracked blasts (Explosive's) set off in tick blast_tick, where, and how many
+## merged into them that tick (Attacks.merged). Derived per tick, so not hashed.
+var blast_tick := -1
+var blast_pos := PackedVector2Array()
+var blast_merged := 0
 ## Item pickups lying on the floor.
 var pickups := PickupStore.new()
 ## Twin Arc: ticks until the pending echo (0 = none), its angle, combo step (its shape), root and damage, and the

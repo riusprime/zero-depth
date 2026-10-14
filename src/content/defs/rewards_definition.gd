@@ -18,6 +18,9 @@ extends ContentDef
 ## Draw weight of a rare item against a common one's 1, in a chest and at an altar.
 @export var rare_weight_chest := 3
 @export var rare_weight_altar := 1
+## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): a wand card of the run's own weapon (requires_weapon) weighs this
+## per mille against a shared card's 1000 in a mod draw (1500: ×1.5). A starting value.
+@export var own_weapon_card_permille := 1500
 ## Cards an altar or chest offers.
 @export var offer_size := 3
 ## The interact button opens an altar or chest within this distance of the player.
@@ -74,6 +77,7 @@ func validate() -> Array[ValidationIssue]:
 		)
 	check_positive(issues, "rare_weight_chest", rare_weight_chest)
 	check_positive(issues, "rare_weight_altar", rare_weight_altar)
+	check_positive(issues, "own_weapon_card_permille", own_weapon_card_permille)  # v0.8.0 BL
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
 	check_positive(issues, "interact_radius_m", interact_radius_m)
