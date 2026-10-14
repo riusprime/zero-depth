@@ -312,6 +312,8 @@ static func attack_cue(move: int) -> StringName:
 			return &"boss_laser"
 		WorldReader.MOVE_MELT:
 			return &"boss_floor_burst"
+		WorldReader.MOVE_CROSS:  # v0.8.0 FB2: the Prism's Cross opens
+			return &"boss_laser"
 	return &""
 
 

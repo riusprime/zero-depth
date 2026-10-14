@@ -59,6 +59,7 @@ const BOSS_MOVES := {
 	&"combo": BossAttackTable.Move.COMBO,  # v0.8.0 FB1
 	&"spike_chase": BossAttackTable.Move.SPIKE_CHASE,
 	&"spike_burst": BossAttackTable.Move.SPIKE_BURST,
+	&"cross": BossAttackTable.Move.CROSS,  # v0.8.0 FB2 (the Prism)
 }
 
 
@@ -588,6 +589,8 @@ static func compile_boss(def: BossDefinition, repo: ContentRepository) -> BossTa
 	)  # v0.7.5 BF1 (N18)
 	t.arena_template = def.arena_template
 	_compile_boss_challenge(def, t)
+	if def is FinalBossDefinition:
+		FinalBodyCompiler.compile_into(def, t)  # v0.8.0 FB2
 	return t
 
 

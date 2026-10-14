@@ -171,6 +171,8 @@ static func _apply(
 	var applied := mini(BossGates.clamp_damage(w, target, scaled, owner_id), a.hp[target])
 	a.hp[target] -= applied
 	PlayerRegen.note_combat(w, target, owner_id)  # Builds: combat stops the out-of-combat regen (L25).
+	if w.final_fight != null and target != 0 and owner_id == a.ids[0]:
+		FinalBoss.note_damage(w, scaled)  # v0.8.0 FB2 (F7): the final fight's damage meter
 	var d := w.emit_event(SimEvent.Kind.DAMAGE, source_id, owner_id, target_id, at)
 	d.root_id = root_id
 	d.parent_seq = parent_seq

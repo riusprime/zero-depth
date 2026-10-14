@@ -115,6 +115,71 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_signature(issues, path, where)
 	_validate_signature_2(issues, path, where)
 	_validate_colossus(issues, path, where)
+	_validate_cross(issues, path, where)
+
+
+## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no
+## slower than its quarter), spins and opens a window of at least the telegraph minimum each, fits both in its active
+## time, is shielded (its window is the only opening), names its orbs' death line with a pattern, and fires its orbs
+## and bolts no faster than a tick.
+func _validate_cross(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	if move != &"cross":
+		return
+	var sp := shape_params
+	if int(sp.get("count", 0)) < 2:
+		issues.append(ValidationIssue.new(&"range", path, where + "a cross has 2..8 arms"))
+	for k in [
+		"length_m",
+		"width_m",
+		"quarter_seconds",
+		"fast_quarter_seconds",
+		"reverse_seconds",
+		"orb_every_seconds",
+		"bolt_every_seconds",
+	]:
+		if sp.has(k) and float(sp[k]) <= 0.0:
+			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k))
+	if float(sp.get("fast_quarter_seconds", 0.0)) > float(sp.get("quarter_seconds", 0.0)):
+		issues.append(
+			ValidationIssue.new(
+				&"range", path, where + "fast_quarter_seconds must be <= quarter_seconds"
+			)
+		)
+	var spin := int(round(float(sp.get("spin_seconds", 0.0)) * 60.0))
+	var window := int(round(float(sp.get("window_seconds", 0.0)) * 60.0))
+	for pair in [["spin_seconds", spin], ["window_seconds", window]]:
+		if pair[1] < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"telegraph_short", path, where + "%s is under the telegraph minimum" % pair[0]
+				)
+			)
+	if int(round(active_seconds * 60.0)) < spin + window:
+		issues.append(
+			ValidationIssue.new(
+				&"duration", path, where + "active_seconds must cover spin_seconds + window_seconds"
+			)
+		)
+	if not shielded:
+		issues.append(
+			ValidationIssue.new(
+				&"missing", path, where + "a cross is shielded (its window opens it)"
+			)
+		)
+	if sp.has("pattern_id") != sp.has("orb_every_seconds"):
+		issues.append(
+			ValidationIssue.new(
+				&"missing", path, where + "pattern_id and orb_every_seconds go together"
+			)
+		)
+	if sp.has("bolt_attack") != sp.has("bolt_every_seconds"):
+		issues.append(
+			ValidationIssue.new(
+				&"missing", path, where + "bolt_attack and bolt_every_seconds go together"
+			)
+		)
+	if sp.has("bolt_attack") and String(sp["bolt_attack"]).is_empty():
+		issues.append(ValidationIssue.new(&"missing", path, where + "bolt_attack is empty"))
 
 
 ## v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves. A combo's strikes stand apart more than the lock (each follows
@@ -192,8 +257,9 @@ func _validate_signature(issues: Array[ValidationIssue], path: String, where: St
 		or sp.has("bounces")  # v0.8.0 BS2 (S5): a ricochet's death line
 		or sp.has("bounce_phase")
 		or sp.has("lava_seconds")  # v0.8.0 BS2 (S6): the lava's
-		or (move == &"gaze" and sp.has("pattern_id"))
-	)  # v0.8.0 BS2 (S4): the gaze's orbs
+		or (move == &"gaze" and sp.has("pattern_id"))  # v0.8.0 BS2 (S4): the gaze's orbs
+		or (move == &"cross" and sp.has("pattern_id"))
+	)  # v0.8.0 FB2: the Cross's orbs
 	if late and String(late_cause_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", path, where + "late_cause_key is required"))
 

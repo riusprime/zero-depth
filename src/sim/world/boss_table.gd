@@ -75,6 +75,24 @@ var dash_read_ticks := 0
 var gap_distance_m := 0.0
 var gap_ticks := 0
 var gap_attack := -1
+## v0.8.0 FB2 (owner F7, "Phase-by-phase mix"; FINAL_BOSS.md F5, F7; BossPrism): a body whose HP is set as it rises
+## from the player's measured damage per second (FinalFight's meter: the last dps_seconds closed seconds, at least
+## dps_min_seconds of them, else its own hp): hp = dps × dps_target_ticks / 60 × window_permille / 1000, clamped to
+## dps_hp_min..dps_hp_max. window_permille is the share of its Cross's cycle that is a window (compiled from its
+## `cross` attacks), so at the measured DPS in every window it lasts about dps_target_ticks. It floats home (the
+## fight's centre) and its shards orbit it: shard_count of them, shard_orbit_m from its centre, turning shard_turn_milli
+## thousandths of 1/4096 of a turn a tick (0 shards: none).
+var dps_hp := false
+var dps_seconds := 0
+var dps_min_seconds := 0
+var dps_target_ticks := 0
+var dps_hp_min := 1
+var dps_hp_max := 1
+var window_permille := 1000
+var floats_home := false
+var shard_count := 0
+var shard_orbit_m := 0.0
+var shard_turn_milli := 0
 
 
 ## The attack index with this id, or -1.

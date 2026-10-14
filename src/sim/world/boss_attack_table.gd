@@ -26,6 +26,7 @@ enum Move {
 	COMBO,  # v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves (BossColossus)
 	SPIKE_CHASE,
 	SPIKE_BURST,
+	CROSS,  # v0.8.0 FB2 (FINAL_BOSS.md F5): the Prism's turning Cross (BossPrism)
 }
 
 var id := &""
@@ -139,3 +140,15 @@ var melt_warn_ticks := 0
 ## from where it lands (its shockwave ring).
 var steps := 1
 var step_m := 0.0
+## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5, F7; BossPrism): a `cross` attack's `count` beams in a plus from the body
+## (length_m, half_width_m, cut short by walls) turn a quarter turn every quarter_ticks at full HP, down to
+## fast_quarter_ticks at no HP (set as each windup begins), reversing every reverse_ticks, for spin_ticks; then its
+## window (window_ticks, the rest of its active time): the beams are out and the shield is down. Its `pattern` (the
+## orbs) fires from the body's orbiting shards every orb_every_ticks while the beams turn; its aimed bolts (the attack
+## at bolt_attack, a `bolt_fan`: its speed, radius, range, damage and lock as the aim line's time) start every
+## bolt_every_ticks over its whole active time.
+var fast_quarter_ticks := 0
+var spin_ticks := 0
+var window_ticks := 0
+var bolt_attack := -1
+var bolt_every_ticks := 0

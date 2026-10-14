@@ -14,6 +14,11 @@ extends RefCounted
 ## - A save is taken at each body's start (RunSaver: the arena's entry, then each phase_tick), so a resumed fight
 ##   starts at the current body's beginning.
 ## While the fight runs (not won, the player alive) its clock counts run time (the arena has no spawner to count it).
+## v0.8.0 FB2 (owner F7, "Phase-by-phase mix": "her HP is set from your measured damage per second so she always lasts
+## about 60 s however strong you are"): the fight measures the player's damage per second (note_damage, advance:
+## FinalFight's meter) while a body that can be hurt is fought (not rising, gated or shattering, the player alive),
+## except a body whose own HP comes from the meter (BossTable.dps_hp: the Prism). As such a body rises its HP is set
+## from the meter (dps_hp_of; SIM_CONTRACTS "The final boss").
 ## Pure: no stream is drawn.
 
 ## BossAi state of a shattering body: after BossAi.GATE (6) and BossSignatures' egg states (7-9), which the views
@@ -30,6 +35,7 @@ static func begin(
 	w: World, tables: PackedInt32Array, shatter_ticks: int, at: Vector2, phase: int = 0
 ) -> void:
 	w.final_fight = FinalFight.create(tables, shatter_ticks)
+	w.final_fight.home = at  # v0.8.0 FB2: the Prism floats back here
 	_spawn(w, clampi(phase, 0, tables.size() - 1), at)
 
 
@@ -68,6 +74,10 @@ static func advance(w: World) -> void:
 	var i := body_index(w)
 	if i < 0:
 		return
+	if measuring(w, i):  # v0.8.0 FB2: a measured tick of the fight (the meter's second runs on)
+		f.dps_t += 1
+		if f.dps_t >= SimTick.TICKS_PER_SECOND:
+			f.close_second()
 	var a := w.actors
 	if f.shatter_t > 0:
 		f.shatter_t -= 1
@@ -123,6 +133,12 @@ static func _spawn(w: World, phase: int, at: Vector2) -> void:
 	f.phase_tick = w.tick
 	f.shatter_t = 0
 	f.body_id = w.spawn_boss(f.tables[phase], at)
+	var t := w.boss_tables[f.tables[phase]]
+	if t.dps_hp:  # v0.8.0 FB2 (F7): her HP from the player's measured damage per second
+		var i := w.actors.index_of(f.body_id)
+		var hp := dps_hp_of(w, t)
+		w.actors.max_hp[i] = hp
+		w.actors.hp[i] = hp
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, f.body_id, f.body_id, f.body_id, at)
 	e.effect_id = EFFECT_RISE
 	e.amount = phase
@@ -191,3 +207,44 @@ static func segment_permille(w: World, k: int) -> int:
 			fill * clampi(a.state_t[i] * 1000 / maxi(1, w.tuning.boss_intro_ticks), 0, 1000) / 1000
 		)
 	return fill
+
+
+# --- v0.8.0 FB2: the damage meter (owner F7) ------------------------------------------------------------------------
+
+
+## True while tick-phase-9's tick counts in the meter: the fight runs, the player lives, and body i can be hurt (not
+## rising, gated or shattering) and is not itself measured against (BossTable.dps_hp).
+static func measuring(w: World, i: int) -> bool:
+	var f := w.final_fight
+	if f == null or f.won or w.player_dead() or i < 0 or f.shatter_t > 0:
+		return false
+	var s := w.actors.state[i]
+	if s == EnemyAi.State.SPAWN or s == BossAi.GATE or s == SHATTER or w.actors.dead[i] == 1:
+		return false
+	return not w.boss_tables[f.tables[f.phase]].dps_hp
+
+
+## Damage._apply: the player's hit (or damage over time) of `amount` on another actor counts while the meter runs.
+static func note_damage(w: World, amount: int) -> void:
+	if amount > 0 and measuring(w, body_index(w)):
+		w.final_fight.dps_acc += amount
+
+
+## [damage, seconds] the meter holds for table t (its last dps_seconds closed seconds).
+static func measured(w: World, t: BossTable) -> Array[int]:
+	if w.final_fight == null:
+		return [0, 0]
+	return w.final_fight.measured(t.dps_seconds)
+
+
+## A dps_hp body's HP (owner F7): with at least dps_min_seconds measured, dps × dps_target_ticks / 60 ×
+## window_permille / 1000 (dps = the damage over the seconds measured), else its table's hp; clamped to
+## dps_hp_min..dps_hp_max. Integer maths (64-bit), so the same meter always gives the same HP.
+static func dps_hp_of(w: World, t: BossTable) -> int:
+	var m := measured(w, t)
+	var hp := t.hp
+	if m[1] > 0 and m[1] >= t.dps_min_seconds:
+		hp = (
+			m[0] * t.dps_target_ticks * t.window_permille / (m[1] * SimTick.TICKS_PER_SECOND * 1000)
+		)
+	return clampi(hp, t.dps_hp_min, maxi(t.dps_hp_min, t.dps_hp_max))

@@ -1287,6 +1287,44 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
 - **Reads (BS2).** `WorldReader.boss_gaze(i)`, `boss_lava()`, `boss_melts()`, `MOVE_GAZE`, `MOVE_MELT`, `TEAM_ENEMY`;
   `BossAi.telegraph` draws nothing on the ground for `gaze` and `melt` (`"ground": false`).
 
+## 10g. The final boss's Prism (v0.8.0 FB2; owner O17, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md) F5, F7)
+
+- **The body (`BossPrism`).** A body whose table has a `cross` attack floats: it glides to the fight's centre
+  (`FinalFight.home`, where the first body rose) at its speed in every state but its rise, a gate and the shatter, and
+  never pursues. Its shards (`BossTable.shard_count`, `shard_orbit_m`, `shard_turn_milli`) are points
+  `shard_pos(k, tick)` on a ring round it, turning with the world's tick (no state); they are what fires.
+- **The Cross (`cross`, `BossAttackTable.Move.CROSS`, appended).** `count` beams in a plus from her edge
+  (`EnemyAi.clear_run`: stopped by walls), one shape function (`beam_at`), drawn and hit alike. The windup (the
+  spin-up) re-aims the arms every tick to `aim + 2048 / count` (the player midway between two arms; never on one).
+  `_lock` sets the way (`BossStore.span`: the opposite of her last Cross's; the first one's from the ai stream) and the
+  quarter `q = fast + (slow − fast) × hp / max_hp` (integer, stored in point 7). Arm 0's angle `st` ticks into the
+  spin is the Gaze's triangle wave (`lock_a + span × along × 1024 / q`, reversing every `reverse_ticks`). For
+  `spin_ticks` a beam touching the player hurts once per `burn_ticks` window; the rest of the active time is the
+  window. `BossDodge.shielded` is true through the windup and the spin and false in the window (and in the two
+  ticks of recovery and choice after it): the Prism can be hurt only then.
+- **Orbs.** While the beams turn, from `orb_every_ticks` on, volley `v` fires the attack's pattern from shard
+  `v % shards` (each wave aimed at the player from the shard), through `BulletPatterns.fire` (its fairness and caps),
+  carrying `BossSignatures.LATE_CAUSE + attack` (the recap's orb line).
+- **Fast bolts.** Every `bolt_every_ticks` over the whole active time (spin and window), shard `(st / every) % shards`
+  locks an aim line (its place in point 0, its angle and start tick in point 1) at the player's position; after the
+  bolt attack's `lock_ticks` (0.4 s) a bolt flies down it (that attack's speed, radius, range and damage, look
+  `crown_bolt`, cause = that attack). It doesn't track; none fires while the player is within 1.0 m (+ radius) of the
+  shard.
+- **The HP from the measured DPS (owner F7).** `FinalFight` holds a meter: a ring of 60 one-second buckets of the
+  damage the player dealt (`Damage._apply`: `scaled`, the hit's damage before the HP and gate clamps, any target but
+  the player) while the fight is measured (`FinalBoss.measuring`: not won, the player alive, the body neither rising,
+  gated nor shattering, and not itself a `dps_hp` body). As a `dps_hp` body rises (`FinalBoss._spawn`) its HP is set:
+  with `n` = min(its `dps_seconds`, the seconds closed) ≥ `dps_min_seconds`,
+  `hp = Σ(last n seconds) × dps_target_ticks × window_permille / (n × 60 × 1000)`, else its table's `hp`; clamped to
+  `dps_hp_min..dps_hp_max`. `window_permille` (compiled) is Σ window / Σ (windup + active + recovery + cooldown) over
+  its Crosses. Integer maths: the same meter gives the same HP. Loops and the hidden catch-up don't change it (their
+  damage scaling still applies).
+- **State and saves.** `FinalFight.home`, `dps_secs`, `dps_head`, `dps_closed`, `dps_acc`, `dps_t` are hashed with the
+  fight and listed in `WorldSnapshot.ADDED_SINCE_V05` (an FB1 save restores with a fresh meter and the centre).
+- **Reads (FB2).** `WorldReader.boss_cross(i)` (`BossPrism.state`: winding, window, progress, arms, angle,
+  half_width, way, quarter, speed, orb_shard, bolt), `boss_shards(i)`, `final_dps(seconds)`, `MOVE_CROSS`.
+  `BossAi.telegraph` draws nothing on the ground for `cross` (`"ground": false`).
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

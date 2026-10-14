@@ -43,7 +43,7 @@ static func attack_ticks(w: World, i: int, atk: BossAttackTable) -> int:
 
 
 ## v0.7.5 BF1: a shielded attack (the signature pattern) is winding up or running: hits spark off (Damage). It opens
-## between patterns.
+## between patterns. v0.8.0 FB2: a shielded Cross opens only for its window (its active time after the spin).
 static func shielded(w: World, i: int) -> bool:
 	if not BossAi.is_boss_kind(w.actors.kinds[i]):
 		return false
@@ -51,6 +51,8 @@ static func shielded(w: World, i: int) -> bool:
 	if s != EnemyAi.State.WINDUP and s != EnemyAi.State.ACTIVE:
 		return false
 	var atk := BossAi.attack_of(w, i)
+	if atk != null and atk.move == BossAttackTable.Move.CROSS and BossPrism.in_window(w, i):
+		return false  # v0.8.0 FB2 (F7): the Cross's window, between two spins
 	return atk != null and atk.shielded
 
 

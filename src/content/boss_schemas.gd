@@ -170,7 +170,32 @@ const MOVES := {
 	## v0.8.0 FB1: `count` rays of spikes out of the boss, aimed between the rays at the player; `steps` rings step_m
 	## apart, stagger_seconds apart, each shown for the lock before it erupts (radius_m).
 	&"spike_burst":
+	## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5, F7; BossPrism): the Prism's Cross: `count` beams in a plus from her
+	## edge (length_m, width_m, stopped by walls). Through the windup thin aim lines keep the player midway between
+	## two arms; then the beams turn a quarter turn every quarter_seconds at full HP, down to fast_quarter_seconds at
+	## none, reversing every reverse_seconds, for spin_seconds, hurting once every burn_seconds; then a window of
+	## window_seconds with the beams out and the shield down (the attack is shielded otherwise; active_seconds is at
+	## least spin + window). An optional pattern_id fires every orb_every_seconds from her orbiting shards while the
+	## beams turn; an optional bolt_attack (a `bolt_fan` of the same boss, its lock the aim line's time) fires a fast
 	{"shape": 0, "params": ["count", "steps", "step_m", "radius_m", "stagger_seconds"]},
+	## bolt from a shard every bolt_every_seconds.
+	&"cross":
+	{
+		"shape": 2,
+		"params":
+		[
+			"count",
+			"length_m",
+			"width_m",
+			"quarter_seconds",
+			"fast_quarter_seconds",
+			"reverse_seconds",
+			"burn_seconds",
+			"spin_seconds",
+			"window_seconds",
+		],
+		"optional": ["pattern_id", "orb_every_seconds", "bolt_attack", "bolt_every_seconds"],
+	},
 }
 
 ## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
@@ -180,6 +205,8 @@ const LOCKED_MOVES: Array[StringName] = [
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16
+## v0.8.0 FB2 (F7): the most seconds the final fight's damage meter holds (FinalFight's ring).
+const DPS_MAX_SECONDS := 60
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

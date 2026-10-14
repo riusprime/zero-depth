@@ -24,6 +24,12 @@ static func compile_boss_attack(
 		t.active_ticks = maxi(t.active_ticks, t.count * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.SPIKE_CHASE or t.move == BossAttackTable.Move.SPIKE_BURST:
 		t.active_ticks = maxi(t.active_ticks, (t.steps - 1) * t.mark_gap_ticks + 1)
+	if t.move == BossAttackTable.Move.CROSS:  # v0.8.0 FB2: the spin, then its window
+		t.spin_ticks = SimTick.seconds_to_ticks(float(sp.get("spin_seconds", 0.0)))
+		t.window_ticks = SimTick.seconds_to_ticks(float(sp.get("window_seconds", 0.0)))
+		t.active_ticks = maxi(t.active_ticks, t.spin_ticks + t.window_ticks)
+		t.fast_quarter_ticks = SimTick.seconds_to_ticks(float(sp.get("fast_quarter_seconds", 0.0)))
+		t.bolt_every_ticks = SimTick.seconds_to_ticks(float(sp.get("bolt_every_seconds", 0.0)))
 	_compile_signature(def, t)
 	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
@@ -34,8 +40,10 @@ static func compile_boss_attack(
 		if pd != null:
 			t.pattern = compile_pattern(pd)
 			var own_clock := (
-				t.move == BossAttackTable.Move.GAZE or t.move == BossAttackTable.Move.LEAP
-			)  # v0.8.0 FB1: a leap's ring fires on its landing, inside its flight
+				t.move == BossAttackTable.Move.GAZE
+				or t.move == BossAttackTable.Move.LEAP
+				or t.move == BossAttackTable.Move.CROSS
+			)  # v0.8.0 FB1: a leap's ring fires on its landing, inside its flight; FB2: a Cross's orbs repeat
 			if t.egg_ticks <= 0 and not own_clock:
 				# v0.8.0 BS1 (S3): an egg bursts on its own clock, after the attack; v0.8.0 BS2 (S4): a gaze's orbs
 				# fire again and again over its own active time.
