@@ -20,6 +20,7 @@ not in `main` yet).
 | Q1–Q6 (PLAN "Owner decisions") | 2026-10-14 | by role; prompts for the seven kinds without an owner design; only the Arc Caster rune and Mine Layer mines keep ground marks; code clips first; CC0 + the owner's generator; HP ×6 / damage ×1.2 per loop | 2026-10-14 |
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | pending | |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | pending | |
+| G2 EC: palettes A/B/C ([ENEMY_COLOURS](evidence/ENEMY_COLOURS.md), shots in `evidence/ec_shots/`) | 2026-10-14 | pending | |
 | G2 RT: the first 3 designed rooms | — | not yet made | |
 | G2 MU: 3 menu and card directions | — | not yet made | |
 
@@ -45,3 +46,11 @@ not in `main` yet).
 - 2026-10-14: TG done on `v080-tg` (agent): the melee kinds', Sniper's and Needle's telegraphs are `"ground": false`
   (shapes and timings kept); their avatars tell the windup (crouch, glow, flash). Contracts updated (PRESENTATION §4,
   SIM §10e, BOSS_FIGHTS "Normal enemies"). The feel is OWNER ONLY.
+- 2026-10-14: EC G2 made on `v080-ec` (agent, from `deb87b4`), not Done: the 14 normal kinds' colours moved into one
+  table (`EnemyPalettes`: body / trim / grey / eye per kind) that every enemy avatar reads; `current` (today's red and
+  grey, value for value) stays the shipped default; candidates A (saturated), B (muted, weathered), C (grey bodies,
+  role trims and eyes), with an eye slit for the Splitter / Splitling and Mender in the candidates. Shots
+  (`scripts/shots/mock_enemy_colours.gd`, Ruins and Frozen Shore, 1920 x 1080) and colour-blind numbers and
+  simulations in [ENEMY_COLOURS](evidence/ENEMY_COLOURS.md). Run locally: lint clean; `tests/unit/presentation`
+  527/527 (new `test_enemy_palettes.gd` 9/9); `tests/arch` + `tests/golden` 6/6; e2e enemies, horde enemies, new
+  enemies 4/4. Not run locally: the full suite (CLAUDE.md). Waiting on the owner's pick.

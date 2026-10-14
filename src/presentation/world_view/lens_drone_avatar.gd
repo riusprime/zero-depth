@@ -13,9 +13,8 @@ const HEIGHT := HOVER_Y + 0.35
 const SHADOW_R := 0.4
 const OUTLINE_M := 0.02
 
-const RED := Color("#D8433A")
-const GREY := Color("#5F5551")
-const EYE := Color("#FF2A22")
+## v0.8.0 EC: the pod (body), the cap (trim), the ring (grey) and the eye slit (eye) come from EnemyPalettes.
+const KIND := WorldReader.KIND_LENS_DRONE
 
 var pod: Node3D
 var ring: Node3D
@@ -51,12 +50,21 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(shadow)
 	pod = Node3D.new()
 	add_child(pod)
-	_parts.piece(pod, BossParts.block(Vector3(0.5, 0.34, 0.46), 30, 0.3), Vector3.ZERO, RED)
 	_parts.piece(
-		pod, BossParts.block(Vector3(0.28, 0.1, 0.26), 31, 0.3), Vector3(-0.04, 0.2, 0), GREY
+		pod, BossParts.block(Vector3(0.5, 0.34, 0.46), 30, 0.3), Vector3.ZERO, _color(&"body")
+	)
+	_parts.piece(
+		pod,
+		BossParts.block(Vector3(0.28, 0.1, 0.26), 31, 0.3),
+		Vector3(-0.04, 0.2, 0),
+		_color(&"trim")
 	)
 	var eye := _parts.glow(
-		pod, BossParts.block(Vector3(0.05, 0.08, 0.28), 33), Vector3(0.26, 0, 0), EYE, 1.8
+		pod,
+		BossParts.block(Vector3(0.05, 0.08, 0.28), 33),
+		Vector3(0.26, 0, 0),
+		_color(&"eye"),
+		1.8
 	)
 	_eye_mat = eye.material_override as StandardMaterial3D
 	ring = Node3D.new()
@@ -65,11 +73,15 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 		ring,
 		BossParts.tube(0.06, 0.42, 34, 10),
 		Vector3(-0.03, 0, 0),
-		GREY,
+		_color(&"grey"),
 		Vector3(0, 0, PI * 0.5)
 	)
 	body_materials = _parts.body_materials
 	_pose()
+
+
+static func _color(slot: StringName) -> Color:
+	return EnemyPalettes.color(KIND, slot)
 
 
 func sync(reader: WorldReader, i: int) -> void:

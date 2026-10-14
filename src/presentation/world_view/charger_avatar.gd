@@ -36,20 +36,19 @@ const TELEPORT_SPEED := 40.0
 const RISE_TIME := 0.35
 const OUTLINE_M := 0.018
 
-## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light).
-const HOOD_COLOR := Color("#D8433A")
-const FLAP_COLOR := Color("#C63B34")
+## Colours sampled from the reference sheet (its lit and shaded tones, as albedo under the game's light). v0.8.0 EC: the
+## hood (body), the back flap (trim), the front legs (grey) and the visor (eye) come from EnemyPalettes per kind.
 const FACE_COLOR := Color("#16181D")
 const CORE_COLOR := Color("#24272D")
-const LEG_COLOR := Color("#6E605D")
 ## The back legs sit in the body's shadow on the sheet: a darker grey.
 const BACK_LEG_COLOR := Color("#4A4446")
 const JOINT_COLOR := Color("#34363C")
 const TALON_COLOR := Color("#E6B596")
-const VISOR_COLOR := Color("#FF2A22")
 const VISOR_ENERGY := 1.4
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor's glow is its own).
+## The kind this model draws (the Charger, or the Brood Mother's Hatchling at two thirds of the size): its colours.
+var kind := WorldReader.KIND_CHARGER
 var body: Node3D
 var visor: MeshInstance3D
 ## Hip nodes, front right, front left, back right, back left.
@@ -76,15 +75,20 @@ var _tell_p := 0.0
 
 
 ## Builds the model. technique "xray" adds an enemy-coloured silhouette twin to the hood and the body, as
-## ActorViews does for its body pieces; the thin legs have none.
-func setup(outline_color: Color, technique: StringName = &"xray") -> void:
+## ActorViews does for its body pieces; the thin legs have none. `p_kind` picks the colours (EnemyPalettes).
+func setup(
+	outline_color: Color, technique: StringName = &"xray", p_kind := WorldReader.KIND_CHARGER
+) -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	kind = p_kind
 	var team := ThemePalette.color(&"enemy_body")
 	add_child(_model)
 	body = Node3D.new()
 	_model.add_child(body)
 	var shell := [
-		[_hood_mesh(), HOOD_COLOR], [_flap_mesh(), FLAP_COLOR], [_core_mesh(), CORE_COLOR]
+		[_hood_mesh(), EnemyPalettes.color(kind, &"body")],
+		[_flap_mesh(), EnemyPalettes.color(kind, &"trim")],
+		[_core_mesh(), CORE_COLOR]
 	]
 	_piece(body, shell, outline_color, team, technique)
 	var face := MeshInstance3D.new()
@@ -98,9 +102,10 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	body.add_child(face)
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
-	_visor_mat.albedo_color = VISOR_COLOR
+	var eye := EnemyPalettes.color(kind, &"eye")
+	_visor_mat.albedo_color = eye
 	_visor_mat.emission_enabled = true
-	_visor_mat.emission = VISOR_COLOR
+	_visor_mat.emission = eye
 	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
 	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
@@ -282,7 +287,7 @@ func _build_leg(
 	hip: Vector3, lens: Array, side: float, front: bool, outline: Color, team: Color
 ) -> void:
 	var s := 1.0 if front else 0.8
-	var c := LEG_COLOR if front else BACK_LEG_COLOR
+	var c := EnemyPalettes.color(kind, &"grey") if front else BACK_LEG_COLOR
 	var root := Node3D.new()
 	root.position = Vector3(hip.x, hip.y, hip.z * side)
 	_model.add_child(root)

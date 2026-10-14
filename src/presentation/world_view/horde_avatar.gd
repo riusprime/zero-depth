@@ -19,13 +19,11 @@ extends AvatarBase
 ## scope) brightening and flashing just before the strike, and the Sniper's muzzle charging up at its barrel's tip (in
 ## the air, never a line on the ground). The facing is the sim's, held through the windup.
 
-const RED := Color("#D8433A")
-const RED_DARK := Color("#A9302B")
-const GREY := Color("#5F5551")
+## v0.8.0 EC: each kind's main plate (body), its second plate or trim (trim), its limbs and frame (grey) and its eye
+## (eye) come from EnemyPalettes; the light grey, dark and bone parts stay neutral.
 const GREY_LIGHT := Color("#8A817C")
 const DARK := Color("#24272D")
 const BONE := Color("#D9CDB8")
-const EYE := Color("#FF2A22")
 ## The Mender's heal colour (beam, crystal, cross): pale green, not a reserved role (ART_DIRECTION).
 const MEND := Color("#7CF29A")
 const OUTLINE_M := 0.02
@@ -62,6 +60,9 @@ var parts := {}
 var _glow_mat := StandardMaterial3D.new()
 ## v0.8.0 TG: the Sniper's muzzle (emission on from the start at energy 0).
 var _muzzle_mat := StandardMaterial3D.new()
+## v0.8.0 EC: the eye slit the Splitter / Splitling and the Mender get when the palette asks for one on every kind
+## (their glow is the seam and the heal crystal), steady.
+var _eye_mat := StandardMaterial3D.new()
 var _tell_p := 0.0
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
@@ -92,7 +93,12 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	height = height_of(kind)
 	body = Node3D.new()
 	add_child(body)
-	var glow := EYE
+	var glow := _col(&"eye")
+	_eye_mat.albedo_color = glow
+	_eye_mat.emission_enabled = true
+	_eye_mat.emission = glow
+	_eye_mat.emission_energy_multiplier = 1.5
+	write_stencil(_eye_mat)
 	match kind:
 		WorldReader.KIND_SWARMER:
 			_build_swarmer()
@@ -237,10 +243,13 @@ func _build_swarmer() -> void:
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.34, 0.14, 0.26), 0.04, 0.03),
 		Vector3(0, 0.17, 0),
-		RED
+		_col(&"body")
 	)
 	_piece(
-		body, NeedleAvatar._chamfer_box(Vector3(0.18, 0.1, 0.18), 0.03), Vector3(0.2, 0.18, 0), GREY
+		body,
+		NeedleAvatar._chamfer_box(Vector3(0.18, 0.1, 0.18), 0.03),
+		Vector3(0.2, 0.18, 0),
+		_col(&"trim")
 	)
 	_glow(body, Vector3(0.012, 0.03, 0.12), Vector3(0.295, 0.2, 0))
 	var mandible := NeedleAvatar._chamfer_box(Vector3(0.14, 0.03, 0.03), 0.01)
@@ -257,7 +266,7 @@ func _build_swarmer() -> void:
 		hip.position = Vector3(0.1 - 0.1 * (k / 2), 0.16, 0.12 * side)
 		hip.rotation.x = 0.7 * side
 		body.add_child(hip)
-		_piece(hip, leg, Vector3(0, -0.08, 0), GREY)
+		_piece(hip, leg, Vector3(0, -0.08, 0), _col(&"grey"))
 		parts["leg%d" % k] = hip
 
 
@@ -266,10 +275,15 @@ func _build_splitter() -> void:
 	for name in ["left", "right"]:
 		var h := Node3D.new()
 		body.add_child(h)
-		_piece(h, half, Vector3(0, 0.08, 0), RED if name == "left" else RED_DARK)
+		_piece(h, half, Vector3(0, 0.08, 0), _col(&"body" if name == "left" else &"trim"))
 		_piece(
-			h, NeedleAvatar._chamfer_box(Vector3(0.2, 0.12, 0.2), 0.03), Vector3(0, 0.82, 0), GREY
+			h,
+			NeedleAvatar._chamfer_box(Vector3(0.2, 0.12, 0.2), 0.03),
+			Vector3(0, 0.82, 0),
+			_col(&"grey")
 		)
+		if EnemyPalettes.eyes_on_all():
+			_eye(h, Vector3(0.012, 0.035, 0.1), Vector3(0.105, 0.82, 0))
 		parts[name] = h
 	_glow(body, Vector3(0.5, 0.62, 0.02), Vector3(0.02, 0.44, 0))
 	var claws := Node3D.new()
@@ -277,7 +291,7 @@ func _build_splitter() -> void:
 	body.add_child(claws)
 	var claw := NeedleAvatar._chamfer_box(Vector3(0.3, 0.06, 0.06), 0.015)
 	for side in [-1.0, 1.0]:
-		_piece(claws, claw, Vector3(0.14, -0.04, 0.22 * side), GREY)
+		_piece(claws, claw, Vector3(0.14, -0.04, 0.22 * side), _col(&"grey"))
 		_piece(claws, ArcCasterAvatar._octahedron(0.04), Vector3(0.3, -0.06, 0.22 * side), BONE)
 	parts["claws"] = claws
 
@@ -287,13 +301,13 @@ func _build_shield_bearer() -> void:
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.5, 0.62, 0.62), 0.07, 0.03),
 		Vector3(-0.05, 0.42, 0),
-		GREY
+		_col(&"grey")
 	)
 	_piece(
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.36, 0.26, 0.4), 0.06, 0.02),
 		Vector3(-0.02, 0.86, 0),
-		RED
+		_col(&"body")
 	)
 	_glow(body, Vector3(0.012, 0.04, 0.24), Vector3(0.165, 0.86, 0))
 	for side in [-1.0, 1.0]:
@@ -315,28 +329,33 @@ func _build_shield_bearer() -> void:
 		shield,
 		NeedleAvatar._chamfer_box(Vector3(0.06, 0.1, 1.04), 0.02),
 		Vector3(0.04, 1.05, 0),
-		RED
+		_col(&"trim")
 	)
 	_piece(
-		shield, NeedleAvatar._chamfer_box(Vector3(0.06, 0.6, 0.1), 0.02), Vector3(0.04, 0.6, 0), RED
+		shield,
+		NeedleAvatar._chamfer_box(Vector3(0.06, 0.6, 0.1), 0.02),
+		Vector3(0.04, 0.6, 0),
+		_col(&"trim")
 	)
 	parts["shield"] = shield
 
 
 func _build_mender() -> void:
-	_piece(body, ArcCasterAvatar._frustum(0.32, 0.16, 0.9, 8), Vector3(0, 0.1, 0), RED)
+	_piece(body, ArcCasterAvatar._frustum(0.32, 0.16, 0.9, 8), Vector3(0, 0.1, 0), _col(&"body"))
 	_piece(
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.26, 0.24, 0.26), 0.06, 0.02),
 		Vector3(0, 1.1, 0),
-		GREY
+		_col(&"trim")
 	)
+	if EnemyPalettes.eyes_on_all():
+		_eye(body, Vector3(0.012, 0.04, 0.16), Vector3(0.135, 1.1, 0))
 	for side in [-1.0, 1.0]:
 		_piece(
 			body,
 			NeedleAvatar._chamfer_box(Vector3(0.08, 0.3, 0.08), 0.02),
 			Vector3(0.1, 1.0, 0.22 * side),
-			GREY
+			_col(&"grey")
 		)
 	var crystal := MeshInstance3D.new()
 	crystal.mesh = ArcCasterAvatar._octahedron(0.1)
@@ -363,9 +382,9 @@ func _build_mine_layer() -> void:
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.7, 0.24, 0.5), 0.06, 0.03),
 		Vector3(0, 0.2, 0),
-		RED
+		_col(&"body")
 	)
-	_piece(body, ArcCasterAvatar._frustum(0.2, 0.1, 0.16, 6), Vector3(0.08, 0.32, 0), GREY)
+	_piece(body, ArcCasterAvatar._frustum(0.2, 0.1, 0.16, 6), Vector3(0.08, 0.32, 0), _col(&"trim"))
 	_glow(body, Vector3(0.012, 0.04, 0.2), Vector3(0.355, 0.24, 0))
 	for side in [-1.0, 1.0]:
 		_piece(
@@ -377,7 +396,12 @@ func _build_mine_layer() -> void:
 	var hopper := Node3D.new()
 	hopper.position = Vector3(-0.3, 0.42, 0)
 	body.add_child(hopper)
-	_piece(hopper, NeedleAvatar._chamfer_box(Vector3(0.24, 0.12, 0.3), 0.03), Vector3.ZERO, GREY)
+	_piece(
+		hopper,
+		NeedleAvatar._chamfer_box(Vector3(0.24, 0.12, 0.3), 0.03),
+		Vector3.ZERO,
+		_col(&"grey")
+	)
 	var mine := Node3D.new()
 	mine.position = Vector3(0, 0.09, 0)
 	hopper.add_child(mine)
@@ -396,13 +420,13 @@ func _build_sniper() -> void:
 			hip,
 			NeedleAvatar._chamfer_box(Vector3(0.05, 0.7, 0.05), 0.01),
 			Vector3(0, -0.33, 0),
-			GREY
+			_col(&"grey")
 		)
 	_piece(
 		body,
 		NeedleAvatar._chamfer_box(Vector3(0.36, 0.26, 0.26), 0.05, 0.02),
 		Vector3(0, 0.78, 0),
-		RED
+		_col(&"body")
 	)
 	var barrel := Node3D.new()
 	barrel.position = Vector3(0.16, 0.84, 0)
@@ -417,14 +441,14 @@ func _build_sniper() -> void:
 		barrel,
 		NeedleAvatar._chamfer_box(Vector3(0.18, 0.08, 0.08), 0.02),
 		Vector3(0.02, 0.1, 0),
-		DARK
+		_col(&"trim")
 	)
 	_glow(barrel, Vector3(0.012, 0.05, 0.05), Vector3(0.115, 0.1, 0))
 	parts["barrel"] = barrel
 	# v0.8.0 TG: the muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
-	_muzzle_mat.albedo_color = EYE
+	_muzzle_mat.albedo_color = _col(&"eye")
 	_muzzle_mat.emission_enabled = true
-	_muzzle_mat.emission = EYE.lightened(0.3)
+	_muzzle_mat.emission = _col(&"eye").lightened(0.3)
 	_muzzle_mat.emission_energy_multiplier = 0.0
 	write_stencil(_muzzle_mat)
 	var muzzle := MeshInstance3D.new()
@@ -450,6 +474,24 @@ func _glow(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	mi.position = at
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(mi)
+
+
+## v0.8.0 EC: a steady eye slit on the eye material (see _eye_mat).
+func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
+	var mi := MeshInstance3D.new()
+	mi.name = "Eye"
+	var bm := BoxMesh.new()
+	bm.size = size
+	mi.mesh = bm
+	mi.material_override = _eye_mat
+	mi.position = at
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(mi)
+
+
+## v0.8.0 EC: this kind's colour in `slot` under the active palette.
+func _col(slot: StringName) -> Color:
+	return EnemyPalettes.color(kind, slot)
 
 
 ## An outlined, flashable body piece (and its X-ray twin while the technique is xray).

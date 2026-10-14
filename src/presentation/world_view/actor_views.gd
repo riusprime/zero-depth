@@ -30,7 +30,8 @@ var bolt_look := {}
 ## (HeatLooks.attack_color: the bolt's own below Hot, orange at Hot, red at Overclock) and keeps it while it flies.
 var heat_tier := HeatLooks.TIER_COOL
 ## v0.7.5 NB1: the biome's cast on enemies (BiomeLook.enemy_tint): their grey and bone parts pulled toward its colour
-## by its alpha (0: none). Red parts, rings and bars keep their colours, so identity never changes (PRESENTATION §3).
+## by its alpha (0: none). Red parts (v0.8.0 EC: the role-coloured parts, EnemyPalettes, all at or over
+## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
 var enemy_tint := Color(0, 0, 0, 0)
 var _actors := {}
 var _projectiles := {}
@@ -401,7 +402,7 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
-			hatch.setup(outline_color, technique)
+			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
 			hatch.scale = Vector3.ONE * 0.66
 			facing.add_child(hatch)
 			height = ChargerAvatar.HEIGHT * 0.66
