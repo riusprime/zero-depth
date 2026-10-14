@@ -69,10 +69,6 @@ func shield_lift() -> float:
 	return _lift
 
 
-func has_death_pose() -> bool:
-	return imported != null
-
-
 func anchor_names() -> Array[StringName]:
 	return [&"weak", &"spear_tip", &"shield"]
 
@@ -287,196 +283,30 @@ func _pose(dt: float) -> void:
 
 
 # --- The owner's model (v0.7.5 BM), posed from its bones -------------------------------------------------------
-# Turns are in the model frame: +Z swings a hanging limb forward (and tips the torso back), +X swings it out to the
-# left (-Z), +Y turns it to its left. A pose function adds its layer; BossAvatar commits them once per frame.
+# v0.8.0 BA: its keyframed clips (WarlordClips) do the moves; this adds the shield's lift while the weak point is
+# open (the sim drops its front armour then), a layer the clips don't know about. Turns are in the model frame: +Z
+# swings a hanging limb forward (and tips the torso back), +X swings it out to the left (-Z), +Y turns it to its left.
+
+
+func _clip_library() -> Dictionary:
+	return WarlordClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
 
 
 func _pose_rig(dt: float) -> void:
-	var p := poser
-	var walk := _walk
-	var attack := _attack_amounts()
-	_lift = lerpf(_lift, maxf(_weak_shown, attack["plant"] * 0.6), _rate(8.0, dt))
-	_pose_idle(p, walk)
-	_pose_walk(p, walk, attack)
-	_pose_shield(p, attack)
-	_pose_spear(p, attack)
-	_pose_lunge(p, attack)
-	_pose_shielded(p, _shield_hold)
-	_pose_flinch(p, _flinch)
-	_pose_stagger(p, _stagger)
-	_pose_death(p, _death)
-
-
-## This frame's attack inputs, 0..1 each (bash is -1..1: drawn back, then thrust), from the move and its phase.
-func _attack_amounts() -> Dictionary:
-	var windup := _state == WorldReader.STATE_WINDUP
-	var fade := _act_fade()
-	var out := {
-		"bash": 0.0,
-		"raise": 0.0,
-		"plant": 0.0,
-		"couch": 0.0,
-		"thrust": 0.0,
-		"draw": 0.0,
-		"throw": 0.0,
-	}
-	match _move:
-		WorldReader.MOVE_SWEEP:
-			out["bash"] = -_wind if windup else fade
-		WorldReader.MOVE_FLOOD:
-			out["raise"] = _wind if windup else 0.0
-			out["plant"] = 0.0 if windup else fade
-		WorldReader.MOVE_CHARGE:
-			out["couch"] = _wind if windup else 0.0
-			out["thrust"] = 0.0 if windup else fade
-		WorldReader.MOVE_BARRAGE:
-			out["draw"] = _wind if windup else 0.0
-			out["throw"] = 0.0 if windup else fade
-	return out
-
-
-## Breath (the chest rises, the shoulders lift, the head nods) and a slow sway from the hips.
-func _pose_idle(p: BonePoser, walk: float) -> void:
-	var calm := 1.0 - walk
-	var breath := sin(_t * 1.5) * calm
-	p.turn(&"Spine01", Vector3.BACK, breath * 0.025)
-	p.turn(&"Spine02", Vector3.BACK, breath * 0.02)
-	p.turn(&"Head", Vector3.BACK, -breath * 0.03)
-	for side in ["L", "R"]:
-		p.shift(StringName(side + "_Clavicle"), Vector3(0, breath * 0.012, 0))
-	p.turn(&"Hip", Vector3.RIGHT, sin(_t * 0.7) * 0.025 * calm)
-
-
-## The walk cycle from its speed: thighs swing, a knee bends on the leg coming forward, the feet stay flat, the hips
-## roll, and the arms counter-swing (the spear arm more, the shield arm a little).
-func _pose_walk(p: BonePoser, walk: float, attack: Dictionary) -> void:
-	if walk <= 0.001:
+	_lift = lerpf(_lift, _weak_shown, _rate(8.0, dt))
+	var k := _lift * (1.0 - maxf(_stagger, _death))
+	if k <= 0.001:
 		return
-	var s := sin(_phase)
-	var c := cos(_phase)
-	var busy := 1.0 - maxf(attack["couch"], attack["thrust"])
-	for side: int in [-1, 1]:
-		var tag := "L_" if side < 0 else "R_"
-		var swing := s * 0.45 * walk * side * busy
-		var knee := -0.75 * walk * maxf(0.0, c * side) * busy
-		p.turn(StringName(tag + "Thigh"), Vector3.BACK, swing)
-		p.turn(StringName(tag + "Calf"), Vector3.BACK, knee)
-		p.turn(StringName(tag + "Foot"), Vector3.BACK, -(swing + knee) * 0.8)
-	p.turn(&"Hip", Vector3.RIGHT, s * 0.05 * walk)
-	p.turn(&"Spine01", Vector3.UP, -s * 0.06 * walk)
-	p.turn(&"R_Upperarm", Vector3.BACK, s * 0.3 * walk)
-	p.turn(&"L_Upperarm", Vector3.BACK, -s * 0.1 * walk)
-
-
-## The shield (left arm): carried turned to the front, drawn back then thrust for the bash, lifted up and aside
-## while the weak point is open (the sim drops its front armour then).
-func _pose_shield(p: BonePoser, attack: Dictionary) -> void:
-	var bash: float = attack["bash"]
-	# x: the arm forward (Z), y: the arm out (X), z: the arm turned to the front (Y), w: the forearm forward (Z).
-	var carry := Vector4(0.3, -0.2, -0.9, 0.55)
-	carry = carry.lerp(Vector4(-0.35, -0.1, -0.5, 0.35), maxf(-bash, 0.0))
-	carry = carry.lerp(Vector4(1.15, -0.35, -1.2, 0.2), maxf(bash, 0.0))
-	carry = carry.lerp(Vector4(0.55, 1.35, -0.2, 0.9), _lift)
-	carry = carry.lerp(Vector4.ZERO, maxf(_stagger, _death))
-	p.turn(&"L_Upperarm", Vector3.UP, carry.z)
-	p.turn(&"L_Upperarm", Vector3.RIGHT, carry.y)
-	p.turn(&"L_Upperarm", Vector3.BACK, carry.x)
-	p.turn(&"L_Forearm", Vector3.BACK, carry.w)
-	# The bash twists the torso: the shield side back in the windup, forward with the blow.
-	p.turn(&"Spine01", Vector3.UP, -bash * 0.35)
-
-
-## The spear (right arm): low at its side; raised overhead and driven down to plant; couched low and thrust;
-## drawn back over the shoulder and thrown. The spear is on the hand bone, so the hand sets where it points.
-func _pose_spear(p: BonePoser, attack: Dictionary) -> void:
-	# x: the arm forward (Z), y: the forearm forward (Z), z: the hand (Z), w: the arm out (X).
-	var arm := Vector4(0.0, 0.1, 0.0, 0.0)
-	arm = arm.lerp(Vector4(2.5, 0.2, 1.0, -0.15), attack["raise"])
-	arm = arm.lerp(Vector4(0.9, 0.3, 2.45, -0.1), attack["plant"])
-	arm = arm.lerp(Vector4(-0.35, 1.25, -2.45, 0.1), attack["couch"])
-	arm = arm.lerp(Vector4(0.75, 0.35, -2.65, 0.0), attack["thrust"])
-	arm = arm.lerp(Vector4(2.9, 0.9, 0.9, -0.2), attack["draw"])
-	arm = arm.lerp(Vector4(1.35, 0.15, -2.8, 0.0), attack["throw"])
-	arm = arm.lerp(Vector4(-0.1, 0.0, 0.0, 0.0), maxf(_stagger, _death))
-	p.turn(&"R_Upperarm", Vector3.RIGHT, arm.w)
-	p.turn(&"R_Upperarm", Vector3.BACK, arm.x)
-	p.turn(&"R_Forearm", Vector3.BACK, arm.y)
-	p.turn(&"R_Hand", Vector3.BACK, arm.z)
-	# The throw twists the spear side back in the draw and through with the throw; the plant bows the torso.
-	p.turn(&"Spine01", Vector3.UP, -attack["draw"] * 0.35 + attack["throw"] * 0.3)
-	p.turn(&"Spine01", Vector3.BACK, attack["raise"] * 0.08 - attack["plant"] * 0.28)
-	p.turn(&"Head", Vector3.BACK, -attack["plant"] * 0.15 - attack["raise"] * 0.1)
-
-
-## The lunge: a deep forward lean with the front leg bent and the back leg long, held through the thrust.
-func _pose_lunge(p: BonePoser, attack: Dictionary) -> void:
-	var lean := maxf(attack["couch"], attack["thrust"])
-	if lean <= 0.001:
-		return
-	p.turn(&"Spine01", Vector3.BACK, -lean * 0.32)
-	p.turn(&"Head", Vector3.BACK, lean * 0.2)
-	p.turn(&"L_Thigh", Vector3.BACK, lean * 0.55)
-	p.turn(&"L_Calf", Vector3.BACK, -lean * 0.6)
-	p.turn(&"R_Thigh", Vector3.BACK, -lean * 0.4)
-	p.turn(&"R_Foot", Vector3.BACK, lean * 0.3)
-	pivot.position += Vector3(0.1, -0.08, 0) * lean
-
-
-## The "shielded" hook (v0.7.5 BM; apply_state's "shielded", which a later step reads from the sim): braced low
-## behind the shield held up in front.
-func _pose_shielded(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	p.turn(&"L_Upperarm", Vector3.BACK, amount * 0.55)
-	p.turn(&"L_Forearm", Vector3.BACK, amount * 0.45)
-	p.turn(&"Spine01", Vector3.BACK, -amount * 0.18)
-	for side in ["L_", "R_"]:
-		p.turn(StringName(side + "Thigh"), Vector3.BACK, amount * 0.35)
-		p.turn(StringName(side + "Calf"), Vector3.BACK, -amount * 0.6)
-		p.turn(StringName(side + "Foot"), Vector3.BACK, amount * 0.25)
-	pivot.position.y -= amount * 0.1
-
-
-## A hit taken: the torso snaps back, the head jerks and the arms flinch out.
-func _pose_flinch(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	var k := amount * amount
-	p.turn(&"Spine01", Vector3.BACK, k * 0.22)
-	p.turn(&"Head", Vector3.BACK, k * 0.25)
-	p.turn(&"L_Upperarm", Vector3.RIGHT, k * 0.15)
-	p.turn(&"R_Upperarm", Vector3.RIGHT, -k * 0.15)
-
-
-## Staggered: it reels, slumped forward on bent knees with both arms low, wobbling.
-func _pose_stagger(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	var wob := sin(_t * 9.0) * amount
-	p.turn(&"Spine01", Vector3.BACK, -amount * 0.3 + wob * 0.05)
-	p.turn(&"Spine02", Vector3.RIGHT, wob * 0.08)
-	p.turn(&"Head", Vector3.BACK, -amount * 0.25)
-	for side in ["L_", "R_"]:
-		p.turn(StringName(side + "Thigh"), Vector3.BACK, amount * 0.25)
-		p.turn(StringName(side + "Calf"), Vector3.BACK, -amount * 0.45)
-	p.turn(&"L_Upperarm", Vector3.RIGHT, amount * 0.25)
-	p.turn(&"R_Upperarm", Vector3.RIGHT, -amount * 0.2)
-
-
-## Its death (after the sim removes it; BossAvatar.die): the knees buckle, the arms fall open and it topples onto its
-## back, then sinks.
-func _pose_death(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	var buckle := smoothstep(0.0, 0.35, amount)
-	var fall := smoothstep(0.2, 0.85, amount)
-	for side in ["L_", "R_"]:
-		p.turn(StringName(side + "Thigh"), Vector3.BACK, buckle * 0.7 - fall * 0.4)
-		p.turn(StringName(side + "Calf"), Vector3.BACK, -buckle * 1.1 + fall * 0.6)
-	p.turn(&"L_Upperarm", Vector3.RIGHT, fall * 0.9)
-	p.turn(&"R_Upperarm", Vector3.RIGHT, -fall * 0.9)
-	p.turn(&"Head", Vector3.BACK, fall * 0.4)
-	pivot.rotation.z += fall * 1.45
-	# Lying on its back, its armour keeps it above the floor; at the very end it sinks away.
-	var sink := smoothstep(0.85, 1.0, amount)
-	pivot.position += Vector3(-0.5 * fall, -0.25 * buckle + 0.4 * fall - 0.9 * sink, 0)
+	# Lifted up and aside, from the carry: out to the left, turned outward, raised, the forearm up.
+	poser.turn(&"L_Upperarm", Vector3.UP, 0.7 * k)
+	poser.turn(&"L_Upperarm", Vector3.RIGHT, 1.55 * k)
+	poser.turn(&"L_Upperarm", Vector3.BACK, 0.25 * k)
+	poser.turn(&"L_Forearm", Vector3.BACK, 0.35 * k)

@@ -297,7 +297,8 @@ func test_a_hit_flinches_and_the_shielded_hook_poses_each() -> void:
 		assert_true(moved > 0 or pos_moved, "%s has a shielded pose" % id)
 
 
-func test_the_warlord_falls_when_it_dies_and_the_others_go_at_once() -> void:
+## v0.8.0 BA: every owner's model now plays a death (the others collapsed at once before); the code bodies still go.
+func test_the_warlord_falls_when_it_dies_and_every_model_collapses() -> void:
 	var a := _avatar(WarlordAvatar)
 	_drive(a, {"state": WorldReader.STATE_MOVE, "weak": 1.0}, 20)
 	assert_true(a.die(), "the Warlord's model falls")
@@ -306,13 +307,13 @@ func test_the_warlord_falls_when_it_dies_and_the_others_go_at_once() -> void:
 	assert_almost_eq(a.death_amount(), 1.0, 0.01)
 	assert_gt(a.pivot.rotation.z, 1.2, "on its back")
 	assert_false(a.weak_core.visible, "the core goes with it")
-	assert_false(_avatar(HiveLensAvatar).die())
-	assert_false(_avatar(FoundryAvatar).die())
+	assert_true(_avatar(HiveLensAvatar).die(), "v0.8.0 BA: the Hive Lens falls too")
+	assert_true(_avatar(FoundryAvatar).die(), "and the Foundry collapses")
 	BossModels.dir = "res://tests/no_such_models/"
 	assert_false(_avatar(WarlordAvatar).die(), "the code body has no fall")
 
 
-func test_actor_views_keep_a_falling_warlord_a_moment() -> void:
+func test_actor_views_keep_a_falling_boss_a_moment() -> void:
 	var w := BossLab.world()
 	var views := ActorViews.new()
 	add_child_autofree(views)
@@ -328,11 +329,12 @@ func test_actor_views_keep_a_falling_warlord_a_moment() -> void:
 	views.sync(reader)
 	assert_null(views.actor_node(aid), "gone from the sim's views")
 	assert_false(node.is_queued_for_deletion(), "but still drawing its fall")
-	assert_true(other.is_queued_for_deletion(), "the Foundry goes at once")
+	assert_false(other.is_queued_for_deletion(), "v0.8.0 BA: the Foundry plays its collapse too")
 	var avatar: BossAvatar = node.get_meta(&"enemy_avatar")
 	assert_gt(avatar.death_amount(), -0.01)
 	await wait_seconds(BossAvatar.DEATH_SECONDS + 0.3)
 	assert_false(is_instance_valid(node), "then freed")
+	assert_false(is_instance_valid(other), "both")
 
 
 func test_the_weak_point_rides_its_bone() -> void:

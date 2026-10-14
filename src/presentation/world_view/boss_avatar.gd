@@ -20,6 +20,15 @@ extends Node3D
 ## hook a later step drives). More read state: the HP (a drop flinches), the player's bearing from the facing (the
 ## Hive Lens's eye turns to it) and the facing (the local velocity that trails the cables). The weak point's core
 ## follows its bone. All of it reads the sim and writes only this node's own children (EI-07).
+## v0.8.0 BA (owner O6: "the animations they do are a shit … like we did with the actual attacks of the player"; Q4:
+## code clips now, the owner's replace them): the owner's models are animated by keyframed clips (BossClip) played
+## in layers by a BossAnimator: idle and walk (matched to its speed), one clip per attack move (its time driven by
+## the sim's attack phase: anticipation fills the windup, the strike pose lands on the first active tick, the
+## follow-through and recovery follow; clip_time), and the shielded hold, a hit's flinch, the stagger, the phase
+## gate's roar, the rise-in (with the boss bar: WorldReader.boss_intro_permille) and the death collapse, which every
+## model now plays after the sim removes it. Each body's library is its <Boss>Clips; its _pose_rig only adds what
+## follows the clips (the Hive Lens's trailing tails, a spider's leg groups). Reduced motion: no tremble or daze
+## sway and no overshoot (BossClip SETTLE keys), the same poses.
 
 ## Faster than this between two ticks is a teleport, not motion.
 const TELEPORT_SPEED := 40.0
@@ -30,6 +39,14 @@ const RISE_SECONDS := 0.8
 const SINK_SECONDS := 0.3
 ## A leap's peak height (metres).
 const LEAP_HEIGHT := 2.6
+## v0.8.0 BA: seconds of the rise clip's flourish after the intro ends; the defaults of an attack's active and
+## recover ticks when apply_state isn't told them (tests, shots); seconds the stagger clip's reel takes; the
+## shielded hold's brace.
+const RISE_FLOURISH_SECONDS := 1.0
+const DEFAULT_ACTIVE_TICKS := 6
+const DEFAULT_RECOVER_TICKS := 60
+const STAGGER_CLIP_SECONDS := 1.2
+const SHIELD_CLIP_SECONDS := 0.4
 ## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
 const MODEL_DIR := "res://assets/models/bosses/"
 ## The weak point's core (BX): its colour and its glow at full.
@@ -51,6 +68,8 @@ var skeleton: Skeleton3D
 var rig: BossRig
 ## v0.7.5 BM: poses the model's bones in the model frame (the skinned models and the Foundry).
 var poser: BonePoser
+## v0.8.0 BA: plays the model's clips (null with the code-built body).
+var animator: BossAnimator
 ## The weak point (BX): its core, its halo, their kept material and the light.
 var weak_core := MeshInstance3D.new()
 var weak_material := StandardMaterial3D.new()
@@ -95,6 +114,25 @@ var _dying := false
 var _local_vel := Vector3.ZERO
 # The weak point's rest position in the skeleton's space (it follows _weak_bone()).
 var _weak_rest_skel := Vector3.ZERO
+# The attack in progress as the sim has it (the avatars remap _move for the code bodies), its timing
+# (BossAnimator: windup, active, recover, strike gap), a serial that changes with each new attack, whether it is
+# shielded, the frame time since the last sync (the clip runs between ticks), the gate's and the intro's progress,
+# when a burrow came back up, and the reaction clips' clocks.
+var _clip_move := -1
+var _attack_ticks := Vector4i.ZERO
+var _attack_serial := 0
+var _attack_shielded := false
+var _since_sync := 0.0
+var _just_synced := false
+var _gate := -1.0
+var _gate_w := 0.0
+var _gate_t := 0.0
+var _intro := -1.0
+var _rise_t := 1.0
+var _unhide_tick := -1
+var _was_hidden := false
+var _stagger_secs := 0.0
+var _shield_t := 0.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
@@ -174,6 +212,9 @@ func sync(reader: WorldReader, i: int) -> void:
 			"facing": SimPlane.yaw_of(reader.actor_facing(i)),
 			"aim": bearing(reader.actor_pos(i), reader.actor_facing(i), reader.player_pos()),
 			"shielded": reader.boss_shielded(i),  # v0.7.5 BF1: its signature pattern (the shell and the pose)
+			"attack_ticks": reader.boss_attack_ticks(i),  # v0.8.0 BA: the clip's timing
+			"gate": reader.boss_gate_permille(i) / 1000.0,
+			"intro": reader.boss_intro_permille(i) / 1000.0,
 		}
 	)
 
@@ -204,6 +245,28 @@ func apply_state(s: Dictionary) -> void:
 	_last_pos = pos
 	if state == WorldReader.STATE_ACTIVE and _state != WorldReader.STATE_ACTIVE:
 		_hit = 1.0
+	# v0.8.0 BA: a windup entered (or a new move winding up) is a new attack for the clips.
+	var raw_move: int = s.get("move", -1)
+	var shielded: bool = s.get("shielded", false)
+	if (
+		state == WorldReader.STATE_WINDUP
+		and (_state != WorldReader.STATE_WINDUP or raw_move != _clip_move)
+	):
+		_attack_serial += 1
+		_attack_shielded = shielded
+		_unhide_tick = -1
+	elif shielded:
+		_attack_shielded = true
+	_clip_move = raw_move
+	_attack_ticks = s.get("attack_ticks", Vector4i.ZERO)
+	_gate = s.get("gate", -1.0)
+	_intro = s.get("intro", -1.0)
+	_since_sync = 0.0
+	_just_synced = true
+	var hidden: bool = s.get("hidden", false)
+	if _was_hidden and not hidden:
+		_unhide_tick = tick
+	_was_hidden = hidden
 	_state = state
 	_move = s.get("move", -1)
 	_state_ticks = s.get("state_ticks", 0)
@@ -226,6 +289,7 @@ func apply_state(s: Dictionary) -> void:
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
+		_rise_t = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
 		_pose_any(0.0)
 
 
@@ -239,9 +303,19 @@ func advance(delta: float) -> void:
 	if dt <= 0.0 or parts == null:
 		return
 	_t += dt
+	# The first frame after a sync shows that tick exactly; later frames (a fast display) run on toward the next.
+	if _just_synced:
+		_just_synced = false
+	else:
+		_since_sync += dt
 	var moving := _state == WorldReader.STATE_MOVE
 	_speed = lerpf(_speed, _vel.length() if moving or _airborne else 0.0, _rate(8.0, dt))
-	_rise = move_toward(_rise, 0.0 if _state == WorldReader.STATE_SPAWN else 1.0, dt / RISE_SECONDS)
+	var spawning := _state == WorldReader.STATE_SPAWN
+	if spawning and _intro >= 0.0:
+		# v0.8.0 BA: it rises with the boss bar (the sim's intro, L22), not after it.
+		_rise = move_toward(_rise, _intro, dt * 4.0)
+	else:
+		_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt / RISE_SECONDS)
 	_sink = move_toward(_sink, 1.0 if _hidden else 0.0, dt / SINK_SECONDS)
 	var wind_target := 0.0
 	if _state == WorldReader.STATE_WINDUP:
@@ -256,6 +330,7 @@ func advance(delta: float) -> void:
 	_shield_hold = lerpf(_shield_hold, 1.0 if _shielded else 0.0, _rate(8.0, dt))
 	if _dying:
 		_death = move_toward(_death, 1.0, dt / (DEATH_SECONDS * 0.75))
+	_advance_clips(dt, spawning)
 	_pose_weak_point(dt)
 	_pose_any(dt)
 	_follow_weak_bone()
@@ -307,9 +382,9 @@ func death_amount() -> float:
 	return _death
 
 
-## True when this boss's body plays a fall after the sim removes it (the Warlord's model).
+## True when this boss's body plays a fall after the sim removes it (v0.8.0 BA: every owner's model collapses).
 func has_death_pose() -> bool:
-	return false
+	return imported != null
 
 
 ## The sim removed this boss: start the death fall. False when the body has none (ActorViews frees it at once).
@@ -403,6 +478,10 @@ func _build_body() -> void:
 	_weak_rest_skel = (
 		BossModels.relative_transform(pivot, skeleton).affine_inverse() * _weak_point_at()
 	)
+	animator = BossAnimator.new(_clip_library())
+	var players := pivot.find_children("*", "AnimationPlayer", true, false)
+	if not players.is_empty():
+		animator.bind_owner(players[0] as AnimationPlayer, skeleton)  # Q4: the owner's clips replace ours
 	for n in _code_nodes():
 		if n.get_parent() == null:
 			n.free()
@@ -519,45 +598,144 @@ func _pose_any(dt: float) -> void:
 		_pose(dt)
 
 
-## The owner's single-mesh model moves as a whole.
+## The owner's model (v0.8.0 BA): its clips in layers (BossAnimator), then what each body adds after them
+## (_pose_rig), the bones written once (BonePoser.commit), the owner's own clips over them, and the windup glow.
 func _pose_imported(dt: float) -> void:
-	var walk := _gait(dt, 2.0, 1.6)
-	var s := sin(_phase)
-	var breath := sin(_t * 1.6) * (1.0 - walk)
-	var lean := 0.0
-	var crouch := 0.0
-	var sag := 0.0
-	if _state == WorldReader.STATE_WINDUP:
-		lean = _wind
-		crouch = _wind
-	elif _state == WorldReader.STATE_RECOVER:
-		sag = 1.0 - smoothstep(20.0, 60.0, float(_state_ticks))
-	var hit := _hit * _hit
-	var kick := -hit * 0.35 if _recoils() else hit * 0.45
-	var squash := 0.0 if _recoils() else hit * 0.14
-	var wob := sin(_t * 9.0) * _stagger
-	pivot.position = Vector3(kick, absf(s) * 0.07 * walk, 0)
-	pivot.rotation = Vector3(
-		s * 0.04 * walk + wob * 0.08,
-		0,
-		(
-			lean * 0.14
-			- sag * 0.08
-			- hit * (0.0 if _recoils() else 0.12)
-			+ wob * 0.06
-			+ _stagger * 0.08
-		)
-	)
-	var sy := 1.0 + breath * 0.015 - crouch * 0.07 - squash - sag * 0.03
-	var sxz := 1.0 + crouch * 0.03 + squash * 0.5
-	pivot.scale = Vector3(sxz, sy, sxz)
-	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
+	_gait(dt, _walk_speed(), _stride())
+	var reduced := ViewPrefs.reduced_motion
+	_animate(dt)
+	animator.apply(poser, pivot, reduced)
+	if not reduced:
+		# A tremble (a roar, a strain) and the stagger's dazed sway: shake, so never with reduced motion.
+		var tremble := animator.param(&"tremble")
+		var daze := animator.param(&"daze")
+		pivot.position += Vector3(sin(_t * 47.0), 0.0, cos(_t * 41.0)) * 0.03 * tremble
+		pivot.rotation += Vector3(sin(_t * 5.3) * 0.08, 0.0, sin(_t * 3.7) * 0.06) * daze
 	_pose_rig(dt)
-	if poser != null:
-		poser.commit()
+	poser.commit()
+	animator.apply_owner(skeleton)
+	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
 	glow_overlay.albedo_color.a = clampf(
 		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse), 0.0, 0.06
 	)
+
+
+## The clips' clocks that run in frame time: the stagger's, the shielded hold's, the gate's roar, the rise.
+func _advance_clips(dt: float, spawning: bool) -> void:
+	_stagger_secs = _stagger_secs + dt if _state == WorldReader.STATE_STAGGERED else 0.0
+	if _shielded:
+		_shield_t = minf(1.0, _shield_t + dt / SHIELD_CLIP_SECONDS)
+	elif _shield_hold < 0.01:
+		_shield_t = 0.0
+	var gating := _state == WorldReader.STATE_GATE
+	_gate_w = move_toward(_gate_w, 1.0 if gating else 0.0, dt / BossAnimator.FADE_OUT)
+	if gating:
+		_gate_t = _gate if _gate >= 0.0 else minf(1.0, _gate_t + dt)
+	elif _gate_w <= 0.0:
+		_gate_t = 0.0
+	if spawning:
+		_rise_t = 0.55 * _rise
+	elif _rise_t < 1.0:
+		_rise_t = minf(1.0, maxf(_rise_t, 0.55 * _rise) + dt / RISE_FLOURISH_SECONDS * 0.45)
+
+
+## Sets every clip layer from the read state: the base (idle, walk), the attack, and the reactions.
+func _animate(dt: float) -> void:
+	var an := animator
+	an.set_layer(BossAnimator.IDLE, &"idle", _t / _idle_seconds(), 1.0 - _walk)
+	an.set_layer(BossAnimator.WALK, &"walk", _phase / TAU, _walk)
+	var attacking := (
+		_clip_move >= 0
+		and not _dying
+		and (
+			_state == WorldReader.STATE_WINDUP
+			or _state == WorldReader.STATE_ACTIVE
+			or _state == WorldReader.STATE_RECOVER
+		)
+	)
+	var clip_name := BossAnimator.clip_name_for(_clip_move, _attack_shielded, an.clips)
+	var c := an.clips.get(clip_name) as BossClip
+	an.drive_action(clip_name, _attack_serial, clip_time(c) if c != null else 0.0, attacking, dt)
+	var variant := String(clip_name).ends_with(BossAnimator.SHIELDED_SUFFIX)
+	an.set_layer(
+		BossAnimator.SHIELD, &"shielded", _shield_t, 0.0 if variant or _dying else _shield_hold
+	)
+	an.set_layer(
+		BossAnimator.FLINCH,
+		&"flinch",
+		1.0 - _flinch,
+		(0.6 if ViewPrefs.reduced_motion else 1.0) if _flinch > 0.0 and not _dying else 0.0
+	)
+	an.set_layer(
+		BossAnimator.STAGGER,
+		&"stagger",
+		minf(1.0, _stagger_secs / STAGGER_CLIP_SECONDS),
+		_stagger * (1.0 - _death)
+	)
+	an.set_layer(BossAnimator.ROAR, &"roar", _gate_t, _gate_w * (1.0 - _death))
+	an.set_layer(BossAnimator.RISE, &"rise", _rise_t, 1.0 if _rise_t < 1.0 else 0.0)
+	an.set_layer(BossAnimator.DEATH, &"death", _death, 1.0 if _dying else 0.0)
+
+
+## The attack clip's time now (0..1), from the sim's attack phase: the windup fills 0..strike (the anticipation),
+## the first active tick is exactly `strike` (the hit), the active ticks run strike..hold (several strikes cycle it
+## once per strike), the recovery hold..1. Between two ticks it runs on by the frame time since the last sync.
+func clip_time(c: BossClip) -> float:
+	var sub := clampf(_since_sync * 60.0, 0.0, 0.999)
+	var tk := _attack_ticks
+	var st := float(_state_ticks) + sub
+	var t := 1.0
+	match _state:
+		WorldReader.STATE_WINDUP:
+			var p := _windup if tk.x <= 0 else st / float(tk.x)
+			t = clampf(p, 0.0, 0.9999) * c.strike
+		WorldReader.STATE_ACTIVE:
+			var n := tk.y if tk.y > 0 else DEFAULT_ACTIVE_TICKS
+			var gap := tk.w
+			if _clip_move == WorldReader.MOVE_BURROW:
+				t = _burrow_time(c)
+			elif gap > 0 and _state_ticks < ((n - 1) / gap) * gap:
+				t = c.strike + fposmod(st, float(gap)) / float(gap) * (c.hold - c.strike)
+			elif gap > 0:
+				var last := float(((n - 1) / gap) * gap)
+				t = (
+					c.strike
+					+ clampf((st - last) / maxf(1.0, n - last), 0.0, 1.0) * (c.hold - c.strike)
+				)
+			else:
+				t = c.strike + clampf(st / float(n), 0.0, 1.0) * (c.hold - c.strike)
+		WorldReader.STATE_RECOVER:
+			var r := tk.z if tk.z > 0 else DEFAULT_RECOVER_TICKS
+			t = c.hold + clampf(st / float(r), 0.0, 1.0) * (1.0 - c.hold)
+	return t
+
+
+## A burrow's active part: it dives (strike → halfway through its active part) while it sinks out of sight, and
+## erupts (halfway → hold) over the 18 ticks after it comes back up.
+func _burrow_time(c: BossClip) -> float:
+	var mid := (c.strike + c.hold) * 0.5
+	if _hidden or _unhide_tick < 0:
+		return lerpf(c.strike, mid, clampf(float(_state_ticks) / 12.0, 0.0, 1.0))
+	var since := float(_last_tick - _unhide_tick) + clampf(_since_sync * 60.0, 0.0, 0.999)
+	return lerpf(mid, c.hold, clampf(since / 18.0, 0.0, 1.0))
+
+
+## Each body's clip library (BossClip by name; its <Boss>Clips).
+func _clip_library() -> Dictionary:
+	return {}
+
+
+## Seconds of one idle loop; the walk speed (m/s) and stride (m) its walk clip is timed to.
+func _idle_seconds() -> float:
+	return 3.0
+
+
+func _walk_speed() -> float:
+	return 2.0
+
+
+func _stride() -> float:
+	return 1.6
 
 
 ## Subclasses move the owner's model's bones (BossRig) from the same inputs as the code-built body.

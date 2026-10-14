@@ -265,106 +265,55 @@ func _pose(dt: float) -> void:
 # left (-Z).
 
 
+## v0.8.0 BA: the owner's model plays its keyframed clips (FoundryClips); the legs follow the clips' leg parameters,
+## and the grate's light follows their heat and the open door.
+func _clip_library() -> Dictionary:
+	return FoundryClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
+
+
+func _idle_seconds() -> float:
+	return 2.4
+
+
 func _pose_rig(dt: float) -> void:
-	var p := poser
-	var attack := _attack_amounts()
-	_door_open = lerpf(_door_open, maxf(_weak_shown, attack["pour"] * 0.5), _rate(8.0, dt))
-	_pose_steps(p, _walk)
-	_pose_attack(p, attack)
-	_pose_shielded(p, _shield_hold)
-	_pose_flinch(p, _flinch)
-	_pose_stagger(p, _stagger)
-	var heat := 1.0 - 0.7 * _stagger
+	var an := animator
+	_door_open = lerpf(_door_open, _weak_shown, _rate(8.0, dt))
+	_pose_legs(poser, an)
 	if grate_light != null:
-		grate_light.light_energy = (
-			GRATE_ENERGY
-			* (1.0 + 2.0 * maxf(attack["pour"], attack["crouch"]) + _door_open + 0.6 * _late)
-			* heat
-		)
+		var heat := maxf(0.0, 1.0 + 0.6 * an.param(&"heat") + _door_open + 0.6 * _late)
+		grate_light.light_energy = GRATE_ENERGY * heat * (1.0 - 0.7 * _stagger)
 		grate_light.position = _on_bone(&"body", MODEL_DOOR) + Vector3(0.25, 0, 0)
 
 
-## This frame's attack inputs, 0..1 each (vent is -1..1: a crouch in the windup, a blow after), and the kick of a
-## shot just fired.
-func _attack_amounts() -> Dictionary:
-	var windup := _state == WorldReader.STATE_WINDUP
-	var fade := _act_fade()
-	var out := {"pour": 0.0, "mortar": 0.0, "vent": 0.0, "launch": 0.0, "kick": 0.0, "crouch": 0.0}
-	match _move:
-		WorldReader.MOVE_FLOOD:
-			out["pour"] = _wind if windup else fade
-		WorldReader.MOVE_BARRAGE:
-			out["mortar"] = _wind if windup else 0.0
-			out["kick"] = 0.0 if windup else _hit
-		WorldReader.MOVE_SLAM_RING:
-			out["vent"] = _wind if windup else -fade
-		WorldReader.MOVE_BROOD:
-			out["launch"] = _wind if windup else 0.0
-			out["kick"] = 0.0 if windup else _hit
-	out["crouch"] = maxf(out["vent"], 0.0)
-	return out
-
-
-## The step cycle from its speed: the legs lift and swing in diagonal pairs (front left with back right) while the
-## body bobs on each step and rolls toward the planted pair.
-func _pose_steps(p: BonePoser, walk: float) -> void:
-	if walk <= 0.001:
-		return
-	var s := sin(_phase)
-	var c := cos(_phase)
+## Each leg from the clips' parameters: its diagonal pair's lift and swing (front left with back right), the front
+## pair's lift and either pair folding under it, and the feet sliding out to each side.
+func _pose_legs(p: BonePoser, an: BossAnimator) -> void:
+	var lift_a := an.param(&"gait_a_lift")
+	var lift_b := an.param(&"gait_b_lift")
+	var swing_a := an.param(&"gait_a_swing")
+	var swing_b := an.param(&"gait_b_swing")
+	var front_lift := an.param(&"front_lift")
+	var front_kneel := an.param(&"front_kneel")
+	var back_kneel := an.param(&"back_kneel")
+	var splay := an.param(&"splay")
 	for k in BossRig.FOUNDRY_LEGS.size():
-		var diag := 1.0 if k == 0 or k == 3 else -1.0
-		var lift := maxf(0.0, s * diag) * 0.2 * walk
-		p.turn(BossRig.FOUNDRY_LEGS[k], Vector3.BACK, c * diag * 0.3 * walk)
-		p.shift(BossRig.FOUNDRY_LEGS[k], Vector3(0, lift, 0))
-	p.shift(&"body", Vector3(0, absf(s) * 0.06 * walk, 0))
-	p.turn(&"body", Vector3.RIGHT, s * 0.035 * walk)
-
-
-## The moves: it tips forward to pour, squats and kicks with each mortar shot, crouches on splayed legs and then
-## swells for the vent ring, rocks back and kicks for the launch.
-func _pose_attack(p: BonePoser, a: Dictionary) -> void:
-	var blow := maxf(-a["vent"], 0.0)
-	var crouch: float = a["crouch"]
-	p.turn(&"body", Vector3.BACK, -a["pour"] * 0.2 + a["launch"] * 0.15 + a["kick"] * 0.04)
-	p.shift(
-		&"body",
-		Vector3(
-			0.08 * a["pour"], -crouch * 0.22 - a["mortar"] * 0.06 - a["kick"] * 0.08 + blow * 0.1, 0
+		var leg := BossRig.FOUNDRY_LEGS[k]
+		var front := k < 2
+		var a := k == 0 or k == 3
+		var lift := (lift_a if a else lift_b) + (front_lift if front else 0.0)
+		var fold := front_kneel if front else -back_kneel
+		p.turn(
+			leg,
+			Vector3.BACK,
+			(swing_a if a else swing_b) + fold * 0.35 + lift * (0.8 if front else 0.0)
 		)
-	)
-	p.stretch(&"body", 1.0 + blow * 0.05)
-	_splay(p, crouch * 0.18)
-
-
-## The "shielded" hook (v0.7.5 BM; apply_state's "shielded", which a later step reads from the sim): it hunkers
-## down low on splayed legs.
-func _pose_shielded(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	p.shift(&"body", Vector3(0, -amount * 0.28, 0))
-	_splay(p, amount * 0.25)
-
-
-## A hit taken: the body jolts back.
-func _pose_flinch(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	p.turn(&"body", Vector3.BACK, amount * amount * 0.08)
-
-
-## Staggered: it lurches and wobbles low.
-func _pose_stagger(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	p.turn(&"body", Vector3.RIGHT, sin(_t * 10.0) * 0.06 * amount)
-	p.turn(&"body", Vector3.BACK, amount * 0.08)
-	p.shift(&"body", Vector3(0, -amount * 0.12, 0))
-
-
-## The feet slide out to each side by `amount` radians (the left legs to -Z, the right to +Z).
-func _splay(p: BonePoser, amount: float) -> void:
-	if amount <= 0.001:
-		return
-	for k in BossRig.FOUNDRY_LEGS.size():
-		p.turn(BossRig.FOUNDRY_LEGS[k], Vector3.RIGHT, amount if k % 2 == 0 else -amount)
+		p.shift(leg, Vector3(0, lift + absf(fold) * 0.12, 0))
+		p.turn(leg, Vector3.RIGHT, splay if k % 2 == 0 else -splay)

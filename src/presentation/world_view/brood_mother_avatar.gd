@@ -29,6 +29,13 @@ var visor: MeshInstance3D
 var sac := Node3D.new()
 var eggs: Array[MeshInstance3D] = []
 var legs: Array[Node3D] = []
+# v0.8.0 BA: the model's legs, measured once (_measure_legs).
+var _leg_names: Array[StringName] = []
+var _leg_axis := PackedVector3Array()
+var _leg_side := PackedInt32Array()
+var _leg_set_a := PackedInt32Array()
+var _leg_front := PackedFloat32Array()
+var _leg_back := PackedFloat32Array()
 
 
 ## v0.7.5 BF2: its dodge-first moves (the Egg Storm's tracked circles and the Web Spiral) pose as its brood: the egg
@@ -219,35 +226,74 @@ func _pose(dt: float) -> void:
 		(leg.get_meta(&"knee") as Node3D).rotation = Vector3(tuck * 0.8 - crouch * 0.2, 0, 0)
 
 
-## The owner's model, rigged in code (BossRig): eight legs scuttle in alternating sets, the front legs rear up
-## before a leap, the legs tuck in the air, the egg sac swells before a brood, and staggered the legs splay.
+## v0.8.0 BA: the owner's model plays its keyframed clips (BroodMotherClips); the legs follow the clips' leg
+## parameters, mapped onto each leg by where it sits round the body.
+func _clip_library() -> Dictionary:
+	return BroodMotherClips.library()
+
+
+func _walk_speed() -> float:
+	return WALK_SPEED
+
+
+func _stride() -> float:
+	return STRIDE
+
+
+func _idle_seconds() -> float:
+	return 2.6
+
+
 func _pose_rig(_dt: float) -> void:
-	var walk := _walk
-	var windup := _state == WorldReader.STATE_WINDUP
-	var rear := _wind if windup and _move == WorldReader.MOVE_LEAP else 0.0
-	var dig := _wind if windup and _move == WorldReader.MOVE_BURROW else 0.0
-	var swell := 0.0
-	if _move == WorldReader.MOVE_BROOD:
-		swell = _wind if windup else _act_fade()
-	var tuck := sin(PI * _leap) if _airborne else 0.0
-	var stag := _stagger
+	_pose_legs(poser, animator)
+
+
+## Each leg from the clips' parameters: its alternating set's lift and swing (the scuttle), every leg's lift, the
+## front and back pairs' lifts by how far forward or back the leg sits, the tuck, and the front legs' digging.
+## A lift turns the leg about the line across its root (its tip up); a swing turns it about the vertical (forward).
+func _pose_legs(p: BonePoser, an: BossAnimator) -> void:
+	if _leg_names.is_empty():
+		_measure_legs()
+	var all_lift := an.param(&"legs_lift")
+	var front_lift := an.param(&"front_lift")
+	var back_lift := an.param(&"back_lift")
+	var tuck := an.param(&"tuck")
+	var lift_a := an.param(&"gait_a_lift")
+	var lift_b := an.param(&"gait_b_lift")
+	var swing_a := an.param(&"gait_a_swing")
+	var swing_b := an.param(&"gait_b_swing")
+	var dig_l := an.param(&"dig_l")
+	var dig_r := an.param(&"dig_r")
+	for j in _leg_names.size():
+		var side := _leg_side[j]
+		var a := _leg_set_a[j] == 1
+		var front := _leg_front[j]
+		var back := _leg_back[j]
+		var lift := (
+			all_lift
+			+ front * front_lift
+			+ back * back_lift
+			+ tuck * 0.95
+			+ (lift_a if a else lift_b)
+			+ front * (dig_r if side > 0 else dig_l)
+		)
+		var swing := (swing_a if a else swing_b) - tuck * 0.35 * (front - back)
+		p.turn(_leg_names[j], Vector3.UP, swing * side)
+		p.turn(_leg_names[j], _leg_axis[j], lift)
+
+
+## Once: each leg's bone, its lift axis, its side, its set and how far forward or back it sits.
+func _measure_legs() -> void:
 	for k in rig.bones.size():
-		var name: String = rig.bones[k][0]
-		if not name.begins_with("leg_"):
+		var leg := String(rig.bones[k][0])
+		if not leg.begins_with("leg_"):
 			continue
 		var ang := rig.leg_angle(k)
-		var out := Vector3(cos(ang), 0, sin(ang))
-		var lift_axis := Vector3(-out.z, 0, out.x)
-		var n := int(name.right(1))
-		var side := 1 if name.begins_with("leg_r") else -1
-		var ph := _phase + (PI if (n + (1 if side > 0 else 0)) % 2 == 0 else 0.0)
-		var lift := maxf(0.0, sin(ph)) * 0.32 * walk
-		var swing := cos(ph) * 0.22 * walk
-		var front := clampf(1.0 - absf(ang) / (PI * 0.5), 0.0, 1.0)
-		lift += (
-			rear * front * 0.7 - rear * (1.0 - front) * 0.1 + tuck * 0.55 - stag * 0.18 + dig * 0.15
-		)
-		bone_q(StringName(name), Quaternion(lift_axis, lift) * Quaternion(Vector3.UP, swing * side))
-	bone(&"body", Vector3(0, 0, 1), rear * 0.22 - stag * 0.08 + sin(_t * 11.0) * 0.04 * stag)
-	var pulse := 1.0 + swell * (0.12 + 0.04 * sin(_t * 18.0)) + sin(_t * 2.0) * 0.015
-	bone_q(&"sac", Quaternion.IDENTITY, Vector3.ZERO, pulse)
+		var n := int(leg.right(1))
+		var side := 1 if leg.begins_with("leg_r") else -1
+		_leg_names.append(StringName(leg))
+		_leg_axis.append(Vector3(-sin(ang), 0, cos(ang)))
+		_leg_side.append(side)
+		_leg_set_a.append(1 if (n + (1 if side > 0 else 0)) % 2 == 0 else 0)
+		_leg_front.append(clampf(1.0 - absf(ang) / (PI * 0.5), 0.0, 1.0))
+		_leg_back.append(clampf(absf(ang) / (PI * 0.5) - 1.0, 0.0, 1.0))
