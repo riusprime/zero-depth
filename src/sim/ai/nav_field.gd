@@ -72,14 +72,23 @@ func build(walls: Array[Obb]) -> void:
 
 
 ## v0.8.0 BS1 (S1): blocks the cells these boxes cover (grown by CLEARANCE, as build) on top of the walls, replacing
-## the last set (empty: none). The next flood runs again.
-func set_extra(boxes: Array[Obb]) -> void:
+## the last set (empty: none). The next flood runs again. v0.8.0 BS2 (S6): also the cells of each meltdown in
+## `melts` (BossLava.melt_shapes: the outer ring of a room, a cool bridge left open), grown the same way.
+func set_extra(boxes: Array[Obb], melts: Array = []) -> void:
 	_flooded = Vector3i(-1, -1, -1)
-	if boxes.is_empty() or size == Vector2i.ZERO:
+	if (boxes.is_empty() and melts.is_empty()) or size == Vector2i.ZERO:
 		extra = PackedByteArray()
 		return
 	extra.resize(size.x * size.y)
 	extra.fill(0)
+	for m: Array in melts:
+		var r: Rect2 = m[BossLava.MELT_BOUND]
+		var c0 := cell_of(r.position)
+		var c1 := cell_of(r.end)
+		for y in range(maxi(c0.y, 0), mini(c1.y, size.y - 1) + 1):
+			for x in range(maxi(c0.x, 0), mini(c1.x, size.x - 1) + 1):
+				if BossLava.melt_covers(m, center(Vector2i(x, y)), CLEARANCE):
+					extra[y * size.x + x] = 1
 	for w in boxes:
 		var b := w.bounds().grow(CLEARANCE)
 		var c0 := cell_of(b.position)
@@ -211,6 +220,37 @@ func flood(goal: Vector2, max_steps: int = UNREACHED) -> void:
 				dist[nk] = nd
 				queue[tail] = nk
 				tail += 1
+
+
+## v0.8.0 BS2 (S6): the free cells reachable from `starts` (cell indices) by the field's steps without entering a
+## cell `avoid` marks (1) or leaving `bound` (cells), as a mask over the grid (1 = reached). The fairness check of
+## the Foundry's lava (BossSignatures: a way to the boss and to an exit always stays).
+func reach(starts: PackedInt32Array, avoid: PackedByteArray, bound: Rect2i) -> PackedByteArray:
+	var seen := PackedByteArray()
+	seen.resize(size.x * size.y)
+	seen.fill(0)
+	var queue := PackedInt32Array()
+	queue.resize(size.x * size.y)
+	var tail := 0
+	for k in starts:
+		if k >= 0 and k < seen.size() and seen[k] == 0 and blocked[k] == 0 and avoid[k] == 0:
+			seen[k] = 1
+			queue[tail] = k
+			tail += 1
+	var head := 0
+	while head < tail:
+		var k := queue[head]
+		head += 1
+		for j in range(_adj_start[k], _adj_start[k + 1]):
+			var nk := _adj[j]
+			if seen[nk] == 1 or avoid[nk] == 1:
+				continue
+			if not bound.has_point(Vector2i(nk % size.x, nk / size.x)):
+				continue
+			seen[nk] = 1
+			queue[tail] = nk
+			tail += 1
+	return seen
 
 
 ## Each free cell's steps (8-way, no diagonal past a blocked or missing orthogonal cell), as one flat list:

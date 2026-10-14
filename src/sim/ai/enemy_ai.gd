@@ -468,6 +468,7 @@ static func resolve(w: World, i: int) -> void:
 				a.fire_cd[i] += 1
 				var ang := burst_angle(t, a.lock_a[i], k)
 				_fire(w, i, ang, t.bolt_speed, t.bolt_radius_m, t.bolt_life_ticks, t.damage)
+				BossRicochet.arm_turret(w, i)  # v0.8.0 BS2 (S5): phase 3's turrets ricochet too
 		ActorStore.Kind.ARC_CASTER:  # the rune (its bolt and spread are patterns, above)
 			if a.state_t[i] == 0 and a.pick[i] == Spell.RUNE:
 				var d := rune_disc(w, i)

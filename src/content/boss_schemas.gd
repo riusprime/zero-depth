@@ -50,7 +50,14 @@ const MOVES := {
 		["count", "spread_degrees", "volleys", "gap_seconds", "speed_mps", "radius_m", "range_m"],
 	},
 	## Drops `count` turrets on marked discs beside itself (an enemy each).
-	&"deploy": {"shape": 0, "params": ["count", "radius_m", "distance_m", "enemy_id"]},
+	## v0.8.0 BS2 (S5): an optional bounce_phase (1-based) makes the turrets' shots bounce off walls once from that
+	## phase on (the Siege Engine's phase 3).
+	&"deploy":
+	{
+		"shape": 0,
+		"params": ["count", "radius_m", "distance_m", "enemy_id"],
+		"optional": ["bounce_phase"],
+	},
 	## Boss challenge (v0.3.0 BX): a vortex drags the player (within pull_range_m, at pull_mps) toward the boss for
 	## its whole windup, then a ring of inner_radius_m..radius_m around it slams.
 	&"pull": {"shape": 3, "params": ["inner_radius_m", "radius_m", "pull_mps", "pull_range_m"]},
@@ -62,7 +69,9 @@ const MOVES := {
 	## in a shape (BulletPatterns). A BURST pattern's shell lands on the target its windup tracked.
 	## v0.8.0 BS1 (owner O5, S2): an optional recall_seconds makes its shots javelins that stick where they stop and
 	## all fly back along their lines recall_seconds after the last could have landed (the Warlord's Javelin Fan).
-	&"pattern": {"shape": 4, "params": ["pattern_id"], "optional": ["recall_seconds"]},
+	## v0.8.0 BS2 (S5): an optional bounces makes its shots bounce off walls that many times (the Siege Engine's
+	## ricochet shells: once), never coming back onto the player within 0.5 s of the bounce.
+	&"pattern": {"shape": 4, "params": ["pattern_id"], "optional": ["recall_seconds", "bounces"]},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
 	## v0.7.5 BF2: an optional pattern_id makes each circle an egg's landing (the Brood Mother's Egg Storm): a shell
@@ -93,7 +102,45 @@ const MOVES := {
 	## v0.7.5 BF3: `count` lanes along the room's rows (x), gap_m apart and centred on the player's row, length_m
 	## long centred on the player (cut short by walls); tracked then locked like `marks`, then standing for the
 	## active time and hurting once every burn_seconds, like `flood` (the Foundry's molten floor).
-	&"row_flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
+	## v0.8.0 BS2 (owner O5, S6): with lava_seconds the lanes leave molten floor where they struck for that long
+	## (lava_damage every lava_burn_seconds to a player standing in it; enemies path round it), each lane cut by fords
+	## ford_m wide so a lava-free way to the boss and to an exit always stays.
+	&"row_flood":
+	{
+		"shape": 2,
+		"params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"],
+		"optional": ["lava_seconds", "lava_damage", "lava_burn_seconds", "ford_m"],
+	},
+	## v0.8.0 BS2 (owner O5, S4): the Hive Lens's Gaze: a beam from its eye, length_m long from its edge (stopped by
+	## walls), width_m wide, starting aimed away from the player (it keeps away through the windup: the eye
+	## brightens, a thin aim line shows), then turning a quarter turn every quarter_seconds, reversing every
+	## reverse_seconds, over the active time; it hurts once every burn_seconds. An optional pattern_id fires again
+	## every orb_every_seconds (its orbs, aimed at the player).
+	&"gaze":
+	{
+		"shape": 2,
+		"params": ["length_m", "width_m", "quarter_seconds", "reverse_seconds", "burn_seconds"],
+		"optional": ["pattern_id", "orb_every_seconds"],
+	},
+	## v0.8.0 BS2 (owner O5, S6): the Foundry's meltdown: after its windup (a roar and the outer ring glowing) the
+	## room's outer ring_m melts for good (everything farther from the room's centre than its inscribed radius less
+	## ring_m); every step_seconds it melts step_m closer (each step glows warn_seconds first), never closer than
+	## min_radius_m. Standing in it hurts the attack's damage every burn_seconds; a bridge ford_m wide to the room's
+	## exit stays cool.
+	&"melt":
+	{
+		"shape": 3,
+		"params":
+		[
+			"ring_m",
+			"min_radius_m",
+			"step_m",
+			"step_seconds",
+			"warn_seconds",
+			"burn_seconds",
+			"ford_m"
+		],
+	},
 }
 
 ## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.

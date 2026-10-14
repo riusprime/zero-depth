@@ -29,7 +29,9 @@ static func compile_boss_attack(
 		)
 		if pd != null:
 			t.pattern = compile_pattern(pd)
-			if t.egg_ticks <= 0:  # v0.8.0 BS1 (S3): an egg bursts on its own clock, after the attack
+			if t.egg_ticks <= 0 and t.move != BossAttackTable.Move.GAZE:
+				# v0.8.0 BS1 (S3): an egg bursts on its own clock, after the attack; v0.8.0 BS2 (S4): a gaze's orbs
+				# fire again and again over its own active time.
 				t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
 			if t.recall_ticks > 0:  # v0.8.0 BS1 (S2): out, stuck, then back along the same lines
 				t.recall_at = t.pattern.duration_ticks() + t.pattern.life_ticks + t.recall_ticks
@@ -58,6 +60,21 @@ static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) ->
 	t.egg_ticks = SimTick.seconds_to_ticks(float(sp.get("egg_seconds", 0.0)))
 	t.egg_hp = int(sp.get("egg_hp", 0))
 	t.burst_phase = int(sp["burst_phase"]) - 1 if sp.has("burst_phase") else 99
+	# v0.8.0 BS2 (S4-S6): the Hive Lens's gaze, the Siege Engine's ricochets, the Foundry's lava and melt.
+	t.quarter_ticks = SimTick.seconds_to_ticks(float(sp.get("quarter_seconds", 0.0)))
+	t.reverse_ticks = SimTick.seconds_to_ticks(float(sp.get("reverse_seconds", 0.0)))
+	t.orb_every_ticks = SimTick.seconds_to_ticks(float(sp.get("orb_every_seconds", 0.0)))
+	t.bounces = int(sp.get("bounces", 0))
+	t.bounce_phase = int(sp["bounce_phase"]) - 1 if sp.has("bounce_phase") else 99
+	t.lava_ticks = SimTick.seconds_to_ticks(float(sp.get("lava_seconds", 0.0)))
+	t.lava_damage = int(sp.get("lava_damage", 0))
+	t.lava_burn_ticks = maxi(1, SimTick.seconds_to_ticks(float(sp.get("lava_burn_seconds", 0.0))))
+	t.ford_m = float(sp.get("ford_m", 0.0))
+	t.melt_ring_m = float(sp.get("ring_m", 0.0))
+	t.melt_min_m = float(sp.get("min_radius_m", 0.0))
+	t.melt_step_m = float(sp.get("step_m", 0.0))
+	t.melt_step_ticks = SimTick.seconds_to_ticks(float(sp.get("step_seconds", 0.0)))
+	t.melt_warn_ticks = SimTick.seconds_to_ticks(float(sp.get("warn_seconds", 0.0)))
 
 
 ## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc

@@ -38,6 +38,7 @@ static func library() -> Dictionary:
 			_slam_ring(),
 			_brood(),
 			_flood(),
+			_melt(),  # v0.8.0 BS2 (S6)
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -229,6 +230,36 @@ static func _stagger() -> BossClip:
 	c.param(&"splay", [[0, 0], [0.4, 0.22], [1, 0.2]])
 	c.param(&"heat", [[0, 0], [0.4, -0.7], [1, -0.7]])
 	c.param(&"daze", [[0, 0], [0.3, 0.3], [0.6, 1], [1, 1]])
+	return c
+
+
+## v0.8.0 BS2 (owner O5, S6): the meltdown. Through its long windup (0..0.6, the 2 s the outer ring glows) it rears
+## back on its back legs, roaring, its fire roaring hotter and hotter and the body swelling, shaking; on the strike
+## (the ring melts) it slams down onto splayed legs and pours, tipped forward with its grate blazing; then it settles.
+static func _melt() -> BossClip:
+	var c := BossClip.new(&"melt")
+	c.strike = 0.6
+	c.hold = 0.72
+	c.param(
+		&"front_lift",
+		[[0, 0], [0.4, 0.3, BACK], [0.58, 0.32], [0.6, -0.05, IN3], [0.72, 0.0], [1, 0]]
+	)
+	c.param(
+		&"splay", [[0, 0], [0.58, 0], [0.6, 0.8, IN3], [0.64, 0.6, OUT, S], [0.72, 0.5], [1, 0]]
+	)
+	c.turn(
+		B, Z, [[0, 0], [0.4, 0.36, BACK], [0.58, 0.38], [0.6, -0.22, IN3], [0.72, -0.16], [1, 0]]
+	)
+	c.stretch(
+		&"body", [[0, 0], [0.4, 0.14, BACK], [0.58, 0.18], [0.6, -0.16, IN3], [0.72, -0.08], [1, 0]]
+	)
+	c.shift(&"body", UP, [[0, 0], [0.58, 0.04], [0.6, -0.2, IN3], [0.72, -0.12], [1, 0]])
+	c.param(
+		&"heat", [[0, 0], [0.3, 1.4], [0.58, 2.6], [0.6, 3.0, IN3], [0.72, 2.4], [0.9, 0.6], [1, 0]]
+	)
+	c.param(
+		&"tremble", [[0, 0], [0.2, 0.2], [0.56, 1, LIN], [0.6, 0.6], [0.72, 0.2], [0.8, 0], [1, 0]]
+	)
 	return c
 
 

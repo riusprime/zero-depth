@@ -48,6 +48,8 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_ROW_LANES: &"row_lanes",
 	WorldReader.MOVE_GRID: &"grid",
 	WorldReader.MOVE_ROW_FLOOD: &"row_flood",
+	WorldReader.MOVE_GAZE: &"gaze",  # v0.8.0 BS2
+	WorldReader.MOVE_MELT: &"melt",
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [

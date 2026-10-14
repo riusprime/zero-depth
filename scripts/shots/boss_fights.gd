@@ -22,7 +22,6 @@ const PLAN := [
 	[&"brood_mother", &"burrow", 214, "brood_burrow_eruption_ring", Vector2.ZERO],
 	[&"hive_lens", &"prism_spiral", 164, "hive_prism_spiral_shielded", Vector2.ZERO],
 	[&"hive_lens", &"petal_bloom", 112, "hive_petal_bloom", Vector2.ZERO],
-	[&"hive_lens", &"glare_ring_fast", 122, "hive_glare_ring_fast", Vector2.ZERO],
 	[&"hive_lens", &"focus_beam_3", 84, "hive_focus_beam_locked", Vector2.ZERO],
 	[&"warlord", &"shield_wall", 150, "warlord_shield_wall_shielded", Vector2.ZERO],
 	[&"warlord", &"shield_wall_cross", 160, "warlord_crossing_walls", Vector2.ZERO],

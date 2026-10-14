@@ -12,6 +12,16 @@ extends Node3D
 ##   its veins glowing brighter as it nears its hatch, wobbling harder and faster (the hatch wobble), and an HP pip
 ##   bar over it (its HP over its max: break it before it hatches). A bursting egg swells and splits. The Hatchling
 ##   inside is hidden meanwhile (ActorViews).
+## v0.8.0 BS2 (S4-S6):
+## - The Hive Lens's Gaze (WorldReader.boss_gaze): through its windup the eye brightens (a flare and a light at the
+##   eye) and a thin aim line runs the way the beam will open; then a real 3D beam, a hot core and a wider glow (two
+##   cylinders, a scrolling noise shader) from the eye down to where it strikes, a burning strip on the floor under
+##   it, and where a wall stopped it a flare, a light and scorch marks left on the floor (fading over SCORCH_TICKS).
+##   Built here, not in the telegraph or VFX drawers (the Focus Beam's are AV2's).
+## - The Siege Engine's ricochets: a spark burst where a hostile shot bounced off a wall (its bounce tick).
+## - The Foundry's molten floor (WorldReader.boss_lava): each piece a churning lava quad that wells up and crusts over
+##   its last LAVA_CRUST_TICKS; its meltdown (WorldReader.boss_melts): the room's floor beyond the melt's radius
+##   molten, the cool bridge to the exit left out, the ring that melts next glowing and pulsing while it is warned.
 ## Pooled: one MultiMesh for every javelin (MAX_JAVELINS, one draw); one node per egg, reused. Ticks are the sim's
 ## plus the frame's interpolation fraction, so they pause with the game. Reduced motion: no tremble, no wobble.
 
@@ -74,6 +84,23 @@ void fragment() {
 }
 """
 
+## v0.8.0 BS2: the Gaze's colours, the eye's height (the Hive Lens hovers) and where the beam meets the floor's
+## height at its far end; the aim line's radius; scorch marks, sparks and the lava's timing.
+const GAZE := Color(1.0, 0.22, 0.52)
+const GAZE_CORE := Color(1.0, 0.86, 0.95)
+const EYE_Y := HiveLensAvatar.HOVER_Y
+const BEAM_END_Y := 0.7
+## The eye's front, this far out from the body's centre along the beam (m): the flare sits on it.
+const EYE_OUT := 1.15
+const AIM_RADIUS := 0.07
+const SCORCH_MAX := 96
+const SCORCH_TICKS := 150.0
+const SCORCH_EVERY := 3
+const SPARK_MAX := 48
+const SPARK_TICKS := 12.0
+const LAVA_FADE_TICKS := 8.0
+const LAVA_CRUST_TICKS := 60.0
+
 ## Where the owner's javelin is looked up (tests point it elsewhere to see the fallback).
 static var model_path := MODEL_PATH
 static var _mesh: Mesh
@@ -92,6 +119,31 @@ var _jav: Array = []
 var _egg_rows: Array = []
 var _drawn := 0
 var _tips := PackedVector3Array()
+## v0.8.0 BS2: the Gaze (its last sync's state, the eye's sim position added), its meshes and lights; scorch marks
+## [at, tick, seed]; ricochet sparks [at, tick] and each hostile shot's last bounce tick seen (by id); lava and melt
+## rows (the last sync) and their pooled nodes.
+var _gaze := {}
+var _gaze_ends: Array = []
+var _beam := MeshInstance3D.new()
+var _beam_glow := MeshInstance3D.new()
+var _beam_floor := MeshInstance3D.new()
+var _aim := MeshInstance3D.new()
+var _eye_flare := MeshInstance3D.new()
+var _impact := MeshInstance3D.new()
+var _eye_light := OmniLight3D.new()
+var _impact_light := OmniLight3D.new()
+var _scorch := MultiMeshInstance3D.new()
+var _scorch_rows: Array = []
+var _scorch_tick := -1
+var _sparks := MultiMeshInstance3D.new()
+var _spark_rows: Array = []
+var _bounced := {}
+var _lava_rows: Array = []
+var _lava_nodes: Array[MeshInstance3D] = []
+var _lava_shader := Shader.new()
+var _melt_rows: Array = []
+var _melt_nodes: Array[MeshInstance3D] = []
+var _melt_shader := Shader.new()
 
 
 func _init() -> void:
@@ -118,6 +170,7 @@ func _init() -> void:
 	_egg_mesh.radial_segments = 14
 	_egg_mesh.rings = 8
 	_pip_mesh.size = Vector2(0.7, 0.09)
+	_init_bs2()
 
 
 func sync(reader: WorldReader) -> void:
@@ -140,11 +193,12 @@ func sync(reader: WorldReader) -> void:
 				]
 			)
 	_sync_eggs()
+	_sync_bs2(reader, boss)
 	_draw(float(_tick))
 
 
 func _process(_delta: float) -> void:
-	if not _jav.is_empty() or not _eggs.is_empty():
+	if not _jav.is_empty() or not _eggs.is_empty() or _bs2_busy():
 		_draw(float(_tick) + Engine.get_physics_interpolation_fraction())
 
 
@@ -249,6 +303,7 @@ func _draw(now: float) -> void:
 		var id: int = row[4]
 		if _eggs.has(id):
 			_pose_egg(_eggs[id], row, now, still)
+	_draw_bs2(now, still)
 
 
 func _draw_javelins(now: float, still: bool) -> void:
@@ -453,3 +508,390 @@ static func _listed() -> bool:
 		if String(m.get("id", "")) == MODEL_ID:
 			return true
 	return false
+
+
+# --- v0.8.0 BS2: the Gaze, the ricochet sparks, the lava and the meltdown -----------------------------------------
+
+
+func _init_bs2() -> void:
+	var beam_sh := Shader.new()
+	beam_sh.code = BossSignatureShaders.BEAM
+	for part: Array in [[_beam, 1.0], [_beam_glow, 0.35], [_aim, 0.6]]:
+		var mi: MeshInstance3D = part[0]
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 1.0
+		cyl.bottom_radius = 1.0
+		cyl.height = 1.0
+		cyl.radial_segments = 12
+		cyl.rings = 6
+		mi.mesh = cyl
+		var m := ShaderMaterial.new()
+		m.shader = beam_sh
+		m.set_shader_parameter("color", GAZE)
+		m.set_shader_parameter("core", GAZE_CORE)
+		m.set_shader_parameter("strength", part[1])
+		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = false
+		mi.extra_cull_margin = 64.0
+		add_child(mi)
+	_beam.name = "GazeBeam"
+	_beam_glow.name = "GazeGlow"
+	_aim.name = "GazeAim"
+	var strip := QuadMesh.new()
+	strip.size = Vector2.ONE
+	strip.orientation = PlaneMesh.FACE_Y
+	_beam_floor.name = "GazeFloor"
+	_beam_floor.mesh = strip
+	var fm := ShaderMaterial.new()
+	var fs := Shader.new()
+	fs.code = BossSignatureShaders.FLOOR
+	fm.shader = fs
+	fm.set_shader_parameter("color", GAZE)
+	_beam_floor.material_override = fm
+	_beam_floor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_beam_floor.visible = false
+	add_child(_beam_floor)
+	var flare := SphereMesh.new()
+	flare.radius = 0.5
+	flare.height = 1.0
+	flare.radial_segments = 10
+	flare.rings = 5
+	for mi: MeshInstance3D in [_eye_flare, _impact]:
+		mi.mesh = flare
+		var m := StandardMaterial3D.new()
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		m.albedo_color = GAZE_CORE
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.visible = false
+		add_child(mi)
+	_eye_flare.name = "GazeEye"
+	_impact.name = "GazeImpact"
+	for l: OmniLight3D in [_eye_light, _impact_light]:
+		l.light_color = GAZE
+		l.omni_range = 4.0
+		l.shadow_enabled = false
+		l.visible = false
+		add_child(l)
+	_eye_light.name = "GazeEyeLight"
+	_impact_light.name = "GazeImpactLight"
+	_impact_light.omni_range = 5.0
+	_scorch.name = "Scorch"
+	_scorch.multimesh = _flat_multimesh(SCORCH_MAX, 0.9)
+	var sm := ShaderMaterial.new()
+	var ss := Shader.new()
+	ss.code = BossSignatureShaders.SCORCH
+	sm.shader = ss
+	sm.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	_scorch.material_override = sm
+	_scorch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_scorch.extra_cull_margin = 16384.0
+	add_child(_scorch)
+	_sparks.name = "RicochetSparks"
+	_sparks.multimesh = _flat_multimesh(SPARK_MAX, 1.0, false)
+	var pm := ShaderMaterial.new()
+	var ps := Shader.new()
+	ps.code = BossSignatureShaders.SPARK
+	pm.shader = ps
+	_sparks.material_override = pm
+	_sparks.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_sparks.extra_cull_margin = 16384.0
+	add_child(_sparks)
+	_lava_shader.code = BossSignatureShaders.LAVA
+	_melt_shader.code = BossSignatureShaders.MELT
+
+
+## A MultiMesh of quads (flat on the floor, or facing the camera) with a custom float per instance.
+static func _flat_multimesh(n: int, size: float, flat: bool = true) -> MultiMesh:
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_custom_data = true
+	var q := QuadMesh.new()
+	q.size = Vector2(size, size)
+	if flat:
+		q.orientation = PlaneMesh.FACE_Y
+	mm.mesh = q
+	mm.instance_count = n
+	mm.visible_instance_count = 0
+	return mm
+
+
+func _sync_bs2(reader: WorldReader, boss: int) -> void:
+	_gaze = {}
+	if boss >= 0:
+		var g := reader.boss_gaze(boss)
+		if not g.is_empty():
+			g["eye"] = reader.actor_pos(boss)
+			_gaze = g
+			if (
+				not g["winding"]
+				and g["hit"]
+				and _tick % SCORCH_EVERY == 0
+				and _tick != _scorch_tick
+			):
+				_scorch_tick = _tick
+				_scorch_rows.append([g["to"], float(_tick), float(_scorch_rows.size() % 7)])
+	while (
+		_scorch_rows.size() > SCORCH_MAX
+		or (not _scorch_rows.is_empty() and float(_tick) - float(_scorch_rows[0][1]) > SCORCH_TICKS)
+	):
+		_scorch_rows.pop_front()
+	_lava_rows = reader.boss_lava()
+	_melt_rows = reader.boss_melts()
+	var seen := {}
+	for k in reader.projectile_count():
+		if reader.projectile_team(k) != WorldReader.TEAM_ENEMY:
+			continue
+		var bt := reader.projectile_bounce_tick(k)
+		var id := reader.projectile_id(k)
+		seen[id] = bt
+		if bt >= 0 and int(_bounced.get(id, -1)) != bt:
+			_spark_rows.append([reader.projectile_pos(k), float(_tick)])
+	_bounced = seen
+	while (
+		_spark_rows.size() > SPARK_MAX
+		or (not _spark_rows.is_empty() and float(_tick) - float(_spark_rows[0][1]) > SPARK_TICKS)
+	):
+		_spark_rows.pop_front()
+	_sync_lava_nodes()
+	_sync_melt_nodes()
+
+
+func _bs2_busy() -> bool:
+	return (
+		not _gaze.is_empty()
+		or not _lava_rows.is_empty()
+		or not _melt_rows.is_empty()
+		or not _spark_rows.is_empty()
+		or not _scorch_rows.is_empty()
+	)
+
+
+## True while the Gaze is drawn (its aim line in the windup, its beam after; tests and the tour).
+func gaze_drawn() -> bool:
+	return _beam.visible or _aim.visible
+
+
+## The drawn beam's (or aim line's) ends in 3D, [from, to] (tests: on the sim's beam), or [].
+func gaze_ends() -> Array:
+	return _gaze_ends
+
+
+## Molten floor pieces and meltdowns drawn now (tests and the tour).
+func lava_count() -> int:
+	var n := 0
+	for mi: MeshInstance3D in _lava_nodes:
+		n += 1 if mi.visible else 0
+	return n
+
+
+func melt_count() -> int:
+	var n := 0
+	for mi: MeshInstance3D in _melt_nodes:
+		n += 1 if mi.visible else 0
+	return n
+
+
+## Ricochet sparks showing now (tests and the tour).
+func spark_count() -> int:
+	return _sparks.multimesh.visible_instance_count
+
+
+func _draw_bs2(now: float, still: bool) -> void:
+	_draw_gaze(now, still)
+	_draw_scorch(now)
+	_draw_sparks(now)
+	_draw_lava(now)
+	_draw_melt()
+
+
+## The Gaze: in the windup the eye brightens and a thin aim line runs the way the beam will open; then the beam, a
+## core and a glow cylinder from the eye down to where it strikes, a burning strip on the floor under it, a flare and
+## a light at the impact point when a wall stopped it.
+func _draw_gaze(now: float, still: bool) -> void:
+	_gaze_ends = []
+	var on := not _gaze.is_empty()
+	for n: Node3D in [
+		_beam, _beam_glow, _beam_floor, _aim, _eye_flare, _eye_light, _impact, _impact_light
+	]:
+		n.visible = false
+	if not on:
+		return
+	var g := _gaze
+	var p := float(g["progress"]) / 1000.0
+	var d := Kin.dir(int(g["angle"]))
+	var eye := SimPlane.to_3d((g["eye"] as Vector2) + d * EYE_OUT, EYE_Y)
+	var to := SimPlane.to_3d(g["to"], BEAM_END_Y)
+	var flicker := 1.0 if still else 0.85 + 0.15 * sin(now * 0.9)
+	_eye_flare.visible = true
+	_eye_light.visible = true
+	_eye_flare.position = eye
+	var bright := p if g["winding"] else 1.0
+	_eye_flare.scale = Vector3.ONE * (0.3 + 0.5 * bright)
+	_eye_light.position = eye
+	_eye_light.light_energy = 0.4 + 3.0 * bright * flicker
+	if g["winding"]:
+		_aim.visible = true
+		_place_cylinder(_aim, eye, to, AIM_RADIUS * (0.6 + 0.4 * p))
+		(_aim.material_override as ShaderMaterial).set_shader_parameter("strength", 0.6 + 1.4 * p)
+		_gaze_ends = [eye, to]
+		return
+	var hw := float(g["half_width"])
+	_beam.visible = true
+	_beam_glow.visible = true
+	_place_cylinder(_beam, eye, to, hw * 0.45)
+	_place_cylinder(_beam_glow, eye, to, hw * (1.05 + (0.0 if still else 0.08 * sin(now * 1.7))))
+	_gaze_ends = [eye, to]
+	var from2: Vector2 = g["from"]
+	var to2: Vector2 = g["to"]
+	_beam_floor.visible = true
+	var mid := (from2 + to2) * 0.5
+	var len := Kin.length(to2 - from2)
+	_beam_floor.transform = Transform3D(
+		(
+			Basis(Vector3.UP, SimPlane.yaw_of(int(g["angle"])))
+			* Basis.from_scale(Vector3(len, 1, hw * 2.0))
+		),
+		SimPlane.to_3d(mid, 0.03)
+	)
+	if g["hit"]:
+		_impact.visible = true
+		_impact_light.visible = true
+		_impact.position = to
+		_impact.scale = Vector3.ONE * (0.7 + (0.0 if still else 0.2 * sin(now * 2.3)))
+		_impact_light.position = to + Vector3(0, 0.4, 0)
+		_impact_light.light_energy = 3.5 * flicker
+
+
+## Puts a unit cylinder (its axis +Y, height 1, radius 1) from a to b with radius r.
+static func _place_cylinder(mi: MeshInstance3D, a: Vector3, b: Vector3, r: float) -> void:
+	var y := b - a
+	var len := maxf(y.length(), 0.001)
+	var yn := y / len
+	var side := Vector3.UP if absf(yn.dot(Vector3.UP)) < 0.95 else Vector3.RIGHT
+	var x := yn.cross(side).normalized()
+	var z := x.cross(yn).normalized()
+	mi.transform = Transform3D(Basis(x * r, yn * len, z * r), (a + b) * 0.5)
+
+
+## Scorch marks the beam burnt where it struck: dark and glowing, fading over SCORCH_TICKS.
+func _draw_scorch(now: float) -> void:
+	var mm := _scorch.multimesh
+	var buf := PackedFloat32Array()
+	var n := 0
+	for row: Array in _scorch_rows:
+		var age := clampf((now - float(row[1])) / SCORCH_TICKS, 0.0, 1.0)
+		var at := SimPlane.to_3d(row[0], 0.025 + 0.001 * float(n % 5))
+		var s := 0.8 + 0.25 * float(row[2]) / 7.0
+		var b := Basis(Vector3.UP, float(row[2])) * Basis.from_scale(Vector3(s, 1, s))
+		buf.append_array(
+			[b.x.x, b.y.x, b.z.x, at.x, b.x.y, b.y.y, b.z.y, at.y, b.x.z, b.y.z, b.z.z, at.z]
+		)
+		buf.append_array([age, float(row[2]), 0.0, 0.0])
+		n += 1
+	if n > 0:
+		buf.resize(mm.instance_count * 16)
+		mm.buffer = buf
+	mm.visible_instance_count = n
+
+
+## A ricochet's spark burst where a hostile shot bounced off a wall: a hot star facing the camera that flashes and
+## shrinks over SPARK_TICKS.
+func _draw_sparks(now: float) -> void:
+	var mm := _sparks.multimesh
+	var buf := PackedFloat32Array()
+	var n := 0
+	for row: Array in _spark_rows:
+		var age := clampf((now - float(row[1])) / SPARK_TICKS, 0.0, 1.0)
+		var at := SimPlane.to_3d(row[0], SimPlane.CORE_HEIGHT)
+		buf.append_array([1, 0, 0, at.x, 0, 1, 0, at.y, 0, 0, 1, at.z, age, 0, 0, 0])
+		n += 1
+	if n > 0:
+		buf.resize(mm.instance_count * 16)
+		mm.buffer = buf
+	mm.visible_instance_count = n
+
+
+func _sync_lava_nodes() -> void:
+	while _lava_nodes.size() < _lava_rows.size():
+		var mi := MeshInstance3D.new()
+		mi.name = "Lava"
+		var q := QuadMesh.new()
+		q.size = Vector2.ONE
+		q.orientation = PlaneMesh.FACE_Y
+		mi.mesh = q
+		var m := ShaderMaterial.new()
+		m.shader = _lava_shader
+		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(mi)
+		_lava_nodes.append(mi)
+	for k in _lava_nodes.size():
+		var mi := _lava_nodes[k]
+		mi.visible = k < _lava_rows.size()
+		if mi.visible:
+			var r: Rect2 = _lava_rows[k][0]
+			mi.transform = Transform3D(
+				Basis.from_scale(Vector3(r.size.x, 1, r.size.y)),
+				SimPlane.to_3d(r.get_center(), 0.035)
+			)
+
+
+## Molten floor: it wells up over LAVA_FADE_TICKS, churns, and crusts over its last LAVA_CRUST_TICKS.
+func _draw_lava(now: float) -> void:
+	for k in mini(_lava_rows.size(), _lava_nodes.size()):
+		var row: Array = _lava_rows[k]
+		var m := _lava_nodes[k].material_override as ShaderMaterial
+		var since := now - float(row[1])
+		var left := float(row[2]) - now
+		m.set_shader_parameter("fade", clampf(since / LAVA_FADE_TICKS, 0.0, 1.0))
+		m.set_shader_parameter("cool", clampf(1.0 - left / LAVA_CRUST_TICKS, 0.0, 1.0))
+
+
+func _sync_melt_nodes() -> void:
+	while _melt_nodes.size() < _melt_rows.size():
+		var mi := MeshInstance3D.new()
+		mi.name = "Meltdown"
+		var q := QuadMesh.new()
+		q.size = Vector2.ONE
+		q.orientation = PlaneMesh.FACE_Y
+		mi.mesh = q
+		var m := ShaderMaterial.new()
+		m.shader = _melt_shader
+		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		mi.material_override = m
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.extra_cull_margin = 64.0
+		add_child(mi)
+		_melt_nodes.append(mi)
+	for k in _melt_nodes.size():
+		_melt_nodes[k].visible = k < _melt_rows.size()
+
+
+## The meltdown: the room's floor beyond its radius molten (the lava look), the cool bridge to the exit left out, and
+## the ring that melts next glowing and pulsing while it is warned (the whole outer ring through the windup).
+func _draw_melt() -> void:
+	for k in mini(_melt_rows.size(), _melt_nodes.size()):
+		var row: Dictionary = _melt_rows[k]
+		var mi := _melt_nodes[k]
+		var r: Rect2 = row["bound"]
+		mi.transform = Transform3D(
+			Basis.from_scale(Vector3(r.size.x, 1, r.size.y)), SimPlane.to_3d(r.get_center(), 0.03)
+		)
+		var m := mi.material_override as ShaderMaterial
+		var c := SimPlane.to_3d(row["centre"])
+		var e := SimPlane.to_3d(row["exit"])
+		var radius := float(row["radius"])
+		m.set_shader_parameter("centre", Vector2(c.x, c.z))
+		m.set_shader_parameter("radius", radius if radius < 100000.0 else 100000.0)
+		m.set_shader_parameter("next", float(row["next"]))
+		m.set_shader_parameter(
+			"warn", float(row["warn"]) / 1000.0 if int(row["warn"]) >= 0 else -1.0
+		)
+		m.set_shader_parameter("bridge", 1.0 if row["bridge"] else 0.0)
+		m.set_shader_parameter("bridge_to", Vector2(e.x, e.z))
+		m.set_shader_parameter("bridge_half", float(row["half"]))

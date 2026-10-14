@@ -164,6 +164,25 @@ const ADDED_SINCE_V05 := {
 		&"jav_attack",
 		&"jav_from",
 		&"jav_back",
+		# v0.8.0 BS2: the Foundry's lava and meltdown and their burn clock (an older save has none)
+		&"lava_x",
+		&"lava_y",
+		&"lava_hx",
+		&"lava_hy",
+		&"lava_from",
+		&"lava_until",
+		&"lava_boss",
+		&"lava_attack",
+		&"melt_boss",
+		&"melt_attack",
+		&"melt_from",
+		&"melt_r0",
+		&"melt_x",
+		&"melt_y",
+		&"melt_ex",
+		&"melt_ey",
+		&"melt_exit",
+		&"burn_cd",
 	],
 	&"ProjectileStore":
 	[
@@ -281,8 +300,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 		return (
 			"World.nav: field size %s, the rebuilt walls give %s" % [nav.get("size"), base.nav.size]
 		)
-	if not base.bosses.pillar_x.is_empty():  # v0.8.0 BS1: the flow field goes round them again
-		base.nav.set_extra(BossSignatures.pillar_obbs(base))
+	if BossSignatures.has_extra(base):  # v0.8.0 BS1/BS2: the flow field goes round them again
+		BossSignatures.set_nav_extra(base, false)
 	base.nav.dist = (nav["dist"] as PackedInt32Array).duplicate()
 	base.nav.set(&"_flooded", nav["flooded"])
 	for f: StringName in [&"_wall_next", &"_nav_next"]:

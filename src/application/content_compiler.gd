@@ -51,6 +51,8 @@ const BOSS_MOVES := {
 	&"row_lanes": BossAttackTable.Move.ROW_LANES,
 	&"grid": BossAttackTable.Move.GRID,  # v0.7.5 BF3
 	&"row_flood": BossAttackTable.Move.ROW_FLOOD,
+	&"gaze": BossAttackTable.Move.GAZE,  # v0.8.0 BS2 (S4)
+	&"melt": BossAttackTable.Move.MELT,  # v0.8.0 BS2 (S6)
 }
 
 

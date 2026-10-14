@@ -90,6 +90,30 @@ var jav_boss := PackedInt32Array()
 var jav_attack := PackedInt32Array()
 var jav_from := PackedInt32Array()
 var jav_back := PackedInt32Array()
+## v0.8.0 BS2 (owner O5; S6), the Foundry's molten floor: each piece an axis-aligned box (centre, half sizes in
+## metres), the tick it was laid and the tick it cools, its boss's actor id and the attack that laid it.
+var lava_x := PackedFloat32Array()
+var lava_y := PackedFloat32Array()
+var lava_hx := PackedFloat32Array()
+var lava_hy := PackedFloat32Array()
+var lava_from := PackedInt32Array()
+var lava_until := PackedInt32Array()
+var lava_boss := PackedInt32Array()
+var lava_attack := PackedInt32Array()
+## S6, the meltdown (one per boss at most, for good): its boss's actor id and attack, the tick the outer ring first
+## melted and the radius it melted to then, the room's centre, and the exit its cool bridge reaches (melt_exit 1; 0 =
+## no exit, no bridge).
+var melt_boss := PackedInt32Array()
+var melt_attack := PackedInt32Array()
+var melt_from := PackedInt32Array()
+var melt_r0 := PackedFloat32Array()
+var melt_x := PackedFloat32Array()
+var melt_y := PackedFloat32Array()
+var melt_ex := PackedFloat32Array()
+var melt_ey := PackedFloat32Array()
+var melt_exit := PackedInt32Array()
+## S6: ticks until molten floor (lava or the melt) may burn the player again (0 while none is down).
+var burn_cd := 0
 
 
 func size() -> int:
@@ -153,6 +177,19 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(v)
 	if pillar_x.size() + jav_x.size() > 0:
 		_hash_signatures(h)
+	if lava_x.size() + melt_boss.size() > 0:  # v0.8.0 BS2: only while molten floor is down
+		_hash_molten(h)
+
+
+## v0.8.0 BS2 (S6): the lava, the meltdown and the burn clock.
+func _hash_molten(h: StateHasher) -> void:
+	for f in [lava_x, lava_y, lava_hx, lava_hy, melt_r0, melt_x, melt_y, melt_ex, melt_ey]:
+		h.add_f32s(f)
+	for f in [
+		lava_from, lava_until, lava_boss, lava_attack, melt_boss, melt_attack, melt_from, melt_exit
+	]:
+		h.add_ints(f)
+	h.add_int(burn_cd)
 
 
 ## v0.8.0 BS1: the pillars and javelins, only while any stands (and a sentinel between the two lists).
@@ -177,6 +214,30 @@ func remove_pillar(k: int) -> void:
 		af.remove_at(k)
 		set(f, af)
 	for f: StringName in [&"pillar_from", &"pillar_until", &"pillar_boss"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.8.0 BS2: removes lava piece k.
+func remove_lava(k: int) -> void:
+	for f: StringName in [&"lava_x", &"lava_y", &"lava_hx", &"lava_hy"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
+	for f: StringName in [&"lava_from", &"lava_until", &"lava_boss", &"lava_attack"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.8.0 BS2: removes meltdown k.
+func remove_melt(k: int) -> void:
+	for f: StringName in [&"melt_r0", &"melt_x", &"melt_y", &"melt_ex", &"melt_ey"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
+	for f: StringName in [&"melt_boss", &"melt_attack", &"melt_from", &"melt_exit"]:
 		var ai: PackedInt32Array = get(f)
 		ai.remove_at(k)
 		set(f, ai)

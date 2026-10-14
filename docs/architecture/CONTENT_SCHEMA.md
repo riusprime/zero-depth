@@ -596,6 +596,19 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     at most 8, bursting from phase 3).
   - `BossDefinition.front_mult_permille` may be 0 (0..1000): a shield that blocks every hit from the front arc (the
     Warlord's tower shield, 120°).
+- **v0.8.0 BS2 (owner O5; SIM_CONTRACTS §10f S4-S6).** Two moves and more optional params (`late_cause_key` is
+  required with `bounces`, `bounce_phase`, `lava_seconds`, and a `gaze` with a `pattern_id`):
+  - `gaze` (LINE): `length_m`, `width_m`, `quarter_seconds`, `reverse_seconds`, `burn_seconds` (all > 0), optional
+    `pattern_id` and `orb_every_seconds`: the Hive Lens's sweeping beam (2.0 s a quarter turn, reversing every
+    8.0 s, 30 m, 0.9 m wide, a burn every 0.5 s, 12 s long; the Petal Bloom's orbs every 3.0 s; `gaze_fast` in
+    phase 3: 1.6 s, 6.4 s, every 2.6 s).
+  - `melt` (RING): `ring_m`, `min_radius_m` (> 0), `step_m`, `step_seconds` (> 0), `warn_seconds` (>= the
+    telegraph minimum, < `step_seconds`), `burn_seconds`, `ford_m` (>= 1.2): the Foundry's meltdown (4.0 m, 7.0 m,
+    2.0 m every 8.0 s, warned 2.0 s, 8 damage every 0.5 s, a 2.0 m bridge; its windup 2.0 s).
+  - `pattern` + `bounces` (1): its shots bounce off a wall once (the Siege Engine's Turret Cross, both).
+  - `deploy` + `bounce_phase` (1-based): its turrets' shots bounce once from that phase (the Siege Engine: 3).
+  - `row_flood` + `lava_seconds` (>= the telegraph minimum), `lava_damage` (>= 1), `lava_burn_seconds`, `ford_m`
+    (>= 1.2): the lanes stay molten that long (the Foundry's Molten Flood, both: 5.0 s, 6 every 0.5 s, 2.0 m fords).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

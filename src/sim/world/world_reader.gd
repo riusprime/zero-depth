@@ -92,6 +92,8 @@ const STATE_STAGGERED := BossAi.STAGGERED
 const STATE_GATE := BossAi.GATE
 ## v0.8.0 BS1 (S3): an egg waiting, and bursting (BossSignatures).
 const STATE_EGG := BossSignatures.EGG
+## v0.8.0 BS2 (S5): the hostile team (a ricochet's sparks are drawn for its shots).
+const TEAM_ENEMY := ActorStore.TEAM_ENEMY
 const STATE_EGG_BURST := BossSignatures.EGG_BURST
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
@@ -117,6 +119,8 @@ const MOVE_MARKS := BossAttackTable.Move.MARKS
 const MOVE_ROW_LANES := BossAttackTable.Move.ROW_LANES
 const MOVE_GRID := BossAttackTable.Move.GRID  # v0.7.5 BF3
 const MOVE_ROW_FLOOD := BossAttackTable.Move.ROW_FLOOD
+const MOVE_GAZE := BossAttackTable.Move.GAZE  # v0.8.0 BS2 (S4)
+const MOVE_MELT := BossAttackTable.Move.MELT  # v0.8.0 BS2 (S6)
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
@@ -1346,6 +1350,53 @@ func boss_recall_permille(i: int) -> int:
 ## v0.8.0 BS1 (S3): actor i is a Brood Mother's egg: its time to hatch or burst 0..1000 (1000 bursting), else -1.
 func actor_egg_permille(i: int) -> int:
 	return BossSignatures.egg_permille(_w, i)
+
+
+## v0.8.0 BS2 (owner O5, S4): boss i's Gaze: {} or {"winding", "progress", "from", "to", "angle", "half_width",
+## "way", "hit"} (BossGaze.state): the eye brightening and its thin aim line in the windup, then the beam.
+func boss_gaze(i: int) -> Dictionary:
+	return BossGaze.state(_w, i)
+
+
+## v0.8.0 BS2 (S6): the Foundry's molten floor down now: [rect (sim plane), the tick it was laid, the tick it cools]
+## each.
+func boss_lava() -> Array:
+	var out := []
+	var bs := _w.bosses
+	for k in bs.lava_x.size():
+		out.append([BossLava.lava_rect(bs, k), bs.lava_from[k], bs.lava_until[k]])
+	return out
+
+
+## v0.8.0 BS2 (S6): the meltdowns, each {"centre", "radius" (molten beyond it; INF while it only glows: the melt
+## attack's windup), "next" (the radius it melts to next), "warn" (0..1000 while the next step glows, else -1),
+## "bound" (the room, Rect2), "bridge" (bool), "exit" (the bridge's far end), "half" (its half width)}.
+func boss_melts() -> Array:
+	var out := []
+	var shapes := BossLava.melt_shapes(_w)
+	for k in shapes.size():
+		var m: Array = shapes[k]
+		var nx := BossLava.melt_warn(_w, k)
+		(
+			out
+			. append(
+				{
+					"centre": m[BossLava.MELT_CENTRE],
+					"radius": m[BossLava.MELT_R],
+					"next": nx[0],
+					"warn": nx[1],
+					"bound": m[BossLava.MELT_BOUND],
+					"bridge": m[BossLava.MELT_HAS_EXIT],
+					"exit": m[BossLava.MELT_EXIT],
+					"half": m[BossLava.MELT_HALF],
+				}
+			)
+		)
+	var i := boss_index()
+	var atk := BossAi.attack_of(_w, i) if i >= 0 else null
+	if atk != null and atk.move == MOVE_MELT and _w.actors.state[i] == EnemyAi.State.WINDUP:
+		out.append(BossLava.melt_windup(_w, i, atk))
+	return out
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

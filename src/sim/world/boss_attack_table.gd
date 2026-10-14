@@ -21,6 +21,8 @@ enum Move {
 	ROW_LANES,
 	GRID,
 	ROW_FLOOD,
+	GAZE,
+	MELT,
 }
 
 var id := &""
@@ -102,3 +104,29 @@ var egg_hp := 0
 var burst_phase := 99
 ## v0.8.0 BS1: the death line for the attack's late part (the javelins coming back, an egg's burst).
 var late_cause_key := &""
+## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4): a `gaze` attack's beam turns a quarter turn (1024) every
+## quarter_ticks from its start (aimed away from the player), reversing every reverse_ticks; it reaches length_m
+## from the boss's edge (cut short by walls), half_width_m each side, and hurts once every burn_ticks. Its `pattern`
+## (the orbs) fires again every orb_every_ticks from orb_every_ticks on (0 = none).
+var quarter_ticks := 0
+var reverse_ticks := 0
+var orb_every_ticks := 0
+## v0.8.0 BS2 (S5): a `pattern` attack's shots bounce off walls this many times (once); a `deploy` attack's turrets'
+## shots bounce once from phase index bounce_phase on (99 = never).
+var bounces := 0
+var bounce_phase := 99
+## v0.8.0 BS2 (S6): a `row_flood` attack's lanes leave molten floor for lava_ticks where they struck (lava_damage
+## once every lava_burn_ticks to a player standing in it), every lane cut by fords ford_m wide (a lava-free way to
+## the boss and to an exit). A `melt` attack melts the room's outer ring for good: everything farther from the room's
+## centre than its inscribed radius less melt_ring_m, then melt_step_m closer every melt_step_ticks (each step glows
+## melt_warn_ticks first), never closer than melt_min_m; it hurts its damage once every burn_ticks; a ford_m bridge
+## to the exit stays cool.
+var lava_ticks := 0
+var lava_damage := 0
+var lava_burn_ticks := 1
+var ford_m := 0.0
+var melt_ring_m := 0.0
+var melt_min_m := 0.0
+var melt_step_m := 0.0
+var melt_step_ticks := 0
+var melt_warn_ticks := 0

@@ -347,13 +347,16 @@ func test_the_hive_lens_phase_script_and_hp() -> void:
 	var t := w.boss_tables[BossLab.table_index(w, &"hive_lens")]
 	assert_eq(t.hp, 2063, "1650 in v0.7.0, x1.25 (2062.5 rounded up)")
 	var p0 := _ids(t, 0)
-	for id: StringName in [&"prism_spiral", &"petal_bloom", &"glare_ring", &"focus_beam"]:
+	# v0.8.0 BS2 (owner O5, S4): the Gaze takes the Glare Ring's place (trimmed).
+	for id: StringName in [&"prism_spiral", &"petal_bloom", &"gaze", &"focus_beam"]:
 		assert_true(p0.has(id), "phase 1 has %s" % id)
 	assert_eq(t.attacks[t.phase_entry[1]].id, &"split", "the Lens Drones still break off at 66 %")
-	assert_true(_ids(t, 1).has(&"glare_ring_fast"), "phase 2 speeds the rings")
+	assert_true(_ids(t, 1).has(&"gaze"), "phase 2 keeps the gaze")
+	assert_eq(t.attack_index(&"glare_ring"), -1, "the Glare Ring is trimmed")
+	assert_eq(t.attack_index(&"glare_ring_fast"), -1)
 	var p2 := _ids(t, 2)
 	for id: StringName in [
-		&"prism_spiral_fast", &"petal_bloom_fast", &"glare_ring_fast", &"focus_beam_3"
+		&"prism_spiral_fast", &"petal_bloom_fast", &"gaze_fast", &"focus_beam_3"
 	]:
 		assert_true(p2.has(id), "phase 3, the hardest mix, has %s" % id)
 	assert_eq(t.attacks[t.phase_entry[2]].id, &"prism_spiral_fast")
@@ -421,19 +424,6 @@ func test_the_petal_bloom_opens_5_petals_with_gaps_between() -> void:
 		assert_gt(speeds.size(), 2, "%s: the petals open out (tips faster than the sides)" % id)
 
 
-func test_the_glare_ring_has_two_gaps() -> void:
-	var w := BossLab.world()
-	var t := w.boss_tables[BossLab.table_index(w, &"hive_lens")]
-	for id: StringName in [&"glare_ring", &"glare_ring_fast"]:
-		var p := _pattern(t, id)
-		assert_eq(p.gap_count, 2)
-		for k in p.waves:
-			var g := _gaps(p, k)
-			var step := 4096 / p.count
-			assert_gt(g[1], step, "%s wave %d: two gaps" % [id, k])
-			assert_lte(g[2], step + 1, "and only two")
-
-
 func test_the_focus_beam_tracks_then_locks_and_a_step_aside_escapes() -> void:
 	for stay: bool in [true, false]:
 		var s := _fight(&"hive_lens", Vector2(9, 0))
@@ -469,7 +459,6 @@ func test_both_bosses_patterns_fire_slow_shots_in_their_looks() -> void:
 	for spec in [
 		[&"brood_mother", &"web_spiral", "acid_glob"],
 		[&"hive_lens", &"petal_bloom", "prism_orb"],
-		[&"hive_lens", &"glare_ring", "prism_orb"],
 	]:
 		var s := _fight(spec[0], Vector2(9, 0))
 		var w: World = s[0]

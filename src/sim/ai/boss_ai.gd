@@ -24,7 +24,9 @@ extends RefCounted
 ## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
 ## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
 ## v0.8.0 BS1 (owner O5): each boss's signature mechanic (BossSignatures): the Gatekeeper's pillars, the Warlord's
-## recalled javelins, the Brood Mother's eggs.
+## recalled javelins, the Brood Mother's eggs. v0.8.0 BS2: `gaze` (the Hive Lens's sweeping beam, BossGaze) and
+## `melt` (the Foundry's meltdown, BossLava); the Siege Engine's ricochets (BossRicochet) and the Foundry's lava are
+## params on `pattern`, `deploy` and `row_flood`.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -131,6 +133,8 @@ static func think(w: World, i: int) -> void:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
 			if BossDodge.is_marker_move(atk.move):  # v0.7.5 BF1: each marker tracks, then locks
 				BossDodge.track_marks(w, b, atk, a.state_t[i])
+			elif atk.move == M.GAZE:  # v0.8.0 BS2 (S4): it starts aimed away from you, wherever you go
+				BossGaze.keep_away(w, i)
 			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
@@ -195,6 +199,10 @@ static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> voi
 				_finish(w, i, b, atk)
 		M.BOLT_FAN:
 			if bs.step[b] >= atk.volleys and a.state_t[i] >= atk.active_ticks:
+				_finish(w, i, b, atk)
+		M.GAZE:  # v0.8.0 BS2 (S4): the eye looks along its beam
+			a.facing[i] = BossGaze.angle_at(w, i, mini(a.state_t[i] + 1, atk.active_ticks - 1))
+			if a.state_t[i] >= atk.active_ticks:
 				_finish(w, i, b, atk)
 		_:
 			if a.state_t[i] >= atk.active_ticks:
@@ -341,6 +349,8 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
 			for k in atk.count:
 				bs.set_pt(b, k, w.player_pos())
+		M.GAZE:  # v0.8.0 BS2 (S4): aimed away from the player; the way it turns
+			BossGaze.lock(w, i, b)
 
 
 ## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
@@ -414,6 +424,8 @@ static func move(w: World, i: int) -> void:
 			if dist <= maxf(t.keep_distance_m, t.radius_m + w.player.radius_m + 0.1):
 				return
 			a.set_pos(i, at + EnemyAi.steer(w, at, to / dist, t.radius_m) * speed)
+			if not w.bosses.melt_boss.is_empty():  # v0.8.0 BS2 (S6): the Foundry keeps to cool ground
+				BossLava.keep_on_ground(w, i)
 		S.WINDUP:
 			var atk := attack_of(w, i)
 			if atk != null and atk.move == M.PULL:
@@ -539,6 +551,8 @@ static func resolve(w: World, i: int) -> void:
 					if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:
 						hit_player(w, i, atk, SimEvent.TAG_AREA, a.pos(i))
 						break
+				if st == atk.active_ticks - 1 and atk.lava_ticks > 0:  # v0.8.0 BS2 (S6): it stays molten
+					BossLava.lay(w, i, atk)
 		M.BOLT_FAN:
 			if w.bosses.step[b] < atk.volleys and st % atk.gap_ticks == 0:
 				w.bosses.step[b] += 1
@@ -549,6 +563,11 @@ static func resolve(w: World, i: int) -> void:
 			BossDodge.resolve_marks(w, i, b, atk, st)
 		M.GRID:  # v0.7.5 BF3: each volley strikes its colour of the locked board
 			BossDodge.resolve_grid(w, i, b, atk, st)
+		M.GAZE:  # v0.8.0 BS2 (S4): the beam turns round the room; its orbs fly
+			BossGaze.resolve(w, i, b, atk, st)
+		M.MELT:  # v0.8.0 BS2 (S6): the outer ring melts for good
+			if st == 0:
+				BossLava.begin_melt(w, i)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -778,6 +797,10 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossDodge.pattern_telegraph(w, i, b, atk, windup, progress)
 	if atk.move == M.GRID:
 		return BossDodge.grid_telegraph(w, i, atk)
+	if atk.move == M.GAZE or atk.move == M.MELT:
+		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
+		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews).
+		return {"shape": &"signature", "ground": false, "progress": progress, "move": atk.move}
 	match atk.move:
 		M.SLAM_RING, M.PULL:
 			var r := ring_of(w, i)
@@ -893,8 +916,12 @@ static func telegraph(w: World, i: int) -> Dictionary:
 
 ## The death recap line for a boss kill: the attack that landed it (World.killer_attack), else the boss's projectile
 ## attack for a bolt, else &"".
-static func cause_key(w: World) -> StringName:
+static func cause_key(w: World) -> StringName:  # gdlint: ignore=max-returns
 	var t := w.boss_table_of_kind(w.killer_kind)
+	if t == null and w.killer_attack >= BossSignatures.LATE_CAUSE:
+		# v0.8.0 BS2 (S5): a turret's ricochet names the boss that deployed it (its deploy attack's late part)
+		t = _live_table(w)
+		return BossSignatures.late_cause_key(t, w.killer_attack) if t != null else &""
 	if t == null:
 		return &""
 	if w.killer_attack == BossChallenge.ARENA_ATTACK:
@@ -910,3 +937,12 @@ static func cause_key(w: World) -> StringName:
 		):
 			return atk.cause_key
 	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
+
+
+## v0.8.0 BS2: the table of the first live boss (the recap of a turret's ricochet), or null.
+static func _live_table(w: World) -> BossTable:
+	for b in w.bosses.size():
+		var i := w.actors.index_of(w.bosses.ids[b])
+		if i >= 0:
+			return table_of(w, i)
+	return null

@@ -35,6 +35,7 @@ static func library() -> Dictionary:
 			_idle(),
 			_walk(),
 			_pattern(),
+			_pattern_shielded(),  # v0.8.0 BS2 (S5)
 			_grid(),
 			_marks(),
 			_lanes(),
@@ -129,6 +130,39 @@ static func _pattern() -> BossClip:
 	)
 	c.turn(&"hull", Y, [[0, 0], [0.5, 0, IN3], [0.62, 0.7, LIN], [0.8, 0.7], [1, 0]])
 	c.param(&"tremble", [[0, 0], [0.49, 0], [0.5, 0.7, LIN], [0.62, 0.4], [0.66, 0], [1, 0]])
+	return c
+
+
+## v0.8.0 BS2 (owner O5, S5): the Turret Cross with ricochet shells (shielded): it braces for the volley harder
+## than any other pattern, the front pair kneeling and the hull dropped flat behind its shield, cannon levelled low
+## at the walls; it kicks back with each volley as the hull turns the cross round, and, as the embers come back off
+## the walls, the hull swings round the other way (watching them return) before it stands.
+static func _pattern_shielded() -> BossClip:
+	var c := BossClip.new(&"pattern_shielded")
+	c.param(&"squat", [[0, 0], [0.38, 1.0, BACK], [0.62, 1.0], [0.85, 0.35], [1, 0]])
+	c.param(&"front_kneel", [[0, 0], [0.4, 0.6, BACK], [0.62, 0.55], [0.85, 0.15], [1, 0]])
+	c.shift(
+		&"hull",
+		UP,
+		[[0, 0], [0.38, -0.3, BACK], [0.5, -0.36, IN3], [0.62, -0.32], [0.85, -0.06], [1, 0]]
+	)
+	c.turn(&"hull", Z, [[0, 0], [0.4, -0.12], [0.5, 0.06, IN3], [0.62, -0.08], [0.85, 0], [1, 0]])
+	c.turn(&"cannon", Z, [[0, 0], [0.4, -0.1], [0.62, -0.1], [1, 0]])
+	var kick := [[0, 0], [0.49, 0], [0.5, -0.5, IN3], [0.515, -0.12]]
+	for k in 4:
+		var t0 := 0.53 + 0.022 * k
+		kick.append([t0, -0.45, IN3])
+		kick.append([t0 + 0.012, -0.12])
+	kick.append_array([[0.62, 0.0], [1, 0]])
+	c.shift(&"cannon", FWD, kick)
+	c.turn(
+		&"hull", Y, [[0, 0], [0.5, 0, IN3], [0.62, 0.7, LIN], [0.74, 0.7], [0.86, -0.5, IO], [1, 0]]
+	)
+	c.turn_pair(&"mortar_l", &"mortar_r", Z, [[0, 0], [0.4, -0.15], [0.62, -0.15], [1, 0]])
+	c.param(
+		&"tremble",
+		[[0, 0], [0.3, 0.2], [0.49, 0.4], [0.5, 0.8, LIN], [0.62, 0.45], [0.66, 0], [1, 0]]
+	)
 	return c
 
 

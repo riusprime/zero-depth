@@ -84,7 +84,7 @@ func apply_state(s: Dictionary) -> void:
 	super(s)
 	if _move == WorldReader.MOVE_PATTERN:
 		_move = WorldReader.MOVE_BOLT_FAN
-	elif _move == WorldReader.MOVE_LANES:
+	elif _move == WorldReader.MOVE_LANES or _move == WorldReader.MOVE_GAZE:  # v0.8.0 BS2: the Gaze too
 		_move = WorldReader.MOVE_RAIL
 
 

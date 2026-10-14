@@ -32,6 +32,9 @@ var _kind := {}
 var _attack := {}
 ## Per projectile id: [birth tick, owner id, owner telegraph ticks at birth, boss attack at birth].
 var _birth := {}
+## v0.8.0 BS2: per projectile id, the boss attack it carried at the last observe (ProjectileStore.cause: a returning
+## javelin's, an egg's burst, a gaze's orbs, a shot after its ricochet carry their attack's late part).
+var _carried := {}
 var _locale := {}
 
 
@@ -54,9 +57,19 @@ func observe(w: World) -> void:
 	_update_streaks(w)
 
 
-## The cause line the recap shows for a hit by actor kind `kind` (boss attack index `attack`, or -1).
+## The cause line the recap shows for a hit by actor kind `kind` (boss attack index `attack`, or -1; v0.8.0 BS1/BS2:
+## an attack's late part, BossSignatures.LATE_CAUSE + the attack, reads its late_cause_key, a turret's ricochet
+## through the live boss's table, as BossAi.cause_key).
 static func cause_key(w: World, kind: int, attack: int, tags: int) -> String:
 	var bt := w.boss_table_of_kind(kind)
+	if attack >= BossSignatures.LATE_CAUSE:
+		if bt == null:
+			for b in w.bosses.size():
+				var i := w.actors.index_of(w.bosses.ids[b])
+				if i >= 0:
+					bt = BossAi.table_of(w, i)
+					break
+		return String(BossSignatures.late_cause_key(bt, attack)) if bt != null else ""
 	if bt != null:
 		if attack >= 0 and attack < bt.attacks.size():
 			return String(bt.attacks[attack].cause_key)
@@ -93,11 +106,16 @@ func _check(w: World, e: SimEvent) -> void:
 	if e.effect_id == &"arena_band":
 		_arena_hit(e)
 		return
+	if e.effect_id == &"molten_floor":  # v0.8.0 BS2: lava or the meltdown
+		_molten_hit(w, e)
+		return
 	if _birth.has(e.source_id):
 		var b: Array = _birth[e.source_id]
 		age = e.tick - int(b[0])
 		shown = int(b[2])
 		attack = int(b[3])
+		if int(_carried.get(e.source_id, -1)) >= 0:
+			attack = int(_carried[e.source_id])
 		if age < PROJECTILE_MIN_TICKS and shown < SimTick.MIN_TELEGRAPH_TICKS:
 			problems.append(
 				"projectile on screen %d ticks, fired after a %d-tick telegraph" % [age, shown]
@@ -158,12 +176,42 @@ func _arena_hit(e: SimEvent) -> void:
 		violations.append(v)
 
 
+## v0.8.0 BS2 (S6): molten floor hurts as damage over time from the boss: lava (its flood stood, telegraphed, where
+## it now burns) reads its attack's late line, the meltdown (warned by its glow) its own attack's line.
+func _molten_hit(w: World, e: SimEvent) -> void:
+	var key := ""
+	var bs := w.bosses
+	for k in bs.lava_x.size():
+		if BossLava.lava_rect(bs, k).has_point(e.pos):
+			key = cause_key(w, -1, BossSignatures.LATE_CAUSE + bs.lava_attack[k], 0)
+			break
+	if key.is_empty():
+		var shapes := BossLava.melt_shapes(w)
+		for k in shapes.size():
+			var atk := BossLava.melt_attack(w, k)
+			if atk != null and BossLava.melt_covers(shapes[k], e.pos, 0.0):
+				key = String(atk.cause_key)
+				break
+	by_cause[key] = int(by_cause.get(key, 0)) + 1
+	last_cause = key
+	if not key.is_empty() and _locale.has(key) and not String(_locale[key][1]).is_empty():
+		return
+	var v := context.duplicate()
+	v.merge({"tick": e.tick, "cause": key, "problems": "molten floor without a recap line"})
+	violations.append(v)
+
+
 func _telegraphed(id: int) -> int:
 	var s: int = _streak.get(id, 0)
 	return s if s > 0 else int(_last_run.get(id, 0))
 
 
 func _update_streaks(w: World) -> void:
+	var p := w.projectiles
+	for k in p.size():
+		var c := p.cause_of(k)
+		if c >= 0:
+			_carried[p.ids[k]] = c
 	var a := w.actors
 	for i in range(1, a.size()):
 		var id := a.ids[i]

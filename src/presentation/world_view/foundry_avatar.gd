@@ -52,7 +52,7 @@ var _door_open := 0.0
 func apply_state(s: Dictionary) -> void:
 	super(s)
 	match _move:
-		WorldReader.MOVE_ROW_FLOOD:
+		WorldReader.MOVE_ROW_FLOOD, WorldReader.MOVE_MELT:  # v0.8.0 BS2: the meltdown pours too
 			_move = WorldReader.MOVE_FLOOD
 		WorldReader.MOVE_PATTERN:
 			_move = WorldReader.MOVE_BARRAGE

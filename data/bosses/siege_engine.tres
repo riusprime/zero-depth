@@ -9,6 +9,7 @@ script = ExtResource("1_atk")
 id = &"turret_cross"
 shape = 4
 shape_params = {
+"bounces": 1,
 "pattern_id": "siege_turret_cross"
 }
 telegraph_seconds = 0.9
@@ -23,12 +24,14 @@ cooldown_seconds = 0.9
 cause_key = &"CAUSE_SIEGE_CROSS"
 opens_weak_point = true
 shielded = true
+late_cause_key = &"CAUSE_SIEGE_RICOCHET"
 
 [sub_resource type="Resource" id="A_turret_cross_fast"]
 script = ExtResource("1_atk")
 id = &"turret_cross_fast"
 shape = 4
 shape_params = {
+"bounces": 1,
 "pattern_id": "siege_turret_cross_fast"
 }
 telegraph_seconds = 0.9
@@ -43,26 +46,7 @@ cooldown_seconds = 0.9
 cause_key = &"CAUSE_SIEGE_CROSS"
 opens_weak_point = true
 shielded = true
-
-[sub_resource type="Resource" id="A_turret_cross_reversing"]
-script = ExtResource("1_atk")
-id = &"turret_cross_reversing"
-shape = 4
-shape_params = {
-"pattern_id": "siege_turret_cross_reversing"
-}
-telegraph_seconds = 0.9
-active_seconds = 0.0167
-recovery_seconds = 1.5
-damage = 14
-move = &"pattern"
-min_range_m = 0.0
-max_range_m = 99.0
-weight = 3
-cooldown_seconds = 0.9
-cause_key = &"CAUSE_SIEGE_CROSS"
-opens_weak_point = true
-shielded = true
+late_cause_key = &"CAUSE_SIEGE_RICOCHET"
 
 [sub_resource type="Resource" id="A_mortar_grid"]
 script = ExtResource("1_atk")
@@ -205,6 +189,7 @@ script = ExtResource("1_atk")
 id = &"deploy"
 shape = 0
 shape_params = {
+"bounce_phase": 3,
 "count": 2,
 "distance_m": 3.0,
 "enemy_id": "needle",
@@ -220,6 +205,7 @@ max_range_m = 99.0
 weight = 1
 cooldown_seconds = 0.5
 cause_key = &"CAUSE_SIEGE_DEPLOY"
+late_cause_key = &"CAUSE_SIEGE_TURRET_RICOCHET"
 
 [sub_resource type="Resource" id="A_shockwave"]
 script = ExtResource("1_atk")
@@ -260,8 +246,8 @@ cooldown_permille = 550
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("turret_cross_reversing", "mortar_grid_3", "barrage_fast", "rail_3", "shockwave")
-entry_attack = &"turret_cross_reversing"
+attack_ids = PackedStringArray("turret_cross_fast", "mortar_grid_3", "barrage_fast", "rail_3", "shockwave")
+entry_attack = &"deploy"
 speed_permille = 0
 cooldown_permille = 412
 
@@ -281,7 +267,7 @@ rear_mult_permille = 1000
 stagger_size = 300
 stagger_decay_per_second = 15.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_turret_cross"), SubResource("A_turret_cross_fast"), SubResource("A_turret_cross_reversing"), SubResource("A_mortar_grid"), SubResource("A_mortar_grid_3"), SubResource("A_barrage"), SubResource("A_barrage_fast"), SubResource("A_rail"), SubResource("A_rail_3"), SubResource("A_deploy"), SubResource("A_shockwave")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_turret_cross"), SubResource("A_turret_cross_fast"), SubResource("A_mortar_grid"), SubResource("A_mortar_grid_3"), SubResource("A_barrage"), SubResource("A_barrage_fast"), SubResource("A_rail"), SubResource("A_rail_3"), SubResource("A_deploy"), SubResource("A_shockwave")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(3, 3)

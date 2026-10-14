@@ -150,3 +150,33 @@ func test_the_signature_params_are_checked() -> void:
 	b = _def("brood_mother")
 	b.attack(&"egg_storm").shape_params["mystery"] = 1
 	assert_has(_codes(b), &"param_unknown", "other keys still fail")
+
+
+## v0.8.0 BS2 (owner O5; BOSS_SIGNATURES.md S4-S6): the Gaze's turn, the ricochets and the lava and melt are checked.
+func test_the_signature_params_of_part_2_are_checked() -> void:
+	for id in ["hive_lens", "siege_engine", "foundry"]:
+		assert_eq(_codes(_def(id)), [], "%s ships valid" % id)
+	var h := _def("hive_lens")
+	h.attack(&"gaze").shape_params["quarter_seconds"] = 0.0
+	assert_has(_codes(h), &"not_positive", "the beam turns")
+	h = _def("hive_lens")
+	h.attack(&"gaze").late_cause_key = &""
+	assert_has(_codes(h), &"missing", "its orbs name their death line")
+	var s := _def("siege_engine")
+	s.attack(&"turret_cross").shape_params["bounces"] = 2
+	assert_has(_codes(s), &"range", "a shell bounces once")
+	s = _def("siege_engine")
+	s.attack(&"deploy").shape_params["bounce_phase"] = 0
+	assert_has(_codes(s), &"range", "bounce_phase is 1-based")
+	var f := _def("foundry")
+	f.attack(&"molten_flood").shape_params["lava_seconds"] = 0.1
+	assert_has(_codes(f), &"telegraph_short", "lava stays long enough to be seen")
+	f = _def("foundry")
+	f.attack(&"molten_flood").shape_params["ford_m"] = 0.5
+	assert_has(_codes(f), &"range", "a ford the hero fits through")
+	f = _def("foundry")
+	f.attack(&"meltdown").shape_params["warn_seconds"] = 9.0
+	assert_has(_codes(f), &"telegraph_short", "each step warned, within its step")
+	f = _def("foundry")
+	f.attack(&"meltdown").shape_params["min_radius_m"] = 0.0
+	assert_has(_codes(f), &"not_positive", "a minimum radius")
