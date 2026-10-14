@@ -230,6 +230,49 @@ func test_loop_bosses_are_not_eased_and_scale_up() -> void:
 	)
 
 
+## v0.8.0 LS (owner Q6): enemies and bosses alike, HP x6 and damage x1.2 per loop, compounding; the x100 cap holds
+## HP from loop 4 (6^3 = 216), damage stays small.
+func test_q6_loop_factors_from_the_data() -> void:
+	var r := RunState.start(1, _run_table())
+	assert_eq(r.table.loop_enemy_hp_permille, 6000)
+	assert_eq(r.table.loop_boss_hp_permille, 6000)
+	assert_eq(r.table.loop_enemy_damage_permille, 1200)
+	assert_eq(r.table.loop_boss_damage_permille, 1200)
+	var hp := []
+	var dmg := []
+	for l in range(1, 6):
+		hp.append(r.loop_permille(r.table.loop_enemy_hp_permille, l))
+		dmg.append(r.loop_permille(r.table.loop_enemy_damage_permille, l))
+	assert_eq(hp, [1000, 6000, 36000, 100000, 100000], "HP x6 per loop, capped at x100")
+	assert_eq(dmg, [1000, 1200, 1440, 1728, 2073], "damage x1.2 per loop")
+
+
+## v0.8.0 LS (owner Q6): on loop 2 and loop 3's floor 1, an enemy and a boss have HP x6 / x36 and damage x1.2 /
+## x1.44 of loop 1's unscaled floor-1 tables (no floor-1 ease past the first loop).
+func test_q6_loops_2_and_3_scale_an_enemy_and_a_boss() -> void:
+	var repo := _repo()
+	var base_e := CombatLab.tables()
+	var base_b := ContentCompiler.compile_bosses(repo)
+	var r := RunState.start(1, _run_table())
+	for c: Array in [[2, 6000, 1200], [3, 36000, 1440]]:
+		r.loop = c[0]
+		r.loop_floors = 3 * (c[0] - 1)
+		var e := CombatLab.tables()
+		r.scale_enemies(e, 1)
+		assert_eq(e[0].hp, maxi(1, SpawnTable.scale(base_e[0].hp, c[1])), "loop %d enemy HP" % c[0])
+		assert_eq(e[0].damage, SpawnTable.scale(base_e[0].damage, c[2]), "loop %d enemy dmg" % c[0])
+		var b := ContentCompiler.compile_bosses(repo)
+		r.scale_bosses(b, 1)
+		assert_eq(b[0].hp, base_b[0].hp * c[1] / 1000, "loop %d boss HP" % c[0])
+		assert_eq(
+			b[0].attacks[0].damage,
+			base_b[0].attacks[0].damage * c[2] / 1000,
+			"loop %d boss attack damage" % c[0]
+		)
+	assert_gt(base_e[0].damage, 0, "the enemy checked deals damage")
+	assert_gt(base_b[0].attacks[0].damage, 0, "the boss attack checked deals damage")
+
+
 func test_the_shop_and_curse_cadence_count_the_run_floor() -> void:
 	var shop := ContentCompiler.compile_shop(_repo().get_def(&"shop", &"terminal"))
 	var featured := []

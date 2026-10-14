@@ -194,3 +194,8 @@ ascension: res://build/shots/v0.7.0-dev/ascension/es/4_blue_gate_floor1.png
   right, and how deep a strong build can go, is **OWNER ONLY** (playtest).
 - The portal's look is the lead's reading (no G2 round, the owner asked for no interventions). The shots are on
   llvmpipe; the look on the owner's PC is **OWNER ONLY**.
+
+## Note (v0.8.0, 2026-10-14)
+- The per-loop factors above are superseded by owner Q6 (v0.8.0 LS): enemies and bosses alike HP ×6 and damage ×1.2
+  per loop, the ×100 cap kept. See [`../../v0.8.0/evidence/LOOP_SCALING.md`](../../v0.8.0/evidence/LOOP_SCALING.md).
+  This file's results stay as run on v0.7.5.
