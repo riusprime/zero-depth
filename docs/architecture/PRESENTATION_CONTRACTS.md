@@ -78,6 +78,12 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   deepens with the progress, an accent glow that climbs and flashes over the last fifth, steady under reduced
   motion; the body faces the locked attack). Elites follow their kind; the bosses' markers are unchanged.
   `tests/unit/sim/test_enemy_ground_marks.gd` lists the ground marks per kind.
+- **Boss ground attacks in 3D** (v0.8.0 AV, owner O7). The Gatekeeper's shock lanes (a `row_lanes` marks telegraph,
+  `TelegraphViews.is_cracked`) are drawn as cracked ground on the exact lane quads (a procedural crack shader, still
+  unshaded and over shadows): faint glowing cracks under the dull outline while they track, charred ground with wide
+  hot cracks that pulse under the bright edge once locked (steady with reduced motion). On the strike tick (the lanes
+  marker shows locked at progress 1000, `BossDodge.mark_state` 2) `StoneSpikeViews` raises stone spikes along the same
+  lanes; they sink back within 0.6 s. Drawn, never decided: the hit is the sim's, the spikes only follow it.
 
 - **The player's attacks are drawn from their final specs** (v0.6.0 MX1; design
   [`../design/MODIFIER_ENGINE.md`](../design/MODIFIER_ENGINE.md) §4): `AttackView` reads `WorldReader.attack_spec`
@@ -153,6 +159,13 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   effects; every pool has a fixed size (384 per layer, 600 per particle kind) and at most 256 effects live. Options >
   Display > **Effects density** (low / medium / high, `ViewPrefs.effects_density`; default high) scales the particles
   (× 0.25 / 0.55 / 1) and the mesh cap (384 / 640 / 1,024); a pattern's own copies are never thinned below the cap.
+- **Hostile fireballs and stone spikes (v0.8.0 AV):** each fireball look is three MultiMeshes (core, edge, trail; one
+  draw each) whatever the count; Low density draws every other trail, shorter and narrower (the balls stay). Lights
+  come only from VfxCore's pool (`LIGHTS`, the brightest requests win): one per lobbed fireball or raining drop, at
+  most `FireballViews.SIGNATURE_LIGHTS` for a boss's signature shots, one flash per spike strike. The spikes are one
+  MultiMesh of at most `StoneSpikeViews.MAX_SPIKES` (512), at most `MAX_STRIKES` (8) strikes alive; their debris and
+  dust come out of VfxCore's sprite pools (inside the 2,000) and scale with the density, their crack marks out of its
+  64 decals.
 
 - **Starting values**, confirmed by the stress scene in v0.1.0:
   - at most 2,000 live GPU particles in total;

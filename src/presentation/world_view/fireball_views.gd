@@ -1,22 +1,33 @@
 class_name FireballViews
 extends Node3D
 ## v0.7.5 BF1 (owner N15; BOSS_FIGHTS.md "Readable"): the hostile fireballs (WorldReader.projectile_look not empty;
-## the plain shots stay ActorViews'). Hundreds at once, so each look is three MultiMeshes (one draw each): a bright
-## unshaded core, a dark edge behind it (a bigger sphere drawn from the inside, so it rings the core) and a trail
-## stretched back along the shot's way. Positions are blended between the last two ticks each frame (physics
-## interpolation by hand: MultiMesh instances aren't nodes). Looks only: nothing here decides an outcome (EI-07).
+## the plain shots stay ActorViews'). Hundreds at once, so each look is three MultiMeshes (one draw each): the core,
+## a dark edge behind it (a bigger copy drawn from the inside, so it rings the core) and a trail stretched back along
+## the shot's way. Positions are blended between the last two ticks each frame (physics interpolation by hand:
+## MultiMesh instances aren't nodes). Looks only: nothing here decides an outcome (EI-07).
 ## - Each boss and enemy has its own look (LOOKS, by the pattern's look key; an unknown key gets DEFAULT_LOOK, so a
 ##   new pattern draws before its look is made): colour, size, a spear tip (a longer core) and a trail.
 ## - Hostile fireballs never use the hero's attack colours (the cyan core, the heat tiers; a test pins the distance).
-## - Effects density (ViewPrefs.effects_density): Low thins the trails (every other ball, shorter); the balls stay.
+## - Effects density (ViewPrefs.effects_density): Low thins the trails (every other ball, narrower); the balls stay.
 ## - v0.7.5 EF (owner N16): the enemies' looks (Arc Caster, Lens Drone, Bomb Drone), and the Bomb Drone's lobbed
 ##   fireball in the air (its telegraph's "lob", drawn as a bigger ball of its look on an arc; no ground circle).
 ## - v0.7.5 BF3: a look with "smoke" draws its trail as unlit smoke (no glow; the Siege Engine's cannon embers), and
 ##   a raining pattern's drops in the air (WorldReader.boss_rain: the Foundry's Slag Fountain) are drawn in their
 ##   pattern's look on an arc up from the boss and down to where they land (they hurt only once landed).
+## - v0.8.0 AV (owner O8: "the orbs that they throw, they're 2D shit looking … actual 3D objects in the game"): every
+##   look is a lit 3D body from ProjectileMeshes (stone chunks, spear heads, gems, plasma orbs, wobbling globs, molten
+##   drops) with FireballShaders' noise swirl, veins, fresnel rim to the dark edge and its own turn; the trail is a
+##   tapered strip facing the camera (glowing, smoke, or drips). The big ones (a lobbed fireball, a raining drop, a
+##   boss's signature shots) ask VfxCore for a small light within its budget (draw_lights, a VfxCore drawer).
+##   Reduced motion stills the swirl, the turning and the wobble.
 
+## v0.8.0 AV (owner O8): each look is a real 3D body (FireballShaders, ProjectileMeshes): "mesh" its shape, "body"
+## its lit surface, "energy" its glow, "crack" how much of it glows only in veins (stone, crust) rather than all
+## over (plasma), "swirl" the noise speed inside, "spin" / "tumble" its own turn, "wobble" (a glob), "facets" (a gem's
+## glints), "opacity" (< 1: translucent), and its trail: "trail_style" &"glow" (additive), &"smoke" (unlit, mixed,
+## widening) or &"drips" (broken into drops), "tail" the strip's width at its end.
 const LOOKS := {
-	## Gatekeeper: grey-orange ember stones.
+	## Gatekeeper: rocky glowing chunks of stone, ember veins, tumbling.
 	&"ember_stone":
 	{
 		"core": Color("#FFBE85"),
@@ -25,8 +36,17 @@ const LOOKS := {
 		"size": 1.0,
 		"tip": 1.0,
 		"trail_m": 0.55,
+		"mesh": &"rock",
+		"body": Color("#54483F"),
+		"energy": 2.4,
+		"crack": 1.0,
+		"swirl": 0.6,
+		"spin": 2.2,
+		"tumble": 1.6,
+		"trail_style": &"glow",
+		"tail": 0.3,
 	},
-	## Warlord: red spear-tipped embers.
+	## Warlord: red spear-tipped embers, long four-sided heads turning about their flight.
 	&"spear_ember":
 	{
 		"core": Color("#FF7A6B"),
@@ -35,6 +55,14 @@ const LOOKS := {
 		"size": 0.9,
 		"tip": 1.9,
 		"trail_m": 0.7,
+		"mesh": &"spear",
+		"body": Color("#5A1A20"),
+		"energy": 2.8,
+		"crack": 0.35,
+		"swirl": 1.2,
+		"spin": 5.0,
+		"trail_style": &"glow",
+		"tail": 0.15,
 	},
 	## v0.7.5 EF. Arc Caster: blue-white plasma balls, a long cold trail.
 	&"arc_plasma":
@@ -45,6 +73,11 @@ const LOOKS := {
 		"size": 1.0,
 		"tip": 1.15,
 		"trail_m": 0.65,
+		"mesh": &"orb",
+		"energy": 3.6,
+		"swirl": 3.0,
+		"trail_style": &"glow",
+		"tail": 0.2,
 	},
 	## v0.7.5 EF. Lens Drone: small red orbs, a rose-white core and a short crimson trail.
 	&"lens_orb":
@@ -55,6 +88,11 @@ const LOOKS := {
 		"size": 0.8,
 		"tip": 1.0,
 		"trail_m": 0.3,
+		"mesh": &"orb",
+		"energy": 3.0,
+		"swirl": 1.2,
+		"trail_style": &"glow",
+		"tail": 0.35,
 	},
 	## v0.7.5 EF. Bomb Drone: violet fuse-fire cinders (and the lobbed fireball they burst from).
 	&"bomb_cinder":
@@ -65,8 +103,15 @@ const LOOKS := {
 		"size": 1.05,
 		"tip": 1.0,
 		"trail_m": 0.45,
+		"mesh": &"orb",
+		"body": Color("#3A1A4A"),
+		"energy": 3.0,
+		"crack": 0.3,
+		"swirl": 2.2,
+		"trail_style": &"glow",
+		"tail": 0.3,
 	},
-	## v0.7.5 BF2: Brood Mother: sickly green acid globs (fat, a short dripping trail).
+	## v0.7.5 BF2: Brood Mother: sickly green acid globs (fat, wobbly, see-through; dripping).
 	&"acid_glob":
 	{
 		"core": Color("#C8FF6A"),
@@ -75,8 +120,16 @@ const LOOKS := {
 		"size": 1.1,
 		"tip": 1.0,
 		"trail_m": 0.4,
+		"mesh": &"glob",
+		"body": Color("#3A6A12"),
+		"energy": 1.7,
+		"swirl": 0.8,
+		"wobble": 0.12,
+		"opacity": 0.72,
+		"trail_style": &"drips",
+		"tail": 0.6,
 	},
-	## v0.7.5 BF2: Hive Lens: magenta-red prism orbs (small, a long bright trail).
+	## v0.7.5 BF2: Hive Lens: magenta-red prism orbs (faceted gems with glints; a long bright trail).
 	&"prism_orb":
 	{
 		"core": Color("#FF78D0"),
@@ -85,6 +138,15 @@ const LOOKS := {
 		"size": 0.9,
 		"tip": 1.0,
 		"trail_m": 0.75,
+		"mesh": &"gem",
+		"body": Color("#6A1048"),
+		"energy": 2.6,
+		"crack": 0.2,
+		"swirl": 0.8,
+		"spin": 3.5,
+		"facets": 0.6,
+		"trail_style": &"glow",
+		"tail": 0.1,
 	},
 	## v0.7.5 BF3: Siege Engine: orange cannon embers with a smoke trail.
 	&"cannon_ember":
@@ -96,8 +158,17 @@ const LOOKS := {
 		"tip": 1.15,
 		"trail_m": 0.9,
 		"smoke": true,
+		"mesh": &"rock",
+		"body": Color("#5A4C40"),
+		"energy": 3.0,
+		"crack": 0.6,
+		"swirl": 1.4,
+		"spin": 1.2,
+		"tumble": 0.8,
+		"trail_style": &"smoke",
+		"tail": 1.8,
 	},
-	## v0.7.5 BF3: Foundry: white-yellow molten drops.
+	## v0.7.5 BF3: Foundry: white-yellow molten drops, a crust over the glow, drips behind.
 	&"molten_drop":
 	{
 		"core": Color("#FFF07A"),
@@ -106,6 +177,13 @@ const LOOKS := {
 		"size": 1.05,
 		"tip": 1.3,
 		"trail_m": 0.45,
+		"mesh": &"drop",
+		"body": Color("#5A3A10"),
+		"energy": 3.4,
+		"crack": 0.4,
+		"swirl": 1.0,
+		"trail_style": &"drips",
+		"tail": 0.5,
 	},
 }
 const DEFAULT_LOOK := {
@@ -115,9 +193,25 @@ const DEFAULT_LOOK := {
 	"size": 1.0,
 	"tip": 1.0,
 	"trail_m": 0.5,
+	"mesh": &"orb",
+	"energy": 2.6,
+	"trail_style": &"glow",
+	"tail": 0.3,
 }
 ## Trail length and share by Effects density (low: every other ball, shorter).
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
+## v0.8.0 AV: the trail strip's width by Effects density (low: thin; the balls stay).
+const TRAIL_WIDTH := {"low": 0.55, "medium": 0.8, "high": 1.0}
+## v0.8.0 AV: the lights the big ones ask VfxCore for (its budget; the brightest requests win): a lobbed fireball or a
+## raining drop each (merged within LIGHT_MERGE m), and a boss's signature shots (merged clusters, at most
+## SIGNATURE_LIGHTS of them).
+const LIGHT_ENERGY := 1.6
+const LIGHT_RANGE := 3.5
+const LIGHT_MERGE := 2.5
+const SIGNATURE_LIGHTS := 3
+const SIGNATURE_ENERGY := 0.9
+## v0.8.0 AV: the dark shell's size over the core's.
+const EDGE_SCALE := 1.15
 const HEIGHT := 0.55
 ## v0.7.5 EF: a lobbed fireball's radius (metres) and how high its arc rises over HEIGHT at the middle of its flight.
 const LOB_RADIUS := 0.3
@@ -127,6 +221,8 @@ const LOB_RISE := 1.4
 const RAIN_FROM_Y := 2.6
 const RAIN_ARC_Y := 2.2
 
+## v0.8.0 AV: the effects layer the big ones ask for light from (WorldViewRoot sets it with the new look; null: none).
+var vfx: VfxCore
 ## Per look: {"core", "edge", "trail": MultiMeshInstance3D}.
 var _sets := {}
 ## This tick's and the last tick's positions by projectile id, and the order drawn this tick (per look).
@@ -143,6 +239,13 @@ var _lobs := {}
 
 ## v0.7.5 BF3: the raining drops this tick, per look: [from, to, progress, progress a tick, radius] each.
 var _rain := {}
+## v0.8.0 AV: the light requests of the last draw: [position, colour, energy, range, merge] each.
+var _light_wants: Array = []
+## v0.8.0 AV: the look of the boss's signature pattern while it fires (its shots get lights), else &"".
+var _signature := &""
+var _motion := -1.0
+## v0.8.0 AV: the trail strips' width factor in the last draw (tests: Low narrows them).
+var _trail_width := 1.0
 
 
 func sync(reader: WorldReader) -> void:
@@ -178,6 +281,10 @@ func sync(reader: WorldReader) -> void:
 			_rain[rkey] = drops
 			if not _drawn.has(rkey):
 				_drawn[rkey] = PackedInt32Array()
+		if pat.get("shielded", false) and not pat.get("winding", true):
+			_signature = StringName(pat.get("look", &""))
+	if _signature != &"" and not _drawn.has(_signature):
+		_signature = &""  # its shots are gone
 	for key in _sets.keys():
 		if not _drawn.has(key):
 			_drawn[key] = PackedInt32Array()
@@ -247,6 +354,22 @@ func rain_count() -> int:
 	return n
 
 
+## v0.8.0 AV: the trail strips' width factor in the last draw (TRAIL_WIDTH by density; tests).
+func trail_width() -> float:
+	return _trail_width
+
+
+## v0.8.0 AV: the lights the big ones asked for in the last draw (tests).
+func light_requests() -> int:
+	return _light_wants.size()
+
+
+## v0.8.0 AV: a VfxCore drawer (WorldViewRoot adds it): the big ones' lights, into the layer's light budget.
+func draw_lights(layer: VfxCore) -> void:
+	for w: Array in _light_wants:
+		layer.light_merged(w[0], w[1], w[2], w[3], w[4])
+
+
 ## v0.7.5 BF3: where a raining drop is drawn at progress f (0 leaving the boss, 1 landing): along the ground from
 ## `from` to `to`, from RAIN_FROM_Y down to the fireballs' height, on an arc RAIN_ARC_Y high.
 static func rain_point(from: Vector2, to: Vector2, f: float) -> Vector3:
@@ -257,7 +380,11 @@ static func rain_point(from: Vector2, to: Vector2, f: float) -> Vector3:
 
 func _draw(f: float) -> void:
 	var trail_scale: float = TRAIL_SCALE.get(ViewPrefs.effects_density, 1.0)
+	var width: float = TRAIL_WIDTH.get(ViewPrefs.effects_density, 1.0)
 	var thin := ViewPrefs.effects_density == "low"
+	_trail_width = width
+	_update_motion()
+	_light_wants.clear()
 	for key in _drawn:
 		var ids: PackedInt32Array = _drawn[key]
 		var look := look_of(key)
@@ -265,6 +392,9 @@ func _draw(f: float) -> void:
 		var edges := PackedFloat32Array()
 		var trails := PackedFloat32Array()
 		var size: float = look["size"]
+		var glow: Color = look["core"]
+		var signature: bool = key == _signature
+		var lit := 0
 		for n in ids.size():
 			var id := ids[n]
 			var p: Vector2 = (_before.get(id, _now[id]) as Vector2).lerp(_now[id], f)
@@ -276,28 +406,57 @@ func _draw(f: float) -> void:
 			cores.append_array(
 				_row(Transform3D(_scaled(basis, Vector3(r * float(look["tip"]), r, r)), at))
 			)
-			edges.append_array(_row(Transform3D(_scaled(basis, Vector3.ONE * r * 1.3), at)))
+			edges.append_array(
+				_row(
+					Transform3D(
+						_scaled(basis, Vector3(r * float(look["tip"]), r, r) * EDGE_SCALE), at
+					)
+				)
+			)
+			if signature and lit < SIGNATURE_LIGHTS and n % 6 == 0:
+				lit += 1
+				_light_wants.append([at, glow, SIGNATURE_ENERGY, LIGHT_RANGE, LIGHT_MERGE * 1.6])
 			if thin and n % 2 == 1:
 				continue
 			var len: float = look["trail_m"] * trail_scale
 			var back := SimPlane.to_3d(p - dir * (len * 0.5 + r * 0.6), HEIGHT)
 			trails.append_array(
-				_row(Transform3D(_scaled(basis, Vector3(len, r * 0.9, r * 0.9)), back))
+				_row(
+					Transform3D(
+						_scaled(basis, Vector3(len, r * 1.7 * width, r * 1.7 * width)), back
+					)
+				)
 			)
 		for at: Vector3 in _lobs.get(key, []):
 			var lr := LOB_RADIUS * size
 			cores.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr), at)))
-			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * 1.3), at)))
+			edges.append_array(_row(Transform3D(Basis().scaled(Vector3.ONE * lr * EDGE_SCALE), at)))
+			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
 		for d: Array in _rain.get(key, []):  # v0.7.5 BF3: the drops in the air, on their arc
 			var r: float = 0.22 * size
 			var at := rain_point(d[0], d[1], d[2] + d[3] * f)
 			cores.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r), at)))
-			edges.append_array(_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r * 1.3), at)))
+			edges.append_array(
+				_row(Transform3D(Basis.IDENTITY.scaled(Vector3.ONE * r * EDGE_SCALE), at))
+			)
+			_light_wants.append([at, glow, LIGHT_ENERGY, LIGHT_RANGE, LIGHT_MERGE])
 		_balls[key] = cores.size() / 12
 		_trails[key] = trails.size() / 12
 		_fill(_sets[key]["core"], cores)
 		_fill(_sets[key]["edge"], edges)
 		_fill(_sets[key]["trail"], trails)
+
+
+## v0.8.0 AV: reduced motion stills the swirl, the turning and the wobble (set on every look when it changes).
+func _update_motion() -> void:
+	var m := 0.0 if ViewPrefs.reduced_motion else 1.0
+	if m == _motion:
+		return
+	_motion = m
+	for key in _sets:
+		for part in ["core", "edge", "trail"]:
+			var mat := (_sets[key][part] as MultiMeshInstance3D).material_override as ShaderMaterial
+			mat.set_shader_parameter("motion", m)
 
 
 ## A basis whose x axis runs along the sim-plane direction `d`.
@@ -347,28 +506,13 @@ static func _fill(mi: MultiMeshInstance3D, buf: PackedFloat32Array) -> void:
 
 func _make_set(key: StringName) -> Dictionary:
 	var look := look_of(key)
-	var out := {}
-	var core := SphereMesh.new()
-	core.radius = 1.0
-	core.height = 2.0
-	core.radial_segments = 10
-	core.rings = 5
-	var edge := SphereMesh.new()
-	edge.radius = 1.0
-	edge.height = 2.0
-	edge.radial_segments = 10
-	edge.rings = 5
-	var trail := BoxMesh.new()
-	trail.size = Vector3(1, 1, 1)
+	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
 	var specs := [
-		["core", core, _mat(look["core"], 2.4, false)],
-		["edge", edge, _mat(look["edge"], 0.0, true)],
-		[
-			"trail",
-			trail,
-			_mat(Color(look["trail"], 0.55), 0.0 if look.get("smoke", false) else 1.2, false, true)
-		],
+		["core", mesh, core_material(look)],
+		["edge", mesh, edge_material(look)],
+		["trail", ProjectileMeshes.get_mesh(&"ribbon"), trail_material(look)],
 	]
+	var out := {}
 	for s: Array in specs:
 		var mm := MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
@@ -381,21 +525,59 @@ func _make_set(key: StringName) -> Dictionary:
 		mi.material_override = s[2]
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+		mi.extra_cull_margin = 2.0  # the shaders turn and stretch the pieces past their boxes
 		add_child(mi)
 		out[s[0]] = mi
+	_motion = -1.0  # the new set takes the current motion on the next draw
 	return out
 
 
-func _mat(c: Color, energy: float, inside: bool, alpha: bool = false) -> StandardMaterial3D:
-	var m := StandardMaterial3D.new()
-	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.albedo_color = c
-	if energy > 0.0:
-		m.emission_enabled = true
-		m.emission = c
-		m.emission_energy_multiplier = energy
-	if inside:
-		m.cull_mode = BaseMaterial3D.CULL_FRONT  # only the far side: a dark ring round the core
-	if alpha:
-		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+## v0.8.0 AV: a look's lit 3D core (FireballShaders.core).
+static func core_material(look: Dictionary) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = FireballShaders.core(float(look.get("opacity", 1.0)) < 1.0)
+	var core: Color = look["core"]
+	m.set_shader_parameter("core_color", core)
+	m.set_shader_parameter("edge_color", look["edge"])
+	m.set_shader_parameter("body_color", look.get("body", core.darkened(0.6)))
+	m.set_shader_parameter("energy", look.get("energy", 2.6))
+	m.set_shader_parameter("crack", look.get("crack", 0.0))
+	m.set_shader_parameter("swirl", look.get("swirl", 1.0))
+	m.set_shader_parameter("spin", look.get("spin", 0.0))
+	m.set_shader_parameter("tumble", look.get("tumble", 0.0))
+	m.set_shader_parameter("wobble", look.get("wobble", 0.0))
+	m.set_shader_parameter("facets", look.get("facets", 0.0))
+	m.set_shader_parameter("opacity", look.get("opacity", 1.0))
+	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	return m
+
+
+## v0.8.0 AV: the dark shell, turning with the core (FireballShaders.edge).
+static func edge_material(look: Dictionary) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = FireballShaders.edge()
+	m.set_shader_parameter("edge_color", look["edge"])
+	m.set_shader_parameter("spin", look.get("spin", 0.0))
+	m.set_shader_parameter("tumble", look.get("tumble", 0.0))
+	m.set_shader_parameter("wobble", look.get("wobble", 0.0))
+	return m
+
+
+## v0.8.0 AV: the trail strip (FireballShaders.trail): glowing and additive, or smoke (mixed, no glow, widening), or
+## drips.
+static func trail_material(look: Dictionary) -> ShaderMaterial:
+	var style: StringName = look.get("trail_style", &"glow")
+	var smoke: bool = style == &"smoke" or bool(look.get("smoke", false))
+	var translucent := float(look.get("opacity", 1.0)) < 1.0
+	var m := ShaderMaterial.new()
+	m.shader = FireballShaders.trail(not smoke and not translucent)
+	var tint: Color = look["trail"]
+	m.set_shader_parameter("tint", tint)
+	m.set_shader_parameter("head", tint if smoke else (look["core"] as Color).lerp(tint, 0.4))
+	m.set_shader_parameter("glow", 1.0 if smoke or translucent else 1.6)
+	m.set_shader_parameter("tail_width", look.get("tail", 0.3))
+	m.set_shader_parameter("drips", 1.0 if style == &"drips" else 0.0)
+	m.set_shader_parameter("scroll", 0.8 if smoke else 2.2)
+	m.set_shader_parameter("opacity", 0.6 if smoke else 0.85)
+	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
 	return m

@@ -20,6 +20,10 @@ extends Node3D
 ## v0.8.0 TG (owner O4, Q3): nor are the melee kinds' lanes and discs, the Sniper's line ("snipe"), the Shield
 ## Bearer's bash ("bash") or the Needle's lanes; their avatars tell the windup. Among normal enemies only the Arc
 ## Caster's rune and the Mine Layer's mines reach this view; the bosses' markers are unchanged.
+## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes (a `row_lanes` marks telegraph) are drawn as cracked ground
+## instead of flat red: while they track the player, thin cracks glowing dimly along each lane (the dark outline kept);
+## once locked, the ground chars and the cracks widen and glow hot, pulsing until the strike (steady with reduced
+## motion), under the bright edge (the dodge cue). The strike itself is StoneSpikeViews' spikes.
 
 ## Shapes drawn as rebuilt meshes (BossAi.telegraph).
 const MESH_SHAPES: Array[StringName] = [
@@ -32,6 +36,54 @@ const ARC_STEPS := 40
 
 const Y := 0.035
 const EDGE := 0.06
+## v0.8.0 AV: the cracked-ground marker's heat while tracking, and its pulse range once locked.
+const CRACK_TRACK_HEAT := 0.2
+const CRACK_LOCK_HEAT := Vector2(0.7, 1.0)
+const CRACK_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_disabled, shadows_disabled;
+
+uniform vec4 hot : source_color = vec4(1.0, 0.42, 0.18, 1.0);
+uniform vec4 char_color : source_color = vec4(0.08, 0.05, 0.04, 1.0);
+uniform float heat = 0.2;
+uniform float char_alpha = 0.0;
+uniform float scale = 1.4;
+
+varying vec3 wp;
+
+vec2 hash2(vec2 p) {
+	p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+	return fract(sin(p) * 43758.5453);
+}
+
+void vertex() {
+	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	vec2 p = wp.xz * scale;
+	vec2 i = floor(p);
+	vec2 f = fract(p);
+	float d1 = 8.0;
+	float d2 = 8.0;
+	for (int y = -1; y <= 1; y++) {
+		for (int x = -1; x <= 1; x++) {
+			vec2 g = vec2(float(x), float(y));
+			float d = length(g + hash2(i + g) - f);
+			if (d < d1) {
+				d2 = d1;
+				d1 = d;
+			} else if (d < d2) {
+				d2 = d;
+			}
+		}
+	}
+	float w = mix(0.05, 0.14, heat);
+	float crack = 1.0 - smoothstep(w * 0.35, w, d2 - d1);
+	ALBEDO = mix(char_color.rgb, hot.rgb * (1.0 + heat * 1.6), crack);
+	ALPHA = clamp(max(char_alpha, crack * mix(0.5, 1.0, heat)), 0.0, 1.0);
+}
+"""
 
 var _nodes := {}
 var _fill_mat := StandardMaterial3D.new()
@@ -43,6 +95,9 @@ var _molten_mat := StandardMaterial3D.new()
 var _dull_mat := StandardMaterial3D.new()
 var _flash_fill_mat := StandardMaterial3D.new()
 var _flash_edge_mat := StandardMaterial3D.new()
+## v0.8.0 AV: the shock lanes' cracked ground, tracking and locked.
+var _crack_track_mat := ShaderMaterial.new()
+var _crack_lock_mat := ShaderMaterial.new()
 var _t := 0.0
 
 
@@ -71,15 +126,25 @@ func _ready() -> void:
 	_dull_mat.albedo_color = Color(c.darkened(0.45), 0.85)
 	_flash_fill_mat.albedo_color = Color(c.lightened(0.15), FLASH_ALPHA.y)
 	_flash_edge_mat.albedo_color = Color(c.lightened(0.55), 1.0)
+	var crack := Shader.new()
+	crack.code = CRACK_SHADER
+	for m: ShaderMaterial in [_crack_track_mat, _crack_lock_mat]:
+		m.shader = crack
+	_crack_track_mat.set_shader_parameter("heat", CRACK_TRACK_HEAT)
+	_crack_lock_mat.set_shader_parameter("heat", CRACK_LOCK_HEAT.y)
+	_crack_lock_mat.set_shader_parameter("char_alpha", 0.4)
 
 
 func _process(delta: float) -> void:
 	_t += delta
 	var a := FLASH_ALPHA.y
+	var heat := CRACK_LOCK_HEAT.y
 	if not ViewPrefs.reduced_motion:
 		var wave := 0.5 + 0.5 * cos(_t * TAU * FLASH_HZ)
 		a = lerpf(FLASH_ALPHA.x, FLASH_ALPHA.y, wave)
+		heat = lerpf(CRACK_LOCK_HEAT.x, CRACK_LOCK_HEAT.y, wave)
 	_flash_fill_mat.albedo_color.a = a
+	_crack_lock_mat.set_shader_parameter("heat", heat)
 
 
 ## v0.7.5 BF1: [fill, edge] materials for a telegraph: a tracking one has no fill and the dull edge, a locked one
@@ -413,6 +478,9 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 	var flash_f := []
 	var flash_e := []
 	var dull := []
+	var crack_lock := []
+	var crack_track := []
+	var cracked := is_cracked(tg)
 	for item: Dictionary in tg["items"]:
 		var locked: bool = item["locked"]
 		var f := []
@@ -425,14 +493,24 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 		else:
 			for o: Obb in item["obbs"]:
 				_lane(f, e, o, 1.0)
-		if locked:
+		if cracked:  # v0.8.0 AV: the shock lanes crack the ground instead of a flat fill
+			(crack_lock if locked else crack_track).append_array(f)
+			(flash_e if locked else dull).append_array(e)
+		elif locked:
 			flash_f.append_array(f)
 			flash_e.append_array(e)
 		else:
 			dull.append_array(e)
 	_emit(fill, flash_f, _flash_fill_mat)
+	_emit(fill, crack_lock, _crack_lock_mat)
+	_emit(fill, crack_track, _crack_track_mat)
 	_emit(edge, flash_e, _flash_edge_mat)
 	_emit(edge, dull, _dull_mat)
+
+
+## v0.8.0 AV: a telegraph drawn as cracked ground (the Gatekeeper's shock lanes: a row_lanes marks telegraph).
+static func is_cracked(tg: Dictionary) -> bool:
+	return tg.get("shape", &"") == &"marks" and tg.get("move", -1) == WorldReader.MOVE_ROW_LANES
 
 
 func _rad(units: int) -> float:

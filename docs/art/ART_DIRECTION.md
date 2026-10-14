@@ -194,6 +194,22 @@ One table (`HeatLooks`) feeds the meter and the attacks.
 of light (a vent's disc, a skill's flash) is additive; debris and vapour (death shards, steam) are lit by the scene;
 telegraphs stay unshaded (PRESENTATION §4).
 
+**Hostile orbs and stone spikes in 3D (v0.8.0 AV, owner O7 and O8: "spikes coming out of the ground that actually
+look like spikes"; "actual 3D objects in the game that look and feel like the game's art").** Every boss and enemy
+fireball is a lit 3D body (`ProjectileMeshes`, `FireballShaders`): a bright core with a noise swirl and flicker
+inside that falls off through a fresnel rim to the look's dark edge colour, a thin dark shell behind it (bright core,
+dark edge; never the hero's attack colours), and a tapered trail strip facing the camera. Each source keeps its own
+body: Gatekeeper ember stones are tumbling faceted rock chunks glowing in their veins; Warlord embers long four-sided
+spear heads turning in flight; Brood Mother acid globs wobbling, see-through green, dripping; Hive Lens prism orbs
+faceted gems with glints; Siege Engine cannon embers rocky with a grey smoke trail; Foundry molten drops teardrops
+with a crust and drips; Arc Caster plasma, Lens Drone red orbs and Bomb Drone violet cinders smooth swirling orbs.
+The big ones (a lobbed fireball, a raining drop, a boss's signature shots) cast a little light. The Gatekeeper's
+shock lanes crack the ground (faint while tracking, hot and pulsing once locked) and strike as rows of faceted grey
+stone spikes with red-hot cracks, thrown debris and dust, then sink back; a crack mark stays. Textures are procedural
+(simplex noise and cellular cracks in code; the CC0 sites were blocked from the build machine): the owner's
+generator or CC0 images may replace them, and an owner model `stone_spike` (manifest-listed, at
+`assets/models/fx/stone_spike.glb`) replaces the code spike.
+
 **Shard look in the world (v0.6.1 SW, owner R3).** World pieces that take the crystal-shard look of the owner's card
 and plaque art are built by one builder, `ShardMesh` (`src/presentation/world_view/shard_mesh.gd`): faceted shards
 with cel facet tones, a dark inverted-hull outline, lit by the scene with a little emission, a soft additive glow, and

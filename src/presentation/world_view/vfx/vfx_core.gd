@@ -455,3 +455,15 @@ func marks_of(tex: StringName) -> int:
 		if s[1] == tex:
 			n += 1
 	return n
+
+
+# --- v0.8.0 AV: helpers for the attack views' drawers (FireballViews, StoneSpikeViews) -----------------------------
+## A light request merged into a cluster (_light_merged), for a drawer outside this class.
+func light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
+	_light_merged(p, c, energy, rng, merge)
+
+
+## One camera-facing sprite of pool `pool` (POOLS) centred at `p`, `s` across, turned `roll`, atlas cell `cell`.
+## False when the pool or the frame's sprite budget is full.
+func sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: float) -> bool:
+	return _put(pool, _facing(p, s, s, true, roll), c, cell, 0.0, 0.0)
