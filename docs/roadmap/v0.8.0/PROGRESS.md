@@ -208,3 +208,4 @@ not in `main` yet).
   e2e shard 127/128: `test_e2e_bosses_2.gd` "warlord: its telegraph is drawn" fails, and fails the same on the base
   `3cd8b4a` without RT2 (open, not fixed here). Shots: 21 in Ruins (gl_compatibility on llvmpipe), 8 copied to
   `evidence/rt_shots/`. Not run locally: the full suite.
+- 2026-10-14: RT2 merged. RT2's agent saw `test_e2e_bosses_2.gd::test_the_warlord_is_reached_through_the_dev_panel` fail on `3cd8b4a` (also without RT2); on the merged `e3c7d44` the file passes 3/3 when run alone (lead). Not reproduced, so possibly order- or load-dependent (the machine was shared); the boss e2e files (bosses_2, boss_signatures, boss_strikes) were added to `scripts/ci/seams.sh` so every merge runs them.

@@ -34,6 +34,9 @@ FILES=(
 	tests/e2e/test_e2e_shell.gd
 	tests/e2e/test_e2e_pad_menus.gd
 	tests/e2e/test_e2e_dev_master_panel.gd
+	tests/e2e/test_e2e_bosses_2.gd
+	tests/e2e/test_e2e_boss_signatures.gd
+	tests/e2e/test_e2e_boss_strikes.gd
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
 set +e
