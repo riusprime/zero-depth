@@ -126,7 +126,9 @@ Answers go into the "Owner decisions" table below the same day.
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Done: part 1 (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2 (`v080-av2`: every other boss ground attack's styled marker and 3D strike, `BossStrikeLooks` / `BossStrikeViews`) |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | Done (`v080-bl`: B1–B7; Gun build −40-46 % DPS in the probe, Blade combo ×5.5; Blade Storm build over the frame budget, reported: [`evidence/BLADE.md`](evidence/BLADE.md)) |
-| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Part 1 done (system + 3 layouts); G2 asked |
+| AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Part 1 done (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2: the other bosses' ground attacks |
+| BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
+| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Done (RT1 `v080-rt`: system + 3 layouts, G2 answered "follow the line of those"; RT2 `v080-rt2`: the other 21, every size, floor rules 5; [`evidence/ROOMS.md`](evidence/ROOMS.md)) |
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets | |
@@ -160,7 +162,8 @@ while agents run.
   room keep their rules; so does the boss room (its own builder). The shop, the arenas and the Overrun room are chosen
   afterwards, from the floor as generated, exactly as before: "keep their existing rules" read as their selection
   rules, so such a room may hold a designed interior (SR redesigns the shop room). Rooms of a size with no layout yet
-  keep today's `RoomInterior` + `RoomThemes` interiors, so the game works throughout.
+  keep today's `RoomInterior` + `RoomThemes` interiors, so the game works throughout (RT2: every size has three, so
+  only a floor resumed from an older save keeps them).
 - **Biomes.** Layouts name kit pieces; the dresser restyles a designed room's square cover (crate stacks, rocks) with
   the biome's `square_cover` (Frozen Shore, Starfall) or Night Rocks' rocks and dead trees, and its decoration with the
   biome's `decor_swap`. Car wrecks, slabs, broken walls and pillars stay the kit's in every biome until the owner's
@@ -168,11 +171,23 @@ while agents run.
 - **Determinism and saves.** Same seed, same floor. Floors change on purpose: `RunState.FLOOR_RULES` 4; a floor saved
   under rules 1-3 is rebuilt without layouts (`RunState.designed_rooms`, `RunSaver.floor_tables`) and makes no layout
   draw, so it is the floor that was saved. Nothing new is hashed or saved (`WorldSnapshot.ADDED_SINCE_V05` unchanged).
+  RT2: `FLOOR_RULES` 5 (every size draws a layout, so the map stream's draws and every new floor change again); a floor
+  saved under rules 4 (RT1) is rebuilt with RT1's three layouts only (`RunState.rt1_rooms`, `RunSaver.RT1_LAYOUTS`),
+  which gives RT1's floors draw for draw (checked against RT1's own code, evidence ROOMS.md RT2).
 - **Density (starting values).** In a typical room (the middle cell size and wall halves) the three layouts block
   14.7-16.5 % of the floor; with their own grass, rubble and debris (counted as 1 m² a piece) about 27-31 % is dressed,
   before the dresser's own grass along the walls and rubble. A central lane is kept open in each.
 - **G2.** Shots of the three (Ruins, and two other biomes) in [`evidence/ROOMS.md`](evidence/ROOMS.md). After the
   owner's pick, the other 21 follow the chosen direction.
+- **RT2 (the other 21, after G2 RT).** Each size's three read differently: the 1×1s a three-corner nook, a centre
+  block with lanes either side, two broken walls jutting on a diagonal; the 2×1s and 3×1s corners and wall clusters, a
+  centre island or a line of islands with lanes along both long walls, a slalom of broken walls jutting from alternate
+  walls (small rooms keep fewer, smaller groups: 10.9-14.8 % blocked in a typical room); the 2×2 to 4×4 add a ruined
+  block centre, diagonal bands of blocks round an open middle, ruined building outlines (pillars and broken walls with
+  2.4-3 m gaps) and wreck convoys, 11.8-15.7 % blocked (two 4×4s below RT1's 14.7-16.5 %, reported). New prefabs in
+  `scripts/content/room_layouts.py` (small corners, wall spurs, the building outline and its broken corner, a central
+  block, a diagonal band); RT1's prefabs and three layouts unchanged. The 4×4 layouts furnish ordinary 4×4 rooms only;
+  the boss room keeps `BossRoomBuilder`.
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share

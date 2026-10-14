@@ -21,6 +21,8 @@ extends RefCounted
 ## loop-1 run (every save made before v0.7.5 AP), and its biome order, routes and floor seeds read as before.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
+## v0.8.0 RT2: the designed layouts of floor rules 4 (RT1: data/room_layouts as RT1 shipped them, unchanged since).
+const RT1_LAYOUTS: Array[StringName] = [&"room_2x2_1", &"room_3x2_1", &"room_3x3_1"]
 
 var store: RunSaveStore
 ## Rooms of the current floor entered so far, one byte per room.
@@ -92,6 +94,8 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var shop := ContentCompiler.compile_shop(repo.get_def(&"shop", &"terminal"))
 	if run == null or run.designed_rooms():  # v0.8.0 RT: a floor saved before RT keeps its rule-built rooms
 		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
+		if run != null and run.rt1_rooms():  # v0.8.0 RT2: a floor saved under RT1 keeps RT1's three layouts
+			map.room_layouts = rt1_layouts(map.room_layouts)
 	if run != null and run.v070_floor():
 		map = FloorParams.v070()
 		if arena != null:
@@ -100,6 +104,21 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 			shop.first_floor = 1
 			shop.every_floors = 1
 	return {&"map": map, &"arena": arena, &"shop": shop}
+
+
+## v0.8.0 RT2: the designed layouts a floor saved under floor rules 4 (RT1) was built with: RT1_LAYOUTS out of
+## `layouts` (RunContentCompiler.compile_room_layouts), the sizes without one dropped, so its rooms of those sizes
+## draw nothing and keep their rule-built interiors as they did then.
+static func rt1_layouts(layouts: Dictionary) -> Dictionary:
+	var out := {}
+	for key: Vector2i in layouts:
+		var list: Array = []
+		for t: RoomLayoutTable in layouts[key]:
+			if t.id in RT1_LAYOUTS:
+				list.append(t)
+		if not list.is_empty():
+			out[key] = list
+	return out
 
 
 ## v0.7.5 BF1 (N18): the boss room floor `run` builds for boss `boss` (an index into `bosses`; -1 = none): today's

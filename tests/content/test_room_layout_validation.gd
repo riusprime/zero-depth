@@ -1,6 +1,6 @@
 extends GutTest
-## v0.8.0 RT (owner O12): the designed room layouts (data/room_layouts) are found by the scanner, valid, and the
-## first three for the owner's G2 (one 2 x 2, one 3 x 2, one 3 x 3); each validation rule catches its mistake
+## v0.8.0 RT (owner O12): the designed room layouts (data/room_layouts) are found by the scanner, valid, and three of
+## every room size (RT1's first three for the owner's G2, RT2's other 21); each validation rule catches its mistake
 ## (RoomLayoutDefinition.validate).
 
 
@@ -35,16 +35,20 @@ func _layout(pieces: Array) -> RoomLayoutDefinition:
 	return d
 
 
-func test_the_first_three_layouts_ship_and_are_valid() -> void:
+func test_every_room_size_has_three_valid_layouts() -> void:
+	# v0.8.0 RT2 (G2 RT): 3 layouts for each of the 8 sizes (24), each valid, dense and dressed. The small rooms (1 x 1,
+	# 2 x 1, 3 x 1) stay fightable with fewer, smaller groups: at least 6 blockers per cell there, 8 elsewhere.
 	var repo := ContentRepository.load_all()
-	var ids := []
-	var cells := []
+	var by_size := {}
 	for d: RoomLayoutDefinition in repo.all_of(&"room_layout"):
-		ids.append(String(d.id))
-		cells.append(d.cells)
 		assert_eq(d.validate().size(), 0, "%s validates" % d.id)
 		assert_true(
 			d.resource_path.begins_with("res://data/room_layouts/"), "%s in its folder" % d.id
+		)
+		assert_eq(
+			d.resource_path.get_file(),
+			"%dx%d_%s.tres" % [d.cells.x, d.cells.y, String(d.id).get_slice("_", 2)],
+			"%s: its file is named by its size" % d.id
 		)
 		var solids := 0
 		var drawn := 0
@@ -54,11 +58,33 @@ func test_the_first_three_layouts_ship_and_are_valid() -> void:
 					solids += 1
 				else:
 					drawn += 1
-		assert_gt(solids, 20, "%s is dense: %d blockers" % [d.id, solids])
+		var per_cell := 6 if d.cells.y == 1 else 8
+		assert_gte(
+			solids, per_cell * d.cells.x * d.cells.y, "%s is dense: %d blockers" % [d.id, solids]
+		)
 		assert_gt(drawn, solids, "%s is dressed: %d drawn pieces" % [d.id, drawn])
 		assert_gt(d.keep_clear.size(), 0, "%s keeps an open lane" % d.id)
-	assert_eq(ids, ["room_2x2_1", "room_3x2_1", "room_3x3_1"])
-	assert_eq(cells, [Vector2i(2, 2), Vector2i(3, 2), Vector2i(3, 3)])
+		if not by_size.has(d.cells):
+			by_size[d.cells] = []
+		(by_size[d.cells] as Array).append(String(d.id))
+	var sizes := [
+		Vector2i(1, 1),
+		Vector2i(2, 1),
+		Vector2i(3, 1),
+		Vector2i(2, 2),
+		Vector2i(3, 2),
+		Vector2i(3, 3),
+		Vector2i(4, 3),
+		Vector2i(4, 4)
+	]
+	assert_eq(by_size.size(), sizes.size(), "every room size and no other")
+	for c: Vector2i in sizes:
+		var ids: Array = by_size.get(c, [])
+		ids.sort()
+		var want := []
+		for n in 3:
+			want.append("room_%dx%d_%d" % [c.x, c.y, n + 1])
+		assert_eq(ids, want, "three layouts of %d x %d" % [c.x, c.y])
 
 
 func test_a_good_cluster_passes() -> void:
