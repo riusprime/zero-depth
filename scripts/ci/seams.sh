@@ -27,6 +27,7 @@ FILES=(
 	tests/unit/sim/test_combos.gd
 	tests/unit/sim/test_modifier_smoke.gd
 	tests/unit/sim/test_readable_cause.gd # v0.7.5 BF2: a boss's new patterns met the readable-cause rule here
+	tests/unit/sim/test_world_snapshot.gd # v0.8.0: SR's shop-room tables met the snapshot guard here
 	tests/e2e/test_e2e_damage_soak.gd
 	tests/e2e/test_e2e_saves.gd
 	tests/e2e/test_e2e_old_save.gd

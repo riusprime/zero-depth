@@ -57,6 +57,10 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"EncounterTable",
 	&"SpawnTable",
 	&"FloorLayout",
+	&"ShopRoomTable",  # v0.8.0 SR: the shop rooms (content, read when a floor is built)
+	&"RoomLayoutTable",  # v0.8.0 RT/SR: a designed layout (content)
+	&"RoomLayoutGroupTable",
+	&"RoomLayoutPieceTable",
 	&"ItemTable",
 	&"BossTable",
 	&"RewardTable",

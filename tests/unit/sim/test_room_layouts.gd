@@ -38,9 +38,9 @@ func test_turns_and_mirrors_map_the_frame_onto_the_room() -> void:
 	assert_eq(RoomLayouts.turns_for(Vector2i(2, 3)), PackedInt32Array([1, 3]))
 	assert_eq(RoomLayouts.key(Vector2i(2, 3)), Vector2i(3, 2))
 	# A mirrored group's anchor and pieces flip along the frame's x.
-	var g := RoomLayoutTable.Group.new()
+	var g := RoomLayoutGroupTable.new()
 	g.anchor = Vector2i(250, 500)
-	var p := RoomLayoutTable.Piece.new()
+	var p := RoomLayoutPieceTable.new()
 	p.piece = &"crate_stack"
 	p.at = Vector2i(100, 0)
 	p.size = Vector2i(100, 100)

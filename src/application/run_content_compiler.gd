@@ -96,10 +96,10 @@ static func compile_room_layout(def: RoomLayoutDefinition) -> RoomLayoutTable:
 	t.cells = def.cells
 	t.weight = def.weight
 	for g in def.groups:
-		var cg := RoomLayoutTable.Group.new()
+		var cg := RoomLayoutGroupTable.new()
 		cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
 		for p in g.pieces:
-			var cp := RoomLayoutTable.Piece.new()
+			var cp := RoomLayoutPieceTable.new()
 			cp.piece = p.piece
 			cp.at = Vector2i(roundi(p.at.x * 100.0), roundi(p.at.y * 100.0))
 			cp.size = Vector2i(roundi(p.size.x * 100.0), roundi(p.size.y * 100.0))
@@ -134,13 +134,13 @@ static func compile_shop_rooms(repo: ContentRepository) -> Dictionary:
 	return out
 
 
-static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutTable.Group:
-	var cg := RoomLayoutTable.Group.new()
+static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutGroupTable:
+	var cg := RoomLayoutGroupTable.new()
 	if g == null:
 		return cg
 	cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
 	for p in g.pieces:
-		var cp := RoomLayoutTable.Piece.new()
+		var cp := RoomLayoutPieceTable.new()
 		cp.piece = p.piece
 		cp.at = Vector2i(roundi(p.at.x * 100.0), roundi(p.at.y * 100.0))
 		cp.size = Vector2i(roundi(p.size.x * 100.0), roundi(p.size.y * 100.0))

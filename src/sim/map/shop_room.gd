@@ -159,7 +159,7 @@ static func _place_stall(ctx: Dictionary, t: ShopRoomTable, base: Array[Obb]) ->
 
 ## A dressing group, kept whole or dropped whole.
 static func _add_group(
-	ctx: Dictionary, stall: Dictionary, g: RoomLayoutTable.Group, walls: Array[Obb], out: Dictionary
+	ctx: Dictionary, stall: Dictionary, g: RoomLayoutGroupTable, walls: Array[Obb], out: Dictionary
 ) -> void:
 	var f: FloorLayout = ctx["f"]
 	var turn: int = ctx["turn"]
@@ -294,7 +294,7 @@ static func _commit(
 
 ## Group `g` placed with its anchor at frame point `anchor` (m) in room interior r at quarter turn `turn`, never
 ## mirrored: the same result as RoomLayouts.place_group.
-static func place_at(g: RoomLayoutTable.Group, anchor: Vector2, r: Rect2, turn: int) -> Dictionary:
+static func place_at(g: RoomLayoutGroupTable, anchor: Vector2, r: Rect2, turn: int) -> Dictionary:
 	var solids: Array[Obb] = []
 	var tags: Array[StringName] = []
 	var heights := PackedFloat64Array()
@@ -357,7 +357,7 @@ static func place_at(g: RoomLayoutTable.Group, anchor: Vector2, r: Rect2, turn: 
 
 
 ## The stall's footprint in the frame, metres round its centre.
-static func _frame_foot(g: RoomLayoutTable.Group) -> Rect2:
+static func _frame_foot(g: RoomLayoutGroupTable) -> Rect2:
 	var foot := Rect2()
 	var first := true
 	for p in g.pieces:
@@ -439,7 +439,7 @@ static func _shop_props_of(placed: Dictionary, turn: int) -> Array:
 
 
 ## Each solid's size before the turn (m), in the group's solid order.
-static func _solid_sizes(g: RoomLayoutTable.Group) -> Array[Vector2]:
+static func _solid_sizes(g: RoomLayoutGroupTable) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	for p in g.pieces:
 		if p.solid:

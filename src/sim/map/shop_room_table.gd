@@ -6,7 +6,7 @@ extends RefCounted
 var id := &""
 var biome := &""
 ## The stall's pieces, centimetres from its centre (its anchor unused), front (the counter) toward the frame's -y.
-var stall := RoomLayoutTable.Group.new()
+var stall := RoomLayoutGroupTable.new()
 ## The stall's candidate centres, per mille of the room in the shop frame, in order.
 var stall_spots: Array[Vector2i] = []
 ## The clear box in front of the counter: width and depth, cm.

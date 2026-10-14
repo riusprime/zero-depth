@@ -70,7 +70,7 @@ static func angle_in_room(angle: int, turn: int, mirror: bool) -> int:
 
 
 ## The group's anchor in the layout frame for room interior r (mirrored when `mirror`).
-static func anchor_of(g: RoomLayoutTable.Group, r: Rect2, turn: int, mirror: bool) -> Vector2:
+static func anchor_of(g: RoomLayoutGroupTable, r: Rect2, turn: int, mirror: bool) -> Vector2:
 	var s := frame_size(r, turn)
 	var a := Vector2(s.x * g.anchor.x / 1000.0, s.y * g.anchor.y / 1000.0)
 	if mirror:
@@ -79,7 +79,7 @@ static func anchor_of(g: RoomLayoutTable.Group, r: Rect2, turn: int, mirror: boo
 
 
 ## A piece's centre in the layout frame.
-static func _frame_point(anchor: Vector2, p: RoomLayoutTable.Piece, mirror: bool) -> Vector2:
+static func _frame_point(anchor: Vector2, p: RoomLayoutPieceTable, mirror: bool) -> Vector2:
 	var d := Vector2(p.at) / 100.0
 	if mirror:
 		d.x = -d.x
@@ -94,7 +94,7 @@ static func _cm(metres: float) -> float:
 ## {"ok": true, "solids": Array[Obb] (axis-aligned), "solid_tags": Array[StringName], "solid_heights":
 ## PackedFloat64Array (m; 0 = the kit's own), "props": [[piece, centre: Vector2, angle, size: Vector2 (m), height (m),
 ## the index into "solids" it stands on or -1]]}. Drawn-only pieces outside the room are left out.
-static func place_group(g: RoomLayoutTable.Group, r: Rect2, turn: int, mirror: bool) -> Dictionary:
+static func place_group(g: RoomLayoutGroupTable, r: Rect2, turn: int, mirror: bool) -> Dictionary:
 	var anchor := anchor_of(g, r, turn, mirror)
 	var solids: Array[Obb] = []
 	var tags: Array[StringName] = []
