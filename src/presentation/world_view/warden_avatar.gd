@@ -8,6 +8,9 @@ extends AvatarBase
 ## the weak spot. Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance()
 ## animates in frame time, and nothing here feeds back into the sim.
 ## +X is the front and +Z the right in every local frame; the node sits at the actor's feet under ActorViews' facing.
+## v0.8.0 TG (owner O4, Q3): its slam disc is no longer drawn on the ground; the windup reads from the body (AvatarBase
+## "tell"): the fists climb overhead, the knees bend into a crouch that deepens with the windup's progress, and the
+## visor brightens and flashes just before the slam.
 
 ## Hips (leg pivots) and the chest pivot above them, in metres from the ground.
 const HIP_Y := 0.3
@@ -200,6 +203,16 @@ func slam_amount() -> float:
 	return _slam
 
 
+## v0.8.0 TG: 0..1 how deep the windup crouch is (from the windup's progress).
+func crouch_amount() -> float:
+	return tell_crouch(_windup) if _state == WorldReader.STATE_WINDUP else 0.0
+
+
+## The visor's current glow (emission energy).
+func visor_energy() -> float:
+	return _visor_mat.emission_energy_multiplier
+
+
 ## The fists' mean height above the feet, in this node's frame.
 func fist_height() -> float:
 	var sum := 0.0
@@ -217,20 +230,25 @@ func _pose(dt: float) -> void:
 	# Heavy breathing at rest; a rolling, lumbering sway when walking.
 	var breath := sin(_t * 1.7) * (1.0 - _walk) * (1.0 - busy)
 	var bob := absf(s) * 0.03 * _walk
-	var crouch := _raise * 0.03 + _slam * 0.1
+	# v0.8.0 TG: the windup's knees-bent crouch (no disc on the ground any more), deepening with its progress.
+	var calm := ViewPrefs.reduced_motion
+	var tell_c := crouch_amount()
+	var crouch := _raise * 0.03 + _slam * 0.1 + tell_c * 0.07
 	var hip := HIP_Y + bob + breath * 0.008 - crouch
 	# Spawn-in: up out of the ground, leaning back as it comes.
 	var sink := 1.0 - _rise
 	sink = sink * sink * (3.0 - 2.0 * sink)
 	_body.position = Vector3(0, -1.35 * sink, 0)
 	_body.rotation = Vector3(s * 0.06 * _walk, 0, -0.25 * sink)
-	var tremble := sin(_t * 47.0) * 0.012 * _raise * smoothstep(0.6, 1.0, _windup)
-	_chest.position = Vector3(tremble, hip, 0)
+	var tremble := 0.0 if calm else sin(_t * 47.0) * 0.012 * _raise * smoothstep(0.6, 1.0, _windup)
+	_chest.position = Vector3(tremble - tell_c * 0.05, hip, 0)
 	# The chest leans back to heave the fists up, then pitches forward into the slam.
 	var lean := 0.06 * _walk + _raise * 0.2 - _slam * 0.15 - _shake * 0.05
 	_chest.rotation = Vector3(-s * 0.05 * _walk, cos(_phase) * 0.06 * _walk, lean)
 	_chest.scale = Vector3(1.0, 1.0 + breath * 0.012, 1.0 + breath * 0.01)
-	_visor_mat.emission_energy_multiplier = 2.4 + 4.0 * _raise + 2.0 * _shake
+	var winding := _state == WorldReader.STATE_WINDUP
+	var tell := tell_glow(_windup, _t, calm) if winding else 1.0
+	_visor_mat.emission_energy_multiplier = (2.4 + 4.0 * _raise) * tell + 2.0 * _shake
 	_crack_mat.emission_energy_multiplier = 1.8 + 0.5 * sin(_t * 3.4) + 1.5 * _raise
 	for k in arms.size():
 		var side := -1.0 if k == 0 else 1.0

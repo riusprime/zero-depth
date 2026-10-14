@@ -7,6 +7,14 @@ extends Node3D
 
 ## Faster than this many ticks between two syncs is a gap, not motion (the velocity is dropped).
 const MOTION_GAP_TICKS := 30
+## v0.8.0 TG: the windup tell (tell_crouch / tell_glow): the crouch is full by this share of the windup, the flash
+## runs from TELL_FLASH_FROM to the strike, the extra glow (a multiple of the accent's rest energy) at the end of
+## the climb and at the flash, and the flash's flicker rate (none with reduced motion). Starting values.
+const TELL_CROUCH_BY := 0.6
+const TELL_FLASH_FROM := 0.8
+const TELL_GLOW_CLIMB := 1.5
+const TELL_GLOW_FLASH := 2.5
+const TELL_FLICKER_HZ := 9.0
 
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
@@ -26,6 +34,42 @@ func _process(delta: float) -> void:
 ## Advances the animation by `delta` seconds of frame time (each avatar its own).
 func advance(_delta: float) -> void:
 	pass
+
+
+## v0.8.0 TG (owner O4, Q3): the melee kinds, the Sniper and the Needle draw no ground mark while they wind up, so
+## their bodies carry the read. From the windup's progress p (0..1, WorldReader.telegraph()["progress"] / 1000, the
+## same number the old ground fill grew with): a crouch / draw-back that deepens over the first TELL_CROUCH_BY of the
+## windup, and an eye / visor / muzzle glow that climbs with p and flashes from TELL_FLASH_FROM until the strike. The
+## direction reads from the body itself: the sim holds an enemy's facing through its windup (EnemyAi), and
+## ActorViews turns the model to it, unsmoothed. Reduced motion (ViewPrefs.reduced_motion): no flicker, the flash
+## is a steady step up; the crouch is a slow pose and stays. Starting values: TELL_* above.
+
+
+## 0..1: how deep the windup crouch is at progress p.
+static func tell_crouch(p: float) -> float:
+	return smoothstep(0.0, TELL_CROUCH_BY, clampf(p, 0.0, 1.0))
+
+
+## Whether progress p is in the flash just before the strike.
+static func tell_flashing(p: float) -> bool:
+	return p >= TELL_FLASH_FROM and p <= 1.0
+
+
+## The accent glow's multiplier at progress p (1 at rest), `t` the frame-time clock, `calm` reduced motion.
+static func tell_glow(p: float, t: float, calm: bool) -> float:
+	var q := clampf(p, 0.0, 1.0)
+	var g := 1.0 + TELL_GLOW_CLIMB * smoothstep(0.0, TELL_FLASH_FROM, q)
+	if tell_flashing(q):
+		var flicker := 1.0 if calm else 0.75 + 0.25 * cos(t * TAU * TELL_FLICKER_HZ)
+		g += TELL_GLOW_FLASH * flicker
+	return g
+
+
+## The windup progress (0..1) of actor i as the view reads it: its telegraph's progress while it winds up, else 0.
+static func windup_progress(reader: WorldReader, i: int) -> float:
+	if reader.actor_state(i) != WorldReader.STATE_WINDUP:
+		return 0.0
+	return float(reader.telegraph(i).get("progress", 0)) / 1000.0
 
 
 ## The share of the way to a target an exponential ease covers in `dt` at `per_second`.

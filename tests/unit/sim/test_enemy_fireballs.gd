@@ -2,7 +2,7 @@ extends GutTest
 ## v0.7.5 EF (owner N16; docs/design/BOSS_FIGHTS.md "Normal enemies"): the Arc Caster, the Lens Drone and the Bomb
 ## Drone fire slow fireball patterns (a fan of 3 plasma balls, a ring of 6 red orbs, a lobbed fireball that bursts
 ## into an X of 4) and draw nothing on the ground; the Needle, the Sniper and the melee kinds keep their ground
-## telegraphs. Every world is seeded.
+## telegraphs (v0.8.0 TG: their shapes, now off the ground). Every world is seeded.
 
 const S := EnemyAi.State
 const K := ActorStore.Kind
@@ -207,7 +207,8 @@ func test_a_player_who_steps_away_dodges_the_landing_and_meets_the_x_of_four() -
 # --- unchanged kinds -----------------------------------------------------------------------------------------------
 
 
-func test_the_needle_the_sniper_and_the_melee_kinds_keep_their_ground_telegraphs() -> void:
+## v0.8.0 TG (owner O4, Q3): they keep their shapes but no longer draw them on the ground (test_enemy_ground_marks).
+func test_the_needle_the_sniper_and_the_melee_kinds_keep_their_shapes_off_the_ground() -> void:
 	var specs := [
 		[K.NEEDLE, Vector2(8, 0), [&"lanes"]],
 		[K.SNIPER, Vector2(12, 0), [&"lane"]],
@@ -226,7 +227,7 @@ func test_the_needle_the_sniper_and_the_melee_kinds_keep_their_ground_telegraphs
 		assert_gte(_until_state(w, id, S.WINDUP), 0, "kind %d winds up" % spec[0])
 		var tg := EnemyAi.telegraph(w, _i(w, id))
 		assert_true((spec[2] as Array).has(tg.get("shape")), "kind %d: %s" % [spec[0], tg])
-		assert_true(tg.get("ground", true), "kind %d draws on the ground" % spec[0])
+		assert_false(tg.get("ground", true), "kind %d: its body tells the windup" % spec[0])
 		assert_null(EnemyAi.pattern_of(w, _i(w, id)), "kind %d fires no pattern" % spec[0])
 
 
