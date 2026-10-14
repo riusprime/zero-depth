@@ -8,8 +8,8 @@ extends Control
 ## profile on the way out (GameSettings, InputRebind).
 ## Three layouts share the same sections: SIDEBAR (the default: categories on the left, one section at a time),
 ## TABS (categories across the top) and LIST (every section in one scrolling column).
-## v0.5.5 A5 (Cold glass, MenuStyle): the blurred, dimmed game (or the dark gradient) behind, a dark glass panel with a
-## thin cold top edge set to the left, plain type, the focused row and the open category lit by the glass highlight.
+## v0.8.0 MU (Ember stone, MenuStyle): the blurred, ember-lit game (or the menu's own ember scene) behind, a carved
+## stone slab set to the left, warm type, the focused row and the open category ember-lit slabs.
 
 signal back_pressed
 ## A setting changed (its GameSettings key); Main applies what lives in the view (shake, outline, view prefs).
@@ -58,7 +58,7 @@ func _init(profile: ProfileStore, p_layout: int = Layout.SIDEBAR, _over_game: bo
 	layout = p_layout
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	MenuStyle.apply(self)
-	var backdrop := MenuBackdrop.new()  # over the game it blurs it; over the main menu, the gradient alone
+	var backdrop := MenuBackdrop.new()  # over the game it blurs it; over the main menu, its own ember scene
 	add_child(backdrop)
 	for id in SECTIONS:
 		sections[id] = _build_section(id)

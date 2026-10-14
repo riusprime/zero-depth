@@ -1,7 +1,7 @@
 class_name PickPanel
 extends ModalPanel
 ## The 3-card pick (v0.3.0 E, owner line L9): while the sim waits on an open altar or chest, three cards
-## (PickSlot: the owner's crystal frames since v0.5.5 A4, coloured by the card's family), a title (the chest's
+## (PickSlot: carved stone tablets since v0.8.0 MU, coloured by the card's family), a title (the chest's
 ## price) and a hint. It shows what the sim offers and sends the player's choice as input (the `picked` signal →
 ## InputLatch.note_pick → InputFrame.pick); it decides nothing itself.
 ## - Mouse: hover focuses a card, a click takes it.
@@ -44,6 +44,9 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	head.add_child(_price_icon)
 	_price_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	col.add_child(head)
+	var groove := MenuPanel.TitleGroove.new(true)  # v0.8.0 MU: the Ember stone title's glowing groove
+	groove.custom_minimum_size = Vector2(0, 12)
+	col.add_child(groove)
 	var cards: BoxContainer = (
 		VBoxContainer.new() if layout == Layout.COLUMN_RIGHT else HBoxContainer.new()
 	)
@@ -52,7 +55,9 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	cards.add_theme_constant_override("separation", 18)
 	col.add_child(cards)
 	col.add_child(_hint)
-	HudStyle.style_label(_title, 26, true)  # v0.3.5 F16: the HUD's plain type
+	HudStyle.style_label(_title, 28, true)  # v0.3.5 F16: the HUD's plain type
+	_title.add_theme_color_override("font_shadow_color", Color(EmberStone.EMBER, 0.3))  # v0.8.0 MU
+	_title.add_theme_constant_override("shadow_outline_size", 12)
 	HudStyle.style_label(_hint, 15)
 	_hint.add_theme_color_override("font_color", Color(1, 1, 1, 0.7))
 	style_labels([_title, _hint])
@@ -131,7 +136,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"color": AbilityIcons.color(id),
 		"tier": int(info["rarity"]),
 		"tier_text": "",
-		"type": int(info["type"]),  # v0.5.5 A4: the frame's family falls back on the card's type
+		"type": int(info["type"]),  # v0.5.5 A4: the colour's family falls back on the card's type
 		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
 		"level_text": "",  # v0.7.5 SM: the level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
 		"held_level": 0,  # v0.7.5 SM: the level held now (0: not held)
@@ -190,7 +195,7 @@ static func level_text(ci: Object, held: int, to: int) -> String:
 	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
 
 
-## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary frame and line ("Legendary", with "Mod" before
+## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary gold and line ("Legendary", with "Mod" before
 ## it on a mod). v0.6.5 WN5b: a wand card taken there goes to `wand_level` (the tier's level-5 version): the line says
 ## "Mod · Level 5 · Legendary".
 static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) -> Dictionary:

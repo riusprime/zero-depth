@@ -83,15 +83,15 @@ func test_walk_to_an_altar_and_take_the_second_card_with_the_pad() -> void:
 			PickPanel.card_face(self, reader, offer[k])["title"],
 			"card %d" % k
 		)
-		var info := reader.card_info(offer[k])  # v0.5.5 A4: the owner's crystal frame of the card's family
+		var info := reader.card_info(offer[k])  # v0.8.0 MU: a stone tablet in the card family's colour
 		var fam := CardFrames.family(info["id"], int(info["type"]), panel.slot(k).tier)
 		assert_eq(
-			panel.slot(k).frame_id(),
+			panel.slot(k).colour_id(),
 			CardFrames.frame_of(fam),
-			"card %d wears its family's frame" % k
+			"card %d wears its family's colour" % k
 		)
-		assert_not_null(panel.slot(k).card.frame_texture(), "card %d draws the frame" % k)
-		assert_true(panel.slot(k).card.text_fits(), "card %d: its text fits the frame" % k)
+		assert_true(panel.slot(k).card is StoneCard, "card %d is a carved stone tablet" % k)
+		assert_true(panel.slot(k).card.text_fits(), "card %d: its text fits the tablet" % k)
 	var tick := w.tick
 	var hp := w.actors.hp[0]
 	await e.frames(30)

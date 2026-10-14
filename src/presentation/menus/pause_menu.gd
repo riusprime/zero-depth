@@ -2,10 +2,10 @@ class_name PauseMenu
 extends MenuPanel
 ## Resume, restart the run, Options (v0.3.0 O), or return to the main menu (v0.3.0 B). Shown over the stage; the
 ## sim is paused (no ticks) while it's open. Keyboard, mouse and pad all work through the focus (MenuPanel).
-## v0.5.5 A5 (Cold glass): the game blurred behind, the list on the left, the run's line and the key hint under it;
-## no build cards beside it (owner: not needed).
-## v0.6.5 WN2: a Build row under Resume opens the Build page (BuildPage: the wand's order, rearranged here).
-## v0.7.5 CX: a Codex row after Options opens the Codex (CodexView) over the paused game.
+## v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the list on a stone slab on the left, the run's line and
+## the key hint under it; no build cards beside it (owner: not needed). v0.6.5 WN2: a Build row under Resume opens the
+## Build page (BuildPage: the wand's order, rearranged here). v0.7.5 CX: a Codex row after Options opens the Codex
+## (CodexView) over the paused game.
 
 signal resume_pressed
 signal build_pressed

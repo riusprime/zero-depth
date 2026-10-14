@@ -7,8 +7,8 @@ extends ModalPanel
 ## dimmed with the reason and can't be sent. It shows what the sim offers and sends the player's choice as input
 ## (`picked` -> InputLatch.note_pick -> InputFrame.pick: 1..n, or PICK_CANCEL for Leave); it decides nothing.
 ## Keyboard: 1/2/3 or arrows move the focus, Enter takes it, Esc leaves. Pad: d-pad / stick, A takes, B leaves.
-## v0.6.1 R1: each choice is one of the owner's wide crystal plaques (PlaqueBox), stacked: the title and the cost on
-## the left, the reward and the curse on the right. Its colour is the reward's family (a card's own, the card frames'
+## v0.6.1 R1: each choice is a wide stone plaque (PlaqueBox; crystal until v0.8.0 MU), stacked: the title and the cost
+## on the left, the reward and the curse on the right. Its colour is the reward's family (a card's own, the card frames'
 ## table; Plaques.USE_FAMILY for shards, a chest, overclock, a cleanse and Leave); a choice that carries a curse wears
 ## the curse colour. The text steps down in size until it fits the plaque's dark panel (en and es).
 
@@ -356,7 +356,7 @@ func _column_height(col: VBoxContainer, w: float) -> float:
 func _label_height(l: Label, w: float) -> float:
 	var f := l.get_theme_font("font")
 	var s := l.get_theme_font_size("font_size")
-	return maxf(f.get_height(s), CrystalCard.text_height(f, l.text, w, s))
+	return maxf(f.get_height(s), TextFit.text_height(f, l.text, w, s))
 
 
 func _width(l: Label) -> float:

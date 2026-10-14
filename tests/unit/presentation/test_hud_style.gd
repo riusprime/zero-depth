@@ -141,9 +141,9 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 			0,
 			"%s has no ghost copies" % l.name
 		)
-		# v0.5.5 A4: the pick cards' titles are coloured capitals, as in the owner's card reference
-		# (docs/roadmap/v0.6.0/refs/card_style_reference.webp); every other HUD label stays plain type.
-		var card_title := l.name == &"Title" and l.get_parent().get_parent() is CrystalCard
+		# v0.5.5 A4: the pick cards' titles are coloured capitals (v0.8.0 MU: carved on the stone tablet,
+		# StoneCard); every other HUD label stays plain type.
+		var card_title := l.name == &"Title" and l.get_parent().get_parent() is StoneCard
 		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
 	assert_lte(Hud.BAR.y, 10.0, "a thin HP bar")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")
@@ -191,16 +191,16 @@ func test_the_heat_bar_keeps_its_colours() -> void:
 	assert_lte(HeatMeter.BAR_H, 8.0, "still a thin straight bar")
 
 
-## v0.5.5 A5: "Menu from C": the pause menu is a left-aligned list over the blurred game, with a key hint, the run's
-## line, and no build cards beside it.
-func test_the_cold_glass_pause_menu() -> void:
+## v0.5.5 A5: the pause menu is a left-aligned list over the blurred game, with a key hint, the run's line, and no
+## build cards beside it; v0.8.0 MU (owner O14, G2 "menu style B"): on a carved stone slab, Ember stone.
+func test_the_ember_stone_pause_menu() -> void:
 	var m := PauseMenu.new()
 	add_child_autofree(m)
-	assert_eq(m.theme, MenuStyle.theme(), "the Cold glass theme")
-	assert_not_null(m.find_child("MenuBackdrop", true, false), "the game blurred and dimmed behind")
-	assert_eq(
-		m.find_children("*", "CrystalCard", true, false).size(), 0, "no crystal cards beside it"
-	)
+	assert_eq(m.theme, MenuStyle.theme(), "the Ember stone theme")
+	assert_not_null(m.find_child("MenuBackdrop", true, false), "the game blurred behind")
+	assert_true(m.slab.get_theme_stylebox("panel") is StoneBox, "the list sits on a stone slab")
+	assert_true(m.slab.is_ancestor_of(m.box), "the rows are on the slab")
+	assert_eq(m.find_children("*", "StoneCard", true, false).size(), 0, "no cards beside it")
 	assert_eq(m.find_children("*", "BuildCard", true, false).size(), 0, "no build cards beside it")
 	for c in m.box.get_children():
 		if c is Button:
@@ -212,5 +212,5 @@ func test_the_cold_glass_pause_menu() -> void:
 	assert_eq(m.run_line.text, tr("UI_PAUSE_RUN") % [2, 3, 42, 87, 146])
 	m.focus_first()
 	await wait_frames(2)
-	assert_true(m.marker.visible, "the glass diamond marks the focused row")
+	assert_true(m.marker.visible, "the ember diamond marks the focused row")
 	assert_lt(m.marker.global_position.x, (m.box.get_node("Resume") as Button).global_position.x)

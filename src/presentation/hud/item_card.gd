@@ -3,16 +3,16 @@ extends PanelContainer
 ## A compact item card (PLAN v0.2.0 L13, owner: "more concise, appear in a smaller card and one small sentence … add to
 ## the card a symbol"): the item's icon, its name in its colour and one short sentence. It fades and slides in when
 ## shown and fades out when hidden. It shows text it is given (already translated); it decides nothing about the game.
-## v0.6.1 R1: the card is one of the owner's wide crystal plaques (Plaques, a nine-slice PlaqueBox) in the card's
-## family colour (CardFrames.family, the card frames' table); the name and the sentence step down in size until they
-## fit the plaque's dark panel (en and es).
+## v0.6.1 R1: the card is a wide plaque (Plaques, PlaqueBox; v0.8.0 MU: a carved Ember stone slab with a glowing
+## groove in the card's family colour, CardFrames.family); the name and the sentence step down in size until they
+## fit the plaque's margins (en and es).
 
 const WIDTH := 600.0
-## The plaque's height at its natural scale (px at the 1920 x 1080 base).
+## The plaque's height (px at the 1920 x 1080 base).
 const HEIGHT := 132.0
 const MIN_HEIGHT := HEIGHT
-## A sentence too long for the plaque at the smallest size grows the plaque through these sizes (width, height): the
-## crystals scale with the height, the plain middle takes the width (a long ability sentence).
+## A sentence too long for the plaque at the smallest size grows the plaque through these sizes (width, height; a
+## long ability sentence).
 const GROW := [
 	Vector2(600, 132), Vector2(680, 140), Vector2(760, 148), Vector2(860, 156), Vector2(960, 164)
 ]
@@ -150,9 +150,7 @@ func text_fits() -> bool:
 	var regular := HudStyle.font(false)
 	var name_w := box.x - _caption_w()
 	var one_line := bold.get_string_size(_name.text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size).x
-	var h := (
-		bold.get_height(name_size) + CrystalCard.text_height(regular, _desc.text, box.x, desc_size)
-	)
+	var h := bold.get_height(name_size) + TextFit.text_height(regular, _desc.text, box.x, desc_size)
 	return one_line <= name_w + 0.5 and h <= box.y + 0.5
 
 
@@ -169,7 +167,7 @@ func _fit() -> void:
 		_fit_sizes()
 		if text_fits():
 			break
-	if not is_equal_approx(_box.scale_factor, _height / Plaques.SIZE.y):
+	if not is_equal_approx(_box.height, _height):
 		var plaque := _box.plaque
 		_box = Plaques.box(plaque, _height, PAD)
 		add_theme_stylebox_override("panel", _box)
@@ -186,9 +184,9 @@ func _fit_sizes() -> void:
 	var bold := HudStyle.font(true)
 	var regular := HudStyle.font(false)
 	var name_w := box.x - _caption_w()
-	name_size = CrystalCard.fit_width(bold, _name.text, name_w, NAME_SIZES)
+	name_size = TextFit.fit_width(bold, _name.text, name_w, NAME_SIZES)
 	var room := box.y - bold.get_height(name_size)
-	desc_size = CrystalCard.fit_size(regular, _desc.text, box.x, room, DESC_SIZES)
+	desc_size = TextFit.fit_size(regular, _desc.text, box.x, room, DESC_SIZES)
 	_name.add_theme_font_size_override("font_size", name_size)
 	_desc.add_theme_font_size_override("font_size", desc_size)
 	_desc.custom_minimum_size = Vector2(box.x, 0)

@@ -1,7 +1,8 @@
 class_name MainMenu
 extends MenuPanel
 ## Continue (v0.4.0 SV: only while a run save exists, focused first), Play, Options, Credits, Quit, the version
-## label and, in debug builds only, the galleries. v0.5.5 A5: in the Cold glass look (MenuStyle), list on the left.
+## label and, in debug builds only, the galleries. v0.8.0 MU: in the Ember stone look (MenuStyle), the list on a stone
+## slab on the left over the menu's own backdrop (MenuBackdrop: an ember-lit stone floor, sparks rising).
 ## v0.7.5 CX: a Codex row after Credits opens the Codex (CodexView).
 ## v0.7.5 PG (owner N20): a Playground row after the Codex, in every build with the dev panel (DevGate).
 
@@ -37,7 +38,7 @@ func _init(
 	if show_galleries:
 		add_button("UI_GALLERIES", func() -> void: galleries_pressed.emit()).name = "Galleries"
 	add_button("UI_QUIT", func() -> void: quit_pressed.emit()).name = "Quit"
-	add_backdrop()
+	add_backdrop().own_scene = true  # v0.8.0 MU: nothing is behind the main menu: its own ember scene
 	add_hint("UI_MENU_HINT")
 	version_label.text = version
 	version_label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

@@ -2,7 +2,7 @@ class_name CreditsView
 extends Control
 ## Credits: the owner's line, "Made with Godot Engine", the Godot licence, third-party notices and the font's
 ## licence. GUT is not shipped (the export smoke and zip audit check that).
-## v0.5.5 A5: in the Cold glass look (MenuStyle) over the dark gradient backdrop.
+## v0.5.5 A5; v0.8.0 MU: in the Ember stone look (MenuStyle) over the menu's ember backdrop (MenuBackdrop).
 ## v0.7.5 SM (N8): the app icon beside the title, and the generated licence list (LicenceListDefinition, built from
 ## the repo's manifests, fonts and addons by scripts/content/build_credits.gd) before the engine's notices.
 

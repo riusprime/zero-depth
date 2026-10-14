@@ -39,7 +39,7 @@ func test_every_hint_has_its_line_in_both_languages_and_fits() -> void:
 				var size := h.line.get_theme_font_size("font_size")
 				var width := OnboardingHints.W - OnboardingHints.PAD.x * 2.0
 				var lines := ceili(
-					CrystalCard.text_height(font, t, width, size) / font.get_height(size) - 0.01
+					TextFit.text_height(font, t, width, size) / font.get_height(size) - 0.01
 				)
 				# the hints shown over a centre panel (low, between its key line and the heat meter): one line
 				var most := 1 if id in [&"pick", &"shop"] else 2

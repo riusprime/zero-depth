@@ -80,7 +80,7 @@ func refresh() -> void:
 		head.text = "%s   %d / %d" % [tr(GROUP_KEYS.get(g, "UI_ACH_TAB")), have, list.size()]
 		head.add_theme_font_override("font", HudStyle.font(true))
 		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", MenuStyle.GLASS.lerp(Color.WHITE, 0.3))
+		head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % g

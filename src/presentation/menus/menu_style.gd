@@ -1,21 +1,22 @@
 class_name MenuStyle
 extends RefCounted
-## The menus' look (v0.5.5 A5, owner pick: "Menu from C (we don't need to have those crystal those there, or what is
-## the purpose?"; mockup docs/roadmap/v0.6.0/evidence/ui_mockups/pause_c.png): "Cold glass". The game blurred and
-## dimmed behind (MenuBackdrop), a left-aligned title and list, plain type, a thin cold-glass highlight on the
-## focused row (a cyan wash that fades to the right over a bright hairline, with a small glass diamond beside it,
-## GlassMarker), the key hints small. No build cards beside the menu (the owner: not needed).
-## One Theme for every full-screen menu (main menu, pause, options, credits, the run recap, the build picker's
-## buttons): `MenuStyle.apply(control)` sets it on a menu's root, so the HUD and the pick cards keep their own looks.
+## The menus' look: "Ember stone" (v0.8.0 MU, owner O14: "we're just throwing away the shard cards we're gonna be
+## using a different style that matches more the game"; G2 pick "menu style B", docs/roadmap/v0.8.0/evidence/
+## MENU_G2.md; it replaces v0.5.5 A5's "Cold glass"). Dark carved stone slabs lit from below by warm embers
+## (StoneBox, EmberStone): a menu's list sits on a slab; the focused row is a small ember-lit slab with a glowing
+## groove and an ember diamond beside it (MenuPanel's EmberMarker), so focus reads the same for the mouse, the keys
+## and the pad; warm type; the game (or, with nothing behind, an ember-lit stone scene) behind with sparks rising
+## (MenuBackdrop). One Theme for every full-screen menu (main menu, pause, options, credits, the Codex, the run recap,
+## the build picker, the Build page): `MenuStyle.apply(control)` sets it on a menu's root.
 ## Presentation only (EI-07): nothing here decides an outcome.
 
-## The cold glass accent and the type (starting values, from the C mockup).
-const GLASS := Color("#7FE3F2")
-const TEXT := Color("#EEF3F6")
-const DIM := Color(0.86, 0.9, 0.93, 0.62)
-const HINT := Color(0.86, 0.9, 0.93, 0.5)
-## A glass panel's fill (Options, the credits): dark, translucent.
-const PANEL := Color(0.02, 0.03, 0.045, 0.62)
+## The ember accent and the type (EmberStone's tokens).
+const EMBER := EmberStone.EMBER
+const TEXT := EmberStone.TEXT
+const DIM := EmberStone.DIM
+const HINT := EmberStone.HINT
+## A row's or a tile's dark fill where a flat box is still wanted (a dimmed empty slot).
+const PANEL := Color(0.05, 0.04, 0.035, 0.7)
 ## Type sizes.
 const TITLE_SIZE := 56
 const BUTTON_SIZE := 26
@@ -24,12 +25,13 @@ const NOTE_SIZE := 17
 ## A menu list's left edge (px at the 1920 x 1080 base) and its width.
 const LIST_LEFT := 180.0
 const LIST_W := 460.0
+## The slab a menu's list sits on: its padding round the list.
+const SLAB_PAD := Vector2(38, 44)
 
 static var _theme: Theme
-static var _highlight: Texture2D
 
 
-## Puts the cold glass Theme on a menu's root control (its children inherit it).
+## Puts the Ember stone Theme on a menu's root control (its children inherit it).
 static func apply(c: Control) -> void:
 	c.theme = theme()
 
@@ -41,18 +43,11 @@ static func theme() -> Theme:
 	t.default_font = HudStyle.font(false)
 	t.default_font_size = 20
 	var bold := HudStyle.font(true)
-	# Buttons: plain type on nothing; the focused or hovered row gets the glass highlight.
+	# Buttons: plain type on the stone; the focused or pressed row is an ember-lit slab, a hovered one half lit.
 	var normal := StyleBoxEmpty.new()
 	_margins(normal)
-	var lit := StyleBoxTexture.new()
-	lit.texture = highlight_texture()
-	lit.texture_margin_left = 4
-	lit.texture_margin_right = 4
-	lit.texture_margin_top = 2
-	lit.texture_margin_bottom = 4
-	_margins(lit)
-	var hover := lit.duplicate() as StyleBoxTexture
-	hover.modulate_color = Color(1, 1, 1, 0.6)
+	var lit := row_slab(1.0)
+	var hover := row_slab(0.45)
 	var none := StyleBoxEmpty.new()
 	_margins(none)
 	t.set_stylebox("normal", "Button", normal)
@@ -65,79 +60,104 @@ static func theme() -> Theme:
 	t.set_color("font_color", "Button", DIM)
 	t.set_color("font_hover_color", "Button", TEXT)
 	t.set_color("font_focus_color", "Button", TEXT)
-	t.set_color("font_pressed_color", "Button", GLASS.lerp(Color.WHITE, 0.6))
-	t.set_color("font_hover_pressed_color", "Button", GLASS.lerp(Color.WHITE, 0.6))
+	t.set_color("font_pressed_color", "Button", EMBER.lerp(Color.WHITE, 0.55))
+	t.set_color("font_hover_pressed_color", "Button", EMBER.lerp(Color.WHITE, 0.55))
 	t.set_color("font_disabled_color", "Button", Color(DIM, 0.3))
-	t.set_color("font_outline_color", "Button", Color(0, 0, 0, 0.55))
+	t.set_color("font_outline_color", "Button", Color(0, 0, 0, 0.6))
 	t.set_constant("outline_size", "Button", 4)
-	# Labels: plain type with a soft outline, readable over the blurred game.
+	# Labels: warm type with a soft outline, readable over the stone and the blurred game.
 	t.set_color("font_color", "Label", TEXT)
-	t.set_color("font_outline_color", "Label", Color(0, 0, 0, 0.55))
+	t.set_color("font_outline_color", "Label", Color(0, 0, 0, 0.6))
 	t.set_constant("outline_size", "Label", 4)
 	t.set_color("font_shadow_color", "Label", Color(0, 0, 0, 0.3))
 	t.set_constant("shadow_offset_x", "Label", 1)
 	t.set_constant("shadow_offset_y", "Label", 2)
-	t.set_color("default_color", "RichTextLabel", Color(TEXT, 0.85))
-	# Panels (Options, credits): dark glass with a thin cold top edge.
-	t.set_stylebox("panel", "PanelContainer", glass_panel())
+	t.set_color("default_color", "RichTextLabel", Color(TEXT, 0.88))
+	# Panels (Options, credits, the Codex's detail): a stone slab.
+	t.set_stylebox("panel", "PanelContainer", stone_panel())
 	var sep := StyleBoxLine.new()
-	sep.color = Color(GLASS, 0.22)
+	sep.color = Color(EMBER, 0.28)
 	sep.thickness = 1
 	var vsep := sep.duplicate() as StyleBoxLine
 	vsep.vertical = true
 	t.set_stylebox("separator", "HSeparator", sep)
 	t.set_stylebox("separator", "VSeparator", vsep)
-	# Sliders (volumes): a thin track, the filled part in glass.
+	# Sliders (volumes): a dark carved track, the filled part glowing ember.
 	var track := StyleBoxFlat.new()
-	track.bg_color = Color(1, 1, 1, 0.14)
+	track.bg_color = Color(EmberStone.GROOVE, 0.9)
+	track.border_color = Color(1, 0.92, 0.82, 0.08)
+	track.border_width_bottom = 1
 	track.content_margin_top = 2
 	track.content_margin_bottom = 2
 	var fill := track.duplicate() as StyleBoxFlat
-	fill.bg_color = Color(GLASS, 0.8)
+	fill.bg_color = Color(EMBER, 0.85)
 	t.set_stylebox("slider", "HSlider", track)
 	t.set_stylebox("grabber_area", "HSlider", fill)
 	t.set_stylebox("grabber_area_highlight", "HSlider", fill)
+	# Scroll bars (the Codex, the credits): a thin carved groove, the grabber ember.
+	var groove := StyleBoxFlat.new()
+	groove.bg_color = Color(EmberStone.GROOVE, 0.6)
+	groove.content_margin_left = 3
+	groove.content_margin_right = 3
+	var grab := StyleBoxFlat.new()
+	grab.bg_color = Color(EMBER, 0.55)
+	var grab_lit := grab.duplicate() as StyleBoxFlat
+	grab_lit.bg_color = Color(EMBER, 0.9)
+	t.set_stylebox("scroll", "VScrollBar", groove)
+	t.set_stylebox("grabber", "VScrollBar", grab)
+	t.set_stylebox("grabber_highlight", "VScrollBar", grab_lit)
+	t.set_stylebox("grabber_pressed", "VScrollBar", grab_lit)
 	_theme = t
 	return t
 
 
-## A dark glass panel with a thin cold top edge (Options, the credits, and v0.6.0 UP the shrine stats and threat
-## panels shown in the pause menu); `margin` (left / right, top / bottom) pads its content.
-static func glass_panel(margin: Vector2 = Vector2.ZERO) -> StyleBoxFlat:
-	var panel := StyleBoxFlat.new()
-	panel.bg_color = PANEL
-	panel.border_width_top = 1
-	panel.border_color = Color(GLASS, 0.55)
-	if margin == Vector2.ZERO:
-		return panel  # the menus' own panels pad themselves
-	panel.content_margin_left = margin.x
-	panel.content_margin_right = margin.x
-	panel.content_margin_top = margin.y
-	panel.content_margin_bottom = margin.y
-	return panel
+## A stone slab panel (Options, the credits, the Codex's detail, and in the pause menu the shrine stats and threat
+## panels); `margin` (left / right, top / bottom) pads its content.
+static func stone_panel(margin: Vector2 = Vector2.ZERO, pattern: int = 3) -> StoneBox:
+	var b := StoneBox.make(margin, pattern)
+	b.under = 0.28
+	b.cut = 16.0
+	b.cracks = 3
+	return b
 
 
-## The focused row's highlight: a cold cyan wash fading to the right, a bright hairline along the bottom that fades
-## the same way, and a short glass edge on the left. Built once in code (no image asset).
-static func highlight_texture() -> Texture2D:
-	if _highlight != null:
-		return _highlight
-	var w := 256
-	var h := 48
-	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
-	for x in w:
-		var u := float(x) / (w - 1)
-		var wash := 0.2 * (1.0 - u) * (1.0 - u)
-		var line := 0.95 * (1.0 - u)
-		for y in h:
-			var a := wash
-			if y >= h - 2:
-				a = line
-			if x < 3:
-				a = maxf(a, 0.75)
-			img.set_pixel(x, y, Color(GLASS, a))
-	_highlight = ImageTexture.create_from_image(img)
-	return _highlight
+## A menu row's slab at `lit` (1 focused or pressed, less when hovered): a small ember-lit slab with a glowing groove
+## along its foot.
+static func row_slab(lit: float) -> StoneBox:
+	var b := StoneBox.make()
+	_margins(b)
+	b.pattern = 11
+	b.cut = 8.0
+	b.chip = 2.0
+	b.cracks = 1
+	b.under = 0.3 * lit
+	b.focus = lit
+	b.dim = lerpf(0.9, 1.05, lit)
+	b.inlay = Color(EMBER, lit)
+	b.inlay_y = 5.0
+	b.shadow = lit >= 1.0
+	return b
+
+
+## A tile's slab (the Codex's tiles, the wand's slots, the achievement rows): its family's or page's colour as the
+## glowing groove along its foot (or `ring` round its picture), lit when focused, dimmed when locked or empty.
+static func tile_slab(
+	tint: Color,
+	focused: bool,
+	quiet: bool = false,
+	pattern: int = 0,
+	margin: Vector2 = Vector2(4, 4)
+) -> StoneBox:
+	var b := StoneBox.make(margin, pattern)
+	b.cut = 9.0
+	b.chip = 2.2
+	b.cracks = 1
+	b.under = 0.12 if quiet else 0.22
+	b.focus = 1.0 if focused else 0.0
+	b.dim = 1.08 if focused else (0.62 if quiet else 0.86)
+	b.inlay = Color(tint, 0.35 if quiet else 0.95)
+	b.inlay_y = 6.0
+	return b
 
 
 ## A small key-hint label (translated text is set by the caller or auto-translated from a key).

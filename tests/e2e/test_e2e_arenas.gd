@@ -171,7 +171,7 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 	for k in panel.card_count():
 		var s := panel.slot(k)
 		assert_eq(s.tier, CardFrames.LEGENDARY_TIER, "card %d is legendary" % k)
-		assert_eq(s.frame_id(), &"gold", "in the gold frame")
+		assert_eq(s.colour_id(), &"gold", "in the gold colour")
 		assert_true(s.card.tier_text().ends_with(tr("RARITY_LEGENDARY")))
 	var before := w.stat_cards.size() + w.items_owned.size()
 	var first := w.rewards.offer_of(r)[0]  # v0.6.5 WN5b: a wand card is its level-5 version

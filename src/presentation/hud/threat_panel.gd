@@ -4,14 +4,14 @@ extends PanelContainer
 ## sentence). The HUD shows it at the top left while you hold a curse; the pause menu shows it too. A curse just
 ## taken or lifted flashes a caption under the title for a moment. Reads only.
 ## v0.6.0 UP: on the HUD an Ember stone slab (HudStyle) with the curses' colour along its top; inside a menu (the
-## pause screen) the menu's Cold glass look (MenuStyle).
+## pause screen) the menu's Ember stone look (MenuStyle).
 
 const FLASH_S := 3.0
 const MARGIN := Vector2(14, 9)
 ## The widest a curse line runs before it wraps (v0.6.0 UP: a long Spanish line ran under the top plate).
 const LINE_W := 560.0
 
-## Whether it wears the menus' Cold glass (set when it is added to a MenuPanel).
+## Whether it wears the menus' Ember stone (set when it is added to a MenuPanel).
 var in_menu := false
 ## The reader last shown (read only), to word the panel again on a language switch.
 var _reader: WorldReader
@@ -54,10 +54,10 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and title colour for where it is: Cold glass in a menu, the HUD's slab otherwise.
+## The panel's box and title colour for where it is: Ember stone in a menu, the HUD's slab otherwise.
 func _apply_look() -> void:
 	if in_menu:
-		add_theme_stylebox_override("panel", MenuStyle.glass_panel(MARGIN))
+		add_theme_stylebox_override("panel", MenuStyle.stone_panel(MARGIN))
 		_title.add_theme_color_override("font_color", MenuStyle.TEXT)
 	else:
 		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, CurseLook.COLOR))

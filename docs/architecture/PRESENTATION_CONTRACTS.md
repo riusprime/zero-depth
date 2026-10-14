@@ -234,9 +234,29 @@ the mode's colour vision on the tokens and asserts:
   (`MenuBackdrop`, a screen-texture shader), a left-aligned title and list, plain type, the focused row lit by a
   thin cold-glass wash and hairline with a glass diamond beside it, small notes and key hints under the list; **no
   build cards beside the menu** (owner: not needed). The pick cards keep `CrystalCard`.
-- **The Codex** (v0.7.5 CX, owner N6): `CodexView`, a full-screen Cold glass menu from the main menu (a row after
+- **v0.8.0 MU restyle (owner O14 "we're just throwing away the shard cards"; G2 pick "menu style B", 2026-10-14;
+  [`../roadmap/v0.8.0/evidence/MENU_G2.md`](../roadmap/v0.8.0/evidence/MENU_G2.md)):** the cards and the menus are
+  **"Ember stone"**, drawn in code. One style box, `StoneBox` (`src/presentation/theme/`, tokens in `EmberStone`):
+  a dark carved slab with chipped edges, the ember glow under it (`under`, `focus`), a grain, cracks, a warm lower
+  bevel, and optional inlays (a glowing groove line, a ring round a socket, a gold rim). Every **pick card** (altar,
+  chest, shop stock, the Swap's card, the Codex's card) is a `StoneCard` (replaces `CrystalCard`): the icon in an
+  `InlaySocket` ringed in the element's colour, the title in the family's colour (`CardFrames`, now a colour table
+  only) over a groove, the sentence, the carved rarity gem (`CardMark`) over the rarity words, a gold rim when epic or
+  legendary, the level badge top right; text steps down (`TextFit`) and a sentence too long at the smallest size
+  reflows the card (a smaller socket), so it never runs into the gem (`test_card_frames.gd`, en and es, every scale).
+  The **plaques** (`PlaqueBox`: item, combo, gamble, event, ascension, shop, banner) are stone slabs with a groove in
+  their colour; the **wand tiles** (`WandRow`), **pips** (`BuildHud`), **Codex tiles**, **achievement rows** and
+  **toast**, the **Swap** tiles and the **build picker** (stone tablets with the weapon's symbol in a socket, a stone
+  title plaque) share it. **Every menu** (`MenuStyle`; main menu, pause, Options, credits, Codex, Build page, run
+  recap, build picker) puts its list on a slab, the focused or pressed row an ember-lit slab with a groove and an
+  ember diamond beside it (`EmberMarker`; a hovered row half lit), warm type; behind it `MenuBackdrop`: the game
+  blurred into a warm dark with a low ember glow, or with nothing behind (the main menu, `own_scene`) its own
+  ember-lit stone floor; sparks drift up from below; **reduced motion stops its clock** (no sparks moving, no
+  flicker). The ember `#EBAE72` is kept apart from the Hot heat colour by saturation (`test_ember_stone.gd`). The
+  owner's crystal frames, plaques and build-picker art are retired (assets, manifests, crop scripts removed).
+- **The Codex** (v0.7.5 CX, owner N6; Ember stone since v0.8.0 MU): `CodexView`, a full-screen menu from the main menu (a row after
   Credits) and the pause menu (a row after Options). Four pages (Cards by pool, Enemies, Bosses, Biomes) of
-  `CodexTile`s, and the focused entry beside them: a card in its crystal frame (`CrystalCard`, its family's frame) or
+  `CodexTile`s, and the focused entry beside them: a card as its stone tablet (`StoneCard`, its family's colour) or
   an emblem (`CodexGlyphs`: an enemy by its behaviour, a boss by its id, a biome as a landscape in its palette), the
   game's own name and sentence keys, and the profile's counts. An entry not met is a dark silhouette named "???".
   Keyboard arrows / Q E / Esc, pad d-pad / LB RB / B, mouse hover, tab click and Back. It reads `CodexCatalog` and
@@ -256,7 +276,7 @@ the mode's colour vision on the tokens and asserts:
   (`test_achievements_view.gd`). Built straight in the owner's looks without a G2 round (v0.7.5: no
   interventions); the owner corrects it at the playtest.
 - **Card levels** (v0.7.5 SM, owner N8): a card that levels (a wand card, 1–5, and an ability card) wears a small
-  badge centred just above its text panel on every pick card (`CrystalCard` via `PickPanel.card_face`, so the altar
+  badge (v0.8.0 MU: top right on the stone tablet) on every pick card (`StoneCard` via `PickPanel.card_face`, so the altar
   and chest pick, the shop's stock, the event panel and the Swap): "Lv 1" when not held, "Lv N → N+1" when taking it
   levels a held card, and on the boss's legendary altar "Lv N → 5" (its level-5 version; "Lv 5" when not held). The
   rarity line is unchanged. The HUD's wand pips (`BuildHud`) and the Build page's tiles (`WandRow`) show a wand

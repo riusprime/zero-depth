@@ -3,12 +3,12 @@ extends PanelContainer
 ## The stats won at the gamble shrine this run (v0.3.0 L19): one row per stat with its icon, the total it adds and
 ## its wins / cap. On the HUD it shows while you stand at the shrine; the pause menu shows it too.
 ## v0.6.0 UP: on the HUD it is an Ember stone slab (HudStyle) with the shrine's colour along its top; inside a menu
-## (the pause screen) it takes the menu's Cold glass look (MenuStyle), so the pause screen reads as one style.
+## (the pause screen) it takes the menu's Ember stone look (MenuStyle), so the pause screen reads as one style.
 
 const ICON := 28.0
 const MARGIN := Vector2(14, 9)
 
-## Whether it wears the menus' Cold glass (set when it is added to a MenuPanel).
+## Whether it wears the menus' Ember stone (set when it is added to a MenuPanel).
 var in_menu := false
 ## The reader last shown (read only), to word the panel again on a language switch.
 var _reader: WorldReader
@@ -47,11 +47,11 @@ func _notification(what: int) -> void:
 		sync(_reader)  # the pause menu syncs it once: a language switch from its Options words it again
 
 
-## The panel's box and title colours for where it is: Cold glass in a menu, the HUD's slab otherwise.
+## The panel's box and title colours for where it is: Ember stone in a menu, the HUD's slab otherwise.
 func _apply_look() -> void:
 	if in_menu:
-		add_theme_stylebox_override("panel", MenuStyle.glass_panel(MARGIN))
-		_title.add_theme_color_override("font_color", MenuStyle.GLASS)
+		add_theme_stylebox_override("panel", MenuStyle.stone_panel(MARGIN))
+		_title.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.25))
 		_none.add_theme_color_override("font_color", MenuStyle.DIM)
 	else:
 		add_theme_stylebox_override("panel", HudStyle.side_panel_box(MARGIN, GambleIcons.CORE))

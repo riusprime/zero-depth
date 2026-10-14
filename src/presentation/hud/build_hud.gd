@@ -7,6 +7,8 @@ extends Control
 ## HUD); reads WorldReader only (EI-07).
 ## v0.6.0 UP: the row sits on a small Ember stone slab (HudFrame) like the HUD's other plates; a filled pip is its
 ## family's colour inside a dark stone rim, an empty pip a dim stone chip (as an empty ability slot).
+## v0.8.0 MU (Ember stone, owner O14): a pip is a small carved stone chip; a filled one holds a glowing inlay ring in
+## its family's colour round its level (InlaySocket's ring), an empty one is an unlit chip.
 ## v0.6.5 WN2: the pips are the wand's slots in order (left to right, as the wand reads); a trigger card's pip wears a
 ## small "›" and a thin ember cut stands after it (the cards to its right are what it casts).
 
@@ -26,8 +28,8 @@ var _row := HBoxContainer.new()
 var _weapon := HudStyle.label(14, true)
 var _utility := HudStyle.label(14)
 var _pips: Array[Panel] = []
-## P-3: each pip's own StyleBoxFlat, set once; sync recolours it (a bound StyleBox redraws its panel itself).
-var _boxes: Array[StyleBoxFlat] = []
+## P-3: each pip's own StoneBox, set once; sync recolours it (a bound StyleBox redraws its panel itself).
+var _boxes: Array[StoneBox] = []
 var _levels: Array[Label] = []
 ## v0.6.5 WN2: the cut after each pip (shown after a trigger card's).
 var _cuts: Array[ColorRect] = []
@@ -52,8 +54,14 @@ func _init() -> void:
 		p.name = "ModPip%d" % (k + 1)
 		p.custom_minimum_size = Vector2(PIP, PIP)
 		p.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var box := StyleBoxFlat.new()
-		box.set_border_width_all(1)
+		var box := StoneBox.new()
+		box.pattern = 3 + k * 5
+		box.cut = 4.0
+		box.chip = 1.0
+		box.cracks = 0
+		box.under = 0.0
+		box.shadow = false
+		box.ring = Rect2(Vector2(2.5, 2.5), Vector2(PIP - 5.0, PIP - 5.0))
 		p.add_theme_stylebox_override("panel", box)
 		_boxes.append(box)
 		var lv := HudStyle.label(12, true)
@@ -103,8 +111,8 @@ func sync(reader: WorldReader) -> void:
 			var tint := CardFrames.tint(
 				CardFrames.frame_of(CardFrames.family(s["id"], int(s["type"])))
 			)
-			box.bg_color = Color(tint, 0.85)
-			box.border_color = HudStyle.STONE_EDGE
+			box.ring_color = tint
+			box.dim = 1.0
 			var ability := int(s["type"]) == WorldReader.CARD_ABILITY
 			# v0.7.5 SM (N8): a wand card shows its level (1–5) on its pip too
 			var levels := ability or bool(reader.card_info(int(s["code"])).get("wand", false))
@@ -112,8 +120,8 @@ func sync(reader: WorldReader) -> void:
 			if k in cuts:
 				_levels[k].text = TRIGGER_MARK
 		else:
-			box.bg_color = Color(HudStyle.STONE_EDGE, 0.55)
-			box.border_color = Color(HudStyle.EMBER_TEXT, 0.22)
+			box.ring_color = Color(0, 0, 0, 0)
+			box.dim = 0.55
 			_levels[k].text = ""
 		_cuts[k].visible = k in cuts and k < shown - 1
 	_place()
@@ -130,6 +138,11 @@ func _place() -> void:
 # --- Reads (tests) ------------------------------------------------------------------------------------------
 func filled_pips() -> int:
 	return _filled
+
+
+## v0.8.0 MU: pip k's stone chip (its ring is its family's colour).
+func pip_box(k: int) -> StoneBox:
+	return _boxes[k]
 
 
 func pip_level_text(k: int) -> String:

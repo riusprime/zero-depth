@@ -13,13 +13,13 @@ extends ModalPanel
 ##   buys or sells, Esc leaves.
 ## - Pad: d-pad or left stick moves the focus, A (Cross) acts, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
-## v0.6.1 R1: the services and the salvage rows are the owner's crystal plaques (ShopTile); the stock keeps the
-## crystal card frames.
+## v0.6.1 R1: the services and the salvage rows are plaques (ShopTile); v0.8.0 MU: the plaques and the stock's
+## cards are carved Ember stone (PlaqueBox, StoneCard).
 
 ## Key repeats (PanelInput.Echo): only the arrows repeat; a held Enter acts once.
 const ECHO := PanelInput.Echo.ARROWS
 const SALVAGE_COLUMNS := 4
-## v0.5.5 A4: the stock's crystal cards are drawn a little smaller than the pick's, so the services and the salvage
+## v0.5.5 A4: the stock's cards are drawn a little smaller than the pick's, so the services and the salvage
 ## list still fit under them at 1080p.
 const CARD_SCALE := 0.92
 const POOR := Color("#FF5A4D")

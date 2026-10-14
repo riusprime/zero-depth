@@ -113,11 +113,11 @@ func test_the_badge_fits_on_the_card_at_the_pick_and_shop_scales() -> void:
 				Rect2(Vector2.ZERO, card.custom_minimum_size).encloses(r),
 				"%s at %.1f: the badge %s is on the card" % [lang, scale, r]
 			)
-			assert_lt(
-				r.end.y,
-				card.content_rect().position.y + 0.5,
-				"above the text panel: the title is clear"
+			# v0.8.0 MU: top right on the stone tablet, clear of the icon's socket and above the title.
+			assert_false(
+				r.intersects(Rect2(card.socket.position, card.socket.size)), "clear of the socket"
 			)
+			assert_lt(r.end.y, card.desc_rect().position.y, "above the text: the title is clear")
 	TranslationServer.set_locale("en")
 
 

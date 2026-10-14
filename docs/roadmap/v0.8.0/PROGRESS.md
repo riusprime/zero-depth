@@ -14,6 +14,7 @@ not in `main` yet).
 | BA | The six bosses move with keyframed clips (code-made, owner Q4) instead of a few code sways: every attack winds up with anticipation, lands its strike pose on the very tick the hit resolves (the clip's time is driven by the sim's windup / active / recovery ticks; a multi-marker slam re-strikes on each marker's tick) and recovers; idle breathing, walks matched to speed, a shielded pose (the Gatekeeper curls into a boulder for its Rock Rings), a flinch, a reel-and-slump stagger, a roar at each phase gate, a rise with the boss bar, and a collapse when it dies (all six now; only the Warlord fell before). Owner clips with the same name in the model's AnimationPlayer replace the code clips. Reduced motion: same poses, no tremble or overshoot. Evidence [BOSS_ANIMATIONS](evidence/BOSS_ANIMATIONS.md), sheets in `evidence/ba_shots/`; the feel is OWNER ONLY | `8b35845` (branch `v080-ba`) |
 | RT part 1 (system + 3 layouts) | Rooms of 2×2, 3×2 and 3×3 cells are furnished from hand-designed layouts (dense clusters of tall blocks, crate stacks, wrecks, fire barrels, broken walls and pillars, grass and rubble, an open lane in the middle), picked per room and turned and mirrored by the generator, restyled by each biome; other sizes keep their rule-built rooms until their layouts come; a save made before RT resumes on its own floor. G2 asked; evidence [`evidence/ROOMS.md`](evidence/ROOMS.md) | `38beba1` (branch `v080-rt`) |
 | EC | Enemies wear one colour family per role (palette A, the owner's G2 pick): melee red-orange, ranged blue-violet, bombers yellow, support green, tanks bronze, each kind its own shade, every kind with a glowing eye ([evidence](evidence/ENEMY_COLOURS.md)) | `234f119` (palettes) + `d71aa5c` (the pick) |
+| MU | The shard cards are gone: cards, plaques, wand tiles and pips, Codex tiles, achievement rows and toast, the shop, Swap and build picker are carved Ember stone tablets (element-coloured inlay ring round the icon, a groove in the family's colour, a carved rarity gem, a gold rim on epic and legendary, the level badge kept); every menu sits on a stone slab with an ember-lit focused row and an ember diamond; the main menu has its own ember-lit stone backdrop, sparks rising (still under reduced motion); long Spanish sentences reflow clear of the gem; the glow is kept apart from the Hot heat colour. Evidence [MENU](evidence/MENU.md); the look is OWNER ONLY | this commit (branch `v080-mu2`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -24,6 +25,7 @@ not in `main` yet).
   `tests/golden` passes unchanged). Run floors change on purpose (floor rules 4); a floor saved before keeps its own.
 - BA: none (presentation, plus two read-only WorldReader reads; `tests/golden` 2/2 unchanged)
 - EC: none (presentation only)
+- MU: none (presentation only)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -49,6 +51,18 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: MU (agent, branch `v080-mu2` from `bace713`): direction B "Ember stone" shipped (owner G2 "menu style
+  B"). New `src/presentation/theme/` `EmberStone` (tokens, the grain made from noise), `StoneBox` (the carved slab
+  style box), `InlaySocket`, `TextFit`; `StoneCard` replaces `CrystalCard`; `PlaqueBox` / `Plaques`, `MenuStyle`,
+  `MenuPanel` (slab, `EmberMarker`, title groove), `MenuBackdrop` (blur + ember wash, the main menu's own stone
+  scene, sparks; reduced motion holds its clock), `BuildCard` / `BuildPicker`, `WandRow`, `BuildHud` pips, `CodexTile`,
+  `AchievementRow`, `AchievementToast`, `SwapPanel` restyled; `CardFrames` is a colour table only. Retired: the crystal
+  frames / plaques / build-picker art, their manifests, crop scripts, asset tests, `BuildArt`; credits list rebuilt.
+  Shots `scripts/shots/mu2_shots.gd` (real screens, en + es). Run locally: lint; `tests/unit/presentation` 577/577;
+  `tests/content` + `tests/arch` 123/123; menu/pick/build/codex/shop/swap/achievements/shell/pad e2e (17 files) 40/40.
+  An earlier presentation run under machine load had 2 stone-spike failures (pass alone and in order, on this tree
+  and on `bace713`; the clean rerun is green). Not run locally: the full suite. The look: OWNER ONLY. Open for the
+  lead: `tests/MIN_TEST_COUNT` (about 8 tests fewer: the retired art's asset tests).
 - 2026-10-14: BA (agent, branch `v080-ba` from `0dfa2c7`): `src/presentation/world_view/boss_anim/` (BossClip: keyed
   tracks of bone / body turn, shift, stretch and named parameters with eases and SETTLE overshoot keys;
   BossAnimator: additive layers idle / walk / action (+ crossfade) / shielded / flinch / stagger / roar / rise /
