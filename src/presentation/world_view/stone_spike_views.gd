@@ -32,6 +32,12 @@ const DUST := Color(0.6, 0.55, 0.5)
 const MODEL_ID := "stone_spike"
 const MODEL_PATH := "res://assets/models/fx/stone_spike.glb"
 const MANIFEST := "res://assets/models/manifest.json"
+## v0.8.0 BS1 (S1): a pillar's spikes: the tall one's height (m), how many shorter ones lean out of its corners, the
+## ticks its cracks pulse before it sinks and the ticks it takes to sink (_draw_pillars).
+const PILLAR_TALL := 1.9
+const PILLAR_SATELLITES := 3
+const PILLAR_WARN_TICKS := 60.0
+const PILLAR_SINK_TICKS := 18.0
 
 const SHADER := """
 shader_type spatial;
@@ -75,6 +81,9 @@ var vfx: VfxCore
 ## Live strikes: {"tick", "seed", "center" (Vector3), "spikes": [[base, basis, height, delay, seed]], "marks":
 ## [Vector3], "dust": [Vector3]}.
 var _strikes: Array[Dictionary] = []
+## v0.8.0 BS1 (owner O5, S1): the pillars standing now (WorldReader.boss_pillars: [center, half, from, until]).
+var _pillars: Array = []
+var _pillars_drawn := 0
 ## Strikes already raised, by key (the boss's id and the marker's lanes), with their tick.
 var _seen := {}
 var _tick := 0
@@ -134,11 +143,12 @@ func sync(reader: WorldReader) -> void:
 		if _tick - int(s["tick"]) <= LIFE_TICKS + SPREAD_TICKS + 1.0:
 			keep.append(s)
 	_strikes = keep
+	_pillars = reader.boss_pillars()  # v0.8.0 BS1
 	_draw(float(_tick))
 
 
 func _process(_delta: float) -> void:
-	if not _strikes.is_empty():
+	if not _strikes.is_empty() or not _pillars.is_empty():
 		_draw(float(_tick) + Engine.get_physics_interpolation_fraction())
 
 
@@ -370,12 +380,87 @@ func _draw(now: float) -> void:
 			)
 			n += 1
 			_bases.append(sp[0])
+	n = _draw_pillars(buf, n, now, still)
 	var mm := _node.multimesh
 	if n > 0:
 		buf.resize(mm.instance_count * 16)
 		mm.buffer = buf
 	mm.visible_instance_count = n
 	_drawn = n
+
+
+## v0.8.0 BS1 (owner O5, S1, "Stone Spikes that stay"): each standing pillar is a cluster of the same stone spikes,
+## a tall one filling its square and PILLAR_SATELLITES shorter ones leaning out of its corners. They thrust up with
+## the strike (RISE_TICKS), stand for the pillar's whole life (the sim's wall), their cracks pulse hot over the last
+## PILLAR_WARN_TICKS and they sink over the last PILLAR_SINK_TICKS: the wall goes on the sim's tick, read from
+## WorldReader.boss_pillars (EI-07). Appends to `buf` from instance n (at most MAX_SPIKES) and returns the count.
+func _draw_pillars(buf: PackedFloat32Array, n: int, now: float, still: bool) -> int:
+	var drawn := 0
+	for p: Array in _pillars:
+		var c: Vector2 = p[0]
+		var h: float = p[1]
+		# The reader's tick is the next one to run: a pillar raised on it shows, and stands until the tick it goes.
+		var age := now - float(p[2]) + 1.0
+		var left := float(p[3]) - now + 1.0
+		var e := 1.0 if age >= RISE_TICKS else extent(age, still)  # it rises, then stands
+		if left < PILLAR_SINK_TICKS:
+			e = minf(e, clampf(left / PILLAR_SINK_TICKS, 0.0, 1.0))
+		if e <= 0.001:
+			continue
+		var heat := clampf(1.0 - age / LIFE_TICKS, 0.0, 1.0) * 0.8
+		if left < PILLAR_WARN_TICKS:
+			var k := 1.0 - left / PILLAR_WARN_TICKS
+			var pulse := 0.5 if still else 0.5 + 0.5 * sin(now * 0.55)
+			heat = maxf(heat, k * pulse)
+		var sd := int(absf(c.x) * 131.0) + int(absf(c.y) * 17.0) * 7
+		drawn += 1
+		for j in PILLAR_SATELLITES + 1:
+			if n >= MAX_SPIKES:
+				_pillars_drawn = drawn
+				return n
+			var tall := PILLAR_TALL * (0.9 + 0.2 * VfxCore.h(sd, j))
+			var width := h * 2.0 * 1.05
+			var at := c
+			var turn := Basis(Vector3.UP, TAU * VfxCore.h(sd + 1, j))
+			if j > 0:  # a shorter spike leaning out of a corner
+				var ang := TAU * (j - 1) / PILLAR_SATELLITES + 0.6 * VfxCore.h(sd + 2, j)
+				at = c + Vector2(cos(ang), sin(ang)) * h * 0.75
+				tall *= 0.55
+				width *= 0.5
+				var out := (SimPlane.to_3d(at) - SimPlane.to_3d(c)).normalized()
+				turn = Basis(out.cross(Vector3.UP).normalized(), -0.28) * turn
+			var b := Basis(turn.x * width, turn.y * tall, turn.z * width)
+			var base := SimPlane.to_3d(at, 0.0)
+			var o := base - Vector3.UP * (tall * (1.0 - e))
+			buf.append_array(
+				[
+					b.x.x,
+					b.y.x,
+					b.z.x,
+					o.x,
+					b.x.y,
+					b.y.y,
+					b.z.y,
+					o.y,
+					b.x.z,
+					b.y.z,
+					b.z.z,
+					o.z,
+					heat,
+					VfxCore.h(sd + 3, j),
+					0.0,
+					0.0
+				]
+			)
+			n += 1
+			_bases.append(base)
+	_pillars_drawn = drawn
+	return n
+
+
+## Pillars standing (any part above the floor) in the last draw (tests and the tour).
+func pillar_count() -> int:
+	return _pillars_drawn
 
 
 ## A VfxCore drawer (WorldViewRoot adds it): each strike's rock debris thrown up, dust rising and spreading, a hot

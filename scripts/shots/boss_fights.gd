@@ -10,7 +10,6 @@ extends SceneTree
 ## [boss, attack, ticks into the attack, label, the player's walk per tick (m)].
 const PLAN := [
 	[&"gatekeeper", &"rock_rings", 110, "gatekeeper_rock_rings_shielded", Vector2.ZERO],
-	[&"gatekeeper", &"cross_quake_fast", 140, "gatekeeper_cross_quake", Vector2.ZERO],
 	[&"gatekeeper", &"fist_slam_3", 70, "gatekeeper_fist_slam_tracking", Vector2(0.0, 0.05)],
 	[&"gatekeeper", &"fist_slam", 84, "gatekeeper_fist_slam_locked", Vector2.ZERO],
 	[&"gatekeeper", &"shock_lanes", 80, "gatekeeper_shock_lanes_locked", Vector2.ZERO],

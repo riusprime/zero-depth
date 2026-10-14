@@ -238,13 +238,24 @@ func test_the_shock_lanes_strike_as_spikes_that_sink_back_into_the_pool() -> voi
 		w.step(InputFrame.new())
 		spikes.sync(reader)
 	assert_eq(spikes.strike_count(), 0, "the strike ends")
-	assert_eq(spikes.spike_count(), 0, "sunk")
 	assert_eq(spikes.pooled(), 0, "back in the pool")
+	# v0.8.0 BS1 (owner O5, S1): the pillars stay standing (the sim's walls), then sink when they go.
+	assert_eq(spikes.pillar_count(), w.bosses.pillar_x.size(), "one cluster a pillar")
+	assert_gt(spikes.pillar_count(), 0, "the spikes that stay")
+	assert_eq(
+		spikes.spike_count(),
+		spikes.pillar_count() * (StoneSpikeViews.PILLAR_SATELLITES + 1),
+		"only the pillars stand"
+	)
+	CombatLab.idle(w, atk.pillar_ticks)
+	spikes.sync(reader)
+	assert_eq(w.bosses.pillar_x.size(), 0)
+	assert_eq(spikes.spike_count(), 0, "sunk")
 	assert_eq(mm.visible_instance_count, 0)
 
 
 func test_only_the_shock_lanes_raise_spikes() -> void:
-	for attack_id: StringName in [&"fist_slam", &"rock_rings", &"cross_quake"]:
+	for attack_id: StringName in [&"fist_slam", &"rock_rings", &"sweep"]:
 		var w := BossLab.world()
 		var i := BossLab.ready_boss(w, &"gatekeeper", Vector2.ZERO)
 		w.actors.set_pos(0, Vector2(6, 3))

@@ -83,3 +83,22 @@ var pattern: BulletPatternTable = null
 ## v0.7.5 BF3: a `grid` attack's cells stand cell_m apart (centre to centre), `count` a side, struck in `volleys`
 ## alternating colours of the checkerboard, mark_gap_ticks apart.
 var cell_m := 0.0
+## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1): a `row_lanes` attack with pillar_ticks > 0 leaves stone pillars
+## along its struck lanes (squares pillar_m a side, pillar_step_m apart from the crossing) that stand as walls for
+## pillar_ticks (BossSignatures).
+var pillar_ticks := 0
+var pillar_m := 0.0
+var pillar_step_m := 0.0
+## v0.8.0 BS1 (S2): a `pattern` attack with recall_ticks > 0 throws javelins that stick where they stop and all fly
+## back along their lines recall_at ticks after its active time began (the pattern's waves, their flight, then
+## recall_ticks); its active time covers their way back too.
+var recall_ticks := 0
+var recall_at := 0
+## v0.8.0 BS1 (S3): a `marks` attack with egg_ticks > 0 lays an egg (enemy_kind, egg_hp at the kind's base HP) on
+## each circle as it strikes, up to max_alive of the kind; an egg hatches after egg_ticks, or from phase index
+## burst_phase on bursts into the attack's pattern instead.
+var egg_ticks := 0
+var egg_hp := 0
+var burst_phase := 99
+## v0.8.0 BS1: the death line for the attack's late part (the javelins coming back, an egg's burst).
+var late_cause_key := &""

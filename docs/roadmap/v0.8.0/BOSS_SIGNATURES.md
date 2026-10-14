@@ -39,9 +39,9 @@ spikes, 3D orbs; v0.8.0 O7, O8).
 ## Decisions (owner, date)
 | Row | Answer | Built in |
 |---|---|---|
-| S1 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
-| S2 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
-| S3 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S1 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (branch `v080-bs1`; [evidence](evidence/BOSS_SIGNATURES_1.md)): pillars 1.0 m every 2.2 m for 6 s; Cross Quake trimmed |
+| S2 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (same): front 120° blocks (×0, sparks); javelins stick, recall 1.0 s; Javelin Rain trimmed |
+| S3 | Yes, as proposed (owner, 2026-10-14: "boss OK") | v0.8.0 Step BS1 (same): eggs 3 s, 20 HP, hatch a Hatchling or burst in phase 3; Web Spiral fast trimmed |
 | S4 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
 | S5 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
 | S6 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |

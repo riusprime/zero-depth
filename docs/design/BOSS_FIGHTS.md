@@ -43,12 +43,26 @@ Owner picks (2026-10-13):
 
 | Boss | Floor | Signature (shielded) | Other patterns | Markers that track you |
 |---|---|---|---|---|
-| **Gatekeeper** (stone) | 1 | **Rock Rings:** 3 slow rings of 16 ember-stones in a row, each ring's gap turning a step | **Cross Quake:** 4 streams in a plus shape that turn slowly | **Fist Slam** circle (2 in phase 2, 3 in phase 3); **Shock Lanes** that track your row and column, then lock |
-| **Warlord** (knight) | 1 | **Shield Wall:** a wall of fireballs marching across the room with one gap (two walls crossing in phase 3) | **Javelin Fan:** 3 waves of 7, offset each wave | **Spear Lines** that track you, then lock; **Lunge** along a tracked lane |
-| **Brood Mother** (spider) | 2 | **Egg Storm:** eggs land on tracked circles and each bursts into an 8-point star of acid globs | **Web Spiral:** 2 arms of slow globs, then reversed | **Leap** circle; **Burrow:** a tracked eruption ring |
+| **Gatekeeper** (stone) | 1 | **Rock Rings:** 3 slow rings of 16 ember-stones in a row, each ring's gap turning a step | ~~Cross Quake~~ (trimmed in v0.8.0 BS1) | **Fist Slam** circle (2 in phase 2, 3 in phase 3); **Shock Lanes** that track your row and column, then lock, strike as stone spikes and **leave stone pillars** (v0.8.0 BS1) |
+| **Warlord** (knight) | 1 | **Shield Wall:** a wall of fireballs marching across the room with one gap (two walls crossing in phase 3) | **Javelin Fan:** 3 waves of 7, offset each wave; the javelins **stick, then fly back** (v0.8.0 BS1) | **Spear Lines** that track you, then lock; **Lunge** along a tracked lane; ~~Javelin Rain~~ (trimmed in v0.8.0 BS1) |
+| **Brood Mother** (spider) | 2 | **Egg Storm:** eggs land on tracked circles and **sit 3 s as targets**: broken they are gone, left they hatch Hatchlings, in phase 3 they burst into an 8-point star of acid globs (v0.8.0 BS1) | **Web Spiral:** 2 arms of slow globs, then reversed (its fast variant trimmed in v0.8.0 BS1) | **Leap** circle; **Burrow:** a tracked eruption ring |
 | **Hive Lens** (eye) | 2 | **Prism Spiral:** 3 arms of prism orbs that reverse direction halfway; the eye is closed (shielded) | **Petal Bloom:** a 5-petal flower of orbs opening out; **Glare Ring:** rings with 2 gaps | **Focus Beam:** a line that tracks you, then locks; its Lens Drones fire small rings |
 | **Siege Engine** (cannon) | 3 | **Turret Cross:** a rotating 4-arm cross of cannon embers while it braces (shielded) | **Mortar Grid:** a checkerboard of tracked circles, alternating twice | **Barrage:** 3 circles that track you in turn; **Rail** lane that tracks you |
 | **Foundry** (furnace) | 3 | **Slag Fountain:** molten balls arc up and rain down in a flower around it, door shut (shielded) | **Furnace Waves:** alternating rings, the gaps shifting | **Molten Flood** lanes that track your row, then lock; its Bomb Drones lob small fireball X-bursts |
+
+### v0.8.0 BS1: one signature mechanic per boss (owner O5; [`BOSS_SIGNATURES.md`](../roadmap/v0.8.0/BOSS_SIGNATURES.md), approved 2026-10-14)
+
+Owner, 2026-10-14: "the fight seem, feels pretty similar … Something that actually stands out for each boss." Each
+boss keeps the rules above and gains one mechanic no other boss has (rows S1-S3 built in v0.8.0 BS1; S4-S6 follow):
+
+| Boss | Signature mechanic | How you play it | Trimmed | Starting values (F10, Bosses page) |
+|---|---|---|---|---|
+| **Gatekeeper** | **Stone Spikes that stay.** Its Shock Lanes strike as stone spikes, and pillars stay standing along the lanes, walls for everything (bodies, sight, its Rock Rings break on them; enemies path round them). Fair: never on a body, always a hero's width plus a margin from any wall or other pillar, so never a sealed pocket | Take cover behind its own pillars from the rings; don't get boxed in | Cross Quake (the Siege Engine owns the cross) | pillar 1.0 m, every 2.2 m, 6.0 s; cracks pulse their last 1 s and they sink |
+| **Warlord** | **Shield facing + recalled javelins.** Its tower shield blocks every hit from its front 120° (sparks, no damage); sides take full damage, the back ×1.25; the shield drops while its weak point is open. Its Javelin Fan's javelins stick in the floor where they stop, then all fly back to it at once along the same lines | Circle it; dodge each javelin twice, out and back | Javelin Rain (its punish is now the Spear Lines) | front arc 120°, ×0; turn 90°/s (was 130); fan range 9 m (10 fast), recall 1.0 s after the last could land |
+| **Brood Mother** | **Eggs to pop.** Egg Storm eggs land and sit 3 s as targets with little HP; a broken egg is gone (a kill), an egg left hatches a Hatchling, and from phase 3 it bursts into its acid star instead | Each cycle: dodge, or turn and break eggs before they hatch | Web Spiral's fast variant (phase 3 opens with the eggs) | egg 3.0 s, 20 HP at the Hatchling's base 12 (scaled with it), at most 8 Hatchlings and eggs, bursting from phase 3 |
+
+Deaths name the new parts: "The Warlord's javelins flew back through you." and "An egg the Brood Mother left burst
+into acid over you." Old saves have none of the new pieces. Numbers are starting values; the feel is OWNER ONLY.
 
 Fireball looks:
 - **Gatekeeper:** grey-orange ember stones.

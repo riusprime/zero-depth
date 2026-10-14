@@ -90,6 +90,9 @@ const SPELL_RUNE := EnemyAi.Spell.RUNE
 const STATE_STAGGERED := BossAi.STAGGERED
 ## v0.8.0 BA: a boss in its phase gate (BossGates; boss_gate_permille), for its roar.
 const STATE_GATE := BossAi.GATE
+## v0.8.0 BS1 (S3): an egg waiting, and bursting (BossSignatures).
+const STATE_EGG := BossSignatures.EGG
+const STATE_EGG_BURST := BossSignatures.EGG_BURST
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -1302,6 +1305,47 @@ func boss_pattern(i: int) -> Dictionary:
 ## (sim-plane points), progress 0..1, progress a tick]; they land as fireballs where `to` is (BossDodge.rain_drops).
 func boss_rain(i: int) -> Array:
 	return BossDodge.rain_drops(_w, i)
+
+
+## v0.8.0 BS1 (owner O5, S1): the Gatekeeper's standing pillars (walls while they stand): [center, half side (m),
+## the tick it rose, the tick it sinks] each, for StoneSpikeViews.
+func boss_pillars() -> Array:
+	var out := []
+	var bs := _w.bosses
+	for k in bs.pillar_x.size():
+		out.append(
+			[
+				Vector2(bs.pillar_x[k], bs.pillar_y[k]),
+				bs.pillar_h[k],
+				bs.pillar_from[k],
+				bs.pillar_until[k]
+			]
+		)
+	return out
+
+
+## v0.8.0 BS1 (S2): the javelins boss i has stuck in the floor: [at, angle out (1/4096 turns), the tick it stuck,
+## the tick it flies back] each (BossSignatures.javelins_of).
+func boss_javelins(i: int) -> Array:
+	return BossSignatures.javelins_of(_w, i)
+
+
+## v0.8.0 BS1 (S2): boss i's recall, for its pull: 0..1000 from its first javelin sticking to their flight back
+## (1000 on that tick), or -1 with none stuck.
+func boss_recall_permille(i: int) -> int:
+	var from := 1 << 30
+	var back := -1
+	for j: Array in BossSignatures.javelins_of(_w, i):
+		from = mini(from, int(j[2]))
+		back = maxi(back, int(j[3]))
+	if back < 0:
+		return -1
+	return clampi((_w.tick - from) * 1000 / maxi(1, back - from), 0, 1000)
+
+
+## v0.8.0 BS1 (S3): actor i is a Brood Mother's egg: its time to hatch or burst 0..1000 (1000 bursting), else -1.
+func actor_egg_permille(i: int) -> int:
+	return BossSignatures.egg_permille(_w, i)
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

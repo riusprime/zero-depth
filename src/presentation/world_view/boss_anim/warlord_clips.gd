@@ -38,6 +38,7 @@ static func library() -> Dictionary:
 			_flood(),
 			_charge(),
 			_barrage(),
+			_recall(),  # v0.8.0 BS1 (S2)
 			_shielded(),
 			_flinch(),
 			_stagger(),
@@ -283,6 +284,32 @@ static func _barrage() -> BossClip:
 	c.turn(&"L_Thigh", Z, [[0, 0], [0.4, 0.35], [0.5, 0.4], [0.62, 0.35], [1, 0]])
 	c.turn(&"R_Thigh", Z, [[0, 0], [0.4, -0.3], [0.5, -0.2], [1, 0]])
 	c.turn(&"L_Upperarm", X, [[0, 0], [0.4, 0.45], [0.5, 0.2, IN3], [1, 0]])
+	return c
+
+
+## v0.8.0 BS1 (owner O5, S2): the recall, timed 0..1 from its first javelin sticking to their flight back
+## (BossAvatar._recall): planted on braced legs behind its shield, it reaches its empty spear hand out toward the
+## javelins in the floor, straining harder (the tremble) as the recall nears, then yanks the arm back to its chest
+## with a twist of the whole body on the tick they fly (1.0), and holds the pull while they come home.
+static func _recall() -> BossClip:
+	var c := BossClip.new(&"recall")
+	c.turn(
+		&"R_Upperarm",
+		Z,
+		[[0, 0.9], [0.15, 1.5, OUT], [0.82, 1.6], [0.92, 1.8, OUT], [0.97, -0.35, IN3], [1, -0.25]]
+	)
+	c.turn(&"R_Upperarm", X, [[0, -0.1], [0.82, -0.15], [0.97, 0.25, IN3], [1, 0.2]])
+	c.turn(&"R_Forearm", Z, [[0, 0.1], [0.82, 0.12], [0.97, 1.25, IN3], [1, 1.15]])
+	c.turn(&"R_Hand", Z, [[0, -1.0], [0.15, -1.3, OUT], [0.92, -1.4], [0.97, 0.5, IN3], [1, 0.4]])
+	c.turn(&"Spine01", Y, [[0, 0.05], [0.82, 0.14], [0.97, -0.4, IN3], [1, -0.32]])
+	c.turn(&"Spine01", Z, [[0, -0.06], [0.82, -0.14], [0.97, 0.2, IN3], [1, 0.16]])
+	c.shift(B, FWD, [[0, 0], [0.82, 0.05], [0.97, -0.14, IN3], [1, -0.1]])
+	c.shift(B, UP, [[0, -0.04], [0.82, -0.07], [0.97, -0.02], [1, -0.03]])
+	c.turn(&"L_Thigh", Z, [[0, 0.3], [1, 0.3]])
+	c.turn(&"L_Calf", Z, [[0, -0.35], [1, -0.35]])
+	c.turn(&"R_Thigh", Z, [[0, -0.22], [0.97, -0.3], [1, -0.28]])
+	c.turn(&"L_Upperarm", Z, [[0, 0.25], [1, 0.25]])  # the shield kept up in front
+	c.param(&"tremble", [[0, 0], [0.55, 0], [0.9, 0.55, LIN], [0.93, 0], [1, 0]])
 	return c
 
 

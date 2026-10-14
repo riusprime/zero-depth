@@ -65,6 +65,8 @@ var fireballs := FireballViews.new()
 var boss_shields := BossShieldView.new()
 ## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes strike as rows of stone spikes.
 var spikes := StoneSpikeViews.new()
+## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
+var signatures := BossSignatureViews.new()
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -122,6 +124,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(fireballs)  # v0.7.5 BF1
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
+	add_child(signatures)  # v0.8.0 BS1
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -198,6 +201,7 @@ func sync() -> void:
 	fireballs.sync(reader)  # v0.7.5 BF1
 	boss_shields.sync(reader)
 	spikes.sync(reader)  # v0.8.0 AV
+	signatures.sync(reader)  # v0.8.0 BS1
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

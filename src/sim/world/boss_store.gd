@@ -70,6 +70,26 @@ var arena := Rect2()
 ## Locked points, MAX_PTS per boss: [x, y] spots, or a lane's length in x.
 var pts_x := PackedFloat32Array()
 var pts_y := PackedFloat32Array()
+## v0.8.0 BS1 (owner O5; BossSignatures): the signature mechanics' standing pieces, lists of their own (not per
+## boss entry; each names its boss's actor id). Empty until a fight raises one, and hashed only then, so every
+## fight before BS1 hashes as before (WorldSnapshot.ADDED_SINCE_V05 lists them: an older save has none).
+## S1, the Gatekeeper's stone pillars: centre, half side (metres), the tick each rose and the tick it sinks. Each is
+## also a wall (World.walls, as a barrier) while it stands.
+var pillar_x := PackedFloat32Array()
+var pillar_y := PackedFloat32Array()
+var pillar_h := PackedFloat32Array()
+var pillar_from := PackedInt32Array()
+var pillar_until := PackedInt32Array()
+var pillar_boss := PackedInt32Array()
+## S2, the Warlord's javelins stuck in the floor: where each stopped, the angle it flew out along (1/4096 turns),
+## its boss's actor id, the boss attack that threw it, the tick it stuck and the tick it flies back.
+var jav_x := PackedFloat32Array()
+var jav_y := PackedFloat32Array()
+var jav_a := PackedInt32Array()
+var jav_boss := PackedInt32Array()
+var jav_attack := PackedInt32Array()
+var jav_from := PackedInt32Array()
+var jav_back := PackedInt32Array()
 
 
 func size() -> int:
@@ -131,3 +151,44 @@ func hash_into(h: StateHasher) -> void:
 	h.add_f32s(dash_y)
 	for v in [arena.position.x, arena.position.y, arena.size.x, arena.size.y]:
 		h.add_f32(v)
+	if pillar_x.size() + jav_x.size() > 0:
+		_hash_signatures(h)
+
+
+## v0.8.0 BS1: the pillars and javelins, only while any stands (and a sentinel between the two lists).
+func _hash_signatures(h: StateHasher) -> void:
+	h.add_f32s(pillar_x)
+	h.add_f32s(pillar_y)
+	h.add_f32s(pillar_h)
+	h.add_ints(pillar_from)
+	h.add_ints(pillar_until)
+	h.add_ints(pillar_boss)
+	h.add_int(-1)
+	h.add_f32s(jav_x)
+	h.add_f32s(jav_y)
+	for f in [jav_a, jav_boss, jav_attack, jav_from, jav_back]:
+		h.add_ints(f)
+
+
+## v0.8.0 BS1: removes pillar k.
+func remove_pillar(k: int) -> void:
+	for f: StringName in [&"pillar_x", &"pillar_y", &"pillar_h"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
+	for f: StringName in [&"pillar_from", &"pillar_until", &"pillar_boss"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)
+
+
+## v0.8.0 BS1: removes javelin k.
+func remove_javelin(k: int) -> void:
+	for f: StringName in [&"jav_x", &"jav_y"]:
+		var af: PackedFloat32Array = get(f)
+		af.remove_at(k)
+		set(f, af)
+	for f: StringName in [&"jav_a", &"jav_boss", &"jav_attack", &"jav_from", &"jav_back"]:
+		var ai: PackedInt32Array = get(f)
+		ai.remove_at(k)
+		set(f, ai)

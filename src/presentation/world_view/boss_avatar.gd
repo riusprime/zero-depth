@@ -47,6 +47,9 @@ const DEFAULT_ACTIVE_TICKS := 6
 const DEFAULT_RECOVER_TICKS := 60
 const STAGGER_CLIP_SECONDS := 1.2
 const SHIELD_CLIP_SECONDS := 0.4
+## v0.8.0 BS1 (S2): the clip a boss plays while its javelins stand in the floor (WarlordClips), timed 0..1 by the
+## recall (WorldReader.boss_recall_permille).
+const RECALL_CLIP := &"recall"
 ## Where the owner's boss models go (PLAN v0.3.0 L10): assets/models/bosses/<model_id()>.glb.
 const MODEL_DIR := "res://assets/models/bosses/"
 ## The weak point's core (BX): its colour and its glow at full.
@@ -133,6 +136,9 @@ var _unhide_tick := -1
 var _was_hidden := false
 var _stagger_secs := 0.0
 var _shield_t := 0.0
+## v0.8.0 BS1 (S2): the recall's progress 0..1 while the boss's javelins stand in the floor (held at 1 while they fly
+## back, through the rest of the attack), -1 with none; its "recall" clip then plays instead of the attack's.
+var _recall := -1.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to every body piece.
@@ -213,6 +219,7 @@ func sync(reader: WorldReader, i: int) -> void:
 			"aim": bearing(reader.actor_pos(i), reader.actor_facing(i), reader.player_pos()),
 			"shielded": reader.boss_shielded(i),  # v0.7.5 BF1: its signature pattern (the shell and the pose)
 			"attack_ticks": reader.boss_attack_ticks(i),  # v0.8.0 BA: the clip's timing
+			"recall": reader.boss_recall_permille(i) / 1000.0,  # v0.8.0 BS1: the javelins' pull
 			"gate": reader.boss_gate_permille(i) / 1000.0,
 			"intro": reader.boss_intro_permille(i) / 1000.0,
 		}
@@ -259,6 +266,16 @@ func apply_state(s: Dictionary) -> void:
 		_attack_shielded = true
 	_clip_move = raw_move
 	_attack_ticks = s.get("attack_ticks", Vector4i.ZERO)
+	# v0.8.0 BS1 (S2): the recall starts a new clip (crossfaded); it holds its pull while the javelins fly back.
+	var recall: float = s.get("recall", -1.0)
+	if recall >= 0.0:
+		if _recall < 0.0:
+			_attack_serial += 1
+		_recall = recall
+	elif _recall >= 0.0 and state != WorldReader.STATE_ACTIVE:
+		_recall = -1.0
+	elif _recall >= 0.0:
+		_recall = 1.0
 	_gate = s.get("gate", -1.0)
 	_intro = s.get("intro", -1.0)
 	_since_sync = 0.0
@@ -655,7 +672,11 @@ func _animate(dt: float) -> void:
 	)
 	var clip_name := BossAnimator.clip_name_for(_clip_move, _attack_shielded, an.clips)
 	var c := an.clips.get(clip_name) as BossClip
-	an.drive_action(clip_name, _attack_serial, clip_time(c) if c != null else 0.0, attacking, dt)
+	var t := clip_time(c) if c != null else 0.0
+	if _recall >= 0.0 and an.has_clip(RECALL_CLIP):  # v0.8.0 BS1 (S2): the pull, timed by the recall
+		clip_name = RECALL_CLIP
+		t = _recall
+	an.drive_action(clip_name, _attack_serial, t, attacking, dt)
 	var variant := String(clip_name).ends_with(BossAnimator.SHIELDED_SUFFIX)
 	an.set_layer(
 		BossAnimator.SHIELD, &"shielded", _shield_t, 0.0 if variant or _dying else _shield_hold

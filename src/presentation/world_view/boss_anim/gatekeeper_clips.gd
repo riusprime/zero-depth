@@ -217,7 +217,8 @@ static func _marks() -> BossClip:
 
 
 ## The Shock Lanes: it twists away with its right fist wound far up and back, the left arm thrown out for balance,
-## then whips round and drives the fist into the floor in front of it on a wide, low stance.
+## then whips round and drives the fist into the floor in front of it on a wide, low stance. v0.8.0 BS1 (S1): as it
+## recovers it heaves both arms up, palms rising, raising the stone pillars that stay along the lanes.
 static func _row_lanes() -> BossClip:
 	var c := BossClip.new(&"row_lanes")
 	c.turn(
@@ -232,7 +233,8 @@ static func _row_lanes() -> BossClip:
 			[0.525, 0.15, OUT3, S],
 			[0.565, 2.6],
 			[0.62, 0.35, IN3],
-			[0.75, 0.4],
+			[0.72, 1.25, OUT],
+			[0.84, 1.1],
 			[1, 0]
 		]
 	)
@@ -247,7 +249,11 @@ static func _row_lanes() -> BossClip:
 		[[0, 0], [0.42, 0.9], [0.5, -0.2, IN3], [0.565, 0.8], [0.62, -0.2, IN3], [1, 0]]
 	)
 	c.turn(&"arm_l", X, [[0, 0], [0.42, 1.1], [0.5, 0.7, IN3], [0.62, 0.7], [1, 0]])
-	c.turn(&"arm_l", Z, [[0, 0], [0.42, -0.3], [0.5, 0.5, IN3], [0.62, 0.5], [1, 0]])
+	c.turn(
+		&"arm_l",
+		Z,
+		[[0, 0], [0.42, -0.3], [0.5, 0.5, IN3], [0.62, 0.5], [0.72, 1.1, OUT], [0.84, 0.95], [1, 0]]
+	)
 	c.turn(
 		&"torso",
 		Y,

@@ -30,6 +30,9 @@ var dist := PackedInt32Array()
 ## Connected region per free cell (-1 for blocked), labelled once from the static walls. A blink may only land in
 ## the region the player stands in, so it never ends in the void outside the floor.
 var region := PackedInt32Array()
+## v0.8.0 BS1 (owner O5, S1): cells blocked for a while on top of the walls (the Gatekeeper's standing pillars), by
+## the same clearance rule; the flood goes round them. Empty = none. set_extra sets it; a build clears it.
+var extra := PackedByteArray()
 var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()
 ## v0.4.0 SC: the goal cell and step bound of the last flood (x = -1: none since the last build). A flood from the
@@ -39,6 +42,7 @@ var _flooded := Vector3i(-1, -1, -1)
 
 func build(walls: Array[Obb]) -> void:
 	_flooded = Vector3i(-1, -1, -1)
+	extra = PackedByteArray()
 	if walls.is_empty():
 		size = Vector2i.ZERO
 		return
@@ -65,6 +69,27 @@ func build(walls: Array[Obb]) -> void:
 	dist.fill(UNREACHED)
 	_label_regions()
 	_build_adjacency()
+
+
+## v0.8.0 BS1 (S1): blocks the cells these boxes cover (grown by CLEARANCE, as build) on top of the walls, replacing
+## the last set (empty: none). The next flood runs again.
+func set_extra(boxes: Array[Obb]) -> void:
+	_flooded = Vector3i(-1, -1, -1)
+	if boxes.is_empty() or size == Vector2i.ZERO:
+		extra = PackedByteArray()
+		return
+	extra.resize(size.x * size.y)
+	extra.fill(0)
+	for w in boxes:
+		var b := w.bounds().grow(CLEARANCE)
+		var c0 := cell_of(b.position)
+		var c1 := cell_of(b.end)
+		for y in range(maxi(c0.y, 0), mini(c1.y, size.y - 1) + 1):
+			for x in range(maxi(c0.x, 0), mini(c1.x, size.x - 1) + 1):
+				var k := y * size.x + x
+				if extra[k] == 0:
+					if Collide.circle_vs_obb(center(Vector2i(x, y)), CLEARANCE, w) != Vector2.ZERO:
+						extra[k] = 1
 
 
 ## The reference build (every wall at every cell), kept for the test that the fast build matches it. Kept on
@@ -173,6 +198,7 @@ func flood(goal: Vector2, max_steps: int = UNREACHED) -> void:
 	dist[queue[0]] = 0
 	var tail := 1
 	var head := 0
+	var open := extra.is_empty()  # v0.8.0 BS1: no standing pillars (the common case: no extra test)
 	while head < tail:
 		var k := queue[head]
 		head += 1
@@ -181,7 +207,7 @@ func flood(goal: Vector2, max_steps: int = UNREACHED) -> void:
 			break
 		for j in range(_adj_start[k], _adj_start[k + 1]):
 			var nk := _adj[j]
-			if dist[nk] == UNREACHED:
+			if dist[nk] == UNREACHED and (open or extra[nk] == 0):
 				dist[nk] = nd
 				queue[tail] = nk
 				tail += 1

@@ -11,7 +11,8 @@ extends GutTest
 
 const DT := 1.0 / 60.0
 ## Clips that end on a held pose rather than at rest.
-const HELD_ENDS: Array[StringName] = [&"shielded", &"stagger", &"death"]
+## v0.8.0 BS1: the Warlord's recall holds its pull while the javelins fly back (BossAvatar._recall).
+const HELD_ENDS: Array[StringName] = [&"shielded", &"stagger", &"death", &"recall"]
 
 var classes := {
 	&"gatekeeper": GatekeeperAvatar,
