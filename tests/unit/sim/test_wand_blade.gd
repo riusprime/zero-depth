@@ -122,7 +122,8 @@ func test_b4_whirl_spins_every_slash() -> void:
 func test_b5_double_slash_repeats_mirrored() -> void:
 	var w := _fight([&"double_slash"])
 	assert_eq(_step(w).repeat_delay_ticks, 9, "0.15 s later")
-	assert_eq(_step(w).repeat_damage_permille, 600)
+	assert_eq(_step(w).repeat_damage_permille, 700, "v0.8.0 BL (B1): each repeat 70 %")
+	assert_eq(_step(w).repeats, 1, "level 1: one repeat (B1: +1 a level, test_blade_combos.gd)")
 	assert_eq(_step(w).echo_mirror, 1, "mirrored")
 	var r := _run(w)
 	assert_gt(int(r["effects"].get(ItemEffects.EFFECT_TWIN_ARC, 0)), 0, "the repeat lands")

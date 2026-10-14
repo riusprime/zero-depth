@@ -197,6 +197,10 @@ const TAGS: Array[StringName] = [
 ## same face on both weapons. Both or neither.
 @export var name_key_gun: StringName = &""
 @export var desc_key_gun: StringName = &""
+## v0.8.0 BL (saves name items by index): 0 for every card that shipped before v0.8.0. A card added later takes the
+## next wave (v0.8.0 BL's Blade Storm and Riposte Chain: 1); its index comes after every earlier wave's
+## (ModifierCompiler.item_defs), so no index an older save holds moves.
+@export var index_wave := 0
 
 
 func category() -> StringName:
@@ -209,6 +213,8 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
 		)
+	if index_wave < 0 or index_wave > 64:
+		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))
 	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")

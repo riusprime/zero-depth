@@ -37,6 +37,9 @@ const CODE_HOOK_FEED := 48
 const FEED_ORDER: Array[StringName] = [&"burn", &"shock", &"bleed", &"frost", &"slow", &"poison"]
 ## A bolt leaves the muzzle this far past the player's and its own edge.
 const MUZZLE_GAP_M := 0.05
+## v0.8.0 BL: the wand's numbers in a world without World.wand_table (a lab): WandTable's defaults (they mirror
+## data/wand/wand.tres).
+static var _wand_defaults := WandTable.new()
 
 
 ## Runs `spec` with `ctx`. Returns true if it landed a hit (a bolt: true once queued; its hits come in phase 9).
@@ -629,6 +632,8 @@ static func run_hook(
 		return false  # v0.6.0 MX4: Heat Sink Rounds
 	if k.when == AttackHook.WHEN_COUNTER and not BladeForms.countering(w):
 		return false  # v0.6.5 WN4: Counter's wave
+	if k.delay_ticks <= 0 and merged(w, k, at):
+		return false  # v0.8.0 BL (B6): Explosive's blasts past 8 a tick merge
 	var dmg := k.damage_for(parent.base_damage)
 	if k.child.form == AttackSpec.Form.WEAPON and k.damage <= 0:  # v0.6.0 MX4: a share of the weapon's
 		dmg = maxi(1, Modifiers.weapon_damage(w) * k.damage_permille / 1000)
@@ -647,6 +652,29 @@ static func run_hook(
 	var landed := launch(w, k.child, c)
 	w.hook_chain.remove_at(w.hook_chain.size() - 1)
 	return landed
+
+
+## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B6, owner O9 / O11): hook `k` is a merge-tracked blast
+## (WandTable.blast_merge_ids: Explosive's) about to go off at `at`. Past WandTable.blast_merge_after of them this tick,
+## one within its radius of a blast already set off this tick merges into it: it doesn't go off (true; counted in
+## World.blast_merged). A volley's blasts land together, so the 9th and later that overlap add nothing; one farther
+## away still goes off. Below the count nothing changes.
+static func merged(w: World, k: AttackHook, at: Vector2) -> bool:
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	if t.blast_merge_after <= 0 or not t.blast_merge_ids.has(k.id):
+		return false
+	if w.blast_tick != w.tick:
+		w.blast_tick = w.tick
+		w.blast_pos = PackedVector2Array()
+		w.blast_merged = 0
+	if w.blast_pos.size() >= t.blast_merge_after:
+		var r2 := k.child.radius_m * k.child.radius_m
+		for p in w.blast_pos:
+			if (p - at).length_squared() <= r2:
+				w.blast_merged += 1
+				return true
+	w.blast_pos.append(at)
+	return false
 
 
 ## The SimEvent tag bits a hook's child carries: a burst is area, a seeking beam a chain, an arc melee, a bolt or a

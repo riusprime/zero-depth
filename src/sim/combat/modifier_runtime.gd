@@ -16,6 +16,10 @@ extends RefCounted
 ## - Gravity Well's pull.
 ## Every function draws no randomness (EI-05) and runs on the one clock.
 
+## v0.8.0 BL (B1): a spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
+## so Double Slash's five repeats at level 5 come within 0.5 s of the swing).
+const REPEAT_GAP_TICKS := 5
+
 
 ## Counter `key` + 1, returned (an EVERY_NTH hook's launches; a form's hits for an every-N status).
 static func count(w: World, key: String) -> int:
@@ -46,7 +50,24 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 	var flags := ModifierState.FLAG_REPEAT
 	if ctx.origin == w.player_pos():  # the player's own attack comes again from where the player is then
 		flags |= ModifierState.FLAG_AT_PLAYER
-	_queue(w, spec.key, w.tick + spec.repeat_delay_ticks, c, flags, "")
+	for n in maxi(1, spec.repeats):  # v0.8.0 BL (B1): each further repeat REPEAT_GAP_TICKS after the one before
+		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
+
+
+## v0.8.0 BL (BLADE_AUDIT B1, Double Slash +1 repeat a level): a combo step's spec repeats `spec.repeats` times.
+## The first repeat stays the step's own echo (ItemEffects.after_swing, World.echo_*); the others are queued here, each
+## REPEAT_GAP_TICKS after the one before, from where the player is then, at repeat_damage_permille of `dmg`, as the
+## echo's slash (its effect id and mirror). A queued repeat is not cancelled by the next swing.
+static func queue_echoes(w: World, spec: AttackSpec, angle: int, root: int, dmg: int) -> void:
+	if spec.repeats <= 1:
+		return
+	var share := maxi(1, dmg * spec.repeat_damage_permille / 1000)
+	var c := AttackContext.make(
+		w.player_pos(), angle, share, root, SimEvent.TAG_MELEE, ItemEffects.EFFECT_TWIN_ARC
+	)
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_AT_PLAYER
+	for n in range(1, spec.repeats):
+		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
 ## A hook's child that waits (AttackHook.delay_ticks): `c` is its launch context, built when it triggered.

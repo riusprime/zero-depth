@@ -80,13 +80,13 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | # | Card | Changes the spell | You see |
 |---|---|---|---|
 | B1 | Wide Arc | +60° arc, +30 % reach | a huge sweep |
-| B2 | Wave | the slash flies on as a crescent (the shooting sword) | a flying crescent |
-| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents | crescents fanning out |
+| B2 | Wave | the slash flies on as a crescent (the shooting sword); v0.8.0 BL: +1 crescent a level | a flying crescent |
+| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents (+1 a level) | crescents fanning out |
 | B4 | Whirl | every slash becomes a 360° spin | a full spin |
-| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later | a criss-cross |
-| B6 | Thrust | narrow and long: reach ×2, arc ×0.4, +30 % damage | a long stab line |
-| B7 | Heavy | ×1.7 damage and big knockback, −30 % swing speed | slow, crushing arcs |
-| B8 | Flurry | +50 % swing speed, −25 % damage | a blur of slashes |
+| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later; v0.8.0 BL: +1 repeat a level, each 70 % | a criss-cross |
+| B6 | Thrust | narrow and long: reach ×2, arc ×0.4, +30 % damage; v0.8.0 BL: the arc widens from level 3 (×1 at 5) | a long stab line |
+| B7 | Heavy | ×1.7 damage and big knockback, −30 % swing speed; v0.8.0 BL: 10 % less slow a level from level 3 (none at 5) | slow, crushing arcs |
+| B8 | Flurry | +50 % swing speed, −25 % damage; v0.8.0 BL: the loss shrinks from level 3, none at 5 | a blur of slashes |
 | B9 | Fissure | the slash cracks the ground ahead in a line that erupts | a crack line, then an eruption |
 | B10 | Chain Cut | a hit leaps to the next enemy within 4 m (+1 per level) | the slash jumping between enemies |
 | B11 | Parry Edge | the slash destroys enemy shots it touches | sparks off the bullets it cuts |
@@ -95,6 +95,8 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | B14 | Finisher+ | the 4th hit's shockwave doubles and carries every card | a big shockwave |
 | B15 | Orbit Blades | each slash throws off a blade that circles you for 3 s | blades orbiting you |
 | B16 | Counter | a slash within 0.5 s of a dash deals ×2 and is a flying wave | a dash-slash wave |
+| B17 | Blade Storm (v0.8.0 BL) | each slash throws 2 spinning blades that fly out and back (+1 a level) | blades looping out and back |
+| B18 | Riposte Chain (v0.8.0 BL) | a slash that kills slashes again at the next enemy within 4 m: 2 in a chain (+1 a level) | the cut leaping on from a kill |
 
 ### Shared pool: works the same on both
 | # | Card | Effect | You see |
@@ -114,6 +116,11 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | T2 | On Kill | …where an enemy dies |
 | T3 | On End | …where the spell ends (its range, a wall, or the end of the slash) |
 | T4 | On Finisher (Blade) / On Crit (Gun) | …on the combo's 4th hit / on a critical hit |
+
+**v0.8.0 BL** ([`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md), owner 2026-10-14): on a Blade run a
+slash's hit triggers (On Hit, On Kill, On Finisher) cast twice; a wand-card offer weighs the run's own weapon's cards
+×1.5 against the shared ones; Split's splits (and anything cast from Split or Explosive) neither split nor explode
+again, and past 8 Explosive blasts in one tick an overlapping one merges into a blast already set off.
 
 ## Combinations it makes (no hand-made pairs)
 - **Gun:** Spread · Homing · ON HIT · Explosive. A fan of seeking bolts, each exploding on hit.

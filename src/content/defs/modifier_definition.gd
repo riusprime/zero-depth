@@ -178,6 +178,10 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 				&"range", resource_path, "%s: per_level on a numeric op or a hook" % where
 			)
 		)
+	if o.per_level_after < 1 or o.per_level_after > 4:  # v0.8.0 BL (B2): the steps start above 1..4
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "%s: per_level_after is 1..4" % where)
+		)
 
 
 ## v0.6.5 WN1: the modifier is a wand trigger (its op is TRIGGER).

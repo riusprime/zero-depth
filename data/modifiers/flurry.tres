@@ -16,7 +16,8 @@ op = 4
 stage = 3
 field = &"damage"
 value = 750.0
-per_level = 25.0
+per_level = 83.33333
+per_level_after = 2
 
 [resource]
 script = ExtResource("1_mod")

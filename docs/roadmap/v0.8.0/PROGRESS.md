@@ -17,6 +17,7 @@ not in `main` yet).
 | MU | The shard cards are gone: cards, plaques, wand tiles and pips, Codex tiles, achievement rows and toast, the shop, Swap and build picker are carved Ember stone tablets (element-coloured inlay ring round the icon, a groove in the family's colour, a carved rarity gem, a gold rim on epic and legendary, the level badge kept); every menu sits on a stone slab with an ember-lit focused row and an ember diamond; the main menu has its own ember-lit stone backdrop, sparks rising (still under reduced motion); long Spanish sentences reflow clear of the gem; the glow is kept apart from the Hot heat colour. Evidence [MENU](evidence/MENU.md); the look is OWNER ONLY | `c78bdbd` (branch `v080-mu2`) |
 | BS part 1 (S1–S3) | Three bosses each get a mechanic of their own: the Gatekeeper's shock lanes leave stone pillars standing for 6 s, real walls you take cover behind from its rock rings (never on you, never sealing you in); the Warlord's tower shield blocks every hit from the front, so you circle it, and its javelins stick in the floor then all fly back along the same lines; the Brood Mother's eggs sit 3 s to be broken, or they hatch (and in phase 3 burst into acid). Cross Quake, Javelin Rain and the fast Web Spiral are gone. Evidence [BOSS_SIGNATURES_1](evidence/BOSS_SIGNATURES_1.md), shots in `evidence/bs_shots/`; the feel is OWNER ONLY | `e34550e` (branch `v080-bs1`) |
 | AV (part 2) | Every other boss ground attack keeps its dull-then-bright marker but fills it with its own ground (stone cracks, steel scratches, bubbling acid, gold light, hazard stripes, molten seams) instead of flat red, and strikes in 3D on the sim's strike tick: the Gatekeeper's fist slams blow craters and its sweep kicks a dust arc; the Warlord's spears thrust up the lanes, its lunge scorches a skid, its bash swings a steel arc, its javelins plant in the circles; the Brood Mother's eggs cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts; the Hive Lens fires a 3D beam and a ring of light; the Siege Engine's shells fall and explode, its rail streaks and scorches, its shockwave rolls out as dust; the Foundry pours molten metal that cools to a crust, blasts steam and sets lanes burning. Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) part 2 | `2a39c6c` (branch `v080-av2`) |
+| BL | The Blade's cards multiply now: Double Slash adds a repeat a level (5 at level 5, 70 % each), Wave a crescent a level, Split Wave a split a level; Heavy, Flurry and Thrust lose their drawback from level 3 (none at 5); a Blade slash's hit casts On Hit / On Kill / On Finisher twice; two new Blade cards, Blade Storm (returning blades, 2 + 1 a level) and Riposte Chain (a kill slashes on, 2 + 1 a level); offers favour the run's own weapon's cards ×1.5; the Gun's Split shards no longer split or explode and Explosive's blasts past 8 a tick merge. Probe DPS: Gun Spread + Split + Explosive 1,432 → 778 per s, + Twin 1,694 → 1,015; Blade combo 1,870 → 10,304. With Blade Storm the Blade combo is over the frame budget (26.6 ms avg), reported. Evidence [`evidence/BLADE.md`](evidence/BLADE.md); feel OWNER ONLY | this commit (branch `v080-bl`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -30,6 +31,7 @@ not in `main` yet).
 - MU: none (presentation only)
 - BS1: none (no golden fixture holds a boss fight; the new BossStore lists hash only while a pillar or javelin stands; `tests/golden` 2/2 unchanged)
 - AV part 2: none (presentation only; `tests/golden` 2/2 unchanged)
+- BL: none (`tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 unchanged: `AttackSpec.repeats` hashes only when set, the blast-merge marks are per tick and not hashed, no golden case holds a Blade pool card or a mod draw)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -54,6 +56,17 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: BL (agent, branch `v080-bl` from `48c5bf9`): BLADE_AUDIT B1–B7. `AttackSpec.repeats` (LATE_INT_FIELDS,
+  hashed only when set), `ModifierRuntime.queue_echoes`; `ModifierOp.per_level_after`; `WandCompile` B3 double casts
+  and B6 `once_more`; `Attacks.merged` (+ `World.blast_*` in `ADDED_SINCE_V05`); `ItemPool.card_weight` (B5,
+  `RewardsDefinition.own_weapon_card_permille`); `WandDefinition` B3/B6 fields; `ItemDefinition.index_wave` (new
+  cards index last); `blade_storm`, `riposte_chain` (data, en + es, `BladeCardIcons`); card texts; perf probe's DPS
+  tally and `--weapon` / `--cards`. SIM_CONTRACTS §8j, CONTENT_SCHEMA, WAND.md. Run locally: lint clean (859 files);
+  new `test_blade_combos.gd` 20/20; content + arch + golden 126/126; application + debug + golden 105/105; wand/modifier
+  sim files 97/97 and 271/277 then the 6 fixed (counts, lists, one queue bound) 86/86; presentation 55/55; e2e 10
+  files 13/13. The machine restarted mid-run; the cut-off runs were re-run. Not run locally: the full suite, seams.
+  Missed: the Gun's DPS fell ~45 %, not "an order"; the Blade Storm combo is over the frame budget (26.6 ms avg).
+  Feel: OWNER ONLY.
 - 2026-10-14: MU (agent, branch `v080-mu2` from `bace713`): direction B "Ember stone" shipped (owner G2 "menu style
   B"). New `src/presentation/theme/` `EmberStone` (tokens, the grain made from noise), `StoneBox` (the carved slab
   style box), `InlaySocket`, `TextFit`; `StoneCard` replaces `CrystalCard`; `PlaqueBox` / `Plaques`, `MenuStyle`,

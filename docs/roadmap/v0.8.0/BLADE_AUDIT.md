@@ -1,4 +1,4 @@
-# G1: Blade combinations against the Gun's (v0.8.0 O10; status: approved by the owner 2026-10-14)
+# G1: Blade combinations against the Gun's (v0.8.0 O10; status: approved by the owner 2026-10-14; built in Step BL)
 
 Owner, 2026-10-14: "the combinations for gun are way better than the combinations for blade. Blade is way more
 difficult to get a good, you know, combination of items. And the, I haven't tried them yet, but... Feels like
@@ -39,10 +39,10 @@ Numbers are starting values; the owner judges the feel in the Playground (DPS me
 ## Decisions (owner, date)
 | Row | Answer | Built in |
 |---|---|---|
-| B1 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B2 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B3 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B4 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B5 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B6 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
-| B7 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | |
+| B1 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B2 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B3 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B4 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B5 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B6 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL (`v080-bl`; [`evidence/BLADE.md`](evidence/BLADE.md)) |
+| B7 | Yes, as proposed (owner, 2026-10-14: "blade audit … OK") | Step BL: kept, nothing to build |

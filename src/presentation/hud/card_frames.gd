@@ -144,6 +144,9 @@ const FAMILY_OF := {
 	&"split_wave": &"projectile",
 	&"thrust": &"damage",
 	&"whirl": &"area",
+	# v0.8.0 BL (BLADE_AUDIT B4): the Blade's two multiplier cards
+	&"blade_storm": &"trinket",
+	&"riposte_chain": &"damage",
 	# Stat cards
 	&"area": &"area",
 	&"armour": &"economy",

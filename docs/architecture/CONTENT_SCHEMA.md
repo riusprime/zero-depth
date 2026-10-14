@@ -425,6 +425,16 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `ELEMENT storm`; Serrated Edge `STATUS bleed 1`, `ELEMENT bleed`; Barbed Bolts `STATUS bleed 1 every 2`,
   `ELEMENT bleed`; Glacial Edge `STATUS frost 1`, `ELEMENT frost`; Ember Edge `STATUS burn 1`, `ELEMENT ember`.
   Melee ones target `[weapon, melee]`, bolt ones `[weapon, projectile]`, so none touches the Skills (as in v0.5).
+- **v0.8.0 BL: Blade combinations** (G1 [`../roadmap/v0.8.0/BLADE_AUDIT.md`](../roadmap/v0.8.0/BLADE_AUDIT.md); sim side
+  [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8j). `ModifierOpDefinition.per_level_after: int` (default 1, 1..4 else
+  `range`): `per_level` counts only for the levels above it (2: from level 3 on; Heavy's slowdown, Flurry's damage loss,
+  Thrust's arc). New op field `repeats` (PATTERN; Double Slash: its level). `WandDefinition`: `blade_hit_casts` (2,
+  1..3), `blade_cast_gap_seconds` (0.1, 0..1), `once_per_line` (`split_shot`, `shared_explosive`), `blast_merge_after`
+  (8, 0..256), `blast_merge_ids` (`shared_explosive`). `RewardsDefinition.own_weapon_card_permille` (1500, positive).
+  `ItemDefinition.index_wave: int` (0..64, default 0): the cards of a later wave index after every earlier wave's
+  (`ModifierCompiler.item_defs`), so a card added to a pool never moves a saved index. Shipped: `blade_storm` (rare)
+  and `riposte_chain`, `WAND` items of the Blade pool, `index_wave` 1. 86 modifiers, 98 items. Every number is a
+  starting value.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's

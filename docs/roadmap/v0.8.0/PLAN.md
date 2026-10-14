@@ -123,7 +123,7 @@ Answers go into the "Owner decisions" table below the same day.
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | Done (`v080-ba`: keyframed clips per boss, timed by the sim's attack phase; [`evidence/BOSS_ANIMATIONS.md`](evidence/BOSS_ANIMATIONS.md)) |
 | BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Done: part 1 (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2 (`v080-av2`: every other boss ground attack's styled marker and 3D strike, `BossStrikeLooks` / `BossStrikeViews`) |
-| BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
+| BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | Done (`v080-bl`: B1–B7; Gun build −40-46 % DPS in the probe, Blade combo ×5.5; Blade Storm build over the frame budget, reported: [`evidence/BLADE.md`](evidence/BLADE.md)) |
 | RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Part 1 done (system + 3 layouts); G2 asked |
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |

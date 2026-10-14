@@ -96,6 +96,8 @@ const FIELD_STAGE := {
 	&"carry": [3, &"carry", ""],
 	&"knockback_m": [3, &"knockback_m", ""],
 	&"line_m": [5, &"line_m", ""],
+	# v0.8.0 BL (BLADE_AUDIT B1: Double Slash +1 repeat a level)
+	&"repeats": [1, &"repeats", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -140,6 +142,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.6.5 WN3 (WAND.md rule 6, a duplicate levels the card up 1–5): added to `value` per level above 1, in the same
 ## units (a numeric op; a HOOK op: to hook_damage_permille). 0 = the op is the same at every level.
 @export var per_level := 0.0
+## v0.8.0 BL (BLADE_AUDIT B2): per_level counts only for the levels above this one (1: from level 2, as before; 2: from
+## level 3 on, so a drawback stays whole at levels 1 and 2 and shrinks from 3).
+@export var per_level_after := 1
 ## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
 ## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
 @export var hook_casts := 1

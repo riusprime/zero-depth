@@ -32,8 +32,9 @@ const POOL_MIN := 40
 ## data + 0 planned ([]) = 59". On the WN5b branch alone: 55 (Blade) / 53 (Gun). Per build: 3 abilities (the weapon,
 ## Blink, Aegis), 18 stat cards, the weapon's 16 wand cards, the passives that take no slot (13 Blade, 11 Gun) and,
 ## with WN5a, the 7 shared cards and the 4 triggers. Not pruned past WAND.md; the owner's target was 40–50
-## (PROGRESS v0.6.5 "Gates": the owner decides).
-const POOL_MAX := 61
+## (PROGRESS v0.6.5 "Gates": the owner decides). v0.8.0 BL: + the Blade's 2 new cards the owner approved (BLADE_AUDIT
+## B4: Blade Storm, Riposte Chain): Blade 63, Gun 59.
+const POOL_MAX := 63
 ## The reachable states the survey rolls from: no card yet, then the four slots filled three ways (so every
 ## ability's mod and both utilities' items can come up).
 const STATES: Array = [

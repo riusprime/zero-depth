@@ -17,6 +17,16 @@ const MAX_SLOTS := 8
 @export var child_size_permille := 600
 @export var child_range_permille := 600
 @export var child_damage_permille := 500
+## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B3): on a Blade run a slash's hit casts a trigger's child spell this
+## many times (1..3), each blade_cast_gap_seconds after the one before.
+@export var blade_hit_casts := 2
+@export var blade_cast_gap_seconds := 0.1
+## v0.8.0 BL (B6): the hook cards (modifier ids) whose children never split or explode again.
+@export var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
+## v0.8.0 BL (B6): past this many blasts of blast_merge_ids in one tick, a blast within its radius of an earlier one
+## merges into it (0 = never).
+@export var blast_merge_after := 8
+@export var blast_merge_ids: Array[StringName] = [&"shared_explosive"]
 
 
 func category() -> StringName:
@@ -56,4 +66,12 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s is outside 1..10000" % pair[0])
 			)
+	if blade_hit_casts < 1 or blade_hit_casts > 3:  # v0.8.0 BL
+		issues.append(ValidationIssue.new(&"range", resource_path, "blade_hit_casts is 1..3"))
+	if blade_cast_gap_seconds < 0.0 or blade_cast_gap_seconds > 1.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "blade_cast_gap_seconds is 0..1")
+		)
+	if blast_merge_after < 0 or blast_merge_after > 256:
+		issues.append(ValidationIssue.new(&"range", resource_path, "blast_merge_after is 0..256"))
 	return issues

@@ -118,7 +118,7 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 			MOD:
 				var mw := PackedInt32Array()
 				for idx in pool:
-					mw.append(rare if w.item_tables[idx].rarity == ItemTable.RARE else 1)
+					mw.append(ItemPool.card_weight(w, idx, rare))  # v0.8.0 BL (B5): the weapon's own ×1.5
 				out.append(pool[w.rng_loot.pick_weighted(mw)])
 	return out
 
