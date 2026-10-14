@@ -196,12 +196,48 @@ const MOVES := {
 		],
 		"optional": ["pattern_id", "orb_every_seconds", "bolt_attack", "bolt_every_seconds"],
 	},
+	## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6; BossNemesis): the Nemesis's moves. An optional
+	## `weapon` ("blade", "gun" or "any", the default) keeps an attack to the runs of that weapon.
+	## `count` of the player's own combo steps in order (each its arc and reach; arc_degrees and reach_m without a
+	## combo), stagger_seconds apart, each following the player (stepping in at speed_mps) until the lock, then held.
+	&"mimic_combo":
+	{
+		"shape": 1,
+		"params": ["count", "arc_degrees", "reach_m", "speed_mps", "stagger_seconds"],
+		"optional": ["weapon"],
+	},
+	## `volleys` of the run's ranged form gap_seconds apart down the lines locked at the lock: a Gun run's own shot (its
+	## cards on it), a Blade run's thrown crescents (`count` of them spread_degrees apart when its wand throws none;
+	## speed_mps and radius_m optional).
+	&"mimic_shots":
+	{
+		"shape": 4,
+		"params": ["count", "spread_degrees", "volleys", "gap_seconds"],
+		"optional": ["weapon", "speed_mps", "radius_m"],
+	},
+	## The player's card `card` (0 = the strongest held, then 1, 2) as the Nemesis's own attack: its arc (repeats
+	## stagger_seconds apart), its volley and its blast, tracked then locked.
+	&"card_cast": {"shape": 0, "params": ["card", "stagger_seconds"], "optional": ["weapon"]},
 }
+## v0.8.0 FB3: the runs an attack's `weapon` may name.
+const WEAPONS: Array[String] = ["any", "blade", "gun"]
+## v0.8.0 FB3: the most cards the Nemesis casts (its card_cast attacks' `card` is below it).
+const MAX_CARD_CASTS := 3
 
 ## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
 ## v0.8.0 FB1: the Colossus's combo and spikes (0.5 s locks as shipped).
+## v0.8.0 FB3: and the Nemesis's three.
 const LOCKED_MOVES: Array[StringName] = [
-	&"marks", &"row_lanes", &"grid", &"row_flood", &"combo", &"spike_chase", &"spike_burst"
+	&"marks",
+	&"row_lanes",
+	&"grid",
+	&"row_flood",
+	&"combo",
+	&"spike_chase",
+	&"spike_burst",
+	&"mimic_combo",
+	&"mimic_shots",
+	&"card_cast",
 ]
 ## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
 const MAX_STEPS := 16

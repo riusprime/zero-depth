@@ -22,6 +22,12 @@ static func compile_boss_attack(
 		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.COMBO:  # v0.8.0 FB1: until the slam after its last swing
 		t.active_ticks = maxi(t.active_ticks, t.count * t.mark_gap_ticks + 1)
+	if t.move == BossAttackTable.Move.MIMIC_COMBO:  # v0.8.0 FB3: until its last swing
+		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
+	if t.move == BossAttackTable.Move.MIMIC_SHOTS:  # v0.8.0 FB3: until its last volley
+		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.gap_ticks + 1)
+	if t.move == BossAttackTable.Move.CARD_CAST:  # v0.8.0 FB3: until a card's last arc repeat
+		t.active_ticks = maxi(t.active_ticks, NemesisBuild.ARC_REPEATS_MAX * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.SPIKE_CHASE or t.move == BossAttackTable.Move.SPIKE_BURST:
 		t.active_ticks = maxi(t.active_ticks, (t.steps - 1) * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.CROSS:  # v0.8.0 FB2: the spin, then its window

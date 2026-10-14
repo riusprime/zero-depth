@@ -1081,7 +1081,7 @@ BOSS_COLOSSUS_DESC,"The Hollow Crown's first body: stone fists as big as a man. 
 BOSS_PRISM,The Prism,El Prisma
 BOSS_PRISM_DESC,"The Hollow Crown's second body: a torn figure ringed by floating red crystal shards. She floats at the arena's heart inside the Cross, four beams that turn round the room, reversing, faster as she weakens. Her shards weave rings, spirals and flowers of orbs between the beams and fire quick bolts down a short aim line. She is shielded while the Cross turns: strike in the short windows between its spins. Her strength is measured from your own damage, so she lasts about a minute however strong you are.","El segundo cuerpo de la Corona Hueca: una figura rasgada rodeada de esquirlas de cristal rojo que flotan. Flota en el corazón de la arena dentro de la Cruz, cuatro rayos que giran por la sala, cambian de sentido y aceleran a medida que se debilita. Sus esquirlas tejen anillos, espirales y flores de orbes entre los rayos y disparan proyectiles rápidos por una breve línea de mira. Está protegida mientras la Cruz gira: golpea en las breves ventanas entre giros. Su fuerza se mide a partir de tu propio daño, así que dura un minuto más o menos por fuerte que seas."
 BOSS_NEMESIS,The Nemesis,La Némesis
-BOSS_NEMESIS_DESC,"The Hollow Crown's last body: a small dark hooded figure, your own shadow. Quick and hard to pin down, it slashes up close, dashes across the arena and fires spreads of bolts.","El último cuerpo de la Corona Hueca: una pequeña figura encapuchada y oscura, tu propia sombra. Rápida y difícil de acorralar, ataca de cerca, cruza la arena de una embestida y dispara abanicos de proyectiles."
+BOSS_NEMESIS_DESC,"The Hollow Crown's last body: a small dark hooded figure, your own shadow. It fights with your weapon, dashes when you dash, walks your steps a moment behind you and casts the strongest cards of your wand back at you. Its strength is yours: its health and its blows come from your build.","El último cuerpo de la Corona Hueca: una pequeña figura encapuchada y oscura, tu propia sombra. Lucha con tu arma, se lanza cuando tú te lanzas, repite tus pasos un instante después y te devuelve las cartas más fuertes de tu varita. Su fuerza es la tuya: su vida y sus golpes salen de tu equipo."
 BOSS_HOLLOW_CROWN,The Hollow Crown,La Corona Hueca
 FINAL_ARENA,The Hollow Arena,La Arena Hueca
 FINAL_ARENA_DESC,"A round arena of dark violet stone hung in the star-lit void, red crystal in its veins and its tiers empty. Its great gate is sealed: the only way out is through the Hollow Crown.","Una arena redonda de piedra violeta oscura suspendida en el vacío estrellado, con cristal rojo en sus vetas y sus gradas vacías. Su gran puerta está sellada: la única salida es a través de la Corona Hueca."
@@ -1094,8 +1094,9 @@ CAUSE_PRISM_ORBS,The Prism's orbs caught you between the beams.,Los orbes del Pr
 CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria del Prisma te abrasó.
 CAUSE_PRISM_BOLT,A fast bolt from the Prism's shards struck you.,Un proyectil rápido de las esquirlas del Prisma te alcanzó.
 CAUSE_NEMESIS_SLASH,The Nemesis cut you down.,La Némesis te abatió de un tajo.
-CAUSE_NEMESIS_DASH,The Nemesis dashed through you.,La Némesis te atravesó de una embestida.
-CAUSE_NEMESIS_SHOTS,The Nemesis's bolts caught you.,Los proyectiles de la Némesis te alcanzaron.
+CAUSE_NEMESIS_CRESCENTS,The Nemesis threw your own slash back at you.,La Némesis te devolvió tu propio tajo.
+CAUSE_NEMESIS_CARD,The Nemesis turned one of your own cards against you.,La Némesis usó una de tus propias cartas contra ti.
+CAUSE_NEMESIS_SHOTS,The Nemesis shot you with your own gun.,La Némesis te disparó con tu propia arma.
 ACH_FINAL_BOSS_NAME,Crown Breaker,Rompecoronas
 ACH_FINAL_BOSS_DESC,"Beat the Hollow Crown, the final boss.","Derrota a la Corona Hueca, el jefe final."
 ACH_FINAL_NO_HIT_NAME,Untouched,Intocable

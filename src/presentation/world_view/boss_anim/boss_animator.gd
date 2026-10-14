@@ -54,6 +54,9 @@ const MOVE_CLIPS := {
 	WorldReader.MOVE_SPIKE_CHASE: &"spike_chase",
 	WorldReader.MOVE_SPIKE_BURST: &"spike_burst",
 	WorldReader.MOVE_CROSS: &"cross",  # v0.8.0 FB2: the Prism
+	WorldReader.MOVE_MIMIC_COMBO: &"mimic_combo",  # v0.8.0 FB3: the Nemesis (a slash, a shot, a cast)
+	WorldReader.MOVE_MIMIC_SHOTS: &"mimic_shots",
+	WorldReader.MOVE_CARD_CAST: &"card_cast",
 }
 ## The clips every boss has besides its moves'.
 const COMMON: Array[StringName] = [

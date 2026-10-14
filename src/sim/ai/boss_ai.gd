@@ -32,6 +32,7 @@ extends RefCounted
 ## whose segment ran out shatters (FinalBoss.SHATTER): it stands still, invulnerable, until FinalBoss replaces it.
 ## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): the Prism's `cross` (BossPrism: the turning beams, her shards' orbs and bolts, the
 ## window between spins); a body with a Cross floats home instead of pursuing (BossPrism.drift).
+## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): a mimic body (the Nemesis) is BossNemesis's: its dash, stance and three moves.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -105,6 +106,8 @@ static func think(w: World, i: int) -> void:
 	BossChallenge.think(w, i, b, t)
 	if a.state[i] != STAGGERED:
 		bs.meter[b] = maxi(0, bs.meter[b] - t.stagger_decay_milli)
+	if t.mimic and w.final_fight != null:  # v0.8.0 FB3: the build read, a dash due, the stance's clock
+		BossNemesis.think(w, i, t)
 	var to_player := w.player_pos() - a.pos(i)
 	var aim := Kin.angle_of(to_player)
 	match a.state[i]:
@@ -133,7 +136,7 @@ static func think(w: World, i: int) -> void:
 			elif gap >= 0:
 				start_attack(w, i, gap)
 				bs.gap_t[b] = 0
-			elif not w.player_dead() and a.cd[i] == 0:
+			elif not w.player_dead() and a.cd[i] == 0 and not BossNemesis.dashing(w, i):
 				var k := _choose(w, b, t, Kin.length(to_player))
 				if k >= 0:
 					start_attack(w, i, k)
@@ -149,6 +152,8 @@ static func think(w: World, i: int) -> void:
 				BossColossus.combo_think(w, i, atk, a.state_t[i])
 			elif atk.move == M.SPIKE_CHASE:  # v0.8.0 FB1: the chasing spikes are laid
 				BossColossus.chase_think(w, i, b, atk, a.state_t[i])
+			elif BossNemesis.is_move(atk.move):  # v0.8.0 FB3: its swing, lines and card follow, then lock
+				BossNemesis.think_attack(w, i, b, atk, a.state_t[i])
 			elif tracking(w, i, t, atk):  # v0.3.5 AI (F3): aim follows the player until it commits
 				_track(w, i, b, atk)
 			if a.state_t[i] >= atk.windup_ticks:
@@ -166,6 +171,8 @@ static func think(w: World, i: int) -> void:
 				BossColossus.combo_think(w, i, atk, atk.windup_ticks + a.state_t[i])
 			elif atk.move == M.SPIKE_CHASE:
 				BossColossus.chase_think(w, i, b, atk, atk.windup_ticks + a.state_t[i])
+			elif BossNemesis.is_move(atk.move):  # v0.8.0 FB3: each later swing follows, then locks
+				BossNemesis.think_attack(w, i, b, atk, atk.windup_ticks + a.state_t[i])
 			_think_active(w, i, b, atk)
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
@@ -173,6 +180,7 @@ static func think(w: World, i: int) -> void:
 				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = atk.cooldown_ticks * t.phase_cd_permille[bs.phase[b]] / 1000
 				bs.attack[b] = -1
+				BossNemesis.after_attack(w, i, atk)  # v0.8.0 FB3: after a combo it backs off
 
 
 static func _think_active(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -285,6 +293,8 @@ static func _choose(w: World, b: int, t: BossTable, dist: float) -> int:
 			continue
 		if atk.move == M.BROOD and _alive_of(w, atk.enemy_kind) >= atk.max_alive:
 			continue
+		if t.mimic and not BossNemesis.allowed(w, atk):  # v0.8.0 FB3: the run's weapon, the cards held
+			continue
 		open.append(k)
 	if open.size() > 1 and open.has(bs.last_attack[b]):
 		open.remove_at(open.find(bs.last_attack[b]))
@@ -378,6 +388,8 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			BossPrism.lock(w, i, b)
 		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: no chase line has stopped yet
 			BossColossus.spikes_lock(w, b)
+		M.MIMIC_COMBO, M.MIMIC_SHOTS, M.CARD_CAST:  # v0.8.0 FB3: at the player; a card's blast on them
+			BossNemesis.lock(w, i, b, atk)
 
 
 ## True while boss i's windup still follows the player (v0.3.5 AI, F3): an aimed move, before its last
@@ -441,6 +453,8 @@ static func move(w: World, i: int) -> void:
 	var slow := ItemProcs.slow_factor(w, i)
 	if BossPrism.floats(w, i):  # v0.8.0 FB2: the Prism floats home, whatever she does
 		BossPrism.drift(w, i, slow)
+		return
+	if BossNemesis.moves(w, i, slow):  # v0.8.0 FB3: its dash, its stance, its combo's steps in
 		return
 	match a.state[i]:
 		S.MOVE:
@@ -610,6 +624,8 @@ static func resolve(w: World, i: int) -> void:
 			BossColossus.combo_resolve(w, i, b, atk, st)
 		M.SPIKE_CHASE, M.SPIKE_BURST:  # v0.8.0 FB1: the spikes due erupt
 			BossColossus.spikes_resolve(w, i, b, atk, st)
+		M.MIMIC_COMBO, M.MIMIC_SHOTS, M.CARD_CAST:  # v0.8.0 FB3: its swings, volleys and cards
+			BossNemesis.resolve(w, i, b, atk, st)
 
 
 static func _fire_fan(w: World, i: int, b: int, atk: BossAttackTable) -> void:
@@ -845,6 +861,8 @@ static func telegraph(w: World, i: int) -> Dictionary:
 		return BossColossus.combo_telegraph(w, i, atk)
 	if atk.move == M.SPIKE_CHASE or atk.move == M.SPIKE_BURST:  # v0.8.0 FB1: the spikes showing
 		return BossColossus.spikes_telegraph(w, i, b, atk)
+	if BossNemesis.is_move(atk.move):  # v0.8.0 FB3: a swing, a volley's lines, a card's parts
+		return BossNemesis.telegraph(w, i, b, atk)
 	if atk.move == M.GAZE or atk.move == M.MELT or atk.move == M.CROSS:
 		# v0.8.0 BS2: nothing on the ground here; the eye, its aim line and the beam, and the glowing ring, are drawn
 		# from WorldReader.boss_gaze / boss_melts (BossSignatureViews); v0.8.0 FB2: the Cross from boss_cross
@@ -963,35 +981,6 @@ static func telegraph(w: World, i: int) -> Dictionary:
 	return out
 
 
-## The death recap line for a boss kill: the attack that landed it (World.killer_attack), else the boss's projectile
-## attack for a bolt, else &"".
-static func cause_key(w: World) -> StringName:  # gdlint: ignore=max-returns
-	var t := w.boss_table_of_kind(w.killer_kind)
-	if t == null and w.killer_attack >= BossSignatures.LATE_CAUSE:
-		# v0.8.0 BS2 (S5): a turret's ricochet names the boss that deployed it (its deploy attack's late part)
-		t = _live_table(w)
-		return BossSignatures.late_cause_key(t, w.killer_attack) if t != null else &""
-	if t == null:
-		return &""
-	if w.killer_attack == BossChallenge.ARENA_ATTACK:
-		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
-	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # v0.8.0 BS1: a javelin coming back, an egg's burst
-		return BossSignatures.late_cause_key(t, w.killer_attack)
-	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
-		return t.attacks[w.killer_attack].cause_key
-	for atk in t.attacks:  # v0.7.5 BF1: a fireball's, the boss's first pattern (or bolt fan)
-		if (
-			(atk.move == M.BOLT_FAN or atk.move == M.PATTERN)
-			and w.killer_tags & SimEvent.TAG_PROJECTILE
-		):
-			return atk.cause_key
-	return t.attacks[0].cause_key if not t.attacks.is_empty() else &""
-
-
-## v0.8.0 BS2: the table of the first live boss (the recap of a turret's ricochet), or null.
-static func _live_table(w: World) -> BossTable:
-	for b in w.bosses.size():
-		var i := w.actors.index_of(w.bosses.ids[b])
-		if i >= 0:
-			return table_of(w, i)
-	return null
+## The death recap line for a boss kill (BossCauses.key; v0.8.0 FB3 moved it there, this file's length).
+static func cause_key(w: World) -> StringName:
+	return BossCauses.key(w)

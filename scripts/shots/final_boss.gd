@@ -133,7 +133,7 @@ func _begin(what: StringName) -> void:
 		&"prism_rise":
 			FinalLab.end_segment(_world)
 		&"nemesis":
-			_attack(&"nemesis_slash")
+			_attack(&"nemesis_combo")  # v0.8.0 FB3: the Nemesis's own combo (the stand-in's slash is gone)
 
 
 func _quiet() -> void:

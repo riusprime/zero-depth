@@ -11,7 +11,8 @@ static var _cache := {}
 static var _noise: NoiseTexture2D
 
 
-## The mesh of shape `id`: &"rock", &"gem", &"spear", &"orb", &"glob", &"drop", or &"ribbon" (the trail strip).
+## The mesh of shape `id`: &"rock", &"gem", &"spear", &"orb", &"glob", &"drop", &"crescent" (v0.8.0 FB3: a flying
+## slash, bowed forward across its flight), or &"ribbon" (the trail strip).
 static func get_mesh(id: StringName) -> Mesh:
 	if not _cache.has(id):
 		_cache[id] = _build(id)
@@ -50,7 +51,38 @@ static func _build(id: StringName) -> Mesh:
 			return _sphere(14, 7)
 		&"ribbon":
 			return _ribbon()
+		&"crescent":
+			return _crescent()
 	return _sphere(16, 8)
+
+
+## v0.8.0 FB3: a flying slash: a thin curved blade bowed forward (+x) across its flight, its horns trailing back.
+static func _crescent() -> ArrayMesh:
+	var n := 10
+	var top := []
+	var bot := []
+	for k in n + 1:
+		var a := lerpf(-1.2, 1.2, float(k) / n)
+		var thick := 0.32 * (1.0 - absf(a) / 1.35)
+		var outer := Vector3(cos(a) * 0.8 - 0.3, 0.0, sin(a) * 1.0)
+		var inner := Vector3(cos(a) * (0.8 - thick) - 0.3, 0.0, sin(a) * (1.0 - thick * 0.6))
+		top.append([outer + Vector3(0, 0.06, 0), inner + Vector3(0, 0.06, 0)])
+		bot.append([outer - Vector3(0, 0.06, 0), inner - Vector3(0, 0.06, 0)])
+	var tris := []
+	for k in n:
+		var t0: Array = top[k]
+		var t1: Array = top[k + 1]
+		var b0: Array = bot[k]
+		var b1: Array = bot[k + 1]
+		tris.append([t0[0], t1[0], t1[1]])
+		tris.append([t0[0], t1[1], t0[1]])
+		tris.append([b0[0], b1[1], b1[0]])
+		tris.append([b0[0], b0[1], b1[1]])
+		tris.append([t0[0], b0[0], b1[0]])
+		tris.append([t0[0], b1[0], t1[0]])
+		tris.append([t0[1], t1[1], b1[1]])
+		tris.append([t0[1], b1[1], b0[1]])
+	return AvatarBase.flat_mesh(tris, Vector3.ZERO)
 
 
 ## A faceted chunk of stone: an icosahedron with its corners pushed in and out (fixed, so every stone is the same

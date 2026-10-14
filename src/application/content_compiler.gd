@@ -60,6 +60,15 @@ const BOSS_MOVES := {
 	&"spike_chase": BossAttackTable.Move.SPIKE_CHASE,
 	&"spike_burst": BossAttackTable.Move.SPIKE_BURST,
 	&"cross": BossAttackTable.Move.CROSS,  # v0.8.0 FB2 (the Prism)
+	&"mimic_combo": BossAttackTable.Move.MIMIC_COMBO,  # v0.8.0 FB3 (the Nemesis)
+	&"mimic_shots": BossAttackTable.Move.MIMIC_SHOTS,
+	&"card_cast": BossAttackTable.Move.CARD_CAST,
+}
+## v0.8.0 FB3: a Nemesis attack's `weapon`.
+const ATTACK_WEAPONS := {
+	"any": BossAttackTable.WEAPON_ANY,
+	"blade": BossAttackTable.WEAPON_BLADE,
+	"gun": BossAttackTable.WEAPON_GUN,
 }
 
 
@@ -682,6 +691,8 @@ static func compile_boss_attack(
 	t.cell_m = float(sp.get("cell_m", 0.0))  # v0.7.5 BF3: a grid's cells
 	t.steps = int(sp.get("steps", 1))  # v0.8.0 FB1: the Colossus's spikes
 	t.step_m = float(sp.get("step_m", 0.0))
+	t.weapon = ATTACK_WEAPONS.get(String(sp.get("weapon", "any")), BossAttackTable.WEAPON_ANY)  # FB3
+	t.card = int(sp.get("card", -1))
 	PatternCompiler.compile_boss_attack(def, repo, t)  # v0.7.5 BF1
 	return t
 

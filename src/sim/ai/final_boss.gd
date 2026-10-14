@@ -19,6 +19,9 @@ extends RefCounted
 ## FinalFight's meter) while a body that can be hurt is fought (not rising, gated or shattering, the player alive),
 ## except a body whose own HP comes from the meter (BossTable.dps_hp: the Prism). As such a body rises its HP is set
 ## from the meter (dps_hp_of; SIM_CONTRACTS "The final boss").
+## v0.8.0 FB3 (owner F6, F7 "Nemesis takes its HP and damage from your own build, an even duel"): as a mimic body
+## rises it reads the player's build (NemesisBuild.prepare: its weapon, hit, combo, shot and cards; its HP from the
+## build), and while it fights the fight records the player's path and dashes (BossNemesis.record).
 ## Pure: no stream is drawn.
 
 ## BossAi state of a shattering body: after BossAi.GATE (6) and BossSignatures' egg states (7-9), which the views
@@ -79,6 +82,8 @@ static func advance(w: World) -> void:
 		if f.dps_t >= SimTick.TICKS_PER_SECOND:
 			f.close_second()
 	var a := w.actors
+	if f.shatter_t == 0 and a.dead[i] == 0 and w.boss_tables[f.tables[f.phase]].mimic:
+		BossNemesis.record(w, i)  # v0.8.0 FB3: the echo of the player's path, their dashes
 	if f.shatter_t > 0:
 		f.shatter_t -= 1
 		a.invuln[i] = maxi(a.invuln[i], 2)
@@ -139,6 +144,8 @@ static func _spawn(w: World, phase: int, at: Vector2) -> void:
 		var hp := dps_hp_of(w, t)
 		w.actors.max_hp[i] = hp
 		w.actors.hp[i] = hp
+	if t.mimic:  # v0.8.0 FB3 (F6, F7): the Nemesis reads the build; its HP from it
+		NemesisBuild.prepare(w, w.actors.index_of(f.body_id), t, true)
 	var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, f.body_id, f.body_id, f.body_id, at)
 	e.effect_id = EFFECT_RISE
 	e.amount = phase

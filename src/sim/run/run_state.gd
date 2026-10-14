@@ -182,6 +182,8 @@ func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 		hp_pm = hp_pm * ease / 1000
 		dmg_pm = dmg_pm * ease / 1000
 	for t in tables:
+		if t.mimic:
+			continue  # v0.8.0 FB3 (owner F7): the Nemesis's HP and damage come from the build, which carries the loops
 		t.hp = maxi(1, t.hp * hp_pm / 1000)
 		for a in t.attacks:
 			a.damage = a.damage * dmg_pm / 1000

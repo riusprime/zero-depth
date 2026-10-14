@@ -123,6 +123,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
 	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
 	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
+	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -219,7 +220,34 @@ const ADDED_SINCE_V05 := {
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
-	&"FinalFight": [&"home", &"dps_secs", &"dps_head", &"dps_closed", &"dps_acc", &"dps_t"],
+	# v0.8.0 FB3: the mimic body's state (an FB2 save has none: a fresh one, the build read at the Nemesis's next tick)
+	&"FinalFight":
+	[
+		&"home",
+		&"dps_secs",
+		&"dps_head",
+		&"dps_closed",
+		&"dps_acc",
+		&"dps_t",
+		&"ready",
+		&"weapon",
+		&"hit",
+		&"hit_cap",
+		&"combo_half",
+		&"combo_reach",
+		&"shot",
+		&"casts",
+		&"echo_x",
+		&"echo_y",
+		&"echo_head",
+		&"echo_n",
+		&"dash_due",
+		&"dash_dir",
+		&"dash_t",
+		&"dash_vel",
+		&"stance",
+		&"stance_t",
+	],
 	&"ModifierState":
 	[
 		&"hold_t",  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)
@@ -583,6 +611,8 @@ static func _make(cls: StringName) -> Object:
 			return ArenaState.new()
 		&"FinalFight":
 			return FinalFight.new()
+		&"NemesisCast":
+			return NemesisCast.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 

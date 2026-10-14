@@ -27,7 +27,15 @@ enum Move {
 	SPIKE_CHASE,
 	SPIKE_BURST,
 	CROSS,  # v0.8.0 FB2 (FINAL_BOSS.md F5): the Prism's turning Cross (BossPrism)
+	MIMIC_COMBO,  # v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis's moves (BossNemesis)
+	MIMIC_SHOTS,
+	CARD_CAST,
 }
+
+## v0.8.0 FB3: the runs a Nemesis attack answers to (`weapon` below).
+const WEAPON_ANY := 0
+const WEAPON_BLADE := 1
+const WEAPON_GUN := 2
 
 var id := &""
 var move := Move.SLAM_RING
@@ -152,3 +160,11 @@ var spin_ticks := 0
 var window_ticks := 0
 var bolt_attack := -1
 var bolt_every_ticks := 0
+## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6; BossNemesis): the Nemesis's moves. The run's
+## weapon an attack answers to (WEAPON_ANY, or only a Blade run's or a Gun run's: the pick leaves the others out), and a
+## `card_cast`'s card (0 = the strongest card of the player's wand it casts, 1 the next, 2 the third). A
+## `mimic_combo` swings `count` of the player's combo steps (each its own arc), mark_gap_ticks apart, each tracked then
+## locked; a `mimic_shots` fires `volleys` of the run's ranged form (the Gun's shot, a Blade's crescents: `count` of
+## them `spread` apart when the build throws none) gap_ticks apart down the lines it locked.
+var weapon := WEAPON_ANY
+var card := -1

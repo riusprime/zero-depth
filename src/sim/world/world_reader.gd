@@ -129,6 +129,16 @@ const MOVE_COMBO := BossAttackTable.Move.COMBO  # v0.8.0 FB1 (the Colossus)
 const MOVE_SPIKE_CHASE := BossAttackTable.Move.SPIKE_CHASE
 const MOVE_SPIKE_BURST := BossAttackTable.Move.SPIKE_BURST
 const MOVE_CROSS := BossAttackTable.Move.CROSS  # v0.8.0 FB2 (the Prism)
+const MOVE_MIMIC_COMBO := BossAttackTable.Move.MIMIC_COMBO  # v0.8.0 FB3 (the Nemesis)
+const MOVE_MIMIC_SHOTS := BossAttackTable.Move.MIMIC_SHOTS
+const MOVE_CARD_CAST := BossAttackTable.Move.CARD_CAST
+## v0.8.0 FB3: the Nemesis's stances (BossTable.STANCE_*) and the effect ids of its dash and its card casts.
+const STANCE_ECHO := BossTable.STANCE_ECHO
+const STANCE_MIRROR := BossTable.STANCE_MIRROR
+const STANCE_CLOSE := BossTable.STANCE_CLOSE
+const STANCE_BACK := BossTable.STANCE_BACK
+const EFFECT_NEMESIS_DASH := BossNemesis.EFFECT_DASH
+const EFFECT_NEMESIS_CAST := BossNemesis.EFFECT_CAST
 ## v0.8.0 FB1: a final boss's body shattering (FinalBoss.SHATTER), and its views' events (STATUS_APPLY effect ids).
 const STATE_SHATTER := FinalBoss.SHATTER
 const EFFECT_FINAL_SHATTER := FinalBoss.EFFECT_SHATTER
@@ -1391,6 +1401,18 @@ func boss_shards(i: int) -> PackedVector2Array:
 	if BossAi.entry_of(_w, i) < 0:
 		return PackedVector2Array()
 	return BossPrism.shards(_w, i)
+
+
+## v0.8.0 FB3 (FINAL_BOSS.md F6, F7): the Nemesis (boss i, a mimic body) for the views: {} or {"weapon", "stance",
+## "dashing", "dash_dir", "echo", "mirror", "hit", "hit_cap", "cards" (each {"code", "level", "card_id", "arc",
+## "arc_half", "arc_reach_m", "arc_strikes", "volley", "shots", "circle", "back", "split", "look", "blast", "blast_m"}),
+## "casting" (the card index it casts now, -1 none), "cast_progress"} (BossNemesis.state).
+func nemesis(i: int) -> Dictionary:
+	if i < 0 or i >= _w.actors.size() or not BossAi.is_boss_kind(_w.actors.kinds[i]):
+		return {}
+	if BossAi.entry_of(_w, i) < 0:
+		return {}
+	return BossNemesis.state(_w, i)
 
 
 ## v0.8.0 FB2 (F7): the final fight's measured damage per second (the meter's last `seconds`, at most what it holds)

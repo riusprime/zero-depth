@@ -1,10 +1,10 @@
 class_name FinalStubClips
 extends RefCounted
 ## v0.8.0 FB1 (FINAL_BOSS.md F5, F6): placeholder clips for the final boss's later bodies, the Prism and the Nemesis,
-## whose fights are FB2's and FB3's (TODO FB2 / FB3: their own rigs, shards and clips). Whole-body motion only (the
-## model's pivot, BossClip.BODY): the Prism floats and turns, pulses as it fires and glides; the Nemesis sways light on
-## its feet, lunges with its slashes and dashes, and snaps up to cast. Both share the reactions (a jolt, a stagger, a
-## roar, a rise from the shards, a fall).
+## whose fights are FB2's and FB3's. No longer used: the Prism plays PrismClips (FB2), the Nemesis NemesisClips (FB3).
+## Whole-body motion only (the model's pivot, BossClip.BODY): the Prism floats and turns, pulses as it fires and glides;
+## the Nemesis sways light on its feet, lunges with its slashes and dashes, and snaps up to cast. Both share the
+## reactions (a jolt, a stagger, a roar, a rise from the shards, a fall).
 
 const Z := Vector3(0, 0, 1)
 const X := Vector3(1, 0, 0)

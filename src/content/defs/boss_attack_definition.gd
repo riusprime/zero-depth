@@ -116,6 +116,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_signature_2(issues, path, where)
 	_validate_colossus(issues, path, where)
 	_validate_cross(issues, path, where)
+	_validate_nemesis(issues, path, where)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no
@@ -354,3 +355,29 @@ func _validate_lock(issues: Array[ValidationIssue], path: String, where: String)
 		issues.append(
 			ValidationIssue.new(&"duration", path, where + "stagger_seconds is under a tick")
 		)
+
+
+## v0.8.0 FB3 (FINAL_BOSS.md F6): a Nemesis attack's weapon is a run's, a card cast's card one of the strongest
+## MAX_CARD_CASTS, and every swing or volley at least a tick apart (none of them is a shielded signature).
+func _validate_nemesis(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if sp.has("weapon") and not BossSchemas.WEAPONS.has(String(sp["weapon"])):
+		issues.append(
+			ValidationIssue.new(&"range", path, where + "weapon: one of %s" % [BossSchemas.WEAPONS])
+		)
+	if move != &"mimic_combo" and move != &"mimic_shots" and move != &"card_cast":
+		return
+	if sp.has("card") and (int(sp["card"]) < 0 or int(sp["card"]) >= BossSchemas.MAX_CARD_CASTS):
+		issues.append(
+			ValidationIssue.new(
+				&"range", path, where + "card: 0..%d" % (BossSchemas.MAX_CARD_CASTS - 1)
+			)
+		)
+	for k in ["stagger_seconds", "gap_seconds"]:
+		if sp.has(k) and int(round(float(sp[k]) * 60.0)) < 1:
+			issues.append(ValidationIssue.new(&"duration", path, where + "%s is under a tick" % k))
+	for k in ["reach_m", "speed_mps", "radius_m"]:
+		if sp.has(k) and float(sp[k]) <= 0.0:
+			issues.append(ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k))
+	if shielded:
+		issues.append(ValidationIssue.new(&"range", path, where + "the Nemesis is never shielded"))

@@ -1325,6 +1325,63 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   half_width, way, quarter, speed, orb_shard, bolt), `boss_shards(i)`, `final_dps(seconds)`, `MOVE_CROSS`.
   `BossAi.telegraph` draws nothing on the ground for `cross` (`"ground": false`).
 
+## 10h. The final boss's Nemesis (v0.8.0 FB3; owner F6 "Weapon + dash + 2-3 cards", F7, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md))
+
+- **A mimic body (`BossTable.mimic`; `BossNemesis`, `NemesisBuild`).** As it rises (`FinalBoss._spawn`) the fight
+  reads the build once (`NemesisBuild.prepare`) into `FinalFight`: the run's weapon (a Gun without the Blade is the
+  Gun, anything else the Blade), its hit and cap, a Blade run's combo arcs (`Modifiers.step(k)`: `half_arc`,
+  `Attacks.arc_reach_m`, clamped), its ranged form (`shot`: a Gun run's `Modifiers.bolt` as a volley; a Blade run's
+  thrown crescents when the wand throws any) and the hostile copies of the strongest cards (`casts`). A card taken
+  later changes nothing mid-duel. An FB2 save (no mimic state) reads it at the Nemesis's next tick (`ready` false),
+  its HP as saved.
+- **The record (tick phase 9).** While a mimic body fights (not shattering), `FinalBoss.advance` calls
+  `BossNemesis.record`: the player's position into the echo ring (`ECHO_MAX` = 120 ticks) and, on the tick a dash
+  begins (`dash_ticks_left == dash_ticks`), `dash_due = tick + dash_react_ticks` and its unit direction.
+- **The dash (phase 3 and 5).** On `dash_due` the Nemesis dashes if it is free (MOVE or RECOVER, not dashing): the
+  player's own dash (`dash_distance_m / dash_ticks` a tick for `dash_ticks`, `dash_iframe_ticks` invulnerable), the
+  player's way, the opposite way in the mirror stance; a due dash in any other state is dropped. It never hurts; no
+  attack starts while it dashes; a stagger, gate or shatter ends it. One `STATUS_APPLY` (`nemesis_dash`).
+- **The stance (phase 3 and 5, MOVE only).** `ECHO` walks to `echo_at(echo_ticks)` (the player's place that many ticks
+  ago), `MIRROR` to `home × 2 − player`, `CLOSE` to the player, `BACK` to `back_off_m` from the player away from it;
+  at its speed (`EnemyAi.steer`), stopping 0.3 m short. Every `stance_ticks` in MOVE a new stance is drawn from the
+  ai stream (`pick_weighted(stance_weights)`); a finished `mimic_combo` sets `BACK`.
+- **The moves (appended: `MIMIC_COMBO`, `MIMIC_SHOTS`, `CARD_CAST`).** The pick (`BossAi._choose`) leaves out an attack
+  whose `weapon` isn't the run's and a `card_cast` whose `card` the build doesn't hold. Each tracks the player
+  (aim and place; a card's blast point, BossStore point 0) until its last `lock_ticks`, then holds.
+  - `mimic_combo`: swing k lands at `windup + k × mark_gap_ticks` (k < `count`), the player's combo step `k mod n`'s
+    arc where it locked; each swing follows (stepping in at the attack's speed) until `lock_ticks` before it lands.
+  - `mimic_shots`: volley v at active tick `v × gap_ticks` (v < `volleys`) of `FinalFight.shot` (or `count` crescents
+    `spread` apart), down the locked aim, from the locked place.
+  - `card_cast`: on its first active tick its volley and its blast (a disc of `blast_m` on the locked point); its arc at
+    active ticks `k × mark_gap_ticks` (k < `arc_strikes`).
+- **Hostile copies (`NemesisCast`).** Card `c` at level `l` is compiled alone on the run's weapon
+  (`WandCompile.for_world(w, [its modifiers at l]).spec(base_bolt or base_step(0))`) and copied: an ARC root → an arc
+  (`half_arc`, reach clamped to `reach_max_m`, 1 + min(repeats, 2) strikes); a BOLT root → a volley (`count × (1 +
+  twin)` ≤ `shots_max`, `spread`, a ring for `directions = circle`, a back shot for `back_permille`; speed and radius
+  clamped; flight ≤ `shot_range_m`); first-level hooks only: a BOLT child → the thrown volley (an ARC root) or splits
+  fanned from each shot (a BOLT root; total ≤ `shots_max`); a BURST, ZONE, RING or LOB child → the blast (radius
+  clamped). Deeper hooks and trigger cuts are never copied: a hostile shot runs no spec (`spec_key` ""), so nothing
+  splits, explodes or casts again (BL's once-per-line, PF2's cast-free). Damage weight: `spec.damage × 1000 /
+  base.damage`, 500..2000.
+- **Fair.** No volley shot is queued within 1.0 m (+ the player's radius) of the player or in a wall; each goes
+  through `BulletPatterns.room` (160 a tick, 900 alive; past it one `LIMIT` `bullet_cap`). Looks: `nemesis_bolt`,
+  `nemesis_crescent`; each shot carries its attack (the recap's line).
+- **HP and damage from the build (owner F7).** `hp = max_hp × build_hp_permille / 1000 + (with n ≥ dps_min_seconds
+  measured of the last dps_seconds) Σ damage × dps_target_ticks / (n × 60)`, clamped to `dps_hp_min..dps_hp_max`
+  (the meter of §10g; integer maths). `cap = max(1, max_hp × damage_cap_permille / 1000)` (< 1000: never a
+  one-shot); `hit = min(max(weapon_damage × build_damage_permille / 1000, damage_min), cap)` with
+  `Modifiers.weapon_damage`; an attack deals `hit × damage / 100 × weight / 1000`, clamped to 1..cap. Loops
+  (`RunState.scale_bosses` skips a mimic table) and the hidden catch-up don't scale it: the build carries them.
+- **State and saves.** `FinalFight.ready`, `weapon`, `hit`, `hit_cap`, `combo_half`, `combo_reach`, `shot`, `casts`
+  (`NemesisCast`, a state class), `echo_x`, `echo_y`, `echo_head`, `echo_n`, `dash_due`, `dash_dir`, `dash_t`,
+  `dash_vel`, `stance`, `stance_t`: hashed once a mimic body has fought (an earlier fight hashes as before) and listed
+  in `WorldSnapshot.ADDED_SINCE_V05`.
+- **Reads (FB3).** `WorldReader.nemesis(i)` (`BossNemesis.state`: weapon, stance, dashing, dash_dir, echo, mirror,
+  hit, hit_cap, cards, casting, cast_progress), `MOVE_MIMIC_COMBO`, `MOVE_MIMIC_SHOTS`, `MOVE_CARD_CAST`,
+  `STANCE_*`, `EFFECT_NEMESIS_DASH`, `EFFECT_NEMESIS_CAST`. `BossAi.telegraph`: a swing as an `&"arc"` (tracked,
+  locked, striking), a volley's lines as `&"lanes"`, a card as `&"marks"` (items: `&"arc"`, `&"lanes"`, `&"disc"`;
+  `card`, `card_index`, `striking`, `strike_items`). `BossAi.cause_key` moved to `BossCauses.key` (unchanged rules).
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

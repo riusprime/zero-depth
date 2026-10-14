@@ -58,6 +58,8 @@ const LIFE := {
 	&"fire_lanes": 40.0,
 	&"skid": 100.0,
 }
+## v0.8.0 FB3: the Nemesis's moves that strike on the tick their telegraph says "striking".
+const NEMESIS_MOVES: Array[int] = [WorldReader.MOVE_MIMIC_COMBO, WorldReader.MOVE_CARD_CAST]
 const SUSTAINED: Array[StringName] = [&"spears", &"beam", &"molten", &"fire_lanes", &"skid"]
 ## A marker strike already raised is not raised again for this many ticks (one strike, seen once).
 const SEEN_TICKS := 30
@@ -213,8 +215,8 @@ func _detect(
 		if tg.get("shape", &"") == &"marks":
 			_detect_marks(aid, look, tg)
 		return
-	if move == WorldReader.MOVE_COMBO:  # v0.8.0 FB1: each swing (and the slam) on the tick it lands
-		_detect_combo(aid, tg)
+	if move == WorldReader.MOVE_COMBO or NEMESIS_MOVES.has(move):
+		_detect_strikes(aid, move, tg)
 		return
 	if move == WorldReader.MOVE_SPIKE_CHASE or move == WorldReader.MOVE_SPIKE_BURST:
 		return  # v0.8.0 FB1: StoneSpikeViews raises them
@@ -309,6 +311,36 @@ func _detect_combo(aid: int, tg: Dictionary) -> void:
 			)
 		&"disc":
 			_spawn(&"cl_slam", aid, {"discs": [[tg["center"], float(tg["radius"])]]})
+
+
+## v0.8.0 FB1: the Colossus's combo (each swing and the slam on the tick it lands); FB3: the Nemesis's swings, a card's
+## arc and blast.
+func _detect_strikes(aid: int, move: int, tg: Dictionary) -> void:
+	if move == WorldReader.MOVE_COMBO:
+		_detect_combo(aid, tg)
+	else:
+		_detect_nemesis(aid, tg)
+
+
+## v0.8.0 FB3: the Nemesis's strikes on the tick its telegraph says "striking": a combo swing's arc, a card's arc
+## (each repeat) and its blast, in its own look.
+func _detect_nemesis(aid: int, tg: Dictionary) -> void:
+	if not bool(tg.get("striking", false)):
+		return
+	var items: Array = tg.get("strike_items", [tg])
+	for item: Dictionary in items:
+		match item.get("shape", &""):
+			&"arc":
+				var a := TAU * float(item["angle"]) / 4096.0
+				var h := TAU * float(item["half_arc"]) / 4096.0
+				var r0 := float(item["own_r"])
+				_spawn(
+					&"nm_slash",
+					aid,
+					{"arc": [item["center"], r0, r0 + float(item["reach"]), a - h, a + h]}
+				)
+			&"disc":
+				_spawn(&"nm_cast", aid, {"discs": [[item["center"], float(item["radius"])]]})
 
 
 ## The sustained strikes follow their boss: the skid runs to where the boss is now; each ends when its boss leaves

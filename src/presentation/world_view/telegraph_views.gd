@@ -24,6 +24,7 @@ extends Node3D
 ## instead of flat red: while they track the player, thin cracks glowing dimly along each lane (the dark outline kept);
 ## once locked, the ground chars and the cracks widen and glow hot, pulsing until the strike (steady with reduced
 ## motion), under the bright edge (the dodge cue). The strike itself is StoneSpikeViews' spikes.
+## v0.8.0 FB3: a &"marks" item may be an &"arc" too (a Nemesis card's swing beside its volley's lines and its blast).
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack with a look (BossStrikeLooks: per boss kind and move)
 ## fills with its own ground pattern instead of flat red: stone cracks, steel scratches, bubbling acid, shimmering
 ## light, hazard stripes, molten seams. While it tracks it keeps the dull outline and no fill; once locked the pattern
@@ -527,6 +528,11 @@ func _update_marks(n: Node3D, tg: Dictionary) -> void:
 			var r: float = item["radius"]
 			_sector(f, c, 0.0, r, 0.0, TAU)
 			_sector(e, c, r - EDGE, r, 0.0, TAU)
+		elif item["shape"] == &"arc":  # v0.8.0 FB3: a card's swing (the Nemesis)
+			var a := _rad(item["angle"])
+			var h := _rad(item["half_arc"])
+			var r0: float = item["own_r"]
+			_fan(f, e, item["center"], r0, r0 + float(item["reach"]), a - h, a + h, 1.0)
 		else:
 			for o: Obb in item["obbs"]:
 				_lane(f, e, o, 1.0)

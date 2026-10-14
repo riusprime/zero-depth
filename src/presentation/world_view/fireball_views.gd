@@ -186,6 +186,42 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.1,
 	},
+	## v0.8.0 FB3: the Nemesis's copies of the hero's shots: the hero's bolt as a pale violet spear on a black body (never
+	## the hero's cyan), and the hero's flying slash as a black crescent with a hot magenta-violet core.
+	&"nemesis_bolt":
+	{
+		"core": Color("#B4A0FF"),
+		"edge": Color("#12061E"),
+		"trail": Color("#5A1AB0"),
+		"size": 0.9,
+		"tip": 1.8,
+		"trail_m": 0.9,
+		"mesh": &"spear",
+		"body": Color("#22102E"),
+		"energy": 3.0,
+		"crack": 0.3,
+		"swirl": 1.2,
+		"spin": 4.0,
+		"trail_style": &"glow",
+		"tail": 0.1,
+	},
+	&"nemesis_crescent":
+	{
+		"core": Color("#E07CFF"),
+		"edge": Color("#0E0414"),
+		"trail": Color("#7A0AA0"),
+		"size": 1.6,
+		"tip": 1.0,
+		"trail_m": 0.6,
+		"mesh": &"crescent",
+		"body": Color("#1A0A24"),
+		"energy": 2.6,
+		"crack": 0.6,
+		"swirl": 0.9,
+		"spin": 0.0,
+		"trail_style": &"glow",
+		"tail": 0.4,
+	},
 	## v0.7.5 BF3: Siege Engine: orange cannon embers with a smoke trail.
 	&"cannon_ember":
 	{

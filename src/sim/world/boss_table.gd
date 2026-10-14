@@ -4,6 +4,12 @@ extends RefCounted
 ## BossDefinition by ContentCompiler.compile_bosses; give the list to World.set_boss_tables.
 ## The arena (arena_cells, arena_template) is what the floor generator reads to build the boss room.
 
+## v0.8.0 FB3: a mimic body's stances (BossNemesis; doc at `mimic` below).
+const STANCE_ECHO := 0
+const STANCE_MIRROR := 1
+const STANCE_CLOSE := 2
+const STANCE_BACK := 3
+
 var id := &""
 var name_key := &""
 var kind := ActorStore.Kind.GATEKEEPER
@@ -93,6 +99,40 @@ var floats_home := false
 var shard_count := 0
 var shard_orbit_m := 0.0
 var shard_turn_milli := 0
+## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards", F7 "Nemesis takes its HP and damage from your own build, an even
+## duel"; FINAL_BOSS.md F6, F7; BossNemesis, NemesisBuild): a mimic body. It echoes the player's path echo_ticks later
+## (a ring of the player's positions), dashes when the player dashes (dash_react_ticks later, the player's own dash),
+## and between attacks keeps a stance for stance_ticks: STANCE_ECHO, STANCE_MIRROR (across the fight's centre from the
+## player), STANCE_CLOSE (at the player), STANCE_BACK (back off to back_off_m), drawn from the ai stream by
+## stance_weights (in that order). It casts the card_casts strongest cards of the player's wand.
+## Its HP as it rises (build_hp): the player's max HP × build_hp_permille / 1000 + the measured DPS × dps_target_ticks
+## / 60 (FinalFight's meter, its dps_seconds / dps_min_seconds; without enough measured, the first term alone), clamped
+## to dps_hp_min..dps_hp_max. Its hit: the player's weapon damage (Modifiers.weapon_damage) × build_damage_permille /
+## 1000, at least damage_min, at most damage_cap_permille of the player's max HP (never a one-shot); each attack deals
+## its `damage` per cent of that hit (still at most the cap). Its hostile copies of the player's attacks are clamped:
+## shots shot_speed_min..shot_speed_max (m per tick), shot_radius_min_m..shot_radius_max_m, at most shot_range_m and
+## shots_max a volley; arcs reach at most reach_max_m; blasts blast_min_m..blast_max_m.
+var mimic := false
+var echo_ticks := 30
+var dash_react_ticks := 15
+var stance_ticks := 90
+var stance_weights := PackedInt32Array([3, 2, 2, 2])
+var back_off_m := 6.0
+var card_casts := 3
+var build_hp := false
+var build_hp_permille := 2000
+var build_damage_permille := 1500
+var damage_min := 6
+var damage_cap_permille := 200
+var shot_speed_min := 0.1167
+var shot_speed_max := 0.2167
+var shot_radius_min_m := 0.15
+var shot_radius_max_m := 0.5
+var shot_range_m := 14.0
+var shots_max := 12
+var reach_max_m := 4.5
+var blast_min_m := 1.0
+var blast_max_m := 3.0
 
 
 ## The attack index with this id, or -1.

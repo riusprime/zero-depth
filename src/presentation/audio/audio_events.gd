@@ -204,6 +204,9 @@ func _events(reader: WorldReader, out: Array) -> void:
 			SimEvent.Kind.HEAL:  # v0.4.0 EN: a Mender's beam lands a heal on an ally
 				if e.target_id != player_id:
 					out.append([&"mender_heal", e.pos, 1.0])
+			SimEvent.Kind.STATUS_APPLY:  # v0.8.0 FB3: the Nemesis dashes with the hero's dash cue, lower
+				if e.effect_id == WorldReader.EFFECT_NEMESIS_DASH:
+					out.append([&"dash", e.pos, 0.8])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.

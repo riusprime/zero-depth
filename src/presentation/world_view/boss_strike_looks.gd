@@ -8,7 +8,8 @@ extends RefCounted
 ## Presentation only: a look changes nothing the sim decides.
 
 ## Marker patterns (the MARK_SHADER's `pattern`).
-enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN }
+## v0.8.0 FB3: VOID, the Nemesis's (dark rifts, a violet-red glow).
+enum Pattern { STONE, BLADE, ACID, LIGHT, HAZARD, MOLTEN, VOID }
 
 ## Strike kinds BossStrikeViews draws, by the geometry they take: discs (a marker's circles, a leap's landing, a
 ## burrow's eruption, a spawn's circles), a ring, an arc, lanes, and a charge's lane.
@@ -28,6 +29,7 @@ const PATTERN_COLORS := {
 	Pattern.LIGHT: [Color(0.12, 0.07, 0.16), Color(1.0, 0.86, 0.5)],
 	Pattern.HAZARD: [Color(0.09, 0.07, 0.03), Color(1.0, 0.7, 0.12)],
 	Pattern.MOLTEN: [Color(0.1, 0.035, 0.02), Color(1.0, 0.55, 0.1)],
+	Pattern.VOID: [Color(0.05, 0.02, 0.08), Color(0.8, 0.25, 1.0)],
 }
 
 ## Look id -> {"pattern", "strike"}.
@@ -62,6 +64,10 @@ const LOOKS := {
 	&"cl_leap": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"cl_boulder": {"pattern": Pattern.STONE, "strike": &"crater"},
 	&"cl_spikes": {"pattern": Pattern.STONE, "strike": &"crack_impact"},
+	# v0.8.0 FB3 (FINAL_BOSS.md F6): the Nemesis. Its swings (its combo's and a card's arc) cut a steel arc in its own
+	# colours, a card's blast flashes as a burst; its volleys are fireballs (FireballViews' nemesis looks).
+	&"nm_slash": {"pattern": Pattern.VOID, "strike": &"steel_arc"},
+	&"nm_cast": {"pattern": Pattern.VOID, "strike": &"light_burst"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -115,6 +121,11 @@ const BY_KIND := {
 		WorldReader.MOVE_MARKS: &"cl_boulder",
 		WorldReader.MOVE_SPIKE_CHASE: &"cl_spikes",
 		WorldReader.MOVE_SPIKE_BURST: &"cl_spikes",
+	},
+	WorldReader.KIND_NEMESIS:  # v0.8.0 FB3
+	{
+		WorldReader.MOVE_MIMIC_COMBO: &"nm_slash",
+		WorldReader.MOVE_CARD_CAST: &"nm_cast",
 	},
 }
 
@@ -189,10 +200,14 @@ void fragment() {
 		float s = fract((p.x + p.y) * 0.9);
 		float g = min(abs(fract(p.x * 0.5) - 0.5), abs(fract(p.y * 0.5) - 0.5));
 		m = max(step(0.5, s) * 0.8, 1.0 - smoothstep(0.015, 0.04, g));
-	} else {  // molten: dark crust plates with hot seams, flowing
+	} else if (pattern == 5) {  // molten: dark crust plates with hot seams, flowing
 		vec2 c = cells(p * 1.1 + vec2(t * 0.25, t * 0.1));
 		m = 1.0 - smoothstep(0.06, 0.2 + 0.15 * heat, c.y - c.x);
 		m = max(m, smoothstep(0.55, 0.8, n) * heat);
+	} else {  // void (v0.8.0 FB3, the Nemesis): thin rifts torn across the ground, a slow swirl in the dark
+		float a = abs(fract((p.x * 0.8 - p.y * 0.6) * 1.3 + n * 1.4 + t * 0.1) - 0.5);
+		m = 1.0 - smoothstep(0.02, 0.07 + 0.05 * heat, a);
+		m = max(m, smoothstep(0.62, 0.85, n) * 0.6 * heat);
 	}
 	vec3 hot = glow.rgb * (1.0 + heat * 1.6);
 	ALBEDO = mix(dark.rgb, hot, m);

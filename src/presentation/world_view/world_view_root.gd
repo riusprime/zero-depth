@@ -75,6 +75,7 @@ var strikes := BossStrikeViews.new()
 ## v0.8.0 FB1 (owner O16): the final boss's shatter between its bodies (the burst, the shards the next rises from).
 var final_views := FinalBossViews.new()
 var prism_views := PrismViews.new()  # v0.8.0 FB2: the Prism's Cross, her bolts' aim lines, the window
+var nemesis_views := NemesisViews.new()  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
 var rig := IsoRig.new()
 var occlusion_enabled := true
 
@@ -141,6 +142,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(strikes)  # v0.8.0 AV part 2
 	add_child(final_views)  # v0.8.0 FB1
 	add_child(prism_views)  # v0.8.0 FB2
+	add_child(nemesis_views)  # v0.8.0 FB3
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -226,6 +228,7 @@ func sync() -> void:
 	strikes.sync(reader)  # v0.8.0 AV part 2
 	final_views.sync(reader)  # v0.8.0 FB1
 	prism_views.sync(reader)  # v0.8.0 FB2
+	nemesis_views.sync(reader)  # v0.8.0 FB3
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:

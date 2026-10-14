@@ -638,6 +638,28 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     (> `radius_m` when it has shards), `shard_turn_dps` (≥ 0). The Prism: 20 s measured, at least 5, 60 s, 600..250,000
     HP; 6 shards 2.3 m out turning 50°/s. A `cross` that fires (orbs or bolts) needs `shard_count` ≥ 1.
 
+- **v0.8.0 FB3 (owner F6, F7; SIM_CONTRACTS §10h).** Three moves (each needs `lock_seconds`; an optional `weapon`,
+  `"any"` (the default), `"blade"` or `"gun"`, keeps it to that weapon's runs; never `shielded`); for a mimic body
+  an attack's `damage` is **per cent of the Nemesis's hit** (100 = its hit):
+  - `mimic_combo` (CONE): `count` swings of the player's combo steps, `arc_degrees` and `reach_m` (without a combo),
+    `speed_mps` (its step in while a swing follows), `stagger_seconds` (≥ a tick) between swings. The Nemesis's
+    `nemesis_combo` (Blade): 3 swings 0.5 s apart, 6 m/s, 0.7 s windup, 0.4 s lock, 100 %, 0..3.5 m.
+  - `mimic_shots` (PROJECTILE): `volleys` of the run's ranged form `gap_seconds` apart; `count` crescents
+    `spread_degrees` apart when a Blade build throws none (optional `speed_mps`, `radius_m`). `nemesis_crescents`
+    (Blade, 3 × 18°, 2 volleys 0.35 s apart, 70 %, 3.5 m+), `nemesis_volley` (Gun, 3 volleys 0.25 s apart, 80 %,
+    3 m+), `nemesis_point_blank` (Gun, 2 volleys 0.2 s apart, 100 %, 0..3 m); 0.4 s locks.
+  - `card_cast` (CIRCLE): `card` (0..2: the strongest card held, then the next two), `stagger_seconds` (an arc's
+    repeats). `nemesis_card_1..3`: 1.0 s windup, 0.5 s lock, 120 %, any range, weights 3, 2, 2.
+  - `FinalBossDefinition` (a mimic body): `mimic`, `echo_seconds` (0..2; 0.5), `dash_reaction_seconds` (≥ 0.1;
+    0.25), `stance_seconds` (> 0; 1.5), `stance_weights` (4 weights ≥ 0, one > 0: echo, mirror, close, back; 3, 2, 2,
+    2), `back_off_m` (> 0; 6.0), `card_casts` (0..3; 3); `hp_from_build` (needs `mimic`) with `build_hp_permille`
+    (2500) and the meter's `dps_measure_seconds` (20), `dps_min_measured_seconds` (5), `dps_target_seconds` (12),
+    `dps_hp_min` (400) ≤ `dps_hp_max` (150,000); `build_damage_permille` (1500), `build_damage_min` (8),
+    `build_damage_cap_permille` (1..999; 200); its copies' clamps `shot_speed_min_mps` / `_max_mps` (7, 13),
+    `shot_radius_min_m` / `_max_m` (0.15, 0.5), `shot_range_m` (14), `shots_max` (1..24; 12), `reach_max_m` (4.5),
+    `blast_min_m` / `blast_max_m` (1.0, 3.0). A mimic table is not scaled by the floor or the loop
+    (`RunState.scale_bosses`).
+
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
 ```gdscript
