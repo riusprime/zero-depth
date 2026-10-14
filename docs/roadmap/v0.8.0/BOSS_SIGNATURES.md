@@ -1,4 +1,4 @@
-# G1: one signature mechanic per boss (v0.8.0 O5; status: waiting for the owner, row by row)
+# G1: one signature mechanic per boss (v0.8.0 O5; status: approved by the owner 2026-10-14)
 
 Owner, 2026-10-14: "for the new bosses, I do like the fights. That's like the direction, the right direction. But I
 tried all of them, and the fight seem, feels pretty similar. We just do the orbs in spirals and the ones crossing in
@@ -39,9 +39,9 @@ spikes, 3D orbs; v0.8.0 O7, O8).
 ## Decisions (owner, date)
 | Row | Answer | Built in |
 |---|---|---|
-| S1 | | |
-| S2 | | |
-| S3 | | |
-| S4 | | |
-| S5 | | |
-| S6 | | |
+| S1 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S2 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S3 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S4 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S5 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |
+| S6 | Yes, as proposed (owner, 2026-10-14: "boss OK") | |

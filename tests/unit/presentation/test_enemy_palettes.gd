@@ -54,7 +54,7 @@ const MIN_ROLE_DE := 15.0
 
 
 func after_each() -> void:
-	EnemyPalettes.active = EnemyPalettes.CURRENT
+	EnemyPalettes.active = EnemyPalettes.SHIPPED
 	ThemePalette.mode = &"off"
 
 
@@ -120,9 +120,14 @@ func test_the_table_covers_every_normal_kind_and_slot_in_every_palette() -> void
 	)
 
 
-func test_the_shipped_default_is_todays_red_and_grey() -> void:
-	assert_eq(EnemyPalettes.active, EnemyPalettes.CURRENT, "until the owner picks")
-	assert_false(EnemyPalettes.eyes_on_all(), "no new eye slits on the shipped look")
+func test_the_shipped_default_is_the_owners_pick() -> void:
+	assert_eq(EnemyPalettes.active, &"a", "the owner's G2 pick, 2026-10-14: palette A")
+	assert_true(EnemyPalettes.eyes_on_all(), "palette A gives every kind an eye slit")
+
+
+func test_current_keeps_the_old_red_and_grey() -> void:
+	EnemyPalettes.active = EnemyPalettes.CURRENT
+	assert_false(EnemyPalettes.eyes_on_all(), "no new eye slits on the old look")
 	# The colours the avatars held as constants before v0.8.0 EC.
 	var c := func(kind: int, slot: StringName) -> Color: return EnemyPalettes.color(kind, slot)
 	assert_eq(c.call(WorldReader.KIND_CHARGER, &"body"), Color("#D8433A"))

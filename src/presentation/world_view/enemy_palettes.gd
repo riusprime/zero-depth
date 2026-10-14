@@ -146,9 +146,10 @@ const TABLE := {
 	},
 }
 
-## The palette the avatars build with. `current` until the owner picks (then the pick's key here, a one-line swap);
-## the G2 shot script sets it to render each candidate.
-static var active := CURRENT
+## The owner's G2 pick (2026-10-14: "Color palette A"). `current` (the pre-v0.8.0 red and grey) stays in the table.
+const SHIPPED := &"a"
+## The palette the avatars build with: the owner's pick; the G2 shot script sets it to render each candidate.
+static var active := SHIPPED
 
 
 ## Kind `kind`'s colour in `slot` (body / trim / grey / eye) under `palette` (default: the active one). A kind

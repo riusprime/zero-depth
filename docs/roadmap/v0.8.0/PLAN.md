@@ -1,4 +1,4 @@
-# v0.8.0 — Fights and feel: the owner's v0.7.5 playtest (plan, owner-approved 2026-10-14; G1s pending)
+# v0.8.0 — Fights and feel: the owner's v0.7.5 playtest (plan, owner-approved 2026-10-14)
 
 Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.md`](PROGRESS.md).
 
@@ -104,6 +104,11 @@ Answers go into the "Owner decisions" table below the same day.
 | Q4 | "Code first, yours replace (Recommended)" | The lead builds keyframed clips per boss in code now; clips the owner makes later replace them | 2026-10-14 |
 | Q5 | "Both (Recommended)" | Start with free CC0 textures (ambientCG, Poly Haven, Kenney; licence and source in the manifest) shaped to the palette; prompts for the owner's generator written alongside, and the owner's PNGs replace any of them | 2026-10-14 |
 | Q6 | "HP ×6, dmg ×1.2 (Recommended)" | Per Ascension loop, enemies and bosses alike: HP ×6, damage ×1.2 (loop 2: ×6 / ×1.2; loop 3: ×36 / ×1.44; the ×100 cap stays). Starting values | 2026-10-14 |
+| G2 EC | "Color palette A" | Enemies use palette A (saturated role colours, `EnemyPalettes.SHIPPED`) | 2026-10-14 |
+| G2 MU | "menu style B" | The menus, pick cards, Build page and plaques take direction B, "Ember stone" (`evidence/MENU_G2.md`); the shard cards go | 2026-10-14 |
+| G1 BOSS_SIGNATURES | "boss OK" | Rows S1–S6 approved as proposed (the main column, not the alternatives) | 2026-10-14 |
+| G1 BLADE_AUDIT | "blade audit … OK" | Rows B1–B7 approved as proposed | 2026-10-14 |
+| Loop cap | "keep de x100 loop" | The ×100 per-stat cap stays: loop HP stops growing at loop 4 (×100) while damage keeps ×1.2 a loop | 2026-10-14 |
 
 ## Steps
 | Step | Scope | Rows | Gate | Kind | Status |
