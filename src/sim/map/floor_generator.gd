@@ -11,6 +11,9 @@ extends RefCounted
 ## share, and cut through the full thickness.
 ## v0.7.5 MG (owner N9): 15-19 rooms (20 with the boss room), footprints up to the extra-large 4 x 4, on a span of
 ## 11 cells (FloorParams; the run's floors read them from data/map).
+## v0.8.0 RT (owner O12): with designed layouts (FloorParams.room_layouts, data/room_layouts), a room of a size that has
+## them draws one (RoomLayouts: a layout, a quarter turn and a mirror, after the templates) and is furnished from it
+## instead of its template; its groups pass the same checks as a vignette, plus a box in front of each doorway.
 ## Every draw comes from the `map` stream in a fixed order, so a seed always gives the same floor. Pure sim code:
 ## integer draws, floats from whole centimetres, no trig.
 
@@ -88,6 +91,7 @@ static func generate(seed_value: int, params: FloorParams = null) -> FloorLayout
 	for room in f.room_count():
 		var cells := f.room_cells[room].size
 		f.room_template.append(RoomInterior.pick(rng, cells, room == f.start_room))
+	_draw_layouts(f, p, rng)
 	for room in f.room_count():
 		_furnish(f, p, rng, room)
 	f.spawn_points.resize(f.room_count())
@@ -121,6 +125,7 @@ static func one_room(seed_value: int, cells: Vector2i, params: FloorParams = nul
 	_make_walls(f, plan)
 	f.slab_first = f.walls.size()
 	f.room_template.append(RoomInterior.pick(rng, cells, true))
+	_draw_layouts(f, FloorParams.new(), rng)  # v0.8.0 RT: the Playground's room is the hall (no layout, no draw)
 	f.spawn_points.resize(1)
 	f.spawn_points[0] = PackedVector2Array()
 	return f
@@ -560,6 +565,9 @@ static func _furnish(f: FloorLayout, p: FloorParams, rng: RngStream, room: int) 
 	var walls := f.room_walls(room)
 	var pieces: Array[Obb] = []
 	var template := f.room_template[room]
+	if f.layout_of(room) != &"":  # v0.8.0 RT: a designed room
+		_furnish_layout(f, p, room, walls)
+		return
 	if RoomThemes.is_themed(template):
 		_furnish_themed(f, p, rng, room, walls)
 		return
@@ -602,6 +610,150 @@ static func _furnish_themed(
 		quota[anchor] = int(quota[anchor]) - 1
 		cars += n_cars
 	f.walls.append_array(pieces)
+
+
+## v0.8.0 RT (owner O12): each room's designed layout, turn and mirror, drawn from the map stream in room order. Only
+## when the floor has layouts (FloorParams.room_layouts; none on a floor saved before RT, which then draws nothing
+## here and comes out as it was), and never for the start hall or the portal room (their own rules) or a room whose
+## size has no layout yet (its rule-built interior stays).
+static func _draw_layouts(f: FloorLayout, p: FloorParams, rng: RngStream) -> void:
+	for room in f.room_count():
+		f.room_layout.append(&"")
+		f.room_turn.append(0)
+		f.room_mirror.append(0)
+		if p.room_layouts.is_empty() or room == f.start_room or room == f.portal_room:
+			continue
+		var cells := f.room_cells[room].size
+		var list: Array = p.room_layouts.get(RoomLayouts.key(cells), [])
+		if list.is_empty():
+			continue
+		var d := RoomLayouts.draw(rng, list, cells)
+		var t: RoomLayoutTable = list[d[0]]
+		f.room_layout[room] = t.id
+		_settle_orientation(f, p, room, t, d[1], d[2])
+
+
+## v0.8.0 RT: the drawn turn and mirror, unless another way round keeps more of the layout clear of the room's
+## doorways: every allowed turn and mirror is scored by the blockers that would stand in a doorway's box (or leave the
+## room), tried from the drawn one on, and the first with the fewest wins. No draw (the choice is a pure function of
+## the floor so far), so a room keeps its drawn way round whenever that is as good as any.
+static func _settle_orientation(
+	f: FloorLayout, p: FloorParams, room: int, t: RoomLayoutTable, turn: int, mirror: int
+) -> void:
+	var options: Array[Vector2i] = []
+	for tr in RoomLayouts.turns_for(f.room_cells[room].size):
+		for m in 2:
+			options.append(Vector2i(tr, m))
+	var start := options.find(Vector2i(turn, mirror))
+	var boxes := _door_boxes(f, p, room)
+	var best := Vector2i(turn, mirror)
+	var best_cost := -1
+	for k in options.size():
+		var o := options[(start + k) % options.size()]
+		var cost := 0
+		for g in t.groups:
+			var placed := RoomLayouts.place_group(g, f.rooms[room], o.x, o.y == 1)
+			if not placed["ok"]:
+				cost += g.pieces.size()
+				continue
+			var solids: Array[Obb] = placed["solids"]
+			if _any_in_boxes(solids, boxes):
+				cost += solids.size()
+		if best_cost < 0 or cost < best_cost:
+			best = o
+			best_cost = cost
+	f.room_turn[room] = best.x
+	f.room_mirror[room] = best.y
+
+
+## The layout table a room drew (null if its id is no longer in the tables).
+static func _layout_table(f: FloorLayout, p: FloorParams, room: int) -> RoomLayoutTable:
+	for t: RoomLayoutTable in p.room_layouts.get(RoomLayouts.key(f.room_cells[room].size), []):
+		if t.id == f.room_layout[room]:
+			return t
+	return null
+
+
+## v0.8.0 RT: the boxes in front of a room's doorways that a designed room keeps free: the doorway's width plus
+## layout_door_side either side, from the wall face layout_door_depth into the room.
+static func _door_boxes(f: FloorLayout, p: FloorParams, room: int) -> Array[Rect2]:
+	var r := f.rooms[room]
+	var out: Array[Rect2] = []
+	for d in f.door_rooms.size():
+		var side := _door_side(f, d, room)
+		if side < 0:
+			continue
+		var c := f.door_centers[d]
+		var half := f.door_widths[d] * 0.5 + p.layout_door_side
+		var face := _edge(r, side)
+		var depth := p.layout_door_depth
+		match side:
+			0:
+				out.append(Rect2(face - depth, c.y - half, depth, half * 2.0))
+			1:
+				out.append(Rect2(c.x - half, face - depth, half * 2.0, depth))
+			2:
+				out.append(Rect2(face, c.y - half, depth, half * 2.0))
+			_:
+				out.append(Rect2(c.x - half, face, half * 2.0, depth))
+	return out
+
+
+## v0.8.0 RT: a designed room's groups, in the layout's order, each kept whole or dropped whole: dropped when a solid
+## would leave the room or stand in a doorway's box, or when the group fails a vignette's checks (doorways, the start
+## and the gate clear, flush to a wall or the slab gap from it and from every other piece, the room one region).
+## Drawn-only pieces go with their group; decoration in a doorway's box is left out.
+static func _furnish_layout(f: FloorLayout, p: FloorParams, room: int, walls: Array[Obb]) -> void:
+	var t := _layout_table(f, p, room)
+	if t == null:
+		return
+	var r := f.rooms[room]
+	var turn := f.room_turn[room]
+	var mirror := f.room_mirror[room] == 1
+	var keep := _door_boxes(f, p, room)
+	var structural := walls.size()
+	var pieces: Array[Obb] = []
+	for g in t.groups:
+		var placed := RoomLayouts.place_group(g, r, turn, mirror)
+		if not placed["ok"]:
+			continue
+		var solids: Array[Obb] = placed["solids"]
+		if _any_in_boxes(solids, keep):
+			continue
+		if not solids.is_empty() and not _vignette_fits(f, p, room, walls, structural, solids):
+			continue
+		var keys := PackedStringArray()
+		for k in solids.size():
+			walls.append(solids[k])
+			pieces.append(solids[k])
+			var key := FloorLayout.piece_key(solids[k])
+			keys.append(key)
+			f.piece_tags[key] = placed["solid_tags"][k]
+			f.piece_heights[key] = placed["solid_heights"][k]
+		for prop: Array in placed["props"]:
+			var on: int = prop[5]
+			if on < 0 and _point_in_boxes(prop[1], keep):
+				continue
+			f.layout_props.append(
+				[prop[0], prop[1], prop[2], prop[3], prop[4], keys[on] if on >= 0 else ""]
+			)
+	f.walls.append_array(pieces)
+
+
+static func _any_in_boxes(pieces: Array[Obb], boxes: Array[Rect2]) -> bool:
+	for piece in pieces:
+		var b := piece.bounds()
+		for box in boxes:
+			if b.intersects(box):
+				return true
+	return false
+
+
+static func _point_in_boxes(q: Vector2, boxes: Array[Rect2]) -> bool:
+	for box in boxes:
+		if box.has_point(q):
+			return true
+	return false
 
 
 ## A vignette fits like any group (allowed, the room stays whole), except for spacing, which is measured on the

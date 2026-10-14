@@ -75,6 +75,43 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	return t
 
 
+## v0.8.0 RT (owner O12): the designed room layouts (data/room_layouts), RoomLayouts.key(cells) -> Array of
+## RoomLayoutTable in id order: centimetres, anchors per mille, yaws in 1/4096 turns.
+static func compile_room_layouts(repo: ContentRepository) -> Dictionary:
+	var out := {}
+	if repo == null:
+		return out
+	for def: RoomLayoutDefinition in repo.all_of(&"room_layout"):
+		var t := compile_room_layout(def)
+		var k := RoomLayouts.key(t.cells)
+		if not out.has(k):
+			out[k] = []
+		(out[k] as Array).append(t)
+	return out
+
+
+static func compile_room_layout(def: RoomLayoutDefinition) -> RoomLayoutTable:
+	var t := RoomLayoutTable.new()
+	t.id = def.id
+	t.cells = def.cells
+	t.weight = def.weight
+	for g in def.groups:
+		var cg := RoomLayoutTable.Group.new()
+		cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
+		for p in g.pieces:
+			var cp := RoomLayoutTable.Piece.new()
+			cp.piece = p.piece
+			cp.at = Vector2i(roundi(p.at.x * 100.0), roundi(p.at.y * 100.0))
+			cp.size = Vector2i(roundi(p.size.x * 100.0), roundi(p.size.y * 100.0))
+			cp.angle = posmod(roundi(p.yaw * 4096.0 / 360.0), 4096)
+			cp.height = roundi(p.height * 100.0)
+			cp.solid = p.solid
+			cg.pieces.append(cp)
+		t.groups.append(cg)
+	t.keep_clear = def.keep_clear.duplicate()
+	return t
+
+
 ## v0.7.5 MG (owner N9): the generator's room counts, footprints and span from data/map over FloorParams' defaults
 ## (null: the defaults, which equal the shipped file).
 static func compile_map(def: MapDefinition) -> FloorParams:

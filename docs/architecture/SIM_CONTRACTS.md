@@ -1324,6 +1324,23 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
   snapshotted; a pre-MG snapshot restores it as 0) is under `cursed_chests_per_floor` (1): at most one cursed chest
   every two floors; the 25 % draw on `loot:event` is taken first, so the stream only moves where a chest is refused.
   A floor resumed from a save made before v0.7.5 is rebuilt with v0.7.0's rules (`RunState.floor_rules`).
+- **Designed rooms (v0.8.0 RT; owner O12).** With layouts (`FloorParams.room_layouts`, from `data/room_layouts`), after
+  the room templates are drawn, each room in order except the start hall and the portal room whose size has layouts
+  draws, from the `map` stream, a layout (by weight), a quarter turn (any for a square room; for a long room the two
+  that keep the layout's long side along the room's) and a mirror (`RoomLayouts.draw`). No draw then moves the turn
+  and mirror to whichever allowed way round puts the fewest of the layout's blockers in a doorway's box (the drawn way
+  first; `FloorGenerator._settle_orientation`). The room is furnished from it instead of its template: each group,
+  in the layout's order, placed in metres (`RoomLayouts.place_group`: anchors scale with the room, pieces keep their
+  metres, everything axis-aligned, whole centimetres) is kept whole or dropped whole: dropped when a blocker would
+  leave the room, stand in a doorway's box (the doorway's width plus 1 m either side, 3 m deep from the wall face),
+  or fail a vignette's checks (doorways, start and gate clear; flush with a wall or the slab gap from it and from
+  every other piece; the room one region holding every doorway approach). Drawn-only pieces go with their group
+  (decoration in a doorway's box is left out) into `FloorLayout.layout_props`, presentation only; blockers carry their
+  kit piece (`piece_tags`) and drawn height (`piece_heights`). Rooms of a size without layouts, the start hall and the
+  portal room keep their rule-built interiors; the boss room, the shop, the arenas and the Overrun room are chosen
+  afterwards as before. Floor rules 4 (`RunState.FLOOR_RULES`): a floor saved under rules 1-3 is rebuilt without
+  layouts and makes none of these draws, so it is the floor it was saved on. Nothing new is hashed or saved (the floor
+  is rebuilt from its seed and rules; the snapshot's walls must match it).
 - **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
   run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
   boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that

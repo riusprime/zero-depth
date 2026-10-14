@@ -17,6 +17,12 @@ not in `main` yet).
 - TG: none (`telegraph()` is not hashed; `tests/golden` passed unchanged)
 - PF: none (the shot cap's per-tick fields aren't hashed; `tests/golden` passed unchanged)
 - AV: none (presentation only; `tests/golden` 2/2 unchanged)
+| RT part 1 (system + 3 layouts) | Rooms of 2×2, 3×2 and 3×3 cells are furnished from hand-designed layouts (dense clusters of tall blocks, crate stacks, wrecks, fire barrels, broken walls and pillars, grass and rubble, an open lane in the middle), picked per room and turned and mirrored by the generator, restyled by each biome; other sizes keep their rule-built rooms until their layouts come; a save made before RT resumes on its own floor. G2 asked; evidence [`evidence/ROOMS.md`](evidence/ROOMS.md) | this commit (branch `v080-rt`) |
+
+## Goldens changed on purpose
+- none yet (LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged)
+- RT1: none (no golden fixture holds a run floor: the replay and export-smoke goldens use the kernel arena;
+  `tests/golden` passes unchanged). Run floors change on purpose (floor rules 4); a floor saved before keeps its own.
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -27,9 +33,16 @@ not in `main` yet).
 | G2 EC: palettes A/B/C ([ENEMY_COLOURS](evidence/ENEMY_COLOURS.md), shots in `evidence/ec_shots/`) | 2026-10-14 | "Color palette A" | 2026-10-14 |
 | G2 RT: the first 3 designed rooms | — | not yet made | |
 | G2 MU: 3 menu and card directions ([MENU_G2](evidence/MENU_G2.md): A Salvage, B Ember stone, C Field kit × main menu, card pick, Build page) | 2026-10-14 | "menu style B" (Ember stone) | 2026-10-14 |
+| G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | pending | |
+| G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | pending | |
+| G2 RT: the first 3 designed rooms ([evidence/ROOMS.md](evidence/ROOMS.md), shots in `evidence/rt_shots/`) | 2026-10-14 | pending | |
+| G2 MU: 3 menu and card directions | — | not yet made | |
 
 ## Open
 - v0.7.5 PR riusprime/zero-depth#6 not merged.
+- RT (agent's reading, for the lead to confirm with the owner): "start, portal/boss rooms, shop and arenas keep their
+  rules" read as their selection rules; the shop, arena and Overrun rooms are chosen after the floor is generated,
+  so they may hold a designed interior (SR redesigns the shop room). The start hall, portal room and boss room never do.
 
 ## Blockers
 - none
@@ -81,3 +94,13 @@ not in `main` yet).
   `scripts/shots/attack_visuals.gd` (17, on llvmpipe). Not run locally: the full suite. The look is OWNER ONLY. Open:
   AV part 2 (the other bosses' ground attacks).
 - 2026-10-14: the owner's picks: "Color palette A, menu style B, blade audit and boss OK, keep de x100 loop". Palette A shipped as the default (`EnemyPalettes.SHIPPED`; enemy presentation tests + enemy e2e 72/72).
+- 2026-10-14: RT part 1 (agent, branch `v080-rt` from `96cbbbd`): `RoomLayoutDefinition` (+ group, piece) and
+  `data/room_layouts/` (2×2, 3×2, 3×3, written by `scripts/content/room_layouts.py`); `RoomLayouts` /
+  `RoomLayoutTable` and the generator's layout draw, orientation settle and group-by-group furnishing on the `map`
+  stream (no new sub-stream); `FLOOR_RULES` 4 (older saves rebuild without layouts); the dresser's biome swaps for
+  designed rooms; `scripts/shots/room_layouts.gd`; PLAN "### RT"; CONTENT_SCHEMA and SIM_CONTRACTS "Designed rooms".
+  Run locally: lint clean (810 files); `tests/content` 136/136; `tests/arch` + `tests/golden` 6/6; map/generator sim
+  tests by name 12 scripts green (93 tests; the starglow/run-flow pair re-run on its own after a timeout); 
+  `tests/unit/application` + `tests/unit/debug` 103/103; presentation dresser/biomes 36/36; e2e saves/old save/run
+  flow/designed rooms 7/7 and the e2e shard 127/127. Shots: 10 at 1920×1080 (llvmpipe), 6 copied to
+  `evidence/rt_shots/`. Not run locally: the full suite. G2 RT asked.

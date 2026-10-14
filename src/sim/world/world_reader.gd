@@ -197,6 +197,8 @@ const FIRE_FIELD := ElementAbilities.FIRE_FIELD
 const FIRE_ZONE := ElementAbilities.FIRE_ZONE
 
 var _w: World
+## v0.8.0 RT: piece_key -> wall index of the floor's interior pieces (built on the first layout_prop ask).
+var _layout_wall_index := {}
 
 
 func _init(world: World) -> void:
@@ -894,6 +896,41 @@ func wall_piece(i: int) -> StringName:
 	if f == null or i < f.slab_first or i >= _w.walls.size():
 		return &""
 	return f.piece_tag(_w.walls[i])
+
+
+## v0.8.0 RT: a designed room's blocker's drawn height (m; 0 = the kit's own), or -1.0 for any other wall (the biome's
+## swap rules apply to a designed room's pieces). Presentation only.
+func wall_layout_height(i: int) -> float:
+	var f := _w.floor_layout
+	if f == null or i < f.slab_first or i >= _w.walls.size():
+		return -1.0
+	return f.piece_height(_w.walls[i])
+
+
+## v0.8.0 RT: the designed rooms' drawn-only pieces (presentation only).
+func layout_prop_count() -> int:
+	return _w.floor_layout.layout_props.size() if _w.floor_layout != null else 0
+
+
+## Prop i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m), "height": float (m; 0 =
+## the kit's own), "wall": the wall index it stands on (-1: decoration on open floor; -2: its blocker is gone, so it
+## isn't drawn)}.
+func layout_prop(i: int) -> Dictionary:
+	var f := _w.floor_layout
+	var p: Array = f.layout_props[i]
+	var wall := -1
+	var key: String = p[5]
+	if not key.is_empty():
+		if _layout_wall_index.is_empty():
+			for k in range(f.slab_first, _w.walls.size()):
+				_layout_wall_index[FloorLayout.piece_key(_w.walls[k])] = k
+		wall = int(_layout_wall_index.get(key, -2))
+	return {"piece": p[0], "pos": p[1], "angle": p[2], "size": p[3], "height": p[4], "wall": wall}
+
+
+## The room's designed layout id (&"" for a rule-built room). For tools and shots.
+func floor_room_layout(room: int) -> StringName:
+	return _w.floor_layout.layout_of(room) if _w.floor_layout != null else &""
 
 
 ## What a wall is, for drawing it: 0 a structural wall (the room edges and partitions), 1 a cover slab, 2 not drawn
