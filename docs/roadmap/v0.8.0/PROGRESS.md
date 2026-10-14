@@ -42,7 +42,7 @@ not in `main` yet).
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | "boss OK": all rows as proposed | 2026-10-14 |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | "blade audit … OK": all rows as proposed | 2026-10-14 |
 | G2 EC: palettes A/B/C ([ENEMY_COLOURS](evidence/ENEMY_COLOURS.md), shots in `evidence/ec_shots/`) | 2026-10-14 | "Color palette A" | 2026-10-14 |
-| G1 [FINAL_BOSS](FINAL_BOSS.md) F1–F9 | 2026-10-14 | pending | |
+| G1 [FINAL_BOSS](FINAL_BOSS.md) F1–F9 | 2026-10-14 | "Approve all" with changes: any loop's End leads to it and it ends the run; its own cosmic round gladiator-arena biome; Nemesis copies weapon + dash + 2–3 cards; "Phase-by-phase mix" scaling | 2026-10-14 |
 | G2 MU: 3 menu and card directions ([MENU_G2](evidence/MENU_G2.md): A Salvage, B Ember stone, C Field kit × main menu, card pick, Build page) | 2026-10-14 | "menu style B" (Ember stone) | 2026-10-14 |
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | pending | |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | pending | |
@@ -172,3 +172,4 @@ not in `main` yet).
   `evidence/rt_shots/`. Not run locally: the full suite. G2 RT asked.
 - 2026-10-14: G2 RT answered: the first three layouts' density is right; the other 21 follow them (RT2).
 - 2026-10-14: the owner's final boss (O16–O17): their Tripo file split into three models (Colossus, Prism, Nemesis; no piece cut); G1 FINAL_BOSS.md written.
+- 2026-10-14: G1 FINAL_BOSS answered (rows in FINAL_BOSS.md "Decisions").

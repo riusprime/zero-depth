@@ -1,4 +1,4 @@
-# G1: the final boss (v0.8.0 O16–O17; status: waiting for the owner, row by row)
+# G1: the final boss (v0.8.0 O16–O17; status: approved by the owner 2026-10-14, with the changes below)
 
 Owner, 2026-10-14, verbatim:
 
@@ -51,12 +51,12 @@ Placeholders: code-made clips over bones built in code (as the Foundry). The fis
 ## Decisions (owner, date)
 | Row | Answer | Built in |
 |---|---|---|
-| F1 | | |
-| F2 | | |
-| F3 | | |
-| F4 | | |
-| F5 | | |
-| F6 | | |
-| F7 | | |
-| F8 | | |
-| F9 | | |
+| F1 | Approved, changed: End the run on **any loop** leads to the final boss; the fight **ends the run** (no loop after it). Owner: "Yes, the boss should have some mechanics, that make it difficult even when you are super ultra omega OP, so it'd would calculate the scaling with the players power, maybe nor the full fight, some of it can be easier if earned through loops but other phases of the fight have to be as difficult as a "fresh" player where winning does not only take power but also skill from the player. The final boss fight ends the run, you can't loop after it, it would teleport you to a new, not yet designed biome, exclusive to this fight, wih unique looking, rounded big room like a gladiator arena, but cosmic like" (2026-10-14) | |
+| F2 | Changed: walking in **teleports you to a new biome exclusive to this fight**: a big **round** room like a **gladiator arena, but cosmic** (its look designed in FB; an art request for its pieces). Replaces the "throne hall in a 4×4 room" proposal (2026-10-14) | |
+| F3 | Approve all (2026-10-14) | |
+| F4 | Approve all (2026-10-14) | |
+| F5 | Approve all (2026-10-14) | |
+| F6 | "Weapon + dash + 2-3 cards (Recommended)": it uses your weapon and dash, echoes your moves and casts the strongest 2–3 cards of your wand (2026-10-14) | |
+| F7 | Changed (owner pick "Phase-by-phase mix"): **Colossus** HP scales with loops like other bosses (power earned by looping shortens it); **Prism** is a skill phase: hittable only in short windows between beam rotations, and her HP is set from your measured damage per second so she always lasts about 60 s however strong you are; **Nemesis** takes its HP and damage from your own build, an even duel (2026-10-14) | |
+| F8 | Approve all (2026-10-14) | |
+| F9 | Approve all (2026-10-14) | |
