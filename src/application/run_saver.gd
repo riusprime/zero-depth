@@ -85,9 +85,17 @@ func discard() -> void:
 
 ## v0.7.5 MG: the floor tables a floor of `run` is built with, compiled from `repo`: {map: FloorParams, arena:
 ## ArenaTable, shop: ShopTable}. v0.8.0 RT: the map carries the designed room layouts (data/room_layouts) unless the
-## floor was saved before RT (RunState.designed_rooms), which is rebuilt with its rule-built rooms. A v0.7.0 floor
+## floor was saved before RT (RunState.designed_rooms), which is rebuilt with its rule-built rooms. v0.8.0 SR: the shop
+## carries the biomes' shop rooms (data/shop_rooms) unless the floor was saved before SR (RunState.shop_rooms), which
+## is rebuilt with its terminal. A v0.7.0 floor
 ## resumed from an older save (RunState.v070_floor) gets v0.7.0's rules on top: FloorParams.v070(), arena share 330 per
 ## mille, a shop on every floor (Main and the save tests).
+## v0.8.0 SR: whether run `run`'s current floor puts its shop in its biome's shop room (false: a floor resumed from a
+## save made before SR, floor rules 1-4, keeps the terminal it had).
+static func shop_rooms(run: RunState) -> bool:
+	return run.floor_rules > RunState.FLOOR_RULES_V080_RT1
+
+
 static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 	var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
 	var arena := RunContentCompiler.compile_arena(repo.get_def(&"arena", &"arena"))
@@ -96,6 +104,8 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 		map.room_layouts = RunContentCompiler.compile_room_layouts(repo)
 		if run != null and run.rt1_rooms():  # v0.8.0 RT2: a floor saved under RT1 keeps RT1's three layouts
 			map.room_layouts = rt1_layouts(map.room_layouts)
+	if shop != null and (run == null or shop_rooms(run)):  # v0.8.0 SR: before SR, the terminal
+		shop.rooms = RunContentCompiler.compile_shop_rooms(repo)
 	if run != null and run.v070_floor():
 		map = FloorParams.v070()
 		if arena != null:

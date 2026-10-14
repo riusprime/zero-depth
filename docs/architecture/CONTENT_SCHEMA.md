@@ -743,6 +743,25 @@ under RT1 (floor rules 4, `RunState.rt1_rooms`) gets RT1's three layouts only (`
 `scripts/content/room_layouts.py` (never edited by hand). The F10 dev panel
 does not list the folder (geometry, not balance).
 
+### Shop rooms (`data/shop_rooms/<biome>.tres`, v0.8.0 SR)
+
+`ShopRoomDefinition` (category `shop_room`, extends `RoomLayoutDefinition`; owner O13, "this shop room that is gonna be
+designed in a way for each biome that will have like its own vendor … in a tent shop"): the shop room of `biome` (one
+per biome). Written by `scripts/content/shop_rooms.py` (its prefabs use `room_layouts.py`'s helpers). Drawn in the
+shop frame: y = 0 the room's way in (its first doorway's side), y = 1 its back; never mirrored. `stall:
+RoomLayoutGroup` (anchor unused): pieces in metres from the stall's centre, its front toward -y: exactly one solid
+`shop_counter` in front of one solid `shop_tent`, together `STALL_SIZE` (4.0 across × 3.4 deep, the owner's desert
+stall at its in-game scale) round the centre, and
+drawn goods and sacks standing on them. `stall_spots: Array[Vector2]` (the stall's candidate centres, fractions of
+the room, tried in order), `approach: Vector2` (the box kept clear in front of the counter: width ≥ the stall's,
+depth ≥ 1.5 m; 6 × 3 m as shipped) and `groups` (RoomLayoutDefinition's dressing groups at fractions of the room). The
+kit is `RoomLayoutDefinition.KIT` plus `SHOP_KIT` (`shop_counter`, `shop_tent`, `shop_wares`, `shop_sack`,
+`shop_lantern`; a designed room may not name them). Validation: RoomLayoutDefinition's rules on every group and on the
+stall, plus a biome, the stall's two solids and size, spots in 0..1, the approach's size, and no counter or tent in
+the dressing. `RunContentCompiler.compile_shop_rooms` → `ShopRoomTable` per biome into `ShopTable.rooms`;
+`RunSaver.floor_tables` adds them unless the floor was saved before SR (`RunState.shop_rooms`, floor rules < 5), whose
+shop is the terminal. The F10 dev panel does not list the folder (geometry, not balance).
+
 ## 6. Biomes
 
 ```gdscript

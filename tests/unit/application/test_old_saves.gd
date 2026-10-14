@@ -245,3 +245,35 @@ func test_a_save_from_the_first_designed_rooms_keeps_its_rooms() -> void:
 	old.finish_floor(w)
 	assert_false(old.rt1_rooms(), "the next floor: today's rules")
 	assert_eq(old.floor_rules, RunState.FLOOR_RULES)
+
+
+## v0.8.0 SR (owner O13): today's floors put the shop in its biome's shop room (floor rules 5); a floor saved before SR
+## (rules 1-4) is rebuilt with the terminal it had, in the room as it was, so its snapshot still fits it and not
+## today's floor; the shop's room is the same either way (ShopPlacement's rule is unchanged); the next floor is
+## today's.
+func test_a_save_from_before_the_shop_rooms_keeps_its_terminal() -> void:
+	var old := SaveLab.run_state(41, 1)
+	old.floor_rules = RunState.FLOOR_RULES_V080_RT1
+	assert_true(old.designed_rooms(), "rules 4: the designed rooms")
+	assert_false(RunSaver.shop_rooms(old), "rules 4: before SR")
+	var w := SaveLab.build_floor(old)
+	assert_true(w.shop.present(), "floor 1 has its shop")
+	assert_false(WorldReader.new(w).shop_stall(), "the terminal, as saved")
+	var saved := RunSaver.payload_of(w, old, 1, PackedByteArray())
+	assert_eq(int(saved["run"]["floor_rules"]), RunState.FLOOR_RULES_V080_RT1)
+	var repo := ContentRepository.load_all()
+	var resumed := RunSaver.run_from(
+		saved, ContentCompiler.compile_run(repo.get_def(&"run", SaveLab.RUN_ID))
+	)
+	assert_false(RunSaver.shop_rooms(resumed), "the payload keeps its rules")
+	assert_true((RunSaver.floor_tables(resumed, repo)[&"shop"] as ShopTable).rooms.is_empty())
+	var again := SaveLab.build_floor(resumed)
+	assert_eq(WorldSnapshot.apply(again, saved["world"]), "", "the saved floor rebuilds the same")
+	var now := SaveLab.run_state(41, 1)
+	assert_true(RunSaver.shop_rooms(now))
+	var fresh := SaveLab.build_floor(now)
+	assert_true(WorldReader.new(fresh).shop_stall(), "today's floor: the stall")
+	assert_eq(fresh.floor_layout.shop_room, w.floor_layout.shop_room, "in the same room")
+	assert_ne(WorldSnapshot.apply(fresh, saved["world"]), "", "and is not the floor that was saved")
+	old.finish_floor(w)
+	assert_true(RunSaver.shop_rooms(old), "the next floor: shop rooms")

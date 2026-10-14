@@ -5,9 +5,17 @@ extends GutTest
 ## store, are saved and announced; Reset all and Copy changes work.
 
 ## Folders that hold no balance: sounds, text, and two legacy folders the run never reads (the knob inventory).
-## v0.8.0 RT: room_layouts, the designed rooms, are geometry drawn in their files, not numbers to tune.
+## v0.8.0 RT: room_layouts, the designed rooms, are geometry drawn in their files, not numbers to tune; v0.8.0 SR:
+## so are shop_rooms, the biomes' shop rooms.
 const NOT_BALANCE := [
-	"audio", "credits", "patch_notes", "utilities", "encounters", "achievements", "room_layouts"
+	"audio",
+	"credits",
+	"patch_notes",
+	"utilities",
+	"encounters",
+	"achievements",
+	"room_layouts",
+	"shop_rooms",
 ]
 const ENEMY := "res://data/enemies/arc_caster.tres"
 const SAVE := "user://test_dev_master_panel.json"

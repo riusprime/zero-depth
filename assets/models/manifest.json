@@ -115,6 +115,11 @@
       "id": "gamble_shrine",
       "path": "assets/models/kit/gamble_shrine.glb",
       "sha256": "de311867124089b3b2e56c6fea0aabfe7e6d3ad7a3d37a7a53c84b590cf0d663"
+    },
+    {
+      "id": "shop_tent",
+      "path": "assets/models/shop/shop_tent.glb",
+      "sha256": "dc4fdbc02b69c1fdba3986b3cbf0a92ab030a81aca7274df8ed8bb71a6a48b57"
     }
   ],
   "textures": [

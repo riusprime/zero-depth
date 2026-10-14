@@ -129,7 +129,8 @@ Answers go into the "Owner decisions" table below the same day.
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Part 1 done (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2: the other bosses' ground attacks |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
 | RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Done (RT1 `v080-rt`: system + 3 layouts, G2 answered "follow the line of those"; RT2 `v080-rt2`: the other 21, every size, floor rules 5; [`evidence/ROOMS.md`](evidence/ROOMS.md)) |
-| SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
+| RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Part 1 done (system + 3 layouts); G2 asked |
+| SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data (+ sim map: the shop room's blockers) | Done (`v080-sr`: the owner's desert stall in every biome, code stand-ins for the rest; [`evidence/SHOP.md`](evidence/SHOP.md)) |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets | |
 
@@ -188,6 +189,21 @@ while agents run.
   `scripts/content/room_layouts.py` (small corners, wall spurs, the building outline and its broken corner, a central
   block, a diagonal band); RT1's prefabs and three layouts unchanged. The 4×4 layouts furnish ordinary 4×4 rooms only;
   the boss room keeps `BossRoomBuilder`.
+
+### SR (the shop room; the agent's reading, 2026-10-14)
+- **Room.** ShopPlacement's rule is unchanged (the same room, so arenas, routes and the Overrun room don't move);
+  that room's interior is then replaced by the biome's shop room (`data/shop_rooms/<biome>.tres`, `ShopRoom`): a
+  tent stall (the owner's desert stall's footprint, 4.0 × 3.4 m: a 0.9 m counter in front of the tent) facing the
+  room's first doorway, a clear 6 × 3 m approach in front of the counter, and dressing groups (crates and goods, sacks, lantern
+  posts, braziers, rocks; the dresser restyles kit pieces per biome). The interaction point is the counter (Shop.pos).
+  No draw; a room where the stall finds no spot keeps the terminal (none over the test's 120 floors, bounded at 3 %).
+- **Saves.** `RunState.FLOOR_RULES` 5; a floor saved under rules 1-4 rebuilds with its terminal
+  (`RunState.shop_rooms`, `RunSaver.floor_tables`). Nothing new hashed or saved.
+- **Look.** The owner's desert stall (`assets/models/shop/shop_tent.glb`, delivered during SR) in every biome until
+  their own; its vendor is fused into the mesh, so the code vendor is hidden over it and the lantern shows a sale
+  (brighter) or a refusal (red). Code stand-ins in the faceted style (`ShopStallView`, `ShopVendor`: a tent and a vendor
+  per biome that idles, turns to you, nods, shakes; reduced motion: a glow instead of movement) draw whatever has no
+  model (`ShopModels`; sizes and facing in ART_LIST §1). The look is OWNER ONLY.
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share
