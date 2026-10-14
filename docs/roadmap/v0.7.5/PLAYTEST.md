@@ -72,5 +72,36 @@ You asked for no interventions, so the lead's readings are written in PLAN for y
 8. Card levels on the pick cards and the wand.
 9. Anything that feels unfinished for a release.
 
-## Owner answers
-OWNER ONLY
+## Owner answers (2026-10-14)
+Pasted verbatim from the owner's message; it opens v0.8.0 ([`../v0.8.0/PLAN.md`](../v0.8.0/PLAN.md), O1–O11).
+
+> "Okay, so I'm just going to throw a lot of feedback from the game that I've been holding and experimenting while
+> playing. So this is going to be V0.8, and I'm just throwing information. So I need you. What I need you to do is to
+> organize it and write it down so we don't lose. Anything that I say, and then we start applying it like we always
+> do, three, four agents max, if the four, if the tasks are not too big, three agents, and, first of all, the enemies
+> are all red. I know I haven't provided models for all of them, but we could work in something that differentiates
+> the different enemies, not only by what they do, but also color. And we could add some different models that add,
+> you know, a bit more spice to the to the enemy mix and for most of them unless the things that are thrown from a
+> distance we are gonna be deleting the red tray that they show when they aim like we already did with some of them
+> before And for the new bosses, I do like the fights. That's like the direction, the right direction. But I tried all
+> of them, and the fight seem, feels pretty similar. We just do the orbs in spirals and the ones crossing in line, and,
+> and that's fine. But we should have something different, right? Something that actually stands out for each boss.
+> Um, the animations they do are a shit, actually. So we have to work on animations from there, like we did with the
+> actual attacks of the player. There are some... If we need to generate textures for that, so the the attacks look
+> real. So, for example, when they do long distance stonekeeper, it should be like spikes coming out of the ground
+> that actually look like spikes and not like. Just a red thingy that doesn't look good at all. And also the orbs that
+> they throw, they're 2D shit looking. We could look up for some textures online and use them to create actual 3D
+> objects in the game that look and feel like the game's art. Um, the combinations for gun are way better than the
+> combinations for blade. Blade is way more difficult to get a good, you know, combination of items. And the, I
+> haven't tried them yet, but... Feels like sometimes you're not getting that that many modifiers in the blade as you
+> get in the gun, and with enough modifiers in the in the gun, for example, it happened multiple times. But this is
+> the example I remember right now. You have a split and the other power that makes the attack divide when you hit an
+> enemy. And they explode after it, and that causes hell of a lag. Like it goes, the game goes two, FPS. find a way of
+> balancing with these animations so the game doesn't have lag a lot. And I feel like the the visuals are great with
+> these images, but maybe we can stop applying some effects so it doesn't cause some lag. And with this kind of build,
+> I tested the DPS on the new playground. And the DPS is above 50K of damage per second per enemy. So I spawned three
+> enemies and I was doing over 150K of DPS. And ultra omega deleting bosses. So we have to find a way of balancing
+> this. when you loop the game and you get to that point so it doesn't become boring and it keeps being difficult and
+> not only like doing shit the stronger enemies deal more damage because that would one shot the the player so it
+> needs to be a lot more HP growing than health because the player doesn't grow in health that much. We don't have
+> those items yet. And that's it for now."
