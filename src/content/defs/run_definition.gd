@@ -38,10 +38,12 @@ extends ContentDef
 ##   compounding (loop 3 = the factor twice), never past loop_scale_cap_permille; on top of the floor's own scaling;
 ## - threat T + loop_threat per loop past the first (Curses.threat: the curses' and Deep's threat, shown as T);
 ## - the hidden catch-up's caps (enemies' and the boss's) + loop_catch_up_cap_permille per loop past the first.
-@export var loop_enemy_hp_permille := 4000
-@export var loop_enemy_damage_permille := 2000
-@export var loop_boss_hp_permille := 2000
-@export var loop_boss_damage_permille := 1500
+## v0.8.0 LS (owner Q6, "HP ×6, dmg ×1.2"): enemies and bosses alike, HP ×6 and damage ×1.2 per loop (was enemy
+## HP ×4 / damage ×2, boss HP ×2 / damage ×1.5), so HP outgrows the player's build and damage only a little.
+@export var loop_enemy_hp_permille := 6000
+@export var loop_enemy_damage_permille := 1200
+@export var loop_boss_hp_permille := 6000
+@export var loop_boss_damage_permille := 1200
 @export var loop_scale_cap_permille := 100000
 @export var loop_threat := 2
 @export var loop_catch_up_cap_permille := 500
