@@ -287,3 +287,68 @@ The other `_room` shots are in `build/shots/v0.8.0/sr/` (not copied, to keep the
 - Vendors and goods as models of their own (`shop_vendor_<biome>`, `shop_wares`): stand-ins until they arrive.
 - A tint of the stall per biome; biome-specific stalls.
 - Look and feel on the owner's PC: **OWNER ONLY**.
+
+## The damage soak's node-count failure after SR (agent `v080-leak`, 2026-10-14) — not a leak: the stall's size per floor
+
+Build: `5bd7616` (branch `claude/lucid-fermat-9wv2tf`, which holds the failing merge `d476908`), Godot 4.7.2.
+
+The seams on `d476908` failed `tests/e2e/test_e2e_damage_soak.gd`: `[136] expected to be < than [135]: after 2 deaths the
+node count (1495) is back near the first fight's (1359)`. The soak counts every node outside `main.view.stage`; SR's
+`ShopStallView` is a child of `WorldViewRoot`, outside the stage, so the stall's nodes count, and they vary per floor
+with how many dressing groups the shop room keeps (stand-in wares, sacks and lantern posts; only `shop_tent` is a model).
+
+**Temporary diagnostic (not committed)**: a copy of the soak with `DEATHS := 4`, printing after fight 1 and after each
+restart the nodes outside the stage, each `WorldViewRoot` child's subtree size, the reader's shop room and
+`shop_piece_count()`:
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/tmp_diag_soak.gd -gexit
+DIAG fight 1:       total=5357 outside_stage=1363 stall=true pieces=8  layout=shop_night_rocks  ShopStall=39
+DIAG after death 1: total=6627 outside_stage=1463 stall=true pieces=15 layout=shop_red_canyon   ShopStall=103
+DIAG after death 2: total=6388 outside_stage=1499 stall=true pieces=22 layout=shop_night_rocks  ShopStall=149
+DIAG after death 3: total=6351 outside_stage=1544 stall=true pieces=25 layout=shop_starfall     ShopStall=187
+DIAG after death 4: total=7778 outside_stage=1532 stall=true pieces=26 layout=shop_ruins        ShopStall=187
+```
+
+(Excerpt of the DIAG lines; the other view children are equal across the five rows except Rewards 139/167/153/153/153,
+Arenas 22/29/22/29/28, EventPedestals 14/14/25/25/14; main's Audio 8 then 9; UI 393 throughout.) Outside the stage
+minus the stall: 1324, 1360, 1350, 1357, 1345. The total doesn't accumulate (the stage dominates it), and the orphan
+check stays at 0. The stall's count follows the sim's `shop_piece_count`, which is the floor's.
+
+**History-free per seed** (temporary test, not committed): floor 1 of seeds 1–12 built with `SaveLab.floor_world`, then
+again in reverse order, each with a fresh `ShopStallView` counted and freed:
+
+```
+SEED 12: first [&"shop_starfall", 26, 187] again [&"shop_starfall", 26, 187]
+SEED 11: first [&"shop_red_canyon", 20, 153] again [&"shop_red_canyon", 20, 153]
+SEED 10: first [&"shop_ruins", 10, 59] again [&"shop_ruins", 10, 59]
+SEED 9: first [&"shop_ruins", 22, 162] again [&"shop_ruins", 22, 162]
+SEED 8: first [&"shop_frozen_shore", 14, 86] again [&"shop_frozen_shore", 14, 86]
+SEED 7: first [&"shop_ruins", 15, 105] again [&"shop_ruins", 15, 105]
+SEED 6: first [&"shop_ruins", 6, 25] again [&"shop_ruins", 6, 25]
+SEED 5: first [&"shop_night_rocks", 6, 25] again [&"shop_night_rocks", 6, 25]
+SEED 4: first [&"shop_starfall", 14, 93] again [&"shop_starfall", 14, 93]
+SEED 3: first [&"shop_red_canyon", 28, 218] again [&"shop_red_canyon", 28, 218]
+SEED 2: first [&"shop_frozen_shore", 6, 25] again [&"shop_frozen_shore", 6, 25]
+SEED 1: first [&"shop_night_rocks", 15, 100] again [&"shop_night_rocks", 15, 100]
+Passing Tests         1
+```
+
+The stall alone spans 25–218 nodes across 12 floors; the soak's bound is 10% of ~1360 (135). The soak itself, unchanged,
+three runs (deterministic):
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_damage_soak.gd -gexit
+run 1: soak: 2 deaths, 42 hits, 6005 frames; nodes 1363 -> 1499   [Failed]: [136] expected to be < than [136]
+run 2: soak: 2 deaths, 42 hits, 6005 frames; nodes 1363 -> 1499   [Failed]: [136] expected to be < than [136]
+run 3: soak: 2 deaths, 42 hits, 6005 frames; nodes 1363 -> 1499   [Failed]: [136] expected to be < than [136]
+```
+
+`test_e2e_shop.gd`: 3/3 passing (68 asserts). `test_e2e_run_flow.gd`: 3/3 passing (56 asserts). Lint: `gdformat --check`
+902 files unchanged, `gdlint` no problems. No code changed; the bound is untouched. Open for the lead and the owner: how
+the soak should treat the shop stall (e.g. exclude it as the stage is excluded, or a fixed seed) — **NOT YET DECIDED**.
+
+**Decided by the lead (2026-10-14):** the soak leaves the shop stall's nodes out of its leak count, the rule it already
+applies to the stage (floor dressing that changes with each floor). Everything else is still counted. After the change,
+`godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_damage_soak.gd -gexit`,
+twice: `soak: 2 deaths, 42 hits, 6005 frames; nodes 1324 -> 1350`, Passing Tests 1 (both runs).
