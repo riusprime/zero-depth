@@ -14,7 +14,7 @@ not in `main` yet).
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
 |---|---|---|---|
-| Q1–Q6 (PLAN "Design questions") | 2026-10-14 | pending | |
+| Q1–Q6 (PLAN "Owner decisions") | 2026-10-14 | by role; prompts for the seven kinds without an owner design; only the Arc Caster rune and Mine Layer mines keep ground marks; code clips first; CC0 + the owner's generator; HP ×6 / damage ×1.2 per loop | 2026-10-14 |
 | G1 BOSS_SIGNATURES | — | not yet written | |
 | G1 BLADE_AUDIT | — | not yet written | |
 
@@ -27,3 +27,4 @@ not in `main` yet).
 ## History
 - 2026-10-14: the owner's v0.7.5 playtest message (O1–O11, verbatim in PLAN); three read-only audits of the live
   code; plan written.
+- 2026-10-14: Q1–Q6 answered (PLAN "Owner decisions"). PF (direct fix) started by an agent on `v080-pf`.
