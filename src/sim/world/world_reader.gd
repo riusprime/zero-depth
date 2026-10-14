@@ -2247,6 +2247,43 @@ func shop_angle() -> int:
 	return _w.floor_layout.shop_angle if _w.floor_layout != null else 0
 
 
+## v0.8.0 SR: the shop stands in its biome's shop room, a tent stall (false: the terminal).
+func shop_stall() -> bool:
+	return _w.floor_layout != null and _w.floor_layout.shop_layout != &"" and Shop.present(_w)
+
+
+## Where you stand to use the shop (ShopPlacement.front: in front of the terminal's screen or the stall's counter).
+func shop_front() -> Vector2:
+	return ShopPlacement.front(_w.floor_layout) if _w.floor_layout != null else _w.shop.pos
+
+
+## v0.8.0 SR: the shop room's layout id (&"" for the terminal).
+func shop_layout() -> StringName:
+	return _w.floor_layout.shop_layout if _w.floor_layout != null else &""
+
+
+## v0.8.0 SR: the shop room's own pieces (the stall, its goods, sacks and lanterns) for ShopStallView.
+func shop_piece_count() -> int:
+	return _w.floor_layout.shop_props.size() if shop_stall() else 0
+
+
+## Piece i: {"piece": StringName, "pos": Vector2, "angle": int (1/4096), "size": Vector2 (m: x along the angle's
+## direction, y across it), "height": float (m; 0 = its own), "solid": bool, "on": the piece a drawn one stands on
+## (&"" for none), "on_height": that piece's height (m; 0 = the kit's own, -1 for none)}.
+func shop_piece(i: int) -> Dictionary:
+	var p: Array = _w.floor_layout.shop_props[i]
+	return {
+		"piece": p[0],
+		"pos": p[1],
+		"angle": p[2],
+		"size": p[3],
+		"height": p[4],
+		"solid": p[5],
+		"on": p[6],
+		"on_height": p[7],
+	}
+
+
 func shop_in_reach() -> bool:
 	return Shop.in_reach(_w)
 

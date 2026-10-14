@@ -112,6 +112,45 @@ static func compile_room_layout(def: RoomLayoutDefinition) -> RoomLayoutTable:
 	return t
 
 
+## v0.8.0 SR (owner O13): the biomes' shop rooms (data/shop_rooms), biome id -> ShopRoomTable: the stall and the
+## dressing groups in centimetres and per mille, as compile_room_layout.
+static func compile_shop_rooms(repo: ContentRepository) -> Dictionary:
+	var out := {}
+	if repo == null:
+		return out
+	for def: ShopRoomDefinition in repo.all_of(&"shop_room"):
+		var t := ShopRoomTable.new()
+		t.id = def.id
+		t.biome = def.biome
+		t.stall = _layout_group(def.stall)
+		for q in def.stall_spots:
+			t.stall_spots.append(Vector2i(roundi(q.x * 1000.0), roundi(q.y * 1000.0)))
+		t.approach = Vector2i(roundi(def.approach.x * 100.0), roundi(def.approach.y * 100.0))
+		t.layout = RoomLayoutTable.new()
+		t.layout.id = def.id
+		for g in def.groups:
+			t.layout.groups.append(_layout_group(g))
+		out[def.biome] = t
+	return out
+
+
+static func _layout_group(g: RoomLayoutGroup) -> RoomLayoutTable.Group:
+	var cg := RoomLayoutTable.Group.new()
+	if g == null:
+		return cg
+	cg.anchor = Vector2i(roundi(g.anchor.x * 1000.0), roundi(g.anchor.y * 1000.0))
+	for p in g.pieces:
+		var cp := RoomLayoutTable.Piece.new()
+		cp.piece = p.piece
+		cp.at = Vector2i(roundi(p.at.x * 100.0), roundi(p.at.y * 100.0))
+		cp.size = Vector2i(roundi(p.size.x * 100.0), roundi(p.size.y * 100.0))
+		cp.angle = posmod(roundi(p.yaw * 4096.0 / 360.0), 4096)
+		cp.height = roundi(p.height * 100.0)
+		cp.solid = p.solid
+		cg.pieces.append(cp)
+	return cg
+
+
 ## v0.7.5 MG (owner N9): the generator's room counts, footprints and span from data/map over FloorParams' defaults
 ## (null: the defaults, which equal the shipped file).
 static func compile_map(def: MapDefinition) -> FloorParams:

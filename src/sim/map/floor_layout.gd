@@ -140,6 +140,15 @@ var arena_rooms := PackedInt32Array()
 var shop_room := -1
 var shop_pos := Vector2.ZERO
 var shop_angle := 0
+## v0.8.0 SR (owner O13): the shop room's layout (ShopRoomTable.id; &"" for the terminal of a floor built before SR,
+## or when the stall found no spot). With one, shop_pos is the counter's centre and shop_angle the way its front
+## faces; shop_solids are the stall's footprints (and any shop_* solid of the dressing), walls the world adds
+## (FloorScenario.add_shop) and the dresser never draws; shop_props are every shop_* piece for ShopStallView, as
+## [piece, centre: Vector2, angle (1/4096), size: Vector2 (m, x along the angle), height (m; 0 = its own), solid,
+## the piece a drawn one stands on (&"" for none), that piece's height (m; 0 = the kit's own; -1 for none)].
+var shop_layout := &""
+var shop_solids: Array[Obb] = []
+var shop_props: Array = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []

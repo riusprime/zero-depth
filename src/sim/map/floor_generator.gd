@@ -930,3 +930,18 @@ static func _nearest_ok_cell(
 			best = q
 			best_d = d
 	return best
+
+
+# --- v0.8.0 SR: the checks a shop room's stall and dressing pass (ShopRoom, after generation) ---
+
+
+## A group placed into a room after generation fits as a designed room's group does (_vignette_fits).
+static func vignette_fits(
+	f: FloorLayout, p: FloorParams, room: int, walls: Array[Obb], structural: int, group: Array[Obb]
+) -> bool:
+	return _vignette_fits(f, p, room, walls, structural, group)
+
+
+## The boxes in front of a room's doorways that a designed room keeps free (_door_boxes).
+static func door_boxes(f: FloorLayout, p: FloorParams, room: int) -> Array[Rect2]:
+	return _door_boxes(f, p, room)

@@ -79,14 +79,35 @@ static func build(
 ## and (v0.7.5 MG, owner N12) on a floor the table skips (ShopTable.on_floor: floors 1, 3, 5 ... as shipped). On a
 ## floor without a shop, the room ShopPlacement would take stays an ordinary room (never an arena: ArenaRooms and
 ## Routes keep it out either way, so the floor's other choices don't move).
-static func add_shop(w: World, shop: ShopTable) -> void:
+## v0.8.0 SR (owner O13): with a shop room for the floor's biome (ShopTable.room_for; none on a floor saved before SR),
+## the room ShopPlacement picked is furnished as the biome's tent stall (ShopRoom.furnish, `map` its generator rules:
+## null, FloorParams' defaults): its old interior goes, the dressing joins the layout's walls, the stall's footprints
+## are walls the dresser never draws, and the shop's spot is the counter. When no stall fits, the terminal stands as
+## before.
+static func add_shop(
+	w: World, shop: ShopTable, biome: StringName = &"", map: FloorParams = null
+) -> void:
 	var layout := w.floor_layout
 	if shop == null or layout == null or not shop.on_floor(w.run_floor_index()):  # AP: across loops
 		return
 	if ShopPlacement.pick(layout) < 0:
 		return
-	var walls: Array[Obb] = w.walls.duplicate()
-	walls.append(ShopPlacement.collider(layout.shop_pos, layout.shop_angle))
+	var extra: Array[Obb] = w.walls.slice(layout.walls.size())  # the gate, the Deep gate, the shrine
+	var room := layout.shop_room
+	var p := map if map != null else FloorParams.defaults()
+	var walls: Array[Obb] = []
+	if ShopRoom.furnish(layout, p, room, shop.room_for(biome)):
+		walls = layout.walls.duplicate()
+		walls.append_array(extra)
+		walls.append_array(layout.shop_solids)
+		var spawns := PackedVector2Array()
+		for q in w.spawn_points:
+			if layout.room_of(q) != room or layout.spawn_points[room].has(q):
+				spawns.append(q)
+		w.spawn_points = spawns
+	else:
+		walls = w.walls.duplicate()
+		walls.append(ShopPlacement.collider(layout.shop_pos, layout.shop_angle))
 	w.set_walls(walls)
 	w.prepare_wall(layout.boss_door_wall)
 	w.shop_table = shop

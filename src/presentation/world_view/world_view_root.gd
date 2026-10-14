@@ -38,8 +38,10 @@ var transit := PortalTransitView.new()
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
-## The shop terminal (v0.5.0 SH; null on a floor without one).
+## The shop terminal (v0.5.0 SH; null on a floor without one, or whose shop is a stall).
 var shop_terminal: ShopTerminalView
+## v0.8.0 SR: the shop's tent stall and its vendor (null on a floor without one: no shop, or a terminal).
+var shop_stall: ShopStallView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
 var challenge := BossChallengeView.new()
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
@@ -161,7 +163,11 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
 		add_child(gamble_shrine)
 		gamble_shrine.setup(reader.gamble_pos())
-	if reader.has_shop():
+	if reader.shop_stall():  # v0.8.0 SR: the biome's tent stall and vendor
+		shop_stall = ShopStallView.new()
+		add_child(shop_stall)
+		shop_stall.setup(reader, stage.prop_style)
+	elif reader.has_shop():
 		shop_terminal = ShopTerminalView.new()
 		add_child(shop_terminal)
 		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
@@ -217,6 +223,8 @@ func sync() -> void:
 		gamble_shrine.sync(reader)
 	if shop_terminal != null:
 		shop_terminal.sync(reader)
+	if shop_stall != null:
+		shop_stall.sync(reader)
 	# v0.5.0 RT: each gate closes when the other one is taken.
 	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:

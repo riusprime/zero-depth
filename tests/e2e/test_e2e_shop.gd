@@ -1,9 +1,10 @@
 extends GutTest
 ## The shop through real input (v0.5.0 SH): start a run (God and Bomb Lobber from the dev panel, clicked with the
 ## mouse: the dev route, so the walk is safe and there is an ability to salvage), walk with the left stick to the
-## floor's shop terminal (in a side room, on the minimap once seen), see the prompt, press E: the shop panel opens
-## with four priced cards and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked
-## card and its slot reads Sold. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
+## floor's shop (in a side room, on the minimap once seen; v0.8.0 SR: the biome's tent stall, its vendor behind the
+## counter turning to you as you come up to it), see the prompt, press E: the shop panel opens with four priced cards
+## and the world waits. Buy a card with the keyboard (arrows, Enter): it applies as a picked card, its slot reads Sold
+## and the vendor nods. Move down to the salvage list and salvage Bomb Lobber with the pad (d-pad, A): 25
 ## shards per level back, the slot is free. B closes the shop and play resumes.
 
 
@@ -33,7 +34,15 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	var layout := w.floor_layout
 	assert_true(w.shop.present(), "the floor has a shop")
 	assert_true(ShopPlacement.allowed(layout, w.shop.room), "in a side room")
-	assert_not_null(main.view.shop_terminal, "the terminal is drawn")
+	# v0.8.0 SR (O13): the shop is the biome's tent stall with its vendor, not the terminal.
+	assert_true(main.driver.reader.shop_stall(), "the shop room has its stall")
+	assert_eq(
+		layout.shop_layout, StringName("shop_%s" % main.run_biome_id()), "the biome's shop room"
+	)
+	var stall: ShopStallView = main.view.shop_stall
+	assert_not_null(stall, "the stall is drawn")
+	assert_null(main.view.shop_terminal, "no terminal")
+	assert_eq(stall.vendor.biome, main.run_biome_id(), "the biome's vendor")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	while w.ability_tables[main.driver.debug.ability_choice].id != &"bomb_lobber":
@@ -43,11 +52,13 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	var bomb := Abilities.index_of_kind(w, AbilityTable.Kind.BOMB_LOBBER)
 	assert_true(Abilities.owned(w, bomb), "Bomb Lobber in slot 2")
-	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked to the terminal")
-	await e.frames(2)
+	assert_true(await e.walk_to(ShopPlacement.front(layout), 0.4), "walked up to the counter")
+	await e.frames(40)
 	assert_true(hud.minimap.state.is_discovered(w.shop.room), "its room is on the minimap")
-	assert_eq(hud.shop.prompt_text(), tr("SHOP_PROMPT"), "the prompt by the terminal")
-	assert_true(main.view.shop_terminal.hot(), "the terminal lights up in reach")
+	assert_eq(hud.shop.prompt_text(), tr("SHOP_PROMPT"), "the prompt by the counter")
+	assert_true(stall.hot(), "the stall's lantern brightens in reach")
+	assert_true(stall.vendor.has_target(), "the vendor looks at you")
+	assert_true(stall.vendor.facing_target(), "and has turned to face you")
 	# TEST HELPER (labelled): grant the shards directly. Earning them by input is test_e2e_rewards'
 	# test_kills_earn_shards; this test is about spending them.
 	w.shards = 400
@@ -87,6 +98,7 @@ func test_walk_to_the_shop_buy_a_card_and_salvage_an_ability() -> void:
 	for ev in w.events_since(seq):
 		picked = picked or (ev.kind == SimEvent.Kind.PICKUP and ev.amount == code)
 	assert_true(picked, "it applied as a picked card")
+	assert_true(stall.vendor.nodding(), "the vendor nods at the sale")
 	gut.p("bought %s for %d" % [Offers.info(w, code)["id"], cost])
 	# Salvage Bomb Lobber with the pad: down to the salvage list, along to it, A.
 	await _pad(e, JOY_BUTTON_DPAD_DOWN)
@@ -147,7 +159,9 @@ func test_rerolls_keep_sold_slots_and_four_buys_per_floor() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
-	assert_true(await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked to the terminal")
+	assert_true(
+		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"
+	)
 	# TEST HELPER (labelled): grant the shards directly, as in the test above.
 	w.shards = 5000
 	await e.tap(KEY_E)
@@ -215,7 +229,9 @@ func test_held_enter_on_reroll_rerolls_once() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
-	assert_true(await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked to the terminal")
+	assert_true(
+		await e.walk_to(ShopPlacement.front(w.floor_layout), 0.4), "walked up to the counter"
+	)
 	# TEST HELPER (labelled): grant the shards directly, as in the tests above.
 	w.shards = 5000
 	await e.tap(KEY_E)

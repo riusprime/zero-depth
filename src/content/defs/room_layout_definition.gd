@@ -55,6 +55,11 @@ func category() -> StringName:
 	return &"room_layout"
 
 
+## The pieces this layout may name (v0.8.0 SR: a shop room adds its stall's pieces, ShopRoomDefinition).
+func kit() -> Array[StringName]:
+	return KIT
+
+
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	if cells.y < 1 or cells.x < cells.y or cells.x > 4:
@@ -93,7 +98,7 @@ func _check_group(issues: Array[ValidationIssue], g: int, group: RoomLayoutGroup
 		if p == null:
 			issues.append(ValidationIssue.new(&"empty", resource_path, "%s is empty" % where))
 			continue
-		if not KIT.has(p.piece):
+		if not kit().has(p.piece):
 			issues.append(
 				ValidationIssue.new(
 					&"unknown_piece", resource_path, "%s: no kit piece '%s'" % [where, p.piece]

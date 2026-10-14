@@ -27,7 +27,8 @@ static func floor_world(run_seed: int, floor_index: int, build: StringName = &"b
 	return build_floor(run_state(run_seed, floor_index, build))
 
 
-static func build_floor(run: RunState) -> World:
+## `biome` (v0.8.0 SR, shots only): the shop room's biome when not the run's own (&"": the run's, as Main).
+static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	var repo := ContentRepository.load_all()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
@@ -53,10 +54,11 @@ static func build_floor(run: RunState) -> World:
 		rules[&"arena"],  # v0.5.5 AR, as Main
 		rules[&"map"]  # v0.7.5 MG, as Main
 	)
-	FloorScenario.add_shop(w, rules[&"shop"])  # v0.5.0 SH, as Main
 	var biome: BiomeDefinition = repo.get_def(
 		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
 	)
+	var shop_biome := biome.id if biome_id == &"" else biome_id
+	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main

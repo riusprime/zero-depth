@@ -1431,6 +1431,25 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   afterwards as before. Floor rules 4 (`RunState.FLOOR_RULES`): a floor saved under rules 1-3 is rebuilt without
   layouts and makes none of these draws, so it is the floor it was saved on. Nothing new is hashed or saved (the floor
   is rebuilt from its seed and rules; the snapshot's walls must match it).
+- **Shop rooms (v0.8.0 SR; owner O13; `ShopRoom`, `FloorScenario.add_shop`).** After `ShopPlacement.pick` (its rule
+  unchanged, so the room, the arenas and the routes stay put), on a floor whose shop table has a shop room for the
+  floor's biome (`ShopTable.room_for`), `ShopRoom.furnish` replaces that room's interior (every piece from `slab_first`
+  inside it, and its drawn pieces) with the biome's layout. No draw. The frame is the quarter turn whose -y points from
+  the room's centre toward its first doorway's approach (the farther axis; ties to x). The stall stands at the first
+  of its spots where it fits, pushed flush to a side or the back within the slab gap; it fits when it passes a
+  designed group's checks (`FloorGenerator.vignette_fits`) and no doorway's box, its approach box (clipped to the
+  room) keeps its full depth across the counter's width, every item spot of the room keeps the item clearance from it
+  and stays out of the approach, and the room stays one region (enemy clearance) holding the doorways' approaches, the
+  item spots and a point 1.8 m in front of the counter. The dressing's groups are kept or dropped whole by the same
+  checks and never stand in the approach. Kit solids join `FloorLayout.walls` (drawn by the dresser); the stall and
+  any `shop_*` solid go to `FloorLayout.shop_solids`, which `add_shop` appends to the world's walls after the layout's
+  walls and the gate's, the Deep gate's and the shrine's footprints (never drawn as walls; `ShopStallView` draws them);
+  `shop_pos` is the counter's centre (the shop's interaction point, `Shop.pos`), `shop_angle` its facing; the room's
+  spawn points keep those clear of the new pieces (spawn clearance), out of the approach and 1.6 m from the counter.
+  When no spot fits, nothing changes and the terminal stands as before (none over the 120 run floors of
+  `tests/unit/sim/test_shop_rooms.gd`, which bounds it at 3 %; one in 30 other floors probed, a 12.8 × 8.9 m room
+  whose reward stood in the walk-up lane). Floor rules 5: a floor saved under rules 1-4 has no shop rooms in its tables
+  and is rebuilt with its terminal. Nothing new is hashed or saved.
 - **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
   run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
   boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that

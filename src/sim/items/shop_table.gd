@@ -31,6 +31,14 @@ var interact_radius_m := 1.8
 ## and every `every_floors` floors after it (FloorCadence: 1, 3, 5 ... as shipped; a 3-floor run has two).
 var first_floor := 1
 var every_floors := 2
+## v0.8.0 SR (owner O13): the biomes' shop rooms, biome id -> ShopRoomTable (RunContentCompiler.compile_shop_rooms).
+## Empty on a floor saved before SR (RunState.shop_rooms; RunSaver.floor_tables), whose shop is the terminal.
+var rooms := {}
+
+
+## v0.8.0 SR: the shop room of biome `biome` (null: none, so the terminal).
+func room_for(biome: StringName) -> ShopRoomTable:
+	return rooms.get(biome, null)
 
 
 ## Whether floor `floor_index` (the run's floor number, counted on past the run's last floor) has the shop.

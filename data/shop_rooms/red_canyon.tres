@@ -1,0 +1,1216 @@
+[gd_resource type="Resource" script_class="ShopRoomDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/room_layout_piece.gd" id="1_piece"]
+[ext_resource type="Script" path="res://src/content/defs/room_layout_group.gd" id="2_group"]
+[ext_resource type="Script" path="res://src/content/defs/shop_room_definition.gd" id="3_shop"]
+
+[sub_resource type="Resource" id="P0_0"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.65, -0.65)
+size = Vector2(1.3, 1.3)
+height = 1.6
+solid = true
+
+[sub_resource type="Resource" id="P0_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(1.95, -0.6)
+size = Vector2(1.3, 1.2)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P0_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.6, -1.9)
+size = Vector2(1.2, 1.2)
+height = 0.9
+solid = true
+
+[sub_resource type="Resource" id="P0_3"]
+script = ExtResource("1_piece")
+piece = &"fire_barrel"
+at = Vector2(3, -0.4)
+size = Vector2(0.8, 0.8)
+solid = true
+
+[sub_resource type="Resource" id="P0_4"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(1.95, -0.6)
+size = Vector2(0.9, 0.6)
+yaw = 352
+
+[sub_resource type="Resource" id="P0_5"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(0.6, -1.9)
+size = Vector2(0.6, 0.6)
+yaw = 320
+
+[sub_resource type="Resource" id="P0_6"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.85, 0.29)
+size = Vector2(0.6, 0.6)
+yaw = 225
+
+[sub_resource type="Resource" id="P0_7"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.31, -0.73)
+size = Vector2(0.6, 0.6)
+yaw = 202
+
+[sub_resource type="Resource" id="P0_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(1.75, 0.45)
+size = Vector2(0.9, 0.45)
+yaw = 348
+
+[sub_resource type="Resource" id="P0_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.69, -1.96)
+size = Vector2(0.6, 0.6)
+yaw = 303
+
+[sub_resource type="Resource" id="P0_10"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-0.37, -2.06)
+size = Vector2(0.6, 0.6)
+yaw = 335
+
+[sub_resource type="Resource" id="P0_11"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(2.82, 0.41)
+size = Vector2(0.6, 0.6)
+yaw = 273
+
+[sub_resource type="Resource" id="P0_12"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(3.81, -0.22)
+size = Vector2(0.6, 0.6)
+yaw = 308
+
+[sub_resource type="Resource" id="G0"]
+script = ExtResource("2_group")
+anchor = Vector2(0, 1)
+pieces = Array[ExtResource("1_piece")]([SubResource("P0_0"), SubResource("P0_1"), SubResource("P0_2"), SubResource("P0_3"), SubResource("P0_4"), SubResource("P0_5"), SubResource("P0_6"), SubResource("P0_7"), SubResource("P0_8"), SubResource("P0_9"), SubResource("P0_10"), SubResource("P0_11"), SubResource("P0_12")])
+
+[sub_resource type="Resource" id="P1_0"]
+script = ExtResource("1_piece")
+piece = &"rock_large"
+at = Vector2(-1, -1)
+size = Vector2(2, 2)
+solid = true
+
+[sub_resource type="Resource" id="P1_1"]
+script = ExtResource("1_piece")
+piece = &"rock_large"
+at = Vector2(-2.6, -0.6)
+size = Vector2(1.2, 1.2)
+solid = true
+
+[sub_resource type="Resource" id="P1_2"]
+script = ExtResource("1_piece")
+piece = &"dead_tree"
+at = Vector2(-0.7, -2.6)
+size = Vector2(1, 1)
+solid = true
+
+[sub_resource type="Resource" id="P1_3"]
+script = ExtResource("1_piece")
+piece = &"brazier_pole"
+at = Vector2(-3.55, -0.4)
+size = Vector2(0.7, 0.7)
+solid = true
+
+[sub_resource type="Resource" id="P1_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.5, 0.49)
+size = Vector2(0.6, 0.6)
+yaw = 243
+
+[sub_resource type="Resource" id="P1_5"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-2.53, -1.5)
+size = Vector2(0.9, 0.45)
+yaw = 291
+
+[sub_resource type="Resource" id="P1_6"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.61, -2.49)
+size = Vector2(0.6, 0.6)
+yaw = 241
+
+[sub_resource type="Resource" id="P1_7"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-2.48, 0.29)
+size = Vector2(0.6, 0.6)
+yaw = 335
+
+[sub_resource type="Resource" id="P1_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.01, -2.7)
+size = Vector2(0.9, 0.45)
+yaw = 354
+
+[sub_resource type="Resource" id="P1_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-3.75, 0.3)
+size = Vector2(0.6, 0.6)
+yaw = 358
+
+[sub_resource type="Resource" id="P1_10"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-3.71, -1.22)
+size = Vector2(0.6, 0.6)
+yaw = 197
+
+[sub_resource type="Resource" id="G1"]
+script = ExtResource("2_group")
+anchor = Vector2(1, 1)
+pieces = Array[ExtResource("1_piece")]([SubResource("P1_0"), SubResource("P1_1"), SubResource("P1_2"), SubResource("P1_3"), SubResource("P1_4"), SubResource("P1_5"), SubResource("P1_6"), SubResource("P1_7"), SubResource("P1_8"), SubResource("P1_9"), SubResource("P1_10")])
+
+[sub_resource type="Resource" id="P2_0"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(1, 1.6)
+size = Vector2(2, 2.2)
+height = 2.6
+solid = true
+
+[sub_resource type="Resource" id="P2_1"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(0.8, -0.6)
+size = Vector2(1.6, 2.2)
+height = 1.9
+solid = true
+
+[sub_resource type="Resource" id="P2_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.6, -2.4)
+size = Vector2(1.2, 1.2)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P2_3"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0.6, -2.4)
+size = Vector2(0.8, 0.5)
+yaw = 250
+
+[sub_resource type="Resource" id="P2_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.31, 2.15)
+size = Vector2(0.6, 0.6)
+yaw = 11
+
+[sub_resource type="Resource" id="P2_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.52, 2.93)
+size = Vector2(0.6, 0.6)
+yaw = 315
+
+[sub_resource type="Resource" id="P2_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.3, 3.07)
+size = Vector2(0.9, 0.45)
+yaw = 82
+
+[sub_resource type="Resource" id="P2_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-0.43, 0.21)
+size = Vector2(0.6, 0.6)
+yaw = 358
+
+[sub_resource type="Resource" id="P2_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.41, -1.23)
+size = Vector2(0.9, 0.45)
+yaw = 298
+
+[sub_resource type="Resource" id="P2_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.38, -1.99)
+size = Vector2(0.6, 0.6)
+yaw = 1
+
+[sub_resource type="Resource" id="P2_10"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(1.75, -1.45)
+size = Vector2(0.9, 0.45)
+yaw = 72
+
+[sub_resource type="Resource" id="P2_11"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(2.01, 0.24)
+size = Vector2(0.6, 0.6)
+yaw = 62
+
+[sub_resource type="Resource" id="P2_12"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.35, -2.4)
+size = Vector2(0.6, 0.6)
+yaw = 285
+
+[sub_resource type="Resource" id="G2"]
+script = ExtResource("2_group")
+anchor = Vector2(0, 0.5)
+pieces = Array[ExtResource("1_piece")]([SubResource("P2_0"), SubResource("P2_1"), SubResource("P2_2"), SubResource("P2_3"), SubResource("P2_4"), SubResource("P2_5"), SubResource("P2_6"), SubResource("P2_7"), SubResource("P2_8"), SubResource("P2_9"), SubResource("P2_10"), SubResource("P2_11"), SubResource("P2_12")])
+
+[sub_resource type="Resource" id="P3_0"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(-1, -1.6)
+size = Vector2(2, 2.2)
+height = 2.6
+solid = true
+
+[sub_resource type="Resource" id="P3_1"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(-0.8, 0.6)
+size = Vector2(1.6, 2.2)
+height = 1.9
+solid = true
+
+[sub_resource type="Resource" id="P3_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.6, 2.4)
+size = Vector2(1.2, 1.2)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P3_3"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-0.6, 2.4)
+size = Vector2(0.8, 0.5)
+yaw = 70
+
+[sub_resource type="Resource" id="P3_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.31, -2.15)
+size = Vector2(0.6, 0.6)
+yaw = 191
+
+[sub_resource type="Resource" id="P3_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.52, -2.93)
+size = Vector2(0.6, 0.6)
+yaw = 135
+
+[sub_resource type="Resource" id="P3_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.3, -3.07)
+size = Vector2(0.9, 0.45)
+yaw = 262
+
+[sub_resource type="Resource" id="P3_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.43, -0.21)
+size = Vector2(0.6, 0.6)
+yaw = 178
+
+[sub_resource type="Resource" id="P3_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.41, 1.23)
+size = Vector2(0.9, 0.45)
+yaw = 118
+
+[sub_resource type="Resource" id="P3_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.38, 1.99)
+size = Vector2(0.6, 0.6)
+yaw = 181
+
+[sub_resource type="Resource" id="P3_10"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-1.75, 1.45)
+size = Vector2(0.9, 0.45)
+yaw = 252
+
+[sub_resource type="Resource" id="P3_11"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-2.01, -0.24)
+size = Vector2(0.6, 0.6)
+yaw = 242
+
+[sub_resource type="Resource" id="P3_12"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.35, 2.4)
+size = Vector2(0.6, 0.6)
+yaw = 105
+
+[sub_resource type="Resource" id="G3"]
+script = ExtResource("2_group")
+anchor = Vector2(1, 0.5)
+pieces = Array[ExtResource("1_piece")]([SubResource("P3_0"), SubResource("P3_1"), SubResource("P3_2"), SubResource("P3_3"), SubResource("P3_4"), SubResource("P3_5"), SubResource("P3_6"), SubResource("P3_7"), SubResource("P3_8"), SubResource("P3_9"), SubResource("P3_10"), SubResource("P3_11"), SubResource("P3_12")])
+
+[sub_resource type="Resource" id="P4_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P4_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0, 0.85)
+size = Vector2(0.9, 0.9)
+height = 0.8
+solid = true
+
+[sub_resource type="Resource" id="P4_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0, 0.85)
+size = Vector2(0.7, 0.5)
+yaw = 30
+
+[sub_resource type="Resource" id="P4_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.74, -0.08)
+size = Vector2(0.6, 0.6)
+yaw = 35
+
+[sub_resource type="Resource" id="P4_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.74, -0.06)
+size = Vector2(0.6, 0.6)
+yaw = 10
+
+[sub_resource type="Resource" id="P4_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.94, 0.99)
+size = Vector2(0.6, 0.6)
+yaw = 126
+
+[sub_resource type="Resource" id="P4_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.2, 1.53)
+size = Vector2(0.9, 0.45)
+yaw = 132
+
+[sub_resource type="Resource" id="P4_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-1, 0.65)
+size = Vector2(0.6, 0.6)
+yaw = 77
+
+[sub_resource type="Resource" id="G4"]
+script = ExtResource("2_group")
+anchor = Vector2(0.28, 0.4)
+pieces = Array[ExtResource("1_piece")]([SubResource("P4_0"), SubResource("P4_1"), SubResource("P4_2"), SubResource("P4_3"), SubResource("P4_4"), SubResource("P4_5"), SubResource("P4_6"), SubResource("P4_7")])
+
+[sub_resource type="Resource" id="P5_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P5_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0, 0.85)
+size = Vector2(0.9, 0.9)
+height = 0.8
+solid = true
+
+[sub_resource type="Resource" id="P5_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0, 0.85)
+size = Vector2(0.7, 0.5)
+yaw = 150
+
+[sub_resource type="Resource" id="P5_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.74, -0.08)
+size = Vector2(0.6, 0.6)
+yaw = 145
+
+[sub_resource type="Resource" id="P5_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.74, -0.06)
+size = Vector2(0.6, 0.6)
+yaw = 170
+
+[sub_resource type="Resource" id="P5_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.94, 0.99)
+size = Vector2(0.6, 0.6)
+yaw = 54
+
+[sub_resource type="Resource" id="P5_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.2, 1.53)
+size = Vector2(0.9, 0.45)
+yaw = 48
+
+[sub_resource type="Resource" id="P5_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(1, 0.65)
+size = Vector2(0.6, 0.6)
+yaw = 103
+
+[sub_resource type="Resource" id="G5"]
+script = ExtResource("2_group")
+anchor = Vector2(0.72, 0.4)
+pieces = Array[ExtResource("1_piece")]([SubResource("P5_0"), SubResource("P5_1"), SubResource("P5_2"), SubResource("P5_3"), SubResource("P5_4"), SubResource("P5_5"), SubResource("P5_6"), SubResource("P5_7")])
+
+[sub_resource type="Resource" id="P6_0"]
+script = ExtResource("1_piece")
+piece = &"wall_broken"
+at = Vector2(0, -0.3)
+size = Vector2(3.4, 0.6)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P6_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.65, -1.15)
+size = Vector2(1.3, 1.1)
+height = 1.1
+solid = true
+
+[sub_resource type="Resource" id="P6_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.65, -1.15)
+size = Vector2(1.3, 1.1)
+height = 0.8
+solid = true
+
+[sub_resource type="Resource" id="P6_3"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(0.65, -1.15)
+size = Vector2(0.6, 0.6)
+yaw = 30
+
+[sub_resource type="Resource" id="P6_4"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-0.65, -1.15)
+size = Vector2(0.8, 0.5)
+
+[sub_resource type="Resource" id="P6_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.51, 0.55)
+size = Vector2(0.6, 0.6)
+yaw = 273
+
+[sub_resource type="Resource" id="P6_6"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.16, 0.53)
+size = Vector2(0.6, 0.6)
+yaw = 248
+
+[sub_resource type="Resource" id="P6_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(1.25, 0.51)
+size = Vector2(0.6, 0.6)
+yaw = 257
+
+[sub_resource type="Resource" id="P6_8"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(2.15, -0.4)
+size = Vector2(0.6, 0.6)
+yaw = 311
+
+[sub_resource type="Resource" id="P6_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-2.11, -0.4)
+size = Vector2(0.6, 0.6)
+yaw = 236
+
+[sub_resource type="Resource" id="P6_10"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-1.45, -1.21)
+size = Vector2(0.6, 0.6)
+yaw = 208
+
+[sub_resource type="Resource" id="P6_11"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.77, -1.31)
+size = Vector2(0.6, 0.6)
+yaw = 261
+
+[sub_resource type="Resource" id="G6"]
+script = ExtResource("2_group")
+anchor = Vector2(0.5, 1)
+pieces = Array[ExtResource("1_piece")]([SubResource("P6_0"), SubResource("P6_1"), SubResource("P6_2"), SubResource("P6_3"), SubResource("P6_4"), SubResource("P6_5"), SubResource("P6_6"), SubResource("P6_7"), SubResource("P6_8"), SubResource("P6_9"), SubResource("P6_10"), SubResource("P6_11")])
+
+[sub_resource type="Resource" id="P7_0"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.6, 0.6)
+size = Vector2(1.2, 1.2)
+height = 0.9
+solid = true
+
+[sub_resource type="Resource" id="P7_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.55, -0.6)
+size = Vector2(1.1, 1.2)
+height = 1.2
+solid = true
+
+[sub_resource type="Resource" id="P7_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0.6, 0.6)
+size = Vector2(0.8, 0.5)
+yaw = 280
+
+[sub_resource type="Resource" id="P7_3"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(0.55, -0.6)
+size = Vector2(0.55, 0.55)
+yaw = 295
+
+[sub_resource type="Resource" id="P7_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.27, 0.68)
+size = Vector2(0.6, 0.6)
+yaw = 333
+
+[sub_resource type="Resource" id="P7_5"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(1.39, 0.74)
+size = Vector2(0.6, 0.6)
+yaw = 79
+
+[sub_resource type="Resource" id="P7_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.5, 1.73)
+size = Vector2(0.9, 0.45)
+yaw = 76
+
+[sub_resource type="Resource" id="G7"]
+script = ExtResource("2_group")
+anchor = Vector2(0, 0.22)
+pieces = Array[ExtResource("1_piece")]([SubResource("P7_0"), SubResource("P7_1"), SubResource("P7_2"), SubResource("P7_3"), SubResource("P7_4"), SubResource("P7_5"), SubResource("P7_6")])
+
+[sub_resource type="Resource" id="P8_0"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.6, -0.6)
+size = Vector2(1.2, 1.2)
+height = 0.9
+solid = true
+
+[sub_resource type="Resource" id="P8_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.55, 0.6)
+size = Vector2(1.1, 1.2)
+height = 1.2
+solid = true
+
+[sub_resource type="Resource" id="P8_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-0.6, -0.6)
+size = Vector2(0.8, 0.5)
+yaw = 100
+
+[sub_resource type="Resource" id="P8_3"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(-0.55, 0.6)
+size = Vector2(0.55, 0.55)
+yaw = 115
+
+[sub_resource type="Resource" id="P8_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.27, -0.68)
+size = Vector2(0.6, 0.6)
+yaw = 153
+
+[sub_resource type="Resource" id="P8_5"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-1.39, -0.74)
+size = Vector2(0.6, 0.6)
+yaw = 259
+
+[sub_resource type="Resource" id="P8_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.5, -1.73)
+size = Vector2(0.9, 0.45)
+yaw = 256
+
+[sub_resource type="Resource" id="G8"]
+script = ExtResource("2_group")
+anchor = Vector2(1, 0.78)
+pieces = Array[ExtResource("1_piece")]([SubResource("P8_0"), SubResource("P8_1"), SubResource("P8_2"), SubResource("P8_3"), SubResource("P8_4"), SubResource("P8_5"), SubResource("P8_6")])
+
+[sub_resource type="Resource" id="P9_0"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(1, 1.6)
+size = Vector2(2, 2.2)
+height = 2.6
+solid = true
+
+[sub_resource type="Resource" id="P9_1"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(0.8, -0.6)
+size = Vector2(1.6, 2.2)
+height = 1.9
+solid = true
+
+[sub_resource type="Resource" id="P9_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.6, -2.4)
+size = Vector2(1.2, 1.2)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P9_3"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0.6, -2.4)
+size = Vector2(0.8, 0.5)
+yaw = 250
+
+[sub_resource type="Resource" id="P9_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.31, 2.15)
+size = Vector2(0.6, 0.6)
+yaw = 11
+
+[sub_resource type="Resource" id="P9_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.52, 2.93)
+size = Vector2(0.6, 0.6)
+yaw = 315
+
+[sub_resource type="Resource" id="P9_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.3, 3.07)
+size = Vector2(0.9, 0.45)
+yaw = 82
+
+[sub_resource type="Resource" id="P9_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-0.43, 0.21)
+size = Vector2(0.6, 0.6)
+yaw = 358
+
+[sub_resource type="Resource" id="P9_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.41, -1.23)
+size = Vector2(0.9, 0.45)
+yaw = 298
+
+[sub_resource type="Resource" id="P9_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(1.38, -1.99)
+size = Vector2(0.6, 0.6)
+yaw = 1
+
+[sub_resource type="Resource" id="P9_10"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(1.75, -1.45)
+size = Vector2(0.9, 0.45)
+yaw = 72
+
+[sub_resource type="Resource" id="P9_11"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(2.01, 0.24)
+size = Vector2(0.6, 0.6)
+yaw = 62
+
+[sub_resource type="Resource" id="P9_12"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.35, -2.4)
+size = Vector2(0.6, 0.6)
+yaw = 285
+
+[sub_resource type="Resource" id="G9"]
+script = ExtResource("2_group")
+anchor = Vector2(0, 0.78)
+pieces = Array[ExtResource("1_piece")]([SubResource("P9_0"), SubResource("P9_1"), SubResource("P9_2"), SubResource("P9_3"), SubResource("P9_4"), SubResource("P9_5"), SubResource("P9_6"), SubResource("P9_7"), SubResource("P9_8"), SubResource("P9_9"), SubResource("P9_10"), SubResource("P9_11"), SubResource("P9_12")])
+
+[sub_resource type="Resource" id="P10_0"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(-1, -1.6)
+size = Vector2(2, 2.2)
+height = 2.6
+solid = true
+
+[sub_resource type="Resource" id="P10_1"]
+script = ExtResource("1_piece")
+piece = &"slab_concrete"
+at = Vector2(-0.8, 0.6)
+size = Vector2(1.6, 2.2)
+height = 1.9
+solid = true
+
+[sub_resource type="Resource" id="P10_2"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.6, 2.4)
+size = Vector2(1.2, 1.2)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P10_3"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-0.6, 2.4)
+size = Vector2(0.8, 0.5)
+yaw = 70
+
+[sub_resource type="Resource" id="P10_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.31, -2.15)
+size = Vector2(0.6, 0.6)
+yaw = 191
+
+[sub_resource type="Resource" id="P10_5"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.52, -2.93)
+size = Vector2(0.6, 0.6)
+yaw = 135
+
+[sub_resource type="Resource" id="P10_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.3, -3.07)
+size = Vector2(0.9, 0.45)
+yaw = 262
+
+[sub_resource type="Resource" id="P10_7"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.43, -0.21)
+size = Vector2(0.6, 0.6)
+yaw = 178
+
+[sub_resource type="Resource" id="P10_8"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.41, 1.23)
+size = Vector2(0.9, 0.45)
+yaw = 118
+
+[sub_resource type="Resource" id="P10_9"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-1.38, 1.99)
+size = Vector2(0.6, 0.6)
+yaw = 181
+
+[sub_resource type="Resource" id="P10_10"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-1.75, 1.45)
+size = Vector2(0.9, 0.45)
+yaw = 252
+
+[sub_resource type="Resource" id="P10_11"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-2.01, -0.24)
+size = Vector2(0.6, 0.6)
+yaw = 242
+
+[sub_resource type="Resource" id="P10_12"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.35, 2.4)
+size = Vector2(0.6, 0.6)
+yaw = 105
+
+[sub_resource type="Resource" id="G10"]
+script = ExtResource("2_group")
+anchor = Vector2(1, 0.22)
+pieces = Array[ExtResource("1_piece")]([SubResource("P10_0"), SubResource("P10_1"), SubResource("P10_2"), SubResource("P10_3"), SubResource("P10_4"), SubResource("P10_5"), SubResource("P10_6"), SubResource("P10_7"), SubResource("P10_8"), SubResource("P10_9"), SubResource("P10_10"), SubResource("P10_11"), SubResource("P10_12")])
+
+[sub_resource type="Resource" id="P11_0"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(0.6, 0.6)
+size = Vector2(1.2, 1.2)
+height = 0.9
+solid = true
+
+[sub_resource type="Resource" id="P11_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(1.8, 0.55)
+size = Vector2(1.2, 1.1)
+height = 1.2
+solid = true
+
+[sub_resource type="Resource" id="P11_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0.6, 0.6)
+size = Vector2(0.8, 0.5)
+yaw = 10
+
+[sub_resource type="Resource" id="P11_3"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(1.8, 0.55)
+size = Vector2(0.55, 0.55)
+yaw = 25
+
+[sub_resource type="Resource" id="P11_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(0.52, -0.27)
+size = Vector2(0.6, 0.6)
+yaw = 63
+
+[sub_resource type="Resource" id="P11_5"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.46, 1.39)
+size = Vector2(0.6, 0.6)
+yaw = 169
+
+[sub_resource type="Resource" id="P11_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(-0.53, 0.5)
+size = Vector2(0.9, 0.45)
+yaw = 166
+
+[sub_resource type="Resource" id="G11"]
+script = ExtResource("2_group")
+anchor = Vector2(0, 0)
+pieces = Array[ExtResource("1_piece")]([SubResource("P11_0"), SubResource("P11_1"), SubResource("P11_2"), SubResource("P11_3"), SubResource("P11_4"), SubResource("P11_5"), SubResource("P11_6")])
+
+[sub_resource type="Resource" id="P12_0"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-0.6, 0.6)
+size = Vector2(1.2, 1.2)
+height = 0.9
+solid = true
+
+[sub_resource type="Resource" id="P12_1"]
+script = ExtResource("1_piece")
+piece = &"crate_stack"
+at = Vector2(-1.8, 0.55)
+size = Vector2(1.2, 1.1)
+height = 1.2
+solid = true
+
+[sub_resource type="Resource" id="P12_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-0.6, 0.6)
+size = Vector2(0.8, 0.5)
+yaw = 170
+
+[sub_resource type="Resource" id="P12_3"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(-1.8, 0.55)
+size = Vector2(0.55, 0.55)
+yaw = 155
+
+[sub_resource type="Resource" id="P12_4"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.52, -0.27)
+size = Vector2(0.6, 0.6)
+yaw = 117
+
+[sub_resource type="Resource" id="P12_5"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(-0.46, 1.39)
+size = Vector2(0.6, 0.6)
+yaw = 11
+
+[sub_resource type="Resource" id="P12_6"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.53, 0.5)
+size = Vector2(0.9, 0.45)
+yaw = 14
+
+[sub_resource type="Resource" id="G12"]
+script = ExtResource("2_group")
+anchor = Vector2(1, 0)
+pieces = Array[ExtResource("1_piece")]([SubResource("P12_0"), SubResource("P12_1"), SubResource("P12_2"), SubResource("P12_3"), SubResource("P12_4"), SubResource("P12_5"), SubResource("P12_6")])
+
+[sub_resource type="Resource" id="P13_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P13_1"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.2, -0.7)
+size = Vector2(0.9, 0.45)
+yaw = 44
+
+[sub_resource type="Resource" id="P13_2"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.02, 0.52)
+size = Vector2(0.6, 0.6)
+yaw = 78
+
+[sub_resource type="Resource" id="P13_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.64, 0.08)
+size = Vector2(0.6, 0.6)
+yaw = 119
+
+[sub_resource type="Resource" id="G13"]
+script = ExtResource("2_group")
+anchor = Vector2(0.2, 0.75)
+pieces = Array[ExtResource("1_piece")]([SubResource("P13_0"), SubResource("P13_1"), SubResource("P13_2"), SubResource("P13_3")])
+
+[sub_resource type="Resource" id="P14_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P14_1"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.2, -0.7)
+size = Vector2(0.9, 0.45)
+yaw = 44
+
+[sub_resource type="Resource" id="P14_2"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.02, 0.52)
+size = Vector2(0.6, 0.6)
+yaw = 78
+
+[sub_resource type="Resource" id="P14_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.64, 0.08)
+size = Vector2(0.6, 0.6)
+yaw = 119
+
+[sub_resource type="Resource" id="G14"]
+script = ExtResource("2_group")
+anchor = Vector2(0.8, 0.75)
+pieces = Array[ExtResource("1_piece")]([SubResource("P14_0"), SubResource("P14_1"), SubResource("P14_2"), SubResource("P14_3")])
+
+[sub_resource type="Resource" id="P15_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P15_1"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.2, -0.7)
+size = Vector2(0.9, 0.45)
+yaw = 44
+
+[sub_resource type="Resource" id="P15_2"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.02, 0.52)
+size = Vector2(0.6, 0.6)
+yaw = 78
+
+[sub_resource type="Resource" id="P15_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.64, 0.08)
+size = Vector2(0.6, 0.6)
+yaw = 119
+
+[sub_resource type="Resource" id="G15"]
+script = ExtResource("2_group")
+anchor = Vector2(0.25, 0.3)
+pieces = Array[ExtResource("1_piece")]([SubResource("P15_0"), SubResource("P15_1"), SubResource("P15_2"), SubResource("P15_3")])
+
+[sub_resource type="Resource" id="P16_0"]
+script = ExtResource("1_piece")
+piece = &"shop_lantern"
+at = Vector2(0, 0)
+size = Vector2(0.5, 0.5)
+height = 2.2
+solid = true
+
+[sub_resource type="Resource" id="P16_1"]
+script = ExtResource("1_piece")
+piece = &"debris_low"
+at = Vector2(0.2, -0.7)
+size = Vector2(0.9, 0.45)
+yaw = 44
+
+[sub_resource type="Resource" id="P16_2"]
+script = ExtResource("1_piece")
+piece = &"rubble_small"
+at = Vector2(0.02, 0.52)
+size = Vector2(0.6, 0.6)
+yaw = 78
+
+[sub_resource type="Resource" id="P16_3"]
+script = ExtResource("1_piece")
+piece = &"grass_tuft"
+at = Vector2(-0.64, 0.08)
+size = Vector2(0.6, 0.6)
+yaw = 119
+
+[sub_resource type="Resource" id="G16"]
+script = ExtResource("2_group")
+anchor = Vector2(0.75, 0.3)
+pieces = Array[ExtResource("1_piece")]([SubResource("P16_0"), SubResource("P16_1"), SubResource("P16_2"), SubResource("P16_3")])
+
+[sub_resource type="Resource" id="P17_0"]
+script = ExtResource("1_piece")
+piece = &"shop_counter"
+at = Vector2(0, -1.25)
+size = Vector2(4, 0.9)
+height = 1
+solid = true
+
+[sub_resource type="Resource" id="P17_1"]
+script = ExtResource("1_piece")
+piece = &"shop_tent"
+at = Vector2(0, 0.45)
+size = Vector2(4, 2.5)
+height = 2.6
+solid = true
+
+[sub_resource type="Resource" id="P17_2"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(0.75, -1.27)
+size = Vector2(1, 0.6)
+
+[sub_resource type="Resource" id="P17_3"]
+script = ExtResource("1_piece")
+piece = &"shop_wares"
+at = Vector2(-1.25, -1.27)
+size = Vector2(0.7, 0.5)
+yaw = 12
+
+[sub_resource type="Resource" id="P17_4"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(-1.5, 1.2)
+size = Vector2(0.6, 0.6)
+yaw = 20
+
+[sub_resource type="Resource" id="P17_5"]
+script = ExtResource("1_piece")
+piece = &"shop_sack"
+at = Vector2(1.5, 1.2)
+size = Vector2(0.55, 0.55)
+yaw = -35
+
+[sub_resource type="Resource" id="G17"]
+script = ExtResource("2_group")
+anchor = Vector2(0.5, 0.5)
+pieces = Array[ExtResource("1_piece")]([SubResource("P17_0"), SubResource("P17_1"), SubResource("P17_2"), SubResource("P17_3"), SubResource("P17_4"), SubResource("P17_5")])
+
+[resource]
+script = ExtResource("3_shop")
+biome = &"red_canyon"
+stall = SubResource("G17")
+stall_spots = Array[Vector2]([Vector2(0.5, 0.56), Vector2(0.5, 0.64), Vector2(0.5, 0.48), Vector2(0.5, 0.72), Vector2(0.38, 0.6), Vector2(0.62, 0.6), Vector2(0.25, 0.6), Vector2(0.75, 0.6), Vector2(0.5, 1), Vector2(0.3, 1), Vector2(0.7, 1), Vector2(0, 1), Vector2(1, 1), Vector2(0, 0.6), Vector2(1, 0.6)])
+approach = Vector2(6, 3)
+groups = Array[ExtResource("2_group")]([SubResource("G0"), SubResource("G1"), SubResource("G2"), SubResource("G3"), SubResource("G4"), SubResource("G5"), SubResource("G6"), SubResource("G7"), SubResource("G8"), SubResource("G9"), SubResource("G10"), SubResource("G11"), SubResource("G12"), SubResource("G13"), SubResource("G14"), SubResource("G15"), SubResource("G16")])
+id = &"shop_red_canyon"

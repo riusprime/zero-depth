@@ -21,10 +21,13 @@ extends RefCounted
 ## saved on.
 ## v0.8.0 RT (owner O12): 4 is today's, with the designed room layouts (data/room_layouts); a floor saved under rules
 ## 1-3 is rebuilt with the rule-built interiors it had (designed_rooms; RunSaver.floor_tables).
-const FLOOR_RULES := 4
+## v0.8.0 SR (owner O13): 5 is today's, the shop room a biome's tent stall (data/shop_rooms; ShopRoom); a floor saved
+## under rules 1-4 is rebuilt with the shop terminal it had (shop_rooms; RunSaver.floor_tables).
+const FLOOR_RULES := 5
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
+const FLOOR_RULES_V080_RT := 4
 
 var run_seed := 0
 var table: RunTable
@@ -219,6 +222,12 @@ func legacy_boss_room() -> bool:
 ## RT, rebuilt with its rule-built rooms).
 func designed_rooms() -> bool:
 	return floor_rules >= 4
+
+
+## v0.8.0 SR: whether the current floor's shop stands in its biome's shop room (false: a floor resumed from a save made
+## before SR, rebuilt with its shop terminal).
+func shop_rooms() -> bool:
+	return floor_rules >= 5
 
 
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:

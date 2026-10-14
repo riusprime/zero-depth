@@ -18,6 +18,7 @@ not in `main` yet).
 | BS part 1 (S1–S3) | Three bosses each get a mechanic of their own: the Gatekeeper's shock lanes leave stone pillars standing for 6 s, real walls you take cover behind from its rock rings (never on you, never sealing you in); the Warlord's tower shield blocks every hit from the front, so you circle it, and its javelins stick in the floor then all fly back along the same lines; the Brood Mother's eggs sit 3 s to be broken, or they hatch (and in phase 3 burst into acid). Cross Quake, Javelin Rain and the fast Web Spiral are gone. Evidence [BOSS_SIGNATURES_1](evidence/BOSS_SIGNATURES_1.md), shots in `evidence/bs_shots/`; the feel is OWNER ONLY | `e34550e` (branch `v080-bs1`) |
 | AV (part 2) | Every other boss ground attack keeps its dull-then-bright marker but fills it with its own ground (stone cracks, steel scratches, bubbling acid, gold light, hazard stripes, molten seams) instead of flat red, and strikes in 3D on the sim's strike tick: the Gatekeeper's fist slams blow craters and its sweep kicks a dust arc; the Warlord's spears thrust up the lanes, its lunge scorches a skid, its bash swings a steel arc, its javelins plant in the circles; the Brood Mother's eggs cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts; the Hive Lens fires a 3D beam and a ring of light; the Siege Engine's shells fall and explode, its rail streaks and scorches, its shockwave rolls out as dust; the Foundry pours molten metal that cools to a crust, blasts steam and sets lanes burning. Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) part 2 | `2a39c6c` (branch `v080-av2`) |
 | BS part 2 (S4–S6) | The other three bosses get theirs: the Hive Lens turns its Gaze round the room, a beam that starts aimed away from you, turns a quarter turn every 2 s and reverses, stops at walls and burns what it touches while its orbs fly; the Siege Engine's Turret Cross embers bounce off the walls once and come back at you from behind (never onto you within 0.5 s), and in phase 3 its turrets' shots bounce too; the Foundry's Molten Flood leaves lava for 5 s (enemies walk round it, a way to the boss and the door always stays), and phase 3 opens with a roar while the room's outer ring glows, then melts for good and creeps in, never closer than 7 m to the centre. Glare Ring, Turret Cross Reversing and the fast Furnace Waves are gone. Deaths name the gaze, its orbs, the ricochets, the lava and the melt. Evidence [BOSS_SIGNATURES_2](evidence/BOSS_SIGNATURES_2.md), shots 7–12 in `evidence/bs_shots/`; the feel is OWNER ONLY | `ef919d3` (branch `v080-bs2`) |
+| SR | The shop is a stall in a designed shop room in every biome: the owner's desert merchant stall (patched awnings on poles, counters, crates, glowing lanterns and its own hooded vendor) stands with its counter facing the room's way in, a clear 6 × 3 m walk-up in front, crates of goods, sacks, lantern posts, braziers and rocks round it per biome; you buy and sell at the counter exactly as before. The stall's lantern brightens on a sale and turns red on a refusal (the owner's vendor is part of the stall's mesh, so it can't move). Code stand-ins cover what has no model yet: a vendor per biome (Ruins scavenger, Night Rocks lantern hermit, Red Canyon trader, Frozen Shore fisher, Starfall astral merchant) that breathes, looks round, turns to you, nods on a sale and shakes its head on a refusal (a glow under reduced motion), shown when a stall model has no vendor of its own. A save made before SR resumes with its terminal. Evidence [SHOP](evidence/SHOP.md); the look is OWNER ONLY | this commit (branch `v080-sr`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -32,6 +33,8 @@ not in `main` yet).
 - BS1: none (no golden fixture holds a boss fight; the new BossStore lists hash only while a pillar or javelin stands; `tests/golden` 2/2 unchanged)
 - AV part 2: none (presentation only; `tests/golden` 2/2 unchanged)
 - BS2: none (no golden fixture holds a boss fight; the lava/melt lists hash only while molten floor is down; `tests/golden` 2/2 unchanged)
+- SR: none (no golden fixture holds a run floor; `tests/golden` 2/2 unchanged). Run floors with a shop change on purpose
+  (floor rules 5: the shop room is refurnished); a floor saved before keeps its terminal.
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -157,3 +160,13 @@ not in `main` yet).
   flow/designed rooms 7/7 and the e2e shard 127/127. Shots: 10 at 1920×1080 (llvmpipe), 6 copied to
   `evidence/rt_shots/`. Not run locally: the full suite. G2 RT asked.
 - 2026-10-14: G2 RT answered: the first three layouts' density is right; the other 21 follow them (RT2).
+- 2026-10-14: SR (agent, branch `v080-sr` from `b988819`): `ShopRoomDefinition` + `data/shop_rooms/` (5, written by
+  `scripts/content/shop_rooms.py` with `room_layouts.py`'s prefab helpers; RT2's script untouched); `ShopRoom`
+  furnishes ShopPlacement's room (its rule unchanged) with the biome's stall and dressing, no draw; `FLOOR_RULES` 5
+  (a floor saved under 1-4 keeps its terminal: `RunState.shop_rooms`, `RunSaver.floor_tables`); `ShopStallView`,
+  `ShopVendor` (5 stand-ins), `ShopModels` (the manifest hook). The owner's desert stall arrived mid-step:
+  installed as `assets/models/shop/shop_tent.glb` (`scripts/art/shop_stall.py`: the loose crate pile left out,
+  centred), in every biome; its vendor is fused into the mesh, so the code vendor is hidden over it and the lantern
+  shows the reactions; the stall footprint grew to the model's (4.0 × 3.4 m). Merge note: RT2 may also bump
+  `FLOOR_RULES`; the lead orders the two (SR uses 5, `FLOOR_RULES_V080_RT` = 4). Run locally: see
+  [SHOP](evidence/SHOP.md). Not run locally: the full suite.
