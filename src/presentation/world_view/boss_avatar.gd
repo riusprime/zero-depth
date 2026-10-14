@@ -632,9 +632,15 @@ func _pose_imported(dt: float) -> void:
 	poser.commit()
 	animator.apply_owner(skeleton)
 	var pulse := 0.5 + 0.5 * sin(_t * 6.0)
+	var extra := _extra_glow()  # v0.8.0 FB1: a final boss's body cracking as it shatters
 	glow_overlay.albedo_color.a = clampf(
-		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse), 0.0, 0.06
+		0.045 * _wind + 0.04 * _hit + _late * (0.02 + 0.01 * pulse) + extra, 0.0, 0.06 + extra
 	)
+
+
+## v0.8.0 FB1: extra glow over the windup's (0 for most bodies; FinalBodyAvatar's shatter).
+func _extra_glow() -> float:
+	return 0.0
 
 
 ## The clips' clocks that run in frame time: the stagger's, the shielded hold's, the gate's roar, the rise.

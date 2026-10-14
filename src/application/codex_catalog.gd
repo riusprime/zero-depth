@@ -7,7 +7,8 @@ extends RefCounted
 ##   the Blade pool, the shared pool (the other wand cards), the triggers, the legendary cards (legendary-rarity
 ##   items: the unique triggers), the stat cards, the utilities (Blink, Aegis), other abilities, and the passives
 ##   (the v0.5 items outside the wand that are still offered; WAND.md "Not in the table").
-## - Enemies, bosses and biomes: every definition of their category.
+## - Enemies, bosses and biomes: every definition of their category. v0.8.0 FB1: the Bosses page has a second
+##   section, the final boss's bodies (FinalBossDefinition, in the run's order), after the floors' bosses.
 ## Each entry is a Dictionary: page, id, section, name_key, desc_key, and by page: type (WorldReader.CARD_*), rarity
 ## (0 common, 1 rare, 2 epic, 3 legendary), leveled (it levels 1–5), alt_name_key (the Gun face of a two-faced
 ## card), desc_permille (a stat card's numbers at common rarity, per mille, for its sentence's %s), kind (an enemy's
@@ -28,7 +29,7 @@ const SECTIONS := {
 		&"passives",
 	],
 	&"enemies": [&"enemies"],
-	&"bosses": [&"bosses"],
+	&"bosses": [&"bosses", &"final"],
 	&"biomes": [&"biomes"],
 }
 const WAND_TAG := "wand"
@@ -95,6 +96,20 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 				}
 			)
 		)
+	for def: BossDefinition in _final_bodies(repo):  # v0.8.0 FB1
+		(
+			c
+			. _add(
+				{
+					"page": &"bosses",
+					"section": &"final",
+					"id": def.id,
+					"name_key": def.name_key,
+					"desc_key": def.desc_key,
+					"kind": int(ContentCompiler.BOSS_KINDS.get(def.id, -1)),
+				}
+			)
+		)
 	for def: BiomeDefinition in repo.all_of(&"biomes"):
 		var palette: Array[Color] = []
 		for k in BiomeDefinition.PALETTE_KEYS:
@@ -113,6 +128,21 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 			)
 		)
 	return c
+
+
+## v0.8.0 FB1: the final boss's bodies in the run's order (RunDefinition.final_bosses), then any other by id.
+static func _final_bodies(repo: ContentRepository) -> Array:
+	var out := []
+	var run: RunDefinition = repo.get_def(&"run", &"three_floors")
+	if run != null:
+		for id: StringName in run.final_bosses:
+			var d := repo.get_def(&"final_bosses", id)
+			if d != null:
+				out.append(d)
+	for d: ContentDef in repo.all_of(&"final_bosses"):
+		if not out.has(d):
+			out.append(d)
+	return out
 
 
 ## The ids `data/wand/migration.tres` retires (never offered again, so never listed).

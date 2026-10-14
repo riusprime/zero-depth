@@ -38,8 +38,13 @@ static func floor_hp(w: World, i: int) -> int:
 
 ## Damage._apply: `amount` on actor i, cut so a boss's HP stops at its next gate. Unchanged for anything else and for
 ## the world's own hits (owner 0).
+## v0.8.0 FB1: a final boss's body before the last keeps 1 HP, whoever hits it (FinalBoss.clamp_damage).
 static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
-	if owner_id == 0 or i == 0 or not BossAi.is_boss_kind(w.actors.kinds[i]):
+	if i == 0 or not BossAi.is_boss_kind(w.actors.kinds[i]):
+		return amount
+	if w.final_fight != null:
+		amount = FinalBoss.clamp_damage(w, i, amount)
+	if owner_id == 0:
 		return amount
 	var lo := floor_hp(w, i)
 	if lo <= 0:

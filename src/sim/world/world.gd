@@ -171,6 +171,8 @@ var bosses := BossStore.new()
 var killer_attack := -1
 ## The actor id of the last boss spawned while it lives, or -1 (the dev panel's Kill boss, the run flow).
 var boss_id := -1
+## v0.8.0 FB1 (owner O16-O17; FinalBoss): the final boss's fight (its three bodies), null in every other world.
+var final_fight: FinalFight
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -578,6 +580,8 @@ func step(frame: InputFrame) -> void:
 	Venom.tick(self)  # v0.6.0 MX4: Venom Core's poison
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
 	# 9. Deaths and spawns (the wave director adds enemies here).
+	if final_fight != null:
+		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
@@ -874,6 +878,15 @@ func boss_alive() -> bool:
 	return false
 
 
+## v0.8.0 FB1: drops the hostile shots queued this tick (FinalBoss.clear_shots: the shatter clears every one).
+func drop_pending_hostile() -> void:
+	var keep: Array[Array] = []
+	for s in _pending_projectiles:
+		if s[1] == ActorStore.TEAM_PLAYER:
+			keep.append(s)
+	_pending_projectiles = keep
+
+
 ## Queues an enemy for phase 9 of this tick (a boss's eggs and turrets).
 func queue_enemy(kind: int, pos: Vector2) -> void:
 	_pending_enemies.append([kind, pos])
@@ -1063,6 +1076,8 @@ func state_hash() -> String:
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
 			for v in [loop, run_floor, loop_threat, loop_cap_permille]:
 				h.add_int(v)
+	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
+		final_fight.hash_into(h)
 	actors.hash_into(h)
 	projectiles.hash_into(h)
 	h.add_int(walls.size())

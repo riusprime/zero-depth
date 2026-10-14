@@ -421,6 +421,9 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 					WorldReader.KIND_WARLORD: WarlordAvatar,  # v0.4.0 BO
 					WorldReader.KIND_HIVE_LENS: HiveLensAvatar,
 					WorldReader.KIND_FOUNDRY: FoundryAvatar,
+					WorldReader.KIND_COLOSSUS: ColossusAvatar,  # v0.8.0 FB1: the final boss's bodies
+					WorldReader.KIND_PRISM: PrismAvatar,
+					WorldReader.KIND_NEMESIS: NemesisAvatar,
 				}[kind]
 				. new()
 			)

@@ -1,0 +1,118 @@
+[gd_resource type="Resource" script_class="FinalBossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/final_boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_nemesis_slash"]
+script = ExtResource("1_atk")
+id = &"nemesis_slash"
+shape = 1
+shape_params = {
+"arc_degrees": 120.0,
+"reach_m": 1.8
+}
+telegraph_seconds = 0.5
+active_seconds = 0.0167
+recovery_seconds = 0.5
+damage = 16
+move = &"sweep"
+min_range_m = 0.0
+max_range_m = 3.0
+weight = 4
+cooldown_seconds = 0.3
+cause_key = &"CAUSE_NEMESIS_SLASH"
+opens_weak_point = true
+
+[sub_resource type="Resource" id="A_nemesis_dash"]
+script = ExtResource("1_atk")
+id = &"nemesis_dash"
+shape = 2
+shape_params = {
+"length_m": 8.0,
+"speed_mps": 16.0
+}
+telegraph_seconds = 0.5
+active_seconds = 0.5
+recovery_seconds = 0.5
+damage = 16
+move = &"charge"
+min_range_m = 3.0
+max_range_m = 12.0
+weight = 3
+cooldown_seconds = 0.4
+cause_key = &"CAUSE_NEMESIS_DASH"
+lock_seconds = 0.4
+
+[sub_resource type="Resource" id="A_nemesis_shots"]
+script = ExtResource("1_atk")
+id = &"nemesis_shots"
+shape = 4
+shape_params = {
+"pattern_id": "arc_caster_plasma_fan_wide"
+}
+telegraph_seconds = 0.6
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 14
+move = &"pattern"
+min_range_m = 3.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.4
+cause_key = &"CAUSE_NEMESIS_SHOTS"
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("nemesis_slash", "nemesis_dash", "nemesis_shots")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_NEMESIS"
+desc_key = &"BOSS_NEMESIS_DESC"
+hp = 860
+radius_m = 0.7
+move_speed_mps = 4.6
+turn_rate_dps = 0.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 200
+stagger_decay_per_second = 14.0
+stagger_seconds = 1.5
+arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 1000
+punish_distance_m = 10.0
+punish_seconds = 2.5
+punish_attack = &""
+weak_point_seconds = 1.5
+weak_point_range_m = 2.5
+weak_point_mult_permille = 1500
+weak_point_stagger_permille = 1500
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 0.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 0
+arena_hazard_seconds = 0.5
+recovery_permille = 1000
+lead_seconds = 0.0
+track_commit_seconds = 0.15
+dash_read_seconds = 0.0
+gap_close_attack = &""
+gap_close_distance_m = 5.0
+gap_close_seconds = 2.0
+attacks = Array[ExtResource("1_atk")]([SubResource("A_nemesis_slash"), SubResource("A_nemesis_dash"), SubResource("A_nemesis_shots")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
+id = &"nemesis"

@@ -29,3 +29,9 @@ var loop_boss_damage_permille := 1000
 var loop_scale_cap_permille := 100000
 var loop_threat := 0
 var loop_catch_up_cap_permille := 0
+## v0.8.0 FB1 (RunDefinition): the final boss's bodies (FinalBossDefinition ids, in order; empty = none: End the run
+## ends it at once), its name key, its arena (a FinalArenaDefinition id) and the shatter between two bodies (ticks).
+var final_bosses: Array[StringName] = []
+var final_name_key := &""
+var final_arena := &""
+var final_shatter_ticks := 90

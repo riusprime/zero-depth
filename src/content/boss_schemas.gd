@@ -5,8 +5,17 @@ extends RefCounted
 ## Shapes are AttackDefinition.Shape values: 0 CIRCLE, 1 CONE, 2 LINE, 3 RING, 4 PROJECTILE.
 
 ## The boss kinds, by boss id (each has its own actor kind and model).
+## v0.8.0 FB1: the final boss's three bodies (FinalBossDefinition, data/final_boss).
 const KINDS: Array[StringName] = [
-	&"gatekeeper", &"brood_mother", &"siege_engine", &"warlord", &"hive_lens", &"foundry"
+	&"gatekeeper",
+	&"brood_mother",
+	&"siege_engine",
+	&"warlord",
+	&"hive_lens",
+	&"foundry",
+	&"colossus",
+	&"prism",
+	&"nemesis",
 ]
 
 ## Arena interior templates, in FloorLayout.Template order (a test pins the match).
@@ -26,7 +35,8 @@ const MOVES := {
 	## A straight charge along a locked lane; touching the body hurts.
 	&"charge": {"shape": 2, "params": ["length_m", "speed_mps"]},
 	## Jumps onto the player's marked spot; `chain` leaps in a row.
-	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"]},
+	## v0.8.0 FB1: an optional pattern_id fires its first wave from where it lands (the Colossus's shockwave ring).
+	&"leap": {"shape": 0, "params": ["radius_m", "range_m", "chain"], "optional": ["pattern_id"]},
 	## Dives under, a ripple tracks the player, stops, and erupts after erupt_seconds (its own telegraph).
 	## v0.7.5 BF2: with lock_seconds its eruption circle follows the player's exact position while it tracks, then
 	## holds for the lock; an optional pattern_id (a RING) bursts from the eruption.
@@ -141,10 +151,35 @@ const MOVES := {
 			"ford_m"
 		],
 	},
+	## v0.8.0 FB1 (owner O17; FINAL_BOSS.md F4; BossColossus): the Colossus's fist combo: `count` swings (an arc of
+	## arc_degrees, reach_m past its edge) that follow the player (it steps in at speed_mps) until the attack's lock,
+	## stagger_seconds apart, then a ground slam (a circle of radius_m round its feet), tracked and locked the same way.
+	&"combo":
+	{
+		"shape": 1,
+		"params": ["count", "arc_degrees", "reach_m", "radius_m", "speed_mps", "stagger_seconds"],
+	},
+	## v0.8.0 FB1: `count` (1-2) lines of `steps` stone spikes chasing the player: each spike step_m on from the one
+	## before toward where the player is, stagger_seconds apart, shown for the lock before it erupts (radius_m); the
+	## lines start spread_degrees apart round the aim; a line ends at a wall.
+	&"spike_chase":
+	{
+		"shape": 0,
+		"params": ["count", "steps", "step_m", "radius_m", "stagger_seconds", "spread_degrees"],
+	},
+	## v0.8.0 FB1: `count` rays of spikes out of the boss, aimed between the rays at the player; `steps` rings step_m
+	## apart, stagger_seconds apart, each shown for the lock before it erupts (radius_m).
+	&"spike_burst":
+	{"shape": 0, "params": ["count", "steps", "step_m", "radius_m", "stagger_seconds"]},
 }
 
 ## v0.7.5 BF1: moves that need a lock (BossAttackDefinition.lock_seconds > 0): their markers track, then lock.
-const LOCKED_MOVES: Array[StringName] = [&"marks", &"row_lanes", &"grid", &"row_flood"]
+## v0.8.0 FB1: the Colossus's combo and spikes (0.5 s locks as shipped).
+const LOCKED_MOVES: Array[StringName] = [
+	&"marks", &"row_lanes", &"grid", &"row_flood", &"combo", &"spike_chase", &"spike_burst"
+]
+## v0.8.0 FB1: the most spikes a line or a ray lays (steps).
+const MAX_STEPS := 16
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 

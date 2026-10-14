@@ -114,6 +114,43 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_lock(issues, path, where)
 	_validate_signature(issues, path, where)
 	_validate_signature_2(issues, path, where)
+	_validate_colossus(issues, path, where)
+
+
+## v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves. A combo's strikes stand apart more than the lock (each follows
+## the player a little before it locks); spikes come in 1..MAX_STEPS steps a real distance apart; a chase has at most
+## two lines and each line's spike erupts before its point is laid again (BossColossus keeps MAX_PTS / count a line).
+func _validate_colossus(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	var lock := int(round(lock_seconds * 60.0))
+	var gap := int(round(float(sp.get("stagger_seconds", 0.0)) * 60.0))
+	if move == &"combo" and gap <= lock:
+		issues.append(
+			ValidationIssue.new(
+				&"duration", path, where + "a combo's stagger_seconds must be over its lock"
+			)
+		)
+	if move != &"spike_chase" and move != &"spike_burst":
+		return
+	var steps := int(sp.get("steps", 0))
+	if steps < 1 or steps > BossSchemas.MAX_STEPS:
+		issues.append(
+			ValidationIssue.new(&"range", path, where + "steps: 1..%d" % BossSchemas.MAX_STEPS)
+		)
+	if float(sp.get("step_m", 0.0)) <= 0.0 or float(sp.get("radius_m", 0.0)) <= 0.0:
+		issues.append(ValidationIssue.new(&"not_positive", path, where + "step_m and radius_m > 0"))
+	if gap < 1:
+		issues.append(ValidationIssue.new(&"duration", path, where + "stagger_seconds < a tick"))
+	if move == &"spike_chase":
+		var lines := int(sp.get("count", 1))
+		if lines > 2:
+			issues.append(ValidationIssue.new(&"too_many", path, where + "a chase has 1-2 lines"))
+		elif gap * (8 / maxi(1, lines)) <= lock:
+			issues.append(
+				ValidationIssue.new(
+					&"duration", path, where + "a chase's spikes are laid too fast for its lock"
+				)
+			)
 
 
 ## v0.8.0 BS1 (owner O5): the signature params. Pillars need a size and a step that leaves a gap between them; a

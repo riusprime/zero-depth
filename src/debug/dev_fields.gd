@@ -19,7 +19,12 @@ const GROUPS := [
 	[
 		"bosses",
 		"UI_DEVM_G_BOSSES",
-		["res://data/bosses", "res://data/boss_pools", "res://data/bullet_patterns"],
+		[
+			"res://data/bosses",
+			"res://data/boss_pools",
+			"res://data/bullet_patterns",
+			"res://data/final_boss",  # v0.8.0 FB1: the final boss's bodies and its arena
+		],
 		"",
 	],
 	[

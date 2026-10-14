@@ -19,6 +19,9 @@ extends RefCounted
 ## saved on a v0.7.0 floor, which floor_tables() then rebuilds with v0.7.0's rules.
 ## v0.7.5 AP adds `run.loop` and `run.loop_floors` (the Ascension loop) the same way: a payload without them is a
 ## loop-1 run (every save made before v0.7.5 AP), and its biome order, routes and floor seeds read as before.
+## v0.8.0 FB1 adds `run.final` (End the run took the hero to the final boss; RunState.final_fight) the same way: a
+## payload without it is a run before the final arena. In the final arena a save is also taken at each body's start
+## (FinalFight.phase_tick: after_tick), so Continue resumes the fight at the current body's beginning.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
 ## v0.8.0 RT2: the designed layouts of floor rules 4 (RT1: data/room_layouts as RT1 shipped them, unchanged since).
@@ -32,6 +35,8 @@ var entries := 0
 ## The last room-entry payload: what Continue resumes from, and what close makes sure is on disk.
 var last := {}
 var _active := false
+## v0.8.0 FB1: the final fight's body whose start was saved last (-1 none).
+var _final_saved := -1
 
 
 func _init(p_store: RunSaveStore = null) -> void:
@@ -44,6 +49,7 @@ func begin_floor(
 	w: World, run: RunState, stage_seed: int, p_rooms: PackedByteArray = PackedByteArray()
 ) -> void:
 	_active = true
+	_final_saved = w.final_fight.phase if w.final_fight != null else -1
 	rooms = PackedByteArray()
 	rooms.resize(w.floor_layout.room_count() if w.floor_layout != null else 0)
 	if p_rooms.size() == rooms.size() and not p_rooms.is_empty():
@@ -59,6 +65,11 @@ func begin_floor(
 func after_tick(w: World, run: RunState, stage_seed: int) -> bool:
 	if not _active or w.floor_layout == null or w.player_dead():
 		return false
+	var f := w.final_fight
+	if f != null and not f.won and f.phase > _final_saved:
+		_final_saved = f.phase  # v0.8.0 FB1: the next body's start (the tick it rose)
+		_save(w, run, stage_seed)
+		return true
 	var room := w.floor_layout.room_of(w.player_pos())
 	if room < 0 or room >= rooms.size() or rooms[room] == 1:
 		return false
@@ -156,6 +167,7 @@ static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	run.floor_rules = int(r.get("floor_rules", RunState.FLOOR_RULES_V070))
 	run.loop = maxi(1, int(r.get("loop", 1)))  # v0.7.5 AP: an older payload is loop 1
 	run.loop_floors = maxi(0, int(r.get("loop_floors", 0)))
+	run.final_fight = bool(r.get("final", false))  # v0.8.0 FB1: an older payload is before the final arena
 	return run
 
 
@@ -189,6 +201,7 @@ static func payload_of(
 			"floor_rules": run.floor_rules,  # v0.7.5 MG: the floor's generation rules
 			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
 			"loop_floors": run.loop_floors,
+			"final": run.final_fight,  # v0.8.0 FB1: the final arena
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

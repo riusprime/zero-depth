@@ -5,7 +5,9 @@ extends Node3D
 ## turn slowly, a brighter rim, rising in over SHOW_S as the shield comes up and gone when it opens. The player's hits
 ## spark off it (HitFeel already bursts on TAG_BLOCKED). Also the shell a burst pattern lobs (its telegraph's "lob",
 ## from the boss to its locked landing circle; v0.7.5 BF2: an egg onto each locked circle of a marks attack with a
-## pattern, the Brood Mother's Egg Storm). Looks only (EI-07).
+## pattern, the Brood Mother's Egg Storm). v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's boulders, a code-made 3D
+## boulder (faceted dark violet stone with glowing red cracks, BOULDER_M across) tumbling on its arc.
+## Looks only (EI-07).
 
 ## The shell's colour by boss kind (each boss its own; a test pins that it is never the hero's cyan).
 const COLORS := {
@@ -15,12 +17,18 @@ const COLORS := {
 	WorldReader.KIND_HIVE_LENS: Color("#FF4AA8"),
 	WorldReader.KIND_SIEGE_ENGINE: Color("#FF9A3A"),
 	WorldReader.KIND_FOUNDRY: Color("#FFE08A"),
+	WorldReader.KIND_COLOSSUS: Color("#C060FF"),  # v0.8.0 FB1: the final boss's violet
+	WorldReader.KIND_PRISM: Color("#FF4A6A"),
+	WorldReader.KIND_NEMESIS: Color("#B070FF"),
 }
 const DEFAULT_COLOR := Color("#E6E0FF")
 const SHOW_S := 0.15
 const SPIN := 0.5
 ## v0.7.5 BF2: lobbed shells are keyed boss id × LOB_KEYS (a burst's), + 1 + k (marker k's egg).
 const LOB_KEYS := 16
+## v0.8.0 FB1: the Colossus's boulder: its size (m) and its tumble (radians a second; none with reduced motion).
+const BOULDER_M := 1.1
+const BOULDER_SPIN := 4.0
 
 ## Boss id -> {"shell", "rim": MeshInstance3D, "shown": 0..1, "at", "radius"}.
 var _shells := {}
@@ -29,6 +37,9 @@ var _lobs := {}
 var _lob_mat := StandardMaterial3D.new()
 ## v0.7.5 BF2: the Brood Mother's eggs: a pale shell glowing acid green.
 var _egg_mat := StandardMaterial3D.new()
+var _boulder_mat := StandardMaterial3D.new()
+## v0.8.0 FB1: the lobs that are boulders (their keys).
+var _boulders := {}
 var _t := 0.0
 
 
@@ -43,11 +54,17 @@ func _init() -> void:
 	_egg_mat.emission_enabled = true
 	_egg_mat.emission = Color("#9BE05A")
 	_egg_mat.emission_energy_multiplier = 0.9
+	_boulder_mat.albedo_color = Color("#3A3046")
+	_boulder_mat.roughness = 0.95
+	_boulder_mat.emission_enabled = true
+	_boulder_mat.emission = Color("#FF3048")
+	_boulder_mat.emission_energy_multiplier = 0.35
 
 
 func sync(reader: WorldReader) -> void:
 	var seen := {}
 	var lobs := {}
+	var boulders := {}
 	for i in reader.actor_count():
 		if not WorldReader.is_boss_kind(reader.actor_kind(i)):
 			continue
@@ -66,6 +83,8 @@ func sync(reader: WorldReader) -> void:
 			for k in items.size():
 				if (items[k] as Dictionary).has("lob"):
 					lobs[id * LOB_KEYS + 1 + k] = items[k]["lob"]
+					if reader.actor_kind(i) == WorldReader.KIND_COLOSSUS:  # v0.8.0 FB1: a boulder
+						boulders[id * LOB_KEYS + 1 + k] = true
 	for id in _shells.keys():
 		if not seen.has(id):
 			(_shells[id]["shell"] as Node).queue_free()
@@ -74,7 +93,17 @@ func sync(reader: WorldReader) -> void:
 		if not lobs.has(id):
 			(_lobs[id] as Node).queue_free()
 			_lobs.erase(id)
+			_boulders.erase(id)
 	for id in lobs:
+		if not _lobs.has(id) and boulders.has(id):  # v0.8.0 FB1
+			var b := MeshInstance3D.new()
+			b.name = "Boulder"
+			b.mesh = BossParts.rock(Vector3.ONE * BOULDER_M, 70 + id % 7)
+			b.material_override = _boulder_mat
+			b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			add_child(b)
+			_lobs[id] = b
+			_boulders[id] = true
 		if not _lobs.has(id):
 			var n := MeshInstance3D.new()
 			var s := SphereMesh.new()
@@ -103,8 +132,16 @@ func lob_count() -> int:
 	return _lobs.size()
 
 
+## v0.8.0 FB1: the boulders in the air now (tests and the tour).
+func boulder_count() -> int:
+	return _boulders.size()
+
+
 func _process(delta: float) -> void:
 	_t += delta
+	if not ViewPrefs.reduced_motion:  # v0.8.0 FB1: the boulders tumble
+		for id in _boulders:
+			(_lobs[id] as Node3D).rotation = Vector3(_t * BOULDER_SPIN, _t * 0.7, id * 0.9)
 	for id in _shells:
 		var s: Dictionary = _shells[id]
 		s["shown"] = minf(1.0, float(s["shown"]) + delta / SHOW_S)

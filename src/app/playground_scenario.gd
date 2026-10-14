@@ -24,7 +24,10 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	w.set_enemy_tables(ContentCompiler.compile_enemies(repo))
 	w.set_item_tables(ContentCompiler.compile_items(repo))
 	w.set_combo_tables(ContentCompiler.compile_combos(repo))
-	w.set_boss_tables(ContentCompiler.compile_bosses(repo))
+	# v0.8.0 FB1: and the final boss's bodies after them (PlaygroundApi.summon_final).
+	var bosses := ContentCompiler.compile_bosses(repo)
+	bosses.append_array(ContentCompiler.compile_final_bosses(repo, final_run(repo)))
+	w.set_boss_tables(bosses)
 	w.floor_index = 1
 	w.run_floor = WAND_FLOOR
 	w.wand_table = WandCompiler.from_repo(repo)
@@ -38,6 +41,11 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	w.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))
 	lay_surface(w, biome)
 	return w
+
+
+## v0.8.0 FB1: the run's table (its final boss: the bodies, the shatter, the name).
+static func final_run(repo: ContentRepository) -> RunTable:
+	return ContentCompiler.compile_run(repo.get_def(&"run", Main.RUN_ID))
 
 
 ## The biome's surface in the room. IcePatches keeps patches out of a floor's start hall and lays them in only part

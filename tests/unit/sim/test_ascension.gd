@@ -1,6 +1,7 @@
 extends GutTest
 ## v0.7.5 AP (owner N4): the Ascension portal and the endless loop, in the sim. On a run's last floor of a loop the
-## gate is the Ascension portal; walking in opens the choice and the world waits; End the run wins, Ascend ends the
+## gate is the Ascension portal; walking in opens the choice and the world waits; End the run leads to the final boss
+## (v0.8.0 FB1; it wins the run when beaten), Ascend ends the
 ## floor and the run goes on at floor 1 of the next loop with the build carried, new biomes and seeds, harder (data);
 ## Not yet closes it until the hero steps out. The run's floor counts across loops (shop and curse cadence, wand slots).
 
@@ -123,7 +124,9 @@ func test_walking_in_opens_the_choice_and_the_world_waits() -> void:
 	assert_true(reader.ascension_open(), "any other pick is ignored")
 
 
-func test_end_the_run_wins_it() -> void:
+## v0.8.0 FB1 (owner, F1 "changed"): End the run no longer wins at once: it takes the hero on to the final arena (the
+## run's last world, test_final_boss.gd), on the same floor and loop.
+func test_end_the_run_leads_to_the_final_boss() -> void:
 	var r := _last_floor_run(13)
 	var w := _floor_world(r)
 	var reader := WorldReader.new(w)
@@ -135,8 +138,12 @@ func test_end_the_run_wins_it() -> void:
 	assert_eq(reader.ascension_choice(), WorldReader.ASCEND_END)
 	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
 	assert_true(w.boss_flow.exited())
-	assert_eq(reader.outcome(), 1, "End the run: the run is won")
-	assert_eq(r.loops_cleared(w), 1, "the loop counts as cleared")
+	assert_eq(reader.outcome(), 3, "End the run: on to the final arena (FB1)")
+	assert_eq(r.loops_cleared(w), 1, "the loop's floors are done")
+	r.finish_floor(w)
+	assert_true(r.final_fight, "the next world is the final boss's")
+	assert_eq(r.loop, 1, "no new loop")
+	assert_eq(r.floor_index, 3)
 
 
 func test_ascend_starts_the_next_loop_with_the_build() -> void:

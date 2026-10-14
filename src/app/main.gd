@@ -319,6 +319,11 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		achievement_tracker.achieved.connect(toast.push)
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
+	var arena_def: FinalArenaDefinition = null  # v0.8.0 FB1: the final arena (End the run), its own biome
+	if run.final_fight:
+		arena_def = repo.get_def(&"final_arena", run.table.final_arena)
+		if arena_def != null:
+			biome = arena_def
 	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
 	var enemies := ContentCompiler.compile_enemies(repo)
@@ -326,28 +331,24 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
-	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
-	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's floor)
-	var world := FloorScenario.build(
-		run.floor_seed(),
-		table,
-		enemies,
-		ContentCompiler.compile_floor_spawning(repo, run.floor_index),  # v0.4.0 TU: with the floor's curve
-		ContentCompiler.compile_items(repo),
-		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
-		run.floor_index,
-		arena,
-		run,
-		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
-		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
-		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
-		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
-	)
-	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
-	FloorScenario.add_shop(world, rules[&"shop"], biome.id, rules[&"map"])
-	IcePatches.place(world, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow (else none)
-	world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
+	var finals := ContentCompiler.compile_final_bosses(repo, run.table)  # v0.8.0 FB1: the final boss's bodies
+	run.scale_bosses(finals)
+	var world: World
+	if arena_def != null:  # v0.8.0 FB1 (F1, F2): End the run brought the hero to the final arena
+		world = FinalArenaScenario.build(
+			run,
+			arena_def,
+			table,
+			enemies,
+			ContentCompiler.compile_items(repo),
+			ContentCompiler.compile_combos(repo),
+			bosses,
+			finals
+		)
+	else:
+		world = _floor_world(repo, run, table, enemies, bosses, biome.id)
+		IcePatches.place(world, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
+		world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
 	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
@@ -366,6 +367,8 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(world)
 	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
+	if arena_def != null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden catch-up counts)
+		FinalArenaScenario.begin(world, run, finals.size())
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
 		var err := WorldSnapshot.apply(world, resume["world"])
 		if err != "":
@@ -373,7 +376,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		WandMigration.run(world)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	_tweaked_run_check()
-	if resume.is_empty():
+	if resume.is_empty() and arena_def == null:  # v0.8.0 FB1: the final arena isn't a Codex biome
 		codex_recorder.enter_biome(biome.id)  # v0.7.5 CX: a visit (not when Continue resumes the floor)
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
@@ -465,6 +468,38 @@ func _next_floor() -> void:
 	_start_floor()
 
 
+## A floor of the run (FloorScenario): its boss drawn from the floor's pool, its room, the floor's tables and its shop.
+func _floor_world(
+	repo: ContentRepository,
+	p_run: RunState,
+	table: PlayerTable,
+	enemies: Array[EnemyTable],
+	bosses: Array[BossTable],
+	biome_id: StringName
+) -> World:
+	var boss := p_run.pick_boss(ContentCompiler.compile_boss_pool(repo, p_run.floor_index))
+	var arena := RunSaver.boss_arena(p_run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
+	var rules := RunSaver.floor_tables(p_run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's)
+	var world := FloorScenario.build(
+		p_run.floor_seed(),
+		table,
+		enemies,
+		ContentCompiler.compile_floor_spawning(repo, p_run.floor_index),  # v0.4.0 TU: with the floor's curve
+		ContentCompiler.compile_items(repo),
+		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
+		p_run.floor_index,
+		arena,
+		p_run,
+		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
+		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
+		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
+		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
+	)
+	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
+	FloorScenario.add_shop(world, rules[&"shop"], biome_id, rules[&"map"])
+	return world
+
+
 ## v0.7.5 AP: the Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
 ## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend, `runs` / `loop` /
 ## `best` keeps the highest loop reached. A tweaked run (the dev panel's balance edits) records nothing, as the Codex.
@@ -507,6 +542,8 @@ func run_recap() -> Dictionary:
 		"routes": run.routes.duplicate(),  # v0.5.0 RT: the route of each floor reached
 		"loop": run.loop,  # v0.7.5 AP: the loop reached and the loops cleared
 		"loops_cleared": run.loops_cleared(w),
+		"true_ending": run.final_fight and driver.reader.final_won(),  # v0.8.0 FB1: the final boss beaten
+		"final_reached": run.final_fight,
 	}
 	if &"shards" in w:
 		out["shards"] = int(w.get(&"shards"))
@@ -777,6 +814,9 @@ func _start_playground(build_id: StringName, biome_id: StringName) -> void:
 		driver, ui, _playground_biomes(repo), biome_id, _playground_names(repo)
 	)
 	playground.on_pause_change = _sync_pause
+	var run_table := PlaygroundScenario.final_run(repo)  # v0.8.0 FB1: the final boss's summon
+	playground.api.final_shatter_ticks = run_table.final_shatter_ticks
+	playground.api.final_name_key = run_table.final_name_key
 	playground.biome_requested.connect(_set_playground_biome)
 	playground.weapon_requested.connect(
 		func() -> void:

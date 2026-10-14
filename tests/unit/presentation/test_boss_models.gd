@@ -124,9 +124,13 @@ func test_phase_two_glows_steadily() -> void:
 
 
 func test_models_are_read_once_per_type() -> void:
-	BossModels.preload_all()
+	BossModels.preload_all(true)  # v0.8.0 FB1: the final boss's bodies load only with `final`
 	var n := BossModels.loaded_count()
-	assert_eq(n, BossModels.SPECS.size(), "v0.7.5 BM: all six bosses")
+	assert_eq(
+		n,
+		BossModels.SPECS.size(),
+		"v0.7.5 BM: all six bosses; v0.8.0 FB1: and the final boss's three bodies"
+	)
 	var m1 := BossModels.get_model(&"stone_sentinel")
 	_avatar(GatekeeperAvatar)
 	_avatar(GatekeeperAvatar)

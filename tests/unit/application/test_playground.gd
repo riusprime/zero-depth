@@ -136,7 +136,8 @@ func test_any_enemy_and_any_boss_spawn_at_a_point() -> void:
 	assert_true(pg.place_enemy_now(ActorStore.Kind.CHARGER, at))
 	assert_eq(w.actors.pos(w.actors.size() - 1), at)
 	for b in w.boss_tables.size():
-		var spot := w.player_pos() + Vector2(-10, -12 + b * 5)
+		# Two columns (v0.8.0 FB1: the final boss's bodies are on the list too).
+		var spot := w.player_pos() + Vector2(-10 + (b % 2) * 5, -12 + (b / 2) * 5)
 		assert_true(pg.place_boss_now(b, spot), "boss %d" % b)
 	assert_eq(w.bosses.size(), w.boss_tables.size(), "every boss, side by side")
 	assert_eq(w.actors.size(), 2 + w.boss_tables.size(), "a boss doesn't clear the room")

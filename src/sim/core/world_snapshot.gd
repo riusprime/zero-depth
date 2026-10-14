@@ -118,6 +118,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"CurseState",  # v0.6.0 CU: the trade-off curses in play (stun, dodges, shots counted)
 	&"CoreState",  # v0.6.0 CU: core carriers, staggers, steal windows, the drops on the floor
 	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
+	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -148,9 +149,17 @@ const ADDED_SINCE_V05 := {
 		&"run_floor",
 		&"loop_threat",
 		&"loop_cap_permille",
+		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
-	&"BossFlow": [&"ascension", &"ascend_open", &"ascend_declined", &"ascend_choice"],
+	&"BossFlow":
+	[
+		&"ascension",
+		&"ascend_open",
+		&"ascend_declined",
+		&"ascend_choice",
+		&"final_next",  # v0.8.0 FB1: an older save gets the base's (RunState.prepare: today's content)
+	],
 	# v0.8.0 BS1: the signature mechanics' pillars and javelins (lists of their own; an older save has none)
 	&"BossStore":
 	[
@@ -566,6 +575,8 @@ static func _make(cls: StringName) -> Object:
 			return CatchUpState.new()
 		&"ArenaState":
 			return ArenaState.new()
+		&"FinalFight":
+			return FinalFight.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 

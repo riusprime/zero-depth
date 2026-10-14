@@ -27,7 +27,8 @@ const CAUSES := {
 ## Recap keys (all optional): "floor" and "floors" (ints), "seconds" (float), "kills" (int), "shards" (int; omitted
 ## when the run has no shards), "items" (Array of item name keys), "routes" (v0.5.0 RT: each floor's route, floor 1
 ## first, as WorldReader.ROUTE_* ints), "threat" and "threat_peak" (ints; v0.5.0 EV), "loop" and "loops_cleared"
-## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared).
+## (ints; v0.7.5 AP: the floor line says "Loop N · " past the first loop, and a line counts the loops cleared),
+## "true_ending" (bool; v0.8.0 FB1: the final boss was beaten, its line first).
 var recap := {}
 
 
@@ -65,6 +66,8 @@ func recap_line(line_name: String) -> String:
 
 
 func _add_recap() -> void:
+	if bool(recap.get("true_ending", false)):  # v0.8.0 FB1 (F1): the final boss beaten
+		_line("TrueEnding", tr("UI_RECAP_TRUE_ENDING"), 24)
 	if recap.has("floor"):
 		_line(
 			"Floor",

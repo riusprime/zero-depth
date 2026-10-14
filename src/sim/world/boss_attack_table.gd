@@ -23,6 +23,9 @@ enum Move {
 	ROW_FLOOD,
 	GAZE,
 	MELT,
+	COMBO,  # v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus's moves (BossColossus)
+	SPIKE_CHASE,
+	SPIKE_BURST,
 }
 
 var id := &""
@@ -130,3 +133,9 @@ var melt_min_m := 0.0
 var melt_step_m := 0.0
 var melt_step_ticks := 0
 var melt_warn_ticks := 0
+## v0.8.0 FB1 (owner O17; FINAL_BOSS.md F4; BossColossus): a `spike_chase` line's or a `spike_burst` ray's spikes
+## (steps of them, step_m apart). A `combo`'s swings use count, half_arc, reach_m, speed (its step toward the player
+## while a swing follows) and mark_gap_ticks (between strikes); its slam radius_m. A `leap` with a pattern fires it
+## from where it lands (its shockwave ring).
+var steps := 1
+var step_m := 0.0

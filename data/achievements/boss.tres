@@ -12,4 +12,5 @@ group = &"bosses"
 order = 1
 kind = 3
 page = &"bosses"
+section = &"bosses"
 counter = &"kills"

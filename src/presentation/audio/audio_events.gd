@@ -21,6 +21,11 @@ const BOSS_FLAVOUR := {
 	WorldReader.KIND_WARLORD: &"boss_telegraph_warlord",
 	WorldReader.KIND_HIVE_LENS: &"boss_telegraph_hive_lens",
 	WorldReader.KIND_FOUNDRY: &"boss_telegraph_foundry",
+	# v0.8.0 FB1 (FINAL_BOSS.md F9: the existing boss sounds until audio is made): the stone one, the light one, the
+	# blade one.
+	WorldReader.KIND_COLOSSUS: &"boss_telegraph_gatekeeper",
+	WorldReader.KIND_PRISM: &"boss_telegraph_hive_lens",
+	WorldReader.KIND_NEMESIS: &"boss_telegraph_warlord",
 }
 const DEATHS := {
 	WorldReader.KIND_CHARGER: &"enemy_death_charger",

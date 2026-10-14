@@ -55,6 +55,13 @@ const LOOKS := {
 	&"fd_vent": {"pattern": Pattern.MOLTEN, "strike": &"steam_ring"},
 	&"fd_firestorm": {"pattern": Pattern.MOLTEN, "strike": &"fire_lanes"},
 	&"fd_bombs": {"pattern": Pattern.MOLTEN, "strike": &"shell"},
+	# v0.8.0 FB1 (FINAL_BOSS.md F4): the Colossus. Its fists' swings throw a dust arc, the slam and the leap blow a
+	# crater, its boulders land as craters too (their shards are fireballs). Its spikes are StoneSpikeViews'.
+	&"cl_fists": {"pattern": Pattern.STONE, "strike": &"dust_arc"},
+	&"cl_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
+	&"cl_leap": {"pattern": Pattern.STONE, "strike": &"crater"},
+	&"cl_boulder": {"pattern": Pattern.STONE, "strike": &"crater"},
+	&"cl_spikes": {"pattern": Pattern.STONE, "strike": &"crack_impact"},
 }
 
 ## Boss kind -> move -> look. The Gatekeeper's row_lanes are StoneSpikeViews' (cracked ground, then spikes).
@@ -100,6 +107,14 @@ const BY_KIND := {
 		WorldReader.MOVE_SLAM_RING: &"fd_vent",
 		WorldReader.MOVE_FLOOD: &"fd_firestorm",
 		WorldReader.MOVE_BROOD: &"fd_bombs",
+	},
+	WorldReader.KIND_COLOSSUS:  # v0.8.0 FB1
+	{
+		WorldReader.MOVE_COMBO: &"cl_fists",
+		WorldReader.MOVE_LEAP: &"cl_leap",
+		WorldReader.MOVE_MARKS: &"cl_boulder",
+		WorldReader.MOVE_SPIKE_CHASE: &"cl_spikes",
+		WorldReader.MOVE_SPIKE_BURST: &"cl_spikes",
 	},
 }
 

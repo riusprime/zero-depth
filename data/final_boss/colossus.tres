@@ -1,0 +1,280 @@
+[gd_resource type="Resource" script_class="FinalBossDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/boss_attack_definition.gd" id="1_atk"]
+[ext_resource type="Script" path="res://src/content/defs/boss_phase_definition.gd" id="2_ph"]
+[ext_resource type="Script" path="res://src/content/defs/final_boss_definition.gd" id="3_boss"]
+
+[sub_resource type="Resource" id="A_fist_combo"]
+script = ExtResource("1_atk")
+id = &"fist_combo"
+shape = 1
+shape_params = {
+"arc_degrees": 140.0,
+"count": 2,
+"radius_m": 3.2,
+"reach_m": 2.6,
+"speed_mps": 5.5,
+"stagger_seconds": 0.7
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 20
+move = &"combo"
+min_range_m = 0.0
+max_range_m = 7.0
+weight = 4
+cooldown_seconds = 0.25
+cause_key = &"CAUSE_COLOSSUS_FISTS"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_fist_combo_3"]
+script = ExtResource("1_atk")
+id = &"fist_combo_3"
+shape = 1
+shape_params = {
+"arc_degrees": 140.0,
+"count": 3,
+"radius_m": 3.2,
+"reach_m": 2.6,
+"speed_mps": 5.5,
+"stagger_seconds": 0.65
+}
+telegraph_seconds = 0.8
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 20
+move = &"combo"
+min_range_m = 0.0
+max_range_m = 7.0
+weight = 4
+cooldown_seconds = 0.25
+cause_key = &"CAUSE_COLOSSUS_FISTS"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_leap_slam"]
+script = ExtResource("1_atk")
+id = &"leap_slam"
+shape = 0
+shape_params = {
+"chain": 1,
+"pattern_id": "colossus_quake_ring",
+"radius_m": 2.6,
+"range_m": 16.0
+}
+telegraph_seconds = 0.9
+active_seconds = 0.6
+recovery_seconds = 0.7
+damage = 24
+move = &"leap"
+min_range_m = 4.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_LEAP"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_leap_slam_2"]
+script = ExtResource("1_atk")
+id = &"leap_slam_2"
+shape = 0
+shape_params = {
+"chain": 2,
+"pattern_id": "colossus_quake_ring",
+"radius_m": 2.6,
+"range_m": 16.0
+}
+telegraph_seconds = 0.9
+active_seconds = 0.6
+recovery_seconds = 0.7
+damage = 24
+move = &"leap"
+min_range_m = 4.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_LEAP"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_spike_chase"]
+script = ExtResource("1_atk")
+id = &"spike_chase"
+shape = 0
+shape_params = {
+"count": 1,
+"radius_m": 1.0,
+"spread_degrees": 0.0,
+"stagger_seconds": 0.2,
+"step_m": 1.6,
+"steps": 10
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 18
+move = &"spike_chase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_SPIKES"
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_spike_chase_2"]
+script = ExtResource("1_atk")
+id = &"spike_chase_2"
+shape = 0
+shape_params = {
+"count": 2,
+"radius_m": 1.0,
+"spread_degrees": 50.0,
+"stagger_seconds": 0.2,
+"step_m": 1.6,
+"steps": 12
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 18
+move = &"spike_chase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_SPIKES"
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_spike_burst"]
+script = ExtResource("1_atk")
+id = &"spike_burst"
+shape = 0
+shape_params = {
+"count": 6,
+"radius_m": 0.85,
+"stagger_seconds": 0.12,
+"step_m": 1.6,
+"steps": 7
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 0.8
+damage = 18
+move = &"spike_burst"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 2
+cooldown_seconds = 0.4
+cause_key = &"CAUSE_COLOSSUS_BURST"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_boulder_throw"]
+script = ExtResource("1_atk")
+id = &"boulder_throw"
+shape = 0
+shape_params = {
+"count": 2,
+"pattern_id": "colossus_boulder_shards",
+"radius_m": 1.7,
+"stagger_seconds": 0.4
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 22
+move = &"marks"
+min_range_m = 3.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_BOULDER"
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_boulder_throw_3"]
+script = ExtResource("1_atk")
+id = &"boulder_throw_3"
+shape = 0
+shape_params = {
+"count": 3,
+"pattern_id": "colossus_boulder_shards",
+"radius_m": 1.7,
+"stagger_seconds": 0.4
+}
+telegraph_seconds = 1.0
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 22
+move = &"marks"
+min_range_m = 3.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_BOULDER"
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="P_0"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 1000
+attack_ids = PackedStringArray("fist_combo", "leap_slam", "spike_chase", "boulder_throw")
+entry_attack = &""
+speed_permille = 1000
+cooldown_permille = 1000
+
+[sub_resource type="Resource" id="P_1"]
+script = ExtResource("2_ph")
+hp_threshold_permille = 500
+attack_ids = PackedStringArray("fist_combo_3", "leap_slam_2", "spike_chase_2", "spike_burst", "boulder_throw_3")
+entry_attack = &"spike_burst"
+speed_permille = 1150
+cooldown_permille = 750
+
+[resource]
+script = ExtResource("3_boss")
+name_key = &"BOSS_COLOSSUS"
+desc_key = &"BOSS_COLOSSUS_DESC"
+hp = 1200
+radius_m = 1.6
+move_speed_mps = 4.2
+turn_rate_dps = 360.0
+keep_distance_m = 0.0
+front_arc_degrees = 0.0
+front_mult_permille = 1000
+rear_arc_degrees = 0.0
+rear_mult_permille = 1000
+stagger_size = 260
+stagger_decay_per_second = 14.0
+stagger_seconds = 2.0
+arena_cells = Vector2i(4, 4)
+arena_template = 0
+ranged_full_m = 5.0
+ranged_far_m = 12.0
+ranged_far_permille = 800
+punish_distance_m = 10.0
+punish_seconds = 2.5
+punish_attack = &"spike_chase"
+weak_point_seconds = 1.5
+weak_point_range_m = 2.5
+weak_point_mult_permille = 1500
+weak_point_stagger_permille = 1500
+arena_close_phase = -1
+arena_close_after_seconds = 0.0
+arena_close_step_seconds = 6.0
+arena_close_step_m = 0.0
+arena_close_warn_seconds = 1.5
+arena_safe_half_m = 5.0
+arena_hazard_damage = 0
+arena_hazard_seconds = 0.5
+recovery_permille = 700
+lead_seconds = 0.0
+track_commit_seconds = 0.15
+dash_read_seconds = 0.4
+gap_close_attack = &"leap_slam"
+gap_close_distance_m = 8.0
+gap_close_seconds = 1.5
+attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_combo"), SubResource("A_fist_combo_3"), SubResource("A_leap_slam"), SubResource("A_leap_slam_2"), SubResource("A_spike_chase"), SubResource("A_spike_chase_2"), SubResource("A_spike_burst"), SubResource("A_boulder_throw"), SubResource("A_boulder_throw_3")])
+phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
+id = &"colossus"

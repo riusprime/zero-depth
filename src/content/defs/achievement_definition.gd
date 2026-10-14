@@ -33,6 +33,9 @@ const STATS: Array[StringName] = [
 	&"curses:chest_card",
 	&"cores:stolen",
 	&"shards:spent",
+	&"final:won",  # v0.8.0 FB1 (FINAL_BOSS.md F8): the final boss beaten,
+	&"final:no_hit_phase",  # a body beaten without a hit,
+	&"final:won_looped",  # and beaten after an Ascension loop
 ]
 const CODEX_COUNTERS := {
 	&"cards": [&"offered", &"taken", &"level"],

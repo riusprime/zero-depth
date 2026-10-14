@@ -8,6 +8,9 @@ extends RefCounted
 ##   and silent. An endless one ("∞") gets its HP back here before every tick; one with a set HP dies.
 ## - Enemies and bosses are spawned as the entities they are (their AI, attacks and phases), at a point.
 ## - Cards go in through the sim's own take (BuildSlots / Offers), at a chosen level.
+## - v0.8.0 FB1: the final boss (FinalBoss): summoned at the room's centre as the whole fight (its bodies shatter into
+##   the next), and a phase jump that hands the fight to a body (summoning it first when no fight runs). Clearing the
+##   room's bosses ends the fight.
 
 ## An endless dummy's pool: no tick of any build empties it, and it is refilled before the next.
 const ENDLESS_HP := 100_000_000
@@ -33,11 +36,21 @@ var world: World
 var god := false
 ## Ids of the endless dummies.
 var endless := {}
+## v0.8.0 FB1: the final boss's bodies (indices into World.boss_tables, in phase order: found by their kinds), the
+## shatter's length and the fight's name (Main sets the last two from the run's content).
+var final_tables := PackedInt32Array()
+var final_shatter_ticks := 90
+var final_name_key := &"BOSS_HOLLOW_CROWN"
 var _queue: Array[Callable] = []
 
 
 func _init(p_world: World) -> void:
 	world = p_world
+	for kind in [ActorStore.Kind.COLOSSUS, ActorStore.Kind.PRISM, ActorStore.Kind.NEMESIS]:
+		for k in world.boss_tables.size():
+			if world.boss_tables[k].kind == kind:
+				final_tables.append(k)
+				break
 
 
 func has_pending() -> bool:
@@ -91,6 +104,16 @@ func remove_card(code: int) -> void:
 	_queue.append(func() -> void: remove_card_now(code))
 
 
+## v0.8.0 FB1: the final boss's fight from body `phase` (0 = the first), at the room's centre.
+func summon_final(phase: int = 0) -> void:
+	_queue.append(func() -> void: summon_final_now(phase))
+
+
+## v0.8.0 FB1: the fight goes to body `phase` now (a fight is summoned first when none runs).
+func final_phase(phase: int) -> void:
+	_queue.append(func() -> void: final_phase_now(phase))
+
+
 func heal() -> void:
 	_queue.append(func() -> void: world.actors.hp[0] = world.actors.max_hp[0])
 
@@ -122,6 +145,27 @@ func place_boss_now(table_index: int, at: Vector2) -> bool:
 	if not clear_spot(at, world.boss_tables[table_index].radius_m):
 		return false
 	world.spawn_boss(table_index, at)
+	return true
+
+
+## v0.8.0 FB1: clears the room's enemies and bosses, then the final boss's body `phase` rises at the room's centre.
+## False without the final boss's tables.
+func summon_final_now(phase: int = 0) -> bool:
+	if final_tables.is_empty():
+		return false
+	clear_now(false)
+	var at := (
+		world.floor_layout.rooms[0].get_center() if world.floor_layout != null else Vector2.ZERO
+	)
+	FinalBoss.begin(world, final_tables, final_shatter_ticks, at, phase)
+	world.final_fight.name_key = final_name_key
+	return true
+
+
+func final_phase_now(phase: int) -> bool:
+	if world.final_fight == null or world.final_fight.won:
+		return summon_final_now(phase)
+	FinalBoss.jump(world, phase)
 	return true
 
 
@@ -349,6 +393,8 @@ func _remove(gone: PackedInt32Array) -> void:
 			world.bosses.remove(b)
 			if world.boss_id == id:
 				world.boss_id = -1
+		if world.final_fight != null and world.final_fight.body_id == id:
+			world.final_fight = null  # v0.8.0 FB1: the fight ends with its body
 		endless.erase(id)
 	a.remove_sorted(gone)
 	if world.boss_id < 0 and world.bosses.size() > 0:

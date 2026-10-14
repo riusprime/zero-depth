@@ -47,6 +47,15 @@ extends ContentDef
 @export var loop_scale_cap_permille := 100000
 @export var loop_threat := 2
 @export var loop_catch_up_cap_permille := 500
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss. End the run at the Ascension portal (any loop)
+## leads to it: one fight in its own arena (final_arena, a FinalArenaDefinition id), its bodies in order
+## (final_bosses: FinalBossDefinition ids, the Colossus, the Prism, the Nemesis), shown as one boss named
+## final_name_key; between two bodies the last one shatters for final_shatter_seconds. Empty final_bosses: End the run
+## ends the run at once (as before FB1).
+@export var final_bosses: Array[StringName] = []
+@export var final_name_key: StringName
+@export var final_arena: StringName
+@export var final_shatter_seconds := 1.5
 
 
 func category() -> StringName:
@@ -56,6 +65,17 @@ func category() -> StringName:
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	check_positive(issues, "floors", floors)
+	if not final_bosses.is_empty():  # v0.8.0 FB1: a final boss has its name, its arena and a real shatter
+		if String(final_name_key).is_empty() or String(final_arena).is_empty():
+			issues.append(
+				ValidationIssue.new(
+					&"missing", resource_path, "final_bosses need final_name_key and final_arena"
+				)
+			)
+		if int(round(final_shatter_seconds * 60.0)) < 1:
+			issues.append(
+				ValidationIssue.new(&"duration", resource_path, "final_shatter_seconds < a tick")
+			)
 	if biomes.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "biomes is empty"))
 	for b in biomes:

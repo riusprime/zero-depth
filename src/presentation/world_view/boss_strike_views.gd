@@ -213,6 +213,11 @@ func _detect(
 		if tg.get("shape", &"") == &"marks":
 			_detect_marks(aid, look, tg)
 		return
+	if move == WorldReader.MOVE_COMBO:  # v0.8.0 FB1: each swing (and the slam) on the tick it lands
+		_detect_combo(aid, tg)
+		return
+	if move == WorldReader.MOVE_SPIKE_CHASE or move == WorldReader.MOVE_SPIKE_BURST:
+		return  # v0.8.0 FB1: StoneSpikeViews raises them
 	if move == WorldReader.MOVE_LEAP:
 		var leap := reader.boss_leap(i)
 		if bool(leap[0]) and float(leap[1]) >= 1.0 and tg.get("shape", &"") == &"disc":
@@ -287,6 +292,23 @@ func _detect_marks(aid: int, look: StringName, tg: Dictionary) -> void:
 		discs.append([c, float(item["radius"])])
 	if not discs.is_empty():
 		_spawn(look, aid, {"discs": discs})
+
+
+## v0.8.0 FB1: the Colossus's combo strikes on the tick its telegraph says "striking": a swing throws a dust arc where
+## it locked, the closing slam blows a crater round its feet.
+func _detect_combo(aid: int, tg: Dictionary) -> void:
+	if not bool(tg.get("striking", false)):
+		return
+	match tg.get("shape", &""):
+		&"arc":
+			var a := TAU * float(tg["angle"]) / 4096.0
+			var h := TAU * float(tg["half_arc"]) / 4096.0
+			var r0 := float(tg["own_r"])
+			_spawn(
+				&"cl_fists", aid, {"arc": [tg["center"], r0, r0 + float(tg["reach"]), a - h, a + h]}
+			)
+		&"disc":
+			_spawn(&"cl_slam", aid, {"discs": [[tg["center"], float(tg["radius"])]]})
 
 
 ## The sustained strikes follow their boss: the skid runs to where the boss is now; each ends when its boss leaves

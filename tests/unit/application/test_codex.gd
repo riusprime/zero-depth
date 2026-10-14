@@ -156,7 +156,11 @@ func test_enemies_bosses_and_biomes_come_from_the_data() -> void:
 	var repo := ContentRepository.load_all()
 	var c := CodexCatalog.build(repo)
 	assert_eq(c.size(&"enemies"), repo.count(&"enemies"))
-	assert_eq(c.size(&"bosses"), repo.count(&"bosses"))
+	assert_eq(
+		c.size(&"bosses"),
+		repo.count(&"bosses") + repo.count(&"final_bosses"),
+		"v0.8.0 FB1: the floors' bosses and the final boss's bodies"
+	)
 	assert_eq(
 		c.size(&"biomes"), repo.count(&"biomes"), "every biome of the data, new ones included"
 	)
