@@ -32,11 +32,10 @@ not in `main` yet).
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | "boss OK": all rows as proposed | 2026-10-14 |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | "blade audit … OK": all rows as proposed | 2026-10-14 |
 | G2 EC: palettes A/B/C ([ENEMY_COLOURS](evidence/ENEMY_COLOURS.md), shots in `evidence/ec_shots/`) | 2026-10-14 | "Color palette A" | 2026-10-14 |
-| G2 RT: the first 3 designed rooms | — | "New rooms are fine in density don't need anything else, follow the line of those to create the rest" | 2026-10-14 |
 | G2 MU: 3 menu and card directions ([MENU_G2](evidence/MENU_G2.md): A Salvage, B Ember stone, C Field kit × main menu, card pick, Build page) | 2026-10-14 | "menu style B" (Ember stone) | 2026-10-14 |
 | G1 [BOSS_SIGNATURES](BOSS_SIGNATURES.md) S1–S6 | 2026-10-14 | pending | |
 | G1 [BLADE_AUDIT](BLADE_AUDIT.md) B1–B7 | 2026-10-14 | pending | |
-| G2 RT: the first 3 designed rooms ([evidence/ROOMS.md](evidence/ROOMS.md), shots in `evidence/rt_shots/`) | 2026-10-14 | pending | |
+| G2 RT: the first 3 designed rooms ([evidence/ROOMS.md](evidence/ROOMS.md), shots in `evidence/rt_shots/`) | 2026-10-14 | "New rooms are fine in density don't need anything else, follow the line of those to create the rest" | 2026-10-14 |
 | G2 MU: 3 menu and card directions | — | not yet made | |
 
 ## Open
