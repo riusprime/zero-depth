@@ -49,7 +49,8 @@ script = ExtResource("1_atk")
 id = &"javelin_fan"
 shape = 4
 shape_params = {
-"pattern_id": "warlord_javelin_fan"
+"pattern_id": "warlord_javelin_fan",
+"recall_seconds": 1.0
 }
 telegraph_seconds = 0.6
 active_seconds = 0.0167
@@ -61,13 +62,15 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_WARLORD_FAN"
+late_cause_key = &"CAUSE_WARLORD_RECALL"
 
 [sub_resource type="Resource" id="A_javelin_fan_fast"]
 script = ExtResource("1_atk")
 id = &"javelin_fan_fast"
 shape = 4
 shape_params = {
-"pattern_id": "warlord_javelin_fan_fast"
+"pattern_id": "warlord_javelin_fan_fast",
+"recall_seconds": 1.0
 }
 telegraph_seconds = 0.6
 active_seconds = 0.0167
@@ -79,6 +82,7 @@ max_range_m = 99.0
 weight = 3
 cooldown_seconds = 0.9
 cause_key = &"CAUSE_WARLORD_FAN"
+late_cause_key = &"CAUSE_WARLORD_RECALL"
 
 [sub_resource type="Resource" id="A_shield_bash"]
 script = ExtResource("1_atk")
@@ -172,28 +176,6 @@ follow_up = &"shield_bash"
 follow_up_permille = 450
 lock_seconds = 0.8
 
-[sub_resource type="Resource" id="A_javelin_rain"]
-script = ExtResource("1_atk")
-id = &"javelin_rain"
-shape = 0
-shape_params = {
-"count": 6,
-"radius_m": 1.6,
-"spread_m": 3.0
-}
-telegraph_seconds = 1.6
-active_seconds = 0.0167
-recovery_seconds = 1.4
-damage = 22
-move = &"barrage"
-min_range_m = 0.0
-max_range_m = 99.0
-weight = 1
-cooldown_seconds = 0.8
-cause_key = &"CAUSE_WARLORD_JAVELINS"
-opens_weak_point = true
-lock_seconds = 0.8
-
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
@@ -213,7 +195,7 @@ cooldown_permille = 650
 [sub_resource type="Resource" id="P_2"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 330
-attack_ids = PackedStringArray("shield_wall_cross", "javelin_fan_fast", "spear_wall", "lunge_dash", "javelin_rain", "shield_bash")
+attack_ids = PackedStringArray("shield_wall_cross", "javelin_fan_fast", "spear_wall", "lunge_dash", "shield_bash")
 entry_attack = &"shield_wall_cross"
 speed_permille = 1430
 cooldown_permille = 487
@@ -225,16 +207,16 @@ desc_key = &"BOSS_WARLORD_DESC"
 hp = 1750
 radius_m = 1.45
 move_speed_mps = 2.1
-turn_rate_dps = 130.0
+turn_rate_dps = 90.0
 keep_distance_m = 0.0
-front_arc_degrees = 140.0
-front_mult_permille = 650
+front_arc_degrees = 120.0
+front_mult_permille = 0
 rear_arc_degrees = 100.0
 rear_mult_permille = 1250
 stagger_size = 220
 stagger_decay_per_second = 12.0
 stagger_seconds = 2.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_wall"), SubResource("A_shield_wall_cross"), SubResource("A_javelin_fan"), SubResource("A_javelin_fan_fast"), SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash"), SubResource("A_javelin_rain")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_shield_wall"), SubResource("A_shield_wall_cross"), SubResource("A_javelin_fan"), SubResource("A_javelin_fan_fast"), SubResource("A_shield_bash"), SubResource("A_spear_lines"), SubResource("A_spear_wall"), SubResource("A_lunge_dash")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1"), SubResource("P_2")])
 arena_cells = Vector2i(4, 4)
 legacy_arena_cells = Vector2i(3, 2)
@@ -244,7 +226,7 @@ ranged_far_m = 12.0
 ranged_far_permille = 400
 punish_distance_m = 9.0
 punish_seconds = 4.0
-punish_attack = &"javelin_rain"
+punish_attack = &"spear_lines"
 weak_point_seconds = 2.0
 weak_point_range_m = 2.5
 weak_point_mult_permille = 2000

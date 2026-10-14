@@ -78,8 +78,9 @@ static func _walk() -> BossClip:
 	return c
 
 
-## The Egg Storm: it braces, hoists its swelling sac high over its back and whips it forward to fling an egg onto
-## each marker (strike..hold is one fling: it swells again and flings again), then lets the sac sink back.
+## The Egg Storm: it braces, lays (the sac dips and pumps: v0.8.0 BS1), hoists its swelling sac high over its back
+## and whips it forward to fling an egg onto each marker (strike..hold is one fling: it swells again and flings
+## again), then lets the sac sink back. The eggs then sit on the floor (BossSignatureViews).
 static func _marks() -> BossClip:
 	var c := BossClip.new(&"marks")
 	var sac_turn := [
@@ -95,6 +96,20 @@ static func _marks() -> BossClip:
 		[1, 0],
 	]
 	c.turn(&"sac", Z, sac_turn)
+	# v0.8.0 BS1 (S3, the eggs that stay): first it lays them: the sac dips to the floor and pumps twice, filling.
+	c.shift(
+		&"sac",
+		UP,
+		[
+			[0, 0],
+			[0.08, -0.12, OUT],
+			[0.18, 0.03],
+			[0.27, -0.1, OUT],
+			[0.38, 0.06],
+			[0.5, 0, IN3],
+			[1, 0]
+		]
+	)
 	c.stretch(
 		&"sac",
 		[

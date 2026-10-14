@@ -14,6 +14,7 @@ not in `main` yet).
 | BA | The six bosses move with keyframed clips (code-made, owner Q4) instead of a few code sways: every attack winds up with anticipation, lands its strike pose on the very tick the hit resolves (the clip's time is driven by the sim's windup / active / recovery ticks; a multi-marker slam re-strikes on each marker's tick) and recovers; idle breathing, walks matched to speed, a shielded pose (the Gatekeeper curls into a boulder for its Rock Rings), a flinch, a reel-and-slump stagger, a roar at each phase gate, a rise with the boss bar, and a collapse when it dies (all six now; only the Warlord fell before). Owner clips with the same name in the model's AnimationPlayer replace the code clips. Reduced motion: same poses, no tremble or overshoot. Evidence [BOSS_ANIMATIONS](evidence/BOSS_ANIMATIONS.md), sheets in `evidence/ba_shots/`; the feel is OWNER ONLY | `8b35845` (branch `v080-ba`) |
 | RT part 1 (system + 3 layouts) | Rooms of 2×2, 3×2 and 3×3 cells are furnished from hand-designed layouts (dense clusters of tall blocks, crate stacks, wrecks, fire barrels, broken walls and pillars, grass and rubble, an open lane in the middle), picked per room and turned and mirrored by the generator, restyled by each biome; other sizes keep their rule-built rooms until their layouts come; a save made before RT resumes on its own floor. G2 asked; evidence [`evidence/ROOMS.md`](evidence/ROOMS.md) | `38beba1` (branch `v080-rt`) |
 | EC | Enemies wear one colour family per role (palette A, the owner's G2 pick): melee red-orange, ranged blue-violet, bombers yellow, support green, tanks bronze, each kind its own shade, every kind with a glowing eye ([evidence](evidence/ENEMY_COLOURS.md)) | `234f119` (palettes) + `d71aa5c` (the pick) |
+| BS part 1 (S1–S3) | Three bosses each get a mechanic of their own: the Gatekeeper's shock lanes leave stone pillars standing for 6 s, real walls you take cover behind from its rock rings (never on you, never sealing you in); the Warlord's tower shield blocks every hit from the front, so you circle it, and its javelins stick in the floor then all fly back along the same lines; the Brood Mother's eggs sit 3 s to be broken, or they hatch (and in phase 3 burst into acid). Cross Quake, Javelin Rain and the fast Web Spiral are gone. Evidence [BOSS_SIGNATURES_1](evidence/BOSS_SIGNATURES_1.md), shots in `evidence/bs_shots/`; the feel is OWNER ONLY | branch `v080-bs1` (the `v0.8.0 Step BS1` commit) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
@@ -24,6 +25,7 @@ not in `main` yet).
   `tests/golden` passes unchanged). Run floors change on purpose (floor rules 4); a floor saved before keeps its own.
 - BA: none (presentation, plus two read-only WorldReader reads; `tests/golden` 2/2 unchanged)
 - EC: none (presentation only)
+- BS1: none (no golden fixture holds a boss fight; the new BossStore lists hash only while a pillar or javelin stands; `tests/golden` 2/2 unchanged)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -49,6 +51,7 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: BS part 1 (agent, branch `v080-bs1` from `bace713`): `BossSignatures` (S1 pillars as barriers + `NavField.set_extra`, S2 front ×0 block + stuck/recalled javelins, S3 eggs as Hatchlings in an EGG state), `BossStore` pillar/javelin lists (in `ADDED_SINCE_V05`), `late_cause_key` + `CAUSE_WARLORD_RECALL` / `CAUSE_BROOD_EGG_BURST`, the three boss files (trims, new params), `BossSignatureViews` (javelins, eggs), `StoneSpikeViews` pillars, clips (Warlord `recall`, Brood lay, Gatekeeper raise); SIM_CONTRACTS §10f, CONTENT_SCHEMA §4, BOSS_FIGHTS.md. Run locally: lint clean (848 files); boss sim files 213/213; `tests/content` 137/137; `tests/arch` 4/4; `tests/golden` 2/2; application saves + debug 31/31; presentation folder 573/575 then the two fixed files + the spikes e2e 23/23; boss/playground/save e2e 17/18 then the failing one green (evidence). Shots 6 (llvmpipe). Not run locally: the full suite, the bot sims, seams. A `pkill -f gut_cmdln.gd` may have stopped another agent's GUT run on the shared machine.
 - 2026-10-14: BA (agent, branch `v080-ba` from `0dfa2c7`): `src/presentation/world_view/boss_anim/` (BossClip: keyed
   tracks of bone / body turn, shift, stretch and named parameters with eases and SETTLE overshoot keys;
   BossAnimator: additive layers idle / walk / action (+ crossfade) / shielded / flinch / stagger / roar / rise /

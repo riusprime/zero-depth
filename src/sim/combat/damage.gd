@@ -20,7 +20,11 @@ static func target_mult(w: World, target: int, from: Vector2) -> Array[int]:
 		var off := Kin.angle_diff(to_attacker, a.facing[target])
 		var lifted := bt.weak_drops_armour and w.bosses.exposed_t[BossAi.entry_of(w, target)] > 0
 		if bt.front_half_arc > 0 and off <= bt.front_half_arc and not lifted:  # v0.4.0 BO: shield up
-			return [bt.front_mult_permille, SimEvent.TAG_ARMOURED]
+			# v0.8.0 BS1 (owner O5, S2): a 0 multiplier is a shield that blocks the hit outright (the Warlord's).
+			var tag := (
+				SimEvent.TAG_BLOCKED if bt.front_mult_permille == 0 else SimEvent.TAG_ARMOURED
+			)
+			return [bt.front_mult_permille, tag]
 		if bt.rear_half_arc > 0 and off >= 2048 - bt.rear_half_arc:
 			return [bt.rear_mult_permille, SimEvent.TAG_WEAK_SPOT]
 	elif EnemyAi.armoured(a.kinds[target]) and from != a.pos(target):

@@ -148,6 +148,23 @@ const ADDED_SINCE_V05 := {
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow": [&"ascension", &"ascend_open", &"ascend_declined", &"ascend_choice"],
+	# v0.8.0 BS1: the signature mechanics' pillars and javelins (lists of their own; an older save has none)
+	&"BossStore":
+	[
+		&"pillar_x",
+		&"pillar_y",
+		&"pillar_h",
+		&"pillar_from",
+		&"pillar_until",
+		&"pillar_boss",
+		&"jav_x",
+		&"jav_y",
+		&"jav_a",
+		&"jav_boss",
+		&"jav_attack",
+		&"jav_from",
+		&"jav_back",
+	],
 	&"ProjectileStore":
 	[
 		&"spec_key",
@@ -231,11 +248,13 @@ static func apply(base: World, snap: Dictionary) -> String:
 	var saved_c: PackedVector2Array = saved.get("center", PackedVector2Array())
 	if saved_c.size() < walls_before or saved_c.slice(0, walls_before) != built["center"]:
 		return "World.walls: the snapshot's floor differs from the one generated from its inputs"
+	# v0.8.0 BS1: the Gatekeeper's standing pillars are walls added in play too (barriers, never in the flow field).
+	var pillars := _saved_pillars(data)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
 	var door: Obb = base.get(&"_wall_next")
 	if (
 		door != null
-		and saved_c.size() == walls_before + 1
+		and saved_c.size() == walls_before + 1 + pillars
 		and saved_c[walls_before] == door.center
 		and not bool(data.get(&"_wall_next", true))
 	):
@@ -252,7 +271,7 @@ static func apply(base: World, snap: Dictionary) -> String:
 	Curses.invalidate(base)  # v0.7.0 audit C-12: the curse sums are summed again from what was restored
 	# v0.5.5 AR: a sealed arena's barriers came back with the walls: they never enter the flow field (World.add_barrier),
 	# so only the wall grid is rebuilt for them.
-	var barriers := base.arenas.barriers.size()
+	var barriers := base.arenas.barriers.size() + base.bosses.pillar_x.size()  # v0.8.0 BS1: pillars too
 	if base.walls.size() == walls_before + barriers and barriers > 0:
 		base.rebuild_wall_grid()
 	elif base.walls.size() != walls_before:  # any other wall added in play: the grid and field are rebuilt
@@ -262,6 +281,8 @@ static func apply(base: World, snap: Dictionary) -> String:
 		return (
 			"World.nav: field size %s, the rebuilt walls give %s" % [nav.get("size"), base.nav.size]
 		)
+	if not base.bosses.pillar_x.is_empty():  # v0.8.0 BS1: the flow field goes round them again
+		base.nav.set_extra(BossSignatures.pillar_obbs(base))
 	base.nav.dist = (nav["dist"] as PackedInt32Array).duplicate()
 	base.nav.set(&"_flooded", nav["flooded"])
 	for f: StringName in [&"_wall_next", &"_nav_next"]:
@@ -270,6 +291,15 @@ static func apply(base: World, snap: Dictionary) -> String:
 		elif base.get(f) == null:
 			return "World.%s: pending in the snapshot, missing in the base" % f
 	return ""
+
+
+## v0.8.0 BS1: how many of the Gatekeeper's pillars stood in the snapshot (0 for an older save).
+static func _saved_pillars(data: Dictionary) -> int:
+	var bosses: Variant = data.get(&"bosses", {})
+	if typeof(bosses) != TYPE_DICTIONARY:
+		return 0
+	var xs: Variant = (bosses as Dictionary).get(&"pillar_x", PackedFloat32Array())
+	return (xs as PackedFloat32Array).size() if xs is PackedFloat32Array else 0
 
 
 ## v0.6.0 MX2: per-entry arrays an older save didn't have, padded to their store's size with the "none" value (a

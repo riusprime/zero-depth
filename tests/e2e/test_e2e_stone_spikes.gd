@@ -3,7 +3,7 @@ extends GutTest
 ## Through main.tscn with real input only (Input.parse_input_event): backtick opens the dev panel, clicks pick the
 ## Gatekeeper and summon it (God keeps the player standing), backtick closes it. When the boss lays its shock lanes,
 ## TelegraphViews draws them as cracked ground, and on their strike StoneSpikeViews raises spikes along them, which
-## sink back into the pool.
+## sink back into the pool. v0.8.0 BS1: some stay standing as pillars (walls) for their time, then sink too.
 
 
 func _click(e: E2e, main: Main, button_name: String) -> void:
@@ -36,6 +36,7 @@ func test_the_gatekeepers_shock_lanes_crack_the_ground_and_strike_as_spikes() ->
 	var cracked := false
 	var struck := false
 	var standing := 0
+	var pillars := 0
 	for k in 7200:
 		await e.frames(1)
 		var i := w.actors.index_of(bid)
@@ -47,9 +48,14 @@ func test_the_gatekeepers_shock_lanes_crack_the_ground_and_strike_as_spikes() ->
 			struck = true
 		standing = maxi(standing, main.view.spikes.spike_count())
 		if struck and main.view.spikes.strike_count() == 0:
-			break
+			pillars = maxi(pillars, main.view.spikes.pillar_count())
+			if main.view.spikes.spike_count() == 0:
+				break
 	assert_true(cracked, "the shock lanes were drawn as cracked ground")
 	assert_true(struck, "they struck")
 	assert_gt(standing, 10, "as a row of stone spikes")
+	# v0.8.0 BS1 (owner O5, S1): some stay as pillars, walls in the sim, then sink too.
+	assert_gt(pillars, 0, "stone pillars stayed after the strike")
 	assert_eq(main.view.spikes.spike_count(), 0, "which sank back")
 	assert_eq(main.view.spikes.pooled(), 0, "into the pool")
+	assert_eq(w.bosses.pillar_x.size(), 0, "and the sim's pillars are gone with them")

@@ -62,7 +62,7 @@ func test_moves_and_params_are_checked() -> void:
 	var d := _def()
 	d.attack(&"fist_slam").shape_params.erase("radius_m")
 	d.attack(&"fist_slam").shape_params["mystery"] = 1
-	d.attack(&"cross_quake").move = &"dragon_breath"
+	d.attack(&"rock_rings").move = &"dragon_breath"
 	d.attack(&"shock_lanes").shape = AttackDefinition.Shape.PROJECTILE
 	var codes := _codes(d)
 	assert_has(codes, &"param_missing")
@@ -86,7 +86,7 @@ func test_phases_are_checked() -> void:
 
 func test_armour_stagger_and_basics_are_checked() -> void:
 	var d := _def()
-	d.front_mult_permille = 0
+	d.front_mult_permille = -1  # v0.8.0 BS1: 0 is a valid shield (the Warlord's); below it is not
 	d.rear_mult_permille = 900
 	d.stagger_size = 0
 	d.hp = 0
@@ -119,3 +119,34 @@ func test_the_boss_challenge_numbers_are_checked() -> void:
 	d = _def()
 	d.attacks[0].follow_up_permille = 1001
 	assert_has(_codes(d), &"range")
+
+
+## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature params are checked: pillars need a size and a step
+## wider than it, a recall and an egg at least the telegraph minimum, an egg its enemy and HP, a late part its line.
+func test_the_signature_params_are_checked() -> void:
+	for id in ["gatekeeper", "warlord", "brood_mother"]:
+		assert_eq(_codes(_def(id)), [], "%s ships valid" % id)
+	var g := _def("gatekeeper")
+	g.attack(&"shock_lanes").shape_params["pillar_step_m"] = 0.5
+	assert_has(_codes(g), &"no_gap", "pillars need a gap between them")
+	g = _def("gatekeeper")
+	g.attack(&"shock_lanes").shape_params["pillar_m"] = 0.0
+	assert_has(_codes(g), &"not_positive")
+	var w := _def("warlord")
+	w.attack(&"javelin_fan").shape_params["recall_seconds"] = 0.1
+	assert_has(_codes(w), &"telegraph_short", "the way back is warned")
+	w = _def("warlord")
+	w.attack(&"javelin_fan").late_cause_key = &""
+	assert_has(_codes(w), &"missing", "the javelins coming back name their death line")
+	var b := _def("brood_mother")
+	b.attack(&"egg_storm").shape_params.erase("enemy_id")
+	assert_has(_codes(b), &"missing", "an egg names what hatches")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["burst_phase"] = 0
+	assert_has(_codes(b), &"range", "burst_phase is 1-based")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["egg_seconds"] = 0.2
+	assert_has(_codes(b), &"telegraph_short", "an egg sits long enough to be seen")
+	b = _def("brood_mother")
+	b.attack(&"egg_storm").shape_params["mystery"] = 1
+	assert_has(_codes(b), &"param_unknown", "other keys still fail")

@@ -72,19 +72,13 @@ func test_the_brood_mothers_phase_script_and_hp() -> void:
 	assert_eq(t.hp, 2000, "1600 in v0.7.0, x1.25")
 	assert_eq(_ids(t, 0), [&"egg_storm", &"web_spiral", &"leap", &"burrow", &"brood"])
 	assert_eq(_ids(t, 1), [&"egg_storm_5", &"web_spiral", &"leap_chain", &"burrow", &"brood_4"])
+	# v0.8.0 BS1 (owner O5, S3): the fast Web Spiral trimmed; phase 3 opens with five eggs that burst.
 	assert_eq(
 		_ids(t, 2),
-		[
-			&"egg_storm_5",
-			&"web_spiral_fast",
-			&"leap_chain",
-			&"burrow_2",
-			&"brood_4",
-			&"pounce_chain"
-		]
+		[&"egg_storm_5", &"web_spiral", &"leap_chain", &"burrow_2", &"brood_4", &"pounce_chain"]
 	)
 	assert_eq(t.attacks[t.phase_entry[1]].id, &"egg_storm_5", "phase 2 opens with five eggs")
-	assert_eq(t.attacks[t.phase_entry[2]].id, &"web_spiral_fast", "phase 3 with the fast web")
+	assert_eq(t.attacks[t.phase_entry[2]].id, &"egg_storm_5", "phase 3 with five bursting eggs")
 	assert_eq(Array(t.phase_threshold), [1000, 660, 330], "the 66 % and 33 % gates stay")
 	var eggs := t.attacks[t.attack_index(&"egg_storm")]
 	var eggs_5 := t.attacks[t.attack_index(&"egg_storm_5")]
@@ -95,9 +89,8 @@ func test_the_brood_mothers_phase_script_and_hp() -> void:
 	var web := _pattern(t, &"web_spiral")
 	assert_eq(web.arms, 2, "2 arms")
 	assert_gt(web.reverse_ticks, 0, "then reversed")
-	var fast := _pattern(t, &"web_spiral_fast")
-	assert_gt(absi(fast.spin_milli), absi(web.spin_milli), "phase 3 turns faster")
-	assert_gt(fast.speed, web.speed)
+	assert_eq(t.attack_index(&"web_spiral_fast"), -1, "no fast web")
+	assert_eq([eggs.egg_ticks, eggs_5.burst_phase], [180, 2], "eggs sit 3 s; burst from phase 3")
 	for id: StringName in [&"egg_storm", &"leap", &"leap_chain", &"pounce_chain", &"burrow"]:
 		assert_eq(t.attacks[t.attack_index(id)].lock_ticks, 48, "%s: tracks, then locks 0.8 s" % id)
 	assert_true(_ids(t, 0).has(&"brood"), "the Hatchlings stay")
@@ -141,26 +134,59 @@ func test_an_egg_storms_circles_track_you_then_lock_in_turn() -> void:
 	assert_gt(locked[2].y, locked[1].y, "the later one later")
 
 
+## v0.8.0 BS1 (owner O5, S3): the eggs sit (BossSignatures) and burst into their star only in phase 3, egg_ticks
+## after they land; before it they hatch. Steps until the first egg laid starts bursting; returns [its centre, the
+## shots of that tick near it].
+func _first_burst(w: World, seen: Dictionary, stand_off: Vector2) -> Array:
+	var egg := -1
+	CombatLab.until(
+		w,
+		func(x: World) -> bool:
+			for j in x.actors.size():
+				if BossSignatures.is_egg(x, j):
+					return true
+			return false,
+		400
+	)
+	for j in w.actors.size():
+		if BossSignatures.is_egg(w, j):
+			egg = w.actors.ids[j]
+			break
+	var c := w.actors.pos(w.actors.index_of(egg))
+	w.actors.set_pos(0, c + stand_off)
+	w.actors.invuln[0] = LONG  # the later eggs land on the player; only the burst is looked at
+	_new_shots(w, seen)
+	for t in 400:
+		w.step(InputFrame.new())
+		var j := w.actors.index_of(egg)
+		var shots := _new_shots(w, seen)
+		if j >= 0 and w.actors.state[j] == BossSignatures.EGG_BURST:
+			var at := w.actors.pos(j)
+			var near: Array[Vector2] = []
+			for p: Vector2 in shots:
+				if p.distance_to(at) < 1.5:
+					near.append(p)
+			return [at, near, w.actors.radius[j]]
+	return [c, [] as Array[Vector2], 0.0]
+
+
 func test_each_egg_bursts_into_an_8_point_star_with_you_in_a_gap() -> void:
 	var s := _fight(&"brood_mother", Vector2(6, 0))
 	var w: World = s[0]
 	var aid: int = s[1]
+	w.bosses.phase[BossAi.entry_of(w, _i(w, aid))] = 2
 	BossLab.start(w, _i(w, aid), &"egg_storm")
 	var atk := BossAi.attack_of(w, _i(w, aid))
-	CombatLab.idle(w, atk.windup_ticks - 1)
-	var c := BossDodge.mark_of(w, _i(w, aid), 0)
-	var stand := c + Vector2(0, 5)  # out of the circle once it locked, beside it
-	w.actors.set_pos(0, stand)
 	var seen := {}
-	_new_shots(w, seen)
-	var hp := w.actors.hp[0]
-	w.step(InputFrame.new())  # the first egg lands and bursts
-	var star := _new_shots(w, seen)
+	var stand_off := Vector2(0, 5)
+	var r := _first_burst(w, seen, stand_off)
+	var c: Vector2 = r[0]
+	var star: Array[Vector2] = r[1]
 	assert_eq(star.size(), 8, "an 8-point star")
-	assert_eq(w.actors.hp[0], hp, "out of its circle: the landing missed")
-	var to_player := Kin.angle_of(stand - c)
+	var to_player := Kin.angle_of(w.player_pos() - c)
+	var out: float = float(r[2]) + atk.pattern.radius_m + BulletPatterns.MUZZLE_M
 	for p: Vector2 in star:
-		assert_almost_eq(p.distance_to(c), BossDodge.egg_r(atk), 0.15, "from the egg's circle")
+		assert_almost_eq(p.distance_to(c), out, 0.15, "from the egg's shell")
 		assert_gte(
 			_angle_diff(Kin.angle_of(p - c), to_player), 200, "no glob flies straight at you"
 		)
@@ -177,19 +203,25 @@ func test_no_glob_spawns_on_you_and_standing_in_the_circle_is_hit() -> void:
 	var aid: int = s[1]
 	BossLab.start(w, _i(w, aid), &"egg_storm")
 	var atk := BossAi.attack_of(w, _i(w, aid))
-	var seen := {}
 	CombatLab.idle(w, atk.windup_ticks - 1)
 	var c := BossDodge.mark_of(w, _i(w, aid), 0)
 	w.actors.set_pos(0, c + Vector2(1.2, 0))  # still inside the locked circle, off its centre
-	_new_shots(w, seen)
 	w.step(InputFrame.new())
-	var star := _new_shots(w, seen)
-	var safe := atk.pattern.safe_radius_m + w.player.radius_m
+	assert_gt(CombatLab.player_damage(w).size(), 0, "still in the circle: the egg landed on you")
+	# Phase 3: standing beside an egg as it bursts, the globs that would spawn on you are left out.
+	var s3 := _fight(&"brood_mother", Vector2(6, 0))
+	var w3: World = s3[0]
+	var aid3: int = s3[1]
+	w3.bosses.phase[BossAi.entry_of(w3, _i(w3, aid3))] = 2
+	BossLab.start(w3, _i(w3, aid3), &"egg_storm")
+	var seen := {}
+	var r := _first_burst(w3, seen, Vector2(1.6, 0))
+	var star: Array[Vector2] = r[1]
+	var safe := atk.pattern.safe_radius_m + w3.player.radius_m
 	for p: Vector2 in star:
-		assert_gt(p.distance_to(w.player_pos()), safe, "no shot spawns on top of you")
+		assert_gt(p.distance_to(w3.player_pos()), safe, "no shot spawns on top of you")
 	assert_lt(star.size(), 8, "the globs that would spawn on you are left out")
 	assert_gt(star.size(), 0, "the rest of the star flies")
-	assert_gt(CombatLab.player_damage(w).size(), 0, "still in the circle: the egg landed on you")
 
 
 func test_the_egg_storm_shields_her_and_she_opens_after() -> void:

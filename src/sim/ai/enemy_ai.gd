@@ -133,6 +133,9 @@ static func think(w: World, i: int) -> void:
 	a.state_t[i] += 1
 	if a.cd[i] > 0:
 		a.cd[i] -= 1
+	if a.state[i] >= BossSignatures.EGG:  # v0.8.0 BS1 (S3): an egg waits, hatches or bursts
+		BossSignatures.egg_think(w, i)
+		return
 	var alive := not w.player_dead()
 	match a.state[i]:
 		State.SPAWN:
@@ -436,6 +439,9 @@ static func _unit(v: Vector2) -> Vector2:
 
 static func resolve(w: World, i: int) -> void:
 	var a := w.actors
+	if a.state[i] == BossSignatures.EGG_BURST and not Engines.frozen(w, i):
+		BossSignatures.egg_burst(w, i)  # v0.8.0 BS1 (S3): a phase-3 egg bursts into its acid star
+		return
 	if a.state[i] != State.ACTIVE or w.player_dead() or Engines.frozen(w, i):
 		return
 	var t := w.enemy_table(a.kinds[i])

@@ -187,6 +187,9 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 		bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
 	if node.has_meta(&"dazed"):
 		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
+	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)
+		facing.visible = false
+		bar.visible = false
 	if node.has_meta(&"avatar"):
 		(node.get_meta(&"avatar") as PlayerAvatar).sync(reader)
 	# Enemy models (v0.2.0 L17): each kind's own node, animated in frame time from the sim state.

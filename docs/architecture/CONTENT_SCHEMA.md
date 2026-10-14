@@ -583,6 +583,19 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   - `row_flood` (LINE): `count` lanes along the room's rows (x), `gap_m` apart centre to centre and centred on the
     player's row, `length_m` long centred on the player (cut short by walls), `width_m` wide; tracked then locked,
     then standing for `active_seconds` and hurting at most once every `burn_seconds`, like `flood` (drawn molten).
+- **v0.8.0 BS1 (owner O5, one signature mechanic per boss; SIM_CONTRACTS §10f).** More optional params, and
+  `late_cause_key: StringName` on a boss attack (the recap line of its late part; required with a recall or a
+  bursting egg, empty otherwise):
+  - `row_lanes` + `pillar_seconds`, `pillar_m`, `pillar_step_m` (all > 0, the step > the side): stone pillars along
+    the struck lanes that stand as walls (the Gatekeeper's Shock Lanes: 6.0 s, 1.0 m, 2.2 m).
+  - `pattern` + `recall_seconds` (>= the telegraph minimum): the shots stick where they stop and fly back along
+    their lines that long after the last could have landed (the Warlord's Javelin Fan: 1.0 s).
+  - `marks` + `egg_seconds` (>= the telegraph minimum), `egg_hp` (>= 1), `enemy_id`, optional `max_alive` and
+    `burst_phase` (1-based): each landing lays an egg of that enemy that hatches after `egg_seconds`, or from phase
+    `burst_phase` on bursts into the attack's `pattern_id` (the Brood Mother's Egg Storm: 3.0 s, 20 HP, Hatchlings,
+    at most 8, bursting from phase 3).
+  - `BossDefinition.front_mult_permille` may be 0 (0..1000): a shield that blocks every hit from the front arc (the
+    Warlord's tower shield, 120°).
 
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 

@@ -208,8 +208,12 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 	var p := w.player_pos()
 	var pr := w.player.radius_m
 	for k in atk.count:
-		if atk.pattern != null:
+		if atk.pattern != null and atk.egg_ticks <= 0:  # v0.8.0 BS1: an egg bursts on its own clock
 			burst_mark(w, i, atk, k, st - k * atk.mark_gap_ticks)
+		if atk.pillar_ticks > 0 and st == k * atk.mark_gap_ticks + 1:
+			# v0.8.0 BS1 (S1): the spikes stay as pillars, the tick after the strike (the strike's own lanes,
+			# drawn and hit on its tick, are never cut short by its pillars).
+			BossSignatures.raise_pillars(w, i, atk, k)
 		if st != k * atk.mark_gap_ticks:
 			continue
 		w.bosses.hit[b] = 0
@@ -217,6 +221,7 @@ static func resolve_marks(w: World, i: int, b: int, atk: BossAttackTable, st: in
 			var c := mark_of(w, i, k)
 			if AttackShapes.disc_touches(c, atk.radius_m, p, pr):
 				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, c)
+			BossSignatures.lay_egg(w, b, atk, c)  # v0.8.0 BS1 (S3): the egg stays, to pop or to hatch
 		else:
 			for o: Obb in row_lanes_of(w, i, k):
 				if Collide.circle_vs_obb(p, pr, o) != Vector2.ZERO:

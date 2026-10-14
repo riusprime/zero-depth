@@ -220,28 +220,19 @@ func test_the_gatekeepers_phase_script() -> void:
 	var t := w.boss_tables[BossLab.table_index(w, &"gatekeeper")]
 	var ids := func(k: int) -> Array:
 		return Array(t.phase_attacks[k]).map(func(a: int) -> StringName: return t.attacks[a].id)
-	assert_eq(ids.call(0), [&"rock_rings", &"cross_quake", &"fist_slam", &"shock_lanes", &"sweep"])
-	assert_eq(
-		ids.call(1), [&"rock_rings_4", &"cross_quake", &"fist_slam_2", &"shock_lanes", &"sweep"]
-	)
-	assert_eq(
-		ids.call(2),
-		[&"rock_rings_4", &"cross_quake_fast", &"fist_slam_3", &"shock_lanes_2", &"sweep"]
-	)
+	# v0.8.0 BS1 (owner O5, S1): Cross Quake trimmed (the Siege Engine owns the cross); the shock lanes' pillars
+	# are its signature now, and phase 3 opens with two of their crosses.
+	assert_eq(ids.call(0), [&"rock_rings", &"fist_slam", &"shock_lanes", &"sweep"])
+	assert_eq(ids.call(1), [&"rock_rings_4", &"fist_slam_2", &"shock_lanes", &"sweep"])
+	assert_eq(ids.call(2), [&"rock_rings_4", &"fist_slam_3", &"shock_lanes_2", &"sweep"])
 	assert_eq(t.attacks[t.phase_entry[1]].id, &"rock_rings_4", "phase 2 opens with four rings")
-	assert_eq(t.attacks[t.phase_entry[2]].id, &"cross_quake_fast", "phase 3 with the fast quake")
+	assert_eq(t.attacks[t.phase_entry[2]].id, &"shock_lanes_2", "phase 3 with two pillar crosses")
 	var rings := t.attacks[t.attack_index(&"rock_rings")].pattern
 	var rings_4 := t.attacks[t.attack_index(&"rock_rings_4")].pattern
 	assert_eq([rings.count, rings.waves], [16, 3], "3 rings of 16")
 	assert_gt(rings_4.waves, rings.waves, "phases add rings")
 	assert_gt(rings_4.speed, rings.speed, "and speed them up")
-	var quake := t.attacks[t.attack_index(&"cross_quake")].pattern
-	assert_eq(quake.arms, 4, "a plus")
-	assert_gt(
-		absi(t.attacks[t.attack_index(&"cross_quake_fast")].pattern.spin_milli),
-		absi(quake.spin_milli),
-		"phase 3 turns faster"
-	)
+	assert_eq(t.attack_index(&"cross_quake"), -1, "no cross quake")
 
 
 func test_the_warlords_phase_script() -> void:

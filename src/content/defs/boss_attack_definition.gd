@@ -27,6 +27,10 @@ extends AttackDefinition
 ## v0.7.5 BF1 (owner N15, "Shielded during big patterns"): the boss is shielded while it winds up and performs this
 ## attack (its signature pattern): hits spark off and deal nothing; it opens between patterns.
 @export var shielded := false
+## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S2, S3): the death recap line for the attack's late part: the javelins
+## coming back (a pattern with recall_seconds), an egg bursting (marks with egg_seconds and a pattern). Required
+## with them; empty otherwise.
+@export var late_cause_key: StringName
 
 
 func validate_into(issues: Array[ValidationIssue], path: String) -> void:
@@ -108,6 +112,45 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		if shape_params.has(k) and String(shape_params[k]).is_empty():
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))
 	_validate_lock(issues, path, where)
+	_validate_signature(issues, path, where)
+
+
+## v0.8.0 BS1 (owner O5): the signature params. Pillars need a size and a step that leaves a gap between them; a
+## recall and an egg give at least the telegraph minimum before the javelins come back or the egg hatches or bursts;
+## an egg names its enemy and HP; the late part of a recall or a bursting egg names its death line.
+func _validate_signature(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	var sp := shape_params
+	if sp.has("pillar_seconds") or sp.has("pillar_m") or sp.has("pillar_step_m"):
+		for k in ["pillar_seconds", "pillar_m", "pillar_step_m"]:
+			if float(sp.get(k, 0.0)) <= 0.0:
+				issues.append(
+					ValidationIssue.new(&"not_positive", path, where + "%s must be > 0" % k)
+				)
+		if float(sp.get("pillar_step_m", 0.0)) <= float(sp.get("pillar_m", 0.0)):
+			issues.append(
+				ValidationIssue.new(
+					&"no_gap", path, where + "pillars need pillar_step_m > pillar_m"
+				)
+			)
+	for k in ["recall_seconds", "egg_seconds"]:
+		if sp.has(k) and int(round(float(sp[k]) * 60.0)) < BehaviourSchemas.MIN_TELEGRAPH_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"telegraph_short", path, where + "%s is under the telegraph minimum" % k
+				)
+			)
+	if sp.has("egg_seconds"):
+		if not sp.has("enemy_id") or int(sp.get("egg_hp", 0)) < 1:
+			issues.append(
+				ValidationIssue.new(
+					&"missing", path, where + "an egg needs enemy_id and egg_hp >= 1"
+				)
+			)
+		if sp.has("burst_phase") and int(sp["burst_phase"]) < 1:
+			issues.append(ValidationIssue.new(&"range", path, where + "burst_phase is 1-based"))
+	var late := sp.has("recall_seconds") or (sp.has("egg_seconds") and sp.has("pattern_id"))
+	if late and String(late_cause_key).is_empty():
+		issues.append(ValidationIssue.new(&"missing", path, where + "late_cause_key is required"))
 
 
 ## v0.7.5 BF1: a lock leaves tracking time before it and a dodge window of at least the telegraph minimum; marks and

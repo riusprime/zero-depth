@@ -15,7 +15,9 @@ extends ContentDef
 @export var turn_rate_dps := 0.0
 ## Pursuit stops this far from the player (0 = walks into melee).
 @export var keep_distance_m := 0.0
-## Armour by the direction a hit comes from (0 arcs = none): as the Warden (CONTENT_SCHEMA §3).
+## Armour by the direction a hit comes from (0 arcs = none): as the Warden (CONTENT_SCHEMA §3). v0.8.0 BS1 (owner O5,
+## S2): front_mult_permille 0 is a shield that blocks every hit from the front arc (the Warlord's; Damage tags it
+## BLOCKED, the hit sparks).
 @export var front_arc_degrees := 0.0
 @export var front_mult_permille := 1000
 @export var rear_arc_degrees := 0.0
@@ -193,8 +195,8 @@ func _check_armour(issues: Array[ValidationIssue]) -> void:
 			issues.append(ValidationIssue.new(&"armour", p, "%s must be within 0..360" % pair[0]))
 	if front_arc_degrees + rear_arc_degrees > 360.0:
 		issues.append(ValidationIssue.new(&"armour", p, "the armour arcs overlap"))
-	if front_mult_permille < 1 or front_mult_permille > 1000:
-		issues.append(ValidationIssue.new(&"armour", p, "front_mult_permille must be 1..1000"))
+	if front_mult_permille < 0 or front_mult_permille > 1000:
+		issues.append(ValidationIssue.new(&"armour", p, "front_mult_permille must be 0..1000"))
 	if rear_mult_permille < 1000 or rear_mult_permille > 3000:
 		issues.append(ValidationIssue.new(&"armour", p, "rear_mult_permille must be 1000..3000"))
 

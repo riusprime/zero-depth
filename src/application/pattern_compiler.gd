@@ -20,14 +20,21 @@ static func compile_boss_attack(
 		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 1)
 	if t.move == BossAttackTable.Move.GRID:  # v0.7.5 BF3: until its last volley strikes
 		t.active_ticks = maxi(t.active_ticks, (t.volleys - 1) * t.mark_gap_ticks + 1)
+	_compile_signature(def, t)
+	if t.pillar_ticks > 0:  # v0.8.0 BS1 (S1): the last cross's pillars rise the tick after it strikes
+		t.active_ticks = maxi(t.active_ticks, (t.count - 1) * t.mark_gap_ticks + 2)
 	if sp.has("pattern_id"):
 		var pd: BulletPatternDefinition = repo.get_def(
 			&"bullet_patterns", StringName(sp["pattern_id"])
 		)
 		if pd != null:
 			t.pattern = compile_pattern(pd)
-			t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
-			if t.move == BossAttackTable.Move.MARKS:  # v0.7.5 BF2: the last egg's burst, from its landing
+			if t.egg_ticks <= 0:  # v0.8.0 BS1 (S3): an egg bursts on its own clock, after the attack
+				t.active_ticks = maxi(t.active_ticks, t.pattern.duration_ticks())
+			if t.recall_ticks > 0:  # v0.8.0 BS1 (S2): out, stuck, then back along the same lines
+				t.recall_at = t.pattern.duration_ticks() + t.pattern.life_ticks + t.recall_ticks
+				t.active_ticks = maxi(t.active_ticks, t.recall_at + t.pattern.life_ticks + 1)
+			if t.move == BossAttackTable.Move.MARKS and t.egg_ticks <= 0:  # v0.7.5 BF2: the last egg's burst
 				t.active_ticks = maxi(
 					t.active_ticks,
 					(
@@ -36,6 +43,21 @@ static func compile_boss_attack(
 						- t.pattern.lob_ticks
 					)
 				)
+
+
+## v0.8.0 BS1 (owner O5; BOSS_SIGNATURES.md S1-S3): the signature numbers: the Gatekeeper's pillars, the Warlord's
+## recall, the Brood Mother's eggs (their enemy kind and cap come from enemy_id and max_alive, as a brood's), and the
+## late part's death line. burst_phase is 1-based in data, a phase index here (99 = never).
+static func _compile_signature(def: BossAttackDefinition, t: BossAttackTable) -> void:
+	var sp := def.shape_params
+	t.late_cause_key = def.late_cause_key
+	t.pillar_ticks = SimTick.seconds_to_ticks(float(sp.get("pillar_seconds", 0.0)))
+	t.pillar_m = float(sp.get("pillar_m", 0.0))
+	t.pillar_step_m = float(sp.get("pillar_step_m", 0.0))
+	t.recall_ticks = SimTick.seconds_to_ticks(float(sp.get("recall_seconds", 0.0)))
+	t.egg_ticks = SimTick.seconds_to_ticks(float(sp.get("egg_seconds", 0.0)))
+	t.egg_hp = int(sp.get("egg_hp", 0))
+	t.burst_phase = int(sp["burst_phase"]) - 1 if sp.has("burst_phase") else 99
 
 
 ## v0.7.5 EF (owner N16): an enemy's patterns, one per attack in order (null where an attack names none): the Arc

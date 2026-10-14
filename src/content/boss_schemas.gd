@@ -60,16 +60,31 @@ const MOVES := {
 	&"flood": {"shape": 2, "params": ["count", "gap_m", "length_m", "width_m", "burn_seconds"]},
 	## v0.7.5 BF1 (owner N15): fires a bullet pattern (data/bullet_patterns, by id) over the active time: slow fireballs
 	## in a shape (BulletPatterns). A BURST pattern's shell lands on the target its windup tracked.
-	&"pattern": {"shape": 4, "params": ["pattern_id"]},
+	## v0.8.0 BS1 (owner O5, S2): an optional recall_seconds makes its shots javelins that stick where they stop and
+	## all fly back along their lines recall_seconds after the last could have landed (the Warlord's Javelin Fan).
+	&"pattern": {"shape": 4, "params": ["pattern_id"], "optional": ["recall_seconds"]},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
 	## v0.7.5 BF2: an optional pattern_id makes each circle an egg's landing (the Brood Mother's Egg Storm): a shell
 	## lobbed onto it while it is locked, and the pattern (a BURST's star) bursting from it as it strikes.
+	## v0.8.0 BS1 (S3): with egg_seconds each landing lays an egg instead (enemy_id, egg_hp, at most max_alive of the
+	## kind) that hatches after egg_seconds, or from phase burst_phase (1 = the first) bursts into the pattern.
 	&"marks":
+	{
+		"shape": 0,
+		"params": ["count", "radius_m", "stagger_seconds"],
+		"optional": ["pattern_id", "egg_seconds", "egg_hp", "enemy_id", "max_alive", "burst_phase"],
+	},
 	## v0.7.5 BF1: `count` crosses of two lanes (the player's row and column, length_m long), stagger_seconds apart,
-	{"shape": 0, "params": ["count", "radius_m", "stagger_seconds"], "optional": ["pattern_id"]},
 	## tracked then locked like `marks`; cut short by walls.
-	&"row_lanes": {"shape": 2, "params": ["count", "length_m", "width_m", "stagger_seconds"]},
+	## v0.8.0 BS1 (owner O5, S1): with pillar_seconds the struck lanes leave stone pillars (pillar_m a side,
+	## pillar_step_m apart) that stand as walls for pillar_seconds (the Gatekeeper's Stone Spikes that stay).
+	&"row_lanes":
+	{
+		"shape": 2,
+		"params": ["count", "length_m", "width_m", "stagger_seconds"],
+		"optional": ["pillar_seconds", "pillar_m", "pillar_step_m"],
+	},
 	## v0.7.5 BF3: a checkerboard of `count` × `count` ground circles (count odd; radius_m each, cell_m apart) centred
 	## on the player's exact position until the attack's lock_seconds, then locked; `volleys` strikes stagger_seconds
 	## apart, alternating the board's two colours (the first holds the player's cell). Each colour shows only for

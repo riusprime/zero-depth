@@ -214,8 +214,9 @@ func test_the_warlords_shield_drops_while_its_weak_point_is_open() -> void:
 	var aid := w.actors.ids[i]
 	var at := w.actors.pos(i)
 	var front := at + Vector2(1.5, 0)
-	assert_eq(Damage.target_mult(w, i, front)[0], 650, "the shield in front")
-	assert_eq(Damage.target_mult(w, i, front)[1], SimEvent.TAG_ARMOURED)
+	# v0.8.0 BS1 (owner O5, S2): the tower shield blocks every hit from the front (was x0.65).
+	assert_eq(Damage.target_mult(w, i, front)[0], 0, "the shield in front")
+	assert_eq(Damage.target_mult(w, i, front)[1], SimEvent.TAG_BLOCKED)
 	assert_eq(Damage.target_mult(w, i, at + Vector2(-1.5, 0))[0], 1250, "weak from behind")
 	w.actors.set_pos(0, Vector2(3, 0))
 	BossLab.start(w, i, &"spear_lines")
@@ -226,7 +227,7 @@ func test_the_warlords_shield_drops_while_its_weak_point_is_open() -> void:
 	assert_eq(up[0], 1000, "shield up: full damage from the front")
 	assert_eq(up[1], 0)
 	w.bosses.exposed_t[BossAi.entry_of(w, i)] = 0
-	assert_eq(Damage.target_mult(w, i, w.actors.pos(i) + Vector2(1.5, 0))[0], 650, "and back")
+	assert_eq(Damage.target_mult(w, i, w.actors.pos(i) + Vector2(1.5, 0))[0], 0, "and back")
 	# The Gatekeeper keeps its armour while exposed (the field is the Warlord's).
 	var g := BossLab.ready_boss(w, &"gatekeeper", Vector2(20, 0))
 	w.bosses.exposed_t[BossAi.entry_of(w, g)] = 60

@@ -1152,6 +1152,55 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
   read (`BossDodge.rain_drops`, `WorldReader.boss_rain(i)`: from, to, progress) and hurt nothing. No new state is
   hashed. `MOVE_GRID` / `MOVE_ROW_FLOOD` for the views.
 
+## 10f. Boss signature mechanics (v0.8.0 BS1; owner O5, [`BOSS_SIGNATURES.md`](../roadmap/v0.8.0/BOSS_SIGNATURES.md) S1-S3)
+
+Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; all in the F10 Bosses page);
+`BossSignatures` holds the rules. Pure: no stream is drawn.
+- **S1, the Gatekeeper's pillars.** The tick after marker k of a `row_lanes` attack with `pillar_ticks` struck (tick
+  phase 6; so the strike's own lanes, drawn and hit on its tick, are never cut by its pillars; the attack stays
+  active a tick longer for its last cross), pillars (squares `pillar_m` a side, axis-aligned) rise along its two lanes every `pillar_step_m` out
+  from the crossing each way (the crossing stays open), as far as each lane ran. A pillar rises only where it touches
+  no living body (plus `BODY_MARGIN_M` 0.3) and keeps 2 × the player's radius + `PASS_SLACK_M` (0.15) from every
+  wall, the door and every other pillar (`BossSignatures.fits`: the corners of both boxes and the inscribed circle).
+  So each pillar is an island in the hero's free space: it never splits it, never closes a way, never seals anyone
+  in. A pillar is a wall while it stands: `World.add_barrier` (collision, shots, sight, `EnemyAi.clear_run`), and the
+  flow field goes round it through `NavField.set_extra` (its cells blocked on top of the walls' build, the flood
+  rerun at once). It sinks on `pillar_until` (`BossSignatures.advance`, phase 6, before the projectile sweep):
+  `World.remove_barriers`, the field reopened. Its boss gone, its pillars go. State: `BossStore.pillar_*` (centre,
+  half side, the tick it rose and sinks, its boss), hashed only while any stands, besides the walls (hashed already).
+- **S2, the Warlord's shield and javelins.** A boss whose `front_mult_permille` is 0 blocks every hit from its front
+  arc (`Damage.target_mult`: `HIT` with `TAG_BLOCKED`, nothing applied; damage over time ignores armour as before);
+  the Warlord's arc is 120° (±60°); its sides take ×1, its back (100°) ×1.25; while its weak point is open the shield
+  is down (`weak_point_drops_armour`). A `pattern` attack with `recall_ticks`: each of its shots that ends on a wall or
+  at its range (not on a body) sticks there (`BossSignatures.on_shot_end`, from `World._projectile_hits`, for a
+  projectile with a cause): the point, the angle it flew, its boss and attack, the tick it stuck and the tick it
+  flies back: the tick the attack's active time began + `recall_at` (the pattern's duration + its shots' life +
+  `recall_ticks`), so every javelin of a throw flies back on one tick. Then (phase 6) each is queued as a hostile
+  shot from where it stuck, back along the line it came (its angle + 180°), at the pattern's speed and radius, the
+  attack's damage × the boss's power, living until the boss's edge; a javelin within the pattern's safe radius of the
+  player crumbles instead (no shot spawns on top of you). The attack stays active until they are home
+  (`recall_at` + the shots' life). State: `BossStore.jav_*`, hashed only while any stands.
+- **S3, the Brood Mother's eggs.** A `marks` attack with `egg_ticks` doesn't burst at the landing: each circle as it
+  strikes (after its hit) queues an egg (`World.queue_egg`), unless `max_alive` of `enemy_kind` are alive or coming
+  (eggs count). In phase 9 the egg arrives as an actor of that kind (a Hatchling), scaled as any arrival, then made an
+  egg (`BossSignatures.make_egg`): state `EGG` (7), HP `egg_hp` at the kind's base HP (scaled as its own HP was),
+  hittable at once, still (no walk, no attack); its EnemyAi fields hold its ticks (`windup`), the HP it hatches with
+  (`pick`) and the attack that laid it (`lock_a`). In phase 3 (`EnemyAi.think`, after its clock): its boss gone, it
+  crumbles; its time up, it hatches (its kind's HP, state SPAWN, the spawn-in) or, from its boss's phase
+  `burst_phase` on, bursts (`EGG_BURST`, 8): its attack's pattern fires from where it lies over the pattern's waves
+  (phase 6, `EnemyAi.resolve`), aimed at the player, through `BulletPatterns.fire` (the fairness and caps), then it is
+  gone. A crumbled or burst egg leaves with state `EGG_GONE` (9): no kill, no shards, no heal orb
+  (`World._remove_dead`). A broken egg is a kill like any. No new hashed fields: the actor columns.
+- **Readable cause.** A returning javelin or an egg's burst carries `BossSignatures.LATE_CAUSE` (4096) + its attack as
+  its cause (`ProjectileStore.cause`); the recap reads that attack's `late_cause_key` (`CAUSE_WARLORD_RECALL`,
+  `CAUSE_BROOD_EGG_BURST`). `BulletPatterns.fire` takes an explicit cause for it.
+- **Reads.** `WorldReader.boss_pillars()`, `boss_javelins(i)`, `boss_recall_permille(i)`, `actor_egg_permille(i)`,
+  `STATE_EGG` / `STATE_EGG_BURST`.
+- **Saves.** The new `BossStore` lists are in `WorldSnapshot.ADDED_SINCE_V05` (an older save has none). A snapshot with
+  pillars standing restores them as walls the way play added them (the door first, then the barriers and pillars:
+  only the wall grid is rebuilt, never the flow field) and sets the field's extra cells again before its last flood
+  is copied, so a restored fight steps exactly as the uninterrupted one (`test_boss_signatures.gd`).
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

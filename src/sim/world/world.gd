@@ -537,6 +537,8 @@ func step(frame: InputFrame) -> void:
 		elif EnemyAi.is_enemy_kind(actors.kinds[i]) and actors.dead[i] == 0:
 			EnemyAi.resolve(self, i)
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
+	if not boss_tables.is_empty():
+		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
 	_projectile_hits()
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
@@ -846,6 +848,12 @@ func boss_alive() -> bool:
 ## Queues an enemy for phase 9 of this tick (a boss's eggs and turrets).
 func queue_enemy(kind: int, pos: Vector2) -> void:
 	_pending_enemies.append([kind, pos])
+
+
+## v0.8.0 BS1 (S3): queues an egg of `kind` for phase 9: `egg` is [its ticks, its HP at the kind's base HP, the boss
+## attack that laid it] (BossSignatures.make_egg).
+func queue_egg(kind: int, pos: Vector2, egg: Array) -> void:
+	_pending_enemies.append([kind, pos, egg])
 
 
 func pending_enemies_of(kind: int) -> int:
@@ -1419,6 +1427,8 @@ func _projectile_hits() -> void:
 				continue
 			dead.append(i)
 			Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2: ON_END, Flame Trail
+			if not projectiles.cause.is_empty():  # v0.8.0 BS1 (S2): a javelin sticks where it stopped
+				BossSignatures.on_shot_end(self, i, a + v * best_t, best_actor >= 0)
 			continue
 		projectiles.pos_x[i] = b.x
 		projectiles.pos_y[i] = b.y
@@ -1426,6 +1436,8 @@ func _projectile_hits() -> void:
 		if projectiles.life[i] <= 0:
 			dead.append(i)
 			Attacks.on_projectile_end(self, i, b)  # v0.6.0 MX2
+			if not projectiles.cause.is_empty():  # v0.8.0 BS1 (S2): at the end of its range
+				BossSignatures.on_shot_end(self, i, b, false)
 	projectiles.remove_sorted(dead)
 
 
@@ -1434,6 +1446,11 @@ func _remove_dead() -> void:
 	for i in range(1, actors.size()):
 		if actors.dead[i] == 1:
 			gone.append(i)
+			if (
+				actors.state[i] == BossSignatures.EGG_GONE
+				and EnemyAi.is_enemy_kind(actors.kinds[i])
+			):
+				continue  # v0.8.0 BS1 (S3): an egg that burst or crumbled leaves without a kill
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
 				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.
@@ -1448,6 +1465,7 @@ func _remove_dead() -> void:
 				)
 				e.amount = bosses.table[b]
 				bosses.remove(b)
+				BossSignatures.on_boss_gone(self, actors.ids[i])  # v0.8.0 BS1: its pillars and javelins go
 				if boss_id == actors.ids[i]:
 					boss_id = -1
 			Rewards.on_kill(self, i)  # Rewards: shards.
@@ -1471,4 +1489,6 @@ func _apply_spawns() -> void:
 		if enemy_table(s[0]) != null:
 			add_enemy(s[0], s[1])
 			SpawnDirector.scale_arrival(self, actors.size() - 1, run_ticks)  # v0.4.0 TU: tier scaling too
+			if s.size() > 2:  # v0.8.0 BS1 (S3): an egg
+				BossSignatures.make_egg(self, actors.size() - 1, s[2])
 	_pending_enemies.clear()

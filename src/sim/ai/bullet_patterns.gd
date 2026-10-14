@@ -88,7 +88,8 @@ static func spin_at(p: BulletPatternTable, t: int) -> int:
 
 
 ## Fires wave k of pattern p for actor `owner` (its id is the shots' owner): the shots that are fair and fit under
-## the caps are queued for this tick's spawn phase. Returns how many were queued.
+## the caps are queued for this tick's spawn phase. Returns how many were queued. `cause` (v0.8.0 BS1): the boss
+## attack the shots name (-2, the default: the owner boss's attack in progress).
 static func fire(
 	w: World,
 	owner_i: int,
@@ -97,7 +98,8 @@ static func fire(
 	origin: Vector2,
 	aim: int,
 	origin_r: float,
-	damage: int
+	damage: int,
+	cause: int = -2
 ) -> int:
 	var shots := wave_shots(p, k, origin, aim, origin_r)
 	var pos: PackedVector2Array = shots[0]
@@ -106,8 +108,9 @@ static func fire(
 	var player := w.player_pos()
 	var n := 0
 	# v0.7.5 BF2: a boss's shots carry the attack that fired them (the death recap's cause line).
-	var attack := -1
-	if BossAi.is_boss_kind(w.actors.kinds[owner_i]):
+	# v0.8.0 BS1: `cause` >= -1 names it outright (an egg's burst: its attack's late part, BossSignatures).
+	var attack := cause if cause >= -1 else -1
+	if cause < -1 and BossAi.is_boss_kind(w.actors.kinds[owner_i]):
 		var b := BossAi.entry_of(w, owner_i)
 		attack = w.bosses.attack[b] if b >= 0 else -1
 	for j in pos.size():

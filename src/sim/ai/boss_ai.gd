@@ -23,6 +23,8 @@ extends RefCounted
 ## as it strikes (eggs; BossDodge.burst_mark).
 ## v0.7.5 BF3: `grid` (a checkerboard of tracked circles struck in alternating colours) and `row_flood` (molten
 ## lanes along the player's row, tracked then locked, standing like a flood): BossDodge.grid_discs, row_flood_of.
+## v0.8.0 BS1 (owner O5): each boss's signature mechanic (BossSignatures): the Gatekeeper's pillars, the Warlord's
+## recalled javelins, the Brood Mother's eggs.
 
 ## Appended after EnemyAi.State (SPAWN, MOVE, WINDUP, ACTIVE, RECOVER).
 const STAGGERED := 5
@@ -579,6 +581,11 @@ static func _hatch(w: World, atk: BossAttackTable, spots: PackedVector2Array) ->
 		w.queue_enemy(atk.enemy_kind, spots[k])
 
 
+## v0.8.0 BS1: actors of `kind` alive or arriving this tick (eggs count; BossSignatures caps its eggs with it).
+static func alive_of(w: World, kind: int) -> int:
+	return _alive_of(w, kind)
+
+
 static func _alive_of(w: World, kind: int) -> int:
 	var n := w.pending_enemies_of(kind)
 	for i in range(1, w.actors.size()):
@@ -892,6 +899,8 @@ static func cause_key(w: World) -> StringName:
 		return &""
 	if w.killer_attack == BossChallenge.ARENA_ATTACK:
 		return &"CAUSE_BOSS_ARENA"  # BX: the closing band
+	if w.killer_attack >= BossSignatures.LATE_CAUSE:  # v0.8.0 BS1: a javelin coming back, an egg's burst
+		return BossSignatures.late_cause_key(t, w.killer_attack)
 	if w.killer_attack >= 0 and w.killer_attack < t.attacks.size():
 		return t.attacks[w.killer_attack].cause_key
 	for atk in t.attacks:  # v0.7.5 BF1: a fireball's, the boss's first pattern (or bolt fan)
