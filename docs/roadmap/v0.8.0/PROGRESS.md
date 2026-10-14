@@ -13,6 +13,7 @@ not in `main` yet).
 | AV (part 1) | Boss and enemy orbs are lit 3D bodies, each with its own shape (the Gatekeeper's tumbling ember stones, the Warlord's spear heads, the Brood Mother's wobbling acid globs, the Hive Lens's faceted prisms, the Siege Engine's smoking embers, the Foundry's dripping molten drops, the casters' and drones' swirling orbs) and a trail; the Gatekeeper's shock lanes crack the ground while they track and lock, then strike as rows of stone spikes with debris, dust and a hot flash that sink back. Procedural textures (the CC0 sites were blocked). Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) | `fcd7fec` (branch `v080-av`) |
 | BA | The six bosses move with keyframed clips (code-made, owner Q4) instead of a few code sways: every attack winds up with anticipation, lands its strike pose on the very tick the hit resolves (the clip's time is driven by the sim's windup / active / recovery ticks; a multi-marker slam re-strikes on each marker's tick) and recovers; idle breathing, walks matched to speed, a shielded pose (the Gatekeeper curls into a boulder for its Rock Rings), a flinch, a reel-and-slump stagger, a roar at each phase gate, a rise with the boss bar, and a collapse when it dies (all six now; only the Warlord fell before). Owner clips with the same name in the model's AnimationPlayer replace the code clips. Reduced motion: same poses, no tremble or overshoot. Evidence [BOSS_ANIMATIONS](evidence/BOSS_ANIMATIONS.md), sheets in `evidence/ba_shots/`; the feel is OWNER ONLY | `8b35845` (branch `v080-ba`) |
 | RT part 1 (system + 3 layouts) | Rooms of 2×2, 3×2 and 3×3 cells are furnished from hand-designed layouts (dense clusters of tall blocks, crate stacks, wrecks, fire barrels, broken walls and pillars, grass and rubble, an open lane in the middle), picked per room and turned and mirrored by the generator, restyled by each biome; other sizes keep their rule-built rooms until their layouts come; a save made before RT resumes on its own floor. G2 asked; evidence [`evidence/ROOMS.md`](evidence/ROOMS.md) | `38beba1` (branch `v080-rt`) |
+| RT2 (the other 21 layouts) | Every room size is furnished from designed layouts, three each (24): small 1×1, 2×1 and 3×1 rooms get a few small corner, wall and centre groups (fewer, smaller: they stay fightable), the big rooms get ruined buildings with broken walls and pillars, central ruined blocks, diagonal bands of blocks round an open middle and wreck convoys; each size's three differ (corners / centre / diagonal or a building). A save made under RT1 resumes on its own floor (floor rules 5; rules 4 rebuilds with RT1's three). The boss rooms keep their own builder. Evidence [`evidence/ROOMS.md`](evidence/ROOMS.md) RT2 | this commit (branch `v080-rt2`) |
 | EC | Enemies wear one colour family per role (palette A, the owner's G2 pick): melee red-orange, ranged blue-violet, bombers yellow, support green, tanks bronze, each kind its own shade, every kind with a glowing eye ([evidence](evidence/ENEMY_COLOURS.md)) | `234f119` (palettes) + `d71aa5c` (the pick) |
 
 ## Goldens changed on purpose
@@ -23,6 +24,8 @@ not in `main` yet).
 - RT1: none (no golden fixture holds a run floor: the replay and export-smoke goldens use the kernel arena;
   `tests/golden` passes unchanged). Run floors change on purpose (floor rules 4); a floor saved before keeps its own.
 - BA: none (presentation, plus two read-only WorldReader reads; `tests/golden` 2/2 unchanged)
+- RT2: none (no golden fixture holds a run floor; `tests/golden` passes unchanged). Run floors change on purpose again
+  (floor rules 5); a floor saved under rules 1-4 keeps its own.
 - EC: none (presentation only)
 
 ## Gates (owner)
@@ -39,6 +42,11 @@ not in `main` yet).
 | G2 MU: 3 menu and card directions | — | not yet made | |
 
 ## Open
+- RT2 finding: `tests/e2e/test_e2e_bosses_2.gd::test_the_warlord_is_reached_through_the_dev_panel` fails locally on
+  `3cd8b4a` (before RT2) and with RT2: "warlord: its telegraph is drawn" ([evidence/ROOMS.md](evidence/ROOMS.md) RT2).
+  For the lead.
+- RT2 density: several new layouts block less than RT1's 14.7-16.5 % in a typical room (the 3×1s 10.9-12.0 % on
+  purpose, "fewer, smaller groups"; `room_4x4_2` 11.8 %, `room_4x4_3` 12.2 %); numbers in ROOMS.md RT2, not widened.
 - v0.7.5 PR riusprime/zero-depth#6 not merged.
 - RT (agent's reading, for the lead to confirm with the owner): "start, portal/boss rooms, shop and arenas keep their
   rules" read as their selection rules; the shop, arena and Overrun rooms are chosen after the floor is generated,
@@ -116,3 +124,15 @@ not in `main` yet).
   flow/designed rooms 7/7 and the e2e shard 127/127. Shots: 10 at 1920×1080 (llvmpipe), 6 copied to
   `evidence/rt_shots/`. Not run locally: the full suite. G2 RT asked.
 - 2026-10-14: G2 RT answered: the first three layouts' density is right; the other 21 follow them (RT2).
+- 2026-10-14: RT2 (agent, branch `v080-rt2` from `3cd8b4a`): 21 layouts written by `scripts/content/room_layouts.py`
+  (new prefabs: small corners, wall spurs, a building outline and its broken corner, a central block, a diagonal band;
+  RT1's prefabs and three files byte-identical); the script's checks gain a regions flood, a wall-slit check, 1-cell
+  sizes and a 3 cm spacing margin (the game's cm rounding broke two 4×4 groups on a 2.2 m edge). `FLOOR_RULES` 5,
+  `RunState.rt1_rooms`, `RunSaver.RT1_LAYOUTS`/`rt1_layouts`: a rules-4 floor rebuilds with RT1's three, the same as
+  RT1's code built it (90 floors compared). Tests: content (24 layouts, 3 per size), the run-floor property test over 60
+  floors with every size (kept share per size), the RT1 old save. Run locally: lint; content 136/136; arch + golden
+  6/6; map/generator sim tests by name (one 3000 s run timed out inside `test_ice_patches.gd` with the others green;
+  run again on its own, see ROOMS.md); starglow 6/6; application + debug 104/104; dresser/biomes 36/36; e2e set 7/7;
+  e2e shard 127/128: `test_e2e_bosses_2.gd` "warlord: its telegraph is drawn" fails, and fails the same on the base
+  `3cd8b4a` without RT2 (open, not fixed here). Shots: 21 in Ruins (gl_compatibility on llvmpipe), 8 copied to
+  `evidence/rt_shots/`. Not run locally: the full suite.

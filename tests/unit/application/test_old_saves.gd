@@ -200,3 +200,48 @@ func test_a_save_from_before_the_designed_rooms_keeps_its_rooms() -> void:
 	assert_ne(WorldSnapshot.apply(fresh, saved["world"]), "", "and is not the floor that was saved")
 	old.finish_floor(w)
 	assert_true(old.designed_rooms(), "the next floor: designed rooms")
+
+
+## v0.8.0 RT2 (G2 RT): today's floors carry layouts for every room size (floor rules 5); a floor saved under RT1 (rules
+## 4) is rebuilt with RT1's three layouts only, so its snapshot still fits it and not today's floor; the next floor is
+## today's.
+func test_a_save_from_the_first_designed_rooms_keeps_its_rooms() -> void:
+	var repo := ContentRepository.load_all()
+	var old := SaveLab.run_state(41, 1)
+	old.floor_rules = RunState.FLOOR_RULES_V080_RT1
+	assert_true(old.designed_rooms(), "rules 4: designed rooms")
+	assert_true(old.rt1_rooms(), "rules 4: RT1's three")
+	var tables: Dictionary = (RunSaver.floor_tables(old, repo)[&"map"] as FloorParams).room_layouts
+	var ids := []
+	for key: Vector2i in tables:
+		for t: RoomLayoutTable in tables[key]:
+			ids.append(String(t.id))
+	ids.sort()
+	assert_eq(ids, ["room_2x2_1", "room_3x2_1", "room_3x3_1"], "only RT1's layouts")
+	var w := SaveLab.build_floor(old)
+	var designed := 0
+	for room in w.floor_layout.room_count():
+		var id := w.floor_layout.layout_of(room)
+		designed += 1 if id != &"" else 0
+		assert_true(id == &"" or id in RunSaver.RT1_LAYOUTS, "room %d: %s, as saved" % [room, id])
+	assert_gt(designed, 0, "the RT1 floor of run 41 has designed rooms")
+	var saved := RunSaver.payload_of(w, old, 1, PackedByteArray())
+	assert_eq(int(saved["run"]["floor_rules"]), RunState.FLOOR_RULES_V080_RT1)
+	var resumed := RunSaver.run_from(
+		saved, ContentCompiler.compile_run(repo.get_def(&"run", SaveLab.RUN_ID))
+	)
+	assert_true(resumed.rt1_rooms(), "the payload keeps its rules")
+	var again := SaveLab.build_floor(resumed)
+	assert_eq(WorldSnapshot.apply(again, saved["world"]), "", "the saved floor rebuilds the same")
+	var now := SaveLab.run_state(41, 1)
+	assert_false(now.rt1_rooms())
+	var fresh := SaveLab.build_floor(now)
+	var new_sizes := 0
+	for room in fresh.floor_layout.room_count():
+		var id := fresh.floor_layout.layout_of(room)
+		new_sizes += 1 if id != &"" and not id in RunSaver.RT1_LAYOUTS else 0
+	assert_gt(new_sizes, 0, "today's floor 1 of run 41 has the other layouts")
+	assert_ne(WorldSnapshot.apply(fresh, saved["world"]), "", "and is not the floor that was saved")
+	old.finish_floor(w)
+	assert_false(old.rt1_rooms(), "the next floor: today's rules")
+	assert_eq(old.floor_rules, RunState.FLOOR_RULES)

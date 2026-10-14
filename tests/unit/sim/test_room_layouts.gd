@@ -4,10 +4,11 @@ extends GutTest
 ## its room; every group of every layout fits a bare room of a typical size in every turn and mirror, its blockers out
 ## of the layout's open lanes; and over many run floors with the layouts in use every floor stays whole: every room
 ## reachable at an enemy's clearance and the player's, doorways open and their approach boxes free of blockers, the
-## start, the gate, item spots and spawn points clear; all three layouts, all four turns and both mirrors show up; the
-## same seed gives the same floor.
+## start, the gate, item spots and spawn points clear; all 24 layouts (v0.8.0 RT2: three of every room size), all four
+## turns and both mirrors show up; the same seed gives the same floor. A room whose doorways leave little of its layout
+## standing is checked like any other (the per-size kept shares are printed).
 
-const SEEDS := 40
+const SEEDS := 60
 const PLAYER_RADIUS := 0.35
 
 var _params: FloorParams
@@ -149,6 +150,7 @@ func test_run_floors_with_designed_rooms_are_whole() -> void:
 	var rooms := 0
 	var kept := 0
 	var drawn := 0
+	var by_size := {}  # layout key -> [rooms, blockers kept, blockers drawn, rooms keeping under half]
 	for s in SEEDS:
 		var seed_value := 7000 + s * 7919
 		var f := FloorGenerator.generate(seed_value, _params)
@@ -173,17 +175,29 @@ func test_run_floors_with_designed_rooms_are_whole() -> void:
 				turns[f.room_turn[room]] = true
 			mirrors[f.room_mirror[room]] = true
 			_assert_door_boxes_free(f, room, tag)
+			var room_drawn := 0
+			var room_kept := 0
 			for g in _table(id).groups:
 				for piece in g.pieces:
-					drawn += 1 if piece.solid else 0
+					room_drawn += 1 if piece.solid else 0
 			for i in range(f.slab_first, f.walls.size()):
 				if (
 					f.room_of(f.walls[i].bounds().get_center()) == room
 					and f.piece_height(f.walls[i]) >= 0.0
 				):
-					kept += 1
+					room_kept += 1
+			drawn += room_drawn
+			kept += room_kept
+			var k := RoomLayouts.key(cells)
+			var row: Array = by_size.get(k, [0, 0, 0, 0])
+			by_size[k] = [
+				row[0] + 1,
+				row[1] + room_kept,
+				row[2] + room_drawn,
+				row[3] + (1 if room_kept * 2 < room_drawn else 0)
+			]
 		_check_whole(f, tag)
-	assert_eq(seen.size(), 3, "all three layouts show up")
+	assert_eq(seen.size(), 24, "all 24 layouts show up")
 	assert_eq(turns.size(), 4, "a square layout in all four turns")
 	assert_eq(mirrors.size(), 2, "mirrored and not")
 	assert_gt(kept * 100, drawn * 60, "most of a layout survives its room's doorways")
@@ -193,6 +207,17 @@ func test_run_floors_with_designed_rooms_are_whole() -> void:
 			% [designed, rooms, SEEDS, kept, drawn, kept * 100.0 / maxi(drawn, 1)]
 		)
 	)
+	var keys := by_size.keys()
+	keys.sort()
+	assert_eq(keys.size(), 8, "designed rooms of every size")
+	for k: Vector2i in keys:
+		var row: Array = by_size[k]
+		gut.p(
+			(
+				"  %d x %d: %d rooms, %d of %d blockers kept (%.0f%%); %d rooms kept under half"
+				% [k.x, k.y, row[0], row[1], row[2], row[1] * 100.0 / maxi(row[2], 1), row[3]]
+			)
+		)
 
 
 func _table(id: StringName) -> RoomLayoutTable:

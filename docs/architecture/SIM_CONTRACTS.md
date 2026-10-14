@@ -1338,8 +1338,11 @@ Starting values in `data/bullet_patterns` (CONTENT_SCHEMA §3); `EnemyAi` holds 
   (decoration in a doorway's box is left out) into `FloorLayout.layout_props`, presentation only; blockers carry their
   kit piece (`piece_tags`) and drawn height (`piece_heights`). Rooms of a size without layouts, the start hall and the
   portal room keep their rule-built interiors; the boss room, the shop, the arenas and the Overrun room are chosen
-  afterwards as before. Floor rules 4 (`RunState.FLOOR_RULES`): a floor saved under rules 1-3 is rebuilt without
-  layouts and makes none of these draws, so it is the floor it was saved on. Nothing new is hashed or saved (the floor
+  afterwards as before. Every room size has layouts since RT2 (24); a room whose doorways drop most of its groups is
+  still a whole room (checked over many floors in `test_room_layouts.gd`). Floor rules 5 (`RunState.FLOOR_RULES`,
+  RT2): a floor saved under rules 1-3 is rebuilt without layouts and makes none of these draws; one saved under rules
+  4 (RT1) is rebuilt with RT1's three layouts only (`RunSaver.rt1_layouts`), so its 1×1, 2×1, 3×1, 4×3 and 4×4 rooms
+  draw nothing, as then; either way it is the floor it was saved on. Nothing new is hashed or saved (the floor
   is rebuilt from its seed and rules; the snapshot's walls must match it).
 - **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
   run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the

@@ -6,16 +6,18 @@ extends SceneTree
 ##   XDG_DATA_HOME=<empty folder> xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --audio-driver Dummy \
 ##     --resolution 1920x1080 -s scripts/shots/room_layouts.gd -- biome=ruins
 ## Options after `--`: biome=<id> (default ruins; the floor is drawn as that biome whatever the run drew there),
-## seed=<first run seed to search from> (default 20261014), only=<layout id> (default: every layout).
-## SHOT CHOICE (labelled): for each layout, the floor-1 rooms of SEARCH run seeds from `seed` on are searched and the
+## seed=<first run seed to search from> (default 20261014), only=<layout id> (default: every layout), out=<folder under
+## build/shots/v0.8.0/> (default rt; RT2's shots: out=rt2), search=<run seeds searched> (default 60).
+## SHOT CHOICE (labelled): for each layout, the floor-1 rooms of `search` run seeds from `seed` on are searched and the
 ## room that kept the largest share of the layout's blockers (its doorways drop the rest) is shown, in whichever turn
 ## and mirror the generator chose; the log prints that share and the mean over every room searched, and the shot
 ## names the seed, room, turn and mirror. Writes
-## build/shots/v0.8.0/rt/<layout>_<biome>_{room,close}.png. Quits on every path. Evidence copies are made by hand.
+## build/shots/v0.8.0/<out>/<layout>_<biome>_{room,close}.png. Quits on every path. Evidence copies are made by hand.
 
-const OUT := "res://build/shots/v0.8.0/rt/"
 const SETTLE := 12
-const SEARCH := 60
+
+var _out := "res://build/shots/v0.8.0/rt/"
+var _search := 60
 
 var _biome_id := &"ruins"
 var _seed := 20261014
@@ -39,7 +41,11 @@ func _initialize() -> void:
 			_seed = int(a.trim_prefix("seed="))
 		elif a.begins_with("only="):
 			_only = StringName(a.trim_prefix("only="))
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
+		elif a.begins_with("out="):
+			_out = "res://build/shots/v0.8.0/%s/" % a.trim_prefix("out=")
+		elif a.begins_with("search="):
+			_search = int(a.trim_prefix("search="))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
 	var repo := ContentRepository.load_all()
 	_biome = repo.get_def(&"biomes", _biome_id)
 	if _biome == null:
@@ -53,7 +59,7 @@ func _initialize() -> void:
 	var params: FloorParams = RunSaver.floor_tables(null, repo)[&"map"]
 	var best := {}  # id -> [share, seed, room]
 	var sums := {}  # id -> [share sum, rooms]
-	for s in SEARCH:
+	for s in _search:
 		var run := SaveLab.run_state(_seed + s, 1)
 		var f := FloorGenerator.generate(run.floor_seed(), params)
 		for room in f.room_count():
@@ -179,7 +185,7 @@ func _process(_delta: float) -> bool:
 		_wait -= 1
 		if _wait == 0:
 			var shot: Array = _shots[_step]
-			var path: String = OUT + "%s.png" % shot[0]
+			var path: String = _out + "%s.png" % shot[0]
 			var img := root.get_texture().get_image()
 			if img == null or img.save_png(path) != OK:
 				push_error("room_layouts: could not save %s" % path)

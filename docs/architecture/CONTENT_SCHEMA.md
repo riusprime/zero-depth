@@ -684,7 +684,7 @@ of 330 per mille and a shop on every floor; `RunState.floor_rules`, `RunSaver.fl
 
 `RoomLayoutDefinition` (category `room_layout`; owner O12, "design maybe two, three rooms of each size … procedural
 generation to place them as templates … a room that could be in different directions"): a hand-designed interior for
-rooms of `cells` (x ≥ y: the long side first; 3 per size planned, 24 in all). Drawn in its own frame: x along the
+rooms of `cells` (x ≥ y: the long side first; 3 per size, 24 in all since RT2: 1×1, 2×1, 3×1, 2×2, 3×2, 3×3, 4×3, 4×4). Drawn in its own frame: x along the
 room's long side, the room's corner at (0, 0). `groups: Array[RoomLayoutGroup]`, each an `anchor` (a fraction of the
 room, 0..1 each way: groups spread with the room's size) and `pieces: Array[RoomLayoutPiece]`: `piece` (a kit id,
 `RoomLayoutDefinition.KIT`), `at` and `size` in metres from the anchor, `solid` (a sim blocker, axis-aligned, drawn
@@ -697,7 +697,10 @@ solids facing each other are at most 0.6 m apart, shut to the player, or at leas
 walkability grid, unless the group's other solids fill the gap); lanes inside 0..1000.
 `RunContentCompiler.compile_room_layouts` turns them into `RoomLayoutTable`s (cm, per mille, 1/4096 turns) keyed by
 `RoomLayouts.key(cells)` into `FloorParams.room_layouts`; `RunSaver.floor_tables` adds them unless the floor was saved
-before RT (`RunState.designed_rooms`, floor rules < 4), which is rebuilt with its rule-built rooms. The F10 dev panel
+before RT (`RunState.designed_rooms`, floor rules < 4), which is rebuilt with its rule-built rooms; a floor saved
+under RT1 (floor rules 4, `RunState.rt1_rooms`) gets RT1's three layouts only (`RunSaver.RT1_LAYOUTS`:
+`room_2x2_1`, `room_3x2_1`, `room_3x3_1`, unchanged since). The files are written by
+`scripts/content/room_layouts.py` (never edited by hand). The F10 dev panel
 does not list the folder (geometry, not balance).
 
 ## 6. Biomes

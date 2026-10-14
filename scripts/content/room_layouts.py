@@ -6,7 +6,12 @@ at a typical size into build/room_layouts/. Edit the layouts here, not in the .t
 
     python3 -I scripts/content/room_layouts.py .
 
-Starting values throughout: the owner picks at the G2 (docs/roadmap/v0.8.0/evidence/ROOMS.md)."""
+A second argument limits the run to the layouts whose name starts with it (all files are still written only for
+those). The "mid" rows also print the open floor's regions at an enemy's clearance and any solid 0.6-2.0 m off a
+wall it faces (v0.8.0 RT2).
+
+Starting values throughout: RT1's three were the owner's G2; RT2's 21 follow them (G2 RT, "follow the line of those
+to create the rest"; docs/roadmap/v0.8.0/evidence/ROOMS.md)."""
 import sys, os, math, copy
 
 try:
@@ -388,9 +393,662 @@ LAYOUTS["3x3_1"] = dict(
     ],
 )
 
+# --- RT2 (G2 RT, owner 2026-10-14: "New rooms are fine in density don't need anything else, follow the line of those
+# to create the rest"): the other 21 layouts, three per size, in RT1's density and style. Smaller prefabs for the
+# small rooms (1 x 1, 2 x 1, 3 x 1 stay fightable: fewer, smaller groups), a broken wall jutting from a wall, a ruined
+# building's outline and its broken corner, a block for a room's middle. The RT1 prefabs and layouts above are
+# unchanged (a floor saved under floor rules 4 rebuilds with them). ---
+
+
+def nook_corner():
+    """A small corner: a tall block, a crate stack either side (about 3.5 x 3.2 m)."""
+    return fringe([
+        S("slab_concrete", 1.1, 1.0, 2.2, 2.0, 2.6),
+        S("crate_stack", 2.85, 0.6, 1.3, 1.2, 1.2),
+        S("crate_stack", 0.65, 2.6, 1.3, 1.2, 0.9),
+    ], seed=47)
+
+
+def camp_corner():
+    """A corner camp: crates, a fire barrel, a short broken wall (about 2.6 x 4.4 m)."""
+    return fringe([
+        S("crate_stack", 0.65, 0.65, 1.3, 1.3, 1.5),
+        S("crate_stack", 1.95, 0.6, 1.3, 1.2, 1.0),
+        S("fire_barrel", 0.4, 1.75, 0.8, 0.8),
+        S("wall_broken", 0.3, 3.3, 0.6, 2.2, 0.9),
+    ], seed=53)
+
+
+def rubble_corner():
+    """A low corner: a rock, a dead tree, a crate stack (about 2.8 x 3.0 m)."""
+    return fringe([
+        S("rock_large", 0.9, 0.9, 1.8, 1.8),
+        S("dead_tree", 2.3, 0.5, 1.0, 1.0),
+        S("crate_stack", 0.6, 2.4, 1.2, 1.2, 0.9),
+    ], seed=83)
+
+
+def crates_corner():
+    """The smallest corner: two crate stacks and a fire barrel (about 2.4 x 2.0 m)."""
+    return fringe([
+        S("crate_stack", 0.65, 0.6, 1.3, 1.2, 1.3),
+        S("crate_stack", 1.85, 0.5, 1.1, 1.0, 0.9),
+        S("fire_barrel", 0.4, 1.6, 0.8, 0.8),
+    ], seed=107)
+
+
+def wall_short():
+    """A short wall cluster: a block, a crate stack, a pillar (about 4.6 x 2.0 m)."""
+    return fringe([
+        S("slab_concrete", -1.2, 1.0, 2.2, 2.0, 2.6),
+        S("crate_stack", 0.6, 0.65, 1.4, 1.3, 1.2),
+        S("wall_pillar", 1.8, 0.5, 1.0, 1.0, 1.7),
+    ], seed=59)
+
+
+def wall_camp():
+    """A fire against a wall: a broken wall, a fire barrel, a crate stack (about 3.2 x 1.8 m)."""
+    return fringe([
+        S("wall_broken", 0.0, 0.3, 3.2, 0.6, 0.9),
+        S("fire_barrel", -0.6, 1.0, 0.8, 0.8),
+        S("crate_stack", 0.6, 1.2, 1.2, 1.2, 1.0),
+    ], seed=61)
+
+
+def wall_spur():
+    """A broken wall jutting from the wall, a pillar at its end, a crate stack and a fire barrel at its foot (about
+    2.8 x 3.6 m)."""
+    return fringe([
+        S("wall_broken", 0.0, 1.3, 0.6, 2.6, 1.1),
+        S("wall_pillar", 0.0, 3.0, 0.6, 0.8, 1.8),
+        S("crate_stack", -0.95, 0.6, 1.3, 1.2, 1.2),
+        S("fire_barrel", 0.7, 0.4, 0.8, 0.8),
+    ], seed=79)
+
+
+def wall_spur_big():
+    """The spur with a block at its foot (about 4.9 x 3.6 m)."""
+    return fringe([
+        S("slab_concrete", -1.4, 1.0, 2.2, 2.0, 2.8),
+        S("wall_broken", 0.0, 1.3, 0.6, 2.6, 1.1),
+        S("wall_pillar", 0.0, 3.0, 0.6, 0.8, 1.8),
+        S("crate_stack", 0.95, 0.6, 1.3, 1.2, 1.2),
+        S("fire_barrel", 2.0, 0.4, 0.8, 0.8),
+    ], seed=109)
+
+
+def free_crates():
+    """A crate pile (about 2.6 x 2.4 m)."""
+    return fringe([
+        S("crate_stack", -0.65, -0.6, 1.3, 1.2, 1.4),
+        S("crate_stack", 0.65, -0.6, 1.3, 1.2, 0.9),
+        S("crate_stack", -0.2, 0.6, 1.2, 1.2, 1.1),
+    ], seed=67)
+
+
+def free_pillar():
+    """One tall block with crate stacks at its foot, centred (about 3.6 x 3.6 m)."""
+    return fringe([
+        S("slab_concrete", -0.6, -0.6, 2.4, 2.4, 3.0),
+        S("crate_stack", 1.2, -0.1, 1.2, 1.2, 1.0),
+        S("crate_stack", -1.2, 1.2, 1.2, 1.2, 0.9),
+    ], seed=71)
+
+
+def free_barricade():
+    """A line of cover: pillars, a broken wall, a crate stack and a fire barrel (about 5.8 x 1.6 m)."""
+    return fringe([
+        S("wall_pillar", -2.4, 0.0, 1.0, 1.0, 1.9),
+        S("wall_broken", -0.7, 0.0, 2.4, 0.6, 1.0),
+        S("wall_pillar", 1.0, 0.0, 1.0, 1.0, 1.6),
+        S("crate_stack", 2.2, -0.1, 1.4, 1.2, 1.0),
+        S("fire_barrel", -0.7, 0.9, 0.8, 0.8),
+    ], seed=89)
+
+
+def wreck_island():
+    """A wreck between a block and crate stacks, a fire barrel (about 9.1 x 2.8 m)."""
+    return fringe([
+        S("car_wreck", 0.0, 0.0, 4.8, 2.2),
+        S("slab_concrete", -3.5, -0.1, 2.2, 2.4, 2.6),
+        S("crate_stack", 3.05, -0.45, 1.3, 1.3, 1.3),
+        S("crate_stack", 3.05, 0.85, 1.3, 1.2, 0.9),
+        S("fire_barrel", 4.1, -0.5, 0.8, 0.8),
+    ], seed=97)
+
+
+def ruin_house():
+    """A ruined building's outline, centred (9 x 7 m): corner pillars, broken walls with three gaps of 2.4-3 m, crate
+    stacks in one inside corner and a fire barrel in the middle."""
+    return fringe([
+        S("wall_pillar", -4.2, -3.0, 0.6, 1.0, 2.2),
+        S("wall_pillar", 4.0, -3.0, 1.0, 1.0, 2.0),
+        S("wall_pillar", -4.0, 3.0, 1.0, 1.0, 1.8),
+        S("wall_pillar", 4.0, 3.0, 1.0, 1.0, 2.1),
+        S("wall_broken", -2.55, -3.2, 2.7, 0.6, 1.3),
+        S("wall_broken", 2.35, -3.2, 2.3, 0.6, 0.9),
+        S("wall_broken", -1.5, 3.2, 4.0, 0.6, 1.1),
+        S("wall_broken", -4.2, 0.0, 0.6, 5.0, 1.2),
+        S("wall_broken", 4.2, -1.25, 0.6, 2.5, 1.0),
+        S("crate_stack", -3.25, -2.25, 1.3, 1.3, 1.4),
+        S("crate_stack", -3.3, -1.0, 1.2, 1.2, 1.0),
+        S("fire_barrel", 0.0, 0.0, 0.8, 0.8),
+    ], seed=101)
+
+
+def ruin_ell():
+    """A building's broken corner standing free: two broken walls on a pillar, a crate stack and a fire barrel in its
+    angle (about 5.0 x 4.0 m; the angle at (0, 0), the arms toward +x and +y)."""
+    return fringe([
+        S("wall_pillar", 0.0, 0.0, 1.0, 1.0, 2.2),
+        S("wall_broken", 2.0, -0.2, 3.0, 0.6, 1.2),
+        S("wall_pillar", 4.0, 0.0, 1.0, 1.0, 1.6),
+        S("wall_broken", -0.2, 2.0, 0.6, 3.0, 1.0),
+        S("crate_stack", 0.95, 0.9, 0.9, 1.6, 1.2),
+        S("fire_barrel", 0.9, 2.1, 0.8, 0.8),
+    ], seed=113)
+
+
+def central_block():
+    """A ruined block for a room's middle, centred (about 8.8 x 4.6 m): tall slabs along one side, crate stacks, a
+    rock, a fire barrel and a dead tree along the other."""
+    return shift(fringe([
+        S("slab_concrete", -3.0, -1.5, 2.8, 3.0, 3.4),
+        S("slab_wide", 0.0, -2.3, 3.2, 1.4, 2.6),
+        S("slab_concrete", 3.0, -1.5, 2.8, 3.0, 3.0),
+        S("crate_stack", -0.85, -0.8, 1.5, 1.6, 1.6),
+        S("crate_stack", 0.75, -0.8, 1.7, 1.6, 1.2),
+        S("crate_stack", -3.6, 0.65, 1.4, 1.3, 1.3),
+        S("rock_large", -2.2, 0.8, 1.4, 1.6),
+        S("fire_barrel", -1.1, 0.4, 0.8, 0.8),
+        S("crate_stack", 2.4, 0.6, 1.6, 1.2, 1.0),
+        S("dead_tree", 3.8, 0.5, 1.2, 1.0),
+    ], seed=103), 0.0, 0.7)
+
+
+def stair():
+    """A broken diagonal band of blocks, a rock and crate stacks, its steps touching corner to corner, centred (about
+    7.7 x 6.8 m)."""
+    return shift(fringe([
+        S("slab_concrete", 1.2, 1.0, 2.4, 2.0, 3.0),
+        S("crate_stack", 0.6, 2.6, 1.2, 1.2, 1.1),
+        S("crate_stack", 1.8, 2.6, 1.2, 1.2, 0.8),
+        S("rock_large", 3.2, 2.8, 1.6, 1.6),
+        S("crate_stack", 3.2, 1.4, 1.6, 1.2, 1.4),
+        S("slab_concrete", 5.2, 4.6, 2.4, 2.0, 2.8),
+        S("crate_stack", 3.4, 4.2, 1.2, 1.2, 1.0),
+        S("slab_wide", 5.2, 3.0, 2.4, 1.2, 2.2),
+        S("crate_stack", 7.05, 6.2, 1.3, 1.2, 1.0),
+    ], seed=127), -3.85, -3.4)
+
+
+# 1 x 1 (a typical room 12.5 x 10 m): small rooms stay fightable, two or three small groups.
+# "the nook": three corners round an open middle.
+LAYOUTS["1x1_1"] = dict(
+    cells=(1, 1),
+    keep=[(0.32, 0.34, 0.36, 0.32)],
+    groups=[
+        corner(nook_corner(), (0, 0)),
+        corner(rubble_corner(), (1, 0)),
+        corner(camp_corner(), (1, 1)),
+    ],
+)
+
+# "the pillar": one block in the middle, lanes either side of it, three small corners.
+LAYOUTS["1x1_2"] = dict(
+    cells=(1, 1),
+    keep=[(0.02, 0.25, 0.27, 0.5), (0.71, 0.25, 0.27, 0.5)],
+    groups=[
+        free(free_pillar(), 0.5, 0.5),
+        corner(crates_corner(), (1, 0)),
+        corner(crates_corner(), (0, 1)),
+        corner(crates_corner(), (1, 1)),
+    ],
+)
+
+# "the spurs": two broken walls jutting from opposite walls, on a diagonal, a corner of crates at either end.
+LAYOUTS["1x1_3"] = dict(
+    cells=(1, 1),
+    keep=[(0.25, 0.39, 0.5, 0.22)],
+    groups=[
+        wall(wall_spur(), 0.4, "top"),
+        wall(flip(wall_spur(), -1, 1), 0.6, "bottom"),
+        corner(crates_corner(), (0, 1)),
+        corner(crates_corner(), (1, 0)),
+    ],
+)
+
+# 2 x 1 (27.8 x 10 m).
+# "the depot": four corners and a cluster on each long wall, the middle open.
+LAYOUTS["2x1_1"] = dict(
+    cells=(2, 1),
+    keep=[(0.3, 0.3, 0.4, 0.4)],
+    groups=[
+        corner(nook_corner(), (0, 0)),
+        corner(rubble_corner(), (0, 1)),
+        corner(nook_corner(), (1, 0)),
+        corner(camp_corner(), (1, 1)),
+        wall(wall_short(), 0.5, "top"),
+        wall(wall_camp(), 0.5, "bottom"),
+    ],
+)
+
+# "the wreck": a wreck island in the middle, lanes along both long walls, fires on the walls round it.
+LAYOUTS["2x1_2"] = dict(
+    cells=(2, 1),
+    keep=[(0.3, 0.04, 0.4, 0.24), (0.3, 0.73, 0.4, 0.23)],
+    groups=[
+        free(wreck_island(), 0.5, 0.5),
+        wall(wall_short(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+        wall(wall_camp(), 0.22, "top"),
+        wall(wall_camp(), 0.78, "bottom"),
+    ],
+)
+
+# "the slalom": three broken walls jutting from alternate walls, a corner at either end of the far wall.
+LAYOUTS["2x1_3"] = dict(
+    cells=(2, 1),
+    keep=[(0.05, 0.39, 0.9, 0.22)],
+    groups=[
+        wall(wall_spur_big(), 0.26, "top"),
+        wall(wall_spur_big(), 0.5, "bottom"),
+        wall(wall_spur_big(), 0.74, "top"),
+        corner(nook_corner(), (0, 1)),
+        corner(rubble_corner(), (1, 1)),
+    ],
+)
+
+# 3 x 1 (43.1 x 10 m): a corridor room, small groups.
+# "the street": four corners, small clusters along both long walls, a lane down the middle.
+LAYOUTS["3x1_1"] = dict(
+    cells=(3, 1),
+    keep=[(0.1, 0.33, 0.8, 0.34)],
+    groups=[
+        corner(nook_corner(), (0, 0)),
+        corner(rubble_corner(), (0, 1)),
+        corner(camp_corner(), (1, 0)),
+        corner(nook_corner(), (1, 1)),
+        wall(wall_short(), 0.27, "top"),
+        wall(wall_camp(), 0.73, "top"),
+        wall(wall_camp(), 0.37, "bottom"),
+        wall(wall_short(), 0.63, "bottom"),
+    ],
+)
+
+# "the barricades": a block, a wreck island and a barricade down the middle, lanes along both long walls.
+LAYOUTS["3x1_2"] = dict(
+    cells=(3, 1),
+    keep=[(0.1, 0.02, 0.8, 0.2), (0.1, 0.78, 0.8, 0.2)],
+    groups=[
+        free(free_pillar(), 0.22, 0.5),
+        free(wreck_island(), 0.5, 0.5),
+        free(free_barricade(), 0.78, 0.5),
+        corner(crates_corner(), (0, 0)),
+        corner(crates_corner(), (1, 1)),
+        corner(crates_corner(), (1, 0)),
+        corner(rubble_corner(), (0, 1)),
+    ],
+)
+
+# "the slalom": four broken walls jutting from alternate walls, a fire between, two corners.
+LAYOUTS["3x1_3"] = dict(
+    cells=(3, 1),
+    keep=[(0.05, 0.39, 0.9, 0.22)],
+    groups=[
+        wall(wall_spur_big(), 0.2, "top"),
+        wall(wall_spur_big(), 0.4, "bottom"),
+        wall(wall_spur_big(), 0.6, "top"),
+        wall(wall_spur_big(), 0.8, "bottom"),
+        corner(rubble_corner(), (0, 1)),
+        corner(nook_corner(), (1, 0)),
+        wall(wall_camp(), 0.4, "top"),
+    ],
+)
+
+# 2 x 2 (27.8 x 22.8 m).
+# "the block": a ruined block in the middle between two block clusters, open lanes either side of it, small corners
+# and fires on the side walls.
+LAYOUTS["2x2_2"] = dict(
+    cells=(2, 2),
+    keep=[(0.1, 0.3, 0.18, 0.4), (0.72, 0.3, 0.18, 0.4)],
+    groups=[
+        free(central_block(), 0.5, 0.5),
+        free(free_big(), 0.5, 0.19),
+        free(free_big(), 0.5, 0.81, fx=-1, fy=-1),
+        corner(nook_corner(), (0, 0)),
+        corner(camp_corner(), (1, 1)),
+        corner(rubble_corner(), (1, 0)),
+        corner(crates_corner(), (0, 1)),
+        wall(wall_camp(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+    ],
+)
+
+# "the diagonal": a broken line of cover from one corner to the other round an open middle, small corners off it.
+LAYOUTS["2x2_3"] = dict(
+    cells=(2, 2),
+    keep=[(0.45, 0.42, 0.1, 0.16)],
+    groups=[
+        free(stair(), 0.27, 0.28),
+        free(stair(), 0.73, 0.72, turns=2),
+        corner(nook_corner(), (1, 0)),
+        corner(camp_corner(), (0, 1)),
+        wall(wall_short(), 0.62, "top"),
+        wall(wall_short(), 0.38, "bottom"),
+        wall(wall_camp(), 0.62, "left"),
+        wall(wall_camp(), 0.38, "right"),
+        free(free_crates(), 0.68, 0.32),
+        free(free_crates(), 0.32, 0.68),
+    ],
+)
+
+# 3 x 2 (43.1 x 22.8 m).
+# "the ruin": a ruined building at one end, a wreck and blocks at the other, clusters on the long walls.
+LAYOUTS["3x2_2"] = dict(
+    cells=(3, 2),
+    keep=[(0.42, 0.3, 0.16, 0.4)],
+    groups=[
+        free(ruin_house(), 0.22, 0.5),
+        corner(ruin_corner(), (0, 0)),
+        corner(camp_corner(), (0, 1)),
+        corner(block_corner(), (1, 0)),
+        corner(crate_corner(), (1, 1)),
+        free(free_wreck(), 0.8, 0.5, turns=1),
+        wall(wall_short(), 0.5, "top"),
+        wall(wall_camp(), 0.5, "bottom"),
+        free(free_crates(), 0.62, 0.24),
+        free(free_slabs(), 0.64, 0.74),
+        wall(wall_spur(), 0.33, "top"),
+        wall(wall_spur(), 0.33, "bottom"),
+        wall(wall_short(), 0.5, "right"),
+        free(free_crates(), 0.62, 0.5),
+        free(free_crates(), 0.18, 0.84),
+        free(free_crates(), 0.44, 0.76),
+    ],
+)
+
+# "the convoy": wrecks in a line from one corner to the other round an open middle, ruins in the other corners.
+LAYOUTS["3x2_3"] = dict(
+    cells=(3, 2),
+    keep=[(0.42, 0.32, 0.16, 0.36)],
+    groups=[
+        corner(wreck_corner(), (0, 0)),
+        free(wreck_island(), 0.27, 0.38),
+        free(wreck_island(), 0.73, 0.62),
+        corner(wreck_corner(), (1, 1)),
+        corner(ruin_corner(), (1, 0)),
+        corner(ruin_corner(), (0, 1)),
+        free(free_camp(), 0.5, 0.16),
+        free(free_camp(), 0.5, 0.84, fy=-1),
+        free(free_big(), 0.28, 0.67),
+        free(free_big(), 0.72, 0.33, fx=-1, fy=-1),
+        wall(wall_camp(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+    ],
+)
+
+# 3 x 3 (43.1 x 35.6 m).
+# "the keep": a ruined building in the middle with blocks at its sides, a ring of open floor, light walls and
+# corners.
+LAYOUTS["3x3_2"] = dict(
+    cells=(3, 3),
+    keep=[(0.28, 0.28, 0.1, 0.1), (0.62, 0.28, 0.1, 0.1), (0.28, 0.62, 0.1, 0.1), (0.62, 0.62, 0.1, 0.1)],
+    groups=[
+        free(ruin_house(), 0.5, 0.5),
+        free(central_block(), 0.5, 0.22),
+        free(central_block(), 0.5, 0.78, fx=-1, fy=-1),
+        free(free_big(), 0.24, 0.5, turns=1),
+        free(free_slabs(), 0.76, 0.5, turns=1),
+        corner(block_corner(), (0, 0)),
+        corner(wreck_corner(), (1, 0)),
+        corner(crate_corner(), (1, 1)),
+        corner(ruin_corner(), (0, 1)),
+        wall(wall_camp(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+        free(free_crates(), 0.2, 0.25),
+        free(free_crates(), 0.8, 0.75),
+        free(free_rocks(), 0.8, 0.25),
+        free(free_rocks(), 0.2, 0.73),
+    ],
+)
+
+# "the diagonal": a broken line of cover from corner to corner (diagonal bands of blocks, then single blocks) round
+# an open middle; a ruined building, a ruined block and camps off it.
+LAYOUTS["3x3_3"] = dict(
+    cells=(3, 3),
+    keep=[(0.45, 0.45, 0.1, 0.1)],
+    groups=[
+        free(stair(), 0.22, 0.24),
+        free(free_pillar(), 0.4, 0.42),
+        free(free_pillar(), 0.61, 0.58),
+        free(stair(), 0.78, 0.77, turns=2),
+        corner(crates_corner(), (0, 0)),
+        corner(crates_corner(), (1, 1)),
+        free(ruin_house(), 0.75, 0.25),
+        free(central_block(), 0.25, 0.76),
+        corner(camp_corner(), (0, 1)),
+        corner(nook_corner(), (1, 0)),
+        wall(wall_spur_big(), 0.5, "top"),
+        wall(wall_spur_big(), 0.5, "bottom"),
+        wall(wall_row(), 0.5, "left"),
+        wall(wall_fire(), 0.5, "right"),
+        free(free_camp(), 0.5, 0.24),
+        free(free_camp(), 0.5, 0.76, fy=-1),
+        free(free_rocks(), 0.82, 0.5),
+        free(free_rocks(), 0.18, 0.5),
+        free(free_crates(), 0.44, 0.6, turns=1),
+    ],
+)
+
+# 4 x 3 (58.4 x 35.6 m).
+# "the depot": four corners, clusters on every wall, two rows of free-standing cover with lanes between.
+LAYOUTS["4x3_1"] = dict(
+    cells=(4, 3),
+    keep=[(0.44, 0.38, 0.12, 0.24)],
+    groups=[
+        corner(block_corner(), (0, 0)),
+        corner(wreck_corner(), (1, 0)),
+        corner(crate_corner(), (1, 1)),
+        corner(ruin_corner(), (0, 1)),
+        wall(wall_row(), 0.33, "top"),
+        wall(wall_fire(), 0.67, "top"),
+        wall(wall_fire(), 0.33, "bottom"),
+        wall(wall_row(), 0.67, "bottom"),
+        wall(wall_row(), 0.5, "left"),
+        wall(wall_fire(), 0.5, "right"),
+        free(free_big(), 0.2, 0.5, turns=1),
+        free(free_wreck(), 0.36, 0.3),
+        free(big_pair(), 0.36, 0.7),
+        free(free_complex(), 0.64, 0.3),
+        free(free_wreck(), 0.64, 0.7),
+        free(free_complex(), 0.8, 0.5, turns=1),
+        free(free_slabs(), 0.55, 0.82),
+        free(free_rocks(), 0.19, 0.22),
+        free(free_rocks(), 0.8, 0.78),
+        free(free_camp(), 0.2, 0.78),
+        free(free_camp(), 0.79, 0.22),
+    ],
+)
+
+# "the compound": two ruined buildings on a diagonal, broken corners and blocks round them, a lane through the middle.
+LAYOUTS["4x3_2"] = dict(
+    cells=(4, 3),
+    keep=[(0.43, 0.32, 0.14, 0.36)],
+    groups=[
+        free(ruin_house(), 0.24, 0.33),
+        free(ruin_house(), 0.76, 0.67),
+        free(ruin_ell(), 0.22, 0.72),
+        free(ruin_ell(), 0.78, 0.28, turns=2),
+        free(central_block(), 0.5, 0.17),
+        free(central_block(), 0.5, 0.83, fx=-1, fy=-1),
+        corner(block_corner(), (0, 0)),
+        corner(wreck_corner(), (1, 0)),
+        corner(crate_corner(), (0, 1)),
+        corner(block_corner(), (1, 1)),
+        wall(wall_row(), 0.5, "left"),
+        wall(wall_row(), 0.5, "right"),
+        free(free_big(), 0.36, 0.57, turns=1),
+        free(free_slabs(), 0.63, 0.45, turns=1),
+        free(free_crates(), 0.9, 0.24, turns=1),
+        free(free_crates(), 0.1, 0.76, turns=1),
+        free(free_slabs(), 0.8, 0.42),
+        free(free_crates(), 0.16, 0.58),
+        free(free_camp(), 0.72, 0.9),
+        free(free_crates(), 0.22, 0.1),
+    ],
+)
+
+# "the convoy": a line of wrecks and blocks from one corner to the other round an open middle, camps and ruins in the
+# other corners.
+LAYOUTS["4x3_3"] = dict(
+    cells=(4, 3),
+    keep=[(0.44, 0.38, 0.12, 0.24)],
+    groups=[
+        corner(crates_corner(), (0, 0)),
+        free(stair(), 0.14, 0.22),
+        free(wreck_island(), 0.32, 0.39),
+        free(free_big(), 0.36, 0.56),
+        free(free_big(), 0.64, 0.5, fx=-1, fy=-1),
+        free(wreck_island(), 0.71, 0.66),
+        corner(crates_corner(), (1, 1)),
+        corner(ruin_corner(), (1, 0)),
+        corner(ruin_corner(), (0, 1)),
+        free(ruin_house(), 0.76, 0.27),
+        free(ruin_house(), 0.29, 0.77),
+        free(central_block(), 0.5, 0.16),
+        free(central_block(), 0.52, 0.84, fx=-1, fy=-1),
+        wall(wall_camp(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+        free(free_camp(), 0.58, 0.33),
+        free(free_slabs(), 0.78, 0.88),
+        free(free_crates(), 0.92, 0.74),
+        free(free_crates(), 0.29, 0.1, turns=1),
+        free(free_crates(), 0.16, 0.52),
+        free(free_camp(), 0.08, 0.7, turns=1),
+        free(free_crates(), 0.86, 0.52, turns=1),
+    ],
+)
+
+# 4 x 4 (58.4 x 48.4 m; the boss rooms keep their own builder).
+# "the quarter": four corners, clusters on every wall, an inner ring of cover and an outer ring round an open
+# middle.
+LAYOUTS["4x4_1"] = dict(
+    cells=(4, 4),
+    keep=[(0.43, 0.42, 0.14, 0.16)],
+    groups=[
+        corner(block_corner(), (0, 0)),
+        corner(wreck_corner(), (1, 0)),
+        corner(crate_corner(), (1, 1)),
+        corner(ruin_corner(), (0, 1)),
+        wall(wall_row(), 0.33, "top"),
+        wall(wall_fire(), 0.67, "top"),
+        wall(wall_fire(), 0.33, "bottom"),
+        wall(wall_row(), 0.67, "bottom"),
+        wall(wall_row(), 0.33, "left"),
+        wall(wall_fire(), 0.67, "left"),
+        wall(wall_fire(), 0.33, "right"),
+        wall(wall_row(), 0.67, "right"),
+        free(free_complex(), 0.3, 0.3),
+        free(free_wreck(), 0.7, 0.3, turns=1),
+        free(big_pair(), 0.7, 0.7),
+        free(free_ruin(), 0.3, 0.7, turns=1),
+        free(free_camp(), 0.5, 0.3),
+        free(free_camp(), 0.5, 0.7, fy=-1),
+        free(free_slabs(), 0.3, 0.49, turns=1),
+        free(free_big(), 0.7, 0.49, turns=1),
+        free(free_big(), 0.15, 0.5, turns=1),
+        free(free_complex(), 0.85, 0.5, turns=1),
+        free(free_big(), 0.5, 0.15),
+        free(free_wreck(), 0.5, 0.85),
+        free(free_rocks(), 0.16, 0.18),
+        free(free_rocks(), 0.82, 0.85),
+        free(free_crates(), 0.82, 0.18),
+        free(free_crates(), 0.18, 0.82),
+        free(free_crates(), 0.18, 0.68),
+        free(free_crates(), 0.42, 0.41),
+        free(free_crates(), 0.86, 0.32, turns=1),
+        free(free_crates(), 0.34, 0.14, turns=1),
+        free(free_crates(), 0.88, 0.72, turns=1),
+        free(free_crates(), 0.58, 0.4, turns=1),
+    ],
+)
+
+# "the citadel": a ruined building in the middle walled by blocks, a ring of open floor round it, light walls and
+# corners, a camp on each side.
+LAYOUTS["4x4_2"] = dict(
+    cells=(4, 4),
+    keep=[(0.1, 0.4, 0.12, 0.2), (0.78, 0.4, 0.12, 0.2), (0.4, 0.1, 0.2, 0.12), (0.4, 0.78, 0.2, 0.12)],
+    groups=[
+        free(ruin_house(), 0.5, 0.5),
+        free(central_block(), 0.5, 0.33),
+        free(central_block(), 0.5, 0.67, fx=-1, fy=-1),
+        free(free_big(), 0.31, 0.5, turns=1),
+        free(free_complex(), 0.69, 0.5, turns=1),
+        free(free_wreck(), 0.31, 0.31, turns=1),
+        free(free_wreck(), 0.69, 0.69, turns=1),
+        free(big_pair(), 0.72, 0.26),
+        free(big_pair(), 0.28, 0.74, fx=-1, fy=-1),
+        corner(nook_corner(), (0, 0)),
+        corner(camp_corner(), (1, 0)),
+        corner(rubble_corner(), (0, 1)),
+        corner(nook_corner(), (1, 1)),
+        wall(wall_camp(), 0.5, "top"),
+        wall(wall_camp(), 0.5, "bottom"),
+        wall(wall_camp(), 0.5, "left"),
+        wall(wall_camp(), 0.5, "right"),
+        free(free_crates(), 0.16, 0.16),
+        free(free_crates(), 0.84, 0.84),
+        free(free_rocks(), 0.84, 0.11),
+        free(free_rocks(), 0.11, 0.84),
+        free(free_slabs(), 0.93, 0.3, turns=1),
+        free(free_pillar(), 0.1, 0.34),
+        free(free_pillar(), 0.9, 0.66),
+        free(free_camp(), 0.32, 0.08),
+        free(free_camp(), 0.66, 0.9),
+        free(free_camp(), 0.08, 0.66, turns=1),
+    ],
+)
+
+# "the crossing": two broken lines of blocks crossing the room on its diagonals, the middle open, a ruined building
+# on two walls and a ruined block on the other two.
+LAYOUTS["4x4_3"] = dict(
+    cells=(4, 4),
+    keep=[(0.43, 0.43, 0.14, 0.14)],
+    groups=[
+        corner(crates_corner(), (0, 0)),
+        free(stair(), 0.16, 0.18),
+        free(stair(), 0.33, 0.34),
+        free(stair(), 0.69, 0.67, turns=2),
+        free(stair(), 0.86, 0.83, turns=2),
+        corner(crates_corner(), (1, 1)),
+        free(stair(), 0.84, 0.18, fx=-1),
+        free(stair(), 0.65, 0.33, fx=-1),
+        free(stair(), 0.31, 0.67, fx=-1, turns=2),
+        free(stair(), 0.13, 0.83, fx=-1, turns=2),
+        corner(nook_corner(), (1, 0)),
+        free(ruin_house(), 0.48, 0.15),
+        free(ruin_house(), 0.5, 0.83),
+        free(central_block(), 0.16, 0.5, turns=1),
+        free(central_block(), 0.82, 0.49, turns=1),
+        wall(wall_spur_big(), 0.5, "right"),
+        wall(wall_camp(), 0.3, "top"),
+        wall(wall_camp(), 0.7, "bottom"),
+        free(free_crates(), 0.28, 0.92, turns=1),
+        free(free_crates(), 0.69, 0.08, turns=1),
+        free(free_crates(), 0.92, 0.68),
+        free(free_crates(), 0.5, 0.6, turns=1),
+        free(free_crates(), 0.92, 0.33),
+        free(free_crates(), 0.08, 0.33),
+    ],
+)
+
 # --- checks ---
 GAP = 2.2
 LANE = 2.0
+# RT2: the game places groups in whole centimetres from per-mille anchors, so a spacing this close to a rule may fall
+# either side of it there: the checks here keep this much to spare.
+SLACK = 0.03
 
 
 def rect_of(p, ax, ay, flipx=False):
@@ -438,7 +1096,7 @@ def check(name, lay, L, Sz, verbose=False):
             problems.append((gi, "leaves room"))
         # flush or slab gap from each wall
         for d in (f[0], f[1], L - f[2], Sz - f[3]):
-            if 0.005 < d < GAP:
+            if 0.005 < d < GAP + SLACK:
                 ok = False
                 problems.append((gi, "wall gap %.2f" % d))
         for kj in kept:
@@ -447,13 +1105,13 @@ def check(name, lay, L, Sz, verbose=False):
                 continue
             dmin = min(min(gap(f, r) for r in sj), min(gap(foot(solids), r) for r in sj))
             dmin = min(dmin, min(gap(r, foot(sj)) for r in solids))
-            if dmin < GAP:
+            if dmin < GAP + SLACK:
                 ok = False
                 problems.append((gi, "gap to group %d %.2f" % (kj, dmin)))
         for kr in lay["keep"]:
             kr_m = (kr[0] * L, kr[1] * Sz, (kr[0] + kr[2]) * L, (kr[1] + kr[3]) * Sz)
             for r in solids:
-                if overlap(r, kr_m):
+                if overlap(r, (kr_m[0] - SLACK, kr_m[1] - SLACK, kr_m[2] + SLACK, kr_m[3] + SLACK)):
                     ok = False
                     problems.append((gi, "in keep clear"))
         if ok:
@@ -463,9 +1121,100 @@ def check(name, lay, L, Sz, verbose=False):
     return kept, problems, block / (L * Sz), (block + decor) / (L * Sz)
 
 
+def wall_slits(lay, L, Sz, kept):
+    """RT2: a solid of a kept group 0.6-2.0 m from a room wall it faces, the corridor not filled by its group's other
+    solids (a pocket the player squeezes into)."""
+    out = []
+    walls = [(-5.0, 0.0, 0.0, Sz), (L, 0.0, L + 5.0, Sz), (0.0, -5.0, L, 0.0), (0.0, Sz, L, Sz + 5.0)]
+    groups = place(lay, L, Sz)
+    for gi in kept:
+        rs = groups[gi][0]
+        for i, a in enumerate(rs):
+            for w in walls:
+                rr = rs + [w]
+                box = _corridor(a, w)
+                if box is None:
+                    continue
+                if not _filled(box, rr, i, len(rr) - 1):
+                    out.append((gi, i, round(min(box[2] - box[0], box[3] - box[1]), 2)))
+    return out
+
+
+def _corridor(a, b):
+    y0, y1 = max(a[1], b[1]), min(a[3], b[3])
+    x0, x1 = max(a[0], b[0]), min(a[2], b[2])
+    if y1 - y0 > 0.01:
+        g = max(b[0] - a[2], a[0] - b[2])
+        if 0.6 < g < LANE:
+            left = a[2] if b[0] >= a[2] else b[2]
+            return (left, y0, left + g, y1)
+    elif x1 - x0 > 0.01:
+        g = max(b[1] - a[3], a[1] - b[3])
+        if 0.6 < g < LANE:
+            top = a[3] if b[1] >= a[3] else b[3]
+            return (x0, top, x1, top + g)
+    return None
+
+
+def _filled(box, rs, i, j):
+    n = 8
+    for u in range(n):
+        for v in range(n):
+            x = box[0] + (box[2] - box[0]) * (u + 0.5) / n
+            y = box[1] + (box[3] - box[1]) * (v + 0.5) / n
+            if not any(r[0] - 1e-4 <= x <= r[2] + 1e-4 and r[1] - 1e-4 <= y <= r[3] + 1e-4
+                       for k, r in enumerate(rs) if k not in (i, j)):
+                return False
+    return True
+
+
+def regions(lay, L, Sz, kept, clear=0.6, step=0.25):
+    """RT2: the open floor's regions at an enemy's clearance (FloorParams.nav_clearance) on a step grid, as the
+    generator's FloorReach does (circles: the distance to each solid's rectangle). 1 = the room stays one region."""
+    groups = place(lay, L, Sz)
+    rs = [r for gi in kept for r in groups[gi][0]]
+    nx, ny = int(L / step), int(Sz / step)
+    open_ = [[False] * ny for _ in range(nx)]
+    for i in range(nx):
+        x = (i + 0.5) * step
+        for j in range(ny):
+            y = (j + 0.5) * step
+            if x < clear or y < clear or x > L - clear or y > Sz - clear:
+                continue
+            ok = True
+            for r in rs:
+                dx = max(r[0] - x, 0, x - r[2])
+                dy = max(r[1] - y, 0, y - r[3])
+                if dx * dx + dy * dy < clear * clear:
+                    ok = False
+                    break
+            open_[i][j] = ok
+    seen = [[False] * ny for _ in range(nx)]
+    n = 0
+    sizes_ = []
+    for i in range(nx):
+        for j in range(ny):
+            if open_[i][j] and not seen[i][j]:
+                n += 1
+                stack = [(i, j)]
+                seen[i][j] = True
+                c = 0
+                while stack:
+                    a, b = stack.pop()
+                    c += 1
+                    for da, db in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        u, v = a + da, b + db
+                        if 0 <= u < nx and 0 <= v < ny and open_[u][v] and not seen[u][v]:
+                            seen[u][v] = True
+                            stack.append((u, v))
+                sizes_.append(c)
+    return n, sorted(sizes_)
+
+
 def sizes(cells):
-    x = {2: (22.6, 33.0), 3: (36.4, 49.8), 4: (50.2, 66.6), 1: (8.8, 19.2)}
-    y = {2: (18.6, 27.0), 3: (30.4, 40.8), 4: (42.2, 54.6), 1: (7.0, 13.4)}
+    # n cells: n x (cell 11-14 / 9-11 m + 2.8 m pitch) less the two wall halves (0.6-5.0 m), FloorParams
+    x = {1: (8.8, 16.2), 2: (22.6, 33.0), 3: (36.4, 49.8), 4: (50.2, 66.6)}
+    y = {1: (6.8, 13.2), 2: (18.6, 27.0), 3: (30.4, 40.8), 4: (42.2, 54.6)}
     cx, cy = cells
     out = []
     # turn even: L = x of cx cells, S = y of cy cells; odd: L = y of cx cells, S = x of cy cells
@@ -554,14 +1303,22 @@ def write_tres(name, lay):
 
 if __name__ == "__main__":
     os.makedirs(OUT_DIR, exist_ok=True)
+    only = sys.argv[2] if len(sys.argv) > 2 else ""
     for name, lay in LAYOUTS.items():
+        if only and not name.startswith(only):
+            continue
         print("==", name, "groups", len(lay["groups"]), "slits", lane_errors(name))
         for kind, (L, Sz) in sizes(lay["cells"]):
             kept, probs, b, dd = check(name, lay, L, Sz)
-            print("  %s %5.1f x %5.1f kept %2d/%d block %.1f%% dressed %.1f%%  %s" % (
-                kind, L, Sz, len(kept), len(lay["groups"]), b * 100, dd * 100, probs[:4] if kind == "mid" or len(kept) < len(lay["groups"]) * 0.6 else ""))
-        (L, Sz) = sizes(lay["cells"])[0][1]
+            extra = ""
+            if kind == "mid":
+                n, parts = regions(lay, L, Sz, kept)
+                extra = " regions %d %s wall slits %s" % (n, parts[:-1], wall_slits(lay, L, Sz, kept))
+            print("  %s %5.1f x %5.1f kept %2d/%d block %.1f%% dressed %.1f%%  %s%s" % (
+                kind, L, Sz, len(kept), len(lay["groups"]), b * 100, dd * 100,
+                probs[:4] if kind == "mid" or len(kept) < len(lay["groups"]) * 0.6 else "", extra))
         if Image is not None:
             os.makedirs(HERE, exist_ok=True)
-            preview(name, lay, L, Sz, os.path.join(HERE, "%s_mid.png" % name))
+            for k, (kind, (L, Sz)) in enumerate([s_ for s_ in sizes(lay["cells"]) if s_[0] == "mid"]):
+                preview(name, lay, L, Sz, os.path.join(HERE, "%s_mid%s.png" % (name, "" if k == 0 else "_turned")))
         write_tres(name, lay)

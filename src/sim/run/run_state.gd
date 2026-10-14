@@ -19,12 +19,15 @@ extends RefCounted
 ## v0.7.5 BF1 (owner N18, "always put them in the big rooms"): 3 is today's, every boss room 4 x 4; a floor saved under
 ## rules 1 or 2 rebuilds its boss room at the boss's legacy_arena_cells (legacy_boss_room), so it is the floor it was
 ## saved on.
-## v0.8.0 RT (owner O12): 4 is today's, with the designed room layouts (data/room_layouts); a floor saved under rules
-## 1-3 is rebuilt with the rule-built interiors it had (designed_rooms; RunSaver.floor_tables).
-const FLOOR_RULES := 4
+## v0.8.0 RT (owner O12): 4 added the designed room layouts (data/room_layouts); a floor saved under rules 1-3 is
+## rebuilt with the rule-built interiors it had (designed_rooms; RunSaver.floor_tables).
+## v0.8.0 RT2 (G2 RT): 5 is today's, with layouts for every room size (24); a floor saved under rules 4 is rebuilt with
+## RT1's three layouts only (rt1_rooms; RunSaver.RT1_LAYOUTS), so its other rooms keep their rule-built interiors.
+const FLOOR_RULES := 5
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
+const FLOOR_RULES_V080_RT1 := 4
 
 var run_seed := 0
 var table: RunTable
@@ -218,7 +221,13 @@ func legacy_boss_room() -> bool:
 ## v0.8.0 RT: whether the current floor has the designed room layouts (false: a floor resumed from a save made before
 ## RT, rebuilt with its rule-built rooms).
 func designed_rooms() -> bool:
-	return floor_rules >= 4
+	return floor_rules >= FLOOR_RULES_V080_RT1
+
+
+## v0.8.0 RT2: whether the current floor was built with RT1's three layouts only (a floor resumed from a save made
+## between RT1 and RT2).
+func rt1_rooms() -> bool:
+	return floor_rules == FLOOR_RULES_V080_RT1
 
 
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:
