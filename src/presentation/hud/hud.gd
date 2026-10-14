@@ -26,7 +26,7 @@ const POOR := Color("#FF5A4D")
 ## v0.3.0 G: a combo's card stays this long, above the item card; its badges sit in a row above the item icons.
 const COMBO_CARD_SECONDS := 4.0
 const COMBO_BADGE := 44.0
-## v0.6.1 R1: each badge sits in a small crystal plaque this tall (the combo's nearest colour).
+## v0.6.1 R1: each badge sits in a small stone plaque this tall (v0.8.0 MU) (the combo's nearest colour).
 const COMBO_PLAQUE_H := 96.0
 ## Run flow (v0.3.0 B): the floor-title card stays this long (s), fading over the last FLOOR_CARD_FADE; the boss
 ## warning shows within BOSS_WARN_M of the boss door, on the near side, until it seals.

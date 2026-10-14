@@ -3,8 +3,9 @@ extends Control
 ## The start screen (v0.3.0 L15: "pick at start, have a two card screen with a cool animation of appearing that
 ## shows both"): one BuildCard per BuildDefinition (Blade, then Gun), staggered in (each rises and fades in), under
 ## the title. The last pick has focus.
-## v0.6.1 R2b: the owner's art (BuildArt): the title sits in the crystal title plaque, the cards in their crystal
-## frames; behind them the menus' Cold-glass backdrop (MenuStyle, MenuBackdrop). No cyan/magenta glitch any more.
+## v0.8.0 MU (owner O14, Ember stone): the title sits on a carved stone plaque with a glowing groove, the cards are
+## stone tablets (BuildCard); behind them the menus' ember backdrop (MenuStyle, MenuBackdrop). (v0.6.1 R2b's crystal
+## title plaque and frames are retired.)
 ## - Mouse: hover focuses a card, a click picks it.
 ## - Keyboard: Left/Right move the focus, Enter picks, Esc goes back.
 ## - Pad: d-pad or left stick move the focus, A (Cross) picks, B (Circle) goes back.
@@ -16,24 +17,26 @@ signal back_pressed
 const STAGGER_S := 0.16
 const FIRST_DELAY_S := 0.12
 const TITLE_S := 0.45
-## The title's type size in the plaque (px); it fits en and es (test_build_art.gd).
+## The title's type size on its plaque (px), and the plaque's size; it fits en and es (test_plaques.gd).
 const TITLE_FONT := 40
+const TITLE_PLAQUE := Vector2(760, 96)
 
 var cards: Array[BuildCard] = []
 var _ids: Array[StringName] = []
 var _focus_index := 0
 var _title := Label.new()
-var _plaque := TextureRect.new()
+var _plaque := PanelContainer.new()
 var _hint := Label.new()
 var _back := Button.new()
 var _t := 0.0
-var _backdrop := MenuBackdrop.new()
+var _backdrop := MenuBackdrop.new()  # v0.8.0 MU: from the main menu, so its own ember scene
 
 
 func _init(builds: Array, last_id: StringName) -> void:
 	name = "BuildPicker"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	MenuStyle.apply(self)
+	_backdrop.own_scene = true
 	add_child(_backdrop)
 	var centre := CenterContainer.new()
 	centre.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -41,28 +44,21 @@ func _init(builds: Array, last_id: StringName) -> void:
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 22)
 	centre.add_child(col)
-	var head := Control.new()
-	head.name = "TitlePlaque"
-	head.custom_minimum_size = BuildArt.TITLE_SIZE * BuildArt.TITLE_SCALE
-	head.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	head.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-	col.add_child(head)
-	_plaque.texture = BuildArt.title()
-	_plaque.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	_plaque.stretch_mode = TextureRect.STRETCH_SCALE
-	_plaque.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_plaque.name = "TitlePlaque"
+	_plaque.custom_minimum_size = TITLE_PLAQUE
+	_plaque.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	head.add_child(_plaque)
+	_plaque.add_theme_stylebox_override("panel", Plaques.box(&"gold", TITLE_PLAQUE.y, 10.0))
+	col.add_child(_plaque)
 	_title.name = "Title"
 	_title.text = "UI_CHOOSE_BUILD"
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_title.add_theme_font_override("font", HudStyle.font(true))
 	_title.add_theme_font_size_override("font_size", TITLE_FONT)
-	_title.position = BuildArt.TITLE_BOX.position * BuildArt.TITLE_SCALE
-	_title.size = BuildArt.TITLE_BOX.size * BuildArt.TITLE_SCALE
+	_title.add_theme_constant_override("outline_size", 6)
 	_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	head.add_child(_title)
+	_plaque.add_child(_title)
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 64)
@@ -151,14 +147,17 @@ func _animate() -> void:
 	_hint.modulate.a = 0.65 * a
 	_back.modulate.a = a
 	# The title plaque fades in.
-	var p := clampf(_t / TITLE_S, 0.0, 1.0)
-	_plaque.modulate.a = p
-	_title.modulate.a = p
+	_plaque.modulate.a = clampf(_t / TITLE_S, 0.0, 1.0)
 
 
 ## The title label (tests).
 func title_label() -> Label:
 	return _title
+
+
+## The title's stone plaque (tests).
+func title_plaque() -> PanelContainer:
+	return _plaque
 
 
 func _unhandled_input(event: InputEvent) -> void:

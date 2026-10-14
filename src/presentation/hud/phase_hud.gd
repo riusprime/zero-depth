@@ -7,7 +7,7 @@ extends VBoxContainer
 ## floor without a curve.
 ## v0.6.0 UP: the queue and the line on screen keep translation keys, not text, and are translated again on every
 ## sync, so a language switch while "New: Charger" shows turns it into "Nuevo: Cargador" at once.
-## v0.6.1 R1: the announcement sits in one of the owner's crystal plaques (the banner's gold, Plaques.USE_FAMILY); the
+## v0.6.1 R1: the announcement sits in a stone plaque (v0.8.0 MU; the banner's gold, Plaques.USE_FAMILY); the
 ## plaque's plain middle stretches to the line's width.
 
 const ANNOUNCE_SECONDS := 4.0

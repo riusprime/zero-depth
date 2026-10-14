@@ -14,9 +14,9 @@ extends ModalPanel
 ## - Reorder: R (pad Y) picks up the chosen card, ←/→ carry it, R / Enter put it down (mouse: drag a card onto a
 ##   slot). The moves reach the sim while the panel is open (the sim ticks while it waits).
 ## It sits over the pick panel and the shop (their input waits while it is open).
-## v0.6.0 UP: a modal choice, so it wears the menus' Cold glass (MenuStyle): the game blurred and dimmed behind
-## (MenuBackdrop), plain type, glass tiles with their family's colour along the top, the focused tile lit by the glass
-## wash and a cold rim. The incoming card keeps the pick cards' look.
+## v0.6.0 UP: a modal choice, so it wears the menus' look (v0.8.0 MU: Ember stone, MenuStyle): the game blurred and
+## sunk into the warm dark behind (MenuBackdrop), warm type, stone tablets with their family's colour as the glowing
+## groove at the foot, the focused tile ember-lit. The incoming card keeps the pick cards' look (StoneCard).
 
 signal moved(value: int)
 
@@ -330,15 +330,9 @@ func _set_focus(k: int) -> void:
 
 
 func _style_skip(on: bool) -> void:
-	var box := MenuStyle.glass_panel(Vector2(8, 6))
-	box.border_color = Color(MenuStyle.GLASS, 0.9)
-	box.border_width_top = 2
-	if on:  # the focused tile: the glass wash and a cold rim
-		box.bg_color = Color(MenuStyle.GLASS, 0.16)
-		box.border_color = MenuStyle.GLASS
-		box.set_border_width_all(1)
-		box.border_width_top = 2
-	_skip.add_theme_stylebox_override("panel", box)
+	_skip.add_theme_stylebox_override(
+		"panel", MenuStyle.tile_slab(MenuStyle.EMBER, on, false, 41, Vector2(8, 6))
+	)
 
 
 ## Enter / A: answer (CHOOSE: replace the focused card; LEAVE: the focused card leaves), put a carried card down, or

@@ -1,6 +1,7 @@
 class_name AchievementRow
 extends Button
-## v0.7.5 AC: one achievement on the Codex's Achievements page, a Cold-glass row (MenuStyle): its glyph, its name and
+## v0.7.5 AC: one achievement on the Codex's Achievements page; v0.8.0 MU: a carved stone row (Ember stone, MenuStyle),
+## ember-lit when focused, an unlocked one with a gold rim inlay and groove: its glyph, its name and
 ## sentence, and on the right "Unlocked" or how far along it is ("37 / 100"). A locked one is dimmed with its
 ## sentence; a hidden locked one is "???" with the hidden line. A Button, so keys, the pad and the mouse reach it
 ## through the focus.
@@ -97,18 +98,16 @@ func show_entry(a: Dictionary, book: AchievementBook) -> void:
 
 
 func _style() -> void:
-	var normal := MenuStyle.glass_panel(Vector2(4, 4))
-	normal.border_width_left = 3
-	normal.border_color = Color(UNLOCKED, 0.85) if unlocked else Color(MenuStyle.GLASS, 0.2)
-	if not unlocked:
-		normal.bg_color = Color(MenuStyle.PANEL, 0.35)
-	var lit := normal.duplicate() as StyleBoxFlat
-	lit.bg_color = Color(MenuStyle.GLASS, 0.16)
-	lit.border_color = MenuStyle.GLASS
-	lit.set_border_width_all(2)
-	lit.border_width_left = 3
-	var hover := lit.duplicate() as StyleBoxFlat
-	hover.bg_color = Color(MenuStyle.GLASS, 0.09)
+	var tint := UNLOCKED if unlocked else Color(MenuStyle.DIM, 0.5)
+	var pattern := hash(entry.get("id", &"")) % 83
+	var normal := MenuStyle.tile_slab(tint, false, not unlocked, pattern)
+	var lit := MenuStyle.tile_slab(tint, true, not unlocked, pattern)
+	var hover := MenuStyle.tile_slab(tint, false, not unlocked, pattern)
+	hover.focus = 0.45
+	hover.dim = 1.0
+	for b: StoneBox in [normal, lit, hover]:
+		b.cut = 12.0
+		b.rim = Color(EmberStone.GOLD, 0.7) if unlocked else Color(0, 0, 0, 0)
 	add_theme_stylebox_override("normal", normal)
 	add_theme_stylebox_override("hover", hover)
 	add_theme_stylebox_override("pressed", lit)

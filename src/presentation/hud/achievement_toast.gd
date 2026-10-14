@@ -1,6 +1,7 @@
 class_name AchievementToast
 extends Control
-## v0.7.5 AC (owner N7: "a toast when one unlocks"): a small Ember-stone slab (HudStyle) under the corner minimap:
+## v0.7.5 AC (owner N7: "a toast when one unlocks"): a small carved Ember stone slab (StoneBox, v0.8.0 MU: with a gold
+## rim inlay and a gold groove, like an achievement row) under the corner minimap:
 ## "Achievement unlocked", the glyph, the achievement's name and sentence. It slides in, stays SHOW_S and fades; more
 ## unlocks wait their turn. It never takes the mouse, the focus or input (non-blocking), and it lives on the UI
 ## layer outside the HUD, so a toast for a floor's last moment carries over into the next floor. Its clock is the
@@ -24,6 +25,7 @@ var desc_label := HudStyle.label(17)
 var _queue: Array[Dictionary] = []
 var _current := {}
 var _t := 0.0
+var _box := StoneBox.new()
 
 
 func _init() -> void:
@@ -36,6 +38,12 @@ func _init() -> void:
 	offset_right = -RIGHT
 	offset_top = TOP
 	visible = false
+	_box.pattern = 61
+	_box.cut = 12.0
+	_box.under = 0.4
+	_box.rim = Color(EmberStone.GOLD, 0.75)
+	_box.inlay = AchievementIcon.GOLD
+	_box.inlay_y = 7.0
 	var row := HBoxContainer.new()
 	row.name = "Row"
 	row.position = PAD
@@ -116,11 +124,12 @@ func _process(delta: float) -> void:
 
 
 func _draw() -> void:
-	HudStyle.draw_plate(self, Rect2(Vector2.ZERO, size), true)
-	draw_rect(
-		Rect2(Vector2(HudStyle.CHAMFER + 4.0, 2.0), Vector2(size.x * 0.35, 2.0)),
-		Color(AchievementIcon.GOLD, 0.9)
-	)
+	_box.draw(get_canvas_item(), Rect2(Vector2.ZERO, size))
+
+
+## v0.8.0 MU: the toast's stone slab (tests).
+func slab() -> StoneBox:
+	return _box
 
 
 func _notification(what: int) -> void:

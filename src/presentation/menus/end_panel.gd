@@ -3,7 +3,7 @@ extends MenuPanel
 ## Shown when the fight ends (PLAN v0.1.0 Step 5): "You died" with what killed you, or "Arena cleared". Restart has
 ## focus. On a run (v0.3.0 B) it is the run recap: "Run complete" or "You died", the floor reached, the run's time,
 ## kills, shards (only when the run counts them), the items you held and the killing cause.
-## v0.5.5 A5 (Cold glass, MenuStyle): the game blurred behind, the title, recap and buttons left-aligned.
+## v0.5.5 A5; v0.8.0 MU (Ember stone, MenuStyle): the game blurred behind, the title, recap and buttons on a stone slab.
 
 signal restart_pressed
 signal main_menu_pressed

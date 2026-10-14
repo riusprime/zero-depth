@@ -1,14 +1,14 @@
 class_name CodexView
 extends Control
-## v0.7.5 CX (owner N6: "the journal of codex cards"): the Codex, from the main menu and the pause menu. Cold glass
-## (MenuStyle) over the blurred game or the menu's gradient: the title and how much you've found, four pages (Cards,
-## Enemies, Bosses, Biomes), the page's entries as tiles in sections (CodexTile; the Cards page by pool: Gun, Blade,
-## shared, triggers, legendary, then stat cards, utilities and passives), and beside them the focused entry: a card
-## in its crystal frame (CrystalCard) with its name and sentence (the game's own keys), or an emblem / a landscape
-## with its line, and your counts from the profile (CodexStore). An entry you haven't met is a silhouette, "???".
-## Keyboard: arrows move, Q / E change the page, Esc goes back. Pad: d-pad or stick, LB / RB, B. Mouse: hover a tile,
-## click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing.
-## v0.7.5 AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four.
+## v0.7.5 CX (owner N6: "the journal of codex cards"): the Codex, from the main menu and the pause menu. Ember stone
+## (MenuStyle, v0.8.0 MU) over the blurred game or the menu's own ember scene: the title and how much you've found, four
+## pages (Cards, Enemies, Bosses, Biomes), the page's entries as tiles in sections (CodexTile; the Cards page by pool:
+## Gun, Blade, shared, triggers, legendary, then stat cards, utilities and passives), and beside them the focused entry:
+## a card as its stone tablet (StoneCard, as in a pick) with its name and sentence (the game's own keys), or an emblem /
+## a landscape with its line, and your counts from the profile (CodexStore). An entry you haven't met is a silhouette,
+## "???". Keyboard: arrows move, Q / E change the page, Esc goes back. Pad: d-pad or stick, LB / RB, B. Mouse: hover a
+## tile, click a page, Back. It reads the catalog (the content) and the profile's counters; it changes nothing. v0.7.5
+## AC: given an AchievementBook, a fifth page, Achievements (AchievementsPage), follows the four.
 
 signal back_pressed
 
@@ -63,7 +63,7 @@ var achievements_page: AchievementsPage
 var tabs := {}
 var tiles: Array[CodexTile] = []
 var progress := Label.new()
-var card := CrystalCard.new(1.0)
+var card := StoneCard.new(1.0)
 var emblem := CodexIcon.new()
 var name_label := Label.new()
 var section_label := Label.new()
@@ -181,19 +181,19 @@ func _tab_row() -> Control:
 func _detail() -> Control:
 	var panel := PanelContainer.new()
 	panel.name = "Detail"
-	panel.add_theme_stylebox_override("panel", MenuStyle.glass_panel(Vector2(22, 22)))
+	panel.add_theme_stylebox_override("panel", MenuStyle.stone_panel(Vector2(22, 22)))
 	panel.custom_minimum_size = Vector2(DETAIL_W, 0)
 	panel.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 24)
 	panel.add_child(row)
-	_visual.custom_minimum_size = CardFrames.SIZE
+	_visual.custom_minimum_size = StoneCard.SIZE
 	_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(_visual)
 	_visual.add_child(card)
 	_emblem_box.name = "Emblem"
-	_emblem_box.add_theme_stylebox_override("panel", MenuStyle.glass_panel(Vector2(14, 14)))
-	_emblem_box.position = Vector2((CardFrames.SIZE.x - EMBLEM - 28) * 0.5, 0)
+	_emblem_box.add_theme_stylebox_override("panel", MenuStyle.stone_panel(Vector2(14, 14)))
+	_emblem_box.position = Vector2((StoneCard.SIZE.x - EMBLEM - 28) * 0.5, 0)
 	_emblem_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	emblem.custom_minimum_size = Vector2(EMBLEM, EMBLEM)
 	_emblem_box.add_child(emblem)
@@ -213,7 +213,7 @@ func _detail() -> Control:
 	desc_label.add_theme_font_size_override("font_size", 20)
 	counts_label.name = "Counts"
 	counts_label.add_theme_font_size_override("font_size", 20)
-	counts_label.add_theme_color_override("font_color", MenuStyle.GLASS.lerp(Color.WHITE, 0.45))
+	counts_label.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.45))
 	for l: Label in [name_label, section_label, desc_label, counts_label]:
 		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -297,7 +297,7 @@ func _build_page() -> void:
 		head.text = "%s   %d / %d" % [tr(SECTION_KEYS[s]), have, rows.size()]
 		head.add_theme_font_override("font", HudStyle.font(true))
 		head.add_theme_font_size_override("font_size", 18)
-		head.add_theme_color_override("font_color", MenuStyle.GLASS.lerp(Color.WHITE, 0.3))
+		head.add_theme_color_override("font_color", MenuStyle.EMBER.lerp(Color.WHITE, 0.3))
 		_list.add_child(head)
 		var grid := GridContainer.new()
 		grid.name = "Grid_%s" % s
@@ -318,7 +318,7 @@ func _build_page() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(tiles[0]) if not tiles.is_empty() else NodePath()
-		var lit := MenuStyle.GLASS.lerp(Color.WHITE, 0.35)
+		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 	if not tiles.is_empty():
 		_show(tiles[0].entry)
@@ -337,7 +337,7 @@ func _build_achievements() -> void:
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
 		b.focus_neighbor_bottom = b.get_path_to(first)
-		var lit := MenuStyle.GLASS.lerp(Color.WHITE, 0.35)
+		var lit := MenuStyle.EMBER.lerp(Color.WHITE, 0.35)
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 
 
@@ -388,7 +388,7 @@ func _show(e: Dictionary) -> void:
 	card.visible = is_card
 	_emblem_box.visible = not is_card
 	_visual.custom_minimum_size = (
-		CardFrames.SIZE if is_card else Vector2(CardFrames.SIZE.x, EMBLEM + 28.0)
+		StoneCard.SIZE if is_card else Vector2(StoneCard.SIZE.x, EMBLEM + 28.0)
 	)
 	var section_text: String = tr(SECTION_KEYS.get(e["section"], "UI_CODEX_TITLE"))
 	if is_card:
@@ -405,7 +405,15 @@ func _show(e: Dictionary) -> void:
 			card.modulate = Color(0.42, 0.44, 0.5, card.modulate.a)
 		else:
 			card.show_face(
-				e["id"], title_of(self, e), desc_of(self, e), fam, tier, PickSlot.TIERS[tier], ""
+				e["id"],
+				title_of(self, e),
+				desc_of(self, e),
+				fam,
+				tier,
+				PickSlot.TIERS[tier],
+				"",
+				"",
+				CodexIcon.color_of(e)
 			)
 			card.modulate = Color(1, 1, 1, card.modulate.a)
 	else:

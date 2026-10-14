@@ -1,10 +1,9 @@
 class_name BuildPage
 extends Control
 ## The pause menu's Build page (v0.6.5 WN2; docs/design/WAND.md rule 4: "Moving cards between slots is free and
-## immediate"). Cold glass (MenuStyle) over the blurred game: the title, the wand as a row of slots (WandRow: each
-## card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"), and under it
-## the plain-words read-back (Wand.describe / render through WorldReader, en + es).
-## Moving a card:
+## immediate"). Ember stone (MenuStyle, v0.8.0 MU) over the blurred game: the title, the wand as a row of slots
+## (WandRow: each card's frame colour, icon, name and level, the trigger cards cutting the row with "cast on hit →"),
+## and under it the plain-words read-back (Wand.describe / render through WorldReader, en + es). Moving a card:
 ## - keyboard: ←/→ (↑/↓) or 1–8 choose a card, Enter picks it up, ←/→ carry it, Enter puts it down (Esc puts it back);
 ## - mouse: drag a card onto a slot, or click a card then click its new slot;
 ## - pad: d-pad (or the left stick) chooses, A picks up, the d-pad carries, A drops (B puts it back).

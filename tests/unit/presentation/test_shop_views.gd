@@ -1,6 +1,6 @@
 extends GutTest
 ## The shop's views (v0.5.0 SH): the terminal glows and pulses without changing a shader; the panel shows the stock
-## in the cards' CardStyle (FACET) with prices and the shard icon, dims what you can't afford or use, lists the
+## as the pick's stone tablets (v0.8.0 MU) with prices and the shard icon, dims what you can't afford or use, lists the
 ## salvage, moves its focus by keyboard and pad and sends actions as picks; the minimap draws the shop and lists it
 ## in the legend.
 
@@ -71,15 +71,14 @@ func test_the_panel_shows_the_stock_in_card_style_with_prices() -> void:
 	p.sync(r)
 	assert_true(p.visible and p.is_open())
 	assert_eq(p.title_text(), tr("SHOP_TITLE"))
-	assert_eq(CardStyle.current, CardStyle.Look.FACET, "the shipped look")
 	for k in w.shop.offer.size():
 		var box := p.card_slot(k).panel_box()
-		assert_true(CardStyle.is_plain(box), "card %d: the cards' plain panel" % k)
-		assert_eq(box.corner_radius_top_left, CardStyle.CUT, "FACET's cut corner")
+		assert_true(box is StoneBox, "card %d: the pick's stone tablet (v0.8.0 MU)" % k)
+		assert_gt(box.cut, 0.0, "its cut corners")
 		var price := Shop.price(w, w.shop.offer[k])
 		assert_eq(p.card_price_text(k), str(price))
 		assert_eq(bool(p.entry(k)["enabled"]), price <= 40, "dimmed when unaffordable")
-	# v0.6.1 R1 (on purpose): the services are the owner's crystal plaques, coloured by the family table
+	# v0.6.1 R1 (on purpose): the services are plaques (v0.8.0 MU: carved stone), coloured by the family table
 	assert_eq(p.heal_tile.panel_box().plaque, Plaques.of_use(&"shop_heal"), "the heal: green")
 	assert_eq(p.reroll_tile.panel_box().plaque, Plaques.of_use(&"shop_reroll"), "the reroll: amber")
 	for t: ShopTile in [p.heal_tile, p.reroll_tile]:

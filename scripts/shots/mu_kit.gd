@@ -492,7 +492,7 @@ static func _card(dir: int, face: Dictionary, focused: bool) -> Control:
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tf := t.get_theme_font("font")
-	var ts := CrystalCard.fit_size(
+	var ts := TextFit.fit_size(
 		tf, face["title"].to_upper(), w, 64.0, [26, 24, 22, 20, 18, 17, 16], 2
 	)
 	t.add_theme_font_size_override("font_size", ts)
@@ -507,7 +507,7 @@ static func _card(dir: int, face: Dictionary, focused: bool) -> Control:
 	var d := label(dir, face["sentence"], 19, false, Color(TEXT[dir], 0.9))
 	d.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	d.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	var ds := CrystalCard.fit_size(
+	var ds := TextFit.fit_size(
 		d.get_theme_font("font"), face["sentence"], w, desc_h, [20, 19, 18, 17, 16, 15, 14, 13]
 	)
 	d.add_theme_font_size_override("font_size", ds)

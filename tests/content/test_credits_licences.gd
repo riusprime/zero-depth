@@ -26,7 +26,11 @@ func test_the_committed_list_matches_a_fresh_build() -> void:
 func test_every_manifest_font_and_addon_is_listed() -> void:
 	var l := load(SHIPPED) as LicenceListDefinition
 	var manifests: PackedStringArray = load(BUILDER).manifests("res://assets")
-	assert_gte(manifests.size(), 5, "the scan finds the manifests")
+	assert_gte(
+		manifests.size(),
+		2,
+		"the scan finds the manifests (audio, models; v0.8.0 MU retired the crystal UI art)"
+	)
 	for m in manifests:
 		var k := Array(l.sources).find(m.trim_prefix("res://"))
 		assert_gte(k, 0, "%s is in the credits" % m)
@@ -70,7 +74,7 @@ func test_the_credits_text_carries_the_generated_list() -> void:
 	var text := CreditsView.legal_text(
 		repo.get_def(&"credits", &"main"), repo.get_def(&"licences", &"generated")
 	)
-	assert_string_contains(text, "The owner's own art")
+	assert_string_contains(text, "Supplied by the owner")
 	assert_string_contains(text, "scripts/audio/generate_sfx.py")
 	assert_string_contains(text, "SIL OPEN FONT LICENSE")
 	assert_string_contains(text, "Gut 9.7.1")

@@ -3,9 +3,9 @@ extends PanelContainer
 ## One button of the shop panel (v0.5.0 SH): the heal, the reroll or a salvage row. A title, and under it a detail line
 ## and a price or refund with the shard icon. A disabled tile is dimmed and its price turns red when you can't afford
 ## it. A mouse click or hover reports itself; the panel decides.
-## v0.6.1 R1: the tile is one of the owner's crystal plaques (PlaqueBox): a salvage row in its card's family colour,
-## the heal green, the reroll amber, the cleanse violet (Plaques.USE_FAMILY); the focused tile is drawn bright. The
-## title and the detail step down in size until they fit the plaque's dark panel (en and es).
+## v0.6.1 R1: the tile is a stone plaque (PlaqueBox; crystal until v0.8.0 MU): a salvage row in its card's family
+## colour, the heal green, the reroll amber, the cleanse violet (Plaques.USE_FAMILY); the focused tile is drawn bright.
+## The title and the detail step down in size until they fit the plaque's dark panel (en and es).
 
 signal clicked
 signal hovered
@@ -72,7 +72,7 @@ func _init(p_name: String, width: float = 340.0) -> void:
 
 
 ## Shows the tile: `amount` shards (a cost, or a refund with `refund`), `poor` when it can't be afforded; `plaque` its
-## crystal plaque's colour.
+## plaque's colour.
 func show_tile(
 	p_title: String,
 	p_detail: String,
@@ -146,7 +146,7 @@ func _fit() -> void:
 		if wide <= box.x and bold.get_height(s) + row_h <= box.y:
 			title_size = s
 			break
-	detail_size = CrystalCard.fit_width(regular, detail.text, box.x - _price_w(), DETAIL_SIZES)
+	detail_size = TextFit.fit_width(regular, detail.text, box.x - _price_w(), DETAIL_SIZES)
 	title.add_theme_font_size_override("font_size", title_size)
 	detail.add_theme_font_size_override("font_size", detail_size)
 	title.custom_minimum_size = Vector2(box.x, 0)

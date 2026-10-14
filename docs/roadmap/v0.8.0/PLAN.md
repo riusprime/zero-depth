@@ -125,7 +125,7 @@ Answers go into the "Owner decisions" table below the same day.
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
 | RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | Part 1 done (system + 3 layouts); G2 asked |
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data | |
-| MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | |
+| MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
 MU (after its G2), BS and BL (after their G1s), BA, EM (when the models arrive). The lead writes the G1s and G2s

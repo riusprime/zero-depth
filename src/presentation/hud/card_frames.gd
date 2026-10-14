@@ -1,23 +1,17 @@
 class_name CardFrames
 extends RefCounted
-## The pick cards' crystal frames (v0.5.5 A4, owner: "two image for the new card select templates … the empty
-## templates you'll have to crop to use them as real cards"). The 12 frames are the owner's art, cropped by
-## scripts/art/crop_card_frames.py into assets/ui/cards/ (manifest.json lists each with its hash and size).
-##
-## A card's frame colour says its family (PLAN v0.5.5 "Card frame colours"). **This file is the one table to remap**:
-## FRAME says which frame a family wears, FAMILY_OF says which family each card is in. Rules on top of the table:
-## an epic card wears the epic frame, a cursed offer the curse frame; v0.5.5 AR (X1b): a legendary card (the boss's
-## tier, PickSlot tier LEGENDARY_TIER) wears the epic gold frame drawn brighter (frame_modulate) with a stronger glow.
-## A card missing from FAMILY_OF falls back to
-## its type's family (DEFAULT_BY_TYPE); tests/unit/presentation/test_card_frames.gd fails on a content card that is
-## missing here, so a new card gets a family on purpose.
+## The cards' colours by family (v0.5.5 A4 "Card frame colours"; the crystal frames that first wore them were retired
+## in v0.8.0 MU, owner O14: "we're just throwing away the shard cards"). A card's colour says its family: the stone
+## card's title and inlay groove (StoneCard), a plaque's inlay (Plaques), a wand tile's and a pip's ring, a Codex
+## tile's, and in the world a core's and an altar's light. **This file is the one table to remap**: FRAME says which
+## colour a family wears, FAMILY_OF says which family each card is in. Rules on top of the table: an epic card wears
+## the epic gold, a cursed offer the curse violet; v0.5.5 AR (X1b): a legendary card (the boss's tier, PickSlot tier
+## LEGENDARY_TIER) wears the gold with a paler title (LEGENDARY_TINT) and a stronger glow. A card missing from
+## FAMILY_OF falls back to its type's family (DEFAULT_BY_TYPE); tests/unit/presentation/test_card_frames.gd fails on a
+## content card that is missing here, so a new card gets a family on purpose.
 ## Presentation only (EI-07): nothing here changes an outcome.
 
-const DIR := "res://assets/ui/cards/"
-## The frames' size in the PNGs (px), every frame the same.
-const SIZE := Vector2(251, 505)
-
-## Families → frame colour (the owner may remap any row).
+## Families → colour id (the owner may remap any row).
 const FRAME := {
 	&"damage": &"red",
 	&"projectile": &"blue",  # projectiles and frost
@@ -33,7 +27,7 @@ const FRAME := {
 	&"trinket": &"indigo",
 }
 
-## Each frame's tint, sampled from its crystals: the card's title colour and the panel's hairline.
+## Each colour id's tint (first sampled from the retired crystal frames): the card's title colour and its inlays.
 const TINT := {
 	&"red": Color("#FF6A4F"),
 	&"blue": Color("#4FA8F0"),
@@ -185,17 +179,13 @@ const FAMILY_OF := {
 	&"shared_explosive": &"area",
 }
 
-## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold frame, overbright, its title a paler gold.
+## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold, its title a paler gold.
 const LEGENDARY_TIER := 4
 const LEGENDARY_TINT := Color("#FFF0A8")
-const LEGENDARY_BRIGHT := Color(1.45, 1.32, 1.05)
-const LEGENDARY_BRIGHT_IDLE := Color(1.2, 1.1, 0.9)
 
 ## A card missing from FAMILY_OF: by card type (WorldReader.CARD_MOD / CARD_ABILITY / CARD_STAT).
 const DEFAULT_BY_TYPE := {0: &"damage", 1: &"area", 2: &"economy"}
 const DEFAULT_FAMILY := &"economy"
-
-static var _cache := {}
 
 
 ## The family of card `id` of `type`, at `tier` (PickSlot.TIERS: 2 is epic), `cursed` for a cursed offer.
@@ -211,29 +201,10 @@ static func family(
 	return DEFAULT_BY_TYPE.get(type, DEFAULT_FAMILY)
 
 
-## The frame's modulate for a card of `tier`: a legendary frame is drawn overbright (bright gold), the others plain
-## (dimmed a little when not focused).
-static func frame_modulate(tier: int, focused: bool) -> Color:
-	if tier == LEGENDARY_TIER:
-		return LEGENDARY_BRIGHT if focused else LEGENDARY_BRIGHT_IDLE
-	return Color(1, 1, 1) if focused else Color(0.8, 0.8, 0.82)
-
-
-## The frame id (a colour) a family wears.
+## The colour id a family wears.
 static func frame_of(fam: StringName) -> StringName:
 	return FRAME.get(fam, FRAME[DEFAULT_FAMILY])
 
 
 static func tint(frame: StringName) -> Color:
 	return TINT.get(frame, Color.WHITE)
-
-
-static func path(frame: StringName) -> String:
-	return DIR + "frame_%s.png" % frame
-
-
-## The frame's texture (loaded once).
-static func texture(frame: StringName) -> Texture2D:
-	if not _cache.has(frame):
-		_cache[frame] = load(path(frame))
-	return _cache[frame]

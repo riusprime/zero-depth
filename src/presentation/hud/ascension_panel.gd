@@ -1,12 +1,12 @@
 class_name AscensionPanel
 extends Control
 ## v0.7.5 AP (owner N4): the Ascension portal's choice. While the sim waits on it (WorldReader.ascension_open), a
-## title, a line and three of the owner's crystal plaques, stacked: End the run (gold: the run is won, the recap),
-## Ascend (violet: the next loop, floor 1, your build kept, harder) and Not yet (silver: step back). It shows what
-## the sim offers and sends the player's choice as input (`picked` -> InputLatch.note_pick -> InputFrame.pick:
-## WorldReader.PICK_ASCEND_END, PICK_ASCEND_ASCEND, or PICK_CANCEL for Not yet); it decides nothing (EI-07).
-## Keyboard: 1/2/3 or arrows move the focus, Enter takes it, Esc is Not yet. Pad: d-pad / stick, A takes, B is Not
-## yet. A mouse click takes a plaque.
+## title, a line and three stone plaques (crystal until v0.8.0 MU), stacked: End the run (gold: the run is won, the
+## recap), Ascend (violet: the next loop, floor 1, your build kept, harder) and Not yet (silver: step back). It shows
+## what the sim offers and sends the player's choice as input (`picked` -> InputLatch.note_pick -> InputFrame.pick:
+## WorldReader.PICK_ASCEND_END, PICK_ASCEND_ASCEND, or PICK_CANCEL for Not yet); it decides nothing (EI-07). Keyboard:
+## 1/2/3 or arrows move the focus, Enter takes it, Esc is Not yet. Pad: d-pad / stick, A takes, B is Not yet. A mouse
+## click takes a plaque.
 
 signal picked(value: int)
 
@@ -14,7 +14,7 @@ const CARD_W := 860.0
 const CARD_H := 132.0
 const TITLE_GOLD := Color("#FFE6A3")
 const LINE_COLOR := Color(1, 1, 1, 0.8)
-## Each choice: node name, plaque (a colour id of assets/ui/plaques), value sent, title and line keys.
+## Each choice: node name, plaque (a colour id, Plaques), value sent, title and line keys.
 const CHOICES := [
 	["End", &"gold", WorldReader.PICK_ASCEND_END, "UI_ASCEND_END", "UI_ASCEND_END_LINE"],
 	["Ascend", &"violet", WorldReader.PICK_ASCEND_ASCEND, "UI_ASCEND_GO", "UI_ASCEND_GO_LINE"],

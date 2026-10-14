@@ -3,7 +3,7 @@ extends PanelContainer
 ## The gamble shrine's result card (v0.3.0 L19). The sim grants the stat at once; this card replays it: a short spin
 ## through the stats the shrine could still give (slowing down, frame time, cosmetic only), landing on the one won,
 ## then its line ("+6 % melee damage") for a moment before it fades. It decides nothing about the game.
-## v0.6.1 R1: the card is one of the owner's crystal plaques (PlaqueBox) in the stat's family colour
+## v0.6.1 R1: the card is a stone plaque (PlaqueBox; crystal until v0.8.0 MU) in the stat's family colour
 ## (Plaques.GAMBLE_FAMILY → the card frames' table), dimmer while it spins; the line steps down in size to fit.
 
 const SPIN_S := 0.9
@@ -158,7 +158,7 @@ static func text_width() -> float:
 
 ## The largest line size at which `text` fits one line of the text column.
 static func fit_line(text: String) -> int:
-	return CrystalCard.fit_width(HudStyle.font(true), text, text_width(), LINE_SIZES)
+	return TextFit.fit_width(HudStyle.font(true), text, text_width(), LINE_SIZES)
 
 
 ## True when `text` fits one line of the text column at its fitted size, under the title (tests).

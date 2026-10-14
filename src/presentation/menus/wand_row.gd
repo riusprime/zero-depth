@@ -1,14 +1,15 @@
 class_name WandRow
 extends Control
 ## The wand as a row of slots (v0.6.5 WN2; docs/design/WAND.md rule 4), shared by the pause menu's Build page and the
-## Swap panel. Each held card is a Cold-glass tile (MenuStyle) with its card family's frame colour along the top
-## (CardFrames), its icon (ItemIcons), its name and its level; an empty slot is a dim tile. A trigger card cuts the
-## row: a cold-glass divider stands after it, and under the row a bracket per part of the wand says what it is ("the
-## shot you fire", then "cast on hit →" under the cards the trigger casts). It draws a wand read (WorldReader.wand(),
-## or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a card leaving, a new card);
-## it decides nothing (EI-07).
-## Mouse: a press on a tile and a release on another is a drag (`tile_dropped`); a press and release on the same tile
-## is a click (`tile_clicked`); hovering a tile reports it (`tile_hovered`). The pages turn those into moves.
+## Swap panel. v0.8.0 MU (Ember stone, MenuStyle): each held card is a small carved stone tablet with its card
+## family's colour (CardFrames) as the glowing groove at its foot, its icon in a socket with an inlay ring in its
+## element's colour (InlaySocket), its name and its level; an empty slot is a dim, unlit tablet. A trigger card cuts
+## the row: a glowing ember groove stands after it, and under the row a bracket per part of the wand says what it is
+## ("the shot you fire", then "cast on hit →" under the cards the trigger casts). It draws a wand read
+## (WorldReader.wand(), or a preview from WorldReader.wand_moved) and the page's marks (focus, the card held, a card
+## leaving, a new card); it decides nothing (EI-07). Mouse: a press on a tile and a release on another is a drag
+## (`tile_dropped`); a press and release on the same tile is a click (`tile_clicked`); hovering a tile reports it
+## (`tile_hovered`). The pages turn those into moves.
 
 signal tile_clicked(k: int)
 signal tile_dropped(from: int, to: int)
@@ -22,6 +23,8 @@ const CUT := 34.0
 const LIFT := 14.0
 const BRACKET_H := 52.0
 const NAME_SIZE := 15
+## The icon's socket (px).
+const SOCKET := 48.0
 const SMALL_SIZE := 13
 const BRACKET_SIZE := 14
 ## A press that moves this far (px) before its release is a drag.
@@ -47,7 +50,7 @@ var fresh := -1
 var _wand := {}
 var _slots := 0
 var _tiles: Array[PanelContainer] = []
-var _icons: Array[ItemIconView] = []
+var _sockets: Array[InlaySocket] = []
 var _keys: Array[Label] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
@@ -74,7 +77,7 @@ func _init() -> void:
 		b.max_lines_visible = 2
 		add_child(b)
 		_brackets.append(b)
-	for k in _tiles.size():  # every tile wears the glass look from the start
+	for k in _tiles.size():  # every tile wears the stone look from the start
 		_style(k)
 
 
@@ -94,8 +97,8 @@ func _make_tile(k: int) -> void:
 	key.text = str(k + 1)
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	box.add_child(key)
-	var icon := ItemIconView.new()
-	icon.custom_minimum_size = Vector2(40, 40)
+	var icon := InlaySocket.new()
+	icon.custom_minimum_size = Vector2(SOCKET, SOCKET)
 	icon.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	box.add_child(icon)
 	var nm := make_label(NAME_SIZE, true, MenuStyle.TEXT)
@@ -109,7 +112,7 @@ func _make_tile(k: int) -> void:
 	t.mouse_entered.connect(func() -> void: tile_hovered.emit(k))
 	add_child(t)
 	_tiles.append(t)
-	_icons.append(icon)
+	_sockets.append(icon)
 	_keys.append(key)
 	_names.append(nm)
 	_levels.append(lv)
@@ -212,15 +215,15 @@ func _refresh() -> void:
 			if k == fresh:
 				_levels[k].text = tr("UI_WAND_NEW")
 			var col := AbilityIcons.color(id) if ability else ItemLooks.color_of_id(id)
-			_icons[k].set_item(id, col)
-			_icons[k].visible = true
+			_sockets[k].show_item(id, col, col)
+			_sockets[k].visible = true
 			var tint := CardFrames.tint(CardFrames.frame_of(CardFrames.family(id, int(c["type"]))))
 			t.set_meta(&"tint", tint)
 			t.set_meta(&"empty", false)
 		else:
 			_names[k].text = tr("UI_WAND_EMPTY")
 			_levels[k].text = ""
-			_icons[k].visible = false
+			_sockets[k].visible = false
 			t.set_meta(&"tint", Color(MenuStyle.DIM, 0.3))
 			t.set_meta(&"empty", true)
 		x += TILE.x
@@ -250,7 +253,7 @@ func _refresh() -> void:
 		l.position = Vector2(float(span[0]), LIFT + TILE.y + 14.0)
 		l.size = Vector2(w, BRACKET_H - 14.0)
 		l.add_theme_color_override(
-			"font_color", MenuStyle.DIM if b == 0 else Color(MenuStyle.GLASS, 0.9)
+			"font_color", MenuStyle.DIM if b == 0 else Color(MenuStyle.EMBER, 0.95)
 		)
 	custom_minimum_size = Vector2(maxf(x, 0.0), LIFT + TILE.y + BRACKET_H)
 	size = custom_minimum_size
@@ -260,46 +263,49 @@ func _refresh() -> void:
 
 func _style(k: int) -> void:
 	var t := _tiles[k]
-	var tint: Color = t.get_meta(&"tint", MenuStyle.GLASS)
+	var tint: Color = t.get_meta(&"tint", MenuStyle.EMBER)
 	var empty: bool = t.get_meta(&"empty", false)
-	var box := MenuStyle.glass_panel(Vector2(8, 6))
-	box.border_color = Color(tint, 0.9)
-	box.border_width_top = 3
-	if empty:
-		box.bg_color = Color(MenuStyle.PANEL, 0.3)
-		box.border_width_top = 1
-	if k == focus or k == held:  # the focused or held tile: the glass wash and a cold rim
-		box.bg_color = Color(MenuStyle.GLASS, 0.22 if k == held else 0.16)
-		box.border_color = MenuStyle.GLASS
-		box.set_border_width_all(2 if k == held else 1)
-		box.border_width_top = 3
-	if k == fresh:  # the incoming card: a warm rim, so it reads as the new one
-		box.border_color = CardFrames.tint(&"gold")
-		box.set_border_width_all(2)
-		box.border_width_top = 3
+	var lit := k == focus or k == held
+	var box := MenuStyle.tile_slab(tint, lit, empty, 5 + k * 7, Vector2(8, 6))
+	if k == held:  # the card held: lifted, with an ember rim
+		box.rim = MenuStyle.EMBER
+	if k == fresh:  # the incoming card: a gold rim, so it reads as the new one
+		box.rim = EmberStone.GOLD
 	t.add_theme_stylebox_override("panel", box)
+	_sockets[k].glow = 1.0 if lit else 0.0
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
+
+
+## The tile's stone tablet (tests: the look, the focus).
+func tile_box(k: int) -> StoneBox:
+	return _tiles[k].get_theme_stylebox("panel") as StoneBox
 
 
 func _draw() -> void:
 	var top := LIFT
 	var bottom := LIFT + TILE.y
-	for cx in _cut_xs:  # a trigger cuts the row: a cold-glass divider with a small arrow head
-		draw_line(
-			Vector2(cx, top - 6.0), Vector2(cx, bottom + 6.0), Color(MenuStyle.GLASS, 0.85), 2.0
-		)
+	var ember := MenuStyle.EMBER
+	for cx in _cut_xs:  # a trigger cuts the row: a glowing ember groove with an arrow head
+		var a := Vector2(cx, top - 4.0)
+		var b := Vector2(cx, bottom + 4.0)
+		draw_line(a, b, Color(ember, 0.12), 9.0)
+		draw_line(a, b, Color(ember, 0.22), 5.0)
+		draw_line(a, b, Color(ember, 0.92), 2.0)
 		var mid := (top + bottom) * 0.5
 		var head := PackedVector2Array(
-			[Vector2(cx + 9, mid), Vector2(cx - 3, mid - 8), Vector2(cx - 3, mid + 8)]
+			[Vector2(cx + 11, mid), Vector2(cx - 4, mid - 10), Vector2(cx - 4, mid + 10)]
 		)
-		draw_colored_polygon(head, Color(MenuStyle.GLASS, 0.85))
+		draw_colored_polygon(head, ember)
+		draw_colored_polygon(
+			PackedVector2Array([head[0], head[1], Vector2(cx, mid)]), Color(1, 0.95, 0.85, 0.35)
+		)
 	for span: Array in _spans:  # the brackets under each part of the wand
 		var a := float(span[0]) + 4.0
 		var b := float(span[1]) - 4.0
 		if b <= a:
 			continue
 		var y := bottom + 8.0
-		var c := MenuStyle.DIM if int(span[2]) == 0 else Color(MenuStyle.GLASS, 0.7)
+		var c := MenuStyle.DIM if int(span[2]) == 0 else Color(ember, 0.75)
 		draw_line(Vector2(a, y - 5.0), Vector2(a, y), c, 1.0)
 		draw_line(Vector2(a, y), Vector2(b, y), c, 1.0)
 		draw_line(Vector2(b, y - 5.0), Vector2(b, y), c, 1.0)
