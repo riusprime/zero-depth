@@ -11,12 +11,14 @@ not in `main` yet).
 | TG | Normal enemies no longer paint red lanes and discs when they wind up; only the Arc Caster's rune and the Mine Layer's mines stay on the ground. Chargers, Hatchlings, Swarmers, Splitters, Splitlings, Shield Bearers, Wardens, Snipers and Needles crouch, glow and flash just before they strike, facing the attack (steady under reduced motion). Evidence [TELEGRAPHS](evidence/TELEGRAPHS.md) | `a1c688f` (branch `v080-tg`) (`v080-tg`) |
 | PF | Spread + Split + Explosive no longer drops the frame: a few explosions look as before; under load nearby ones merge and the extra ones thin (no light of their own); past 96 live bolts the rest fly as plain darts; at most 256 player shots alive (`data/tuning/sim.tres`). Probe tick + frame avg 26-37 ms → 8-9.4 ms (target ~12 ms met); p95 16.5-20.1 ms (missed, reported). Owner's fps: OWNER ONLY ([`evidence/PERF.md`](evidence/PERF.md)) | `f74e987` (branch `v080-pf`) |
 | AV (part 1) | Boss and enemy orbs are lit 3D bodies, each with its own shape (the Gatekeeper's tumbling ember stones, the Warlord's spear heads, the Brood Mother's wobbling acid globs, the Hive Lens's faceted prisms, the Siege Engine's smoking embers, the Foundry's dripping molten drops, the casters' and drones' swirling orbs) and a trail; the Gatekeeper's shock lanes crack the ground while they track and lock, then strike as rows of stone spikes with debris, dust and a hot flash that sink back. Procedural textures (the CC0 sites were blocked). Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) | `fcd7fec` (branch `v080-av`) |
+| BA | The six bosses move with keyframed clips (code-made, owner Q4) instead of a few code sways: every attack winds up with anticipation, lands its strike pose on the very tick the hit resolves (the clip's time is driven by the sim's windup / active / recovery ticks; a multi-marker slam re-strikes on each marker's tick) and recovers; idle breathing, walks matched to speed, a shielded pose (the Gatekeeper curls into a boulder for its Rock Rings), a flinch, a reel-and-slump stagger, a roar at each phase gate, a rise with the boss bar, and a collapse when it dies (all six now; only the Warlord fell before). Owner clips with the same name in the model's AnimationPlayer replace the code clips. Reduced motion: same poses, no tremble or overshoot. Evidence [BOSS_ANIMATIONS](evidence/BOSS_ANIMATIONS.md), sheets in `evidence/ba_shots/`; the feel is OWNER ONLY | this commit (branch `v080-ba`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
 - TG: none (`telegraph()` is not hashed; `tests/golden` passed unchanged)
 - PF: none (the shot cap's per-tick fields aren't hashed; `tests/golden` passed unchanged)
 - AV: none (presentation only; `tests/golden` 2/2 unchanged)
+- BA: none (presentation, plus two read-only WorldReader reads; `tests/golden` 2/2 unchanged)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -35,6 +37,17 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: BA (agent, branch `v080-ba` from `0dfa2c7`): `src/presentation/world_view/boss_anim/` (BossClip: keyed
+  tracks of bone / body turn, shift, stretch and named parameters with eases and SETTLE overshoot keys;
+  BossAnimator: additive layers idle / walk / action (+ crossfade) / shielded / flinch / stagger / roar / rise /
+  death, and the owner-clip hook; one clip library per boss, 13-14 clips each). BossAvatar drives the action clip's
+  time from the sim (new `WorldReader.boss_attack_ticks`, `STATE_GATE`; the gate's and intro's progress) and every
+  owner's model now plays a death (ActorViews keeps it 1.6 s). The avatars' old per-move pose code for the models is
+  replaced by the clips (the code-built fallback bodies are unchanged). Tests: new `test_boss_animations.gd` (15);
+  `test_boss_models.gd`, `test_boss_models_2.gd`, `test_boss_rigs.gd` follow the data's real moves and the deaths.
+  Shots `scripts/shots/boss_anims.gd` (one boss per run, llvmpipe). Run locally: lint, boss/avatar presentation
+  158/158, arch + golden 6/6, boss e2e 9/9, `test_boss_markers` + `test_bosses_2` 30/30. Not run locally: the full
+  suite. Feel: OWNER ONLY.
 - 2026-10-14: MU G2 (agent, branch `v080-mu` from `34742a1`): three menu-and-card directions (A Salvage, B Ember stone,
   C Field kit) drawn in code by tool scripts only (`scripts/shots/mu_kit.gd`, `mu_shaders.gd`, `mu_shots.gd`,
   `mock_main_menu.gd`, `mock_pick.gd`, `mock_build.gd`), each on the main menu, the 3-card pick and the Build page at

@@ -88,6 +88,8 @@ const SPELL_SPREAD := EnemyAi.Spell.SPREAD
 const SPELL_RUNE := EnemyAi.Spell.RUNE
 ## A boss knocked off balance by a full stagger meter (BossAi).
 const STATE_STAGGERED := BossAi.STAGGERED
+## v0.8.0 BA: a boss in its phase gate (BossGates; boss_gate_permille), for its roar.
+const STATE_GATE := BossAi.GATE
 ## How far from a gated boss its adds rise (m).
 const GATE_ADD_RING_M := BossGates.ADD_RING_M
 ## Boss moves, for telegraph()["move"] and boss_move() (views pick an animation from them).
@@ -1212,6 +1214,17 @@ func boss_phase_thresholds(i: int) -> PackedInt32Array:
 func boss_move(i: int) -> int:
 	var atk := BossAi.attack_of(_w, i)
 	return atk.move if atk != null else -1
+
+
+## v0.8.0 BA: the timing of boss i's attack in progress, for its animation clip (the strike pose lands on the first
+## active tick): Vector4i(windup ticks, active ticks, recover ticks, the ticks between strikes when it strikes more
+## than once (a `marks` or `row_lanes` attack's later markers), else 0); Vector4i.ZERO with no attack.
+func boss_attack_ticks(i: int) -> Vector4i:
+	var atk := BossAi.attack_of(_w, i)
+	if atk == null:
+		return Vector4i.ZERO
+	var gap := atk.mark_gap_ticks if atk.count > 1 and BossDodge.is_marker_move(atk.move) else 0
+	return Vector4i(atk.windup_ticks, atk.active_ticks, atk.recover_ticks, gap)
 
 
 ## Ticks into boss i's current state, for its animation.

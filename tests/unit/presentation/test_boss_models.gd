@@ -70,21 +70,45 @@ func test_whole_body_motion_and_glow_change_no_shader() -> void:
 				"tick": t + 1,
 				"pos": Vector2.ZERO,
 				"state": WorldReader.STATE_WINDUP,
-				"move": WorldReader.MOVE_SLAM_RING,
+				"move": WorldReader.MOVE_MARKS,  # v0.8.0 BA: the Fist Slam (its data's move)
 				"windup": float(t) / 40.0
 			}
 		)
 		a.advance(DT)
 	assert_gt(a.glow_amount(), 0.025, "the windup glows")
 	assert_ne(a.pivot.transform, rest, "and leans")
-	a.apply_state({"tick": 41, "pos": Vector2.ZERO, "state": WorldReader.STATE_ACTIVE, "move": 0})
+	a.apply_state(
+		{
+			"tick": 41,
+			"pos": Vector2.ZERO,
+			"state": WorldReader.STATE_ACTIVE,
+			"move": WorldReader.MOVE_MARKS
+		}
+	)
 	a.advance(DT)
 	assert_gt(a.pivot.position.x, 0.1, "the slam lunges forward")
 	assert_eq(DamageFlashKeys.of(a), before, "no shader changed")
 	var s := _avatar(SiegeEngineAvatar)
-	s.apply_state({"tick": 1, "pos": Vector2.ZERO, "state": WorldReader.STATE_WINDUP, "move": 9})
-	s.advance(DT)
-	s.apply_state({"tick": 2, "pos": Vector2.ZERO, "state": WorldReader.STATE_ACTIVE, "move": 9})
+	# v0.8.0 BA: the Rail (its data's `lanes`) throws it back on the shot.
+	for t in 10:
+		s.apply_state(
+			{
+				"tick": t + 1,
+				"pos": Vector2.ZERO,
+				"state": WorldReader.STATE_WINDUP,
+				"move": WorldReader.MOVE_LANES,
+				"windup": 0.9
+			}
+		)
+		s.advance(DT)
+	s.apply_state(
+		{
+			"tick": 11,
+			"pos": Vector2.ZERO,
+			"state": WorldReader.STATE_ACTIVE,
+			"move": WorldReader.MOVE_LANES
+		}
+	)
 	s.advance(DT)
 	assert_lt(s.pivot.position.x, -0.1, "the turret kicks back")
 

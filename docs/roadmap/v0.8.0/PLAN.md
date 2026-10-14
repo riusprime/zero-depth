@@ -114,7 +114,7 @@ Answers go into the "Owner decisions" table below the same day.
 | EC | Enemy colours per kind | O2 | Q1, then G2 | presentation only | |
 | EM | Enemy model prompts, then the owner's models in game | O3 | Q2, then the owner's files | art + presentation | |
 | BS | One signature mechanic per boss | O5 | G1 BOSS_SIGNATURES | sim + tests | |
-| BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | |
+| BA | Boss animation rework | O6 | Q4 | presentation (+ assets) | Done (`v080-ba`: keyframed clips per boss, timed by the sim's attack phase; [`evidence/BOSS_ANIMATIONS.md`](evidence/BOSS_ANIMATIONS.md)) |
 | AV | Attack visuals in 3D: stone spikes, 3D orbs, textured boss ground attacks | O7, O8 | Q5 | presentation + assets | Part 1 done (`v080-av`: 3D orbs, the Gatekeeper's spikes and cracked lanes; procedural textures); part 2: the other bosses' ground attacks |
 | BL | Blade combinations | O10 | G1 BLADE_AUDIT | sim + data + tests | |
 | RT | Designed rooms: 3 layouts per size, turned and mirrored by the generator, per-biome pieces | O12 | G2 on the first 3 | sim (map) + data + presentation | |
