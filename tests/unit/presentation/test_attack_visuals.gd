@@ -367,7 +367,9 @@ func test_the_shock_lanes_crack_the_ground_while_tracking_and_locked() -> void:
 	)
 
 
-func test_the_fist_slams_keep_their_flash() -> void:
+## v0.8.0 AV part 2: the fist slams' locked circles flash in the stone look (BossStrikeLooks), not the shock lanes'
+## cracked ground and not flat red.
+func test_the_fist_slams_flash_in_their_own_look() -> void:
 	var w := BossLab.world()
 	var i := BossLab.ready_boss(w, &"gatekeeper", Vector2.ZERO)
 	w.actors.set_pos(0, Vector2(6, 0))
@@ -379,5 +381,10 @@ func test_the_fist_slams_keep_their_flash() -> void:
 	add_child_autofree(tv)
 	tv.sync(WorldReader.new(w))
 	assert_false(TelegraphViews.is_cracked(WorldReader.new(w).telegraph(i)))
-	for m in _fill_materials(tv):
-		assert_true(m is StandardMaterial3D, "the circles flash as before")
+	var mats := _fill_materials(tv)
+	assert_gt(mats.size(), 0)
+	for m in mats:
+		assert_true(m is ShaderMaterial, "the circles flash styled")
+		assert_eq(
+			(m as ShaderMaterial).shader, BossStrikeLooks.mark_shader(), "not the cracked lanes"
+		)

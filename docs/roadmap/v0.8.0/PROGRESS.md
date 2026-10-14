@@ -11,12 +11,14 @@ not in `main` yet).
 | TG | Normal enemies no longer paint red lanes and discs when they wind up; only the Arc Caster's rune and the Mine Layer's mines stay on the ground. Chargers, Hatchlings, Swarmers, Splitters, Splitlings, Shield Bearers, Wardens, Snipers and Needles crouch, glow and flash just before they strike, facing the attack (steady under reduced motion). Evidence [TELEGRAPHS](evidence/TELEGRAPHS.md) | `a1c688f` (branch `v080-tg`) (`v080-tg`) |
 | PF | Spread + Split + Explosive no longer drops the frame: a few explosions look as before; under load nearby ones merge and the extra ones thin (no light of their own); past 96 live bolts the rest fly as plain darts; at most 256 player shots alive (`data/tuning/sim.tres`). Probe tick + frame avg 26-37 ms → 8-9.4 ms (target ~12 ms met); p95 16.5-20.1 ms (missed, reported). Owner's fps: OWNER ONLY ([`evidence/PERF.md`](evidence/PERF.md)) | `f74e987` (branch `v080-pf`) |
 | AV (part 1) | Boss and enemy orbs are lit 3D bodies, each with its own shape (the Gatekeeper's tumbling ember stones, the Warlord's spear heads, the Brood Mother's wobbling acid globs, the Hive Lens's faceted prisms, the Siege Engine's smoking embers, the Foundry's dripping molten drops, the casters' and drones' swirling orbs) and a trail; the Gatekeeper's shock lanes crack the ground while they track and lock, then strike as rows of stone spikes with debris, dust and a hot flash that sink back. Procedural textures (the CC0 sites were blocked). Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) | `fcd7fec` (branch `v080-av`) |
+| AV (part 2) | Every other boss ground attack keeps its dull-then-bright marker but fills it with its own ground (stone cracks, steel scratches, bubbling acid, gold light, hazard stripes, molten seams) instead of flat red, and strikes in 3D on the sim's strike tick: the Gatekeeper's fist slams blow craters and its sweep kicks a dust arc; the Warlord's spears thrust up the lanes, its lunge scorches a skid, its bash swings a steel arc, its javelins plant in the circles; the Brood Mother's eggs cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts; the Hive Lens fires a 3D beam and a ring of light; the Siege Engine's shells fall and explode, its rail streaks and scorches, its shockwave rolls out as dust; the Foundry pours molten metal that cools to a crust, blasts steam and sets lanes burning. Evidence [ATTACK_VISUALS](evidence/ATTACK_VISUALS.md) part 2 | the `v0.8.0 Step AV2` commit (branch `v080-av2`) |
 
 ## Goldens changed on purpose
 - LS: none; loop 1 is unscaled, `tests/golden` 2/2 and `test_modifier_equivalence.gd` 3/3 pass unchanged
 - TG: none (`telegraph()` is not hashed; `tests/golden` passed unchanged)
 - PF: none (the shot cap's per-tick fields aren't hashed; `tests/golden` passed unchanged)
 - AV: none (presentation only; `tests/golden` 2/2 unchanged)
+- AV part 2: none (presentation only; `tests/golden` 2/2 unchanged)
 
 ## Gates (owner)
 | Gate | Asked | Answer | Date |
@@ -35,6 +37,16 @@ not in `main` yet).
 - none
 
 ## History
+- 2026-10-14: AV part 2 on `v080-av2` (agent, from `0dfa2c7`): `BossStrikeLooks` (a look per boss kind and move;
+  every ground attack in `data/bosses` has one), styled marker fills in `TelegraphViews` (tracking dull and unfilled,
+  locked hot; edges unchanged), and `BossStrikeViews` (+ `BossStrikeShapes`, `BossStrikeMeshes`, `BossStrikeFx`)
+  drawing each strike on the sim's strike tick from WorldReader, pooled (six capped MultiMeshes, 24 strikes), through
+  VfxCore's sprite, light and decal budgets and `VfxLayer.burst` / `BurstBudget`. The shots showed MultiMesh instance
+  colours coming through white in these shaders and a bright molten bed turning cream under the stage's exposure: the
+  colours now ride in the custom data and the bed is dimmer (seams hot). New tests `test_attack_visuals_2.gd` (11) and
+  e2e `test_e2e_boss_strikes.gd` (1); part 1's fist-slam test follows the styled flash. Run locally: lint clean (831
+  files); presentation set 148/148; `tests/arch` 4/4; `tests/golden` 2/2; `tests/content` 133/133; boss e2e 11/11.
+  Shots `scripts/shots/attack_visuals_2.gd` (24, llvmpipe). Not run locally: the full suite. The look is OWNER ONLY.
 - 2026-10-14: MU G2 (agent, branch `v080-mu` from `34742a1`): three menu-and-card directions (A Salvage, B Ember stone,
   C Field kit) drawn in code by tool scripts only (`scripts/shots/mu_kit.gd`, `mu_shaders.gd`, `mu_shots.gd`,
   `mock_main_menu.gd`, `mock_pick.gd`, `mock_build.gd`), each on the main menu, the 3-card pick and the Build page at

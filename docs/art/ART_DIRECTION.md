@@ -210,6 +210,19 @@ stone spikes with red-hot cracks, thrown debris and dust, then sink back; a crac
 generator or CC0 images may replace them, and an owner model `stone_spike` (manifest-listed, at
 `assets/models/fx/stone_spike.glb`) replaces the code spike.
 
+**The other bosses' ground attacks (v0.8.0 AV part 2, owner O7: "so the attacks look real").** Each marker fills
+with its boss's ground pattern (Gatekeeper stone cracks, Warlord steel scratches, Brood Mother bubbling acid, Hive
+Lens shimmering gold light over violet, Siege Engine amber hazard stripes, Foundry molten seams) under the same dull
+then bright edge. Strikes: the Gatekeeper's fist slam blows a crater (rocks thrown, a dust shockwave, a hot cracked
+bowl) and its sweep kicks a dust arc; the Warlord's spear lines thrust rows of spears up the lanes, its lunge leaves a
+scorched skid with sparks, its shield bash a steel arc, its javelin rain plants javelins; the Brood Mother's eggs
+cast a growing shadow then splat acid, its leap cracks the ground, its burrow erupts as a ring of dirt and rock; the
+Hive Lens fires a 3D beam (a noise-lit tube) down the locked line and its flare is a ring of light; the Siege
+Engine's shells fall and explode (fireball, shrapnel, scorched crater), its rail fires a white-hot streak that
+leaves a scorched line, its shockwave rolls out as a dust wall; the Foundry pours molten metal down its lanes that
+cools from hot seams to a dark crust, its vent blasts a ring of steam and heat, its firestorm sets the lanes burning.
+The glows stay well off the hero's cyan. Procedural, like part 1.
+
 **Shard look in the world (v0.6.1 SW, owner R3).** World pieces that take the crystal-shard look of the owner's card
 and plaque art are built by one builder, `ShardMesh` (`src/presentation/world_view/shard_mesh.gd`): faceted shards
 with cel facet tones, a dark inverted-hull outline, lit by the scene with a little emission, a soft additive glow, and
