@@ -157,6 +157,7 @@ Also: `godot --headless --path . -s scripts/content/build_patch_notes.gd` (after
 | The five design pillars (the audit framework) | [`docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md`](docs/design/ROGUELIKE_AUDIT_FRAMEWORK.md) |
 | Palettes, shapes, lighting, art requests | [`docs/art/ART_DIRECTION.md`](docs/art/ART_DIRECTION.md) |
 | PLAN, PROGRESS, evidence, patch-note templates | [`docs/process/TEMPLATES.md`](docs/process/TEMPLATES.md) |
+| Everything waiting on the owner (art, decisions, tests); keep it current | [`docs/OWNER_TODO.md`](docs/OWNER_TODO.md) |
 
 ## Glossary
 
