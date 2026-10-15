@@ -67,6 +67,8 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D15 | Merge v0.7.5 (PR riusprime/zero-depth#6) and then v0.8.0 into `main` | waiting for your test | — |
 | D16 | The Gun's new feel (O18): the blue shade (kept off the Arc Caster's periwinkle shots), whether its range should shrink with the slower speed (kept at 10.8 m), and the stacked Gun builds' damage rising again with the bigger shot (Spread + Split + Explosive +12 %; with Twin +44 %) | as built | GUN_FEEL.md "For the owner" |
 | D17 | The blue pulse costs more to draw than the old squares: the stacked-Gun test went from 7.7 to 8.1 ms a frame (with Twin 8.4 to 11.1 ms), still under the 12 ms target on average. Keep the look, or simplify it under heavy fire | keep | GUN_FEEL.md |
+| D18 | **Blade hit-stop:** the game already freezes on every landed Blade swing (3, 3, 4 and 7 frames by combo step, since v0.1.0) and GF3 added the 2-frame view freeze you asked for on top. Keep both, keep only the game's, or shorten the game's to 2 frames | both | BLADE_FEEL.md "Found" |
+| D19 | The Blade's slash impact reads faint in the renders (big bodies hide it, its sparks wash out on pale sand and the white flash). Bigger / brighter? | as built | BLADE_FEEL.md |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 
