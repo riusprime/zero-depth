@@ -112,7 +112,8 @@ unchanged at the clear. The minimap keeps showing the whole layout and marks eac
   by sim ticks. **Ground marks never take a hostile hue:** a zone's patch, a lob's landing circle and the flat fill of
   a ring or burst pass through `AttackFormLooks.ground_safe`, which leans a colour in the telegraphs' red-orange /
   red / magenta band toward the player's cool core; only light that rises off the floor carries the heat edge.
-  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and dart.
+  Plain attacks (no element, cue or weight) add nothing over the v0.5 blade and the hero's shot (since v0.8.0 GF1 a
+  blue pulse, HeroPulseViews, in place of the dart).
 - **The ability modifiers' attacks** (v0.6.0 MX2) draw through the existing ability views from sim numbers: bombs and
   their ground circles (`AbilityVisuals`), the drones and orbit blades, the patches by kind (`ElementVisuals`: fire
   orange, Napalm red, Arc Field's shock field pale blue, a hook's zone pale white) and each growing ring (the RING

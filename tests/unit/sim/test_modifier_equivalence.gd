@@ -8,7 +8,9 @@ extends GutTest
 ## v0.6.0 MX2: the abilities became weapon modifiers on purpose (owner B7), so the two cases that hold abilities
 ## (blade_all: Flame Trail and Orbit Blades; gun_all: Drone Buddy and Arc Field) were re-recorded on the MX2 code with
 ## the same generator; the other 20 cases still match their v0.5 recording, unchanged (PROGRESS "Goldens changed on
-## purpose").
+## purpose"). v0.8.0 GF1: the Gun's basic shot changed on purpose (owner O18: bigger, slower to fire, harder-hitting,
+## a little slower; the Gun's heat a shot x9/7), so the twelve cases that hold the Gun were re-recorded with the same
+## generator; the ten Blade-only cases still match, unchanged.
 
 const FIXTURE := "res://tests/golden/fixtures/modifier_equivalence.json"
 

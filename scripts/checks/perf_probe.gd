@@ -13,12 +13,12 @@ extends SceneTree
 ## v0.8.0 BL (BLADE_AUDIT B6): it also tallies the damage the dummies took (DpsTally, the Playground's DPS meter's
 ## count from the event log) and prints it as damage per second, overall and per dummy, with the top sources.
 ## --weapon=blade runs the Blade (Primary pressed every tick, the dummies 1.4-2.3 m away); --cards=a,b,c grants these
-## cards (in this wand order) instead of the default build.
+## cards (in this wand order) instead of the default build; --cards=none grants none (v0.8.0 GF1: the plain weapon).
 ## v0.8.0 PF2: it also counts the ticks where a capped attack's throw was cut short (alive_capped: Blade Storm's 36).
 ## Writes only under build/ (build/perf/perf_probe.txt) and prints the same report.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
 ##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
-##   [-- --tag=name]
+##   [-- --tag=name] [-- --on-aim]
 
 const OUT_DIR := "res://build/perf"
 const WARMUP_TICKS := 60
@@ -35,6 +35,8 @@ var _cap := 0
 var _weapon := &"gun"
 var _cards: Array[StringName] = []
 var _tag := ""
+## v0.8.0 GF1: --on-aim puts the dummies on the aim line (4 m out, then 1.5 m apart), so one dummy takes every shot.
+var _on_aim := false
 var _tally := DpsTally.new()
 var _world: World
 var _api: PlaygroundApi
@@ -69,6 +71,8 @@ func _initialize() -> void:
 		elif a.begins_with("--cards="):
 			for id in a.get_slice("=", 1).split(",", false):
 				_cards.append(StringName(id))
+		elif a == "--on-aim":
+			_on_aim = true
 		elif a.begins_with("--tag="):
 			_tag = a.get_slice("=", 1)
 	_total = WARMUP_TICKS + _seconds * 60
@@ -83,6 +87,8 @@ func _initialize() -> void:
 	var cards: Array[StringName] = [&"gun_spread", &"split_shot", &"shared_explosive"]
 	if not _cards.is_empty():
 		cards = _cards
+	if _cards == [&"none"]:  # v0.8.0 GF1: the plain weapon, no cards (the Gun's base DPS)
+		cards = []
 	if _twin:
 		cards.append(&"gun_twin")
 	for id in cards:
@@ -93,6 +99,8 @@ func _initialize() -> void:
 		var at := hero + Vector2(4.0 + 1.5 * (k / 3), -2.0 + 2.0 * (k % 3))
 		if _weapon == &"blade":  # v0.8.0 BL: within a slash's reach
 			at = hero + Vector2(1.4 + 0.9 * (k / 3), -1.0 + 1.0 * (k % 3))
+		if _on_aim:
+			at = hero + Vector2(4.0 + 1.5 * k, 0.0)  # the aim is angle 0 (+x)
 		if not _api.place_dummy_now(at):
 			_line("dummy %d at %s: no room" % [k, at])
 	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, _button(), _button())

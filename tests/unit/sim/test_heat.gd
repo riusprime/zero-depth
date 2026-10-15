@@ -77,7 +77,8 @@ func test_the_data_compiles_to_the_starting_values() -> void:
 	assert_not_null(def)
 	assert_eq(def.validate().size(), 0, "the shipped heat validates")
 	assert_eq(_heat.max_heat, 100)
-	assert_eq([_heat.gain_swing, _heat.gain_finisher, _heat.gain_bolt], [2500, 5000, 900])
+	# v0.8.0 GF1: a bolt's heat 0.9 x 9/7 (the Gun fires 7/9 as often, so it heats as fast a second).
+	assert_eq([_heat.gain_swing, _heat.gain_finisher, _heat.gain_bolt], [2500, 5000, 1157])
 	assert_eq(_heat.decay_delay_ticks, 60, "decay waits 1 s")
 	assert_eq(_heat.decay_per_tick, 250, "then 15 heat per second")
 	assert_eq([_heat.hot_threshold, _heat.overclock_threshold], [40, 75])
@@ -114,7 +115,7 @@ func test_each_landed_attack_adds_its_type_once() -> void:
 	var v := _world([], [Vector2(3, 0)])
 	v.step(_f(S))
 	_idle(v, 12, 0)
-	assert_eq(v.heat.milli, 900, "one landed bolt adds 0.9")
+	assert_eq(v.heat.milli, 1157, "one landed bolt adds 1.157 (v0.8.0 GF1: 0.9 x 9/7)")
 	var miss := _world([], [Vector2(-3, 0)])
 	_swing(miss)
 	assert_eq(miss.heat.milli, 0, "a whiff adds nothing")

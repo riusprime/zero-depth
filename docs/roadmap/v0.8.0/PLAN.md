@@ -148,7 +148,7 @@ Answers go into the "Owner decisions" table below the same day.
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data (+ sim map: the shop room's blockers) | Done (`v080-sr`: the owner's desert stall in every biome, code stand-ins for the rest; [`evidence/SHOP.md`](evidence/SHOP.md)) |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets || Done (FB1 `v080-fb1`: the flow, the arena, the bar, the Colossus; FB2 `v080-fb2`: the Prism; FB3 `v080-fb3`: the Nemesis and the true ending; evidence FINAL_BOSS_1..3.md) |
-| GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | |
+| GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | Done (`v080-gf1`: 0.2 m, 9 ticks, 5, 16.2 m/s; DPS −2.9 % in whole ticks; the blue pulse and the cast; stacks' DPS up and the PF frame worse, reported: [`evidence/GUN_FEEL.md`](evidence/GUN_FEEL.md)) |
 | GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
@@ -221,6 +221,28 @@ while agents run.
   (brighter) or a refusal (red). Code stand-ins in the faceted style (`ShopStallView`, `ShopVendor`: a tent and a vendor
   per biome that idles, turns to you, nods, shakes; reduced motion: a glow instead of movement) draw whatever has no
   model (`ShopModels`; sizes and facing in ART_LIST §1). The look is OWNER ONLY.
+
+### GF1 (the Gun's shot and the cast; the agent's reading, 2026-10-15)
+- **Numbers** (`data/player/runner.tres`; the kernel `PlayerTable` and `PrimaryDefinition` defaults match): hit radius
+  0.16 → 0.2 m (×1.25), interval 0.12 → 0.15 s (7 → 9 ticks: ×1/0.75 = 9.33 in whole ticks), damage 4 → 5 (×4/3 = 5.33
+  in whole points), speed 18 → 16.2 m/s (×0.9). DPS 34.29 → 33.33 computed (−2.8 %), 34.2 → 33.2 measured: the closest
+  whole pair (10 ticks / 6 is +5 %). Starting values (F10).
+- **Range kept:** life 0.6 → 0.667 s (36 → 40 ticks), so the slower shot still reaches 10.8 m ("lower the speed a bit"
+  read as the shot's speed, not its reach).
+- **Heat kept a second:** `gain_bolt` 0.9 → 1.157 (×9/7; heat counts landed shots, and the Gun shoots 7/9 as often):
+  Hot at 5.13 s, Overclock 9.63 s (5.17 / 9.72 before).
+- **Cards:** their own multipliers on top, data unchanged; Split's shards keep the card's 0.08 m (not grown with the
+  bolt); Rapid Fire's "+60 %" is +50 % in whole ticks now (+75 % before).
+- **The pulse:** every hero shot that is not a hostile fireball or a shrapnel shard (HeroPulseViews, three MultiMeshes a
+  look): the boss orbs' lit core shader with a pale cyan centre, the hero's cyan leaned 35 % to blue (hue 202°, normal
+  colour mode only), a swelling additive glow, a short trail; no dark edge (the hostile mark). Not bluer: the Arc
+  Caster's hostile plasma is periwinkle `#6E9CFF`.
+- **The cast:** a spark at the casting hand (right of the aim, a little above the shot) and a small swirl round the aim
+  on each shot (`WorldReader.shot_fired`), pooled (4), merged within 6 ticks; a 0.13 s body accent (kick back, head
+  turn, hood flick, visor flare). Reduced motion: the spark only.
+- **Reported, not tuned:** the Spread + Split + Explosive stack's DPS +12 % (+44 % with Twin: the bigger bolt lands
+  more of a fan and a twin pair), and the PF probe's avg frame +0.5 to +2.6 ms (the pulse's draw; every avg but one
+  noisy run within 12 ms). Owner questions in GUN_FEEL.
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share

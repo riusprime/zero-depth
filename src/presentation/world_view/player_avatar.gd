@@ -67,6 +67,13 @@ const CLEAVE_WIND := -1.15
 const CLEAVE_WHIP := 1.05
 const LUNGE_LEAN := 0.34
 const RECOIL_LEAN := 0.3
+## v0.8.0 GF1 (owner O19: a light cast on every shot): the body's accent, a quick kick back from the aim and a flick
+## of the head toward the casting side, gone in about CAST_SECONDS; reduced motion drops it (HeroCastFx keeps the
+## spark). Shots faster than that keep it up instead of stacking (it is set, never added).
+const CAST_SECONDS := 0.13
+const CAST_LEAN := 0.07
+const CAST_TWIST := 0.14
+const CAST_HOOD := 0.09
 ## Faster than this between two ticks is a teleport (blink, a new floor), not motion: the dash is ~27 m/s.
 const TELEPORT_SPEED := 40.0
 
@@ -137,6 +144,8 @@ var _lean := Vector3.ZERO
 var _lunge := 0.0
 var _brace := 0.0
 var _recoil := 0.0
+## v0.8.0 GF1: the cast accent (1 on a shot, easing to 0).
+var _cast := 0.0
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
@@ -234,6 +243,7 @@ func sync(reader: WorldReader) -> void:
 			"dead": reader.player_dead(),
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
+			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}
 	)
@@ -251,6 +261,8 @@ func apply_state(s: Dictionary) -> void:
 	_gun = s.get("gun", false)
 	if s.get("shooting", false):
 		_last_shot_tick = tick
+	if s.get("shot", false) and not ViewPrefs.reduced_motion:
+		_cast = 1.0
 	var st: int = s["swing_t"]
 	_swing = 0.0
 	_sweep = 0.0
@@ -339,6 +351,7 @@ func advance(delta: float) -> void:
 	_dash = move_toward(_dash, 1.0 if _dashing else 0.0, dt * (14.0 if _dashing else 4.0))
 	_crouch = lerpf(_crouch, 1.0 if _guarding else 0.0, _rate(12.0, dt))
 	_slump = move_toward(_slump, 1.0 if _dead else 0.0, dt * (2.2 if _dead else 4.0))
+	_cast = move_toward(_cast, 0.0, dt / CAST_SECONDS)
 	_pose(dt)
 	_step_springs(dt, accel)
 	_rebuild_cloak()
@@ -391,7 +404,7 @@ func slump_amount() -> float:
 
 ## The head's current yaw (radians, SimPlane.yaw_of convention), where the visor looks.
 func body_yaw() -> float:
-	return _body_yaw + _twist + _spin
+	return _body_yaw + _twist + _spin + _cast * CAST_TWIST
 
 
 ## The finisher's spin so far (radians, 0..TAU), and how far the body leans into a thrust or a lunge (0..1).
@@ -415,6 +428,11 @@ func recoil_amount() -> float:
 
 func twist_amount() -> float:
 	return _twist
+
+
+## v0.8.0 GF1: the cast accent now (0..1).
+func cast_amount() -> float:
+	return _cast
 
 
 func stab_amount() -> float:
@@ -489,7 +507,7 @@ func _pose(dt: float) -> void:
 	var lean_target := (
 		move_dir * (0.16 * clampf(speed / WALK_SPEED, 0.0, 1.0) * (1.0 - _dash) + 0.32 * _dash)
 		+ face_dir * (_crouch * 0.12 + _slump * 0.22 + _stab * 0.22 + _lunge * LUNGE_LEAN)
-		- face_dir * (_recoil * RECOIL_LEAN)
+		- face_dir * (_recoil * RECOIL_LEAN + _cast * CAST_LEAN)
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
@@ -497,13 +515,24 @@ func _pose(dt: float) -> void:
 	if _lean.length() > 0.0001:
 		b = Basis(Vector3.UP.cross(_lean.normalized()), _lean.length())
 	_pelvis.basis = b
-	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin, 0)
+	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin + _cast * CAST_TWIST, 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
 	# Skills: the lunge pitches the hood down into it, the recoil throws it back.
 	hood.rotation = Vector3(
-		_slump * 0.15, 0, -HOOD_TILT - _slump * 0.2 - _crouch * 0.08 - _lunge * 0.12 + _recoil * 0.3
+		_slump * 0.15,
+		0,
+		(
+			-HOOD_TILT
+			- _slump * 0.2
+			- _crouch * 0.08
+			- _lunge * 0.12
+			+ _recoil * 0.3
+			+ _cast * CAST_HOOD
+		)
 	)
-	_visor_mat.emission_energy_multiplier = lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount)
+	_visor_mat.emission_energy_multiplier = (
+		lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount) * (1.0 + 0.5 * _cast)
+	)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.
 	_leg_root.position.y = hip

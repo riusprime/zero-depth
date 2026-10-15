@@ -41,12 +41,14 @@ var blink_iframe_ticks := 6
 ## starts over. Shooting: bolts. Distances in metres, speeds in metres per tick.
 var combo: Array[SwingStep] = default_combo()
 var combo_window_ticks := 12
-## Shooting: a bolt every shot_period_ticks while held, bolt_damage each.
-var shot_period_ticks := 7
-var bolt_damage := 4
-var bolt_speed := 18.0 / 60.0
-var bolt_radius_m := 0.16
-var bolt_life_ticks := 36
+## Shooting: a bolt every shot_period_ticks while held, bolt_damage each. v0.8.0 GF1 (owner O18): bigger, slower to
+## fire, harder-hitting, a little slower in flight (was 7 ticks, 4, 18 m/s, 0.16 m, 36 ticks); the range stays 10.8 m.
+## The same numbers as data/player/runner.tres.
+var shot_period_ticks := 9
+var bolt_damage := 5
+var bolt_speed := 16.2 / 60.0
+var bolt_radius_m := 0.2
+var bolt_life_ticks := 40
 ## Builds (v0.3.0 L15, L16; ContentCompiler.apply_build): the weapons this run may use (WEAPON_* bits; both outside
 ## a run's build, so the kernel and lab worlds keep both), and each weapon's damage in per mille.
 var weapons := WEAPONS_ALL

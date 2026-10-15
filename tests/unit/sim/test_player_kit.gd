@@ -72,7 +72,7 @@ func test_the_combo_chains_then_resets() -> void:
 func test_holding_shoot_fires_a_steady_stream() -> void:
 	var w := _world(Vector2.INF)
 	var t := w.player
-	for i in t.shot_period_ticks * 5:
+	for i in t.shot_period_ticks * 4 + 1:  # the fifth leaves on tick 4 periods + 1
 		w.step(_f(InputFrame.SHOOT))
 	assert_eq(
 		w.projectiles.size(), 5, "one bolt every %d ticks, the first at once" % t.shot_period_ticks

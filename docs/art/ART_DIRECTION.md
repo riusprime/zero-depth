@@ -99,7 +99,7 @@ Rules:
 | Enemies | Cubes and boxy variants, about the player's size; bosses larger | One distinct silhouette per behaviour: a wedge for a charger, a shield plate for a guard, a long box for a shooter, and so on. Decided per enemy at its G2 |
 | Walls and cover | Thin tall slabs (Ruins), faceted boulders (Night Rocks), mesa blocks (Red Canyon), slate blocks (Frozen Shore), violet star stone and leaning star monoliths (Starfall) | Generated from boxes plus seeded faceting |
 | Props | Small cubes (rubble), grass tufts, crates, fences, dead trees, barrels, ice floes, star crystals, meteorites, floating islands | Seeded procedural meshes; never block movement unless they are cover |
-| Projectiles | Streaks: a thin emissive box plus a dashed trail | Hostile yellow, player cyan or white |
+| Projectiles | Streaks: a thin emissive box plus a dashed trail (v0.8.0 GF1: the hero's shots are lit 3D pulses, a pale cyan core, the cyan leaned to blue, a soft glow and a short trail, never a dark edge; hostile orbs keep the dark edge) | Hostile yellow, player cyan or white |
 
 ## 4. Lighting and rendering
 

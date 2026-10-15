@@ -131,7 +131,7 @@ func test_blade_damage_is_up_15_percent_exactly_on_average() -> void:
 
 func test_gun_damage_is_the_bolts_own() -> void:  # owner 2026-10-08: the Gun's -15 % is gone
 	var w := _world(&"gun", Vector2(2.0, 0), 5000)
-	for i in 7 * 10:
+	for i in w.player.shot_period_ticks * 10:
 		w.step(_f(S))
 	_idle(w, 20)
 	var got := _hits(w, SimEvent.TAG_PROJECTILE)
@@ -139,9 +139,9 @@ func test_gun_damage_is_the_bolts_own() -> void:  # owner 2026-10-08: the Gun's 
 	var total := 0
 	for v in got:
 		total += v
-	assert_eq(total, 40, "4 x 1.00 x 10 = 40")
+	assert_eq(total, 50, "5 x 1.00 x 10 = 50 (v0.8.0 GF1: the bolt is 5)")
 	for v in got:
-		assert_eq(v, 4)
+		assert_eq(v, 5)
 
 
 func test_full_damage_without_a_build() -> void:

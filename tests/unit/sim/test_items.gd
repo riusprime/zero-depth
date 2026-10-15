@@ -144,7 +144,7 @@ func test_splinter_fires_three_bolts_in_a_fan_at_sixty_percent() -> void:
 	assert_eq(w.projectiles.size(), 3)
 	var angles := []
 	for k in 3:
-		assert_eq(w.projectiles.damage[k], 2, "4 x 0.6 = 2.4, rounded down")
+		assert_eq(w.projectiles.damage[k], 3, "5 x 0.6 = 3 (v0.8.0 GF1: the bolt is 5)")
 		var a := Kin.angle_of(Vector2(w.projectiles.vel_x[k], w.projectiles.vel_y[k]))
 		angles.append(a if a < 2048 else a - 4096)
 	angles.sort()
@@ -159,9 +159,9 @@ func test_rapid_coil_shortens_the_shot_period() -> void:
 	for i in 25:
 		plain.step(_f(InputFrame.SHOOT))
 		w.step(_f(InputFrame.SHOOT))
-	assert_eq(plain.projectiles.size(), 4, "every 7 ticks")
-	assert_eq(w.projectiles.size(), 5, "every 5 ticks: 7 / 1.4")
-	assert_eq(WorldReader.new(w).shot_period_ticks(), 5)
+	assert_eq(plain.projectiles.size(), 3, "every 9 ticks (v0.8.0 GF1)")
+	assert_eq(w.projectiles.size(), 5, "every 6 ticks: 9 / 1.4 = 6.4, rounded")
+	assert_eq(WorldReader.new(w).shot_period_ticks(), 6)
 
 
 func _walled(kinds: Array) -> World:
@@ -268,7 +268,7 @@ func test_items_stack() -> void:
 	assert_eq(w.projectiles.size(), 3)
 	for k in 3:
 		assert_eq(w.projectiles.bounces[k], 1)
-	assert_eq(ItemEffects.shot_period_ticks(w), 5)
+	assert_eq(ItemEffects.shot_period_ticks(w), 6, "9 / 1.4 (v0.8.0 GF1)")
 	var r := WorldReader.new(w)
 	assert_eq(r.item_count(), 3)
 	assert_true(r.has_item_kind(WorldReader.ITEM_RICOCHET_CORE))
