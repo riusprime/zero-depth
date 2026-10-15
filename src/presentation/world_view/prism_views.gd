@@ -31,8 +31,8 @@ var _at := Vector2.ZERO
 var _radius := 1.5
 var _tick := 0
 var _arms: Array[Dictionary] = []
-var _bolt_line := MeshInstance3D.new()
-var _shard_flash := MeshInstance3D.new()
+var _bolt_line: MeshInstance3D
+var _shard_flash: MeshInstance3D
 var _shard_light := OmniLight3D.new()
 var _core_light := OmniLight3D.new()
 var _ring := MeshInstance3D.new()

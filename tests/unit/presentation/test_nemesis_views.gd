@@ -32,6 +32,15 @@ func _dist(a: Color, b: Color) -> float:
 	return Vector3(a.r - b.r, a.g - b.g, a.b - b.b).length()
 
 
+func test_its_views_and_avatar_leave_no_orphan_nodes() -> void:
+	var before := Node.get_orphan_node_ids().size()
+	var v := _views()
+	var a := _avatar()
+	assert_not_null(v)
+	assert_not_null(a)
+	assert_eq(Node.get_orphan_node_ids().size(), before, "no node left outside the tree")
+
+
 func test_its_clips_are_the_heros_motion_vocabulary() -> void:
 	var lib := NemesisClips.library()
 	for n: StringName in NemesisClips.NAMES:

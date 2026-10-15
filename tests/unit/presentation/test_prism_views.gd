@@ -191,3 +191,14 @@ func test_her_orbs_and_bolts_have_their_looks() -> void:
 	assert_eq(bolt["mesh"], &"spear", "the bolts are long crystal spears")
 	assert_gt(float(bolt["tip"]), 2.0)
 	assert_ne(orb["core"], FireballViews.look_of(&"prism_orb")["core"], "not the Hive Lens's")
+
+
+func test_her_views_and_avatar_leave_no_orphan_nodes() -> void:
+	# v0.8.0 fix: a node made in a member's initializer and then replaced in _init was never in the tree (the damage
+	# soak's 6 orphans: 2 per fight). Built and put in the tree, every node they made is in it.
+	var before := Node.get_orphan_node_ids().size()
+	var v := _views()
+	var a := _avatar()
+	assert_not_null(v)
+	assert_not_null(a)
+	assert_eq(Node.get_orphan_node_ids().size(), before, "no node left outside the tree")

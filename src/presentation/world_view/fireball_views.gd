@@ -149,10 +149,11 @@ const LOOKS := {
 		"tail": 0.1,
 	},
 	## v0.8.0 FB2: the Prism (the final boss's second body): her shards' orbs, deep red crystal gems turning as they
-	## drift, a crimson trail (redder and darker than the Hive Lens's magenta prism orbs).
+	## drift, a crimson trail (redder and darker than the Hive Lens's magenta prism orbs). The core is a hot rose
+	## (a bright core, apart from the spear embers and the lens orbs; v0.8.0 fix).
 	&"crown_orb":
 	{
-		"core": Color("#F02848"),
+		"core": Color("#FF729E"),
 		"edge": Color("#2A0610"),
 		"trail": Color("#B81C38"),
 		"size": 1.0,
@@ -168,10 +169,11 @@ const LOOKS := {
 		"trail_style": &"glow",
 		"tail": 0.15,
 	},
-	## v0.8.0 FB2: the Prism's fast bolts: long white-hot crystal spears with a long red streak behind.
+	## v0.8.0 FB2: the Prism's fast bolts: long pale-rose crystal spears with a long red streak behind (pinker than
+	## the hero's white-hot; v0.8.0 fix).
 	&"crown_bolt":
 	{
-		"core": Color("#FFD6DC"),
+		"core": Color("#FFBCCC"),
 		"edge": Color("#3A0814"),
 		"trail": Color("#FF3A58"),
 		"size": 0.95,
