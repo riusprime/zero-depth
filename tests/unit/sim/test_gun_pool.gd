@@ -89,7 +89,9 @@ func test_g2_rapid_fire_is_a_stream_of_small_bolts() -> void:
 	W.run(plain, 60, 0, W.S)
 	var a := W.events(w, SimEvent.Kind.SPAWN).size()
 	var b := W.events(plain, SimEvent.Kind.SPAWN).size()
-	assert_gt(a, b + 3, "more bolts in a second (%d vs %d)" % [a, b])
+	# v0.8.0 GF1: 9 ticks a shot plain, 9 / 1.6 = 5.6 -> 6 with Rapid Fire: 7 vs 10 in a second (+50 % in whole
+	# ticks, the card's +60 % rounded; it was 7 / 1.6 = 4.4 -> 4, +75 %, before).
+	assert_eq([a, b], [10, 7], "more bolts in a second (%d vs %d)" % [a, b])
 
 
 func test_g3_twin_fires_two_side_by_side() -> void:
@@ -127,7 +129,9 @@ func test_g5_split_bursts_into_three_half_size_shards_at_the_hit() -> void:
 	var w := W.world(&"gun", [&"split_shot"], [[Vector2(2.0, 0.0), 2000]])
 	var k := W.hook_of(Modifiers.bolt(w), &"split_shot")
 	assert_eq([k.trigger, k.child.count], [TRIG.ON_HIT, 3])
-	assert_almost_eq(k.child.radius_m, _plain().radius_m * 0.5, 1e-5, "half size")
+	# v0.8.0 GF1: the splits keep the card's own 0.08 m (half the old 0.16 m bolt; the bolt grew, the card didn't).
+	assert_almost_eq(k.child.radius_m, 0.08, 1e-5, "the card's size")
+	assert_lt(k.child.radius_m, _plain().radius_m * 0.5, "under half the bolt")
 	W.run(w, 1, 0, W.S)
 	var seen := 0
 	for t in 20:
@@ -307,10 +311,14 @@ func test_g16_halo_fires_a_ring_at_half_range() -> void:
 # --- In a fight --------------------------------------------------------------------------------------------------
 func test_every_gun_card_changes_the_scripted_gun_fight_and_replays() -> void:
 	var plain := WandLab.run(WandLab.fight(&"gun", []), 240)
+	# v0.8.0 GF1: the bigger bolt lands every shot of the first 6 s, so Ricochet first bounces later (8 s).
+	var plain_long := WandLab.run(WandLab.fight(&"gun", []), 480)
 	for id in CARDS:
-		var a := WandLab.run(WandLab.fight(&"gun", [id]), 240)
-		var b := WandLab.run(WandLab.fight(&"gun", [id]), 240)
-		assert_ne(a["digest"], plain["digest"], "%s changes what happens" % id)
+		var n := 480 if id == &"gun_ricochet" else 240
+		var a := WandLab.run(WandLab.fight(&"gun", [id]), n)
+		var b := WandLab.run(WandLab.fight(&"gun", [id]), n)
+		var base: Dictionary = plain_long if n == 480 else plain
+		assert_ne(a["digest"], base["digest"], "%s changes what happens" % id)
 		assert_eq([b["digest"], b["hash"]], [a["digest"], a["hash"]], "%s replays" % id)
 
 

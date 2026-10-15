@@ -148,7 +148,7 @@ func test_vampiric_core_never_overheals_and_needs_a_player_kill() -> void:
 
 
 # --- Static Chain -------------------------------------------------------------------------------------------
-## Holds SHOOT for `shots` bolts (one every 7 ticks), then lets them land.
+## Holds SHOOT for `shots` bolts (one every shot_period_ticks), then lets them land.
 func _shoot(w: World, shots: int, aim: int = 0) -> void:
 	for t in (shots - 1) * w.player.shot_period_ticks + 1:
 		w.step(_f(S, 0, aim))
@@ -163,7 +163,7 @@ func test_static_chain_every_third_bolt_jumps_to_the_nearest_other_enemy() -> vo
 	assert_true(r.chain_ready())
 	_shoot(w, 1)
 	var bolts := _events(w, SimEvent.Kind.DAMAGE, SimEvent.TAG_PROJECTILE)
-	assert_eq(_amounts(bolts), [4, 4, 4])
+	assert_eq(_amounts(bolts), [5, 5, 5], "the bolt is 5 (v0.8.0 GF1)")
 	var chains := _events(w, SimEvent.Kind.DAMAGE, SimEvent.TAG_CHAIN)
 	assert_eq(_amounts(chains), [5], "the third bolt chains for 5")
 	assert_eq(chains[0].target_id, w.actors.ids[3], "to the nearest (1.5 m, not 3 m)")

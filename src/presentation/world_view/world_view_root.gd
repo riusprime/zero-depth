@@ -64,6 +64,9 @@ var modifier_marks := ModifierOverlays.new()  # v0.6.0 MX4: the shell, the charg
 var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades
 ## v0.7.5 BF1: the hostile fireballs (pooled per look in MultiMeshes) and the bosses' crystal shields and lobbed shells.
 var fireballs := FireballViews.new()
+## v0.8.0 GF1 (owner O19): the hero's shots as blue pulses (pooled per look in MultiMeshes) and the cast flourish.
+var pulses := HeroPulseViews.new()
+var cast_fx := HeroCastFx.new()
 var boss_shields := BossShieldView.new()
 ## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes strike as rows of stone spikes.
 var spikes := StoneSpikeViews.new()
@@ -135,6 +138,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(modifier_marks)  # v0.6.0 MX4
 	add_child(blade_forms)  # v0.6.5 WN4
 	add_child(fireballs)  # v0.7.5 BF1
+	pulses.actors = actors
+	pulses.draw_on_sync = false  # each frame's _process draws the pulses
+	add_child(pulses)  # v0.8.0 GF1
+	add_child(cast_fx)
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
@@ -207,6 +214,8 @@ func sync() -> void:
 	shards.sync(reader)
 	heal_orbs.sync(reader)
 	item_fx.sync(reader)
+	pulses.sync(reader)  # v0.8.0 GF1: after item_fx, which sets the bolt look a new shot takes
+	cast_fx.sync(reader)
 	status_fx.sync(reader)
 	heat_fx.sync(reader)
 	transit.sync(reader)  # after the actors: it poses the hero's model

@@ -84,6 +84,8 @@ func sync(reader: WorldReader) -> void:
 	for i in reader.projectile_count():
 		if reader.projectile_look(i) != "":
 			continue  # v0.7.5 BF1: a fireball (FireballViews draws them)
+		if reader.projectile_team(i) == 0 and not reader.projectile_is_shard(i):
+			continue  # v0.8.0 GF1: the hero's shots are blue pulses (HeroPulseViews draws them)
 		var id := reader.projectile_id(i)
 		live[id] = true
 		var p := reader.projectile_pos(i)
@@ -509,7 +511,8 @@ func bolt_color() -> Color:
 	)
 
 
-## Hostile shots are yellow streaks; the player's bolts are short cyan darts (reserved colours, PRESENTATION §3).
+## Hostile shots are yellow streaks; the player's bolts were short cyan darts (reserved colours, PRESENTATION §3).
+## v0.8.0 GF1: only the hero's shrapnel shards are still drawn here as darts (HeroPulseViews draws the hero's shots).
 ## v0.4.0 SC: a node of the same look comes back from the pool when there is one; the mesh is shared per look.
 func _make_projectile(is_player: bool = false) -> Node3D:
 	var size := Vector3(0.55, 0.05, 0.08)

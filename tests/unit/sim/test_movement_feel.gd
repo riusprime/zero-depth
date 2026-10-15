@@ -41,6 +41,6 @@ func test_the_compiled_player_has_the_bigger_bolt_hitbox() -> void:
 	var t := ContentCompiler.compile_player(
 		ContentRepository.load_all().get_def(&"player", &"runner")
 	)
-	assert_almost_eq(t.bolt_radius_m, 0.16, 0.0001)
+	assert_almost_eq(t.bolt_radius_m, 0.2, 0.0001, "v0.8.0 GF1: 25 % bigger than 0.16")
 	assert_eq(t.accel_permille, 319)
 	assert_eq(t.decel_permille, 369)

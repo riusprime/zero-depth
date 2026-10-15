@@ -65,6 +65,8 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D13 | From v0.7.5: add the sub-streams `map:ice`, `map:starglow`, `map:overrun` to EI-05's locked list? | kept, unlisted | LOCKED_DECISIONS EI-05 |
 | D14 | The "win" achievement now counts only when the final boss is beaten (End the run no longer wins at once). OK? | as built | FINAL_BOSS_1.md |
 | D15 | Merge v0.7.5 (PR riusprime/zero-depth#6) and then v0.8.0 into `main` | waiting for your test | — |
+| D16 | The Gun's new feel (O18): the blue shade (kept off the Arc Caster's periwinkle shots), whether its range should shrink with the slower speed (kept at 10.8 m), and the stacked Gun builds' damage rising again with the bigger shot (Spread + Split + Explosive +12 %; with Twin +44 %) | as built | GUN_FEEL.md "For the owner" |
+| D17 | The blue pulse costs more to draw than the old squares: the stacked-Gun test went from 7.7 to 8.1 ms a frame (with Twin 8.4 to 11.1 ms), still under the 12 ms target on average. Keep the look, or simplify it under heavy fire | keep | GUN_FEEL.md |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 

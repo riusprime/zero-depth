@@ -75,11 +75,10 @@ func test_the_blade_and_its_trail_follow_the_heat_tier() -> void:
 	assert_eq(kit.hue(), HeatLooks.OVERCLOCK, "the swing is red")
 
 
-func _bolt_color(actors: ActorViews, r: WorldReader) -> Color:
+## v0.8.0 GF1: the hero's shots are blue pulses (HeroPulseViews): the colour the newest one was fired with.
+func _bolt_color(pulses: HeroPulseViews, r: WorldReader) -> Color:
 	var id := r.projectile_id(r.projectile_count() - 1)
-	var holder := actors.projectile_node(id)
-	var mesh := holder.get_child(0) as MeshInstance3D
-	return (mesh.material_override as StandardMaterial3D).albedo_color
+	return pulses.look(pulses.key_of(id))[0]
 
 
 func test_bolts_take_the_heat_tier_colour_when_fired() -> void:
@@ -87,6 +86,9 @@ func test_bolts_take_the_heat_tier_colour_when_fired() -> void:
 	var r := WorldReader.new(w)
 	var actors := ActorViews.new()
 	add_child_autofree(actors)
+	var pulses := HeroPulseViews.new()
+	pulses.actors = actors
+	add_child_autofree(pulses)
 	actors.sync(r)
 	var base := actors.bolt_color()
 	assert_eq(base, ThemePalette.color(&"player_core"), "cool: the player's cyan")
@@ -98,10 +100,11 @@ func test_bolts_take_the_heat_tier_colour_when_fired() -> void:
 			w.heat.milli = points * HeatTable.MILLI
 			w.step(_f(InputFrame.SHOOT, InputFrame.SHOOT if k == 0 else 0))
 			actors.sync(r)
+			pulses.sync(r)
 			if r.projectile_count() > before:
 				break
 		assert_gt(r.projectile_count(), before, "%d heat: a bolt flew" % points)
-		seen[points] = _bolt_color(actors, r)
+		seen[points] = _bolt_color(pulses, r)
 	assert_eq(seen[10], base, "under Hot: the bolt keeps its colour")
 	assert_eq(seen[50], HeatLooks.HOT, "Hot: orange bolts")
 	assert_eq(seen[90], HeatLooks.OVERCLOCK, "Overclock: red bolts")
