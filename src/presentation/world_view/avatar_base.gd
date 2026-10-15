@@ -28,6 +28,9 @@ const FLINCH_PEAK := 0.25
 const FLINCH_SNAP := 0.18
 const FLINCH_RETRIGGER_S := 0.12
 const FLINCH_CALM := 0.4
+## v0.8.0 GF3 (owner O22): a Blade hit also knocks the pose away from the swing by up to FLINCH_KNOCK_M (metres, at
+## the flinch's peak and strength 1; the node only, back to rest exactly). Starting value.
+const FLINCH_KNOCK_M := 0.09
 
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
@@ -44,24 +47,62 @@ var _flinch_t := FLINCH_SECONDS
 var _flinch_s := 0.0
 var _flinch_dir := Vector2.RIGHT
 var _rest_xf := Transform3D.IDENTITY
+## v0.8.0 GF3: the knock of the flinch running (metres at its peak; 0: none, a bolt's).
+var _flinch_knock := 0.0
+## v0.8.0 GF3 (owner O22, the Blade's hit-stop): frame seconds the pose is held still for (HitStop): the frame time
+## that falls inside it is dropped, the rest of that frame runs on, so the pose resumes where it stopped (no pop).
+var _hold := 0.0
 
 
 func _process(delta: float) -> void:
-	advance(delta)
-	advance_flinch(delta)
+	var dt := consume_hold(delta)
+	if dt <= 0.0:
+		return
+	advance(dt)
+	advance_flinch(dt)
+
+
+## v0.8.0 GF3: holds the pose still for `seconds` of frame time (the longer of this and a hold already running; never
+## stacked). A flinch running jumps to its peak first, so the hold shows the impact pose. Presentation only.
+func hold(seconds: float) -> void:
+	_hold = maxf(_hold, seconds)
+	if flinching() and _flinch_t < FLINCH_PEAK * FLINCH_SECONDS:
+		_flinch_t = FLINCH_PEAK * FLINCH_SECONDS
+		advance_flinch(0.0)
+
+
+func holding() -> bool:
+	return _hold > 0.0
+
+
+## v0.8.0 GF3: the share of `delta` left once a hold has taken its part (the hold counts down by what it took).
+func consume_hold(delta: float) -> float:
+	if _hold <= 0.0:
+		return delta
+	var used := minf(_hold, maxf(delta, 0.0))
+	_hold -= used
+	return delta - used
 
 
 ## v0.8.0 GF2: a hit pushes the body's pose away along `away` (sim plane, the hit's direction) at `strength` (1: a
 ## bolt). False when the last flinch is too young to restart (FLINCH_RETRIGGER_S).
-func flinch(away: Vector2, strength: float = 1.0) -> bool:
+## v0.8.0 GF3: `knock` (0..1, a Blade hit's) also shifts the pose away by up to FLINCH_KNOCK_M.
+func flinch(away: Vector2, strength: float = 1.0, knock: float = 0.0) -> bool:
 	if flinching() and _flinch_t < FLINCH_RETRIGGER_S:
 		return false
 	if not flinching():
 		_rest_xf = transform
+	var calm := FLINCH_CALM if ViewPrefs.reduced_motion else 1.0
 	_flinch_t = 0.0
-	_flinch_s = clampf(strength, 0.0, 1.5) * (FLINCH_CALM if ViewPrefs.reduced_motion else 1.0)
+	_flinch_s = clampf(strength, 0.0, 1.5) * calm
+	_flinch_knock = clampf(knock, 0.0, 1.0) * FLINCH_KNOCK_M * calm
 	_flinch_dir = away.normalized() if away.length_squared() > 1e-6 else Vector2.RIGHT
 	return true
+
+
+## v0.8.0 GF3: how far the pose is knocked away now (metres).
+func knock_amount() -> float:
+	return maxf(flinch_envelope(_flinch_t / FLINCH_SECONDS), 0.0) * _flinch_knock
 
 
 func flinching() -> bool:
@@ -105,7 +146,7 @@ func advance_flinch(delta: float) -> void:
 	)
 	var b := Basis(axis, FLINCH_LEAN * k) * Basis.from_scale(squash)
 	var p := Vector3(0, _flinch_pivot(), 0)
-	transform = _rest_xf * Transform3D(b, p - b * p)
+	transform = _rest_xf * Transform3D(b, p - b * p + d * knock_amount())
 
 
 ## The point the flinch leans about, metres above the feet in this node's frame (a hovering body leans about itself).

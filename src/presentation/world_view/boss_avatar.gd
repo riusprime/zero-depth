@@ -116,6 +116,8 @@ var _aim := 0.0
 var _facing_yaw := 0.0
 var _shielded := false
 var _flinch := 0.0
+## v0.8.0 GF3 (owner O22): frame seconds the pose is held still (HitStop on a Blade hit); see AvatarBase.hold.
+var _hold := 0.0
 var _aim_shown := 0.0
 var _shield_hold := 0.0
 var _death := 0.0
@@ -317,7 +319,18 @@ func apply_state(s: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
-	advance(delta)
+	var dt := delta
+	if _hold > 0.0:  # v0.8.0 GF3: the hit-stop's share of this frame is dropped; the rest runs on
+		var used := minf(_hold, maxf(delta, 0.0))
+		_hold -= used
+		dt = delta - used
+	if dt > 0.0:
+		advance(dt)
+
+
+## v0.8.0 GF3: holds the pose (and its flinch clip) still for `seconds` of frame time, never stacked.
+func hold(seconds: float) -> void:
+	_hold = maxf(_hold, seconds)
 
 
 ## Advances the animation by `delta` seconds of frame time.
@@ -397,8 +410,9 @@ func flinch_amount() -> float:
 
 ## v0.8.0 GF2: a hit (HitFeel, on each of the player's hits; and a drop in HP read by apply_state) starts the flinch
 ## clip, rate-limited (FLINCH_RETRIGGER). The clip leans the body back along its own front, so `_away` and `_strength`
-## are taken for the shared avatar call and not used. False when the last flinch is still too fresh.
-func flinch(_away: Vector2 = Vector2.ZERO, _strength: float = 1.0) -> bool:
+## are taken for the shared avatar call and not used (v0.8.0 GF3: so is a Blade hit's `_knock`). False when the last
+## flinch is still too fresh.
+func flinch(_away: Vector2 = Vector2.ZERO, _strength: float = 1.0, _knock: float = 0.0) -> bool:
 	if _flinch > FLINCH_RETRIGGER:
 		return false
 	_flinch = 1.0

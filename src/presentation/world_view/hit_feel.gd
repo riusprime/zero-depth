@@ -11,6 +11,10 @@ extends Node3D
 ## where it hit, a spray out of the far side along the hit) and flinches the enemy's model away from the hit
 ## (AvatarBase.flinch for the normal kinds, BossAvatar.flinch's clip for the bosses: a pose only, the sim body never
 ## moves), on top of the white flash.
+## v0.8.0 GF3 (owner O22): a Blade hit's impact is a cut along the slash with sparks along it (ImpactFx), its flinch is
+## stronger and knocks the pose away from the swing, and it starts the view's hit-stop (HitStop: the hero's swing and
+## the struck enemies held about 2 frames, shared by one swing's hits, rate-limited; a tiny camera kick). In the view
+## only: the sim's own hit-stop above is unchanged and the sim never reads this one.
 
 const SHARDS := 7
 const SHARD_FRAMES := 30
@@ -25,6 +29,12 @@ var rig: IsoRig
 var impacts := ImpactFx.new()
 ## v0.8.0 GF2: flinches started (tests).
 var flinches := 0
+## v0.8.0 GF3: the view's hit-stop (WorldViewRoot hands it the blade view, KitView, as `hit_stop.kit`).
+var hit_stop := HitStop.new()
+## v0.8.0 GF3: a count of the swings seen (one swing's hits share one freeze), and the last sync's swing tick / step.
+var _swing_serial := 0
+var _last_swing_t := 0
+var _last_step := -1
 var _last_seq := 0
 var _rng := RandomNumberGenerator.new()
 var _shards: Array = []
@@ -34,12 +44,19 @@ var _burst_mats := {}
 func _init(p_actors: ActorViews, p_rig: IsoRig) -> void:
 	actors = p_actors
 	rig = p_rig
+	hit_stop.actors = p_actors
+	hit_stop.rig = p_rig
 	_rng.seed = 1  # the cosmetic stream: presentation only, never feeds the sim (EI-05)
 
 
 func sync(reader: WorldReader) -> void:
 	var player_id := reader.actor_id(0)
 	var shook := false
+	var st := reader.swing_tick()
+	if st > 0 and (_last_swing_t == 0 or st < _last_swing_t or reader.combo_step() != _last_step):
+		_swing_serial += 1
+	_last_swing_t = st
+	_last_step = reader.combo_step()
 	for e in reader.events_since(_last_seq):
 		_last_seq = e.seq
 		match e.kind:
@@ -56,7 +73,16 @@ func sync(reader: WorldReader) -> void:
 					rig.shake(0.55)
 				elif player_hit(e, player_id):
 					var hit := impacts.on_hit(reader, e)
-					_flinch(e.target_id, hit[0], hit[1])
+					_flinch(e.target_id, hit[0], hit[1], hit[2])
+					if e.tags & SimEvent.TAG_MELEE:  # v0.8.0 GF3: a Blade hit holds the views a moment
+						hit_stop.on_blade_hit(
+							e.target_id,
+							e.tick,
+							_swing_serial if st > 0 else -1,
+							SimPlane.to_3d(hit[0]),
+							finisher_hit(reader, e),
+							player_id
+						)
 			SimEvent.Kind.HIT:
 				if e.tags & SimEvent.TAG_EXPOSED:  # BX: a boss's open weak point, struck up close
 					_burst(e.pos, Color(1.0, 0.84, 0.42), 9, 0.11)
@@ -86,12 +112,13 @@ static func player_hit(e: SimEvent, player_id: int) -> bool:
 
 
 ## v0.8.0 GF2: flinches the hit enemy's model away along `away` (a model without a flinch: nothing).
-func _flinch(id: int, away: Vector2, strength: float) -> void:
+## v0.8.0 GF3: `knock` (a Blade hit's) also knocks the pose away (AvatarBase.flinch).
+func _flinch(id: int, away: Vector2, strength: float, knock: float = 0.0) -> void:
 	var node := actors.actor_node(id)
 	if node == null or not node.has_meta(&"enemy_avatar"):
 		return
 	var avatar: Object = node.get_meta(&"enemy_avatar")
-	if avatar.has_method(&"flinch") and avatar.call(&"flinch", away, strength):
+	if avatar.has_method(&"flinch") and avatar.call(&"flinch", away, strength, knock):
 		flinches += 1
 
 
@@ -146,6 +173,7 @@ func _burst(at: Vector2, c: Color, n: int, size: float, lit: bool = false) -> vo
 
 
 func _process(delta: float) -> void:
+	hit_stop.advance(delta)  # v0.8.0 GF3
 	for k in range(_shards.size() - 1, -1, -1):
 		var sh: Array = _shards[k]
 		var node: MeshInstance3D = sh[0]

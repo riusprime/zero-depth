@@ -74,6 +74,23 @@ const CAST_SECONDS := 0.13
 const CAST_LEAN := 0.07
 const CAST_TWIST := 0.14
 const CAST_HOOD := 0.09
+## v0.8.0 GF3 (owner O22: the Blade gets the Gun's treatment; the swing itself stays as the owner likes it): an accent
+## on every combo step, timed to the sim's swing ticks (the hit on its active tick, the blade's sweep, the recovery)
+## and run on in frame time between syncs: a wind-up (the hips drop, the body draws back and the head and poncho wind
+## further back) up to the hit, the swing (the body drives into the aim, the hood pitches in, the visor flares) from
+## the hit through the sweep, and a follow-through (the head carries on past the arc's end, then settles) over the
+## recovery. The finisher's is ACCENT_FINISHER bigger. Reduced motion: no follow-through (no overshoot). Added on top
+## of the existing swing pose (radians and metres at full). Starting values.
+const WIND_CROUCH := 0.05
+const WIND_LEAN := 0.12
+const WIND_TWIST := 0.32
+const WIND_HOOD := 0.12
+const STRIKE_LEAN := 0.2
+const STRIKE_HOOD := 0.16
+const STRIKE_VISOR := 0.8
+const FOLLOW_TWIST := 0.36
+const FOLLOW_LEAN := 0.06
+const ACCENT_FINISHER := 1.6
 ## Faster than this between two ticks is a teleport (blink, a new floor), not motion: the dash is ~27 m/s.
 const TELEPORT_SPEED := 40.0
 
@@ -146,6 +163,15 @@ var _brace := 0.0
 var _recoil := 0.0
 ## v0.8.0 GF1: the cast accent (1 on a shot, easing to 0).
 var _cast := 0.0
+## v0.8.0 GF3: the swing accent's clock (swing ticks, run on in frame time up to one tick past the last sync's), the
+## step's hit tick, sweep and length, whether it is the finisher, and the accent now: (wind, strike, follow), 0..1.
+var _acc_clock := 0.0
+var _acc_tick := 0
+var _acc_active := 2
+var _acc_sweep := 5
+var _acc_ticks := 14
+var _acc_fin := false
+var _accent := Vector3.ZERO
 
 
 ## Builds the model. technique "xray" adds a team-coloured silhouette twin to the hood and the cloak (as
@@ -244,6 +270,8 @@ func sync(reader: WorldReader) -> void:
 			"gun": reader.weapon_id() == &"pulse_gun",
 			"shooting": reader.shooting(),
 			"shot": reader.shot_fired(),  # v0.8.0 GF1: the cast accent
+			"active_tick": reader.swing_active_tick(),  # v0.8.0 GF3: the swing accent
+			"finisher": reader.is_finisher(),
 			"swing_form": reader.blade_swing(),  # v0.6.5 WN4: Lunge Step drives in, Heavy braces
 		}
 	)
@@ -273,6 +301,7 @@ func apply_state(s: Dictionary) -> void:
 		_swing_dir = -1.0 if _motion == WorldReader.MOTION_SLASH_LEFT_TO_RIGHT else 1.0
 		var sweep := clampf(float(st - 1) / maxf(1.0, float(s.get("sweep_ticks", 5))), 0.0, 1.0)
 		_sweep = 1.0 - (1.0 - sweep) * (1.0 - sweep)
+	_set_accent_clock(s, st)
 	if _motion == WorldReader.MOTION_SPIN and st > 0:
 		_spin_target = TAU * _sweep
 	else:
@@ -291,6 +320,50 @@ func apply_state(s: Dictionary) -> void:
 		_leg_yaw = _aim_yaw
 		_pose(0.0)
 		_reset_springs()
+
+
+## v0.8.0 GF3: the swing accent's timing from a sync (swing tick `st`; 0: no swing).
+func _set_accent_clock(s: Dictionary, st: int) -> void:
+	if st <= 0 or _dead:
+		_acc_tick = 0
+		_acc_clock = 0.0
+		return
+	if st != _acc_tick:
+		_acc_clock = float(st)
+	_acc_tick = st
+	_acc_active = int(s.get("active_tick", 2))
+	_acc_sweep = int(s.get("sweep_ticks", 5))
+	_acc_ticks = int(s["swing_ticks"])
+	_acc_fin = bool(s.get("finisher", false))
+
+
+## v0.8.0 GF3: the swing accent at swing time `tf` (ticks, fractional) of a step hitting on `active`, sweeping
+## `sweep` ticks and `ticks` long: (wind-up, swing, follow-through), each 0..1; `calm` (reduced motion) drops the
+## follow-through. Before the swing and after it: zero.
+static func swing_accent(tf: float, active: int, sweep: int, ticks: int, calm: bool) -> Vector3:
+	if tf <= 0.0 or tf > float(ticks) + 1.0:
+		return Vector3.ZERO
+	var a := float(active)
+	var e := float(sweep + 1)  # the blade reaches the arc's end
+	var wind := 0.0
+	if tf < a:
+		wind = smoothstep(0.0, maxf(a - 0.5, 0.5), tf)
+	else:
+		wind = clampf(1.0 - (tf - a), 0.0, 1.0)
+	var strike := smoothstep(a - 1.0, a + 0.5, tf) * (1.0 - smoothstep(a + 1.0, e + 2.0, tf))
+	var follow := 0.0
+	if not calm:
+		follow = smoothstep(e - 1.0, e + 2.0, tf) * (1.0 - smoothstep(e + 2.0, float(ticks), tf))
+	return Vector3(wind, strike, follow)
+
+
+## v0.8.0 GF3: the swing accent now (wind-up, swing, follow-through), and its size (the finisher's bigger).
+func swing_accent_now() -> Vector3:
+	return _accent
+
+
+func accent_scale() -> float:
+	return ACCENT_FINISHER if _acc_fin else 1.0
 
 
 ## v0.6.5 WN4: the Blade cards that change the swing itself (WorldReader.blade_swing): Lunge Step leans into the
@@ -352,6 +425,13 @@ func advance(delta: float) -> void:
 	_crouch = lerpf(_crouch, 1.0 if _guarding else 0.0, _rate(12.0, dt))
 	_slump = move_toward(_slump, 1.0 if _dead else 0.0, dt * (2.2 if _dead else 4.0))
 	_cast = move_toward(_cast, 0.0, dt / CAST_SECONDS)
+	if _acc_tick > 0:  # v0.8.0 GF3: the accent runs on between syncs, at most a tick past the last one
+		_acc_clock = minf(_acc_clock + dt * 60.0, float(_acc_tick) + 1.0)
+	_accent = (
+		swing_accent(_acc_clock, _acc_active, _acc_sweep, _acc_ticks, ViewPrefs.reduced_motion)
+		if _acc_tick > 0
+		else Vector3.ZERO
+	)
 	_pose(dt)
 	_step_springs(dt, accel)
 	_rebuild_cloak()
@@ -404,7 +484,18 @@ func slump_amount() -> float:
 
 ## The head's current yaw (radians, SimPlane.yaw_of convention), where the visor looks.
 func body_yaw() -> float:
-	return _body_yaw + _twist + _spin + _cast * CAST_TWIST
+	return _body_yaw + _twist + _spin + _cast * CAST_TWIST + _accent_twist()
+
+
+## v0.8.0 GF3: the head's extra twist from the swing accent: wound further back, then carried on past the arc's end
+## (the swing's own way; a thrust winds and follows a little to its slash side, a spin the spin's way).
+func _accent_twist() -> float:
+	var way := _swing_dir
+	if _motion == WorldReader.MOTION_SPIN:
+		way = 1.0
+	elif _motion == WorldReader.MOTION_THRUST:
+		way = 0.5
+	return way * (-_accent.x * WIND_TWIST + _accent.z * FOLLOW_TWIST) * accent_scale()
 
 
 ## The finisher's spin so far (radians, 0..TAU), and how far the body leans into a thrust or a lunge (0..1).
@@ -498,6 +589,7 @@ func _pose(dt: float) -> void:
 		- _stab * 0.05
 		- _lunge * 0.09
 		- _brace * 0.06
+		- _accent.x * WIND_CROUCH * accent_scale()
 	)
 	_pelvis.position = Vector3(0, hip, 0)
 	# Lean: into the movement (hard on a dash), forward when guarding or collapsing, a slow idle sway.
@@ -511,11 +603,20 @@ func _pose(dt: float) -> void:
 		+ side * sin(_t * 1.1) * 0.02 * (1.0 - _walk)
 	)
 	_lean = _lean.lerp(lean_target, _rate(9.0, dt))
+	# v0.8.0 GF3: the swing accent leans the body at once (it is already smooth; the lean's ease would blur it).
+	var acc_k := accent_scale()
+	var lean := (
+		_lean
+		+ (
+			face_dir
+			* ((_accent.y * STRIKE_LEAN + _accent.z * FOLLOW_LEAN - _accent.x * WIND_LEAN) * acc_k)
+		)
+	)
 	var b := Basis.IDENTITY
-	if _lean.length() > 0.0001:
-		b = Basis(Vector3.UP.cross(_lean.normalized()), _lean.length())
+	if lean.length() > 0.0001:
+		b = Basis(Vector3.UP.cross(lean.normalized()), lean.length())
 	_pelvis.basis = b
-	_head_yaw.rotation = Vector3(0, _body_yaw + _twist + _spin + _cast * CAST_TWIST, 0)
+	_head_yaw.rotation = Vector3(0, body_yaw(), 0)
 	# Dead: the hood droops forward and rolls to one side on top of the pooled cloak.
 	# Skills: the lunge pitches the hood down into it, the recoil throws it back.
 	hood.rotation = Vector3(
@@ -528,10 +629,14 @@ func _pose(dt: float) -> void:
 			- _lunge * 0.12
 			+ _recoil * 0.3
 			+ _cast * CAST_HOOD
+			+ (_accent.x * WIND_HOOD - _accent.y * STRIKE_HOOD) * acc_k
 		)
 	)
 	_visor_mat.emission_energy_multiplier = (
-		lerpf(2.4, 0.35, _slump) * (1.0 + 0.7 * _heat_amount) * (1.0 + 0.5 * _cast)
+		lerpf(2.4, 0.35, _slump)
+		* (1.0 + 0.7 * _heat_amount)
+		* (1.0 + 0.5 * _cast)
+		* (1.0 + STRIKE_VISOR * _accent.y * acc_k)
 	)
 	# Legs: alternate stride, tucked on a dash, stretched forward when sitting dead, splayed when the hips drop
 	# below what the swung leg can reach.

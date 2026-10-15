@@ -253,6 +253,7 @@ func _build_section(id: StringName) -> VBoxContainer:
 		&"accessibility":
 			_cycler(box, "UI_SHAKE", "shake", ["on", "off"])
 			_cycler(box, "UI_REDUCED_MOTION", "reduced_motion", ["off", "on"])
+			_cycler(box, "UI_HIT_STOP", "hit_stop", ["on", "off"])  # v0.8.0 GF3: the Blade's hit-stop
 			_cycler(box, "UI_COLOUR_MODE", "colour_mode", GameSettings.COLOUR_MODES)
 			_cycler(box, "UI_CAPTIONS", "captions", ["off", "on"])
 			_cycler(box, "UI_UI_SCALE", "ui_scale", GameSettings.UI_SCALES)  # v0.7.5 SM

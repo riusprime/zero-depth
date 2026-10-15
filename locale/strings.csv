@@ -263,6 +263,7 @@ UI_OPT_75,75 %,75 %
 UI_OPT_85,85 %,85 %
 UI_OPT_100,100 %,100 %
 UI_REDUCED_MOTION,Reduced motion,Movimiento reducido
+UI_HIT_STOP,Hit-stop,Pausa de impacto
 UI_COLOUR_MODE,Colour-blind mode,Modo daltónico
 UI_OPT_PROTANOPIA,Protanopia,Protanopía
 UI_OPT_DEUTERANOPIA,Deuteranopia,Deuteranopía

@@ -37,6 +37,8 @@ var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
 var _flash := {}
+## v0.8.0 GF3 (owner O22, the Blade's hit-stop): frame seconds an actor's flash is held lit and uncounted, by id.
+var _flash_hold := {}
 ## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
 var _tint := {}
 ## Projectile materials by look (see _projectile_material), and one mesh per look.
@@ -76,7 +78,7 @@ func sync(reader: WorldReader) -> void:
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
-	for d: Dictionary in [_flash, _tint]:  # a removed actor's flash and glow go with it (bounded)
+	for d: Dictionary in [_flash, _tint, _flash_hold]:  # a removed actor's flash and glow go with it (bounded)
 		for id in d.keys():
 			if not alive.has(id):
 				d.erase(id)
@@ -144,8 +146,23 @@ func is_flashing(id: int) -> bool:
 	return _flash.has(id)
 
 
-func _process(_delta: float) -> void:
+## v0.8.0 GF3: holds actor `id`'s flash (lit, its frames not counted down) for `seconds` of frame time.
+func hold_flash(id: int, seconds: float) -> void:
+	if _flash.has(id):
+		_flash_hold[id] = maxf(seconds, float(_flash_hold.get(id, 0.0)))
+
+
+func flash_held(id: int) -> bool:
+	return _flash_hold.has(id)
+
+
+func _process(delta: float) -> void:
 	for id in _flash.keys():
+		if _flash_hold.has(id):
+			_flash_hold[id] = float(_flash_hold[id]) - delta
+			if float(_flash_hold[id]) > 0.0:
+				continue
+			_flash_hold.erase(id)
 		_flash[id] -= 1
 		if _flash[id] <= 0:
 			_flash.erase(id)

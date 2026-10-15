@@ -67,6 +67,8 @@ var fireballs := FireballViews.new()
 ## v0.8.0 GF1 (owner O19): the hero's shots as blue pulses (pooled per look in MultiMeshes) and the cast flourish.
 var pulses := HeroPulseViews.new()
 var cast_fx := HeroCastFx.new()
+## v0.8.0 GF3 (owner O22): the Blade's edge spark (KitView draws the slash edge; HitFeel the cut and the hit-stop).
+var swing_fx := BladeSwingFx.new(kit)
 var boss_shields := BossShieldView.new()
 ## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes strike as rows of stone spikes.
 var spikes := StoneSpikeViews.new()
@@ -142,6 +144,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	pulses.draw_on_sync = false  # each frame's _process draws the pulses
 	add_child(pulses)  # v0.8.0 GF1
 	add_child(cast_fx)
+	add_child(swing_fx)  # v0.8.0 GF3
 	add_child(boss_shields)
 	add_child(spikes)  # v0.8.0 AV
 	add_child(signatures)  # v0.8.0 BS1
@@ -194,6 +197,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
+	hit_feel.hit_stop.kit = kit  # v0.8.0 GF3: the hit-stop holds the blade and its trail too
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
 		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
@@ -207,6 +211,7 @@ func sync() -> void:
 	challenge.sync(reader)
 	actors.sync(reader)
 	kit.sync(reader)
+	swing_fx.sync(reader)  # v0.8.0 GF3: after the blade, whose tip it rides
 	utility.sync(reader)
 	hit_feel.sync(reader)
 	pickups.sync(reader)

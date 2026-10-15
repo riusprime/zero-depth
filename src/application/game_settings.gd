@@ -45,6 +45,7 @@ const DEFAULTS := {
 	"language": "en",
 	"hints": "on",  # v0.7.5 SM: the first-run hints (HintStore)
 	"ui_scale": "100",  # v0.7.5 SM: UI_SCALES
+	"hit_stop": "on",  # v0.8.0 GF3: the Blade's hit-stop, a look only (read by the view)
 }
 
 

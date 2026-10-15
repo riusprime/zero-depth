@@ -150,7 +150,7 @@ Answers go into the "Owner decisions" table below the same day.
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets || Done (FB1 `v080-fb1`: the flow, the arena, the bar, the Colossus; FB2 `v080-fb2`: the Prism; FB3 `v080-fb3`: the Nemesis and the true ending; evidence FINAL_BOSS_1..3.md) |
 | GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | Done (`v080-gf2`: impacts, flinch, thrown numbers, shaking crits; [`evidence/HIT_FEEL.md`](evidence/HIT_FEEL.md)) |
-| GF3 | The Blade: swing, slash trail, impact, flinch, a 2-frame hit-stop | O22 | none (owner direction) | presentation | |
+| GF3 | The Blade: swing, slash trail, impact, flinch, a 2-frame hit-stop | O22 | none (owner direction) | presentation | Done (`v080-gf3`: the swing accent, slash edge and edge spark; the slash impact along the swing; a stronger flinch with a knock; the view's 2-frame hit-stop with its Accessibility option; the sim's own hit-stop found and reported: [`evidence/BLADE_FEEL.md`](evidence/BLADE_FEEL.md)) |
 | GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | Done (`v080-gf1`: 0.2 m, 9 ticks, 5, 16.2 m/s; DPS −2.9 % in whole ticks; the blue pulse and the cast; stacks' DPS up and the PF frame worse, reported: [`evidence/GUN_FEEL.md`](evidence/GUN_FEEL.md)) |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
@@ -245,6 +245,30 @@ while agents run.
 - **Reported, not tuned:** the Spread + Split + Explosive stack's DPS +12 % (+44 % with Twin: the bigger bolt lands
   more of a fan and a twin pair), and the PF probe's avg frame +0.5 to +2.6 ms (the pulse's draw; every avg but one
   noisy run within 12 ms). Owner questions in GUN_FEEL.
+
+### GF3 (the Blade's swing, impact, flinch and hit-stop; the agent's reading, 2026-10-15)
+- **Presentation only.** The Blade's numbers, `src/sim/` and the input are unchanged; the existing laser blade, its
+  trail, the slash forms and BladeFormView are kept as they are (owner, v0.6: "sword animation stays as is for now I like
+  it") and the new looks are layered on top.
+- **Swing:** a per-step accent on the hero model timed from the sim's swing ticks (`swing_tick`, `swing_active_tick`,
+  `swing_sweep_ticks`, `swing_ticks`, `is_finisher`): wind-up up to the hit tick (the sim's steps hit on tick 2-7, so
+  the wind-up is 1-6 ticks long), the swing from the hit through the sweep, a follow-through over the recovery; the
+  finisher ×1.6; reduced motion drops the follow-through (the overshoot). A bright slash edge in the hero's blue-white
+  over the trail (the step's element tints it; the heat tier from Hot up) and a pooled spark on the blade's tip that
+  flares on the hit tick.
+- **Impact:** a slash's own impact: a cut along the swing's tangent and sparks thrown along it (a thrust's along its
+  aim), strength 1.1 (a bolt's 1.0; GF2's 0.6 share is gone), the finisher ×1.3, drawn on the struck body's side
+  toward the camera so the body doesn't hide it; the GF2 budget, merging and pools.
+- **Flinch:** a slash's is ×1.35 a bolt's and knocks the pose up to 0.09 m away from the swing (the pose only).
+- **Hit-stop:** in the view (EI-03; the lead's reading in O22): on a Blade hit the hero's model, the laser blade and
+  its trail, each struck enemy's model (at its flinch's peak) and its white flash hold for 2 frames (2/60 s of frame
+  time) with a 0.06 m camera kick (0.1 m on the finisher); one swing's hits share one freeze; a new one at least
+  9 ticks (0.15 s) after the last began; Options → Accessibility "Hit-stop" (on by default) and reduced motion turn it
+  off. **Found, for the lead and the owner:** the sim already has a Blade hit-stop: every landed swing adds the step's
+  `hitstop_ticks` to `World.freeze_ticks` (3, 3, 4 and 7 ticks for the four steps, `data/player/runner.tres`;
+  SIM_CONTRACTS §2), which holds the whole sim; PRESENTATION_CONTRACTS §6 says "Hit-stop is sim state … The view shows
+  it; it never creates it." The view's hold is built as briefed and sits inside that sim freeze; whether to keep both,
+  or to make the view show the sim's freeze instead, is an owner question (BLADE_FEEL.md).
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share

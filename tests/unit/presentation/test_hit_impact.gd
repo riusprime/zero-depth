@@ -290,7 +290,8 @@ func test_a_bolt_hit_throws_an_impact_with_a_spray_out_of_the_far_side() -> void
 	assert_eq(feel.impacts.live(), 0, "and it goes")
 
 
-func test_a_slash_is_smaller_and_an_area_hit_smaller_still() -> void:
+## v0.8.0 GF3 (owner O22): a slash's impact is its own and at least a bolt's (it was 0.6 of it in GF2).
+func test_a_slash_is_at_least_a_bolt_s_and_an_area_hit_smaller() -> void:
 	var pieces := []
 	for kind: int in [ImpactFx.BOLT, ImpactFx.SLASH, ImpactFx.OTHER]:
 		var fx := ImpactFx.new()
@@ -301,8 +302,8 @@ func test_a_slash_is_smaller_and_an_area_hit_smaller_still() -> void:
 		layer.begin(3.0)
 		fx.draw(layer)
 		pieces.append(fx.last_pieces)
-	assert_gt(pieces[0], pieces[1])
-	assert_gt(pieces[1], pieces[2])
+	assert_gte(pieces[1], pieces[0])
+	assert_gt(pieces[0], pieces[2])
 
 
 func test_impacts_merge_and_thin_within_the_budget() -> void:
