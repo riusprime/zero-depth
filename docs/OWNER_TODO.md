@@ -2,7 +2,7 @@
 
 Everything that waits on you, in one place: art, decisions, tests and the playtest. The lead keeps it up to date: a
 row moves to **Done** with the date when it arrives, and new requests are added here as they come up. Last updated
-2026-10-15, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
+2026-10-15 (textures added), v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
 **How to deliver art:** drop the `.glb` (with its textures) or `.png` into `unprocessed_images/` (or the repo root),
 named by the **id** in the tables below, and say so in chat. The lead installs, sizes, lists and tests it. Prompts
@@ -112,8 +112,15 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 - **Starfall:** `star_crystal`, `meteorite`, `star_monolith`, `floating_island`, `void_spike`, `ground_star`,
   `ruined_observatory` (7)
 
-### 3.7 Attack textures (P3): ART_LIST §5
-`fx_orb_core`, `fx_beam`, `fx_lava_crack`, `fx_rock_burst` (today they're made in code).
+### 3.7 Textures to replace the code-made looks (P1–P3): [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md)
+Owner, 2026-10-15: real painted textures, like the player's attacks, for what v0.8.0 drew in code. Each row there
+says what it replaces and gives the prompt.
+- **P1 (most visible):** `fx_orb_cores`, `fx_orb_cores_2`, `fx_orb_cores_final`, `fx_trails`, `fx_beam`,
+  `fx_beam_impact`, `fx_ground_cracks`, `fx_rock_burst`, `fx_lava_flow`, `tex_lava_crust`, `tex_menu_stone` (11)
+- **P2:** `fx_dust_ring`, `fx_light_ring`, `fx_acid_splat`, `fx_steam_puffs`, `fx_rail_streak`, `fx_skid_marks`,
+  `fx_aim_lines`, `fx_crystal_shatter`, `fx_cast_sigils`, `tex_menu_stone_wall`, `tex_mark_steel`, `tex_mark_hazard`,
+  `tex_mark_acid`, `tex_mark_light`, `tex_stone_spike` (15)
+- **P3:** `fx_ember_sparks`, `fx_star_motes`, `ui_element_glyphs`, `ui_element_glyphs_2` (4)
 
 ### 3.8 Audio (P3)
 A final-boss music track (FINAL_BOSS F9); today it uses the existing boss sounds.
