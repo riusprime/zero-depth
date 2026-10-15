@@ -240,3 +240,4 @@ not in `main` yet).
 - 2026-10-15: seams 338/338 on `622febb` (all of v0.8.0 except EM merged). Steps table cleaned (duplicate rows from merges); PLAYTEST.md written. EM waits for the owner's enemy models.
 - 2026-10-15: the owner asked for one document of everything they owe (art, decisions, tests, the playtest): [`../../OWNER_TODO.md`](../../OWNER_TODO.md), kept up to date by the lead.
 - 2026-10-15: owner: "include in that document the textures replacement and prompts for them": `docs/art/requests/v0.8.0_textures.md` (30 textures replacing the code-made looks, prompts) and OWNER_TODO §3.7.
+- 2026-10-15: the owner's Gun and hit-feel message (O18–O21, verbatim in PLAN); steps GF1 (the Gun) and GF2 (hit feel) started.

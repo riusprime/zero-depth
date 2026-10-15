@@ -51,6 +51,21 @@ The owner, 2026-10-14 (second message, same day), verbatim:
 > far as you can without generating new models and give me the full list of things you need that I will be generating
 > this afternoon after work"
 
+The owner, 2026-10-15 (third message), verbatim:
+
+> "So we have to modify and spice up the animation of the gun. We are gonna be adding some animations to it. So I want
+> you to make it a little bit bigger, maybe like 25% bigger, and the gun should shoot less bullets per second, but do
+> the enough more damage to be able to maintain the DPS. So we lower the speed a bit, we make it bigger, and then we
+> transform the square that comes out into a pulse, like a fireball, but it will be blue. The main character needs to
+> have like a casting animation, just spark of light and swirl that comes out of him every time a bullet comes out. And
+> it should be very light, that like shooting animation, but it should have one. So then the enemies, when hit by a
+> bullet, should have particles where it hit and coming behind, so we have an impact, a clear impact of it. And the
+> enemy should flinch. That doesn't mean to move, so to flinch. And we keep the very short, just a couple of frames,
+> that the enemy is highlighted in white every time an enemy is hit. And that's how the basic works. So we have to do
+> the DP, the damage numbers, a little bit bigger, just a bit, and they should come out like they are thrown from the
+> enemy in a curve that goes up and out. And the crit should be a number that spawns bigger, it has a little shake, and
+> then it vanishes. So we make a real combat animation."
+
 ## Context
 - **`main`** is v0.7.0 (`a20850f`, PR riusprime/zero-depth#5). **v0.7.5** is built and green on GitHub
   (`claude/v0.7.5-new-ground` at `f1a9ab5`, PR riusprime/zero-depth#6) and is what the owner played; it is not merged
@@ -83,6 +98,10 @@ The owner, 2026-10-14 (second message, same day), verbatim:
 | O15 | "work as far as you can without generating new models and give me the full list of things you need that I will be generating this afternoon" | Every step is built with code-made stand-ins where art is missing (L15); the full list of art is [`../../art/requests/v0.8.0_ART_LIST.md`](../../art/requests/v0.8.0_ART_LIST.md) | — |
 | O16 | "a final boss right before choosing loop or ending, if ending is chosen then you fight the final boss, this would have 3 phases, with different combat in each one, I have a glb file that contain the three models … can you split it into three different models … a "plaeholder" that will be replace with actual cool animations I'll work … I want this final battle to be epic" | The owner's file split into three models by their separate pieces (no piece cut; [`FINAL_BOSS.md`](FINAL_BOSS.md) "The models"). **G1** [`FINAL_BOSS.md`](FINAL_BOSS.md) rows F1–F9 | FB |
 | O17 | "One has a big stone hands … a fast moving pace fight … melee attacks, jumps … the spikes that come out of the floor … throw big rocks … the second phase … a ranged fight … rays that go in a cross and turn with her in the middle … a lot of small balls … quick, fast attacks … the third model, the small black one … the nemesis of the main character … mimics some of the movements of the main character … a mix of both a melee and range fight" (verbatim in FINAL_BOSS.md) | Phase 1 the Colossus (fists), phase 2 the Prism (shards), phase 3 the Nemesis (the small dark one); the lead's proposal per phase in FINAL_BOSS.md F4–F6 | FB |
+| O18 | "make it a little bit bigger, maybe like 25% bigger, and the gun should shoot less bullets per second, but do the enough more damage to be able to maintain the DPS. So we lower the speed a bit" | The Gun's basic shot: **25 % bigger**; fire rate **×0.75** (lead's reading of "less bullets per second … lower the speed a bit"), damage **×1.333** so its DPS is unchanged; its flight speed **×0.9** ("a bit"). Starting values in data (F10). Gun cards that scale size, rate or damage keep their own multipliers on top | GF1 |
+| O19 | "transform the square that comes out into a pulse, like a fireball, but it will be blue. The main character needs to have like a casting animation, just spark of light and swirl … every time a bullet comes out … very light" | The Gun's bolt becomes a **blue pulse fireball** (a lit 3D orb with a trail, in the hero's blue, off every hostile colour); the hero gets a **light cast flourish** on every shot: a spark of light at the hand and a small swirl, a quick arm/body accent; reduced motion keeps only the spark | GF1 |
+| O20 | "the enemies, when hit by a bullet, should have particles where it hit and coming behind … a clear impact … the enemy should flinch. That doesn't mean to move … we keep the very short, just a couple of frames, that the enemy is highlighted in white" | Every bolt hit: **impact particles** at the hit point and a spray out the far side along the shot's direction; the enemy **flinches** (a quick pose recoil, no movement in the sim); the white hit flash stays (a couple of frames). Bosses flinch through their clip system | GF2 |
+| O21 | "the damage numbers, a little bit bigger, just a bit, and they should come out like they are thrown from the enemy in a curve that goes up and out. And the crit should be a number that spawns bigger, it has a little shake, and then it vanishes" | Damage numbers **~15 % bigger**, **thrown** from the enemy in an up-and-out arc (alternating sides); crits spawn **bigger**, **shake** briefly, then vanish. For every hit (Gun and Blade) | GF2 |
 
 ## Design questions (owner, 2026-10-14)
 - **Q1 (O2) Enemy colours:** each kind its own hue / by role (melee, ranged, support) / by floor.
@@ -129,6 +148,8 @@ Answers go into the "Owner decisions" table below the same day.
 | SR | The shop room per biome: a tent stall and a vendor | O13 | none (the owner's direction); the vendor's look follows the owner's models | presentation + data (+ sim map: the shop room's blockers) | Done (`v080-sr`: the owner's desert stall in every biome, code stand-ins for the rest; [`evidence/SHOP.md`](evidence/SHOP.md)) |
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets || Done (FB1 `v080-fb1`: the flow, the arena, the bar, the Colossus; FB2 `v080-fb2`: the Prism; FB3 `v080-fb3`: the Nemesis and the true ending; evidence FINAL_BOSS_1..3.md) |
+| GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | |
+| GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
 MU (after its G2), BS and BL (after their G1s), BA, EM (when the models arrive). The lead writes the G1s and G2s
