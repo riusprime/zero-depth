@@ -149,7 +149,7 @@ Answers go into the "Owner decisions" table below the same day.
 | MU | Menu and card style rework: the shard cards go | O14 | G2 (3 directions) | presentation only | Done (direction B "Ember stone" shipped on `v080-mu2`; [`evidence/MENU.md`](evidence/MENU.md)) |
 | FB | The final boss: three phases (the Colossus, the Prism, the Nemesis) after "End the run" | O16, O17 | G1 FINAL_BOSS | sim + data + presentation + assets || Done (FB1 `v080-fb1`: the flow, the arena, the bar, the Colossus; FB2 `v080-fb2`: the Prism; FB3 `v080-fb3`: the Nemesis and the true ending; evidence FINAL_BOSS_1..3.md) |
 | GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | |
-| GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | |
+| GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | Done (`v080-gf2`: impacts, flinch, thrown numbers, shaking crits; [`evidence/HIT_FEEL.md`](evidence/HIT_FEEL.md)) |
 
 **Waves (3 agents; 4 when small):** wave 1 PF + LS + TG; wave 2 RT (system + 3 layouts for G2) + AV + EC; then SR,
 MU (after its G2), BS and BL (after their G1s), BA, EM (when the models arrive). The lead writes the G1s and G2s

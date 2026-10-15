@@ -47,6 +47,12 @@ const DEFAULT_ACTIVE_TICKS := 6
 const DEFAULT_RECOVER_TICKS := 60
 const STAGGER_CLIP_SECONDS := 1.2
 const SHIELD_CLIP_SECONDS := 0.4
+## v0.8.0 GF2 (owner O20: "the enemy should flinch"): the player's hits play the flinch clip, a light additive layer;
+## a hit restarts it only once the last one has faded to FLINCH_RETRIGGER (so steady fire keeps it twitching instead
+## of holding it at the clip's start), and over an attack's clip it plays at FLINCH_ATTACK_WEIGHT so it never fights
+## the strike. Starting values.
+const FLINCH_RETRIGGER := 0.4
+const FLINCH_ATTACK_WEIGHT := 0.5
 ## v0.8.0 BS1 (S2): the clip a boss plays while its javelins stand in the floor (WarlordClips), timed 0..1 by the
 ## recall (WorldReader.boss_recall_permille).
 const RECALL_CLIP := &"recall"
@@ -297,7 +303,7 @@ func apply_state(s: Dictionary) -> void:
 	# WorldReader.boss_shielded: the boss is firing its shielded signature).
 	var hp: int = s.get("hp", -1)
 	if hp >= 0 and _last_hp >= 0 and hp < _last_hp:
-		_flinch = 1.0
+		flinch()
 	_last_hp = hp
 	_aim = s.get("aim", 0.0)
 	_facing_yaw = s.get("facing", 0.0)
@@ -387,6 +393,16 @@ func stagger_amount() -> float:
 ## 0..1: the flinch of the last hit taken (v0.7.5 BM).
 func flinch_amount() -> float:
 	return _flinch
+
+
+## v0.8.0 GF2: a hit (HitFeel, on each of the player's hits; and a drop in HP read by apply_state) starts the flinch
+## clip, rate-limited (FLINCH_RETRIGGER). The clip leans the body back along its own front, so `_away` and `_strength`
+## are taken for the shared avatar call and not used. False when the last flinch is still too fresh.
+func flinch(_away: Vector2 = Vector2.ZERO, _strength: float = 1.0) -> bool:
+	if _flinch > FLINCH_RETRIGGER:
+		return false
+	_flinch = 1.0
+	return true
 
 
 ## 0..1: the "shielded" pose (v0.7.5 BM; apply_state's "shielded", read from the sim by sync()).
@@ -687,11 +703,14 @@ func _animate(dt: float) -> void:
 	an.set_layer(
 		BossAnimator.SHIELD, &"shielded", _shield_t, 0.0 if variant or _dying else _shield_hold
 	)
+	var flinch_w := (
+		(0.6 if ViewPrefs.reduced_motion else 1.0) * (FLINCH_ATTACK_WEIGHT if attacking else 1.0)
+	)
 	an.set_layer(
 		BossAnimator.FLINCH,
 		&"flinch",
 		1.0 - _flinch,
-		(0.6 if ViewPrefs.reduced_motion else 1.0) if _flinch > 0.0 and not _dying else 0.0
+		flinch_w if _flinch > 0.0 and not _dying else 0.0
 	)
 	an.set_layer(
 		BossAnimator.STAGGER,

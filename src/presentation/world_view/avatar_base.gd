@@ -15,6 +15,19 @@ const TELL_FLASH_FROM := 0.8
 const TELL_GLOW_CLIMB := 1.5
 const TELL_GLOW_FLASH := 2.5
 const TELL_FLICKER_HZ := 9.0
+## v0.8.0 GF2 (owner O20: "the enemy should flinch. That doesn't mean to move"): a hit's flinch, a pose recoil away
+## from the hit drawn on this node only (the sim body never moves): FLINCH_SECONDS long, the lean back (radians) and
+## the squash (the share the body shortens; it widens by half that) at full strength, peaking at FLINCH_PEAK of the
+## way and snapping back with a small overshoot (FLINCH_SNAP). A new hit restarts it only once the last one has run
+## FLINCH_RETRIGGER_S, so steady fire keeps it twitching instead of holding it bent. Reduced motion: FLINCH_CALM of
+## it. Starting values.
+const FLINCH_SECONDS := 0.2
+const FLINCH_LEAN := 0.3
+const FLINCH_SQUASH := 0.16
+const FLINCH_PEAK := 0.25
+const FLINCH_SNAP := 0.18
+const FLINCH_RETRIGGER_S := 0.12
+const FLINCH_CALM := 0.4
 
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
@@ -25,10 +38,79 @@ var _last_pos := Vector2.ZERO
 var _vel := Vector2.ZERO
 # Frame time since the model was built (seconds).
 var _t := 0.0
+# v0.8.0 GF2: the flinch running (seconds into it; FLINCH_SECONDS or more: none), its strength, the push's direction
+# on the sim plane (away from the hit), and this node's own transform at rest (a Hatchling is built at two thirds).
+var _flinch_t := FLINCH_SECONDS
+var _flinch_s := 0.0
+var _flinch_dir := Vector2.RIGHT
+var _rest_xf := Transform3D.IDENTITY
 
 
 func _process(delta: float) -> void:
 	advance(delta)
+	advance_flinch(delta)
+
+
+## v0.8.0 GF2: a hit pushes the body's pose away along `away` (sim plane, the hit's direction) at `strength` (1: a
+## bolt). False when the last flinch is too young to restart (FLINCH_RETRIGGER_S).
+func flinch(away: Vector2, strength: float = 1.0) -> bool:
+	if flinching() and _flinch_t < FLINCH_RETRIGGER_S:
+		return false
+	if not flinching():
+		_rest_xf = transform
+	_flinch_t = 0.0
+	_flinch_s = clampf(strength, 0.0, 1.5) * (FLINCH_CALM if ViewPrefs.reduced_motion else 1.0)
+	_flinch_dir = away.normalized() if away.length_squared() > 1e-6 else Vector2.RIGHT
+	return true
+
+
+func flinching() -> bool:
+	return _flinch_t < FLINCH_SECONDS
+
+
+## 0..1 (a little under 0 in the snap back): the flinch's envelope now, times its strength.
+func flinch_amount() -> float:
+	return flinch_envelope(_flinch_t / FLINCH_SECONDS) * _flinch_s
+
+
+## The flinch's shape over its life u (0..1): out fast to 1 at FLINCH_PEAK, back past 0 by FLINCH_SNAP, settled at 1.
+static func flinch_envelope(u: float) -> float:
+	if u <= 0.0 or u >= 1.0:
+		return 0.0
+	if u < FLINCH_PEAK:
+		var a := u / FLINCH_PEAK
+		return 1.0 - (1.0 - a) * (1.0 - a)
+	var b := (u - FLINCH_PEAK) / (1.0 - FLINCH_PEAK)
+	return (1.0 - b) * (1.0 - b) * (1.0 - b) - FLINCH_SNAP * sin(PI * b) * (1.0 - b)
+
+
+## Steps the flinch by `delta` seconds of frame time and poses this node: a lean away from the hit about the pivot
+## (_flinch_pivot), a squash; at rest the node's own transform comes back exactly.
+func advance_flinch(delta: float) -> void:
+	if not flinching():
+		return
+	_flinch_t += clampf(delta, 0.0, 0.05)
+	if not flinching():
+		transform = _rest_xf
+		return
+	var k := flinch_amount()
+	var yaw := (get_parent() as Node3D).rotation.y if get_parent() is Node3D else 0.0
+	var d := (
+		Basis(Vector3.UP, yaw + _rest_xf.basis.get_euler().y).inverse()
+		* SimPlane.to_3d(_flinch_dir)
+	)
+	var axis := Vector3.UP.cross(d).normalized()
+	var squash := Vector3(
+		1.0 + 0.5 * FLINCH_SQUASH * k, 1.0 - FLINCH_SQUASH * k, 1.0 + 0.5 * FLINCH_SQUASH * k
+	)
+	var b := Basis(axis, FLINCH_LEAN * k) * Basis.from_scale(squash)
+	var p := Vector3(0, _flinch_pivot(), 0)
+	transform = _rest_xf * Transform3D(b, p - b * p)
+
+
+## The point the flinch leans about, metres above the feet in this node's frame (a hovering body leans about itself).
+func _flinch_pivot() -> float:
+	return 0.0
 
 
 ## Advances the animation by `delta` seconds of frame time (each avatar its own).

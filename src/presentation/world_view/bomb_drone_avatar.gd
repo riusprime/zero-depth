@@ -171,6 +171,11 @@ func advance(delta: float) -> void:
 	_pose()
 
 
+## v0.8.0 GF2: the flinch leans the hull about itself, not about the ground under it.
+func _flinch_pivot() -> float:
+	return HOVER_Y
+
+
 ## The hull's current height above the ground (the hover plus the bob).
 func hover_height() -> float:
 	return hull.position.y

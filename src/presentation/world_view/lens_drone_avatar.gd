@@ -1,5 +1,5 @@
 class_name LensDroneAvatar
-extends Node3D
+extends AvatarBase
 ## The Lens Drone (v0.4.0 BO): one of the three drones the Hive Lens splits into at half HP, a small copy of its
 ## rim pods in the enemy style. A red faceted pod with a grey cap and a glowing red eye slit in front, a grey ring
 ## turning round it, hovering HOVER_Y up with a bob over a soft dark ground shadow (the sim treats it as a body on
@@ -19,13 +19,10 @@ const KIND := WorldReader.KIND_LENS_DRONE
 var pod: Node3D
 var ring: Node3D
 var shadow: MeshInstance3D
-var body_materials: Array[StandardMaterial3D] = []
 
 var _eye_mat := StandardMaterial3D.new()
 var _parts: BossParts
-var _fresh := true
 var _state := WorldReader.STATE_SPAWN
-var _t := 0.0
 var _rise := 0.0
 var _charge := 0.0
 
@@ -97,10 +94,6 @@ func apply_state(s: Dictionary) -> void:
 		_pose()
 
 
-func _process(delta: float) -> void:
-	advance(delta)
-
-
 func advance(delta: float) -> void:
 	var dt := clampf(delta, 0.0, 0.05)
 	if dt <= 0.0 or pod == null:
@@ -111,6 +104,11 @@ func advance(delta: float) -> void:
 	var aiming := _state == WorldReader.STATE_WINDUP or _state == WorldReader.STATE_ACTIVE
 	_charge = move_toward(_charge, 1.0 if aiming else 0.0, dt * (4.0 if aiming else 2.0))
 	_pose()
+
+
+## v0.8.0 GF2: the flinch leans the pod about itself, not about the ground under it.
+func _flinch_pivot() -> float:
+	return HOVER_Y
 
 
 ## The pod's current height above the ground (the hover plus the bob).

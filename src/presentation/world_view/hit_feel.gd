@@ -7,6 +7,10 @@ extends Node3D
 ## The sim's hit-stop is already in the tick (freeze_ticks); nothing here changes an outcome.
 ## Bosses (v0.3.0 BX): a dull grey-blue spark when the ranged armour deflects most of a far hit, a big gold one on
 ## the open weak point.
+## v0.8.0 GF2 (owner O20): each of the player's hits on an enemy also throws an impact (ImpactFx: a flash and sparks
+## where it hit, a spray out of the far side along the hit) and flinches the enemy's model away from the hit
+## (AvatarBase.flinch for the normal kinds, BossAvatar.flinch's clip for the bosses: a pose only, the sim body never
+## moves), on top of the white flash.
 
 const SHARDS := 7
 const SHARD_FRAMES := 30
@@ -17,6 +21,10 @@ const DEFLECT_COLOR := Color(0.42, 0.46, 0.52)
 
 var actors: ActorViews
 var rig: IsoRig
+## v0.8.0 GF2: the impacts (drawn into the effects layer: WorldViewRoot adds impacts.draw to its drawers).
+var impacts := ImpactFx.new()
+## v0.8.0 GF2: flinches started (tests).
+var flinches := 0
 var _last_seq := 0
 var _rng := RandomNumberGenerator.new()
 var _shards: Array = []
@@ -46,6 +54,9 @@ func sync(reader: WorldReader) -> void:
 					actors.flash(e.target_id)
 				if e.target_id == player_id:
 					rig.shake(0.55)
+				elif player_hit(e, player_id):
+					var hit := impacts.on_hit(reader, e)
+					_flinch(e.target_id, hit[0], hit[1])
 			SimEvent.Kind.HIT:
 				if e.tags & SimEvent.TAG_EXPOSED:  # BX: a boss's open weak point, struck up close
 					_burst(e.pos, Color(1.0, 0.84, 0.42), 9, 0.11)
@@ -60,6 +71,28 @@ func sync(reader: WorldReader) -> void:
 			SimEvent.Kind.KILL:
 				if e.target_id != player_id:
 					_burst(e.pos, ThemePalette.color(&"enemy_body"), SHARDS, 0.16, true)
+	impacts.track(reader)
+
+
+## v0.8.0 GF2: a DAMAGE event that is the player's hit on an enemy (not a damage-over-time tick).
+static func player_hit(e: SimEvent, player_id: int) -> bool:
+	return (
+		e.kind == SimEvent.Kind.DAMAGE
+		and e.owner_id == player_id
+		and e.target_id != player_id
+		and (e.tags & SimEvent.TAG_DOT) == 0
+		and e.amount > 0
+	)
+
+
+## v0.8.0 GF2: flinches the hit enemy's model away along `away` (a model without a flinch: nothing).
+func _flinch(id: int, away: Vector2, strength: float) -> void:
+	var node := actors.actor_node(id)
+	if node == null or not node.has_meta(&"enemy_avatar"):
+		return
+	var avatar: Object = node.get_meta(&"enemy_avatar")
+	if avatar.has_method(&"flinch") and avatar.call(&"flinch", away, strength):
+		flinches += 1
 
 
 ## A DAMAGE event from the combo's finisher itself (the player's melee, not an item's echo), read while that swing

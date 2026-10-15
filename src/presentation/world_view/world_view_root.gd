@@ -188,6 +188,8 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
 	add_child(hit_feel)
+	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
+		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
 	stage.build(reader, palette, arena_half)
 	sync()
 	rig.snap_to(SimPlane.to_3d(reader.player_pos()))

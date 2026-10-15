@@ -488,3 +488,11 @@ func light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float)
 ## False when the pool or the frame's sprite budget is full.
 func sprite(pool: StringName, p: Vector3, s: float, c: Color, cell: int, roll: float) -> bool:
 	return _put(pool, _facing(p, s, s, true, roll), c, cell, 0.0, 0.0)
+
+
+## v0.8.0 GF2: a camera-facing streak of pool `pool` from `a` to `b`, `w` wide (a spark drawn along its path), atlas
+## cell `cell`. False when the pool or the frame's sprite budget is full.
+func streak(pool: StringName, a: Vector3, b: Vector3, w: float, c: Color, cell: int) -> bool:
+	if a.distance_squared_to(b) < 1e-6:
+		return _put(pool, _facing(a, w, w, true), c, cell, 0.0, 0.0)
+	return _put(pool, _ribbon(a, b, w), c, cell, 0.0, 0.0)
