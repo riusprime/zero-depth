@@ -45,6 +45,9 @@ var active_ticks := 1
 var recover_ticks := 0
 var cooldown_ticks := 0
 var damage := 0
+## v0.8.0 BP (owner O27): each orb or shot of its bullet pattern deals this when > 0 (a small hit beside a bigger one:
+## a leap's ring, a burrow's eruption, an egg's burst); 0 = damage. BossAi.orb_damage reads it.
+var orb_damage := 0
 var min_range_m := 0.0
 var max_range_m := 99.0
 var weight := 1

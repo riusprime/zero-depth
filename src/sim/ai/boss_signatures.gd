@@ -218,7 +218,7 @@ static func _throw_back(w: World, bi: int, k: int) -> void:
 		ActorStore.TEAM_ENEMY,
 		at,
 		dir * pat.speed,
-		BossAi.powered(w, bi, atk.damage),
+		BossAi.orb_damage(w, bi, atk),
 		pat.radius_m,
 		life,
 		SimEvent.TAG_PROJECTILE
@@ -333,7 +333,7 @@ static func egg_burst(w: World, i: int) -> void:
 		c,
 		Kin.angle_of(w.player_pos() - c),
 		w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M,
-		BossAi.powered(w, boss, atk.damage),
+		BossAi.orb_damage(w, boss, atk),
 		LATE_CAUSE + w.actors.lock_a[i]
 	)
 

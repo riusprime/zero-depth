@@ -197,8 +197,10 @@ func test_the_dev_panels_kill_passes_the_shield() -> void:
 
 
 func test_the_patterns_fire_fireballs_of_the_bosss_look() -> void:
+	# v0.8.0 BP (owner O27): the Warlord's javelins come and go faster (6.5 m/s, under the 7 m/s slow-shot cap).
 	for spec in [
-		[&"gatekeeper", &"rock_rings", "ember_stone"], [&"warlord", &"javelin_fan", "spear_ember"]
+		[&"gatekeeper", &"rock_rings", "ember_stone", 3.0, 5.0],
+		[&"warlord", &"javelin_fan", "spear_ember", 6.0, 7.0]
 	]:
 		var s := _fight(spec[0], Vector2(9, 0))
 		var w: World = s[0]
@@ -212,7 +214,7 @@ func test_the_patterns_fire_fireballs_of_the_bosss_look() -> void:
 		for k in reader.projectile_count():
 			assert_eq(reader.projectile_look(k), spec[2])
 			var v := reader.projectile_vel(k).length() * SimTick.TICKS_PER_SECOND
-			assert_between(v, 3.0, 5.0, "slow (about 3-5 m/s)")
+			assert_between(v, spec[3], spec[4], "%s: %.1f-%.1f m/s" % [spec[1], spec[3], spec[4]])
 
 
 func test_the_gatekeepers_phase_script() -> void:

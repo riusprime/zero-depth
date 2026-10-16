@@ -14,7 +14,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 1.6
-damage = 12
+damage = 22
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -34,7 +35,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 1.5
-damage = 12
+damage = 22
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -53,10 +55,11 @@ shape_params = {
 "radius_m": 1.8,
 "stagger_seconds": 0.5
 }
-telegraph_seconds = 1.6
+telegraph_seconds = 1.1
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 22
+damage = 50
+hit_class = &"big"
 move = &"marks"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -75,10 +78,11 @@ shape_params = {
 "radius_m": 1.8,
 "stagger_seconds": 0.6
 }
-telegraph_seconds = 1.6
+telegraph_seconds = 1.1
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 22
+damage = 34
+hit_class = &"medium"
 move = &"marks"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -97,10 +101,11 @@ shape_params = {
 "radius_m": 1.8,
 "stagger_seconds": 0.55
 }
-telegraph_seconds = 1.6
+telegraph_seconds = 1.1
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 22
+damage = 34
+hit_class = &"medium"
 move = &"marks"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -126,7 +131,8 @@ shape_params = {
 telegraph_seconds = 1.6
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 20
+damage = 30
+hit_class = &"medium"
 move = &"row_lanes"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -151,7 +157,8 @@ shape_params = {
 telegraph_seconds = 1.6
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 20
+damage = 30
+hit_class = &"medium"
 move = &"row_lanes"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -171,7 +178,8 @@ shape_params = {
 telegraph_seconds = 0.6
 active_seconds = 0.0167
 recovery_seconds = 0.9
-damage = 18
+damage = 30
+hit_class = &"medium"
 move = &"sweep"
 min_range_m = 0.0
 max_range_m = 3.8

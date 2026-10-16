@@ -31,6 +31,14 @@ extends AttackDefinition
 ## coming back (a pattern with recall_seconds), an egg bursting (marks with egg_seconds and a pattern). Required
 ## with them; empty otherwise.
 @export var late_cause_key: StringName
+## v0.8.0 BP (owner O27): how big a hit the attack is (BossSchemas.HIT_CLASSES: &"small", &"medium", &"big"), which
+## sets how many of its hits kill the hero; empty for what is not a hit of its own (the meltdown's burning ground, the
+## Nemesis's hits made from the build). A big attack ends in its punish window: it never chains into a follow-up
+## (BossDefinition checks its recovery).
+@export var hit_class: StringName
+## v0.8.0 BP: each orb or shot its bullet pattern fires deals this (a small hit) when the attack's own hit is bigger (a
+## leap's quake ring, a burrow's eruption ring, an egg's burst, the gaze's and the Cross's orbs); 0 = `damage`.
+@export var orb_damage := 0
 
 
 func validate_into(issues: Array[ValidationIssue], path: String) -> void:
@@ -85,6 +93,7 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "damage must be > 0"))
 	if weight <= 0:
 		issues.append(ValidationIssue.new(&"not_positive", path, where + "weight must be > 0"))
+	_validate_hit_class(issues, path, where)
 	if min_range_m < 0.0 or max_range_m < min_range_m:
 		issues.append(ValidationIssue.new(&"range", path, where + "needs 0 <= min_range_m <= max"))
 	if cooldown_seconds < 0.0:
@@ -117,6 +126,23 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	_validate_colossus(issues, path, where)
 	_validate_cross(issues, path, where)
 	_validate_nemesis(issues, path, where)
+
+
+## v0.8.0 BP (owner O27): a known hit class; a big attack never chains (its punish window follows it); orb_damage only
+## for an attack with a pattern.
+func _validate_hit_class(issues: Array[ValidationIssue], path: String, where: String) -> void:
+	if not String(hit_class).is_empty() and not BossSchemas.HIT_CLASSES.has(hit_class):
+		issues.append(
+			ValidationIssue.new(&"range", path, where + "unknown hit_class %s" % hit_class)
+		)
+	if hit_class == &"big" and not String(follow_up).is_empty():
+		issues.append(
+			ValidationIssue.new(&"punish", path, where + "a big attack ends in its punish window")
+		)
+	if orb_damage < 0 or (orb_damage > 0 and not shape_params.has("pattern_id")):
+		issues.append(
+			ValidationIssue.new(&"range", path, where + "orb_damage >= 0, and only with a pattern")
+		)
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no

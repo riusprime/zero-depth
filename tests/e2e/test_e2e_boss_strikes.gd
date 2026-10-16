@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.8.0 AV part 2 (owner O7): the other bosses' ground attacks reach the real game styled and strike as 3D effects.
 ## Through main.tscn with real input only (Input.parse_input_event): backtick opens the dev panel, clicks turn God on,
-## pick each boss in turn and summon it, backtick closes the panel. Each boss's ground attack is drawn with its look
-## (TelegraphViews.look_of) and strikes in BossStrikeViews with that boss's look; then KillBoss clears it for the next.
+## pick each boss in turn and summon it (the panel stays open, so God stays on), backtick closes the panel at the
+## end. Each boss's ground attack is drawn with its look (TelegraphViews.look_of) and strikes in BossStrikeViews with
+## that boss's look; then KillBoss clears it for the next.
 
 const BOSSES: Array[StringName] = [
 	&"warlord", &"brood_mother", &"hive_lens", &"siege_engine", &"foundry"
@@ -38,8 +39,9 @@ func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 		assert_eq(choice.text, name)
 		await _click(e, main, "SpawnBoss")
 		await e.frames(2)
-		await e.tap(KEY_QUOTELEFT)
-		assert_false(main.is_dev_panel_open())
+		# v0.8.0 BP: the panel stays open through the fight: closing it drops its DebugApi and God with it
+		# (Main.toggle_dev_panel), and the bosses now kill in 2-5 hits, so the hero died by the third boss.
+		assert_true(main.is_dev_panel_open())
 		var bid := reader.actor_id(reader.boss_index())
 		var looks: Array = (BossStrikeLooks.BY_KIND[table.kind] as Dictionary).values()
 		var styled := false
@@ -64,7 +66,6 @@ func test_each_bosss_ground_attacks_are_styled_and_strike_in_3d() -> void:
 		assert_true(styled, "%s: a ground attack drawn in its look" % id)
 		assert_true(struck, "%s: it struck in 3D" % id)
 		assert_gt(drawn, 0, "%s: the strike is drawn" % id)
-		await e.tap(KEY_QUOTELEFT)
 		await _click(e, main, "KillBoss")
 		await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)

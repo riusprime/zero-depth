@@ -411,7 +411,7 @@ func test_the_warlords_javelins_are_deterministic_and_survive_a_save() -> void:
 		var s := _fight(&"warlord", Vector2(20, 0), Vector2.ZERO, true)
 		var w: World = s[0]
 		BossLab.start(w, w.actors.index_of(s[1]), &"javelin_fan_fast")
-		CombatLab.idle(w, 200)
+		CombatLab.idle(w, 150)  # v0.8.0 BP: they stick sooner and come back sooner (0.5 s; was 200 ticks)
 		return w
 	var a: World = make.call()
 	var b: World = make.call()
@@ -546,6 +546,8 @@ func test_in_phase_three_eggs_burst_into_the_acid_star_instead() -> void:
 				var late := BossSignatures.LATE_CAUSE + _atk_index(w, aid, &"egg_storm_5")
 				assert_eq(w.projectiles.cause_of(k), late, "the egg burst's own cause")
 	assert_gt(acid, atk.count * 4, "each egg bursts into its star")
+	# v0.8.0 BP: the boss starts nothing else meanwhile (its next pick, a brood's Hatchlings, is not an egg's).
+	w.actors.cd[w.actors.index_of(aid)] = LONG
 	CombatLab.idle(w, atk.pattern.duration_ticks())
 	assert_eq(_eggs(w).size(), 0, "burst eggs are gone")
 	assert_eq(w.kills, kills, "without a kill")

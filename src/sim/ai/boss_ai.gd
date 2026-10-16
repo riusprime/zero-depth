@@ -434,6 +434,12 @@ static func powered(w: World, i: int, amount: int) -> int:
 	return EnemyAi.powered(w, i, amount)
 
 
+## v0.8.0 BP (owner O27): the damage of each orb or shot attack `atk`'s bullet pattern fires (its orb_damage when set,
+## else its damage), under boss i's catch-up.
+static func orb_damage(w: World, i: int, atk: BossAttackTable) -> int:
+	return powered(w, i, atk.orb_damage if atk.orb_damage > 0 else atk.damage)
+
+
 ## A spawn spot `dist` from `at` along `angle`, pulled in until it is clear of walls (or `at` itself). Public:
 ## BossGates' adds use it too.
 static func spot(w: World, at: Vector2, angle: int, dist: float) -> Vector2:

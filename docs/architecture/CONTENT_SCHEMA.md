@@ -664,6 +664,17 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     `blast_min_m` / `blast_max_m` (1.0, 3.0). A mimic table is not scaled by the floor or the loop
     (`RunState.scale_bosses`).
 
+- **v0.8.0 BP (owner O27).** Two optional fields on a boss attack:
+  - `hit_class: StringName`: `&"small"` (orbs, shots, javelins), `&"medium"` (strikes, lanes, beams) or `&"big"`
+    (leaps, charges, slams), or empty (not a hit of its own: the meltdown, the Nemesis's build-made hits). The hits
+    of its `damage` that kill the base hero (`data/player/runner.tres` HP, loop 1, before the floor, Deep, catch-up
+    and loop factors) are `BossSchemas.HIT_CLASSES`: small 4-5, medium 3-4, big 2 (a content test). A `big` attack
+    has no `follow_up`, and its recovery after the boss's `recovery_permille` is its punish window,
+    `BossSchemas.PUNISH_MIN_TICKS`..`PUNISH_MAX_TICKS` (36..54 ticks, 0.6..0.9 s; `BossDefinition` checks it).
+  - `orb_damage: int` (≥ 0; only with a `pattern_id`): each orb or shot of the attack's pattern deals it (a small hit
+    beside a bigger one: a leap's quake ring, a burrow's eruption, an egg's burst, the gaze's and the Cross's orbs;
+    the recalled javelins); 0 = `damage`. Scaled with `damage` by `RunState.scale_bosses`.
+
 ### 4b. Bullet patterns (`data/bullet_patterns/*.tres`, v0.7.5 BF1)
 
 ```gdscript

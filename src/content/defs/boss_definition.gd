@@ -262,6 +262,16 @@ func _check_challenge(issues: Array[ValidationIssue]) -> void:
 			issues.append(
 				ValidationIssue.new(&"challenge", p, "gap-close distance and time must be > 0")
 			)
+	for a in attacks:  # v0.8.0 BP (owner O27): a big attack's punish window, after recovery_permille
+		if a == null or a.hit_class != &"big":
+			continue
+		var rec := int(round(a.recovery_seconds * 60.0)) * recovery_permille / 1000
+		if rec < BossSchemas.PUNISH_MIN_TICKS or rec > BossSchemas.PUNISH_MAX_TICKS:
+			issues.append(
+				ValidationIssue.new(
+					&"punish", p, "attack %s: a big attack recovers 0.6..0.9 s (its window)" % a.id
+				)
+			)
 	for a in attacks:
 		if a == null or String(a.follow_up).is_empty():
 			continue
