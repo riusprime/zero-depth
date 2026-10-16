@@ -2,7 +2,7 @@
 
 Everything that waits on you, in one place: art, decisions, tests and the playtest. The lead keeps it up to date: a
 row moves to **Done** with the date when it arrives, and new requests are added here as they come up. Last updated
-2026-10-15 (textures added), v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
+2026-10-16 (playtest 2 fixes and part 2 built; your textures and VFX received), v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
 **How to deliver art:** drop the `.glb` (with its textures) or `.png` into `unprocessed_images/` (or the repo root),
 named by the **id** in the tables below, and say so in chat. The lead installs, sizes, lists and tests it. Prompts
@@ -50,11 +50,23 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 - [ ] AO (O37): take Ring, Spread and Swirl on a Gun run and try the orders on the Build page (Ring · Spread, Spread ·
   Ring, Ring · Spread · Swirl, Swirl · Ring · Spread): does the order now matter enough, does the storm read as a storm,
   and are the lightning circles too strong? ([evidence](roadmap/v0.8.0/evidence/ATTACK_ORDER.md))
+- [ ] P1 (O23, O25, O26): do enemies now chase you round walls and through doors instead of getting stuck? Does the
+  Warden's red circle and overhead slam read? Can you see every melee enemy's strike coming (arms raised and held)?
+- [ ] BP (O27): the faster boss attacks (Warlord javelins, leaps, slams): dashable after the warning? Is the opening
+  after big attacks long enough to hit back with the Blade? Do bosses kill in about 4–5 small hits / 2 big ones?
+  ([evidence](roadmap/v0.8.0/evidence/BOSS_PACE.md))
+- [ ] RR (O33): do the rarity colours read on cards, the shop and the boss reward? Did a run go "broken" (Chain Blast,
+  the ×2 triggers), and how often over your runs? ([evidence](roadmap/v0.8.0/evidence/RARITY.md))
+- [ ] Your textures and VFX, once installed (§3.7): does each one look right where it is used?
 - [ ] On the **Windows export** (the CI build, not the editor): starts, plays, saves and quits cleanly.
 
 ---
 
 ## 2. Decisions waiting for you
+
+**Most urgent** (they block or change the next build): **D23** (the utility-card list: nothing is built until you
+mark it), **D37** (which floor the boss hits count on), **D29** (what counts as a broken build), **D18** (the Blade's
+two hit-stops), **D15** (merging into `main`, after your test).
 
 | # | Question | Today (the lead's default) | Where |
 |---|---|---|---|
@@ -145,12 +157,16 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 ### 3.7 Textures to replace the code-made looks (P1–P3): [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md)
 Owner, 2026-10-15: real painted textures, like the player's attacks, for what v0.8.0 drew in code. Each row there
 says what it replaces and gives the prompt.
+
+**Received 2026-10-16: 29 of 30** (`FX.zip` → `unprocessed_images/vfx/`, `TEX.zip` → `unprocessed_images/v080_tex/`;
+being installed now). **Still owed: `fx_rail_streak`** (P2, the Siege Engine's rail; the prompt is in the request
+file). `ui_element_glyphs2.png` was stored as `ui_element_glyphs_2`.
 - **P1 (most visible):** `fx_orb_cores`, `fx_orb_cores_2`, `fx_orb_cores_final`, `fx_trails`, `fx_beam`,
-  `fx_beam_impact`, `fx_ground_cracks`, `fx_rock_burst`, `fx_lava_flow`, `tex_lava_crust`, `tex_menu_stone` (11)
+  `fx_beam_impact`, `fx_ground_cracks`, `fx_rock_burst`, `fx_lava_flow`, `tex_lava_crust`, `tex_menu_stone` (11) ✅
 - **P2:** `fx_dust_ring`, `fx_light_ring`, `fx_acid_splat`, `fx_steam_puffs`, `fx_rail_streak`, `fx_skid_marks`,
   `fx_aim_lines`, `fx_crystal_shatter`, `fx_cast_sigils`, `tex_menu_stone_wall`, `tex_mark_steel`, `tex_mark_hazard`,
-  `tex_mark_acid`, `tex_mark_light`, `tex_stone_spike` (15)
-- **P3:** `fx_ember_sparks`, `fx_star_motes`, `ui_element_glyphs`, `ui_element_glyphs_2` (4)
+  `tex_mark_acid`, `tex_mark_light`, `tex_stone_spike` (15) ✅ except `fx_rail_streak` ☐
+- **P3:** `fx_ember_sparks`, `fx_star_motes`, `ui_element_glyphs`, `ui_element_glyphs_2` (4) ✅
 
 ### 3.8 Audio (P3)
 A final-boss music track (FINAL_BOSS F9); today it uses the existing boss sounds.
@@ -170,4 +186,6 @@ A final-boss music track (FINAL_BOSS F9); today it uses the existing boss sounds
 | 2026-10-13 | Warlord, Hive Lens, Foundry models (v0.7.5) |
 | 2026-10-14 | The final boss's three models (split from one file) |
 | 2026-10-14 | The shop stall (`shop_tent`) |
+| 2026-10-16 | 29 of the 30 v0.8.0 textures and VFX (§3.7; `fx_rail_streak` still owed) |
+| 2026-10-16 | Playtest 2 feedback (O23–O37) and its answers: hearts paused, the two end-of-loop devices, part 2 in v0.8.0 |
 | 2026-10-14 | v0.8.0 picks: palette A, menu style B, boss signatures, Blade audit, final boss rows, the ×100 loop cap, room density |
