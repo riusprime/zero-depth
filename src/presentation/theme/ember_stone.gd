@@ -24,15 +24,38 @@ const GOLD := Color("#E8C870")
 const GROOVE := Color(0.025, 0.018, 0.013)
 ## The grain texture's size (px); a slab larger than this stretches it.
 const GRAIN_PX := 512
+## v0.8.0 TX3: the owner's textures (docs/art/requests/v0.8.0_textures.md; scripts/assets/tx3_prep.py): the slabs'
+## carved stone grain (`tex_menu_stone`, grey, multiplied in) and the main menu's ember-lit wall
+## (`tex_menu_stone_wall`, MenuBackdrop). Without them the code-made looks stay (the grain from noise, the shader's
+## stone floor).
+const STONE_TEX := "res://assets/textures/ui/tex_menu_stone.png"
+const WALL_TEX := "res://assets/textures/ui/tex_menu_stone_wall.png"
 
 static var _grain: Texture2D
+static var _wall: Texture2D
+static var _wall_tried := false
 
 
-## The shared stone grain (a soft mottle with fine grit), made once from noise in code (no image asset), as a grey
-## texture the slabs multiply their colour by (0.6 .. 1).
+## The shared stone grain the slabs multiply their colour by (about 0.6 .. 1): the owner's carved stone
+## (`tex_menu_stone`) when it is installed, otherwise made once from noise in code (a soft mottle with fine grit).
 static func grain() -> Texture2D:
 	if _grain != null:
 		return _grain
+	if ResourceLoader.exists(STONE_TEX):
+		_grain = load(STONE_TEX) as Texture2D
+		if _grain != null:
+			return _grain
+	_grain = code_grain()
+	return _grain
+
+
+## Whether the slabs wear the owner's stone (false: the code-made grain).
+static func owner_grain() -> bool:
+	return grain().resource_path == STONE_TEX
+
+
+## The code-made grain (the fallback): a grey noise texture, 0.6 .. 1.
+static func code_grain() -> Texture2D:
 	var n := FastNoiseLite.new()
 	n.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
 	n.seed = 20261014
@@ -44,8 +67,16 @@ static func grain() -> Texture2D:
 	var img := n.get_seamless_image(GRAIN_PX, GRAIN_PX)
 	img.convert(Image.FORMAT_RGB8)
 	img.adjust_bcs(1.6, 0.36, 0.0)
-	_grain = ImageTexture.create_from_image(img)
-	return _grain
+	return ImageTexture.create_from_image(img)
+
+
+## The main menu's stone wall (null: not installed; MenuBackdrop draws its code-made floor).
+static func wall() -> Texture2D:
+	if not _wall_tried:
+		_wall_tried = true
+		if ResourceLoader.exists(WALL_TEX):
+			_wall = load(WALL_TEX) as Texture2D
+	return _wall
 
 
 ## A stable 0..1 hash of two integers (the slabs' chips and cracks: the same slab looks the same every frame).

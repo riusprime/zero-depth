@@ -232,6 +232,36 @@
       "id": "fx_void_noise",
       "path": "assets/textures/vfx/fx_void_noise.png",
       "sha256": "23991586870a58e1f5bd6e79c8216863575f8e84fcdac3d33760be95fbecb3a0"
+    },
+    {
+      "id": "tex_menu_stone",
+      "path": "assets/textures/ui/tex_menu_stone.png",
+      "sha256": "8dd885ee2adbe5489629d999c022011bb646d019dc227a9b49ae866ebf99af42"
+    },
+    {
+      "id": "tex_menu_stone_wall",
+      "path": "assets/textures/ui/tex_menu_stone_wall.png",
+      "sha256": "1d815edb0128e82d2fc8656d69b06d781b75e42ada5cf738d8a63112fe39c347"
+    },
+    {
+      "id": "ui_element_glyphs",
+      "path": "assets/textures/ui/ui_element_glyphs.png",
+      "sha256": "e4aceb42d3aaace3ab0b66be7fc3110432da051838359f75629abd67f9c085c9"
+    },
+    {
+      "id": "ui_element_glyphs_2",
+      "path": "assets/textures/ui/ui_element_glyphs_2.png",
+      "sha256": "909658fb1c8114bcfe3a12f151f0e39128c64444b1987ab251d8ed8644ebf6bc"
+    },
+    {
+      "id": "fx_ember_sparks",
+      "path": "assets/textures/vfx/fx_ember_sparks.png",
+      "sha256": "57f9c88b045492f6abd06712c607d28913b65f3ef09a9ba6e802038ccf354c60"
+    },
+    {
+      "id": "fx_star_motes",
+      "path": "assets/textures/vfx/fx_star_motes.png",
+      "sha256": "d181f25e8cb834b562c9eb2914b827ec5860bb7e532166eb899f0fe4f3aadfc5"
     }
   ]
 }
