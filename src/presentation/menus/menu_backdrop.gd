@@ -7,6 +7,10 @@ extends ColorRect
 ##   `own_scene` is set): its own scene, a dark ember-lit stone floor
 ##   (slow mottled slabs with carved seams and cracks), a warm glow breathing up from below, a vignette.
 ## - Both: a few sparks drifting up from the embers.
+## v0.8.0 TX3: the owner's textures replace the code looks where installed (EmberStone.wall, SPARKS_TEX): the main
+## menu's scene is the owner's ember-lit stone wall (`tex_menu_stone_wall`, dimmed, the glow still breathing over
+## it) and each spark is one of the owner's four ember sprites (`fx_ember_sparks`, 2 x 2). Still one pass on one
+## rect; without the textures the code-made floor and round sparks stay.
 ## Reduced motion (HudStyle.reduced_motion): the clock stops, so the sparks stand still and nothing flickers or
 ## breathes. The clock is the screen's (a look only, never an outcome: EI-03). It takes no input. Cheap: one pass
 ## of value noise per pixel, only while a menu shows.
@@ -17,6 +21,9 @@ const DARK_RIGHT := 0.5
 const BLUR_LOD := 2.6
 ## The sparks' strength (starting value).
 const SPARKS := 1.0
+## v0.8.0 TX3: the owner's ember sprites, and how bright the owner's wall is drawn under the glow (starting value).
+const SPARKS_TEX := "res://assets/textures/vfx/fx_ember_sparks.png"
+const WALL_GAIN := 0.62
 
 const SHADER := """
 shader_type canvas_item;
@@ -27,6 +34,11 @@ uniform float dark_right = 0.5;
 uniform float t = 0.0;
 uniform float sparks = 1.0;
 uniform float scene = 0.0;
+uniform sampler2D wall_tex : filter_linear, repeat_enable;
+uniform float has_wall = 0.0;
+uniform float wall_gain = 0.62;
+uniform sampler2D spark_tex : filter_linear_mipmap;
+uniform float has_spark_tex = 0.0;
 const vec3 EMBER = vec3(0.92, 0.68, 0.45);
 const vec3 HOTCORE = vec3(1.0, 0.86, 0.66);
 
@@ -54,7 +66,18 @@ float fbm(vec2 p) {
 	return v;
 }
 // The ember-lit stone floor (the main menu's own scene): big slabs with seams, mottle and cracks, lit from below.
-vec3 stone_scene(vec2 px, vec2 uv) {
+vec3 stone_scene(vec2 px, vec2 uv, vec2 screen) {
+	float breathe = 0.9 + 0.1 * sin(t * 0.7) + 0.05 * sin(t * 1.9 + 1.3);
+	if (has_wall > 0.5) {
+		// The owner's wall: one image tall, repeated across; its own warm foot, the code glow breathing over it.
+		vec3 w = texture(wall_tex, px / screen.y).rgb * wall_gain;
+		float wg = pow(uv.y, 2.4) * 0.22 * breathe;
+		wg += 0.2 * exp(-length((uv - vec2(0.7 + 0.03 * sin(t * 0.21), 1.05)) * vec2(1.3, 2.4)) * 2.0) * breathe;
+		w *= 0.8 + 0.25 * breathe;
+		w += EMBER * wg * (0.25 + 1.6 * w.r);
+		float wv = length((uv - vec2(0.6, 0.62)) * vec2(1.25, 1.0));
+		return w * (1.0 - smoothstep(0.3, 1.1, wv) * 0.8);
+	}
 	vec2 q = px / vec2(260.0, 180.0);
 	q.x += floor(q.y) * 0.5;
 	vec2 cell = fract(q);
@@ -66,7 +89,6 @@ vec3 stone_scene(vec2 px, vec2 uv) {
 	col += vec3(0.05, 0.035, 0.02) * (1.0 - smoothstep(0.0, 2.5, abs(seam - 8.0))) * uv.y;
 	float cr = abs(fbm(px / 90.0 + id) * 2.0 - 1.0);
 	col *= 1.0 - (1.0 - smoothstep(0.006, 0.025, cr)) * 0.3 * step(0.55, hash(id + 0.5));
-	float breathe = 0.9 + 0.1 * sin(t * 0.7) + 0.05 * sin(t * 1.9 + 1.3);
 	float glow = pow(uv.y, 2.4) * 0.45 * breathe;
 	glow += 0.35 * exp(-length((uv - vec2(0.7 + 0.03 * sin(t * 0.21), 1.05)) * vec2(1.3, 2.4)) * 2.0) * breathe;
 	col += EMBER * glow * (0.3 + 0.8 * m);
@@ -86,9 +108,22 @@ vec3 spark_layer(vec2 px, vec2 screen, float cellw, float speed, float k) {
 		float x = (col + 0.2 + 0.6 * h2) * cellw + sin(t * (1.0 + h) + h * 6.28) * cellw * 0.18;
 		float d = length(px - vec2(x, y));
 		float r = 1.3 + 1.4 * h;
-		float a = smoothstep(r + 1.2, r * 0.3, d) + 0.25 * exp(-d / (r * 2.5));
-		a *= (1.0 - life) * smoothstep(0.0, 0.08, life) * smoothstep(0.2, 0.75, y / screen.y);
-		acc += mix(EMBER, HOTCORE, 0.5 + 0.5 * h) * a * step(0.55, h2);
+		float fade = (1.0 - life) * smoothstep(0.0, 0.08, life) * smoothstep(0.2, 0.75, y / screen.y);
+		fade *= step(0.55, h2);
+		if (has_spark_tex > 0.5) {
+			// One of the owner's four sprites (its quarter from the hash), centred on the spark.
+			float s = r * 7.0;
+			vec2 l = (px - vec2(x, y)) / s + 0.5;
+			if (l.x > 0.0 && l.x < 1.0 && l.y > 0.0 && l.y < 1.0) {
+				float v = floor(fract(h * 7.31 + h2 * 3.7) * 4.0);
+				vec2 cell = vec2(mod(v, 2.0), floor(v * 0.5));
+				vec4 sp = texture(spark_tex, (cell + l) * 0.5);
+				acc += mix(sp.rgb, mix(EMBER, HOTCORE, 0.5 + 0.5 * h), 0.35) * sp.a * fade * 1.5;
+			}
+		} else {
+			float a = smoothstep(r + 1.2, r * 0.3, d) + 0.25 * exp(-d / (r * 2.5));
+			acc += mix(EMBER, HOTCORE, 0.5 + 0.5 * h) * a * fade;
+		}
 	}
 	return acc;
 }
@@ -107,7 +142,7 @@ void fragment() {
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.3, 0.8), 4.0).rgb - p0));
 	spread = max(spread, length(textureLod(screen_tex, vec2(0.75, 0.75), 4.0).rgb - p0));
 	float empty = max(scene, 1.0 - smoothstep(0.004, 0.03, spread));
-	vec3 col = mix(over, stone_scene(px, uv), empty);
+	vec3 col = mix(over, stone_scene(px, uv, screen), empty);
 	col += sparks * spark_layer(px, screen, 46.0, 0.05, 0.0);
 	col += sparks * 0.6 * spark_layer(px + vec2(23.0, 0.0), screen, 71.0, 0.035, 5.0);
 	COLOR = vec4(col, 1.0);
@@ -115,6 +150,8 @@ void fragment() {
 """
 
 static var _shader: Shader
+static var _sparks_tex: Texture2D
+static var _sparks_tried := false
 
 ## The backdrop's clock (s): it runs unless reduced motion holds it.
 var clock := 0.0
@@ -140,6 +177,15 @@ func _init() -> void:
 	_mat.set_shader_parameter(&"dark_right", DARK_RIGHT)
 	_mat.set_shader_parameter(&"sparks", SPARKS)
 	_mat.set_shader_parameter(&"t", clock)
+	var w := EmberStone.wall()
+	_mat.set_shader_parameter(&"has_wall", 1.0 if w != null else 0.0)
+	_mat.set_shader_parameter(&"wall_gain", WALL_GAIN)
+	if w != null:
+		_mat.set_shader_parameter(&"wall_tex", w)
+	var sp := sparks_texture()
+	_mat.set_shader_parameter(&"has_spark_tex", 1.0 if sp != null else 0.0)
+	if sp != null:
+		_mat.set_shader_parameter(&"spark_tex", sp)
 	material = _mat
 
 
@@ -148,6 +194,23 @@ func _process(delta: float) -> void:
 		return
 	clock += minf(delta, 0.1)
 	_mat.set_shader_parameter(&"t", clock)
+
+
+## The owner's ember sprites (null: not installed; the code's round sparks stay).
+static func sparks_texture() -> Texture2D:
+	if not _sparks_tried:
+		_sparks_tried = true
+		if ResourceLoader.exists(SPARKS_TEX):
+			_sparks_tex = load(SPARKS_TEX) as Texture2D
+	return _sparks_tex
+
+
+## Whether this backdrop draws the owner's wall and ember sprites: [wall, sparks].
+func owner_textures() -> Array:
+	return [
+		float(_mat.get_shader_parameter(&"has_wall")) > 0.5,
+		float(_mat.get_shader_parameter(&"has_spark_tex")) > 0.5
+	]
 
 
 ## Sets the clock (screenshots and tests).

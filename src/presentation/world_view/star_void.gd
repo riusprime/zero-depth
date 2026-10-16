@@ -7,6 +7,9 @@ extends RefCounted
 ## cosmetic stream BiomeEdge hands in; the twinkle and the drift are frame time, still with reduced motion. All of it
 ## stays below the ground (y < 0) and clear of the floor, so nothing stands where you walk or hides a fight. No
 ## collision. Presentation only.
+## v0.8.0 TX3: with the owner's `fx_star_motes` installed (MOTES_TEX, 2 x 2: a four-point twinkle, a soft round star,
+## a tiny comet, a sparkle cluster) each star is one of those sprites on a camera-facing quad (still one MultiMesh,
+## one draw), added over the void; without it the code-made octahedron stays.
 
 ## The rock under the floor: how far it reaches past the ground and how deep it goes (m).
 const ROCK_LIP := 0.12
@@ -70,6 +73,43 @@ void fragment() {
 	float rate = 0.8 + fract(phase) * 2.6;
 	float tw = mix(1.0, 0.3 + 0.7 * (0.5 + 0.5 * sin(TIME * rate + phase * 6.0)), motion);
 	ALBEDO = tint * (0.9 + 1.7 * tw);
+}
+"""
+
+## v0.8.0 TX3: the owner's star motes, and a sprite quad's size against the old octahedron's (the motes' glow round a
+## small core; starting value).
+const MOTES_TEX := "res://assets/textures/vfx/fx_star_motes.png"
+const SPRITE_SCALE := 2.8
+
+const SPRITE_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+
+uniform float motion = 1.0;
+uniform sampler2D motes : source_color, filter_linear_mipmap;
+
+varying vec3 tint;
+varying float phase;
+
+void vertex() {
+	tint = COLOR.rgb;
+	phase = float(INSTANCE_ID) * 1.618034;
+	// Face the camera, keeping the instance's scale.
+	MODELVIEW_MATRIX = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+	MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+		vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+		vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+		vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+		vec4(0.0, 0.0, 0.0, 1.0));
+}
+
+void fragment() {
+	// One of the four motes (its quarter from the instance), tinted toward the star's colour; it twinkles as before.
+	float v = floor(fract(phase * 0.37) * 4.0);
+	vec4 tx = texture(motes, (vec2(mod(v, 2.0), floor(v * 0.5)) + UV) * 0.5);
+	float rate = 0.8 + fract(phase) * 2.6;
+	float tw = mix(1.0, 0.3 + 0.7 * (0.5 + 0.5 * sin(TIME * rate + phase * 6.0)), motion);
+	ALBEDO = tx.rgb * mix(vec3(1.0), tint, 0.6) * tx.a * (0.9 + 1.7 * tw);
 }
 """
 
@@ -146,9 +186,17 @@ static func rock_material(edge_color: Color) -> StandardMaterial3D:
 
 
 static func star_material() -> ShaderMaterial:
-	var m := _shader(STAR_SHADER)
+	var tex := motes()
+	var m := _shader(SPRITE_SHADER if tex != null else STAR_SHADER)
 	m.set_shader_parameter("motion", _motion())
+	if tex != null:
+		m.set_shader_parameter("motes", tex)
 	return m
+
+
+## v0.8.0 TX3: the owner's star motes (null: not installed; the code-made stars stay).
+static func motes() -> Texture2D:
+	return load(MOTES_TEX) as Texture2D if ResourceLoader.exists(MOTES_TEX) else null
 
 
 static func nebula_material(tint: Color, seed_value: float) -> ShaderMaterial:
@@ -308,8 +356,11 @@ static func _in_any(p: Vector2, ground: Array, d: float) -> bool:
 	return false
 
 
-## A star: a tiny octahedron (unit size).
+## A star: a camera-facing quad for the owner's motes (SPRITE_SCALE across, the shader turns it), or without them a
+## tiny octahedron (unit size).
 static func star_mesh() -> ArrayMesh:
+	if motes() != null:
+		return _sprite_quad(SPRITE_SCALE)
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var top := Vector3(0, 0.5, 0)
@@ -320,6 +371,19 @@ static func star_mesh() -> ArrayMesh:
 		var b: Vector3 = ring[(k + 1) % 4]
 		_facet(st, top, a, b, Vector3.ZERO)
 		_facet(st, low, b, a, Vector3.ZERO)
+	return st.commit()
+
+
+static func _sprite_quad(w: float) -> ArrayMesh:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var h := w * 0.5
+	var corners := [Vector3(-h, h, 0), Vector3(h, h, 0), Vector3(h, -h, 0), Vector3(-h, -h, 0)]
+	var uvs := [Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)]
+	for k: int in [0, 1, 2, 0, 2, 3]:
+		st.set_normal(Vector3.BACK)
+		st.set_uv(uvs[k])
+		st.add_vertex(corners[k])
 	return st.commit()
 
 
