@@ -979,6 +979,20 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   cap above `cap_max` is `cap_range`; a pack range whose max is under its min, or whose arrays differ in length, is
   `pack_range`; a negative `pack` is `mix_entry`; a negative `edge_band_m` is `negative`.
 
+- **`IntensityDirectorDefinition`** (v0.8.0 N5, owner O58; `data/spawning/intensity.tres`, category `intensity`, id
+  `director`; in the dev panel's Difficulty group with `data/spawning`): the intensity director's numbers
+  ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11), starting values the owner tunes: `close_radius_m` (3), `hit_full_hp_gain`
+  (1000: the intensity a hit of the whole max HP adds; 10 % of max HP adds 100), `close_kill_gain` (25),
+  `close_gain_per_second` (30), `drain_per_second` (60), `calm_seconds` (2), `peak_intensity` (750),
+  `peak_seconds_min` / `max` (3 / 5), `pull_back_radius_m` (8), `pull_back_enemies` (2), `pull_back_max_seconds` (4),
+  `quiet_seconds_min` / `max` (10 / 20), `relax_intensity` (400), `build_interval_permille` (400: while building up
+  the packs come at 0.4 × the curve's interval). Intensity runs 0..1000. Validation: the radii > 0 (`not_positive`);
+  gains 0..100000 / 0..1000, drain 1..1000, the thresholds 1..1000 / 0..1000, `pull_back_enemies` 0..1000,
+  `build_interval_permille` 100..1000 (`range`); `relax_intensity` below `peak_intensity` (`intensity_order`); every
+  duration > 0 and at least a tick (`not_positive`, `duration_zero_ticks`); each min not above its max
+  (`duration_range`). Compiled by `IntensityCompiler.compile` (ticks; intensity × 1000, per-second rates
+  / 60) onto the run floors' `SpawnTable.intensity`.
+
 - **`CatchUpDefinition`** (v0.5.5 DS, owner D4 and D7; `data/scaling/catch_up.tres`, category `scaling`, id
   `catch_up`): the hidden catch-up's numbers, all per mille ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11):
   `expected_power_permille` (E at floor entry, `[1000, 2000, 4000]`), `cap_permille` (`[1500, 2000, 2500]`),

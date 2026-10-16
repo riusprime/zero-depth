@@ -357,6 +357,8 @@ var catch_up_table: CatchUpTable
 ## data/tuning/sim.tres. Loadout, not state (not hashed).
 var tuning := SimTuning.new()
 var catch_up := CatchUpState.new()
+## v0.8.0 N5 (owner O58): the intensity director's state (Intensity), hashed only when the spawner has its table.
+var intensity := IntensityState.new()
 var deep_elite_rooms := PackedInt32Array()
 var _next_id := 1
 var _event_seq := 0
@@ -1083,6 +1085,8 @@ func state_hash() -> String:
 	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.
 	if catch_up_table != null:  # v0.5.5 DS: only worlds whose loadout has the hidden catch-up.
 		catch_up.hash_into(h)
+	if spawner != null and spawner.intensity != null:  # v0.8.0 N5: only worlds whose spawner has the director
+		intensity.hash_into(h)
 	if not deep_elite_rooms.is_empty():  # v0.5.5 DS (S5): only once a Deep room brought its elite.
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
@@ -1534,6 +1538,7 @@ func _remove_dead() -> void:
 			if EnemyAi.is_enemy_kind(actors.kinds[i]):
 				kills += 1
 				EnemyAi.on_death(self, i)  # v0.4.0 EN: a Splitter splits.
+				Intensity.on_death(self, i)  # v0.8.0 N5: a kill beside the hero raises intensity
 			var b := bosses.index_of(actors.ids[i])
 			if b >= 0:  # Bosses (v0.3.0 C): defeated, once, as it leaves.
 				var e := emit_event(

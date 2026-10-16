@@ -200,6 +200,10 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   the room's index `k`. Re-entering a room after a resume therefore replays its randomness exactly, whatever
   happened earlier. First used in v0.5.5 AR by the sealed arenas' waves (`Arenas`): derived at each seal from the
   floor's seed (`World.seed_value`, which the run seed derives per floor), so room `k` on each floor has its own.
+- **The intensity director's cycles (v0.8.0 N5).** `Intensity` derives `ai:intensity:<cycle>` from the floor's seed
+  (`World.seed_value`) when a build-up reaches its peak, and draws two numbers from it: the peak's length, then the
+  quiet's. No stream is stored (the cycle count is state), so the draws replay exactly after a resume and never move
+  any other stream. A sub-stream of `ai` like `ai:room:k`; not in EI-05's list either (flagged with `map:ice`, D13).
 - **Per-room generation seeds.** `FloorGenerator` derives one sub-seed per room from the `map` stream, so changing
   one room's template never shifts any other room.
 - The `cosmetic` stream lives in presentation (particle jitter, camera shake noise, pitch jitter). It is derived
@@ -1466,6 +1470,31 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   (`data/scaling/catch_up.tres`): E = 1000 / 2000 / 4000, cap ×1.5 / ×2 / ×2.5, boss E = 2000 / 4000 / 7000, boss cap
   ×2 / ×3 / ×4, +0.25 per T, 120 per ability level, 80 per item, 150 per combo. It is never shown to the player: no
   `WorldReader` accessor exists (a test checks); the dev panel reads the world directly.
+- **The intensity director (v0.8.0 N5, owner O58, Left 4 Dead's director: "It doesn't change how hard the game hits.
+  It changes when.").** On a run floor `ContentCompiler.compile_floor_spawning` hangs `SpawnTable.intensity` (an
+  `IntensityTable`, loadout) from `data/spawning/intensity.tres`; a spawner without it (labs, kernel, a hand-built
+  `compile_spawning`) runs and hashes as before. `Intensity.advance` runs at the top of `SpawnDirector.advance`
+  (tick phase 9), so only on ordinary floor spawning: a sealed arena, the Overrun, the boss room, the encounters and
+  the final arena never run it (it is frozen there). `World.intensity` (an `IntensityState`: `level` = intensity ×
+  1000, 0..1000000, `mode`, `timer`, `quiet_len`, `cycle`, `calm`, `last_hp`, `seen_tick`; hashed only with the
+  table; snapshotted; `ADDED_SINCE_V05`: an older save's floor starts in `BUILD_UP` at 0). Each tick it runs:
+  **hit**: the hero's HP fell since the tick before (only if the director ran that tick: `seen_tick = tick − 1`; any
+  HP loss counts) → `+ lost × hit_full_hp_gain / max HP`; **close**: an alive enemy within `close_radius_m` →
+  `+ close_gain_per_tick`; **kill**: `World._remove_dead` → `Intensity.on_death`, an enemy dying within
+  `close_radius_m` → `+ close_kill_gain` (only while the director ran the tick before); **drain**: `calm` counts the
+  ticks with no hit and no close enemy; from `calm_ticks` on, `− drain_per_tick`; clamped to 0..1000000. Then the
+  state: `BUILD_UP` → `PEAK` at `peak_level` (one stream `ai:intensity:<cycle>` derived from the world's seed draws
+  the peak's length in `peak_ticks_min..max`, then the quiet's in `quiet_ticks_min..max`); `PEAK` → `PULL_BACK` when
+  its timer ends (timer = `pull_back_max_ticks`); `PULL_BACK` → `QUIET` once at most `pull_back_enemies` alive enemies
+  are within `pull_back_radius_m`, or on its timeout; `QUIET` → `BUILD_UP` (`cycle + 1`) once its drawn length has
+  passed and `level ≤ relax_level`, or at the latest `quiet_ticks_max` after it began (then `level` drops to
+  `relax_level`). Gate: in `PULL_BACK` and `QUIET` `SpawnDirector.advance` sends no pack (`Intensity.sending`; the
+  interval clock runs down to 0 and waits; the enemies out stay); in `BUILD_UP` the next interval is the curve's ×
+  `build_interval_permille` (`Intensity.interval`, the ramp toward the peak); `PEAK` keeps the curve's. The cap, the
+  mix, the pack, the tier, the curve, the curses, Deep and the catch-up are untouched: the director changes when, not
+  what or how strong. The player gets no cue (owner: "the enemies are the real indicator"); `WorldReader.
+  has_intensity`, `intensity` (0..1000), `intensity_mode`, `intensity_timer` exist for the dev panel (F10's Tools page:
+  `DevPanel.intensity_text`).
 - **Boss phase gates (v0.5.5 DS, owner D7: mechanics HP can't skip).** Every boss has three phases at 1000 / 660 /
   330 ‰ of max HP (data). Damage on a boss stops at the next phase's threshold (`BossGates.clamp_damage` in
   `Damage._apply`, so a hit, a DoT tick or a burst all stop there; only the world's own hits, owner 0 such as the dev

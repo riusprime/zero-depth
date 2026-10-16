@@ -30,6 +30,8 @@ var packs := PackedInt32Array()
 ## v0.4.0 TU (owner D1–D3): the floor's difficulty curve (null = SC's plain 30 s tiers, as before). With a curve,
 ## floor time picks a phase: the danger tier, the cap and the interval follow it, and the mix opens by phase.
 var curve: CurveTable
+## v0.8.0 N5 (owner O58): the intensity director's numbers (null = off: packs come as before; Intensity).
+var intensity: IntensityTable
 
 
 func tier_at(run_ticks: int) -> int:
