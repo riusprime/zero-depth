@@ -6,9 +6,12 @@ extends RefCounted
 ## set into its socket's inlay ring (InlaySocket), so the element reads by shape as well as by the ring's colour.
 ## ELEMENT_OF is the card → element table (as CardFrames.FAMILY_OF; an ELEMENT op inside a HOOK op's hook_ops
 ## counts); tests/unit/presentation/test_element_glyphs.gd fails when a content card's ELEMENT op is missing here or
-## disagrees, so a new elemental card gets its glyph on purpose. The crossed blades and the star burst have no
-## element yet (OWNER_TODO D42): they are sliced and named but no card wears them. Without the
-## sheets nothing is drawn (the ring's colour alone, the look before TX3).
+## disagrees, so a new elemental card gets its glyph on purpose. v0.8.0 N1 (owner O54, D42 "(a)"): the two spare
+## glyphs got their meanings: the star burst on a Legendary card (LEGENDARY: the items of rarity LEGENDARY; the reward
+## pick's legendary tier too, StoneCard), over its element; the crossed blades on a Blade card with no element
+## (BLADE_PLAIN: the items that require the Blade and name no element). glyph_of picks the one a card wears; the
+## same test keeps both lists in step with the content. Without the sheets nothing is drawn (the ring's colour
+## alone, the look before TX3).
 ## Presentation only (EI-07).
 
 const SHEETS := [
@@ -23,8 +26,8 @@ const CELLS := {
 	&"venom": [0, Vector2i(1, 1)],  # a venom drop
 	&"void": [1, Vector2i(0, 0)],  # a void spiral
 	&"bleed": [1, Vector2i(1, 0)],  # a blood drop
-	&"blades": [1, Vector2i(0, 1)],  # crossed blades (no element yet)
-	&"star": [1, Vector2i(1, 1)],  # a star burst (no element yet)
+	&"blades": [1, Vector2i(0, 1)],  # crossed blades: a Blade card with no element (N1, D42)
+	&"star": [1, Vector2i(1, 1)],  # a star burst: a Legendary card (N1, D42)
 }
 ## Every card whose modifier names an element → that element (the first ELEMENT op's).
 const ELEMENT_OF := {
@@ -53,12 +56,64 @@ const ELEMENT_OF := {
 	&"venom_core": &"venom",
 }
 
+## v0.8.0 N1 (D42): the Legendary cards (ItemDefinition.Rarity.LEGENDARY); they wear the star burst.
+const LEGENDARY := {
+	&"chain_blast": true,
+	&"echo_storm": true,
+	&"inferno_core": true,
+	&"tempest_core": true,
+	&"trigger_on_end_twice": true,
+	&"trigger_on_hit_twice": true,
+	&"trigger_on_kill_twice": true,
+}
+## v0.8.0 N1 (D42): the Blade cards (requires_weapon blade) that name no element and aren't Legendary; they wear the
+## crossed blades.
+const BLADE_PLAIN := {
+	&"blade_orbit": true,
+	&"blade_storm": true,
+	&"bulwark": true,
+	&"chain_cut": true,
+	&"counter": true,
+	&"double_slash": true,
+	&"echo_slash": true,
+	&"finisher_plus": true,
+	&"fissure": true,
+	&"flurry": true,
+	&"heavy": true,
+	&"long_edge": true,
+	&"long_shadow": true,
+	&"lunge_step": true,
+	&"momentum": true,
+	&"overcharge": true,
+	&"parry_edge": true,
+	&"rearguard": true,
+	&"riposte_chain": true,
+	&"seeker": true,
+	&"split_wave": true,
+	&"thrust": true,
+	&"twin_arc": true,
+	&"twin_cast": true,
+	&"whirl": true,
+	&"wide_arc": true,
+}
+
 static var _sheets: Array = []
 
 
 ## The element card `id` wears (&"" for none).
 static func element_of(id: StringName) -> StringName:
 	return ELEMENT_OF.get(id, &"")
+
+
+## v0.8.0 N1 (D42): the glyph card `id` wears: the star burst on a Legendary card, else its element's, else the
+## crossed blades on a plain Blade card (&"" for none).
+static func glyph_of(id: StringName) -> StringName:
+	if LEGENDARY.has(id):
+		return &"star"
+	var e := element_of(id)
+	if e != &"":
+		return e
+	return &"blades" if BLADE_PLAIN.has(id) else &""
 
 
 ## A glyph's sheet and its region on it ([Texture2D, Rect2]); [] when the glyph or its sheet is missing.

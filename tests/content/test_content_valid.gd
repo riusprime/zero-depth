@@ -62,10 +62,10 @@ func test_the_combo_compiles_to_the_four_slashes() -> void:
 	assert_eq(
 		got,
 		[
-			[SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 13, 2, 683, 10, 3, 5],
-			[SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 14, 3, 683, 10, 3, 5],
-			[SwingStep.Motion.THRUST, 16, 4, 228, 12, 4, 4],
-			[SwingStep.Motion.SPIN, 31, 7, 2048, 24, 7, 9],
+			[SwingStep.Motion.SLASH_RIGHT_TO_LEFT, 13, 2, 683, 10, 4, 5],
+			[SwingStep.Motion.SLASH_LEFT_TO_RIGHT, 14, 3, 683, 10, 4, 5],
+			[SwingStep.Motion.THRUST, 16, 4, 228, 12, 5, 4],
+			[SwingStep.Motion.SPIN, 31, 7, 2048, 24, 8, 9],
 		]
 	)
 

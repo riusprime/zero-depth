@@ -15,8 +15,13 @@ func _init(p_test: GutTest) -> void:
 
 
 ## Boots main.tscn with a memory-only profile (optionally pre-filled) and waits for the menu. v0.6.5 WN5b: `saves`, a
-## memory-only run save store already holding a save (an old one to Continue), else an empty one.
-func boot(profile: ProfileStore = null, saves: RunSaveStore = null) -> Main:
+## memory-only run save store already holding a save (an old one to Continue), else an empty one. v0.8.0 N1 (O53):
+## `seed`, the seed mode (Main.fixed_seed): the e2e keep the fixed STAGE_SEED order on purpose (the first new run takes
+## it, each later one the next); RunSeeds.RANDOM plays as the game does.
+func boot(
+	profile: ProfileStore = null, saves: RunSaveStore = null, seed: int = Main.STAGE_SEED
+) -> Main:
+	Main.fixed_seed = seed
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
 	RunSaveStore.use_shared(saves if saves != null else RunSaveStore.new(""))  # v0.4.0 SV: none from an earlier test
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()

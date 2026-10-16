@@ -89,6 +89,10 @@ var bursts_asked := 0
 var bursts_drawn := 0
 var bursts_merged := 0
 var bursts_skipped := 0
+## v0.8.0 N1: with `record` on (the light-walk probe, tests), the places of this frame's flame sprites (their
+## centres), since a headless renderer keeps no instance transforms to read back.
+var record := false
+var placed_flames := PackedVector3Array()
 ## The same pools in a list (begin and finish walk it every frame without allocating).
 var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
@@ -109,6 +113,14 @@ var _lights_off := false
 
 func _init() -> void:
 	name = "Vfx"
+	# v0.8.0 N1 (owner O46/O55: "fire drawings popping randomly in position and timing through the whole screen"):
+	# every piece here (the pools' instances, the pooled lights, the floor marks) is laid out again each frame, and a
+	# pool slot holds a different effect from one frame to the next (a fire light hid, another effect's flames came
+	# first). Under the project's physics interpolation the renderer drew each slot between its last two physics
+	# ticks' places, so for a frame a flame or an ember stood halfway between two fires, and a pooled light slid.
+	# The pieces are placed on frame time already (sim ticks plus the fraction): no interpolation, as every other
+	# per-frame pool (AttackFormPool, BakedMeshPools, BossStrikeViews ...). The children inherit it.
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	for id: StringName in POOLS:
 		var spec: Array = POOLS[id]
 		var mat := ShaderMaterial.new()
@@ -246,6 +258,8 @@ func begin(now: float) -> void:
 	_lights_off = false
 	_light_wants.clear()
 	_spots.clear()
+	if record:
+		placed_flames.clear()
 
 
 ## Ends the frame: lets the drawers add theirs, shows the used pieces, gives the lights to the brightest requests,
@@ -294,6 +308,8 @@ func _put(
 	mm.set_instance_color(i, c)
 	mm.set_instance_custom_data(i, Color(float(cell), clampf(dissolve, 0.0, 1.0), sd, 0.0))
 	p["used"] = i + 1
+	if record and pool == &"flame":
+		placed_flames.append(xf.origin)
 	return true
 
 

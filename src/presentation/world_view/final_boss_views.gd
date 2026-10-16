@@ -58,6 +58,9 @@ var _bursts := 0
 
 func _init() -> void:
 	name = "FinalBossViews"
+	# v0.8.0 N1 (O55, the lighting audit): the ring, the shards and their light are laid out in _process on frame
+	# time: no physics interpolation on top (the light jumped from the ring to a burst over a tick).
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true

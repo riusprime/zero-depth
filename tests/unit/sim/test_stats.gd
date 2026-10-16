@@ -102,7 +102,9 @@ func test_max_hp_heals_by_the_gain_and_armour_cuts_hits_taken() -> void:
 	assert_eq(w.actors.hp[0], 75, "and healed by the 25 gained")
 	Stats.add_card(w, Stats.Stat.ARMOUR, Stats.Rarity.EPIC)
 	assert_eq(
-		Damage.hit(w, 0, 50, 9, 9, 9, 0, Vector2(3, 0), Vector2.ZERO), 45, "-10 % damage taken"
+		Damage.hit(w, 0, 50, 9, 9, 9, 0, Vector2(3, 0), Vector2.ZERO),
+		34,
+		"-10 % damage taken, times the Blade's -25 % (v0.8.0 N1, D39): 50 x 0.675 = 33.75"
 	)
 
 

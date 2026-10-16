@@ -73,6 +73,7 @@ func _init(builds: Array, last_id: StringName) -> void:
 			FIRST_DELAY_S + STAGGER_S * k
 		)
 		c.name = String(def.id).capitalize()
+		c.taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39)
 		var id := def.id
 		c.pressed.connect(func() -> void: picked.emit(id))
 		row.add_child(c)

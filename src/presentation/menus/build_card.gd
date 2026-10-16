@@ -35,6 +35,8 @@ var weapon := 0
 var title_key := &""
 var desc_key := &""
 var damage_permille := 1000
+## v0.8.0 N1 (D39): the build's damage taken, per mille (1000 draws no line; the Blade's 750 reads "-25 %").
+var taken_permille := 1000
 var delay := 0.0
 ## Sizes picked by the last draw (tests check the text fits).
 var name_size := 0
@@ -201,6 +203,22 @@ func _draw() -> void:
 		DAMAGE_SIZE,
 		Color(acc, 0.95)
 	)
+	if taken_permille != 1000:  # v0.8.0 N1 (D39): the line above the damage factor
+		draw_string(
+			bold,
+			Vector2(r.position.x, r.end.y - regular.get_descent(DAMAGE_SIZE) - DAMAGE_SIZE - 8.0),
+			tr("BUILD_TAKEN") % taken_text(),
+			HORIZONTAL_ALIGNMENT_CENTER,
+			r.size.x,
+			DAMAGE_SIZE,
+			Color(acc, 0.95)
+		)
+
+
+## v0.8.0 N1: "-25 %" from the build's damage taken per mille.
+func taken_text() -> String:
+	var pct := int(round((taken_permille - 1000) / 10.0))
+	return ("+%d %%" % pct) if pct >= 0 else ("-%d %%" % -pct)
 
 
 ## "+15 %" / "-15 %" from the data's per mille.

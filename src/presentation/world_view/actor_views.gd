@@ -16,6 +16,18 @@ const PROJECTILE_POOL_MAX := 400
 const ANIMATE_RADIUS_M := 24.0
 ## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
 const GREY_SATURATION := 0.3
+## A body material's rest emission without a role glow: [colour, energy] (flashable's dark white).
+const NO_GLOW := [Color.WHITE, 0.0]
+## v0.8.0 N1 (owner O39: "colors are still a bit to dimmed so yellow orange and red are close because of the room
+## lighning"): the normal kinds' role-coloured plates (EnemyPalettes' body and trim, saturation at or over
+## GREY_SATURATION) glow a share of their own colour (emission = the albedo x ROLE_GLOW), so the hue still reads where
+## the room's warm fire light and the biome's grade pull every surface toward orange; greys, eyes, bosses and the
+## hero are untouched. The hit flash and the status tints still win while they last, then the glow comes back.
+## Starting value (the measured line-up: docs/roadmap/v0.8.0/evidence/N1_FIXES.md).
+const ROLE_GLOW := 0.45
+
+## v0.8.0 N1: the role glow's energy the views build with (ROLE_GLOW; the line-up shot script sweeps it, 0 = none).
+static var role_glow_energy := ROLE_GLOW
 
 ## Occlusion technique under test: "outline" (rim only) or "xray" (rim + silhouette through walls).
 ## v0.5.9: the floor's lighting mood; with one, the hero carries a small warm light (StageKit.hero_light).
@@ -70,6 +82,7 @@ func sync(reader: WorldReader) -> void:
 			add_child(node)
 			if reader.actor_team(i) != 0:
 				tint_greys(node, enemy_tint)
+				role_glow(node, reader.actor_kind(i), role_glow_energy)  # v0.8.0 N1 (O39)
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
@@ -187,8 +200,9 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 	var tint: Array = _tint.get(id, [])
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		m.emission = Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE)
-		m.emission_energy_multiplier = 1.6 if on else (tint[1] if not tint.is_empty() else 0.0)
+		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # N1: the role glow
+		m.emission = Color.WHITE if on else rest[0]
+		m.emission_energy_multiplier = 1.6 if on else rest[1]
 
 
 func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
@@ -274,6 +288,21 @@ static func tint_greys(node: Node3D, tint: Color) -> void:
 		var c := m.albedo_color
 		var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
 		m.albedo_color = Color(c.lerp(cold, tint.a), c.a)
+
+
+## v0.8.0 N1 (O39): a normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
+## the rest state is kept on the material (meta "rest") for the flash to come back to. Kinds outside EnemyPalettes
+## (bosses, the hero) and grey or textured materials keep none.
+static func role_glow(node: Node3D, kind: int, energy: float) -> void:
+	if energy <= 0.0 or not EnemyPalettes.KIND_IDS.has(kind):
+		return
+	for m: StandardMaterial3D in node.get_meta(&"mats", []):
+		if m.albedo_texture != null or m.albedo_color.s < GREY_SATURATION:
+			continue
+		var c := Color(m.albedo_color, 1.0)
+		m.emission = c
+		m.emission_energy_multiplier = energy
+		m.set_meta(&"rest", [c, energy])
 
 
 ## Makes a body material ready for the hit flash and tints: emission on, dark (energy 0), so a flash changes

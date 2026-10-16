@@ -13,6 +13,10 @@ const ARRIVAL_FADE_SECONDS := 0.2
 ## v0.7.5 AP: the Codex profile page the Ascension counters live on (_record_ascension; not a Codex page you browse).
 const ASCENSION_PAGE := &"runs"
 
+## v0.8.0 N1 (owner O53): how a new run's seed is picked (RunSeeds: random in the game; RunSeeds.AUTO resolves at boot;
+## a seed >= 0 fixes the order on purpose: E2e.boot sets it before main.tscn boots).
+static var fixed_seed := RunSeeds.AUTO
+
 var profile: ProfileStore
 var driver: SimDriver
 var view: WorldViewRoot
@@ -63,6 +67,7 @@ var _end: EndPanel
 ## Ticks since the fight ended; the end panel waits a moment so the last hit reads.
 var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
+var _seeds: RunSeeds
 var _run_biomes: Array[StringName] = []
 var _fade := ColorRect.new()
 var _fade_left := 0.0
@@ -74,6 +79,8 @@ var _pg_biome := &"ruins"
 
 func _ready() -> void:
 	get_tree().set_auto_accept_quit(false)
+	_seeds = RunSeeds.new(RunSeeds.resolve(fixed_seed, STAGE_SEED))  # v0.8.0 N1 (O53)
+	_stage_seed = _seeds.mode if _seeds.mode >= 0 else STAGE_SEED
 	get_window().theme = load(ThemePalette.UI_THEME)
 	InputDefaults.apply()
 	profile = ProfileStore.shared()
@@ -187,6 +194,7 @@ func show_build_picker() -> void:
 	p.picked.connect(
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)
+			_stage_seed = _seeds.next()  # v0.8.0 N1 (O53): every new run its own seed
 			start_stage()
 	)
 	p.back_pressed.connect(show_main_menu)
@@ -558,13 +566,13 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with the next seed and the same build.
+## A new run with a new seed (v0.8.0 N1: random, or the next one under a fixed mode) and the same build.
 func restart() -> void:
 	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
 		_end_stage()
 		_start_playground(_pg_build, _pg_biome)
 		return
-	_stage_seed += 1
+	_stage_seed = _seeds.next()
 	_end_stage()
 	start_stage()
 

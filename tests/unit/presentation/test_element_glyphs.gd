@@ -76,3 +76,51 @@ func test_an_elemental_cards_socket_wears_its_glyph() -> void:
 	s.show_item(&"ember_edge", Color.ORANGE, Color.ORANGE)
 	s.size = Vector2(30, 30)
 	assert_false(s.shows_glyph(), "none on a socket too small to read it")
+
+
+## v0.8.0 N1 (owner O54, D42 "(a)"): the Legendary items (and only they) are in LEGENDARY; the Blade items with no
+## element that aren't Legendary (and only they) are in BLADE_PLAIN.
+func test_the_spare_glyphs_lists_follow_the_content() -> void:
+	var el := _elements()
+	var legendary := {}
+	var plain := {}
+	for path in ContentScanner.scan("res://data/items"):
+		var card: ItemDefinition = load(path)
+		if card.rarity == ItemDefinition.Rarity.LEGENDARY:
+			legendary[card.id] = true
+		elif card.requires_weapon == &"blade" and el.get(card.id, &"") == &"":
+			plain[card.id] = true
+	assert_gt(legendary.size(), 0, "legendary cards found")
+	assert_gt(plain.size(), 10, "plain Blade cards found")
+	assert_eq(legendary.size(), ElementGlyphs.LEGENDARY.size(), "as many Legendary cards as listed")
+	for id: StringName in legendary:
+		assert_true(ElementGlyphs.LEGENDARY.has(id), "%s is Legendary: the star burst" % id)
+	for id: StringName in ElementGlyphs.LEGENDARY:
+		assert_true(legendary.has(id), "%s is listed Legendary but isn't" % id)
+	for id: StringName in plain:
+		assert_true(
+			ElementGlyphs.BLADE_PLAIN.has(id), "%s is a plain Blade card: the crossed blades" % id
+		)
+	for id: StringName in ElementGlyphs.BLADE_PLAIN:
+		assert_true(plain.has(id), "%s is listed as a plain Blade card but isn't" % id)
+
+
+func test_a_card_wears_the_star_the_element_or_the_crossed_blades() -> void:
+	assert_eq(ElementGlyphs.glyph_of(&"inferno_core"), &"star", "Legendary over its element")
+	assert_eq(ElementGlyphs.glyph_of(&"trigger_on_hit_twice"), &"star")
+	assert_eq(
+		ElementGlyphs.glyph_of(&"ember_edge"), &"ember", "an elemental Blade card keeps its element"
+	)
+	assert_eq(ElementGlyphs.glyph_of(&"flurry"), &"blades", "a plain Blade card")
+	assert_eq(ElementGlyphs.glyph_of(&"swift_feet"), &"", "a plain non-Blade card wears none")
+	for g: StringName in [&"star", &"blades"]:
+		assert_eq(ElementGlyphs.region(g).size(), 2, "%s is on the owner's sheet" % g)
+	var s := InlaySocket.new()
+	add_child_autofree(s)
+	s.size = Vector2(80, 80)
+	s.show_item(&"flurry", Color.WHITE, Color.WHITE)
+	assert_eq(s.element, &"blades")
+	assert_true(s.shows_glyph(), "the crossed blades on Flurry")
+	s.show_item(&"chain_blast", Color.ORANGE, Color.ORANGE)
+	assert_eq(s.element, &"star")
+	assert_true(s.shows_glyph(), "the star burst on Chain Blast")
