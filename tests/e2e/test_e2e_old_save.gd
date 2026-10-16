@@ -28,6 +28,10 @@ func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
 	assert_eq(focus.name if focus != null else &"", &"Continue", "Continue, focused first")
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)
+	var waited := 0  # v0.8.0 N3 (O45): the load waits a frame or two behind the loading cover
+	while not main.is_playing() and waited < 10:
+		await get_tree().process_frame
+		waited += 1
 	assert_true(main.is_playing(), "the old save is not set aside: it continues")
 	var w := e.world()
 	var ids := []

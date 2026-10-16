@@ -281,6 +281,12 @@ const ADDED_SINCE_V05 := {
 		&"ring_spec",
 		&"ring_depth",
 		&"ring_proc",
+		&"ring_vel",  # v0.8.0 N3 (travelling rings: an older save's rings are plain, ModifierAbilities pads them)
+		&"ring_orb",
+		&"ring_orb_a",
+		&"ring_pulse",
+		&"ring_k",
+		&"ring_seen",
 		&"lob_count",
 		&"streak_n",
 		&"streak_last",
@@ -411,6 +417,11 @@ static func _pad_added(w: World) -> void:
 		s.fire_depth.append(0)
 		s.fire_proc.append(100)
 		s.fire_cap.append(0)
+	if s.ring_pulse.size() != s.ring_pos.size():  # v0.8.0 N3: an older save's rings are plain (they don't travel)
+		for f: StringName in [&"ring_vel", &"ring_orb", &"ring_orb_a", &"ring_pulse", &"ring_k"]:
+			var arr: Variant = s.get(f)
+			arr.resize(s.ring_pos.size())
+			s.set(f, arr)
 
 
 ## The script variables of `obj`, in declaration order (cached per script: a class's fields don't change).

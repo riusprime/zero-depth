@@ -79,6 +79,7 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"ring_share_permille",
 	&"swirl",
 	&"swirl_group",
+	&"ring_flight",  # v0.8.0 N3 (owner O47: the travelling ring's flight, ticks)
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -126,17 +127,20 @@ var repeats := 0
 var alive_max := 0
 
 ## v0.8.0 AO (owner O37; docs/roadmap/v0.8.0/evidence/ATTACK_ORDER.md): the order rule's ring. ring_layout 1: a
-## ring a SHAPE card made (Ring), run by WandRings: `count` rings laid evenly round the centre (one: on it), each one
-## `ring_pulses` concentric pulses (the count that stood left of the Ring; 0 = one), each ring and pulse dealing
-## ring_share_permille of the hit when there is more than one (0 = whole). swirl 1 (Swirl, a MOTION card): every ring
-## is thrown to its own random spot round the attacker (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl
-## left of the Ring, taken in by it): the whole ring group is thrown to one random spot. Randomness: WandRings' named
-## stream.
+## ring a SHAPE card made (Ring), run by WandRings. v0.8.0 N3 (owner O47): the shot itself, a ring that flies: `count`
+## ring shots laid as bolts are (a fan, a circle), each pulsing `ring_pulses` times as it flies (the count that stood
+## left of the Ring; 0 = once), each dealing ring_share_permille of the hit (0 = whole; WandRings.MULTI_PERMILLE of
+## that when there is more than one ring or pulse). swirl 1 (Swirl, a MOTION card): every ring flies off in its own
+## random direction (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl left of the Ring, taken in by it):
+## the group flies the aim as one, its rings spinning round its centre. Randomness: WandRings' named stream.
 var ring_layout := 0
 var ring_pulses := 0
 var ring_share_permille := 0
 var swirl := 0
 var swirl_group := 0
+## v0.8.0 N3 (owner O47: "the circle should substitute the fireball"): an order-rule ring's flight in ticks, the bolt's
+## life it took in (WandCompile.take_in); it flies at the bolt's `speed` (WandRings). 0 = SpecForms' hook bolt's.
+var ring_flight := 0
 
 # --- size, speed, reach
 ## An arc: half its width (1/4096 turns) and its reach past the attacker's edge, × (1000 + bonus) / 1000.
@@ -422,6 +426,7 @@ func read() -> Dictionary:
 		"ring_share_permille": ring_share_permille,
 		"swirl": swirl,
 		"swirl_group": swirl_group,
+		"ring_flight": ring_flight,  # v0.8.0 N3
 		"barrier_ticks": barrier_ticks,
 		"charge_ticks": charge_ticks,
 		"charge_permille": charge_permille,

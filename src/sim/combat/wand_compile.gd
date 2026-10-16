@@ -40,9 +40,10 @@ extends RefCounted
 ## - v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): a SHAPE card
 ##   (ModifierTable.OrderKind; Ring) takes in what is left of it when it sets the form (take_in): a count becomes the
 ##   ring's pulses, a motion throws the whole ring group; COUNT and MOTION cards to its right then multiply and move
-##   the rings. Stat-like cards stay order-free. A bolt child built on such a ring (a card to the Ring's right: Split's
-##   shards, a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX alive (WandRings.cap_child): every ring and
-##   pulse of a launch hits, and each hit would throw its own.
+##   the rings. v0.8.0 N3 (owner O47): the ring is the shot, flying the shot's flight (ring_flight); a motion left of
+##   it makes the group spin as it flies (WandRings). Stat-like cards stay order-free. A bolt child built on such a
+##   ring (a card to the Ring's right: Split's shards, a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX
+##   alive (WandRings.cap_child): every ring and pulse of a launch hits, and each hit would throw its own.
 
 const MAX_DEPTH := 2
 
@@ -162,15 +163,17 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 
 
 ## v0.8.0 AO (owner O37; evidence/ATTACK_ORDER.md): a SHAPE card (Ring) turning `s` into `form` takes in what is left
-## of it: the count built so far becomes the ring's pulses (Spread · Ring: one ring of three pulses) and its fan goes;
-## a Swirl left of it throws the whole ring group instead of each ring (Swirl · Ring · Spread: three rings round one
-## random spot). Cards to its right then work on the ring: a count multiplies the rings (Ring · Spread: three rings
-## round the hero), a Swirl throws each ring to its own spot (Ring · Spread · Swirl: the storm). Only a ring has a
-## layout; another form keeps the old meaning.
+## of it: the count built so far becomes the ring's pulses (Spread · Ring: one bigger ring shot that pulses three
+## times as it flies) and its fan goes; a Swirl left of it makes the group fly as one, spinning (Swirl · Ring ·
+## Spread: three rings circling one travelling centre). Cards to its right then work on the ring: a count multiplies
+## the ring shots (Ring · Spread: a fan of three), a Swirl sends each its own random way (Ring · Spread · Swirl: the
+## storm). v0.8.0 N3: the bolt's flight becomes the ring's (ring_flight). Only a ring has a layout; another form keeps
+## the old meaning.
 static func take_in(s: AttackSpec, form: int) -> void:
 	if form != AttackSpec.Form.RING:
 		return
 	s.ring_layout = 1
+	s.ring_flight = s.life_ticks if s.form == AttackSpec.Form.BOLT else 0  # v0.8.0 N3: the shot's flight
 	s.ring_pulses = maxi(1, s.count) if s.count > 1 else 0
 	s.swirl_group = 1 if s.swirl > 0 or s.swirl_group > 0 else 0
 	s.count = 1

@@ -92,9 +92,15 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 		_focused(main).name, &"Continue", "Continue shows, focused first, while a save exists"
 	)
 	assert_eq(tr("UI_CONTINUE"), "Continue")  # v0.5.5 A5: plain sentence case
-	# Enter on Continue: read the resumed world before its first tick.
+	# Enter on Continue: read the resumed world before its first tick. v0.8.0 N3 (O45): the load waits a frame or two
+	# behind the loading cover; the world is read in the frame it is built (before any physics tick).
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)
+	assert_true(main.loads.cover.is_covered(), "Continue covers the screen first")
+	var waited := 0
+	while not main.is_playing() and waited < 10:
+		await get_tree().process_frame
+		waited += 1
 	assert_true(main.is_playing(), "Continue starts the saved run")
 	var r := e.world()
 	assert_ne(r, w, "a new world")

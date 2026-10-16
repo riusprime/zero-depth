@@ -5,11 +5,12 @@ extends Node
 
 const STAGE_SEED := 20261006
 const END_PANEL_DELAY_TICKS := 45
-## Run flow (v0.3.0 B): the run's data, and the fade-in from black when a floor starts.
+## Run flow (v0.3.0 B): the run's data, and the fade-in from black when a floor starts (v0.8.0 N3: the loading
+## cover's; a floor reached through a portal opens from the portal's cover over PORTAL_UNVEIL_SECONDS).
 const RUN_ID := &"three_floors"
 const FADE_SECONDS := 0.45
-## v0.3.5 PT: a floor that opens on the arrival column fades in faster, so the column shows.
-const ARRIVAL_FADE_SECONDS := 0.2
+## v0.8.0 N3 (owner O45): a portal's cover opens on the new floor over this long (CoverLoads).
+const PORTAL_UNVEIL_SECONDS := 0.55
 ## v0.7.5 AP: the Codex profile page the Ascension counters live on (_record_ascension; not a Codex page you browse).
 const ASCENSION_PAGE := &"runs"
 
@@ -38,6 +39,8 @@ var toast := AchievementToast.new()
 ## v0.7.5 SM (N8): the first-run hints (seen ones in the profile's hints section), on the UI layer like the toast.
 var hint_store: HintStore
 var hints := OnboardingHints.new()
+## v0.8.0 N3 (owner O45): every floor load runs behind the loading cover (CoverLoads; it took over the fade-in).
+var loads := CoverLoads.new()
 ## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground while it runs (null otherwise).
 var playground: PlaygroundSession
 
@@ -69,9 +72,6 @@ var _ended_ticks := 0
 var _stage_seed := STAGE_SEED
 var _seeds: RunSeeds
 var _run_biomes: Array[StringName] = []
-var _fade := ColorRect.new()
-var _fade_left := 0.0
-var _fade_len := FADE_SECONDS
 ## v0.7.5 PG: the Playground's weapon and biome (kept across Restart and Change weapon).
 var _pg_build := &"gun"
 var _pg_biome := &"ruins"
@@ -94,24 +94,12 @@ func _ready() -> void:
 	ViewPrefs.apply_settings(profile)  # v0.3.0 O: reduced motion, colour-blind palette
 	ui.name = "UI"
 	add_child(ui)
-	_fade.name = "Fade"
-	_fade.color = Color.BLACK
-	_fade.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_fade.visible = false
-	ui.add_child(_fade)
+	ui.add_child(loads.cover)  # v0.8.0 N3
 	ui.add_child(toast)  # v0.7.5 AC
 	hint_store = HintStore.new(profile)  # v0.7.5 SM
 	hints.setup(hint_store)
 	ui.add_child(hints)
 	show_main_menu()
-
-
-func _process(delta: float) -> void:
-	if _fade_left > 0.0:
-		_fade_left = maxf(0.0, _fade_left - delta)
-		_fade.color.a = _fade_left / _fade_len
-		_fade.visible = _fade_left > 0.0
 
 
 func _notification(what: int) -> void:
@@ -167,11 +155,14 @@ func is_playing() -> bool:
 func show_main_menu() -> void:
 	saves.close()  # v0.4.0 SV: leaving a run (pause -> Main menu) keeps its last room entry
 	_end_stage()
+	loads.cover.unveil(FADE_SECONDS)  # v0.8.0 N3: a cover left up by a run that was left (none: nothing)
 	audio.set_ambience(&"")
 	var m := MainMenu.new(
 		GameVersion.label(), OS.is_debug_build(), saves.store.has_save(), DevGate.enabled()
 	)
-	m.continue_pressed.connect(continue_run)
+	m.continue_pressed.connect(
+		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3 (O45)
+	)
 	m.play_pressed.connect(show_build_picker)
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
@@ -195,7 +186,7 @@ func show_build_picker() -> void:
 		func(id: StringName) -> void:
 			profile.section("loadout")["build"] = String(id)
 			_stage_seed = _seeds.next()  # v0.8.0 N1 (O53): every new run its own seed
-			start_stage()
+			loads.behind(get_tree(), ui, _covered_start, FADE_SECONDS)  # v0.8.0 N3 (O45)
 	)
 	p.back_pressed.connect(show_main_menu)
 	_set_menu(p)
@@ -432,11 +423,11 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	)
 	_ended_ticks = 0
 	driver.ticked.connect(_on_tick.bind(driver))
-	_fade_len = FADE_SECONDS if run.run_floor() == 1 else ARRIVAL_FADE_SECONDS
-	_fade_left = _fade_len
-	_fade.color.a = 1.0
-	_fade.visible = true
-	ui.move_child(_fade, ui.get_child_count() - 1)
+	if not loads.cover.showing():  # v0.8.0 N3 (O45): the cover that hid the load fades or opens on the new floor
+		loads.cover.cover_now(LoadingCover.Style.BLACK)
+	var portal := loads.cover.style != LoadingCover.Style.BLACK
+	loads.cover.unveil(PORTAL_UNVEIL_SECONDS if portal else FADE_SECONDS)
+	ui.move_child(loads.cover, ui.get_child_count() - 1)
 	ui.move_child(hints, ui.get_child_count() - 1)  # v0.7.5 SM: the hints read over the fade-in too
 	ui.move_child(toast, ui.get_child_count() - 1)  # v0.7.5 AC: a toast reads over the fade-in
 	hints.begin_floor(run.floor_index, driver.reader)  # v0.7.5 SM
@@ -452,8 +443,10 @@ func _on_tick(from: SimDriver) -> void:
 	_hud.sync(driver.reader)
 	hints.observe(driver.reader)  # v0.7.5 SM
 	var outcome := driver.reader.outcome()
+	if _end == null:
+		loads.closing(driver.reader)  # v0.8.0 N3 (O45): the portal's iris closes as the hero goes in
 	if outcome == 3 and _end == null:
-		_next_floor()
+		loads.portal(get_tree(), ui, driver, _next_floor, func() -> bool: return driver != null)
 		return
 	if outcome == 0 or _end != null:
 		return
@@ -566,12 +559,31 @@ func run_biome_id() -> StringName:
 	return _run_biomes[run.biome_of()] if run != null else &""
 
 
-## A new run with a new seed (v0.8.0 N1: random, or the next one under a fixed mode) and the same build.
+## A new run with a new seed (v0.8.0 N1: random, or the next one under a fixed mode) and the same build. v0.8.0 N3
+## (O45): behind the loading cover.
 func restart() -> void:
 	if playground != null:  # v0.7.5 PG: the pause menu's Restart rebuilds the room
 		_end_stage()
 		_start_playground(_pg_build, _pg_biome)
 		return
+	close_pause()
+	if driver != null:
+		driver.paused = true  # the old run holds while the cover is up
+	loads.behind(get_tree(), ui, _covered_restart, FADE_SECONDS)
+
+
+## v0.8.0 N3 (O45): the loads CoverLoads runs behind its cover (Play, Continue, Restart).
+func _covered_start() -> void:
+	_set_menu(null)
+	start_stage()
+
+
+func _covered_continue() -> void:
+	_set_menu(null)
+	continue_run()
+
+
+func _covered_restart() -> void:
 	_stage_seed = _seeds.next()
 	_end_stage()
 	start_stage()

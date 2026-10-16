@@ -156,7 +156,10 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(hud2.floor_card_showing(), "floor 2's card")
 	assert_eq(hud2.item_icon_count(), items.size(), "the carried items' icons")
 	assert_eq(hud2.ability_hud.filled_count(), owned.size(), "the ability slots")
-	assert_true(main.get_node("UI/Fade").visible, "the floor fades in")
+	assert_true(
+		main.get_node("UI/LoadingCover").visible,
+		"the floor opens from the portal's cover (v0.8.0 N3)"
+	)
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
