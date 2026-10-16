@@ -107,6 +107,7 @@ two hit-stops), **D15** (merging into `main`, after your test).
 | D35 | Rarity (RR): how fast loops pile up Legendaries (each loop +5 % chance a boss altar and one more pick, up to 4 picks) | as built | RARITY.md "Loops" |
 | D36 | **The Nemesis and "3-4 strikes" (O27):** its blows come from your build and are capped at a fifth of your max HP (FB3, "never a one-shot"), so it needs 5+ hits to kill you; at the base Blade the formula gives about 10 × 1.15 × 1.5 ≈ 17 a hit (6 hits; worked out, not measured). Keep the cap (it stays a duel of your own build), or raise its floor/cap so it kills in 3-4 like the others? | cap kept, Nemesis unchanged | [`BOSS_PACE.md`](roadmap/v0.8.0/evidence/BOSS_PACE.md) |
 | D37 | **Which floor the hits-to-kill count on (O27):** BP set them on the data's damage (×1.0). In a run floor 1's boss is ×0.8 (orbs 6 hits, big attacks 3), floor 2's ×1.2 (orbs 4, big 2) and floor 3's ×1.4 (orbs 4, javelins 3, big 2). Count them on floor 1, 2 or 3 instead? | the data (×1.0) | [`BOSS_PACE.md`](roadmap/v0.8.0/evidence/BOSS_PACE.md) |
+| D41 | Textures (TX2): the Warden's slam dust ring is now your `fx_dust_ring` (beige dust and stones); on the pale Playground sand it reads fainter than the old near-white band. Keep yours, go back to the white band, or a whiter dust ring render? | yours | TEXTURES_2.md; `tx_shots/tx2_warden_slam_dust.jpg` |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 

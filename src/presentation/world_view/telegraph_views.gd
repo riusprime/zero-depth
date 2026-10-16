@@ -54,6 +54,8 @@ uniform vec4 char_color : source_color = vec4(0.08, 0.05, 0.04, 1.0);
 uniform float heat = 0.2;
 uniform float char_alpha = 0.0;
 uniform float scale = 1.4;
+uniform sampler2D cracks_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform float cracks_on = 0.0;
 
 varying vec3 wp;
 
@@ -86,7 +88,11 @@ void fragment() {
 	}
 	float w = mix(0.05, 0.14, heat);
 	float crack = 1.0 - smoothstep(w * 0.35, w, d2 - d1);
-	ALBEDO = mix(char_color.rgb, hot.rgb * (1.0 + heat * 1.6), crack);
+	if (cracks_on > 0.5) {  // v0.8.0 TX2: the owner's cracks (fx_ground_cracks' shape, the hot colour kept)
+		vec4 k = texture(cracks_tex, wp.xz * 0.18);
+		crack = k.a * mix(0.55, 1.0, heat) + k.a * k.g * heat * 0.5;
+	}
+	ALBEDO = mix(char_color.rgb, hot.rgb * (1.0 + heat * 1.6), clamp(crack, 0.0, 1.0));
 	ALPHA = clamp(max(char_alpha, crack * mix(0.5, 1.0, heat)), 0.0, 1.0);
 }
 """
@@ -138,8 +144,11 @@ func _ready() -> void:
 	_flash_edge_mat.albedo_color = Color(c.lightened(0.55), 1.0)
 	var crack := Shader.new()
 	crack.code = CRACK_SHADER
+	var cracks := BossStrikeMeshes.texture("fx_ground_cracks")  # v0.8.0 TX2
 	for m: ShaderMaterial in [_crack_track_mat, _crack_lock_mat]:
 		m.shader = crack
+		m.set_shader_parameter("cracks_tex", cracks)
+		m.set_shader_parameter("cracks_on", 1.0 if cracks != null else 0.0)
 	_crack_track_mat.set_shader_parameter("heat", CRACK_TRACK_HEAT)
 	_crack_lock_mat.set_shader_parameter("heat", CRACK_LOCK_HEAT.y)
 	_crack_lock_mat.set_shader_parameter("char_alpha", 0.4)

@@ -21,6 +21,11 @@ const POOLS := {
 	&"bubble": ["fx_bubbles", Vector2(2, 2), false, 0.0, 192, "fx_fire_noise"],
 	&"tendril": ["fx_void_tendrils", Vector2(2, 2), false, 0.08, 160, "fx_void_noise"],
 	&"rift": ["fx_void_rift", Vector2(2, 2), true, 0.03, 48, "fx_void_noise"],
+	# v0.8.0 TX2: the owner's rock bursts (slams, eruptions), steam puffs (the Foundry's vent) and crystal shatter
+	# bursts (the final boss between bodies).
+	&"rockburst": ["fx_rock_burst", Vector2(2, 2), false, 0.0, 48, "fx_fire_noise"],
+	&"steam": ["fx_steam_puffs", Vector2(2, 2), false, 0.04, 96, "fx_fire_noise"],
+	&"shatter": ["fx_crystal_shatter", Vector2(2, 2), true, 0.0, 32, "fx_fire_noise"],
 }
 ## Floor-mark textures: the texture and its atlas cell (-1: the whole texture; the splatter sheet is 2 x 2).
 const MARK_TEX := {
@@ -31,12 +36,14 @@ const MARK_TEX := {
 	&"splat1": ["fx_splatter_mark", 1],
 	&"splat2": ["fx_splatter_mark", 2],
 	&"splat3": ["fx_splatter_mark", 3],
+	# v0.8.0 TX2: the cracks a slam, a spike row or a crater leaves (one cell: one kind, so overlapping ones merge).
+	&"cracks": ["fx_ground_cracks", 0],
 }
 const DIR := "res://assets/textures/vfx/"
 const LIGHTS := 10
 const DECALS := 64
 const ICE_CAP := 256
-## P-20: every pool's pieces together a frame (the pools' own caps sum to 2,480), PRESENTATION §7's 2,000 live
+## P-20: every pool's pieces together a frame (the pools' own caps sum to 2,656), PRESENTATION §7's 2,000 live
 ## particles; past it the last pieces of the frame drop, as the attack-form canvas's MAX_PARTICLES does.
 const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
@@ -74,6 +81,8 @@ void fragment() {
 	ALPHA = clamp(t.a * COLOR.a * keep, 0.0, 1.0);
 }
 """
+
+static var _has_tex := {}
 
 ## Sprite and ice pools: id -> {node, mm, used, cap}.
 var pools := {}
@@ -221,6 +230,13 @@ static func _ice_material() -> StandardMaterial3D:
 	m.rim_enabled = true
 	m.rim = 0.6
 	return m
+
+
+## v0.8.0 TX2: true when texture `id` of DIR is installed (cached; a drawer keeps its code look without it).
+static func has_tex(id: String) -> bool:
+	if not _has_tex.has(id):
+		_has_tex[id] = ResourceLoader.exists(DIR + id + ".png")
+	return _has_tex[id]
 
 
 ## True when the owner's textures are installed (otherwise the canvas keeps its flat look).

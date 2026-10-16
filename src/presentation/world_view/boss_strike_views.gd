@@ -101,6 +101,7 @@ func _init() -> void:
 	_pool(&"beam", BossStrikeMeshes.tube(), _glow(BossStrikeMeshes.GLOW % "blend_add"), false)
 	var ground := _glow(BossStrikeMeshes.GROUND)
 	ground.render_priority = 1  # over the telegraph's fill of the same lanes (both transparent)
+	BossStrikeMeshes.set_ground_textures(ground)  # v0.8.0 TX2: the owner's ground textures
 	_pool(&"ground", BossStrikeMeshes.ground(), ground, false)
 	for pair: Array in [[_swoosh_add, "SwooshAdd", true], [_swoosh_mix, "SwooshMix", false]]:
 		var mi: MeshInstance3D = pair[0]

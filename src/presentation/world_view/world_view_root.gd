@@ -141,6 +141,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 		layer.drawers.append(spikes.draw_fx)
 		strikes.vfx = layer  # v0.8.0 AV part 2: the strikes' sprites, lights, marks and explosions
 		layer.drawers.append(strikes.draw_fx)
+		layer.drawers.append(final_views.draw_fx)  # v0.8.0 TX2: the shatter's crystal burst
 	element_fx.forms_drawn = true  # MX3 draws the spec forms (rings, spec patches, bombs)
 	ability_fx.forms_drawn = true
 	add_child(modifier_marks)  # v0.6.0 MX4

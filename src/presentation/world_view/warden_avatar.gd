@@ -329,6 +329,15 @@ func _build_dust() -> void:
 	dust = MeshInstance3D.new()
 	dust.name = "SlamDust"
 	dust.mesh = _dust_mesh()
+	# v0.8.0 TX2: the owner's dust ring (fx_dust_ring's first cell) on a flat quad, its ragged ring at the same unit
+	# radius (it sits at BossStrikeShapes.DUST_RING_R of the quad's side), tinted the same neutral dust.
+	var tex := BossStrikeMeshes.texture("fx_dust_ring")
+	if tex != null:
+		var q := PlaneMesh.new()
+		q.size = Vector2.ONE / BossStrikeShapes.DUST_RING_R
+		dust.mesh = q
+		_dust_mat.albedo_texture = tex
+		_dust_mat.uv1_scale = Vector3(0.5, 0.5, 1.0)
 	_dust_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_dust_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_dust_mat.cull_mode = BaseMaterial3D.CULL_DISABLED

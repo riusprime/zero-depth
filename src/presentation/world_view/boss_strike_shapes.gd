@@ -11,11 +11,21 @@ const METAL := Color(0.26, 0.26, 0.28)
 const SHELL := Color(0.86, 0.83, 0.72)
 const DUST := Color(0.64, 0.58, 0.52)
 const STEAM := Color(0.86, 0.87, 0.9)
+## v0.8.0 TX2: where the owner's rings sit in their quads (the ring's radius over the quad's side).
+const DUST_RING_R := 0.4
+const LIGHT_RING_R := 0.42
+## v0.8.0 TX2: the widest dust front (m) drawn with the owner's ring (_dust_front); wider ones keep the code band.
+const DUST_RING_MAX_M := 6.0
 
 ## The views' pools (id -> {mm, used, cap, drawn}) and the swooshes' triangles ([position, colour]) this draw.
 var pools := {}
 var arc_add := []
 var arc_mix := []
+## v0.8.0 TX2: which owner textures are installed (the rings and steam draw their code bands without them).
+var _dust_tex := BossStrikeMeshes.textured("fx_dust_ring")
+var _light_tex := BossStrikeMeshes.textured("fx_light_ring")
+var _steam_tex := VfxCore.has_tex("fx_steam_puffs")
+var _skid_tex := BossStrikeMeshes.textured("fx_skid_marks")
 
 
 func put(pool: StringName, xf: Transform3D, c: Color, cd: Color) -> void:
@@ -91,6 +101,8 @@ func _rock(
 
 
 ## A ground quad at `c` (3D), `along` its long axis (length `l`) and `w` across, pattern `pat` (BossStrikeMeshes.G_*).
+## v0.8.0 TX2: `sd` picks the owner texture's atlas cell (crater cracks, acid splat, dust ring); `sub` >= 0 is sent
+## instead (a skid's repeats down its length). The noise offset comes from the glow.
 func _ground(
 	c: Vector3,
 	along: Vector3,
@@ -100,18 +112,20 @@ func _ground(
 	heat: float,
 	alpha: float,
 	glow: Color,
-	_sd: int  # kept for the callers; the noise offset now comes from the glow
+	sd: int,
+	sub: int = -1
 ) -> void:
 	if alpha <= 0.005 or l <= 0.01:
 		return
 	var x := along.normalized()
 	var z := x.cross(Vector3.UP)
 	var b := Basis(x * l, Vector3.UP, z * w)
+	var s := clampi(sub, 0, 15) if sub >= 0 else posmod(sd, 4)
 	put(
 		&"ground",
 		Transform3D(b, Vector3(c.x, Y_GROUND, c.z)),
 		glow,
-		Color(pat, clampf(heat, 0.0, 1.0), BossStrikeMeshes.pack(glow), alpha)
+		Color(pat + s / 16.0, clampf(heat, 0.0, 1.0), BossStrikeMeshes.pack(glow), alpha)
 	)
 
 
@@ -184,7 +198,28 @@ func _crater(
 		_rock(p, s, STONE, heat, sd, k, 0.0 if still else age * 0.35 * (_h(sd + 8, k) - 0.5), gi)
 	var u := clampf(age / 16.0, 0.0, 1.0)
 	var front := r * (0.6 + 1.1 * (1.0 - (1.0 - u) * (1.0 - u)))
-	_band(&"band_mix", c, front, 0.4 * (1.0 - 0.5 * u), Color(DUST, 0.7 * (1.0 - u)), 1.0, sd)
+	_dust_front(c, front, 0.4 * (1.0 - 0.5 * u), (0.5 if _dust_tex else 0.7) * (1.0 - u), sd)
+
+
+## v0.8.0 TX2: a shockwave's dust front `r` round at `c`: the owner's dust ring flat on the floor (its ragged ring
+## sits at about DUST_RING_R of the quad), or the code's band of dust `hgt` tall while the texture is missing.
+func _dust_front(c: Vector3, r: float, hgt: float, alpha: float, sd: int) -> void:
+	# A room-wide shockwave keeps the code's rolling band: the ring texture blown up to the room covers it (the shots).
+	if _dust_tex and r <= DUST_RING_MAX_M:
+		var s := r / DUST_RING_R
+		_ground(
+			c,
+			Vector3(cos(sd), 0, sin(sd)),
+			s,
+			s,
+			BossStrikeMeshes.G_DUST_RING,
+			0.0,
+			alpha,
+			DUST,
+			sd
+		)
+	else:
+		_band(&"band_mix", c, r, hgt, Color(DUST, alpha), 1.0, sd)
 
 
 func _eruption(
@@ -222,6 +257,9 @@ func _eruption(
 			gi
 		)
 	var u := clampf(age / 20.0, 0.0, 1.0)
+	if _dust_tex:  # v0.8.0 TX2: the dirt wall is the owner's rock burst (BossStrikeFx) over a dust ring
+		_dust_front(c, r * (0.5 + 0.8 * u), 1.3 * (1.0 - 0.6 * u), 0.9 * (1.0 - u), sd + 1)
+		return
 	_band(
 		&"band_mix",
 		c,
@@ -356,18 +394,26 @@ func _ring(s: Dictionary, age: float, life: float) -> void:
 		&"light_ring":
 			var u := clampf(age / 8.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, 1.0 - (1.0 - u) * (1.0 - u))
-			_band(&"band_add", c, r, 0.9, Color(glow, fade), 2.2, sd)
+			if _light_tex:  # v0.8.0 TX2: the owner's light ring flat on the floor, a low glow standing on it
+				var side := r / LIGHT_RING_R
+				_ground(
+					c, Vector3.RIGHT, side, side, BossStrikeMeshes.G_LIGHT_RING, 1.0, fade, glow, sd
+				)
+				_band(&"band_add", c, r, 0.35, Color(glow, fade * 0.6), 1.6, sd)
+			else:
+				_band(&"band_add", c, r, 0.9, Color(glow, fade), 2.2, sd)
 			_band(&"band_add", c, r * 0.85, 0.5, Color(0.85, 0.6, 1.0, fade * 0.7), 1.6, sd + 1)
 		&"shock_ring":
 			var u := clampf(age / 24.0, 0.0, 1.0)
 			var r := lerpf(r0, r1, u)
-			_band(&"band_mix", c, r, 0.7 * (1.0 - 0.4 * u), Color(DUST, 0.85 * fade), 1.0, sd)
+			_dust_front(c, r, 0.7 * (1.0 - 0.4 * u), 0.85 * fade, sd)
 			_band(&"band_add", c, r + 0.15, 0.25, Color(glow, 0.8 * (1.0 - u)), 1.8, sd + 1)
 		_:  # steam_ring: a blast of steam and heat
 			var u := clampf(age / 10.0, 0.0, 1.0)
 			var r := lerpf(maxf(r0, 0.6), r1, 1.0 - (1.0 - u) * (1.0 - u))
 			var rise := clampf(age / life, 0.0, 1.0)
-			_band(&"band_mix", c, r, 1.6 + 1.2 * rise, Color(STEAM, 0.8 * fade), 1.0, sd)
+			if not _steam_tex:  # v0.8.0 TX2: with the owner's steam puffs the steam is BossStrikeFx's sprites
+				_band(&"band_mix", c, r, 1.6 + 1.2 * rise, Color(STEAM, 0.8 * fade), 1.0, sd)
 			_band(&"band_add", c, r * 0.9, 0.4, Color(glow, 0.9 * (1.0 - u)), 2.0, sd + 1)
 			_ground(
 				c,
@@ -555,11 +601,26 @@ func _skid(s: Dictionary, after: float, life: float, sd: int) -> void:
 	var heat := 1.0 if after < 0.0 else clampf(1.0 - after / (life * 0.6), 0.0, 1.0)
 	var alpha := 1.0 if after < 0.0 else clampf((life - after) / 30.0, 0.0, 1.0)
 	var o: Obb = s["lane"]
+	var w := o.half.y * 1.5
+	if _skid_tex:  # v0.8.0 TX2: the owner's skid grooves, repeated down the lunge's length
+		_ground(
+			SimPlane.to_3d((from + to) * 0.5),
+			_dir3(d),
+			d.length(),
+			w,
+			BossStrikeMeshes.G_SKID,
+			heat,
+			alpha,
+			s["glow"],
+			sd,
+			maxi(1, roundi(d.length() / maxf(w * 1.6, 0.1)))
+		)
+		return
 	_ground(
 		SimPlane.to_3d((from + to) * 0.5),
 		_dir3(d),
 		d.length(),
-		o.half.y * 1.5,
+		w,
 		BossStrikeMeshes.G_SCORCH,
 		heat,
 		alpha,

@@ -56,6 +56,8 @@ uniform vec4 stone_dark : source_color = vec4(0.24, 0.22, 0.21, 1.0);
 uniform vec4 hot : source_color = vec4(1.0, 0.32, 0.12, 1.0);
 uniform float energy = 4.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+uniform sampler2D stone_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform float stone_on = 0.0;
 
 varying float heat;
 varying float seed;
@@ -71,8 +73,13 @@ void fragment() {
 	float n = texture(noise_tex, vec2(lp.x * 1.3 + lp.z * 0.7 + seed, lp.y * 0.9 + seed * 2.0)).r;
 	float veins = 1.0 - smoothstep(0.01, 0.05, abs(n - 0.5));
 	float low = 1.0 - smoothstep(0.0, 0.85, lp.y);
-	float g = veins * heat * mix(0.35, 1.0, low);
 	ALBEDO = mix(stone_dark.rgb, stone.rgb, smoothstep(0.3, 0.7, n));
+	if (stone_on > 0.5) {  // v0.8.0 TX2: the owner's cracked stone round the spike, its cracks the hot veins
+		vec4 s = texture(stone_tex, vec2(lp.x * 0.9 + lp.z * 0.9 + seed, lp.y * 0.8 + seed * 0.37));
+		ALBEDO = s.rgb * (1.0 - s.a * 0.6) * 1.15;
+		veins = s.a;
+	}
+	float g = veins * heat * mix(0.35, 1.0, low);
 	EMISSION = hot.rgb * (energy * g + 0.5 * heat * low * low);
 	ROUGHNESS = 0.9;
 	SPECULAR = 0.2;
@@ -117,6 +124,9 @@ func _init() -> void:
 	_mat.shader = sh
 	_mat.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
 	_mat.set_shader_parameter("hot", HOT)
+	var stone := BossStrikeMeshes.texture("tex_stone_spike")  # v0.8.0 TX2: the owner's spike stone
+	_mat.set_shader_parameter("stone_tex", stone)
+	_mat.set_shader_parameter("stone_on", 1.0 if stone != null else 0.0)
 	_node.material_override = _mat
 	_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 	_node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -572,4 +582,4 @@ func draw_fx(layer: VfxCore) -> void:
 		layer.light_merged(c + Vector3(0, 0.8, 0), HOT, 3.5 * (1.0 - u) * (1.0 - u), 6.0, 1.0)
 		var marks: Array = s["marks"]
 		for k in marks.size():
-			layer.mark(sd * 16 + k, &"scorch", marks[k], 1.1, CRACK_MARK)
+			layer.mark(sd * 16 + k, BossStrikeFx.crack_mark(), marks[k], 1.1, CRACK_MARK)

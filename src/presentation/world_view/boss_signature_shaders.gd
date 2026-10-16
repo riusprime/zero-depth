@@ -79,6 +79,10 @@ render_mode cull_disabled, depth_draw_never;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float cool = 0.0;
 uniform float fade = 1.0;
+uniform sampler2D lava_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D crust_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform float lava_on = 0.0;
+uniform float crust_on = 0.0;
 varying vec3 wp;
 void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -92,7 +96,17 @@ void fragment() {
 	vec2 e = min(UV, 1.0 - UV);
 	float edge = smoothstep(0.0, 0.08, min(e.x, e.y));
 	vec3 hot = mix(vec3(0.85, 0.14, 0.02), vec3(1.0, 0.62, 0.12), heat);
-	ALBEDO = mix(hot * 0.35, vec3(0.08, 0.04, 0.03), crust * 0.9);
+	vec3 crust_rgb = vec3(0.08, 0.04, 0.03);
+	if (lava_on > 0.5) {  // v0.8.0 TX2: the owner's lava (fx_lava_flow), its crust (tex_lava_crust) closing as it cools
+		vec4 lv = texture(lava_tex, wp.xz * 0.22 + vec2(TIME * 0.02, TIME * 0.012));
+		hot = lv.rgb * mix(0.45, 0.9, lv.a);  // kept dim: the stage's exposure turns a bright bed to cream
+		if (crust_on > 0.5) {
+			vec4 cr = texture(crust_tex, wp.xz * 0.3);
+			crust = smoothstep(1.02 - cool, 1.1 - cool, 1.0 - cr.a);
+			crust_rgb = cr.rgb * 0.5;
+		}
+	}
+	ALBEDO = mix(hot * 0.35, crust_rgb, crust * 0.9);
 	EMISSION = hot * (1.0 - crust) * (1.3 - cool * 0.8);
 	ROUGHNESS = mix(0.4, 0.95, crust);
 	ALPHA = fade * mix(0.35, 1.0, edge);
@@ -110,6 +124,10 @@ uniform float warn = -1.0;
 uniform float bridge = 0.0;
 uniform vec2 bridge_to = vec2(0.0);
 uniform float bridge_half = 1.0;
+uniform sampler2D lava_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform sampler2D crust_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform float lava_on = 0.0;
+uniform float crust_on = 0.0;
 varying vec3 wp;
 void vertex() {
 	wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -136,7 +154,17 @@ void fragment() {
 	vec3 hot = mix(vec3(0.85, 0.14, 0.02), vec3(1.0, 0.62, 0.12), heat);
 	if (molten) {
 		float crust = smoothstep(0.62, 0.7, n2);
-		ALBEDO = mix(hot * 0.35, vec3(0.08, 0.04, 0.03), crust * 0.85);
+		vec3 crust_rgb = vec3(0.08, 0.04, 0.03);
+		if (lava_on > 0.5) {  // v0.8.0 TX2: the owner's lava, a few crust plates (tex_lava_crust) floating on it
+			vec4 lv = texture(lava_tex, p * 0.22 + vec2(TIME * 0.018, TIME * 0.01));
+			hot = lv.rgb * mix(0.45, 0.9, lv.a);
+			if (crust_on > 0.5) {
+				vec4 cr = texture(crust_tex, p * 0.27);
+				crust = smoothstep(0.9, 0.98, 1.0 - cr.a) * smoothstep(0.55, 0.7, n);
+				crust_rgb = cr.rgb * 0.5;
+			}
+		}
+		ALBEDO = mix(hot * 0.35, crust_rgb, crust * 0.85);
 		EMISSION = hot * (1.0 - crust) * 1.3;
 		ALPHA = 1.0;
 	} else {

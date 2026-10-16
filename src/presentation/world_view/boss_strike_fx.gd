@@ -21,12 +21,13 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					var d: Array = s["discs"][k]
 					var c := SimPlane.to_3d(d[0])
 					_dust_ring(layer, c, d[1], age, sd + k, 8)
+					_rock_burst(layer, c, float(d[1]), age, sd + k)
 					layer.light_merged(
 						c + Vector3.UP * 0.8, glow, 3.0 * (1.0 - u) * (1.0 - u), 6.0, 2.0
 					)
 					layer.mark(
 						BossStrikeViews.MARK_BASE + sd * 8 + k,
-						&"scorch",
+						crack_mark(),
 						c,
 						float(d[1]) * 1.1,
 						BossStrikeViews.CRACK_MARK
@@ -46,7 +47,7 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 						_sparks(layer, c, age, sd + k, 6, glow)
 					layer.mark(
 						BossStrikeViews.MARK_BASE + sd * 8 + k,
-						&"scorch",
+						crack_mark(),
 						c,
 						float(d[1]) * 0.8,
 						BossStrikeViews.CRACK_MARK
@@ -72,7 +73,8 @@ static func draw(layer: VfxCore, strikes: Array[Dictionary], now: float) -> void
 					sd,
 					12,
 					BossStrikeShapes.STEAM if steam else BossStrikeShapes.DUST,
-					1.0 if steam else 0.5
+					1.0 if steam else 0.5,
+					&"steam" if steam and VfxCore.has_tex("fx_steam_puffs") else &"smoke"
 				)
 				layer.light_merged(c + Vector3.UP, glow, 3.0 * (1.0 - u), 8.0, 2.0)
 			&"dust_arc", &"steel_arc":
@@ -160,8 +162,39 @@ static func _dust_ring(layer: VfxCore, c: Vector3, r: float, age: float, sd: int
 			)
 
 
+## v0.8.0 TX2: the cracks a crater or a javelin leaves (the owner's fx_ground_cracks; the code's scorch without it).
+static func crack_mark() -> StringName:
+	return &"cracks" if VfxCore.has_tex("fx_ground_cracks") else &"scorch"
+
+
+## v0.8.0 TX2: the owner's rock burst (fx_rock_burst, seen from the side) blasting up out of a crater `r` round: it
+## grows over its first ticks and fades by 26. Thinned with the layer's density like the rest.
+static func _rock_burst(layer: VfxCore, c: Vector3, r: float, age: float, sd: int) -> void:
+	var t := clampf(age / 26.0, 0.0, 1.0)
+	if t >= 1.0 or not VfxCore.has_tex("fx_rock_burst") or VfxCore.h(sd + 30, 0) > layer.density:
+		return
+	var grow := 1.0 - (1.0 - minf(age / 6.0, 1.0)) * (1.0 - minf(age / 6.0, 1.0))
+	var s := clampf(r * 1.5, 1.2, 5.0) * (0.55 + 0.45 * grow)
+	layer.sprite(
+		&"rockburst",
+		c + Vector3.UP * s * 0.42,
+		s,
+		Color(1.0, 1.0, 1.0, (1.0 - t * t) * minf(age / 2.0 + 0.3, 1.0)),
+		posmod(sd, 4),
+		0.0
+	)
+
+
 static func _puff_ring(
-	layer: VfxCore, c: Vector3, r: float, age: float, sd: int, n: int, col: Color, rise: float
+	layer: VfxCore,
+	c: Vector3,
+	r: float,
+	age: float,
+	sd: int,
+	n: int,
+	col: Color,
+	rise: float,
+	pool: StringName = &"smoke"
 ) -> void:
 	var t := clampf(age / 40.0, 0.0, 1.0)
 	if t >= 1.0:
@@ -172,9 +205,9 @@ static func _puff_ring(
 		var a := TAU * (k + VfxCore.h(sd + 15, k)) / n
 		var q := c + Vector3(cos(a), 0.0, sin(a)) * r + Vector3.UP * (0.4 + 1.6 * t * rise)
 		layer.sprite(
-			&"smoke",
+			pool,
 			q,
-			1.0 + 1.0 * t,
+			(1.0 + 1.0 * t) * (1.3 if pool == &"steam" else 1.0),
 			Color(col, 0.7 * (1.0 - t)),
 			(sd + k) % 4,
 			TAU * VfxCore.h(sd + 16, k)

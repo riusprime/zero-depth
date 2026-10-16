@@ -19,6 +19,8 @@ const HOT := Color("#FF3A5A")
 ## The gathering ring's radius over the boss's (m) and its light's range.
 const RING_M := 0.6
 const LIGHT_RANGE := 9.0
+## v0.8.0 TX2: seconds the owner's crystal shatter bursts flare (draw_fx).
+const BURST_FX_S := 0.55
 
 const SHADER := """
 shader_type spatial;
@@ -54,6 +56,9 @@ var _ring := MeshInstance3D.new()
 var _ring_mat := StandardMaterial3D.new()
 var _light := OmniLight3D.new()
 var _bursts := 0
+## v0.8.0 TX2: where the last burst was and the burst body's radius (draw_fx).
+var _burst_at := Vector3.ZERO
+var _burst_r := 1.0
 
 
 func _init() -> void:
@@ -137,9 +142,35 @@ func ring_amount() -> float:
 	return _shatter
 
 
+## v0.8.0 TX2: a VfxCore drawer (WorldViewRoot adds it with the new look): the owner's crystal shatter bursts
+## (fx_crystal_shatter) flaring where the body burst over its first BURST_FX_S, a big one in the middle and three
+## smaller round it, growing as they fade. Frame time like the shards; nothing without the texture.
+func draw_fx(layer: VfxCore) -> void:
+	if _age < 0.0 or _age >= BURST_FX_S or not VfxCore.has_tex("fx_crystal_shatter"):
+		return
+	var u := _age / BURST_FX_S
+	var fade := (1.0 - u) * (1.0 - u)
+	var c := _burst_at + Vector3(0, 1.4, 0)
+	var big := (_burst_r * 2.0 + 2.5) * (0.6 + 0.6 * u)
+	layer.sprite(&"shatter", c, big, Color(1.4, 1.2, 1.25, fade), _bursts % 4, 0.0)
+	for k in 3:
+		var a := TAU * (k + VfxCore.h(_bursts, k)) / 3.0
+		var off := Vector3(cos(a), 0.3 * (VfxCore.h(_bursts + 1, k) - 0.5), sin(a)) * big * 0.35
+		layer.sprite(
+			&"shatter",
+			c + off * (0.6 + u),
+			big * 0.45,
+			Color(1.3, 1.1, 1.2, fade),
+			(_bursts + k + 1) % 4,
+			a
+		)
+
+
 func _burst(at: Vector3, radius: float, tick: int) -> void:
 	_bursts += 1
 	_age = 0.0
+	_burst_at = at
+	_burst_r = radius
 	_rise = -1.0
 	_shards.clear()
 	var sd := tick * 37 + _bursts * 101
