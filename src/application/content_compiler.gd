@@ -285,6 +285,7 @@ static func compile_floor_spawning(repo: ContentRepository, floor_index: int) ->
 	var def := curve_def(repo, floor_index)
 	if def != null:
 		t.curve = compile_curve(def, t, repo)
+	t.intensity = IntensityCompiler.compile(repo.get_def(&"intensity", &"director"))  # v0.8.0 N5 (owner O58)
 	return t
 
 

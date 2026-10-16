@@ -591,6 +591,28 @@ func tier() -> int:
 	return _w.spawner.danger_tier(_w.run_ticks) if _w.spawner != null else 0
 
 
+# --- The intensity director (v0.8.0 N5, owner O58) ---------------------------------------------------------------
+## True when the floor's ordinary spawning has the intensity director. The player is never shown it (owner: "for now
+## nothing, quietness, the enemies are the real indicator"); the dev panel (F10's Tools page) reads it.
+func has_intensity() -> bool:
+	return Intensity.table(_w) != null
+
+
+## The hidden intensity, 0..1000 (0 without the director).
+func intensity() -> int:
+	return _w.intensity.level / 1000 if has_intensity() else 0
+
+
+## The director's state (IntensityState.Mode: BUILD_UP 0, PEAK 1, PULL_BACK 2, QUIET 3; BUILD_UP without it).
+func intensity_mode() -> int:
+	return _w.intensity.mode if has_intensity() else IntensityState.Mode.BUILD_UP
+
+
+## Ticks left in the PEAK, PULL_BACK or QUIET timer (0 in BUILD_UP or without the director).
+func intensity_timer() -> int:
+	return maxi(0, _w.intensity.timer) if has_intensity() else 0
+
+
 # --- Difficulty curve (v0.4.0 TU, owner D1–D3) ------------------------------------------------------------------
 ## True when the floor's spawning follows a difficulty curve.
 func has_curve() -> bool:

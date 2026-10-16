@@ -87,6 +87,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
+	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
 ]
 ## State objects: every script variable is copied.
@@ -124,6 +125,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"ModifierState",  # v0.6.0 MX4: queued launches, every-N counters, the moments' and body rules' marks
 	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
 	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
+	&"IntensityState",  # v0.8.0 N5: the intensity director's state
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -156,6 +158,7 @@ const ADDED_SINCE_V05 := {
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
+		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
@@ -617,6 +620,8 @@ static func _make(cls: StringName) -> Object:
 			return FinalFight.new()
 		&"NemesisCast":
 			return NemesisCast.new()
+		&"IntensityState":
+			return IntensityState.new()
 	return null  # HeatState needs its table: a base without heat can't take a snapshot with it
 
 
