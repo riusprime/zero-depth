@@ -77,6 +77,7 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D20 | Void's black holes (P2, starting values): 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m at 3 m/s, every 0.2 s 30 % of the shot on enemies within 1.4 m; on the Blade a slash rolls where it first lands; the roll uses the existing `ability` stream (no new stream). OK? | as built | PLAN "P2"; VOID_AND_PORTALS.md |
 | D21 | The Loop device stands beside the Ascension portal where a Deep gate would (no menu, no "End the run"); the two Ascension achievements now say "Take the Loop device". OK? | as built | FINAL_BOSS.md "The flow since P2" |
 | D22 | The Purple Portal (Deep gate) 10 % ease (P3, O35) applies on loop 2 **and every later loop**. Loop 2 only instead? | loop 2 and later | [`BIOME_PERF_AND_LIGHT.md`](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md) |
+| D23 | **Utility cards (UC, G1):** 22 mechanic cards; mark each Yes / No / Change. Only Yes rows get built | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 
