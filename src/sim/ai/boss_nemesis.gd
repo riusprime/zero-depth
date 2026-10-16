@@ -58,11 +58,18 @@ static func fan_angle(aim: int, k: int, n: int, full: int) -> int:
 	return (aim - half + 2 * half * k / (n - 1)) & 4095
 
 
-## Body i's attack may be picked now: its weapon is the run's, and a card cast's card is held.
+## Body i's attack may be picked now: its weapon is the run's, and a card cast's card is held. v0.8.0 N2 (owner O52):
+## with mimic windows, outside a window it fights with its own kit (every attack but the card casts, whatever the
+## run's weapon, and its own: weapon "own"); in a window only the run's weapon's and the cards, never its own.
 static func allowed(w: World, atk: BossAttackTable) -> bool:
 	var f := w.final_fight
 	if f == null:
 		return atk.move != M.CARD_CAST
+	var t := FinalPace.table(w)
+	if t != null and t.window_ticks > 0 and not FinalPace.copies(w):
+		return atk.move != M.CARD_CAST
+	if atk.weapon == BossAttackTable.WEAPON_OWN:
+		return false
 	if atk.weapon != BossAttackTable.WEAPON_ANY and atk.weapon != f.weapon:
 		return false
 	return atk.move != M.CARD_CAST or (atk.card >= 0 and atk.card < f.casts.size())
@@ -97,7 +104,7 @@ static func think(w: World, i: int, t: BossTable) -> void:
 	var free := a.state[i] == S.MOVE or a.state[i] == S.RECOVER
 	if f.dash_due >= 0 and w.tick >= f.dash_due:
 		f.dash_due = -1
-		if free and f.dash_t == 0 and not w.player_dead():
+		if free and f.dash_t == 0 and not w.player_dead() and FinalPace.copies(w):  # N2: in a window
 			_dash(w, i)
 	if a.state[i] == S.MOVE and f.dash_t == 0:
 		f.stance_t -= 1
@@ -125,10 +132,17 @@ static func _dash(w: World, i: int) -> void:
 	e.amount = ticks
 
 
+## v0.8.0 N2: outside a mimic window it neither echoes nor mirrors the player (its own kit: close in or back off).
 static func _next_stance(w: World, t: BossTable) -> void:
 	var f := w.final_fight
-	var pick := w.rng_ai.pick_weighted(t.stance_weights)
-	f.stance = pick if pick >= 0 else BossTable.STANCE_ECHO
+	var weights := t.stance_weights
+	if not FinalPace.copies(w):
+		weights = weights.duplicate()
+		weights[BossTable.STANCE_ECHO] = 0
+		weights[BossTable.STANCE_MIRROR] = 0
+	var pick := w.rng_ai.pick_weighted(weights)
+	var fallback := BossTable.STANCE_ECHO if FinalPace.copies(w) else BossTable.STANCE_CLOSE
+	f.stance = pick if pick >= 0 else fallback
 	f.stance_t = maxi(1, t.stance_ticks)
 
 
@@ -140,7 +154,10 @@ static func after_attack(w: World, i: int, atk: BossAttackTable) -> void:
 
 
 ## BossAi._lock: aimed at the player, from where it stands; a card's blast on the player.
+## v0.8.0 N2: the attack copies the build when it begins in a mimic window (FinalFight.copying, kept to its end).
 static func lock(w: World, i: int, b: int, _atk: BossAttackTable) -> void:
+	if w.final_fight != null:
+		w.final_fight.copying = FinalPace.copies(w)
 	_follow(w, i)
 	w.bosses.set_pt(b, BLAST_PT, w.player_pos())
 
@@ -278,7 +295,7 @@ static func combo_arc(w: World, i: int, k: int) -> Array:
 	var f := w.final_fight
 	var half := atk.half_arc
 	var reach := atk.reach_m
-	if f != null and not f.combo_half.is_empty():
+	if f != null and f.copying and not f.combo_half.is_empty():  # v0.8.0 N2: your combo in a window
 		var n := f.combo_half.size()
 		half = f.combo_half[k % n]
 		reach = f.combo_reach[k % n]
@@ -292,7 +309,7 @@ static func combo_arc(w: World, i: int, k: int) -> Array:
 ## (`count`, `spread` between two of them, CRESCENT_SPEED unless the attack sets speed_mps).
 static func shot_cast(w: World, i: int, atk: BossAttackTable) -> NemesisCast:
 	var f := w.final_fight
-	if f != null and f.shot != null and f.shot.has_volley():
+	if f != null and f.copying and f.shot != null and f.shot.has_volley():  # v0.8.0 N2: in a window
 		return f.shot
 	var t := BossAi.table_of(w, i)
 	var c := NemesisCast.new()
@@ -318,6 +335,8 @@ static func card_of(w: World, atk: BossAttackTable) -> NemesisCast:
 	var f := w.final_fight
 	if f == null or atk.card < 0 or atk.card >= f.casts.size():
 		return null
+	if not f.copying and FinalPace.table(w) != null and FinalPace.table(w).window_ticks > 0:
+		return null  # v0.8.0 N2: a card is cast only in a window
 	return f.casts[atk.card]
 
 
@@ -396,16 +415,12 @@ static func resolve(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> 
 			w.bosses.hit[b] = 0
 			var c := combo_arc(w, i, st / gap)
 			if AttackShapes.arc_touches(c[0], c[1], c[2], c[3], c[4], p, pr):
-				_hit(w, i, b, NemesisBuild.damage_of(w, atk.damage), SimEvent.TAG_MELEE, c[0])
+				_hit(w, i, b, NemesisBuild.damage_of(w, atk), SimEvent.TAG_MELEE, c[0])
 		M.MIMIC_SHOTS:
 			if st % maxi(1, atk.gap_ticks) != 0 or st / maxi(1, atk.gap_ticks) >= atk.volleys:
 				return
 			fire_volley(
-				w,
-				i,
-				shot_cast(w, i, atk),
-				NemesisBuild.damage_of(w, atk.damage),
-				w.bosses.attack[b]
+				w, i, shot_cast(w, i, atk), NemesisBuild.damage_of(w, atk), w.bosses.attack[b]
 			)
 		M.CARD_CAST:
 			_resolve_card(w, i, b, atk, st)
@@ -417,7 +432,7 @@ static func _resolve_card(w: World, i: int, b: int, atk: BossAttackTable, st: in
 		return
 	var p := w.player_pos()
 	var pr := w.player.radius_m
-	var dmg := NemesisBuild.damage_of(w, atk.damage, c.damage_permille)
+	var dmg := NemesisBuild.damage_of(w, atk, c.damage_permille)
 	if st == 0:
 		var id := w.actors.ids[i]
 		var e := w.emit_event(SimEvent.Kind.STATUS_APPLY, id, id, id, w.actors.pos(i))

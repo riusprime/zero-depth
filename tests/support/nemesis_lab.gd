@@ -24,18 +24,34 @@ static func grant(w: World, cards: Array) -> void:
 
 
 ## The arena of a `build` run (seed `seed_value`), `cards` granted, the hero held up (invulnerable), the Nemesis risen
-## and acting. With `held` false the hero can be hurt.
+## and acting. With `held` false the hero can be hurt. v0.8.0 N2: with `always` (the FB3 tests) The Fallen copies the
+## build the whole fight (its table's mimic windows off in this world), else in its windows as shipped.
 static func world(
-	seed_value: int, build: StringName = &"blade", cards: Array = [], held: bool = true
+	seed_value: int,
+	build: StringName = &"blade",
+	cards: Array = [],
+	held: bool = true,
+	always: bool = true
 ) -> World:
 	var w := FinalLab.arena(FinalLab.run_state(seed_value, build))
 	if held:
 		w.actors.invuln[0] = LONG
 	grant(w, cards)
+	if always:
+		w.boss_tables[w.final_fight.tables[2]].window_ticks = 0
 	FinalLab.past_rise(w)
 	FinalBoss.jump(w, 2)
 	FinalLab.past_rise(w)
 	return w
+
+
+## v0.8.0 N2: steps until The Fallen's mimic window is `state` (FinalPace.Mimic), at most `limit` ticks; the ticks run.
+static func until_window(w: World, state: int, limit: int = 2400) -> int:
+	for k in limit:
+		if FinalPace.window(w) == state:
+			return k
+		w.step(InputFrame.new())
+	return limit
 
 
 ## The Nemesis's attack index of `id`.

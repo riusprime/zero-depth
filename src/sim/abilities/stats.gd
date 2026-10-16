@@ -336,8 +336,9 @@ static func _scaled_m(w: World, s: int, metres: float) -> float:
 	return metres if m == 1000 else metres * m / 1000.0
 
 
+## v0.8.0 N2 (owner O42): in The Fallen's mimic window the move speed is at most the base (FinalPace.move_cap).
 static func move_permille(w: World) -> int:
-	return value(w, Stat.MOVE)
+	return FinalPace.move_cap(w, value(w, Stat.MOVE))
 
 
 static func shards(w: World, amount: int) -> int:

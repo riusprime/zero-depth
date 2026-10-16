@@ -27,8 +27,9 @@ const BOSSES: Array[StringName] = [
 ]
 ## The Blade must kill each of the six within this (ticks: 3 minutes of fight at the data's HP, loop 1).
 const KILL_LIMIT := 10800
-## The final boss's three bodies within this (ticks: 6 minutes; FINAL_BOSS.md F7: ~1.5 floor-3 bosses, the Prism ~60 s).
-const FINAL_LIMIT := 21600
+## The final boss's three bodies within this (ticks: 10 minutes; v0.8.0 N2, owner O41: each body 1-3 min, the base build
+## about 2 min each).
+const FINAL_LIMIT := 36000
 
 
 static func _repo() -> ContentRepository:
@@ -187,7 +188,7 @@ func test_the_blade_beats_the_final_boss() -> void:
 		for a in (_repo().get_def(&"final_bosses", id) as BossDefinition).attacks:
 			if a.hit_class == &"big":
 				bigs[a.id] = true
-	assert_eq(bigs.size(), 2, "the Colossus's two leap slams")
+	assert_eq(bigs.size(), 6, "the Colossus's three leap slams, The Fallen's three cards (N2)")
 	var w := FinalLab.arena(FinalLab.run_state(21, &"blade"))
 	FinalLab.past_rise(w)
 	var bot := BladeRun.new(-1, bigs)

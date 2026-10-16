@@ -176,6 +176,7 @@ static func think(w: World, i: int) -> void:
 			_think_active(w, i, b, atk)
 		S.RECOVER:
 			var atk: BossAttackTable = t.attacks[bs.attack[b]]
+			BossColossus.leap_late_waves(w, i, atk, a.state_t[i])  # v0.8.0 N2: a ring's later waves
 			if a.state_t[i] >= atk.recover_ticks:
 				EnemyAi.enter_state(a, i, S.MOVE)
 				a.cd[i] = atk.cooldown_ticks * t.phase_cd_permille[bs.phase[b]] / 1000

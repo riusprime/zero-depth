@@ -31,6 +31,18 @@ static func compile_into(def: FinalBossDefinition, t: BossTable) -> void:
 	t.dps_target_ticks = SimTick.seconds_to_ticks(def.dps_target_seconds)
 	t.dps_hp_min = def.dps_hp_min
 	t.dps_hp_max = def.dps_hp_max
+	# v0.8.0 N2 (owner O41, O42, O52): the pace and The Fallen's windows.
+	t.pace = def.pace
+	t.pace_ref_dps = def.pace_ref_dps
+	t.pace_ref_ticks = SimTick.seconds_to_ticks(def.pace_ref_seconds)
+	t.pace_min_ticks = maxi(1, SimTick.seconds_to_ticks(def.pace_min_seconds))
+	t.pace_max_ticks = SimTick.seconds_to_ticks(def.pace_max_seconds)
+	t.pace_burst_ticks = SimTick.seconds_to_ticks(def.pace_burst_seconds)
+	t.window_ticks = SimTick.seconds_to_ticks(def.mimic_window_seconds)
+	t.window_every_ticks = maxi(1, SimTick.seconds_to_ticks(def.mimic_every_seconds))
+	t.window_first_ticks = SimTick.seconds_to_ticks(def.mimic_first_seconds)
+	t.window_warn_ticks = SimTick.seconds_to_ticks(def.mimic_warn_seconds)
+	t.nerf_min_permille = def.mimic_nerf_min_permille
 	_compile_mimic(def, t)
 
 

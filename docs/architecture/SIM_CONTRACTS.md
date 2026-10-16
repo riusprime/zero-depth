@@ -1392,6 +1392,45 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   locked, striking), a volley's lines as `&"lanes"`, a card as `&"marks"` (items: `&"arc"`, `&"lanes"`, `&"disc"`;
   `card`, `card_index`, `striking`, `strike_items`). `BossAi.cause_key` moved to `BossCauses.key` (unchanged rules).
 
+
+## 10i. The final boss's pace and The Fallen's windows (v0.8.0 N2; owner O41, O42, O52, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md) "N2")
+
+Supersedes §10g's HP formula (for a paced body), §10h's "HP and damage from the build" (The Fallen is paced; its hits
+below) and FB3's cap of a fifth of max HP (D36).
+- **The pace (`FinalPace`, `BossTable.pace`).** `dps_milli = Σ damage × 1000 / n` over the meter's last
+  `dps_seconds` (n ≥ `dps_min_seconds`, else 0). `time = clamp(pace_ref_ticks × isqrt(pace_ref_dps × 10⁹ / dps_milli)
+  / 1000, pace_min_ticks, pace_max_ticks)`; `hp = clamp(dps_milli × time × window_permille / (60 × 10⁶), dps_hp_min,
+  dps_hp_max)` (`CatchUp.isqrt`, 64-bit ints). Set in `FinalBoss._spawn` (`FinalPace.rise`) when the meter holds
+  enough, else in tick phase 9 (`FinalPace.advance`) the first tick it does; `hp` keeps its fill (`hp × fill / 1000`,
+  at least 1). `FinalFight.paced`, `pace_dps` record it. `FinalBoss.dps_hp_of` returns it for a paced table.
+- **The rate cap.** Tick phase 9, each tick a paced body is not rising, shattering or dead: `pace_budget +=
+  rate = max(1, max_hp × 1000 / pace_min_ticks)`, at most `rate × pace_burst_ticks`. `Damage._apply` →
+  `BossGates.clamp_damage` → `FinalBoss.clamp_damage(…, owner_id)`: the 1-HP floor of a body before the last, then
+  `FinalPace.cap_hit`: owner 0 (the world's own hit) passes; else, in a mimic window, `× nerf_permille`; then
+  `min(amount, pace_budget / 1000)`, paid from the bucket. The meter (§10g `note_damage`) still records the hit's
+  damage before the clamp.
+- **The Fallen's windows (`BossTable.window_ticks` > 0).** `u = tick − phase_tick − boss_intro_ticks −
+  window_first_ticks + window_warn_ticks`; OFF for u < 0; else `c = u mod window_every_ticks`: WARN for c <
+  `window_warn_ticks`, ON for c < warn + `window_ticks`, else OFF; OFF while shattering, rising, dead or won. No state
+  of its own (a function of the tick and the rise). One `STATUS_APPLY` on the tick each state begins (`fallen_warn`,
+  `fallen_open`, `fallen_close`; amount = the state).
+- **In a window** (`FinalPace.copies`): `BossNemesis.allowed` keeps §10h's rule (the run's weapon, the cards held)
+  and leaves out `weapon = own`; a due dash is answered; stances are drawn from all four weights. `BossNemesis.lock`
+  sets `FinalFight.copying` at each attack's start, kept to its end: a copying combo swings the player's steps, a
+  copying `mimic_shots` fires `FinalFight.shot`, a card is cast only while copying. The player: `nerf_permille =
+  clamp(pace_ref_dps × 10⁶ / pace_dps, nerf_min_permille, 1000)` on their hits on it; `Stats.move_permille` at most
+  1000 (`FinalPace.move_cap`).
+- **Outside a window:** every non-card attack may be picked (whatever the run's weapon; `weapon = own` too), no card,
+  no dash answer, stances only CLOSE and BACK; combos swing the attack's own arc, shots are the attack's own crescents.
+- **Its hits.** `NemesisBuild.damage_of(w, atk, weight)`: `own = max(1, max_hp × atk.damage / 100)` (the data's
+  `damage` is a per cent of the player's max HP, by `hit_class`); not copying → `min(own, cap)`; copying →
+  `clamp(max(own, hit × weight / 1000), 1, cap)`, `cap = max_hp × damage_cap_permille / 1000` (500).
+- **State and saves.** `FinalFight.paced`, `pace_dps`, `pace_budget`, `copying`: hashed with the fight (always, after
+  the meter) and listed in `WorldSnapshot.ADDED_SINCE_V05` (an older save: unpaced, an empty bucket).
+- **Reads (N2).** `WorldReader.final_pace()` (`FinalPace.state` + `capped`: paced, dps, seconds, budget, capped,
+  window, window_left, window_len, nerf, copying), `WorldReader.fallen_window()`, `FALLEN_OFF`, `FALLEN_WARN`,
+  `FALLEN_ON`.
+
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×

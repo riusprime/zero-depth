@@ -1082,8 +1082,8 @@ BOSS_COLOSSUS,The Colossus,El Coloso
 BOSS_COLOSSUS_DESC,"The Hollow Crown's first body: stone fists as big as a man. It never stops: fist combos that follow you and end in a ground slam, leaps that crack the floor in a shockwave ring, lines of stone spikes that chase you across the arena and bursts of them all around it, and boulders that shatter into shards where they land. Every blow locks half a second before it lands.","El primer cuerpo de la Corona Hueca: puños de piedra tan grandes como un hombre. Nunca se detiene: combos de puños que te siguen y acaban en un golpe al suelo, saltos que agrietan el suelo en un anillo de onda expansiva, líneas de pinchos de piedra que te persiguen por la arena y estallidos de pinchos a su alrededor, y rocas que se rompen en esquirlas al caer. Cada golpe se fija medio segundo antes de caer."
 BOSS_PRISM,The Prism,El Prisma
 BOSS_PRISM_DESC,"The Hollow Crown's second body: a torn figure ringed by floating red crystal shards. She floats at the arena's heart inside the Cross, four beams that turn round the room, reversing, faster as she weakens. Her shards weave rings, spirals and flowers of orbs between the beams and fire quick bolts down a short aim line. She is shielded while the Cross turns: strike in the short windows between its spins. Her strength is measured from your own damage, so she lasts about a minute however strong you are.","El segundo cuerpo de la Corona Hueca: una figura rasgada rodeada de esquirlas de cristal rojo que flotan. Flota en el corazón de la arena dentro de la Cruz, cuatro rayos que giran por la sala, cambian de sentido y aceleran a medida que se debilita. Sus esquirlas tejen anillos, espirales y flores de orbes entre los rayos y disparan proyectiles rápidos por una breve línea de mira. Está protegida mientras la Cruz gira: golpea en las breves ventanas entre giros. Su fuerza se mide a partir de tu propio daño, así que dura un minuto más o menos por fuerte que seas."
-BOSS_NEMESIS,The Nemesis,La Némesis
-BOSS_NEMESIS_DESC,"The Hollow Crown's last body: a small dark hooded figure, your own shadow. It fights with your weapon, dashes when you dash, walks your steps a moment behind you and casts the strongest cards of your wand back at you. Its strength is yours: its health and its blows come from your build.","El último cuerpo de la Corona Hueca: una pequeña figura encapuchada y oscura, tu propia sombra. Lucha con tu arma, se lanza cuando tú te lanzas, repite tus pasos un instante después y te devuelve las cartas más fuertes de tu varita. Su fuerza es la tuya: su vida y sus golpes salen de tu equipo."
+BOSS_NEMESIS,The Fallen,El Caído
+BOSS_NEMESIS_DESC,"The Hollow Crown's last body: a small dark hooded figure, your own shadow, fallen. It fights with a kit of its own, and at times it reaches for yours: for a few seconds it takes your weapon, your dash, your steps and the strongest cards of your wand, and pulls your power down to its level, an even duel. Its strength follows yours.","El último cuerpo de la Corona Hueca: una pequeña figura encapuchada y oscura, tu propia sombra, caída. Lucha con sus propias armas y, a ratos, alcanza las tuyas: durante unos segundos toma tu arma, tu impulso, tus pasos y las cartas más fuertes de tu varita, y rebaja tu poder hasta el suyo, un duelo igualado. Su fuerza sigue a la tuya."
 BOSS_HOLLOW_CROWN,The Hollow Crown,La Corona Hueca
 FINAL_ARENA,The Hollow Arena,La Arena Hueca
 FINAL_ARENA_DESC,"A round arena of dark violet stone hung in the star-lit void, red crystal in its veins and its tiers empty. Its great gate is sealed: the only way out is through the Hollow Crown.","Una arena redonda de piedra violeta oscura suspendida en el vacío estrellado, con cristal rojo en sus vetas y sus gradas vacías. Su gran puerta está sellada: la única salida es a través de la Corona Hueca."
@@ -1095,10 +1095,10 @@ CAUSE_COLOSSUS_BOULDER,A boulder the Colossus threw crushed you.,Una roca que la
 CAUSE_PRISM_ORBS,The Prism's orbs caught you between the beams.,Los orbes del Prisma te alcanzaron entre los rayos.
 CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria del Prisma te abrasó.
 CAUSE_PRISM_BOLT,A fast bolt from the Prism's shards struck you.,Un proyectil rápido de las esquirlas del Prisma te alcanzó.
-CAUSE_NEMESIS_SLASH,The Nemesis cut you down.,La Némesis te abatió de un tajo.
-CAUSE_NEMESIS_CRESCENTS,The Nemesis threw your own slash back at you.,La Némesis te devolvió tu propio tajo.
-CAUSE_NEMESIS_CARD,The Nemesis turned one of your own cards against you.,La Némesis usó una de tus propias cartas contra ti.
-CAUSE_NEMESIS_SHOTS,The Nemesis shot you with your own gun.,La Némesis te disparó con tu propia arma.
+CAUSE_NEMESIS_SLASH,The Fallen cut you down.,El Caído te abatió de un tajo.
+CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas del Caído te alcanzaron.
+CAUSE_NEMESIS_CARD,The Fallen turned one of your own cards against you.,El Caído usó una de tus propias cartas contra ti.
+CAUSE_NEMESIS_SHOTS,The Fallen shot you with your own gun.,El Caído te disparó con tu propia arma.
 ACH_FINAL_BOSS_NAME,Crown Breaker,Rompecoronas
 ACH_FINAL_BOSS_DESC,"Beat the Hollow Crown, the final boss.","Derrota a la Corona Hueca, el jefe final."
 ACH_FINAL_NO_HIT_NAME,Untouched,Intocable
@@ -1108,6 +1108,8 @@ ACH_FINAL_LOOPED_DESC,Beat the Hollow Crown after an Ascension loop.,Derrota a l
 UI_CODEX_SECTION_FINAL,The Hollow Crown,La Corona Hueca
 UI_RECAP_TRUE_ENDING,The Hollow Crown is broken: the true ending.,La Corona Hueca está rota: el verdadero final.
 HUD_FINAL_SHATTER,SHATTERED,HECHA AÑICOS
+HUD_FALLEN_WARN,The Fallen reaches for your power…,El Caído alcanza tu poder…
+HUD_FALLEN_WINDOW,"The Fallen mirrors you: your build is its own, your power pulled to its level (%d s)","El Caído te imita: tu equipo es el suyo y tu poder baja hasta el suyo (%d s)"
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a la Corona Hueca en el centro de la sala; un botón de fase salta a ese cuerpo.

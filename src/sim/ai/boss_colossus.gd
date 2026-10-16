@@ -154,6 +154,30 @@ static func leap_wave(w: World, i: int, atk: BossAttackTable, at: Vector2) -> vo
 	)
 
 
+## v0.8.0 N2 (owner O41 "really hard to dodge spells"): a leap's pattern with more than one wave fires wave k
+## (k >= 1) k × wave_gap_ticks into its recovery, from where it landed (the double quake ring of leap_slam_3: the
+## second ring turned so its gaps stand where the first one's stones flew). Its stones keep the pattern's fair rules
+## (none within its safe radius of the player: a hero punishing in melee is never hit by it).
+static func leap_late_waves(w: World, i: int, atk: BossAttackTable, t: int) -> void:
+	var pat := atk.pattern
+	if atk.move != BossAttackTable.Move.LEAP or pat == null or pat.waves <= 1 or t <= 0:
+		return
+	var gap := maxi(1, pat.wave_gap_ticks)
+	if t % gap != 0 or t / gap >= pat.waves:
+		return
+	var at := w.actors.pos(i)
+	BulletPatterns.fire(
+		w,
+		i,
+		pat,
+		t / gap,
+		at,
+		Kin.angle_of(w.player_pos() - at),
+		w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M,
+		BossAi.orb_damage(w, i, atk)
+	)
+
+
 # --- spikes -------------------------------------------------------------------------------------------------------
 
 

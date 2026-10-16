@@ -33,6 +33,10 @@ const KIND_LENS_DRONE := ActorStore.Kind.LENS_DRONE
 const KIND_COLOSSUS := ActorStore.Kind.COLOSSUS
 const KIND_PRISM := ActorStore.Kind.PRISM
 const KIND_NEMESIS := ActorStore.Kind.NEMESIS
+## v0.8.0 N2: The Fallen's mimic window states (final_pace "window", fallen_window), for the presentation.
+const FALLEN_OFF := FinalPace.Mimic.OFF
+const FALLEN_WARN := FinalPace.Mimic.WARN
+const FALLEN_ON := FinalPace.Mimic.ON
 ## How a melee combo step moves the blade (SwingStep.Motion; swing_motion()).
 const MOTION_SLASH_RIGHT_TO_LEFT := SwingStep.Motion.SLASH_RIGHT_TO_LEFT
 const MOTION_SLASH_LEFT_TO_RIGHT := SwingStep.Motion.SLASH_LEFT_TO_RIGHT
@@ -1563,6 +1567,26 @@ func final_arena_radius() -> float:
 ## The tick the current body began (its rise).
 func final_phase_tick() -> int:
 	return _w.final_fight.phase_tick if _w.final_fight != null else -1
+
+
+## v0.8.0 N2 (owner O41, O42, O52; FinalPace.state): the current body's pace and The Fallen's mimic window: {} outside a
+## final fight, else {"paced" (its HP set from the meter), "dps" (the measured damage per second it was set from),
+## "seconds" (how long it lasts at that rate), "budget" (the damage it may take now: the rate cap's bucket), "capped"
+## (the bucket is empty: hits land for nothing until it refills), "window" (FinalPace.Mimic: OFF, WARN, ON),
+## "window_left" and "window_len" (ticks of the window state now), "nerf" (your damage on it per mille, in a window),
+## "copying" (the attack in progress copies your build)}.
+func final_pace() -> Dictionary:
+	if _w.final_fight == null:
+		return {}
+	var out := FinalPace.state(_w)
+	if not out.is_empty():
+		out["capped"] = FinalPace.table(_w).pace and _w.final_fight.pace_budget < 1000
+	return out
+
+
+## v0.8.0 N2: The Fallen's mimic window now (FinalPace.Mimic: 0 off, 1 the warning, 2 on).
+func fallen_window() -> int:
+	return FinalPace.window(_w) if _w.final_fight != null else FALLEN_OFF
 
 
 ## The death recap's cause key when a boss killed the player (its attack's line), else &"".

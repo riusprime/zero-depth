@@ -6,7 +6,8 @@ extends RefCounted
 ## it rises (prepare, from FinalBoss._spawn; again at its first tick after an FB2 save, whose fight lacks it) and kept
 ## in the fight (FinalFight: saved and hashed), so a card taken later changes nothing mid-duel.
 ## - The weapon: the run's (PlayerBuild: a Gun without the Blade is the Gun, anything else the Blade).
-## - Its HP (BossTable.build_hp): hp_of. Its hit and cap: hit_of, cap_of; each attack's share: damage_of.
+## - Its HP (BossTable.build_hp): hp_of (v0.8.0 N2: FinalPace's when paced). Its hit and cap: hit_of, cap_of; each
+##   attack's damage: damage_of (its class's share of your max HP; in a mimic window your build's hit when more).
 ## - Its combo: a Blade run's combo steps as the wand compiled them (each step's arc and reach, Attacks.arc_reach_m,
 ##   clamped to reach_max_m).
 ## - Its shot (mimic_shots): a Gun run's compiled shot (every card on it) as a hostile volley; a Blade run's thrown
@@ -89,14 +90,20 @@ static func hit_from(weapon_damage: int, cap: int, t: BossTable) -> int:
 	return mini(maxi(weapon_damage * t.build_damage_permille / 1000, t.damage_min), cap)
 
 
-## An attack's damage: `percent` of the hit × `weight_permille` / 1000, at least 1, at most the cap. Without a read
-## build (a lab boss outside a fight) the attack's own damage.
-static func damage_of(w: World, percent: int, weight_permille: int = 1000) -> int:
+## An attack's damage (v0.8.0 N2, owner O27 "small balls 4-5 big attacks 2", superseding F7's "a fifth of your max HP"
+## cap, D36): its own hit is its `damage` per cent of the player's max HP (its hit class: 22 small, 30-34 medium, 50
+## big: 5, 4-3, 2 hits); an attack begun in a mimic window (FinalFight.copying) copies your damage: the build's hit ×
+## `weight_permille` / 1000 when that is more. At least 1, at most the cap (hit_cap). Without a read build (a lab boss
+## outside a fight) the attack's own damage.
+static func damage_of(w: World, atk: BossAttackTable, weight_permille: int = 1000) -> int:
 	var f := w.final_fight
 	if f == null or not f.ready or f.hit <= 0:
-		return maxi(1, percent)
-	var d := f.hit * percent / 100 * weight_permille / 1000
-	return clampi(d, 1, maxi(1, f.hit_cap))
+		return maxi(1, atk.damage)
+	var cap := maxi(1, f.hit_cap)
+	var own := maxi(1, w.actors.max_hp[0] * atk.damage / 100)
+	if not f.copying:
+		return mini(own, cap)
+	return clampi(maxi(own, f.hit * weight_permille / 1000), 1, cap)
 
 
 # --- the cards ----------------------------------------------------------------------------------------------------

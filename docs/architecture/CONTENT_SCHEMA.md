@@ -670,6 +670,22 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     `blast_min_m` / `blast_max_m` (1.0, 3.0). A mimic table is not scaled by the floor or the loop
     (`RunState.scale_bosses`).
 
+- **v0.8.0 N2 (owner O41, O42, O52; SIM_CONTRACTS §10i).** Supersedes FB3's "per cent of the Nemesis's hit": a
+  mimic body's attack `damage` is **per cent of the player's max HP** with a `hit_class` (22 small, 30/34 medium, 50
+  big), and in a mimic window the build's hit when more; `build_damage_cap_permille` 500. `weapon` may also be
+  `"own"` (only outside its windows): The Fallen's `fallen_storm` (7 crescents 20° apart, 3 volleys 0.3 s apart,
+  8 m/s, 0.4 s lock, 22) and `fallen_rush` (4 swings 0.3 s apart, 140°, 2.2 m, 7 m/s, 0.4 s lock, 30).
+  `FinalBossDefinition`: `pace` with `pace_ref_dps` (≥ 1; 30), `pace_ref_seconds` (120), `pace_min_seconds` (≥ 30;
+  60), `pace_max_seconds` (180; min ≤ ref ≤ max), `pace_burst_seconds` (0..min; 10) and the meter's
+  `dps_measure_seconds` / `dps_min_measured_seconds` / `dps_hp_min` / `dps_hp_max` (5,000,000 on all three bodies);
+  `mimic_window_seconds` (≥ 0; 7; 0 = copies all the time, needs `mimic`), `mimic_every_seconds` (> window +
+  warning + 1 s; 20), `mimic_first_seconds` (≥ the warning; 12), `mimic_warn_seconds` (≥ 0.5; 1.5),
+  `mimic_nerf_min_permille` (1..1000; 100). New attacks: the Colossus's `leap_slam_3` (pattern
+  `colossus_quake_double`: a 28-stone ring, two 2-stone gaps, twice 0.45 s apart turned 90°) and `spike_chase_3`
+  (2 lines 30° apart, 0.15 s, 14 spikes), both in its second phase; the Prism's `cross_weave` (pattern
+  `prism_crown_weave`: 6 spiral arms reversing at 0.7 s; bolts every 0.8 s from `prism_bolt_fan`: 3 bolts 30° apart,
+  2 volleys 0.2 s apart).
+
 - **v0.8.0 BP (owner O27).** Two optional fields on a boss attack:
   - `hit_class: StringName`: `&"small"` (orbs, shots, javelins), `&"medium"` (strikes, lanes, beams) or `&"big"`
     (leaps, charges, slams), or empty (not a hit of its own: the meltdown, the Nemesis's build-made hits). The hits

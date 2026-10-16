@@ -197,7 +197,8 @@ const MOVES := {
 		"optional": ["pattern_id", "orb_every_seconds", "bolt_attack", "bolt_every_seconds"],
 	},
 	## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6; BossNemesis): the Nemesis's moves. An optional
-	## `weapon` ("blade", "gun" or "any", the default) keeps an attack to the runs of that weapon.
+	## `weapon` ("blade", "gun" or "any", the default) keeps an attack to the runs of that weapon (in a mimic window,
+	## v0.8.0 N2; outside one every non-card attack is its own kit), "own" to outside the windows only.
 	## `count` of the player's own combo steps in order (each its arc and reach; arc_degrees and reach_m without a
 	## combo), stagger_seconds apart, each following the player (stepping in at speed_mps) until the lock, then held.
 	&"mimic_combo":
@@ -220,7 +221,8 @@ const MOVES := {
 	&"card_cast": {"shape": 0, "params": ["card", "stagger_seconds"], "optional": ["weapon"]},
 }
 ## v0.8.0 FB3: the runs an attack's `weapon` may name.
-const WEAPONS: Array[String] = ["any", "blade", "gun"]
+## v0.8.0 N2 (owner O52): "own" is The Fallen's own kit, only outside its mimic windows.
+const WEAPONS: Array[String] = ["any", "blade", "gun", "own"]
 ## v0.8.0 FB3: the most cards the Nemesis casts (its card_cast attacks' `card` is below it).
 const MAX_CARD_CASTS := 3
 

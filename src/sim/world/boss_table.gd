@@ -133,6 +133,27 @@ var shots_max := 12
 var reach_max_m := 4.5
 var blast_min_m := 1.0
 var blast_max_m := 3.0
+## v0.8.0 N2 (owner O41; FinalPace; FINAL_BOSS.md "N2"): a paced body. Its HP is set from the player's measured damage
+## per second (the meter's last dps_seconds, at least dps_min_seconds of them: as it rises, or the first tick the
+## meter holds them) so that at that rate it lasts pace_ref_ticks × sqrt(pace_ref_dps / dps), within pace_min_ticks ..
+## pace_max_ticks (× window_permille: the Prism's windows), clamped to dps_hp_min..dps_hp_max; and it takes at most
+## max HP / pace_min_ticks a tick, from a bucket that holds at most pace_burst_ticks of it (the rate cap: never under
+## pace_min_ticks of fighting, whatever the build).
+var pace := false
+var pace_ref_dps := 30
+var pace_ref_ticks := 7200
+var pace_min_ticks := 3600
+var pace_max_ticks := 10800
+var pace_burst_ticks := 600
+## v0.8.0 N2 (owner O42, O52; BossNemesis): The Fallen copies the build only in windows: window_ticks long, one every
+## window_every_ticks, the first window_first_ticks after it rises (past its rise), each shown window_warn_ticks ahead.
+## In a window the player's damage on it is pulled to the reference level (FinalPace.nerf_permille, at least
+## nerf_min_permille) and their move speed to the base (at most 1000 per mille). 0 window_ticks: it copies all the time.
+var window_ticks := 0
+var window_every_ticks := 1200
+var window_first_ticks := 720
+var window_warn_ticks := 90
+var nerf_min_permille := 100
 
 
 ## The attack index with this id, or -1.

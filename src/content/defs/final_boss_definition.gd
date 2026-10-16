@@ -54,6 +54,31 @@ extends BossDefinition
 @export var reach_max_m := 4.5
 @export var blast_min_m := 1.0
 @export var blast_max_m := 3.0
+## v0.8.0 N2 (owner O41 "each phase takes 1-2 minutes 1 minute being the most op and longer if you are not op,
+## oneshoting (killing a phase in seconds should never happen)"; FINAL_BOSS.md "N2"; FinalPace): a paced body. Its HP
+## is set from the measured damage per second (the last dps_measure_seconds, at least dps_min_measured_seconds of
+## them; as it rises, or as soon as the meter holds them) so that at that rate it lasts
+##   pace_ref_seconds × sqrt(pace_ref_dps / dps), within pace_min_seconds .. pace_max_seconds
+## (× the window share for a body with Cross windows), clamped to dps_hp_min..dps_hp_max; and it never takes more than
+## its max HP / pace_min_seconds a second (a bucket holding at most pace_burst_seconds of it), so no build kills it in
+## under pace_min_seconds.
+@export var pace := false
+@export var pace_ref_dps := 30
+@export var pace_ref_seconds := 120.0
+@export var pace_min_seconds := 60.0
+@export var pace_max_seconds := 180.0
+@export var pace_burst_seconds := 10.0
+## v0.8.0 N2 (owner O42 "it should mimic and nerf you into what he has so the match is even", O52 "should only be at
+## certain times not the whole fight, so on and off"): a mimic body copies the build only in windows of
+## mimic_window_seconds, one every mimic_every_seconds, the first mimic_first_seconds after its rise, each shown
+## mimic_warn_seconds ahead; in a window the player's damage on it is pulled to pace_ref_dps (at least
+## mimic_nerf_min_permille of it) and their move speed to the base. Outside, it fights with its own kit.
+## 0 mimic_window_seconds: it copies the whole fight (FB3).
+@export var mimic_window_seconds := 0.0
+@export var mimic_every_seconds := 20.0
+@export var mimic_first_seconds := 12.0
+@export var mimic_warn_seconds := 1.5
+@export var mimic_nerf_min_permille := 100
 
 
 func category() -> StringName:
@@ -63,6 +88,7 @@ func category() -> StringName:
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
 	var p := resource_path
+	_check_pace(issues)
 	if hp_from_dps:
 		if dps_measure_seconds < 1 or dps_measure_seconds > BossSchemas.DPS_MAX_SECONDS:
 			issues.append(
@@ -151,6 +177,45 @@ func _check_mimic(issues: Array[ValidationIssue]) -> void:
 		issues.append(
 			ValidationIssue.new(&"range", p, "shot_range_m, reach_max_m > 0; shots 1..24")
 		)
+
+
+## v0.8.0 N2: a paced body's numbers (its meter, its times in order, a reference DPS) and a window that fits its cycle.
+func _check_pace(issues: Array[ValidationIssue]) -> void:
+	var p := resource_path
+	if pace:
+		if dps_measure_seconds < 1 or dps_measure_seconds > BossSchemas.DPS_MAX_SECONDS:
+			issues.append(ValidationIssue.new(&"range", p, "dps_measure_seconds: 1..60"))
+		if dps_min_measured_seconds < 1 or dps_min_measured_seconds > dps_measure_seconds:
+			issues.append(
+				ValidationIssue.new(&"range", p, "dps_min_measured_seconds: 1..dps_measure_seconds")
+			)
+		if pace_ref_dps < 1:
+			issues.append(ValidationIssue.new(&"not_positive", p, "pace_ref_dps >= 1"))
+		if (
+			pace_min_seconds < 30.0
+			or pace_ref_seconds < pace_min_seconds
+			or pace_max_seconds < pace_ref_seconds
+		):
+			issues.append(ValidationIssue.new(&"range", p, "pace: 30 <= min <= ref <= max seconds"))
+		if pace_burst_seconds < 0.0 or pace_burst_seconds > pace_min_seconds:
+			issues.append(ValidationIssue.new(&"range", p, "pace_burst_seconds: 0..min"))
+		if dps_hp_min < 1 or dps_hp_max < dps_hp_min:
+			issues.append(ValidationIssue.new(&"range", p, "needs 1 <= dps_hp_min <= dps_hp_max"))
+	if mimic_window_seconds < 0.0:
+		issues.append(ValidationIssue.new(&"range", p, "mimic_window_seconds >= 0"))
+	if mimic_window_seconds > 0.0:
+		if not mimic:
+			issues.append(ValidationIssue.new(&"missing", p, "mimic windows need mimic"))
+		if mimic_every_seconds < mimic_window_seconds + mimic_warn_seconds + 1.0:
+			issues.append(
+				ValidationIssue.new(&"range", p, "mimic_every_seconds: over window + warning + 1 s")
+			)
+		if mimic_warn_seconds < 0.5 or mimic_first_seconds < mimic_warn_seconds:
+			issues.append(
+				ValidationIssue.new(&"range", p, "mimic_warn_seconds >= 0.5, first >= warning")
+			)
+		if mimic_nerf_min_permille < 1 or mimic_nerf_min_permille > 1000:
+			issues.append(ValidationIssue.new(&"range", p, "mimic_nerf_min_permille: 1..1000"))
 
 
 ## A Cross's shards and bolt: shards to fire from, and its bolt attack a `bolt_fan` of this boss with a lock (the aim
