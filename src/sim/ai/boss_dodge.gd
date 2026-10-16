@@ -73,7 +73,7 @@ static func resolve_pattern(w: World, i: int, b: int, atk: BossAttackTable, st: 
 	var origin := w.bosses.pt(b, 0) if burst else w.actors.pos(i)
 	var r := 0.0 if burst else w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M
 	var n := BulletPatterns.fire(
-		w, i, pat, k, origin, w.actors.lock_a[i], r, BossAi.powered(w, i, atk.damage)
+		w, i, pat, k, origin, w.actors.lock_a[i], r, BossAi.orb_damage(w, i, atk)
 	)
 	BossRicochet.arm_pattern(w, atk, n)  # v0.8.0 BS2 (S5): the Turret Cross's embers bounce once
 
@@ -245,14 +245,7 @@ static func burst_mark(w: World, i: int, atk: BossAttackTable, k: int, local: in
 		return
 	var c := mark_of(w, i, k)
 	BulletPatterns.fire(
-		w,
-		i,
-		pat,
-		kw,
-		c,
-		Kin.angle_of(w.player_pos() - c),
-		egg_r(atk),
-		BossAi.powered(w, i, atk.damage)
+		w, i, pat, kw, c, Kin.angle_of(w.player_pos() - c), egg_r(atk), BossAi.orb_damage(w, i, atk)
 	)
 
 
@@ -277,14 +270,7 @@ static func burst_eruption(w: World, i: int, atk: BossAttackTable, c: Vector2, s
 	if kw < 0:
 		return
 	BulletPatterns.fire(
-		w,
-		i,
-		pat,
-		kw,
-		c,
-		Kin.angle_of(w.player_pos() - c),
-		egg_r(atk),
-		BossAi.powered(w, i, atk.damage)
+		w, i, pat, kw, c, Kin.angle_of(w.player_pos() - c), egg_r(atk), BossAi.orb_damage(w, i, atk)
 	)
 
 

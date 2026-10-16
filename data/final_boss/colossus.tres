@@ -19,7 +19,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 20
+damage = 34
+hit_class = &"medium"
 move = &"combo"
 min_range_m = 0.0
 max_range_m = 7.0
@@ -44,7 +45,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 20
+damage = 34
+hit_class = &"medium"
 move = &"combo"
 min_range_m = 0.0
 max_range_m = 7.0
@@ -64,10 +66,12 @@ shape_params = {
 "radius_m": 2.6,
 "range_m": 16.0
 }
-telegraph_seconds = 0.9
-active_seconds = 0.6
-recovery_seconds = 0.7
-damage = 24
+telegraph_seconds = 0.7
+active_seconds = 0.45
+recovery_seconds = 1.0
+damage = 50
+hit_class = &"big"
+orb_damage = 22
 move = &"leap"
 min_range_m = 4.0
 max_range_m = 99.0
@@ -87,10 +91,12 @@ shape_params = {
 "radius_m": 2.6,
 "range_m": 16.0
 }
-telegraph_seconds = 0.9
-active_seconds = 0.6
-recovery_seconds = 0.7
-damage = 24
+telegraph_seconds = 0.7
+active_seconds = 0.45
+recovery_seconds = 1.0
+damage = 50
+hit_class = &"big"
+orb_damage = 22
 move = &"leap"
 min_range_m = 4.0
 max_range_m = 99.0
@@ -115,7 +121,8 @@ shape_params = {
 telegraph_seconds = 0.9
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 18
+damage = 30
+hit_class = &"medium"
 move = &"spike_chase"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -139,7 +146,8 @@ shape_params = {
 telegraph_seconds = 0.9
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 18
+damage = 30
+hit_class = &"medium"
 move = &"spike_chase"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -162,7 +170,8 @@ shape_params = {
 telegraph_seconds = 0.9
 active_seconds = 0.0167
 recovery_seconds = 0.8
-damage = 18
+damage = 30
+hit_class = &"medium"
 move = &"spike_burst"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -182,10 +191,12 @@ shape_params = {
 "radius_m": 1.7,
 "stagger_seconds": 0.4
 }
-telegraph_seconds = 1.0
+telegraph_seconds = 0.75
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 22
+damage = 34
+hit_class = &"medium"
+orb_damage = 22
 move = &"marks"
 min_range_m = 3.0
 max_range_m = 99.0
@@ -204,10 +215,12 @@ shape_params = {
 "radius_m": 1.7,
 "stagger_seconds": 0.4
 }
-telegraph_seconds = 1.0
+telegraph_seconds = 0.75
 active_seconds = 0.0167
 recovery_seconds = 0.6
-damage = 22
+damage = 34
+hit_class = &"medium"
+orb_damage = 22
 move = &"marks"
 min_range_m = 3.0
 max_range_m = 99.0

@@ -150,7 +150,7 @@ static func leap_wave(w: World, i: int, atk: BossAttackTable, at: Vector2) -> vo
 		at,
 		Kin.angle_of(w.player_pos() - at),
 		w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M,
-		BossAi.powered(w, i, atk.damage)
+		BossAi.orb_damage(w, i, atk)
 	)
 
 

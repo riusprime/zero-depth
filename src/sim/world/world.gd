@@ -1408,12 +1408,27 @@ func _move_and_collide() -> void:
 						continue
 					if heavy[a] != heavy[b]:
 						if heavy[a] == 1:
-							actors.set_pos(b, actors.pos(b) - push * 2.0)
+							_shove(b, -push * 2.0)
 						else:
-							actors.set_pos(a, actors.pos(a) + push * 2.0)
+							_shove(a, push * 2.0)
 						continue
 				actors.set_pos(a, actors.pos(a) + push)
 				actors.set_pos(b, actors.pos(b) - push)
+
+
+## v0.8.0 BP: a boss's shove moves body i by `delta` only as far as the first wall on the way (its radius swept), so a
+## boss landing beside a body at a wall can't push it through the wall (the faster Colossus leap found it: a hero in
+## the final ring was shoved out of it). The pass's other pushes are unchanged.
+func _shove(i: int, delta: Vector2) -> void:
+	var a := actors.pos(i)
+	var b := a + delta
+	var r := actors.radius[i]
+	var t := 1.0
+	for w in _wall_grid.query_rect(Rect2(a, Vector2.ZERO).expand(b).grow(r)):
+		var hit := Collide.sweep_vs_obb(a, b, r, walls[w])
+		if hit >= 0.0 and hit < t:
+			t = hit
+	actors.set_pos(i, a + delta * t)
 
 
 func _projectile_hits() -> void:

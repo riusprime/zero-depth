@@ -202,6 +202,7 @@ func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 		t.hp = maxi(1, t.hp * hp_pm / 1000)
 		for a in t.attacks:
 			a.damage = a.damage * dmg_pm / 1000
+			a.orb_damage = a.orb_damage * dmg_pm / 1000  # v0.8.0 BP: the orbs scale with it
 
 
 ## Floor f's boss: one of its pool (indices into the compiled bosses), drawn from a stream of the run seed

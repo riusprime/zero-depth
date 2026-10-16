@@ -231,6 +231,27 @@ func test_the_strike_pose_lands_on_the_first_active_tick_read_from_the_sim() -> 
 		assert_true(struck, "%s %s struck" % pick)
 
 
+## v0.8.0 BP (owner O27): the sped-up attacks animate on the sim's faster ticks: the reader gives the new windup and
+## the strike pose lands on its first active tick (no view timer of its own).
+func test_the_sped_up_attacks_animate_on_the_sims_faster_ticks() -> void:
+	for pick: Array in [
+		[&"warlord", &"javelin_fan", 27],
+		[&"warlord", &"lunge_dash", 60],
+		[&"brood_mother", &"leap", 60],
+		[&"hive_lens", &"dive", 60],
+		[&"siege_engine", &"rail", 66],
+		[&"foundry", &"bomb_launch", 42],
+		[&"gatekeeper", &"fist_slam", 66],
+	]:
+		var struck := false
+		for r: Array in _run_attack(pick[0], pick[1], 200):
+			if r[0] == WorldReader.STATE_ACTIVE and r[1] == 0 and not struck:
+				struck = true
+				assert_eq((r[5] as Vector4i).x, int(pick[2]), "%s: the sim's new windup" % pick[1])
+				assert_almost_eq(r[2], r[3], 1e-5, "%s: the strike pose on its tick" % pick[1])
+		assert_true(struck, "%s %s struck" % [pick[0], pick[1]])
+
+
 func test_each_marker_of_a_marks_attack_strikes_on_its_own_tick() -> void:
 	var rows := _run_attack(&"gatekeeper", &"fist_slam_3", 200)
 	var strikes := 0

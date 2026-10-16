@@ -14,7 +14,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 1.6
-damage = 14
+damage = 22
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -34,7 +35,8 @@ shape_params = {
 telegraph_seconds = 0.8
 active_seconds = 0.0167
 recovery_seconds = 1.5
-damage = 14
+damage = 22
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -50,12 +52,13 @@ id = &"javelin_fan"
 shape = 4
 shape_params = {
 "pattern_id": "warlord_javelin_fan",
-"recall_seconds": 1.0
+"recall_seconds": 0.5
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 0.45
 active_seconds = 0.0167
 recovery_seconds = 1.1
-damage = 12
+damage = 25
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -70,12 +73,13 @@ id = &"javelin_fan_fast"
 shape = 4
 shape_params = {
 "pattern_id": "warlord_javelin_fan_fast",
-"recall_seconds": 1.0
+"recall_seconds": 0.5
 }
-telegraph_seconds = 0.6
+telegraph_seconds = 0.45
 active_seconds = 0.0167
 recovery_seconds = 1.0
-damage = 12
+damage = 25
+hit_class = &"small"
 move = &"pattern"
 min_range_m = 0.0
 max_range_m = 99.0
@@ -95,7 +99,8 @@ shape_params = {
 telegraph_seconds = 0.6
 active_seconds = 0.0167
 recovery_seconds = 0.9
-damage = 18
+damage = 34
+hit_class = &"medium"
 move = &"sweep"
 min_range_m = 0.0
 max_range_m = 3.65
@@ -119,7 +124,8 @@ shape_params = {
 telegraph_seconds = 1.6
 active_seconds = 0.6
 recovery_seconds = 1.2
-damage = 20
+damage = 30
+hit_class = &"medium"
 move = &"flood"
 min_range_m = 0.0
 max_range_m = 16.0
@@ -143,7 +149,8 @@ shape_params = {
 telegraph_seconds = 1.6
 active_seconds = 0.7
 recovery_seconds = 1.1
-damage = 20
+damage = 30
+hit_class = &"medium"
 move = &"flood"
 min_range_m = 0.0
 max_range_m = 16.0
@@ -159,12 +166,13 @@ id = &"lunge_dash"
 shape = 2
 shape_params = {
 "length_m": 16.0,
-"speed_mps": 16.0
+"speed_mps": 20.0
 }
-telegraph_seconds = 1.4
+telegraph_seconds = 1.0
 active_seconds = 0.0167
 recovery_seconds = 1.3
-damage = 24
+damage = 50
+hit_class = &"big"
 move = &"charge"
 min_range_m = 4.5
 max_range_m = 18.0
@@ -172,8 +180,6 @@ weight = 2
 cooldown_seconds = 1.0
 cause_key = &"CAUSE_WARLORD_DASH"
 opens_weak_point = true
-follow_up = &"shield_bash"
-follow_up_permille = 450
 lock_seconds = 0.8
 
 [sub_resource type="Resource" id="P_0"]

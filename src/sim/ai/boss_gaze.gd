@@ -85,7 +85,7 @@ static func _orbs(w: World, i: int, atk: BossAttackTable, st: int) -> void:
 		c,
 		Kin.angle_of(w.player_pos() - c),
 		w.actors.radius[i] + pat.radius_m + BulletPatterns.MUZZLE_M,
-		BossAi.powered(w, i, atk.damage),
+		BossAi.orb_damage(w, i, atk),
 		ORB_CAUSE + w.bosses.attack[BossAi.entry_of(w, i)]
 	)
 

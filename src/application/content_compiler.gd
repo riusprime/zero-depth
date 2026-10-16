@@ -656,6 +656,7 @@ static func compile_boss_attack(
 	t.recover_ticks = SimTick.seconds_to_ticks(def.recovery_seconds)
 	t.cooldown_ticks = SimTick.seconds_to_ticks(def.cooldown_seconds)
 	t.damage = def.damage
+	t.orb_damage = def.orb_damage  # v0.8.0 BP (owner O27)
 	t.min_range_m = def.min_range_m
 	t.max_range_m = def.max_range_m
 	t.weight = def.weight

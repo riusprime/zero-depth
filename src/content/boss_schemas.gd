@@ -243,8 +243,21 @@ const LOCKED_MOVES: Array[StringName] = [
 const MAX_STEPS := 16
 ## v0.8.0 FB2 (F7): the most seconds the final fight's damage meter holds (FinalFight's ring).
 const DPS_MAX_SECONDS := 60
+## v0.8.0 BP (owner O27): how big a boss hit is (BossAttackDefinition.hit_class) and how many of them kill the hero at
+## the data's damage (loop 1, before the floor, Deep, catch-up and loop factors, which scale every class alike):
+## small orbs and shots 4-5, medium strikes 3-4, big attacks 2. Inclusive [min, max].
+const HIT_CLASSES := {&"small": [4, 5], &"medium": [3, 4], &"big": [2, 2]}
+## v0.8.0 BP (owner O27, "not making them unkillable by the blade"): after a big attack the boss recovers, still, for
+## this window (ticks, after its recovery_permille): starting values 0.6..0.9 s.
+const PUNISH_MIN_TICKS := 36
+const PUNISH_MAX_TICKS := 54
 ## v0.7.5 BF1: params that name a bullet pattern (resolved by the compiler; a content test checks they exist).
 const PATTERN_PARAMS: Array[String] = ["pattern_id"]
 
 ## Params that name an enemy (resolved by the compiler; a content test checks they exist).
 const ENEMY_PARAMS: Array[String] = ["enemy_id"]
+
+
+## v0.8.0 BP: the hits of `damage` that kill a hero of `hp` (rounded up; a damage under 1 counts as 1).
+static func hits_to_kill(hp: int, damage: int) -> int:
+	return (hp + maxi(1, damage) - 1) / maxi(1, damage)
