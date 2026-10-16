@@ -255,7 +255,7 @@ static func _mod(w: World) -> int:
 	var pool := ItemPool.available(w)
 	var weights := PackedInt32Array()
 	for idx in pool:
-		var rare := w.item_tables[idx].rarity == ItemTable.RARE
+		var rare := w.item_tables[idx].tier() >= ItemTable.TIER_RARE  # v0.8.0 RR: an epic one too
 		weights.append(w.reward_table.rare_weight_chest if rare else 1)
 	var pick := Offers.pick(w.ev.rng, weights)
 	return pool[pick] if pick >= 0 else -1

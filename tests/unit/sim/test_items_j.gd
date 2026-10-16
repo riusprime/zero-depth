@@ -76,12 +76,13 @@ func _kill(w: World, i: int) -> void:
 func test_the_data_has_distinct_kinds() -> void:
 	assert_eq(
 		_tables.size(),
-		98,
+		99,
 		(
 			"16 + 8 engine items (G) + 3 heat items (L18) + 4 ability mods (CP) + 32 modifier cards (v0.6.0 MX4)"
 			+ " + the wand's 4 trigger cards (v0.6.5 WN1) + the Gun pool's 12 new cards (v0.6.5 WN3)"
 			+ " + the Blade pool's 12 new cards (v0.6.5 WN4) + the shared pool's 2 new cards (v0.6.5 WN5a)"
 			+ " + the 3 legendary triggers (v0.6.5 WN5b) + the Blade's 2 multiplier cards (v0.8.0 BL)"
+			+ " + Chain Blast (v0.8.0 RR)"
 		)
 	)
 	var kinds := {}

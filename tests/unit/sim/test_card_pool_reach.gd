@@ -40,8 +40,12 @@ func test_every_card_in_the_pool_is_offered_from_some_reachable_state() -> void:
 		for k in keys:
 			var c: Array = counts.get(k, [0, 0])
 			assert_gt(c[0] + c[1], 0, "%s: %s is offered somewhere" % [build, k])
+		var legend := {}  # v0.8.0 RR: a Legendary card is the boss's tier, offered here only rarely
+		for t in CardPoolSurvey.world(_repo, 1, build, []).item_tables:
+			if t.rarity == ItemTable.LEGENDARY:
+				legend["mod:%s" % t.id] = true
 		for k: String in counts:
-			if k != "_rolls":
+			if k != "_rolls" and not legend.has(k):
 				assert_has(keys, k, "%s: %s is in the pool" % [build, k])
 
 

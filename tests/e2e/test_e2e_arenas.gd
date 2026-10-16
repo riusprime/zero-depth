@@ -165,14 +165,26 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 	assert_eq(w.choosing, w.legendary_id, "E opens it")
 	var panel := hud.pick_panel()
 	assert_true(panel.is_open())
-	assert_eq(panel.title_text(), tr("PICK_TITLE_LEGENDARY"), "Pick a legendary card")
+	assert_true(
+		panel.title_text() in [tr("PICK_TITLE_BOSS"), tr("PICK_TITLE_BOSS_LEGENDARY")],
+		"the boss's reward (v0.8.0 RR)"
+	)
 	assert_eq(panel.card_count(), 3, "three cards")
 	assert_true(panel.is_legendary())
+	var words := []
+	for key in ["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"]:
+		words.append(tr(key))
 	for k in panel.card_count():
 		var s := panel.slot(k)
-		assert_eq(s.tier, CardFrames.LEGENDARY_TIER, "card %d is legendary" % k)
-		assert_eq(s.colour_id(), &"gold", "in the gold colour")
-		assert_true(s.card.tier_text().ends_with(tr("RARITY_LEGENDARY")))
+		var code := w.rewards.offer_of(r)[k]
+		var tier := int(main.driver.reader.card_info(code)["rarity"])
+		# v0.8.0 RR (owner O33): every card wears its own tier: a Legendary one (and a legendary stat card) the gold
+		if tier == Offers.LEGENDARY:
+			assert_eq(s.tier, CardFrames.LEGENDARY_TIER, "card %d is legendary" % k)
+			assert_eq(s.colour_id(), &"gold", "in the gold colour")
+		else:
+			assert_ne(s.tier, CardFrames.LEGENDARY_TIER, "card %d keeps its own tier" % k)
+		assert_true(s.card.tier_text().ends_with(words[tier]), "its tier's word")
 	var before := w.stat_cards.size() + w.items_owned.size()
 	var first := w.rewards.offer_of(r)[0]  # v0.6.5 WN5b: a wand card is its level-5 version
 	var wand := bool(main.driver.reader.card_info(first).get("wand", false))

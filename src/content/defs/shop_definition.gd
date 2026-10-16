@@ -6,7 +6,8 @@ extends ContentDef
 
 ## Cards in the stock.
 @export var offer_size := 4
-## A card's price on floor 1 by rarity: common, rare, epic (a mod or ability card is common or rare).
+## A card's price on floor 1 by rarity: common, rare, epic and (v0.8.0 RR, optional) legendary; without a fourth, a
+## legendary card costs the epic price. Salvage always refunds at most the epic price (ShopTable.sell_price).
 @export var rarity_prices := PackedInt32Array([30, 55, 90])
 ## Each floor after the first raises every price but the reroll by this share of the floor-1 price (x 1, 1.5, 2).
 @export var floor_price_step := 0.5
@@ -44,9 +45,11 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "offer_size", offer_size)
 	if offer_size > 9:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is at most 9"))
-	if rarity_prices.size() != 3:
+	if rarity_prices.size() < 3 or rarity_prices.size() > 4:  # v0.8.0 RR: + legendary
 		issues.append(
-			ValidationIssue.new(&"range", resource_path, "rarity_prices has common, rare and epic")
+			ValidationIssue.new(
+				&"range", resource_path, "rarity_prices has common, rare, epic (and legendary)"
+			)
 		)
 	for k in rarity_prices.size():
 		check_positive(issues, "rarity_prices[%d]" % k, rarity_prices[k])

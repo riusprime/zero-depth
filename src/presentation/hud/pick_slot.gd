@@ -12,7 +12,9 @@ signal clicked(slot: int)
 signal hovered(slot: int)
 
 const COMMON := Color("#9AA4B2")
-const RARE := Color("#F0B840")
+## v0.8.0 RR (owner O33, four tiers each with its colour): rare is blue (was the amber #F0B840, too close to the
+## legendary gold); the tier's word is always on the card too, so no tier reads by colour alone.
+const RARE := Color("#4AA8F0")
 ## v0.4.0 BS: an epic stat card, and an ability card (the hero's cyan).
 const EPIC := Color("#C77DFF")
 const ABILITY := Color("#2BC4E2")
@@ -100,6 +102,11 @@ func family() -> StringName:
 
 func colour_id() -> StringName:
 	return card.colour_id
+
+
+## v0.8.0 RR: the shown card's type (WorldReader.CARD_*; -1 for a face without one).
+func face_type() -> int:
+	return int(_face.get("type", -1))
 
 
 func set_focused(on: bool) -> void:

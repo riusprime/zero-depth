@@ -155,6 +155,7 @@ const ADDED_SINCE_V05 := {
 		&"loop_threat",
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
+		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":

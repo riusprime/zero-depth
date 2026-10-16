@@ -41,16 +41,22 @@ enum Kind {
 	WAND,  # v0.6.5 WN3: a wand card of a weapon's pool (CardLevels)
 }
 
-## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier only).
+## ItemDefinition.Rarity (v0.3.0 E; v0.6.0 MX4 LEGENDARY: the boss's tier; v0.8.0 RR EPIC, appended).
 const COMMON := 0
 const RARE := 1
 const LEGENDARY := 2
+const EPIC := 3
+## v0.8.0 RR (owner O33): the card tiers in order (Offers.info's "rarity": 0 common, 1 rare, 2 epic, 3 legendary).
+const TIER_COMMON := 0
+const TIER_RARE := 1
+const TIER_EPIC := 2
+const TIER_LEGENDARY := 3
 
 var id := &""
 var kind := Kind.LONG_EDGE
 var name_key := &""
 var desc_key := &""
-## COMMON or RARE (chests weight rare items higher).
+## COMMON, RARE, EPIC or LEGENDARY (ItemDefinition.Rarity's values; tier() gives the tier's order).
 var rarity := COMMON
 ## The PlayerTable.Utility the item needs, or -1 for any (rewards never offer it otherwise).
 var requires_utility := -1
@@ -133,3 +139,20 @@ var poison_spread_m := 0.0
 var bleed_move_period_ticks := 0
 var name_key_gun := &""
 var desc_key_gun := &""
+
+
+## v0.8.0 RR: this card's tier, in order (TIER_*: common 0, rare 1, epic 2, legendary 3).
+func tier() -> int:
+	return tier_of(rarity)
+
+
+## v0.8.0 RR: ItemDefinition.Rarity `r` as a tier in order (TIER_*).
+static func tier_of(r: int) -> int:
+	match r:
+		RARE:
+			return TIER_RARE
+		EPIC:
+			return TIER_EPIC
+		LEGENDARY:
+			return TIER_LEGENDARY
+	return TIER_COMMON

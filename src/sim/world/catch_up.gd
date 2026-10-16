@@ -64,7 +64,7 @@ static func power_level(w: World, s: int) -> int:
 	if t.kind != ItemTable.Kind.MODIFIER and t.kind != ItemTable.Kind.WAND:
 		return 1
 	match t.rarity:
-		ItemTable.RARE:
+		ItemTable.RARE, ItemTable.EPIC:  # v0.8.0 RR: an epic card counts as a rare one
 			return 2 + up
 		ItemTable.LEGENDARY:
 			return 3 + up

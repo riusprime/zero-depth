@@ -26,7 +26,7 @@ static func draw_weighted(w: World, count: int, rare_weight: int) -> PackedInt32
 		var weights := PackedInt32Array()
 		for idx in left:
 			weights.append(card_weight(w, idx, rare_weight))
-		var k := w.rng_loot.pick_weighted(weights)
+		var k := Offers.pick(w.rng_loot, weights)
 		if k < 0:
 			break
 		out.append(left[k])
@@ -37,15 +37,28 @@ static func draw_weighted(w: World, count: int, rare_weight: int) -> PackedInt32
 ## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): item `idx`'s weight in a mod draw: `rare_weight` for a rare one
 ## (1 for a common one), × RewardTable.own_weapon_card_permille when it is a wand card of the run's own weapon
 ## (requires_weapon: the Blade's cards on a Blade run), × 1000 otherwise (a shared card, a trigger, a passive).
-static func card_weight(w: World, idx: int, rare_weight: int) -> int:
+## v0.8.0 RR (owner O33): an epic one weighs `epic_permille` / 1000 and a legendary one `legendary_permille` / 1000 of
+## a common one (the same integers as before for common and rare cards: base per mille × own / 1000). A world without
+## those weights (the v0.3.0 draw) weighs an epic card as a rare one.
+static func card_weight(
+	w: World, idx: int, rare_weight: int, epic_permille: int = -1, legendary_permille: int = 0
+) -> int:
 	var it := w.item_tables[idx]
-	var base := rare_weight if it.rarity == ItemTable.RARE else 1
+	var base := 1000
+	match it.rarity:
+		ItemTable.RARE:
+			base = rare_weight * 1000
+		ItemTable.EPIC:
+			base = epic_permille if epic_permille >= 0 else rare_weight * 1000
+		ItemTable.LEGENDARY:
+			base = legendary_permille
 	var own := it.requires_weapon != 0 and CardLevels.is_card(w, idx)
-	return base * (w.reward_table.own_weapon_card_permille if own else 1000)
+	return base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
 
 
 ## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the
-## boss's tier and a boss's core; altars, chests, shops and elites never draw one).
+## boss's tier and a boss's core; v0.8.0 RR: an altar's, a chest's and the shop's draw at their legendary weight,
+## Offers.draw; events and elites never draw one).
 static func available(w: World, legendary: bool = false) -> PackedInt32Array:
 	var left := PackedInt32Array()
 	for idx in w.item_tables.size():

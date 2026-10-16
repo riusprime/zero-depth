@@ -6,7 +6,7 @@
 script = ExtResource("1_shp")
 id = &"terminal"
 offer_size = 4
-rarity_prices = PackedInt32Array(30, 55, 90)
+rarity_prices = PackedInt32Array(30, 55, 90, 150)
 floor_price_step = 0.5
 late_floor_price = 1.5
 max_buys = 4

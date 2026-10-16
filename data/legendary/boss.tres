@@ -5,10 +5,14 @@
 [resource]
 script = ExtResource("1_leg")
 stat_cards = Array[StringName]([&"damage", &"crit_chance", &"crit_damage", &"attack_speed", &"area", &"max_hp", &"cooldowns", &"move_speed", &"armour", &"regen"])
-mods = Array[StringName]([&"trigger_on_hit_twice", &"trigger_on_kill_twice", &"trigger_on_end_twice"])
+mods = Array[StringName]([])
 stat_weight = 60
 mod_weight = 40
 offer_size = 3
 stat_multiplier = 1.6
 wand_level = 5
+legendary_chance = 0.125
+legendary_chance_per_loop = 0.05
+extra_picks_per_loop = 1
+extra_picks_max = 3
 id = &"boss"

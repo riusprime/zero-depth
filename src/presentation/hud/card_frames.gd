@@ -180,6 +180,7 @@ const FAMILY_OF := {
 	# v0.6.5 WN5a: the shared pool's new cards (S1-S4 and S6 keep their v0.6 cards' frames above)
 	&"shared_bleed": &"damage",
 	&"shared_explosive": &"area",
+	&"chain_blast": &"area",  # v0.8.0 RR: the Legendary pre-nerf Explosive
 }
 
 ## v0.5.5 AR (X1b): the legendary tier (PickSlot.TIERS index): the gold, its title a paler gold.

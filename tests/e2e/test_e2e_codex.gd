@@ -56,6 +56,54 @@ func _shoot_until_a_kill(e: E2e) -> void:
 	await e.frames(2)
 
 
+## v0.8.0 RR: walks the Cards page by the arrow keys (right along a row, down at its end, then left along the
+## next) and checks every met mod card it shows: its tier word on the card and in the section line. Returns the tiers
+## seen (a set of Offers rarities).
+func _walk_met_mods(e: E2e, main: Main, codex: CodexView) -> Dictionary:
+	var seen := {}
+	await e.tap(KEY_DOWN)
+	var dir := KEY_RIGHT
+	for k in 600:
+		var at := codex.shown_entry()
+		if (
+			codex.page == &"cards"
+			and int(at.get("type", -1)) == WorldReader.CARD_MOD
+			and main.codex.is_unlocked(&"cards", at["id"])
+		):
+			var word := tr(CodexView.RARITY_KEYS[int(at["rarity"])])
+			assert_eq(codex.card.tier_text(), word, "%s: the card says its tier" % at["id"])
+			assert_string_contains(codex.section_label.text, word, "and the section line")
+			seen[int(at["rarity"])] = true
+		await e.tap(dir)
+		if codex.shown_entry() == at:  # the row's end: down, then back the other way
+			await e.tap(KEY_DOWN)
+			if codex.shown_entry() == at:
+				break
+			dir = KEY_LEFT if dir == KEY_RIGHT else KEY_RIGHT
+	return seen
+
+
+## v0.8.0 RR (owner O33): the Codex says every mod card's tier. The profile already holds one card of each tier (a
+## profile from earlier runs: setup); the main menu's Codex row opens it (keys) and the arrows reach all four.
+func test_the_codex_says_each_cards_tier() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	for id in [&"shared_explosive", &"halo_shot", &"gun_twin", &"chain_blast"]:
+		main.codex.unlock(&"cards", id)
+	for k in 3:
+		await e.tap(KEY_DOWN)
+	assert_eq(_focused(main).name, &"Codex")
+	await e.tap(KEY_ENTER)
+	await e.frames(2)
+	var codex := main.get_node_or_null("UI/CodexView") as CodexView
+	assert_not_null(codex)
+	if codex == null:
+		return
+	var seen := await _walk_met_mods(e, main, codex)
+	gut.p("tiers seen: %s" % [seen.keys()])
+	assert_eq(seen.keys().size(), 4, "Common, Rare, Epic and Legendary cards each say their tier")
+
+
 func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
@@ -86,16 +134,29 @@ func test_the_codex_fills_in_a_run_and_opens_from_both_menus() -> void:
 		main.codex.count(&"biomes", biome, &"visits"), 1, "the first floor's biome is visited"
 	)
 	var w := e.world()
-	# Take the nearest altar's first card (E opens it, 1 and Enter take the card).
+	# Take a card of the nearest altar (E opens it, its number key and Enter take it).
 	var altar := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
 	assert_true(await e.walk_to(w.rewards.pos(altar), w.reward_table.interact_radius_m * 0.6))
 	await e.tap(KEY_E)
 	await e.frames(2)
 	assert_true(main.driver.reader.choosing(), "E opened the altar")
+	# v0.8.0 RR (owner O33): a mod card says its tier on the card (the word, not the colour alone); take the first
+	# mod card offered (else the first card), so the Codex later holds a met mod card
+	var panel := (main.get_node("UI/Hud") as Hud).pick_panel()
+	var take := -1
+	for k in panel.card_count():
+		var info := main.driver.reader.card_info(main.driver.reader.choice_items()[k])
+		if int(info["type"]) == WorldReader.CARD_MOD:
+			var word := tr(PickPanel.RARITY_KEYS[int(info["rarity"])])
+			assert_true(
+				panel.slot(k).card.tier_text().ends_with(word), "card %d says %s" % [k, word]
+			)
+			take = k if take < 0 else take
+	take = maxi(take, 0)
 	var card_id: StringName = (
-		main.driver.reader.card_info(main.driver.reader.choice_items()[0])["id"]
+		main.driver.reader.card_info(main.driver.reader.choice_items()[take])["id"]
 	)
-	await e.tap(KEY_1)
+	await e.tap([KEY_1, KEY_2, KEY_3][take])
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
 	assert_false(main.driver.reader.choosing(), "the card was taken")

@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_item")
 kind = 31
+rarity = 3
 name_key = &"ITEM_SPLIT_SHOT"
 desc_key = &"ITEM_SPLIT_SHOT_DESC"
 tags = PackedStringArray("bolt", "wand")

@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_item")
 kind = 33
+rarity = 3
 name_key = &"ITEM_RIPOSTE_CHAIN"
 desc_key = &"ITEM_RIPOSTE_CHAIN_DESC"
 requires_weapon = &"blade"

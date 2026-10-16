@@ -38,6 +38,10 @@ static func compile_legendary(
 	t.offer_size = def.offer_size
 	t.stat_permille = int(round(def.stat_multiplier * 1000.0))
 	t.wand_level = def.wand_level  # v0.6.5 WN5b
+	t.card_permille = int(round(def.legendary_chance * 1000.0))  # v0.8.0 RR
+	t.card_loop_permille = int(round(def.legendary_chance_per_loop * 1000.0))
+	t.extra_picks_per_loop = def.extra_picks_per_loop
+	t.extra_picks_max = def.extra_picks_max
 	return t
 
 

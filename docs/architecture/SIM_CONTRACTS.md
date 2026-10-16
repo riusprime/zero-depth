@@ -1657,6 +1657,14 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   `RewardStore.Kind.LEGENDARY` reward appears at `FloorLayout.boss_spawn` (`World.legendary_id`, hashed once set; it
   stays set after the pick). Its offer (`Offers.roll_legendary`, loot stream, on the first open) is up to 3 cards from
   the tier only: legendary stat cards (`Offers.LEGENDARY` = rarity 3) and the pool's mods.
+  v0.8.0 RR (owner O33; `docs/roadmap/v0.8.0/evidence/RARITY.md`): the roll first draws `range_int(0, 999)` against
+  `LegendaryTable.chance(World.loop)` (only when the chance is between 0 and 1000); under it the first card is a
+  Legendary card (an item of rarity `LEGENDARY` still in the pool, uniform, one more draw), and no Legendary card is a
+  pool mod otherwise. The death sets `World.legendary_picks` = `LegendaryTable.extra_picks(loop)`; a pick at the altar
+  while it is above 0 uses one, clears the offer (`rolled` 0) and keeps the altar (`BossReward.another_pick`); it is
+  hashed only while above 0 and saved (`WorldSnapshot.ADDED_SINCE_V05`). Altars', chests' and the shop's mod draws
+  weigh each tier (`ItemPool.card_weight`: per mille of a common card, × the weapon's own ×1.5 / 1000); a legendary
+  card enters their pool only while its source's weight is above 0.
 - There is no enrage timer. The danger tier is the floor's own clock (it restarts on every floor and counts only
   while the player lives), not a global one; the owner asked for scaling over time (F10, v0.4.0 PLAN).
 - All scaling is integer `‰` tables. A formula that needs `pow` or `exp` is authored as a table instead.

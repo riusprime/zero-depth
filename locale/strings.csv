@@ -1104,3 +1104,8 @@ HUD_FINAL_SHATTER,SHATTERED,HECHA AÑICOS
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a la Corona Hueca en el centro de la sala; un botón de fase salta a ese cuerpo.
+ITEM_CHAIN_BLAST,Chain Blast,Explosión en cadena
+ITEM_CHAIN_BLAST_DESC,The spell and all its splits explode; blasts never merge.,El hechizo y sus divisiones estallan; nunca se funden.
+PICK_TITLE_BOSS,The boss's reward,La recompensa del jefe
+PICK_TITLE_BOSS_LEGENDARY,The boss left a Legendary card,El jefe dejó una carta legendaria
+PICK_TITLE_BOSS_MORE,%s · %d more picks here,%s · %d elecciones más aquí

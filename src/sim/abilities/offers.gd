@@ -88,6 +88,8 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 		return ItemPool.draw_weighted(w, size, rare)
 	var weights := t.chest_card_weights if chest else t.altar_card_weights
 	var rarity := t.chest_rarity_weights if chest else t.altar_rarity_weights
+	var epic := t.epic_permille_chest if chest else t.epic_permille_altar  # v0.8.0 RR
+	var legend := t.legendary_permille_chest if chest else t.legendary_permille_altar
 	var out := PackedInt32Array()
 	if not chest:
 		var fresh := _abilities(w, out, true)
@@ -97,7 +99,7 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 	while out.size() < size and guard < 16:
 		guard += 1
 		# Indexed by card type (MOD, ABILITY, STAT); the data's weights are [ability, stat, mod].
-		var pools := [_mods(w, out), _abilities(w, out, false), _stats(w, out)]
+		var pools := [_mods(w, out, rare, epic, legend), _abilities(w, out, false), _stats(w, out)]
 		var wts := PackedInt32Array()
 		for k in 3:
 			var weight: int = weights[(k + 2) % 3]
@@ -117,8 +119,8 @@ static func draw(w: World, chest: bool, size: int) -> PackedInt32Array:
 				out.append(stat_code(s, pick(w.rng_loot, rarity)))
 			MOD:
 				var mw := PackedInt32Array()
-				for idx in pool:
-					mw.append(ItemPool.card_weight(w, idx, rare))  # v0.8.0 BL (B5): the weapon's own ×1.5
+				for idx in pool:  # v0.8.0 BL (B5): the weapon's own ×1.5; v0.8.0 RR: by tier
+					mw.append(ItemPool.card_weight(w, idx, rare, epic, legend))
 				out.append(pool[w.rng_loot.pick_weighted(mw)])
 	return out
 
@@ -163,11 +165,19 @@ static func roll_epic(w: World) -> PackedInt32Array:
 ## each a legendary stat card (a pool stat under its cap, by its card weight) or a pool mod still in the item pool;
 ## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats. v0.6.5 WN5b: with the
 ## tier's wand_level, every wand card of the run's pool is a pool mod too, taken at that level (BossReward.on_pick).
+## v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): first one draw (range 0..999) against the tier's
+## Legendary chance for this loop (LegendaryTable.chance): under it, the first card is a Legendary card (rarity
+## LEGENDARY, uniform among those still in the pool; one more draw). A Legendary card is never a pool mod otherwise.
 static func roll_legendary(w: World) -> PackedInt32Array:
 	var t := w.legendary_table
 	var out := PackedInt32Array()
 	if t == null:
 		return out
+	var chance := t.chance(w.loop)
+	if chance > 0 and (chance >= 1000 or w.rng_loot.range_int(0, 999) < chance):
+		var legends := legendary_cards(w)
+		if not legends.is_empty():
+			out.append(legends[w.rng_loot.range_int(0, legends.size() - 1)])
 	var guard := 0
 	while out.size() < t.offer_size and guard < 16:
 		guard += 1
@@ -178,7 +188,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 		var mods := PackedInt32Array()
 		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
 			var wand := t.wand_level > 0 and CardLevels.is_card(w, idx)  # v0.6.5 WN5b: level-5 versions
-			if (t.mods.has(idx) or wand) and not out.has(idx):
+			var legend := w.item_tables[idx].rarity == ItemTable.LEGENDARY  # v0.8.0 RR: by the chance only
+			if (t.mods.has(idx) or wand) and not legend and not out.has(idx):
 				mods.append(idx)
 		var wts := PackedInt32Array(
 			[
@@ -196,6 +207,15 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 			out.append(stat_code(stats[w.rng_loot.pick_weighted(sw)], LEGENDARY))
 		else:
 			out.append(mods[w.rng_loot.range_int(0, mods.size() - 1)])
+	return out
+
+
+## v0.8.0 RR: the Legendary cards (ItemTable.LEGENDARY) still in the item pool, ascending (the boss's chance slot).
+static func legendary_cards(w: World) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for idx in ItemPool.available(w, true):
+		if w.item_tables[idx].rarity == ItemTable.LEGENDARY:
+			out.append(idx)
 	return out
 
 
@@ -240,11 +260,14 @@ static func _stats(w: World, out: PackedInt32Array) -> PackedInt32Array:
 	return left
 
 
-## Mods still in the item pool (ItemPool.available), not already in `out`.
-static func _mods(w: World, out: PackedInt32Array) -> PackedInt32Array:
+## Mods still in the item pool (ItemPool.available), not already in `out`. v0.8.0 RR: with the source's weights, a
+## legendary one too while its weight is above 0, and never a card whose weight is 0 (pick_weighted refuses it).
+static func _mods(
+	w: World, out: PackedInt32Array, rare: int = 1, epic: int = -1, legend: int = 0
+) -> PackedInt32Array:
 	var left := PackedInt32Array()
-	for idx in ItemPool.available(w):
-		if not out.has(idx):
+	for idx in ItemPool.available(w, legend > 0):
+		if not out.has(idx) and ItemPool.card_weight(w, idx, rare, epic, legend) > 0:
 			left.append(idx)
 	return left
 
@@ -308,9 +331,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"curse": curse_of(code),
 			}
 	var it := w.item_tables[code]
-	var rarity := 1 if it.rarity == ItemTable.RARE else 0
-	if it.rarity == ItemTable.LEGENDARY:
-		rarity = LEGENDARY  # v0.6.0 MX4: a legendary modifier
+	var rarity := it.tier()  # v0.6.0 MX4: a legendary modifier; v0.8.0 RR: the four tiers in order
 	var face := item_keys(w, it)  # v0.6.5 WN5a: T4's face per weapon
 	return {
 		"modifier": BuildSlots.is_slot_item(it),  # v0.6.0 MX2: it takes a modifier slot

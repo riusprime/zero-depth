@@ -18,6 +18,14 @@ extends ContentDef
 ## Draw weight of a rare item against a common one's 1, in a chest and at an altar.
 @export var rare_weight_chest := 3
 @export var rare_weight_altar := 1
+## v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): the draw weight of an epic and of a legendary mod
+## against a common one's 1, in a chest (and the shop, which draws as a chest) and at an altar. A Legendary card is
+## the boss's (LegendaryDefinition.card_permille); these keep it rare everywhere else (0: never). Starting values
+## set by the odds script (scripts/checks/rarity_odds.gd), not by the bots.
+@export var epic_weight_chest := 1.5
+@export var epic_weight_altar := 0.5
+@export var legendary_weight_chest := 0.0
+@export var legendary_weight_altar := 0.0
 ## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): a wand card of the run's own weapon (requires_weapon) weighs this
 ## per mille against a shared card's 1000 in a mod draw (1500: ×1.5). A starting value.
 @export var own_weapon_card_permille := 1500
@@ -77,6 +85,14 @@ func validate() -> Array[ValidationIssue]:
 		)
 	check_positive(issues, "rare_weight_chest", rare_weight_chest)
 	check_positive(issues, "rare_weight_altar", rare_weight_altar)
+	for pair: Array in [  # v0.8.0 RR
+		["epic_weight_chest", epic_weight_chest],
+		["epic_weight_altar", epic_weight_altar],
+		["legendary_weight_chest", legendary_weight_chest],
+		["legendary_weight_altar", legendary_weight_altar],
+	]:
+		if float(pair[1]) < 0.0 or float(pair[1]) > 10.0:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s is 0..10" % pair[0]))
 	check_positive(issues, "own_weapon_card_permille", own_weapon_card_permille)  # v0.8.0 BL
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
