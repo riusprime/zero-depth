@@ -1,191 +1,194 @@
 # What the lead needs from Rius (the owner's to-do list)
 
-Everything that waits on you, in one place: art, decisions, tests and the playtest. The lead keeps it up to date: a
-row moves to **Done** with the date when it arrives, and new requests are added here as they come up. Last updated
-2026-10-16 (playtest 2 fixes and part 2 built; your textures and VFX received), v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
+Only what is **still open**: tests, decisions and art. Anything you answered or delivered is gone from here; your
+answers live in [`roadmap/v0.8.0/PLAN.md`](roadmap/v0.8.0/PLAN.md) (owner lines O39–O50 and "Owner decisions"). Last
+rewritten 2026-10-16 from your annotated copy, v0.8.0 (branch `claude/lucid-fermat-9wv2tf`).
 
 **How to deliver art:** drop the `.glb` (with its textures) or `.png` into `unprocessed_images/` (or the repo root),
-named by the **id** in the tables below, and say so in chat. The lead installs, sizes, lists and tests it. Prompts
-for each item are in the request file named in its section. Nothing blocks the game: every item has a code-made
-stand-in until yours arrives.
+named by the **id** below, and say so in chat. The lead installs, sizes, lists and tests it. Every item has a
+code-made stand-in until yours arrives, so nothing blocks the game.
 
 Priority: **P1** changes the game most · **P2** worth doing soon · **P3** nice to have.
 
 ---
 
-## 1. Playtest v0.8.0 (P1)
+## 1. Playtest: what you haven't tried yet
 
 Get it: `git fetch origin && git switch claude/lucid-fermat-9wv2tf && git pull`, open in Godot 4.7.2, Play.
-Shortcut to every fight: Main menu → **Playground** → **F1**. Every new number: **F10**. The sheet:
-[`roadmap/v0.8.0/PLAYTEST.md`](roadmap/v0.8.0/PLAYTEST.md).
+Shortcut to every fight: Main menu → **Playground** → **F1**. Every number: **F10**.
 
-### What I hope to get back
-- **Answers to the 8 playtest questions** in your own words; I paste them verbatim into PLAYTEST.md and they become
-  the next version's plan, as with v0.7.5.
-- **Per boss (6) and per final-boss body (3):** too easy / right / too hard, how long it felt, the one thing that
-  felt unfair or unreadable, the weakest animation or effect.
-- **Numbers you can read off the game,** where you have them:
-  - fps with your biggest builds (the stacked Gun: Spread + Split + Explosive; the Blade: Double Slash + Blade Storm +
-    Wave + Split Wave + On Hit + Explosive), from the F10 overlay or Godot's monitor;
-  - the Playground DPS meter for a Blade build against a Gun build you'd call "good";
-  - how long the Prism and the Nemesis took you.
-- **Bugs:** what you did, what you saw, what you expected; a screenshot if you can. "Saved and continued" matters
-  (it rebuilds the floor from the save).
-- **Anything you'd cut or change,** even if it isn't in the questions.
+- [ ] **Void's black holes:** do they feel good, is the pull strong enough? (decides D20)
+- [ ] **Loop 2 and later:** hard without one-shotting you? Is loop 2 through the Purple Portal about 10 % easier?
+  (decides D22)
+- [ ] **Enemies chasing:** do they now follow you round walls and through doors? Does the Warden's red circle and
+  overhead slam read?
+- [ ] **Faster bosses:** are the Warlord's javelins, the leaps and the slams dashable after the warning? Is the
+  pause after big attacks long enough to hit back with the Blade?
+- [ ] **Rarity:** do the tier colours read on cards, the shop and the boss reward? (D31)
+- [ ] **Your textures and VFX,** once installed (the next push): does each look right where it is used? Anything to
+  redo?
+- [ ] **Windows export,** on the next builds (you confirmed this one works).
+- [ ] After the next build (Ring as a travelling shot, the longer final boss, loading screens): the same checks again.
 
-### Specific checks only you can make
-- [ ] Can you dodge every melee enemy now that their red ground marks are gone (only the body tells the wind-up)?
-- [ ] Enemy colours by role (palette A): do the roles read at a glance?
-- [ ] Each boss's signature: does each fight now stand out?
-- [ ] The final boss from a real run: the Ascension portal (walk in, no menu since P2) → arena → three bodies → the true ending.
-- [ ] P2: the last floor's two devices: do the Ascension portal and the green Loop device beside it read as two separate things? Is the Loop device easy to find and to step on?
-- [ ] P2: Void's black holes (8 % a shot, +3 % a level): do they feel good, and is the pull strong enough?
-- [ ] Blade vs Gun: does the Blade now combine as well? Is Blade Storm still worth taking?
-- [ ] The Ember stone menus and cards, in English and Spanish.
-- [ ] The 24 designed rooms and the shop stall in every biome.
-- [ ] Loops: is loop 2+ hard without one-shotting you?
-- [ ] P3: do Ruins, Night Rocks and Red Canyon now run as smoothly as Starfall on your PC (fps)? Do the fire
-  lights still pop as you walk, or fade? Is the glow low enough (barrels, braziers, the hero), the mood kept? Is loop
-  2 through the Purple Portal about 10 % easier? ([evidence](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md))
-- [ ] AO (O37): take Ring, Spread and Swirl on a Gun run and try the orders on the Build page (Ring · Spread, Spread ·
-  Ring, Ring · Spread · Swirl, Swirl · Ring · Spread): does the order now matter enough, does the storm read as a storm,
-  and are the lightning circles too strong? ([evidence](roadmap/v0.8.0/evidence/ATTACK_ORDER.md))
-- [ ] P1 (O23, O25, O26): do enemies now chase you round walls and through doors instead of getting stuck? Does the
-  Warden's red circle and overhead slam read? Can you see every melee enemy's strike coming (arms raised and held)?
-- [ ] BP (O27): the faster boss attacks (Warlord javelins, leaps, slams): dashable after the warning? Is the opening
-  after big attacks long enough to hit back with the Blade? Do bosses kill in about 4–5 small hits / 2 big ones?
-  ([evidence](roadmap/v0.8.0/evidence/BOSS_PACE.md))
-- [ ] RR (O33): do the rarity colours read on cards, the shop and the boss reward? Did a run go "broken" (Chain Blast,
-  the ×2 triggers), and how often over your runs? ([evidence](roadmap/v0.8.0/evidence/RARITY.md))
-- [ ] Your textures and VFX, once installed (§3.7): does each one look right where it is used?
-- [ ] On the **Windows export** (the CI build, not the editor): starts, plays, saves and quits cleanly.
+**What I hope to get back:** the same as before: per boss too easy / right / too hard and how long it took; fps
+with your biggest builds; bugs (what you did, saw, expected; a screenshot); anything you'd cut.
 
 ---
 
-## 2. Decisions waiting for you
-
-**Most urgent** (they block or change the next build): **D23** (the utility-card list: nothing is built until you
-mark it), **D37** (which floor the boss hits count on), **D29** (what counts as a broken build), **D18** (the Blade's
-two hit-stops), **D15** (merging into `main`, after your test).
+## 2. Decisions still open
 
 | # | Question | Today (the lead's default) | Where |
 |---|---|---|---|
-| D1 | The Prism's length: about 60 s of **fight**, or 60 s of **hitting windows** (≈ 3.5 min) | 60 s of fight | `data/final_boss/prism.tres` `dps_target_seconds`; FINAL_BOSS_2.md |
-| D2 | Blade Storm: lower its 36-blade cap (steadier 60 fps, less damage) or keep it and make the drawing cheaper | keep 36 | PERF.md "PF2" |
-| D3 | The Nemesis casts **3** of your cards (you allowed 2–3) | 3 | `data/final_boss/nemesis.tres` `card_casts` |
-| D4 | The final boss's names (working: the Hollow Crown; the Colossus, the Prism, the Nemesis) | working names | `locale/strings.csv` |
-| D5 | The Hive Lens's Gaze is **not** shielded (its open eye is the window to hit it) | not shielded | BOSS_SIGNATURES_2.md |
-| D6 | The Foundry's melt starts 4 m in from the room's edge (its rooms are 48–55 m across) | room radius − 4 m | BOSS_SIGNATURES_2.md |
-| D7 | Two Blade readings: "up to 5 slashes at L5" built as 5 repeats; "blasts from one trigger merge past 8" built as "per tick" | as built | BLADE.md |
-| D8 | The Gun stack's damage fell about half, not "an order of magnitude" as the audit guessed. Enough? | as built | BLADE.md |
-| D9 | The old crystal card art (cards, plaques, build picker) was deleted with the shard cards. Restore it from git? | deleted | MENU.md |
-| D10 | Shop, arena and Overrun rooms may get a designed interior too (they're chosen after the floor is built) | allowed | ROOMS.md |
-| D11 | Two 4×4 layouts are a little sparser than your first three (about 12 % blocked vs 15–16 %) | kept | ROOMS.md RT2 |
-| D12 | From v0.7.5: should the Siege Engine and the Foundry keep their gap-closers? | kept | v0.7.5 PROGRESS |
-| D13 | From v0.7.5: add the sub-streams `map:ice`, `map:starglow`, `map:overrun` to EI-05's locked list? | kept, unlisted | LOCKED_DECISIONS EI-05 |
-| D14 | The "win" achievement now counts only when the final boss is beaten (End the run no longer wins at once). OK? | as built | FINAL_BOSS_1.md |
-| D15 | Merge v0.7.5 (PR riusprime/zero-depth#6) and then v0.8.0 into `main` | waiting for your test | — |
-| D16 | The Gun's new feel (O18): the blue shade (kept off the Arc Caster's periwinkle shots), whether its range should shrink with the slower speed (kept at 10.8 m), and the stacked Gun builds' damage rising again with the bigger shot (Spread + Split + Explosive +12 %; with Twin +44 %) | as built | GUN_FEEL.md "For the owner" |
-| D17 | The blue pulse costs more to draw than the old squares: the stacked-Gun test went from 7.7 to 8.1 ms a frame (with Twin 8.4 to 11.1 ms), still under the 12 ms target on average. Keep the look, or simplify it under heavy fire | keep | GUN_FEEL.md |
-| D18 | **Blade hit-stop:** the game already freezes on every landed Blade swing (3, 3, 4 and 7 frames by combo step, since v0.1.0) and GF3 added the 2-frame view freeze you asked for on top. Keep both, keep only the game's, or shorten the game's to 2 frames | both | BLADE_FEEL.md "Found" |
-| D19 | The Blade's slash impact reads faint in the renders (big bodies hide it, its sparks wash out on pale sand and the white flash). Bigger / brighter? | as built | BLADE_FEEL.md |
-| D20 | Void's black holes (P2, starting values): 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m at 3 m/s, every 0.2 s 30 % of the shot on enemies within 1.4 m; on the Blade a slash rolls where it first lands; the roll uses the existing `ability` stream (no new stream). OK? | as built | PLAN "P2"; VOID_AND_PORTALS.md |
-| D21 | The Loop device stands beside the Ascension portal where a Deep gate would (no menu, no "End the run"); the two Ascension achievements now say "Take the Loop device". OK? | as built | FINAL_BOSS.md "The flow since P2" |
-| D22 | The Purple Portal (Deep gate) 10 % ease (P3, O35) applies on loop 2 **and every later loop**. Loop 2 only instead? | loop 2 and later | [`BIOME_PERF_AND_LIGHT.md`](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md) |
-| D23 | **Utility cards (UC, G1):** 22 mechanic cards; mark each Yes / No / Change. Only Yes rows get built | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
-| D24 | AO (O37) readings: "Triple" is the existing **Spread** card (its 3-shot fan) extended with the order rule, not a new card; **Ring and Swirl are Gun cards only** (the Blade has no Ring yet); Ring's circle is cast **in front of you along the aim** (not round the hero, not where the shot ends). Keep, or a separate Triple card / a Blade Ring / another place? | as built | [`ATTACK_ORDER.md`](roadmap/v0.8.0/evidence/ATTACK_ORDER.md) |
-| D25 | AO's power (starting values, untuned): Ring 2.5 m (+0.3 m a level), 0.85 a ring or pulse when more than one, each ring shocks on its own; on the probe's 6 dummies Ring alone deals about 7× the plain shot, and Spread · Ring (one ring, 3 pulses on one spot) beats Ring · Spread (3 rings) on both a cluster and a single target (numbers in ATTACK_ORDER.md). Tune, or keep for your playtest? | keep for the playtest | ATTACK_ORDER.md |
-| D26 | AO's caps (direct, for the frame budget): a ring pulses at most 5 times (a level-5 Spread left of a Ring is 11 shots: the rest is dropped), at most 48 rings alive, a ring's Split shards / trigger casts at most 64 alive. OK? | as built | ATTACK_ORDER.md |
-| D27 | AO's Swirl draws from a new named stream, `wand:swirl:<tick>:<launch>` (derived from the run seed per launch, nothing saved). Add it to EI-05's list with D13's sub-streams? | kept, unlisted | `src/sim/combat/wand_rings.gd`; LOCKED_DECISIONS EI-05 |
-| D28 | Which other cards should become order cards? Today only Ring (shape), Spread and Halo (count) and Swirl (motion); Twin, Boomerang, Orbit, Spiral and Homing stay order-free | as built | ATTACK_ORDER.md |
-| D29 | Rarity (RR): which combinations count as a **broken build** (Chain Blast + Split + Spread/Twin on the Gun, Chain Blast + Double Slash + On Hit on the Blade, and each ×2 trigger with Explosive or Chain Blast), and the odds model (every altar and chest opened, a player who chases the pieces). Right list? | as built | [`RARITY.md`](roadmap/v0.8.0/evidence/RARITY.md) "What counts as broken" |
-| D30 | Rarity (RR): the boss's altar now shows each card's **own** tier (a level-5 Common card says "Mod · Level 5 · Common"; only Legendary cards and the 1.6× stat cards are gold) and its title says "The boss's reward" or "The boss left a Legendary card" instead of "Pick a legendary card" (X1b). OK? | as built | RARITY.md "UI" |
-| D31 | Rarity (RR): Rare cards are **blue** now (they were amber, too close to the Legendary gold); every card also says its tier in words | blue | RARITY.md "UI"; `rr_shots/` |
-| D32 | Rarity (RR): a boss's **core** (stolen in the fight) no longer gives the ×2 triggers, only legendary stat cards, so every Legendary card goes through the odds. OK, or let cores give Legendary cards too (the odds then depend on how often you steal) | stats only | RARITY.md "What changed" |
-| D33 | Rarity (RR): Split, Twin, Blade Storm and Riposte Chain are **Epic** (drawn about half as often at altars as a common card, 1.5× in chests). Other picks? | as built | RARITY.md "Every card's tier" |
-| D34 | Rarity (RR): Chain Blast's blasts never merge (the pre-nerf rule). The PF frame budget was measured with Explosive's merging; a Chain Blast + Split + Spread build may lag like before PF (not measured) | as built | RARITY.md "Not measured" |
-| D35 | Rarity (RR): how fast loops pile up Legendaries (each loop +5 % chance a boss altar and one more pick, up to 4 picks) | as built | RARITY.md "Loops" |
-| D36 | **The Nemesis and "3-4 strikes" (O27):** its blows come from your build and are capped at a fifth of your max HP (FB3, "never a one-shot"), so it needs 5+ hits to kill you; at the base Blade the formula gives about 10 × 1.15 × 1.5 ≈ 17 a hit (6 hits; worked out, not measured). Keep the cap (it stays a duel of your own build), or raise its floor/cap so it kills in 3-4 like the others? | cap kept, Nemesis unchanged | [`BOSS_PACE.md`](roadmap/v0.8.0/evidence/BOSS_PACE.md) |
-| D37 | **Which floor the hits-to-kill count on (O27):** BP set them on the data's damage (×1.0). In a run floor 1's boss is ×0.8 (orbs 6 hits, big attacks 3), floor 2's ×1.2 (orbs 4, big 2) and floor 3's ×1.4 (orbs 4, javelins 3, big 2). Count them on floor 1, 2 or 3 instead? | the data (×1.0) | [`BOSS_PACE.md`](roadmap/v0.8.0/evidence/BOSS_PACE.md) |
-
-Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
+| D13 | Add the map sub-streams `map:ice`, `map:starglow`, `map:overrun` (and Ring/Swirl's stream, if it stays after the Ring change) to the engineering rule's locked list? A bookkeeping call: nothing in play changes | kept, unlisted | LOCKED_DECISIONS EI-05 |
+| D20 | Void's black holes: 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m, every 0.2 s 30 % of the shot's damage. OK? (after you try it) | as built | VOID_AND_PORTALS.md |
+| D22 | The Purple Portal 10 % ease on loop 2 **and every later loop**, or loop 2 only? (after you try it) | loop 2 and later | BIOME_PERF_AND_LIGHT.md |
+| D23 | **Utility cards:** 22 mechanic cards; mark each row Yes / No / Change. Nothing on that list is built until you do | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
+| D28 | Which other cards should care about order (like Ring, Spread, Halo, Swirl)? Twin, Boomerang, Orbit, Spiral, Homing are order-free today | as built | ATTACK_ORDER.md |
+| D31 | Rare cards are **blue** (were amber, too close to Legendary gold); every card says its tier in words. OK? | blue | RARITY.md |
+| D32 | A boss's stolen **core** gives only legendary stat cards (no ×2 triggers), so every Legendary card goes through the odds. OK, or let cores give Legendary cards too? | stats only | RARITY.md |
+| D33 | Split, Twin, Blade Storm and Riposte Chain are **Epic** (rarer than common). Other picks? | as built | RARITY.md |
+| D34 | Chain Blast's blasts never merge (the old rule), so a Chain Blast + Split + Spread build may lag like before the performance fix (not measured yet; the lead measures it next) | as built | RARITY.md |
+| D35 | How fast loops pile up Legendaries: each loop +5 % chance at a boss altar and one more pick, up to 4 | as built | RARITY.md |
+| D38 | **Bosses get easy if you farm a floor** (O40). Pick how the boss keeps up: **(a)** it scales with your power when you reach it (your damage per second and HP, read when the fight starts), **(b)** it scales with the time you spent on the floor, **(c)** the floor pushes you on (enemies get harder the longer you stay). The lead recommends **(a)**: the fight stays hard however you got strong, and it's the same rule that gives the final boss its 1–2 minute phases (O41) | (a), once you pick | PLAN O40, O41 |
+| D39 | **The Blade's damage reduction** (O43): the lead's starting value is **−25 % damage taken** while you hold the Blade (it fights close). More, less, or only while swinging? | −25 % while held | PLAN O43 |
 
 ---
 
-## 3. Art you can generate
+## 3. 3D art: specs and prompts
 
-### 3.1 Shop (P1): [`art/requests/v0.8.0_ART_LIST.md`](art/requests/v0.8.0_ART_LIST.md) §1
-| ✓ | id | what | note |
+**Shared rules (every model):** the look of your kit and `docs/art/look_reference.webp`: chunky, chipped, weathered
+low-poly; worn metal, concrete and stone; no baked lighting or shadows; no text, letters or logos; one object, no
+ground plane; readable from an isometric camera about 35° down. Rigged is always a bonus, never needed: without a rig
+the lead animates parts in code.
+
+**Kit prefix** (props, room pieces, devices):
+> Low-poly faceted 3D game prop, stylised, chunky and slightly weathered, flat-shaded facets with crisp edges, a
+> single object centred on a plain white background, three-quarter view from above, soft even studio light, no
+> text, no letters, no numbers, no logo, no ground plane, same style as a modular kit of ruined-city props (concrete
+> walls, crate stacks, a car wreck, fire barrels) for a dark isometric action roguelike.
+
+**Character prefix** (enemies, vendors, the hero's weapons when shown on their own):
+> Stylised low-poly faceted game character for a dark isometric action roguelike, reference sheet with a 3/4 front
+> view and a side view on a plain neutral grey background, chunky readable silhouette, worn scratched charcoal steel
+> and stone plates with [COLOUR] faceted armour, a few small glowing accents in the same colour, no baked shadows,
+> soft even studio light, no text, no logo, no watermark,
+
+**3D step** (with the image as input):
+> Game-ready stylised low-poly 3D model, hard-surface faceted shapes, worn scratched charcoal steel with [COLOUR]
+> parts, small emissive accents, clear silhouette from above, baked colour texture with no lighting or shadows baked
+> in, single object, no base, no background,
+
+**Negative prompt** (if the tool has one):
+> text, letters, logo, watermark, background scenery, ground, base, pedestal, baked shadows, strong rim light,
+> smooth organic skin, realistic photo, clean plastic look, many tiny details
+
+### 3.1 New from your playtest notes (P1)
+
+| ✓ | id | What it is, how it should look | Size (W×D×H m) | Prompt (after the prefix) |
+|---|---|---|---|---|
+| ☐ | `ascension_portal` | The way to the final boss (walk in). Tall, upright and important: it should read as "the end", so you can tell it from the Loop device at a glance. Violet-white light inside, red crystal on the frame | 2.4 × 1.0 × 3.6 | [kit prefix] a tall ancient stone portal arch on a raised round dais of three steps, the arch made of dark violet stone blocks with red faceted crystal shards set along its edge and a large crystal at the keystone, an opening filled with a swirling violet-white light, a few floating stone fragments around the top |
+| ☐ | `loop_device` | The way to the next loop (step on it). Low, round and mechanical, about half the portal's height: a pad you step onto, green light | 1.8 × 1.8 × 0.9 | [kit prefix] a low round mechanical teleport pad, a worn steel ring platform flush with the floor with three short angled pylons around its edge, glowing green rune lines in concentric circles on the pad, a slowly turning metal ring hovering above the centre, green light |
+| ☐ | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
+| ☐ | `hero_blade` | The hero's Blade, professional-looking. Its slash leaves a blue-white edge, so the edge glows | 1.1 long | [character prefix, steel blue] a single-edged laser sword, a long straight faceted blade of pale blue-white light with a hard bright edge, a chunky charcoal steel hilt with a blue crystal in the guard, a wrapped grip; shown on its own, side view |
+| ☐ | `menu_chest` | For the future main-menu scene (the hero opening a chest). A treasure chest that opens: a separate lid (or a rig with an `open` clip) | 1.0 × 0.6 × 0.7 | [kit prefix] a heavy iron-banded treasure chest of dark weathered wood, faceted metal corners, a red crystal lock, glowing red light leaking through the gap under the lid, the lid as a separate object |
+| ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
+
+### 3.2 Enemy models (P1)
+Seven kinds still have the lead's code-made body. Each takes its **role colour** where the prompts say
+[COLOUR] (the game fine-tunes the shade). Greys stay neutral, because each biome tints them.
+
+| ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
+|---|---|---|---|---|
+| ☐ | `swarmer` | melee red-orange `#D8562A` | 0.5 m long | a small fast armoured beetle, a low wedge-shaped faceted shell with a ridge down its back, a charcoal head with one glowing slit eye, two pale bone mandibles that open wide, six thin segmented charcoal legs splayed low; about 3k triangles |
+| ☐ | `splitter` | melee red-orange `#D8562A` | 1.0 m tall | a squat creature made of two faceted half-bodies pressed together, a glowing hot seam of light down the middle where it will break apart, charcoal caps, two short arms with bone claws held **out at the shoulders** (they must show from above), short thick legs; the two halves as separate objects is a bonus; about 6k triangles |
+| ☐ | `shield_bearer` | tank bronze `#A8743A` | 1.2 m tall | a stocky armoured soldier behind a tall rectangular tower shield almost its own height, a charcoal iron rim and a faceted bronze crystal boss, a heavy closed helm with a glowing visor slit, broad charcoal pauldrons, braced and leaning into the shield (the shield as a separate object is a bonus); about 7k triangles |
+| ☐ | `mender` | support green `#4FAE6A` | 1.3 m tall, floats | a floating hooded robed healer with no legs, a tattered faceted robe ending in points, a charcoal hood with a soft glow inside, two thin arms holding up a large glowing pale crystal, a small cross-shaped crystal floating above its head; no stand; about 6k triangles |
+| ☐ | `mine_layer` | bomber yellow `#D8A824` | 0.9 m long | a low armoured crawler on two short charcoal tank treads, a faceted hull with chevron plates, a charcoal dome with one glowing eye, an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
+| ☐ | `sniper` | ranged blue-violet `#5A62D8` | 1.1 m tall | a lean walking gun platform on a tripod of three long thin charcoal legs, a narrow faceted body, a very long charcoal rifle barrel pointing forward, a big round glowing scope lens on top, cooling fins along the barrel; about 5k triangles |
+| ☐ | `lens_drone` (P3) | boss red `#C8221E` | 0.6 m | (3D step only) a small hovering drone pod, a red faceted body with a charcoal steel cap, one glowing red eye slit, a thin grey ring round its middle; no stand; about 3k triangles |
+
+### 3.3 The final boss (P1–P2)
+
+| ✓ | What | Spec | Prompt / note |
 |---|---|---|---|
-| ✅ | `shop_tent` | the stall | **Done 2026-10-14** (your desert stall, in every biome) |
-| ☐ | `shop_vendor_ruins` | the Ruins vendor | **as a separate model** so it can move (the stall's vendor is fused) |
-| ☐ | `shop_vendor_night_rocks` | Night Rocks vendor | |
-| ☐ | `shop_vendor_red_canyon` | Red Canyon vendor | |
-| ☐ | `shop_vendor_frozen_shore` | Frozen Shore vendor | |
-| ☐ | `shop_vendor_starfall` | Starfall vendor | |
-| ☐ | `shop_wares` | goods for the counter | |
-| ☐ | stalls for the other 4 biomes (P3) | optional | today your desert stall stands in every biome |
+| ☐ | **Re-export your final-boss file with one shared, smaller texture** (P1) | 2048² or 4096², one texture used by all three bodies | Each of the three models now carries its own copy of the same 8192² texture: +56 MB in the repo |
+| ☐ | Animated Colossus, Prism and The Fallen (P2) | clips named `idle`, `walk` and the attack names in FINAL_BOSS_1..3.md, in an AnimationPlayer inside the `.glb` | Yours replace the code clips by name |
+| ☐ | `arena_wall_segment` (P2) | 8 × 3 × 4; 8 make the ring | [kit prefix] + "cosmic, star-lit, dark violet stone with red crystal veins": a curved section of a tall arena wall, tiered dark stone seating rising in steps, broken in places, red crystal veins, star-lit edges |
+| ☐ | `arena_gate` (P2) | 6 × 2 × 6 | [same] a huge arched gate in the same stone, closed by a crystal portcullis |
+| ☐ | `arena_pillar` (P2) | 1.2 × 1.2 × 5 | [same] a tall broken column topped by a floating crystal shard |
+| ☐ | `arena_brazier` (P2) | 1 × 1 × 1.4 | [same] a stone brazier holding a violet star-fire |
+| ☐ | `ground_arena` (P2) | tileable 1024² PNG | worn circular stone paving seen from above, a faint star pattern, dark violet, seamless tile, no text |
 
-### 3.2 Enemy models (P1): [`art/requests/v0.8.0_enemy_models.md`](art/requests/v0.8.0_enemy_models.md)
-`swarmer`, `splitter`, `shield_bearer`, `mender`, `mine_layer`, `sniper` (each in its role colour) — ☐ ☐ ☐ ☐ ☐ ☐.
-Optional: `lens_drone` ([`v0.7.5_bosses_2_models.md`](art/requests/v0.7.5_bosses_2_models.md)) ☐.
+### 3.4 The shop (P2: you're not sure yet)
 
-### 3.3 Final boss (P1)
-| ✓ | What | Why |
-|---|---|---|
-| ☐ | **Re-export your final-boss file with one shared, smaller texture** (2048 or 4096) | each of the three models carries its own copy of the same 8192² texture: +56 MB in the repo |
-| ☐ | Animated versions of the Colossus, the Prism and the Nemesis | your "actual cool animations"; they replace the code clips by name (`idle`, `walk`, attack names in FINAL_BOSS_1..3.md) |
-| ☐ | Arena pieces (P2): `arena_wall_segment`, `arena_gate`, `arena_pillar`, `arena_brazier`, `ground_arena` | ART_LIST §7 |
+| ✓ | id | Spec | Prompt (after the character prefix, "standing idle, arms at its sides, facing forward") |
+|---|---|---|---|
+| ☐ | `shop_vendor_ruins` | 1.6 m tall, its face toward glTF +Z, **a separate model from the stall** (so it can move) | a hunched scavenger in a hooded patched coat and goggles, a big backpack of junk and wires |
+| ☐ | `shop_vendor_night_rocks` | 1.7 m | a lantern-carrying hermit in a moss-grey cloak, a staff hung with charms |
+| ☐ | `shop_vendor_red_canyon` | 1.7 m | a desert trader in wrapped scarves and a wide-brimmed hat, a bandolier of pouches |
+| ☐ | `shop_vendor_frozen_shore` | 1.7 m | a fur-wrapped fisher-trader with a hood rimmed in frost, a hook on a pole |
+| ☐ | `shop_vendor_starfall` | 1.8 m, floating, no floor base | a floating cloaked astral merchant, a star-map cape, small orbiting crystals |
+| ☐ | `shop_wares` | 1.0 × 0.6 × 0.6, +Z toward the player | (kit prefix) a pile of goods for a counter: bottles, a scroll case, glowing crystal shards in a crate, a small chest |
+| ☐ | stalls for the other 4 biomes (P3) | must fit 4.0 × 3.4 m, 2.55 m tall; say which way its front faces | (kit prefix) your desert stall's shape, re-dressed: Night Rocks (moss-grey cloth, a hanging lantern on a staff), Red Canyon (sun-bleached cloth, cattle skull), Frozen Shore (furs, nets, frost), Starfall (star-map cloth, floating crystals) |
 
-### 3.4 Boss attack pieces (P2): ART_LIST §4
-`stone_spike` (3 variants in one file) ☐ · `javelin` ☐ · `brood_egg` ☐
+### 3.5 Boss attack pieces (P2)
 
-### 3.5 Boss animation clips (P2)
-Optional, any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…,
-listed per boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an
+| ✓ | id | Size | Prompt (after the kit prefix) |
+|---|---|---|---|
+| ☐ | `stone_spike` | 0.6 × 0.6 × 1.4 (tall), 3 variants in one file | a sharp faceted stone spike bursting out of cracked ground, grey with a red-hot glowing crack, in three heights (short, mid, tall) side by side |
+| ☐ | `javelin` | 2.0 long | the Warlord's leaf-headed crystal javelin, a red faceted crystal tip, a grey worn steel shaft |
+| ☐ | `brood_egg` | 0.6 tall | the Brood Mother's leathery green-grey egg with glowing veins, slightly cracked at the top |
+
+### 3.6 Room pieces (P2–P3)
+Designed rooms use today's kit until these come. All after the kit prefix.
+
+| Biome | id | Size (W×D×H m) | Prompt |
+|---|---|---|---|
+| Ruins | `building_corner` | 2.0 × 2.0 × 3.0 | a corner of a ruined concrete building, two walls meeting, a rusty ladder bolted on one face, broken top edge |
+| Ruins | `ladder_frame` | 1.0 × 0.4 × 2.0 | a rusty metal scaffold frame with a ladder, flat-backed so it stands against a wall |
+| Ruins | `column_broken` | 1.0 × 1.0 × 1.6 | a broken stone column, snapped top, a fallen chunk at its base |
+| Ruins | `pipe_bundle` | 2.0 × 0.8 × 0.9 | three thick rusted pipes lying side by side on concrete blocks |
+| Ruins | `barricade` | 2.0 × 0.5 × 1.0 | a makeshift barricade of planks, a sheet of corrugated metal and sandbags |
+| Ruins | `tire_stack` | 0.9 × 0.9 × 0.9 | a stack of three old worn tyres |
+| Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top |
+| Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over |
+| Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side |
+| Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
+| Night Rocks | `boulder_small` | 0.5 × 0.5 × 0.35 | a small faceted dark boulder, mossy on top |
+| Night Rocks | `rock_spire` | 1 × 1 × 2.2 | a tall jagged dark rock spire |
+| Night Rocks | `stone_arch` | 3 × 1 × 2.4 | a broken natural stone arch, one leg fallen |
+| Night Rocks | `mushroom_cluster` | 0.6 × 0.6 × 0.5 | pale glowing cave mushrooms |
+| Night Rocks | `bone_pile` | 0.8 × 0.6 × 0.3 | old animal bones and a horned skull |
+| Red Canyon | `mesa_chunk` | 1.5 × 1.5 × 1.4 | a chunk of layered red sandstone, flat-topped, striped |
+| Red Canyon | `dry_shrub` | 0.5 × 0.5 × 0.4 | a dry thorny desert shrub |
+| Red Canyon | `cactus` | 0.6 × 0.6 × 1.6 | a branching faceted cactus |
+| Red Canyon | `wagon_wreck` | 2.4 × 1.4 × 1.4 | a broken wooden wagon on its side |
+| Red Canyon | `cattle_skull_post` | 0.4 × 0.4 × 1.4 | a post topped by a horned skull |
+| Frozen Shore | `snow_drift` | 0.9 × 0.6 × 0.28 | a low wind-packed snow drift, a long soft mound with a sharp sculpted crest on one side |
+| Frozen Shore | `ice_shard` | 0.5 × 0.5 × 0.4 | a small cluster of three faceted ice crystals growing from one frozen root |
+| Frozen Shore | `ice_rock` | 1.2 × 1.2 × 1.2 | a square-based rock boulder half covered in thick ice |
+| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above |
+| Frozen Shore | `ground_snow` | tileable 1024² PNG | packed snow ground with footprints of wind, seen from above, seamless tile |
+| Frozen Shore | `boat_wreck` | 3 × 1.4 × 1.2 | a small frozen wooden boat, half sunk in snow |
+| Frozen Shore | `fish_rack` | 1.4 × 0.6 × 1.6 | a drying rack with frozen fish and nets |
+| Starfall | `star_crystal` | 0.5 × 0.5 × 0.4 | a small cluster of three hexagonal crystals growing from one root |
+| Starfall | `meteorite` | 0.6 × 0.5 × 0.26 | a small fallen meteorite, a low lumpy faceted stone, dark violet-grey, pitted |
+| Starfall | `star_monolith` | 1 × 1 × 1.6 | a dark violet stone monolith with glowing star lines carved in it |
+| Starfall | `floating_island` | 2 × 2 × 2 | a small floating rock island, flat grassy-stone top, roots and rock hanging below |
+| Starfall | `void_spike` | 1 × 1 × 2.5 | a long jagged stone spike hanging downward, dark violet, star-lit tip |
+| Starfall | `ground_star` | tileable 1024² PNG | dark violet stone ground with faint star specks, seen from above, seamless tile |
+| Starfall | `ruined_observatory` | 2.5 × 2.5 × 2.6 | a broken stone dome with a cracked telescope |
+
+### 3.7 Boss animation clips (P3: you're not sure yet)
+Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per
+boss in [`roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md`](roadmap/v0.8.0/evidence/BOSS_ANIMATIONS.md)) in an
 AnimationPlayer inside the `.glb`; yours replace the code ones.
 
-### 3.6 Room pieces (P2): ART_LIST §3
-- **Ruins:** `building_corner`, `ladder_frame`, `column_broken`, `pipe_bundle`, `barricade`, `tire_stack`,
-  `metal_post`, `dumpster`, `cable_spool`, `sign_frame` (10)
-- **Night Rocks:** `boulder_small`, `rock_spire`, `stone_arch`, `mushroom_cluster`, `bone_pile` (5)
-- **Red Canyon:** `mesa_chunk`, `dry_shrub`, `cactus`, `wagon_wreck`, `cattle_skull_post` (5)
-- **Frozen Shore:** `snow_drift`, `ice_shard`, `ice_rock`, `ice_floe`, `ground_snow`, `boat_wreck`, `fish_rack` (7)
-- **Starfall:** `star_crystal`, `meteorite`, `star_monolith`, `floating_island`, `void_spike`, `ground_star`,
-  `ruined_observatory` (7)
-
-### 3.7 Textures to replace the code-made looks (P1–P3): [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md)
-Owner, 2026-10-15: real painted textures, like the player's attacks, for what v0.8.0 drew in code. Each row there
-says what it replaces and gives the prompt.
-
-**Received 2026-10-16: 29 of 30** (`FX.zip` → `unprocessed_images/vfx/`, `TEX.zip` → `unprocessed_images/v080_tex/`;
-being installed now). **Still owed: `fx_rail_streak`** (P2, the Siege Engine's rail; the prompt is in the request
-file). `ui_element_glyphs2.png` was stored as `ui_element_glyphs_2`.
-- **P1 (most visible):** `fx_orb_cores`, `fx_orb_cores_2`, `fx_orb_cores_final`, `fx_trails`, `fx_beam`,
-  `fx_beam_impact`, `fx_ground_cracks`, `fx_rock_burst`, `fx_lava_flow`, `tex_lava_crust`, `tex_menu_stone` (11) ✅
-- **P2:** `fx_dust_ring`, `fx_light_ring`, `fx_acid_splat`, `fx_steam_puffs`, `fx_rail_streak`, `fx_skid_marks`,
-  `fx_aim_lines`, `fx_crystal_shatter`, `fx_cast_sigils`, `tex_menu_stone_wall`, `tex_mark_steel`, `tex_mark_hazard`,
-  `tex_mark_acid`, `tex_mark_light`, `tex_stone_spike` (15) ✅ except `fx_rail_streak` ☐
-- **P3:** `fx_ember_sparks`, `fx_star_motes`, `ui_element_glyphs`, `ui_element_glyphs_2` (4) ✅
-
-### 3.8 Audio (P3)
-A final-boss music track (FINAL_BOSS F9); today it uses the existing boss sounds.
-
 ---
 
-## 4. Things only you can confirm (OWNER ONLY)
-- [ ] Your credit line for the credits screen (`CREDITS_OWNER` is still "…").
-- [ ] The AI 3D generator's terms allow shipping its models in a sold game (Tripo, used for every model).
-- [ ] The Windows build on your hardware (above, §1).
+## 4. 2D art and audio still owed
 
----
-
-## Done (moved here when it arrives)
-| Date | Item |
-|---|---|
-| 2026-10-13 | Warlord, Hive Lens, Foundry models (v0.7.5) |
-| 2026-10-14 | The final boss's three models (split from one file) |
-| 2026-10-14 | The shop stall (`shop_tent`) |
-| 2026-10-16 | 29 of the 30 v0.8.0 textures and VFX (§3.7; `fx_rail_streak` still owed) |
-| 2026-10-16 | Playtest 2 feedback (O23–O37) and its answers: hearts paused, the two end-of-loop devices, part 2 in v0.8.0 |
-| 2026-10-14 | v0.8.0 picks: palette A, menu style B, boss signatures, Blade audit, final boss rows, the ×100 loop cap, room density |
+| ✓ | id | What | Prompt |
+|---|---|---|---|
+| ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
+| ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
