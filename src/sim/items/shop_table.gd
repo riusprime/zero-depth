@@ -82,6 +82,6 @@ func reroll_cost(uses: int) -> int:
 
 ## What a card of `rarity` sells for on floor `floor_index` (its price under the floor step alone).
 func sell_price(rarity: int, floor_index: int) -> int:
-	var r := clampi(rarity, 0, rarity_prices.size() - 1)
+	var r := clampi(rarity, 0, mini(rarity_prices.size() - 1, 2))  # v0.8.0 RR: a legendary sells as an epic
 	var base := maxi(1, scaled(rarity_prices[r], sell_step_permille(floor_index)))
 	return scaled(base, sell_permille)

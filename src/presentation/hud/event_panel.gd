@@ -155,7 +155,9 @@ static func choice_lines(ci: Object, reader: WorldReader, k: int, c: int) -> Dic
 				var face := PickPanel.card_face(ci, reader, code)
 				out["reward_title"] = "%s · %s" % [face["title"], face["tier_text"]]
 				out["reward"] = face["sentence"]
-				out["color"] = PickSlot.TIERS[clampi(int(face["tier"]), 0, 3)]
+				out["color"] = PickSlot.TIERS[clampi(
+					int(face["tier"]), 0, PickSlot.TIERS.size() - 1
+				)]
 				out["plaque"] = Plaques.of_card(face["id"], int(face["type"]), int(face["tier"]))
 	var curse := reader.event_choice_curse(k, c)
 	if curse >= 0:

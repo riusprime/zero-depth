@@ -42,8 +42,11 @@ enum Kind {
 }
 
 ## How rare an item is (v0.3.0 E): chests weight rare items higher. Appended, never renumbered. v0.6.0 MX4:
-## LEGENDARY, offered only by the boss's legendary tier (and a boss's core), never by altars, chests or shops.
-enum Rarity { COMMON, RARE, LEGENDARY }
+## LEGENDARY, the boss's tier. v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): EPIC appended, so the
+## four tiers read Common < Rare < Epic < Legendary (ItemTable.tier maps this enum onto that order). Every tier's
+## weight in an altar's, a chest's and the shop's draw is RewardsDefinition's; a Legendary card is mostly the boss's
+## (LegendaryDefinition.card_permille), rarely an altar's or a chest's.
+enum Rarity { COMMON, RARE, LEGENDARY, EPIC }
 
 ## v0.6.0 MX1: the kinds whose attack effects live in their modifiers (each must name at least one).
 const MODIFIER_KINDS: Array[Kind] = [
@@ -215,9 +218,11 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if index_wave < 0 or index_wave > 64:
 		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))
-	if rarity < Rarity.COMMON or rarity > Rarity.LEGENDARY:
+	if rarity < Rarity.COMMON or rarity > Rarity.EPIC:
 		issues.append(
-			ValidationIssue.new(&"range", resource_path, "rarity is common, rare or legendary")
+			ValidationIssue.new(
+				&"range", resource_path, "rarity is common, rare, epic or legendary"
+			)
 		)
 	if not requires_utility in [&"", &"guard", &"blink"]:
 		issues.append(

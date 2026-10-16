@@ -184,6 +184,10 @@ class_name AttackDefinition extends Resource
   growing after the difficulty curve holds at its peak; owner D7). `@export var shards_by_floor: bool` (bosses) pays
   `shards` × the floor number instead, with no tier scaling.
 
+**Item rarity** (v0.8.0 RR, owner O33; [`RARITY.md`](../roadmap/v0.8.0/evidence/RARITY.md)): four tiers, `COMMON`,
+`RARE`, `LEGENDARY` (2) and `EPIC` (3, appended: the enum is never renumbered; `ItemTable.tier()` reads them in the order
+Common < Rare < Epic < Legendary, the order `Offers.info`'s `rarity` and the card frames use). Every tier has a draw weight
+per source in `RewardsDefinition` (below); a Legendary card is mostly the boss's (`LegendaryDefinition`).
 **Item rarity** (v0.3.0 E): the shipped `ItemDefinition` has `@export var rarity: Rarity` (`COMMON`, `RARE`;
 default `COMMON`). Chests weight rare items higher (`RewardsDefinition.rare_weight_chest`). `@export var requires_utility: StringName` (empty, `guard` or `blink`) keeps an item out of every offer unless the
 player chose that utility (Bulwark: `guard`).
@@ -449,7 +453,9 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
 later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
-and the radius positive. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
+and the radius positive. v0.8.0 RR: `epic_weight_chest` / `epic_weight_altar` (data 1.5 / 0.5) and `legendary_weight_chest` /
+`legendary_weight_altar` (data 0.05 / 0.02): an epic and a legendary mod's draw weight against a common one's 1 (0..10;
+0 = never; a chest's weights serve the shop). The common and rare weights draw exactly as before. v0.4.0 TU (owner D8): `heal_orb_chance` (0.1: a normal enemy's kill drops a heal orb, one
 loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 m, × the pickup-range stat); both
 shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
 card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
@@ -475,8 +481,8 @@ max HP per second; `weight`; `max_stacks`, the cap). Validation: prices, radii, 
 steps non-negative, every stat known and listed once, the pool not empty.
 
 **Shop** (v0.5.0 SH, PLAN R1, R2; category `shop`, `data/shop/terminal.tres`): `ShopDefinition` holds `offer_size`
-(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; a mod or
-an ability card is common or rare), `floor_price_step` (each later floor raises every price but the reroll by this
+(cards in the stock, 4), `rarity_prices` (floor 1's price for a common, rare and epic card: 30 / 55 / 90; v0.8.0 RR:
+an optional fourth for a legendary one, data 150; salvage refunds at most the epic price), `floor_price_step` (each later floor raises every price but the reroll by this
 share of floor 1's: × 1, 1.5, 2), `heal_share` (0.3 of max HP, once per shop) and `heal_price` (40 × the floor
 step), `reroll_price` and `reroll_step` (20, then × 1.5 per use at that shop, rounded half up: 20, 30, 45, 68),
 `sell_share` (a mod or stat card sells for 0.4 of its shop price; a stat card one stack, the stat values rebuilt from
@@ -1137,6 +1143,13 @@ data 5): with it every wand card (an item tagged `wand`, of the run's pool) is a
 boss's legendary altar takes it at that level (a held one rises to it; `BossReward.on_pick`); `mods` are now the three
 legendary triggers (the MX4 legendary versions and trinkets were retired or are wand cards). The pool needs cards:
 `stat_cards`, `mods` or `wand_level` (`missing`).
+v0.8.0 RR (owner O33; [`RARITY.md`](../roadmap/v0.8.0/evidence/RARITY.md)): `legendary_chance` and
+`legendary_chance_per_loop` (0..1; data 0.125 and 0.05): the chance a boss altar's offer holds one Legendary card (an item
+of rarity `LEGENDARY`; its first card), and what each loop past the first adds (capped at 1); `extra_picks_per_loop`
+and `extra_picks_max` (0..8; data 1 and 3): the picks a boss altar gives past the first on loop L
+(`min(max, per_loop × (L − 1))`; the altar stays after a pick, its offer cleared, `World.legendary_picks`). `mods` is
+empty in the data: the three legendary triggers and Chain Blast come only by that chance (and rarely from altars, chests
+and the shop), so a boss's core gives legendary stat cards only.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

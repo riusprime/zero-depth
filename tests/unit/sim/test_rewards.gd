@@ -95,7 +95,6 @@ func test_the_shipped_data() -> void:
 		rare,
 		[
 			"afterimage",
-			"blade_storm",  # v0.8.0 BL (B4): a rare Blade wand card
 			"bulwark",
 			"cluster_payload",
 			"cold_snap",
@@ -107,7 +106,7 @@ func test_the_shipped_data() -> void:
 			"razor_orbit",
 			"wildfire"
 		],
-		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP)"
+		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP; v0.8.0 RR: Blade Storm is Epic)"
 	)
 	rare_cards.sort()
 	assert_eq(

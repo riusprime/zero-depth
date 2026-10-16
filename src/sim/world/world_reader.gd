@@ -1197,6 +1197,11 @@ func reward_is_legendary(i: int) -> bool:
 	return BossReward.is_legendary(_w, i) or reward_drop_kind(i) == DROP_BOSS_CORE  # v0.6.0 CU
 
 
+## v0.8.0 RR (owner O33): the picks the floor's boss altar still gives after the one open now (0 on loop 1).
+func legendary_picks_left() -> int:
+	return _w.legendary_picks
+
+
 ## v0.6.5 WN5b: the level a wand card taken from reward i goes to (the boss's legendary altar: the tier's wand_level,
 ## WAND.md "level-5 versions"), or 0.
 func legendary_card_level(i: int) -> int:

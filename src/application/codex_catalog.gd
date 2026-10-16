@@ -180,7 +180,7 @@ static func _item_entry(def: ItemDefinition) -> Dictionary:
 		"alt_name_key": def.name_key_gun,
 		"desc_key": def.desc_key,
 		"type": Offers.MOD,
-		"rarity": 3 if def.rarity == ItemDefinition.Rarity.LEGENDARY else int(def.rarity),
+		"rarity": ItemTable.tier_of(int(def.rarity)),  # v0.8.0 RR: the four tiers in order
 		"leveled": def.tags.has(WAND_TAG),
 	}
 

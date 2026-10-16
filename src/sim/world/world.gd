@@ -316,6 +316,9 @@ var arenas := ArenaState.new()  # v0.5.5 AR: the arena sealed now and those clea
 ## death left (its reward id; -1 until then; it stays set after the pick so one boss pays once). BossReward.
 var legendary_table: LegendaryTable
 var legendary_id := -1
+## v0.8.0 RR (owner O33): the picks the floor's legendary altar still gives after the one open now (LegendaryTable.
+## extra_picks for the loop, set when the boss dies; BossReward.another_pick). Hashed while above 0.
+var legendary_picks := 0
 ## v0.7.5 NB1: the floor's ice (Frozen Shore; IcePatches): loadout, null on every other biome (not hashed: laid from
 ## the floor seed like the layout; its slide shows in the hashed position and velocity). v0.7.5 NB2: or Starfall's
 ## starglow pools (IceField.kind), the same way.
@@ -1065,6 +1068,8 @@ func state_hash() -> String:
 		arenas.hash_into(h)
 	if legendary_id != -1:  # v0.5.5 AR: only once a boss left its legendary altar.
 		h.add_int(legendary_id)
+	if legendary_picks != 0:  # v0.8.0 RR: only while a loop's boss altar gives more picks.
+		h.add_int(legendary_picks)
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.

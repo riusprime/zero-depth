@@ -383,7 +383,10 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 	var w := _arena_floor(3)
 	assert_not_null(w.legendary_table)
 	assert_false(w.legendary_table.stats.is_empty())
-	assert_false(w.legendary_table.mods.is_empty())
+	assert_true(
+		w.legendary_table.mods.is_empty(), "v0.8.0 RR: the Legendary cards come by the chance"
+	)
+	assert_gt(w.legendary_table.card_permille, 0)
 	for s in w.legendary_table.stats:
 		var t := w.stat_tables[s]
 		assert_eq(t.amounts.size(), 4, "%s: four rarities" % t.id)

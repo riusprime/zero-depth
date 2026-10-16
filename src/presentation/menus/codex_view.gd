@@ -382,6 +382,23 @@ func _on_tile_focus(t: CodexTile, head: Label) -> void:
 		_scroll.ensure_control_visible.call_deferred(head)
 
 
+## v0.8.0 RR (owner O33): Cards entry `e`'s frame tier (PickSlot.TIERS): a mod's or a stat card's tier in order
+## (a Legendary one the legendary gold), an ability card the ability's.
+static func tier_of(e: Dictionary) -> int:
+	if int(e["type"]) == WorldReader.CARD_ABILITY:
+		return 3
+	var r := clampi(int(e["rarity"]), 0, 3)
+	return CardFrames.LEGENDARY_TIER if r == 3 else r
+
+
+## v0.8.0 RR: the tier word a mod card shows in the Codex ("Common", "Rare", "Epic", "Legendary"); "" for an ability
+## or a stat card (a stat card's tier is drawn per offer).
+static func tier_text(ci: Object, e: Dictionary) -> String:
+	if int(e["type"]) != WorldReader.CARD_MOD:
+		return ""
+	return ci.tr(RARITY_KEYS[clampi(int(e["rarity"]), 0, 3)])
+
+
 func _show(e: Dictionary) -> void:
 	_shown = e
 	var locked := not store.is_unlocked(page, e["id"])
@@ -394,13 +411,10 @@ func _show(e: Dictionary) -> void:
 	var section_text: String = tr(SECTION_KEYS.get(e["section"], "UI_CODEX_TITLE"))
 	if is_card:
 		var fam := CardFrames.family(e["id"], int(e["type"]))
-		var tier := clampi(int(e["rarity"]), 0, 1)
-		if int(e["rarity"]) >= 3:
-			tier = CardFrames.LEGENDARY_TIER
-		elif int(e["type"]) == WorldReader.CARD_ABILITY:
-			tier = 3
-		if not locked and tier in [1, CardFrames.LEGENDARY_TIER]:
-			section_text = "%s · %s" % [section_text, tr(RARITY_KEYS[mini(int(e["rarity"]), 3)])]
+		var tier := tier_of(e)
+		var tier_word := tier_text(self, e)  # v0.8.0 RR (owner O33): every card says its tier
+		if not locked and tier_word != "":
+			section_text = "%s · %s" % [section_text, tier_word]
 		if locked:
 			card.show_face(&"", "???", tr("UI_CODEX_LOCKED"), fam, 0, PickSlot.COMMON, "")
 			card.modulate = Color(0.42, 0.44, 0.5, card.modulate.a)
@@ -412,7 +426,7 @@ func _show(e: Dictionary) -> void:
 				fam,
 				tier,
 				PickSlot.TIERS[tier],
-				"",
+				tier_word,
 				"",
 				CodexIcon.color_of(e)
 			)

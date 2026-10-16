@@ -15,6 +15,10 @@ enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 ## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
 const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
+## v0.8.0 RR (owner O33): the tier words in order (Offers.info's rarity: common, rare, epic, legendary).
+const RARITY_KEYS: Array[String] = [
+	"RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"
+]
 
 var layout := Layout.ROW_CENTRE
 var _dim := ColorRect.new()
@@ -24,6 +28,7 @@ var _hint := Label.new()
 var _slots: Array[PickSlot] = []
 var _count := 0
 var _reward := -1
+var _boss := false  # v0.8.0 RR: the open choice is the boss's altar
 var _swap_seen := false
 
 
@@ -93,6 +98,7 @@ func sync(reader: WorldReader) -> void:
 	visible = true
 	var items := reader.choice_items()
 	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR (X1b)
+	_boss = legendary
 	_count = items.size()
 	for k in SLOTS:
 		var s := _slots[k]
@@ -111,8 +117,8 @@ func sync(reader: WorldReader) -> void:
 	)
 	if reader.reward_is_epic(r):  # v0.5.0 RT
 		_title.text = tr("PICK_TITLE_EPIC_ALTAR")
-	if legendary:  # v0.5.5 AR (X1b): the boss's reward
-		_title.text = tr("PICK_TITLE_LEGENDARY")
+	if legendary:  # v0.5.5 AR (X1b): the boss's reward; v0.8.0 RR: says when it holds a Legendary card
+		_title.text = boss_title(self, _slots.slice(0, _count), reader.legendary_picks_left())
 	var drop := reader.reward_drop_kind(r)  # v0.6.0 CU: a stolen core, Marked's card
 	if drop == WorldReader.DROP_CORE or drop == WorldReader.DROP_BOSS_CORE:
 		_title.text = tr("PICK_TITLE_CORE")
@@ -158,9 +164,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
 				args.append(GambleIcons.percent(int(info["side"])))
 			face["sentence"] = ci.tr(info["desc_key"]) % args
-			face["tier_text"] = ci.tr(
-				["RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"][face["tier"]]
-			)
+			face["tier_text"] = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
 			if face["tier"] == WorldReader.RARITY_LEGENDARY:  # v0.5.5 AR: tier 3 is the ability's; legendary has its own
 				face["tier"] = CardFrames.LEGENDARY_TIER
 		WorldReader.CARD_CURSE:  # v0.6.0 CU: a trade-off curse card: its name, its upside, rare
@@ -169,7 +173,10 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_CURSE"), ci.tr("RARITY_RARE")]
 		_:
 			face["color"] = ItemLooks.color_of_id(id)
-			var rarity: String = ci.tr("RARITY_RARE" if face["tier"] == 1 else "RARITY_COMMON")
+			# v0.8.0 RR (owner O33): the four tiers' words; a Legendary card wears the legendary gold
+			var rarity: String = ci.tr(RARITY_KEYS[clampi(face["tier"], 0, 3)])
+			if face["tier"] == WorldReader.RARITY_LEGENDARY:
+				face["tier"] = CardFrames.LEGENDARY_TIER
 			var run := not reader.abilities().is_empty()  # a run with abilities: say it's a mod
 			var kind_key := "UI_CARD_MODIFIER" if info.get("modifier", false) else "UI_CARD_MOD"  # v0.6.0 MX2
 			face["tier_text"] = "%s · %s" % [ci.tr(kind_key), rarity] if run else rarity
@@ -195,27 +202,37 @@ static func level_text(ci: Object, held: int, to: int) -> String:
 	return ci.tr("UI_CARD_LEVEL_UP") % [held, to]
 
 
-## v0.5.5 AR (X1b): a card of the boss's legendary tier: the legendary gold and line ("Legendary", with "Mod" before
-## it on a mod). v0.6.5 WN5b: a wand card taken there goes to `wand_level` (the tier's level-5 version): the line says
-## "Mod · Level 5 · Legendary".
+## v0.5.5 AR (X1b): a card of the boss's legendary altar. v0.8.0 RR (owner O33): it keeps its own tier (a Legendary
+## card the legendary gold, a legendary stat card too; any other its tier's colour and word), so a Legendary card
+## stands out among the boss's level-5 versions. v0.6.5 WN5b: a wand card taken there goes to `wand_level`: the line
+## says "Mod · Level 5 · <tier>" and the badge "Lv 5".
 static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) -> Dictionary:
 	var out := face.duplicate()
-	out["tier"] = CardFrames.LEGENDARY_TIER
-	var word: String = ci.tr("RARITY_LEGENDARY")
 	if wand_level > 0 and bool(face.get("wand", false)):
+		var tier := int(face["tier"])
+		var word: String = ci.tr(
+			RARITY_KEYS[3 if tier == CardFrames.LEGENDARY_TIER else clampi(tier, 0, 2)]
+		)
 		word = "%s · %s" % [ci.tr("UI_CARD_ABILITY_LEVEL") % wand_level, word]
 		out["level_text"] = level_text(ci, int(face.get("held_level", 0)), wand_level)  # v0.7.5 SM
-	out["tier_text"] = (
-		"%s · %s" % [ci.tr("UI_CARD_MOD"), word]
-		if int(face["type"]) == WorldReader.CARD_MOD
-		else word
-	)
+		out["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), word]
 	return out
 
 
-## Whether the open choice is the boss's legendary pick.
+## v0.8.0 RR: the boss altar's title: "The boss left a Legendary card" when one of `slots` is a Legendary mod card
+## (the gold frame on a mod), else "The boss's reward"; with picks left after this one, their count after it.
+static func boss_title(ci: Object, slots: Array, picks_left: int) -> String:
+	var key := "PICK_TITLE_BOSS"
+	for s: PickSlot in slots:
+		if s.tier == CardFrames.LEGENDARY_TIER and int(s.face_type()) == WorldReader.CARD_MOD:
+			key = "PICK_TITLE_BOSS_LEGENDARY"
+	var title: String = ci.tr(key)
+	return ci.tr("PICK_TITLE_BOSS_MORE") % [title, picks_left] if picks_left > 0 else title
+
+
+## Whether the open choice is the boss's legendary pick (v0.8.0 RR: by the reward, not the first card's tier).
 func is_legendary() -> bool:
-	return _open and _slots[0].tier == CardFrames.LEGENDARY_TIER
+	return _open and _boss
 
 
 func card_count() -> int:

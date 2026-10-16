@@ -17,6 +17,15 @@ extends ContentDef
 ## v0.6.5 WN5b (WAND.md "The legendary tier offers level-5 versions"): 0, or every wand card (an item tagged wand, of
 ## the run's pool) joins the mods, and the legendary pick takes it at this level (1..5; a held one rises to it).
 @export var wand_level := 0
+## v0.8.0 RR (owner O33: "Legendary items and spells could be obtained from bosses"; "Infinite loops should eventually
+## allow players to accumulate extremely powerful combinations"; docs/roadmap/v0.8.0/evidence/RARITY.md): the chance
+## that a boss altar's offer holds one Legendary card (an item of rarity LEGENDARY), and what each loop past the first
+## adds (both 0..1); the picks a boss altar gives past the first, per loop past the first, and at most. Starting
+## values set by the odds script (scripts/checks/rarity_odds.gd).
+@export var legendary_chance := 0.0
+@export var legendary_chance_per_loop := 0.0
+@export var extra_picks_per_loop := 0
+@export var extra_picks_max := 0
 
 
 func category() -> StringName:
@@ -33,6 +42,14 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(ValidationIssue.new(&"range", resource_path, "wand_level is 0..5"))
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
+	if legendary_chance < 0.0 or legendary_chance > 1.0:  # v0.8.0 RR
+		issues.append(ValidationIssue.new(&"range", resource_path, "legendary_chance is 0..1"))
+	if legendary_chance_per_loop < 0.0 or legendary_chance_per_loop > 1.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "legendary_chance_per_loop is 0..1")
+		)
+	if extra_picks_per_loop < 0 or extra_picks_max < 0 or extra_picks_max > 8:
+		issues.append(ValidationIssue.new(&"range", resource_path, "extra picks are 0..8"))
 	if stat_weight < 0 or mod_weight < 0 or stat_weight + mod_weight <= 0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "weights are >= 0, not both 0"))
 	return issues

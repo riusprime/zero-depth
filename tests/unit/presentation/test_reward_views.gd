@@ -153,7 +153,7 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	assert_eq(p.card_count(), 3)
 	assert_eq(p.title_text(), tr("PICK_TITLE_CHEST") % 40, "the title carries the price")
 	assert_eq(p.slot(0).rarity_color(), PickSlot.COMMON)
-	assert_eq(p.slot(1).rarity_color(), PickSlot.RARE, "a rare item has the gold mark")
+	assert_eq(p.slot(1).rarity_color(), PickSlot.RARE, "a rare item has the rare (blue) mark")
 	for k in 3:  # v0.8.0 MU: a stone tablet in the card family's colour; rarity is the gem and the glow
 		var box := p.slot(k).panel_box()
 		assert_true(box is StoneBox, "card %d: a carved stone tablet" % k)

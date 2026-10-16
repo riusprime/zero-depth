@@ -39,6 +39,8 @@ FILES=(
 	tests/e2e/test_e2e_boss_signatures.gd
 	tests/e2e/test_e2e_boss_strikes.gd
 	tests/e2e/test_e2e_final_boss.gd
+	tests/e2e/test_e2e_attack_order.gd # v0.8.0: AO (card order) met RR (tiers, counts) here
+	tests/unit/sim/test_rarity.gd
 	tests/unit/presentation/test_attack_visuals_2.gd # v0.8.0: BS2 moves met AV2s every-move check here
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"

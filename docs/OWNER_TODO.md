@@ -86,6 +86,13 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D26 | AO's caps (direct, for the frame budget): a ring pulses at most 5 times (a level-5 Spread left of a Ring is 11 shots: the rest is dropped), at most 48 rings alive, a ring's Split shards / trigger casts at most 64 alive. OK? | as built | ATTACK_ORDER.md |
 | D27 | AO's Swirl draws from a new named stream, `wand:swirl:<tick>:<launch>` (derived from the run seed per launch, nothing saved). Add it to EI-05's list with D13's sub-streams? | kept, unlisted | `src/sim/combat/wand_rings.gd`; LOCKED_DECISIONS EI-05 |
 | D28 | Which other cards should become order cards? Today only Ring (shape), Spread and Halo (count) and Swirl (motion); Twin, Boomerang, Orbit, Spiral and Homing stay order-free | as built | ATTACK_ORDER.md |
+| D29 | Rarity (RR): which combinations count as a **broken build** (Chain Blast + Split + Spread/Twin on the Gun, Chain Blast + Double Slash + On Hit on the Blade, and each ×2 trigger with Explosive or Chain Blast), and the odds model (every altar and chest opened, a player who chases the pieces). Right list? | as built | [`RARITY.md`](roadmap/v0.8.0/evidence/RARITY.md) "What counts as broken" |
+| D30 | Rarity (RR): the boss's altar now shows each card's **own** tier (a level-5 Common card says "Mod · Level 5 · Common"; only Legendary cards and the 1.6× stat cards are gold) and its title says "The boss's reward" or "The boss left a Legendary card" instead of "Pick a legendary card" (X1b). OK? | as built | RARITY.md "UI" |
+| D31 | Rarity (RR): Rare cards are **blue** now (they were amber, too close to the Legendary gold); every card also says its tier in words | blue | RARITY.md "UI"; `rr_shots/` |
+| D32 | Rarity (RR): a boss's **core** (stolen in the fight) no longer gives the ×2 triggers, only legendary stat cards, so every Legendary card goes through the odds. OK, or let cores give Legendary cards too (the odds then depend on how often you steal) | stats only | RARITY.md "What changed" |
+| D33 | Rarity (RR): Split, Twin, Blade Storm and Riposte Chain are **Epic** (drawn about half as often at altars as a common card, 1.5× in chests). Other picks? | as built | RARITY.md "Every card's tier" |
+| D34 | Rarity (RR): Chain Blast's blasts never merge (the pre-nerf rule). The PF frame budget was measured with Explosive's merging; a Chain Blast + Split + Spread build may lag like before PF (not measured) | as built | RARITY.md "Not measured" |
+| D35 | Rarity (RR): how fast loops pile up Legendaries (each loop +5 % chance a boss altar and one more pick, up to 4 picks) | as built | RARITY.md "Loops" |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 

@@ -262,11 +262,15 @@ func test_b4_the_new_cards_are_blade_wand_cards() -> void:
 
 func test_b4_the_new_cards_take_the_last_indices() -> void:
 	var defs := ModifierCompiler.item_defs(WandLab.repo())
-	var n := defs.size()
+	var n := 0  # v0.8.0 RR: later index waves (Chain Blast, wave 2) come after these
+	while n < defs.size() and (defs[n] as ItemDefinition).index_wave <= 1:
+		n += 1
 	assert_eq([defs[n - 2].id, defs[n - 1].id], [&"blade_storm", &"riposte_chain"])
 	for k in n - 2:
 		assert_eq((defs[k] as ItemDefinition).index_wave, 0, "%s keeps its index" % defs[k].id)
 	assert_eq(defs[n - 3].id, &"trigger_on_kill_twice", "the v0.6.5 order ends where it did")
+	for k in range(n, defs.size()):
+		assert_gt((defs[k] as ItemDefinition).index_wave, 1, "%s: a later wave" % defs[k].id)
 
 
 # --- B5 --------------------------------------------------------------------------------------------------------
