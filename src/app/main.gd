@@ -144,7 +144,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		and not driver.reader.event_open()  # v0.5.0 EV: so does an event panel's
 		and not driver.reader.shop_open()  # v0.5.0 SH: so does the shop's
 		and not driver.reader.swapping()  # v0.6.0 MX2: so does the swap's skip
-		and not driver.reader.ascension_open()  # v0.7.5 AP: so does the Ascension portal's Not yet
 		and event.is_action_pressed(&"pause")
 	):
 		get_viewport().set_input_as_handled()
@@ -319,7 +318,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 		achievement_tracker.achieved.connect(toast.push)
 	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
 	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
-	var arena_def: FinalArenaDefinition = null  # v0.8.0 FB1: the final arena (End the run), its own biome
+	var arena_def: FinalArenaDefinition = null  # v0.8.0 FB1: the final arena (P2: the Ascension portal), its own biome
 	if run.final_fight:
 		arena_def = repo.get_def(&"final_arena", run.table.final_arena)
 		if arena_def != null:
@@ -334,7 +333,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	var finals := ContentCompiler.compile_final_bosses(repo, run.table)  # v0.8.0 FB1: the final boss's bodies
 	run.scale_bosses(finals)
 	var world: World
-	if arena_def != null:  # v0.8.0 FB1 (F1, F2): End the run brought the hero to the final arena
+	if arena_def != null:  # FB1 (F1, F2); P2: the Ascension portal brought the hero here
 		world = FinalArenaScenario.build(
 			run,
 			arena_def,
@@ -458,11 +457,12 @@ func _on_tick(from: SimDriver) -> void:
 
 
 ## The run's portal was taken: carry over, then the next floor (with its card and a fade-in). v0.7.5 AP: through the
-## Ascension portal's Ascend the next floor is the next loop's first, and the Codex counts it (_record_ascension).
+## Loop device (v0.8.0 P2; the Ascension portal's Ascend before it) the next floor is the next loop's first, and the
+## Codex counts it (_record_ascension).
 func _next_floor() -> void:
-	var ascended := driver.reader.ascension_choice() == WorldReader.ASCEND_ASCEND
+	var looped := driver.reader.ascension_choice() == WorldReader.ASCEND_LOOP
 	run.finish_floor(driver.world)
-	if ascended:
+	if looped:
 		_record_ascension(run.loop)
 	_end_floor()
 	_start_floor()
@@ -501,14 +501,15 @@ func _floor_world(
 
 
 ## v0.7.5 AP: the Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
-## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend, `runs` / `loop` /
-## `best` keeps the highest loop reached. A tweaked run (the dev panel's balance edits) records nothing, as the Codex.
+## (docs/roadmap/v0.7.5/evidence/ASCENSION.md): `runs` / `ascended` / `times` counts every Ascend (v0.8.0 P2: every
+## Loop device taken), `runs` / `loop` / `best` keeps the highest loop reached. A tweaked run (the dev panel's balance
+## edits) records nothing, as the Codex.
 func _record_ascension(loop: int) -> void:
 	if codex == null or (codex_recorder != null and not codex_recorder.enabled):
 		return
 	codex.add(ASCENSION_PAGE, &"ascended", &"times")
 	codex.raise_to(ASCENSION_PAGE, &"loop", &"best", loop)
-	if achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each Ascend
+	if achievement_tracker != null:  # v0.7.5 AC: the Ascension achievements count each loop taken
 		achievement_tracker.report(&"runs:ascended")
 
 

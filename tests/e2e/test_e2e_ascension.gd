@@ -2,10 +2,10 @@ extends GutTest
 ## v0.7.5 AP (owner N4): the Ascension portal and the endless loop through main.tscn with real input only. The run is
 ## moved to its last floor by a labelled TEST HELPER (the run's floor number) and the F10 panel's Restart floor (a key
 ## press) rebuilds it; the dev panel (backtick, mouse clicks: God mode for the long walk, Kill boss) stands in for the
-## fight as in test_e2e_run_flow; the left stick walks through the boss door and into the Ascension portal, whose
-## choice opens (the world waits). Ascend (2, Enter) carries the build into loop 2's floor 1, "Loop 2 · Floor 1" on the
-## HUD, the Codex counts it, and Continue after Main menu resumes loop 2. End the run (Enter on the first card) leads to
-## the final arena (v0.8.0 FB1). Not yet (Esc) closes the choice without opening the pause menu.
+## fight as in test_e2e_run_flow; the left stick walks through the boss door. v0.8.0 P2 (owner O28): no choice panel;
+## the boss's death opens two devices, both drawn and named, the HUD naming both. The stick walks onto the Loop device:
+## the build goes into loop 2's floor 1, "Loop 2 · Floor 1" on the HUD, the Codex counts it, and Continue after Main
+## menu resumes loop 2. Another run walks into the Ascension portal: on to the final arena (v0.8.0 FB1).
 
 const LEG_FRAMES := 7000
 
@@ -65,14 +65,18 @@ func _boot_on_last_floor(e: E2e) -> Main:
 	return main
 
 
-## God mode, through the boss door, Kill boss, into the Ascension portal: true when its choice opened.
-func _to_the_choice(e: E2e, main: Main) -> bool:
+## God mode, through the boss door, Kill boss: true when both devices opened (v0.8.0 P2: the Ascension portal and the
+## Loop device beside it, no menu).
+func _to_the_devices(e: E2e, main: Main) -> bool:
 	var w := e.world()
 	var f := w.floor_layout
 	assert_true(main.driver.reader.ascension_floor(), "the last floor has the Ascension portal")
 	assert_not_null(main.view.ascension, "drawn as the Ascension portal")
 	assert_null(main.view.gate, "not the blue gate")
+	assert_not_null(main.view.loop_device, "and the Loop device beside it")
 	assert_true(main.view.ascension.is_sealed(), "dormant while the boss lives")
+	assert_true(main.view.loop_device.is_sealed(), "both")
+	assert_null(main.get_node_or_null("UI/Hud/AscensionPanel"), "no choice panel any more")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	var into := Kin.dir(f.boss_door_angle)
@@ -89,36 +93,36 @@ func _to_the_choice(e: E2e, main: Main) -> bool:
 	await e.frames(10)
 	assert_false(main.view.ascension.is_sealed(), "the column rises")
 	assert_gt(main.view.ascension.rise, 0.0)
+	assert_false(main.view.loop_device.is_sealed(), "the Loop device lights")
+	assert_true(main.view.loop_device.label.visible, "named")
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_true(
 		hud.gate_text().begins_with(tr("HUD_ASCENSION_OPEN")), "the HUD names the Ascension portal"
 	)
-	var opened: bool = await _walk(
-		e,
-		f.portal_pos + f.portal_facing() * 1.0,
-		func() -> bool: return main.driver.reader.ascension_open(),
-		-f.portal_facing()
+	assert_true(
+		hud.gate_text().contains(tr("HUD_LOOP_DEVICE_OPEN") % 2), "and the Loop device's loop 2"
 	)
-	assert_true(opened, "walking into the light opens the choice")
-	await e.frames(2)
-	return opened
+	await e.tap(KEY_QUOTELEFT)  # the dev panel away (God mode stays)
+	return true
 
 
-func test_ascend_carries_the_build_into_loop_two() -> void:
+## Walks onto the Loop device until the hero goes in.
+func _onto_loop(e: E2e, main: Main) -> bool:
+	var f := e.world().floor_layout
+	var took: bool = await _walk(
+		e,
+		f.loop_pos,
+		func() -> bool: return main.driver.reader.ascension_choice() == WorldReader.ASCEND_LOOP
+	)
+	return took
+
+
+func test_the_loop_device_carries_the_build_into_loop_two() -> void:
 	var e := E2e.new(self)
 	var main := await _boot_on_last_floor(e)
-	if not await _to_the_choice(e, main):
+	if not await _to_the_devices(e, main):
 		return
 	var w := e.world()
-	var panel := main.get_node("UI/Hud/AscensionPanel") as AscensionPanel
-	assert_true(panel.visible and panel.is_open(), "the Ascension choice shows")
-	assert_eq(panel.card_count(), 3, "End the run, Ascend, Not yet")
-	assert_eq(panel.card_text(1, "Line"), tr("UI_ASCEND_GO_LINE") % 2, "Ascend names loop 2")
-	var tick := w.tick
-	var at := w.player_pos()
-	await e.frames(20)
-	assert_eq(w.player_pos(), at, "the world waits for the choice")
-	assert_gt(w.tick, tick, "while the ticks count")
 	var owned := w.ability_owned.duplicate()
 	var levels := w.ability_levels.duplicate()
 	var items := w.items_owned.duplicate()
@@ -126,14 +130,13 @@ func test_ascend_carries_the_build_into_loop_two() -> void:
 	var cards := w.card_levels.duplicate()
 	var stats := w.stat_values.duplicate()
 	var biome_left := main.run_biome_id()
-	await e.tap(KEY_2)  # focus Ascend
-	assert_eq(panel.focus_index(), 1)
-	await e.tap(KEY_ENTER)
+	assert_true(await _onto_loop(e, main), "stepping onto the Loop device takes it")
+	assert_false(main.run.final_fight, "not the final boss")
 	var frames := 0
 	while main.run.loop == 1 and frames < 300:
 		await e.frames(1)
 		frames += 1
-	assert_eq(main.run.loop, 2, "Ascend: loop 2")
+	assert_eq(main.run.loop, 2, "the Loop device: loop 2")
 	await e.frames(3)
 	var w2 := e.world()
 	assert_ne(w2, w, "a new floor")
@@ -161,7 +164,7 @@ func test_ascend_carries_the_build_into_loop_two() -> void:
 		"the HUD says Loop 2 · Floor 1"
 	)
 	assert_true(hud.floor_card_text().begins_with(tr("HUD_LOOP") % 2), "and so does the card")
-	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 1, "the Codex counts the Ascend")
+	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 1, "the Codex counts the loop")
 	assert_eq(main.codex.count(&"runs", &"loop", &"best"), 2, "and the loop reached")
 	# Continue mid-loop: Esc -> Main menu, then Continue (focused) resumes loop 2's floor 1.
 	await e.frames(90)  # past the arrival and the start hall's save
@@ -181,39 +184,29 @@ func test_ascend_carries_the_build_into_loop_two() -> void:
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
-## v0.8.0 FB1 (owner, F1 "changed"): End the run takes the hero on to the final arena instead of the recap (the fight
-## and its victory recap: test_e2e_final_boss).
-func test_end_the_run_leads_to_the_final_arena() -> void:
+## v0.8.0 P2 (owner O28): walking into the Ascension portal goes straight on to the final arena (no menu; the fight and
+## its victory recap: test_e2e_final_boss).
+func test_the_ascension_portal_leads_to_the_final_arena() -> void:
 	var e := E2e.new(self)
 	var main := await _boot_on_last_floor(e)
-	if not await _to_the_choice(e, main):
+	if not await _to_the_devices(e, main):
 		return
-	var panel := main.get_node("UI/Hud/AscensionPanel") as AscensionPanel
-	assert_eq(panel.focus_index(), 0, "End the run has the focus")
-	await e.tap(KEY_ENTER)
+	var f := e.world().floor_layout
+	var took: bool = await _walk(
+		e,
+		f.portal_pos + f.portal_facing() * 1.0,
+		func() -> bool: return main.driver.reader.ascension_choice() == WorldReader.ASCEND_PORTAL,
+		-f.portal_facing()
+	)
+	assert_true(took, "walking into the light takes the portal")
 	var frames := 0
 	while not main.run.final_fight and frames < 400:
 		await e.frames(1)
 		frames += 1
 	await e.frames(3)
-	assert_true(main.run.final_fight, "End the run: on to the final boss")
+	assert_true(main.run.final_fight, "on to the final boss")
 	assert_true(main.driver.reader.final_arena(), "the final arena")
-	assert_null(main.get_node_or_null("UI/EndPanel"), "no recap yet")
+	assert_null(main.get_node_or_null("UI/EndPanel"), "no recap")
 	assert_eq(main.run.loop, 1, "no new loop")
-	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 0, "no Ascend counted")
-	assert_eq(get_errors().size(), 0, "no engine or script error")
-
-
-func test_not_yet_closes_the_choice() -> void:
-	var e := E2e.new(self)
-	var main := await _boot_on_last_floor(e)
-	if not await _to_the_choice(e, main):
-		return
-	var w := e.world()
-	await e.tap(KEY_ESCAPE)
-	await e.frames(3)
-	assert_false(main.driver.reader.ascension_open(), "Esc is Not yet")
-	assert_null(main.get_node_or_null("UI/PauseMenu"), "and doesn't open the pause menu")
-	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "the portal is still open, nothing taken")
-	assert_false((main.get_node("UI/Hud/AscensionPanel") as AscensionPanel).visible)
+	assert_eq(main.codex.count(&"runs", &"ascended", &"times"), 0, "no loop counted")
 	assert_eq(get_errors().size(), 0, "no engine or script error")

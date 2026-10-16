@@ -67,6 +67,8 @@ var overlay := ColorRect.new()
 var deep_gate: PortalGate
 ## v0.7.5 AP: the Ascension portal (null on other floors); the way in flares it and flashes in its gold.
 var ascension: AscensionPortal
+## v0.8.0 P2 (owner O28): the Loop device (null on other floors); stepping onto it flares it and flashes in its green.
+var loop_device: LoopDevice
 
 var _actors: ActorViews
 var _gate: PortalGate
@@ -113,7 +115,11 @@ func sync(reader: WorldReader) -> void:
 		if phase == Phase.ENTER and taken != null:
 			taken.flare()
 		_flash = PortalGate.visor_blue()
-		if phase == Phase.ENTER and ascension != null:  # v0.7.5 AP
+		var looped := reader.ascension_choice() == WorldReader.ASCEND_LOOP
+		if phase == Phase.ENTER and looped and loop_device != null:  # v0.8.0 P2
+			loop_device.flare()
+			_flash = LoopDevice.flash_color()
+		elif phase == Phase.ENTER and ascension != null:  # v0.7.5 AP
 			ascension.flare()
 			_flash = AscensionPortal.flash_color()
 	var node := _player_node(reader)

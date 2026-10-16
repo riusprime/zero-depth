@@ -19,9 +19,9 @@ extends RefCounted
 ##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
 ##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
 ## Ascension (v0.7.5 AP, Ascension): on a run's last floor of a loop (`ascension`) the gate is the Ascension portal.
-##   Walking into its opening opens the choice (ascend_open; the world waits); End the run or Ascend send the hero
-##   in (enter_ascension: ENTERING, ascend_choice), Not yet closes it until the hero has left the opening
-##   (ascend_declined).
+##   v0.8.0 P2 (owner O28): no choice panel; two devices open with the boss's death: walking into the Ascension
+##   portal's opening sends the hero in toward the final boss, stepping onto the Loop device (FloorLayout.loop_pos)
+##   sends the hero into the next loop (enter_ascension: ENTERING, ascend_choice).
 ## Blink (blink_may_land): the boss room is entered only through its door, and never left or entered while sealed
 ## (the fight); once the boss is dead the door is open both ways (v0.5.0 PB).
 ## Run time keeps counting while spawns are stopped (count_time), so the floor's clock covers the boss fight.
@@ -58,14 +58,16 @@ var routes := false
 var route_taken := -1
 var deep := false
 var epic_altar_id := -1
-## v0.7.5 AP: the gate is the Ascension portal, its choice is open, the hero said Not yet (until it steps out), and
-## the choice taken (Ascension.Choice).
+## v0.7.5 AP: the gate is the Ascension portal, and the device taken (Ascension.Choice). v0.8.0 P2: ascend_open and
+## ascend_declined belonged to the retired choice panel; they stay false (kept: saved and hashed on these floors, so
+## older saves load and the digests keep their shape).
 var ascension := false
 var ascend_open := false
 var ascend_declined := false
 var ascend_choice := 0
-## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F1): End the run leads to the final boss (RunState.prepare, from the run's
-## content: setup, not hashed): WorldReader.outcome is then 3 (the app builds the final arena), not 1.
+## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F1): the Ascension portal (v0.8.0 P2; End the run before it) leads to the final
+## boss (RunState.prepare, from the run's content: setup, not hashed): WorldReader.outcome is then 3 (the app builds the
+## final arena), not 1.
 var final_next := false
 
 
@@ -193,8 +195,11 @@ func advance(w: World) -> void:
 				e.amount = 1 if routes else 0  # v0.5.0 RT: 1 when the Deep gate opened too
 				w.remove_wall_now(f.boss_door_wall)  # v0.5.0 PB (D10): the door opens both ways
 		State.OPEN:
-			if ascension:  # v0.7.5 AP: the Ascension portal asks first
-				_advance_ascension(f, p)
+			if ascension:  # v0.8.0 P2 (O28): the Ascension portal or the Loop device, no menu
+				if in_portal(f, p):
+					enter_ascension(w, Ascension.Choice.ASCENSION)
+				elif Ascension.on_loop_device(f, p):
+					enter_ascension(w, Ascension.Choice.LOOP)
 				return
 			var route := -1
 			if in_portal(f, p):
@@ -208,18 +213,8 @@ func advance(w: World) -> void:
 				w.emit_event(SimEvent.Kind.FLOOR_EXIT, 0, 0, 0, p).amount = route
 
 
-## v0.7.5 AP: in the open Ascension portal's opening the choice opens, unless the hero said Not yet and hasn't
-## stepped out since.
-func _advance_ascension(f: FloorLayout, p: Vector2) -> void:
-	if not in_portal(f, p):
-		ascend_declined = false
-		return
-	if not ascend_declined:
-		ascend_open = true
-
-
-## v0.7.5 AP: the Ascension portal's choice was taken (Ascension.Choice.END or ASCEND): the hero goes in, as through
-## the gate (FLOOR_EXIT, amount Routes.Route.NORMAL; the next floor's route is normal).
+## v0.7.5 AP: a device of the Ascension floor was taken (Ascension.Choice.ASCENSION or LOOP; v0.8.0 P2): the hero goes
+## in, as through the gate (FLOOR_EXIT, amount Routes.Route.NORMAL; the next floor's route is normal).
 func enter_ascension(w: World, choice: int) -> void:
 	ascend_open = false
 	ascend_choice = choice

@@ -90,6 +90,11 @@ var portal_angle := 0
 var has_deep_portal := false
 var deep_portal_pos := Vector2.ZERO
 var deep_portal_angle := 0
+## v0.8.0 P2 (owner O28): the Loop device on a loop's last floor (Ascension.place_loop_device; FloorScenario), a pad
+## beside the Ascension portal: its centre and the way it faces. has_loop_device is false until it is placed.
+var has_loop_device := false
+var loop_pos := Vector2.ZERO
+var loop_angle := 0
 ## Item spots: 1 in a 1 x 1 room, 1-2 in bigger rooms, none in the start hall. Grouped by room in room order;
 ## item_rooms[i] is spot i's room.
 var item_spots := PackedVector2Array()

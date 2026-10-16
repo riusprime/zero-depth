@@ -167,7 +167,7 @@ Answers go into the "Owner decisions" table below the same day.
 | GF2 | Hit feel: impact particles, flinch, white flash, thrown damage numbers, shaking crits | O20, O21 | none (owner direction) | presentation | Done (`v080-gf2`: impacts, flinch, thrown numbers, shaking crits; [`evidence/HIT_FEEL.md`](evidence/HIT_FEEL.md)) |
 | GF3 | The Blade: swing, slash trail, impact, flinch, a 2-frame hit-stop | O22 | none (owner direction) | presentation | Done (`v080-gf3`: the swing accent, slash edge and edge spark; the slash impact along the swing; a stronger flinch with a knock; the view's 2-frame hit-stop with its Accessibility option; the sim's own hit-stop found and reported: [`evidence/BLADE_FEEL.md`](evidence/BLADE_FEEL.md)) |
 | P1 | Fights read and chase: shortest-path chasing (a shared field), the Smasher's red circle and slam, clear melee strike poses | O23, O25, O26, O32 | none (direct fixes) | sim (chase) + presentation | In progress |
-| P2 | Void's black holes; the Ascension portal and the Loop device as two separate things, the final boss reached through Ascension | O24, O28 | none (owner direction) | sim + data + presentation | In progress |
+| P2 | Void's black holes; the Ascension portal and the Loop device as two separate things, the final boss reached through Ascension | O24, O28 | none (owner direction) | sim + data + presentation | Done (`v080-p2`: Void's pull on every hit replaced by black holes, 8 % a shot + 3 % a level, 2 s, at most 3, pull and damage over time; the choice panel gone, the Ascension portal walks on to the final boss and the green Loop device beside it starts the next loop; [`evidence/VOID_AND_PORTALS.md`](evidence/VOID_AND_PORTALS.md)) |
 | P3 | Biome lag against Star, lights that fade instead of switching, less glow, a cheaper-code pass, loop 2 + Purple Portal 10 % easier | O29–O32, O35 | none (direct fixes) | presentation + data | In progress |
 | GF1 | The Gun: bigger, slower, harder-hitting blue pulse; the hero casts each shot | O18, O19 | none (owner direction) | sim (data) + presentation | Done (`v080-gf1`: 0.2 m, 9 ticks, 5, 16.2 m/s; DPS −2.9 % in whole ticks; the blue pulse and the cast; stacks' DPS up and the PF frame worse, reported: [`evidence/GUN_FEEL.md`](evidence/GUN_FEEL.md)) |
 
@@ -287,6 +287,39 @@ while agents run.
   SIM_CONTRACTS §2), which holds the whole sim; PRESENTATION_CONTRACTS §6 says "Hit-stop is sim state … The view shows
   it; it never creates it." The view's hold is built as briefed and sits inside that sim freeze; whether to keep both,
   or to make the view show the sim's freeze instead, is an owner question (BLADE_FEEL.md).
+
+### P2 (Void's black holes; the Ascension portal and the Loop device; the agent's reading, 2026-10-16)
+- **Void (O24), what was there.** `gravity_well` (Void) put an `ON_HIT` hook on the spell: every landed hit set off a
+  2.5 m burst at 20 % (+10 % a level) that moved each enemy it touched up to 0.8 m toward the hit in one tick, before
+  the burst's own hits (`ModifierRuntime.pull`). "Buggy", read from the code (not reproduced in play, the owner's
+  word stands for what they saw): every hit of every bolt of a Spread or Split volley teleported the enemies by up to
+  0.8 m at once, so crowds jerked and stacked on the hit point, and a 0.8 m jump could carry one into or past a thin
+  wall before the collision pass pushed it out (sometimes on the far side). The pull, its runtime and the `pull_m`
+  card field are gone (the spec field stays for the hash order, never set).
+- **New (starting values, F10).** Each shot carrying Void (a projectile of the spell where it ends: the hit that
+  stopped it, a wall or the end of its flight; on the Blade, a slash where it first lands) leaves a black hole with
+  a chance of **8 % at level 1, +3 % a level: 8 / 11 / 14 / 17 / 20 %** (`hole_chance_permille` 80 + 30, the card's
+  data). One draw on the existing **`ability`** stream per shot or landing slash, only for a spec with a chance (a
+  build without Void draws nothing; no new stream, so no EI-05 question). The hole stands **2 s** (120 ticks), **at
+  most 3** (a new one replaces the oldest), draws every enemy within **3.5 m** toward its centre at **3 m/s**
+  (0.05 m a tick: no jump through walls; not bosses, nor enemies still spawning in; it stops 0.3 m short of the
+  centre) and every **0.2 s** pulses **30 % of the shot's damage** (rounded, at least 1) on each enemy within its
+  **1.4 m** core, as damage over time (TAG_DOT, proc 0: it never sets off the spell's cards). Numbers in
+  `data/wand/wand.tres` (`hole_*`) and the card (`data/modifiers/gravity_well.tres`).
+- **Look.** A small dark swirling hole on the floor (violet arms spiralling in to a dark core with a thin rim, a
+  black sphere over it), opening and closing with its life; pooled (6, made once); reduced motion slows the swirl.
+- **The two devices (O28).** On a loop's last floor the Ascension choice panel (End the run / Ascend / Not yet) is gone
+  and nothing waits on a pick. The boss's death opens two separate things in the boss room: the **Ascension portal**
+  (the gate's place and look, now named "Ascension" over it): walking into its opening goes on to the final arena
+  and the final boss; and the **Loop device**, smaller and green (a 0.9 m pad with a glowing rim and an upright ring
+  facing the camera, two arrowheads chasing round it, named "Loop"), on the spot beside the portal where a Deep gate
+  would stand (in front of it: nothing solid, so a saved floor rebuilds the same walls): stepping on it starts the
+  next loop's floor 1 with the build, as Ascend did. A run ends by beating the final boss or dying (a run without a
+  final boss in its content is won through the portal). The HUD names both. The Codex's Ascend counter and the two
+  Ascension achievements count the Loop device (their text says so). Old saves: the saved choice keeps its number
+  (End = the portal, Ascend = the Loop device); the retired choice's fields stay saved and hashed, always off.
+- **Why the boss "could not" be reached** (O28's first line, read from the code): the only way in was the panel's
+  first card, "End the run", whose name says the run ends; the path worked (the FB e2e walked it).
 
 ## Audit (live code, 2026-10-14)
 - **Enemies:** 14 kinds (`data/enemies/*.tres`), all code-made avatars (`actor_views.gd:343-452`); 7 share

@@ -12,6 +12,8 @@ extends RefCounted
 ## plinth's footprint a wall.
 ## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
 ## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
+## v0.8.0 P2 (owner O28): on a loop's last floor, the Loop device beside the Ascension portal
+## (Ascension.place_loop_device; nothing solid, so the walls are unchanged).
 ## v0.5.5 AR: with an arena table, the sealed arenas (ArenaRooms.mark, after the Overrun room), whose item spots the
 ## rewards fill first.
 ## v0.7.5 MG: `map` (RunContentCompiler.compile_map, data/map) sets the generator's room counts and footprints (null:
@@ -41,6 +43,8 @@ static func build(
 	if arenas != null:  # v0.5.5 AR: the sealed arenas, before the rewards that fill them first
 		ArenaRooms.mark(layout, arenas.share_permille)
 	var routes := Routes.offers_choice(run) and Routes.place_deep_gate(layout)  # v0.5.0 RT
+	if run != null and run.is_last_floor():  # v0.8.0 P2 (O28): the Loop device beside the Ascension portal
+		Ascension.place_loop_device(layout)
 	var w := World.new(seed_value, player, layout.start_pos)
 	var walls: Array[Obb] = layout.walls.duplicate()
 	walls.append(gate_collider(layout))

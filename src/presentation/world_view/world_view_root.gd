@@ -32,6 +32,10 @@ var gate: PortalGate
 var deep_gate: PortalGate
 ## v0.7.5 AP: the Ascension portal where the gate stands on a run's last floor of a loop (`gate` is null there).
 var ascension: AscensionPortal
+## v0.8.0 P2 (owner O28): the Loop device beside it (null on other floors).
+var loop_device: LoopDevice
+## v0.8.0 P2 (owner O24): Void's black holes.
+var black_holes := BlackHoleViews.new()
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit := PortalTransitView.new()
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
@@ -153,10 +157,17 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(final_views)  # v0.8.0 FB1
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
+	add_child(black_holes)  # v0.8.0 P2
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
 		ascension.setup(reader.portal_pos(), reader.portal_angle())
+		if reader.has_loop_device():  # v0.8.0 P2 (O28): the Loop device beside it
+			loop_device = LoopDevice.new()
+			add_child(loop_device)
+			loop_device.setup(
+				reader.loop_device_pos(), reader.loop_device_angle(), reader.loop_device_radius()
+			)
 	elif reader.has_gate():  # v0.7.5 PG: not in the Playground's room (a floor without a gate)
 		gate = PortalGate.new()
 		add_child(gate)
@@ -194,6 +205,7 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	transit.setup(actors, gate)
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP
+	transit.loop_device = loop_device  # v0.8.0 P2
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -245,6 +257,7 @@ func sync() -> void:
 	final_views.sync(reader)  # v0.8.0 FB1
 	prism_views.sync(reader)  # v0.8.0 FB2
 	nemesis_views.sync(reader)  # v0.8.0 FB3
+	black_holes.sync(reader)  # v0.8.0 P2
 	if boss_door != null:
 		boss_door.sync(reader)
 	if gamble_shrine != null:
@@ -259,6 +272,8 @@ func sync() -> void:
 		gate.set_sealed(not open)
 	if ascension != null and ascension.is_sealed() == open:  # v0.7.5 AP: the column rises
 		ascension.set_sealed(not open)
+	if loop_device != null and loop_device.is_sealed() == open:  # v0.8.0 P2: and the Loop device lights
+		loop_device.set_sealed(not open)
 	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
 	if deep_gate != null and deep_gate.is_sealed() == deep_open:
 		deep_gate.set_sealed(not deep_open)

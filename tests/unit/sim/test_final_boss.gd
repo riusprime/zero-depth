@@ -1,7 +1,8 @@
 # gdlint: disable=max-public-methods
 extends GutTest
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3, F7): the final boss's flow and its fight in the sim. End the run (any
-## loop) leads to the final arena instead of winning at once; Ascend is unchanged; the arena is a round walled room;
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3, F7): the final boss's flow and its fight in the sim. The Ascension
+## portal (any loop; v0.8.0 P2, End the run before) leads to the final arena instead of winning at once; the Loop device
+## (Ascend before P2) loops; the arena is a round walled room;
 ## one fight, three bodies: a body keeps 1 HP until its segment ends, then shatters (1.5 s, invulnerable, every
 ## hostile shot cleared) and the next rises where it stood; the last one's fall wins the run; the Colossus scales
 ## with the loop like the floors' bosses; a world saved at a body's start resumes there.
@@ -61,7 +62,7 @@ func test_end_the_run_leads_to_the_final_arena() -> void:
 	var w := SaveLab.build_floor(run)
 	assert_true(w.boss_flow.ascension)
 	assert_true(w.boss_flow.final_next, "the run has a final boss")
-	w.boss_flow.ascend_choice = Ascension.Choice.END
+	w.boss_flow.ascend_choice = Ascension.Choice.ASCENSION
 	w.boss_flow.state = BossFlow.State.EXITED
 	assert_eq(WorldReader.new(w).outcome(), 3, "End the run: on to the next world, not a win")
 	run.finish_floor(w)
@@ -78,7 +79,7 @@ func test_end_on_a_later_loop_leads_there_too() -> void:
 		run.routes.append(Routes.Route.NORMAL)
 	var w := SaveLab.build_floor(run)
 	assert_true(w.boss_flow.final_next, "any loop")
-	w.boss_flow.ascend_choice = Ascension.Choice.END
+	w.boss_flow.ascend_choice = Ascension.Choice.ASCENSION
 	w.boss_flow.state = BossFlow.State.EXITED
 	assert_eq(WorldReader.new(w).outcome(), 3)
 	run.finish_floor(w)
@@ -89,7 +90,7 @@ func test_end_on_a_later_loop_leads_there_too() -> void:
 func test_ascend_skips_the_final_boss() -> void:
 	var run := SaveLab.run_state(53, 3)
 	var w := SaveLab.build_floor(run)
-	w.boss_flow.ascend_choice = Ascension.Choice.ASCEND
+	w.boss_flow.ascend_choice = Ascension.Choice.LOOP
 	w.boss_flow.state = BossFlow.State.EXITED
 	assert_eq(WorldReader.new(w).outcome(), 3)
 	run.finish_floor(w)
@@ -103,7 +104,7 @@ func test_a_run_without_a_final_boss_ends_at_once() -> void:
 	run.table.final_bosses = []
 	var w := SaveLab.build_floor(run)
 	assert_false(w.boss_flow.final_next)
-	w.boss_flow.ascend_choice = Ascension.Choice.END
+	w.boss_flow.ascend_choice = Ascension.Choice.ASCENSION
 	w.boss_flow.state = BossFlow.State.EXITED
 	assert_eq(WorldReader.new(w).outcome(), 1, "as before FB1")
 

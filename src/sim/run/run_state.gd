@@ -1,15 +1,16 @@
 class_name RunState
 extends RefCounted
-## A run of floors (v0.3.0 PLAN L3-L4, "Run (B)"): the floor number, the biome order (shuffled once per run from
-## the `biomes` stream), each floor's seed (floor 1 uses the run seed, later floors one derived from it), the enemy
-## scaling per floor, the carry between floors and the totals the recap shows. Pure sim code; the app owns one per
-## run and builds a fresh World per floor.
-## v0.7.5 AP (owner N4, the Ascension loop): after the last floor's boss the Ascension portal ends the run or starts
-## loop + 1 at floor 1 with the build carried (finish_floor). `floor_index` stays the floor within the loop (1..
-## floors: the floor tables, boss pools, curves and prices read it); run_floor() counts the run's floors across
-## loops (the floor seeds, the bosses drawn, the routes, the biome order, the boss's floor-1 ease and FloorCadence's
-## shop and curse floors read it, so loop 2 is new ground and two featured floors never meet at a seam). Each loop
-## past the first scales enemies and bosses (loop_permille) and adds threat and catch-up cap (prepare).
+## A run of floors (v0.3.0 PLAN L3-L4, "Run (B)"): the floor number, the biome order (shuffled once per run from the
+## `biomes` stream), each floor's seed (floor 1 uses the run seed, later floors one derived from it), the enemy scaling
+## per floor, the carry between floors and the totals the recap shows. Pure sim code; the app owns one per run and
+## builds a fresh World per floor. v0.7.5 AP (owner N4, the Ascension loop): after the last floor's boss the Ascension
+## portal ends the run or starts loop + 1 at floor 1 with the build carried (finish_floor). v0.8.0 P2 (owner O28): two
+## devices instead of a choice: the Ascension portal leads to the final boss, the Loop device starts loop + 1.
+## `floor_index` stays the floor within the loop (1.. floors: the floor tables, boss pools, curves and prices read it);
+## run_floor() counts the run's floors across loops (the floor seeds, the bosses drawn, the routes, the biome order, the
+## boss's floor-1 ease and FloorCadence's shop and curse floors read it, so loop 2 is new ground and two featured floors
+## never meet at a seam). Each loop past the first scales enemies and bosses (loop_permille) and adds threat and
+## catch-up cap (prepare).
 
 ## v0.7.5 MG: the floor rules the current floor was built with. FLOOR_RULES (2): v0.7.5's bigger floors, fewer arenas,
 ## the shop every two floors (data/map, data/arenas, data/shop). 1: v0.7.0's (FloorParams.v070(), a third of the
@@ -239,15 +240,15 @@ func rt1_rooms() -> bool:
 
 
 ## Closes the floor `w` (its portal taken): adds its totals, takes the carry and moves to the next floor. v0.7.5 AP:
-## when the Ascension portal's Ascend took it, the next floor is floor 1 of the next loop (new biomes drawn).
+## when the Loop device took it (v0.7.5's Ascend), the next floor is floor 1 of the next loop (new biomes drawn).
 func finish_floor(w: World) -> void:
 	ticks_done += w.run_ticks
 	kills_done += w.kills
 	threat_by_floor.append(Curses.threat(w))
 	carry = RunCarry.take(w, table.heal_permille, table.shard_carry_permille)
-	if Ascension.ended(w) and _has_final():  # v0.8.0 FB1 (F1): End the run: to the final arena, same floor
+	if Ascension.took_portal(w) and _has_final():  # FB1; v0.8.0 P2: the Ascension portal: the final arena
 		final_fight = true
-	elif Ascension.ascended(w):
+	elif Ascension.looped(w):  # v0.8.0 P2 (O28): the Loop device
 		loop_floors += floor_index
 		loop += 1
 		floor_index = 1
@@ -261,16 +262,17 @@ func finish_floor(w: World) -> void:
 
 
 ## v0.7.5 AP: the loops the run cleared, with `w` the current floor's world (null: the finished floors only): the
-## loops left by Ascend, and the current one when its Ascension portal ended the run. v0.8.0 FB1: with a final boss,
+## loops left by the Loop device, and the current one when its Ascension portal ended the run (a run with no final
+## boss). v0.8.0 FB1: with a final boss,
 ## the current loop counts once the final boss is beaten (dying to it clears none).
 func loops_cleared(w: World = null) -> int:
 	var done := loop - 1
-	if w != null and (Ascension.ended(w) or (w.final_fight != null and w.final_fight.won)):
+	if w != null and (Ascension.took_portal(w) or (w.final_fight != null and w.final_fight.won)):
 		done += 1
 	return done
 
 
-## v0.8.0 FB1: the run has a final boss (End the run leads to it).
+## v0.8.0 FB1: the run has a final boss (the Ascension portal leads to it; v0.8.0 P2).
 func _has_final() -> bool:
 	return not table.final_bosses.is_empty()
 

@@ -18,6 +18,12 @@ static func compile(def: WandDefinition) -> WandTable:
 	t.cast_free_lines = def.cast_free_lines.duplicate()  # v0.8.0 PF2
 	t.blast_merge_after = def.blast_merge_after
 	t.blast_merge_ids = def.blast_merge_ids.duplicate()
+	t.hole_ticks = SimTick.seconds_to_ticks(def.hole_seconds)  # v0.8.0 P2 (O24): Void's black holes
+	t.hole_max = def.hole_max
+	t.hole_pull_radius_m = def.hole_pull_radius_m
+	t.hole_pull_step_m = def.hole_pull_mps / SimTick.TICKS_PER_SECOND
+	t.hole_radius_m = def.hole_radius_m
+	t.hole_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.hole_period_seconds))
 	return t
 
 

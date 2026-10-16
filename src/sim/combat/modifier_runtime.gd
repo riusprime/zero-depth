@@ -13,8 +13,8 @@ extends RefCounted
 ## - the body's rules: Ascension (after charge_ticks without a root attack, the next one deals × charge_permille),
 ##   Aether Shell (out of combat barrier_ticks, the next enemy hit is absorbed, and combat starts again) and
 ##   Resonance (each status on an enemy adds resonance_permille to the player's damage on it);
-## - Gravity Well's pull.
-## Every function draws no randomness (EI-05) and runs on the one clock.
+## - v0.8.0 P2: Void's black holes (BlackHoles; Gravity Well's pull on every hit is gone, owner O24).
+## Every function here draws no randomness (EI-05; a black hole's roll is BlackHoles') and runs on the one clock.
 
 ## v0.8.0 BL (B1): a spec with `repeats` > 1 repeats again this many ticks after each repeat (a starting value: 0.08 s,
 ## so Double Slash's five repeats at level 5 come within 0.5 s of the swing).
@@ -134,6 +134,7 @@ static func advance(w: World) -> void:
 		Attacks.launch(w, spec, c)
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	BlackHoles.advance(w)  # v0.8.0 P2 (O24): Void's black holes pull and pulse
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 
@@ -256,21 +257,6 @@ static func resonance_mult(w: World, target: int, owner_id: int) -> int:
 	n += 1 if a.slow_t[target] > 0 else 0
 	n += 1 if a.poison_stacks[target] > 0 else 0
 	return 1000 + n * b.resonance_permille
-
-
-# --- Gravity Well ----------------------------------------------------------------------------------------------------
-## Pulls every enemy (not a boss, not spawning in) touching the disc (`at`, `r`) up to `d` metres toward its centre,
-## never past it. Walls push them out again in the next collision pass.
-static func pull(w: World, at: Vector2, r: float, d: float) -> void:
-	var a := w.actors
-	for i in w.enemies_near(at, r):
-		if a.invuln[i] > 0 or BossAi.is_boss_kind(a.kinds[i]):
-			continue
-		var to := at - a.pos(i)
-		var dist := Kin.length(to)
-		var step := minf(d, maxf(0.0, dist - a.radius[i]))
-		if dist > 0.0 and step > 0.0:
-			a.set_pos(i, a.pos(i) + to * (step / dist))
 
 
 # --- Hash ---------------------------------------------------------------------------------------------------------

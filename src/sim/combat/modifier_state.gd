@@ -49,6 +49,11 @@ var cast_key := PackedStringArray()
 var cast_pos := PackedVector2Array()
 var cast_angle := PackedInt32Array()
 var cast_flag := PackedInt32Array()
+## v0.8.0 P2 (owner O24, Void; BlackHoles): the black holes standing, oldest first (parallel arrays): where, the tick it
+## opened, and each pulse's damage. Hashed only while one stands (older digests unchanged).
+var hole_pos := PackedVector2Array()
+var hole_from := PackedInt32Array()
+var hole_dmg := PackedInt32Array()
 
 
 func touched() -> bool:
@@ -61,6 +66,7 @@ func touched() -> bool:
 		or shell_tick != -1
 		or trail_tick != -1
 		or hold_t != 0
+		or not hole_pos.is_empty()
 	)
 
 
@@ -107,3 +113,11 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
 		h.add_int(hold_t)
+	if not hole_pos.is_empty():  # v0.8.0 P2: only while a black hole stands (older digests unchanged)
+		h.add_string("holes")
+		h.add_int(hole_pos.size())
+		for p in hole_pos:
+			h.add_f32(p.x)
+			h.add_f32(p.y)
+		h.add_ints(hole_from)
+		h.add_ints(hole_dmg)

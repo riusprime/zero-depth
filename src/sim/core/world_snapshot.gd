@@ -256,6 +256,9 @@ const ADDED_SINCE_V05 := {
 		&"cast_pos",
 		&"cast_angle",
 		&"cast_flag",
+		&"hole_pos",  # v0.8.0 P2 (Void's black holes: an older save has none)
+		&"hole_from",
+		&"hole_dmg",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	&"EventState": [&"cursed_rolled"],  # v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0)

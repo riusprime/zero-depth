@@ -1,13 +1,14 @@
 class_name FinalArenaScenario
 extends RefCounted
-## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final arena's World, the run's last after End the run. Its
-## floor is FinalArena's round room (its radius and segments from the FinalArenaDefinition), the hero arriving on the
-## +y side (the portal transit's arrival), the floor's tables as any floor (the run's carry, curses, heat, the hidden
-## catch-up: Main sets them as on every floor), no spawner, rewards, shop, events or gate. Its boss flow only runs the
-## arrival (its state is FIGHT from the start, no door, no portal). The bosses are the floors' (so every saved index
-## means what it did) and then the final boss's bodies, scaled as a boss of the loop's last floor (RunState.
-## scale_bosses: the loop's factor too, F7 for the Colossus; the Prism's and the Nemesis's own rules are FB2's and
-## FB3's). begin() starts the fight once Main has set the loadout (the first body's rise counts the hidden catch-up).
+## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final arena's World, the run's last after the Ascension portal
+## (v0.8.0 P2; End the run before). Its floor is FinalArena's round room (its radius and segments from the
+## FinalArenaDefinition), the hero arriving on the +y side (the portal transit's arrival), the floor's tables as any
+## floor (the run's carry, curses, heat, the hidden catch-up: Main sets them as on every floor), no spawner, rewards,
+## shop, events or gate. Its boss flow only runs the arrival (its state is FIGHT from the start, no door, no portal).
+## The bosses are the floors' (so every saved index means what it did) and then the final boss's bodies, scaled as a
+## boss of the loop's last floor (RunState.scale_bosses: the loop's factor too, F7 for the Colossus; the Prism's and
+## the Nemesis's own rules are FB2's and FB3's). begin() starts the fight once Main has set the loadout (the first
+## body's rise counts the hidden catch-up).
 
 
 static func build(

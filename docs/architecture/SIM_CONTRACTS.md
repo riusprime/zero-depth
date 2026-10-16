@@ -165,7 +165,8 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   tables (§10).
 - **v0.4.0 BS** adds two named streams, derived the same way: `crit` (one roll per direct player hit while the crit
   chance is above 0; `Stats.outgoing`) and `ability` (the auto abilities' randomness: a spare bomb's scatter;
-  `Abilities`). Offers still draw only `loot`. Both states join the hash with the build block (§10).
+  `Abilities`; v0.8.0 P2: Void's black-hole roll, one draw per shot or landing slash of a spec with
+  `hole_permille` > 0, `BlackHoles.roll`, so a build without Void draws nothing new). Offers still draw only `loot`. Both states join the hash with the build block (§10).
 - **v0.5.0 EV** adds three sub-streams, derived the same way, so no older draw moves: `map:event` (which rooms hold
   an event; drawn fresh from the run seed by `Events.pick_rooms`, a pure function of layout and seed), `loot:event`
   (`World.ev.rng`: the event drawn per pedestal, each panel's cards and curses on its first open, an ambush's kinds
@@ -589,8 +590,16 @@ for `barrier_ticks`, the next enemy hit on the player is absorbed (HIT emitted, 
 player with effect `aether_shell`) and combat starts again; Resonance, an attacker multiplier in `Damage.hit` after
 Cold Snap's: + `resonance_permille` per status on the enemy (burning, shocked, bleeding, chilled or frozen, slowed,
 poisoned). Phase Dash: `World.dash_iframes_active` holds for the whole dash and the player skips body collisions.
-Gravity Well: a burst with `pull_m` moves every enemy it touches (not a boss, not spawning) up to that far toward its
-centre before its hits; walls push them out in the next collision pass.
+Gravity Well's pull (a burst with `pull_m`) is retired (v0.8.0 P2, owner O24): no card sets `pull_m` (kept in the hash
+order). **Void's black holes** (`BlackHoles`, v0.8.0 P2): a spec with `hole_permille` > 0 rolls once on the `ability`
+stream where a projectile of it ends (`Attacks.on_projectile_end`, a projectile with its own spec key) and where a
+slash of it first lands (`Attacks._arc`); on success a hole opens there (`World.mx.hole_pos` / `hole_from` /
+`hole_dmg`; the pulse = the shot's damage × `hole_damage_permille`, rounded, at least 1). Past `WandTable.hole_max` (3)
+the oldest closes first. Tick phase 6 (`ModifierRuntime.advance`): holes whose age reaches `hole_ticks` (120) close;
+each then (oldest first) moves every enemy within `hole_pull_radius_m` (3.5 m; not a boss, not spawning) by
+`hole_pull_step_m` (0.05 m a tick) toward its centre, stopping `BlackHoles.CORE_GAP_M` (0.3 m) short, and every
+`hole_period_ticks` (12) of its age pulses `Damage.tick_dot` (TAG_DOT, proc 0, effect `void_hole`) on each enemy
+within `hole_radius_m` (1.4 m). Hashed (`ModifierState`) only while a hole stands; snapshotted (`ADDED_SINCE_V05`).
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
@@ -820,7 +829,8 @@ cards (§8e) are offered too.
 burst 1.5 m at 60 %), S2 Lightning `storm_core` (storm; an `ON_HIT` seeking beam within 4 m at 50 % that jumps once
 more: 2 more enemies), S3 Frost `frost_core` (slow, frost 1, frost element: the frost engine's threshold 3 freezes
 for 1 s), S4 Venom `venom_core` (poison 1, venom; the poison spreads on death, §8d), S5 Bleed `shared_bleed` (bleed
-1, bleed element), S6 Void `gravity_well` (void on the spell; an `ON_HIT` burst 2.5 m at 20 % that pulls 0.8 m), S7
+1, bleed element), S6 Void `gravity_well` (void on the spell; v0.8.0 P2: `hole_permille` 80 + 30 a level, `hole_damage_permille` 300:
+black holes, §8b), S7
 Explosive `shared_explosive` (an `ON_END` burst 1.4 m at 60 % where the spell ends: an arc's tip, a projectile's end,
 a burst; its child drawn ember). Each levels 1–5 (§8f's `CardLevels`). Everything else is the v0.3 / v0.6 engines.
 
@@ -1593,6 +1603,15 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
   `tests/unit/sim/test_shop_rooms.gd`, which bounds it at 3 %; one in 30 other floors probed, a 12.8 × 8.9 m room
   whose reward stood in the walk-up lane). Floor rules 5: a floor saved under rules 1-4 has no shop rooms in its tables
   and is rebuilt with its terminal. Nothing new is hashed or saved.
+- **v0.8.0 P2 (owner O28): two devices, no choice.** On an Ascension floor in state `OPEN`, standing in the portal's
+  opening (`BossFlow.in_portal`) calls `enter_ascension(Choice.ASCENSION)` (1, v0.7.5's END) and standing within
+  `Ascension.LOOP_RADIUS_M` (0.9 m) of `FloorLayout.loop_pos` calls `enter_ascension(Choice.LOOP)` (2, v0.7.5's ASCEND).
+  The Loop device is placed at setup (`FloorScenario.build`, a loop's last floor: `Ascension.place_loop_device`, a pure
+  function of the layout: the centre of the clear front square of the first spot `Routes.fits` without clearing, else
+  `boss_spawn`); nothing solid is added. Nothing waits on a pick (`World.step` lost the Ascension wait; `ascend_open`
+  and `ascend_declined` stay false and are still hashed and saved). The paragraph below is v0.7.5's, kept for the
+  history: read END as the portal (to the final boss, FB1) and ASCEND as the Loop device; `Ascension.ascended` is
+  `looped`, `ended` is `took_portal`.
 - **The Ascension portal and the endless loop (v0.7.5 AP, owner N4; `Ascension`, `BossFlow`, `RunState`).** On a
   run's last floor of a loop (`RunState.is_last_floor`, loop-local) `RunState.prepare` sets `BossFlow.ascension`: the
   boss room's gate is the Ascension portal (the gate's own footprint, opening and `in_portal`; no Deep gate on that

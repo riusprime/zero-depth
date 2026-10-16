@@ -261,7 +261,8 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `rate_bonus_permille`. `SET_FORM` runs in FORM, `STATUS` and `ELEMENT` in PAYLOAD, `HOOK` in HOOK. v0.6.0 MX4
   (SIM_CONTRACTS §8d): FORM `mirror`; PATTERN `directions` (0 forward, 1 circle), `back_damage_permille`,
   `aim_offset_degrees`; BEHAVIOUR `chains`, `homing_dps` (degrees per second), `returns`, `orbit_seconds`,
-  `intangible`; PAYLOAD `pull_m`, `barrier_seconds`, `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
+  `intangible`; PAYLOAD `barrier_seconds` (v0.8.0 P2: `pull_m` retired; `hole_chance_permille`,
+  `hole_damage_permille` added: Void's black holes), `charge_seconds`, `charge_permille`, `resonance_permille`; SCALE
   `heat_rate_permille`, and the virtual `range` (`MUL_PERMILLE` on whichever field is the form's range).
 - **Validation** (`ERROR`): id; a known family; rarity; known target tags, none twice; at least one op; each op a
   known kind and, for a numeric op, a known field; each op's effective stage equal to the stage its kind or field
@@ -371,7 +372,8 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   kinds and item indices and become the shared cards: S1 Fire `ember_core` (its kill burst + 10 % a level), S2
   Lightning `storm_core` (its chain + 10 % a level), S3 Frost `frost_core` (a new `MUL_PERMILLE damage 1000`,
   + 50 ‰ a level), S4 Venom `venom_core` (the same), S6 Void `gravity_well` (a new `ELEMENT void` on the spell; its
-  pull + 10 % a level); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
+  pull + 10 % a level; v0.8.0 P2, owner O24: the pull is gone, `ADD hole_chance_permille 80` + 30 a level and
+  `ADD hole_damage_permille 300`: black holes); their names became Fire / Fuego, Lightning / Rayo, Frost / Escarcha, Venom / Veneno, Void /
   Vacío. Two new `WAND` items and modifiers: S5 `shared_bleed` (`STATUS bleed 1`, `ELEMENT bleed`,
   `MUL_PERMILLE damage 1000` + 50 ‰ a level; the bleed 1 a stack every 0.5 s, 0.25 s while moving, 4 s, 8 stacks;
   Bleed / Sangrado) and S7 `shared_explosive` (a `HOOK ON_END BURST` 1.4 m at 600 ‰, + 100 ‰ a level, effect
@@ -430,7 +432,9 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `range`): `per_level` counts only for the levels above it (2: from level 3 on; Heavy's slowdown, Flurry's damage loss,
   Thrust's arc). New op field `repeats` (PATTERN; Double Slash: its level). `WandDefinition`: `blade_hit_casts` (2,
   1..3), `blade_cast_gap_seconds` (0.1, 0..1), `once_per_line` (`split_shot`, `shared_explosive`), `blast_merge_after`
-  (8, 0..256), `blast_merge_ids` (`shared_explosive`). `RewardsDefinition.own_weapon_card_permille` (1500, positive).
+  (8, 0..256), `blast_merge_ids` (`shared_explosive`); v0.8.0 P2 (Void's black holes): `hole_seconds` (2.0, 0.1..10),
+  `hole_max` (3, 1..16), `hole_pull_radius_m` (3.5), `hole_pull_mps` (3.0), `hole_radius_m` (1.4; each 0..20),
+  `hole_period_seconds` (0.2, 1/60..`hole_seconds`). `RewardsDefinition.own_weapon_card_permille` (1500, positive).
   `ItemDefinition.index_wave: int` (0..64, default 0): the cards of a later wave index after every earlier wave's
   (`ModifierCompiler.item_defs`), so a card added to a pool never moves a saved index. Shipped: `blade_storm` (rare)
   and `riposte_chain`, `WAND` items of the Blade pool, `index_wave` 1. 86 modifiers, 98 items. Every number is a

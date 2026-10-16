@@ -705,7 +705,7 @@ ITEM_REARGUARD_DESC,Every attack also fires backwards at 60%.,Cada ataque tambi�
 ITEM_WIDE_ARC,Wide Arc,Arco Amplio
 ITEM_WIDE_ARC_DESC,Slashes sweep 60° wider and reach 30% farther.,Tus tajos barren 60° más y llegan un 30% más lejos.
 ITEM_GRAVITY_WELL,Void,Vacío
-ITEM_GRAVITY_WELL_DESC,Hits pull nearby enemies toward the point of hit.,Tus golpes atraen a los enemigos cercanos.
+ITEM_GRAVITY_WELL_DESC,8 % a shot (+3 %/lv): a 2 s black hole pulls and hurts.,8 % por disparo (+3 %/nv): agujero negro que atrae y daña.
 ITEM_SHATTER,Shatter,Estallido
 ITEM_SHATTER_DESC,Kills burst into 4 shards that hit nearby enemies.,Las bajas estallan en 4 esquirlas que golpean cerca.
 ITEM_AFTERSHOCK,Aftershock,Réplica
@@ -987,20 +987,14 @@ ACH_CODEX_TRIGGERS_DESC,See every trigger card in the Codex.,Descubre en el Cód
 ACH_CODEX_ENEMIES_NAME,Field Guide,Guía de campo
 ACH_CODEX_ENEMIES_DESC,Meet every enemy.,Encuentra a todos los enemigos.
 ACH_ASCEND_1_NAME,Ascension,Ascensión
-ACH_ASCEND_1_DESC,Take the Ascension portal and start a new loop.,Toma el portal de la Ascensión y empieza un nuevo ciclo.
+ACH_ASCEND_1_DESC,Take the Loop device and start a new loop.,Toma el dispositivo del Ciclo y empieza un nuevo ciclo.
 ACH_ASCEND_5_NAME,Endless,Sin fin
-ACH_ASCEND_5_DESC,Ascend 5 times.,Asciende 5 veces.
+ACH_ASCEND_5_DESC,Take the Loop device 5 times.,Toma el dispositivo del Ciclo 5 veces.
 HUD_LOOP,Loop %d,Ciclo %d
-HUD_ASCENSION_OPEN,The Ascension portal is open. Walk into the light to end the run or Ascend.,El portal de la Ascensión está abierto. Entra en la luz para terminar la partida o ascender.
-UI_ASCEND_TITLE,Ascension,Ascensión
-UI_ASCEND_LINE,"The last boss has fallen. End the run here, or Ascend: start again from floor 1 with everything you carry.","El último jefe ha caído. Termina la partida aquí o asciende: vuelve a empezar desde el piso 1 con todo lo que llevas."
-UI_ASCEND_END,End the run,Terminar la partida
-UI_ASCEND_END_LINE,Face what waits beyond the portal: beat it and the run is won.,Enfréntate a lo que espera tras el portal: derrótalo y la partida es tuya.
-UI_ASCEND_GO,Ascend,Ascender
-UI_ASCEND_GO_LINE,"Loop %d: new biomes, stronger enemies, more threat. Your wand, cards, levels and stats come with you.","Ciclo %d: biomas nuevos, enemigos más fuertes, más amenaza. Tu varita, cartas, niveles y estadísticas vienen contigo."
-UI_ASCEND_NOT_YET,Not yet,Todavía no
-UI_ASCEND_NOT_YET_LINE,Step back and keep exploring the floor.,Retrocede y sigue explorando el piso.
-UI_ASCEND_HINT,↑/↓ or 1-3 to choose · Enter or A to take · Esc or B: not yet,↑/↓ o 1-3 para elegir · Intro o A para aceptar · Esc o B: todavía no
+HUD_ASCENSION_OPEN,The Ascension portal is open: walk into its light to face the final boss.,El portal de la Ascensión está abierto: entra en su luz para enfrentarte al jefe final.
+HUD_LOOP_DEVICE_OPEN,"Or step onto the Loop device to start loop %d with everything you carry.","O pisa el dispositivo del Ciclo para empezar el ciclo %d con todo lo que llevas."
+WORLD_ASCENSION_NAME,Ascension,Ascensión
+WORLD_LOOP_NAME,Loop,Ciclo
 UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
 UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
 UI_UI_SCALE,Interface size,Tamaño de la interfaz

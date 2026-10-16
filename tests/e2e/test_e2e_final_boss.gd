@@ -1,11 +1,11 @@
 extends GutTest
 ## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss through main.tscn with real input only. As
 ## test_e2e_ascension: the run is moved to its last floor by a labelled TEST HELPER and F10's Restart floor rebuilds it;
-## the dev panel (backtick, clicks: God mode, Kill boss) stands in for the fights. End the run (Enter on the focused
-## first card) takes the hero to the final arena: a round room drawn as the cosmic arena, the boss bar one bar in three
-## named segments. Kill boss ends the Colossus's segment: it shatters (the bar says SHATTERED, no hostile shot stays),
-## the Prism rises from its shards, a save is taken at the Prism's start and Continue after Main menu resumes there;
-## two more Kill boss win the run: the victory recap with the true ending line, the achievement unlocked.
+## the dev panel (backtick, clicks: God mode, Kill boss) stands in for the fights. Walking into the Ascension portal
+## (v0.8.0 P2: no menu) takes the hero to the final arena: a round room drawn as the cosmic arena, the boss bar one bar
+## in three named segments. Kill boss ends the Colossus's segment: it shatters (the bar says SHATTERED, no hostile shot
+## stays), the Prism rises from its shards, a save is taken at the Prism's start and Continue after Main menu resumes
+## there; two more Kill boss win the run: the victory recap with the true ending line, the achievement unlocked.
 
 const LEG_FRAMES := 7000
 
@@ -63,7 +63,7 @@ func _boot_on_last_floor(e: E2e) -> Main:
 	return main
 
 
-## God mode, through the boss door, Kill boss, into the Ascension portal, End the run: true once the final arena is
+## God mode, through the boss door, Kill boss, into the Ascension portal (P2: no menu): true once the final arena is
 ## the world. The dev panel stays open (its God mode keeps the hero up in the arena too).
 func _to_the_arena(e: E2e, main: Main) -> bool:
 	var w := e.world()
@@ -80,19 +80,15 @@ func _to_the_arena(e: E2e, main: Main) -> bool:
 	await e.frames(30)
 	await _click(e, main, "KillBoss")
 	await e.frames(12)
-	var opened: bool = await _walk(
+	var took: bool = await _walk(
 		e,
 		f.portal_pos + f.portal_facing() * 1.0,
-		func() -> bool: return main.driver.reader.ascension_open(),
+		func() -> bool: return main.driver.reader.ascension_choice() == WorldReader.ASCEND_PORTAL,
 		-f.portal_facing()
 	)
-	assert_true(opened, "the Ascension choice opened")
-	if not opened:
+	assert_true(took, "walking into the Ascension portal takes it (v0.8.0 P2: no menu)")
+	if not took:
 		return false
-	var panel := main.get_node("UI/Hud/AscensionPanel") as AscensionPanel
-	assert_eq(panel.focus_index(), 0, "End the run has the focus")
-	assert_eq(panel.card_text(0, "Line"), tr("UI_ASCEND_END_LINE"), "it says what waits")
-	await e.tap(KEY_ENTER)
 	var frames := 0
 	while (main.run == null or not main.run.final_fight) and frames < 400:
 		await e.frames(1)
@@ -113,7 +109,7 @@ func _hostile_shots(w: World) -> int:
 	return n
 
 
-func test_end_the_run_walks_into_the_final_boss_and_beats_it() -> void:
+func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	var e := E2e.new(self)
 	var main := await _boot_on_last_floor(e)
 	if not await _to_the_arena(e, main):

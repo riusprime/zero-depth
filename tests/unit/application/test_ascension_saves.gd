@@ -11,11 +11,11 @@ func _run_table() -> RunTable:
 	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
 
 
-## A run moved into loop 2's floor 1 the way finish_floor moves it (an Ascend from floor 3).
+## A run moved into loop 2's floor 1 the way finish_floor moves it (the Loop device from floor 3; Ascend before P2).
 func _loop_two_run(run_seed: int) -> RunState:
 	var run := SaveLab.run_state(run_seed, 3)
 	var w := SaveLab.build_floor(run)
-	w.boss_flow.ascend_choice = Ascension.Choice.ASCEND
+	w.boss_flow.ascend_choice = Ascension.Choice.LOOP
 	run.finish_floor(w)
 	return run
 
@@ -76,4 +76,27 @@ func test_an_older_last_floor_save_resumes_with_the_ascension_portal() -> void:
 	var w2 := SaveLab.build_floor(back)
 	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "a snapshot without the AP fields restores")
 	assert_true(w2.boss_flow.ascension, "the last floor gets the Ascension portal")
+	assert_true(w2.floor_layout.has_loop_device, "v0.8.0 P2: and the Loop device beside it")
 	assert_eq(w2.state_hash(), w.state_hash(), "and the same state")
+
+
+## v0.8.0 P2 (owner O28): a last-floor save made before P2 (its snapshot holds the retired choice's fields, and the
+## device taken in the old numbers) restores onto the rebuilt floor, Loop device and all; Ascend's old number is the
+## Loop device's.
+func test_p2_a_last_floor_save_from_before_p2_restores_with_the_two_devices() -> void:
+	var run := SaveLab.run_state(78, 3)
+	var w := SaveLab.build_floor(run)
+	CombatLab.idle(w, 20)
+	var p := RunSaver.payload_of(w, run, 78, PackedByteArray())
+	var flow: Dictionary = p["world"]["world"][&"boss_flow"]
+	assert_true(flow.has(&"ascend_open"), "the retired fields are still saved")
+	flow[&"ascend_choice"] = 2  # v0.7.5's Ascend
+	var back := RunSaver.run_from(p, _run_table())
+	var w2 := SaveLab.build_floor(back)
+	assert_eq(WorldSnapshot.apply(w2, p["world"]), "", "it restores")
+	assert_true(w2.floor_layout.has_loop_device)
+	assert_eq(
+		WorldReader.new(w2).ascension_choice(),
+		WorldReader.ASCEND_LOOP,
+		"Ascend reads as the Loop device"
+	)

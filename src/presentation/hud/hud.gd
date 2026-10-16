@@ -59,8 +59,6 @@ var shop := ShopHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 var swap := SwapPanel.new()
-## v0.7.5 AP: the Ascension portal's choice (End the run, Ascend, Not yet).
-var ascension := AscensionPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
 var _regen := RegenPulse.new()  # v0.3.0 L25: green pulse on the HP bar while regenerating.
@@ -173,8 +171,6 @@ func _init() -> void:
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
-	add_child(ascension)  # v0.7.5 AP: the Ascension portal's choice; its answer is input, like a pick
-	ascension.picked.connect(_pick.picked.emit)
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
 
 
@@ -249,7 +245,6 @@ func sync(reader: WorldReader) -> void:
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
 	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
-	ascension.sync(reader)  # v0.7.5 AP
 
 
 func _process(delta: float) -> void:
@@ -425,8 +420,10 @@ func _gate_note(reader: WorldReader) -> String:
 			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
 				return ""
 			var open := tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
-			if reader.ascension_floor():  # v0.7.5 AP
+			if reader.ascension_floor():  # v0.7.5 AP; v0.8.0 P2 (O28): the two devices
 				open = tr("HUD_ASCENSION_OPEN")
+				if reader.has_loop_device():
+					open += "\n" + tr("HUD_LOOP_DEVICE_OPEN") % (reader.loop() + 1)
 			return open + "\n" + tr("HUD_EXPLORE_AFTER_BOSS")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())

@@ -37,7 +37,9 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 - [ ] Can you dodge every melee enemy now that their red ground marks are gone (only the body tells the wind-up)?
 - [ ] Enemy colours by role (palette A): do the roles read at a glance?
 - [ ] Each boss's signature: does each fight now stand out?
-- [ ] The final boss from a real run: End the run → arena → three bodies → the true ending.
+- [ ] The final boss from a real run: the Ascension portal (walk in, no menu since P2) → arena → three bodies → the true ending.
+- [ ] P2: the last floor's two devices: do the Ascension portal and the green Loop device beside it read as two separate things? Is the Loop device easy to find and to step on?
+- [ ] P2: Void's black holes (8 % a shot, +3 % a level): do they feel good, and is the pull strong enough?
 - [ ] Blade vs Gun: does the Blade now combine as well? Is Blade Storm still worth taking?
 - [ ] The Ember stone menus and cards, in English and Spanish.
 - [ ] The 24 designed rooms and the shop stall in every biome.
@@ -69,6 +71,8 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D17 | The blue pulse costs more to draw than the old squares: the stacked-Gun test went from 7.7 to 8.1 ms a frame (with Twin 8.4 to 11.1 ms), still under the 12 ms target on average. Keep the look, or simplify it under heavy fire | keep | GUN_FEEL.md |
 | D18 | **Blade hit-stop:** the game already freezes on every landed Blade swing (3, 3, 4 and 7 frames by combo step, since v0.1.0) and GF3 added the 2-frame view freeze you asked for on top. Keep both, keep only the game's, or shorten the game's to 2 frames | both | BLADE_FEEL.md "Found" |
 | D19 | The Blade's slash impact reads faint in the renders (big bodies hide it, its sparks wash out on pale sand and the white flash). Bigger / brighter? | as built | BLADE_FEEL.md |
+| D20 | Void's black holes (P2, starting values): 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m at 3 m/s, every 0.2 s 30 % of the shot on enemies within 1.4 m; on the Blade a slash rolls where it first lands; the roll uses the existing `ability` stream (no new stream). OK? | as built | PLAN "P2"; VOID_AND_PORTALS.md |
+| D21 | The Loop device stands beside the Ascension portal where a Deep gate would (no menu, no "End the run"); the two Ascension achievements now say "Take the Loop device". OK? | as built | FINAL_BOSS.md "The flow since P2" |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 

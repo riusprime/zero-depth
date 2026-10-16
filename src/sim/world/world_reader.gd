@@ -156,12 +156,11 @@ const RARITY_LEGENDARY := Offers.LEGENDARY
 ## v0.5.0 RT: the routes (Routes.Route).
 const ROUTE_NORMAL := Routes.Route.NORMAL
 const ROUTE_DEEP := Routes.Route.DEEP
-## v0.7.5 AP: the Ascension portal's choices (ascension_choice) and the picks that send them (InputFrame.pick).
+## v0.7.5 AP: the device taken on the Ascension floor (ascension_choice); v0.8.0 P2 (O28): the Ascension portal or
+## the Loop device (no picks: walking in is the choice).
 const ASCEND_NONE := Ascension.Choice.NONE
-const ASCEND_END := Ascension.Choice.END
-const ASCEND_ASCEND := Ascension.Choice.ASCEND
-const PICK_ASCEND_END := Ascension.PICK_END
-const PICK_ASCEND_ASCEND := Ascension.PICK_ASCEND
+const ASCEND_PORTAL := Ascension.Choice.ASCENSION
+const ASCEND_LOOP := Ascension.Choice.LOOP
 const RARITY_RARE := ItemTable.RARE
 ## Kit (v0.3.5 K): the build skills.
 const SKILL_LUNGE_CLEAVE := SkillTable.Kind.LUNGE_CLEAVE
@@ -484,16 +483,16 @@ func mine_fuse(k: int) -> int:
 	return -1 if m.fuse[k] < 0 else clampi(m.fuse[k] * 1000 / maxi(1, m.fuse_total[k]), 0, 1000)
 
 
-## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead,
-## 3 when the portal of a floor before the last was taken (the app loads the next floor).
-## v0.8.0 FB1 (F1): End the run goes on to the final arena (3) when the run has a final boss; the final arena's
-## outcome is 1 once its last body fell.
+## 0 while fighting, 1 when the last wave is cleared (or the run's last portal taken), 2 when the player is dead, 3 when
+## the portal of a floor before the last was taken (the app loads the next floor). v0.8.0 FB1 (F1): the Ascension portal
+## (P2) goes on to the final arena (3) when the run has a final boss; the final arena's outcome is 1 once its last body
+## fell.
 func outcome() -> int:
 	if _w.final_fight != null and _w.final_fight.won and _w.boss_flow != null:
 		return 1
 	if _w.boss_flow != null and _w.boss_flow.exited():
-		if _w.boss_flow.ascension:  # v0.7.5 AP: End the run wins it; Ascend goes on to the next loop
-			return 3 if Ascension.ascended(_w) or _w.boss_flow.final_next else 1
+		if _w.boss_flow.ascension:  # v0.8.0 P2: the Loop device or the final boss go on; no final boss: won
+			return 3 if Ascension.looped(_w) or _w.boss_flow.final_next else 1
 		return 1 if _w.floor_index >= _w.floor_count else 3
 	if _w.player_dead():
 		return 2
@@ -1076,14 +1075,32 @@ func ascension_floor() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.ascension
 
 
-## v0.7.5 AP: the Ascension portal's choice is open (the world waits; AscensionPanel shows it).
-func ascension_open() -> bool:
-	return Ascension.waiting(_w)
-
-
-## v0.7.5 AP: the choice taken: ASCEND_NONE, ASCEND_END or ASCEND_ASCEND.
+## v0.7.5 AP: the device taken: ASCEND_NONE, ASCEND_PORTAL or ASCEND_LOOP (v0.8.0 P2).
 func ascension_choice() -> int:
 	return _w.boss_flow.ascend_choice if _w.boss_flow != null else ASCEND_NONE
+
+
+## v0.8.0 P2 (owner O28): the Loop device beside the Ascension portal (a loop's last floor): whether it stands, its
+## centre, the way it faces and the radius that takes the hero (it opens with the portal: portal_active).
+func has_loop_device() -> bool:
+	return ascension_floor() and _w.floor_layout != null and _w.floor_layout.has_loop_device
+
+
+func loop_device_pos() -> Vector2:
+	return _w.floor_layout.loop_pos if _w.floor_layout != null else Vector2.ZERO
+
+
+func loop_device_angle() -> int:
+	return _w.floor_layout.loop_angle if _w.floor_layout != null else 0
+
+
+func loop_device_radius() -> float:
+	return Ascension.LOOP_RADIUS_M
+
+
+## v0.8.0 P2 (owner O24): Void's black holes standing (BlackHoles.read: pos, from, age, life, radius, pull_radius).
+func black_holes() -> Array:
+	return BlackHoles.read(_w)
 
 
 func has_boss_room() -> bool:
@@ -1214,11 +1231,16 @@ func arena_barriers() -> Array[Rect2]:
 
 
 ## The gate the hero went into (the Deep gate once it was taken, else the gate): its centre and facing.
+## v0.8.0 P2: the Loop device once it was taken.
 func entered_portal_pos() -> Vector2:
+	if ascension_choice() == ASCEND_LOOP:
+		return loop_device_pos()
 	return deep_portal_pos() if route_taken() == Routes.Route.DEEP else portal_pos()
 
 
 func entered_portal_angle() -> int:
+	if ascension_choice() == ASCEND_LOOP:
+		return loop_device_angle()
 	return deep_portal_angle() if route_taken() == Routes.Route.DEEP else portal_angle()
 
 

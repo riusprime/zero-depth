@@ -518,15 +518,13 @@ func step(frame: InputFrame) -> void:
 			Rewards.choose(self, frame)
 		tick += 1
 		return
-	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice;
-	# v0.7.5 AP: so does the Ascension portal's.
-	if shop.open or ev.open >= 0 or Ascension.waiting(self):
+	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
+	# (v0.7.5 AP's Ascension choice waited here too; v0.8.0 P2 retired it: two devices, no panel.)
+	if shop.open or ev.open >= 0:
 		if shop.open:
 			Shop.choose(self, frame)
-		elif ev.open >= 0:
-			Events.choose(self, frame)
 		else:
-			Ascension.choose(self, frame)
+			Events.choose(self, frame)
 		tick += 1
 		return
 	if boss_flow != null and boss_flow.holds_world():  # Run flow: the floor is over, or the portal transit (PT).

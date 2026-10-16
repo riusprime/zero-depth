@@ -6,9 +6,9 @@ extends GutTest
 ##   run's combo or crescents, a Gun run's own shots in its look), answers the hero's dash (Space) with its own, and
 ##   casts the card, its name over its head.
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
-##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, End the run on the way; at the Nemesis,
-##   its HP is the build's formula and it answers a dash; Kill boss beats it: the victory recap with the true ending,
-##   Crown Breaker, Untouched and Beyond the Loop unlocked.
+##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
+##   Nemesis, its HP is the build's formula and it answers a dash; Kill boss beats it: the victory recap with the true
+##   ending, Crown Breaker, Untouched and Beyond the Loop unlocked.
 
 const LEG_FRAMES := 7000
 const LIMIT := 1500
@@ -238,13 +238,12 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 	await _e.frames(30)
 	await _click(main, "KillBoss")
 	await _e.frames(12)
-	var opened: bool = await _walk(
+	var took: bool = await _walk(
 		f.portal_pos + f.portal_facing() * 1.0,
-		func() -> bool: return main.driver.reader.ascension_open(),
+		func() -> bool: return main.driver.reader.ascension_choice() == WorldReader.ASCEND_PORTAL,
 		-f.portal_facing()
 	)
-	assert_true(opened, "the Ascension choice opened")
-	await _e.tap(KEY_ENTER)  # End the run
+	assert_true(took, "walked into the Ascension portal (v0.8.0 P2: no menu)")
 	var frames := 0
 	while (main.run == null or not main.run.final_fight) and frames < 400:
 		await _e.frames(1)

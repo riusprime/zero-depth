@@ -73,7 +73,6 @@ const FIELD_STAGE := {
 	&"returns": [2, &"returns", ""],
 	&"orbit_seconds": [2, &"orbit_ticks", "ticks"],
 	&"intangible": [2, &"intangible", ""],
-	&"pull_m": [3, &"pull_m", ""],
 	&"barrier_seconds": [3, &"barrier_ticks", "ticks"],
 	&"charge_seconds": [3, &"charge_ticks", "ticks"],
 	&"charge_permille": [3, &"charge_permille", ""],
@@ -100,6 +99,9 @@ const FIELD_STAGE := {
 	&"repeats": [1, &"repeats", ""],
 	# v0.8.0 PF2 (owner O9): a bolt hook's projectiles alive at once, at most (Blade Storm's blades)
 	&"alive_max": [1, &"alive_max", ""],
+	# v0.8.0 P2 (owner O24, Void): a shot's chance to leave a black hole (per mille) and its pulses' damage share
+	&"hole_chance_permille": [3, &"hole_permille", ""],
+	&"hole_damage_permille": [3, &"hole_damage_permille", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

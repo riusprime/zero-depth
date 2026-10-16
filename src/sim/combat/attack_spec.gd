@@ -71,6 +71,8 @@ const INT_FIELDS: Array[StringName] = [
 const LATE_INT_FIELDS: Array[StringName] = [
 	&"repeats",
 	&"alive_max",  # v0.8.0 PF2
+	&"hole_permille",  # v0.8.0 P2 (O24: Void's black holes)
+	&"hole_damage_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -171,8 +173,14 @@ var intangible := 0
 ## Ability merges (Modifiers.mirror): 1 the spec copies the weapon's form, pattern and every hook (Mirror Drone); 2
 ## it takes every hook of the weapon (Blade Orbit).
 var mirror := 0
-## Payload: a burst pulls the enemies it touches this far toward its centre (Gravity Well).
+## Payload: a burst pulls the enemies it touches this far toward its centre (v0.6.0 MX4's Gravity Well; v0.8.0 P2:
+## retired with Void's pull, no card sets it; kept for the hash order).
 var pull_m := 0.0
+## v0.8.0 P2 (owner O24, Void): each shot (a projectile where it ends) or landing slash of this spec leaves a black hole
+## with this chance (per mille, one draw on the `ability` stream; 0 = never); its pulses deal this share of the shot's
+## damage (BlackHoles).
+var hole_permille := 0
+var hole_damage_permille := 0
 ## The body spec's rules (never launched): out of combat this long, a barrier absorbs one hit (Aether Shell); after
 ## this long without attacking the next attack deals × charge_permille (Ascension); each status on an enemy adds
 ## this to the damage it takes (Resonance).
@@ -388,6 +396,7 @@ func read() -> Dictionary:
 		"intangible": intangible,
 		"mirror": mirror,
 		"pull_m": pull_m,
+		"hole_permille": hole_permille,  # v0.8.0 P2
 		"barrier_ticks": barrier_ticks,
 		"charge_ticks": charge_ticks,
 		"charge_permille": charge_permille,

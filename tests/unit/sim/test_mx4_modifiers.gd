@@ -225,13 +225,10 @@ func test_m14_wide_arc_widens_arcs_and_grows_projectiles() -> void:
 	assert_almost_eq(Modifiers.bolt(w).radius_m, Modifiers.bolt(plain).radius_m, 1e-5, "Blade-only")
 
 
-func test_m15_gravity_well_pulls_enemies_toward_the_hit() -> void:
-	var w := W.world(
-		&"gun", [&"gravity_well"], [[Vector2(2.0, 0.0), 2000], [Vector2(2.0, 2.0), 2000]]
-	)
-	var k := W.hook_of(Modifiers.bolt(w), &"gravity_well")
-	assert_almost_eq(k.child.pull_m, 0.8, 1e-6)
-	var before := w.actors.pos(2)
-	W.run(w, 1, 0, W.S)
-	W.run(w, 12)
-	assert_lt(w.actors.pos(2).y, before.y - 0.3, "the side enemy is pulled toward the hit")
+## v0.8.0 P2 (owner O24): Void no longer pulls on every hit; its shots leave black holes by chance
+## (test_black_holes.gd).
+func test_m15_gravity_well_leaves_black_holes_instead_of_a_pull_on_every_hit() -> void:
+	var w := W.world(&"gun", [&"gravity_well"])
+	assert_null(W.hook_of(Modifiers.bolt(w), &"gravity_well"), "no pull burst")
+	assert_eq(Modifiers.bolt(w).pull_m, 0.0)
+	assert_eq(Modifiers.bolt(w).hole_permille, 80, "a black hole's chance")

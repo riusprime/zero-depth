@@ -1,62 +1,51 @@
 extends GutTest
-## v0.7.5 AP: the Ascension portal's views. The choice panel shows what the sim waits on and sends the picks as input
-## (End the run 1, Ascend 2, Not yet = cancel); the portal has its own look (gold-white and lavender, never the
+## v0.7.5 AP: the Ascension portal's views (v0.8.0 P2: the choice panel is gone; the Loop device stands beside the
+## portal); the portal has its own look (gold-white and lavender, never the
 ## visor blue or the Deep violet) and its column rises when the portal opens; the HUD, pause line and recap say
 ## "Loop N · " past the first loop, and the recap counts the loops cleared.
 
 
-func _choice_world() -> World:
-	var w := SaveLab.floor_world(41, 3)
-	w.boss_flow.state = BossFlow.State.OPEN  # a state set for the view only: the sim's own path is test_ascension
-	w.boss_flow.ascend_open = true
-	return w
-
-
-func _key(panel: AscensionPanel, code: Key) -> void:
-	var ev := InputEventKey.new()
-	ev.physical_keycode = code
-	ev.keycode = code
-	ev.pressed = true
-	panel._input(ev)
-
-
-func test_the_panel_opens_on_the_choice_and_sends_the_picks() -> void:
-	var w := _choice_world()
-	var reader := WorldReader.new(w)
-	var panel := AscensionPanel.new()
-	add_child_autofree(panel)
-	var sent := []
-	panel.picked.connect(func(v: int) -> void: sent.append(v))
-	assert_false(panel.visible, "hidden until the choice opens")
-	panel.sync(reader)
-	assert_true(panel.visible and panel.is_open())
-	assert_eq(panel.card_count(), 3)
-	assert_eq(panel.title_text(), tr("UI_ASCEND_TITLE"))
-	assert_eq(panel.card_text(0, "Title"), tr("UI_ASCEND_END"))
-	assert_eq(panel.card_text(1, "Title"), tr("UI_ASCEND_GO"))
-	assert_eq(panel.card_text(1, "Line"), tr("UI_ASCEND_GO_LINE") % 2, "Ascend names the next loop")
-	assert_eq(panel.card_text(2, "Title"), tr("UI_ASCEND_NOT_YET"))
-	assert_eq(panel.focus_index(), 0, "End the run has the focus")
-	_key(panel, KEY_DOWN)
-	assert_eq(panel.focus_index(), 1)
-	_key(panel, KEY_ENTER)
-	assert_eq(sent, [WorldReader.PICK_ASCEND_ASCEND], "Enter sends Ascend")
-	_key(panel, KEY_ENTER)
-	assert_eq(sent.size(), 1, "one answer per opening")
-	w.boss_flow.ascend_open = false
-	panel.sync(reader)
-	assert_false(panel.visible, "it closes with the sim's choice")
-	w.boss_flow.ascend_open = true
-	panel.sync(reader)
-	_key(panel, KEY_ESCAPE)
-	assert_eq(sent[1], InputFrame.PICK_CANCEL, "Esc is Not yet")
-	w.boss_flow.ascend_open = false
-	panel.sync(reader)
-	w.boss_flow.ascend_open = true
-	panel.sync(reader)
-	_key(panel, KEY_1)
-	_key(panel, KEY_ENTER)
-	assert_eq(sent[2], WorldReader.PICK_ASCEND_END, "1 then Enter is End the run")
+## v0.8.0 P2 (owner O28): the Loop device has its own look (green, apart from the portal's gold and lavender, the
+## gate's blue and Deep's violet), smaller than the portal; dormant and nameless until the portal opens, then lit,
+## turning and named; reduced motion holds its turn.
+func test_p2_the_loop_device_has_its_own_look_and_lights_when_open() -> void:
+	var d := LoopDevice.new()
+	add_child_autofree(d)
+	d.setup(Vector2(1.0, 2.0), 0, 0.9)
+	assert_true(d.is_sealed(), "dormant at first")
+	assert_false(d.label.visible, "no name while the boss lives")
+	for c: Color in [LoopDevice.GREEN]:
+		for other: Color in [
+			PortalGate.visor_blue(),
+			PortalGate.DEEP_VIOLET,
+			PortalGate.DEEP_RIM,
+			AscensionPortal.GOLD,
+			AscensionPortal.LAVENDER,
+			AscensionPortal.CORE,
+		]:
+			assert_gt(
+				_dist(c, other), 0.25, "%s reads apart from %s" % [c.to_html(), other.to_html()]
+			)
+	assert_lt(
+		LoopDevice.RING_Y + LoopDevice.RING_R,
+		AscensionPortal.COLUMN_H * 0.25,
+		"smaller than the portal"
+	)
+	var dim := d.light.light_energy
+	d.calm = false
+	d.set_sealed(false)
+	assert_true(d.label.visible, "named once open")
+	assert_eq(d.label.text, tr("WORLD_LOOP_NAME"))
+	d._process(0.5)
+	assert_gt(d.light.light_energy, dim, "lit")
+	assert_gt(d.chase, 0.0, "its arrowheads chase round the ring")
+	var calm := LoopDevice.new()
+	add_child_autofree(calm)
+	calm.setup(Vector2.ZERO, 0, 0.9)
+	calm.calm = true
+	calm.set_sealed(false)
+	calm._process(0.5)
+	assert_eq(calm.chase, 0.0, "reduced motion: they stand")
 
 
 func test_the_portal_has_its_own_look_and_its_column_rises() -> void:
@@ -100,11 +89,22 @@ func test_the_world_view_draws_the_ascension_portal_on_the_last_floor() -> void:
 	view.setup(WorldReader.new(w), _palette(), 40.0)
 	assert_not_null(view.ascension, "the Ascension portal")
 	assert_null(view.gate, "not the blue gate")
+	assert_not_null(view.loop_device, "v0.8.0 P2: and the Loop device")
+	assert_eq(
+		view.loop_device.position, SimPlane.to_3d(w.floor_layout.loop_pos), "where the sim's pad is"
+	)
+	assert_true(view.loop_device.is_sealed(), "dormant while the boss lives")
+	w.boss_flow.state = BossFlow.State.OPEN  # a state set for the view only (the sim's path: test_ascension)
+	view.sync()
+	assert_false(view.loop_device.is_sealed(), "it opens with the portal")
+	assert_false(view.ascension.is_sealed())
+	assert_true(view.ascension.label.visible, "the portal is named too")
 	var w1 := SaveLab.floor_world(42, 1)
 	var view1 := WorldViewRoot.new()
 	add_child_autofree(view1)
 	view1.setup(WorldReader.new(w1), _palette(), 40.0)
 	assert_null(view1.ascension, "floor 1 keeps its gate")
+	assert_null(view1.loop_device, "and has no Loop device")
 	assert_not_null(view1.gate)
 
 

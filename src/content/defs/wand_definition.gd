@@ -30,6 +30,16 @@ const MAX_SLOTS := 8
 ## merges into it (0 = never).
 @export var blast_merge_after := 8
 @export var blast_merge_ids: Array[StringName] = [&"shared_explosive"]
+## v0.8.0 P2 (owner O24, Void): a black hole a Void shot leaves (its chance and its pulses' damage share are the card's,
+## data/modifiers/gravity_well.tres): how long it lasts, how many stand at once (a new one past it replaces the
+## oldest), how far it pulls (m) and how fast (m/s), the core whose enemies its pulses hurt (m) and the gap between
+## pulses (s). Starting values.
+@export var hole_seconds := 2.0
+@export var hole_max := 3
+@export var hole_pull_radius_m := 3.5
+@export var hole_pull_mps := 3.0
+@export var hole_radius_m := 1.4
+@export var hole_period_seconds := 0.2
 
 
 func category() -> StringName:
@@ -77,4 +87,21 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if blast_merge_after < 0 or blast_merge_after > 256:
 		issues.append(ValidationIssue.new(&"range", resource_path, "blast_merge_after is 0..256"))
+	if hole_seconds < 0.1 or hole_seconds > 10.0:  # v0.8.0 P2
+		issues.append(ValidationIssue.new(&"range", resource_path, "hole_seconds is 0.1..10"))
+	if hole_max < 1 or hole_max > 16:
+		issues.append(ValidationIssue.new(&"range", resource_path, "hole_max is 1..16"))
+	if hole_period_seconds < 1.0 / 60.0 or hole_period_seconds > hole_seconds:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "hole_period_seconds is 1/60..hole_seconds"
+			)
+		)
+	for pair: Array in [
+		["hole_pull_radius_m", hole_pull_radius_m],
+		["hole_pull_mps", hole_pull_mps],
+		["hole_radius_m", hole_radius_m],
+	]:
+		if float(pair[1]) < 0.0 or float(pair[1]) > 20.0:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s is 0..20" % pair[0]))
 	return issues

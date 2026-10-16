@@ -1,9 +1,9 @@
 extends GutTest
 ## v0.7.5 AP (owner N4): the Ascension portal and the endless loop, in the sim. On a run's last floor of a loop the
-## gate is the Ascension portal; walking in opens the choice and the world waits; End the run leads to the final boss
-## (v0.8.0 FB1; it wins the run when beaten), Ascend ends the
-## floor and the run goes on at floor 1 of the next loop with the build carried, new biomes and seeds, harder (data);
-## Not yet closes it until the hero steps out. The run's floor counts across loops (shop and curse cadence, wand slots).
+## gate is the Ascension portal. v0.8.0 P2 (owner O28): no choice panel; two devices open with the boss's death:
+## walking into the Ascension portal leads to the final boss (v0.8.0 FB1; it wins the run when beaten), stepping onto
+## the Loop device beside it ends the floor and the run goes on at floor 1 of the next loop with the build carried,
+## new biomes and seeds, harder (data). The run's floor counts across loops (shop and curse cadence, wand slots).
 
 const LONG := 1 << 24
 
@@ -64,31 +64,34 @@ func _open_portal(w: World) -> void:
 	w.actors.set_pos(0, f.portal_front_point())
 
 
-## The frame that walks toward the gate's face.
-func _into_gate(w: World) -> InputFrame:
+## The frame that walks from the hero toward `to`.
+func _toward(w: World, to: Vector2) -> InputFrame:
 	var frame := InputFrame.new()
-	var to_gate := -w.floor_layout.portal_facing()
-	frame.move = Vector2i(
-		roundi(to_gate.x * SimTick.MOVE_MAX), roundi(to_gate.y * SimTick.MOVE_MAX)
-	)
+	var d := (to - w.player_pos()).normalized()
+	frame.move = Vector2i(roundi(d.x * SimTick.MOVE_MAX), roundi(d.y * SimTick.MOVE_MAX))
 	return frame
 
 
-func _walk_in(w: World) -> int:
-	var frame := _into_gate(w)
+## Walks toward `to` (re-aimed each tick) until the hero goes in; the ticks it took, or -1.
+func _walk_to(w: World, to: Vector2) -> int:
 	return CombatLab.until(
 		w,
 		func(x: World) -> bool:
-			x.step(frame)
-			return Ascension.waiting(x) or x.boss_flow.state == BossFlow.State.ENTERING,
+			x.step(_toward(x, to))
+			return x.boss_flow.state == BossFlow.State.ENTERING,
 		240
 	)
 
 
-func _pick(w: World, value: int) -> void:
-	var frame := InputFrame.new()
-	frame.pick = value
-	w.step(frame)
+## Walks from the portal's front into the Ascension portal's opening.
+func _walk_in(w: World) -> int:
+	var f := w.floor_layout
+	return _walk_to(w, f.portal_pos)
+
+
+## Walks from the portal's front onto the Loop device.
+func _step_on_loop(w: World) -> int:
+	return _walk_to(w, w.floor_layout.loop_pos)
 
 
 func test_only_the_last_floor_of_a_loop_has_the_ascension_portal() -> void:
@@ -96,49 +99,74 @@ func test_only_the_last_floor_of_a_loop_has_the_ascension_portal() -> void:
 	var w := _floor_world(r)
 	assert_false(w.boss_flow.ascension, "floor 1 has the gate")
 	assert_false(WorldReader.new(w).ascension_floor())
+	assert_false(WorldReader.new(w).has_loop_device(), "and no Loop device")
 	r = _last_floor_run(11)
 	assert_eq(r.floor_index, 3)
 	var w3 := _floor_world(r)
 	assert_true(w3.boss_flow.ascension, "the run's last floor has the Ascension portal")
 	assert_true(WorldReader.new(w3).ascension_floor())
-	assert_false(w3.floor_layout.has_deep_portal, "and no Deep gate beside it")
+	assert_true(WorldReader.new(w3).has_loop_device(), "and the Loop device beside it")
+	assert_false(w3.floor_layout.has_deep_portal, "and no Deep gate")
 
 
-func test_walking_in_opens_the_choice_and_the_world_waits() -> void:
+## v0.8.0 P2 (owner O28): the Loop device stands in the boss room, apart from the portal's opening, clear of every wall
+## and solid piece, and adds nothing solid (the floor's walls are the ones it would have without it).
+func test_p2_the_loop_device_stands_apart_and_adds_nothing_solid() -> void:
+	for seed_value in [21, 22, 23, 24, 25, 26]:
+		var r := _last_floor_run(seed_value)
+		var w := _floor_world(r)
+		var f := w.floor_layout
+		assert_true(f.has_loop_device, "seed %d: placed" % seed_value)
+		assert_eq(f.room_of(f.loop_pos), f.boss_room, "seed %d: in the boss room" % seed_value)
+		assert_false(
+			BossFlow.in_portal(f, f.loop_pos), "seed %d: not in the portal's opening" % seed_value
+		)
+		assert_gt(
+			f.loop_pos.distance_to(f.portal_front_point()),
+			Ascension.LOOP_RADIUS_M + 2.0,
+			"seed %d: apart from the portal's front" % seed_value
+		)
+		for wall in w.walls:
+			assert_eq(
+				Collide.circle_vs_obb(f.loop_pos, Ascension.LOOP_RADIUS_M, wall),
+				Vector2.ZERO,
+				"seed %d: no wall on the pad" % seed_value
+			)
+		assert_eq(
+			w.walls.size(),
+			f.walls.size() + 1,
+			"seed %d: the layout's walls and the gate's footprint only" % seed_value
+		)
+
+
+func test_p2_the_devices_wait_for_the_boss() -> void:
 	var r := _last_floor_run(12)
 	var w := _floor_world(r)
-	var reader := WorldReader.new(w)
-	_open_portal(w)
-	assert_gte(_walk_in(w), 0, "walking into the opening reaches the portal")
-	assert_true(reader.ascension_open(), "the choice opened")
-	assert_eq(reader.outcome(), 0, "nothing is decided yet")
-	var at := w.player_pos()
-	var tick := w.tick
-	var frame := _into_gate(w)
-	for k in 30:
-		w.step(frame)
-	assert_eq(w.player_pos(), at, "the world waits for the choice")
-	assert_eq(w.tick, tick + 30, "the ticks still count")
-	assert_true(reader.ascension_open())
-	_pick(w, 3)  # not one of the choices
-	assert_true(reader.ascension_open(), "any other pick is ignored")
+	var f := w.floor_layout
+	w.actors.set_pos(0, f.boss_door_inside(1.5))
+	CombatLab.idle(w, 4)
+	assert_eq(w.boss_flow.state, BossFlow.State.FIGHT, "the boss room sealed")
+	w.actors.set_pos(0, f.loop_pos)
+	CombatLab.idle(w, 5)
+	assert_eq(
+		w.boss_flow.state, BossFlow.State.FIGHT, "the Loop device is dormant while the boss lives"
+	)
+	assert_eq(WorldReader.new(w).ascension_choice(), WorldReader.ASCEND_NONE)
 
 
-## v0.8.0 FB1 (owner, F1 "changed"): End the run no longer wins at once: it takes the hero on to the final arena (the
-## run's last world, test_final_boss.gd), on the same floor and loop.
-func test_end_the_run_leads_to_the_final_boss() -> void:
+## v0.8.0 P2 (owner O28): walking into the Ascension portal goes straight in (no menu, the world never waits), on to
+## the final arena (v0.8.0 FB1: the run's last world, test_final_boss.gd), on the same floor and loop.
+func test_p2_the_ascension_portal_leads_to_the_final_boss() -> void:
 	var r := _last_floor_run(13)
 	var w := _floor_world(r)
 	var reader := WorldReader.new(w)
 	_open_portal(w)
-	_walk_in(w)
-	_pick(w, WorldReader.PICK_ASCEND_END)
-	assert_false(reader.ascension_open(), "the choice closed")
+	assert_gte(_walk_in(w), 0, "walking into the opening takes the portal")
 	assert_eq(w.boss_flow.state, BossFlow.State.ENTERING, "the hero goes in")
-	assert_eq(reader.ascension_choice(), WorldReader.ASCEND_END)
+	assert_eq(reader.ascension_choice(), WorldReader.ASCEND_PORTAL)
 	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
 	assert_true(w.boss_flow.exited())
-	assert_eq(reader.outcome(), 3, "End the run: on to the final arena (FB1)")
+	assert_eq(reader.outcome(), 3, "on to the final arena (FB1)")
 	assert_eq(r.loops_cleared(w), 1, "the loop's floors are done")
 	r.finish_floor(w)
 	assert_true(r.final_fight, "the next world is the final boss's")
@@ -146,20 +174,40 @@ func test_end_the_run_leads_to_the_final_boss() -> void:
 	assert_eq(r.floor_index, 3)
 
 
-func test_ascend_starts_the_next_loop_with_the_build() -> void:
+## v0.8.0 P2: a run without a final boss (a table with none) is won through the Ascension portal.
+func test_p2_without_a_final_boss_the_portal_wins_the_run() -> void:
+	var t := _run_table()
+	t.final_bosses.clear()
+	var r := RunState.start(13, t)
+	for k in r.table.floors - 1:
+		var wk := _floor_world(r)
+		wk.boss_flow.route_taken = Routes.Route.NORMAL
+		r.finish_floor(wk)
+	var w := _floor_world(r)
+	_open_portal(w)
+	_walk_in(w)
+	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
+	assert_eq(WorldReader.new(w).outcome(), 1, "the run is won")
+
+
+func test_p2_the_loop_device_starts_the_next_loop_with_the_build() -> void:
 	var r := _last_floor_run(14)
 	var w := _floor_world(r)
 	var reader := WorldReader.new(w)
 	w.add_item(0)
 	_open_portal(w)
-	_walk_in(w)
-	_pick(w, WorldReader.PICK_ASCEND_ASCEND)
+	assert_gte(_step_on_loop(w), 0, "stepping onto the Loop device takes it")
+	assert_eq(reader.ascension_choice(), WorldReader.ASCEND_LOOP)
+	assert_eq(
+		reader.entered_portal_pos(), w.floor_layout.loop_pos, "the way in draws the hero to it"
+	)
 	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
-	assert_eq(reader.outcome(), 3, "Ascend: on to the next floor")
+	assert_eq(reader.outcome(), 3, "on to the next floor")
 	var held := w.shards
 	var biome_3 := r.biome_of()
 	var seeds := [r.floor_seed(1), r.floor_seed(2), r.floor_seed(3)]
 	r.finish_floor(w)
+	assert_false(r.final_fight, "not the final boss")
 	assert_eq(r.loop, 2, "loop 2")
 	assert_eq(r.floor_index, 1, "at its floor 1")
 	assert_eq(r.loop_floors, 3)
@@ -176,28 +224,25 @@ func test_ascend_starts_the_next_loop_with_the_build() -> void:
 	assert_eq(w2.items_owned, PackedInt32Array([0]), "the build came along")
 	assert_eq(w2.shards, held / 2, "half the shards, as through any portal")
 	assert_false(w2.boss_flow.ascension, "loop 2's floor 1 has the gate")
+	assert_false(w2.floor_layout.has_loop_device, "and no Loop device")
 	assert_eq(w2.loop_threat, r.table.loop_threat, "the loop adds its threat")
 	assert_eq(Curses.threat(w2), r.table.loop_threat, "threat T shows it")
 	assert_eq(w2.loop_cap_permille, r.table.loop_catch_up_cap_permille)
 
 
-func test_not_yet_closes_until_the_hero_steps_out() -> void:
+## v0.8.0 P2: the old picks do nothing: an Ascension floor never waits on a pick.
+func test_p2_no_choice_waits() -> void:
 	var r := _last_floor_run(15)
 	var w := _floor_world(r)
-	var reader := WorldReader.new(w)
 	_open_portal(w)
-	_walk_in(w)
-	_pick(w, InputFrame.PICK_CANCEL)
-	assert_false(reader.ascension_open(), "Not yet closed it")
-	var frame := _into_gate(w)
-	for k in 20:
+	var tick := w.tick
+	for v in [1, 2, InputFrame.PICK_CANCEL]:
+		var frame := InputFrame.new()
+		frame.pick = v
 		w.step(frame)
-	assert_false(reader.ascension_open(), "standing in the opening keeps it closed")
-	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "and nothing was taken")
-	w.actors.set_pos(0, w.floor_layout.portal_front_point() + w.floor_layout.portal_facing() * 2.0)
-	CombatLab.idle(w, 2)
-	assert_gte(_walk_in(w), 0)
-	assert_true(reader.ascension_open(), "walking in again opens it again")
+	assert_eq(w.tick, tick + 3)
+	assert_eq(w.boss_flow.state, BossFlow.State.OPEN, "a pick takes nothing")
+	assert_false(w.boss_flow.ascend_open, "the retired choice never opens")
 
 
 func test_loop_scaling_compounds_and_caps() -> void:
@@ -290,8 +335,7 @@ func test_the_shop_and_curse_cadence_count_the_run_floor() -> void:
 	var r := _last_floor_run(16)
 	var w := _floor_world(r)
 	_open_portal(w)
-	_walk_in(w)
-	_pick(w, WorldReader.PICK_ASCEND_ASCEND)
+	_step_on_loop(w)
 	CombatLab.idle(w, BossFlow.ENTER_TICKS + 2)
 	r.finish_floor(w)
 	var w4 := _floor_world(r)
@@ -320,8 +364,8 @@ func test_the_next_loop_is_deterministic() -> void:
 	var wa := _floor_world(a)
 	var wb := _floor_world(b)
 	wa.boss_flow.ascension = true
-	wa.boss_flow.ascend_choice = Ascension.Choice.ASCEND
-	wb.boss_flow.ascend_choice = Ascension.Choice.ASCEND
+	wa.boss_flow.ascend_choice = Ascension.Choice.LOOP
+	wb.boss_flow.ascend_choice = Ascension.Choice.LOOP
 	a.finish_floor(wa)
 	b.finish_floor(wb)
 	assert_eq(a.biome_order, b.biome_order, "the same run draws the same loop biomes")
