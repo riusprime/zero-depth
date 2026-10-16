@@ -299,3 +299,4 @@ not in `main` yet).
   `scripts/shots/melee_strikes.gd`. Found: the flow field went empty whenever the player stood in a blocked cell
   (against a wall or in a doorway). Reported: the sim bench's stress_ai p99 is +4-21 % (mean +5 / -1 %).
 - 2026-10-16: P3 (`v080-p3`, agent): biome lag found in the kit decoration (chunked, coarsest level of detail), fire-light shadows and far lights fade, glow down, a per-floor occlusion index, `loop_deep_ease_permille` 900 for Deep floors past loop 1; `scripts/checks/biome_probe.gd` added; the first three biomes are still ~1.35× Starfall's frame on the software renderer (reported).
+- 2026-10-16: lead merged P2 (`f0fc88c`), P1 (`0a7e0bb`) and P3 (`c2c7020`); `bash scripts/ci/seams.sh` on `c2c7020`: 339/339 passing, 844 s (`check_gut_log: ok (339 passing, minimum 1)`). D22 (the Deep ease on loop 3+) added to OWNER_TODO.
