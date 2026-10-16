@@ -761,7 +761,7 @@ ITEM_GUN_TWIN_DESC,"Gun: fires the spell twice, side by side.","Pistola: dispara
 ITEM_GUN_SPREAD,Spread,Abanico
 ITEM_GUN_SPREAD_DESC,"Gun, count: a 3-shot fan (+2 a level); after Ring: 3 rings","Pistola: abanico de 3 (+2 por nivel); tras Anillo: 3 anillos"
 ITEM_GUN_RING,Ring,Anillo
-ITEM_GUN_RING_DESC,"Gun, shape: a lightning circle that shocks","Pistola, forma: un círculo de rayos que electrocuta"
+ITEM_GUN_RING_DESC,"Gun, shape: your shot is a flying, shocking lightning ring","Pistola, forma: disparas un anillo de rayos que electrocuta"
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,"Gun, motion: throws what is left of it at random","Pistola, movimiento: lanza al azar lo de su izquierda"
 ITEM_GUN_PIERCE,Pierce,Perforación

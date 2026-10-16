@@ -503,6 +503,16 @@ func outcome() -> int:
 	return 1 if _w.cleared else 0
 
 
+## v0.8.0 N3 (owner O45): the portal on this floor leads to another floor the app loads (outcome() turns 3 once the hero
+## is through it), not to the run's end: the loading cover closes only then.
+func portal_loads() -> bool:
+	if _w.boss_flow == null:
+		return false
+	if _w.boss_flow.ascension:
+		return Ascension.looped(_w) or _w.boss_flow.final_next
+	return _w.floor_index < _w.floor_count
+
+
 func wave_number() -> int:
 	return _w.wave_index + 1
 
@@ -867,24 +877,43 @@ func fire_spec_keys() -> PackedStringArray:
 
 
 ## v0.6.0 MX3: the RING form's live rings: {key, pos, radius (full), start, end} (the radius now grows linearly from
-## start to end, ModifierAbilities.ring_radius).
+## start to end, ModifierAbilities.ring_radius). v0.8.0 N3: a travelling ring (pulses > 0) also gives where it left
+## (from), its velocity per tick, its orbit and orbit angle, and "pos" is its centre this tick; ring_place puts it at
+## any moment between ticks.
 func rings_live() -> Array[Dictionary]:
 	var st := _w.ab
 	var out: Array[Dictionary] = []
 	for k in st.ring_pos.size():
+		var moving := k < st.ring_pulse.size() and st.ring_pulse[k] > 0
 		(
 			out
 			. append(
 				{
 					"key": st.ring_spec[k] if k < st.ring_spec.size() else "",
-					"pos": st.ring_pos[k],
+					"pos": ModifierAbilities.ring_centre(_w, k, _w.tick),
+					"from": st.ring_pos[k],
 					"radius": st.ring_r[k],
 					"start": st.ring_start[k],
 					"end": st.ring_end[k],
+					"pulses": st.ring_pulse[k] if moving else 0,
+					"vel": st.ring_vel[k] if moving else Vector2.ZERO,
+					"orb": st.ring_orb[k] if moving else 0.0,
+					"orb_a": st.ring_orb_a[k] if moving else 0,
 				}
 			)
 		)
 	return out
+
+
+## v0.8.0 N3: a travelling ring of rings_live() at moment `t` (ticks, fractional): [centre, radius], by the sim's own
+## formulas (ModifierAbilities.travel_centre and travel_radius), so the ring drawn is the ring that hits.
+static func ring_place(r: Dictionary, t: float) -> Array:
+	var age := t - float(r["start"])
+	var life := int(r["end"]) - int(r["start"])
+	return [
+		ModifierAbilities.travel_centre(r["from"], r["vel"], float(r["orb"]), int(r["orb_a"]), age),
+		ModifierAbilities.travel_radius(float(r["radius"]), int(r["pulses"]), life, age),
+	]
 
 
 static func _padded(keys: PackedStringArray, n: int) -> PackedStringArray:

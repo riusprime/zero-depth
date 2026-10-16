@@ -3,20 +3,22 @@ extends SceneTree
 ## ATTACK_ORDER.md): renders what each order of Ring, Spread and Swirl does to the Gun's shot, in the real game view
 ## (WorldViewRoot on the Ruins stage, the iso camera) of a real World with the data's Gun, Shoot held toward a loose
 ## crowd of dummies: Ring alone, Ring · Spread, Spread · Ring, Ring · Spread · Swirl, Swirl · Ring · Spread (and the
-## plain shot to compare). Needs a renderer:
+## plain shot to compare). v0.8.0 N3 (owner O47; evidence/N3_RING_AND_LOADING.md): the rings are the shot and fly, so
+## each is grabbed mid-flight; Ring · Halo added (a circle of ring shots). Needs a renderer:
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/attack_order.gd
-## Writes build/shots/<version>/ao/<n>_<label>.jpg and prints each path with the rings alive. Frames are grabbed in
+## Writes build/shots/<version>/ring/<n>_<label>.jpg and prints each path with the rings alive. Frames are grabbed in
 ## _process.
 
 ## [label, cards (wand order), camera size, ticks of Shoot before the grab, frames to settle].
 const PLAN := [
 	["plain_shot", [], 12.0, 24, 2],
-	["ring", [&"gun_ring"], 12.0, 24, 2],
-	["ring_spread", [&"gun_ring", &"gun_spread"], 12.0, 24, 2],
-	["spread_ring", [&"gun_spread", &"gun_ring"], 12.0, 24, 2],
-	["ring_spread_swirl", [&"gun_ring", &"gun_spread", &"gun_swirl"], 14.0, 40, 2],
-	["swirl_ring_spread", [&"gun_swirl", &"gun_ring", &"gun_spread"], 14.0, 31, 2],
+	["ring", [&"gun_ring"], 12.0, 20, 2],
+	["ring_spread", [&"gun_ring", &"gun_spread"], 12.0, 20, 2],
+	["spread_ring", [&"gun_spread", &"gun_ring"], 12.0, 20, 2],
+	["ring_spread_swirl", [&"gun_ring", &"gun_spread", &"gun_swirl"], 14.0, 34, 2],
+	["swirl_ring_spread", [&"gun_swirl", &"gun_ring", &"gun_spread"], 14.0, 20, 2],
+	["ring_halo", [&"gun_ring", &"halo_shot"], 14.0, 16, 2],
 ]
 const SIZE := Vector2i(1280, 720)
 ## A loose crowd ahead of and round the hero.
@@ -44,7 +46,7 @@ var _dir := ""
 
 
 func _initialize() -> void:
-	_dir = "res://build/shots/%s/ao/" % GameVersion.label()
+	_dir = "res://build/shots/%s/ring/" % GameVersion.label()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
 	_repo = ContentRepository.load_all()
 	_tables = ContentCompiler.compile_items(_repo)

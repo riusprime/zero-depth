@@ -28,6 +28,7 @@ const TAIL_SEGMENTS := 4
 const STREAK_SEGMENTS := 9
 const ORBIT_TURN := 0.09
 const HOME_TURN := 0.035
+const TRAVEL_FADE_FROM := 0.8  # v0.8.0 N3: a travelling ring fades out over its flight's last fifth
 ## v0.6.5 WN3: a waiting mine's ground ring (metres; G12 Mine).
 const MINE_RING_M := 0.45
 const RING_STAGGER := 4.0
@@ -980,8 +981,10 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 				return  # v0.8.0 AO: a pulse or a thrown ring that hasn't started (WandRings)
 			var life := maxf(1.0, float(f["end"]) - float(f["start"]))
 			var t := clampf((now - float(f["start"])) / life, 0.0, 1.0)
-			fade = 1.0 - t * t * t
-			_ring_at(SimPlane.to_3d(f["pos"], GROUND_H), float(f["radius"]) * t, look, fade, pts)
+			var go := int(f.get("pulses", 0)) > 0  # v0.8.0 N3: a travelling ring, where the sim puts it now
+			var at: Array = WorldReader.ring_place(f, now) if go else [f["pos"], f["radius"] * t]
+			fade = 1.0 - (smoothstep(TRAVEL_FADE_FROM, 1.0, t) if go else t * t * t)
+			_ring_at(SimPlane.to_3d(at[0], GROUND_H), float(at[1]), look, fade, pts)
 		&"zone":
 			fade = f["fade"]
 			var c := SimPlane.to_3d(f["pos"], GROUND_H)

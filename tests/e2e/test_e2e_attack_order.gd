@@ -5,7 +5,8 @@ extends GutTest
 ## them in that order: the wand is Ring · Spread · Swirl, the storm (three lightning circles thrown out at random);
 ## holding Shoot lays them and AttackFormView strikes lightning to each. The Build page shows each card's slot and
 ## order mark; moving Swirl from slot 3 to slot 1 (the keyboard: 3, Enter, ←, ←, Enter) makes Swirl · Ring · Spread,
-## one thrown group of three rings joined by shock arcs, once the move reaches the sim.
+## one thrown group of three rings joined by shock arcs, once the move reaches the sim. v0.8.0 N3 (owner O47): the
+## rings are the shot itself and fly: the storm's fly off each its own way, the group flies the aim spinning.
 
 
 func after_each() -> void:
@@ -32,22 +33,27 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 	await e.frames(3)
 
 
-## Holds Shoot (the right mouse button) for `n` frames; returns the most rings alive at once and how far apart the
-## live rings were at most.
+## Holds Shoot (the right mouse button) for `n` frames; returns the most rings alive at once, how far apart the live
+## rings were at most, and how far from the hero a ring flew at most (v0.8.0 N3: the rings travel).
 func _shoot(e: E2e, n: int) -> Array:
 	var w := e.world()
 	var most := 0
 	var spread := 0.0
+	var flew := 0.0
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
 	for k in n:
 		await e.frames(1)
 		most = maxi(most, w.ab.ring_pos.size())
-		for a in w.ab.ring_pos:
-			for b in w.ab.ring_pos:
+		var at := []
+		for j in w.ab.ring_pos.size():
+			at.append(ModifierAbilities.ring_centre(w, j, w.tick))
+			flew = maxf(flew, (at[j] as Vector2).distance_to(w.player_pos()))
+		for a: Vector2 in at:
+			for b: Vector2 in at:
 				spread = maxf(spread, a.distance_to(b))
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
 	await e.frames(2)
-	return [most, spread]
+	return [most, spread, flew]
 
 
 func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group() -> void:
@@ -74,6 +80,7 @@ func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group()
 	var storm: Array = await _shoot(e, 40)
 	assert_gte(int(storm[0]), 3, "the storm's rings are in play (%d at most)" % storm[0])
 	assert_gt(float(storm[1]), 1.0, "thrown apart")
+	assert_gt(float(storm[2]), 3.0, "the rings fly out (%.1f m)" % storm[2])
 	assert_gt(forms.ring_arcs_drawn, arcs, "lightning strikes to the thrown rings")
 	# The Build page: each card's slot and order mark; Swirl moves from slot 3 to slot 1.
 	await e.tap(KEY_ESCAPE)
@@ -112,6 +119,7 @@ func test_ring_spread_swirl_is_a_storm_and_moving_swirl_first_throws_one_group()
 	arcs = forms.ring_arcs_drawn
 	var group: Array = await _shoot(e, 12)
 	assert_gte(int(group[0]), 3, "a group of three rings")
+	assert_gt(float(group[2]), 1.5, "flying the aim")
 	assert_gt(forms.ring_arcs_drawn, arcs, "joined by shock arcs and struck from the hero")
 	var by_start := {}
 	for k in w.ab.ring_start.size():

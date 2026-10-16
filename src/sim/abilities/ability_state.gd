@@ -115,6 +115,17 @@ var ring_root := PackedInt32Array()
 var ring_spec := PackedStringArray()
 var ring_depth := PackedInt32Array()
 var ring_proc := PackedInt32Array()
+## v0.8.0 N3 (owner O47; WandRings): a travelling ring's velocity (metres per tick), its orbit round its travelling
+## centre (metres; 0 = none) and the orbit's start angle, and its pulses (0 = a plain ring that grows where it was
+## cast), and which ring of its launch it is; ring_seen: who each travelling ring already hit, as triples [root,
+## ring of the launch × 8 + pulse, target id] (ModifierAbilities: once per ring and pulse). Hashed only once a ring
+## travelled, so worlds whose rings never did hash as before.
+var ring_vel := PackedVector2Array()
+var ring_orb := PackedFloat32Array()
+var ring_orb_a := PackedInt32Array()
+var ring_pulse := PackedInt32Array()
+var ring_k := PackedInt32Array()
+var ring_seen := PackedInt32Array()
 ## Bomb Lobber: weapon attacks counted toward its next lob. Frost Nova: the kill streak (kills, the last kill's tick).
 var lob_count := 0
 var streak_n := 0
@@ -224,5 +235,23 @@ func hash_into(h: StateHasher) -> void:
 		h.add_f32(p.x)
 		h.add_f32(p.y)
 	h.add_f32s(ring_r)
+	if _rings_travelled():  # v0.8.0 N3
+		h.add_int(ring_vel.size())
+		for v in ring_vel:
+			h.add_f32(v.x)
+			h.add_f32(v.y)
+		h.add_f32s(ring_orb)
+		h.add_ints(ring_orb_a)
+		h.add_ints(ring_pulse)
+		h.add_ints(ring_k)
+		h.add_ints(ring_seen)
 	for v in [lob_count, streak_n, streak_last]:
 		h.add_int(v)
+
+
+## v0.8.0 N3: any ring alive travels (its travel columns hash).
+func _rings_travelled() -> bool:
+	for p in ring_pulse:
+		if p != 0:
+			return true
+	return false

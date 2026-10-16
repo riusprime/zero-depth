@@ -5,6 +5,8 @@
   OS `Linux 6.18.44-fc-v139` (cloud container, headless)
 - **Date:** 2026-10-16
 - **Who ran it:** agent
+- **Superseded in part (N3, owner O47):** the Ring no longer casts a circle in front of the hero; it is the shot, a
+  travelling ring, and its numbers were retuned: [`N3_RING_AND_LOADING.md`](N3_RING_AND_LOADING.md).
 
 Owner (O37): "make the order of the attacks be more important … Not every single mod should have an impact on the
 order but they should have it, currently the order does not matter that much".
