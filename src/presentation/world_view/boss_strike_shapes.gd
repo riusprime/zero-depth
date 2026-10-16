@@ -128,8 +128,11 @@ func _band(
 	put(pool, Transform3D(b, c), col, cd)
 
 
-## A beam from `a` to `b`, `rad` thick.
-func _tube(a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: int) -> void:
+## A beam from `a` to `b`, `rad` thick; `owner_art` (v0.8.0 TX1): drawn with the owner's beam strip when it is
+## installed (the Focus Beam; the rail keeps its code look, its texture not delivered).
+func _tube(
+	a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: int, owner_art := false
+) -> void:
 	var d := b - a
 	if d.length() < 0.01 or col.a <= 0.005:
 		return
@@ -139,7 +142,10 @@ func _tube(a: Vector3, b: Vector3, rad: float, col: Color, bright: float, sd: in
 	var up := side.cross(d).normalized()
 	var basis := Basis(d, up * rad, side * rad)
 	var cd := Color(
-		2.0 + clampf(col.a, 0.0, 1.0), float(sd % 89) / 89.0, bright, BossStrikeMeshes.pack(col)
+		(4.0 if owner_art else 2.0) + clampf(col.a, 0.0, 1.0),
+		float(sd % 89) / 89.0,
+		bright,
+		BossStrikeMeshes.pack(col)
 	)
 	put(&"beam", Transform3D(basis, a), col, cd)
 
@@ -492,8 +498,8 @@ func _beam(s: Dictionary, o: Obb, age: float, after: float, life: float, sd: int
 	var flick := 0.85 + 0.15 * _h(sd, int(age))
 	if fade > 0.0:
 		var core := 0.12 if rail else o.half.y * 0.45
-		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd)
-		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1)
+		_tube(a, tip, core, Color(1.0, 0.97, 0.9, fade), 2.6 * flick, sd, not rail)
+		_tube(a, tip, core * 2.6, Color(glow, 0.55 * fade), 1.8 * flick, sd + 1, not rail)
 	if rail:  # its haze lingers longer than the streak
 		var haze := clampf(1.0 - age / life, 0.0, 1.0)
 		_tube(a, b, 0.45, Color(glow, 0.3 * haze), 1.2, sd + 2)

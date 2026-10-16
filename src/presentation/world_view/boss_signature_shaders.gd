@@ -13,12 +13,38 @@ uniform vec4 color : source_color = vec4(1.0, 0.22, 0.52, 1.0);
 uniform vec4 core : source_color = vec4(1.0, 0.86, 0.95, 1.0);
 uniform float strength = 1.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+// v0.8.0 TX1 (FxTextures.texture_beam): the owner's beam or aim-line strip, one row of a 1 x 4 sheet, across the
+// cylinder as the camera sees it (its middle the row's middle), along it tiled every tex_tile m (or once).
+uniform sampler2D beam_tex : filter_linear_mipmap, repeat_enable;
+uniform float tex_on = 0.0;
+uniform float tex_row = 0.0;
+uniform float tex_tile = 4.0;
+uniform float tex_once = 0.0;
+uniform float tex_scroll = 0.0;
+varying float along;
+varying float along_m;
+varying vec3 perp;
+void vertex() {
+	along = VERTEX.y + 0.5;
+	along_m = along * length(MODEL_MATRIX[1].xyz);
+	vec3 axis = (MODELVIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz;
+	vec3 c = cross(axis, vec3(0.0, 0.0, 1.0));
+	perp = length(c) > 0.00001 ? normalize(c) : vec3(1.0, 0.0, 0.0);
+}
 void fragment() {
-	float n = texture(noise_tex, vec2(UV.x * 2.0 + TIME * 0.4, UV.y * 4.0 - TIME * 2.5)).r;
 	float rim = clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0);
-	float body = rim * rim * mix(0.5, 1.2, n);
-	float hot = pow(rim, 6.0);
-	ALBEDO = mix(color.rgb, core.rgb, hot) * body * strength * 1.1;
+	if (tex_on > 0.5) {
+		float across = dot(normalize(NORMAL), perp);  // -1 .. 1 across the beam as it is seen
+		float x = tex_once > 0.5 ? clamp(along, 0.004, 0.996) : along_m / tex_tile - TIME * tex_scroll;
+		float y = (tex_row + clamp(0.5 + 0.5 * across, 0.03, 0.97)) * 0.25;
+		vec4 t = texture(beam_tex, vec2(x, y));
+		ALBEDO = mix(color.rgb, core.rgb, t.r) * t.a * strength * 1.8;
+	} else {
+		float n = texture(noise_tex, vec2(UV.x * 2.0 + TIME * 0.4, UV.y * 4.0 - TIME * 2.5)).r;
+		float body = rim * rim * mix(0.5, 1.2, n);
+		float hot = pow(rim, 6.0);
+		ALBEDO = mix(color.rgb, core.rgb, hot) * body * strength * 1.1;
+	}
 }
 """
 

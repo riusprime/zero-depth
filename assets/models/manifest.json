@@ -232,6 +232,46 @@
       "id": "fx_void_noise",
       "path": "assets/textures/vfx/fx_void_noise.png",
       "sha256": "23991586870a58e1f5bd6e79c8216863575f8e84fcdac3d33760be95fbecb3a0"
+    },
+    {
+      "id": "fx_orb_cores",
+      "path": "assets/textures/vfx/fx_orb_cores.png",
+      "sha256": "feca4e1d6563a04f03ff417ed39f32b4b50c33d08bdc9af482c8ca41aee0251c"
+    },
+    {
+      "id": "fx_orb_cores_2",
+      "path": "assets/textures/vfx/fx_orb_cores_2.png",
+      "sha256": "ea32f5632e5849b00129a87e2b63b0489b1e42472c624f085c57a7959a610e9f"
+    },
+    {
+      "id": "fx_orb_cores_final",
+      "path": "assets/textures/vfx/fx_orb_cores_final.png",
+      "sha256": "6db8cac60f2c8b2101c2ece5c5fcdd4056649609d5ffeccb25e1b5b25fd02549"
+    },
+    {
+      "id": "fx_trails",
+      "path": "assets/textures/vfx/fx_trails.png",
+      "sha256": "135f06cb7c171b750f7223724aeaa003588a4bffad220a2b307a5d60a8aef367"
+    },
+    {
+      "id": "fx_beam",
+      "path": "assets/textures/vfx/fx_beam.png",
+      "sha256": "83bb2028c6f02a4606ccaa813295ef710ef630473ff6ce8748b8bafbf4b94a0e"
+    },
+    {
+      "id": "fx_beam_impact",
+      "path": "assets/textures/vfx/fx_beam_impact.png",
+      "sha256": "05be95058c0c435d049d6117336dcff42657294091f78f1f65c22460ffc7772c"
+    },
+    {
+      "id": "fx_aim_lines",
+      "path": "assets/textures/vfx/fx_aim_lines.png",
+      "sha256": "b02bf60a35943b9cff99560589e7076e2f46339116cd17604ade0347c7494be0"
+    },
+    {
+      "id": "fx_cast_sigils",
+      "path": "assets/textures/vfx/fx_cast_sigils.png",
+      "sha256": "150a9fd8cbebd2c23037ad34d8d9a9b27859424171b5d691684d00f7da83cd75"
     }
   ]
 }

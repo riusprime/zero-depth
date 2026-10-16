@@ -55,6 +55,16 @@ func _init() -> void:
 			"impact": _flare(BEAM_CORE),
 			"light": OmniLight3D.new(),
 		}
+		# v0.8.0 TX1: the owner's beam strip, chevron aim lines (pointing out along each arm) and impact flares.
+		for key in ["core", "glow"]:
+			FxTextures.texture_beam(_mat_of(arm[key]), "fx_beam", 0, 5.0, false, 0.5)
+		FxTextures.texture_beam(
+			_mat_of(arm["aim"]), "fx_aim_lines", FxTextures.AIM_CHEVRONS, 7.0, false, 0.4
+		)
+		var imp := FxTextures.flare_material(BEAM, BEAM_CORE, k % 4)
+		if imp != null:
+			(arm["impact"] as MeshInstance3D).mesh = FxTextures.flare_mesh()
+			(arm["impact"] as MeshInstance3D).material_override = imp
 		var strip := QuadMesh.new()
 		strip.size = Vector2.ONE
 		strip.orientation = PlaneMesh.FACE_Y
@@ -76,6 +86,7 @@ func _init() -> void:
 		_arms.append(arm)
 	_bolt_line = _cylinder(beam_sh, BOLT, 0.8)
 	_bolt_line.name = "BoltAim"
+	FxTextures.texture_beam(_mat_of(_bolt_line), "fx_aim_lines", FxTextures.AIM_LASER, 1.0, true)
 	_shard_flash = _flare(BEAM_CORE)
 	_shard_flash.name = "ShardFlash"
 	for l: OmniLight3D in [_shard_light, _core_light]:
@@ -121,6 +132,10 @@ func _cylinder(sh: Shader, c: Color, strength: float) -> MeshInstance3D:
 	mi.extra_cull_margin = 64.0
 	add_child(mi)
 	return mi
+
+
+static func _mat_of(mi: MeshInstance3D) -> ShaderMaterial:
+	return mi.material_override as ShaderMaterial
 
 
 func _flare(c: Color) -> MeshInstance3D:
