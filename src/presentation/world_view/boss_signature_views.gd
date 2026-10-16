@@ -100,6 +100,8 @@ const SPARK_MAX := 48
 const SPARK_TICKS := 12.0
 const LAVA_FADE_TICKS := 8.0
 const LAVA_CRUST_TICKS := 60.0
+## v0.8.0 TX2: the lava and meltdown shaders' owner textures (BossStrikeMeshes.GROUND_TEX slots).
+const LAVA_SLOTS := ["lava_tex", "crust_tex"]
 
 ## Where the owner's javelin is looked up (tests point it elsewhere to see the fallback).
 static var model_path := MODEL_PATH
@@ -841,6 +843,7 @@ func _sync_lava_nodes() -> void:
 		var m := ShaderMaterial.new()
 		m.shader = _lava_shader
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # v0.8.0 TX2: the owner's lava and crust
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(mi)
@@ -878,6 +881,7 @@ func _sync_melt_nodes() -> void:
 		var m := ShaderMaterial.new()
 		m.shader = _melt_shader
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		BossStrikeMeshes.set_ground_textures(m, LAVA_SLOTS)  # v0.8.0 TX2: the owner's lava and crust
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.extra_cull_margin = 64.0

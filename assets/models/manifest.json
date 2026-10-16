@@ -302,6 +302,81 @@
       "id": "fx_cast_sigils",
       "path": "assets/textures/vfx/fx_cast_sigils.png",
       "sha256": "150a9fd8cbebd2c23037ad34d8d9a9b27859424171b5d691684d00f7da83cd75"
+    },
+    {
+      "id": "fx_ground_cracks",
+      "path": "assets/textures/vfx/fx_ground_cracks.png",
+      "sha256": "02bf2a4eab3b58c38ee0b5225133187e73bd973fa8ceee51530b6fd8b112c77e"
+    },
+    {
+      "id": "fx_rock_burst",
+      "path": "assets/textures/vfx/fx_rock_burst.png",
+      "sha256": "397ee2eb3042e9682ddb259ac1540f97d2ce5e45bf7957da3099ee30c286c1d5"
+    },
+    {
+      "id": "fx_dust_ring",
+      "path": "assets/textures/vfx/fx_dust_ring.png",
+      "sha256": "b3d7e7f9026f707462fa866e86827fa4db7fc5a8e8d9d54d8c37b16607e36560"
+    },
+    {
+      "id": "fx_light_ring",
+      "path": "assets/textures/vfx/fx_light_ring.png",
+      "sha256": "e3166f8c23b559c27f4746605ed4baadc62a1ee4026212e045ccf38fe61356fc"
+    },
+    {
+      "id": "fx_acid_splat",
+      "path": "assets/textures/vfx/fx_acid_splat.png",
+      "sha256": "867bf4b95f210cc0bf1789378c9499e82ca45dc0df6b511002a12f205386953d"
+    },
+    {
+      "id": "fx_steam_puffs",
+      "path": "assets/textures/vfx/fx_steam_puffs.png",
+      "sha256": "4bb1985f464ffdc1543b3ba6b6cd1ede315228670bdc6ba1b21105b290005290"
+    },
+    {
+      "id": "fx_skid_marks",
+      "path": "assets/textures/vfx/fx_skid_marks.png",
+      "sha256": "0b3c6c6c88b0233605ad5fb6668dfaa91ac5aa504de1b3c15cebbf8e0d7e2205"
+    },
+    {
+      "id": "fx_crystal_shatter",
+      "path": "assets/textures/vfx/fx_crystal_shatter.png",
+      "sha256": "7789d42bdd637a23ec063cad2a184334f0967bf0e785867c508f92edc9107603"
+    },
+    {
+      "id": "fx_lava_flow",
+      "path": "assets/textures/vfx/fx_lava_flow.png",
+      "sha256": "c4a36562d00dd6fba526404c29dd17ce3338f0d59e7b87bae9e11e41e5369ae3"
+    },
+    {
+      "id": "tex_lava_crust",
+      "path": "assets/textures/kit/tex_lava_crust.png",
+      "sha256": "43c0d324cad81c495349ffdddea75e4a715d9ea8c91195bf0f29e24cfcae2c10"
+    },
+    {
+      "id": "tex_mark_steel",
+      "path": "assets/textures/kit/tex_mark_steel.png",
+      "sha256": "d690363290ec70b100045020f435e5c968ea72e8a4e08150bb0e1f9941e3ed93"
+    },
+    {
+      "id": "tex_mark_hazard",
+      "path": "assets/textures/kit/tex_mark_hazard.png",
+      "sha256": "def012b0df56a002015baff9893e2b1ad88bb0698b806b3a6d86bca6af67a442"
+    },
+    {
+      "id": "tex_mark_acid",
+      "path": "assets/textures/kit/tex_mark_acid.png",
+      "sha256": "0c0632663deec94167c7b26201bcb89588f71475289db49061c8435da766ca94"
+    },
+    {
+      "id": "tex_mark_light",
+      "path": "assets/textures/kit/tex_mark_light.png",
+      "sha256": "5a56ba9d12b8f87036a3c361aaa4d2c89c9ff02258a8b774c241fcbf824ce697"
+    },
+    {
+      "id": "tex_stone_spike",
+      "path": "assets/textures/kit/tex_stone_spike.png",
+      "sha256": "de1372aade2a0a938c000895414c154a3a774ed152de05fa663ca6e5fa4a518d"
     }
   ]
 }

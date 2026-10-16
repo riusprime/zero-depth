@@ -32,6 +32,18 @@ const PATTERN_COLORS := {
 	Pattern.VOID: [Color(0.05, 0.02, 0.08), Color(0.8, 0.25, 1.0)],
 }
 
+## v0.8.0 TX2: per pattern, the owner's texture that replaces the code pattern: [texture id, world scale (repeats a
+## metre), how much of its own colour shows as the ground under the hot part (0: the look's dark tint), flow]. The
+## void (the Nemesis) keeps its code rifts: no texture was asked for it.
+const PATTERN_TEX := {
+	Pattern.STONE: ["fx_ground_cracks", 0.18, 0.0, 0.0],
+	Pattern.BLADE: ["tex_mark_steel", 0.25, 1.0, 0.0],
+	Pattern.ACID: ["tex_mark_acid", 0.25, 1.0, 1.0],
+	Pattern.LIGHT: ["tex_mark_light", 0.2, 1.0, 0.0],
+	Pattern.HAZARD: ["tex_mark_hazard", 0.3, 1.0, 0.0],
+	Pattern.MOLTEN: ["tex_lava_crust", 0.3, 1.0, 1.0],
+}
+
 ## Look id -> {"pattern", "strike"}.
 const LOOKS := {
 	&"gk_slam": {"pattern": Pattern.STONE, "strike": &"crater"},
@@ -142,6 +154,11 @@ uniform float heat = 0.5;
 uniform float base_alpha = 0.3;
 uniform float motion = 1.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+uniform sampler2D pattern_tex : source_color, filter_linear_mipmap, repeat_enable;
+uniform float tex_on = 0.0;
+uniform float tex_scale = 0.25;
+uniform float tex_body = 1.0;
+uniform float tex_flow = 0.0;
 
 varying vec3 wp;
 
@@ -210,7 +227,17 @@ void fragment() {
 		m = max(m, smoothstep(0.62, 0.85, n) * 0.6 * heat);
 	}
 	vec3 hot = glow.rgb * (1.0 + heat * 1.6);
-	ALBEDO = mix(dark.rgb, hot, m);
+	vec3 body = dark.rgb;
+	if (tex_on > 0.5) {
+		// v0.8.0 TX2: the owner's texture in place of the code pattern: its alpha is the part that heats (the cracks,
+		// the scratches, the stripes' paint, the acid, the light's seams, the crust's seams), tinted toward the glow;
+		// a surface's own colour is the ground under it (tex_body), darkened so the hot part reads.
+		vec4 tx = texture(pattern_tex, p * tex_scale + vec2(t * 0.01, 0.0) * tex_flow);
+		m = tx.a;
+		hot = mix(tx.rgb, glow.rgb, 0.45) * (1.0 + heat * 1.6);
+		body = mix(dark.rgb, tx.rgb * 0.5, tex_body);
+	}
+	ALBEDO = mix(body, hot, m);
 	ALPHA = clamp(max(base_alpha, m * mix(0.45, 1.0, heat)), 0.0, 1.0);
 }
 """
@@ -258,4 +285,12 @@ static func mark_material(look: StringName, heat: float, base_alpha: float) -> S
 	m.set_shader_parameter("heat", heat)
 	m.set_shader_parameter("base_alpha", base_alpha)
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	var spec: Array = PATTERN_TEX.get(pattern_of(look), [])
+	var tex := BossStrikeMeshes.texture(spec[0]) if not spec.is_empty() else null
+	m.set_shader_parameter("tex_on", 1.0 if tex != null else 0.0)
+	if tex != null:
+		m.set_shader_parameter("pattern_tex", tex)
+		m.set_shader_parameter("tex_scale", spec[1])
+		m.set_shader_parameter("tex_body", spec[2])
+		m.set_shader_parameter("tex_flow", spec[3])
 	return m

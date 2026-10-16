@@ -316,7 +316,7 @@ func test_the_strike_throws_debris_and_dust_flashes_and_cracks_the_floor() -> vo
 	assert_gt(layer.used(&"debris"), 0, "rock debris")
 	assert_gt(layer.used(&"smoke"), 0, "dust")
 	assert_gt(layer.lights_on(), 0, "a hot flash")
-	assert_gt(layer.marks_of(&"scorch"), 0, "cracks left on the floor")
+	assert_gt(layer.marks_of(BossStrikeFx.crack_mark()), 0, "cracks left on the floor")
 	ViewPrefs.effects_density = "low"
 	var high := layer.used(&"debris")
 	layer.density = 0.3
