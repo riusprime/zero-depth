@@ -83,6 +83,8 @@ var prism_views := PrismViews.new()  # v0.8.0 FB2: the Prism's Cross, her bolts'
 var nemesis_views := NemesisViews.new()  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
 var rig := IsoRig.new()
 var occlusion_enabled := true
+## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
+var _occlusion_index := {}
 
 
 func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> void:
@@ -272,20 +274,29 @@ func sync() -> void:
 				focus.append(p)
 				if focus.size() > OCCLUSION_FOCUS_MAX:
 					break
+		# v0.8.0 P3 (owner O32): the floor's walls indexed once (Occlusion.build_index), not all tested every tick.
+		if (
+			_occlusion_index.is_empty()
+			or _occlusion_index["count"] != stage.wall_specs.size()
+			or _occlusion_index["pitch"] != rig.pitch_deg
+		):
+			_occlusion_index = Occlusion.build_index(rig.pitch_deg, stage.wall_specs)
 		stage.apply_occlusion(
-			Occlusion.select(rig.toward_camera_on_plane(), rig.pitch_deg, focus, stage.wall_specs)
+			Occlusion.select_in(
+				rig.toward_camera_on_plane(), _occlusion_index, focus, stage.wall_specs
+			)
 		)
 	else:
 		stage.apply_occlusion(PackedInt32Array())
 
 
 ## Draws a real flame on each fire prop into the effects layer (inside its frame): the props' own lights stay in
-## StageKit.
+## StageKit. v0.8.0 P3 (O32): a prop whose light StageKit hid (out of the view's reach) draws no flame either.
 func _draw_prop_fires(layer: VfxCore) -> void:
 	if stage == null or stage.kit == null:
 		return
 	var fx := layer as VfxLayer
 	for k in stage.kit.lights.size():
 		var l := stage.kit.lights[k]
-		if is_instance_valid(l) and l.is_inside_tree():
+		if is_instance_valid(l) and l.visible and l.is_inside_tree():
 			fx.prop_fire(l.global_position - Vector3(0, 0.36, 0), k * 7919 + 13)

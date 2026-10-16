@@ -148,6 +148,12 @@ func route_permille(f: int = run_floor()) -> int:
 	return table.deep_scale_permille if is_deep(f) else 1000
 
 
+## v0.8.0 P3 (owner O35): run floor f's ease in per mille: RunTable.loop_deep_ease_permille on a Deep floor past loop 1
+## (the second loop + the Purple Portal), else 1000. Loop 2 alone and a Deep floor on loop 1 are unchanged.
+func _loop_deep_ease(f: int = run_floor()) -> int:
+	return table.loop_deep_ease_permille if loop > 1 and is_deep(f) else 1000
+
+
 ## Scales freshly compiled enemy tables for floor f (v0.4.0 SC): HP and damage × the run's per-floor per-mille
 ## tables, rounded (SpawnTable.scale). The danger tier's scaling comes on top as each enemy arrives (SpawnDirector);
 ## the tier restarts with each floor's World. Enemies a boss brings in (eggs, turrets) get the floor's only.
@@ -160,6 +166,10 @@ func scale_enemies(tables: Array[EnemyTable], f: int = floor_index) -> void:
 	if loop > 1:
 		hp_pm = SpawnTable.scale(hp_pm, loop_permille(table.loop_enemy_hp_permille))
 		dmg_pm = SpawnTable.scale(dmg_pm, loop_permille(table.loop_enemy_damage_permille))
+	var ease := _loop_deep_ease(run_floor(f))  # v0.8.0 P3 (owner O35)
+	if ease != 1000:
+		hp_pm = SpawnTable.scale(hp_pm, ease)
+		dmg_pm = SpawnTable.scale(dmg_pm, ease)
 	for t in tables:
 		t.hp = maxi(1, SpawnTable.scale(t.hp, hp_pm))
 		t.damage = SpawnTable.scale(t.damage, dmg_pm)
@@ -176,6 +186,10 @@ func scale_bosses(tables: Array[BossTable], f: int = floor_index) -> void:
 	if loop > 1:
 		hp_pm = hp_pm * loop_permille(table.loop_boss_hp_permille) / 1000
 		dmg_pm = dmg_pm * loop_permille(table.loop_boss_damage_permille) / 1000
+	var deep_ease := _loop_deep_ease(run_floor(f))  # v0.8.0 P3 (owner O35)
+	if deep_ease != 1000:
+		hp_pm = hp_pm * deep_ease / 1000
+		dmg_pm = dmg_pm * deep_ease / 1000
 	# v0.4.0 TU (owner D9): floor 1's bosses are eased (-20 % HP and damage), in the same step.
 	var ease := SpawnTable.per_floor(table.boss_ease_floor_permille, run_floor(f))
 	if ease > 0 and ease != 1000:

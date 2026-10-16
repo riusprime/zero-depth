@@ -47,6 +47,11 @@ extends ContentDef
 @export var loop_scale_cap_permille := 100000
 @export var loop_threat := 2
 @export var loop_catch_up_cap_permille := 500
+## v0.8.0 P3 (owner O35, "Reduce the difficulty of this specific combination (second loop + Purple Portal) by
+## approximately 10%"): a Deep floor (the Purple Portal's route) past loop 1 eases its enemies' and bosses' HP and
+## damage × this per mille, on top of the floor's, the Deep and the loop factors; a Deep floor on loop 1 and a normal
+## floor on loop 2 keep theirs. 1000 = no ease. Starting value 900.
+@export var loop_deep_ease_permille := 1000
 ## v0.8.0 FB1 (owner O16-O17; FINAL_BOSS.md F1-F3): the final boss. End the run at the Ascension portal (any loop)
 ## leads to it: one fight in its own arena (final_arena, a FinalArenaDefinition id), its bodies in order
 ## (final_bosses: FinalBossDefinition ids, the Colossus, the Prism, the Nemesis), shown as one boss named
@@ -129,6 +134,10 @@ func validate() -> Array[ValidationIssue]:
 					&"range", resource_path, "%s: 1000..loop_scale_cap_permille" % pair[0]
 				)
 			)
+	if loop_deep_ease_permille < 1 or loop_deep_ease_permille > 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "loop_deep_ease_permille: 1..1000")
+		)
 	if loop_threat < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "loop_threat is negative"))
 	if loop_catch_up_cap_permille < 0:

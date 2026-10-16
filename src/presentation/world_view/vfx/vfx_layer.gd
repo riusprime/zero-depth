@@ -16,6 +16,9 @@ const VOID_GLOW := Color(0.62, 0.32, 1.0)
 const VOID_TENDRIL := Color(0.5, 0.26, 0.9)
 const BLOOD := Color(0.58, 0.05, 0.09)
 const SCORCH := Color(0.05, 0.04, 0.035, 0.85)
+## v0.8.0 P3 (owner O31, less glow on barrels and torches): the fire props' flame sprites (were 2.2, 1.8, 1.4): the
+## same warm hue, bright enough to read as fire, no longer blooming over the room.
+const PROP_FIRE_COLOR := Color(1.6, 1.32, 1.04, 1.0)
 const FROST_MARK := Color(0.78, 0.93, 1.0, 0.8)
 const VENOM_MARK := Color(0.2, 0.55, 0.12, 0.85)
 const BLOOD_MARK := Color(0.32, 0.02, 0.04, 0.9)
@@ -211,12 +214,7 @@ func prop_fire(p: Vector3, sd: int) -> void:
 		var hgt := (0.62 if k == 0 else 0.42 + 0.12 * h(sd + 3, k)) * beat
 		var cell := (k + int(age / (8.0 + 4.0 * h(sd, k + 40)))) % 4
 		_put(
-			&"flame",
-			_facing(q, hgt * 0.7, hgt, false),
-			Color(2.2, 1.8, 1.4, 1.0),
-			cell,
-			0.0,
-			h(sd, k) * 10.0
+			&"flame", _facing(q, hgt * 0.7, hgt, false), PROP_FIRE_COLOR, cell, 0.0, h(sd, k) * 10.0
 		)
 	_embers(p, age, sd, 2, 1.0)
 

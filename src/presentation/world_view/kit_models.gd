@@ -37,11 +37,18 @@ const CHEST_LID_CUT := 0.56
 ## Level-of-detail generation (ImporterMesh.generate_lods): normals merge below / split above these angles.
 const LOD_NORMAL_MERGE_DEG := 25.0
 const LOD_NORMAL_SPLIT_DEG := 60.0
+## v0.8.0 P3 (owner O29, "the Red, Blue, and Original biomes experience lag"): a scattered decoration piece (grass,
+## rubble, debris: 0.2-0.4 m, a few dozen pixels on screen, hundreds per floor) is drawn from its coarsest generated
+## level of detail (the kit's are 9.8-12.8k triangles each: ~20 million triangles a floor in the first three biomes,
+## against ~0.5 million in Frozen Shore and Starfall, whose decoration is code-made). A piece of DECOR_TRIS triangles
+## or fewer is drawn as it is.
+const DECOR_TRIS := 1000
 
 ## Where pieces are looked up (tests point it elsewhere to see the fallback).
 static var dir := DIR
 static var _cache := {}
 static var _split_cache := {}
+static var _decor_cache := {}
 
 
 ## {"mesh": ArrayMesh in the unit box, "material": the piece's StandardMaterial3D, "size": its natural size in
@@ -76,6 +83,7 @@ static func ids_with_role(role: StringName) -> Array[StringName]:
 static func clear_cache() -> void:
 	_cache.clear()
 	_split_cache.clear()
+	_decor_cache.clear()
 
 
 ## A piece cut in two at height `cut` (a fraction of its height), at its natural size in metres, centred on x and
@@ -124,6 +132,33 @@ static func _with_lods(arrays: Array) -> ArrayMesh:
 	im.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	im.generate_lods(LOD_NORMAL_MERGE_DEG, LOD_NORMAL_SPLIT_DEG, [])
 	return im.get_mesh()
+
+
+## v0.8.0 P3: `mesh` as a scattered decoration piece draws it: its coarsest generated level of detail (the same
+## vertices, normals, UVs and material; the generator keeps UV seams, so the kit's pieces stop at 3.2-4.7k triangles)
+## when it has more than DECOR_TRIS triangles and one surface; otherwise `mesh` itself. Cached per mesh.
+static func decor_mesh(mesh: Mesh) -> Mesh:
+	if mesh == null:
+		return null
+	var key := mesh.get_instance_id()
+	if _decor_cache.has(key):
+		return _decor_cache[key]
+	var out := mesh
+	if mesh.get_surface_count() == 1 and mesh is ArrayMesh:
+		var arrays := mesh.surface_get_arrays(0)
+		var idx: Variant = arrays[Mesh.ARRAY_INDEX]
+		if idx != null and (idx as PackedInt32Array).size() / 3 > DECOR_TRIS:
+			var im := ImporterMesh.new()
+			im.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays)
+			im.generate_lods(LOD_NORMAL_MERGE_DEG, LOD_NORMAL_SPLIT_DEG, [])
+			var n := im.get_surface_lod_count(0)
+			if n > 0:
+				arrays[Mesh.ARRAY_INDEX] = im.get_surface_lod_indices(0, n - 1)
+				var low := ArrayMesh.new()
+				low.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+				out = low
+	_decor_cache[key] = out
+	return out
 
 
 ## Surface arrays keeping only the vertices `idx` uses (so each part's bounds are its own), re-indexed.

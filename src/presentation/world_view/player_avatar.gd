@@ -88,6 +88,9 @@ const WIND_HOOD := 0.12
 const STRIKE_LEAN := 0.2
 const STRIKE_HOOD := 0.16
 const STRIKE_VISOR := 0.8
+## v0.8.0 P3 (owner O31, "Glow intensity is still excessive … particularly on … the main character"): the visor's
+## resting emission (was 2.4): it still reads as lit, and blooms less over the hood and the poncho.
+const VISOR_ENERGY := 1.4
 const FOLLOW_TWIST := 0.36
 const FOLLOW_LEAN := 0.06
 const ACCENT_FINISHER := 1.6
@@ -203,7 +206,7 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	_visor_mat.albedo_color = team
 	_visor_mat.emission_enabled = true
 	_visor_mat.emission = team
-	_visor_mat.emission_energy_multiplier = 2.4
+	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
 	write_stencil(_visor_mat)
 	visor.material_override = _visor_mat
 	visor.position = Vector3(FACE_X + 0.006, 0.0, 0)
@@ -633,7 +636,7 @@ func _pose(dt: float) -> void:
 		)
 	)
 	_visor_mat.emission_energy_multiplier = (
-		lerpf(2.4, 0.35, _slump)
+		lerpf(VISOR_ENERGY, 0.35, _slump)
 		* (1.0 + 0.7 * _heat_amount)
 		* (1.0 + 0.5 * _cast)
 		* (1.0 + STRIKE_VISOR * _accent.y * acc_k)

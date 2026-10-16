@@ -23,6 +23,7 @@ loop_boss_damage_permille = 1200
 loop_scale_cap_permille = 100000
 loop_threat = 2
 loop_catch_up_cap_permille = 500
+loop_deep_ease_permille = 900
 final_bosses = Array[StringName]([&"colossus", &"prism", &"nemesis"])
 final_name_key = &"BOSS_HOLLOW_CROWN"
 final_arena = &"hollow_arena"

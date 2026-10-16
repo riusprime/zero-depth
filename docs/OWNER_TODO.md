@@ -42,6 +42,9 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 - [ ] The Ember stone menus and cards, in English and Spanish.
 - [ ] The 24 designed rooms and the shop stall in every biome.
 - [ ] Loops: is loop 2+ hard without one-shotting you?
+- [ ] P3: do Ruins, Night Rocks and Red Canyon now run as smoothly as Starfall on your PC (fps)? Do the fire
+  lights still pop as you walk, or fade? Is the glow low enough (barrels, braziers, the hero), the mood kept? Is loop
+  2 through the Purple Portal about 10 % easier? ([evidence](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md))
 - [ ] On the **Windows export** (the CI build, not the editor): starts, plays, saves and quits cleanly.
 
 ---

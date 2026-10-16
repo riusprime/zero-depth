@@ -930,6 +930,7 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.loop_scale_cap_permille = def.loop_scale_cap_permille
 	t.loop_threat = def.loop_threat
 	t.loop_catch_up_cap_permille = def.loop_catch_up_cap_permille
+	t.loop_deep_ease_permille = def.loop_deep_ease_permille  # v0.8.0 P3 (owner O35)
 	t.final_bosses = def.final_bosses.duplicate()  # v0.8.0 FB1: the final boss
 	t.final_name_key = def.final_name_key
 	t.final_arena = def.final_arena

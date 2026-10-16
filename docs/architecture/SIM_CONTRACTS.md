@@ -1624,6 +1624,8 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
     `pow`). Normal enemies' HP and damage per mille × `loop_enemy_hp_permille` / `loop_enemy_damage_permille`'s loop
     factor (`scale_enemies`, after the floor and Deep factors: one more `SpawnTable.scale` each); bosses' HP and
     attack damage × `loop_boss_hp_permille` / `loop_boss_damage_permille`'s (`scale_bosses`, integer division).
+    v0.8.0 P3 (owner O35): on a Deep floor past loop 1 both then × `loop_deep_ease_permille` (900; one more
+    `SpawnTable.scale` for enemies, one more integer step for bosses, before the floor-1 ease); nowhere else.
     `prepare` sets `World.loop`, `World.run_floor`, `World.loop_threat` = `loop_threat` × (loop − 1) (added to
     `Curses.threat`, so it shows as T and raises the catch-up caps through `threat_cap`) and `World.loop_cap_permille`
     = `loop_catch_up_cap_permille` × (loop − 1), added to both catch-up caps (`CatchUp.start_floor`, `on_boss`).
