@@ -21,6 +21,8 @@ const GHOST_TICKS := 18
 var label := Label3D.new()
 var _sigil := MeshInstance3D.new()
 var _sigil_mat := StandardMaterial3D.new()
+## v0.8.0 TX1: the owner's sigil (FxTextures.sigil_material; null: the code disc).
+var _sigil_tex: ShaderMaterial
 var _ghosts: Array[MeshInstance3D] = []
 var _ghost_mats: Array[StandardMaterial3D] = []
 var _ghost_tick := PackedInt32Array()
@@ -55,6 +57,10 @@ func _init() -> void:
 	_sigil_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	_sigil_mat.albedo_color = Color(SIGIL, 0.0)
 	_sigil.material_override = _sigil_mat
+	_sigil_tex = FxTextures.sigil_material(SIGIL, 0)  # v0.8.0 TX1: the owner's sigil, in its violet
+	if _sigil_tex != null:
+		_sigil.mesh = FxTextures.floor_quad(SIGIL_R * 2.3)
+		_sigil.material_override = _sigil_tex
 	_sigil.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_sigil.visible = false
 	add_child(_sigil)
@@ -110,6 +116,11 @@ func _process(delta: float) -> void:
 	if _sigil.visible:
 		var pulse := 1.0 if ViewPrefs.reduced_motion else 0.8 + 0.2 * sin(_t * 9.0)
 		_sigil_mat.albedo_color = Color(SIGIL, clampf(0.15 + 0.6 * _progress, 0.0, 0.8) * pulse)
+		if _sigil_tex != null:
+			_sigil_tex.set_shader_parameter("alpha", _sigil_mat.albedo_color.a)
+			_sigil_tex.set_shader_parameter(
+				"turn", 0.0 if ViewPrefs.reduced_motion else _progress * 1.2
+			)
 		_sigil.scale = Vector3.ONE * (0.6 + 0.4 * _progress)
 
 

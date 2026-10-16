@@ -236,6 +236,16 @@ func _make(shape: StringName, style: StringName = &"") -> Node3D:
 	deco.top_level = true
 	deco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	root.add_child(deco)
+	if style == &"rune":  # v0.8.0 TX1: the owner's cast sigil in place of the code ring and spokes
+		var mat := FxTextures.sigil_material(ThemePalette.color(&"telegraph_hostile"), 3)
+		if mat != null:
+			var sigil := MeshInstance3D.new()
+			sigil.name = "Sigil"
+			sigil.mesh = FxTextures.floor_quad(1.0)
+			sigil.material_override = mat
+			sigil.top_level = true
+			sigil.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			root.add_child(sigil)
 	if style == &"bomb":
 		var bomb := MeshInstance3D.new()
 		bomb.name = "Bomb"
@@ -363,6 +373,14 @@ func _update_style(n: Node3D, tg: Dictionary) -> void:
 		&"rune":
 			var c: Vector2 = tg["center"]
 			var r: float = tg["radius"]
+			var sigil := n.get_node_or_null("Sigil") as MeshInstance3D
+			if sigil != null:
+				sigil.global_position = SimPlane.to_3d(c, 0.035)
+				sigil.scale = Vector3.ONE * r * 2.3
+				var sm := sigil.material_override as ShaderMaterial
+				sm.set_shader_parameter("alpha", 0.35 + 0.65 * p)
+				sm.set_shader_parameter("turn", p * PI * 0.5)
+				return  # the deco stays empty: the sigil is the rune's mark
 			_sector(pts, c, r * 0.6 - EDGE * 0.5, r * 0.6, 0.0, TAU)
 			var turn := p * PI * 0.5
 			for k in 6:

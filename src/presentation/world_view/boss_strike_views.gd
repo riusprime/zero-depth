@@ -98,7 +98,12 @@ func _init() -> void:
 	_pool(&"blade", BossStrikeMeshes.blade(), _mat(BossStrikeMeshes.BLADE), true)
 	_pool(&"band_add", BossStrikeMeshes.band(), _glow(BossStrikeMeshes.GLOW % "blend_add"), false)
 	_pool(&"band_mix", BossStrikeMeshes.band(), _glow(BossStrikeMeshes.GLOW % "blend_mix"), false)
-	_pool(&"beam", BossStrikeMeshes.tube(), _glow(BossStrikeMeshes.GLOW % "blend_add"), false)
+	var beam := _glow(BossStrikeMeshes.GLOW % "blend_add")
+	var strip := FxTextures.get_tex("fx_beam")  # v0.8.0 TX1: the Focus Beam in the owner's beam strip
+	if strip != null:
+		beam.set_shader_parameter("beam_tex", strip)
+		beam.set_shader_parameter("tex_on", 1.0)
+	_pool(&"beam", BossStrikeMeshes.tube(), beam, false)
 	var ground := _glow(BossStrikeMeshes.GROUND)
 	ground.render_priority = 1  # over the telegraph's fill of the same lanes (both transparent)
 	_pool(&"ground", BossStrikeMeshes.ground(), ground, false)

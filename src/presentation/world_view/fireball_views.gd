@@ -274,6 +274,31 @@ const DEFAULT_LOOK := {
 	"trail_style": &"glow",
 	"tail": 0.3,
 }
+## v0.8.0 TX1: the owner's painted cores (FxTextures; docs/art/requests/v0.8.0_textures.md): look -> [sheet, cell (0
+## top left .. 3 bottom right), turn (radians: a spear-shaped painting, its tip down-left, turned to point along the
+## flight)]. Tinted by the look's own colours. A look not listed (the Lens Drone's orbs, DEFAULT_LOOK) or a sheet not
+## installed keeps the code noise. The Colossus's boulder shards share the Gatekeeper's ember_stone look (its data), so
+## they draw its ember rock.
+const SPEAR_TURN := 2.356
+const TEX_CORES := {
+	&"ember_stone": ["fx_orb_cores", 0, 0.0],
+	&"acid_glob": ["fx_orb_cores", 1, 0.0],
+	&"prism_orb": ["fx_orb_cores", 2, 0.0],
+	&"molten_drop": ["fx_orb_cores", 3, 0.0],
+	&"spear_ember": ["fx_orb_cores_2", 0, SPEAR_TURN],
+	&"cannon_ember": ["fx_orb_cores_2", 1, 0.0],
+	&"arc_plasma": ["fx_orb_cores_2", 2, 0.0],
+	&"bomb_cinder": ["fx_orb_cores_2", 3, 0.0],
+	&"crown_orb": ["fx_orb_cores_final", 1, 0.0],
+	&"crown_bolt": ["fx_orb_cores_final", 2, SPEAR_TURN],
+	&"nemesis_bolt": ["fx_orb_cores_final", 3, 0.0],
+	&"nemesis_crescent": ["fx_orb_cores_final", 3, 0.0],
+}
+## v0.8.0 TX1: the fx_trails rows: flame, smoke, acid drips, crystal sparkle.
+const TRAIL_FLAME := 0
+const TRAIL_SMOKE := 1
+const TRAIL_DRIPS := 2
+const TRAIL_CRYSTAL := 3
 ## Trail length and share by Effects density (low: every other ball, shorter).
 const TRAIL_SCALE := {"low": 0.45, "medium": 0.75, "high": 1.0}
 ## v0.8.0 AV: the trail strip's width by Effects density (low: thin; the balls stay).
@@ -581,7 +606,8 @@ static func _fill(mi: MultiMeshInstance3D, buf: PackedFloat32Array) -> void:
 
 
 func _make_set(key: StringName) -> Dictionary:
-	var look := look_of(key)
+	var look := look_of(key).duplicate()
+	look["key"] = key  # v0.8.0 TX1: the materials pick the owner's textures by the look's key
 	var mesh := ProjectileMeshes.get_mesh(look.get("mesh", &"orb"))
 	var specs := [
 		["core", mesh, core_material(look)],
@@ -625,7 +651,29 @@ static func core_material(look: Dictionary) -> ShaderMaterial:
 	m.set_shader_parameter("facets", look.get("facets", 0.0))
 	m.set_shader_parameter("opacity", look.get("opacity", 1.0))
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	var key: StringName = look.get("key", &"")
+	if TEX_CORES.has(key):
+		var spec: Array = TEX_CORES[key]
+		var t := FxTextures.get_tex(spec[0])
+		if t != null:
+			m.set_shader_parameter("core_tex", t)
+			m.set_shader_parameter("tex_on", 1.0)
+			m.set_shader_parameter("tex_cell", Vector2(int(spec[1]) % 2, int(spec[1]) / 2))
+			m.set_shader_parameter("tex_turn", spec[2])
 	return m
+
+
+## v0.8.0 TX1: the fx_trails row a look's trail draws with: smoke, drips, crystal (gems and the Prism's bolts), else
+## flame.
+static func trail_row(look: Dictionary) -> int:
+	var style: StringName = look.get("trail_style", &"glow")
+	if style == &"smoke" or bool(look.get("smoke", false)):
+		return TRAIL_SMOKE
+	if style == &"drips":
+		return TRAIL_DRIPS
+	if look.get("mesh", &"orb") == &"gem" or look.get("key", &"") == &"crown_bolt":
+		return TRAIL_CRYSTAL
+	return TRAIL_FLAME
 
 
 ## v0.8.0 AV: the dark shell, turning with the core (FireballShaders.edge).
@@ -656,4 +704,9 @@ static func trail_material(look: Dictionary) -> ShaderMaterial:
 	m.set_shader_parameter("scroll", 0.8 if smoke else 2.2)
 	m.set_shader_parameter("opacity", 0.6 if smoke else 0.85)
 	m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+	var strip := FxTextures.get_tex("fx_trails")  # v0.8.0 TX1: the owner's trail strip
+	if strip != null:
+		m.set_shader_parameter("trail_tex", strip)
+		m.set_shader_parameter("tex_on", 1.0)
+		m.set_shader_parameter("tex_row", float(trail_row(look)))
 	return m

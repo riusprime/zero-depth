@@ -29,25 +29,47 @@ uniform float facets = 0.0;
 uniform float opacity = 1.0;
 uniform float motion = 1.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+// v0.8.0 TX1 (FireballViews.TEX_CORES): the owner's painted core, cell `tex_cell` of a 2 x 2 sheet (L its lightness,
+// A its outline), projected onto the body from its three sides and turning with it; `tex_turn` lines a spear-shaped
+// painting up with the flight. It takes the noise's place; the look's colours still tint it.
+uniform sampler2D core_tex : filter_linear_mipmap;
+uniform float tex_on = 0.0;
+uniform vec2 tex_cell = vec2(0.0);
+uniform float tex_turn = 0.0;
 
 varying vec3 lp;
+varying vec3 ln;
 varying float seed;
 
 %s
 
+float painted(vec2 p, float turn) {
+	vec2 q = vec2(p.x * cos(turn) - p.y * sin(turn), p.x * sin(turn) + p.y * cos(turn));
+	vec4 c = texture(core_tex, (clamp(0.5 + q * 0.8, 0.01, 0.99) + tex_cell) * 0.5);
+	return mix(0.12, c.r, c.a);
+}
+
 void fragment() {
 	float t = TIME * motion;
-	vec2 a = lp.xy * noise_scale * 0.5 + vec2(seed, t * 0.21 * swirl);
-	vec2 b = lp.zy * noise_scale * 0.5 + vec2(t * 0.17 * swirl, seed * 3.0);
-	float n = texture(noise_tex, a).r * 0.6 + texture(noise_tex, b).r * 0.4;
+	float n;
+	if (tex_on > 0.5) {
+		vec3 w = abs(ln) + 0.001;
+		w /= w.x + w.y + w.z;
+		float turn = tex_turn + (spin + tumble > 0.01 ? 0.0 : t * 0.2 * swirl);
+		n = painted(lp.xz, turn) * w.y + painted(lp.xy, turn) * w.z + painted(lp.zy, 0.0) * w.x;
+	} else {
+		vec2 a = lp.xy * noise_scale * 0.5 + vec2(seed, t * 0.21 * swirl);
+		vec2 b = lp.zy * noise_scale * 0.5 + vec2(t * 0.17 * swirl, seed * 3.0);
+		n = texture(noise_tex, a).r * 0.6 + texture(noise_tex, b).r * 0.4;
+	}
 	float facing = clamp(dot(NORMAL, VIEW), 0.0, 1.0);
 	float fres = 1.0 - facing;
-	float veins = 1.0 - smoothstep(0.012, 0.055, abs(n - 0.5));
+	float veins = tex_on > 0.5 ? 0.35 + 0.65 * smoothstep(0.16, 0.5, n) : 1.0 - smoothstep(0.012, 0.055, abs(n - 0.5));
 	float inner = pow(facing, 4.0);
 	float mask = mix(1.0, max(veins, inner * 0.45), crack);
 	float sparkle = facets * (0.5 + 0.5 * sin(dot(floor(NORMAL * 3.0), vec3(12.9, 78.2, 37.7)) + t * 3.0));
 	float flick = 0.85 + 0.3 * texture(noise_tex, vec2(seed * 7.0, t * 0.9)).r;
-	vec3 hot = core_color.rgb * (0.55 + 1.0 * n + sparkle);
+	vec3 hot = core_color.rgb * (0.55 + (1.0 + 0.6 * tex_on) * n + sparkle);
 	vec3 glow = mix(hot, edge_color.rgb, smoothstep(0.3, 0.95, fres));
 	ALBEDO = mix(core_color.rgb * 0.25, body_color.rgb, crack);
 	EMISSION = glow * energy * mask * flick;
@@ -79,6 +101,7 @@ void vertex() {
 	float w = sin(t * 7.0 + v.y * 6.0 + v.x * 3.0) * sin(t * 5.0 + v.z * 5.0);
 	v *= 1.0 + wobble * w * motion;
 	lp = VERTEX;
+	ln = NORMAL;
 	VERTEX = v;
 	NORMAL = r * NORMAL;
 }
@@ -95,6 +118,7 @@ uniform float wobble = 0.0;
 uniform float motion = 1.0;
 
 varying vec3 lp;
+varying vec3 ln;
 varying float seed;
 
 %s
@@ -117,6 +141,11 @@ uniform float scroll = 2.0;
 uniform float opacity = 0.8;
 uniform float motion = 1.0;
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
+// v0.8.0 TX1 (FireballViews.trail_row): the owner's trail strip, row `tex_row` of a 1 x 4 sheet; its right half (from
+// the thin middle to the full right end) runs from the trail's tail to the ball.
+uniform sampler2D trail_tex : filter_linear_mipmap;
+uniform float tex_on = 0.0;
+uniform float tex_row = 0.0;
 
 varying float seed;
 
@@ -140,13 +169,21 @@ void fragment() {
 	float body = 1.0 - smoothstep(0.3 + 0.35 * n, 1.0, v);
 	float along = smoothstep(0.0, 0.85, u);
 	float a = body * along * opacity * (0.55 + 0.7 * n);
-	if (drips > 0.0) {
-		float cell = fract(u * 4.0 + t * 1.3 + seed);
-		float blob = 1.0 - smoothstep(0.2, 0.34, length(vec2((cell - 0.5) * 1.6, v * 0.9)));
-		a = mix(a, max(a * 0.3, blob * along * opacity), drips);
+	if (tex_on > 0.5) {
+		float x = 0.5 + 0.5 * clamp(u + (n - 0.5) * 0.04, 0.0, 0.995);
+		vec4 s = texture(trail_tex, vec2(x, (tex_row + clamp(UV.y, 0.02, 0.98)) * 0.25));
+		vec3 base = mix(tint.rgb, head.rgb, smoothstep(0.55, 1.0, u));
+		ALBEDO = mix(base, vec3(1.0), s.r * 0.35) * glow * (0.75 + 0.5 * s.r);
+		ALPHA = clamp(s.a * opacity * 1.6 * smoothstep(0.0, 0.2, u), 0.0, 1.0);
+	} else {
+		if (drips > 0.0) {
+			float cell = fract(u * 4.0 + t * 1.3 + seed);
+			float blob = 1.0 - smoothstep(0.2, 0.34, length(vec2((cell - 0.5) * 1.6, v * 0.9)));
+			a = mix(a, max(a * 0.3, blob * along * opacity), drips);
+		}
+		ALBEDO = mix(tint.rgb, head.rgb, smoothstep(0.55, 1.0, u)) * glow;
+		ALPHA = clamp(a, 0.0, 1.0);
 	}
-	ALBEDO = mix(tint.rgb, head.rgb, smoothstep(0.55, 1.0, u)) * glow;
-	ALPHA = clamp(a, 0.0, 1.0);
 }
 """
 

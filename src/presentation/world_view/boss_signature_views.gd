@@ -531,6 +531,10 @@ func _init_bs2() -> void:
 		m.set_shader_parameter("core", GAZE_CORE)
 		m.set_shader_parameter("strength", part[1])
 		m.set_shader_parameter("noise_tex", ProjectileMeshes.noise())
+		if mi == _aim:  # v0.8.0 TX1: the owner's dashed aim line, the owner's beam strip
+			FxTextures.texture_beam(m, "fx_aim_lines", FxTextures.AIM_DASHED, 6.0, false, 0.6)
+		else:
+			FxTextures.texture_beam(m, "fx_beam", 3, 5.0, false, 0.5)
 		mi.material_override = m
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visible = false
@@ -568,6 +572,10 @@ func _init_bs2() -> void:
 		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		mi.visible = false
 		add_child(mi)
+	var impact := FxTextures.flare_material(GAZE, GAZE_CORE, 2)  # v0.8.0 TX1: the owner's impact flare
+	if impact != null:
+		_impact.mesh = FxTextures.flare_mesh()
+		_impact.material_override = impact
 	_eye_flare.name = "GazeEye"
 	_impact.name = "GazeImpact"
 	for l: OmniLight3D in [_eye_light, _impact_light]:
@@ -762,6 +770,10 @@ func _draw_gaze(now: float, still: bool) -> void:
 		_impact_light.visible = true
 		_impact.position = to
 		_impact.scale = Vector3.ONE * (0.7 + (0.0 if still else 0.2 * sin(now * 2.3)))
+		if _impact.material_override is ShaderMaterial:
+			(_impact.material_override as ShaderMaterial).set_shader_parameter(
+				"motion", 0.0 if still else 1.0
+			)
 		_impact_light.position = to + Vector3(0, 0.4, 0)
 		_impact_light.light_energy = 3.5 * flicker
 

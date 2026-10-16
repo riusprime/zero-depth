@@ -89,8 +89,15 @@ render_mode unshaded, %s, depth_draw_never, cull_disabled, shadows_disabled;
 
 uniform sampler2D noise_tex : filter_linear_mipmap, repeat_enable;
 uniform float motion = 1.0;
+// v0.8.0 TX1: the owner's beam strip (fx_beam row tex_row), for a beam whose r is 4 + alpha (FxTextures).
+uniform sampler2D beam_tex : filter_linear_mipmap, repeat_enable;
+uniform float tex_on = 0.0;
+uniform float tex_row = 2.0;
+uniform float tex_tile = 5.0;
 
 varying vec4 cd;
+varying float along_m;
+varying vec3 perp;
 
 // The instance's colour, packed by BossStrikeMeshes.pack (six bits a channel, 0..2).
 vec3 unpack(float v) {
@@ -102,12 +109,23 @@ vec3 unpack(float v) {
 
 void vertex() {
 	cd = INSTANCE_CUSTOM;
+	along_m = VERTEX.x * length(MODEL_MATRIX[0].xyz);
+	vec3 axis = (MODELVIEW_MATRIX * vec4(1.0, 0.0, 0.0, 0.0)).xyz;
+	vec3 c = cross(axis, vec3(0.0, 0.0, 1.0));
+	perp = length(c) > 0.00001 ? normalize(c) : vec3(0.0, 1.0, 0.0);
 }
 
 void fragment() {
 	float t = TIME * motion;
 	vec3 tint = unpack(cd.a);
-	if (cd.r < 1.5) {
+	if (cd.r > 3.5 && tex_on > 0.5) {
+		float alpha = cd.r - 4.0;
+		float across = dot(normalize(NORMAL), perp);
+		float y = (tex_row + clamp(0.5 + 0.5 * across, 0.03, 0.97)) * 0.25;
+		vec4 s = texture(beam_tex, vec2(along_m / tex_tile - t * 0.5 + cd.g, y));
+		ALBEDO = mix(tint, vec3(1.0), s.r * 0.7) * cd.b * 0.55;
+		ALPHA = clamp(alpha * s.a, 0.0, 1.0);
+	} else if (cd.r < 1.5) {
 		float alpha = cd.r;
 		float n = texture(noise_tex, vec2(UV.x * 3.0 + cd.g, UV.y * 0.8 - t * 0.6)).r;
 		float band = pow(1.0 - UV.y, 1.6) * smoothstep(0.0, 0.08, UV.y);
@@ -115,7 +133,7 @@ void fragment() {
 		float puff = texture(noise_tex, vec2(UV.x * 7.0 - cd.g, UV.y * 1.5 - t * 0.9)).r;
 		ALPHA = clamp(alpha * band * smoothstep(0.42, 0.72, n * 0.6 + puff * 0.6), 0.0, 1.0);
 	} else {
-		float alpha = cd.r - 2.0;
+		float alpha = cd.r - (cd.r > 3.5 ? 4.0 : 2.0);
 		float core = pow(abs(dot(NORMAL, VIEW)), 2.5);
 		float n = texture(noise_tex, vec2(UV.x * 6.0 - t * 2.5 + cd.g, UV.y)).r;
 		ALBEDO = mix(tint, vec3(1.0), core * 0.75) * cd.b * mix(0.75, 1.35, n);
