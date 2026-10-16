@@ -260,8 +260,8 @@ func test_the_strongest_cards_are_picked_by_level_then_rarity_then_slot() -> voi
 		tie_ids.append(c.card_id)
 	assert_eq(
 		tie_ids,
-		[&"halo_shot", &"gun_spread", &"gun_twin"] as Array[StringName],
-		"a tie: the rare first, then the slot"
+		[&"gun_twin", &"halo_shot", &"gun_spread"] as Array[StringName],
+		"a tie: the rarest first (v0.8.0 RR: Twin is Epic, Halo Rare), then the slot"
 	)
 
 
