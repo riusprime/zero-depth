@@ -17,7 +17,7 @@ recovery_seconds = 0.1833333
 arc_degrees = 120.0
 reach_m = 1.6
 damage = 10
-hitstop_seconds = 0.05
+hitstop_seconds = 0.0666667
 lunge_m = 0.0
 sweep_seconds = 0.0833333
 
@@ -29,7 +29,7 @@ recovery_seconds = 0.1833333
 arc_degrees = 120.0
 reach_m = 1.6
 damage = 10
-hitstop_seconds = 0.05
+hitstop_seconds = 0.0666667
 lunge_m = 0.0
 sweep_seconds = 0.0833333
 
@@ -41,7 +41,7 @@ recovery_seconds = 0.2
 arc_degrees = 40.0
 reach_m = 2.3
 damage = 12
-hitstop_seconds = 0.0666667
+hitstop_seconds = 0.0833333
 lunge_m = 0.35
 sweep_seconds = 0.0666667
 
@@ -53,7 +53,7 @@ recovery_seconds = 0.4
 arc_degrees = 360.0
 reach_m = 1.9
 damage = 24
-hitstop_seconds = 0.1166667
+hitstop_seconds = 0.1333333
 lunge_m = 0.6
 sweep_seconds = 0.15
 

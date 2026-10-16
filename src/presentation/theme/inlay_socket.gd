@@ -25,7 +25,7 @@ var glow := 0.0:
 		queue_redraw()
 ## The picture in the socket (an ItemIconView by default; null for an empty socket).
 var icon: ItemIconView
-## v0.8.0 TX3: the element whose glyph the badge shows (&"": none).
+## v0.8.0 TX3: the glyph the badge shows (&"": none): an element's, or (N1, D42) the star burst or crossed blades.
 var element := &"":
 	set(v):
 		element = v
@@ -58,7 +58,7 @@ func show_item(id: StringName, icon_color: Color, ring: Color) -> void:
 	if icon != null:
 		icon.set_item(id, icon_color)
 		icon.visible = id != &""
-	element = ElementGlyphs.element_of(id)
+	element = ElementGlyphs.glyph_of(id)  # v0.8.0 N1 (D42): the star, the element, or the crossed blades
 
 
 func _draw() -> void:

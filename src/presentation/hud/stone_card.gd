@@ -150,6 +150,8 @@ func show_face(
 	_level.add_theme_color_override("font_color", EmberStone.EMBER.lightened(0.3))
 	_level_box.border_color = Color(EmberStone.EMBER, 0.6)
 	socket.show_item(id, elem.lerp(Color.WHITE, 0.15), elem if id != &"" else Color(1, 1, 1, 0.12))
+	if tier == CardFrames.LEGENDARY_TIER and id != &"":  # v0.8.0 N1 (D42): the legendary tier's star burst
+		socket.element = &"star"
 	gem.color = tier_color
 	gem.visible = id != &""
 	_box.pattern = hash(id) % 997

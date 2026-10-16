@@ -27,6 +27,10 @@ Numbers marked **starting value** are defaults to tune, usually at a G2 gate or 
 - Godot's 3D physics interpolation (`physics/common/physics_interpolation = true`, 4.4+) smooths those
   transforms between ticks. A view calls `reset_physics_interpolation()` when an actor spawns or teleports, so it
   doesn't streak across the room.
+- A view that lays its pieces out on frame time (ticks plus the interpolation fraction, in `_process`), above all a
+  pool whose slots change hands between frames (MultiMesh instances, pooled lights, decals), sets
+  `physics_interpolation_mode = OFF`: interpolated, a re-used slot is drawn between two unrelated places for a frame
+  (v0.8.0 N1: the fire sprites flashing across the screen, `evidence/N1_FIXES.md`).
 - The **aim reticle** is drawn in `_process` from the live cursor or stick position, not from the last tick. Aim
   must feel instant even though the sim reads it at 60 Hz.
 - **Frame budget** (**target**): 60 fps at 1080p on the owner's lowest-spec GPU, with the presentation stress

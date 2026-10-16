@@ -123,7 +123,9 @@ func test_ember_stacks_cap_at_five_and_scale_the_tick() -> void:
 	assert_eq(w.actors.burn_stacks[1], 5)
 	assert_eq(WorldReader.new(w).burn_stacks(1), 5)
 	var after := w.last_event_seq()
-	_idle(w, 31)
+	# v0.8.0 N1 (O48): one burn period exactly (30 ticks), so one tick falls in it whatever phase the swings' longer
+	# hit-stop left the burn in (31 caught two once the hit-stop grew).
+	_idle(w, 30)
 	var dots := w.events_since(after).filter(
 		func(e: SimEvent) -> bool: return e.kind == SimEvent.Kind.DAMAGE
 	)

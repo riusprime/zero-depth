@@ -382,6 +382,7 @@ static func apply_build(t: PlayerTable, def: BuildDefinition) -> PlayerTable:
 			t.weapons = PlayerTable.WEAPON_GUN
 			t.bolt_damage_permille = def.damage_permille
 	t.skill = compile_skill(def.skill)  # v0.3.5 K: the build's second ability.
+	t.damage_taken_permille = def.damage_taken_permille  # v0.8.0 N1 (D39): the Blade takes 25 % less
 	return t
 
 

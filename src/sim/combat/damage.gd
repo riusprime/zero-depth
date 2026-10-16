@@ -103,8 +103,11 @@ static func hit(
 		m = [m[0] * c[0] / 1000, m[1] | c[1]]
 	h.tags |= m[1]
 	var scaled := amount * m[0] / 1000
-	if target == 0 and scaled > 0 and Stats.armour_permille(w) != 1000:  # v0.4.0 BS: armour
-		scaled = maxi(1, (scaled * Stats.armour_permille(w) + 500) / 1000)
+	if target == 0 and scaled > 0:
+		# v0.4.0 BS: armour; v0.8.0 N1 (D39): times the held weapon's damage taken (the Blade's -25 %), one rounding.
+		var taken := Stats.armour_permille(w) * PlayerBuild.taken_permille(w) / 1000
+		if taken != 1000:
+			scaled = maxi(1, (scaled * taken + 500) / 1000)
 	var got := 0
 	if scaled > 0:
 		got = _apply(

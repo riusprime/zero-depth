@@ -13,12 +13,13 @@ extends RefCounted
 ##   (Flurry) don't stutter.
 ## - Off with the Options "Hit-stop" off or reduced motion on (ViewPrefs.hit_stop_on).
 ## The sim's own hit-stop (World.freeze_ticks, from the step's hitstop_ticks) is unchanged and separate.
-## Starting values.
+## Starting values. v0.8.0 N1 (owner O48, D18: "OK but we could make it a 20% more noticeable"): the hold 2 -> 2.4
+## frames, the kick 0.06 -> 0.072 m (finisher 0.1 -> 0.12 m), the sim's steps 3,3,4,7 -> 4,4,5,8 ticks (runner.tres).
 
-const HOLD_SECONDS := 2.0 / 60.0
+const HOLD_SECONDS := 2.4 / 60.0
 const MIN_GAP_TICKS := 9
-const KICK_M := 0.06
-const FINISHER_KICK_M := 0.1
+const KICK_M := 0.072
+const FINISHER_KICK_M := 0.12
 
 ## Counts (tests and the probe): freezes started, hits that joined one, hits a freeze was refused for (too soon).
 var freezes := 0

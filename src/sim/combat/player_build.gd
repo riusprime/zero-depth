@@ -19,6 +19,16 @@ static func has_gun(w: World) -> bool:
 	return (w.player.weapons & PlayerTable.WEAPON_GUN) != 0
 
 
+## v0.8.0 N1 (owner O43, D39): the damage the hero takes, per mille, from the held weapon: a Blade run holds the
+## Blade the whole run and takes its build's damage_taken_permille (750); a one-weapon run takes its build's value
+## (the Gun's 1000), a kernel world with both weapons 1000.
+static func taken_permille(w: World) -> int:
+	var t := w.player
+	if t.weapons == PlayerTable.WEAPON_BLADE or t.weapons == PlayerTable.WEAPON_GUN:
+		return t.damage_taken_permille
+	return 1000
+
+
 ## Tick phase 2: moving turns the character (the facing keeps the last move direction when you stop).
 static func note_facing(w: World) -> void:
 	if w.move_intent != Vector2i.ZERO and not w.player_dead():
@@ -76,6 +86,8 @@ static func hash_into(w: World, h: StateHasher) -> void:
 	for v in [s.melee_residue, s.bolt_residue, s.combat_tick, s.regen_acc, s.regen_tick]:
 		h.add_int(v)
 	h.add_int(w.regen_bonus_permille)
+	if t.damage_taken_permille != 1000:  # v0.8.0 N1 (D39): only a build that changes it hashes it
+		h.add_int(t.damage_taken_permille)
 
 
 ## The reads the views need (WorldReader.player_build): has_blade, has_gun, facing (the melee angle now),

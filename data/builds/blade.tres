@@ -23,5 +23,6 @@ weapon = 0
 name_key = &"BUILD_BLADE"
 desc_key = &"BUILD_BLADE_DESC"
 damage_permille = 1150
+damage_taken_permille = 750
 skill = SubResource("Skill_lunge_cleave")
 id = &"blade"

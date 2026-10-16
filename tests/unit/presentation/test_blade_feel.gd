@@ -419,7 +419,7 @@ func _swing_until_hit(s: Array) -> int:
 	return -1
 
 
-func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_frames() -> void:
+func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_4_frames() -> void:
 	var s := _setup()
 	var actors: ActorViews = s[2]
 	var feel: HitFeel = s[3]
@@ -450,7 +450,14 @@ func test_a_blade_hit_holds_the_hero_s_swing_and_the_struck_enemy_for_2_frames()
 		)
 		assert_almost_eq(hero.body_yaw(), hero_yaw, 1e-5, "frame %d: its head and swing too" % f)
 		assert_true(actors.is_flashing(id), "frame %d: still flashing" % f)
-	assert_false(feel.hit_stop.holding(), "2 frames, then it lets go")
+	# v0.8.0 N1 (owner O48, +20 %): the hold is 2.4 frames, so the third frame holds its first 0.4 and runs on.
+	assert_true(feel.hit_stop.holding(), "2 whole frames held, 0.4 of a frame left")
+	enemy._process(DT)
+	hero._process(DT)
+	kit._process(DT)
+	actors._process(DT)
+	feel.hit_stop.advance(DT)
+	assert_false(feel.hit_stop.holding(), "2.4 frames, then it lets go")
 	assert_false(enemy.holding())
 	assert_false(hero.holding())
 	assert_false(kit.holding())

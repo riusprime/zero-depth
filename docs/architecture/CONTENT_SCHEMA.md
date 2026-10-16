@@ -1183,7 +1183,9 @@ chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read 
 
 `BuildDefinition` (v0.3.0 L15, L16; `data/builds/`): `id`, `weapon` (`BLADE` or `GUN`), `name_key`, `desc_key`,
 `damage_permille` (100–5000, the weapon's damage factor) and, since v0.3.5 K (owner F18), `skill`, a required
-`SkillDefinition` sub-resource: the build's second ability on the Skill button. Its fields:
+`SkillDefinition` sub-resource: the build's second ability on the Skill button. v0.8.0 N1 (D39):
+`damage_taken_permille` (100–1000, default 1000), the share of every hit the hero takes while the build's weapon is
+held (the Blade 750), multiplied with Armour in `Damage.hit`. The skill's fields:
 
 | Field | Kinds | Rule |
 |---|---|---|

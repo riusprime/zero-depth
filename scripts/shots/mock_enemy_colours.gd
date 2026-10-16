@@ -6,6 +6,11 @@ extends SceneTree
 ##     godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/shots/mock_enemy_colours.gd
 ## Options after `--`: palettes=current,a,b,c  biomes=ruins,frozen_shore  modes=off,deuteranopia,tritanopia
 ## (the colour-blind modes are ThemePalette's: the views build with that mode on, as a player with it set would see).
+## v0.8.0 N1 (owner O39: "yellow orange and red are close because of the room lighning"): fire=1 lights the line-up
+## with two of the room's fire lights (StageKit's: the mood's warm colour, energy and range, at a barrel's height)
+## either side of the grid, as a room with torches does; measure=1 then reads each kind's body on screen (the mean
+## of its coloured pixels in a box on its body) and prints its colour, hue, CIE L*, chroma, and the closest ΔE
+## across roles and inside the warm trio (the reds, oranges and yellows); tag=<t> adds a suffix to the file name.
 ## Writes build/shots/<version>/ec/<palette>_<biome>_<mode>.png and prints each path. The world is stepped only until
 ## every kind has risen out of the ground (each held on its grid spot), then frozen while the frame-time animation
 ## settles. Labels are drawn by this script (English). Quits on every path.
@@ -65,6 +70,9 @@ var _ids: Array[int] = []
 var _ticks := 0
 var _settle := -1
 var _frame := 0
+var _fire := false
+var _measure := false
+var _tag := ""
 
 
 func _initialize() -> void:
@@ -78,6 +86,14 @@ func _initialize() -> void:
 			biomes = a.trim_prefix("biomes=").split(",")
 		elif a.begins_with("modes="):
 			modes = a.trim_prefix("modes=").split(",")
+		elif a == "fire=1":
+			_fire = true
+		elif a == "measure=1":
+			_measure = true
+		elif a.begins_with("glow="):  # v0.8.0 N1: the role glow's energy (ActorViews.ROLE_GLOW; 0 = the look before)
+			ActorViews.role_glow_energy = float(a.trim_prefix("glow="))
+		elif a.begins_with("tag="):
+			_tag = "_" + a.trim_prefix("tag=")
 	for p in palettes:
 		for b in biomes:
 			for m in modes:
@@ -137,6 +153,15 @@ func _next() -> bool:
 	_view.rig.snap_to(SimPlane.to_3d(Vector2.ZERO))
 	_view.rig.set_process(false)
 	_view.rig.camera.current = true
+	if _fire:  # two of the room's fire lights, as StageKit builds them (v0.8.0 N1)
+		for side: float in [-1.0, 1.0]:
+			var l := OmniLight3D.new()
+			l.light_color = biome.mood.warm_light_color
+			l.light_energy = biome.mood.warm_light_energy
+			l.omni_range = biome.mood.warm_light_range
+			l.omni_attenuation = 1.1
+			l.position = SimPlane.to_3d(RIGHT * side * 5.2 + DOWN * -0.4, 1.15)
+			_view.add_child(l)
 	_ticks = 0
 	_settle = -1
 	return true
@@ -180,8 +205,10 @@ func _process(_delta: float) -> bool:
 	if _settle > 0:
 		return false
 	var job: Array = _jobs[_job]
-	var path := _dir + "%s_%s_%s.png" % job
+	var path := _dir + "%s_%s_%s" % job + _tag + ".png"
 	var img := root.get_texture().get_image()
+	if _measure and img != null:
+		_report(img, job)
 	if img == null or img.save_png(path) != OK:
 		push_error("mock_enemy_colours: could not save %s" % path)
 		quit(1)
@@ -195,6 +222,118 @@ func _process(_delta: float) -> bool:
 	if not _next():
 		quit(0)
 	return false
+
+
+## measure=1: each kind's body colour on screen, and how far apart the roles read.
+func _report(img: Image, job: Array) -> void:
+	var cam := _view.rig.camera
+	var k := Vector2(img.get_size()) / root.get_visible_rect().size
+	var got := {}
+	var lines := PackedStringArray()
+	for n in PLAN.size():
+		var id := EnemyPalettes.KIND_IDS[int(PLAN[n][0])] as StringName
+		var at := _body_centre(_ids[n], int(PLAN[n][0]))
+		var c := cam.unproject_position(at) * k
+		var half := maxf(
+			3.0, (cam.unproject_position(at + Vector3(0.09, 0, 0.09)) * k).distance_to(c)
+		)
+		var sum := Color(0, 0, 0)
+		var count := 0
+		for y in range(int(c.y - half), int(c.y + half)):
+			for x in range(int(c.x - half), int(c.x + half)):
+				if x < 0 or y < 0 or x >= img.get_width() or y >= img.get_height():
+					continue
+				var p := img.get_pixel(x, y)
+				if p.s >= 0.12 and p.v >= 0.1:  # coloured, not the outline or a grey
+					sum += p
+					count += 1
+		var mean := Color(sum.r / maxi(count, 1), sum.g / maxi(count, 1), sum.b / maxi(count, 1))
+		got[id] = mean
+		var lab := _lab(mean)
+		lines.append(
+			(
+				"  %-13s %-8s %s hue %5.1f  L* %5.1f  chroma %5.1f  (%d px)"
+				% [
+					id,
+					EnemyPalettes.ROLES[id],
+					mean.to_html(false),
+					mean.h * 360.0,
+					lab.x,
+					Vector2(lab.y, lab.z).length(),
+					count
+				]
+			)
+		)
+	var across := [INF, "", ""]
+	var warm := [INF, "", ""]
+	var warm_ids := [
+		&"charger",
+		&"hatchling",
+		&"swarmer",
+		&"splitter",
+		&"splitling",
+		&"bomb_drone",
+		&"mine_layer"
+	]
+	for a: StringName in got:
+		for b: StringName in got:
+			if String(a) >= String(b):
+				continue
+			var de := _lab(got[a]).distance_to(_lab(got[b]))
+			if EnemyPalettes.ROLES[a] != EnemyPalettes.ROLES[b] and de < across[0]:
+				across = [de, a, b]
+			if (
+				a in warm_ids
+				and b in warm_ids
+				and EnemyPalettes.ROLES[a] != EnemyPalettes.ROLES[b]
+				and de < warm[0]
+			):
+				warm = [de, a, b]
+	print(
+		(
+			"measure: palette=%s biome=%s mode=%s fire=%s glow=%.2f%s"
+			% [job[0], job[1], job[2], str(_fire), ActorViews.role_glow_energy, _tag]
+		)
+	)
+	print("\n".join(lines))
+	print("  closest across roles: ΔE %.1f (%s / %s)" % across)
+	print("  closest red/orange vs yellow (melee vs bombers): ΔE %.1f (%s / %s)" % warm)
+	var hues := PackedStringArray()
+	for id: StringName in [&"charger", &"splitter", &"splitling", &"bomb_drone", &"mine_layer"]:
+		hues.append("%s %.1f" % [id, (got[id] as Color).h * 360.0])
+	print("  warm hues (deg): " + ", ".join(hues))
+
+
+## The centre of kind `kind`'s body plate (its mesh drawn in the palette's body colour) on actor `id`, else its spot.
+func _body_centre(id: int, kind: int) -> Vector3:
+	var node := _view.actors.actor_node(id)
+	var want := EnemyPalettes.color(kind, &"body")
+	if node != null:
+		for mi: MeshInstance3D in node.find_children("*", "MeshInstance3D", true, false):
+			var mats: Array = [mi.material_override]
+			for sfc in mi.get_surface_override_material_count():
+				mats.append(mi.get_surface_override_material(sfc))
+			for m in mats:
+				var sm := m as StandardMaterial3D
+				if sm != null and sm.albedo_color.is_equal_approx(want) and mi.is_visible_in_tree():
+					return mi.global_transform * mi.get_aabb().get_center()
+	return SimPlane.to_3d(_spots[_ids.find(id)], 0.42)
+
+
+static func _lab(c: Color) -> Vector3:
+	var lin := func(v: float) -> float:
+		return v / 12.92 if v <= 0.04045 else pow((v + 0.055) / 1.055, 2.4)
+	var r: float = lin.call(c.r)
+	var g: float = lin.call(c.g)
+	var b: float = lin.call(c.b)
+	var x := (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047
+	var y := 0.2126 * r + 0.7152 * g + 0.0722 * b
+	var z := (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883
+	var f := func(t: float) -> float:
+		return pow(t, 1.0 / 3.0) if t > 0.008856 else 7.787 * t + 16.0 / 116.0
+	return Vector3(
+		116.0 * f.call(y) - 16.0, 500.0 * (f.call(x) - f.call(y)), 200.0 * (f.call(y) - f.call(z))
+	)
 
 
 func _draw_labels() -> void:

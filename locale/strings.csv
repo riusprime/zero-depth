@@ -25,7 +25,7 @@ UI_OPT_60,60,60
 UI_OPT_120,120,120
 UI_OPT_144,144,144
 BIOME_RUINS,Ruins,Ruinas
-CREDITS_OWNER,…,…
+CREDITS_OWNER,Rius,Rius
 CREDITS_MADE_WITH,Made with Godot Engine,Hecho con Godot Engine
 UI_DEV_PANEL,Developer panel,Panel de desarrollo
 UI_DEV_PAUSE,Pause / resume,Pausar / seguir
@@ -188,6 +188,7 @@ BUILD_BLADE_DESC,A four-slash combo toward where you face. No gun.,Un combo de c
 BUILD_GUN,GUN,PISTOLA
 BUILD_GUN_DESC,Hold to shoot where you aim. No blade.,Mantén para disparar hacia donde apuntas. Sin hoja.
 BUILD_DAMAGE,Damage %s,Daño %s
+BUILD_TAKEN,Damage taken %s,Daño recibido %s
 BUILD_HINT,Left / Right to choose · Enter or A to start · Esc or B to go back,Izquierda / Derecha para elegir · Intro o A para empezar · Esc o B para volver
 UI_VOLUME_AMBIENCE,Ambience,Ambiente
 CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]

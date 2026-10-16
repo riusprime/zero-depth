@@ -148,6 +148,9 @@ var _melt_shader := Shader.new()
 
 func _init() -> void:
 	name = "BossSignatures"
+	# v0.8.0 N1 (O55, the lighting audit): everything here is laid out in _draw on frame time (ticks plus the
+	# fraction), its lights, scorch and spark pools included: no physics interpolation on top (as VfxCore).
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var mm := MultiMesh.new()
 	mm.transform_format = MultiMesh.TRANSFORM_3D
 	mm.use_custom_data = true
