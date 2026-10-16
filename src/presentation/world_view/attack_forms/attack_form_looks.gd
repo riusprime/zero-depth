@@ -115,6 +115,9 @@ static func compose(
 		"flash": CRIT_FLASH if crit else Color(0, 0, 0, 0),
 		"angles": angles_of(spec),
 		"count": maxi(1, int(spec.get("count", 1))),
+		# v0.8.0 AO: an order-rule ring (WandRings: the view joins its rings with shock arcs) and a thrown one (Swirl)
+		"ring_layout": int(spec.get("ring_layout", 0)),
+		"thrown": int(spec.get("swirl", 0)) > 0 or int(spec.get("swirl_group", 0)) > 0,
 	}
 	_sizes(look, spec, form)
 	return look

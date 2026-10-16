@@ -205,7 +205,19 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"level": level,
 		"trigger": trigger_of(w, code),
 		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
+		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
 	}
+
+
+## v0.8.0 AO (owner O37): card `code`'s ModifierTable.OrderKind (its first modifier that has one; FREE otherwise): the
+## wand's tiles mark a shape, a count and a motion card (it changes what is left of it).
+static func order_of(w: World, code: int) -> int:
+	if Offers.type_of(code) == Offers.ABILITY or code < 0 or code >= w.item_tables.size():
+		return ModifierTable.OrderKind.FREE
+	for m in w.item_tables[code].modifiers:
+		if m.order_kind != ModifierTable.OrderKind.FREE:
+			return m.order_kind
+	return ModifierTable.OrderKind.FREE
 
 
 ## The plain-words read-back of a wand read (read()): an Array of lines, each {"key": a translation key, "args": its

@@ -100,6 +100,8 @@ func test_the_shipped_data() -> void:
 			"cluster_payload",
 			"cold_snap",
 			"conductor",
+			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
+			"gun_swirl",
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",

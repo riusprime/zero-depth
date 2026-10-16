@@ -47,6 +47,9 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 - [ ] P3: do Ruins, Night Rocks and Red Canyon now run as smoothly as Starfall on your PC (fps)? Do the fire
   lights still pop as you walk, or fade? Is the glow low enough (barrels, braziers, the hero), the mood kept? Is loop
   2 through the Purple Portal about 10 % easier? ([evidence](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md))
+- [ ] AO (O37): take Ring, Spread and Swirl on a Gun run and try the orders on the Build page (Ring · Spread, Spread ·
+  Ring, Ring · Spread · Swirl, Swirl · Ring · Spread): does the order now matter enough, does the storm read as a storm,
+  and are the lightning circles too strong? ([evidence](roadmap/v0.8.0/evidence/ATTACK_ORDER.md))
 - [ ] On the **Windows export** (the CI build, not the editor): starts, plays, saves and quits cleanly.
 
 ---
@@ -78,6 +81,11 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D21 | The Loop device stands beside the Ascension portal where a Deep gate would (no menu, no "End the run"); the two Ascension achievements now say "Take the Loop device". OK? | as built | FINAL_BOSS.md "The flow since P2" |
 | D22 | The Purple Portal (Deep gate) 10 % ease (P3, O35) applies on loop 2 **and every later loop**. Loop 2 only instead? | loop 2 and later | [`BIOME_PERF_AND_LIGHT.md`](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md) |
 | D23 | **Utility cards (UC, G1):** 22 mechanic cards; mark each Yes / No / Change. Only Yes rows get built | — | [`UTILITY_CARDS.md`](roadmap/v0.8.0/UTILITY_CARDS.md) |
+| D24 | AO (O37) readings: "Triple" is the existing **Spread** card (its 3-shot fan) extended with the order rule, not a new card; **Ring and Swirl are Gun cards only** (the Blade has no Ring yet); Ring's circle is cast **in front of you along the aim** (not round the hero, not where the shot ends). Keep, or a separate Triple card / a Blade Ring / another place? | as built | [`ATTACK_ORDER.md`](roadmap/v0.8.0/evidence/ATTACK_ORDER.md) |
+| D25 | AO's power (starting values, untuned): Ring 2.5 m (+0.3 m a level), 0.85 a ring or pulse when more than one, each ring shocks on its own; on the probe's 6 dummies Ring alone deals about 7× the plain shot, and Spread · Ring (one ring, 3 pulses on one spot) beats Ring · Spread (3 rings) on both a cluster and a single target (numbers in ATTACK_ORDER.md). Tune, or keep for your playtest? | keep for the playtest | ATTACK_ORDER.md |
+| D26 | AO's caps (direct, for the frame budget): a ring pulses at most 5 times (a level-5 Spread left of a Ring is 11 shots: the rest is dropped), at most 48 rings alive, a ring's Split shards / trigger casts at most 64 alive. OK? | as built | ATTACK_ORDER.md |
+| D27 | AO's Swirl draws from a new named stream, `wand:swirl:<tick>:<launch>` (derived from the run seed per launch, nothing saved). Add it to EI-05's list with D13's sub-streams? | kept, unlisted | `src/sim/combat/wand_rings.gd`; LOCKED_DECISIONS EI-05 |
+| D28 | Which other cards should become order cards? Today only Ring (shape), Spread and Halo (count) and Swirl (motion); Twin, Boomerang, Orbit, Spiral and Homing stay order-free | as built | ATTACK_ORDER.md |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 

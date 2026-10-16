@@ -758,7 +758,11 @@ ITEM_GUN_RAPID_FIRE_DESC,"Gun: ×0.6 size, +60% fire rate, −30% damage.","Pist
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Gun: fires the spell twice, side by side.","Pistola: dispara dos veces, lado a lado."
 ITEM_GUN_SPREAD,Spread,Abanico
-ITEM_GUN_SPREAD_DESC,Gun: becomes a 3-shot fan (+2 per level).,Pistola: un abanico de 3 balas (+2 por nivel).
+ITEM_GUN_SPREAD_DESC,"Gun, count: a 3-shot fan (+2 a level); after Ring: 3 rings","Pistola: abanico de 3 (+2 por nivel); tras Anillo: 3 anillos"
+ITEM_GUN_RING,Ring,Anillo
+ITEM_GUN_RING_DESC,"Gun, shape: a lightning circle that shocks","Pistola, forma: un círculo de rayos que electrocuta"
+ITEM_GUN_SWIRL,Swirl,Remolino
+ITEM_GUN_SWIRL_DESC,"Gun, motion: throws what is left of it at random","Pistola, movimiento: lanza al azar lo de su izquierda"
 ITEM_GUN_PIERCE,Pierce,Perforación
 ITEM_GUN_PIERCE_DESC,Gun: passes through 2 enemies (+1 per level).,Pistola: atraviesa 2 enemigos (+1 por nivel).
 ITEM_GUN_RICOCHET,Ricochet,Rebote
@@ -821,6 +825,9 @@ UI_BUILD_SLOTS,%d of %d slots · the wand reads left to right,%d de %d huecos ·
 UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
 UI_WAND_NEW,New,Nueva
+UI_WAND_ORDER_SHAPE,← shape,← forma
+UI_WAND_ORDER_COUNT,← count,← número
+UI_WAND_ORDER_MOTION,← motion,← movimiento
 UI_WAND_EMPTY,Empty,Vacío
 UI_WAND_CUT_FIRE,the shot you fire,el disparo que lanzas
 UI_WAND_CUT_ON_HIT,cast on hit →,se lanza al impactar →

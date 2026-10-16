@@ -25,4 +25,5 @@ family = &"projectile"
 target = PackedStringArray("projectile")
 stage = 1
 ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+order_kind = 2
 id = &"gun_spread"

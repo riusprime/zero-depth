@@ -15,6 +15,8 @@ extends SceneTree
 ## --weapon=blade runs the Blade (Primary pressed every tick, the dummies 1.4-2.3 m away); --cards=a,b,c grants these
 ## cards (in this wand order) instead of the default build; --cards=none grants none (v0.8.0 GF1: the plain weapon).
 ## v0.8.0 PF2: it also counts the ticks where a capped attack's throw was cut short (alive_capped: Blade Storm's 36).
+## v0.8.0 AO: and the rings alive (rings: the order rule's lightning circles too) and the ticks the ring cap held a
+## launch back (rings_capped: WandRings.RINGS_MAX).
 ## Writes only under build/ (build/perf/perf_probe.txt) and prints the same report.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
 ##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
@@ -225,10 +227,15 @@ func _count_tick() -> void:
 		)
 		_add("shots_capped", 1.0 if capped else 0.0)
 	var cut := 0.0  # v0.8.0 PF2: 1 on a tick where a capped attack's throw was cut short (AttackSpec.alive_max)
+	var ring_cut := 0.0  # v0.8.0 AO: 1 on a tick where the ring cap held a launch back (WandRings.RINGS_MAX)
 	for e in _world.events_since(_world.tick_seq0):
 		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == Attacks.EFFECT_ALIVE_CAP:
 			cut = 1.0
+		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == WandRings.EFFECT_RING_CAP:
+			ring_cut = 1.0
 	_add("alive_capped", cut)
+	_add("rings", _world.ab.ring_pos.size())  # v0.8.0 AO: the rings alive (and waiting) this tick
+	_add("rings_capped", ring_cut)
 	if _view == null:
 		return
 	var vfx := _view.attack_forms.vfx

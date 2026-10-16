@@ -262,8 +262,10 @@ func test_items_are_tagged_by_weapon_honestly() -> void:
 			"gun_pierce",
 			"gun_rapid_fire",
 			"gun_ricochet",
+			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl
 			"gun_spiral",
 			"gun_spread",
+			"gun_swirl",
 			"gun_twin",
 			"halo_shot",
 			"orbit_rounds",

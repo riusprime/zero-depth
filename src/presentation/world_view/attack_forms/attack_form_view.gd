@@ -32,6 +32,14 @@ extends AttackFormCanvas
 ## AbilityVisuals leave those to this view (forms_drawn) and keep drawing what has no spec (Napalm Drone's patches,
 ## the steel of the orbit blades, the drones).
 
+## v0.8.0 AO: the order rule's lightning (_sync_ring_arcs): at most this many arcs and strikes a frame, and a thrown
+## ring's strike from the hero lasts this long (ticks).
+const RING_ARCS_MAX := 12
+const RING_THROW_TICKS := 6.0
+
+## v0.8.0 AO: the shock arcs and storm strikes laid since the view began, one per arc per sync (for the tests).
+var ring_arcs_drawn := 0
+
 
 # --- Live wiring ----------------------------------------------------------------------------------------------
 func sync(reader: WorldReader) -> void:
@@ -184,6 +192,7 @@ static func _seed_at(p: Vector2, k: int) -> int:
 ## the patches (ZONE) that name a spec, the bombs in flight (LOB) and their landings, the orbit blades (ORBITER).
 func _sync_mx2_forms(reader: WorldReader) -> void:
 	_live_forms.clear()
+	var order_rings: Array[Dictionary] = []
 	for r: Dictionary in reader.rings_live():
 		var look := _look_of(reader, r["key"])
 		if look.is_empty():
@@ -193,6 +202,9 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 		f["look"] = look
 		f["seed"] = _seed_at(r["pos"], int(r["start"]))
 		_live_forms.append(f)
+		if int(look.get("ring_layout", 0)) > 0:
+			order_rings.append(f)
+	_sync_ring_arcs(order_rings)
 	var el := reader.element_fx()
 	var fire_keys := reader.fire_spec_keys()
 	var fire_pos: PackedVector2Array = el["fire_pos"]
@@ -244,6 +256,87 @@ func _sync_mx2_forms(reader: WorldReader) -> void:
 		)
 	_sync_blasts(ab)
 	_sync_orbit(reader, ab)
+
+
+## v0.8.0 AO (owner O37: the triple circle "shocks and hits with lighting", the swirl's "storm"): the order rule's rings
+## (WandRings) get lightning between them, read from the sim's rings (their spec's look, their centres and start
+## ticks; nothing decided here). The rings of one launch that started together (Ring · Spread's three) are joined by
+## shock arcs round the group while they grow; a thrown ring (Swirl) gets a strike from the hero to where it lands as it
+## starts. At most RING_ARCS_MAX a frame (the PF budget: each is a VfxLayer line).
+func _sync_ring_arcs(rings: Array[Dictionary]) -> void:
+	var groups := {}
+	var arcs := 0
+	for f in rings:
+		var start := int(f["start"])
+		var look: Dictionary = f["look"]
+		var age := float(_tick - start)
+		if age < 0.0:
+			continue
+		if bool(look.get("thrown", false)) and age < RING_THROW_TICKS and arcs < RING_ARCS_MAX:
+			arcs += 1
+			ring_arcs_drawn += 1
+			_live_forms.append(
+				_ring_arc(_player, f["pos"], start, RING_THROW_TICKS, look, f["seed"])
+			)
+		var gk := "%s@%d" % [f["key"], start]
+		if not groups.has(gk):
+			groups[gk] = []
+		var g: Array = groups[gk]
+		var p: Vector2 = f["pos"]
+		if g.is_empty() or not (g[g.size() - 1]["pos"] as Vector2).is_equal_approx(p):
+			g.append(f)
+	for gk: String in groups:
+		var g: Array = groups[gk]
+		if g.size() < 2:
+			continue
+		var life := maxf(1.0, float(g[0]["end"]) - float(g[0]["start"]))
+		for k in g.size():
+			if arcs >= RING_ARCS_MAX:
+				return
+			var a: Dictionary = g[k]
+			var b: Dictionary = g[(k + 1) % g.size()]
+			if g.size() == 2 and k == 1:
+				break  # two rings: one arc
+			arcs += 1
+			ring_arcs_drawn += 1
+			_live_forms.append(
+				_ring_arc(a["pos"], b["pos"], int(a["start"]), life, a["look"], int(a["seed"]) + k)
+			)
+
+
+## v0.8.0 AO: the arcs _sync_ring_arcs adds are drawn here; every other live form as the canvas draws it.
+func _draw_live_form(f: Dictionary, now: float) -> void:
+	if f["kind"] != &"arc":
+		super(f, now)
+		return
+	var t := (now - float(f["start"])) / maxf(1.0, float(f["end"]) - float(f["start"]))
+	if t < 0.0 or t > 1.0:
+		return
+	var look: Dictionary = f["look"]
+	var fade := 1.0 - t * t
+	var a := SimPlane.to_3d(f["pos"], BODY_H)
+	var b := SimPlane.to_3d(f["to"], BODY_H)
+	if vfx != null:
+		vfx.line(&"storm", a, b, fade, now - float(f["start"]), int(f["seed"]))
+		return
+	_put(&"beam_core", segment(a, b, 0.08), lit_color(look["core"], fade, look["energy"]))
+	_put(&"beam_edge", segment(a, b, 0.22), lit_color(look["edge"], 0.45 * fade, look["energy"]))
+	var pts: Array[Vector3] = [a.lerp(b, 0.5)]
+	_emit(f, look, pts, now, fade)
+
+
+static func _ring_arc(
+	from: Vector2, to: Vector2, start: int, life: float, look: Dictionary, sd: int
+) -> Dictionary:
+	return {
+		"kind": &"arc",
+		"look": look,
+		"pos": from,
+		"to": to,
+		"start": start,
+		"end": float(start) + life,
+		"seed": sd,
+	}
 
 
 static func _pos_key(p: Vector2) -> String:

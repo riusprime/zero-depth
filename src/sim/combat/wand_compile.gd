@@ -37,6 +37,12 @@ extends RefCounted
 ## - v0.8.0 BL (B6): a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
 ##   anything built from them: its lineage holds one) takes none of those hooks again: the first shot splits and
 ##   explodes, its splits neither split nor explode (the lineage guard alone stopped only the same card).
+## - v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): a SHAPE card
+##   (ModifierTable.OrderKind; Ring) takes in what is left of it when it sets the form (take_in): a count becomes the
+##   ring's pulses, a motion throws the whole ring group; COUNT and MOTION cards to its right then multiply and move
+##   the rings. Stat-like cards stay order-free. A bolt child built on such a ring (a card to the Ring's right: Split's
+##   shards, a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX alive (WandRings.cap_child): every ring and
+##   pulse of a launch hits, and each hit would throw its own.
 
 const MAX_DEPTH := 2
 
@@ -133,6 +139,8 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 	match op.op:
 		ModifierOp.Op.SET_FORM:
 			if s.form_layers == 0:
+				if m.order_kind == ModifierTable.OrderKind.SHAPE:
+					take_in(s, op.form)  # v0.8.0 AO: the shape takes in what is left of it
 				SpecForms.change_form(s, op.form)  # v0.6.0 MX4: keeps its range
 				s.form_layers = 1
 			elif s.depth < MAX_DEPTH:
@@ -151,6 +159,23 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 			pass  # a trigger is a card of its own (run cuts there)
 		_:
 			Modifiers.numeric(s, op)
+
+
+## v0.8.0 AO (owner O37; evidence/ATTACK_ORDER.md): a SHAPE card (Ring) turning `s` into `form` takes in what is left
+## of it: the count built so far becomes the ring's pulses (Spread · Ring: one ring of three pulses) and its fan goes;
+## a Swirl left of it throws the whole ring group instead of each ring (Swirl · Ring · Spread: three rings round one
+## random spot). Cards to its right then work on the ring: a count multiplies the rings (Ring · Spread: three rings
+## round the hero), a Swirl throws each ring to its own spot (Ring · Spread · Swirl: the storm). Only a ring has a
+## layout; another form keeps the old meaning.
+static func take_in(s: AttackSpec, form: int) -> void:
+	if form != AttackSpec.Form.RING:
+		return
+	s.ring_layout = 1
+	s.ring_pulses = maxi(1, s.count) if s.count > 1 else 0
+	s.swirl_group = 1 if s.swirl > 0 or s.swirl_group > 0 else 0
+	s.count = 1
+	s.spread = 0
+	s.swirl = 0
 
 
 ## v0.8.0 BL (B6): whether hook card `id` is a once-per-line card and `s` already comes from one (class doc).
@@ -200,7 +225,7 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	k.damage_permille = op.damage_permille
 	k.delay_ticks = op.delay_ticks  # v0.6.0 MX4
 	k.when = op.when
-	k.child = run(c, i)
+	k.child = WandRings.cap_child(s, run(c, i))  # v0.8.0 AO: a ring's shards, at most so many alive
 	return k
 
 
@@ -257,7 +282,7 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 		k.trigger = trig
 		k.damage_permille = child_damage_permille
 		k.delay_ticks = gap * n
-		k.child = run(c, i + 1)
+		k.child = WandRings.cap_child(s, run(c, i + 1))  # v0.8.0 AO: a ring's casts, likewise
 		s.hooks.append(k)
 	if not s.modifier_ids.has(String(m.id)):
 		s.modifier_ids.append(String(m.id))

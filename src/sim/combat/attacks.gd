@@ -267,6 +267,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var offsets := shot_offsets(spec)
 	if spec.has_tag(&"weapon"):
 		offsets = Abilities.shot_offsets(w, offsets)  # Pulse Gun L5: twin bolts (the weapon's own shots)
+	if spec.swirl > 0:
+		offsets = WandRings.swirl_offsets(w, offsets)  # v0.8.0 AO: Swirl, each bolt at a random angle
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
@@ -528,8 +530,12 @@ static func _zone(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	ElementAbilities.add_zone(w, ctx.origin, area_radius(w, spec), life, spec, ctx)
 
 
-## A ring from ctx.origin (ModifierAbilities grows it, phase 6).
+## A ring from ctx.origin (ModifierAbilities grows it, phase 6). v0.8.0 AO: a ring a SHAPE card made lays its rings
+## by the order rule (WandRings: several, pulsing, thrown).
 static func _ring(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
+	if spec.ring_layout > 0:
+		WandRings.launch(w, spec, ctx)
+		return
 	ModifierAbilities.add_ring(w, ctx.origin, area_radius(w, spec), spec, ctx)
 
 
