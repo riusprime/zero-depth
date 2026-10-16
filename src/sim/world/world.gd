@@ -554,7 +554,7 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
-		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)  # v0.4.0 SC: bounded
+		flood_nav()  # v0.4.0 SC: bounded; v0.8.0 P1: stops past the enemies
 	_run_ai()
 	# 4. Action states.
 	_advance_actions()
@@ -794,6 +794,19 @@ func prepare_wall(o: Obb) -> void:
 	_nav_next.build(next)
 
 
+## v0.8.0 P1 (owner O23, O32): the world's flood of the flow field from the player, bounded (WORLD_FLOOD_STEPS) and
+## stopped a margin past the farthest live enemy (their cells are its targets), skipped while the player keeps its
+## cell and every enemy is still in the field, and with no enemy alive.
+func flood_nav() -> void:
+	var targets := PackedInt32Array()
+	for i in range(1, actors.size()):
+		if actors.dead[i] == 0 and EnemyAi.is_enemy_kind(actors.kinds[i]):
+			targets.append(nav.target_cell(actors.pos(i)))
+	if targets.is_empty():
+		return  # nobody reads the field; the first flood with enemies about runs (the key is the old one)
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+
+
 ## Adds a wall during play. The flow field swaps to the one prepare_wall built (or is rebuilt if there is none) and
 ## floods from the player at once, so enemies path around the new wall from this tick.
 func add_wall_now(o: Obb) -> void:
@@ -806,7 +819,7 @@ func add_wall_now(o: Obb) -> void:
 		nav.build(walls)
 	_wall_next = null
 	_nav_next = null
-	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
+	flood_nav()
 
 
 ## v0.5.0 PB (owner D10): removes a wall added in play (the boss door reopening once the boss is dead). The wall is
@@ -823,7 +836,7 @@ func remove_wall_now(o: Obb) -> void:
 	else:
 		nav.build(walls)
 	_nav_open = null
-	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS)
+	flood_nav()
 
 
 # --- end Run flow ------------------------------------------------------------------------------------------

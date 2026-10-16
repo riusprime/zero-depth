@@ -10,6 +10,9 @@ extends AvatarBase
 ## v0.8.0 TG (owner O4, Q3): no lane on the ground any more; the windup reads from the body (AvatarBase "tell"): it
 ## sinks into a crouch and draws back as the windup's progress climbs, the visor brightens and flashes just before
 ## the charge, and the body holds the locked facing (the sim's) the whole time.
+## v0.8.0 P1 (owner O26): the talons rise and hold by STRIKE_RAISE_BY of the windup's progress (AvatarBase.strike_raise,
+## the sim's progress, not a timer), then the charge's start (the sim's ACTIVE) throws them out ahead in STRIKE_SNAP_S
+## (strike_swing), held through the run, and they come back after it.
 
 ## The legs, right side (the left mirrors it): the hip, then per segment (femur, tibia, talon) its length, its yaw
 ## (0 is the front, negative turns toward +Z, the right) and its pitch (0 is level, negative points down). Each
@@ -140,6 +143,7 @@ func apply_state(s: Dictionary) -> void:
 	_track_motion(tick, pos, TELEPORT_SPEED)
 	var prev := _state
 	_state = s["state"]
+	strike_note(_state)  # v0.8.0 P1: the charge's start throws the talons out
 	if _state == WorldReader.STATE_SPAWN:
 		_rise = 0.0
 	elif _fresh and prev != WorldReader.STATE_SPAWN:
@@ -155,8 +159,11 @@ func advance(delta: float) -> void:
 	_t += dt
 	_speed = lerpf(_speed, _vel.length(), _rate(12.0, dt))
 	var st := _state
-	_wind = move_toward(_wind, 1.0 if st == WorldReader.STATE_WINDUP else 0.0, dt * 6.0)
-	_lunge = move_toward(_lunge, 1.0 if st == WorldReader.STATE_ACTIVE else 0.0, dt * 12.0)
+	strike_advance(dt)
+	_wind = strike_raised(
+		st == WorldReader.STATE_WINDUP, _tell_p, move_toward(_wind, 0.0, dt * 6.0)
+	)
+	_lunge = strike_swing()
 	_daze = move_toward(_daze, 1.0 if st == WorldReader.STATE_RECOVER else 0.0, dt * 4.0)
 	if st != WorldReader.STATE_SPAWN:
 		_rise = move_toward(_rise, 1.0, dt / RISE_TIME)

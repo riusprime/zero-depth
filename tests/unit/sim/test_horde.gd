@@ -108,7 +108,8 @@ func test_the_flow_field_is_bounded_and_not_reflooded_from_the_same_cell() -> vo
 		if d != NavField.UNREACHED:
 			reached += 1
 			max_d = maxi(max_d, d)
-	assert_lte(max_d, NavField.WORLD_FLOOD_STEPS, "no cell past the bound")
+	var bound := NavField.WORLD_FLOOD_STEPS * NavField.ORTHO  # v0.8.0 P1: a bound in sides
+	assert_lte(max_d, bound, "no cell past the bound")
 	var full := NavField.new()
 	full.build(w.walls)
 	full.flood(w.player_pos())
@@ -116,7 +117,7 @@ func test_the_flow_field_is_bounded_and_not_reflooded_from_the_same_cell() -> vo
 	for k in full.dist.size():
 		if full.dist[k] != NavField.UNREACHED:
 			all += 1
-			if full.dist[k] <= NavField.WORLD_FLOOD_STEPS:
+			if full.dist[k] <= bound:
 				assert_eq(nav.dist[k], full.dist[k], "inside the bound, the same distances")
 	assert_lt(reached, all, "the bound leaves the far side of floor 1 out")
 	var planted := nav.dist.duplicate()

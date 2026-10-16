@@ -21,7 +21,9 @@ func _run(
 	var p := from
 	for k in ticks:
 		p += vel / 60.0
-		a.apply_state({"tick": t0 + k + 1, "pos": p, "state": state})
+		# v0.8.0 P1: a windup's progress rises over 48 ticks (the sim's telegraph progress drives the raise).
+		var w := clampf(float(k + 1) / 48.0, 0.0, 1.0) if state == WorldReader.STATE_WINDUP else 0.0
+		a.apply_state({"tick": t0 + k + 1, "pos": p, "state": state, "windup": w})
 		a.advance(DT)
 	return p
 

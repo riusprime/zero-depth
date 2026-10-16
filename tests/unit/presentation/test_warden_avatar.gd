@@ -71,7 +71,7 @@ func test_has_no_shield() -> void:
 		assert_false(String(n.name).to_lower().contains("shield"), "no shield node: %s" % n.name)
 	# Nothing stands out far in front like the old slab did (radius 0.55; fists may stick out a little).
 	for n in _all_nodes(a):
-		if n is MeshInstance3D:
+		if n is MeshInstance3D and (n as MeshInstance3D).visible:  # v0.8.0 P1: not the hidden dust ring
 			var mi := n as MeshInstance3D
 			var box := a.global_transform.affine_inverse() * mi.global_transform * mi.get_aabb()
 			assert_lt(box.end.x, 0.8, "%s stays near the body" % mi.name)

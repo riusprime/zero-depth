@@ -207,7 +207,8 @@ func test_a_player_who_steps_away_dodges_the_landing_and_meets_the_x_of_four() -
 # --- unchanged kinds -----------------------------------------------------------------------------------------------
 
 
-## v0.8.0 TG (owner O4, Q3): they keep their shapes but no longer draw them on the ground (test_enemy_ground_marks).
+## v0.8.0 TG (owner O4, Q3): they keep their shapes but no longer draw them on the ground (test_enemy_ground_marks);
+## v0.8.0 P1 (owner O25): except the Warden's slam circle.
 func test_the_needle_the_sniper_and_the_melee_kinds_keep_their_shapes_off_the_ground() -> void:
 	var specs := [
 		[K.NEEDLE, Vector2(8, 0), [&"lanes"]],
@@ -227,7 +228,13 @@ func test_the_needle_the_sniper_and_the_melee_kinds_keep_their_shapes_off_the_gr
 		assert_gte(_until_state(w, id, S.WINDUP), 0, "kind %d winds up" % spec[0])
 		var tg := EnemyAi.telegraph(w, _i(w, id))
 		assert_true((spec[2] as Array).has(tg.get("shape")), "kind %d: %s" % [spec[0], tg])
-		assert_false(tg.get("ground", true), "kind %d: its body tells the windup" % spec[0])
+		# v0.8.0 P1 (owner O25): the Warden's slam circle is back on the ground (its body tells it too).
+		var on_ground: bool = spec[0] == K.WARDEN
+		assert_eq(
+			tg.get("ground", true),
+			on_ground,
+			"kind %d: on the ground only for the Warden" % spec[0]
+		)
 		assert_null(EnemyAi.pattern_of(w, _i(w, id)), "kind %d fires no pattern" % spec[0])
 
 

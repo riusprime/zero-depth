@@ -31,6 +31,16 @@ const FLINCH_CALM := 0.4
 ## v0.8.0 GF3 (owner O22): a Blade hit also knocks the pose away from the swing by up to FLINCH_KNOCK_M (metres, at
 ## the flinch's peak and strength 1; the node only, back to rest exactly). Starting value.
 const FLINCH_KNOCK_M := 0.09
+## v0.8.0 P1 (owner O26: "Their arm movements don't communicate attacks properly"): every melee enemy's strike reads
+## in two beats. The strike pose (claws, fists, shield, mandibles drawn back or up) is fully raised by STRIKE_RAISE_BY
+## of the windup's progress (the sim's telegraph progress, not a timer) and held there to the hit; at the hit tick (the
+## sim's ACTIVE state, first seen by a sync) the strike snaps out over STRIKE_SNAP_S, accelerating, stays out while the
+## attack is active and STRIKE_HOLD_S after, then eases back over STRIKE_BACK_S. Frame time only animates the motion
+## the sim's state started; nothing here decides anything. Starting values.
+const STRIKE_RAISE_BY := 0.35
+const STRIKE_SNAP_S := 0.07
+const STRIKE_HOLD_S := 0.12
+const STRIKE_BACK_S := 0.35
 
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
@@ -52,6 +62,10 @@ var _flinch_knock := 0.0
 ## v0.8.0 GF3 (owner O22, the Blade's hit-stop): frame seconds the pose is held still for (HitStop): the frame time
 ## that falls inside it is dropped, the rest of that frame runs on, so the pose resumes where it stopped (no pop).
 var _hold := 0.0
+## v0.8.0 P1: the strike running: frame seconds since the hit tick was seen (-1: none), and how many of them it had
+## run when the attack left ACTIVE (-1 while still active).
+var _strike_s := -1.0
+var _strike_end_s := -1.0
 
 
 func _process(delta: float) -> void:
@@ -157,6 +171,64 @@ func _flinch_pivot() -> float:
 ## Advances the animation by `delta` seconds of frame time (each avatar its own).
 func advance(_delta: float) -> void:
 	pass
+
+
+## v0.8.0 P1: 0..1 how far the strike pose is raised at windup progress p: full by STRIKE_RAISE_BY, then held.
+static func strike_raise(p: float) -> float:
+	return smoothstep(0.0, STRIKE_RAISE_BY, clampf(p, 0.0, 1.0))
+
+
+## v0.8.0 P1: notes the sim state each sync: the first sync in ACTIVE starts the strike, leaving ACTIVE ends its
+## active part (the hold and the ease back follow).
+func strike_note(state: int) -> void:
+	if state == WorldReader.STATE_ACTIVE:
+		if _strike_s < 0.0 or _strike_end_s >= 0.0:
+			_strike_s = 0.0
+			_strike_end_s = -1.0
+	elif _strike_s >= 0.0 and _strike_end_s < 0.0:
+		_strike_end_s = _strike_s
+
+
+## v0.8.0 P1: runs the strike's motion by `dt` seconds of frame time.
+func strike_advance(dt: float) -> void:
+	if _strike_s < 0.0:
+		return
+	_strike_s += dt
+	var after := _strike_s - maxf(STRIKE_SNAP_S, _strike_end_s)
+	if _strike_end_s >= 0.0 and after > STRIKE_HOLD_S + STRIKE_BACK_S:
+		_strike_s = -1.0
+		_strike_end_s = -1.0
+
+
+## v0.8.0 P1: 0..1 how far the strike is out now: accelerating out over STRIKE_SNAP_S from the hit tick, out while
+## the attack is active and STRIKE_HOLD_S after, then back over STRIKE_BACK_S.
+func strike_swing() -> float:
+	if _strike_s < 0.0:
+		return 0.0
+	if _strike_s < STRIKE_SNAP_S:
+		var u := _strike_s / STRIKE_SNAP_S
+		return u * u
+	if _strike_end_s < 0.0:
+		return 1.0
+	var after := _strike_s - maxf(STRIKE_SNAP_S, _strike_end_s)
+	if after <= STRIKE_HOLD_S:
+		return 1.0
+	return 1.0 - smoothstep(0.0, 1.0, (after - STRIKE_HOLD_S) / STRIKE_BACK_S)
+
+
+## v0.8.0 P1: whether the strike is still snapping out (its first STRIKE_SNAP_S).
+func strike_snapping() -> bool:
+	return _strike_s >= 0.0 and _strike_s < STRIKE_SNAP_S
+
+
+## v0.8.0 P1: the raised pose's share now: from the windup's progress while it winds up (`winding`), falling to 0 as
+## the strike snaps out, 0 while it is out, and `rest` (the avatar's own eased value) otherwise.
+func strike_raised(winding: bool, p: float, rest: float) -> float:
+	if winding:
+		return strike_raise(p)
+	if strike_snapping():
+		return minf(rest, 1.0 - _strike_s / STRIKE_SNAP_S)
+	return rest if _strike_s < 0.0 else 0.0
 
 
 ## v0.8.0 TG (owner O4, Q3): the melee kinds, the Sniper and the Needle draw no ground mark while they wind up, so
