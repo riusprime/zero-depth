@@ -12,6 +12,13 @@ extends ContentDef
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
 ## Appended, never renumbered. v0.6.0 MX4: LEGENDARY (the boss's tier only).
 enum Rarity { COMMON, RARE, LEGENDARY }
+## v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): what the card
+## does to the cards to its left in the wand. FREE: a plain rewrite (stat-like; order changes nothing on its own).
+## SHAPE: it changes what the attack is, and takes in what is left of it (Ring: a count left of it becomes the ring's
+## pulses, a motion left of it throws the whole ring). COUNT: it multiplies what is left of it (Spread, Halo: right of
+## a Ring, more rings). MOTION: it moves what is left of it (Swirl). WandCompile reads SHAPE; the wand's tiles show
+## the other two. Appended, never renumbered.
+enum OrderKind { FREE, SHAPE, COUNT, MOTION }
 
 ## Spec tags a target filter (and a hook's attack) may name. weapon: the run's weapon attacks; melee / projectile:
 ## what they physically are; skill: the Skill button; area / chain: a burst or a jump; hook: an attack a hook spawned.
@@ -71,6 +78,8 @@ const FAMILIES: Array[StringName] = [
 @export var ops: Array[ModifierOpDefinition] = []
 ## An optional visual overlay id (the design's §4: only when the spec change alone isn't readable). Empty in MX1.
 @export var overlay: StringName = &""
+## v0.8.0 AO: OrderKind (what the card does to the cards to its left).
+@export var order_kind := OrderKind.FREE
 
 
 func category() -> StringName:
@@ -87,6 +96,10 @@ func validate() -> Array[ValidationIssue]:
 		)
 	if stage < Stage.FORM or stage > Stage.SCALE:
 		issues.append(ValidationIssue.new(&"range", resource_path, "unknown stage %d" % stage))
+	if order_kind < OrderKind.FREE or order_kind > OrderKind.MOTION:
+		issues.append(ValidationIssue.new(&"range", resource_path, "unknown order kind"))
+	if order_kind == OrderKind.SHAPE and not _sets_form():  # v0.8.0 AO: a shape card changes the form
+		issues.append(ValidationIssue.new(&"order", resource_path, "a shape card sets a form"))
 	_check_tag_list(issues, "target", target)
 	if ops.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a modifier needs ops"))
@@ -182,6 +195,14 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "%s: per_level_after is 1..4" % where)
 		)
+
+
+## v0.8.0 AO: one of the card's own ops changes the form (SET_FORM).
+func _sets_form() -> bool:
+	for o in ops:
+		if o != null and o.op == ModifierOpDefinition.Op.SET_FORM:
+			return true
+	return false
 
 
 ## v0.6.5 WN1: the modifier is a wand trigger (its op is TRIGGER).

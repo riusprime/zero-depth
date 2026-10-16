@@ -19,6 +19,7 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	t.target = def.target.duplicate()
 	t.stage = int(def.stage)
 	t.overlay = def.overlay
+	t.order_kind = int(def.order_kind)  # v0.8.0 AO
 	for d: ModifierOpDefinition in def.ops:
 		t.ops.append(compile_op(d, d.stage_in(def.stage)))
 	return t

@@ -73,6 +73,12 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"alive_max",  # v0.8.0 PF2
 	&"hole_permille",  # v0.8.0 P2 (O24: Void's black holes)
 	&"hole_damage_permille",
+	# v0.8.0 AO (owner O37: the order rule; WandCompile, WandRings)
+	&"ring_layout",
+	&"ring_pulses",
+	&"ring_share_permille",
+	&"swirl",
+	&"swirl_group",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -118,6 +124,19 @@ var repeats := 0
 ## queued at once, at most (0 = no cap of its own; SimTuning.player_shots_max still holds). Attacks._bolts doesn't
 ## launch a bolt past it, and a launch cut short leaves one LIMIT event (Attacks.EFFECT_ALIVE_CAP).
 var alive_max := 0
+
+## v0.8.0 AO (owner O37; docs/roadmap/v0.8.0/evidence/ATTACK_ORDER.md): the order rule's ring. ring_layout 1: a
+## ring a SHAPE card made (Ring), run by WandRings: `count` rings laid evenly round the centre (one: on it), each one
+## `ring_pulses` concentric pulses (the count that stood left of the Ring; 0 = one), each ring and pulse dealing
+## ring_share_permille of the hit when there is more than one (0 = whole). swirl 1 (Swirl, a MOTION card): every ring
+## is thrown to its own random spot round the attacker (a bolt: each leaves at a random angle); swirl_group 1 (a Swirl
+## left of the Ring, taken in by it): the whole ring group is thrown to one random spot. Randomness: WandRings' named
+## stream.
+var ring_layout := 0
+var ring_pulses := 0
+var ring_share_permille := 0
+var swirl := 0
+var swirl_group := 0
 
 # --- size, speed, reach
 ## An arc: half its width (1/4096 turns) and its reach past the attacker's edge, × (1000 + bonus) / 1000.
@@ -397,6 +416,12 @@ func read() -> Dictionary:
 		"mirror": mirror,
 		"pull_m": pull_m,
 		"hole_permille": hole_permille,  # v0.8.0 P2
+		# v0.8.0 AO: the order rule's ring and Swirl (the views' lightning circles, shock arcs and storm)
+		"ring_layout": ring_layout,
+		"ring_pulses": ring_pulses,
+		"ring_share_permille": ring_share_permille,
+		"swirl": swirl,
+		"swirl_group": swirl_group,
 		"barrier_ticks": barrier_ticks,
 		"charge_ticks": charge_ticks,
 		"charge_permille": charge_permille,

@@ -200,6 +200,10 @@ const WAND_ON_KILL := AttackSpec.Trigger.ON_KILL
 const WAND_ON_END := AttackSpec.Trigger.ON_END
 const WAND_ON_FINISHER := AttackSpec.Trigger.ON_FINISHER
 const WAND_ON_CRIT := AttackSpec.Trigger.ON_CRIT
+## v0.8.0 AO: what a wand card does to the cards to its left (wand()["cards"][n]["order"]; Wand.order_of).
+const WAND_ORDER_SHAPE := ModifierTable.OrderKind.SHAPE
+const WAND_ORDER_COUNT := ModifierTable.OrderKind.COUNT
+const WAND_ORDER_MOTION := ModifierTable.OrderKind.MOTION
 const PICK_SWAP_SKIP := InputFrame.PICK_SWAP_SKIP
 const ABILITY_MAX_LEVEL := AbilityTable.MAX_LEVEL
 ## v0.5.0 EV: event pedestals, costs, rewards and refusals (Events).

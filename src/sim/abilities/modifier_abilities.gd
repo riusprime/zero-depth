@@ -143,13 +143,16 @@ static func on_projectile_end(w: World, at: Vector2) -> void:
 
 # --- The RING runner ----------------------------------------------------------------------------------------------
 ## A ring of `spec` from `at` growing to `r` over the spec's life (Attacks.launch), dealing ctx.damage to each enemy
-## its edge passes, at ctx's root and hook level.
-static func add_ring(w: World, at: Vector2, r: float, spec: AttackSpec, ctx: AttackContext) -> void:
+## its edge passes, at ctx's root and hook level. v0.8.0 AO: it starts growing `delay` ticks from now (WandRings: a
+## pulse, a thrown ring; until then it waits, hitting nothing).
+static func add_ring(
+	w: World, at: Vector2, r: float, spec: AttackSpec, ctx: AttackContext, delay: int = 0
+) -> void:
 	var st := w.ab
 	st.ring_pos.append(at)
 	st.ring_r.append(r)
-	st.ring_start.append(w.tick)
-	st.ring_end.append(w.tick + maxi(1, spec.life_ticks))
+	st.ring_start.append(w.tick + delay)
+	st.ring_end.append(w.tick + delay + maxi(1, spec.life_ticks))
 	st.ring_dmg.append(ctx.damage)
 	st.ring_root.append(ctx.root if ctx.root != 0 else w.take_root())
 	st.ring_spec.append(spec.key)
@@ -174,6 +177,9 @@ static func advance_rings(w: World) -> void:
 	var book := Modifiers.book(w)
 	var k := 0
 	while k < st.ring_pos.size():
+		if w.tick < st.ring_start[k]:  # v0.8.0 AO: a pulse or a thrown ring not started yet
+			k += 1
+			continue
 		var at := st.ring_pos[k]
 		var spec := book.find(st.ring_spec[k])
 		var now := ring_radius(w, k, w.tick)

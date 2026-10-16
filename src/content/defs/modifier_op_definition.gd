@@ -102,6 +102,9 @@ const FIELD_STAGE := {
 	# v0.8.0 P2 (owner O24, Void): a shot's chance to leave a black hole (per mille) and its pulses' damage share
 	&"hole_chance_permille": [3, &"hole_permille", ""],
 	&"hole_damage_permille": [3, &"hole_damage_permille", ""],
+	# v0.8.0 AO (owner O37): a Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
+	&"ring_share_permille": [3, &"ring_share_permille", ""],
+	&"swirl": [2, &"swirl", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

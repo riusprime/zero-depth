@@ -6,6 +6,8 @@ extends RefCounted
 ## ModifierDefinition.Stage, same numbers. v0.6.5 WN1: the order of one card's own ops (across cards the slot order
 ## decides: WandCompile).
 enum Stage { FORM, PATTERN, BEHAVIOUR, PAYLOAD, HOOK, SCALE }
+## v0.8.0 AO: ModifierDefinition.OrderKind, same numbers.
+enum OrderKind { FREE, SHAPE, COUNT, MOTION }
 const STAGE_COUNT := 6
 
 var id := &""
@@ -16,6 +18,8 @@ var target := PackedStringArray()
 var stage: int = Stage.PAYLOAD
 var ops: Array[ModifierOp] = []
 var overlay := &""
+## v0.8.0 AO: ModifierDefinition.OrderKind, same numbers (WandCompile: a SHAPE card takes in what is left of it).
+var order_kind := 0
 
 
 ## v0.6.5 WN1: the wand trigger's op (a trigger card's one op), or null for a modifier of rewrites.
@@ -47,6 +51,7 @@ func at(level: int) -> ModifierTable:
 	t.target = target.duplicate()
 	t.stage = stage
 	t.overlay = overlay
+	t.order_kind = order_kind
 	for o in ops:
 		t.ops.append(o.at_level(level))
 	return t

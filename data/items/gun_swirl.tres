@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 33
+name_key = &"ITEM_GUN_SWIRL"
+desc_key = &"ITEM_GUN_SWIRL_DESC"
+rarity = 1
+tags = PackedStringArray("bolt", "wand")
+requires_weapon = &"gun"
+modifiers = Array[StringName]([&"gun_swirl"])
+id = &"gun_swirl"

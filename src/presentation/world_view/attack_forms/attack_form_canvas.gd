@@ -976,6 +976,8 @@ func _draw_live_form(f: Dictionary, now: float) -> void:
 	var fade := 1.0
 	match f["kind"]:
 		&"ring":
+			if now < float(f["start"]):
+				return  # v0.8.0 AO: a pulse or a thrown ring that hasn't started (WandRings)
 			var life := maxf(1.0, float(f["end"]) - float(f["start"]))
 			var t := clampf((now - float(f["start"])) / life, 0.0, 1.0)
 			fade = 1.0 - t * t * t

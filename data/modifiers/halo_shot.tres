@@ -30,4 +30,5 @@ rarity = 1
 target = PackedStringArray("projectile")
 stage = 1
 ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2"), SubResource("Op_3")])
+order_kind = 2
 id = &"halo_shot"

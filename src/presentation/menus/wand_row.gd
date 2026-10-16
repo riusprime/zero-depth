@@ -37,6 +37,12 @@ const CUT_KEYS := {
 	WorldReader.WAND_ON_FINISHER: "UI_WAND_CUT_ON_FINISHER",
 	WorldReader.WAND_ON_CRIT: "UI_WAND_CUT_ON_CRIT",
 }
+## v0.8.0 AO: the order mark of each order kind (WorldReader.WAND_ORDER_*; a plain card has none).
+const ORDER_KEYS := {
+	WorldReader.WAND_ORDER_SHAPE: "UI_WAND_ORDER_SHAPE",
+	WorldReader.WAND_ORDER_COUNT: "UI_WAND_ORDER_COUNT",
+	WorldReader.WAND_ORDER_MOTION: "UI_WAND_ORDER_MOTION",
+}
 ## The compile's nesting depth (a third trigger casts nothing; WAND.md rule 3).
 const MAX_DEPTH := 2
 
@@ -183,6 +189,13 @@ func row_width() -> float:
 
 
 ## Restyles the marks only (focus, held, leaving, new) after the page changes them.
+## v0.8.0 AO (owner O37: "make the order of the attacks be more important"): a tile's top line, its slot number and,
+## on a card that changes what is left of it (Wand.order_of: a shape, a count or a motion), that mark.
+func key_text(k: int, order: int) -> String:
+	var key: String = ORDER_KEYS.get(order, "")
+	return str(k + 1) if key == "" else "%d · %s" % [k + 1, tr(key)]
+
+
 func refresh_marks() -> void:
 	for k in _slots:
 		_style(k)
@@ -209,6 +222,7 @@ func _refresh() -> void:
 			var c: Dictionary = cards[k]
 			var id: StringName = c["id"]
 			_names[k].text = tr(c["name_key"])
+			_keys[k].text = key_text(k, int(c.get("order", 0)))
 			var ability := int(c["type"]) == WorldReader.CARD_ABILITY
 			var levels := ability or bool(c.get("wand", false))  # v0.7.5 SM: a wand card shows its level too
 			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
@@ -222,6 +236,7 @@ func _refresh() -> void:
 			t.set_meta(&"empty", false)
 		else:
 			_names[k].text = tr("UI_WAND_EMPTY")
+			_keys[k].text = str(k + 1)
 			_levels[k].text = ""
 			_sockets[k].visible = false
 			t.set_meta(&"tint", Color(MenuStyle.DIM, 0.3))
