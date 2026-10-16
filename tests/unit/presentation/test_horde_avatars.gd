@@ -24,9 +24,11 @@ func _avatar(kind: int) -> HordeAvatar:
 	return a
 
 
+## v0.8.0 P1: a windup's progress rises over 48 ticks (the sim's telegraph progress drives the strike pose).
 func _run(a: HordeAvatar, t0: int, state: int, ticks: int, healing := false) -> void:
 	for k in ticks:
-		a.apply_state({"tick": t0 + k, "state": state, "healing": healing})
+		var p := clampf(float(k + 1) / 48.0, 0.0, 1.0) if state == STATE.WINDUP else 0.0
+		a.apply_state({"tick": t0 + k, "state": state, "healing": healing, "windup": p})
 		a.advance(DT)
 
 
@@ -72,6 +74,7 @@ func test_the_shield_draws_back_then_slams_forward() -> void:
 	_run(a, 20, STATE.WINDUP, 30)
 	assert_lt(shield.position.x, rest - 0.1, "drawn back")
 	_run(a, 50, STATE.ACTIVE, 2)
+	_run(a, 52, STATE.RECOVER, 3)  # v0.8.0 P1: the bash snaps out over STRIKE_SNAP_S (about 4 frames) from the hit
 	assert_gt(shield.position.x, rest, "bashed forward")
 
 

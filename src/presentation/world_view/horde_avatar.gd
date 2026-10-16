@@ -18,6 +18,11 @@ extends AvatarBase
 ## (AvatarBase "tell"): a crouch and draw-back that deepens with the windup's progress, the accent (eye, seam, visor,
 ## scope) brightening and flashing just before the strike, and the Sniper's muzzle charging up at its barrel's tip (in
 ## the air, never a line on the ground). The facing is the sim's, held through the windup.
+## v0.8.0 P1 (owner O26: "Their arm movements don't communicate attacks properly"): the melee kinds (STRIKE_KINDS)
+## raise their strike pose by STRIKE_RAISE_BY of the windup's progress and hold it (AvatarBase.strike_raise): the
+## Swarmer's mandibles gape and its body rears, the Splitter's claws lift high and back, the Shield Bearer draws its
+## shield back and leans in behind it. At the hit tick (the sim's ACTIVE) the strike snaps out (strike_swing): the
+## mandibles bite shut as the body lunges, the claws chop down through the front, the shield slams forward.
 
 ## v0.8.0 EC: each kind's main plate (body), its second plate or trim (trim), its limbs and frame (grey) and its eye
 ## (eye) come from EnemyPalettes; the light grey, dark and bone parts stay neutral.
@@ -45,6 +50,15 @@ const TELL_KINDS: Array[int] = [
 	WorldReader.KIND_SHIELD_BEARER,
 	WorldReader.KIND_SNIPER,
 ]
+## v0.8.0 P1: the melee kinds whose strike is a raise-and-hold then a snap.
+const STRIKE_KINDS: Array[int] = [
+	WorldReader.KIND_SWARMER,
+	WorldReader.KIND_SPLITTER,
+	WorldReader.KIND_SPLITLING,
+	WorldReader.KIND_SHIELD_BEARER,
+]
+## v0.8.0 P1: the Splitter's claw pivot (x, height) and how far out to each side the claws hang (z).
+const CLAW_PIVOT := Vector3(0.1, 0.6, 0.36)
 ## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
@@ -146,6 +160,7 @@ func apply_state(s: Dictionary) -> void:
 		_state = state
 		_state_tick = tick
 	_ticks_in = tick - _state_tick
+	strike_note(state)  # v0.8.0 P1: the hit tick starts the strike
 	if _fresh:
 		_fresh = false
 		_rise = 0.0 if state == WorldReader.STATE_SPAWN else 1.0
@@ -160,17 +175,28 @@ func advance(delta: float) -> void:
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
 	var winding := _state == WorldReader.STATE_WINDUP
-	_wind = move_toward(_wind, 1.0 if winding else 0.0, dt * (2.2 if winding else 5.0))
-	if _state == WorldReader.STATE_ACTIVE:
-		_strike = 1.0
+	strike_advance(dt)
+	if STRIKE_KINDS.has(kind):
+		# v0.8.0 P1: raised from the windup's progress and held; the strike snaps out at the hit tick.
+		_wind = strike_raised(winding, _tell_p, move_toward(_wind, 0.0, dt * 5.0))
+		_strike = strike_swing()
 	else:
-		_strike = move_toward(_strike, 0.0, dt * 4.0)
+		_wind = move_toward(_wind, 1.0 if winding else 0.0, dt * (2.2 if winding else 5.0))
+		if _state == WorldReader.STATE_ACTIVE:
+			_strike = 1.0
+		else:
+			_strike = move_toward(_strike, 0.0, dt * 4.0)
 	_pose()
 
 
 ## How far into its windup pose the model is, 0..1 (tests).
 func windup_pose() -> float:
 	return _wind
+
+
+## v0.8.0 P1: 0..1 how far its strike is out (tests).
+func strike_pose() -> float:
+	return _strike
 
 
 ## The accent's glow (tests): the eye, seam, crystal or scope.
@@ -206,9 +232,12 @@ func _pose() -> void:
 	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
 	match kind:
 		WorldReader.KIND_SWARMER:
+			# v0.8.0 P1: rears up with the mandibles gaping, then lunges and bites them shut.
+			body.rotation.z += _wind * 0.25 - _strike * 0.2
+			body.position.x += _strike * 0.08
 			for k in 2:
 				var m: Node3D = parts["mandible%d" % k]
-				m.rotation.y = (0.15 + _wind * 0.7 - _strike * 0.6) * (1.0 if k == 0 else -1.0)
+				m.rotation.y = (0.15 + _wind * 0.85 - _strike * 0.75) * (1.0 if k == 0 else -1.0)
 			for k in 6:
 				var leg: Node3D = parts["leg%d" % k]
 				leg.rotation.z = sin(_t * 22.0 + k * 1.7) * 0.25
@@ -216,9 +245,17 @@ func _pose() -> void:
 			var gap := 0.03 + _wind * 0.08 + sin(_t * 3.0) * 0.01
 			(parts["left"] as Node3D).position.z = -gap
 			(parts["right"] as Node3D).position.z = gap
-			(parts["claws"] as Node3D).rotation.z = -_wind * 0.5 + _strike * 0.8
+			# v0.8.0 P1: the claws lift high and back over the body, then chop down through the front.
+			var claws := parts["claws"] as Node3D
+			claws.rotation.z = _wind * 1.1 - _strike * 0.85
+			claws.position.x = CLAW_PIVOT.x - _wind * 0.06 + _strike * 0.14
+			body.rotation.z += _wind * 0.1 - _strike * 0.16
 		WorldReader.KIND_SHIELD_BEARER:
-			(parts["shield"] as Node3D).position.x = 0.5 - _wind * 0.18 + _strike * 0.3
+			# v0.8.0 P1: the shield draws back and tips up, the body leans in behind it; then the shield slams out.
+			var shield := parts["shield"] as Node3D
+			shield.position.x = 0.5 - _wind * 0.24 + _strike * 0.38
+			shield.rotation.z = _wind * 0.22 - _strike * 0.12
+			body.rotation.z += -_wind * 0.06 - _strike * 0.12
 		WorldReader.KIND_MENDER:
 			body.position.y += 0.18 + sin(_t * 2.2) * 0.06
 			(parts["cross"] as Node3D).rotation.y = _t * 2.0
@@ -286,13 +323,20 @@ func _build_splitter() -> void:
 			_eye(h, Vector3(0.012, 0.035, 0.1), Vector3(0.105, 0.82, 0))
 		parts[name] = h
 	_glow(body, Vector3(0.5, 0.62, 0.02), Vector3(0.02, 0.44, 0))
+	# v0.8.0 P1 (O26): the claws hang from the shoulders, out to the sides past the body, so a raised claw and its
+	# chop read from the iso camera (they were tucked into the body's front).
 	var claws := Node3D.new()
-	claws.position = Vector3(0.24, 0.45, 0)
+	claws.position = Vector3(CLAW_PIVOT.x, CLAW_PIVOT.y, 0)
 	body.add_child(claws)
-	var claw := NeedleAvatar._chamfer_box(Vector3(0.3, 0.06, 0.06), 0.015)
+	var claw := NeedleAvatar._chamfer_box(Vector3(0.44, 0.09, 0.09), 0.02)
 	for side in [-1.0, 1.0]:
-		_piece(claws, claw, Vector3(0.14, -0.04, 0.22 * side), _col(&"grey"))
-		_piece(claws, ArcCasterAvatar._octahedron(0.04), Vector3(0.3, -0.06, 0.22 * side), BONE)
+		_piece(claws, claw, Vector3(0.22, 0, CLAW_PIVOT.z * side), _col(&"grey"))
+		_piece(
+			claws,
+			ArcCasterAvatar._octahedron(0.08),
+			Vector3(0.47, -0.02, CLAW_PIVOT.z * side),
+			BONE
+		)
 	parts["claws"] = claws
 
 

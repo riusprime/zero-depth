@@ -142,7 +142,7 @@ static func set_nav_extra(w: World, flood: bool = true) -> void:
 	boxes.append_array(BossLava.lava_obbs(w))
 	w.nav.set_extra(boxes, BossLava.melt_shapes(w))
 	if flood and not w.enemy_tables.is_empty():
-		w.nav.flood(w.player_pos(), NavField.WORLD_FLOOD_STEPS)
+		w.flood_nav()  # v0.8.0 P1: the world's flood (bounded, stopped past the enemies)
 
 
 ## v0.8.0 BS2: true while any piece the flow field goes round is down (pillars, lava, a meltdown).

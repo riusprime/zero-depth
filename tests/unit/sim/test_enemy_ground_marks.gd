@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.8.0 TG (owner O4, Q3 "only things landing at range"): per normal enemy kind, which of its telegraphs are drawn
 ## on the ground ("ground" missing or true in EnemyAi.telegraph). Only the Arc Caster's rune and the Mine Layer's
-## armed mines; every other kind still hands the view a telegraph (shape and timing, for the forecasts, the parity
-## tests and the readable-cause recap), marked "ground": false so its body tells the windup. Elites follow their kind.
+## armed mines, and since v0.8.0 P1 (owner O25) the Warden's slam circle; every other kind still hands the view a
+## telegraph (shape and timing, for the forecasts, the parity tests and the readable-cause recap), marked "ground":
+## false so its body tells the windup. Elites follow their kind.
 
 const K := ActorStore.Kind
 const TICKS := 1800
@@ -15,7 +16,7 @@ const TABLE := [
 	[K.SPLITTER, Vector2(1.2, 0), [], &"disc"],
 	[K.SPLITLING, Vector2(1.0, 0), [], &"disc"],
 	[K.SHIELD_BEARER, Vector2(1.8, 0), [], &"lane"],
-	[K.WARDEN, Vector2(1.5, 0), [], &"disc"],
+	[K.WARDEN, Vector2(1.5, 0), ["disc/"], &"disc"],  # v0.8.0 P1 (owner O25): its red circle is back
 	[K.SNIPER, Vector2(12, 0), [], &"lane"],
 	[K.NEEDLE, Vector2(8, 0), [], &"lanes"],
 	[K.ARC_CASTER, Vector2(-8, 0), ["disc/rune"], &"disc"],
@@ -55,7 +56,7 @@ func _marks(kind: int, at: Vector2, elite: bool) -> Array:
 	return [ground.keys(), shapes]
 
 
-func test_only_the_arc_casters_rune_and_the_mine_layers_mines_mark_the_ground() -> void:
+func test_only_the_rune_the_mines_and_the_wardens_slam_mark_the_ground() -> void:
 	for spec: Array in TABLE:
 		var got := _marks(spec[0], spec[1], false)
 		var ground: Array = got[0]
@@ -67,9 +68,9 @@ func test_only_the_arc_casters_rune_and_the_mine_layers_mines_mark_the_ground() 
 
 func test_elites_follow_their_kind() -> void:
 	for spec: Array in TABLE:
-		if spec[2].is_empty() and spec[3] != &"":
+		if (spec[2].is_empty() or spec[0] == K.WARDEN) and spec[3] != &"":
 			var got := _marks(spec[0], spec[1], true)
-			assert_eq(got[0], [], "elite kind %d: no ground mark" % spec[0])
+			assert_eq(got[0], spec[2], "elite kind %d: its kind's ground marks" % spec[0])
 			assert_true((got[1] as Dictionary).has(spec[3]), "elite kind %d telegraphs" % spec[0])
 
 

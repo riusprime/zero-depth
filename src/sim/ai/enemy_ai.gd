@@ -22,6 +22,8 @@ extends RefCounted
 ## and the Bomb Drone's flying fireball "lob", both "ground": false). The Needle, the Sniper, the melee kinds, the
 ## Arc Caster's rune, the Mine Layer and the Mender are unchanged.
 ## v0.8.0 TG (owner O4, Q3): the Needle, the Sniper and the melee kinds keep their shapes but go "ground": false too.
+## v0.8.0 P1 (owner O25, playtest 2: "The large ground-smashing enemy no longer displays its red circular attack
+## warning"): the Warden's slam disc is drawn on the ground again, the third exception with the rune and the mines.
 
 enum State { SPAWN, MOVE, WINDUP, ACTIVE, RECOVER }
 
@@ -674,6 +676,7 @@ static func snipe_lane(w: World, i: int) -> Obb:
 ## the Needle's lanes keep their shape and timings (forecasts, parity, the readable-cause recap) but are "ground":
 ## false: the avatar's body shows the windup. Only the Arc Caster's rune and the Mine Layer's mines stay on the
 ## ground among normal enemies (elites too: the rule is by kind). Bosses are BossAi's and unchanged.
+## v0.8.0 P1 (owner O25): and the Warden's slam disc ("ground": true), which its body also tells (the overhead slam).
 static func telegraph(w: World, i: int) -> Dictionary:
 	var a := w.actors
 	if BossAi.is_boss_kind(a.kinds[i]):
@@ -722,11 +725,11 @@ static func telegraph(w: World, i: int) -> Dictionary:
 				"progress": progress,
 				"style": &"snipe"
 			}
-		ActorStore.Kind.WARDEN:
+		ActorStore.Kind.WARDEN:  # v0.8.0 P1 (owner O25): its red circle is back on the ground
 			var d := locked_disc(w, i)
 			return {
 				"shape": &"disc",
-				"ground": false,
+				"ground": true,
 				"center": d[0],
 				"radius": d[1],
 				"progress": progress
