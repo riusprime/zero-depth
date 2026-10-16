@@ -932,6 +932,9 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   `loop_boss_damage_permille` (1200; v0.8.0 LS, owner Q6: was 4000 / 2000 / 2000 / 1500), each 1000..`loop_scale_cap_permille` (`range`), the factor never past
   `loop_scale_cap_permille` (100000, × 100); and adds `loop_threat` (2, threat T, ≥ 0, `negative`) and
   `loop_catch_up_cap_permille` (500, to both hidden catch-up caps, ≥ 0, `negative`). `floors` is a loop's length.
+  v0.8.0 P3 (owner O35): `loop_deep_ease_permille` (900; 1..1000, `range`; 1000 = none): a Deep floor (the Purple
+  Portal's route) past loop 1 multiplies its enemies' and bosses' HP and damage by it, on top of the floor, Deep and
+  loop factors; a Deep floor on loop 1 and a normal floor on loop 2 keep theirs.
 - **`DifficultyCurveDefinition`** (v0.4.0 TU, owner 2026-10-08 D1–D4; `data/curves/floor_1.tres` .. `floor_3.tres`,
   category `curve`, one per floor by `floor_index`): `phases`, an ordered list of **`DifficultyPhase`**:
   `start_seconds` (floor time; the first at 0), `name_key` (the HUD's name, en + es), `tier_permille` (the danger tier

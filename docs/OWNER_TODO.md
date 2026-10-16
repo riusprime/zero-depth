@@ -44,6 +44,9 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 - [ ] The Ember stone menus and cards, in English and Spanish.
 - [ ] The 24 designed rooms and the shop stall in every biome.
 - [ ] Loops: is loop 2+ hard without one-shotting you?
+- [ ] P3: do Ruins, Night Rocks and Red Canyon now run as smoothly as Starfall on your PC (fps)? Do the fire
+  lights still pop as you walk, or fade? Is the glow low enough (barrels, braziers, the hero), the mood kept? Is loop
+  2 through the Purple Portal about 10 % easier? ([evidence](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md))
 - [ ] On the **Windows export** (the CI build, not the editor): starts, plays, saves and quits cleanly.
 
 ---
@@ -73,6 +76,7 @@ Shortcut to every fight: Main menu → **Playground** → **F1**. Every new numb
 | D19 | The Blade's slash impact reads faint in the renders (big bodies hide it, its sparks wash out on pale sand and the white flash). Bigger / brighter? | as built | BLADE_FEEL.md |
 | D20 | Void's black holes (P2, starting values): 8 % a shot +3 % a level (20 % at 5), 2 s, at most 3, pull 3.5 m at 3 m/s, every 0.2 s 30 % of the shot on enemies within 1.4 m; on the Blade a slash rolls where it first lands; the roll uses the existing `ability` stream (no new stream). OK? | as built | PLAN "P2"; VOID_AND_PORTALS.md |
 | D21 | The Loop device stands beside the Ascension portal where a Deep gate would (no menu, no "End the run"); the two Ascension achievements now say "Take the Loop device". OK? | as built | FINAL_BOSS.md "The flow since P2" |
+| D22 | The Purple Portal (Deep gate) 10 % ease (P3, O35) applies on loop 2 **and every later loop**. Loop 2 only instead? | loop 2 and later | [`BIOME_PERF_AND_LIGHT.md`](roadmap/v0.8.0/evidence/BIOME_PERF_AND_LIGHT.md) |
 
 Answer in chat as "D1 fight, D2 keep, …"; the lead writes each answer into the docs the same day.
 
