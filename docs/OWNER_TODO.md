@@ -51,6 +51,7 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 | D35 | How fast loops pile up Legendaries: each loop +5 % chance at a boss altar and one more pick, up to 4 | as built | RARITY.md |
 | D38 | **Bosses get easy if you farm a floor** (O40). Pick how the boss keeps up: **(a)** it scales with your power when you reach it (your damage per second and HP, read when the fight starts), **(b)** it scales with the time you spent on the floor, **(c)** the floor pushes you on (enemies get harder the longer you stay). The lead recommends **(a)**: the fight stays hard however you got strong, and it's the same rule that gives the final boss its 1–2 minute phases (O41) | (a), once you pick | PLAN O40, O41 |
 | D39 | **The Blade's damage reduction** (O43): the lead's starting value is **−25 % damage taken** while you hold the Blade (it fights close). More, less, or only while swinging? | −25 % while held | PLAN O43 |
+| D42 | **Two element glyphs have no element:** `ui_element_glyphs_2` has a crossed blade and a star burst, but no card's element is "blades" or "star" (cards wear flame, snowflake, bolt, venom, void, blood). What are they for: **(a)** physical / Blade cards and Legendary or cosmic cards, **(b)** future elements, **(c)** unused? | unused (sliced and named, no card wears them) | TEXTURES_3.md |
 
 ---
 
