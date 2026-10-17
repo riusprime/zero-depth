@@ -53,6 +53,7 @@ FILES=(
 	tests/e2e/test_e2e_codex.gd # v0.8.0: AO's new cards reflowed the Codex grid under RR's tier walk here
 	tests/e2e/test_e2e_pad_aim.gd # v0.8.0: N9 (pad aim follows the walk) meets the loading cover and the builds here
 	tests/e2e/test_e2e_arrival.gd # v0.8.0: N11 (the arrival) meets the loading cover, spawning and the HUD here
+	tests/e2e/test_e2e_boss_signatures_2.gd # v0.8.0: N11 (arrival) and N14 (the default floor) met the Foundry meltdown here
 	tests/e2e/test_e2e_wand_build.gd # v0.8.0: a Swap given mid-arrival (N11) froze the landing under the hidden HUD here
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
