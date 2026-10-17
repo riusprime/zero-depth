@@ -8,7 +8,9 @@ extends GutTest
 ## - the run is replayed from a snapshot taken before the pause with the frames the driver stepped: the same order
 ##   and the same state hash (the moves are input, EI-04).
 ## - a run continued on floor 3 (a save on disk: 8 slots full) opens the Swap at 8 slots: it fits the screen, and an
-##   insert with the pad (X, d-pad, A, then the card that leaves, A) gives the order the panel previewed.
+##   insert with the pad (X, d-pad, A, then the card that leaves, A) gives the order the panel previewed. v0.8.0 N11
+##   fix: the card comes while the hero is still arriving (under the cover); the arrival still ends, then the Swap
+##   shows.
 
 const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
 ## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued).
@@ -256,13 +258,17 @@ func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> 
 	var w := e.world()
 	assert_eq(main.run.floor_index, 3)
 	assert_eq(w.mod_slots.size(), 8, "eight cards in eight slots")
+	# v0.8.0 N11 (O69): the floor opens under the cover and the hero's arrival; the card is given before it landed.
+	assert_true(main.driver.reader.arriving(), "the grant comes while the hero is still arriving")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await _click(e, main, "GrantMod")
 	await e.frames(3)
 	await e.tap(KEY_QUOTELEFT)
+	assert_true(await e.landed(), "the Swap waiting never stops the arrival: the hero lands")
 	await e.frames(2)
 	var hud: Hud = main.get_node("UI/Hud")
+	assert_true(hud.visible, "the HUD shows once landed, the Swap in it")
 	assert_true(hud.swap.is_open(), "a ninth card: the Swap panel")
 	assert_eq(hud.swap.slot_count(), 8)
 	var screen := main.get_viewport().get_visible_rect()

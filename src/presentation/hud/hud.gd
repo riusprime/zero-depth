@@ -262,6 +262,7 @@ func sync(reader: WorldReader) -> void:
 	shop.sync(reader)  # v0.5.0 SH
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
+	swap.input_enabled = not _landing  # v0.8.0 N11 fix: no answer to a Swap hidden under the arrival (it would be lost)
 	shop.panel.input_enabled = not reader.swapping()  # the shop waits under the swap
 
 
