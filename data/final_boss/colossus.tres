@@ -156,6 +156,56 @@ cooldown_seconds = 0.35
 cause_key = &"CAUSE_COLOSSUS_SPIKES"
 lock_seconds = 0.5
 
+[sub_resource type="Resource" id="A_leap_slam_3"]
+script = ExtResource("1_atk")
+id = &"leap_slam_3"
+shape = 0
+shape_params = {
+"chain": 1,
+"pattern_id": "colossus_quake_double",
+"radius_m": 2.6,
+"range_m": 16.0
+}
+telegraph_seconds = 0.7
+active_seconds = 0.45
+recovery_seconds = 1.0
+damage = 50
+hit_class = &"big"
+orb_damage = 22
+move = &"leap"
+min_range_m = 4.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_LEAP"
+opens_weak_point = true
+lock_seconds = 0.5
+
+[sub_resource type="Resource" id="A_spike_chase_3"]
+script = ExtResource("1_atk")
+id = &"spike_chase_3"
+shape = 0
+shape_params = {
+"count": 2,
+"radius_m": 1.0,
+"spread_degrees": 30.0,
+"stagger_seconds": 0.15,
+"step_m": 1.6,
+"steps": 14
+}
+telegraph_seconds = 0.9
+active_seconds = 0.0167
+recovery_seconds = 0.6
+damage = 30
+hit_class = &"medium"
+move = &"spike_chase"
+min_range_m = 0.0
+max_range_m = 99.0
+weight = 3
+cooldown_seconds = 0.35
+cause_key = &"CAUSE_COLOSSUS_SPIKES"
+lock_seconds = 0.5
+
 [sub_resource type="Resource" id="A_spike_burst"]
 script = ExtResource("1_atk")
 id = &"spike_burst"
@@ -240,13 +290,23 @@ cooldown_permille = 1000
 [sub_resource type="Resource" id="P_1"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 500
-attack_ids = PackedStringArray("fist_combo_3", "leap_slam_2", "spike_chase_2", "spike_burst", "boulder_throw_3")
+attack_ids = PackedStringArray("fist_combo_3", "leap_slam_2", "leap_slam_3", "spike_chase_2", "spike_chase_3", "spike_burst", "boulder_throw_3")
 entry_attack = &"spike_burst"
 speed_permille = 1150
 cooldown_permille = 750
 
 [resource]
 script = ExtResource("3_boss")
+dps_measure_seconds = 20
+dps_min_measured_seconds = 5
+dps_hp_min = 600
+dps_hp_max = 5000000
+pace = true
+pace_ref_dps = 30
+pace_ref_seconds = 120.0
+pace_min_seconds = 60.0
+pace_max_seconds = 180.0
+pace_burst_seconds = 10.0
 name_key = &"BOSS_COLOSSUS"
 desc_key = &"BOSS_COLOSSUS_DESC"
 hp = 1200
@@ -288,6 +348,6 @@ dash_read_seconds = 0.4
 gap_close_attack = &"leap_slam"
 gap_close_distance_m = 8.0
 gap_close_seconds = 1.5
-attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_combo"), SubResource("A_fist_combo_3"), SubResource("A_leap_slam"), SubResource("A_leap_slam_2"), SubResource("A_spike_chase"), SubResource("A_spike_chase_2"), SubResource("A_spike_burst"), SubResource("A_boulder_throw"), SubResource("A_boulder_throw_3")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_fist_combo"), SubResource("A_fist_combo_3"), SubResource("A_leap_slam"), SubResource("A_leap_slam_2"), SubResource("A_spike_chase"), SubResource("A_spike_chase_2"), SubResource("A_leap_slam_3"), SubResource("A_spike_chase_3"), SubResource("A_spike_burst"), SubResource("A_boulder_throw"), SubResource("A_boulder_throw_3")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0"), SubResource("P_1")])
 id = &"colossus"

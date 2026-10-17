@@ -23,6 +23,13 @@ extends RefCounted
 ## tick) and its stance (`stance`, BossTable.STANCE_*, for `stance_t` more ticks). An FB2 save lacks them
 ## (WorldSnapshot.ADDED_SINCE_V05): a fresh mimic state, read again at the Nemesis's next tick (its HP stays as saved).
 
+## v0.8.0 N2 (owner O41: "each phase takes 1-2 minutes 1 minute being the most op and longer if you are not op";
+## O42, O52: The Fallen "should mimic and nerf you … only at certain times … on and off"; FinalPace): the pace of the
+## body fighting now: `paced` once its HP was set from the meter (at `pace_dps`, the measured damage per second × 1000
+## it was set from), `pace_budget` the damage it may still take now (× 1000: its rate cap's bucket), and `copying`
+## while The Fallen's attack in progress began in a mimic window (it swings and casts the player's build). An older
+## save lacks them (WorldSnapshot.ADDED_SINCE_V05): a fresh pace (unpaced, an empty bucket), set again from the meter.
+
 ## v0.8.0 FB2: the meter's ring holds this many seconds (a body reads its last dps_seconds of them).
 const DPS_SECONDS := BossSchemas.DPS_MAX_SECONDS
 ## v0.8.0 FB3: the echo's ring holds this many ticks (BossTable.echo_ticks is at most this).
@@ -64,6 +71,11 @@ var dash_t := 0
 var dash_vel := Vector2.ZERO
 var stance := 0
 var stance_t := 0
+## v0.8.0 N2: the body's pace and The Fallen's window copy (class doc).
+var paced := false
+var pace_dps := 0
+var pace_budget := 0
+var copying := false
 
 
 func _init() -> void:
@@ -133,6 +145,8 @@ func hash_into(h: StateHasher) -> void:
 	h.add_f32(home.y)
 	h.add_ints(dps_secs)
 	for v in [dps_head, dps_closed, dps_acc, dps_t]:
+		h.add_int(v)
+	for v in [1 if paced else 0, pace_dps, pace_budget, 1 if copying else 0]:  # v0.8.0 N2
 		h.add_int(v)
 	if not ready and echo_n == 0:
 		return  # v0.8.0 FB3: no mimic body has fought yet (an earlier fight hashes as before)

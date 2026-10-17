@@ -69,12 +69,13 @@ func test_the_prism_is_a_skill_phase_in_data() -> void:
 	assert_true(t.floats_home)
 	assert_eq(t.shard_count, 6)
 	assert_eq(t.window_permille, 294, "a 2.5 s window in each 8.5 s cycle")
-	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower"]:
+	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower", &"cross_weave"]:
 		var a := t.attacks[t.attack_index(id)]
 		assert_eq(a.move, BossAttackTable.Move.CROSS)
 		assert_eq(a.count, 4, "four beams in a plus")
 		assert_true(a.shielded)
-		assert_eq(a.bolt_attack, t.attack_index(&"prism_bolt"))
+		var bolt := &"prism_bolt_fan" if id == &"cross_weave" else &"prism_bolt"  # v0.8.0 N2
+		assert_eq(a.bolt_attack, t.attack_index(bolt))
 		assert_eq(t.attacks[a.bolt_attack].lock_ticks, 24, "the fast shots' aim line: 0.4 s")
 		assert_eq(a.pattern.look, &"crown_orb", "her own fireball look")
 	assert_eq(t.phase_attacks.size(), 1)
@@ -319,7 +320,7 @@ func test_the_orbs_fly_from_her_orbiting_shards() -> void:
 func test_every_orb_pattern_leaves_a_gap() -> void:
 	var w := _prism(69)
 	var t := BossAi.table_of(w, FinalLab.body(w))
-	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower"]:
+	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower", &"cross_weave"]:
 		var pat := t.attacks[t.attack_index(id)].pattern
 		for kw in pat.waves:
 			var shots := BulletPatterns.wave_shots(pat, kw, Vector2.ZERO, 1024, 0.5)
@@ -402,9 +403,12 @@ func test_her_hp_is_the_formula_of_the_measured_dps() -> void:
 	for k in 30:
 		secs.append(1000 if k < 10 else 100)  # the last 20 s: 100 a second
 	_fill_meter(w, secs)
-	var expect := 100 * t.dps_target_ticks / 60 * t.window_permille / 1000
-	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 60 s × 0.294 window share")
-	assert_eq(expect, 1764)
+	# v0.8.0 N2 (owner O41): the pace: at 100 dps she lasts 120 s × sqrt(30 / 100) = 65.6 s of windows
+	var secs_at := FinalPace.seconds_at(100000, t)
+	assert_eq(secs_at, 3938, "120 s × sqrt(30 / 100), in ticks (the integer root: 0.547)")
+	var expect := 100 * secs_at / 60 * t.window_permille / 1000
+	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 65.6 s × 0.294 window share")
+	assert_eq(expect, 1929)
 	FinalBoss.jump(w, 1)
 	var i := FinalLab.body(w)
 	assert_eq(w.actors.max_hp[i], expect, "she rises with it")
@@ -441,7 +445,7 @@ func test_the_same_meter_gives_the_same_hp() -> void:
 	assert_eq(FinalBoss.dps_hp_of(a, t), FinalBoss.dps_hp_of(b, t))
 	assert_eq(
 		FinalBoss.dps_hp_of(a, t),
-		(37 + 120 + 455 + 98 + 301 + 77 + 15 + 600 + 3) * 3600 * 294 / (10 * 60 * 1000)
+		FinalPace.hp_for((37 + 120 + 455 + 98 + 301 + 77 + 15 + 600 + 3) * 1000 / 10, t)
 	)
 
 

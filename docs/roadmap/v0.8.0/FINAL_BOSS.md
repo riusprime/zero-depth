@@ -88,3 +88,56 @@ Built in P2 (`v080-p2`; evidence [`evidence/VOID_AND_PORTALS.md`](evidence/VOID_
 - Why the owner could not reach the boss (read from the code, not reproduced): the only way to it was the panel's
   first card, "End the run", whose name says the run ends; the e2e test reached the arena through it, so the path
   worked, but it read as the end of the run.
+
+## N2: a fight that lasts, harder dodges, The Fallen (owner O41, O42, O52, 2026-10-16)
+Owner, playtest 3, verbatim (PLAN O41): "got to last boss and what shouldn't happen happened, it was one of the easiest
+fights of the run because I was too OP, even if I am OP the boss should not that that quick and most spells were easy
+to dodge, we have to have the really hard to dodge spells, and a pretty intense fight that each phase takes 1-2
+minutes 1 minute being the most op and longer if you are not op, oneshoting (killing a phase in seconds should never
+happen)". O42: "it should mimic and nerf you into what he has so the match is even and it is more difficult and makes
+you less broken"; "change nemesis for The Fallen". O52: "should only be at certain times not the whole fight, so on
+and off".
+
+Built in N2 (`v080-n2`; evidence [`evidence/FINAL_BOSS_N2.md`](evidence/FINAL_BOSS_N2.md)). Supersedes F7's three
+rules (the Colossus's loop scaling, the Prism's flat 60 s, the Nemesis's max HP × 2.5 + DPS × 12 s) and FB3's "a fifth
+of your max HP" cap (D36):
+- **One pace for every body** (`FinalPace`, `BossTable.pace`; all three bodies). Its HP is set from your measured
+  damage per second (the fight's meter, the last 20 measured seconds, at least 5) so that at that rate it lasts
+  **120 s × √(30 / your dps)**, never under **60 s** nor over **180 s** (× the Prism's window share). 30 dps is the
+  base Blade hero's (measured: 28–29 dps on the Colossus); 4× stronger is about a minute, a quarter as strong three.
+  The Prism and The Fallen rise with it (the meter holds the Colossus's seconds); the Colossus rises with its own HP
+  and takes the paced HP once 5 s are measured, keeping its bar's fill. Why a square root: a stronger build is still
+  quicker (owner: "longer if you are not op"), but never quick.
+- **The rate cap: no body is killed in under a minute.** Each tick a paced body is in the fight (risen, not
+  shattering) it can take max HP / 60 s more damage, banked up to 10 s; your hit takes at most what is banked. So
+  even a build whose measured rate understates it (chains, procs, splits, a late Overclock) cannot take a body in
+  under 60 s of fighting. The dev panel's Kill boss (the world's own hit) is not capped.
+- **Harder-to-dodge attacks**, each with a telegraph and a dash path (sim tests):
+  - the Colossus, at half HP: **leap_slam_3**, a leap whose landing throws two quake rings 0.45 s apart, 28 stones,
+    two 2-stone gaps turned 90° between the rings (weave through one gap, then turn; the second ring flies in
+    its recovery, `BossColossus.leap_late_waves`, and like every ring leaves out stones within 1.6 m of you, so a
+    hero punishing in melee is never hit by it); **spike_chase_3**, two chasing
+    spike lines 30° apart, laid every 0.15 s (was 0.2), 14 spikes long;
+  - the Prism: **cross_weave**, a Cross whose orbs are six spiral arms that reverse 0.7 s in (the streams cross), its
+    shards firing **prism_bolt_fan** (three fast bolts 30° apart, twice, 0.2 s apart, after the 0.4 s aim line) every
+    0.8 s instead of a single bolt every 1.1 s;
+  - The Fallen (its own kit): **fallen_storm**, three volleys of seven crescents 20° apart (narrow gaps) locked 0.4 s
+    before the first, 0.3 s apart; **fallen_rush**, a four-swing rush that steps in and locks each swing 0.4 s before
+    it lands.
+- **The Fallen** (was the Nemesis; ids stay `nemesis`; en "The Fallen", es "El Caído", its death lines and Codex text
+  rewritten). Its **mimic windows** (`FinalPace.window`): one every **20 s**, **7 s** long, the first 12 s after its
+  rise, each warned **1.5 s** ahead. The warning: a violet ring pulses at your feet and at its feet, and the boss bar
+  says "The Fallen reaches for your power…"; the window: both rings burn, a violet thread joins them, the bar says
+  "The Fallen mirrors you: … (N s)". In a window it copies your build (your weapon's moves, your combo's arcs, your
+  shot, your dash, your echo and mirror stances, your three strongest cards; an attack begun in the window keeps the
+  copy to its end) and pulls you to its level: your damage on it × 30 / the dps its HP was set from (at least 10 %),
+  your move speed at most the base. Outside a window it fights with its own kit (every non-card move whatever your
+  weapon, its own storm and rush, close-in and back-off stances; no dash answer, no card).
+- **Its hits by O27** (D36 superseded): outside a window each attack hits for its class's share of your max HP
+  (crescents and shots 22 %: 5 hits; slashes 30 %: 4; point-blank 34 %: 3; the cards, only in a window, 50 %: 2, each
+  followed by a 0.7 s punish window); in a window your build's hit (weapon × 1.5 × the card's weight) when that is
+  more, at most half your max HP.
+- **Saves:** the pace (`paced`, `pace_dps`, `pace_budget`) and the window copy (`copying`) are saved and hashed with
+  the fight (`FinalFight`; `WorldSnapshot.ADDED_SINCE_V05`); the window itself is a function of the tick and the
+  body's rise, so a save mid-window resumes mid-window. An older save loads with a fresh pace, set again from the
+  meter.

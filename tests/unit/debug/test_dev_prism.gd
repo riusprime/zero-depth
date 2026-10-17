@@ -21,7 +21,9 @@ func test_the_prism_numbers_are_f10_rows() -> void:
 		"dps_min_measured_seconds": 5,
 		"dps_target_seconds": 60.0,
 		"dps_hp_min": 600,
-		"dps_hp_max": 250000,
+		"dps_hp_max": 5000000,  # v0.8.0 N2: paced (O41)
+		"pace": true,
+		"pace_min_seconds": 60.0,
 		"shard_count": 6,
 		"shard_orbit_m": 2.3,
 		"shard_turn_dps": 50.0,

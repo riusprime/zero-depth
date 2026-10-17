@@ -10,6 +10,8 @@ extends Control
 ## v0.8.0 FB1 (owner O16; FINAL_BOSS.md F3): the final boss is one bar split in three named segments (its bodies), under
 ## the fight's name: a body already beaten is an empty segment, the one fighting is its HP (empty while it shatters,
 ## filling as the next rises), the ones to come are full; "SHATTERED" shows through the shatter.
+## v0.8.0 N2 (owner O52): under the segments, The Fallen's mimic window line (its warning, then the window and the
+## seconds left; WorldReader.final_pace), empty otherwise.
 
 const BAR := Vector2(560, 8)
 const STAGGER := Vector2(560, 3)
@@ -25,6 +27,8 @@ var _boss_key := &""
 ## v0.8.0 FB1: the final boss's segments (fills and names), built when a fight shows.
 var _segments: Array[ColorRect] = []
 var _segment_names: Array[Label] = []
+## v0.8.0 N2: The Fallen's window line.
+var _fallen := Label.new()
 
 
 func _init() -> void:
@@ -59,6 +63,14 @@ func _init() -> void:
 	_stagger_label.position = Vector2(BAR.x + 10, 26 + BAR.y - 10)
 	HudStyle.style_label(_stagger_label, 14)
 	add_child(_stagger_label)
+	_fallen.name = "FallenLine"
+	_fallen.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_fallen.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_fallen.position = Vector2(-120, 26 + BAR.y + 26)
+	_fallen.size = Vector2(BAR.x + 240, 22)
+	HudStyle.style_label(_fallen, 16)
+	_fallen.add_theme_color_override("font_color", Color(0.86, 0.66, 1.0))
+	add_child(_fallen)
 	visible = false
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -72,6 +84,7 @@ func sync(reader: WorldReader) -> void:
 	if reader.final_fight():  # v0.8.0 FB1: one bar, three bodies
 		_sync_final(reader, i)
 		return
+	_fallen.text = ""
 	_show_segments(0)
 	var key := reader.boss_name_key(i)
 	if key != _boss_key:
@@ -116,6 +129,14 @@ func _sync_final(reader: WorldReader, i: int) -> void:
 		_stagger_label.text = tr("HUD_BOSS_PHASE_SHIFT")
 	if reader.final_shattering():
 		_stagger_label.text = tr("HUD_FINAL_SHATTER")
+	var pace := reader.final_pace()  # v0.8.0 N2 (O52): The Fallen's window
+	match int(pace.get("window", WorldReader.FALLEN_OFF)):
+		WorldReader.FALLEN_WARN:
+			_fallen.text = tr("HUD_FALLEN_WARN")
+		WorldReader.FALLEN_ON:
+			_fallen.text = tr("HUD_FALLEN_WINDOW") % ceili(int(pace["window_left"]) / 60.0)
+		_:
+			_fallen.text = ""
 
 
 func _build_segments(n: int) -> void:
@@ -188,6 +209,11 @@ func status_text() -> String:
 ## The stagger fraction shown (tests).
 func stagger_fraction() -> float:
 	return _stagger_fill.size.x / STAGGER.x
+
+
+## v0.8.0 N2: The Fallen's window line ("" none; tests).
+func fallen_text() -> String:
+	return _fallen.text
 
 
 func boss_name() -> String:

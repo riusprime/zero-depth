@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BulletPatternDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/bullet_pattern_definition.gd" id="1_pat"]
+
+[resource]
+script = ExtResource("1_pat")
+kind = 0
+look = &"ember_stone"
+speed_mps = 6.5
+radius_m = 0.26
+range_m = 16.0
+waves = 2
+wave_gap_seconds = 0.45
+turn_per_wave_degrees = 90.0
+count = 28
+gap_count = 2
+gap_width = 2
+safe_radius_m = 1.6
+id = &"colossus_quake_double"

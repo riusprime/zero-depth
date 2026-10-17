@@ -43,7 +43,7 @@ static func clamp_damage(w: World, i: int, amount: int, owner_id: int) -> int:
 	if i == 0 or not BossAi.is_boss_kind(w.actors.kinds[i]):
 		return amount
 	if w.final_fight != null:
-		amount = FinalBoss.clamp_damage(w, i, amount)
+		amount = FinalBoss.clamp_damage(w, i, amount, owner_id)  # v0.8.0 N2: the pace's cap
 	if owner_id == 0:
 		return amount
 	var lo := floor_hp(w, i)

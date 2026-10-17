@@ -5,10 +5,13 @@ extends GutTest
 ##   God mode (Player tab), "Phase 3" (Spawn tab): the Nemesis rises holding the run's weapon, fights with it (a Blade
 ##   run's combo or crescents, a Gun run's own shots in its look), answers the hero's dash (Space) with its own, and
 ##   casts the card, its name over its head.
+## - v0.8.0 N2 (owner O42, O52: "The Fallen", "on and off"): it rises in its own kit; its mimic window is warned on the
+##   boss bar's line (HUD_FALLEN_WARN) and by the violet rings at the hero's and its feet, then opens
+##   (HUD_FALLEN_WINDOW, the rings and the thread between them): in the window it copies the weapon, dash and card.
 ## - A run on its second loop (a labelled TEST HELPER sets the loop and the floor; F10's Restart floor rebuilds it):
 ##   God mode and Kill boss (the dev panel) through the Colossus and the Prism, the Ascension portal on the way; at the
-##   Nemesis, its HP is the build's formula and it answers a dash; Kill boss beats it: the victory recap with the true
-##   ending, Crown Breaker, Untouched and Beyond the Loop unlocked.
+##   Nemesis, its HP is the pace's (N2) and in its window it answers a dash; Kill boss beats it: the victory recap with
+##   the true ending, Crown Breaker, Untouched and Beyond the Loop unlocked.
 
 const LEG_FRAMES := 7000
 const LIMIT := 1500
@@ -103,9 +106,12 @@ func _risen(main: Main) -> int:
 
 
 ## Taps Space (the hero's dash) until the Nemesis answers with its own dash (at most `tries` dashes, a second apart).
+## v0.8.0 N2: it answers only in its mimic window, so each try waits for one.
 func _dash_answered(main: Main, tries: int = 10) -> bool:
 	var reader := main.driver.reader
 	for t in tries:
+		if reader.fallen_window() != WorldReader.FALLEN_ON:
+			await _until_window(main, WorldReader.FALLEN_ON)
 		await _e.tap(KEY_SPACE)
 		for k in 50:
 			await _e.frames(1)
@@ -114,6 +120,31 @@ func _dash_answered(main: Main, tries: int = 10) -> bool:
 				return true
 		await _e.frames(10)
 	return false
+
+
+## v0.8.0 N2: waits until The Fallen's window is `state` (WorldReader.FALLEN_*), at most `limit` frames; true if it is.
+func _until_window(main: Main, state: int, limit: int = 2400) -> bool:
+	for k in limit:
+		if main.driver.reader.fallen_window() == state:
+			return true
+		await _e.frames(1)
+	return false
+
+
+## v0.8.0 N2: its window shows: the boss bar's line and the rings (then the thread) at the hero's and its feet.
+func _window_shows(main: Main) -> void:
+	var hud: Hud = main.get_node("UI/Hud")
+	assert_true(await _until_window(main, WorldReader.FALLEN_WARN), "a window is warned")
+	await _e.frames(2)
+	assert_eq(hud.boss_bar.fallen_text(), tr("HUD_FALLEN_WARN"), "the warning's line")
+	assert_eq(main.view.nemesis_views.cue_shown(), 1, "the warning's rings")
+	assert_true(await _until_window(main, WorldReader.FALLEN_ON), "the window opens")
+	await _e.frames(2)
+	assert_true(
+		hud.boss_bar.fallen_text().begins_with(tr("HUD_FALLEN_WINDOW").get_slice("(", 0)),
+		"the window's line"
+	)
+	assert_eq(main.view.nemesis_views.cue_shown(), 2, "the rings and the thread")
 
 
 func _mimics(main: Main, build: StringName) -> void:
@@ -131,7 +162,9 @@ func _mimics(main: Main, build: StringName) -> void:
 	var avatar: Node = main.view.actors.actor_node(reader.actor_id(i)).get_meta(&"enemy_avatar")
 	assert_true(avatar is NemesisAvatar, "drawn as the Nemesis")
 	assert_eq((avatar as NemesisAvatar).weapon_kind, build, "the weapon in its hand")
-	assert_true(await _dash_answered(main), "it dashes when the hero dashes")
+	assert_eq(reader.fallen_window(), WorldReader.FALLEN_OFF, "N2: it rises in its own kit")
+	await _window_shows(main)
+	assert_true(await _dash_answered(main), "in its window it dashes when the hero dashes")
 	var weapon_ids: Array = (
 		[&"nemesis_combo", &"nemesis_crescents"]
 		if build == &"blade"
@@ -146,15 +179,21 @@ func _mimics(main: Main, build: StringName) -> void:
 		if i < 0:
 			break
 		var atk := BossAi.attack_of(w, i)  # a read
-		if atk != null and weapon_ids.has(atk.id):
+		var copying := bool(reader.final_pace().get("copying", false))
+		if atk != null and copying and weapon_ids.has(atk.id):
 			used_weapon = true
 		assert_false(
 			(
 				atk != null
+				and copying
 				and not weapon_ids.has(atk.id)
 				and atk.move != BossAttackTable.Move.CARD_CAST
 			),
-			"never the other weapon's attack"
+			"in a window never the other weapon's attack"
+		)
+		assert_false(
+			atk != null and not copying and atk.move == BossAttackTable.Move.CARD_CAST,
+			"no card outside a window"
 		)
 		if main.view.nemesis_views.card_shown() != "":
 			named = main.view.nemesis_views.card_shown()
@@ -260,20 +299,23 @@ func test_beating_the_nemesis_on_a_later_loop_is_the_true_ending() -> void:
 		while main.driver.reader.final_phase() == phase and frames < 260:
 			await _e.frames(1)
 			frames += 1
-	await _e.tap(KEY_QUOTELEFT)  # the panel away: the fight is played
+	# v0.8.0 N2: the panel stays open (its buttons take no focus), so God mode holds while the hero waits for The
+	# Fallen's window (closing it drops the debug tools: O27's hits would kill the hero meanwhile)
 	var reader := main.driver.reader
 	w = _e.world()
 	var i := await _risen(main)
 	assert_eq(reader.actor_kind(i), WorldReader.KIND_NEMESIS, "the Nemesis rises")
 	var t := BossAi.table_of(w, i)  # reads
-	assert_eq(
-		reader.actor_max_hp(i),
-		NemesisBuild.hp_from(w.actors.max_hp[0], FinalBoss.measured(w, t), t),
-		"its HP from the build"
+	var pace := reader.final_pace()
+	var expect := FinalPace.hp_for(w.final_fight.pace_dps, t) if bool(pace["paced"]) else -1
+	if expect > 0:
+		assert_eq(reader.actor_max_hp(i), expect, "N2: its HP from the pace")
+	assert_gte(
+		reader.actor_max_hp(i), t.dps_hp_min, "its HP (the pace's, or its own before a meter)"
 	)
 	assert_eq(reader.nemesis(i)["weapon"], &"blade", "the run's Blade")
-	assert_true(await _dash_answered(main), "it answers a dash")
-	await _e.tap(KEY_QUOTELEFT)
+	await _window_shows(main)
+	assert_true(await _dash_answered(main, 20), "in its window it answers a dash")
 	await _click(main, "KillBoss")
 	frames = 0
 	while main.get_node_or_null("UI/EndPanel") == null and frames < 600:

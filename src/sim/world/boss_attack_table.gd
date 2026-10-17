@@ -36,6 +36,8 @@ enum Move {
 const WEAPON_ANY := 0
 const WEAPON_BLADE := 1
 const WEAPON_GUN := 2
+## v0.8.0 N2 (owner O52): The Fallen's own kit, picked only outside its mimic windows.
+const WEAPON_OWN := 3
 
 var id := &""
 var move := Move.SLAM_RING

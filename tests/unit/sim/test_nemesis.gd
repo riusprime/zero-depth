@@ -44,12 +44,17 @@ func test_the_nemesis_is_a_mimic_body_in_data() -> void:
 	var w := NemesisLab.world(301)
 	var t := _table(w)
 	assert_true(t.mimic)
-	assert_true(t.build_hp, "its HP from the build")
+	assert_true(
+		t.pace, "v0.8.0 N2 (O41): its HP from the pace (FinalPace), not FB3's build formula"
+	)
+	assert_false(t.build_hp)
 	assert_eq(t.echo_ticks, 30, "the echo: 0.5 s behind")
 	assert_eq(t.dash_react_ticks, 15, "the dash answered 0.25 s later")
 	assert_eq(t.stance_ticks, 90)
 	assert_eq(t.card_casts, 3, "the strongest three cards")
-	assert_eq(t.damage_cap_permille, 200, "never more than a fifth of your max HP a hit")
+	assert_eq(
+		t.damage_cap_permille, 500, "N2 (O27, D36 superseded): at most half your max HP a hit"
+	)
 	for id: StringName in [
 		&"nemesis_combo", &"nemesis_crescents", &"nemesis_volley", &"nemesis_point_blank"
 	]:
@@ -261,7 +266,7 @@ func test_the_strongest_cards_are_picked_by_level_then_rarity_then_slot() -> voi
 	assert_eq(
 		tie_ids,
 		[&"gun_twin", &"halo_shot", &"gun_spread"] as Array[StringName],
-		"a tie: the rarest first (v0.8.0 RR: Twin is Epic, Halo Rare), then the slot"
+		"a tie: the legendary first (Twin since v0.8.0 RR), then the rare, then the slot"
 	)
 
 
@@ -446,12 +451,8 @@ func test_its_hp_is_the_formula_of_your_build() -> void:
 	assert_eq(
 		NemesisBuild.hp_from(100000, [1 << 30, 20] as Array[int], t), t.dps_hp_max, "the ceiling"
 	)
-	var i := _body(w)
-	assert_eq(
-		w.actors.max_hp[i],
-		NemesisBuild.hp_from(w.actors.max_hp[0], FinalBoss.measured(w, t), t),
-		"its HP as it rose"
-	)
+	# v0.8.0 N2: the build formula is kept for a table that asks for it (hp_from_build); The Fallen is paced: see
+	# tests/unit/sim/test_final_pace.gd (its HP from the meter as it rises).
 
 
 func test_its_hit_is_your_weapon_and_never_a_one_shot() -> void:
@@ -461,9 +462,11 @@ func test_its_hit_is_your_weapon_and_never_a_one_shot() -> void:
 	assert_eq(NemesisBuild.hit_from(2, 20, t), 8, "at least 8")
 	assert_eq(NemesisBuild.hit_from(5000, 20, t), 20, "at most the cap")
 	assert_eq(NemesisBuild.hit_from(5000, 3, t), 3, "the cap wins over the floor")
-	assert_eq(w.final_fight.hit_cap, w.actors.max_hp[0] * 200 / 1000, "a fifth of your max HP")
+	assert_eq(w.final_fight.hit_cap, w.actors.max_hp[0] * 500 / 1000, "N2: half your max HP")
 	w.final_fight.hit = 1 << 20
-	assert_eq(NemesisBuild.damage_of(w, 120, 2000), w.final_fight.hit_cap, "every hit capped")
+	w.final_fight.copying = true
+	var card := t.attacks[t.attack_index(&"nemesis_card_1")]
+	assert_eq(NemesisBuild.damage_of(w, card, 2000), w.final_fight.hit_cap, "every hit capped")
 	assert_lt(w.final_fight.hit_cap, w.actors.max_hp[0], "never your whole HP")
 
 

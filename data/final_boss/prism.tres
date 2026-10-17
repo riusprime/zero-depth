@@ -100,6 +100,38 @@ cause_key = &"CAUSE_PRISM_BEAM"
 shielded = true
 late_cause_key = &"CAUSE_PRISM_ORBS"
 
+[sub_resource type="Resource" id="A_cross_weave"]
+script = ExtResource("1_atk")
+id = &"cross_weave"
+shape = 2
+shape_params = {
+"bolt_attack": "prism_bolt_fan",
+"bolt_every_seconds": 0.8,
+"burn_seconds": 0.5,
+"count": 4,
+"fast_quarter_seconds": 1.2,
+"length_m": 40.0,
+"orb_every_seconds": 1.4,
+"pattern_id": "prism_crown_weave",
+"quarter_seconds": 2.4,
+"reverse_seconds": 3.0,
+"spin_seconds": 5.0,
+"width_m": 0.9,
+"window_seconds": 2.5
+}
+telegraph_seconds = 1.0
+active_seconds = 7.5
+recovery_seconds = 0.0
+damage = 30
+hit_class = &"medium"
+orb_damage = 22
+move = &"cross"
+weight = 1
+cooldown_seconds = 0.0
+cause_key = &"CAUSE_PRISM_BEAM"
+shielded = true
+late_cause_key = &"CAUSE_PRISM_ORBS"
+
 [sub_resource type="Resource" id="A_prism_bolt"]
 script = ExtResource("1_atk")
 id = &"prism_bolt"
@@ -124,10 +156,34 @@ cooldown_seconds = 1.0
 cause_key = &"CAUSE_PRISM_BOLT"
 lock_seconds = 0.4
 
+[sub_resource type="Resource" id="A_prism_bolt_fan"]
+script = ExtResource("1_atk")
+id = &"prism_bolt_fan"
+shape = 4
+shape_params = {
+"count": 3,
+"gap_seconds": 0.2,
+"radius_m": 0.22,
+"range_m": 32.0,
+"speed_mps": 22.0,
+"spread_degrees": 30.0,
+"volleys": 2
+}
+telegraph_seconds = 0.5
+active_seconds = 0.0167
+recovery_seconds = 0.4
+damage = 22
+hit_class = &"small"
+move = &"bolt_fan"
+weight = 1
+cooldown_seconds = 1.0
+cause_key = &"CAUSE_PRISM_BOLT"
+lock_seconds = 0.4
+
 [sub_resource type="Resource" id="P_0"]
 script = ExtResource("2_ph")
 hp_threshold_permille = 1000
-attack_ids = PackedStringArray("cross_ring", "cross_spiral", "cross_flower")
+attack_ids = PackedStringArray("cross_ring", "cross_spiral", "cross_flower", "cross_weave")
 entry_attack = &""
 speed_permille = 1000
 cooldown_permille = 1000
@@ -139,7 +195,13 @@ dps_measure_seconds = 20
 dps_min_measured_seconds = 5
 dps_target_seconds = 60.0
 dps_hp_min = 600
-dps_hp_max = 250000
+dps_hp_max = 5000000
+pace = true
+pace_ref_dps = 30
+pace_ref_seconds = 120.0
+pace_min_seconds = 60.0
+pace_max_seconds = 180.0
+pace_burst_seconds = 10.0
 shard_count = 6
 shard_orbit_m = 2.3
 shard_turn_dps = 50.0
@@ -184,6 +246,6 @@ dash_read_seconds = 0.0
 gap_close_attack = &""
 gap_close_distance_m = 5.0
 gap_close_seconds = 2.0
-attacks = Array[ExtResource("1_atk")]([SubResource("A_cross_ring"), SubResource("A_cross_spiral"), SubResource("A_cross_flower"), SubResource("A_prism_bolt")])
+attacks = Array[ExtResource("1_atk")]([SubResource("A_cross_ring"), SubResource("A_cross_spiral"), SubResource("A_cross_flower"), SubResource("A_cross_weave"), SubResource("A_prism_bolt"), SubResource("A_prism_bolt_fan")])
 phases = Array[ExtResource("2_ph")]([SubResource("P_0")])
 id = &"prism"

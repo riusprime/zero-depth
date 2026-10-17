@@ -69,6 +69,7 @@ const ATTACK_WEAPONS := {
 	"any": BossAttackTable.WEAPON_ANY,
 	"blade": BossAttackTable.WEAPON_BLADE,
 	"gun": BossAttackTable.WEAPON_GUN,
+	"own": BossAttackTable.WEAPON_OWN,  # v0.8.0 N2: The Fallen's own kit (outside its windows)
 }
 
 

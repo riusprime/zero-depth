@@ -4,8 +4,8 @@ extends GutTest
 ## top), a punish window after every big attack (no follow-up, a 0.6-0.9 s recovery), faster javelins and jumps, and
 ## one or two slow readable attacks kept per boss. The evidence table: docs/roadmap/v0.8.0/evidence/BOSS_PACE.md.
 
-## The attacks with no hit class of their own: the meltdown's burning ground (a hazard), the Nemesis's (its hits are
-## made from the player's build, owner F7: an owner question in OWNER_TODO).
+## The attacks with no hit class of their own: the meltdown's burning ground (a hazard). v0.8.0 N2 (owner O27, D36
+## superseded): The Fallen's attacks are classed too (its own hits outside its mimic windows).
 const UNCLASSED := [&"meltdown"]
 ## Per boss, the slow readable attacks BP left as they were: [id, telegraph seconds].
 const KEPT_SLOW := {
@@ -55,7 +55,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 	for def in _bodies(repo):
 		for atk in def.attacks:
 			var where := "%s %s" % [def.id, atk.id]
-			if def.id == &"nemesis" or UNCLASSED.has(atk.id):
+			if UNCLASSED.has(atk.id):
 				assert_eq(atk.hit_class, &"", where + ": no class of its own")
 				continue
 			assert_true(BossSchemas.HIT_CLASSES.has(atk.hit_class), where + ": classed")
@@ -68,7 +68,11 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 				var orbs := BossSchemas.hits_to_kill(hp, atk.orb_damage)
 				assert_between(orbs, 4, 5, where + ": its orbs are small hits")
 			seen += 1
-	assert_eq(seen, 69, "every classed attack of the six bosses, the Colossus and the Prism")
+	assert_eq(
+		seen,
+		82,
+		"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9)"
+	)
 
 
 func test_loop_scaling_still_applies_on_top() -> void:
@@ -106,7 +110,7 @@ func test_a_big_attack_is_followed_by_its_punish_window() -> void:
 			assert_true(atk.opens_weak_point, where + ": its window opens the weak point")
 			var rec := t.attacks[k].recover_ticks
 			assert_between(rec, BossSchemas.PUNISH_MIN_TICKS, BossSchemas.PUNISH_MAX_TICKS, where)
-	assert_eq(bigs, 13)
+	assert_eq(bigs, 17, "N2: the Colossus's leap_slam_3, The Fallen's three card casts")
 
 
 func test_the_javelins_come_and_go_faster() -> void:

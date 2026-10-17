@@ -251,6 +251,11 @@ const ADDED_SINCE_V05 := {
 		&"dash_vel",
 		&"stance",
 		&"stance_t",
+		# v0.8.0 N2: the body's pace and The Fallen's window copy (an older save: unpaced, set again from the meter)
+		&"paced",
+		&"pace_dps",
+		&"pace_budget",
+		&"copying",
 	],
 	&"ModifierState":
 	[
