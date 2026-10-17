@@ -46,6 +46,7 @@ FILES=(
 	tests/unit/sim/test_nemesis.gd # v0.8.0: RR's tiers changed the Nemesis's pick order here
 	tests/unit/sim/test_intensity_director.gd # v0.8.0: N5 (the director) meets spawning, snapshots and old saves here
 	tests/unit/sim/test_final_pace.gd # v0.8.0: N2 (the final boss paced to your damage) meets RR/BP/N1 builds here
+	tests/e2e/test_e2e_health_bars.gd # v0.8.0: N4 (the bars) meets N2 (the final boss) and every boss here
 	tests/unit/presentation/test_attack_visuals_2.gd # v0.8.0: BS2 moves met AV2s every-move check here
 	tests/e2e/test_e2e_loading_cover.gd # v0.8.0: N3's loading cover sits in every floor load (start, portal)
 )
