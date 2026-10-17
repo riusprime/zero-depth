@@ -308,6 +308,23 @@ the mode's colour vision on the tokens and asserts:
   rarity line is unchanged. The HUD's wand pips (`BuildHud`) and the Build page's tiles (`WandRow`) show a wand
   card's level as they show an ability modifier's. The badge fits on the card at the pick's and the shop's scales
   in en and es (`test_card_level_views.gd`).
+- **The reward cards** (v0.8.0 N8, owner O62, D48; [`../roadmap/v0.8.0/evidence/REWARD_CARDS.md`](../roadmap/v0.8.0/evidence/REWARD_CARDS.md)):
+  every pick card (`StoneCard`: the altars, the boss's altar, the epic altar, a chest's one card, the shop's stock,
+  the Swap, the Codex) reads top to bottom: the **name**, the **big icon** (its element or star glyph badge kept), the
+  **gain line** (old → new: `CardGain`, its numbers the sim's own `WorldReader.card_forecast` → `CardForecast`, the
+  steps the take runs: a stat's value, max HP, an ability's or a wand card's level), the sentence, the gem and the
+  **rarity's word**. The **whole card is painted in its rarity's colour** (`CardPaint`: the stone face and back tinted
+  dark toward it, its frame line and glow in it; the text keeps ≥ 4.5:1 contrast). The pick panel **deals** them
+  (`CardDeal`, read each frame, deciding nothing): face down from below the screen into a fan, flipped one by one
+  (the width to 0, the face swapped halfway); an **Epic or Legendary** card is dealt last: its back glows, the
+  background darkens, and it flips with a punch, a flash and light rays rising behind it (`CardFx`; the rays on one
+  layer under every card); a **Legendary** card keeps a looping holographic shine. The focused card **tilts** toward
+  the cursor (a fixed tilt when focused by key or pad) and **sinks** a little, its gain counting up from the old value.
+  On a pick its icon **flies** to the HUD slot it landed in (`CardFlights`/`CardFly`: an ability's slot, a wand pip,
+  the carried row, else the HP plate) and the cards not picked **burn** (a dissolve shader with an ember edge); a
+  cancel just closes. A press during the deal ends it at once and still counts (no input lost or held back).
+  **Reduced motion:** no deal, flip, tilt or flight; the cards fade in face up, the shine holds still, the panel fades
+  out on a pick. The shop's cards wear the same face, paint and gain line, without the deal.
 - **First-run hints** (v0.7.5 SM, owner N8): `OnboardingHints`, one small Ember-stone slab with a cold top line at
   the top centre (top 150 at the 1920×1080 base, 720 wide, "TIP" and one line); while a centre panel is open (a pick, the
   Swap, the shop, an event) it sits low instead (its bottom 82 px above the screen's, between the panel's key line and

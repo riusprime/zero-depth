@@ -133,22 +133,25 @@ static func add_amount(w: World, s: int, a: int) -> void:
 		for k in old.size():
 			w.stat_values[k] = old[k]
 	var before_hp := max_hp(w)
-	var v := w.stat_values[s]
-	match MODE[s]:
-		MULT:
-			v = (v * (1000 + a) + 500) / 1000
-			v = mini(v, t.cap) if t.cap > 0 else v
-		CUT:
-			v = (v * (1000 - a) + 500) / 1000
-			v = maxi(v, t.cap) if t.cap > 0 else v
-		ADD:
-			v += a
-	w.stat_values[s] = v
+	w.stat_values[s] = stepped(t, s, w.stat_values[s], a)
 	if s == Stat.MAX_HP:
 		var gain := max_hp(w) - before_hp
 		# Twin of _side's Glass Cannon push, without its floor of 1 (see there; audit G-17).
 		w.actors.max_hp[0] += gain
 		w.actors.hp[0] = mini(w.actors.max_hp[0], w.actors.hp[0] + maxi(0, gain))
+
+
+## v0.8.0 N8: stat `s`'s raw value `v` moved by `a` per mille within table `t`'s cap (add_amount's step, and the
+## pick card's forecast: CardForecast). Pure.
+static func stepped(t: StatTable, s: int, v: int, a: int) -> int:
+	match MODE[s]:
+		MULT:
+			v = (v * (1000 + a) + 500) / 1000
+			return mini(v, t.cap) if t.cap > 0 else v
+		CUT:
+			v = (v * (1000 - a) + 500) / 1000
+			return maxi(v, t.cap) if t.cap > 0 else v
+	return v + a
 
 
 ## True when another card of `s` would change nothing (offers skip it).
@@ -170,18 +173,28 @@ static func at_cap(w: World, s: int) -> bool:
 
 ## An ADD stat's total with the player's base (crit chance and crit damage in per mille).
 static func total(w: World, s: int) -> int:
+	return total_at(w, s, value(w, s))
+
+
+## v0.8.0 N8: total() for a raw value `v` of stat `s` (CardForecast's after-card number).
+static func total_at(w: World, s: int, v: int) -> int:
 	match s:
 		Stat.CRIT_CHANCE:
-			return w.player.crit_chance_permille + value(w, s)
+			return w.player.crit_chance_permille + v
 		Stat.CRIT_DAMAGE:
-			return w.player.crit_mult_permille + value(w, s)
-	return value(w, s)
+			return w.player.crit_mult_permille + v
+	return v
 
 
 ## The player's max HP: the table's, x the max HP stat, plus the gamble shrine's old-style wins (v0.3.0 L19) when
 ## the shrine doesn't pay in stats.
 static func max_hp(w: World) -> int:
-	var base := (w.player.hp * value(w, Stat.MAX_HP) + 500) / 1000
+	return max_hp_at(w, value(w, Stat.MAX_HP))
+
+
+## v0.8.0 N8: max_hp() with the max HP stat at `v` (CardForecast's after-card number).
+static func max_hp_at(w: World, v: int) -> int:
+	var base := (w.player.hp * v + 500) / 1000
 	var cut := Curses.max_hp_permille(w)  # v0.6.0 CU: Glass Heart
 	if cut != 1000:
 		base = maxi(1, (base * cut + 500) / 1000)

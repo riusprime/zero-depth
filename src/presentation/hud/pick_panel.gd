@@ -9,27 +9,59 @@ extends ModalPanel
 ## - Pad: d-pad or left stick moves the focus, A (Cross) takes it, B (Circle) leaves.
 ## Space (dash) never confirms: the panel doesn't use ui_accept.
 ## Layouts (G2 mockups for the owner): ROW_CENTRE ships as the default.
+## v0.8.0 N8 (owner O62, D48): the cards are dealt (CardDeal): face down from the bottom of the screen into a fan,
+## flipped one by one (the width to 0, the face swapped halfway); an Epic or Legendary card waits for last with a
+## glowing back while the background darkens, and flips with a punch, a flash and rays behind it; a Legendary card
+## keeps a holographic shine. The hovered card tilts toward the cursor (a focused one by key or pad: a fixed tilt)
+## and sinks a little, its numbers counting up from the old value. On a pick its icon flies to its HUD slot
+## (card_taken → Hud's CardFly) and the cards not picked burn (no discard button: D48); a chest deals its one card,
+## already taken (N7), and any answer closes it. A press during the deal ends the deal at once and still counts (no
+## input is lost or held back). Reduced motion: no deal, flip or tilt; the cards fade in face up, tier colour and
+## words kept; on a pick the panel fades. All of it only draws: the sim decides (EI-07).
+
+## v0.8.0 N8: the picked card (its code) leaves its socket at `from` (global px): the HUD flies its icon to its slot.
+signal card_taken(code: int, from: Rect2)
 
 enum Layout { ROW_CENTRE, ROW_LOW, COLUMN_RIGHT }
 
 ## Key repeats (PanelInput.Echo): a held key repeats (the sent latch stops a second answer).
 const ECHO := PanelInput.Echo.ACT
 const SLOTS := 3
+## v0.8.0 N8: the background's dim at rest and how much darker the rare wait takes it; the outro (burn, fly) length.
+const DIM := 0.45
+const DIM_WAIT := 0.32
+const OUTRO_S := 0.75
+const OUTRO_REDUCED_S := 0.15
+## The fixed tilt of a card focused by key or pad (CardFx.set_hover).
+const FOCUS_TILT := Vector2(0.35, -0.2)
 ## v0.8.0 RR (owner O33): the tier words in order (Offers.info's rarity: common, rare, epic, legendary).
 const RARITY_KEYS: Array[String] = [
 	"RARITY_COMMON", "RARITY_RARE", "RARITY_EPIC", "RARITY_LEGENDARY"
 ]
 
 var layout := Layout.ROW_CENTRE
+## v0.8.0 N8: the deal's timeline (CardDeal).
+var deal := CardDeal.new()
 var _dim := ColorRect.new()
 var _title := Label.new()
 var _price_icon := ShardIcon.new(26.0)
 var _hint := Label.new()
+## v0.8.0 N8: the high cards' light rays, on one layer under every card.
+var _rays := Control.new()
 var _slots: Array[PickSlot] = []
 var _count := 0
 var _reward := -1
 var _boss := false  # v0.8.0 RR: the open choice is the boss's altar
 var _swap_seen := false
+## v0.8.0 N8: the cards' codes, the answer sent, the dealt chest, the outro's clock (< 0: none).
+var _codes := PackedInt32Array()
+var _answer := InputFrame.PICK_NONE
+var _dealt := false
+var _outro := -1.0
+var _picked := -1
+var _reader: WorldReader
+var _dim_base := DIM
+var _mouse_tilt := false
 
 
 func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
@@ -37,7 +69,13 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 	name = "PickPanel"
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_add_dim(_dim, 0.18 if layout == Layout.ROW_LOW else 0.45)
+	_dim_base = 0.18 if layout == Layout.ROW_LOW else DIM
+	_add_dim(_dim, _dim_base)
+	_rays.name = "Rays"
+	_rays.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_rays.draw.connect(_draw_rays)
+	add_child(_rays)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_theme_constant_override("separation", 14)
@@ -78,6 +116,7 @@ func _init(p_layout: Layout = Layout.ROW_CENTRE) -> void:
 
 ## Opens, refreshes or closes from the sim's state.
 func sync(reader: WorldReader) -> void:
+	_reader = reader
 	if _closed(reader.choosing()):
 		return
 	var r := reader.choice_reward()
@@ -96,7 +135,9 @@ func sync(reader: WorldReader) -> void:
 	_sent = false
 	_reward = rid
 	visible = true
+	_end_outro()
 	var items := reader.choice_items()
+	_codes = items
 	var legendary := reader.reward_is_legendary(r)  # v0.5.5 AR (X1b)
 	_boss = legendary
 	_count = items.size()
@@ -129,7 +170,10 @@ func sync(reader: WorldReader) -> void:
 		_title.text = tr("PICK_TITLE_CHEST_DEALT")
 	_price_icon.visible = chest and not dealt
 	_hint.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
+	_dealt = dealt
+	_answer = InputFrame.PICK_NONE
 	_set_focus(0)
+	_start_deal()
 
 
 ## A card code's face (v0.4.0 BS; WorldReader.card_info), translated through `ci`: id, title, sentence, color,
@@ -149,6 +193,7 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 		"wand": bool(info.get("wand", false)),  # v0.6.5 WN5b: a wand card (levels 1–5)
 		"level_text": "",  # v0.7.5 SM: the level badge ("Lv 1", "Lv 2 → 3"); "" for a card with no level
 		"held_level": 0,  # v0.7.5 SM: the level held now (0: not held)
+		"gain": reader.card_forecast(code),  # v0.8.0 N8 (O62): what gets better, old → new (the sim's forecast)
 	}
 	match int(info["type"]):
 		WorldReader.CARD_ABILITY:
@@ -162,6 +207,8 @@ static func card_face(ci: Object, reader: WorldReader, code: int) -> Dictionary:
 			face["tier_text"] = (
 				ci.tr(new_key) if lvl <= 1 else ci.tr("UI_CARD_ABILITY_LEVEL") % lvl
 			)
+			# v0.8.0 N8 (O62, "write the rarity out"): an ability card names its rarity too
+			face["tier_text"] += " · " + ci.tr(RARITY_KEYS[clampi(int(info["rarity"]), 0, 3)])
 		WorldReader.CARD_STAT:
 			var args := [GambleIcons.percent(int(info["amount"]))]
 			if int(info.get("side", 0)) > 0:  # v0.5.0 CP: a rule card's second number
@@ -253,7 +300,20 @@ func title_text() -> String:
 func _input(event: InputEvent) -> void:
 	if not _open or not input_enabled or _sent:
 		return
+	if event is InputEventMouseMotion:
+		_mouse_tilt = true
 	var d := PanelInput.decode(event, 3, ECHO)
+	if (
+		d.kind
+		in [
+			PanelInput.Kind.DIGIT,
+			PanelInput.Kind.CONFIRM,
+			PanelInput.Kind.CANCEL,
+			PanelInput.Kind.STEP
+		]
+	):
+		_mouse_tilt = false
+		skip_deal()  # v0.8.0 N8: a press during the deal ends it at once, and still counts
 	match d.kind:
 		PanelInput.Kind.DIGIT:
 			_set_focus(d.digit)
@@ -279,8 +339,164 @@ func _set_focus(k: int) -> void:
 func _on_clicked(k: int) -> void:
 	if not _open or not input_enabled or _sent or k >= _count:
 		return
+	skip_deal()
 	_set_focus(k)
 	_send(k + 1)
+
+
+## v0.8.0 N8: ends the deal now (every card in place, face up); a pick press calls it before it counts.
+func skip_deal() -> void:
+	if not deal.done():
+		deal.skip()
+		_apply_deal()
+
+
+func _send(value: int) -> void:
+	_answer = value
+	super(value)
+
+
+func _start_deal() -> void:
+	var tiers := []
+	for k in _count:
+		tiers.append(_slots[k].tier)
+	deal.start(tiers, HudStyle.reduced_motion)
+	for k in _count:
+		var fx := _slots[k].card.fx
+		fx.set_burn(0.0)
+		fx.modulate = Color.WHITE
+	_apply_deal()
+
+
+## Puts every card where the deal has it now, and the background's dim.
+func _apply_deal() -> void:
+	var view_h := get_viewport_rect().size.y if is_inside_tree() else 1080.0
+	for k in _count:
+		var s := _slots[k]
+		var fx := s.card.fx
+		var arrive := deal.arrive(k)
+		var fan := deal.fan(k)
+		var below := (
+			view_h - s.global_position.y + 60.0 if s.is_inside_tree() else CardDeal.FROM_BELOW
+		)
+		var drop := fan.y * s.card.scale_factor
+		var off := Vector2(0, drop + below * (1.0 - arrive))
+		fx.set_pose(
+			off,
+			fan.x * arrive + 0.3 * (1.0 - arrive) * signf(fan.x + 0.01),
+			deal.width(k),
+			deal.punch(k)
+		)
+		fx.set_side(deal.face_up(k), deal.back_glow(k))
+		fx.set_light(deal.flash(k), deal.rays(k))
+	_dim.color.a = _dim_base + DIM_WAIT * deal.dark()
+	_rays.queue_redraw()
+
+
+func _draw_rays() -> void:
+	var inv := _rays.get_global_transform().affine_inverse()
+	for k in _count:
+		var fx := _slots[k].card.fx
+		if fx.rays > 0.001 and _slots[k].visible:
+			fx.draw_rays(_rays, inv * fx.global_position, fx.get_global_transform().get_scale().y)
+
+
+func _process(delta: float) -> void:
+	if _outro >= 0.0:
+		_advance_outro(delta)
+		return
+	if not _open:
+		return
+	if deal.time < deal.length() + 2.0:  # the deal, then the rays and the dim settling after the last flip
+		deal.advance(minf(delta, 0.1))
+		_apply_deal()
+	else:
+		_rays.queue_redraw()  # the rays keep turning
+	_hover()
+
+
+## The focused card tilts toward the cursor (or a fixed tilt when focused by key or pad) and sinks; the others rest.
+func _hover() -> void:
+	var mouse := get_global_mouse_position()
+	for k in _count:
+		var s := _slots[k]
+		var tilt := Vector2.ZERO
+		if s.focused and not HudStyle.reduced_motion and deal.done():
+			tilt = FOCUS_TILT
+			var r := s.card.get_global_rect()
+			if _mouse_tilt and r.has_point(mouse) and r.size.x > 0.0:
+				tilt = (mouse - r.get_center()) / (r.size * 0.5)
+		s.card.fx.set_hover(tilt, 1.0 if s.focused else 0.0)
+
+
+## v0.8.0 N8: the choice closed. After a pick (or a dealt chest's answer) the picked card's icon flies to the HUD and
+## the others burn; after a cancel the panel just goes.
+func _on_closed() -> void:
+	var k := _answer - 1 if _answer > 0 else (0 if _dealt else -1)
+	if k < 0 or k >= _count or (_answer <= 0 and _still_there()):
+		return  # a cancel; or a chest's card that needs the swap, left for later
+	card_taken.emit(_codes[k], _slots[k].card.socket.get_global_rect())
+	visible = true
+	_outro = 0.0
+	_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for s in _slots:
+		s.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_picked = k
+
+
+## The choice's reward still stands (its card was not taken).
+func _still_there() -> bool:
+	if _reader == null:
+		return false
+	for i in _reader.reward_count():
+		if _reader.reward_id(i) == _reward:
+			return true
+	return false
+
+
+func _advance_outro(delta: float) -> void:
+	_outro += delta
+	var reduced := HudStyle.reduced_motion
+	var length := OUTRO_REDUCED_S if reduced else OUTRO_S
+	var t := clampf(_outro / length, 0.0, 1.0)
+	for k in _count:
+		var fx := _slots[k].card.fx
+		fx.set_light(0.0, deal.rays(k) * (1.0 - t))  # the rays sink with the cards
+		_rays.queue_redraw()
+		if k == _picked:
+			fx.modulate.a = 1.0 - clampf(t * 3.0, 0.0, 1.0)  # its icon is flying; the card fades fast
+		elif reduced:
+			fx.modulate.a = 1.0 - t
+		else:
+			fx.set_burn(t)
+	_dim.color.a = _dim_base * (1.0 - t)
+	modulate.a = 1.0 if t < 0.8 else (1.0 - t) * 5.0
+	if t >= 1.0:
+		_end_outro()
+		visible = _open
+
+
+## The outro is over (or a new choice opened): the cards whole again, the panel's clicks back.
+func _end_outro() -> void:
+	if _outro < 0.0:
+		return
+	_outro = -1.0
+	_picked = -1
+	modulate.a = 1.0
+	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	for s in _slots:
+		s.mouse_filter = Control.MOUSE_FILTER_STOP
+		s.card.fx.set_burn(0.0)
+		s.card.fx.modulate = Color.WHITE
+
+
+## v0.8.0 N8: the outro is playing (the picked card's icon flying, the others burning), and which card was picked.
+func outro_playing() -> bool:
+	return _outro >= 0.0
+
+
+func picked_slot() -> int:
+	return _picked
 
 
 func _place(col: VBoxContainer) -> void:

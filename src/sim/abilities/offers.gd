@@ -304,7 +304,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"name_key": t.name_key,
 				"desc_key": t.desc_key,
 				"rarity": 1 if t.rare else 0,
-				"level": mini(Abilities.level_of(w, idx) + 1, AbilityTable.MAX_LEVEL),
+				"level": Abilities.level_after(w, idx),  # v0.8.0 N8: grant's own step
 				"amount": 0,
 				"modifier": t.is_modifier(),  # v0.6.0 MX2: it takes a modifier slot
 			}

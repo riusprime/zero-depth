@@ -150,6 +150,12 @@ const EFFECT_FINAL_RISE := FinalBoss.EFFECT_RISE
 ## Rewards (v0.3.0 E): reward kinds and item rarities, for views.
 const REWARD_ALTAR := RewardStore.Kind.ALTAR
 const REWARD_CHEST := RewardStore.Kind.CHEST
+## v0.8.0 N8: card_forecast's kinds: no number, a level, a value per mille, max HP. Literals equal to CardForecast's
+## KIND_* (a const naming CardForecast here would close a load cycle; test_reward_cards.gd checks they match).
+const GAIN_NONE := 0
+const GAIN_LEVEL := 1
+const GAIN_PERMILLE := 2
+const GAIN_HP := 3
 const REWARD_LEGENDARY := RewardStore.Kind.LEGENDARY  # v0.5.5 AR (X1b)
 const REWARD_DROP := RewardStore.Kind.DROP  # v0.6.0 CU: a free one-card drop (a stolen core, Marked's card)
 ## v0.6.0 CU: a drop's kind (CoreState.Drop).
@@ -1772,6 +1778,12 @@ func choice_reward() -> int:
 func choice_items() -> PackedInt32Array:
 	var i := choice_reward()
 	return _w.rewards.offer_of(i) if i >= 0 else PackedInt32Array()
+
+
+## v0.8.0 N8 (owner O62): what taking card `code` changes, old → new (CardForecast: the take's own steps; on the
+## open choice's reward, so the boss's altar's level-5 rule counts).
+func card_forecast(code: int) -> Dictionary:
+	return CardForecast.of(_w, code, choice_reward())
 
 
 ## v0.8.0 N7 (owner O61): the open choice is a chest's dealt card (no choice: any answer takes it).

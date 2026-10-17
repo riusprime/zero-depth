@@ -58,6 +58,8 @@ var phase_hud := PhaseHud.new()
 var shop := ShopHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
+## v0.8.0 N8 (owner O62): the picked cards' icons fly over everything to their HUD slots.
+var flights := CardFlights.new()
 var swap := SwapPanel.new()
 var _hp_bar := HudBar.new()
 var _hp_text := HudStyle.label(14, true)
@@ -107,6 +109,7 @@ var _t := 0.0
 ## theme override; cleared on a language switch.
 var _shown := {}
 var _shown_locale := ""
+var _reader: WorldReader  # v0.8.0 N8: the last sync's (a picked card's flight reads where it landed)
 
 
 func _init() -> void:
@@ -172,9 +175,19 @@ func _init() -> void:
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
+	flights.abilities = ability_hud  # v0.8.0 N8: where a picked card's icon flies
+	flights.build = build_hud
+	flights.items = _items
+	flights.plate = _hp_frame
+	add_child(flights)
+	# deferred: the HUD's slots sync after the pick panel
+	_pick.card_taken.connect(
+		func(code: int, from: Rect2) -> void: flights.launch.call_deferred(_reader, code, from)
+	)
 
 
 func sync(reader: WorldReader) -> void:
+	_reader = reader
 	var locale := TranslationServer.get_locale()
 	if locale != _shown_locale:  # P-7: words again in a new language
 		_shown_locale = locale

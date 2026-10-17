@@ -138,6 +138,7 @@ func _render() -> void:
 		_face.get("level_text", ""),  # v0.7.5 SM: the level badge
 		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
+	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
 	_apply()
 
 
