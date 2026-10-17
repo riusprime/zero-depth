@@ -118,55 +118,71 @@ var room_meshes := {}
 var room_fragments := {}
 var hero_light: OmniLight3D
 var clusters: Array = []
+var _tint: Array = []
+var _shadows := true
+var _by_room := {}
 
 
 ## Builds every cluster `placed` (ShardDressing.place) with the tint `tint_key` (a TINTS key). `shadows`: small
 ## crystals cast shadows (the "high" lighting quality).
 func build(placed: Array, tint_key: StringName, shadows := true) -> void:
+	for r: int in begin(placed, tint_key, shadows):
+		build_room(r)
+
+
+## v0.8.0 N12 (O70): build() in parts (a load bakes one room a frame): takes `placed` and returns the rooms to build,
+## in build()'s order; build_room(r) then bakes and adds each.
+func begin(placed: Array, tint_key: StringName, shadows := true) -> Array:
 	clusters = placed
-	var tint: Array = TINTS.get(tint_key, TINTS[&"default"])
-	var by_room := {}
+	_tint = TINTS.get(tint_key, TINTS[&"default"])
+	_shadows = shadows
+	_by_room = {}
 	for c: Dictionary in placed:
 		var r: int = c["room"]
-		if not by_room.has(r):
-			by_room[r] = []
-		by_room[r].append(c)
+		if not _by_room.has(r):
+			_by_room[r] = []
+		_by_room[r].append(c)
+	return _by_room.keys()
+
+
+## One room's crystals baked into one mesh, its fragments in a MultiMesh, and its hero cluster's light.
+func build_room(r: int) -> void:
+	var tint := _tint
 	var calm := ViewPrefs.reduced_motion
-	for r: int in by_room:
-		var crystals: Array = []
-		var frags: Array = []
-		for c: Dictionary in by_room[r]:
-			crystals.append_array(c["crystals"])
-			frags.append_array(c["fragments"])
-			if c["hero"] and (c["light"] as Vector3).is_finite():
-				_add_light(c["light"], tint[1])
-		var glow_e := GLOW_ENERGY
-		var node := MeshInstance3D.new()
-		node.name = "Shards_%d" % r
-		node.mesh = bake(crystals)
-		node.material_override = material(tint, glow_e, 0.0)
-		node.cast_shadow = (
-			GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-			if shadows or r == _hero_room(by_room[r])
-			else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		)
-		add_child(node)
-		room_meshes[r] = node
-		if frags.is_empty():
-			continue
-		var mm := MultiMesh.new()
-		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.mesh = crystal_mesh(2)
-		mm.instance_count = frags.size()
-		for k in frags.size():
-			mm.set_instance_transform(k, frags[k])
-		var mmi := MultiMeshInstance3D.new()
-		mmi.name = "Fragments_%d" % r
-		mmi.multimesh = mm
-		mmi.material_override = material(tint, glow_e * 1.3, 0.0 if calm else BOB_AMPLITUDE)
-		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(mmi)
-		room_fragments[r] = mmi
+	var crystals: Array = []
+	var frags: Array = []
+	for c: Dictionary in _by_room[r]:
+		crystals.append_array(c["crystals"])
+		frags.append_array(c["fragments"])
+		if c["hero"] and (c["light"] as Vector3).is_finite():
+			_add_light(c["light"], tint[1])
+	var glow_e := GLOW_ENERGY
+	var node := MeshInstance3D.new()
+	node.name = "Shards_%d" % r
+	node.mesh = bake(crystals)
+	node.material_override = material(tint, glow_e, 0.0)
+	node.cast_shadow = (
+		GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		if _shadows or r == _hero_room(_by_room[r])
+		else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	)
+	add_child(node)
+	room_meshes[r] = node
+	if frags.is_empty():
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.mesh = crystal_mesh(2)
+	mm.instance_count = frags.size()
+	for k in frags.size():
+		mm.set_instance_transform(k, frags[k])
+	var mmi := MultiMeshInstance3D.new()
+	mmi.name = "Fragments_%d" % r
+	mmi.multimesh = mm
+	mmi.material_override = material(tint, glow_e * 1.3, 0.0 if calm else BOB_AMPLITUDE)
+	mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(mmi)
+	room_fragments[r] = mmi
 
 
 ## r's room index when one of its clusters is the hero's, else -1.

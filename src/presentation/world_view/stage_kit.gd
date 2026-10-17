@@ -36,6 +36,10 @@ const TINT_AMOUNT := 0.55
 ## and out of a light's reach, and each piece is drawn from its coarsest level of detail (KitModels.decor_mesh: 2.2-4x
 ## fewer triangles, for pieces a few dozen pixels tall). The pieces, their places and their look are kept.
 const DECOR_CHUNK_M := 16.0
+## v0.8.0 N12 (O70): a load adds the kit's pieces this many at a time (one job each, ~5-10 ms headless).
+const PIECES_PER_JOB := 48
+## v0.8.0 N12: and the procedural walls' meshes this many walls at a time.
+const PROC_WALLS_PER_JOB := 8
 
 var lights: Array[OmniLight3D] = []
 ## v0.8.0 N10: the procedural walls' meshes built (one per sim wall it draws) and their triangles.
@@ -71,22 +75,59 @@ func build(
 	proc: Dictionary = {},
 	wall_tex: Dictionary = {}
 ) -> void:
+	var q := ViewBuildQueue.new()
+	q.add("kit", queue_build.bind(q, placements, wall_count, cover_hue, mood, proc, wall_tex))
+	q.run_all()
+
+
+## v0.8.0 N12 (owner O70): build() as jobs right after the running one on `q` (ViewBuildQueue.add_next): the
+## procedural walls' meshes PROC_WALLS_PER_JOB walls at a time, the pieces PIECES_PER_JOB at a time, then each
+## decoration kind; a load runs them over frames behind the loading cover.
+func queue_build(
+	q: ViewBuildQueue,
+	placements: Array,
+	wall_count: int,
+	cover_hue: Color,
+	mood: BiomeMood,
+	proc: Dictionary = {},
+	wall_tex: Dictionary = {}
+) -> void:
 	wall_pieces.resize(wall_count)
 	for i in wall_count:
 		wall_pieces[i] = []
 	if not proc.is_empty():
-		_build_proc(proc, wall_tex)
+		var solid := _proc_material(wall_tex)
+		var surfaces: Dictionary = proc.get("surfaces", {})
+		var owners: Array = surfaces.keys()
+		for from in range(0, owners.size(), PROC_WALLS_PER_JOB):
+			q.add_next(
+				"kit_proc_walls",
+				_build_proc.bind(surfaces, owners.slice(from, from + PROC_WALLS_PER_JOB), solid)
+			)
 	var tint := _hue_tint(cover_hue)
 	var decor := {}
+	var pieces: Array = []
 	for p: Dictionary in placements:
-		var piece := piece_of(p["piece"], bool(p.get("lod", false)))
-		if piece.is_empty():
+		if piece_of(p["piece"], bool(p.get("lod", false))).is_empty():
 			continue
 		if p["kind"] == &"decor":
 			if not decor.has(p["piece"]):
 				decor[p["piece"]] = []
 			decor[p["piece"]].append(p["xform"])
 			continue
+		pieces.append(p)
+	for from in range(0, pieces.size(), PIECES_PER_JOB):
+		q.add_next(
+			"kit",
+			_add_pieces.bind(pieces.slice(from, from + PIECES_PER_JOB), wall_count, tint, mood)
+		)
+	for id: StringName in decor:
+		q.add_next("kit_decor", _add_decor.bind(id, decor[id]))
+
+
+func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -> void:
+	for p: Dictionary in pieces:
+		var piece := piece_of(p["piece"], bool(p.get("lod", false)))
 		var tinted: bool = p["kind"] == &"wall" or p["kind"] == &"cover"
 		var node := MeshInstance3D.new()
 		node.mesh = piece["mesh"]
@@ -100,33 +141,35 @@ func build(
 			wall_pieces[p["wall"]].append(node)
 		if p["kind"] == &"light":
 			_add_light(p["piece"], (p["xform"] as Transform3D).origin, mood)
-	for id: StringName in decor:
-		var piece := piece_of(id)
-		var chunks := {}  # v0.8.0 P3: grid cell -> this piece's transforms in it
-		for xf: Transform3D in decor[id]:
-			var cell := Vector2i(
-				floori(xf.origin.x / DECOR_CHUNK_M), floori(xf.origin.z / DECOR_CHUNK_M)
-			)
-			if not chunks.has(cell):
-				chunks[cell] = []
-			chunks[cell].append(xf)
-		var group := Node3D.new()  # the piece kind's chunks under one node, as before
-		group.name = "Decor_" + String(id)
-		add_child(group)
-		for cell: Vector2i in chunks:
-			var xfs: Array = chunks[cell]
-			var mm := MultiMesh.new()
-			mm.transform_format = MultiMesh.TRANSFORM_3D
-			mm.mesh = KitModels.decor_mesh(piece["mesh"])  # v0.8.0 P3: its decoration detail
-			mm.instance_count = xfs.size()
-			for k in xfs.size():
-				mm.set_instance_transform(k, xfs[k])
-			var mmi := MultiMeshInstance3D.new()
-			mmi.name = "Chunk_%d_%d" % [cell.x, cell.y]
-			mmi.multimesh = mm
-			mmi.material_override = piece["material"]
-			group.add_child(mmi)
-			decor_nodes += 1
+
+
+func _add_decor(id: StringName, xforms: Array) -> void:
+	var piece := piece_of(id)
+	var chunks := {}  # v0.8.0 P3: grid cell -> this piece's transforms in it
+	for xf: Transform3D in xforms:
+		var cell := Vector2i(
+			floori(xf.origin.x / DECOR_CHUNK_M), floori(xf.origin.z / DECOR_CHUNK_M)
+		)
+		if not chunks.has(cell):
+			chunks[cell] = []
+		chunks[cell].append(xf)
+	var group := Node3D.new()  # the piece kind's chunks under one node, as before
+	group.name = "Decor_" + String(id)
+	add_child(group)
+	for cell: Vector2i in chunks:
+		var xfs: Array = chunks[cell]
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = KitModels.decor_mesh(piece["mesh"])  # v0.8.0 P3: its decoration detail
+		mm.instance_count = xfs.size()
+		for k in xfs.size():
+			mm.set_instance_transform(k, xfs[k])
+		var mmi := MultiMeshInstance3D.new()
+		mmi.name = "Chunk_%d_%d" % [cell.x, cell.y]
+		mmi.multimesh = mm
+		mmi.material_override = piece["material"]
+		group.add_child(mmi)
+		decor_nodes += 1
 
 
 ## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it. v0.8.0 N10:
@@ -138,13 +181,17 @@ static func piece_of(id: StringName, lod: bool = false) -> Dictionary:
 
 ## v0.8.0 N10 (option A): one mesh per sim wall the procedural wall draws, one surface, one material for the floor
 ## (ProceduralWall.material: the face and top textures in one shader); faded with the wall as its pieces are.
-func _build_proc(proc: Dictionary, wall_tex: Dictionary) -> void:
+## v0.8.0 N12: the material made once (_proc_material), the meshes `owners` at a time (one job each).
+func _proc_material(wall_tex: Dictionary) -> Material:
 	var face: Texture2D = wall_tex.get("face", null)
 	var top: Texture2D = wall_tex.get("top", null)
 	var solid := ProceduralWall.material(face, top)
 	_faded[solid] = ProceduralWall.material(face, top, true)
-	var surfaces: Dictionary = proc.get("surfaces", {})
-	for owner: int in surfaces:
+	return solid
+
+
+func _build_proc(surfaces: Dictionary, owners: Array, solid: Material) -> void:
+	for owner: int in owners:
 		var mesh := ArrayMesh.new()
 		for arr: Array in surfaces[owner]:
 			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]

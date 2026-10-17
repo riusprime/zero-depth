@@ -132,6 +132,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	assert_true(gone, "walking into the portal goes down")
 	if not gone:
 		return
+	await e.loaded()  # v0.8.0 N12: floor 2 builds over frames behind the portal's cover
 	await e.frames(2)
 	var w2 := e.world()
 	assert_ne(w2, w, "a new floor")
@@ -190,6 +191,7 @@ func test_restart_run_from_the_pause_menu() -> void:
 	await e.tap(KEY_DOWN)  # Resume -> Build (v0.6.5 WN2)
 	await e.tap(KEY_DOWN)  # -> Restart run
 	await e.tap(KEY_ENTER)
+	await e.loaded()  # v0.8.0 N12: the new run builds over frames behind the cover
 	await e.frames(3)
 	assert_null(main.get_node_or_null("UI/PauseMenu"), "the pause menu closed")
 	assert_ne(e.world(), w, "a fresh run")

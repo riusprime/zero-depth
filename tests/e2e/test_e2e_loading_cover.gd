@@ -6,6 +6,9 @@ extends GutTest
 ## corner mark before the floor is built, and the cover fades away on the running floor; walking into the open portal
 ## (the dev panel's God and Kill boss stand in for the fight, as in test_e2e_portal) closes the gate's iris over the
 ## screen as the hero goes in, floor 2 loads under the closed cover, and the cover opens on floor 2.
+## v0.8.0 N12 (owner O70: "the loading screens still freeze the game … never stop moving or freezing"): each load is
+## built over several frames (the World on a worker thread, the view in slices) and the cover's clock, which turns
+## the mark and moves the iris, advanced on every one of them.
 
 const LEG_FRAMES := 7000
 
@@ -35,6 +38,23 @@ func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO
 	return done.call()
 
 
+## Waits for the load in progress frame by frame (wall clock, at most E2e.LOAD_MS): the frames it took and whether the
+## cover's clock moved on every one of them while it showed.
+func _watch_load(main: Main) -> Dictionary:
+	var cover := main.loads.cover
+	var frames := 0
+	var still := 0
+	var last := cover.clock()
+	var from := Time.get_ticks_msec()
+	while main.loads.busy() and Time.get_ticks_msec() - from < E2e.LOAD_MS:
+		await get_tree().physics_frame  # the load's own frames (e.frames skips over a load)
+		frames += 1
+		if cover.showing() and cover.clock() <= last:
+			still += 1
+		last = cover.clock()
+	return {"frames": frames, "still": still, "done": not main.loads.busy()}
+
+
 func _click(e: E2e, main: Main, button: String) -> void:
 	var b := main.get_node("UI/DevPanel").find_child(button, true, false) as Button
 	assert_not_null(b, "the dev panel has %s" % button)
@@ -54,14 +74,14 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	assert_eq(cover.style, LoadingCover.Style.BLACK, "in black")
 	assert_true(cover.mark.visible, "with the loading mark")
 	assert_null(main.driver, "before the floor is built")
-	var waited := 0
-	while main.driver == null and waited < 20:
-		await e.frames(1)
-		waited += 1
-		if main.driver == null:
-			assert_true(cover.is_covered(), "covered while it waits")
+	var first: Dictionary = await _watch_load(main)
+	assert_true(first["done"], "the run's first floor loaded")
 	assert_not_null(main.driver, "the floor was built behind the cover")
 	assert_true(cover.showing(), "still covered as the floor starts")
+	assert_gt(int(first["frames"]), 3, "the load ran over many drawn frames, not in one")
+	assert_eq(int(first["still"]), 0, "the cover moved on every frame of the load")
+	assert_gt(main.loads.frames, 3, "CoverLoads counted them too")
+	gut.p("new run: %d frames, %.0f ms" % [main.loads.frames, float(main.loads.phases["total"])])
 	var gone := 0
 	while cover.showing() and gone < 120:
 		await e.frames(1)
@@ -106,10 +126,15 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 			assert_eq(cover.style, LoadingCover.Style.GATE, "in the gate's colours")
 		closed_on_floor_1 = closed_on_floor_1 or cover.is_covered()
 		held += 1
-		await e.frames(1)
+		await get_tree().physics_frame
 	assert_true(mid, "the iris closed over several frames")
 	assert_true(closed_on_floor_1, "and was closed before the load")
-	assert_eq(main.run.floor_index, 2, "floor 2 loaded")
+	assert_eq(main.run.floor_index, 2, "floor 2 loads")
+	var portal_load: Dictionary = await _watch_load(main)
+	assert_true(portal_load["done"], "floor 2 loaded")
+	assert_gt(int(portal_load["frames"]), 3, "the portal's load ran over many drawn frames")
+	assert_eq(int(portal_load["still"]), 0, "the iris kept moving on every frame of it")
+	gut.p("gate: %d frames, %.0f ms" % [main.loads.frames, float(main.loads.phases["total"])])
 	assert_ne(e.world(), w, "a new world")
 	assert_true(cover.showing(), "the cover is over floor 2 as it starts")
 	assert_eq(cover.style, LoadingCover.Style.GATE, "the gate's cover opens on it")

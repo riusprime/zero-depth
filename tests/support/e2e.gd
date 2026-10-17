@@ -5,6 +5,8 @@ extends RefCounted
 
 ## walk_to's budget (frames of stick input).
 const WALK_FRAMES := 2400
+## v0.8.0 N12: the longest a load behind the cover may take (wall clock) before loaded() gives up.
+const LOAD_MS := 120000
 
 var test: GutTest
 var main: Main
@@ -30,9 +32,24 @@ func boot(
 	return main
 
 
+## v0.8.0 N12 (owner O70): `n` frames of play. A load behind the cover (a new run, Continue, Restart, a portal) now
+## runs over many frames; those are not counted: when one is running, this waits until its floor is live (wall
+## clock, at most LOAD_MS), so a test's frame counts stay frames of play. test_e2e_loading_cover watches the load's
+## own frames with the tree's physics_frame directly.
 func frames(n: int) -> void:
 	for i in n:
 		await test.get_tree().physics_frame
+		await _through_load()
+
+
+func _through_load() -> void:
+	if main == null or not is_instance_valid(main) or not main.loads.busy():
+		return
+	var from := Time.get_ticks_msec()
+	while main.loads.busy() and Time.get_ticks_msec() - from < LOAD_MS:
+		await test.get_tree().physics_frame
+	if main.loads.busy():
+		test.fail_test("a load behind the cover took over %d ms" % LOAD_MS)
 
 
 func send(ev: InputEvent) -> void:
@@ -106,6 +123,7 @@ func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
+	await loaded()  # v0.8.0 N12: the run's first floor builds over frames behind the cover
 	await frames(4)
 	if land:
 		await landed()
@@ -119,6 +137,13 @@ func landed(limit: int = 600) -> bool:
 			return true
 		await frames(1)
 	return false
+
+
+## v0.8.0 N12 (owner O70): a load behind the cover (a new run, Continue, Restart, a portal) builds its floor over
+## frames, the World on a worker thread; headless frames take microseconds, so this waits on the wall clock (at most
+## LOAD_MS) until the load is done (frames() does too). Returns at once when no load runs.
+func loaded() -> void:
+	await _through_load()
 
 
 ## v0.8.0 N6 (owner O60): the Playground from the main menu through the dev tools: F10, then Enter on the panel's

@@ -85,16 +85,51 @@ var _wall_pieces: Array[StringName] = []
 var _wall_layout_heights := PackedFloat64Array()
 ## Sim-plane rects the ground covers on a generated floor (empty in the arena: a square ground).
 var _ground_rects: Array[Rect2] = []
+## v0.8.0 N12: the queue the stage is being built on (build() makes its own), and whether the kit dresses the floor.
+var _queue: ViewBuildQueue
+var _use_kit := false
+## v0.8.0 N12: the crystal shards' placement (ShardDressing.place, on a worker), and its input.
+var _shard_input := {}
+var _shard_placed: Array = []
+## v0.8.0 N12: the dresser's input and placements, and the procedural walls' input and result (on a worker).
+var _dressing := {}
+var _placements: Array = []
+var _proc_input := {}
+var _proc := {}
 
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
+	var q := ViewBuildQueue.new()
+	queue_build(q, reader, p_palette, arena_half)
+	q.run_all()
+
+
+## v0.8.0 N12 (owner O70): build()'s parts as jobs on `q` (ViewBuildQueue), in build()'s order; a load runs them over
+## frames behind the loading cover. A part that learns its own pieces as it goes adds them right after itself
+## (q.add_next: the crystal shards' placement on a worker, then one room's shards a job).
+func queue_build(
+	q: ViewBuildQueue, reader: WorldReader, p_palette: Dictionary, arena_half: float
+) -> void:
+	_queue = q
 	palette = p_palette
 	deep = reader.floor_is_deep()
+	q.add("stage_light", _build_environment_and_light)
+	if reader.final_arena():  # v0.8.0 FB1 (F2): the final arena draws itself
+		q.add("final_arena", _build_final_arena.bind(reader))
+		return
+	q.add("ground", _build_floor_ground.bind(reader, arena_half))
+	q.add("walls", _build_structure.bind(reader))
+	q.add("kit", _build_dressing.bind(reader, arena_half))
+	q.add("ice", _build_ice.bind(reader))
+	q.add("edge", _build_edge.bind(reader))
+
+
+func _build_environment_and_light() -> void:
 	_build_environment()
 	_build_light()
-	if reader.final_arena():  # v0.8.0 FB1 (F2): the final arena draws itself
-		_build_final_arena(reader)
-		return
+
+
+func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 	_ground_rects.clear()
 	if reader.has_floor():
 		_ground_rects = reader.floor_ground()
@@ -107,15 +142,19 @@ func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> voi
 		_build_ground(arena_half)
 	else:
 		_build_room_ground()
-	var use_kit := mood != null and KitModels.has_structure()
-	_build_walls(reader, not use_kit)
+
+
+func _build_structure(reader: WorldReader) -> void:
+	_use_kit = mood != null and KitModels.has_structure()
+	_build_walls(reader, not _use_kit)
 	_build_contact_shadows()
-	if use_kit:
+
+
+func _build_dressing(reader: WorldReader, arena_half: float) -> void:
+	if _use_kit:
 		_build_kit(reader)
 	else:  # kept deliberately: the box-wall fallback keeps the game runnable before the art kit is imported (P-17)
 		_build_props(reader.seed_value(), arena_half)
-	_build_ice(reader)
-	_build_edge(reader)
 
 
 ## v0.8.0 FB1: the final arena (FinalArenaStage): the walls' specs stay for the occlusion, its wall blocks are the
@@ -520,33 +559,42 @@ func _build_kit(reader: WorldReader) -> void:
 		dressing["decor_swap"] = _names(look.decor_swap)
 	wall_style = resolved_wall_style()
 	dressing["wall_style"] = wall_style
-	var placements := StageDresser.dress(dressing)
-	var proc := {}
-	var tex := {}
+	# v0.8.0 N12 (O70): the dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
+	# their dictionaries and the cosmetic stream; no node, no mesh): on a worker. Then the nodes, a few a job.
+	_dressing = dressing
+	_proc_input = {
+		"walls": walls,
+		"rooms": rooms,
+		"doors": doors,
+		"seed": reader.seed_value(),
+		"face_m": mood.wall_texture_m,
+		"top_m": mood.wall_top_texture_m,
+	}
+	_queue.add_next_worker("dress", _dress)
+	_queue.add_next("kit_nodes", _build_kit_nodes.bind(reader, walls, rooms, doors, keep))
+
+
+func _dress() -> void:
+	_placements = StageDresser.dress(_dressing)
+	_proc = {}
 	if wall_style == StageDresser.STYLE_PROC:  # v0.8.0 N10 (option A)
 		var t0 := Time.get_ticks_usec()
-		proc = (
-			ProceduralWall
-			. build(
-				{
-					"walls": walls,
-					"cuts": StageDresser.niches(placements),
-					"rooms": rooms,
-					"doors": doors,
-					"seed": reader.seed_value(),
-					"face_m": mood.wall_texture_m,
-					"top_m": mood.wall_top_texture_m,
-				}
-			)
-		)
+		_proc_input["cuts"] = StageDresser.niches(_placements)
+		_proc = ProceduralWall.build(_proc_input)
 		wall_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
-		tex = wall_textures(prop_style)
+
+
+func _build_kit_nodes(
+	reader: WorldReader, walls: Array, rooms: Array, doors: Array, keep: Array
+) -> void:
+	var tex := wall_textures(prop_style) if not _proc.is_empty() else {}
 	kit = StageKit.new()
 	kit.name = "Kit"
 	add_child(kit)
-	kit.build(placements, wall_specs.size(), palette["cover"], mood, proc, tex)
-	kit.set_shadows(lighting == "high")
-	_build_shards(reader, walls, rooms, doors, keep, placements)
+	# v0.8.0 N12: in parts (StageKit.queue_build), then the shadows and the shards after them.
+	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
+	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
+	_build_shards(reader, walls, rooms, doors, keep, _placements)
 
 
 ## v0.8.0 N10: the wall style ViewPrefs.wall_style picks for this biome (StageDresser.STYLE_*).
@@ -649,28 +697,37 @@ func _build_shards(
 		special.append(reader.event_pos(k))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
-	var placed := (
-		ShardDressing
-		. place(
-			{
-				"walls": walls,
-				"pieces": placements,
-				"rooms": rooms,
-				"special": special,
-				"start_room": reader.floor_start_room(),
-				"boss_room": reader.boss_room(),
-				"doors": blocked,
-				"keep_clear": clear,
-				"spawns": Array(reader.spawn_spots()),
-				"start": reader.floor_start_pos(),
-				"seed": reader.seed_value(),
-			}
-		)
-	)
+	_shard_input = {
+		"walls": walls,
+		"pieces": placements,
+		"rooms": rooms,
+		"special": special,
+		"start_room": reader.floor_start_room(),
+		"boss_room": reader.boss_room(),
+		"doors": blocked,
+		"keep_clear": clear,
+		"spawns": Array(reader.spawn_spots()),
+		"start": reader.floor_start_pos(),
+		"seed": reader.seed_value(),
+	}
+	# v0.8.0 N12 (O70): the placement is pure work (ShardDressing reads only the dictionary), on a worker; then each
+	# room's crystals are baked and added in a job of their own.
+	_queue.add_next_worker("shards_place", _place_shards)
+	_queue.add_next("shards", _build_shard_rooms)
+
+
+func _place_shards() -> void:
+	_shard_placed = ShardDressing.place(_shard_input)
+
+
+func _build_shard_rooms() -> void:
 	shards = ShardCluster.new()
 	shards.name = "Shards"
 	add_child(shards)
-	shards.build(placed, ShardCluster.tint_key(prop_style, deep), lighting == "high")
+	for r: int in shards.begin(
+		_shard_placed, ShardCluster.tint_key(prop_style, deep), lighting == "high"
+	):
+		_queue.add_next("shards", shards.build_room.bind(r))
 
 
 ## Fades the walls at the given indices (dithered alpha) and restores the rest.

@@ -83,6 +83,10 @@ void fragment() {
 """
 
 static var _has_tex := {}
+## v0.8.0 N12 (owner O70): the floor marks' cut textures and the two sprite shaders, made once per run of the game
+## and shared by every floor's layer (each floor made them again: ~30 ms of a load's frame).
+static var _mark_cache := {}
+static var _shader_cache := {}
 
 ## Sprite and ice pools: id -> {node, mm, used, cap}.
 var pools := {}
@@ -181,10 +185,24 @@ func _pool(id: StringName, mesh: Mesh, mat: Material, cap: int) -> void:
 func _shader(additive: bool) -> Shader:
 	var key := additive
 	if not _shaders.has(key):
-		var s := Shader.new()
-		s.code = SHADER % ("blend_add" if additive else "blend_mix")
-		_shaders[key] = s
+		if not _shader_cache.has(key):
+			var s := Shader.new()
+			s.code = SHADER % ("blend_add" if additive else "blend_mix")
+			_shader_cache[key] = s
+		_shaders[key] = _shader_cache[key]
 	return _shaders[key]
+
+
+## v0.8.0 N12 (O70): reads the sprite sheets and cuts the floor marks once, ahead of a floor's first layer
+## (ViewWarmup, on a worker while the loading cover shows).
+static func warm() -> void:
+	if not available():
+		return
+	for id: StringName in POOLS:
+		_tex(POOLS[id][0])
+		_tex(POOLS[id][5])
+	for id: StringName in MARK_TEX:
+		_mark_texture(MARK_TEX[id][0], int(MARK_TEX[id][1]))
 
 
 static func _tex(id: String) -> Texture2D:
@@ -194,6 +212,13 @@ static func _tex(id: String) -> Texture2D:
 
 ## A floor-mark texture: the whole texture, or one cell of a 2 x 2 sheet cut out (a decal takes no atlas cell).
 static func _mark_texture(id: String, cell: int) -> Texture2D:
+	var key := "%s/%d" % [id, cell]
+	if not _mark_cache.has(key):
+		_mark_cache[key] = _cut_mark(id, cell)
+	return _mark_cache[key]
+
+
+static func _cut_mark(id: String, cell: int) -> Texture2D:
 	var t := _tex(id)
 	if t == null or cell < 0:
 		return t

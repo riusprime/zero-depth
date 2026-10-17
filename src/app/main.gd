@@ -110,12 +110,14 @@ func _notification(what: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	# v0.8.0 N12: not while a load builds a floor behind the cover.
 	if (  # the master dev panel (docs/tools/DEV_PANEL.md): every build, anywhere
 		event is InputEventKey
 		and event.pressed
 		and not event.echo
 		and event.physical_keycode == KEY_F10
 		and DevGate.enabled()
+		and not loads.busy()
 	):  # v0.7.5 SM: one switch locks it for a public release (ROADMAP §0.4)
 		get_viewport().set_input_as_handled()
 		_toggle_master_panel()
@@ -271,130 +273,146 @@ func show_gallery() -> void:
 	g.setup(&"ruins", 35.26, &"xray", true)
 
 
-## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor.
+## Starts a run (v0.3.0 B) with the run seed _stage_seed, on its first floor, all in this frame (the tools and the
+## tests; the game's Play builds it behind the cover over frames: _covered_start).
 func start_stage() -> void:
 	_set_menu(null)
-	var repo := _content()
-	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
-	_run_biomes = run_def.biomes.duplicate()
-	var build := StringName(profile.section("loadout").get("build", "blade"))
-	run = RunState.start(_stage_seed, ContentCompiler.compile_run(run_def), build)
-	_start_floor(repo)
+	var plan := _new_run_plan()
+	plan.repo = _content()
+	plan.build()
+	_adopt_run(plan)
+	_open_floor_now(plan)
 
 
 ## v0.4.0 SV: Continue resumes the saved run at its last room entry. A save that doesn't fit is set aside.
 func continue_run() -> void:
+	var save := _usable_save()
+	if save.is_empty():
+		return
+	_set_menu(null)
+	var plan := FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion)
+	plan.repo = _content()
+	plan.build()
+	_adopt_run(plan)
+	if plan.err != "":
+		saves.store.reject(plan.err)
+		show_main_menu()
+		return
+	_open_floor_now(plan)
+
+
+## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
+## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
+## All in this frame (the dev panel's Restart floor, the tools); a portal builds the next floor over frames
+## (_next_floor).
+func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
+	var plan := FloorPlan.next_floor(run, _run_biomes, resume, ViewPrefs.reduced_motion)
+	plan.repo = repo if repo != null else _content()
+	plan.build()
+	if plan.err != "":
+		return plan.err
+	_open_floor_now(plan)
+	return ""
+
+
+## v0.8.0 N12 (owner O70: "the loading screens still freeze the game … never stop moving or freezing"): the loads
+## behind the cover. The World is built on a worker thread (FloorPlan.build, CoverLoads.on_worker) and the view in
+## slices of a few milliseconds a frame (CoverLoads.build_view), so the cover and its mark move on every frame;
+## the same FloorPlan and the same view jobs as the one-frame build above, so the floor is the same. Play, Continue
+## and Restart run it through _covered_start / _covered_continue / _covered_restart, a portal through _next_floor.
+## The plan built on a worker, then the floor's nodes over frames; returns why a save didn't fit.
+func _load_plan(plan: FloorPlan) -> String:
+	tuning.apply()  # the dev panel's overrides written into the content here, on the main thread (_content)
+	await loads.on_worker(get_tree(), plan.build, "world")
+	if plan.mode != FloorPlan.Mode.FLOOR:
+		_adopt_run(plan)
+	if plan.err != "":
+		return plan.err
+	var nodes := _floor_nodes(plan)
+	await loads.build_view(get_tree(), nodes["queue"])
+	_floor_live(nodes)
+	return ""
+
+
+func _usable_save() -> Dictionary:
 	var save := saves.store.read()
 	if not RunSaver.is_usable(save):
 		if not save.is_empty():
 			saves.store.reject("payload version %s" % str(save.get("version")))
 		show_main_menu()
-		return
-	_set_menu(null)
-	var repo := _content()
-	var run_def: RunDefinition = repo.get_def(&"run", RUN_ID)
-	_run_biomes = run_def.biomes.duplicate()
-	_stage_seed = int(save["run"]["stage_seed"])
-	run = RunSaver.run_from(save, ContentCompiler.compile_run(run_def))
-	var err := _start_floor(repo, save)
-	if err != "":
-		saves.store.reject(err)
-		show_main_menu()
+		return {}
+	return save
 
 
-## Builds the run's current floor: its seed, biome and enemy scaling from the run, the carry applied. `resume`: a
-## save's payload (v0.4.0 SV), whose world snapshot is then written into the fresh floor; returns why it didn't fit.
-func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> String:
-	if repo == null:
-		repo = _content()
+func _new_run_plan() -> FloorPlan:
+	var build := StringName(profile.section("loadout").get("build", "blade"))
+	return FloorPlan.new_run(RUN_ID, _stage_seed, build, ViewPrefs.reduced_motion)
+
+
+## A new or continued run's plan made the run: it is Main's now.
+func _adopt_run(plan: FloorPlan) -> void:
+	run = plan.run
+	_run_biomes = plan.run_biomes
+	_stage_seed = plan.stage_seed
+
+
+func _open_floor_now(plan: FloorPlan) -> void:
+	var nodes := _floor_nodes(plan)
+	(nodes["queue"] as ViewBuildQueue).run_all()
+	_floor_live(nodes)
+
+
+## The floor's first half on the main thread: the save's room entry, the Codex's visit, the driver (not stepping
+## yet) and the view, added but not processing, its build queued (ViewBuildQueue).
+func _floor_nodes(plan: FloorPlan) -> Dictionary:
+	var repo := plan.repo
 	if codex_recorder == null:  # v0.7.5 CX: built on the first floor, from the content already loaded
 		codex_recorder = CodexRecorder.new(codex, codex_catalog(repo))
 	if achievement_tracker == null:  # v0.7.5 AC: before the biome's visit, so its Codex write is heard
 		achievement_tracker = AchievementTracker.new(_achievements_book(repo))
 		achievement_tracker.achieved.connect(toast.push)
-	var def: PlayerDefinition = repo.get_def(&"player", &"runner")
-	var biome: BiomeDefinition = repo.get_def(&"biomes", _run_biomes[run.biome_of()])
-	var arena_def: FinalArenaDefinition = null  # v0.8.0 FB1: the final arena (P2: the Ascension portal), its own biome
-	if run.final_fight:
-		arena_def = repo.get_def(&"final_arena", run.table.final_arena)
-		if arena_def != null:
-			biome = arena_def
-	var table := ContentCompiler.compile_player(def)  # v0.4.0 BS (F11): no utility at the start
-	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))  # v0.3.0 L15: the run's build.
-	var enemies := ContentCompiler.compile_enemies(repo)
-	run.scale_enemies(enemies)
-	# The floor's boss (v0.3.0 C): drawn from its floor's pool, scaled like the enemies; its arena sizes the room.
-	var bosses := ContentCompiler.compile_bosses(repo)
-	run.scale_bosses(bosses)
-	var finals := ContentCompiler.compile_final_bosses(repo, run.table)  # v0.8.0 FB1: the final boss's bodies
-	run.scale_bosses(finals)
-	var world: World
-	if arena_def != null:  # FB1 (F1, F2); P2: the Ascension portal brought the hero here
-		world = FinalArenaScenario.build(
-			run,
-			arena_def,
-			table,
-			enemies,
-			ContentCompiler.compile_items(repo),
-			ContentCompiler.compile_combos(repo),
-			bosses,
-			finals
-		)
-	else:
-		world = _floor_world(repo, run, table, enemies, bosses, biome.id)
-		IcePatches.place(world, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
-		world.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
-	world.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
-	world.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
-	world.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
-	world.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
-	world.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
-	world.legendary_table = RunContentCompiler.compile_legendary(
-		repo.get_def(&"legendary", &"boss"), world.stat_tables, world.item_tables
-	)
-	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
-	Abilities.start_floor(world)
-	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
-	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
-	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
-	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
-	CatchUp.start_floor(world)
-	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
-	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in; v0.8.0 N11 (O69): every floor's arrival (data)
-		var calm := ViewPrefs.reduced_motion  # AP: run_floor() counts across loops
-		world.boss_flow.set_transit(
-			calm, true, BossFlow.arrival_length(world.tuning, calm, run.run_floor() == 1)
-		)
-	if arena_def != null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden catch-up counts)
-		FinalArenaScenario.begin(world, run, finals.size())
-	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
-		var err := WorldSnapshot.apply(world, resume["world"])
-		if err != "":
-			return err
-		WandMigration.run(world)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
+	var world := plan.world
+	var biome := plan.biome
+	var resume := plan.resume
 	saves.begin_floor(world, run, _stage_seed, resume.get("rooms", PackedByteArray()))
 	_tweaked_run_check()
-	if resume.is_empty() and arena_def == null:  # v0.8.0 FB1: the final arena isn't a Codex biome
+	if resume.is_empty() and plan.arena_def == null:  # v0.8.0 FB1: the final arena isn't a Codex biome
 		codex_recorder.enter_biome(biome.id)  # v0.7.5 CX: a visit (not when Continue resumes the floor)
-	driver = SimDriver.new()
-	driver.name = "SimDriver"
-	driver.setup(world)
-	driver.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
-	add_child(driver)
-	view = WorldViewRoot.new()
-	view.name = "WorldView"
-	view.stage.prop_style = biome.id
-	view.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
-	view.stage.look = biome.look  # v0.7.5 NB1: the biome's own dressing and edge (null: the hand-written look)
+	var d := SimDriver.new()
+	d.name = "SimDriver"
+	d.setup(world)
+	d.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
+	var v := WorldViewRoot.new()
+	v.name = "WorldView"
+	v.stage.prop_style = biome.id
+	v.stage.mood = biome.mood  # v0.5.9: the biome's lighting mood
+	v.stage.look = biome.look  # v0.7.5 NB1: the biome's own dressing and edge (null: the hand-written look)
 	if biome.look != null:
-		view.actors.enemy_tint = biome.look.enemy_tint
+		v.actors.enemy_tint = biome.look.enemy_tint
 	_biome_path = biome.resource_path
-	view.stage.lighting = GameSettings.get_value(profile, "lighting")
-	add_child(view)
+	v.stage.lighting = GameSettings.get_value(profile, "lighting")
+	v.process_mode = Node.PROCESS_MODE_DISABLED  # v0.8.0 N12: nothing in it runs until it is built (_floor_live),
+	v.visible = false  # and the renderer draws none of it under the closed cover
+	add_child(v)
 	# The boss room makes the floor's bounds lopsided; props scatter over a square centred on the origin.
-	var b := driver.reader.floor_bounds()
+	var b := d.reader.floor_bounds()
 	var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
-	view.setup(driver.reader, biome.palette, half + 4.0)
+	var q := ViewBuildQueue.new()
+	v.queue_setup(q, d.reader, biome.palette, half + 4.0)
+	return {"plan": plan, "driver": d, "view": v, "queue": q, "biome": biome}
+
+
+## The floor's second half, once its view is built: the driver steps, input, the HUD, the cover opens.
+func _floor_live(nodes: Dictionary) -> void:
+	var plan: FloorPlan = nodes["plan"]
+	var biome: BiomeDefinition = nodes["biome"]
+	var resume := plan.resume
+	driver = nodes["driver"]
+	view = nodes["view"]
+	add_child(driver)
+	move_child(driver, view.get_index())  # before the view, as when both were added in one frame
+	view.process_mode = Node.PROCESS_MODE_INHERIT
+	view.visible = true
 	view.rig.shake_enabled = GameSettings.get_value(profile, "shake") == "on"
 	view.ink.set_style(InkPass.style_from_setting(GameSettings.get_value(profile, "outline")))
 	var player_input := PlayerInput.new(view.rig, driver.reader)
@@ -432,7 +450,6 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	ui.move_child(hints, ui.get_child_count() - 1)  # v0.7.5 SM: the hints read over the fade-in too
 	ui.move_child(toast, ui.get_child_count() - 1)  # v0.7.5 AC: a toast reads over the fade-in
 	hints.begin_floor(run.floor_index, driver.reader)  # v0.7.5 SM
-	return ""
 
 
 func _on_tick(from: SimDriver) -> void:
@@ -466,40 +483,11 @@ func _next_floor() -> void:
 	run.finish_floor(driver.world)
 	if looped:
 		_record_ascension(run.loop)
+	var from := Time.get_ticks_usec()
 	_end_floor()
-	_start_floor()
-
-
-## A floor of the run (FloorScenario): its boss drawn from the floor's pool, its room, the floor's tables and its shop.
-func _floor_world(
-	repo: ContentRepository,
-	p_run: RunState,
-	table: PlayerTable,
-	enemies: Array[EnemyTable],
-	bosses: Array[BossTable],
-	biome_id: StringName
-) -> World:
-	var boss := p_run.pick_boss(ContentCompiler.compile_boss_pool(repo, p_run.floor_index))
-	var arena := RunSaver.boss_arena(p_run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
-	var rules := RunSaver.floor_tables(p_run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's)
-	var world := FloorScenario.build(
-		p_run.floor_seed(),
-		table,
-		enemies,
-		ContentCompiler.compile_floor_spawning(repo, p_run.floor_index),  # v0.4.0 TU: with the floor's curve
-		ContentCompiler.compile_items(repo),
-		ContentCompiler.compile_rewards(repo.get_def(&"rewards", &"floor")),  # v0.3.0 E: altars, chests, shards.
-		p_run.floor_index,
-		arena,
-		p_run,
-		ContentCompiler.compile_combos(repo),  # v0.3.0 G: named combos.
-		ContentCompiler.compile_gamble(repo.get_def(&"gamble", &"shrine")),  # v0.3.0 L19: the gamble shrine.
-		rules[&"arena"],  # v0.5.5 AR: the sealed arenas
-		rules[&"map"]  # v0.7.5 MG: rooms, footprints (N9)
-	)
-	# v0.5.0 SH; v0.7.5 MG: every two floors (N12); v0.8.0 SR: in the biome's shop room (O13)
-	FloorScenario.add_shop(world, rules[&"shop"], biome_id, rules[&"map"])
-	return world
+	loads.phases["end_floor"] = (Time.get_ticks_usec() - from) / 1000.0
+	# v0.8.0 N12 (O70): built over frames, the cover moving.
+	await _load_plan(FloorPlan.next_floor(run, _run_biomes, {}, ViewPrefs.reduced_motion))
 
 
 ## v0.7.5 AP: the Ascension counters for the achievements (AC) in the Codex's profile section, through its counter API
@@ -576,18 +564,24 @@ func restart() -> void:
 ## v0.8.0 N3 (O45): the loads CoverLoads runs behind its cover (Play, Continue, Restart).
 func _covered_start() -> void:
 	_set_menu(null)
-	start_stage()
+	await _load_plan(_new_run_plan())
 
 
 func _covered_continue() -> void:
+	var save := _usable_save()
+	if save.is_empty():
+		return
 	_set_menu(null)
-	continue_run()
+	var err := await _load_plan(FloorPlan.continued(RUN_ID, save, ViewPrefs.reduced_motion))
+	if err != "":
+		saves.store.reject(err)
+		show_main_menu()
 
 
 func _covered_restart() -> void:
 	_stage_seed = _seeds.next()
 	_end_stage()
-	start_stage()
+	await _covered_start()
 
 
 func toggle_dev_panel() -> void:
@@ -972,8 +966,13 @@ func _end_floor() -> void:
 		var kept := profile.save_file() or profile.path.is_empty()
 		codex.dirty = not kept
 		achievements.dirty = not kept
-	for n in [_hud, _end, _dev, _devm, playground, driver, view, get_node_or_null("Gallery")]:
+	for n in [_hud, _end, _dev, _devm, playground, driver, get_node_or_null("Gallery")]:
 		_drop(n)
+	if view != null and loads.busy():  # v0.8.0 N12 (O70): behind the cover, the old view is freed over frames
+		view.get_parent().remove_child(view)
+		loads.free_slowly(get_tree(), view)
+	else:
+		_drop(view)
 	playground = null
 	_hud = null
 	_end = null
