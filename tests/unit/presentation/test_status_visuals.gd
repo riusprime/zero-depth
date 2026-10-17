@@ -145,7 +145,8 @@ func test_hud_shows_the_combo_card_and_a_badge_when_a_combo_unlocks() -> void:
 
 
 ## Audit P-14: a rebuilt icon row holds only the new icons in the same frame (the old ones leave the row before they
-## are freed, so they are never laid out or drawn beside their replacements); the same for the boss bar's phase marks.
+## are freed, so they are never laid out or drawn beside their replacements). (The boss bar's phase marks went in
+## v0.8.0 N4: one full bar per phase, WorldReader.boss_phase_permille.)
 func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 	var repo := ContentRepository.load_all()
 	var w := FloorScenario.build(
@@ -165,12 +166,3 @@ func test_rebuilt_rows_drop_the_old_children_at_once() -> void:
 	assert_eq(hud.item_icon_count(), 2)
 	for c in hud._items.get_children():
 		assert_false(c.is_queued_for_deletion(), "no freed icon left in the row")
-	var bar := BossBar.new()
-	add_child_autofree(bar)
-	bar._build_marks(PackedInt32Array([1000, 500]))
-	bar._build_marks(PackedInt32Array([1000, 660, 330]))
-	var marks := 0
-	for c in bar._hp_back.get_children():
-		assert_false(c.is_queued_for_deletion(), "no freed mark left under the bar")
-		marks += 1 if c != bar._hp_fill else 0
-	assert_eq(marks, 2, "only the new boss's marks")

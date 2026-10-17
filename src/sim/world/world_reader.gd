@@ -1419,6 +1419,41 @@ func boss_shielded(i: int) -> bool:
 	return BossDodge.shielded(_w, i)
 
 
+## v0.8.0 N4 (owner O56: "if your boss has a shield you have to break before you can hurt it again, make the bar say
+## so"): no hit can hurt boss i now: its invulnerable ticks run (the rise, a phase gate, a leap or burrow, a mimic's
+## dash), its signature pattern's shield is up (boss_shielded), or it stands in a gate or a final shatter. The boss
+## bar's invulnerable look. A read only (Damage decides; this mirrors its checks).
+func boss_invulnerable(i: int) -> bool:
+	var s := _w.actors.state[i]
+	return (
+		_w.actors.invuln[i] > 0
+		or BossDodge.shielded(_w, i)
+		or s == BossAi.GATE
+		or s == FinalBoss.SHATTER
+	)
+
+
+## v0.8.0 N4: the shields boss i still has to pass before it can fall, derived from sim state (no store counts
+## shields): its phase gates still to come (each an invulnerable transition). 0 in its last phase. A final boss's
+## body counts its own gates only (owner O59: nothing on the bar hints how many bodies remain).
+func boss_shields_left(i: int) -> int:
+	var t := BossAi.table_of(_w, i)
+	return maxi(0, t.phase_threshold.size() - 1 - boss_phase(i))
+
+
+## v0.8.0 N4 (owner O56: "The bosses should have one full bar and refill when changing phases"): boss i's HP within
+## its current phase, 0..1000: full at the phase's start (its threshold of max HP), empty at the next phase's
+## threshold (or 0 in the last phase). The boss bar shows one full bar per phase from it.
+func boss_phase_permille(i: int) -> int:
+	var t := BossAi.table_of(_w, i)
+	var mx := _w.actors.max_hp[i]
+	var p := boss_phase(i)
+	var th := t.phase_threshold
+	var hi := th[p] * mx / 1000 if p < th.size() else mx
+	var lo := th[p + 1] * mx / 1000 if p + 1 < th.size() else 0
+	return clampi((_w.actors.hp[i] - lo) * 1000 / maxi(1, hi - lo), 0, 1000)
+
+
 ## v0.7.5 BF1: the bullet pattern boss i is winding up or firing: {} or {"id", "kind" (BulletPatternTable.Kind),
 ## "look", "shielded", "winding", "progress" 0..1000} (BossAi.pattern_state), for the avatars' poses.
 func boss_pattern(i: int) -> Dictionary:

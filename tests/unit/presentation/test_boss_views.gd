@@ -187,8 +187,13 @@ func test_the_boss_bar_shows_while_a_boss_lives() -> void:
 	hud.sync(reader)
 	assert_true(hud.boss_bar.visible)
 	assert_eq(hud.boss_bar.boss_name(), tr(&"BOSS_SIEGE_ENGINE"))
+	assert_eq(
+		w.actors.hp[i],
+		w.actors.max_hp[i] * 660 / 1000,
+		"v0.5.5 DS: the burst stops at the 66 % gate"
+	)
 	assert_almost_eq(
-		hud.boss_bar.hp_fraction(), 0.66, 0.01, "v0.5.5 DS: the burst stops at the 66 % gate"
+		hud.boss_bar.hp_fraction(), 0.0, 0.001, "v0.8.0 N4: the first phase's bar is empty there"
 	)
 	assert_almost_eq(
 		hud.boss_bar.stagger_fraction(), 1.0, 0.01, "612 > 300: staggered, the meter shows full"

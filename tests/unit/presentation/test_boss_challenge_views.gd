@@ -28,7 +28,13 @@ func test_the_boss_bar_fills_over_exactly_the_rise() -> void:
 	var i := w.actors.index_of(id)
 	Damage.hit(w, i, 350, 1, 1, 1, 0, Vector2(6, 5), w.actors.pos(i))  # v0.7.5 BF1: 20 % of 1750
 	hud.sync(reader)
-	assert_almost_eq(hud.boss_bar.hp_fraction(), 0.8, 0.01, "then its real HP")
+	assert_almost_eq(
+		hud.boss_bar.hp_fraction(),
+		reader.boss_phase_permille(i) / 1000.0,
+		0.001,
+		"then its real HP (v0.8.0 N4: within its first phase, 1750 .. 66 %)"
+	)
+	assert_almost_eq(hud.boss_bar.hp_fraction(), (1400.0 - 1155.0) / (1750.0 - 1155.0), 0.002)
 
 
 func test_the_weak_point_glows_on_the_model_by_energy_only() -> void:

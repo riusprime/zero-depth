@@ -1111,6 +1111,10 @@ UI_RECAP_TRUE_ENDING,The Hollow Crown is broken: the true ending.,La Corona Huec
 HUD_FINAL_SHATTER,SHATTERED,HECHA AÑICOS
 HUD_FALLEN_WARN,The Fallen reaches for your power…,El Caído alcanza tu poder…
 HUD_FALLEN_WINDOW,"The Fallen mirrors you: your build is its own, your power pulled to its level (%d s)","El Caído te imita: tu equipo es el suyo y tu poder baja hasta el suyo (%d s)"
+HUD_BOSS_INVULNERABLE,Invulnerable,Invulnerable
+HUD_BOSS_SHIELD_ONE,1 shield left,1 escudo restante
+HUD_BOSS_SHIELDS,%d shields left,%d escudos restantes
+HUD_BOSS_PHASE,Phase %d / %d,Fase %d / %d
 UI_PG_FINAL,Final boss,Jefe final
 UI_PG_FINAL_PHASE,Phase %d,Fase %d
 UI_PG_FINAL_HINT,Summons the Hollow Crown at the room's centre; a phase button jumps to that body.,Invoca a la Corona Hueca en el centro de la sala; un botón de fase salta a ese cuerpo.
