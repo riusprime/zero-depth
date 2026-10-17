@@ -1,7 +1,6 @@
 class_name ContentCompiler
 extends RefCounted
 ## Turns definitions into the sim's plain tables, converting seconds to ticks once (CONTENT_SCHEMA §9).
-## In v0.0.1 it compiles only the player.
 
 ## A build weapon id (BuildDefinition.WEAPON_IDS) to its PlayerTable weapon bit; any other id (empty) is 0.
 const WEAPON_BITS := {&"blade": PlayerTable.WEAPON_BLADE, &"gun": PlayerTable.WEAPON_GUN}
