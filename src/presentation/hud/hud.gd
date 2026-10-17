@@ -189,7 +189,7 @@ func sync(reader: WorldReader) -> void:
 	if _changed(&"hp", [hp, mx, hp_color]):
 		_hp_text.text = tr("HUD_HP") % [hp, mx]
 		_hp_text.add_theme_color_override("font_color", hp_color)
-	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.fraction(), _hp_bar.size.y))
+	_regen.sync(reader, Vector2(_hp_bar.size.x * _hp_bar.shown_fraction(), _hp_bar.size.y))
 	_set_pip(_dash, reader.dash_cooldown(), reader.dash_cooldown_total())
 	if reader.has_blink():
 		if _changed(&"util", &"UTIL_BLINK"):

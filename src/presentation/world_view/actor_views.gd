@@ -45,6 +45,8 @@ var heat_tier := HeatLooks.TIER_COOL
 ## by its alpha (0: none). Red parts (v0.8.0 EC: the role-coloured parts, EnemyPalettes, all at or over
 ## GREY_SATURATION), rings and bars keep their colours, so identity never changes (PRESENTATION §3).
 var enemy_tint := Color(0, 0, 0, 0)
+## v0.8.0 N4 (owner O57): the damage chunks on the bars over enemies and the hero (one MultiMesh for all).
+var bar_chunks := BarChunks.new(BAR_W)
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -67,6 +69,8 @@ var _proj_key_of: Array = [[], []]
 
 func sync(reader: WorldReader) -> void:
 	heat_tier = HeatLooks.tier_of(reader.heat_state())
+	if bar_chunks.get_parent() == null:
+		add_child(bar_chunks)
 	var alive := {}
 	var hero := reader.player_pos()
 	for i in reader.actor_count():
@@ -91,6 +95,7 @@ func sync(reader: WorldReader) -> void:
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
+	bar_chunks.keep_only(alive)
 	for d: Dictionary in [_flash, _tint, _flash_hold]:  # a removed actor's flash and glow go with it (bounded)
 		for id in d.keys():
 			if not alive.has(id):
@@ -215,9 +220,9 @@ func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
 	var bar: Node3D = node.get_meta(&"bar")
 	var hurt := reader.actor_hp(i) < reader.actor_max_hp(i) or reader.actor_team(i) == 0
 	bar.visible = not spawning and not node.has_meta(&"boss") and hurt
-	if bar.visible:
+	if bar.visible:  # v0.8.0 N4 (O57): its chunk and refill (BarChunks scales the bar to the trail's fill)
 		var frac := clampf(float(reader.actor_hp(i)) / maxf(1.0, reader.actor_max_hp(i)), 0.0, 1.0)
-		bar.scale = Vector3(maxf(frac, 0.001), 1, 1)
+		bar_chunks.feed(reader.actor_id(i), bar, frac, reader.actor_team(i) == 0)
 	if node.has_meta(&"dazed"):
 		(node.get_meta(&"dazed") as Node3D).visible = reader.actor_recovering(i)
 	if reader.actor_egg_permille(i) >= 0:  # v0.8.0 BS1 (S3): still an egg (BossSignatureViews draws it)

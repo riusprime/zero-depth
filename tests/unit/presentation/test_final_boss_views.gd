@@ -180,7 +180,9 @@ func test_a_body_shatters_in_place_and_the_next_rises_from_its_shards() -> void:
 	assert_true(nemesis.get_meta(&"enemy_avatar") is NemesisAvatar, "and the Nemesis")
 
 
-func test_the_boss_bar_is_one_bar_in_three_named_segments() -> void:
+## v0.8.0 N4 (owner O56: "The bosses should have one full bar and refill when changing phases, specially the last
+## boss"): one bar per body under the fight's name, the line naming the body; full as each body starts.
+func test_the_boss_bar_is_one_bar_per_body() -> void:
 	var w := _arena(204)
 	var reader := WorldReader.new(w)
 	var bar := BossBar.new()
@@ -189,23 +191,32 @@ func test_the_boss_bar_is_one_bar_in_three_named_segments() -> void:
 	bar.sync(reader)
 	assert_true(bar.visible)
 	assert_eq(bar.boss_name(), tr("BOSS_HOLLOW_CROWN"))
-	assert_eq(bar.segment_count(), 3)
-	for k in 3:
-		assert_almost_eq(bar.segment_fraction(k), 1.0, 0.01)
-	FinalLab.hit(w, w.actors.hp[FinalLab.body(w)] / 2)
+	assert_eq(bar.phase_text(), tr(reader.final_segment_name_key(0)))
+	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01, "the Colossus's bar is full")
+	# owner O59: "not show 1/3 just the colossus so later phases come as surprise"
+	assert_false(bar.phase_text().contains("3"), "no count of the bodies")
+	assert_false(bar.phase_text().contains("/"))
+	for l: Label in bar.find_children("*", "Label", true, false):
+		assert_false(l.text.contains("/ 3") or l.text.contains("1/3"), "no line counts the bodies")
+	var b := FinalLab.body(w)
+	var phase_hp := w.actors.max_hp[b] - w.actors.max_hp[b] * 500 / 1000  # its first phase: full .. 50 %
+	FinalLab.hit(w, phase_hp / 2)
 	bar.sync(reader)
-	assert_almost_eq(bar.segment_fraction(0), 0.5, 0.05, "the Colossus's segment is its HP")
+	assert_almost_eq(bar.hp_fraction(), 0.5, 0.05, "the bar is its first phase's HP")
 	FinalLab.end_segment(w)
 	bar.sync(reader)
-	assert_almost_eq(bar.segment_fraction(0), 0.0, 0.01)
+	assert_almost_eq(bar.hp_fraction(), 0.0, 0.01)
 	assert_eq(bar.status_text(), tr("HUD_FINAL_SHATTER"))
+	assert_true(bar.invulnerable(), "a shatter can't be hurt: the bar says so")
+	assert_string_contains(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
 	FinalLab.through_shatter(w)
 	bar.sync(reader)
-	assert_almost_eq(bar.segment_fraction(1), 1.0, 0.01, "the Prism's, full once it rose")
+	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01, "the Prism's own bar, full once it rose")
+	assert_eq(bar.phase_text(), tr(reader.final_segment_name_key(1)))
 	var plain := BossLab.world()
 	BossLab.ready_boss(plain, &"gatekeeper")
 	bar.sync(WorldReader.new(plain))
-	assert_eq(bar.segment_count(), 0, "a floor's boss keeps the plain bar")
+	assert_eq(bar.phase_text(), tr("HUD_BOSS_PHASE") % [1, 3], "a floor's boss: its phase")
 	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01)
 
 

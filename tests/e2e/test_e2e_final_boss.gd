@@ -3,9 +3,10 @@ extends GutTest
 ## test_e2e_ascension: the run is moved to its last floor by a labelled TEST HELPER and F10's Restart floor rebuilds it;
 ## the dev panel (backtick, clicks: God mode, Kill boss) stands in for the fights. Walking into the Ascension portal
 ## (v0.8.0 P2: no menu) takes the hero to the final arena: a round room drawn as the cosmic arena, the boss bar one bar
-## in three named segments. Kill boss ends the Colossus's segment: it shatters (the bar says SHATTERED, no hostile shot
-## stays), the Prism rises from its shards, a save is taken at the Prism's start and Continue after Main menu resumes
-## there; two more Kill boss win the run: the victory recap with the true ending line, the achievement unlocked.
+## for its first body (v0.8.0 N4: one bar per body, named). Kill boss ends the Colossus: it shatters (the bar says
+## SHATTERED and Invulnerable, no hostile shot stays), the Prism rises from its shards with its own bar, a save is
+## taken at the Prism's start and Continue after Main menu resumes there; two more Kill boss win the run: the victory
+## recap with the true ending line, the achievement unlocked.
 
 const LEG_FRAMES := 7000
 
@@ -135,15 +136,20 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	var bar := _hud(main).boss_bar
 	assert_true(bar.visible, "the boss bar shows")
 	assert_eq(bar.boss_name(), tr("BOSS_HOLLOW_CROWN"), "one boss: the Hollow Crown")
-	assert_eq(bar.segment_count(), 3, "in three segments")
-	assert_almost_eq(bar.segment_fraction(0), 1.0, 0.01, "the Colossus's is full")
-	assert_almost_eq(bar.segment_fraction(2), 1.0, 0.01, "the bodies to come are full")
+	assert_eq(
+		bar.phase_text(),
+		tr(reader.final_segment_name_key(0)),
+		"v0.8.0 N4: one bar per body, the Colossus's; O59: its name only, no count"
+	)
+	assert_almost_eq(bar.hp_fraction(), 1.0, 0.01, "the Colossus's is full")
 	# The Colossus's segment ends: it shatters.
 	await _click(e, main, "KillBoss")
 	await e.frames(3)
 	assert_true(reader.final_shattering(), "it shatters")
 	assert_eq(bar.status_text(), tr("HUD_FINAL_SHATTER"), "the bar says so")
-	assert_almost_eq(bar.segment_fraction(0), 0.0, 0.01, "its segment is empty")
+	assert_almost_eq(bar.hp_fraction(), 0.0, 0.01, "its bar is empty")
+	assert_true(bar.invulnerable(), "v0.8.0 N4: it can't be hurt: the bar says so")
+	assert_string_starts_with(bar.shield_text(), tr("HUD_BOSS_INVULNERABLE"))
 	for k in 20:
 		await e.frames(1)
 		assert_eq(_hostile_shots(w), 0, "no hostile shot while it shatters")
@@ -154,6 +160,9 @@ func test_the_ascension_portal_walks_into_the_final_boss_and_beats_it() -> void:
 	assert_eq(reader.final_phase(), 1, "the next body")
 	assert_eq(reader.actor_kind(reader.boss_index()), WorldReader.KIND_PRISM, "the Prism rises")
 	assert_eq(main.view.final_views.burst_count(), 1, "from the Colossus's shards")
+	assert_eq(
+		bar.phase_text(), tr(reader.final_segment_name_key(1)), "v0.8.0 N4: the Prism's own bar"
+	)
 	assert_gt(main.view.final_views.shard_count(), 0)
 	await e.frames(2)
 	var saved: Dictionary = main.saves.last
