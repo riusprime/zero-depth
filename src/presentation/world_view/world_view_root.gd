@@ -94,10 +94,38 @@ var _occlusion_index := {}
 
 
 func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> void:
+	var q := ViewBuildQueue.new()
+	queue_setup(q, p_reader, palette, arena_half)
+	q.run_all()
+
+
+## v0.8.0 N12 (owner O70): the view's build as jobs on `q` (ViewBuildQueue), in setup()'s order: the models read on a
+## worker, the views, the devices and props, the stage's parts (StageView.queue_build), the first sync. A load runs
+## them over frames behind the loading cover (CoverLoads.build_view); setup() runs them at once.
+func queue_setup(
+	q: ViewBuildQueue, p_reader: WorldReader, palette: Dictionary, arena_half: float
+) -> void:
 	reader = p_reader
 	# v0.3.0 L13: the owner's boss models load with the stage, never on a spawn (v0.8.0 FB1: the final boss's three
-	# only where its fight is: the final arena, the Playground).
-	BossModels.preload_all(reader.final_fight() or not reader.has_gate())
+	# only where its fight is: the final arena, the Playground). v0.8.0 N12: with the kit's and the shop's models, on
+	# a worker (ViewWarmup).
+	q.add_worker(
+		"models",
+		ViewWarmup.warm.bind(
+			reader.final_fight() or not reader.has_gate(),
+			stage.mood != null,
+			stage.prop_style,
+			reader.shop_stall()
+		)
+	)
+	q.add("views", _setup_views.bind(palette))
+	q.add("effects", _setup_effects)
+	q.add("devices", _setup_devices.bind(palette))
+	stage.queue_build(q, reader, palette, arena_half)
+	q.add("first_sync", _first_sync)
+
+
+func _setup_views(palette: Dictionary) -> void:
 	actors.outline_color = palette["outline"]
 	add_child(stage)
 	add_child(telegraphs)
@@ -131,6 +159,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	events.setup(reader)
 	add_child(cores)  # v0.6.0 CU
 	add_child(attack_forms)  # v0.6.0 MX3
+
+
+## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
+func _setup_effects() -> void:
 	if stage.mood != null and VfxLayer.available():  # v0.5.9 art: real fire, explosions and lightning
 		var layer := VfxLayer.new()
 		add_child(layer)
@@ -163,6 +195,10 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
 	add_child(black_holes)  # v0.8.0 P2
+
+
+## The floor's portals and devices, the boss door, the shrine and the shop, the portal transit, the ink and hit feel.
+func _setup_devices(palette: Dictionary) -> void:
 	if reader.has_floor() and reader.ascension_floor():  # v0.7.5 AP: its own look, the gate's place
 		ascension = AscensionPortal.new()
 		add_child(ascension)
@@ -224,7 +260,9 @@ func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> voi
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
 		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
-	stage.build(reader, palette, arena_half)
+
+
+func _first_sync() -> void:
 	sync()
 	rig.snap_to(SimPlane.to_3d(reader.player_pos()))
 

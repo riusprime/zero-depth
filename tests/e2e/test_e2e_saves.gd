@@ -97,10 +97,9 @@ func test_quit_mid_room_and_continue_at_its_entry() -> void:
 	e.key(KEY_ENTER, true)
 	e.key(KEY_ENTER, false)
 	assert_true(main.loads.cover.is_covered(), "Continue covers the screen first")
-	var waited := 0
-	while not main.is_playing() and waited < 10:
-		await get_tree().process_frame
-		waited += 1
+	# v0.8.0 N12 (O70): the load runs over frames behind the cover (the World on a worker); CoverLoads.finished
+	# comes in the frame the floor goes live, before its first tick.
+	await main.loads.finished
 	assert_true(main.is_playing(), "Continue starts the saved run")
 	var r := e.world()
 	assert_ne(r, w, "a new world")

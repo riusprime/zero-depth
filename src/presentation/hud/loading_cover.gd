@@ -151,6 +151,11 @@ func unveil(seconds: float) -> void:
 	_apply()
 
 
+## v0.8.0 N12: the cover's own clock (s), which turns the mark and moves the iris: it advances every drawn frame.
+func clock() -> float:
+	return _spin
+
+
 ## The screen is fully covered.
 func is_covered() -> bool:
 	return phase == Phase.COVERED
