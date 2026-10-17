@@ -18,6 +18,10 @@ var camera: Camera3D
 var target := Vector3.ZERO
 ## Screen shake (PRESENTATION §1, §6): off means none at all.
 var shake_enabled := true
+## v0.8.0 N11 (owner O69): the arrival's flourish (PortalTransitView sets it each tick): a roll of the view about its
+## axis (radians) and a zoom (1 = none, above 1 closer). None with shake off or reduced motion, like the shake.
+var flourish_roll := 0.0
+var flourish_zoom := 1.0
 var _shake := 0.0
 var _shake_seed := 0
 ## v0.8.0 GF3: the kick (see KICK_SECONDS).
@@ -60,7 +64,8 @@ func _process(delta: float) -> void:
 	if dist > dead_zone_m:
 		var want := position + offset * ((dist - dead_zone_m) / dist)
 		position = position.lerp(want, clampf(delta * smoothing, 0.0, 1.0))
-	camera.size = view_size
+	camera.size = view_size / flourish_zoom
+	camera.rotation.z = flourish_roll
 	_shake = maxf(0.0, _shake - delta * 2.5)
 	_shake_seed += 1
 	var off := kick_offset()
@@ -102,6 +107,22 @@ func kick_offset() -> Vector2:
 func shake(amount: float) -> void:
 	if shake_enabled and not ViewPrefs.reduced_motion:
 		_shake = minf(1.0, _shake + amount)
+
+
+## v0.8.0 N11: holds the shake at `level` (0..1) at least (a steady tremble while the receiver charges). Off like
+## shake().
+func shake_to(level: float) -> void:
+	if shake_enabled and not ViewPrefs.reduced_motion:
+		_shake = maxf(_shake, minf(1.0, level))
+
+
+## v0.8.0 N11: the arrival's roll (radians) and zoom (1 = none); back to none with shake off or reduced motion.
+func set_flourish(roll: float, zoom: float) -> void:
+	if not shake_enabled or ViewPrefs.reduced_motion:
+		roll = 0.0
+		zoom = 1.0
+	flourish_roll = roll
+	flourish_zoom = maxf(0.25, zoom)
 
 
 func shake_level() -> float:

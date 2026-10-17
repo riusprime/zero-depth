@@ -499,6 +499,8 @@ func _build_kit(reader: WorldReader) -> void:
 	for i in reader.floor_door_count():
 		doors.append(reader.floor_door_rect(i))
 	var keep: Array = [reader.portal_pos()]
+	if reader.floor_receiver():  # v0.8.0 N11 (O69): nothing stands on the hero's receiver
+		keep.append(reader.floor_start_pos())
 	for i in reader.reward_count():
 		keep.append(reader.reward_pos(i))
 	if reader.shop_stall():  # v0.8.0 SR: no rubble where you walk up to the counter

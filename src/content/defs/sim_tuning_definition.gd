@@ -29,6 +29,10 @@ extends ContentDef
 @export var field_min_m := 1.5
 ## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (the frame budget's sim cap).
 @export var player_shots_max := 256
+## v0.8.0 N11 (owner O69): the hero's arrival on the floor's receiver: floor 1 of a run, a later floor, reduced motion.
+@export var arrival_first_seconds := 1.6
+@export var arrival_seconds := 0.8
+@export var arrival_calm_seconds := 0.3
 
 
 func category() -> StringName:
@@ -47,6 +51,9 @@ func validate() -> Array[ValidationIssue]:
 		["pickup_radius_m", pickup_radius_m],
 		["fire_hit_seconds", fire_hit_seconds],
 		["fire_trail_spacing_m", fire_trail_spacing_m],
+		["arrival_first_seconds", arrival_first_seconds],  # v0.8.0 N11
+		["arrival_seconds", arrival_seconds],
+		["arrival_calm_seconds", arrival_calm_seconds],
 	]:
 		if pair[1] <= 0.0:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s > 0" % pair[0]))

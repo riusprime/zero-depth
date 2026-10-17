@@ -76,6 +76,9 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.fire_trail_spacing_m = def.fire_trail_spacing_m
 	t.field_min_m = def.field_min_m
 	t.player_shots_max = def.player_shots_max  # v0.8.0 PF
+	t.arrival_first_ticks = SimTick.seconds_to_ticks(def.arrival_first_seconds)  # v0.8.0 N11
+	t.arrival_ticks = SimTick.seconds_to_ticks(def.arrival_seconds)
+	t.arrival_calm_ticks = SimTick.seconds_to_ticks(def.arrival_calm_seconds)
 	return t
 
 

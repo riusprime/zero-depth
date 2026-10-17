@@ -8,6 +8,17 @@ extends Node3D
 ## EI-03); sync() reads the progress through WorldReader and only poses the hero's model and these effects.
 ## Cheap: two small one-shot CPU particle bursts, one light, two meshes; every material is built once here and only
 ## its colour or a uniform changes afterwards (never a feature flag: the damage-lag rule).
+## v0.8.0 N11 (owner O69: "the screen shakes a little bit and wobbles, and then zoom, the main character pops, and …
+## you feel it"): on a floor with a receiver (FloorReceiver) the arrival plays on it instead of the column, after the
+## loading cover has opened (Main holds the sim until then):
+## - floor 1 of a run (~1.6 s): no hero at first; the receiver charges (its glow ramps), the view trembles and wobbles
+##   (a light shake, a small sine roll and scale), a quick zoom in, then the hero pops in with a punch (a scale
+##   overshoot, a flash and a ring of light bursting from the receiver, dust), a heavier kick and a short rumble, and
+##   the view settles back;
+## - a later floor (~0.8 s, after the portal's iris opened): the receiver flares and the hero rises out of it with a
+##   small burst and kick;
+## - reduced motion: no shake, wobble, zoom or rise: the receiver's light flares and fades and the hero appears in it.
+## The view's roll and zoom are IsoRig's flourish (off with shake off, like the shake and the kick).
 
 ## The phase showing (tests read it): none, the way in, the arrival.
 enum Phase { NONE, ENTER, ARRIVE }
@@ -25,6 +36,27 @@ const SPINS_OUT := 1.5
 ## How far in front of the gate's centre line (m) the hero is drawn to, and how high it rises.
 const PULL_DEPTH := 0.3
 const LIFT := 0.45
+## v0.8.0 N11 (fractions of the arrival's progress): floor 1's charge ends and the hero pops at POP_AT; the zoom runs
+## in from ZOOM_FROM; the pop's overshoot lasts POP_SPAN, its ring BURST_SPAN. A later floor's flare ends at
+## STEP_FLARE_END, the hero rises over STEP_RISE_FROM..STEP_RISE_TO from STEP_DEPTH m under the floor.
+const POP_AT := 0.58
+const ZOOM_FROM := 0.38
+const ZOOM_IN := 0.16
+const POP_SPAN := 0.26
+const BURST_SPAN := 0.32
+const POP_OVERSHOOT := 3.0
+const TREMBLE := 0.12
+const TREMBLE_PEAK := 0.32
+const WOBBLE_ROLL := 0.03
+const WOBBLE_ZOOM := 0.02
+const POP_SHAKE := 0.6
+const POP_KICK_M := 0.5
+const STEP_FLARE_END := 0.3
+const STEP_RISE_FROM := 0.22
+const STEP_RISE_TO := 0.72
+const STEP_DEPTH := 1.1
+const STEP_SHAKE := 0.25
+const STEP_KICK_M := 0.22
 ## Arrival: the hero grows over this part of the progress; the column fades out after COLUMN_FADE.
 const GROW_FROM := 0.2
 const GROW_TO := 0.8
@@ -69,6 +101,12 @@ var deep_gate: PortalGate
 var ascension: AscensionPortal
 ## v0.8.0 P2 (owner O28): the Loop device (null on other floors); stepping onto it flares it and flashes in its green.
 var loop_device: LoopDevice
+## v0.8.0 N11 (O69): the floor's receiver (null without one: the final arena, the Playground) and the view's rig.
+var receiver: FloorReceiver
+var rig: IsoRig
+## v0.8.0 N11: this arrival is floor 1's (the big landing), and whether the hero has popped in (tests read both).
+var first := false
+var landed := false
 
 var _actors: ActorViews
 var _gate: PortalGate
@@ -110,6 +148,8 @@ func sync(reader: WorldReader) -> void:
 		progress = 0.0
 	if phase != was:
 		_burst_done = false
+		landed = false
+		first = reader.arrival_first()
 		var deep := reader.route_taken() == WorldReader.ROUTE_DEEP and deep_gate != null
 		var taken := deep_gate if deep else _gate
 		if phase == Phase.ENTER and taken != null:
@@ -132,7 +172,10 @@ func sync(reader: WorldReader) -> void:
 			_enter(reader, node, avatar)
 		Phase.ARRIVE:
 			_hide_extras(node, avatar)
-			_arrive(node, avatar)
+			if receiver != null:
+				_land(avatar)
+			else:
+				_arrive(node, avatar)
 		_:
 			if was != Phase.NONE:
 				_rest(avatar)
@@ -213,6 +256,112 @@ func _arrive(node: Node3D, avatar: Node3D) -> void:
 		avatar.visible = grow > 0.01
 
 
+## v0.8.0 N11: the arrival on the floor's receiver (see the header): floor 1's landing, a later floor's step-out, or
+## reduced motion's flare.
+func _land(avatar: Node3D) -> void:
+	var q := progress
+	column.visible = false
+	var foot := receiver.position
+	if calm:
+		receiver.set_charge(1.0 - q)
+		receiver.set_burst(-1.0)
+		flash_ball.visible = false
+		_set_light(0.0)
+		_set_overlay(FloorReceiver.CORE, 0.22 * (1.0 - q))
+		if avatar != null:
+			_pose(avatar, Vector3.ZERO, 1.0, q >= 0.3)
+		landed = q >= 0.3
+		return
+	if first:
+		_land_first(avatar, q, foot)
+	else:
+		_step_out(avatar, q, foot)
+
+
+## Floor 1: charge, tremble and wobble, zoom, the pop, the settle.
+func _land_first(avatar: Node3D, q: float, foot: Vector3) -> void:
+	var env := smoothstep(0.04, 0.45, q) * (1.0 - smoothstep(POP_AT, POP_AT + 0.08, q))
+	var zoom := (
+		1.0 + ZOOM_IN * smoothstep(ZOOM_FROM, POP_AT, q) * (1.0 - smoothstep(POP_AT, 1.0, q))
+	)
+	if rig != null:
+		var roll := sin(q * TAU * 4.0) * WOBBLE_ROLL * env
+		rig.set_flourish(roll, zoom + sin(q * TAU * 6.0) * WOBBLE_ZOOM * env)
+		if q < POP_AT:
+			rig.shake_to(TREMBLE + (TREMBLE_PEAK - TREMBLE) * smoothstep(0.1, POP_AT, q))
+	if q < POP_AT:
+		var c := smoothstep(0.0, POP_AT, q)
+		receiver.set_charge(c * c)
+		receiver.set_burst(-1.0)
+		flash_ball.visible = false
+		_set_light(0.0)
+		_set_overlay(FADE_COLOR, 0.0)
+		if avatar != null:
+			_pose(avatar, Vector3.ZERO, 0.001, false)
+		return
+	var u := clampf((q - POP_AT) / POP_SPAN, 0.0, 1.0)
+	if not landed:
+		landed = true
+		receiver.puff()
+		if rig != null:
+			rig.shake(POP_SHAKE)  # the rumble
+			rig.kick(Vector3(1, 0, 1), POP_KICK_M)
+	receiver.set_charge(1.0 - smoothstep(POP_AT, 1.0, q))
+	receiver.set_burst((q - POP_AT) / BURST_SPAN)
+	var f := 1.0 - smoothstep(0.0, 0.5, u)
+	_flash_at(foot + Vector3(0, 0.9, 0), f, FloorReceiver.CORE, 0.4)
+	if avatar != null:
+		_pose(avatar, Vector3.ZERO, _overshoot(u, POP_OVERSHOOT), true)
+
+
+## A later floor: the receiver flares and the hero rises out of it.
+func _step_out(avatar: Node3D, q: float, foot: Vector3) -> void:
+	if rig != null:
+		rig.set_flourish(0.0, 1.0)
+	receiver.set_charge(
+		smoothstep(0.0, STEP_FLARE_END, q) * (1.0 - smoothstep(STEP_FLARE_END, 1.0, q))
+	)
+	var rise := smoothstep(STEP_RISE_FROM, STEP_RISE_TO, q)
+	if q >= STEP_RISE_FROM and not landed:
+		landed = true
+		receiver.puff()
+		if rig != null:
+			rig.shake(STEP_SHAKE)
+			rig.kick(Vector3(1, 0, 1), STEP_KICK_M)
+	receiver.set_burst((q - STEP_RISE_FROM) / BURST_SPAN if landed else -1.0)
+	var f := 1.0 - smoothstep(STEP_RISE_FROM, STEP_RISE_FROM + 0.2, q) if landed else 0.0
+	_flash_at(foot + Vector3(0, 0.6, 0), f, FloorReceiver.CORE, 0.2)
+	if avatar != null:
+		var s := 0.6 + 0.4 * rise
+		_pose(avatar, Vector3(0, -STEP_DEPTH * (1.0 - rise), 0), s, landed)
+
+
+## The hero model's pose for the landing: offset, uniform size, shown.
+func _pose(avatar: Node3D, at: Vector3, size: float, shown: bool) -> void:
+	avatar.position = at
+	avatar.rotation = Vector3.ZERO
+	avatar.scale = Vector3.ONE * maxf(size, 0.001)
+	avatar.visible = shown
+
+
+## The flash ball, the light and the screen flash at `f` (0..1) in colour `c`, the screen's at `screen` alpha at most.
+func _flash_at(at: Vector3, f: float, c: Color, screen: float) -> void:
+	flash_ball.visible = f > 0.0
+	flash_ball.position = at
+	flash_ball.scale = Vector3.ONE * (0.3 + 1.6 * (1.0 - f))
+	_flash_mat.albedo_color = Color(c, 0.8 * f)
+	light.position = at
+	light.light_color = c
+	_set_light(LIGHT_ENERGY * f)
+	_set_overlay(c, screen * f * f)
+
+
+## An overshooting ease (0..1 → 0..1, past 1 on the way): the pop's punch.
+static func _overshoot(u: float, k: float) -> float:
+	var v := u - 1.0
+	return 1.0 + (k + 1.0) * v * v * v + k * v * v
+
+
 ## Back to normal: the hero's model and its ring and bar as ActorViews leaves them, the effects off.
 func _rest(avatar: Node3D) -> void:
 	if avatar != null:
@@ -228,6 +377,11 @@ func _rest(avatar: Node3D) -> void:
 	flash_ball.visible = false
 	_set_light(0.0)
 	_set_overlay(FADE_COLOR, 0.0)
+	if receiver != null:  # v0.8.0 N11: the receiver back at rest, the view settled
+		receiver.set_charge(0.0)
+		receiver.set_burst(-1.0)
+	if rig != null:
+		rig.set_flourish(0.0, 1.0)
 
 
 ## The contact disc, team ring and HP bar stay off while the hero is not all there.

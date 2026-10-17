@@ -354,14 +354,17 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	)
 	Abilities.grant_start(world)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(world)
-	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in, and the arrival on floors after the first.
-		world.boss_flow.set_transit(ViewPrefs.reduced_motion, run.run_floor() > 1)  # AP: every loop
 	Heat.enable(world, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	EventCompiler.setup(world, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	world.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(world)
 	world.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))  # dev panel Step 6
+	if world.boss_flow != null:  # v0.3.5 PT: the portal's way in; v0.8.0 N11 (O69): every floor's arrival (data)
+		var calm := ViewPrefs.reduced_motion  # AP: run_floor() counts across loops
+		world.boss_flow.set_transit(
+			calm, true, BossFlow.arrival_length(world.tuning, calm, run.run_floor() == 1)
+		)
 	if arena_def != null:  # v0.8.0 FB1: the first body rises (after the loadout: its hidden catch-up counts)
 		FinalArenaScenario.begin(world, run, finals.size())
 	if not resume.is_empty():  # v0.4.0 SV: back to the saved room entry
@@ -376,6 +379,7 @@ func _start_floor(repo: ContentRepository = null, resume: Dictionary = {}) -> St
 	driver = SimDriver.new()
 	driver.name = "SimDriver"
 	driver.setup(world)
+	driver.hold = loads.cover.showing  # v0.8.0 N11 (O69): the arrival starts once the loading cover opened
 	add_child(driver)
 	view = WorldViewRoot.new()
 	view.name = "WorldView"

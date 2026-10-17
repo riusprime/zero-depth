@@ -33,6 +33,7 @@ func test_a_pad_shot_before_the_right_stick_goes_the_way_the_hero_walked() -> vo
 	await _press(e, JOY_BUTTON_A)  # Gun: the run starts
 	assert_true(main.is_playing())
 	var w := e.world()
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_eq(w.player.weapons, PlayerTable.WEAPON_GUN, "a Gun run")
 	var start := w.player_pos()
 	# Walk west with the left stick (open floor; the right stick is never touched), then let go.

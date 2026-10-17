@@ -99,14 +99,26 @@ func _mouse_scale() -> Vector2:
 
 ## Play from the main menu with the keyboard: the Play button has focus, then the build screen's last pick (Blade on
 ## a fresh profile; Right moves to Gun). v0.4.0 BS (F11): no utility pick; the run starts with weapon, dash, skill
-## and vent.
-func start_from_menu(build: StringName = &"blade") -> void:
+## and vent. v0.8.0 N11: then waits for the hero to land on the receiver (`land` false: returns as the floor opens).
+func start_from_menu(build: StringName = &"blade", land: bool = true) -> void:
 	await tap(KEY_ENTER)
 	await frames(2)
 	if build == &"gun":
 		await tap(KEY_RIGHT)
 	await tap(KEY_ENTER)
 	await frames(4)
+	if land:
+		await landed()
+
+
+## v0.8.0 N11 (owner O69): waits (reading only) until the floor's arrival is over and play is on, `limit` frames at
+## most (the cover's fade, then the arrival: floor 1's ~1.6 s). True when it was.
+func landed(limit: int = 600) -> bool:
+	for k in limit:
+		if main.driver != null and not main.driver.reader.arriving():
+			return true
+		await frames(1)
+	return false
 
 
 ## v0.8.0 N6 (owner O60): the Playground from the main menu through the dev tools: F10, then Enter on the panel's

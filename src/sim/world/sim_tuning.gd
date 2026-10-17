@@ -39,3 +39,8 @@ var fire_trail_spacing_m := ElementAbilities.TRAIL_SPACING_M
 var field_min_m := ModifierAbilities.FIELD_MIN_M
 ## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (Attacks._shot_room).
 var player_shots_max := Attacks.MAX_PLAYER_SHOTS
+## v0.8.0 N11 (owner O69): the hero's arrival on the floor's receiver (BossFlow.arrival_length): floor 1 of a run, a
+## later floor, and either with reduced motion. Nothing spawns and nothing acts until it ends.
+var arrival_first_ticks := BossFlow.ARRIVE_FIRST_TICKS
+var arrival_ticks := BossFlow.ARRIVE_TICKS
+var arrival_calm_ticks := BossFlow.ARRIVE_TICKS_CALM
