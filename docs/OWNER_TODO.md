@@ -197,4 +197,5 @@ AnimationPlayer inside the `.glb`; yours replace the code ones.
 | ✓ | id | What | Prompt |
 |---|---|---|---|
 | ☐ | `fx_rail_streak` (P2) | The Siege Engine's rail shot (the only texture missing from the zips) | in [`art/requests/v0.8.0_textures.md`](art/requests/v0.8.0_textures.md) |
+| ☐ | `tex_wall_<biome>` ×5 (P1, **after** you pick the Ruins prototype) | Tiling wall textures for the new procedural exterior walls (N10), one per biome; optional top-edge textures | in [`art/requests/v0.8.0_walls.md`](art/requests/v0.8.0_walls.md) |
 | ☐ | final-boss music (P3) | A track for the final arena; today it uses the boss sounds | — |
