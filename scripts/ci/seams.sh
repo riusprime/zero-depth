@@ -52,6 +52,7 @@ FILES=(
 	tests/e2e/test_e2e_builds.gd # v0.8.0: N3's cover moved the run start past the pick press; the first shot met it here
 	tests/e2e/test_e2e_codex.gd # v0.8.0: AO's new cards reflowed the Codex grid under RR's tier walk here
 	tests/e2e/test_e2e_pad_aim.gd # v0.8.0: N9 (pad aim follows the walk) meets the loading cover and the builds here
+	tests/e2e/test_e2e_arrival.gd # v0.8.0: N11 (the arrival) meets the loading cover, spawning and the HUD here
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
 set +e
