@@ -18,11 +18,10 @@ extends RefCounted
 ##    doorways, rewards and the portal.
 ## v0.8.0 N10 (owners O66, O67), a G2 prototype: rule 2 has three styles ("wall_style"), the owner picks:
 ## - STYLE_KIT (today's): as above.
-## - STYLE_PROC (option A): ProceduralWall builds the structural walls as one modelled ruin; the dresser only keeps
-##   rule 4's light props (each with a "niche": the sim-plane rect the wall leaves open for it) and sparse kit
-##   accents: a wall_pillar every ACCENT_STEP m on walls at least ACCENT_MIN_WALL long and at most ACCENT_MAX_DEPTH
-##   thick, drawn from its decimated copy (the corners get the builder's own quoin stones, so no pillar stacks on
-##   them).
+## - STYLE_PROC (option A; v0.8.0 N13, D50: the game's walls in every biome): ProceduralWall builds the structural
+##   walls as one modelled ruin; the dresser only keeps rule 4's light props (each with a "niche": the sim-plane rect
+##   the wall leaves open for it). No kit piece on those walls (owner O71, "100% new"): N10's decimated kit pillar
+##   accents are now the builder's own pillars, in the biome's wall textures.
 ## - STYLE_FIT (option B): the kit kept, the stacking fixed: each stretch is laid edge to edge with pieces at their
 ##   natural length and height (FIT_LEN, the models' own proportions), in rows about FIT_DEPTH deep across a thick
 ##   wall (each row's depth fitted to its share of the wall), the
@@ -56,11 +55,6 @@ const LAYOUT_DECOR: Array[StringName] = [&"grass_tuft", &"rubble_small", &"debri
 const STYLE_KIT := &"kit"
 const STYLE_PROC := &"proc"
 const STYLE_FIT := &"fit"
-## Option A's accents.
-const ACCENT_MIN_WALL := 9.0
-const ACCENT_MAX_DEPTH := 1.4
-const ACCENT_STEP := Vector2(8.0, 12.0)
-const ACCENT_PILLAR_W := 0.8
 ## Option B: each wall piece's natural length (m) at its natural height (KitModels.SPECS), from the loaded models'
 ## proportions (KitModels.get_piece(id)["size"].x: 0.902, 2.302, 0.954, 0.771); test_stage_dresser checks them.
 const FIT_LEN := {&"wall_1m": 0.9, &"wall_2m": 2.3, &"wall_broken": 0.95, &"wall_pillar": 0.77}
@@ -97,7 +91,8 @@ const FIT_ENDINGS: Array = [
 ## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries);
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
 ## - "biome": StringName; "seed": int;
-## - v0.8.0 N10, "wall_style": STYLE_KIT (the default), STYLE_PROC or STYLE_FIT (see the rules above);
+## - v0.8.0 N10, "wall_style": STYLE_KIT (the dresser's default; StageView passes STYLE_PROC, the game's, since
+##   N13), STYLE_PROC or STYLE_FIT (see the rules above);
 ## - v0.7.5 NB1, a biome's look (BiomeLook; both optional, absent for the first three biomes): "square_cover"
 ##   {piece: int weight} draws square cover footprints with those pieces, and "decor_swap" {piece: piece} draws a
 ##   decoration piece as another (a kit or a code-made piece, CodeProps).
@@ -115,7 +110,7 @@ static func dress(f: Dictionary) -> Array:
 		var w: Array = walls[i]
 		if w[3] == 0:
 			if style == STYLE_PROC and ProceduralWall.handles(w):
-				_dress_wall_proc(out, i, w, slots.get(i, []), rng)
+				_dress_wall_proc(out, i, w, slots.get(i, []))
 			elif style == STYLE_FIT:
 				_dress_wall_fit(out, i, w, slots.get(i, []), rng)
 			else:
@@ -249,29 +244,12 @@ static func _light(
 		)
 
 
-## v0.8.0 N10 (option A): a structural wall the procedural wall draws: its light props (in niches) and, on a long
-## thin wall, a kit pillar every ACCENT_STEP m (kept 1.4 m from a light).
-static func _dress_wall_proc(
-	out: Array, i: int, w: Array, slots: Array, rng: RandomNumberGenerator
-) -> void:
+## v0.8.0 N10 (option A): a structural wall the procedural wall draws: only its light props, in niches (v0.8.0 N13:
+## no kit pillar accents; ProceduralWall lays its own pillars).
+static func _dress_wall_proc(out: Array, i: int, w: Array, slots: Array) -> void:
 	var fr := _frame(w)
-	var length: float = fr["length"]
-	var depth: float = fr["depth"]
 	for s: Array in slots:
 		_light(out, i, fr, s[0], s[1], s[2], true)
-	if depth > ACCENT_MAX_DEPTH or length < ACCENT_MIN_WALL:
-		return
-	var at := -length * 0.5 + rng.randf_range(4.0, 6.0)
-	while at < length * 0.5 - 2.0:
-		var clear := true
-		for s: Array in slots:
-			if absf(float(s[0]) - at) < 1.4:
-				clear = false
-		if clear:
-			var size := Vector3(ACCENT_PILLAR_W, _jitter(rng, 1.3), depth)
-			_add(out, &"wall_pillar", _place(fr, at, 0.0, size), i, &"wall")
-			out[out.size() - 1]["lod"] = true  # its decimated copy
-		at += rng.randf_range(ACCENT_STEP.x, ACCENT_STEP.y)
 
 
 ## v0.8.0 N10: the sim-plane rect a light prop's niche cuts from the procedural wall: LIGHT_SLOT wide (a brazier's

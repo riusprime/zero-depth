@@ -6,6 +6,14 @@ extends GutTest
 ## per metre far under the kit's; the dresser puts far fewer kit pieces on the walls it draws, and crystals still
 ## find their wall spots. Option B (StageDresser.STYLE_FIT) lays whole pieces edge to edge, at their natural length,
 ## never the same piece the same way round twice in a row, from decimated copies.
+## v0.8.0 N13 (owner O71, D50 = A everywhere): option A is the default in every biome, with no kit piece on a
+## structural wall in any biome (its pillars are the builder's own: inside the footprint, standing over the wall
+## round them, clear of the lights); a thick wall's top is a rim of laid stones round a sunken fill; the dev toggle
+## cycles a / old / b.
+
+const BIOMES: Array[StringName] = [
+	&"ruins", &"night_rocks", &"red_canyon", &"frozen_shore", &"starfall"
+]
 
 const SEEDS := [77, 501, 1234]
 ## A point is well inside the union when all of these round it are wall (past a quoin's 0.3 m square).
@@ -136,7 +144,7 @@ func test_it_stays_inside_the_footprints_and_leaves_doorways_and_niches_open() -
 
 
 ## A point well inside the union (every point 0.33 m round it is wall) is under exactly one top: the joins at
-## corners and T-junctions leave no gap and no overlap.
+## corners and T-junctions leave no gap and no overlap (v0.8.0 N13: away from the pillars, whose courses stack).
 func test_one_top_over_every_point_inside_corners_included() -> void:
 	var f := _floor(501)
 	var both := _option_a(f)
@@ -174,6 +182,8 @@ func test_one_top_over_every_point_inside_corners_included() -> void:
 		var deep := true
 		for d: Vector2 in AROUND:
 			if not _in_any(p + d, feet, 0.0) or _in_any(p + d, niches, 0.0):
+				deep = false
+			if _in_any(p + d, built["pillar_rects"], 0.1):  # v0.8.0 N13: a pillar's courses stack
 				deep = false
 		if not deep:
 			continue
@@ -214,26 +224,126 @@ func test_triangles_per_metre_far_under_the_kit() -> void:
 		assert_lt(per_m, 150.0, "seed %d: triangle budget per metre of face" % s)
 
 
-func test_the_dresser_puts_far_fewer_kit_pieces_on_the_walls_it_builds() -> void:
+## v0.8.0 N13: "100% new": in every biome (its own cover and decoration swaps, as StageView passes them), the
+## dresser puts no kit piece on a structural wall option A draws; the light props keep their niches; interior cover
+## is dressed as before.
+func test_no_kit_pieces_on_the_exterior_walls_in_any_biome() -> void:
+	var content := ContentRepository.load_all()
+	for b: StringName in BIOMES:
+		var biome: BiomeDefinition = content.get_def(&"biomes", b)
+		assert_not_null(biome, String(b))
+		for s: int in SEEDS:
+			var f := _floor(s)
+			f["biome"] = b
+			if biome.look != null:
+				f["square_cover"] = StageView._names(biome.look.square_cover)
+				f["decor_swap"] = StageView._names(biome.look.decor_swap)
+			var walls: Array = f["walls"]
+			var old := 0
+			var old_cover := {}
+			for p: Dictionary in StageDresser.dress(f):
+				if p["wall"] >= 0 and int(walls[p["wall"]][3]) == 0 and p["kind"] == &"wall":
+					old += 1
+				elif p["kind"] == &"cover":
+					old_cover[p["wall"]] = true
+			var now := 0
+			var lights := 0
+			var cover := {}
+			var g := f.duplicate()
+			g["wall_style"] = StageDresser.STYLE_PROC
+			for p: Dictionary in StageDresser.dress(g):
+				if p["wall"] >= 0 and int(walls[p["wall"]][3]) == 0 and p["kind"] == &"wall":
+					now += 1
+				if p["kind"] == &"light":
+					lights += 1
+					assert_true(p.has("niche"), "a light prop gets its niche")
+				elif p["kind"] == &"cover":
+					cover[p["wall"]] = true
+			if s == SEEDS[0]:
+				gut.p("%s seed %d: kit wall pieces %d -> %d" % [b, s, old, now])
+			assert_eq(now, 0, "%s seed %d: no kit piece on a structural wall" % [b, s])
+			assert_gt(lights, 0)
+			assert_eq(
+				cover.keys(), old_cover.keys(), "%s seed %d: the same cover walls dressed" % [b, s]
+			)
+
+
+## v0.8.0 N13 (rule 3b): the builder's own pillars, where N10's kit accents stood: inside their wall's footprint,
+## standing over the wall's own top under them, clear of the light niches.
+func test_the_pillars_are_the_builders_own() -> void:
+	var total := 0
 	for s: int in SEEDS:
 		var f := _floor(s)
-		var walls: Array = f["walls"]
-		var old := 0
-		for p: Dictionary in StageDresser.dress(f):
-			if p["kind"] == &"wall" and int(walls[p["wall"]][3]) == 0:
-				old += 1
-		var now := 0
-		var lights := 0
-		for p: Dictionary in _option_a(f)[0]:
-			if p["kind"] == &"wall" and int(walls[p["wall"]][3]) == 0:
-				now += 1
-				assert_eq(p["piece"], &"wall_pillar", "only pillar accents")
-			if p["kind"] == &"light":
-				lights += 1
-				assert_true(p.has("niche"), "a light prop gets its niche")
-		gut.p("seed %d: kit wall pieces %d -> %d" % [s, old, now])
-		assert_lt(now * 10, old, "seed %d: under a tenth of the kit pieces" % s)
-		assert_gt(lights, 0)
+		var both := _option_a(f)
+		var built: Dictionary = both[1]
+		total += int(built["pillars"])
+		var feet := _footprints(f)
+		var niches := StageDresser.niches(both[0])
+		var verts := _verts(built)
+		for r: Rect2 in built["pillar_rects"]:
+			assert_true(_in_any(r.get_center(), feet, 0.0), "seed %d: a pillar on a wall" % s)
+			var inside := false
+			for ft: Rect2 in feet:
+				if (
+					ft.grow(0.002).encloses(r.grow_individual(0.06, 0.0, 0.06, 0.0))
+					or (ft.grow(0.002).encloses(r.grow_individual(0.0, 0.06, 0.0, 0.06)))
+				):
+					inside = true
+			assert_true(inside, "seed %d: a pillar (its lips too) inside its footprint" % s)
+			assert_false(
+				_in_any(r.get_center(), niches, WallPillars.CLEAR - 0.01),
+				"seed %d: clear of a light" % s
+			)
+			var top := 0.0
+			var hidden := 0.0
+			for v in verts:
+				var p := SimPlane.to_sim(v)
+				if r.grow(0.07).has_point(p):  # its corners (the lips) included
+					top = maxf(top, v.y)
+				if r.grow(-0.02).has_point(p):  # the wall's own top under it
+					hidden = maxf(hidden, v.y)
+			assert_gte(top, WallPillars.H.x - 0.06, "seed %d: a pillar stands" % s)
+			assert_lt(hidden, top, "seed %d: over the wall's top under it" % s)
+	gut.p("pillars: %d on seeds %s" % [total, SEEDS])
+	assert_gt(total, SEEDS.size() * 3, "pillars on the long thin walls")
+
+
+## v0.8.0 N13 (rule 2, the N10 note "a ruined platform more than a wall"): a thick wall's top is a rim of laid
+## stones round a fill sunk below it; thin walls are all rim.
+func test_a_thick_walls_top_is_a_rim_round_a_sunken_fill() -> void:
+	for s: int in SEEDS:
+		var built: Dictionary = _option_a(_floor(s))[1]
+		gut.p(
+			(
+				"seed %d: top rim %.0f m2 at %.2f m, fill %.0f m2 at %.2f m"
+				% [
+					s,
+					built["top_rim_m2"],
+					built["top_rim_h"],
+					built["top_fill_m2"],
+					built["top_fill_h"]
+				]
+			)
+		)
+		assert_gt(float(built["top_fill_m2"]), 50.0, "seed %d: thick walls have a fill" % s)
+		assert_lt(
+			float(built["top_fill_h"]),
+			float(built["top_rim_h"]) - 0.15,
+			"seed %d: the fill sits below the rim" % s
+		)
+		assert_gte(float(built["top_fill_h"]), ProceduralWall.FILL_MIN)
+	var thin := (
+		ProceduralWall
+		. build(
+			{
+				"walls": [[Vector2.ZERO, Vector2(6.0, 0.6), 0.0, 0]],
+				"rooms": [],
+				"doors": [],
+				"seed": 3,
+			}
+		)
+	)
+	assert_eq(float(thin["top_fill_m2"]), 0.0, "a 1.2 m wall is all rim")
 
 
 func test_crystals_still_find_their_wall_spots() -> void:
@@ -390,26 +500,35 @@ func test_a_procedural_wall_fades_with_its_wall() -> void:
 	assert_eq(node.get_surface_override_material(0), solid, "restored")
 
 
+## v0.8.0 N13 (D50): option A by default in every biome (no "auto" any more); the kit and B only on the toggle.
 func test_the_wall_style_follows_the_dev_toggle() -> void:
 	var stage := StageView.new()
 	autofree(stage)
 	var before := ViewPrefs.wall_style
-	ViewPrefs.wall_style = &"auto"
-	stage.prop_style = &"ruins"
-	assert_eq(
-		stage.resolved_wall_style(), StageDresser.STYLE_PROC, "Ruins draws option A by default"
-	)
-	stage.prop_style = &"night_rocks"
-	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_KIT, "the other biomes keep the kit")
 	ViewPrefs.wall_style = &"a"
-	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_PROC, "A in any biome")
+	assert_eq(ViewPrefs.WALL_STYLES, [&"a", &"old", &"b"] as Array[StringName])
+	for b: StringName in BIOMES:
+		stage.prop_style = b
+		assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_PROC, "%s draws A" % b)
 	ViewPrefs.wall_style = &"b"
 	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_FIT)
 	ViewPrefs.wall_style = &"old"
 	stage.prop_style = &"ruins"
 	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_KIT)
+	ViewPrefs.wall_style = &"auto"  # an old value: A
+	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_PROC)
 	ViewPrefs.wall_style = before
-	for b: StringName in [&"ruins", &"night_rocks", &"red_canyon", &"frozen_shore", &"starfall"]:
+	var content := ContentRepository.load_all()
+	for b: StringName in BIOMES:
+		var mood: BiomeMood = (content.get_def(&"biomes", b) as BiomeDefinition).mood
+		gut.p(
+			(
+				"%s: face tile %.1f m, top tile %.1f m"
+				% [b, mood.wall_texture_m, mood.wall_top_texture_m]
+			)
+		)
+		assert_between(mood.wall_texture_m, 3.0, 6.0, "%s's own face scale" % b)
+	for b: StringName in BIOMES:
 		var tex := StageView.wall_textures(b)
 		assert_not_null(tex["face"], "%s face" % b)
 		assert_not_null(tex["top"], "%s top" % b)
@@ -418,19 +537,19 @@ func test_the_wall_style_follows_the_dev_toggle() -> void:
 
 func test_the_dev_panel_walls_button_cycles_the_style() -> void:
 	var before := ViewPrefs.wall_style
-	ViewPrefs.wall_style = &"auto"
+	ViewPrefs.wall_style = &"a"
 	var panel := DevPanel.new(DebugApi.new(SaveLab.floor_world(20261008, 1)))
 	add_child_autofree(panel)
 	DevWalls.wire(panel)
 	var label := panel.find_child("WallStyleChoice", true, false) as Label
-	assert_eq(label.text, "walls: auto")
+	assert_eq(label.text, "walls: a")
 	var b := panel.find_child("WallStyle", true, false) as Button
 	assert_not_null(b, "the Walls button")
 	assert_eq(b.text, "UI_DEV_WALL_STYLE")
 	var seen: Array[StringName] = []
-	for k in 4:
+	for k in 3:
 		b.pressed.emit()
 		seen.append(ViewPrefs.wall_style)
-	assert_eq(seen, [&"old", &"a", &"b", &"auto"] as Array[StringName], "auto, old, A, B and round")
-	assert_eq(label.text, "walls: auto")
+	assert_eq(seen, [&"old", &"b", &"a"] as Array[StringName], "A, old, B and round")
+	assert_eq(label.text, "walls: a")
 	ViewPrefs.wall_style = before

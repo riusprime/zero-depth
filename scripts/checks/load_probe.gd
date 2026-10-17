@@ -11,6 +11,8 @@ extends SceneTree
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1600x900x24" \
 ##     godot --path . --fixed-fps 60 --audio-driver Dummy --resolution 640x360 -s scripts/checks/load_probe.gd \
 ##     -- --menu-only   (llvmpipe: only the new run, Continue and Restart: a frame of play takes ~1 s there)
+## v0.8.0 N13: a "stage:" line per load (the biome, its wall style and structural wall meshes / triangles), and
+## `-- walls=old|a|b` sets ViewPrefs.wall_style first (the dev toggle's comparisons; default a).
 ## Writes nothing into the tracked tree; the lines are pasted into the evidence by hand.
 
 const AFTER_FRAMES := 60
@@ -39,6 +41,9 @@ func _initialize() -> void:
 			]
 		)
 	)
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("walls="):
+			ViewPrefs.wall_style = StringName(a.trim_prefix("walls="))
 	ProfileStore.use_shared(ProfileStore.new(""))
 	RunSaveStore.use_shared(RunSaveStore.new(""))
 	Main.fixed_seed = Main.STAGE_SEED
@@ -184,6 +189,20 @@ func _report(label: String, opened: bool) -> void:
 	)
 	print(line)
 	print("load_probe: %-9s phases ms: %s" % [label, " ".join(ph)])
+	if main.view != null and main.view.stage != null:  # v0.8.0 N13: which biome, which walls
+		var ws := main.view.stage.structural_wall_stats()
+		print(
+			(
+				"load_probe: %-9s stage: biome=%s walls=%s wall_meshes=%d wall_tris=%d"
+				% [
+					label,
+					main.view.stage.prop_style,
+					main.view.stage.wall_style,
+					ws["nodes"],
+					ws["tris"]
+				]
+			)
+		)
 	_rows.append(line)
 	var lens := PackedStringArray()
 	for i in _samples.size():

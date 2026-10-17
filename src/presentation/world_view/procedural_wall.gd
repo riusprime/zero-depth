@@ -20,13 +20,20 @@ extends RefCounted
 ##    height: height_at(x, y) at the stone (BASE_H, lowered in slumps (4 m noise) and collapsed stretches (7 m noise,
 ##    down to MIN_H), notched (1.5 m lattice: breaks through the top), a few tall remnants (3 m lattice)), jittered
 ##    per stone, STONE_MISSING of the stones gone from the top course; never below MIN_H (walls still read as walls),
-##    never above MAX_H.
+##    never above MAX_H. v0.8.0 N13 (the N10 note: a thick wall's top read from above as a laid-stone platform): only
+##    the rim is laid stones, the cells within RIM of the union's edge (each face's skin); deeper in, a thick wall's
+##    top is its rubble fill: FILL_LUMP lumps (bigger than the rim's stones) sunk FILL_DROP below the top there, down
+##    to FILL_MIN, darker (FILL_COL), so from above a thick wall reads as two ruined skins with broken fill between,
+##    a wall top and not a floor. Thin walls (no cell that deep) are all rim, as before.
 ## 3. The face (O67, "blocks … with depth"): in front of the core, between it and the footprint, each straight face
 ##    run is laid in stone courses (COURSES, the same heights everywhere so corners line up), staggered blocks
 ##    BLOCK_MIN-BLOCK_MAX long with GAP joints. Per block, from the stream: flush with the footprint, recessed, or
 ##    missing (the core shows behind, darker); its front corners jittered; some with a chipped top corner; the upper
 ##    courses a little further back (a lean); never above the top. Pilasters every PILASTER_STEP on long runs; quoin
 ##    stones at outer corners (missing ones read as chipped corners); bent rebar out of the top on some stretches.
+## 3b. v0.8.0 N13 (owner O71, "100% new": no kit pieces on the exterior walls): pillars, WallPillars' rules, where
+##    N10's kit pillar accents stood: piers through a long thin wall's depth, flush with its faces, standing over its
+##    top, in the same textures. The faces' courses, pilasters and rebar stop at them.
 ## 4. Fallen chunks: a few low stones (CHUNK_MAX_H, the decoration limit's rule) on the floor at a face's base, only
 ##    inside a room and DOOR_CLEAR from doorways.
 ## 5. The look: the owner's textures (tex_wall_<biome> on the faces, mapped once from the top down and repeating along
@@ -70,6 +77,12 @@ const REBAR_PER_M := 0.12
 const CHUNK_PER_M := 0.3
 const CHUNK_MAX_H := 0.25
 const DOOR_CLEAR := 1.0
+## v0.8.0 N13: the top's rim and fill (rule 2).
+const RIM := 0.75
+const FILL_LUMP := 1.2
+const FILL_DROP := Vector2(0.36, 0.6)
+const FILL_MIN := 0.25
+const FILL_COL := Color(0.66, 0.64, 0.62)
 ## v0.8.0 N10 (owner O68, "too grained … make it bigger"): one tile of the face texture (3:2, the owner's
 ## tex_wall_<biome>) covers FACE_M_DEFAULT metres along the wall (its height follows the aspect), its top at
 ## FACE_TOP_Y; one tile of the top texture (tex_wall_top_<biome>) TOP_M_DEFAULT metres. Each biome sets its own
@@ -125,7 +138,9 @@ static func footprint(w: Array) -> Rect2:
 ## light props' niches: the wall is open there), "rooms": [Rect2], "doors": [Rect2], "seed": int; v0.8.0 O68,
 ## "face_m", "top_m": the texture tiles' size (m; FACE_M_DEFAULT, TOP_M_DEFAULT).
 ## Returns {"surfaces": {wall index: [its mesh arrays (one surface)]}, "tris": int, "face_m":
-## float (the faces' length along the ground), "blocks": int, "walls": [the wall indices drawn]}.
+## float (the faces' length along the ground), "blocks": int, "walls": [the wall indices drawn], v0.8.0 N13
+## "pillars": int, "pillar_rects": [Rect2] (their sim-plane footprints), and the top's rim and fill (rule 2):
+## "top_rim_m2", "top_fill_m2" (their areas), "top_rim_h", "top_fill_h" (their mean heights, m)}.
 static func build(f: Dictionary) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(f.get("seed", 0)) * 7919 + 9241  # the cosmetic stream: presentation only
@@ -152,8 +167,15 @@ static func build(f: Dictionary) -> Dictionary:
 		"stones": {},
 		"face_m": float(f.get("face_m", FACE_M_DEFAULT)) if not legacy_look else 2.4,
 		"top_m": float(f.get("top_m", TOP_M_DEFAULT)) if not legacy_look else 3.0,
+		"fill": {},
+		"pillars": [],
+		"top_rim": Vector2.ZERO,
+		"top_fill": Vector2.ZERO,
 	}
 	_core(ctx)
+	ctx["pillars"] = WallPillars.spots(ctx, rects, owners, f.get("cuts", []))
+	for p: Dictionary in ctx["pillars"]:
+		WallPillars.build_one(ctx, p)
 	var runs := _runs(g)
 	for run: Dictionary in runs:
 		out["face_m"] = float(out["face_m"]) + float(run["b"]) - float(run["a"])
@@ -165,6 +187,14 @@ static func build(f: Dictionary) -> Dictionary:
 		tris += b.v.size() / 3
 	out["tris"] = tris
 	out["blocks"] = ctx["blocks"]
+	out["pillars"] = (ctx["pillars"] as Array).size()
+	out["pillar_rects"] = (ctx["pillars"] as Array).map(
+		func(p: Dictionary) -> Rect2: return p["rect"]
+	)
+	for k: String in ["top_rim", "top_fill"]:
+		var t: Vector2 = ctx[k]
+		out[k + "_m2"] = t.y
+		out[k + "_h"] = t.x / t.y if t.y > 0.0 else 0.0
 	return out
 
 
@@ -188,10 +218,20 @@ static func height_at(x: float, y: float, salt: int) -> float:
 
 static func _core(ctx: Dictionary) -> void:
 	var g: WallGrid = ctx["g"]
+	var depth := g.edge_dist()
+	var fill := PackedByteArray()
+	fill.resize(g.nx * g.ny)
 	for j in g.ny:
 		for i in g.nx:
 			if g.cells[j * g.nx + i] >= 0:
-				g.cell_h[j * g.nx + i] = _stone_h(ctx, i, j)
+				var deep := depth[j * g.nx + i] >= RIM and not legacy_look
+				fill[j * g.nx + i] = 1 if deep else 0
+				g.cell_h[j * g.nx + i] = _fill_h(ctx, i, j) if deep else _stone_h(ctx, i, j)
+				var area := (g.xs[i + 1] - g.xs[i]) * (g.ys[j + 1] - g.ys[j])
+				var tally: Vector2 = ctx["top_fill" if deep else "top_rim"]
+				ctx["top_fill" if deep else "top_rim"] = (
+					tally + Vector2(area * g.cell_h[j * g.nx + i], area)
+				)
 	for j in g.ny:
 		for i in g.nx:
 			var owner := g.cells[j * g.nx + i]
@@ -205,7 +245,7 @@ static func _core(ctx: Dictionary) -> void:
 			b.u_flip = 1.0
 			var x0 := (g.xs[i] + g.xs[i + 1]) * 0.5
 			var y0 := (g.ys[j] + g.ys[j + 1]) * 0.5
-			var top := TOP_COL * _variation(ctx, x0, y0)
+			var top := (FILL_COL if fill[j * g.nx + i] == 1 else TOP_COL) * _variation(ctx, x0, y0)
 			var p00 := _top(ctx, i, j, h)
 			var p10 := _top(ctx, i + 1, j, h)
 			var p11 := _top(ctx, i + 1, j + 1, h)
@@ -277,6 +317,27 @@ static func _stone_h(ctx: Dictionary, i: int, j: int) -> float:
 	if _hash(col, row, salt + 73) < STONE_MISSING:
 		h -= lerpf(0.2, 0.35, _hash(col, row, salt + 74))
 	h = clampf(snappedf(h, STONE_STEP), MIN_H, MAX_H)
+	cache[key] = h
+	return h
+
+
+## v0.8.0 N13: a thick wall's fill cell (rule 2): the lump (FILL_LUMP square) it lies in, sunk FILL_DROP under the
+## top there, a few lumps fallen further; within FILL_MIN..MAX_H, snapped to STONE_STEP.
+static func _fill_h(ctx: Dictionary, i: int, j: int) -> float:
+	var g: WallGrid = ctx["g"]
+	var salt: int = ctx["salt"]
+	var cx := (g.xs[i] + g.xs[i + 1]) * 0.5
+	var cy := (g.ys[j] + g.ys[j + 1]) * 0.5
+	var key := Vector2i(floori(cx / FILL_LUMP), floori(cy / FILL_LUMP))
+	g.cell_off[j * g.nx + i] = _hash(key.x, key.y, salt + 101)
+	var cache: Dictionary = ctx["fill"]
+	if cache.has(key):
+		return cache[key]
+	var h := height_at((key.x + 0.5) * FILL_LUMP, (key.y + 0.5) * FILL_LUMP, salt)
+	h -= lerpf(FILL_DROP.x, FILL_DROP.y, _hash(key.x, key.y, salt + 103))
+	if _hash(key.x, key.y, salt + 105) < STONE_MISSING:
+		h -= 0.15
+	h = clampf(snappedf(h, STONE_STEP), FILL_MIN, MAX_H)
 	cache[key] = h
 	return h
 
@@ -434,15 +495,19 @@ static func _face(ctx: Dictionary, run: Dictionary) -> void:
 				b -= GAP * 0.5
 	if b - a < 0.15:
 		return
-	# Pilasters, then the courses between them.
-	var spans: Array = []
+	# v0.8.0 N13: the pillars on this face, then the pilasters clear of them, then the courses between them.
+	var spans := WallPillars.spans(ctx, run, a, b)
+	var pillars := spans.duplicate()
 	if b - a >= PILASTER_MIN_RUN:
 		var s := a + rng.randf_range(1.5, 3.0)
 		while s < b - 1.0:
 			var w := rng.randf_range(0.36, 0.5)
-			spans.append(Vector2(s - w * 0.5, s + w * 0.5))
-			_pilaster(ctx, run, s - w * 0.5, s + w * 0.5)
+			var sp := Vector2(s - w * 0.5, s + w * 0.5)
+			if not WallPillars.near_any(sp, pillars, WallPillars.OTHER):
+				spans.append(sp)
+				_pilaster(ctx, run, sp.x, sp.y)
 			s += rng.randf_range(PILASTER_STEP.x, PILASTER_STEP.y)
+	spans.sort_custom(func(p: Vector2, q: Vector2) -> bool: return p.x < q.x)
 	var zones: Array = []
 	var at := a
 	for sp: Vector2 in spans:
@@ -454,6 +519,7 @@ static func _face(ctx: Dictionary, run: Dictionary) -> void:
 			continue
 		for k in COURSES.size() - 1:
 			_course(ctx, run, z.x, z.y, k)
+	run["pillar_spans"] = pillars
 	_rebar(ctx, run, a, b)
 	_chunks(ctx, run, a, b)
 
@@ -694,6 +760,8 @@ static func _rebar(ctx: Dictionary, run: Dictionary, a: float, b: float) -> void
 		if b - a < 0.8:
 			return
 		var s := rng.randf_range(a + 0.3, b - 0.3)
+		if WallPillars.near_any(Vector2(s, s), run.get("pillar_spans", []), 0.1):
+			continue
 		var owner := _owner(ctx, run, s)
 		if owner < 0:
 			continue
