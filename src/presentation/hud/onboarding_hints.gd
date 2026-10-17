@@ -53,6 +53,8 @@ var _was_choosing := false
 var _live := false
 ## A centre panel is open (the last observed tick): the slab sits low.
 var _panel_open := false
+## v0.8.0 N11 (owner O69): the hero is still arriving (the last observed tick): no hint shows and its clock waits.
+var _landing := false
 
 
 func _init() -> void:
@@ -94,6 +96,7 @@ func begin_floor(floor_index: int, reader: WorldReader) -> void:
 	_was_choosing = false
 	_moment = {}
 	_live = true
+	_landing = reader.arriving()  # v0.8.0 N11
 	if floor_index <= 1:
 		for id: StringName in [&"move", &"attack", &"dash"]:
 			_enqueue(id)
@@ -114,6 +117,9 @@ func end_floor() -> void:
 
 ## Reads one tick: queues the hints whose moment has come.
 func observe(reader: WorldReader) -> void:
+	if _landing != reader.arriving():  # v0.8.0 N11: the hints wait for the hero to land
+		_landing = reader.arriving()
+		_refresh_visible()
 	if store == null or not store.enabled():
 		return
 	var choosing := reader.choosing() and not reader.swapping()
@@ -188,7 +194,14 @@ func _next() -> void:
 
 
 func _refresh_visible() -> void:
-	visible = _current != &"" and _live and not _covered and store != null and store.enabled()
+	visible = (
+		_current != &""
+		and _live
+		and not _covered
+		and not _landing
+		and store != null
+		and store.enabled()
+	)
 
 
 ## The hint's action was done: it fades out (once it has been up MIN_S).
@@ -210,7 +223,7 @@ func _process(delta: float) -> void:
 		_current = &""
 		_refresh_visible()
 		return
-	if _covered or not _live:
+	if _covered or not _live or _landing:
 		return
 	_t += delta
 	if _current in CONTEXT and not _moment.get(_current, false) and _t >= MIN_S:
@@ -248,7 +261,7 @@ func _input(event: InputEvent) -> void:
 		or (event is InputEventJoypadMotion and absf(event.axis_value) > 0.3)
 	):
 		_set_device(InputRebind.PAD)
-	if _current == &"" or _covered:
+	if _current == &"" or _covered or _landing:
 		return
 	var action: StringName = (
 		_attack_action if _current == &"attack" else DONE_ACTIONS.get(_current, &"")

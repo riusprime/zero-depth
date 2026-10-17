@@ -1219,6 +1219,22 @@ func transit_holds() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.holds_world()
 
 
+## v0.8.0 N11 (owner O69): the floor has a receiver, the platform the hero arrives on in the middle of its first room
+## (at floor_start_pos): every run floor, Deep floors too; not the final arena or the Playground (no gate there).
+func floor_receiver() -> bool:
+	return has_gate()
+
+
+## v0.8.0 N11: the arrival playing now is floor 1 of a run's (the big landing; a later floor's is the step-out).
+func arrival_first() -> bool:
+	return _w.run_floor_index() == 1
+
+
+## v0.8.0 N11: the hero is still arriving (the world holds; nothing spawns, nothing acts, the hero isn't there yet).
+func arriving() -> bool:
+	return _w.boss_flow != null and _w.boss_flow.arrive_left > 0
+
+
 # --- Routes (v0.5.0 RT) ---------------------------------------------------------------------------------------
 ## This floor's boss room has the Deep gate (a run's floor before the last), where it stands and faces.
 func has_deep_portal() -> bool:

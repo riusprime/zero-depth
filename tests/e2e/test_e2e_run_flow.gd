@@ -195,4 +195,5 @@ func test_restart_run_from_the_pause_menu() -> void:
 	assert_ne(e.world(), w, "a fresh run")
 	assert_eq(main.run.run_seed, run_seed + 1, "with the next seed")
 	assert_eq(main.run.floor_index, 1)
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_gt(e.world().tick, 0, "and it runs")

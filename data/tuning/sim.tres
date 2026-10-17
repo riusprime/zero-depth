@@ -6,3 +6,6 @@
 script = ExtResource("1_tun")
 id = &"sim"
 player_shots_max = 256
+arrival_first_seconds = 1.6
+arrival_seconds = 0.8
+arrival_calm_seconds = 0.3

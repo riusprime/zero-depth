@@ -15,6 +15,10 @@ extends RefCounted
 ##   input for enter_ticks while the hero is drawn in (v0.3.5 PT, F19), then the floor ends (EXITED, still).
 ## Arrival (v0.3.5 PT, F20): a floor after the first opens with arrive_ticks of the same hold while the hero
 ##   materialises; the run flow sets both lengths (set_transit), shorter with reduced motion. One clock (EI-03).
+##   v0.8.0 N11 (owner O69: "the spawning enemies would be paused … there would be no main character yet"): every
+##   run floor opens with it, floor 1 of a run the longest (the hero lands on the floor's receiver): the lengths are
+##   data (SimTuning's arrival_*; arrival_length). While it holds nothing runs: no input acts, nothing spawns, the
+##   hero can't be hit or targeted, the enemies already placed don't act, and the run's clock waits.
 ## Routes (v0.5.0 RT): on a run's floor before the last the room has two gates (`routes`): the gate and the Deep gate
 ##   (FloorLayout.deep_portal_pos). Both open together; walking into one sets route_taken once (Routes.Route) and
 ##   the other closes. `deep` marks a Deep floor (RunState.prepare), and epic_altar_id its epic altar.
@@ -39,6 +43,8 @@ const ENTER_TICKS := 60
 const ARRIVE_TICKS := 48
 const ENTER_TICKS_CALM := 24
 const ARRIVE_TICKS_CALM := 18
+## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival (~1.6 s), the big landing on the receiver.
+const ARRIVE_FIRST_TICKS := 96
 
 var state := State.WAITING
 ## Which compiled boss World.spawn_boss gets (BossArenaSpec.boss_index).
@@ -114,11 +120,21 @@ func gate_open(route: int) -> bool:
 
 
 ## Setup (the run flow, before the first tick): the transit lengths, short with reduced motion (`calm`), and whether
-## this floor opens with the arrival.
-func set_transit(calm: bool, arrive: bool) -> void:
+## this floor opens with the arrival. v0.8.0 N11: `ticks` >= 0 is the arrival's length (arrival_length; the run flow's
+## data), else the shipped one.
+func set_transit(calm: bool, arrive: bool, ticks: int = -1) -> void:
 	enter_ticks = ENTER_TICKS_CALM if calm else ENTER_TICKS
-	arrive_ticks = (ARRIVE_TICKS_CALM if calm else ARRIVE_TICKS) if arrive else 0
+	var length := ticks if ticks >= 0 else (ARRIVE_TICKS_CALM if calm else ARRIVE_TICKS)
+	arrive_ticks = length if arrive else 0
 	arrive_left = arrive_ticks
+
+
+## v0.8.0 N11 (O69): the arrival's length in ticks from the tuning: floor 1 of a run (`first`), a later floor, or
+## either with reduced motion (`calm`: a quick fade-in).
+static func arrival_length(t: SimTuning, calm: bool, first: bool) -> int:
+	if calm:
+		return t.arrival_calm_ticks
+	return t.arrival_first_ticks if first else t.arrival_ticks
 
 
 ## The world stands still and takes no input: the floor is over, or the hero is going in or arriving.

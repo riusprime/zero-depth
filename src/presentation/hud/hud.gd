@@ -99,6 +99,8 @@ var _floor_card_left := 0.0
 var _biome_key := ""
 ## The floor card's [floor, deep, shards lost], so a language switch can word it again (v0.6.0 UP).
 var _floor_card_args := []
+## v0.8.0 N11 (owner O69): the hero is still arriving (the last sync): the HUD stays hidden and the floor card waits.
+var _landing := false
 # v0.3.0 UI: the danger meter (L23), the low-HP edge glow (L24) and the style's plates.
 var _danger := DangerMeter.new()
 var _vignette := LowHpVignette.new()
@@ -188,6 +190,9 @@ func _init() -> void:
 
 func sync(reader: WorldReader) -> void:
 	_reader = reader
+	if _landing != reader.arriving():  # v0.8.0 N11: hidden until the hero lands, then shown
+		_landing = reader.arriving()
+		visible = not _landing
 	var locale := TranslationServer.get_locale()
 	if locale != _shown_locale:  # P-7: words again in a new language
 		_shown_locale = locale
@@ -269,7 +274,7 @@ func _process(delta: float) -> void:
 		_card_left -= delta
 	if _combo_left > 0.0:
 		_combo_left -= delta
-	if _floor_card_left > 0.0:
+	if _floor_card_left > 0.0 and not _landing:  # v0.8.0 N11: the card shows once the hero landed
 		_floor_card_left -= delta
 		_floor_card.modulate.a = clampf(_floor_card_left / FLOOR_CARD_FADE, 0.0, 1.0)
 		_floor_card.visible = _floor_card_left > 0.0
@@ -291,6 +296,8 @@ func show_floor(
 	_floor_card_left = FLOOR_CARD_SECONDS
 	_floor_card.modulate.a = 1.0
 	_floor_card.visible = true
+	if _reader != null:  # v0.8.0 N11: the floor line names the biome now (the sim waits for the cover to open)
+		sync(_reader)
 
 
 ## The floor-title card's words in the language now (v0.6.0 UP: again on a language switch while it shows).

@@ -4,7 +4,8 @@ extends RefCounted
 ## model for that"; docs/art/requests/v0.8.0_ART_LIST.md §1). A model is used when assets/models/manifest.json lists
 ## its id (shop_tent, shop_vendor_<biome>, shop_wares) and its file is on disk (assets/models/shop/<id>.glb as the art
 ## list asks); otherwise get_model gives {} and ShopStallView draws its code-made stand-in (L15: missing art never
-## blocks a step). Each model is read once (cached), its first mesh turned into our frame and scaled:
+## blocks a step). v0.8.0 N11: the floor receiver's model (`floor_receiver`, FloorReceiver) is read the same way.
+## Each model is read once (cached), its first mesh turned into our frame and scaled:
 ## - its front (glTF +Z, the way a generator's "facing forward" model looks) turned to +X, our front (SPECS "yaw");
 ## - centred on x and z, its lowest point on the floor (y = 0), or `lift` metres up (the Starfall merchant floats);
 ## - the tent and the wares scaled to fill their box (SPECS "size", x y z after the turn), so the tent covers the
@@ -30,6 +31,9 @@ const SPECS := {
 	&"shop_vendor_red_canyon": {"height": 1.7, "yaw": FRONT_YAW},
 	&"shop_vendor_frozen_shore": {"height": 1.7, "yaw": FRONT_YAW},
 	&"shop_vendor_starfall": {"height": 1.8, "yaw": FRONT_YAW, "lift": 0.35},
+	# v0.8.0 N11 (owner O69): the floor's receiver (FloorReceiver; docs/OWNER_TODO.md §3.1 `floor_receiver`), round,
+	# so no turn: it fills its 2.2 x 1.2 x 2.2 m box on the hero's start.
+	&"floor_receiver": {"size": Vector3(2.2, 1.2, 2.2), "yaw": 0.0},
 }
 
 ## Where the manifest is read (tests point it at their own).

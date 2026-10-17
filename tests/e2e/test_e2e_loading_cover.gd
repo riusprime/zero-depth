@@ -68,6 +68,7 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 		gone += 1
 	assert_false(cover.showing(), "the cover faded away (%d frames)" % gone)
 	var w := e.world()
+	await e.landed()  # v0.8.0 N11: the hero lands on the receiver first
 	assert_gt(w.tick, 0, "the run is on")
 	# Into the portal.
 	var f := w.floor_layout

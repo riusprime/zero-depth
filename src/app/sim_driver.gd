@@ -19,6 +19,9 @@ var debug: DebugApi
 var playground: PlaygroundApi
 ## Where input comes from: a Callable returning [move_screen: Vector2, aim_world: Vector2, aim_dist_m: float].
 var input_source: Callable
+## v0.8.0 N11 (owner O69): while the world's arrival hasn't played yet and this returns true, the world waits (Main:
+## the loading cover still shows, so the arrival plays once the cover opened). Empty: never.
+var hold: Callable
 ## v0.6.5 WN2: the frame the last tick stepped with (read only: the e2e tests record a run's frames to replay it).
 var last_frame: InputFrame
 
@@ -50,6 +53,8 @@ func _physics_process(_delta: float) -> void:
 			edited.emit()
 		return
 	if debug != null and not debug.should_step():
+		return
+	if hold.is_valid() and reader.arriving() and hold.call():
 		return
 	step_once()
 

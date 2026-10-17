@@ -71,7 +71,7 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	)
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
-	if w.boss_flow != null:
+	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
 	EventCompiler.setup(w, repo)  # v0.5.0 EV, as Main: event rooms and curses after the heat
