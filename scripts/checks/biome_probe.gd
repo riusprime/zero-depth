@@ -21,7 +21,10 @@ extends SceneTree
 ## Vulkan device):
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/checks/biome_probe.gd \
 ##     -- biome=ruins [seed=20261008] [floor=1] [frames=120] [settle=20] [spots=5] [tag=before]
-##     [lighting=high|low] [shot=1] [light_spot=1] [off=fog,glow,…] [cpu=1]
+##     [lighting=high|low] [shot=1] [light_spot=1] [off=fog,glow,…] [cpu=1] [walls=auto|old|a|b]
+## v0.8.0 N10: walls= sets ViewPrefs.wall_style before the floor is built, and a "walls:" line reports the style, the
+## structural walls' wall meshes and full-detail triangles, and the procedural walls' build time; build_ms is the
+## whole view's setup (the floor's stage, kit and walls).
 ## Writes only under build/ (build/perf/biome_probe_<biome>[_<tag>].txt) and prints the same report. Quits on every
 ## path.
 
@@ -83,6 +86,8 @@ func _initialize() -> void:
 			_shot = true
 		elif a.begins_with("lighting="):
 			_lighting = a.trim_prefix("lighting=")
+		elif a.begins_with("walls="):
+			ViewPrefs.wall_style = StringName(a.trim_prefix("walls="))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
 	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", _biome_id)
@@ -104,7 +109,9 @@ func _initialize() -> void:
 	root.add_child(_view)
 	var b := _reader.floor_bounds()
 	var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
+	var t_setup := Time.get_ticks_usec()
 	_view.setup(_reader, biome.palette, half + 4.0)
+	var setup_ms := (Time.get_ticks_usec() - t_setup) / 1000.0
 	_view.sync()
 	if _cpu and _view.stage.kit != null:  # its frame work is called (and timed) by the probe
 		_view.stage.kit.set_process(false)
@@ -152,6 +159,20 @@ func _initialize() -> void:
 				env.glow_bloom,
 				env.ssao_enabled,
 				env.ssil_enabled
+			]
+		)
+	)
+	var ws := _view.stage.structural_wall_stats()
+	_line(
+		(
+			"walls: style=%s (pref %s) wall_meshes=%d wall_tris=%d proc_build_ms=%.1f build_ms=%.1f"
+			% [
+				_view.stage.wall_style,
+				ViewPrefs.wall_style,
+				ws["nodes"],
+				ws["tris"],
+				_view.stage.wall_build_ms,
+				setup_ms
 			]
 		)
 	)

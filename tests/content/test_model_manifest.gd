@@ -26,10 +26,13 @@ func test_every_model_file_is_listed() -> void:
 	for m: Dictionary in _manifest():
 		listed["res://" + String(m["path"])] = true
 	for dir in [
-		"res://assets/models/bosses", "res://assets/models/kit", "res://assets/models/shop"
+		"res://assets/models/bosses",
+		"res://assets/models/kit",
+		"res://assets/models/shop",
+		"res://assets/models/kit_lod",  # v0.8.0 N10: the decimated wall pieces
 	]:
 		for f in DirAccess.get_files_at(dir):
-			if f.ends_with(".glb"):
+			if f.ends_with(".glb") or f.ends_with(".res"):
 				assert_true(listed.has(dir.path_join(f)), "%s is in the manifest" % f)
 
 

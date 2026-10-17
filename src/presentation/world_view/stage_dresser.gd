@@ -16,6 +16,19 @@ extends RefCounted
 ##    within DOOR_CLEAR of a doorway or LIGHT_SPACING of another light.
 ## 5. Decoration: grass tufts along the room's walls, rubble and debris on open floor, kept KEEP_CLEAR away from
 ##    doorways, rewards and the portal.
+## v0.8.0 N10 (owners O66, O67), a G2 prototype: rule 2 has three styles ("wall_style"), the owner picks:
+## - STYLE_KIT (today's): as above.
+## - STYLE_PROC (option A): ProceduralWall builds the structural walls as one modelled ruin; the dresser only keeps
+##   rule 4's light props (each with a "niche": the sim-plane rect the wall leaves open for it) and sparse kit
+##   accents: a wall_pillar every ACCENT_STEP m on walls at least ACCENT_MIN_WALL long and at most ACCENT_MAX_DEPTH
+##   thick, drawn from its decimated copy (the corners get the builder's own quoin stones, so no pillar stacks on
+##   them).
+## - STYLE_FIT (option B): the kit kept, the stacking fixed: each stretch is laid edge to edge with pieces at their
+##   natural length and height (FIT_LEN, the models' own proportions), in rows about FIT_DEPTH deep across a thick
+##   wall (each row's depth fitted to its share of the wall), the
+##   stretch's few cm of rest spread over its pieces (FIT_STRETCH at most on stretches of 2 m and more), never the
+##   same piece twice in a row, each turned 180° and/or mirrored at random; pillars at both ends of a long wall; drawn
+##   from the decimated kit copies (KitModels.get_lod_piece, "lod": true).
 
 const DECOR_MAX_HEIGHT := 0.4
 const BROKEN_CHANCE := 0.2
@@ -39,6 +52,41 @@ const SLAB_HEIGHT := 1.8
 ## decoration pieces (the biome's decor_swap, never past DECOR_MAX_HEIGHT).
 const LAYOUT_SQUARE: Array[StringName] = [&"crate_stack", &"rock_large"]
 const LAYOUT_DECOR: Array[StringName] = [&"grass_tuft", &"rubble_small", &"debris_low"]
+## v0.8.0 N10: the wall styles.
+const STYLE_KIT := &"kit"
+const STYLE_PROC := &"proc"
+const STYLE_FIT := &"fit"
+## Option A's accents.
+const ACCENT_MIN_WALL := 9.0
+const ACCENT_MAX_DEPTH := 1.4
+const ACCENT_STEP := Vector2(8.0, 12.0)
+const ACCENT_PILLAR_W := 0.8
+## Option B: each wall piece's natural length (m) at its natural height (KitModels.SPECS), from the loaded models'
+## proportions (KitModels.get_piece(id)["size"].x: 0.902, 2.302, 0.954, 0.771); test_stage_dresser checks them.
+const FIT_LEN := {&"wall_1m": 0.9, &"wall_2m": 2.3, &"wall_broken": 0.95, &"wall_pillar": 0.77}
+const FIT_HEIGHT := {&"wall_1m": 1.0, &"wall_2m": 1.0, &"wall_broken": 0.7, &"wall_pillar": 1.3}
+## The pieces a stretch is drawn from, by weight.
+const FIT_PICK := {&"wall_2m": 5, &"wall_1m": 3, &"wall_broken": 2}
+const FIT_STRETCH := 0.15
+## A thick wall is laid in rows across its depth, each about this deep (the pieces' own depth, 0.58-0.9 m).
+const FIT_DEPTH := 0.85
+## How a stretch ends: the combination whose length is nearest the rest.
+const FIT_ENDINGS: Array = [
+	[],
+	[&"wall_1m"],
+	[&"wall_broken"],
+	[&"wall_pillar"],
+	[&"wall_2m"],
+	[&"wall_1m", &"wall_broken"],
+	[&"wall_broken", &"wall_1m"],
+	[&"wall_2m", &"wall_1m"],
+	[&"wall_1m", &"wall_2m"],
+	[&"wall_2m", &"wall_broken"],
+	[&"wall_broken", &"wall_2m"],
+	[&"wall_1m", &"wall_pillar"],
+	[&"wall_broken", &"wall_pillar"],
+	[&"wall_2m", &"wall_pillar"],
+]
 
 
 ## Places the kit over a floor. `f` keys:
@@ -49,21 +97,29 @@ const LAYOUT_DECOR: Array[StringName] = [&"grass_tuft", &"rubble_small", &"debri
 ## - v0.8.0 RT, "props": the designed rooms' drawn-only pieces (WorldReader.layout_prop dictionaries);
 ## - "rooms": [Rect2] interiors; "start_room": int; "doors": [Rect2]; "keep_clear": [Vector2];
 ## - "biome": StringName; "seed": int;
+## - v0.8.0 N10, "wall_style": STYLE_KIT (the default), STYLE_PROC or STYLE_FIT (see the rules above);
 ## - v0.7.5 NB1, a biome's look (BiomeLook; both optional, absent for the first three biomes): "square_cover"
 ##   {piece: int weight} draws square cover footprints with those pieces, and "decor_swap" {piece: piece} draws a
 ##   decoration piece as another (a kit or a code-made piece, CodeProps).
 ## Returns [{"piece": StringName, "xform": Transform3D (scales the unit-box piece), "wall": the wall index it
-## belongs to (-1 for none), "kind": &"wall" | &"cover" | &"light" | &"decor"}].
+## belongs to (-1 for none), "kind": &"wall" | &"cover" | &"light" | &"decor"}] (v0.8.0 N10: STYLE_PROC's light
+## props also carry "niche": Rect2; STYLE_FIT's wall pieces "lod": true).
 static func dress(f: Dictionary) -> Array:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(f.get("seed", 0)) * 7919 + 4513  # the cosmetic stream: presentation only
 	var out: Array = []
 	var walls: Array = f.get("walls", [])
 	var slots := _light_slots(f, rng)
+	var style: StringName = f.get("wall_style", STYLE_KIT)
 	for i in walls.size():
 		var w: Array = walls[i]
 		if w[3] == 0:
-			_dress_wall(out, i, w, slots.get(i, []), rng)
+			if style == STYLE_PROC and ProceduralWall.handles(w):
+				_dress_wall_proc(out, i, w, slots.get(i, []), rng)
+			elif style == STYLE_FIT:
+				_dress_wall_fit(out, i, w, slots.get(i, []), rng)
+			else:
+				_dress_wall(out, i, w, slots.get(i, []), rng)
 		elif w.size() > 5 and float(w[5]) >= 0.0:  # v0.8.0 RT: a designed room's blocker
 			_layout_named(out, i, w, f, rng)
 		else:
@@ -161,9 +217,16 @@ static func _fill(
 		a += seg
 
 
-## A light prop at `along`, on the side `side` (+1 or -1 along the depth axis), with a low broken wall behind it.
+## A light prop at `along`, on the side `side` (+1 or -1 along the depth axis), with a low broken wall behind it
+## (v0.8.0 N10, `niche`: none; the procedural wall leaves the prop a niche instead, recorded on the placement).
 static func _light(
-	out: Array, i: int, fr: Dictionary, along: float, side: float, piece: StringName
+	out: Array,
+	i: int,
+	fr: Dictionary,
+	along: float,
+	side: float,
+	piece: StringName,
+	niche: bool = false
 ) -> void:
 	var depth: float = fr["depth"]
 	var foot := minf(0.6, depth)
@@ -171,6 +234,9 @@ static func _light(
 	var h := 0.9 if piece == &"fire_barrel" else 2.0
 	var w := foot if piece == &"fire_barrel" else minf(foot, 0.3)
 	_add(out, piece, _place(fr, along, across, Vector3(w, h, w)), i, &"light")
+	if niche:
+		out[out.size() - 1]["niche"] = _niche(fr, along, side, foot, piece)
+		return
 	var behind := depth - foot
 	if behind > 0.15:
 		var back := -side * foot * 0.5
@@ -181,6 +247,181 @@ static func _light(
 			i,
 			&"wall"
 		)
+
+
+## v0.8.0 N10 (option A): a structural wall the procedural wall draws: its light props (in niches) and, on a long
+## thin wall, a kit pillar every ACCENT_STEP m (kept 1.4 m from a light).
+static func _dress_wall_proc(
+	out: Array, i: int, w: Array, slots: Array, rng: RandomNumberGenerator
+) -> void:
+	var fr := _frame(w)
+	var length: float = fr["length"]
+	var depth: float = fr["depth"]
+	for s: Array in slots:
+		_light(out, i, fr, s[0], s[1], s[2], true)
+	if depth > ACCENT_MAX_DEPTH or length < ACCENT_MIN_WALL:
+		return
+	var at := -length * 0.5 + rng.randf_range(4.0, 6.0)
+	while at < length * 0.5 - 2.0:
+		var clear := true
+		for s: Array in slots:
+			if absf(float(s[0]) - at) < 1.4:
+				clear = false
+		if clear:
+			var size := Vector3(ACCENT_PILLAR_W, _jitter(rng, 1.3), depth)
+			_add(out, &"wall_pillar", _place(fr, at, 0.0, size), i, &"wall")
+			out[out.size() - 1]["lod"] = true  # its decimated copy
+		at += rng.randf_range(ACCENT_STEP.x, ACCENT_STEP.y)
+
+
+## v0.8.0 N10: the sim-plane rect a light prop's niche cuts from the procedural wall: LIGHT_SLOT wide (a brazier's
+## 0.6), from the wall's face on the prop's side back over the prop's foot (leaving at least 0.12 m of wall behind).
+static func _niche(
+	fr: Dictionary, along: float, side: float, foot: float, piece: StringName
+) -> Rect2:
+	var depth: float = fr["depth"]
+	var wide := LIGHT_SLOT if piece == &"fire_barrel" else 0.6
+	var across := clampf(foot + 0.06, 0.0, maxf(depth - 0.12, foot * 0.5))
+	var axis2 := Vector2(fr["axis"].x, -fr["axis"].z)
+	var depth2 := Vector2(fr["depth_axis"].x, -fr["depth_axis"].z)
+	var c := (
+		SimPlane.to_sim(fr["center"])
+		+ axis2 * along
+		+ depth2 * side * (depth * 0.5 - across * 0.5 + 0.03)
+	)
+	var size := (
+		Vector2(wide, across + 0.06) if absf(axis2.x) > 0.5 else Vector2(across + 0.06, wide)
+	)
+	return Rect2(c - size * 0.5, size)
+
+
+## v0.8.0 N10: every niche the placements ask for (STYLE_PROC's light props).
+static func niches(placements: Array) -> Array:
+	var out: Array = []
+	for p: Dictionary in placements:
+		if p.has("niche"):
+			out.append(p["niche"])
+	return out
+
+
+## v0.8.0 N10 (option B): a structural wall laid with whole kit pieces (see the rules above).
+static func _dress_wall_fit(
+	out: Array, i: int, w: Array, slots: Array, rng: RandomNumberGenerator
+) -> void:
+	var fr := _frame(w)
+	var length: float = fr["length"]
+	var first := out.size()
+	var cuts: Array = slots.duplicate()
+	cuts.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
+	var stretches: Array = []
+	var at := -length * 0.5
+	for s: Array in cuts:
+		var lo: float = s[0] - LIGHT_SLOT * 0.5
+		stretches.append(Vector2(at, lo))
+		at = lo + LIGHT_SLOT
+	stretches.append(Vector2(at, length * 0.5))
+	var pillars := length >= PILLAR_MIN_WALL
+	for k in stretches.size():
+		var st: Vector2 = stretches[k]
+		# Rows across a thick wall, each about FIT_DEPTH deep (its own pieces), so no piece is fattened to fill it.
+		var rows := maxi(1, roundi(float(fr["depth"]) / FIT_DEPTH))
+		var row_depth := float(fr["depth"]) / rows
+		for r in rows:
+			var across := -float(fr["depth"]) * 0.5 + (r + 0.5) * row_depth
+			var ends := [pillars and k == 0, pillars and k == stretches.size() - 1]
+			_fit(out, i, fr, st.x, st.y, rng, ends[0], ends[1], across, row_depth)
+	for s: Array in cuts:
+		_light(out, i, fr, s[0], s[1], s[2])
+	for k in range(first, out.size()):
+		if out[k]["kind"] == &"wall":
+			out[k]["lod"] = true
+
+
+## Whole pieces from a to b, edge to edge, the rest spread over them.
+static func _fit(
+	out: Array,
+	i: int,
+	fr: Dictionary,
+	a: float,
+	b: float,
+	rng: RandomNumberGenerator,
+	lead: bool,
+	tail: bool,
+	across: float = 0.0,
+	depth: float = -1.0
+) -> void:
+	var length := b - a
+	if length <= 0.05:
+		return
+	if depth < 0.0:
+		depth = fr["depth"]
+	var seq := fit_sequence(length, rng, lead, tail)
+	var total := 0.0
+	for piece: StringName in seq:
+		total += float(FIT_LEN[piece])
+	var k := length / total
+	var prev := &""
+	var prev_turn := false
+	for piece: StringName in seq:
+		var seg := float(FIT_LEN[piece]) * k
+		var h := float(FIT_HEIGHT[piece]) * rng.randf_range(0.92, 1.08)
+		var turn := rng.randf() < 0.5
+		var mirror := rng.randf() < 0.5
+		if piece == prev:  # the same piece again (only through a stretch's ending): never the same way round
+			turn = not prev_turn
+		var basis := (
+			Basis(Vector3.UP, float(fr["yaw"]) + (PI if turn else 0.0))
+			* Basis.from_scale(Vector3(seg * (-1.0 if mirror else 1.0), h, depth))
+		)
+		var origin: Vector3 = (
+			fr["center"] + fr["axis"] * (a + seg * 0.5) + fr["depth_axis"] * across
+		)
+		_add(out, piece, Transform3D(basis, origin), i, &"wall")
+		a += seg
+		prev = piece
+		prev_turn = turn
+
+
+## v0.8.0 N10: the pieces for a stretch `length` m long: a pillar first and/or last (`lead`, `tail`), random pieces
+## (never the same twice in a row) while more than 3.2 m is left, then the FIT_ENDINGS combination nearest the rest.
+static func fit_sequence(
+	length: float, rng: RandomNumberGenerator, lead: bool, tail: bool
+) -> Array[StringName]:
+	var seq: Array[StringName] = []
+	var pillar: float = FIT_LEN[&"wall_pillar"]
+	var used := 0.0
+	if lead and length > pillar * 2.0:
+		seq.append(&"wall_pillar")
+		used += pillar
+	var tail_len := pillar if tail and length - used > pillar * 2.0 else 0.0
+	var prev: StringName = seq[seq.size() - 1] if not seq.is_empty() else &""
+	while length - used - tail_len > 3.2:
+		var pool := FIT_PICK.duplicate()
+		pool.erase(prev)
+		var pick := _pick(rng, pool)
+		seq.append(pick)
+		used += float(FIT_LEN[pick])
+		prev = pick
+	var rest := length - used - tail_len
+	var best: Array = []
+	var err := INF
+	for combo: Array in FIT_ENDINGS:
+		var sum := 0.0
+		for p: StringName in combo:
+			sum += float(FIT_LEN[p])
+		if combo.is_empty() and seq.is_empty() and tail_len == 0.0:
+			continue
+		var e := absf(sum - rest)
+		if not combo.is_empty() and combo[0] == prev:
+			e += 0.1
+		if e < err - 0.000001:
+			err = e
+			best = combo
+	for p: StringName in best:
+		seq.append(p)
+	if tail_len > 0.0:
+		seq.append(&"wall_pillar")
+	return seq
 
 
 static func _dress_slab(

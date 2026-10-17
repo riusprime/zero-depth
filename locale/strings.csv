@@ -626,6 +626,7 @@ PHASE_SWARM,The swarm,El enjambre
 PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
+UI_DEV_WALL_STYLE,Walls: next style (then Restart floor),Muros: siguiente estilo (luego Reiniciar piso)
 HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."
 HUD_ARENA,ARENA,ARENA
 HUD_ARENA_WAVE,Wave %d / %d · %d left,Oleada %d / %d · quedan %d

@@ -38,6 +38,9 @@ const TINT_AMOUNT := 0.55
 const DECOR_CHUNK_M := 16.0
 
 var lights: Array[OmniLight3D] = []
+## v0.8.0 N10: the procedural walls' meshes built (one per sim wall it draws) and their triangles.
+var proc_nodes := 0
+var proc_tris := 0
 ## Per dressed wall index: its pieces.
 var wall_pieces: Array = []
 ## v0.8.0 P3: the decoration MultiMeshes built (one per piece kind per chunk).
@@ -58,15 +61,25 @@ var _frame := 0
 
 
 ## Builds the nodes. `wall_count`: how many walls the stage dresses (the wall_specs size). `cover_hue`: the biome's
-## cover colour, tinting walls and cover.
-func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood) -> void:
+## cover colour, tinting walls and cover. v0.8.0 N10: `proc`, ProceduralWall.build's result (empty: none), drawn
+## with `wall_tex` {"face": Texture2D, "top": Texture2D} (the owner's per-biome wall textures, untinted).
+func build(
+	placements: Array,
+	wall_count: int,
+	cover_hue: Color,
+	mood: BiomeMood,
+	proc: Dictionary = {},
+	wall_tex: Dictionary = {}
+) -> void:
 	wall_pieces.resize(wall_count)
 	for i in wall_count:
 		wall_pieces[i] = []
+	if not proc.is_empty():
+		_build_proc(proc, wall_tex)
 	var tint := _hue_tint(cover_hue)
 	var decor := {}
 	for p: Dictionary in placements:
-		var piece := piece_of(p["piece"])
+		var piece := piece_of(p["piece"], bool(p.get("lod", false)))
 		if piece.is_empty():
 			continue
 		if p["kind"] == &"decor":
@@ -116,10 +129,41 @@ func build(placements: Array, wall_count: int, cover_hue: Color, mood: BiomeMood
 			decor_nodes += 1
 
 
-## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
-static func piece_of(id: StringName) -> Dictionary:
-	var piece := KitModels.get_piece(id)
+## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it. v0.8.0 N10:
+## `lod`, its decimated copy (KitModels.get_lod_piece).
+static func piece_of(id: StringName, lod: bool = false) -> Dictionary:
+	var piece := KitModels.get_lod_piece(id) if lod else KitModels.get_piece(id)
 	return piece if not piece.is_empty() else CodeProps.get_piece(id)
+
+
+## v0.8.0 N10 (option A): one mesh per sim wall the procedural wall draws, one surface, one material for the floor
+## (ProceduralWall.material: the face and top textures in one shader); faded with the wall as its pieces are.
+func _build_proc(proc: Dictionary, wall_tex: Dictionary) -> void:
+	var face: Texture2D = wall_tex.get("face", null)
+	var top: Texture2D = wall_tex.get("top", null)
+	var solid := ProceduralWall.material(face, top)
+	_faded[solid] = ProceduralWall.material(face, top, true)
+	var surfaces: Dictionary = proc.get("surfaces", {})
+	for owner: int in surfaces:
+		var mesh := ArrayMesh.new()
+		for arr: Array in surfaces[owner]:
+			var verts: PackedVector3Array = arr[Mesh.ARRAY_VERTEX]
+			if verts.is_empty():
+				continue
+			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arr)
+			proc_tris += verts.size() / 3
+		if mesh.get_surface_count() == 0:
+			continue
+		var node := MeshInstance3D.new()
+		node.name = "ProcWall_%d" % owner
+		node.mesh = mesh
+		for k in mesh.get_surface_count():
+			node.set_surface_override_material(k, solid)
+		node.set_meta(&"piece", &"proc_wall")
+		add_child(node)
+		proc_nodes += 1
+		if owner >= 0 and owner < wall_pieces.size():
+			wall_pieces[owner].append(node)
 
 
 ## The biome hue at full brightness, mixed with white: walls keep their texture's light and dark and take the hue.
@@ -213,6 +257,15 @@ func set_faded(indices: PackedInt32Array) -> void:
 
 func _apply(i: int, faded: bool) -> void:
 	for node: MeshInstance3D in wall_pieces[i]:
+		if node.material_override == null:  # v0.8.0 N10: a procedural wall, one material per surface
+			for k in node.get_surface_override_material_count():
+				var m := node.get_surface_override_material(k)
+				if faded:
+					node.set_meta(StringName("solid_%d" % k), m)
+					node.set_surface_override_material(k, _faded.get(m, m))
+				elif node.has_meta(StringName("solid_%d" % k)):
+					node.set_surface_override_material(k, node.get_meta(StringName("solid_%d" % k)))
+			continue
 		if faded:
 			node.set_meta(&"solid", node.material_override)
 			node.material_override = _faded.get(node.material_override, node.material_override)
