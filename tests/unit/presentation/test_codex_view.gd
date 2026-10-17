@@ -84,6 +84,35 @@ func test_pages_switch_and_list_the_data() -> void:
 	assert_eq(tab.get_node(tab.focus_neighbor_bottom), first, "and down from it, the first tile")
 
 
+## v0.8.0: down from any tile goes to the next row of its section (its last tile when that row is short), and from a
+## section's last row into the next section's first row; up the same way back. No row is skipped (AO's two Gun cards
+## left the Gun section a short third row that down from its right side jumped over).
+func test_down_and_up_never_skip_a_short_row() -> void:
+	var v := _view(CodexStore.new(ProfileStore.new("")))
+	await wait_physics_frames(2)
+	var rows: Array = []  # every row of the Cards page, top to bottom: Array of Array[CodexTile]
+	for s: StringName in v.catalog.sections(&"cards"):
+		var grid := v.find_child("Grid_%s" % s, true, false) as GridContainer
+		assert_not_null(grid, "the %s grid" % s)
+		var kids := grid.get_children()
+		for start in range(0, kids.size(), CodexView.COLUMNS):
+			rows.append(kids.slice(start, mini(start + CodexView.COLUMNS, kids.size())))
+	assert_gt(rows.size(), 2)
+	var short := 0
+	for r in rows.size() - 1:
+		var next: Array = rows[r + 1]
+		short += 1 if next.size() < CodexView.COLUMNS else 0
+		for t: CodexTile in rows[r]:
+			var down := t.find_valid_focus_neighbor(SIDE_BOTTOM)
+			assert_true(next.has(down), "down from %s lands on the next row" % t.entry["id"])
+		for t: CodexTile in next:
+			var up := t.find_valid_focus_neighbor(SIDE_TOP)
+			assert_true(
+				(rows[r] as Array).has(up), "up from %s lands on the row above" % t.entry["id"]
+			)
+	assert_gt(short, 0, "the page has a short row to cross")
+
+
 func test_it_fits_1080p_in_english_and_spanish() -> void:
 	var store := CodexStore.new(ProfileStore.new(""))
 	for e: Dictionary in CodexCatalog.build(ContentRepository.load_all()).entries(&"cards"):

@@ -286,6 +286,7 @@ func _build_page() -> void:
 	if achievements_page != null:
 		achievements_page.visible = false
 	var found := 0
+	var above: Array[CodexTile] = []  # the section before's tiles (_link_short_rows)
 	for s: StringName in catalog.sections(page):
 		var rows: Array = catalog.section_entries(page, s)
 		var have := 0
@@ -306,6 +307,7 @@ func _build_page() -> void:
 		grid.add_theme_constant_override("h_separation", GAP)
 		grid.add_theme_constant_override("v_separation", GAP)
 		_list.add_child(grid)
+		var here: Array[CodexTile] = []
 		for k in rows.size():
 			var e: Dictionary = rows[k]
 			var t := CodexTile.new()
@@ -315,6 +317,9 @@ func _build_page() -> void:
 			if tiles.is_empty() or (k < COLUMNS and s == catalog.sections(page)[0]):
 				t.focus_neighbor_top = t.get_path_to(tabs[page])  # up goes to this page's tab, not another
 			tiles.append(t)
+			here.append(t)
+		_link_short_rows(above, here)
+		above = here
 	progress.text = tr("UI_CODEX_FOUND") % [found, catalog.size(page)]
 	for p: StringName in tabs:
 		var b: Button = tabs[p]
@@ -323,6 +328,31 @@ func _build_page() -> void:
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 	if not tiles.is_empty():
 		_show(tiles[0].entry)
+
+
+## v0.8.0: a short row is never skipped. Down from a column the next row (or the next section's only row) doesn't
+## reach lands on that row's last tile, and up from a column the row above doesn't reach lands on its last tile. Godot's
+## own focus search otherwise jumps over the short row to the next full one, so its cards (Gun Twin and Halo Shot,
+## after AO's two Gun cards) can't be reached by the arrows from that side.
+func _link_short_rows(above: Array[CodexTile], here: Array[CodexTile]) -> void:
+	var n := here.size()
+	if n == 0:
+		return
+	var last_len := (n - 1) % COLUMNS + 1
+	if n > COLUMNS and last_len < COLUMNS:
+		for k in range(n - COLUMNS, n - last_len):  # the full row's columns past the short row's end
+			here[k].focus_neighbor_bottom = here[k].get_path_to(here[n - 1])
+	if above.is_empty():
+		return
+	var first_len := mini(n, COLUMNS)
+	var a_n := above.size()
+	var a_len := (a_n - 1) % COLUMNS + 1
+	for k in range(a_n - a_len, a_n):
+		if k - (a_n - a_len) >= first_len:
+			above[k].focus_neighbor_bottom = above[k].get_path_to(here[first_len - 1])
+	if a_len < COLUMNS:
+		for k in range(a_len, first_len):
+			here[k].focus_neighbor_top = here[k].get_path_to(above[a_n - 1])
 
 
 ## v0.7.5 AC: the Achievements page in the body's place; up from its first line goes to its tab.

@@ -49,6 +49,8 @@ FILES=(
 	tests/e2e/test_e2e_health_bars.gd # v0.8.0: N4 (the bars) meets N2 (the final boss) and every boss here
 	tests/unit/presentation/test_attack_visuals_2.gd # v0.8.0: BS2 moves met AV2s every-move check here
 	tests/e2e/test_e2e_loading_cover.gd # v0.8.0: N3's loading cover sits in every floor load (start, portal)
+	tests/e2e/test_e2e_builds.gd # v0.8.0: N3's cover moved the run start past the pick press; the first shot met it here
+	tests/e2e/test_e2e_codex.gd # v0.8.0: AO's new cards reflowed the Codex grid under RR's tier walk here
 )
 LIST="$(printf 'res://%s\n' "${FILES[@]}" | paste -sd, -)"
 set +e
