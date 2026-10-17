@@ -159,6 +159,8 @@ const ADDED_SINCE_V05 := {
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
+		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
+		&"gamble_fail_tick",
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
@@ -347,6 +349,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if err != "":
 		return err
 	_pad_added(base)  # v0.6.0 MX2: an older save's stores get their new per-entry arrays
+	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
+		base.gamble_wins = base.gamble_uses
+		base.gamble_fail_tick = -1
 	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)

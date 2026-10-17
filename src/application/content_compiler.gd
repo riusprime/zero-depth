@@ -746,15 +746,14 @@ static func compile_gamble(def: GambleDefinition) -> GambleTable:
 	t.interact_radius_m = def.interact_radius_m
 	t.spot_distance_m = def.spot_distance_m
 	t.clear_radius_m = def.clear_radius_m
-	t.amount = PackedInt32Array()
-	t.weight = PackedInt32Array()
-	t.cap = PackedInt32Array()
-	t.requires_weapon = PackedInt32Array()
-	for s in GambleTable.STAT_COUNT:
-		t.amount.append(0)
-		t.weight.append(0)
-		t.cap.append(0)
-		t.requires_weapon.append(0)
+	t.floor_chance_permille = def.floor_chance_permille  # v0.8.0 N14 (O72)
+	t.max_wins = def.max_wins
+	t.fail_permille = def.fail_permille
+	for f: StringName in [&"amount", &"weight", &"cap", &"requires_weapon"]:
+		var zeros := PackedInt32Array()
+		zeros.resize(GambleTable.STAT_COUNT)
+		zeros.fill(0)
+		t.set(f, zeros)
 	for e in def.stats:
 		var s := GambleTable.STAT_IDS.find(e.stat) if e != null else -1
 		if s < 0:

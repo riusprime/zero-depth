@@ -2034,13 +2034,35 @@ func gamble_last_stat() -> int:
 	return _w.gamble_last_stat
 
 
-## The last refused use (too poor, or every stat capped): its tick, -1 when none.
+## The last refused use (too poor, spent, or every stat capped): its tick, -1 when none.
 func gamble_denied_tick() -> int:
 	return _w.gamble_denied_tick
 
 
 func gamble_uses() -> int:
 	return _w.gamble_uses
+
+
+## v0.8.0 N14 (owner O72): the shrine's wins on this floor and how many it grants (the sim's own numbers), whether it
+## is spent (blocked), the chance a use fails (per mille) and the last failed use's tick (-1 = none).
+func gamble_wins() -> int:
+	return Gamble.wins(_w)
+
+
+func gamble_max_wins() -> int:
+	return Gamble.max_wins(_w)
+
+
+func gamble_spent() -> bool:
+	return Gamble.spent(_w)
+
+
+func gamble_fail_permille() -> int:
+	return Gamble.fail_permille(_w)
+
+
+func gamble_fail_tick() -> int:
+	return _w.gamble_fail_tick
 
 
 func gamble_stat_count() -> int:

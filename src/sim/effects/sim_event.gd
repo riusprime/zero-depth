@@ -21,6 +21,8 @@ extends RefCounted
 ## card or an ability (amount = the refund, effect_id = its id, target_id = the card code).
 ## v0.4.0 BS: PICKUP's amount is a card code (Offers): under 1000 an item (as before), 1000 + i ability i, 2000 + stat
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
+## v0.8.0 N14 (owner O72): GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
+## pos = the shrine.
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -44,6 +46,7 @@ enum Kind {
 	VENT_COLD,
 	SHOP_BUY,
 	SHOP_SALVAGE,
+	GAMBLE_FAIL,
 }
 
 const TAG_MELEE := 1

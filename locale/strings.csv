@@ -225,6 +225,10 @@ HUD_HEAT_VENT,VENT READY,PURGA LISTA
 HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
 UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
 UI_GAMBLE_SPENT,The shrine has nothing left to give,El santuario ya no tiene nada que dar
+UI_GAMBLE_ODDS,Wins %d/%d · %s %% to fail,Victorias %d/%d · %s %% de fallar
+UI_GAMBLE_BLOCKED,Spent · the shrine gave its %d wins,Agotado · el santuario dio sus %d victorias
+UI_GAMBLE_SPENT_TAG,Spent,Agotado
+UI_GAMBLE_FAILED,It failed,Falló
 UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
 UI_GAMBLE_STATS,Shrine stats,Estadísticas del santuario
 UI_GAMBLE_STATS_NONE,No shrine stats yet,Aún no tienes estadísticas del santuario
