@@ -13,6 +13,7 @@ const LEG_FRAMES := 7000
 func after_each() -> void:
 	for a in [&"move_up", &"move_down", &"move_left", &"move_right"]:
 		Input.action_release(a)
+	E2e.center_sticks()  # v0.8.0 fix: the Deep gate's walk ends with the stick still pushed
 
 
 func _walk(e: E2e, target: Vector2, done: Callable, push: Vector2 = Vector2.ZERO) -> bool:

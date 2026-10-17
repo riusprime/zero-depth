@@ -518,9 +518,12 @@ func step(frame: InputFrame) -> void:
 		tick += 1
 		return
 	tick_seq0 = _event_seq  # Engines: the watchdog counts this tick's events.
+	# v0.8.0 N11 fix: while the hero arrives, phase 1c's hold comes before any choice: a swap opened meanwhile (the dev
+	# panel's grant) waits for the landing, instead of freezing the arrival with the HUD hidden.
+	var arriving := boss_flow != null and boss_flow.arrive_left > 0
 	# 1b. Rewards: while a 3-card choice is open, only the pick runs; the tick still counts.
 	var granting := swap_code >= 0 and swap_source == BuildSlots.Source.GRANT
-	if granting or choosing >= 0:
+	if (granting or choosing >= 0) and not arriving:
 		if granting:  # v0.6.0 MX2: a swap with no panel of its own waits first
 			BuildSlots.choose_grant(self, frame)
 		else:
@@ -529,7 +532,7 @@ func step(frame: InputFrame) -> void:
 		return
 	# v0.5.0 SH: the shop's panel is open, only its actions run; v0.5.0 EV: an event panel waits for its choice.
 	# (v0.7.5 AP's Ascension choice waited here too; v0.8.0 P2 retired it: two devices, no panel.)
-	if shop.open or ev.open >= 0:
+	if (shop.open or ev.open >= 0) and not arriving:
 		if shop.open:
 			Shop.choose(self, frame)
 		else:

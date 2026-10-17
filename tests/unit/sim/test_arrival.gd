@@ -164,3 +164,26 @@ func test_the_arrival_is_hashed_and_deterministic() -> void:
 			w.step(_move(Vector2(1, 1)))
 		hashes.append(w.state_hash())
 	assert_eq(hashes[0], hashes[1], "same seed, same arrival, same play")
+
+
+## v0.8.0 N11 fix (test_e2e_wand_build's Swap at eight slots): a card that needs the Swap, given while the hero is still
+## arriving (the dev panel's grant lands between ticks, even at tick 0), never stops the arrival: it ends on its tick
+## and the Swap is still waiting for its answer, once the HUD shows it.
+func test_a_swap_opened_mid_arrival_waits_for_the_landing() -> void:
+	var w := _arriving(1)
+	var cards: Array[int] = []
+	for id: StringName in [&"heavy", &"whirl", &"flurry", &"thrust", &"wide_arc"]:
+		cards.append(WandLab.code(w, id))
+	for k in Wand.slots(w):
+		assert_true(BuildSlots.take(w, cards[k]), "fills slot %d" % (k + 1))
+	var extra := cards[Wand.slots(w)]
+	assert_true(BuildSlots.needs_swap(w, extra), "the slots are full")
+	Offers.apply(w, extra)  # as DebugApi.grant_mod (and a found card) does
+	assert_true(BuildSlots.swapping(w))
+	var used := CombatLab.until(
+		w, func(x: World) -> bool: return not WorldReader.new(x).arriving(), 400
+	)
+	assert_eq(used, 96, "the arrival ends on its tick with the Swap open")
+	assert_true(BuildSlots.swapping(w), "and the Swap still waits for its answer")
+	CombatLab.idle(w, 10)
+	assert_true(BuildSlots.swapping(w), "until it gets one")

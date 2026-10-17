@@ -24,6 +24,7 @@ func boot(
 	profile: ProfileStore = null, saves: RunSaveStore = null, seed: int = Main.STAGE_SEED
 ) -> Main:
 	Main.fixed_seed = seed
+	center_sticks()  # v0.8.0 fix: no stick an earlier test left pushed
 	ProfileStore.use_shared(profile if profile != null else ProfileStore.new(""))
 	RunSaveStore.use_shared(saves if saves != null else RunSaveStore.new(""))  # v0.4.0 SV: none from an earlier test
 	main = (load("res://src/app/main.tscn") as PackedScene).instantiate()
@@ -189,6 +190,19 @@ func stick_toward(dir: Vector2) -> void:
 	var c := InputLatch.C45
 	joy_axis(JOY_AXIS_LEFT_X, (dir.x + dir.y) * c)
 	joy_axis(JOY_AXIS_LEFT_Y, -(dir.y - dir.x) * c)
+
+
+## v0.8.0 fix: lets go of both sticks (Input keeps an axis where the last motion left it, across tests). A stick
+## still pushed when a test ends rode into the next file: Godot's LineEdit then doesn't start editing on focus, so
+## test_e2e_dev_master_panel's typing went nowhere after test_e2e_difficulty. boot() calls it (and difficulty's
+## after_each).
+static func center_sticks() -> void:
+	for axis: JoyAxis in [JOY_AXIS_LEFT_X, JOY_AXIS_LEFT_Y, JOY_AXIS_RIGHT_X, JOY_AXIS_RIGHT_Y]:
+		var ev := InputEventJoypadMotion.new()
+		ev.axis = axis
+		ev.axis_value = 0.0
+		Input.parse_input_event(ev)
+	Input.flush_buffered_events()
 
 
 ## The reward (RewardStore.Kind) nearest the player (v0.3.0 E), or -1. A read, not an action.
