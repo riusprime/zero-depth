@@ -70,4 +70,7 @@ floor_price_step = 0.5
 interact_radius_m = 1.8
 spot_distance_m = 2.6
 clear_radius_m = 0.9
+floor_chance_permille = 400
+max_wins = 3
+fail_permille = 300
 stats = Array[ExtResource("1_gse")]([SubResource("S_max_hp"), SubResource("S_melee"), SubResource("S_shot"), SubResource("S_move"), SubResource("S_dash"), SubResource("S_regen"), SubResource("S_heat"), SubResource("S_shards")])

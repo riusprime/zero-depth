@@ -50,3 +50,20 @@ func test_unknown_and_duplicate_stats_are_rejected() -> void:
 	assert_has(codes, &"duplicate_stat")
 	d.stats.clear()
 	assert_has(_codes(d), &"missing")
+
+
+## v0.8.0 N14 (O72): the shipped rarity, cap and failure, and their ranges.
+func test_the_rarity_cap_and_failure_are_data_and_validated() -> void:
+	var d := _def()
+	assert_eq(d.floor_chance_permille, 400, "40 % of floors")
+	assert_eq(d.max_wins, 3, "three wins a shrine")
+	assert_eq(d.fail_permille, 300, "30 % to fail")
+	d.floor_chance_permille = 1001
+	d.fail_permille = -1
+	d.max_wins = 0
+	var codes := _codes(d)
+	assert_eq(codes.count(&"range"), 2)
+	assert_has(codes, &"not_positive")
+	var never := _def()
+	never.fail_permille = 1000
+	assert_has(_codes(never), &"range", "a shrine that always fails is rejected")

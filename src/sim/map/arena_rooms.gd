@@ -3,7 +3,8 @@ extends RefCounted
 ## The floor's sealed arenas (v0.5.5 AR; PLAN D2, X1 "open floor, sealed arenas"): about a third of the combat rooms
 ## seal on entry and fight in waves (Arenas). Chosen after the boss room and the Overrun room are marked, from the
 ## rooms already generated, so the floor's walls and draws stay as they were:
-## - a candidate is a combat room: not the start hall (the shrine stands there), the boss room, the boss room's host,
+## - a candidate is a combat room: not the start hall (the arrival receiver; v0.8.0 N14: the gamble shrine left it for a
+##   combat room that is not an arena, Gamble.rooms), the boss room, the boss room's host,
 ##   the portal room, the Overrun room (the hardest arena, marked on its own) or the room the shop takes
 ##   (ShopPlacement is a pure function of the layout); event rooms are picked later among the rooms left
 ##   (Events.pick_rooms keeps arenas out);

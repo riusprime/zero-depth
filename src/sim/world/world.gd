@@ -205,6 +205,10 @@ var gamble_uses := 0
 var gamble_last_stat := -1
 var gamble_tick := -1
 var gamble_denied_tick := -1
+## v0.8.0 N14 (owner O72): the shrine's wins on this floor (a failed use doesn't count; at GambleTable.max_wins it is
+## spent) and the last failed use's tick (-1 = none). Not carried: each floor's shrine starts fresh.
+var gamble_wins := 0
+var gamble_fail_tick := -1
 # --- end Gamble ---------------------------------------------------------------------------------------------
 # v0.5.0 SH (Shop): the shop's rules (loadout, not hashed; null = no shops) and the floor's shop (hashed once placed).
 var shop_table: ShopTable
@@ -1080,6 +1084,9 @@ func state_hash() -> String:
 			h.add_int(v)
 		h.add_f32(gamble_pos.x)
 		h.add_f32(gamble_pos.y)
+		if gamble_wins != gamble_uses or gamble_fail_tick >= 0:  # v0.8.0 N14: only once a use failed
+			h.add_int(gamble_wins)
+			h.add_int(gamble_fail_tick)
 	if shop.present():  # v0.5.0 SH: only floors with a shop.
 		shop.hash_into(h)
 	Events.hash_into(self, h)  # v0.5.0 EV: only worlds with events or curses.

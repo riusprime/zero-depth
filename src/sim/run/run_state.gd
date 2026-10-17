@@ -25,11 +25,15 @@ extends RefCounted
 ## v0.8.0 RT2 (G2 RT) and SR (owner O13), merged into one step of the rules: 5 is today's, with layouts for every room
 ## size (24) and the shop room a biome's tent stall (data/shop_rooms; ShopRoom). A floor saved under rules 4 is rebuilt
 ## with RT1's three layouts only (rt1_rooms; RunSaver.RT1_LAYOUTS) and the shop terminal it had (RunSaver.shop_rooms).
-const FLOOR_RULES := 5
+## v0.8.0 N14 (owner O72): 6 is today's: the gamble shrine stands on some floors only (GambleTable's
+## floor_chance_permille), in a combat room away from the start hall (Gamble.site). A floor saved under rules 1-5 is
+## rebuilt with the shrine in its start hall, as it was saved (FloorScenario.legacy_shrine_of).
+const FLOOR_RULES := 6
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
 const FLOOR_RULES_V080_RT1 := 4
+const FLOOR_RULES_V080_SR := 5
 
 var run_seed := 0
 var table: RunTable

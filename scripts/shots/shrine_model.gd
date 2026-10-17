@@ -104,10 +104,15 @@ func _walk_step() -> bool:
 	return false
 
 
-## A spot just in front of the shrine (toward the start point): the shrine itself is solid.
+## A spot just in front of the shrine: the shrine itself is solid. v0.8.0 N14: the shrine left the start hall (on
+## STAGE_SEED's floor 1 it stands in a combat room), so the spot faces the room's first doorway (Gamble.front, the
+## spot placement proved reachable); a floor saved before N14 keeps the old spot toward the start point.
 func _front(w: World) -> Vector2:
-	var to_start := w.floor_layout.start_pos - w.gamble_pos
-	return w.gamble_pos + to_start.normalized() * 1.2
+	var f := w.floor_layout
+	var room := f.room_of(w.gamble_pos)
+	if room == f.start_room:
+		return w.gamble_pos + (f.start_pos - w.gamble_pos).normalized() * 1.2
+	return Gamble.front(w.gamble_pos, f.door_approaches(room, 1.0)[0])
 
 
 func _go(step: StringName) -> void:

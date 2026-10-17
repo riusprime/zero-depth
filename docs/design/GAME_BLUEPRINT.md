@@ -159,7 +159,10 @@ value or by an owner decision, and the change is noted here.
   cards** (a free altar's first card is a new ability while a slot is free), **stat cards** (most cards: 12 stats ×
   common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
-  → cooldowns, regen, shard gain) raise the same stat values by its own amounts. **v0.8.0 N7 (owner O61, D48):** a
+  → cooldowns, regen, shard gain) raise the same stat values by its own amounts. **v0.8.0 N14 (owner O72):** the
+  shrine is rarer: it stands on some floors only (starting value 40 %), in a combat room away from the start hall
+  (never the boss room or an arena); each shrine grants at most 3 stats, then it is spent (blocked, drawn dim); every
+  paid use has a 30 % chance to fail (paid, no stat), and the price still rises after a miss. **v0.8.0 N7 (owner O61, D48):** a
   chest gives **one random card** by the chest's odds, no choice: it is dealt as it opens and any press takes it (paid then); only
   altars (the floor's, the boss's, the epic altar) offer a pick of 3. A cursed chest still asks: its curse card or
   its one card (D49). v0.8.0 N8 (O62): the cards are dealt face down and flipped; an Epic or Legendary one waits for

@@ -8,8 +8,9 @@ extends RefCounted
 ## v0.3.0 E: the floor's free altars and shard chests on the layout's item spots (Rewards.place: one per room while
 ## rooms last, never in the start hall or the boss room, which has no item spots), placed after the carry so no
 ## card offers an item you hold. v0.2.0's item pedestals are gone: items come from an altar's or chest's pick.
-## v0.3.0 L19: with a gamble table, the gamble shrine in the start hall (Gamble.place, after the rewards), its
-## plinth's footprint a wall.
+## v0.3.0 L19: with a gamble table, the gamble shrine (Gamble.place, after the rewards), its plinth's footprint a
+## wall. v0.8.0 N14 (owner O72): on some floors only, in a combat room away from the start hall (Gamble.site; the
+## spawn points under it dropped); a floor saved before N14 (legacy_shrine) keeps it in the start hall.
 ## v0.5.0 RT: on a run's floor before the last, the Deep gate beside the gate (Routes.place_deep_gate; its footprint
 ## a wall); on a Deep floor, the extra chest and the epic altar (Routes.place_deep_rewards, after the shrine).
 ## v0.8.0 P2 (owner O28): on a loop's last floor, the Loop device beside the Ascension portal
@@ -50,8 +51,12 @@ static func build(
 	walls.append(gate_collider(layout))
 	if routes:
 		walls.append(Routes.deep_gate_collider(layout))
+	var legacy_shrine := legacy_shrine_of(run)  # v0.8.0 N14: an older save's floor
+	var shrine := PackedVector2Array()
 	if gamble != null:  # v0.3.0 L19: the shrine is solid, like the gate (its footprint is not drawn as a wall).
-		walls.append(Gamble.collider(Gamble.spot(layout, gamble)))
+		shrine = Gamble.site(layout, gamble, legacy_shrine, map)
+		if not shrine.is_empty():
+			walls.append(Gamble.collider(shrine[0]))
 	w.set_walls(walls)
 	w.prepare_wall(layout.boss_door_wall)
 	w.floor_layout = layout
@@ -70,9 +75,12 @@ static func build(
 	if run != null:
 		run.prepare(w)
 	Rewards.place(w, layout)  # after the carry, so no card offers an item you hold
-	if gamble != null:  # v0.3.0 L19: the gamble shrine in the start hall.
+	if gamble != null:  # v0.3.0 L19: the gamble shrine; v0.8.0 N14: on the floors site() gives one
 		w.gamble_table = gamble
-		Gamble.place(w, layout)
+		if not shrine.is_empty():
+			Gamble.place(w, shrine[0])
+			if not legacy_shrine:  # no enemy spawns inside its footprint
+				w.spawn_points = Gamble.free_spawns(w.spawn_points, shrine[0], gamble)
 	if Routes.is_deep(w):  # v0.5.0 RT (set by run.prepare)
 		Routes.place_deep_rewards(w, layout, run.table.deep_extra_chests)
 	return w
@@ -116,6 +124,12 @@ static func add_shop(
 	w.prepare_wall(layout.boss_door_wall)
 	w.shop_table = shop
 	Shop.place(w, layout)
+
+
+## v0.8.0 N14 (O72): whether run `run`'s current floor keeps its shrine in the start hall (a floor resumed from a save
+## made before N14, floor rules 1-5); false for today's floors and for a floor built without a run.
+static func legacy_shrine_of(run: RunState) -> bool:
+	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_SR
 
 
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.

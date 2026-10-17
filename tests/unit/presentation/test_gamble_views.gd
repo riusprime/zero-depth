@@ -1,7 +1,8 @@
 extends GutTest
 ## The gamble shrine's views (v0.3.0 L19): the shrine's glow and flash change no shader, its price turns red when
 ## you can't pay, the card's spin lands on the stat won, every stat has an icon and a line in both languages, and
-## the stats panel lists what was won.
+## the stats panel lists what was won. v0.8.0 N14 (owner O72): a failed use fizzles (no shader changes) and shows
+## "It failed"; a spent shrine is dimmed with "Spent" above it; the prompt's odds line reads the sim's numbers.
 
 
 func _world() -> World:
@@ -24,6 +25,7 @@ func test_the_shrine_glows_and_flashes_without_changing_a_shader() -> void:
 	for m in view.materials():
 		assert_true(m.emission_enabled, "emission on from creation")
 	w.shards = 100
+	w.gamble_table.fail_permille = 0  # v0.8.0 N14: this use wins
 	w.input_buffer[3] = 1
 	Gamble.interact(w)
 	view.sync(reader)
@@ -109,3 +111,90 @@ func test_the_stats_panel_lists_what_was_won() -> void:
 	assert_eq(panel.row_count(), 2, "one row per stat")
 	assert_eq(panel.row_text(0), GambleIcons.line(panel, &"max_hp", 8))
 	assert_eq(panel.row_text(1), GambleIcons.line(panel, &"melee_damage", 120))
+
+
+## v0.8.0 N14: a world whose shrine's first use fails.
+func _failing_world() -> World:
+	var w := _world()
+	for s in range(1, 1000):
+		w.seed_value = s
+		if Gamble.fails(w, 0):
+			break
+	return w
+
+
+func test_a_failed_use_fizzles_without_changing_a_shader_and_says_so() -> void:
+	var w := _failing_world()
+	var reader := WorldReader.new(w)
+	var view := GambleShrineView.new()
+	add_child_autofree(view)
+	view.set_process(false)
+	view.setup(reader.gamble_pos())
+	var hud := GambleHud.new()
+	add_child_autofree(hud)
+	hud.set_process(false)
+	view.sync(reader)
+	hud.sync(reader)
+	var before := DamageFlashKeys.of(view)
+	w.shards = 100
+	w.input_buffer[3] = 1
+	assert_false(Gamble.interact(w), "the use failed")
+	view.sync(reader)
+	hud.sync(reader)
+	assert_true(view.fizzling(), "the shrine fizzles")
+	assert_false(view.spinning(), "no spin: nothing won")
+	assert_false(hud.card.showing(), "no result card")
+	TranslationServer.set_locale("en")
+	hud.sync(reader)
+	assert_eq(hud.fail_text(), "It failed")
+	for k in int(GambleShrineView.FIZZLE_S * 60.0) + 2:
+		view._process(1.0 / 60.0)
+	assert_false(view.fizzling(), "the fizzle ends")
+	assert_eq(DamageFlashKeys.of(view), before, "the fizzle changed no shader")
+	for k in int(GambleHud.FAIL_S * 60.0) + 2:
+		hud._process(1.0 / 60.0)
+	assert_eq(hud.fail_text(), "", "the line goes")
+	TranslationServer.set_locale("es")
+	w.gamble_fail_tick = 99
+	hud.sync(reader)
+	assert_eq(hud.fail_text(), "Falló")
+	TranslationServer.set_locale("en")
+
+
+func test_the_odds_line_reads_the_sims_numbers_and_a_spent_shrine_dims() -> void:
+	var w := _world()
+	w.actors.set_pos(0, w.gamble_pos + Vector2(1.0, 0))
+	var reader := WorldReader.new(w)
+	var hud := GambleHud.new()
+	add_child_autofree(hud)
+	var view := GambleShrineView.new()
+	add_child_autofree(view)
+	view.setup(reader.gamble_pos())
+	TranslationServer.set_locale("en")
+	hud.sync(reader)
+	assert_eq(hud.odds_text(), "Wins 0/3 · 30 % to fail")
+	w.gamble_table.fail_permille = 125
+	w.gamble_table.max_wins = 4
+	w.gamble_wins = 1
+	hud.sync(reader)
+	assert_eq(hud.odds_text(), "Wins 1/4 · 12.5 % to fail", "from the table, not a copy")
+	TranslationServer.set_locale("es")
+	hud.sync(reader)
+	assert_eq(hud.odds_text(), "Victorias 1/4 · 12.5 % de fallar")
+	TranslationServer.set_locale("en")
+	w.gamble_wins = 4
+	w.shards = 1000
+	hud.sync(reader)
+	view.sync(reader)
+	assert_true(reader.gamble_spent())
+	assert_eq(hud.prompt_text(), "Spent · the shrine gave its 4 wins")
+	assert_true(hud.prompt_poor(), "in the refusal colour")
+	assert_eq(hud.odds_text(), "", "no odds once spent")
+	assert_true(view.dimmed(), "dimmed")
+	assert_true(view.price_label.visible)
+	assert_eq(view.price_label.text, "Spent")
+	assert_eq(view.price_label.modulate, GambleShrineView.PRICE_SPENT)
+	TranslationServer.set_locale("es")
+	view.sync(reader)
+	assert_eq(view.price_label.text, "Agotado")
+	TranslationServer.set_locale("en")

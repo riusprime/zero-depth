@@ -58,7 +58,10 @@ static func place(
 	w: World, layout: FloorLayout, taken: PackedInt32Array = PackedInt32Array()
 ) -> void:
 	var placed := PackedInt32Array()
-	for r in pick_rooms(layout, w.seed_value, w.ev.rules, taken):
+	var shut := taken.duplicate()
+	if Gamble.present(w):  # v0.8.0 N14: the shrine's room (a no-op for the start hall, never a candidate)
+		shut.append(layout.room_of(w.gamble_pos))
+	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut):
 		var e := draw_event(w, placed)
 		if e < 0:
 			break
