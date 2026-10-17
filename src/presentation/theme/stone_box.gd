@@ -77,6 +77,16 @@ var fill := EmberStone.STONE:
 	set(v):
 		fill = v
 		emit_changed()
+## v0.8.0 N8 (owner O62, "paint the whole card"): the glow's colour (alpha 0: the ember's) and a frame line round the
+## slab in this colour (alpha 0: none), a card's rarity.
+var glow_color := Color(0, 0, 0, 0):
+	set(v):
+		glow_color = v
+		emit_changed()
+var edge := Color(0, 0, 0, 0):
+	set(v):
+		edge = v
+		emit_changed()
 
 
 ## A slab with these content margins (left / right, top / bottom px).
@@ -155,7 +165,11 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			pts,
 			nrm,
 			(8.0 + 14.0 * glow) * k,
-			EmberStone.ember(focus, 0.5 * glow),
+			(
+				EmberStone.ember(focus, 0.5 * glow)
+				if glow_color.a <= 0.0
+				else Color(glow_color, 0.5 * glow)
+			),
 			true
 		)
 	_face(to_canvas_item, rect, pts)
@@ -176,6 +190,17 @@ func _draw(to_canvas_item: RID, rect: Rect2) -> void:
 			to_canvas_item, inset, PackedColorArray([Color(rim, 0.9 * rim.a)]), 1.6 * k, true
 		)
 	_bevel(to_canvas_item, pts, nrm, k)
+	if edge.a > 0.0:  # v0.8.0 N8: the rarity's frame, just inside the dark rim
+		var frame := PackedVector2Array()
+		for i in pts.size():
+			frame.append(pts[i] - nrm[i] * 3.5 * k)
+		frame.append(frame[0])
+		rs.canvas_item_add_polyline(
+			to_canvas_item, frame, PackedColorArray([Color(edge, 0.25 * edge.a)]), 6.0 * k, true
+		)
+		rs.canvas_item_add_polyline(
+			to_canvas_item, frame, PackedColorArray([Color(edge, 0.95 * edge.a)]), 2.2 * k, true
+		)
 
 
 ## The face: a fan from the centre, lit warm toward the foot, over the grain.

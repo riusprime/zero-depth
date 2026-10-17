@@ -44,4 +44,15 @@ static func on_pick(w: World, i: int, code: int) -> void:
 	if Offers.type_of(code) != Offers.MOD or not CardLevels.is_card(w, code):
 		return
 	if CardLevels.level(w, code) < t.wand_level:
-		CardLevels.set_level(w, code, t.wand_level)
+		CardLevels.set_level(w, code, level_after(w, i, code, CardLevels.level(w, code)))
+
+
+## v0.8.0 N8: the level wand card `code` ends at when taken from reward i with `lvl` after the take: the tier's
+## wand_level on the legendary altar (never down), else `lvl` (on_pick's rule, and CardForecast's). Pure.
+static func level_after(w: World, i: int, code: int, lvl: int) -> int:
+	var t := w.legendary_table
+	if t == null or t.wand_level <= 0 or i < 0 or not is_legendary(w, i):
+		return lvl
+	if Offers.type_of(code) != Offers.MOD or not CardLevels.is_card(w, code):
+		return lvl
+	return maxi(lvl, t.wand_level)

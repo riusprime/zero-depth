@@ -145,6 +145,11 @@ func pip_box(k: int) -> StoneBox:
 	return _boxes[k]
 
 
+## v0.8.0 N8: pip k's rect (global px): a picked card's icon flies to it (CardFlights).
+func pip_rect(k: int) -> Rect2:
+	return _pips[k].get_global_rect()
+
+
 func pip_level_text(k: int) -> String:
 	return _levels[k].text
 

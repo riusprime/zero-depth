@@ -49,6 +49,11 @@ static func level_of(w: World, idx: int) -> int:
 	return w.ability_levels[s] if s >= 0 else 0
 
 
+## v0.8.0 N8: ability `idx`'s level after one more card (1 when new; grant's step, Offers.info and CardForecast).
+static func level_after(w: World, idx: int) -> int:
+	return mini(level_of(w, idx) + 1, AbilityTable.MAX_LEVEL)
+
+
 ## The compiled index of the first ability of `kind`, or -1.
 static func index_of_kind(w: World, kind: int) -> int:
 	for k in w.ability_tables.size():
@@ -96,7 +101,7 @@ static func grant(w: World, idx: int) -> bool:
 	if s >= 0:
 		if w.ability_levels[s] >= AbilityTable.MAX_LEVEL:
 			return false
-		w.ability_levels[s] += 1
+		w.ability_levels[s] = level_after(w, idx)
 	else:
 		if t.is_modifier() and BuildSlots.full(w):
 			return false

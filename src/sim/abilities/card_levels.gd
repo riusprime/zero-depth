@@ -35,9 +35,17 @@ static func can_take(w: World, idx: int) -> bool:
 static func level_up(w: World, idx: int) -> bool:
 	if not w.items_owned.has(idx) or not is_card(w, idx) or level(w, idx) >= MAX_LEVEL:
 		return false
-	_store(w, idx, level(w, idx) + 1)
+	_store(w, idx, level_after(w, idx))
 	Modifiers.invalidate(w)
 	return true
+
+
+## v0.8.0 N8: the level item `idx` has after it is taken once more: 1 when not held, one up for a held wand card
+## below MAX_LEVEL, else its level (level_up's step, and the pick card's forecast: CardForecast). Pure.
+static func level_after(w: World, idx: int) -> int:
+	if not w.items_owned.has(idx):
+		return 1
+	return mini(level(w, idx) + 1, MAX_LEVEL) if is_card(w, idx) else level(w, idx)
 
 
 ## Sets held wand card `idx` to `lvl` (1..MAX_LEVEL; the dev panel's TEST HELPER and the labs). False if `idx` isn't a

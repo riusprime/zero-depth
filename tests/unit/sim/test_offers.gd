@@ -127,7 +127,9 @@ func test_a_world_without_build_tables_rolls_items_as_before() -> void:
 		w.reward_table = ContentCompiler.compile_rewards(_repo.get_def(&"rewards", &"floor"))
 	var offer := _roll(a, RewardStore.Kind.CHEST)
 	assert_eq(
-		offer, ItemPool.draw_weighted(b, 3, b.reward_table.rare_weight_chest), "the v0.3.0 draw"
+		offer,
+		ItemPool.draw_weighted(b, Offers.CHEST_CARDS, b.reward_table.rare_weight_chest),
+		"the v0.3.0 draw (v0.8.0 N7: one card for a chest)"
 	)
 	for c in offer:
 		assert_eq(Offers.type_of(c), Offers.MOD)

@@ -143,7 +143,8 @@ func test_the_calm_hud_has_plain_labels_and_thin_bars() -> void:
 		)
 		# v0.5.5 A4: the pick cards' titles are coloured capitals (v0.8.0 MU: carved on the stone tablet,
 		# StoneCard); every other HUD label stays plain type.
-		var card_title := l.name == &"Title" and l.get_parent().get_parent() is StoneCard
+		# v0.8.0 N8: the tablet's face hangs from the card's pivot (StoneCard → CardFx → Pivot → Face → Title)
+		var card_title := l.name == &"Title" and l.get_parent().get_parent().get_parent() is CardFx
 		assert_eq((l as Label).uppercase, card_title, "%s is plain type" % l.name)
 	assert_lte(Hud.BAR.y, 10.0, "a thin HP bar")
 	assert_lte(DangerMeter.SIZE.y, 16.0, "a slim danger meter")

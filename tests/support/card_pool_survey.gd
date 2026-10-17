@@ -106,8 +106,9 @@ static func pool(repo: ContentRepository, build: StringName) -> Array[PackedStri
 	return [have, planned]
 
 
-## Rolls an altar and a chest offer in every STATE of `build` for `seeds` seeds (each roll on a fresh world).
-## Returns {key: [altar count, chest count]} and, under "_rolls", [altar rolls, chest rolls].
+## Rolls an altar and a chest offer in every STATE of `build` for `seeds` seeds (each roll on a fresh world; v0.8.0
+## N7: three one-card chests per state). Returns {key: [altar count, chest count]} and, under "_rolls", [altar rolls,
+## chest rolls].
 static func survey(repo: ContentRepository, build: StringName, seeds: int) -> Dictionary:
 	var out := {}
 	var rolls := [0, 0]
@@ -116,13 +117,16 @@ static func survey(repo: ContentRepository, build: StringName, seeds: int) -> Di
 			for src in 2:
 				var w := world(repo, 7000 + s, build, state)
 				var kind := RewardStore.Kind.ALTAR if src == 0 else RewardStore.Kind.CHEST
-				var id := w.add_reward(kind, Vector2(100, 100), 0)
-				rolls[src] += 1
-				for c in Offers.roll(w, w.rewards.index_of(id)):
-					var k := key(w, c)
-					if not out.has(k):
-						out[k] = [0, 0]
-					out[k][src] += 1
+				# v0.8.0 N7: a chest deals one card, so a state rolls a floor's worth of chests (as many as an
+				# altar's cards, each its own chest on the same world: no card twice, as the floor rolls them).
+				for n in 1 if src == 0 else RewardStore.OFFER_SLOTS:
+					var id := w.add_reward(kind, Vector2(100 + n, 100), 0)
+					rolls[src] += 1
+					for c in Offers.roll(w, w.rewards.index_of(id)):
+						var k := key(w, c)
+						if not out.has(k):
+							out[k] = [0, 0]
+						out[k][src] += 1
 	out["_rolls"] = rolls
 	return out
 

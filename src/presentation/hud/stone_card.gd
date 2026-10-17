@@ -11,15 +11,23 @@ extends Control
 ## Text steps down in size until it fits (TextFit); a sentence too long for the room at the smallest size reflows
 ## the card (a smaller socket, the title higher), so a long Spanish line never runs into the rarity gem.
 ## It draws text it is given (already translated); it decides nothing about the game (EI-07).
+## v0.8.0 N8 (owner O62, "give it order … the ability's name on top, its icon big in the middle, and below, what gets
+## better, with the old value and the new one"): from the top now: the title, the groove, the big socket (its element
+## or star glyph badge kept), the gain line (CardGain: the sim's forecast, old → new; it counts up from the old value
+## while the card is focused), the sentence, the gem and the rarity's word. The whole tablet is painted in its
+## rarity's colour (CardPaint: the stone tinted, a frame line and the glow in it); the face hangs from a pivot
+## (CardFx) that the pick panel deals, flips, tilts and burns; a focused card sinks a little instead of lifting.
 
 ## The tablet's size at scale 1 (px at the 1920 x 1080 base); the pick draws it at PickSlot.PICK_SCALE.
 const SIZE := Vector2(275, 450)
-## Side margin, the socket's size and top, and the compact layout's (a long sentence).
+## Side margin, the title's top, the big socket's size, and the compact layout's (a long sentence).
 const MARGIN := 20.0
-const SOCKET := 78.0
-const SOCKET_TOP := 40.0
-const SOCKET_COMPACT := 52.0
-const SOCKET_TOP_COMPACT := 30.0
+const TITLE_TOP := 36.0
+const SOCKET := 112.0
+const SOCKET_COMPACT := 44.0
+const TITLE_TOP_COMPACT := 30.0
+## v0.8.0 N8: the gain line's type size.
+const GAIN_SIZE := 18
 ## The foot: the rarity gem's size and centre (px above the bottom), the rarity words' band.
 const GEM := 18.0
 const GEM_Y := 58.0
@@ -34,7 +42,6 @@ const TEXT := Color("#EDE3D6")
 const UNDER := [0.18, 0.42, 0.55, 0.42, 0.8]
 const IDLE_DIM := 0.84
 const FADE_S := 0.15
-const LIFT_PX := 10.0
 
 ## Card px → screen px (the pick draws cards larger than the shop and the Codex).
 var scale_factor := 1.0
@@ -49,6 +56,8 @@ var focused := false
 var title_size := 0
 var desc_size := 0
 var compact := false
+## v0.8.0 N8: the pivot the face hangs from (the deal, flip, tilt, light and burn).
+var fx: CardFx
 var _root := Control.new()
 var _slab := Panel.new()
 var _box := StoneBox.new()
@@ -58,6 +67,14 @@ var _tier := Label.new()
 ## v0.7.5 SM (N8): the card's level badge top right ("Lv 1", "Lv 2 → 3"); hidden for a card with none.
 var _level := Label.new()
 var _level_box := StyleBoxFlat.new()
+## v0.8.0 N8: the gain line (old → new) and its numbers (WorldReader.card_forecast), the count-up's progress (1: done).
+var _gain := Label.new()
+var _gain_data := {}
+## v0.8.0 N8: the boxes the layout gave the title and the sentence (a Label grows past its box to hold its text, so
+## the fit is checked against these).
+var _title_box := Vector2.ZERO
+var _desc_box := Vector2.ZERO
+var _count := 1.0
 var _id := &""
 var _shown := 1.0
 var _showing := false
@@ -91,6 +108,7 @@ func _init(p_scale: float = 1.0) -> void:
 		l.add_theme_constant_override("outline_size", 3)
 		_root.add_child(l)
 	_desc.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+	_desc.clip_text = true  # v0.8.0 N8: it keeps its box (a stale minimum height could push it into the gem)
 	_tier.autowrap_mode = TextServer.AUTOWRAP_OFF
 	_tier.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	_title.add_theme_font_override("font", HudStyle.font(true))
@@ -113,6 +131,19 @@ func _init(p_scale: float = 1.0) -> void:
 	_level.visible = false
 	_root.add_child(_level)
 	_root.add_child(gem)
+	_gain.name = "Gain"
+	_gain.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_gain.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_gain.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_gain.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	_gain.add_theme_font_override("font", HudStyle.font(true))
+	_gain.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+	_gain.add_theme_constant_override("outline_size", 4)
+	_gain.visible = false
+	_root.add_child(_gain)
+	remove_child(_root)
+	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
+	add_child(fx)
 	for c in find_children("*", "Control", true, false):
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_layout()
@@ -159,6 +190,15 @@ func show_face(
 	_box.rim = (
 		EmberStone.GOLD if tier == 2 or tier == CardFrames.LEGENDARY_TIER else Color(0, 0, 0, 0)
 	)
+	_box.fill = CardPaint.face(tier_color)  # v0.8.0 N8 (O62): the whole card in its rarity's colour
+	_box.edge = tier_color
+	_box.glow_color = tier_color
+	fx.paint(
+		tier,
+		tier_color,
+		tier == CardFrames.LEGENDARY_TIER and id != &"",
+		not HudStyle.reduced_motion
+	)
 	if not _showing:
 		_showing = true
 		_shown = 0.0
@@ -167,8 +207,29 @@ func show_face(
 
 
 func set_focused(on: bool) -> void:
+	if on and not focused and CardGain.shows(_gain_data):
+		_count = 1.0 if HudStyle.reduced_motion else 0.0  # v0.8.0 N8: the numbers count up from the old value
 	focused = on
 	_apply()
+
+
+## v0.8.0 N8: the gain line's numbers (WorldReader.card_forecast: kind, old, new; an empty one hides the line).
+func show_gain(gain: Dictionary) -> void:
+	_gain_data = gain
+	_count = 1.0
+	_gain.visible = CardGain.shows(gain)
+	_gain.text = CardGain.final_text(self, gain) if _gain.visible else ""
+	_gain.add_theme_color_override("font_color", EmberStone.EMBER.lightened(0.35))
+	_layout()
+
+
+## v0.8.0 N8: the gain line as shown now ("" for none), and the new number it shows (counting up while focused).
+func gain_text() -> String:
+	return _gain.text if _gain.visible else ""
+
+
+func gain_value() -> int:
+	return CardGain.value_at(_gain_data, _count)
 
 
 func title_text() -> String:
@@ -190,7 +251,7 @@ func level_text() -> String:
 
 ## v0.7.5 SM: the level badge's rect in this card's pixels (tests: it stays on the card).
 func level_rect() -> Rect2:
-	return Rect2(_level.position + _root.position, _level.size)
+	return Rect2(_level.position, _level.size)
 
 
 func icon_id() -> StringName:
@@ -207,9 +268,10 @@ func glow_alpha() -> float:
 	return _box.under * 0.55 + _box.focus * 0.9
 
 
-## How far the focused card is lifted (px; 0 unfocused): focus reads by shape, not by colour alone.
+## How far the focused card moves (px; 0 unfocused): v0.8.0 N8 (O62) it sinks a little (and shrinks), so focus still
+## reads by shape, not by colour alone.
 func lift() -> float:
-	return -_root.position.y
+	return CardFx.SINK_PX * fx.sink * fx.pivot.scale.y
 
 
 ## The sentence's box and the rarity gem's, in this card's pixels (tests: they never overlap).
@@ -229,7 +291,7 @@ func content_rect() -> Rect2:
 
 ## True when the title and the sentence fit their boxes at the sizes picked (tests).
 func text_fits() -> bool:
-	return _fits(_title, _title.size) and _fits(_desc, _desc.size)
+	return _fits(_title, _title_box) and _fits(_desc, _desc_box)
 
 
 func _fits(l: Label, box: Vector2) -> bool:
@@ -239,6 +301,9 @@ func _fits(l: Label, box: Vector2) -> bool:
 
 
 func _process(delta: float) -> void:
+	if _count < 1.0:  # v0.8.0 N8: the count-up
+		_count = minf(1.0, _count + delta / CardGain.COUNT_S)
+		_gain.text = CardGain.text(self, _gain_data, gain_value())
 	if _shown >= 1.0:
 		return
 	_shown = move_toward(_shown, 1.0, minf(delta, 1.0 / 30.0) / FADE_S)
@@ -251,28 +316,26 @@ func _apply() -> void:
 	_box.focus = 1.0 if focused else 0.0
 	_box.dim = 1.0 if focused else IDLE_DIM
 	socket.glow = 1.0 if focused else 0.0
-	_root.position = Vector2(0, -LIFT_PX * scale_factor if focused else 0.0)
+	fx.set_hover(fx.tilt, 1.0 if focused else 0.0)  # v0.8.0 N8: the focused card sinks a little
 	_root.modulate = Color.WHITE if focused else Color(0.9, 0.9, 0.9)
 
 
-## Places the slab, the socket, the text and the foot for scale_factor and fits the text sizes; a sentence that
-## does not fit at the smallest size takes the compact layout.
+## Places the slab, the title, the socket, the gain line, the sentence and the foot for scale_factor and fits the
+## text sizes; a sentence that does not fit at the smallest size takes the compact layout (a smaller socket).
 func _layout() -> void:
 	compact = false
-	_place(SOCKET, SOCKET_TOP)
+	_place(SOCKET, TITLE_TOP)
 	if not text_fits():
 		compact = true
-		_place(SOCKET_COMPACT, SOCKET_TOP_COMPACT)
+		_place(SOCKET_COMPACT, TITLE_TOP_COMPACT)
 
 
-func _place(socket_px: float, socket_top: float) -> void:
+func _place(socket_px: float, title_top: float) -> void:
 	var s := scale_factor
 	var full := SIZE * s
 	_slab.position = Vector2.ZERO
 	_slab.size = full
-	var side := socket_px * s
-	socket.position = Vector2((full.x - side) * 0.5, socket_top * s)
-	socket.size = Vector2(side, side)
+	fx.lay_out(full)
 	var w := (SIZE.x - MARGIN * 2.0) * s
 	var x := MARGIN * s
 	var bold := HudStyle.font(true)
@@ -292,8 +355,8 @@ func _place(socket_px: float, socket_top: float) -> void:
 	var tier_h := bold.get_height(tier_size)
 	_tier.position = Vector2(x, full.y - TIER_BOTTOM * s - tier_h)
 	_tier.size = Vector2(w, tier_h)
-	# The title under the socket: one line if it fits at a readable size, else two.
-	var y := socket.position.y + side + 12.0 * s
+	# v0.8.0 N8: the title on top: one line if it fits at a readable size, else two.
+	var y := title_top * s
 	var t := _title.text.to_upper()
 	var sizes := _scaled(TITLE_SIZES)
 	var one: Array = sizes.slice(0, 5)
@@ -306,10 +369,26 @@ func _place(socket_px: float, socket_top: float) -> void:
 	_title.add_theme_font_size_override("font_size", title_size)
 	_title.position = Vector2(x, y)
 	_title.size = Vector2(w, th)
-	y += th + 8.0 * s
+	_title_box = Vector2(w, th)
+	y += th + 6.0 * s
 	_box.inlay_y = full.y - y  # the glowing groove under the title
-	y += 10.0 * s
-	# The sentence: between the groove and the gem, never into it.
+	y += 8.0 * s
+	# The big icon in the middle.
+	var side := socket_px * s
+	socket.position = Vector2((full.x - side) * 0.5, y)
+	socket.size = Vector2(side, side)
+	y += side + 8.0 * s
+	# What gets better (old → new), when the card has a number.
+	if _gain.visible:
+		var gs := maxi(11, roundi(GAIN_SIZE * s))
+		while gs > 11 and bold.get_string_size(_gain.text, HORIZONTAL_ALIGNMENT_LEFT, -1, gs).x > w:
+			gs -= 1
+		_gain.add_theme_font_size_override("font_size", gs)
+		var gh := bold.get_height(gs)
+		_gain.position = Vector2(x, y)
+		_gain.size = Vector2(w, gh)
+		y += gh + 6.0 * s
+	# The sentence: between the gain line and the gem, never into it.
 	var bottom := gem.position.y - 10.0 * s
 	var desc_h := maxf(bottom - y, 0.0)
 	var dsizes := _scaled(DESC_SIZES)
@@ -317,12 +396,13 @@ func _place(socket_px: float, socket_top: float) -> void:
 	_desc.add_theme_font_size_override("font_size", desc_size)
 	_desc.position = Vector2(x, y)
 	_desc.size = Vector2(w, desc_h)
-	# v0.7.5 SM: the level badge top right, clear of the socket.
+	_desc_box = Vector2(w, desc_h)
+	# v0.7.5 SM: the level badge top right, above the title.
 	_level.add_theme_font_size_override("font_size", maxi(10, roundi(LEVEL_SIZE * s)))
 	_level.reset_size()
 	var ls := _level.get_combined_minimum_size()
 	_level.size = ls
-	_level.position = Vector2(full.x - ls.x - 16.0 * s, 16.0 * s)
+	_level.position = Vector2(full.x - ls.x - 16.0 * s, 9.0 * s)
 
 
 func _scaled(sizes: Array) -> Array:

@@ -192,7 +192,7 @@ func _survey(build: StringName) -> PackedStringArray:
 					seen = seen or (loop == 1 and _has_legend(w, o))
 					from_other += _take(w, build, o, false)
 				for c in chests:
-					var o := Offers.draw(w, true, t.offer_size)
+					var o := Offers.draw(w, true, Offers.CHEST_CARDS)  # v0.8.0 N7: one card, no choice
 					seen = seen or (loop == 1 and _has_legend(w, o))
 					from_other += _take(w, build, o, false)
 				if FloorCadence.on(run_floor, first, every):

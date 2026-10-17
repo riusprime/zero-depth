@@ -26,6 +26,9 @@ const CURSE := 3
 const EPIC := 2
 ## v0.5.5 AR (X1b): the boss-only legendary rarity (BossReward's altar offers only legendary cards).
 const LEGENDARY := 3
+## v0.8.0 N7 (owner O61): a chest rolls this many cards (one, dealt with no choice: Rewards.deal); altars keep the
+## data's offer_size.
+const CHEST_CARDS := 1
 
 
 static func enabled(w: World) -> bool:
@@ -77,7 +80,9 @@ static func roll(w: World, i: int) -> PackedInt32Array:
 		return roll_epic(w)  # v0.5.0 RT
 	if BossReward.is_legendary(w, i):
 		return roll_legendary(w)  # v0.5.5 AR
-	return draw(w, w.rewards.kind[i] == RewardStore.Kind.CHEST, w.reward_table.offer_size)
+	if w.rewards.kind[i] == RewardStore.Kind.CHEST:
+		return draw(w, true, CHEST_CARDS)  # v0.8.0 N7
+	return draw(w, false, w.reward_table.offer_size)
 
 
 ## Up to `size` cards by an altar's (`chest` false) or a chest's rules (v0.5.0 SH: the shop's stock draws as a chest).
@@ -299,7 +304,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"name_key": t.name_key,
 				"desc_key": t.desc_key,
 				"rarity": 1 if t.rare else 0,
-				"level": mini(Abilities.level_of(w, idx) + 1, AbilityTable.MAX_LEVEL),
+				"level": Abilities.level_after(w, idx),  # v0.8.0 N8: grant's own step
 				"amount": 0,
 				"modifier": t.is_modifier(),  # v0.6.0 MX2: it takes a modifier slot
 			}

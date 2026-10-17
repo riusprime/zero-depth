@@ -9,6 +9,8 @@ extends RefCounted
 enum Kind { ALTAR, CHEST, LEGENDARY, DROP }
 
 const OFFER_SLOTS := 3
+## v0.8.0 N7: `rolled` of a chest whose one card was dealt: the panel shows it and its next answer takes it.
+const DEALT := 2
 
 var ids := PackedInt32Array()
 var pos_x := PackedFloat32Array()
@@ -16,7 +18,7 @@ var pos_y := PackedFloat32Array()
 var kind := PackedInt32Array()
 ## Shards to open (0 for an altar).
 var price := PackedInt32Array()
-## 1 once the offer was rolled.
+## 1 once the offer was rolled; v0.8.0 N7: DEALT once a chest's card was dealt.
 var rolled := PackedInt32Array()
 ## OFFER_SLOTS item indices per reward (index into World.item_tables, -1 = empty), flattened.
 var offer := PackedInt32Array()
