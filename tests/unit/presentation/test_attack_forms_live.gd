@@ -4,6 +4,7 @@ extends GutTest
 ## look), and the older views leave those to AttackFormView when it is there (forms_drawn), keeping what has no spec.
 
 const P := InputFrame.PRIMARY
+const MX4 := preload("res://tests/support/mx4_world.gd")
 
 var _repo: ContentRepository
 var _view: AttackFormView
@@ -235,3 +236,22 @@ func test_a_full_bomb_look_cache_keeps_the_newest_bomb() -> void:
 	}
 	view._sync_blasts(landed)
 	assert_eq(view._effects[-1]["look"], mine, "it lands in its own look")
+
+
+## v0.8.0 (owner bug, 2026-10-17: "picking ring I had twin and echo … Invalid access to property or key 'length'"):
+## shots already flying when Ring is picked keep being drawn as bolts, though the wand's look is now a ring.
+func test_shots_in_flight_when_ring_is_picked_are_still_drawn() -> void:
+	var w := MX4.world(&"gun", [&"gun_twin", &"gun_echo"], [[Vector2(9.0, 0), 50000]])
+	var r := WorldReader.new(w)
+	MX4.run(w, 1, MX4.S, MX4.S)
+	for k in 6:
+		MX4.run(w, 1, 0, MX4.S)
+		_view.sync(r)
+		_view.draw_at(float(r.tick()))
+	assert_gt(r.projectile_count(), 0, "bolts are flying")
+	w.add_item(MX4.item(w, &"gun_ring"))
+	for k in 30:
+		MX4.run(w, 1, 0, 0)
+		_view.sync(r)
+		_view.draw_at(float(r.tick()))
+	assert_eq(r.projectile_count(), 0, "the old bolts flew out")

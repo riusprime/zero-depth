@@ -134,7 +134,9 @@ func _sync_bolts(reader: WorldReader) -> void:
 		if reader.projectile_team(i) != 0 or reader.projectile_is_shard(i):
 			continue
 		var look := _projectile_look(reader, i)
-		if look.is_empty() or not adds_layer(look):
+		# v0.8.0 (owner bug 2026-10-17): a shot still flying when Ring is picked has a spec whose look is now a ring;
+		# it keeps its plain dart (ActorViews) instead of a bolt layer it has no length for.
+		if look.is_empty() or int(look["form"]) != AttackFormLooks.BOLT or not adds_layer(look):
 			continue
 		var id := reader.projectile_id(i)
 		seen[id] = true
