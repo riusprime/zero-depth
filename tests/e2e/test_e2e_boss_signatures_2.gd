@@ -134,6 +134,9 @@ func test_the_foundrys_phase_three_melts_the_outer_ring() -> void:
 	restart.grab_focus()
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)
+	# v0.8.0 fix: the restarted floor's arrival (N11, O69) holds the clock, and a summon queued then is dropped with
+	# the dev panel's DebugApi when backtick closes it; so the hero lands first, as start_from_menu waits.
+	assert_true(await _e.landed(), "the hero lands on the restarted floor")
 	var bid := await _summon(_e, main, &"foundry")
 	var w := _e.world()
 	var glowed := false
