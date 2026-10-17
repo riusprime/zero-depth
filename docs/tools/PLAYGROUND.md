@@ -28,7 +28,7 @@ branch `claude/playground` (cut from `claude/v0.7.5-new-ground` at `d5a5602`, af
 
 | Question | Answer |
 |---|---|
-| How do you get into the playground? | **A main-menu row** "Playground", in every build that has the dev panel (locked with it for a public release, `DevGate`) |
+| How do you get into the playground? | **A main-menu row** "Playground", in every build that has the dev panel (locked with it for a public release, `DevGate`). **Superseded** v0.8.0 N6 (owner O60, 2026-10-17): the F10 panel's Playground button, off a run |
 | How do training dummies behave? | **Never die by default** (HP refills) **plus an optional HP** per spawn (it dies, to time a kill). They stand still |
 | What does the DPS meter show? | **Total + per source**: DPS over the last 5 s, total damage, time since the first hit, a breakdown by source (basic attack, each child spell / trigger, each ability, bleed / burn / poison ticks), Reset |
 | What does the panel look like? | **Dev-tool style, no mockups** (the F10 panel's plain look; G2 waived by the owner for this tool) |
@@ -63,7 +63,9 @@ branch `claude/playground` (cut from `claude/v0.7.5-new-ground` at `d5a5602`, af
 
 ## How to use it
 
-1. Main menu → **Playground** (under Codex) → pick the weapon (Gun / Blade, ←/→ and Enter).
+1. Main menu → **F10** (the master dev panel) → **Playground** (top bar) → pick the weapon (Gun / Blade, ←/→ and
+   Enter). v0.8.0 N6 (owner O60, "nah playground will be hidden as a dev option"): it is no longer a main-menu row;
+   the button shows only off a run (on the main menu), locked with F10 for a public release (`DevGate`).
 2. You're in one big 4×4 room. A **DPS meter** sits on the right; **F1** opens the panel (bottom-left reminder).
 3. While the panel is open the game waits:
    - **Build:** set the **Level** (1–5), search, select a card and press **Add at level** (or double-click it). A card

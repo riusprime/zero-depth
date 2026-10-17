@@ -1,8 +1,8 @@
 extends GutTest
 ## v0.8.0 GF3 (owner O22): the Blade's feel in the real game, through main.tscn and real input only. In the
-## Playground (the menu's row, the Blade, F1's panel places a dummy by a click), left clicks swing at the dummy: each
-## slash hit throws a slash impact, the hero model accents the swing, and the view's hit-stop holds the hero's swing
-## for a moment while the sim's clock ticks on, one tick a physics frame. Options -> Accessibility -> "Hit-stop"
+## Playground (F10 -> Playground, the Blade, F1's panel places a dummy by a click), left clicks swing at the dummy:
+## each slash hit throws a slash impact, the hero model accents the swing, and the view's hit-stop holds the hero's
+## swing for a moment while the sim's clock ticks on, one tick a physics frame. Options -> Accessibility -> "Hit-stop"
 ## (keyboard) turns it off: the slashes still land, nothing is held.
 
 var _e: E2e
@@ -41,12 +41,9 @@ func _mouse(pos: Vector2, pressed: bool) -> void:
 	_e.send(ev)
 
 
-## Main menu -> Playground -> the Blade; F1 places a dummy a step ahead and shuts the panel.
+## Main menu -> F10 -> Playground -> the Blade; F1 places a dummy a step ahead and shuts the panel.
 func _playground_with_a_dummy(main: Main) -> World:
-	for k in 4:  # Play -> Options -> Credits -> Codex -> Playground
-		await _e.tap(KEY_DOWN)
-	await _e.tap(KEY_ENTER)
-	await _e.frames(2)
+	await _e.open_playground_picker()  # v0.8.0 N6: F10 -> Playground (off the main menu)
 	await _e.tap(KEY_LEFT)  # the Blade (left of the Gun)
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)

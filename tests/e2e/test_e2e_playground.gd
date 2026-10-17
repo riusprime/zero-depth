@@ -1,6 +1,7 @@
 extends GutTest
-## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground from the real main menu, by input only: the row,
-## the weapon pick, the room; F1's panel holds the sim; a click places an endless dummy, a right click deletes; the
+## v0.7.5 PG (owner N20, docs/tools/PLAYGROUND.md): the Playground from the real main menu, by input only. v0.8.0 N6
+## (owner O60): no menu row any more; F10's master dev panel has the Playground button. Then the weapon pick, the room;
+## F1's panel holds the sim; a click places an endless dummy, a right click deletes; the
 ## basic attack on the dummy fills the DPS meter; a biome button redraws the room with its ice and keeps the dummy;
 ## the Boss tool places a boss; Add puts a card in the build at the level set; Esc shuts the panel, not the game.
 
@@ -59,11 +60,11 @@ func test_the_playground_from_the_menu() -> void:
 	_e = E2e.new(self)
 	var main := await _e.boot()
 	_scale = await _e._mouse_scale()
-	for k in 4:  # Play -> Options -> Credits -> Codex -> Playground
-		await _e.tap(KEY_DOWN)
-	assert_eq(_focused(main).name, &"Playground", "the Playground row is under the Codex")
-	await _e.tap(KEY_ENTER)
-	await _e.frames(2)
+	var menu := main.get_node("UI/MainMenu")
+	assert_null(
+		menu.find_child("Playground", true, false), "no Playground row on the main menu (O60)"
+	)
+	await _e.open_playground_picker()  # v0.8.0 N6: F10 -> Playground (off the main menu)
 	await _e.tap(KEY_RIGHT)  # the Gun: its bolts reach the dummy from where the player stands
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)

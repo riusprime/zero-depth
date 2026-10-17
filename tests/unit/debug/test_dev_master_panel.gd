@@ -76,3 +76,15 @@ func test_an_edit_reaches_the_store_is_saved_and_announced() -> void:
 	_panel.reset_all()
 	assert_eq(_t.overrides.size(), 0)
 	assert_ne((load(ENEMY) as EnemyDefinition).hp, 123, "shipped value back")
+
+
+## v0.8.0 N6 (owner O60): the Playground button is in the top bar only when asked (Main: off a run) and announces.
+func test_the_playground_button_only_off_a_run() -> void:
+	assert_null(_panel.find_child("Playground", true, false), "none by default (in a run)")
+	var off_run: DevMasterPanel = add_child_autofree(DevMasterPanel.new(_t, null, true))
+	var b := off_run.find_child("Playground", true, false) as Button
+	assert_not_null(b, "off a run: a Playground button")
+	assert_eq(b.text, "UI_PLAYGROUND")
+	watch_signals(off_run)
+	b.pressed.emit()
+	assert_signal_emitted(off_run, "playground_requested")

@@ -1,7 +1,7 @@
 extends GutTest
 ## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards", F7; FINAL_BOSS.md F6-F8): the Nemesis through main.tscn with real
 ## input only.
-## - The Playground on a Blade run and on a Gun run (the main menu's row): a wand card added at level 3 (Build tab),
+## - The Playground on a Blade run and on a Gun run (F10 -> Playground): a wand card added at level 3 (Build tab),
 ##   God mode (Player tab), "Phase 3" (Spawn tab): the Nemesis rises holding the run's weapon, fights with it (a Blade
 ##   run's combo or crescents, a Gun run's own shots in its look), answers the hero's dash (Space) with its own, and
 ##   casts the card, its name over its head.
@@ -59,10 +59,7 @@ func _type(text: String) -> void:
 
 ## The Playground on a `build` run, a wand card added at level 3, God mode, then Phase 3; returns the card's code.
 func _playground_phase_3(main: Main, build: StringName) -> int:
-	for k in 4:  # Play -> Options -> Credits -> Codex -> Playground
-		await _e.tap(KEY_DOWN)
-	await _e.tap(KEY_ENTER)
-	await _e.frames(2)
+	await _e.open_playground_picker()  # v0.8.0 N6: F10 -> Playground (off the main menu)
 	await _e.tap(KEY_RIGHT if build == &"gun" else KEY_LEFT)  # the Playground's picker opens on the Gun
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)

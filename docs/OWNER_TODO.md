@@ -15,7 +15,7 @@ Priority: **P1** changes the game most · **P2** worth doing soon · **P3** nice
 ## 1. Playtest: what you haven't tried yet
 
 Get it: `git fetch origin && git switch claude/lucid-fermat-9wv2tf && git pull`, open in Godot 4.7.2, Play.
-Shortcut to every fight: Main menu → **Playground** → **F1**. Every number: **F10**.
+Shortcut to every fight: Main menu → **F10** → **Playground** (top bar) → **F1**. Every number: **F10**.
 
 - [ ] **Void's black holes:** do they feel good, is the pull strong enough? (decides D20)
 - [ ] **Loop 2 and later:** hard without one-shotting you? Is loop 2 through the Purple Portal about 10 % easier?
