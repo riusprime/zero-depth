@@ -1,6 +1,6 @@
 extends GutTest
-## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5, F7): the Prism through main.tscn with real input only. The Playground (the
-## main menu's row, the Gun), F1: God mode (Player tab), then the final boss's "Phase 2" button (Spawn tab) jumps the
+## v0.8.0 FB2 (owner O17; FINAL_BOSS.md F5, F7): the Prism through main.tscn with real input only. The Playground
+## (F10 -> Playground, the Gun), F1: God mode (Player tab), then the final boss's "Phase 2" button (Spawn tab) jumps the
 ## fight to the Prism. With the Gun's fire held on her: the Cross's spin-up draws four aim lines, then four beams turn
 ## while her shield turns every shot away (no HP lost), a bolt's aim line shows, and in the window after (the gold
 ## ring, the beams out) the shots land; the hero is still standing.
@@ -49,10 +49,7 @@ func test_the_prism_from_the_playground_jump() -> void:
 	_e = E2e.new(self)
 	var main := await _e.boot()
 	_scale = await _e._mouse_scale()
-	for k in 4:  # Play -> Options -> Credits -> Codex -> Playground
-		await _e.tap(KEY_DOWN)
-	await _e.tap(KEY_ENTER)
-	await _e.frames(2)
+	await _e.open_playground_picker()  # v0.8.0 N6: F10 -> Playground (off the main menu)
 	await _e.tap(KEY_RIGHT)  # the Gun
 	await _e.tap(KEY_ENTER)
 	await _e.frames(4)

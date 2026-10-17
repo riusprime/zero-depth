@@ -157,9 +157,7 @@ func show_main_menu() -> void:
 	_end_stage()
 	loads.cover.unveil(FADE_SECONDS)  # v0.8.0 N3: a cover left up by a run that was left (none: nothing)
 	audio.set_ambience(&"")
-	var m := MainMenu.new(
-		GameVersion.label(), OS.is_debug_build(), saves.store.has_save(), DevGate.enabled()
-	)
+	var m := MainMenu.new(GameVersion.label(), OS.is_debug_build(), saves.store.has_save())
 	m.continue_pressed.connect(
 		func() -> void: loads.behind(get_tree(), ui, _covered_continue, FADE_SECONDS)  # v0.8.0 N3 (O45)
 	)
@@ -167,7 +165,6 @@ func show_main_menu() -> void:
 	m.options_pressed.connect(show_options)
 	m.credits_pressed.connect(show_credits)
 	m.codex_pressed.connect(show_codex)
-	m.playground_pressed.connect(_show_playground_picker)  # v0.7.5 PG
 	m.galleries_pressed.connect(show_gallery)
 	m.quit_pressed.connect(
 		func() -> void: get_tree().root.propagate_notification(NOTIFICATION_WM_CLOSE_REQUEST)
@@ -613,8 +610,9 @@ func _toggle_master_panel() -> void:
 			driver.debug.reseed_requested.connect(_reseed)
 		tools = DevPanel.new(driver.debug)
 		driver.paused = true
-	_devm = DevMasterPanel.new(tuning, tools)
+	_devm = DevMasterPanel.new(tuning, tools, driver == null)  # v0.8.0 N6: Playground off a run only
 	_devm.changed.connect(_on_tuning_changed)
+	_devm.playground_requested.connect(_open_playground_from_panel)
 	_devm.restart_requested.connect(_restart_floor)
 	_devm.close_requested.connect(_close_master_panel)
 	ui.add_child(_devm)
@@ -811,7 +809,15 @@ func _sync_pause() -> void:
 # --- v0.7.5 PG: the Playground (owner N20, docs/tools/PLAYGROUND.md) ------------------------------------------------
 
 
-## Playground -> pick the weapon (as Play) -> the room.
+## v0.8.0 N6 (owner O60: "nah playground will be hidden as a dev option"): F10's Playground button (off a run only)
+## shuts the panel and opens the Playground's weapon pick.
+func _open_playground_from_panel() -> void:
+	_close_master_panel()
+	if driver == null:
+		_show_playground_picker()
+
+
+## F10 -> Playground -> pick the weapon (as Play) -> the room.
 func _show_playground_picker() -> void:
 	var p := BuildPicker.new(ContentRepository.load_all().all_of(&"build"), _pg_build)
 	p.picked.connect(func(id: StringName) -> void: _start_playground(id, _pg_biome))

@@ -5,7 +5,7 @@ Your 2026-10-14 messages (verbatim in [`PLAN.md`](PLAN.md), O1–O17). Answers b
 ## Get the build
 - Branch `claude/lucid-fermat-9wv2tf` (v0.7.5 + v0.8.0; not in `main` yet):
   `git fetch origin && git switch claude/lucid-fermat-9wv2tf && git pull`, open in Godot 4.7.2, let it import, Play.
-- Fastest way to the bosses: Main menu → **Playground** → **F1** (spawn any boss, the final boss and "jump to phase",
+- Fastest way to the bosses: Main menu → **F10** → **Playground** (top bar) → **F1** (spawn any boss, the final boss and "jump to phase",
   god mode, any card at any level, the DPS meter). F10 → Bosses for every new number.
 
 ## What's new

@@ -109,6 +109,25 @@ func start_from_menu(build: StringName = &"blade") -> void:
 	await frames(4)
 
 
+## v0.8.0 N6 (owner O60): the Playground from the main menu through the dev tools: F10, then Enter on the panel's
+## Playground button (GUT's output window lies over the panel's top bar in a test run, so it gets focus directly;
+## the press is a real key event). Leaves the Playground's weapon pick open, on the Gun.
+func open_playground_picker() -> void:
+	await tap(KEY_F10)
+	var panel := main.get_node_or_null("UI/DevMasterPanel")
+	test.assert_not_null(panel, "F10 opens the master dev panel")
+	if panel == null:
+		return
+	var b := panel.find_child("Playground", true, false) as Button
+	test.assert_not_null(b, "the panel's Playground button")
+	if b == null:
+		return
+	b.grab_focus()
+	await frames(1)
+	await tap(KEY_ENTER)
+	await frames(2)
+
+
 func world() -> World:
 	return main.driver.world if main.driver != null else null
 

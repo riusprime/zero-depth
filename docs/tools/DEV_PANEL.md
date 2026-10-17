@@ -67,6 +67,8 @@ Each step is one commit, with tests of the folders it touches; one full suite at
 2. **The panel (F10).** A full-screen overlay in all builds: groups on the left (above), a search box, the selected
    source's fields built from its exported properties (numbers, arrays, dictionaries, nested resources), each with
    its shipped value and a reset. Buttons: Restart floor, Reset all, Copy changes. Pauses the game while open.
+   v0.8.0 N6 (owner O60): off a run (on the main menu) the top bar also has **Playground**, the only way into the
+   Playground (docs/tools/PLAYGROUND.md); it shuts the panel and opens the weapon pick.
    The old debug buttons also appear on a Tools page; the backtick panel stays (debug builds, many e2e tests drive
    it). e2e: F10 opens it from `main.tscn`.
 3. **Lighting live.** `StageView.apply_mood()` re-applies the environment, the grade, the fire and hero lights

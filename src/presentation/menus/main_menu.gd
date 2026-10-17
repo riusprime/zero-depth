@@ -4,26 +4,20 @@ extends MenuPanel
 ## label and, in debug builds only, the galleries. v0.8.0 MU: in the Ember stone look (MenuStyle), the list on a stone
 ## slab on the left over the menu's own backdrop (MenuBackdrop: an ember-lit stone floor, sparks rising).
 ## v0.7.5 CX: a Codex row after Credits opens the Codex (CodexView).
-## v0.7.5 PG (owner N20): a Playground row after the Codex, in every build with the dev panel (DevGate).
+## v0.8.0 N6 (owner O60): no Playground row any more; the Playground opens from the master dev panel (F10).
 
 signal continue_pressed
 signal play_pressed
 signal options_pressed
 signal credits_pressed
 signal codex_pressed
-signal playground_pressed
 signal galleries_pressed
 signal quit_pressed
 
 var version_label := Label.new()
 
 
-func _init(
-	version: String,
-	show_galleries: bool,
-	show_continue: bool = false,
-	show_playground: bool = false
-) -> void:
+func _init(version: String, show_galleries: bool, show_continue: bool = false) -> void:
 	super()
 	name = "MainMenu"
 	add_title("UI_TITLE")
@@ -33,8 +27,6 @@ func _init(
 	add_button("UI_OPTIONS", func() -> void: options_pressed.emit()).name = "Options"
 	add_button("UI_CREDITS", func() -> void: credits_pressed.emit()).name = "Credits"
 	add_button("UI_CODEX", func() -> void: codex_pressed.emit()).name = "Codex"  # v0.7.5 CX
-	if show_playground:  # v0.7.5 PG
-		add_button("UI_PLAYGROUND", func() -> void: playground_pressed.emit()).name = "Playground"
 	if show_galleries:
 		add_button("UI_GALLERIES", func() -> void: galleries_pressed.emit()).name = "Galleries"
 	add_button("UI_QUIT", func() -> void: quit_pressed.emit()).name = "Quit"
