@@ -140,8 +140,8 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 		elif common.size() < 2:
 			common.append(k)
 	assert_gt(rare, -1, "the data has a rare item")
-	w.add_reward(RewardStore.Kind.CHEST, Vector2(1, 0), 40)
-	w.shards = 40
+	# v0.8.0 N7 (owner O61): only an altar offers a choice now (a chest deals one card: test_reward_cards.gd).
+	w.add_reward(RewardStore.Kind.ALTAR, Vector2(1, 0), 0)
 	# Force the offer so a rare item is in it (the draw itself is tested in the sim).
 	w.rewards.set_offer(0, PackedInt32Array([common[0], rare, common[1]]))
 	_open(w)
@@ -151,7 +151,7 @@ func test_the_pick_panel_shows_the_offer_with_rarity_frames() -> void:
 	p.sync(r)
 	assert_true(p.is_open())
 	assert_eq(p.card_count(), 3)
-	assert_eq(p.title_text(), tr("PICK_TITLE_CHEST") % 40, "the title carries the price")
+	assert_eq(p.title_text(), tr("PICK_TITLE_ALTAR"))
 	assert_eq(p.slot(0).rarity_color(), PickSlot.COMMON)
 	assert_eq(p.slot(1).rarity_color(), PickSlot.RARE, "a rare item has the rare (blue) mark")
 	for k in 3:  # v0.8.0 MU: a stone tablet in the card family's colour; rarity is the gem and the glow

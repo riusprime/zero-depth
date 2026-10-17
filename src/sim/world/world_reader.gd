@@ -1774,6 +1774,12 @@ func choice_items() -> PackedInt32Array:
 	return _w.rewards.offer_of(i) if i >= 0 else PackedInt32Array()
 
 
+## v0.8.0 N7 (owner O61): the open choice is a chest's dealt card (no choice: any answer takes it).
+func choice_dealt() -> bool:
+	var i := choice_reward()
+	return i >= 0 and _w.rewards.rolled[i] == RewardStore.DEALT
+
+
 ## The last refused open: the reward's id and the tick (-1 when none yet).
 func reward_denied_id() -> int:
 	return _w.reward_denied_id

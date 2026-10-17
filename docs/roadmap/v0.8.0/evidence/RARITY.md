@@ -273,6 +273,59 @@ The shipped 0.125 sits between the first two rows; the 3000-run table above is t
   run with it (NOT YET RUN; D34).
 - The damage of each recipe (no fight simulated; D29).
 
+## v0.8.0 N7: a chest deals one card (re-run, 2026-10-17)
+
+Owner O61 (D48): a chest gives one random card by its odds, no choice; altars keep their pick of 3. The odds above are
+RR's (a chest offered three cards and the modelled player took the best). `scripts/checks/rarity_odds.gd` now draws a
+chest's one card (`Offers.CHEST_CARDS`) and takes it when it fits the wand (the same rule as any take); altars, the
+shop and the boss altar are unchanged. Loop 1 only (the band's metric).
+
+- **Build:** the working tree on `6475075` (branch `v080-n78`) before the N7 commit: N7, plus N8's uncommitted work (the
+  presentation, and the forecast's sim helpers `Stats.stepped` / `max_hp_at` / `total_at`, `CardLevels.level_after`,
+  `Abilities.level_after`, `BossReward.level_after`, which the takes now call: the same steps); Godot `4.7.2.stable.official.ed1daf0bf`
+- **Who ran it:** agent
+
+```
+godot --headless --path . -s scripts/checks/rarity_odds.gd -- runs=3000 loops=1
+```
+```
+rarity_odds: runs=3000 loops=1 overrides={  }
+weights per mille of a common card: altar rare 1000 epic 500 legendary 20; chest/shop rare 3000 epic 1500 legendary 50; boss Legendary chance loop1..5 [125, 175, 225, 275, 325]; boss picks loop1..5 [1, 2, 3, 4, 4]
+== blade: 3000 runs ==
+runs offered >= 1 Legendary card in loop 1: 1024 (34.13 %)
+broken build held by loop 1 floor 1 (run floor 1): 6 (0.20 %)
+broken build held by loop 1 floor 2 (run floor 2): 44 (1.47 %)
+broken build held by loop 1 floor 3 (run floor 3): 133 (4.43 %)
+expected Legendary cards held at the end of loop 1: 0.397
+Legendary cards taken over 1 loops: 1130 from bosses (94.8 %), 62 from altars/chests/shop
+first broken recipe: chain_blast + double_slash + on_hit|on_hit_x2: 15
+first broken recipe: on_hit_x2 + explosive|chain + double_slash: 11
+first broken recipe: on_kill_x2 + explosive|chain: 77
+first broken recipe: on_end_x2 + explosive|chain + split_wave|double_slash: 30
+== gun: 3000 runs ==
+runs offered >= 1 Legendary card in loop 1: 1011 (33.70 %)
+broken build held by loop 1 floor 1 (run floor 1): 4 (0.13 %)
+broken build held by loop 1 floor 2 (run floor 2): 54 (1.80 %)
+broken build held by loop 1 floor 3 (run floor 3): 165 (5.50 %)
+expected Legendary cards held at the end of loop 1: 0.394
+Legendary cards taken over 1 loops: 1137 from bosses (96.1 %), 46 from altars/chests/shop
+first broken recipe: chain_blast + split + spread|twin: 25
+first broken recipe: on_hit_x2 + explosive|chain + spread|twin|split: 38
+first broken recipe: on_kill_x2 + explosive|chain: 81
+first broken recipe: on_end_x2 + explosive|chain + spread|twin: 21
+```
+
+| Metric | RR (3-card chests) | N7 (1-card chests) | Band (O33) | In band? |
+|---|---|---|---|---|
+| Broken by the end of loop 1, Blade | 6.10 % | **4.43 %** (133 / 3000) | 7–10 % | **no** (was no) |
+| Broken by the end of loop 1, Gun | 9.37 % | **5.50 %** (165 / 3000) | 7–10 % | **no** (was yes) |
+| Both | 7.73 % | 4.97 % (298 / 6000) | 7–10 % | **no** |
+| Legendary cards from bosses (loop 1) | — | 94.8 % / 96.1 % | "mostly" | yes |
+
+**The band is missed now** (fewer chest cards reach the build: a chest no longer lets the player pick the recipe piece).
+Reported, not retuned (OWNER_TODO D49): the knobs are the boss's Legendary chance, the chest's Epic/Legendary weights,
+or the band. The loops 2–5 rows above were not re-run (NOT YET RUN under N7).
+
 ## UI
 Every mod card says its tier in words on its foot ("Mod · Rare", "Mod · Level 5 · Legendary") on top of its colour:
 Common grey, **Rare blue** (was amber: too close to the Legendary gold; D31), Epic purple with the gold rim, Legendary

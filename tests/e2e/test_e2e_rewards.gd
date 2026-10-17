@@ -1,7 +1,7 @@
 extends GutTest
 ## The economy through real input (v0.3.0 E): shooting enemies earns shards (gems fly to you and the HUD counter
-## shows them); a chest you can't afford shows its price in red and stays shut; with enough shards, E opens it
-## and the keyboard (3, Enter) buys the 3rd card.
+## shows them); a chest you can't afford shows its price in red and stays shut; with enough shards, E opens it.
+## v0.8.0 N7 (owner O61): the chest deals one card; Enter takes it (no choice), paid then.
 
 
 func after_each() -> void:
@@ -46,7 +46,7 @@ func test_kills_earn_shards() -> void:
 	gut.p("kills %d, shards %d after %d ticks" % [w.kills, w.shards, w.tick])
 
 
-func test_a_chest_is_shut_until_you_can_pay_then_the_keyboard_buys_a_card() -> void:
+func test_a_chest_is_shut_until_you_can_pay_then_it_deals_one_card() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -83,15 +83,15 @@ func test_a_chest_is_shut_until_you_can_pay_then_the_keyboard_buys_a_card() -> v
 	var panel := hud.pick_panel()
 	assert_eq(w.choosing, chest_id, "E opened the chest")
 	assert_true(panel.is_open())
-	assert_eq(panel.title_text(), tr("PICK_TITLE_CHEST") % price, "the title shows the price")
+	assert_eq(panel.title_text(), tr("PICK_TITLE_CHEST_DEALT"), "it says what the chest gave you")
 	var offer := w.rewards.offer_of(w.rewards.index_of(chest_id))
-	await e.tap(KEY_3)
-	assert_eq(panel.focus_index(), 2, "3 focused the 3rd card")
+	assert_eq(offer.size(), 1, "one card")
+	assert_eq(panel.card_count(), 1, "one card dealt")
+	assert_eq(w.shards, price + 7, "nothing paid while it shows")
 	await e.tap(KEY_ENTER)
 	await e.frames(2)
-	assert_true(
-		_took(w, offer[2]), "bought the 3rd card (a mod, an ability or a stat card; v0.4.0 BS)"
-	)
+	assert_eq(w.choosing, -1, "Enter took it")
+	assert_true(_took(w, offer[0]), "the card (a mod, an ability or a stat card)")
 	assert_eq(w.shards, 7, "paid the price")
 	assert_eq(w.rewards.index_of(chest_id), -1, "the chest is consumed")
 	assert_eq(hud.shard_text(), "7")

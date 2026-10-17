@@ -124,8 +124,11 @@ func sync(reader: WorldReader) -> void:
 		_title.text = tr("PICK_TITLE_CORE")
 	elif drop == WorldReader.DROP_ELITE_CARD:
 		_title.text = tr("PICK_TITLE_ELITE_DROP")
-	_price_icon.visible = chest
-	_hint.text = tr("PICK_HINT")
+	var dealt := reader.choice_dealt()  # v0.8.0 N7 (owner O61): a chest deals its one card, no choice
+	if dealt:
+		_title.text = tr("PICK_TITLE_CHEST_DEALT")
+	_price_icon.visible = chest and not dealt
+	_hint.text = tr("PICK_HINT_DEALT" if dealt else "PICK_HINT")
 	_set_focus(0)
 
 

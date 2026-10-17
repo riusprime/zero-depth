@@ -1123,3 +1123,5 @@ ITEM_CHAIN_BLAST_DESC,The spell and all its splits explode; blasts never merge.,
 PICK_TITLE_BOSS,The boss's reward,La recompensa del jefe
 PICK_TITLE_BOSS_LEGENDARY,The boss left a Legendary card,El jefe dejó una carta legendaria
 PICK_TITLE_BOSS_MORE,%s · %d more picks here,%s · %d elecciones más aquí
+PICK_TITLE_CHEST_DEALT,Chest · it gave you this,Cofre · te ha dado esto
+PICK_HINT_DEALT,"Enter, A or a click to take it","Intro, A o un clic para cogerla"

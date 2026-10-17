@@ -311,17 +311,43 @@ func test_a_chest_you_cant_afford_stays_shut() -> void:
 	assert_eq(w.shards, 39)
 
 
-func test_buying_a_chest_pays_on_the_pick() -> void:
+## v0.8.0 N7 (owner O61, D48): a chest deals one card by its odds; the world waits while the panel shows it (its
+## numbers before the take), and any pick input (here a cancel) takes it, paid then, and closes the chest.
+func test_a_chest_deals_one_card_and_any_answer_takes_it() -> void:
 	var w := _world()
 	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
 	w.shards = 55
 	_press(w, I)
-	assert_eq(w.shards, 55, "opening is free; cancel costs nothing")
 	var offer := w.rewards.offer_of(0)
-	_pick(w, 3)
+	assert_eq(offer.size(), 1, "one card")
+	assert_eq(w.rewards.rolled[0], RewardStore.DEALT)
+	assert_ne(w.choosing, -1, "the world waits while the card shows")
+	assert_eq(w.shards, 55, "nothing paid yet")
+	assert_true(w.items_owned.is_empty(), "nothing taken yet")
+	var t := w.tick
+	_press(w, 0)
+	assert_ne(w.choosing, -1, "no answer: still showing")
+	assert_eq(w.tick, t + 1, "the tick still counts")
+	_pick(w, InputFrame.PICK_CANCEL)
+	assert_eq(w.choosing, -1, "any answer closes it")
 	assert_eq(w.shards, 15, "40 paid")
-	assert_eq(w.items_owned, PackedInt32Array([offer[2]]))
+	assert_eq(w.items_owned, PackedInt32Array([offer[0]]), "and the card taken: no choice")
 	assert_eq(w.rewards.size(), 0, "the chest is consumed")
+
+
+## v0.8.0 N7: an older save's chest, rolled with three cards before N7, deals its first card.
+func test_an_old_three_card_chest_deals_its_first_card() -> void:
+	var w := _world()
+	w.add_reward(RewardStore.Kind.CHEST, Vector2(1.0, 0), 40)
+	w.shards = 40
+	var old := Offers.draw(w, true, 3)
+	w.rewards.set_offer(0, old)
+	_press(w, I)
+	assert_eq(w.rewards.offer_of(0), PackedInt32Array([old[0]]), "its first card only")
+	_pick(w, 3)
+	assert_eq(w.items_owned, PackedInt32Array([old[0]]), "any answer takes that card")
+	assert_eq(w.shards, 0)
+	assert_eq(w.rewards.size(), 0)
 
 
 func test_an_out_of_range_pick_waits() -> void:

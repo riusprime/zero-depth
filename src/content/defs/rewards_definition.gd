@@ -29,7 +29,7 @@ extends ContentDef
 ## v0.8.0 BL (docs/roadmap/v0.8.0/BLADE_AUDIT.md B5): a wand card of the run's own weapon (requires_weapon) weighs this
 ## per mille against a shared card's 1000 in a mod draw (1500: ×1.5). A starting value.
 @export var own_weapon_card_permille := 1500
-## Cards an altar or chest offers.
+## Cards an altar offers (v0.8.0 N7, owner O61: a chest deals one card, Offers.CHEST_CARDS).
 @export var offer_size := 3
 ## The interact button opens an altar or chest within this distance of the player.
 @export var interact_radius_m := 1.6

@@ -451,7 +451,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
 altar and chest counts (inclusive ranges), `chest_prices` by chest order on floor 1, `floor_price_step` (each
-later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3),
+later floor adds that share of the floor-1 price), `rare_weight_chest` / `rare_weight_altar`, `offer_size` (1..3; v0.8.0 N7: an altar's cards only, a chest deals one, `Offers.CHEST_CARDS`),
 `interact_radius_m` and `shard_tier_bonus`. Validation: ranges ordered and non-negative, prices positive, weights
 and the radius positive. v0.8.0 RR: `epic_weight_chest` / `epic_weight_altar` (data 1.5 / 0.5) and `legendary_weight_chest` /
 `legendary_weight_altar` (data 0.05 / 0.02): an epic and a legendary mod's draw weight against a common one's 1 (0..10;

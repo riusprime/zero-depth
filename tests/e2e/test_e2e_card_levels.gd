@@ -139,19 +139,18 @@ func test_a_held_card_shows_its_level_up_on_the_pick_and_its_pip() -> void:
 	assert_eq(tr("UI_CARD_LEVEL_UP") % [1, 2], "Nv 1 → 2", "Spanish")
 
 
-## The rewards (altars, then chests) nearest first, until one offers a wand card; returns [reward, slot] or [-1, -1].
-## TEST HELPER (labelled): a chest's price is granted as shards, as test_e2e_rewards.gd does (paying is its test).
+## The altars nearest first, until one offers a wand card; returns [reward, slot] or [-1, -1]. v0.8.0 N7 (owner
+## O61): a chest deals its card on the open (no offer to look at), so only altars are tried.
+## TEST HELPER (labelled): the altars' cards are drawn almost all as mods (an altar's first card stays its new
+## ability), so the floor's two altars offer a wand card; the mix itself is tests/unit/sim/test_offers.gd.
 func _find_wand_offer(e: E2e, w: World, reader: WorldReader, panel: PickPanel) -> Array:
+	w.reward_table.altar_card_weights = PackedInt32Array([0, 1, 1000])
 	var tried := {}
 	for attempt in 8:
 		var r := -1
 		for i in w.rewards.size():
 			var kind := w.rewards.kind[i]
-			if (
-				(kind != RewardStore.Kind.ALTAR and kind != RewardStore.Kind.CHEST)
-				or tried.has(i)
-				or Arenas.locked(w, i)
-			):
+			if kind != RewardStore.Kind.ALTAR or tried.has(i) or Arenas.locked(w, i):
 				continue
 			var d := w.rewards.pos(i).distance_to(w.player_pos())
 			if r < 0 or d < w.rewards.pos(r).distance_to(w.player_pos()):
@@ -161,8 +160,6 @@ func _find_wand_offer(e: E2e, w: World, reader: WorldReader, panel: PickPanel) -
 		tried[r] = true
 		if not await e.walk_to(w.rewards.pos(r), w.reward_table.interact_radius_m * 0.6):
 			continue
-		if w.rewards.kind[r] == RewardStore.Kind.CHEST:
-			w.shards = maxi(w.shards, w.rewards.price[r] + 1)
 		await e.tap(KEY_E)
 		await e.frames(3)
 		if not panel.is_open():
@@ -190,7 +187,7 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	var found := await _find_wand_offer(e, w, reader, panel)
 	var r: int = found[0]
 	var k: int = found[1]
-	assert_gte(r, 0, "an altar or a chest offers a wand card")
+	assert_gte(r, 0, "an altar offers a wand card")
 	if r < 0:
 		return
 	var card := w.rewards.offer_of(r)[k]
@@ -212,8 +209,8 @@ func test_a_held_wand_card_shows_lv_n_to_n_plus_1_and_its_pip() -> void:
 	var slot := Array(w.mod_slots).find(card)
 	assert_gte(slot, 0, "the card is in the wand")
 	assert_eq(hud.build_hud.pip_level_text(slot), "1", "its wand pip shows level 1")
-	if w.rewards.kind[r] == RewardStore.Kind.CHEST:
-		w.shards = maxi(w.shards, w.rewards.price[r] + 1)  # TEST HELPER, as above
+	# back to the altar (the floor's enemies may have pushed the hero off while the dev panel was used)
+	await e.walk_to(w.rewards.pos(r), w.reward_table.interact_radius_m * 0.6)
 	await e.tap(KEY_E)
 	await e.frames(3)
 	assert_true(panel.is_open(), "the same reward again")

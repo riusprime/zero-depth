@@ -34,7 +34,8 @@ extends RefCounted
 ## offer is first rolled, `loot:event` rolls rules.cursed_chest_permille; a cursed offer's first card becomes a
 ## trade-off curse card (Offers.curse_code) for a trade-off curse you don't hold. Taking it takes the curse, upside
 ## and drawback; the other cards are clean. The epic stat card it used to carry is gone. Event choices' random curses
-## draw plain curses only (Pool.PLAIN).
+## draw plain curses only (Pool.PLAIN). v0.8.0 N7 (D49): a chest rolls one card now, so the curse card goes before
+## it (a two-card choice: the curse or the chest's card); a cursed chest is the one chest that still asks.
 ## v0.7.5 MG (owner N10, "one every two floors"): the roll above counts only on a curse floor (EventRules.curse_floor:
 ## floors 1, 3, 5 ... as shipped) and while the floor's cursed offers are under rules.cursed_chests_per_floor (1):
 ## at most one cursed chest every two floors. The dev route (force_curse) skips both.
@@ -266,8 +267,8 @@ static func on_offer_rolled(w: World, i: int) -> void:
 	s.force_curse = false
 	var offer := w.rewards.offer_of(i)
 	var card := Offers.curse_code(curse)
-	if offer.is_empty():
-		offer.append(card)
+	if offer.size() < RewardStore.OFFER_SLOTS:  # v0.8.0 N7 (D49): a chest's one card stays beside its curse
+		offer.insert(CURSED_SLOT, card)
 	else:
 		offer[CURSED_SLOT] = card
 	w.rewards.set_offer(i, offer)
