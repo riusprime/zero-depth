@@ -201,6 +201,7 @@ Answers go into the "Owner decisions" table below the same day.
 | D42 | "yes to that" | Crossed blades = physical / Blade cards; star burst = Legendary / cosmic cards | 2026-10-16 |
 | D48 | "One card dealt and flipped (Recommended)"; "Epic and Legendary (Recommended)"; "Unpicked cards burn (Recommended)" | A chest deals one card that flips (with the wait if it rolled high), applied as it lands; the wait is for Epic and Legendary; at an altar the two cards not picked burn (no new button) | 2026-10-17 |
 | D50 | "Walls should be 100% new with the textures" | Option A (procedural ruin walls with the owner's textures) in all five biomes | 2026-10-17 |
+| D55 | "Dev panel is fine as is don't need to touch it" | Closing the dev panel (backtick) keeps turning God off and dropping a queued summon; no change | 2026-10-17 |
 | N1–N3 | "n1 is OK … N3 is OK, add this to this batch's queue" | Built in v0.8.0 | 2026-10-16 |
 
 ## Steps
