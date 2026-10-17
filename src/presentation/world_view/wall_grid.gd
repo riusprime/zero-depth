@@ -74,6 +74,41 @@ func owner_at(p: Vector2) -> int:
 	return at(i, j)
 
 
+## v0.8.0 N13 (ProceduralWall's rim and fill): each solid cell's distance (m, from its centre) to the union's edge
+## along the grid's rows and columns (the nearest open cell in any of the four directions; off the grid is open).
+func edge_dist() -> PackedFloat32Array:
+	var d := PackedFloat32Array()
+	d.resize(nx * ny)
+	d.fill(1e6)
+	for j in ny:
+		var edge := xs[0]
+		for i in nx:
+			if cells[j * nx + i] < 0:
+				edge = xs[i + 1]
+				continue
+			d[j * nx + i] = minf(d[j * nx + i], (xs[i] + xs[i + 1]) * 0.5 - edge)
+		edge = xs[nx]
+		for i in range(nx - 1, -1, -1):
+			if cells[j * nx + i] < 0:
+				edge = xs[i]
+				continue
+			d[j * nx + i] = minf(d[j * nx + i], edge - (xs[i] + xs[i + 1]) * 0.5)
+	for i in nx:
+		var edge := ys[0]
+		for j in ny:
+			if cells[j * nx + i] < 0:
+				edge = ys[j + 1]
+				continue
+			d[j * nx + i] = minf(d[j * nx + i], (ys[j] + ys[j + 1]) * 0.5 - edge)
+		edge = ys[ny]
+		for j in range(ny - 1, -1, -1):
+			if cells[j * nx + i] < 0:
+				edge = ys[j]
+				continue
+			d[j * nx + i] = minf(d[j * nx + i], edge - (ys[j] + ys[j + 1]) * 0.5)
+	return d
+
+
 ## Sorted grid lines: the given edges (closer than 0.1 mm merged), each gap split into STEP or less.
 static func axis(values: Array) -> PackedFloat64Array:
 	values.sort()

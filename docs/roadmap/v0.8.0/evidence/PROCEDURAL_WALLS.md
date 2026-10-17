@@ -6,6 +6,7 @@
   ran on its tree before it was committed, only these docs were written after). Godot `4.7.2.stable.official.ed1daf0bf`;
   OS Linux 6.18.44 (cloud container, 4 cores, no GPU).
 - **Date:** 2026-10-17
+- **Superseded by N13** (D50 = A everywhere, no kit pillar accents): [WALLS_EVERYWHERE.md](WALLS_EVERYWHERE.md).
 - **Who ran it:** agent
 
 ## What the owner asked

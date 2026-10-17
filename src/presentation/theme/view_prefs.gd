@@ -3,7 +3,7 @@ extends RefCounted
 ## Presentation-only preferences from the profile's settings (v0.3.0 O): reduced motion and the colour-blind mode.
 ## They change how things look, never an outcome (EI-07). Main applies them at boot and whenever Options changes one.
 
-const WALL_STYLES: Array[StringName] = [&"auto", &"old", &"a", &"b"]  # v0.8.0 N10: wall_style's values
+const WALL_STYLES: Array[StringName] = [&"a", &"old", &"b"]  # v0.8.0 N10, N13: wall_style's values
 
 ## Reduced motion: no camera shake at all, and hit bursts throw half the sparks.
 static var reduced_motion := false
@@ -13,11 +13,11 @@ static var effects_density := "high"
 ## v0.8.0 GF3 (owner O22): the Blade's hit-stop (HitStop: the hero's swing and the struck enemy held ~2 frames on a
 ## Blade hit, in the view only). Options -> Accessibility "Hit-stop"; reduced motion turns it off too.
 static var hit_stop := true
-## v0.8.0 N10 (owners O66, O67; a G2 prototype, dev only): which structural walls a floor is drawn with: "auto" (the
-## prototype's default: Ruins option A, the other biomes today's kit), "old" (today's kit everywhere), "a" (the
-## procedural ruin, ProceduralWall), "b" (the kit laid edge to edge from its decimated copies). The dev panel's tools
-## page cycles it; a floor built after the change shows it (Restart floor).
-static var wall_style := &"auto"
+## v0.8.0 N10 (owners O66, O67), N13 (owner O71, D50 = A everywhere): which structural walls a floor is drawn with:
+## "a" (the game's walls in every biome: the procedural ruin, ProceduralWall), and, as dev comparisons only, "old"
+## (the kit pieces stacked as before N10) and "b" (the kit laid edge to edge from its decimated copies). The dev
+## panel's tools page cycles it; a floor built after the change shows it (Restart floor).
+static var wall_style := &"a"
 
 
 static func apply_settings(profile: ProfileStore) -> void:

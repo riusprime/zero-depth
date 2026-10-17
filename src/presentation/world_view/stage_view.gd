@@ -25,10 +25,9 @@ const GROUND_TEXTURES := {
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
 }
 const GROUND_TEXTURE_M := 4.0
-## v0.8.0 N10 (owners O66, O67; G2 prototype): the biomes whose structural walls ViewPrefs' "auto" draws as the
-## procedural ruin (option A); the rest keep the kit until the owner picks. The owner's wall textures, by biome
-## (tex_wall_<biome>, tex_wall_top_<biome>; a biome without its own takes Ruins').
-const PROC_BIOMES: Array[StringName] = [&"ruins"]
+## v0.8.0 N10 (owners O66, O67), N13 (owner O71, D50 = A everywhere): every biome's structural walls are the
+## procedural ruin (option A) in the owner's wall textures, by biome (tex_wall_<biome>, tex_wall_top_<biome>; a
+## biome without its own takes Ruins').
 const WALL_TEXTURE := "res://assets/textures/kit/tex_wall_%s.png"
 const WALL_TOP_TEXTURE := "res://assets/textures/kit/tex_wall_top_%s.png"
 
@@ -597,16 +596,15 @@ func _build_kit_nodes(
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
 
 
-## v0.8.0 N10: the wall style ViewPrefs.wall_style picks for this biome (StageDresser.STYLE_*).
+## v0.8.0 N10, N13: the wall style ViewPrefs.wall_style picks (StageDresser.STYLE_*): option A in every biome; the
+## kit ("old") and option B only as the dev toggle's comparisons.
 func resolved_wall_style() -> StringName:
 	match ViewPrefs.wall_style:
 		&"old":
 			return StageDresser.STYLE_KIT
-		&"a":
-			return StageDresser.STYLE_PROC
 		&"b":
 			return StageDresser.STYLE_FIT
-	return StageDresser.STYLE_PROC if prop_style in PROC_BIOMES else StageDresser.STYLE_KIT
+	return StageDresser.STYLE_PROC
 
 
 ## v0.8.0 N10 (the probes' numbers): the structural walls' drawn wall meshes (kit pieces and procedural walls; not
