@@ -56,6 +56,11 @@ extends Resource
 @export var grade_strength := 0.0
 @export var contrast := 1.0
 @export var saturation := 1.0
+## v0.8.0 N10 (owner O68, "the texture seems a bit too grained … make it bigger"): how much wall one tile of the
+## procedural walls' textures covers (m): the face texture (3:2) this long along the wall (its height follows the
+## aspect), the top texture this wide. Read when a floor is built (the dev panel's Restart floor shows an edit).
+@export var wall_texture_m := 4.0
+@export var wall_top_texture_m := 4.5
 
 
 ## Problems as "field: why" strings (BiomeDefinition turns them into ValidationIssues).
@@ -84,6 +89,8 @@ func problems() -> PackedStringArray:
 		["grade_strength", grade_strength, 0.0, 1.0],
 		["contrast", contrast, 0.5, 2.0],
 		["saturation", saturation, 0.0, 2.0],
+		["wall_texture_m", wall_texture_m, 0.5, 16.0],
+		["wall_top_texture_m", wall_top_texture_m, 0.5, 16.0],
 	]:
 		if f[1] < f[2] or f[1] > f[3]:
 			out.append("%s: %s is outside %s..%s" % f)

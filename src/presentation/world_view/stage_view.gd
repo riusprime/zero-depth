@@ -25,6 +25,12 @@ const GROUND_TEXTURES := {
 	&"red_canyon": "res://assets/textures/kit/ground_b.png",
 }
 const GROUND_TEXTURE_M := 4.0
+## v0.8.0 N10 (owners O66, O67; G2 prototype): the biomes whose structural walls ViewPrefs' "auto" draws as the
+## procedural ruin (option A); the rest keep the kit until the owner picks. The owner's wall textures, by biome
+## (tex_wall_<biome>, tex_wall_top_<biome>; a biome without its own takes Ruins').
+const PROC_BIOMES: Array[StringName] = [&"ruins"]
+const WALL_TEXTURE := "res://assets/textures/kit/tex_wall_%s.png"
+const WALL_TOP_TEXTURE := "res://assets/textures/kit/tex_wall_top_%s.png"
 
 ## Lighting quality (v0.5.9 Step 1, GameSettings "lighting"): "high" adds contact shadow (SSAO) and bounce light
 ## (SSIL); "low" leaves both off for slower GPUs.
@@ -65,6 +71,10 @@ var shards: ShardCluster
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
 var wall_specs: Array = []
+## v0.8.0 N10: the wall style this floor was dressed with (StageDresser.STYLE_*) and how long the procedural walls
+## took to build (ms; 0 without them): the probes read both.
+var wall_style := &""
+var wall_build_ms := 0.0
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
 var _wall_faded: StandardMaterial3D
@@ -506,13 +516,92 @@ func _build_kit(reader: WorldReader) -> void:
 	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration
 		dressing["square_cover"] = _names(look.square_cover)
 		dressing["decor_swap"] = _names(look.decor_swap)
+	wall_style = resolved_wall_style()
+	dressing["wall_style"] = wall_style
 	var placements := StageDresser.dress(dressing)
+	var proc := {}
+	var tex := {}
+	if wall_style == StageDresser.STYLE_PROC:  # v0.8.0 N10 (option A)
+		var t0 := Time.get_ticks_usec()
+		proc = (
+			ProceduralWall
+			. build(
+				{
+					"walls": walls,
+					"cuts": StageDresser.niches(placements),
+					"rooms": rooms,
+					"doors": doors,
+					"seed": reader.seed_value(),
+					"face_m": mood.wall_texture_m,
+					"top_m": mood.wall_top_texture_m,
+				}
+			)
+		)
+		wall_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
+		tex = wall_textures(prop_style)
 	kit = StageKit.new()
 	kit.name = "Kit"
 	add_child(kit)
-	kit.build(placements, wall_specs.size(), palette["cover"], mood)
+	kit.build(placements, wall_specs.size(), palette["cover"], mood, proc, tex)
 	kit.set_shadows(lighting == "high")
 	_build_shards(reader, walls, rooms, doors, keep, placements)
+
+
+## v0.8.0 N10: the wall style ViewPrefs.wall_style picks for this biome (StageDresser.STYLE_*).
+func resolved_wall_style() -> StringName:
+	match ViewPrefs.wall_style:
+		&"old":
+			return StageDresser.STYLE_KIT
+		&"a":
+			return StageDresser.STYLE_PROC
+		&"b":
+			return StageDresser.STYLE_FIT
+	return StageDresser.STYLE_PROC if prop_style in PROC_BIOMES else StageDresser.STYLE_KIT
+
+
+## v0.8.0 N10 (the probes' numbers): the structural walls' drawn wall meshes (kit pieces and procedural walls; not
+## the light props) and their full-detail triangles: {"nodes": int, "tris": int}.
+func structural_wall_stats() -> Dictionary:
+	var nodes := 0
+	var tris := 0
+	if kit == null:
+		return {"nodes": 0, "tris": 0}
+	for i in mini(kit.wall_pieces.size(), _wall_classes.size()):
+		if _wall_classes[i] != 0:
+			continue
+		for node: MeshInstance3D in kit.wall_pieces[i]:
+			var piece: StringName = node.get_meta(&"piece", &"")
+			if not (piece == &"proc_wall" or KitModels.SPECS.get(piece, {}).get("role") == &"wall"):
+				continue
+			nodes += 1
+			tris += mesh_tris(node.mesh)
+	return {"nodes": nodes, "tris": tris}
+
+
+## A mesh's triangles at full detail (every surface).
+static func mesh_tris(mesh: Mesh) -> int:
+	var n := 0
+	if mesh == null:
+		return 0
+	for k in mesh.get_surface_count():
+		var arr := mesh.surface_get_arrays(k)
+		var idx: Variant = arr[Mesh.ARRAY_INDEX]
+		if idx != null and (idx as PackedInt32Array).size() > 0:
+			n += (idx as PackedInt32Array).size() / 3
+		else:
+			n += (arr[Mesh.ARRAY_VERTEX] as PackedVector3Array).size() / 3
+	return n
+
+
+## v0.8.0 N10: the owner's wall textures for a biome ({"face", "top"}; Ruins' when the biome has none).
+static func wall_textures(biome: StringName) -> Dictionary:
+	var out := {}
+	for pair: Array in [["face", WALL_TEXTURE], ["top", WALL_TOP_TEXTURE]]:
+		var path := String(pair[1]) % biome
+		if not ResourceLoader.exists(path):
+			path = String(pair[1]) % "ruins"
+		out[pair[0]] = load(path) if ResourceLoader.exists(path) else null
+	return out
 
 
 ## v0.8.0 RT: the designed rooms' drawn-only pieces (WorldReader.layout_prop).

@@ -6,6 +6,8 @@
 
 [sub_resource type="Resource" id="Resource_mood"]
 script = ExtResource("2_mood")
+wall_texture_m = 5.0
+wall_top_texture_m = 5.0
 sun_color = Color(1, 0.6, 0.38, 1)
 sun_energy = 0.65
 sun_pitch_deg = -22.0

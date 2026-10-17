@@ -865,7 +865,9 @@ class_name BiomeDefinition extends Resource
   - the warm light colour, energy and range that fire props use;
   - the hero light's energy and range;
   - the grade: shadow and highlight colours and strength (a split tone), contrast and saturation (the lighting pass
-    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md)).
+    after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md));
+  - v0.8.0 N10 (O68): `wall_texture_m` and `wall_top_texture_m`, the metres of wall one tile of the procedural walls'
+    face and top textures covers (0.5-16).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.
