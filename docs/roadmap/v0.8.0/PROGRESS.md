@@ -3,6 +3,19 @@
 Plan: [`PLAN.md`](PLAN.md). Branch: `claude/lucid-fermat-9wv2tf`, fast-forwarded to v0.7.5's `f1a9ab5` (v0.7.5 is
 not in `main` yet).
 
+## Where we are
+(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-18.)
+
+- **Pushed on `claude/lucid-fermat-9wv2tf`:** N1–N19, TX, the owner's 34 models (MI), the load fix (LD), the curse
+  room as its own room (N19); seams 467/467 on each merge.
+- **In flight (cloud session, not pushed yet):** BD, the five biome boss doors (the owner's models sliced, ~18 % bigger,
+  press interact to open, the owner's opening and impact sounds); PR, the Prism's second phase (cross 15 % slower,
+  three fixed orb patterns, one spell at a time, never orbs with beams), merged in the lead's worktree and waiting
+  for seams after BD. If this block still lists them, they never landed: rebuild them from the PLAN rows O82–O84.
+- **Next:** land BD and PR (seams, push); the quick-shot tool (one launch, a chosen floor or room, every biome), proposed
+  in the agent cost review and waiting for the owner's yes; then the owner's playtest of v0.8.0.
+- **Waiting on the owner:** D58 (models), D59 (curse room), D60 (the Prism), and the rest of `OWNER_TODO.md` §2.
+
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
