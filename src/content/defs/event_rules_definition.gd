@@ -38,6 +38,10 @@ extends ContentDef
 ## far from the next drop at the same spot.
 @export var hunt_range_m := 16.0
 @export var drop_offset_m := 0.9
+## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
+## floor has a curse room (one combat room holding the curse altar and the floor's curse event), in per mille (400:
+## 40 % of floors).
+@export var curse_room_floor_chance_permille := 400
 
 
 func category() -> StringName:
@@ -69,6 +73,12 @@ func validate() -> Array[ValidationIssue]:
 				&"range",
 				resource_path,
 				"cursed_chest_first_floor and _every_floors >= 1, _per_floor >= 0"
+			)
+		)
+	if curse_room_floor_chance_permille < 0 or curse_room_floor_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "curse_room_floor_chance_permille is outside 0..1000"
 			)
 		)
 	if cleanse_price <= 0:

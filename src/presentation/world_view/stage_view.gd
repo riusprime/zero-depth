@@ -543,6 +543,8 @@ func _build_kit(reader: WorldReader) -> void:
 		keep.append(reader.reward_pos(i))
 	if reader.shop_stall():  # v0.8.0 SR: no rubble where you walk up to the counter
 		keep.append(reader.shop_front())
+	if reader.event_curse_altar() >= 0:  # v0.8.0 N17: nothing stands on the curse altar
+		keep.append(reader.event_pos(reader.event_curse_altar()))
 	var dressing := {
 		"walls": walls,
 		"rooms": rooms,

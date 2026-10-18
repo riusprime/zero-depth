@@ -17,6 +17,9 @@ const MAX_CHOICES := 2
 @export var requires: StringName = &""
 ## v0.5.5 DS (S5): only on Deep floors, and a Deep floor's first pedestal holds one (Events.draw_event).
 @export var deep_only := false
+## v0.8.0 N17 (owner O75): a curse event: drawn only for the floor's curse room (its dark room and altar), never for a
+## common event room (Events.draw_event). A floor saved before N17 draws it as before.
+@export var curse_room := false
 @export var choices: Array[EventChoiceDefinition] = []
 
 

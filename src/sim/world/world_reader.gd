@@ -2308,6 +2308,16 @@ func event_room(k: int) -> int:
 	return _w.ev.room[k]
 
 
+## v0.8.0 N17 (owner O75): the curse room's altar (a pedestal index), or -1 on a floor without a curse room.
+func event_curse_altar() -> int:
+	return _w.ev.curse_k
+
+
+## v0.8.0 N17: the curse room (a room index), or -1.
+func event_curse_room() -> int:
+	return _w.ev.room[_w.ev.curse_k] if _w.ev.curse_k >= 0 else -1
+
+
 ## EVENT_READY, EVENT_ACTIVE (a fight or a defence running) or EVENT_DONE.
 func event_state(k: int) -> int:
 	return _w.ev.state[k]
