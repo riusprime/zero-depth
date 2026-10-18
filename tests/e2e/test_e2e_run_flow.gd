@@ -78,8 +78,27 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	# v0.4.0 BS: an altar's first (focused) card is a new ability while a slot is free.
 	assert_eq(w.ability_owned.size(), 2, "took the card: a second ability slot")
 	var item := w.ability_owned[1] if w.ability_owned.size() > 1 else -1
-	# Leg 2: through the boss door.
+	# Leg 2: through the boss door. v0.8.0 BD (owner O83): it stays shut until E opens it.
 	var into := Kin.dir(f.boss_door_angle)
+	var shut_walls := w.walls.size()
+	await e.walk_to(f.boss_door_outside(0.9), 0.5)
+	assert_eq(w.boss_flow.door, BossFlow.Door.SHUT, "the boss door is shut")
+	assert_eq(hud.boss_door.prompt_text(), tr("BOSS_DOOR_PROMPT"), "its prompt shows by it")
+	for k in 60:
+		e.stick_toward(into)
+		await e.frames(1)
+	e.stick_toward(Vector2.ZERO)
+	await e.frames(2)
+	assert_lt(f.boss_door_depth(w.player_pos()), 0.0, "walking into it: it blocks the way")
+	assert_eq(main.view.boss_door.open_amount, 0.0, "its slab is up")
+	await e.tap(KEY_E)
+	assert_eq(w.boss_flow.door, BossFlow.Door.OPENING, "E opens it")
+	assert_eq(hud.boss_door.prompt_text(), "", "no prompt while it opens")
+	await e.frames(BossFlow.DOOR_OPEN_TICKS / 2)
+	assert_between(main.view.boss_door.open_amount, 0.2, 0.8, "the slab slides down with the sim")
+	await e.frames(BossFlow.DOOR_OPEN_TICKS / 2 + 10)
+	assert_eq(w.boss_flow.door, BossFlow.Door.OPEN, "open")
+	assert_eq(w.walls.size(), shut_walls - 1, "the passage is clear")
 	var walls_before := w.walls.size()
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into

@@ -209,7 +209,8 @@ func test_waves_spawn_inside_one_after_another_then_the_doors_open() -> void:
 	var w := _floor_with_arena(1)
 	var f := w.floor_layout
 	var room := f.arena_rooms[0]
-	var walls := w.walls.size()
+	# v0.8.0 BD: the shut boss door's collider joins the walls on the first tick and stays (no press here).
+	var walls := w.walls.size() + (1 if w.boss_flow.door == BossFlow.Door.SET else 0)
 	var locked := PackedInt32Array()
 	for i in w.rewards.size():
 		if f.room_of(w.rewards.pos(i)) == room:

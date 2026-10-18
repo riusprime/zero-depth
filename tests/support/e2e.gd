@@ -287,3 +287,22 @@ func walk_to(target: Vector2, within: float) -> bool:
 	joy_axis(JOY_AXIS_LEFT_Y, 0.0)
 	await frames(12)
 	return ok
+
+
+## v0.8.0 BD (owner O83): walks up to the shut boss door, presses interact (E) and waits until it is open. True when
+## it is open (at once on a floor without the press, or once it already opened or the fight began).
+func open_boss_door() -> bool:
+	var w := world()
+	var bf := w.boss_flow
+	if bf == null or w.floor_layout == null or w.floor_layout.boss_room < 0:
+		return true
+	if bf.door == BossFlow.Door.PASSAGE or bf.door == BossFlow.Door.OPEN:
+		return true
+	await walk_to(w.floor_layout.boss_door_outside(0.9), 0.5)
+	if bf.door == BossFlow.Door.SHUT:
+		await tap(KEY_E)
+	for k in BossFlow.DOOR_OPEN_TICKS + 30:
+		if bf.door == BossFlow.Door.OPEN or w.player_dead():
+			break
+		await frames(1)
+	return bf.door == BossFlow.Door.OPEN

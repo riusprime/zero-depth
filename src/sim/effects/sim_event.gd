@@ -23,6 +23,8 @@ extends RefCounted
 ## x 10 + rarity a stat card. A HIT with TAG_CRIT was a critical hit.
 ## v0.8.0 N14 (owner O72): GAMBLE_FAIL: a paid use of the gamble shrine failed (no stat); source = the shrine's id,
 ## pos = the shrine.
+## v0.8.0 BD (owner O83): BOSS_DOOR_OPENING: the interact press started the shut boss door's opening; BOSS_DOOR_OPENED:
+## its slab is down and the passage open (BossFlow.DOOR_OPEN_TICKS later). pos = the door's centre.
 enum Kind {
 	HIT,
 	DAMAGE,
@@ -47,6 +49,8 @@ enum Kind {
 	SHOP_BUY,
 	SHOP_SALVAGE,
 	GAMBLE_FAIL,
+	BOSS_DOOR_OPENING,
+	BOSS_DOOR_OPENED,
 }
 
 const TAG_MELEE := 1

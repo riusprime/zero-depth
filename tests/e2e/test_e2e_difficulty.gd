@@ -78,6 +78,7 @@ func test_a_strong_build_meets_the_hidden_catch_up_boss_gates_and_a_deep_floor_t
 	assert_eq(w.ability_owned.size(), 4, "the weapon and three abilities")
 	var p := CatchUp.power(w)
 	assert_gte(p, 2800, "15 ability levels: P ≥ ×2.8")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into

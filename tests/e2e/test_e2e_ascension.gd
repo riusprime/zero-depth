@@ -80,6 +80,7 @@ func _to_the_devices(e: E2e, main: Main) -> bool:
 	assert_null(main.get_node_or_null("UI/Hud/AscensionPanel"), "no choice panel any more")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into

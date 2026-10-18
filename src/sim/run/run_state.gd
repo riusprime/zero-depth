@@ -35,7 +35,9 @@ extends RefCounted
 ## altar centred and solid, crystals, no spawns), small rooms first, on every Deep floor (Whispering Deep at its altar),
 ## Echo Mirror only once a stat is raised. A floor saved under rules 7 is rebuilt with N17's curse room (a combat room
 ## keeping its interior; FloorScenario.curse_room_rules_of).
-const FLOOR_RULES := 8
+## v0.8.0 BD (owner O83): 9 is today's: the boss door is shut and solid until the interact press opens it
+## (BossFlow.Door, set in prepare). A floor saved under rules 1-8 keeps its open doorway, as it was saved.
+const FLOOR_RULES := 9
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -43,6 +45,7 @@ const FLOOR_RULES_V080_RT1 := 4
 const FLOOR_RULES_V080_SR := 5
 const FLOOR_RULES_V080_N14 := 6
 const FLOOR_RULES_V080_N17 := 7
+const FLOOR_RULES_V080_N19 := 8
 
 var run_seed := 0
 var table: RunTable
@@ -238,6 +241,8 @@ func prepare(w: World) -> void:
 	if w.boss_flow != null:  # v0.5.0 RT
 		w.boss_flow.deep = is_deep()
 		w.boss_flow.ascension = is_last_floor()  # v0.7.5 AP: the loop's last floor has the Ascension portal
+		if floor_rules > FLOOR_RULES_V080_N19:  # v0.8.0 BD (O83): shut until pressed (before BD: an open doorway)
+			w.boss_flow.door = BossFlow.Door.SET
 		w.boss_flow.final_next = is_last_floor() and _has_final()  # v0.8.0 FB1: End leads to the final boss
 	w.deep_threat = routes.count(Routes.Route.DEEP)  # v0.5.0 RT + EV: +1 threat T per Deep floor taken
 	if not carry.is_empty():

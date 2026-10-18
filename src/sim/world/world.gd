@@ -562,6 +562,8 @@ func step(frame: InputFrame) -> void:
 		tick += 1
 		return
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
+	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
+		boss_flow.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
 		flood_nav()  # v0.4.0 SC: bounded; v0.8.0 P1: stops past the enemies
@@ -835,13 +837,18 @@ func add_wall_now(o: Obb) -> void:
 ## v0.5.0 PB (owner D10): removes a wall added in play (the boss door reopening once the boss is dead). The wall is
 ## matched by its shape (a restored world holds copies of the walls); the grid is rebuilt, and the flow field from
 ## before add_wall_now swaps back in (or is rebuilt if there is none) and floods from the player at once.
-func remove_wall_now(o: Obb) -> void:
+## v0.8.0 BD: `again` (the boss door's press opening it before the fight): the field with the wall is kept as the
+## prepared one (prepare_wall), so the sealing that adds it back swaps it in instead of rebuilding.
+func remove_wall_now(o: Obb, again: bool = false) -> void:
 	var k := _find_wall(o)
 	if k < 0:
 		return
 	walls.remove_at(k)
 	rebuild_wall_grid()
 	if _nav_open != null:
+		if again and _wall_next == null:
+			_wall_next = o
+			_nav_next = nav
 		nav = _nav_open
 	else:
 		nav.build(walls)

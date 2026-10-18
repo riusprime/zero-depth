@@ -201,6 +201,8 @@ CAPTION_BOSS_STAGGER,[Boss staggered],[Jefe aturdido]
 CAPTION_BOSS_PHASE,[Boss roars: a new phase],[El jefe ruge: nueva fase]
 CAPTION_BOSS_DEATH,[Boss destroyed],[Jefe destruido]
 CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de golpe]
+CAPTION_DOOR_OPENING,[The boss door grinds open],[La puerta del jefe se abre chirriando]
+CAPTION_DOOR_IMPACT,[The boss door thuds down],[La puerta del jefe cae con un golpe sordo]
 CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
 CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
 ITEM_HEAT_SINK,Heat Sink,Disipador
@@ -593,6 +595,7 @@ CAPTION_CURSE,[curse],[maldición]
 CAPTION_AMBUSH,[ambush],[emboscada]
 UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
 SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
+BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
 SHOP_TITLE,Shop,Tienda
 SHOP_SOLD,Sold,Vendido
 SHOP_CANT_USE,Can't use now,No se puede usar ahora

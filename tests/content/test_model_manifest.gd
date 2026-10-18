@@ -31,6 +31,7 @@ func test_every_model_file_is_listed() -> void:
 		"res://assets/models/shop",
 		"res://assets/models/enemies",  # v0.8.0 MI
 		"res://assets/models/devices",
+		"res://assets/models/doors",  # v0.8.0 BD
 	]:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".glb") or f.ends_with(".res"):

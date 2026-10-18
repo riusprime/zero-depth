@@ -34,6 +34,7 @@ func test_summoning_the_boss_dissolves_the_floor_and_its_bar_fills_over_the_rise
 	await e.click_at(god.get_global_rect().get_center())
 	assert_true(main.driver.debug.god, "God mode for the walk")
 	await e.tap(KEY_QUOTELEFT)
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	# Walk to the boss door with the stick; enemies keep arriving meanwhile.
 	var nav := NavField.new()
 	var target := f.boss_door_inside(2.0)

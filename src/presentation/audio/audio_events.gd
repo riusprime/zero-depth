@@ -187,6 +187,10 @@ func _events(reader: WorldReader, out: Array) -> void:
 				out.append([&"shard_collect", e.pos, 1.0])
 			SimEvent.Kind.BOSS_ROOM_SEALED:
 				out.append([&"boss_door_seal", null, 1.0])
+			SimEvent.Kind.BOSS_DOOR_OPENING:  # v0.8.0 BD (O83): the owner's sounds, at the door
+				out.append([&"boss_door_opening", e.pos, 1.0])
+			SimEvent.Kind.BOSS_DOOR_OPENED:
+				out.append([&"boss_door_impact", e.pos, 1.0])
 			SimEvent.Kind.PORTAL_OPENED:
 				out.append([&"portal_open", null, 1.0])
 				if e.amount == 1:  # v0.5.0 RT: the Deep gate opened beside it
