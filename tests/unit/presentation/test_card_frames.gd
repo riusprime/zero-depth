@@ -9,6 +9,12 @@ const CARD_DIRS := ["res://data/items", "res://data/stat_cards", "res://data/abi
 ## Font sizes below these (px at 1080p) count as too small to read at 1280 x 720.
 const MIN_TITLE := 13
 const MIN_DESC := 12
+## Frost Nova's Spanish sentence before N16 (the longest the cards ever showed), for the reflow check.
+const LONG_ES := (
+	"Modificador: tu arma gana el elemento escarcha (cargas de escarcha al golpear) y 4 muertes seguidas "
+	+ "lanzan un anillo de escarcha de 3 m: 10 de daño y 2 cargas de escarcha (como mucho cada 4 s). "
+	+ "Más amplio por nivel; 4 cargas desde el nivel 3; cada 3 s en el nivel 5."
+)
 
 var _locale := ""
 
@@ -166,7 +172,8 @@ func test_frost_nova_in_spanish_reflows_clear_of_the_gem() -> void:
 	var card := StoneCard.new(PickSlot.PICK_SCALE)
 	add_child_autofree(card)
 	var def: Resource = load("res://data/abilities/frost_nova.tres")
-	var sentence := tr(def.desc_key)
+	# v0.8.0 N16 (O74): the card texts are short now; the reflow is still proved on the long sentence MENU_G2 flagged
+	var sentence := LONG_ES
 	assert_gt(sentence.length(), 150, "the long sentence MENU_G2 flagged")
 	card.show_face(
 		&"frost_nova", tr(def.name_key), sentence, &"projectile", 3, PickSlot.ABILITY, "x"

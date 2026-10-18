@@ -43,7 +43,10 @@ func test_void_shots_leave_black_holes_the_view_draws() -> void:
 	var cards: Array = reader.wand()["cards"]
 	assert_eq(int(cards[0]["level"]), 5, "Void at level 5")
 	assert_eq(int(reader.attack_spec(WorldReader.ATTACK_BOLT)["hole_permille"]), 200, "20 % a shot")
-	assert_true(tr("ITEM_GRAVITY_WELL_DESC").contains("8 %"), "its text names the chance")
+	assert_false(
+		tr("ITEM_GRAVITY_WELL_DESC").contains("%"),
+		"N16 (O74): its text says what it does, no numbers"
+	)
 	var seen := 0
 	var drawn := 0
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
