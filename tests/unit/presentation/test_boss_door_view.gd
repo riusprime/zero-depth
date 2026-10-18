@@ -54,6 +54,44 @@ func test_no_model_is_the_code_made_door() -> void:
 	assert_true(e.slab.mesh is BoxMesh)
 
 
+## v0.8.0 BW (owner, 2026-10-18: "doors are too thin"): a thick wall gets a frame on each face, the slab in the
+## middle and a lining along the passage's sides; a thin one keeps the one frame.
+func test_a_thick_wall_is_a_tunnel_with_a_frame_on_each_face() -> void:
+	const HALF := 2.5
+	for b in BIOMES:
+		var d := BossDoorView.new()
+		add_child_autofree(d)
+		d.setup(Vector2.ZERO, 0, WIDTH, HALF, Color(0.5, 0.5, 0.5), b)
+		assert_eq(d.frames.size(), 2, "%s: a frame on each face" % b)
+		var front := _x_span(d.frames[0])
+		var back := _x_span(d.frames[1])
+		var out := HALF + BossDoorView.FRAME_PROUD
+		assert_almost_eq(front.x, -out, 0.01, "%s: the front frame proud of the front face" % b)
+		assert_almost_eq(back.y, out, 0.01, "%s: the back frame proud of the back face" % b)
+		assert_eq(d.slab.position.x, 0.0, "%s: the slab in the middle" % b)
+		assert_eq(d.lining.size(), 2, "%s: a lining on each side" % b)
+		for l in d.lining:
+			var size: Vector3 = (l.mesh as BoxMesh).size
+			assert_gt(l.position.x + size.x * 0.5, back.x, "%s: tucked under the back frame" % b)
+			assert_lt(l.position.x - size.x * 0.5, front.y, "%s: tucked under the front frame" % b)
+			var inner := absf(l.position.z) - size.z * 0.5
+			assert_lt(inner, WIDTH * 0.5, "%s: over the wall's cut end" % b)
+		assert_eq(_door(b).frames.size(), 1, "%s: a thin wall keeps the one frame" % b)
+		assert_eq(_door(b).lining.size(), 0, b)
+
+
+## The X span (min, max) of a frame's parts in the door's frame.
+func _x_span(frame: Node3D) -> Vector2:
+	var lo := INF
+	var hi := -INF
+	for c in frame.get_children():
+		var m := c as MeshInstance3D
+		var box := (frame.transform * m.transform) * m.mesh.get_aabb()
+		lo = minf(lo, box.position.x)
+		hi = maxf(hi, box.end.x)
+	return Vector2(lo, hi)
+
+
 func _world(rules: int) -> World:
 	var lab := RunLab.new(ContentRepository.load_all(), 8311, &"blade")
 	lab.run.floor_rules = rules

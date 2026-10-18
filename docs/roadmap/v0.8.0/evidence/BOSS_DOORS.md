@@ -217,3 +217,37 @@ The door is built in the view's `devices` job, which took 0.2-27.7 ms per load i
 - The impact sound is cut at 2.95 s (see §2).
 - The key is E, not F (see §3).
 - The look of the doors, the size, the jambs' fit against the walls and the sounds: **OWNER ONLY**.
+
+## 8. BW: the door as a tunnel through the wall (owner O85)
+- **Status:** RUN (lead, the owner's PC: i7-10700K, RTX 3060, Windows 11; Godot `4.7.2.stable.official.ed1daf0bf`).
+  How it looks: **OWNER ONLY**.
+- **Build:** `claude/lucid-fermat-9wv2tf` at `840f08e` plus the BW change (the step's commit, `v0.8.0 Step BW: …`).
+- **What changed:** `BossDoorView._build_model`. A wall thicker than the frame (the frame's depth over its jambs and
+  lintel, 1.8-2.3 m by biome) gets a frame on each face, 5 cm proud of the face (the back one turned to face the boss
+  room). The slab stays in the middle. Each side of the passage between the frames gets a lining of the biome's wall
+  face texture (0.35 m into the wall, 3 cm into the passage, 1.8 m tall, tucked 0.2 m under each frame). A wall no
+  thicker than the frame keeps the one frame in the middle, as before. Presentation only.
+- **Tests** (`godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<file> -gexit`):
+
+| File | Raw result |
+|---|---|
+| tests/unit/presentation/test_boss_door_view.gd | `Tests 6; Passing Tests 6; Asserts 129` (new: `test_a_thick_wall_is_a_tunnel_with_a_frame_on_each_face`, five biomes) |
+| tests/e2e/test_e2e_run_flow.gd | `Tests 3; Passing Tests 3; Asserts 64` |
+
+- **Lint:** not run locally (gdtoolkit and Python are not installed on this machine); CI runs it.
+- **Shots** ([`bw_shots/`](bw_shots/), the shut door, one per biome, the GPU at 1600 × 900, JPEG quality 85). Each
+  biome ran with `APPDATA` pointed at its own empty folder (on Windows the user data lives under `APPDATA`, not
+  `XDG_DATA_HOME`; with one shared folder the first run's save turned Enter into Continue, and the other four made no
+  shot):
+```
+APPDATA=<empty folder> godot --path . --audio-driver Dummy --resolution 1600x900 \
+  -s scripts/shots/boss_doors.gd -- biome=<biome> closed_only
+```
+
+| Shot | Script's raw lines |
+|---|---|
+| `ruins_closed.jpg` | `run seed=6 floor biome=ruins` · `model=true door=2 open=0.00 walls_has_door=true` · `(frame 1752, tick 330)` |
+| `night_rocks_closed.jpg` | `run seed=5 floor biome=night_rocks` · `model=true door=2 open=0.00 walls_has_door=true` · `(frame 1926, tick 330)` |
+| `red_canyon_closed.jpg` | `run seed=3 floor biome=red_canyon` · `model=true door=2 open=0.00 walls_has_door=true` · `(frame 2148, tick 330)` |
+| `frozen_shore_closed.jpg` | `run seed=2 floor biome=frozen_shore` · `model=true door=2 open=0.00 walls_has_door=true` · `(frame 1771, tick 330)` |
+| `starfall_closed.jpg` | `run seed=4 floor biome=starfall` · `model=true door=2 open=0.00 walls_has_door=true` · `(frame 1869, tick 330)` |
