@@ -107,6 +107,22 @@ session on this proyect gets them"):
 
 Supersedes the "one full run per wave" rule (owner, 2026-10-09).
 
+### Keep steps fast (owner, 2026-10-18)
+
+The owner: "lately subagents take very long … is everything that they are doing necessary"; then "Yes let's do it,
+they are taking way too long". Cloud machines have 4 CPUs and Godot runs at half speed when they're crowded. So:
+- **One heavy job at a time.** At most one agent runs Godot tests or shots at a time. The lead runs `seams.sh` only
+  when no agent is testing. Other agents can read, write code and lint meanwhile.
+- **Small steps.** One owner request is one step. Split a big request (many models, several systems) into steps that
+  each report back, rather than one long step.
+- **Test only what the change reaches.** Run the touched tests first and the e2e that reach the change. The slow
+  seed-loop tests (for example `tests/unit/sim/test_curse_room.gd`, about 14 min) run only when the step changes
+  that system. Otherwise GitHub runs them.
+- **Few shots.** One shot per biome, or per thing the owner will look at. Before/after pairs only when asked.
+- **No timing on a busy machine.** Frame times and load probes here are noise. Run a probe once to catch a gross stall,
+  and mark the target `NOT YET RUN (owner hardware)` rather than re-running it.
+- **No re-runs to "be sure".** If a run is killed by a limit or memory, re-run only the files that didn't finish.
+
 ## Commands
 
 ```bash
