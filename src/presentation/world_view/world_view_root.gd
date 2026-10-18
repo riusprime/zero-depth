@@ -8,20 +8,64 @@ extends Node3D
 ## silhouettes still show the ones farther off).
 const OCCLUSION_RADIUS_M := 10.0
 const OCCLUSION_FOCUS_MAX := 24
+## v0.8.0 LD (owner O70: loads never freeze): the parts a view makes when it is made (about 16 ms of the main thread
+## together, 23-55 ms on a busy machine, in one frame). A load behind the cover makes them ahead, a few a frame
+## (prebuild()); the next WorldViewRoot takes them (_part()). Made the same way either way, so the view is the same.
+static var parts: Array[GDScript] = [
+	StageView,
+	ActorViews,
+	KitView,
+	UtilityView,
+	TelegraphViews,
+	InkPass,
+	PickupViews,
+	RewardViews,
+	ShardViews,
+	HealOrbViews,
+	BlackHoleViews,
+	PortalTransitView,
+	BossChallengeView,
+	SkillVisuals,
+	AbilityVisuals,
+	DamageNumbers,
+	ElementVisuals,
+	OverrunDoorViews,
+	ArenaViews,
+	HordeVisuals,
+	EventPedestalViews,
+	CoreViews,
+	AttackFormView,
+	ModifierOverlays,
+	BladeFormView,
+	FireballViews,
+	HeroPulseViews,
+	HeroCastFx,
+	BossShieldView,
+	StoneSpikeViews,
+	BossSignatureViews,
+	BossStrikeViews,
+	FinalBossViews,
+	PrismViews,
+	NemesisViews,
+	IsoRig,
+]
+
+## v0.8.0 LD: the parts prebuild() made, by script, waiting for the next view.
+static var _made := {}
 
 var reader: WorldReader
-var stage := StageView.new()
-var actors := ActorViews.new()
-var kit := KitView.new()
-var utility := UtilityView.new()
-var telegraphs := TelegraphViews.new()
+var stage: StageView = _part(StageView)
+var actors: ActorViews = _part(ActorViews)
+var kit: KitView = _part(KitView)
+var utility: UtilityView = _part(UtilityView)
+var telegraphs: TelegraphViews = _part(TelegraphViews)
 var hit_feel: HitFeel
-var ink := InkPass.new()
-var pickups := PickupViews.new()
+var ink: InkPass = _part(InkPass)
+var pickups: PickupViews = _part(PickupViews)
 ## Altars, chests and shard gems (v0.3.0 E).
-var rewards := RewardViews.new()
-var shards := ShardViews.new()
-var heal_orbs := HealOrbViews.new()  # v0.4.0 TU (D8)
+var rewards: RewardViews = _part(RewardViews)
+var shards: ShardViews = _part(ShardViews)
+var heal_orbs: HealOrbViews = _part(HealOrbViews)  # v0.4.0 TU (D8)
 var item_fx: ItemVisuals
 ## v0.3.0 G: engine statuses and combo payoffs.
 var status_fx: StatusVisuals
@@ -35,9 +79,9 @@ var ascension: AscensionPortal
 ## v0.8.0 P2 (owner O28): the Loop device beside it (null on other floors).
 var loop_device: LoopDevice
 ## v0.8.0 P2 (owner O24): Void's black holes.
-var black_holes := BlackHoleViews.new()
+var black_holes: BlackHoleViews = _part(BlackHoleViews)
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
-var transit := PortalTransitView.new()
+var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
 var receiver: FloorReceiver
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
@@ -49,48 +93,79 @@ var shop_terminal: ShopTerminalView
 ## v0.8.0 SR: the shop's tent stall and its vendor (null on a floor without one: no shop, or a terminal).
 var shop_stall: ShopStallView
 ## Boss challenge (v0.3.0 BX): the closing band, the pull's vortex, enemies dissolving on the summon.
-var challenge := BossChallengeView.new()
+var challenge: BossChallengeView = _part(BossChallengeView)
 ## v0.3.5 K: the build skills' forecast, streaks, flashes and tracers.
-var skill_fx := SkillVisuals.new()
+var skill_fx: SkillVisuals = _part(SkillVisuals)
 ## v0.4.0 BS: bombs, drones, orbit blades, the blink shock; damage numbers (crits big and yellow).
-var ability_fx := AbilityVisuals.new()
-var damage_numbers := DamageNumbers.new()
+var ability_fx: AbilityVisuals = _part(AbilityVisuals)
+var damage_numbers: DamageNumbers = _part(DamageNumbers)
 ## v0.4.0 AB: Arc Field, Frost Nova, the fire, the ability combos; the Overrun room's red door frames.
-var element_fx := ElementVisuals.new()
-var overrun_doors := OverrunDoorViews.new()
+var element_fx: ElementVisuals = _part(ElementVisuals)
+var overrun_doors: OverrunDoorViews = _part(OverrunDoorViews)
 ## v0.5.5 AR: the sealed arenas' amber frames and barriers, and the dark veil over the rest of the floor while sealed.
-var arenas := ArenaViews.new()
+var arenas: ArenaViews = _part(ArenaViews)
 ## v0.4.0 EN: mines on the floor, Menders' heal beams, Snipers' tracers.
-var horde_fx := HordeVisuals.new()
-var events := EventPedestalViews.new()  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
-var cores := CoreViews.new()  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
+var horde_fx: HordeVisuals = _part(HordeVisuals)
+var events: EventPedestalViews = _part(EventPedestalViews)  # v0.5.0 EV: event pedestals, the drone's ring, elite crowns
+var cores: CoreViews = _part(CoreViews)  # v0.6.0 CU: cores on elites and bosses, the steal window, dodge and stun cues
 ## v0.6.0 MX3: the attack forms drawn from their final specs (element core, heat edge, motion cues), pooled.
-var attack_forms := AttackFormView.new()
-var modifier_marks := ModifierOverlays.new()  # v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks
-var blade_forms := BladeFormView.new()  # v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades
+var attack_forms: AttackFormView = _part(AttackFormView)
+## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
+var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
+## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
+var blade_forms: BladeFormView = _part(BladeFormView)
 ## v0.7.5 BF1: the hostile fireballs (pooled per look in MultiMeshes) and the bosses' crystal shields and lobbed shells.
-var fireballs := FireballViews.new()
+var fireballs: FireballViews = _part(FireballViews)
 ## v0.8.0 GF1 (owner O19): the hero's shots as blue pulses (pooled per look in MultiMeshes) and the cast flourish.
-var pulses := HeroPulseViews.new()
-var cast_fx := HeroCastFx.new()
+var pulses: HeroPulseViews = _part(HeroPulseViews)
+var cast_fx: HeroCastFx = _part(HeroCastFx)
 ## v0.8.0 GF3 (owner O22): the Blade's edge spark (KitView draws the slash edge; HitFeel the cut and the hit-stop).
 var swing_fx := BladeSwingFx.new(kit)
-var boss_shields := BossShieldView.new()
+var boss_shields: BossShieldView = _part(BossShieldView)
 ## v0.8.0 AV (owner O7): the Gatekeeper's shock lanes strike as rows of stone spikes.
-var spikes := StoneSpikeViews.new()
+var spikes: StoneSpikeViews = _part(StoneSpikeViews)
 ## v0.8.0 BS1 (owner O5): the Warlord's javelins stuck in the floor and the Brood Mother's eggs.
-var signatures := BossSignatureViews.new()
+var signatures: BossSignatureViews = _part(BossSignatureViews)
 
 ## v0.8.0 AV part 2 (owner O7): every other boss ground attack strikes as a 3D effect.
-var strikes := BossStrikeViews.new()
+var strikes: BossStrikeViews = _part(BossStrikeViews)
 ## v0.8.0 FB1 (owner O16): the final boss's shatter between its bodies (the burst, the shards the next rises from).
-var final_views := FinalBossViews.new()
-var prism_views := PrismViews.new()  # v0.8.0 FB2: the Prism's Cross, her bolts' aim lines, the window
-var nemesis_views := NemesisViews.new()  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
-var rig := IsoRig.new()
+var final_views: FinalBossViews = _part(FinalBossViews)
+var prism_views: PrismViews = _part(PrismViews)  # v0.8.0 FB2: the Prism's Cross, her bolts' aim lines, the window
+var nemesis_views: NemesisViews = _part(NemesisViews)  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
+var rig: IsoRig = _part(IsoRig)
 var occlusion_enabled := true
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
+
+
+## v0.8.0 LD: makes the parts not made yet for about `budget_ms` (one at least); true when every part is made.
+static func prebuild(budget_ms: float) -> bool:
+	var from := Time.get_ticks_usec()
+	for script: GDScript in parts:
+		if _made.has(script):
+			continue
+		_made[script] = script.new()
+		if (Time.get_ticks_usec() - from) / 1000.0 >= budget_ms:
+			return _made.size() == parts.size()
+	return true
+
+
+## v0.8.0 LD: frees the parts prebuild() made that no view took (a load that stopped).
+static func drop_prebuilt() -> void:
+	for o: Object in _made.values():
+		if o is Node:
+			(o as Node).free()
+	_made.clear()
+
+
+## v0.8.0 LD: a part made ahead by prebuild() when there is one, else a new one.
+static func _part(script: GDScript) -> Object:
+	if _made.has(script):
+		var o: Object = _made[script]
+		_made.erase(script)
+		return o
+	return script.new()
 
 
 func setup(p_reader: WorldReader, palette: Dictionary, arena_half: float) -> void:

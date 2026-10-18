@@ -49,6 +49,8 @@ func _initialize() -> void:
 			]
 		)
 	)
+	ViewBuildQueue.probe = true  # v0.8.0 LD: the frame breakdown's hooks (off in the game)
+	CoverLoads.probe = true
 	ProfileStore.use_shared(ProfileStore.new(""))
 	RunSaveStore.use_shared(RunSaveStore.new(""))
 	Main.fixed_seed = Main.STAGE_SEED
