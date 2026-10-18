@@ -50,6 +50,7 @@ static func compile_events(repo: ContentRepository) -> Array[EventTable]:
 		t.min_floor = def.min_floor
 		t.requires = EventDefinition.REQUIRES.find(def.requires)
 		t.deep_only = def.deep_only  # v0.5.5 DS (S5)
+		t.curse_room = def.curse_room  # v0.8.0 N17 (O75)
 		for c in def.choices:
 			t.labels.append(c.label_key)
 			var cost := EventChoiceDefinition.COSTS.find(c.cost)
@@ -101,14 +102,17 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.core_mod_weight = def.core_mod_weight
 	t.hunt_range_m = def.hunt_range_m
 	t.drop_offset_m = def.drop_offset_m
+	t.curse_room_floor_chance_permille = def.curse_room_floor_chance_permille  # v0.8.0 N17 (O75)
 	return t
 
 
-## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests).
-static func setup(w: World, repo: ContentRepository) -> void:
+## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `legacy` (v0.8.0
+## N17): a floor saved before the curse room keeps its event rooms as they were (FloorScenario.legacy_curse_room_of).
+static func setup(w: World, repo: ContentRepository, legacy: bool = false) -> void:
 	Events.setup(
 		w,
 		compile_events(repo),
 		compile_curses(repo),
-		compile_rules(repo.get_def(&"event_rules", &"floor"))
+		compile_rules(repo.get_def(&"event_rules", &"floor")),
+		legacy
 	)

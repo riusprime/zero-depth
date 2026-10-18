@@ -186,6 +186,11 @@ static func leave_lines(ci: Object) -> Dictionary:
 	}
 
 
+## v0.8.0 N17: the event's name at the panel's top (the one place it shows; tests read it).
+func title_text() -> String:
+	return _title.text
+
+
 func card_count() -> int:
 	return _cards.size()
 

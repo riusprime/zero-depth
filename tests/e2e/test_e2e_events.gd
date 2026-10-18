@@ -1,7 +1,7 @@
 extends GutTest
 ## Event rooms and cursed rewards through real input (v0.5.0 EV, PLAN R3-R4): start a run from the menu, turn on
 ## god mode in the dev panel (so the walk survives the floor's spawns), walk (left stick only) to the floor's event
-## pedestal: its name floats over it and the prompt names it; E opens the panel (the world waits): one card per
+## pedestal: the prompt names it (v0.8.0 N17: no name floats over it); E opens the panel (the world waits): one card per
 ## choice with its cost and reward, and Leave; Esc leaves it for later, E opens it again, Enter takes the first
 ## choice and its outcome lands. Then the dev route curses the next chest: walk to a chest, open it with the pad's
 ## X, the first card is marked cursed; take it with A: the curse is held, threat T shows 1 on the HUD and in the
@@ -34,7 +34,7 @@ func test_take_an_event_choice_and_a_cursed_chest_card() -> void:
 	var name := tr(Events.table(w, 0).name_key)
 	gut.p("event: %s" % Events.table(w, 0).id)
 	assert_eq(hud.events.prompt_text(), tr("UI_EVENT_OPEN") % name, "the prompt names it")
-	assert_true(main.view.events.name_label(0).visible, "its name floats over it")
+	assert_eq(main.view.events.label_count(), 0, "v0.8.0 N17 (O75): no name floats over it")
 	await e.tap(KEY_E)
 	await e.frames(2)
 	assert_eq(w.ev.open, 0, "E opened it")

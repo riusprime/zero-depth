@@ -1124,3 +1124,4 @@ UI_GAIN_LEVEL_NEW,New · Level %d,Nuevo · Nivel %d
 UI_GAIN_HP,%d → %d HP,%d → %d PV
 UI_GAIN_ARROW,%s → %s,%s → %s
 UI_GAIN_PERCENT,%s%%,%s %%
+UI_CURSE_ALTAR_OPEN,[E / X] Touch the altar,[E / X] Tocar el altar

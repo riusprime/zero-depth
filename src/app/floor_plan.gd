@@ -129,7 +129,8 @@ func _build_world() -> void:
 	Abilities.grant_start(w)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
-	EventCompiler.setup(w, repo)  # v0.5.0 EV: event rooms and curses, after the carry and the heat
+	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17: an older save's floor keeps its rooms
+	EventCompiler.setup(w, repo, FloorScenario.legacy_curse_room_of(run))
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)

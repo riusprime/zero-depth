@@ -132,6 +132,12 @@ static func legacy_shrine_of(run: RunState) -> bool:
 	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_SR
 
 
+## v0.8.0 N17 (O75): whether run `run`'s current floor keeps its event rooms as they were before the curse room (a
+## floor resumed from a save made before N17, floor rules 1-6); false for today's floors and a floor without a run.
+static func legacy_curse_room_of(run: RunState) -> bool:
+	return run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_N14
+
+
 ## Item spot indices in fill order: each room's first spot (in room order), then the second spots.
 static func spot_order(layout: FloorLayout) -> PackedInt32Array:
 	return Rewards.spot_order(layout)
