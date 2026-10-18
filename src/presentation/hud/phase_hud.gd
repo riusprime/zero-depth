@@ -57,7 +57,8 @@ func _init() -> void:
 
 
 func sync(reader: WorldReader) -> void:
-	if not reader.has_curve() or not reader.has_floor():
+	# v0.8.0 N19 (N17's shots): hidden while an event panel is open, whose title sits where its line would show
+	if not reader.has_curve() or not reader.has_floor() or reader.event_open():
 		visible = false
 		return
 	visible = true

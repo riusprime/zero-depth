@@ -8,7 +8,7 @@ extends Node3D
 ## panel interact opens (EventPanel). The turning, glowing crystal is the cue that it can be used. The curse room's
 ## altar (WorldReader.event_curse_altar) is its own model: a dark stone altar with a cracked crystal (code-made; the
 ## owner's `curse_altar` model replaces the stone through assets/models/manifest.json, ShopModels), in its dark room
-## (CurseRoomView: the shroud, the cold light, the glyph sigils).
+## (CurseRoomView: the shroud, the cold light, the ritual sigils and, v0.8.0 N19, the crystals).
 ## A ready pedestal glows and its glyph turns; an active one (a fight or a defence) pulses red or cyan; a spent one
 ## goes dark. Glowing materials have emission on from creation; only energies and colours change (flash-safe).
 ## Reads only (EI-07).

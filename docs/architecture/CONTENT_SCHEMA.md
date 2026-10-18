@@ -1042,7 +1042,7 @@ class_name EventDefinition extends ContentDef          # data/events/*.tres, cat
 @export var desc_key: StringName
 @export var weight := 10                               # draw weight among the floor's events
 @export var min_floor := 1
-@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability"
+@export var requires: StringName = &""                 # "", "curse", "heat", "stat_card", "ability", "stat_raised" (v0.8.0 N19)
 @export var deep_only := false                         # v0.5.5 DS (S5): Deep floors only, drawn first there
 @export var choices: Array[EventChoiceDefinition]      # 1..2; the panel always adds "Leave it"
 
