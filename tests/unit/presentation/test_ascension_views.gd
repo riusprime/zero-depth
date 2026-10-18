@@ -6,14 +6,13 @@ extends GutTest
 
 
 ## v0.8.0 P2 (owner O28): the Loop device has its own look (green, apart from the portal's gold and lavender, the
-## gate's blue and Deep's violet), smaller than the portal; dormant and nameless until the portal opens, then lit,
-## turning and named; reduced motion holds its turn.
+## gate's blue and Deep's violet), smaller than the portal; dormant until the portal opens, then lit and turning;
+## reduced motion holds its turn. v0.8.0 N18 (owner O76): no floating name, ever (P2's "Loop" label removed).
 func test_p2_the_loop_device_has_its_own_look_and_lights_when_open() -> void:
 	var d := LoopDevice.new()
 	add_child_autofree(d)
 	d.setup(Vector2(1.0, 2.0), 0, 0.9)
 	assert_true(d.is_sealed(), "dormant at first")
-	assert_false(d.label.visible, "no name while the boss lives")
 	for c: Color in [LoopDevice.GREEN]:
 		for other: Color in [
 			PortalGate.visor_blue(),
@@ -34,8 +33,9 @@ func test_p2_the_loop_device_has_its_own_look_and_lights_when_open() -> void:
 	var dim := d.light.light_energy
 	d.calm = false
 	d.set_sealed(false)
-	assert_true(d.label.visible, "named once open")
-	assert_eq(d.label.text, tr("WORLD_LOOP_NAME"))
+	assert_eq(
+		d.find_children("*", "Label3D", true, false).size(), 0, "no floating name once open (O76)"
+	)
 	d._process(0.5)
 	assert_gt(d.light.light_energy, dim, "lit")
 	assert_gt(d.chase, 0.0, "its arrowheads chase round the ring")
@@ -98,7 +98,11 @@ func test_the_world_view_draws_the_ascension_portal_on_the_last_floor() -> void:
 	view.sync()
 	assert_false(view.loop_device.is_sealed(), "it opens with the portal")
 	assert_false(view.ascension.is_sealed())
-	assert_true(view.ascension.label.visible, "the portal is named too")
+	assert_eq(
+		view.ascension.find_children("*", "Label3D", true, false).size(),
+		0,
+		"v0.8.0 N18 (O76): the open portal has no floating name"
+	)
 	var w1 := SaveLab.floor_world(42, 1)
 	var view1 := WorldViewRoot.new()
 	add_child_autofree(view1)

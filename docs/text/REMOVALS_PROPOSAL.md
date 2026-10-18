@@ -1,10 +1,17 @@
 # Removals proposal: the explaining texts (v0.8.0 N16, O74)
 
+**Status: Applied 2026-10-18** (v0.8.0 N18, owner O76: "Apply them all"). Every row below was applied exactly as
+recommended: the 10 "Remove" rows with the code that showed them (and their keys gone from `locale/strings.csv`),
+the 48 "Shorten" rows in the proposed wording, the 15 "Keep" rows unchanged (`HUD_FALLEN_WARN` kept; `WAND_READ_FIRE`
+and its read-out kept). The two questions: the bosses keep their English names in Spanish ("Keep English names");
+"Whirling Steel" / "Torbellino de acero" is "OK". What was removed, with its code:
+[`docs/roadmap/v0.8.0/evidence/TEXT_REMOVALS.md`](../roadmap/v0.8.0/evidence/TEXT_REMOVALS.md).
+
 The owner (O74): "we need to remove all the 'explaining texts' we need the players to discover most of the thing and
 not explain anything … we do not need to explain bosses or loop device or ascension or shrine, keep the basic things,
 before removing any text on screen that you doubt ask me". Process chosen: "Rewrite now, ask before removing".
 
-**Nothing below has been removed or shortened yet.** Each row is a text that teaches a rule or explains a thing,
+(As proposed in N16, before the owner's answer:) each row is a text that teaches a rule or explains a thing,
 with where it shows and a recommendation. The lead asks the owner row by row (or group by group); only a "yes" is
 applied, in a later step, with its code (a removed floating label or hint needs its node or trigger gone too, and the
 tests that check it changed).

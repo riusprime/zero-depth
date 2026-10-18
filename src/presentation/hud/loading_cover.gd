@@ -166,6 +166,11 @@ func showing() -> bool:
 	return phase != Phase.HIDDEN
 
 
+## v0.8.0 N18: the cover hides the screen (closing or closed; while it fades out, what is under it shows).
+func shut() -> bool:
+	return phase == Phase.COVERING or phase == Phase.COVERED
+
+
 ## The cover's colours for `p_style`, dark to light (the portal's palette; black for BLACK).
 static func palette(p_style: int) -> Array[Color]:
 	match p_style:

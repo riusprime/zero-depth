@@ -365,6 +365,7 @@ func _place(socket_px: float, title_top: float) -> void:
 		title_size = TextFit.fit_size(
 			bold, t, w, bold.get_height(sizes[0]) * 2.0 + 1.0, sizes, TITLE_MAX_LINES
 		)
+	title_size = mini(title_size, TextFit.word_fit_size(bold, t, w, title_size))  # v0.8.0 N18: a long word shrinks
 	var th := maxf(TextFit.text_height(bold, t, w, title_size), bold.get_height(title_size))
 	_title.add_theme_font_size_override("font_size", title_size)
 	_title.position = Vector2(x, y)

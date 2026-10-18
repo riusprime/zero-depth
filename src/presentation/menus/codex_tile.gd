@@ -56,6 +56,7 @@ func show_entry(p_entry: Dictionary, title: String, p_locked: bool) -> void:
 	name = "Tile_%s" % p_entry["id"]
 	picture.show_entry(p_entry, p_locked)
 	name_label.text = "???" if p_locked else title
+	TextFit.fit_label_words(name_label, SIZE.x - 12.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
 	name_label.add_theme_color_override("font_color", MenuStyle.DIM if p_locked else MenuStyle.TEXT)
 	_tint = tint_of(p_entry)
 	_style()

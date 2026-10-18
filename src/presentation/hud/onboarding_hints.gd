@@ -3,9 +3,12 @@ extends Control
 ## v0.7.5 SM (owner N8; ROADMAP §5 "Onboarding hints"): the first-run hints. Each shows once (HintStore, the
 ## profile's `hints` section), on a small Ember-stone slab with a cold top line at the top centre of the screen:
 ## - at a first run's start: move and aim, then attack, then dash (each closes when you do it);
-## - when the heat first reads Hot: vent; when the first card pick opens: the wand reads left to right;
-## - after the first card joins the wand: the Build page (pause → Build); the first trigger card in the wand;
-## - the first shop, the first open portal; at the second floor's start: the Codex (pause → Codex).
+## - when the heat first reads Hot: vent;
+## - after the first card joins the wand: the Build page (pause → Build);
+## - at the second floor's start: the Codex (pause → Codex).
+## v0.8.0 N18 (owner O74/O76: the game stops explaining): the hints that explained a thing (the first pick's "the wand
+## reads left to right", the first trigger card, the first shop, the first open portal) are gone with their triggers;
+## only the controls stay.
 ## Non-blocking: it never takes the mouse, the focus or an input (it only listens), and the game never waits for it.
 ## A hint closes when its action is done or its panel closes (after MIN_S at least), else after MAX_S; Options
 ## "Show hints: Off" hides it at once. The keys it names are the live bindings of the device used last (keyboard
@@ -27,8 +30,8 @@ const MAX_S := 9.0
 const FADE_S := 0.25
 ## The move hint closes once the hero walked this far (m).
 const MOVE_DONE_M := 1.5
-## Hints about a moment (a panel, a portal): they come before the first-run steps and close with their moment.
-const CONTEXT: Array[StringName] = [&"pick", &"shop", &"portal", &"vent"]
+## Hints about a moment (the heat): they come before the first-run steps and close with their moment.
+const CONTEXT: Array[StringName] = [&"vent"]
 ## The input that closes a hint (the attack's is the build's: `primary` swings, `shoot` fires).
 const DONE_ACTIONS := {&"dash": &"dash", &"vent": &"vent"}
 ## The key each hint names (besides move's four keys and attack's, which is the build's).
@@ -125,9 +128,6 @@ func observe(reader: WorldReader) -> void:
 	var choosing := reader.choosing() and not reader.swapping()
 	_panel_open = reader.choosing() or reader.shop_open() or reader.event_open()
 	_moment = {
-		&"pick": choosing,
-		&"shop": reader.shop_open(),
-		&"portal": reader.portal_active(),
 		# the heat read builds a dictionary: only while the vent hint is due or showing
 		&"vent": (store.due(&"vent") or _current == &"vent") and _vent_ready(reader),
 	}
@@ -137,11 +137,9 @@ func observe(reader: WorldReader) -> void:
 	if _current == &"move" and _move_from != Vector2.INF:
 		if reader.player_pos().distance_to(_move_from) >= MOVE_DONE_M:
 			_done()
-	if _was_choosing and not choosing:  # a pick just closed: the wand may hold its first card or a trigger
+	if _was_choosing and not choosing:  # a pick just closed: the wand may hold its first card
 		if store.due(&"build") and not reader.build()["slots"].is_empty():
 			_enqueue(&"build")
-		if store.due(&"trigger") and not (reader.wand()["cuts"] as PackedInt32Array).is_empty():
-			_enqueue(&"trigger")
 	_was_choosing = choosing
 
 
@@ -291,7 +289,7 @@ func _word() -> void:
 
 
 func hint_text(id: StringName) -> String:
-	var line_key := "HINT_" + String(id).to_upper()  # HINT_MOVE, HINT_ATTACK, HINT_PICK …
+	var line_key := "HINT_" + String(id).to_upper()  # HINT_MOVE, HINT_ATTACK, HINT_BUILD …
 	if id == &"move":
 		var pad := device == InputRebind.PAD
 		var keys := PackedStringArray()

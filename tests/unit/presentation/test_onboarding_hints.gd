@@ -1,7 +1,8 @@
 extends GutTest
 ## v0.7.5 SM (owner N8): the first-run hints' view. Every hint has its line in English and Spanish and fits its slab
 ## in two lines; the keys it names are the live bindings (a remap shows) of the device used last; a hint about a
-## moment (the first pick) comes before a waiting first-run step, which shows again after it; the Codex hint waits for
+## moment (v0.8.0 N18: the heat's vent hint; the pick, shop, portal and trigger hints are gone, owner O76) comes
+## before a waiting first-run step, which shows again after it; the Codex hint waits for
 ## the second floor; Options carries "Interface size", "Show hints" and "Reset hints"; the interface size scales the
 ## window's content.
 
@@ -41,8 +42,7 @@ func test_every_hint_has_its_line_in_both_languages_and_fits() -> void:
 				var lines := ceili(
 					TextFit.text_height(font, t, width, size) / font.get_height(size) - 0.01
 				)
-				# the hints shown over a centre panel (low, between its key line and the heat meter): one line
-				var most := 1 if id in [&"pick", &"shop"] else 2
+				var most := 2
 				assert_lte(lines, most, "%s %s (%s): %d lines" % [lang, id, dev, lines])
 	TranslationServer.set_locale("en")
 
@@ -85,14 +85,14 @@ func test_a_moment_comes_first_and_the_waiting_step_shows_after() -> void:
 	h.begin_floor(1, _reader())
 	assert_eq(h.current_id(), &"move", "a first run opens with move")
 	assert_eq(h.queued_ids(), [&"attack", &"dash"] as Array[StringName])
-	h._moment = {&"pick": true}
-	h._enqueue(&"pick")
-	assert_eq(h.current_id(), &"pick", "the first pick comes first")
+	h._moment = {&"vent": true}
+	h._enqueue(&"vent")
+	assert_eq(h.current_id(), &"vent", "the heat comes first")
 	assert_eq(h.queued_ids()[0], &"move", "move waits its turn again")
-	assert_true(store.seen(&"pick") and store.seen(&"move"))
+	assert_true(store.seen(&"vent") and store.seen(&"move"))
 	h.end_floor()
 	assert_false(h.visible, "no floor, no hint")
-	assert_false(&"pick" in h.queued_ids())
+	assert_false(&"vent" in h.queued_ids())
 
 
 func test_the_codex_hint_waits_for_the_second_floor() -> void:

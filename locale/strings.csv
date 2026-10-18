@@ -57,7 +57,7 @@ UI_OUTLINE,Outline style,Estilo de contorno
 UI_OPT_INK,Ink,Tinta
 UI_OPT_SKETCH,Sketch,Boceto
 UI_OPT_PAPER,Sketch + paper,Boceto + papel
-GATE_SEALED,The gate is sealed. The way on isn't open yet.,La puerta está sellada. El camino aún no está abierto.
+GATE_SEALED,Sealed.,Sellada.
 GATE_NAME,Gate,Puerta
 ITEM_LONG_EDGE,Long Edge,Filo Largo
 ITEM_LONG_EDGE_DESC,Your blade reaches farther.,Tu espada llega más lejos.
@@ -96,31 +96,31 @@ HUD_KILLS,Kills: %d,Bajas: %d
 HUD_PICKED,Picked up %s: %s,Has cogido %s: %s
 HUD_PICKED_UP,Picked up,Recogido
 ENEMY_HATCHLING,Hatchling,Cría
-BOSS_GATEKEEPER,The Gatekeeper,El Guardián de la Puerta
-BOSS_BROOD_MOTHER,The Brood Mother,La Madre de la Prole
-BOSS_SIEGE_ENGINE,The Siege Engine,La Máquina de Asedio
+BOSS_GATEKEEPER,The Gatekeeper,The Gatekeeper
+BOSS_BROOD_MOTHER,The Brood Mother,The Brood Mother
+BOSS_SIEGE_ENGINE,The Siege Engine,The Siege Engine
 HUD_BOSS_STAGGER,Stagger,Aturdimiento
 HUD_BOSS_STAGGERED,STAGGERED,ATURDIDO
 HUD_BOSS_PHASE_SHIFT,PHASE SHIFT,CAMBIO DE FASE
 CAUSE_HATCHLING,A Hatchling ran you down.,Una Cría te arrolló.
-CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo del Guardián de la Puerta te aplastó.
-CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca del Guardián de la Puerta te sepultaron.
-CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz del Guardián de la Puerta te alcanzó.
-CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque del Guardián de la Puerta te derribó.
-CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido del Guardián de la Puerta te destrozó.
-CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida del Guardián de la Puerta te aplastó.
-CAUSE_BROOD_LEAP,The Brood Mother landed on you.,La Madre de la Prole cayó sobre ti.
-CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,La Madre de la Prole surgió bajo tus pies.
-CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de la Madre de la Prole te aplastaron.
-CAUSE_BROOD_EGGS,The Brood Mother's egg storm burst over you.,La tormenta de huevos de la Madre de la Prole estalló sobre ti.
-CAUSE_BROOD_WEB,The Brood Mother's acid web caught you.,La telaraña ácida de la Madre de la Prole te atrapó.
-CAUSE_BROOD_EGG_BURST,A Brood Mother egg burst over you.,Un huevo de la Madre de la Prole te estalló encima.
-CAUSE_SIEGE_BARRAGE,The Siege Engine's shells blew you apart.,Los proyectiles de la Máquina de Asedio te destrozaron.
-CAUSE_SIEGE_RAIL,The Siege Engine's rail beam burned through you.,El rayo de la Máquina de Asedio te atravesó.
-CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyectiles de la Máquina de Asedio te abatió.
+CAUSE_GATEKEEPER_SLAM,The Gatekeeper's fist slam crushed you.,El puñetazo de The Gatekeeper te aplastó.
+CAUSE_GATEKEEPER_RINGS,The Gatekeeper's rock rings buried you.,Los anillos de roca de The Gatekeeper te sepultaron.
+CAUSE_GATEKEEPER_QUAKE,The Gatekeeper's cross quake caught you.,El temblor en cruz de The Gatekeeper te alcanzó.
+CAUSE_GATEKEEPER_LANES,The Gatekeeper's shockwave knocked you down.,La onda de choque de The Gatekeeper te derribó.
+CAUSE_GATEKEEPER_SWEEP,The Gatekeeper's sweep smashed you.,El barrido de The Gatekeeper te destrozó.
+CAUSE_GATEKEEPER_CHARGE,The Gatekeeper's charge flattened you.,La embestida de The Gatekeeper te aplastó.
+CAUSE_BROOD_LEAP,The Brood Mother landed on you.,The Brood Mother cayó sobre ti.
+CAUSE_BROOD_BURROW,The Brood Mother burst up beneath you.,The Brood Mother surgió bajo tus pies.
+CAUSE_BROOD_BROOD,The Brood Mother's eggs crushed you.,Los huevos de The Brood Mother te aplastaron.
+CAUSE_BROOD_EGGS,The Brood Mother's egg storm burst over you.,La tormenta de huevos de The Brood Mother estalló sobre ti.
+CAUSE_BROOD_WEB,The Brood Mother's acid web caught you.,La telaraña ácida de The Brood Mother te atrapó.
+CAUSE_BROOD_EGG_BURST,A Brood Mother egg burst over you.,Un huevo de The Brood Mother te estalló encima.
+CAUSE_SIEGE_BARRAGE,The Siege Engine's shells blew you apart.,Los proyectiles de The Siege Engine te destrozaron.
+CAUSE_SIEGE_RAIL,The Siege Engine's rail beam burned through you.,El rayo de The Siege Engine te atravesó.
+CAUSE_SIEGE_BOLTS,The Siege Engine's bolt fan cut you down.,El abanico de proyectiles de The Siege Engine te abatió.
 CAUSE_SIEGE_DEPLOY,A falling turret crushed you.,Una torreta al caer te aplastó.
-CAUSE_SIEGE_CROSS,The Siege Engine's turret cross burned you down.,La cruz de torretas de la Máquina de Asedio te abrasó.
-CAUSE_SIEGE_GRID,The Siege Engine's mortars caught you.,Los morteros de la Máquina de Asedio te pillaron.
+CAUSE_SIEGE_CROSS,The Siege Engine's turret cross burned you down.,La cruz de torretas de The Siege Engine te abrasó.
+CAUSE_SIEGE_GRID,The Siege Engine's mortars caught you.,Los morteros de The Siege Engine te pillaron.
 UI_DEV_SPAWN_BOSS,Spawn boss,Invocar jefe
 UI_DEV_NEXT_BOSS,Next boss,Siguiente jefe
 REWARD_OPEN_ALTAR,[E / X] Open the altar,[E / X] Abrir el altar
@@ -170,8 +170,8 @@ BIOME_FROZEN_SHORE,Frozen Shore,Costa Helada
 BIOME_STARFALL,Starfall,Caída Estelar
 HUD_FLOOR,Floor %d · %s,Piso %d · %s
 HUD_FLOOR_CARD,Floor %d,Piso %d
-HUD_BOSS_AHEAD,Boss ahead. The door shuts behind you.,Jefe adelante. La puerta se cierra tras de ti.
-HUD_PORTAL_OPEN,The portal is open. Walk in to go down.,El portal está abierto. Entra para bajar.
+HUD_BOSS_AHEAD,Boss ahead.,Jefe adelante.
+HUD_PORTAL_OPEN,The portal is open.,El portal está abierto.
 UI_RESTART_RUN,Restart run,Reiniciar partida
 UI_RUN_COMPLETE,Run complete,Partida completada
 UI_RECAP_FLOOR,Floor reached: %d / %d,Piso alcanzado: %d / %d
@@ -194,10 +194,10 @@ UI_VOLUME_AMBIENCE,Ambience,Ambiente
 CAPTION_PLAYER_DEATH,[Your core shuts down],[Tu núcleo se apaga]
 CAPTION_COMBO_UNLOCK,[Combo chime],[Campanilla de combo]
 CAPTION_OVERHEAT,[Overheat alarm],[Alarma de sobrecalentamiento]
-CAPTION_TELEGRAPH_GATEKEEPER,[Warning: the Gatekeeper's attack rumbles],[Aviso: el ataque del Guardián de la Puerta retumba]
-CAPTION_TELEGRAPH_BROOD_MOTHER,[Warning: the Brood Mother chitters],[Aviso: la Madre de la Prole chirría]
-CAPTION_TELEGRAPH_SIEGE_ENGINE,[Warning: the Siege Engine whines as it charges],[Aviso: la Máquina de Asedio zumba al cargar]
-CAPTION_BOSS_STAGGER,[Boss staggered: power drops],[Jefe aturdido: pierde potencia]
+CAPTION_TELEGRAPH_GATEKEEPER,[Warning: the Gatekeeper's attack rumbles],[Aviso: el ataque de The Gatekeeper retumba]
+CAPTION_TELEGRAPH_BROOD_MOTHER,[Warning: the Brood Mother chitters],[Aviso: The Brood Mother chirría]
+CAPTION_TELEGRAPH_SIEGE_ENGINE,[Warning: the Siege Engine whines as it charges],[Aviso: The Siege Engine zumba al cargar]
+CAPTION_BOSS_STAGGER,[Boss staggered],[Jefe aturdido]
 CAPTION_BOSS_PHASE,[Boss roars: a new phase],[El jefe ruge: nueva fase]
 CAPTION_BOSS_DEATH,[Boss destroyed],[Jefe destruido]
 CAPTION_DOOR_SEAL,[The boss door slams shut],[La puerta del jefe se cierra de golpe]
@@ -224,9 +224,8 @@ HUD_HEAT_OVERHEAT,OVERHEAT,SOBRECALENTADO
 HUD_HEAT_VENT,VENT READY,PURGA LISTA
 HUD_HEAT_VENT_BLINK,VENT READY,PURGA LISTA
 UI_GAMBLE_USE,[E / X] Gamble · %d shards,[E / X] Apostar · %d fragmentos
-UI_GAMBLE_SPENT,The shrine has nothing left to give,El santuario ya no tiene nada que dar
-UI_GAMBLE_ODDS,Wins %d/%d · %s %% to fail,Victorias %d/%d · %s %% de fallar
-UI_GAMBLE_BLOCKED,Spent · the shrine gave its %d wins,Agotado · el santuario dio sus %d victorias
+UI_GAMBLE_SPENT,Spent,Agotado
+UI_GAMBLE_BLOCKED,Spent,Agotado
 UI_GAMBLE_SPENT_TAG,Spent,Agotado
 UI_GAMBLE_FAILED,It failed,Falló
 UI_GAMBLE_CARD,Gamble shrine,Santuario de apuestas
@@ -240,9 +239,9 @@ UI_GAMBLE_DASH_COOLDOWN,−%s %% dash cooldown,−%s %% de recarga del esprint
 UI_GAMBLE_REGEN,+%s %% HP/s out of combat,+%s %% PV/s fuera de combate
 UI_GAMBLE_HEAT_CAPACITY,+%s %% heat capacity,+%s %% de capacidad de calor
 UI_GAMBLE_SHARD_GAIN,+%s %% shards from kills,+%s %% de fragmentos por baja
-CAUSE_GATEKEEPER_PULL,The Gatekeeper's vortex pulled you in.,El vórtice del Guardián de la Puerta te atrapó.
-CAUSE_BROOD_POUNCE,The Brood Mother hunted you down.,La Madre de la Prole te dio caza.
-CAUSE_SIEGE_SHOCKWAVE,The Siege Engine's shockwave swept you away.,La onda de choque de la Máquina de Asedio te barrió.
+CAUSE_GATEKEEPER_PULL,The Gatekeeper's vortex pulled you in.,El vórtice de The Gatekeeper te atrapó.
+CAUSE_BROOD_POUNCE,The Brood Mother hunted you down.,The Brood Mother te dio caza.
+CAUSE_SIEGE_SHOCKWAVE,The Siege Engine's shockwave swept you away.,La onda de choque de The Siege Engine te barrió.
 CAUSE_BOSS_ARENA,The closing arena crushed you.,La arena te aplastó contra el muro.
 UI_SECTION_AUDIO,Audio,Audio
 UI_SECTION_DISPLAY,Display,Pantalla
@@ -336,7 +335,7 @@ MAP_LEGEND_ROOM,Explored room,Sala explorada
 MAP_LEGEND_UNEXPLORED,Way to an unexplored room,Paso a una sala sin explorar
 MAP_LEGEND_ALTAR,Altar,Altar
 MAP_LEGEND_CHEST,Chest (dim: can't pay yet),Cofre (tenue: aún no te alcanza)
-MAP_LEGEND_BOSS,Boss door (dim: open after the boss),Puerta del jefe (tenue: abierta tras el jefe)
+MAP_LEGEND_BOSS,Boss door,Puerta del jefe
 MAP_LEGEND_PORTAL,Portal (blue: open),Portal (azul: abierto)
 MAP_ROOMS,Rooms found: %d / %d,Salas halladas: %d / %d
 MAP_LEGEND_SHRINE,Gamble shrine,Santuario de apuestas
@@ -446,47 +445,47 @@ ABILITY_COMBO_SUPERCONDUCTOR_DESC,Lightning hits chilled enemies harder.,Los ray
 ABILITY_COMBO_EMBER_WARD,Ember Ward,Guarda de Brasas
 ABILITY_COMBO_EMBER_WARD_DESC,Blocking bursts fire around you.,Bloquear hace estallar fuego a tu alrededor.
 HUD_OVERRUN,OVERRUN,ASEDIO
-HUD_OVERRUN_CLEARED,"Overrun cleared, the doors open: an ability card and double shards","Asedio superado, las puertas se abren: una carta de habilidad y fragmentos dobles"
+HUD_OVERRUN_CLEARED,Overrun cleared,Asedio superado
 MAP_LEGEND_OVERRUN,"Overrun (optional, harder)","Asedio (opcional, más difícil)"
 UI_DEV_GO_OVERRUN,Go to the Overrun door,Ir a la puerta del asedio
 CAPTION_OVERRUN_ENTER,[Overrun alarm],[Alarma de asedio]
 CAPTION_OVERRUN_CLEAR,[Overrun cleared],[Asedio superado]
-BOSS_WARLORD,The Warlord,El Señor de la Guerra
-BOSS_HIVE_LENS,The Hive Lens,La Lente Enjambre
-BOSS_FOUNDRY,The Foundry,La Fundición
+BOSS_WARLORD,The Warlord,The Warlord
+BOSS_HIVE_LENS,The Hive Lens,The Hive Lens
+BOSS_FOUNDRY,The Foundry,The Foundry
 ENEMY_LENS_DRONE,Lens Drone,Dron Lente
 CAUSE_LENS_DRONE,A Lens Drone's ring of orbs got you.,El anillo de orbes de un Dron Lente te alcanzó.
-CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo del Señor de la Guerra te derribó.
-CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas del Señor de la Guerra te atravesaron.
-CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida del Señor de la Guerra te arrolló.
-CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas del Señor de la Guerra llovieron sobre ti.
-CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos del Señor de la Guerra te arrolló.
-CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas del Señor de la Guerra te abatió.
-CAUSE_WARLORD_RECALL,The Warlord's javelins flew back through you.,Las jabalinas del Señor de la Guerra volvieron atravesándote.
-CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de la Lente Enjambre te barrió.
-CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de la Lente Enjambre te abatieron.
-CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de la Lente Enjambre te quemó.
-CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,La Lente Enjambre se lanzó sobre ti.
-CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de la Lente Enjambre te aplastó.
-CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concentrado de la Lente Enjambre te encontró a lo lejos.
-CAUSE_HIVE_SPIRAL,The Hive Lens's prism spiral cut you down.,La espiral de prismas de la Lente Enjambre te abatió.
-CAUSE_HIVE_BLOOM,The Hive Lens's petal bloom closed around you.,La flor de pétalos de la Lente Enjambre se cerró sobre ti.
-CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de la Fundición te quemó.
-CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de la Fundición te destrozaron.
-CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de la Fundición te abrasó.
-CAUSE_FOUNDRY_LAUNCH,A Foundry Bomb Drone crushed you.,Un Dron Bombardero de la Fundición te aplastó.
-CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,La Fundición inundó la sala de fuego.
-CAUSE_FOUNDRY_FOUNTAIN,The Foundry's slag fountain rained down on you.,La fuente de escoria de la Fundición te llovió encima.
-CAUSE_FOUNDRY_WAVES,The Foundry's furnace waves washed over you.,Las oleadas del horno de la Fundición te arrasaron.
-CAUSE_HIVE_GAZE,The Hive Lens's gaze swept over you.,La mirada de la Lente Enjambre te barrió.
-CAUSE_HIVE_GAZE_ORBS,The Hive Lens's orbs caught you.,Los orbes de la Lente Enjambre te alcanzaron.
-CAUSE_SIEGE_RICOCHET,A Siege Engine shell bounced into you.,Un proyectil rebotado de la Máquina de Asedio te alcanzó.
+CAUSE_WARLORD_BASH,The Warlord's shield bash knocked you flat.,El golpe de escudo de The Warlord te derribó.
+CAUSE_WARLORD_SPEARS,The Warlord's spear lines ran you through.,Las líneas de lanzas de The Warlord te atravesaron.
+CAUSE_WARLORD_DASH,The Warlord's lunge ran you down.,La embestida de The Warlord te arrolló.
+CAUSE_WARLORD_JAVELINS,The Warlord's javelins rained down on you.,Las jabalinas de The Warlord llovieron sobre ti.
+CAUSE_WARLORD_WALL,The Warlord's shield wall swept over you.,El muro de escudos de The Warlord te arrolló.
+CAUSE_WARLORD_FAN,The Warlord's javelin fan struck you down.,El abanico de jabalinas de The Warlord te abatió.
+CAUSE_WARLORD_RECALL,The Warlord's javelins flew back through you.,Las jabalinas de The Warlord volvieron atravesándote.
+CAUSE_HIVE_SWEEP,The Hive Lens's beam swept through you.,El rayo de The Hive Lens te barrió.
+CAUSE_HIVE_PRISM,The Hive Lens's prism bolts cut you down.,Los proyectiles de prisma de The Hive Lens te abatieron.
+CAUSE_HIVE_GLARE,The Hive Lens's glare burned you.,El destello de The Hive Lens te quemó.
+CAUSE_HIVE_DIVE,The Hive Lens dived onto you.,The Hive Lens se lanzó sobre ti.
+CAUSE_HIVE_SPLIT,A drone splitting off the Hive Lens crushed you.,Un dron al separarse de The Hive Lens te aplastó.
+CAUSE_HIVE_FOCUS,The Hive Lens's focused beam found you far away.,El rayo concentrado de The Hive Lens te encontró a lo lejos.
+CAUSE_HIVE_SPIRAL,The Hive Lens's prism spiral cut you down.,La espiral de prismas de The Hive Lens te abatió.
+CAUSE_HIVE_BLOOM,The Hive Lens's petal bloom closed around you.,La flor de pétalos de The Hive Lens se cerró sobre ti.
+CAUSE_FOUNDRY_FLOOD,The Foundry's molten floor burned you.,El suelo fundido de The Foundry te quemó.
+CAUSE_FOUNDRY_SLAG,The Foundry's slag shells blew you apart.,Los proyectiles de escoria de The Foundry te destrozaron.
+CAUSE_FOUNDRY_VENT,The Foundry's vent blast scorched you.,La explosión del respiradero de The Foundry te abrasó.
+CAUSE_FOUNDRY_LAUNCH,A Foundry Bomb Drone crushed you.,Un Dron Bombardero de The Foundry te aplastó.
+CAUSE_FOUNDRY_FIRESTORM,The Foundry flooded the room with fire.,The Foundry inundó la sala de fuego.
+CAUSE_FOUNDRY_FOUNTAIN,The Foundry's slag fountain rained down on you.,La fuente de escoria de The Foundry te llovió encima.
+CAUSE_FOUNDRY_WAVES,The Foundry's furnace waves washed over you.,Las oleadas del horno de The Foundry te arrasaron.
+CAUSE_HIVE_GAZE,The Hive Lens's gaze swept over you.,La mirada de The Hive Lens te barrió.
+CAUSE_HIVE_GAZE_ORBS,The Hive Lens's orbs caught you.,Los orbes de The Hive Lens te alcanzaron.
+CAUSE_SIEGE_RICOCHET,A Siege Engine shell bounced into you.,Un proyectil rebotado de The Siege Engine te alcanzó.
 CAUSE_SIEGE_TURRET_RICOCHET,A turret's bouncing shot hit you.,El disparo rebotado de una torreta te alcanzó.
-CAUSE_FOUNDRY_LAVA,You stood in the Foundry's lava.,Pisaste la lava de la Fundición.
-CAUSE_FOUNDRY_MELT,The Foundry melted the floor out from under you.,La Fundición fundió el suelo bajo tus pies.
-CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura del Señor de la Guerra resuena]
-CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: la Lente Enjambre zumba al enfocar]
-CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de la Fundición ruge]
+CAUSE_FOUNDRY_LAVA,You stood in the Foundry's lava.,Pisaste la lava de The Foundry.
+CAUSE_FOUNDRY_MELT,The Foundry melted the floor out from under you.,The Foundry fundió el suelo bajo tus pies.
+CAPTION_TELEGRAPH_WARLORD,[Warning: the Warlord's armour clanks],[Aviso: la armadura de The Warlord resuena]
+CAPTION_TELEGRAPH_HIVE_LENS,[Warning: the Hive Lens hums as it focuses],[Aviso: The Hive Lens zumba al enfocar]
+CAPTION_TELEGRAPH_FOUNDRY,[Warning: the Foundry's furnace roars],[Aviso: el horno de The Foundry ruge]
 EVENT_UNSTABLE_CORE,Unstable Core,Núcleo inestable
 EVENT_UNSTABLE_CORE_DESC,A cracked power core hums with stolen strength.,Un núcleo agrietado zumba con fuerza robada.
 EVENT_UNSTABLE_CORE_DRAW,Draw the power out,Extraer la energía
@@ -565,14 +564,14 @@ UI_EVENT_HINT,←/→ or 1-3 to choose · Enter or A to take · Esc or B to leav
 UI_EVENT_COST,Cost,Coste
 UI_EVENT_REWARD,Reward,Recompensa
 UI_EVENT_LEAVE,Leave it,Dejarlo
-UI_EVENT_LEAVE_DESC,Walk away. You can come back later.,Márchate. Puedes volver más tarde.
+UI_EVENT_LEAVE_DESC,Walk away.,Márchate.
 UI_EVENT_COST_NONE,Nothing but the curse,Nada más que la maldición
 UI_EVENT_COST_HP,Lose %d %% of your max HP now,Pierdes un %d %% de tu vida máxima ahora
 UI_EVENT_COST_MAX_HP,%d %% less max HP for the run,Un %d %% menos de vida máxima durante la partida
 UI_EVENT_COST_SHARDS,Pay %d shards,Pagas %d fragmentos
 UI_EVENT_COST_OVERHEAT,Overheat now: a stall,Sobrecalentarte ahora: un bloqueo
 UI_EVENT_COST_FIGHT,Fight %d elites here,Luchar aquí contra %d élites
-UI_EVENT_COST_DEFEND,Stay by it for %d s; enemies come faster,Quédate a su lado %d s; los enemigos llegan antes
+UI_EVENT_COST_DEFEND,Stay by it for %d s,Quédate a su lado %d s
 UI_EVENT_REWARD_OVERCLOCK,+%d %% Overclock damage this floor,+%d %% de daño de sobrecarga en esta planta
 UI_EVENT_REWARD_SHARDS,+%d shards,+%d fragmentos
 UI_EVENT_REWARD_CHEST,A free chest once they fall,Un cofre gratis cuando caigan
@@ -613,8 +612,8 @@ SHOP_HINT,"Arrows or 1-4 to choose · Enter or A to buy or sell · Esc or B to l
 MAP_LEGEND_SHOP,Shop,Tienda
 HUD_FLOOR_DEEP,Floor %d · Deep · %s,Piso %d · Profundo · %s
 HUD_FLOOR_CARD_DEEP,Floor %d · Deep,Piso %d · Profundo
-HUD_SHARDS_HALVED,The portal kept half your shards: -%d,El portal se quedó con la mitad de tus fragmentos: -%d
-HUD_PORTALS_OPEN,"Two portals are open: blue goes on, violet goes Deep (harder, richer).","Hay dos portales abiertos: el azul sigue, el violeta baja a lo Profundo (más duro, más botín)."
+HUD_SHARDS_HALVED,-%d shards,-%d fragmentos
+HUD_PORTALS_OPEN,Two portals are open.,Hay dos portales abiertos.
 REWARD_OPEN_EPIC_ALTAR,[E / X] Open the epic altar,[E / X] Abrir el altar épico
 REWARD_OPEN_DROP,[E / X] Take the card,[E / X] Tomar la carta
 PICK_TITLE_EPIC_ALTAR,Epic altar · choose one,Altar épico · elige uno
@@ -630,11 +629,10 @@ PHASE_SWARM,The swarm,El enjambre
 PHASE_PEAK,Full horde,Horda completa
 HUD_NEW_ENEMY,New: %s,Nuevo: %s
 UI_DEV_NEXT_PHASE,Next difficulty phase,Siguiente fase de dificultad
-HUD_EXPLORE_AFTER_BOSS,"The boss door is open: explore the rest of the floor, the portal waits for you.","La puerta del jefe está abierta: explora el resto del piso, el portal te espera."
 HUD_ARENA,ARENA,ARENA
 HUD_ARENA_WAVE,Wave %d / %d · %d left,Oleada %d / %d · quedan %d
-HUD_ARENA_CLEARED,"Arena cleared: the doors are open, its reward is unlocked","Arena superada: las puertas se abren, su recompensa está desbloqueada"
-MAP_LEGEND_ARENA,"Arena (seals until cleared, holds rewards)","Arena (se sella hasta superarla, guarda recompensas)"
+HUD_ARENA_CLEARED,Arena cleared,Arena superada
+MAP_LEGEND_ARENA,Arena,Arena
 UI_DEV_GO_ARENA,Go to an arena door,Ir a la puerta de una arena
 UI_DEV_CLEAR_WAVE,Clear the arena wave,Despejar la oleada de la arena
 PICK_TITLE_LEGENDARY,Pick a legendary card,Elige una carta legendaria
@@ -826,7 +824,7 @@ WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
 WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.
 UI_BUILD,Build,Construcción
 UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
-UI_BUILD_SLOTS,%d of %d slots · the wand reads left to right,%d de %d huecos · la varita se lee de izquierda a derecha
+UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
 UI_BUILD_HINT,←→ choose · Enter pick up / put down · mouse: drag or click twice · pad: A pick up · d-pad move · A drop · Esc / B back,←→ elegir · Intro coger / soltar · ratón: arrastra o haz dos clics · mando: A coger · cruceta mover · A soltar · Esc / B volver
 UI_WAND_LEVEL,Lv %d,Nv %d
 UI_WAND_NEW,New,Nueva
@@ -903,31 +901,31 @@ UI_CODEX_DEATHS,Times it killed you,Veces que te mató
 UI_CODEX_FIGHTS,Fought,Combates
 UI_CODEX_VISITS,Floors entered,Pisos visitados
 UI_CODEX_FOUND,Found %d / %d,Descubierto %d / %d
-UI_CODEX_LOCKED,Not met yet. Meet it in a run to fill this page.,Aún no lo has encontrado. Encuéntralo en una partida para llenar esta página.
+UI_CODEX_LOCKED,Not found yet.,Aún sin descubrir.
 UI_CODEX_HINT,Arrows / stick move · Q E / LB RB page · Esc / B back,Flechas / stick mover · Q E / LB RB página · Esc / B volver
-ENEMY_CHARGER_DESC,"Runs at you, locks a straight lane and charges along it, then stands dazed: the moment to punish it.","Corre hacia ti, fija un carril recto y embiste por él; después queda aturdido: el momento de castigarlo."
-ENEMY_WARDEN_DESC,A slow rock golem that slams the ground around itself. Its front is armoured; hit it from behind.,Un gólem de roca lento que golpea el suelo a su alrededor. Su frente está blindado: atácalo por la espalda.
-ENEMY_NEEDLE_DESC,"A walking turret that keeps its distance and fires a burst down a locked line, backing off when you close in.",Una torreta andante que mantiene la distancia y dispara una ráfaga por una línea fija; retrocede si te acercas.
-ENEMY_HATCHLING_DESC,"The Brood Mother's young: small, quick, and they lunge in straight lines.","Las crías de la Madre de la Prole: pequeñas, rápidas, embisten en línea recta."
-ENEMY_ARC_CASTER_DESC,"Keeps its range and casts: a fan of three slow plasma balls, a wider fan, or a rune that erupts under you.","Mantiene la distancia y lanza: un abanico de tres bolas de plasma lentas, un abanico más abierto o una runa que estalla bajo tus pies."
-ENEMY_BOMB_DRONE_DESC,"Hovers out of reach and lobs a fireball that lands where you stand and bursts into an X of four small ones.","Flota fuera de tu alcance y lanza una bola de fuego que cae donde estás y estalla en una X de cuatro más pequeñas."
-ENEMY_SWARMER_DESC,"Weak alone, dangerous in packs: it bites with a short lunge.","Débil a solas, peligroso en manada: muerde con una embestida corta."
-ENEMY_SPLITTER_DESC,Swipes the ground ahead of it and splits into two Splitlings when it dies.,Barre el suelo frente a sí y se divide en dos Fragmentos al morir.
-ENEMY_SPLITLING_DESC,"What is left of a Splitter: smaller, weaker, and it never splits again.","Lo que queda de un Divisor: más pequeño, más débil, y ya no se divide."
-ENEMY_SHIELD_BEARER_DESC,Turns its big shield toward you and bashes whoever stands in front. Get around it.,Gira su gran escudo hacia ti y embiste a quien tenga delante. Rodéalo.
-ENEMY_MENDER_DESC,Never attacks: it keeps away and heals its most hurt ally. Take it down first.,Nunca ataca: se mantiene lejos y cura al aliado más herido. Acaba con él primero.
-ENEMY_MINE_LAYER_DESC,Drops mines as it moves; a mine arms when you touch it and blows a moment later.,Suelta minas al moverse; una mina se arma al tocarla y estalla un instante después.
-ENEMY_SNIPER_DESC,"Shows a long line, then fires down it for heavy damage, and walks to a new spot.","Muestra una línea larga, dispara por ella con mucho daño y cambia de posición."
-ENEMY_LENS_DRONE_DESC,"Breaks off the Hive Lens's rim and fires slow rings of six red orbs from a distance.","Se desprende del borde de la Lente Enjambre y dispara, a distancia, anillos lentos de seis orbes rojos."
-BOSS_GATEKEEPER_DESC,"A giant stone sentinel, the Warden's big brother. Its shock lanes take your row and column, then erupt as stone spikes that stay as pillars for a few seconds: walls for you, its rock rings and everything else. Take cover behind them, but don't get boxed in. Fist slams and sweeps too.","Un centinela de piedra gigante, el hermano mayor del Guardián. Sus carriles de choque toman tu fila y tu columna y estallan en púas de piedra que quedan en pie unos segundos como pilares: muros para ti, para sus anillos de roca y para todo lo demás. Cúbrete tras ellos, pero que no te encierren. También da puñetazos al suelo y barridos."
-BOSS_BROOD_MOTHER_DESC,"Lobs eggs onto circles that follow you. The eggs sit for a few seconds: break them, or they hatch into Hatchlings (and late in the fight burst into a star of acid). Spins webs of acid globs; her leaps and burrows lock where you stood. Shielded while her eggs fly.","Lanza huevos sobre círculos que te siguen. Los huevos quedan unos segundos en el suelo: rómpelos, o nacerán Crías (y al final del combate estallarán en una estrella de ácido). Teje espirales de gotas ácidas; sus saltos y sus excavaciones se fijan donde estabas. Se protege mientras vuelan sus huevos."
-BOSS_SIEGE_ENGINE_DESC,"A war machine that braces behind its shield and turns a cross of cannon embers that bounce off the walls and come back from behind, shells a checkerboard of circles, drops shells that follow you, fires a rail down your lane and deploys its turrets, whose shots bounce too once it is badly hurt.","Una máquina de guerra que se atrinchera tras su escudo y gira una cruz de brasas de cañón que rebotan en las paredes y vuelven por la espalda, bombardea un tablero de círculos, lanza proyectiles que te siguen, dispara un raíl por tu carril y despliega sus torretas, cuyos disparos también rebotan cuando está malherida."
-BOSS_WARLORD_DESC,"A knight behind a tower shield that blocks every hit from the front: circle it and strike its sides and back. Its javelins stick in the floor, then all fly back to it along the same lines: dodge them twice. Planting spears and dashing lower its shield.","Un caballero tras un escudo torre que bloquea todo golpe de frente: rodéalo y golpea sus flancos y su espalda. Sus jabalinas se clavan en el suelo y luego vuelven todas a él por las mismas líneas: esquívalas dos veces. Al plantar lanzas y embestir baja el escudo."
-BOSS_HIVE_LENS_DESC,"A floating eye that fires prism spirals that turn back halfway and blooming petals, and turns its gaze round the room: a beam you must stay ahead of while its orbs fly. Its focus beam follows you, then locks. Its eye closes, shielded, while the spiral turns. Once hurt, Lens Drones break off its rim.","Un ojo flotante que dispara espirales de prismas que giran al revés a mitad y flores de pétalos, y pasea su mirada por la sala: un rayo al que debes adelantarte mientras vuelan sus orbes. Su rayo concentrado te sigue y luego se fija. Cierra el ojo, protegido, mientras gira la espiral. Al quedar herido, se desprenden Drones Lente de su borde."
-BOSS_FOUNDRY_DESC,"A walking furnace that shuts its door and rains slag in a flower around it, sends out rings of molten drops with shifting gaps, floods your row with molten floor that stays as lava for a while and launches Bomb Drones. Near the end it melts the edge of the room for good, so you fight close to it.","Un horno andante que cierra su puerta y hace llover escoria en forma de flor a su alrededor, lanza anillos de gotas fundidas con huecos que se desplazan, inunda tu fila de suelo fundido que se queda como lava un rato y suelta Drones Bombarderos. Al final funde para siempre el borde de la sala, y luchas pegado a él."
+ENEMY_CHARGER_DESC,Runs at you and charges.,Corre hacia ti y embiste.
+ENEMY_WARDEN_DESC,A slow rock golem.,Un gólem de roca lento.
+ENEMY_NEEDLE_DESC,A walking turret.,Una torreta andante.
+ENEMY_HATCHLING_DESC,The Brood Mother's young.,Las crías de The Brood Mother.
+ENEMY_ARC_CASTER_DESC,Keeps its distance and casts.,Mantiene la distancia y lanza hechizos.
+ENEMY_BOMB_DRONE_DESC,Hovers and lobs fireballs.,Flota y lanza bolas de fuego.
+ENEMY_SWARMER_DESC,"Weak alone, dangerous in packs.","Débil a solas, peligroso en manada."
+ENEMY_SPLITTER_DESC,It splits when it dies.,Se divide al morir.
+ENEMY_SPLITLING_DESC,What is left of a Splitter.,Lo que queda de un Divisor.
+ENEMY_SHIELD_BEARER_DESC,Hides behind a big shield.,Se esconde tras un gran escudo.
+ENEMY_MENDER_DESC,Heals its allies.,Cura a sus aliados.
+ENEMY_MINE_LAYER_DESC,Drops mines as it moves.,Suelta minas al moverse.
+ENEMY_SNIPER_DESC,Shoots from far away.,Dispara desde lejos.
+ENEMY_LENS_DRONE_DESC,Breaks off the Hive Lens.,Se desprende de The Hive Lens.
+BOSS_GATEKEEPER_DESC,A giant stone sentinel.,Un centinela de piedra gigante.
+BOSS_BROOD_MOTHER_DESC,Mother of the swarm.,La madre del enjambre.
+BOSS_SIEGE_ENGINE_DESC,A war machine behind its shield.,Una máquina de guerra tras su escudo.
+BOSS_WARLORD_DESC,A knight behind a tower shield.,Un caballero tras un escudo torre.
+BOSS_HIVE_LENS_DESC,A floating eye.,Un ojo flotante.
+BOSS_FOUNDRY_DESC,A walking furnace.,Un horno andante.
 BIOME_RUINS_DESC,Broken halls of old stone under a cold light.,Salones rotos de piedra antigua bajo una luz fría.
-BIOME_FROZEN_SHORE_DESC,"A moonlit shore locked in ice: snow, slate and frozen sea. The ice patches make you slide.","Una costa helada bajo la luna: nieve, pizarra y mar congelado. Las placas de hielo te hacen resbalar."
-BIOME_STARFALL_DESC,"Floating rock and crystal islands over a field of stars. The starglow pools speed your step.","Islas flotantes de roca y cristal sobre un campo de estrellas. Los charcos de luz estelar aceleran tu paso."
+BIOME_FROZEN_SHORE_DESC,A moonlit shore locked in ice.,Una costa helada bajo la luna.
+BIOME_STARFALL_DESC,Floating islands over a field of stars.,Islas flotantes sobre un campo de estrellas.
 BIOME_NIGHT_ROCKS_DESC,Dark stone fields under a night sky.,Campos de piedra oscura bajo un cielo nocturno.
 BIOME_RED_CANYON_DESC,Sun-baked red rock and narrow passes.,Roca roja tostada por el sol y pasos estrechos.
 UI_ACH_TAB,Achievements,Logros
@@ -935,7 +933,7 @@ UI_ACH_TOAST,ACHIEVEMENT UNLOCKED,LOGRO DESBLOQUEADO
 UI_ACH_PROGRESS,Unlocked %d / %d,Desbloqueados %d / %d
 UI_ACH_UNLOCKED,Unlocked,Desbloqueado
 UI_ACH_LOCKED,Locked,Bloqueado
-UI_ACH_HIDDEN,A hidden achievement. Keep playing to find it.,Un logro oculto. Sigue jugando para descubrirlo.
+UI_ACH_HIDDEN,Hidden.,Oculto.
 UI_ACH_GROUP_RUN,The run,La partida
 UI_ACH_GROUP_BOSSES,Bosses,Jefes
 UI_ACH_GROUP_BIOMES,Biomes,Biomas
@@ -1003,10 +1001,6 @@ ACH_ASCEND_1_DESC,Start a new loop.,Empieza un nuevo ciclo.
 ACH_ASCEND_5_NAME,Endless,Sin fin
 ACH_ASCEND_5_DESC,Start a new loop 5 times.,Empieza un nuevo ciclo 5 veces.
 HUD_LOOP,Loop %d,Ciclo %d
-HUD_ASCENSION_OPEN,The Ascension portal is open: walk into its light to face the final boss.,El portal de la Ascensión está abierto: entra en su luz para enfrentarte al jefe final.
-HUD_LOOP_DEVICE_OPEN,"Or step onto the Loop device to start loop %d with everything you carry.","O pisa el dispositivo del Ciclo para empezar el ciclo %d con todo lo que llevas."
-WORLD_ASCENSION_NAME,Ascension,Ascensión
-WORLD_LOOP_NAME,Loop,Ciclo
 UI_RECAP_LOOPS,Loops cleared: %d,Ciclos superados: %d
 UI_CARD_LEVEL_UP,Lv %d → %d,Nv %d → %d
 UI_UI_SCALE,Interface size,Tamaño de la interfaz
@@ -1022,14 +1016,10 @@ HINT_MOUSE,the mouse,el ratón
 HINT_PAD_LEFT_STICK,Left stick,Stick izquierdo
 HINT_PAD_RIGHT_STICK,the right stick,el stick derecho
 HINT_ATTACK,Attack with %s,Ataca con %s
-HINT_DASH,Dash with %s to get out of danger,Usa el impulso con %s para salir del peligro
-HINT_VENT,Your heat is high: %s vents it in a blast around you,Tu calor está alto: %s lo purga en una explosión a tu alrededor
-HINT_PICK,"Each card joins your wand, which reads left to right","Cada carta va a tu varita, que se lee de izquierda a derecha"
-HINT_BUILD,"Reorder your wand any time: %s, then Build",Reordena tu varita cuando quieras: %s y luego Construcción
-HINT_TRIGGER,"A trigger card casts the cards to its right as a small spell (On Hit, On Kill …)","Una carta disparadora lanza las cartas a su derecha como un pequeño hechizo (Al Impactar, Al Matar …)"
-HINT_SHOP,"The shop: buy cards with shards, or sell the ones you don't need",La tienda: compra cartas con fragmentos o vende las que sobren
-HINT_PORTAL,The portal is open: step in to leave the floor,El portal está abierto: entra para salir del piso
-HINT_CODEX,"Everything you meet goes into the Codex: %s, then Codex",Todo lo que encuentras va al Códice: %s y luego Códice
+HINT_DASH,Dash with %s,Esquiva con %s
+HINT_VENT,Vent with %s,Purga con %s
+HINT_BUILD,Build: %s,Construcción: %s
+HINT_CODEX,Codex: %s,Códice: %s
 UI_CREDITS_ASSETS,"Art, models and sound","Arte, modelos y sonido"
 UI_CREDITS_FONT,Font,Fuente
 UI_CREDITS_ADDON,Addon,Complemento
@@ -1083,27 +1073,27 @@ UI_PG_SRC_BLEED,Bleed,Sangrado
 UI_PG_SRC_SHOCK,Shock,Choque
 UI_PG_SRC_FROST,Frost,Escarcha
 UI_PG_SRC_POISON,Poison,Veneno
-BOSS_COLOSSUS,The Colossus,El Coloso
-BOSS_COLOSSUS_DESC,"The Hollow Crown's first body: stone fists as big as a man. It never stops: fist combos that follow you and end in a ground slam, leaps that crack the floor in a shockwave ring, lines of stone spikes that chase you across the arena and bursts of them all around it, and boulders that shatter into shards where they land. Every blow locks half a second before it lands.","El primer cuerpo de Hollow Crown: puños de piedra tan grandes como un hombre. Nunca se detiene: combos de puños que te siguen y acaban en un golpe al suelo, saltos que agrietan el suelo en un anillo de onda expansiva, líneas de pinchos de piedra que te persiguen por la arena y estallidos de pinchos a su alrededor, y rocas que se rompen en esquirlas al caer. Cada golpe se fija medio segundo antes de caer."
-BOSS_PRISM,The Prism,El Prisma
-BOSS_PRISM_DESC,"The Hollow Crown's second body: a torn figure ringed by floating red crystal shards. She floats at the arena's heart inside the Cross, four beams that turn round the room, reversing, faster as she weakens. Her shards weave rings, spirals and flowers of orbs between the beams and fire quick bolts down a short aim line. She is shielded while the Cross turns: strike in the short windows between its spins. Her strength is measured from your own damage, so she lasts about a minute however strong you are.","El segundo cuerpo de Hollow Crown: una figura rasgada rodeada de esquirlas de cristal rojo que flotan. Flota en el corazón de la arena dentro de la Cruz, cuatro rayos que giran por la sala, cambian de sentido y aceleran a medida que se debilita. Sus esquirlas tejen anillos, espirales y flores de orbes entre los rayos y disparan proyectiles rápidos por una breve línea de mira. Está protegida mientras la Cruz gira: golpea en las breves ventanas entre giros. Su fuerza se mide a partir de tu propio daño, así que dura un minuto más o menos por fuerte que seas."
-BOSS_NEMESIS,The Fallen,El Caído
-BOSS_NEMESIS_DESC,"The Hollow Crown's last body: a small dark hooded figure, your own shadow, fallen. It fights with a kit of its own, and at times it reaches for yours: for a few seconds it takes your weapon, your dash, your steps and the strongest cards of your wand, and pulls your power down to its level, an even duel. Its strength follows yours.","El último cuerpo de Hollow Crown: una pequeña figura encapuchada y oscura, tu propia sombra, caída. Lucha con sus propias armas y, a ratos, alcanza las tuyas: durante unos segundos toma tu arma, tu impulso, tus pasos y las cartas más fuertes de tu varita, y rebaja tu poder hasta el suyo, un duelo igualado. Su fuerza sigue a la tuya."
+BOSS_COLOSSUS,The Colossus,The Colossus
+BOSS_COLOSSUS_DESC,Hollow Crown's first body.,El primer cuerpo de Hollow Crown.
+BOSS_PRISM,The Prism,The Prism
+BOSS_PRISM_DESC,Hollow Crown's second body.,El segundo cuerpo de Hollow Crown.
+BOSS_NEMESIS,The Fallen,The Fallen
+BOSS_NEMESIS_DESC,Hollow Crown's last body: your own shadow.,El último cuerpo de Hollow Crown: tu propia sombra.
 BOSS_HOLLOW_CROWN,The Hollow Crown,Hollow Crown
 FINAL_ARENA,The Hollow Arena,La Arena Hueca
-FINAL_ARENA_DESC,"A round arena of dark violet stone hung in the star-lit void, red crystal in its veins and its tiers empty. Its great gate is sealed: the only way out is through the Hollow Crown.","Una arena redonda de piedra violeta oscura suspendida en el vacío estrellado, con cristal rojo en sus vetas y sus gradas vacías. Su gran puerta está sellada: la única salida es a través de Hollow Crown."
-CAUSE_COLOSSUS_FISTS,The Colossus's fists caught you.,Los puños del Coloso te alcanzaron.
-CAUSE_COLOSSUS_LEAP,The Colossus's leap struck you.,El salto del Coloso te golpeó.
-CAUSE_COLOSSUS_SPIKES,The Colossus's stone spikes caught up with you.,Los pinchos de piedra del Coloso te alcanzaron.
-CAUSE_COLOSSUS_BURST,The Colossus's spikes burst under you.,Los pinchos del Coloso brotaron bajo tus pies.
-CAUSE_COLOSSUS_BOULDER,A boulder the Colossus threw crushed you.,Una roca que lanzó el Coloso te aplastó.
-CAUSE_PRISM_ORBS,The Prism's orbs caught you.,Los orbes del Prisma te alcanzaron.
-CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria del Prisma te abrasó.
-CAUSE_PRISM_BOLT,The Prism's bolt struck you.,Un proyectil del Prisma te alcanzó.
-CAUSE_NEMESIS_SLASH,The Fallen cut you down.,El Caído te abatió de un tajo.
-CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas del Caído te alcanzaron.
-CAUSE_NEMESIS_CARD,The Fallen used your own card.,El Caído usó tu propia carta.
-CAUSE_NEMESIS_SHOTS,The Fallen shot you with your own gun.,El Caído te disparó con tu propia arma.
+FINAL_ARENA_DESC,A dark arena in the void.,Una arena oscura en el vacío.
+CAUSE_COLOSSUS_FISTS,The Colossus's fists caught you.,Los puños de The Colossus te alcanzaron.
+CAUSE_COLOSSUS_LEAP,The Colossus's leap struck you.,El salto de The Colossus te golpeó.
+CAUSE_COLOSSUS_SPIKES,The Colossus's stone spikes caught up with you.,Los pinchos de piedra de The Colossus te alcanzaron.
+CAUSE_COLOSSUS_BURST,The Colossus's spikes burst under you.,Los pinchos de The Colossus brotaron bajo tus pies.
+CAUSE_COLOSSUS_BOULDER,A boulder the Colossus threw crushed you.,Una roca que lanzó The Colossus te aplastó.
+CAUSE_PRISM_ORBS,The Prism's orbs caught you.,Los orbes de The Prism te alcanzaron.
+CAUSE_PRISM_BEAM,The Prism's turning Cross burned you.,La Cruz giratoria de The Prism te abrasó.
+CAUSE_PRISM_BOLT,The Prism's bolt struck you.,Un proyectil de The Prism te alcanzó.
+CAUSE_NEMESIS_SLASH,The Fallen cut you down.,The Fallen te abatió de un tajo.
+CAUSE_NEMESIS_CRESCENTS,The Fallen's crescents caught you.,Las medialunas de The Fallen te alcanzaron.
+CAUSE_NEMESIS_CARD,The Fallen used your own card.,The Fallen usó tu propia carta.
+CAUSE_NEMESIS_SHOTS,The Fallen shot you with your own gun.,The Fallen te disparó con tu propia arma.
 ACH_FINAL_BOSS_NAME,Crown Breaker,Rompecoronas
 ACH_FINAL_BOSS_DESC,Beat the Hollow Crown.,Derrota a Hollow Crown.
 ACH_FINAL_NO_HIT_NAME,Untouched,Intocable
@@ -1113,8 +1103,8 @@ ACH_FINAL_LOOPED_DESC,Beat the Hollow Crown after an Ascension loop.,Derrota a H
 UI_CODEX_SECTION_FINAL,The Hollow Crown,Hollow Crown
 UI_RECAP_TRUE_ENDING,The Hollow Crown is broken: the true ending.,Hollow Crown está rota: el verdadero final.
 HUD_FINAL_SHATTER,SHATTERED,HECHA AÑICOS
-HUD_FALLEN_WARN,The Fallen reaches for your power…,El Caído alcanza tu poder…
-HUD_FALLEN_WINDOW,"The Fallen mirrors you: your build is its own, your power pulled to its level (%d s)","El Caído te imita: tu equipo es el suyo y tu poder baja hasta el suyo (%d s)"
+HUD_FALLEN_WARN,The Fallen reaches for your power…,The Fallen alcanza tu poder…
+HUD_FALLEN_WINDOW,Mirrored · %d s,Imitado · %d s
 HUD_BOSS_INVULNERABLE,Invulnerable,Invulnerable
 HUD_BOSS_SHIELD_ONE,1 shield left,1 escudo restante
 HUD_BOSS_SHIELDS,%d shields left,%d escudos restantes

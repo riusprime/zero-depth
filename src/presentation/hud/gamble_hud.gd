@@ -3,8 +3,9 @@ extends Control
 ## The gamble shrine on the HUD (v0.3.0 L19): the interact prompt by the shrine (its price, red when you can't
 ## afford it, or a note when every stat is capped), the result card when a use lands (GambleCard), and the stats
 ## won this run (GambleStatsPanel) while you stand at the shrine or just after a win. Reads only; never takes the
-## mouse. v0.8.0 N14 (owner O72): under the prompt, the shrine's wins and its chance to fail (the sim's numbers:
-## "Wins 1/3 · 30 % to fail"); a spent shrine says so; a failed use shows a short "It failed" line.
+## mouse. v0.8.0 N14 (owner O72): a spent shrine says so; a failed use shows a short "It failed" line. v0.8.0 N18
+## (owner O76: the game stops explaining): N14's odds line under the prompt (wins and chance to fail) is gone, and a
+## spent shrine's prompt is the one word "Spent".
 
 const POOR := Color("#FF5A4D")
 ## The stats panel stays this long (s) after a win, even once you walk away.
@@ -16,7 +17,6 @@ const FAIL_COLOR := Color("#FF7A5C")
 var card := GambleCard.new()
 var stats := GambleStatsPanel.new()
 var _prompt := Label.new()
-var _odds := Label.new()
 var _fail := Label.new()
 var _seen_tick := -1
 var _fail_tick := -1
@@ -40,17 +40,6 @@ func _init() -> void:
 	_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
 	_prompt.visible = false
 	add_child(_prompt)
-	_odds.name = "GambleOdds"  # v0.8.0 N14: the wins and the chance to fail, under the prompt
-	_odds.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_odds.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_odds.custom_minimum_size = Vector2(900, 0)
-	_odds.position = Vector2(-450, -80)
-	_odds.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	_odds.add_theme_font_size_override("font_size", 20)
-	_odds.add_theme_constant_override("outline_size", 5)
-	_odds.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
-	_odds.visible = false
-	add_child(_odds)
 	_fail.name = "GambleFailed"  # v0.8.0 N14: a failed use's short line, over the shrine
 	_fail.set_anchors_preset(Control.PRESET_CENTER)
 	_fail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -77,19 +66,17 @@ func _init() -> void:
 func sync(reader: WorldReader) -> void:
 	if not reader.has_gamble():
 		_prompt.visible = false
-		_odds.visible = false
 		_fail.visible = false
 		stats.visible = false
 		return
 	_near = reader.gamble_in_reach() and not reader.choosing()
 	_prompt.visible = _near
 	var spent := reader.gamble_spent()
-	_odds.visible = _near and not spent and not reader.gamble_exhausted()
 	if _near:
 		var price := reader.gamble_price()
 		var ok := reader.gamble_affordable() and not reader.gamble_exhausted() and not spent
 		if spent:  # v0.8.0 N14 (O72): blocked after its wins
-			_prompt.text = tr("UI_GAMBLE_BLOCKED") % reader.gamble_max_wins()
+			_prompt.text = tr("UI_GAMBLE_BLOCKED")
 		elif reader.gamble_exhausted():
 			_prompt.text = tr("UI_GAMBLE_SPENT")
 		elif reader.gamble_affordable():
@@ -97,7 +84,6 @@ func sync(reader: WorldReader) -> void:
 		else:
 			_prompt.text = tr("REWARD_TOO_POOR") % [reader.shards(), price]
 		HudStyle.font_color(_prompt, Color.WHITE if ok else POOR)
-		_odds.text = odds_line(self, reader)
 	var f := reader.gamble_fail_tick()
 	if f != _fail_tick:
 		_fail_tick = f
@@ -131,25 +117,9 @@ func prompt_text() -> String:
 	return _prompt.text if _prompt.visible else ""
 
 
-## v0.8.0 N14: the wins and chance line under the prompt ("" when hidden), and the failed use's line ("" when none).
-func odds_text() -> String:
-	return _odds.text if _odds.visible else ""
-
-
+## v0.8.0 N14: the failed use's line ("" when none).
 func fail_text() -> String:
 	return _fail.text if _fail.visible else ""
-
-
-## v0.8.0 N14 (O72): "Wins 1/3 · 30 % to fail", from the sim's own numbers (Gamble.wins, max_wins, fail_permille).
-static func odds_line(ci: Object, reader: WorldReader) -> String:
-	return (
-		ci.tr("UI_GAMBLE_ODDS")
-		% [
-			reader.gamble_wins(),
-			reader.gamble_max_wins(),
-			GambleIcons.percent(reader.gamble_fail_permille())
-		]
-	)
 
 
 func prompt_poor() -> bool:
