@@ -1200,6 +1200,21 @@ func boss_door_sealed() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.door_sealed()
 
 
+## v0.8.0 BD (owner O83): the door's slide before the fight from the sim, 0 (shut) .. 1 (open; BossFlow.door_progress),
+## or -1 when the sim doesn't drive it (a floor before BD, or once the fight began).
+func boss_door_progress() -> float:
+	return _w.boss_flow.door_progress(_w.tick) if _w.boss_flow != null else -1.0
+
+
+## v0.8.0 BD (O83): the interact press would open the boss door now (the prompt).
+func boss_door_in_reach() -> bool:
+	return (
+		_w.boss_flow != null
+		and not _w.player_dead()
+		and _w.boss_flow.door_in_reach(_w.floor_layout, player_pos())
+	)
+
+
 ## The gate's portal is active: the boss is dead, and walking in leaves the floor.
 func portal_active() -> bool:
 	return _w.boss_flow != null and _w.boss_flow.portal_active()

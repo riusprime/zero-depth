@@ -63,6 +63,7 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	assert_true(main.driver.debug.god, "God mode for the walk")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var walls_open := w.walls.size()
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(

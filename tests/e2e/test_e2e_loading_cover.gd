@@ -94,6 +94,7 @@ func test_a_run_starts_behind_the_black_cover_and_a_portal_covers_in_its_colours
 	var f := w.floor_layout
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
+	assert_true(await e.open_boss_door(), "v0.8.0 BD (O83): E opened the boss door")
 	var into := Kin.dir(f.boss_door_angle)
 	var sealed: bool = await _walk(
 		e, f.boss_door_inside(2.0), func() -> bool: return w.boss_flow.door_sealed(), into

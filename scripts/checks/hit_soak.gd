@@ -287,6 +287,14 @@ func _door(w: World) -> void:
 		_go("boss")
 	elif _stage_frame > 5000:
 		_go("boss")
+	elif w.boss_flow.door == BossFlow.Door.SHUT or w.boss_flow.door == BossFlow.Door.OPENING:
+		# v0.8.0 BD (owner O83): the door opens on the interact press (pad X), then the walk goes on.
+		var by := f.boss_door_outside(0.9)
+		if (by - w.player_pos()).length() < 0.8:
+			_release_all()
+			_button(JOY_BUTTON_X, _stage_frame % 10 == 0 and w.boss_flow.door == BossFlow.Door.SHUT)
+		else:
+			_walk(w, by, false)
 	else:
 		_walk(w, f.boss_door_inside(2.0), true)
 

@@ -31,7 +31,10 @@ RATE = 44100
 SFX_PEAK = 10 ** (-1.0 / 20.0)
 AMB_PEAK = 10 ** (-6.0 / 20.0)
 AMB_SECONDS = 10.0
-LICENCE = "Original work generated for this project by scripts/audio/generate_sfx.py (no third-party audio)"
+LICENCE = (
+    "Original work generated for this project by scripts/audio/generate_sfx.py (no third-party audio); the boss"
+    " door's opening and impact supplied by the owner (Rius; prepared by scripts/audio/bd_audio_prep.py)"
+)
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT_SFX = os.path.join(ROOT, "assets", "audio", "sfx")
@@ -1153,6 +1156,11 @@ def manifest_for(rendered):
                 "loop": kind == "ambience",
             }
         )
+    # v0.8.0 BD: the owner's sounds (rows marked "source": "owner", prepared by bd_audio_prep.py) are kept as listed.
+    if os.path.exists(MANIFEST):
+        for row in json.load(open(MANIFEST, encoding="utf-8")).get("sounds", []):
+            if row.get("source") == "owner":
+                sounds.append(row)
     return {
         "generator": "scripts/audio/generate_sfx.py",
         "generator_version": GENERATOR_VERSION,

@@ -4,7 +4,7 @@ extends RefCounted
 ## into their caches before its view is built, as a worker job of the view's ViewBuildQueue (WorldViewRoot.queue_setup),
 ## so the main thread never waits on a model file: the boss models (BossModels.preload_all, as the stage build always
 ## did), the kit's pieces, their decoration detail and the chest's two halves, the wall textures, and the shop
-## stall's models. Measured
+## stall's models, and (v0.8.0 BD) the biome's boss door. Measured
 ## before N12, reading them cold held one frame of a run's first floor for 5-8 s (the boss models), 2-3 s (the shop
 ## stall) and 0.5 s (the kit's walls). Each cache is filled once per run of the game; later floors find them filled.
 ## Thread rule: the worker reads and fills these caches while the main thread builds nothing and draws only the
@@ -29,6 +29,7 @@ static func warm(final: bool, kit: bool, biome: StringName, shop: bool) -> void:
 		EnemyModels.get_model(id)
 	LoopDevice.warm_model()
 	AscensionPortal.warm_model()
+	BossDoorModels.get_model(biome)  # v0.8.0 BD (O82): the biome's boss door
 	if kit:
 		for id: StringName in KitModels.SPECS:
 			var piece := KitModels.get_piece(id)

@@ -142,6 +142,25 @@ O78). The numbers and the shots: [`roadmap/v0.8.0/evidence/MODELS_INSTALL.md`](r
 | ☑ 2026-10-18 | `lens_drone` | The Hive Lens's drones (hover, ring of feet spins, eye flares) |
 | ☑ 2026-10-18 | `ascension_portal` | The Ascension portal (your dais, pillars and crystals; the violet beam in code, after your reference image) |
 
+### 3.0b Delivered 2026-10-18 (installed in v0.8.0 BD)
+Your five boss doors and the door's two sounds (O82, O83). Each door is cut into its frame and its slab by
+`scripts/assets/bd_prep.py`, about 18 % bigger than the old code-made door, and shown on its biome's boss room. The
+door now opens when you press interact (E / pad X) next to it. Numbers and shots:
+[`roadmap/v0.8.0/evidence/BOSS_DOORS.md`](roadmap/v0.8.0/evidence/BOSS_DOORS.md).
+
+| ✓ | id | What |
+|---|---|---|
+| ☑ 2026-10-18 | `boss_door_ruins` | Ruins: concrete, riveted iron and rebar, a scrap-metal horned crest |
+| ☑ 2026-10-18 | `boss_door_night_rocks` | Night Rocks: blue-grey rock, moss, bones and a pale beast skull |
+| ☑ 2026-10-18 | `boss_door_red_canyon` | Red Canyon: sandstone strata, rope-bound beams, a cattle skull, the sun on the slab |
+| ☑ 2026-10-18 | `boss_door_frozen_shore` | Frozen Shore: ice and snow, icicles, an ice-glazed skull |
+| ☑ 2026-10-18 | `boss_door_starfall` | Starfall: violet stone, star specks, crystal clusters |
+| ☑ 2026-10-18 | `door_opening` (sound) | Plays at the door when you press to open it (the opening lasts as long as the sound, 2.7 s) |
+| ☑ 2026-10-18 | `door_impact` (sound) | Plays when the slab lands. Cut to 2.95 s with a 0.9 s fade (the game's sound effects stop at 3 s; yours rings for about 5.5 s). Tell the lead if you want the whole tail |
+
+- [ ] **Your key:** you wrote "F on keyboard", but F is already Vent, so the door uses the existing interact key, E
+  (pad X is the same as you asked). Say if you want something else.
+
 ### 3.1 New from your playtest notes (P1)
 
 | ✓ | id | What it is, how it should look | Size (W×D×H m) | Prompt (after the prefix) |

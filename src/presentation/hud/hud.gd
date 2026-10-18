@@ -56,6 +56,8 @@ var overrun_hud := OverrunHud.new()
 var phase_hud := PhaseHud.new()
 ## v0.5.0 SH: the shop's prompt and panel.
 var shop := ShopHud.new()
+## v0.8.0 BD (O83): the boss door's interact prompt.
+var boss_door := BossDoorHud.new()
 ## v0.6.0 MX2: the weapon, the utility and the six modifier slot pips; the Swap choice (over the pick and the shop).
 var build_hud := BuildHud.new()
 ## v0.8.0 N8 (owner O62): the picked cards' icons fly over everything to their HUD slots.
@@ -174,6 +176,7 @@ func _init() -> void:
 	add_child(events)  # v0.5.0 EV: so do the event panel's cards; a choice is input, like a pick
 	events.panel.picked.connect(_pick.picked.emit)
 	add_child(shop)  # v0.5.0 SH: so does the shop panel
+	add_child(boss_door)  # v0.8.0 BD
 	add_child(build_hud)  # v0.6.0 MX2
 	build_hud.anchor = _hp_frame
 	add_child(swap)  # v0.6.0 MX2: last, over the pick and the shop; its answer is input
@@ -260,6 +263,7 @@ func sync(reader: WorldReader) -> void:
 	overrun_hud.sync(reader)  # v0.4.0 AB
 	phase_hud.sync(reader)  # v0.4.0 TU
 	shop.sync(reader)  # v0.5.0 SH
+	boss_door.sync(reader)  # v0.8.0 BD
 	build_hud.sync(reader)  # v0.6.0 MX2
 	swap.sync(reader)
 	swap.input_enabled = not _landing  # v0.8.0 N11 fix: no answer to a Swap hidden under the arrival (it would be lost)

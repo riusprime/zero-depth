@@ -8,6 +8,9 @@ extends Node3D
 ## silhouettes still show the ones farther off).
 const OCCLUSION_RADIUS_M := 10.0
 const OCCLUSION_FOCUS_MAX := 24
+## v0.8.0 BD (O83): the camera shake as the boss door's slab lands (starting value; none with shake off or reduced
+## motion).
+const DOOR_LAND_SHAKE := 0.3
 ## v0.8.0 LD (owner O70: loads never freeze): the parts a view makes when it is made (about 16 ms of the main thread
 ## together, 23-55 ms on a busy machine, in one frame). A load behind the cover makes them ahead, a few a frame
 ## (prebuild()); the next WorldViewRoot takes them (_part()). Made the same way either way, so the view is the same.
@@ -302,7 +305,8 @@ func _setup_devices(palette: Dictionary) -> void:
 			reader.boss_door_angle(),
 			reader.boss_door_width(),
 			reader.boss_door_half_thickness(),
-			palette["cover"]
+			palette["cover"],
+			stage.prop_style  # v0.8.0 BD (O82): the biome's own door
 		)
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
@@ -384,6 +388,8 @@ func sync() -> void:
 	black_holes.sync(reader)  # v0.8.0 P2
 	if boss_door != null:
 		boss_door.sync(reader)
+		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud
+			rig.shake(DOOR_LAND_SHAKE)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
 	if shop_terminal != null:

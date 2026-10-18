@@ -170,6 +170,8 @@ const ADDED_SINCE_V05 := {
 		&"ascend_declined",
 		&"ascend_choice",
 		&"final_next",  # v0.8.0 FB1: an older save gets the base's (RunState.prepare: today's content)
+		&"door",  # v0.8.0 BD: an older save's floor (rules 1-7) gets the base's: Door.PASSAGE (RunState.prepare)
+		&"door_press_tick",
 	],
 	# v0.8.0 BS1: the signature mechanics' pillars and javelins (lists of their own; an older save has none)
 	&"BossStore":
