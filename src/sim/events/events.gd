@@ -22,10 +22,16 @@ extends RefCounted
 ##   or the shrine's room) holds the curse altar: a pedestal like the others (World.ev.curse_k), whose event is drawn
 ##   from the curse events (EventTable.curse_room) after the common rooms' draws; the common rooms never draw a curse
 ##   event. A floor saved before N17 (`legacy`) keeps its event rooms as they were.
+## - v0.8.0 N19 (owner O80: "The curse room should be a fixed unique small room in every biome like the store"): the
+##   curse room is a room type of its own (CurseRoom.furnish: its interior cleared, the altar centred and solid, crystal
+##   clusters round the walls, no enemy spawns). The room: small rooms and rooms holding no reward first (curse_site);
+##   on a Deep floor always one (rules.curse_room_deep_chance_permille), whose altar holds Whispering Deep (S5: the
+##   draw takes a deep_only event first). Echo Mirror needs a raised stat (Need.STAT_RAISED) to be drawn at all. A floor
+##   built under N17's rules (floor rules 7, CURSE_RULES_N17) keeps N17's room, draw and look.
 
 enum Cost { NONE, HP, MAX_HP, SHARDS, OVERHEAT, FIGHT, DEFEND }
 enum Reward { STAT_EPIC, STAT_ECHO, MOD, CHEST, OVERCLOCK, ABILITY_LEVEL, SHARDS, CLEANSE }
-enum Need { ANY, CURSE, HEAT, STAT_CARD, ABILITY }
+enum Need { ANY, CURSE, HEAT, STAT_CARD, ABILITY, STAT_RAISED }
 enum State { READY, ACTIVE, DONE }
 
 const MAX_CHOICES := 2
@@ -44,6 +50,14 @@ const CURSE_STREAM := "map:curse_room"
 const POOL_ANY := 0
 const POOL_COMMON := 1
 const POOL_CURSE := 2
+## v0.8.0 N19: the curse-room rules a floor was built under (FloorScenario.curse_room_rules_of): before N17 (no curse
+## room), N17's (a combat room keeps its interior; Whispering Deep in the common draw; Echo Mirror needs only stat
+## cards) and today's.
+const CURSE_RULES_BEFORE_N17 := 0
+const CURSE_RULES_N17 := 1
+const CURSE_RULES_N19 := 2
+## v0.8.0 N19: a room this small (interior, m²) is a small room (a one-cell room is about 10-14 m by 9-11 m).
+const SMALL_ROOM_M2 := 170.0
 
 
 ## Sets up the floor's event rooms (setup, after FloorScenario.build and the run's carry): the loadout and its
@@ -53,7 +67,7 @@ static func setup(
 	events: Array[EventTable],
 	curses: Array[CurseTable],
 	rules: EventRules,
-	legacy: bool = false
+	curse_rules: int = CURSE_RULES_N19
 ) -> void:
 	var s := w.ev
 	s.events = events
@@ -67,37 +81,68 @@ static func setup(
 	s.rng_elite = RngStream.derive(w.seed_value, "ai:elite")
 	Curses.after_setup(w)  # v0.6.0 CU: a held Glass Heart cuts the fresh floor's max HP
 	if w.floor_layout != null and not events.is_empty():
-		place(w, w.floor_layout, PackedInt32Array(), legacy)
+		place(w, w.floor_layout, PackedInt32Array(), curse_rules)
 
 
 ## Places one pedestal per picked room with an event drawn for it; v0.8.0 N17: then the curse room's altar (unless
-## `legacy`: a floor saved before N17, whose rooms draw every event as before).
+## CURSE_RULES_BEFORE_N17: a floor saved before N17, whose rooms draw every event as before); v0.8.0 N19: in a room
+## of its own (CurseRoom.furnish), its solids added to the world's walls and no enemy spawning inside.
 static func place(
 	w: World,
 	layout: FloorLayout,
 	taken: PackedInt32Array = PackedInt32Array(),
-	legacy: bool = false
+	curse_rules: int = CURSE_RULES_N19
 ) -> void:
 	var placed := PackedInt32Array()
 	var shut := taken.duplicate()
 	if Gamble.present(w):  # v0.8.0 N14: the shrine's room (a no-op for the start hall, never a candidate)
 		shut.append(layout.room_of(w.gamble_pos))
-	var curse_room := -1 if legacy else curse_site(layout, w.seed_value, w.ev.rules, shut)
+	var curse_room := -1
+	if curse_rules == CURSE_RULES_N17:
+		curse_room = curse_site_n17(layout, w.seed_value, w.ev.rules, shut)
+	elif curse_rules == CURSE_RULES_N19:
+		curse_room = curse_site(
+			layout, w.seed_value, w.ev.rules, shut, Routes.is_deep(w), reward_rooms(w, layout)
+		)
 	if curse_room >= 0:
 		shut.append(curse_room)
-	var pool := POOL_ANY if legacy else POOL_COMMON
+	var pool := POOL_ANY if curse_rules == CURSE_RULES_BEFORE_N17 else POOL_COMMON
 	for r in pick_rooms(layout, w.seed_value, w.ev.rules, shut):
-		var e := draw_event(w, placed, pool)
+		var e := draw_event(w, placed, pool, curse_rules)
 		if e < 0:
 			break
 		placed.append(e)
 		_add(w, spot(layout, r, w.ev.rules)[0], r, e)
 	if curse_room < 0:
 		return
-	var c := draw_event(w, placed, POOL_CURSE)  # after the common draws, so they stay as drawn
-	if c >= 0:
-		w.ev.curse_k = w.ev.size()
+	var c := draw_event(w, placed, POOL_CURSE, curse_rules)  # after the common draws: they stay as drawn
+	if c < 0:
+		return
+	w.ev.curse_k = w.ev.size()
+	if curse_rules == CURSE_RULES_N17:
 		_add(w, spot(layout, curse_room, w.ev.rules)[0], curse_room, c)
+		return
+	var at := curse_spot(layout, curse_room, w.ev.rules)[0]
+	_furnish(w, layout, curse_room, at)
+	_add(w, at, curse_room, c)
+
+
+## v0.8.0 N19: the curse room becomes its own room (CurseRoom.furnish); the world's walls follow the layout's (the
+## gate, the Deep gate, the shrine and the shop's solids kept after them, then the altar and the crystals) and no enemy
+## spawns inside it.
+static func _furnish(w: World, layout: FloorLayout, room: int, at: Vector2) -> void:
+	var extra: Array[Obb] = w.walls.slice(layout.walls.size())
+	var solids := CurseRoom.furnish(layout, room, at)
+	var walls: Array[Obb] = layout.walls.duplicate()
+	walls.append_array(extra)
+	walls.append_array(solids)
+	w.set_walls(walls)
+	w.prepare_wall(layout.boss_door_wall)
+	var spawns := PackedVector2Array()
+	for q in w.spawn_points:
+		if layout.room_of(q) != room:
+			spawns.append(q)
+	w.spawn_points = spawns
 
 
 static func _add(w: World, at: Vector2, room: int, e: int) -> void:
@@ -110,22 +155,105 @@ static func _add(w: World, at: Vector2, room: int, e: int) -> void:
 ## (its first output dropped, as Gamble.stream): a curse room with rules.curse_room_floor_chance_permille; then the
 ## candidate rooms (curse_rooms, minus `shut`) in an order drawn from the same stream, the first with a clear altar spot
 ## (spot) wins. Pure: a function of the layout, the rules and the floor seed (property-tested over many seeds).
-static func curse_site(
+## Kept for a floor built under N17's rules (CURSE_RULES_N17); today's is curse_site.
+static func curse_site_n17(
 	layout: FloorLayout, seed_value: int, rules: EventRules, shut: PackedInt32Array
 ) -> int:
 	var rng := Gamble.stream(seed_value, CURSE_STREAM)
 	if not rng.chance_permille(rules.curse_room_floor_chance_permille):
 		return -1
-	var order := curse_rooms(layout)
+	for r in _shuffled(rng, curse_rooms(layout)):
+		if not shut.has(r) and not spot(layout, r, rules).is_empty():
+			return r
+	return -1
+
+
+## v0.8.0 N19 (O80): today's curse room, or -1. The same draws as N17's (the chance, then the candidates' order, on
+## CURSE_STREAM), with rules.curse_room_deep_chance_permille on a Deep floor (`deep`); then, keeping the drawn order
+## within each group: small rooms (SMALL_ROOM_M2) holding no reward (`rewarded`: the rooms that hold one), other rooms
+## holding none, small rooms holding one, the rest. The first not in `shut` and not the shop's room (layout.shop_room:
+## curse_rooms leaves out the room ShopPlacement would pick now, which can differ from the one it picked once the shop
+## room is furnished) with an altar spot (curse_spot, on the room as CurseRoom.furnish will clear it) wins. Pure: a
+## function of the layout, the rules, the floor seed and `rewarded`.
+static func curse_site(
+	layout: FloorLayout,
+	seed_value: int,
+	rules: EventRules,
+	shut: PackedInt32Array,
+	deep: bool = false,
+	rewarded: PackedInt32Array = PackedInt32Array()
+) -> int:
+	var rng := Gamble.stream(seed_value, CURSE_STREAM)
+	var chance := (
+		rules.curse_room_deep_chance_permille if deep else rules.curse_room_floor_chance_permille
+	)
+	if not rng.chance_permille(chance):
+		return -1
+	var order := _shuffled(rng, curse_rooms(layout))
+	for group in 4:
+		for r in order:
+			if _group_of(layout, r, rewarded) != group or shut.has(r) or r == layout.shop_room:
+				continue  # N19 fix: the shop's real room (curse_rooms' guess can differ once it is furnished)
+			if not curse_spot(layout, r, rules).is_empty():
+				return r
+	return -1
+
+
+static func _group_of(layout: FloorLayout, r: int, rewarded: PackedInt32Array) -> int:
+	var big := 0 if layout.rooms[r].get_area() <= SMALL_ROOM_M2 else 1
+	return big + (2 if rewarded.has(r) else 0)
+
+
+static func _shuffled(rng: RngStream, rooms: PackedInt32Array) -> PackedInt32Array:
+	var order := rooms.duplicate()
 	for k in range(order.size() - 1, 0, -1):
 		var j := rng.range_int(0, k)
 		var swap := order[k]
 		order[k] = order[j]
 		order[j] = swap
-	for r in order:
-		if not shut.has(r) and not spot(layout, r, rules).is_empty():
-			return r
-	return -1
+	return order
+
+
+## v0.8.0 N19: the rooms holding one of the floor's rewards (an altar or a chest), ascending.
+static func reward_rooms(w: World, layout: FloorLayout) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	for i in w.rewards.size():
+		var r := layout.room_of(w.rewards.pos(i))
+		if r >= 0 and not out.has(r):
+			out.append(r)
+	out.sort()
+	return out
+
+
+## v0.8.0 N19: the curse altar's spot in `room` ([] when none), on the room as CurseRoom.furnish leaves it (its
+## interior pieces gone): the room's centre, else its spawn points nearest the centre first; the first far enough in
+## from the room's walls (the crystals' gap) and at least reward_gap_m from every item spot. Pure: no stream.
+static func curse_spot(layout: FloorLayout, room: int, rules: EventRules) -> PackedVector2Array:
+	var centre := layout.rooms[room].get_center()
+	var tries := [centre]
+	var pts := (
+		layout.spawn_points[room] if room < layout.spawn_points.size() else PackedVector2Array()
+	)
+	var order := Array(pts)
+	order.sort_custom(
+		func(a: Vector2, b: Vector2) -> bool:
+			var da := Kin.length(a - centre)
+			var db := Kin.length(b - centre)
+			return da < db or (da == db and (a.x < b.x or (a.x == b.x and a.y < b.y)))
+	)
+	tries.append_array(order)
+	var margin := maxf(rules.clear_radius_m, CurseRoom.CRYSTAL_ALTAR_GAP_M * 0.5)
+	for p: Vector2 in tries:
+		if not layout.rooms[room].grow(-margin).has_point(p):
+			continue
+		var ok := true
+		for s in layout.item_spots:
+			if Kin.length(s - p) < rules.reward_gap_m:
+				ok = false
+				break
+		if ok:
+			return PackedVector2Array([p])
+	return PackedVector2Array()
 
 
 ## v0.8.0 N17: the rooms a curse room may be, ascending: the combat rooms a shrine may stand in (Gamble.rooms: not the
@@ -205,23 +333,31 @@ static func _clear(layout: FloorLayout, room: int, p: Vector2, rules: EventRules
 ## only on a Deep floor, and there the draw takes one first while one is left (so every Deep floor has one).
 ## v0.8.0 N17: `pool` POOL_COMMON (a common event room) leaves the curse events out, POOL_CURSE (the curse room) takes
 ## only them, POOL_ANY (a floor saved before N17) takes every event.
-static func draw_event(w: World, placed: PackedInt32Array, pool: int = POOL_ANY) -> int:
+## v0.8.0 N19: under CURSE_RULES_N19 Whispering Deep (deep_only) is a curse event and Need.STAT_RAISED holds Echo
+## Mirror back; older `curse_rules` keep a deep_only event common and read STAT_RAISED as STAT_CARD (needs_met).
+static func draw_event(
+	w: World, placed: PackedInt32Array, pool: int = POOL_ANY, curse_rules: int = CURSE_RULES_N19
+) -> int:
 	var deep := Routes.is_deep(w)
 	var weights := PackedInt32Array()
 	var deep_weights := PackedInt32Array()
 	var any_deep := false
 	for e in w.ev.events.size():
 		var t := w.ev.events[e]
-		var ok := t.min_floor <= w.floor_index and not placed.has(e) and needs_met(w, t.requires)
+		var ok := t.min_floor <= w.floor_index and not placed.has(e)
+		ok = ok and needs_met(w, t.requires, curse_rules)
 		ok = ok and (deep or not t.deep_only)
-		ok = ok and (pool == POOL_ANY or t.curse_room == (pool == POOL_CURSE))
+		var curse := t.curse_room and (curse_rules == CURSE_RULES_N19 or not t.deep_only)
+		ok = ok and (pool == POOL_ANY or curse == (pool == POOL_CURSE))
 		weights.append(t.weight if ok else 0)
 		deep_weights.append(t.weight if ok and t.deep_only else 0)
 		any_deep = any_deep or (ok and t.deep_only and t.weight > 0)
 	return Offers.pick(w.ev.rng, deep_weights if any_deep else weights)
 
 
-static func needs_met(w: World, need: int) -> bool:
+static func needs_met(w: World, need: int, curse_rules: int = CURSE_RULES_N19) -> bool:
+	if need == Need.STAT_RAISED and curse_rules != CURSE_RULES_N19:
+		need = Need.STAT_CARD  # v0.8.0 N19: a floor built before it drew Echo Mirror on stat cards alone
 	match need:
 		Need.CURSE:
 			return not w.curses_owned.is_empty()
@@ -231,6 +367,8 @@ static func needs_met(w: World, need: int) -> bool:
 			return Stats.enabled(w)
 		Need.ABILITY:
 			return not w.ability_tables.is_empty()
+		Need.STAT_RAISED:  # v0.8.0 N19 (O80): the stat Echo Mirror would echo exists (its choice's own rule)
+			return Stats.enabled(w) and strongest_stat(w) >= 0
 	return true
 
 

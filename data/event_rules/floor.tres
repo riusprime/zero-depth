@@ -24,4 +24,5 @@ core_mod_weight = 10
 hunt_range_m = 16.0
 drop_offset_m = 0.9
 curse_room_floor_chance_permille = 400
+curse_room_deep_chance_permille = 1000
 id = &"floor"

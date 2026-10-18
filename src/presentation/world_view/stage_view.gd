@@ -91,6 +91,8 @@ var _shard_placed: Array = []
 ## v0.8.0 N12: the dresser's input and placements, and the procedural walls' input and result (on a worker).
 var _dressing := {}
 var _placements: Array = []
+## v0.8.0 N19: the furnished curse room (Rect2() for none), whose loose decoration and wall lights are left out.
+var _curse_rect := Rect2()
 var _proc_input := {}
 var _proc := {}
 
@@ -559,6 +561,10 @@ func _build_kit(reader: WorldReader) -> void:
 	# v0.8.0 N12 (O70): the dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
 	# their dictionaries and the cosmetic stream; no node, no mesh): on a worker. Then the nodes, a few a job.
 	_dressing = dressing
+	# v0.8.0 N19 (O80): the pact room keeps only its own fixed look (CurseRoomView.strip after the dresser)
+	_curse_rect = (
+		reader.floor_room(reader.event_curse_room()) if reader.curse_room_furnished() else Rect2()
+	)
 	_proc_input = {
 		"walls": walls,
 		"rooms": rooms,
@@ -573,7 +579,7 @@ func _build_kit(reader: WorldReader) -> void:
 
 
 func _dress() -> void:
-	_placements = StageDresser.dress(_dressing)
+	_placements = CurseRoomView.strip(StageDresser.dress(_dressing), _curse_rect)
 	_proc = {}
 	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
 	_proc_input["cuts"] = StageDresser.niches(_placements)

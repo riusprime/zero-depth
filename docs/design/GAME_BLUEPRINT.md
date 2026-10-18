@@ -92,6 +92,11 @@ only adds numbers, menus or breadth fails the filter.
   glowing glyphs, with the curse altar in its middle. The pacts whose price is a curse (Unstable Core, Echo Mirror)
   appear only there. No name floats over any pedestal: you read what it is when you open it. Cursed chests stay
   (D57).
+  v0.8.0 N19 (owner O80, D57): the curse room is a **room type of its own, like the shop's**, the same in every
+  biome: a small room (when one is free) with a fixed layout, the altar solid in its centre with a clear walk-up,
+  crystal clusters round its walls, no enemy spawning inside, dark and mystical (a dark veil, a cold low light, the
+  four purple ritual sigils). **Every Deep floor has one**, and Whispering Deep is offered at its altar (S5's Deep
+  event now lives there). **Echo Mirror is not offered until you have raised a stat.**
 - **Death** ends the run. A recap shows the killing cause, the build and the timeline (v0.3.0).
 
 ## C. Player kit
@@ -349,7 +354,8 @@ Splitlings) are exempt. The phases are in `data/curves/floor_N.tres` (§H).
 - **Bosses (D6, D7)** take their own m when they spawn, against the power expected at the floor's end, with a higher
   cap (×2 / ×3 / ×4, +0.25 per T), and gates HP can't skip (§F).
 - **Deep floors bite (S5).** A Deep floor: a violet haze over the biome's light, an elite in every combat room,
-  +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep).
+  +1 T (which raises both caps), the epic altar by the boss door, and a Deep-only event (Whispering Deep; v0.8.0
+  N19: at the floor's curse altar, so every Deep floor has a curse room).
 
 ## I. Meta-progression limits
 

@@ -9,11 +9,14 @@ extends SceneTree
 ## SHOT HELPER (labelled): the hero's HP is held at its max every frame (surviving the walk is not this shot's
 ## subject), and without `walk=1` the hero is set beside the altar once landed (the walk across the floor takes too
 ## long on the software renderer; reaching it by input is test_e2e_curse_room's job). Writes <seed>_room.png,
-## <seed>_close.png and <seed>_panel.png to build/shots/v0.8.0/n17/. Evidence copies are made by hand.
+## <seed>_close.png and <seed>_panel.png to build/shots/v0.8.0/n19/. Evidence copies are made by hand.
+## v0.8.0 N19 (owner O80): the room is a room of its own with a solid altar at its centre: the hero stands at its
+## walk-up (CurseRoom.front's side, in reach); the room shot is taken a little wider (ROOM_VIEW) to show the whole room.
 
-const OUT := "res://build/shots/v0.8.0/n17/"
+const OUT := "res://build/shots/v0.8.0/n19/"
 const GIVE_UP_FRAMES := 6000
 const CLOSE_VIEW := 6.5
+const ROOM_VIEW := 19.0
 
 var _main: Main
 var _frame := 0
@@ -99,6 +102,8 @@ func _process(_delta: float) -> bool:
 			if _walk_step():
 				_go(&"room")
 		&"room":
+			if _step_frame == 1:
+				_main.view.rig.view_size = ROOM_VIEW
 			if _step_frame == 60:
 				_grab("room")
 				_main.view.rig.view_size = CLOSE_VIEW
@@ -121,12 +126,11 @@ func _process(_delta: float) -> bool:
 	return false
 
 
-## Where to stand: beside the altar, toward the room's centre.
+## Where to stand: at the altar's walk-up (toward the room's first doorway), in reach.
 func _target(w: World) -> Vector2:
 	var at := w.ev.pos(w.ev.curse_k)
-	var c := w.floor_layout.rooms[w.ev.room[w.ev.curse_k]].get_center()
-	var d := c - at
-	return at + (d.normalized() if d.length() > 0.1 else Vector2(1, 0)) * 0.9
+	var front := CurseRoom.front(w.floor_layout, w.ev.room[w.ev.curse_k], at)
+	return at + (front - at).normalized() * 1.25
 
 
 func _walk_step() -> bool:

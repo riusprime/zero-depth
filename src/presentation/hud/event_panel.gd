@@ -300,7 +300,10 @@ func _text(line_name: String, text: String, c: Color) -> Label:
 	var l := HudStyle.label(SIZES[line_name], BOLD.has(line_name))
 	l.name = line_name
 	l.text = text
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	# v0.8.0 N19: the key and the "Cursed" mark sit in a row with no width of their own: they never wrap (N17's shots
+	# showed "Cursed" one letter a line)
+	var one_line := line_name == "Key" or line_name == "CursedHead"
+	l.autowrap_mode = TextServer.AUTOWRAP_OFF if one_line else TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_color_override("font_color", c)
 	l.add_theme_constant_override("line_spacing", 0)
 	l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED

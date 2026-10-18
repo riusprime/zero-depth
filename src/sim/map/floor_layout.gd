@@ -154,6 +154,11 @@ var shop_angle := 0
 var shop_layout := &""
 var shop_solids: Array[Obb] = []
 var shop_props: Array = []
+## v0.8.0 N19 (owner O80): the curse room as a room type of its own (CurseRoom.furnish, from Events.place; -1 on a
+## floor without one, or one built under older rules, whose curse room kept its interior): its room, and the solids
+## the world adds as walls: the altar's footprint first, then each crystal cluster's (CurseRoomView draws them).
+var curse_room := -1
+var curse_solids: Array[Obb] = []
 ## The floor's footprint, for drawing ground: each room's cells (interior, walls and doorways up to its grid
 ## lines), then the outer half of each outer wall.
 var ground: Array[Rect2] = []

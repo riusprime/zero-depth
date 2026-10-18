@@ -30,6 +30,9 @@ var drop_offset_m := 0.9
 ## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
 ## floor has a curse room, in per mille (Events.curse_site, on `map:curse_room`).
 var curse_room_floor_chance_permille := 400
+## v0.8.0 N19 (owner O80, BLUEPRINT S5): the chance on a Deep floor (1000: every Deep floor has one, as Whispering
+## Deep lives at its altar).
+var curse_room_deep_chance_permille := 1000
 
 
 ## Whether floor `floor_index` (the run's floor number, counted on past the run's last floor) may hold cursed chests.
