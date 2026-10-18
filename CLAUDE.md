@@ -122,6 +122,14 @@ they are taking way too long". Cloud machines have 4 CPUs and Godot runs at half
 - **No timing on a busy machine.** Frame times and load probes here are noise. Run a probe once to catch a gross stall,
   and mark the target `NOT YET RUN (owner hardware)` rather than re-running it.
 - **No re-runs to "be sure".** If a run is killed by a limit or memory, re-run only the files that didn't finish.
+- **No baseline copies.** Don't check out and import an old tree for before/after shots or probes unless the owner asks.
+- **Wait, don't poll.** Start long runs with `run_in_background` and wait for the completion notice. No `until … sleep`
+  loops: each check is another full turn.
+- **Read small.** Find a file's lines with `grep -n`, then read just that range. Don't `cat` whole large files or docs
+  (`OWNER_TODO.md`, `PLAN.md`, 1000-line scripts). Only look at the shots you need to check; each image costs tokens on
+  every later turn.
+- **Hand back early.** Report when the step is done, and leave polish for the owner to ask for. The lead starts a fresh
+  agent for a follow-up rather than resuming one with a very long history.
 
 ## Commands
 
