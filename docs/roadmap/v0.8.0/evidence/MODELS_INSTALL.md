@@ -255,6 +255,37 @@ the machine). The ones marked "cv" happen while the view builds; the after run p
 device models (`ViewWarmup`, added after it: in that run the Loop device read its file in a view job, and each enemy
 model was read at its kind's first spawn). **Not re-measured on a quiet machine** (NOT YET RUN): it should be, before the owner's look at it.
 
+**Re-run on the final tree** (`bbf8bad`: the merge with N17/N19's sim changes, the portal and the model warm-up; the
+same command, twice, load average 5.6-6.8; floor 1's hash differs from the runs above because N17/N19 changed the
+floors):
+
+| load | longest frame run 1 (ms) | longest frame run 2 (ms) | the view's longest job, run 2 (ms) |
+|---|---|---|---|
+| new run | 100.7 | 112.2 | 29.5 |
+| gate | 147.1 | 155.8 | 27.3 |
+| continue | 445.1 | 140.3 | 24.1 |
+| deep | 131.1 | 615.4 | 50.4 |
+| ascension | 55.0 | 47.6 | 46.5 |
+| restart | 654.5 | 76.4 | 32.1 |
+| loop | 189.0 | 124.7 | 28.5 |
+
+```
+load_probe: continue  covered 98452 frames,  5418.5 ms; longest frame  445.1 ms; still mark frames 0; after-60 longest    5.3 ms; floor=2 hash=a33b90d81650
+load_probe: continue  frames over 50 ms (index from cover start: ms, c = covered, w/v = World/view building): 67976:445cv
+load_probe: restart   covered 92108 frames,  5499.1 ms; longest frame  654.5 ms; still mark frames 0; after-60 longest    6.5 ms; floor=1 hash=163692b46115
+load_probe: restart   frames over 50 ms (index from cover start: ms, c = covered, w/v = World/view building): 6805:55cw, 7560:124cw, 27595:61cw, 32678:73cw, 69333:654cv, 69660:57cv, 72765:109cv
+load_probe: done; load average 6.78 5.57 5.72 8/155 23569
+[run 2]
+load_probe: deep      covered 90046 frames,  6858.2 ms; longest frame  615.4 ms
+load_probe: deep      phases … view:dress=2404.6 … view_longest_job=50.4
+```
+**Missed, not explained:** the before tree's longest frames were 38-62 ms; after, single frames of 100-650 ms appear
+while the view builds ("cv"), but no view job runs longer than 50 ms, and the same load's worst frame moves between
+runs (restart 654 → 76 ms, deep 131 → 615 ms). So the stall is outside the view's jobs (a frame waiting on the
+workers: the dressing (`view:dress`, a worker, about 2.4 s now) or a resource lock), on a machine shared with other
+agents' renders. Not fixed here; it needs a quiet re-measure and a look at what the main thread waits on (D51's
+load rule). Reported to the lead.
+
 ## 6. Shots
 In [`mi_shots/`](mi_shots/) (JPEG copies by hand of `build/shots/...`): per biome the same designed room (layout
 `room_2x2_1`, run seed 20261031, room 2) whole and close, and before/after of the close view (`<biome>_room.jpg`,
@@ -287,6 +318,7 @@ re-runs ran after it). No full suite, no bot tests (owner rule).
 The owner's pieces now dress every biome and the city kit stays in Ruins. Red Canyon draws far fewer triangles (the
 kit's 10-13 k-triangle grass and debris gave way to 1 k shrubs); Starfall draws more (its void's islands and spikes
 were a few dozen code triangles each; they are now the owner's 3 k / 1 k models), still under Ruins. Frame times on
-this shared software renderer say nothing about the owner's GPU (OWNER ONLY). The first load of a session reads more
+this shared software renderer say nothing about the owner's GPU (OWNER ONLY). The loads' longest frames grew and are
+not explained yet (§5): the one missed rule of this step. The first load of a session reads more
 models now (the 28 new kit pieces, the four enemies and the two devices, on the load's worker behind the black cover);
 a spawn never reads a model. What the owner should decide is in D58.
