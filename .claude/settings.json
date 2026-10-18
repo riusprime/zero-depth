@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(godot:*)",
+      "Bash(timeout:*)",
+      "Bash(xvfb-run:*)",
+      "Bash(gdformat:*)",
+      "Bash(gdlint:*)",
+      "Bash(bash scripts/:*)",
+      "Bash(python3 scripts/:*)",
+      "Bash(python3 -I scripts/:*)",
+      "Bash(python scripts/:*)",
+      "Bash(pip install -r requirements-dev.txt)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git branch:*)",
+      "Bash(git worktree:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git push -u origin claude/:*)",
+      "Bash(git push origin claude/:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push origin main:*)",
+      "Bash(git reset --hard:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash scripts/dev/session_start.sh" }
+        ]
+      }
+    ]
+  }
+}

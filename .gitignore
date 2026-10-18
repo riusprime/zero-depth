@@ -19,5 +19,6 @@ __pycache__/
 *.p12
 *.pem
 
-# Agent worktrees (local only)
-.claude/
+# Agent worktrees and personal settings (local only); the project's shared settings are tracked
+.claude/*
+!.claude/settings.json
