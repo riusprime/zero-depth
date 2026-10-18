@@ -29,5 +29,6 @@ weight = 10
 min_floor = 2
 requires = &""
 deep_only = true
+curse_room = true
 choices = Array[ExtResource("1_ch")]([SubResource("C_listen"), SubResource("C_bleed")])
 id = &"whispering_deep"

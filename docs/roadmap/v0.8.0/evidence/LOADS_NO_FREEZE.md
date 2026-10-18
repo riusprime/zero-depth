@@ -214,3 +214,111 @@ Not run: the full suite, the seams script, the bot tests (owner rule), `tests/un
   new floor's materials (shader compilation) still hold the cover (numbers above). A shader warm-up (drawing each
   material once behind the first black cover) was not built: D51 asks whether it's needed on your PC.
 - Not proved: the feel, and the frame times on the owner's PC (OWNER ONLY).
+
+## v0.8.0 LD: the floor's first frame (at `96bb48a`, branch `v080-ld` from `5ff24af`)
+
+**The cause** (measured in MI's follow-up, MODELS_INSTALL §5, "cause 3"). When the World's build ended,
+`Main._floor_nodes` made the floor's nodes in a single frame. `WorldViewRoot.new()` creates the view's 36 parts in
+that frame: about 16 ms on a quiet process, 23-55 ms per load in the probe, and 149 ms once while starved. On the
+first floor of a session, the Codex and achievement trackers are made in the same frame, which reached 60-95 ms
+(`cpu=95.8 runq=0.1 … step1=0.0[]`).
+
+**The fix.**
+- `WorldViewRoot.parts` lists those parts. `WorldViewRoot.prebuild(budget_ms)` makes the ones not yet made, with
+  at least one per call.
+- `CoverLoads.prebuild_view()` calls it once a frame with `VIEW_BUDGET_MS` (6 ms) behind the cover. `Main._load_plan`
+  runs it just before `_floor_nodes`.
+- The view's initialisers take the parts made ahead (`_part()`). Without any made ahead, as with `setup()`,
+  `_open_floor_now` and the tests, each part is made new, as before.
+- `drop_prebuilt()` frees parts that no view took.
+- Neither the parts nor the order the view builds them in changes. New test
+  `test_a_view_made_from_parts_made_ahead_is_the_same_view` (`tests/unit/presentation/test_view_build_queue.gd`):
+  every part made ahead is taken, and the view has the same nodes, names and places as one made in one call.
+- No sim change.
+- The load probe's frame hooks are now off by default (`ViewBuildQueue.probe`, `CoverLoads.probe`).
+  `scripts/checks/load_probe.gd` turns them on.
+
+**Measured.**
+- A standalone timing script (scratch, not committed), four rounds:
+  - `WorldViewRoot.new()` alone: 51.4 / 23.6 / 15.5 / 15.0 ms;
+  - `prebuild(6.0)` slices: up to 9.4 ms (one part runs over the budget alone);
+  - `WorldViewRoot.new()` after prebuild: 0.1 ms.
+- In a probe run with a temporary print around `_floor_nodes` (not committed), the seven loads took
+  8.1 / 2.6 / 0.3 / 2.9 / 4.4 / 4.9 / 3.9 ms.
+- `view_parts_frames`: 6-9 frames per load.
+
+**load_probe ×3** (`godot --headless --fixed-fps 60 --path . -s scripts/checks/load_probe.gd`). The lead's seams were
+running in parallel on the 4-vCPU machine, at load average 5.5-6.4:
+
+| load | run 1 longest (ms) | run 2 longest (ms) | run 3 longest (ms) |
+|---|---|---|---|
+| new run (Night Rocks) | 109.8 | 161.3 | 207.0 |
+| gate (Red Canyon) | 118.4 | 92.5 | 98.5 |
+| continue (Red Canyon) | 34.0 | 29.1 | 198.2 |
+| deep (Ruins) | 99.1 | 178.6 | 52.8 |
+| ascension (final arena) | 212.5 | 54.3 | 133.0 |
+| restart (Night Rocks) | 359.2 | 43.4 | 138.3 |
+| loop (Night Rocks) | 27.6 | 32.0 | 34.4 |
+
+```
+[run 1]
+load_probe: new_run   covered 119349 frames, 16994.6 ms; longest frame  109.8 ms; still mark frames 0; after-60 longest    6.1 ms; floor=1 hash=163692b46115
+load_probe: gate      covered 24863 frames,  5043.5 ms; longest frame  118.4 ms; still mark frames 1; after-60 longest    5.9 ms; floor=2 hash=a33b90d81650
+load_probe: continue  covered 34589 frames,  4858.4 ms; longest frame   34.0 ms; still mark frames 0; after-60 longest    5.4 ms; floor=2 hash=a33b90d81650
+load_probe: deep      covered 36405 frames,  6143.6 ms; longest frame   99.1 ms; still mark frames 1; after-60 longest    7.4 ms; floor=3 hash=6781bb34aae4
+load_probe: ascension covered 24751 frames,  3875.5 ms; longest frame  212.5 ms; still mark frames 0; after-60 longest    5.4 ms; floor=3 hash=2bf9e5547f33
+load_probe: restart   covered 36238 frames,  5628.1 ms; longest frame  359.2 ms; still mark frames 0; after-60 longest    3.8 ms; floor=1 hash=163692b46115
+load_probe: loop      covered 28297 frames,  4367.2 ms; longest frame   27.6 ms; still mark frames 0; after-60 longest    6.7 ms; floor=1 hash=56901631297e
+load_probe: done; load average 5.90 5.12 5.60 8/160 30302
+[run 2]
+load_probe: new_run   covered 150599 frames, 19184.2 ms; longest frame  161.3 ms; still mark frames 0; after-60 longest    4.7 ms; floor=1 hash=163692b46115
+load_probe: gate      covered 32112 frames,  5332.1 ms; longest frame   92.5 ms; still mark frames 1; after-60 longest    6.1 ms; floor=2 hash=a33b90d81650
+load_probe: continue  covered 28153 frames,  4380.3 ms; longest frame   29.1 ms; still mark frames 0; after-60 longest    4.9 ms; floor=2 hash=a33b90d81650
+load_probe: deep      covered 34487 frames,  6444.8 ms; longest frame  178.6 ms; still mark frames 1; after-60 longest    7.1 ms; floor=3 hash=6781bb34aae4
+load_probe: ascension covered 29325 frames,  4268.7 ms; longest frame   54.3 ms; still mark frames 0; after-60 longest    6.0 ms; floor=3 hash=2bf9e5547f33
+load_probe: restart   covered 36637 frames,  5694.3 ms; longest frame   43.4 ms; still mark frames 0; after-60 longest    3.8 ms; floor=1 hash=163692b46115
+load_probe: loop      covered 28343 frames,  4576.6 ms; longest frame   32.0 ms; still mark frames 0; after-60 longest    5.9 ms; floor=1 hash=56901631297e
+load_probe: done; load average 5.75 5.29 5.62 6/156 30358
+[run 3]
+load_probe: new_run   covered 153116 frames, 18289.2 ms; longest frame  207.0 ms; still mark frames 0; after-60 longest    3.5 ms; floor=1 hash=163692b46115
+load_probe: gate      covered 24736 frames,  4785.7 ms; longest frame   98.5 ms; still mark frames 1; after-60 longest    5.9 ms; floor=2 hash=a33b90d81650
+load_probe: continue  covered 28342 frames,  4558.2 ms; longest frame  198.2 ms; still mark frames 0; after-60 longest    5.2 ms; floor=2 hash=a33b90d81650
+load_probe: deep      covered 37116 frames,  5723.0 ms; longest frame   52.8 ms; still mark frames 1; after-60 longest    9.5 ms; floor=3 hash=6781bb34aae4
+load_probe: ascension covered 25032 frames,  3925.9 ms; longest frame  133.0 ms; still mark frames 0; after-60 longest    5.5 ms; floor=3 hash=2bf9e5547f33
+load_probe: restart   covered 41209 frames,  5597.0 ms; longest frame  138.3 ms; still mark frames 0; after-60 longest    9.7 ms; floor=1 hash=163692b46115
+load_probe: loop      covered 25523 frames,  3941.1 ms; longest frame   34.4 ms; still mark frames 0; after-60 longest    6.2 ms; floor=1 hash=56901631297e
+load_probe: done; load average 6.40 5.62 5.72 7/159 30475
+```
+**What the frames over 50 ms were** (the probe's breakdown, three worst per load, from
+`build/perf/ld_probe_<n>.log`):
+- **None is the floor's first frame any more.** No `step1=0.0[]` frame with real CPU time is left in any load's
+  eight worst.
+- Every frame over 62 ms but one is the main thread waiting:
+  - for a CPU (`runq` about the frame's length, 0-4.6 ms of its own CPU; for example
+    `359.2 ms cv cpu=4.0 runq=358.9 … step1=0.0[wait:dress]`);
+  - or neither running nor in the run queue (`cpu=0.0 runq=0.0`, 98-172 ms; the machine).
+
+  While the main thread only polls the worker, the frame's own work is under 5 ms.
+- **The one exception, not explained:** run 3, new run, `80.2 ms cv cpu=58.1 runq=24.0 … step1=0.0[wait:dress]`. That
+  is 58 ms of main-thread CPU in a frame where the queue only polled the dress worker. It was seen before LD too
+  (MI follow-up run "e": `225.6 ms cv cpu=138.9 … [wait:dress]`). Not found here.
+- The view jobs over 50 ms are real main-thread work under contention:
+  - `final_arena` 51-54 ms (`cpu` 40-44 ms, ascension runs 1-2);
+  - `ground` 51 ms (`cpu` 38.6 ms, deep run 3).
+
+  Each is a single job; they predate LD.
+
+**Target (≤ 50 ms per frame): still missed on this machine, reported.** The share of over-50 frames that come from the
+game's own work fell to the jobs above, and the one frame not explained. The rest are waits for a CPU. A quiet machine
+and the owner's hardware: **NOT YET RUN**.
+
+**Tests:**
+- `gdformat --check src scripts tests` (1033 files unchanged) + `gdlint` (no problems);
+- `tests/arch` 4/4;
+- `-gtest=` 14 files, 44/44 (Asserts 5426, 323.2 s):
+  - unit: view_build_queue (5, 1 new), loading_cover, floor_receiver, ascension_views, portal_transit_view,
+    routes_view;
+  - e2e: loading_cover, arrival, saves, run_flow, old_save, dev_panel, dev_master_panel, dev_gate.
+
+Not run locally: seams, the full suite.
+

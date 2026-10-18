@@ -179,6 +179,14 @@ var pressed: int          # bitmask of buttons pressed since the previous tick
   layout, rules and seed (`Events.curse_site`). The altar's event is then drawn on `loot:event` after the common
   rooms' draws, from the curse events only; the common rooms draw from the others. `EventState.curse_k` (the
   altar's pedestal) is saved and hashed once >= 0. A floor saved under floor rules 1-6 draws as before (no room).
+- **v0.8.0 N19** (owner O80) keeps the same `map:curse_room` draws (the chance, then the drawn order) and adds no
+  stream: on a Deep floor the chance is `curse_room_deep_chance_permille` (1000); the drawn order is then grouped,
+  keeping the drawn order inside each group (small rooms, interior <= `Events.SMALL_ROOM_M2` 170 m², holding no reward;
+  other rooms holding none; small rooms holding one; the rest), and the first with an altar spot (`Events.curse_spot`)
+  wins. `CurseRoom.furnish` (pure, no draw) then clears the room's interior, puts the altar's footprint and the crystal
+  clusters into the world's walls and drops the room's spawn points. Whispering Deep is a curse event (drawn only for
+  the altar; on a Deep floor first, as before); Echo Mirror needs `stat_raised` (`Need.STAT_RAISED`). Floor rules 8; a
+  floor saved under rules 7 is rebuilt with N17's room, draw and look (`Events.CURSE_RULES_N17`).
 - **v0.6.0 CU** draws only on named streams that already exist: `combat` (Rooted's dodge: one draw per enemy hit that
   would land on the player, only while a dodge chance is held; `Curses.dodges`), `ai:elite` (core theft: the card an
   elite's or a boss's core holds, drawn when it becomes an elite (`Curses.make_elite`) or rises (`World.spawn_boss`);

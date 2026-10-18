@@ -42,6 +42,9 @@ extends ContentDef
 ## floor has a curse room (one combat room holding the curse altar and the floor's curse event), in per mille (400:
 ## 40 % of floors).
 @export var curse_room_floor_chance_permille := 400
+## v0.8.0 N19 (owner O80: "Should Whispering Deep move into the curse room? yes"): the chance on a Deep floor, in
+## per mille (1000: every Deep floor has a curse room, so S5's Whispering Deep on every Deep floor holds).
+@export var curse_room_deep_chance_permille := 1000
 
 
 func category() -> StringName:
@@ -79,6 +82,12 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(
 				&"range", resource_path, "curse_room_floor_chance_permille is outside 0..1000"
+			)
+		)
+	if curse_room_deep_chance_permille < 0 or curse_room_deep_chance_permille > 1000:
+		issues.append(
+			ValidationIssue.new(
+				&"range", resource_path, "curse_room_deep_chance_permille is outside 0..1000"
 			)
 		)
 	if cleanse_price <= 0:

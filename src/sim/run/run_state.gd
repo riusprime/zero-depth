@@ -31,13 +31,18 @@ extends RefCounted
 ## v0.8.0 N17 (owner O75): 7 is today's: the curse room (Events.curse_site: on some floors, one combat room with the
 ## curse altar, the curse events drawn only there). A floor saved under rules 1-6 is rebuilt with its event rooms as
 ## they were (no curse room, every event in the common draw; FloorScenario.legacy_curse_room_of).
-const FLOOR_RULES := 7
+## v0.8.0 N19 (owner O80): 8 is today's: the curse room is a room of its own (CurseRoom.furnish: interior cleared, the
+## altar centred and solid, crystals, no spawns), small rooms first, on every Deep floor (Whispering Deep at its altar),
+## Echo Mirror only once a stat is raised. A floor saved under rules 7 is rebuilt with N17's curse room (a combat room
+## keeping its interior; FloorScenario.curse_room_rules_of).
+const FLOOR_RULES := 8
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
 const FLOOR_RULES_V080_RT1 := 4
 const FLOOR_RULES_V080_SR := 5
 const FLOOR_RULES_V080_N14 := 6
+const FLOOR_RULES_V080_N17 := 7
 
 var run_seed := 0
 var table: RunTable

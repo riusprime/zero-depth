@@ -3,7 +3,9 @@ extends GutTest
 ## away from the start hall holding the curse altar in its dark, glyph-lit room. God from the dev panel (clicked with
 ## the mouse: the dev route, so the walk is safe), then walking to the altar with the stick: no name floats over it and
 ## the prompt doesn't name it; E opens the panel, which names it; the digit picks the choice that carries a curse and
-## Enter takes it: the curse is held and threat shows on the HUD.
+## Enter takes it: the curse is held and threat shows on the HUD. v0.8.0 N19 (owner O80): the room is a room of its
+## own (no enemy spawns inside, crystals round its walls, the four purple ritual sigils) and the altar is solid, so
+## the walk ends at its walk-up, in reach.
 
 ## Run seed 1: floor 1 holds a curse room (asserted below).
 const SEED := 1
@@ -38,10 +40,17 @@ func test_walk_into_the_curse_room_open_the_altar_and_take_a_curse() -> void:
 	assert_not_null(events.curse_room, "the room is dressed (dark, glyphs)")
 	assert_eq(events.pedestal_root(k).name, &"CurseAltar", "the altar's own model")
 	assert_eq(events.label_count(), 0, "no name floats over it")
+	assert_eq(layout.curse_room, room, "a room of its own (N19)")
+	for q in w.spawn_points:
+		assert_ne(layout.room_of(q), room, "no enemy spawns inside")
+	assert_gt(events.curse_room.crystals.size(), 0, "crystals round its walls")
+	assert_true(events.curse_room.uses_sheet, "the ritual sigils")
 	await e.tap(KEY_QUOTELEFT)
 	await _click(e, main, "God")
 	await e.tap(KEY_QUOTELEFT)
-	assert_true(await e.walk_to(w.ev.pos(k), 0.6), "walked to the altar")
+	var at := w.ev.pos(k)
+	var up := at + (CurseRoom.front(layout, room, at) - at).normalized() * 1.25  # the walk-up, in reach
+	assert_true(await e.walk_to(up, 0.35), "walked up to the altar")
 	await e.frames(2)
 	var name := tr(Events.table(w, k).name_key)
 	gut.p("curse altar: %s" % Events.table(w, k).id)
