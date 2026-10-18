@@ -49,7 +49,16 @@ const STONE: Array[StringName] = [
 	&"wall_pillar",
 	&"slab_concrete",
 	&"slab_wide",
-	&"rock_large"
+	&"rock_large",
+	# v0.8.0 MI: the owner's stone pieces of the biome pools.
+	&"column_broken",
+	&"building_corner",
+	&"rock_spire",
+	&"stone_arch",
+	&"mesa_chunk",
+	&"ice_rock",
+	&"star_monolith",
+	&"ruined_observatory",
 ]
 const NON_STONE_CLEAR := 0.5
 ## Rule 3 (the share of the free wall base) and rule 4.

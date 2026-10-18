@@ -5,7 +5,8 @@ extends SceneTree
 ## wide view. The world is never stepped (a still floor, no enemies yet).
 ## Needs a renderer:
 ##   xvfb-run -a godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/starfall.gd
-## Options after `--`: seed=<run seed> (default 20261008), floor=<index> (default 1). Whatever biome the run drew
+## Options after `--`: seed=<run seed> (default 20261008), floor=<index> (default 1), biome=<id> (default starfall;
+## v0.8.0 MI: night_rocks shows its moss islands; writes build/shots/<version>/<biome>/). Whatever biome the run drew
 ## there, the floor is drawn and laid as Starfall.
 ## Writes build/shots/<version>/starfall/. Quits on every path.
 
@@ -13,6 +14,7 @@ const SETTLE := 10
 
 var _seed := 20261008
 var _floor := 1
+var _biome := &"starfall"
 var _dir := ""
 var _view: WorldViewRoot
 var _reader: WorldReader
@@ -28,11 +30,14 @@ func _initialize() -> void:
 			_seed = int(a.trim_prefix("seed="))
 		elif a.begins_with("floor="):
 			_floor = int(a.trim_prefix("floor="))
-	_dir = "res://build/shots/%s/starfall/" % GameVersion.label()
+		elif a.begins_with("biome="):  # v0.8.0 MI: another biome's edge (Night Rocks' islands)
+			_biome = StringName(a.trim_prefix("biome="))
+	_dir = "res://build/shots/%s/%s/" % [GameVersion.label(), _biome]
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_dir))
-	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", &"starfall")
+	var biome: BiomeDefinition = ContentRepository.load_all().get_def(&"biomes", _biome)
 	var w := SaveLab.floor_world(_seed, _floor)
-	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # as Main (whatever biome the run drew here)
+	if biome.surface != null:
+		IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # as Main (whatever biome the run drew here)
 	_reader = WorldReader.new(w)
 	_view = WorldViewRoot.new()
 	_view.stage.mood = biome.mood
@@ -58,6 +63,8 @@ func _initialize() -> void:
 	_shots.append(["3_void_edge", Vector2(west.position.x, west.get_center().y), 18.0])
 	_shots.append(["4_wide", b.get_center(), maxf(b.size.x, b.size.y) * 0.75])
 	var e := _view.stage.edge
+	if e == null:
+		return
 	print(
 		(
 			"starfall: seed=%d floor=%d pools=%d stars=%d islands=%d crystals=%d spikes=%d nebula=%d"

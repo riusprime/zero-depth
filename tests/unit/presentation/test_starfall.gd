@@ -179,7 +179,11 @@ func test_a_floor_draws_its_pools_where_the_sim_has_them_and_the_starry_void() -
 		assert_gt(e.star_count, 500, "a field of stars")
 		assert_gt(e.spike_count, 20, "spikes hang from the rim")
 		assert_gt(e.island_count, 5, "rock islands drift around")
-		assert_gt(e.crystal_count, 0, "some carry crystals")
+		# v0.8.0 MI: the owner's island carries its own crystals (the code-made clusters only with the code islands).
+		if StageKit.has_piece(&"floating_island_starfall"):
+			assert_eq(e.crystal_count, 0, "the owner's islands bring their own crystals")
+		else:
+			assert_gt(e.crystal_count, 0, "some carry crystals")
 		assert_gte(e.nebula_count, StarVoid.NEBULA_MIN, "nebula clouds")
 		_assert_void_rules(reader.floor_ground(), reader.floor_bounds(), 400 + s)
 		assert_eq(reader.state_hash(), before, "drawing it never touches the sim")

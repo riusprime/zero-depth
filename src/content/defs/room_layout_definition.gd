@@ -28,9 +28,22 @@ const KIT: Array[StringName] = [
 	&"rubble_small",
 	&"grass_tuft",
 	&"debris_low",
+	# v0.8.0 MI (owner O79): the piece roles (BiomeLook.ROLES) the layouts name; each biome draws them from its pools.
+	&"cover_square",
+	&"cover_block",
+	&"cover_long",
+	&"cover_wall",
+	&"cover_post",
+	&"cover_deep",
+	&"landmark",
+	&"decor_grass",
+	&"decor_rubble",
+	&"decor_debris",
 ]
 ## Decoration: low pieces (drawn at most StageDresser.DECOR_MAX_HEIGHT tall) that may lie on open floor.
-const DECOR: Array[StringName] = [&"rubble_small", &"grass_tuft", &"debris_low"]
+const DECOR: Array[StringName] = [
+	&"rubble_small", &"grass_tuft", &"debris_low", &"decor_grass", &"decor_rubble", &"decor_debris"
+]
 ## No slit inside a group: two solid pieces facing each other across a corridor are either at most SHUT apart (too
 ## narrow for the player, 0.35 m radius) or at least MIN_LANE apart (wide enough for an enemy, FloorParams.nav_clearance
 ## 0.6 m either side, with 0.8 m to spare so the floor's 0.5 m walkability grid always finds the lane open whatever its

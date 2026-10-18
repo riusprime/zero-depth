@@ -29,6 +29,8 @@ func test_every_model_file_is_listed() -> void:
 		"res://assets/models/bosses",
 		"res://assets/models/kit",
 		"res://assets/models/shop",
+		"res://assets/models/enemies",  # v0.8.0 MI
+		"res://assets/models/devices",
 	]:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".glb") or f.ends_with(".res"):
@@ -57,6 +59,16 @@ func test_every_kit_texture_is_listed_with_its_hash() -> void:
 		for f in DirAccess.get_files_at(dir):
 			if f.ends_with(".png"):
 				assert_true(listed.has(dir.path_join(f)), "%s is in the manifest" % f)
+
+
+## v0.8.0 MI: every enemy model the avatars ask for is delivered, and the Loop device's.
+func test_the_enemy_and_device_models_are_delivered() -> void:
+	var ids := []
+	for m: Dictionary in _manifest():
+		ids.append(StringName(m["id"]))
+	for id: StringName in EnemyModels.SPECS:
+		assert_has(ids, id, "%s is delivered" % id)
+	assert_has(ids, &"loop_device")
 
 
 func test_the_kit_models_are_the_ids_the_dresser_asks_for() -> void:

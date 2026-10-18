@@ -6,7 +6,7 @@
 
 [sub_resource type="Resource" id="P0_0"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(-4.2, -3)
 size = Vector2(0.6, 1)
 height = 2.2
@@ -14,7 +14,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_1"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(4, -3)
 size = Vector2(1, 1)
 height = 2
@@ -22,7 +22,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_2"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(-4, 3)
 size = Vector2(1, 1)
 height = 1.8
@@ -30,7 +30,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_3"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(4, 3)
 size = Vector2(1, 1)
 height = 2.1
@@ -38,7 +38,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_4"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(-2.55, -3.2)
 size = Vector2(2.7, 0.6)
 height = 1.3
@@ -46,7 +46,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_5"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(2.35, -3.2)
 size = Vector2(2.3, 0.6)
 height = 0.9
@@ -54,7 +54,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_6"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(-1.5, 3.2)
 size = Vector2(4, 0.6)
 height = 1.1
@@ -62,7 +62,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_7"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(-4.2, 0)
 size = Vector2(0.6, 5)
 height = 1.2
@@ -70,7 +70,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_8"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(4.2, -1.25)
 size = Vector2(0.6, 2.5)
 height = 1
@@ -78,7 +78,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_9"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-3.25, -2.25)
 size = Vector2(1.3, 1.3)
 height = 1.4
@@ -86,7 +86,7 @@ solid = true
 
 [sub_resource type="Resource" id="P0_10"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-3.3, -1)
 size = Vector2(1.2, 1.2)
 height = 1
@@ -101,210 +101,210 @@ solid = true
 
 [sub_resource type="Resource" id="P0_12"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-4.06, -3.83)
 size = Vector2(0.6, 0.6)
 yaw = 35
 
 [sub_resource type="Resource" id="P0_13"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-4.71, -2.84)
 size = Vector2(0.6, 0.6)
 yaw = 104
 
 [sub_resource type="Resource" id="P0_14"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(4.06, -4.03)
 size = Vector2(0.6, 0.6)
 yaw = 56
 
 [sub_resource type="Resource" id="P0_15"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(4.85, -3.06)
 size = Vector2(0.6, 0.6)
 yaw = 44
 
 [sub_resource type="Resource" id="P0_16"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(4.08, 2.09)
 size = Vector2(0.6, 0.6)
 yaw = 115
 
 [sub_resource type="Resource" id="P0_17"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(4.08, 3.89)
 size = Vector2(0.6, 0.6)
 yaw = 129
 
 [sub_resource type="Resource" id="P0_18"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.84, -3.75)
 size = Vector2(0.6, 0.6)
 yaw = 147
 
 [sub_resource type="Resource" id="P0_19"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.05, -3.22)
 size = Vector2(0.6, 0.6)
 yaw = 63
 
 [sub_resource type="Resource" id="P0_20"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.78, -2.55)
 size = Vector2(0.6, 0.6)
 yaw = 82
 
 [sub_resource type="Resource" id="P0_21"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.76, -4.05)
 size = Vector2(0.6, 0.6)
 yaw = 64
 
 [sub_resource type="Resource" id="P0_22"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(3.02, -3.85)
 size = Vector2(0.9, 0.45)
 yaw = 137
 
 [sub_resource type="Resource" id="P0_23"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(2.92, -2.73)
 size = Vector2(0.6, 0.6)
 yaw = 30
 
 [sub_resource type="Resource" id="P0_24"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.99, -3.08)
 size = Vector2(0.6, 0.6)
 yaw = 141
 
 [sub_resource type="Resource" id="P0_25"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.97, 2.63)
 size = Vector2(0.6, 0.6)
 yaw = 89
 
 [sub_resource type="Resource" id="P0_26"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.36, 2.53)
 size = Vector2(0.6, 0.6)
 yaw = 8
 
 [sub_resource type="Resource" id="P0_27"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.91, 3.36)
 size = Vector2(0.6, 0.6)
 yaw = 87
 
 [sub_resource type="Resource" id="P0_28"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.07, 3.83)
 size = Vector2(0.6, 0.6)
 yaw = 13
 
 [sub_resource type="Resource" id="P0_29"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-1.95, 3.91)
 size = Vector2(0.6, 0.6)
 yaw = 100
 
 [sub_resource type="Resource" id="P0_30"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-3.18, 3.99)
 size = Vector2(0.9, 0.45)
 yaw = 100
 
 [sub_resource type="Resource" id="P0_31"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-3.41, 0.59)
 size = Vector2(0.6, 0.6)
 yaw = 36
 
 [sub_resource type="Resource" id="P0_32"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-3.41, 2.04)
 size = Vector2(0.6, 0.6)
 yaw = 172
 
 [sub_resource type="Resource" id="P0_33"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-4.73, 2.34)
 size = Vector2(0.6, 0.6)
 yaw = 99
 
 [sub_resource type="Resource" id="P0_34"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-4.95, -0.55)
 size = Vector2(0.9, 0.45)
 yaw = 45
 
 [sub_resource type="Resource" id="P0_35"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(4.69, -1.87)
 size = Vector2(0.6, 0.6)
 yaw = 87
 
 [sub_resource type="Resource" id="P0_36"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(3.51, -0.31)
 size = Vector2(0.6, 0.6)
 yaw = 42
 
 [sub_resource type="Resource" id="P0_37"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-2.27, -1.06)
 size = Vector2(0.6, 0.6)
 yaw = 77
 
 [sub_resource type="Resource" id="P0_38"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-3.28, -0.01)
 size = Vector2(0.6, 0.6)
 yaw = 117
 
 [sub_resource type="Resource" id="P0_39"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.18, -0.75)
 size = Vector2(0.6, 0.6)
 yaw = 95
 
 [sub_resource type="Resource" id="P0_40"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.14, 0.59)
 size = Vector2(0.6, 0.6)
 yaw = 103
 
 [sub_resource type="Resource" id="P0_41"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.63, 0.18)
 size = Vector2(0.9, 0.45)
 yaw = 77
@@ -316,7 +316,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P0_0"), SubResource("P0_1")
 
 [sub_resource type="Resource" id="P1_0"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(1.9, 0.3)
 size = Vector2(3.8, 0.6)
 height = 1.1
@@ -324,7 +324,7 @@ solid = true
 
 [sub_resource type="Resource" id="P1_1"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(4.3, 0.5)
 size = Vector2(1, 1)
 height = 1.9
@@ -332,7 +332,7 @@ solid = true
 
 [sub_resource type="Resource" id="P1_2"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(6, 0.3)
 size = Vector2(2.4, 0.6)
 height = 0.8
@@ -340,7 +340,7 @@ solid = true
 
 [sub_resource type="Resource" id="P1_3"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(0.3, 2.4)
 size = Vector2(0.6, 3.6)
 height = 1
@@ -348,7 +348,7 @@ solid = true
 
 [sub_resource type="Resource" id="P1_4"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(0.5, 4.7)
 size = Vector2(1, 1)
 height = 1.7
@@ -356,119 +356,119 @@ solid = true
 
 [sub_resource type="Resource" id="P1_5"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(1.6, 1.25)
 size = Vector2(2, 1.3)
 solid = true
 
 [sub_resource type="Resource" id="P1_6"]
 script = ExtResource("1_piece")
-piece = &"dead_tree"
+piece = &"cover_square"
 at = Vector2(3.2, 1.1)
 size = Vector2(1.2, 1)
 solid = true
 
 [sub_resource type="Resource" id="P1_7"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(3.24, -0.17)
 size = Vector2(0.6, 0.6)
 yaw = 156
 
 [sub_resource type="Resource" id="P1_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(4.14, -0.39)
 size = Vector2(0.6, 0.6)
 yaw = 136
 
 [sub_resource type="Resource" id="P1_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(4.38, 1.25)
 size = Vector2(0.6, 0.6)
 yaw = 67
 
 [sub_resource type="Resource" id="P1_10"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(6.74, -0.55)
 size = Vector2(0.9, 0.45)
 yaw = 166
 
 [sub_resource type="Resource" id="P1_11"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(7.55, 0.42)
 size = Vector2(0.6, 0.6)
 yaw = 13
 
 [sub_resource type="Resource" id="P1_12"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(6.92, 0.97)
 size = Vector2(0.9, 0.45)
 yaw = 59
 
 [sub_resource type="Resource" id="P1_13"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(5.4, 1.01)
 size = Vector2(0.6, 0.6)
 yaw = 59
 
 [sub_resource type="Resource" id="P1_14"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.93, 3.95)
 size = Vector2(0.6, 0.6)
 yaw = 141
 
 [sub_resource type="Resource" id="P1_15"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.21, 3.89)
 size = Vector2(0.6, 0.6)
 yaw = 90
 
 [sub_resource type="Resource" id="P1_16"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.37, 0.91)
 size = Vector2(0.6, 0.6)
 yaw = 57
 
 [sub_resource type="Resource" id="P1_17"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.55, 4.88)
 size = Vector2(0.6, 0.6)
 yaw = 41
 
 [sub_resource type="Resource" id="P1_18"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.68, 5.67)
 size = Vector2(0.6, 0.6)
 yaw = 175
 
 [sub_resource type="Resource" id="P1_19"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(2.28, 2.43)
 size = Vector2(0.6, 0.6)
 yaw = 72
 
 [sub_resource type="Resource" id="P1_20"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.72, 2.37)
 size = Vector2(0.6, 0.6)
 yaw = 168
 
 [sub_resource type="Resource" id="P1_21"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(3.26, 1.93)
 size = Vector2(0.6, 0.6)
 yaw = 14
@@ -480,7 +480,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P1_0"), SubResource("P1_1")
 
 [sub_resource type="Resource" id="P2_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.65, -0.65)
 size = Vector2(1.3, 1.3)
 height = 1.5
@@ -488,7 +488,7 @@ solid = true
 
 [sub_resource type="Resource" id="P2_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(1.95, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1
@@ -503,7 +503,7 @@ solid = true
 
 [sub_resource type="Resource" id="P2_3"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(0.3, -3.3)
 size = Vector2(0.6, 2.2)
 height = 0.9
@@ -511,42 +511,42 @@ solid = true
 
 [sub_resource type="Resource" id="P2_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.49, -0.59)
 size = Vector2(0.6, 0.6)
 yaw = 350
 
 [sub_resource type="Resource" id="P2_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(3.09, -0.74)
 size = Vector2(0.6, 0.6)
 yaw = 234
 
 [sub_resource type="Resource" id="P2_6"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(1.75, -1.43)
 size = Vector2(0.9, 0.45)
 yaw = 228
 
 [sub_resource type="Resource" id="P2_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.77, -2.69)
 size = Vector2(0.6, 0.6)
 yaw = 255
 
 [sub_resource type="Resource" id="P2_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.34, -4.61)
 size = Vector2(0.6, 0.6)
 yaw = 268
 
 [sub_resource type="Resource" id="P2_9"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.49, -2.63)
 size = Vector2(0.6, 0.6)
 yaw = 283
@@ -558,7 +558,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P2_0"), SubResource("P2_1")
 
 [sub_resource type="Resource" id="P3_0"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"landmark"
 at = Vector2(-1.3, 1.2)
 size = Vector2(2.6, 2.4)
 height = 3
@@ -566,7 +566,7 @@ solid = true
 
 [sub_resource type="Resource" id="P3_1"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"cover_block"
 at = Vector2(-3.8, 1.2)
 size = Vector2(2.4, 2.4)
 height = 2.2
@@ -574,7 +574,7 @@ solid = true
 
 [sub_resource type="Resource" id="P3_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.7, 3.05)
 size = Vector2(1.4, 1.3)
 height = 1.4
@@ -582,7 +582,7 @@ solid = true
 
 [sub_resource type="Resource" id="P3_3"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.6, 4.3)
 size = Vector2(1.2, 1.2)
 height = 0.9
@@ -590,7 +590,7 @@ solid = true
 
 [sub_resource type="Resource" id="P3_4"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-5.65, 0.55)
 size = Vector2(1.3, 1.1)
 height = 1
@@ -598,70 +598,70 @@ solid = true
 
 [sub_resource type="Resource" id="P3_5"]
 script = ExtResource("1_piece")
-piece = &"rock_large"
+piece = &"cover_square"
 at = Vector2(-2, 2.95)
 size = Vector2(1.2, 1.1)
 solid = true
 
 [sub_resource type="Resource" id="P3_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-2.19, -0.23)
 size = Vector2(0.6, 0.6)
 yaw = 125
 
 [sub_resource type="Resource" id="P3_7"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.45, 2.12)
 size = Vector2(0.6, 0.6)
 yaw = 139
 
 [sub_resource type="Resource" id="P3_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-3.02, -0.35)
 size = Vector2(0.6, 0.6)
 yaw = 21
 
 [sub_resource type="Resource" id="P3_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-4.67, -0.25)
 size = Vector2(0.6, 0.6)
 yaw = 174
 
 [sub_resource type="Resource" id="P3_10"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-3.02, 2.85)
 size = Vector2(0.6, 0.6)
 yaw = 167
 
 [sub_resource type="Resource" id="P3_11"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(0.19, 3.03)
 size = Vector2(0.9, 0.45)
 yaw = 51
 
 [sub_resource type="Resource" id="P3_12"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.63, 4.28)
 size = Vector2(0.6, 0.6)
 yaw = 52
 
 [sub_resource type="Resource" id="P3_13"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.56, 5.13)
 size = Vector2(0.6, 0.6)
 yaw = 57
 
 [sub_resource type="Resource" id="P3_14"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-5.57, 1.33)
 size = Vector2(0.9, 0.45)
 yaw = 56
@@ -673,7 +673,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P3_0"), SubResource("P3_1")
 
 [sub_resource type="Resource" id="P4_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -0.65)
 size = Vector2(1.3, 1.3)
 height = 1.9
@@ -681,7 +681,7 @@ solid = true
 
 [sub_resource type="Resource" id="P4_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-1.95, -0.65)
 size = Vector2(1.3, 1.3)
 height = 1.3
@@ -689,7 +689,7 @@ solid = true
 
 [sub_resource type="Resource" id="P4_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -1.95)
 size = Vector2(1.3, 1.3)
 height = 1
@@ -697,7 +697,7 @@ solid = true
 
 [sub_resource type="Resource" id="P4_3"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-3.2, -0.6)
 size = Vector2(1.2, 1.2)
 height = 0.9
@@ -705,14 +705,14 @@ solid = true
 
 [sub_resource type="Resource" id="P4_4"]
 script = ExtResource("1_piece")
-piece = &"rock_large"
+piece = &"cover_square"
 at = Vector2(-2, -2)
 size = Vector2(1.4, 1.4)
 solid = true
 
 [sub_resource type="Resource" id="P4_5"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"cover_block"
 at = Vector2(-0.7, -3.6)
 size = Vector2(1.4, 2)
 height = 2.6
@@ -720,7 +720,7 @@ solid = true
 
 [sub_resource type="Resource" id="P4_6"]
 script = ExtResource("1_piece")
-piece = &"slab_wide"
+piece = &"cover_long"
 at = Vector2(-5, -0.6)
 size = Vector2(2.4, 1.2)
 height = 2
@@ -728,77 +728,77 @@ solid = true
 
 [sub_resource type="Resource" id="P4_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.15, -0.83)
 size = Vector2(0.6, 0.6)
 yaw = 276
 
 [sub_resource type="Resource" id="P4_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.85, 0.15)
 size = Vector2(0.6, 0.6)
 yaw = 300
 
 [sub_resource type="Resource" id="P4_9"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-3.36, 0.17)
 size = Vector2(0.9, 0.45)
 yaw = 335
 
 [sub_resource type="Resource" id="P4_10"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-3.04, -1.57)
 size = Vector2(0.6, 0.6)
 yaw = 310
 
 [sub_resource type="Resource" id="P4_11"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-1.57, -2.76)
 size = Vector2(0.6, 0.6)
 yaw = 225
 
 [sub_resource type="Resource" id="P4_12"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.73, -4.47)
 size = Vector2(0.9, 0.45)
 yaw = 181
 
 [sub_resource type="Resource" id="P4_13"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.86, -4.87)
 size = Vector2(0.6, 0.6)
 yaw = 245
 
 [sub_resource type="Resource" id="P4_14"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.21, -4.35)
 size = Vector2(0.6, 0.6)
 yaw = 227
 
 [sub_resource type="Resource" id="P4_15"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.41, -2.8)
 size = Vector2(0.6, 0.6)
 yaw = 276
 
 [sub_resource type="Resource" id="P4_16"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-5.79, 0.39)
 size = Vector2(0.6, 0.6)
 yaw = 353
 
 [sub_resource type="Resource" id="P4_17"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-5.67, -1.55)
 size = Vector2(0.6, 0.6)
 yaw = 316
@@ -810,21 +810,21 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P4_0"), SubResource("P4_1")
 
 [sub_resource type="Resource" id="P5_0"]
 script = ExtResource("1_piece")
-piece = &"car_wreck"
+piece = &"cover_deep"
 at = Vector2(0, 0)
 size = Vector2(2.2, 4.8)
 solid = true
 
 [sub_resource type="Resource" id="P5_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.5, 3)
 size = Vector2(1.2, 1.2)
 solid = true
 
 [sub_resource type="Resource" id="P5_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.4, -3)
 size = Vector2(1.4, 1.2)
 height = 1.6
@@ -832,84 +832,84 @@ solid = true
 
 [sub_resource type="Resource" id="P5_3"]
 script = ExtResource("1_piece")
-piece = &"rock_large"
+piece = &"cover_square"
 at = Vector2(1.8, -1)
 size = Vector2(1.4, 1.4)
 solid = true
 
 [sub_resource type="Resource" id="P5_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.59, -1.88)
 size = Vector2(0.6, 0.6)
 yaw = 146
 
 [sub_resource type="Resource" id="P5_5"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(1.37, 0.77)
 size = Vector2(0.6, 0.6)
 yaw = 110
 
 [sub_resource type="Resource" id="P5_6"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(1.33, 2.14)
 size = Vector2(0.9, 0.45)
 yaw = 92
 
 [sub_resource type="Resource" id="P5_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.65, 2.67)
 size = Vector2(0.6, 0.6)
 yaw = 143
 
 [sub_resource type="Resource" id="P5_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.57, 2.08)
 size = Vector2(0.6, 0.6)
 yaw = 239
 
 [sub_resource type="Resource" id="P5_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.57, 0.77)
 size = Vector2(0.6, 0.6)
 yaw = 107
 
 [sub_resource type="Resource" id="P5_10"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.55, -0.81)
 size = Vector2(0.9, 0.45)
 yaw = 93
 
 [sub_resource type="Resource" id="P5_11"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.89, -2.85)
 size = Vector2(0.6, 0.6)
 yaw = 159
 
 [sub_resource type="Resource" id="P5_12"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.37, 2.96)
 size = Vector2(0.6, 0.6)
 yaw = 111
 
 [sub_resource type="Resource" id="P5_13"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.41, -3.2)
 size = Vector2(0.6, 0.6)
 yaw = 188
 
 [sub_resource type="Resource" id="P5_14"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(3.01, -1.1)
 size = Vector2(0.6, 0.6)
 yaw = 258
@@ -921,7 +921,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P5_0"), SubResource("P5_1")
 
 [sub_resource type="Resource" id="P6_0"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"cover_block"
 at = Vector2(-1.2, 1)
 size = Vector2(2.2, 2)
 height = 2.6
@@ -929,7 +929,7 @@ solid = true
 
 [sub_resource type="Resource" id="P6_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.6, 0.65)
 size = Vector2(1.4, 1.3)
 height = 1.2
@@ -937,7 +937,7 @@ solid = true
 
 [sub_resource type="Resource" id="P6_2"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(1.8, 0.5)
 size = Vector2(1, 1)
 height = 1.7
@@ -945,49 +945,49 @@ solid = true
 
 [sub_resource type="Resource" id="P6_3"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.72, -0.29)
 size = Vector2(0.6, 0.6)
 yaw = 135
 
 [sub_resource type="Resource" id="P6_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.29, 1.76)
 size = Vector2(0.6, 0.6)
 yaw = 158
 
 [sub_resource type="Resource" id="P6_5"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.67, 2.25)
 size = Vector2(0.9, 0.45)
 yaw = 12
 
 [sub_resource type="Resource" id="P6_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-1.84, 2.21)
 size = Vector2(0.6, 0.6)
 yaw = 69
 
 [sub_resource type="Resource" id="P6_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.66, -0.23)
 size = Vector2(0.6, 0.6)
 yaw = 178
 
 [sub_resource type="Resource" id="P6_8"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(1.62, -0.41)
 size = Vector2(0.6, 0.6)
 yaw = 87
 
 [sub_resource type="Resource" id="P6_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(2.71, 0.32)
 size = Vector2(0.6, 0.6)
 yaw = 52
@@ -999,7 +999,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P6_0"), SubResource("P6_1")
 
 [sub_resource type="Resource" id="P7_0"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(0, -0.3)
 size = Vector2(3.2, 0.6)
 height = 0.9
@@ -1014,7 +1014,7 @@ solid = true
 
 [sub_resource type="Resource" id="P7_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.6, -1.2)
 size = Vector2(1.2, 1.2)
 height = 1
@@ -1022,28 +1022,28 @@ solid = true
 
 [sub_resource type="Resource" id="P7_3"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.97, -0.42)
 size = Vector2(0.6, 0.6)
 yaw = 217
 
 [sub_resource type="Resource" id="P7_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.87, -0.5)
 size = Vector2(0.6, 0.6)
 yaw = 242
 
 [sub_resource type="Resource" id="P7_5"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.29, -0.9)
 size = Vector2(0.9, 0.45)
 yaw = 194
 
 [sub_resource type="Resource" id="P7_6"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.55, -1.04)
 size = Vector2(0.6, 0.6)
 yaw = 266
@@ -1055,7 +1055,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P7_0"), SubResource("P7_1")
 
 [sub_resource type="Resource" id="P8_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1.4
@@ -1063,7 +1063,7 @@ solid = true
 
 [sub_resource type="Resource" id="P8_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 0.9
@@ -1071,7 +1071,7 @@ solid = true
 
 [sub_resource type="Resource" id="P8_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.2, 0.6)
 size = Vector2(1.2, 1.2)
 height = 1.1
@@ -1079,35 +1079,35 @@ solid = true
 
 [sub_resource type="Resource" id="P8_3"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.47, -0.78)
 size = Vector2(0.9, 0.45)
 yaw = 111
 
 [sub_resource type="Resource" id="P8_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, -1.41)
 size = Vector2(0.6, 0.6)
 yaw = 61
 
 [sub_resource type="Resource" id="P8_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.75, -0.7)
 size = Vector2(0.6, 0.6)
 yaw = 58
 
 [sub_resource type="Resource" id="P8_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.06, 1.45)
 size = Vector2(0.6, 0.6)
 yaw = 126
 
 [sub_resource type="Resource" id="P8_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.25, 0.56)
 size = Vector2(0.6, 0.6)
 yaw = 46
@@ -1119,7 +1119,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P8_0"), SubResource("P8_1")
 
 [sub_resource type="Resource" id="P9_0"]
 script = ExtResource("1_piece")
-piece = &"slab_wide"
+piece = &"cover_long"
 at = Vector2(0, 0)
 size = Vector2(3.4, 1.4)
 height = 2.8
@@ -1127,7 +1127,7 @@ solid = true
 
 [sub_resource type="Resource" id="P9_1"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"cover_block"
 at = Vector2(2.4, 0.3)
 size = Vector2(1.4, 2)
 height = 2
@@ -1135,14 +1135,14 @@ solid = true
 
 [sub_resource type="Resource" id="P9_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-2.3, -0.1)
 size = Vector2(1.2, 1.2)
 solid = true
 
 [sub_resource type="Resource" id="P9_3"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-2.3, 1.1)
 size = Vector2(1.2, 1.2)
 height = 0.9
@@ -1150,56 +1150,56 @@ solid = true
 
 [sub_resource type="Resource" id="P9_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.45, -1.21)
 size = Vector2(0.6, 0.6)
 yaw = 7
 
 [sub_resource type="Resource" id="P9_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.1, 1.13)
 size = Vector2(0.6, 0.6)
 yaw = 164
 
 [sub_resource type="Resource" id="P9_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(2.36, -1.13)
 size = Vector2(0.6, 0.6)
 yaw = 110
 
 [sub_resource type="Resource" id="P9_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(2.26, 1.75)
 size = Vector2(0.6, 0.6)
 yaw = 135
 
 [sub_resource type="Resource" id="P9_8"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.39, 0.9)
 size = Vector2(0.6, 0.6)
 yaw = 79
 
 [sub_resource type="Resource" id="P9_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-2.28, -1.19)
 size = Vector2(0.6, 0.6)
 yaw = 109
 
 [sub_resource type="Resource" id="P9_10"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-3.27, -0.2)
 size = Vector2(0.6, 0.6)
 yaw = 163
 
 [sub_resource type="Resource" id="P9_11"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.23, 1.02)
 size = Vector2(0.9, 0.45)
 yaw = 10
@@ -1211,7 +1211,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P9_0"), SubResource("P9_1")
 
 [sub_resource type="Resource" id="P10_0"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(0, 1.3)
 size = Vector2(0.6, 2.6)
 height = 1.1
@@ -1219,7 +1219,7 @@ solid = true
 
 [sub_resource type="Resource" id="P10_1"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(0, 3)
 size = Vector2(0.6, 0.8)
 height = 1.8
@@ -1227,7 +1227,7 @@ solid = true
 
 [sub_resource type="Resource" id="P10_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.95, 0.6)
 size = Vector2(1.3, 1.2)
 height = 1.2
@@ -1242,49 +1242,49 @@ solid = true
 
 [sub_resource type="Resource" id="P10_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.14, -0.55)
 size = Vector2(0.6, 0.6)
 yaw = 87
 
 [sub_resource type="Resource" id="P10_5"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.53, 1.97)
 size = Vector2(0.6, 0.6)
 yaw = 103
 
 [sub_resource type="Resource" id="P10_6"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.57, 2.02)
 size = Vector2(0.9, 0.45)
 yaw = 53
 
 [sub_resource type="Resource" id="P10_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, 3.1)
 size = Vector2(0.6, 0.6)
 yaw = 124
 
 [sub_resource type="Resource" id="P10_8"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.06, 3.95)
 size = Vector2(0.9, 0.45)
 yaw = 22
 
 [sub_resource type="Resource" id="P10_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.83, 3.14)
 size = Vector2(0.6, 0.6)
 yaw = 147
 
 [sub_resource type="Resource" id="P10_10"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.83, 0.76)
 size = Vector2(0.6, 0.6)
 yaw = 99
@@ -1296,7 +1296,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P10_0"), SubResource("P10_1
 
 [sub_resource type="Resource" id="P11_0"]
 script = ExtResource("1_piece")
-piece = &"wall_broken"
+piece = &"cover_wall"
 at = Vector2(0, -1.3)
 size = Vector2(0.6, 2.6)
 height = 1.1
@@ -1304,7 +1304,7 @@ solid = true
 
 [sub_resource type="Resource" id="P11_1"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(0, -3)
 size = Vector2(0.6, 0.8)
 height = 1.8
@@ -1312,7 +1312,7 @@ solid = true
 
 [sub_resource type="Resource" id="P11_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.95, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1.2
@@ -1327,49 +1327,49 @@ solid = true
 
 [sub_resource type="Resource" id="P11_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.14, 0.55)
 size = Vector2(0.6, 0.6)
 yaw = 273
 
 [sub_resource type="Resource" id="P11_5"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.53, -1.97)
 size = Vector2(0.6, 0.6)
 yaw = 257
 
 [sub_resource type="Resource" id="P11_6"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.57, -2.02)
 size = Vector2(0.9, 0.45)
 yaw = 307
 
 [sub_resource type="Resource" id="P11_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, -3.1)
 size = Vector2(0.6, 0.6)
 yaw = 236
 
 [sub_resource type="Resource" id="P11_8"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-0.06, -3.95)
 size = Vector2(0.9, 0.45)
 yaw = 338
 
 [sub_resource type="Resource" id="P11_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.83, -3.14)
 size = Vector2(0.6, 0.6)
 yaw = 213
 
 [sub_resource type="Resource" id="P11_10"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.83, -0.76)
 size = Vector2(0.6, 0.6)
 yaw = 261
@@ -1381,7 +1381,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P11_0"), SubResource("P11_1
 
 [sub_resource type="Resource" id="P12_0"]
 script = ExtResource("1_piece")
-piece = &"slab_concrete"
+piece = &"cover_block"
 at = Vector2(-1, -1.2)
 size = Vector2(2, 2.2)
 height = 2.6
@@ -1389,7 +1389,7 @@ solid = true
 
 [sub_resource type="Resource" id="P12_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, 0.6)
 size = Vector2(1.3, 1.4)
 height = 1.2
@@ -1397,7 +1397,7 @@ solid = true
 
 [sub_resource type="Resource" id="P12_2"]
 script = ExtResource("1_piece")
-piece = &"wall_pillar"
+piece = &"cover_post"
 at = Vector2(-0.5, 1.8)
 size = Vector2(1, 1)
 height = 1.7
@@ -1405,49 +1405,49 @@ solid = true
 
 [sub_resource type="Resource" id="P12_3"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.29, -1.72)
 size = Vector2(0.6, 0.6)
 yaw = 225
 
 [sub_resource type="Resource" id="P12_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.76, 0.29)
 size = Vector2(0.6, 0.6)
 yaw = 248
 
 [sub_resource type="Resource" id="P12_5"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-2.25, -0.67)
 size = Vector2(0.9, 0.45)
 yaw = 102
 
 [sub_resource type="Resource" id="P12_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-2.21, -1.84)
 size = Vector2(0.6, 0.6)
 yaw = 159
 
 [sub_resource type="Resource" id="P12_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.23, 0.66)
 size = Vector2(0.6, 0.6)
 yaw = 268
 
 [sub_resource type="Resource" id="P12_8"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(0.41, 1.62)
 size = Vector2(0.6, 0.6)
 yaw = 177
 
 [sub_resource type="Resource" id="P12_9"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-0.32, 2.71)
 size = Vector2(0.6, 0.6)
 yaw = 142
@@ -1459,7 +1459,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P12_0"), SubResource("P12_1
 
 [sub_resource type="Resource" id="P13_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1.4
@@ -1467,7 +1467,7 @@ solid = true
 
 [sub_resource type="Resource" id="P13_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 0.9
@@ -1475,7 +1475,7 @@ solid = true
 
 [sub_resource type="Resource" id="P13_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.2, 0.6)
 size = Vector2(1.2, 1.2)
 height = 1.1
@@ -1483,35 +1483,35 @@ solid = true
 
 [sub_resource type="Resource" id="P13_3"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.47, -0.78)
 size = Vector2(0.9, 0.45)
 yaw = 111
 
 [sub_resource type="Resource" id="P13_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, -1.41)
 size = Vector2(0.6, 0.6)
 yaw = 61
 
 [sub_resource type="Resource" id="P13_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.75, -0.7)
 size = Vector2(0.6, 0.6)
 yaw = 58
 
 [sub_resource type="Resource" id="P13_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.06, 1.45)
 size = Vector2(0.6, 0.6)
 yaw = 126
 
 [sub_resource type="Resource" id="P13_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.25, 0.56)
 size = Vector2(0.6, 0.6)
 yaw = 46
@@ -1523,7 +1523,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P13_0"), SubResource("P13_1
 
 [sub_resource type="Resource" id="P14_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1.4
@@ -1531,7 +1531,7 @@ solid = true
 
 [sub_resource type="Resource" id="P14_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 0.9
@@ -1539,7 +1539,7 @@ solid = true
 
 [sub_resource type="Resource" id="P14_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.2, 0.6)
 size = Vector2(1.2, 1.2)
 height = 1.1
@@ -1547,35 +1547,35 @@ solid = true
 
 [sub_resource type="Resource" id="P14_3"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.47, -0.78)
 size = Vector2(0.9, 0.45)
 yaw = 111
 
 [sub_resource type="Resource" id="P14_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, -1.41)
 size = Vector2(0.6, 0.6)
 yaw = 61
 
 [sub_resource type="Resource" id="P14_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.75, -0.7)
 size = Vector2(0.6, 0.6)
 yaw = 58
 
 [sub_resource type="Resource" id="P14_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.06, 1.45)
 size = Vector2(0.6, 0.6)
 yaw = 126
 
 [sub_resource type="Resource" id="P14_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.25, 0.56)
 size = Vector2(0.6, 0.6)
 yaw = 46
@@ -1587,7 +1587,7 @@ pieces = Array[ExtResource("1_piece")]([SubResource("P14_0"), SubResource("P14_1
 
 [sub_resource type="Resource" id="P15_0"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 1.4
@@ -1595,7 +1595,7 @@ solid = true
 
 [sub_resource type="Resource" id="P15_1"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(0.65, -0.6)
 size = Vector2(1.3, 1.2)
 height = 0.9
@@ -1603,7 +1603,7 @@ solid = true
 
 [sub_resource type="Resource" id="P15_2"]
 script = ExtResource("1_piece")
-piece = &"crate_stack"
+piece = &"cover_square"
 at = Vector2(-0.2, 0.6)
 size = Vector2(1.2, 1.2)
 height = 1.1
@@ -1611,35 +1611,35 @@ solid = true
 
 [sub_resource type="Resource" id="P15_3"]
 script = ExtResource("1_piece")
-piece = &"debris_low"
+piece = &"decor_debris"
 at = Vector2(-1.47, -0.78)
 size = Vector2(0.9, 0.45)
 yaw = 111
 
 [sub_resource type="Resource" id="P15_4"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(0.59, -1.41)
 size = Vector2(0.6, 0.6)
 yaw = 61
 
 [sub_resource type="Resource" id="P15_5"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(1.75, -0.7)
 size = Vector2(0.6, 0.6)
 yaw = 58
 
 [sub_resource type="Resource" id="P15_6"]
 script = ExtResource("1_piece")
-piece = &"rubble_small"
+piece = &"decor_rubble"
 at = Vector2(-0.06, 1.45)
 size = Vector2(0.6, 0.6)
 yaw = 126
 
 [sub_resource type="Resource" id="P15_7"]
 script = ExtResource("1_piece")
-piece = &"grass_tuft"
+piece = &"decor_grass"
 at = Vector2(-1.25, 0.56)
 size = Vector2(0.6, 0.6)
 yaw = 46

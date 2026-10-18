@@ -1258,7 +1258,45 @@ def fmt(v):
     return s if s not in ("-0", "") else "0"
 
 
+# v0.8.0 MI (owner O79: "we need to redo the template basic rooms where we generate each biomes with the new assets"):
+# the .tres files name piece ROLES, not the Ruins kit's pieces; each biome draws a role from its own pool
+# (BiomeLook.pools, StageDresser). The layouts here keep the kit names they were drawn with (their footprints and
+# heights are unchanged); ROLE maps them at write time. A concrete slab is a block when both its sides are 1.4 m or
+# more, else a long slab. Each layout's biggest block of LANDMARK_AREA m² or more is its landmark (the biome's set
+# piece). Light props keep their names (fire_barrel, brazier_pole).
+ROLE = {
+    "crate_stack": "cover_square",
+    "rock_large": "cover_square",
+    "dead_tree": "cover_square",
+    "slab_wide": "cover_long",
+    "wall_broken": "cover_wall",
+    "wall_pillar": "cover_post",
+    "car_wreck": "cover_deep",
+    "grass_tuft": "decor_grass",
+    "rubble_small": "decor_rubble",
+    "debris_low": "decor_debris",
+}
+LANDMARK_AREA = 5.0
+
+
+def role_of(p):
+    if p["piece"] == "slab_concrete":
+        return "cover_block" if min(p["size"]) >= 1.4 else "cover_long"
+    return ROLE.get(p["piece"], p["piece"])
+
+
+def landmark_of(lay):
+    best, area = None, LANDMARK_AREA - 1e-9
+    for gi, g in enumerate(lay["groups"]):
+        for pi, p in enumerate(g["pieces"]):
+            a = p["size"][0] * p["size"][1]
+            if p["solid"] and role_of(p) == "cover_block" and a > area:
+                best, area = (gi, pi), a
+    return best
+
+
 def write_tres(name, lay):
+    landmark = landmark_of(lay)
     lines = ['[gd_resource type="Resource" script_class="RoomLayoutDefinition" format=3]', ""]
     lines.append('[ext_resource type="Script" path="res://src/content/defs/room_layout_piece.gd" id="1_piece"]')
     lines.append('[ext_resource type="Script" path="res://src/content/defs/room_layout_group.gd" id="2_group"]')
@@ -1272,7 +1310,7 @@ def write_tres(name, lay):
             pids.append(pid)
             lines.append('[sub_resource type="Resource" id="%s"]' % pid)
             lines.append('script = ExtResource("1_piece")')
-            lines.append('piece = &"%s"' % p["piece"])
+            lines.append('piece = &"%s"' % ("landmark" if (gi, pi) == landmark else role_of(p)))
             lines.append("at = Vector2(%s, %s)" % (fmt(p["at"][0]), fmt(p["at"][1])))
             lines.append("size = Vector2(%s, %s)" % (fmt(p["size"][0]), fmt(p["size"][1])))
             if p["yaw"]:

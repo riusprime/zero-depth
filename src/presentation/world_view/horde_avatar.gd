@@ -59,6 +59,14 @@ const STRIKE_KINDS: Array[int] = [
 ]
 ## v0.8.0 P1: the Splitter's claw pivot (x, height) and how far out to each side the claws hang (z).
 const CLAW_PIVOT := Vector3(0.1, 0.6, 0.36)
+## v0.8.0 MI (the owner's models, posed in code): the walk is full at WALK_FULL_MPS (m/s on the ground), a stride
+## WALK_HZ a second, the legs swing WALK_SWING (radians); a death lasts DEATH_SECONDS; the X-ray twin shrinks by
+## XRAY_GROW along its normals (m). Starting values.
+const WALK_FULL_MPS := 2.0
+const WALK_HZ := 2.2
+const WALK_SWING := 0.3
+const DEATH_SECONDS := 0.4
+const XRAY_GROW := -0.02
 ## The Sniper's muzzle glow at full charge (emission energy; 0 when cold), and where it sits on the barrel.
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
@@ -69,6 +77,8 @@ var height := 1.0
 ## The pivot every part hangs from (the rise-in and the lean), and the kind's moving parts, by name.
 var body: Node3D
 var parts := {}
+## v0.8.0 MI: the owner's model (null: the code-made body), scaled to the kind's height.
+var model: Node3D
 
 ## The glowing accent (eye, seam, crystal, scope): its own material, emission on from the start.
 var _glow_mat := StandardMaterial3D.new()
@@ -87,6 +97,14 @@ var _wind := 0.0
 var _strike := 0.0
 var _outline := Color.BLACK
 var _technique := &"xray"
+## v0.8.0 MI: each part's rest pivot, the walk's phase and pace (0..1, from how fast the node moves on screen), and
+## the death (seconds in; -1: alive).
+var _rest := {}
+var _walk := 0.0
+var _walk_t := 0.0
+var _last_at := Vector3.INF
+var _die_t := -1.0
+var _model_scale := 1.0
 
 
 static func height_of(p_kind: int) -> float:
@@ -97,6 +115,36 @@ static func height_of(p_kind: int) -> float:
 
 static func is_horde_kind(p_kind: int) -> bool:
 	return p_kind == WorldReader.KIND_SPLITLING or HEIGHTS.has(p_kind)
+
+
+## v0.8.0 MI: the owner's model a kind draws with (EnemyModels; the Splitling the Splitter's, smaller), or &"".
+static func model_id(p_kind: int) -> StringName:
+	match p_kind:
+		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
+			return &"splitter"
+		WorldReader.KIND_SHIELD_BEARER:
+			return &"shield_bearer"
+		WorldReader.KIND_MENDER:
+			return &"mender"
+	return &""
+
+
+## v0.8.0 MI: true when the body is the owner's model.
+func has_model() -> bool:
+	return model != null
+
+
+## v0.8.0 MI: starts the death (the owner's model only): the body sinks and tips over DEATH_SECONDS, the Splitter's
+## halves fly apart (its two Splitlings are already in the sim). False for the code-made body (it goes at once).
+func die() -> bool:
+	if model == null:
+		return false
+	_die_t = 0.0
+	return true
+
+
+func dying() -> bool:
+	return _die_t >= 0.0
 
 
 func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -> void:
@@ -113,23 +161,31 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	_eye_mat.emission = glow
 	_eye_mat.emission_energy_multiplier = 1.5
 	write_stencil(_eye_mat)
-	match kind:
-		WorldReader.KIND_SWARMER:
-			_build_swarmer()
-		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
-			glow = ThemePalette.color(&"telegraph_hostile")
-			_build_splitter()
-			if kind == WorldReader.KIND_SPLITLING:
-				body.scale = Vector3.ONE * SPLITLING_SCALE
-		WorldReader.KIND_SHIELD_BEARER:
-			_build_shield_bearer()
-		WorldReader.KIND_MENDER:
-			glow = MEND
-			_build_mender()
-		WorldReader.KIND_MINE_LAYER:
-			_build_mine_layer()
-		WorldReader.KIND_SNIPER:
-			_build_sniper()
+	if kind in [WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING]:
+		glow = ThemePalette.color(&"telegraph_hostile")
+	elif kind == WorldReader.KIND_MENDER:
+		glow = MEND
+	var owner_model := EnemyModels.get_model(model_id(kind))  # v0.8.0 MI: the owner's model first
+	if not owner_model.is_empty():
+		_build_model(owner_model)
+		if kind == WorldReader.KIND_SPLITLING:
+			body.scale = Vector3.ONE * SPLITLING_SCALE
+	else:
+		match kind:
+			WorldReader.KIND_SWARMER:
+				_build_swarmer()
+			WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
+				_build_splitter()
+				if kind == WorldReader.KIND_SPLITLING:
+					body.scale = Vector3.ONE * SPLITLING_SCALE
+			WorldReader.KIND_SHIELD_BEARER:
+				_build_shield_bearer()
+			WorldReader.KIND_MENDER:
+				_build_mender()
+			WorldReader.KIND_MINE_LAYER:
+				_build_mine_layer()
+			WorldReader.KIND_SNIPER:
+				_build_sniper()
 	_glow_mat.albedo_color = glow
 	_glow_mat.emission_enabled = true
 	_glow_mat.emission = glow
@@ -172,6 +228,18 @@ func advance(delta: float) -> void:
 	if dt <= 0.0 or body == null:
 		return
 	_t += dt
+	if _die_t >= 0.0:
+		_die_t += dt
+	if model != null and is_inside_tree():  # v0.8.0 MI: the walk's pace from how fast the body moves
+		var at := global_position
+		var speed := (
+			0.0
+			if _last_at == Vector3.INF
+			else Vector2(at.x - _last_at.x, at.z - _last_at.z).length() / dt
+		)
+		_last_at = at
+		_walk = move_toward(_walk, clampf(speed / WALK_FULL_MPS, 0.0, 1.0), dt * 4.0)
+		_walk_t += dt * lerpf(0.0, WALK_HZ * TAU, _walk)
 	var spawning := _state == WorldReader.STATE_SPAWN
 	_rise = move_toward(_rise, 0.0 if spawning else 1.0, dt * (6.0 if spawning else 2.5))
 	var winding := _state == WorldReader.STATE_WINDUP
@@ -230,6 +298,9 @@ func _pose() -> void:
 	)
 	body.rotation.z = crouch * 0.12
 	var energy := (1.5 + _wind * 3.0) * tell + _strike * 2.0
+	if model != null:  # v0.8.0 MI: the owner's model's parts
+		_pose_model(energy, calm)
+		return
 	match kind:
 		WorldReader.KIND_SWARMER:
 			# v0.8.0 P1: rears up with the mandibles gaping, then lunges and bites them shut.
@@ -270,6 +341,125 @@ func _pose() -> void:
 			_muzzle_mat.emission_energy_multiplier = maxf(muzzle, _strike * MUZZLE_ENERGY)
 			(parts["muzzle"] as Node3D).scale = Vector3.ONE * (0.4 + 0.6 * maxf(charge, _strike))
 	_glow_mat.emission_energy_multiplier = energy * lerpf(0.2, 1.0, _rise)
+
+
+# --- v0.8.0 MI: the owner's models ----------------------------------------------------------------------------------
+
+
+## The owner's model (EnemyModels.get_model): each part a node at its pivot, its surfaces on three materials: the
+## frame as delivered (`base`), the plates in the kind's role colour (`role`: greyscale in the texture, times
+## _col(&"body")), the accents on the glowing accent material (`glow`). Both body materials are flashable and
+## carry the meta "enemy_tex" (ActorViews tints and glows them like the code bodies' plates); no drawn outline
+## (owner v0.7.5 on his models: the stroke is ugly; the stencil stays for the X-ray twin), which shrinks along its
+## normals (XRAY_GROW).
+func _build_model(m: Dictionary) -> void:
+	var tex: Texture2D = m["texture"]
+	var base := _model_material(tex, Color.WHITE)
+	var role := _model_material(tex, _col(&"body"))
+	model = Node3D.new()
+	model.name = "Model"
+	_model_scale = float(m["scale"])
+	model.scale = Vector3.ONE * _model_scale
+	body.add_child(model)
+	var parts_in: Dictionary = m["parts"]
+	for pname: StringName in parts_in:
+		var part: Dictionary = parts_in[pname]
+		var pivot := Node3D.new()
+		pivot.name = String(pname)
+		pivot.position = part["pivot"]
+		model.add_child(pivot)
+		var mi := MeshInstance3D.new()
+		mi.name = "Mesh"
+		mi.mesh = part["mesh"]
+		mi.extra_cull_margin = 0.5  # poses move parts past the rest bounds
+		var surfaces: Array = part["surfaces"]
+		for s in surfaces.size():
+			var which: StringName = surfaces[s]
+			var mat: StandardMaterial3D = (
+				_glow_mat if which == &"glow" else (role if which == &"role" else base)
+			)
+			mi.set_surface_override_material(s, mat)
+		pivot.add_child(mi)
+		if _technique == &"xray":
+			var ghost := MeshInstance3D.new()
+			ghost.name = "XrayTwin"
+			ghost.mesh = part["mesh"]
+			var gm := StandardMaterial3D.new()
+			gm.albedo_color = _col(&"body")
+			gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
+			gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
+			gm.grow = true
+			gm.grow_amount = XRAY_GROW / maxf(float(m["scale"]), 0.0001)
+			ghost.material_override = gm
+			ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			pivot.add_child(ghost)
+		parts[String(pname)] = pivot
+		_rest[String(pname)] = pivot.position
+	body_materials.append(base)
+	body_materials.append(role)
+
+
+func _model_material(tex: Texture2D, c: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = tex
+	mat.albedo_color = c
+	mat.roughness = 1.0
+	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
+	mat.stencil_color = _outline
+	mat.stencil_outline_thickness = 0.0
+	mat.set_meta(&"enemy_tex", true)
+	return ActorViews.flashable(mat)
+
+
+## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
+## about its own pivot). What drives each move is the same as the code body's: the windup's raise-and-hold (_wind),
+## the strike's snap (_strike), the Mender's heal, the walk's pace (_walk) and the death (_die_t).
+func _pose_model(energy: float, calm: bool) -> void:
+	var swing := sin(_walk_t) * WALK_SWING * _walk
+	var d := clampf(_die_t / DEATH_SECONDS, 0.0, 1.0) if _die_t >= 0.0 else 0.0
+	model.rotation = Vector3.ZERO
+	for pname: String in parts:
+		var n := parts[pname] as Node3D
+		n.position = _rest[pname]
+		n.rotation = Vector3.ZERO
+	if parts.has("leg_l"):
+		(parts["leg_l"] as Node3D).rotation.z = swing
+		(parts["leg_r"] as Node3D).rotation.z = -swing
+		body.position.y += absf(sin(_walk_t)) * 0.025 * _walk
+	match kind:
+		WorldReader.KIND_SHIELD_BEARER:
+			# The shield lifts and draws back through the windup (held raised: O25), then bashes out at the hit.
+			var shield := parts["shield"] as Node3D
+			shield.position += Vector3(-_wind * 0.12 + _strike * 0.3, _wind * 0.1, 0)
+			shield.rotation.z = _wind * 0.3 - _strike * 0.18
+			body.rotation.z += -_strike * 0.05
+		WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING:
+			# The seam gapes through the windup; the claws lift up and out (held), then chop forward and down.
+			var gap := 0.012 + _wind * 0.045 + d * 0.4
+			for side: Array in [["half_l", "arm_l", -1.0], ["half_r", "arm_r", 1.0]]:
+				var s: float = side[2]
+				var half := parts[side[0]] as Node3D
+				var arm := parts[side[1]] as Node3D
+				half.position.z += gap * s
+				half.rotation.x = -s * d * 0.6
+				arm.position.z += gap * s
+				arm.rotation.x = -s * (_wind * 0.55 - _strike * 0.2)
+				arm.rotation.z = _wind * 0.7 - _strike * 0.9
+				arm.rotation.y = s * _strike * 0.55
+		WorldReader.KIND_MENDER:
+			# It floats and sways; the cross over it turns; healing raises its crystals and lights them.
+			body.position.y += 0.22 + (0.0 if calm else sin(_t * 2.2) * 0.06)
+			if not calm:
+				model.rotation.x = sin(_t * 1.3) * 0.05
+			(parts["cross"] as Node3D).rotation.y = _t * 2.0
+			var lift := 1.0 if _healing else 0.0
+			(parts["crystal"] as Node3D).position.y += lift * 0.1
+			energy = 1.5 + (2.5 + sin(_t * 9.0) if _healing else 0.0)
+	model.scale = Vector3.ONE * _model_scale * (1.0 - 0.35 * d)
+	if d > 0.0:
+		body.rotation.z += d * 0.7
+		body.position.y += d * 0.04 * height  # tips over above the ground (no sinking through it)
+	_glow_mat.emission_energy_multiplier = energy * lerpf(0.2, 1.0, _rise) * (1.0 - d)
 
 
 # --- the six builds -----------------------------------------------------------------------------------------------

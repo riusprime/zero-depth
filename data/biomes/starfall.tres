@@ -70,6 +70,50 @@ speed_scale = 1.25
 
 [sub_resource type="Resource" id="Resource_look"]
 script = ExtResource("4_look")
+pools = {
+&"cover_square": {
+&"star_monolith": 2,
+&"rock_large": 2
+},
+&"cover_block": {
+&"star_monolith": 2,
+&"ruined_observatory": 1
+},
+&"cover_long": {
+&"star_monolith": 1
+},
+&"cover_wall": {
+&"star_monolith": 1
+},
+&"cover_post": {
+&"star_monolith": 1
+},
+&"cover_deep": {
+&"star_monolith": 1
+},
+&"landmark": {
+&"ruined_observatory": 2,
+&"star_monolith": 1
+},
+&"decor_grass": {
+&"star_crystal": 1
+},
+&"decor_rubble": {
+&"meteorite": 1
+},
+&"decor_debris": {
+&"meteorite": 1
+},
+&"void_island": {
+&"floating_island_starfall": 1
+},
+&"void_spike": {
+&"void_spike": 1
+}
+}
+max_per_floor = {
+&"ruined_observatory": 1
+}
 square_cover = {
 &"rock_large": 3,
 &"star_monolith": 1

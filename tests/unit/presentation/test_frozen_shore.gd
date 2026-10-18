@@ -180,7 +180,10 @@ func test_a_floor_draws_its_ice_where_the_sim_has_it_and_the_frozen_sea() -> voi
 func test_the_first_three_biomes_draw_none_of_it() -> void:
 	for id: StringName in [&"ruins", &"night_rocks", &"red_canyon"]:
 		var b: BiomeDefinition = _repo.get_def(&"biomes", id)
-		assert_null(b.look, "%s keeps its hand-written look" % id)
+		# v0.8.0 MI: every biome has a look now (its piece pools); none of these three has the sea, and their
+		# grey parts take no cast.
+		assert_ne(b.look.edge, &"water", "%s has no frozen sea" % id)
+		assert_eq(b.look.enemy_tint.a, 0.0, "%s: no cast on the enemies' greys" % id)
 		assert_null(b.surface, "%s has no ice" % id)
 		var w := SaveLab.floor_world(11, 1)
 		w.ice = null

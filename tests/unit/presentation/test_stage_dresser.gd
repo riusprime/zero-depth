@@ -6,6 +6,25 @@ extends GutTest
 ## the start hall gets its light, and no light sits in a doorway.
 
 const SEEDS := 40
+## v0.8.0 MI: the Ruins kit's city pieces (owner O78: "let's keep car just for ruins") and the four city pieces of
+## v0.8.0 MI.
+const CITY: Array[StringName] = [
+	&"car_wreck",
+	&"crate_stack",
+	&"slab_concrete",
+	&"slab_wide",
+	&"wall_broken",
+	&"wall_pillar",
+	&"wall_1m",
+	&"wall_2m",
+	&"debris_low",
+	&"building_corner",
+	&"ladder_frame",
+	&"column_broken",
+	&"pipe_bundle",
+	&"barricade",
+	&"tire_stack",
+]
 
 
 ## The dresser's input for a generated floor, as StageView builds it (walls in the same order, gate footprint out).
@@ -170,24 +189,44 @@ func _designed_floor(seed_value: int, biome: StringName) -> Dictionary:
 	f["keep_clear"] = [layout.portal_pos]
 	f["props"] = props
 	var look: BiomeLook = (repo.get_def(&"biomes", biome) as BiomeDefinition).look
-	if look != null:
-		f["square_cover"] = StageView._names(look.square_cover)
-		f["decor_swap"] = StageView._names(look.decor_swap)
+	f.merge(StageDresser.look_input(look), true)  # v0.8.0 MI: as StageView builds it
 	return f
 
 
-func test_designed_rooms_are_drawn_solid_where_solid_and_restyled_by_the_biome() -> void:
-	for biome: StringName in [&"ruins", &"frozen_shore"]:
+## v0.8.0 MI: the pieces a biome may draw: its pools' pieces, the light props, and the Ruins kit's pieces for a
+## role it has no pool for.
+func _allowed(f: Dictionary) -> Dictionary:
+	var out := {&"fire_barrel": true, &"brazier_pole": true}
+	var pools: Dictionary = f.get("pools", {})
+	for role: StringName in BiomeLook.ROLES:
+		if pools.has(role):
+			for k: StringName in pools[role]:
+				out[k] = true
+		elif StageDresser.LEGACY_PIECE.has(role):
+			out[StageDresser.LEGACY_PIECE[role]] = true
+	return out
+
+
+func test_designed_rooms_are_drawn_solid_where_solid_with_the_biomes_own_pieces() -> void:
+	for biome: StringName in [
+		&"ruins", &"night_rocks", &"red_canyon", &"frozen_shore", &"starfall"
+	]:
 		var f := _designed_floor(4242, biome)
 		var walls: Array = f["walls"]
-		var square: Dictionary = f.get("square_cover", {})
+		var allowed := _allowed(f)
 		var designed := 0
 		for w: Array in walls:
 			designed += 1 if float(w[5]) >= 0.0 else 0
 		assert_gt(designed, 20, "%s: the floor has designed rooms" % biome)
-		var crates := 0
+		var own := 0
 		for p: Dictionary in StageDresser.dress(f):
 			var xform: Transform3D = p["xform"]
+			if biome != &"ruins" and p["piece"] in CITY:
+				fail_test("%s draws the city piece %s" % [biome, p["piece"]])
+				return
+			if not allowed.has(p["piece"]):
+				fail_test("%s draws %s, outside its pools" % [biome, p["piece"]])
+				return
 			if p["kind"] == &"decor":
 				assert_lte(xform.basis.y.length(), StageDresser.DECOR_MAX_HEIGHT + 0.0001)
 				continue
@@ -200,17 +239,9 @@ func test_designed_rooms_are_drawn_solid_where_solid_and_restyled_by_the_biome()
 				if not _inside(c, w, 0.12):
 					fail_test("%s: %s leaves wall %d at %s" % [biome, p["piece"], wi, c])
 					return
-			if w.size() > 5 and float(w[5]) >= 0.0:
-				crates += 1 if p["piece"] == &"crate_stack" else 0
-				if StringName(w[4]) in [&"crate_stack", &"rock_large"] and not square.is_empty():
-					assert_has(square, p["piece"], "%s: square cover is the biome's" % biome)
-				elif StringName(w[4]) != p["piece"] and square.is_empty():
-					fail_test("%s: %s drawn as %s" % [biome, w[4], p["piece"]])
-					return
-		if square.is_empty():
-			assert_gt(crates, 0, "%s: the layout's crates stand" % biome)
-		else:
-			assert_eq(crates, 0, "%s: no crate stack in a biome that swaps them" % biome)
+			if (KitModels.SPECS.get(p["piece"], {}) as Dictionary).get("role", &"") == &"biome":
+				own += 1
+		assert_gt(own, 0, "%s: the owner's v0.8.0 pieces stand in it" % biome)
 	# A drawn piece whose blocker is gone (the boss door's way) is not drawn.
 	var gone := {
 		"piece": &"wall_pillar",
@@ -221,3 +252,47 @@ func test_designed_rooms_are_drawn_solid_where_solid_and_restyled_by_the_biome()
 		"wall": -2
 	}
 	assert_eq(StageDresser.dress({"props": [gone]}).size(), 0)
+
+
+## v0.8.0 MI (owner O79: "cap the observatory max to 1 per floor in starfall"): over many floors, no Starfall floor
+## draws two ruined observatories (BiomeLook max_per_floor), and every capped piece keeps its cap.
+func test_a_capped_landmark_never_repeats_on_a_floor() -> void:
+	var seen := 0
+	for s in 24:
+		var f := _designed_floor(7000 + s * 13, &"starfall")
+		var caps: Dictionary = f["max_per_floor"]
+		assert_eq(int(caps.get(&"ruined_observatory", 0)), 1)
+		var counts := {}
+		for p: Dictionary in StageDresser.dress(f):
+			counts[p["piece"]] = int(counts.get(p["piece"], 0)) + 1
+		assert_lte(int(counts.get(&"ruined_observatory", 0)), 1, "seed %d" % (7000 + s * 13))
+		seen += int(counts.get(&"ruined_observatory", 0))
+	assert_gt(seen, 0, "the observatory does stand on some floors")
+
+
+## v0.8.0 MI: wall props stand inside their structural wall (rule 1), in a niche the procedural wall leaves.
+func test_wall_props_stand_inside_their_wall() -> void:
+	var props := 0
+	for s in 12:
+		var f := _floor(300 + s, &"red_canyon")
+		f.merge(
+			StageDresser.look_input(
+				(
+					(
+						ContentRepository.load_all().get_def(&"biomes", &"red_canyon")
+						as BiomeDefinition
+					)
+					. look
+				)
+			),
+			true
+		)
+		var walls: Array = f["walls"]
+		for p: Dictionary in StageDresser.dress(f):
+			if p["piece"] != &"cattle_skull_post" or int(walls[p["wall"]][3]) != 0:
+				continue
+			props += 1
+			assert_true(p.has("niche"), "its niche is cut")
+			for c in _corners(p["xform"]):
+				assert_true(_inside(c, walls[p["wall"]], 0.02), "inside the wall")
+	assert_gt(props, 0, "Red Canyon's skull posts stand in its walls")

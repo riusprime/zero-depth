@@ -12,7 +12,13 @@ extends Node3D
 ## The void stays impassable in the sim (the floor's outer walls); this is only what you see there. No collision.
 ## Presentation only.
 
-const STYLES: Array[StringName] = [&"water", &"stars"]
+## - v0.8.0 MI &"islands" (Night Rocks, owner O78: "the moss island goes in Night Rocks"): the mood's own void, with
+##   the biome's floating islands (BiomeLook pool void_island: the owner's moss island) drifting below the floor's
+##   level around it, as Starfall's do; nothing else.
+## v0.8.0 MI: `pieces` names the owner's void models a style draws ({&"void_island": id, &"void_spike": id}; Starfall:
+## floating_island_starfall and void_spike); a missing one keeps the code-made piece. An island model carries its own
+## crystals, so the code-made crystal clusters are left off with it.
+const STYLES: Array[StringName] = [&"water", &"stars", &"islands"]
 ## The sea's surface below the ground, the snow bank's foot, and how far the sea reaches past the floor (m).
 const WATER_Y := -0.45
 const BANK_FOOT := -0.6
@@ -83,17 +89,43 @@ static func has_style(s: StringName) -> bool:
 ## Builds the edge `p_style` around a floor whose ground covers `ground` (sim-plane rects) within `bounds`.
 ## `edge_color`: the biome palette's `edge` token. `seed_value`: the floor seed (the cosmetic stream's root).
 func build(
-	p_style: StringName, ground: Array, bounds: Rect2, edge_color: Color, seed_value: int
+	p_style: StringName,
+	ground: Array,
+	bounds: Rect2,
+	edge_color: Color,
+	seed_value: int,
+	pieces: Dictionary = {}
 ) -> void:
 	style = p_style
 	if style == &"water":
 		_build_water(ground, bounds, edge_color, seed_value)
 	elif style == &"stars":
-		_build_stars(ground, bounds, edge_color, seed_value)
+		_build_stars(ground, bounds, edge_color, seed_value, pieces)
+	elif style == &"islands":
+		_build_islands(ground, bounds, edge_color, seed_value, pieces)
+
+
+## v0.8.0 MI: Night Rocks' void: only the drifting islands (the owner's moss island; the code-made rock without it).
+func _build_islands(
+	ground: Array, bounds: Rect2, edge_color: Color, seed_value: int, pieces: Dictionary
+) -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed_value * 7919 + 3301  # the cosmetic stream: presentation only
+	var isles := StarVoid.island_xforms(ground, bounds, rng)
+	island_count = isles[0].size()
+	var model := StarVoid.model_piece(pieces.get(&"void_island", &""), true)
+	if model.is_empty():
+		islands = _multi(
+			"Islands", StarVoid.island_mesh(), isles[0], StarVoid.drift_material(edge_color, false)
+		)
+	else:
+		islands = _multi("Islands", model["mesh"], isles[0], model["material"])
 
 
 ## v0.7.5 NB2: Starfall's starry void (StarVoid's rules and meshes).
-func _build_stars(ground: Array, bounds: Rect2, edge_color: Color, seed_value: int) -> void:
+func _build_stars(
+	ground: Array, bounds: Rect2, edge_color: Color, seed_value: int, pieces: Dictionary = {}
+) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value * 7919 + 3301  # the cosmetic stream: presentation only
 	var st := SurfaceTool.new()
@@ -108,7 +140,11 @@ func _build_stars(ground: Array, bounds: Rect2, edge_color: Color, seed_value: i
 	add_child(underside)
 	var hang := StarVoid.spike_xforms(ground, rng)
 	spike_count = hang.size()
-	spikes = _multi("Spikes", StarVoid.spike_mesh(), hang, StarVoid.rock_material(edge_color))
+	var spike_model := StarVoid.model_piece(pieces.get(&"void_spike", &""), false)
+	if spike_model.is_empty():
+		spikes = _multi("Spikes", StarVoid.spike_mesh(), hang, StarVoid.rock_material(edge_color))
+	else:
+		spikes = _multi("Spikes", spike_model["mesh"], hang, spike_model["material"])
 	var sky := StarVoid.star_xforms(ground, bounds, rng)
 	star_count = sky[0].size()
 	stars = _multi("Stars", StarVoid.star_mesh(), sky[0], StarVoid.star_material(), sky[1])
@@ -127,6 +163,10 @@ func _build_stars(ground: Array, bounds: Rect2, edge_color: Color, seed_value: i
 	nebula_count = nebula.get_child_count()
 	var isles := StarVoid.island_xforms(ground, bounds, rng)
 	island_count = isles[0].size()
+	var isle_model := StarVoid.model_piece(pieces.get(&"void_island", &""), true)
+	if not isle_model.is_empty():
+		islands = _multi("Islands", isle_model["mesh"], isles[0], isle_model["material"])
+		return  # its crystals are part of the owner's island
 	crystal_count = isles[1].size()
 	islands = _multi(
 		"Islands", StarVoid.island_mesh(), isles[0], StarVoid.drift_material(edge_color, false)

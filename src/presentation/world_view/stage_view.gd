@@ -189,8 +189,23 @@ func _build_edge(reader: WorldReader) -> void:
 	edge = BiomeEdge.new()
 	edge.name = "Edge"
 	add_child(edge)
+	# v0.8.0 MI: the owner's void pieces the biome's pools name (the heaviest of each pool).
+	var pieces := {}
+	var pools: Dictionary = StageDresser.look_input(look).get("pools", {})
+	for role: StringName in [&"void_island", &"void_spike"]:
+		var pool: Dictionary = pools.get(role, {})
+		var best := &""
+		for k: StringName in pool:
+			if best == &"" or int(pool[k]) > int(pool[best]):
+				best = k
+		pieces[role] = best
 	edge.build(
-		look.edge, _ground_rects, reader.floor_bounds(), palette["edge"], reader.seed_value()
+		look.edge,
+		_ground_rects,
+		reader.floor_bounds(),
+		palette["edge"],
+		reader.seed_value(),
+		pieces
 	)
 
 
@@ -551,9 +566,8 @@ func _build_kit(reader: WorldReader) -> void:
 		"seed": reader.seed_value(),
 		"props": _layout_props(reader),
 	}
-	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration
-		dressing["square_cover"] = _names(look.square_cover)
-		dressing["decor_swap"] = _names(look.decor_swap)
+	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration (v0.8.0 MI: its piece pools)
+		dressing.merge(StageDresser.look_input(look), true)
 	# v0.8.0 N12 (O70): the dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
 	# their dictionaries and the cosmetic stream; no node, no mesh): on a worker. Then the nodes, a few a job.
 	_dressing = dressing

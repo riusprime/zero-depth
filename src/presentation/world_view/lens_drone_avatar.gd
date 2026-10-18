@@ -18,6 +18,8 @@ const KIND := WorldReader.KIND_LENS_DRONE
 
 var pod: Node3D
 var ring: Node3D
+## v0.8.0 MI: true when the pod is the owner's model.
+var has_model := false
 var shadow: MeshInstance3D
 
 var _eye_mat := StandardMaterial3D.new()
@@ -47,6 +49,10 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	add_child(shadow)
 	pod = Node3D.new()
 	add_child(pod)
+	if _build_model():  # v0.8.0 MI: the owner's model
+		body_materials = _parts.body_materials
+		_pose()
+		return
 	_parts.piece(
 		pod, BossParts.block(Vector3(0.5, 0.34, 0.46), 30, 0.3), Vector3.ZERO, _color(&"body")
 	)
@@ -75,6 +81,72 @@ func setup(outline_color: Color, technique: StringName = &"xray") -> void:
 	)
 	body_materials = _parts.body_materials
 	_pose()
+
+
+## v0.8.0 MI: the owner's Lens Drone (EnemyModels &"lens_drone"): its pod centred on the pod node (the hover and
+## bob as the code-made pod's), its red plates in the palette's body colour (greyscale in the texture), its frame as
+## delivered, its eye slit on the eye material (flaring through the windup as before) and its little ring of feet
+## turning under it (the ring). False when the model is missing (the code-made pod is built).
+func _build_model() -> bool:
+	var m := EnemyModels.get_model(&"lens_drone")
+	if m.is_empty():
+		return false
+	has_model = true
+	var tex: Texture2D = m["texture"]
+	var mats := {}
+	for slot: StringName in [&"base", &"role"]:
+		var mat := StandardMaterial3D.new()
+		mat.albedo_texture = tex
+		mat.albedo_color = _color(&"body") if slot == &"role" else Color.WHITE
+		mat.roughness = 1.0
+		mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
+		mat.stencil_outline_thickness = 0.0
+		mat.set_meta(&"enemy_tex", true)
+		mats[slot] = ActorViews.flashable(mat)
+		_parts.body_materials.append(mat)
+	_eye_mat.albedo_color = _color(&"eye")
+	_eye_mat.emission_enabled = true
+	_eye_mat.emission = _color(&"eye")
+	_eye_mat.emission_energy_multiplier = 1.8
+	var holder := Node3D.new()
+	holder.name = "Model"
+	var s: float = m["scale"]
+	holder.scale = Vector3.ONE * s
+	holder.position = Vector3(0, -float(m["height"]) * s * 0.5, 0)  # the pod's middle on the pod node
+	pod.add_child(holder)
+	var parts_in: Dictionary = m["parts"]
+	for pname: StringName in parts_in:
+		var part: Dictionary = parts_in[pname]
+		var pivot := Node3D.new()
+		pivot.name = String(pname)
+		pivot.position = part["pivot"]
+		holder.add_child(pivot)
+		var mi := MeshInstance3D.new()
+		mi.mesh = part["mesh"]
+		var surfaces: Array = part["surfaces"]
+		for k in surfaces.size():
+			mi.set_surface_override_material(
+				k, _eye_mat if surfaces[k] == &"glow" else mats.get(surfaces[k], mats[&"base"])
+			)
+		pivot.add_child(mi)
+		if _parts.technique() == &"xray":
+			var ghost := MeshInstance3D.new()
+			ghost.mesh = part["mesh"]
+			var gm := StandardMaterial3D.new()
+			gm.albedo_color = _color(&"body")
+			gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
+			gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
+			gm.grow = true
+			gm.grow_amount = -0.02 / maxf(s, 0.0001)
+			ghost.material_override = gm
+			ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			pivot.add_child(ghost)
+		if pname == &"ring":
+			ring = pivot
+	if ring == null:
+		ring = Node3D.new()
+		holder.add_child(ring)
+	return true
 
 
 static func _color(slot: StringName) -> Color:
@@ -120,7 +192,11 @@ func _pose() -> void:
 	var bob := sin(_t * TAU * 0.8) * BOB_M
 	pod.position = Vector3(0, lerpf(0.4, HOVER_Y, _rise) + bob, 0)
 	pod.rotation = Vector3(sin(_t * 1.5) * 0.08, 0, sin(_t * 1.9) * 0.06 - 0.05 * _charge)
-	ring.rotation = Vector3(_t * 2.5, 0, 0)
+	# The code-made ring turns about its tube; the owner's ring of feet spins under the pod (v0.8.0 MI), faster as
+	# the eye charges.
+	ring.rotation = (
+		Vector3(0, _t * (2.5 + 6.0 * _charge), 0) if has_model else Vector3(_t * 2.5, 0, 0)
+	)
 	_eye_mat.emission_energy_multiplier = 1.8 + 3.5 * _charge
 	var s := lerpf(0.6, 1.0, _rise) * (1.0 - bob)
 	shadow.scale = Vector3(s, 1, s)
