@@ -141,3 +141,43 @@ of your max HP" cap (D36):
   the fight (`FinalFight`; `WorldSnapshot.ADDED_SINCE_V05`); the window itself is a function of the tick and the
   body's rise, so a save mid-window resumes mid-window. An older save loads with a fresh pace, set again from the
   meter.
+
+## PR: the Prism's second phase is fair (owner O84, 2026-10-18)
+Owner, verbatim (PLAN O84): "Second phase of Hollow Crown last boss is almost impossible the lasers on a cross should be
+15% slower, the all small balls he shoots should be shooted on a predictable pattern we should have 3 different
+patters with enough space to be dodged but not easy to dodge and he shouldnt have all 3 spells at the same time, we
+should rotate,and never make small balls and lasers at the same time"
+
+What the phase did before (FB2 + N2, read from the code): every attack was a Cross (`cross_ring`, `cross_spiral`,
+`cross_flower`, `cross_weave`, picked at random), and each Cross ran **all three spells at once**: the four beams
+turned for 5.0 s while her shards fired an orb pattern **aimed at you** every 1.6 s (1.4 s for the weave) and a fast
+bolt every 1.1 s (the weave: three-bolt fans every 0.8 s), and the bolts went on through the 2.5 s window. **The three
+spells** are the Cross (the lasers), the orbs (the small balls: `crown_orb`, 0.2 m crystal gems at 2.6-3.0 m/s) and
+the fast bolts (`crown_bolt`, a long crystal spear at 22 m/s down a 0.4 s aim line). The lead read the bolts as the
+owner's "quick, fast attacks" (O17), not as small balls, so they keep their aim line.
+
+Built in PR (`v080-pr`; evidence [`evidence/FINAL_BOSS_PR.md`](evidence/FINAL_BOSS_PR.md)). Supersedes N2's
+`cross_weave` and `prism_bolt_fan` (gone) and FB2's orbs inside the Cross:
+- **The Cross turns 15 % slower.** A quarter turn every 2.824 s at full HP (was 2.4) down to 1.412 s at none (was
+  1.2), reversing every 3.529 s (was 3.0): every turn takes 1 / 0.85 as long (169, 85 and 212 ticks; 0.85 to the
+  tick). The 1.0 s aim lines, the 5.0 s spin, the 0.5 s burn and the 2.5 s window are unchanged.
+- **One spell at a time, in a fixed rotation** (no random pick): Cross → ring → Cross → spiral → Cross → flower, again.
+  The bolts fire only in each Cross's window, once the beams are out (0.3 s in, then 1.1 s later: two a window).
+  Every spell waits until every shot she fired is gone, so **no orb or bolt is in the air while a beam is aimed or
+  burning**, and orbs never fly with bolts. Each orb spell lasts until its last orb has left (she stays shielded).
+- **Three predictable orb patterns**, each fired from her centre at a fixed angle (not at you), the same every time:
+  - **Ring** (`crown_ring`): 4 rings, 0.8 s apart, of 32 orbs less 4 gaps of 2; every other ring turned 33.75°, so
+    the gaps zigzag and you step left, right, left.
+  - **Spiral** (`crown_spiral`): 10 solid arms turning 45°/s, reversing after 1.2 s; walk round her with the arms (or
+    out with the orbs).
+  - **Flower** (`crown_flower`): 4 petals of orbs (fast at the tips, slower at the edges), 4 waves 0.9 s apart, each
+    turned 33.75° further: you walk round her one gap at a time.
+  - The numbers, at 4 m from her (the patterns' check distance; the hero is 0.7 m wide, runs 6 m/s): every gap is a
+    clear corridor of **1.92-2.07 m (2.75-2.96 hero widths)**; between the gaps the orbs stand too close to slip
+    through; the ring's and the flower's next wave moves its gaps 1.10 m from the last one's, with 0.41-0.43 s to
+    step (2.55-2.66 m/s, under half the run); the spiral's arms sweep 3.14 m/s at 4 m. All 3.0 m/s, 0.2 m, 13 m (to
+    the wall), 22 damage.
+- **One rotation is 50.0 s**; she is open 18.0 % of it (three 2.5 s windows and the 0.5 s breaths after each orb
+  spell), and her paced HP is set from that share (was 29.4 %), so the phase's length at your damage stays the
+  pace's. Measured (`test_final_pace`, the same four builds): the Prism took 98.5 / 73.4 / 71.1 / 81.8 s (base,
+  strong, absurd gun, absurd blade), was 89.4 / 76.4 / 73.0 / 76.6 s.
