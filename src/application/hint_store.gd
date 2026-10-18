@@ -5,17 +5,14 @@ extends RefCounted
 ## `hints` setting, on by default). Each hint shows once; "Reset hints" forgets them all. Never part of a run's
 ## state or any hash.
 
-## Every hint, in the order a first run meets them (OnboardingHints decides when each one shows).
+## Every hint, in the order a first run meets them (OnboardingHints decides when each one shows). v0.8.0 N18: pick,
+## trigger, shop and portal removed (they explained; owner O76); an older profile's seen list may still name them.
 const IDS: Array[StringName] = [
 	&"move",
 	&"attack",
 	&"dash",
 	&"vent",
-	&"pick",
 	&"build",
-	&"trigger",
-	&"shop",
-	&"portal",
 	&"codex",
 ]
 const SETTING := "hints"

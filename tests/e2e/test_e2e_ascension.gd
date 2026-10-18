@@ -3,7 +3,8 @@ extends GutTest
 ## moved to its last floor by a labelled TEST HELPER (the run's floor number) and the F10 panel's Restart floor (a key
 ## press) rebuilds it; the dev panel (backtick, mouse clicks: God mode for the long walk, Kill boss) stands in for the
 ## fight as in test_e2e_run_flow; the left stick walks through the boss door. v0.8.0 P2 (owner O28): no choice panel;
-## the boss's death opens two devices, both drawn and named, the HUD naming both. The stick walks onto the Loop device:
+## the boss's death opens two devices, both drawn (v0.8.0 N18, O76: no names over them
+## and no HUD line about them). The stick walks onto the Loop device:
 ## the build goes into loop 2's floor 1, "Loop 2 · Floor 1" on the HUD, the Codex counts it, and Continue after Main
 ## menu resumes loop 2. Another run walks into the Ascension portal: on to the final arena (v0.8.0 FB1).
 
@@ -94,14 +95,13 @@ func _to_the_devices(e: E2e, main: Main) -> bool:
 	assert_false(main.view.ascension.is_sealed(), "the column rises")
 	assert_gt(main.view.ascension.rise, 0.0)
 	assert_false(main.view.loop_device.is_sealed(), "the Loop device lights")
-	assert_true(main.view.loop_device.label.visible, "named")
+	# v0.8.0 N18 (owner O76: the game stops explaining): no floating names, no HUD lines about the two devices
+	for n: Node3D in [main.view.loop_device, main.view.ascension]:
+		assert_eq(
+			n.find_children("*", "Label3D", true, false).size(), 0, "%s: no floating name" % n.name
+		)
 	var hud: Hud = main.get_node("UI/Hud")
-	assert_true(
-		hud.gate_text().begins_with(tr("HUD_ASCENSION_OPEN")), "the HUD names the Ascension portal"
-	)
-	assert_true(
-		hud.gate_text().contains(tr("HUD_LOOP_DEVICE_OPEN") % 2), "and the Loop device's loop 2"
-	)
+	assert_eq(hud.gate_text(), "", "the HUD explains neither device")
 	await e.tap(KEY_QUOTELEFT)  # the dev panel away (God mode stays)
 	return true
 

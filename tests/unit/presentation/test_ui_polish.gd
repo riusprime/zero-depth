@@ -286,16 +286,25 @@ func test_the_swap_panel_wears_ember_stone_and_its_names_fit_the_tiles() -> void
 		assert_eq(off.focus, 0.0, "an unfocused tile is unlit")
 		assert_eq(on.focus, 1.0, "the focused tile is ember-lit")
 		assert_gt(on.dim, off.dim, "and brighter")
-	# Tile names wrap by word; every word of every slot name fits a tile, in both languages.
+	# Tile names wrap by word; every word of every slot name fits a tile, in both languages. v0.8.0 N18 (owner O76:
+	# "Shrink long words to fit"): at the size the tile draws it (WandRow.NAME_SIZE, or smaller for a word too long,
+	# never under TextFit.WORD_FLOOR of it).
 	var f := HudStyle.font(true)
 	var inner := SwapPanel.TILE.x - 16.0
+	var lowest := ceili(WandRow.NAME_SIZE * TextFit.WORD_FLOOR)
 	assert_gt(_slot_name_keys().size(), 20, "the abilities' and items' names")
+	var shrunk := 0
 	for lang: String in LANGS:
 		TranslationServer.set_locale(lang)
 		for k: String in _slot_name_keys():
+			var s := TextFit.word_fit_size(f, tr(k), inner, WandRow.NAME_SIZE)
+			assert_gte(s, lowest, "%s: %s stays legible (%d px)" % [lang, k, s])
+			if s < WandRow.NAME_SIZE:
+				shrunk += 1
 			for word in tr(k).split(" ", false):
-				var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-				assert_lte(w, inner, "%s: '%s' (%s) fits a swap tile" % [lang, word, k])
+				var w := f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x
+				assert_lte(w, inner, "%s: '%s' (%s) fits a swap tile at %d px" % [lang, word, k, s])
+	gut.p("slot names drawn smaller to fit (both languages): %d" % shrunk)
 
 
 func test_the_options_binding_cells_follow_a_language_switch() -> void:

@@ -431,8 +431,10 @@ func gate_text() -> String:
 	return _gate.text
 
 
-## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal. v0.5.0 PB (D10):
-## in the boss room after the boss, a second line says the floor is still yours to explore (none outside it).
+## The note at the bottom: the sealed gate, the boss warning near the boss door, the open portal (in the boss room
+## after the boss; none outside it). v0.8.0 N18 (owner O76: the game stops explaining): PB's second line ("explore the
+## rest of the floor") and, on a loop's last floor, the Ascension portal's and the Loop device's lines are gone: no note
+## there at all.
 func _gate_note(reader: WorldReader) -> String:
 	if not reader.has_floor():
 		return ""
@@ -440,12 +442,9 @@ func _gate_note(reader: WorldReader) -> String:
 		if reader.portal_active():
 			if reader.floor_room_of(reader.player_pos()) != reader.boss_room():
 				return ""
-			var open := tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
-			if reader.ascension_floor():  # v0.7.5 AP; v0.8.0 P2 (O28): the two devices
-				open = tr("HUD_ASCENSION_OPEN")
-				if reader.has_loop_device():
-					open += "\n" + tr("HUD_LOOP_DEVICE_OPEN") % (reader.loop() + 1)
-			return open + "\n" + tr("HUD_EXPLORE_AFTER_BOSS")
+			if reader.ascension_floor():  # v0.8.0 N18: the Ascension portal and the Loop device speak for themselves
+				return ""
+			return tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN")
 		if not reader.boss_door_sealed():
 			var d := reader.boss_door_depth(reader.player_pos())
 			var near := reader.player_pos().distance_to(reader.boss_door_center()) <= BOSS_WARN_M

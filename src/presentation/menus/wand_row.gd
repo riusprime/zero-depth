@@ -165,6 +165,11 @@ func card_name(k: int) -> String:
 	return _names[k].text
 
 
+## v0.8.0 N18: the font size tile `k`'s name is drawn at (NAME_SIZE, or smaller for a word too long for the tile).
+func name_size(k: int) -> int:
+	return _names[k].get_theme_font_size("font_size")
+
+
 func level_text(k: int) -> String:
 	return _levels[k].text
 
@@ -241,6 +246,7 @@ func _refresh() -> void:
 			_sockets[k].visible = false
 			t.set_meta(&"tint", Color(MenuStyle.DIM, 0.3))
 			t.set_meta(&"empty", true)
+		TextFit.fit_label_words(_names[k], TILE.x - 16.0, NAME_SIZE)  # v0.8.0 N18: a long word shrinks
 		x += TILE.x
 		var trig := int(cards[k]["trigger"]) if k < cards.size() else -1
 		if trig >= 0 and k < _slots - 1:

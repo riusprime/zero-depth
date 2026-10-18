@@ -2,10 +2,10 @@ extends GutTest
 ## The gamble shrine through real input (v0.3.0 L19; v0.8.0 N14, owner O72: rarer, 3 wins, 30 % to fail). Run seed 2
 ## (E2e.boot's fixed seed) draws a shrine on floor 1, in a combat room next to the start hall (never the start hall).
 ## God from the dev panel (clicked with the mouse: the dev route, so the walk is safe), then walking up to the shrine
-## with the stick shows its price above it and the prompt with its wins and chance to fail (red with no shards, and E
-## then pays nothing); with shards, E on the keyboard pays 25 and wins a stat (the card spins and lands on it); X on
-## the pad pays 38 and fails (the shrine fizzles, "It failed", no stat, the price still rises to 57); after the 3rd
-## win the shrine is spent: dimmed, "Spent" above it, the prompt says so, and E pays nothing.
+## with the stick shows its price above it and the prompt (red with no shards, and E then pays nothing; v0.8.0 N18,
+## owner O76: no odds line under it); with shards, E on the keyboard pays 25 and wins a stat (the card spins and lands
+## on it); X on the pad pays 38 and fails (the shrine fizzles, "It failed", no stat, the price still rises to 57);
+## after the 3rd win the shrine is spent: dimmed, "Spent" above it, the prompt says so, and E pays nothing.
 
 ## Run seed 2's floor-1 shrine: uses 1 and 2 fail, 0, 3 and 4 win (Gamble.fails on its floor seed).
 const SEED := 2
@@ -66,8 +66,7 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_eq(shrine.price_label.text, "25")
 	assert_eq(shrine.price_label.modulate, GambleShrineView.PRICE_POOR, "red: can't afford it")
 	assert_eq(hud.gamble.prompt_text(), tr("REWARD_TOO_POOR") % [0, 25])
-	assert_eq(hud.gamble.odds_text(), tr("UI_GAMBLE_ODDS") % [0, 3, "30"], "wins and the odds")
-	assert_eq(hud.gamble.odds_text(), "Wins 0/3 · 30 % to fail")
+	assert_null(hud.gamble.find_child("GambleOdds", true, false), "v0.8.0 N18: no odds line")
 	await e.tap(KEY_E)
 	await e.frames(2)
 	assert_eq(w.gamble_uses, 0, "E paid nothing")
@@ -88,7 +87,6 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_eq(Gamble.stacks(w, first), 1, "and won a stat")
 	assert_true(hud.gamble.card.showing(), "the result card shows")
 	assert_true(shrine.spinning(), "the core spins with it")
-	assert_eq(hud.gamble.odds_text(), tr("UI_GAMBLE_ODDS") % [1, 3, "30"])
 	await e.frames(int(GambleCard.SPIN_S * 60.0) + 6)
 	assert_eq(shrine.price_label.text, "38", "the next use costs more")
 	# Use 2: the pad's X pays 38 and fails.
@@ -101,7 +99,6 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_eq(hud.gamble.fail_text(), tr("UI_GAMBLE_FAILED"))
 	assert_eq(hud.gamble.fail_text(), "It failed")
 	assert_eq(shrine.price_label.text, "57", "the price still rises after a miss")
-	assert_eq(hud.gamble.odds_text(), tr("UI_GAMBLE_ODDS") % [1, 3, "30"], "still one win")
 	# Use 3 fails, uses 4 and 5 win: the third win spends the shrine.
 	for k in 3:
 		await e.tap(KEY_E)
@@ -113,8 +110,8 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	assert_true(shrine.dimmed(), "drawn dim")
 	assert_eq(shrine.price_label.text, tr("UI_GAMBLE_SPENT_TAG"), "'Spent' above it")
 	assert_eq(shrine.price_label.modulate, GambleShrineView.PRICE_SPENT)
-	assert_eq(hud.gamble.prompt_text(), tr("UI_GAMBLE_BLOCKED") % 3, "the prompt says why")
-	assert_eq(hud.gamble.odds_text(), "", "no odds on a spent shrine")
+	assert_eq(hud.gamble.prompt_text(), tr("UI_GAMBLE_BLOCKED"), "the prompt says so")
+	assert_eq(hud.gamble.prompt_text(), "Spent")
 	var shards := w.shards
 	var denied := w.gamble_denied_tick
 	await e.tap(KEY_E)
@@ -125,7 +122,7 @@ func test_find_the_shrine_win_fail_and_spend_it_with_keyboard_and_pad() -> void:
 	TranslationServer.set_locale("es")
 	await e.frames(2)
 	assert_eq(shrine.price_label.text, "Agotado", "Spanish")
-	assert_eq(hud.gamble.prompt_text(), "Agotado · el santuario dio sus 3 victorias")
+	assert_eq(hud.gamble.prompt_text(), "Agotado")
 	TranslationServer.set_locale("en")
 	await e.frames(2)
 	await e.tap(KEY_ESCAPE)

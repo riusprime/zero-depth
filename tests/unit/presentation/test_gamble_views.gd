@@ -161,7 +161,9 @@ func test_a_failed_use_fizzles_without_changing_a_shader_and_says_so() -> void:
 	TranslationServer.set_locale("en")
 
 
-func test_the_odds_line_reads_the_sims_numbers_and_a_spent_shrine_dims() -> void:
+## v0.8.0 N18 (owner O76): N14's odds line is gone (no wins count, no chance to fail on screen); a spent shrine says
+## one word and dims.
+func test_no_odds_line_and_a_spent_shrine_dims() -> void:
 	var w := _world()
 	w.actors.set_pos(0, w.gamble_pos + Vector2(1.0, 0))
 	var reader := WorldReader.new(w)
@@ -172,24 +174,16 @@ func test_the_odds_line_reads_the_sims_numbers_and_a_spent_shrine_dims() -> void
 	view.setup(reader.gamble_pos())
 	TranslationServer.set_locale("en")
 	hud.sync(reader)
-	assert_eq(hud.odds_text(), "Wins 0/3 · 30 % to fail")
-	w.gamble_table.fail_permille = 125
+	assert_null(hud.find_child("GambleOdds", true, false), "no odds line")
+	assert_false(hud.prompt_text().contains("%"), "the prompt names no chance")
 	w.gamble_table.max_wins = 4
-	w.gamble_wins = 1
-	hud.sync(reader)
-	assert_eq(hud.odds_text(), "Wins 1/4 · 12.5 % to fail", "from the table, not a copy")
-	TranslationServer.set_locale("es")
-	hud.sync(reader)
-	assert_eq(hud.odds_text(), "Victorias 1/4 · 12.5 % de fallar")
-	TranslationServer.set_locale("en")
 	w.gamble_wins = 4
 	w.shards = 1000
 	hud.sync(reader)
 	view.sync(reader)
 	assert_true(reader.gamble_spent())
-	assert_eq(hud.prompt_text(), "Spent · the shrine gave its 4 wins")
+	assert_eq(hud.prompt_text(), "Spent")
 	assert_true(hud.prompt_poor(), "in the refusal colour")
-	assert_eq(hud.odds_text(), "", "no odds once spent")
 	assert_true(view.dimmed(), "dimmed")
 	assert_true(view.price_label.visible)
 	assert_eq(view.price_label.text, "Spent")

@@ -22,6 +22,10 @@ var icon := AchievementIcon.new()
 var header := HudStyle.label(14, true)
 var name_label := HudStyle.label(21, true)
 var desc_label := HudStyle.label(17)
+## v0.8.0 N18: true while the screen is shut behind a loading cover (Main: LoadingCover.shut). The toast waits then,
+## hidden and its clock stopped, so an unlock made while a floor loads (the biome's, on arrival) is seen when the cover
+## opens, over the fade-in, instead of running out unseen behind it.
+var hold := Callable()
 var _queue: Array[Dictionary] = []
 var _current := {}
 var _t := 0.0
@@ -108,6 +112,9 @@ func _fit() -> void:
 
 func _process(delta: float) -> void:
 	if _current.is_empty():
+		return
+	if hold.is_valid() and hold.call():
+		modulate.a = 0.0
 		return
 	_t += delta
 	var left := SHOW_S - _t

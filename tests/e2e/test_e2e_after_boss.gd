@@ -80,8 +80,11 @@ func test_out_through_the_boss_door_and_back_to_the_portal() -> void:
 	assert_true(reader.portal_active(), "the portal is open")
 	assert_false(reader.boss_door_sealed(), "and the boss door with it")
 	assert_eq(w.walls.size(), walls_open, "its collider is gone")
-	assert_true(
-		hud.gate_text().ends_with(tr("HUD_EXPLORE_AFTER_BOSS")), "the HUD says: keep exploring"
+	# v0.8.0 N18 (owner O76): the "explore the rest of the floor" line is gone; the note only says the portal is open
+	assert_eq(
+		hud.gate_text(),
+		tr("HUD_PORTALS_OPEN" if reader.has_deep_portal() else "HUD_PORTAL_OPEN"),
+		"the HUD says the portal is open, nothing more"
 	)
 	# The boss room is a safe spot: nothing arrives while you stand in it.
 	var seq := w.last_event_seq()
