@@ -74,16 +74,21 @@ func setup(sim_pos: Vector2, facing_angle: int, pad_radius: float) -> void:
 		model.scale = Vector3.ONE * (radius * 2.0 / maxf(_model_width, 0.0001))
 
 
-## v0.8.0 MI: the owner's Loop device (MODEL_PATH, mi_prep.py: 8k triangles, 0.9 m tall as prepared) in place of the
-## code-made stone pad; the rim's glow, the upright ring, its chasing arrowheads, the veil and the light stay on top
-## of it, animated as before. Missing: the code-made pad (L15).
-func _build_model() -> void:
+## v0.8.0 MI: reads the owner's pad into its cache once (ViewWarmup does it on the load's worker).
+static func warm_model() -> void:
 	if not _model_cache.has(MODEL_PATH):
 		_model_cache[MODEL_PATH] = (
 			ModelLibrary.first_surface(load(MODEL_PATH) as PackedScene)
 			if ResourceLoader.exists(MODEL_PATH)
 			else {}
 		)
+
+
+## v0.8.0 MI: the owner's Loop device (MODEL_PATH, mi_prep.py: 8k triangles, 0.9 m tall as prepared) in place of the
+## code-made stone pad; the rim's glow, the upright ring, its chasing arrowheads, the veil and the light stay on top
+## of it, animated as before. Missing: the code-made pad (L15).
+func _build_model() -> void:
+	warm_model()
 	var surface: Dictionary = _model_cache[MODEL_PATH]
 	if surface.is_empty():
 		return

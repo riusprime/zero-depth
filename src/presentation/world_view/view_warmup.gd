@@ -17,6 +17,13 @@ extends RefCounted
 ## `shop`: the floor has the biome's shop stall.
 static func warm(final: bool, kit: bool, biome: StringName, shop: bool) -> void:
 	BossModels.preload_all(final)
+	# v0.8.0 MI: the owner's enemy models (read here, so a Mender's first spawn never reads a file mid-fight) and the
+	# two devices' models (the Loop device's pad, the Ascension portal).
+	for id: StringName in EnemyModels.SPECS:
+		EnemyModels.get_model(id)
+	LoopDevice.warm_model()
+	if ResourceLoader.exists(AscensionPortal.MODEL_PATH):
+		load(AscensionPortal.MODEL_PATH)
 	if kit:
 		for id: StringName in KitModels.SPECS:
 			var piece := KitModels.get_piece(id)
