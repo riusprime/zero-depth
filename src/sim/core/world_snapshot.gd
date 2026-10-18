@@ -272,7 +272,9 @@ const ADDED_SINCE_V05 := {
 		&"hole_dmg",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
-	&"EventState": [&"cursed_rolled"],  # v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0)
+	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
+	# older save's floor has none: -1, apply)
+	&"EventState": [&"cursed_rolled", &"curse_k"],
 	&"AbilityState":
 	[
 		&"bomb_spec",
@@ -352,6 +354,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
 		base.gamble_wins = base.gamble_uses
 		base.gamble_fail_tick = -1
+	var ev_data: Variant = data.get(&"ev", {})
+	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
+		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none
 	if not data.has(&"mod_slots"):  # v0.6.0 MX2: a v0.5 build into the six slots
 		base.mod_slots = PackedInt32Array()
 		BuildSlots.migrate(base)

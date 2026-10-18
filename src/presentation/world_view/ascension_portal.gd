@@ -9,7 +9,8 @@ extends Node3D
 ##   core, lavender at its edges, with bands of light climbing it, a thin bright core inside, motes rising and
 ##   fragments circling its top;
 ## - dormant while the boss lives (the shards dim, no column); when the sim's portal opens the column rises from the
-##   dais over RISE_SECONDS with a flare (reduced motion: it is there at once, no flare).
+##   dais over RISE_SECONDS with a flare (reduced motion: it is there at once, no flare);
+## - no floating name (v0.8.0 N18, owner O76: P2's "Ascension" label is gone; the player finds out what it is).
 ## Presentation only (EI-07): it reads nothing from the sim and decides nothing; WorldViewRoot unseals it when the
 ## portal opens, PortalTransitView flares it when the hero goes in. Its clock (rise, bands, orbit) is the
 ## presentation's (never an outcome, EI-03).
@@ -76,8 +77,6 @@ var shard_material: StandardMaterial3D
 var obelisk_material: StandardMaterial3D
 var fragments: Array[Node3D] = []
 var glow: MeshInstance3D
-## v0.8.0 P2 (owner O28): its name over it once open ("Ascension"), as the Loop device's beside it.
-var label := Label3D.new()
 ## Reduced motion (ViewPrefs, read at setup): the column appears at once, no flare.
 var calm := false
 ## 0..1: how far the column has risen (tests read it).
@@ -94,7 +93,6 @@ func _init() -> void:
 	_build_column()
 	_build_motes()
 	_build_fragments()
-	_build_label()
 	set_sealed(true)
 
 
@@ -114,7 +112,6 @@ func set_sealed(sealed: bool) -> void:
 	elif calm or not is_inside_tree():
 		rise = 1.0
 	motes.emitting = not sealed
-	label.visible = not sealed
 	_apply()
 
 
@@ -322,18 +319,3 @@ func _build_fragments() -> void:
 		piece.visible = false
 		add_child(piece)
 		fragments.append(piece)
-
-
-## v0.8.0 P2: the name over the dais, facing the camera.
-func _build_label() -> void:
-	label.name = "Name"
-	label.text = tr("WORLD_ASCENSION_NAME")
-	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.font_size = 56
-	label.pixel_size = 0.006
-	label.outline_size = 10
-	label.modulate = GOLD
-	label.no_depth_test = true
-	label.position = Vector3(COLUMN_X + 1.6, 4.6, 0)  # in front of the column, over the spire
-	add_child(label)

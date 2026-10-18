@@ -33,10 +33,10 @@ func test_show_hints_off_makes_none_due() -> void:
 func test_seen_hints_survive_a_save_and_a_load() -> void:
 	var path := "user://test_hint_store_profile.json"
 	var p := ProfileStore.new(path)
-	HintStore.new(p).mark(&"pick")
+	HintStore.new(p).mark(&"vent")
 	assert_true(p.save_file())
 	var again := ProfileStore.open(path)
-	assert_true(HintStore.new(again).seen(&"pick"), "read back from the file")
+	assert_true(HintStore.new(again).seen(&"vent"), "read back from the file")
 	assert_false(HintStore.new(again).seen(&"move"))
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 

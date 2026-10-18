@@ -28,12 +28,16 @@ extends RefCounted
 ## v0.8.0 N14 (owner O72): 6 is today's: the gamble shrine stands on some floors only (GambleTable's
 ## floor_chance_permille), in a combat room away from the start hall (Gamble.site). A floor saved under rules 1-5 is
 ## rebuilt with the shrine in its start hall, as it was saved (FloorScenario.legacy_shrine_of).
-const FLOOR_RULES := 6
+## v0.8.0 N17 (owner O75): 7 is today's: the curse room (Events.curse_site: on some floors, one combat room with the
+## curse altar, the curse events drawn only there). A floor saved under rules 1-6 is rebuilt with its event rooms as
+## they were (no curse room, every event in the common draw; FloorScenario.legacy_curse_room_of).
+const FLOOR_RULES := 7
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
 const FLOOR_RULES_V080_RT1 := 4
 const FLOOR_RULES_V080_SR := 5
+const FLOOR_RULES_V080_N14 := 6
 
 var run_seed := 0
 var table: RunTable

@@ -8,8 +8,8 @@ extends Node3D
 ## - a low round pad of dark stone with a glowing rim the size of the sim's pad (stepping on it takes the hero);
 ## - an upright ring standing on the pad, turned to face the camera (so it never reads edge-on), with two arrowheads
 ##   chasing round it (the loop), and a faint disc of light inside the ring;
-## - its name over it ("Loop", tr) once open.
-## Dormant while the boss lives (dim, still, no name); when the portal opens it lights and its arrowheads chase round
+## - no floating name (v0.8.0 N18, owner O76: P2's "Loop" label is gone; the player finds out what it is).
+## Dormant while the boss lives (dim, still); when the portal opens it lights and its arrowheads chase round
 ## (reduced motion: they stand). Presentation only (EI-07): it reads nothing and decides nothing; WorldViewRoot
 ## unseals it with the portal, PortalTransitView flares it when the hero steps in. Its clock is the presentation's.
 ##
@@ -37,7 +37,6 @@ var ring: MeshInstance3D
 var veil: MeshInstance3D
 var arrows: Array[MeshInstance3D] = []
 var light := OmniLight3D.new()
-var label := Label3D.new()
 var ring_material := StandardMaterial3D.new()
 var rim_material := StandardMaterial3D.new()
 var veil_material := StandardMaterial3D.new()
@@ -106,7 +105,6 @@ func set_sealed(sealed: bool) -> void:
 	if _sealed and not sealed and is_inside_tree() and not calm:
 		_flare = FLARE_SECONDS * 0.6
 	_sealed = sealed
-	label.visible = not sealed
 	veil.visible = not sealed
 	_apply()
 
@@ -250,14 +248,3 @@ func _build() -> void:
 	light.position.y = RING_Y
 	light.shadow_enabled = false
 	add_child(light)
-	label.name = "Name"
-	label.text = tr("WORLD_LOOP_NAME")
-	label.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.font_size = 48
-	label.pixel_size = 0.006
-	label.outline_size = 10
-	label.modulate = GREEN.lightened(0.4)
-	label.no_depth_test = true
-	label.position.y = RING_Y + RING_R + 0.55
-	add_child(label)

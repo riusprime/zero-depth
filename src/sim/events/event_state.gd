@@ -24,6 +24,8 @@ var state := PackedInt32Array()
 var rolled := PackedInt32Array()
 var roll_card := PackedInt32Array()
 var roll_curse := PackedInt32Array()
+## v0.8.0 N17 (owner O75): the curse room's altar (a pedestal index), or -1 on a floor without a curse room.
+var curse_k := -1
 ## The pedestal whose panel is open (an index), or -1: while >= 0 the world waits.
 var open := -1
 ## Ambush Cache in progress: its pedestal (-1 none) and the pack's actor ids. Wandering Drone: its pedestal, ticks
@@ -107,3 +109,5 @@ func hash_into(h: StateHasher) -> void:
 	for v in [cleanse_tick, cleanse_last, done_tick, done_pedestal, 1 if force_curse else 0]:
 		h.add_int(v)
 	h.add_int(cursed_rolled)  # v0.7.5 MG
+	if curse_k >= 0:  # v0.8.0 N17: only floors with a curse room
+		h.add_int(curse_k)

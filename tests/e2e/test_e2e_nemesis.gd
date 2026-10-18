@@ -137,10 +137,12 @@ func _window_shows(main: Main) -> void:
 	assert_eq(main.view.nemesis_views.cue_shown(), 1, "the warning's rings")
 	assert_true(await _until_window(main, WorldReader.FALLEN_ON), "the window opens")
 	await _e.frames(2)
+	# v0.8.0 N18 (owner O76): the line is shortened to "Mirrored · %d s" (its timer kept)
 	assert_true(
-		hud.boss_bar.fallen_text().begins_with(tr("HUD_FALLEN_WINDOW").get_slice("(", 0)),
+		hud.boss_bar.fallen_text().begins_with(tr("HUD_FALLEN_WINDOW").get_slice("%", 0)),
 		"the window's line"
 	)
+	assert_true(hud.boss_bar.fallen_text().ends_with(" s"), "with its seconds")
 	assert_eq(main.view.nemesis_views.cue_shown(), 2, "the rings and the thread")
 
 

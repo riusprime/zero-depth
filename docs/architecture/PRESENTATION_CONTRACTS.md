@@ -330,10 +330,10 @@ the mode's colour vision on the tokens and asserts:
   Swap, the shop, an event) it sits low instead (its bottom 82 px above the screen's, between the panel's key line and
   the heat meter), so it never covers the panel's title or cards. Each hint shows once
   (`HintStore`, the profile's `hints` section): move and aim, attack, dash at a first run's start (each closes when
-  you do it); vent when the heat first reads Hot; the first card pick (the wand reads left to right); the Build page
-  (pause → Build) after the first card joins the wand; the first trigger card; the first shop; the first open
-  portal; the Codex (pause → Codex) at the second floor's start. A hint about a moment (pick, shop, portal, vent)
-  comes before a waiting first-run step; a hint stays at least 2 s and at most 9 s, fades in and out (no slide), and
+  you do it); vent when the heat first reads Hot; the Build page (pause → Build) after the first card joins the wand;
+  the Codex (pause → Codex) at the second floor's start (v0.8.0 N18, owner O76: the hints that explained a thing, the
+  first pick, the first trigger card, the first shop and the first open portal, are gone; the hints name controls
+  only). A hint about a moment (vent) comes before a waiting first-run step; a hint stays at least 2 s and at most 9 s, fades in and out (no slide), and
   waits under the pause menu, Options, the Build page, the Codex and the run recap. Its clock is the frame's (a look,
   never an outcome); it reads `WorldReader` only. Built straight in the HUD's look without a G2 round (v0.7.5: no
   interventions); the owner corrects it at the playtest.

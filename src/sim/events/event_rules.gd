@@ -27,6 +27,9 @@ var core_window_ticks := 120
 var core_mod_weight := 10
 var hunt_range_m := 16.0
 var drop_offset_m := 0.9
+## v0.8.0 N17 (owner O75: "they need to appear once max per floor and 40% of floors not all the time"): the chance a
+## floor has a curse room, in per mille (Events.curse_site, on `map:curse_room`).
+var curse_room_floor_chance_permille := 400
 
 
 ## Whether floor `floor_index` (the run's floor number, counted on past the run's last floor) may hold cursed chests.

@@ -87,6 +87,11 @@ only adds numbers, menus or breadth fails the filter.
   with a cost (HP, max HP, shards, an overheat, an elite fight, a defence, or a curse) and a reward shown before
   you take it, plus "Leave it". The eight events and six curses are listed in
   [`../roadmap/v0.5.0/PLAN.md`](../roadmap/v0.5.0/PLAN.md) (step EV).
+- **The curse room** (v0.8.0 N17, owner O75): on about 40 % of floors (a starting value), at most one, a combat room
+  away from the start hall, the boss, the shop, the arenas, the Overrun room and the shrine is dark and ringed by
+  glowing glyphs, with the curse altar in its middle. The pacts whose price is a curse (Unstable Core, Echo Mirror)
+  appear only there. No name floats over any pedestal: you read what it is when you open it. Cursed chests stay
+  (D57).
 - **Death** ends the run. A recap shows the killing cause, the build and the timeline (v0.3.0).
 
 ## C. Player kit

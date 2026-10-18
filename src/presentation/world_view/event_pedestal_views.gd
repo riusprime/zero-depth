@@ -1,8 +1,14 @@
 class_name EventPedestalViews
 extends Node3D
 ## Event rooms in the world (v0.5.0 EV): one lit pedestal per event (a stepped hexagonal base, a slanted lectern
-## column and a floating violet glyph crystal over it, with its own light), its name floating above while you stand
-## near; the Wandering Drone's ring on the floor filling as you hold it; and a gold crown ring under every elite.
+## column and a floating violet glyph crystal over it, with its own light); the Wandering Drone's ring on the floor
+## filling as you hold it; and a gold crown ring under every elite.
+## v0.8.0 N17 (owner O75: "the name displayed on top of the model of the curses device … you get to see it when you
+## click it not from the text over the 3d model"): no name floats over a pedestal any more; its name shows in the
+## panel interact opens (EventPanel). The turning, glowing crystal is the cue that it can be used. The curse room's
+## altar (WorldReader.event_curse_altar) is its own model: a dark stone altar with a cracked crystal (code-made; the
+## owner's `curse_altar` model replaces the stone through assets/models/manifest.json, ShopModels), in its dark room
+## (CurseRoomView: the shroud, the cold light, the glyph sigils).
 ## A ready pedestal glows and its glyph turns; an active one (a fight or a defence) pulses red or cyan; a spent one
 ## goes dark. Glowing materials have emission on from creation; only energies and colours change (flash-safe).
 ## Reads only (EI-07).
@@ -16,16 +22,28 @@ const STONE_TOP := Color("#545B6A")
 const GLYPH_Y := 1.45
 const GLYPH_ENERGY := 2.6
 const LIGHT_ENERGY := 1.3
-## The name shows within this distance (m).
-const NAME_NEAR_M := 7.0
+## v0.8.0 N17: the curse altar's stone, and the owner's model that replaces it.
+const CURSE_STONE := Color("#1C1D24")
+const CURSE_TOP := Color("#2A2B36")
+const CURSE_MODEL_ID := &"curse_altar"
+## v0.8.0 N17 (owner, 2026-10-18: "give a little light on the floating symbol over the altar"): the altar's crystal
+## light: cold violet, low, short, no shadow (BIOME_PERF_AND_LIGHT: never one of the 4 shadow casters), faded out with
+## distance, pulsing gently with the room's glyphs (CurseRoomView.GLOW_SPEED; reduced motion: steady).
+const CURSE_LIGHT := Color("#9C8CFF")
+const CURSE_LIGHT_ENERGY := 0.8
+const CURSE_LIGHT_RANGE := 2.4
+const CURSE_PULSE := 0.25
 const RING_SEGMENTS := 48
 
+## v0.8.0 N17: the curse room's dressing (null on a floor without one); the altar draws the owner's model.
+var curse_room: CurseRoomView
+var curse_uses_model := false
 var _reader: WorldReader
+var _curse_k := -1
 var _roots: Array[Node3D] = []
 var _glyphs: Array[Node3D] = []
 var _glyph_mats: Array[StandardMaterial3D] = []
 var _lights: Array[OmniLight3D] = []
-var _names: Array[Label3D] = []
 var _ring: MeshInstance3D
 var _ring_fill: MeshInstance3D
 var _ring_mat := StandardMaterial3D.new()
@@ -51,10 +69,14 @@ func _init() -> void:
 func setup(reader: WorldReader) -> void:
 	_reader = reader
 	for k in reader.event_count():
-		var root := make_pedestal(k)
+		var root := make_curse_altar(k) if k == reader.event_curse_altar() else make_pedestal(k)
 		root.position = SimPlane.to_3d(reader.event_pos(k))
 		add_child(root)
 		_roots.append(root)
+	if reader.event_curse_altar() >= 0:  # v0.8.0 N17 (O75): the dark room round it
+		curse_room = CurseRoomView.new()
+		add_child(curse_room)
+		curse_room.setup(reader)
 	_ring = MeshInstance3D.new()
 	_ring.material_override = _ring_mat
 	_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -71,8 +93,13 @@ func pedestal_count() -> int:
 	return _roots.size()
 
 
-func name_label(k: int) -> Label3D:
-	return _names[k]
+## v0.8.0 N17 (O75): the Label3D nodes over the pedestals (none: the name shows only in the panel).
+func label_count() -> int:
+	return find_children("*", "Label3D", true, false).size()
+
+
+func pedestal_root(k: int) -> Node3D:
+	return _roots[k]
 
 
 func glyph_energy(k: int) -> float:
@@ -93,12 +120,6 @@ func ring_visible() -> bool:
 
 func sync(reader: WorldReader) -> void:
 	_reader = reader
-	var p := reader.player_pos()
-	for k in _roots.size():
-		var near := reader.event_pos(k).distance_to(p) <= NAME_NEAR_M
-		_names[k].text = tr(reader.event_name_key(k))
-		var ready := reader.event_state(k) == WorldReader.EVENT_READY
-		_names[k].visible = near and ready and not reader.event_open()  # the panel names it then
 	_sync_ring(reader)
 	_sync_crowns(reader)
 
@@ -126,13 +147,18 @@ func _process(delta: float) -> void:
 		m.emission_energy_multiplier = energy
 		_lights[k].light_color = c
 		_lights[k].light_energy = LIGHT_ENERGY * energy / GLYPH_ENERGY
+		if k == _curse_k:  # v0.8.0 N17: its own soft light, breathing with the glyphs
+			var pulse := curse_pulse() if state == WorldReader.EVENT_READY else 1.0
+			m.emission_energy_multiplier = energy * pulse
+			_lights[k].light_color = CURSE_LIGHT if state == WorldReader.EVENT_READY else c
+			_lights[k].light_energy = CURSE_LIGHT_ENERGY * pulse * energy / GLYPH_ENERGY
 		_glyphs[k].rotation.y += turn * delta
 		_glyphs[k].position.y = (
 			GLYPH_Y + (sin(_t * 2.0 + k) * 0.06 if state != WorldReader.EVENT_DONE else -0.2)
 		)
 
 
-## The pedestal model: stepped hexagonal base, a slanted lectern, the glyph crystal and its light, the name.
+## The pedestal model: stepped hexagonal base, a slanted lectern, the glyph crystal and its light.
 func make_pedestal(k: int) -> Node3D:
 	var n := Node3D.new()
 	n.name = "Pedestal%d" % k
@@ -145,6 +171,83 @@ func make_pedestal(k: int) -> Node3D:
 	lectern.position.y = 1.02
 	lectern.rotation_degrees.x = -18.0
 	n.add_child(lectern)
+	var glyph := _glyph_node(n)
+	var crystal := _mesh(RewardViews.bipyramid(3, 0.16, 0.26, 0.2), _glyph_mats[k])
+	crystal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	glyph.add_child(crystal)
+	for j in 2:
+		var shard := _mesh(RewardViews.bipyramid(3, 0.04, 0.09, 0.07), _glyph_mats[k])
+		shard.position = Vector3(0.24 if j == 0 else -0.24, 0.05 * (j * 2 - 1), 0.0)
+		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		glyph.add_child(shard)
+	_add_light(n, 4.5)
+	return n
+
+
+## v0.8.0 N17 (O75): the curse room's altar: a squat dark stone altar (a plinth, a block with a sunken top, two
+## horn-like side stones) and over it a cracked crystal (two halves split apart, chips between them) that glows and
+## turns like a pedestal's. The owner's `curse_altar` model (docs/OWNER_TODO.md §3.1) replaces the stone once the
+## manifest lists it; the crystal and its light stay.
+func make_curse_altar(k: int) -> Node3D:
+	var n := Node3D.new()
+	n.name = "CurseAltar"
+	var model := ShopModels.get_model(CURSE_MODEL_ID)
+	curse_uses_model = not model.is_empty()
+	if curse_uses_model:
+		var body := _mesh(model["mesh"], model["material"])
+		body.name = "Model"
+		n.add_child(body)
+	else:
+		var stone := _stone(CURSE_STONE)
+		var top := _stone(CURSE_TOP)
+		n.add_child(_mesh(RewardViews.prism(4, 0.95, 0.9, 0.18, 0.0, 0.0, 41), stone))
+		n.add_child(_mesh(RewardViews.prism(4, 0.68, 0.6, 0.62, 0.18, 0.12, 43), top))
+		n.add_child(_mesh(RewardViews.prism(4, 0.78, 0.74, 0.12, 0.8, 0.0, 45), stone))
+		for j in 2:
+			var horn := _mesh(RewardViews.prism(3, 0.12, 0.05, 0.5, 0.0, 0.2, 47 + j), stone)
+			horn.position = Vector3(0.0, 0.92, 0.52 if j == 0 else -0.52)
+			horn.rotation_degrees.x = 14.0 if j == 0 else -14.0
+			n.add_child(horn)
+	var glyph := _glyph_node(n)
+	for j in 2:  # the crystal, split in two along its height
+		var half := _mesh(RewardViews.bipyramid(3, 0.15, 0.27, 0.18), _glyph_mats[k])
+		half.position = Vector3(0.05 * (j * 2 - 1), 0.02 * j, 0.0)
+		half.rotation_degrees.z = 9.0 * (j * 2 - 1)
+		half.scale = Vector3(0.55, 1.0, 1.0)
+		half.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		glyph.add_child(half)
+	for j in 3:  # chips flaking off the crack
+		var chip := _mesh(RewardViews.bipyramid(3, 0.03, 0.06, 0.05), _glyph_mats[k])
+		chip.position = Vector3(0.2 * (j - 1), -0.18 + 0.12 * j, 0.12 * (1 - j))
+		chip.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		glyph.add_child(chip)
+	_add_light(n, CURSE_LIGHT_RANGE)
+	var light := _lights[k]
+	light.name = "CrystalLight"
+	light.light_color = CURSE_LIGHT
+	light.light_energy = CURSE_LIGHT_ENERGY
+	light.shadow_enabled = false
+	light.distance_fade_enabled = true
+	light.distance_fade_begin = 30.0
+	light.distance_fade_length = 8.0
+	_curse_k = k
+	return n
+
+
+## v0.8.0 N17: the curse altar's pulse now (1 ± CURSE_PULSE on the glyphs' beat; 1 under reduced motion).
+func curse_pulse() -> float:
+	if ViewPrefs.reduced_motion:
+		return 1.0
+	return 1.0 + CURSE_PULSE * sin(_t * CurseRoomView.GLOW_SPEED)
+
+
+## v0.8.0 N17: the altar's crystal light (null without a curse altar; tests read it).
+func curse_light() -> OmniLight3D:
+	return _lights[_curse_k] if _curse_k >= 0 else null
+
+
+## The glowing crystal's node and material (the next pedestal's), turned and lit by _process.
+func _glyph_node(n: Node3D) -> Node3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = GLOW
 	mat.emission_enabled = true
@@ -154,35 +257,18 @@ func make_pedestal(k: int) -> Node3D:
 	var glyph := Node3D.new()
 	glyph.position.y = GLYPH_Y
 	n.add_child(glyph)
-	var crystal := _mesh(RewardViews.bipyramid(3, 0.16, 0.26, 0.2), mat)
-	crystal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	glyph.add_child(crystal)
-	for j in 2:
-		var shard := _mesh(RewardViews.bipyramid(3, 0.04, 0.09, 0.07), mat)
-		shard.position = Vector3(0.24 if j == 0 else -0.24, 0.05 * (j * 2 - 1), 0.0)
-		shard.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		glyph.add_child(shard)
 	_glyphs.append(glyph)
+	return glyph
+
+
+func _add_light(n: Node3D, reach: float) -> void:
 	var light := OmniLight3D.new()
 	light.light_color = GLOW
 	light.light_energy = LIGHT_ENERGY
-	light.omni_range = 4.5
+	light.omni_range = reach
 	light.position.y = GLYPH_Y
 	n.add_child(light)
 	_lights.append(light)
-	var label := Label3D.new()
-	label.name = "Name"
-	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.no_depth_test = true
-	label.font_size = 64
-	label.outline_size = 16
-	label.pixel_size = 0.008
-	label.position.y = 2.6
-	label.modulate = GLOW.lerp(Color.WHITE, 0.5)
-	label.visible = false
-	n.add_child(label)
-	_names.append(label)
-	return n
 
 
 ## The Wandering Drone's ring: the full circle dim, the share held bright.
