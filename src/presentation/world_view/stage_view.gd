@@ -70,9 +70,7 @@ var shards: ShardCluster
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
 var wall_specs: Array = []
-## v0.8.0 N10: the wall style this floor was dressed with (StageDresser.STYLE_*) and how long the procedural walls
-## took to build (ms; 0 without them): the probes read both.
-var wall_style := &""
+## v0.8.0 N10: how long the procedural walls took to build (ms; 0 without them): the probes read it.
 var wall_build_ms := 0.0
 var _wall_nodes: Array[MeshInstance3D] = []
 var _wall_solid: StandardMaterial3D
@@ -556,8 +554,6 @@ func _build_kit(reader: WorldReader) -> void:
 	if look != null:  # v0.7.5 NB1: the biome's own cover and decoration
 		dressing["square_cover"] = _names(look.square_cover)
 		dressing["decor_swap"] = _names(look.decor_swap)
-	wall_style = resolved_wall_style()
-	dressing["wall_style"] = wall_style
 	# v0.8.0 N12 (O70): the dressing and the ruin's geometry are pure work (StageDresser and ProceduralWall read only
 	# their dictionaries and the cosmetic stream; no node, no mesh): on a worker. Then the nodes, a few a job.
 	_dressing = dressing
@@ -568,6 +564,7 @@ func _build_kit(reader: WorldReader) -> void:
 		"seed": reader.seed_value(),
 		"face_m": mood.wall_texture_m,
 		"top_m": mood.wall_top_texture_m,
+		"calm": WallCalm.calm_of(mood),  # v0.8.0 N15: the biome's calmer walls
 	}
 	_queue.add_next_worker("dress", _dress)
 	_queue.add_next("kit_nodes", _build_kit_nodes.bind(reader, walls, rooms, doors, keep))
@@ -576,17 +573,17 @@ func _build_kit(reader: WorldReader) -> void:
 func _dress() -> void:
 	_placements = StageDresser.dress(_dressing)
 	_proc = {}
-	if wall_style == StageDresser.STYLE_PROC:  # v0.8.0 N10 (option A)
-		var t0 := Time.get_ticks_usec()
-		_proc_input["cuts"] = StageDresser.niches(_placements)
-		_proc = ProceduralWall.build(_proc_input)
-		wall_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
+	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
+	_proc_input["cuts"] = StageDresser.niches(_placements)
+	_proc = ProceduralWall.build(_proc_input)
+	wall_build_ms = (Time.get_ticks_usec() - t0) / 1000.0
 
 
 func _build_kit_nodes(
 	reader: WorldReader, walls: Array, rooms: Array, doors: Array, keep: Array
 ) -> void:
 	var tex := wall_textures(prop_style) if not _proc.is_empty() else {}
+	tex.merge(WallCalm.look_of(mood))  # v0.8.0 N15: the shader's calming values
 	kit = StageKit.new()
 	kit.name = "Kit"
 	add_child(kit)
@@ -594,17 +591,6 @@ func _build_kit_nodes(
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
 	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
-
-
-## v0.8.0 N10, N13: the wall style ViewPrefs.wall_style picks (StageDresser.STYLE_*): option A in every biome; the
-## kit ("old") and option B only as the dev toggle's comparisons.
-func resolved_wall_style() -> StringName:
-	match ViewPrefs.wall_style:
-		&"old":
-			return StageDresser.STYLE_KIT
-		&"b":
-			return StageDresser.STYLE_FIT
-	return StageDresser.STYLE_PROC
 
 
 ## v0.8.0 N10 (the probes' numbers): the structural walls' drawn wall meshes (kit pieces and procedural walls; not

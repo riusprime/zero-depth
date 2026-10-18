@@ -593,7 +593,6 @@ func toggle_dev_panel() -> void:
 	driver.debug = DebugApi.new(driver.world)
 	driver.debug.reseed_requested.connect(_reseed)
 	_dev = DevPanel.new(driver.debug)
-	DevWalls.wire(_dev)
 	ui.add_child(_dev)
 
 
@@ -608,7 +607,6 @@ func _toggle_master_panel() -> void:
 			driver.debug = DebugApi.new(driver.world)
 			driver.debug.reseed_requested.connect(_reseed)
 		tools = DevPanel.new(driver.debug)
-		DevWalls.wire(tools as DevPanel)
 		driver.paused = true
 	_devm = DevMasterPanel.new(tuning, tools, driver == null)  # v0.8.0 N6: Playground off a run only
 	_devm.changed.connect(_on_tuning_changed)

@@ -61,6 +61,25 @@ extends Resource
 ## aspect), the top texture this wide. Read when a floor is built (the dev panel's Restart floor shows an edit).
 @export var wall_texture_m := 4.0
 @export var wall_top_texture_m := 4.5
+## v0.8.0 N15 (owner O73, "Night biome textures look busy … how could we make it less busy keeping this model?"):
+## calmer walls, the same model (ProceduralWall rule 6; the defaults are N13's look). In the walls' shader: how much
+## of the textures' finest detail stays (1: all; toward 0 it blends into a sample 2.5 mips coarser), and each
+## texture's contrast round its own mean colour (1: as installed; the face's lower where the modelled blocks already
+## draw the pattern, so the two don't overlap).
+@export var wall_detail := 1.0
+@export var wall_face_contrast := 1.0
+@export var wall_top_contrast := 1.0
+## In the builder: the top's laid stones this many times bigger; the share of missing, recessed and chipped blocks,
+## gone top stones and missing quoins times this; the blocks' corner jitter and the stones' height jitter times this;
+## the thick walls' rubble-fill lumps this big (m) and their height noise times this; the stones' and blocks'
+## brightness noise times this; the fill's brightness against the rim's (0.97).
+@export var wall_stone_scale := 1.0
+@export var wall_breakage := 1.0
+@export var wall_jitter := 1.0
+@export var wall_fill_lump_m := 1.2
+@export var wall_fill_noise := 1.0
+@export var wall_tint_noise := 1.0
+@export var wall_fill_shade := 0.66
 
 
 ## Problems as "field: why" strings (BiomeDefinition turns them into ValidationIssues).
@@ -91,6 +110,16 @@ func problems() -> PackedStringArray:
 		["saturation", saturation, 0.0, 2.0],
 		["wall_texture_m", wall_texture_m, 0.5, 16.0],
 		["wall_top_texture_m", wall_top_texture_m, 0.5, 16.0],
+		["wall_detail", wall_detail, 0.0, 1.0],
+		["wall_face_contrast", wall_face_contrast, 0.0, 1.5],
+		["wall_top_contrast", wall_top_contrast, 0.0, 1.5],
+		["wall_stone_scale", wall_stone_scale, 0.5, 2.5],
+		["wall_breakage", wall_breakage, 0.0, 2.0],
+		["wall_jitter", wall_jitter, 0.0, 2.0],
+		["wall_fill_lump_m", wall_fill_lump_m, 0.6, 3.0],
+		["wall_fill_noise", wall_fill_noise, 0.0, 2.0],
+		["wall_tint_noise", wall_tint_noise, 0.0, 2.0],
+		["wall_fill_shade", wall_fill_shade, 0.3, 1.0],
 	]:
 		if f[1] < f[2] or f[1] > f[3]:
 			out.append("%s: %s is outside %s..%s" % f)

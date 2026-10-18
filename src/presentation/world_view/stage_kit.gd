@@ -66,7 +66,8 @@ var _frame := 0
 
 ## Builds the nodes. `wall_count`: how many walls the stage dresses (the wall_specs size). `cover_hue`: the biome's
 ## cover colour, tinting walls and cover. v0.8.0 N10: `proc`, ProceduralWall.build's result (empty: none), drawn
-## with `wall_tex` {"face": Texture2D, "top": Texture2D} (the owner's per-biome wall textures, untinted).
+## with `wall_tex` {"face": Texture2D, "top": Texture2D} (the owner's per-biome wall textures, untinted; v0.8.0 N15:
+## and WallCalm.look_of's shader values).
 func build(
 	placements: Array,
 	wall_count: int,
@@ -108,7 +109,7 @@ func queue_build(
 	var decor := {}
 	var pieces: Array = []
 	for p: Dictionary in placements:
-		if piece_of(p["piece"], bool(p.get("lod", false))).is_empty():
+		if piece_of(p["piece"]).is_empty():
 			continue
 		if p["kind"] == &"decor":
 			if not decor.has(p["piece"]):
@@ -127,7 +128,7 @@ func queue_build(
 
 func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -> void:
 	for p: Dictionary in pieces:
-		var piece := piece_of(p["piece"], bool(p.get("lod", false)))
+		var piece := piece_of(p["piece"])
 		var tinted: bool = p["kind"] == &"wall" or p["kind"] == &"cover"
 		var node := MeshInstance3D.new()
 		node.mesh = piece["mesh"]
@@ -172,10 +173,9 @@ func _add_decor(id: StringName, xforms: Array) -> void:
 		decor_nodes += 1
 
 
-## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it. v0.8.0 N10:
-## `lod`, its decimated copy (KitModels.get_lod_piece).
-static func piece_of(id: StringName, lod: bool = false) -> Dictionary:
-	var piece := KitModels.get_lod_piece(id) if lod else KitModels.get_piece(id)
+## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
+static func piece_of(id: StringName) -> Dictionary:
+	var piece := KitModels.get_piece(id)
 	return piece if not piece.is_empty() else CodeProps.get_piece(id)
 
 
@@ -185,8 +185,8 @@ static func piece_of(id: StringName, lod: bool = false) -> Dictionary:
 func _proc_material(wall_tex: Dictionary) -> Material:
 	var face: Texture2D = wall_tex.get("face", null)
 	var top: Texture2D = wall_tex.get("top", null)
-	var solid := ProceduralWall.material(face, top)
-	_faded[solid] = ProceduralWall.material(face, top, true)
+	var solid := ProceduralWall.material(face, top, false, wall_tex)
+	_faded[solid] = ProceduralWall.material(face, top, true, wall_tex)
 	return solid
 
 
