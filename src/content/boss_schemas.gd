@@ -81,7 +81,14 @@ const MOVES := {
 	## all fly back along their lines recall_seconds after the last could have landed (the Warlord's Javelin Fan).
 	## v0.8.0 BS2 (S5): an optional bounces makes its shots bounce off walls that many times (the Siege Engine's
 	## ricochet shells: once), never coming back onto the player within 0.5 s of the bounce.
-	&"pattern": {"shape": 4, "params": ["pattern_id"], "optional": ["recall_seconds", "bounces"]},
+	## v0.8.0 PR (owner O84: "a predictable pattern"): an optional aim_degrees fires every wave from that fixed angle
+	## (the world's frame, 0 = +x) instead of at the player (the Prism's orb spells).
+	&"pattern":
+	{
+		"shape": 4,
+		"params": ["pattern_id"],
+		"optional": ["recall_seconds", "bounces", "aim_degrees"]
+	},
 	## v0.7.5 BF1: `count` ground circles, stagger_seconds apart, each following the player's exact position until
 	## the attack's lock_seconds, then locked and flashing until it strikes (BOSS_FIGHTS.md rule 1).
 	## v0.7.5 BF2: an optional pattern_id makes each circle an egg's landing (the Brood Mother's Egg Storm): a shell
@@ -175,10 +182,10 @@ const MOVES := {
 	## two arms; then the beams turn a quarter turn every quarter_seconds at full HP, down to fast_quarter_seconds at
 	## none, reversing every reverse_seconds, for spin_seconds, hurting once every burn_seconds; then a window of
 	## window_seconds with the beams out and the shield down (the attack is shielded otherwise; active_seconds is at
-	## least spin + window). An optional pattern_id fires every orb_every_seconds from her orbiting shards while the
-	## beams turn; an optional bolt_attack (a `bolt_fan` of the same boss, its lock the aim line's time) fires a fast
+	## least spin + window). An optional bolt_attack (a `bolt_fan` of the same boss, its lock the aim line's time)
+	## fires a fast bolt from a shard every bolt_every_seconds through the window (v0.8.0 PR, owner O84: only then,
 	{"shape": 0, "params": ["count", "steps", "step_m", "radius_m", "stagger_seconds"]},
-	## bolt from a shard every bolt_every_seconds.
+	## with the beams out; a Cross fires no orbs).
 	&"cross":
 	{
 		"shape": 2,
@@ -194,7 +201,7 @@ const MOVES := {
 			"spin_seconds",
 			"window_seconds",
 		],
-		"optional": ["pattern_id", "orb_every_seconds", "bolt_attack", "bolt_every_seconds"],
+		"optional": ["bolt_attack", "bolt_every_seconds"],
 	},
 	## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards"; FINAL_BOSS.md F6; BossNemesis): the Nemesis's moves. An optional
 	## `weapon` ("blade", "gun" or "any", the default) keeps an attack to the runs of that weapon (in a mimic window,

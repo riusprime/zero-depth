@@ -9,6 +9,7 @@ extends SceneTree
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/final_boss_n2.gd -- <n>
 ## `-- <n>` renders shot n alone. Writes build/shots/v0.8.0/n2/<n>_<label>.jpg.
+## v0.8.0 PR (O84): `cross_weave` is gone, so shot 3 reproduces only at N2's commit (scripts/shots/prism_pr.gd).
 
 ## [label, the moment (see _moment), camera size].
 const PLAN := [

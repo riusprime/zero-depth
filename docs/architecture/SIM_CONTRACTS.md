@@ -1343,8 +1343,24 @@ Starting values in `data/bosses` (CONTENT_SCHEMA §4, the shape params below; al
 - **State and saves.** `FinalFight.home`, `dps_secs`, `dps_head`, `dps_closed`, `dps_acc`, `dps_t` are hashed with the
   fight and listed in `WorldSnapshot.ADDED_SINCE_V05` (an FB1 save restores with a fresh meter and the centre).
 - **Reads (FB2).** `WorldReader.boss_cross(i)` (`BossPrism.state`: winding, window, progress, arms, angle,
-  half_width, way, quarter, speed, orb_shard, bolt), `boss_shards(i)`, `final_dps(seconds)`, `MOVE_CROSS`.
-  `BossAi.telegraph` draws nothing on the ground for `cross` (`"ground": false`).
+  half_width, way, quarter, speed, bolt; FB2's orb_shard is gone with the Cross's orbs, PR), `boss_shards(i)`,
+  `final_dps(seconds)`, `MOVE_CROSS`. `BossAi.telegraph` draws nothing on the ground for `cross` (`"ground": false`).
+- **One spell at a time (v0.8.0 PR, owner O84).** Supersedes "Orbs" above and the bolts' "whole active time":
+  - **The rotation.** A body with `BossTable.rotation` (`FinalBossDefinition.spell_rotation`) never draws its next
+    attack: in MOVE with no cooldown left, `BossPrism.next_spell` takes the attack after `BossStore.last_attack` in
+    the phase's list (the first when none), and waits (-1) while any shot it fired is in the air or queued
+    (`BossPrism.shots_alive`: projectiles whose owner is its id, plus `World.pending_projectiles_of`). The Prism's
+    list: `cross_ring`, `crown_ring`, `cross_spiral`, `crown_spiral`, `cross_flower`, `crown_flower`.
+  - **A Cross fires no orbs** (validation: no `pattern_id` on a `cross`). Its bolts start only in the window:
+    `BOLT_LEAD_TICKS` (18) after the spin ends, then every `bolt_every_ticks`, while one can still fire before the
+    active time ends (`BossPrism.bolt_starting`; the shard is the bolt's order in the window % shards).
+  - **The orb spells** are `pattern` attacks with `BossAttackTable.fixed_aim` (shape param `aim_degrees`): `_lock` sets
+    `lock_a` to it, so every wave fires from her centre at that angle plus the pattern's own turn, wherever the player
+    is. In a rotation body an orb spell's active time is at least its pattern's duration plus its shots' life
+    (`FinalBodyCompiler`), so she is shielded until its last orb is gone.
+  - So: no shot of hers is in the air while a beam is aimed (the windup) or burning (the spin); orbs fly only in an orb
+    spell and never with a bolt. `window_permille` for a rotation body is the open part of one rotation (each Cross's
+    window, every recovery and cooldown, the active time of an attack that isn't shielded) over its length.
 
 ## 10h. The final boss's Nemesis (v0.8.0 FB3; owner F6 "Weapon + dash + 2-3 cards", F7, [`FINAL_BOSS.md`](../roadmap/v0.8.0/FINAL_BOSS.md))
 

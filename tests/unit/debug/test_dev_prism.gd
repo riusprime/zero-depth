@@ -38,12 +38,11 @@ func test_the_prism_numbers_are_f10_rows() -> void:
 			cross = k
 	assert_gte(cross, 0)
 	var params := {
-		"quarter_seconds": 2.4,
-		"fast_quarter_seconds": 1.2,
-		"reverse_seconds": 3.0,
+		"quarter_seconds": 2.824,  # v0.8.0 PR (O84): 15 % slower (2.4 / 0.85)
+		"fast_quarter_seconds": 1.412,
+		"reverse_seconds": 3.529,
 		"spin_seconds": 5.0,
 		"window_seconds": 2.5,
-		"orb_every_seconds": 1.6,
 		"bolt_every_seconds": 1.1,
 	}
 	for p: String in params:

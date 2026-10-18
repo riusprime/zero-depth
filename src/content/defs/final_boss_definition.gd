@@ -22,6 +22,10 @@ extends BossDefinition
 @export var shard_count := 0
 @export var shard_orbit_m := 0.0
 @export var shard_turn_dps := 0.0
+## v0.8.0 PR (owner O84): the body casts its phase's attacks in their listed order, one at a time (a fixed rotation;
+## no weighted pick), and each waits until every shot it fired is gone (BossTable.rotation). Its phases list each
+## attack once (the rotation finds its place by the last attack).
+@export var spell_rotation := false
 ## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards", F7 "Nemesis takes its HP and damage from your own build, an even
 ## duel"; CONTENT_SCHEMA §4 "the Nemesis"): a mimic body. It echoes the player's path echo_seconds behind, dashes
 ## dash_reaction_seconds after the player dashes, keeps a stance for stance_seconds (stance_weights: echo, mirror,
@@ -120,6 +124,17 @@ func validate() -> Array[ValidationIssue]:
 		)
 	_check_crosses(issues)
 	_check_mimic(issues)
+	if spell_rotation:  # v0.8.0 PR (O84)
+		for ph in phases:
+			if ph == null:
+				continue
+			var seen := {}
+			for id in ph.attack_ids:
+				if seen.has(id):
+					issues.append(
+						ValidationIssue.new(&"range", p, "spell_rotation: %s listed twice" % id)
+					)
+				seen[id] = true
 	return issues
 
 

@@ -647,6 +647,17 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
     (1..measure), `dps_target_seconds` (> 0), `dps_hp_min` ≤ `dps_hp_max`; `shard_count` (0..12), `shard_orbit_m`
     (> `radius_m` when it has shards), `shard_turn_dps` (≥ 0). The Prism: 20 s measured, at least 5, 60 s, 600..250,000
     HP; 6 shards 2.3 m out turning 50°/s. A `cross` that fires (orbs or bolts) needs `shard_count` ≥ 1.
+  - **v0.8.0 PR (owner O84).** A `cross` takes no `pattern_id` / `orb_every_seconds` (code `orbs_with_beams`: never
+    orbs with the beams); its bolts fire only in its window. The Prism's three Crosses turn 15 % slower: a quarter
+    every 2.824 s at full HP down to 1.412 s at none, reversing every 3.529 s (was 2.4, 1.2, 3.0); the spin-up, spin,
+    window and burn unchanged. A `pattern` attack may take `aim_degrees` (0..<360: every wave from that fixed angle,
+    not at the player). `FinalBossDefinition.spell_rotation` (bool): the phase's attacks are cast in their listed
+    order, one at a time, each after her last shot is gone (each listed once). The Prism's orb spells `crown_ring`,
+    `crown_spiral`, `crown_flower` (`pattern`, `aim_degrees` 0, 0.8 s telegraph, shielded, 22 damage, 0.5 s
+    cooldown) fire `prism_crown_ring` (4 rings of 32 less 4 gaps of 2, 0.8 s apart, every other one turned 33.75°),
+    `prism_crown_spiral` (10 arms, 16 waves 0.15 s apart, 45°/s reversing at 1.2 s) and `prism_crown_flower` (4
+    petals of 64 cut under 500, 4 waves 0.9 s apart, each turned 33.75°), all 3.0 m/s, 0.2 m, 13 m.
+    `prism_crown_weave`, `cross_weave` and `prism_bolt_fan` are gone. A SPIRAL may have 1..12 arms (was 1..8).
 
 - **v0.8.0 FB3 (owner F6, F7; SIM_CONTRACTS §10h).** Three moves (each needs `lock_seconds`; an optional `weapon`,
   `"any"` (the default), `"blade"` or `"gun"`, keeps it to that weapon's runs; never `shielded`); for a mimic body
@@ -684,7 +695,7 @@ class_name BossDefinition extends ContentDef       # data/bosses/<id>.tres (v0.3
   `colossus_quake_double`: a 28-stone ring, two 2-stone gaps, twice 0.45 s apart turned 90°) and `spike_chase_3`
   (2 lines 30° apart, 0.15 s, 14 spikes), both in its second phase; the Prism's `cross_weave` (pattern
   `prism_crown_weave`: 6 spiral arms reversing at 0.7 s; bolts every 0.8 s from `prism_bolt_fan`: 3 bolts 30° apart,
-  2 volleys 0.2 s apart).
+  2 volleys 0.2 s apart; removed in PR, owner O84).
 
 - **v0.8.0 BP (owner O27).** Two optional fields on a boss attack:
   - `hit_class: StringName`: `&"small"` (orbs, shots, javelins), `&"medium"` (strikes, lanes, beams) or `&"big"`

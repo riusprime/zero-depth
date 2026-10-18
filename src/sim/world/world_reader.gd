@@ -1536,9 +1536,9 @@ func boss_gaze(i: int) -> Dictionary:
 
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5): boss i's Cross: {} or {"winding", "window", "progress", "arms" ([from, to, hit] per
-## beam), "angle", "half_width", "way", "quarter", "speed", "orb_shard", "bolt" ({} or {"from", "to", "angle",
-## "progress", "shard"})} (BossPrism.state): the spin-up's aim lines, the turning beams, the window, the bolt's aim
-## line.
+## beam), "angle", "half_width", "way", "quarter", "speed", "bolt" ({} or {"from", "to", "angle", "progress",
+## "shard"})} (BossPrism.state): the spin-up's aim lines, the turning beams, the window, the bolt's aim line.
+## v0.8.0 PR (O84): no "orb_shard" (a Cross fires no orbs).
 func boss_cross(i: int) -> Dictionary:
 	return BossPrism.state(_w, i)
 

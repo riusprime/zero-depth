@@ -476,6 +476,15 @@ func pending_projectiles() -> int:
 	return _pending_projectiles.size()
 
 
+## v0.8.0 PR (O84): projectiles actor `owner_id` queued this tick, not spawned yet (BossPrism.shots_alive).
+func pending_projectiles_of(owner_id: int) -> int:
+	var n := 0
+	for q in _pending_projectiles:
+		if int(q[0]) == owner_id:
+			n += 1
+	return n
+
+
 ## v0.8.0 PF: the player's projectiles alive and queued now (Attacks._shot_room's count).
 func player_projectiles() -> int:
 	var n := 0

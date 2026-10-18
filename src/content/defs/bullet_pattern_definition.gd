@@ -128,8 +128,9 @@ func validate() -> Array[ValidationIssue]:
 				if count > 16:
 					issues.append(ValidationIssue.new(&"no_gap", p, "a burst's star holds <= 16"))
 		Kind.SPIRAL, Kind.CROSS:
-			if arms < 1 or arms > 8:
-				issues.append(ValidationIssue.new(&"range", p, "arms must be 1..8"))
+			# v0.8.0 PR (O84): up to 12 (the Prism's 10-arm spiral: 36° between the arms)
+			if arms < 1 or arms > 12:
+				issues.append(ValidationIssue.new(&"range", p, "arms must be 1..12"))
 			if reverse_at_seconds < 0.0:
 				issues.append(ValidationIssue.new(&"duration", p, "reverse_at_seconds < 0"))
 		Kind.WALL:

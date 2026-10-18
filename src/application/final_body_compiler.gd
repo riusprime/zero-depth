@@ -3,6 +3,9 @@ extends RefCounted
 ## v0.8.0 FB2 (owner F7; FINAL_BOSS.md F5): a final body's own rules, beside ContentCompiler (which calls it for a
 ## FinalBossDefinition): its Crosses' bolt attacks (by index), its float and shards, and an HP set from the measured
 ## damage per second (the window share from its Crosses' cycles: windup, active, recovery and cooldown).
+## v0.8.0 PR (owner O84): a body with spell_rotation casts its phase's attacks in order (BossTable.rotation); its
+## window share is then the open part of one whole rotation (each Cross's window, every recovery and cooldown, and the
+## active time of an attack that isn't shielded) over the rotation's length.
 ## v0.8.0 FB3: a mimic body's numbers (the Nemesis: its echo, dash, stances, cards, its HP and hit from the build and
 ## the clamps on its copies of the player's attacks), in sim units.
 
@@ -19,6 +22,28 @@ static func compile_into(def: FinalBossDefinition, t: BossTable) -> void:
 		at.bolt_attack = t.attack_index(bolt) if bolt != &"" else -1
 		cycle += at.windup_ticks + at.active_ticks + at.recover_ticks + at.cooldown_ticks
 		window += at.window_ticks
+	t.rotation = def.spell_rotation
+	if t.rotation and not def.phases.is_empty() and def.phases[0] != null:
+		cycle = 0
+		window = 0
+		for id in def.phases[0].attack_ids:
+			var k := t.attack_index(StringName(id))
+			if k < 0:
+				continue
+			var at := t.attacks[k]
+			if at.pattern != null and at.move != BossAttackTable.Move.CROSS:
+				# an orb spell lasts until its last orb is gone (its last wave plus the orbs' life), so the next
+				# Cross never waits on it in the open
+				at.active_ticks = maxi(
+					at.active_ticks, at.pattern.duration_ticks() + at.pattern.life_ticks
+				)
+			var open := at.recover_ticks + at.cooldown_ticks
+			if at.move == BossAttackTable.Move.CROSS:
+				open += at.window_ticks
+			elif not at.shielded:
+				open += at.windup_ticks + at.active_ticks
+			cycle += at.windup_ticks + at.active_ticks + at.recover_ticks + at.cooldown_ticks
+			window += open
 	t.window_permille = clampi(window * 1000 / maxi(1, cycle), 1, 1000) if cycle > 0 else 1000
 	t.shard_count = def.shard_count
 	t.shard_orbit_m = def.shard_orbit_m

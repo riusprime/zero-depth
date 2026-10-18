@@ -91,7 +91,7 @@ func test_flower_spiral_and_burst_rules() -> void:
 	s.id = &"test_spiral"
 	s.look = &"ember_stone"
 	s.kind = BulletPatternDefinition.Kind.SPIRAL
-	s.arms = 12
+	s.arms = 13  # v0.8.0 PR: 1..12
 	assert_has(_codes(s.validate()), &"range")
 	var b := BulletPatternDefinition.new()
 	b.id = &"test_burst"

@@ -70,8 +70,11 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 			seen += 1
 	assert_eq(
 		seen,
-		82,
-		"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9)"
+		83,
+		(
+			"every classed attack of the six bosses and the final boss's three bodies (N2: 4 new, The Fallen's 9;"
+			+ " PR: the Prism's 3 orb spells in, cross_weave and prism_bolt_fan out)"
+		)
 	)
 
 
