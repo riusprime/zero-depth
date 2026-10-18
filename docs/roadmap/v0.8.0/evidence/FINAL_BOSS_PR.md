@@ -102,6 +102,8 @@ no failure in them; the other 32 files (the stopped `test_readable_cause` among 
 Lint: `gdformat --check src scripts tests` (1034 files unchanged), `gdlint src scripts tests` (no problems),
 `bash scripts/ci/gut_shard.sh --check` (`gut_shard: ok (370 test files in 6 shards)`).
 
+**Finished after hand-back (2026-10-18, same tree as `7e4479c`):** the 32 remaining `tests/unit/sim` files ran to the end: `Scripts 32`, `Tests 295`, `Passing Tests 295`, `Time 2443.494s`. With the first run's 89 files, all 121 files in the folder passed; nothing is left unrun.
+
 ## Shots (game camera, the real view)
 ```
 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
