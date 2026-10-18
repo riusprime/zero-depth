@@ -279,12 +279,98 @@ load_probe: done; load average 6.78 5.57 5.72 8/155 23569
 load_probe: deep      covered 90046 frames,  6858.2 ms; longest frame  615.4 ms
 load_probe: deep      phases … view:dress=2404.6 … view_longest_job=50.4
 ```
-**Missed, not explained:** the before tree's longest frames were 38-62 ms; after, single frames of 100-650 ms appear
-while the view builds ("cv"), but no view job runs longer than 50 ms, and the same load's worst frame moves between
-runs (restart 654 → 76 ms, deep 131 → 615 ms). So the stall is outside the view's jobs (a frame waiting on the
-workers: the dressing (`view:dress`, a worker, about 2.4 s now) or a resource lock), on a machine shared with other
-agents' renders. Not fixed here; it needs a quiet re-measure and a look at what the main thread waits on (D51's
-load rule). Reported to the lead.
+**Missed, not explained** (at `fdba2a7`): the before tree's longest frames were 38-62 ms; after, single frames of
+100-650 ms appeared while the view built ("cv"), though no view job ran longer than 50 ms. Followed up below.
+
+### Loads: the follow-up (the stalls found, one fixed; at `9939cf3`)
+The lead asked for the 100-650 ms frames to be found and fixed. `scripts/checks/load_probe.gd` now writes each
+load's eight worst frames to `build/perf/load_probe_frames_<load>.txt` and prints the three worst over 50 ms. Each
+frame has the main thread's own CPU time and its time waiting for a CPU (`cpu=`, `runq=`, from
+`/proc/thread-self/schedstat`), the machine's stolen time, and the engine's process and physics time. It also has the
+view queue's step with its jobs (or `wait:<job>` for the worker job it polled) and `free_slowly`'s slice.
+
+**What the stalls were.** Three kinds, measured:
+1. **The main thread waiting for a CPU** (most of them, and every frame over about 100 ms): `runq` is about the
+   frame's length, the main thread's own CPU in it is 0-6 ms, and the queue only polled a worker job
+   (`wait:dress`, `wait:models`) or the World was building on its worker (`cw`). Examples (run "c", load average
+   6.7-8.8):
+   `524.3 ms cv cpu=1.1 runq=524.2 … step1=0.0[wait:dress]` and
+   `709.1 ms cv cpu=6.0 runq=702.0 … step1=342.4[kit_nodes:342]` (a 23 ms job that waited 702 ms for a CPU).
+   The machine has 4 vCPUs and was running 3-4 other agents' Godot processes (load average 6-9). **The before tree
+   does the same.** `0a10c28` is the parent of MI's first commit. It was run with the same instrumented probe, in a
+   scratch worktree, at the same time:
+   - before 1: continue 504.5 ms, deep 984.1 ms;
+   - before 2: ascension `440.6 ms cv cpu=4.0 runq=440.0 … step1=0.0[wait:models]`.
+
+   So this is the shared machine, not MI. No code change can stop the OS from holding a runnable thread. Running
+   the probe at `nice -n -10` didn't stop it either (`543.8 ms cw cpu=4.4 runq=543.4`).
+2. **The Ascension portal's model read twice (MI's, fixed).** `ViewWarmup` read
+   `ascension_portal.glb` on the worker and dropped it. Nothing held it, so the portal's `_init` read the file again
+   on the main thread, in the `devices` job:
+   - the Deep load's devices job took 48.8 ms in run "a" and 93.6 ms in run "b" (`step1=93.6[devices:94]`);
+   - `AscensionPortal.new()`, timed alone after the warm-up, took 42-49 ms.
+
+   Now `AscensionPortal.warm_model()` keeps the scene in a static, the way `LoopDevice` already did. After the fix:
+   `AscensionPortal.new()` takes 2.5-3.9 ms, and the Deep load's devices job takes 14.9-25.9 ms. The textures
+   the warm-up reads are kept too, until the next warm-up: the biome's wall textures and Starfall's crack
+   textures.
+3. **Frames of main-thread work outside the view's jobs: 35-96 ms of `cpu`, `runq` about 0.** These come from
+   `step1=0.0[]`, the frame where the World's build ends and `Main._floor_nodes` makes the floor's nodes in one
+   frame. Timed once with temporary prints in that function (not committed):
+   - `WorldViewRoot.new()` took 23-55 ms per load, with one at 149 ms while starved;
+   - `saves.begin_floor` took 0-9.5 ms.
+
+   `WorldViewRoot.new()` alone, on a quiet process, takes about 16 ms. Its largest parts are `BossStrikeViews` (12.9
+   ms cold, 0.3 ms warm), `BossSignatureViews` (7.4 / 2.4 ms) and `PrismViews` (2.9 ms). The first floor of a
+   session is the slowest: the Codex and achievement trackers are made there. The before tree has these frames too
+   (`91.5 ms cv … step1=0.1[]`), and `_floor_nodes` predates MI (N12). **Not fixed here (outside MI)**. Spreading
+   `_floor_nodes` over frames is N12's code.
+
+Checked and not the cause:
+- The new models' textures are imported like every other model texture in the project: lossless (`compress/mode=0`,
+  all 66 files) with mipmaps generated at import, so mipmaps aren't generated at first use.
+- The GPU upload can't be measured headless: **NOT YET RUN** on a GPU.
+- Meshes made on a worker don't add work to the main thread's frames headless: 2000 `ArrayMesh`es made on a worker
+  added 1.6 ms of main-thread CPU.
+
+**The probe on the final tree, three runs** (`godot --headless --fixed-fps 60 --path . -s
+scripts/checks/load_probe.gd`, at `9939cf3`, load average 5.1-5.6). Biomes covered:
+- Night Rocks: new run, restart, loop;
+- Red Canyon: gate, continue;
+- Ruins: deep;
+- the final arena: ascension.
+
+Starfall and Frozen Shore aren't in the probe's sequence.
+
+| load | run 1 longest (ms) | run 2 longest (ms) | run 3 longest (ms) | the view's longest job, runs 2 / 3 (ms) |
+|---|---|---|---|---|
+| new run | 95.1 | 65.1 | 59.5 | 23.1 / 29.4 |
+| gate | 32.6 | 34.0 | 35.1 | 22.9 / 25.2 |
+| continue | 44.2 | 34.6 | 36.9 | 24.0 / 24.1 |
+| deep | 42.3 | 68.7 | 35.6 | 23.9 / 24.0 |
+| ascension | 36.8 | 35.8 | 42.3 | 34.6 / 35.5 |
+| restart | 38.5 | 99.6 | 56.5 | 23.1 / 36.2 |
+| loop | 51.7 | 35.1 | 48.2 | 26.3 / 27.8 |
+
+The frames over 62 ms:
+```
+[run 1] load_probe: new_run   worst 24112: 95.1 ms cv cpu=95.8 runq=0.1 slices=2 steal=00ms process=9.1 physics=0.1 nodes=25 objects=11920 orphans=249 step1=0.0[]
+[run 2] load_probe: new_run   worst 33718: 65.1 ms cv cpu=62.4 runq=0.5 slices=2 steal=00ms process=1.2 physics=0.2 nodes=25 objects=11922 orphans=249 step1=0.0[]
+[run 2] load_probe: deep      worst 30644: 68.7 ms cv cpu=3.9 runq=68.0 slices=1 steal=00ms process=38.6 physics=0.2 nodes=2618 objects=19155 orphans=2 step1=0.0[wait:dress]
+[run 2] load_probe: restart   worst 24900: 99.6 ms cv cpu=4.6 runq=98.9 slices=5 steal=00ms process=4.3 physics=0.2 nodes=2791 objects=20142 orphans=2 step1=0.0[wait:dress]
+[run 1] load_probe: done; load average 5.56 5.67 6.52 5/145 28060
+[run 2] load_probe: done; load average 5.62 5.65 6.44 6/145 28167
+[run 3] load_probe: done; load average 5.42 5.55 6.35 2/146 28218
+```
+**The target is still missed, reported.** 18 of the 21 loads are ≤ 51.7 ms, and their longest frames are within the
+old tree's 38-62 ms. Three are over 62 ms:
+- 68.7 ms and 99.6 ms were the main thread waiting for a CPU (cause 1, the machine);
+- 95.1 ms (and 65.1 ms) was the first floor's `_floor_nodes` frame (cause 3, from before MI).
+
+Earlier runs of this follow-up, at higher load (6.4-9.0), had frames up to 709 ms, all of cause 1. They're kept in
+`build/perf/probe_{b,c,d,e,nice1,cap1}.log`; `cap1`'s `--max-fps 60` had no effect headless. They aren't evidence of
+the final tree: run "e" carried a heavier `free_slowly` probe, and only run "b" predates the portal fix. A quiet
+machine and the owner's hardware are **NOT YET RUN**.
 
 ## 6. Shots
 In [`mi_shots/`](mi_shots/) (JPEG copies by hand of `build/shots/...`): per biome the same designed room (layout
