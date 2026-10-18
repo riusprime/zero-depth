@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Fails when a GUT run "passed" without really testing (docs/architecture/TEST_MATRIX.md §3, LESSONS L5).
 # Usage: scripts/ci/check_gut_log.sh <gut.log> [min_count_file]
+# v0.8.0 (2026-10-18): grep -q reads from a here-string, not a pipe: under pipefail an early-exiting grep -q made
+# the echo fail with SIGPIPE on a big log, and a green seams run (469/469) read as "no GUT summary".
 set -euo pipefail
 LOG="$1"
 MIN_FILE="${2:-tests/MIN_TEST_COUNT}"
@@ -9,9 +11,9 @@ CLEAN="$(sed -E 's/\x1B\[[0-9;]*[mK]//g' "$LOG")"
 
 fail() { echo "check_gut_log: FAIL: $*" >&2; exit 1; }
 
-echo "$CLEAN" | grep -q "Passing Tests" || fail "no GUT summary (GUT did not run)"
+grep -q "Passing Tests" <<<"$CLEAN" || fail "no GUT summary (GUT did not run)"
 for pattern in "SCRIPT ERROR" "Parse Error" "Failed to load script" "\[GUT ERROR\]"; do
-	if echo "$CLEAN" | grep -E -q "$pattern"; then
+	if grep -E -q "$pattern" <<<"$CLEAN"; then
 		echo "$CLEAN" | grep -E "$pattern" | head -5 >&2
 		fail "log contains '$pattern'"
 	fi
