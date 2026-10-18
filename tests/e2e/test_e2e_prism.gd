@@ -4,8 +4,12 @@ extends GutTest
 ## fight to the Prism. With the Gun's fire held on her: the Cross's spin-up draws four aim lines, then four beams turn
 ## while her shield turns every shot away (no HP lost), a bolt's aim line shows, and in the window after (the gold
 ## ring, the beams out) the shots land; the hero is still standing.
+## v0.8.0 PR (owner O84): then her next spell is an orb pattern of its own: her crystal orbs fly while no beam is
+## drawn or aimed (never orbs and lasers at the same time).
 
 const LIMIT := 1500
+## v0.8.0 PR: frames to wait for the orb spell after the window.
+const ORB_LIMIT := 600
 
 var _e: E2e
 var _scale := Vector2.ONE
@@ -98,6 +102,9 @@ func test_the_prism_from_the_playground_jump() -> void:
 			break
 		var c := reader.boss_cross(i)
 		if c.is_empty():
+			if was_window:  # v0.8.0 PR: the Cross ends with its window (the orbs come next)
+				windows += 1
+				was_window = false
 			continue
 		var hp := reader.actor_hp(i)
 		if c["winding"] and views.aim_count() == 4:
@@ -118,6 +125,22 @@ func test_the_prism_from_the_playground_jump() -> void:
 		elif was_window:
 			windows += 1
 		was_window = c["window"]
+	var orbs_seen := 0
+	frames = 0
+	while frames < ORB_LIMIT and orbs_seen == 0:
+		await _e.frames(1)
+		frames += 1
+		for p in reader.projectile_count():
+			if reader.projectile_look(p) == "crown_orb":
+				orbs_seen += 1
+	assert_gt(orbs_seen, 0, "her orb spell follows the Cross")
+	for k in 120:  # the orbs fly out: no beam drawn, none aimed, no Cross
+		await _e.frames(1)
+		i = reader.boss_index()
+		if i < 0:
+			break
+		assert_true(reader.boss_cross(i).is_empty(), "no Cross while her orbs fly")
+		assert_eq(views.beam_count() + views.aim_count(), 0, "no beam drawn with the orbs")
 	_mouse(aim, MOUSE_BUTTON_RIGHT, false)
 	assert_true(saw_aim_lines, "the spin-up's four aim lines")
 	assert_true(saw_beams, "four beams turning")

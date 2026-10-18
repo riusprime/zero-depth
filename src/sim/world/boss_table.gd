@@ -99,6 +99,10 @@ var floats_home := false
 var shard_count := 0
 var shard_orbit_m := 0.0
 var shard_turn_milli := 0
+## v0.8.0 PR (owner O84: "he shouldnt have all 3 spells at the same time, we should rotate"; BossPrism.next_spell): a
+## body whose phase attacks are a fixed rotation, cast in their listed order, one at a time, with no draw from the ai
+## stream; each waits until every shot the body fired is gone.
+var rotation := false
 ## v0.8.0 FB3 (owner F6 "Weapon + dash + 2-3 cards", F7 "Nemesis takes its HP and damage from your own build, an even
 ## duel"; FINAL_BOSS.md F6, F7; BossNemesis, NemesisBuild): a mimic body. It echoes the player's path echo_ticks later
 ## (a ring of the player's positions), dashes when the player dashes (dash_react_ticks later, the player's own dash),

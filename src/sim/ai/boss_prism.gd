@@ -14,20 +14,25 @@ extends RefCounted
 ##   to fast_quarter_ticks at none, so the Cross speeds up as she weakens. She is shielded through the windup and the
 ##   spin (BossDodge.shielded); then the beams go out for the window (window_ticks, the rest of the active time) and
 ##   her shield is down: the only time she can be hurt.
-## - Orbs: while the beams turn, the attack's pattern fires again every orb_every_ticks (from orb_every_ticks on) from
-##   shard (volley % shards), aimed at the player, through BulletPatterns.fire (its fairness: no shot spawns on the
-##   player or in a wall; its caps). They carry LATE_CAUSE + the attack (the recap names the orbs).
-## - Fast shots: every bolt_every_ticks over the whole active time (spin and window) a shard locks an aim line at the
-##   player for the bolt attack's lock_ticks (0.4 s as shipped), then fires a fast bolt down it (the bolt attack's
-##   speed, radius, range and damage; it carries that attack, so the recap names the bolt). No bolt fires while the
-##   player stands within BOLT_SAFE_M of its shard.
+## - Fast shots: through the window (BOLT_LEAD_TICKS after the spin ends, then every bolt_every_ticks) a shard locks
+##   an aim line at the player for the bolt attack's lock_ticks (0.4 s as shipped), then fires a fast bolt down it
+##   (the bolt attack's speed, radius, range and damage; it carries that attack, so the recap names the bolt). No bolt
+##   fires while the player stands within BOLT_SAFE_M of its shard.
+## v0.8.0 PR (owner O84, 2026-10-18: "the lasers on a cross should be 15% slower, the all small balls he shoots should
+## be shooted on a predictable pattern … 3 different patters … he shouldnt have all 3 spells at the same time, we
+## should rotate, and never make small balls and lasers at the same time"): her three spells, the Cross (the beams),
+## the bolts (in the Cross's window, once the beams are out) and the orbs, never overlap. A Cross fires no orbs; the
+## orbs are spells of their own (`pattern` attacks fired from her centre at a fixed angle, BossAttackTable.fixed_aim),
+## and her phase's attacks are a fixed rotation (BossTable.rotation, next_spell): Cross, orb pattern 1, Cross, orb
+## pattern 2, Cross, orb pattern 3, again. A spell only starts once every shot she fired is gone (shots_alive), so no
+## orb flies while a beam is aimed or burning and no bolt is left when the orbs come.
 ## One shape function each (beam_at, shard_pos, bolt line), drawn and hit alike (EI-07). Pure: integer angles (Kin),
 ## the ai stream only for the first Cross's way.
 
 ## A body's shards' fast bolts look like this (FireballViews; the orbs' look is their pattern's).
 const BOLT_LOOK := &"crown_bolt"
-## The orbs' recap cause: BossSignatures.LATE_CAUSE + the attack (its late_cause_key).
-const ORB_CAUSE := BossSignatures.LATE_CAUSE
+## v0.8.0 PR (O84): the window's first bolt starts aiming this long after the beams go out (ticks: 0.3 s).
+const BOLT_LEAD_TICKS := 18
 ## No bolt fires while the player's edge is this close to its shard (m).
 const BOLT_SAFE_M := 1.0
 ## BossStore points of a Cross in progress: the bolt's shard (its origin) in point BOLT_AT; the bolt's angle (x) and
@@ -75,6 +80,32 @@ static func shards(w: World, i: int) -> PackedVector2Array:
 	for k in BossAi.table_of(w, i).shard_count:
 		out.append(shard_pos(w, i, k, w.tick))
 	return out
+
+
+# --- the rotation (v0.8.0 PR, owner O84) -------------------------------------------------------------------------
+
+
+## BossAi.think in MOVE, for a body with a rotation: the attack after her last one in the phase's list (the first when
+## none yet), or -1 while it must wait: every spell waits until no shot of hers is left (no orb with the beams, no
+## bolt with the orbs).
+static func next_spell(w: World, i: int, b: int, t: BossTable) -> int:
+	var bs := w.bosses
+	var list: PackedInt32Array = t.phase_attacks[bs.phase[b]]
+	if list.is_empty():
+		return -1
+	var at := list.find(bs.last_attack[b])
+	var k := list[(at + 1) % list.size()] if at >= 0 else list[0]
+	return -1 if shots_alive(w, i) > 0 else k
+
+
+## The shots boss i fired still in flight (and any queued this tick).
+static func shots_alive(w: World, i: int) -> int:
+	var id := w.actors.ids[i]
+	var n := 0
+	for p in w.projectiles.size():
+		if w.projectiles.owner[p] == id:
+			n += 1
+	return n + w.pending_projectiles_of(id)
 
 
 # --- the Cross ----------------------------------------------------------------------------------------------------
@@ -166,7 +197,7 @@ static func in_window(w: World, i: int) -> bool:
 
 
 ## Tick phase 6 (BossAi.resolve): while the beams turn they hurt a player one touches (at most once every
-## burn_ticks; the hurt iframes still apply) and the orbs fly; over the whole active time the bolts aim and fire.
+## burn_ticks; the hurt iframes still apply); in the window (beams out) the bolts aim and fire.
 static func resolve(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> void:
 	if st >= atk.active_ticks:
 		return
@@ -177,37 +208,17 @@ static func resolve(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> 
 			if Collide.circle_vs_obb(w.player_pos(), w.player.radius_m, o) != Vector2.ZERO:
 				BossAi.hit_player(w, i, atk, SimEvent.TAG_AREA, o.center)
 				break
-		_orbs(w, i, atk, st)
+		return
 	_bolts(w, i, b, atk, st)
 
 
-## The orb volley running at spin tick st: [volley, its tick] (volley -1 before the first).
-static func orb_volley(atk: BossAttackTable, st: int) -> Array[int]:
-	if atk.pattern == null or atk.orb_every_ticks <= 0 or st < atk.orb_every_ticks:
-		return [-1, 0]
-	return [st / atk.orb_every_ticks - 1, st % atk.orb_every_ticks]
-
-
-static func _orbs(w: World, i: int, atk: BossAttackTable, st: int) -> void:
-	var v := orb_volley(atk, st)
-	if v[0] < 0:
-		return
-	var kw := BulletPatterns.wave_at(atk.pattern, v[1])
-	if kw < 0:
-		return
-	var n := maxi(1, BossAi.table_of(w, i).shard_count)
-	var c := shard_pos(w, i, v[0] % n, w.tick)
-	BulletPatterns.fire(
-		w,
-		i,
-		atk.pattern,
-		kw,
-		c,
-		Kin.angle_of(w.player_pos() - c),
-		atk.pattern.radius_m + BulletPatterns.MUZZLE_M,
-		BossAi.orb_damage(w, i, atk),
-		ORB_CAUSE + w.bosses.attack[BossAi.entry_of(w, i)]
-	)
+## v0.8.0 PR (O84): the bolt that starts aiming on active tick st (0, 1, …: its order in the window), or -1. Bolts
+## start BOLT_LEAD_TICKS into the window, every bolt_every_ticks, while one can still fire before the window ends.
+static func bolt_starting(atk: BossAttackTable, lock: int, st: int) -> int:
+	var rel := st - atk.spin_ticks - BOLT_LEAD_TICKS
+	if atk.bolt_every_ticks <= 0 or rel < 0 or rel % atk.bolt_every_ticks != 0:
+		return -1
+	return rel / atk.bolt_every_ticks if st + lock < atk.active_ticks else -1
 
 
 ## The bolt attack of a Cross (null when it has none).
@@ -228,11 +239,11 @@ static func _bolts(w: World, i: int, b: int, atk: BossAttackTable, st: int) -> v
 		_fire_bolt(w, i, b, atk, bolt)
 		bs.pts_y[b * BossStore.MAX_PTS + BOLT_AIM] = -1.0
 		return
-	var every := atk.bolt_every_ticks
-	if st < every or st % every != 0 or st + lock >= atk.active_ticks or w.player_dead():
+	var k := bolt_starting(atk, lock, st)
+	if k < 0 or w.player_dead():
 		return
 	var n := maxi(1, BossAi.table_of(w, i).shard_count)
-	var at := shard_pos(w, i, (st / every) % n, w.tick)
+	var at := shard_pos(w, i, k % n, w.tick)
 	bs.set_pt(b, BOLT_AT, at)
 	bs.pts_x[b * BossStore.MAX_PTS + BOLT_AIM] = Kin.angle_of(w.player_pos() - at)
 	bs.pts_y[b * BossStore.MAX_PTS + BOLT_AIM] = st
@@ -285,15 +296,16 @@ static func bolt_state(w: World, i: int) -> Dictionary:
 		"angle": ang,
 		"progress":
 		clampi((w.actors.state_t[i] - aim_t) * 1000 / maxi(1, bolt.lock_ticks), 0, 1000),
-		"shard": (aim_t / maxi(1, atk.bolt_every_ticks)) % n,
+		"shard":
+		maxi(0, aim_t - atk.spin_ticks - BOLT_LEAD_TICKS) / maxi(1, atk.bolt_every_ticks) % n,
 	}
 
 
 ## Boss i's Cross for the views: {} or {"winding" (the spin-up: thin aim lines), "window" (beams out, shield down),
 ## "progress" (0..1000 of the windup, the spin, or the window), "arms" ([from, to, hit] per beam: where it runs now,
 ## the aim line's in the windup; empty in the window), "angle" (arm 0's, 1/4096 turns), "half_width", "way" (+1 or
-## -1), "quarter" (ticks a quarter turn), "speed" (0..1000: how much faster than at full HP), "orb_shard" (the shard
-## firing orbs now, -1 none), "bolt" (bolt_state)}.
+## -1), "quarter" (ticks a quarter turn), "speed" (0..1000: how much faster than at full HP), "bolt" (bolt_state).
+## v0.8.0 PR (O84): a Cross fires no orbs, so no "orb_shard".
 static func state(w: World, i: int) -> Dictionary:
 	var atk := BossAi.attack_of(w, i)
 	var s := w.actors.state[i]
@@ -328,11 +340,6 @@ static func state(w: World, i: int) -> Dictionary:
 			)
 	var q := quarter(w, i)
 	var span := maxi(1, atk.quarter_ticks - atk.fast_quarter_ticks)
-	var orb := -1
-	if not winding and not window:
-		var v := orb_volley(atk, st)
-		if v[0] >= 0 and v[1] < atk.pattern.duration_ticks():
-			orb = v[0] % maxi(1, BossAi.table_of(w, i).shard_count)
 	return {
 		"winding": winding,
 		"window": window,
@@ -343,6 +350,5 @@ static func state(w: World, i: int) -> Dictionary:
 		"way": w.bosses.span[BossAi.entry_of(w, i)],
 		"quarter": q,
 		"speed": clampi((atk.quarter_ticks - q) * 1000 / span, 0, 1000),
-		"orb_shard": orb,
 		"bolt": bolt_state(w, i),
 	}

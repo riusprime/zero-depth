@@ -7,6 +7,8 @@ extends SceneTree
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1600x900 -s scripts/shots/final_boss_2.gd -- <n>
 ## `-- <n>` renders shot n alone (one at a time on a shared machine). Writes build/shots/v0.8.0/fb2/<n>_<label>.jpg.
+## v0.8.0 PR (O84): the Cross no longer fires orbs and its bolts fire only in the window, so shots 4-5 reproduce only
+## at FB2's commit; the PR look is scripts/shots/prism_pr.gd.
 
 ## [label, the Cross started (attack id, or &"" none), the moment (see _moment), camera size].
 const PLAN := [

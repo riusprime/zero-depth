@@ -29,11 +29,11 @@ const BUILDS := [
 		[[&"chain_blast", 5], [&"double_slash", 5], [&"trigger_on_hit_twice", 5]]
 	],
 ]
-## The N2 attacks: [boss, attack].
+## The N2 attacks: [boss, attack]. (v0.8.0 PR, owner O84: the Prism's prism_bolt_fan and cross_weave are gone; her
+## orb spells' gaps and steps are test_prism.gd's.)
 const NEW_ATTACKS := [
 	[&"colossus", &"leap_slam_3"],
 	[&"colossus", &"spike_chase_3"],
-	[&"prism", &"prism_bolt_fan"],
 	[&"nemesis", &"fallen_storm"],
 	[&"nemesis", &"fallen_rush"],
 ]
@@ -465,7 +465,11 @@ func test_standing_still_each_new_attack_hits() -> void:
 ## (BulletPatterns.MAX_ALIVE alive, MAX_SHOTS_PER_TICK a tick) with no LIMIT event, printed beside the attack they join.
 func test_the_new_patterns_keep_the_shot_caps() -> void:
 	for pair: Array in [
-		[1, &"cross_spiral"], [1, &"cross_weave"], [0, &"leap_slam_2"], [0, &"leap_slam_3"]
+		[1, &"crown_ring"],
+		[1, &"crown_spiral"],
+		[1, &"crown_flower"],
+		[0, &"leap_slam_2"],
+		[0, &"leap_slam_3"],
 	]:
 		var w := FinalLab.arena(FinalLab.run_state(40))
 		w.actors.invuln[0] = NemesisLab.LONG

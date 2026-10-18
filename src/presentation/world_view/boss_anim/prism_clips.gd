@@ -12,6 +12,8 @@ extends RefCounted
 ## - shielded: braced, "shield" 1; flinch: a hit; stagger, roar, rise (from the Colossus's shards), death;
 ## - shatter: the crack-up between bodies, "tremble" climbing (the avatar's own layer, as FinalBodyAvatar trembles);
 ## - bolt_fan: a lone bolt (only when the dev panel starts her bolt attack by itself; in her fight it fires in a Cross).
+## - pattern (v0.8.0 PR, owner O84): an orb spell: she gathers through its telegraph ("charge"), then rises and holds
+##   aloft with the shards racing round ("spin") while her orbs pour out of her, and sinks back to the float.
 ## Presentation only.
 
 const UP := Vector3(0, 1, 0)
@@ -47,6 +49,7 @@ const NAMES: Array[StringName] = [
 	&"death",
 	&"shatter",
 	&"bolt_fan",
+	&"pattern",
 ]
 
 static var _lib := {}
@@ -142,8 +145,27 @@ static func library() -> Dictionary:
 		bolt.shift(B, UP, [[0, 0], [0.42, 0.1, BACK], [0.5, 0.04, IN3], [1, 0]])
 		bolt.turn(B, Z, [[0, 0], [0.42, 0.06], [0.5, -0.06, IN3], [1, 0]])
 		bolt.param(&"flare", [[0, 0], [0.42, 0.6], [0.5, 1.0, IN3], [1, 0]])
+		var orbs := BossClip.new(&"pattern")  # v0.8.0 PR: an orb spell
+		orbs.strike = 0.12
+		orbs.hold = 0.9
+		orbs.shift(B, UP, [[0, 0], [0.1, -0.1, IO], [0.12, 0.45, BACK], [0.9, 0.4], [1, 0, IO]])
+		orbs.stretch(B, [[0, 0], [0.1, -0.06], [0.12, 0.08, OUT3], [0.2, 0.03, OUT, S], [1, 0]])
+		orbs.param(&"charge", [[0, 0], [0.12, 1.0, IN], [0.2, 0.4, OUT], [0.9, 0.4], [1, 0]])
+		orbs.param(&"spin", [[0, 0.25], [0.12, 1.2, IN], [0.9, 1.0], [1, 0]])
 		for c: BossClip in [
-			idle, walk, cross, cast, shielded, flinch, stagger, roar, rise, death, shatter, bolt
+			idle,
+			walk,
+			cross,
+			cast,
+			shielded,
+			flinch,
+			stagger,
+			roar,
+			rise,
+			death,
+			shatter,
+			bolt,
+			orbs
 		]:
 			_lib[c.name] = c
 	return _lib

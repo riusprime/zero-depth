@@ -214,3 +214,16 @@ func test_the_prism_cross_and_dps_hp_are_checked() -> void:
 	p = fresh.call()
 	p.shard_orbit_m = 1.0
 	assert_has(_codes(p), &"range", "the shards orbit outside her body")
+	# v0.8.0 PR (owner O84): no orbs with the beams; a fixed aim is a pattern's; the rotation lists each spell once
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["pattern_id"] = "prism_crown_ring"
+	assert_has(_codes(p), &"orbs_with_beams", "a Cross fires no orbs")
+	p = fresh.call()
+	p.attack(&"crown_ring").shape_params["aim_degrees"] = 400.0
+	assert_has(_codes(p), &"range", "a fixed aim is 0..<360")
+	p = fresh.call()
+	p.attack(&"cross_ring").shape_params["aim_degrees"] = 0.0
+	assert_has(_codes(p), &"range", "only a pattern has a fixed aim")
+	p = fresh.call()
+	p.phases[0].attack_ids.append("cross_ring")
+	assert_has(_codes(p), &"range", "a rotation lists each spell once")

@@ -5,8 +5,27 @@ extends GutTest
 ## her HP drops, stop at the walls and never open on the player; she is shielded while they turn and open only in the
 ## window after; her shards fire the orb patterns (their gaps kept) and fast bolts after a 0.4 s aim line; her HP comes
 ## from the measured damage per second (the formula, its clamps, determinism); the death lines; saves mid-phase-2.
+## v0.8.0 PR (owner O84): the Cross turns 15 % slower; the orbs are three spells of their own in fixed, dodgeable
+## patterns from her centre; her spells rotate one at a time (Cross, orbs, Cross, …) and never overlap: no orb or bolt
+## is in the air while a beam is aimed or burning; the bolts fire only in the window.
 
 const LONG := 1 << 24
+## v0.8.0 PR: the rotation, in order (one spell at a time).
+const ROTATION: Array[StringName] = [
+	&"cross_ring", &"crown_ring", &"cross_spiral", &"crown_spiral", &"cross_flower", &"crown_flower"
+]
+## The orb spells and their pattern kinds (three distinct patterns).
+const ORB_SPELLS := {
+	&"crown_ring": BulletPatternTable.Kind.RING,
+	&"crown_spiral": BulletPatternTable.Kind.SPIRAL,
+	&"crown_flower": BulletPatternTable.Kind.FLOWER,
+}
+## The hero's usual distance from her for the gap numbers (m): the patterns' validation distance.
+const USUAL_M := BulletPatternDefinition.GAP_CHECK_M
+## FB2's Cross, before PR (ticks): quarter 2.4 s, fast quarter 1.2 s, reverse 3.0 s.
+const OLD_QUARTER := 144
+const OLD_FAST := 72
+const OLD_REVERSE := 180
 
 
 func _arena(seed_value: int = 41) -> World:
@@ -68,20 +87,28 @@ func test_the_prism_is_a_skill_phase_in_data() -> void:
 	assert_true(t.dps_hp, "her HP comes from the measured damage per second")
 	assert_true(t.floats_home)
 	assert_eq(t.shard_count, 6)
-	assert_eq(t.window_permille, 294, "a 2.5 s window in each 8.5 s cycle")
-	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower", &"cross_weave"]:
+	assert_true(t.rotation, "v0.8.0 PR: her spells rotate")
+	assert_true(t.window_permille > 100 and t.window_permille < 300, "the open share of a rotation")
+	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower"]:
 		var a := t.attacks[t.attack_index(id)]
 		assert_eq(a.move, BossAttackTable.Move.CROSS)
 		assert_eq(a.count, 4, "four beams in a plus")
 		assert_true(a.shielded)
-		var bolt := &"prism_bolt_fan" if id == &"cross_weave" else &"prism_bolt"  # v0.8.0 N2
-		assert_eq(a.bolt_attack, t.attack_index(bolt))
+		assert_eq(a.bolt_attack, t.attack_index(&"prism_bolt"))
 		assert_eq(t.attacks[a.bolt_attack].lock_ticks, 24, "the fast shots' aim line: 0.4 s")
+		assert_null(a.pattern, "v0.8.0 PR: a Cross fires no orbs")
+	for id: StringName in ORB_SPELLS:
+		var a := t.attacks[t.attack_index(id)]
+		assert_eq(a.move, BossAttackTable.Move.PATTERN)
+		assert_true(a.shielded, "shielded while she casts")
+		assert_eq(a.fixed_aim, 0, "a fixed aim, not at the player")
 		assert_eq(a.pattern.look, &"crown_orb", "her own fireball look")
 	assert_eq(t.phase_attacks.size(), 1)
-	assert_false(
-		t.phase_attacks[0].has(t.attack_index(&"prism_bolt")), "the bolts fire inside a Cross"
-	)
+	var listed: Array[StringName] = []
+	for k in t.phase_attacks[0]:
+		listed.append(t.attacks[k].id)
+	assert_eq(listed, ROTATION, "the rotation: Cross, orbs, Cross, orbs, Cross, orbs")
+	assert_eq(t.attack_index(&"cross_weave"), -1, "N2's weave Cross is gone (O84)")
 
 
 func test_she_floats_home_and_barely_moves() -> void:
@@ -180,7 +207,7 @@ func test_the_cross_speeds_up_as_her_hp_drops() -> void:
 	var w := _prism(63)
 	var i := FinalLab.body(w)
 	var atk := BossAi.table_of(w, i).attacks[_attack(w, &"cross_ring")]
-	assert_eq(BossPrism.quarter_of(w, i, atk), atk.quarter_ticks, "full HP: 2.4 s a quarter")
+	assert_eq(BossPrism.quarter_of(w, i, atk), atk.quarter_ticks, "full HP: 2.82 s a quarter")
 	w.actors.hp[i] = w.actors.max_hp[i] / 2
 	assert_eq(
 		BossPrism.quarter_of(w, i, atk),
@@ -262,81 +289,209 @@ func test_she_is_shielded_while_the_cross_turns_and_open_in_its_window() -> void
 	while w.actors.state[i] != EnemyAi.State.WINDUP and t < 600:
 		w.step(InputFrame.new())
 		t += 1
-	assert_true(t <= atk.window_ticks + 3, "the next Cross follows the window")
-	assert_eq(poke.call(), 0, "shielded again")
+	assert_true(t <= atk.window_ticks + 90, "the next spell follows the window (%d)" % t)
+	assert_eq(
+		BossAi.table_of(w, i).attacks[w.bosses.attack[BossAi.entry_of(w, i)]].id, &"crown_ring"
+	)
+	assert_eq(poke.call(), 0, "shielded again while she casts the orbs")
 
 
-func test_a_whole_cycle_is_open_only_in_its_window() -> void:
+## v0.8.0 PR: over a whole rotation she is open about the share her HP is set from (window_permille).
+func test_a_whole_rotation_is_open_about_its_window_share() -> void:
 	var w := _prism(67)
 	var i := FinalLab.body(w)
+	var b := BossAi.entry_of(w, i)
 	CombatLab.until(w, func(x: World) -> bool: return x.actors.state[i] == EnemyAi.State.WINDUP)
 	var open := 0
 	var total := 0
-	for k in 1020:  # two cycles
+	var starts := 0
+	var last := w.bosses.attack[b]
+	while starts < ROTATION.size() and total < 6000:  # one rotation, from the first Cross's windup
 		w.step(InputFrame.new())
 		total += 1
 		if not BossDodge.shielded(w, i):
 			open += 1
-	assert_almost_eq(float(open) / total, 0.294, 0.02, "open about 2.5 s of every 8.5 s")
+		if w.bosses.attack[b] >= 0 and w.bosses.attack[b] != last:
+			starts += 1
+		if w.bosses.attack[b] >= 0:
+			last = w.bosses.attack[b]
+	var share := BossAi.table_of(w, i).window_permille / 1000.0
+	gut.p(
+		(
+			"PR rotation: %d ticks (%.1f s), open %d ticks (%.3f; compiled %.3f)"
+			% [total, total / 60.0, open, float(open) / total, share]
+		)
+	)
+	assert_eq(starts, ROTATION.size(), "a whole rotation ran")
+	assert_almost_eq(float(open) / total, share, 0.02, "open about her window share")
 
 
 # --- orbs and bolts -----------------------------------------------------------------------------------------------
 
 
-func test_the_orbs_fly_from_her_orbiting_shards() -> void:
-	var w := _prism(68)
-	var i := FinalLab.body(w)
-	var atk := _start(w)
-	w.actors.set_pos(0, Vector2(-6, 5))
-	var seen := 0
-	for k in atk.windup_ticks + atk.spin_ticks:
-		var before := {}
-		for p in w.projectiles.size():
-			before[w.projectiles.ids[p]] = true
-		w.step(FinalLab.walk(w, w.player_pos()))
-		var shards := BossPrism.shards(w, i)
-		for p in _hostile(w, "crown_orb"):
-			if before.has(w.projectiles.ids[p]):
-				continue
-			seen += 1
-			var at := (
-				Vector2(w.projectiles.pos_x[p], w.projectiles.pos_y[p])
-				- Vector2(w.projectiles.vel_x[p], w.projectiles.vel_y[p])
-			)
-			var near := 99.0
-			for s in shards:
-				near = minf(near, Kin.length(at - s))
-			assert_true(near < 0.6, "it leaves a shard (%.2f m)" % near)
-			var safe := atk.pattern.safe_radius_m + w.player.radius_m
-			assert_true(Kin.length(at - w.player_pos()) >= safe - 0.2, "never on the player")
-			assert_eq(
-				w.projectiles.cause[p],
-				BossPrism.ORB_CAUSE + _attack(w, &"cross_ring"),
-				"the orbs carry their line"
-			)
-	assert_gt(seen, 40, "volleys of orbs between the beams")
+## v0.8.0 PR (O84: "a predictable pattern"): each orb spell fires from her centre at its fixed angle, wherever the
+## player stands, the same orbs each time.
+func test_the_orbs_fly_from_her_centre_at_a_fixed_angle() -> void:
+	var sets := []
+	for spot: Vector2 in [Vector2(-6, 5), Vector2(7, 2)]:
+		var w := _prism(68)
+		var i := FinalLab.body(w)
+		w.actors.set_pos(0, spot)
+		var atk := _start(w, &"crown_ring")
+		var dirs: Array[int] = []
+		for k in atk.windup_ticks + atk.pattern.duration_ticks():
+			var before := {}
+			for p in w.projectiles.size():
+				before[w.projectiles.ids[p]] = true
+			w.step(InputFrame.new())
+			for p in _hostile(w, "crown_orb"):
+				if before.has(w.projectiles.ids[p]):
+					continue
+				var v := Vector2(w.projectiles.vel_x[p], w.projectiles.vel_y[p])
+				var at := Vector2(w.projectiles.pos_x[p], w.projectiles.pos_y[p])  # not moved yet
+				var out := at - w.actors.pos(i)
+				assert_almost_eq(
+					Kin.length(out),
+					w.actors.radius[i] + atk.pattern.radius_m + BulletPatterns.MUZZLE_M,
+					0.05,
+					"from her edge"
+				)
+				assert_eq(Kin.angle_of(v), Kin.angle_of(out), "straight out from her centre")
+				assert_eq(w.projectiles.cause[p], _attack(w, &"crown_ring"), "they name the orbs")
+				dirs.append(Kin.angle_of(v))
+		dirs.sort()
+		sets.append(dirs)
+	assert_eq((sets[0] as Array).size(), 4 * 24, "four rings of 24 orbs (32 less 4 gaps of 2)")
+	assert_eq(sets[0], sets[1], "the same orbs wherever the player stands")
 
 
-func test_every_orb_pattern_leaves_a_gap() -> void:
+## The angles (1/4096 turns) of wave kw's shots, sorted.
+func _wave_angles(pat: BulletPatternTable, kw: int) -> Array[int]:
+	var shots := BulletPatterns.wave_shots(pat, kw, Vector2.ZERO, 0, 1.75)
+	var angs: Array[int] = []
+	for v: Vector2 in shots[1]:
+		angs.append(Kin.angle_of(v))
+	angs.sort()
+	return angs
+
+
+## The angle steps between neighbouring shots of a wave (1/4096 turns), round the circle.
+func _steps(angs: Array[int]) -> Array[int]:
+	var out: Array[int] = []
+	for k in angs.size():
+		var nxt := angs[(k + 1) % angs.size()] + (4096 if k == angs.size() - 1 else 0)
+		out.append(nxt - angs[k])
+	return out
+
+
+## The clear corridor (m) between two neighbouring shots `step` apart, `r` out: the chord less a shot's width.
+func _corridor(step: int, r: float, shot_r: float) -> float:
+	return 2.0 * r * sin(PI * step / 4096.0) - 2.0 * shot_r
+
+
+## The angles where the hero stands clear of a wave's shots `r` out (1/4096 turns).
+func _clear(angs: Array[int], r: float, reach: float) -> Dictionary:
+	var out := {}
+	for a in 4096:
+		var ok := true
+		for s in angs:
+			var d := absi(((a - s + 2048) & 4095) - 2048)
+			if TAU * d / 4096.0 * r < reach:
+				ok = false
+				break
+		if ok:
+			out[a] = true
+	return out
+
+
+## The least turn (1/4096 turns) from any clear angle of one wave to any of the next.
+func _least_move(c0: Dictionary, c1: Dictionary) -> int:
+	var best := 4096
+	for a: int in c0:
+		if c1.has(a):
+			return 0
+		for b: int in c1:
+			best = mini(best, absi(((a - b + 2048) & 4095) - 2048))
+	return best
+
+
+## v0.8.0 PR (O84: "3 different patters with enough space to be dodged but not easy to dodge"): three distinct
+## patterns; every wave's gaps are a clear corridor of 2-3 hero widths at the usual distance, and between the gaps the
+## orbs stand too close to slip through; each next wave (ring, flower) moves the gaps so the hero must step, at a
+## speed under his run; the spiral's arms turn at a walk round her.
+func test_the_three_orb_patterns_are_dodgeable_but_not_easy() -> void:
 	var w := _prism(69)
 	var t := BossAi.table_of(w, FinalLab.body(w))
-	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower", &"cross_weave"]:
+	var hero := 2.0 * w.player.radius_m
+	var run := w.player.move_speed * 60.0
+	var kinds := {}
+	for id: StringName in ORB_SPELLS:
 		var pat := t.attacks[t.attack_index(id)].pattern
+		assert_eq(pat.kind, ORB_SPELLS[id], "%s: its own pattern" % id)
+		kinds[pat.kind] = true
+		var reach := pat.radius_m + w.player.radius_m
+		var slowest := pat.speed
+		var prev := {}
 		for kw in pat.waves:
-			var shots := BulletPatterns.wave_shots(pat, kw, Vector2.ZERO, 1024, 0.5)
-			var angs: Array[int] = []
-			for v: Vector2 in shots[1]:
-				angs.append(Kin.angle_of(v))
-			angs.sort()
-			var widest := 0
-			for k in angs.size():
-				var nxt := angs[(k + 1) % angs.size()] + (4096 if k == angs.size() - 1 else 0)
-				widest = maxi(widest, nxt - angs[k])
-			var gap_m := 4.0 * TAU * widest / 4096.0 - 2.0 * pat.radius_m
-			assert_true(
-				gap_m >= 2.0 * w.player.radius_m + 0.3,
-				"%s wave %d: a gap you fit (%.2f m)" % [id, kw, gap_m]
-			)
+			var angs := _wave_angles(pat, kw)
+			var steps := _steps(angs)
+			var least := 4096
+			var gaps: Array[float] = []
+			for st in steps:
+				least = mini(least, st)
+			for st in steps:
+				var c := _corridor(st, USUAL_M, pat.radius_m)
+				if st > least * 3 / 2 or pat.kind == BulletPatternTable.Kind.SPIRAL:
+					gaps.append(c)
+				else:
+					assert_lt(c, hero, "%s wave %d: no slipping between the orbs" % [id, kw])
+			assert_false(gaps.is_empty(), "%s wave %d: gaps" % [id, kw])
+			for c in gaps:
+				assert_gte(
+					c, 2.0 * hero, "%s wave %d: a gap of 2+ hero widths (%.2f m)" % [id, kw, c]
+				)
+				assert_lte(c, 3.0 * hero, "%s wave %d: but not wide open (%.2f m)" % [id, kw, c])
+			if kw == 0:
+				var shots := BulletPatterns.wave_shots(pat, kw, Vector2.ZERO, 0, 1.75)
+				for v: Vector2 in shots[1]:
+					slowest = minf(slowest, Kin.length(v))
+				(
+					gut
+					. p(
+						(
+							"PR gaps %s: %d gaps, corridor %.2f m at %.1f m (%.2f hero widths), %d orbs a wave"
+							% [id, gaps.size(), gaps.min(), USUAL_M, gaps.min() / hero, angs.size()]
+						)
+					)
+				)
+			if pat.kind == BulletPatternTable.Kind.SPIRAL:
+				continue
+			var clear := _clear(angs, USUAL_M, reach)
+			if kw > 0:
+				var move := _least_move(prev, clear)
+				var metres := TAU * move / 4096.0 * USUAL_M
+				var free := pat.wave_gap_ticks / 60.0 - 2.0 * reach / (slowest * 60.0)
+				var need := metres / free
+				assert_gt(move, 0, "%s wave %d: the gaps move, you must step" % [id, kw])
+				assert_lt(
+					need, 0.7 * run, "%s wave %d: a step you make (%.2f m/s)" % [id, kw, need]
+				)
+				if kw == 1:
+					gut.p(
+						(
+							"PR step %s: %.2f m in %.2f s between waves: %.2f m/s (run %.1f m/s)"
+							% [id, metres, free, need, run]
+						)
+					)
+			prev = clear
+		if pat.kind == BulletPatternTable.Kind.SPIRAL:
+			var along := pat.speed * 60.0 * pat.wave_gap_ticks / 60.0 - 2.0 * pat.radius_m
+			assert_lt(along, hero, "the arms are solid streams")
+			var ride := absf(pat.spin_milli) / 1000.0 * 60.0 * TAU / 4096.0 * USUAL_M
+			assert_lt(ride, 0.7 * run, "you can walk round with the arms (%.2f m/s)" % ride)
+			assert_gt(pat.reverse_ticks, 0, "and they turn back")
+			gut.p("PR spiral: the arms sweep %.2f m/s at %.1f m (run %.1f)" % [ride, USUAL_M, run])
+	assert_eq(kinds.size(), 3, "three different patterns")
 
 
 func test_a_fast_bolt_aims_for_0_4_s_then_flies_down_its_line() -> void:
@@ -407,8 +562,9 @@ func test_her_hp_is_the_formula_of_the_measured_dps() -> void:
 	var secs_at := FinalPace.seconds_at(100000, t)
 	assert_eq(secs_at, 3938, "120 s × sqrt(30 / 100), in ticks (the integer root: 0.547)")
 	var expect := 100 * secs_at / 60 * t.window_permille / 1000
-	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 65.6 s × 0.294 window share")
-	assert_eq(expect, 1929)
+	# v0.8.0 PR (O84): the rotation's open share, 0.180 (was the Cross's 0.294)
+	assert_eq(FinalBoss.dps_hp_of(w, t), expect, "100 dps × 65.6 s × 0.180 window share")
+	assert_eq(expect, 1181)
 	FinalBoss.jump(w, 1)
 	var i := FinalLab.body(w)
 	assert_eq(w.actors.max_hp[i], expect, "she rises with it")
@@ -493,8 +649,9 @@ func test_each_part_names_its_death() -> void:
 	w.killer_kind = w.actors.kinds[i]
 	w.killer_attack = cross
 	assert_eq(BossAi.cause_key(w), &"CAUSE_PRISM_BEAM")
-	w.killer_attack = BossPrism.ORB_CAUSE + cross
-	assert_eq(BossAi.cause_key(w), &"CAUSE_PRISM_ORBS")
+	for id: StringName in ORB_SPELLS:
+		w.killer_attack = _attack(w, id)
+		assert_eq(BossAi.cause_key(w), &"CAUSE_PRISM_ORBS")
 	w.killer_attack = _attack(w, &"prism_bolt")
 	assert_eq(BossAi.cause_key(w), &"CAUSE_PRISM_BOLT")
 
@@ -511,6 +668,130 @@ func test_the_beam_kills_with_its_line() -> void:
 	w.step(InputFrame.new())
 	assert_true(w.player_dead())
 	assert_eq(BossAi.cause_key(w), &"CAUSE_PRISM_BEAM")
+
+
+# --- v0.8.0 PR (owner O84): slower, one spell at a time ----------------------------------------------------------
+
+
+## "the lasers on a cross should be 15% slower": every turn of the Cross takes 1 / 0.85 as long (to the tick).
+func test_the_cross_turns_15_percent_slower() -> void:
+	var w := _prism(81)
+	var i := FinalLab.body(w)
+	var t := BossAi.table_of(w, i)
+	for id: StringName in [&"cross_ring", &"cross_spiral", &"cross_flower"]:
+		var a := t.attacks[t.attack_index(id)]
+		assert_eq(a.quarter_ticks, roundi(OLD_QUARTER / 0.85), "%s: a quarter turn in 2.82 s" % id)
+		assert_eq(a.fast_quarter_ticks, roundi(OLD_FAST / 0.85), "at no HP in 1.41 s")
+		assert_eq(a.reverse_ticks, roundi(OLD_REVERSE / 0.85), "reversing after 3.53 s")
+		assert_eq(a.windup_ticks, 60, "the aim lines: 1.0 s, as before")
+		assert_eq(a.burn_ticks, 30, "the burn: 0.5 s, as before")
+		for pair: Array in [[OLD_QUARTER, a.quarter_ticks], [OLD_FAST, a.fast_quarter_ticks]]:
+			var ratio := float(pair[0]) / float(pair[1])
+			assert_almost_eq(ratio, 0.85, 0.005, "%s turns at 85 %% of its old speed" % id)
+	_start(w)
+	_to_active(w)
+	var q := BossPrism.quarter(w, i)
+	assert_eq(q, roundi(OLD_QUARTER / 0.85), "full HP: the slow quarter")
+	var a0 := BossPrism.angle_at(w, i, 0)
+	var way := w.bosses.span[BossAi.entry_of(w, i)]
+	assert_eq(
+		(BossPrism.angle_at(w, i, q) - a0) & 4095, (way * 1024) & 4095, "a quarter in q ticks"
+	)
+	var old_step := 1024.0 / OLD_QUARTER
+	var step := absf(float(((BossPrism.angle_at(w, i, 60) - a0 + 2048) & 4095) - 2048)) / 60.0
+	gut.p(
+		"PR cross: %.2f -> %.2f units a tick at full HP (%.3f)" % [old_step, step, step / old_step]
+	)
+	assert_almost_eq(step / old_step, 0.85, 0.01, "85 % of the old turn a tick")
+
+
+## O84: "he shouldnt have all 3 spells at the same time, we should rotate, and never make small balls and lasers at
+## the same time". A whole phase (three rotations): the spells come in the fixed order, one at a time; on every tick a
+## beam is aimed (the windup's lines) or burning, no shot of hers is in the air; orbs only in an orb spell, bolts only
+## in a Cross's window; and every spell begins after a gap.
+func test_her_spells_rotate_one_at_a_time_and_never_overlap() -> void:
+	var w := _prism(82)
+	var i := FinalLab.body(w)
+	var id := w.actors.ids[i]
+	var b := BossAi.entry_of(w, i)
+	var t := BossAi.table_of(w, i)
+	w.actors.set_pos(0, Vector2(-4, 3))
+	var order: Array[StringName] = []
+	var starts: Array[float] = []
+	var last := -1
+	var beam_ticks := 0
+	var quiet := 1  # ticks since the last shot of hers or beam (none before her first spell)
+	for k in 3 * 3000:
+		var spot := Vector2(-4, 3) if (k / 240) % 2 == 0 else Vector2(3, 4)
+		w.step(FinalLab.walk(w, spot))
+		i = w.actors.index_of(id)
+		var atk_k := w.bosses.attack[b]
+		if atk_k >= 0 and atk_k != last and w.actors.state[i] == EnemyAi.State.WINDUP:
+			order.append(t.attacks[atk_k].id)
+			starts.append(w.tick / 60.0)
+			assert_gte(quiet, 1, "%s begins after a gap" % t.attacks[atk_k].id)
+		if atk_k >= 0:
+			last = atk_k
+		var atk: BossAttackTable = t.attacks[atk_k] if atk_k >= 0 else null
+		var s := w.actors.state[i]
+		var beams := (
+			atk != null
+			and atk.move == BossAttackTable.Move.CROSS
+			and (
+				s == EnemyAi.State.WINDUP
+				or (s == EnemyAi.State.ACTIVE and w.actors.state_t[i] < atk.spin_ticks)
+			)
+		)
+		var orbs := 0
+		var bolts := 0
+		for p in w.projectiles.size():
+			if w.projectiles.owner[p] != id:
+				continue
+			if w.projectiles.look[p] == "crown_orb":
+				orbs += 1
+			else:
+				bolts += 1
+		if beams:
+			beam_ticks += 1
+			assert_eq(
+				orbs + bolts, 0, "tick %d: no shot of hers while a beam is aimed or burns" % w.tick
+			)
+		if orbs > 0:
+			assert_true(
+				atk != null and atk.move == BossAttackTable.Move.PATTERN,
+				"orbs only in an orb spell"
+			)
+			assert_eq(bolts, 0, "never orbs and bolts together")
+		quiet = 0 if beams or orbs + bolts > 0 else quiet + 1
+		if order.size() > 3 * ROTATION.size():
+			break
+	gut.p("PR order: %s" % [order])
+	gut.p("PR starts (s): %s" % [starts.map(func(x: float) -> float: return snappedf(x, 0.01))])
+	assert_gt(beam_ticks, 0, "the Cross ran")
+	assert_gte(order.size(), 2 * ROTATION.size(), "two rotations or more")
+	for k in order.size():
+		assert_eq(order[k], ROTATION[k % ROTATION.size()], "spell %d in the fixed order" % k)
+
+
+## The bolts (the third spell) fire only in the window, once the beams are out.
+func test_the_bolts_fire_only_in_the_window() -> void:
+	var w := _prism(83)
+	var i := FinalLab.body(w)
+	var atk := _start(w)
+	w.actors.set_pos(0, Vector2(-7, 4))
+	var fired := 0
+	for k in atk.windup_ticks + atk.active_ticks:
+		var n := _hostile(w, "crown_bolt").size()
+		var in_spin := (
+			w.actors.state[i] == EnemyAi.State.WINDUP or w.actors.state_t[i] < atk.spin_ticks
+		)
+		if in_spin:
+			assert_true(BossPrism.bolt_state(w, i).is_empty(), "no aim line while the beams turn")
+		w.step(InputFrame.new())
+		if _hostile(w, "crown_bolt").size() > n:
+			fired += 1
+			assert_true(BossPrism.in_window(w, i), "a bolt flies only in the window")
+	assert_eq(fired, 2, "two bolts in each 2.5 s window")
 
 
 # --- determinism and saves ----------------------------------------------------------------------------------------
@@ -543,7 +824,9 @@ func test_a_snapshot_mid_cross_round_trips() -> void:
 	for k in 400:
 		w.step(InputFrame.new())
 		w2.step(InputFrame.new())
-	assert_eq(w2.state_hash(), w.state_hash(), "the Cross, its orbs and bolts go on the same")
+	assert_eq(
+		w2.state_hash(), w.state_hash(), "the Cross, its bolts and the next spell go on the same"
+	)
 
 
 func test_a_save_from_before_fb2_mid_phase_2_restores() -> void:

@@ -120,6 +120,12 @@ func validate_into(issues: Array[ValidationIssue], path: String) -> void:
 	for k: String in BossSchemas.ENEMY_PARAMS + BossSchemas.PATTERN_PARAMS:
 		if shape_params.has(k) and String(shape_params[k]).is_empty():
 			issues.append(ValidationIssue.new(&"missing", path, where + "%s is empty" % k))
+	if shape_params.has("aim_degrees"):  # v0.8.0 PR (O84): a pattern's fixed aim
+		var deg := float(shape_params["aim_degrees"])
+		if move != &"pattern" or deg < 0.0 or deg >= 360.0:
+			issues.append(
+				ValidationIssue.new(&"range", path, where + "aim_degrees: a pattern's, 0..<360")
+			)
 	_validate_lock(issues, path, where)
 	_validate_signature(issues, path, where)
 	_validate_signature_2(issues, path, where)
@@ -147,8 +153,8 @@ func _validate_hit_class(issues: Array[ValidationIssue], path: String, where: St
 
 ## v0.8.0 FB2 (FINAL_BOSS.md F5, F7): a Cross has 2..8 arms, real lengths and times, speeds up (its fast quarter no
 ## slower than its quarter), spins and opens a window of at least the telegraph minimum each, fits both in its active
-## time, is shielded (its window is the only opening), names its orbs' death line with a pattern, and fires its orbs
-## and bolts no faster than a tick.
+## time, is shielded (its window is the only opening), and fires its bolts no faster than a tick. v0.8.0 PR (O84): it
+## fires no orbs.
 func _validate_cross(issues: Array[ValidationIssue], path: String, where: String) -> void:
 	if move != &"cross":
 		return
@@ -161,7 +167,6 @@ func _validate_cross(issues: Array[ValidationIssue], path: String, where: String
 		"quarter_seconds",
 		"fast_quarter_seconds",
 		"reverse_seconds",
-		"orb_every_seconds",
 		"bolt_every_seconds",
 	]:
 		if sp.has(k) and float(sp[k]) <= 0.0:
@@ -193,10 +198,12 @@ func _validate_cross(issues: Array[ValidationIssue], path: String, where: String
 				&"missing", path, where + "a cross is shielded (its window opens it)"
 			)
 		)
-	if sp.has("pattern_id") != sp.has("orb_every_seconds"):
+	# v0.8.0 PR (owner O84: "never make small balls and lasers at the same time"): a Cross fires no orbs; the orbs
+	# are spells of their own (`pattern` attacks), cast between the Crosses.
+	if sp.has("pattern_id") or sp.has("orb_every_seconds"):
 		issues.append(
 			ValidationIssue.new(
-				&"missing", path, where + "pattern_id and orb_every_seconds go together"
+				&"orbs_with_beams", path, where + "a cross fires no orbs (O84): no pattern_id"
 			)
 		)
 	if sp.has("bolt_attack") != sp.has("bolt_every_seconds"):
@@ -284,9 +291,8 @@ func _validate_signature(issues: Array[ValidationIssue], path: String, where: St
 		or sp.has("bounces")  # v0.8.0 BS2 (S5): a ricochet's death line
 		or sp.has("bounce_phase")
 		or sp.has("lava_seconds")  # v0.8.0 BS2 (S6): the lava's
-		or (move == &"gaze" and sp.has("pattern_id"))  # v0.8.0 BS2 (S4): the gaze's orbs
-		or (move == &"cross" and sp.has("pattern_id"))
-	)  # v0.8.0 FB2: the Cross's orbs
+		or (move == &"gaze" and sp.has("pattern_id"))
+	)  # v0.8.0 BS2 (S4): the gaze's orbs
 	if late and String(late_cause_key).is_empty():
 		issues.append(ValidationIssue.new(&"missing", path, where + "late_cause_key is required"))
 

@@ -137,7 +137,12 @@ static func think(w: World, i: int) -> void:
 				start_attack(w, i, gap)
 				bs.gap_t[b] = 0
 			elif not w.player_dead() and a.cd[i] == 0 and not BossNemesis.dashing(w, i):
-				var k := _choose(w, b, t, Kin.length(to_player))
+				# v0.8.0 PR (O84): the Prism casts her spells in a fixed rotation, one at a time
+				var k := (
+					BossPrism.next_spell(w, i, b, t)
+					if t.rotation
+					else _choose(w, b, t, Kin.length(to_player))
+				)
 				if k >= 0:
 					start_attack(w, i, k)
 		S.WINDUP:
@@ -380,6 +385,8 @@ static func _lock(w: World, i: int, b: int, atk: BossAttackTable) -> void:
 			bs.span[b] = dir * atk.half_arc * 2
 		M.PATTERN, M.GRID, M.ROW_FLOOD:  # v0.7.5 BF1/BF3: a burst's landing, a board's or a row's centre
 			bs.set_pt(b, 0, target)
+			if atk.fixed_aim >= 0:  # v0.8.0 PR (O84): the same spell opens the same way, wherever you stand
+				a.lock_a[i] = atk.fixed_aim
 		M.MARKS, M.ROW_LANES:  # v0.7.5 BF1: every marker starts on the player
 			for k in atk.count:
 				bs.set_pt(b, k, w.player_pos())

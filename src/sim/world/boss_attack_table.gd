@@ -99,6 +99,10 @@ var lock_ticks := 0
 var mark_gap_ticks := 0
 var shielded := false
 var pattern: BulletPatternTable = null
+## v0.8.0 PR (owner O84: "the all small balls he shoots should be shooted on a predictable pattern"): a `pattern`
+## attack with fixed_aim >= 0 fires its waves from this angle (1/4096 turns, the world's frame) instead of at the
+## player, so the same spell always opens the same way; -1 = aimed at the player (every other boss).
+var fixed_aim := -1
 ## v0.7.5 BF3: a `grid` attack's cells stand cell_m apart (centre to centre), `count` a side, struck in `volleys`
 ## alternating colours of the checkerboard, mark_gap_ticks apart.
 var cell_m := 0.0

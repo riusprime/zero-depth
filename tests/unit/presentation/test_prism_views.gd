@@ -96,7 +96,7 @@ func test_the_shard_that_fires_flares() -> void:
 	var reader := WorldReader.new(w)
 	var a := _avatar()
 	var flared := 0.0
-	for k in atk.windup_ticks + atk.spin_ticks:
+	for k in atk.windup_ticks + atk.active_ticks:  # v0.8.0 PR: her bolts fire in the window
 		w.step(InputFrame.new())
 		a.sync(reader, i)
 		a.advance(DT)
@@ -143,7 +143,7 @@ func test_a_bolts_aim_line_shows_then_goes() -> void:
 	var v := _views()
 	var shown := 0
 	var gone_after := false
-	for k in 400:
+	for k in 520:  # v0.8.0 PR: the bolts aim in the window (from 1.3 s after the spin-up's 6.0 s)
 		w.step(InputFrame.new())
 		v.sync(reader)
 		var aiming := not BossPrism.bolt_state(w, i).is_empty()
