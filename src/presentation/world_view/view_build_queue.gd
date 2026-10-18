@@ -15,6 +15,12 @@ extends RefCounted
 ##   is the view built in one call.
 ## Any view builder can join the queue (StageView's parts, a wall-mesh builder): it only adds jobs.
 
+## v0.8.0 MI (the load probe's frame breakdown): the frame the last step() ran on, how long it took and which jobs
+## ran in it (a tool reads them; nothing in the game does).
+static var probe_frame := -1
+static var probe_step_ms := 0.0
+static var probe_jobs := PackedStringArray()
+
 ## Milliseconds per job name (summed when a name repeats), and the longest single main-thread job.
 var ms := {}
 var longest_ms := 0.0
@@ -59,8 +65,12 @@ func size() -> int:
 func step(budget_ms: float) -> bool:
 	steps += 1
 	var from := Time.get_ticks_usec()
+	probe_jobs = PackedStringArray()
 	var out := _step(budget_ms, from)
-	longest_step_ms = maxf(longest_step_ms, (Time.get_ticks_usec() - from) / 1000.0)
+	var took := (Time.get_ticks_usec() - from) / 1000.0
+	longest_step_ms = maxf(longest_step_ms, took)
+	probe_frame = Engine.get_process_frames()
+	probe_step_ms = took
 	return out
 
 
@@ -68,6 +78,7 @@ func _step(budget_ms: float, from: int) -> bool:
 	while true:
 		if _task >= 0:  # a worker job may still be adding jobs: the list is not read until it is done
 			if not WorkerThreadPool.is_task_completed(_task):
+				probe_jobs.append("wait:" + _task_name)
 				return false
 			WorkerThreadPool.wait_for_task_completion(_task)
 			_task = -1
@@ -102,6 +113,7 @@ func _run(j: Dictionary) -> void:
 	(j["job"] as Callable).call()
 	_insert_at = -1
 	_note(j["name"], t, not j["worker"])
+	probe_jobs.append("%s:%.0f" % [j["name"], (Time.get_ticks_usec() - t) / 1000.0])
 	_next += 1
 
 

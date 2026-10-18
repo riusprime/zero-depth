@@ -18,8 +18,8 @@ const SPECS := {
 	&"slab_wide": {"yaw": 0.0, "height": 1.8, "role": &"cover"},
 	&"crate_stack": {"yaw": PI * 0.5, "height": 1.2, "role": &"cover"},
 	&"car_wreck": {"yaw": 0.0, "height": 1.4, "role": &"cover"},
-	&"rock_large": {"yaw": 0.0, "height": 1.2, "role": &"cover"},
-	&"dead_tree": {"yaw": 0.0, "height": 2.2, "role": &"cover"},
+	&"rock_large": {"yaw": 0.0, "height": 1.2, "role": &"cover", "foot": Vector2(1.5, 1.5)},
+	&"dead_tree": {"yaw": 0.0, "height": 2.2, "role": &"cover", "foot": Vector2(1.0, 1.0)},
 	&"fire_barrel": {"yaw": 0.0, "height": 0.9, "role": &"light"},
 	&"brazier_pole": {"yaw": 0.0, "height": 2.0, "role": &"light"},
 	&"chest": {"yaw": PI * 0.5, "height": 0.6, "role": &"reward"},
@@ -29,6 +29,126 @@ const SPECS := {
 	# v0.6.0 Step SR: the gamble shrine (GambleShrineView), its front (the slot window) on +Z. 1.7 m tall puts its
 	# footprint at 1.58 x 1.12 m, the old obelisk's plinth width over the sim's 1 m square (Gamble.collider).
 	&"gamble_shrine": {"yaw": 0.0, "height": 1.7, "role": &"shrine"},
+	# v0.8.0 MI: the owner's v0.8.0 pieces (scripts/assets/mi_prep.py: turned long side onto +X, sized, simplified and
+	# re-textured offline, so yaw 0). Role &"biome": a biome's own piece, drawn only where its BiomeLook pools name it
+	# (owner O78: every piece only in the biome it fits); a missing one drops out of the pools (has_structure ignores
+	# it). "foot": its footprint from the request row (W x D, m), for decoration and props placed at natural size.
+	# "tint": how much of the biome's cover hue it takes (0: its own colours; the kit's pieces take all of
+	# StageKit.TINT_AMOUNT). "min_foot" / "max_foot": the shorter side of a cover footprint it may fill (m; outside
+	# that, the pool's other pieces draw). Role &"void": a piece of the void past the floor's edge (BiomeEdge).
+	&"building_corner":
+	{
+		"yaw": 0.0,
+		"height": 3.0,
+		"role": &"biome",
+		"foot": Vector2(2.0, 2.0),
+		"tint": 0.0,
+		"min_foot": 1.8
+	},
+	&"ladder_frame":
+	{"yaw": 0.0, "height": 2.0, "role": &"biome", "foot": Vector2(1.0, 0.4), "tint": 0.0},
+	&"column_broken":
+	{
+		"yaw": 0.0,
+		"height": 1.6,
+		"role": &"biome",
+		"foot": Vector2(1.0, 1.0),
+		"tint": 0.0,
+		"max_foot": 1.4
+	},
+	&"pipe_bundle":
+	{"yaw": 0.0, "height": 0.9, "role": &"biome", "foot": Vector2(2.0, 0.8), "tint": 0.0},
+	&"barricade":
+	{"yaw": 0.0, "height": 1.0, "role": &"biome", "foot": Vector2(2.0, 0.5), "tint": 0.0},
+	&"tire_stack":
+	{
+		"yaw": 0.0,
+		"height": 0.9,
+		"role": &"biome",
+		"foot": Vector2(0.9, 0.9),
+		"tint": 0.0,
+		"max_foot": 1.4
+	},
+	&"boulder_small":
+	{"yaw": 0.0, "height": 0.35, "role": &"decor", "foot": Vector2(0.5, 0.5), "tint": 0.0},
+	&"rock_spire":
+	{
+		"yaw": 0.0,
+		"height": 2.2,
+		"role": &"biome",
+		"foot": Vector2(1.0, 1.0),
+		"tint": 0.0,
+		"max_foot": 1.6
+	},
+	&"stone_arch":
+	{
+		"yaw": 0.0,
+		"height": 2.4,
+		"role": &"biome",
+		"foot": Vector2(3.0, 1.0),
+		"tint": 0.0,
+		"min_foot": 0.9
+	},
+	&"mushroom_cluster":
+	{"yaw": 0.0, "height": 0.5, "role": &"decor", "foot": Vector2(0.6, 0.6), "tint": 0.0},
+	&"bone_pile":
+	{"yaw": 0.0, "height": 0.3, "role": &"decor", "foot": Vector2(0.8, 0.6), "tint": 0.0},
+	&"floating_island_moss":
+	{"yaw": 0.0, "height": 2.0, "role": &"void", "foot": Vector2(2.0, 2.0), "tint": 0.0},
+	&"mesa_chunk":
+	{"yaw": 0.0, "height": 1.4, "role": &"biome", "foot": Vector2(1.5, 1.5), "tint": 0.0},
+	&"dry_shrub":
+	{"yaw": 0.0, "height": 0.4, "role": &"decor", "foot": Vector2(0.5, 0.5), "tint": 0.0},
+	&"cactus":
+	{
+		"yaw": 0.0,
+		"height": 1.6,
+		"role": &"biome",
+		"foot": Vector2(0.6, 0.6),
+		"tint": 0.0,
+		"max_foot": 1.1
+	},
+	&"wagon_wreck":
+	{"yaw": 0.0, "height": 1.4, "role": &"biome", "foot": Vector2(2.4, 1.4), "tint": 0.0},
+	&"cattle_skull_post":
+	{
+		"yaw": 0.0,
+		"height": 1.4,
+		"role": &"biome",
+		"foot": Vector2(0.4, 0.4),
+		"tint": 0.0,
+		"max_foot": 0.8
+	},
+	&"snow_drift":
+	{"yaw": 0.0, "height": 0.28, "role": &"decor", "foot": Vector2(0.9, 0.6), "tint": 0.0},
+	&"ice_shard":
+	{"yaw": 0.0, "height": 0.4, "role": &"decor", "foot": Vector2(0.5, 0.5), "tint": 0.0},
+	&"ice_rock":
+	{"yaw": 0.0, "height": 1.2, "role": &"biome", "foot": Vector2(1.2, 1.2), "tint": 0.0},
+	# The owner's `ice_floe` file holds a frozen boat half sunk in snow (the boat_wreck request): installed as that.
+	&"boat_wreck":
+	{"yaw": 0.0, "height": 1.2, "role": &"biome", "foot": Vector2(3.0, 1.4), "tint": 0.0},
+	&"fish_rack":
+	{"yaw": 0.0, "height": 1.6, "role": &"biome", "foot": Vector2(1.4, 0.6), "tint": 0.0},
+	&"star_crystal":
+	{"yaw": 0.0, "height": 0.4, "role": &"decor", "foot": Vector2(0.5, 0.5), "tint": 0.0},
+	&"meteorite":
+	{"yaw": 0.0, "height": 0.26, "role": &"decor", "foot": Vector2(0.6, 0.5), "tint": 0.0},
+	&"star_monolith":
+	{"yaw": 0.0, "height": 1.6, "role": &"biome", "foot": Vector2(1.0, 1.0), "tint": 0.0},
+	&"floating_island_starfall":
+	{"yaw": 0.0, "height": 2.0, "role": &"void", "foot": Vector2(2.0, 2.0), "tint": 0.0},
+	&"void_spike":
+	{"yaw": 0.0, "height": 2.5, "role": &"void", "foot": Vector2(1.0, 1.0), "tint": 0.0},
+	&"ruined_observatory":
+	{
+		"yaw": 0.0,
+		"height": 2.6,
+		"role": &"biome",
+		"foot": Vector2(2.5, 2.5),
+		"tint": 0.0,
+		"min_foot": 1.9
+	},
 }
 
 ## The chest's lid seam, as a fraction of its height (an empty band in its vertex heights at 0.55-0.575; the

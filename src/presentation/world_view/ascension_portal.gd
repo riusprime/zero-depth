@@ -11,6 +11,15 @@ extends Node3D
 ## - dormant while the boss lives (the shards dim, no column); when the sim's portal opens the column rises from the
 ##   dais over RISE_SECONDS with a flare (reduced motion: it is there at once, no flare);
 ## - no floating name (v0.8.0 N18, owner O76: P2's "Ascension" label is gone; the player finds out what it is).
+## v0.8.0 MI (owner O81: "this is the ascension portal to replace, but it has no light beam, you have to place a new
+## nice light purple violet beam of light that looks good and matches the style like in this image"): with the
+## owner's model installed (MODEL_PATH: a stepped hexagonal stone dais, broken pillars at the back over the gate's
+## solid footprint, violet crystal clusters, a few crystals floating) it replaces the code-made dais and spire, and
+## the column is the reference's beam instead: a tall soft light-violet column rising from the dais's glowing circle
+## (BEAM_LAYERS additive shafts, each fading up its height and toward its silhouette, soft streaks scrolling up), a
+## bright core at its foot (a glow and a glowing ring on the dais), the model's floating crystals turning and bobbing
+## and small violet shards rising inside the beam (the motes), one soft violet light (no shadow). Reduced motion: no
+## scrolling, no bobbing, no rising shards. Without the model the v0.7.5 look stays (L15).
 ## Presentation only (EI-07): it reads nothing from the sim and decides nothing; WorldViewRoot unseals it when the
 ## portal opens, PortalTransitView flares it when the hero goes in. Its clock (rise, bands, orbit) is the
 ## presentation's (never an outcome, EI-03).
@@ -25,6 +34,10 @@ const CORE := Color("#FFF6E0")
 const LAVENDER := Color("#B79BFF")
 const DAIS := Color("#CFC6D8")
 const DAIS_TOP := Color("#E6DEEC")
+## v0.8.0 MI: the owner's beam: a pale violet-white heart and light violet edges (the reference image), its glow.
+const BEAM_CORE := Color("#E2D2FF")
+const BEAM_EDGE := Color("#9F78FF")
+const BEAM_GLOW := Color("#C7A8FF")
 ## The column: radius at its foot and top (m), height (m), centre in front of the wall line (local x, m).
 const COLUMN_X := 1.0
 const COLUMN_R := 1.05
@@ -44,6 +57,15 @@ const ORBIT_COUNT := 5
 const ORBIT_R := 1.55
 const ORBIT_Y := 3.6
 const ORBIT_SPEED := 0.12
+## v0.8.0 MI: the owner's model; where its dais's circle is in the model (metres, as prepared: the top of the dais at
+## 0.73 m, its centre a little off the model's middle) and the circle's radius; the beam's layers [radius at the
+## foot, at the top, strength] (outer haze, body, core); the floating crystals' bob (m) and turn (radians a second).
+const MODEL_PATH := "res://assets/models/devices/ascension_portal.glb"
+const DAIS_CENTRE := Vector3(0.14, 0.73, -0.08)
+const CIRCLE_R := 0.95
+const BEAM_LAYERS := [[1.15, 1.35, 0.4], [0.78, 0.9, 0.7], [0.3, 0.34, 0.85]]
+const SHARD_BOB_M := 0.08
+const SHARD_TURN := 0.35
 
 const COLUMN_SHADER := """
 shader_type spatial;
@@ -67,6 +89,45 @@ void fragment() {
 }
 """
 
+## v0.8.0 MI: the owner's beam. Soft at its silhouette (the opposite of the v0.7.5 column's bright rim), fading up its
+## height, with thin vertical streaks of light scrolling slowly up it (motion 0: still).
+const BEAM_SHADER := """
+shader_type spatial;
+render_mode unshaded, blend_add, cull_disabled, depth_draw_never, shadows_disabled, fog_disabled;
+
+uniform vec4 core_color : source_color = vec4(0.95, 0.92, 1.0, 1.0);
+uniform vec4 edge_color : source_color = vec4(0.69, 0.55, 1.0, 1.0);
+uniform float strength = 1.0;
+uniform float motion = 1.0;
+uniform float seed = 0.0;
+
+float hash(float x) {
+	return fract(sin(x * 127.1 + seed * 31.7) * 43758.5453);
+}
+
+void fragment() {
+	float h = 1.0 - UV.y;
+	float facing = abs(dot(NORMAL, VIEW));
+	// Soft edges: the shaft's middle (facing the camera) bright, its silhouette gone.
+	float soft = smoothstep(0.05, 0.85, facing);
+	float fade = (1.0 - smoothstep(0.2, 1.0, h)) * smoothstep(0.0, 0.025, h);
+	// Streaks: narrow vertical bands at fixed places round the shaft, each brightening and dimming as a pulse of light
+	// climbs it.
+	float col_id = floor(UV.x * 28.0);
+	float lane = fract(UV.x * 28.0);
+	float on = step(0.55, hash(col_id));
+	float pulse = 0.5 + 0.5 * sin((h * 3.0 - TIME * 0.35 * motion) * 6.2832 + hash(col_id + 3.0) * 6.2832);
+	float streak = on * smoothstep(0.5, 0.0, abs(lane - 0.5)) * (0.4 + 0.6 * pulse);
+	vec3 col = mix(edge_color.rgb, core_color.rgb, soft);
+	ALBEDO = col * strength * fade * soft * (0.55 + 0.9 * streak);
+}
+"""
+
+## v0.8.0 MI: the model's scene, read once (warm_model(), on the load's worker): a read discarded there was read again
+## from the file on the main thread when the portal was built (~45 ms in one frame of the Deep floor's load).
+static var _scene: PackedScene = null
+static var _scene_read := false
+
 var column: MeshInstance3D
 var core: MeshInstance3D
 var column_material: ShaderMaterial
@@ -81,6 +142,14 @@ var glow: MeshInstance3D
 var calm := false
 ## 0..1: how far the column has risen (tests read it).
 var rise := 0.0
+## v0.8.0 MI: the owner's model (null: the code-made dais and spire), its floating crystals (each [node, rest
+## position]), the beam's extra outer layer, the dais's ring and its material, and every beam material.
+var model: Node3D
+var floaters: Array = []
+var haze: MeshInstance3D
+var ring: MeshInstance3D
+var ring_material := StandardMaterial3D.new()
+var _beam_mats: Array[ShaderMaterial] = []
 var _sealed := true
 var _flare := 0.0
 var _t := 0.0
@@ -88,11 +157,16 @@ var _t := 0.0
 
 func _init() -> void:
 	name = "AscensionPortal"
-	_build_dais()
-	_build_spire()
-	_build_column()
+	shard_material = ShardMesh.crystal_material(CORE.lerp(GOLD, 0.4), SHARD_SEALED)
+	obelisk_material = ShardMesh.crystal_material(LAVENDER, SHARD_SEALED)
+	if _build_model():
+		_build_beam()
+	else:
+		_build_dais()
+		_build_spire()
+		_build_column()
+		_build_fragments()
 	_build_motes()
-	_build_fragments()
 	set_sealed(true)
 
 
@@ -101,6 +175,8 @@ func setup(sim_pos: Vector2, facing_angle: int) -> void:
 	position = SimPlane.to_3d(sim_pos)
 	rotation = Vector3(0, SimPlane.yaw_of(facing_angle), 0)
 	calm = ViewPrefs.reduced_motion
+	for m in _beam_mats:
+		m.set_shader_parameter("motion", 0.0 if calm else 1.0)
 
 
 func set_sealed(sealed: bool) -> void:
@@ -111,7 +187,7 @@ func set_sealed(sealed: bool) -> void:
 		rise = 0.0
 	elif calm or not is_inside_tree():
 		rise = 1.0
-	motes.emitting = not sealed
+	motes.emitting = not sealed and not (calm and model != null)
 	_apply()
 
 
@@ -144,18 +220,30 @@ func _process(delta: float) -> void:
 		f.position = Vector3(COLUMN_X + cos(a) * ORBIT_R, y * maxf(rise, 0.35), sin(a) * ORBIT_R)
 		f.rotation.y += delta * 0.8
 		f.visible = rise > 0.05
+	if not calm:  # v0.8.0 MI: the owner's floating crystals bob and turn (still with reduced motion)
+		for k in floaters.size():
+			var n: Node3D = floaters[k][0]
+			n.position = (
+				(floaters[k][1] as Vector3) + Vector3(0, sin(_t * 0.9 + k * 1.7) * SHARD_BOB_M, 0)
+			)
+			n.rotation.y += delta * SHARD_TURN * (1.0 if k % 2 == 0 else -1.0)
 
 
 ## The look for the state now: the column's height and brightness, the light, the shards' glow.
 func _apply() -> void:
 	var k := _flare / FLARE_SECONDS
 	var up := smoothstep(0.0, 1.0, rise)
+	var foot := DAIS_CENTRE.y if model != null else 0.0
 	column.visible = up > 0.001
 	core.visible = column.visible
 	column.scale = Vector3(1.0, maxf(up, 0.001), 1.0)
-	column.position.y = COLUMN_H * 0.5 * up
+	column.position.y = foot + COLUMN_H * 0.5 * up
 	core.scale = column.scale
 	core.position.y = column.position.y
+	if haze != null:
+		haze.visible = column.visible
+		haze.scale = column.scale
+		haze.position.y = column.position.y
 	column_material.set_shader_parameter("strength", 0.8 + 1.6 * k * k)
 	core_material.set_shader_parameter("strength", 1.1 + 2.0 * k * k)
 	light.light_energy = (
@@ -166,6 +254,83 @@ func _apply() -> void:
 	obelisk_material.emission_energy_multiplier = e * 0.8 + 0.6 * k * k
 	var m := glow.material_override as StandardMaterial3D
 	m.albedo_color.a = (0.18 if _sealed else 0.42) + 0.3 * k * k
+	if ring != null:
+		ring_material.emission_energy_multiplier = (0.4 if _sealed else 2.2) + 2.0 * k * k
+
+
+## v0.8.0 MI: reads the model's scene once and keeps it (ViewWarmup calls it on the load's worker).
+static func warm_model() -> void:
+	if _scene_read:
+		return
+	_scene = load(MODEL_PATH) as PackedScene if ResourceLoader.exists(MODEL_PATH) else null
+	_scene_read = true
+
+
+## v0.8.0 MI: the owner's model (its floating crystals their own nodes), placed so its dais's circle is under the
+## column; false when the file is missing.
+func _build_model() -> bool:
+	warm_model()
+	var scene := _scene
+	if scene == null:
+		return false
+	model = scene.instantiate() as Node3D
+	model.name = "Model"
+	model.position = Vector3(COLUMN_X - DAIS_CENTRE.x, 0, -DAIS_CENTRE.z)
+	add_child(model)
+	for mi: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+		if String(mi.name).begins_with("shard_"):
+			floaters.append([mi, mi.position])
+	return true
+
+
+## v0.8.0 MI: the reference's beam over the owner's dais: three soft additive shafts (haze, body, core), a bright glow
+## and a glowing ring at the circle, the violet light.
+func _build_beam() -> void:
+	var layers: Array[MeshInstance3D] = []
+	for i in BEAM_LAYERS.size():
+		var spec: Array = BEAM_LAYERS[i]
+		var mat := ShaderMaterial.new()
+		mat.shader = Shader.new()
+		mat.shader.code = BEAM_SHADER
+		mat.set_shader_parameter("core_color", BEAM_CORE)
+		mat.set_shader_parameter("edge_color", BEAM_EDGE)
+		mat.set_shader_parameter("strength", spec[2])
+		mat.set_shader_parameter("seed", float(i) * 1.37)
+		_beam_mats.append(mat)
+		layers.append(_shaft("AscensionBeam%d" % i, spec[0], spec[1], mat))
+	haze = layers[0]
+	column = layers[1]
+	core = layers[2]
+	column_material = _beam_mats[1]
+	core_material = _beam_mats[2]
+	var tm := TorusMesh.new()
+	tm.inner_radius = CIRCLE_R - 0.07
+	tm.outer_radius = CIRCLE_R
+	tm.rings = 40
+	tm.ring_segments = 6
+	ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ring_material.albedo_color = BEAM_GLOW
+	ring_material.emission_enabled = true
+	ring_material.emission = BEAM_GLOW
+	ring = MeshInstance3D.new()
+	ring.name = "DaisRing"
+	ring.mesh = tm
+	ring.material_override = ring_material
+	ring.scale = Vector3(1.0, 0.25, 1.0)
+	ring.position = Vector3(COLUMN_X, DAIS_CENTRE.y + 0.02, 0)
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(ring)
+	glow = ShardMesh.glow(BEAM_GLOW, 3.6, 0.18)
+	glow.name = "DaisGlow"
+	glow.position = Vector3(COLUMN_X, DAIS_CENTRE.y + 0.3, 0)
+	add_child(glow)
+	light = OmniLight3D.new()
+	light.light_color = BEAM_GLOW
+	light.omni_range = 7.0
+	light.omni_attenuation = 1.3
+	light.shadow_enabled = false
+	light.position = Vector3(COLUMN_X, DAIS_CENTRE.y + 1.4, 0)
+	add_child(light)
 
 
 ## A pale hexagonal dais in front of the wall line (where the hero walks in) and a step behind it.
@@ -198,13 +363,13 @@ func _build_dais() -> void:
 	inlay_mat.emission_enabled = true
 	inlay_mat.emission = GOLD
 	inlay_mat.emission_energy_multiplier = 0.25
-	var ring := MeshInstance3D.new()
-	ring.name = "DaisInlay"
-	ring.mesh = inlay
-	ring.material_override = inlay_mat
-	ring.position = Vector3(COLUMN_X, 0.18, 0)
-	ring.rotation.y = PI / 6.0
-	add_child(ring)
+	var inlay_node := MeshInstance3D.new()
+	inlay_node.name = "DaisInlay"
+	inlay_node.mesh = inlay
+	inlay_node.material_override = inlay_mat
+	inlay_node.position = Vector3(COLUMN_X, 0.18, 0)
+	inlay_node.rotation.y = PI / 6.0
+	add_child(inlay_node)
 	glow = ShardMesh.glow(GOLD, 4.2, 0.18)
 	glow.name = "DaisGlow"
 	glow.position = Vector3(COLUMN_X, 0.4, 0)
@@ -214,8 +379,6 @@ func _build_dais() -> void:
 ## The spire behind the opening (over the gate's solid footprint): a tall gold-white cluster and two lavender
 ## obelisks at the footprint's ends.
 func _build_spire() -> void:
-	shard_material = ShardMesh.crystal_material(CORE.lerp(GOLD, 0.4), SHARD_SEALED)
-	obelisk_material = ShardMesh.crystal_material(LAVENDER, SHARD_SEALED)
 	var back := ShardMesh.cluster(shard_material, 9, 3.6, 0.75, 41)
 	back.name = "AscensionSpire"
 	back.position = Vector3(-0.3, 0.0, 0.0)
@@ -278,7 +441,8 @@ func _shaft(node_name: String, r0: float, r1: float, mat: Material) -> MeshInsta
 	return n
 
 
-## Gold motes rising up the column while it is open (one small CPU emitter, presentation clock).
+## Gold motes rising up the column while it is open (one small CPU emitter, presentation clock). v0.8.0 MI: with the
+## owner's model, small violet crystal shards rising and turning inside the beam (none with reduced motion).
 func _build_motes() -> void:
 	motes.name = "AscensionMotes"
 	motes.amount = 26
@@ -294,20 +458,37 @@ func _build_motes() -> void:
 	motes.initial_velocity_max = 1.4
 	motes.scale_amount_min = 0.5
 	motes.scale_amount_max = 1.0
-	var q := SphereMesh.new()
-	q.radius = 0.05
-	q.height = 0.1
-	q.radial_segments = 6
-	q.rings = 3
 	var m := StandardMaterial3D.new()
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	m.albedo_color = CORE
 	m.emission_enabled = true
-	m.emission = GOLD
 	m.emission_energy_multiplier = 2.0
-	q.material = m
-	motes.mesh = q
-	motes.position = Vector3(COLUMN_X, 0.4, 0)
+	if model != null:
+		var gem := PrismMesh.new()  # a small faceted shard, turning as it rises
+		gem.size = Vector3(0.07, 0.16, 0.07)
+		gem.material = m
+		m.albedo_color = BEAM_CORE
+		m.emission = BEAM_GLOW
+		motes.mesh = gem
+		motes.amount = 22
+		motes.lifetime = 3.2
+		motes.emission_sphere_radius = 0.7
+		motes.gravity = Vector3(0, 0.5, 0)
+		motes.initial_velocity_min = 0.4
+		motes.initial_velocity_max = 0.9
+		motes.angular_velocity_min = -60.0
+		motes.angular_velocity_max = 60.0
+		motes.position = Vector3(COLUMN_X, DAIS_CENTRE.y + 0.3, 0)
+	else:
+		var q := SphereMesh.new()
+		q.radius = 0.05
+		q.height = 0.1
+		q.radial_segments = 6
+		q.rings = 3
+		m.albedo_color = CORE
+		m.emission = GOLD
+		q.material = m
+		motes.mesh = q
+		motes.position = Vector3(COLUMN_X, 0.4, 0)
 	add_child(motes)
 
 

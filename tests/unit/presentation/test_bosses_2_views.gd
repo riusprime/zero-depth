@@ -60,7 +60,8 @@ func test_the_lens_drone_builds_flashable_and_hovers() -> void:
 	d.setup(Color.BLACK)
 	add_child_autofree(d)
 	d.set_process(false)
-	assert_gt(d.body_materials.size(), 2)
+	# v0.8.0 MI: the owner's model has two body materials (its frame and its plates); the code pod three.
+	assert_gt(d.body_materials.size(), 1 if d.has_model else 2)
 	for m in d.body_materials:
 		assert_true(m.emission_enabled)
 	d.apply_state({"tick": 1, "state": WorldReader.STATE_MOVE})

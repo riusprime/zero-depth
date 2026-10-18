@@ -115,7 +115,7 @@ func _advance() -> void:
 			if _holes_only:
 				_world.boss_flow.state = BossFlow.State.OPEN
 				_holes()
-				_step = 3
+				_step = 4
 		1:
 			if _shot("1_dormant"):
 				_world.boss_flow.state = BossFlow.State.OPEN  # the view's state only: the boss is dead
@@ -129,20 +129,28 @@ func _advance() -> void:
 				_wait = SETTLE
 		3:
 			if _shot("3_loop_device_close"):
-				_holes()
+				# v0.8.0 MI (owner O81): the owner's Ascension portal and its beam, close.
+				_view.rig.view_size = 8.0
+				_view.rig.snap_to(
+					SimPlane.to_3d(_reader.portal_pos() + Kin.dir(_reader.portal_angle()) * 1.0)
+				)
 				_wait = SETTLE
 		4:
+			if _shot("3b_ascension_portal_close"):
+				_holes()
+				_wait = SETTLE
+		5:
 			if _shot("4_black_holes"):
 				_view.rig.view_size = 6.0
 				_view.rig.snap_to(SimPlane.to_3d(_world.mx.hole_pos[1]))
 				_wait = SETTLE
-		5:
+		6:
 			if _shot("5_black_hole_close"):
 				_floor(1)
 				_world.boss_flow.state = BossFlow.State.OPEN
 				_view.sync()
 				_wait = SETTLE * 3
-		6:
+		7:
 			if _shot("6_blue_gate_floor1"):
 				quit(0)
 

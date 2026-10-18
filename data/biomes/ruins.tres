@@ -1,8 +1,10 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_definition.gd" id="1_pvo31"]
 
 [ext_resource type="Script" path="res://src/content/defs/biome_mood.gd" id="2_mood"]
+
+[ext_resource type="Script" path="res://src/content/defs/biome_look.gd" id="4_look"]
 
 [sub_resource type="Resource" id="Resource_mood"]
 script = ExtResource("2_mood")
@@ -41,6 +43,50 @@ contrast = 1.06
 saturation = 0.85
 glow_spread = 0.25
 
+[sub_resource type="Resource" id="Resource_look"]
+script = ExtResource("4_look")
+pools = {
+&"cover_square": {
+&"crate_stack": 6,
+&"rock_large": 2,
+&"tire_stack": 1,
+&"column_broken": 1
+},
+&"cover_block": {
+&"slab_concrete": 5,
+&"building_corner": 1
+},
+&"cover_long": {
+&"slab_wide": 3,
+&"slab_concrete": 2,
+&"barricade": 1,
+&"pipe_bundle": 1
+},
+&"cover_wall": {
+&"wall_broken": 3,
+&"barricade": 1
+},
+&"cover_post": {
+&"wall_pillar": 2,
+&"column_broken": 1
+},
+&"cover_deep": {
+&"car_wreck": 1
+},
+&"landmark": {
+&"building_corner": 3,
+&"slab_concrete": 1
+},
+&"wall_prop": {
+&"ladder_frame": 1
+}
+}
+max_per_floor = {
+&"building_corner": 4
+}
+wall_props_per_room = 1
+wall_prop_chance = 0.35
+
 [resource]
 script = ExtResource("1_pvo31")
 name_key = &"BIOME_RUINS"
@@ -57,3 +103,4 @@ palette = {
 template_tags = PackedStringArray("ruins")
 id = &"ruins"
 mood = SubResource("Resource_mood")
+look = SubResource("Resource_look")

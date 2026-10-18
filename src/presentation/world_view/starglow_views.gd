@@ -1,11 +1,17 @@
 class_name StarglowViews
 extends Node3D
 ## v0.7.5 NB2: the floor's starglow pools (Starfall), drawn exactly where the sim has them (WorldReader.ice_patch with
-## surface_kind &"starglow": looks fast = is fast). Each pool is one flat faceted sheet of deep night-violet facets in
-## close shades with small stars twinkling in it (a shader: frame time, still with reduced motion), and a bright
-## lavender rim on its exact edge so its boundary reads at a glance. It only helps (the hero runs faster on it), so it
-## is ground, not a telegraph: none of the hostile hues, no pulse. Never casts a shadow. Its facet shades come from
-## the cosmetic stream. Presentation only.
+## surface_kind &"starglow": looks fast = is fast). It only helps (the hero runs faster on it), so it is ground, not a
+## telegraph: none of the hostile hues, no pulse. Never casts a shadow. Presentation only.
+## v0.8.0 MI (owner 2026-10-18: "ground star is currently a rectangle on the ground I created this texture but I want
+## you to not make it a random rectangle but give it a crack shape, use the image"): each pool is a crack in the floor
+## through which the owner's ground_star shows (its cosmic stone and starlight, sampled in world space so the pools
+## never repeat it), with a soft violet glow round the crack. The crack shapes are CRACKS (four jagged branching
+## shapes in one mask, scripts/assets/mi_prep.py), each pool drawing one of them turned or mirrored (eight ways) from
+## the cosmetic stream, stretched over the sim's rect: every shape's trunks run out to all four sides, so the cracks
+## reach the pool's edges, and a faint violet wash (AREA_ALPHA) keeps the rest of the rect readable, where the speed
+## is. One mesh, one material for every pool on the floor (it was two: the faceted sheet and its rim). Without the
+## owner's textures the v0.7.5 faceted sheet and bright rim draw (L15).
 
 const DEEP := Color("#1B1046")
 const LIGHT := Color("#3F2C96")
@@ -18,6 +24,13 @@ const FACET_M := 0.75
 ## Stars per square metre cell grid (cells per metre) and the share of cells that hold a star.
 const STAR_CELLS_PER_M := 3.0
 const STAR_SHARE := 0.16
+## v0.8.0 MI: the owner's texture and the crack masks; metres one tile of the texture covers; the faint wash over the
+## rest of the pool (alpha) and the crack's glow colour.
+const STARS_TEX := "res://assets/textures/kit/ground_star.png"
+const CRACKS_TEX := "res://assets/textures/kit/ground_star_cracks.png"
+const TILE_M := 3.0
+const AREA_ALPHA := 0.16
+const CRACK_GLOW := Color("#B070FF")
 
 const POOL_SHADER := """
 shader_type spatial;
@@ -55,28 +68,109 @@ void fragment() {
 }
 """
 
+## v0.8.0 MI: the crack. COLOR.rg is the pool's shape's cell in the mask (0 or 0.5 each); UV the place in it.
+const CRACK_SHADER := """
+shader_type spatial;
+render_mode unshaded, cull_disabled, depth_draw_never, shadows_disabled;
+
+uniform sampler2D cracks : filter_linear_mipmap, repeat_disable;
+uniform sampler2D stars : source_color, filter_linear_mipmap, repeat_enable;
+uniform float tile_m = 3.0;
+uniform vec4 glow : source_color = vec4(0.69, 0.44, 1.0, 1.0);
+uniform vec4 wash : source_color = vec4(0.11, 0.06, 0.27, 1.0);
+uniform float wash_alpha = 0.1;
+uniform float motion = 1.0;
+
+varying vec3 world;
+
+void vertex() {
+	world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+}
+
+void fragment() {
+	vec2 uv = COLOR.rg + clamp(UV, vec2(0.004), vec2(0.996)) * 0.5;
+	vec2 m = texture(cracks, uv).rg;
+	vec3 sky = texture(stars, world.xz / tile_m).rgb;
+	// The starlight in the crack breathes a little (frame time; still with reduced motion).
+	float breathe = mix(1.0, 0.85 + 0.15 * sin(TIME * 1.7 + world.x * 0.7 + world.z * 0.4), motion);
+	float core = m.r;
+	float halo = m.g;
+	vec3 ground = mix(wash.rgb, sky * 0.7, 0.5);
+	// A soft cut where a crack meets the pool's edge (it still reaches it).
+	vec2 q = min(UV, vec2(1.0) - UV);
+	core *= mix(0.35, 1.0, smoothstep(0.0, 0.04, min(q.x, q.y)));
+	vec3 col = mix(ground, sky * (1.15 + 0.55 * core) * breathe, core) + glow.rgb * halo * 0.3;
+	ALBEDO = col;
+	ALPHA = clamp(core + halo * 0.45 + wash_alpha, 0.0, 1.0);
+}
+"""
+
+## The eight ways a crack shape is laid on its pool: the UVs of the rect's corners (a, b, c, d in _crack's order).
+const TURNS := [
+	[Vector2(0, 0), Vector2(1, 0), Vector2(1, 1), Vector2(0, 1)],
+	[Vector2(1, 0), Vector2(1, 1), Vector2(0, 1), Vector2(0, 0)],
+	[Vector2(1, 1), Vector2(0, 1), Vector2(0, 0), Vector2(1, 0)],
+	[Vector2(0, 1), Vector2(0, 0), Vector2(1, 0), Vector2(1, 1)],
+	[Vector2(1, 0), Vector2(0, 0), Vector2(0, 1), Vector2(1, 1)],
+	[Vector2(0, 0), Vector2(0, 1), Vector2(1, 1), Vector2(1, 0)],
+	[Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)],
+	[Vector2(1, 1), Vector2(1, 0), Vector2(0, 0), Vector2(0, 1)],
+]
+
 var patch_count := 0
 var sheet: MeshInstance3D
 var rim: MeshInstance3D
+## v0.8.0 MI: true when the pools are cracks (the owner's textures), and each pool's crack shape (0..3).
+var cracked := false
+var shapes := PackedInt32Array()
 
 
 ## Builds every pool of `reader`'s floor. `seed_value`: the floor seed (the cosmetic stream's root).
 func build(reader: WorldReader, seed_value: int) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value * 7919 + 4243  # the cosmetic stream: presentation only
+	patch_count = reader.ice_patch_count()
+	if patch_count == 0:
+		return
+	var crack_mat := crack_material()
+	if crack_mat != null:
+		cracked = true
+		var cs := SurfaceTool.new()
+		cs.begin(Mesh.PRIMITIVE_TRIANGLES)
+		for i in patch_count:
+			var shape := rng.randi_range(0, 3)
+			shapes.append(shape)
+			_crack(cs, reader.ice_patch(i), shape, TURNS[rng.randi_range(0, TURNS.size() - 1)])
+		sheet = _add_mesh("StarglowCracks", cs, crack_mat)
+		return
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var rs := SurfaceTool.new()
 	rs.begin(Mesh.PRIMITIVE_TRIANGLES)
-	patch_count = reader.ice_patch_count()
 	for i in patch_count:
 		var r := reader.ice_patch(i)
 		_sheet(st, r, rng)
 		_rim(rs, r)
-	if patch_count == 0:
-		return
 	sheet = _add_mesh("StarglowSheet", st, pool_material())
 	rim = _add_mesh("StarglowRim", rs, rim_material())
+
+
+## v0.8.0 MI: the crack material (the owner's ground_star in the CRACKS shapes), or null without the textures.
+static func crack_material() -> ShaderMaterial:
+	if not (ResourceLoader.exists(STARS_TEX) and ResourceLoader.exists(CRACKS_TEX)):
+		return null
+	var m := ShaderMaterial.new()
+	m.shader = Shader.new()
+	m.shader.code = CRACK_SHADER
+	m.set_shader_parameter("cracks", load(CRACKS_TEX))
+	m.set_shader_parameter("stars", load(STARS_TEX))
+	m.set_shader_parameter("tile_m", TILE_M)
+	m.set_shader_parameter("glow", CRACK_GLOW)
+	m.set_shader_parameter("wash", DEEP)
+	m.set_shader_parameter("wash_alpha", AREA_ALPHA)
+	m.set_shader_parameter("motion", 0.0 if ViewPrefs.reduced_motion else 1.0)
+	m.render_priority = 1
+	return m
 
 
 ## The pool's shader material (its stars twinkle; still with reduced motion).
@@ -112,6 +206,20 @@ func _add_mesh(n: String, st: SurfaceTool, mat: Material) -> MeshInstance3D:
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mi)
 	return mi
+
+
+## v0.8.0 MI: one pool as one quad over its exact rect, its crack shape's cell in the vertex colour and its turn in
+## the corners' UVs.
+func _crack(st: SurfaceTool, r: Rect2, shape: int, turn: Array) -> void:
+	var cell := Color(0.5 * (shape % 2), 0.5 * floorf(shape / 2.0), 0.0)
+	var corners := [
+		r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)
+	]
+	for k: int in [0, 1, 2, 0, 2, 3]:
+		st.set_color(cell)
+		st.set_uv(turn[k])
+		st.set_normal(Vector3.UP)
+		st.add_vertex(SimPlane.to_3d(corners[k], LIFT))
 
 
 ## The pool cut into facets, two triangles each, every triangle its own shade (in the vertex colour's red).

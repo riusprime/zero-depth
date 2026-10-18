@@ -62,6 +62,7 @@ with your biggest builds; bugs (what you did, saw, expected; a screenshot); anyt
 | D51 | **Loads (N12, O70), after you try them:** the cover's mark and the portal's iris now keep moving while a floor builds (the floor is built in the background; the longest frame of a load on the test machine went from 1.9-10.6 s to 33-61 ms). One stop may be left: the first frame that draws the new floor, still under the cover, compiles its materials' shaders (1.7-2.2 s on the test machine's CPU renderer; a real GPU is much faster, unmeasured). **(1)** On your PC, does the cover still stop for a moment before it opens (on the first run more than later)? If yes, a shader warm-up behind the first black cover is the next step (it would make the first load a little longer). **(2)** The first load of a session reads the models and takes ~11 s behind the black cover here (later loads 2-4 s): OK, or should the game read them at boot, behind the menu? | as built | [LOADS_NO_FREEZE.md](roadmap/v0.8.0/evidence/LOADS_NO_FREEZE.md) |
 | D54 | **The rarer shrine (N14, O72), after you try it:** **(1)** starting values: a shrine on 40 % of floors, at most 3 stats a shrine, 30 % of paid uses fail (all in `data/gamble/shrine.tres`); the price steps up after every paid try, a miss too. OK? **(2)** It stands in a combat room away from the start hall (never the boss room, the shop's, the Overrun room or a sealed arena), so you may have to fight your way to it, and it isn't shown until you find its room. OK, or should the minimap show it from the start? **(3)** Each try's success is fixed by the floor (reloading a save gives the same result). OK? **(4)** A run saved before this change keeps its floor's shrine in the start hall, its earlier wins counted toward the 3. | as built | [PROGRESS](roadmap/v0.8.0/PROGRESS.md) N14 |
 | D56 | **Calmer walls (N15, O73), after you look:** Night Rocks and Starfall (and, lighter, Frozen Shore) now draw their wall textures softer and flatter (fine detail and contrast toned down, bigger tiles), with bigger top stones, fewer missing or recessed blocks, a bigger, flatter rubble fill and steadier shading; the walls' shape and pillars are the same. Measured at the game's camera: 33-41 % less busy; Ruins and Red Canyon unchanged. **(1)** Calm enough, too flat, or still busy (per biome)? Every value is in the biome's data and on the dev panel's lighting page (`wall_detail`, `wall_face_contrast`, `wall_top_contrast`, `wall_stone_scale`, `wall_breakage`, …). **(2)** Should Ruins get a lighter pass too (it measures between Frozen Shore and Red Canyon)? The old/B wall toggle is gone (D53) | as built | [CALMER_WALLS.md](roadmap/v0.8.0/evidence/CALMER_WALLS.md); `n15_shots/` |
+| D58 | **Your v0.8.0 models (MI, O77-O81), after you look:** **(1)** caps a floor, so a landmark never repeats: the observatory 1 (yours), the stone arch 2, the wagon and the boat wreck 3 each, the building corner 4: OK, or other numbers (or caps on more pieces)? **(2)** Your `ice_floe.glb` is a frozen boat half sunk in snow, so it went in as `boat_wreck` (Frozen Shore's wreck and landmark); the floes on the sea stay code-made: OK, or send the floe? **(3)** Starfall's pools are now cracks your texture shows through, but the speed is still the sim's rectangle: the cracks reach its four sides and a faint wash covers the rest, so the edge of the fast area reads only roughly. OK, a stronger wash, or should the sim's pool take the crack's shape (a sim change)? **(4)** The light props are unchanged: the rusty oil drum and the iron brazier light every biome, and the drum reads as a city prop outside Ruins: give each biome its own light prop (a model for each)? **(5)** Your enemies: no drawn outline (as on your bosses); the Mender's violet plates take its green, the Lens Drone's red ones the palette's violet; the Splitter's arms span 1.7 m (its body in the sim is smaller): OK? **(6)** Shared on purpose: the plain boulder (`rock_large`) in all five biomes, the dead tree in Night Rocks and Frozen Shore: OK? **(7)** The Ascension portal's beam is light violet as you asked: its edge colour is close to the Deep gate's violet (both portals never stand on one floor): OK? | as built | [MODELS_INSTALL.md](roadmap/v0.8.0/evidence/MODELS_INSTALL.md); `mi_shots/` |
 
 ---
 
@@ -93,12 +94,54 @@ the lead animates parts in code.
 > text, letters, logo, watermark, background scenery, ground, base, pedestal, baked shadows, strong rim light,
 > smooth organic skin, realistic photo, clean plastic look, many tiny details
 
+### 3.0 Delivered 2026-10-18 (installed in v0.8.0 MI)
+Your 34 models and the ground_star texture: each prepared offline (sized, simplified to a triangle budget, re-textured)
+by `scripts/assets/mi_prep.py`, listed in `assets/models/manifest.json`, and placed only in the biome it fits (your
+O78). The numbers and the shots: [`roadmap/v0.8.0/evidence/MODELS_INSTALL.md`](roadmap/v0.8.0/evidence/MODELS_INSTALL.md).
+
+| ✓ | id | Where it went |
+|---|---|---|
+| ☑ 2026-10-18 | `building_corner` | Ruins: a designed room's landmark and its big blocks (at most 4 a floor) |
+| ☑ 2026-10-18 | `ladder_frame` | Ruins: stands against a wall, in a niche of the wall |
+| ☑ 2026-10-18 | `column_broken` | Ruins: square cover and posts |
+| ☑ 2026-10-18 | `pipe_bundle` | Ruins: long cover |
+| ☑ 2026-10-18 | `barricade` | Ruins: long cover and thin walls |
+| ☑ 2026-10-18 | `tire_stack` | Ruins: square cover |
+| ☑ 2026-10-18 | `boulder_small` | Night Rocks: floor decoration |
+| ☑ 2026-10-18 | `rock_spire` | Night Rocks: square cover and posts |
+| ☑ 2026-10-18 | `stone_arch` | Night Rocks: landmark and deep cover (at most 2 a floor) |
+| ☑ 2026-10-18 | `mushroom_cluster` | Night Rocks: floor decoration |
+| ☑ 2026-10-18 | `bone_pile` | Night Rocks: floor decoration |
+| ☑ 2026-10-18 | `floating_island_moss` | Night Rocks: islands drifting in the void past the floor's edge (your O78) |
+| ☑ 2026-10-18 | `mesa_chunk` | Red Canyon: square cover, blocks, long cover and walls |
+| ☑ 2026-10-18 | `dry_shrub` | Red Canyon: floor decoration |
+| ☑ 2026-10-18 | `cactus` | Red Canyon: square cover and posts |
+| ☑ 2026-10-18 | `wagon_wreck` | Red Canyon: the wreck slot (the car's) and landmark (at most 3 a floor) |
+| ☑ 2026-10-18 | `cattle_skull_post` | Red Canyon: posts, and against a wall in a niche |
+| ☑ 2026-10-18 | `snow_drift` | Frozen Shore: floor decoration (replaces the code-made drift) |
+| ☑ 2026-10-18 | `ice_shard` | Frozen Shore: floor decoration (replaces the code-made shard) |
+| ☑ 2026-10-18 | `ice_rock` | Frozen Shore: square cover, blocks, long cover and walls |
+| ☑ 2026-10-18 | `ice_floe` (file) | Your `ice_floe.glb` holds a frozen boat half sunk in snow, so it is installed as **`boat_wreck`**: Frozen Shore's wreck slot and landmark (at most 3 a floor). The floes on the sea stay code-made (see D58) |
+| ☑ 2026-10-18 | `fish_rack` | Frozen Shore: against a wall, in a niche (it is 1.6 m tall: rule 1 keeps tall pieces off open floor) |
+| ☑ 2026-10-18 | `star_crystal` | Starfall: floor decoration (replaces the code-made crystal) |
+| ☑ 2026-10-18 | `meteorite` | Starfall: floor decoration (replaces the code-made one) |
+| ☑ 2026-10-18 | `star_monolith` | Starfall: square cover, long cover, walls, posts |
+| ☑ 2026-10-18 | `floating_island_starfall` | Starfall: the islands drifting in the starry void |
+| ☑ 2026-10-18 | `void_spike` | Starfall: the spikes hanging from the floor's rim |
+| ☑ 2026-10-18 | `ruined_observatory` | Starfall: a designed room's landmark and big blocks, **at most 1 a floor** (your O79) |
+| ☑ 2026-10-18 | `ground_star` (texture) | Starfall: the starglow pools are now crack shapes your texture shows through |
+| ☑ 2026-10-18 | `loop_device` | The Loop device's pad (its green ring, arrows and light stay on top) |
+| ☑ 2026-10-18 | `mender` | The Mender (animated in code: float, sway, cross, crystals raised while healing, death) |
+| ☑ 2026-10-18 | `shield_bearer` | The Shield Bearer (legs walk, shield raised and held, bash, death) |
+| ☑ 2026-10-18 | `splitter` | The Splitter and, smaller, the Splitling (legs, claws raised and held then chop, halves part on death) |
+| ☑ 2026-10-18 | `lens_drone` | The Hive Lens's drones (hover, ring of feet spins, eye flares) |
+| ☑ 2026-10-18 | `ascension_portal` | The Ascension portal (your dais, pillars and crystals; the violet beam in code, after your reference image) |
+
 ### 3.1 New from your playtest notes (P1)
 
 | ✓ | id | What it is, how it should look | Size (W×D×H m) | Prompt (after the prefix) |
 |---|---|---|---|---|
-| ☐ | `ascension_portal` | The way to the final boss (walk in). Tall, upright and important: it should read as "the end", so you can tell it from the Loop device at a glance. Violet-white light inside, red crystal on the frame | 2.4 × 1.0 × 3.6 | [kit prefix] a tall ancient stone portal arch on a raised round dais of three steps, the arch made of dark violet stone blocks with red faceted crystal shards set along its edge and a large crystal at the keystone, an opening filled with a swirling violet-white light, a few floating stone fragments around the top |
-| ☐ | `loop_device` | The way to the next loop (step on it). Low, round and mechanical, about half the portal's height: a pad you step onto, green light | 1.8 × 1.8 × 0.9 | [kit prefix] a low round mechanical teleport pad, a worn steel ring platform flush with the floor with three short angled pylons around its edge, glowing green rune lines in concentric circles on the pad, a slowly turning metal ring hovering above the centre, green light |
+| ☑ | `ascension_portal` | **Delivered 2026-10-18, installed in MI** (7,992 triangles, map 1024; the beam is code: soft violet shafts, a glowing ring, floating crystals, as in your reference image). The way to the final boss (walk in) | 2.4 × 1.0 × 3.6 | — |
 | ☐ | `floor_receiver` | Where the hero arrives on every floor (N11). Must read as "you arrive here", clearly not the exit portal: low, round, a ring of standing stones or metal arms around a glowing landing circle, no opening to walk into | 2.2 × 2.2 × 1.2 | [kit prefix] a low round arrival platform, a worn stone disc with a glowing pale-cyan landing circle in its centre, four short curved metal arms rising from its rim and bending inward like a cage opened, cables and runes along the arms, no arch, no doorway |
 | ☑ | `curse_altar` | **Delivered 2026-10-18, installed by N17** (decimated to 1,822 triangles, maps 1024). The curse device in its dark curse room (N17). Low, square, heavy and ominous: it should read as "a pact you make here", not a shop or a shrine. Only the stone: the game floats its own cracked violet crystal above it and draws the glowing glyphs around the room | 1.4 × 1.4 × 1.0 | [kit prefix] a squat ancient altar of dark cracked basalt, a square plinth with a sunken basin on top, two short curved horn-like stones rising at its sides, faint violet runes carved into its faces, chains and broken shackles hanging from the corners, black wax drips, no crystal on top, no light source |
 | ☐ | `hero_gun` | The hero's Gun, professional-looking (your note: they "need to look professional"). It fires the blue pulse, so blue accents; seen in the hero's hand, small | 0.7 long | [character prefix, steel blue] a chunky sci-fi energy pistol held in one hand, a short thick barrel with a glowing blue core visible through vents, a faceted charcoal steel body, a blue crystal power cell at the back, a worn grip; shown on its own, side view |
@@ -107,18 +150,14 @@ the lead animates parts in code.
 | ☐ | (rig) the hero | For the same scene: if your hero model can be rigged with an `open_chest` clip (kneel, lift the lid, look in), the lead builds the menu around it. Otherwise the lead animates the existing hero in code | — | — |
 
 ### 3.2 Enemy models (P1)
-Seven kinds still have the lead's code-made body. Each takes its **role colour** where the prompts say
+Three kinds still have the lead's code-made body. Each takes its **role colour** where the prompts say
 [COLOUR] (the game fine-tunes the shade). Greys stay neutral, because each biome tints them.
 
 | ✓ | id | Role colour | In-game size | Prompt (after the character prefix, then the 3D step) |
 |---|---|---|---|---|
 | ☐ | `swarmer` | melee red-orange `#D8562A` | 0.5 m long | a small fast armoured beetle, a low wedge-shaped faceted shell with a ridge down its back, a charcoal head with one glowing slit eye, two pale bone mandibles that open wide, six thin segmented charcoal legs splayed low; about 3k triangles |
-| ☐ | `splitter` | melee red-orange `#D8562A` | 1.0 m tall | a squat creature made of two faceted half-bodies pressed together, a glowing hot seam of light down the middle where it will break apart, charcoal caps, two short arms with bone claws held **out at the shoulders** (they must show from above), short thick legs; the two halves as separate objects is a bonus; about 6k triangles |
-| ☐ | `shield_bearer` | tank bronze `#A8743A` | 1.2 m tall | a stocky armoured soldier behind a tall rectangular tower shield almost its own height, a charcoal iron rim and a faceted bronze crystal boss, a heavy closed helm with a glowing visor slit, broad charcoal pauldrons, braced and leaning into the shield (the shield as a separate object is a bonus); about 7k triangles |
-| ☐ | `mender` | support green `#4FAE6A` | 1.3 m tall, floats | a floating hooded robed healer with no legs, a tattered faceted robe ending in points, a charcoal hood with a soft glow inside, two thin arms holding up a large glowing pale crystal, a small cross-shaped crystal floating above its head; no stand; about 6k triangles |
 | ☐ | `mine_layer` | bomber yellow `#D8A824` | 0.9 m long | a low armoured crawler on two short charcoal tank treads, a faceted hull with chevron plates, a charcoal dome with one glowing eye, an open hopper at the back holding a dark round spiked mine with a small blinking light (the mine as a separate object is a bonus); about 5k triangles |
 | ☐ | `sniper` | ranged blue-violet `#5A62D8` | 1.1 m tall | a lean walking gun platform on a tripod of three long thin charcoal legs, a narrow faceted body, a very long charcoal rifle barrel pointing forward, a big round glowing scope lens on top, cooling fins along the barrel; about 5k triangles |
-| ☐ | `lens_drone` (P3) | boss red `#C8221E` | 0.6 m | (3D step only) a small hovering drone pod, a red faceted body with a charcoal steel cap, one glowing red eye slit, a thin grey ring round its middle; no stand; about 3k triangles |
 
 ### 3.3 The final boss (P1–P2)
 
@@ -153,44 +192,16 @@ Seven kinds still have the lead's code-made body. Each takes its **role colour**
 | ☐ | `brood_egg` | 0.6 tall | the Brood Mother's leathery green-grey egg with glowing veins, slightly cracked at the top |
 
 ### 3.6 Room pieces (P2–P3)
-Designed rooms use today's kit until these come. All after the kit prefix.
+Still to come (the rest of the list arrived 2026-10-18, §3.0). All after the kit prefix.
 
 | Biome | id | Size (W×D×H m) | Prompt |
 |---|---|---|---|
-| Ruins | `building_corner` | 2.0 × 2.0 × 3.0 | a corner of a ruined concrete building, two walls meeting, a rusty ladder bolted on one face, broken top edge |
-| Ruins | `ladder_frame` | 1.0 × 0.4 × 2.0 | a rusty metal scaffold frame with a ladder, flat-backed so it stands against a wall |
-| Ruins | `column_broken` | 1.0 × 1.0 × 1.6 | a broken stone column, snapped top, a fallen chunk at its base |
-| Ruins | `pipe_bundle` | 2.0 × 0.8 × 0.9 | three thick rusted pipes lying side by side on concrete blocks |
-| Ruins | `barricade` | 2.0 × 0.5 × 1.0 | a makeshift barricade of planks, a sheet of corrugated metal and sandbags |
-| Ruins | `tire_stack` | 0.9 × 0.9 × 0.9 | a stack of three old worn tyres |
 | Ruins | `metal_post` | 0.2 × 0.2 × 1.8 | a bent rusty metal post with a snapped bracket at the top |
 | Ruins | `dumpster` | 1.8 × 1.0 × 1.2 | a dented rusty dumpster with its lid half open, junk spilling over |
 | Ruins | `cable_spool` | 0.9 × 0.9 × 0.7 | a big wooden cable spool lying on its side |
 | Ruins | `sign_frame` | 1.2 × 0.2 × 1.6 | a blank fallen billboard frame on two posts, no text |
-| Night Rocks | `boulder_small` | 0.5 × 0.5 × 0.35 | a small faceted dark boulder, mossy on top |
-| Night Rocks | `rock_spire` | 1 × 1 × 2.2 | a tall jagged dark rock spire |
-| Night Rocks | `stone_arch` | 3 × 1 × 2.4 | a broken natural stone arch, one leg fallen |
-| Night Rocks | `mushroom_cluster` | 0.6 × 0.6 × 0.5 | pale glowing cave mushrooms |
-| Night Rocks | `bone_pile` | 0.8 × 0.6 × 0.3 | old animal bones and a horned skull |
-| Red Canyon | `mesa_chunk` | 1.5 × 1.5 × 1.4 | a chunk of layered red sandstone, flat-topped, striped |
-| Red Canyon | `dry_shrub` | 0.5 × 0.5 × 0.4 | a dry thorny desert shrub |
-| Red Canyon | `cactus` | 0.6 × 0.6 × 1.6 | a branching faceted cactus |
-| Red Canyon | `wagon_wreck` | 2.4 × 1.4 × 1.4 | a broken wooden wagon on its side |
-| Red Canyon | `cattle_skull_post` | 0.4 × 0.4 × 1.4 | a post topped by a horned skull |
-| Frozen Shore | `snow_drift` | 0.9 × 0.6 × 0.28 | a low wind-packed snow drift, a long soft mound with a sharp sculpted crest on one side |
-| Frozen Shore | `ice_shard` | 0.5 × 0.5 × 0.4 | a small cluster of three faceted ice crystals growing from one frozen root |
-| Frozen Shore | `ice_rock` | 1.2 × 1.2 × 1.2 | a square-based rock boulder half covered in thick ice |
-| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above |
+| Frozen Shore | `ice_floe` | 2 × 1.6 × 0.12 | a flat cracked slab of floating sea ice, seen from above (the file you sent under this name is a frozen boat; it went in as `boat_wreck`) |
 | Frozen Shore | `ground_snow` | tileable 1024² PNG | packed snow ground with footprints of wind, seen from above, seamless tile |
-| Frozen Shore | `boat_wreck` | 3 × 1.4 × 1.2 | a small frozen wooden boat, half sunk in snow |
-| Frozen Shore | `fish_rack` | 1.4 × 0.6 × 1.6 | a drying rack with frozen fish and nets |
-| Starfall | `star_crystal` | 0.5 × 0.5 × 0.4 | a small cluster of three hexagonal crystals growing from one root |
-| Starfall | `meteorite` | 0.6 × 0.5 × 0.26 | a small fallen meteorite, a low lumpy faceted stone, dark violet-grey, pitted |
-| Starfall | `star_monolith` | 1 × 1 × 1.6 | a dark violet stone monolith with glowing star lines carved in it |
-| Starfall | `floating_island` | 2 × 2 × 2 | a small floating rock island, flat grassy-stone top, roots and rock hanging below |
-| Starfall | `void_spike` | 1 × 1 × 2.5 | a long jagged stone spike hanging downward, dark violet, star-lit tip |
-| Starfall | `ground_star` | tileable 1024² PNG | dark violet stone ground with faint star specks, seen from above, seamless tile |
-| Starfall | `ruined_observatory` | 2.5 × 2.5 × 2.6 | a broken stone dome with a cracked telescope |
 
 ### 3.7 Boss animation clips (P3: you're not sure yet)
 Any boss: clips named like the code ones (`idle`, `walk`, `marks`, `pattern`, `lanes`, `leap`, `death`…, listed per

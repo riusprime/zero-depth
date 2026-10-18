@@ -217,6 +217,14 @@ func test_role_colours_stay_out_of_the_biome_grey_cast() -> void:
 				)
 
 
+## v0.8.0 MI: true when kind `kind` draws the owner's model (its frame and trims are his texture's).
+static func _owner_model(kind: int) -> bool:
+	var id := HordeAvatar.model_id(kind)
+	if kind == WorldReader.KIND_LENS_DRONE:
+		id = &"lens_drone"
+	return id != &"" and EnemyModels.has_model(id)
+
+
 ## Every material colour under `node`: body materials (meta "mats") and glowing overrides (eyes, visors).
 static func _colours(node: Node) -> Dictionary:
 	var out := {}
@@ -255,6 +263,9 @@ func test_the_avatars_build_from_the_active_palette() -> void:
 			for slot in EnemyPalettes.SLOTS:
 				if slot == &"eye" and not EnemyPalettes.eyes_on_all() and NO_EYE.has(KINDS[k]):
 					continue  # today's Splitter glows at its seam, the Mender at its crystal
+				if slot != &"body" and _owner_model(KINDS[k]):
+					continue  # v0.8.0 MI: an owner's model takes the role colour on its plates only
+
 				var want := EnemyPalettes.color(KINDS[k], slot).to_html(false)
 				assert_true(
 					got.has(want), "%s: kind %d draws its %s %s" % [p, KINDS[k], slot, want]
@@ -266,6 +277,9 @@ func test_the_splitter_and_mender_get_an_eye_only_in_the_candidates() -> void:
 	for p: StringName in [EnemyPalettes.CURRENT, &"a"]:
 		EnemyPalettes.active = p
 		for kind in [WorldReader.KIND_SPLITTER, WorldReader.KIND_MENDER]:
+			if _owner_model(kind):  # v0.8.0 MI: the owner's model brings its own glowing eyes
+				assert_true(EnemyModels.has_model(HordeAvatar.model_id(kind)), "kind %d" % kind)
+				continue
 			var a := HordeAvatar.new()
 			a.setup(kind, Color.BLACK)
 			var eyes := a.find_children("Eye", "MeshInstance3D", true, false)

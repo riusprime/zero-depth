@@ -271,6 +271,12 @@ func _drop_missing(nodes: Dictionary, alive: Dictionary) -> void:
 			if boss is BossAvatar and is_inside_tree() and (boss as BossAvatar).die():
 				(boss as Node).set_process(true)
 				get_tree().create_timer(BossAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
+			elif boss is HordeAvatar and is_inside_tree() and (boss as HordeAvatar).die():
+				# v0.8.0 MI: an owner's enemy model falls (the Splitter's halves part) a moment, its bar gone.
+				(boss as Node).set_process(true)
+				if node.has_meta(&"bar"):
+					(node.get_meta(&"bar") as Node3D).visible = false
+				get_tree().create_timer(HordeAvatar.DEATH_SECONDS).timeout.connect(node.queue_free)
 			else:
 				node.queue_free()
 
@@ -288,7 +294,10 @@ static func tint_greys(node: Node3D, tint: Color) -> void:
 	if tint.a <= 0.0:
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		if m.albedo_texture != null or m.albedo_color.s >= GREY_SATURATION:
+		if (
+			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
+			or m.albedo_color.s >= GREY_SATURATION
+		):
 			continue
 		var c := m.albedo_color
 		var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
@@ -302,7 +311,10 @@ static func role_glow(node: Node3D, kind: int, energy: float) -> void:
 	if energy <= 0.0 or not EnemyPalettes.KIND_IDS.has(kind):
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		if m.albedo_texture != null or m.albedo_color.s < GREY_SATURATION:
+		if (
+			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
+			or m.albedo_color.s < GREY_SATURATION
+		):
 			continue
 		var c := Color(m.albedo_color, 1.0)
 		m.emission = c

@@ -147,6 +147,8 @@ const DRIFT_SHADER := """
 shader_type spatial;
 
 uniform vec4 albedo : source_color = vec4(0.23, 0.2, 0.32, 1.0);
+uniform sampler2D tex : source_color, filter_linear_mipmap;
+uniform float use_tex = 0.0;
 uniform vec4 glow : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float glow_energy = 0.0;
 uniform float rough = 0.85;
@@ -164,7 +166,8 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = albedo.rgb;
+	// v0.8.0 MI: an owner's island model draws its own colour map (use_tex 1).
+	ALBEDO = mix(albedo.rgb, texture(tex, UV).rgb, use_tex);
 	ROUGHNESS = rough;
 	SPECULAR = spec;
 	EMISSION = glow.rgb * glow_energy;
@@ -221,6 +224,39 @@ static func drift_material(edge_color: Color, crystal: bool) -> ShaderMaterial:
 	else:
 		m.set_shader_parameter("albedo", ROCK.lerp(edge_color, 0.3))
 	return m
+
+
+## v0.8.0 MI: an owner's void piece (KitModels role &"void": a floating island, a hanging spike) in the frame the
+## code-made ones use (unit footprint, its top at y = 0 and its bottom at y = -1), with its material: for an island
+## the drifting shader on its colour map (`drift` true), else its own textured material. {} when the model is
+## missing (the code-made piece stays; L15).
+static func model_piece(id: StringName, drift: bool) -> Dictionary:
+	var piece := KitModels.get_piece(id) if id != &"" else {}
+	if piece.is_empty():
+		return {}
+	var arrays := (piece["mesh"] as ArrayMesh).surface_get_arrays(0)
+	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	for k in verts.size():
+		verts[k].y -= 1.0
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	for slot in [Mesh.ARRAY_BONES, Mesh.ARRAY_WEIGHTS]:
+		arrays[slot] = null
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var src: StandardMaterial3D = piece["material"]
+	var mat: Material
+	if drift:
+		var sm := _shader(DRIFT_SHADER)
+		sm.set_shader_parameter("drift", DRIFT_M)
+		sm.set_shader_parameter("speed", DRIFT_SPEED)
+		sm.set_shader_parameter("motion", _motion())
+		sm.set_shader_parameter("use_tex", 1.0)
+		if src != null and src.albedo_texture != null:
+			sm.set_shader_parameter("tex", src.albedo_texture)
+		mat = sm
+	else:
+		mat = src.duplicate() if src != null else StandardMaterial3D.new()
+	return {"mesh": mesh, "material": mat}
 
 
 static func _shader(code: String) -> ShaderMaterial:

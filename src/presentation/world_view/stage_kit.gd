@@ -130,10 +130,12 @@ func _add_pieces(pieces: Array, wall_count: int, tint: Color, mood: BiomeMood) -
 	for p: Dictionary in pieces:
 		var piece := piece_of(p["piece"])
 		var tinted: bool = p["kind"] == &"wall" or p["kind"] == &"cover"
+		# v0.8.0 MI: a biome's own piece keeps its colours (KitModels "tint": its share of the hue).
+		var share := float((KitModels.SPECS.get(p["piece"], {}) as Dictionary).get("tint", 1.0))
 		var node := MeshInstance3D.new()
 		node.mesh = piece["mesh"]
 		node.material_override = _material(
-			p["piece"], piece["material"], tint if tinted else Color.WHITE
+			p["piece"], piece["material"], Color.WHITE.lerp(tint, share) if tinted else Color.WHITE
 		)
 		node.transform = p["xform"]
 		node.set_meta(&"piece", p["piece"])
@@ -177,6 +179,14 @@ func _add_decor(id: StringName, xforms: Array) -> void:
 static func piece_of(id: StringName) -> Dictionary:
 	var piece := KitModels.get_piece(id)
 	return piece if not piece.is_empty() else CodeProps.get_piece(id)
+
+
+## v0.8.0 MI: whether piece_of(id) would draw something, without reading the model (a file check): the dresser's
+## pools drop a piece that is not installed (L15).
+static func has_piece(id: StringName) -> bool:
+	if CodeProps.has(id):
+		return true
+	return KitModels.SPECS.has(id) and ResourceLoader.exists(KitModels.dir + String(id) + ".glb")
 
 
 ## v0.8.0 N10 (option A): one mesh per sim wall the procedural wall draws, one surface, one material for the floor

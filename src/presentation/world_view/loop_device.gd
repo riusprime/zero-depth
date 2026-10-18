@@ -26,6 +26,10 @@ const LIGHT_OPEN := 1.6
 const FLARE_ENERGY := 4.0
 const FLARE_SECONDS := 1.0
 const ARROW_SPEED := 0.35
+## v0.8.0 MI: the owner's model of the device.
+const MODEL_PATH := "res://assets/models/devices/loop_device.glb"
+
+static var _model_cache := {}
 
 var pad: MeshInstance3D
 var rim: MeshInstance3D
@@ -42,9 +46,12 @@ var calm := false
 var radius := 0.9
 ## How far round the arrowheads have chased (turns; tests read it).
 var chase := 0.0
+## v0.8.0 MI: the owner's pad (null: the code-made one; _model_width: its width as prepared, m).
+var model: MeshInstance3D
 var _sealed := true
 var _flare := 0.0
 var _spin: Node3D
+var _model_width := 1.0
 
 
 func _init() -> void:
@@ -63,6 +70,40 @@ func setup(sim_pos: Vector2, facing_angle: int, pad_radius: float) -> void:
 	(pad.mesh as CylinderMesh).bottom_radius = radius + 0.06
 	(rim.mesh as TorusMesh).inner_radius = radius - 0.07
 	(rim.mesh as TorusMesh).outer_radius = radius
+	if model != null:  # v0.8.0 MI: the owner's pad spans the sim's pad
+		model.scale = Vector3.ONE * (radius * 2.0 / maxf(_model_width, 0.0001))
+
+
+## v0.8.0 MI: reads the owner's pad into its cache once (ViewWarmup does it on the load's worker).
+static func warm_model() -> void:
+	if not _model_cache.has(MODEL_PATH):
+		_model_cache[MODEL_PATH] = (
+			ModelLibrary.first_surface(load(MODEL_PATH) as PackedScene)
+			if ResourceLoader.exists(MODEL_PATH)
+			else {}
+		)
+
+
+## v0.8.0 MI: the owner's Loop device (MODEL_PATH, mi_prep.py: 8k triangles, 0.9 m tall as prepared) in place of the
+## code-made stone pad; the rim's glow, the upright ring, its chasing arrowheads, the veil and the light stay on top
+## of it, animated as before. Missing: the code-made pad (L15).
+func _build_model() -> void:
+	warm_model()
+	var surface: Dictionary = _model_cache[MODEL_PATH]
+	if surface.is_empty():
+		return
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, surface["arrays"])
+	model = MeshInstance3D.new()
+	model.name = "Model"
+	model.mesh = mesh
+	if surface["material"] != null:
+		model.material_override = surface["material"]
+	var box: AABB = surface["aabb"]
+	_model_width = maxf(box.size.x, box.size.z)
+	model.scale = Vector3.ONE * (radius * 2.0 / maxf(_model_width, 0.0001))
+	add_child(model)
+	pad.visible = false
 
 
 func set_sealed(sealed: bool) -> void:
@@ -145,6 +186,7 @@ func _build() -> void:
 	pad.material_override = stone
 	pad.position.y = PAD_H * 0.5
 	add_child(pad)
+	_build_model()
 	var rm := TorusMesh.new()
 	rm.inner_radius = radius - 0.07
 	rm.outer_radius = radius

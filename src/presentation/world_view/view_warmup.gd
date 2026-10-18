@@ -11,19 +11,35 @@ extends RefCounted
 ## loading cover (the queue runs no other job until it is done, the old floor's view is gone and the new one is not
 ## processing), so no frame reads a cache while it is filled.
 
+## v0.8.0 MI (the load-frame fix): the textures warm() read (the biome's wall textures, Starfall's crack textures),
+## kept until the next warm(): a read that nothing holds is let go at once and read again, from its file, on the main
+## thread by the job that uses it.
+
+static var _kept: Array = []
+
 
 ## `final`: the final boss's three models too (the final arena, the Playground). `kit`: the floor is dressed from
 ## the kit (a biome mood; v0.8.0 N10: with the biome's wall textures). `biome`: the floor's (StageView.prop_style).
 ## `shop`: the floor has the biome's shop stall.
 static func warm(final: bool, kit: bool, biome: StringName, shop: bool) -> void:
 	BossModels.preload_all(final)
+	# v0.8.0 MI: the owner's enemy models (read here, so a Mender's first spawn never reads a file mid-fight) and the
+	# two devices' models (the Loop device's pad, the Ascension portal).
+	for id: StringName in EnemyModels.SPECS:
+		EnemyModels.get_model(id)
+	LoopDevice.warm_model()
+	AscensionPortal.warm_model()
 	if kit:
 		for id: StringName in KitModels.SPECS:
 			var piece := KitModels.get_piece(id)
 			if not piece.is_empty() and KitModels.SPECS[id]["role"] == &"decor":
 				KitModels.decor_mesh(piece["mesh"])
 		KitModels.split(&"chest", KitModels.CHEST_LID_CUT)
-		StageView.wall_textures(biome)
+		var keep: Array = StageView.wall_textures(biome).values()
+		for path: String in [StarglowViews.STARS_TEX, StarglowViews.CRACKS_TEX]:
+			if biome == &"starfall" and ResourceLoader.exists(path):
+				keep.append(load(path))
+		_kept = keep
 		VfxCore.warm()  # the effects layer's sheets and floor marks (a floor with a mood has the layer)
 	if shop:
 		for id: StringName in [&"shop_tent", &"shop_wares", ShopModels.vendor_id(biome)]:
