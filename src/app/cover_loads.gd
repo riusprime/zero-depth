@@ -25,6 +25,12 @@ const VIEW_BUDGET_MS := 6.0
 ## v0.8.0 N12: an old floor's view (thousands of nodes; ~100 ms to free in one frame) is freed this long a frame.
 const FREE_BUDGET_MS := 4.0
 
+## v0.8.0 MI (the load probe's frame breakdown): the frame free_slowly() last ran a slice on, the slice's time and the
+## nodes it freed (a tool reads them; nothing in the game does).
+static var probe_free_frame := -1
+static var probe_free_ms := 0.0
+static var probe_freed := 0
+
 var cover := LoadingCover.new()
 var waiting := false
 ## v0.8.0 N12: the last load's timings in ms (the World on its worker, each view job, the longest view job) and the
@@ -109,6 +115,7 @@ func free_slowly(tree: SceneTree, root: Node) -> void:
 	var stack: Array[Node] = [root]
 	while not stack.is_empty():
 		var from := Time.get_ticks_usec()
+		probe_freed = 0
 		while not stack.is_empty() and (Time.get_ticks_usec() - from) / 1000.0 < FREE_BUDGET_MS:
 			var n: Node = stack.back()
 			if n.get_child_count() > 0:
@@ -118,6 +125,9 @@ func free_slowly(tree: SceneTree, root: Node) -> void:
 			else:
 				stack.pop_back()
 				n.free()
+				probe_freed += 1
+		probe_free_frame = Engine.get_process_frames()
+		probe_free_ms = (Time.get_ticks_usec() - from) / 1000.0
 		await tree.process_frame
 
 

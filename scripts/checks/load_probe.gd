@@ -22,6 +22,15 @@ var main: Main
 var _last_us := 0
 var _recording := false
 var _samples: Array[float] = []
+## v0.8.0 MI: per frame, what the previous frame spent its time on (see _breakdown).
+var _info: Array[String] = []
+## v0.8.0 MI: the main thread's own CPU time and its time waiting for a CPU (Linux /proc/thread-self/schedstat, ns), at
+## the last frame: a long frame with little CPU and a long run-queue wait was the OS giving the CPU to others.
+var _cpu_ns := 0
+var _runq_ns := 0
+var _slices := 0
+## v0.8.0 MI: the machine's stolen time (the hypervisor ran another guest; /proc/stat, 1/100 s summed over the CPUs).
+var _steal := 0
 var _covered: Array[bool] = []
 var _still: Array[bool] = []
 ## Per frame: how far the load was (w: the World on its worker, v: the view's build, -: neither).
@@ -53,6 +62,7 @@ func _process(_delta: float) -> bool:
 	if _recording and _last_us > 0:
 		var c := main.loads.cover
 		_samples.append((now - _last_us) / 1000.0)
+		_info.append(_sched() + _breakdown())
 		_covered.append(c.showing())
 		var spin: float = c.get("_spin")
 		_still.append(c.showing() and spin == _last_spin)
@@ -62,8 +72,37 @@ func _process(_delta: float) -> bool:
 			at = "v" if (ph as Dictionary).has("world") else "w"
 		_stage.append(at)
 		_last_spin = spin
+	if not _recording:
+		_sched()
 	_last_us = now
 	return false
+
+
+## v0.8.0 MI: "cpu=… runq=…" (ms) for the frame just ended, from /proc/thread-self/schedstat ("" where there is none).
+func _sched() -> String:
+	var f := FileAccess.open("/proc/thread-self/schedstat", FileAccess.READ)
+	if f == null:
+		return ""
+	var parts := f.get_line().split(" ")
+	if parts.size() < 2:
+		return ""
+	var cpu := parts[0].to_int()
+	var runq := parts[1].to_int()
+	var slices := parts[2].to_int() if parts.size() > 2 else 0
+	var steal := _steal
+	var st := FileAccess.open("/proc/stat", FileAccess.READ)
+	if st != null:
+		var cols := st.get_line().split(" ", false)
+		steal = cols[8].to_int() if cols.size() > 8 else 0
+	var out := (
+		"cpu=%.1f runq=%.1f slices=%d steal=%d0ms "
+		% [(cpu - _cpu_ns) / 1e6, (runq - _runq_ns) / 1e6, slices - _slices, steal - _steal]
+	)
+	_cpu_ns = cpu
+	_runq_ns = runq
+	_slices = slices
+	_steal = steal
+	return out
 
 
 func _frames(n: int) -> void:
@@ -121,6 +160,7 @@ func _into_gate(pos: Vector2, angle: int) -> void:
 func _load(label: String, trigger: Callable) -> void:
 	var old_view := main.view
 	_samples.clear()
+	_info.clear()
 	_covered.clear()
 	_still.clear()
 	_stage.clear()
@@ -206,8 +246,49 @@ func _report(label: String, opened: bool) -> void:
 			% [label, ", ".join(lens)]
 		)
 	)
+	# v0.8.0 MI: the worst frames' breakdown, into build/perf/ (the frame's process and physics time, the node and object
+	# counts, the view queue's step and its jobs).
+	var order: Array = range(_samples.size())
+	order.sort_custom(func(a: int, b: int) -> bool: return _samples[a] > _samples[b])
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://build/perf"))
+	var f := FileAccess.open("res://build/perf/load_probe_frames_%s.txt" % label, FileAccess.WRITE)
+	for k in mini(8, order.size()):
+		var i: int = order[k]
+		var row := (
+			"%d: %.1f ms %s%s %s"
+			% [i - first, _samples[i], "c" if _covered[i] else "", _stage[i], _info[i]]
+		)
+		if f != null:
+			f.store_line(row)
+		if k < 3 and _samples[i] > 50.0:
+			print("load_probe: %-9s worst %s" % [label, row])
 	if not opened:
 		push_error("load_probe: %s never opened" % label)
+
+
+## v0.8.0 MI: the frame just ended, broken down: the engine's process and physics time for it, the nodes and objects,
+## and (when the view's queue stepped in it) its step's time and jobs.
+func _breakdown() -> String:
+	var q := ""
+	var ago := Engine.get_process_frames() - ViewBuildQueue.probe_frame
+	if ago <= 1:
+		q = (
+			" step%d=%.1f[%s]"
+			% [ago, ViewBuildQueue.probe_step_ms, ",".join(ViewBuildQueue.probe_jobs)]
+		)
+	if Engine.get_process_frames() - CoverLoads.probe_free_frame <= 1:
+		q += " free=%.1f[%d]" % [CoverLoads.probe_free_ms, CoverLoads.probe_freed]
+	return (
+		"process=%.1f physics=%.1f nodes=%d objects=%d orphans=%d%s"
+		% [
+			Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+			Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+			Performance.get_monitor(Performance.OBJECT_COUNT),
+			Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
+			q
+		]
+	)
 
 
 ## A control: the main menu for `ms` with no load (the machine's own hitches, shared with other jobs).

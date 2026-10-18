@@ -123,6 +123,11 @@ void fragment() {
 }
 """
 
+## v0.8.0 MI: the model's scene, read once (warm_model(), on the load's worker): a read discarded there was read again
+## from the file on the main thread when the portal was built (~45 ms in one frame of the Deep floor's load).
+static var _scene: PackedScene = null
+static var _scene_read := false
+
 var column: MeshInstance3D
 var core: MeshInstance3D
 var column_material: ShaderMaterial
@@ -253,12 +258,19 @@ func _apply() -> void:
 		ring_material.emission_energy_multiplier = (0.4 if _sealed else 2.2) + 2.0 * k * k
 
 
+## v0.8.0 MI: reads the model's scene once and keeps it (ViewWarmup calls it on the load's worker).
+static func warm_model() -> void:
+	if _scene_read:
+		return
+	_scene = load(MODEL_PATH) as PackedScene if ResourceLoader.exists(MODEL_PATH) else null
+	_scene_read = true
+
+
 ## v0.8.0 MI: the owner's model (its floating crystals their own nodes), placed so its dais's circle is under the
 ## column; false when the file is missing.
 func _build_model() -> bool:
-	if not ResourceLoader.exists(MODEL_PATH):
-		return false
-	var scene := load(MODEL_PATH) as PackedScene
+	warm_model()
+	var scene := _scene
 	if scene == null:
 		return false
 	model = scene.instantiate() as Node3D
