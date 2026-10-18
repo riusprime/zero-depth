@@ -26,7 +26,9 @@ const VIEW_BUDGET_MS := 6.0
 const FREE_BUDGET_MS := 4.0
 
 ## v0.8.0 MI (the load probe's frame breakdown): the frame free_slowly() last ran a slice on, the slice's time and the
-## nodes it freed (a tool reads them; nothing in the game does).
+## nodes it freed (a tool reads them; nothing in the game does). v0.8.0 LD: kept only while `probe` is on (the probe
+## turns it on; off in the game).
+static var probe := false
 static var probe_free_frame := -1
 static var probe_free_ms := 0.0
 static var probe_freed := 0
@@ -95,6 +97,19 @@ func on_worker(tree: SceneTree, job: Callable, label: String) -> void:
 	phases[label] = (Time.get_ticks_usec() - from) / 1000.0
 
 
+## v0.8.0 LD (owner O70): makes the next view's parts VIEW_BUDGET_MS a frame (WorldViewRoot.prebuild) before Main
+## makes the view, so making it holds no frame.
+func prebuild_view(tree: SceneTree) -> void:
+	var from := Time.get_ticks_usec()
+	var n := 0
+	while not WorldViewRoot.prebuild(VIEW_BUDGET_MS):
+		n += 1
+		await tree.process_frame
+	await tree.process_frame
+	phases["view_parts"] = (Time.get_ticks_usec() - from) / 1000.0
+	phases["view_parts_frames"] = n + 2
+
+
 ## v0.8.0 N12: runs the view's build queue VIEW_BUDGET_MS a frame until it is done, then lets one frame draw before
 ## the floor goes live (the HUD and the input are made in a frame of their own).
 func build_view(tree: SceneTree, q: ViewBuildQueue) -> void:
@@ -126,8 +141,9 @@ func free_slowly(tree: SceneTree, root: Node) -> void:
 				stack.pop_back()
 				n.free()
 				probe_freed += 1
-		probe_free_frame = Engine.get_process_frames()
-		probe_free_ms = (Time.get_ticks_usec() - from) / 1000.0
+		if probe:
+			probe_free_frame = Engine.get_process_frames()
+			probe_free_ms = (Time.get_ticks_usec() - from) / 1000.0
 		await tree.process_frame
 
 

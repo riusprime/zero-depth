@@ -329,6 +329,7 @@ func _load_plan(plan: FloorPlan) -> String:
 		_adopt_run(plan)
 	if plan.err != "":
 		return plan.err
+	await loads.prebuild_view(get_tree())  # v0.8.0 LD (O70): the view's parts a few a frame, so its frame holds none
 	var nodes := _floor_nodes(plan)
 	await loads.build_view(get_tree(), nodes["queue"])
 	_floor_live(nodes)

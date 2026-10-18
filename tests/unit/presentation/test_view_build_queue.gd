@@ -114,3 +114,31 @@ func test_a_view_built_in_slices_is_the_view_built_in_one_call() -> void:
 		assert_eq(reader.state_hash(), before, "%s: the sim untouched" % c[0])
 		one.queue_free()
 		sliced.queue_free()
+
+
+## v0.8.0 LD (owner O70): a load makes the view's parts a few a frame (WorldViewRoot.prebuild) before the view; the
+## view takes every one of them, and built from them it is the view made in one call.
+func test_a_view_made_from_parts_made_ahead_is_the_same_view() -> void:
+	var repo := ContentRepository.load_all()
+	var biome: BiomeDefinition = repo.get_def(&"biomes", &"ruins")
+	var w := SaveLab.floor_world(7, 1)
+	var reader := WorldReader.new(w)
+	var one := _view(biome)
+	one.setup(reader, biome.palette, 60.0)
+	var slices := 1
+	while not WorldViewRoot.prebuild(2.0):
+		slices += 1
+	assert_gt(slices, 1, "the parts are made over several slices")
+	assert_eq(WorldViewRoot._made.size(), WorldViewRoot.parts.size(), "every part made ahead")
+	var ahead := _view(biome)
+	assert_eq(WorldViewRoot._made.size(), 0, "the view took every part made ahead")
+	ahead.setup(reader, biome.palette, 60.0)
+	var a := PackedStringArray()
+	var b := PackedStringArray()
+	_paths(one, one, a)
+	_paths(ahead, ahead, b)
+	assert_gt(a.size(), 100, "a dressed floor")
+	assert_eq(b, a, "the same nodes, names and places")
+	WorldViewRoot.drop_prebuilt()
+	one.queue_free()
+	ahead.queue_free()
