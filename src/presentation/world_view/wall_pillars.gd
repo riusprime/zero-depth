@@ -108,7 +108,10 @@ static func build_one(ctx: Dictionary, p: Dictionary) -> void:
 	lines.append(top - 0.12)
 	lines.append(top)
 	var c := r.get_center()
-	var tint := rng.randf_range(0.86, 1.0) * ProceduralWall._variation(ctx, c.x, c.y)
+	var noise := float(ctx.get("calm", WallCalm.BUILDER)["tint"])  # v0.8.0 N15: its tint noise
+	var tint := (
+		lerpf(1.0, rng.randf_range(0.86, 1.0), noise) * ProceduralWall._variation(ctx, c.x, c.y)
+	)
 	for k in lines.size() - 1:
 		var y0 := lines[k] + (0.0 if k == 0 else ProceduralWall.GAP * 0.5)
 		var y1 := lines[k + 1] - ProceduralWall.GAP * 0.5
@@ -118,7 +121,7 @@ static func build_one(ctx: Dictionary, p: Dictionary) -> void:
 		elif k % 2 == 0:
 			along = -STEP_IN
 		var box := _span_of(r, axis, r.position[axis] - along, r.end[axis] + along)
-		var t := tint * rng.randf_range(0.9, 1.0)
+		var t := tint * lerpf(1.0, rng.randf_range(0.9, 1.0), noise)
 		var dy := rng.randf_range(0.0, 0.05) if k == lines.size() - 2 else 0.0
 		_box(b, box, y0, y1, dy, k == 0, Color(t, t, t))
 		ctx["blocks"] = int(ctx["blocks"]) + 1

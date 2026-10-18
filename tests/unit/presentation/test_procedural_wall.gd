@@ -1,15 +1,15 @@
 extends GutTest
-## v0.8.0 N10 (owners O66, O67), the G2 prototype's two wall styles, as properties over generated floors:
-## option A (ProceduralWall) is the same for a seed, stays inside the walls' footprints (only low fallen chunks lie
-## on a room's floor), leaves doorways and light niches open, joins its walls without a gap or an overlap (one top
-## over every point well inside the union, corners included), keeps its top within its bounds and its triangles
-## per metre far under the kit's; the dresser puts far fewer kit pieces on the walls it draws, and crystals still
-## find their wall spots. Option B (StageDresser.STYLE_FIT) lays whole pieces edge to edge, at their natural length,
-## never the same piece the same way round twice in a row, from decimated copies.
-## v0.8.0 N13 (owner O71, D50 = A everywhere): option A is the default in every biome, with no kit piece on a
-## structural wall in any biome (its pillars are the builder's own: inside the footprint, standing over the wall
-## round them, clear of the lights); a thick wall's top is a rim of laid stones round a sunken fill; the dev toggle
-## cycles a / old / b.
+## v0.8.0 N10 (owners O66, O67), the procedural walls (option A, ProceduralWall) as properties over generated floors:
+## the same for a seed, inside the walls' footprints (only low fallen chunks lie on a room's floor), doorways and
+## light niches open, joined without a gap or an overlap (one top over every point well inside the union, corners
+## included), the top within its bounds, triangles per metre far under the kit's; crystals still find their wall
+## spots.
+## v0.8.0 N13 (owner O71, D50 = A everywhere): no kit piece on a structural wall in any biome (its pillars are the
+## builder's own: inside the footprint, standing over the wall round them, clear of the lights); a thick wall's top
+## is a rim of laid stones round a sunken fill.
+## v0.8.0 N15 (owner O73, D53): the one wall style (the old kit tiling, option B, its decimated copies and the dev
+## toggle are gone); each biome's calming values (BiomeMood's wall_*) reach the builder and the shader, validated;
+## at the defaults the walls are N13's; calmer walls never cost more triangles per metre.
 
 const BIOMES: Array[StringName] = [
 	&"ruins", &"night_rocks", &"red_canyon", &"frozen_shore", &"starfall"
@@ -55,11 +55,10 @@ func _floor(seed_value: int) -> Dictionary:
 	}
 
 
-## The dresser's placements and the builder's result for a floor, as StageView builds option A.
-func _option_a(f: Dictionary) -> Array:
-	var g := f.duplicate()
-	g["wall_style"] = StageDresser.STYLE_PROC
-	var placements := StageDresser.dress(g)
+## The dresser's placements and the builder's result for a floor, as StageView builds them (v0.8.0 N15: `calm`, a
+## biome's calming values; none: N13's look).
+func _option_a(f: Dictionary, calm: Dictionary = {}) -> Array:
+	var placements := StageDresser.dress(f)
 	var built := (
 		ProceduralWall
 		. build(
@@ -69,6 +68,7 @@ func _option_a(f: Dictionary) -> Array:
 				"rooms": f["rooms"],
 				"doors": f["doors"],
 				"seed": f["seed"],
+				"calm": calm,
 			}
 		)
 	)
@@ -225,8 +225,8 @@ func test_triangles_per_metre_far_under_the_kit() -> void:
 
 
 ## v0.8.0 N13: "100% new": in every biome (its own cover and decoration swaps, as StageView passes them), the
-## dresser puts no kit piece on a structural wall option A draws; the light props keep their niches; interior cover
-## is dressed as before.
+## dresser puts no kit piece on a structural wall; the light props keep their niches; every cover slab is dressed
+## (v0.8.0 N15: the kit's wall tiling is gone, so this is the only dressing).
 func test_no_kit_pieces_on_the_exterior_walls_in_any_biome() -> void:
 	var content := ContentRepository.load_all()
 	for b: StringName in BIOMES:
@@ -239,33 +239,28 @@ func test_no_kit_pieces_on_the_exterior_walls_in_any_biome() -> void:
 				f["square_cover"] = StageView._names(biome.look.square_cover)
 				f["decor_swap"] = StageView._names(biome.look.decor_swap)
 			var walls: Array = f["walls"]
-			var old := 0
-			var old_cover := {}
-			for p: Dictionary in StageDresser.dress(f):
-				if p["wall"] >= 0 and int(walls[p["wall"]][3]) == 0 and p["kind"] == &"wall":
-					old += 1
-				elif p["kind"] == &"cover":
-					old_cover[p["wall"]] = true
 			var now := 0
 			var lights := 0
 			var cover := {}
-			var g := f.duplicate()
-			g["wall_style"] = StageDresser.STYLE_PROC
-			for p: Dictionary in StageDresser.dress(g):
-				if p["wall"] >= 0 and int(walls[p["wall"]][3]) == 0 and p["kind"] == &"wall":
+			for p: Dictionary in StageDresser.dress(f):
+				if p["wall"] >= 0 and int(walls[p["wall"]][3]) == 0 and p["kind"] != &"light":
 					now += 1
 				if p["kind"] == &"light":
 					lights += 1
 					assert_true(p.has("niche"), "a light prop gets its niche")
 				elif p["kind"] == &"cover":
 					cover[p["wall"]] = true
-			if s == SEEDS[0]:
-				gut.p("%s seed %d: kit wall pieces %d -> %d" % [b, s, old, now])
+			var slabs := {}
+			for i in walls.size():
+				assert_true(
+					int(walls[i][3]) == 1 or ProceduralWall.handles(walls[i]),
+					"%s seed %d: the builder draws structural wall %d" % [b, s, i]
+				)
+				if int(walls[i][3]) == 1:
+					slabs[i] = true
 			assert_eq(now, 0, "%s seed %d: no kit piece on a structural wall" % [b, s])
 			assert_gt(lights, 0)
-			assert_eq(
-				cover.keys(), old_cover.keys(), "%s seed %d: the same cover walls dressed" % [b, s]
-			)
+			assert_eq(cover.keys(), slabs.keys(), "%s seed %d: every cover slab dressed" % [b, s])
 
 
 ## v0.8.0 N13 (rule 3b): the builder's own pillars, where N10's kit accents stood: inside their wall's footprint,
@@ -374,101 +369,6 @@ func test_crystals_still_find_their_wall_spots() -> void:
 	assert_gt(walls, 0, "clusters along the walls")
 
 
-func test_option_b_lays_whole_pieces_edge_to_edge() -> void:
-	var within := 0
-	var all := 0
-	for s: int in SEEDS:
-		var f := _floor(s)
-		var g := f.duplicate()
-		g["wall_style"] = StageDresser.STYLE_FIT
-		var by_wall := {}
-		for p: Dictionary in StageDresser.dress(g):
-			if p["kind"] != &"wall" or int(f["walls"][p["wall"]][3]) != 0:
-				continue
-			assert_true(bool(p.get("lod", false)), "from the decimated copies")
-			if not by_wall.has(p["wall"]):
-				by_wall[p["wall"]] = []
-			by_wall[p["wall"]].append(p)
-		for wi: int in by_wall:
-			var w: Array = f["walls"][wi]
-			var fr := StageDresser._frame(w)
-			var axis: Vector3 = fr["axis"]
-			var rows := {}  # a thick wall is laid in rows across its depth: each row on its own
-			for p: Dictionary in by_wall[wi]:
-				var x: Transform3D = p["xform"]
-				var length := x.basis.x.length()
-				var along := (x.origin - (fr["center"] as Vector3)).dot(axis)
-				var across := (x.origin - (fr["center"] as Vector3)).dot(
-					fr["depth_axis"] as Vector3
-				)
-				if x.basis.y.length() < 0.6:
-					continue  # the low broken wall behind a light prop
-				var row := roundi(across * 100.0)
-				if not rows.has(row):
-					rows[row] = []
-				rows[row].append([along - length * 0.5, along + length * 0.5, p])
-				if StageDresser.FIT_LEN.has(p["piece"]):
-					var ratio := length / float(StageDresser.FIT_LEN[p["piece"]])
-					all += 1
-					if absf(ratio - 1.0) <= StageDresser.FIT_STRETCH:
-						within += 1
-					assert_between(ratio, 0.5, 1.6, "never badly stretched")
-			for row: int in rows:
-				var spans: Array = rows[row]
-				spans.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
-				for k in range(1, spans.size()):
-					assert_lte(spans[k - 1][1], spans[k][0] + 0.001, "no overlap on wall %d" % wi)
-					var pa: Dictionary = spans[k - 1][2]
-					var pb: Dictionary = spans[k][2]
-					if pa["piece"] == pb["piece"] and spans[k][0] - spans[k - 1][1] < 0.01:  # touching
-						var xa: Transform3D = pa["xform"]
-						var xb: Transform3D = pb["xform"]
-						assert_false(
-							(
-								xa.basis.x.normalized().is_equal_approx(xb.basis.x.normalized())
-								and signf(xa.basis.determinant()) == signf(xb.basis.determinant())
-							),
-							"the same piece never twice the same way round"
-						)
-	gut.p(
-		(
-			"option B: %d of %d pieces within ±%d%% of their natural length"
-			% [within, all, StageDresser.FIT_STRETCH * 100]
-		)
-	)
-	assert_gt(within, all * 0.9, "nine in ten at their natural length")
-
-
-func test_option_b_lengths_are_the_models_own() -> void:
-	for id: StringName in StageDresser.FIT_LEN:
-		var piece := KitModels.get_piece(id)
-		assert_false(piece.is_empty(), "%s loads" % id)
-		assert_almost_eq(
-			(piece["size"] as Vector3).x, float(StageDresser.FIT_LEN[id]), 0.01, String(id)
-		)
-		assert_almost_eq((piece["size"] as Vector3).y, float(StageDresser.FIT_HEIGHT[id]), 0.001)
-
-
-func test_the_decimated_copies_are_light() -> void:
-	for id: StringName in StageDresser.FIT_LEN:
-		var path := KitModels.LOD_DIR + String(id) + "_lod.res"
-		assert_true(ResourceLoader.exists(path), path)
-		var mesh := load(path) as ArrayMesh
-		var tris := (mesh.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
-		var full := KitModels.get_piece(id)["mesh"] as ArrayMesh
-		var full_tris := (
-			(full.surface_get_arrays(0)[Mesh.ARRAY_INDEX] as PackedInt32Array).size() / 3
-		)
-		gut.p("%s: %d -> %d triangles" % [id, full_tris, tris])
-		assert_lte(tris, 3000, "%s at most 3k triangles" % id)
-		assert_lt(tris * 3, full_tris, "%s under a third" % id)
-		assert_not_null(mesh.surface_get_material(0), "keeps its texture")
-		var lod := KitModels.get_lod_piece(id)
-		assert_almost_eq(
-			(lod["size"] as Vector3).x, (KitModels.get_piece(id)["size"] as Vector3).x, 0.02
-		)
-
-
 func test_a_procedural_wall_fades_with_its_wall() -> void:
 	var f := _floor(77)
 	var both := _option_a(f)
@@ -491,6 +391,7 @@ func test_a_procedural_wall_fades_with_its_wall() -> void:
 	assert_not_null(node)
 	var solid := node.get_surface_override_material(0) as ShaderMaterial
 	assert_not_null(solid.get_shader_parameter(&"face_tex"), "the owner's wall texture")
+	assert_eq(float(solid.get_shader_parameter(&"detail")), 1.0, "N13's look at the defaults")
 	assert_not_null(solid.get_shader_parameter(&"top_tex"), "and its top texture")
 	kit.set_faded(PackedInt32Array([wi]))
 	var faded := node.get_surface_override_material(0) as ShaderMaterial
@@ -500,24 +401,9 @@ func test_a_procedural_wall_fades_with_its_wall() -> void:
 	assert_eq(node.get_surface_override_material(0), solid, "restored")
 
 
-## v0.8.0 N13 (D50): option A by default in every biome (no "auto" any more); the kit and B only on the toggle.
-func test_the_wall_style_follows_the_dev_toggle() -> void:
-	var stage := StageView.new()
-	autofree(stage)
-	var before := ViewPrefs.wall_style
-	ViewPrefs.wall_style = &"a"
-	assert_eq(ViewPrefs.WALL_STYLES, [&"a", &"old", &"b"] as Array[StringName])
-	for b: StringName in BIOMES:
-		stage.prop_style = b
-		assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_PROC, "%s draws A" % b)
-	ViewPrefs.wall_style = &"b"
-	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_FIT)
-	ViewPrefs.wall_style = &"old"
-	stage.prop_style = &"ruins"
-	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_KIT)
-	ViewPrefs.wall_style = &"auto"  # an old value: A
-	assert_eq(stage.resolved_wall_style(), StageDresser.STYLE_PROC)
-	ViewPrefs.wall_style = before
+## v0.8.0 N13 (D50), N15 (D53): one wall style in every biome, at its own tile size, from its own textures; the dev
+## panel's Walls button is gone.
+func test_every_biome_draws_its_own_procedural_walls() -> void:
 	var content := ContentRepository.load_all()
 	for b: StringName in BIOMES:
 		var mood: BiomeMood = (content.get_def(&"biomes", b) as BiomeDefinition).mood
@@ -527,29 +413,91 @@ func test_the_wall_style_follows_the_dev_toggle() -> void:
 				% [b, mood.wall_texture_m, mood.wall_top_texture_m]
 			)
 		)
-		assert_between(mood.wall_texture_m, 3.0, 6.0, "%s's own face scale" % b)
+		assert_between(mood.wall_texture_m, 3.0, 8.0, "%s's own face scale" % b)
 	for b: StringName in BIOMES:
 		var tex := StageView.wall_textures(b)
 		assert_not_null(tex["face"], "%s face" % b)
 		assert_not_null(tex["top"], "%s top" % b)
 		assert_true((tex["face"] as Texture2D).resource_path.ends_with("tex_wall_%s.png" % b))
-
-
-func test_the_dev_panel_walls_button_cycles_the_style() -> void:
-	var before := ViewPrefs.wall_style
-	ViewPrefs.wall_style = &"a"
 	var panel := DevPanel.new(DebugApi.new(SaveLab.floor_world(20261008, 1)))
 	add_child_autofree(panel)
-	DevWalls.wire(panel)
-	var label := panel.find_child("WallStyleChoice", true, false) as Label
-	assert_eq(label.text, "walls: a")
-	var b := panel.find_child("WallStyle", true, false) as Button
-	assert_not_null(b, "the Walls button")
-	assert_eq(b.text, "UI_DEV_WALL_STYLE")
-	var seen: Array[StringName] = []
-	for k in 3:
-		b.pressed.emit()
-		seen.append(ViewPrefs.wall_style)
-	assert_eq(seen, [&"old", &"b", &"a"] as Array[StringName], "A, old, B and round")
-	assert_eq(label.text, "walls: a")
-	ViewPrefs.wall_style = before
+	assert_null(panel.find_child("WallStyle", true, false), "no Walls button")
+	assert_null(panel.find_child("WallStyleChoice", true, false), "no wall style readout")
+	assert_false(
+		ResourceLoader.exists("res://assets/models/kit_lod/wall_2m_lod.res"), "no decimated copies"
+	)
+
+
+## v0.8.0 N15 (rule 6): each biome's calming values come from its data and are validated; the defaults are N13's
+## look (the same walls, vertex for vertex), and each biome's own values reach the builder and the shader.
+func test_each_biome_calms_its_walls_from_its_data() -> void:
+	var plain := BiomeMood.new()
+	assert_eq(WallCalm.calm_of(plain), WallCalm.BUILDER, "the defaults: N13's builder")
+	assert_eq(
+		WallCalm.look_of(plain),
+		{"detail": 1.0, "face_contrast": 1.0, "top_contrast": 1.0},
+		"and N13's shader"
+	)
+	var f := _floor(77)
+	var a: Dictionary = _option_a(f)[1]
+	var b: Dictionary = _option_a(f, WallCalm.calm_of(plain))[1]
+	assert_eq(a["tris"], b["tris"])
+	for owner: int in a["surfaces"]:
+		assert_eq(
+			a["surfaces"][owner][0][Mesh.ARRAY_VERTEX],
+			b["surfaces"][owner][0][Mesh.ARRAY_VERTEX],
+			"wall %d as N13 drew it" % owner
+		)
+	var bad := BiomeMood.new()
+	bad.wall_breakage = 3.0
+	bad.wall_detail = 1.5
+	var problems := bad.problems()
+	assert_eq(problems.size(), 2, str(problems))
+	var content := ContentRepository.load_all()
+	for id: StringName in BIOMES:
+		var mood: BiomeMood = (content.get_def(&"biomes", id) as BiomeDefinition).mood
+		assert_eq(mood.problems().size(), 0, "%s's walls validate" % id)
+		var look := WallCalm.look_of(mood)
+		var m := ProceduralWall.material(null, null, false, look)
+		for k: String in look:
+			assert_almost_eq(float(m.get_shader_parameter(StringName(k))), float(look[k]), 0.0001)
+		gut.p("%s: calm %s, look %s" % [id, WallCalm.calm_of(mood), look])
+
+
+## v0.8.0 N15: a calmer biome never costs more triangles per metre than N13's walls on the same floor (bigger stones,
+## fewer breaks), and it still has its rim, its fill and its pillars.
+func test_calmer_walls_cost_no_more_triangles() -> void:
+	var content := ContentRepository.load_all()
+	for id: StringName in BIOMES:
+		var mood: BiomeMood = (content.get_def(&"biomes", id) as BiomeDefinition).mood
+		for s: int in SEEDS:
+			var f := _floor(s)
+			var n13: Dictionary = _option_a(f)[1]
+			var now: Dictionary = _option_a(f, WallCalm.calm_of(mood))[1]
+			var before := float(n13["tris"]) / float(n13["face_m"])
+			var after := float(now["tris"]) / float(now["face_m"])
+			(
+				gut
+				. p(
+					(
+						"%s seed %d: %.1f -> %.1f triangles per metre; pillars %d; fill %.0f m2 at %.2f m, rim at %.2f m"
+						% [
+							id,
+							s,
+							before,
+							after,
+							now["pillars"],
+							now["top_fill_m2"],
+							now["top_fill_h"],
+							now["top_rim_h"]
+						]
+					)
+				)
+			)
+			assert_lte(after, before + 0.05, "%s seed %d: no more triangles per metre" % [id, s])
+			assert_gt(int(now["pillars"]), 0, "%s seed %d: the pillars stay" % [id, s])
+			assert_lt(
+				float(now["top_fill_h"]),
+				float(now["top_rim_h"]) - 0.15,
+				"%s: the fill sits low" % id
+			)

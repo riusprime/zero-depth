@@ -1,6 +1,7 @@
 extends GutTest
 ## The kit dressing rules (v0.5.9 Step 4), as properties over generated floors: the same seed gives the same
-## placements; every wall and slab is dressed; looks solid = is solid (a piece taller than the decoration limit
+## placements; every slab is dressed and every structural wall is the procedural wall's (v0.8.0 N15: the only
+## style); looks solid = is solid (a piece taller than the decoration limit
 ## stays inside its sim footprint); decoration stays low and out of doorways and away from rewards and the portal;
 ## the start hall gets its light, and no light sits in a doorway.
 
@@ -88,7 +89,12 @@ func test_every_wall_and_slab_is_dressed_and_tall_pieces_stay_in_their_footprint
 					)
 					return
 		for i in walls.size():
-			assert_true(dressed.has(i), "seed %d: wall %d is dressed" % [500 + s, i])
+			if int(walls[i][3]) == 0:
+				assert_true(
+					ProceduralWall.handles(walls[i]), "seed %d: wall %d is built" % [500 + s, i]
+				)
+			else:
+				assert_true(dressed.has(i), "seed %d: wall %d is dressed" % [500 + s, i])
 
 
 func test_decoration_keeps_clear_and_lights_avoid_doorways() -> void:

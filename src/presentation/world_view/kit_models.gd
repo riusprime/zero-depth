@@ -7,10 +7,6 @@ extends RefCounted
 ## cached. A missing file gives {} and the caller draws its primitive (L15: missing art never blocks a step).
 
 const DIR := "res://assets/models/kit/"
-## v0.8.0 N10 (option B, owner O67): decimated copies of the four wall pieces, <id>_lod.res (an ArrayMesh in the raw
-## model's space with the piece's own material and texture; scripts/assets/kit_lod.gd makes them), normalised as the
-## originals are.
-const LOD_DIR := "res://assets/models/kit_lod/"
 ## Per piece: the yaw (radians about Y) that turns its long side onto +X (read from renders of the raw models),
 ## its natural height in metres (KIT_REQUESTS), and its role for the dresser.
 const SPECS := {
@@ -50,7 +46,6 @@ const DECOR_TRIS := 1000
 
 ## Where pieces are looked up (tests point it elsewhere to see the fallback).
 static var dir := DIR
-static var lod_dir := LOD_DIR
 static var _cache := {}
 static var _split_cache := {}
 static var _decor_cache := {}
@@ -65,26 +60,6 @@ static func get_piece(id: StringName) -> Dictionary:
 	var out := {}
 	if SPECS.has(id) and ResourceLoader.exists(path):
 		out = _normalise(ModelLibrary.first_surface(load(path) as PackedScene), SPECS[id])
-	_cache[path] = out
-	return out
-
-
-## v0.8.0 N10: a piece's decimated copy (same keys as get_piece), or the piece itself when it has none.
-static func get_lod_piece(id: StringName) -> Dictionary:
-	var path := lod_dir + String(id) + "_lod.res"
-	if _cache.has(path):
-		return _cache[path]
-	var out := {}
-	if SPECS.has(id) and ResourceLoader.exists(path):
-		var mesh := load(path) as ArrayMesh
-		if mesh != null and mesh.get_surface_count() > 0:
-			var surface := {
-				"arrays": mesh.surface_get_arrays(0),
-				"material": mesh.surface_get_material(0) as StandardMaterial3D,
-			}
-			out = _normalise(surface, SPECS[id])
-	if out.is_empty():
-		out = get_piece(id)
 	_cache[path] = out
 	return out
 

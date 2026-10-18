@@ -42,6 +42,9 @@ extends RefCounted
 ##    anisotropic (no shimmer); the face offset and flipped per SEGMENT_M stretch, the tops per stone, a
 ##    low-frequency brightness over stones and blocks (no visible tiling); vertex colour darkens the base (grime)
 ##    and the recesses; flat-shaded facets.
+## 6. v0.8.0 N15 (owner O73, "Night biome textures look busy … less busy keeping this model?"): each biome calms its
+##    walls without changing the model (WallCalm: its BiomeMood's wall_* values; the defaults are N13's look, the
+##    stream's draws the same whatever the values, so a biome at the defaults builds exactly N13's walls).
 
 ## Grid refinement (m).
 const STEP := 0.6
@@ -103,18 +106,6 @@ const FADED_ALPHA := 0.3
 const STEP_FACE := Color(0.86, 0.84, 0.82)
 const TOP_COL := Color(0.97, 0.96, 0.94)
 const RECESS := Color(0.7, 0.68, 0.66)
-## Face or top texture by the vertex colour's alpha, times its colour (grime, tint); flat, rough stone.
-const SHADER := """shader_type spatial;
-render_mode cull_back, diffuse_burley;
-uniform sampler2D face_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
-uniform sampler2D top_tex : source_color, filter_linear_mipmap_anisotropic, repeat_enable;
-void fragment() {
-	vec3 t = COLOR.a > 0.5 ? texture(top_tex, UV).rgb : texture(face_tex, UV).rgb;
-	ALBEDO = t * COLOR.rgb;
-	ROUGHNESS = 1.0;
-	//FADE
-}
-"""
 ## Evidence only (scripts/shots/walls_n10.gd grain=old): the look before O68's fix, to compare: 2.4 m and 3 m tiles,
 ## no mipmaps (the textures were first installed without them), no offsets, no variation.
 static var legacy_look := false
@@ -136,7 +127,8 @@ static func footprint(w: Array) -> Rect2:
 
 ## Builds the walls. `f` keys: "walls" (StageDresser's: [[center, half, yaw, kind, …]]), "cuts": [Rect2] (the
 ## light props' niches: the wall is open there), "rooms": [Rect2], "doors": [Rect2], "seed": int; v0.8.0 O68,
-## "face_m", "top_m": the texture tiles' size (m; FACE_M_DEFAULT, TOP_M_DEFAULT).
+## "face_m", "top_m": the texture tiles' size (m; FACE_M_DEFAULT, TOP_M_DEFAULT); v0.8.0 N15, "calm": rule 6's
+## builder values (WallCalm.calm_of; missing keys: WallCalm.BUILDER).
 ## Returns {"surfaces": {wall index: [its mesh arrays (one surface)]}, "tris": int, "face_m":
 ## float (the faces' length along the ground), "blocks": int, "walls": [the wall indices drawn], v0.8.0 N13
 ## "pillars": int, "pillar_rects": [Rect2] (their sim-plane footprints), and the top's rim and fill (rule 2):
@@ -156,7 +148,10 @@ static func build(f: Dictionary) -> Dictionary:
 	if rects.is_empty():
 		return out
 	var g := WallGrid.new(rects, owners, f.get("cuts", []))
+	var calm := WallCalm.BUILDER.duplicate()
+	calm.merge(f.get("calm", {}), true)
 	var ctx := {
+		"calm": calm,
 		"g": g,
 		"salt": salt,
 		"rng": rng,
@@ -218,6 +213,8 @@ static func height_at(x: float, y: float, salt: int) -> float:
 
 static func _core(ctx: Dictionary) -> void:
 	var g: WallGrid = ctx["g"]
+	var fill_col := FILL_COL * (float(ctx["calm"]["fill_shade"]) / 0.66)
+	fill_col.a = 1.0
 	var depth := g.edge_dist()
 	var fill := PackedByteArray()
 	fill.resize(g.nx * g.ny)
@@ -245,7 +242,7 @@ static func _core(ctx: Dictionary) -> void:
 			b.u_flip = 1.0
 			var x0 := (g.xs[i] + g.xs[i + 1]) * 0.5
 			var y0 := (g.ys[j] + g.ys[j + 1]) * 0.5
-			var top := (FILL_COL if fill[j * g.nx + i] == 1 else TOP_COL) * _variation(ctx, x0, y0)
+			var top := (fill_col if fill[j * g.nx + i] == 1 else TOP_COL) * _variation(ctx, x0, y0)
 			var p00 := _top(ctx, i, j, h)
 			var p10 := _top(ctx, i + 1, j, h)
 			var p11 := _top(ctx, i + 1, j + 1, h)
@@ -303,8 +300,10 @@ static func _stone_h(ctx: Dictionary, i: int, j: int) -> float:
 	var salt: int = ctx["salt"]
 	var cx := (g.xs[i] + g.xs[i + 1]) * 0.5
 	var cy := (g.ys[j] + g.ys[j + 1]) * 0.5
-	var row := floori(cy / STONE)
-	var wide := lerpf(STONE_LONG.x, STONE_LONG.y, _hash(row, 0, salt + 75))
+	var calm: Dictionary = ctx["calm"]
+	var deep := STONE * float(calm["stone"])
+	var row := floori(cy / deep)
+	var wide := lerpf(STONE_LONG.x, STONE_LONG.y, _hash(row, 0, salt + 75)) * float(calm["stone"])
 	var off := _hash(row, 1, salt + 76) * wide
 	var col := floori((cx + off) / wide)
 	var key := Vector2i(col, row)
@@ -312,9 +311,9 @@ static func _stone_h(ctx: Dictionary, i: int, j: int) -> float:
 	var cache: Dictionary = ctx["stones"]
 	if cache.has(key):
 		return cache[key]
-	var h := height_at((col + 0.5) * wide - off, (row + 0.5) * STONE, salt)
-	h += lerpf(-0.22, 0.12, _hash(col, row, salt + 71))
-	if _hash(col, row, salt + 73) < STONE_MISSING:
+	var h := height_at((col + 0.5) * wide - off, (row + 0.5) * deep, salt)
+	h += -0.05 + (_hash(col, row, salt + 71) - 0.5) * 0.34 * float(calm["jitter"])  # -0.22..0.12 at 1
+	if _hash(col, row, salt + 73) < STONE_MISSING * float(calm["breaks"]):
 		h -= lerpf(0.2, 0.35, _hash(col, row, salt + 74))
 	h = clampf(snappedf(h, STONE_STEP), MIN_H, MAX_H)
 	cache[key] = h
@@ -328,15 +327,19 @@ static func _fill_h(ctx: Dictionary, i: int, j: int) -> float:
 	var salt: int = ctx["salt"]
 	var cx := (g.xs[i] + g.xs[i + 1]) * 0.5
 	var cy := (g.ys[j] + g.ys[j + 1]) * 0.5
-	var key := Vector2i(floori(cx / FILL_LUMP), floori(cy / FILL_LUMP))
+	var calm: Dictionary = ctx["calm"]
+	var lump := float(calm["fill_lump"])
+	var noise := float(calm["fill_noise"])
+	var key := Vector2i(floori(cx / lump), floori(cy / lump))
 	g.cell_off[j * g.nx + i] = _hash(key.x, key.y, salt + 101)
 	var cache: Dictionary = ctx["fill"]
 	if cache.has(key):
 		return cache[key]
-	var h := height_at((key.x + 0.5) * FILL_LUMP, (key.y + 0.5) * FILL_LUMP, salt)
-	h -= lerpf(FILL_DROP.x, FILL_DROP.y, _hash(key.x, key.y, salt + 103))
-	if _hash(key.x, key.y, salt + 105) < STONE_MISSING:
-		h -= 0.15
+	var h := height_at((key.x + 0.5) * lump, (key.y + 0.5) * lump, salt)
+	var mid := (FILL_DROP.x + FILL_DROP.y) * 0.5
+	h -= mid + (_hash(key.x, key.y, salt + 103) - 0.5) * (FILL_DROP.y - FILL_DROP.x) * noise
+	if _hash(key.x, key.y, salt + 105) < STONE_MISSING * float(calm["breaks"]):
+		h -= 0.15 * noise
 	h = clampf(snappedf(h, STONE_STEP), FILL_MIN, MAX_H)
 	cache[key] = h
 	return h
@@ -539,7 +542,8 @@ static func _segment(ctx: Dictionary, run: Dictionary, b: Buf, s: float) -> void
 static func _variation(ctx: Dictionary, x: float, y: float) -> float:
 	if legacy_look:
 		return 1.0
-	return lerpf(VARIATION_LO, 1.0, _value(x, y, VARIATION_M, int(ctx["salt"]) + 91))
+	var lo := 1.0 - (1.0 - VARIATION_LO) * float(ctx.get("calm", WallCalm.BUILDER)["tint"])
+	return lerpf(lo, 1.0, _value(x, y, VARIATION_M, int(ctx["salt"]) + 91))
 
 
 ## How far the union is solid from corner p along d (sampled just inside along e), up to QUOIN.
@@ -605,10 +609,11 @@ static func _course(ctx: Dictionary, run: Dictionary, a: float, b: float, k: int
 		if s1 - s0 < 0.08:
 			continue
 		var roll := rng.randf()
-		if roll < MISSING_CHANCE:
+		var breaks := float(ctx["calm"]["breaks"])
+		if roll < MISSING_CHANCE * breaks:
 			continue
 		var recess := rng.randf_range(0.0, 0.015)
-		if roll < MISSING_CHANCE + RECESS_CHANCE:
+		if roll < (MISSING_CHANCE + RECESS_CHANCE) * breaks:
 			recess = rng.randf_range(0.04, 0.08)
 		recess += LEAN * k
 		var top := minf(y1, _top_over(ctx, run, s0, s1) - 0.03)
@@ -632,22 +637,25 @@ static func _block(
 ) -> void:
 	var rng: RandomNumberGenerator = ctx["rng"]
 	var back := -(INSET + EMBED)
-	var j := 0.008
+	var calm: Dictionary = ctx["calm"]
+	var jit := float(calm["jitter"])
+	var j := 0.008 * jit
+	var d := 0.012 * jit
 	# Front corners: bottom-left, bottom-right, top-right, top-left as [s, y, o].
 	var fr: Array[Vector3] = [
-		Vector3(s0 + rng.randf_range(-j, j), y0, o_front - rng.randf() * 0.012),
-		Vector3(s1 + rng.randf_range(-j, j), y0, o_front - rng.randf() * 0.012),
+		Vector3(s0 + rng.randf_range(-j, j), y0, o_front - rng.randf() * d),
+		Vector3(s1 + rng.randf_range(-j, j), y0, o_front - rng.randf() * d),
 		Vector3(
-			s1 + rng.randf_range(-j, j), y1 + rng.randf_range(-j, j), o_front - rng.randf() * 0.012
+			s1 + rng.randf_range(-j, j), y1 + rng.randf_range(-j, j), o_front - rng.randf() * d
 		),
 		Vector3(
-			s0 + rng.randf_range(-j, j), y1 + rng.randf_range(-j, j), o_front - rng.randf() * 0.012
+			s0 + rng.randf_range(-j, j), y1 + rng.randf_range(-j, j), o_front - rng.randf() * d
 		),
 	]
 	if broken:
-		fr[2].y -= rng.randf_range(0.0, 0.06)
-		fr[3].y -= rng.randf_range(0.0, 0.06)
-	if rng.randf() < CHIP_CHANCE:
+		fr[2].y -= rng.randf_range(0.0, 0.06) * jit
+		fr[3].y -= rng.randf_range(0.0, 0.06) * jit
+	if rng.randf() < CHIP_CHANCE * float(calm["breaks"]):
 		var c := 2 if rng.randf() < 0.5 else 3
 		var w := minf(rng.randf_range(0.05, 0.1), (s1 - s0) * 0.4)
 		fr[c].x += -w if c == 2 else w
@@ -658,7 +666,9 @@ static func _block(
 	]
 	var mid := (s0 + s1) * 0.5
 	var c2 := _sim(run, mid, 0.0)
-	var tint := rng.randf_range(0.82, 1.0) * _variation(ctx, c2.x, c2.y)
+	var tint := (
+		lerpf(1.0, rng.randf_range(0.82, 1.0), float(calm["tint"])) * _variation(ctx, c2.x, c2.y)
+	)
 	var col := Color(tint, tint, tint)
 	var owner := _owner(ctx, run, mid)
 	if owner < 0:
@@ -695,7 +705,7 @@ static func _quoins(
 		var y1 := minf(COURSES[k + 1] - GAP * 0.5, top_h - 0.02)
 		if y1 - y0 < 0.1:
 			break
-		if rng.randf() >= QUOIN_CHANCE:
+		if rng.randf() >= 1.0 - (1.0 - QUOIN_CHANCE) * float(ctx["calm"]["breaks"]):
 			continue
 		# A corner stone is a box over the corner square: built as a block of depth q (its front on this face).
 		var sub := run.duplicate()
@@ -729,7 +739,7 @@ static func _corner_block(
 		_at(run, s1, back, y1),
 		_at(run, s0, back, y1 - rng.randf_range(0.0, 0.03)),
 	]
-	var t := rng.randf_range(0.86, 1.0)
+	var t := lerpf(1.0, rng.randf_range(0.86, 1.0), float(ctx["calm"]["tint"]))
 	var col := Color(t, t, t)
 	var out := _out3(run)
 	var al := _along3(run)
@@ -917,10 +927,13 @@ static func _vert(part: Buf, p: Vector3, n: Vector3, up: bool, along_z: bool, co
 	part.c.append(Color(col.r * grime, col.g * grime, col.b * grime, 1.0 if up else 0.0))
 
 
-## The walls' material (one per floor; `faded`: the occlusion's dithered see-through copy).
-static func material(face: Texture2D, top: Texture2D, faded: bool = false) -> ShaderMaterial:
+## The walls' material (one per floor; `faded`: the occlusion's dithered see-through copy; v0.8.0 N15, `look`: rule
+## 6's shader values, WallCalm.look_of's keys; missing: N13's look).
+static func material(
+	face: Texture2D, top: Texture2D, faded: bool = false, look: Dictionary = {}
+) -> ShaderMaterial:
 	var sh := Shader.new()
-	var code := SHADER
+	var code := WallCalm.SHADER.replace("//BIAS", str(WallCalm.SOFT_BIAS))
 	if legacy_look:
 		code = code.replace("filter_linear_mipmap_anisotropic", "filter_linear")
 	sh.code = code.replace(
@@ -930,6 +943,8 @@ static func material(face: Texture2D, top: Texture2D, faded: bool = false) -> Sh
 	m.shader = sh
 	m.set_shader_parameter(&"face_tex", face)
 	m.set_shader_parameter(&"top_tex", top if top != null else face)
+	for k: String in ["detail", "face_contrast", "top_contrast"]:
+		m.set_shader_parameter(StringName(k), float(look.get(k, 1.0)))
 	return m
 
 

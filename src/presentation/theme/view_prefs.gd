@@ -3,8 +3,6 @@ extends RefCounted
 ## Presentation-only preferences from the profile's settings (v0.3.0 O): reduced motion and the colour-blind mode.
 ## They change how things look, never an outcome (EI-07). Main applies them at boot and whenever Options changes one.
 
-const WALL_STYLES: Array[StringName] = [&"a", &"old", &"b"]  # v0.8.0 N10, N13: wall_style's values
-
 ## Reduced motion: no camera shake at all, and hit bursts throw half the sparks.
 static var reduced_motion := false
 ## v0.6.0 MX3: the attack effects' density (Options "Effects density": low / medium / high): AttackFormView scales its
@@ -13,11 +11,6 @@ static var effects_density := "high"
 ## v0.8.0 GF3 (owner O22): the Blade's hit-stop (HitStop: the hero's swing and the struck enemy held ~2 frames on a
 ## Blade hit, in the view only). Options -> Accessibility "Hit-stop"; reduced motion turns it off too.
 static var hit_stop := true
-## v0.8.0 N10 (owners O66, O67), N13 (owner O71, D50 = A everywhere): which structural walls a floor is drawn with:
-## "a" (the game's walls in every biome: the procedural ruin, ProceduralWall), and, as dev comparisons only, "old"
-## (the kit pieces stacked as before N10) and "b" (the kit laid edge to edge from its decimated copies). The dev
-## panel's tools page cycles it; a floor built after the change shows it (Restart floor).
-static var wall_style := &"a"
 
 
 static func apply_settings(profile: ProfileStore) -> void:
@@ -33,13 +26,6 @@ static func apply_settings(profile: ProfileStore) -> void:
 ## How many of `n` sparks a burst throws.
 static func sparks(n: int) -> int:
 	return maxi(1, (n + 1) / 2) if reduced_motion else n
-
-
-## v0.8.0 N10: the next wall style (the dev panel's button); returns it.
-static func next_wall_style() -> StringName:
-	var k := WALL_STYLES.find(wall_style)
-	wall_style = WALL_STYLES[(k + 1) % WALL_STYLES.size()]
-	return wall_style
 
 
 ## v0.8.0 GF3: whether a Blade hit holds the views (the option on, reduced motion off).

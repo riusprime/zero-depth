@@ -6,10 +6,6 @@ extends PanelContainer
 ## chosen normal enemy, all through DebugApi. v0.5.5 DS: the hidden catch-up's readout (developers only; the player
 ## never sees it: owner D4 "Yes, but hidden").
 
-## v0.8.0 N10 (G2): the Walls button; Main cycles ViewPrefs.wall_style (debug never reaches presentation) and
-## answers with show_wall_style.
-signal wall_style_requested
-
 var api: DebugApi
 var _info := Label.new()
 var _hash := Label.new()
@@ -19,7 +15,6 @@ var _ability := Label.new()
 var _mod := Label.new()  # v0.6.0 MX4: the modifier card GrantMod gives
 var _catch_up := Label.new()
 var _intensity := Label.new()  # v0.8.0 N5: the intensity director's readout
-var _walls := Label.new()  # v0.8.0 N10: the wall style (ViewPrefs.wall_style)
 
 
 static func unlocked(debug_build: bool = OS.is_debug_build()) -> bool:
@@ -60,7 +55,6 @@ func _init(p_api: DebugApi) -> void:
 		["GoArena", "UI_DEV_GO_ARENA", api.go_arena],  # v0.5.5 AR
 		["ClearWave", "UI_DEV_CLEAR_WAVE", api.clear_wave],
 		["NextPhase", "UI_DEV_NEXT_PHASE", api.next_phase],  # v0.4.0 TU
-		["WallStyle", "UI_DEV_WALL_STYLE", _next_wall_style],  # v0.8.0 N10 (G2: old / A / B)
 	]:
 		var b := Button.new()
 		b.name = spec[0]
@@ -86,18 +80,6 @@ func _init(p_api: DebugApi) -> void:
 	_intensity.name = "Intensity"
 	_intensity.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	col.add_child(_intensity)
-	_walls.name = "WallStyleChoice"
-	_walls.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
-	col.add_child(_walls)
-
-
-func _next_wall_style() -> void:
-	wall_style_requested.emit()
-
-
-## v0.8.0 N10: shows the wall style in use (auto / old / a / b); the next floor built (Restart floor) draws it.
-func show_wall_style(style: String) -> void:
-	_walls.text = "walls: " + style
 
 
 func _process(_delta: float) -> void:
