@@ -75,7 +75,7 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 		w.boss_flow.set_transit(false, run.floor_index > 1)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))
 	# v0.5.0 EV, as Main: event rooms and curses after the heat (v0.8.0 N17: an older save's floor keeps its rooms)
-	EventCompiler.setup(w, repo, FloorScenario.legacy_curse_room_of(run))
+	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))  # v0.5.5 DS
 	CatchUp.start_floor(w)
 	return w

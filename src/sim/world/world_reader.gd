@@ -2318,6 +2318,23 @@ func event_curse_room() -> int:
 	return _w.ev.room[_w.ev.curse_k] if _w.ev.curse_k >= 0 else -1
 
 
+## v0.8.0 N19 (O80): whether the curse room is a room of its own (CurseRoom.furnish; false on a floor built under
+## N17's rules, whose curse room kept its interior).
+func curse_room_furnished() -> bool:
+	return _w.floor_layout != null and _w.floor_layout.curse_room >= 0
+
+
+## v0.8.0 N19: the curse room's crystal clusters as [centre: Vector2, half side (m)] (the altar's footprint left out).
+func curse_room_crystals() -> Array:
+	var out: Array = []
+	if _w.floor_layout == null or _w.floor_layout.curse_room < 0:
+		return out
+	var solids := _w.floor_layout.curse_solids
+	for i in range(1, solids.size()):
+		out.append([solids[i].center, solids[i].half.x])
+	return out
+
+
 ## EVENT_READY, EVENT_ACTIVE (a fight or a defence running) or EVENT_DONE.
 func event_state(k: int) -> int:
 	return _w.ev.state[k]

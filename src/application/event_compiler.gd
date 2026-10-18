@@ -103,16 +103,20 @@ static func compile_rules(def: EventRulesDefinition) -> EventRules:
 	t.hunt_range_m = def.hunt_range_m
 	t.drop_offset_m = def.drop_offset_m
 	t.curse_room_floor_chance_permille = def.curse_room_floor_chance_permille  # v0.8.0 N17 (O75)
+	t.curse_room_deep_chance_permille = def.curse_room_deep_chance_permille  # v0.8.0 N19 (O80)
 	return t
 
 
-## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `legacy` (v0.8.0
-## N17): a floor saved before the curse room keeps its event rooms as they were (FloorScenario.legacy_curse_room_of).
-static func setup(w: World, repo: ContentRepository, legacy: bool = false) -> void:
+## Sets up a built floor's event rooms from the repository (Main, the shot scripts and the tests). `curse_rules`
+## (v0.8.0 N17, N19; Events.CURSE_RULES_*): a floor saved under older floor rules keeps its event rooms as they were
+## (FloorScenario.curse_room_rules_of).
+static func setup(
+	w: World, repo: ContentRepository, curse_rules: int = Events.CURSE_RULES_N19
+) -> void:
 	Events.setup(
 		w,
 		compile_events(repo),
 		compile_curses(repo),
 		compile_rules(repo.get_def(&"event_rules", &"floor")),
-		legacy
+		curse_rules
 	)
