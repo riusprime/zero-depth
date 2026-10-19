@@ -879,6 +879,10 @@ class_name BiomeDefinition extends Resource
     after v0.6.1, [`docs/art/LIGHTING_PASS.md`](../art/LIGHTING_PASS.md));
   - v0.8.0 N10 (O68): `wall_texture_m` and `wall_top_texture_m`, the metres of wall one tile of the procedural walls'
     face and top textures covers (0.5-16).
+  - v0.8.0 GX (O86), all on the "high" lighting tier only: the haze's height falloff `fog_height` (m, -20..10) and
+    `fog_height_density` (0-4; 0 off); volumetric fog `volumetric_enabled`, `volumetric_density` (0-0.2, a low layer
+    that follows the view), `volumetric_albedo`, `volumetric_height` (the layer's top, 0.5-12 m),
+    `volumetric_light_energy` (how much the fire props light it, 0-16) and `volumetric_sun_energy` (0-4).
 
   A missing mood is a `mood_missing` `ERROR`. A value outside its range, or a sun that doesn't point down, is a
   `mood_invalid` `ERROR`.

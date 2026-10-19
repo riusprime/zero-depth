@@ -74,6 +74,7 @@ void fragment() {
 	float facing = clamp(dot(NORMAL, VIEW), 0.0, 1.0);
 	ALBEDO = body.rgb * mix(0.55, 1.15, v_shade);
 	ROUGHNESS = 0.22;
+	METALLIC = 0.2;  // v0.8.0 GX: ShardMesh.CRYSTAL_METALLIC, the glint under the fire props
 	SPECULAR = 0.75;
 	RIM = 0.35;
 	RIM_TINT = 0.6;

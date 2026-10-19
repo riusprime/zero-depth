@@ -31,6 +31,21 @@ extends Resource
 ## Haze over the scene (exponential fog); 0 turns it off.
 @export var fog_density := 0.004
 @export var fog_color := Color(0.2, 0.16, 0.13)
+## v0.8.0 GX (owner O86, graphics feedback §4): the haze's height falloff, "high" lighting only. Below `fog_height`
+## (m) the haze thickens by `fog_height_density` per metre (0: off), so whatever lies under the floor's level sinks
+## into it; Godot has one fog colour, so it hazes toward `fog_color`.
+@export var fog_height := 0.0
+@export var fog_height_density := 0.0
+## v0.8.0 GX (O86, feedback §1): volumetric fog on the "high" tier, so the fire props' light hangs in the air. A low
+## layer (from just under the floor up to `volumetric_height` m) that follows the view, `volumetric_density` thick,
+## tinted `volumetric_albedo`; the fire props light it at `volumetric_light_energy`, the sun or moon at
+## `volumetric_sun_energy` (low: torches, not the sun, carry it, and the void stays dark). Starting values.
+@export var volumetric_enabled := false
+@export var volumetric_density := 0.03
+@export var volumetric_albedo := Color(1.0, 0.86, 0.7)
+@export var volumetric_height := 3.5
+@export var volumetric_light_energy := 1.0
+@export var volumetric_sun_energy := 0.0
 @export var glow_intensity := 0.6
 ## The warm light that fire props and chests throw (Step 4 uses it for light props).
 @export var warm_light_color := Color(1.0, 0.62, 0.3)
@@ -96,6 +111,12 @@ func problems() -> PackedStringArray:
 		["contact_radius", contact_radius, 0.05, 4.0],
 		["contact_strength", contact_strength, 0.0, 1.0],
 		["fog_density", fog_density, 0.0, 0.2],
+		["fog_height", fog_height, -20.0, 10.0],
+		["fog_height_density", fog_height_density, 0.0, 4.0],
+		["volumetric_density", volumetric_density, 0.0, 0.2],
+		["volumetric_height", volumetric_height, 0.5, 12.0],
+		["volumetric_light_energy", volumetric_light_energy, 0.0, 16.0],
+		["volumetric_sun_energy", volumetric_sun_energy, 0.0, 4.0],
 		["glow_intensity", glow_intensity, 0.0, 8.0],
 		["warm_light_energy", warm_light_energy, 0.0, 16.0],
 		["warm_light_range", warm_light_range, 0.5, 30.0],

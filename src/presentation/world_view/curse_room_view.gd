@@ -277,6 +277,7 @@ func _build_crystals(reader: WorldReader) -> void:
 			mat_glow.emission_enabled = true
 			mat_glow.emission = c
 			mat_glow.roughness = 0.15
+			mat_glow.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
 			glow_mats.append(mat_glow)
 		for j in count:
 			var u := float(j) / count

@@ -14,8 +14,11 @@ not in `main` yet).
   proposed in the agent cost review and waiting for the owner's yes.
 - **Waiting on the owner:** D58 (models), D59 (curse room), D60 (the Prism), D61 (wand rounding), and the rest of `OWNER_TODO.md` §2.
 - **Branch `claude/perf-graphics-v080`** (owner O86, 2026-10-19: "create a new branch for this do not modify the actual
-  branch"), cut from `claude/lucid-fermat-9wv2tf` at `89e3937`, which stays untouched: FS, FV (performance) and GX
-  (graphics) from the owner's two feedback files. The owner checks the look and measures fps on their PC.
+  branch"), cut from `claude/lucid-fermat-9wv2tf` at `89e3937`, which stays untouched: FS (stage), FV (horde effects
+  and the `--horde` probe, O87) and GX (atmosphere on "high", within the O88 reference) merged. Next: the owner's fps
+  run on their PC (`godot --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10`, and a
+  real fight High vs Low) and their look check; then D61 and the open proposals in PERF_GRAPHICS (sim spatial grid,
+  far-Charger animation rate).
 
 ## Done
 | Step | What (player-facing) | Commit |
@@ -73,6 +76,9 @@ not in `main` yet).
 | BW | The boss door reads as a doorway through the wall, not a door pasted on it (O85): on a thick wall a frame stands on each face (the back one facing the boss room), the slab in the middle, the passage lined with the biome's wall stone over the wall's cut ends; a thin wall keeps the one frame. [BOSS_DOORS §8](evidence/BOSS_DOORS.md); the look: OWNER ONLY | this commit |
 | FS | The stage costs less to draw and should look the same (O86). The four torch lights that cast shadows change less often: they are re-picked about once a second, not four times, and a light keeps its shadow unless another is clearly nearer (2.5 m + 20 % of its distance), so the shadow maps rebuild less. The sun's shadow map is half the size (4096, was 8192): compare the two Ruins shots. The floor is drawn as one object per ground material instead of one per tile (on the probe's Ruins floor: 1 node instead of 2475). The mines' blinking light no longer re-reads its colour every frame. [PERF_GRAPHICS §FS](evidence/PERF_GRAPHICS.md); fps on your PC and the 4096 shadow edges: OWNER ONLY | this commit (branch `v080-fs`) |
 | FV | Effects in a big fight ask for far fewer lights, with the same look up close: explosions, lightning, frost, venom and void now share one light per colour within 2.5 m, like fire patches already did; a burning horde lights at most 4 extra spots (the brightest); when the effect pools are 70 % full, each new effect throws half the debris, smoke, sparks and ice (its blast and flash stay). In a 110-enemy horde with Twin, Split, Explosive, burn and chain lightning, light requests drop from about 40 to about 8 a frame. Enemies with statuses and respawning Chargers no longer build hidden meshes each time. FPS on your PC: NOT YET RUN (owner hardware), command in [`evidence/PERF_GRAPHICS.md`](evidence/PERF_GRAPHICS.md) § FV | this commit (branch `v080-fv`) |
+| GX | On the "high" lighting quality the air comes alive (O86, held to O88's reference look): torch and brazier light hangs in a low layer of fog round each flame, warm embers drift up round every fire, a faint cool dust floats over the room, and the crystals (room shards, Starfall's star crystals, Frozen Shore's ice, the curse room's) catch the light with a sharper glint while stone stays matte. Each biome has its own fog tint (warm in the first three, cooler on Frozen Shore and Starfall); Starfall's stars below stay clear. Nothing changes on "low", and reduced motion freezes the motes. The frame is no brighter or hazier than before (five room shots against the reference). [PERF_GRAPHICS §GX](evidence/PERF_GRAPHICS.md); the look and fps high vs low on your PC: OWNER ONLY | this commit (branch `v080-gx`) |
+
+- 2026-10-19 (agent GX, branch `v080-gx` from `d2ae864`): O86 graphics §1, §3, §4, §5 on the "high" lighting tier, held to O88's reference (never brighter, hazier or flatter). Volumetric fog works under the ortho camera (forward_plus on lavapipe); the five room shots match their references' brightness (Night Rocks' torch fog energy lowered 1.5 → 1.0 after its first shot read brighter). Height haze kept to under the floor's level. Tests 1-4 and evidence in [PERF_GRAPHICS §GX](evidence/PERF_GRAPHICS.md); fps high vs low: NOT YET RUN (owner hardware).
 
 ## Goldens changed on purpose
 - P1: none (`tests/golden` 2/2 unchanged; the kernel replays use no flow field). Enemy paths on run floors change on purpose (O23); the old-save and saves e2e pass.

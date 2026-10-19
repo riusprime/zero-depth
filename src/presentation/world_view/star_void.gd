@@ -153,6 +153,7 @@ uniform vec4 glow : source_color = vec4(0.0, 0.0, 0.0, 1.0);
 uniform float glow_energy = 0.0;
 uniform float rough = 0.85;
 uniform float spec = 0.4;
+uniform float metal = 0.0;
 uniform float drift = 0.18;
 uniform float speed = 0.45;
 uniform float motion = 1.0;
@@ -169,6 +170,7 @@ void fragment() {
 	// v0.8.0 MI: an owner's island model draws its own colour map (use_tex 1).
 	ALBEDO = mix(albedo.rgb, texture(tex, UV).rgb, use_tex);
 	ROUGHNESS = rough;
+	METALLIC = metal;
 	SPECULAR = spec;
 	EMISSION = glow.rgb * glow_energy;
 	RIM = 0.45;
@@ -221,6 +223,7 @@ static func drift_material(edge_color: Color, crystal: bool) -> ShaderMaterial:
 		m.set_shader_parameter("glow_energy", 0.9)
 		m.set_shader_parameter("rough", 0.15)
 		m.set_shader_parameter("spec", 0.8)
+		m.set_shader_parameter("metal", ShardMesh.CRYSTAL_METALLIC)  # v0.8.0 GX: the glint
 	else:
 		m.set_shader_parameter("albedo", ROCK.lerp(edge_color, 0.3))
 	return m
