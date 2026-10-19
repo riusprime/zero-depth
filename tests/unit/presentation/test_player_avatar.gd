@@ -111,6 +111,8 @@ func _count_xray(n: Node) -> int:
 			var m := (child as MeshInstance3D).material_override as StandardMaterial3D
 			if m != null and m.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
 				c += 1
+			elif m != null and EnemyLooks.xray_of(m) != null:  # v0.8.0 HR: a pass of its own material
+				c += 1
 		c += _count_xray(child)
 	return c
 

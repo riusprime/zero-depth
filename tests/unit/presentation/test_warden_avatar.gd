@@ -55,13 +55,17 @@ func test_exposes_body_materials_for_the_hit_flash() -> void:
 func test_xray_adds_twins_and_outline_does_not() -> void:
 	var x := _avatar(&"xray")
 	var o := _avatar(&"outline")
+	# v0.8.0 HR: the silhouette is a pass of each piece's own material (EnemyLooks.xray), not a twin node.
 	var count := func(root: Node) -> int:
 		var n := 0
 		for c in _all_nodes(root):
 			if c is MeshInstance3D:
-				n += 1
+				var m := (c as MeshInstance3D).material_override
+				if m != null and EnemyLooks.xray_of(m) != null:
+					n += 1
 		return n
-	assert_gt(count.call(x), count.call(o), "the X-ray technique adds silhouette twins")
+	assert_gt(count.call(x), count.call(o), "the X-ray technique adds silhouette passes")
+	assert_eq(count.call(o), 0, "outline draws none")
 	assert_eq(x.body_materials.size(), o.body_materials.size(), "the same body pieces either way")
 
 

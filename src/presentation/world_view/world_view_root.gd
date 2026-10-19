@@ -205,6 +205,17 @@ func queue_setup(
 	q.add("devices", _setup_devices.bind(palette))
 	stage.queue_build(q, reader, palette, arena_half)
 	q.add("first_sync", _first_sync)
+	q.add("shader_warmup", _warm_shaders)  # v0.8.0 HR (O89; RenderSwitches.SHADER_WARMUP)
+
+
+## v0.8.0 HR: the window's MSAA under RenderSwitches.MSAA_OFF (the game's root window only).
+func _enter_tree() -> void:
+	RenderSwitches.apply_viewport(get_viewport())
+
+
+## v0.8.0 HR: the floor's effect, attack and enemy shaders drawn once, tiny, behind the cover (ShaderWarmup).
+func _warm_shaders() -> void:
+	ShaderWarmup.build(self, rig.camera, actors)
 
 
 func _setup_views(palette: Dictionary) -> void:

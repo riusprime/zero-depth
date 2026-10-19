@@ -53,6 +53,8 @@ const VISOR_ENERGY := 1.4
 ## material), built once and shared by every Charger and Hatchling, as the Warden's are. A horde respawning a few
 ## Chargers a second rebuilt about 20 SurfaceTool meshes for each.
 static var _meshes := {}
+## v0.8.0 HR: the face's material, one for every Charger.
+static var _face_mat: StandardMaterial3D
 
 ## Parts, read by tests and by ActorViews (flash materials; the visor's glow is its own).
 ## The kind this model draws (the Charger, or the Brood Mother's Hatchling at two thirds of the size): its colours.
@@ -62,7 +64,9 @@ var visor: MeshInstance3D
 ## Hip nodes, front right, front left, back right, back left.
 var legs: Array[Node3D] = []
 
-var _visor_mat := StandardMaterial3D.new()
+## v0.8.0 HR (O89): the visor's shared accent (EnemyLooks.accent), its energy this Charger's GLOW (last set: _visor_e).
+var _visor_mat: ShaderMaterial
+var _visor_e := -1.0
 # Everything hangs from this node, which sinks into the ground before the rise; this node itself is never moved.
 var _model := Node3D.new()
 var _femurs: Array[Node3D] = []
@@ -101,21 +105,13 @@ func setup(
 	_piece(body, shell, outline_color, team, technique)
 	var face := MeshInstance3D.new()
 	face.mesh = _face_mesh()
-	var fm := StandardMaterial3D.new()
-	fm.albedo_color = FACE_COLOR
-	fm.roughness = 1.0
-	write_stencil(fm)
-	face.material_override = fm
+	face.material_override = _face_material()  # v0.8.0 HR: one for every Charger
 	face.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(face)
 	visor = MeshInstance3D.new()
 	visor.mesh = _visor_mesh()
 	var eye := EnemyPalettes.color(kind, &"eye")
-	_visor_mat.albedo_color = eye
-	_visor_mat.emission_enabled = true
-	_visor_mat.emission = eye
-	_visor_mat.emission_energy_multiplier = VISOR_ENERGY
-	write_stencil(_visor_mat)
+	_visor_mat = EnemyLooks.accent(eye, eye, VISOR_ENERGY, null)  # v0.8.0 HR: shared, GLOW per Charger
 	visor.material_override = _visor_mat
 	visor.position = Vector3(0.155, 0.51, 0)
 	visor.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -190,7 +186,7 @@ func crouch_amount() -> float:
 
 
 func visor_energy() -> float:
-	return _visor_mat.emission_energy_multiplier
+	return _visor_e if _visor_e >= 0.0 else VISOR_ENERGY
 
 
 ## The talon tips in this node's frame, front right, front left, back right, back left.
@@ -235,7 +231,7 @@ func _pose() -> void:
 	var glow := (
 		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
 	)
-	_visor_mat.emission_energy_multiplier = glow
+	set_visor_energy(glow)
 	for k in legs.size():
 		_pose_leg(k, y, lunge, rise)
 
@@ -666,8 +662,27 @@ static func _build_talon_mesh(length: float, r: float) -> ArrayMesh:
 	return flat_mesh(tris, Vector3(length * 0.4, -0.01, 0))
 
 
-## One mesh node from several [mesh, colour] parts, a surface each with its own outlined, flashable material;
-## technique "xray" adds one silhouette twin for the whole node.
+## v0.8.0 HR: the visor's glow on this Charger's visor (its GLOW), set only when it changes.
+func set_visor_energy(e: float) -> void:
+	if e == _visor_e or visor == null:
+		return
+	_visor_e = e
+	visor.set_instance_shader_parameter(EnemyLooks.GLOW, e)
+
+
+## v0.8.0 HR: the face's material (it writes the stencil like the body), made once.
+static func _face_material() -> StandardMaterial3D:
+	if _face_mat == null:
+		_face_mat = StandardMaterial3D.new()
+		_face_mat.albedo_color = FACE_COLOR
+		_face_mat.roughness = 1.0
+		write_stencil(_face_mat)
+	return _face_mat
+
+
+## One mesh node from several [mesh, colour] parts, a surface each on a shared, two-sided, outlined body plate
+## (v0.8.0 HR: EnemyLooks, the flash this Charger's HIT); technique "xray" adds the X-ray pass to each plate (it was
+## one silhouette twin node for the whole node, shrunk EnemyLooks.XRAY_SHRINK as the pass is).
 func _piece(
 	parent: Node3D, parts: Array, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
@@ -683,12 +698,13 @@ func _piece(
 		_meshes[key] = merged
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
+	var xray: Material = (
+		EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0) if technique == &"xray" else null
+	)
 	for k in parts.size():
-		var mat := outline_material(parts[k][1], outline, OUTLINE_M)
-		mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-		mi.set_surface_override_material(k, mat)
-		body_materials.append(ActorViews.flashable(mat))
+		mi.set_surface_override_material(
+			k, shared_body(kind, parts[k][1], null, outline, OUTLINE_M, xray, true)
+		)
 	parent.add_child(mi)
-	if technique == &"xray":
-		xray_twin(parent, merged, parts[0][1], team)
+	_hit_pieces.append(mi)
 	return mi

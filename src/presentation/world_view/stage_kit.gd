@@ -178,8 +178,20 @@ func _add_decor(id: StringName, xforms: Array) -> void:
 		mmi.name = "Chunk_%d_%d" % [cell.x, cell.y]
 		mmi.multimesh = mm
 		mmi.material_override = piece["material"]
+		# v0.8.0 HR (O89; RenderSwitches.SCATTER_NO_SHADOW): small floor scatter casts no shadow.
+		if RenderSwitches.SCATTER_NO_SHADOW and _tallest(xfs) < RenderSwitches.SCATTER_SHADOW_MAX_M:
+			mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		group.add_child(mmi)
 		decor_nodes += 1
+
+
+## v0.8.0 HR: the tallest of a decoration chunk's pieces (m): its transforms' height scale (the decoration meshes are
+## one unit tall, KitModels / CodeProps).
+static func _tallest(xfs: Array) -> float:
+	var top := 0.0
+	for xf: Transform3D in xfs:
+		top = maxf(top, xf.basis.y.length())
+	return top
 
 
 ## A kit piece, or (v0.7.5 NB1) a code-made one the kit lacks (CodeProps); {} when neither has it.
@@ -257,6 +269,8 @@ func _add_light(id: StringName, base: Vector3, mood: BiomeMood) -> void:
 	light.omni_range = mood.warm_light_range
 	light.omni_attenuation = 1.1
 	light.shadow_enabled = false
+	if RenderSwitches.TORCH_DUAL_PARABOLOID:  # v0.8.0 HR (O89): 2 shadow renders, not the cube's 6
+		light.omni_shadow_mode = OmniLight3D.SHADOW_DUAL_PARABOLOID
 	add_child(light)
 	lights.append(light)
 	_light_energy.append(mood.warm_light_energy)

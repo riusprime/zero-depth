@@ -208,6 +208,12 @@ func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # N1: the role glow
 		m.emission = Color.WHITE if on else rest[0]
 		m.emission_energy_multiplier = 1.6 if on else rest[1]
+	if node.has_meta(&"hit_look"):  # v0.8.0 HR: an avatar on shared materials takes it per piece
+		(node.get_meta(&"hit_look") as AvatarBase).show_hit(
+			on or not tint.is_empty(),
+			Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
+			1.6 if on else (float(tint[1]) if not tint.is_empty() else 0.0)
+		)
 
 
 func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
@@ -294,14 +300,24 @@ static func tint_greys(node: Node3D, tint: Color) -> void:
 	if tint.a <= 0.0:
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		if (
-			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
-			or m.albedo_color.s >= GREY_SATURATION
-		):
+		if m.albedo_texture != null and not m.has_meta(&"enemy_tex"):
 			continue
-		var c := m.albedo_color
-		var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
-		m.albedo_color = Color(c.lerp(cold, tint.a), c.a)
+		m.albedo_color = grey_tinted(m.albedo_color, tint)
+
+
+## v0.8.0 HR: a body colour under the biome's cast (tint_greys' rule: a grey, under GREY_SATURATION, is pulled toward
+## `tint` by its alpha; any other colour, or no cast, comes back as it was). HordeAvatar picks its shared materials
+## with it.
+static func grey_tinted(c: Color, tint: Color) -> Color:
+	if tint.a <= 0.0 or c.s >= GREY_SATURATION:
+		return c
+	var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
+	return Color(c.lerp(cold, tint.a), c.a)
+
+
+## v0.8.0 HR: whether a body colour takes the role glow (role_glow's rule: saturation at or over GREY_SATURATION).
+static func role_glows(c: Color) -> bool:
+	return c.s >= GREY_SATURATION
 
 
 ## v0.8.0 N1 (O39): a normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
@@ -313,7 +329,7 @@ static func role_glow(node: Node3D, kind: int, energy: float) -> void:
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
 		if (
 			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
-			or m.albedo_color.s < GREY_SATURATION
+			or not role_glows(m.albedo_color)
 		):
 			continue
 		var c := Color(m.albedo_color, 1.0)
@@ -410,7 +426,10 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_CHARGER:
 			# The clawed hooded crawler (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
+			avatar.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			avatar.role_glow = role_glow_energy
 			avatar.setup(outline_color, technique)
+			root.set_meta(&"hit_look", avatar)
 			facing.add_child(avatar)
 			root.set_meta(&"enemy_avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
@@ -470,7 +489,10 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
+			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			hatch.role_glow = role_glow_energy
 			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
+			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
 			facing.add_child(hatch)
 			height = ChargerAvatar.HEIGHT * 0.66
@@ -501,11 +523,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
+			horde.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials (tint_greys, role_glow)
+			horde.role_glow = role_glow_energy
 			horde.setup(kind, outline_color, technique)
 			facing.add_child(horde)
 			height = horde.height
 			root.set_meta(&"enemy_avatar", horde)
 			root.set_meta(&"mats", horde.body_materials.duplicate())
+			root.set_meta(&"hit_look", horde)  # v0.8.0 HR: the flash and tints (_set_flash)
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

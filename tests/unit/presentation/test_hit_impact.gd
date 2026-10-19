@@ -227,6 +227,15 @@ func test_the_white_flash_reaches_every_enemy_and_boss_model_in_palette_a() -> v
 	for kind: int in NORMAL_KINDS + BOSS_KINDS:
 		var node := views._make_actor(kind, false, 0.5)
 		add_child_autofree(node)
+		if node.has_meta(&"hit_look"):  # v0.8.0 HR: an avatar on shared materials flashes per piece
+			var horde: AvatarBase = node.get_meta(&"hit_look")
+			assert_gt(horde.hit_pieces().size(), 0, "kind %d has flashable pieces" % kind)
+			views._set_flash(node, true)
+			assert_eq(horde.hit_look(), EnemyLooks.hit_value(true, Color.WHITE, 1.6))
+			assert_gt(horde.hit_look().x, 1.0, "kind %d glows white" % kind)
+			views._set_flash(node, false)
+			assert_eq(horde.hit_look(), EnemyLooks.HIT_OFF, "kind %d: the flash ends" % kind)
+			continue
 		var mats: Array = node.get_meta(&"mats", [])
 		assert_gt(mats.size(), 0, "kind %d has flashable materials" % kind)
 		views._set_flash(node, true)
