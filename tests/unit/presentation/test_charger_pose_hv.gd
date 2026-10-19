@@ -105,7 +105,7 @@ func _ref_pose(a: ChargerAvatar) -> void:
 		* tell
 		* (1.0 - a._daze * 0.7)
 	)
-	(a.visor.material_override as StandardMaterial3D).emission_energy_multiplier = glow
+	a.set_visor_energy(glow)  # v0.8.0 HR: the visor's GLOW on the shared accent
 	for k in a.legs.size():
 		_ref_pose_leg(a, k, y, lunge, rise)
 

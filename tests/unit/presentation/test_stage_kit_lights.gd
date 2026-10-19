@@ -196,7 +196,7 @@ func test_small_scatter_casts_no_shadow_under_the_switch() -> void:
 	assert_eq(group.get_child_count(), 2, "two chunks")
 	for c in group.get_children():
 		var mmi := c as MultiMeshInstance3D
-		var small := mmi.multimesh.get_instance_transform(0).basis.y.length() < 0.6
+		var small := mmi.name == "Chunk_0_0"  # the low piece's cell (the headless MultiMesh keeps no transforms)
 		var off := RenderSwitches.SCATTER_NO_SHADOW and small
 		assert_eq(
 			mmi.cast_shadow,

@@ -1,14 +1,15 @@
 extends SceneTree
-## v0.8.0 HR (owner O89: "lag mostly comes from shooting hordes"): counts what a horde costs the renderer. A still
-## scene: the iso camera (IsoRig), a sun with shadows, a ground, a wall standing between the camera and part of the
-## crowd (the X-ray shows them through it), and N enemies of the six horde kinds (the real ActorViews over a real World
-## with the compiled enemies, X-ray technique), a third of them flashing as if hit. After `settle` frames it reads, for
-## `frames` frames, RenderingServer's draw calls, objects and primitives in the frame and reports their median, plus
-## the scene's MeshInstance3D count. Counts, not timings (timings on a busy cloud machine are noise).
+## v0.8.0 HR (owner O89: "lag mostly comes from shooting hordes"): counts what a horde costs the renderer. A scene:
+## the iso camera (IsoRig), a sun with shadows, a ground, a wall standing between the camera and part of the crowd
+## (the X-ray shows them through it), and N enemies of the horde kinds, Splitlings too (charger=1: all Chargers):
+## the real ActorViews over a real World with the compiled enemies, X-ray technique, stepped SPAWN_TICKS past their
+## spawn, a third of them flashing as if hit. After `settle` frames it reads, for `frames` frames, RenderingServer's
+## draw calls, objects and primitives in the frame and reports their median, plus the actors' MeshInstance3D count.
+## Counts, not timings (timings on a busy cloud machine are noise).
 ## Needs a renderer (Forward+; in a container: xvfb-run with a software Vulkan device):
 ##   VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" \
 ##     godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/checks/horde_draws.gd \
-##     -- [n=120] [frames=30] [settle=30] [tag=after] [shot=1]
+##     -- [n=120] [frames=30] [settle=30] [tag=after] [shot=1] [charger=1]
 ## Writes only under build/ (build/perf/horde_draws[_<tag>].txt, with shot=1 build/perf/shots/horde_<tag>.png) and
 ## prints the same report. Quits on every path.
 
@@ -23,11 +24,16 @@ const KINDS: Array[int] = [
 	WorldReader.KIND_SNIPER,
 ]
 
+## Sim ticks stepped before the view is built (the enemies' spawn is over by then).
+const SPAWN_TICKS := 90
+
 var _n := 120
 var _frames := 30
 var _settle := 30
 var _tag := ""
 var _shot := false
+## charger=1: every enemy a Charger (the perf probe's horde) instead of the horde kinds.
+var _charger := false
 var _views: ActorViews
 var _frame := 0
 var _draws: Array[int] = []
@@ -51,12 +57,16 @@ func _initialize() -> void:
 				_tag = kv[1]
 			"shot":
 				_shot = kv[1] == "1"
+			"charger":
+				_charger = kv[1] == "1"
 	var w := World.new(11, PlayerTable.starting_values())
 	w.set_enemy_tables(ContentCompiler.compile_enemies(ContentRepository.load_all()))
 	var side := ceili(sqrt(float(_n)))
 	for k in _n:
 		var p := Vector2((k % side) - side * 0.5, (k / side) - side * 0.5) * 1.3 + Vector2(-2, -2)
-		w.add_enemy(KINDS[k % KINDS.size()], p)
+		w.add_enemy(WorldReader.KIND_CHARGER if _charger else KINDS[k % KINDS.size()], p)
+	for t in SPAWN_TICKS:  # past the spawn rise (a spawning enemy is sunk into the ground)
+		w.step(InputFrame.new())
 	var reader := WorldReader.new(w)
 	var scene := Node3D.new()
 	root.add_child(scene)
@@ -101,9 +111,7 @@ func _initialize() -> void:
 	for i in reader.actor_count():  # a third flashing, as if hit
 		if reader.actor_team(i) != 0 and i % 3 == 0:
 			_views.flash(reader.actor_id(i), 100000)
-	_views.set_process(false)  # the flashes hold
-	for n in _views.find_children("*", "Node", true, false):
-		n.set_process(false)  # a still crowd
+	_views.set_process(false)  # the flashes hold (the enemy models keep animating: they finish rising)
 	print("horde_draws: %d enemies, renderer=%s" % [_n, _renderer()])
 
 
@@ -149,7 +157,8 @@ static func _median(a: Array[int]) -> int:
 func _report() -> void:
 	var meshes := _views.find_children("*", "MeshInstance3D", true, false).size()
 	var lines := PackedStringArray()
-	lines.append("horde_draws: %d enemies (%d kinds), tag=%s" % [_n, KINDS.size(), _tag])
+	var kinds := "Chargers" if _charger else "%d kinds" % KINDS.size()
+	lines.append("horde_draws: %d enemies (%s), tag=%s" % [_n, kinds, _tag])
 	(
 		lines
 		. append(

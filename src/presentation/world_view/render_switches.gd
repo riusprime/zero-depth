@@ -2,8 +2,9 @@ class_name RenderSwitches
 extends RefCounted
 ## v0.8.0 HR (owner O89: "optimize performance at maximum without losing the game vibe … if not I'll tell you what to
 ## discard"): the look-changing performance switches, one each, so the owner can turn any of them off after a
-## playtest. Each defaults ON; set one to false (and, for the two project settings, the line named) to get the old
-## look back. What each changes on screen: docs/roadmap/v0.8.0/evidence/PERF_GRAPHICS.md "## HR".
+## playtest. Each defaults ON but switch 4 (off: see it); set one to false (and, for the two project settings, the
+## line named) to get the old look back. What each changes on screen: docs/roadmap/v0.8.0/evidence/PERF_GRAPHICS.md
+## "## HR".
 ## The same-pixels work of HR (the shared X-ray pass, the shared enemy materials) has no switch: it draws the same.
 ## Presentation only (EI-07).
 
@@ -21,11 +22,14 @@ const SCATTER_SHADOW_MAX_M := 0.6
 ## run-time line restores it without editing project.godot).
 const MSAA_OFF := true
 ## 4. The renderer on its own thread (project.godot rendering/driver/threads/thread_model=2, "Separate"). A project
-## setting read at start-up only, so this constant only documents it: to turn it off set thread_model=1 ("Safe").
-## Godot 4.7.2 prints at every start that this mode is experimental and "can lead to project crashes or
-## instability"; the game path has no synchronous read-back of the renderer (VfxCore's one get_image cuts the floor
-## marks once, on the load's worker). The first switch to drop if the game ever crashes or hitches oddly.
-const RENDER_THREAD := true
+## setting read at start-up only, so this constant only documents it. OFF (thread_model=1, "Safe"): with it on, the
+## horde e2e (tests/e2e/test_e2e_horde_enemies.gd) logged 15 'Parameter "material" is null' engine errors
+## (material_get_instance_shader_parameters: an instance reached a material the render thread had not made yet) and
+## 0 with it off, the same tree; Godot 4.7.2 also prints at every start that the mode is experimental and "can lead
+## to project crashes or instability". The game path has no synchronous read-back of the renderer (VfxCore's one
+## get_image cuts the floor marks once, on the load's worker), so that was not the blocker. To try it again: set
+## thread_model=2 and this to true (docs/roadmap/v0.8.0/evidence/PERF_GRAPHICS.md "## HR").
+const RENDER_THREAD := false
 ## 5. Every effect, enemy and attack shader drawn once, tiny, behind the loading cover (ShaderWarmup), so the first
 ## shot, spawn or effect of a floor never compiles one mid-fight. Same pixels. false: compiled on first use again.
 const SHADER_WARMUP := true

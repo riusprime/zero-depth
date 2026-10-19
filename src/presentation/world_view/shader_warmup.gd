@@ -4,8 +4,9 @@ extends Node3D
 ## effect, attack and enemy shaders drawn once behind the loading cover, so the first shot, spawn or effect of a floor
 ## never compiles a shader or a pipeline mid-fight. ViewWarmup reads the files on a worker; this is its drawing half,
 ## the view build's last job (WorldViewRoot.queue_setup):
-## - every mesh and material the built view holds but does not draw yet (a hidden pool slot, a MultiMesh with no
-##   instance shown: the hero's casts and swings, the effects layer's pools, the attack forms), one proxy each;
+## - every effect mesh and material the built view holds but does not draw yet (a hidden pool slot on its own
+##   ShaderMaterial, a MultiMesh with no instance shown: the hero's casts and swings, the effects layer's pools, the
+##   attack forms), one proxy each;
 ## - the materials made only on first use (the hero pulse's core, glow and trail, the fireball's shaders, the boss
 ##   strike marks, the impact flare and the cast sigil);
 ## - one enemy of each horde kind and a Charger and Hatchling, built as ActorViews builds them (their shared
@@ -90,10 +91,22 @@ func _from_view(n: Node, hidden: bool) -> void:
 			_multimesh_proxy(mm, mmi.material_override)
 	elif n is MeshInstance3D:
 		var mi := n as MeshInstance3D
-		if mi.mesh != null and off:
+		if mi.mesh != null and off and _custom_shaded(mi):
 			_mesh_proxy(mi)
 	for c in n.get_children():
 		_from_view(c, off)
+
+
+## Whether a hidden piece draws with an effect's own shader (a ShaderMaterial: the ones made and compiled on first
+## use). The models' StandardMaterial3D pieces (a boss's, the shop's) are left out: their few shader variants are
+## drawn by the floor already.
+static func _custom_shaded(mi: MeshInstance3D) -> bool:
+	if mi.material_override != null:
+		return mi.material_override is ShaderMaterial
+	for k in mi.get_surface_override_material_count():
+		if mi.get_surface_override_material(k) is ShaderMaterial:
+			return true
+	return false
 
 
 static func _shown(mm: MultiMesh) -> int:

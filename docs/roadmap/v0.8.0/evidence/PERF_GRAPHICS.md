@@ -562,6 +562,156 @@ What the timings say:
 
 **fps:** NOT YET RUN (owner hardware). **Look and feel:** OWNER ONLY.
 
+## HR
+
+Step HR (owner O89: "optimize performance at maximum without losing the game vibe … lag mostly comes from shooting
+hordes with multiple modifiers … if not I'll tell you what to discard"). Branch `v080-hr` from `07af5d59`, HV
+(`33dfbdf8`) merged in. Agent work; fps and feel on the owner's PC: OWNER ONLY.
+
+### What changed: same pixels (no switch)
+
+- **The X-ray is a pass of the piece's own material, not a twin mesh.** Before, every enemy body piece had a second
+  MeshInstance3D (the "twin") with its own StandardMaterial3D in STENCIL_MODE_XRAY: an opaque draw, a depth
+  prepass and the X-ray pass per piece, and one more node to move. Now one shared X-ray pass per team colour and
+  shrink (`EnemyLooks.xray`: unshaded, alpha, no depth test, drawn where the stencil is not 1, team colour at 0.85,
+  shrunk 0.96 about the piece's origin as the twin's node was, or grown by `XRAY_GROW / scale` on the owner's
+  models). It is chained after the body's outline pass, so the stencil rule is unchanged: an enemy shows through
+  walls in its team colour, never through itself. This covers the horde kinds, the Charger and Hatchling, and every
+  `AvatarBase._outlined` body (Warden, Needle, Arc Caster, Bomb Drone, the hero). Not changed: the bosses and the
+  Lens Drone (their own twin code, one or two on screen) and the grey-cube fallback.
+- **No empty outline pass on the owner's models.** Their materials were STENCIL_MODE_OUTLINE at thickness 0: an
+  extra pass that drew nothing. Now they write the stencil only (as the eyes and glows already did).
+- **Shared enemy materials, flash and glow per enemy.** The horde kinds' and the Charger's/Hatchling's body
+  materials are `EnemyLooks` ShaderMaterials shared by every enemy of the same look. Their shading is Godot 4.7.2's
+  own generated StandardMaterial3D code for the old settings (roughness 1, specular 0.5, Burley, Schlick-GGX,
+  emission on, the colour map on the models), with the default textures it sampled written as their constant values.
+  The biome's grey cast and the role glow (`ActorViews.tint_greys` / `role_glow`, N1) are picked in when the
+  material is made. The hit flash and the status tints are an `instance uniform` per piece (`zd_hit`), and the
+  glowing accents' energy another (`zd_glow`, the visor's too). Each is written only when its value changes,
+  behind HV's per-actor guards. The code bodies' meshes are shared too (one per shape), so a crowd's identical
+  pieces draw as one instanced draw. Other kinds (Warden, Needle, Arc Caster, Bomb Drone, the bosses, the hero)
+  keep their own StandardMaterial3D: fewer on screen.
+
+### What changed: the switches (owner: say which to discard)
+
+All are in `src/presentation/world_view/render_switches.gd`, one constant each (and the line in `project.godot`
+where named). Set a constant to `false` to get the old look back.
+
+| # | Switch | On screen | To turn it off |
+|---|---|---|---|
+| 1 | `TORCH_DUAL_PARABOLOID` | The four shadow-casting torches use dual-paraboloid shadows (2 shadow renders each, not 6). Shadows can stretch a little near the paraboloid seam. In the Ruins shot below the torch pools look a little larger and warmer than the reference; this switch is the likely cause (not isolated) | `false` |
+| 2 | `SCATTER_NO_SHADOW` | Small floor scatter (rubble, tufts, debris, drifts; the dresser caps them at 0.4 m, the switch at 0.6 m) casts no shadow. Walls, cover and props keep theirs | `false` |
+| 3 | `MSAA_OFF` | No 2x MSAA on the 3D view; the ink pass draws the edges. Silhouette edges between ink lines may show more stair-steps | `false` (sets 2x again at run time), or `project.godot` `msaa_3d=2` |
+| 4 | `RENDER_THREAD` | **Off.** Measured below: the separate render thread gave engine errors in the horde e2e | It is off: `project.godot` `thread_model=1`. To try it: `thread_model=2` |
+| 5 | `SHADER_WARMUP` | Same pixels. Behind the loading cover, each effect shader on a hidden pool piece, the first-use materials (hero pulse, fireball, boss marks, flare, sigil) and one of each horde kind plus a Charger and Hatchling are drawn once, a thousandth of their size in front of the camera, then removed after 3 frames (`ShaderWarmup`) | `false` |
+
+**Why the render thread is off (switch 4).** With `thread_model=2`, the same tree, test and command:
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_horde_enemies.gd -gexit 2>&1 | grep -c 'Parameter "material" is null'
+thread_model=1: 0
+thread_model=2: 15
+```
+
+The errors read `ERROR: Parameter "material" is null. at: material_get_instance_shader_parameters
+(servers/rendering/dummy/storage/material_storage.cpp:264)`: an instance reached a material the render thread had
+not made yet. Godot 4.7.2 also prints at every start that the separate thread is "experimental … can lead to project
+crashes or instability". No synchronous read-back blocked it: the game path has one `get_image` (VfxCore cuts the
+floor marks once, on the load's worker); `get_rendering_info` is only in tools.
+
+### Draws in a horde, before and after (counts, not timings)
+
+New probe `scripts/checks/horde_draws.gd`. Scene: the iso camera, a sun with shadows, a ground, and a wall in front
+of part of the crowd. 120 enemies are added to a real World with the compiled enemies and stepped 90 ticks past
+their spawn. ActorViews draws them with the X-ray technique, a third of them flashing. The probe reads draws,
+objects and primitives on 30 frames after 30 settle frames. "Before" is `07af5d59`'s `src/` and `project.godot`
+checked out in this worktree with the same probe, then put back. Build: the runs were made on WIP commits `deacb89f`
+(horde kinds) and `7360f0ac` (Chargers, and the Ruins shot), since squashed into this step's commit; their `src/` and
+`project.godot` are this commit's (only the probe's options and these docs changed after). Machine: cloud container,
+lavapipe (llvmpipe) Forward+, 1920x1080.
+
+```
+VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/checks/horde_draws.gd -- n=120 tag=before shot=1
+horde_draws: 120 enemies (7 kinds), tag=before
+renderer=forward_plus msaa_3d=2 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 6042 (min 6042, max 6042)
+objects median: 6042
+primitives median: 2417245
+actor MeshInstance3D nodes: 1858
+
+(build deacb89f) ... -- n=120 tag=after shot=1
+horde_draws: 120 enemies (7 kinds), tag=after
+renderer=forward_plus msaa_3d=0 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 2069 (min 2063, max 2080)
+objects median: 4228
+primitives median: 1737177
+actor MeshInstance3D nodes: 1149
+
+(build 7360f0ac) ... -- n=120 tag=charger_before charger=1     (src/project.godot at 07af5d59)
+horde_draws: 120 enemies (Chargers), tag=charger_before
+renderer=forward_plus msaa_3d=2 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 10239 (min 10239, max 10239)
+objects median: 10239
+primitives median: 1163465
+actor MeshInstance3D nodes: 2415
+
+(build 7360f0ac) ... -- n=120 tag=charger_after charger=1
+horde_draws: 120 enemies (Chargers), tag=charger_after
+renderer=forward_plus msaa_3d=0 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 3596 (min 3577, max 3624)
+objects median: 9877
+primitives median: 1163465
+actor MeshInstance3D nodes: 2293
+```
+
+So in this scene the draw calls fell from 6042 to about 2069 for 120 horde-kind enemies (about 66 % fewer) and
+from 10239 to about 3596 for 120 Chargers (about 65 % fewer). Frame time on the owner's PC: NOT YET RUN (owner
+hardware).
+
+### Shots
+
+- `hr_shots/xray_horde_before_after.jpg`: the probe's crowd, before (left) and after (right). The enemies behind the
+  wall show through it in red in both, visible enemies are not overdrawn, the flashing third is white in both. One
+  difference: where an enemy's own parts overlap behind the wall, the after side shows faint inner edges, because the
+  X-ray is now drawn per part surface (alpha 0.85 over alpha 0.85) where some twins were one merged mesh.
+- `hr_shots/ruins_reference_vs_hr.jpg`: the reference `mi_shots/ruins_room.jpg` (left) and the same tool and room
+  with every switch on (right), from `scripts/shots/room_layouts.gd -- biome=ruins only=room_2x2_1 out=hr` (build
+  `7360f0ac`, log `renderer=forward_plus device=llvmpipe`). `hr_shots/ruins_room_hr.jpg` is the full frame. The walls,
+  cover, scatter and grade match. The torch pools (bottom-left fire, top) look a little larger and warmer than the
+  reference (see switch 1).
+
+### Tests (this step's tree, after the HV merge, `thread_model=1`)
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<24 presentation files> -gexit
+(test_horde_avatars, test_hit_impact, test_enemy_palettes, test_warden_avatar, test_needle_avatar, test_player_avatar,
+ test_stage_kit_lights, test_shader_warmup, test_windup_tells, test_damage_flash, test_melee_strikes,
+ test_new_enemy_avatars, test_charger_avatar, test_boss_animations, test_boss_models_2, test_view_build_queue,
+ test_kit_decor_lod, test_boss_views, test_health_bars, test_charger_pose_hv, test_screen_cull, test_crowd_view,
+ test_status_visuals, test_attack_forms_live)
+Tests               188
+Passing Tests       186
+Failing Tests         2
+```
+
+The 2 failures are `test_view_build_queue.gd`'s `test_a_view_built_in_slices_is_the_view_built_in_one_call` and
+`test_a_view_made_from_parts_made_ahead_is_the_same_view`: the Atmosphere's FogLayer and Dust sit at different
+places in the two views. They are **not from HR**: the same file run alone fails the same 2 tests on `07af5d59` and
+on HV's `33dfbdf8` (`Passing Tests 3 / Failing Tests 2` on each).
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_horde_enemies.gd,res://tests/e2e/test_e2e_attacks.gd,res://tests/e2e/test_e2e_run_flow.gd,res://tests/e2e/test_e2e_heat.gd,res://tests/e2e/test_e2e_lighting.gd -gexit
+Tests                10
+Passing Tests        10
+Time              96.49s
+```
+
+Lint: `gdformat --check src scripts tests` (1053 files unchanged) and `gdlint src scripts tests` (no problems).
+
 ## Next candidates (read-only audit, 2026-10-19; owner: "Any other findings on the code that could improve the lag and fps that doesn't change the game?")
 Three read-only reviews of `db26b485` (sim, view CPU, GPU). Nothing measured or changed; sizes are estimates from the code.
 **Same game and same pixels:**

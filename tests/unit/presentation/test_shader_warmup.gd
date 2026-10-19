@@ -14,9 +14,17 @@ func _view() -> Array:
 	var quad := QuadMesh.new()
 	var hidden := MeshInstance3D.new()  # a pool slot waiting for its first use
 	hidden.mesh = quad
-	hidden.material_override = StandardMaterial3D.new()
+	var fx := ShaderMaterial.new()  # an effect's own shader
+	fx.shader = Shader.new()
+	fx.shader.code = "shader_type spatial;"
+	hidden.material_override = fx
 	hidden.visible = false
 	root.add_child(hidden)
+	var model := MeshInstance3D.new()  # a hidden model piece on a StandardMaterial3D: no proxy
+	model.mesh = quad
+	model.material_override = StandardMaterial3D.new()
+	model.visible = false
+	root.add_child(model)
 	var shown := MeshInstance3D.new()  # drawn already: no proxy
 	shown.mesh = quad
 	root.add_child(shown)
@@ -43,7 +51,11 @@ func test_the_warmup_draws_hidden_pieces_first_use_materials_and_each_horde_kind
 	var w := ShaderWarmup.build(v[0], v[1], v[2])
 	assert_not_null(w)
 	autofree(w)
-	assert_eq(w.hidden_proxies, 2, "the hidden slot and the empty pool, not the drawn mesh")
+	assert_eq(
+		w.hidden_proxies,
+		2,
+		"the hidden effect slot and the empty pool, not the drawn mesh or the model piece"
+	)
 	assert_gt(w.lazy_proxies, 5, "the hero pulse, fireball and boss strike shaders at least")
 	assert_eq(w.enemies, ShaderWarmup.HORDE_KINDS.size() + 2, "and a Charger and a Hatchling")
 	assert_lt(w.global_transform.basis.get_scale().x, 0.01, "well under a pixel")
