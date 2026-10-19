@@ -71,7 +71,12 @@ func test_a_budget_spreads_the_jobs_over_frames() -> void:
 func _paths(n: Node, base: Node, out: PackedStringArray) -> void:
 	for c in n.get_children():
 		var line := "%s %s" % [_auto.sub(str(base.get_path_to(c)), "@", true), c.get_class()]
-		if c is Node3D:
+		# v0.8.0 GX: the atmosphere's fog layer and dust follow whichever camera is current when they turn on, not the
+		# floor, so only their place in the tree is compared.
+		if (
+			c is Node3D
+			and not (c.get_parent() is StageAtmosphere and c.name in [&"FogLayer", &"Dust"])
+		):
 			line += " %s" % str((c as Node3D).transform)
 		out.append(line)
 		_paths(c, base, out)
