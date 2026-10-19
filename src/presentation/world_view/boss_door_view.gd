@@ -148,7 +148,7 @@ func _build_model(model: Dictionary, width: float, half_thick: float, biome: Str
 	var two := half_thick * 2.0 > x1 - x0
 	# The front frame's outer face FRAME_PROUD proud of the wall's front face; the back one turned to mirror it.
 	var front_x := -half_thick - FRAME_PROUD - x0 if two else 0.0
-	for side: float in ([1.0, -1.0] if two else [1.0]):
+	for side: float in [1.0, -1.0] if two else [1.0]:
 		var frame := Node3D.new()
 		frame.name = "FrameFront" if side > 0.0 else "FrameBack"
 		frame.position = Vector3(front_x * side, 0, 0)
