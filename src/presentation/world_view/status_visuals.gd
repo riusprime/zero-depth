@@ -22,6 +22,9 @@ const DRIPS := 3
 const CRYSTALS := 4
 const ORBS := 3
 const FX_FRAMES := 16
+## v0.8.0 HV: a status's reach past the actor's radius for the cull: its flames and arcs (about 1.5 m over the body)
+## and its light (VfxLayer._light_status: 3 m range).
+const STATUS_REACH_M := 3.5
 
 ## P-9: the pieces the effects layer draws instead (hidden under the new look).
 const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
@@ -29,6 +32,12 @@ const VFX_DRAWN: Array[String] = ["embers", "drips", "crystals", "sparks"]
 var actors: ActorViews
 ## The new look's effects layer (null: the boxes and rings as before).
 var vfx: VfxLayer
+## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot sets it): a status wholly out of the picture (past its
+## reach + ScreenCull.MARGIN_M) is not drawn into the effects layer. Null: every status draws.
+var cull: ScreenCull
+## v0.8.0 HV: statuses drawn into the effects layer last frame, and skipped as off screen (tests, the perf probe).
+var statuses_drawn := 0
+var statuses_culled := 0
 ## Kept for the view's life, one per look (see the class note).
 var _mats := {}
 var _box := BoxMesh.new()
@@ -45,6 +54,12 @@ var _fx_template := SkillVisuals._make_template()
 var _on := {}
 ## Payoffs drawn by the vfx layer: [kind, at (Vector3), radius, start tick, life, seed, to (Array of Vector3)].
 var _shots: Array = []
+## v0.8.0 HV: the per-tick Dictionaries kept and refilled instead of built every tick: the actors alive with a
+## status, each one's _on entry by id ({on, r, node, top}, its "on" swapped with the scratch), and the scratch a
+## status-free enemy is read into (left empty, nothing kept for it).
+var _alive := {}
+var _entries := {}
+var _scratch := {}
 
 
 func _init(p_actors: ActorViews) -> void:
@@ -72,29 +87,38 @@ func use_vfx(layer: VfxLayer) -> void:
 func sync(reader: WorldReader) -> void:
 	_frame += 1
 	_on.clear()
-	var alive := {}
+	_alive.clear()
 	for i in reader.actor_count():
 		var id := reader.actor_id(i)
 		var node := actors.actor_node(id)
 		if node == null:
 			continue
-		var on := _statuses(reader, i)
-		if on.is_empty():
+		_scratch.clear()
+		_statuses(reader, i, _scratch)
+		if _scratch.is_empty():
 			continue
-		alive[id] = true
+		_alive[id] = true
 		var v: Dictionary = _views.get(id, {})
 		if v.is_empty() or not is_instance_valid(v["root"]):
 			v = _build(node, reader.actor_radius(i))
 			_views[id] = v
+		var entry: Dictionary = _entries.get(id, {})
+		if entry.is_empty():
+			entry = {"on": {}}
+			_entries[id] = entry
+		var on: Dictionary = _scratch
+		_scratch = entry["on"]
+		entry["on"] = on
 		_update(v, on, reader.actor_radius(i))
-		_on[id] = {
-			"on": on,
-			"r": reader.actor_radius(i),
-			"node": node,
-			"top": maxf(0.5, float(v["bar_y"]) - 0.4)
-		}
+		entry["r"] = reader.actor_radius(i)
+		entry["node"] = node
+		entry["top"] = maxf(0.5, float(v["bar_y"]) - 0.4)
+		_on[id] = entry
+	for id in _entries.keys():
+		if not _alive.has(id):
+			_entries.erase(id)
 	for id in _views.keys():
-		if not alive.has(id):
+		if not _alive.has(id):
 			var v: Dictionary = _views[id]
 			if is_instance_valid(v["root"]):
 				(v["root"] as Node3D).queue_free()
@@ -102,9 +126,9 @@ func sync(reader: WorldReader) -> void:
 	_sync_payoffs(reader)
 
 
-## What actor i shows: {status: stacks}. Enemies show burn/shock/bleed/frost/frozen; the player its charges.
-func _statuses(reader: WorldReader, i: int) -> Dictionary:
-	var out := {}
+## What actor i shows: {status: stacks}, filled into `out` (v0.8.0 HV: a kept Dictionary, emptied by the caller).
+## Enemies show burn/shock/bleed/frost/frozen; the player its charges.
+func _statuses(reader: WorldReader, i: int, out: Dictionary) -> Dictionary:
 	if i == 0:
 		if reader.guard_charges() > 0:
 			out[&"guard"] = reader.guard_charges()
@@ -192,7 +216,9 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 	for k in (v["pips"] as Array).size():
 		var p: MeshInstance3D = v["pips"][k]
 		p.visible = shock > 0 and k < shock_max
-		p.material_override = _mats[&"pip_on" if k < shock else &"pip_off"]
+		var m: Material = _mats[&"pip_on" if k < shock else &"pip_off"]
+		if p.material_override != m:  # v0.8.0 HV: set on a change only
+			p.material_override = m
 	var charges: int = on.get(&"guard", 0)
 	if charges > 0 and (v["orbs"] as Array).is_empty():
 		_build_orbs(v)
@@ -317,13 +343,21 @@ func _sync_payoff_shots(reader: WorldReader) -> void:
 ## Draws the statuses and payoffs into the effects layer (called inside its frame).
 func _draw_vfx(layer: VfxCore) -> void:
 	var fx := layer as VfxLayer
+	statuses_drawn = 0
+	statuses_culled = 0
 	for id: int in _on:
 		var s: Dictionary = _on[id]
 		var node: Node3D = s["node"]
 		if not is_instance_valid(node) or not node.is_inside_tree():
 			continue
 		var p := node.global_position
-		fx.status(Vector3(p.x, 0.0, p.z), float(s["r"]), s["on"], id, float(s["top"]))
+		var ground := Vector3(p.x, 0.0, p.z)
+		var r := float(s["r"])
+		if cull != null and not cull.shows(ground, r + STATUS_REACH_M):  # v0.8.0 HV: wholly off screen
+			statuses_culled += 1
+			continue
+		statuses_drawn += 1
+		fx.status(ground, r, s["on"], id, float(s["top"]))
 	var keep: Array = []
 	for shot: Array in _shots:
 		var u := (fx.now() - float(shot[3])) / float(shot[4])

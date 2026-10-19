@@ -403,6 +403,165 @@ Lint: `gdformat --check src scripts tests` flags only `src/presentation/world_vi
 fps High vs Low with the new atmosphere: `NOT YET RUN (owner hardware)`. The owner compares Options > Display >
 Lighting quality High and Low on the same room.
 
+## HV
+
+**Owner line.** O89: "Okay let's go for all of them and I'll play and test how the game feels the target of these is
+trying to optimize performance at maximum without losing the game vibe but not getting fps drops during the fun part
+of the game, if not I'll tell you what to discard, if something is not going to be loaded when far make sure it is far
+enough so it does not happen in the screen it should be for outside of the screen but lag mostly comes from shooting
+hordes with multiple modifiers".
+
+**Build:** branch `v080-hv` from `07af5d59`; the code under test is this step's commit (the working tree that became
+it). Godot `4.7.2.stable.official.ed1daf0bf`, headless, a cloud machine with 4 CPUs. Presentation only: no sim, data,
+content or golden change.
+
+### What changed
+1. **Unchanged material writes skipped.**
+   - `ActorViews._set_flash` remembers, per actor id, the glow state it last wrote (`_shown`: lit, rest, or a tint's
+     colour and energy) and returns at once when it is the same. A burning or frozen enemy got `set_tint` from
+     `ItemVisuals._sync_burns` every tick, and each call rewrote emission on every body material.
+   - `set_tint` keeps the stored tint when it hasn't changed. `flash()` on an actor that is already flashing only
+     extends its frame count (`HitFeel` flashes on every DAMAGE event).
+   - The guard keys on the state, not on how the material is written, so HR's shared materials can change the write
+     underneath.
+   - `ChargerAvatar`: the visor's `emission_energy_multiplier` is written only when it changes by more than 1e-4, and
+     `_model.position` only when it changes.
+   - `StatusVisuals`: the shock pips' `material_override` is compared before it is set. The per-tick Dictionaries are
+     reused: the alive set, one entry per affected actor (its `on` swapped with a scratch dict), and a scratch dict that
+     enemies with no status are read into. Before, a new Dictionary was built per actor per tick.
+2. **Charger pose without Arrays.** `_pose_leg` used to build two duplicates, literal arrays and about five `_plus()`
+   results per leg, a typed `segs` array, and three property writes per segment (about 40 Arrays per Charger a frame).
+   - It now uses local floats, summed in the old order, and one `transform` write per segment and for the body.
+   - `tests/unit/presentation/test_charger_pose_hv.gd` copies the old `_pose`/`_pose_leg` as the reference. It checks
+     every transform with exact `==` on 7 states: still, walking, windup, charge, dazed, rising, mixed.
+   - First run: the body and hips matched, but some segments were off in the last float bit. The cause was the test
+     harness, not the pose. `setup()` had posed the reference nodes with one transform write, and a rotation set after
+     that keeps a scale read back from the basis (0.99999994). The old code never wrote a transform, so its nodes always
+     had an exact unit scale. The reference now puts each node's scale back to exactly one first, and every transform
+     matches exactly.
+3. **Off-screen culling** (owner rule: never visible on screen).
+   - New `src/presentation/camera/screen_cull.gd`. `WorldViewRoot.sync` refreshes it each tick from the camera itself:
+     its global transform (position, roll), `size` (with the flourish zoom), the shake and kick `h_offset`/`v_offset`,
+     and the viewport aspect.
+   - A point's gap is how far outside that rectangle it lands on screen. An orthographic projection never makes a
+     distance longer, so a gap of g screen metres is at least g ground metres (about 1.7 g along the screen's vertical).
+   - What is skipped, and when:
+
+     | Thing | Skipped when the gap is over | Notes |
+     |---|---|---|
+     | Enemy model animation | 4 m (largest model, height included) + 6 m | stays on 2 m farther (hysteresis); replaces the 24 m circle round the hero, kept only for views with no camera (unit tests) |
+     | Status VFX | actor radius + 3.5 m (flames; the status light's 3 m range) + 6 m | `StatusVisuals._draw_vfx` |
+     | Flashes | size + 3 m + 6 m | `AttackFormCanvas` |
+     | Landings | 3 × radius + 3 m (a burst's light reaches 3r + 2 m) + 6 m | `AttackFormCanvas` |
+     | Live rings and patches | radius + 3 m + 6 m | `AttackFormCanvas` |
+     | Live bolts | half the trail + (length + 1 m) × scale + 6 m | `AttackFormCanvas` |
+
+   - A bolt with a tether back to the hero is never skipped, since its line can cross the screen. A skipped bolt still
+     counts toward `LIVE_BOLTS_MAX`, so the same bolts get their rims as before.
+   - When an enemy model turns back on, it runs `advance(0.05)` four times at once, then its own `_process` runs again
+     before that frame is drawn.
+   - `_first_sync` snaps the camera before the first sync too, so that sync culls against the right view.
+   - `tests/unit/presentation/test_screen_cull.gd` checks:
+     - the edge `ScreenCull` finds matches `Camera3D.unproject_position` (right edge at the viewport width, top edge
+       at 0);
+     - at the edge, and at edge + reach + margin − 0.1 m, an enemy model animates, a status draws and a flash draws;
+     - past that, each is skipped;
+     - the hysteresis band;
+     - the tint and flash rewrite guards.
+   - First run: the "coming back" check placed the enemy exactly on the threshold, which float rounding put just
+     outside. It was moved 0.5 m inside.
+4. **Attack-form CPU** (same output).
+   - New `attack_forms/live_bolt_look.gd`: a live bolt's look fields are read once into typed fields, kept on the look
+     under `&"hv_live"`.
+   - The bolt is laid out with the pools in hand (`_put_in`) and a reused points Array. `_emit_parts(sd, …)` replaces
+     the new Dictionary per bolt.
+   - The pools are kept as lists (no `pools.values()` ×4 a frame), and the kept effects are swapped instead of rebuilt.
+5. **Catch-up ticks: measured and reasoned, not changed.**
+   - `project.godot` has `max_physics_steps_per_frame = 4`, and `main.gd` connects `driver.ticked` to `view.sync`. Below
+     60 fps Godot runs about 60/F ticks a frame (1.5 at 40 fps, 2 at 30, at most 4), and the whole view sync runs for
+     each. Headless `--fixed-fps 60` always runs one tick a frame, so this machine cannot show it.
+   - The probe's new catch-up model replays Godot's step rule over the run's measured CPU costs. It is CPU only, uses
+     this machine's timings, and ranks only:
+     - before: frames with 0/1/2/3/4 ticks [0, 124, 104, 48, 31], 1.95 view syncs a frame;
+     - after: [0, 209, 140, 33, 3], 1.56 view syncs a frame.
+   - Syncing the heavy views once a frame is not provably safe:
+     - the avatars' `strike_note` and `_track_motion` read per-tick state;
+     - `AttackFormView._sync_bolts` builds trails from one point per sync;
+     - `StatusVisuals._frame` counts syncs (it times the shock sparks);
+     - physics interpolation needs a position written every tick.
+   - Per the brief, it was left unchanged. On the owner's PC the dev panel's `ticks_last_frame` shows the real count.
+
+### Tests (this step's tree)
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/presentation/test_charger_pose_hv.gd,res://tests/unit/presentation/test_screen_cull.gd -gexit
+Tests                 9
+Passing Tests         9
+---- All tests passed! ----
+
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<20 files: test_charger_avatar, test_crowd_view, test_damage_flash, test_hit_impact, test_hit_feel, test_status_visuals, test_vfx_layer, test_vfx_budget, test_vfx_pressure, test_vfx_interpolation, test_attack_forms, test_attack_forms_live, test_attack_form_looks, test_attack_visuals, test_attack_visuals_2, test_windup_tells, test_melee_strikes, test_horde_avatars, test_enemy_palettes, test_boss_views> -gexit
+Tests               180
+Passing Tests       180
+Asserts           24393
+Time              28.71s
+---- All tests passed! ----
+
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<e2e: test_e2e_horde_enemies, test_e2e_enemies, test_e2e_attacks, test_e2e_camera, test_e2e_health_bars, test_e2e_run_flow, test_e2e_combo, test_e2e_playground> -gexit
+Tests                13
+Passing Tests        13
+Time              131.361s
+---- All tests passed! ----
+
+gdformat --check src scripts tests   -> 1048 files would be left unchanged
+gdlint src scripts tests             -> Success: no problems found
+```
+
+### Horde probe, before and after
+`godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10 --tag=hv_before|hv_after`.
+Before: `07af5d59`'s `actor_views.gd`, `charger_avatar.gd`, `status_visuals.gd`, `attack_form_canvas.gd` and
+`world_view_root.gd` copied in temporarily, with this step's probe. After: this step's tree. The outputs are in
+`build/perf/perf_probe_hv_before.txt` and `perf_probe_hv_after.txt`.
+
+**Counts** (deterministic; this is the evidence). Every count shared by both runs is identical:
+
+| Metric (avg / p95 / max) | Before and after |
+|---|---|
+| projectiles | 20.887 / 51 / 82 |
+| events | 13.060 / 58 / 171 |
+| bursts_drawn | 16.700 / 25 / 27 |
+| sprites_drawn | 550.503 / 780 / 902 |
+| lights_on | 7.523 / 10 / 10 |
+| form_meshes | 90.092 / 221 / 386 |
+| status_drawn | 27.807 / 53 / 57 |
+| flashing | 3.323 / 10 / 16 |
+| damage | 10794 over 10 s |
+
+After only:
+- `animated` 104.313 / 110 / 110: about 6 of the 110 Chargers, on average, were wholly off this room's screen.
+- `status_culled` 0 / 0 / 0: the probe's burning enemies were all within reach of the view.
+
+**Timings** (noisy cloud CPU; these rank only, they are not a measurement):
+
+| ms per tick, avg | Before | After |
+|---|---|---|
+| sim | 4.816 | 4.692 (not this step's code) |
+| view sync | 8.204 | 7.469 |
+| frame (`_process`) | 8.687 | 6.587 |
+| total | 21.707 | 18.749 |
+| ChargerAvatar frame | 4.560 | 2.639 |
+| AttackFormView frame | 3.256 | 3.140 |
+| sync: actors | 3.202 | 3.273 |
+| sync: status_fx | 0.808 | 0.676 |
+| sync: item_fx | 0.720 | 0.223 |
+
+What the timings say:
+- The pose rewrite and the visor guard roughly halve the Charger animation cost.
+- The tint guard takes most of the cost out of `item_fx`.
+- `AttackFormView` barely moved: its cost is not in the per-bolt look-ups this step removed. The next candidate is
+  the effects layer drawn inside its frame.
+- `actors` sync is unchanged: avatar `sync` and bars dominate, and HR's shared materials touch that area.
+
+**fps:** NOT YET RUN (owner hardware). **Look and feel:** OWNER ONLY.
+
 ## Next candidates (read-only audit, 2026-10-19; owner: "Any other findings on the code that could improve the lag and fps that doesn't change the game?")
 Three read-only reviews of `db26b485` (sim, view CPU, GPU). Nothing measured or changed; sizes are estimates from the code.
 **Same game and same pixels:**
