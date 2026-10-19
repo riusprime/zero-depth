@@ -197,6 +197,7 @@ static func star_crystal_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = STAR_CRYSTAL
 	m.roughness = 0.15
+	m.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
 	m.metallic_specular = 0.8
 	m.rim_enabled = true
 	m.rim = 0.5
@@ -228,6 +229,7 @@ static func ice_material() -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = ICE
 	m.roughness = 0.12
+	m.metallic = ShardMesh.CRYSTAL_METALLIC  # v0.8.0 GX: the glint
 	m.metallic_specular = 0.8
 	m.rim_enabled = true
 	m.rim = 0.4

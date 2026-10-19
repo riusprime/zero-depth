@@ -32,6 +32,10 @@ Shortcut to every fight: Main menu → **F10** → **Playground** (top bar) → 
 - [ ] **The Prism (final boss phase 2, PR, O84):** is it fair now? The Cross turns 15 % slower; her orbs come as
   three spells of their own (a zigzag ring, a reversing spiral, a turning flower), never with the beams; the bolts
   only in the window. Too easy / right / too hard, and how long she took. (decides D60)
+- [ ] **Torch air and embers (GX, O86/O88; branch `v080-gx`):** on Lighting quality High, look at the light hanging
+  in the air round torches and braziers, the embers and the faint dust, and the crystals' glint, in each biome. Does
+  it add to your reference look without making it brighter or hazier? Then compare fps High vs Low on your PC
+  (side by side: `docs/roadmap/v0.8.0/evidence/gx_shots/`).
 
 **What I hope to get back:** the same as before: per boss too easy / right / too hard and how long it took; fps
 with your biggest builds; bugs (what you did, saw, expected; a screenshot); anything you'd cut.

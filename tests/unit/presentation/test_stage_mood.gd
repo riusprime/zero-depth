@@ -110,3 +110,40 @@ func test_apply_mood_updates_the_running_stage() -> void:
 	m.grade_strength = 0.0
 	stage.apply_mood()
 	assert_false(stage.environment.adjustment_enabled, "and off again")
+
+
+## v0.8.0 GX (owner O86): volumetric fog and the height haze are mood values, on the "high" tier only; the sun
+## barely lights the fog (the fire props carry it), and the void never takes it.
+func test_volumetric_fog_and_height_haze_follow_the_lighting_tier() -> void:
+	var m := BiomeMood.new()
+	m.fog_density = 0.0
+	m.fog_height = 0.4
+	m.fog_height_density = 0.2
+	m.volumetric_enabled = true
+	m.volumetric_albedo = Color(1, 0.8, 0.6)
+	m.volumetric_sun_energy = 0.05
+	var stage := _stage(m)
+	var env := stage.environment
+	assert_true(env.volumetric_fog_enabled, "high: volumetric fog")
+	assert_almost_eq(env.volumetric_fog_density, 0.0, 0.0001, "the density is the layer's alone")
+	assert_eq(env.volumetric_fog_albedo, m.volumetric_albedo)
+	assert_almost_eq(env.volumetric_fog_sky_affect, 0.0, 0.0001, "the void stays dark")
+	assert_true(env.fog_enabled, "the height haze turns the fog on")
+	assert_almost_eq(env.fog_height, 0.4, 0.0001)
+	assert_almost_eq(env.fog_height_density, 0.2, 0.0001)
+	assert_almost_eq(stage.sun.light_volumetric_fog_energy, 0.05, 0.0001)
+	stage.set_lighting("low")
+	assert_false(env.volumetric_fog_enabled, "low: no volumetric fog")
+	assert_almost_eq(env.fog_height_density, 0.0, 0.0001, "low: no height haze")
+	assert_false(env.fog_enabled, "and no fog at all without haze")
+	m.volumetric_enabled = false
+	stage.set_lighting("high")
+	assert_false(env.volumetric_fog_enabled, "a mood without it stays off")
+
+
+func test_volumetric_and_height_fields_are_validated() -> void:
+	var m := BiomeMood.new()
+	m.volumetric_density = 0.5
+	m.volumetric_height = 0.1
+	m.fog_height_density = -1.0
+	assert_eq(m.problems().size(), 3, "%s" % m.problems())

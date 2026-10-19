@@ -38,6 +38,10 @@ const LIGHTING_QUALITIES: Array[String] = ["high", "low"]
 const DEEP_VIOLET := Color("#8A5CFF")
 const DEEP_EDGE := Color("#140A26")
 const DEEP_FOG_DENSITY := 0.012
+## v0.8.0 GX: the volumetric fog's reach from the camera (m; past IsoRig's 100 m far plane, as the floor is 48-72 m
+## away) and its froxel spread (1: even, as nothing near the camera needs the detail).
+const VOLUMETRIC_LENGTH := 110.0
+const VOLUMETRIC_DETAIL_SPREAD := 1.0
 
 ## Which biome's props to scatter (v0.3.0 B): &"night_rocks" (faceted boulders, dead trees), &"red_canyon" (mesa
 ## chunks, dry grass), anything else Ruins (rubble, grass). Set before build().
@@ -64,6 +68,9 @@ var contact_shadows: MeshInstance3D
 ## The floor built from the owner's kit (v0.5.9 Step 4), when there is a mood and every wall and cover piece
 ## loads; otherwise the boxes and primitive props draw as before.
 var kit: StageKit
+## v0.8.0 GX (owner O86): the air on the "high" tier (StageAtmosphere: the fog layer, embers, dust); null without
+## the kit.
+var atmosphere: StageAtmosphere
 ## v0.6.1 SD (owner R4): the crystal-shard clusters dressing the floor (null without the kit or a floor).
 var shards: ShardCluster
 ## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
@@ -273,6 +280,16 @@ func _mood_environment(env: Environment) -> void:
 		env.fog_enabled = mood.fog_density > 0.0
 		env.fog_density = mood.fog_density
 		env.fog_light_color = mood.fog_color
+		env.fog_height = mood.fog_height
+		# v0.8.0 GX (O86): volumetric fog, its density from StageAtmosphere's layer only (an even density over the
+		# 48-72 m between the iso camera and the floor would black the frame out); the void never takes it, and it
+		# reaches past the camera's far plane (IsoRig: 100 m). On and off with the lighting tier (set_lighting).
+		env.volumetric_fog_density = 0.0
+		env.volumetric_fog_albedo = mood.volumetric_albedo
+		env.volumetric_fog_length = VOLUMETRIC_LENGTH
+		env.volumetric_fog_detail_spread = VOLUMETRIC_DETAIL_SPREAD
+		env.volumetric_fog_sky_affect = 0.0
+		env.volumetric_fog_ambient_inject = 0.0
 		_build_vignette(mood.vignette)
 	if deep:
 		_apply_deep(env)
@@ -292,6 +309,8 @@ func apply_mood() -> void:
 	_build_light()
 	if kit != null and mood != null:
 		kit.retune(mood)
+	if atmosphere != null and mood != null:
+		atmosphere.retune(mood)
 
 
 ## v0.5.5 DS (S5): the Deep haze on top of whatever look the environment has (the mood's, or the old one): the void
@@ -315,6 +334,14 @@ func set_lighting(quality: String) -> void:
 	var high := mood != null and lighting == "high"
 	environment.ssao_enabled = high
 	environment.ssil_enabled = high and mood.ssil_enabled
+	if mood != null:
+		# v0.8.0 GX (O86): the new atmosphere is "high" only: volumetric fog, the height haze, embers and dust.
+		var height_haze := mood.fog_height_density if high else 0.0
+		environment.fog_height_density = height_haze
+		environment.fog_enabled = mood.fog_density > 0.0 or deep or height_haze > 0.0
+		environment.volumetric_fog_enabled = high and mood.volumetric_enabled
+	if atmosphere != null:
+		atmosphere.set_enabled(high)
 	if kit != null:
 		kit.set_shadows(high)
 
@@ -359,6 +386,7 @@ func _build_light() -> void:
 		light.rotation_degrees = Vector3(mood.sun_pitch_deg, mood.sun_yaw_deg, 0)
 		light.light_energy = mood.sun_energy
 		light.light_color = mood.sun_color
+		light.light_volumetric_fog_energy = mood.volumetric_sun_energy  # v0.8.0 GX: torches carry the fog
 	if deep:  # v0.5.5 DS (S5): the sun pulled toward violet, a little dimmer
 		light.light_color = light.light_color.lerp(DEEP_VIOLET, 0.45)
 		light.light_energy *= 0.85
@@ -612,7 +640,19 @@ func _build_kit_nodes(
 	# v0.8.0 N12: in parts (StageKit.queue_build), then the shadows and the shards after them.
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
 	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
+	_queue.add_next("atmosphere", _build_atmosphere)
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
+
+
+## v0.8.0 GX (owner O86): the air round the kit's light props (after the kit has placed them).
+func _build_atmosphere() -> void:
+	if mood == null or kit == null:
+		return
+	atmosphere = StageAtmosphere.new()
+	atmosphere.name = "Atmosphere"
+	add_child(atmosphere)
+	atmosphere.setup(mood, kit.lights)
+	set_lighting(lighting)
 
 
 ## v0.8.0 N10 (the probes' numbers): the structural walls' drawn wall meshes (kit pieces and procedural walls; not

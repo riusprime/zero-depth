@@ -163,6 +163,9 @@ const LOD_NORMAL_SPLIT_DEG := 60.0
 ## against ~0.5 million in Frozen Shore and Starfall, whose decoration is code-made). A piece of DECOR_TRIS triangles
 ## or fewer is drawn as it is.
 const DECOR_TRIS := 1000
+## v0.8.0 GX (owner O86, graphics feedback §5): the owner's crystal pieces glint (the .glb untouched; the material
+## changed at load): per piece, its roughness and metallic. Stone stays matte.
+const GLOSS := {&"star_crystal": [0.25, 0.2], &"ice_shard": [0.25, 0.15]}
 
 ## Where pieces are looked up (tests point it elsewhere to see the fallback).
 static var dir := DIR
@@ -180,8 +183,25 @@ static func get_piece(id: StringName) -> Dictionary:
 	var out := {}
 	if SPECS.has(id) and ResourceLoader.exists(path):
 		out = _normalise(ModelLibrary.first_surface(load(path) as PackedScene), SPECS[id])
+		if GLOSS.has(id) and not out.is_empty():
+			out["material"] = glossed(out["material"], GLOSS[id][0], GLOSS[id][1])
 	_cache[path] = out
 	return out
+
+
+## v0.8.0 GX: a copy of `mat` with this roughness and metallic (its roughness and metallic maps dropped, so the
+## values hold); any other material is returned as it is.
+static func glossed(mat: Material, roughness: float, metallic: float) -> Material:
+	var base := mat as BaseMaterial3D
+	if base == null:
+		return mat
+	var m := base.duplicate() as BaseMaterial3D
+	m.roughness = roughness
+	m.metallic = metallic
+	if not m is ORMMaterial3D:
+		m.roughness_texture = null
+		m.metallic_texture = null
+	return m
 
 
 ## True when every wall and cover piece loads (the dresser needs all of them to build a floor).
