@@ -341,7 +341,7 @@ static func _burst(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var hits := 0
 	var r := ctx.radius_m if ctx.radius_m > 0.0 else spec.radius_m  # v0.6.0 MX4: Vent's, an echo's
 	BladeForms.on_burst(w, spec, ctx.origin, r)  # v0.6.5 WN4: Finisher+'s shockwave, for the view
-	for i in range(1, a.size()):
+	for i in w.aoe_candidates(ctx.origin, r):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
 		if not AttackShapes.disc_touches(ctx.origin, r, a.pos(i), a.radius[i]):
@@ -360,7 +360,7 @@ static func _seek(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var a := w.actors
 	var best := -1
 	var best_d := spec.reach_m
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(ctx.origin, spec.reach_m):  # v0.8.0 HS: a superset, ascending
 		if j == ctx.exclude or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - ctx.origin)

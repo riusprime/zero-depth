@@ -101,7 +101,7 @@ static func shockwave(w: World, dmg: int, root: int, effect: StringName) -> void
 	var a := w.actors
 	var center := w.player_pos()
 	var radius := Modifiers.nth_burst_radius_m(w)
-	for i in range(1, a.size()):
+	for i in w.aoe_candidates(center, radius):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if a.teams[i] == ActorStore.TEAM_PLAYER or a.dead[i] == 1:
 			continue
 		if not AttackShapes.disc_touches(center, radius, a.pos(i), a.radius[i]):

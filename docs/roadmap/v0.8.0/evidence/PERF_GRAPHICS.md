@@ -416,3 +416,134 @@ Three read-only reviews of `db26b485` (sim, view CPU, GPU). Nothing measured or 
 8. Experiments: `rendering/driver/threads/thread_model` = Separate (stability check); shader warm-up behind the loading cover (`hero_pulse_views.gd:359`, `hero_cast_fx.gd:93`, `blade_swing_fx.gd:48`, `boss_strike_looks.gd:272`).
 9. Risky, measure first: when frames drop, the whole view sync runs once per catch-up tick (`project.godot:33` `max_physics_steps_per_frame=4`, `main.gd:424`); measure `SimDriver.ticks_last_frame` in a horde.
 **Changes pixels (owner's eye):** torch shadows as dual paraboloid instead of cube (`stage_kit.gd:252-260`, 24 → 8 shadow passes); no shadows from small floor scatter (`stage_kit.gd:177-184`); MSAA off with the ink lines.
+
+## HS
+Owner O89: "lag mostly comes from shooting hordes with multiple modifiers". Agent HS, branch `v080-hs` from `07af5d59`.
+Sim only; outcomes, event order and the world hash unchanged. Cloud machine (4 CPUs, shared): the timings rank phases,
+they are not frame evidence. Frame rate on the owner's PC: `NOT YET RUN (owner hardware)`.
+
+### What was built
+- `World.phase_probe` (null in play, in `WorldSnapshot.WORLD_KEPT`, never hashed): `step`, `_run_ai`, `EnemyAi.think`,
+  `_move_and_collide` and `_projectile_hits` call its `begin`/`end` at phase boundaries. The clock is read only in
+  `scripts/checks/perf_probe.gd` (`--phases`, `PhaseTimer`); `tests/arch` passes. The probe now prints the world's state
+  hash at the end of every run.
+- `World.aoe_candidates(center, reach)`: inside `_projectile_hits` a `DenseGrid` of the actors (built at most once,
+  on the first area check; nothing moves or adds a body inside `_projectile_hits`) gives an ascending superset;
+  elsewhere it is every index (the old scan). The callers keep their own live test (dead, team, distance, the
+  lower-index tie): `Attacks._burst` (Explosive), `Attacks._seek` (Static Chain's first jump), `Engines.nearest_enemies`
+  (shock jumps), Wildfire, Blood Harvest, `ItemEffects.shockwave`. Tests only: `debug_aoe_misses` counts a body in reach
+  the candidates left out; `debug_aoe_full` keeps the full scan as the reference.
+- The actor pair pass works on local copies of `pos_x`/`pos_y` (one native copy, handed back after; handed back
+  around a boss's `_shove`) and starts each body's candidates at `bsearch(a + 1)`; the same arithmetic in the same order.
+
+### Skipped, and why
+- Per-hit allocations (`hooks_on` caching, `projectile_spec` once, `damage.gd` 2-element returns, `String(k.id)`):
+  the whole hit (`proj.damage`) is 0.17-0.18 ms a tick at 2.5 hits a tick; the allocations are a part of that.
+- `player_projectiles_of`, the event-log trim, `ActorStore`/`ProjectileStore` compaction: `after`, `remove_dead` and
+  `proj.remove` are 0.004-0.05 ms a tick.
+- `_rays`, `_arc`: Scatter Blast and the Blade, not in the horde build; not measured.
+- A smaller circle cell: not tried (`move.grid` is 0.10 ms).
+- The AoE grid did not move `proj.end` / `proj.procs` here (0.159 → 0.156, 0.099 → 0.098 ms): at 1.7 bursts a tick
+  the scans were cheap; it bounds the cost of a crowded tick (43 hits) rather than the average.
+
+### Commands and raw results
+Build: `b0402e86` (step 0, the timer) for "before"; this commit for "after".
+
+`godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10 --sim-only --phases`
+before the fixes (timer only):
+```
+sim_ms            4.518     9.675    19.245
+projectiles      20.887    51.000    82.000
+events           13.060    58.000   171.000
+hits              2.547    12.000    43.000
+damage            3.173    13.000    42.000
+kills             0.375     2.000     6.000
+status_applies    4.440    21.000    66.000
+world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0
+sim phases over 600 ticks (ms per tick; calls per tick; the timer's own cost is in them):
+  phase                 avg       p95    calls   share
+  move                  1.623     2.363      1.0   35.9 %
+  ai                    1.431     2.036      1.0   31.7 %
+  proj                  0.587     2.140      1.0   13.0 %
+  nav_flood             0.388     5.379      0.1    8.6 %
+  resolve               0.165     0.266      1.0    3.7 %
+  statuses              0.125     0.345      1.0    2.8 %
+  actions               0.055     0.175      1.0    1.2 %
+  after                 0.042     0.140      1.0    0.9 %
+  remove_dead           0.029     0.114      1.0    0.6 %
+  dash_abilities        0.028     0.044      1.0    0.6 %
+  move.steer            0.670     0.982      1.0   14.8 %
+  ai.plan               0.651     0.935     27.5   14.4 %
+  move.pairs            0.647     0.941      2.0   14.3 %
+  move.walls            0.186     0.269      3.0    4.1 %
+  proj.damage           0.172     0.723      1.2    3.8 %
+  proj.end              0.159     0.620      1.7    3.5 %
+  proj.sweep            0.120     0.312     20.9    2.7 %
+  move.grid             0.103     0.152      2.0    2.3 %
+  proj.procs            0.099     0.517      1.2    2.2 %
+  ai.grid               0.053     0.083      1.0    1.2 %
+  proj.remove           0.004     0.010      1.0    0.1 %
+  (rest)                0.045  (sim_ms avg minus the top-level phases)
+```
+The same without `--phases` (before): `sim_ms 4.825 9.525 19.881`, `events 13.060`, `hits 2.547`, `kills 0.375`,
+`world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0` (the timer changes nothing).
+
+After the fixes, with `--phases`:
+```
+sim_ms            4.736    10.077    41.120
+projectiles      20.887    51.000    82.000
+events           13.060    58.000   171.000
+hits              2.547    12.000    43.000
+damage            3.173    13.000    42.000
+kills             0.375     2.000     6.000
+status_applies    4.440    21.000    66.000
+world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0
+  phase                 avg       p95    calls   share
+  ai                    1.589     2.197      1.0   33.5 %
+  move                  1.576     2.273      1.0   33.3 %
+  proj                  0.603     2.058      1.0   12.7 %
+  nav_flood             0.435     5.385      0.1    9.2 %
+  resolve               0.177     0.276      1.0    3.7 %
+  statuses              0.139     0.350      1.0    2.9 %
+  actions               0.058     0.160      1.0    1.2 %
+  after                 0.050     0.148      1.0    1.1 %
+  remove_dead           0.031     0.118      1.0    0.7 %
+  dash_abilities        0.029     0.053      1.0    0.6 %
+  move.steer            0.732     1.003      1.0   15.5 %
+  ai.plan               0.707     0.985     27.5   14.9 %
+  move.pairs            0.516     0.795      2.0   10.9 %
+  move.walls            0.204     0.298      3.0    4.3 %
+  proj.damage           0.181     0.643      1.2    3.8 %
+  proj.end              0.156     0.699      1.7    3.3 %
+  proj.sweep            0.128     0.345     20.9    2.7 %
+  move.grid             0.105     0.163      2.0    2.2 %
+  proj.procs            0.098     0.482      1.2    2.1 %
+  ai.grid               0.060     0.083      1.0    1.3 %
+  proj.remove           0.004     0.011      1.0    0.1 %
+  (rest)                0.048  (sim_ms avg minus the top-level phases)
+```
+After, without `--phases`: `sim_ms 4.295 9.396 15.137`, `projectiles 20.887`, `events 13.060`, `hits 2.547`,
+`damage 3.173`, `kills 0.375`, `world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0`.
+The same counts and the same hash before and after. On this machine `move.pairs` went 0.647 → 0.516 ms while the
+untouched phases read 5-9 % higher in the after run (noise); the 41 ms max is one stalled tick on a shared machine.
+
+### What the timer says is left (not changed; outside the HS candidate list)
+1. `move.steer` (`EnemyAi.move` per enemy, every tick): 0.67-0.73 ms.
+2. `ai` minus `ai.plan` (`EnemyAi.think`'s state machine): ~0.8 ms; `ai.plan` (27.5 plans a tick): 0.65-0.71 ms.
+3. `nav_flood`: 0.4 ms on average but 5.4 ms p95. It runs on 1 tick in 10 and that tick is the sim's p95 spike (the
+   likeliest sim-side fps drop in a horde). Spreading the flood over ticks would change when enemies see the new
+   field, which is an outcome change, so it needs an owner decision.
+
+### Tests (this commit's tree)
+`godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<tests/arch/test_sim_purity.gd,
+tests/arch/test_layering.gd, tests/golden/test_replay_ground_plane.gd, tests/unit/sim/{test_state_hasher,
+test_world_snapshot, test_modifier_equivalence, test_attack_order, test_engines, test_mx4_engine, test_damage,
+test_collision, test_dense_grid, test_horde}.gd, tests/e2e/test_e2e_old_save.gd> -gexit`:
+```
+Tests                98
+Passing Tests        98
+Asserts           33449
+Time              219.463s
+```
+`-gtest=res://tests/unit/application/test_hit_grid.gd`: `Tests 2`, `Passing Tests 2` (the horde build stepped 360
+ticks with the grid and with the full scan: the same hash every 30 ticks, 0 misses).

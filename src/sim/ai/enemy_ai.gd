@@ -126,7 +126,11 @@ static func think(w: World, i: int) -> void:
 	var a := w.actors
 	var planning := plans_now(w, i)
 	if planning:  # v0.4.0 SC: the staggered plan (before the frozen check: a thawed enemy has a fresh one)
+		if w.phase_probe != null:  # v0.8.0 HS: the perf probe's phase timer (null in play)
+			w.phase_probe.begin(&"ai.plan")
 		plan(w, i)
+		if w.phase_probe != null:
+			w.phase_probe.end(&"ai.plan")
 	if a.frozen_t[i] > 0:  # Engines (Engines.frozen): a frozen enemy holds still, its state paused.
 		return
 	if CoreTheft.staggered(w, i):  # v0.6.0 CU: a staggered elite stands

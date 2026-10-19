@@ -32,6 +32,10 @@ extends SceneTree
 ## (cloud machines are noisy): the frame target is measured on the owner's PC.
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10
 ##   (writes build/perf/perf_probe_horde.txt; on a GPU machine drop --headless to include the draw in wall time)
+## v0.8.0 HS (owner O89): --phases splits the sim's tick into its phases (World.phase_probe, a timer the sim tells where
+## each phase begins and ends; null in play, it never touches state) and prints ms per tick, avg and p95, per phase,
+## and the world's state hash at the end (the same with or without --phases: the timer changes no outcome).
+##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10 --phases
 
 const OUT_DIR := "res://build/perf"
 const WARMUP_TICKS := 60
@@ -81,6 +85,10 @@ var _rows := {}  # metric -> Array of floats
 var _keys := {}  # node instance id -> its report key
 var _node_ms := {}  # class/name -> total ms over the measured ticks
 var _report: PackedStringArray = []
+## v0.8.0 HS: --phases (the timer the world reports its phases to; null: off) and the per-tick ms of each phase.
+var _phase_timer: PhaseTimer = null
+var _phase_rows := {}  # phase -> Array of [tick index, ms, calls]
+var _phase_ticks := 0
 
 
 func _initialize() -> void:
@@ -110,6 +118,8 @@ func _initialize() -> void:
 			_horde = HORDE_DEFAULT
 		elif a.begins_with("--horde="):
 			_horde = int(a.get_slice("=", 1))
+		elif a == "--phases":  # v0.8.0 HS
+			_phase_timer = PhaseTimer.new()
 	_total = WARMUP_TICKS + _seconds * 60
 	var repo := ContentRepository.load_all()
 	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
@@ -118,6 +128,7 @@ func _initialize() -> void:
 	if _cap > 0 and &"player_shots_max" in _world.tuning:
 		_world.tuning.set(&"player_shots_max", _cap)
 	_api = PlaygroundApi.new(_world)
+	_world.phase_probe = _phase_timer  # v0.8.0 HS: null unless --phases
 	_reader = WorldReader.new(_world)
 	var cards: Array[StringName] = [&"gun_spread", &"split_shot", &"shared_explosive"]
 	if _horde > 0:
@@ -192,6 +203,8 @@ func _process(delta: float) -> bool:
 		_finish()
 		return true
 	var measured := _tick_n >= WARMUP_TICKS
+	if _phase_timer != null:
+		_phase_timer.reset()
 	var t0 := Time.get_ticks_usec()
 	_api.apply_pending()  # the endless dummies' refill, as SimDriver runs it before every tick
 	_world.step(_frame_in)
@@ -240,6 +253,7 @@ func _process(delta: float) -> bool:
 		_add("frame_ms", frame_ms)
 		_add("total_ms", (t1 - t0) / 1000.0 + sync_ms + frame_ms)
 		_count_tick()
+		_phases_tick()
 	_tick_n += 1
 	return false
 
@@ -410,6 +424,7 @@ func _finish() -> void:
 		_line("sync cost by view (ms per tick, avg):")
 		for k in keys.slice(0, 12):
 			_line("  %-24s %8.3f" % [k, float(prof[k]) / n])
+	_phases_report()
 	var now := _world.tick - 1
 	var secs := float(_total - WARMUP_TICKS) / SimTick.TICKS_PER_SECOND
 	var dps := float(_tally.total) / maxf(secs, 0.001)
@@ -441,6 +456,8 @@ func _finish() -> void:
 		tag = _tag
 	if _sim_only:
 		tag += "_sim"
+	if _phase_timer != null:
+		tag += "_phases"
 	var f := FileAccess.open(OUT_DIR + "/perf_probe_%s.txt" % tag, FileAccess.WRITE)
 	if f != null:
 		f.store_string("\n".join(_report) + "\n")
@@ -452,3 +469,88 @@ func _finish() -> void:
 func _line(s: String) -> void:
 	print(s)
 	_report.append(s)
+
+
+## v0.8.0 HS: keeps this measured tick's phase times (the timer was reset before the step).
+func _phases_tick() -> void:
+	if _phase_timer == null:
+		return
+	for k: StringName in _phase_timer.us:
+		if not _phase_rows.has(k):
+			_phase_rows[k] = []
+		(_phase_rows[k] as Array).append(
+			[_phase_ticks, _phase_timer.us[k] / 1000.0, _phase_timer.calls[k]]
+		)
+	_phase_ticks += 1
+
+
+## v0.8.0 HS: the phase table (top-level phases, then their parts; a tick without the phase counts 0 ms) and the
+## world's state hash (the same run without --phases prints the same hash).
+func _phases_report() -> void:
+	_line("world hash at tick %d: %s" % [_world.tick, _world.state_hash()])
+	if _phase_timer == null:
+		return
+	var n := maxi(_phase_ticks, 1)
+	var avg := {}
+	var p95 := {}
+	var calls := {}
+	for k: StringName in _phase_rows:
+		var per := []
+		per.resize(n)
+		per.fill(0.0)
+		var sum := 0.0
+		var c := 0
+		for row: Array in _phase_rows[k]:
+			per[row[0]] = row[1]
+			sum += row[1]
+			c += row[2]
+		per.sort()
+		avg[k] = sum / n
+		p95[k] = per[mini(n - 1, int(n * 0.95))]
+		calls[k] = float(c) / n
+	var keys := avg.keys()
+	keys.sort_custom(func(x: StringName, y: StringName) -> bool: return avg[x] > avg[y])
+	var sim_sum := 0.0
+	for v: float in _rows["sim_ms"]:
+		sim_sum += v
+	var top := 0.0
+	_line(
+		(
+			"sim phases over %d ticks (ms per tick; calls per tick; the timer's own cost is in them):"
+			% n
+		)
+	)
+	_line("  phase                 avg       p95    calls   share")
+	for part in [false, true]:
+		for k: StringName in keys:
+			if String(k).contains(".") != part:
+				continue
+			if not part:
+				top += avg[k]
+			_line(
+				(
+					"  %-18s %8.3f  %8.3f  %7.1f  %5.1f %%"
+					% [k, avg[k], p95[k], calls[k], 100.0 * avg[k] / maxf(sim_sum / n, 0.000001)]
+				)
+			)
+	_line("  %-18s %8.3f  (sim_ms avg minus the top-level phases)" % ["(rest)", sim_sum / n - top])
+
+
+## v0.8.0 HS: the phase timer World.step reports to (World.phase_probe): begin and end bracket a named phase; a phase
+## entered several times a tick adds up. Probe-only (it reads the clock; the sim never does).
+class PhaseTimer:
+	extends RefCounted
+	var us := {}  # phase -> usec this tick
+	var calls := {}  # phase -> times entered this tick
+	var _open := {}  # phase -> its start (usec)
+
+	func begin(k: StringName) -> void:
+		_open[k] = Time.get_ticks_usec()
+
+	func end(k: StringName) -> void:
+		us[k] = int(us.get(k, 0)) + Time.get_ticks_usec() - int(_open[k])
+		calls[k] = int(calls.get(k, 0)) + 1
+
+	func reset() -> void:
+		us.clear()
+		calls.clear()

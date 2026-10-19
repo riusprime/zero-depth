@@ -49,6 +49,12 @@ const WORLD_KEPT := {
 	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
 	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
+	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
+	&"debug_aoe_misses": "debug (v0.8.0 HS): a test's superset check, off in play",
+	&"debug_aoe_full": "debug (v0.8.0 HS): a test's reference run, off in play",
+	&"_hit_grid": "transient within a tick (v0.8.0 HS): built inside _projectile_hits only",
+	&"_hit_grid_state": "transient within a tick (v0.8.0 HS): 0 between ticks",
+	&"_every_index": "derived (v0.8.0 HS): 1 .. n - 1, rebuilt from the actor count",
 }
 ## Content tables: compiled from content at setup, read-only in play (the guard test checks they don't change).
 const LOADOUT_CLASSES: Array[StringName] = [
