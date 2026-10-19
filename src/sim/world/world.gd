@@ -12,6 +12,8 @@ const BUTTON_BITS: Array[int] = [
 const DASH_SLOT := 2
 ## v0.4.0 SC: how far a body may drift during the collision passes before its wall check is redone (_move_and_collide).
 const WALL_SKIP_M := 0.5
+## v0.8.0 HS: aoe_candidates' query grows by this past the reach (and the largest radius), over float rounding.
+const AOE_MARGIN_M := 0.01
 
 var tick := 0
 var freeze_ticks := 0
@@ -364,11 +366,25 @@ var catch_up := CatchUpState.new()
 ## v0.8.0 N5 (owner O58): the intensity director's state (Intensity), hashed only when the spawner has its table.
 var intensity := IntensityState.new()
 var deep_elite_rooms := PackedInt32Array()
+## v0.8.0 HS: the perf probe's phase timer (scripts/checks/perf_probe.gd --phases); null in play. Told where each tick
+## phase begins and ends (begin/end with the phase's name), it never reads or writes state: not hashed, not copied.
+var phase_probe: Object = null
+## v0.8.0 HS: tests only: -1 off; 0 or more counts the aoe_candidates calls that left out an actor the full scan's
+## distance test would take (it must stay 0: the candidates are a superset).
+var debug_aoe_misses := -1
+## v0.8.0 HS: tests only: true keeps aoe_candidates on the full scan (the reference its grid must match exactly).
+var debug_aoe_full := false
 var _next_id := 1
 var _event_seq := 0
 var _events: Array[SimEvent] = []
 var _wall_grid := DenseGrid.new()  # v0.4.0 SC: dense grids (were UniformGrids)
 var _actor_grid := DenseGrid.new()
+## v0.8.0 HS: the area attacks' grid (aoe_candidates): built at most once in each _projectile_hits, from the positions
+## then (nothing moves or adds a body inside it); _hit_grid_state 0: closed (full scans), 1: open, 2: open and built.
+var _hit_grid := DenseGrid.new()
+var _hit_grid_state := 0
+## v0.8.0 HS: 1 .. n - 1 for n actors (aoe_candidates' full scan; it depends on the count only).
+var _every_index := PackedInt32Array()
 ## Run flow: a wall prepared for adding in play, and its flow field (prepare_wall).
 var _wall_next: Obb
 var _nav_next: NavField
@@ -574,14 +590,30 @@ func step(frame: InputFrame) -> void:
 	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
 		boss_flow.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
+	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
+		if pp != null:
+			pp.begin(&"nav_flood")
 		flood_nav()  # v0.4.0 SC: bounded; v0.8.0 P1: stops past the enemies
+		if pp != null:
+			pp.end(&"nav_flood")
+	if pp != null:
+		pp.begin(&"ai")
 	_run_ai()
+	if pp != null:
+		pp.end(&"ai")
+		pp.begin(&"actions")
 	# 4. Action states.
 	_advance_actions()
+	if pp != null:
+		pp.end(&"actions")
+		pp.begin(&"move")
 	# 5. Move and collide.
 	var before_move := player_pos()  # Items: the Kinetic Dash sweep starts here.
 	_move_and_collide()
+	if pp != null:
+		pp.end(&"move")
+		pp.begin(&"resolve")
 	# 6. Hits: enemy attacks, then projectile sweeps.
 	for i in range(1, actors.size()):
 		if BossAi.is_boss_kind(actors.kinds[i]) and actors.dead[i] == 0:
@@ -591,19 +623,34 @@ func step(frame: InputFrame) -> void:
 	Mines.advance(self)  # v0.4.0 EN: mines arm and blow.
 	if not boss_tables.is_empty():
 		BossSignatures.advance(self)  # v0.8.0 BS1: pillars sink, javelins fly back
+	if pp != null:
+		pp.end(&"resolve")
+		pp.begin(&"proj")
 	_projectile_hits()
+	if pp != null:
+		pp.end(&"proj")
+		pp.begin(&"dash_abilities")
 	ItemEffects.dash_hits(self, before_move)  # Items: Kinetic Dash.
 	Abilities.advance(self)  # v0.4.0 BS: auto abilities, the blink shock, stat regen.
+	if pp != null:
+		pp.end(&"dash_abilities")
+		pp.begin(&"statuses")
 	# 7. The effect queue arrives with the engine work. 8. Statuses: Ember Edge burns (Items).
 	ItemEffects.tick_burns(self)
 	ItemProcs.tick_slows(self)  # Items: Frost Core slows run down.
 	Engines.tick_statuses(self)  # Engines: shock, bleed, frost, freezes.
 	Venom.tick(self)  # v0.6.0 MX4: Venom Core's poison
 	PlayerRegen.advance(self)  # Builds: out-of-combat regen (L25).
+	if pp != null:
+		pp.end(&"statuses")
+		pp.begin(&"remove_dead")
 	# 9. Deaths and spawns (the wave director adds enemies here).
 	if final_fight != null:
 		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
+	if pp != null:
+		pp.end(&"remove_dead")
+		pp.begin(&"after")
 	Events.advance(self)  # v0.5.0 EV: ambush cleared, defence held, elites alive.
 	CoreTheft.advance(self)  # v0.6.0 CU: the gone carriers, staggers and steal windows, drops taken
 	Arenas.advance(self)  # v0.5.5 AR: sealed arenas (the Overrun too): the seal, the waves, the clear
@@ -621,6 +668,8 @@ func step(frame: InputFrame) -> void:
 		boss_flow.advance(self)
 	BossReward.advance(self)  # v0.5.5 AR (X1b): the boss's legendary altar
 	_apply_spawns()
+	if pp != null:
+		pp.end(&"after")
 	# 10. Cues are already in the event log. 11. Hashing is on demand (state_hash).
 	tick += 1
 
@@ -961,6 +1010,41 @@ func _rewards_touched() -> bool:
 ## v0.4.0 BS: living enemy indices whose body touches the disc (center, r), ascending. The uniform grid of this
 ## tick's bodies (the DenseGrid built in phase 5) does the broadphase, so call it from phase 6 on (auto-ability
 ## targeting).
+## v0.8.0 HS: the actor indices an area check around `center` must look at, ascending, from 1: every index whose
+## centre is within `reach` plus its own radius of `center` is in it (a superset; the caller's own test, live, decides).
+## Inside _projectile_hits a grid narrows it; elsewhere it is every actor (the full scan it replaces).
+func aoe_candidates(center: Vector2, reach: float) -> PackedInt32Array:
+	var out: PackedInt32Array
+	if _hit_grid_state == 0:
+		var n := actors.size() - 1
+		if _every_index.size() != maxi(n, 0):
+			_every_index.resize(maxi(n, 0))
+			for k in n:
+				_every_index[k] = k + 1
+		out = _every_index
+	else:
+		if _hit_grid_state == 1:
+			_hit_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
+			_hit_grid_state = 2
+		var m := reach + AOE_MARGIN_M
+		out = _hit_grid.query_rect(Rect2(center.x - m, center.y - m, m * 2.0, m * 2.0))
+		if not out.is_empty() and out[0] == 0:
+			out.remove_at(0)
+	if debug_aoe_misses >= 0:
+		_check_aoe(center, reach, out)
+	return out
+
+
+## v0.8.0 HS (tests): counts an actor the full scan's distance test would take that `got` left out.
+func _check_aoe(center: Vector2, reach: float, got: PackedInt32Array) -> void:
+	for j in range(1, actors.size()):
+		if Kin.length(actors.pos(j) - center) <= reach + actors.radius[j] and not got.has(j):
+			debug_aoe_misses += 1
+	for k in range(1, got.size()):
+		if got[k] <= got[k - 1]:
+			debug_aoe_misses += 1
+
+
 func enemies_near(center: Vector2, r: float) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	var g := r + 1.0
@@ -1237,14 +1321,19 @@ func _buffer_presses(pressed: int) -> void:
 
 func _run_ai() -> void:
 	var target := player_pos()
+	var pp := phase_probe  # v0.8.0 HS
 	if not enemy_tables.is_empty():  # v0.4.0 SC: the grid the enemies' staggered plans query (EnemyAi.plan)
+		if pp != null:
+			pp.begin(&"ai.grid")
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
+		if pp != null:
+			pp.end(&"ai.grid")
 	for i in range(1, actors.size()):
 		if BossAi.is_boss_kind(actors.kinds[i]):
 			BossAi.think(self, i)  # Bosses (v0.3.0 C).
 			continue
 		if EnemyAi.is_enemy_kind(actors.kinds[i]):
-			EnemyAi.think(self, i)
+			EnemyAi.think(self, i)  # (its plan is timed as ai.plan inside)
 			continue
 		if actors.kinds[i] != ActorStore.Kind.DUMMY:
 			continue
@@ -1342,6 +1431,9 @@ func _move_and_collide() -> void:
 			vel = target
 		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step (v0.3.0 L11)
 	actors.set_pos(0, p)
+	var pp := phase_probe  # v0.8.0 HS
+	if pp != null:
+		pp.begin(&"move.steer")
 	# Dummies steer toward the player plus their jitter.
 	var target := p
 	for i in range(1, actors.size()):
@@ -1364,6 +1456,9 @@ func _move_and_collide() -> void:
 			at += to * (dummy_speed / dist)
 		actors.set_pos(i, at)
 	PlayerSkill.push(self)  # Kit (v0.3.5 K): Scatter Blast knockback, before walls resolve it.
+	if pp != null:
+		pp.end(&"move.steer")
+		pp.begin(&"move.walls")
 	# Resolve: walls first, then actor pairs in ascending index order. A boss in the air or underground passes
 	# through both; a boss on the ground isn't shoved: the other body takes the whole push (v0.3.0 C).
 	var through := PackedInt32Array()
@@ -1400,31 +1495,36 @@ func _move_and_collide() -> void:
 			for w in _wall_grid.query_rect(Rect2(ap.x - r, ap.y - r, r * 2.0, r * 2.0)):
 				ap += Collide.circle_vs_obb(ap, r, walls[w])
 			actors.set_pos(i, ap)
+		if pp != null:
+			pp.end(&"move.walls")
+			pp.begin(&"move.grid")
 		_actor_grid.build_circles(actors.pos_x, actors.pos_y, actors.radius)
+		if pp != null:
+			pp.end(&"move.grid")
+			pp.begin(&"move.pairs")
 		var ghost := dash_ticks_left > 0 and ModifierRuntime.intangible(self)  # v0.6.0 MX4: Phase Dash
+		# v0.8.0 HS: the pass works on local copies of the position columns (one native copy on the first push,
+		# handed back after; an actor-store lookup per read was most of its cost) and starts each body's candidates
+		# past its own index (bsearch: the grid's list is ascending), with the same arithmetic in the same order.
+		var px := actors.pos_x
+		var py := actors.pos_y
+		var rad := actors.radius
 		for a in actors.size():
 			if ghost and a == 0:
 				continue
-			var ra := actors.radius[a]
-			var pa := Vector2(actors.pos_x[a], actors.pos_y[a])
-			for b in _actor_grid.query_rect(Rect2(pa.x - ra, pa.y - ra, ra * 2.0, ra * 2.0)):
-				if b <= a:
-					continue
+			var ra := rad[a]
+			var near := _actor_grid.query_rect(Rect2(px[a] - ra, py[a] - ra, ra * 2.0, ra * 2.0))
+			for q in range(near.bsearch(a + 1), near.size()):
+				var b := near[q]
 				# v0.4.0 SC: bodies whose boxes are clearly apart get no push; skip the call (the margin covers
 				# rounding, so the result is the same).
-				var rb := actors.radius[b]
+				var rb := rad[b]
 				var reach := ra + rb + 0.001
-				if (
-					absf(actors.pos_x[b] - actors.pos_x[a]) >= reach
-					or absf(actors.pos_y[b] - actors.pos_y[a]) >= reach
-				):
+				if absf(px[b] - px[a]) >= reach or absf(py[b] - py[a]) >= reach:
 					continue
 				# The circle-circle push, applied half to each (a gets it, b its negation; coincident centres part
 				# along x). Inlined here for speed (v0.4.0 TU); test_collision drives it through this pass.
-				var d := (
-					Vector2(actors.pos_x[a], actors.pos_y[a])
-					- Vector2(actors.pos_x[b], actors.pos_y[b])
-				)
+				var d := Vector2(px[a], py[a]) - Vector2(px[b], py[b])
 				var rr := ra + rb
 				var dist2 := float(d.x) * d.x + float(d.y) * d.y
 				if dist2 >= rr * rr:
@@ -1437,13 +1537,28 @@ func _move_and_collide() -> void:
 					if through[a] == 1 or through[b] == 1:
 						continue
 					if heavy[a] != heavy[b]:
+						actors.pos_x = px  # _shove reads and writes the store: hand the columns back first
+						actors.pos_y = py
 						if heavy[a] == 1:
 							_shove(b, -push * 2.0)
 						else:
 							_shove(a, push * 2.0)
+						px = actors.pos_x
+						py = actors.pos_y
 						continue
-				actors.set_pos(a, actors.pos(a) + push)
-				actors.set_pos(b, actors.pos(b) - push)
+				var na := Vector2(px[a], py[a]) + push
+				px[a] = na.x
+				py[a] = na.y
+				var nb := Vector2(px[b], py[b]) - push
+				px[b] = nb.x
+				py[b] = nb.y
+		actors.pos_x = px
+		actors.pos_y = py
+		if pp != null:
+			pp.end(&"move.pairs")
+			pp.begin(&"move.walls")
+	if pp != null:
+		pp.end(&"move.walls")
 
 
 ## v0.8.0 BP: a boss's shove moves body i by `delta` only as far as the first wall on the way (its radius swept), so a
@@ -1463,7 +1578,11 @@ func _shove(i: int, delta: Vector2) -> void:
 
 func _projectile_hits() -> void:
 	var dead := PackedInt32Array()
+	_hit_grid_state = 0 if debug_aoe_full else 1  # v0.8.0 HS: aoe_candidates may build its grid from here on
+	var pp := phase_probe  # v0.8.0 HS
 	for i in projectiles.size():
+		if pp != null:
+			pp.begin(&"proj.sweep")
 		ProjectileMoves.steer(self, i)  # v0.6.0 MX4: orbit first, homing, the way back
 		var a := Vector2(projectiles.pos_x[i], projectiles.pos_y[i])
 		var v := Vector2(projectiles.vel_x[i], projectiles.vel_y[i])
@@ -1496,8 +1615,12 @@ func _projectile_hits() -> void:
 			if t >= 0.0 and t < best_t:
 				best_t = t
 				best_actor = k
+		if pp != null:
+			pp.end(&"proj.sweep")
 		if best_t <= 1.0:
 			if best_actor >= 0:
+				if pp != null:
+					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
 				var got := Damage.hit(
 					self,
@@ -1513,11 +1636,16 @@ func _projectile_hits() -> void:
 					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
 				hit_spec = null
+				if pp != null:
+					pp.end(&"proj.damage")
+					pp.begin(&"proj.procs")
 				if best_actor == 0 and player_dead() and killer_attack < 0:
 					killer_attack = projectiles.cause_of(i)  # v0.7.5 BF2: the recap names the shot's attack
 				# Items: Frost Core and Static Chain react to the player's landed bolts.
 				ItemProcs.on_bolt_hit(self, best_actor, i, got, a + v * best_t)
 				Abilities.on_bolt_hit(self, best_actor, i, got, a + v * best_t)  # v0.4.0: drone chain
+				if pp != null:
+					pp.end(&"proj.procs")
 				if Heat.pierce(self, i, best_actor, a):  # Heat: a Hot bolt goes on through one enemy.
 					continue
 				if ProjectileMoves.pierce(self, i, best_actor, a):  # v0.6.0 MX4: Edge Rounds, Boomerang
@@ -1536,19 +1664,32 @@ func _projectile_hits() -> void:
 					Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2
 				continue
 			dead.append(i)
+			if pp != null:
+				pp.begin(&"proj.end")
 			Attacks.on_projectile_end(self, i, a + v * best_t)  # v0.6.0 MX2: ON_END, Flame Trail
 			if not projectiles.cause.is_empty():  # v0.8.0 BS1 (S2): a javelin sticks where it stopped
 				BossSignatures.on_shot_end(self, i, a + v * best_t, best_actor >= 0)
+			if pp != null:
+				pp.end(&"proj.end")
 			continue
 		projectiles.pos_x[i] = b.x
 		projectiles.pos_y[i] = b.y
 		projectiles.life[i] -= 1
 		if projectiles.life[i] <= 0:
 			dead.append(i)
+			if pp != null:
+				pp.begin(&"proj.end")
 			Attacks.on_projectile_end(self, i, b)  # v0.6.0 MX2
 			if not projectiles.cause.is_empty():  # v0.8.0 BS1 (S2): at the end of its range
 				BossSignatures.on_shot_end(self, i, b, false)
+			if pp != null:
+				pp.end(&"proj.end")
+	_hit_grid_state = 0
+	if pp != null:
+		pp.begin(&"proj.remove")
 	projectiles.remove_sorted(dead)
+	if pp != null:
+		pp.end(&"proj.remove")
 
 
 func _remove_dead() -> void:

@@ -371,7 +371,7 @@ static func nearest_enemies(
 	var a := w.actors
 	var picked := PackedInt32Array()
 	var dists := PackedFloat32Array()
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(at, reach):  # v0.8.0 HS: a superset, ascending (was every actor)
 		if j == skip or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		var d := Kin.length(a.pos(j) - at)
@@ -502,7 +502,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 			var at := a.pos(i)
 			w.wildfire_tick = w.tick
 			w.wildfire_pos = at
-			for j in range(1, a.size()):
+			for j in w.aoe_candidates(at, m.wildfire_radius_m):  # v0.8.0 HS: a superset, ascending
 				if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 					continue
 				if AttackShapes.disc_touches(at, m.wildfire_radius_m, a.pos(j), a.radius[j]):
@@ -520,7 +520,7 @@ static func on_kill(w: World, kill: SimEvent, i: int, tags: int) -> void:
 	var pid := a.ids[0]
 	w.harvest_tick = w.tick
 	w.harvest_pos = center
-	for j in range(1, a.size()):
+	for j in w.aoe_candidates(center, c.radius_m):  # v0.8.0 HS: a superset, ascending
 		if j == i or a.teams[j] == ActorStore.TEAM_PLAYER or a.dead[j] == 1:
 			continue
 		if AttackShapes.disc_touches(center, c.radius_m, a.pos(j), a.radius[j]):
