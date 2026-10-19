@@ -151,3 +151,77 @@ func test_floods_and_chases_are_deterministic() -> void:
 			w.actors.hp[0] = w.actors.max_hp[0]
 	assert_eq(a.state_hash(), b.state_hash())
 	assert_eq(a.nav.dist, b.nav.dist)
+
+
+## v0.8.0 NF (owner O90, "A then"): a build over NavField.SLICES ticks (begin_build, then advance once a tick) leaves
+## the live field alone until it is done, then holds exactly what flood() gives from the same goal, bound and targets
+## (and, unbounded with no targets, what flood_reference gives).
+func test_a_build_over_slices_equals_the_flood_at_once() -> void:
+	var w := _rooms([[-11.0, 2.4], [1.0, 2.4], [13.0, 1.6]], Vector2(-17, 9))
+	for at: Vector2 in [Vector2(-6, -8), Vector2(10, -8), Vector2(17, -10), Vector2(16, 9)]:
+		w.add_enemy(K.SWARMER, at)
+	var targets := PackedInt32Array()
+	for i in range(1, w.actors.size()):
+		targets.append(w.nav.target_cell(w.actors.pos(i)))
+	var cases := [[NavField.WORLD_FLOOD_STEPS, targets], [NavField.UNREACHED, PackedInt32Array()]]
+	for c: Array in cases:
+		var built := NavField.new()
+		built.build(w.walls)
+		built.last_work = 150  # small slices: the build takes every one of its ticks
+		var at_once := NavField.new()
+		at_once.build(w.walls)
+		at_once.flood(w.player_pos(), c[0], c[1])
+		var live := built.dist.duplicate()
+		built.begin_build(w.player_pos(), c[0], c[1])
+		var ticks := 0
+		while built.building():
+			assert_eq(built.dist, live, "the live field is untouched while the build runs")
+			built.advance()
+			ticks += 1
+		assert_eq(ticks, NavField.SLICES, "built over %d ticks" % NavField.SLICES)
+		assert_eq(built.dist, at_once.dist, "the build's field is the flood's")
+		assert_eq(built.get(&"_flooded"), at_once.get(&"_flooded"), "and its key")
+		assert_eq(built.last_work, at_once.last_work, "and its work")
+		if (c[1] as PackedInt32Array).is_empty():
+			var reference := NavField.new()
+			reference.build(w.walls)
+			reference.flood_reference(w.player_pos())
+			assert_eq(built.dist, reference.dist, "unbounded: the reference's distances")
+		# The same goal again: skipped as flood() would skip it.
+		built.begin_build(w.player_pos(), c[0], c[1])
+		assert_false(built.building(), "same cell and every target reached: no build")
+
+
+## v0.8.0 NF: the world starts the build on its flood ticks and swaps it in within NavField.SLICES ticks; a wall added
+## in play (and every other immediate flood) floods at once and drops the build in progress.
+func test_the_world_builds_its_flood_over_ticks_and_a_new_wall_floods_at_once() -> void:
+	var w := _rooms([[-11.0, 2.4], [1.0, 2.4]], Vector2(-6, 8))
+	w.add_enemy(K.WARDEN, Vector2(10, -8))
+	w.add_enemy(K.WARDEN, Vector2(15, -3))
+	while w.tick % NavField.PERIOD != 0 or w.nav.never_flooded():
+		w.step(InputFrame.new())
+	w.nav.last_work = 150  # small slices
+	w.actors.set_pos(0, Vector2(-14, 6))  # a new cell: the next flood tick starts a build
+	while w.tick % NavField.PERIOD != 0:
+		w.step(InputFrame.new())
+	w.step(InputFrame.new())
+	assert_true(w.nav.building(), "a build in progress after its first slice")
+	var key: Vector3i = w.nav.get(&"_flooded")
+	var goal := w.nav.cell_of(Vector2(-14, 6))
+	assert_ne(Vector2i(key.x, key.y), goal, "the live field is still the old one")
+	for t in NavField.SLICES - 1:
+		w.step(InputFrame.new())
+	assert_false(w.nav.building(), "swapped in within %d ticks" % NavField.SLICES)
+	key = w.nav.get(&"_flooded")
+	assert_eq(Vector2i(key.x, key.y), goal, "the live field is the new one")
+	# A build in progress, then a wall added in play: the field floods at once and the build is dropped.
+	w.actors.set_pos(0, Vector2(-6, 8))
+	while w.tick % NavField.PERIOD != 0:
+		w.step(InputFrame.new())
+	w.nav.last_work = 150
+	w.step(InputFrame.new())
+	assert_true(w.nav.building(), "a build in progress")
+	w.add_wall_now(Obb.make(Vector2(-11, 0), Vector2(1.2, PARTITION_HALF), 0))
+	assert_false(w.nav.building(), "the new wall drops the build")
+	key = w.nav.get(&"_flooded")
+	assert_eq(Vector2i(key.x, key.y), w.nav.cell_of(w.player_pos()), "and floods at once")

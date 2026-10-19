@@ -46,7 +46,7 @@ const WORLD_KEPT := {
 	&"_wall_grid": "rebuilt: derived from walls",
 	&"_wall_next": "setup (prepare_wall): only whether it is still pending is copied",
 	&"_nav_next": "setup (prepare_wall): only whether it is still pending is copied",
-	&"nav": "rebuilt from walls; its last flood (dist, the flood key) is copied",
+	&"nav": "rebuilt from walls; its last flood and a build in progress (NF) are copied",
 	&"_nav_open": "rebuilt: the field before the door sealed (apply's add_wall_now keeps it)",
 	&"curse_totals": "rebuilt: Curses.total's cache, summed from curses_owned (v0.7.0 audit C-12)",
 	&"phase_probe": "debug (v0.8.0 HS): the perf probe's phase timer, null in play, not state",
@@ -321,7 +321,11 @@ static var _fields := {}
 static func take(w: World, errors: PackedStringArray = PackedStringArray()) -> Dictionary:
 	var data := _encode_object(w, WORLD_KEPT, "World", errors)
 	data[&"nav"] = {
-		"size": w.nav.size, "dist": w.nav.dist.duplicate(), "flooded": w.nav.get(&"_flooded")
+		"size": w.nav.size,
+		"dist": w.nav.dist.duplicate(),
+		"flooded": w.nav.get(&"_flooded"),
+		"work": w.nav.last_work,  # v0.8.0 NF: the next build's budget
+		"build": w.nav.build_state(),  # v0.8.0 NF: the flood being built ({} none), run again on restore
 	}
 	data[&"_wall_next"] = w.get(&"_wall_next") != null
 	data[&"_nav_next"] = w.get(&"_nav_next") != null
@@ -386,6 +390,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 		BossSignatures.set_nav_extra(base, false)
 	base.nav.dist = (nav["dist"] as PackedInt32Array).duplicate()
 	base.nav.set(&"_flooded", nav["flooded"])
+	# v0.8.0 NF: a save from before NF has no build in progress and no work (the next build's budget starts small).
+	base.nav.last_work = int(nav.get("work", 0))
+	base.nav.restore_build(nav.get("build", {}))
 	for f: StringName in [&"_wall_next", &"_nav_next"]:
 		if not bool(data.get(f, false)):
 			base.set(f, null)

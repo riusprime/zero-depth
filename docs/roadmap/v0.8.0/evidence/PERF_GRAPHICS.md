@@ -856,3 +856,49 @@ Time              219.463s
 ```
 `-gtest=res://tests/unit/application/test_hit_grid.gd`: `Tests 2`, `Passing Tests 2` (the horde build stepped 360
 ticks with the grid and with the full scan: the same hash every 30 ticks, 0 misses).
+
+## NF
+Owner O90 (D63): "instead of calculating path from every enemy would it be easier to calculate it coming out of the
+player?"; told it already is one flow field from the player every 10 ticks, offered A (each flood over 3 ticks):
+"A then". Agent NF, branch `v080-nf` from `a3bf019c`. Sim change. Cloud machine (4 CPUs, shared): timings rank only.
+Frame rate on the owner's PC: `NOT YET RUN (owner hardware)`.
+
+### What was built
+- `NavField.begin_build` / `advance` / `cancel_build`: the periodic world flood (`World._begin_nav_flood` on
+  `tick % NavField.PERIOD == 0`) is the same bucketed flood, run as a resumable fill into a back buffer over
+  `NavField.SLICES` (3) ticks: slices 1 and 2 stop between buckets once the work (cells taken from the buckets) reaches
+  1x / 2x the budget (a third of the last flood's work, at least `SLICE_MIN` 64); slice 3 finishes. Done, it swaps in
+  (distances and key); enemies read only the live field. `flood()` runs the same fill to the end at once, so a build's
+  result equals `flood()`'s by construction (and `test_a_build_over_slices_equals_the_flood_at_once` checks it, and
+  `flood_reference` for the unbounded case). Same skip rules as before.
+- Immediate floods stay immediate and drop a build in progress: `World.flood_nav` (add_wall_now, remove_wall_now,
+  `BossSignatures.set_nav_extra`), `NavField.build` / `set_extra` / `flood_reference`, and a field's first flood since
+  its build (`never_flooded`: the floor's first flood). The field swapped out at the boss door holds no build; the last
+  flood's work carries across the swap.
+- Saves: `WorldSnapshot` copies the field's `work` and `build` (`NavField.build_state`: goal cell, bound, targets,
+  budget, slices run); restore starts the build again and runs the same slices. A save from before NF has neither key
+  (no build, work 0). Nav is not hashed (as before).
+- `perf_probe.gd --phases` gained a `max` column.
+
+### Commands and raw results
+`godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10 --sim-only --phases`
+
+Before (build `a3bf019c` + the probe's `max` column only, no sim change):
+```
+sim_ms            4.855    11.315    22.805
+world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0
+  phase                 avg       p95       max    calls   share
+  nav_flood             0.531     7.197    13.274      0.1   10.9 %
+```
+(An earlier before run, without the `max` column: `nav_flood 0.522 5.552 0.1 10.7 %`, `sim_ms 4.894 10.016 69.629`.)
+
+After (this commit):
+```
+sim_ms            4.856     8.466    13.229
+world hash at tick 660: 19edddce0a06d56c3ea9a44473cd6049ac539e747cf6635a1e5fdd5a6b18a2a0
+  phase                 avg       p95       max    calls   share
+  nav_flood             0.452     2.714     4.903      0.2    9.3 %
+```
+The flood now runs on 2 of 10 ticks on average (calls 0.1 → 0.2: some builds finish within 1 or 2 slices). The horde
+probe's world hash is the same before and after: in its open arena the enemies walk straight at the player (the flow
+field is read only while a wall blocks the straight line), so a field up to 2 ticks older changes nothing there.
