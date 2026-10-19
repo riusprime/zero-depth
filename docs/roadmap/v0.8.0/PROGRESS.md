@@ -12,7 +12,10 @@ not in `main` yet).
   passed 469/469 (see History).
 - **Next:** the owner's playtest of v0.8.0; the quick-shot tool (one launch, a chosen floor or room, every biome),
   proposed in the agent cost review and waiting for the owner's yes.
-- **Waiting on the owner:** D58 (models), D59 (curse room), D60 (the Prism), and the rest of `OWNER_TODO.md` §2.
+- **Waiting on the owner:** D58 (models), D59 (curse room), D60 (the Prism), D61 (wand rounding), and the rest of `OWNER_TODO.md` §2.
+- **Branch `claude/perf-graphics-v080`** (owner O86, 2026-10-19: "create a new branch for this do not modify the actual
+  branch"), cut from `claude/lucid-fermat-9wv2tf` at `89e3937`, which stays untouched: FS, FV (performance) and GX
+  (graphics) from the owner's two feedback files. The owner checks the look and measures fps on their PC.
 
 ## Done
 | Step | What (player-facing) | Commit |
@@ -426,3 +429,4 @@ not in `main` yet).
 - 2026-10-18: BD (agent, branch `v080-bd` from `5ff24af` + `claude/lucid-fermat-9wv2tf` at `cb6a601`, `123acce` and `6f0de2c`; owner O82, O83): `scripts/assets/bd_prep.py` cuts the five raw doors along their groove (frame and slab, capped), `BossDoorModels` / `BossDoorView` draw the biome's door, `BossFlow.Door` makes the door shut until the interact press (floor rules 9 on top of N19's 8), `scripts/audio/bd_audio_prep.py` installs the two sounds; the e2e boss walks press E first (`E2e.open_boss_door`), `hit_soak.gd` presses pad X. One run of `test_e2e_ascension.gd` crashed (signal 11, `propagate_notification()` called from a worker thread) and passed 2/2 on the re-run after the merge. Commit `9cac95f`. [BOSS_DOORS](evidence/BOSS_DOORS.md)
 - 2026-10-18 (lead): PR merged (`aa300bc`), BD merged (`d37b042`); `test_e2e_ascension` added to seams (BD saw one worker-thread crash there). Pushed `d6ef340` on the owner's word ("push it then") mid-run. Seams on `d37b042`+: `Tests 469`, `Passing Tests 469`, `Time 1246.318s`, but `seams.sh` exited 1: `check_gut_log: FAIL: no GUT summary` on a log that has one. Cause: `echo "$CLEAN" | grep -q` under `pipefail` (grep -q quits early, echo gets SIGPIPE on a 237 kB log). Fixed with here-strings in `scripts/ci/check_gut_log.sh`; re-checked the same log 3×: `check_gut_log: ok (469 passing, minimum 1)`; a log without a summary and one with `SCRIPT ERROR` still fail.
 - 2026-10-18 (lead, the owner's PC): BW (owner O85, "doors are too thin"; the lead's door-in-a-tunnel option): `BossDoorView` puts a frame on each face of a wall thicker than the frame, the slab in the middle, and the biome's wall stone lining the passage between them. New test `test_a_thick_wall_is_a_tunnel_with_a_frame_on_each_face`. Run locally: `test_boss_door_view.gd` 6/6, `test_e2e_run_flow.gd` 3/3; five GPU shots (BOSS_DOORS §8). Not run locally: lint (no gdtoolkit here), seams, the rest of the suite.
+- 2026-10-19 (lead): O86, the owner's perf and graphics feedback (`feedback/`); new branch `claude/perf-graphics-v080` from `89e3937`; steps FS, FV, GX planned, D61 asked. No fps measured here: owner hardware.
