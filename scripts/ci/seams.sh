@@ -42,6 +42,7 @@ FILES=(
 	tests/e2e/test_e2e_ascension.gd # v0.8.0: BD saw one worker-thread crash here (door model warm-up meets the Ascension load)
 	tests/unit/sim/test_boss_pace.gd # v0.8.0: BP (boss damage by hits) meets RR and loop scaling here
 	tests/e2e/test_e2e_attack_order.gd # v0.8.0: AO (card order) met RR (tiers, counts) here
+	tests/unit/presentation/test_view_build_queue.gd # v0.8.0: GX (the atmosphere) met LD (views built in slices) here
 	tests/unit/sim/test_rarity.gd
 	tests/unit/sim/test_items.gd # v0.8.0: AO (new cards) and RR (tiers) met the pool count here
 	tests/unit/sim/test_nemesis.gd # v0.8.0: RR's tiers changed the Nemesis's pick order here
