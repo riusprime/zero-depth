@@ -137,6 +137,9 @@ var final_views: FinalBossViews = _part(FinalBossViews)
 var prism_views: PrismViews = _part(PrismViews)  # v0.8.0 FB2: the Prism's Cross, her bolts' aim lines, the window
 var nemesis_views: NemesisViews = _part(NemesisViews)  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
 var rig: IsoRig = _part(IsoRig)
+## v0.8.0 HV (owner O89): the camera's view, read once a tick before the views sync; the enemy models' animation,
+## the status effects and the attack forms skip only what is wholly out of the picture (ScreenCull).
+var cull := ScreenCull.new()
 var occlusion_enabled := true
 ## v0.8.0 FV (O87): the perf probe's per-view sync breakdown (view name -> total ms); filled only while
 ## `profile_sync` is on.
@@ -343,9 +346,13 @@ func _setup_devices(palette: Dictionary) -> void:
 	add_child(hit_feel)
 	if attack_forms.vfx != null:  # v0.8.0 GF2: the hits' impacts, in the effects layer's pools and budget
 		attack_forms.vfx.drawers.append(hit_feel.impacts.draw)
+	actors.cull = cull  # v0.8.0 HV
+	status_fx.cull = cull
+	attack_forms.cull = cull
 
 
 func _first_sync() -> void:
+	rig.snap_to(SimPlane.to_3d(reader.player_pos()))  # v0.8.0 HV: the view the first sync culls against
 	sync()
 	rig.snap_to(SimPlane.to_3d(reader.player_pos()))
 
@@ -362,6 +369,7 @@ func _sync_view(id: StringName, view: Object) -> void:
 
 
 func sync() -> void:
+	cull.refresh(rig.camera)  # v0.8.0 HV
 	_sync_view(&"telegraphs", telegraphs)
 	_sync_view(&"challenge", challenge)
 	_sync_view(&"actors", actors)

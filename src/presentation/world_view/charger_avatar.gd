@@ -80,6 +80,9 @@ var _daze := 0.0
 var _rise := 1.0
 # v0.8.0 TG: the windup's progress (0..1) from the last sync.
 var _tell_p := 0.0
+# v0.8.0 HV: the body's position this pose (the legs' hips follow it) and the visor energy last written.
+var _body_pos := Vector3.ZERO
+var _visor_e := VISOR_ENERGY
 
 
 ## Builds the model. technique "xray" adds an enemy-coloured silhouette twin to the hood and the body, as
@@ -225,28 +228,43 @@ func _pose() -> void:
 	var crouch := crouch_amount()
 	var drop := _daze * 0.09 - _wind * 0.05 + lunge * 0.07 + crouch * 0.09
 	var y := bob + breath + tremble - drop
-	_model.position = Vector3(0, -(1.0 - rise) * 0.45, 0)
+	var sink := Vector3(0, -(1.0 - rise) * 0.45, 0)
+	if _model.position != sink:  # v0.8.0 HV: still once risen (moving it re-dirties the whole model)
+		_model.position = sink
 	# The lunge throws the whole hood forward, nose down and stretched long, so it reads from above.
-	body.position = Vector3(-_wind * 0.06 - crouch * 0.07 + lunge * 0.16, y, 0)
-	body.rotation = Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
-	body.scale = Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
+	# v0.8.0 HV: one transform write (rotation then scale, as Node3D composes them) instead of three.
+	_body_pos = Vector3(-_wind * 0.06 - crouch * 0.07 + lunge * 0.16, y, 0)
+	var rot := Vector3(_daze * 0.16, 0, _wind * 0.3 - lunge * 0.3 - _daze * 0.1)
+	var scl := Vector3(1.0 + lunge * 0.14, 1.0 - lunge * 0.06, 1.0 - lunge * 0.04)
+	body.transform = Transform3D(Basis.from_euler(rot) * Basis.from_scale(scl), _body_pos)
 	var shimmer := 0.0 if calm else 0.5 * sin(_t * 30.0)
 	var tell := tell_glow(_tell_p, _t, calm) if _state == WorldReader.STATE_WINDUP else 1.0
 	var glow := (
 		VISOR_ENERGY * (1.0 + _wind * (1.6 + shimmer) + lunge * 1.2) * tell * (1.0 - _daze * 0.7)
 	)
-	_visor_mat.emission_energy_multiplier = glow
+	if absf(glow - _visor_e) > 1e-4:  # v0.8.0 HV: written on a change only
+		_visor_e = glow
+		_visor_mat.emission_energy_multiplier = glow
 	for k in legs.size():
 		_pose_leg(k, y, lunge, rise)
 
 
+## v0.8.0 HV (owner O89, the horde lag): the same maths as before in plain floats, no Array built (it made about 40
+## Arrays per Charger a frame), and one transform write per segment (tests/unit/presentation/
+## test_charger_pose_hv.gd compares it with the old formula).
 func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	var front := k < 2
 	var side := 1.0 if k % 2 == 0 else -1.0
 	var hip: Vector3 = FRONT_HIP if front else BACK_HIP
-	var lens: Array = FRONT_LEN if front else BACK_LEN
-	var yaw: Array = (FRONT_YAW if front else BACK_YAW).duplicate()
-	var pitch: Array = (FRONT_PITCH if front else BACK_PITCH).duplicate()
+	var l0: float = FRONT_LEN[0] if front else BACK_LEN[0]
+	var l1: float = FRONT_LEN[1] if front else BACK_LEN[1]
+	var l2: float = FRONT_LEN[2] if front else BACK_LEN[2]
+	var y0: float = FRONT_YAW[0] if front else BACK_YAW[0]
+	var y1: float = FRONT_YAW[1] if front else BACK_YAW[1]
+	var y2: float = FRONT_YAW[2] if front else BACK_YAW[2]
+	var p0: float = FRONT_PITCH[0] if front else BACK_PITCH[0]
+	var p1: float = FRONT_PITCH[1] if front else BACK_PITCH[1]
+	var p2: float = FRONT_PITCH[2] if front else BACK_PITCH[2]
 	# Diagonal pairs step together: front right with back left, front left with back right.
 	var off := 0.0 if (k == 0 or k == 3) else PI
 	var lift := maxf(0.0, cos(_phase + off)) * 0.45 * _walk
@@ -256,43 +274,53 @@ func _pose_leg(k: int, body_y: float, lunge: float, rise: float) -> void:
 	)
 	var sweep := sin(_phase + off) * 0.3 * _walk
 	# Hips follow the body; the femur tips to keep the feet near the ground (a cheap stand-in for IK).
-	var hold := clampf(-body_y / float(lens[0]), -0.6, 0.6)
-	# Toward the front is +yaw on the right side (the left mirrors it).
-	var add_yaw := [sweep, sweep, sweep]
-	var add_pitch := [lift + fidget + hold, lift * 0.5, 0.0]
+	var hold := clampf(-body_y / l0, -0.6, 0.6)
+	# Toward the front is +yaw on the right side (the left mirrors it). Each sum adds its terms in the old order.
+	var ay0 := sweep
+	var ay1 := sweep
+	var ay2 := sweep
+	var ap0 := lift + fidget + hold
+	var ap1 := lift * 0.5
+	var ap2 := 0.0
 	if front:
 		# Wind-up: claws raised high and pointed forward. Lunge: the arms thrown out ahead, talons forward.
-		add_yaw = _plus(
-			add_yaw, [_wind * 0.3 + lunge * 0.55, _wind * 0.2 + lunge * 0.2, -lunge * 0.5]
-		)
-		add_pitch = _plus(
-			add_pitch,
-			[_wind * 0.9 + lunge * 0.55, _wind * 1.7 + lunge * 1.1, _wind * 1.5 + lunge * 0.7]
-		)
+		ay0 = ay0 + (_wind * 0.3 + lunge * 0.55)
+		ay1 = ay1 + (_wind * 0.2 + lunge * 0.2)
+		ay2 = ay2 + -lunge * 0.5
+		ap0 = ap0 + (_wind * 0.9 + lunge * 0.55)
+		ap1 = ap1 + (_wind * 1.7 + lunge * 1.1)
+		ap2 = ap2 + (_wind * 1.5 + lunge * 0.7)
 	else:
 		# Back legs brace on the wind-up and kick out behind on the lunge.
-		add_yaw = _plus(add_yaw, [-_wind * 0.15 - lunge * 0.35, -lunge * 0.3, -lunge * 0.3])
-		add_pitch = _plus(add_pitch, [-_wind * 0.1 + lunge * 0.3, lunge * 0.5, lunge * 0.3])
+		ay0 = ay0 + (-_wind * 0.15 - lunge * 0.35)
+		ay1 = ay1 + -lunge * 0.3
+		ay2 = ay2 + -lunge * 0.3
+		ap0 = ap0 + (-_wind * 0.1 + lunge * 0.3)
+		ap1 = ap1 + lunge * 0.5
+		ap2 = ap2 + lunge * 0.3
 	# Dazed: legs splay, the talons go limp and twitch.
 	var twitch := sin(_t * 9.0 + k) * 0.05 * _daze
-	add_yaw = _plus(add_yaw, [-_daze * 0.15, -_daze * 0.15, -_daze * 0.2])
-	add_pitch = _plus(add_pitch, [_daze * 0.3, 0.0, _daze * 0.35 + twitch])
+	ay0 = ay0 + -_daze * 0.15
+	ay1 = ay1 + -_daze * 0.15
+	ay2 = ay2 + -_daze * 0.2
+	ap0 = ap0 + _daze * 0.3
+	ap1 = ap1 + 0.0
+	ap2 = ap2 + (_daze * 0.35 + twitch)
 	# Rising out of the ground the legs start folded up against the body.
-	add_pitch = _plus(add_pitch, [(1.0 - rise) * 1.2, (1.0 - rise) * 1.4, (1.0 - rise) * 1.0])
-	legs[k].position = Vector3(hip.x + body.position.x, hip.y + body_y, hip.z * side)
+	ap0 = ap0 + (1.0 - rise) * 1.2
+	ap1 = ap1 + (1.0 - rise) * 1.4
+	ap2 = ap2 + (1.0 - rise) * 1.0
+	legs[k].position = Vector3(hip.x + _body_pos.x, hip.y + body_y, hip.z * side)
 	var at := Vector3.ZERO
-	var segs: Array[Node3D] = [_femurs[k], _tibias[k], _talons[k]]
-	for j in 3:
-		var y: float = (yaw[j] + add_yaw[j]) * side
-		var p: float = pitch[j] + add_pitch[j]
-		segs[j].position = at
-		segs[j].rotation = Vector3(0, y, p)
-		var reach: float = lens[j]
-		at += Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
+	at = _pose_seg(_femurs[k], at, (y0 + ay0) * side, p0 + ap0, l0)
+	at = _pose_seg(_tibias[k], at, (y1 + ay1) * side, p1 + ap1, l1)
+	_pose_seg(_talons[k], at, (y2 + ay2) * side, p2 + ap2, l2)
 
 
-static func _plus(a: Array, b: Array) -> Array:
-	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+## One leg segment at `at`, turned (yaw y, pitch p), in one transform write; returns where the next one starts.
+static func _pose_seg(seg: Node3D, at: Vector3, y: float, p: float, reach: float) -> Vector3:
+	seg.transform = Transform3D(Basis.from_euler(Vector3(0, y, p)), at)
+	return at + Vector3(cos(p) * cos(y), sin(p), -cos(p) * sin(y)) * reach
 
 
 func _build_leg(
