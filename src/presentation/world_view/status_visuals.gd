@@ -133,18 +133,21 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	var bar_y := 1.3
 	if node.has_meta(&"bar"):
 		bar_y = (node.get_meta(&"bar") as Node3D).get_parent().position.y
-	var v := {"root": root, "bar_y": bar_y}
+	var v := {"root": root, "bar_y": bar_y, "pips": [], "orbs": []}
+	if vfx != null:
+		# v0.8.0 FV (owner O87, the horde lag): the effects layer draws the embers, drips, crystals, sparks and shell,
+		# so none of their ~15 hidden meshes is built per affected enemy (a burning horde built and freed them as
+		# statuses came and went); the shock pips and guard orbs are built the first time they show (_update).
+		for kind: String in VFX_DRAWN:
+			v[kind] = []
+		v["shell"] = null
+		return v
 	v["embers"] = _pieces(root, EMBERS, _box, Vector3(0.11, 0.11, 0.11), &"burn")
 	v["drips"] = _pieces(root, DRIPS, _box, Vector3(0.08, 0.2, 0.08), &"bleed")
 	v["crystals"] = _pieces(root, CRYSTALS, _prism, Vector3.ONE, &"frost")
 	v["sparks"] = _pieces(root, 2, _box, Vector3(0.05, 0.05, 0.5), &"shock")
-	v["orbs"] = _pieces(root, ORBS, _box, Vector3(0.12, 0.12, 0.12), &"guard")
-	var pips: Array = []
-	for k in PIPS:
-		var p := _piece(root, _pip, Vector3.ONE, &"pip_off")
-		p.position = Vector3((k - (PIPS - 1) * 0.5) * 0.16, bar_y + 0.2, 0)
-		pips.append(p)
-	v["pips"] = pips
+	_build_orbs(v)
+	_build_pips(v)
 	var shell := _piece(root, _shell, Vector3(r * 2.6, 1.3, r * 2.6), &"shell")
 	shell.position = Vector3(0, 0.55, 0)
 	v["shell"] = shell
@@ -156,6 +159,22 @@ func _build(node: Node3D, r: float) -> Dictionary:
 	return v
 
 
+## The shock pips over the bar (once per view).
+func _build_pips(v: Dictionary) -> void:
+	var root: Node3D = v["root"]
+	var pips: Array = []
+	for k in PIPS:
+		var p := _piece(root, _pip, Vector3.ONE, &"pip_off")
+		p.position = Vector3((k - (PIPS - 1) * 0.5) * 0.16, float(v["bar_y"]) + 0.2, 0)
+		pips.append(p)
+	v["pips"] = pips
+
+
+## The guard orbs (once per view).
+func _build_orbs(v: Dictionary) -> void:
+	v["orbs"] = _pieces(v["root"], ORBS, _box, Vector3(0.12, 0.12, 0.12), &"guard")
+
+
 func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 	var t := _frame / 60.0
 	if vfx == null:
@@ -164,15 +183,20 @@ func _update(v: Dictionary, on: Dictionary, r: float) -> void:
 		for kind: String in VFX_DRAWN:
 			for p: Node3D in v[kind]:
 				p.visible = false
-		(v["shell"] as Node3D).visible = false
+		if v["shell"] != null:
+			(v["shell"] as Node3D).visible = false
 	var shock: int = on.get(&"shock", 0)
+	if shock > 0 and (v["pips"] as Array).is_empty():  # v0.8.0 FV: built when first shown
+		_build_pips(v)
 	var shock_max: int = mini(on.get(&"shock_max", PIPS), PIPS)
-	for k in PIPS:
+	for k in (v["pips"] as Array).size():
 		var p: MeshInstance3D = v["pips"][k]
 		p.visible = shock > 0 and k < shock_max
 		p.material_override = _mats[&"pip_on" if k < shock else &"pip_off"]
 	var charges: int = on.get(&"guard", 0)
-	for k in ORBS:
+	if charges > 0 and (v["orbs"] as Array).is_empty():
+		_build_orbs(v)
+	for k in (v["orbs"] as Array).size():
 		var o: Node3D = v["orbs"][k]
 		o.visible = k < charges
 		var a := t * 3.0 + TAU * k / ORBS
@@ -220,7 +244,7 @@ func shown(id: int, kind: StringName) -> int:
 	if v.is_empty():
 		return 0
 	if kind == &"shell":
-		return 1 if (v["shell"] as Node3D).visible else 0
+		return 1 if v["shell"] != null and (v["shell"] as Node3D).visible else 0
 	if kind == &"pips_lit":
 		var lit := 0
 		for p: MeshInstance3D in v["pips"]:
