@@ -373,17 +373,13 @@ func _build_light() -> void:
 func _build_ground(arena_half: float) -> void:
 	var tiles := int(ceil(arena_half * 2.0 / TILE_M)) + 2
 	var mats := [_mat(palette["ground"]), _mat(palette["ground_alt"])]
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(TILE_M, TILE_M)
+	var cells: Array = [[], []]
+	var start := -tiles * TILE_M * 0.5 + TILE_M * 0.5
 	for i in tiles:
 		for j in tiles:
-			var tile := MeshInstance3D.new()
-			tile.mesh = plane
-			tile.material_override = mats[(i + j) % 2]
-			var start := -tiles * TILE_M * 0.5 + TILE_M * 0.5
-			tile.position = Vector3(start + i * TILE_M, 0, start + j * TILE_M)
-			tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			add_child(tile)
+			var at := Vector3(start + i * TILE_M, 0, start + j * TILE_M)
+			cells[(i + j) % 2].append(_tile_xform(at, Vector2(TILE_M, TILE_M)))
+	_add_ground_tiles(cells, mats)
 
 
 ## Ground over r, unless the ground already covers it whole.
@@ -401,7 +397,17 @@ func _build_room_ground() -> void:
 	var textured := _ground_material()
 	if textured != null:
 		mats = [textured, textured]
-	for r in _ground_rects:
+	var cells := room_ground_cells(_ground_rects)
+	if mats[0] == mats[1]:
+		cells = [cells[0] + cells[1], []]
+	_add_ground_tiles(cells, mats)
+
+
+## The room ground's tiles: the global TILE_M grid clipped to each rect, as [even cells, odd cells] (the checker's two
+## colours), each tile's transform (_tile_xform). Pure, so tests read it without a renderer.
+static func room_ground_cells(rects: Array[Rect2]) -> Array:
+	var cells: Array = [[], []]
+	for r in rects:
 		var i0 := int(floor(r.position.x / TILE_M))
 		var i1 := int(floor(r.end.x / TILE_M))
 		var j0 := int(floor(r.position.y / TILE_M))
@@ -411,14 +417,41 @@ func _build_room_ground() -> void:
 				var cell := Rect2(Vector2(i, j) * TILE_M, Vector2(TILE_M, TILE_M)).intersection(r)
 				if cell.size.x <= 0.001 or cell.size.y <= 0.001:
 					continue
-				var plane := PlaneMesh.new()
-				plane.size = cell.size
-				var tile := MeshInstance3D.new()
-				tile.mesh = plane
-				tile.material_override = mats[posmod(i + j, 2)]
-				tile.position = SimPlane.to_3d(cell.get_center())
-				tile.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				add_child(tile)
+				cells[posmod(i + j, 2)].append(
+					_tile_xform(SimPlane.to_3d(cell.get_center()), cell.size)
+				)
+	return cells
+
+
+## v0.8.0 Step FS (owner O86; perf review Part 2 item 4): the ground tiles of each material (cells[k] with mats[k]:
+## each tile's transform, _tile_xform) drawn as one MultiMeshInstance3D of a unit plane, each instance scaled to its
+## cell (was a PlaneMesh and a MeshInstance3D per tile). The same pixels: the checker is flat colour, the textured
+## ground maps in world space (triplanar on the world position), and a plane scaled in x and z keeps its up normal.
+## No shadow cast.
+func _add_ground_tiles(cells: Array, mats: Array) -> void:
+	var plane := PlaneMesh.new()
+	plane.size = Vector2.ONE
+	for k in cells.size():
+		var list: Array = cells[k]
+		if list.is_empty():
+			continue
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = plane
+		mm.instance_count = list.size()
+		for n in list.size():
+			mm.set_instance_transform(n, list[n])
+		var node := MultiMeshInstance3D.new()
+		node.name = "Ground%d" % k
+		node.multimesh = mm
+		node.material_override = mats[k]
+		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(node)
+
+
+## A ground tile's transform: the unit plane scaled to `size` (m, on x and z) at `at`.
+static func _tile_xform(at: Vector3, size: Vector2) -> Transform3D:
+	return Transform3D(Basis.from_scale(Vector3(size.x, 1.0, size.y)), at)
 
 
 ## The kit ground (Ruins: stone tiles; the other biomes: packed dirt), or null without a mood or the texture.

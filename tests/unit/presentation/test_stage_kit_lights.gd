@@ -42,6 +42,13 @@ func _run(kit: StageKit, frames: int) -> void:
 		kit._process(1.0 / 60.0)
 
 
+## Steps `kit` through the next shadow re-pick (v0.8.0 Step FS: every SHADOW_PICK_EVERY frames).
+func _run_to_shadow_pick(kit: StageKit) -> void:
+	_run(kit, 1)
+	while kit._frame % StageKit.SHADOW_PICK_EVERY != 1:
+		_run(kit, 1)
+
+
 func test_a_far_light_fades_out_and_back_in() -> void:
 	if KitModels.get_piece(&"fire_barrel").is_empty():
 		pass_test("no kit in this checkout")
@@ -85,6 +92,9 @@ func test_shadows_fade_in_and_out_instead_of_switching() -> void:
 	assert_false(last.shadow_enabled, "only SHADOW_LIGHTS cast shadows")
 	_look_at(Vector3(StageKit.SHADOW_LIGHTS * 3.0 + 3.0, 0, 0))  # the focus moves past the last light
 	_run(kit, 16)
+	assert_true(first.shadow_enabled, "no swap before the shadow re-pick (Step FS: a stable set)")
+	assert_almost_eq(first.shadow_opacity, 1.0, 0.001, "still fully in")
+	_run_to_shadow_pick(kit)
 	assert_true(first.shadow_enabled, "the light leaving the few still has its shadow, fading")
 	assert_lt(first.shadow_opacity, 1.0)
 	assert_false(last.shadow_enabled, "the light joining waits for the leaving one's slot")
@@ -101,6 +111,33 @@ func test_shadows_fade_in_and_out_instead_of_switching() -> void:
 	assert_lte(most, StageKit.SHADOW_LIGHTS, "never more than the budget cast at once")
 	_run(kit, 40)
 	assert_almost_eq(last.shadow_opacity, 1.0, 0.001, "fully in")
+
+
+func test_a_caster_keeps_its_shadow_until_a_challenger_is_meaningfully_nearer() -> void:
+	if KitModels.get_piece(&"fire_barrel").is_empty():
+		pass_test("no kit in this checkout")
+		return
+	var placements: Array = []
+	for k in StageKit.SHADOW_LIGHTS:
+		placements.append(_light(Vector3(k, 0, 0)))
+	placements.append(_light(Vector3(-StageKit.SHADOW_LIGHTS, 0, 0)))  # the challenger
+	var kit := _kit(placements)
+	kit.set_shadows(true)
+	_run(kit, 40)
+	var keeper := kit.lights[StageKit.SHADOW_LIGHTS - 1]
+	var challenger := kit.lights[StageKit.SHADOW_LIGHTS]
+	assert_true(keeper.shadow_enabled)
+	assert_false(challenger.shadow_enabled)
+	_look_at(Vector3(-0.6, 0, 0))  # the challenger is now a little nearer than the keeper
+	_run_to_shadow_pick(kit)
+	_run(kit, 40)
+	assert_true(keeper.shadow_enabled, "a little nearer is not enough to swap")
+	assert_false(challenger.shadow_enabled)
+	_look_at(Vector3(-6, 0, 0))  # now much nearer
+	_run_to_shadow_pick(kit)
+	_run(kit, 80)
+	assert_false(keeper.shadow_enabled, "the keeper hands its shadow over")
+	assert_true(challenger.shadow_enabled, "to the much nearer light")
 
 
 func test_decoration_is_chunked_with_every_piece_kept() -> void:

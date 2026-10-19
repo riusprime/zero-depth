@@ -12,15 +12,22 @@ const SHADOW_LIGHTS := 4
 ## leaving the SHADOW_LIGHTS fades its shadow in or out over this long (s) instead of switching it (the joining one
 ## once the leaving one is out, so never more than SHADOW_LIGHTS cast), and one keeps its shadow until another is
 ## nearer the focus by SHADOW_SWAP_M (no swapping back and forth on a border).
+## v0.8.0 Step FS (owner O86; perf review Part 2 item 2): the margin grows with distance, SHADOW_SWAP_M plus
+## SHADOW_SWAP_FRAC of the keeper's distance, so a challenger must be meaningfully nearer; each swap rebuilds shadow
+## faces, so the set changes rarely.
 const SHADOW_FADE_S := 0.45
-const SHADOW_SWAP_M := 1.5
+const SHADOW_SWAP_M := 2.5
+const SHADOW_SWAP_FRAC := 0.2
 ## v0.8.0 P3 (O30, O32): a light whose reach can't touch the view (farther from the focus than the view's half
 ## diagonal on the ground, VIEW_REACH x the camera's size, plus its range) fades out over LIGHT_FADE_S and is
 ## hidden, and fades back in on the way in; hidden lights skip the flicker's per-frame work.
 const VIEW_REACH := 1.3
 const LIGHT_FADE_S := 0.4
-## How often (frames) the focus distances and the shadow picks are refreshed.
+## How often (frames) the focus distances (the view fade) are refreshed.
 const PICK_EVERY := 15
+## v0.8.0 Step FS: how often (frames) the shadow casters are re-picked (was every PICK_EVERY); sooner when a caster
+## leaves the view's reach, so its slot doesn't sit empty.
+const SHADOW_PICK_EVERY := 60
 ## v0.8.0 P3 (owner O31): the flame teardrop's HDR colour factor and emission (were 1.6 and 2.0).
 const FLAME_HDR := 1.2
 const FLAME_EMISSION := 1.1
@@ -353,7 +360,7 @@ func _process(delta: float) -> void:
 	_t += delta
 	_frame += 1
 	if _frame % PICK_EVERY == 1:
-		_pick(shadows)
+		_pick(shadows and _frame % SHADOW_PICK_EVERY == 1)
 	var shadow_step := delta / SHADOW_FADE_S
 	var view_step := delta / LIGHT_FADE_S
 	var calm := ViewPrefs.reduced_motion
@@ -408,8 +415,9 @@ func _focus() -> Array:
 	return [focus, cam.size if cam.projection == Camera3D.PROJECTION_ORTHOGONAL else 30.0]
 
 
-## Every PICK_EVERY frames: which lights are in the view's reach (the rest fade out), and, with `with_shadows`, which
-## SHADOW_LIGHTS of them cast shadows (the nearest the focus; a light keeping its shadow wins a near tie).
+## Every PICK_EVERY frames: which lights are in the view's reach (the rest fade out), and, with `with_shadows` (every
+## SHADOW_PICK_EVERY frames, or when a caster leaves the view's reach), which SHADOW_LIGHTS of them cast shadows (the
+## nearest the focus; a light keeping its shadow wins unless another is nearer by the swap margin).
 func _pick(with_shadows: bool) -> void:
 	if lights.is_empty():
 		return
@@ -424,16 +432,19 @@ func _pick(with_shadows: bool) -> void:
 		var p := lights[k].global_position
 		d[k] = Vector2(p.x - focus.x, p.z - focus.z).length()
 		_view_want[k] = 1 if d[k] <= reach + lights[k].omni_range else 0
+		if shadows and _view_want[k] == 0 and _shadow_want[k] == 1:
+			with_shadows = true  # a caster left the view: re-pick now
 	if not with_shadows:
 		return
+	var key := PackedFloat32Array()
+	key.resize(lights.size())
+	for k in lights.size():
+		key[k] = d[k] - (SHADOW_SWAP_M + SHADOW_SWAP_FRAC * d[k]) * _shadow_want[k]
 	var order: Array = []
 	for k in lights.size():
 		if _view_want[k] == 1:
 			order.append(k)
-	order.sort_custom(
-		func(a: int, b: int) -> bool:
-			return d[a] - SHADOW_SWAP_M * _shadow_want[a] < d[b] - SHADOW_SWAP_M * _shadow_want[b]
-	)
+	order.sort_custom(func(a: int, b: int) -> bool: return key[a] < key[b])
 	for k in lights.size():
 		_shadow_want[k] = 0
 	for n in mini(SHADOW_LIGHTS, order.size()):

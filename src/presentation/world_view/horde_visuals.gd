@@ -9,6 +9,9 @@ extends Node3D
 const TRACER_S := 0.18
 const MINE_RING_ALPHA := 0.45
 const BEAM_W := 0.06
+## The mines' blinking light, bright to dim (v0.8.0 Step FS: parsed once, not every frame).
+const MINE_LIGHT_HI := Color("#FF2A22")
+const MINE_LIGHT_LO := Color("#5A0E0B")
 
 var _mines := {}
 var _beams := {}
@@ -29,7 +32,7 @@ func _ready() -> void:
 	_mine_mat.albedo_color = Color("#24272D")
 	_mine_mat.roughness = 1.0
 	_light_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_light_mat.albedo_color = Color("#FF2A22")
+	_light_mat.albedo_color = MINE_LIGHT_HI
 	_beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	_beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_beam_mat.albedo_color = Color(HordeAvatar.MEND, 0.8)
@@ -63,7 +66,7 @@ func sync(reader: WorldReader) -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	var light := 0.5 + 0.5 * sin(_t * 10.0)
-	_light_mat.albedo_color = Color("#FF2A22").lerp(Color("#5A0E0B"), light)
+	_light_mat.albedo_color = MINE_LIGHT_HI.lerp(MINE_LIGHT_LO, light)
 	_beam_mat.albedo_color = Color(HordeAvatar.MEND, 0.55 + 0.35 * sin(_t * 14.0))
 	for k in range(_tracers.size() - 1, -1, -1):
 		var tr_node: MeshInstance3D = _tracers[k][0]
