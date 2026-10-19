@@ -402,3 +402,17 @@ Lint: `gdformat --check src scripts tests` flags only `src/presentation/world_vi
 
 fps High vs Low with the new atmosphere: `NOT YET RUN (owner hardware)`. The owner compares Options > Display >
 Lighting quality High and Low on the same room.
+
+## Next candidates (read-only audit, 2026-10-19; owner: "Any other findings on the code that could improve the lag and fps that doesn't change the game?")
+Three read-only reviews of `db26b485` (sim, view CPU, GPU). Nothing measured or changed; sizes are estimates from the code.
+**Same game and same pixels:**
+1. Material values rewritten when unchanged: burn/frost tint every tick (`item_visuals.gd:89-93` → `actor_views.gd:192,205`, ~25 materials per Charger), hit flash re-set on every DAMAGE (`actor_views.gd:157-160`), Charger visor every frame (`charger_avatar.gd:239`), shock pips' `material_override` every tick (`status_visuals.gd:195`). Fix: skip when equal.
+2. Charger pose allocates ~10 Arrays per leg per frame (`charger_avatar.gd:243-291`, ~4,400 a frame at 110). Fix: local floats, one transform write.
+3. X-ray twin = a second MeshInstance3D + own material per part (`horde_avatar.gd:383-395`, `avatar_base.gd:316,333-347`), and model enemies keep an outline pass at thickness 0 (`horde_avatar.gd:403-409`). Fix: one shared `next_pass` X-ray material per kind; `write_stencil` instead of the empty outline. One owner shot behind a wall.
+4. Per-enemy unique materials break draw batching (`horde_avatar.gd:84-89,400-410`, `actor_views.gd:290-349`). Fix: a shared ShaderMaterial per kind with instance uniforms. Larger job; owner checks flash and tint.
+5. Status VFX and attack forms laid out off-screen (`status_visuals.gd:320`, `attack_form_canvas.gd:303-345`); avatars animate in a 24 m circle around the hero, not the camera's view (`actor_views.gd:16,93`). Fix: cull to the camera's ground rectangle + margin.
+6. Sim: full O(N) scans in Explosive bursts, chain seek, Wildfire, shockwave (`attacks.gd:344,363`, `engines.gd:374,505,523`, `item_effects.gd:104`); per-hit allocations (`attack_spec.gd:308` `hooks_on`, `attacks.gd:745` ×3, `damage.gd:68,98-101`); actor-pair collision query slices (`dense_grid.gd:131-146`). A DenseGrid already exists; fixes keep candidate order ascending. First: a probe-only sim phase timer (the horde's 4.7 ms is not mostly bolt hits: 2.5 hits a tick).
+7. AttackFormCanvas per-bolt Dictionary/Array work (`attack_form_canvas.gd:545-588`, `:353`).
+8. Experiments: `rendering/driver/threads/thread_model` = Separate (stability check); shader warm-up behind the loading cover (`hero_pulse_views.gd:359`, `hero_cast_fx.gd:93`, `blade_swing_fx.gd:48`, `boss_strike_looks.gd:272`).
+9. Risky, measure first: when frames drop, the whole view sync runs once per catch-up tick (`project.godot:33` `max_physics_steps_per_frame=4`, `main.gd:424`); measure `SimDriver.ticks_last_frame` in a horde.
+**Changes pixels (owner's eye):** torch shadows as dual paraboloid instead of cube (`stage_kit.gd:252-260`, 24 → 8 shadow passes); no shadows from small floor scatter (`stage_kit.gd:177-184`); MSAA off with the ink lines.
