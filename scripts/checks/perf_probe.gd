@@ -497,6 +497,7 @@ func _phases_report() -> void:
 	var n := maxi(_phase_ticks, 1)
 	var avg := {}
 	var p95 := {}
+	var top_ms := {}  # v0.8.0 NF: the phase's worst tick
 	var calls := {}
 	for k: StringName in _phase_rows:
 		var per := []
@@ -511,6 +512,7 @@ func _phases_report() -> void:
 		per.sort()
 		avg[k] = sum / n
 		p95[k] = per[mini(n - 1, int(n * 0.95))]
+		top_ms[k] = per[n - 1]
 		calls[k] = float(c) / n
 	var keys := avg.keys()
 	keys.sort_custom(func(x: StringName, y: StringName) -> bool: return avg[x] > avg[y])
@@ -524,7 +526,7 @@ func _phases_report() -> void:
 			% n
 		)
 	)
-	_line("  phase                 avg       p95    calls   share")
+	_line("  phase                 avg       p95       max    calls   share")
 	for part in [false, true]:
 		for k: StringName in keys:
 			if String(k).contains(".") != part:
@@ -533,8 +535,15 @@ func _phases_report() -> void:
 				top += avg[k]
 			_line(
 				(
-					"  %-18s %8.3f  %8.3f  %7.1f  %5.1f %%"
-					% [k, avg[k], p95[k], calls[k], 100.0 * avg[k] / maxf(sim_sum / n, 0.000001)]
+					"  %-18s %8.3f  %8.3f  %8.3f  %7.1f  %5.1f %%"
+					% [
+						k,
+						avg[k],
+						p95[k],
+						top_ms[k],
+						calls[k],
+						100.0 * avg[k] / maxf(sim_sum / n, 0.000001)
+					]
 				)
 			)
 	_line("  %-18s %8.3f  (sim_ms avg minus the top-level phases)" % ["(rest)", sim_sum / n - top])

@@ -96,7 +96,8 @@ var orbs := HealOrbStore.new()
 ## v0.4.0 TU (owner D9): the share of max HP restored when the boss room seals (per mille; RunState.prepare sets it
 ## from the run's per-floor table: floor 1 full, later floors none). Setup, not hashed.
 var boss_room_heal_permille := 0
-## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed).
+## Enemy pathing: a flow field toward the player, rebuilt every NavField.PERIOD ticks (derived, not hashed; v0.8.0 NF:
+## built over NavField.SLICES ticks, its build in progress saved by WorldSnapshot).
 var nav := NavField.new()
 
 # --- Items (v0.2.0 E) ---------------------------------------------------------------------------------------
@@ -591,10 +592,13 @@ func step(frame: InputFrame) -> void:
 		boss_flow.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
-	if tick % NavField.PERIOD == 0 and not enemy_tables.is_empty():
+	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
+	if not enemy_tables.is_empty() and (tick % NavField.PERIOD == 0 or nav.building()):
 		if pp != null:
 			pp.begin(&"nav_flood")
-		flood_nav()  # v0.4.0 SC: bounded; v0.8.0 P1: stops past the enemies
+		if tick % NavField.PERIOD == 0:
+			_begin_nav_flood()  # v0.4.0 SC: bounded; v0.8.0 P1: stops past the enemies
+		nav.advance()
 		if pp != null:
 			pp.end(&"nav_flood")
 	if pp != null:
@@ -867,14 +871,36 @@ func prepare_wall(o: Obb) -> void:
 ## v0.8.0 P1 (owner O23, O32): the world's flood of the flow field from the player, bounded (WORLD_FLOOD_STEPS) and
 ## stopped a margin past the farthest live enemy (their cells are its targets), skipped while the player keeps its
 ## cell and every enemy is still in the field, and with no enemy alive.
+## v0.8.0 NF (owner O90): this floods at once (the walls or extra cells changed) and drops a build in progress.
 func flood_nav() -> void:
+	nav.cancel_build()
+	var targets := _nav_targets()
+	if targets.is_empty():
+		return  # nobody reads the field; the first flood with enemies about runs (the key is the old one)
+	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+
+
+## v0.8.0 NF (owner O90, "A then"): the periodic flood, from the player's cell and the enemies' cells of this tick,
+## built over NavField.SLICES ticks (NavField.begin_build; World.step advances it) and swapped in when done, so the
+## field enemies follow is up to that many ticks older. Skipped by flood's rules; a field not yet flooded since its
+## build floods at once (the floor's first flood: enemies never walk an empty field).
+func _begin_nav_flood() -> void:
+	var targets := _nav_targets()
+	if targets.is_empty():
+		return
+	if nav.never_flooded():
+		nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+	else:
+		nav.begin_build(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+
+
+## The live enemies' cells (NavField.target_cell), the flood's targets.
+func _nav_targets() -> PackedInt32Array:
 	var targets := PackedInt32Array()
 	for i in range(1, actors.size()):
 		if actors.dead[i] == 0 and EnemyAi.is_enemy_kind(actors.kinds[i]):
 			targets.append(nav.target_cell(actors.pos(i)))
-	if targets.is_empty():
-		return  # nobody reads the field; the first flood with enemies about runs (the key is the old one)
-	nav.flood(player_pos(), NavField.WORLD_FLOOD_STEPS, targets)
+	return targets
 
 
 ## Adds a wall during play. The flow field swaps to the one prepare_wall built (or is rebuilt if there is none) and
@@ -885,6 +911,8 @@ func add_wall_now(o: Obb) -> void:
 	if o == _wall_next and _nav_next != null:
 		_nav_open = nav
 		nav = _nav_next
+		_nav_open.cancel_build()  # v0.8.0 NF: the kept field holds no build; the flood's work carries over
+		nav.last_work = _nav_open.last_work
 	else:
 		nav.build(walls)
 	_wall_next = null
@@ -907,6 +935,8 @@ func remove_wall_now(o: Obb, again: bool = false) -> void:
 		if again and _wall_next == null:
 			_wall_next = o
 			_nav_next = nav
+		nav.cancel_build()  # v0.8.0 NF: the field swapped out holds no build; the flood's work carries over
+		_nav_open.last_work = nav.last_work
 		nav = _nav_open
 	else:
 		nav.build(walls)

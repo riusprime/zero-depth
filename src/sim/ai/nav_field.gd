@@ -32,6 +32,10 @@ const TARGET_MARGIN := 8 * ORTHO
 ## crossing a wall (side steps through cells whose centre is SEED_CLEARANCE clear of every wall).
 const SEED_CELLS := 2
 const SEED_CLEARANCE := 0.25
+## v0.8.0 NF (owner O90, "A then"): the world's periodic flood is built over this many ticks (begin_build, advance),
+## at least SLICE_MIN cells of work a slice before the last.
+const SLICES := 3
+const SLICE_MIN := 64
 const STEPS: Array[Vector2i] = [
 	Vector2i(1, 0),
 	Vector2i(-1, 0),
@@ -58,6 +62,9 @@ var region := PackedInt32Array()
 ## v0.8.0 BS1 (owner O5, S1): cells blocked for a while on top of the walls (the Gatekeeper's standing pillars), by
 ## the same clearance rule; the flood goes round them. Empty = none. set_extra sets it; a build clears it.
 var extra := PackedByteArray()
+## v0.8.0 NF (owner O90): the work (cells taken from the buckets) of the last flood; a build's budget per slice is a
+## SLICES-th of it. Copied in a snapshot, carried when the world swaps fields.
+var last_work := 0
 var _adj_start := PackedInt32Array()
 var _adj := PackedInt32Array()
 ## v0.8.0 P1: each step's cost (ORTHO or DIAG), beside _adj.
@@ -69,9 +76,38 @@ var _walls: Array[Obb] = []
 ## v0.8.0 P1: z is -1 - the bound when that flood stopped early at its targets: it is skipped again only while every
 ## target it is given is still reached.
 var _flooded := Vector3i(-1, -1, -1)
+## v0.8.0 NF: the build in progress (begin_build .. advance): whether there is one, its slices run, budget, bound and
+## targets (with its goal, in _f_key, all a snapshot needs: restore_build runs its slices again), and the back field's
+## buffers while none runs (a build moves them into the fill's).
+var _b_on := false
+var _b_slices := 0
+var _b_budget := 0
+var _b_max := 0
+var _b_targets := PackedInt32Array()
+var _back := PackedInt32Array()
+var _b_ring := PackedInt32Array()
+var _b_want := PackedByteArray()
+## v0.8.0 NF: the fill's state (flood() runs one to the end at once; a build runs one a slice a tick): its distances,
+## bucket ring, target marks, bucket lengths, seeds and targets, and where its loop stands. Derived, never hashed.
+var _f_d := PackedInt32Array()
+var _f_ring := PackedInt32Array()
+var _f_want := PackedByteArray()
+var _f_lens := PackedInt32Array()
+var _f_seeds := PackedInt32Array()
+var _f_targets := PackedInt32Array()
+var _f_key := Vector3i(-1, -1, -1)
+var _f_last_seed := -1
+var _f_bound := 0
+var _f_open := true
+var _f_cur := 0
+var _f_queued := 0
+var _f_left := 0
+var _f_stop := 0
+var _f_work := 0
 
 
 func build(walls: Array[Obb]) -> void:
+	cancel_build()  # v0.8.0 NF: the walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
 	extra = PackedByteArray()
 	_walls = walls.duplicate()
@@ -107,6 +143,7 @@ func build(walls: Array[Obb]) -> void:
 ## the last set (empty: none). The next flood runs again. v0.8.0 BS2 (S6): also the cells of each meltdown in
 ## `melts` (BossLava.melt_shapes: the outer ring of a room, a cool bridge left open), grown the same way.
 func set_extra(boxes: Array[Obb], melts: Array = []) -> void:
+	cancel_build()  # v0.8.0 NF: the walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
 	if (boxes.is_empty() and melts.is_empty()) or size == Vector2i.ZERO:
 		extra = PackedByteArray()
@@ -136,6 +173,7 @@ func set_extra(boxes: Array[Obb], melts: Array = []) -> void:
 ## The reference build (every wall at every cell), kept for the test that the fast build matches it. Kept on
 ## purpose as the parity oracle for build (owner keeps safety nets; audit G-22): change it with build, never drop it.
 func build_reference(walls: Array[Obb]) -> void:
+	cancel_build()  # v0.8.0 NF: the walls or extra cells change: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
 	_walls = walls.duplicate()
 	if walls.is_empty():
@@ -228,56 +266,229 @@ func region_near(p: Vector2) -> int:
 ## v0.8.0 P1 (O32): `targets` (cell indices, target_cell's; -1 skipped) lets the flood stop TARGET_MARGIN past the
 ## last of them to settle; cells past that keep UNREACHED or a not-yet-final distance (an upper bound) that no enemy
 ## stands on. A target that is never reached (another region, past the bound) leaves the flood whole.
+## v0.8.0 NF: floods at once (the walls changed: add_wall_now, remove_wall_now, set_nav_extra; or the first flood);
+## a build in progress (begin_build) is dropped.
 func flood(goal: Vector2, max_steps: int = UNREACHED, targets := PackedInt32Array()) -> void:
+	cancel_build()
 	if size == Vector2i.ZERO:
 		return
 	var g := cell_of(goal)
-	if g.x == _flooded.x and g.y == _flooded.y:
-		if _flooded.z == max_steps:
-			return
-		if _flooded.z == -1 - max_steps and not targets.is_empty() and _all_reached(targets):
-			return
+	if _skips(g, max_steps, targets):
+		return
 	_flooded = Vector3i(g.x, g.y, max_steps)
-	dist.fill(UNREACHED)
 	if not inside(g):
+		dist.fill(UNREACHED)
 		return
 	var n := size.x * size.y
 	if _ring.size() < RING * n:
 		_ring.resize(RING * n)
-	var lens := PackedInt32Array()
-	lens.resize(RING)
-	lens.fill(0)
-	var open := extra.is_empty()  # v0.8.0 BS1: no standing pillars (the common case: no extra test)
-	var bound := mini(max_steps, UNREACHED / ORTHO - 1) * ORTHO
-	var queued := 0
-	# The seeds go in as their distance comes round (one goes past RING when the goal cell is blocked).
-	var seeds := _seeds(g, open)
-	var last_seed := -1
-	for s in range(1, seeds.size(), 2):
-		last_seed = maxi(last_seed, seeds[s])
-	# Targets: marked in _want (cleared again before returning); `left` counts the marked cells not yet settled.
-	var left := 0
-	if not targets.is_empty():
-		if _want.size() < n:
-			_want.resize(n)
-			_want.fill(0)
-		for k in targets:
-			if k >= 0 and k < n and _want[k] == 0:
-				_want[k] = 1
-				left += 1
-	var stop := UNREACHED
-	var cur := 0
-	# The arrays the loop writes are held in locals only while it runs (no copy on write; members get them back).
-	var d := dist
+	if not targets.is_empty() and _want.size() < n:
+		_want.resize(n)
+		_want.fill(0)
+	# The arrays the fill writes are held by it only while it runs (no copy on write; members get them back).
+	_f_d = dist
 	dist = PackedInt32Array()
-	var ring := _ring
+	_f_ring = _ring
 	_ring = PackedInt32Array()
-	var want := _want
+	_f_want = _want
 	_want = PackedByteArray()
+	_begin(g, max_steps, targets)
+	_run(UNREACHED)
+	_flooded = _f_key
+	last_work = _f_work
+	dist = _f_d
+	_ring = _f_ring
+	_want = _f_want
+	_f_d = PackedInt32Array()
+	_f_ring = PackedInt32Array()
+	_f_want = PackedByteArray()
+
+
+## v0.4.0 SC / v0.8.0 P1: a flood from cell g with this bound would give the distances already there: the last flood
+## was from the same cell with the same bound, or it stopped at its targets and every target given is still reached.
+func _skips(g: Vector2i, max_steps: int, targets: PackedInt32Array) -> bool:
+	if g.x != _flooded.x or g.y != _flooded.y:
+		return false
+	if _flooded.z == max_steps:
+		return true
+	return _flooded.z == -1 - max_steps and not targets.is_empty() and _all_reached(targets)
+
+
+## v0.8.0 NF (owner O90, "A then"): the world's periodic flood, built over SLICES ticks into the back field and
+## swapped in whole when it is done (advance); until then every reader sees the live field (dist). The build is the
+## flood() from this goal, bound and targets, run in slices: skipped by the same rule, and its result (distances and
+## key) is exactly flood()'s. A field never flooded since its build floods at once instead (World).
+func begin_build(goal: Vector2, max_steps: int, targets: PackedInt32Array) -> void:
+	cancel_build()
+	if size == Vector2i.ZERO:
+		return
+	var g := cell_of(goal)
+	if _skips(g, max_steps, targets):
+		return
+	if not inside(g):
+		flood(goal, max_steps, targets)  # nothing to build: no distances at all
+		return
+	_start_build(g, max_steps, targets, maxi(SLICE_MIN, (last_work + SLICES - 1) / SLICES))
+
+
+func _start_build(g: Vector2i, max_steps: int, targets: PackedInt32Array, budget: int) -> void:
+	var n := size.x * size.y
+	_back.resize(n)
+	if _b_ring.size() < RING * n:
+		_b_ring.resize(RING * n)
+	_b_want.resize(n)
+	_b_want.fill(0)
+	_f_d = _back
+	_back = PackedInt32Array()
+	_f_ring = _b_ring
+	_b_ring = PackedInt32Array()
+	_f_want = _b_want
+	_b_want = PackedByteArray()
+	_b_on = true
+	_b_slices = 0
+	_b_budget = budget
+	_b_max = max_steps
+	_b_targets = targets.duplicate()
+	_begin(g, max_steps, targets)
+
+
+## v0.8.0 NF: whether a build is in progress (begin_build; advance runs its next slice).
+func building() -> bool:
+	return _b_on
+
+
+## v0.8.0 NF: the build's next slice. Slices before the last stop once the build's work (cells taken from the
+## buckets) reaches the budget times their number; the last (the SLICES-th) runs to the end. A build that is done
+## swaps in as the live field (its key too), and the old field becomes the next back buffer.
+func advance() -> void:
+	if not _b_on:
+		return
+	var limit := UNREACHED if _b_slices >= SLICES - 1 else _b_budget * (_b_slices + 1)
+	var done := _run(limit)
+	_b_slices += 1
+	if not done:
+		return
+	_flooded = _f_key
+	last_work = _f_work
+	_back = dist
+	dist = _f_d
+	_b_ring = _f_ring
+	_b_want = _f_want
+	_f_d = PackedInt32Array()
+	_f_ring = PackedInt32Array()
+	_f_want = PackedByteArray()
+	_b_on = false
+
+
+## v0.8.0 NF: drops a build in progress (the walls or extra cells changed, or a flood ran at once); the live field
+## stays as it is.
+func cancel_build() -> void:
+	if not _b_on:
+		return
+	_back = _f_d
+	_b_ring = _f_ring
+	_b_want = _f_want
+	_f_d = PackedInt32Array()
+	_f_ring = PackedInt32Array()
+	_f_want = PackedByteArray()
+	_b_on = false
+
+
+## v0.8.0 NF: a build in progress as plain data (a save: WorldSnapshot), {} with none: its goal cell, bound, targets,
+## budget and slices run. The rest is derived: restore_build runs the same slices again.
+func build_state() -> Dictionary:
+	if not _b_on:
+		return {}
+	return {
+		"g": Vector2i(_f_key.x, _f_key.y),
+		"max": _b_max,
+		"targets": _b_targets.duplicate(),
+		"budget": _b_budget,
+		"slices": _b_slices,
+	}
+
+
+## v0.8.0 NF: restores build_state's build ({} = none) on this field (its walls and extra cells set as they were):
+## starts it again and runs the slices it had run, so it stands where it stood.
+func restore_build(state: Dictionary) -> void:
+	cancel_build()
+	if state.is_empty() or size == Vector2i.ZERO:
+		return
+	_start_build(
+		state["g"], int(state["max"]), state["targets"] as PackedInt32Array, int(state["budget"])
+	)
+	for i in int(state["slices"]):
+		advance()
+
+
+## v0.8.0 NF: whether the field was never flooded since its build (or since its extra cells changed).
+func never_flooded() -> bool:
+	return _flooded == Vector3i(-1, -1, -1)
+
+
+## v0.8.0 NF: a fill's start (flood() and begin_build); _f_d, _f_ring and _f_want hold its arrays (moved in).
+func _begin(g: Vector2i, max_steps: int, targets: PackedInt32Array) -> void:
+	var n := size.x * size.y
+	var d := _f_d
+	_f_d = PackedInt32Array()
+	d.fill(UNREACHED)
+	_f_d = d
+	_f_lens = PackedInt32Array()
+	_f_lens.resize(RING)
+	_f_lens.fill(0)
+	_f_open = extra.is_empty()  # v0.8.0 BS1: no standing pillars (the common case: no extra test)
+	_f_bound = mini(max_steps, UNREACHED / ORTHO - 1) * ORTHO
+	_f_queued = 0
+	_f_cur = 0
+	_f_work = 0
+	_f_key = Vector3i(g.x, g.y, max_steps)
+	# The seeds go in as their distance comes round (one goes past RING when the goal cell is blocked).
+	_f_seeds = _seeds(g, _f_open)
+	_f_last_seed = -1
+	for s in range(1, _f_seeds.size(), 2):
+		_f_last_seed = maxi(_f_last_seed, _f_seeds[s])
+	# Targets: marked in want (cleared again when the fill ends); `left` counts the marked cells not yet settled.
+	_f_targets = targets
+	_f_left = 0
+	if not targets.is_empty():
+		var want := _f_want
+		_f_want = PackedByteArray()
+		for k in targets:
+			if k >= 0 and k < n and want[k] == 0:
+				want[k] = 1
+				_f_left += 1
+		_f_want = want
+	_f_stop = UNREACHED
+
+
+## v0.8.0 NF: runs the fill until it ends or its work (cells taken from the buckets) reaches `limit` (checked between
+## buckets, so the same slices every run). Returns whether it ended; an ended fill's key says if it stopped early.
+func _run(limit: int) -> bool:
+	var n := size.x * size.y
+	# The arrays the loop writes are held in locals only while it runs (no copy on write; members get them back).
+	var d := _f_d
+	_f_d = PackedInt32Array()
+	var ring := _f_ring
+	_f_ring = PackedInt32Array()
+	var want := _f_want
+	_f_want = PackedByteArray()
+	var lens := _f_lens
+	_f_lens = PackedInt32Array()
+	var seeds := _f_seeds
+	var last_seed := _f_last_seed
+	var bound := _f_bound
+	var open := _f_open
+	var cur := _f_cur
+	var queued := _f_queued
+	var left := _f_left
+	var stop := _f_stop
+	var work := _f_work
 	var adj := _adj
 	var adj_w := _adj_w
 	var adj_start := _adj_start
 	while (queued > 0 or cur <= last_seed) and cur <= bound and cur <= stop:
+		if work >= limit:
+			break
 		var b := cur % RING
 		var base := b * n
 		if cur <= last_seed:
@@ -289,6 +500,7 @@ func flood(goal: Vector2, max_steps: int = UNREACHED, targets := PackedInt32Arra
 					lens[b] += 1
 					queued += 1
 		var count := lens[b]
+		work += count
 		# Far from the bound and with no extra cells, the step test is the distance alone (the common case).
 		var plain := open and cur + DIAG <= bound
 		for q in count:
@@ -323,15 +535,25 @@ func flood(goal: Vector2, max_steps: int = UNREACHED, targets := PackedInt32Arra
 		queued -= count
 		lens[b] = 0
 		cur += 1
-	if left > 0:
-		for k in targets:
-			if k >= 0 and k < n:
-				want[k] = 0
-	elif stop < UNREACHED and queued > 0 and cur <= bound:
-		_flooded.z = -1 - max_steps  # stopped at its targets: the cells past them aren't finished
-	dist = d
-	_ring = ring
-	_want = want
+	var done := not ((queued > 0 or cur <= last_seed) and cur <= bound and cur <= stop)
+	if done:
+		if left > 0:
+			for k in _f_targets:
+				if k >= 0 and k < n:
+					want[k] = 0
+			left = 0
+		elif stop < UNREACHED and queued > 0 and cur <= bound:
+			_f_key.z = -1 - _f_key.z  # stopped at its targets: the cells past them aren't finished
+	_f_d = d
+	_f_ring = ring
+	_f_want = want
+	_f_lens = lens
+	_f_cur = cur
+	_f_queued = queued
+	_f_left = left
+	_f_stop = stop
+	_f_work = work
+	return done
 
 
 ## v0.8.0 P1: whether every target cell (-1 skipped) has a distance.
@@ -509,6 +731,7 @@ func _build_adjacency() -> void:
 ## parity oracle for flood (owner keeps safety nets; audit G-22). v0.8.0 P1: the octile distances by plain
 ## label-correcting (a cell goes back in the queue whenever it gets shorter), from the same seeds, no bound.
 func flood_reference(goal: Vector2) -> void:
+	cancel_build()  # v0.8.0 NF: a build in progress is dropped
 	_flooded = Vector3i(-1, -1, -1)
 	if size == Vector2i.ZERO:
 		return

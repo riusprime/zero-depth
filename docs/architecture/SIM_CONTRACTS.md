@@ -1030,7 +1030,9 @@ Presentation sees the sim only through `WorldReader`, a read-only facade over `W
 - **Not copied, by name** (`WORLD_KEPT`, each with its reason): the loadout tables (content compiled at setup, kept
   from the base world), the event log (not state; `_event_seq` is copied), the wall grid (rebuilt from the walls), the
   pending boss door and its prepared flow field (only whether they are still pending), and the flow field (rebuilt
-  from the walls; its last flood is copied). Objects of a `LOADOUT_CLASSES` class are kept wherever they appear.
+  from the walls; its last flood is copied, and v0.8.0 NF its last flood's work and a build in progress as
+  `NavField.build_state()`: goal cell, bound, targets, budget, slices run; restore runs the same slices again, a save
+  from before NF has none). Objects of a `LOADOUT_CLASSES` class are kept wherever they appear.
 - **An object of an unclassified class is an error naming its path** (`take(w, errors)`), never a silent skip.
 - **`World.from_snapshot(snap, base)`** writes the snapshot into `base`, a world built from the same generation inputs
   (run seed, floor, build, content) at any tick. It checks the base's generated walls start the snapshot's (else the
@@ -1072,7 +1074,13 @@ Starting values; `EnemyAi` and `BossAi` hold the rules, `data/enemies` and `data
 - **The flow field (v0.4.0 SC).** One flood a `NavField.PERIOD` (10 ticks) from the player for every enemy, stopped
   `NavField.WORLD_FLOOD_STEPS` (160 half-metre steps, ~80 m of path) out, and skipped when the player is still in
   the cell of the last flood (the walls don't change between builds, so the result would be the same). An enemy past
-  the bound walks straight until it is back in reach.
+  the bound walks straight until it is back in reach. **v0.8.0 NF (owner O90, "A then"):** the periodic flood is
+  built over `NavField.SLICES` (3) ticks into a back field (`begin_build` on the flood tick, `advance` that tick and
+  the next two; slices before the last stop between buckets once the build's work, the cells taken from the buckets,
+  reaches a third of the last flood's work, at least `SLICE_MIN`; the last finishes) and swapped in when done, so
+  enemies follow a field up to 2 ticks older; the finished field and key equal `flood()`'s from the same goal and
+  targets. Floods that follow a wall change stay at once and drop a build in progress: `add_wall_now`,
+  `remove_wall_now`, `set_nav_extra`, and a field's first flood since its build.
 - **The gap-closer.** A boss whose player stays beyond `gap_close_distance_m` (from its edge) for
   `gap_close_seconds` performs `gap_close_attack` (Gatekeeper: charge; Brood Mother: leap; Siege Engine: bolt fan).
   The punish attack (`punish_*`, BX) keeps its priority.
