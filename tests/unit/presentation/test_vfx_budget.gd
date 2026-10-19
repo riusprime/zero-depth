@@ -55,7 +55,7 @@ func test_a_few_blasts_draw_as_before_even_on_one_spot() -> void:
 	assert_eq(_vfx.bursts_drawn, 4)
 	assert_eq(_vfx.bursts_merged, 0)
 	assert_eq(_sprites(), one * 4, "each with its full look")
-	assert_eq(_vfx.lights_asked(), 4, "each with its light")
+	assert_eq(_vfx.lights_asked(), 1, "v0.8.0 FV: one light shared by the four on one spot")
 
 
 func test_under_load_the_extra_blasts_thin_and_ask_for_no_light() -> void:

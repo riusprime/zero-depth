@@ -49,6 +49,23 @@ const MAX_SPRITES := 2000
 ## How long a floor mark stays (ticks) and how long it fades at the end.
 const MARK_TICKS := 420.0
 const MARK_FADE := 90.0
+## v0.8.0 FV (owner O86, feedback 2026-10-19 Part 3: "every other effect requests unmerged lights"): every effect's
+## light joins a light of its own colour within LIGHT_MERGE_M (the fire patches' 2.5 m since the lighting pass), so
+## near-simultaneous effects (Twin pairs, chains, overlapping blasts) share one light instead of each taking a slot.
+## A lone effect's light is unchanged. Each merge brightens the shared light by LIGHT_MERGE_BOOST, at most
+## LIGHT_MERGE_BOOST_MAX times its brightest member (a burning horde no longer stacks ×1.08 per enemy). Starting values.
+const LIGHT_MERGE_M := 2.5
+const LIGHT_MERGE_BOOST := 1.08
+const LIGHT_MERGE_BOOST_MAX := 1.3
+## v0.8.0 FV: the enemy statuses' lights (burning enemies: the term that grows with the horde) are gathered over the
+## frame, the brightest first, merged within LIGHT_MERGE_M; at most STATUS_LIGHTS_MAX new lights come from them, the
+## rest only join a light already there or are dropped. Starting value (the pool holds LIGHTS).
+const STATUS_LIGHTS_MAX := 4
+## v0.8.0 FV: pressure thinning. While a pool is past PRESSURE of its cap (or the frame's pieces past PRESSURE of
+## MAX_SPRITES), an effect's debris, smoke, sparks and ice crystals are halved (rounded up); its blast and flash stay.
+## The cap then thins the effects gradually instead of cutting the frame's last ones off. Deterministic: it reads only
+## this frame's counts, in the callers' fixed draw order. Starting value.
+const PRESSURE := 0.7
 
 const SHADER := """
 shader_type spatial;
@@ -102,6 +119,12 @@ var bursts_asked := 0
 var bursts_drawn := 0
 var bursts_merged := 0
 var bursts_skipped := 0
+## v0.8.0 FV: this frame's light requests folded into a light already asked for (_light_merged); the status lights
+## asked for and those dropped past STATUS_LIGHTS_MAX; the pieces left out by pressure thinning (_thin).
+var lights_merged := 0
+var status_lights_asked := 0
+var status_lights_dropped := 0
+var pieces_thinned := 0
 ## v0.8.0 N1: with `record` on (the light-walk probe, tests), the places of this frame's flame sprites (their
 ## centres), since a headless renderer keeps no instance transforms to read back.
 var record := false
@@ -109,7 +132,10 @@ var placed_flames := PackedVector3Array()
 ## The same pools in a list (begin and finish walk it every frame without allocating).
 var _pool_list: Array[Dictionary] = []
 var _cam_basis := Basis()
+## Light requests: [position, colour, energy, range, brightest member's energy].
 var _light_wants: Array = []
+## v0.8.0 FV: this frame's status light requests, laid in at finish (_flush_status_lights): [p, colour, energy, range].
+var _status_wants: Array = []
 ## Floor marks: [key, texture id, position, radius, start tick, turn, colour].
 var _marks: Array = []
 var _mark_keys := {}
@@ -296,8 +322,13 @@ func begin(now: float) -> void:
 	bursts_drawn = 0
 	bursts_merged = 0
 	bursts_skipped = 0
+	lights_merged = 0
+	status_lights_asked = 0
+	status_lights_dropped = 0
+	pieces_thinned = 0
 	_lights_off = false
 	_light_wants.clear()
+	_status_wants.clear()
 	_spots.clear()
 	if record:
 		placed_flames.clear()
@@ -309,6 +340,7 @@ func finish() -> void:
 	for d in drawers:
 		if d.is_valid():
 			d.call(self)
+	_flush_status_lights()
 	for p: Dictionary in _pool_list:
 		(p["mm"] as MultiMesh).visible_instance_count = int(p["used"])
 	_light_wants.sort_custom(_brighter)
@@ -394,23 +426,87 @@ func _ribbon_tall(a: Vector3, b: Vector3, w: float) -> Transform3D:
 	return Transform3D(Basis(xf.basis.y, xf.basis.x, -xf.basis.z), xf.origin)
 
 
+## An effect's light: merged into a light of the same colour within LIGHT_MERGE_M (v0.8.0 FV; a lone one as before).
 func _light(p: Vector3, c: Color, energy: float, rng: float) -> void:
-	if energy > 0.02 and not _lights_off:
-		_light_wants.append([p, c, energy, rng])
+	_light_merged(p, c, energy, rng, LIGHT_MERGE_M)
 
 
 ## One light for a cluster: when a light of colour `c` already stands within `merge` m, it takes the stronger
 ## energy and the wider range instead of a second light (overlapping fire patches light the room once, not once
-## each: owner, 2026-10-12, "that's too much fire").
+## each: owner, 2026-10-12, "that's too much fire"). Only the same colour merges (a cold flash never joins a fire).
 func _light_merged(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> void:
-	if energy <= 0.02:
+	if energy <= 0.02 or _lights_off:
 		return
+	if not _merge_into(p, c, energy, rng, merge):
+		_light_wants.append([p, c, energy, rng, energy])
+
+
+## Folds a request into a light of colour `c` already asked for within `merge` m; false when there is none.
+func _merge_into(p: Vector3, c: Color, energy: float, rng: float, merge: float) -> bool:
 	for w: Array in _light_wants:
 		if (w[1] as Color).is_equal_approx(c) and (w[0] as Vector3).distance_to(p) < merge:
-			w[2] = maxf(float(w[2]), energy) * 1.08
+			w[4] = maxf(float(w[4]), energy)
+			w[2] = minf(
+				maxf(float(w[2]), energy) * LIGHT_MERGE_BOOST, float(w[4]) * LIGHT_MERGE_BOOST_MAX
+			)
 			w[3] = maxf(float(w[3]), rng)
-			return
-	_light_wants.append([p, c, energy, rng])
+			lights_merged += 1
+			return true
+	return false
+
+
+## v0.8.0 FV: an enemy status's light, gathered for _flush_status_lights (the brightest few get slots).
+func _light_status(p: Vector3, c: Color, energy: float, rng: float) -> void:
+	if energy > 0.02 and not _lights_off:
+		status_lights_asked += 1
+		_status_wants.append([p, c, energy, rng])
+
+
+## Lays the frame's status lights in, the brightest first: each merges into a light of its colour within
+## LIGHT_MERGE_M (an effect's or an earlier status's); past STATUS_LIGHTS_MAX new ones, the rest are dropped.
+func _flush_status_lights() -> void:
+	if _status_wants.is_empty():
+		return
+	_status_wants.sort_custom(_status_first)
+	var opened := 0
+	for w: Array in _status_wants:
+		if _merge_into(w[0], w[1], w[2], w[3], LIGHT_MERGE_M):
+			continue
+		if opened >= STATUS_LIGHTS_MAX:
+			status_lights_dropped += 1
+			continue
+		opened += 1
+		_light_wants.append([w[0], w[1], w[2], w[3], w[2]])
+	_status_wants.clear()
+
+
+## The status-light order: the brighter first, ties by place (x, then z), so a frame always picks the same ones.
+static func _status_first(a: Array, b: Array) -> bool:
+	if float(a[2]) != float(b[2]):
+		return float(a[2]) > float(b[2])
+	var pa: Vector3 = a[0]
+	var pb: Vector3 = b[0]
+	if pa.x != pb.x:
+		return pa.x < pb.x
+	return pa.z < pb.z
+
+
+## v0.8.0 FV: `n` pieces of pool `pool` for one effect, halved (rounded up) under pressure (PRESSURE).
+func _thin(pool: StringName, n: int) -> int:
+	if n <= 1 or not _pressed(pool):
+		return n
+	var keep := (n + 1) / 2
+	pieces_thinned += n - keep
+	return keep
+
+
+## True while pool `pool` is past PRESSURE of its cap, or the frame's pieces past PRESSURE of MAX_SPRITES.
+func _pressed(pool: StringName) -> bool:
+	var p: Dictionary = pools[pool]
+	return (
+		int(p["used"]) >= int(float(p["cap"]) * PRESSURE)
+		or MAX_SPRITES - _sprite_left >= int(MAX_SPRITES * PRESSURE)
+	)
 
 
 ## Takes the spot `p` for `kind` this frame unless a piece of that kind from another effect (`owner`) already

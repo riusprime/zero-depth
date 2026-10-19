@@ -138,6 +138,10 @@ var prism_views: PrismViews = _part(PrismViews)  # v0.8.0 FB2: the Prism's Cross
 var nemesis_views: NemesisViews = _part(NemesisViews)  # v0.8.0 FB3: the Nemesis's card casts and dash afterimages
 var rig: IsoRig = _part(IsoRig)
 var occlusion_enabled := true
+## v0.8.0 FV (O87): the perf probe's per-view sync breakdown (view name -> total ms); filled only while
+## `profile_sync` is on.
+var profile_sync := false
+var sync_profile := {}
 ## v0.8.0 P3 (O32): the floor's walls for the occlusion test, indexed once (Occlusion.build_index).
 var _occlusion_index := {}
 
@@ -346,46 +350,57 @@ func _first_sync() -> void:
 	rig.snap_to(SimPlane.to_3d(reader.player_pos()))
 
 
-func sync() -> void:
-	telegraphs.sync(reader)
-	challenge.sync(reader)
-	actors.sync(reader)
-	kit.sync(reader)
-	swing_fx.sync(reader)  # v0.8.0 GF3: after the blade, whose tip it rides
-	utility.sync(reader)
-	hit_feel.sync(reader)
-	pickups.sync(reader)
-	rewards.sync(reader)
-	shards.sync(reader)
-	heal_orbs.sync(reader)
-	item_fx.sync(reader)
-	pulses.sync(reader)  # v0.8.0 GF1: after item_fx, which sets the bolt look a new shot takes
-	cast_fx.sync(reader)
-	status_fx.sync(reader)
-	heat_fx.sync(reader)
-	transit.sync(reader)  # after the actors: it poses the hero's model
-	skill_fx.sync(reader)  # v0.3.5 K
-	ability_fx.sync(reader)  # v0.4.0 BS
-	element_fx.sync(reader)  # v0.4.0 AB
-	overrun_doors.sync(reader)
-	arenas.sync(reader)  # v0.5.5 AR
-	damage_numbers.sync(reader)
-	horde_fx.sync(reader)  # v0.4.0 EN
-	events.sync(reader)  # v0.5.0 EV
-	cores.sync(reader)  # v0.6.0 CU
-	attack_forms.sync(reader)  # v0.6.0 MX3
-	modifier_marks.sync(reader)  # v0.6.0 MX4
-	blade_forms.sync(reader)  # v0.6.5 WN4
-	fireballs.sync(reader)  # v0.7.5 BF1
-	boss_shields.sync(reader)
-	spikes.sync(reader)  # v0.8.0 AV
-	signatures.sync(reader)  # v0.8.0 BS1
+## v0.8.0 FV (owner O87, the horde lag): one view's sync, timed into `sync_profile` while `profile_sync` is on (the
+## perf probe's --horde; off in the game: a plain call).
+func _sync_view(id: StringName, view: Object) -> void:
+	if not profile_sync:
+		view.call(&"sync", reader)
+		return
+	var t0 := Time.get_ticks_usec()
+	view.call(&"sync", reader)
+	sync_profile[id] = float(sync_profile.get(id, 0.0)) + (Time.get_ticks_usec() - t0) / 1000.0
 
-	strikes.sync(reader)  # v0.8.0 AV part 2
-	final_views.sync(reader)  # v0.8.0 FB1
-	prism_views.sync(reader)  # v0.8.0 FB2
-	nemesis_views.sync(reader)  # v0.8.0 FB3
-	black_holes.sync(reader)  # v0.8.0 P2
+
+func sync() -> void:
+	_sync_view(&"telegraphs", telegraphs)
+	_sync_view(&"challenge", challenge)
+	_sync_view(&"actors", actors)
+	_sync_view(&"kit", kit)
+	_sync_view(&"swing_fx", swing_fx)  # v0.8.0 GF3: after the blade, whose tip it rides
+	_sync_view(&"utility", utility)
+	_sync_view(&"hit_feel", hit_feel)
+	_sync_view(&"pickups", pickups)
+	_sync_view(&"rewards", rewards)
+	_sync_view(&"shards", shards)
+	_sync_view(&"heal_orbs", heal_orbs)
+	_sync_view(&"item_fx", item_fx)
+	_sync_view(&"pulses", pulses)  # v0.8.0 GF1: after item_fx, which sets the bolt look a new shot takes
+	_sync_view(&"cast_fx", cast_fx)
+	_sync_view(&"status_fx", status_fx)
+	_sync_view(&"heat_fx", heat_fx)
+	_sync_view(&"transit", transit)  # after the actors: it poses the hero's model
+	_sync_view(&"skill_fx", skill_fx)  # v0.3.5 K
+	_sync_view(&"ability_fx", ability_fx)  # v0.4.0 BS
+	_sync_view(&"element_fx", element_fx)  # v0.4.0 AB
+	_sync_view(&"overrun_doors", overrun_doors)
+	_sync_view(&"arenas", arenas)  # v0.5.5 AR
+	_sync_view(&"damage_numbers", damage_numbers)
+	_sync_view(&"horde_fx", horde_fx)  # v0.4.0 EN
+	_sync_view(&"events", events)  # v0.5.0 EV
+	_sync_view(&"cores", cores)  # v0.6.0 CU
+	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
+	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
+	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
+	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1
+	_sync_view(&"boss_shields", boss_shields)
+	_sync_view(&"spikes", spikes)  # v0.8.0 AV
+	_sync_view(&"signatures", signatures)  # v0.8.0 BS1
+
+	_sync_view(&"strikes", strikes)  # v0.8.0 AV part 2
+	_sync_view(&"final_views", final_views)  # v0.8.0 FB1
+	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
+	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
+	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
 	if boss_door != null:
 		boss_door.sync(reader)
 		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud

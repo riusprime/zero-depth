@@ -49,6 +49,11 @@ const JOINT_COLOR := Color("#34363C")
 const TALON_COLOR := Color("#E6B596")
 const VISOR_ENERGY := 1.4
 
+## v0.8.0 FV (owner O87, the horde lag): the body and leg meshes (geometry only: every colour is a per-instance
+## material), built once and shared by every Charger and Hatchling, as the Warden's are. A horde respawning a few
+## Chargers a second rebuilt about 20 SurfaceTool meshes for each.
+static var _meshes := {}
+
 ## Parts, read by tests and by ActorViews (flash materials; the visor's glow is its own).
 ## The kind this model draws (the Charger, or the Brood Mother's Hatchling at two thirds of the size): its colours.
 var kind := WorldReader.KIND_CHARGER
@@ -361,6 +366,13 @@ static func _ring(x: float, peak: float, sh: Vector3, fl: Vector3, hem: Vector3)
 
 ## The hood: a ridged roof from the face's arch back to a sharp corner that juts out behind the ridge.
 static func _hood_mesh() -> ArrayMesh:
+	var key: String = "hood"
+	if not _meshes.has(key):
+		_meshes[key] = _build_hood_mesh()
+	return _meshes[key]
+
+
+static func _build_hood_mesh() -> ArrayMesh:
 	var rings := _crumple(_hood_rings(), 1)
 	var tris := _shell(rings)
 	var back: Array = rings[rings.size() - 1]
@@ -421,6 +433,13 @@ static func _shell(rings: Array) -> Array:
 ## A second, lower layer under the roof: a mantle whose hem runs level from the face to the back, so it shows
 ## below the roof's rising lower edge and juts out to a corner behind and at the back sides.
 static func _flap_mesh() -> ArrayMesh:
+	var key: String = "flap"
+	if not _meshes.has(key):
+		_meshes[key] = _build_flap_mesh()
+	return _meshes[key]
+
+
+static func _build_flap_mesh() -> ArrayMesh:
 	var key := [
 		_ring(
 			0.04,
@@ -455,6 +474,13 @@ static func _flap_mesh() -> ArrayMesh:
 
 ## The dark body under the hood: a squat faceted lump that closes the hood's open bottom.
 static func _core_mesh() -> ArrayMesh:
+	var key: String = "core"
+	if not _meshes.has(key):
+		_meshes[key] = _build_core_mesh()
+	return _meshes[key]
+
+
+static func _build_core_mesh() -> ArrayMesh:
 	var sm := SphereMesh.new()
 	sm.radius = 0.2
 	sm.height = 0.24
@@ -476,6 +502,13 @@ static func _core_mesh() -> ArrayMesh:
 ## The face: the roof's front arch set back into the hood, a dark collar joining the two, and a chin point under
 ## the visor.
 static func _face_mesh() -> ArrayMesh:
+	var key: String = "face"
+	if not _meshes.has(key):
+		_meshes[key] = _build_face_mesh()
+	return _meshes[key]
+
+
+static func _build_face_mesh() -> ArrayMesh:
 	var rim: Array = _hood_rings()[0]
 	var inner := []
 	var mid := Vector3(0.15, 0.52, 0)
@@ -498,6 +531,13 @@ static func _face_mesh() -> ArrayMesh:
 
 ## The visor: a tall hexagonal gem, its point toward the front.
 static func _visor_mesh() -> ArrayMesh:
+	var key: String = "visor"
+	if not _meshes.has(key):
+		_meshes[key] = _build_visor_mesh()
+	return _meshes[key]
+
+
+static func _build_visor_mesh() -> ArrayMesh:
 	var w := 0.032
 	var h := 0.062
 	var ring := [
@@ -522,6 +562,13 @@ static func _visor_mesh() -> ArrayMesh:
 ## An armoured limb segment along +X: a six-sided plate, uneven round its sides, narrow at the joint, swelling to
 ## its widest three quarters down and bevelled in at the far end, with a raised ridge along its back.
 static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
+	var key: String = "plate %s %s %s" % [length, r0, r1]
+	if not _meshes.has(key):
+		_meshes[key] = _build_plate(length, r0, r1)
+	return _meshes[key]
+
+
+static func _build_plate(length: float, r0: float, r1: float) -> ArrayMesh:
 	var shape := [1.25, 0.95, 0.85, 1.05, 0.85, 0.95]
 	var stations := [
 		[0.0, r0 * 0.75],
@@ -555,6 +602,13 @@ static func _plate(length: float, r0: float, r1: float) -> ArrayMesh:
 
 ## A low-poly joint knuckle at the pivot.
 static func _ball(r: float) -> ArrayMesh:
+	var key: String = "ball %s" % r
+	if not _meshes.has(key):
+		_meshes[key] = _build_ball(r)
+	return _meshes[key]
+
+
+static func _build_ball(r: float) -> ArrayMesh:
 	var sm := SphereMesh.new()
 	sm.radius = r
 	sm.height = r * 2.0
@@ -573,6 +627,13 @@ static func _ball(r: float) -> ArrayMesh:
 
 ## A talon along +X that curls toward -Y: a five-sided base, a bent middle ring and a sharp point.
 static func _talon_mesh(length: float, r: float) -> ArrayMesh:
+	var key: String = "talon %s %s" % [length, r]
+	if not _meshes.has(key):
+		_meshes[key] = _build_talon_mesh(length, r)
+	return _meshes[key]
+
+
+static func _build_talon_mesh(length: float, r: float) -> ArrayMesh:
 	var n := 5
 	var rings := []
 	var spine := [
@@ -610,10 +671,16 @@ static func _talon_mesh(length: float, r: float) -> ArrayMesh:
 func _piece(
 	parent: Node3D, parts: Array, outline: Color, team: Color, technique: StringName
 ) -> MeshInstance3D:
-	var merged := ArrayMesh.new()
+	var key := "piece"
 	for part: Array in parts:
-		var m: ArrayMesh = part[0]
-		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.surface_get_arrays(0))
+		key += " %d" % (part[0] as Object).get_instance_id()
+	var merged: ArrayMesh = _meshes.get(key)
+	if merged == null:  # v0.8.0 FV: one merged mesh per set of parts, shared
+		merged = ArrayMesh.new()
+		for part: Array in parts:
+			var m: ArrayMesh = part[0]
+			merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, m.surface_get_arrays(0))
+		_meshes[key] = merged
 	var mi := MeshInstance3D.new()
 	mi.mesh = merged
 	for k in parts.size():

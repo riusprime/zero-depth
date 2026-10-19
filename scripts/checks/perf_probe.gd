@@ -21,10 +21,33 @@ extends SceneTree
 ##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd [-- --twin] [-- --seconds=10]
 ##   [-- --dummies=6] [-- --level=5] [-- --sim-only] [-- --cap=N] [-- --weapon=blade] [-- --cards=a,b,c]
 ##   [-- --tag=name] [-- --on-aim]
+## v0.8.0 FV (owner O87: "when a visual op build hits a horde of enemies the game lags"): --horde[=N] fills the room
+## with N (default HORDE_DEFAULT) live Chargers that chase the hero, topped back up as they die (at most
+## HORDE_REFILL a tick, at fixed places round the hero), grants HORDE_CARDS (Twin, Split, Explosive, a burn, chain
+## lightning, kills that explode and spread the fire; --cards= still overrides), turns the aim round the hero
+## (a full turn every 256 ticks) and makes the hero unhurtable. It adds the per-view sync breakdown
+## (WorldViewRoot.profile_sync) and per tick: enemies alive, hits, damage events, kills, status applies, damage
+## numbers thrown, actors flashing, enemies drawing statuses, and the effects layer's merged and status lights and
+## thinned pieces. The counts are deterministic (fixed seed, fixed input); the timings only rank the hot spots here
+## (cloud machines are noisy): the frame target is measured on the owner's PC.
+##   godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10
+##   (writes build/perf/perf_probe_horde.txt; on a GPU machine drop --headless to include the draw in wall time)
 
 const OUT_DIR := "res://build/perf"
 const WARMUP_TICKS := 60
 const TARGET_MS := 12.0
+## v0.8.0 FV: the horde mode's enemies alive, top-ups a tick and build (real card ids from data/items).
+const HORDE_DEFAULT := 110
+const HORDE_REFILL := 8
+const HORDE_CARDS: Array[StringName] = [
+	&"gun_twin",
+	&"split_shot",
+	&"shared_explosive",
+	&"cinder_shot",
+	&"static_chain",
+	&"ember_core",
+	&"wildfire",
+]
 
 var _seconds := 10
 var _twin := false
@@ -39,12 +62,18 @@ var _cards: Array[StringName] = []
 var _tag := ""
 ## v0.8.0 GF1: --on-aim puts the dummies on the aim line (4 m out, then 1.5 m apart), so one dummy takes every shot.
 var _on_aim := false
+## v0.8.0 FV: --horde's enemy count (0: off) and how many it has placed (its next spawn spot).
+var _horde := 0
+var _placed := 0
 var _tally := DpsTally.new()
 var _world: World
 var _api: PlaygroundApi
 var _reader: WorldReader
 var _view: WorldViewRoot
 var _procs: Array[Node] = []
+## v0.8.0 FV: every node the probe has taken over (it turns them back on before each sync, so a view that turns its
+## own nodes off, ActorViews' off-screen crowds, still decides which ones run; each runs once a tick).
+var _adopted: Array[Node] = []
 var _frame_in: InputFrame
 var _tick_n := 0
 var _total := 0
@@ -77,6 +106,10 @@ func _initialize() -> void:
 			_on_aim = true
 		elif a.begins_with("--tag="):
 			_tag = a.get_slice("=", 1)
+		elif a == "--horde":
+			_horde = HORDE_DEFAULT
+		elif a.begins_with("--horde="):
+			_horde = int(a.get_slice("=", 1))
 	_total = WARMUP_TICKS + _seconds * 60
 	var repo := ContentRepository.load_all()
 	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
@@ -87,6 +120,10 @@ func _initialize() -> void:
 	_api = PlaygroundApi.new(_world)
 	_reader = WorldReader.new(_world)
 	var cards: Array[StringName] = [&"gun_spread", &"split_shot", &"shared_explosive"]
+	if _horde > 0:
+		cards = HORDE_CARDS.duplicate()
+		_api.god = true
+		_dummies = 0
 	if not _cards.is_empty():
 		cards = _cards
 	if _cards == [&"none"]:  # v0.8.0 GF1: the plain weapon, no cards (the Gun's base DPS)
@@ -105,6 +142,7 @@ func _initialize() -> void:
 			at = hero + Vector2(4.0 + 1.5 * k, 0.0)  # the aim is angle 0 (+x)
 		if not _api.place_dummy_now(at):
 			_line("dummy %d at %s: no room" % [k, at])
+	_horde_refill(_horde)
 	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, _button(), _button())
 	if not _sim_only:
 		_view = WorldViewRoot.new()
@@ -115,17 +153,19 @@ func _initialize() -> void:
 		if biome.look != null:
 			_view.actors.enemy_tint = biome.look.enemy_tint
 		root.add_child(_view)
+		_view.profile_sync = _horde > 0
 		var b := _reader.floor_bounds()
 		var half := maxf(maxf(-b.position.x, b.end.x), maxf(-b.position.y, b.end.y))
 		_view.setup(_reader, biome.palette, half + 4.0)
 	_line(
 		(
-			"perf_probe: %s + %s, level %d, %d dummies, %d s of %s (+%d warm-up ticks), %s"
+			"perf_probe: %s + %s, level %d, %d dummies, %d horde, %d s of %s (+%d warm-up ticks), %s"
 			% [
 				_weapon,
 				", ".join(cards),
 				_level,
 				_dummies,
+				_horde,
 				_seconds,
 				"Primary pressed" if _weapon == &"blade" else "held Shoot",
 				WARMUP_TICKS,
@@ -158,7 +198,10 @@ func _process(delta: float) -> bool:
 	var t1 := Time.get_ticks_usec()
 	var held := InputFrame.SHOOT if _weapon != &"blade" else 0
 	var pressed := InputFrame.PRIMARY if _weapon == &"blade" else 0
-	_frame_in = InputFrame.make(Vector2i.ZERO, 0, 600, held, pressed)
+	var aim := (_tick_n * 16) & 4095 if _horde > 0 else 0  # v0.8.0 FV: round the horde
+	_frame_in = InputFrame.make(Vector2i.ZERO, aim, 600, held, pressed)
+	if _horde > 0:  # topped up between ticks, outside the timed sim (as a wave's spawns would land)
+		_horde_refill(HORDE_REFILL)
 	if _tick_n == WARMUP_TICKS - 1:
 		_tally.reset(_reader)  # v0.8.0 BL: the damage counted over the measured ticks only
 	elif measured:
@@ -166,8 +209,20 @@ func _process(delta: float) -> bool:
 	var sync_ms := 0.0
 	var frame_ms := 0.0
 	if _view != null:
+		if _tick_n == WARMUP_TICKS:  # v0.8.0 FV: the per-view breakdown over the measured ticks only
+			_view.sync_profile.clear()
+		var live: Array[Node] = []
+		for n in _adopted:  # v0.8.0 FV: back on, so ActorViews' sync can turn the far crowd off again
+			if is_instance_valid(n):
+				n.set_process(true)
+				live.append(n)
+		_adopted = live
+		var t_sync := Time.get_ticks_usec()
 		_view.sync()
-		sync_ms = (Time.get_ticks_usec() - t1) / 1000.0
+		sync_ms = (Time.get_ticks_usec() - t_sync) / 1000.0
+		# v0.8.0 FV: this tick's processing nodes only (before, a crowd avatar ActorViews turned back on was added
+		# again every tick, so it ran once per tick it had been near: the frame cost grew with the run).
+		_procs.clear()
 		_adopt(_view)
 		for n in _procs:
 			if not is_instance_valid(n) or not n.is_inside_tree():
@@ -189,11 +244,42 @@ func _process(delta: float) -> bool:
 	return false
 
 
+## v0.8.0 FV: places Chargers round the hero until the horde is back to `_horde` alive, at most `most` now. Spots
+## walk a golden-angle spiral between 3 m and the room's edge (deterministic); a blocked spot is skipped.
+func _horde_refill(most: int) -> void:
+	if _horde <= 0:
+		return
+	var b := _reader.floor_bounds()
+	var hero := _world.player_pos()
+	var reach := maxf(
+		(
+			minf(
+				minf(hero.x - b.position.x, b.end.x - hero.x),
+				minf(hero.y - b.position.y, b.end.y - hero.y)
+			)
+			- 1.0
+		),
+		4.0
+	)
+	var want := mini(_horde - _reader.enemies_alive(), most)
+	var tries := 0
+	while want > 0 and tries < most * 4:
+		tries += 1
+		_placed += 1
+		var a := _placed * 2.39996
+		var r := 3.0 + fposmod(_placed * 0.618034, 1.0) * (reach - 3.0)
+		if _api.place_enemy_now(ActorStore.Kind.CHARGER, hero + Vector2(cos(a), sin(a)) * r):
+			want -= 1
+
+
 ## Takes over the processing of every view node with a script _process (new ones too: avatars appear on a sync).
 func _adopt(n: Node) -> void:
 	if n.is_processing() and n.get_script() != null and n.has_method(&"_process"):
 		n.set_process(false)
 		_procs.append(n)
+		if not n.has_meta(&"perf_probe_adopted"):
+			n.set_meta(&"perf_probe_adopted", true)
+			_adopted.append(n)
 	for c in n.get_children():
 		_adopt(c)
 
@@ -228,11 +314,34 @@ func _count_tick() -> void:
 		_add("shots_capped", 1.0 if capped else 0.0)
 	var cut := 0.0  # v0.8.0 PF2: 1 on a tick where a capped attack's throw was cut short (AttackSpec.alive_max)
 	var ring_cut := 0.0  # v0.8.0 AO: 1 on a tick where the ring cap held a launch back (WandRings.RINGS_MAX)
+	var tally := {&"hits": 0, &"damage": 0, &"kills": 0, &"status_applies": 0, &"damage_numbers": 0}
+	var player_id := _reader.actor_id(0)
 	for e in _world.events_since(_world.tick_seq0):
 		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == Attacks.EFFECT_ALIVE_CAP:
 			cut = 1.0
 		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == WandRings.EFFECT_RING_CAP:
 			ring_cut = 1.0
+		match e.kind:
+			SimEvent.Kind.HIT:
+				tally[&"hits"] += 1
+			SimEvent.Kind.DAMAGE:
+				tally[&"damage"] += 1
+				# DamageNumbers' own filter: the player's non-DoT hits on others.
+				if (
+					e.owner_id == player_id
+					and e.target_id != player_id
+					and not (e.tags & SimEvent.TAG_DOT)
+					and e.amount > 0
+				):
+					tally[&"damage_numbers"] += 1
+			SimEvent.Kind.KILL:
+				tally[&"kills"] += 1
+			SimEvent.Kind.STATUS_APPLY:
+				tally[&"status_applies"] += 1
+	if _horde > 0:
+		_add("enemies", _reader.enemies_alive())
+		for k: StringName in tally:
+			_add(String(k), tally[k])
 	_add("alive_capped", cut)
 	_add("rings", _world.ab.ring_pos.size())  # v0.8.0 AO: the rings alive (and waiting) this tick
 	_add("rings_capped", ring_cut)
@@ -254,6 +363,14 @@ func _count_tick() -> void:
 	_add("decals", vfx.marks())
 	_add("form_effects", _view.attack_forms.effect_count())
 	_add("form_meshes", _view.attack_forms.meshes_drawn())
+	if _horde > 0:  # v0.8.0 FV
+		for m: StringName in [
+			&"lights_merged", &"status_lights_asked", &"status_lights_dropped", &"pieces_thinned"
+		]:
+			if m in vfx:
+				_add(String(m), vfx.get(m))
+		_add("flashing", (_view.actors.get(&"_flash") as Dictionary).size())
+		_add("status_drawn", (_view.status_fx.get(&"_on") as Dictionary).size())
 
 
 func _add(metric: String, v: float) -> void:
@@ -285,6 +402,14 @@ func _finish() -> void:
 		_line("frame cost by node (ms per tick, avg):")
 		for k in keys.slice(0, 12):
 			_line("  %-24s %8.3f" % [k, float(_node_ms[k]) / n])
+	if _view != null and not _view.sync_profile.is_empty():  # v0.8.0 FV: --horde
+		var n := float((_rows["sim_ms"] as Array).size())
+		var prof: Dictionary = _view.sync_profile
+		var keys := prof.keys()
+		keys.sort_custom(func(x: StringName, y: StringName) -> bool: return prof[x] > prof[y])
+		_line("sync cost by view (ms per tick, avg):")
+		for k in keys.slice(0, 12):
+			_line("  %-24s %8.3f" % [k, float(prof[k]) / n])
 	var now := _world.tick - 1
 	var secs := float(_total - WARMUP_TICKS) / SimTick.TICKS_PER_SECOND
 	var dps := float(_tally.total) / maxf(secs, 0.001)
@@ -311,7 +436,7 @@ func _finish() -> void:
 		)
 	)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT_DIR))
-	var tag := "twin" if _twin else "base"
+	var tag := "twin" if _twin else ("horde" if _horde > 0 else "base")
 	if _tag != "":
 		tag = _tag
 	if _sim_only:
