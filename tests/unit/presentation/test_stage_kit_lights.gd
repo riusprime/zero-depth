@@ -168,3 +168,42 @@ func test_decoration_is_chunked_with_every_piece_kept() -> void:
 		seen += mm.instance_count
 	assert_eq(seen, 30, "every piece drawn once")
 	assert_eq(kit.decor_nodes, group.get_child_count())
+
+
+## v0.8.0 HR (O89; RenderSwitches): the torches' shadows are dual-paraboloid, and the small floor scatter casts none
+## (a tall piece keeps its shadow).
+func test_torches_use_dual_paraboloid_shadows_under_the_switch() -> void:
+	if KitModels.get_piece(&"fire_barrel").is_empty():
+		pass_test("no kit in this checkout")
+		return
+	var kit := _kit([_light(Vector3(2, 0, 0))])
+	var want := (
+		OmniLight3D.SHADOW_DUAL_PARABOLOID
+		if RenderSwitches.TORCH_DUAL_PARABOLOID
+		else OmniLight3D.SHADOW_CUBE
+	)
+	assert_eq(kit.lights[0].omni_shadow_mode, want)
+
+
+func test_small_scatter_casts_no_shadow_under_the_switch() -> void:
+	var low := Transform3D(Basis.from_scale(Vector3(0.9, 0.28, 0.6)), Vector3(1, 0, 1))
+	var tall := Transform3D(Basis.from_scale(Vector3(0.9, 0.9, 0.6)), Vector3(40, 0, 40))
+	var placements: Array = []
+	for xf: Transform3D in [low, tall]:
+		placements.append({"piece": &"snow_drift", "xform": xf, "wall": -1, "kind": &"decor"})
+	var kit := _kit(placements)
+	var group := kit.get_node_or_null("Decor_snow_drift")
+	assert_eq(group.get_child_count(), 2, "two chunks")
+	for c in group.get_children():
+		var mmi := c as MultiMeshInstance3D
+		var small := mmi.name == "Chunk_0_0"  # the low piece's cell (the headless MultiMesh keeps no transforms)
+		var off := RenderSwitches.SCATTER_NO_SHADOW and small
+		assert_eq(
+			mmi.cast_shadow,
+			(
+				GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				if off
+				else GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+			),
+			"%s: a small piece casts none" % mmi.name
+		)

@@ -12,7 +12,8 @@ const CUBE := 0.7
 const BAR_W := 0.55
 ## v0.4.0 SC: projectile nodes kept for reuse per look, at most this many idle (hordes fire hundreds a second).
 const PROJECTILE_POOL_MAX := 400
-## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation.
+## v0.4.0 SC: enemy models farther than this from the hero (off screen) stop their frame-time animation. v0.8.0 HV:
+## only without a camera (`cull` unset: a view built alone, as the unit tests do); the game uses the camera's view.
 const ANIMATE_RADIUS_M := 24.0
 ## v0.7.5 NB1: body colours under this saturation count as grey (stone, metal, bone) for the biome's enemy cast.
 const GREY_SATURATION := 0.3
@@ -47,6 +48,9 @@ var heat_tier := HeatLooks.TIER_COOL
 var enemy_tint := Color(0, 0, 0, 0)
 ## v0.8.0 N4 (owner O57): the damage chunks on the bars over enemies and the hero (one MultiMesh for all).
 var bar_chunks := BarChunks.new(BAR_W)
+## v0.8.0 HV (owner O89): the camera's view (WorldViewRoot refreshes it each tick): an enemy model animates unless it
+## is wholly out of the picture (ScreenCull.keeps, past its largest radius + the margin, with hysteresis).
+var cull: ScreenCull
 var _actors := {}
 var _projectiles := {}
 var _proj_last := {}
@@ -55,6 +59,12 @@ var _flash := {}
 var _flash_hold := {}
 ## A steady glow per actor id (e.g. burning), shown when not flashing: [color, energy].
 var _tint := {}
+## v0.8.0 HV: the glow state last written to each actor's body materials, by id ([true] lit, [false] rest, or
+## [false, colour, energy] a tint), so an unchanged one is not written again every tick (a burning horde's ~10
+## materials each, every tick).
+var _shown := {}
+## v0.8.0 HV: whether each enemy model was animating at the last sync (the hysteresis's state), by id.
+var _anim_on := {}
 ## Projectile materials by look (see _projectile_material), and one mesh per look.
 var _proj_mats := {}
 var _proj_meshes := {}
@@ -90,13 +100,13 @@ func sync(reader: WorldReader) -> void:
 		node.position = SimPlane.to_3d(reader.actor_pos(i))
 		_update_actor(node, reader, i)
 		if node.has_meta(&"enemy_avatar"):  # v0.4.0 SC: off-screen crowds don't animate
-			var near := (reader.actor_pos(i) - hero).length() <= ANIMATE_RADIUS_M
-			(node.get_meta(&"enemy_avatar") as Node).set_process(near)
+			_animate_if_seen(node, id, reader.actor_pos(i), hero)
 		if fresh:
 			node.reset_physics_interpolation()
 	_drop_missing(_actors, alive)
 	bar_chunks.keep_only(alive)
-	for d: Dictionary in [_flash, _tint, _flash_hold]:  # a removed actor's flash and glow go with it (bounded)
+	# A removed actor's flash and glow go with it (bounded).
+	for d: Dictionary in [_flash, _tint, _flash_hold, _shown, _anim_on]:
 		for id in d.keys():
 			if not alive.has(id):
 				d.erase(id)
@@ -130,6 +140,25 @@ func sync(reader: WorldReader) -> void:
 			_proj_last.erase(id)
 
 
+## v0.8.0 HV (owner O89: never skipped on screen): an enemy model animates while the camera could show it
+## (ScreenCull.keeps: within its largest radius + the margin of the view, with hysteresis); without a camera, within
+## ANIMATE_RADIUS_M of the hero as before. Turning back on, it runs a few short steps at once, so its smoothed pose has
+## caught up before it can reach the screen (its own _process runs again before this frame is drawn).
+func _animate_if_seen(node: Node3D, id: int, pos: Vector2, hero: Vector2) -> void:
+	var avatar := node.get_meta(&"enemy_avatar") as Node
+	var was: bool = _anim_on.get(id, false)
+	var on := false
+	if cull != null and cull.active:
+		on = cull.keeps(SimPlane.to_3d(pos), ScreenCull.AVATAR_RADIUS_M, was)
+	else:
+		on = (pos - hero).length() <= ANIMATE_RADIUS_M
+	_anim_on[id] = on
+	avatar.set_process(on)
+	if on and not was and avatar.has_method(&"advance"):
+		for k in 4:
+			avatar.call(&"advance", 0.05)
+
+
 ## Re-applies the mood to the hero's carried light (the dev panel's lighting page).
 func retune_hero_light(mood: BiomeMood) -> void:
 	hero_mood = mood
@@ -156,8 +185,10 @@ func projectile_node(id: int) -> Node3D:
 ## Flashes an actor white for a few frames (`frames` > 0: that many instead, e.g. a longer flash on a finisher).
 func flash(id: int, frames: int = 0) -> void:
 	if _actors.has(id):
+		var lit := _flash.has(id)
 		_flash[id] = maxi(frames if frames > 0 else flash_frames, _flash.get(id, 0))
-		_set_flash(_actors[id], true)
+		if not lit:  # v0.8.0 HV: already flashing, only its frames grow (the materials are lit already)
+			_set_flash(_actors[id], true, id)
 
 
 func is_flashing(id: int) -> bool:
@@ -193,7 +224,9 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 	if energy <= 0.0:
 		_tint.erase(id)
 	else:
-		_tint[id] = [c, energy]
+		var was: Array = _tint.get(id, [])
+		if was.is_empty() or was[0] != c or was[1] != energy:  # v0.8.0 HV: kept when unchanged
+			_tint[id] = [c, energy]
 	if _actors.has(id) and not _flash.has(id):
 		_set_flash(_actors[id], false, id)
 
@@ -202,12 +235,33 @@ func set_tint(id: int, c: Color, energy: float) -> void:
 ## material's shader, and switching it compiles a new shader variant (and frees it again when no material uses
 ## it), which stalled the frame on every hit (docs/roadmap/v0.2.0/evidence/DAMAGE_LAG.md). Flashable materials
 ## are built with emission on at energy 0 (flashable()).
+## v0.8.0 HV: an actor's materials are written only when its glow state changes (_shown), whatever writes them.
 func _set_flash(node: Node3D, on: bool, id: int = -1) -> void:
 	var tint: Array = _tint.get(id, [])
+	if id >= 0:
+		var was: Array = _shown.get(id, [])
+		if on:
+			if was.size() == 1 and was[0]:
+				return
+			_shown[id] = [true]
+		elif tint.is_empty():
+			if was.size() == 1 and not was[0]:
+				return
+			_shown[id] = [false]
+		else:
+			if was.size() == 3 and was[1] == tint[0] and was[2] == tint[1]:
+				return
+			_shown[id] = [false, tint[0], tint[1]]
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
 		var rest: Array = tint if not tint.is_empty() else m.get_meta(&"rest", NO_GLOW)  # N1: the role glow
 		m.emission = Color.WHITE if on else rest[0]
 		m.emission_energy_multiplier = 1.6 if on else rest[1]
+	if node.has_meta(&"hit_look"):  # v0.8.0 HR: an avatar on shared materials takes it per piece
+		(node.get_meta(&"hit_look") as AvatarBase).show_hit(
+			on or not tint.is_empty(),
+			Color.WHITE if on else (tint[0] if not tint.is_empty() else Color.WHITE),
+			1.6 if on else (float(tint[1]) if not tint.is_empty() else 0.0)
+		)
 
 
 func _update_actor(node: Node3D, reader: WorldReader, i: int) -> void:
@@ -294,14 +348,24 @@ static func tint_greys(node: Node3D, tint: Color) -> void:
 	if tint.a <= 0.0:
 		return
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
-		if (
-			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
-			or m.albedo_color.s >= GREY_SATURATION
-		):
+		if m.albedo_texture != null and not m.has_meta(&"enemy_tex"):
 			continue
-		var c := m.albedo_color
-		var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
-		m.albedo_color = Color(c.lerp(cold, tint.a), c.a)
+		m.albedo_color = grey_tinted(m.albedo_color, tint)
+
+
+## v0.8.0 HR: a body colour under the biome's cast (tint_greys' rule: a grey, under GREY_SATURATION, is pulled toward
+## `tint` by its alpha; any other colour, or no cast, comes back as it was). HordeAvatar picks its shared materials
+## with it.
+static func grey_tinted(c: Color, tint: Color) -> Color:
+	if tint.a <= 0.0 or c.s >= GREY_SATURATION:
+		return c
+	var cold := Color(tint.r, tint.g, tint.b) * maxf(c.get_luminance() * 1.6, 0.25)
+	return Color(c.lerp(cold, tint.a), c.a)
+
+
+## v0.8.0 HR: whether a body colour takes the role glow (role_glow's rule: saturation at or over GREY_SATURATION).
+static func role_glows(c: Color) -> bool:
+	return c.s >= GREY_SATURATION
 
 
 ## v0.8.0 N1 (O39): a normal kind's role-coloured materials glow `energy` of their own colour (ROLE_GLOW) at rest;
@@ -313,7 +377,7 @@ static func role_glow(node: Node3D, kind: int, energy: float) -> void:
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
 		if (
 			(m.albedo_texture != null and not m.has_meta(&"enemy_tex"))
-			or m.albedo_color.s < GREY_SATURATION
+			or not role_glows(m.albedo_color)
 		):
 			continue
 		var c := Color(m.albedo_color, 1.0)
@@ -410,7 +474,10 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_CHARGER:
 			# The clawed hooded crawler (v0.2.0 L17): its own node under the facing, animated in frame time.
 			var avatar := ChargerAvatar.new()
+			avatar.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			avatar.role_glow = role_glow_energy
 			avatar.setup(outline_color, technique)
+			root.set_meta(&"hit_look", avatar)
 			facing.add_child(avatar)
 			root.set_meta(&"enemy_avatar", avatar)
 			root.set_meta(&"mats", avatar.body_materials.duplicate())
@@ -470,7 +537,10 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		WorldReader.KIND_HATCHLING:
 			# The Brood Mother's hatchling (v0.3.0 C): a Charger crawler at two thirds of the size.
 			var hatch := ChargerAvatar.new()
+			hatch.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials
+			hatch.role_glow = role_glow_energy
 			hatch.setup(outline_color, technique, WorldReader.KIND_HATCHLING)  # v0.8.0 EC: its colours
+			root.set_meta(&"hit_look", hatch)
 			hatch.scale = Vector3.ONE * 0.66
 			facing.add_child(hatch)
 			height = ChargerAvatar.HEIGHT * 0.66
@@ -501,11 +571,14 @@ func _make_actor(kind: int, is_player: bool, radius: float) -> Node3D:
 		_ when HordeAvatar.is_horde_kind(kind):
 			# The horde kinds (v0.4.0 EN): one code-built model per kind.
 			var horde := HordeAvatar.new()
+			horde.enemy_tint = enemy_tint  # v0.8.0 HR: they pick its shared materials (tint_greys, role_glow)
+			horde.role_glow = role_glow_energy
 			horde.setup(kind, outline_color, technique)
 			facing.add_child(horde)
 			height = horde.height
 			root.set_meta(&"enemy_avatar", horde)
 			root.set_meta(&"mats", horde.body_materials.duplicate())
+			root.set_meta(&"hit_look", horde)  # v0.8.0 HR: the flash and tints (_set_flash)
 		_ when kind == WorldReader.KIND_PLAYER and is_player:
 			# The hooded wanderer (owner, 2026-10-07): its own node, animated in frame time.
 			height = 1.0

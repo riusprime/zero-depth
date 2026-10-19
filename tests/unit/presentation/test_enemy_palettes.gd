@@ -225,7 +225,8 @@ static func _owner_model(kind: int) -> bool:
 	return id != &"" and EnemyModels.has_model(id)
 
 
-## Every material colour under `node`: body materials (meta "mats") and glowing overrides (eyes, visors).
+## Every material colour under `node`: body materials (meta "mats") and glowing overrides (eyes, visors), and
+## (v0.8.0 HR) a horde kind's shared EnemyLooks materials (its plates and accents).
 static func _colours(node: Node) -> Dictionary:
 	var out := {}
 	for m: StandardMaterial3D in node.get_meta(&"mats", []):
@@ -235,9 +236,19 @@ static func _colours(node: Node) -> Dictionary:
 		var n: Node = stack.pop_back()
 		stack.append_array(n.get_children())
 		if n is MeshInstance3D:
-			var mo := (n as MeshInstance3D).material_override as StandardMaterial3D
+			var mi := n as MeshInstance3D
+			var mo := mi.material_override as StandardMaterial3D
 			if mo != null and mo.emission_enabled:
 				out[mo.albedo_color.to_html(false)] = true
+			var shared: Array[Material] = [mi.material_override]
+			for k in mi.get_surface_override_material_count():
+				shared.append(mi.get_surface_override_material(k))
+			for m in shared:
+				if (
+					m is ShaderMaterial
+					and (m as ShaderMaterial).get_shader_parameter("albedo") is Color
+				):
+					out[(m.get_shader_parameter("albedo") as Color).to_html(false)] = true
 	return out
 
 
@@ -314,6 +325,14 @@ func test_a_colour_blind_mode_still_recolours_the_ring_and_xray_not_the_palette(
 				ring_ok = ring_ok or mo.albedo_color == team
 			if mo != null and mo.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
 				xray_ok = xray_ok or Color(mo.stencil_color, 1.0) == team
+			# v0.8.0 HR: the X-ray is a pass of the piece's own material (EnemyLooks.xray), not a twin node.
+			var pieces: Array[Material] = [mi.material_override]
+			for s in mi.get_surface_override_material_count():
+				pieces.append(mi.get_surface_override_material(s))
+			for m in pieces:
+				var x := EnemyLooks.xray_of(m) if m != null else null
+				if x != null:
+					xray_ok = xray_ok or Color(x.get_shader_parameter("albedo"), 1.0) == team
 		assert_true(ring_ok, "kind %d: the team ring takes the mode's enemy colour" % KINDS[k])
 		assert_true(xray_ok, "kind %d: the X-ray twin too" % KINDS[k])
 		var got := _colours(node)

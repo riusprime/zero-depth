@@ -44,6 +44,15 @@ const STRIKE_BACK_S := 0.35
 
 ## The outlined body materials (ActorViews flashes them on a hit).
 var body_materials: Array[StandardMaterial3D] = []
+## v0.8.0 HR (O89): for an avatar on EnemyLooks' shared materials (the horde kinds, the Charger and Hatchling): the
+## biome's cast on the grey parts (ActorViews.enemy_tint) and the role glow's energy (ActorViews.role_glow_energy;
+## 0: none), set by ActorViews before setup(): they pick the shared body materials (they were applied to the avatar's
+## own materials after it was built: ActorViews.tint_greys / role_glow). Its pieces carrying a body plate (the hit
+## flash goes to them, show_hit) and the HIT last set on them.
+var enemy_tint := Color(0, 0, 0, 0)
+var role_glow := 0.0
+var _hit_pieces: Array[GeometryInstance3D] = []
+var _hit := EnemyLooks.HIT_OFF
 # Sim state from the last sync.
 var _fresh := true
 var _last_tick := -1
@@ -289,7 +298,9 @@ func _track_motion(tick: int, pos: Vector2, teleport_speed: float) -> void:
 
 
 ## One outlined, flashable body piece under `parent` (its material in body_materials), and with technique "xray"
-## its enemy-coloured silhouette twin. Unlike BossParts.piece, the vertex colours are not the albedo unless asked.
+## its silhouette in the team colour through walls. Unlike BossParts.piece, the vertex colours are not the albedo
+## unless asked. v0.8.0 HR (O89): the silhouette is a pass of the piece's own material (EnemyLooks.xray, shared per
+## team colour, shrunk as the twin was), no longer a second MeshInstance3D with its own material.
 func _outlined(
 	parent: Node3D,
 	mesh: Mesh,
@@ -314,8 +325,64 @@ func _outlined(
 	parent.add_child(piece)
 	body_materials.append(ActorViews.flashable(mat))
 	if technique == &"xray":
-		xray_twin(parent, mesh, c, team, at)
+		EnemyLooks.chain_xray(mat, EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0))
 	return piece
+
+
+## v0.8.0 HR: the hit flash or a status tint (`on`: `c` at `energy` instead of the rest glow; off: the rest glow), on
+## every body piece of this avatar (its shared materials' HIT); nothing is set when it is already showing
+## (ActorViews._set_flash calls it).
+func show_hit(on: bool, c: Color = Color.WHITE, energy: float = 0.0) -> void:
+	var v := EnemyLooks.hit_value(on, c, energy)
+	if v == _hit:
+		return
+	_hit = v
+	for piece in _hit_pieces:
+		piece.set_instance_shader_parameter(EnemyLooks.HIT, v)
+
+
+## v0.8.0 HR: the HIT now on the body pieces (tests: Vector4 rgb the linear emission x energy, w 1 = shown).
+func hit_look() -> Vector4:
+	return _hit
+
+
+## v0.8.0 HR: this avatar's body pieces on shared materials (tests).
+func hit_pieces() -> Array[GeometryInstance3D]:
+	return _hit_pieces
+
+
+## v0.8.0 HR: the shared body materials this avatar draws with, each once, in build order (tests, tools).
+func body_looks() -> Array[ShaderMaterial]:
+	var out: Array[ShaderMaterial] = []
+	for piece in _hit_pieces:
+		var mi := piece as MeshInstance3D
+		var mats: Array[Material] = [mi.material_override]
+		for k in mi.get_surface_override_material_count():
+			mats.append(mi.get_surface_override_material(k))
+		for m in mats:
+			if EnemyLooks.is_body(m) and not out.has(m):
+				out.append(m)
+	return out
+
+
+## v0.8.0 HR: the shared body material (EnemyLooks.body) for a plate of `p_kind` in colour `c` (times `tex` when
+## given), outlined in `outline` `outline_m` thick, then `xray_pass`; `two_sided`: drawn from both sides. The biome's
+## cast pulls a grey plate toward enemy_tint and a role-coloured one rests at role_glow of its own colour, as
+## ActorViews.tint_greys and role_glow did to the avatar's own materials.
+func shared_body(
+	p_kind: int,
+	c: Color,
+	tex: Texture2D,
+	outline: Color,
+	outline_m: float,
+	xray_pass: Material,
+	two_sided := false
+) -> ShaderMaterial:
+	var albedo := ActorViews.grey_tinted(c, enemy_tint)
+	var rest: Array = ActorViews.NO_GLOW
+	if role_glow > 0.0 and EnemyPalettes.KIND_IDS.has(p_kind) and ActorViews.role_glows(albedo):
+		rest = [Color(albedo, 1.0), role_glow]
+	return EnemyLooks.body(albedo, tex, rest[0], rest[1], outline, outline_m, xray_pass, two_sided)
 
 
 ## An opaque body material with the stencil outline.
@@ -329,7 +396,8 @@ static func outline_material(c: Color, outline: Color, outline_m: float) -> Stan
 	return mat
 
 
-## A body piece's X-ray twin: the same mesh a little smaller, drawn in the team colour where walls hide it.
+## A body piece's X-ray twin: the same mesh a little smaller, drawn in the team colour where walls hide it (the
+## Charger's merged body still uses it; _outlined chains EnemyLooks.xray onto the piece's material instead).
 static func xray_twin(
 	parent: Node3D, mesh: Mesh, c: Color, team: Color, at: Vector3 = Vector3.ZERO
 ) -> MeshInstance3D:

@@ -12,7 +12,10 @@ extends AvatarBase
 ## - Mine Layer: a low red crawler with a grey dome and a mine sitting in its rear hopper, lowered to drop it.
 ## - Sniper: a red box body on a grey tripod with a long grey barrel; its scope glows hotter through the windup.
 ## Presentation only (EI-07): sync() reads the sim through WorldReader once per tick, advance() animates in frame time.
-## Flash materials come from ActorViews.flashable; nothing toggles emission_enabled at runtime. +X is the front.
+## +X is the front. v0.8.0 HR (owner O89, the horde lag): every material is EnemyLooks' (shared by every enemy of the
+## same look, so a crowd's identical pieces draw instanced) and the meshes are shared too (_shared_mesh); the hit
+## flash and the status tints (show_hit, from ActorViews) and the accent's glow (GLOW) are instance uniforms on this
+## enemy's own pieces, set only when they change; the X-ray is a pass of each piece's material (no twin nodes).
 ## v0.8.0 TG (owner O4, Q3): the Swarmer's lane, the Splitter's and Splitling's disc, the Shield Bearer's bash lane and
 ## the Sniper's line are no longer drawn on the ground; these kinds (TELL_KINDS) read their windup from the body
 ## (AvatarBase "tell"): a crouch and draw-back that deepens with the windup's progress, the accent (eye, seam, visor,
@@ -71,6 +74,10 @@ const XRAY_GROW := -0.02
 const MUZZLE_ENERGY := 4.0
 const MUZZLE_AT := Vector3(0.92, 0, 0)
 
+## v0.8.0 HR: the code bodies' meshes, one per shape for every enemy (keyed by their vertices), and the boxes by size.
+static var _meshes := {}
+static var _boxes := {}
+
 var kind := WorldReader.KIND_SWARMER
 ## The model's top (for the health bar).
 var height := 1.0
@@ -80,13 +87,21 @@ var parts := {}
 ## v0.8.0 MI: the owner's model (null: the code-made body), scaled to the kind's height.
 var model: Node3D
 
-## The glowing accent (eye, seam, crystal, scope): its own material, emission on from the start.
-var _glow_mat := StandardMaterial3D.new()
-## v0.8.0 TG: the Sniper's muzzle (emission on from the start at energy 0).
-var _muzzle_mat := StandardMaterial3D.new()
+## The glowing accent (eye, seam, crystal, scope): shared (EnemyLooks.accent), its energy this enemy's GLOW.
+var _glow_mat: ShaderMaterial
+## v0.8.0 TG: the Sniper's muzzle (its GLOW from 0).
+var _muzzle_mat: ShaderMaterial
 ## v0.8.0 EC: the eye slit the Splitter / Splitling and the Mender get when the palette asks for one on every kind
 ## (their glow is the seam and the heal crystal), steady.
-var _eye_mat := StandardMaterial3D.new()
+var _eye_mat: ShaderMaterial
+## v0.8.0 HR: the X-ray pass the body's pieces carry (null without the xray technique).
+var _xray: Material
+## v0.8.0 HR: this enemy's accent pieces (the glow) and muzzle, and the energies last set on them (the body plates
+## and their flash: AvatarBase's _hit_pieces).
+var _glow_pieces: Array[GeometryInstance3D] = []
+var _muzzle_piece: GeometryInstance3D
+var _glow_e := -1.0
+var _muzzle_e := 0.0
 var _tell_p := 0.0
 var _state := WorldReader.STATE_SPAWN
 var _state_tick := 0
@@ -156,16 +171,21 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 	body = Node3D.new()
 	add_child(body)
 	var glow := _col(&"eye")
-	_eye_mat.albedo_color = glow
-	_eye_mat.emission_enabled = true
-	_eye_mat.emission = glow
-	_eye_mat.emission_energy_multiplier = 1.5
-	write_stencil(_eye_mat)
+	_eye_mat = EnemyLooks.accent(glow, glow, 1.5, null)
 	if kind in [WorldReader.KIND_SPLITTER, WorldReader.KIND_SPLITLING]:
 		glow = ThemePalette.color(&"telegraph_hostile")
 	elif kind == WorldReader.KIND_MENDER:
 		glow = MEND
 	var owner_model := EnemyModels.get_model(model_id(kind))  # v0.8.0 MI: the owner's model first
+	if _technique == &"xray":
+		var team := ThemePalette.color(&"enemy_body")
+		_xray = (
+			EnemyLooks.xray(team, EnemyLooks.XRAY_SHRINK, 0.0)
+			if owner_model.is_empty()
+			else EnemyLooks.xray(team, 1.0, XRAY_GROW / maxf(float(owner_model["scale"]), 0.0001))
+		)
+	# The owner's model's accents carry the X-ray pass (its twin covered every surface); the code bodies' do not.
+	_glow_mat = EnemyLooks.accent(glow, glow, 1.5, _xray if not owner_model.is_empty() else null)
 	if not owner_model.is_empty():
 		_build_model(owner_model)
 		if kind == WorldReader.KIND_SPLITLING:
@@ -186,11 +206,6 @@ func setup(p_kind: int, outline_color: Color, technique: StringName = &"xray") -
 				_build_mine_layer()
 			WorldReader.KIND_SNIPER:
 				_build_sniper()
-	_glow_mat.albedo_color = glow
-	_glow_mat.emission_enabled = true
-	_glow_mat.emission = glow
-	_glow_mat.emission_energy_multiplier = 1.5
-	write_stencil(_glow_mat)
 	_pose()
 
 
@@ -269,7 +284,7 @@ func strike_pose() -> float:
 
 ## The accent's glow (tests): the eye, seam, crystal or scope.
 func glow_energy() -> float:
-	return _glow_mat.emission_energy_multiplier
+	return _glow_e
 
 
 ## v0.8.0 TG: 0..1 how deep the windup crouch is (0 for a kind without a tell or outside the windup).
@@ -281,7 +296,7 @@ func crouch_amount() -> float:
 
 ## v0.8.0 TG: the Sniper's muzzle glow (0 when cold; always 0 for the other kinds).
 func muzzle_energy() -> float:
-	return _muzzle_mat.emission_energy_multiplier if parts.has("muzzle") else 0.0
+	return _muzzle_e if parts.has("muzzle") else 0.0
 
 
 func _pose() -> void:
@@ -338,9 +353,25 @@ func _pose() -> void:
 			(parts["barrel"] as Node3D).rotation.z = -_wind * 0.04 + _strike * 0.12 - crouch * 0.12
 			var charge := smoothstep(0.0, 1.0, _tell_p) if telling else 0.0
 			var muzzle := MUZZLE_ENERGY * charge * tell / (1.0 + TELL_GLOW_CLIMB + TELL_GLOW_FLASH)
-			_muzzle_mat.emission_energy_multiplier = maxf(muzzle, _strike * MUZZLE_ENERGY)
+			_set_muzzle(maxf(muzzle, _strike * MUZZLE_ENERGY))
 			(parts["muzzle"] as Node3D).scale = Vector3.ONE * (0.4 + 0.6 * maxf(charge, _strike))
-	_glow_mat.emission_energy_multiplier = energy * lerpf(0.2, 1.0, _rise)
+	_set_glow(energy * lerpf(0.2, 1.0, _rise))
+
+
+## v0.8.0 HR: the accent's energy on this enemy's accent pieces, set only when it changes.
+func _set_glow(e: float) -> void:
+	if e == _glow_e:
+		return
+	_glow_e = e
+	for piece in _glow_pieces:
+		piece.set_instance_shader_parameter(EnemyLooks.GLOW, e)
+
+
+func _set_muzzle(e: float) -> void:
+	if e == _muzzle_e or _muzzle_piece == null:
+		return
+	_muzzle_e = e
+	_muzzle_piece.set_instance_shader_parameter(EnemyLooks.GLOW, e)
 
 
 # --- v0.8.0 MI: the owner's models ----------------------------------------------------------------------------------
@@ -348,14 +379,14 @@ func _pose() -> void:
 
 ## The owner's model (EnemyModels.get_model): each part a node at its pivot, its surfaces on three materials: the
 ## frame as delivered (`base`), the plates in the kind's role colour (`role`: greyscale in the texture, times
-## _col(&"body")), the accents on the glowing accent material (`glow`). Both body materials are flashable and
-## carry the meta "enemy_tex" (ActorViews tints and glows them like the code bodies' plates); no drawn outline
-## (owner v0.7.5 on his models: the stroke is ugly; the stencil stays for the X-ray twin), which shrinks along its
-## normals (XRAY_GROW).
+## _col(&"body")), the accents on the glowing accent material (`glow`). Both body materials take the hit flash and
+## the biome's tint and role glow like the code bodies' plates (they were the "enemy_tex" materials); no drawn
+## outline (owner v0.7.5 on his models: the stroke is ugly; v0.8.0 HR: the stencil is written straight, no empty
+## outline pass), and the X-ray pass shrinks along the normals (XRAY_GROW).
 func _build_model(m: Dictionary) -> void:
 	var tex: Texture2D = m["texture"]
-	var base := _model_material(tex, Color.WHITE)
-	var role := _model_material(tex, _col(&"body"))
+	var base := _body_material(Color.WHITE, tex, 0.0)
+	var role := _body_material(_col(&"body"), tex, 0.0)
 	model = Node3D.new()
 	model.name = "Model"
 	_model_scale = float(m["scale"])
@@ -373,42 +404,28 @@ func _build_model(m: Dictionary) -> void:
 		mi.mesh = part["mesh"]
 		mi.extra_cull_margin = 0.5  # poses move parts past the rest bounds
 		var surfaces: Array = part["surfaces"]
+		var plates := false
+		var glows := false
 		for s in surfaces.size():
 			var which: StringName = surfaces[s]
-			var mat: StandardMaterial3D = (
-				_glow_mat if which == &"glow" else (role if which == &"role" else base)
+			glows = glows or which == &"glow"
+			plates = plates or which != &"glow"
+			mi.set_surface_override_material(
+				s, _glow_mat if which == &"glow" else (role if which == &"role" else base)
 			)
-			mi.set_surface_override_material(s, mat)
 		pivot.add_child(mi)
-		if _technique == &"xray":
-			var ghost := MeshInstance3D.new()
-			ghost.name = "XrayTwin"
-			ghost.mesh = part["mesh"]
-			var gm := StandardMaterial3D.new()
-			gm.albedo_color = _col(&"body")
-			gm.stencil_mode = BaseMaterial3D.STENCIL_MODE_XRAY
-			gm.stencil_color = Color(ThemePalette.color(&"enemy_body"), 0.85)
-			gm.grow = true
-			gm.grow_amount = XRAY_GROW / maxf(float(m["scale"]), 0.0001)
-			ghost.material_override = gm
-			ghost.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			pivot.add_child(ghost)
+		if plates:
+			_hit_pieces.append(mi)
+		if glows:
+			_glow_pieces.append(mi)
 		parts[String(pname)] = pivot
 		_rest[String(pname)] = pivot.position
-	body_materials.append(base)
-	body_materials.append(role)
 
 
-func _model_material(tex: Texture2D, c: Color) -> StandardMaterial3D:
-	var mat := StandardMaterial3D.new()
-	mat.albedo_texture = tex
-	mat.albedo_color = c
-	mat.roughness = 1.0
-	mat.stencil_mode = BaseMaterial3D.STENCIL_MODE_OUTLINE
-	mat.stencil_color = _outline
-	mat.stencil_outline_thickness = 0.0
-	mat.set_meta(&"enemy_tex", true)
-	return ActorViews.flashable(mat)
+## v0.8.0 HR: the shared body material for a plate of colour `c` (times `tex`, the owner's colour map, when given),
+## outlined `outline_m` thick (AvatarBase.shared_body: the biome's cast and the role glow picked in).
+func _body_material(c: Color, tex: Texture2D, outline_m: float) -> ShaderMaterial:
+	return shared_body(kind, c, tex, _outline, outline_m, _xray)
 
 
 ## v0.8.0 MI: the model's parts in this frame's pose (model units, about a metre each; +X the front, each part turning
@@ -459,7 +476,7 @@ func _pose_model(energy: float, calm: bool) -> void:
 	if d > 0.0:
 		body.rotation.z += d * 0.7
 		body.position.y += d * 0.04 * height  # tips over above the ground (no sinking through it)
-	_glow_mat.emission_energy_multiplier = energy * lerpf(0.2, 1.0, _rise) * (1.0 - d)
+	_set_glow(energy * lerpf(0.2, 1.0, _rise) * (1.0 - d))
 
 
 # --- the six builds -----------------------------------------------------------------------------------------------
@@ -592,22 +609,22 @@ func _build_mender() -> void:
 			_col(&"grey")
 		)
 	var crystal := MeshInstance3D.new()
-	crystal.mesh = ArcCasterAvatar._octahedron(0.1)
+	crystal.mesh = _shared_mesh(ArcCasterAvatar._octahedron(0.1))
 	crystal.material_override = _glow_mat
 	crystal.position = Vector3(0.14, 1.36, 0)
 	crystal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	body.add_child(crystal)
+	_glow_pieces.append(crystal)
 	var cross := Node3D.new()
 	cross.position = Vector3(0, 1.62, 0)
 	body.add_child(cross)
 	for size in [Vector3(0.26, 0.07, 0.07), Vector3(0.07, 0.26, 0.07)]:
 		var bar := MeshInstance3D.new()
-		var bm := BoxMesh.new()
-		bm.size = size
-		bar.mesh = bm
+		bar.mesh = _box(size)
 		bar.material_override = _glow_mat
 		bar.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		cross.add_child(bar)
+		_glow_pieces.append(bar)
 	parts["cross"] = cross
 
 
@@ -680,18 +697,15 @@ func _build_sniper() -> void:
 	_glow(barrel, Vector3(0.012, 0.05, 0.05), Vector3(0.115, 0.1, 0))
 	parts["barrel"] = barrel
 	# v0.8.0 TG: the muzzle that charges up through the windup (a small hot gem at the barrel's tip, in the air).
-	_muzzle_mat.albedo_color = _col(&"eye")
-	_muzzle_mat.emission_enabled = true
-	_muzzle_mat.emission = _col(&"eye").lightened(0.3)
-	_muzzle_mat.emission_energy_multiplier = 0.0
-	write_stencil(_muzzle_mat)
+	_muzzle_mat = EnemyLooks.accent(_col(&"eye"), _col(&"eye").lightened(0.3), 0.0, null)
 	var muzzle := MeshInstance3D.new()
 	muzzle.name = "Muzzle"
-	muzzle.mesh = ArcCasterAvatar._octahedron(0.06)
+	muzzle.mesh = _shared_mesh(ArcCasterAvatar._octahedron(0.06))
 	muzzle.material_override = _muzzle_mat
 	muzzle.position = MUZZLE_AT
 	muzzle.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	barrel.add_child(muzzle)
+	_muzzle_piece = muzzle
 	parts["muzzle"] = muzzle
 
 
@@ -701,22 +715,19 @@ func _build_sniper() -> void:
 ## A glowing accent box (an eye, the seam, a scope lens) on the accent material.
 func _glow(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	var mi := MeshInstance3D.new()
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
+	mi.mesh = _box(size)
 	mi.material_override = _glow_mat
 	mi.position = at
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(mi)
+	_glow_pieces.append(mi)
 
 
 ## v0.8.0 EC: a steady eye slit on the eye material (see _eye_mat).
 func _eye(parent: Node3D, size: Vector3, at: Vector3) -> void:
 	var mi := MeshInstance3D.new()
 	mi.name = "Eye"
-	var bm := BoxMesh.new()
-	bm.size = size
-	mi.mesh = bm
+	mi.mesh = _box(size)
 	mi.material_override = _eye_mat
 	mi.position = at
 	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -728,8 +739,33 @@ func _col(slot: StringName) -> Color:
 	return EnemyPalettes.color(kind, slot)
 
 
-## An outlined, flashable body piece (and its X-ray twin while the technique is xray).
+## An outlined, flashable body piece (its material carries the X-ray pass while the technique is xray). v0.8.0 HR:
+## the shared mesh and material (it was AvatarBase._outlined: its own material and an X-ray twin node per piece).
 func _piece(parent: Node3D, mesh: Mesh, at: Vector3, c: Color) -> void:
-	_outlined(
-		parent, mesh, at, c, _outline, ThemePalette.color(&"enemy_body"), _technique, OUTLINE_M
+	var piece := MeshInstance3D.new()
+	piece.mesh = _shared_mesh(mesh)
+	piece.position = at
+	piece.material_override = _body_material(c, null, OUTLINE_M)
+	parent.add_child(piece)
+	_hit_pieces.append(piece)
+
+
+## v0.8.0 HR: the one mesh every enemy draws for `mesh`'s shape (the builders make a new one per call).
+static func _shared_mesh(mesh: Mesh) -> Mesh:
+	var verts: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var key := (
+		"%s/%d/%d/%d" % [mesh.get_class(), mesh.get_surface_count(), verts.size(), hash(verts)]
 	)
+	if not _meshes.has(key):
+		_meshes[key] = mesh
+	return _meshes[key]
+
+
+## v0.8.0 HR: the one box of `size` every enemy draws (the accents and the Mender's cross).
+static func _box(size: Vector3) -> BoxMesh:
+	var key := "%.4f/%.4f/%.4f" % [size.x, size.y, size.z]
+	if not _boxes.has(key):
+		var bm := BoxMesh.new()
+		bm.size = size
+		_boxes[key] = bm
+	return _boxes[key]

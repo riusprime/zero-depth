@@ -64,6 +64,8 @@ func test_xray_twins_only_with_xray() -> void:
 			var mat := (m as MeshInstance3D).material_override as StandardMaterial3D
 			if mat != null and mat.stencil_mode == BaseMaterial3D.STENCIL_MODE_XRAY:
 				c += 1
+			elif mat != null and EnemyLooks.xray_of(mat) != null:  # v0.8.0 HR: its own material's pass
+				c += 1
 		return c
 	assert_gt(count.call(with_x), 0, "xray adds twins")
 	assert_eq(count.call(without), 0, "outline has none")

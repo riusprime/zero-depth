@@ -37,6 +37,12 @@ Shortcut to every fight: Main menu → **F10** → **Playground** (top bar) → 
   it add to your reference look without making it brighter or hazier? Then compare fps High vs Low on your PC
   (side by side: `docs/roadmap/v0.8.0/evidence/gx_shots/`).
 
+- [ ] **HR switches (O89; branch `v080-hr`): say which to discard.** Play a big horde fight with your heaviest
+  build, then judge each look change: (1) torch shadows (dual-paraboloid), (2) small floor scatter without shadows,
+  (3) no MSAA (edges from the ink only), (4) shaders warmed up behind the loading screen. Each is one `false` in
+  `src/presentation/world_view/render_switches.gd`. The separate render thread is already off (it gave errors). Note
+  your fps before and after if you can (`docs/roadmap/v0.8.0/evidence/PERF_GRAPHICS.md` § HR).
+
 **What I hope to get back:** the same as before: per boss too easy / right / too hard and how long it took; fps
 with your biggest builds; bugs (what you did, saw, expected; a screenshot); anything you'd cut.
 

@@ -32,20 +32,48 @@ func _run(a: HordeAvatar, t0: int, state: int, ticks: int, healing := false) -> 
 		a.advance(DT)
 
 
+## v0.8.0 HR: the body plates are EnemyLooks' shared materials: dark at rest (no role glow outside ActorViews), the
+## flash an instance uniform; the code bodies outlined, every plate carrying the X-ray pass (no twin nodes).
 func test_every_kind_is_built_flashable_and_outlined() -> void:
 	for kind: int in KINDS:
 		var a := HordeAvatar.new()
 		a.setup(kind, Color.BLACK, &"xray")
 		# v0.8.0 MI: an owner's model has two body materials (its frame, its role plates); a code body more.
-		assert_gt(a.body_materials.size(), 1 if a.has_model() else 3, "kind %d has a model" % kind)
+		var looks := a.body_looks()
+		assert_gt(looks.size(), 1 if a.has_model() else 2, "kind %d has a model" % kind)
+		assert_gt(a.hit_pieces().size(), 1, "kind %d: pieces that flash" % kind)
 		assert_gt(a.height, 0.3, "kind %d: a height for its bar" % kind)
-		for m: StandardMaterial3D in a.body_materials:
-			assert_true(m.emission_enabled, "kind %d: a hit flash changes energy only" % kind)
-			assert_eq(m.emission_energy_multiplier, 0.0, "kind %d: dark until flashed" % kind)
-			assert_eq(
-				m.stencil_mode, BaseMaterial3D.STENCIL_MODE_OUTLINE, "kind %d: outlined" % kind
-			)
+		assert_eq(a.hit_look(), EnemyLooks.HIT_OFF, "kind %d: dark until flashed" % kind)
+		for m: ShaderMaterial in looks:
+			assert_eq(m.get_shader_parameter("emission_energy"), 0.0, "kind %d: no glow" % kind)
+			assert_not_null(EnemyLooks.xray_of(m), "kind %d: seen through walls" % kind)
+			var outlined := m.next_pass != EnemyLooks.xray_of(m)
+			assert_eq(outlined, not a.has_model(), "kind %d: code bodies outlined" % kind)
+		assert_eq(
+			a.find_children("XrayTwin", "MeshInstance3D", true, false).size(), 0, "no twin nodes"
+		)
 		a.free()
+
+
+## v0.8.0 HR (O89): a crowd of one kind shares its materials and meshes (drawn instanced), and a flash on one enemy
+## reaches only its own pieces.
+func test_a_crowd_shares_its_looks_and_a_flash_stays_on_its_enemy() -> void:
+	for kind: int in KINDS:
+		var a := _avatar(kind)
+		var b := _avatar(kind)
+		assert_eq(a.body_looks(), b.body_looks(), "kind %d: the same materials" % kind)
+		for k in a.hit_pieces().size():
+			var pa := a.hit_pieces()[k] as MeshInstance3D
+			var pb := b.hit_pieces()[k] as MeshInstance3D
+			assert_eq(pa.mesh, pb.mesh, "kind %d: the same meshes" % kind)
+		a.show_hit(true, Color.WHITE, 1.6)
+		assert_eq(a.hit_look().w, 1.0, "kind %d: flashing" % kind)
+		assert_gt(a.hit_look().x, 1.0, "kind %d: white at 1.6" % kind)
+		for p: GeometryInstance3D in a.hit_pieces():
+			assert_eq(p.get_instance_shader_parameter(EnemyLooks.HIT), a.hit_look())
+		assert_eq(b.hit_look(), EnemyLooks.HIT_OFF, "kind %d: the other one is not" % kind)
+		a.show_hit(false)
+		assert_eq(a.hit_look(), EnemyLooks.HIT_OFF, "kind %d: back to rest" % kind)
 
 
 func test_each_kind_winds_up_visibly() -> void:
@@ -162,14 +190,12 @@ func test_the_owners_models_replace_three_code_bodies() -> void:
 		var want := HordeAvatar.model_id(kind) != &""
 		assert_eq(a.has_model(), want, "kind %d: the owner's model when one is delivered" % kind)
 		if want:
-			for m: StandardMaterial3D in a.body_materials:
-				assert_not_null(m.albedo_texture, "kind %d: his colour map" % kind)
-				assert_true(m.has_meta(&"enemy_tex"), "kind %d: tinted like a code body" % kind)
-			var role: Color = a.body_materials[1].albedo_color
-			assert_true(
-				role.is_equal_approx(EnemyPalettes.color(kind, &"body")),
-				"kind %d: the plates in the role colour" % kind
-			)
+			var role_found := false
+			for m: ShaderMaterial in a.body_looks():
+				assert_not_null(m.get_shader_parameter("texture_albedo"), "kind %d: his map" % kind)
+				var c: Color = m.get_shader_parameter("albedo")
+				role_found = role_found or c.is_equal_approx(EnemyPalettes.color(kind, &"body"))
+			assert_true(role_found, "kind %d: the plates in the role colour" % kind)
 
 
 ## v0.8.0 MI: a missing model file keeps the code-made body (L15).

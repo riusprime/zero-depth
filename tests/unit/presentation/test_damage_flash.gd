@@ -110,6 +110,11 @@ func test_enemy_models_are_built_flashable() -> void:
 	for avatar in avatars:
 		var name: String = avatar.get_script().get_global_name()
 		avatar.setup(Color.BLACK, &"xray")
+		if avatar is ChargerAvatar:  # v0.8.0 HR: shared materials, the flash an instance uniform per piece
+			assert_gt((avatar as ChargerAvatar).hit_pieces().size(), 0, name)
+			assert_eq((avatar as ChargerAvatar).hit_look(), EnemyLooks.HIT_OFF, name)
+			avatar.free()
+			continue
 		assert_gt(avatar.body_materials.size(), 0)
 		for m: StandardMaterial3D in avatar.body_materials:
 			assert_true(m.emission_enabled, "%s: a hit flash changes energy only" % name)

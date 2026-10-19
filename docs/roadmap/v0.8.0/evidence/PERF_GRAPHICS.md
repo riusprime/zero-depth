@@ -403,6 +403,315 @@ Lint: `gdformat --check src scripts tests` flags only `src/presentation/world_vi
 fps High vs Low with the new atmosphere: `NOT YET RUN (owner hardware)`. The owner compares Options > Display >
 Lighting quality High and Low on the same room.
 
+## HV
+
+**Owner line.** O89: "Okay let's go for all of them and I'll play and test how the game feels the target of these is
+trying to optimize performance at maximum without losing the game vibe but not getting fps drops during the fun part
+of the game, if not I'll tell you what to discard, if something is not going to be loaded when far make sure it is far
+enough so it does not happen in the screen it should be for outside of the screen but lag mostly comes from shooting
+hordes with multiple modifiers".
+
+**Build:** branch `v080-hv` from `07af5d59`; the code under test is this step's commit (the working tree that became
+it). Godot `4.7.2.stable.official.ed1daf0bf`, headless, a cloud machine with 4 CPUs. Presentation only: no sim, data,
+content or golden change.
+
+### What changed
+1. **Unchanged material writes skipped.**
+   - `ActorViews._set_flash` remembers, per actor id, the glow state it last wrote (`_shown`: lit, rest, or a tint's
+     colour and energy) and returns at once when it is the same. A burning or frozen enemy got `set_tint` from
+     `ItemVisuals._sync_burns` every tick, and each call rewrote emission on every body material.
+   - `set_tint` keeps the stored tint when it hasn't changed. `flash()` on an actor that is already flashing only
+     extends its frame count (`HitFeel` flashes on every DAMAGE event).
+   - The guard keys on the state, not on how the material is written, so HR's shared materials can change the write
+     underneath.
+   - `ChargerAvatar`: the visor's `emission_energy_multiplier` is written only when it changes by more than 1e-4, and
+     `_model.position` only when it changes.
+   - `StatusVisuals`: the shock pips' `material_override` is compared before it is set. The per-tick Dictionaries are
+     reused: the alive set, one entry per affected actor (its `on` swapped with a scratch dict), and a scratch dict that
+     enemies with no status are read into. Before, a new Dictionary was built per actor per tick.
+2. **Charger pose without Arrays.** `_pose_leg` used to build two duplicates, literal arrays and about five `_plus()`
+   results per leg, a typed `segs` array, and three property writes per segment (about 40 Arrays per Charger a frame).
+   - It now uses local floats, summed in the old order, and one `transform` write per segment and for the body.
+   - `tests/unit/presentation/test_charger_pose_hv.gd` copies the old `_pose`/`_pose_leg` as the reference. It checks
+     every transform with exact `==` on 7 states: still, walking, windup, charge, dazed, rising, mixed.
+   - First run: the body and hips matched, but some segments were off in the last float bit. The cause was the test
+     harness, not the pose. `setup()` had posed the reference nodes with one transform write, and a rotation set after
+     that keeps a scale read back from the basis (0.99999994). The old code never wrote a transform, so its nodes always
+     had an exact unit scale. The reference now puts each node's scale back to exactly one first, and every transform
+     matches exactly.
+3. **Off-screen culling** (owner rule: never visible on screen).
+   - New `src/presentation/camera/screen_cull.gd`. `WorldViewRoot.sync` refreshes it each tick from the camera itself:
+     its global transform (position, roll), `size` (with the flourish zoom), the shake and kick `h_offset`/`v_offset`,
+     and the viewport aspect.
+   - A point's gap is how far outside that rectangle it lands on screen. An orthographic projection never makes a
+     distance longer, so a gap of g screen metres is at least g ground metres (about 1.7 g along the screen's vertical).
+   - What is skipped, and when:
+
+     | Thing | Skipped when the gap is over | Notes |
+     |---|---|---|
+     | Enemy model animation | 4 m (largest model, height included) + 6 m | stays on 2 m farther (hysteresis); replaces the 24 m circle round the hero, kept only for views with no camera (unit tests) |
+     | Status VFX | actor radius + 3.5 m (flames; the status light's 3 m range) + 6 m | `StatusVisuals._draw_vfx` |
+     | Flashes | size + 3 m + 6 m | `AttackFormCanvas` |
+     | Landings | 3 × radius + 3 m (a burst's light reaches 3r + 2 m) + 6 m | `AttackFormCanvas` |
+     | Live rings and patches | radius + 3 m + 6 m | `AttackFormCanvas` |
+     | Live bolts | half the trail + (length + 1 m) × scale + 6 m | `AttackFormCanvas` |
+
+   - A bolt with a tether back to the hero is never skipped, since its line can cross the screen. A skipped bolt still
+     counts toward `LIVE_BOLTS_MAX`, so the same bolts get their rims as before.
+   - When an enemy model turns back on, it runs `advance(0.05)` four times at once, then its own `_process` runs again
+     before that frame is drawn.
+   - `_first_sync` snaps the camera before the first sync too, so that sync culls against the right view.
+   - `tests/unit/presentation/test_screen_cull.gd` checks:
+     - the edge `ScreenCull` finds matches `Camera3D.unproject_position` (right edge at the viewport width, top edge
+       at 0);
+     - at the edge, and at edge + reach + margin − 0.1 m, an enemy model animates, a status draws and a flash draws;
+     - past that, each is skipped;
+     - the hysteresis band;
+     - the tint and flash rewrite guards.
+   - First run: the "coming back" check placed the enemy exactly on the threshold, which float rounding put just
+     outside. It was moved 0.5 m inside.
+4. **Attack-form CPU** (same output).
+   - New `attack_forms/live_bolt_look.gd`: a live bolt's look fields are read once into typed fields, kept on the look
+     under `&"hv_live"`.
+   - The bolt is laid out with the pools in hand (`_put_in`) and a reused points Array. `_emit_parts(sd, …)` replaces
+     the new Dictionary per bolt.
+   - The pools are kept as lists (no `pools.values()` ×4 a frame), and the kept effects are swapped instead of rebuilt.
+5. **Catch-up ticks: measured and reasoned, not changed.**
+   - `project.godot` has `max_physics_steps_per_frame = 4`, and `main.gd` connects `driver.ticked` to `view.sync`. Below
+     60 fps Godot runs about 60/F ticks a frame (1.5 at 40 fps, 2 at 30, at most 4), and the whole view sync runs for
+     each. Headless `--fixed-fps 60` always runs one tick a frame, so this machine cannot show it.
+   - The probe's new catch-up model replays Godot's step rule over the run's measured CPU costs. It is CPU only, uses
+     this machine's timings, and ranks only:
+     - before: frames with 0/1/2/3/4 ticks [0, 124, 104, 48, 31], 1.95 view syncs a frame;
+     - after: [0, 209, 140, 33, 3], 1.56 view syncs a frame.
+   - Syncing the heavy views once a frame is not provably safe:
+     - the avatars' `strike_note` and `_track_motion` read per-tick state;
+     - `AttackFormView._sync_bolts` builds trails from one point per sync;
+     - `StatusVisuals._frame` counts syncs (it times the shock sparks);
+     - physics interpolation needs a position written every tick.
+   - Per the brief, it was left unchanged. On the owner's PC the dev panel's `ticks_last_frame` shows the real count.
+
+### Tests (this step's tree)
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/unit/presentation/test_charger_pose_hv.gd,res://tests/unit/presentation/test_screen_cull.gd -gexit
+Tests                 9
+Passing Tests         9
+---- All tests passed! ----
+
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<20 files: test_charger_avatar, test_crowd_view, test_damage_flash, test_hit_impact, test_hit_feel, test_status_visuals, test_vfx_layer, test_vfx_budget, test_vfx_pressure, test_vfx_interpolation, test_attack_forms, test_attack_forms_live, test_attack_form_looks, test_attack_visuals, test_attack_visuals_2, test_windup_tells, test_melee_strikes, test_horde_avatars, test_enemy_palettes, test_boss_views> -gexit
+Tests               180
+Passing Tests       180
+Asserts           24393
+Time              28.71s
+---- All tests passed! ----
+
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<e2e: test_e2e_horde_enemies, test_e2e_enemies, test_e2e_attacks, test_e2e_camera, test_e2e_health_bars, test_e2e_run_flow, test_e2e_combo, test_e2e_playground> -gexit
+Tests                13
+Passing Tests        13
+Time              131.361s
+---- All tests passed! ----
+
+gdformat --check src scripts tests   -> 1048 files would be left unchanged
+gdlint src scripts tests             -> Success: no problems found
+```
+
+### Horde probe, before and after
+`godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde --seconds=10 --tag=hv_before|hv_after`.
+Before: `07af5d59`'s `actor_views.gd`, `charger_avatar.gd`, `status_visuals.gd`, `attack_form_canvas.gd` and
+`world_view_root.gd` copied in temporarily, with this step's probe. After: this step's tree. The outputs are in
+`build/perf/perf_probe_hv_before.txt` and `perf_probe_hv_after.txt`.
+
+**Counts** (deterministic; this is the evidence). Every count shared by both runs is identical:
+
+| Metric (avg / p95 / max) | Before and after |
+|---|---|
+| projectiles | 20.887 / 51 / 82 |
+| events | 13.060 / 58 / 171 |
+| bursts_drawn | 16.700 / 25 / 27 |
+| sprites_drawn | 550.503 / 780 / 902 |
+| lights_on | 7.523 / 10 / 10 |
+| form_meshes | 90.092 / 221 / 386 |
+| status_drawn | 27.807 / 53 / 57 |
+| flashing | 3.323 / 10 / 16 |
+| damage | 10794 over 10 s |
+
+After only:
+- `animated` 104.313 / 110 / 110: about 6 of the 110 Chargers, on average, were wholly off this room's screen.
+- `status_culled` 0 / 0 / 0: the probe's burning enemies were all within reach of the view.
+
+**Timings** (noisy cloud CPU; these rank only, they are not a measurement):
+
+| ms per tick, avg | Before | After |
+|---|---|---|
+| sim | 4.816 | 4.692 (not this step's code) |
+| view sync | 8.204 | 7.469 |
+| frame (`_process`) | 8.687 | 6.587 |
+| total | 21.707 | 18.749 |
+| ChargerAvatar frame | 4.560 | 2.639 |
+| AttackFormView frame | 3.256 | 3.140 |
+| sync: actors | 3.202 | 3.273 |
+| sync: status_fx | 0.808 | 0.676 |
+| sync: item_fx | 0.720 | 0.223 |
+
+What the timings say:
+- The pose rewrite and the visor guard roughly halve the Charger animation cost.
+- The tint guard takes most of the cost out of `item_fx`.
+- `AttackFormView` barely moved: its cost is not in the per-bolt look-ups this step removed. The next candidate is
+  the effects layer drawn inside its frame.
+- `actors` sync is unchanged: avatar `sync` and bars dominate, and HR's shared materials touch that area.
+
+**fps:** NOT YET RUN (owner hardware). **Look and feel:** OWNER ONLY.
+
+## HR
+
+Step HR (owner O89: "optimize performance at maximum without losing the game vibe … lag mostly comes from shooting
+hordes with multiple modifiers … if not I'll tell you what to discard"). Branch `v080-hr` from `07af5d59`, HV
+(`33dfbdf8`) merged in. Agent work; fps and feel on the owner's PC: OWNER ONLY.
+
+### What changed: same pixels (no switch)
+
+- **The X-ray is a pass of the piece's own material, not a twin mesh.** Before, every enemy body piece had a second
+  MeshInstance3D (the "twin") with its own StandardMaterial3D in STENCIL_MODE_XRAY: an opaque draw, a depth
+  prepass and the X-ray pass per piece, and one more node to move. Now one shared X-ray pass per team colour and
+  shrink (`EnemyLooks.xray`: unshaded, alpha, no depth test, drawn where the stencil is not 1, team colour at 0.85,
+  shrunk 0.96 about the piece's origin as the twin's node was, or grown by `XRAY_GROW / scale` on the owner's
+  models). It is chained after the body's outline pass, so the stencil rule is unchanged: an enemy shows through
+  walls in its team colour, never through itself. This covers the horde kinds, the Charger and Hatchling, and every
+  `AvatarBase._outlined` body (Warden, Needle, Arc Caster, Bomb Drone, the hero). Not changed: the bosses and the
+  Lens Drone (their own twin code, one or two on screen) and the grey-cube fallback.
+- **No empty outline pass on the owner's models.** Their materials were STENCIL_MODE_OUTLINE at thickness 0: an
+  extra pass that drew nothing. Now they write the stencil only (as the eyes and glows already did).
+- **Shared enemy materials, flash and glow per enemy.** The horde kinds' and the Charger's/Hatchling's body
+  materials are `EnemyLooks` ShaderMaterials shared by every enemy of the same look. Their shading is Godot 4.7.2's
+  own generated StandardMaterial3D code for the old settings (roughness 1, specular 0.5, Burley, Schlick-GGX,
+  emission on, the colour map on the models), with the default textures it sampled written as their constant values.
+  The biome's grey cast and the role glow (`ActorViews.tint_greys` / `role_glow`, N1) are picked in when the
+  material is made. The hit flash and the status tints are an `instance uniform` per piece (`zd_hit`), and the
+  glowing accents' energy another (`zd_glow`, the visor's too). Each is written only when its value changes,
+  behind HV's per-actor guards. The code bodies' meshes are shared too (one per shape), so a crowd's identical
+  pieces draw as one instanced draw. Other kinds (Warden, Needle, Arc Caster, Bomb Drone, the bosses, the hero)
+  keep their own StandardMaterial3D: fewer on screen.
+
+### What changed: the switches (owner: say which to discard)
+
+All are in `src/presentation/world_view/render_switches.gd`, one constant each (and the line in `project.godot`
+where named). Set a constant to `false` to get the old look back.
+
+| # | Switch | On screen | To turn it off |
+|---|---|---|---|
+| 1 | `TORCH_DUAL_PARABOLOID` | The four shadow-casting torches use dual-paraboloid shadows (2 shadow renders each, not 6). Shadows can stretch a little near the paraboloid seam. In the Ruins shot below the torch pools look a little larger and warmer than the reference; this switch is the likely cause (not isolated) | `false` |
+| 2 | `SCATTER_NO_SHADOW` | Small floor scatter (rubble, tufts, debris, drifts; the dresser caps them at 0.4 m, the switch at 0.6 m) casts no shadow. Walls, cover and props keep theirs | `false` |
+| 3 | `MSAA_OFF` | No 2x MSAA on the 3D view; the ink pass draws the edges. Silhouette edges between ink lines may show more stair-steps | `false` (sets 2x again at run time), or `project.godot` `msaa_3d=2` |
+| 4 | `RENDER_THREAD` | **Off.** Measured below: the separate render thread gave engine errors in the horde e2e | It is off: `project.godot` `thread_model=1`. To try it: `thread_model=2` |
+| 5 | `SHADER_WARMUP` | Same pixels. Behind the loading cover, each effect shader on a hidden pool piece, the first-use materials (hero pulse, fireball, boss marks, flare, sigil) and one of each horde kind plus a Charger and Hatchling are drawn once, a thousandth of their size in front of the camera, then removed after 3 frames (`ShaderWarmup`) | `false` |
+
+**Why the render thread is off (switch 4).** With `thread_model=2`, the same tree, test and command:
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_horde_enemies.gd -gexit 2>&1 | grep -c 'Parameter "material" is null'
+thread_model=1: 0
+thread_model=2: 15
+```
+
+The errors read `ERROR: Parameter "material" is null. at: material_get_instance_shader_parameters
+(servers/rendering/dummy/storage/material_storage.cpp:264)`: an instance reached a material the render thread had
+not made yet. Godot 4.7.2 also prints at every start that the separate thread is "experimental … can lead to project
+crashes or instability". No synchronous read-back blocked it: the game path has one `get_image` (VfxCore cuts the
+floor marks once, on the load's worker); `get_rendering_info` is only in tools.
+
+### Draws in a horde, before and after (counts, not timings)
+
+New probe `scripts/checks/horde_draws.gd`. Scene: the iso camera, a sun with shadows, a ground, and a wall in front
+of part of the crowd. 120 enemies are added to a real World with the compiled enemies and stepped 90 ticks past
+their spawn. ActorViews draws them with the X-ray technique, a third of them flashing. The probe reads draws,
+objects and primitives on 30 frames after 30 settle frames. "Before" is `07af5d59`'s `src/` and `project.godot`
+checked out in this worktree with the same probe, then put back. Build: the runs were made on WIP commits `deacb89f`
+(horde kinds) and `7360f0ac` (Chargers, and the Ruins shot), since squashed into this step's commit; their `src/` and
+`project.godot` are this commit's (only the probe's options and these docs changed after). Machine: cloud container,
+lavapipe (llvmpipe) Forward+, 1920x1080.
+
+```
+VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s "-screen 0 1920x1080x24" godot --path . --audio-driver Dummy --resolution 1920x1080 -s scripts/checks/horde_draws.gd -- n=120 tag=before shot=1
+horde_draws: 120 enemies (7 kinds), tag=before
+renderer=forward_plus msaa_3d=2 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 6042 (min 6042, max 6042)
+objects median: 6042
+primitives median: 2417245
+actor MeshInstance3D nodes: 1858
+
+(build deacb89f) ... -- n=120 tag=after shot=1
+horde_draws: 120 enemies (7 kinds), tag=after
+renderer=forward_plus msaa_3d=0 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 2069 (min 2063, max 2080)
+objects median: 4228
+primitives median: 1737177
+actor MeshInstance3D nodes: 1149
+
+(build 7360f0ac) ... -- n=120 tag=charger_before charger=1     (src/project.godot at 07af5d59)
+horde_draws: 120 enemies (Chargers), tag=charger_before
+renderer=forward_plus msaa_3d=2 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 10239 (min 10239, max 10239)
+objects median: 10239
+primitives median: 1163465
+actor MeshInstance3D nodes: 2415
+
+(build 7360f0ac) ... -- n=120 tag=charger_after charger=1
+horde_draws: 120 enemies (Chargers), tag=charger_after
+renderer=forward_plus msaa_3d=0 thread_model=1
+frames read: 30 (after 30 settle)
+draw_calls median: 3596 (min 3577, max 3624)
+objects median: 9877
+primitives median: 1163465
+actor MeshInstance3D nodes: 2293
+```
+
+So in this scene the draw calls fell from 6042 to about 2069 for 120 horde-kind enemies (about 66 % fewer) and
+from 10239 to about 3596 for 120 Chargers (about 65 % fewer). Frame time on the owner's PC: NOT YET RUN (owner
+hardware).
+
+### Shots
+
+- `hr_shots/xray_horde_before_after.jpg`: the probe's crowd, before (left) and after (right). The enemies behind the
+  wall show through it in red in both, visible enemies are not overdrawn, the flashing third is white in both. One
+  difference: where an enemy's own parts overlap behind the wall, the after side shows faint inner edges, because the
+  X-ray is now drawn per part surface (alpha 0.85 over alpha 0.85) where some twins were one merged mesh.
+- `hr_shots/ruins_reference_vs_hr.jpg`: the reference `mi_shots/ruins_room.jpg` (left) and the same tool and room
+  with every switch on (right), from `scripts/shots/room_layouts.gd -- biome=ruins only=room_2x2_1 out=hr` (build
+  `7360f0ac`, log `renderer=forward_plus device=llvmpipe`). `hr_shots/ruins_room_hr.jpg` is the full frame. The walls,
+  cover, scatter and grade match. The torch pools (bottom-left fire, top) look a little larger and warmer than the
+  reference (see switch 1).
+
+### Tests (this step's tree, after the HV merge, `thread_model=1`)
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=<24 presentation files> -gexit
+(test_horde_avatars, test_hit_impact, test_enemy_palettes, test_warden_avatar, test_needle_avatar, test_player_avatar,
+ test_stage_kit_lights, test_shader_warmup, test_windup_tells, test_damage_flash, test_melee_strikes,
+ test_new_enemy_avatars, test_charger_avatar, test_boss_animations, test_boss_models_2, test_view_build_queue,
+ test_kit_decor_lod, test_boss_views, test_health_bars, test_charger_pose_hv, test_screen_cull, test_crowd_view,
+ test_status_visuals, test_attack_forms_live)
+Tests               188
+Passing Tests       186
+Failing Tests         2
+```
+
+The 2 failures are `test_view_build_queue.gd`'s `test_a_view_built_in_slices_is_the_view_built_in_one_call` and
+`test_a_view_made_from_parts_made_ahead_is_the_same_view`: the Atmosphere's FogLayer and Dust sit at different
+places in the two views. They are **not from HR**: the same file run alone fails the same 2 tests on `07af5d59` and
+on HV's `33dfbdf8` (`Passing Tests 3 / Failing Tests 2` on each).
+
+```
+godot --headless --fixed-fps 60 --path . -s addons/gut/gut_cmdln.gd -gtest=res://tests/e2e/test_e2e_horde_enemies.gd,res://tests/e2e/test_e2e_attacks.gd,res://tests/e2e/test_e2e_run_flow.gd,res://tests/e2e/test_e2e_heat.gd,res://tests/e2e/test_e2e_lighting.gd -gexit
+Tests                10
+Passing Tests        10
+Time              96.49s
+```
+
+Lint: `gdformat --check src scripts tests` (1053 files unchanged) and `gdlint src scripts tests` (no problems).
+
 ## Next candidates (read-only audit, 2026-10-19; owner: "Any other findings on the code that could improve the lag and fps that doesn't change the game?")
 Three read-only reviews of `db26b485` (sim, view CPU, GPU). Nothing measured or changed; sizes are estimates from the code.
 **Same game and same pixels:**

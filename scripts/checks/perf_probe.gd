@@ -385,6 +385,7 @@ func _count_tick() -> void:
 				_add(String(m), vfx.get(m))
 		_add("flashing", (_view.actors.get(&"_flash") as Dictionary).size())
 		_add("status_drawn", (_view.status_fx.get(&"_on") as Dictionary).size())
+		_hv_count()  # v0.8.0 HV
 
 
 func _add(metric: String, v: float) -> void:
@@ -425,6 +426,9 @@ func _finish() -> void:
 		for k in keys.slice(0, 12):
 			_line("  %-24s %8.3f" % [k, float(prof[k]) / n])
 	_phases_report()
+
+	if _view != null:
+		_hv_catchup()  # v0.8.0 HV
 	var now := _world.tick - 1
 	var secs := float(_total - WARMUP_TICKS) / SimTick.TICKS_PER_SECOND
 	var dps := float(_tally.total) / maxf(secs, 0.001)
@@ -554,3 +558,57 @@ class PhaseTimer:
 	func reset() -> void:
 		us.clear()
 		calls.clear()
+
+
+# --- v0.8.0 HV (owner O89) ----------------------------------------------------------------------------------------
+## The enemy models animating this tick (ActorViews' ScreenCull test) and the statuses the effects layer skipped as
+## off screen last frame.
+func _hv_count() -> void:
+	var anim: Variant = _view.actors.get(&"_anim_on")
+	if not anim is Dictionary:  # a tree from before HV (the probe's before run)
+		return
+	var on := 0
+	for v: bool in (anim as Dictionary).values():
+		if v:
+			on += 1
+	_add("animated", on)
+	_add("status_culled", _view.status_fx.get(&"statuses_culled"))
+
+
+## A model of Godot's catch-up (max_physics_steps_per_frame = 4) from this run's measured costs: a frame takes at
+## least 1/60 s (vsync), each frame runs the ticks the last frame's time owes (sim + the view sync each, as
+## SimDriver.ticked -> WorldViewRoot.sync), then one frame of _process. CPU only (no GPU here) and this machine's
+## timings: it ranks, it does not measure the owner's PC (the dev panel's ticks_last_frame does).
+func _hv_catchup() -> void:
+	var sims: Array = _rows.get("sim_ms", [])
+	var syncs: Array = _rows.get("sync_ms", [])
+	var frames: Array = _rows.get("frame_ms", [])
+	var step := 1000.0 / 60.0
+	var hist := [0, 0, 0, 0, 0]
+	var acc := 0.0
+	var last := step
+	var k := 0
+	while k < sims.size():
+		acc += last
+		var n := mini(4, int(acc / step))
+		acc = 0.0 if n == 4 else acc - n * step  # past the cap the time is dropped (the game slows)
+		var cost := 0.0
+		for j in n:
+			if k >= sims.size():
+				break
+			cost += float(sims[k]) + float(syncs[k])
+			k += 1
+		cost += float(frames[maxi(k - 1, 0)])
+		hist[n] += 1
+		last = maxf(cost, step)
+	var total := 0
+	var ticks := 0
+	for n in hist.size():
+		total += hist[n]
+		ticks += n * hist[n]
+	_line(
+		(
+			"catch-up model (CPU only, this machine, vsync 60): frames with 0/1/2/3/4 ticks %s; %.2f view syncs a frame"
+			% [str(hist), float(ticks) / maxf(total, 1)]
+		)
+	)

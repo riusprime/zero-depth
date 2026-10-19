@@ -37,7 +37,8 @@ common/physics_jitter_fix=0.0
 [rendering]
 
 renderer/rendering_method="forward_plus"
-anti_aliasing/quality/msaa_3d=2
+driver/threads/thread_model=1
+anti_aliasing/quality/msaa_3d=0
 lights_and_shadows/directional_shadow/size=4096
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=4
 
