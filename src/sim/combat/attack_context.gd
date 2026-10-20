@@ -32,6 +32,10 @@ var damage_fn := Callable()
 ## radius when the caller sizes it at run time (Vent's blast, an echo with the area stat; 0 = the spec's).
 var repeat := false
 var back := false
+## v0.8.0 MR (owner O91; SecondaryProc): a secondary attack (an Echo's repeat, a Double Slash echo; a secondary bolt's
+## hit): its hits feed statuses at WandTable.secondary_proc_permille, its hooks' children launch at that share of the
+## proc, and its trigger casts at that share of their damage (Attacks.run_hook).
+var secondary := false
 var radius_m := 0.0
 ## v0.6.5 WN3: a charged shot's bolts are this much bigger (per mille of the spec's radius; G13 Charge).
 var size_permille := 1000
@@ -53,9 +57,11 @@ static func make(
 	return c
 
 
-## The context a hook's child launches with: one level deeper, half the proc coefficient, the parent's root.
+## The context a hook's child launches with: one level deeper, half the proc coefficient, the parent's root; v0.8.0
+## MR: a repeat's child is a repeat's too (Attacks.run_hook: it launches no trigger's later cast).
 func child(at: Vector2, p_damage: int, p_tags: int, p_effect: StringName) -> AttackContext:
 	var c := AttackContext.make(at, angle, p_damage, root, p_tags, p_effect)
 	c.depth = depth + 1
 	c.proc_pct = proc_pct / 2
+	c.repeat = repeat and not back  # v0.8.0 MR (O91): a repeat's child launches no later cast either
 	return c

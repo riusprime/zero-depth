@@ -20,6 +20,7 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	t.stage = int(def.stage)
 	t.overlay = def.overlay
 	t.order_kind = int(def.order_kind)  # v0.8.0 AO
+	t.alt_target = def.alt_target.duplicate()  # v0.8.0 MR
 	for d: ModifierOpDefinition in def.ops:
 		t.ops.append(compile_op(d, d.stage_in(def.stage)))
 	return t
@@ -48,6 +49,7 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	o.casts = d.hook_casts  # v0.6.5 WN5b
 	o.per_level_after = d.per_level_after  # v0.8.0 BL (B2)
+	o.alt = d.alt  # v0.8.0 MR
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
@@ -62,6 +64,8 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
 				o.per_level = d.per_level  # v0.8.0 BL: per mille as is (Flurry's 250 / 3), rounded per level
+			elif String(map[2]) == "" and AttackSpec.is_int_field(map[1]):
+				o.per_level = d.per_level  # v0.8.0 MR: a whole field's step as is, rounded per level (Flurry's ½)
 	return o
 
 

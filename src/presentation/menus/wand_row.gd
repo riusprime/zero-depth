@@ -61,6 +61,8 @@ var _keys: Array[Label] = []
 var _names: Array[Label] = []
 var _levels: Array[Label] = []
 var _brackets: Array[Label] = []
+## v0.8.0 MR (owner O91): why each card can't act where it sits (Wand.flags: a translation key, or &"").
+var _dead: Array[StringName] = []
 ## Each tile's x (left edge) and the dividers' x, from the last layout.
 var _xs: Array[float] = []
 var _cut_xs: Array[float] = []
@@ -113,6 +115,9 @@ func _make_tile(k: int) -> void:
 	nm.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(nm)
 	var lv := make_label(SMALL_SIZE, false, MenuStyle.DIM)
+	lv.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # v0.8.0 MR: a flagged card's reason takes two lines
+	lv.max_lines_visible = 2
+	lv.custom_minimum_size = Vector2(TILE.x - 16, 0)
 	box.add_child(lv)
 	t.gui_input.connect(_on_tile_input.bind(k))
 	t.mouse_entered.connect(func() -> void: tile_hovered.emit(k))
@@ -174,6 +179,12 @@ func level_text(k: int) -> String:
 	return _levels[k].text
 
 
+## v0.8.0 MR (owner O91): why the card in slot `k` can't act where it sits (a translation key; &"": it acts). Its tile
+## is dimmed and shows the reason in place of its level.
+func dead_reason(k: int) -> StringName:
+	return _dead[k] if k < _dead.size() else &""
+
+
 ## The bracket labels shown, left to right (tests).
 func bracket_texts() -> PackedStringArray:
 	var out := PackedStringArray()
@@ -209,6 +220,7 @@ func refresh_marks() -> void:
 
 func _refresh() -> void:
 	var cards: Array = _wand.get("cards", [])
+	_dead = WorldReader.wand_flags(_wand)  # v0.8.0 MR
 	var x := 0.0
 	_xs.clear()
 	_cut_xs.clear()
@@ -233,6 +245,8 @@ func _refresh() -> void:
 			_levels[k].text = tr("UI_WAND_LEVEL") % int(c["level"]) if levels else ""
 			if k == fresh:
 				_levels[k].text = tr("UI_WAND_NEW")
+			elif dead_reason(k) != &"":  # v0.8.0 MR: it does nothing here; the tile says why
+				_levels[k].text = tr(dead_reason(k))
 			var col := AbilityIcons.color(id) if ability else ItemLooks.color_of_id(id)
 			_sockets[k].show_item(id, col, col)
 			_sockets[k].visible = true
@@ -295,6 +309,8 @@ func _style(k: int) -> void:
 	t.add_theme_stylebox_override("panel", box)
 	_sockets[k].glow = 1.0 if lit else 0.0
 	t.modulate = Color(1, 1, 1, 0.42) if k == leaving else Color.WHITE
+	if k != leaving and dead_reason(k) != &"":  # v0.8.0 MR (O91): a card that can't act here is dimmed
+		t.modulate = Color(0.62, 0.6, 0.58, 0.78)
 
 
 ## The tile's stone tablet (tests: the look, the focus).

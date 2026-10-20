@@ -174,16 +174,17 @@ static func on_hit(w: World, i: int, root: int, tags: int, effect_id: StringName
 		SRC_ORBIT:
 			bleed = m.bleed_orbit
 	var id := a.ids[i]
+	var pm := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc (SecondaryProc)
 	if burn > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BURN + src, id, w.tick):
-		add_burn(w, i, burn, root, EFFECT_CINDER_SHOT)
+		add_burn(w, i, SecondaryProc.stacks(w, burn, pm), root, EFFECT_CINDER_SHOT)
 	if bleed > 0 and w.proc_ledger.try_mark(root, CODE_FEED_BLEED + src, id, w.tick):
-		add_bleed(w, i, bleed, root)
+		add_bleed(w, i, SecondaryProc.stacks(w, bleed, pm), root)
 	if frost > 0 and w.proc_ledger.try_mark(root, CODE_FEED_FROST + src, id, w.tick):
-		add_frost(w, i, frost, root, EFFECT_FROST)
+		add_frost(w, i, SecondaryProc.stacks(w, frost, pm), root, EFFECT_FROST)
 	if shock > 0 and w.proc_ledger.try_mark(root, CODE_FEED_SHOCK + src, id, w.tick):
-		add_shock(w, i, shock, root)
+		add_shock(w, i, SecondaryProc.stacks(w, shock, pm), root)
 	if poison > 0 and w.proc_ledger.try_mark(root, CODE_FEED_POISON + src, id, w.tick):
-		Venom.add(w, i, poison, root)
+		Venom.add(w, i, SecondaryProc.stacks(w, poison, pm), root)
 
 
 static func source_of(tags: int, effect_id: StringName) -> int:

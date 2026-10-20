@@ -62,13 +62,30 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		ModifierRuntime.on_root_launch(w, spec, ctx)
 	if spec.homing > 0 and spec.form == AttackSpec.Form.ARC:
 		ctx.angle = ProjectileMoves.snap_angle(w, ctx.origin, ctx.angle, arc_reach_m(w, spec) + 2.0)
-	var landed := _form(w, spec, ctx)
+	var landed := _shared_form(w, spec, ctx)
 	if not spec.hooks.is_empty():
 		_run(w, spec, AttackSpec.Trigger.ON_LAUNCH, ctx, ctx.origin, -1, 0)
 	if ctx.depth == 0 and not ctx.back and spec.back_permille > 0:
 		_back(w, spec, ctx)
 	if ctx.depth == 0 and not ctx.repeat and ctx.step < 0 and spec.repeat_delay_ticks > 0:
 		ModifierRuntime.queue_repeat(w, spec, ctx)
+	return landed
+
+
+## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): the form runs with each of its
+## projectiles (or hits) at the spec's share_permille of the launch's damage and base damage (its hooks' shares are
+## of that); the launch's moments after it (ON_LAUNCH, the back copy, a repeat) keep the whole.
+static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
+	var share := spec.share_permille
+	if share <= 0:
+		return _form(w, spec, ctx)
+	var d0 := ctx.damage
+	var b0 := ctx.base_damage
+	ctx.damage = maxi(1, d0 * share / 1000)
+	ctx.base_damage = maxi(1, b0 * share / 1000)
+	var landed := _form(w, spec, ctx)
+	ctx.damage = d0
+	ctx.base_damage = b0
 	return landed
 
 
@@ -273,9 +290,17 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
 	var room := _alive_room(w, spec)  # v0.8.0 PF2
-	for off in offsets:
+	# v0.8.0 MR (O91; SecondaryProc): a secondary launch's bolts are all secondary (a repeat's carry that too); a
+	# sharing spec's bolts past its primary one (the centre bolt's first lane; a circle's first) are secondary.
+	var kind0 := ProjectileStore.SECONDARY if ctx.secondary else 0
+	if ctx.repeat and not ctx.back:
+		kind0 |= ProjectileStore.REPEAT
+	var centre := 0 if spec.directions == AttackSpec.DIR_CIRCLE else (offsets.size() - 1) / 2
+	for oi in offsets.size():
+		var off := offsets[oi]
 		var dir := Kin.dir(ctx.angle + off)
-		for side in lanes:
+		for li in lanes.size():
+			var side := lanes[li]
 			if room == 0:
 				_alive_capped(w, spec)
 				return
@@ -295,6 +320,11 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				spec.bounces,
 				spec.key
 			)
+			var kind := kind0
+			if spec.share_permille > 0 and (oi != centre or li != 0):
+				kind |= ProjectileStore.SECONDARY
+			if kind != 0:
+				w.set_pending_second(kind)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
@@ -453,9 +483,13 @@ static func _rays(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 
 static func _hit(w: World, i: int, ctx: AttackContext, from: Vector2, at: Vector2) -> int:
 	var pid := w.actors.ids[0]
-	return Damage.hit(
+	var pm0 := w.hit_proc_permille  # v0.8.0 MR (O91): a secondary attack's hit feeds at its proc
+	w.hit_proc_permille = SecondaryProc.of_ctx(w, ctx)
+	var got := Damage.hit(
 		w, i, ctx.damage, pid, pid, ctx.root, ctx.tags, from, at, ctx.effect_id, ctx.proc_pct
 	)
+	w.hit_proc_permille = pm0
+	return got
 
 
 ## v0.6.0 MX2: one hit of `spec` on actor `i` at `at` from `from` (an orbiter's touch, a patch's, a ring's, a bomb's
@@ -571,7 +605,9 @@ static func _landed(
 	var crit := w.last_hit_crit  # v0.6.5 WN1: this hit's (read before a status or a hook hits again)
 	var arc := spec.depth == 0 and spec.form == AttackSpec.Form.ARC
 	if arc and spec.has_status(&"burn") and spec.has_tag(&"weapon"):
-		ItemEffects.on_melee_hit(w, i, ctx.root, spec.stacks_of(&"burn"))
+		var burn := SecondaryProc.stacks(w, spec.stacks_of(&"burn"), SecondaryProc.of_ctx(w, ctx))
+		if burn > 0:  # v0.8.0 MR (O91): a Double Slash echo burns at the secondary proc
+			ItemEffects.on_melee_hit(w, i, ctx.root, burn)
 	var direct := (
 		spec.form == AttackSpec.Form.ARC
 		or spec.form == AttackSpec.Form.BOLT
@@ -608,6 +644,7 @@ static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> voi
 			continue  # v0.6.0 MX4: an inherited every-N status counts this form's own hits
 		if not w.proc_ledger.try_mark(ctx.root, code, a.ids[i], w.tick):
 			continue
+		n = SecondaryProc.stacks(w, n, SecondaryProc.of_ctx(w, ctx))  # v0.8.0 MR: a secondary's
 		match st:
 			&"burn":
 				Engines.add_burn(w, i, n, ctx.root, spec.id)
@@ -660,6 +697,8 @@ static func run_hook(
 ) -> bool:
 	if parent.depth + 1 > MAX_HOOK_DEPTH or k.child.depth > MAX_HOOK_DEPTH:
 		return false
+	if parent.repeat and not parent.back and k.child.recast != 0:
+		return false  # v0.8.0 MR (O91): a repeat never casts a trigger's later cast
 	if w.hook_chain.has(String(k.id)):
 		return false
 	if k.when == AttackHook.WHEN_OVERCLOCK and not Heat.overclocked(w):
@@ -672,6 +711,12 @@ static func run_hook(
 	if k.child.form == AttackSpec.Form.WEAPON and k.damage <= 0:  # v0.6.0 MX4: a share of the weapon's
 		dmg = maxi(1, Modifiers.weapon_damage(w) * k.damage_permille / 1000)
 	var c := parent.child(at, dmg, tags_of(k.child), k.child.effect_id)
+	if parent.secondary:  # v0.8.0 MR (O91; SecondaryProc): a secondary's hook at its proc, its cast at its damage
+		var pm := SecondaryProc.permille(w)
+		c.proc_pct = maxi(1, c.proc_pct * pm / 1000)
+		if k.child.has_tag(WandCasts.TAG_CAST):
+			c.damage = maxi(1, c.damage * pm / 1000)
+			c.base_damage = c.damage
 	c.exclude = exclude
 	if k.child.form == AttackSpec.Form.BOLT and exclude >= 0:  # v0.6.0 MX4: from past the enemy it hit
 		c.muzzle_m = w.actors.radius[exclude] + k.child.radius_m + MUZZLE_GAP_M
@@ -795,6 +840,7 @@ static func on_projectile_hit(w: World, i: int, pi: int, at: Vector2) -> void:
 	var ctx := AttackContext.make(at, ang, p.damage[pi], root, p.tags[pi], &"")
 	ctx.depth = spec.depth
 	ctx.proc_pct = maxi(1, 100 >> spec.depth)
+	_second_of(w, pi, ctx)  # v0.8.0 MR
 	for k in hooks:
 		if k.every > 0 and (w.chain_count % k.every != 0 or w.chain_root == root):
 			continue
@@ -813,11 +859,19 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		var ctx := AttackContext.make(at, ang, p.damage[pi], p.root_id[pi], p.tags[pi], &"")
 		ctx.depth = spec.depth
 		ctx.proc_pct = maxi(1, 100 >> spec.depth)
+		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
 	var own := pi < w.projectiles.spec_key.size() and w.projectiles.spec_key[pi] != ""
 	if own and spec != null and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it ends
 		BlackHoles.roll(w, spec, at, w.projectiles.damage[pi])
 	ModifierAbilities.on_projectile_end(w, at)
+
+
+## v0.8.0 MR (O91): projectile `pi`'s hit or end carries what the bolt was: secondary, a repeat's (ProjectileStore).
+static func _second_of(w: World, pi: int, ctx: AttackContext) -> void:
+	var kind := w.projectiles.second_of(pi)
+	ctx.secondary = (kind & ProjectileStore.SECONDARY) != 0
+	ctx.repeat = (kind & ProjectileStore.REPEAT) != 0
 
 
 ## The next landed bolt fires the bolt's first every-N ON_HIT hook (Static Chain's "ready" mark).

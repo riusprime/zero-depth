@@ -105,6 +105,15 @@ const FIELD_STAGE := {
 	# v0.8.0 AO (owner O37): a Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
 	&"ring_share_permille": [3, &"ring_share_permille", ""],
 	&"swirl": [2, &"swirl", ""],
+	# v0.8.0 MR (owner O91): a projectile's share of the launch's damage (Twin, Spread, Halo), and the rhythm cards'
+	# extra rate (FireRhythm: Rapid Fire's ramp, Flurry's burst)
+	&"share_permille": [3, &"share_permille", ""],
+	&"ramp_permille": [5, &"ramp_permille", ""],
+	&"ramp_cap_permille": [5, &"ramp_cap_permille", ""],
+	&"ramp_reset_seconds": [5, &"ramp_reset_ticks", "ticks"],
+	&"burst_permille": [5, &"burst_permille", ""],
+	&"burst_swings": [5, &"burst_swings", ""],
+	&"burst_pause_seconds": [5, &"burst_pause_ticks", "ticks"],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).
@@ -155,6 +164,9 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.6.5 WN5b (TRIGGER; WAND.md's legendary "On Hit ×2": the cast repeats twice): how many times the cut's child spell
 ## is cast each time the trigger fires (1..3), each cast hook_delay_seconds after the one before.
 @export var hook_casts := 1
+## v0.8.0 MR (owner O91, Split Wave): an op of the card's other reading (ModifierDefinition.alt_target): it runs only
+## there, and the others only on the target.
+@export var alt := false
 
 
 ## The stage this op runs in, given its modifier's.

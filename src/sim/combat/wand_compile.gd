@@ -32,6 +32,10 @@ extends RefCounted
 ##   On Kill, On Finisher) cast WandTable.blade_hit_casts times (2), blade_cast_gap_ticks apart (a legendary trigger's
 ##   own delay when it has one): a slash hits each enemy once, a Gun volley many times, so trigger builds work on
 ##   both weapons. The Gun's triggers, a slash's On End and every non-slash spec cast as before.
+## - v0.8.0 MR (owner O91: "Prevent repeats repeating themselves"): a trigger's later casts (the second of ×2, a slash
+##   hit's second) are repeats (AttackSpec.recast): a spell built from one casts each of its own triggers once, and a
+##   repeat's hit (Echo, a Double Slash echo) launches no later cast (Attacks.run_hook). A card with an alt_target
+##   (Split Wave) reads a spec of that target the other way while it has no child of the card's own target.
 ## - v0.8.0 PF2 (owner O9): a spec a cast-free hook made (WandTable.cast_free_lines: Blade Storm's blades, and anything
 ##   built from them) takes no trigger cut: the trigger still ends it, but its hits cast nothing.
 ## - v0.8.0 BL (B6): a spec a once-per-line hook made (WandTable.once_per_line: Split's splits, Explosive's blast, and
@@ -115,7 +119,8 @@ func run(s: AttackSpec, from: int, skip_form_at: int = -1) -> AttackSpec:
 	var moment := s.has_tag(Modifiers.TAG_MOMENT)
 	for i in range(from, mods.size()):
 		var m := mods[i]
-		if not s.matches(m.target) or (moment and m.target.is_empty()):
+		var alt := alt_reading(s, m)  # v0.8.0 MR: the card's other reading (Split Wave without a wave)
+		if not alt and (not s.matches(m.target) or (moment and m.target.is_empty())):
 			continue
 		if m.is_trigger():
 			_cut(s, m, i)
@@ -123,7 +128,7 @@ func run(s: AttackSpec, from: int, skip_form_at: int = -1) -> AttackSpec:
 		var applied := false
 		for stage in ModifierTable.STAGE_COUNT:  # a card's own ops in stage order
 			for op in m.ops:
-				if op.stage != stage:
+				if op.stage != stage or op.alt != alt:
 					continue
 				if i == skip_form_at and op.op == ModifierOp.Op.SET_FORM:
 					continue
@@ -176,9 +181,23 @@ static func take_in(s: AttackSpec, form: int) -> void:
 	s.ring_flight = s.life_ticks if s.form == AttackSpec.Form.BOLT else 0  # v0.8.0 N3: the shot's flight
 	s.ring_pulses = maxi(1, s.count) if s.count > 1 else 0
 	s.swirl_group = 1 if s.swirl > 0 or s.swirl_group > 0 else 0
+	if s.count > 1:  # v0.8.0 MR: the count's share goes with it (the pulses take their own, ring_share_permille)
+		s.share_permille = 0
 	s.count = 1
 	s.spread = 0
 	s.swirl = 0
+
+
+## v0.8.0 MR (owner O91: "Make Split Wave useful without Wave"): whether card `m` reads `s` the other way: `s` is of
+## its alt_target and not its target, and no hook of `s` has a child of its target yet (a flying slash). Its `alt` ops
+## run there instead of the others (ModifierTable.alt_target).
+static func alt_reading(s: AttackSpec, m: ModifierTable) -> bool:
+	if m.alt_target.is_empty() or s.matches(m.target) or not s.matches(m.alt_target):
+		return false
+	for k in s.hooks:
+		if k.child.matches(m.target):
+			return false
+	return true
 
 
 ## v0.8.0 BL (B6): whether hook card `id` is a once-per-line card and `s` already comes from one (class doc).
@@ -220,6 +239,7 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 		shape.apply(c, m, o, -1)
 	c.lineage = s.lineage.duplicate()  # v0.6.0 MX4: this modifier's hook never rides its own child
 	c.lineage.append(String(m.id))
+	c.recast = s.recast  # v0.8.0 MR: built from a later cast, it casts its triggers once
 	var k := AttackHook.new()
 	k.id = m.id
 	k.trigger = op.trigger
@@ -271,6 +291,8 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 	if blade and hit and s.form == AttackSpec.Form.ARC:  # v0.8.0 BL (B3): a slash hit casts twice
 		casts *= maxi(1, hit_casts)
 		gap = gap if gap > 0 else cast_gap_ticks
+	if s.recast != 0:  # v0.8.0 MR (O91): a later cast (or a spell built from one) casts each trigger once
+		casts = 1
 	for n in casts:  # v0.6.5 WN5b: a legendary trigger casts again, delay_ticks apart
 		var c := child_base.copy()
 		c.id = m.id
@@ -280,6 +302,7 @@ func _cut(s: AttackSpec, m: ModifierTable, i: int) -> void:
 			c.tags.append(WandCasts.TAG_CAST)
 		c.lineage = s.lineage.duplicate()
 		c.lineage.append(String(m.id))
+		c.recast = 1 if n > 0 or s.recast != 0 else 0  # v0.8.0 MR (O91): the later casts are repeats
 		var k := AttackHook.new()
 		k.id = m.id
 		k.trigger = trig

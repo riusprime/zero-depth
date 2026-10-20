@@ -47,7 +47,7 @@ static func queue_repeat(w: World, spec: AttackSpec, ctx: AttackContext) -> void
 	c.muzzle_m = ctx.muzzle_m
 	c.target = ctx.target
 	c.has_target = ctx.has_target
-	var flags := ModifierState.FLAG_REPEAT
+	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_SECONDARY  # v0.8.0 MR: at the secondary proc
 	if ctx.origin == w.player_pos():  # the player's own attack comes again from where the player is then
 		flags |= ModifierState.FLAG_AT_PLAYER
 	for n in maxi(1, spec.repeats):  # v0.8.0 BL (B1): each further repeat REPEAT_GAP_TICKS after the one before
@@ -66,13 +66,16 @@ static func queue_echoes(w: World, spec: AttackSpec, angle: int, root: int, dmg:
 		w.player_pos(), angle, share, root, SimEvent.TAG_MELEE, ItemEffects.EFFECT_TWIN_ARC
 	)
 	var flags := ModifierState.FLAG_REPEAT | ModifierState.FLAG_AT_PLAYER
+	flags |= ModifierState.FLAG_SECONDARY  # v0.8.0 MR (O91): the echoes at the secondary proc
 	for n in range(1, spec.repeats):
 		_queue(w, spec.key, w.tick + spec.repeat_delay_ticks + n * REPEAT_GAP_TICKS, c, flags, "")
 
 
 ## A hook's child that waits (AttackHook.delay_ticks): `c` is its launch context, built when it triggered.
+## v0.8.0 MR (O91): a repeat's child waits as a repeat's (it launches no trigger's later cast either).
 static func queue_hook(w: World, k: AttackHook, c: AttackContext) -> void:
-	_queue(w, k.child.key, w.tick + k.delay_ticks, c, 0, String(k.id))
+	var flags := ModifierState.FLAG_REPEAT if c.repeat else 0
+	_queue(w, k.child.key, w.tick + k.delay_ticks, c, flags, String(k.id))
 
 
 static func _queue(
@@ -125,6 +128,7 @@ static func advance(w: World) -> void:
 		if spec == null or w.player_dead():
 			continue
 		c.repeat = (flags & ModifierState.FLAG_REPEAT) != 0
+		c.secondary = (flags & ModifierState.FLAG_SECONDARY) != 0  # v0.8.0 MR (O91; SecondaryProc)
 		if flags & ModifierState.FLAG_AT_PLAYER:
 			c.origin = w.player_pos()
 		if hook != "":

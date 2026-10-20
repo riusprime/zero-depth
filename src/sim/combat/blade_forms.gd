@@ -72,7 +72,8 @@ static func settle(s: AttackSpec) -> AttackSpec:
 static func step(w: World, k: int) -> SwingStep:
 	var base: SwingStep = w.player.combo[k]
 	var s := Modifiers.step(w, k)
-	var wand := s.rate_bonus_permille if s != null else 0
+	# v0.8.0 MR (O91): Flurry's burst is part of the step's raw wand bonus (FireRhythm), so the curve covers it
+	var wand := s.rate_bonus_permille + FireRhythm.swing_bonus(w, s) if s != null else 0
 	var t := table(w)
 	# v0.8.0 SG (owner O91): one rate for the whole swing, the attack speed stat plus the step's wand bonus through
 	# the curve, then Heavy Hands (AttackRate.rate), never under the table's rate_min.

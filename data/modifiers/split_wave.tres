@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
@@ -36,10 +36,45 @@ hook_effect = &"split_wave"
 hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2"), SubResource("Child_3")])
 per_level = 50.0
 
+[sub_resource type="Resource" id="Alt_1"]
+script = ExtResource("2_op")
+op = 0
+field = &"count"
+value = 2.0
+per_level = 1.0
+
+[sub_resource type="Resource" id="Alt_2"]
+script = ExtResource("2_op")
+op = 0
+field = &"spread_degrees"
+value = 60.0
+
+[sub_resource type="Resource" id="Alt_3"]
+script = ExtResource("2_op")
+op = 0
+field = &"arc_degrees"
+value = 36.0
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 8
+stage = 4
+form = 1
+hook_trigger = 0
+hook_tags = PackedStringArray("projectile")
+hook_radius_m = 0.15
+hook_reach_m = 3.0
+hook_damage_permille = 400
+hook_effect = &"split_wave"
+hook_ops = Array[Resource]([SubResource("Alt_1"), SubResource("Alt_2"), SubResource("Alt_3")])
+per_level = 50.0
+alt = true
+
 [resource]
 script = ExtResource("1_mod")
 family = &"projectile"
 target = PackedStringArray("wave")
 stage = 4
-ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
+alt_target = PackedStringArray("weapon", "melee")
 id = &"split_wave"

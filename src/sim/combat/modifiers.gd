@@ -340,6 +340,10 @@ static func numeric(s: AttackSpec, op: ModifierOp) -> void:
 		return
 	var c: int = s.get(op.field)
 	var iv := int(op.value)
+	if op.field == &"share_permille":  # v0.8.0 MR (O91): shares multiply down the wand (0 = whole)
+		c = c if c > 0 else 1000
+		if op.op == ModifierOp.Op.MUL_PERMILLE:
+			s.damage_mul_permille = s.damage_mul_permille * iv / 1000  # the view's weight is each bolt's
 	match op.op:
 		ModifierOp.Op.SET:
 			c = iv

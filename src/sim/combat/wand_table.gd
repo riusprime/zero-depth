@@ -32,6 +32,10 @@ var hole_pull_radius_m := 3.5
 var hole_pull_step_m := 0.05
 var hole_radius_m := 1.4
 var hole_period_ticks := 12
+## v0.8.0 MR (owner O91; SecondaryProc): a secondary attack's proc (per mille of its statuses, its hooks' statuses and
+## its trigger casts' damage), and the cards that do nothing right of a trigger (Wand.flags).
+var secondary_proc_permille := 500
+var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash", &"gun_charge"]
 ## v0.6.5 WN5b (WandMigrationDefinition, data/wand/migration.tres): the retired v0.6 cards (item or ability ids) and
 ## what each becomes in a held build on a Blade run and on a Gun run (&"": refunded as shards). WandMigration reads
 ## them when a build that still holds an old card is loaded (an old save's carry or snapshot). Empty: no migration.

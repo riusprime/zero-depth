@@ -760,7 +760,7 @@ ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on your finisher.,Las cart
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Bigger, stronger, slower shots.","Disparos más grandes, fuertes y lentos."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
-ITEM_GUN_RAPID_FIRE_DESC,"Smaller, faster, weaker shots.","Disparos más pequeños, rápidos y débiles."
+ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.",Disparos pequeños y débiles que aceleran si mantienes.
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado."
 ITEM_GUN_SPREAD,Spread,Abanico
@@ -786,7 +786,7 @@ ITEM_GUN_ECHO_DESC,Fire again a moment later.,Disparas otra vez un instante desp
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
 ITEM_GUN_BACKFIRE_DESC,Also fire behind you.,También disparas hacia atrás.
 ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
-ITEM_SPLIT_WAVE_DESC,Flying slashes split on hit.,Tus tajos voladores se dividen al impactar.
+ITEM_SPLIT_WAVE_DESC,"Flying slashes split; without them, hits throw crescents.","Tajos voladores se dividen; sin ellos, lanzan medialunas."
 ITEM_WHIRL,Whirl,Remolino
 ITEM_WHIRL_DESC,Every slash becomes a full spin.,Cada tajo se vuelve un giro completo.
 ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
@@ -796,7 +796,7 @@ ITEM_THRUST_DESC,"Stab farther and harder, but narrower.","Estocadas más largas
 ITEM_HEAVY,Heavy,Pesado
 ITEM_HEAVY_DESC,Slower swings that hit much harder.,Tajos más lentos que golpean mucho más fuerte.
 ITEM_FLURRY,Flurry,Ráfaga
-ITEM_FLURRY_DESC,"Faster, lighter swings.",Tajos más rápidos y ligeros.
+ITEM_FLURRY_DESC,"After a pause, a burst of fast, lighter swings.","Tras una pausa, una ráfaga de tajos rápidos y ligeros."
 ITEM_FISSURE,Fissure,Fisura
 ITEM_FISSURE_DESC,Your slashes crack the ground and it erupts.,Tus tajos agrietan el suelo y la grieta estalla.
 ITEM_CHAIN_CUT,Chain Cut,Corte en Cadena
@@ -825,6 +825,7 @@ WAND_READ_ON_END,"Where it ends, it casts %s.","Donde termina, lanza %s."
 WAND_READ_ON_FINISHER,The combo's last hit casts %s.,El último golpe del combo lanza %s.
 WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
 WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.
+WAND_READ_DEAD,Does nothing after a trigger: %s.,No hace nada tras un disparador: %s.
 UI_BUILD,Build,Construcción
 UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
@@ -842,6 +843,8 @@ UI_WAND_CUT_ON_END,cast where it ends →,se lanza donde termina →
 UI_WAND_CUT_ON_FINISHER,cast on the finisher →,se lanza en el remate →
 UI_WAND_CUT_ON_CRIT,cast on a crit →,se lanza en un crítico →
 UI_WAND_CUT_UNUSED,too deep to cast,demasiado profundo para lanzarse
+UI_WAND_DEAD_TRIGGER,Does nothing after a trigger,No hace nada tras un disparador
+UI_WAND_DEAD_DEEP,Too deep to cast,Demasiado profundo para lanzarse
 UI_SWAP_PLACE,Insert the new card: where does it go?,Insertar la carta nueva: ¿dónde va?
 UI_SWAP_LEAVE,Which card leaves the wand?,¿Qué carta sale de la varita?
 UI_SWAP_CARRY,Move the card: ←→ then R or Enter,Mueve la carta: ←→ y luego R o Intro

@@ -31,7 +31,7 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := spec.period_ticks
-	var r := AttackRate.rate(w, spec.rate_bonus_permille)
+	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
 	if r == 1000:
 		return base
 	return maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))

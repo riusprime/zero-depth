@@ -978,6 +978,47 @@ proposed). Evidence: [`../roadmap/v0.8.0/evidence/BLADE.md`](../roadmap/v0.8.0/e
     Blade Storm's child sets it to 36 (6 slashes × 6 blades: a level-5 Double Slash swing). Nothing is stored per tick
     (no `WorldSnapshot` field); a spec without it hashes as before. `SimTuning.player_shots_max` still holds.
 
+## 8k. Shared damage, repeats and rhythms (v0.8.0 MR)
+
+Owner O91; spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "MR" (starting values);
+WAND.md rules 10–11. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_MR.md`](../roadmap/v0.8.0/evidence/BALANCE_MR.md).
+- **Shares.** `AttackSpec.share_permille` (`LATE_INT_FIELDS`; content op field `share_permille`, PAYLOAD; 0 = whole):
+  `Modifiers.numeric` reads 0 as 1000, so a card's `MUL_PERMILLE` multiplies down the wand (Twin 600, Spread 550, Halo
+  400; each `+per_level`), and the view's `damage_mul_permille` takes the same factor. `Attacks._shared_form` runs the
+  form with the launch's `damage` and `base_damage` at that share (its hooks' shares are of it); `ON_LAUNCH`, the back
+  copy and the repeat queue keep the whole. A Ring's `take_in` of a count drops the share (its pulses take
+  `ring_share_permille`). Spread's count is +2 at level 1, +1 a level after; Echo repeats at 500 (+50); Double Slash
+  at 600.
+- **Secondary proc.** `WandTable.secondary_proc_permille` (data 500; `SecondaryProc`). Secondary: a sharing spec's bolts
+  past its primary one (`Attacks._bolts`: the centre offset's first lane, a circle's first), every bolt of a secondary
+  launch, the Echo repeat (`ModifierState.FLAG_SECONDARY` on `queue_repeat`), Double Slash's echoes (`queue_echoes`;
+  the first echo: `PlayerKit.swing_arc` with `EFFECT_TWIN_ARC`, now also a repeat). A bolt carries it in
+  `ProjectileStore.second` (bits `SECONDARY` 1, `REPEAT` 2; a lazy column: empty, unhashed, absent from older saves
+  until the first such bolt). A secondary hit sets `World.hit_proc_permille` (transient; `Attacks._hit`, the projectile
+  sweep) and its feeds scale: `Engines.on_hit`, `_landed`'s burn, `_feed`. A secondary's hook child launches at
+  `proc_pct` × the proc (its statuses), and a `TAG_CAST` child at that share of its damage (`run_hook`); the child is
+  not secondary itself. Stacks: rounded down, the remainder (per mille) carried in `ModifierState.sec_carry`.
+- **Repeats never repeat.** `AttackSpec.recast` (`LATE_INT_FIELDS`): `WandCompile._cut` sets it on a trigger's n ≥ 1
+  cast (×2 legendaries, a slash hit's second) and on everything built from it (`_hook`, `_cut`, `_layer`'s copy); a
+  spec with it casts each trigger once. A repeat's context (`AttackContext.repeat`, not a back copy; inherited by its
+  children, `FLAG_REPEAT` on its queued hooks, `ProjectileStore.REPEAT` on its bolts) never launches a hook whose child
+  has `recast` (`run_hook`). The depth, lineage, `once_per_line`, 256-a-tick and shot caps are unchanged.
+- **Rhythms.** `FireRhythm` returns an extra rate bonus counted into the attack's raw bonus
+  (`ItemEffects.shot_period_ticks`, `BladeForms.step`). Rapid Fire: `ramp_permille` 100 × (streak − 1), at most
+  `ramp_cap_permille` (600 +150), the streak reset after `ramp_reset_ticks` (24) without a shot
+  (`PlayerKit._fire_bolt` → `on_shot`); base +300, radius × 0.7, damage × 0.85. Flurry: the first `burst_swings` (3;
+  4 at level 3, 5 at level 5: per_level 0.5 from level 3, rounded) swings that start `burst_pause_ticks` (36) or more
+  after the last swing ended come `burst_permille` (800) faster (`on_swing` at the swing's start, which records its
+  end tick); damage × 0.85. State: `ModifierState.ramp_n`, `ramp_tick`, `burst_n`, `burst_free` (hashed only when
+  set; `ADDED_SINCE_V05`). A whole-number op field without a unit keeps its `per_level` as is (`ModifierCompiler`), so
+  ½ a level rounds per level.
+- **Split Wave without Wave.** `ModifierDefinition.alt_target` / `ModifierOpDefinition.alt`: on a spec of the
+  alt target (not of the target) with no hook child of the target yet, the card's `alt` ops run instead
+  (`WandCompile.alt_reading`): a slash with no flying slash throws 2 crescents (+1) at 400 (+50) on each hit.
+- **Placement flags.** `Wand.flags(read)`: `UI_WAND_DEAD_TRIGGER` for a card in `WandTable.after_trigger_dead`
+  (`gun_echo`, `double_slash`, `gun_charge`) right of a trigger, `UI_WAND_DEAD_DEEP` past the third trigger. `describe`
+  leaves the first out of its spell and lists them (`WAND_READ_DEAD`); `WandRow` dims the tile and shows the reason.
+
 ## 9. What presentation receives
 
 Presentation sees the sim only through `WorldReader`, a read-only facade over `World`

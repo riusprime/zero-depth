@@ -49,13 +49,14 @@ func test_the_shipped_tuning_holds_the_curve() -> void:
 func test_gun_period_adds_the_stat_and_the_wand_bonus_before_the_curve() -> void:
 	var w := W.world(&"gun", [&"gun_rapid_fire"])
 	var base := Modifiers.bolt(w).period_ticks
-	assert_eq(Modifiers.bolt(w).rate_bonus_permille, 600)
-	assert_eq(AttackRate.rate(w, 600), 1550, "+60 % -> +55 %")
-	assert_eq(ItemEffects.shot_period_ticks(w), AttackRate.scaled(base, 1550))
+	# v0.8.0 MR (O91): Rapid Fire's base is +30 % (its ramp adds while held: test_mr_modifiers.gd)
+	assert_eq(Modifiers.bolt(w).rate_bonus_permille, 300)
+	assert_eq(AttackRate.rate(w, 300), 1300, "+30 %: under the knee, whole")
+	assert_eq(ItemEffects.shot_period_ticks(w), AttackRate.scaled(base, 1300))
 	_cards(w, Stats.Stat.ATTACK_SPEED, Stats.Rarity.EPIC, 4)  # +72 %
 	assert_eq(AttackRate.stat_bonus(w), 720)
-	var r := 1000 + 500 + (1320 - 500) * 500 / 1000  # raw +132 % -> +91 %
-	assert_eq(AttackRate.rate(w, 600), r)
+	var r := 1000 + 500 + (1020 - 500) * 500 / 1000  # raw +102 % -> +76 %
+	assert_eq(AttackRate.rate(w, 300), r)
 	assert_eq(
 		ItemEffects.shot_period_ticks(w), AttackRate.scaled(base, r), "one rate, not 1.6 x 1.72"
 	)
@@ -76,7 +77,10 @@ func test_a_negative_wand_bonus_slows_the_gun() -> void:
 func test_the_blade_swings_at_one_rate() -> void:
 	var plain := W.world(&"blade")
 	var w := W.world(&"blade", [&"flurry"])
-	var bonus := Modifiers.step(w, 0).rate_bonus_permille
+	w.mx.burst_n = 1  # v0.8.0 MR: Flurry's burst swing (FireRhythm), part of the step's raw bonus
+	var bonus := (
+		Modifiers.step(w, 0).rate_bonus_permille + FireRhythm.swing_bonus(w, Modifiers.step(w, 0))
+	)
 	assert_gt(bonus, 0, "Flurry speeds the swing")
 	_cards(w, Stats.Stat.ATTACK_SPEED, Stats.Rarity.RARE, 2)  # +24 %
 	var r := 1000 + AttackRate.curve(w.tuning, 240 + bonus)
@@ -146,10 +150,11 @@ func test_an_attack_speed_card_forecasts_the_rate_after_the_curve() -> void:
 	var w := W.world(&"gun", [&"gun_rapid_fire"])
 	var code := Offers.stat_code(Stats.Stat.ATTACK_SPEED, Stats.Rarity.EPIC)
 	var f := CardForecast.of(w, code)
-	assert_eq(f["old"], 1550, "Rapid Fire's +60 % after the curve")
-	assert_eq(f["new"], 1000 + 500 + (780 - 500) * 500 / 1000, "+18 % more raw: +14 %")
-	assert_eq(int(f["new"]), AttackRate.rate_at(w, 1180, 600), "the take's own function")
-	assert_eq(Offers.info(w, code)["amount"], 90, "the sentence names the real +9 %")
+	# v0.8.0 MR (O91): Rapid Fire's base +30 % leaves the card under the knee
+	assert_eq(f["old"], 1300, "Rapid Fire's +30 %")
+	assert_eq(f["new"], 1480, "+18 % more raw, under the knee: whole")
+	assert_eq(int(f["new"]), AttackRate.rate_at(w, 1180, 300), "the take's own function")
+	assert_eq(Offers.info(w, code)["amount"], 180, "the sentence names the real +18 %")
 	var plain := W.world(&"gun")
 	assert_eq(Offers.info(plain, code)["amount"], 180, "under the knee the card's +18 % is real")
 	assert_eq(WorldReader.new(w).card_forecast(code), f, "the reader forecasts the same")
@@ -237,9 +242,9 @@ func test_catch_up_reads_the_bucket_and_the_weapon_rate() -> void:
 	for k in rf.item_tables.size():
 		if rf.item_tables[k].id == &"gun_rapid_fire":
 			BuildSlots.take(rf, k)
-	assert_eq(CatchUp.wand_rate_bonus(rf), 600, "Rapid Fire's +60 %, whatever its slot")
+	assert_eq(CatchUp.wand_rate_bonus(rf), 300, "Rapid Fire's +30 % (MR), whatever its slot")
 	assert_eq(CatchUp.wand_rate_bonus(rf), AttackRate.weapon_bonus(rf), "the bolt's own bonus")
-	assert_eq(CatchUp.rate_permille(rf), 1550)
+	assert_eq(CatchUp.rate_permille(rf), 1300)
 	var v := SaveLab.floor_world(31, 1, &"gun")
 	_cards(v, Stats.Stat.DAMAGE, Stats.Rarity.RARE, 2)  # +30 %
 	Stats.add_card(v, Stats.Stat.ONRUSH, Stats.Rarity.COMMON)  # +10 %, always counted

@@ -80,9 +80,10 @@ func test_g2_rapid_fire_is_a_stream_of_small_bolts() -> void:
 	var p := _plain()
 	var w := W.world(&"gun", [&"gun_rapid_fire"])
 	var s := Modifiers.bolt(w)
-	assert_almost_eq(s.radius_m, p.radius_m * 0.6, 1e-5)
-	assert_eq(s.rate_bonus_permille, 600)
-	assert_eq(s.damage, p.damage * 700 / 1000)
+	# v0.8.0 MR (O91): sustained fire (x0.7 size, +30 % rate, x0.85 damage, ramping while held)
+	assert_almost_eq(s.radius_m, p.radius_m * 0.7, 1e-5)
+	assert_eq(s.rate_bonus_permille, 300)
+	assert_eq(s.damage, p.damage * 850 / 1000)
 	assert_lt(ItemEffects.shot_period_ticks(w), ItemEffects.shot_period_ticks(W.world(&"gun")))
 	var plain := W.world(&"gun")
 	W.run(w, 60, 0, W.S)
@@ -91,7 +92,8 @@ func test_g2_rapid_fire_is_a_stream_of_small_bolts() -> void:
 	var b := W.events(plain, SimEvent.Kind.SPAWN).size()
 	# v0.8.0 GF1: 9 ticks a shot plain, 9 / 1.6 = 5.6 -> 6 with Rapid Fire: 7 vs 10 in a second (+50 % in whole
 	# ticks, the card's +60 % rounded; it was 7 / 1.6 = 4.4 -> 4, +75 %, before).
-	assert_eq([a, b], [10, 7], "more bolts in a second (%d vs %d)" % [a, b])
+	# v0.8.0 MR: held for a second the ramp climbs (+30 % base, +10 % a shot to +60 %, through the curve): 11 vs 7.
+	assert_eq([a, b], [11, 7], "more bolts in a second (%d vs %d)" % [a, b])
 
 
 func test_g3_twin_fires_two_side_by_side() -> void:
@@ -278,14 +280,14 @@ func test_g13_charge_grows_while_held_and_fires_on_release() -> void:
 func test_g14_echo_fires_again_later_at_sixty_percent() -> void:
 	var w := W.world(&"gun", [&"gun_echo"])
 	var s := Modifiers.bolt(w)
-	assert_eq([s.repeat_delay_ticks, s.repeat_damage_permille], [18, 600])
+	assert_eq([s.repeat_delay_ticks, s.repeat_damage_permille], [18, 500])  # v0.8.0 MR: 50 %
 	W.run(w, 1, 0, W.S)
 	assert_eq(_mine(w).size(), 1)
 	assert_eq(w.mx.q_key.size(), 1, "the echo waits")
 	W.run(w, 18)
 	var m := _mine(w)
 	assert_eq(m.size(), 2, "a ghost volley follows")
-	assert_eq(w.projectiles.damage[m[1]], s.damage * 600 / 1000)
+	assert_eq(w.projectiles.damage[m[1]], s.damage * 500 / 1000)
 
 
 func test_g15_backfire_also_fires_behind_you() -> void:
