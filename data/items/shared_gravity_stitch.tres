@@ -11,4 +11,5 @@ desc_key = &"ITEM_SHARED_GRAVITY_STITCH_DESC"
 tags = PackedStringArray("wand")
 modifiers = Array[StringName]([&"shared_gravity_stitch"])
 index_wave = 3
+loot_category = &"advanced"
 id = &"shared_gravity_stitch"

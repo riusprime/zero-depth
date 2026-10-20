@@ -1,9 +1,11 @@
 extends GutTest
 ## v0.8.0 N7 + N8 (owner O61, O62; D48) through the real game (main.tscn, input by Input.parse_input_event only):
-## 1. walk (keys) to an altar and open it with E: three cards arrive face down from the bottom and flip one by one;
+## 1. walk (keys) to an altar and open it with E: three cards arrive face down from the bottom and flip one by one
+##    (v0.8.0 FL: floor 1's first altar holds a card compatible with the wand);
 ##    Enter takes the focused card: it is applied, its icon flies to its HUD slot and the two others burn;
 ## 2. walk to a chest and open it with E: one card is dealt (no choice) and its flip runs; a press during the deal ends
-##    the deal and takes the card; the icon flies to the HUD.
+##    the deal and takes the card; the icon flies to the HUD;
+## 3. v0.8.0 FL: a jackpot card says "Jackpot" on its card.
 
 
 func after_each() -> void:
@@ -29,6 +31,12 @@ func test_an_altar_deals_three_cards_and_the_pick_flies_to_the_hud() -> void:
 	assert_true(panel.is_open())
 	var n := panel.card_count()
 	assert_eq(n, 3, "three cards")
+	# v0.8.0 FL (owner O91): floor 1's first regular altar shows a modifier compatible with the wand
+	assert_eq(w.loot_guaranteed, 1, "the floor's first guaranteed altar")
+	var fits := 0
+	for c in w.rewards.offer_of(w.rewards.index_of(id)):
+		fits += 1 if LootPacing.compatible(w, c) else 0
+	assert_gt(fits, 0, "a compatible card among the three")
 	assert_false(panel.deal.done(), "dealing")
 	assert_false(panel.slot(0).card.fx.face.visible, "face down at first")
 	assert_gt(panel.slot(0).card.fx.offset.y, 100.0, "coming up from below the screen")
@@ -95,6 +103,44 @@ func test_a_chest_deals_one_card_and_a_press_takes_it() -> void:
 	assert_eq(w.shards, 3, "paid")
 	assert_eq(hud.flights.flying(), 1, "its icon flies to the HUD")
 	assert_false(panel.slot(0).card.fx.burning(), "nothing burns at a chest")
+
+
+## v0.8.0 FL (owner O91: "rare early jackpots … through explicit exceptional rewards"): a jackpot card reads
+## "Jackpot" on the pick panel, and taking it applies it as any card.
+func test_a_jackpot_card_says_so_on_the_pick() -> void:
+	var e := E2e.new(self)
+	var main: Main = await e.boot()
+	await e.start_from_menu(&"gun")
+	var w := e.world()
+	var hud: Hud = main.get_node("UI/Hud")
+	var reader: WorldReader = main.driver.reader
+	# TEST HELPER (labelled): the jackpot every offer (its shipped 15 per mille is test_loot_rewards' job)
+	w.loot_pacing.jackpot_permille = 1000
+	var i := E2e.nearest_reward(w, RewardStore.Kind.ALTAR)
+	assert_gte(i, 0, "an altar on the floor")
+	var id := w.rewards.ids[i]
+	assert_true(await e.walk_to(w.rewards.pos(i), w.reward_table.interact_radius_m * 0.6))
+	await e.tap(KEY_E)
+	await e.frames(2)
+	var panel := hud.pick_panel()
+	assert_eq(w.choosing, id, "E opened the altar")
+	for f in 240:
+		await e.frames(1)
+		if panel.deal.done():
+			break
+	var marked := -1
+	for k in panel.card_count():
+		var says := panel.slot(k).card.tier_text().begins_with(tr("PICK_JACKPOT"))
+		assert_eq(says, reader.choice_jackpot(k), "card %d says Jackpot only when it is one" % k)
+		if says:
+			marked = k
+	assert_gte(marked, 0, "one card is the jackpot's")
+	var code := w.rewards.offer_of(w.rewards.index_of(id))[maxi(marked, 0)]
+	await e.tap(KEY_1 + maxi(marked, 0))
+	await e.tap(KEY_ENTER)
+	await e.frames(3)
+	assert_eq(w.choosing, -1, "Enter took it")
+	assert_true(_took(w, code), "the jackpot card is applied")
 
 
 ## Card `code` (Offers) was applied to the world (the run starts with the weapon only).

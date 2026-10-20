@@ -6,8 +6,8 @@ extends RefCounted
 ## - a stat card: the stat's shown value now and after one card (Stats.card_amount, Stats.stepped within the cap;
 ##   max HP in HP through Stats.max_hp_at, crit through Stats.total_at, the rest per mille);
 ## - an ability card: its level now (0: new) and after (Abilities.level_after);
-## - a wand card: its level now (0: not held) and after (CardLevels.level_after, then the boss's altar's level-5 rule
-##   BossReward.level_after);
+## - a wand card: its level now (0: not held) and after (CardLevels.level_after; v0.8.0 FL: the boss's altar's
+##   level-5 rule is gone, so every source takes it one level up);
 ## - any other card (a passive mod, a trigger, a curse): no number (KIND_NONE).
 ## Pure: it reads the world and writes nothing.
 
@@ -17,9 +17,9 @@ const KIND_PERMILLE := 2
 const KIND_HP := 3
 
 
-## {kind, old, new, stat (the Stats.Stat, or -1)} for card `code` taken from reward index `reward` (-1: not from
-## a reward, e.g. the shop).
-static func of(w: World, code: int, reward: int = -1) -> Dictionary:
+## {kind, old, new, stat (the Stats.Stat, or -1)} for card `code` taken from reward index `_reward` (-1: not from
+## a reward, e.g. the shop; v0.8.0 FL: no source changes the forecast any more, the argument stays for the callers).
+static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 	var out := {"kind": KIND_NONE, "old": 0, "new": 0, "stat": -1}
 	match Offers.type_of(code):
 		Offers.STAT:
@@ -48,7 +48,5 @@ static func of(w: World, code: int, reward: int = -1) -> Dictionary:
 				var held := CardLevels.level(w, code) if w.items_owned.has(code) else 0
 				out["kind"] = KIND_LEVEL
 				out["old"] = held
-				out["new"] = BossReward.level_after(
-					w, reward, code, CardLevels.level_after(w, code)
-				)
+				out["new"] = CardLevels.level_after(w, code)
 	return out

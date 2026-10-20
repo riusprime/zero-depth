@@ -94,6 +94,11 @@ const TAGS: Array[StringName] = [
 	&"mutation",  # v0.8.0 RM (owner O91): a rare mutation card (its own category; offer_weight_permille keeps it rare)
 ]
 
+## v0.8.0 FL: the pacing categories, in LootPacing.Category's order (ItemTable.loot_category is the index).
+const LOOT_CATEGORIES: Array[StringName] = [
+	&"other", &"form", &"element", &"advanced", &"trigger", &"mutation"
+]
+
 @export var kind := Kind.LONG_EDGE
 @export var rarity := Rarity.COMMON
 ## The utility the item needs to do anything (v0.3.0 E): a UtilityDefinition id (&"guard", &"blink"), or empty for
@@ -209,6 +214,11 @@ const TAGS: Array[StringName] = [
 ## chest's and the shop's draw (ItemPool.card_weight); a card under 1000 never fills the boss's legendary chance slot
 ## (Offers.legendary_cards). The floor pacing step (FL) tunes when such a card is eligible. 1000 = as its tier.
 @export var offer_weight_permille := 1000
+## v0.8.0 FL (owner O91; docs/roadmap/v0.8.0/BALANCE_PASS.md "FL"): the card's pacing category, one of
+## LOOT_CATEGORIES (empty = other): `form` changes the attack's shape or path on its own, `element` is a shared status
+## card (S1–S7), `advanced` multiplies, repeats or builds on other cards (and the legendary ×2 triggers), `trigger` is
+## T1–T4, `mutation` a mutation. Every wand card and trigger card names one; LootPacing weighs its draws by the floor.
+@export var loot_category: StringName = &""
 
 
 func category() -> StringName:
@@ -229,6 +239,7 @@ func validate() -> Array[ValidationIssue]:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "a mutation weighs under 1000 per mille")
 		)
+	_check_loot_category(issues)  # v0.8.0 FL
 	if index_wave < 0 or index_wave > 64:
 		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))
 	if rarity < Rarity.COMMON or rarity > Rarity.EPIC:
@@ -463,6 +474,37 @@ func _check_bleed_engine(issues: Array[ValidationIssue]) -> void:
 	check_positive(issues, "bleed_seconds", bleed_seconds)
 	check_duration(issues, "bleed_seconds", bleed_seconds)
 	check_positive(issues, "bleed_max_stacks", bleed_max_stacks)
+
+
+## v0.8.0 FL: a known category; every wand card and trigger card names one (not other); a mutation is tagged so and
+## only it; a trigger card is a trigger (T1–T4) or, legendary (the ×2 triggers), advanced, and only a trigger card is.
+func _check_loot_category(issues: Array[ValidationIssue]) -> void:
+	if loot_category != &"" and not loot_category in LOOT_CATEGORIES:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "unknown loot_category %s" % loot_category)
+		)
+		return
+	var named := loot_category != &"" and loot_category != &"other"
+	if (tags.has("wand") or kind == Kind.TRIGGER) and not named:
+		issues.append(
+			ValidationIssue.new(
+				&"missing", resource_path, "a wand or trigger card names a category"
+			)
+		)
+	if tags.has("mutation") != (loot_category == &"mutation"):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a mutation, and only it, is a mutation")
+		)
+	if kind == Kind.TRIGGER and named:
+		var want := &"advanced" if rarity == Rarity.LEGENDARY else &"trigger"
+		if loot_category != want:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "this trigger card is %s" % want)
+			)
+	elif loot_category == &"trigger":
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "only a trigger card is a trigger")
+		)
 
 
 ## v0.6.5 WN5a: the moving bleed is shorter than the standing one; a Gun face has both keys.

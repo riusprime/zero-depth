@@ -10,4 +10,5 @@ desc_key = &"ITEM_LONG_SHADOW_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("dash", "blade", "wand")
 modifiers = Array[StringName]([&"long_shadow"])
+loot_category = &"advanced"
 id = &"long_shadow"

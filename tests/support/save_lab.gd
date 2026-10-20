@@ -69,6 +69,7 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.5.5 AR (X1b), as Main
 	)
+	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))  # v0.8.0 FL
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	if w.boss_flow != null:  # v0.8.0 N11: floor 1's arrival left out here (Main lands on it; test_arrival covers it)

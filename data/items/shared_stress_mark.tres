@@ -10,4 +10,5 @@ desc_key = &"ITEM_SHARED_STRESS_MARK_DESC"
 tags = PackedStringArray("wand")
 modifiers = Array[StringName]([&"shared_stress_mark"])
 index_wave = 3
+loot_category = &"advanced"
 id = &"shared_stress_mark"

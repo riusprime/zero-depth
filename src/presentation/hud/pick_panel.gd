@@ -148,7 +148,9 @@ func sync(reader: WorldReader) -> void:
 			continue
 		var face := card_face(self, reader, items[k])  # v0.4.0 BS: a mod, an ability or a stat card
 		if legendary:
-			face = legendary_face(self, face, reader.legendary_card_level(r))
+			face = legendary_face(self, face)
+		if reader.choice_jackpot(k):  # v0.8.0 FL: a jackpot card says so
+			face = jackpot_face(self, face)
 		s.show_card(face)
 		var curse := reader.choice_curse(k)  # v0.5.0 EV: a cursed chest card says so
 		s.show_curse(CurseLook.down_line(self, reader, curse) if curse >= 0 else "")  # v0.6.0 CU
@@ -254,18 +256,21 @@ static func level_text(ci: Object, held: int, to: int) -> String:
 
 ## v0.5.5 AR (X1b): a card of the boss's legendary altar. v0.8.0 RR (owner O33): it keeps its own tier (a Legendary
 ## card the legendary gold, a legendary stat card too; any other its tier's colour and word), so a Legendary card
-## stands out among the boss's level-5 versions. v0.6.5 WN5b: a wand card taken there goes to `wand_level`: the line
-## says "Mod · Level 5 · <tier>" and the badge "Lv 5".
-static func legendary_face(ci: Object, face: Dictionary, wand_level: int = 0) -> Dictionary:
+## stands out. v0.8.0 FL (owner O91): no level-5 version any more: a wand card there reads as anywhere else (an
+## upgrade's badge "Lv N → N+1", card_face).
+static func legendary_face(_ci: Object, face: Dictionary) -> Dictionary:
+	return face.duplicate()
+
+
+## v0.8.0 FL (owner O91: "rare early jackpots … through explicit exceptional rewards"; LootPacing.jackpot): a jackpot
+## card's line starts with "Jackpot", and the face says so (`jackpot`).
+static func jackpot_face(ci: Object, face: Dictionary) -> Dictionary:
 	var out := face.duplicate()
-	if wand_level > 0 and bool(face.get("wand", false)):
-		var tier := int(face["tier"])
-		var word: String = ci.tr(
-			RARITY_KEYS[3 if tier == CardFrames.LEGENDARY_TIER else clampi(tier, 0, 2)]
-		)
-		word = "%s · %s" % [ci.tr("UI_CARD_ABILITY_LEVEL") % wand_level, word]
-		out["level_text"] = level_text(ci, int(face.get("held_level", 0)), wand_level)  # v0.7.5 SM
-		out["tier_text"] = "%s · %s" % [ci.tr("UI_CARD_MOD"), word]
+	out["jackpot"] = true
+	var line: String = face.get("tier_text", "")
+	out["tier_text"] = (
+		ci.tr("PICK_JACKPOT") if line == "" else "%s · %s" % [ci.tr("PICK_JACKPOT"), line]
+	)
 	return out
 
 

@@ -2,7 +2,8 @@ extends SceneTree
 ## v0.8.0 RR (owner O33): the four card tiers on the pick panel's stone cards, one language per run (`-- --lang=en` or
 ## `-- --lang=es`): Explosive (Common), Wildfire (Rare), Twin (Epic, a Gun card), Chain Blast (Legendary), each face
 ## built by PickPanel.card_face from a Gun run's world (the game's own face code); then the boss altar's faces
-## (PickPanel.legendary_face: a level-5 Common card next to Chain Blast and a legendary stat card). A tool, not a test.
+## (PickPanel.legendary_face: a Common card next to Chain Blast and a legendary stat card; v0.8.0 FL: no level-5
+## version). A tool, not a test.
 ## Needs a renderer (not --headless):
 ##   xvfb-run -a -s "-screen 0 1600x1000x24" godot --path . --rendering-driver opengl3 --audio-driver Dummy \
 ##     --resolution 1600x1000 -s scripts/shots/rarity_cards.gd -- --lang=en
@@ -72,7 +73,7 @@ func _show_boss() -> void:
 	_clear()
 	for id in BOSS:
 		var face := PickPanel.card_face(root, _reader, _code(id))
-		_slot(PickPanel.legendary_face(root, face, _w.legendary_table.wand_level))
+		_slot(PickPanel.legendary_face(root, face))  # v0.8.0 FL: no level-5 version any more
 	var stat := Offers.stat_code(Stats.Stat.DAMAGE, Offers.LEGENDARY)
 	_slot(PickPanel.card_face(root, _reader, stat))
 

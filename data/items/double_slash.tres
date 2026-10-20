@@ -10,4 +10,5 @@ desc_key = &"ITEM_DOUBLE_SLASH_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"double_slash"])
+loot_category = &"advanced"
 id = &"double_slash"

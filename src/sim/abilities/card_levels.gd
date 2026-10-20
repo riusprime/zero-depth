@@ -3,9 +3,10 @@ extends RefCounted
 ## v0.6.5 WN3 (docs/design/WAND.md rule 6: "A duplicate levels up. Taking a card you already hold makes it stronger
 ## (levels 1–5) and uses no new slot"): the levels of the wand's cards (World.card_levels, by item index). A wand card
 ## is an item tagged `wand` (ItemTable.tags): the Gun pool G1–G16 (WN3), and the other pools as they ship. While you
-## hold one below MAX_LEVEL it stays in the offers (altars, chests, the shop, events, cores), and taking it again
-## raises its level instead of taking a slot. Its modifiers compile at that level (ModifierTable.at: each op's
-## per_level, Modifiers.build_modifiers). Deterministic; no randomness.
+## hold one below MAX_LEVEL it stays in the offers (altars, chests, the shop, events, cores; v0.8.0 FL: below the
+## floor's level ceiling, LootPacing), and taking it again raises its level instead of taking a slot. Its modifiers
+## compile at that level (ModifierTable.at: each op's per_level, Modifiers.build_modifiers). Deterministic; no
+## randomness.
 
 const MAX_LEVEL := 5
 const TAG := "wand"
@@ -23,11 +24,15 @@ static func level(w: World, idx: int) -> int:
 	return maxi(1, w.card_levels[idx])
 
 
-## Taking item `idx` now would do something: it isn't held, or it is a wand card below MAX_LEVEL.
-static func can_take(w: World, idx: int) -> bool:
+## Item `idx` may be offered now: it isn't held, or it is a wand card below the floor's level ceiling (v0.8.0 FL:
+## LootPacing.ceiling, MAX_LEVEL without a pacing table), or below `ceiling` when given (at most MAX_LEVEL; the
+## boss's upgrade and a jackpot pass a higher one, the dev panel's grants MAX_LEVEL). Every card source's check:
+## ItemPool.available, Shop.can_apply (the shop, an event's cards, a core's drop).
+static func can_take(w: World, idx: int, ceiling: int = -1) -> bool:
 	if not w.items_owned.has(idx):
 		return true
-	return is_card(w, idx) and level(w, idx) < MAX_LEVEL
+	var cap := mini(ceiling if ceiling > 0 else LootPacing.ceiling(w), MAX_LEVEL)
+	return is_card(w, idx) and level(w, idx) < cap
 
 
 ## A held wand card taken again: one level up (at most MAX_LEVEL); the build compiles again. False if `idx` isn't a

@@ -125,7 +125,7 @@ func test_the_boss_altar_holds_a_legendary_card_at_its_chance() -> void:
 		var c := offer[k]
 		assert_false(
 			Offers.type_of(c) == Offers.MOD and w.item_tables[c].rarity == ItemTable.LEGENDARY,
-			"the other cards are the boss's level-5 versions and legendary stat cards"
+			"the other cards are the boss's upgrade and legendary stat cards (v0.8.0 FL)"
 		)
 	var none := _world()
 	none.legendary_table.card_permille = 0

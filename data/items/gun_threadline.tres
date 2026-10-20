@@ -12,4 +12,5 @@ requires_weapon = &"gun"
 tags = PackedStringArray("bolt", "wand")
 modifiers = Array[StringName]([&"gun_threadline"])
 index_wave = 3
+loot_category = &"advanced"
 id = &"gun_threadline"

@@ -468,7 +468,11 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   LINK a link time, PULL a reach, DELAY a delay, CONSUME a period and a release cap; every cast but a pull's is
   checked as a hook's child. New op fields `imprint_seconds` / `imprint_permille` (PAYLOAD; Dodge Imprint 1.5 / 1100
   +100). `ItemDefinition.offer_weight_permille` (0..10000, default 1000; a `mutation`-tagged card is under 1000) and
-  the item tag `mutation`. `WandDefinition.remnant_max` (96, 1..256), `remnant_kind_max` (48, 16, 48, 48; 4 entries,
+  the item tag `mutation`. v0.8.0 FL: `ItemDefinition.loot_category` (one of `LOOT_CATEGORIES`: `other`, `form`,
+  `element`, `advanced`, `trigger`, `mutation`; empty = other): every wand card and trigger card names one (not other);
+  a `mutation`-tagged card, and only it, is `mutation`; a trigger card is `trigger` (T1–T4) or, legendary (the ×2
+  triggers), `advanced`; only a trigger card is `trigger`. The shipped mapping is in
+  [`BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `WandDefinition.remnant_max` (96, 1..256), `remnant_kind_max` (48, 16, 48, 48; 4 entries,
   each 1..`remnant_max`), `remnant_activations_max` (64, 1..256), `thermal_base` (6), `thermal_per_burn` (4; together
   > 0), `thermal_shatter_seconds` (0.3, 0..2). Shipped (`index_wave` 3): `gun_threadline` (Gun, rare),
   `shared_faultline`, `shared_gravity_stitch` (rare), `shared_stress_mark` (common), `mut_double_exposure`,
@@ -1235,6 +1239,20 @@ and `extra_picks_max` (0..8; data 1 and 3): the picks a boss altar gives past th
 (`min(max, per_loop × (L − 1))`; the altar stays after a pick, its offer cleared, `World.legendary_picks`). `mods` is
 empty in the data: the three legendary triggers and Chain Blast come only by that chance (and rarely from altars, chests
 and the shop), so a boss's core gives legendary stat cards only.
+v0.8.0 FL (owner O91; SIM_CONTRACTS §8m): `wand_level` is retired (validation: it must be 0; the level-5 grant is
+gone). `upgrade_choice` (bool; data true): the altar offers one held wand card one level up, up to the next floor's
+level ceiling. `card_categories` (`ItemDefinition.LOOT_CATEGORIES` but `other`; data `advanced`, `trigger`): one card of
+those categories (never a Legendary card nor a mutation; the Legendary chance's card takes its place). The pool needs
+cards: `stat_cards`, `mods`, `upgrade_choice` or `card_categories` (`missing`).
+
+`LootPacingDefinition` (v0.8.0 FL, owner O91; `data/rewards/pacing.tres`, category `loot_pacing`, id `pacing`; the dev
+panel's economy group): one table every card source reads (SIM_CONTRACTS §8m). Per stage (floor 1, floor 2, floor 3,
+Deep floors and loops ≥ 2): `floor_1_weights_permille`, `floor_2_weights_permille`, `floor_3_weights_permille`,
+`deep_weights_permille` (five each, 0..10000: [form, element, advanced, trigger, mutation]; data 1400/1400/400/600/20,
+1000/1000/1000/1200/100, 900/900/1200/1200/300, 800/800/1300/1200/600), `level_ceilings` (four, 1..5, never falling;
+data 2/3/5/5), `guaranteed_altars` (four, 0..8; data 2/0/0/0: the floor's first N regular altars show a card compatible
+with the wand), and `jackpot_permille` (0..1000; data 15). Compiled by `RunContentCompiler.compile_loot_pacing` into
+`LootPacingTable`; without the file, no pacing.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,

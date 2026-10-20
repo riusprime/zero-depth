@@ -10,4 +10,5 @@ desc_key = &"ITEM_WIDE_ARC_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"wide_arc"])
+loot_category = &"form"
 id = &"wide_arc"

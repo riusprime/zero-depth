@@ -10,4 +10,5 @@ desc_key = &"ITEM_SPLIT_WAVE_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"split_wave"])
+loot_category = &"advanced"
 id = &"split_wave"

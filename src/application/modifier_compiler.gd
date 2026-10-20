@@ -190,6 +190,7 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun
 	t.offer_weight_permille = def.offer_weight_permille  # v0.8.0 RM: a mutation's low weight
+	t.loot_category = maxi(0, ItemDefinition.LOOT_CATEGORIES.find(def.loot_category))  # v0.8.0 FL
 
 
 ## Every modifier in a repository, compiled, in id order (the combinatorial smoke test and the views' tests use it).

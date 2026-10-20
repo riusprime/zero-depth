@@ -467,7 +467,9 @@ static func _mod(w: World) -> int:
 	var weights := PackedInt32Array()
 	for idx in pool:
 		var rare := w.item_tables[idx].tier() >= ItemTable.TIER_RARE  # v0.8.0 RR: an epic one too
-		weights.append(w.reward_table.rare_weight_chest if rare else 1)
+		# v0.8.0 FL: × the floor stage's category multiplier (per mille of the old weight; × 1 without pacing)
+		var base := w.reward_table.rare_weight_chest if rare else 1
+		weights.append(base if w.loot_pacing == null else LootPacing.weigh(w, idx, base * 1000))
 	var pick := Offers.pick(w.ev.rng, weights)
 	return pool[pick] if pick >= 0 else -1
 

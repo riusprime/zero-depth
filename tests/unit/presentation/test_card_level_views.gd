@@ -1,9 +1,9 @@
 extends GutTest
 ## v0.7.5 SM (owner N8): a wand card's level on its card face (PickPanel.card_face, shared by the altar and chest pick,
 ## the shop, the event panel and the Swap) and on the HUD's wand pips and the Build page's row. A wand card not held
-## reads "Lv 1"; held at N, "Lv N → N+1"; the legendary altar's level-5 version "Lv N → 5" ("Lv 5" when not held);
-## an ability card follows the same rule; a stat card has no badge. The badge fits on the card in English and
-## Spanish at the pick's and the shop's scales. Views only: they read the sim.
+## reads "Lv 1"; held at N, "Lv N → N+1" (v0.8.0 FL: the legendary altar's too, its level-5 version is gone; a
+## jackpot card's line starts "Jackpot"); an ability card follows the same rule; a stat card has no badge. The badge
+## fits on the card in English and Spanish at the pick's and the shop's scales. Views only: they read the sim.
 
 const BASE := Vector2(1920, 1080)
 
@@ -56,13 +56,14 @@ func test_a_wand_card_reads_lv_1_then_lv_n_to_n_plus_1() -> void:
 	TranslationServer.set_locale("es")
 	assert_eq(PickPanel.card_face(self, r, code)["level_text"], "Nv 3 → 4", "in Spanish")
 	TranslationServer.set_locale("en")
-	var legendary := PickPanel.legendary_face(self, face, 5)
-	assert_eq(legendary["level_text"], "Lv 3 → 5", "the legendary altar gives its level-5 version")
-	var fresh := PickPanel.legendary_face(
-		self, PickPanel.card_face(self, r, WandLab.code(w, &"long_edge")), 5
+	var legendary := PickPanel.legendary_face(self, face)
+	assert_eq(
+		legendary["level_text"], "Lv 3 → 4", "v0.8.0 FL: the legendary altar's upgrade is one level"
 	)
-	if bool(r.card_info(WandLab.code(w, &"long_edge"))["wand"]):
-		assert_eq(fresh["level_text"], "Lv 5", "not held: straight to 5")
+	var jackpot := PickPanel.jackpot_face(self, face)
+	assert_true(bool(jackpot["jackpot"]), "v0.8.0 FL: a jackpot card says so")
+	assert_string_starts_with(jackpot["tier_text"], "Jackpot · ")
+	assert_eq(jackpot["level_text"], "Lv 3 → 4", "its badge is the take's")
 
 
 func test_an_item_that_does_not_level_and_a_stat_card_show_no_badge() -> void:

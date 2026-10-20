@@ -1129,6 +1129,7 @@ PICK_TITLE_BOSS_LEGENDARY,The boss left a Legendary card,El jefe dejó una carta
 PICK_TITLE_BOSS_MORE,%s · %d more,%s · %d más
 PICK_TITLE_CHEST_DEALT,Chest · it gave you this,Cofre · te ha dado esto
 PICK_HINT_DEALT,"Enter, A or a click to take it","Intro, A o un clic para cogerla"
+PICK_JACKPOT,Jackpot,Premio gordo
 UI_GAIN_LEVEL,Level %d → %d,Nivel %d → %d
 UI_GAIN_LEVEL_NEW,New · Level %d,Nuevo · Nivel %d
 UI_GAIN_HP,%d → %d HP,%d → %d PV
