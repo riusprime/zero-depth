@@ -335,8 +335,18 @@ with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attac
 every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
 DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
 target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
-1210) within their caps; the other stats are read where the sim computes them (cooldowns: dash, skill, blink, bombs;
-attack speed: shot period, drone period, a swing's recovery; area: swing and cleave reach, vent radius, ability
+1210) within their caps, except an `additive` card (**v0.8.0 SG**, owner O91: damage, attack speed and Glass Cannon;
+two +10 % = 1200). The damage multiplier is one additive bucket, `(DAMAGE + ONRUSH while moving + Hoarder's bonus) ×
+GLASS_CANNON` (`Stats.damage_permille`); the curses (Blood Price, Glass Heart, Heavy Hands) stay explicit multipliers.
+Attack speed has one rule (`AttackRate`): the raw bonus = `ATTACK_SPEED − 1000` + the attack's wand
+`rate_bonus_permille` (a negative one counts); the effective bonus counts it in full up to `attack_speed_knee`
+(500), at `attack_speed_slope` (500 ‰) up to `attack_speed_knee2` (1500), at `attack_speed_slope2` (250 ‰) above
+(`SimTuning`, `data/tuning/sim.tres`); the rate `1000 + effective` (at least 1) then takes Heavy Hands' cut. The Gun's
+period is `base × 1000 / rate` half up (at least 2 ticks once changed), the Blade's whole swing (hit tick, sweep,
+recovery) scales by the same rate (at least `rate_min`), the drone's period reads the stat alone. A save made before
+SG (`World.stat_rules` 0) rebuilds DAMAGE, ATTACK_SPEED and GLASS_CANNON from `stat_cards` and the gamble stacks on
+load (`Stats.migrate_rules`). The other stats are read where the sim computes them (cooldowns: dash, skill, blink,
+bombs; attack speed: shot period, drone period, the Blade's swing; area: swing and cleave reach, vent radius, ability
 radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
 in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
 
@@ -1531,10 +1541,13 @@ below) and FB3's cap of a fifth of max HP (D36).
 - **The hidden catch-up (v0.5.5 DS, owner D3-D7, D10, B1: "regular scaling + multiplier based on how much you
   grew", "Yes, but hidden").** Everything above stays the regular scaling; `CatchUp` multiplies on top of it. The
   build's power `P` (per mille of a fresh build, `CatchUp.power`, the one function a later term such as the modifier
-  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × DAMAGE × GLASS_CANNON ×
-  (1000 + ONRUSH) × expected_crit(chance, mult) / expected_crit(base) × ATTACK_SPEED × (1000 + ability_level ×
+  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × (DAMAGE + ONRUSH) ×
+  GLASS_CANNON × expected_crit(chance, mult) / expected_crit(base) × rate × (1000 + ability_level ×
   levels of the non-weapon abilities + item × items held + combo × combos owned)`, each step `/ 1000` in integers;
-  nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
+  v0.8.0 SG: `(DAMAGE + ONRUSH)` is the additive bucket (Onrush always counted, Hoarder never) and `rate` is
+  `1000 + AttackRate.curve(ATTACK_SPEED − 1000 + the held cards' rate_bonus_permille ADD ops at their levels)`
+  (`CatchUp.rate_permille`, `wand_rate_bonus`: summed whatever the order, so a reorder still never changes P; no
+  curse, as before); nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
   cap)` per mille with an integer square root (no float, no `pow`). At floor entry (`CatchUp.start_floor`, after the
   carry, the abilities, the heat and the events are set up; `Main._start_floor`) `E = expected_power[f − 1]` and
   `cap = cap[f − 1] + threat_cap × T` (`Curses.threat`: curses held and Deep floors taken); `m` is then fixed for the
