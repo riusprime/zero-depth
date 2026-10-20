@@ -88,8 +88,9 @@ func test_the_gun_cards_scale_the_new_shot() -> void:
 	assert_almost_eq(big.radius_m, 0.4, 1e-5, "Big Shot: x2 size")
 	assert_almost_eq(big.speed, base.speed * 0.75, 1e-6, "-25 % speed")
 	var rapid := _compiled(w, &"gun_rapid_fire")
-	assert_almost_eq(rapid.radius_m, 0.12, 1e-5, "Rapid Fire: x0.6 size")
-	assert_eq(rapid.rate_bonus_permille, 600, "+60 % fire rate")
+	# v0.8.0 MR (O91): sustained fire: x0.7 size, +30 % rate, ramping while held (test_mr_modifiers.gd)
+	assert_almost_eq(rapid.radius_m, 0.14, 1e-5, "Rapid Fire: x0.7 size")
+	assert_eq(rapid.rate_bonus_permille, 300, "+30 % fire rate")
 
 
 func _compiled(w: World, card: StringName) -> AttackSpec:

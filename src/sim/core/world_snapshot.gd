@@ -92,6 +92,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
+	&"RemnantRule",  # v0.8.0 RM: a REMNANT op's rule (content)
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
@@ -172,6 +173,7 @@ const ADDED_SINCE_V05 := {
 		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
 		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
 		&"gamble_fail_tick",
+		&"stat_rules",  # v0.8.0 SG: an older save's stat rules are 0 (apply rebuilds them: Stats.migrate_rules)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
@@ -410,6 +412,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
 		base.gamble_wins = base.gamble_uses
 		base.gamble_fail_tick = -1
+	if not data.has(&"stat_rules"):  # v0.8.0 SG (O91): damage and attack speed compounded before SG
+		base.stat_rules = 0
+		Stats.migrate_rules(base)
 	var ev_data: Variant = data.get(&"ev", {})
 	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
 		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none

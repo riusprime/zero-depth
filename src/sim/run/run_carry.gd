@@ -20,6 +20,7 @@ const FIELDS: Array[StringName] = [
 	&"stat_cards",  # v0.5.0 SH: the stat cards taken, so the shop can sell one back
 	&"mod_slots",  # v0.6.0 MX2: the six modifier slots in pick order (the layer order)
 	&"card_levels",  # v0.6.5 WN3: the wand cards' levels
+	&"stat_rules",  # v0.8.0 SG: the rules stat_values follow (a carry without it is from before SG)
 ]
 const HP := &"hp"
 ## v0.5.5 EC (owner Q-S4): the shards the portal left behind, written to the next floor's World.shards_left_behind
@@ -59,6 +60,10 @@ static func apply(w: World, carry: Dictionary) -> void:
 	# The abilities' tables come after the carry (Main, the labs), so the migration runs in Abilities.start_floor.
 	if not carry.has(&"mod_slots"):
 		w.migrate_slots = true
+	# v0.8.0 SG: a carry from before SG compounded damage and attack speed; the stat tables come after the carry too,
+	# so Abilities.start_floor rebuilds them (Stats.migrate_rules).
+	if carry.has(&"stat_values") and not carry.has(&"stat_rules"):
+		w.stat_rules = 0
 	Modifiers.invalidate(w)  # v0.6.5 WN4: the cards' levels came after the items
 	Gamble.after_carry(w)  # the shrine's max HP wins, before the HP is clamped to max
 	if carry.has(HP):

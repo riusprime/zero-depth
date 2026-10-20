@@ -5,6 +5,13 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
+## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
+const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
+const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
+const REMNANT_FRAGMENT := RemnantRule.Kind.FRAGMENT
+const REMNANT_ATTACK_CROSS := RemnantRule.Activate.ATTACK_CROSS
+const REMNANT_DELAY := RemnantRule.Activate.DELAY
+const EFFECT_THERMAL_BREAK := Engines.EFFECT_THERMAL_BREAK
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE

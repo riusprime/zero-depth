@@ -2,8 +2,9 @@ class_name StatCardDefinition
 extends ContentDef
 ## A stat card (v0.4.0 BS, owner F9; CONTENT_SCHEMA §8): one stat in three rarities. Every reward that isn't an
 ## ability or a mod is one of these. Amounts are percent (or points for crit chance and crit damage, percent of
-## max HP per second for regen), compiled to per mille. Cards stack multiplicatively (two +10 % = x1.21); `cap` is
-## the most (or for a cut, the least) the stat may reach, as a multiplier or a total in points (0 = none).
+## max HP per second for regen), compiled to per mille. Cards stack multiplicatively (two +10 % = x1.21) unless the
+## card is `additive` (v0.8.0 SG, owner O91: damage, attack speed and Glass Cannon; two +10 % = x1.20); `cap` is the
+## most (or for a cut, the least) the stat may reach, as a multiplier or a total in points (0 = none).
 ## v0.5.0 CP: five rule cards that trade or condition their gain (Stats has each rule): glass_cannon (+damage, and
 ## `side` cuts max HP down to `limit` x), onrush (+damage while moving), overkill (a kill's excess damage splashes
 ## to the nearest enemy within `limit` m), hoarder (+damage per 100 shards held, counting at most `limit` shards;
@@ -38,6 +39,17 @@ const STATS: Array[StringName] = [
 const SIDED: Array[StringName] = [&"glass_cannon", &"hoarder", &"lifesprout"]
 const LIMITED: Array[StringName] = [&"glass_cannon", &"overkill", &"hoarder"]
 const RARITIES := 3
+## v0.8.0 SG: the multiplier stats a card may make additive (the points and cut stats already add or cut).
+const ADDITIVE_OK: Array[StringName] = [
+	&"max_hp",
+	&"damage",
+	&"attack_speed",
+	&"area",
+	&"move_speed",
+	&"shard_gain",
+	&"pickup_range",
+	&"glass_cannon",
+]
 
 ## One of STATS.
 @export var stat: StringName = &"damage"
@@ -55,6 +67,9 @@ const RARITIES := 3
 ## v0.5.0 CP: the rule's limit (LIMITED cards only): Glass Cannon's lowest max HP multiplier (0..1), Overkill's
 ## splash reach in metres, Hoarder's most shards that count.
 @export var limit := 0.0
+## v0.8.0 SG (owner O91: "Ordinary damage pickups should add bonuses rather than compound multiplicatively"): a
+## multiplier stat's cards (and gamble wins) add their amounts instead of compounding (ADDITIVE_OK stats only).
+@export var additive := false
 
 
 func category() -> StringName:
@@ -85,6 +100,10 @@ func validate() -> Array[ValidationIssue]:
 	if weight < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "weight is negative"))
 	_validate_rule(issues)
+	if additive and not ADDITIVE_OK.has(stat):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "additive is only for %s" % [ADDITIVE_OK])
+		)
 	return issues
 
 

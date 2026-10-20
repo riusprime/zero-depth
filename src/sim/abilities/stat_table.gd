@@ -16,3 +16,6 @@ var weight := 0
 ## gain) and the limit x 1000 (Glass Cannon's lowest max HP multiplier, Overkill's reach in mm, Hoarder's shards).
 var side := PackedInt32Array([0, 0, 0])
 var limit_permille := 0
+## v0.8.0 SG (owner O91): a MULT stat whose cards add their amounts (value + amount within the cap) instead of
+## compounding (Stats.stepped): damage, attack speed and Glass Cannon.
+var additive := false

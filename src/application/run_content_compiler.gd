@@ -98,6 +98,10 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.arrival_first_ticks = SimTick.seconds_to_ticks(def.arrival_first_seconds)  # v0.8.0 N11
 	t.arrival_ticks = SimTick.seconds_to_ticks(def.arrival_seconds)
 	t.arrival_calm_ticks = SimTick.seconds_to_ticks(def.arrival_calm_seconds)
+	t.attack_speed_knee_permille = def.attack_speed_knee_permille  # v0.8.0 SG
+	t.attack_speed_knee2_permille = def.attack_speed_knee2_permille
+	t.attack_speed_slope_permille = def.attack_speed_slope_permille
+	t.attack_speed_slope2_permille = def.attack_speed_slope2_permille
 	return t
 
 

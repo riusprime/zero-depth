@@ -44,3 +44,9 @@ var player_shots_max := Attacks.MAX_PLAYER_SHOTS
 var arrival_first_ticks := BossFlow.ARRIVE_FIRST_TICKS
 var arrival_ticks := BossFlow.ARRIVE_TICKS
 var arrival_calm_ticks := BossFlow.ARRIVE_TICKS_CALM
+## v0.8.0 SG (owner O91): the attack-speed curve (AttackRate.curve): full up to the knee, then slope, then slope2
+## past knee2, per mille.
+var attack_speed_knee_permille := AttackRate.KNEE
+var attack_speed_knee2_permille := AttackRate.KNEE2
+var attack_speed_slope_permille := AttackRate.SLOPE
+var attack_speed_slope2_permille := AttackRate.SLOPE2

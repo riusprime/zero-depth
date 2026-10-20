@@ -760,7 +760,7 @@ ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on your finisher.,Las cart
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Bigger, stronger, slower shots.","Disparos más grandes, fuertes y lentos."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
-ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.","Disparos más pequeños y débiles que se aceleran cuanto más mantienes."
+ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.",Disparos pequeños y débiles que aceleran si mantienes.
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado."
 ITEM_GUN_SPREAD,Spread,Abanico
@@ -786,7 +786,7 @@ ITEM_GUN_ECHO_DESC,Fire again a moment later.,Disparas otra vez un instante desp
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
 ITEM_GUN_BACKFIRE_DESC,Also fire behind you.,También disparas hacia atrás.
 ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
-ITEM_SPLIT_WAVE_DESC,"Flying slashes split on hit; without them, hits throw small crescents.","Tus tajos voladores se dividen al impactar; sin ellos, los impactos lanzan medialunas pequeñas."
+ITEM_SPLIT_WAVE_DESC,"Flying slashes split; without them, hits throw crescents.","Tajos voladores se dividen; sin ellos, lanzan medialunas."
 ITEM_WHIRL,Whirl,Remolino
 ITEM_WHIRL_DESC,Every slash becomes a full spin.,Cada tajo se vuelve un giro completo.
 ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
@@ -810,7 +810,7 @@ ITEM_PARRY_EDGE_DESC,Your slashes destroy enemy shots.,Tus tajos destruyen los d
 ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
 ITEM_LUNGE_STEP_DESC,Each slash steps you forward.,Cada tajo te hace avanzar.
 ITEM_FINISHER_PLUS,Fracture Bank,Banco de Fracturas
-ITEM_FINISHER_PLUS_DESC,Combo hits lodge fragments; your finisher rips them out.,Los golpes del combo clavan fragmentos; el remate los arranca.
+ITEM_FINISHER_PLUS_DESC,Combo hits lodge fragments; your finisher rips them out.,El combo clava fragmentos; el remate los arranca.
 ITEM_COUNTER,Counter,Contraataque
 ITEM_COUNTER_DESC,Slash right after a dash to hit hard.,Ataca justo tras esquivar y pega fuerte.
 WAND_READ_FIRE,You fire %s.,Disparas %s.
@@ -1139,12 +1139,12 @@ UI_CURSE_ALTAR_OPEN,[E / X] Touch the altar,[E / X] Tocar el altar
 ITEM_GUN_THREADLINE,Threadline,Hilo Conector
 ITEM_GUN_THREADLINE_DESC,Shots fired close together are linked by a cutting thread.,Los disparos seguidos quedan unidos por un hilo cortante.
 ITEM_SHARED_FAULTLINE,Faultline,Falla
-ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erupt.,Los golpes dejan grietas; atacar a través de una la hace estallar.
+ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erupt.,Los golpes dejan grietas que estallan al cruzarlas.
 ITEM_SHARED_GRAVITY_STITCH,Gravity Stitch,Puntada Gravitatoria
-ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen enemigos y curvan tus disparos.
+ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen y curvan disparos.
 ITEM_SHARED_STRESS_MARK,Stress Mark,Marca de Tensión
-ITEM_SHARED_STRESS_MARK_DESC,Hits mark enemies; strike from another side to break the mark.,Los golpes marcan; golpea desde otro lado para romper la marca.
+ITEM_SHARED_STRESS_MARK_DESC,Hits mark foes; hit from another side to break the mark.,Los golpes marcan; golpea desde otro lado para romperla.
 ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
-ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: la trayectoria de un ataque golpea otra vez al poco.
+ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
 ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
-ITEM_MUT_GRAND_FINALE_DESC,"Mutation: every few seconds, the remnants of cards to its left burst.",Mutación: cada pocos segundos estallan los restos de las cartas a su izquierda.
+ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.

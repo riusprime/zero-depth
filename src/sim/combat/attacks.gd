@@ -75,15 +75,16 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 
 ## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): the form runs with each of its
 ## projectiles (or hits) at the spec's share_permille of the launch's damage and base damage (its hooks' shares are
-## of that); the launch's moments after it (ON_LAUNCH, the back copy, a repeat) keep the whole.
+## of that; v0.8.0 RM lead fix: rounded half up, at least 1); the launch's moments after it (ON_LAUNCH, the back copy,
+## a repeat) keep the whole.
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
-	ctx.damage = maxi(1, d0 * share / 1000)
-	ctx.base_damage = maxi(1, b0 * share / 1000)
+	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
+	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
 	ctx.base_damage = b0
@@ -236,11 +237,12 @@ static func shot_offsets(spec: AttackSpec) -> PackedInt32Array:
 	return out
 
 
-## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (at least 1).
+## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (rounded half up, v0.8.0 RM
+## lead fix; at least 1).
 static func bolt_base_damage(spec: AttackSpec) -> int:
 	if spec.count <= 1:
 		return spec.damage
-	return maxi(1, spec.damage * spec.damage_permille / 1000)
+	return maxi(1, (spec.damage * spec.damage_permille + 500) / 1000)
 
 
 # --- Runners ------------------------------------------------------------------------------------------------

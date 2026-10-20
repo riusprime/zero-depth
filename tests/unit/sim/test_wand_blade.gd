@@ -96,7 +96,10 @@ func test_b2_wave_throws_a_flying_crescent() -> void:
 
 func test_b3_split_wave_needs_a_flying_slash_and_splits_it() -> void:
 	var alone := _fight([&"split_wave"])
-	assert_null(_hook(_step(alone), &"split_wave"), "no flying slash: nothing to split")
+	# v0.8.0 MR (O91): without a flying slash the slash's hits throw small crescents (test_mr_modifiers.gd)
+	var own := _hook(_step(alone), &"split_wave")
+	assert_not_null(own, "no flying slash: the slash throws its own crescents")
+	assert_eq(own.child.count, 2)
 	var w := _fight([&"echo_slash", &"split_wave"])
 	var crescent := _hook(_step(w), &"echo_slash").child
 	var split := _hook(crescent, &"split_wave")
@@ -122,7 +125,7 @@ func test_b4_whirl_spins_every_slash() -> void:
 func test_b5_double_slash_repeats_mirrored() -> void:
 	var w := _fight([&"double_slash"])
 	assert_eq(_step(w).repeat_delay_ticks, 9, "0.15 s later")
-	assert_eq(_step(w).repeat_damage_permille, 700, "v0.8.0 BL (B1): each repeat 70 %")
+	assert_eq(_step(w).repeat_damage_permille, 600, "v0.8.0 MR: each repeat 60 % (BL: 70 %)")
 	assert_eq(_step(w).repeats, 1, "level 1: one repeat (B1: +1 a level, test_blade_combos.gd)")
 	assert_eq(_step(w).echo_mirror, 1, "mirrored")
 	var r := _run(w)
@@ -157,11 +160,19 @@ func test_b7_heavy_is_slow_and_crushing() -> void:
 
 
 func test_b8_flurry_swings_faster_for_less() -> void:
+	# v0.8.0 MR (O91): a burst, the first 3 swings after a pause (FireRhythm; test_mr_modifiers.gd)
 	var plain := _fight([])
 	var w := _fight([&"flurry"])
-	assert_lt(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a faster swing")
-	assert_eq(_step(w).damage, _step(plain).damage * 750 / 1000, "−25 % damage")
-	assert_gt(_run(w)["hits"], _run(plain)["hits"], "more slashes land")
+	assert_eq(
+		BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "no swing yet: the base"
+	)
+	w.mx.burst_n = 1
+	assert_lt(
+		BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "a burst swing is faster"
+	)
+	w.mx.burst_n = 0
+	assert_eq(_step(w).damage, _step(plain).damage * 850 / 1000, "−15 % damage")
+	assert_ne(_run(w)["hash"], _run(plain)["hash"], "it changes the fight")
 
 
 func test_b9_fissure_cracks_then_erupts_in_a_line() -> void:
