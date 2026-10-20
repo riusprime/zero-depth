@@ -87,7 +87,8 @@ func levels() -> bool:
 	return life_per_level != 0 or max_per_level != 0 or stack_per_level != 0
 
 
-func hash_into(h: StateHasher) -> void:
+## Its numbers into a spec's digest (AttackHook.hash_into; content, so not named hash_into: WorldSnapshot's guard).
+func digest_into(h: StateHasher) -> void:
 	h.add_string("remnant")
 	for f in FIELDS:
 		var v: Variant = get(f)

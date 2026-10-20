@@ -45,7 +45,7 @@ func hash_into(h: StateHasher) -> void:
 	for v in [trigger, every, damage, damage_permille, delay_ticks, when]:
 		h.add_int(v)
 	if remnant != null:  # v0.8.0 RM: only a remnant's (a build without one hashes as before)
-		remnant.hash_into(h)
+		remnant.digest_into(h)
 		for v in [slot, section, 1 if extract else 0]:
 			h.add_int(v)
 	child.hash_into(h)

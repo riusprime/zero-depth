@@ -73,3 +73,10 @@ Every run exited 0. The Twin · Spread · Halo run also printed `projectiles 84.
   damage share is the plan's starting value.
 
 These are starting values. Re-tuning is the owner's call (D66); nothing was changed after these runs.
+
+## Lead fix (2026-10-20, landed with step RM)
+The lead found that a share floored (`d0 * share / 1000`): a 5-damage bolt at a 32 % share became 1, so Twin · Spread ·
+Halo hit less than the plain Gun. `Attacks._shared_form` (each projectile's share of the launch's damage and base
+damage) and `Attacks.bolt_base_damage` (a split shot's `damage_permille` share) now round half up,
+`(d * share + 500) / 1000`, still at least 1. The damage table above was measured before this fix; it was not re-run
+(NOT YET RUN after the fix). The tests it moved are named in PROGRESS (step RM).

@@ -1,8 +1,8 @@
 {
   "blade_all": {
     "damage": 4160,
-    "digest": "30799447b8201f0338641f5d564cfcfa8eed56382716013cd72723ab1b377897",
-    "hits": 126,
+    "digest": "d33041ce87e39442f485a40767f41afbb48a8ae18a97a2a6839eef439a789f27",
+    "hits": 122,
     "kills": 14
   },
   "blade_conductor": {
@@ -61,8 +61,8 @@
   },
   "both_all": {
     "damage": 4160,
-    "digest": "f3eff201ade07d7971747e9bb5db3ce83b05c8ba3d782a14f99e5e0c0904d331",
-    "hits": 189,
+    "digest": "e9ce164275b6c085fddce27fb70d32119bced4f0aa57afee642995e286419079",
+    "hits": 193,
     "kills": 14
   },
   "both_plain": {
@@ -73,8 +73,8 @@
   },
   "gun_all": {
     "damage": 4160,
-    "digest": "238e77927f9b19241c9dccdfe08b62a80bf4b7ab994bc5cf8cd67457ed30dc87",
-    "hits": 442,
+    "digest": "ec2691d270fabb3f43f18aaf14e312c7327c8d304d0f60fa786336fac4ea64a2",
+    "hits": 380,
     "kills": 14
   },
   "gun_barbed_bolts": {
