@@ -19,6 +19,10 @@ not in `main` yet).
   `src/presentation/world_view/render_switches.gd` (the render thread one off). Next: the owner plays and measures on
   their PC, says which switches to discard; D61.
 
+- **Branch `claude/balance-pass-v080`** (owner O91, 2026-10-20: the build and loot balance pass), cut from
+  `claude/perf-graphics-v080` at `ae4f136`: the plan is [`BALANCE_PASS.md`](BALANCE_PASS.md), five steps in the
+  owner's order (SG stats → MR modifiers → RM remnants → FL floor loot → BV validation); starting values D64-D68.
+
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
@@ -452,3 +456,4 @@ not in `main` yet).
 - 2026-10-19 (lead): HS (`8df1d18c`, merged `515c8a64`), HV + HR (HR merged HV `33dfbdf8` and tested the combined tree; merged `d9aa0912`); `perf_probe.gd` kept both the HS `--phases` and the HV blocks. `test_view_build_queue`'s two compare tests had failed since GX (the atmosphere's fog layer and dust follow the current camera; not in seams): now compared by place in the tree only (`e7d05165`), 5/5, and the file added to `seams.sh`. HR's separate render thread switch left off (engine errors in the horde e2e). `bash scripts/ci/seams.sh` on `e7d05165`: `Tests 471`, `Passing Tests 471`, `Time 1183.732s`, exit 0.
 - 2026-10-19: NF (agent, branch `v080-nf` from `a3bf019c`; owner O90, D63 answered A): `NavField` resumable fill (`_begin`/`_run`, shared by `flood()` and the new `begin_build`/`advance`/`cancel_build`, `build_state`/`restore_build`, `last_work`, `never_flooded`; `SLICES` 3, `SLICE_MIN` 64); `World._begin_nav_flood` on flood ticks, `advance` each tick while building, `flood_nav` immediate and cancelling, the door swaps carry `last_work` and drop the outgoing build; `WorldSnapshot` nav `work` + `build` (old saves: none); `perf_probe.gd --phases` `max` column; SIM_CONTRACTS flow field + snapshot. Tests: `gdformat --check src scripts tests && gdlint src scripts tests` (1054 files unchanged, no problems); `tests/golden`+`tests/arch` `Tests 6`, `Passing Tests 6`; `test_chase_field.gd` `Tests 8`, `Passing 8` (2 new); `test_world_snapshot.gd` `Tests 15`, `Passing 15` (new mid-build round trip after 1 and 2 slices + pre-NF save); 12 sim files (arenas, boss door press, boss signatures 1-2, enemies, enemy ai, horde, horde enemies, modifier equivalence, state hasher, utility, floor generator) `Tests 152`, `Passing Tests 152`, `Time 901.226s`; e2e old save, saves, horde enemies, boss signatures 1-2, ascension `Tests 13`, `Passing Tests 13`, `Time 193.754s`. Probe `nav_flood` avg/p95/max 0.531/7.197/13.274 → 0.452/2.714/4.903 ms. Not run: `test_curse_room.gd` (not touched), the full suite (GitHub).
 - 2026-10-19 (lead): NF (`0870ceda`, owner O90) merged as `1a4e23dd`; `bash scripts/ci/seams.sh` on `1a4e23dd`: `Tests 477`, `Passing Tests 477`, `Time 1264.937s`, exit 0.
+- 2026-10-20 (lead): O91 recorded (the balance pass); `BALANCE_PASS.md`, steps SG, MR, RM, FL, BV, D64-D68; branch `claude/balance-pass-v080` from `ae4f136`.
