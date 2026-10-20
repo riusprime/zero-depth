@@ -79,10 +79,13 @@ func test_wave_split_wave_vs_split_wave_wave() -> void:
 		_hook(_hook(_step(b), &"echo_slash").child, &"split_wave"),
 		"Split·Wave: nothing to split yet"
 	)
+	# v0.8.0 MR (O91): Split·Wave: no wave yet, so the slash itself throws the crescents
+	assert_not_null(_hook(_step(b), &"split_wave"), "Split·Wave: the slash throws its own")
+	assert_null(_hook(_step(a), &"split_wave"), "Wave·Split: not the slash")
 	var ra := _run(a)
 	var rb := _run(b)
 	assert_gt(int(ra["effects"].get(&"split_wave", 0)), 0)
-	assert_eq(int(rb["effects"].get(&"split_wave", 0)), 0)
+	assert_gt(int(rb["effects"].get(&"split_wave", 0)), 0)
 	assert_ne(ra["hash"], rb["hash"], "the fights differ")
 
 

@@ -65,13 +65,13 @@ func _swing(w: World, ticks: int) -> Dictionary:
 
 
 # --- B1 --------------------------------------------------------------------------------------------------------
-func test_b1_double_slash_repeats_once_more_each_level_at_70_percent() -> void:
+func test_b1_double_slash_repeats_once_more_each_level_at_60_percent() -> void:
 	for lvl in range(1, 6):
 		var w := _solo([&"double_slash"], [Vector2(1.3, 0.0)])
 		_at(w, &"double_slash", lvl)
 		var s := Modifiers.step(w, 0)
 		assert_eq(s.repeats, lvl, "level %d: %d repeats" % [lvl, lvl])
-		assert_eq(s.repeat_damage_permille, 700, "level %d: each at 70 %%" % lvl)
+		assert_eq(s.repeat_damage_permille, 600, "level %d: each at 60 %% (v0.8.0 MR)" % lvl)
 		var hits := _swing(w, 90)
 		assert_eq(
 			int(hits.get(ItemEffects.EFFECT_TWIN_ARC, 0)),
@@ -81,7 +81,7 @@ func test_b1_double_slash_repeats_once_more_each_level_at_70_percent() -> void:
 		assert_eq(int(hits.get(&"", 0)), 1, "level %d: the slash itself once" % lvl)
 
 
-func test_b1_a_repeat_deals_70_percent_of_the_slash() -> void:
+func test_b1_a_repeat_deals_60_percent_of_the_slash() -> void:
 	var w := _solo([&"double_slash"], [Vector2(1.3, 0.0)])
 	_at(w, &"double_slash", 3)
 	var seen := w.last_event_seq()
@@ -97,7 +97,7 @@ func test_b1_a_repeat_deals_70_percent_of_the_slash() -> void:
 	var slash: int = dmg[&""][0]
 	assert_eq((dmg[ItemEffects.EFFECT_TWIN_ARC] as Array).size(), 3)
 	for v: int in dmg[ItemEffects.EFFECT_TWIN_ARC]:
-		assert_eq(v, maxi(1, slash * 700 / 1000), "each repeat: 70 % of the slash")
+		assert_eq(v, maxi(1, slash * 600 / 1000), "each repeat: 60 % of the slash (v0.8.0 MR)")
 
 
 func test_b1_the_next_swing_does_not_cancel_the_queued_repeats() -> void:
@@ -155,17 +155,23 @@ func test_b2_heavy_slows_less_from_level_3_and_not_at_5() -> void:
 	assert_eq(BladeForms.step(w, 0).ticks, BladeForms.step(plain, 0).ticks, "level 5: full speed")
 
 
-func test_b2_flurry_loses_less_damage_from_level_3_and_none_at_5() -> void:
+func test_b2_flurry_deals_85_percent_at_every_level_since_mr() -> void:
 	var plain := Modifiers.step(WandLab.fight(&"blade", []), 0).damage
 	var w := WandLab.fight(&"blade", [&"flurry"])
 	var got := []
 	for lvl in range(1, 6):
 		_at(w, &"flurry", lvl)
 		got.append(Modifiers.step(w, 0).damage)
+	# v0.8.0 MR (O91): Flurry is a burst now, ×0.85 at every level (its levels add burst swings)
 	assert_eq(
 		got,
-		[plain * 750 / 1000, plain * 750 / 1000, plain * 833 / 1000, plain * 917 / 1000, plain],
-		"−25 %, shrinking from level 3, none at level 5"
+		[
+			plain * 850 / 1000,
+			plain * 850 / 1000,
+			plain * 850 / 1000,
+			plain * 850 / 1000,
+			plain * 850 / 1000
+		]
 	)
 
 
@@ -328,7 +334,8 @@ func test_b6_blasts_past_eight_in_a_tick_merge_when_they_overlap() -> void:
 
 
 func test_b6_the_owners_build_merges_blasts_in_play() -> void:
-	var w := WandLab.fight(&"gun", [&"gun_spread", &"shared_explosive", &"gun_twin"])
+	# v0.8.0 MR: Spread is +1 a level now (7 at level 5), so Halo joins to keep a big volley (7 × 3 × 2 = 42 bolts)
+	var w := WandLab.fight(&"gun", [&"gun_spread", &"halo_shot", &"shared_explosive", &"gun_twin"])
 	_at(w, &"gun_spread", 5)
 	var merged := 0
 	for t in 300:
@@ -336,4 +343,4 @@ func test_b6_the_owners_build_merges_blasts_in_play() -> void:
 		if w.blast_tick == w.tick - 1:
 			merged += w.blast_merged
 			assert_lte(w.blast_pos.size(), 64, "the per-tick marks stay small")
-	assert_gt(merged, 0, "22 bolts a volley: the blasts past 8 that overlap merge")
+	assert_gt(merged, 0, "42 bolts a volley: the blasts past 8 that overlap merge")
