@@ -61,6 +61,8 @@ const LEGENDARY := {
 	&"chain_blast": true,
 	&"echo_storm": true,
 	&"inferno_core": true,
+	&"mut_double_exposure": true,  # v0.8.0 RM: the mutations (legendary tier)
+	&"mut_grand_finale": true,
 	&"tempest_core": true,
 	&"trigger_on_end_twice": true,
 	&"trigger_on_hit_twice": true,

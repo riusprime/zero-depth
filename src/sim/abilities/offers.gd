@@ -219,7 +219,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 static func legendary_cards(w: World) -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for idx in ItemPool.available(w, true):
-		if w.item_tables[idx].rarity == ItemTable.LEGENDARY:
+		var t := w.item_tables[idx]
+		if t.rarity == ItemTable.LEGENDARY and t.offer_weight_permille >= 1000:  # v0.8.0 RM: no mutation
 			out.append(idx)
 	return out
 

@@ -99,11 +99,15 @@ func test_the_shipped_data() -> void:
 			"cluster_payload",
 			"cold_snap",
 			"conductor",
+			"finisher_plus",  # v0.8.0 RM: Fracture Bank, rare
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
 			"gun_swirl",
+			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",
+			"shared_faultline",
+			"shared_gravity_stitch",
 			"wildfire"
 		],
 		"the rare items (lead, 2026-10-07; Meltdown, v0.3.0 L18; the ability mods, v0.5.0 CP; v0.8.0 RR: Blade Storm is Epic)"
@@ -119,8 +123,7 @@ func test_the_shipped_data() -> void:
 			"boomerang",
 			"halo_shot",
 			"heat_sink_rounds",
-			"long_shadow",
-			"meltdown_edge",
+			"meltdown_edge",  # v0.8.0 RM: Long Shadow is Dodge Imprint, common
 			"mirror_drone",
 			"orbit_rounds",
 			"phase_dash",

@@ -196,14 +196,14 @@ func test_b11_parry_edge_cuts_enemy_shots() -> void:
 	assert_gt(int(r["marks"].get(BladeForms.FX_PARRY, 0)), 0, "sparks where they were cut")
 
 
-func test_b12_afterimage_repeats_the_last_slash_on_a_dash() -> void:
+## v0.8.0 RM (owner O91): B12 is Dodge Imprint (the same id, long_shadow): no ghost copy; for 1.5 s after a dash the
+## next attack is cast from where the dash began (test_remnant_cards.gd plays it).
+func test_b12_dodge_imprint_marks_the_dash() -> void:
 	var w := _fight([&"long_shadow"])
-	var k := _hook(Modifiers.dash(w), &"long_shadow")
-	assert_not_null(k, "the dash leaves a copy")
-	assert_eq(k.child.form, AttackSpec.Form.WEAPON, "of your last slash")
+	assert_null(_hook(Modifiers.dash(w), &"long_shadow"), "no ghost copy")
+	assert_eq([Modifiers.dash(w).imprint_ticks, Modifiers.dash(w).imprint_permille], [90, 1100])
 	var r := _run(w)
-	assert_gt(int(r["effects"].get(&"long_shadow", 0)), 0, "the ghost slash lands")
-	assert_gt(int(r["marks"].get(BladeForms.FX_ARC, 0)), 0, "the view's ghost slash")
+	assert_eq(int(r["effects"].get(&"long_shadow", 0)), 0, "it adds no hit of its own")
 
 
 func test_b13_lunge_step_drives_you_forward() -> void:
@@ -220,20 +220,20 @@ func test_b13_lunge_step_drives_you_forward() -> void:
 	assert_almost_eq(_step(_fight([&"lunge_step"])).step_m, 1.0, 0.001)
 
 
-func test_b14_finisher_plus_shockwave_carries_every_card() -> void:
+## v0.8.0 RM (owner O91: "Rework Finisher+ into Fracture Bank"): the same id; every combo step carries its fragment
+## hook, the finisher's extracts (test_remnants.gd, test_remnant_cards.gd).
+func test_b14_fracture_bank_lodges_and_the_finisher_extracts() -> void:
 	var w := _fight([&"finisher_plus", &"ember_edge"])
 	var last := w.player.combo.size() - 1
-	assert_null(_hook(_step(w, 0), &"finisher_plus"), "only the 4th hit")
+	var lodge := _hook(_step(w, 0), &"finisher_plus")
+	assert_not_null(lodge, "a combo step lodges")
+	assert_false(lodge.extract)
 	var k := _hook(_step(w, last), &"finisher_plus")
-	assert_not_null(k, "the finisher's shockwave")
+	assert_true(k.extract, "the finisher extracts")
 	assert_eq(k.child.form, AttackSpec.Form.BURST)
-	assert_almost_eq(k.child.radius_m, 3.0, 0.001, "a big one")
-	assert_eq(k.damage_permille, 2000, "doubled")
-	assert_true(
-		k.child.has_status(&"burn"),
-		"Ember Edge sits right of it and still burns the shockwave (carry)"
-	)
-	assert_gt(int(_run(w)["effects"].get(&"finisher_plus", 0)), 0, "the shockwave lands")
+	assert_eq(k.damage_permille, 400, "40 % of the finisher a fragment")
+	var r := _run(w)
+	assert_gt(int(r["effects"].get(&"finisher_plus", 0)), 0, "the extraction lands")
 
 
 func test_b15_orbit_blades_circle_you() -> void:

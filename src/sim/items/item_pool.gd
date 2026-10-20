@@ -53,7 +53,10 @@ static func card_weight(
 		ItemTable.LEGENDARY:
 			base = legendary_permille
 	var own := it.requires_weapon != 0 and CardLevels.is_card(w, idx)
-	return base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
+	var out := base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
+	if it.offer_weight_permille != 1000:  # v0.8.0 RM: a mutation's low weight (the others' integers unchanged)
+		out = out * it.offer_weight_permille / 1000
+	return out
 
 
 ## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the

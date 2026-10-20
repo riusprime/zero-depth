@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemDefinition" format=3]
+
+[ext_resource type="Script" path="res://src/content/defs/item_definition.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+kind = 33
+rarity = 2
+name_key = &"ITEM_MUT_GRAND_FINALE"
+desc_key = &"ITEM_MUT_GRAND_FINALE_DESC"
+tags = PackedStringArray("wand", "mutation")
+modifiers = Array[StringName]([&"mut_grand_finale"])
+offer_weight_permille = 150
+index_wave = 3
+id = &"mut_grand_finale"

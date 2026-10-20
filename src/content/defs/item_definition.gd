@@ -91,6 +91,7 @@ const TAGS: Array[StringName] = [
 	&"venom",
 	&"trigger",  # v0.6.5 WN1: a wand trigger card (Kind.TRIGGER)
 	&"wand",  # v0.6.5 WN3: a wand card that levels up 1–5 (CardLevels)
+	&"mutation",  # v0.8.0 RM (owner O91): a rare mutation card (its own category; offer_weight_permille keeps it rare)
 ]
 
 @export var kind := Kind.LONG_EDGE
@@ -204,6 +205,10 @@ const TAGS: Array[StringName] = [
 ## next wave (v0.8.0 BL's Blade Storm and Riposte Chain: 1); its index comes after every earlier wave's
 ## (ModifierCompiler.item_defs), so no index an older save holds moves.
 @export var index_wave := 0
+## v0.8.0 RM (owner O91: mutations "exceptionally rare"): the card's draw weight × this per mille in an altar's, a
+## chest's and the shop's draw (ItemPool.card_weight); a card under 1000 never fills the boss's legendary chance slot
+## (Offers.legendary_cards). The floor pacing step (FL) tunes when such a card is eligible. 1000 = as its tier.
+@export var offer_weight_permille := 1000
 
 
 func category() -> StringName:
@@ -215,6 +220,14 @@ func validate() -> Array[ValidationIssue]:
 	if String(name_key).is_empty() or String(desc_key).is_empty():
 		issues.append(
 			ValidationIssue.new(&"missing", resource_path, "name_key and desc_key are required")
+		)
+	if offer_weight_permille < 0 or offer_weight_permille > 10000:  # v0.8.0 RM
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "offer_weight_permille 0..10000")
+		)
+	if tags.has("mutation") and offer_weight_permille >= 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "a mutation weighs under 1000 per mille")
 		)
 	if index_wave < 0 or index_wave > 64:
 		issues.append(ValidationIssue.new(&"range", resource_path, "index_wave is 0..64"))

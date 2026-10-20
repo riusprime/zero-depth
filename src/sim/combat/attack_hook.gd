@@ -23,6 +23,14 @@ var child: AttackSpec
 ## fire (WHEN_ALWAYS, or WHEN_OVERCLOCK: only while the heat is at Overclock).
 var delay_ticks := 0
 var when := 0
+## v0.8.0 RM (owner O91; Remnants): a REMNANT op's hook: the remnant it leaves (null: a plain hook, which launches its
+## child), its card's wand slot and trigger section (the slots between two triggers: Grand Finale's reach), and on a
+## FINISHER remnant whether this spec extracts (the combo's finisher) or lodges (the other steps). Run by
+## Remnants.on_hook instead of a launch; its child is what an activation casts.
+var remnant: RemnantRule
+var slot := -1
+var section := 0
+var extract := false
 
 
 ## The damage the child deals when the parent's base damage is `base`.
@@ -36,4 +44,8 @@ func hash_into(h: StateHasher) -> void:
 	h.add_string(String(id))
 	for v in [trigger, every, damage, damage_permille, delay_ticks, when]:
 		h.add_int(v)
+	if remnant != null:  # v0.8.0 RM: only a remnant's (a build without one hashes as before)
+		remnant.hash_into(h)
+		for v in [slot, section, 1 if extract else 0]:
+			h.add_int(v)
 	child.hash_into(h)

@@ -138,6 +138,7 @@ static func advance(w: World) -> void:
 		Attacks.launch(w, spec, c)
 		if hook != "":
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
+	Remnants.advance(w)  # v0.8.0 RM (O91): the remnants end, follow and activate
 	BlackHoles.advance(w)  # v0.8.0 P2 (O24): Void's black holes pull and pulse
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
@@ -146,6 +147,7 @@ static func advance(w: World) -> void:
 # --- The moments ----------------------------------------------------------------------------------------------------
 ## The dash just started (World phase 4): its ON_LAUNCH hooks from where it starts (Long Shadow).
 static func on_dash_start(w: World) -> void:
+	Remnants.on_dash_start(w)  # v0.8.0 RM: Dodge Imprint keeps where it began
 	_moment(w, Modifiers.dash(w), AttackSpec.Trigger.ON_LAUNCH, w.player_pos())
 
 
