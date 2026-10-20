@@ -217,7 +217,7 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"trigger": trigger_of(w, code),
 		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
 		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
-		"after_trigger_dead": _dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
+		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
 		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)
 	}
 
@@ -242,7 +242,7 @@ static func remnant_of(w: World, code: int) -> int:
 
 
 ## v0.8.0 MR: card `id` does nothing right of a trigger (WandTable.after_trigger_dead).
-static func _dead_after_trigger(w: World, id: Variant) -> bool:
+static func dead_after_trigger(w: World, id: Variant) -> bool:
 	var t := w.wand_table if w.wand_table != null else _defaults
 	return t.after_trigger_dead.has(StringName(str(id)))
 

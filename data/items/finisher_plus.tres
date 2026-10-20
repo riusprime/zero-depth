@@ -11,4 +11,5 @@ rarity = 1
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"finisher_plus"])
+loot_category = &"advanced"
 id = &"finisher_plus"

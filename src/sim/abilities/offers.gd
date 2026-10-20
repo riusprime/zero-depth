@@ -74,15 +74,19 @@ static func rarity_of(code: int) -> int:
 	return (code - STAT_BASE) % 10
 
 
-## Rolls reward i's offer (Rewards.interact, on its first open).
+## Rolls reward i's offer (Rewards.interact, on its first open). v0.8.0 FL (LootPacing): a regular altar's offer
+## keeps the floor's compatible-card guarantee, then a regular altar's or chest's offer draws its jackpot.
 static func roll(w: World, i: int) -> PackedInt32Array:
 	if Routes.is_epic_altar(w, i):
 		return roll_epic(w)  # v0.5.0 RT
 	if BossReward.is_legendary(w, i):
 		return roll_legendary(w)  # v0.5.5 AR
+	var out: PackedInt32Array
 	if w.rewards.kind[i] == RewardStore.Kind.CHEST:
-		return draw(w, true, CHEST_CARDS)  # v0.8.0 N7
-	return draw(w, false, w.reward_table.offer_size)
+		out = draw(w, true, CHEST_CARDS)  # v0.8.0 N7
+	else:
+		out = LootPacing.guarantee(w, draw(w, false, w.reward_table.offer_size))
+	return LootPacing.jackpot(w, i, out)
 
 
 ## Up to `size` cards by an altar's (`chest` false) or a chest's rules (v0.5.0 SH: the shop's stock draws as a chest).
@@ -167,12 +171,14 @@ static func roll_epic(w: World) -> PackedInt32Array:
 
 
 ## v0.5.5 AR (X1b): the boss's legendary altar: up to the tier's offer_size cards from its own pool (LegendaryTable),
-## each a legendary stat card (a pool stat under its cap, by its card weight) or a pool mod still in the item pool;
-## the type by the tier's [stat, mod] weights among the pools left; loot stream, no repeats. v0.6.5 WN5b: with the
-## tier's wand_level, every wand card of the run's pool is a pool mod too, taken at that level (BossReward.on_pick).
-## v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): first one draw (range 0..999) against the tier's
-## Legendary chance for this loop (LegendaryTable.chance): under it, the first card is a Legendary card (rarity
-## LEGENDARY, uniform among those still in the pool; one more draw). A Legendary card is never a pool mod otherwise.
+## drawn from the loot stream, no repeats. v0.8.0 RR (owner O33; docs/roadmap/v0.8.0/evidence/RARITY.md): first one
+## draw (range 0..999) against the tier's Legendary chance for this loop (LegendaryTable.chance): under it, the first
+## card is a Legendary card (rarity LEGENDARY, uniform among those still in the pool; one more draw). v0.8.0 FL (owner
+## O91: "boss offers an upgrade or advanced choice; remove automatic level-5 grants"): then, with the tier's
+## `upgrade`, one held wand card one level up (uniform among those below the next floor's ceiling,
+## LootPacing.next_ceiling); then, with its card_categories and no Legendary card, one card of those categories (by
+## its card weight × the floor's multiplier; never a Legendary card nor a mutation); the rest are legendary stat cards
+## (a pool stat under its cap, by its card weight) or the tier's pool mods, by its [stat, mod] weights.
 static func roll_legendary(w: World) -> PackedInt32Array:
 	var t := w.legendary_table
 	var out := PackedInt32Array()
@@ -183,6 +189,21 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 		var legends := legendary_cards(w)
 		if not legends.is_empty():
 			out.append(legends[w.rng_loot.range_int(0, legends.size() - 1)])
+	var legend := not out.is_empty()
+	if t.upgrade:  # v0.8.0 FL
+		var ups := boss_upgrades(w, out)
+		if not ups.is_empty():
+			out.append(ups[w.rng_loot.range_int(0, ups.size() - 1)])
+	if not t.card_categories.is_empty() and not legend:
+		var cards := PackedInt32Array()
+		var cw := PackedInt32Array()
+		for idx in ItemPool.available(w):  # never a Legendary card (the chance's only)
+			if not out.has(idx) and t.card_categories.has(LootPacing.category(w, idx)):
+				cards.append(idx)
+				cw.append(LootPacing.weigh(w, idx, 1000))
+		var k := pick(w.rng_loot, cw)
+		if k >= 0:
+			out.append(cards[k])
 	var guard := 0
 	while out.size() < t.offer_size and guard < 16:
 		guard += 1
@@ -192,9 +213,8 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 				stats.append(s)
 		var mods := PackedInt32Array()
 		for idx in ItemPool.available(w, true):  # v0.6.0 MX4: the tier's legendary modifiers too
-			var wand := t.wand_level > 0 and CardLevels.is_card(w, idx)  # v0.6.5 WN5b: level-5 versions
-			var legend := w.item_tables[idx].rarity == ItemTable.LEGENDARY  # v0.8.0 RR: by the chance only
-			if (t.mods.has(idx) or wand) and not legend and not out.has(idx):
+			var rare_legend := w.item_tables[idx].rarity == ItemTable.LEGENDARY  # v0.8.0 RR: by the chance only
+			if t.mods.has(idx) and not rare_legend and not out.has(idx):
 				mods.append(idx)
 		var wts := PackedInt32Array(
 			[
@@ -213,6 +233,16 @@ static func roll_legendary(w: World) -> PackedInt32Array:
 		else:
 			out.append(mods[w.rng_loot.range_int(0, mods.size() - 1)])
 	return out
+
+
+## v0.8.0 FL: the boss altar's upgrade choices, ascending: held wand cards below the next floor's level ceiling
+## (LootPacing.next_ceiling), usable and in no other offer, not already in `out`.
+static func boss_upgrades(w: World, out: PackedInt32Array) -> PackedInt32Array:
+	var ups := PackedInt32Array()
+	for idx in ItemPool.available(w, true, LootPacing.next_ceiling(w)):
+		if w.items_owned.has(idx) and CardLevels.is_card(w, idx) and not out.has(idx):
+			ups.append(idx)
+	return ups
 
 
 ## v0.8.0 RR: the Legendary cards (ItemTable.LEGENDARY) still in the item pool, ascending (the boss's chance slot).
@@ -349,7 +379,7 @@ static func info(w: World, code: int) -> Dictionary:
 		"rarity": rarity,
 		"level": 0,
 		"amount": 0,
-		"wand": CardLevels.is_card(w, code),  # v0.6.5 WN5b: a wand card (the legendary tier's level-5 version)
+		"wand": CardLevels.is_card(w, code),  # v0.6.5 WN5b: a wand card (it levels up)
 	}
 
 

@@ -10,4 +10,5 @@ desc_key = &"ITEM_PARRY_EDGE_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"parry_edge"])
+loot_category = &"form"
 id = &"parry_edge"

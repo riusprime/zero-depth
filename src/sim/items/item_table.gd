@@ -74,6 +74,9 @@ var retired := false
 ## v0.8.0 RM (owner O91: mutations): the card's draw weight × this per mille (ItemPool.card_weight; under 1000 it never
 ## fills the boss's chance slot, Offers.legendary_cards). 1000 = as its tier.
 var offer_weight_permille := 1000
+## v0.8.0 FL (owner O91; LootPacing.Category): the card's pacing category (ItemDefinition.loot_category): OTHER 0,
+## FORM 1, ELEMENT 2, ADVANCED 3, TRIGGER 4, MUTATION 5. Its draw weight × the floor stage's multiplier for it.
+var loot_category := 0
 ## Ember Edge (the burn engine's numbers).
 var burn_damage := 0
 var burn_period_ticks := 1

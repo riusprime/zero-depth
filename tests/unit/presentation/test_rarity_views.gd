@@ -1,6 +1,6 @@
 extends GutTest
 ## v0.8.0 RR (owner O33): every card shows its tier: the pick panel's and the shop's faces (PickPanel.card_face), the
-## boss altar's (legendary_face keeps the card's own tier, a level-5 wand card says "Level 5 · <tier>") and its title,
+## boss altar's (legendary_face keeps the card's own tier; v0.8.0 FL: no level-5 version any more) and its title,
 ## and the Codex's Cards entries (CodexView.tier_of / tier_text); a word on top of the colour, in en and es.
 
 var _repo: ContentRepository
@@ -56,16 +56,16 @@ func test_the_boss_altar_keeps_each_cards_tier_and_its_title_says_a_legendary() 
 	var w := _world()
 	var r := WorldReader.new(w)
 	var spread := PickPanel.legendary_face(
-		self, PickPanel.card_face(self, r, _code(w, &"gun_spread")), 5
+		self, PickPanel.card_face(self, r, _code(w, &"gun_spread"))
 	)
 	assert_eq(int(spread["tier"]), 0, "a common card stays common")
-	assert_eq(spread["tier_text"], "Mod · Level 5 · Common")
-	assert_eq(spread["level_text"], "Lv 5")
+	assert_eq(spread["tier_text"], "Modifier · Common", "v0.8.0 FL: no level-5 version")
+	assert_eq(spread["level_text"], "Lv 1")
 	var chain := PickPanel.legendary_face(
-		self, PickPanel.card_face(self, r, _code(w, &"chain_blast")), 5
+		self, PickPanel.card_face(self, r, _code(w, &"chain_blast"))
 	)
 	assert_eq(int(chain["tier"]), CardFrames.LEGENDARY_TIER, "the Legendary one in gold")
-	assert_eq(chain["tier_text"], "Mod · Level 5 · Legendary")
+	assert_eq(chain["tier_text"], "Modifier · Legendary")
 	var plain := PickSlot.new(0)
 	var gold := PickSlot.new(1)
 	add_child_autofree(plain)

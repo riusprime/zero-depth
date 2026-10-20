@@ -126,6 +126,8 @@ func _build_world() -> void:
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables
 	)
+	# v0.8.0 FL: floor-paced loot (LootPacing)
+	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))
 	Abilities.grant_start(w)  # slot 1 = the build's weapon (floor 1; later floors carry it)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18

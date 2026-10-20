@@ -179,6 +179,18 @@ value or by an owner decision, and the change is noted here.
   altars (the floor's, the boss's, the epic altar) offer a pick of 3. A cursed chest still asks: its curse card or
   its one card (D49). v0.8.0 N8 (O62): the cards are dealt face down and flipped; an Epic or Legendary one waits for
   last (PRESENTATION_CONTRACTS, the reward cards).
+- **Floor-paced loot (v0.8.0 FL, owner O91; WAND.md "Floor-paced loot", SIM_CONTRACTS §8m).** One pacing table
+  (`data/rewards/pacing.tres`) for every card source: per stage it weighs each card category (form, element,
+  advanced, trigger, mutation) and caps the level a held wand card is offered up to (floor 1 level 2, floor 2 level 3,
+  floor 3 level 5; Deep floors and later loops level 5 with advanced and mutations more common). Floor 1 favours
+  standalone forms and elements, and its first two altars each show a modifier compatible with the wand; advanced
+  cards are possible at low weight and mutations only through a jackpot. Floor 2 raises advanced and trigger cards;
+  floor 3 raises mutations and investment without guaranteeing a matching finisher. No source bypasses the ceiling
+  (the shop, rerolls, events, stolen cores re-checked at their drop). A rare **jackpot** (starting value 1.5 % of
+  altar and chest offers) lifts one held card one level past the ceiling or lets a mutation in, and says "Jackpot" on
+  its card. The **boss's altar** offers an upgrade (a held card one level up, to the next floor's ceiling), an
+  advanced or trigger card and a legendary stat card; the automatic level-5 grant is gone. Reward counts, prices and
+  shards are unchanged. Every number is a starting value (dev panel, economy).
 - **Element abilities and ability combos (v0.4.0 AB, owner F13).** Arc Field, Frost Nova and Flame Trail bring the
   shock, frost and burn engines to any build without an item (v0.6.0 MX2, as weapon modifiers: Arc Field's attacks
   leave a shock field, Frost Nova gives the weapon frost and rings on a kill streak, Flame Trail's dash and

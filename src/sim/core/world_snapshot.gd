@@ -36,6 +36,7 @@ const WORLD_KEPT := {
 	&"catch_up_table": "loadout",  # v0.5.5 DS
 	&"arena_table": "loadout",  # v0.5.5 AR
 	&"legendary_table": "loadout",  # v0.5.5 AR
+	&"loot_pacing": "loadout",  # v0.8.0 FL
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
@@ -84,6 +85,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"ArenaTable",  # v0.5.5 AR
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
+	&"LootPacingTable",  # v0.8.0 FL
 	&"EventTable",  # v0.5.0 EV
 	&"CurseTable",
 	&"EventRules",
@@ -166,6 +168,8 @@ const ADDED_SINCE_V05 := {
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
+		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
+		&"loot_jackpots",
 		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
 		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
 		&"gamble_fail_tick",

@@ -12,4 +12,5 @@ requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"blade_storm"])
 index_wave = 1
+loot_category = &"advanced"
 id = &"blade_storm"

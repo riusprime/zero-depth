@@ -10,4 +10,5 @@ desc_key = &"ITEM_TRIGGER_ON_KILL_TWICE_DESC"
 rarity = 2
 tags = PackedStringArray("trigger")
 modifiers = Array[StringName]([&"trigger_on_kill_twice"])
+loot_category = &"advanced"
 id = &"trigger_on_kill_twice"

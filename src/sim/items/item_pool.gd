@@ -39,7 +39,8 @@ static func draw_weighted(w: World, count: int, rare_weight: int) -> PackedInt32
 ## (requires_weapon: the Blade's cards on a Blade run), × 1000 otherwise (a shared card, a trigger, a passive).
 ## v0.8.0 RR (owner O33): an epic one weighs `epic_permille` / 1000 and a legendary one `legendary_permille` / 1000 of
 ## a common one (the same integers as before for common and rare cards: base per mille × own / 1000). A world without
-## those weights (the v0.3.0 draw) weighs an epic card as a rare one.
+## those weights (the v0.3.0 draw) weighs an epic card as a rare one. v0.8.0 FL: then × the floor stage's multiplier
+## for the card's category (LootPacing.weigh; × 1 in a world without a pacing table).
 static func card_weight(
 	w: World, idx: int, rare_weight: int, epic_permille: int = -1, legendary_permille: int = 0
 ) -> int:
@@ -56,18 +57,19 @@ static func card_weight(
 	var out := base * (w.reward_table.own_weapon_card_permille if own else 1000) / 1000
 	if it.offer_weight_permille != 1000:  # v0.8.0 RM: a mutation's low weight (the others' integers unchanged)
 		out = out * it.offer_weight_permille / 1000
-	return out
+	return LootPacing.weigh(w, idx, out)  # v0.8.0 FL: × the floor stage's multiplier for its category
 
 
 ## The item indices that may still be drawn, ascending. v0.6.0 MX4: a legendary item only with `legendary` (the
 ## boss's tier and a boss's core; v0.8.0 RR: an altar's, a chest's and the shop's draw at their legendary weight,
-## Offers.draw; events and elites never draw one).
-static func available(w: World, legendary: bool = false) -> PackedInt32Array:
+## Offers.draw; events and elites never draw one). v0.8.0 FL: a held wand card only below the floor's level ceiling
+## (LootPacing.ceiling), or below `ceiling` when given (the boss's upgrade, a jackpot).
+static func available(w: World, legendary: bool = false, ceiling: int = -1) -> PackedInt32Array:
 	var left := PackedInt32Array()
 	for idx in w.item_tables.size():
 		if (
 			(legendary or w.item_tables[idx].rarity != ItemTable.LEGENDARY)
-			and CardLevels.can_take(w, idx)  # v0.6.5 WN3: a held wand card below level 5 too
+			and CardLevels.can_take(w, idx, ceiling)  # v0.6.5 WN3: a held wand card below its ceiling too
 			and not w.pickups.item.has(idx)
 			and not w.rewards.offer.has(idx)
 			and not w.ev.roll_card.has(idx)  # v0.5.0 EV: a mod an event panel shows

@@ -35,6 +35,8 @@ static func apply(w: World, run: RunState, repo: ContentRepository) -> void:
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		repo.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables
 	)
+	# v0.8.0 FL: floor-paced loot (LootPacing)
+	w.loot_pacing = RunContentCompiler.compile_loot_pacing(repo.get_def(&"loot_pacing", &"pacing"))
 	if w.heat != null:
 		w.heat.table = ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock"))
 	w.refresh_build(false)

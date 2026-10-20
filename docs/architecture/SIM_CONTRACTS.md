@@ -932,6 +932,8 @@ rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp
 `trigger_on_kill_twice`, `trigger_on_end_twice`): `WandCompile._cut` files the child spell `casts` times as hooks of
 the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
 of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
+**Superseded by v0.8.0 FL** (§8m): the level-5 grant is gone (`BossReward.on_pick`, `BossReward.level_after` and
+`WorldReader.legendary_card_level` were removed; `LegendaryTable.wand_level` is retired and the content must hold 0).
 
 ## 8j. Blade combinations and the Gun's top end (v0.8.0 BL)
 
@@ -1080,6 +1082,48 @@ lifetimes, hit intervals and activation limits"); spec [`../roadmap/v0.8.0/BALAN
 - **Mutations.** Item tag `mutation`; `ItemDefinition.offer_weight_permille` (`ItemTable`; 1000 = as its tier)
   multiplies `ItemPool.card_weight`; a card under 1000 never fills the boss's legendary chance slot
   (`Offers.legendary_cards`). Double Exposure and Grand Finale: legendary tier, 150.
+
+## 8m. Floor-paced loot (v0.8.0 FL)
+
+Owner O91 ([`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "FL"); evidence
+[`../roadmap/v0.8.0/evidence/BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `LootPacing` is the one rule
+every card source draws through; `World.loot_pacing` (`LootPacingTable`, loadout, not hashed) holds the numbers, and a
+world without it (labs, the older scenarios) draws exactly as before FL (no multiplier, ceiling 5, no guarantee and no
+extra draw on `loot`).
+- **Stage.** `LootPacing.stage`: `DEEP` on a Deep floor (`Routes.is_deep`) or any floor of loop ≥ 2, else
+  `FLOOR_1..FLOOR_3` by `World.floor_index` (3 and past it: `FLOOR_3`). `next_stage` is one later, at most `DEEP`.
+- **Categories.** `ItemTable.loot_category` (`LootPacing.Category`: OTHER, FORM, ELEMENT, ADVANCED, TRIGGER,
+  MUTATION). Stat cards are their own category (an `Offers` STAT code) and keep their weights.
+- **Weights.** `ItemPool.card_weight` ends × the stage's per-mille multiplier for the card's category
+  (`LootPacing.weigh`, integer, rounded down; OTHER × 1). The events' mod draw (`Events._mod`) and an elite's core
+  (`CoreTheft.draw_card`) weigh their mods the same way (their old weight × 1000 × the multiplier / 1000; the core's
+  stat cards × 1000 so the ratio holds).
+- **Ceiling.** `CardLevels.can_take(w, idx, ceiling = -1)`: a held wand card is takeable from a source only below
+  `LootPacing.ceiling` (or the given ceiling, at most 5). So `ItemPool.available` (altars, chests, the shop's restock and
+  reroll, events, cores, the boss's card) never offers a held card at the ceiling, and `Shop.can_apply` (buying, an
+  event's block, a stolen core's re-check at its drop, which then redraws) refuses it. `CardLevels.level_up` itself has
+  no ceiling: a jackpot and the boss's upgrade pass it. The dev panel's grant passes `MAX_LEVEL` (exempt).
+- **Guarantee.** `Offers.roll` of a regular altar (not a chest, the shop, the epic or the boss's altar): while
+  `World.loot_guaranteed` < the stage's `guaranteed_altars` it counts one, and an offer holding no `LootPacing.compatible`
+  card has one card replaced (`_slot`: the last card, never an altar's leading fresh ability) by one drawn from
+  `ItemPool.available` by the altar's weights (one `loot` draw). Compatible: a usable wand card of category form, element
+  or advanced that would act where it lands (a new card at the wand's end, a held one where it sits): not past
+  `WandCompile.MAX_DEPTH` triggers, not a `WandTable.after_trigger_dead` card right of a trigger.
+- **Jackpot.** `Offers.roll` of a regular altar or a chest: one `loot` draw (0..999) against `jackpot_permille`; on a
+  hit one card (`_slot`, never the only compatible card) becomes a jackpot card uniformly from `LootPacing.jackpot_pool`
+  (a held wand card exactly at the ceiling, below 5, or a mutation; `ItemPool.available(w, true, ceiling + 1)`), one
+  more draw. The pair (reward id, card) is appended to `World.loot_jackpots`; `WorldReader.choice_jackpot(k)` reads it
+  and the pick card's line starts "Jackpot" (`PickPanel.jackpot_face`, `PICK_JACKPOT`).
+- **The boss's altar** (`Offers.roll_legendary`, replacing the level-5 grant of §8i): the Legendary chance's draw as
+  before; then with `LegendaryTable.upgrade` one held wand card below `LootPacing.next_ceiling`
+  (`Offers.boss_upgrades`, uniform; taking it raises it one level as anywhere); then with `card_categories` (data
+  advanced, trigger) and no Legendary card, one card of those categories from `ItemPool.available(w)` (weight 1000 × the
+  stage's multiplier; never a Legendary card nor a mutation, so the ×2 triggers stay the chance's); the rest legendary
+  stat cards (and `mods`) by the tier's weights as before. The loop's extra picks are unchanged.
+- **State.** `World.loot_guaranteed` (hashed once above 0) and `World.loot_jackpots` (hashed once not empty) are per
+  floor, in `WorldSnapshot.ADDED_SINCE_V05` (an older save: 0 and none). Economy unchanged: reward counts, prices and
+  shards. The Overrun's ability cards and the Deep epic altar's ability level-ups and epic stat cards hold no wand card,
+  so pacing does not reach them.
 
 ## 9. What presentation receives
 

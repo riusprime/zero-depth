@@ -62,6 +62,7 @@ static func world(
 	w.legendary_table = RunContentCompiler.compile_legendary(
 		r.get_def(&"legendary", &"boss"), w.stat_tables, w.item_tables  # v0.6.0 CU: as Main (boss cores)
 	)
+	w.loot_pacing = RunContentCompiler.compile_loot_pacing(r.get_def(&"loot_pacing", &"pacing"))  # v0.8.0 FL
 	Abilities.grant_start(w)
 	Abilities.start_floor(w)
 	Heat.enable(w, ContentCompiler.compile_heat(r.get_def(&"heat", &"overclock")))

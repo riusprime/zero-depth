@@ -10,4 +10,5 @@ desc_key = &"ITEM_GUN_BIG_SHOT_DESC"
 tags = PackedStringArray("bolt", "wand")
 requires_weapon = &"gun"
 modifiers = Array[StringName]([&"gun_big_shot"])
+loot_category = &"form"
 id = &"gun_big_shot"

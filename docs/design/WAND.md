@@ -183,7 +183,7 @@ again, and past 8 Explosive blasts in one tick an overlapping one merges into a 
   - The Drone retires: its side attack is what the owner doesn't want.
 - Old saves load: each held card maps to its new card, in pick order. A card without a match is refunded as shards.
 - The legendary tier offers level-5 versions and a few unique triggers (for example "On Hit ×2": the cast repeats
-  twice).
+  twice). v0.8.0 FL: the level-5 versions are gone ("The legendary tier" below).
 
 ### The mapping (v0.6.5 WN5b)
 The data is one table, [`data/wand/migration.tres`](../../data/wand/migration.tres) (CONTENT_SCHEMA "the wand"). A
@@ -263,14 +263,29 @@ Explosive `shared_explosive` (new cards of WN5a).
   passives outside the wand, like stat cards, and stay offered: WAND.md says nothing about them, and pruning them is the
   owner's call (PROGRESS v0.6.5 "Gates").
 
-### The legendary tier (v0.6.5 WN5b)
-- **Level-5 versions:** the boss's legendary altar offers every wand card of the run's pool (Gun runs G1–G16, Blade
-  runs B1–B16; S1–S7 once merged) besides the legendary stat cards. A wand card picked there is taken at level 5 (a
-  held one rises to 5). Its card reads "Mod · Level 5 · Legendary".
+### The legendary tier (v0.6.5 WN5b; v0.8.0 FL)
+- **v0.8.0 FL (owner O91: "boss offers an upgrade or advanced choice; remove automatic level-5 grants"):** no more
+  level-5 versions. The boss's legendary altar offers three choices: an **upgrade** (a held wand card one level up, up
+  to the next floor's level ceiling), an **advanced or trigger card** (its place goes to the Legendary card when the
+  boss's Legendary chance hits), and a **legendary stat card**. A wand card taken there levels as anywhere ("Lv N →
+  N+1"). Data: `data/legendary/boss.tres` (`upgrade_choice`, `card_categories`; `wand_level` retired, 0).
+- ~~Level-5 versions~~ (v0.6.5 WN5b, superseded by FL): the altar offered every wand card of the run's pool and took a
+  pick to level 5.
 - **Unique triggers:** On Hit ×2, On Kill ×2, On End ×2 (`trigger_on_*_twice`). They cut the wand like T1–T3, and the
   cards to their right cast twice each time, the second cast 0.15 s after the first. They are legendary only (the
   boss's altar, a boss's core).
-- The pick stays one of three, 60 % stat cards / 40 % mods by weight (data `data/legendary/boss.tres`).
+- The pick stays one of three (v0.8.0 FL: the upgrade, the advanced or trigger card, then legendary stat cards by the
+  60 / 40 stat / mod weights; data `data/legendary/boss.tres`).
+
+### Floor-paced loot (v0.8.0 FL)
+Every card has a pacing category (`loot_category`: form, element, advanced, trigger, mutation; stat cards their own).
+One table (`data/rewards/pacing.tres`, the dev panel's economy group) weighs each category per stage and caps the level
+a held card is offered up to: floor 1 level 2 (forms and elements favoured, advanced and triggers rarer, mutations
+almost never), floor 2 level 3, floor 3 and the Deep floors and later loops level 5. A held card at the ceiling isn't
+offered as a duplicate by any source (altars, chests, the shop and its rerolls, events, stolen cores); higher
+duplicates come on later floors. Floor 1's first two altars each show a card that changes your attack. A rare jackpot
+(1.5 % of altar and chest offers) lifts one held card one level past the ceiling or lets a mutation in; its card reads
+"Jackpot". SIM_CONTRACTS §8m.
 
 ## How it's built (after G1)
 1. **The wand compiler.**

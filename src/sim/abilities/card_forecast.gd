@@ -9,8 +9,8 @@ extends RefCounted
 ##   Hoarder's bonus now, Onrush's movement left out), attack speed the weapon attack's rate after the curve with its
 ##   wand bonus and Heavy Hands counted (AttackRate.rate_at);
 ## - an ability card: its level now (0: new) and after (Abilities.level_after);
-## - a wand card: its level now (0: not held) and after (CardLevels.level_after, then the boss's altar's level-5 rule
-##   BossReward.level_after);
+## - a wand card: its level now (0: not held) and after (CardLevels.level_after; v0.8.0 FL: the boss's altar's
+##   level-5 rule is gone, so every source takes it one level up);
 ## - any other card (a passive mod, a trigger, a curse): no number (KIND_NONE).
 ## gain(): a stat card's shown amount, the forecast's new − old for attack speed (what the card really adds after
 ## the curve), else the card's amount (Offers.info's "amount", the card's sentence).
@@ -22,9 +22,9 @@ const KIND_PERMILLE := 2
 const KIND_HP := 3
 
 
-## {kind, old, new, stat (the Stats.Stat, or -1)} for card `code` taken from reward index `reward` (-1: not from
-## a reward, e.g. the shop).
-static func of(w: World, code: int, reward: int = -1) -> Dictionary:
+## {kind, old, new, stat (the Stats.Stat, or -1)} for card `code` taken from reward index `_reward` (-1: not from
+## a reward, e.g. the shop; v0.8.0 FL: no source changes the forecast any more, the argument stays for the callers).
+static func of(w: World, code: int, _reward: int = -1) -> Dictionary:
 	var out := {"kind": KIND_NONE, "old": 0, "new": 0, "stat": -1}
 	match Offers.type_of(code):
 		Offers.STAT:
@@ -62,9 +62,7 @@ static func of(w: World, code: int, reward: int = -1) -> Dictionary:
 				var held := CardLevels.level(w, code) if w.items_owned.has(code) else 0
 				out["kind"] = KIND_LEVEL
 				out["old"] = held
-				out["new"] = BossReward.level_after(
-					w, reward, code, CardLevels.level_after(w, code)
-				)
+				out["new"] = CardLevels.level_after(w, code)
 	return out
 
 
