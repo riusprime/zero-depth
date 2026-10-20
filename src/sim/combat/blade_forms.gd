@@ -72,12 +72,15 @@ static func settle(s: AttackSpec) -> AttackSpec:
 static func step(w: World, k: int) -> SwingStep:
 	var base: SwingStep = w.player.combo[k]
 	var s := Modifiers.step(w, k)
-	if s == null or (s.motion < 0 and s.rate_bonus_permille == 0 and s.step_m <= 0.0):
-		return base
+	var wand := s.rate_bonus_permille if s != null else 0
 	var t := table(w)
-	var rate := maxi(t.rate_min, 1000 + s.rate_bonus_permille)
+	# v0.8.0 SG (owner O91): one rate for the whole swing, the attack speed stat plus the step's wand bonus through
+	# the curve, then Heavy Hands (AttackRate.rate), never under the table's rate_min.
+	var rate := maxi(t.rate_min, AttackRate.rate(w, wand))
+	if rate == 1000 and (s == null or (s.motion < 0 and s.step_m <= 0.0)):
+		return base
 	var out := SwingStep.new()
-	out.motion = base.motion if s.motion < 0 else (s.motion as SwingStep.Motion)
+	out.motion = base.motion if s == null or s.motion < 0 else (s.motion as SwingStep.Motion)
 	out.active_tick = maxi(1, _scaled(base.active_tick, rate))
 	out.ticks = maxi(out.active_tick + 1, _scaled(base.ticks, rate))
 	out.sweep_ticks = maxi(1, _scaled(base.sweep_ticks, rate))
@@ -85,8 +88,9 @@ static func step(w: World, k: int) -> SwingStep:
 	out.reach_m = base.reach_m
 	out.damage = base.damage
 	out.hitstop_ticks = base.hitstop_ticks
-	out.lunge_m = base.lunge_m + s.step_m
-	if s.step_m > 0.0:
+	var step_m := s.step_m if s != null else 0.0
+	out.lunge_m = base.lunge_m + step_m
+	if step_m > 0.0:
 		out.lunge_over = maxi(out.active_tick - 1, t.lunge_ticks)
 	return out
 

@@ -12,4 +12,5 @@ cap = 3.0
 weight = 6
 side = PackedFloat32Array(8, 10, 12)
 limit = 0.4
+additive = true
 id = &"glass_cannon"

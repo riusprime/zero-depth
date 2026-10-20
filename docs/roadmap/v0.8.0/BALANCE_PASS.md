@@ -80,6 +80,25 @@ then validation (BV).
    - the expected values (`data/scaling/catch_up.tres`) change only if those numbers show that hidden scaling now
      cancels earned synergy. Otherwise they are reported, not retuned.
 
+**Built (SG, 2026-10-20, branch `v080-sg`; evidence [`evidence/BALANCE_SG.md`](evidence/BALANCE_SG.md)).** As above,
+with these readings of what the spec left open:
+- the flag is data: `additive = true` on `data/stat_cards/{damage,attack_speed,glass_cannon}.tres`
+  (`StatCardDefinition.additive` → `StatTable.additive`; only multiplier stats may set it). The other multiplier
+  stats still compound (D64);
+- `AttackRate` (`src/sim/abilities/attack_rate.gd`) is the one function: the Gun (`ItemEffects.shot_period_ticks`),
+  the Blade (`BladeForms.step`: hit tick, sweep and recovery; `Stats.swing_end` is gone), the drone
+  (`Stats.period`), the HUD (`WorldReader`), the cards (`CardForecast`) and the catch-up read it. The Gun's 2-tick
+  floor applies once the period changed (a base period under 2 stays as it is);
+- the attack-speed card's sentence ("+X % attack speed") now names the real gain after the curve, with the weapon's
+  wand bonus and Heavy Hands counted (`CardForecast.gain` → `Offers.info` "amount"); its gain line shows the rate
+  before → after. A damage card's sentence keeps its amount (it adds exactly that); its gain line shows the bucket
+  without Onrush's movement but with Hoarder's bonus now;
+- `CatchUp.rate_permille` leaves Heavy Hands out (P never read the curses), and reads the wand's rate bonus as the
+  sum of the held cards' own rate ops at their levels, whatever their order (`CatchUp.wand_rate_bonus`), not the
+  compiled weapon attack's: SIM_CONTRACTS' "a reorder never changes P" (`test_wand.gd`) outranks the plan's
+  wording. The two agree while the rate cards sit before any trigger;
+- an old save's Glass Cannon max HP cut is not replayed (MAX_HP keeps its stored value, like every other stat).
+
 ## MR: existing modifiers
 1. **Shared damage and secondary proc.** An attack's extra projectiles are **secondary**:
    - Twin's second lane;
