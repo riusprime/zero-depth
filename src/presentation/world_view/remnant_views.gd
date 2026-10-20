@@ -93,11 +93,11 @@ func sync(reader: WorldReader) -> void:
 	var gems := 0
 	for r: Dictionary in read["remnants"]:
 		match int(r["kind"]):
-			RemnantRule.Kind.SEGMENT:
+			WorldReader.REMNANT_SEGMENT:
 				if bars < SEGMENTS:
 					_bar(_bars[bars], r)
 					bars += 1
-			RemnantRule.Kind.ANCHOR:
+			WorldReader.REMNANT_ANCHOR:
 				if rings < ANCHORS:
 					_ring(_rings[rings], r)
 					rings += 1
@@ -134,9 +134,9 @@ func _bar(m: MeshInstance3D, r: Dictionary) -> void:
 	m.scale = Vector3(length, 1.0, 1.0)
 	var color := THREAD
 	match int(r["activate"]):
-		RemnantRule.Activate.ATTACK_CROSS:
+		WorldReader.REMNANT_ATTACK_CROSS:
 			color = CRACK
-		RemnantRule.Activate.DELAY:
+		WorldReader.REMNANT_DELAY:
 			color = PATH
 	var life := maxf(1.0, float(r["life"]))
 	var fade := clampf(1.0 - float(r["age"]) / life, 0.25, 1.0)
@@ -153,7 +153,7 @@ func _ring(m: MeshInstance3D, r: Dictionary) -> void:
 
 func _gem(m: MeshInstance3D, r: Dictionary) -> void:
 	var at := SimPlane.to_3d(r["a"])
-	var frag := int(r["kind"]) == RemnantRule.Kind.FRAGMENT
+	var frag := int(r["kind"]) == WorldReader.REMNANT_FRAGMENT
 	var size := 1.0 + 0.2 * maxi(0, int(r["count"]) - 1) if frag else 1.0
 	m.position = Vector3(at.x, 1.3, at.z)
 	m.rotation = Vector3(0.0, float(int(r["dir"])) / 4096.0 * TAU, 0.0)
@@ -170,7 +170,9 @@ func _events(reader: WorldReader) -> void:
 		_seen = e.seq
 		if e.kind == SimEvent.Kind.REMNANT_ACTIVATE:
 			_flash(e.pos, maxf(0.4, reader.remnant_cast_radius(e.effect_id)), MARK)
-		elif e.kind == SimEvent.Kind.STATUS_APPLY and e.effect_id == Engines.EFFECT_THERMAL_BREAK:
+		elif (
+			e.kind == SimEvent.Kind.STATUS_APPLY and e.effect_id == WorldReader.EFFECT_THERMAL_BREAK
+		):
 			_flash(e.pos, 0.9, SHATTER)
 
 
