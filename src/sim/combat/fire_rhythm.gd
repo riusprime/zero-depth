@@ -52,4 +52,4 @@ static func on_swing(w: World) -> void:
 		m.burst_n = 1
 	else:
 		m.burst_n = mini(m.burst_n + 1, spec.burst_swings + 1)
-	m.burst_free = w.tick + Stats.swing_end(w, PlayerKit.current_step(w))
+	m.burst_free = w.tick + PlayerKit.current_step(w).ticks  # v0.8.0 SG: the swing ends after its ticks

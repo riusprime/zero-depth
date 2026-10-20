@@ -18,7 +18,7 @@ extends RefCounted
 ## v0.6.0 CU, the trade-off curses' effects (C1-C8):
 ## - NO_DASH: a dash press does nothing (World._advance_actions); DODGE: an enemy hit on the player is dodged with
 ##   `amount` per mille on the `combat` stream: no damage, the hurt i-frames, a STATUS_APPLY &"dodge" cue (Damage.hit);
-## - ATTACK_SLOW: the attack speed stat x (1 - amount) (Stats.period, Stats.swing_end); FOURTH_HIT: the Blade combo's
+## - ATTACK_SLOW: the attack rate x (1 - amount) (AttackRate.rate, after the curve); FOURTH_HIT: the Blade combo's
 ##   4th step, and every 4th Gun shot (CurseState.shots), x (1 + amount) damage (PlayerKit);
 ## - MAX_HP_CUT: max HP x (1 - amount) (Stats.max_hp; taking or lifting it moves World.actors.max_hp[0] by the
 ##   difference); CRIT_CHANCE: + amount crit chance (Stats.crit_chance, under the card cap);
@@ -328,7 +328,7 @@ static func dodges(w: World, owner_id: int, at: Vector2) -> bool:
 	return true
 
 
-## Heavy Hands: the attack speed stat's value (per mille) under its cut.
+## Heavy Hands: an attack rate (per mille, AttackRate.rate after the curve) under its cut.
 static func attack_speed(w: World, m: int) -> int:
 	var cut := mini(total(w, Effect.ATTACK_SLOW), 900)
 	return m if cut == 0 else maxi(1, (m * (1000 - cut) + 500) / 1000)

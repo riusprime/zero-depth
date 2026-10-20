@@ -10,4 +10,5 @@ desc_key = &"STAT_DAMAGE_DESC"
 amounts = PackedFloat32Array(8, 15, 25)
 cap = 0
 weight = 12
+additive = true
 id = &"damage"

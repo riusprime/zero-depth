@@ -4,10 +4,12 @@ extends RefCounted
 ## on how much you grew", "Yes, but hidden"; SIM_CONTRACTS §11). Regular scaling (the floor's tables, the danger tier,
 ## Deep) stays; on top of it:
 ## - power(w): the build's power P, per mille of a fresh build (1000), a pure function of the loadout and never of
-##   how well it is played: weapon level × damage stat × Glass Cannon × (1 + Onrush) × expected crit (relative to the
-##   base crit) × attack speed × (1 + the modifier slots' levels and the utility's level, the items without a slot
-##   and the combos, at their table weights). The one place the build's power is read (v0.6.0 MX2: the weapon, the
-##   utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand's slots).
+##   how well it is played: weapon level × (damage stat + Onrush: v0.8.0 SG's additive bucket, Hoarder left out) ×
+##   Glass Cannon × expected crit (relative to the base crit) × the attack rate (v0.8.0 SG: the attack speed stat
+##   plus the held cards' rate bonus, order-free, through AttackRate's curve) × (1 + the modifier slots' levels and
+##   the utility's level, the items without a slot and the combos, at their table weights). The one place the build's
+##   power is read (v0.6.0 MX2: the weapon, the utility and the modifier slots, BuildSlots; v0.6.5 WN1: the wand's
+##   slots).
 ## - multiplier(P, E, cap): m = clamp(sqrt(P / E), 1, cap), per mille, integer square root (no float).
 ## - v0.7.5 AP: past the first loop both caps get World.loop_cap_permille more (and the loop's threat raises them
 ##   through threat_cap like any T).
@@ -26,11 +28,13 @@ static func power(w: World) -> int:
 	if t == null:
 		return 1000
 	var p := Abilities.weapon_permille(w)
-	p = p * Stats.value(w, Stats.Stat.DAMAGE) / 1000
+	# v0.8.0 SG (owner O91): the additive bucket (damage + Onrush, always counted; Hoarder not), x Glass Cannon
+	p = p * (Stats.value(w, Stats.Stat.DAMAGE) + Stats.value(w, Stats.Stat.ONRUSH)) / 1000
 	p = p * Stats.value(w, Stats.Stat.GLASS_CANNON) / 1000
-	p = p * (1000 + Stats.value(w, Stats.Stat.ONRUSH)) / 1000
 	p = p * expected_crit(w, Stats.crit_chance(w), Stats.crit_mult(w)) / base_crit(w)
-	p = p * Stats.value(w, Stats.Stat.ATTACK_SPEED) / 1000
+	# v0.8.0 SG: the effective rate, the stat and the wand's rate bonus through the curve (no curse: the curses were
+	# never counted)
+	p = p * rate_permille(w) / 1000
 	# v0.6.0 MX2: per modifier level (each slot's card: an ability modifier's level, an attack item 1) and the
 	# utility's level at the table's per-level weight; the items without a slot at the item weight. v0.6.5 WN1: the
 	# wand's cards (its slots, whatever their order: a reorder never changes P), a trigger card 1.
@@ -50,6 +54,29 @@ static func power(w: World) -> int:
 		+ t.combo_permille * w.combos_owned.size()
 	)
 	return maxi(1, p * (1000 + extra) / 1000)
+
+
+## v0.8.0 SG: the attack rate P counts, per mille: 1000 + the curve of the attack speed stat's bonus and the wand's
+## rate bonus (AttackRate.curve; Heavy Hands left out, as P never read the curses).
+static func rate_permille(w: World) -> int:
+	return maxi(1, 1000 + AttackRate.curve(w.tuning, AttackRate.stat_bonus(w) + wand_rate_bonus(w)))
+
+
+## v0.8.0 SG: the rate bonus the held cards add to an attack, per mille, whatever their order (SIM_CONTRACTS: a
+## reorder never changes P): every card's own rate_bonus_permille ADD ops at its level (Rapid Fire, Rapid Coil,
+## Flurry, Heavy ...), not the ones a trigger or hook passes on. It equals the compiled weapon attack's bonus
+## (AttackRate.weapon_bonus) while those cards sit before any trigger.
+static func wand_rate_bonus(w: World) -> int:
+	var sum := 0
+	for code in w.items_owned:
+		if code < 0 or code >= w.item_tables.size():
+			continue
+		var lvl := CardLevels.level(w, code)
+		for m in w.item_tables[code].modifiers:
+			for o in m.ops:
+				if o.op == ModifierOp.Op.ADD and o.field == &"rate_bonus_permille":
+					sum += int(o.at_level(lvl).value)
+	return sum
 
 
 ## v0.6.0 MX4: what slot `s`'s card counts in levels: an ability modifier its level; a v0.5 item 1; an M-list card

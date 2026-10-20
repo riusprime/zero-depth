@@ -100,8 +100,11 @@ func test_c2_heavy_hands_slower_attacks_and_a_heavy_fourth_hit() -> void:
 	var v := _world()
 	assert_eq(Stats.period(v, 30), 30)
 	assert_eq(Stats.period(w, 30), 38, "attack speed x0.8: 30 ticks -> 37.5, half up")
-	var step := w.player.combo[0]
-	assert_gt(Stats.swing_end(w, step), Stats.swing_end(v, step), "the swing's recovery is longer")
+	assert_gt(
+		PlayerKit.current_step(w).ticks,
+		PlayerKit.current_step(v).ticks,
+		"v0.8.0 SG: the whole swing is longer (one rate)"
+	)
 	for s in 4:
 		w.combo_step = s
 		assert_eq(Curses.swing_damage(w, 100), 160 if s == 3 else 100, "Blade step %d" % (s + 1))

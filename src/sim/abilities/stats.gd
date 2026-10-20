@@ -2,8 +2,9 @@ class_name Stats
 extends RefCounted
 ## Stat cards and crit (v0.4.0 BS, owner F9). World.stat_values holds one integer per Stat (empty = no card yet:
 ## every stat at its base). Cards stack multiplicatively in per mille, rounded half up at each card:
-## - MULT stats: value x (1000 + amount) / 1000, never over the cap (max HP, damage, attack speed, area, move speed,
-##   shard gain, pickup range; base 1000 = x1);
+## - MULT stats: value x (1000 + amount) / 1000, never over the cap (max HP, area, move speed, shard gain, pickup
+##   range; base 1000 = x1); v0.8.0 SG (owner O91): an additive table (StatTable.additive: damage, attack speed, Glass
+##   Cannon) adds instead, value + amount within the cap;
 ## - CUT stats: value x (1000 - amount) / 1000, never under the cap (cooldowns, armour = damage taken);
 ## - ADD stats: value + amount (crit chance and crit damage in per mille points on top of the player's base, capped
 ##   in total; regen in per mille of max HP per second).
@@ -23,7 +24,9 @@ extends RefCounted
 ## v0.5.5 EC (owner D9): LIFESPROUT (ADD), the heal-orb card: the first card sets the kill's heal-orb drop chance to
 ## its amount, each further card adds its side amount; the chance is read capped (heal_orb_chance). Without the card
 ## no orb drops (HealOrbs.on_kill).
-## Damage stats fold into one multiplier (damage_permille): damage x glass cannon x (1 + onrush + hoarder).
+## Damage stats fold into one multiplier (damage_permille). v0.8.0 SG (owner O91): one additive bucket, (damage +
+## onrush while moving + hoarder) x glass cannon; the curses stay explicit multipliers. Attack speed reads one curve
+## with the attack's wand bonus (AttackRate).
 
 enum Stat {
 	MAX_HP,
@@ -57,6 +60,10 @@ const MODE: Array[int] = [
 const BASE: Array[int] = [
 	1000, 1000, 0, 0, 1000, 1000, 1000, 1000, 0, 1000, 1000, 1000, 1000, 0, 0, 0, 1000, 0
 ]
+## v0.8.0 SG (owner O91): the stat rules a world's values follow (World.stat_rules): 0 before SG (damage, attack
+## speed and Glass Cannon compounded), 1 since (their cards add). An older save rebuilds them (migrate_rules).
+const RULES := 1
+const ADDITIVE_STATS: Array[int] = [Stat.DAMAGE, Stat.ATTACK_SPEED, Stat.GLASS_CANNON]
 ## Hoarder counts shards in steps of this many.
 const HOARD_STEP := 100
 const EFFECT_OVERKILL := &"overkill"
@@ -146,7 +153,7 @@ static func add_amount(w: World, s: int, a: int) -> void:
 static func stepped(t: StatTable, s: int, v: int, a: int) -> int:
 	match MODE[s]:
 		MULT:
-			v = (v * (1000 + a) + 500) / 1000
+			v = v + a if t.additive else (v * (1000 + a) + 500) / 1000
 			return mini(v, t.cap) if t.cap > 0 else v
 		CUT:
 			v = (v * (1000 - a) + 500) / 1000
@@ -239,17 +246,28 @@ static func dot(w: World, amount: int) -> int:
 	return amount if m == 1000 else (amount * m + 500) / 1000
 
 
-## The player's damage multiplier now, per mille: damage x glass cannon x (1 + onrush while moving + hoarder per
-## 100 shards held) (v0.5.0 CP).
+## The player's damage multiplier now, per mille (v0.8.0 SG, owner O91): the bucket (damage_bucket: the damage stat
+## + Onrush while moving + Hoarder per 100 shards held) x glass cannon.
 static func damage_permille(w: World) -> int:
-	var m := value(w, Stat.DAMAGE)
+	return damage_at(w, damage_bucket(w, w.move_intent != Vector2i.ZERO))
+
+
+## v0.8.0 SG: the additive damage bucket, per mille: the damage stat (its cards and the gamble's wins add) + Hoarder's
+## bonus now + Onrush when `moving`.
+static func damage_bucket(w: World, moving: bool) -> int:
+	return bucket_at(w, value(w, Stat.DAMAGE), moving)
+
+
+## damage_bucket() with the damage stat at raw value `v` (CardForecast's after-card number).
+static func bucket_at(w: World, v: int, moving: bool) -> int:
+	var b := v + hoard_bonus(w)
+	return b + value(w, Stat.ONRUSH) if moving else b
+
+
+## Bucket `b` x glass cannon, per mille.
+static func damage_at(w: World, b: int) -> int:
 	var g := value(w, Stat.GLASS_CANNON)
-	if g != 1000:
-		m = (m * g + 500) / 1000
-	var bonus := hoard_bonus(w)
-	if w.move_intent != Vector2i.ZERO:
-		bonus += value(w, Stat.ONRUSH)
-	return m if bonus == 0 else (m * (1000 + bonus) + 500) / 1000
+	return b if g == 1000 else (b * g + 500) / 1000
 
 
 ## Hoarder's bonus now, per mille: per full 100 shards held, at most the limit's shards counted.
@@ -313,7 +331,8 @@ static func auto_cooldown(w: World, ticks: int) -> int:
 	return _fast(w, cooldown(w, ticks))
 
 
-## v0.5.0 CP: an auto ability's firing period: attack speed, then Fast Hands (never under 1 tick).
+## v0.5.0 CP: an auto ability's firing period: attack speed (the curve, the stat alone), then Fast Hands (never
+## under 1 tick).
 static func auto_period(w: World, ticks: int) -> int:
 	return _fast(w, period(w, ticks))
 
@@ -322,21 +341,15 @@ static func _fast(w: World, ticks: int) -> int:
 	return _scaled_ticks(w, Stat.FAST_HANDS, ticks)
 
 
-## A firing period of `ticks` under attack speed (never under 1 tick).
+## A firing period of `ticks` under attack speed without a wand bonus (AttackRate: the stat through the curve, then
+## Heavy Hands; never under 1 tick). v0.8.0 SG: the Gun's period and the Blade's swing read AttackRate with their
+## wand bonus (ItemEffects.shot_period_ticks, BladeForms.step); the old recovery-only swing_end folded into the
+## Blade's one rate.
 static func period(w: World, ticks: int) -> int:
-	var m := Curses.attack_speed(w, value(w, Stat.ATTACK_SPEED))  # v0.6.0 CU: Heavy Hands
+	var m := AttackRate.rate(w, 0)
 	if m == 1000:
 		return ticks
-	return maxi(1, (ticks * 1000 + m / 2) / m)
-
-
-## The tick a swing of `step` ends: its recovery shortens under attack speed (its hit tick doesn't move).
-static func swing_end(w: World, step: SwingStep) -> int:
-	var m := Curses.attack_speed(w, value(w, Stat.ATTACK_SPEED))  # v0.6.0 CU: Heavy Hands
-	if m == 1000:
-		return step.ticks
-	var rec := step.ticks - step.active_tick
-	return step.active_tick + maxi(1, (rec * 1000 + m / 2) / m)
+	return maxi(1, AttackRate.scaled(ticks, m))
 
 
 static func area(w: World, metres: float) -> float:
@@ -379,6 +392,39 @@ static func advance_regen(w: World) -> void:
 		a.hp[0] += 1
 		w.ab.regen_acc -= REGEN_UNIT
 		w.ab.regen_tick = w.tick
+
+
+## v0.8.0 SG: a world restored from before SG (World.stat_rules 0: WorldSnapshot.apply, or a carry through
+## Abilities.start_floor) rebuilds damage, attack speed and Glass Cannon from its stat cards and the gamble shrine's
+## stacks under today's rules (Shop.rebuild_stats' replay, limited to those stats). The other stats keep their stored
+## values (an event's max HP cut isn't recorded anywhere to replay). Then stat_rules = RULES.
+static func migrate_rules(w: World) -> void:
+	if w.stat_rules >= RULES:
+		return
+	w.stat_rules = RULES
+	if w.stat_values.size() < COUNT:
+		return  # no card and no win yet: every stat at its base
+	var redo := []
+	for s in ADDITIVE_STATS:
+		var t := table(w, s)
+		if t != null and t.additive:
+			redo.append(s)
+			w.stat_values[s] = BASE[s]
+	for c in w.stat_cards:
+		var s := Offers.stat_of(c)
+		if redo.has(s):
+			var t := table(w, s)
+			var r := clampi(Offers.rarity_of(c), 0, t.amounts.size() - 1)
+			w.stat_values[s] = stepped(t, s, w.stat_values[s], t.amounts[r])
+	var wins := w.gamble_stacks.size() if w.gamble_table != null else 0
+	for g in wins:
+		var s := from_gamble(w, g)
+		if not redo.has(s):
+			continue
+		for k in w.gamble_stacks[g]:
+			w.stat_values[s] = stepped(
+				table(w, s), s, w.stat_values[s], Gamble.gamble_permille(w, g)
+			)
 
 
 ## The gamble shrine pays its overlapping stats into the same stat values (v0.4.0 BS), by its own amounts: the stat

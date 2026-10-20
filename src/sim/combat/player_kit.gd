@@ -85,7 +85,7 @@ static func advance(w: World) -> void:
 		if w.swing_t == cur.active_tick:
 			_resolve_swing(w)
 		w.swing_t += 1
-		if w.swing_t > Stats.swing_end(w, cur):  # v0.4.0 BS: attack speed shortens the recovery
+		if w.swing_t > cur.ticks:  # v0.8.0 SG: attack speed scales the whole swing (BladeForms.step)
 			w.swing_t = 0
 			w.combo_window = t.combo_window_ticks if w.combo_step < t.combo.size() - 1 else 0
 	elif w.combo_window > 0:

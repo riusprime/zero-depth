@@ -903,6 +903,7 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 		var points := Stats.MODE[s] == Stats.ADD  # crit, regen and the v0.5.0 CP added cards
 		t.cap = int(round(def.cap * (10.0 if points else 1000.0)))
 		t.weight = def.weight
+		t.additive = def.additive  # v0.8.0 SG
 		if def.side.size() == StatCardDefinition.RARITIES:  # v0.5.0 CP: the rule cards
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
