@@ -44,6 +44,9 @@ var per_level := 0.0
 var per_level_after := 1
 ## v0.6.5 WN5b (TRIGGER): the child spell is cast this many times per trigger, each delay_ticks after the one before.
 var casts := 1
+## v0.8.0 MR (owner O91: "Make Split Wave useful without Wave"): an op of the card's other reading: it runs only on a
+## spec of the card's alt_target that carries no hook child of its target yet (ModifierTable.alt_target; WandCompile).
+var alt := false
 
 
 ## v0.6.5 WN3: a copy at card level `level` (1..5): its value, a hook's damage share and its child ops' values each
@@ -75,6 +78,7 @@ func at_level(level: int) -> ModifierOp:
 		&"per_level",
 		&"per_level_after",
 		&"casts",
+		&"alt",  # v0.8.0 MR
 	]:
 		o.set(f, get(f))
 	o.hook_tags = hook_tags.duplicate()

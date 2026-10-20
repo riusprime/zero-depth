@@ -31,6 +31,7 @@ static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := spec.period_ticks
 	var bonus := spec.rate_bonus_permille
+	bonus += FireRhythm.shot_bonus(w, spec)  # v0.8.0 MR (O91): Rapid Fire's ramp, part of the raw bonus
 	if bonus <= 0:
 		return Stats.period(w, base)  # v0.4.0 BS: attack speed
 	return Stats.period(w, maxi(2, int(round(base * 1000.0 / (1000 + bonus)))))

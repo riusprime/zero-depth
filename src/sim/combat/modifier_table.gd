@@ -20,6 +20,10 @@ var ops: Array[ModifierOp] = []
 var overlay := &""
 ## v0.8.0 AO: ModifierDefinition.OrderKind, same numbers (WandCompile: a SHAPE card takes in what is left of it).
 var order_kind := 0
+## v0.8.0 MR (owner O91, Split Wave without Wave): the card's other reading. On a spec matching alt_target (and not
+## target) that has no hook child matching target yet, the card's `alt` ops run instead (WandCompile.run): Split Wave
+## splits a flying slash, and on a slash with no flying slash its hits throw small crescents. Empty: none.
+var alt_target := PackedStringArray()
 
 
 ## v0.6.5 WN1: the wand trigger's op (a trigger card's one op), or null for a modifier of rewrites.
@@ -52,6 +56,7 @@ func at(level: int) -> ModifierTable:
 	t.stage = stage
 	t.overlay = overlay
 	t.order_kind = order_kind
+	t.alt_target = alt_target.duplicate()  # v0.8.0 MR
 	for o in ops:
 		t.ops.append(o.at_level(level))
 	return t

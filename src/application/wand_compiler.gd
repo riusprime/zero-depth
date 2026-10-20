@@ -24,6 +24,8 @@ static func compile(def: WandDefinition) -> WandTable:
 	t.hole_pull_step_m = def.hole_pull_mps / SimTick.TICKS_PER_SECOND
 	t.hole_radius_m = def.hole_radius_m
 	t.hole_period_ticks = maxi(1, SimTick.seconds_to_ticks(def.hole_period_seconds))
+	t.secondary_proc_permille = def.secondary_proc_permille  # v0.8.0 MR (O91)
+	t.after_trigger_dead = def.after_trigger_dead.duplicate()
 	return t
 
 

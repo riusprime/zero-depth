@@ -13,7 +13,7 @@ value = 0.15
 script = ExtResource("2_op")
 op = 2
 field = &"repeat_damage_permille"
-value = 700.0
+value = 600.0
 
 [sub_resource type="Resource" id="Op_3"]
 script = ExtResource("2_op")

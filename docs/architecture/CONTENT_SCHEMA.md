@@ -447,6 +447,14 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `alive_max` (PATTERN, a whole number: the bolt hook's projectiles alive at once, at most; 0 = none of its own):
   `blade_storm`'s child sets 36. `WandDefinition.cast_free_lines: Array[StringName]` (data: `blade_storm`): the hook
   cards whose children cast no trigger's spell. Starting values.
+- **v0.8.0 MR: shares, rhythms, Split Wave's other reading** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8k).
+  New op fields: `share_permille` (PAYLOAD, a `MUL_PERMILLE` share each projectile deals; Twin 600 +50, Spread 550 +30,
+  Halo 400 +50), `ramp_permille`, `ramp_cap_permille`, `ramp_reset_seconds`, `burst_permille`, `burst_swings`,
+  `burst_pause_seconds` (SCALE; Rapid Fire 100 / 600 +150 / 0.4, Flurry 800 / 3 +½ from level 3 / 0.6). A whole-number
+  field without a unit keeps its `per_level` as is and rounds per level. `ModifierDefinition.alt_target` (tags) and
+  `ModifierOpDefinition.alt` (bool): the ops of the card's other reading (an `alt` op needs an `alt_target`, else
+  `alt`): Split Wave's crescents from a slash with no flying slash. `WandDefinition.secondary_proc_permille` (500,
+  0..1000) and `after_trigger_dead: Array[StringName]` (`gun_echo`, `double_slash`, `gun_charge`). Starting values.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's

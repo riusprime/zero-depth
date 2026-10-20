@@ -40,6 +40,13 @@ const MAX_SLOTS := 8
 @export var hole_pull_mps := 3.0
 @export var hole_radius_m := 1.4
 @export var hole_period_seconds := 0.2
+## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage and full-strength effects"): a
+## secondary attack (Twin's second lane, Spread's and Halo's bolts past the centre one, Echo's repeat, Double Slash's
+## repeats) feeds its statuses, its hooks' statuses and its trigger casts' damage at this per mille (SecondaryProc).
+@export var secondary_proc_permille := 500
+## v0.8.0 MR (O91: "Clearly flag incompatible placements"): the cards (item ids) that do nothing right of a trigger (a
+## repeat and a hold only act on the shot you fire): the wand's tiles and read-back flag them there (Wand.flags).
+@export var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash", &"gun_charge"]
 
 
 func category() -> StringName:
@@ -79,6 +86,10 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s is outside 1..10000" % pair[0])
 			)
+	if secondary_proc_permille < 0 or secondary_proc_permille > 1000:  # v0.8.0 MR
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "secondary_proc_permille is 0..1000")
+		)
 	if blade_hit_casts < 1 or blade_hit_casts > 3:  # v0.8.0 BL
 		issues.append(ValidationIssue.new(&"range", resource_path, "blade_hit_casts is 1..3"))
 	if blade_cast_gap_seconds < 0.0 or blade_cast_gap_seconds > 1.0:

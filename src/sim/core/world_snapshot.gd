@@ -39,6 +39,7 @@ const WORLD_KEPT := {
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
+	&"hit_proc_permille": "transient within a hit (v0.8.0 MR): 1000 between hits",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
@@ -231,6 +232,7 @@ const ADDED_SINCE_V05 := {
 		&"mine_t",
 		&"look",  # v0.7.5 BF1 (fireball looks; empty = none, as a store that never held one)
 		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
+		&"second",  # v0.8.0 MR (a secondary bolt or a repeat's; empty = none, as a store that never held one)
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
@@ -278,6 +280,11 @@ const ADDED_SINCE_V05 := {
 		&"hole_pos",  # v0.8.0 P2 (Void's black holes: an older save has none)
 		&"hole_from",
 		&"hole_dmg",
+		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
+		&"ramp_tick",
+		&"burst_n",
+		&"burst_free",
+		&"sec_carry",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an

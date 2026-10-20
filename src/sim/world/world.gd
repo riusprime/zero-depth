@@ -310,6 +310,10 @@ var hit_spec: AttackSpec = null
 ## v0.6.5 WN1: whether the last player hit Damage.hit resolved was a crit (the wand's On Crit reads it right after).
 ## Transient within a hit (WorldSnapshot.WORLD_KEPT).
 var last_hit_crit := false
+## v0.8.0 MR (owner O91; SecondaryProc): the proc of the player hit resolving now, per mille (a secondary attack's:
+## WandTable.secondary_proc_permille; 1000 otherwise), which the engines' status feeds read. Transient within a hit
+## (WorldSnapshot.WORLD_KEPT): 1000 between hits.
+var hit_proc_permille := 1000
 ## v0.6.5 WN1 (Wand): the wand's numbers, the slots per floor and the trigger's child spell (loadout, not hashed; null
 ## = a lab world: six slots, the class defaults for the child spell).
 var wand_table: WandTable
@@ -468,8 +472,14 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0]
 	)
+
+
+## v0.8.0 MR (owner O91): the player bolt queued last is a secondary one (ProjectileStore.SECONDARY) or a repeat's
+## (ProjectileStore.REPEAT; Attacks._bolts).
+func set_pending_second(kind: int) -> void:
+	_pending_projectiles[-1][12] = kind
 
 
 ## v0.7.5 BF1: the projectile queued last is a fireball of look `look` (BulletPatterns).
@@ -1652,6 +1662,7 @@ func _projectile_hits() -> void:
 				if pp != null:
 					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
+				hit_proc_permille = SecondaryProc.of_projectile(self, i)  # v0.8.0 MR: a secondary's
 				var got := Damage.hit(
 					self,
 					best_actor,
@@ -1666,6 +1677,7 @@ func _projectile_hits() -> void:
 					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
 				hit_spec = null
+				hit_proc_permille = 1000
 				if pp != null:
 					pp.end(&"proj.damage")
 					pp.begin(&"proj.procs")
@@ -1764,6 +1776,8 @@ func _apply_spawns() -> void:
 			projectiles.set_look(projectiles.size() - 1, s[10])
 		if s[11] >= 0:  # v0.7.5 BF2: the boss attack that fired it
 			projectiles.set_cause(projectiles.size() - 1, s[11])
+		if s[12] != 0:  # v0.8.0 MR: a secondary bolt or a repeat's
+			projectiles.set_second(projectiles.size() - 1, s[12])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
 	_pending_projectiles.clear()

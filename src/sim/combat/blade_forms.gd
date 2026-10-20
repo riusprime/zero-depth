@@ -72,10 +72,11 @@ static func settle(s: AttackSpec) -> AttackSpec:
 static func step(w: World, k: int) -> SwingStep:
 	var base: SwingStep = w.player.combo[k]
 	var s := Modifiers.step(w, k)
-	if s == null or (s.motion < 0 and s.rate_bonus_permille == 0 and s.step_m <= 0.0):
+	var burst := 0 if s == null else FireRhythm.swing_bonus(w, s)  # v0.8.0 MR (O91): Flurry's burst
+	if s == null or (s.motion < 0 and s.rate_bonus_permille + burst == 0 and s.step_m <= 0.0):
 		return base
 	var t := table(w)
-	var rate := maxi(t.rate_min, 1000 + s.rate_bonus_permille)
+	var rate := maxi(t.rate_min, 1000 + s.rate_bonus_permille + burst)
 	var out := SwingStep.new()
 	out.motion = base.motion if s.motion < 0 else (s.motion as SwingStep.Motion)
 	out.active_tick = maxi(1, _scaled(base.active_tick, rate))

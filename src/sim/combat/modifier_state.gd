@@ -10,6 +10,8 @@ extends RefCounted
 ## A queued launch's flags: a repeat (it never repeats again), launched from where the player is when it fires.
 const FLAG_REPEAT := 1
 const FLAG_AT_PLAYER := 2
+## v0.8.0 MR (owner O91): a secondary attack (an Echo's repeat, a Double Slash echo: SecondaryProc).
+const FLAG_SECONDARY := 4
 
 ## The queued launches, oldest first (parallel arrays): the spec's AttackBook key, the tick it fires, where from and
 ## which way, its damage and base damage, root, SimEvent tags, effect id, hook level (depth, proc), flags, the hook id
@@ -54,6 +56,15 @@ var cast_flag := PackedInt32Array()
 var hole_pos := PackedVector2Array()
 var hole_from := PackedInt32Array()
 var hole_dmg := PackedInt32Array()
+## v0.8.0 MR (owner O91; FireRhythm): Rapid Fire's ramp (the consecutive shots so far, the tick of the last shot) and
+## Flurry's burst (the swing's place in its burst, 1 = the first after a pause; the tick its last swing ends); and
+## SecondaryProc's carry (per mille of a status stack a secondary hit owes, so halved stacks are exact on average).
+## Hashed only when set (older digests unchanged).
+var ramp_n := 0
+var ramp_tick := 0
+var burst_n := 0
+var burst_free := 0
+var sec_carry := 0
 
 
 func touched() -> bool:
@@ -67,6 +78,9 @@ func touched() -> bool:
 		or trail_tick != -1
 		or hold_t != 0
 		or not hole_pos.is_empty()
+		or ramp_n != 0
+		or burst_n != 0
+		or sec_carry != 0
 	)
 
 
@@ -121,3 +135,7 @@ func hash_into(h: StateHasher) -> void:
 			h.add_f32(p.y)
 		h.add_ints(hole_from)
 		h.add_ints(hole_dmg)
+	if ramp_n != 0 or burst_n != 0 or sec_carry != 0:  # v0.8.0 MR: only once a rhythm or a carry is set
+		h.add_string("mr")
+		for v in [ramp_n, ramp_tick, burst_n, burst_free, sec_carry]:
+			h.add_int(v)

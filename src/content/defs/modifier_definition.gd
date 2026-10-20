@@ -80,6 +80,10 @@ const FAMILIES: Array[StringName] = [
 @export var overlay: StringName = &""
 ## v0.8.0 AO: OrderKind (what the card does to the cards to its left).
 @export var order_kind := OrderKind.FREE
+## v0.8.0 MR (owner O91, Split Wave without Wave): the card's other reading: on a spec carrying every tag here (and not
+## the target) that has no hook child matching the target yet, the ops marked `alt` run instead of the others
+## (ModifierTable.alt_target). Empty: none.
+@export var alt_target: PackedStringArray = PackedStringArray()
 
 
 func category() -> StringName:
@@ -101,6 +105,9 @@ func validate() -> Array[ValidationIssue]:
 	if order_kind == OrderKind.SHAPE and not _sets_form():  # v0.8.0 AO: a shape card changes the form
 		issues.append(ValidationIssue.new(&"order", resource_path, "a shape card sets a form"))
 	_check_tag_list(issues, "target", target)
+	_check_tag_list(issues, "alt_target", alt_target)  # v0.8.0 MR
+	if _has_alt() and alt_target.is_empty():
+		issues.append(ValidationIssue.new(&"alt", resource_path, "an alt op needs an alt_target"))
 	if ops.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a modifier needs ops"))
 	if is_trigger() and ops.size() != 1:  # v0.6.5 WN1: a trigger card is its cut, nothing else
@@ -113,6 +120,14 @@ func validate() -> Array[ValidationIssue]:
 		else:
 			_check_op(issues, k, ops[k])
 	return issues
+
+
+## v0.8.0 MR: some op is of the card's other reading (ModifierOpDefinition.alt).
+func _has_alt() -> bool:
+	for o in ops:
+		if o != null and o.alt:
+			return true
+	return false
 
 
 func _check_tag_list(issues: Array[ValidationIssue], what: String, tags: PackedStringArray) -> void:

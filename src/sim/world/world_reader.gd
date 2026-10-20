@@ -2249,6 +2249,12 @@ static func wand_describe(wand_read: Dictionary) -> Array[Dictionary]:
 	return Wand.describe(wand_read)
 
 
+## v0.8.0 MR (owner O91): per card of a wand read, why it can't act where it sits (Wand.flags: a translation key, or
+## &""): the tiles dim such a card and show the reason.
+static func wand_flags(wand_read: Dictionary) -> Array[StringName]:
+	return Wand.flags(wand_read)
+
+
 ## v0.6.5 WN2: describe()'s lines in words (Wand.render; `translate` is the view's tr).
 static func wand_render(lines: Array[Dictionary], translate: Callable) -> String:
 	return Wand.render(lines, translate)

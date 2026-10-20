@@ -53,6 +53,20 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
    cards (elements and statuses) appear in both.
 9. **The difficulty catch-up reads the wand** through `CatchUp.power`. A strong wand raises the hidden scaling up to
    its cap, so a broken wand still melts the floor but a normal one meets a fair fight.
+10. **Extra projectiles share the damage** (v0.8.0 MR, owner O91: "Extra projectiles must not each duplicate full
+    damage and full-strength effects"). A multiplying card sets each projectile's share of the shot (Twin 60 %,
+    Spread 55 %, Halo 40 %; `share_permille`), and the shares multiply down the wand. Its projectiles past the first
+    (Twin's second lane, the bolts past Spread's centre one or Halo's first), Echo's repeat and Double Slash's repeats
+    are **secondary**: they run at `secondary_proc_permille` (50 %, `data/wand/wand.tres`). Their status stacks,
+    their hooks' statuses (the children's proc) and their trigger casts' damage are halved. Stacks are whole, so a
+    halved feed rounds down and carries the rest to the next one (`SecondaryProc`): exact on average. A hook child of
+    a secondary is not secondary itself, so nothing halves twice.
+11. **A repeat never repeats** (v0.8.0 MR, O91: "Prevent repeats repeating themselves"). An attack launched as a
+    repeat (Echo's repeat, a Double Slash echo, a trigger's later cast: the second of ×2, a slash hit's second)
+    never queues a repeat or a later cast of any kind. The guards stay: lineage, `once_per_line`, depth ≤ 2, 256
+    launches a tick, the player-shot cap. A card that can't act where it sits is flagged on its tile and left out of
+    the read-back: Echo, Double Slash and Charge right of a trigger ("Does nothing after a trigger"), any card past
+    the third trigger ("Too deep to cast").
 
 ## The pools (G1: the owner keeps, cuts or edits rows)
 
@@ -60,9 +74,9 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | # | Card | Changes the spell | You see |
 |---|---|---|---|
 | G1 | Big Shot | ×2 size, ×1.6 damage, −25 % speed | a fat slow orb |
-| G2 | Rapid Fire | ×0.6 size, +60 % fire rate, −30 % damage | a stream of small bolts |
-| G3 | Twin | fires the spell twice, side by side | paired bolts |
-| G4 | Spread | becomes a 3-shot fan (+2 per level) | a fan |
+| G2 | Rapid Fire | ×0.6 size, +60 % fire rate, −30 % damage; v0.8.0 MR: sustained fire: ×0.7 size, ×0.85 damage, +30 % rate, and holding fire ramps +10 % a shot up to +60 % (+15 % a level), reset after 0.4 s without a shot | a stream of small bolts |
+| G3 | Twin | fires the spell twice, side by side; v0.8.0 MR: each lane 60 % (+5 % a level), the second lane secondary | paired bolts |
+| G4 | Spread | becomes a 3-shot fan (+2 per level); v0.8.0 MR: +1 a level after the first, each bolt 55 % (+3 % a level), the bolts past the centre one secondary | a fan |
 | G5 | Split | on its first hit, splits into 3 at half size | a burst of shards at the hit |
 | G6 | Pierce | passes through 2 enemies (+1 per level) | a streak through the line |
 | G7 | Ricochet | bounces off walls twice | angled bounces |
@@ -71,22 +85,22 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | G10 | Orbit | circles you once before it flies out | a ring of shots, then a volley |
 | G11 | Spiral | travels in a corkscrew | a helix |
 | G12 | Mine | stops at its range and waits 3 s, exploding on contact | a field of mines |
-| G13 | Charge | hold to grow it, up to ×3 size and damage | it swells in the barrel |
-| G14 | Echo | fires again 0.3 s later at 60 % | a trailing ghost volley |
+| G13 | Charge | hold to grow it, up to ×3 size and damage; v0.8.0 MR: does nothing right of a trigger (flagged) | it swells in the barrel |
+| G14 | Echo | fires again 0.3 s later at 60 %; v0.8.0 MR: at 50 % (+5 % a level), secondary; does nothing right of a trigger (flagged) | a trailing ghost volley |
 | G15 | Backfire | also fires behind you | shots in both directions |
-| G16 | Halo | the spell fires in a full ring, ×0.5 range | a ring of shots |
+| G16 | Halo | the spell fires in a full ring, ×0.5 range; v0.8.0 MR: each ring bolt 40 % (+5 % a level), the bolts past the first secondary | a ring of shots |
 
 ### Blade pool: what the slash does
 | # | Card | Changes the spell | You see |
 |---|---|---|---|
 | B1 | Wide Arc | +60° arc, +30 % reach | a huge sweep |
 | B2 | Wave | the slash flies on as a crescent (the shooting sword); v0.8.0 BL: +1 crescent a level | a flying crescent |
-| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents (+1 a level) | crescents fanning out |
+| B3 | Split Wave | needs a flying slash: on hit, splits into 3 small crescents (+1 a level); v0.8.0 MR: without one, each slash hit throws 2 small crescents outward (+1 a level) at 40 % (+5 %) | crescents fanning out |
 | B4 | Whirl | every slash becomes a 360° spin | a full spin |
-| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later; v0.8.0 BL: +1 repeat a level, each 70 % | a criss-cross |
+| B5 | Double Slash | every slash repeats, mirrored, 0.15 s later; v0.8.0 BL: +1 repeat a level, each 70 %; v0.8.0 MR: each 60 %, secondary; does nothing right of a trigger (flagged) | a criss-cross |
 | B6 | Thrust | narrow and long: reach ×2, arc ×0.4, +30 % damage; v0.8.0 BL: the arc widens from level 3 (×1 at 5) | a long stab line |
 | B7 | Heavy | ×1.7 damage and big knockback, −30 % swing speed; v0.8.0 BL: 10 % less slow a level from level 3 (none at 5) | slow, crushing arcs |
-| B8 | Flurry | +50 % swing speed, −25 % damage; v0.8.0 BL: the loss shrinks from level 3, none at 5 | a blur of slashes |
+| B8 | Flurry | +50 % swing speed, −25 % damage; v0.8.0 BL: the loss shrinks from level 3, none at 5; v0.8.0 MR: a burst: the first 3 swings after a 0.6 s pause +80 % rate (+1 swing at levels 3 and 5), the rest at the base rate; ×0.85 damage at every level | a blur of slashes |
 | B9 | Fissure | the slash cracks the ground ahead in a line that erupts | a crack line, then an eruption |
 | B10 | Chain Cut | a hit leaps to the next enemy within 4 m (+1 per level) | the slash jumping between enemies |
 | B11 | Parry Edge | the slash destroys enemy shots it touches | sparks off the bullets it cuts |
