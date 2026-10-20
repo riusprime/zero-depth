@@ -1267,6 +1267,9 @@ and `hoarder` (the most shards that count)); any other stat must leave both empt
 A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
 v0.5.5 EC (owner D9) appends `lifesprout` (SIDED): the only source of heal orbs. The first card sets a kill's orb
 chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read capped at `cap` (30 percent points).
+v0.8.0 SG (owner O91) adds `additive` (bool, default false; only for the multiplier stats `max_hp`, `damage`,
+`attack_speed`, `area`, `move_speed`, `shard_gain`, `pickup_range`, `glass_cannon`, else `range`): the cards add
+their amounts instead of compounding. Shipped on `damage`, `attack_speed` and `glass_cannon`.
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
@@ -1306,7 +1309,9 @@ Windows check.
 `SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
 spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
 spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
-Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+Flame Trail spacing, the shortest field throw, and (v0.8.0 SG) the attack-speed curve:
+`attack_speed_knee_permille` (500), `attack_speed_knee2_permille` (1500, at least the knee),
+`attack_speed_slope_permille` (500) and `attack_speed_slope2_permille` (250), slopes 0..1000 (`AttackRate`). Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
 turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.

@@ -134,7 +134,7 @@ func test_onrush_adds_damage_only_while_moving() -> void:
 	w.step(_f(0, Vector2i(SimTick.MOVE_MAX, 0)))
 	assert_eq(Stats.damage_permille(w), 1180, "moving: +18 %")
 	Stats.add_card(w, Stats.Stat.DAMAGE, Stats.Rarity.COMMON)
-	assert_eq(Stats.damage_permille(w), 1274, "x1.08 then +18 %: 1080 x 1.18")
+	assert_eq(Stats.damage_permille(w), 1260, "v0.8.0 SG: one bucket, 1 + 0.08 + 0.18")
 	w.step(_f())
 	assert_eq(Stats.damage_permille(w), 1080, "stopped again")
 

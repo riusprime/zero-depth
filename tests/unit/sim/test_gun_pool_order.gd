@@ -137,7 +137,8 @@ func test_a_duplicate_levels_the_card_up_without_a_slot() -> void:
 	assert_eq([CardLevels.level(w, k), w.mod_slots.size()], [2, 1], "level 2, the same one slot")
 	assert_ne(w.state_hash(), h, "the level is hashed")
 	var s := Modifiers.bolt(w)
-	assert_eq([s.count, s.spread], [5, ContentCompiler.degrees_to_units(40.0)], "+2 shots, +10°")
+	# v0.8.0 MR (O91): +2 shots at level 1, +1 a level after
+	assert_eq([s.count, s.spread], [4, ContentCompiler.degrees_to_units(40.0)], "+1 shot, +10°")
 	assert_eq(int((Wand.read(w)["cards"] as Array)[0]["level"]), 2, "the wand reads the level")
 
 
@@ -163,15 +164,16 @@ func test_each_gun_card_grows_with_its_level() -> void:
 	# The level's step per card (per_level in its data): level 3 against level 1 on the compiled bolt.
 	var grows := {
 		&"gun_big_shot": [&"damage_mul_permille", 1600, 1800],
-		&"gun_rapid_fire": [&"rate_bonus_permille", 600, 900],
-		&"gun_twin": [&"damage_mul_permille", 1000, 1200],
-		&"gun_spread": [&"count", 3, 7],
+		# v0.8.0 MR (O91): Rapid Fire's ramp cap grows (its base rate doesn't); Twin's lane share and Spread's +1
+		&"gun_rapid_fire": [&"ramp_cap_permille", 600, 900],
+		&"gun_twin": [&"share_permille", 600, 700],
+		&"gun_spread": [&"count", 3, 5],
 		&"gun_pierce": [&"pierce", 2, 4],
 		&"gun_ricochet": [&"bounces", 2, 4],
 		&"gun_spiral": [&"damage_mul_permille", 1000, 1200],
 		&"gun_mine": [&"mine_ticks", 180, 240],
 		&"gun_charge": [&"hold_permille", 3000, 3500],
-		&"gun_echo": [&"repeat_damage_permille", 600, 800],
+		&"gun_echo": [&"repeat_damage_permille", 500, 600],
 		&"gun_backfire": [&"damage_mul_permille", 1000, 1200],
 		&"boomerang": [&"damage_mul_permille", 1000, 1200],
 		&"orbit_rounds": [&"damage_mul_permille", 1000, 1200],

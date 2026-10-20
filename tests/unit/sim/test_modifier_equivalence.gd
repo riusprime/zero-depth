@@ -10,7 +10,9 @@ extends GutTest
 ## the same generator; the other 20 cases still match their v0.5 recording, unchanged (PROGRESS "Goldens changed on
 ## purpose"). v0.8.0 GF1: the Gun's basic shot changed on purpose (owner O18: bigger, slower to fire, harder-hitting,
 ## a little slower; the Gun's heat a shot x9/7), so the twelve cases that hold the Gun were re-recorded with the same
-## generator; the ten Blade-only cases still match, unchanged.
+## generator; the ten Blade-only cases still match, unchanged. v0.8.0 RM: blade_all, gun_all and both_all re-recorded on
+## purpose (they hold Fire + Frost, which now Thermal Break, and the reworked Fracture Bank; the share rounds half up);
+## the other 19 cases unchanged.
 
 const FIXTURE := "res://tests/golden/fixtures/modifier_equivalence.json"
 

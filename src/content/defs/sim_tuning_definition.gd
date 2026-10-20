@@ -33,6 +33,12 @@ extends ContentDef
 @export var arrival_first_seconds := 1.6
 @export var arrival_seconds := 0.8
 @export var arrival_calm_seconds := 0.3
+## v0.8.0 SG (owner O91): the attack-speed curve (AttackRate): a raw bonus counts in full up to the knee, then at
+## slope per mille up to knee2, then at slope2 (per mille; knee2 >= knee).
+@export var attack_speed_knee_permille := 500
+@export var attack_speed_knee2_permille := 1500
+@export var attack_speed_slope_permille := 500
+@export var attack_speed_slope2_permille := 250
 
 
 func category() -> StringName:
@@ -60,8 +66,23 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "heal_orbs_max", heal_orbs_max)
 	check_positive(issues, "fire_cap", fire_cap)
 	check_positive(issues, "player_shots_max", player_shots_max)
+	_validate_attack_speed(issues)
 	if gate_adds_max < gate_adds_min:
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "gate_adds_max >= gate_adds_min")
 		)
 	return issues
+
+
+## v0.8.0 SG: the knees are 0 or more and in order; the slopes between 0 and 1000 per mille.
+func _validate_attack_speed(issues: Array[ValidationIssue]) -> void:
+	if attack_speed_knee_permille < 0 or attack_speed_knee2_permille < attack_speed_knee_permille:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "0 <= attack_speed knee <= knee2")
+		)
+	for pair: Array in [
+		["attack_speed_slope_permille", attack_speed_slope_permille],
+		["attack_speed_slope2_permille", attack_speed_slope2_permille],
+	]:
+		if pair[1] < 0 or pair[1] > 1000:
+			issues.append(ValidationIssue.new(&"range", resource_path, "%s in 0..1000" % pair[0]))

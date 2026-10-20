@@ -290,6 +290,9 @@ var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
 var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
+## v0.8.0 SG (owner O91): the rules stat_values follow (Stats.RULES; an older save reads 0 and Stats.migrate_rules
+## rebuilds it).
+var stat_rules := Stats.RULES
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 ## v0.6.0 MX2 (BuildSlots; owner B7): the modifier slots in pick order (the layer order), as Offers card codes (an item
 ## index, or ABILITY_BASE + an ability index), at most BuildSlots.SLOTS; run-long (RunCarry). A pending swap: the
