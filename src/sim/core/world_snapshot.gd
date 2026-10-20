@@ -90,6 +90,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
+	&"RemnantRule",  # v0.8.0 RM: a REMNANT op's rule (content)
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
@@ -286,6 +287,39 @@ const ADDED_SINCE_V05 := {
 		&"burst_n",
 		&"burst_free",
 		&"sec_carry",
+		&"rem_uid",  # v0.8.0 RM (Remnants, Dodge Imprint: an older save has none)
+		&"rem_kind",
+		&"rem_card",
+		&"rem_key",
+		&"rem_slot",
+		&"rem_section",
+		&"rem_depth",
+		&"rem_proc",
+		&"rem_root",
+		&"rem_born",
+		&"rem_life",
+		&"rem_gap",
+		&"rem_charges",
+		&"rem_basis",
+		&"rem_a",
+		&"rem_b",
+		&"rem_dir",
+		&"rem_target",
+		&"rem_target2",
+		&"rem_count",
+		&"rem_group",
+		&"rem_next",
+		&"gap_uid",
+		&"gap_target",
+		&"gap_tick",
+		&"rem_act_tick",
+		&"rem_act_n",
+		&"link_id",
+		&"link_tick",
+		&"link_key",
+		&"finale_tick",
+		&"imprint_at",
+		&"imprint_until",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an

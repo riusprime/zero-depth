@@ -455,6 +455,25 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `ModifierOpDefinition.alt` (bool): the ops of the card's other reading (an `alt` op needs an `alt_target`, else
   `alt`): Split Wave's crescents from a slash with no flying slash. `WandDefinition.secondary_proc_permille` (500,
   0..1000) and `after_trigger_dead: Array[StringName]` (`gun_echo`, `double_slash`, `gun_charge`). Starting values.
+- **v0.8.0 RM: remnants, Dodge Imprint, mutations, Thermal Break** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md)
+  §8l). `ModifierOpDefinition.Op.REMNANT` (10, HOOK stage): a hook whose child (`form`, the `hook_*` fields,
+  `hook_ops`, `per_level` on `hook_damage_permille`) is its remnant's cast, with `remnant_kind` (SEGMENT, ANCHOR,
+  MARK, FRAGMENT), `remnant_spawn` (LINK, CONTACT, HIT, PATH, NONE), `remnant_activate` (ENEMY_CROSS, ATTACK_CROSS,
+  PULL, TURN, FINISHER, DELAY, CONSUME), `remnant_seconds` (+ `_per_level`), `remnant_max` (1..64, + `_per_level`),
+  `remnant_hit_gap_seconds`, `remnant_charges` (0 = until its life), `remnant_length_m`, `remnant_width_m`,
+  `remnant_link_seconds`, `remnant_pull_radius_m`, `remnant_pull_mps`, `remnant_bend_radius_m`, `remnant_bend_dps`,
+  `remnant_turn_degrees` (0..180), `remnant_delay_seconds`, `remnant_stack_max` (1..16, + `remnant_stack_per_level`),
+  `remnant_period_seconds`, `remnant_release_max` (1..64), `remnant_stagger`. Validation: a consumer (CONSUME) and
+  only it spawns NONE; a link or a path is a segment; a mark or a fragment is left by a hit; CONTACT needs a length,
+  LINK a link time, PULL a reach, DELAY a delay, CONSUME a period and a release cap; every cast but a pull's is
+  checked as a hook's child. New op fields `imprint_seconds` / `imprint_permille` (PAYLOAD; Dodge Imprint 1.5 / 1100
+  +100). `ItemDefinition.offer_weight_permille` (0..10000, default 1000; a `mutation`-tagged card is under 1000) and
+  the item tag `mutation`. `WandDefinition.remnant_max` (96, 1..256), `remnant_kind_max` (48, 16, 48, 48; 4 entries,
+  each 1..`remnant_max`), `remnant_activations_max` (64, 1..256), `thermal_base` (6), `thermal_per_burn` (4; together
+  > 0), `thermal_shatter_seconds` (0.3, 0..2). Shipped (`index_wave` 3): `gun_threadline` (Gun, rare),
+  `shared_faultline`, `shared_gravity_stitch` (rare), `shared_stress_mark` (common), `mut_double_exposure`,
+  `mut_grand_finale` (legendary tier, weight 150); reworked in place: `long_shadow` (Dodge Imprint, common),
+  `finisher_plus` (Fracture Bank, rare). 95 modifiers, 107 items. Every number is a starting value.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's

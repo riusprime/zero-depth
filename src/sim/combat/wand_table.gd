@@ -36,6 +36,15 @@ var hole_period_ticks := 12
 ## its trigger casts' damage), and the cards that do nothing right of a trigger (Wand.flags).
 var secondary_proc_permille := 500
 var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash", &"gun_charge"]
+## v0.8.0 RM (owner O91; Remnants): the remnants alive at once in all and per kind (RemnantRule.Kind order; the oldest
+## replaced), and the activations a tick (then one LIMIT event).
+var remnant_max := 96
+var remnant_kind_max := PackedInt32Array([48, 16, 48, 48])
+var remnant_activations_max := 64
+## v0.8.0 RM (Engines.thermal_break): Thermal Break's hit (base + per burn stack) and its shatter's ticks (the view).
+var thermal_base := 6
+var thermal_per_burn := 4
+var thermal_shatter_ticks := 18
 ## v0.6.5 WN5b (WandMigrationDefinition, data/wand/migration.tres): the retired v0.6 cards (item or ability ids) and
 ## what each becomes in a held build on a Blade run and on a Gun run (&"": refunded as shards). WandMigration reads
 ## them when a build that still holds an old card is loaded (an old save's carry or snapshot). Empty: no migration.

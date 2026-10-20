@@ -15,7 +15,10 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## step, a blink, a vent), EVERY_NTH: every Nth launch of the spec launches the child instead.
 ## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
 ## (WandCompile turns it into the combo's last step's ON_HIT).
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
+## v0.8.0 RM: ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
+enum Trigger {
+	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT
+}
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
 ## them are floats.
@@ -89,6 +92,9 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"burst_permille",
 	&"burst_swings",
 	&"burst_pause_ticks",
+	# v0.8.0 RM (owner O91: Dodge Imprint, a dash spec's; Remnants.imprint)
+	&"imprint_ticks",
+	&"imprint_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -172,6 +178,10 @@ var ramp_reset_ticks := 0
 var burst_permille := 0
 var burst_swings := 0
 var burst_pause_ticks := 0
+## v0.8.0 RM (owner O91, Dodge Imprint; a dash spec's): for imprint_ticks after a dash starts, the next weapon attack is
+## cast from where the dash began at × imprint_permille (0 = none; Remnants.imprint).
+var imprint_ticks := 0
+var imprint_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -402,6 +412,7 @@ func read() -> Dictionary:
 					"every": k.every,
 					"delay_ticks": k.delay_ticks,
 					"when": k.when,
+					"remnant": -1 if k.remnant == null else k.remnant.kind,  # v0.8.0 RM
 					"child": k.child.read(),
 				}
 			)

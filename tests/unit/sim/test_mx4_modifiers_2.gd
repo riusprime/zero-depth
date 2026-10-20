@@ -58,16 +58,16 @@ func test_m18_an_arc_snaps_as_far_as_its_reach() -> void:
 	)
 
 
-func test_m19_long_shadow_repeats_the_last_attack_where_the_dash_began() -> void:
+## v0.8.0 RM (owner O91): Long Shadow / Afterimage is Dodge Imprint (the same id): the dash spec keeps where it began
+## and the next attack is cast from there (test_remnant_cards.gd); no queued copy.
+func test_m19_long_shadow_is_dodge_imprint() -> void:
 	var w := W.world(&"blade", [&"long_shadow"], [[Vector2(-1.2, 0.0), 2000]])
-	var k := W.hook_of(Modifiers.dash(w), &"long_shadow")
-	assert_eq([k.trigger, k.child.form, k.delay_ticks], [TRIG.ON_LAUNCH, FORM.WEAPON, 9])
+	assert_null(W.hook_of(Modifiers.dash(w), &"long_shadow"))
 	assert_true(Modifiers.dash(w).has_tag(&"moment"))
-	W.run(w, 30, W.P, 0, 2048)  # a swing toward -x (the facing is the aim before any move)
 	W.run(w, 1, W.D, 0, 2048, Vector2i(SimTick.MOVE_MAX, 0))
-	assert_eq(w.mx.q_key.size(), 1, "the afterimage waits")
-	W.run(w, 20, 0, 0, 2048)
-	assert_gt(W.damage(w, &"long_shadow").size(), 0, "it swings that way where the dash began")
+	assert_eq(w.mx.q_key.size(), 0, "nothing waits")
+	assert_eq(w.mx.imprint_at, Vector2.ZERO, "where the dash began")
+	assert_gt(w.mx.imprint_until, w.tick, "for a while after it")
 
 
 func test_m20_phase_dash_is_intangible_and_ends_in_shards() -> void:

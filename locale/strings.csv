@@ -718,8 +718,8 @@ ITEM_AFTERSHOCK,Aftershock,Réplica
 ITEM_AFTERSHOCK_DESC,Your attacks end in a small blast.,Tus ataques acaban en una pequeña explosión.
 ITEM_SEEKER,Seeker,Buscador
 ITEM_SEEKER_DESC,Your attacks seek the nearest enemy.,Tus ataques buscan al enemigo más cercano.
-ITEM_LONG_SHADOW,Afterimage,Imagen Fantasma
-ITEM_LONG_SHADOW_DESC,Dashing leaves a ghost that slashes.,Al esquivar dejas un fantasma que ataca.
+ITEM_LONG_SHADOW,Dodge Imprint,Huella de Esquiva
+ITEM_LONG_SHADOW_DESC,"After a dash, your next attack comes from where it began.","Tras esquivar, tu siguiente ataque sale de donde empezó."
 ITEM_PHASE_DASH,Phase Dash,Esquiva de Fase
 ITEM_PHASE_DASH_DESC,Dash untouchable and burst into shards.,Esquiva intocable y estalla en esquirlas.
 ITEM_EMBER_TRAIL,Ember Trail,Rastro de Brasas
@@ -809,8 +809,8 @@ ITEM_PARRY_EDGE,Parry Edge,Filo Desviador
 ITEM_PARRY_EDGE_DESC,Your slashes destroy enemy shots.,Tus tajos destruyen los disparos enemigos.
 ITEM_LUNGE_STEP,Lunge Step,Paso de Embestida
 ITEM_LUNGE_STEP_DESC,Each slash steps you forward.,Cada tajo te hace avanzar.
-ITEM_FINISHER_PLUS,Finisher+,Remate+
-ITEM_FINISHER_PLUS_DESC,Your finisher bursts in a big shockwave.,Tu remate estalla en una gran onda.
+ITEM_FINISHER_PLUS,Fracture Bank,Banco de Fracturas
+ITEM_FINISHER_PLUS_DESC,Combo hits lodge fragments; your finisher rips them out.,El combo clava fragmentos; el remate los arranca.
 ITEM_COUNTER,Counter,Contraataque
 ITEM_COUNTER_DESC,Slash right after a dash to hit hard.,Ataca justo tras esquivar y pega fuerte.
 WAND_READ_FIRE,You fire %s.,Disparas %s.
@@ -826,6 +826,10 @@ WAND_READ_ON_FINISHER,The combo's last hit casts %s.,El último golpe del combo 
 WAND_READ_ON_CRIT,Each critical hit casts %s.,Cada crítico lanza %s.
 WAND_READ_UNUSED,Too deep to cast: %s.,Demasiado profundo para lanzarse: %s.
 WAND_READ_DEAD,Does nothing after a trigger: %s.,No hace nada tras un disparador: %s.
+WAND_READ_REMNANT,%s leaves remnants that release %s.,%s deja restos que liberan %s.
+WAND_READ_REMNANT_PULL,%s leaves anchors that pull.,%s deja anclas que atraen.
+WAND_READ_FINALE,"Every few seconds, %s releases the remnants to its left as %s.","Cada pocos segundos, %s libera los restos a su izquierda como %s."
+WAND_READ_BURST,a burst,un estallido
 UI_BUILD,Build,Construcción
 UI_BUILD_TITLE,BUILD,CONSTRUCCIÓN
 UI_BUILD_SLOTS,%d of %d slots,%d de %d huecos
@@ -1131,3 +1135,15 @@ UI_GAIN_HP,%d → %d HP,%d → %d PV
 UI_GAIN_ARROW,%s → %s,%s → %s
 UI_GAIN_PERCENT,%s%%,%s %%
 UI_CURSE_ALTAR_OPEN,[E / X] Touch the altar,[E / X] Tocar el altar
+ITEM_GUN_THREADLINE,Threadline,Hilo Conector
+ITEM_GUN_THREADLINE_DESC,Shots fired close together are linked by a cutting thread.,Los disparos seguidos quedan unidos por un hilo cortante.
+ITEM_SHARED_FAULTLINE,Faultline,Falla
+ITEM_SHARED_FAULTLINE_DESC,Hits leave cracks; attacking across one makes it erupt.,Los golpes dejan grietas que estallan al cruzarlas.
+ITEM_SHARED_GRAVITY_STITCH,Gravity Stitch,Puntada Gravitatoria
+ITEM_SHARED_GRAVITY_STITCH_DESC,Hits leave anchors that pull enemies and bend your shots.,Los golpes dejan anclas que atraen y curvan disparos.
+ITEM_SHARED_STRESS_MARK,Stress Mark,Marca de Tensión
+ITEM_SHARED_STRESS_MARK_DESC,Hits mark foes; hit from another side to break the mark.,Los golpes marcan; golpea desde otro lado para romperla.
+ITEM_MUT_DOUBLE_EXPOSURE,Double Exposure,Doble Exposición
+ITEM_MUT_DOUBLE_EXPOSURE_DESC,Mutation: an attack's path strikes again a moment later.,Mutación: el trazo de un ataque golpea otra vez al poco.
+ITEM_MUT_GRAND_FINALE,Grand Finale,Gran Final
+ITEM_MUT_GRAND_FINALE_DESC,Mutation: the remnants of cards to its left burst.,Mutación: estallan los restos de las cartas a su izquierda.

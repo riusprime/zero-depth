@@ -280,7 +280,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -1018,6 +1018,68 @@ WAND.md rules 10–11. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_MR.md`](..
 - **Placement flags.** `Wand.flags(read)`: `UI_WAND_DEAD_TRIGGER` for a card in `WandTable.after_trigger_dead`
   (`gun_echo`, `double_slash`, `gun_charge`) right of a trigger, `UI_WAND_DEAD_DEEP` past the third trigger. `describe`
   leaves the first out of its spell and lists them (`WAND_READ_DEAD`); `WandRow` dims the tile and shows the reason.
+
+## 8l. Remnants, Dodge Imprint and Thermal Break (v0.8.0 RM)
+
+Owner O91 ("Build reusable remnants, connections and events—not hardcoded modifier-pair scripts. Define inheritance,
+lifetimes, hit intervals and activation limits"); spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md)
+"RM" and MR 4 (starting values); WAND.md rules 12–13. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_RM.md`](../roadmap/v0.8.0/evidence/BALANCE_RM.md).
+- **Compile.** `ModifierOpDefinition.Op.REMNANT` (10) with the `remnant_*` fields → `ModifierOp.remnant`
+  (`RemnantRule`: kind SEGMENT / ANCHOR / MARK / FRAGMENT, spawn LINK / CONTACT / HIT / PATH / NONE, activate
+  ENEMY_CROSS / ATTACK_CROSS / PULL / TURN / FINISHER / DELAY / CONSUME, life, own cap, gap, charges, lengths, pull,
+  bend, turn, delay, stacks, period, releases; `at_level` grows life, cap and stacks). `WandCompile.apply` builds it
+  as a hook (the HOOK guards: depth, lineage, `once_per_line`; its child built by the card and the cards to its right)
+  that carries the rule, the card's slot and trigger section (`section_of`: trigger cards left of it) and, on a
+  FINISHER remnant, `extract` (the spec is the combo's finisher). A CONTACT or HIT remnant is an `ON_HIT` hook; a
+  LINK, PATH or NONE one is `AttackSpec.Trigger.ON_REMNANT` (8, appended), which no moment fires. `AttackBook`
+  indexes the remnant hooks by their child's key (`remnant_hook`) and lists the consumers. `AttackHook.hash_into`
+  adds the rule, slot, section and extract only for a remnant hook; `AttackSpec.imprint_ticks` / `imprint_permille`
+  are `LATE_INT_FIELDS`. A build without a remnant card compiles and hashes as before.
+- **Left.** `Attacks.run_hook` hands a remnant hook to `Remnants.on_hook` (no launch): CONTACT, a crack of
+  `length_m` along the attack's way centred on the hit (one per card per root a tick); HIT, an anchor at the hit
+  (likewise), a mark on the enemy (its direction: from the attack's origin to the enemy, or the attack's way when it
+  hit where it is), a fragment on the enemy (+1, at most `stack_max`, its life refreshed). LINK: `Attacks._bolts`
+  marks each bolt it queues (`World.set_pending_link`, pending column 13); `World._apply_spawns` calls
+  `Remnants.on_link`, which links the bolt to the last one marked with the same key within `link_ticks` (the thread's
+  ends ride the two projectiles while they fly: `rem_target`, `rem_target2` are their ids). PATH: `Remnants.on_arc`
+  (a slash: `ARC_CHORDS` chords at `PATH_REACH` of its reach, one path) and `on_bolt_end` (a bolt: the line it flew).
+  Nothing is left by an attack at the deepest hook level or while the card's id is on `World.hook_chain`.
+- **Inheritance.** A remnant stores its activation's level: depth + 1 and half the proc of the attack that left it
+  (`rem_depth`, `rem_proc`), its root, its damage basis (that hit's base damage), its slot and section. Its cast is
+  the remnant hook's child (a break or an extraction casts the hitting spec's own hook's child), launched through
+  `Attacks.launch` with the card's id pushed on `hook_chain`; a DELAY cast is a repeat (`AttackContext.repeat`).
+- **Limits** (`WandTable`, `data/wand/wand.tres`): each card's `max_alive`, `remnant_kind_max` per kind (48, 16, 48,
+  48), `remnant_max` (96) in all: past a cap the oldest goes (`REMNANT_END`, `END_REPLACED`). `remnant_activations_max`
+  (64) a tick, then one `LIMIT` event (`effect_id` `remnant_cap`, `amount` the cap); every cast also passes
+  `Attacks._count` (256 launches a tick). A remnant's `gap_ticks` per enemy, per path (`rem_group`; `gap_*`); its
+  charges (`-1`: until its life).
+- **Tick phase 6** (`ModifierRuntime.advance`, after the launch queue, before the black holes): `Remnants.advance`
+  ends the remnants past their life (`END_EXPIRED`), whose cast left the build or whose enemy is gone (`END_GONE`);
+  threads and marks follow; then, in store order by uid: ENEMY_CROSS (each enemy touching the segment, its half
+  width, takes the cast), ATTACK_CROSS by a player projectile of another root whose move this tick crosses it (a
+  slash crosses in `on_arc`), PULL (enemies within `pull_radius_m` move `pull_step_m` toward it, not a boss, stopping
+  0.3 m short; player projectiles within `bend_radius_m` turn `bend_step` toward it, an orbiting one excepted), DELAY
+  (after `delay_ticks`, each enemy touching the path once, then spent); then the consumers: every `period_ticks` since
+  the last release (`finale_tick`), the remnants of the consumer's section with a slot left of its own, oldest first,
+  at most `release_max`, each releasing the consumer's cast at its basis where it is (`END_CONSUMED`). No randomness.
+- **Events** (appended to `SimEvent.Kind`): `REMNANT_SPAWN` (effect = card, amount = kind), `REMNANT_ACTIVATE` (effect
+  = card, amount = the cast's damage), `REMNANT_END` (effect = card, amount = `Remnants.END_*`).
+- **Dodge Imprint** (`long_shadow`, same id): the dash spec's `imprint_ticks`; `Remnants.on_dash_start` keeps the start
+  (`imprint_at`) until the dash's end + `imprint_ticks` (`imprint_until`); the next root weapon attack
+  (`Attacks.launch`, depth 0, not a repeat or a back copy) launches from there at × `imprint_permille` and spends it
+  (one `REMNANT_ACTIVATE`).
+- **Thermal Break** (`Engines.thermal_break`, from `add_burn` and `add_frost`): an enemy with burn stacks and frost
+  stacks or a freeze, whichever came second, inside `Engines.begin`: burn and frost (and a freeze) consumed, one
+  `STATUS_APPLY` (`thermal_break`, amount = the burn stacks; the view's shatter), one `Damage.tick_dot` of
+  `WandTable.thermal_base` + `thermal_per_burn` × stacks (6, 4: × the damage stat, TAG_DOT, proc 0). Fire and Frost
+  from any source react; it never feeds a status, so it can't chain itself.
+- **State, hash, saves.** `ModifierState.rem_*` (struct of arrays, oldest first), `gap_*`, `rem_act_tick` / `_n`,
+  `link_*`, `finale_tick`, `imprint_at` / `_until`: copied by `WorldSnapshot`, listed in `ADDED_SINCE_V05` (an older
+  save has none), hashed (`ModifierState._hash_remnants`) only once `remnants_touched()` (a remnant card acted), so no
+  older digest moves. The view reads `WorldReader.remnants()` / `remnant_cast_radius` (`RemnantViews`, pooled).
+- **Mutations.** Item tag `mutation`; `ItemDefinition.offer_weight_permille` (`ItemTable`; 1000 = as its tier)
+  multiplies `ItemPool.card_weight`; a card under 1000 never fills the boss's legendary chance slot
+  (`Offers.legendary_cards`). Double Exposure and Grand Finale: legendary tier, 150.
 
 ## 9. What presentation receives
 

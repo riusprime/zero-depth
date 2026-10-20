@@ -14,6 +14,10 @@ var digest := ""
 ## v0.6.0 MX2: every spec by its key (AttackSpec.key: the roots by id, each hook child under "<parent key>/<n>"), so
 ## what a launch leaves behind (a projectile, a bomb, a patch, a ring) runs its own spec.
 var by_key := {}
+## v0.8.0 RM (Remnants): every remnant hook (AttackHook.remnant) by its child's key (the key a remnant stores, so an
+## activation finds its rule and its cast; derived like by_key), and the consumers (Grand Finale) in key order.
+var remnant_hooks := {}
+var consumers: Array[AttackHook] = []
 
 
 func add(s: AttackSpec) -> void:
@@ -37,6 +41,8 @@ func find(key: String) -> AttackSpec:
 ## v0.6.0 MX2: files every spec and every hook child by key (a child reached twice keeps its first key).
 func register() -> void:
 	by_key = {}
+	remnant_hooks = {}
+	consumers = []
 	for id in order:
 		_file(specs[StringName(id)], id)
 
@@ -47,7 +53,18 @@ func _file(s: AttackSpec, key: String) -> void:
 	if not by_key.has(key):
 		by_key[key] = s
 	for k in s.hooks.size():
-		_file(s.hooks[k].child, "%s/%d" % [key, k])
+		var h := s.hooks[k]
+		var ck := "%s/%d" % [key, k]
+		_file(h.child, ck)
+		if h.remnant != null and not remnant_hooks.has(h.child.key):  # v0.8.0 RM
+			remnant_hooks[h.child.key] = h
+			if h.remnant.activate == RemnantRule.Activate.CONSUME:
+				consumers.append(h)
+
+
+## v0.8.0 RM: the remnant hook whose child is filed under `key` (null: none, or the build changed).
+func remnant_hook(key: String) -> AttackHook:
+	return remnant_hooks.get(key)
 
 
 func seal() -> void:

@@ -1,38 +1,32 @@
-[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="ModifierDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://src/content/defs/modifier_definition.gd" id="1_mod"]
 [ext_resource type="Script" path="res://src/content/defs/modifier_op_definition.gd" id="2_op"]
 
-[sub_resource type="Resource" id="Child_1"]
-script = ExtResource("2_op")
-op = 0
-field = &"carry"
-value = 1.0
-
-[sub_resource type="Resource" id="Child_2"]
-script = ExtResource("2_op")
-op = 1
-field = &"radius_m"
-value = 0.0
-per_level = 0.3
-
 [sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
-op = 8
+op = 10
 stage = 4
 form = 7
-hook_trigger = 4
 hook_tags = PackedStringArray("area")
-hook_radius_m = 3.0
-hook_damage_permille = 2000
+hook_radius_m = 1.0
+hook_damage_permille = 400
 hook_effect = &"finisher_plus"
-hook_ops = Array[Resource]([SubResource("Child_1"), SubResource("Child_2")])
-per_level = 250.0
+per_level = 50.0
+remnant_kind = 3
+remnant_spawn = 2
+remnant_activate = 4
+remnant_seconds = 4.0
+remnant_max = 48
+remnant_charges = 1
+remnant_stack_max = 4
+remnant_stack_per_level = 1
 
 [resource]
 script = ExtResource("1_mod")
 family = &"area"
-target = PackedStringArray("finisher")
+rarity = 1
+target = PackedStringArray("weapon", "melee")
 stage = 4
 ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
 id = &"finisher_plus"

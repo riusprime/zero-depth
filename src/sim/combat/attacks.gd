@@ -60,6 +60,7 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		return true
 	if ctx.depth == 0 and not ctx.repeat and not ctx.back:
 		ModifierRuntime.on_root_launch(w, spec, ctx)
+		Remnants.imprint(w, spec, ctx)  # v0.8.0 RM: Dodge Imprint, from where the dash began
 	if spec.homing > 0 and spec.form == AttackSpec.Form.ARC:
 		ctx.angle = ProjectileMoves.snap_angle(w, ctx.origin, ctx.angle, arc_reach_m(w, spec) + 2.0)
 	var landed := _shared_form(w, spec, ctx)
@@ -74,15 +75,16 @@ static func launch(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 
 ## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): the form runs with each of its
 ## projectiles (or hits) at the spec's share_permille of the launch's damage and base damage (its hooks' shares are
-## of that); the launch's moments after it (ON_LAUNCH, the back copy, a repeat) keep the whole.
+## of that; v0.8.0 RM lead fix: rounded half up, at least 1); the launch's moments after it (ON_LAUNCH, the back copy,
+## a repeat) keep the whole.
 static func _shared_form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	var share := spec.share_permille
 	if share <= 0:
 		return _form(w, spec, ctx)
 	var d0 := ctx.damage
 	var b0 := ctx.base_damage
-	ctx.damage = maxi(1, d0 * share / 1000)
-	ctx.base_damage = maxi(1, b0 * share / 1000)
+	ctx.damage = maxi(1, (d0 * share + 500) / 1000)
+	ctx.base_damage = maxi(1, (b0 * share + 500) / 1000)
 	var landed := _form(w, spec, ctx)
 	ctx.damage = d0
 	ctx.base_damage = b0
@@ -235,11 +237,12 @@ static func shot_offsets(spec: AttackSpec) -> PackedInt32Array:
 	return out
 
 
-## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (at least 1).
+## Each bolt's base damage: the spec's, or its damage_permille share when the shot splits (rounded half up, v0.8.0 RM
+## lead fix; at least 1).
 static func bolt_base_damage(spec: AttackSpec) -> int:
 	if spec.count <= 1:
 		return spec.damage
-	return maxi(1, spec.damage * spec.damage_permille / 1000)
+	return maxi(1, (spec.damage * spec.damage_permille + 500) / 1000)
 
 
 # --- Runners ------------------------------------------------------------------------------------------------
@@ -273,6 +276,8 @@ static func _arc(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 	BladeForms.on_arc(w, spec, ctx)  # v0.6.5 WN4: Parry Edge, the view's ghost slashes
 	if landed and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it first landed
 		BlackHoles.roll(w, spec, first, ctx.damage)
+	if not w.mx.rem_uid.is_empty() or not spec.hooks.is_empty():  # v0.8.0 RM: cracks it crosses, its path
+		Remnants.on_arc(w, spec, ctx, reach)
 	if not spec.hooks.is_empty():
 		var tip := ctx.origin + Kin.dir(ctx.angle) * (w.player.radius_m + arc_reach_m(w, spec))
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, tip, -1, 0)
@@ -296,6 +301,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	if ctx.repeat and not ctx.back:
 		kind0 |= ProjectileStore.REPEAT
 	var centre := 0 if spec.directions == AttackSpec.DIR_CIRCLE else (offsets.size() - 1) / 2
+	var link := Remnants.link_of(spec) if not spec.hooks.is_empty() else null  # v0.8.0 RM: Threadline
 	for oi in offsets.size():
 		var off := offsets[oi]
 		var dir := Kin.dir(ctx.angle + off)
@@ -325,6 +331,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				kind |= ProjectileStore.SECONDARY
 			if kind != 0:
 				w.set_pending_second(kind)
+			if link != null:
+				w.set_pending_link(link.child.key)
 
 
 ## v0.8.0 PF2: how many more of `spec`'s bolts may launch now under its alive_max (-1: no cap of its own).
@@ -695,6 +703,8 @@ static func fire(w: World, spec: AttackSpec, trigger: int, ctx: AttackContext, a
 static func run_hook(
 	w: World, k: AttackHook, parent: AttackContext, at: Vector2, exclude: int
 ) -> bool:
+	if k.remnant != null:  # v0.8.0 RM: a remnant hook leaves (or activates) its remnant instead
+		return Remnants.on_hook(w, k, parent, at, exclude)
 	if parent.depth + 1 > MAX_HOOK_DEPTH or k.child.depth > MAX_HOOK_DEPTH:
 		return false
 	if parent.repeat and not parent.back and k.child.recast != 0:
@@ -861,6 +871,7 @@ static func on_projectile_end(w: World, pi: int, at: Vector2) -> void:
 		ctx.proc_pct = maxi(1, 100 >> spec.depth)
 		_second_of(w, pi, ctx)  # v0.8.0 MR
 		_run(w, spec, AttackSpec.Trigger.ON_END, ctx, at, -1, 0)
+		Remnants.on_bolt_end(w, spec, pi, at)  # v0.8.0 RM: Double Exposure's path
 	var own := pi < w.projectiles.spec_key.size() and w.projectiles.spec_key[pi] != ""
 	if own and spec != null and spec.hole_permille > 0:  # v0.8.0 P2 (O24): Void's black hole where it ends
 		BlackHoles.roll(w, spec, at, w.projectiles.damage[pi])

@@ -5,7 +5,12 @@ extends GutTest
 ## Blast is the Legendary pre-nerf Explosive (its splits and casts explode, its blasts never merge).
 
 const LEGENDARY_IDS := [
-	"chain_blast", "trigger_on_end_twice", "trigger_on_hit_twice", "trigger_on_kill_twice"
+	"chain_blast",
+	"mut_double_exposure",  # v0.8.0 RM: the mutations, in the legendary tier at a low weight
+	"mut_grand_finale",
+	"trigger_on_end_twice",
+	"trigger_on_hit_twice",
+	"trigger_on_kill_twice",
 ]
 const EPIC_IDS := ["blade_storm", "gun_twin", "riposte_chain", "split_shot"]
 

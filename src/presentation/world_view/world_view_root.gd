@@ -26,6 +26,7 @@ static var parts: Array[GDScript] = [
 	ShardViews,
 	HealOrbViews,
 	BlackHoleViews,
+	RemnantViews,  # v0.8.0 RM
 	PortalTransitView,
 	BossChallengeView,
 	SkillVisuals,
@@ -83,6 +84,9 @@ var ascension: AscensionPortal
 var loop_device: LoopDevice
 ## v0.8.0 P2 (owner O24): Void's black holes.
 var black_holes: BlackHoleViews = _part(BlackHoleViews)
+## v0.8.0 RM (owner O91): the remnants (threads, cracks, anchors, marks, fragments, replay paths), their flashes and
+## Thermal Break's shatter.
+var remnants: RemnantViews = _part(RemnantViews)
 ## v0.3.5 PT: the hero's way into the portal and the arrival on a new floor.
 var transit: PortalTransitView = _part(PortalTransitView)
 ## v0.8.0 N11 (owner O69): the receiver the hero arrives on, in the middle of the first room (null without one).
@@ -291,6 +295,7 @@ func _setup_effects() -> void:
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
 	add_child(black_holes)  # v0.8.0 P2
+	add_child(remnants)  # v0.8.0 RM
 
 
 ## The floor's portals and devices, the boss door, the shrine and the shop, the portal transit, the ink and hit feel.
@@ -420,6 +425,7 @@ func sync() -> void:
 	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
 	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
+	_sync_view(&"remnants", remnants)  # v0.8.0 RM
 	if boss_door != null:
 		boss_door.sync(reader)
 		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud

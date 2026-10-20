@@ -1168,6 +1168,17 @@ func black_holes() -> Array:
 	return BlackHoles.read(_w)
 
 
+## v0.8.0 RM (owner O91): the remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,
+## kind, card, activate, a, b, dir, age, life, count, target}], imprint, imprint_at}).
+func remnants() -> Dictionary:
+	return Remnants.read(_w)
+
+
+## v0.8.0 RM: the radius (m) of the cast card `card`'s remnant releases (the view's flash; 0 without one).
+func remnant_cast_radius(card: StringName) -> float:
+	return Remnants.cast_radius(_w, card)
+
+
 func has_boss_room() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.boss_room >= 0 and _w.boss_flow != null
 

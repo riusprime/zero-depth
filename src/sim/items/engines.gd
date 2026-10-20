@@ -36,6 +36,9 @@ const EFFECT_BLOOD_HARVEST := &"blood_harvest"
 const EFFECT_SPIKED_PHASE := &"spiked_phase"
 const EFFECT_SLIPSTREAM := &"slipstream"
 const EFFECT_FROZEN_BASTION := &"frozen_bastion"
+## v0.8.0 RM (owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"): an enemy both burning and
+## chilled or frozen breaks (thermal_break): its DAMAGE event's and its shatter's (STATUS_APPLY) effect id.
+const EFFECT_THERMAL_BREAK := &"thermal_break"
 
 ## Payoff hits: they never add stacks (so no engine feeds itself or another through its own payoff).
 const PAYOFFS: Array[StringName] = [
@@ -73,6 +76,9 @@ const SRC_CHAIN := 3
 const SRC_WAVE := 4
 ## v0.5.0 CP: an Orbit Blades touch (Razor Orbit feeds bleed from it).
 const SRC_ORBIT := 5
+
+## v0.8.0 RM: the wand's numbers in a lab world without World.wand_table (Thermal Break's; they mirror wand.tres).
+static var _wand_defaults := WandTable.new()
 
 
 # --- Combos ---------------------------------------------------------------------------------------------------
@@ -219,6 +225,7 @@ static func add_burn(w: World, i: int, n: int, root: int, effect: StringName) ->
 	a.burn_stacks[i] = mini(a.burn_stacks[i] + n, m.burn_max_stacks)
 	a.burn_t[i] = m.burn_duration_ticks
 	_status(w, i, root, a.burn_stacks[i], effect)
+	thermal_break(w, i, root)  # v0.8.0 RM: fire on a chilled enemy
 
 
 ## Adds shock stacks (capped at the threshold, refreshed). Plasma Arc: shocking a burning enemy arcs. At the
@@ -298,8 +305,40 @@ static func add_frost(w: World, i: int, n: int, root: int, effect: StringName) -
 			a.frost_t[i] = 0
 			a.frozen_t[i] = m.freeze_ticks
 			_status(w, i, root, m.freeze_ticks, EFFECT_FREEZE)
+			thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
 			return
 	_status(w, i, root, a.frost_stacks[i], effect)
+	thermal_break(w, i, root)  # v0.8.0 RM: frost on a burning enemy
+
+
+## v0.8.0 RM (owner O91; WAND.md "Thermal Break"; SIM_CONTRACTS §8l): enemy `i` is both burning and chilled (frost
+## stacks) or frozen, whichever came second: it breaks. Its burn and its frost are consumed (a freeze ends), then it
+## takes one hit of WandTable.thermal_base + thermal_per_burn × the burn stacks it had, as a damage-over-time hit
+## (Damage.tick_dot: × the damage stat, never a crit, proc 0: it sets nothing off, so it can't chain itself), after a
+## STATUS_APPLY (EFFECT_THERMAL_BREAK, amount = the burn stacks) the view shows as a short shatter. Fire and Frost from
+## any source react; the engine guard (begin) holds it to once in a chain.
+static func thermal_break(w: World, i: int, root: int) -> void:
+	var a := w.actors
+	if a.dead[i] == 1 or a.burn_stacks[i] <= 0:
+		return
+	if a.frost_stacks[i] <= 0 and a.frozen_t[i] <= 0:
+		return
+	if not begin(w, EFFECT_THERMAL_BREAK):
+		return
+	var t := w.wand_table if w.wand_table != null else _wand_defaults
+	var stacks := a.burn_stacks[i]
+	a.burn_stacks[i] = 0
+	a.burn_t[i] = 0
+	a.burn_cd[i] = 0
+	a.frost_stacks[i] = 0
+	a.frost_t[i] = 0
+	a.frozen_t[i] = 0
+	_status(w, i, root, stacks, EFFECT_THERMAL_BREAK)
+	var pid := a.ids[0]
+	Damage.tick_dot(
+		w, i, t.thermal_base + t.thermal_per_burn * stacks, pid, pid, EFFECT_THERMAL_BREAK
+	)
+	end(w)
 
 
 ## Actor i is frozen (EnemyAi skips it; ItemProcs.slow_factor is 0).

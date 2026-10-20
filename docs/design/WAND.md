@@ -67,6 +67,23 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
     launches a tick, the player-shot cap. A card that can't act where it sits is flagged on its tile and left out of
     the read-back: Echo, Double Slash and Charge right of a trigger ("Does nothing after a trigger"), any card past
     the third trigger ("Too deep to cast").
+12. **Remnants** (v0.8.0 RM, owner O91: "Build reusable remnants, connections and events—not hardcoded modifier-pair
+    scripts"; [`BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "RM"). A remnant card leaves a small object
+    behind (a **segment** between two points, an **anchor** that pulls, a **mark** on an enemy with a direction, a
+    **fragment** count on an enemy) that a later attack, or time, activates. Its activation is a spell the card
+    casts, built like a trigger's child: by the card and the **cards to its right** (a Big right of Faultline makes
+    its eruptions bigger, one left of it doesn't). A remnant keeps the hook level of the attack that left it (its
+    cast is that attack's child: one level deeper, half the proc; an attack at the deepest level leaves none), and
+    its own cast never leaves the same remnant (lineage). Every card's rule is its kind and its numbers in
+    `data/modifiers/` (`RemnantRule`): how long it lasts, how many of the card's stand (the oldest replaced), the
+    least time between two of its hits on one enemy, how many activations it has. Limits for all
+    (`data/wand/wand.tres`): 96 alive, a cap per kind, 64 activations a tick (then one LIMIT event), and every
+    activation's cast counts toward the 256 launches a tick. The cards are in the pools below (G17, S8–S10, B12, B14)
+    and the mutations.
+13. **Thermal Break** (v0.8.0 RM, owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"). An enemy
+    that is both burning and chilled or frozen breaks, whichever came second: its burn and frost are consumed (a
+    freeze ends) into one hit of 6 + 4 per burn stack (× the damage stat; a damage-over-time hit: never a crit, it
+    sets nothing off), with a short shatter. One rule in the status engine, so Fire and Frost from any source react.
 
 ## The pools (G1: the owner keeps, cuts or edits rows)
 
@@ -89,6 +106,7 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | G14 | Echo | fires again 0.3 s later at 60 %; v0.8.0 MR: at 50 % (+5 % a level), secondary; does nothing right of a trigger (flagged) | a trailing ghost volley |
 | G15 | Backfire | also fires behind you | shots in both directions |
 | G16 | Halo | the spell fires in a full ring, ×0.5 range; v0.8.0 MR: each ring bolt 40 % (+5 % a level), the bolts past the first secondary | a ring of shots |
+| G17 | Threadline (v0.8.0 RM, rare) | consecutive projectiles of a volley, or of two shots 0.4 s apart, connect for 0.5 s with a thread; an enemy crossing it takes 25 % of a bolt (at most once each 0.25 s per thread), cast through the cards to its right; up to 6 threads (+2 a level) | cyan threads between the shots |
 
 ### Blade pool: what the slash does
 | # | Card | Changes the spell | You see |
@@ -104,9 +122,9 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | B9 | Fissure | the slash cracks the ground ahead in a line that erupts | a crack line, then an eruption |
 | B10 | Chain Cut | a hit leaps to the next enemy within 4 m (+1 per level) | the slash jumping between enemies |
 | B11 | Parry Edge | the slash destroys enemy shots it touches | sparks off the bullets it cuts |
-| B12 | Afterimage | dashing leaves a copy that repeats your last slash | a ghost slash |
+| B12 | Dodge Imprint (v0.8.0 RM; was Afterimage, same id `long_shadow`; common) | for 1.5 s after a dash, your next attack is cast from where the dash began, +10 % damage a level (the ghost copy is gone) | a faint ring where the dash began |
 | B13 | Lunge Step | each slash steps you 1 m forward | you drive into the crowd |
-| B14 | Finisher+ | the 4th hit's shockwave doubles and carries every card | a big shockwave |
+| B14 | Fracture Bank (v0.8.0 RM; was Finisher+, same id `finisher_plus`; rare) | combo hits (not the finisher) lodge a fragment in the enemy hit, at most 4 (+1 a level), each 4 s; the finisher's hit extracts every fragment in the enemies it hits: one burst of 40 % (+5 % a level) of the finisher's damage per fragment, cast through the cards to its right | crimson gems over the enemies, a flash as they come out |
 | B15 | Orbit Blades | each slash throws off a blade that circles you for 3 s | blades orbiting you |
 | B16 | Counter | a slash within 0.5 s of a dash deals ×2 and is a flying wave | a dash-slash wave |
 | B17 | Blade Storm (v0.8.0 BL) | each slash throws 2 spinning blades that fly out and back (+1 a level) | blades looping out and back |
@@ -122,6 +140,18 @@ Move ON HIT one slot to the left, and only the split bolts burn when they hit, n
 | S5 | Bleed | bleed stacks that tick faster when you move | red streaks |
 | S6 | Void | hits pull nearby enemies in | a violet smear and a pull |
 | S7 | Explosive | the spell explodes where it ends | a blast at the end |
+| S8 | Faultline (v0.8.0 RM, rare) | a slash's contact or a projectile's impact leaves a 1.6 m crack along the attack for 3 s (6 at most, +1 a level); a later attack crossing it erupts it: a 1.2 m burst at 80 % of the crossing hit (+10 % a level), cast through the cards to its right; the crack is spent | ember cracks, an eruption |
+| S9 | Gravity Stitch (v0.8.0 RM, rare) | a hit leaves an anchor for 1.2 s (4 at most; +0.3 s and +1 a level) that pulls enemies within 2.5 m gently in and bends your projectiles within 3 m toward it | violet rings on the floor |
+| S10 | Stress Mark (v0.8.0 RM, common) | a hit marks the enemy with its direction for 3 s (one an enemy); a later hit from 90° or more away breaks it: +100 % of that hit (+20 % a level), cast through the cards to its right, and a short stagger | an amber gem over the enemy, a flash as it breaks |
+
+### Mutations (v0.8.0 RM): rare, shared
+Tag `mutation`, the legendary tier at a low weight (`offer_weight_permille` 150; never the boss's legendary chance slot;
+the floor pacing step FL decides when they are offered).
+
+| # | Card | Effect | You see |
+|---|---|---|---|
+| M1 | Double Exposure | 0.6 s after an attack, its path (a bolt's flown line, a slash's arc) hurts each enemy on it once more at 40 %; its replay never replays | a pale path, then a flash |
+| M2 | Grand Finale | every 4 s it consumes the remnants made by the cards to its **left** in its own trigger section, each releasing a 1.5 m burst at 60 % of the hit that made it (at most 12 a release), cast through the cards to its right | the remnants flash as they go |
 
 ### Triggers: they cut the wand, and both weapons get them
 | # | Card | The cards to its right cast… |

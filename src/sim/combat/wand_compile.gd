@@ -48,6 +48,12 @@ extends RefCounted
 ##   it makes the group spin as it flies (WandRings). Stat-like cards stay order-free. A bolt child built on such a
 ##   ring (a card to the Ring's right: Split's shards, a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX
 ##   alive (WandRings.cap_child): every ring and pulse of a launch hits, and each hit would throw its own.
+## - v0.8.0 RM (owner O91: "Build reusable remnants, connections and events"; WAND.md rule 12): a REMNANT op is a hook
+##   (the same guards: depth, lineage, once per line) whose child is what its remnant's activation casts, built where
+##   its card sits like a trigger's child: by its own card and the cards to its right, so a later card shapes every
+##   activation. The hook records its card's slot and trigger section (how many trigger cards stand left of it: Grand
+##   Finale's reach) and, for a FINISHER remnant, whether the spec is the combo's finisher (it extracts; the other steps
+##   lodge). A remnant left on a hit is an ON_HIT hook; a link, a path or a consumer is ON_REMNANT (Remnants finds it).
 
 const MAX_DEPTH := 2
 
@@ -163,6 +169,11 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 					s.hooks.append(_hook(s, m, op, i))
 		ModifierOp.Op.TRIGGER:
 			pass  # a trigger is a card of its own (run cuts there)
+		ModifierOp.Op.REMNANT:  # v0.8.0 RM: a hook that leaves a remnant (class doc)
+			if op.remnant == null or s.depth >= MAX_DEPTH or s.lineage.has(String(m.id)):
+				return
+			if not once_more(s, m.id):
+				s.hooks.append(_remnant(s, m, op, i))
 		_:
 			Modifiers.numeric(s, op)
 
@@ -250,6 +261,30 @@ func _hook(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHoo
 	k.when = op.when
 	k.child = WandRings.cap_child(s, run(c, i))  # v0.8.0 AO: a ring's shards, at most so many alive
 	return k
+
+
+## v0.8.0 RM: the REMNANT op `op` of card `m` (slot `i`) on `s`: a hook (its child built as _hook builds one) that
+## carries the remnant, its card's slot and section, and whether `s` extracts (class doc).
+func _remnant(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHook:
+	var k := _hook(s, m, op, i)
+	k.remnant = op.remnant
+	k.slot = i
+	k.section = section_of(i)
+	var hit := (
+		op.remnant.spawn == RemnantRule.Spawn.CONTACT or op.remnant.spawn == RemnantRule.Spawn.HIT
+	)
+	k.trigger = AttackSpec.Trigger.ON_HIT if hit else AttackSpec.Trigger.ON_REMNANT
+	k.extract = op.remnant.activate == RemnantRule.Activate.FINISHER and s.has_tag(&"finisher")
+	return k
+
+
+## v0.8.0 RM: the trigger section of slot `i`: how many trigger cards stand left of it.
+func section_of(i: int) -> int:
+	var n := 0
+	for k in mini(i, mods.size()):
+		if mods[k].is_trigger():
+			n += 1
+	return n
 
 
 ## The form-layering rule (design §2, owner B8): a second form op adds an attack in its own form that fires where the

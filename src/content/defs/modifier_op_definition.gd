@@ -11,7 +11,10 @@ extends Resource
 ## application every `every` landed hits; 0 = every hit). ELEMENT names an element the view draws. HOOK adds an
 ## attack the spec spawns (its trigger, form, tags, size and damage below). v0.6.5 WN1: TRIGGER, a wand trigger card's
 ## one op: it cuts the wand (the cards to its right build the child spell cast on `hook_trigger`; Modifiers).
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }
+## v0.8.0 RM (owner O91; WAND.md rule 12): REMNANT, a hook that leaves a remnant (Remnants) instead of launching at
+## once: its child (form, hook_* fields, hook_ops, then the cards to its right) is what the remnant's activation
+## casts, and the remnant_* fields below say what is left, when and how it activates.
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER, REMNANT }
 
 ## The forms of the design's §1 (AttackSpec.Form mirrors these numbers). v0.6.0 MX4: WEAPON, a hook's child only: a
 ## copy of the weapon's last attack (the Blade's current combo step, or the Gun's shot), resolved when it launches
@@ -26,6 +29,24 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit; ON_FINISHER, the combo's last step's hits (a
 ## TRIGGER op only: Modifiers compiles it into the last step's ON_HIT).
 enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
+
+## v0.8.0 RM (Remnants; SIM_CONTRACTS §8l): a REMNANT op's remnant. Kinds: SEGMENT (a line between two points),
+## ANCHOR (a point that pulls), MARK (on an enemy, with a direction), FRAGMENT (on an enemy, a count). Appended, never
+## renumbered (RemnantRule mirrors the numbers).
+enum RemnantKind { SEGMENT, ANCHOR, MARK, FRAGMENT }
+## When it is left: LINK, between consecutive projectiles of the attack (a volley's, or two shots remnant_link_seconds
+## apart); CONTACT, along the attack where it hits (a slash's contact, a projectile's impact; remnant_length_m long);
+## HIT, where a hit lands (an anchor) or on the enemy hit (a mark, a fragment); PATH, the attack's path once it is
+## done (a bolt's flown line, a slash's arc); NONE, never (a consumer: Grand Finale).
+enum RemnantSpawn { LINK, CONTACT, HIT, PATH, NONE }
+## How it activates: ENEMY_CROSS, an enemy touching the segment takes the cast (at most once each hit_gap per
+## remnant); ATTACK_CROSS, a later player attack crossing it erupts it (the cast at that attack's damage); PULL, it
+## pulls enemies and bends player projectiles (no cast); TURN, a later hit on the marked enemy from remnant_turn_degrees
+## or more away breaks it (the cast at that hit's damage); FINISHER, the combo's finisher extracts it (the cast at the
+## finisher's damage × the count; the other combo steps lodge); DELAY, remnant_delay_seconds after it is left it hurts
+## the enemies touching it once; CONSUME, every remnant_period_seconds it consumes the remnants made by the cards left
+## of it in its trigger section, each releasing the cast at its damage (at most remnant_release_max).
+enum RemnantActivate { ENEMY_CROSS, ATTACK_CROSS, PULL, TURN, FINISHER, DELAY, CONSUME }
 
 ## v0.6.0 MX4: when a hook may fire: always, or only while the heat is at Overclock (Heat Sink Rounds). v0.6.5 WN4:
 ## COUNTER, only on a slash that counters (within its counter window after a dash: Counter, B16).
@@ -105,6 +126,10 @@ const FIELD_STAGE := {
 	# v0.8.0 AO (owner O37): a Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
 	&"ring_share_permille": [3, &"ring_share_permille", ""],
 	&"swirl": [2, &"swirl", ""],
+	# v0.8.0 RM (owner O91): Dodge Imprint (a dash spec's): for this long after a dash, the next weapon attack is cast
+	# from where the dash began, × imprint_permille
+	&"imprint_seconds": [3, &"imprint_ticks", "ticks"],
+	&"imprint_permille": [3, &"imprint_permille", ""],
 	# v0.8.0 MR (owner O91): a projectile's share of the launch's damage (Twin, Spread, Halo), and the rhythm cards'
 	# extra rate (FireRhythm: Rapid Fire's ramp, Flurry's burst)
 	&"share_permille": [3, &"share_permille", ""],
@@ -167,6 +192,36 @@ const ELEMENTS: Array[StringName] = [&"ember", &"storm", &"frost", &"venom", &"v
 ## v0.8.0 MR (owner O91, Split Wave): an op of the card's other reading (ModifierDefinition.alt_target): it runs only
 ## there, and the others only on the target.
 @export var alt := false
+## v0.8.0 RM (owner O91: "Build reusable remnants, connections and events"; Remnants): a REMNANT op's remnant (see the
+## enums): its kind, when it is left and how it activates; its life (s) and the most of this card's alive (each + its
+## per_level a level above 1); the least time between two of its hits on one enemy; its charges (activations before it
+## is spent; 0 = until its life ends); a crack's length and a segment's half width (m); two shots this close link
+## (Threadline); an anchor's pull (reach m, m/s) and bend (reach m, degrees per second); a mark's break angle; a
+## replay's delay; a fragment's most per enemy (+ per level); a consumer's period and most releases; and whether an
+## activation staggers the enemy (EnemyAi's recover). Starting values.
+@export var remnant_kind := RemnantKind.SEGMENT
+@export var remnant_spawn := RemnantSpawn.HIT
+@export var remnant_activate := RemnantActivate.ENEMY_CROSS
+@export var remnant_seconds := 1.0
+@export var remnant_seconds_per_level := 0.0
+@export var remnant_max := 1
+@export var remnant_max_per_level := 0
+@export var remnant_hit_gap_seconds := 0.0
+@export var remnant_charges := 1
+@export var remnant_length_m := 0.0
+@export var remnant_width_m := 0.15
+@export var remnant_link_seconds := 0.0
+@export var remnant_pull_radius_m := 0.0
+@export var remnant_pull_mps := 0.0
+@export var remnant_bend_radius_m := 0.0
+@export var remnant_bend_dps := 0.0
+@export var remnant_turn_degrees := 90.0
+@export var remnant_delay_seconds := 0.0
+@export var remnant_stack_max := 1
+@export var remnant_stack_per_level := 0
+@export var remnant_period_seconds := 0.0
+@export var remnant_release_max := 0
+@export var remnant_stagger := false
 
 
 ## The stage this op runs in, given its modifier's.
@@ -181,7 +236,7 @@ func required_stage() -> int:
 			return 0
 		Op.STATUS, Op.ELEMENT:
 			return 3
-		Op.HOOK, Op.TRIGGER:
+		Op.HOOK, Op.TRIGGER, Op.REMNANT:
 			return 4
 	return int(FIELD_STAGE[field][0]) if FIELD_STAGE.has(field) else -1
 

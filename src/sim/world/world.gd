@@ -475,7 +475,7 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0, ""]
 	)
 
 
@@ -483,6 +483,11 @@ func queue_projectile(
 ## (ProjectileStore.REPEAT; Attacks._bolts).
 func set_pending_second(kind: int) -> void:
 	_pending_projectiles[-1][12] = kind
+
+
+## v0.8.0 RM (Remnants, Threadline): the player bolt queued last links to the one before it (its LINK hook's key).
+func set_pending_link(key: String) -> void:
+	_pending_projectiles[-1][13] = key
 
 
 ## v0.7.5 BF1: the projectile queued last is a fireball of look `look` (BulletPatterns).
@@ -1783,6 +1788,8 @@ func _apply_spawns() -> void:
 			projectiles.set_second(projectiles.size() - 1, s[12])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
+		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
+			Remnants.on_link(self, projectiles.size() - 1, s[13])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:
