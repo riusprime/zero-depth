@@ -319,6 +319,7 @@ func _build_page() -> void:
 			tiles.append(t)
 			here.append(t)
 		_link_short_rows(above, here)
+		_stop_at_row_ends(here)
 		above = here
 	progress.text = tr("UI_CODEX_FOUND") % [found, catalog.size(page)]
 	for p: StringName in tabs:
@@ -328,6 +329,18 @@ func _build_page() -> void:
 		b.add_theme_color_override("font_color", lit if p == page else MenuStyle.DIM)
 	if not tiles.is_empty():
 		_show(tiles[0].entry)
+
+
+## v0.8.0 RM: left and right stop at a row's ends instead of jumping to the nearest tile of another section (with the
+## two mutations the legendary section takes two rows, and right from its first row's end landed on a stat card,
+## skipping the rest of that section).
+func _stop_at_row_ends(here: Array[CodexTile]) -> void:
+	for k in here.size():
+		var t := here[k]
+		if k % COLUMNS == 0:
+			t.focus_neighbor_left = t.get_path_to(t)
+		if k % COLUMNS == COLUMNS - 1 or k == here.size() - 1:
+			t.focus_neighbor_right = t.get_path_to(t)
 
 
 ## v0.8.0: a short row is never skipped. Down from a column the next row (or the next section's only row) doesn't
