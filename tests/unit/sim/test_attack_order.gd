@@ -187,7 +187,9 @@ func test_ring_spread_is_a_fan_of_three_ring_shots_at_the_multi_share() -> void:
 		var v: Vector2 = r[k][4]
 		assert_almost_eq(Kin.angle_of(v), offsets[k] & 4095, 2, "ring %d on the fan's line" % k)
 		assert_eq(r[k][2], r[0][2], "together")
-		assert_eq(r[k][3], maxi(1, whole * WandRings.MULTI_PERMILLE / 1000), "each the multi share")
+		# v0.8.0 MR (O91): each ring shot Spread throws is a share too (its 55 %), then the multi share
+		var each := maxi(1, whole * spec.share_permille / 1000)
+		assert_eq(r[k][3], maxi(1, each * WandRings.MULTI_PERMILLE / 1000), "each the multi share")
 		assert_eq(r[k][5], r[0][5], "one root for the launch")
 	assert_ne(r[0][4], r[2][4], "apart")
 
@@ -296,7 +298,9 @@ func test_the_ring_cap_holds_and_leaves_a_limit_event() -> void:
 	)
 	var p := _bolt_world([SPREAD, RING], 5)
 	assert_eq(
-		Modifiers.bolt(p).ring_pulses, 11, "a level-5 Spread left of the Ring: 11 shots taken in"
+		Modifiers.bolt(p).ring_pulses,
+		7,
+		"a level-5 Spread left of the Ring: 7 shots taken in (MR: +1 a level)"
 	)
 	W.run(p, 1, 0, W.S)
 	assert_eq(p.ab.ring_pulse[0], WandRings.PULSES_MAX, "but one ring pulses 5 times at most")

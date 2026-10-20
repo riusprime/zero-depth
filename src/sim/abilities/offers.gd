@@ -319,7 +319,7 @@ static func info(w: World, code: int) -> Dictionary:
 				"desc_key": st.desc_key,
 				"rarity": rarity_of(code),
 				"level": 0,
-				"amount": st.amounts[rarity_of(code)],
+				"amount": CardForecast.gain(w, code),  # v0.8.0 SG: attack speed's real gain after the curve
 				# v0.5.0 CP: a rule card's second number
 				"side": st.side[rarity_of(code)] if rarity_of(code) < st.side.size() else 0,
 			}

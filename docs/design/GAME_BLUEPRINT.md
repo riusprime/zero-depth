@@ -109,7 +109,7 @@ only adds numbers, menus or breadth fails the filter.
 | Utility (v0.4.0 BS, owner F11: none at the start; PD-01 flipped) | An ability card on the utility button: **Aegis** (the guard: hits from the front cut to 20 %, blocks store guard charges for the next swing) **or Blink** (a teleport the way you're moving, through walls by range, with a 2 m landing shock), never both | v0.1.0 PLAN; v0.4.0 PLAN (starting values) |
 | The build (v0.6.0 MX2, owner B7; was v0.4.0's four ability slots, F8) | **The weapon, one utility pick and six modifier slots.** The weapon is the build's (Blade: Combo Sword = the combo + Lunge Cleave; Gun: Pulse Gun = the bolts + Scatter Blast), levels 1–5, outside the slots, with the dash and Vent. The utility (Blink or Aegis) is one pick outside the slots. **Six modifier slots**, filled in pick order (the layer order): the six old abilities as weapon modifiers (Bomb Lobber, Drone Buddy, Orbit Blades, Arc Field, Frost Nova, Flame Trail; each carries the weapon's elements and effects; taking one you hold levels it 1–5 without a slot) and the attack items (the 14 MX1 items and the four ability mods). With the six full, a new modifier offers **Swap**: pick the one it replaces, or skip. Stat cards are unlimited (no slot) | [`MODIFIER_ENGINE.md`](MODIFIER_ENGINE.md) "The build"; [`../architecture/SIM_CONTRACTS.md`](../architecture/SIM_CONTRACTS.md) §8c |
 | Builds (v0.3.0 L15) | **Blade** (melee only) or **Gun** (shooting only), picked before the run. Blade hits ×1.15 (L16); the Gun hits ×1.00 since 2026-10-08 (owner: "do not make gun -15% it is actually unplayable with that debuff"; L16's ×0.85 is gone) | `data/builds/*.tres` `damage_permille` |
-| Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
+| Crit (v0.4.0 BS, owner F9) | Every direct hit: 5 % chance, ×1.5; stat cards raise both (75 %, ×4.0 caps; v0.8.0 SG: +3/5/8 points of chance, +10/20/35 of damage). A crit shows a big yellow number and rings sharper | v0.4.0 PLAN (starting values) |
 | Dash | Short and fast, on a cooldown. Its distance, cooldown and any invulnerability window are from GA | GA §5 |
 
 **Starting values in use.** These are tuning defaults that no source has given yet. Each one is replaced by the GA
@@ -167,7 +167,9 @@ value or by an owner decision, and the change is noted here.
   items (engines, dash, guard, heat, sustain) and the stat cards take none.
 - **Rewards (v0.4.0 BS, owner F9, F13).** Altars and chests offer pick 1 of 3 from three card types: **ability
   cards** (a free altar's first card is a new ability while a slot is free), **stat cards** (most cards: 12 stats ×
-  common / rare / epic, stacking multiplicatively with caps; chests roll more rare and epic) and the 27 items as
+  common / rare / epic, stacking multiplicatively with caps; v0.8.0 SG, owner O91: damage, attack speed and Glass
+  Cannon add instead, damage with Onrush and Hoarder in one bucket, attack speed through one curve with the wand's
+  rate cards; chests roll more rare and epic) and the 27 items as
   rarer **mods** (mostly in chests). The gamble shrine's overlapping wins (max HP, damage, move speed, dash cooldown
   → cooldowns, regen, shard gain) raise the same stat values by its own amounts. **v0.8.0 N14 (owner O72):** the
   shrine is rarer: it stands on some floors only (starting value 40 %), in a combat room away from the start hall

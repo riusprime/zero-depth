@@ -1,8 +1,8 @@
 {
   "blade_all": {
     "damage": 4160,
-    "digest": "c9cf9464a7ab94082e18a183355a32154b33b447d855c3a118cddf5f3513f776",
-    "hits": 121,
+    "digest": "30799447b8201f0338641f5d564cfcfa8eed56382716013cd72723ab1b377897",
+    "hits": 126,
     "kills": 14
   },
   "blade_conductor": {
@@ -61,8 +61,8 @@
   },
   "both_all": {
     "damage": 4160,
-    "digest": "6869bc4f089546ebdf243118581f96e65644de865d1b3f0348474ce478d76105",
-    "hits": 188,
+    "digest": "f3eff201ade07d7971747e9bb5db3ce83b05c8ba3d782a14f99e5e0c0904d331",
+    "hits": 189,
     "kills": 14
   },
   "both_plain": {

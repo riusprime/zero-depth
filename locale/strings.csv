@@ -760,7 +760,7 @@ ITEM_TRIGGER_ON_FINISHER_DESC,Cards to its right cast on your finisher.,Las cart
 ITEM_GUN_BIG_SHOT,Big Shot,Disparo Grande
 ITEM_GUN_BIG_SHOT_DESC,"Bigger, stronger, slower shots.","Disparos más grandes, fuertes y lentos."
 ITEM_GUN_RAPID_FIRE,Rapid Fire,Fuego Rápido
-ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.","Disparos más pequeños y débiles que se aceleran cuanto más mantienes."
+ITEM_GUN_RAPID_FIRE_DESC,"Smaller, weaker shots that fire faster the longer you hold.",Disparos pequeños y débiles que aceleran si mantienes.
 ITEM_GUN_TWIN,Twin,Gemelo
 ITEM_GUN_TWIN_DESC,"Fire twice, side by side.","Disparas dos veces, lado a lado."
 ITEM_GUN_SPREAD,Spread,Abanico
@@ -786,7 +786,7 @@ ITEM_GUN_ECHO_DESC,Fire again a moment later.,Disparas otra vez un instante desp
 ITEM_GUN_BACKFIRE,Backfire,Tiro Trasero
 ITEM_GUN_BACKFIRE_DESC,Also fire behind you.,También disparas hacia atrás.
 ITEM_SPLIT_WAVE,Split Wave,Onda Dividida
-ITEM_SPLIT_WAVE_DESC,"Flying slashes split on hit; without them, hits throw small crescents.","Tus tajos voladores se dividen al impactar; sin ellos, los impactos lanzan medialunas pequeñas."
+ITEM_SPLIT_WAVE_DESC,"Flying slashes split; without them, hits throw crescents.","Tajos voladores se dividen; sin ellos, lanzan medialunas."
 ITEM_WHIRL,Whirl,Remolino
 ITEM_WHIRL_DESC,Every slash becomes a full spin.,Cada tajo se vuelve un giro completo.
 ITEM_DOUBLE_SLASH,Double Slash,Tajo Doble
