@@ -5,6 +5,13 @@ extends RefCounted
 ## It is a wide facade on purpose: one read method per thing a view needs.
 
 const KIND_PLAYER := ActorStore.Kind.PLAYER
+## v0.8.0 RM: the remnant kinds, activations and Thermal Break's effect id, for the views (the layer rule).
+const REMNANT_SEGMENT := RemnantRule.Kind.SEGMENT
+const REMNANT_ANCHOR := RemnantRule.Kind.ANCHOR
+const REMNANT_FRAGMENT := RemnantRule.Kind.FRAGMENT
+const REMNANT_ATTACK_CROSS := RemnantRule.Activate.ATTACK_CROSS
+const REMNANT_DELAY := RemnantRule.Activate.DELAY
+const EFFECT_THERMAL_BREAK := Engines.EFFECT_THERMAL_BREAK
 const KIND_CHARGER := ActorStore.Kind.CHARGER
 const KIND_WARDEN := ActorStore.Kind.WARDEN
 const KIND_NEEDLE := ActorStore.Kind.NEEDLE
@@ -1168,6 +1175,17 @@ func black_holes() -> Array:
 	return BlackHoles.read(_w)
 
 
+## v0.8.0 RM (owner O91): the remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,
+## kind, card, activate, a, b, dir, age, life, count, target}], imprint, imprint_at}).
+func remnants() -> Dictionary:
+	return Remnants.read(_w)
+
+
+## v0.8.0 RM: the radius (m) of the cast card `card`'s remnant releases (the view's flash; 0 without one).
+func remnant_cast_radius(card: StringName) -> float:
+	return Remnants.cast_radius(_w, card)
+
+
 func has_boss_room() -> bool:
 	return _w.floor_layout != null and _w.floor_layout.boss_room >= 0 and _w.boss_flow != null
 
@@ -1294,11 +1312,14 @@ func legendary_picks_left() -> int:
 	return _w.legendary_picks
 
 
-## v0.6.5 WN5b: the level a wand card taken from reward i goes to (the boss's legendary altar: the tier's wand_level,
-## WAND.md "level-5 versions"), or 0.
-func legendary_card_level(i: int) -> int:
-	var t := _w.legendary_table
-	return t.wand_level if t != null and BossReward.is_legendary(_w, i) else 0
+## v0.8.0 FL (owner O91; LootPacing.jackpot): card k of the open choice is a jackpot card (it says "Jackpot"). Replaces
+## v0.6.5 WN5b's legendary_card_level: the boss's altar no longer takes a wand card to level 5.
+func choice_jackpot(k: int) -> bool:
+	var i := choice_reward()
+	if i < 0:
+		return false
+	var offer := _w.rewards.offer_of(i)
+	return k >= 0 and k < offer.size() and LootPacing.is_jackpot(_w, _w.rewards.ids[i], offer[k])
 
 
 ## v0.6.0 CU: reward i's drop kind (DROP_*), or -1 when it isn't a drop.
@@ -1812,7 +1833,7 @@ func choice_items() -> PackedInt32Array:
 
 
 ## v0.8.0 N8 (owner O62): what taking card `code` changes, old → new (CardForecast: the take's own steps; on the
-## open choice's reward, so the boss's altar's level-5 rule counts).
+## open choice's reward).
 func card_forecast(code: int) -> Dictionary:
 	return CardForecast.of(_w, code, choice_reward())
 
@@ -2247,6 +2268,12 @@ static func wand_moved(wand_read: Dictionary, from: int, to: int) -> Dictionary:
 ## v0.6.5 WN2: the plain-words read-back of any wand read (Wand.describe), e.g. a preview from wand_moved.
 static func wand_describe(wand_read: Dictionary) -> Array[Dictionary]:
 	return Wand.describe(wand_read)
+
+
+## v0.8.0 MR (owner O91): per card of a wand read, why it can't act where it sits (Wand.flags: a translation key, or
+## &""): the tiles dim such a card and show the reason.
+static func wand_flags(wand_read: Dictionary) -> Array[StringName]:
+	return Wand.flags(wand_read)
 
 
 ## v0.6.5 WN2: describe()'s lines in words (Wand.render; `translate` is the view's tr).

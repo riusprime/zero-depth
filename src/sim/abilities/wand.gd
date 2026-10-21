@@ -19,6 +19,17 @@ const TRIGGER_KEYS := {
 	AttackSpec.Trigger.ON_FINISHER: &"WAND_READ_ON_FINISHER",
 	AttackSpec.Trigger.ON_CRIT: &"WAND_READ_ON_CRIT",
 }
+## v0.8.0 MR (owner O91: "Clearly flag incompatible placements"): why a card can't act where it sits (flags()): right
+## of a trigger a repeat or a hold (WandTable.after_trigger_dead), or past the third trigger (too deep to cast).
+const DEAD_AFTER_TRIGGER := &"UI_WAND_DEAD_TRIGGER"
+const DEAD_TOO_DEEP := &"UI_WAND_DEAD_DEEP"
+## v0.8.0 RM: what a card's remnant does (remnant_of; the read-back's lines).
+const REMNANT_NONE := 0
+const REMNANT_CASTS := 1
+const REMNANT_PULLS := 2
+const REMNANT_CONSUMES := 3
+## A wand without a table (a lab): WandTable's defaults (they mirror data/wand/wand.tres).
+static var _defaults := WandTable.new()
 
 
 ## The wand's slot count now (the floor's, WandTable.slots_at; six without a table). v0.7.5 AP: by the run's floor
@@ -206,7 +217,54 @@ static func _card(w: World, code: int, level: int) -> Dictionary:
 		"trigger": trigger_of(w, code),
 		"wand": bool(info.get("wand", false)),  # v0.7.5 SM: a wand card (it has a level, 1–5)
 		"order": order_of(w, code),  # v0.8.0 AO: what it does to the cards to its left
+		"after_trigger_dead": dead_after_trigger(w, info["id"]),  # v0.8.0 MR: it does nothing right of a trigger
+		"remnant": remnant_of(w, code),  # v0.8.0 RM: what its remnant does (REMNANT_*)
 	}
+
+
+## v0.8.0 RM (owner O91; Remnants): what card `code`'s remnant does, for the read-back: REMNANT_NONE, REMNANT_CASTS
+## (its activation casts a spell the cards to its right shape), REMNANT_PULLS (an anchor's pull) or REMNANT_CONSUMES
+## (Grand Finale: it releases the remnants to its left).
+static func remnant_of(w: World, code: int) -> int:
+	if Offers.type_of(code) == Offers.ABILITY or code < 0 or code >= w.item_tables.size():
+		return REMNANT_NONE
+	for m in w.item_tables[code].modifiers:
+		for o in m.ops:
+			if o.remnant == null:
+				continue
+			match o.remnant.activate:
+				RemnantRule.Activate.PULL:
+					return REMNANT_PULLS
+				RemnantRule.Activate.CONSUME:
+					return REMNANT_CONSUMES
+			return REMNANT_CASTS
+	return REMNANT_NONE
+
+
+## v0.8.0 MR: card `id` does nothing right of a trigger (WandTable.after_trigger_dead).
+static func dead_after_trigger(w: World, id: Variant) -> bool:
+	var t := w.wand_table if w.wand_table != null else _defaults
+	return t.after_trigger_dead.has(StringName(str(id)))
+
+
+## v0.8.0 MR (owner O91): per card of a wand read (read(), or a preview from WorldReader.wand_moved), in slot order,
+## why it can't act where it sits: DEAD_AFTER_TRIGGER (a card that does nothing right of a trigger, there),
+## DEAD_TOO_DEEP (past the third trigger: the compile casts nothing that deep), or &"" (it acts). A trigger card is
+## never flagged. The wand's tiles dim a flagged card and show the reason; describe() leaves its effect out.
+static func flags(wand: Dictionary) -> Array[StringName]:
+	var out: Array[StringName] = []
+	var cuts := 0
+	for c: Dictionary in wand.get("cards", []):
+		if int(c["trigger"]) >= 0:
+			out.append(&"")
+			cuts += 1
+		elif cuts > WandCompile.MAX_DEPTH:
+			out.append(DEAD_TOO_DEEP)
+		elif cuts > 0 and bool(c.get("after_trigger_dead", false)):
+			out.append(DEAD_AFTER_TRIGGER)
+		else:
+			out.append(&"")
+	return out
 
 
 ## v0.8.0 AO (owner O37): card `code`'s ModifierTable.OrderKind (its first modifier that has one; FREE otherwise): the
@@ -224,15 +282,22 @@ static func order_of(w: World, code: int) -> int:
 ## arguments}, where an argument is a line of the same shape, an Array of them (a list, joined) or a plain value.
 ## The first line is the spell you fire (the weapon's attack, and the cards that shape it); each trigger adds a line
 ## for the child spell it casts (a small copy, shaped by the cards to its right); cards past a third trigger (deeper
-## than the compile casts) are listed as unused.
+## than the compile casts) are listed as unused; v0.8.0 MR: a card that does nothing right of a trigger (flags()) is
+## left out of its spell and listed last ("Does nothing after a trigger: Echo.").
 static func describe(wand: Dictionary) -> Array[Dictionary]:
 	var gun: bool = wand.get("weapon", &"blade") == &"gun"
 	var segments: Array = [[]]
 	var triggers: Array[int] = []
-	for c: Dictionary in wand.get("cards", []):
+	var dead: Array = []  # v0.8.0 MR: the cards that do nothing right of a trigger (flags())
+	var why := flags(wand)
+	var cards: Array = wand.get("cards", [])
+	for n in cards.size():
+		var c: Dictionary = cards[n]
 		if int(c["trigger"]) >= 0:
 			triggers.append(int(c["trigger"]))
 			segments.append([])
+		elif why[n] == DEAD_AFTER_TRIGGER:
+			dead.append({"key": c["name_key"], "args": []})
 		else:
 			(segments[segments.size() - 1] as Array).append({"key": c["name_key"], "args": []})
 	var lines: Array[Dictionary] = []
@@ -247,7 +312,41 @@ static func describe(wand: Dictionary) -> Array[Dictionary]:
 			continue
 		var key: StringName = TRIGGER_KEYS.get(triggers[k], &"WAND_READ_ON_HIT")
 		lines.append({"key": key, "args": [_spell(small, names)]})
+	lines.append_array(_remnant_lines(cards, why))  # v0.8.0 RM
+	if not dead.is_empty():
+		lines.append({"key": &"WAND_READ_DEAD", "args": [dead]})
 	return lines
+
+
+## v0.8.0 RM (owner O91): a line per remnant card that acts where it sits: what it leaves and what its remnants release
+## (a burst shaped by the cards right of it in its trigger section), or that it pulls, or (Grand Finale) that it
+## releases the remnants to its left.
+static func _remnant_lines(cards: Array, why: Array[StringName]) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var cuts := 0
+	for n in cards.size():
+		var c: Dictionary = cards[n]
+		if int(c["trigger"]) >= 0:
+			cuts += 1
+			continue
+		var kind := int(c.get("remnant", REMNANT_NONE))
+		if kind == REMNANT_NONE or why[n] != &"" or cuts > WandCompile.MAX_DEPTH:
+			continue
+		var me := {"key": c["name_key"], "args": []}
+		if kind == REMNANT_PULLS:
+			out.append({"key": &"WAND_READ_REMNANT_PULL", "args": [me]})
+			continue
+		var right: Array = []
+		for m in range(n + 1, cards.size()):
+			var r: Dictionary = cards[m]
+			if int(r["trigger"]) >= 0:
+				break
+			if why[m] == &"":
+				right.append({"key": r["name_key"], "args": []})
+		var burst := _spell(&"WAND_READ_BURST", right)
+		var key := &"WAND_READ_FINALE" if kind == REMNANT_CONSUMES else &"WAND_READ_REMNANT"
+		out.append({"key": key, "args": [me, burst]})
+	return out
 
 
 static func _spell(base: StringName, names: Array) -> Dictionary:

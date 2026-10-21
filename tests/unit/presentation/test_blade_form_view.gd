@@ -36,8 +36,8 @@ func test_whirl_wave_draws_a_ring_of_crescents() -> void:
 	assert_gte(int(_drawn([&"whirl", &"echo_slash"]).get(&"crescent", 0)), BladeForms.CRESCENT_RING)
 
 
-func test_afterimage_and_double_slash_draw_ghost_slashes() -> void:
-	assert_gt(int(_drawn([&"long_shadow"]).get(&"ghost", 0)), 0, "a ghost slash where you dashed")
+func test_double_slash_draws_ghost_slashes() -> void:
+	# v0.8.0 RM: Afterimage is Dodge Imprint (no ghost copy; RemnantViews marks its point)
 	assert_gt(int(_drawn([&"double_slash"]).get(&"ghost", 0)), 0, "the mirrored echo")
 
 
@@ -55,7 +55,7 @@ func test_orbit_blades_and_counter_and_finisher() -> void:
 	assert_gt(int(_drawn([&"blade_orbit"]).get(&"blade", 0)), 1, "blades orbiting you")
 	assert_gt(int(_drawn([&"counter"]).get(&"ring", 0)), 0, "the counter's flash")
 	assert_gt(int(_drawn([&"counter"]).get(&"crescent", 0)), 0, "the dash-slash wave")
-	assert_gt(int(_drawn([&"finisher_plus"]).get(&"ring", 0)), 0, "the big shockwave")
+	# v0.8.0 RM: Finisher+ is Fracture Bank (its extraction flashes in RemnantViews)
 
 
 func test_the_swing_itself_changes_on_the_blade_and_the_hero() -> void:

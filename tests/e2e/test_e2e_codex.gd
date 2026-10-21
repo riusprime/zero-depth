@@ -62,25 +62,33 @@ func _shoot_until_a_kill(e: E2e) -> void:
 func _walk_met_mods(e: E2e, main: Main, codex: CodexView) -> Dictionary:
 	var seen := {}
 	await e.tap(KEY_DOWN)
-	var dir := KEY_RIGHT
-	for k in 600:
-		var at := codex.shown_entry()
-		if (
-			codex.page == &"cards"
-			and int(at.get("type", -1)) == WorldReader.CARD_MOD
-			and main.codex.is_unlocked(&"cards", at["id"])
-		):
-			var word := tr(CodexView.RARITY_KEYS[int(at["rarity"])])
-			assert_eq(codex.card.tier_text(), word, "%s: the card says its tier" % at["id"])
-			assert_string_contains(codex.section_label.text, word, "and the section line")
-			seen[int(at["rarity"])] = true
-		await e.tap(dir)
-		if codex.shown_entry() == at:  # the row's end: down, then back the other way
-			await e.tap(KEY_DOWN)
-			if codex.shown_entry() == at:
-				break
-			dir = KEY_LEFT if dir == KEY_RIGHT else KEY_RIGHT
+	# v0.8.0 RM: each row is swept to its left end, then to its right end (the arrows stop at a row's ends), so a
+	# row entered from the middle is read whole.
+	for row in 200:
+		for key in [KEY_LEFT, KEY_RIGHT]:
+			for k in 60:
+				var at := codex.shown_entry()
+				_note_tier(main, codex, at, seen)
+				await e.tap(key)
+				if codex.shown_entry() == at:
+					break
+		var end := codex.shown_entry()
+		await e.tap(KEY_DOWN)
+		if codex.shown_entry() == end:
+			break
 	return seen
+
+
+func _note_tier(main: Main, codex: CodexView, at: Dictionary, seen: Dictionary) -> void:
+	if (
+		codex.page == &"cards"
+		and int(at.get("type", -1)) == WorldReader.CARD_MOD
+		and main.codex.is_unlocked(&"cards", at["id"])
+	):
+		var word := tr(CodexView.RARITY_KEYS[int(at["rarity"])])
+		assert_eq(codex.card.tier_text(), word, "%s: the card says its tier" % at["id"])
+		assert_string_contains(codex.section_label.text, word, "and the section line")
+		seen[int(at["rarity"])] = true
 
 
 ## v0.8.0 RR (owner O33): the Codex says every mod card's tier. The profile already holds one card of each tier (a

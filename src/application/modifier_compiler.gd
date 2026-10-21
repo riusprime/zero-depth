@@ -20,6 +20,7 @@ static func compile_modifier(def: ModifierDefinition) -> ModifierTable:
 	t.stage = int(def.stage)
 	t.overlay = def.overlay
 	t.order_kind = int(def.order_kind)  # v0.8.0 AO
+	t.alt_target = def.alt_target.duplicate()  # v0.8.0 MR
 	for d: ModifierOpDefinition in def.ops:
 		t.ops.append(compile_op(d, d.stage_in(def.stage)))
 	return t
@@ -48,12 +49,15 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 	o.trigger_gun = d.hook_trigger_gun  # v0.6.5 WN1
 	o.casts = d.hook_casts  # v0.6.5 WN5b
 	o.per_level_after = d.per_level_after  # v0.8.0 BL (B2)
+	o.alt = d.alt  # v0.8.0 MR
 	for r: Resource in d.hook_ops:
 		var c := r as ModifierOpDefinition
 		if c != null:
 			o.child_ops.append(compile_op(c, c.stage_in(stage)))
-	if d.op == ModifierOpDefinition.Op.HOOK:
+	if d.op == ModifierOpDefinition.Op.HOOK or d.op == ModifierOpDefinition.Op.REMNANT:
 		o.per_level = d.per_level  # v0.6.5 WN3: per mille of the hook's damage share
+	if d.op == ModifierOpDefinition.Op.REMNANT:
+		o.remnant = compile_remnant(d)  # v0.8.0 RM
 	if d.is_numeric() and ModifierOpDefinition.FIELD_STAGE.has(d.field):
 		var map: Array = ModifierOpDefinition.FIELD_STAGE[d.field]  # [stage, sim field, unit]
 		o.field = map[1]
@@ -62,7 +66,41 @@ static func compile_op(d: ModifierOpDefinition, stage: int) -> ModifierOp:
 			o.per_level = _units(d, map, d.value + d.per_level) - o.value
 			if d.op == ModifierOpDefinition.Op.MUL_PERMILLE:
 				o.per_level = d.per_level  # v0.8.0 BL: per mille as is (Flurry's 250 / 3), rounded per level
+			elif String(map[2]) == "" and AttackSpec.is_int_field(map[1]):
+				o.per_level = d.per_level  # v0.8.0 MR: a whole field's step as is, rounded per level (Flurry's ½)
 	return o
+
+
+## v0.8.0 RM (owner O91; Remnants): a REMNANT op's remnant in sim units (seconds to ticks, m/s and degrees/s to a
+## tick's step, degrees to 1/4096 turns).
+static func compile_remnant(d: ModifierOpDefinition) -> RemnantRule:
+	var r := RemnantRule.new()
+	r.kind = int(d.remnant_kind)
+	r.spawn = int(d.remnant_spawn)
+	r.activate = int(d.remnant_activate)
+	r.life_ticks = SimTick.seconds_to_ticks(d.remnant_seconds)
+	r.life_per_level = SimTick.seconds_to_ticks(d.remnant_seconds_per_level)
+	r.max_alive = d.remnant_max
+	r.max_per_level = d.remnant_max_per_level
+	r.gap_ticks = SimTick.seconds_to_ticks(d.remnant_hit_gap_seconds)
+	r.charges = d.remnant_charges
+	r.length_m = d.remnant_length_m
+	r.width_m = d.remnant_width_m
+	r.link_ticks = SimTick.seconds_to_ticks(d.remnant_link_seconds)
+	r.pull_radius_m = d.remnant_pull_radius_m
+	r.pull_step_m = d.remnant_pull_mps / SimTick.TICKS_PER_SECOND
+	r.bend_radius_m = d.remnant_bend_radius_m
+	r.bend_step = roundi(
+		d.remnant_bend_dps * SimTick.ANGLE_UNITS / 360.0 / SimTick.TICKS_PER_SECOND
+	)
+	r.turn_units = ContentCompiler.degrees_to_units(d.remnant_turn_degrees)
+	r.delay_ticks = SimTick.seconds_to_ticks(d.remnant_delay_seconds)
+	r.stack_max = d.remnant_stack_max
+	r.stack_per_level = d.remnant_stack_per_level
+	r.period_ticks = SimTick.seconds_to_ticks(d.remnant_period_seconds)
+	r.release_max = d.remnant_release_max
+	r.stagger = d.remnant_stagger
+	return r
 
 
 ## A numeric op's content value `v` in sim units (its field's conversion; MUL_PERMILLE stays per mille; an int
@@ -151,6 +189,8 @@ static func compile_item_extras(def: ItemDefinition, t: ItemTable) -> void:
 	t.bleed_move_period_ticks = SimTick.seconds_to_ticks(def.bleed_move_period_seconds)  # v0.6.5 WN5a
 	t.name_key_gun = def.name_key_gun
 	t.desc_key_gun = def.desc_key_gun
+	t.offer_weight_permille = def.offer_weight_permille  # v0.8.0 RM: a mutation's low weight
+	t.loot_category = maxi(0, ItemDefinition.LOOT_CATEGORIES.find(def.loot_category))  # v0.8.0 FL
 
 
 ## Every modifier in a repository, compiled, in id order (the combinatorial smoke test and the views' tests use it).

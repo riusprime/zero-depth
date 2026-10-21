@@ -9,4 +9,5 @@ name_key = &"ITEM_STORM_CORE"
 desc_key = &"ITEM_STORM_CORE_DESC"
 tags = PackedStringArray("shock", "wand")
 modifiers = Array[StringName]([&"storm_core"])
+loot_category = &"element"
 id = &"storm_core"

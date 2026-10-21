@@ -10,4 +10,5 @@ desc_key = &"ITEM_COUNTER_DESC"
 requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"counter"])
+loot_category = &"form"
 id = &"counter"

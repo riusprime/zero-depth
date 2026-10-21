@@ -9,4 +9,5 @@ name_key = &"ITEM_SHARED_EXPLOSIVE"
 desc_key = &"ITEM_SHARED_EXPLOSIVE_DESC"
 tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"shared_explosive"])
+loot_category = &"element"
 id = &"shared_explosive"

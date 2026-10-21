@@ -4,7 +4,7 @@ extends GutTest
 ## modifiers) in every slot position of a full eight-card wand, on the Blade and the Gun, heat on, through the
 ## AttackScenario script. Each run: no crash, the launches per tick under the cap (the one LIMIT tick aside), a bounded
 ## number of live projectiles and queued launches, the card in its slot, and the same event digest and state hash
-## when replayed. Mechanics only: no bot, no balance (owner P1).
+## when replayed; v0.8.0 RM: the remnants alive under their cap. Mechanics only: no bot, no balance (owner P1).
 
 const TICKS := 60
 const POSITIONS := 8
@@ -54,12 +54,14 @@ func _run(w: World) -> Dictionary:
 	var max_launches := 0
 	var max_projectiles := 0
 	var max_queued := 0
+	var max_remnants := 0  # v0.8.0 RM: the remnant store under its cap
 	for t in TICKS:
 		w.step(AttackScenario.frame(t))
 		if w.launch_tick == w.tick - 1:
 			max_launches = maxi(max_launches, w.launch_count)
 		max_projectiles = maxi(max_projectiles, w.projectiles.size())
 		max_queued = maxi(max_queued, w.mx.q_key.size())
+		max_remnants = maxi(max_remnants, w.mx.rem_uid.size())
 		for e in w.events_since(seen):
 			seen = e.seq
 			h.add_int(e.kind)
@@ -72,6 +74,7 @@ func _run(w: World) -> Dictionary:
 		"max_launches": max_launches,
 		"max_projectiles": max_projectiles,
 		"max_queued": max_queued,
+		"max_remnants": max_remnants,
 	}
 
 
@@ -108,6 +111,8 @@ func test_every_card_in_every_slot_on_both_weapons_runs_and_replays() -> void:
 					bad.append("%s: projectiles %d" % [label, a["max_projectiles"]])
 				if a["max_queued"] > MAX_QUEUED:
 					bad.append("%s: queued %d" % [label, a["max_queued"]])
+				if a["max_remnants"] > Remnants.table(w).remnant_max:
+					bad.append("%s: remnants %d" % [label, a["max_remnants"]])
 				if [b["digest"], b["hash"]] != [a["digest"], a["hash"]]:
 					bad.append("%s: the replay differs" % label)
 	gut.p(

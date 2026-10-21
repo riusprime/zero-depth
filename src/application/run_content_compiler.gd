@@ -37,11 +37,30 @@ static func compile_legendary(
 	t.weights = PackedInt32Array([def.stat_weight, def.mod_weight])
 	t.offer_size = def.offer_size
 	t.stat_permille = int(round(def.stat_multiplier * 1000.0))
-	t.wand_level = def.wand_level  # v0.6.5 WN5b
+	t.upgrade = def.upgrade_choice  # v0.8.0 FL (the v0.6.5 WN5b wand_level is retired)
+	for c in def.card_categories:
+		var k := ItemDefinition.LOOT_CATEGORIES.find(c)
+		if k > 0:
+			t.card_categories.append(k)
 	t.card_permille = int(round(def.legendary_chance * 1000.0))  # v0.8.0 RR
 	t.card_loop_permille = int(round(def.legendary_chance_per_loop * 1000.0))
 	t.extra_picks_per_loop = def.extra_picks_per_loop
 	t.extra_picks_max = def.extra_picks_max
+	return t
+
+
+## v0.8.0 FL (owner O91): the floor-paced loot table (LootPacingDefinition); null without a definition (no pacing).
+static func compile_loot_pacing(def: LootPacingDefinition) -> LootPacingTable:
+	if def == null:
+		return null
+	var t := LootPacingTable.new()
+	var rows: Array[PackedInt32Array] = []
+	for row in def.weight_rows():
+		rows.append(row.duplicate())
+	t.weights = rows
+	t.ceilings = def.level_ceilings.duplicate()
+	t.guaranteed_altars = def.guaranteed_altars.duplicate()
+	t.jackpot_permille = def.jackpot_permille
 	return t
 
 
@@ -79,6 +98,10 @@ static func compile_sim_tuning(def: SimTuningDefinition) -> SimTuning:
 	t.arrival_first_ticks = SimTick.seconds_to_ticks(def.arrival_first_seconds)  # v0.8.0 N11
 	t.arrival_ticks = SimTick.seconds_to_ticks(def.arrival_seconds)
 	t.arrival_calm_ticks = SimTick.seconds_to_ticks(def.arrival_calm_seconds)
+	t.attack_speed_knee_permille = def.attack_speed_knee_permille  # v0.8.0 SG
+	t.attack_speed_knee2_permille = def.attack_speed_knee2_permille
+	t.attack_speed_slope_permille = def.attack_speed_slope_permille
+	t.attack_speed_slope2_permille = def.attack_speed_slope2_permille
 	return t
 
 

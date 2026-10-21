@@ -36,9 +36,11 @@ const WORLD_KEPT := {
 	&"catch_up_table": "loadout",  # v0.5.5 DS
 	&"arena_table": "loadout",  # v0.5.5 AR
 	&"legendary_table": "loadout",  # v0.5.5 AR
+	&"loot_pacing": "loadout",  # v0.8.0 FL
 	&"attack_book": "rebuilt: compiled from the build again (v0.6.0 MX1, Modifiers)",
 	&"hit_spec": "transient within a tick (v0.6.0 MX2): null between ticks",
 	&"last_hit_crit": "transient within a hit (v0.6.5 WN1): read right after the hit that set it",
+	&"hit_proc_permille": "transient within a hit (v0.8.0 MR): 1000 between hits",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
@@ -83,12 +85,14 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"ArenaTable",  # v0.5.5 AR
 	&"CurveTable",  # v0.4.0 TU's difficulty curve (SpawnTable.curve); the save lab builds floors with it, as Main
 	&"LegendaryTable",
+	&"LootPacingTable",  # v0.8.0 FL
 	&"EventTable",  # v0.5.0 EV
 	&"CurseTable",
 	&"EventRules",
 	&"CatchUpTable",  # v0.5.5 DS
 	&"ModifierTable",  # v0.6.0 MX1
 	&"ModifierOp",
+	&"RemnantRule",  # v0.8.0 RM: a REMNANT op's rule (content)
 	&"WandTable",  # v0.6.5 WN1
 	&"BladeTable",  # v0.6.5 WN4
 	&"SimTuning",  # the dev panel's Step 6: the sim's designer numbers
@@ -164,9 +168,12 @@ const ADDED_SINCE_V05 := {
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
+		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
+		&"loot_jackpots",
 		&"intensity",  # v0.8.0 N5: the intensity director (an older save's floor starts in BUILD_UP: the base's)
 		&"gamble_wins",  # v0.8.0 N14: an older save's shrine counts its uses as wins (apply), and never failed
 		&"gamble_fail_tick",
+		&"stat_rules",  # v0.8.0 SG: an older save's stat rules are 0 (apply rebuilds them: Stats.migrate_rules)
 	],
 	# v0.7.5 AP: the Ascension portal (an older save's last floor gets the base's, from RunState.prepare)
 	&"BossFlow":
@@ -231,6 +238,7 @@ const ADDED_SINCE_V05 := {
 		&"mine_t",
 		&"look",  # v0.7.5 BF1 (fireball looks; empty = none, as a store that never held one)
 		&"cause",  # v0.7.5 BF2 fix (the attack that fired a boss shot; padded with "none")
+		&"second",  # v0.8.0 MR (a secondary bolt or a repeat's; empty = none, as a store that never held one)
 	],
 	&"ActorStore": [&"poison_stacks", &"poison_t", &"poison_cd"],  # v0.6.0 MX4 (Venom; padded with 0)
 	# v0.8.0 FB2: the final fight's centre and damage meter (an FB1 save has neither: the base's, a fresh meter)
@@ -278,6 +286,44 @@ const ADDED_SINCE_V05 := {
 		&"hole_pos",  # v0.8.0 P2 (Void's black holes: an older save has none)
 		&"hole_from",
 		&"hole_dmg",
+		&"ramp_n",  # v0.8.0 MR (FireRhythm, SecondaryProc: an older save has no ramp, no burst, no carry)
+		&"ramp_tick",
+		&"burst_n",
+		&"burst_free",
+		&"sec_carry",
+		&"rem_uid",  # v0.8.0 RM (Remnants, Dodge Imprint: an older save has none)
+		&"rem_kind",
+		&"rem_card",
+		&"rem_key",
+		&"rem_slot",
+		&"rem_section",
+		&"rem_depth",
+		&"rem_proc",
+		&"rem_root",
+		&"rem_born",
+		&"rem_life",
+		&"rem_gap",
+		&"rem_charges",
+		&"rem_basis",
+		&"rem_a",
+		&"rem_b",
+		&"rem_dir",
+		&"rem_target",
+		&"rem_target2",
+		&"rem_count",
+		&"rem_group",
+		&"rem_next",
+		&"gap_uid",
+		&"gap_target",
+		&"gap_tick",
+		&"rem_act_tick",
+		&"rem_act_n",
+		&"link_id",
+		&"link_tick",
+		&"link_key",
+		&"finale_tick",
+		&"imprint_at",
+		&"imprint_until",
 	],
 	&"ItemMods": [&"bleed_move_period_ticks"],  # v0.6.5 WN5a (S5 Bleed: an older save has the base's)
 	# v0.7.5 MG (N10: an older save's floor counts its cursed chests from 0); v0.8.0 N17: the curse room's altar (an
@@ -366,6 +412,9 @@ static func apply(base: World, snap: Dictionary) -> String:
 	if not data.has(&"gamble_wins"):  # v0.8.0 N14 (O72): every use before N14 won a stat
 		base.gamble_wins = base.gamble_uses
 		base.gamble_fail_tick = -1
+	if not data.has(&"stat_rules"):  # v0.8.0 SG (O91): damage and attack speed compounded before SG
+		base.stat_rules = 0
+		Stats.migrate_rules(base)
 	var ev_data: Variant = data.get(&"ev", {})
 	if typeof(ev_data) == TYPE_DICTIONARY and not (ev_data as Dictionary).has(&"curse_k"):
 		base.ev.curse_k = -1  # v0.8.0 N17 (O75): a floor saved before the curse room has none

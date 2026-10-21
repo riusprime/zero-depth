@@ -447,6 +447,37 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   `alive_max` (PATTERN, a whole number: the bolt hook's projectiles alive at once, at most; 0 = none of its own):
   `blade_storm`'s child sets 36. `WandDefinition.cast_free_lines: Array[StringName]` (data: `blade_storm`): the hook
   cards whose children cast no trigger's spell. Starting values.
+- **v0.8.0 MR: shares, rhythms, Split Wave's other reading** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §8k).
+  New op fields: `share_permille` (PAYLOAD, a `MUL_PERMILLE` share each projectile deals; Twin 600 +50, Spread 550 +30,
+  Halo 400 +50), `ramp_permille`, `ramp_cap_permille`, `ramp_reset_seconds`, `burst_permille`, `burst_swings`,
+  `burst_pause_seconds` (SCALE; Rapid Fire 100 / 600 +150 / 0.4, Flurry 800 / 3 +½ from level 3 / 0.6). A whole-number
+  field without a unit keeps its `per_level` as is and rounds per level. `ModifierDefinition.alt_target` (tags) and
+  `ModifierOpDefinition.alt` (bool): the ops of the card's other reading (an `alt` op needs an `alt_target`, else
+  `alt`): Split Wave's crescents from a slash with no flying slash. `WandDefinition.secondary_proc_permille` (500,
+  0..1000) and `after_trigger_dead: Array[StringName]` (`gun_echo`, `double_slash`, `gun_charge`). Starting values.
+- **v0.8.0 RM: remnants, Dodge Imprint, mutations, Thermal Break** (owner O91; [`SIM_CONTRACTS.md`](SIM_CONTRACTS.md)
+  §8l). `ModifierOpDefinition.Op.REMNANT` (10, HOOK stage): a hook whose child (`form`, the `hook_*` fields,
+  `hook_ops`, `per_level` on `hook_damage_permille`) is its remnant's cast, with `remnant_kind` (SEGMENT, ANCHOR,
+  MARK, FRAGMENT), `remnant_spawn` (LINK, CONTACT, HIT, PATH, NONE), `remnant_activate` (ENEMY_CROSS, ATTACK_CROSS,
+  PULL, TURN, FINISHER, DELAY, CONSUME), `remnant_seconds` (+ `_per_level`), `remnant_max` (1..64, + `_per_level`),
+  `remnant_hit_gap_seconds`, `remnant_charges` (0 = until its life), `remnant_length_m`, `remnant_width_m`,
+  `remnant_link_seconds`, `remnant_pull_radius_m`, `remnant_pull_mps`, `remnant_bend_radius_m`, `remnant_bend_dps`,
+  `remnant_turn_degrees` (0..180), `remnant_delay_seconds`, `remnant_stack_max` (1..16, + `remnant_stack_per_level`),
+  `remnant_period_seconds`, `remnant_release_max` (1..64), `remnant_stagger`. Validation: a consumer (CONSUME) and
+  only it spawns NONE; a link or a path is a segment; a mark or a fragment is left by a hit; CONTACT needs a length,
+  LINK a link time, PULL a reach, DELAY a delay, CONSUME a period and a release cap; every cast but a pull's is
+  checked as a hook's child. New op fields `imprint_seconds` / `imprint_permille` (PAYLOAD; Dodge Imprint 1.5 / 1100
+  +100). `ItemDefinition.offer_weight_permille` (0..10000, default 1000; a `mutation`-tagged card is under 1000) and
+  the item tag `mutation`. v0.8.0 FL: `ItemDefinition.loot_category` (one of `LOOT_CATEGORIES`: `other`, `form`,
+  `element`, `advanced`, `trigger`, `mutation`; empty = other): every wand card and trigger card names one (not other);
+  a `mutation`-tagged card, and only it, is `mutation`; a trigger card is `trigger` (T1–T4) or, legendary (the ×2
+  triggers), `advanced`; only a trigger card is `trigger`. The shipped mapping is in
+  [`BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `WandDefinition.remnant_max` (96, 1..256), `remnant_kind_max` (48, 16, 48, 48; 4 entries,
+  each 1..`remnant_max`), `remnant_activations_max` (64, 1..256), `thermal_base` (6), `thermal_per_burn` (4; together
+  > 0), `thermal_shatter_seconds` (0.3, 0..2). Shipped (`index_wave` 3): `gun_threadline` (Gun, rare),
+  `shared_faultline`, `shared_gravity_stitch` (rare), `shared_stress_mark` (common), `mut_double_exposure`,
+  `mut_grand_finale` (legendary tier, weight 150); reworked in place: `long_shadow` (Dodge Imprint, common),
+  `finisher_plus` (Fracture Bank, rare). 95 modifiers, 107 items. Every number is a starting value.
 - No modifier has a `name_key`: in MX1 the card is still the item. Modifier cards, slots and Swap are MX stage 2.
 
 **Rewards** (v0.3.0 E, category `rewards`, `data/rewards/floor.tres`): `RewardsDefinition` holds the floor's
@@ -1208,6 +1239,20 @@ and `extra_picks_max` (0..8; data 1 and 3): the picks a boss altar gives past th
 (`min(max, per_loop × (L − 1))`; the altar stays after a pick, its offer cleared, `World.legendary_picks`). `mods` is
 empty in the data: the three legendary triggers and Chain Blast come only by that chance (and rarely from altars, chests
 and the shop), so a boss's core gives legendary stat cards only.
+v0.8.0 FL (owner O91; SIM_CONTRACTS §8m): `wand_level` is retired (validation: it must be 0; the level-5 grant is
+gone). `upgrade_choice` (bool; data true): the altar offers one held wand card one level up, up to the next floor's
+level ceiling. `card_categories` (`ItemDefinition.LOOT_CATEGORIES` but `other`; data `advanced`, `trigger`): one card of
+those categories (never a Legendary card nor a mutation; the Legendary chance's card takes its place). The pool needs
+cards: `stat_cards`, `mods`, `upgrade_choice` or `card_categories` (`missing`).
+
+`LootPacingDefinition` (v0.8.0 FL, owner O91; `data/rewards/pacing.tres`, category `loot_pacing`, id `pacing`; the dev
+panel's economy group): one table every card source reads (SIM_CONTRACTS §8m). Per stage (floor 1, floor 2, floor 3,
+Deep floors and loops ≥ 2): `floor_1_weights_permille`, `floor_2_weights_permille`, `floor_3_weights_permille`,
+`deep_weights_permille` (five each, 0..10000: [form, element, advanced, trigger, mutation]; data 1400/1400/400/600/20,
+1000/1000/1000/1200/100, 900/900/1200/1200/300, 800/800/1300/1200/600), `level_ceilings` (four, 1..5, never falling;
+data 2/3/5/5), `guaranteed_altars` (four, 0..8; data 2/0/0/0: the floor's first N regular altars show a card compatible
+with the wand), and `jackpot_permille` (0..1000; data 15). Compiled by `RunContentCompiler.compile_loot_pacing` into
+`LootPacingTable`; without the file, no pacing.
 
 `StatCardDefinition` (v0.4.0 BS, owner F9; `data/stat_cards/`, category `stat_card`): `id`, `stat` (one of
 `max_hp`, `damage`, `crit_chance`, `crit_damage`, `attack_speed`, `area`, `cooldowns`, `move_speed`, `regen`,
@@ -1222,6 +1267,9 @@ and `hoarder` (the most shards that count)); any other stat must leave both empt
 A stat card's `desc_key` takes a second `%s` for `side` when it has one. Rules: `Stats` (src/sim/abilities).
 v0.5.5 EC (owner D9) appends `lifesprout` (SIDED): the only source of heal orbs. The first card sets a kill's orb
 chance to its `amounts` (10 %), every further card adds its `side` (+5 %), read capped at `cap` (30 percent points).
+v0.8.0 SG (owner O91) adds `additive` (bool, default false; only for the multiplier stats `max_hp`, `damage`,
+`attack_speed`, `area`, `move_speed`, `shard_gain`, `pickup_range`, `glass_cannon`, else `range`): the cards add
+their amounts instead of compounding. Shipped on `damage`, `attack_speed` and `glass_cannon`.
 
 `RewardsDefinition` (v0.4.0 BS) gains `altar_card_weights` and `chest_card_weights` ([ability, stat, mod]) and
 `altar_rarity_weights` and `chest_rarity_weights` ([common, rare, epic]): 3 weights ≥ 0, not all 0.
@@ -1261,7 +1309,9 @@ Windows check.
 `SimTuningDefinition` (category `tuning`, id `sim`) holds the designer numbers the sim once kept as constants:
 spawn-in, a boss's rise and post-stagger wait, phase-gate length, adds and ring, enemy AI commit, strafe, flank,
 spread, Sniper relocation and Mender scan, the heal-orb cap, the pickup radius, the fire-patch cap, hit rate and
-Flame Trail spacing, the shortest field throw. Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
+Flame Trail spacing, the shortest field throw, and (v0.8.0 SG) the attack-speed curve:
+`attack_speed_knee_permille` (500), `attack_speed_knee2_permille` (1500, at least the knee),
+`attack_speed_slope_permille` (500) and `attack_speed_slope2_permille` (250), slopes 0..1000 (`AttackRate`). Seconds, metres and per mille; `RunContentCompiler.compile_sim_tuning`
 turns it into `SimTuning` on `World.tuning`. The shipped file equals the old constants (a test checks), which stay
 as `SimTuning`'s defaults. A value that must be positive and isn't, or `gate_adds_max < gate_adds_min`, is a
 `range` `ERROR`. Map generation (`FloorParams`) is not in it yet.

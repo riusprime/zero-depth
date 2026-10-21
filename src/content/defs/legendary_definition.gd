@@ -14,9 +14,17 @@ extends ContentDef
 @export var offer_size := 3
 ## A legendary stat card's amount: its epic amount x this.
 @export var stat_multiplier := 1.6
-## v0.6.5 WN5b (WAND.md "The legendary tier offers level-5 versions"): 0, or every wand card (an item tagged wand, of
-## the run's pool) joins the mods, and the legendary pick takes it at this level (1..5; a held one rises to it).
+## Retired by v0.8.0 FL (owner O91: "remove automatic level-5 grants"): it was v0.6.5 WN5b's level every wand card
+## was taken at from this altar. Kept so an older file still loads; it must be 0 (the upgrade choice below replaced it).
 @export var wand_level := 0
+## v0.8.0 FL (owner O91: "boss offers an upgrade or advanced choice"; BALANCE_PASS.md "FL"): the altar's choices, in
+## card order. With `upgrade_choice`, one held wand card one level up, up to the next floor's level ceiling
+## (LootPacing.next_ceiling). With `card_categories` (ItemDefinition.LOOT_CATEGORIES), one card of those categories
+## from the item pool (never a Legendary card: those come only by the Legendary chance below, which takes this choice's
+## place when it hits; so the legendary ×2 triggers stay the boss's). The rest are legendary stat cards (and `mods`)
+## by the weights below. A choice with nothing to offer leaves its place to the rest.
+@export var upgrade_choice := false
+@export var card_categories: Array[StringName] = []
 ## v0.8.0 RR (owner O33: "Legendary items and spells could be obtained from bosses"; "Infinite loops should eventually
 ## allow players to accumulate extremely powerful combinations"; docs/roadmap/v0.8.0/evidence/RARITY.md): the chance
 ## that a boss altar's offer holds one Legendary card (an item of rarity LEGENDARY), and what each loop past the first
@@ -34,12 +42,20 @@ func category() -> StringName:
 
 func validate() -> Array[ValidationIssue]:
 	var issues := super.validate()
-	if stat_cards.is_empty() and mods.is_empty() and wand_level == 0:
+	if (
+		stat_cards.is_empty()
+		and mods.is_empty()
+		and not upgrade_choice
+		and card_categories.is_empty()
+	):
 		issues.append(ValidationIssue.new(&"missing", resource_path, "the pool needs cards"))
+	for c in card_categories:  # v0.8.0 FL
+		if not c in ItemDefinition.LOOT_CATEGORIES or c == &"other":
+			issues.append(ValidationIssue.new(&"range", resource_path, "unknown category %s" % c))
 	if stat_multiplier < 1.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "stat_multiplier is at least 1"))
-	if wand_level < 0 or wand_level > 5:  # v0.6.5 WN5b: CardLevels.MAX_LEVEL
-		issues.append(ValidationIssue.new(&"range", resource_path, "wand_level is 0..5"))
+	if wand_level != 0:  # v0.8.0 FL: the level-5 grant is gone (upgrade_choice)
+		issues.append(ValidationIssue.new(&"range", resource_path, "wand_level is retired: 0"))
 	if offer_size < 1 or offer_size > 3:
 		issues.append(ValidationIssue.new(&"range", resource_path, "offer_size is 1..3"))
 	if legendary_chance < 0.0 or legendary_chance > 1.0:  # v0.8.0 RR

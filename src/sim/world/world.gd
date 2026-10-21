@@ -290,6 +290,9 @@ var ability_owned := PackedInt32Array()
 var ability_levels := PackedInt32Array()
 var stat_values := PackedInt32Array()
 var stat_cards := PackedInt32Array()  # v0.5.0 SH: the stat cards taken (Offers codes), in order
+## v0.8.0 SG (owner O91): the rules stat_values follow (Stats.RULES; an older save reads 0 and Stats.migrate_rules
+## rebuilds it).
+var stat_rules := Stats.RULES
 var ab := AbilityState.new()  # per floor: cooldowns, drones, bombs, orbit, charges
 ## v0.6.0 MX2 (BuildSlots; owner B7): the modifier slots in pick order (the layer order), as Offers card codes (an item
 ## index, or ABILITY_BASE + an ability index), at most BuildSlots.SLOTS; run-long (RunCarry). A pending swap: the
@@ -310,6 +313,10 @@ var hit_spec: AttackSpec = null
 ## v0.6.5 WN1: whether the last player hit Damage.hit resolved was a crit (the wand's On Crit reads it right after).
 ## Transient within a hit (WorldSnapshot.WORLD_KEPT).
 var last_hit_crit := false
+## v0.8.0 MR (owner O91; SecondaryProc): the proc of the player hit resolving now, per mille (a secondary attack's:
+## WandTable.secondary_proc_permille; 1000 otherwise), which the engines' status feeds read. Transient within a hit
+## (WorldSnapshot.WORLD_KEPT): 1000 between hits.
+var hit_proc_permille := 1000
 ## v0.6.5 WN1 (Wand): the wand's numbers, the slots per floor and the trigger's child spell (loadout, not hashed; null
 ## = a lab world: six slots, the class defaults for the child spell).
 var wand_table: WandTable
@@ -326,6 +333,12 @@ var legendary_id := -1
 ## v0.8.0 RR (owner O33): the picks the floor's legendary altar still gives after the one open now (LegendaryTable.
 ## extra_picks for the loop, set when the boss dies; BossReward.another_pick). Hashed while above 0.
 var legendary_picks := 0
+## v0.8.0 FL (owner O91; LootPacing): the floor's pacing table (loadout, not hashed; null = no pacing, the draws as
+## before FL), the regular altars that used the floor's compatible-card guarantee (hashed once above 0) and the
+## floor's jackpot cards as (reward id, card code) pairs (hashed once one exists; the pick card's "Jackpot").
+var loot_pacing: LootPacingTable
+var loot_guaranteed := 0
+var loot_jackpots := PackedInt32Array()
 ## v0.7.5 NB1: the floor's ice (Frozen Shore; IcePatches): loadout, null on every other biome (not hashed: laid from
 ## the floor seed like the layout; its slide shows in the hashed position and velocity). v0.7.5 NB2: or Starfall's
 ## starglow pools (IceField.kind), the same way.
@@ -468,8 +481,19 @@ func queue_projectile(
 	spec_key: String = ""
 ) -> void:
 	_pending_projectiles.append(
-		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1]
+		[owner_id, team, at, vel, damage, radius_m, life, tags, bounces, spec_key, &"", -1, 0, ""]
 	)
+
+
+## v0.8.0 MR (owner O91): the player bolt queued last is a secondary one (ProjectileStore.SECONDARY) or a repeat's
+## (ProjectileStore.REPEAT; Attacks._bolts).
+func set_pending_second(kind: int) -> void:
+	_pending_projectiles[-1][12] = kind
+
+
+## v0.8.0 RM (Remnants, Threadline): the player bolt queued last links to the one before it (its LINK hook's key).
+func set_pending_link(key: String) -> void:
+	_pending_projectiles[-1][13] = key
 
 
 ## v0.7.5 BF1: the projectile queued last is a fireball of look `look` (BulletPatterns).
@@ -1209,6 +1233,7 @@ func state_hash() -> String:
 		h.add_int(legendary_id)
 	if legendary_picks != 0:  # v0.8.0 RR: only while a loop's boss altar gives more picks.
 		h.add_int(legendary_picks)
+	LootPacing.hash_into(self, h)  # v0.8.0 FL: only once a guarantee or a jackpot was used.
 	if kit.touched():  # Kit (v0.3.5 K): only once Vent or Skill was pressed.
 		kit.hash_into(h)
 	if gamble_id >= 0 or not gamble_stacks.is_empty():  # Gamble shrine (v0.3.0 L19): only once there is one.
@@ -1652,6 +1677,7 @@ func _projectile_hits() -> void:
 				if pp != null:
 					pp.begin(&"proj.damage")
 				hit_spec = Attacks.projectile_spec(self, i)  # v0.6.0 MX2: the bolt's own spec feeds
+				hit_proc_permille = SecondaryProc.of_projectile(self, i)  # v0.8.0 MR: a secondary's
 				var got := Damage.hit(
 					self,
 					best_actor,
@@ -1666,6 +1692,7 @@ func _projectile_hits() -> void:
 					Attacks.projectile_proc(hit_spec)  # v0.6.5 WN1: a hook's (a trigger's child) 50, then 25
 				)
 				hit_spec = null
+				hit_proc_permille = 1000
 				if pp != null:
 					pp.end(&"proj.damage")
 					pp.begin(&"proj.procs")
@@ -1764,8 +1791,12 @@ func _apply_spawns() -> void:
 			projectiles.set_look(projectiles.size() - 1, s[10])
 		if s[11] >= 0:  # v0.7.5 BF2: the boss attack that fired it
 			projectiles.set_cause(projectiles.size() - 1, s[11])
+		if s[12] != 0:  # v0.8.0 MR: a secondary bolt or a repeat's
+			projectiles.set_second(projectiles.size() - 1, s[12])
 		ProjectileMoves.on_spawn(self, projectiles.size() - 1)  # v0.6.0 MX4
 		emit_event(SimEvent.Kind.SPAWN, id, s[0], id, s[2])
+		if s[13] != "":  # v0.8.0 RM: Threadline links it to the bolt before
+			Remnants.on_link(self, projectiles.size() - 1, s[13])
 	_pending_projectiles.clear()
 	for s in _pending_enemies:  # Bosses (v0.3.0 C): eggs and turrets.
 		if enemy_table(s[0]) != null:

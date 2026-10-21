@@ -149,6 +149,13 @@ const FAMILY_OF := {
 	# v0.8.0 BL (BLADE_AUDIT B4): the Blade's two multiplier cards
 	&"blade_storm": &"trinket",
 	&"riposte_chain": &"damage",
+	# v0.8.0 RM (owner O91): the remnant cards and the two mutations (Dodge Imprint and Fracture Bank keep theirs)
+	&"gun_threadline": &"projectile",
+	&"shared_faultline": &"area",
+	&"shared_gravity_stitch": &"time",
+	&"shared_stress_mark": &"damage",
+	&"mut_double_exposure": &"time",
+	&"mut_grand_finale": &"epic",
 	# Stat cards
 	&"area": &"area",
 	&"armour": &"economy",

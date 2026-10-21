@@ -11,4 +11,5 @@ name_key_gun = &"ITEM_TRIGGER_ON_CRIT"
 desc_key_gun = &"ITEM_TRIGGER_ON_CRIT_DESC"
 tags = PackedStringArray("trigger")
 modifiers = Array[StringName]([&"trigger_on_finisher"])
+loot_category = &"trigger"
 id = &"trigger_on_finisher"

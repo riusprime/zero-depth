@@ -11,4 +11,5 @@ desc_key = &"ITEM_CHAIN_BLAST_DESC"
 tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"chain_blast"])
 index_wave = 2
+loot_category = &"advanced"
 id = &"chain_blast"

@@ -7,6 +7,11 @@ extends SceneTree
 ##   godot --headless --path . -s scripts/checks/rarity_odds.gd -- runs=4000 loops=5
 ## Optional overrides to try other numbers without editing the data (the shipped data is the default):
 ##   boss=0.15 boss_loop=0.1 altar=0.02 chest=0.05
+##   pacing=0 (v0.8.0 FL: without the floor pacing table, data/rewards/pacing.tres; the boss's altar still has FL's
+##   choices, since the level-5 grant is gone from the code)
+##
+## v0.8.0 FL: the floor's pacing (LootPacing) weighs every draw and caps the levels; the floor's guaranteed altars
+## replace a card as Offers.roll does. The jackpot is left out (it needs a placed reward; BV's loot_sample has it).
 ##
 ## The run model (docs/roadmap/v0.8.0/evidence/RARITY.md "Model"): a loop is 3 floors; each floor has the shipped
 ## reward counts (altars_min..altars_max altars, capped at altars_cap with the rest chests, plus chests_min..chests_max
@@ -86,7 +91,7 @@ func _initialize() -> void:
 	var args := ScriptArgs.parse()
 	runs = int(args.get("runs", runs))
 	loops = int(args.get("loops", loops))
-	for k in ["boss", "boss_loop", "altar", "chest"]:
+	for k in ["boss", "boss_loop", "altar", "chest", "pacing"]:
 		if args.has(k):
 			_over[k] = float(args[k])
 	_repo = ContentRepository.load_all()
@@ -148,6 +153,10 @@ func _world(seed_value: int, build: StringName) -> World:
 		w.reward_table.legendary_permille_altar = int(round(_over["altar"] * 1000.0))
 	if _over.has("chest"):
 		w.reward_table.legendary_permille_chest = int(round(_over["chest"] * 1000.0))
+	if not (_over.has("pacing") and _over["pacing"] == 0.0):  # v0.8.0 FL
+		w.loot_pacing = RunContentCompiler.compile_loot_pacing(
+			_repo.get_def(&"loot_pacing", &"pacing")
+		)
 	if _ids.is_empty():
 		for k in w.item_tables.size():
 			_ids[String(w.item_tables[k].id)] = k
@@ -181,6 +190,7 @@ func _survey(build: StringName) -> PackedStringArray:
 				var run_floor := (loop - 1) * 3 + fl
 				w.floor_index = fl
 				w.run_floor = run_floor
+				w.loot_guaranteed = 0  # v0.8.0 FL: a new floor's guarantee
 				var t := w.reward_table
 				var altars := layout.range_int(t.altars_min, t.altars_max)
 				var chests := layout.range_int(t.chests_min, t.chests_max)
@@ -188,7 +198,7 @@ func _survey(build: StringName) -> PackedStringArray:
 					chests += altars - t.altars_cap
 					altars = t.altars_cap
 				for a in altars:
-					var o := Offers.draw(w, false, t.offer_size)
+					var o := LootPacing.guarantee(w, Offers.draw(w, false, t.offer_size))  # v0.8.0 FL
 					seen = seen or (loop == 1 and _has_legend(w, o))
 					from_other += _take(w, build, o, false)
 				for c in chests:
@@ -283,7 +293,7 @@ func _without_held(w: World, offer: PackedInt32Array) -> PackedInt32Array:
 ## Takes one card of `offer` by the player's rule (class doc). Returns 1 when it took a Legendary card, 0 otherwise,
 ## and (with `optional`, the shop) -1 when nothing in the offer is worth buying.
 func _take(
-	w: World, build: StringName, offer: PackedInt32Array, boss: bool, optional: bool = false
+	w: World, build: StringName, offer: PackedInt32Array, _boss: bool, optional: bool = false
 ) -> int:
 	if offer.is_empty():
 		return -1 if optional else 0
@@ -316,11 +326,7 @@ func _take(
 	var legend := (
 		Offers.type_of(code) == Offers.MOD and w.item_tables[code].rarity == ItemTable.LEGENDARY
 	)
-	BuildSlots.take(w, code, _replace(w, code, wanted))
-	if boss and Offers.type_of(code) == Offers.MOD and CardLevels.is_card(w, code):
-		var lvl := w.legendary_table.wand_level
-		if lvl > 0 and CardLevels.level(w, code) < lvl:
-			CardLevels.set_level(w, code, lvl)  # BossReward.on_pick
+	BuildSlots.take(w, code, _replace(w, code, wanted))  # v0.8.0 FL: no level-5 grant at the boss's altar
 	return 1 if legend else 0
 
 

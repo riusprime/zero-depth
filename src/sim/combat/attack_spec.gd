@@ -15,7 +15,10 @@ enum Form { ARC, BOLT, RING, BEAM, ZONE, ORBITER, LOB, BURST, WEAPON }
 ## step, a blink, a vent), EVERY_NTH: every Nth launch of the spec launches the child instead.
 ## v0.6.5 WN1 (the wand's triggers): ON_CRIT, a landed critical hit (Attacks); ON_FINISHER is compile-time only
 ## (WandCompile turns it into the combo's last step's ON_HIT).
-enum Trigger { ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER }
+## v0.8.0 RM: ON_REMNANT, a remnant hook that no moment fires (Remnants finds it: a link, a path, a consumer).
+enum Trigger {
+	ON_HIT, ON_KILL, ON_NTH, ON_END, ON_LAUNCH, EVERY_NTH, ON_CRIT, ON_FINISHER, ON_REMNANT
+}
 
 ## Numeric fields a modifier op may change (sim names; ModifierTable.FIELD_OF maps the content names), and which of
 ## them are floats.
@@ -80,6 +83,18 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	&"swirl",
 	&"swirl_group",
 	&"ring_flight",  # v0.8.0 N3 (owner O47: the travelling ring's flight, ticks)
+	# v0.8.0 MR (owner O91: extra bolts share the damage; a repeat never repeats; Rapid Fire's and Flurry's rhythms)
+	&"share_permille",
+	&"recast",
+	&"ramp_permille",
+	&"ramp_cap_permille",
+	&"ramp_reset_ticks",
+	&"burst_permille",
+	&"burst_swings",
+	&"burst_pause_ticks",
+	# v0.8.0 RM (owner O91: Dodge Imprint, a dash spec's; Remnants.imprint)
+	&"imprint_ticks",
+	&"imprint_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -153,12 +168,35 @@ var speed := 0.0
 var life_ticks := 0
 var period_ticks := 0
 var rate_bonus_permille := 0
+## v0.8.0 MR (owner O91; FireRhythm): the rhythm cards' extra rate, counted into the attack's raw rate bonus when it
+## fires. Rapid Fire (sustained fire): each consecutive shot adds ramp_permille more, up to ramp_cap_permille, and the
+## ramp starts over after ramp_reset_ticks without a shot. Flurry (a burst): the first burst_swings swings after
+## burst_pause_ticks without swinging come burst_permille faster, the rest at the base rate. 0 = none.
+var ramp_permille := 0
+var ramp_cap_permille := 0
+var ramp_reset_ticks := 0
+var burst_permille := 0
+var burst_swings := 0
+var burst_pause_ticks := 0
+## v0.8.0 RM (owner O91, Dodge Imprint; a dash spec's): for imprint_ticks after a dash starts, the next weapon attack is
+## cast from where the dash began at × imprint_permille (0 = none; Remnants.imprint).
+var imprint_ticks := 0
+var imprint_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
 ## 1); every nth_every-th step of the combo (0 = none) deals × nth_damage_permille / 1000 and runs its ON_NTH hooks.
 var damage := 0
 var damage_permille := 1000
+## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage"): each projectile (or hit) of this
+## attack deals this share of the launch's damage (Twin's lanes, Spread's and Halo's bolts; the cards' shares
+## multiply down the wand; 0 = whole). A spec with a share marks its bolts past the first secondary (Attacks._bolts:
+## WandTable.secondary_proc_permille of their statuses and their hooks' proc; SecondaryProc).
+var share_permille := 0
+## v0.8.0 MR (O91: "Prevent repeats repeating themselves"): 1 on a trigger's later cast (a ×2 trigger's second, a
+## slash hit's second) and on every spec built from one: it casts each of its own triggers once, and a repeat's hit
+## (an Echo, a Double Slash echo) never launches a hook whose child is one (Attacks.run_hook).
+var recast := 0
 var nth_every := 0
 var nth_damage_permille := 1000
 var hitstop_ticks := 0
@@ -374,6 +412,7 @@ func read() -> Dictionary:
 					"every": k.every,
 					"delay_ticks": k.delay_ticks,
 					"when": k.when,
+					"remnant": -1 if k.remnant == null else k.remnant.kind,  # v0.8.0 RM
 					"child": k.child.read(),
 				}
 			)
@@ -396,6 +435,7 @@ func read() -> Dictionary:
 		"speed": speed,
 		"rate_bonus_permille": rate_bonus_permille,
 		"damage": damage,
+		"share_permille": share_permille,  # v0.8.0 MR
 		"nth_every": nth_every,
 		"statuses": status_ids.duplicate(),
 		"elements": elements.duplicate(),

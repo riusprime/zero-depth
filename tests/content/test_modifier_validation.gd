@@ -16,13 +16,14 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		89,
+		95,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
 			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
 			+ " v0.6.5 WN3: the Gun pool's 12 new; WN4: the Blade pool's 12 new cards (B3–B11, B13, B14,"
 			+ " B16); WN5a: the shared pool's 2 new (S5 Bleed, S7 Explosive); v0.6.5 WN5b: the 3 legendary"
 			+ " triggers (On Hit, On Kill, On End ×2); v0.8.0 BL: Blade Storm and Riposte Chain; v0.8.0 RR: Chain Blast"
+			+ " + v0.8.0 RM: Threadline, Faultline, Gravity Stitch, Stress Mark and the two mutations"
 		)
 	)
 	assert_true(
@@ -124,7 +125,7 @@ func test_bad_mx4_hooks_are_rejected() -> void:
 	d.ops[0].hook_ops.append(nested)
 	assert_has(_codes(d), &"range", "a child op is never a hook")
 	var ls := (load("res://data/modifiers/long_shadow.tres") as ModifierDefinition).duplicate(true)
-	assert_eq(ls.validate(), [], "a weapon copy needs no size")
+	assert_eq(ls.validate(), [], "Dodge Imprint's numbers validate (v0.8.0 RM)")
 	ls.target = PackedStringArray(["dash", "sparkle"])
 	assert_has(_codes(ls), &"tags", "an unknown target tag")
 
@@ -140,7 +141,7 @@ func test_mx4_values_convert() -> void:
 		"360°/s in 1/4096 turns per tick"
 	)
 	var ls: ModifierTable = by_id[&"long_shadow"]
-	assert_eq([ls.ops[0].delay_ticks, ls.ops[0].form], [9, AttackSpec.Form.WEAPON], "0.15 s")
+	assert_eq([ls.ops[0].field, ls.ops[0].value], [&"imprint_ticks", 90.0], "1.5 s (v0.8.0 RM)")
 	var split: ModifierTable = by_id[&"split_shot"]
 	assert_eq(split.ops[0].child_ops.size(), 2, "the child's count and spread")
 	var fuse: ModifierTable = by_id[&"short_fuse"]

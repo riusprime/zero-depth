@@ -5,20 +5,23 @@
 
 [sub_resource type="Resource" id="Op_1"]
 script = ExtResource("2_op")
-op = 8
-stage = 4
-form = 8
-hook_trigger = 4
-hook_damage_permille = 800
-hook_effect = &"long_shadow"
-hook_delay_seconds = 0.15
+op = 0
+stage = 3
+field = &"imprint_seconds"
+value = 1.5
+
+[sub_resource type="Resource" id="Op_2"]
+script = ExtResource("2_op")
+op = 0
+stage = 3
+field = &"imprint_permille"
+value = 1100.0
 per_level = 100.0
 
 [resource]
 script = ExtResource("1_mod")
 family = &"dash"
-rarity = 1
 target = PackedStringArray("dash")
-stage = 4
-ops = Array[ExtResource("2_op")]([SubResource("Op_1")])
+stage = 3
+ops = Array[ExtResource("2_op")]([SubResource("Op_1"), SubResource("Op_2")])
 id = &"long_shadow"

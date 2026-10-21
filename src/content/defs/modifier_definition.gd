@@ -80,6 +80,10 @@ const FAMILIES: Array[StringName] = [
 @export var overlay: StringName = &""
 ## v0.8.0 AO: OrderKind (what the card does to the cards to its left).
 @export var order_kind := OrderKind.FREE
+## v0.8.0 MR (owner O91, Split Wave without Wave): the card's other reading: on a spec carrying every tag here (and not
+## the target) that has no hook child matching the target yet, the ops marked `alt` run instead of the others
+## (ModifierTable.alt_target). Empty: none.
+@export var alt_target: PackedStringArray = PackedStringArray()
 
 
 func category() -> StringName:
@@ -101,6 +105,9 @@ func validate() -> Array[ValidationIssue]:
 	if order_kind == OrderKind.SHAPE and not _sets_form():  # v0.8.0 AO: a shape card changes the form
 		issues.append(ValidationIssue.new(&"order", resource_path, "a shape card sets a form"))
 	_check_tag_list(issues, "target", target)
+	_check_tag_list(issues, "alt_target", alt_target)  # v0.8.0 MR
+	if _has_alt() and alt_target.is_empty():
+		issues.append(ValidationIssue.new(&"alt", resource_path, "an alt op needs an alt_target"))
 	if ops.is_empty():
 		issues.append(ValidationIssue.new(&"missing", resource_path, "a modifier needs ops"))
 	if is_trigger() and ops.size() != 1:  # v0.6.5 WN1: a trigger card is its cut, nothing else
@@ -113,6 +120,14 @@ func validate() -> Array[ValidationIssue]:
 		else:
 			_check_op(issues, k, ops[k])
 	return issues
+
+
+## v0.8.0 MR: some op is of the card's other reading (ModifierOpDefinition.alt).
+func _has_alt() -> bool:
+	for o in ops:
+		if o != null and o.alt:
+			return true
+	return false
 
 
 func _check_tag_list(issues: Array[ValidationIssue], what: String, tags: PackedStringArray) -> void:
@@ -132,7 +147,7 @@ func _check_tag_list(issues: Array[ValidationIssue], what: String, tags: PackedS
 func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) -> void:
 	var where := "ops[%d]" % k
 	var at := o.stage_in(stage)
-	if o.op < ModifierOpDefinition.Op.SET or o.op > ModifierOpDefinition.Op.TRIGGER:
+	if o.op < ModifierOpDefinition.Op.SET or o.op > ModifierOpDefinition.Op.REMNANT:
 		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown op" % where))
 		return
 	if o.is_numeric() and not ModifierOpDefinition.FIELD_STAGE.has(o.field):
@@ -173,6 +188,8 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 			_check_hook(issues, where, o)
 		ModifierOpDefinition.Op.TRIGGER:
 			_check_trigger(issues, where, o)
+		ModifierOpDefinition.Op.REMNANT:  # v0.8.0 RM
+			_check_remnant(issues, where, o)
 	if o.op == ModifierOpDefinition.Op.SET_FORM:
 		if o.form < ModifierOpDefinition.Form.ARC or o.form > ModifierOpDefinition.Form.BURST:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown form" % where))
@@ -185,7 +202,8 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 				&"range", resource_path, "%s: hook_casts is 1..3, on a trigger" % where
 			)
 		)
-	if o.per_level != 0.0 and not (o.is_numeric() or o.op == ModifierOpDefinition.Op.HOOK):
+	var hooked := o.op == ModifierOpDefinition.Op.HOOK or o.op == ModifierOpDefinition.Op.REMNANT
+	if o.per_level != 0.0 and not (o.is_numeric() or hooked):
 		issues.append(  # v0.6.5 WN3: a level grows a number (or a hook's damage share)
 			ValidationIssue.new(
 				&"range", resource_path, "%s: per_level on a numeric op or a hook" % where
@@ -195,6 +213,100 @@ func _check_op(issues: Array[ValidationIssue], k: int, o: ModifierOpDefinition) 
 		issues.append(
 			ValidationIssue.new(&"range", resource_path, "%s: per_level_after is 1..4" % where)
 		)
+
+
+## v0.8.0 RM (Remnants): a remnant's numbers are in range, and its cast (unless it never casts: an anchor's pull) is
+## a hook's child (_check_hook's rules, but its trigger: the remnant decides when).
+func _check_remnant(issues: Array[ValidationIssue], where: String, o: ModifierOpDefinition) -> void:
+	if (
+		o.remnant_kind < ModifierOpDefinition.RemnantKind.SEGMENT
+		or o.remnant_kind > ModifierOpDefinition.RemnantKind.FRAGMENT
+	):
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown remnant" % where))
+	if (
+		o.remnant_spawn < ModifierOpDefinition.RemnantSpawn.LINK
+		or o.remnant_spawn > ModifierOpDefinition.RemnantSpawn.NONE
+	):
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown spawn" % where))
+	var act := int(o.remnant_activate)
+	if (
+		act < ModifierOpDefinition.RemnantActivate.ENEMY_CROSS
+		or act > ModifierOpDefinition.RemnantActivate.CONSUME
+	):
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: unknown activate" % where))
+	var consumer := act == ModifierOpDefinition.RemnantActivate.CONSUME
+	if consumer != (o.remnant_spawn == ModifierOpDefinition.RemnantSpawn.NONE):
+		issues.append(
+			ValidationIssue.new(&"remnant", resource_path, "%s: a consumer leaves nothing" % where)
+		)
+	var segment := o.remnant_kind == ModifierOpDefinition.RemnantKind.SEGMENT
+	if (
+		(
+			o.remnant_spawn
+			in [ModifierOpDefinition.RemnantSpawn.LINK, ModifierOpDefinition.RemnantSpawn.PATH]
+		)
+		and not segment
+	):
+		issues.append(
+			ValidationIssue.new(
+				&"remnant", resource_path, "%s: a link or a path is a segment" % where
+			)
+		)
+	var on_enemy := (
+		o.remnant_kind
+		in [ModifierOpDefinition.RemnantKind.MARK, ModifierOpDefinition.RemnantKind.FRAGMENT]
+	)
+	if on_enemy and o.remnant_spawn != ModifierOpDefinition.RemnantSpawn.HIT:
+		issues.append(
+			ValidationIssue.new(&"remnant", resource_path, "%s: a mark is left by a hit" % where)
+		)
+	if not consumer:
+		check_positive(issues, "%s.remnant_seconds" % where, o.remnant_seconds)
+		check_duration(issues, "%s.remnant_seconds" % where, o.remnant_seconds)
+		if o.remnant_max < 1 or o.remnant_max > 64:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "%s: remnant_max 1..64" % where)
+			)
+	if o.remnant_max_per_level < 0 or o.remnant_stack_per_level < 0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: a level adds >= 0" % where))
+	if (
+		o.remnant_charges < 0
+		or o.remnant_hit_gap_seconds < 0.0
+		or o.remnant_seconds_per_level < 0.0
+	):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "%s: remnant numbers >= 0" % where)
+		)
+	if o.remnant_spawn == ModifierOpDefinition.RemnantSpawn.CONTACT:
+		check_positive(issues, "%s.remnant_length_m" % where, o.remnant_length_m)
+	if o.remnant_spawn == ModifierOpDefinition.RemnantSpawn.LINK:
+		check_positive(issues, "%s.remnant_link_seconds" % where, o.remnant_link_seconds)
+	if act == ModifierOpDefinition.RemnantActivate.PULL:
+		check_positive(issues, "%s.remnant_pull_radius_m" % where, o.remnant_pull_radius_m)
+	if (
+		act == ModifierOpDefinition.RemnantActivate.TURN
+		and (o.remnant_turn_degrees <= 0.0 or o.remnant_turn_degrees > 180.0)
+	):
+		issues.append(ValidationIssue.new(&"range", resource_path, "%s: a turn of 0..180" % where))
+	if act == ModifierOpDefinition.RemnantActivate.DELAY:
+		check_positive(issues, "%s.remnant_delay_seconds" % where, o.remnant_delay_seconds)
+	if (
+		act == ModifierOpDefinition.RemnantActivate.FINISHER
+		and (o.remnant_stack_max < 1 or o.remnant_stack_max > 16)
+	):
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "%s: remnant_stack_max 1..16" % where)
+		)
+	if consumer:
+		check_positive(issues, "%s.remnant_period_seconds" % where, o.remnant_period_seconds)
+		if o.remnant_release_max < 1 or o.remnant_release_max > 64:
+			issues.append(
+				ValidationIssue.new(
+					&"range", resource_path, "%s: remnant_release_max 1..64" % where
+				)
+			)
+	if act != ModifierOpDefinition.RemnantActivate.PULL:
+		_check_hook(issues, where, o)
 
 
 ## v0.8.0 AO: one of the card's own ops changes the form (SET_FORM).

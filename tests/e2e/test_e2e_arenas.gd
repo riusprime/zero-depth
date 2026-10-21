@@ -187,16 +187,19 @@ func test_the_boss_leaves_a_legendary_pick() -> void:
 			assert_ne(s.tier, CardFrames.LEGENDARY_TIER, "card %d keeps its own tier" % k)
 		assert_true(s.card.tier_text().ends_with(words[tier]), "its tier's word")
 	var before := w.stat_cards.size() + w.items_owned.size()
-	var first := w.rewards.offer_of(r)[0]  # v0.6.5 WN5b: a wand card is its level-5 version
+	var first := w.rewards.offer_of(r)[0]
 	var wand := bool(main.driver.reader.card_info(first).get("wand", false))
-	if wand:
-		assert_string_contains(panel.slot(0).card.tier_text(), tr("UI_CARD_ABILITY_LEVEL") % 5)
+	# v0.8.0 FL (owner O91): no level-5 version; the boss's upgrade is a held card one level up
+	var upgrade := wand and w.items_owned.has(first)
+	var lvl := CardLevels.level(w, first) + 1 if upgrade else 1
 	await e.tap(KEY_ENTER)
 	await e.frames(3)
 	assert_eq(w.choosing, -1, "Enter took the focused card")
 	assert_eq(
-		w.stat_cards.size() + w.items_owned.size(), before + 1, "a legendary card joined the build"
+		w.stat_cards.size() + w.items_owned.size(),
+		before + (0 if upgrade else 1),
+		"a card joined the build (or a held one rose)"
 	)
 	if wand:
-		assert_eq(CardLevels.level(w, first), 5, "the wand card at level 5")
+		assert_eq(CardLevels.level(w, first), lvl, "the wand card one level up (1 when new)")
 	assert_eq(w.rewards.index_of(w.legendary_id), -1)

@@ -3,7 +3,8 @@ extends RefCounted
 ## v0.6.0 MX1: one compiled ModifierOpDefinition in sim units (its field named as AttackSpec names it). Loadout.
 
 ## ModifierOpDefinition.Op, same numbers. v0.6.5 WN1: TRIGGER, a wand trigger card's cut (Modifiers).
-enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER }
+## v0.8.0 RM: REMNANT, a hook that leaves a remnant (`remnant`; Remnants), its child cast when it activates.
+enum Op { SET, ADD, MAX, MIN, MUL_PERMILLE, SET_FORM, STATUS, ELEMENT, HOOK, TRIGGER, REMNANT }
 
 var op: int = Op.ADD
 ## The stage it runs in (ModifierTable.Stage).
@@ -44,6 +45,11 @@ var per_level := 0.0
 var per_level_after := 1
 ## v0.6.5 WN5b (TRIGGER): the child spell is cast this many times per trigger, each delay_ticks after the one before.
 var casts := 1
+## v0.8.0 MR (owner O91: "Make Split Wave useful without Wave"): an op of the card's other reading: it runs only on a
+## spec of the card's alt_target that carries no hook child of its target yet (ModifierTable.alt_target; WandCompile).
+var alt := false
+## v0.8.0 RM (REMNANT): the remnant it leaves (null on every other op).
+var remnant: RemnantRule
 
 
 ## v0.6.5 WN3: a copy at card level `level` (1..5): its value, a hook's damage share and its child ops' values each
@@ -75,11 +81,14 @@ func at_level(level: int) -> ModifierOp:
 		&"per_level",
 		&"per_level_after",
 		&"casts",
+		&"alt",  # v0.8.0 MR
 	]:
 		o.set(f, get(f))
 	o.hook_tags = hook_tags.duplicate()
+	if remnant != null:  # v0.8.0 RM: its life and caps grow too
+		o.remnant = remnant.at_level(level)
 	var n := maxi(0, level - maxi(1, per_level_after))  # v0.8.0 BL: B2's late steps
-	if op == Op.HOOK:
+	if op == Op.HOOK or op == Op.REMNANT:
 		o.damage_permille = damage_permille + roundi(per_level * n)
 	elif AttackSpec.is_int_field(field):
 		o.value = value + roundi(per_level * n)
@@ -92,7 +101,7 @@ func at_level(level: int) -> ModifierOp:
 
 ## v0.6.5 WN3: true if this op or a child op grows with the level.
 func levels() -> bool:
-	if per_level != 0.0:
+	if per_level != 0.0 or (remnant != null and remnant.levels()):
 		return true
 	for c in child_ops:
 		if c.levels():

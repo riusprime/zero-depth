@@ -2,8 +2,8 @@ extends GutTest
 ## v0.6.5 WN5b (docs/design/WAND.md "What happens to the v0.6 cards"; SIM_CONTRACTS §8i): the retired v0.6 cards are
 ## never offered (altars, chests, the shop, events, cores, the legendary tier, the overrun's ability cards); a build
 ## that still holds one maps each onto its new card in pick order (a duplicate levels up, no match refunds shards at
-## the salvage price); the legendary tier offers the run's wand cards at level 5 and the legendary triggers, whose
-## child spell is cast twice. Mechanics only, no bots (P1).
+## the salvage price); the legendary tier offers (v0.8.0 FL) an upgrade, an advanced or trigger card and the legendary
+## triggers, whose child spell is cast twice. Mechanics only, no bots (P1).
 
 const SEEDS := 12
 
@@ -198,37 +198,45 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------
-func test_the_legendary_tier_offers_the_runs_wand_cards_and_the_legendary_triggers() -> void:
+## v0.8.0 FL (owner O91): the boss's altar offers an upgrade of a held wand card, an advanced or trigger card and a
+## legendary stat card (the Legendary chance's card in the second's place); never a retired card, never a form or
+## element card it doesn't hold, and a wand card only from the run's pool.
+func test_the_legendary_tier_offers_advanced_and_trigger_cards_and_the_legendary_triggers() -> void:
 	for build: StringName in [&"blade", &"gun"]:
-		var seen := {}
+		var picked := 0
 		var weapons := 0
 		for s in 40:
 			var w := _floor(build, 300 + s)
 			weapons = w.player.weapons
 			var id := w.add_reward(RewardStore.Kind.LEGENDARY, Vector2(100, 100), 0)
 			for c in Offers.roll(w, w.rewards.index_of(id)):
-				if Offers.type_of(c) == Offers.MOD:
-					seen[w.item_tables[c].id] = w.item_tables[c]
-		var wand := 0
-		for key: StringName in seen:
-			var t: ItemTable = seen[key]
-			assert_false(t.retired, "%s: %s retired" % [build, key])
-			if t.tags.has("wand"):
-				wand += 1
+				if Offers.type_of(c) != Offers.MOD:
+					continue
+				var t := w.item_tables[c]
+				assert_false(t.retired, "%s: %s retired" % [build, t.id])
 				assert_true(
 					t.requires_weapon == 0 or (t.requires_weapon & weapons) != 0,
-					"%s: %s from the run's pool" % [build, key]
+					"%s: %s from the run's pool" % [build, t.id]
 				)
-			else:
-				assert_eq(
-					t.kind, ItemTable.Kind.TRIGGER, "%s: %s a legendary trigger" % [build, key]
+				var cat := LootPacing.category(w, c)
+				var legend := t.rarity == ItemTable.LEGENDARY
+				assert_true(
+					(
+						legend
+						or cat == LootPacing.Category.ADVANCED
+						or cat == LootPacing.Category.TRIGGER
+					),
+					"%s: %s an advanced or trigger card (or the Legendary chance's)" % [build, t.id]
 				)
-		assert_gt(wand, 4, "%s: the wand cards are in the tier (%d seen)" % [build, wand])
+				picked += 0 if legend else 1
+		assert_gt(picked, 20, "%s: the card choice is there (%d seen)" % [build, picked])
 
 
-func test_a_wand_card_taken_at_the_legendary_altar_is_level_5() -> void:
+## v0.8.0 FL (owner O91: "remove automatic level-5 grants"): a wand card taken at the boss's altar levels as anywhere.
+func test_a_wand_card_taken_at_the_legendary_altar_is_one_level_up() -> void:
 	var w := _floor(&"gun")
 	var big := _it(w, &"gun_big_shot")
+	_take(w, [&"gun_big_shot"])
 	var id := w.add_reward(RewardStore.Kind.LEGENDARY, w.player_pos() + Vector2(0.5, 0), 0)
 	var r := w.rewards.index_of(id)
 	w.rewards.set_offer(r, PackedInt32Array([big]))  # the roll is the loot stream's; this test needs Big Shot
@@ -236,18 +244,17 @@ func test_a_wand_card_taken_at_the_legendary_altar_is_level_5() -> void:
 	f.pressed = InputFrame.INTERACT
 	w.step(f)
 	assert_eq(w.choosing, id, "it opens")
+	assert_eq(CardForecast.of(w, big, r)["new"], 2, "the forecast says level 2")
 	var pick := InputFrame.new()
 	pick.pick = 1
 	w.step(pick)
-	assert_true(w.items_owned.has(big))
-	assert_eq(CardLevels.level(w, big), 5, "its level-5 version")
-	assert_false(CardLevels.can_take(w, big), "at the top: offered no more")
+	assert_eq(CardLevels.level(w, big), 2, "one level up, no level-5 version")
 	var alt := _floor(&"gun")
-	var id2 := alt.add_reward(RewardStore.Kind.ALTAR, alt.player_pos() + Vector2(0.5, 0), 0)
+	var id2 := alt.add_reward(RewardStore.Kind.LEGENDARY, alt.player_pos() + Vector2(0.5, 0), 0)
 	alt.rewards.set_offer(alt.rewards.index_of(id2), PackedInt32Array([big]))
 	alt.step(f)
 	alt.step(pick)
-	assert_eq(CardLevels.level(alt, big), 1, "an altar's pick is level 1, as before")
+	assert_eq(CardLevels.level(alt, big), 1, "a fresh card is level 1")
 
 
 func test_the_legendary_triggers_cast_their_spell_twice() -> void:

@@ -280,7 +280,7 @@ Every gameplay consequence is a `SimEvent`:
 |---|---|---|
 | `seq` | int | Global sequence number in this `World`, monotonic |
 | `tick` | int | Tick it happened on |
-| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. New kinds are appended, never inserted, because kinds are hashed |
+| `kind` | enum | `HIT`, `DAMAGE`, `HEAL`, `BARRIER`, `KILL`, `STATUS_APPLY`, `STATUS_TICK`, `SPAWN`, `LIMIT`, then appended: `PICKUP` (v0.2.0; v0.3.0 E: also a card taken from an altar or chest), `COMBO_UNLOCKED` (v0.3.0 G), `BOSS_DEFEATED` (v0.3.0 C: once per boss, after its `KILL`; `amount` = its boss table index) and `SHARDS` (v0.3.0 E: a kill paid `amount` shards at `pos`), …, then (v0.3.5 K) `SKILL_USED` (the build skill started; `amount` = `SkillTable.Kind`, `root_id` = the skill's root, which all its hits share), `VENT` (the Vent button vented `amount` heat) and `VENT_COLD` (the Vent button under Hot: nothing vented). Then (v0.5.0 SH) `SHOP_BUY` (shards spent at the shop: `amount` = the price, `effect_id` = the card's id or `shop_heal` / `shop_reroll`; a bought card also emits `PICKUP` from the terminal, the heal a `HEAL` with `effect_id` `shop_heal`) and `SHOP_SALVAGE` (shards back: `amount` = the refund, `effect_id` = what was sold, `target_id` = its card code). The first nine were declared in v0.0.1, even though early versions emit only some kinds. v0.8.0 RM appends `REMNANT_SPAWN`, `REMNANT_ACTIVATE` and `REMNANT_END` (§8l). New kinds are appended, never inserted, because kinds are hashed |
 | `root_id` | int | The chain this event belongs to. A player action, an enemy attack or a status tick opens a new root |
 | `parent_seq` | int | The event that caused this one (−1 for a root) |
 | `depth` | int | 0 for a root; parent depth + 1 otherwise |
@@ -335,8 +335,18 @@ with `TAG_CRIT` (bit 16, reserved since v0.0.1). This sits before step 2's attac
 every player source alike: swings, bolts, skills, abilities, vents and item payoffs (chains, shockwaves, thorns).
 DoT ticks the player owns take the damage stat but never crit. A hit the player takes is cut by armour after the
 target multipliers (`× armour / 1000`, at least 1). Cards stack multiplicatively per card in per mille (two +10 % =
-1210) within their caps; the other stats are read where the sim computes them (cooldowns: dash, skill, blink, bombs;
-attack speed: shot period, drone period, a swing's recovery; area: swing and cleave reach, vent radius, ability
+1210) within their caps, except an `additive` card (**v0.8.0 SG**, owner O91: damage, attack speed and Glass Cannon;
+two +10 % = 1200). The damage multiplier is one additive bucket, `(DAMAGE + ONRUSH while moving + Hoarder's bonus) ×
+GLASS_CANNON` (`Stats.damage_permille`); the curses (Blood Price, Glass Heart, Heavy Hands) stay explicit multipliers.
+Attack speed has one rule (`AttackRate`): the raw bonus = `ATTACK_SPEED − 1000` + the attack's wand
+`rate_bonus_permille` (a negative one counts); the effective bonus counts it in full up to `attack_speed_knee`
+(500), at `attack_speed_slope` (500 ‰) up to `attack_speed_knee2` (1500), at `attack_speed_slope2` (250 ‰) above
+(`SimTuning`, `data/tuning/sim.tres`); the rate `1000 + effective` (at least 1) then takes Heavy Hands' cut. The Gun's
+period is `base × 1000 / rate` half up (at least 2 ticks once changed), the Blade's whole swing (hit tick, sweep,
+recovery) scales by the same rate (at least `rate_min`), the drone's period reads the stat alone. A save made before
+SG (`World.stat_rules` 0) rebuilds DAMAGE, ATTACK_SPEED and GLASS_CANNON from `stat_cards` and the gamble stacks on
+load (`Stats.migrate_rules`). The other stats are read where the sim computes them (cooldowns: dash, skill, blink,
+bombs; attack speed: shot period, drone period, the Blade's swing; area: swing and cleave reach, vent radius, ability
 radii; move speed; shard gain; pickup range: reward, shrine and pickup reach; regen: per mille of max HP per second,
 in and out of combat). Worlds whose player has no crit and no cards (the kernel goldens) never roll.
 
@@ -922,6 +932,8 @@ rises, never falls). The tier's `mods` are three legendary triggers: `ModifierOp
 `trigger_on_kill_twice`, `trigger_on_end_twice`): `WandCompile._cut` files the child spell `casts` times as hooks of
 the same trigger, the n-th with `delay_ticks` × n (0.15 s: the later casts go through the launch queue, §8d). The pick
 of 3 is unchanged. `WorldReader.legendary_card_level(i)` tells the pick panel the level ("Mod · Level 5 · Legendary").
+**Superseded by v0.8.0 FL** (§8m): the level-5 grant is gone (`BossReward.on_pick`, `BossReward.level_after` and
+`WorldReader.legendary_card_level` were removed; `LegendaryTable.wand_level` is retired and the content must hold 0).
 
 ## 8j. Blade combinations and the Gun's top end (v0.8.0 BL)
 
@@ -967,6 +979,151 @@ proposed). Evidence: [`../roadmap/v0.8.0/evidence/BLADE.md`](../roadmap/v0.8.0/e
     bolts that fit, in pattern order, and leaves one `LIMIT` event (`effect_id` `attack_alive_cap`, `amount` the cap).
     Blade Storm's child sets it to 36 (6 slashes × 6 blades: a level-5 Double Slash swing). Nothing is stored per tick
     (no `WorldSnapshot` field); a spec without it hashes as before. `SimTuning.player_shots_max` still holds.
+
+## 8k. Shared damage, repeats and rhythms (v0.8.0 MR)
+
+Owner O91; spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "MR" (starting values);
+WAND.md rules 10–11. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_MR.md`](../roadmap/v0.8.0/evidence/BALANCE_MR.md).
+- **Shares.** `AttackSpec.share_permille` (`LATE_INT_FIELDS`; content op field `share_permille`, PAYLOAD; 0 = whole):
+  `Modifiers.numeric` reads 0 as 1000, so a card's `MUL_PERMILLE` multiplies down the wand (Twin 600, Spread 550, Halo
+  400; each `+per_level`), and the view's `damage_mul_permille` takes the same factor. `Attacks._shared_form` runs the
+  form with the launch's `damage` and `base_damage` at that share (its hooks' shares are of it); `ON_LAUNCH`, the back
+  copy and the repeat queue keep the whole. A Ring's `take_in` of a count drops the share (its pulses take
+  `ring_share_permille`). Spread's count is +2 at level 1, +1 a level after; Echo repeats at 500 (+50); Double Slash
+  at 600.
+- **Secondary proc.** `WandTable.secondary_proc_permille` (data 500; `SecondaryProc`). Secondary: a sharing spec's bolts
+  past its primary one (`Attacks._bolts`: the centre offset's first lane, a circle's first), every bolt of a secondary
+  launch, the Echo repeat (`ModifierState.FLAG_SECONDARY` on `queue_repeat`), Double Slash's echoes (`queue_echoes`;
+  the first echo: `PlayerKit.swing_arc` with `EFFECT_TWIN_ARC`, now also a repeat). A bolt carries it in
+  `ProjectileStore.second` (bits `SECONDARY` 1, `REPEAT` 2; a lazy column: empty, unhashed, absent from older saves
+  until the first such bolt). A secondary hit sets `World.hit_proc_permille` (transient; `Attacks._hit`, the projectile
+  sweep) and its feeds scale: `Engines.on_hit`, `_landed`'s burn, `_feed`. A secondary's hook child launches at
+  `proc_pct` × the proc (its statuses), and a `TAG_CAST` child at that share of its damage (`run_hook`); the child is
+  not secondary itself. Stacks: rounded down, the remainder (per mille) carried in `ModifierState.sec_carry`.
+- **Repeats never repeat.** `AttackSpec.recast` (`LATE_INT_FIELDS`): `WandCompile._cut` sets it on a trigger's n ≥ 1
+  cast (×2 legendaries, a slash hit's second) and on everything built from it (`_hook`, `_cut`, `_layer`'s copy); a
+  spec with it casts each trigger once. A repeat's context (`AttackContext.repeat`, not a back copy; inherited by its
+  children, `FLAG_REPEAT` on its queued hooks, `ProjectileStore.REPEAT` on its bolts) never launches a hook whose child
+  has `recast` (`run_hook`). The depth, lineage, `once_per_line`, 256-a-tick and shot caps are unchanged.
+- **Rhythms.** `FireRhythm` returns an extra rate bonus counted into the attack's raw bonus
+  (`ItemEffects.shot_period_ticks`, `BladeForms.step`). Rapid Fire: `ramp_permille` 100 × (streak − 1), at most
+  `ramp_cap_permille` (600 +150), the streak reset after `ramp_reset_ticks` (24) without a shot
+  (`PlayerKit._fire_bolt` → `on_shot`); base +300, radius × 0.7, damage × 0.85. Flurry: the first `burst_swings` (3;
+  4 at level 3, 5 at level 5: per_level 0.5 from level 3, rounded) swings that start `burst_pause_ticks` (36) or more
+  after the last swing ended come `burst_permille` (800) faster (`on_swing` at the swing's start, which records its
+  end tick); damage × 0.85. State: `ModifierState.ramp_n`, `ramp_tick`, `burst_n`, `burst_free` (hashed only when
+  set; `ADDED_SINCE_V05`). A whole-number op field without a unit keeps its `per_level` as is (`ModifierCompiler`), so
+  ½ a level rounds per level.
+- **Split Wave without Wave.** `ModifierDefinition.alt_target` / `ModifierOpDefinition.alt`: on a spec of the
+  alt target (not of the target) with no hook child of the target yet, the card's `alt` ops run instead
+  (`WandCompile.alt_reading`): a slash with no flying slash throws 2 crescents (+1) at 400 (+50) on each hit.
+- **Placement flags.** `Wand.flags(read)`: `UI_WAND_DEAD_TRIGGER` for a card in `WandTable.after_trigger_dead`
+  (`gun_echo`, `double_slash`, `gun_charge`) right of a trigger, `UI_WAND_DEAD_DEEP` past the third trigger. `describe`
+  leaves the first out of its spell and lists them (`WAND_READ_DEAD`); `WandRow` dims the tile and shows the reason.
+
+## 8l. Remnants, Dodge Imprint and Thermal Break (v0.8.0 RM)
+
+Owner O91 ("Build reusable remnants, connections and events—not hardcoded modifier-pair scripts. Define inheritance,
+lifetimes, hit intervals and activation limits"); spec [`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md)
+"RM" and MR 4 (starting values); WAND.md rules 12–13. Evidence: [`../roadmap/v0.8.0/evidence/BALANCE_RM.md`](../roadmap/v0.8.0/evidence/BALANCE_RM.md).
+- **Compile.** `ModifierOpDefinition.Op.REMNANT` (10) with the `remnant_*` fields → `ModifierOp.remnant`
+  (`RemnantRule`: kind SEGMENT / ANCHOR / MARK / FRAGMENT, spawn LINK / CONTACT / HIT / PATH / NONE, activate
+  ENEMY_CROSS / ATTACK_CROSS / PULL / TURN / FINISHER / DELAY / CONSUME, life, own cap, gap, charges, lengths, pull,
+  bend, turn, delay, stacks, period, releases; `at_level` grows life, cap and stacks). `WandCompile.apply` builds it
+  as a hook (the HOOK guards: depth, lineage, `once_per_line`; its child built by the card and the cards to its right)
+  that carries the rule, the card's slot and trigger section (`section_of`: trigger cards left of it) and, on a
+  FINISHER remnant, `extract` (the spec is the combo's finisher). A CONTACT or HIT remnant is an `ON_HIT` hook; a
+  LINK, PATH or NONE one is `AttackSpec.Trigger.ON_REMNANT` (8, appended), which no moment fires. `AttackBook`
+  indexes the remnant hooks by their child's key (`remnant_hook`) and lists the consumers. `AttackHook.hash_into`
+  adds the rule, slot, section and extract only for a remnant hook; `AttackSpec.imprint_ticks` / `imprint_permille`
+  are `LATE_INT_FIELDS`. A build without a remnant card compiles and hashes as before.
+- **Left.** `Attacks.run_hook` hands a remnant hook to `Remnants.on_hook` (no launch): CONTACT, a crack of
+  `length_m` along the attack's way centred on the hit (one per card per root a tick); HIT, an anchor at the hit
+  (likewise), a mark on the enemy (its direction: from the attack's origin to the enemy, or the attack's way when it
+  hit where it is), a fragment on the enemy (+1, at most `stack_max`, its life refreshed). LINK: `Attacks._bolts`
+  marks each bolt it queues (`World.set_pending_link`, pending column 13); `World._apply_spawns` calls
+  `Remnants.on_link`, which links the bolt to the last one marked with the same key within `link_ticks` (the thread's
+  ends ride the two projectiles while they fly: `rem_target`, `rem_target2` are their ids). PATH: `Remnants.on_arc`
+  (a slash: `ARC_CHORDS` chords at `PATH_REACH` of its reach, one path) and `on_bolt_end` (a bolt: the line it flew).
+  Nothing is left by an attack at the deepest hook level or while the card's id is on `World.hook_chain`.
+- **Inheritance.** A remnant stores its activation's level: depth + 1 and half the proc of the attack that left it
+  (`rem_depth`, `rem_proc`), its root, its damage basis (that hit's base damage), its slot and section. Its cast is
+  the remnant hook's child (a break or an extraction casts the hitting spec's own hook's child), launched through
+  `Attacks.launch` with the card's id pushed on `hook_chain`; a DELAY cast is a repeat (`AttackContext.repeat`).
+- **Limits** (`WandTable`, `data/wand/wand.tres`): each card's `max_alive`, `remnant_kind_max` per kind (48, 16, 48,
+  48), `remnant_max` (96) in all: past a cap the oldest goes (`REMNANT_END`, `END_REPLACED`). `remnant_activations_max`
+  (64) a tick, then one `LIMIT` event (`effect_id` `remnant_cap`, `amount` the cap); every cast also passes
+  `Attacks._count` (256 launches a tick). A remnant's `gap_ticks` per enemy, per path (`rem_group`; `gap_*`); its
+  charges (`-1`: until its life).
+- **Tick phase 6** (`ModifierRuntime.advance`, after the launch queue, before the black holes): `Remnants.advance`
+  ends the remnants past their life (`END_EXPIRED`), whose cast left the build or whose enemy is gone (`END_GONE`);
+  threads and marks follow; then, in store order by uid: ENEMY_CROSS (each enemy touching the segment, its half
+  width, takes the cast), ATTACK_CROSS by a player projectile of another root whose move this tick crosses it (a
+  slash crosses in `on_arc`), PULL (enemies within `pull_radius_m` move `pull_step_m` toward it, not a boss, stopping
+  0.3 m short; player projectiles within `bend_radius_m` turn `bend_step` toward it, an orbiting one excepted), DELAY
+  (after `delay_ticks`, each enemy touching the path once, then spent); then the consumers: every `period_ticks` since
+  the last release (`finale_tick`), the remnants of the consumer's section with a slot left of its own, oldest first,
+  at most `release_max`, each releasing the consumer's cast at its basis where it is (`END_CONSUMED`). No randomness.
+- **Events** (appended to `SimEvent.Kind`): `REMNANT_SPAWN` (effect = card, amount = kind), `REMNANT_ACTIVATE` (effect
+  = card, amount = the cast's damage), `REMNANT_END` (effect = card, amount = `Remnants.END_*`).
+- **Dodge Imprint** (`long_shadow`, same id): the dash spec's `imprint_ticks`; `Remnants.on_dash_start` keeps the start
+  (`imprint_at`) until the dash's end + `imprint_ticks` (`imprint_until`); the next root weapon attack
+  (`Attacks.launch`, depth 0, not a repeat or a back copy) launches from there at × `imprint_permille` and spends it
+  (one `REMNANT_ACTIVATE`).
+- **Thermal Break** (`Engines.thermal_break`, from `add_burn` and `add_frost`): an enemy with burn stacks and frost
+  stacks or a freeze, whichever came second, inside `Engines.begin`: burn and frost (and a freeze) consumed, one
+  `STATUS_APPLY` (`thermal_break`, amount = the burn stacks; the view's shatter), one `Damage.tick_dot` of
+  `WandTable.thermal_base` + `thermal_per_burn` × stacks (6, 4: × the damage stat, TAG_DOT, proc 0). Fire and Frost
+  from any source react; it never feeds a status, so it can't chain itself.
+- **State, hash, saves.** `ModifierState.rem_*` (struct of arrays, oldest first), `gap_*`, `rem_act_tick` / `_n`,
+  `link_*`, `finale_tick`, `imprint_at` / `_until`: copied by `WorldSnapshot`, listed in `ADDED_SINCE_V05` (an older
+  save has none), hashed (`ModifierState._hash_remnants`) only once `remnants_touched()` (a remnant card acted), so no
+  older digest moves. The view reads `WorldReader.remnants()` / `remnant_cast_radius` (`RemnantViews`, pooled).
+- **Mutations.** Item tag `mutation`; `ItemDefinition.offer_weight_permille` (`ItemTable`; 1000 = as its tier)
+  multiplies `ItemPool.card_weight`; a card under 1000 never fills the boss's legendary chance slot
+  (`Offers.legendary_cards`). Double Exposure and Grand Finale: legendary tier, 150.
+
+## 8m. Floor-paced loot (v0.8.0 FL)
+
+Owner O91 ([`../roadmap/v0.8.0/BALANCE_PASS.md`](../roadmap/v0.8.0/BALANCE_PASS.md) "FL"); evidence
+[`../roadmap/v0.8.0/evidence/BALANCE_FL.md`](../roadmap/v0.8.0/evidence/BALANCE_FL.md). `LootPacing` is the one rule
+every card source draws through; `World.loot_pacing` (`LootPacingTable`, loadout, not hashed) holds the numbers, and a
+world without it (labs, the older scenarios) draws exactly as before FL (no multiplier, ceiling 5, no guarantee and no
+extra draw on `loot`).
+- **Stage.** `LootPacing.stage`: `DEEP` on a Deep floor (`Routes.is_deep`) or any floor of loop ≥ 2, else
+  `FLOOR_1..FLOOR_3` by `World.floor_index` (3 and past it: `FLOOR_3`). `next_stage` is one later, at most `DEEP`.
+- **Categories.** `ItemTable.loot_category` (`LootPacing.Category`: OTHER, FORM, ELEMENT, ADVANCED, TRIGGER,
+  MUTATION). Stat cards are their own category (an `Offers` STAT code) and keep their weights.
+- **Weights.** `ItemPool.card_weight` ends × the stage's per-mille multiplier for the card's category
+  (`LootPacing.weigh`, integer, rounded down; OTHER × 1). The events' mod draw (`Events._mod`) and an elite's core
+  (`CoreTheft.draw_card`) weigh their mods the same way (their old weight × 1000 × the multiplier / 1000; the core's
+  stat cards × 1000 so the ratio holds).
+- **Ceiling.** `CardLevels.can_take(w, idx, ceiling = -1)`: a held wand card is takeable from a source only below
+  `LootPacing.ceiling` (or the given ceiling, at most 5). So `ItemPool.available` (altars, chests, the shop's restock and
+  reroll, events, cores, the boss's card) never offers a held card at the ceiling, and `Shop.can_apply` (buying, an
+  event's block, a stolen core's re-check at its drop, which then redraws) refuses it. `CardLevels.level_up` itself has
+  no ceiling: a jackpot and the boss's upgrade pass it. The dev panel's grant passes `MAX_LEVEL` (exempt).
+- **Guarantee.** `Offers.roll` of a regular altar (not a chest, the shop, the epic or the boss's altar): while
+  `World.loot_guaranteed` < the stage's `guaranteed_altars` it counts one, and an offer holding no `LootPacing.compatible`
+  card has one card replaced (`_slot`: the last card, never an altar's leading fresh ability) by one drawn from
+  `ItemPool.available` by the altar's weights (one `loot` draw). Compatible: a usable wand card of category form, element
+  or advanced that would act where it lands (a new card at the wand's end, a held one where it sits): not past
+  `WandCompile.MAX_DEPTH` triggers, not a `WandTable.after_trigger_dead` card right of a trigger.
+- **Jackpot.** `Offers.roll` of a regular altar or a chest: one `loot` draw (0..999) against `jackpot_permille`; on a
+  hit one card (`_slot`, never the only compatible card) becomes a jackpot card uniformly from `LootPacing.jackpot_pool`
+  (a held wand card exactly at the ceiling, below 5, or a mutation; `ItemPool.available(w, true, ceiling + 1)`), one
+  more draw. The pair (reward id, card) is appended to `World.loot_jackpots`; `WorldReader.choice_jackpot(k)` reads it
+  and the pick card's line starts "Jackpot" (`PickPanel.jackpot_face`, `PICK_JACKPOT`).
+- **The boss's altar** (`Offers.roll_legendary`, replacing the level-5 grant of §8i): the Legendary chance's draw as
+  before; then with `LegendaryTable.upgrade` one held wand card below `LootPacing.next_ceiling`
+  (`Offers.boss_upgrades`, uniform; taking it raises it one level as anywhere); then with `card_categories` (data
+  advanced, trigger) and no Legendary card, one card of those categories from `ItemPool.available(w)` (weight 1000 × the
+  stage's multiplier; never a Legendary card nor a mutation, so the ×2 triggers stay the chance's); the rest legendary
+  stat cards (and `mods`) by the tier's weights as before. The loop's extra picks are unchanged.
+- **State.** `World.loot_guaranteed` (hashed once above 0) and `World.loot_jackpots` (hashed once not empty) are per
+  floor, in `WorldSnapshot.ADDED_SINCE_V05` (an older save: 0 and none). Economy unchanged: reward counts, prices and
+  shards. The Overrun's ability cards and the Deep epic altar's ability level-ups and epic stat cards hold no wand card,
+  so pacing does not reach them.
 
 ## 9. What presentation receives
 
@@ -1531,10 +1688,13 @@ below) and FB3's cap of a fifth of max HP (D36).
 - **The hidden catch-up (v0.5.5 DS, owner D3-D7, D10, B1: "regular scaling + multiplier based on how much you
   grew", "Yes, but hidden").** Everything above stays the regular scaling; `CatchUp` multiplies on top of it. The
   build's power `P` (per mille of a fresh build, `CatchUp.power`, the one function a later term such as the modifier
-  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × DAMAGE × GLASS_CANNON ×
-  (1000 + ONRUSH) × expected_crit(chance, mult) / expected_crit(base) × ATTACK_SPEED × (1000 + ability_level ×
+  engine's slots joins) is a pure function of the loadout: `weapon_permille(weapon level) × (DAMAGE + ONRUSH) ×
+  GLASS_CANNON × expected_crit(chance, mult) / expected_crit(base) × rate × (1000 + ability_level ×
   levels of the non-weapon abilities + item × items held + combo × combos owned)`, each step `/ 1000` in integers;
-  nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
+  v0.8.0 SG: `(DAMAGE + ONRUSH)` is the additive bucket (Onrush always counted, Hoarder never) and `rate` is
+  `1000 + AttackRate.curve(ATTACK_SPEED − 1000 + the held cards' rate_bonus_permille ADD ops at their levels)`
+  (`CatchUp.rate_permille`, `wand_rate_bonus`: summed whatever the order, so a reorder still never changes P; no
+  curse, as before); nothing about how the run is played (HP, shards, kills, position) enters. `m = clamp(isqrt(P × 10⁶ / E), 1000,
   cap)` per mille with an integer square root (no float, no `pow`). At floor entry (`CatchUp.start_floor`, after the
   carry, the abilities, the heat and the events are set up; `Main._start_floor`) `E = expected_power[f − 1]` and
   `cap = cap[f − 1] + threat_cap × T` (`Curses.threat`: curses held and Deep floors taken); `m` is then fixed for the

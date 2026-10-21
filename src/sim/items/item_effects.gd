@@ -25,15 +25,16 @@ static func swing_reach_m(w: World, step: int = -1) -> float:
 	return Attacks.arc_reach_m(w, Modifiers.step(w, s))
 
 
-## Ticks between bolts while shooting: the bolt spec's period, with its rate bonus (Rapid Coil) applied (never under
-## 2 ticks once shortened), then attack speed.
+## Ticks between bolts while shooting (v0.8.0 SG, owner O91): the bolt spec's period at one rate, the attack speed
+## stat plus its wand rate bonus (Rapid Fire, Rapid Coil ...; a negative one counts) through the curve, then Heavy
+## Hands (AttackRate.rate), rounded half up; never under AttackRate.MIN_SHOT_TICKS once changed.
 static func shot_period_ticks(w: World) -> int:
 	var spec := Modifiers.bolt(w)
 	var base := spec.period_ticks
-	var bonus := spec.rate_bonus_permille
-	if bonus <= 0:
-		return Stats.period(w, base)  # v0.4.0 BS: attack speed
-	return Stats.period(w, maxi(2, int(round(base * 1000.0 / (1000 + bonus)))))
+	var r := AttackRate.rate(w, spec.rate_bonus_permille + FireRhythm.shot_bonus(w, spec))  # v0.8.0 MR: the ramp
+	if r == 1000:
+		return base
+	return maxi(mini(base, AttackRate.MIN_SHOT_TICKS), AttackRate.scaled(base, r))
 
 
 ## Damage of each bolt in a shot: the full bolt, or a Splinter share (rounded down, at least 1).

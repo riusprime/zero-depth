@@ -85,7 +85,7 @@ static func advance(w: World) -> void:
 		if w.swing_t == cur.active_tick:
 			_resolve_swing(w)
 		w.swing_t += 1
-		if w.swing_t > Stats.swing_end(w, cur):  # v0.4.0 BS: attack speed shortens the recovery
+		if w.swing_t > cur.ticks:  # v0.8.0 SG: attack speed scales the whole swing (BladeForms.step)
 			w.swing_t = 0
 			w.combo_window = t.combo_window_ticks if w.combo_step < t.combo.size() - 1 else 0
 	elif w.combo_window > 0:
@@ -103,6 +103,7 @@ static func advance(w: World) -> void:
 		ItemEffects.on_swing_start(w)
 		ItemProcs.on_swing_start(w)  # Items: Momentum.
 		Engines.on_swing_start(w)  # Engines: Bulwark's guard charges.
+		FireRhythm.on_swing(w)  # v0.8.0 MR (O91): Flurry's burst
 	# Shooting: while held (and not swinging), a bolt every shot_period_ticks; the first one comes at once.
 	if w.shot_cd > 0:
 		w.shot_cd -= 1
@@ -177,6 +178,9 @@ static func swing_arc(
 	var s := step if step >= 0 else w.combo_step
 	var ctx := AttackContext.make(w.player_pos(), angle, dmg, root, SimEvent.TAG_MELEE, effect_id)
 	ctx.step = s
+	if effect_id == ItemEffects.EFFECT_TWIN_ARC:  # v0.8.0 MR (O91): an echo is a repeat, at the secondary proc
+		ctx.repeat = true
+		ctx.secondary = true
 	return Attacks.launch(w, Modifiers.step(w, s), ctx)
 
 
@@ -189,6 +193,7 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	dmg = Gamble.shot_damage(w, dmg)  # Gamble shrine (v0.3.0 L19).
 	dmg = Curses.shot_damage(w, dmg)  # v0.6.0 CU: Heavy Hands' every 4th shot
 	AbilityCombos.on_shot(w)  # v0.4.0 AB: Wingman
+	FireRhythm.on_shot(w)  # v0.8.0 MR (O91): Rapid Fire's ramp
 	var tags := SimEvent.TAG_PROJECTILE | Heat.bolt_tags(w) | Abilities.bolt_tags(w)  # Hot, Pulse Gun L3
 	var ctx := AttackContext.make(w.player_pos(), w.aim_angle, dmg, 0, tags, &"")
 	if charge != 1000:

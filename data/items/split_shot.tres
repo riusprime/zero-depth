@@ -11,4 +11,5 @@ desc_key = &"ITEM_SPLIT_SHOT_DESC"
 tags = PackedStringArray("bolt", "wand")
 requires_weapon = &"gun"
 modifiers = Array[StringName]([&"split_shot"])
+loot_category = &"advanced"
 id = &"split_shot"

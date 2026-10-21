@@ -40,6 +40,27 @@ const MAX_SLOTS := 8
 @export var hole_pull_mps := 3.0
 @export var hole_radius_m := 1.4
 @export var hole_period_seconds := 0.2
+## v0.8.0 MR (owner O91: "Extra projectiles must not each duplicate full damage and full-strength effects"): a
+## secondary attack (Twin's second lane, Spread's and Halo's bolts past the centre one, Echo's repeat, Double Slash's
+## repeats) feeds its statuses, its hooks' statuses and its trigger casts' damage at this per mille (SecondaryProc).
+@export var secondary_proc_permille := 500
+## v0.8.0 MR (O91: "Clearly flag incompatible placements"): the cards (item ids) that do nothing right of a trigger (a
+## repeat and a hold only act on the shot you fire): the wand's tiles and read-back flag them there (Wand.flags).
+@export var after_trigger_dead: Array[StringName] = [&"gun_echo", &"double_slash", &"gun_charge"]
+## v0.8.0 RM (owner O91: "Define inheritance, lifetimes, hit intervals and activation limits"; Remnants): the remnants
+## alive at once in all and of each kind (SEGMENT, ANCHOR, MARK, FRAGMENT; a new one past a cap replaces the oldest),
+## and the activations in one tick (past them, one LIMIT event; each activation's cast also counts toward the 256
+## launches a tick). Starting values.
+@export var remnant_max := 96
+@export var remnant_kind_max := PackedInt32Array([48, 16, 48, 48])
+@export var remnant_activations_max := 64
+## v0.8.0 RM (owner O91: "Make Fire+Frost's Thermal Break a natural elemental reaction"; Engines.thermal_break): an
+## enemy both burning and chilled or frozen breaks: one hit of thermal_base + thermal_per_burn × its burn stacks (×
+## the damage stat, no crit, a damage-over-time hit: it never sets anything off), its burn and frost consumed, and a
+## short shatter the view shows (thermal_shatter_seconds). Starting values.
+@export var thermal_base := 6
+@export var thermal_per_burn := 4
+@export var thermal_shatter_seconds := 0.3
 
 
 func category() -> StringName:
@@ -79,6 +100,10 @@ func validate() -> Array[ValidationIssue]:
 			issues.append(
 				ValidationIssue.new(&"range", resource_path, "%s is outside 1..10000" % pair[0])
 			)
+	if secondary_proc_permille < 0 or secondary_proc_permille > 1000:  # v0.8.0 MR
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "secondary_proc_permille is 0..1000")
+		)
 	if blade_hit_casts < 1 or blade_hit_casts > 3:  # v0.8.0 BL
 		issues.append(ValidationIssue.new(&"range", resource_path, "blade_hit_casts is 1..3"))
 	if blade_cast_gap_seconds < 0.0 or blade_cast_gap_seconds > 1.0:
@@ -97,6 +122,7 @@ func validate() -> Array[ValidationIssue]:
 				&"range", resource_path, "hole_period_seconds is 1/60..hole_seconds"
 			)
 		)
+	_check_remnants(issues)  # v0.8.0 RM
 	for pair: Array in [
 		["hole_pull_radius_m", hole_pull_radius_m],
 		["hole_pull_mps", hole_pull_mps],
@@ -105,3 +131,28 @@ func validate() -> Array[ValidationIssue]:
 		if float(pair[1]) < 0.0 or float(pair[1]) > 20.0:
 			issues.append(ValidationIssue.new(&"range", resource_path, "%s is 0..20" % pair[0]))
 	return issues
+
+
+## v0.8.0 RM: the remnant limits and Thermal Break's numbers.
+func _check_remnants(issues: Array[ValidationIssue]) -> void:
+	if remnant_max < 1 or remnant_max > 256:
+		issues.append(ValidationIssue.new(&"range", resource_path, "remnant_max is 1..256"))
+	if remnant_kind_max.size() != 4:
+		issues.append(
+			ValidationIssue.new(&"table_size", resource_path, "remnant_kind_max has 4 entries")
+		)
+	for n in remnant_kind_max:
+		if n < 1 or n > remnant_max:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "remnant_kind_max is 1..remnant_max")
+			)
+	if remnant_activations_max < 1 or remnant_activations_max > 256:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "remnant_activations_max is 1..256")
+		)
+	if thermal_base < 0 or thermal_per_burn < 0 or thermal_base + thermal_per_burn <= 0:
+		issues.append(ValidationIssue.new(&"range", resource_path, "Thermal Break deals > 0"))
+	if thermal_shatter_seconds < 0.0 or thermal_shatter_seconds > 2.0:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "thermal_shatter_seconds is 0..2")
+		)

@@ -6,6 +6,11 @@ extends RefCounted
 const MOVE_INT_FIELDS: Array[StringName] = [
 	&"pierce_left", &"ret", &"home", &"orbit_t", &"orbit_n", &"orbit_a", &"life0"
 ]
+## v0.8.0 MR (owner O91; SecondaryProc), bits of `second`: a secondary bolt (Twin's second lane, Spread's and Halo's
+## bolts past the centre one, an Echo's repeat: its hits at the secondary proc) and a repeat's (an Echo's repeat and a
+## repeat's hook bolts: their hits launch no trigger's later cast).
+const SECONDARY := 1
+const REPEAT := 2
 
 var ids := PackedInt32Array()
 var owner := PackedInt32Array()
@@ -47,6 +52,9 @@ var look := PackedStringArray()
 ## v0.7.5 BF2: a boss fireball's attack (the boss table's attack index that fired it; -1 = none), so the death recap
 ## names the pattern that killed, not the one the boss is on now. Empty until a boss's fireball flies (set_cause).
 var cause := PackedInt32Array()
+## v0.8.0 MR (owner O91; SecondaryProc): a player bolt's kind (the SECONDARY and REPEAT bits; 0 a plain one). Empty
+## until the first such bolt (set_second), so stores that never held one step and hash as before.
+var second := PackedInt32Array()
 
 
 func size() -> int:
@@ -95,6 +103,8 @@ func add(
 		look.append("")
 	if not cause.is_empty():  # v0.7.5 BF2
 		cause.append(-1)
+	if not second.is_empty():  # v0.8.0 MR
+		second.append(0)
 
 
 ## v0.7.5 BF1: projectile i is a fireball of look `key` (the column fills the first time).
@@ -117,6 +127,21 @@ func set_cause(i: int, attack: int) -> void:
 ## v0.7.5 BF2: the boss attack that fired projectile i (-1 = none or not a boss's).
 func cause_of(i: int) -> int:
 	return cause[i] if i < cause.size() else -1
+
+
+## v0.8.0 MR: projectile i is a secondary bolt or a repeat's (`kind`; the column fills the first time, 0 elsewhere).
+func set_second(i: int, kind: int) -> void:
+	if second.size() < ids.size():
+		var was := second.size()
+		second.resize(ids.size())
+		for k in range(was, ids.size()):
+			second[k] = 0
+	second[i] = kind
+
+
+## v0.8.0 MR: projectile i's kind (0 = a primary bolt).
+func second_of(i: int) -> int:
+	return second[i] if i < second.size() else 0
 
 
 ## v0.7.5 BF1: projectile i's look key ("" = a plain shot).
@@ -157,6 +182,8 @@ func remove_sorted(indices: PackedInt32Array) -> void:
 			look.remove_at(i)
 		if i < cause.size():  # v0.7.5 BF2
 			cause.remove_at(i)
+		if i < second.size():  # v0.8.0 MR
+			second.remove_at(i)
 		pos_x.remove_at(i)
 		pos_y.remove_at(i)
 		vel_x.remove_at(i)
@@ -185,6 +212,9 @@ func hash_into(h: StateHasher, with_specs: bool = true) -> void:
 		h.add_string(",".join(look))
 	if not cause.is_empty():  # v0.7.5 BF2: only once a boss's fireball has flown
 		h.add_ints(cause)
+	if not second.is_empty():  # v0.8.0 MR: only once a secondary bolt has flown
+		h.add_string("second")
+		h.add_ints(second)
 	if not with_specs:
 		return
 	for k in spec_key:  # v0.6.0 MX2: only once a projectile names a spec (the kernel golden's never do)
