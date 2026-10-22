@@ -166,7 +166,7 @@ func test_each_gun_card_grows_with_its_level() -> void:
 		&"gun_big_shot": [&"damage_mul_permille", 1600, 1800],
 		# v0.8.0 MR (O91): Rapid Fire's ramp cap grows (its base rate doesn't); Twin's lane share and Spread's +1
 		&"gun_rapid_fire": [&"ramp_cap_permille", 600, 900],
-		&"gun_twin": [&"share_permille", 600, 700],
+		&"gun_twin": [&"share_permille", 600, 800],  # v0.9.0 TW: +10 % a level
 		&"gun_spread": [&"count", 3, 5],
 		&"gun_pierce": [&"pierce", 2, 4],
 		&"gun_ricochet": [&"bounces", 2, 4],
@@ -263,7 +263,6 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 		"gun_big_shot",
 		"gun_rapid_fire",
 		"gun_twin",
-		"gun_spread",
 		"split_shot",
 		"gun_pierce",
 		"gun_ricochet",
@@ -279,7 +278,7 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 	]:
 		assert_has(gun_pool, "mod:" + id, "%s in the Gun's pool" % id)
 		assert_does_not_have(blade_pool, "mod:" + id, "%s never in the Blade's" % id)
-	for id: String in ["seeker", "twin_cast", "rearguard"]:
+	for id: String in ["seeker", "twin_cast", "rearguard", "gun_spread"]:  # v0.9.0 TW: Spread retired
 		# v0.6.5 WN5b: retired (WAND.md: → G8, G14, G15 on the Gun; Twin Cast → B5 on the Blade): in no pool.
 		assert_does_not_have(blade_pool, "mod:" + id, "%s retired" % id)
 		assert_does_not_have(gun_pool, "mod:" + id)

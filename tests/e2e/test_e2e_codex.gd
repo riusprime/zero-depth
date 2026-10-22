@@ -96,7 +96,7 @@ func _note_tier(main: Main, codex: CodexView, at: Dictionary, seen: Dictionary) 
 func test_the_codex_says_each_cards_tier() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
-	for id in [&"shared_explosive", &"halo_shot", &"gun_twin", &"chain_blast"]:
+	for id in [&"gun_pierce", &"halo_shot", &"gun_twin", &"chain_blast"]:
 		main.codex.unlock(&"cards", id)
 	for k in 3:
 		await e.tap(KEY_DOWN)

@@ -55,7 +55,11 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		items += 1 if t.retired else 0
 	for t in w.ability_tables:
 		abilities += 1 if t.retired else 0
-	assert_eq([items, abilities], [37, 6], "43 rows: 37 items and the six old ability modifiers")
+	assert_eq(
+		[items, abilities],
+		[39, 6],
+		"45 rows: 39 items (v0.9.0: Spread, Explosive) and the six old ability modifiers"
+	)
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
 	for id: StringName in [&"echo_slash", &"split_shot", &"wide_arc", &"blade_orbit"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept its id as a wand card" % id)
@@ -135,11 +139,11 @@ func test_a_gun_build_maps_onto_the_gun_pool() -> void:
 			&"gun_backfire",
 			&"gun_charge",
 			&"gun_ricochet",
-			&"shared_explosive"
+			&"ember_core"
 		],
 		(
 			"Seeker → G8, Twin Cast → G14, Rearguard → G15, Ascension → G13, Ricochet Core → G7,"
-			+ " Aftershock → S7 (WN5a's, merged)"
+			+ " Aftershock → S1 Fire (v0.9.0 XP: Explosive retired)"
 		)
 	)
 	assert_eq(refund, 0, "every card has a Gun row")
@@ -193,8 +197,43 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 	var w := _floor(&"gun")
 	RunCarry.apply(w, carry)
 	Abilities.start_floor(w)
-	assert_eq(_ids(w), [&"gun_spread", &"gun_rapid_fire", &"gun_mine"])
+	assert_eq(_ids(w), [&"gun_twin", &"gun_rapid_fire", &"gun_mine"], "v0.9.0 TW: Spread is Twin")
 	assert_eq(_levels(w), [1, 1, 2], "Bomb Lobber and its Cluster Payload: Mine at level 2")
+
+
+## v0.9.0 TW (owner Q8: Twin and Spread merged into one card): Spread is retired; a held Spread becomes Twin in its
+## place (the table's rule: a card already held levels up by 1), and Spread is never offered again.
+func test_a_held_spread_becomes_twin_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var spread := _it(w, &"gun_spread")
+	assert_true(w.item_tables[spread].retired, "Spread is retired")
+	assert_does_not_have(ItemPool.available(w), spread, "never offered")
+	_take(w, [&"gun_homing", &"gun_spread"])
+	CardLevels.set_level(w, spread, 3)
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_homing", &"gun_twin"], "in Spread's place")
+	assert_eq(_levels(w), [1, 1], "a new Twin at level 1, as every retired card")
+	var both := _floor(&"gun")
+	_take(both, [&"gun_twin", &"gun_spread"])
+	WandMigration.run(both)
+	assert_eq(_ids(both), [&"gun_twin"])
+	assert_eq(_levels(both), [2], "a Twin already held levels up")
+
+
+## v0.9.0 XP (owner Q11: "Both": Fire's kill blast and the Explosive card go): Explosive is retired, never offered on
+## either weapon; a held Explosive becomes Fire (the element it was closest to), as do the rows that pointed at it.
+func test_explosive_is_retired_never_offered_and_becomes_fire() -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var boom := _it(w, &"shared_explosive")
+		assert_true(w.item_tables[boom].retired, "Explosive is retired")
+		assert_does_not_have(ItemPool.available(w), boom, "never offered on a %s run" % weapon)
+		_take(w, [&"shared_explosive"])
+		WandMigration.run(w)
+		assert_eq(_ids(w), [&"ember_core"], "a held Explosive becomes Fire (%s)" % weapon)
+	var t := _floor(&"gun").wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"shared_explosive", "no row lands on Explosive")
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------

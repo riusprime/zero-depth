@@ -94,8 +94,11 @@ func test_a_v0_6_1_gun_save_from_its_carry_maps_and_levels_up_duplicates() -> vo
 	var refund := WandMigration.run(w)
 	assert_eq(
 		_ids(w),
-		[&"gun_spread", &"gun_homing", &"gun_mine", &"storm_core", &"gun_rapid_fire"],
-		"Splinter Shot → G4, Seeker → G8, Bomb Lobber + Cluster Payload → G12, Storm Core stays (S2)"
+		[&"gun_twin", &"gun_homing", &"gun_mine", &"storm_core", &"gun_rapid_fire"],
+		(
+			"Splinter Shot → G4 (v0.9.0 TW: Spread is Twin now), Seeker → G8, Bomb Lobber + Cluster Payload"
+			+ " → G12, Storm Core stays (S2)"
+		)
 	)
 	assert_eq(_levels(w), [1, 1, 3, 1, 1])
 	assert_eq(refund, 0, "every card has a match (Storm Core is WN5a's S2)")

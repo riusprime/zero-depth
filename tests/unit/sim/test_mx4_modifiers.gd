@@ -29,18 +29,74 @@ func test_m1_storm_core_chains_lightning_to_two_more_enemies() -> void:
 	assert_eq(W.targets(jumps).size(), 2, "each landed bolt chains to the 2 others")
 
 
-func test_m2_ember_core_burns_and_kills_explode() -> void:
-	var w := W.world(&"gun", [&"ember_core"], [[Vector2(2.5, 0.0), 6], [Vector2(3.4, 0.6), 400]])
+## v0.9.0 XP (owner Q11: "I don't want to have the enemies exploding after they die"; "Burning ground on kill"):
+## Fire's kill blast is gone; a kill by a Fire hit (a burning enemy) leaves a burning patch (1.2 m, 2 s) that burns
+## the enemies standing in it, then goes out.
+func test_m2_ember_core_burns_and_a_burning_kill_leaves_burning_ground() -> void:
+	var w := W.world(&"gun", [&"ember_core"], [[Vector2(2.5, 0.0), 6], [Vector2(2.8, 0.7), 100000]])
 	var bolt := Modifiers.bolt(w)
 	assert_true(bolt.has_status(&"burn") and bolt.elements.has("ember"))
 	var k := W.hook_of(bolt, &"ember_core")
-	assert_eq([k.trigger, k.child.form], [TRIG.ON_KILL, FORM.BURST])
+	assert_eq(
+		[k.trigger, k.child.form, k.child.alive_max, k.child.life_ticks],
+		[TRIG.ON_KILL, FORM.ZONE, 12, 120],
+		"a patch on a kill, at most 12, 2 s"
+	)
+	assert_almost_eq(k.child.radius_m, 1.2, 0.001)
+	assert_true(k.child.has_status(&"burn"), "the patch burns")
 	assert_true(
 		Modifiers.step(w, 0).has_status(&"burn"), "every attack, the Skill and the steps too"
 	)
-	W.run(w, 40, 0, W.S)
-	assert_gt(W.damage(w, &"ember_core").size(), 0, "the kill burst")
+	var key := k.child.key
+	var a := w.actors
+	var first := a.ids[1]
+	var second := a.ids[2]
+	var lit := -1
+	var out := -1
+	var burnt := 0
+	for t in 300:
+		var i1 := a.index_of(first)
+		w.step(W.frame(0, W.S if i1 >= 0 and a.dead[i1] == 0 else 0))
+		var on := Array(w.ab.fire_spec).has(key)
+		if lit < 0 and on:
+			lit = w.tick
+		if lit >= 0 and out < 0 and not on:
+			out = w.tick
+		var i2 := a.index_of(second)
+		if on and i2 >= 0:
+			burnt = maxi(burnt, a.burn_stacks[i2])
+	var gone := a.index_of(first)
+	assert_true(gone < 0 or a.dead[gone] == 1, "the first enemy died")
+	assert_gt(lit, -1, "its death left a burning patch")
+	assert_gt(burnt, 0, "the enemy standing in it burns")
+	assert_almost_eq(out - lit, 120, 2, "it goes out after 2 s")
+	assert_eq(w.actors.hp[0], w.actors.max_hp[0], "the patch never hurts the hero")
 	assert_gt(w.item_mods.burn_max_stacks, 0, "the card brings the burn engine's numbers")
+
+
+## v0.9.0 XP: Fire's patches are capped (12 alive); one lit within a patch's radius merges into it (renewing it).
+func test_m2_fire_patches_cap_at_twelve_and_merge_when_close() -> void:
+	var w := W.world(&"gun", [&"ember_core"])
+	var child := W.hook_of(Modifiers.bolt(w), &"ember_core").child
+	var r := Attacks.area_radius(w, child)
+	var seq := w.last_event_seq()
+	for n in 16:
+		var at := Vector2(n * 3.0, 20.0)
+		var ctx := AttackContext.make(at, 0, 5, w.take_root(), 0, &"ember_core")
+		ElementAbilities.add_zone(w, at, r, child.life_ticks, child, ctx)
+	assert_eq(Array(w.ab.fire_spec).count(child.key), 12, "at most 12 alive")
+	var limits := 0
+	for e in w.events_since(seq):
+		if e.kind == SimEvent.Kind.LIMIT and e.effect_id == Attacks.EFFECT_ALIVE_CAP:
+			limits += 1
+	assert_eq(limits, 4, "each one past the cap: a LIMIT, not lit")
+	var end0 := w.ab.fire_end[0]
+	w.tick += 30
+	var near := Vector2(0.5, 20.0)
+	var c2 := AttackContext.make(near, 0, 5, w.take_root(), 0, &"ember_core")
+	ElementAbilities.add_zone(w, near, r, child.life_ticks, child, c2)
+	assert_eq(Array(w.ab.fire_spec).count(child.key), 12, "a close one merges")
+	assert_eq(w.ab.fire_end[0], end0 + 30, "into the patch there, renewed")
 
 
 func test_m3_frost_core_freezes_on_the_third_hit_on_a_slowed_enemy() -> void:

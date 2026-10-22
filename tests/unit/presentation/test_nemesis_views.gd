@@ -6,7 +6,8 @@ extends GutTest
 ## the sim's strike tick; its shots in its own fireball looks, never the hero's colours.
 
 const DT := 1.0 / 60.0
-const GUN_CARDS := [[&"gun_spread", 2], [&"shared_explosive", 3], [&"halo_shot", 1]]
+## v0.9.0 TW, XP: Twin and Fire in Spread's and Explosive's places (both retired, never cast).
+const GUN_CARDS := [[&"gun_twin", 2], [&"ember_core", 3], [&"halo_shot", 1]]
 
 
 func after_each() -> void:
@@ -123,7 +124,7 @@ func test_a_card_cast_names_the_card_and_draws_its_parts() -> void:
 	w.actors.set_pos(0, w.actors.pos(i) + Vector2(6, 0))
 	var k := -1
 	for n in w.final_fight.casts.size():
-		if w.final_fight.casts[n].card_id == &"shared_explosive":
+		if w.final_fight.casts[n].card_id == &"ember_core":
 			k = n
 	var v := _views()
 	var tv := TelegraphViews.new()
@@ -146,7 +147,7 @@ func test_a_card_cast_names_the_card_and_draws_its_parts() -> void:
 		for st: Array in sv.strikes():
 			if st[0] == &"nm_cast":
 				cast_strikes += 1
-	var info := reader.card_info(NemesisLab.card(w, &"shared_explosive"))
+	var info := reader.card_info(NemesisLab.card(w, &"ember_core"))
 	assert_eq(named, tr(StringName(info["name_key"])), "your card's own name")
 	assert_gt(marks, 0, "its parts on the ground")
 	assert_gt(cast_strikes, 0, "its blast struck in its look")

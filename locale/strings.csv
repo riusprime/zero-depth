@@ -691,7 +691,7 @@ HUD_KEY_PAD_OTHER,Pad,Mando
 ITEM_STORM_CORE,Lightning,Rayo
 ITEM_STORM_CORE_DESC,Your hits chain lightning.,Tus golpes lanzan rayos en cadena.
 ITEM_EMBER_CORE,Fire,Fuego
-ITEM_EMBER_CORE_DESC,Your hits burn. Kills explode in flames.,Tus golpes queman. Las bajas estallan en llamas.
+ITEM_EMBER_CORE_DESC,Your hits burn. Burning foes leave fire behind.,Tus golpes queman. Los enemigos en llamas dejan fuego.
 ITEM_VENOM_CORE,Venom,Veneno
 ITEM_VENOM_CORE_DESC,Your hits poison. Poison spreads on death.,Tus golpes envenenan. El veneno salta al morir.
 ITEM_ECHO_SLASH,Wave,Onda

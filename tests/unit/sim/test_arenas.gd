@@ -391,8 +391,9 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 	for s in w.legendary_table.stats:
 		var t := w.stat_tables[s]
 		assert_eq(t.amounts.size(), 4, "%s: four rarities" % t.id)
+		var mul := 1300 if t.id in [&"damage", &"attack_speed"] else 1600  # v0.9.0 LG (owner Q12)
 		assert_eq(
-			t.amounts[Offers.LEGENDARY], (t.amounts[Offers.EPIC] * 1600 + 500) / 1000, "%s" % t.id
+			t.amounts[Offers.LEGENDARY], (t.amounts[Offers.EPIC] * mul + 500) / 1000, "%s" % t.id
 		)
 		assert_gt(t.amounts[Offers.LEGENDARY], t.amounts[Offers.EPIC])
 	var before := Stats.value(w, Stats.Stat.DAMAGE)
@@ -403,6 +404,28 @@ func test_legendary_stat_cards_are_stronger_than_epic() -> void:
 		(before * (1000 + t.amounts[Offers.LEGENDARY]) + 500) / 1000,
 		"a legendary damage card adds its legendary amount"
 	)
+
+
+## v0.9.0 LG (owner Q12: "Power/Haste ×1.3"): legendary Power +40 % → +32.5 %, Haste +28.8 % → +23.4 %; the other
+## legendary stat cards keep epic × 1.6.
+func test_legendary_power_and_haste_are_epic_times_one_point_three() -> void:
+	var w := _arena_floor(3)
+	var power := w.stat_tables[Stats.Stat.DAMAGE]
+	var haste := w.stat_tables[Stats.Stat.ATTACK_SPEED]
+	assert_eq(
+		[power.amounts[Offers.EPIC], power.amounts[Offers.LEGENDARY]], [250, 325], "Power 32.5 %"
+	)
+	assert_eq(
+		[haste.amounts[Offers.EPIC], haste.amounts[Offers.LEGENDARY]], [180, 234], "Haste 23.4 %"
+	)
+	var crit := w.stat_tables[Stats.Stat.CRIT_DAMAGE]
+	assert_eq(
+		crit.amounts[Offers.LEGENDARY],
+		(crit.amounts[Offers.EPIC] * 1600 + 500) / 1000,
+		"another stat keeps × 1.6"
+	)
+	var hp := w.stat_tables[Stats.Stat.MAX_HP]
+	assert_eq(hp.amounts[Offers.LEGENDARY], (hp.amounts[Offers.EPIC] * 1600 + 500) / 1000)
 
 
 func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:

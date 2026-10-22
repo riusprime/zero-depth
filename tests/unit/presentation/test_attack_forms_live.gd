@@ -88,6 +88,26 @@ func test_a_shock_field_is_a_zone_in_its_specs_look() -> void:
 	assert_eq(old.fire_count(), 1, "alone, it still draws it")
 
 
+## v0.9.0 XP (owner Q11, "Burning ground on kill"): Fire's burning patch is a low flat zone in the ember look, at the
+## sim's radius (no blast).
+func test_fires_burning_patch_is_an_ember_zone() -> void:
+	var w := _world(&"gun", [], [&"ember_core"], [[Vector2(2.5, 0), 4]])
+	var r := WorldReader.new(w)
+	for k in 90:
+		w.step(_f(0, InputFrame.SHOOT if w.actors.dead[1] == 0 else 0))
+		_view.sync(r)
+		if not w.ab.fire_pos.is_empty():
+			break
+	assert_eq(w.ab.fire_pos.size(), 1, "the kill left one patch")
+	assert_ne(r.fire_spec_keys()[0], "", "the patch names its spec")
+	_view.draw_at(float(r.tick()))
+	assert_eq(_view.pool(&"zone_fill").used, 1)
+	assert_almost_eq(_sx(&"zone_fill"), w.ab.fire_r[0], 0.0001, "drawn at the sim's radius")
+	var c := _view.pool(&"zone_rim").instance_color(0)
+	assert_gt(c.r, c.b, "in the ember look (warm)")
+	assert_false(AttackFormLooks.is_hostile_hue(c), "never a telegraph hue")
+
+
 func test_a_frost_ring_is_drawn_at_the_sims_radius_now() -> void:
 	var enemies := []
 	for k in 4:

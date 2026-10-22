@@ -43,7 +43,12 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	defs.assign(_repo.all_of(&"wand") + _all())
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
-		m.old_ids.size(), 43, "the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table)"
+		m.old_ids.size(),
+		45,
+		(
+			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
+			+ " Explosive (into Fire)"
+		)
 	)
 
 
