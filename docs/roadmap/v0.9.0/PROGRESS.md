@@ -11,12 +11,14 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
   Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
   Portal earned through a purple-rune room; the hub replaces most of the menu.
-- **Wave 1 under way (owner's go, 2026-10-22):** DS and CV done; PT (agent, branch `v090-pt`) and SA then FA
-  (agent, branch `v090-safa`) building in worktrees.
-- **Waiting on the owner:** the altar model (prompt in
-  `docs/art/requests/v0.9.0_altars_portals.md`); Swarmer, Mine Layer and Sniper models (EM). The G1s and G2s named in
-  later steps come as those steps start.
-- **Next:** merge PT and SA/FA, seams, then Wave 2.
+- **Merged and green (2026-10-22):** Wave 1 (DS, CV, PT, SA, FA), the card changes (TW, XP, LG), IX and TD (timed
+  doors), AS (attack slots, owner G2 = B to build next). Seams 486/486 on `57c8a0c9`.
+- **Agents working:** FV (five floors, fixing its four reds), RA then DX (rune pillars, destructibles), LZ then BM
+  (laser and bomb forms). Queued: MI2 (install the owner's 28 models and 3 textures, Godot-backed simplify), AS2 (G2
+  look B, the Swap panel for full Secondary/Element slots, straight UI edges).
+- **Waiting on the owner:** ELITES.md (G1); the pylon, containers, barrel, lockdown bars and hazard models (art list);
+  Swarmer, Mine Layer and Sniper (EM).
+- **Next:** merge FV, RA/DX, LZ/BM as they report; MI2 and AS2; then VP, the other forms, NB (new bosses G1), DP, LK, EL.
 
 ## Owner decisions (2026-10-22)
 - Q1–Q30, ATTACK_FORMS and UTILITY_CARDS, verbatim in the PLAN's "Owner decisions". LOCKED_DECISIONS change log: six
@@ -29,6 +31,15 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | — | `tests/MIN_TEST_COUNT` 1904 → 2676 | `78271656` |
 | DS | The boss door's boom lands with the slab: the impact sound starts 18 ticks (0.3 s) before the touchdown, so the file's peak meets it; sim and goldens unchanged | `15a1bac2` |
 | CV | The arrival and the boss door vibrate (a small fast buzz on both axes, averaging to nothing) instead of shaking and kicking the view; also walking into the Ascension portal; hit, finisher and Blade-kick shakes unchanged | `ce7ffad7` |
+| PT | The floor portals are tall swirling ovals that grow from a point after the boss dies (walk in once formed, 90 ticks) and collapse when you go through, 1.5 m clear of walls; later floors arrive through the portal you took. Floors saved before v0.9.0 keep their old gates (`3de267b5`) | `b6a780b0` (merge) |
+| SA | Floor 1 opens on a big stone altar: runes and jewels light, orbit faster, build up and the hero pops in, over 4.0 s, with a placeholder sound | `f16b8ad4`, merge `1214f0bf` |
+| FA | The Ascension portal leads to a quiet stair causeway and a purple altar; two pylons wake the Colossus on the plateau, which becomes the arena | `b084ee3b`, merge `1214f0bf` |
+| TW | Twin and Spread are one card: two shots side by side at Lv 1–4, three fanned at Lv 5 | `5a81f10f`, merge `2c196402` |
+| XP | No death explosions: Fire's kills leave a burning patch; the Explosive card is retired | `b0665dd2`, merge `2c196402` |
+| LG | Legendary Power +32.5 %, Haste +23.4 % (was +40 %, +28.8 %) | `b2aeaef3`, merge `2c196402` |
+| IX | One shared interactable and one prompt (the final approach's pylons first) | `8c77e190`, merge `38f2e207` |
+| TD | Timed secret doors: two switches open a dead end's door for 15 s of quickening beeps, to a hidden room with an epic altar or a chest; spawns ease to a quarter in the switches' room | `ba7df04d`, merge `38f2e207` |
+| AS | Attack slots: Form 1, Pattern 1, Secondary 2, Element 2 inside the wand; a full Form/Pattern slot's new card replaces and burns the old; one compatibility table; 12 projectiles per attack and 40 a second; old saves trimmed | `a45eeb3f`, merge `6cce8a51` |
 | 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
 
 ## Goldens changed on purpose
@@ -66,3 +77,11 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   Downloads and gdtoolkit 4.5.0 in a scratch venv (nothing installed system-wide). DS (`15a1bac2`): test_door_boom +
   test_boss_door_view + test_audio_director 22/22, then test_door_boom + arch layering/purity 6/6, e2e run_flow 3/3. CV (`ce7ffad7`): 43/43 presentation
   and arch, e2e arrival + ascension 4/4, audio + portal 3/3. PT and SA/FA handed to two agents in worktrees.
+- 2026-10-22 — Merged PT, SA/FA, TW/XP/LG, IX/TD and AS. Seams found and the lead fixed: an over-long test line; the
+  achievement toast hidden by the 4.0 s arrival (now held through it); BuildFight still granting the retired Spread;
+  old saves no longer restoring because PT moved the gates (legacy_gate for floor rules ≤ 9, `3de267b5`); SlotTable
+  missing from WorldSnapshot's lists; the v0.6.1 Blade save now trimmed to one Pattern. Both PT and TD fixed FA's
+  state-hash bug (the floor/loop fields). Seams 486/486 on `57c8a0c9` (1889 s). The owner delivered 28 models and 3
+  textures (`163a8b42`); meshoptimizer has no Windows build, so prep goes through Godot (owner's pick). The lead's
+  boss-scaling draft for five floors (+25 % / +12 %) overshot the owner's "stretch" rule; corrected to ≈ +18.3 % /
+  +9.5 % in FV.
