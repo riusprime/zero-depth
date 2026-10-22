@@ -1,9 +1,9 @@
-# v0.9.0 — World and weapons: the owner's v0.8.0 feedback (plan, DRAFT 2026-10-22)
+# v0.9.0 — World and weapons: the owner's v0.8.0 feedback (plan, owner answers 2026-10-22; Steps await the owner's go)
 
 Recorded so these decisions never depend on chat context. Progress: [`PROGRESS.md`](PROGRESS.md).
 
-**DRAFT:** written in Phase 0, before any code. **Q1–Q19 answered 2026-10-22** (see "Owner decisions"; they win over
-the decision column where the two differ); Q20–Q30 are pending. The owner-lines table is complete, but much of the
+**DRAFT:** written in Phase 0, before any code. **Q1–Q30 answered 2026-10-22** (see "Owner decisions"; they win over
+the decision column where the two differ). The Steps below are rewritten from the answers. The owner-lines table is complete, but much of the
 decision column reads **Decide: Qn**. Nothing except the direct fixes is built until the owner answers the design questions below
 (owner, 2026-10-22: "Ask me the design questions and gates before building anything that isn't a direct fix … the
 idea is that we go through all new feedback together before the full plan"). The Steps section is the lead's draft
@@ -458,16 +458,17 @@ the retired Phase Dash) and the six rows the AS slot rules would touch (6, 9, 13
 ## Gates in this version
 | Gate | File | Blocks |
 |---|---|---|
-| Q1–Q30 | this PLAN | the steps they name |
-| G1 attack forms | [`ATTACK_FORMS.md`](ATTACK_FORMS.md) | AF, LZ, BM, VP |
-| G1 utility cards | [`UTILITY_CARDS.md`](UTILITY_CARDS.md) | UC |
-| G1 elites | `ELITES.md` (after Q24–Q26) | EL |
+| Q1–Q30 | this PLAN | answered 2026-10-22 |
+| G1 attack forms | [`ATTACK_FORMS.md`](ATTACK_FORMS.md) | answered 2026-10-22 (F1–F10) |
+| G1 utility cards | [`UTILITY_CARDS.md`](UTILITY_CARDS.md) | answered 2026-10-22 (Q30) |
 | G1 VFX audit | `VFX_AUDIT.md` (after AS) | VX |
-| G1 collectibles, unlocks, affinities | `COLLECTIBLES.md`, `UNLOCKS.md` (only if Q1 (a)) | CL, MP, RB |
-| G2 portals and altar | shots in the game camera | PT, SA |
+| G1 new bosses | `BOSSES_4_5.md` | NB |
+| G1 elites | `ELITES.md` | EL |
+| G1 unlocks, affinities, collectibles | `UNLOCKS.md`, `AFFINITIES.md`, `COLLECTIBLES.md` | MP, RB, CL |
+| G2 portals and altar | shots in the game camera | PT, SA (shown after building; the shape is decided) |
 | G2 card slots and replace | mockups of the card and Build page | AS |
 | G2 elite bar | 3 mockups | EL |
-| G2 hub | mockups (only if Q1 (a)) | HB |
+| G2 hub | mockups | HB |
 
 ## Owner decisions
 | Q | Answer (the owner's pick, verbatim) | What it means | Date |
@@ -491,69 +492,119 @@ the retired Phase Dash) and the six rows the AS slot rules would touch (6, 9, 13
 | Q17 | "not every explosion should have a shake, just arrival, boss floor and the last boss travel animations, taking the portal and arriving to the new final boss platform, nowhere else"; then, asked which of today's camera moves stay: "Boss door landing, Getting hit, Blade finisher, Blade hit kick" | **The new vibration** (small, fast, no pull across the screen) is used only for the floor-1 arrival, the boss door landing, and the final-boss travel (taking the Ascension portal and arriving on the approach platform). No explosion shakes (none exist today, and none are added). Kept as they are: the shake when you're hit, the Blade finisher's shake and the Blade hit kick. The arrival's directional kick goes | 2026-10-22 |
 | Q18 | "On the altar plateau (Recommended)"; "Stair causeway (Recommended)"; "Press once (Recommended)" | You arrive at the foot of a broad stair causeway (about 25 m) up to a plateau, with no enemies. The purple altar stands in the middle and the two rune pylons at the plateau's sides; each switches on with one interact press (it locks in with a sound and lights its runes; the second sets them spinning). The plateau is the arena: when the buildup ends, walls of light rise around it and the Colossus rises from the altar. No second load | 2026-10-22 |
 | Q19 | "0.3 s earlier (Recommended)" | The door's impact sound fires 18 ticks (0.3 s) before the slab touches down, so its peak lands on the touchdown; the shake stays on the touchdown | 2026-10-22 |
+| Q20 | "Allow local timers (Recommended)" | PD-05 clarified (LOCKED_DECISIONS): optional, local challenge timers are allowed; still no run-wide clock or enrage timer. Timed door: 15 s from the second switch; the boss door's opening sound, accelerating beeps, the door's impact on the shut; the room holds an epic altar or a chest (or a collectible) | 2026-10-22 |
+| Q21 | "A new room type"; "One per biome (Recommended)"; then "1–2 a floor, short (Recommended)" | **Lockdowns are a new room type**; today's Arenas stay as the longer wave fights (11 %). 1–2 Lockdowns a floor: one short contained encounter (20–40 s) in set formations, a visible seal with a sound, the stuck-enemy safety (an enemy unreachable for 3 s is pulled back; exits forced open at 90 s), a reward on clear. Normal from floor 1; Elite (floors 4–5 only, the elite rules) and Hazard rarer. Hazards per biome: Ruins sparking cables, Night Rocks falling rocks, Red Canyon heat vents, Frozen Shore cracking ice, Starfall falling stars, each with a ground warning | 2026-10-22 |
+| Q22 | "when approaching puzzles the enemy spawn should ease a bit so the player has a chill moment to solve the puzzle, not stop completly"; "A quarter of the rate"; "3 pillars, 4 faces (Recommended)" | **Puzzle calm (every puzzle):** in a puzzle's room (timed-door switches, rune pillars, later puzzles), new packs come at a quarter of the rate; enemies already there keep fighting; normal spawning resumes when it's solved or you leave. Rune Alignment: 3 pillars of 4 faces, interact turns one a quarter, a wall carving shows the 3 symbols, solved opens a chest or a hidden room | 2026-10-22 |
+| Q23 | "L1 attack, but don't show it, players will have to guess it, but hidden room should not appear or be visible until you open it"; then "sorry I meant L2, the secondary attack"; then "The Skill (Q / pad Y)" | **Cracked walls break only to the Skill** (Q / pad Y; e.g. the Gun's Scatter Blast). Nothing tells the player (only the wall's subtle cracks, W30). The hidden room behind it is not drawn, lit or shown on the minimap until the wall breaks. Containers (1 hit, a small chance of shards or a heal) and explosive barrels (a short fuse, hurt enemies and you) as proposed (no objection) | 2026-10-22 |
+| Q24 | "we are gonna be making the game 5 floors, so 4-5, we need to adjust difficulty scaling and loot to 5 floors"; "Stretch today's curve (Recommended)"; "first floors are smaller and later floors are longer for example 10, 13, 15, 17 , 19"; "4, 5, 6, 7, 8 (Recommended)"; "New bosses for 4–5"; "4: two per floor (Recommended)"; "Scale with floor size (Recommended)"; "All 5, random order (Recommended)"; "15 % / 25 %" | **A run is 5 floors** (PD-03 changed). Floors grow: about 10, 13, 15, 17 and 19 rooms plus the boss room. Difficulty is today's curve stretched so floor 5 ends where floor 3 ends now (enemy HP ‰ 1000 / 1380 / 1900 / 2620 / 3610, damage 1000 / 1180 / 1400 / 1660 / 1960; boss +25 % HP and +12 % damage a floor); loops scale from there as today. Wand slots 4, 5, 6, 7, 8. Every run visits all five biomes once, in random order. Altars and chests scale with the floor's rooms (about 1–2 each on floor 1 up to 3 on floor 5); the shop on floors 1, 3, 5. Floors 1–3 keep today's boss pools; **4 new bosses**, 2 per pool for floors 4 and 5 (a G1 list and model prompts). **Normal elites only on floors 4–5:** 15 % of floor 4's combat rooms, 25 % of floor 5's, at most 1 alive, at least 2 rooms apart | 2026-10-22 |
+| Q25 | "you have a 30% chance of dropping the core"; then "The current normal enemies as elite dissapear and we will only get the new elites, those all, have the 30%, there is a card that makes elites appear and drop dozens of cards, we remove that one it is too broken, this feature is replace by elites appearing in later floors and giving a chance of obtaining free cards"; "Remove it" (Ambush Cache) | The ×2 HP elite goes; every elite is an archetype. **Killing one has a 30 % chance to drop its core card** (no stagger window; the core-theft window goes). **The Marked curse is deleted** ("Elites hunt you, and there are more of them" / "Slain elites drop a free rare card"). **The Ambush Cache event is deleted.** Elites now come only from floors 4–5 and Elite Lockdowns | 2026-10-22 |
+| Q26 | "Your three (Recommended)"; "Small name above (Recommended)" | Breaker, Rift Hunter and Conduit, checked in `ELITES.md` (G1) against today's bosses and enemies, with model prompts and code stand-ins. The bar: a small name above a wider framed bar; G2 with 3 mockups | 2026-10-22 |
+| Q26b | (Purple Portal) "the purple portal should be linked to one of the new puzzles or events, not be there as default"; "one of the event rooms, in a big room, has activation purple runes, that make the screen shake so you know something happened, but then when you kill the boss the purple portal appears"; "it shouldn't be in all floorrs, never in floor 1, 50% of appearing in floor 2 if does not appear, then warrantee on the next floor" | **The Purple Portal is earned.** It no longer opens after every boss. A purple-rune event room (in a big room) holds activation runes; activating them plays the new vibration (added to Q17's list) and a sound, and that floor's boss then leaves the Purple Portal beside the normal one. Never on floor 1; 50 % on floor 2; if it didn't appear there, it's certain on floor 3. **Lead's reading:** one purple room per run (per loop), none on floors 4–5. Deep floors keep their rewards and ×1.25; their "elite in every combat room" goes (elites follow Q24) | 2026-10-22 |
+| Q27 | "You will have a small menu, with options, continue and play, and the rest of the thing go into the hub" | The main menu is Play, Continue and Options (and Quit, the lead's addition: the game needs a way out). The Codex, Credits, achievements and the rest move into the hub: the Portal Machine starts a run; the Rune Archive holds the Codex and collectibles; the Wardrobe; the Progression Station; the Trophy Area. Death or a win shows the summary, then Restart (one press) or the hub | 2026-10-22 |
+| Q28 | "the most broken could be unlocked, maybe 2 of them" | Eight forms are in the pool from the start; the **2 strongest forms** (picked from BR's measurements, confirmed by the owner) are unlocked with Rune Fragments. The other unlocks are cosmetics and limited utility (G1 `UNLOCKS.md`) | 2026-10-22 |
+| Q29 | "I draft 16, you edit (Recommended)" | The lead drafts 16 collectibles and their lore lines in the owner's short style (G1 `COLLECTIBLES.md`); the owner edits | 2026-10-22 |
+| Q29b | (other puzzles) "Later wave, after you play (Recommended)"; (shrines) "Gamble shrine = Fortune (Recommended)"; (interactions) "Healing fountains, Hidden rune markings"; (robes) "Robes + 5 affinities (Recommended)" | Puzzles B, D, E, F are built in a later v0.9.0 wave, only after the owner has played TD, RA and DX. Today's gamble shrine becomes the Fortune Shrine; Blood and Chaos shrines are added (at most one shrine a floor, costs shown first; the Chaos challenge may bring an elite, a designed exception). Healing fountains (rare, one use) and hidden rune markings near secrets go in; interactive statues don't. Robe colours are cosmetic; one of five affinities (Ember, Storm, Venom, Astral, Guardian) or none is picked at the Wardrobe (G1 sets each so none is always best) | 2026-10-22 |
+| Q30 | UC rows: "1 Close Quarters, 2 Second Wind, 3 Deep Cuts, 4 Heavy L1"; "6 Afterburn, 7 Adrenaline, 8 Perfect Dodge"; "9 Fifth Strike, 10 Wind Up, 11 Last Stand"; "15 Hunter's Mark, 16 Ghost Step"; "17 Backstab, 18 Crowd Control"; "22 Time Shard"; Heavy L1: "Phase Strike's level-up (Recommended)" | **Yes:** 1, 2, 3, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 22, and 4 as Phase Strike's higher levels (no new card). **No:** 5, 12, 13, 14, 19, 20, 21. Fifth Strike (9) and Afterburn (6) sit under the new slot rules (Secondary / fire outside the element slot) | 2026-10-22 |
 
-## Steps (DRAFT: the lead's order, rewritten after the answers)
+## Steps (rewritten from the owner's answers, 2026-10-22)
 
-Every step is one commit, `v0.9.0 Step <code>: <player-facing outcome>`, and is tested as CLAUDE.md "Testing before
-a push" says. On this PC, test shards run in parallel, each with its own `APPDATA`.
+Every step is one commit, `v0.9.0 Step <code>: <player-facing outcome>`, tested as CLAUDE.md "Testing before a push"
+says. On this PC, test shards and shots run in parallel, each with its own `APPDATA`. Steps that touch the same files
+run one after another; the waves below are the order, and steps inside a wave can run side by side. A step marked
+**G1** or **G2** starts with that gate and builds only after the owner's answer.
 
-### 0. Setup (done in this commit)
-- Branch `claude/world-combat-v090` from `origin/main` at `aeef604a`. `MIN_TEST_COUNT` 2676 (`78271656`). This PLAN,
-  PROGRESS, the two feedback files, `UTILITY_CARDS.md` and `ATTACK_FORMS.md` (G1s), and the art request for the
-  altar and portals. The ROADMAP status line.
+### 0. Setup (done)
+- Branch `claude/world-combat-v090` from `origin/main` at `aeef604a`; `MIN_TEST_COUNT` 2676 (`78271656`); the PLAN,
+  PROGRESS, feedback, G1s and the art request (`54f40318`); the owner's answers (`74fca543`, `1ae81240`, this commit).
 
-### Wave 1: direct fixes and presentation (start as soon as the answers allow)
-- **DS: the door boom lands with the slab** (presentation only, after Q19). Fire `boss_door_impact` at
-  `DOOR_OPEN_TICKS − k` ticks, cued from the view on `boss_door_progress()` so the sim and goldens don't change.
-  Tests: a unit test on the cue tick. e2e: `test_e2e_boss_door` (existing) still passes.
-- **CV: a vibration, not a shove** (presentation only, after Q17). A noise vibration in `iso_rig.gd` (`vibrate(level)`
-  with a ramp, peak and ease), used by the arrival (and every shake if Q17 (a)); the arrival drops its kick. Shake off
-  and reduced motion still stop it. Tests: unit (amplitude bounds, no drift: the mean offset stays ~0).
-- **PT: tall portals that form when the boss dies** (presentation, plus a sim flag if walking in must wait for the
-  1.5 s form). Files: `portal_gate.gd` (new outline mask and frame), `world_view_root.gd:302-322, 440-449`. Tests:
-  view unit tests; `test_e2e_portal` (existing) walks in after it forms. One shot per biome.
-- **SA: the arrival altar** (sim tuning + presentation, after Q16). `AltarStage` (reusable: colour, runes, timeline,
-  sound, trigger); `FloorReceiver` replaced; `arrival_first_seconds` and `arrival_seconds` from Q16
-  (`data/tuning/sim.tres:9-11`); goldens that cover an arrival move on purpose and are named in PROGRESS. Tests:
-  the existing arrival e2e plus the timeline checks. One shot per biome.
-- **FA: the final approach** (sim + presentation, after Q18). A new stage built like `FinalArenaScenario` (`src/app/`,
-  `src/sim/map/`), two mechanisms on IX, the fight gated on both, the SA altar in purple. Tests: unit (the gate), and an
-  e2e from the Ascension portal to the Colossus's rise through real input.
+### Wave 1: the door, the camera, the portals, the arrival, the final approach
+- **DS: the door boom lands with the slab** (presentation only). The impact cue fires 18 ticks before touchdown,
+  from the view on `boss_door_progress()` (sim and goldens unchanged). Tests: the cue tick; `test_e2e_boss_door`.
+- **CV: a vibration, not a shove** (presentation only). `IsoRig.vibrate(level)` (noise on both axes, small, with ramp,
+  peak and ease), used only by the floor-1 arrival, the boss door landing, the final-boss travel (Ascension portal and
+  the approach arrival) and the purple runes (DP). The arrival's kick goes; hit, finisher and Blade-kick shakes stay.
+  Shake off and reduced motion stop it. Tests: amplitude bounds, mean offset ~0.
+- **PT: oval portals that grow and collapse** (presentation, plus a sim flag so you can walk in only once formed).
+  `portal_gate.gd`'s swirl reshaped into a frameless vertical oval with a swirling edge and particles in its colour; it
+  grows from a point into a circle and then the oval with a reverse-burn edge (N8's burn) after the boss dies, and
+  collapses into a point. Later floors' arrival: the same portal grows in the first room, the hero steps out, it
+  collapses (replaces `FloorReceiver` there). Tests: view units; the portal e2e. One shot per biome.
+- **SA: the floor-1 altar** (sim tuning + presentation). `AltarStage` (colour, runes, jewels, timeline, sound,
+  trigger); floor 1 only; the six-stage sequence over 4.0 s (`arrival_first_seconds` 1.6 → 4.0); the owner's model when
+  it arrives, a code stand-in first; a placeholder sound. Goldens that cover an arrival move on purpose. Tests: the
+  arrival e2e. One shot per biome.
+- **FA: the final approach** (sim + presentation). After the Ascension portal: a stair causeway (~25 m) to a plateau,
+  no enemies; two pylons (one interact press each, on IX's first version), the purple `AltarStage`, walls of light,
+  the Colossus rises from the altar; the plateau is the arena (replaces the ring arena's entry). Tests: the gate unit;
+  an e2e from the Ascension portal to the Colossus's rise through real input.
 
-### Wave 2: the attack system
-- **AS: slots, categories and compatibility** (sim + tests). Card categories and limits in data (`wand.tres`,
-  `data/modifiers/*.tres`), one compatibility table, the compile (`wand_compile.gd`: no layering of forms), the
-  offers (`item_pool.gd:87-99`), the replace flow (Q5) and its G2, and the save migration for runs saved with
-  today's stacks. Tests: compile and offer units, old saves, e2e `test_e2e_attack_slots` (pick a second pattern: the
-  first leaves).
-- **VP: Void becomes a projectile** (sim + tests; includes C54's removal). `gravity_well` is retired in
-  `migration.tres`; `black_holes.gd`, its views and `hole_*` are deleted; the new form is built.
-- **LZ: the laser**, **BM: the bomb** (sim + tests + presentation each), then **AF: the rest of the approved forms**
-  (one step per form or per pair).
-- **LG: the legendary nerf** (data, after Q12). **BR: the balance review** (after LZ/BM/VP: Q13's cap, its regression
-  test, per-form DPS sheets from the Playground's meter in `evidence/FORMS_DPS.md`).
-- **TX: card text** (after Q14 and AS: data-filled numbers, slot tags, en and es, and a placeholder test).
-- **VX: VFX** (after the VFX_AUDIT G1).
+### Wave 2: the attack system (Gun forms)
+- **AS: slots, categories and compatibility** (sim + tests + presentation). Categories and limits in data (Form 1,
+  Pattern 1, Secondary 2, Elements 2); patterns Twin (merged), Halo, Ring, Backfire; Spiral and Swirl as motion
+  secondaries; one compatibility table; no layering of forms; offers filtered (`item_pool.gd:87-99`); "replaces X" and
+  the burn (G2 for the card and Build page); 12 projectiles per attack with merging; the slot tag on every card (en,
+  es); runs saved in v0.8.0 still load (how an over-full wand is trimmed is proposed to the owner in this step). Tests:
+  compile, offers, old saves; e2e `test_e2e_attack_slots`.
+- **TW: Twin and Spread become one card** (data + sim). 2 copies at Lv 1–4 (60/70/80/90 %), 3 at Lv 5 (70 %); side by
+  side, a 15° fan at three. `gun_spread` retired through `migration.tres`.
+- **XP: no more death explosions** (sim + data). Fire's kill blast becomes a burning patch (1.2 m, 2 s); the Explosive
+  card is retired; Fire's text updated (en, es).
+- **VP: Void becomes a projectile.** `gravity_well` retired; `black_holes.gd`, its views and `hole_*` deleted; the
+  Void form (Q10).
+- **LZ: the laser**, **BM: the bomb** (sim + tests + presentation each, Q8, Q9).
+- **AF1–AF3: Lance + Scatter, Glaive + Seekers, Wave + Wisps** (Charge and Boomerang retired).
+- **LG: the legendary nerf** (data: Power and Haste × 1.3).
+- **BR: the balance review.** The projectiles-a-second regression test (≤ 40); per-form DPS sheets from the
+  Playground's meter (`evidence/FORMS_DPS.md`); the two strongest forms named for Q28.
+- **VX: VFX** (**G1** `VFX_AUDIT.md` first): launch, travel, impact and element looks per form; Twin, Ring, Spiral,
+  Swirl cues; modular textures with code fallbacks.
 
-### Wave 3: the world (Phases 1–2)
-- **IX: a shared interactable** (sim + presentation).
-- **TD: timed doors** (after Q20), **RA: rune alignment** (Q22), **DX: destructibles** (Q23), **LK: lockdowns** (Q21),
-  **RG: the special-room schema and pacing report** (W72–W74; 1,000-seed property test that every timed door is
-  completable at base speed and every lockdown can open).
-- **EL: elites** (after Q24–Q26, ELITES.md, the bar's G2): the framework, the bar, the spawn budget, then one step
-  per archetype.
-- **BV: biome looks** for the v0.9.0 interactions.
-- **UC** (after Q30): one step per batch of approved rows.
-- **EM**: when the owner's files arrive.
+### Wave 3: five floors
+- **FV: a run is five floors** (sim + data; PD-03 changed). Floors of about 10, 13, 15, 17, 19 rooms; the stretched
+  curves (`data/curves/`, `three_floors.tres` → five); wand slots 4–8; all five biomes once each; loot scaled to room
+  count; shop on 1, 3, 5; enemy kinds keep their floor 1–3 introductions, floors 4–5 draw from all; the run save
+  migrates (a v0.8.0 run in progress resumes in its 3-floor shape). Generation property tests over 1,000 seeds; goldens
+  change on purpose.
+- **NB: four new bosses** (**G1** `BOSSES_4_5.md`: one signature mechanic each, checked against the six; then model
+  prompts; code stand-ins, one step per boss).
+- **DP: the Purple Portal is earned** (sim + presentation). The purple-rune event room (a big room; never floor 1,
+  50 % on floor 2, else certain on floor 3, one per run); activation plays the vibration; that floor's boss then opens
+  the Purple Portal. Deep floors lose "an elite in every combat room".
 
-### Wave 4: the hub and progression (in v0.9.0 by Q1 "Everything")
-- HB hub, MP Rune Fragments, RB robes and affinities, CL collectibles, shrines, the other puzzles (B, D, E, F), more
-  elites, after Q27–Q29 and their G1s and G2s. W27's rule still holds: the other puzzles are built only after the
-  owner's verdict on TD, RA and DX.
+### Wave 4: the world
+- **IX: a shared interactable** (sim + presentation; FA's pylons move onto it).
+- **PC: puzzle calm**: spawns at a quarter of the rate in a puzzle's room.
+- **TD: timed doors** (15 s, beeps, PD-05's clarification). **RA: rune alignment** (3 × 4). **DX: destructibles**
+  (cracked walls to the Skill only, hidden rooms unseen until open; containers; explosive barrels; hidden rune
+  markings). **HF: healing fountains.**
+- **LK: lockdowns** (a new room type, 1–2 a floor; Normal, Elite, Hazard per biome; the stuck-enemy safety and the 90 s
+  cap, tested with a stuck enemy).
+- **RG: the special-room schema** (`SpecialRoomDefinition`) and the pacing report over 1,000 seeds, plus the
+  no-softlock property tests (timed doors completable at base speed, lockdowns always open).
+- **EL: elites** (**G1** `ELITES.md`; **G2** the bar). The ×2 HP elite, the Marked curse and the Ambush Cache event
+  deleted; archetype framework; floors 4–5 at 15 % / 25 %, at most 1 alive, 2 rooms apart; 30 % core drop; the bar with
+  its name; one step per archetype (Breaker, Rift Hunter, Conduit).
+- **SH: shrines**: the gamble shrine becomes Fortune; Blood and Chaos added.
+- **BV: biome looks** for every Wave 4 interaction.
+
+### Wave 5: the hub and progression
+- **HB: the hub** (**G2** first). The small menu (Play, Continue, Options, Quit); the hub with the Portal Machine, the
+  Rune Archive (Codex, collectibles), the Wardrobe, the Progression Station, the Trophy Area and the Credits; the
+  evolving states keyed on profile flags; the run summary, Restart (one press) or the hub.
+- **MP: Rune Fragments** (**G1** `UNLOCKS.md`: sources, rates, prices; the two strongest forms from BR; no stat
+  upgrades, PD-06); the profile migrates to version 2.
+- **RB: robes and affinities** (**G1** `AFFINITIES.md`).
+- **CL: collectibles** (**G1** `COLLECTIBLES.md`, 16 drafted by the lead).
+
+### Wave 6: after the owner plays
+- **PZ: puzzles B, D, E, F**, once the owner has judged TD, RA and DX.
+- **UC: the utility cards** approved in Q30 (1, 2, 3, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 22; 4 as Phase Strike's
+  higher levels), in batches. They can move earlier if a wave has room.
+- **EM:** Swarmer, Mine Layer and Sniper when the owner's files arrive (any time).
 
 ### R. Release
-- Version 0.9.0 in `project.godot`, patch notes en + es, What's New, the ROADMAP row and History, the README status line,
-  CLAUDE.md re-checked, PROGRESS final, PLAYTEST.md, the full suite on the PR into `main`.
+- Version 0.9.0 in `project.godot`, patch notes en + es, What's New, the ROADMAP row and History, the README status
+  line, CLAUDE.md re-checked, PROGRESS final, PLAYTEST.md, the full suite on the PR into `main`.
 
 ## Audit (live code, 2026-10-22)
 
@@ -630,8 +681,10 @@ The four read-only investigations, condensed. Paths are from the repo root.
 **D. EM and UC:** see E1–E2 and [`UTILITY_CARDS.md`](UTILITY_CARDS.md).
 
 ## Open items (what they block)
-- Q1–Q30 and the G1s above: every step except the setup.
-- The owner's models: the altar (SA uses a stand-in), the elites (EL stand-ins), Swarmer, Mine Layer and Sniper (EM).
+- The owner's go on the rewritten Steps: Wave 1 starts then.
+- The G1s and G2s named in the steps: each blocks only its own step.
+- The owner's models: the altar (SA uses a stand-in), the elites and the four new bosses (stand-ins), Swarmer, Mine
+  Layer and Sniper (EM). The owner's arrival sound is not needed (Q16: the lead's placeholder).
 
 ## Verification
 - Per step: the tests named in it, plus the e2e that reaches it through `main.tscn` and real input.

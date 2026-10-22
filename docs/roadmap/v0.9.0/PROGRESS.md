@@ -5,28 +5,27 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 ## Where we are
 (The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-22.)
 
-- **Phase 0 done; the PLAN is a DRAFT.** Both owner documents are in `feedback/`, every line has a row (C1–C90,
-  W1–W78, E1–E2), and the live code is audited. `tests/MIN_TEST_COUNT` is 2676 (PR #7's green `verify` total).
-- **Answered 2026-10-22:** Q1–Q14 (scope: everything; the attack system), the attack-forms G1 (all ten forms) and
-  Q15–Q19 (oval portals, the floor-1 altar, the camera, the final approach, the door boom).
-- **Waiting on the owner:** design questions Q20–Q30 in the PLAN (the world; the hub and progression; UC), the G1 list [`UTILITY_CARDS.md`](UTILITY_CARDS.md), and the altar model (prompt in
-  `docs/art/requests/v0.9.0_altars_portals.md`). The enemy models for Swarmer, Mine Layer and Sniper are still
-  waiting too (EM).
-- **Next:** record the answers in the PLAN's "Owner decisions", rewrite Steps from them, mark the PLAN approved, then
-  Wave 1 (DS, CV, PT, SA, FA).
+- **Phase 0 and the owner's answers are done.** Every line of both documents has a row (C1–C90, W1–W78, E1–E2); all
+  30 design questions, the attack-forms G1 and the utility-cards G1 are answered (the PLAN's "Owner decisions"). The
+  Steps are rewritten from them in six waves. `tests/MIN_TEST_COUNT` is 2676.
+- **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
+  Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
+  Portal earned through a purple-rune room; the hub replaces most of the menu.
+- **Waiting on the owner:** the go to start Wave 1 (DS, CV, PT, SA, FA); the altar model (prompt in
+  `docs/art/requests/v0.9.0_altars_portals.md`); Swarmer, Mine Layer and Sniper models (EM). The G1s and G2s named in
+  later steps come as those steps start.
+- **Next:** Wave 1.
 
 ## Owner decisions (2026-10-22)
-- Q1–Q14 and the attack-forms G1, verbatim in the PLAN's "Owner decisions". In short: everything in v0.9.0; the wand
-  stays with limits (Form 1, Pattern 1, Secondary 2, Elements 2); Twin and Spread merge (2 copies at Lv 1–4, 3 at
-  Lv 5); Spiral and Swirl ride on a pattern; ten Gun forms; Fire's kill blast and the Explosive card deleted; Power and
-  Haste legendaries × 1.3; 12 projectiles per attack; card text keeps the short style plus a slot tag.
-  LOCKED_DECISIONS change log: three rows.
+- Q1–Q30, ATTACK_FORMS and UTILITY_CARDS, verbatim in the PLAN's "Owner decisions". LOCKED_DECISIONS change log: six
+  rows (the wand, elements and Void, the legendaries, PD-03 five floors, PD-05 local timers, elites and the Purple
+  Portal); ROADMAP §3: two rows.
 
 ## Done
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | `tests/MIN_TEST_COUNT` 1904 → 2676 | `78271656` |
-| 0 | Plan (DRAFT), G1 lists, art request | this commit |
+| 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
 
 ## Goldens changed on purpose
 - None.
@@ -36,12 +35,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 |---|---|---|---|
 | Q1–Q14 | [PLAN](PLAN.md) "Design questions" | answered | 2026-10-22 |
 | Q15–Q19 | [PLAN](PLAN.md) "Design questions" | answered | 2026-10-22 |
-| Q20–Q30 | [PLAN](PLAN.md) "Design questions" | pending | |
+| Q20–Q30 | [PLAN](PLAN.md) "Design questions" | answered | 2026-10-22 |
 | G1 attack forms | [ATTACK_FORMS.md](ATTACK_FORMS.md) | F1–F10 approved; Twin and Spread merged | 2026-10-22 |
-| G1 utility cards (D23) | [UTILITY_CARDS.md](UTILITY_CARDS.md) | pending | |
+| G1 utility cards (D23) | [UTILITY_CARDS.md](UTILITY_CARDS.md) | 14 rows yes, row 4 as Phase Strike's level-up, 7 no | 2026-10-22 |
 
 ## Open
-- Every step waits on its question or gate.
+- Wave 1 waits on the owner's go; later steps open their own G1s and G2s.
 
 ## Blockers
 - None. (The steps wait on the owner's answers, which is the process, not a blocker.)
@@ -55,3 +54,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   LOCKED_DECISIONS). Next: Q15–Q30 and the UC list.
 - 2026-10-22 — The owner answered Q15–Q19 (recorded in the PLAN; the art request now asks for the altar only). Next:
   Q20–Q30 and the UC list.
+- 2026-10-22 — The owner answered Q20–Q30 and the UC list (five floors, lockdowns as a new room type, puzzle calm,
+  cracked walls to the Skill, elites on floors 4–5 with a 30 % core, Marked and Ambush Cache deleted, the earned Purple
+  Portal, the hub menu, two unlockable forms, shrines, fountains, robes and affinities). Steps rewritten in six waves.
+  Next: the owner's go for Wave 1.

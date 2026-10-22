@@ -1,7 +1,7 @@
 # Roadmap
 
-> **Status (2026-10-22):** **Active version: v0.9.0 "World and weapons"** ([plan](v0.9.0/PLAN.md), DRAFT: waiting on
-> the owner's design questions), the owner's v0.8.0 playtest feedback. `main` holds v0.8.0 (`aeef604a`, PR
+> **Status (2026-10-22):** **Active version: v0.9.0 "World and weapons"** ([plan](v0.9.0/PLAN.md); the owner answered every
+> design question, and the Steps await the owner's go), the owner's v0.8.0 playtest feedback. `main` holds v0.8.0 (`aeef604a`, PR
 > riusprime/zero-depth#7).
 
 This is the development guide for the game: how a session picks the work up, how versions are numbered and
@@ -149,6 +149,8 @@ add a row here and a change-log row in
 | Exit gates and bands checked by **sims** (bot policies) | §4, SCORECARD | Bot balance sims are not run; balance is checked by the **owner** (owner: "From now on not run bot tests, because they do not represent reality") | 2026-10-08, v0.5.5 |
 | Waves of at most 4 agents | v0.3.5 PLAN | At most 3 agents at once | 2026-10-08, v0.5.5 |
 | One full suite per wave, by the lead (2026-10-09) | CLAUDE.md | No local full suite: the seams (`scripts/ci/seams.sh`) after a merge; the full suite once per version on the PR into `main`, sharded on GitHub | 2026-10-13, v0.7.5 |
+| A run is 3 floors (PD-03) | LOCKED_DECISIONS | A run is 5 floors of about 10, 13, 15, 17, 19 rooms (owner Q24) | 2026-10-22, v0.9.0 |
+| No clock or timer of any kind (PD-05) | LOCKED_DECISIONS | Optional local challenge timers are allowed; no run-wide clock or enrage timer (owner Q20) | 2026-10-22, v0.9.0 |
 
 ---
 
@@ -177,7 +179,7 @@ M4b. Exit gates name who checks each item:
 | **v0.7.5** | New Ground and the small things | — | (Owner-directed 2026-10-12, [`v0.7.5/PLAN.md`](v0.7.5/PLAN.md).) Biome 4 Frozen Shore and a 5th cosmic biome; the Ascension portal (end the run or loop endlessly); the Codex; local achievements; onboarding and other small launch items; floors up to 20 rooms with bigger rooms; a curse and a shop every two floors; 20 % fewer challenge rooms. No second character | Owner playtest (**owner**) | Built and played by the owner (2026-10-14); feedback → v0.8.0 |
 | ~~v0.7.x~~ (moved into v0.7.5) | New Ground | balance | 4th biome, Frozen Shore (water edges and ice props), plus any others the owner picks. Added as balance and variety tests of the generator | No biome shifts a floor's death hazard by more than 10 percentage points (**sims**) | — |
 | **v0.8.0** | Fights and feel | — | (Owner-directed 2026-10-14, [`v0.8.0/PLAN.md`](v0.8.0/PLAN.md); "this is going to be V0.8".) The owner's v0.7.5 playtest: enemy colours and models, no red wind-up marks on melee enemies, one signature mechanic per boss, boss animations, 3D attack visuals (stone spikes, 3D orbs), the lag of stacked Gun builds, Blade combinations, Ascension loop scaling (HP far faster than damage). The old provisional v0.8.0+ rows shift one minor step | Owner playtest (**owner**) | Built and played by the owner (2026-10-22); released through PR riusprime/zero-depth#7 (with v0.7.5); feedback → v0.9.0 |
-| **v0.9.0** | World and weapons | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop"; [`v0.9.0/PLAN.md`](v0.9.0/PLAN.md).) The owner's two v0.8.0 documents: tall floor portals, the arrival altar, the final approach, the door sound; attack forms (Orbs, Laser, Bomb, Void …) with one pattern and element slots, the legendary nerf, VFX, card text; timed doors, lockdowns, rune alignment, destructibles, elite archetypes; the hub and meta progression (scope Q1). Plus UC and the rest of EM carried from v0.8.0 | Owner playtest (**owner**) | Phase 0 done; PLAN DRAFT, waiting on Q1–Q30 |
+| **v0.9.0** | World and weapons | — | (Owner-directed 2026-10-22, O92: "move into the next version that is coming with feedback and much more to develop"; [`v0.9.0/PLAN.md`](v0.9.0/PLAN.md).) The owner's two v0.8.0 documents: tall floor portals, the arrival altar, the final approach, the door sound; attack forms (Orbs, Laser, Bomb, Void …) with one pattern and element slots, the legendary nerf, VFX, card text; timed doors, lockdowns, rune alignment, destructibles, elite archetypes; the hub and meta progression (scope Q1). Plus UC and the rest of EM carried from v0.8.0 | Owner playtest (**owner**) | Phase 0 done; Q1–Q30 answered (5 floors from now on); Steps await the owner's go |
 | v0.8.x (planned as v0.8.0) | Content Beta | M6 | 60–80 items if the evidence justifies them. A second kit or character. Meta unlocks (alternatives, information, cosmetics). A journal/codex. The final visual and audio language (the visual look starts in v0.5.9). Full onboarding | New content adds variety without reopening any P0 failure (**sims** + **owner**) | — |
 | v0.9.x | Launch line | — | Final credits and licenses, local achievements, an accessibility pass, a Steam build, trailer moments | The owner's launch list (**owner**) | — |
 

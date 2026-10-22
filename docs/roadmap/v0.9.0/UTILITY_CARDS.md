@@ -43,7 +43,9 @@ the wand, like today's utility cards.
 
 If you want any other mechanic, add a row at the bottom with just its name and what it does in play.
 
-## Decisions (owner, date)
+## Decisions (owner, 2026-10-22; PLAN Q30)
 | Row | Answer | Built in |
 |---|---|---|
-| — | | |
+| 1, 2, 3, 6, 7, 8, 9, 10, 11, 15, 16, 17, 18, 22 | Yes | |
+| 4 | Yes, as Phase Strike's higher levels ("Phase Strike's level-up (Recommended)"), no new card | |
+| 5, 12, 13, 14, 19, 20, 21 | No (not ticked) | — |
