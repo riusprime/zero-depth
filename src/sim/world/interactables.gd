@@ -14,13 +14,13 @@ extends RefCounted
 ##   (add_calm_room); while the hero stands in a calm room that is not solved, SpawnDirector's clock runs at a quarter
 ##   of its rate (calm_now). Enemies already out keep fighting. solve_calm ends it for good; leaving the room ends it
 ##   while you are away.
-## Users: the final approach's rune pylons (FinalApproach, v0.9.0 FA).
+## Users: the final approach's rune pylons (FinalApproach, v0.9.0 FA), the timed door's switches (TimedDoor, TD).
 ## Pure: no stream is drawn.
 
-enum Kind { PYLON }
+enum Kind { PYLON, TIMED_SWITCH }
 
 ## Each kind's prompt (a string key in locale/strings.csv), for the shared prompt view.
-const PROMPT_KEYS: Array[StringName] = [&"APPROACH_PYLON_PROMPT"]
+const PROMPT_KEYS: Array[StringName] = [&"APPROACH_PYLON_PROMPT", &"TIMED_SWITCH_PROMPT"]
 ## Puzzle calm: the spawn clock runs one tick in CALM_DIVISOR (a quarter of the rate).
 const CALM_DIVISOR := 4
 
@@ -105,6 +105,8 @@ static func handle(w: World, i: int) -> void:
 		Kind.PYLON:
 			if w.approach != null:
 				w.approach.press(w, r.ref[i])
+		Kind.TIMED_SWITCH:
+			TimedDoor.press(w, i)
 
 
 ## Registers `room` as a puzzle's calm room (setup). Returns its index.

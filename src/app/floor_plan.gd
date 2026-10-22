@@ -134,6 +134,10 @@ func _build_world() -> void:
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
 	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
+	# v0.9.0 TD: after every room kind; a floor saved before TD (floor rules 1-9) has none
+	if arena_def == null and run.floor_rules > RunState.FLOOR_RULES_V080_BD:
+		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, table.move_speed)
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)

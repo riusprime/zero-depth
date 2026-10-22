@@ -206,6 +206,7 @@ CAPTION_DOOR_IMPACT,[The boss door thuds down],[La puerta del jefe cae con un go
 CAPTION_PORTAL_OPEN,[The portal hums open],[El portal se abre con un zumbido]
 CAPTION_ARRIVAL_ALTAR,[The altar hums and flares],[El altar zumba y destella]
 CAPTION_PYLON_LOCK,[A rune pylon locks in],[Un pilar rúnico se enciende]
+CAPTION_TIMER_BEEP,[Beeping],[Pitidos]
 CAPTION_FINAL_ALTAR,[The altar roars awake],[El altar despierta con un rugido]
 CAPTION_LOW_HP,[Heartbeat: low health],[Latido: poca vida]
 ITEM_HEAT_SINK,Heat Sink,Disipador
@@ -600,6 +601,7 @@ UI_DEV_CURSE_CHEST,Curse next chest,Maldecir el próximo cofre
 SHOP_PROMPT,[E / X] Open the shop,[E / X] Abrir la tienda
 BOSS_DOOR_PROMPT,[E / X] Open the door,[E / X] Abrir la puerta
 APPROACH_PYLON_PROMPT,[E / X] Awaken,[E / X] Despertar
+TIMED_SWITCH_PROMPT,[E / X] Activate,[E / X] Activar
 SHOP_TITLE,Shop,Tienda
 SHOP_SOLD,Sold,Vendido
 SHOP_CANT_USE,Can't use now,No se puede usar ahora

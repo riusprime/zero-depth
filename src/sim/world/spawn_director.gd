@@ -21,6 +21,9 @@ extends RefCounted
 ## v0.8.0 N5 (owner O58): with the intensity director (SpawnTable.intensity) packs come only while it builds up or
 ## peaks (Intensity.sending); pulling back and quiet hold them (the interval clock runs down and waits at 0). It
 ## gates only when: the kind, size, tier and scaling above are untouched.
+## v0.9.0 TD (owner Q22: "A quarter of the rate"): while the hero stands in an unsolved puzzle's room (a calm room of
+## World.interactables) the interval clock runs one tick in four, so new packs come at a quarter of the rate; the
+## enemies already out keep fighting, and normal spawning resumes once it's solved or the hero leaves the room.
 
 ## Distance between the rings of a pack's spots, and their count per ring.
 const PACK_STEP_M := 1.1
@@ -37,7 +40,10 @@ static func advance(w: World) -> void:
 		w.spawn_cd = t.interval_now(0)
 	w.run_ticks += 1
 	if w.spawn_cd > 0:
-		w.spawn_cd = maxi(0, w.spawn_cd - 1 - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
+		# v0.9.0 TD (Q22, Interactables.spawn_clock_step): in an unsolved puzzle's room the clock runs at a quarter
+		var step := Interactables.spawn_clock_step(w)
+		if step > 0:
+			w.spawn_cd = maxi(0, w.spawn_cd - step - Events.spawn_haste(w))  # v0.5.0 EV: Wandering Drone
 	Intensity.advance(w)  # v0.8.0 N5 (owner O58): intensity and the build-up / peak / pull back / quiet rhythm
 	if w.spawn_cd > 0:
 		return

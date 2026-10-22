@@ -930,6 +930,15 @@ def s_final_altar(r):
     return mix(build, at(mix(boom, growl, rumble), rise))
 
 
+def s_timer_beep(r):
+    """v0.9.0 TD (owner W §2: "Slow beeps at first. Increasing frequency as time passes"; the lead's placeholder for
+    docs/art/requests/v0.9.0_ART_LIST.md §6 `timer_beep`): one short clean beep, 0.09 s; the game repeats it faster
+    and faster (TimedDoorView.beep_ticks). A sine at 1.9 kHz with a soft octave, a fast attack and a short ring."""
+    m = n_of(0.09)
+    tone = osc(1900.0, "sine", m) + osc(3800.0, "sine", m) * 0.15
+    return tone * env(m, 0.002, 0.07) * 0.8
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1018,6 +1027,7 @@ SFX = [
     ("arrival_altar", s_arrival_altar),
     ("pylon_lock", s_pylon_lock),
     ("final_altar", s_final_altar),
+    ("timer_beep", s_timer_beep),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------
