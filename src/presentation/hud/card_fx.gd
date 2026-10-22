@@ -221,6 +221,14 @@ func burning() -> bool:
 	return _burn_mat != null
 
 
+## v0.9.0 AS (owner Q5 "Marked, old one burns"): a fresh burn material (the same dissolve, its params at 0) for any
+## other part that burns, the pick card's replaced-card chip (PickSlot.burn_replaced).
+static func burn_material() -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = _burner()
+	return m
+
+
 func _share_material(on: bool) -> void:
 	for c in face.find_children("*", "CanvasItem", true, false):
 		(c as CanvasItem).use_parent_material = on

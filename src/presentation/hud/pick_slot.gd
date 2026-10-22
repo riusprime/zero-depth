@@ -7,6 +7,9 @@ extends VBoxContainer
 ## curse's line. The rarity also reads as the ember glow under the tablet (and a gold rim on epic and legendary). The
 ## focused card lifts, its glow grows and its lower edge lights up. A mouse click or hover reports itself; the panel
 ## decides what happens.
+## v0.9.0 AS (owner Q5, Q14; G2 option A): under a Form, Pattern, Secondary or Element card its slot line: the slot's
+## mark (SlotGlyph) and tag ("Pattern"), and when that slot is full the card it replaces (its small icon and "Replaces
+## Twin", in ember), which burns away when this card is picked (burn_replaced, the pick panel's outro).
 
 signal clicked(slot: int)
 signal hovered(slot: int)
@@ -36,6 +39,14 @@ var _key := Label.new()
 var _curse := HBoxContainer.new()
 var _curse_text := Label.new()
 var _face := {}
+## v0.9.0 AS: the slot line (its mark, its tag) and the replaced card's chip (its icon and words; the part that burns).
+var _slot := HBoxContainer.new()
+var _slot_glyph := SlotGlyph.new(14.0)
+var _slot_text := Label.new()
+var _old := HBoxContainer.new()
+var _old_icon := InlaySocket.new()
+var _old_text := Label.new()
+var _old_burn: ShaderMaterial
 
 
 func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
@@ -51,6 +62,7 @@ func _init(p_index: int, p_scale: float = PICK_SCALE) -> void:
 	_key.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_key.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_key)
+	_build_slot_line()
 	_build_curse(p_scale)
 	gui_input.connect(_on_gui_input)
 	mouse_entered.connect(func() -> void: hovered.emit(index))
@@ -139,7 +151,91 @@ func _render() -> void:
 		_face.get("color", Color(0, 0, 0, 0))  # v0.8.0 MU: the element's colour on the inlay ring
 	)
 	card.show_gain(_face.get("gain", {}))  # v0.8.0 N8: what gets better, old → new
+	_show_slot_line()
 	_apply()
+
+
+## v0.9.0 AS: the slot line from the face (PickPanel.slot_face): hidden on a card without a slot tag.
+func _show_slot_line() -> void:
+	var slot := int(_face.get("slot", WorldReader.SLOT_NONE))
+	_slot.visible = slot != WorldReader.SLOT_NONE
+	_slot_glyph.slot = slot
+	_slot_glyph.color = Color(_face.get("color", MenuStyle.TEXT), 1.0).lerp(Color.WHITE, 0.35)
+	_slot_text.text = _face.get("slot_text", "")
+	var old: StringName = _face.get("replaces_id", &"")
+	_old.visible = old != &""
+	_old_text.text = _face.get("replaces_text", "")
+	var c: Color = _face.get("replaces_color", MenuStyle.EMBER)
+	_old_icon.show_item(old, c, c)
+	burn_replaced(0.0)
+
+
+## v0.9.0 AS: the slot tag shown under the card ("" when none) and the "Replaces <card>" words ("" when the slot has
+## room).
+func slot_text() -> String:
+	return _slot_text.text if _slot.visible else ""
+
+
+func replaces_text() -> String:
+	return _old_text.text if _slot.visible and _old.visible else ""
+
+
+## v0.9.0 AS (owner Q5): 0..1 of the replaced card's burn (0: whole; 1: gone), N8's dissolve (CardFx).
+func burn_replaced(t: float) -> void:
+	if t <= 0.0:
+		_old.material = null
+		_old_burn = null
+		_old.modulate.a = 1.0
+		return
+	if HudStyle.reduced_motion:
+		_old.modulate.a = 1.0 - t
+		return
+	if _old_burn == null:
+		_old_burn = CardFx.burn_material()
+		_old.material = _old_burn
+	_old_burn.set_shader_parameter("burn", t)
+	_old_burn.set_shader_parameter("edge_color", Color("#FF8A3D"))
+	var r := _old.get_global_rect()
+	_old_burn.set_shader_parameter("rect_pos", r.position)
+	_old_burn.set_shader_parameter("rect_size", r.size.max(Vector2.ONE))
+
+
+## The replaced card's chip is burning now (tests).
+func replaced_burning() -> bool:
+	return _old_burn != null
+
+
+func _build_slot_line() -> void:
+	_slot.name = "SlotLine"
+	_slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_slot.alignment = BoxContainer.ALIGNMENT_CENTER
+	_slot.add_theme_constant_override("separation", 6)
+	_slot_glyph.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_slot.add_child(_slot_glyph)
+	for l: Label in [_slot_text, _old_text]:
+		l.add_theme_font_size_override("font_size", 15)
+		l.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_slot_text.add_theme_color_override("font_color", Color(MenuStyle.TEXT, 0.9))
+	_slot.add_child(_slot_text)
+	_old.name = "Replaces"
+	_old.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_old.add_theme_constant_override("separation", 4)
+	var dot := Label.new()
+	dot.text = "·"
+	dot.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	dot.add_theme_color_override("font_color", Color(MenuStyle.TEXT, 0.6))
+	_old.add_child(dot)
+	_old_icon.custom_minimum_size = Vector2(22, 22)
+	_old_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_old.add_child(_old_icon)
+	_old_text.add_theme_color_override("font_color", MenuStyle.EMBER)
+	_old.add_child(_old_text)
+	for c in _old.find_children("*", "CanvasItem", true, false):
+		(c as CanvasItem).use_parent_material = true  # every part burns along one front
+	_slot.add_child(_old)
+	_slot.visible = false
+	add_child(_slot)
 
 
 func _build_curse(s: float) -> void:

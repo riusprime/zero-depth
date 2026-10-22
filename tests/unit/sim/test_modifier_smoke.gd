@@ -70,9 +70,11 @@ func _run(
 					or e.amount == Engines.MAX_EVENTS_PER_TICK
 					or e.effect_id == WandRings.EFFECT_RING_CAP
 					or e.effect_id == Attacks.EFFECT_ALIVE_CAP
+					or e.effect_id == Attacks.EFFECT_SHOT_CAP
 				):
 					# the launch cap or the per-tick event watchdog holding; v0.8.0 AO: with every card at once the
-					# Ring makes order-rule rings, and their cap and their shards' alive cap hold too
+					# Ring makes order-rule rings, and their cap and their shards' alive cap hold too; v0.9.0 AS: with
+					# no second form layered, every card at once also fills the player-shot cap (256), which holds
 					capped += 1
 	return {
 		"digest": h.finish_hex(),

@@ -13,4 +13,5 @@ tags = PackedStringArray("bolt", "wand")
 modifiers = Array[StringName]([&"gun_threadline"])
 index_wave = 3
 loot_category = &"advanced"
+slot_category = &"secondary"
 id = &"gun_threadline"

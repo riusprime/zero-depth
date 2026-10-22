@@ -134,9 +134,33 @@ func content_rect() -> Rect2:
 func _refresh() -> void:
 	row.show_wand(_read, _slots)
 	_note.text = tr("UI_BUILD_SLOTS") % [card_count(), _slots]
+	var counts := slot_counts_text(self, _read)  # v0.9.0 AS (Q4, G2 option A): the slot categories' counts
+	if counts != "":
+		_note.text += "  ·  " + counts
 	var lines := WorldReader.wand_describe(_read)
 	_read_back.text = WorldReader.wand_render(lines, func(k: StringName) -> String: return tr(k))
 	_read_back.custom_minimum_size.x = maxf(READ_W, row.row_width())
+
+
+## v0.9.0 AS (owner Q2–Q4; G2 option A): the wand read's slot line, through `ci`'s tr: the form fired now and each
+## limited category's held / limit ("Form: Orbs · Pattern 1/1 · Secondary 2/2 · Element 0/2"); "" on a run without
+## them. Pure.
+static func slot_counts_text(ci: Object, wand: Dictionary) -> String:
+	var parts := PackedStringArray()
+	var form := String(wand.get("form", ""))
+	if form != "":
+		parts.append(ci.tr("UI_BUILD_FORM") % ci.tr("UI_FORM_" + form.to_upper()))
+	for e: Array in wand.get("slot_counts", []):
+		if int(e[0]) == WorldReader.SLOT_FORM:
+			continue  # the form's name says it
+		parts.append(
+			"%s %d/%d" % [ci.tr(WorldReader.SLOT_TAG_KEYS[int(e[0])]), int(e[1]), int(e[2])]
+		)
+	return "  ·  ".join(parts)
+
+
+func note_text() -> String:
+	return _note.text
 
 
 ## Moves the card in slot `from` to slot `to` in the preview (the sim's rule), true if it moved.

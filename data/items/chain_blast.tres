@@ -12,4 +12,5 @@ tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"chain_blast"])
 index_wave = 2
 loot_category = &"advanced"
+slot_category = &"free"
 id = &"chain_blast"

@@ -14,4 +14,5 @@ burn_max_stacks = 5
 tags = PackedStringArray("fire", "wand")
 modifiers = Array[StringName]([&"ember_core"])
 loot_category = &"element"
+slot_category = &"element"
 id = &"ember_core"

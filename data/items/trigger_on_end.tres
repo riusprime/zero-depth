@@ -10,4 +10,5 @@ desc_key = &"ITEM_TRIGGER_ON_END_DESC"
 tags = PackedStringArray("trigger")
 modifiers = Array[StringName]([&"trigger_on_end"])
 loot_category = &"trigger"
+slot_category = &"free"
 id = &"trigger_on_end"

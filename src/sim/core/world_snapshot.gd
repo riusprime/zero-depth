@@ -43,6 +43,7 @@ const WORLD_KEPT := {
 	&"hit_proc_permille": "transient within a hit (v0.8.0 MR): 1000 between hits",
 	&"wand_table": "loadout",  # v0.6.5 WN1
 	&"blade_table": "loadout",  # v0.6.5 WN4
+	&"slot_table": "loadout",  # v0.9.0 AS
 	&"ice": "loadout (v0.7.5 NB1: IcePatches lays it from the floor seed)",
 	&"_events": "the presentation's event log, not state (its counter _event_seq is copied)",
 	&"_wall_grid": "rebuilt: derived from walls",
@@ -156,6 +157,8 @@ const ADDED_SINCE_V05 := {
 		&"blast_tick",  # v0.8.0 BL: the blast merge's per-tick marks
 		&"blast_pos",
 		&"blast_merged",
+		&"shot_window",  # v0.9.0 AS: the last second's player launches (a save from before AS: none)
+		&"shot_window_tick",
 		&"mod_slots",
 		&"swap_code",
 		&"swap_source",

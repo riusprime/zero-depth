@@ -11,4 +11,5 @@ tags = PackedStringArray("wand")
 modifiers = Array[StringName]([&"shared_stress_mark"])
 index_wave = 3
 loot_category = &"advanced"
+slot_category = &"free"
 id = &"shared_stress_mark"

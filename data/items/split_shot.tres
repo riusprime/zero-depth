@@ -12,4 +12,5 @@ tags = PackedStringArray("bolt", "wand")
 requires_weapon = &"gun"
 modifiers = Array[StringName]([&"split_shot"])
 loot_category = &"advanced"
+slot_category = &"secondary"
 id = &"split_shot"

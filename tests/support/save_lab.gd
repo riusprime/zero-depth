@@ -63,6 +63,7 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	w.set_boss_tables(bosses)
 	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main
+	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS, as Main
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB, as Main

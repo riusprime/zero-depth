@@ -32,6 +32,7 @@ static func build(repo: ContentRepository, build_id: StringName, biome: BiomeDef
 	w.run_floor = WAND_FLOOR
 	w.wand_table = WandCompiler.from_repo(repo)
 	w.blade_table = BladeCompiler.from_repo(repo)
+	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)
 	w.dummy_speed = 0.0  # the dummies stand still and never shoot (dummy_fire_period stays 0)

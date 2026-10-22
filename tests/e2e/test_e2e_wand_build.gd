@@ -13,15 +13,16 @@ extends GutTest
 ##   shows.
 
 const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
-## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued).
+## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued). v0.9.0 AS
+## (owner Q6): one Pattern on the Blade (Whirl), so Thrust and Wide Arc gave way to Parry Edge and Frost.
 const EIGHT: Array = [
 	&"heavy",
 	&"trigger_on_hit",
 	&"whirl",
 	&"flurry",
 	&"trigger_on_kill",
-	&"thrust",
-	&"wide_arc",
+	&"parry_edge",
+	&"frost_core",
 	&"echo_slash",
 ]
 
