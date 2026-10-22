@@ -122,7 +122,7 @@ func _initialize() -> void:
 			_phase_timer = PhaseTimer.new()
 	_total = WARMUP_TICKS + _seconds * 60
 	var repo := ContentRepository.load_all()
-	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run_def: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	var biome: BiomeDefinition = repo.get_def(&"biomes", run_def.biomes[0])
 	_world = PlaygroundScenario.build(repo, _weapon, biome)
 	if _cap > 0 and &"player_shots_max" in _world.tuning:

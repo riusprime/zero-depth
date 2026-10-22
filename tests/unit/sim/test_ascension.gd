@@ -13,7 +13,7 @@ func _repo() -> ContentRepository:
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(_repo().get_def(&"run", &"three_floors"))
+	return ContentCompiler.compile_run(_repo().get_def(&"run", RunSaver.RUN_ID))
 
 
 ## A real floor of `run` (the app's FloorScenario) with an invulnerable player, as test_run_flow builds one.
@@ -101,7 +101,7 @@ func test_only_the_last_floor_of_a_loop_has_the_ascension_portal() -> void:
 	assert_false(WorldReader.new(w).ascension_floor())
 	assert_false(WorldReader.new(w).has_loop_device(), "and no Loop device")
 	r = _last_floor_run(11)
-	assert_eq(r.floor_index, 3)
+	assert_eq(r.floor_index, 5, "v0.9.0 FV: the last of five floors")
 	var w3 := _floor_world(r)
 	assert_true(w3.boss_flow.ascension, "the run's last floor has the Ascension portal")
 	assert_true(WorldReader.new(w3).ascension_floor())
@@ -171,7 +171,7 @@ func test_p2_the_ascension_portal_leads_to_the_final_boss() -> void:
 	r.finish_floor(w)
 	assert_true(r.final_fight, "the next world is the final boss's")
 	assert_eq(r.loop, 1, "no new loop")
-	assert_eq(r.floor_index, 3)
+	assert_eq(r.floor_index, 5)
 
 
 ## v0.8.0 P2: a run without a final boss (a table with none) is won through the Ascension portal.
@@ -205,22 +205,24 @@ func test_p2_the_loop_device_starts_the_next_loop_with_the_build() -> void:
 	assert_eq(reader.outcome(), 3, "on to the next floor")
 	var held := w.shards
 	var biome_3 := r.biome_of()
-	var seeds := [r.floor_seed(1), r.floor_seed(2), r.floor_seed(3)]
+	var seeds := [
+		r.floor_seed(1), r.floor_seed(2), r.floor_seed(3), r.floor_seed(4), r.floor_seed(5)
+	]
 	r.finish_floor(w)
 	assert_false(r.final_fight, "not the final boss")
 	assert_eq(r.loop, 2, "loop 2")
 	assert_eq(r.floor_index, 1, "at its floor 1")
-	assert_eq(r.loop_floors, 3)
-	assert_eq(r.run_floor(), 4, "the run's fourth floor")
+	assert_eq(r.loop_floors, 5)
+	assert_eq(r.run_floor(), 6, "the run's sixth floor")
 	assert_eq(r.loops_cleared(), 1)
-	assert_eq(r.biome_order.size(), 6, "the next loop's biomes were drawn")
+	assert_eq(r.biome_order.size(), 10, "the next loop's biomes were drawn")
 	assert_ne(r.biome_of(), biome_3, "the new loop never opens on the biome it left")
 	assert_false(seeds.has(r.floor_seed()), "a new floor seed")
-	assert_eq(r.routes.size(), 4, "a route per run floor")
+	assert_eq(r.routes.size(), 6, "a route per run floor")
 	var w2 := _floor_world(r)
 	assert_eq(w2.floor_index, 1, "the floor tables read floor 1")
 	assert_eq(w2.loop, 2)
-	assert_eq(w2.run_floor_index(), 4)
+	assert_eq(w2.run_floor_index(), 6)
 	assert_eq(w2.items_owned, PackedInt32Array([0]), "the build came along")
 	assert_eq(w2.shards, held / 2, "half the shards, as through any portal")
 	assert_false(w2.boss_flow.ascension, "loop 2's floor 1 has the gate")
@@ -340,21 +342,21 @@ func test_the_shop_and_curse_cadence_count_the_run_floor() -> void:
 	r.finish_floor(w)
 	var w4 := _floor_world(r)
 	FloorScenario.add_shop(w4, shop)
-	assert_false(w4.shop.present(), "run floor 4 (loop 2, floor 1) has no shop after floor 3's")
+	assert_false(w4.shop.present(), "run floor 6 (loop 2, floor 1) has no shop after floor 5's")
 	EventCompiler.setup(w4, _repo())
 	assert_false(Curses.curse_floor_open(w4), "nor cursed chests")
-	w4.run_floor = 5
-	assert_true(Curses.curse_floor_open(w4), "run floor 5 (loop 2, floor 2) has them")
+	w4.run_floor = 7
+	assert_true(Curses.curse_floor_open(w4), "run floor 7 (loop 2, floor 2) has them")
 
 
 func test_the_wand_keeps_its_slots_in_the_next_loop() -> void:
 	var r := RunState.start(17, _run_table())
 	r.loop = 2
-	r.loop_floors = 3
+	r.loop_floors = 5
 	var w := _floor_world(r)
 	w.wand_table = WandCompiler.from_repo(_repo())
 	assert_eq(
-		Wand.slots(w), w.wand_table.slots_at(3), "loop 2's floor 1 keeps the last floor's slots"
+		Wand.slots(w), w.wand_table.slots_at(5), "loop 2's floor 1 keeps the last floor's slots"
 	)
 
 

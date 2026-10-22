@@ -39,7 +39,7 @@ func _shop() -> ShopRoomDefinition:
 
 func test_every_biome_ships_its_valid_shop_room() -> void:
 	var repo := ContentRepository.load_all()
-	var run: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	var biomes := []
 	for d: ShopRoomDefinition in repo.all_of(&"shop_room"):
 		assert_eq(d.validate().size(), 0, "%s validates: %s" % [d.id, d.validate()])

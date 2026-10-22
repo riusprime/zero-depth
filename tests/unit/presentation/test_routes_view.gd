@@ -104,9 +104,9 @@ func test_the_view_builds_both_gates_and_closes_the_one_not_taken() -> void:
 
 
 func test_the_last_floor_has_one_gate() -> void:
-	var w := FightLab.floor_world(51, 3)
+	var w := FightLab.floor_world(51, 5)
 	var v := _view(w)
-	assert_null(v.deep_gate, "floor 3's boss still wins the run with one portal")
+	assert_null(v.deep_gate, "floor 5's boss still wins the run with one portal (v0.9.0 FV)")
 
 
 func test_the_floor_card_and_label_name_a_deep_floor() -> void:
@@ -195,7 +195,7 @@ func test_the_deep_gate_opening_has_its_sound() -> void:
 	assert_true(ResourceLoader.exists("res://data/audio/cues/deep_portal_open.tres"))
 	var cue: AudioCueDefinition = load("res://data/audio/cues/deep_portal_open.tres")
 	assert_eq(cue.caption_key, &"CAPTION_DEEP_PORTAL")
-	var single := FightLab.floor_world(51, 3)
+	var single := FightLab.floor_world(51, 5)
 	single.actors.invuln[0] = LONG
 	var r3 := WorldReader.new(single)
 	var ev3 := AudioEvents.new()

@@ -731,7 +731,7 @@ static func compile_rewards(def: RewardsDefinition) -> RewardTable:
 	t.heal_orb_chance_permille = int(round(def.heal_orb_chance * 1000.0))  # v0.4.0 TU (D8)
 	t.heal_orb_heal_permille = int(round(def.heal_orb_heal * 1000.0))
 	t.heal_orb_reach_m = def.heal_orb_reach_m
-	return t
+	return RunContentCompiler.add_reward_bands(t, def)  # v0.9.0 FV: counts by the floor's rooms
 
 
 ## The gamble shrine (v0.3.0 L19): prices in per mille, each stat's amount (HP for max_hp, per mille of the data's
@@ -942,7 +942,7 @@ static func compile_run(def: RunDefinition) -> RunTable:
 	t.final_name_key = def.final_name_key
 	t.final_arena = def.final_arena
 	t.final_shatter_ticks = maxi(1, SimTick.seconds_to_ticks(def.final_shatter_seconds))
-	return t
+	return RunContentCompiler.add_run_shape(t, def)  # v0.9.0 FV: its id, floor sizes and wand slots
 
 
 ## Overclock heat (v0.3.0 L18) in sim units: heat in milli-points, seconds in ticks. Null without a definition

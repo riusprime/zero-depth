@@ -7,10 +7,10 @@ extends GutTest
 ##   resumes, and the sim's wand order is the page's: the moves arrived as input on the first ticks.
 ## - the run is replayed from a snapshot taken before the pause with the frames the driver stepped: the same order
 ##   and the same state hash (the moves are input, EI-04).
-## - a run continued on floor 3 (a save on disk: 8 slots full) opens the Swap at 8 slots: it fits the screen, and an
-##   insert with the pad (X, d-pad, A, then the card that leaves, A) gives the order the panel previewed. v0.8.0 N11
-##   fix: the card comes while the hero is still arriving (under the cover); the arrival still ends, then the Swap
-##   shows.
+## - a run continued on its last floor (v0.9.0 FV: floor 5; a save on disk: 8 slots full) opens the Swap at 8
+##   slots: it fits the screen, and an insert with the pad (X, d-pad, A, then the card that leaves, A) gives the
+##   order the panel previewed. v0.8.0 N11 fix: the card comes while the hero is still arriving (under the cover);
+##   the arrival still ends, then the Swap shows.
 
 const FOUR: Array = [&"bomb_lobber", &"drone_buddy", &"orbit_blades", &"arc_field"]
 ## v0.6.5 WN5b: Blade wand cards only (a save holding retired v0.6 cards migrates when it is continued). v0.9.0 AS
@@ -228,9 +228,10 @@ func test_the_build_page_opened_twice_in_one_pause_keeps_the_first_change() -> v
 	assert_eq(w.mod_slots, twice, "both changes reached the sim, in order")
 
 
-## Boots main.tscn with a run saved on floor 3 (eight wand slots, all full), and continues it from the menu.
+## Boots main.tscn with a run saved on its last floor (v0.9.0 FV: floor 5; eight wand slots, all full), and continues
+## it from the menu.
 func _floor_three(e: E2e) -> Main:
-	var run := SaveLab.run_state(777, 3, &"blade")
+	var run := SaveLab.run_state(777, SaveLab.floors(), &"blade")
 	var w := SaveLab.build_floor(run)
 	for id: StringName in EIGHT:
 		assert_true(BuildSlots.take(w, WandLab.code(w, id)), "takes %s" % id)
@@ -253,11 +254,11 @@ func _floor_three(e: E2e) -> Main:
 func test_the_swap_at_eight_slots_fits_the_screen_and_inserts_with_the_pad() -> void:
 	var e := E2e.new(self)
 	var main := await _floor_three(e)
-	assert_true(main.is_playing(), "the floor 3 run continues")
+	assert_true(main.is_playing(), "the floor 5 run continues")
 	if not main.is_playing():
 		return
 	var w := e.world()
-	assert_eq(main.run.floor_index, 3)
+	assert_eq(main.run.floor_index, 5)
 	assert_eq(w.mod_slots.size(), 8, "eight cards in eight slots")
 	# v0.8.0 N11 (O69): the floor opens under the cover and the hero's arrival; the card is given before it landed.
 	assert_true(main.driver.reader.arriving(), "the grant comes while the hero is still arriving")

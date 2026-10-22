@@ -51,7 +51,7 @@ func test_through_the_boss_door_and_down_the_portal_to_floor_two() -> void:
 	var f := w.floor_layout
 	var hud: Hud = main.get_node("UI/Hud")
 	assert_eq(main.run.floor_index, 1, "a run starts on floor 1")
-	assert_eq(w.floor_count, 3, "of three")
+	assert_eq(w.floor_count, 5, "of five (v0.9.0 FV)")
 	var biome_1: BiomeDefinition = ContentRepository.load_all().get_def(
 		&"biomes", main.run_biome_id()
 	)

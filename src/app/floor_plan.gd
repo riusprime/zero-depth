@@ -35,7 +35,7 @@ const RULE_FIELDS: Array[String] = [
 var mode := Mode.FLOOR
 ## The content (null: build() reads it, ContentRepository.load_all).
 var repo: ContentRepository
-var run_id := &"three_floors"
+var run_id := RunSaver.RUN_ID
 var run: RunState
 var run_biomes: Array[StringName] = []
 var stage_seed := 0
@@ -91,6 +91,8 @@ static func next_floor(
 func build() -> void:
 	if repo == null:
 		repo = ContentRepository.load_all()
+	if mode == Mode.CONTINUE and repo.get_def(&"run", RunSaver.saved_run_id(resume)) != null:
+		run_id = RunSaver.saved_run_id(resume)  # v0.9.0 FV: the save's own run shape (a v0.8.0 run: 3 floors)
 	if mode != Mode.FLOOR:
 		var run_def: RunDefinition = repo.get_def(&"run", run_id)
 		run_biomes = run_def.biomes.duplicate()
@@ -136,7 +138,7 @@ func _build_world() -> void:
 		w = _floor_world(table, enemies, bosses, biome.id)
 		IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2: ice or starglow
 		w.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
-	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1: the wand grows 4 → 6 → 8 (before the slots migrate)
+	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
 	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS: slot limits, caps, compatibility
 	w.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
@@ -215,7 +217,10 @@ static func approach_of(save: Dictionary) -> bool:
 func _floor_world(
 	table: PlayerTable, enemies: Array[EnemyTable], bosses: Array[BossTable], biome_id: StringName
 ) -> World:
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
+	# v0.9.0 FV: floors 4-5 draw a boss not yet met
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG: map, arenas, shop (v0.7.0's on an old save's)
 	var w := FloorScenario.build(

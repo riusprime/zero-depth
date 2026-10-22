@@ -45,7 +45,7 @@ static func _world(seed_value: int = 5) -> World:
 	var w := World.new(seed_value, t)
 	w.set_enemy_tables(ContentCompiler.compile_enemies(repo))
 	var bosses := ContentCompiler.compile_bosses(repo)
-	var run := ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors"))
+	var run := ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	bosses.append_array(ContentCompiler.compile_final_bosses(repo, run))  # the Colossus's moves on an open plane
 	w.set_boss_tables(bosses)
 	w.set_item_tables(ContentCompiler.compile_items(repo))

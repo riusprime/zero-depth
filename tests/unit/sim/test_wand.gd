@@ -56,21 +56,18 @@ func _ids(w: World) -> Array:
 
 
 # --- The slots grow -------------------------------------------------------------------------------------------
-func test_the_wand_grows_four_six_eight_by_floor() -> void:
+## v0.9.0 FV (owner Q24, "4, 5, 6, 7, 8"): one more slot a floor over the five floors (was 4 → 6 → 8).
+func test_the_wand_grows_one_slot_a_floor() -> void:
 	var got := []
-	for f in [1, 2, 3, 4]:
+	for f in [1, 2, 3, 4, 5, 6]:
 		got.append(Wand.slots(_world(f)))
-	assert_eq(
-		got,
-		[4, 6, 8, 8],
-		"4 on floor 1, 6 after the first boss, 8 after the second (the last repeats)"
-	)
+	assert_eq(got, [4, 5, 6, 7, 8, 8], "4 on floor 1, one more after each boss (the last repeats)")
 	var lab := _world()
 	lab.wand_table = null
 	assert_eq(Wand.slots(lab), BuildSlots.SLOTS, "a world without the table keeps six")
 	var def: WandDefinition = _repo.get_def(&"wand", &"wand")
 	assert_eq(def.validate(), [], "the shipped wand validates")
-	assert_eq(def.slots_per_floor, PackedInt32Array([4, 6, 8]), "starting values (data)")
+	assert_eq(def.slots_per_floor, PackedInt32Array([4, 5, 6, 7, 8]), "starting values (data)")
 
 
 func test_with_every_slot_full_a_new_card_opens_the_swap() -> void:
@@ -85,7 +82,7 @@ func test_with_every_slot_full_a_new_card_opens_the_swap() -> void:
 	assert_eq(_ids(w), [&"heavy", &"trigger_on_hit", &"wide_arc", &"overcharge"], "in place")
 	var f2 := _world(2)
 	_take(f2, FOUR)
-	assert_false(BuildSlots.needs_swap(f2, _it(f2, &"overcharge")), "floor 2 has six slots")
+	assert_false(BuildSlots.needs_swap(f2, _it(f2, &"overcharge")), "floor 2 has five slots (FV)")
 
 
 func test_the_held_cards_keep_their_order_into_the_next_floor() -> void:
@@ -96,7 +93,7 @@ func test_the_held_cards_keep_their_order_into_the_next_floor() -> void:
 	RunCarry.apply(next, RunCarry.take(w, 0))
 	Abilities.start_floor(next)
 	assert_eq(next.mod_slots, w.mod_slots, "the carry keeps the wand's order")
-	assert_eq(Wand.slots(next), 6, "and the wand has grown")
+	assert_eq(Wand.slots(next), 5, "and the wand has grown (v0.9.0 FV: one slot a floor)")
 
 
 func test_utility_and_stat_cards_stay_outside_the_wand() -> void:
@@ -176,7 +173,7 @@ func test_a_run_with_reorders_replays_exactly() -> void:
 
 # --- Reads ------------------------------------------------------------------------------------------------------
 func test_the_reader_gives_the_cards_their_levels_and_the_cuts() -> void:
-	var w := _world(3)
+	var w := _world(5)  # v0.9.0 FV: eight slots on floor 5 (was floor 3)
 	_take(
 		w, [&"ember_edge", &"trigger_on_hit", &"bomb_lobber", &"trigger_on_finisher", &"long_edge"]
 	)

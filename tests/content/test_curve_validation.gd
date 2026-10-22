@@ -1,6 +1,7 @@
 extends GutTest
-## Difficulty curve content (v0.4.0 TU): the three shipped curves (floors 1-3) validate, name only kinds in SC's
-## spawn mix, bring in every kind before the peak and every mix kind by floor 3, and bad curves are rejected by code.
+## Difficulty curve content (v0.4.0 TU): the shipped curves (floors 1-3; v0.9.0 FV: and 4-5) validate, name only
+## kinds in SC's spawn mix, bring in every kind before the peak and every mix kind by floor 3, and bad curves are
+## rejected by code.
 
 
 func _def() -> DifficultyCurveDefinition:
@@ -13,7 +14,7 @@ func _codes(d: DifficultyCurveDefinition) -> Array:
 
 func test_the_shipped_curves_are_valid() -> void:
 	var repo := ContentRepository.load_all()
-	assert_eq(repo.count(&"curve"), 3)
+	assert_eq(repo.count(&"curve"), 5)  # v0.9.0 FV: floors 4 and 5
 	var sc: SpawnDirectorDefinition = repo.get_def(&"spawning", &"floor_1")
 	var mix := sc.enemy_ids()
 	var floors := []
@@ -29,7 +30,7 @@ func test_the_shipped_curves_are_valid() -> void:
 		)
 		assert_eq(peak.kinds.size(), 0, "%s: every kind is in before the peak" % d.id)
 	floors.sort()
-	assert_eq(floors, [1, 2, 3])
+	assert_eq(floors, [1, 2, 3, 4, 5])
 
 
 func test_every_mix_kind_appears_by_floor_3() -> void:

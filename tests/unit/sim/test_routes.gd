@@ -18,7 +18,7 @@ func before_all() -> void:
 
 
 func _run_table() -> RunTable:
-	return ContentCompiler.compile_run(_repo.get_def(&"run", &"three_floors"))
+	return ContentCompiler.compile_run(_repo.get_def(&"run", RunSaver.RUN_ID))
 
 
 ## A run on floor `f`, every floor before it taken by `route`.
@@ -121,30 +121,31 @@ func test_the_run_data_has_the_deep_numbers() -> void:
 	)
 
 
-func test_two_gates_only_after_the_bosses_of_floors_one_and_two() -> void:
-	for f: int in [1, 2, 3]:
+## v0.9.0 FV: five floors, the Deep gate on floors 1-4 (every floor before the last).
+func test_two_gates_only_after_the_bosses_of_floors_one_to_four() -> void:
+	for f: int in [1, 2, 3, 4, 5]:
 		var run := _run_on(f)
-		assert_eq(Routes.offers_choice(run), f < 3, "floor %d" % f)
+		assert_eq(Routes.offers_choice(run), f < 5, "floor %d" % f)
 		var w := _floor(run)
 		var reader := WorldReader.new(w)
 		assert_eq(
 			reader.has_deep_portal(),
-			f < 3,
+			f < 5,
 			"floor %d: the Deep gate stands only before the last" % f
 		)
-		assert_eq(w.floor_layout.has_deep_portal, f < 3)
+		assert_eq(w.floor_layout.has_deep_portal, f < 5)
 		var before := w.walls.size()
 		assert_false(reader.gate_open(Routes.Route.DEEP), "sealed before the boss dies")
 		assert_false(reader.gate_open(Routes.Route.NORMAL))
 		_open_gates(w)
 		assert_true(reader.gate_open(Routes.Route.NORMAL), "floor %d: the gate opens" % f)
 		assert_eq(
-			reader.gate_open(Routes.Route.DEEP), f < 3, "floor %d: the Deep gate opens with it" % f
+			reader.gate_open(Routes.Route.DEEP), f < 5, "floor %d: the Deep gate opens with it" % f
 		)
 		var opened := _events_of(w, SimEvent.Kind.PORTAL_OPENED)
 		assert_eq(opened.size(), 1)
 		assert_eq(
-			opened[0].amount, 1 if f < 3 else 0, "the event says whether the Deep gate opened"
+			opened[0].amount, 1 if f < 5 else 0, "the event says whether the Deep gate opened"
 		)
 		assert_eq(w.walls.size(), before, "no wall was left behind (v0.5.0 PB: the door reopened)")
 	var plain := WorldReader.new(World.new(1, PlayerTable.starting_values()))

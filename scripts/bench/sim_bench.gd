@@ -275,7 +275,7 @@ static func _cpu_ms() -> float:
 ## combos and rewards. Guard utility.
 static func _floor_world(repo: ContentRepository, run_seed: int, floor_index: int) -> World:
 	var run := RunState.start(
-		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors"))
+		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	)
 	run.floor_index = floor_index
 	var table := ContentCompiler.apply_utility(
@@ -286,7 +286,9 @@ static func _floor_world(repo: ContentRepository, run_seed: int, floor_index: in
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var spec := BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
 	var layout := FloorGenerator.generate(run.floor_seed())
 	BossRoomBuilder.attach(layout, spec)

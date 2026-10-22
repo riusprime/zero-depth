@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_wand")
-slots_per_floor = PackedInt32Array(4, 6, 8)
+slots_per_floor = PackedInt32Array(4, 5, 6, 7, 8)
 child_size_permille = 600
 child_range_permille = 600
 child_damage_permille = 500

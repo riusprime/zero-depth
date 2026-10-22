@@ -154,7 +154,7 @@ static func _shops(repo: ContentRepository) -> PackedStringArray:
 ## opening each one would: cursed chests per floor and per run.
 func _curses(repo: ContentRepository) -> PackedStringArray:
 	var count := runs
-	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run_def: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	var per_floor := {}
 	var per_run := {}
 	var chests := 0
@@ -214,7 +214,7 @@ func _curses(repo: ContentRepository) -> PackedStringArray:
 ## FloorScenario.build and EventLab.world): enough for rewards and their offers.
 static func _floor(repo: ContentRepository, run_seed: int, floor_index: int) -> World:
 	var run := RunState.start(
-		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors")), &"blade"
+		run_seed, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)), &"blade"
 	)
 	run.floor_index = floor_index
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
@@ -223,7 +223,9 @@ static func _floor(repo: ContentRepository, run_seed: int, floor_index: int) -> 
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var spec := BossArenaSpec.make(bosses[boss].arena_cells, bosses[boss].arena_template, boss)
 	var layout := FloorGenerator.generate(run.floor_seed(), _params(repo))
 	BossRoomBuilder.attach(layout, spec)

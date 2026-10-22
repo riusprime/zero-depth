@@ -80,7 +80,7 @@ func test_every_boss_hit_kills_the_base_hero_in_its_class_hits() -> void:
 
 func test_loop_scaling_still_applies_on_top() -> void:
 	var repo := ContentRepository.load_all()
-	var run := RunState.start(7, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors")))
+	var run := RunState.start(7, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)))
 	run.floor_index = 2
 	var base := ContentCompiler.compile_bosses(repo)
 	var one := ContentCompiler.compile_bosses(repo)
@@ -93,9 +93,10 @@ func test_loop_scaling_still_applies_on_top() -> void:
 			var a0 := base[b].attacks[k]
 			var a1 := one[b].attacks[k]
 			var a2 := two[b].attacks[k]
-			assert_eq(a1.damage, a0.damage * 1200 / 1000, "%s floor 2: ×1.2" % a0.id)
-			assert_eq(a2.damage, a0.damage * 1440 / 1000, "%s loop 2: ×1.2 more (O11)" % a0.id)
-			assert_eq(a2.orb_damage, a0.orb_damage * 1440 / 1000, "%s: its orbs too" % a0.id)
+			# v0.9.0 FV: +10 % a floor (was +20 %), the loop's ×1.2 on top
+			assert_eq(a1.damage, a0.damage * 1100 / 1000, "%s floor 2: ×1.1" % a0.id)
+			assert_eq(a2.damage, a0.damage * 1320 / 1000, "%s loop 2: ×1.2 more (O11)" % a0.id)
+			assert_eq(a2.orb_damage, a0.orb_damage * 1320 / 1000, "%s: its orbs too" % a0.id)
 
 
 func test_a_big_attack_is_followed_by_its_punish_window() -> void:

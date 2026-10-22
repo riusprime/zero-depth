@@ -1634,8 +1634,10 @@ below) and FB3's cap of a fifth of max HP (D36).
 ## 11. Scaling and threat
 
 - **Floor and danger tier drive scaling (v0.4.0 SC, owner F7/F10).** A normal enemy's max HP is its base ×
-  `enemy_hp_floor_permille[floor − 1]` (`data/run/three_floors.tres`: 1.9^(f − 1)) × `hp_tier_permille[tier]`
-  (`data/spawning/floor_1.tres`: 1.10^tier), its damage × `enemy_damage_floor_permille` (1.4^(f − 1)) ×
+  `enemy_hp_floor_permille[floor − 1]` (`data/run/five_floors.tres` since v0.9.0 FV: 1000, 1380, 1900, 2620, 3610,
+  v0.8.0's 1.9^(f − 1) over three floors stretched over five) × `hp_tier_permille[tier]`
+  (`data/spawning/floor_1.tres`: 1.10^tier), its damage × `enemy_damage_floor_permille` (1000, 1180, 1400, 1660,
+  1960; was 1.4^(f − 1)) ×
   `damage_tier_permille` (1.05^tier), each step rounded half up (`SpawnTable.scale`). The floor factor is applied to
   the compiled enemy tables when the floor is built (`RunState.scale_enemies`, so a boss's summons get it too); the
   tier factor to each enemy as the spawn director brings it in (HP, and `ActorStore.power`, which `EnemyAi` applies

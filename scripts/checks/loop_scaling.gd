@@ -13,7 +13,7 @@ const HEADER := "loop | enemy hp pm | enemy dmg pm | boss hp pm | boss dmg pm | 
 
 func _initialize() -> void:
 	var repo := ContentRepository.load_all()
-	var table := ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors"))
+	var table := ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID))
 	var base_e := ContentCompiler.compile_enemies(repo)
 	var base_b := ContentCompiler.compile_bosses(repo)
 	var steps := [
