@@ -4,11 +4,11 @@ extends GutTest
 ## kept its id as a wand card (WN3/WN4) or has a row; every target is a card in the data or a pending shared-pool id;
 ## a bad table is reported.
 
-## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table.
+## WAND.md's "map directly" cards that kept their ids as wand cards (WN3, WN4): never in the table. (v0.9.0 AF2:
+## Boomerang, one of them, is retired into the Glaive form: it has a row now.)
 const KEPT: Array[StringName] = [
 	&"echo_slash",
 	&"halo_shot",
-	&"boomerang",
 	&"orbit_rounds",
 	&"split_shot",
 	&"wide_arc",
@@ -45,11 +45,11 @@ func test_the_shipped_table_is_discovered_and_valid() -> void:
 	assert_eq(WandMigrationDefinition.cross_check(defs), [])
 	assert_eq(
 		m.old_ids.size(),
-		47,
+		48,
 		(
 			"the v0.6 cards it retires: 13 + 4 + 17 + 3 + 6 (WAND.md table); v0.9.0: Spread (into Twin),"
 			+ " Explosive (into Fire), the old Void (into the Void form; refunded on the Blade), Charge (into"
-			+ " the Lance; refunded on the Blade)"
+			+ " the Lance; refunded on the Blade), Boomerang (into the Glaive; refunded on the Blade)"
 		)
 	)
 

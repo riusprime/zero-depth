@@ -137,6 +137,8 @@ func _sync_bolts(reader: WorldReader) -> void:
 			or reader.projectile_is_bomb(i)
 			or reader.projectile_is_void(i)
 			or reader.projectile_is_pellet(i)
+			or reader.projectile_is_disc(i)  # v0.9.0 AF2: GlaiveView the discs, SeekersView the darts
+			or reader.projectile_is_dart(i)
 		):  # v0.9.0 VP: VoidView draws the Void shots; v0.9.0 AF1: ScatterView the pellets
 			continue
 		var look := _projectile_look(reader, i)

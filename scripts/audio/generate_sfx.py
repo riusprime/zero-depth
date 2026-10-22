@@ -1107,6 +1107,36 @@ def s_lockdown_open(r):
     return mix(body, at(clack, 1.15))
 
 
+def s_glaive_throw(r):
+    """v0.9.0 AF2 (the agent's placeholder for the Glaive form's throw, owner Q7 F7 "a spinning disc that flies out and
+    returns"): 0.38 s, an airy whir whose band rises 700 to 2400 Hz and falls back, chopped at a 22 Hz spin (the disc's
+    blades), over a thin metallic ring and the soft flick of the release."""
+    n = n_of(0.38)
+    t = np.arange(n) / RATE
+    band = np.concatenate([curve(700.0, 2400.0, n // 2), curve(2400.0, 900.0, n - n // 2)])
+    chop = 0.55 + 0.45 * np.sin(2.0 * np.pi * 22.0 * t) ** 2
+    whir = bandpass(noise(r, n), band, 3.0) * chop * env(n, 0.03, 0.16) * 0.9
+    ring = metal_ping(0.3, 1320.0, ratio=1.5, index=1.8, decay=0.09) * 0.25
+    m = n_of(0.05)
+    flick = one_pole_hp(noise(r, m), 2500.0) * env(m, 0.001, 0.015) * 0.6
+    return mix(whir, ring, flick)
+
+
+def s_seekers_fire(r):
+    """v0.9.0 AF2 (the agent's placeholder for the Seekers form's volley, owner Q7 F8 "three small darts that curve to
+    the nearest enemies"): 0.2 s, three quick glassy chirps 35 ms apart, each an FM ping sweeping up (1500 to 2600 Hz,
+    a little higher each), with a breath of high air under them."""
+    chirps = []
+    for k in range(3):
+        m = n_of(0.09)
+        f = curve(1500.0 + 150.0 * k, 2600.0 + 200.0 * k, m)
+        ping = fm(f, 2.0, 1.2 * np.exp(-np.arange(m) / RATE / 0.03), m) * env(m, 0.001, 0.035)
+        chirps.append(at(ping * 0.5, 0.035 * k))
+    n = n_of(0.2)
+    air = one_pole_hp(noise(r, n), 4000.0) * env(n, 0.005, 0.06) * 0.2
+    return mix(air, *chirps)
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -1208,6 +1238,8 @@ SFX = [
     ("lockdown_open", s_lockdown_open),
     ("lance_charge", s_lance_charge),
     ("lance_release", s_lance_release),
+    ("glaive_throw", s_glaive_throw),
+    ("seekers_fire", s_seekers_fire),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

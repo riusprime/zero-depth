@@ -267,7 +267,8 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 		"gun_pierce",
 		"gun_ricochet",
 		"gun_homing",
-		"boomerang",
+		"gun_glaive",  # v0.9.0 AF2: the Glaive (Boomerang retired into it)
+		"gun_seekers",  # v0.9.0 AF2
 		"orbit_rounds",
 		"gun_spiral",
 		"gun_mine",
@@ -278,8 +279,8 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 	]:
 		assert_has(gun_pool, "mod:" + id, "%s in the Gun's pool" % id)
 		assert_does_not_have(blade_pool, "mod:" + id, "%s never in the Blade's" % id)
-	# v0.9.0 TW: Spread retired; v0.9.0 AF1: Charge retired
-	for id: String in ["seeker", "twin_cast", "rearguard", "gun_spread", "gun_charge"]:
+	# v0.9.0 TW: Spread retired; v0.9.0 AF1: Charge retired; v0.9.0 AF2: Boomerang retired
+	for id: String in ["seeker", "twin_cast", "rearguard", "gun_spread", "gun_charge", "boomerang"]:
 		# v0.6.5 WN5b: retired (WAND.md: → G8, G14, G15 on the Gun; Twin Cast → B5 on the Blade): in no pool.
 		assert_does_not_have(blade_pool, "mod:" + id, "%s retired" % id)
 		assert_does_not_have(gun_pool, "mod:" + id)

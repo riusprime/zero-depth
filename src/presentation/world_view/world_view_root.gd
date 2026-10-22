@@ -43,6 +43,8 @@ static var parts: Array[GDScript] = [
 	VoidView,  # v0.9.0 VP
 	LanceView,  # v0.9.0 AF1
 	ScatterView,  # v0.9.0 AF1
+	GlaiveView,  # v0.9.0 AF2
+	SeekersView,  # v0.9.0 AF2
 	ModifierOverlays,
 	BladeFormView,
 	FireballViews,
@@ -144,6 +146,9 @@ var voids: VoidView = _part(VoidView)
 ## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
 var lances: LanceView = _part(LanceView)
 var scatter: ScatterView = _part(ScatterView)
+## v0.9.0 AF2 (owner Q7): the Glaive's spinning discs out and back; the Seekers' curving darts and their trails.
+var glaives: GlaiveView = _part(GlaiveView)
+var seekers: SeekersView = _part(SeekersView)
 ## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
 var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
 ## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
@@ -291,6 +296,8 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(voids)  # v0.9.0 VP
 	add_child(lances)  # v0.9.0 AF1
 	add_child(scatter)  # v0.9.0 AF1
+	add_child(glaives)  # v0.9.0 AF2
+	add_child(seekers)  # v0.9.0 AF2
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -498,6 +505,8 @@ func sync() -> void:
 	_sync_view(&"voids", voids)  # v0.9.0 VP
 	_sync_view(&"lances", lances)  # v0.9.0 AF1
 	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
+	_sync_view(&"glaives", glaives)  # v0.9.0 AF2
+	_sync_view(&"seekers", seekers)  # v0.9.0 AF2
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
 	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
 	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1

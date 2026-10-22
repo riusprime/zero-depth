@@ -106,6 +106,9 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	# v0.9.0 AF1 (owner Q7: the Lance and Scatter forms; Lance, Scatter)
 	&"lance",
 	&"pellets",
+	# v0.9.0 AF2 (owner Q7: the Glaive and Seekers forms; Glaive, Seekers)
+	&"glaive",
+	&"seekers",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -218,6 +221,12 @@ var lance := 0
 ## v0.9.0 AF1 (owner Q7, F6; Scatter): pellets, the bolts are the Scatter's pellets (the view draws them as a cone of
 ## pellets); their numbers are the plain bolt fields (count, spread, life, speed, share_permille).
 var pellets := 0
+## v0.9.0 AF2 (owner Q7, F7; Glaive): glaive, the bolt is the Glaive's spinning disc (the view draws it as one); it
+## flies out and comes back through the return rule (returns, ProjectileMoves), hitting every enemy on both passes.
+var glaive := 0
+## v0.9.0 AF2 (owner Q7, F8; Seekers): seekers, the bolts are the Seekers' darts: each homes on its own one of the
+## nearest enemies (Seekers.target) at the homing rate; the rest are the plain bolt fields.
+var seekers := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -522,4 +531,6 @@ func read() -> Dictionary:
 		"void_pull_mm": void_pull_mm,
 		"lance": lance,  # v0.9.0 AF1
 		"pellets": pellets,
+		"glaive": glaive,  # v0.9.0 AF2
+		"seekers": seekers,
 	}

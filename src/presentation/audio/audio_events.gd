@@ -651,6 +651,10 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 			cue = &"void_hum"
 		elif reader.scatter_active():  # v0.9.0 AF1: the Scatter's bark (Scatter Blast's cue until its own sound)
 			cue = &"skill_scatter_blast"
+		elif reader.glaive_active():  # v0.9.0 AF2: the Glaive's spinning throw
+			cue = &"glaive_throw"
+		elif reader.seekers_active():  # v0.9.0 AF2: the Seekers' volley of chirps
+			cue = &"seekers_fire"
 		out.append([cue, reader.player_pos(), 1.0])
 	if hostile:
 		out.append([&"enemy_fire", null, 1.0])
