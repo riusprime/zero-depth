@@ -419,6 +419,7 @@ func _setup_devices(palette: Dictionary) -> void:
 	transit.arrival_gate = arrival_gate
 	transit.altar = altar
 	transit.rig = rig
+	lances.rig = rig  # v0.9.0 AF1b: the release's camera kick
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP
 	transit.loop_device = loop_device  # v0.8.0 P2

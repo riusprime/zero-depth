@@ -418,8 +418,9 @@ func bomb_active() -> bool:
 	return Bomb.active(_w)
 
 
-## v0.9.0 AF1 (owner Q7, F5): the run's Gun shot is the Lance; how far it has charged (0..1); and its lines from the
-## hero along the aim now (Lance.trace, the geometry its release hits: EI-07), empty while it isn't charging.
+## v0.9.0 AF1 (owner Q7, F5): the run's Gun shot is the Lance; how far it has charged (0..1). v0.9.0 AF1b: and the
+## charging ball in front of the hero (Lance.orb: {pos, radius}, the ball a release now would launch: EI-07), empty
+## while it isn't charging.
 func lance_active() -> bool:
 	return Lance.active(_w)
 
@@ -428,10 +429,8 @@ func lance_charge() -> float:
 	return Lance.charge(_w)
 
 
-func lance_lines() -> Array[Dictionary]:
-	if Lance.charge(_w) <= 0.0:
-		return []
-	return Lance.trace(_w, Modifiers.bolt(_w), _w.player_pos(), _w.aim_angle)
+func lance_orb() -> Dictionary:
+	return Lance.orb(_w)
 
 
 ## v0.9.0 AF1 (owner Q7, F6): player projectile `i` is a Scatter pellet (ScatterView draws it, not the pulses), and the

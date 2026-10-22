@@ -632,12 +632,15 @@ flies along), at most `void_pull_mmps` (1 m/s, weaker with distance), the pulls 
 capped at the strongest one's top step (no stacking), with a separation push from neighbours within 0.3 m of its
 edge; heavies (radius ≥ 0.5 m) half, bosses, elites and spawning enemies none (`VoidShots.steps`, pure: the view's
 lean reads it).
-**The Lance form** (`Lance`, v0.9.0 AF1, Q7 F5): a BEAM spec with `lance` > 0 charges as G13 Charge did
-(`GunForms.hold`, `World.mx.hold_t`, `hold_ticks` 72, `hold_permille` 5000) except that a full charge waits for the
-release; the release (`Attacks._form` → `Lance.fire`) traces one line per Twin lane from the hero's edge, `reach_m`
-(10.8) long and `radius_m` (0.25) wide, ended only by a wall, and lands one hit (`Attacks.land`, the spec's statuses
-and hooks) on every enemy it crosses; no projectile; one `SimEvent.Kind.LANCE` a line (pos = start, amount = length
-mm, amount_applied = angle, proc_pct = the charge ‰). The card `gun_charge` is retired into it (`migration.tres`).
+**The Lance form** (`Lance`, v0.9.0 AF1, Q7 F5; AF1b, the owner's "low-key Hadouken"): a BOLT spec with `lance` > 0
+charges as G13 Charge did (`GunForms.hold`, `World.mx.hold_t`, `hold_ticks` 72, `hold_permille` 11600, +580 a level)
+except that a full charge waits for the release; the release (`PlayerKit._fire_bolt`) launches the Gun's own bolt (the
+orb's speed, life and look; Twin's lanes at its share) with `pierce` 999 (every enemy, once each; a wall ends it), its
+radius × `Lance.size_permille` (× 1 on a tap → × 2 at full) and its damage × the charge ‰; then `Lance.on_release`
+emits one `SimEvent.Kind.LANCE` (pos = the muzzle, amount = the ball's radius mm, amount_applied = the aim, proc_pct =
+the charge ‰) and starts the push back: `World.mx.recoil_t` = 6 ticks of `recoil_step` = 0.5 m × the charge fraction
+/ 6 against the aim, added to the walk in `World._move_and_collide` (walls resolve it); hashed and saved only while
+it runs. The card `gun_charge` is retired into it (`migration.tres`).
 **The Scatter form** (`Scatter`, v0.9.0 AF1, Q7 F6): a BOLT spec with `pellets` > 0 (the Gun's own bolt runner:
 `count` 6 over `spread` 25°, 5 m, `share_permille` 1000 so the pellets past the centre are secondary); `pellets` only
 marks them for the view. No new state.

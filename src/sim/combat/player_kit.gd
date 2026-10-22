@@ -192,7 +192,8 @@ static func swing_arc(
 
 ## One shot: the bolt spec launched along the aim (a Splinter fan, Ricochet's bounces: its spec's pattern and
 ## behaviour).
-## v0.6.5 WN3: `charge` (per mille) sizes a charged shot (G13 Charge: its damage and its bolts' radius).
+## v0.6.5 WN3: `charge` (per mille) sizes a charged shot (G13 Charge: its damage and its bolts' radius). v0.9.0 AF1b:
+## the Lance's ball is sized by Lance.size_permille instead, and its release pushes the hero back (Lance.on_release).
 static func _fire_bolt(w: World, charge: int = 1000) -> void:
 	var spec := Modifiers.bolt(w)
 	var dmg := PlayerBuild.bolt_damage(w, Attacks.bolt_base_damage(spec))  # Builds: the Gun's factor (L16).
@@ -206,5 +207,10 @@ static func _fire_bolt(w: World, charge: int = 1000) -> void:
 		ctx.damage = maxi(1, dmg * charge / 1000)
 		ctx.base_damage = ctx.damage
 		ctx.size_permille = charge
+	var lance := Lance.is_lance(spec)
+	if lance:  # v0.9.0 AF1b: the Lance's ball grows x 1 to x 2 while its damage grows x 1 to x 11.6
+		ctx.size_permille = Lance.size_permille(spec, charge)
 	Attacks.launch(w, spec, ctx)
+	if lance:
+		Lance.on_release(w, spec, charge, spec.radius_m * ctx.size_permille / 1000.0)
 	ModifierAbilities.on_attack(w, ModifierAbilities.shot_end(w, ModifierAbilities.field_range(w)))

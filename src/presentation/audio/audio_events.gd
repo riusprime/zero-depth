@@ -11,6 +11,8 @@ const LOW_HP_PERMILLE := 300
 const HEARTBEAT_TICKS := 54
 ## Boss hits and deaths are pitched down a little.
 const BOSS_PITCH := 0.8
+## v0.9.0 AF1b: the Lance's charge-up hum starts once a charge passes this (a tap stays quiet).
+const LANCE_HUM_AT := 0.1
 ## A crit's hit is pitched up, so it rings sharper (v0.4.0 BS).
 const CRIT_PITCH := 1.6
 ## v0.9.0 DS (owner C35, Q19): `boss_door_impact.wav` peaks about 0.3 s in, so its cue starts this many ticks before
@@ -108,6 +110,8 @@ var _crack_broken := false
 var _props := PackedInt32Array()
 ## v0.9.0 DP: whether the purple runes were awake, for their cue's edge.
 var _purple_lit := false
+## v0.9.0 AF1b: the Lance's charge hum has played for the charge running (it starts once the charge passes this).
+var _lance_hum := false
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -141,6 +145,7 @@ func prime(reader: WorldReader) -> void:
 	_crack_broken = reader.crack_broken()
 	_props = prop_marks(reader)
 	_purple_lit = reader.purple_lit()
+	_lance_hum = reader.lance_charge() >= LANCE_HUM_AT
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -432,8 +437,8 @@ func _events(reader: WorldReader, out: Array) -> void:
 					out.append([&"dash", e.pos, 0.8])
 			SimEvent.Kind.BLAST:  # v0.9.0 BM: a bomb bursts
 				out.append([&"bomb_blast", e.pos, 1.0])
-			SimEvent.Kind.LANCE:  # v0.9.0 AF1: a Lance released (the Gun's shot cue until its own sound comes)
-				out.append([&"bolt_fire", e.pos, 1.0])
+			SimEvent.Kind.LANCE:  # v0.9.0 AF1b: a Lance released, its whoosh
+				out.append([&"lance_release", e.pos, 1.0])
 
 
 ## Mines (v0.4.0 EN): a beep as one arms, the blast when an armed one goes off the floor.
@@ -567,6 +572,11 @@ func _player(reader: WorldReader, out: Array) -> void:
 		out.append([&"blink_out", reader.blink_from(), 1.0])
 		out.append([&"blink_in", here, 1.0])
 	_blink_tick = bt
+	# v0.9.0 AF1b: the Lance's charge-up hum, once a charge passes LANCE_HUM_AT (a tap stays quiet).
+	var c := reader.lance_charge()
+	if c >= LANCE_HUM_AT and not _lance_hum:
+		out.append([&"lance_charge", here, 1.0])
+	_lance_hum = c >= LANCE_HUM_AT or (_lance_hum and c > 0.0)
 
 
 ## v0.3.5 K: the sound of a build skill (SkillUsed's amount).
@@ -606,6 +616,8 @@ func _scan_projectiles(reader: WorldReader, out: Array) -> void:
 		else:
 			hostile = true
 	_projectiles = seen
+	if fired and reader.lance_active():  # v0.9.0 AF1b: the Lance's ball sounds with its LANCE event (_events)
+		fired = false
 	if fired:  # v0.9.0 BM: the Bomb form's throw has its own toss; v0.9.0 VP: the Void's shot its hum
 		var cue := &"bolt_fire"
 		if reader.bomb_active():

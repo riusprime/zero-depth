@@ -106,8 +106,6 @@ static func _form(w: World, spec: AttackSpec, ctx: AttackContext) -> bool:
 		AttackSpec.Form.BURST:
 			return _burst(w, spec, ctx)
 		AttackSpec.Form.BEAM:
-			if Lance.is_lance(spec):  # v0.9.0 AF1: the Lance's release, its line at Twin's share
-				return Lance.fire(w, spec, ctx)
 			return _seek(w, spec, ctx) if spec.seek else _rays(w, spec, ctx)
 		AttackSpec.Form.LOB:  # v0.6.0 MX2
 			_lob(w, spec, ctx)

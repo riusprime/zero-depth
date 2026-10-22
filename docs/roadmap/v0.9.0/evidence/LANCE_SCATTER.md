@@ -125,3 +125,117 @@ None changed (no golden file touched; the new spec fields hash only when not 0).
 ## Not run here
 
 The full suite (GitHub runs it); the seams (the lead's).
+
+---
+
+# v0.9.0 AF1b: the Lance becomes a charged energy ball (evidence)
+
+Owner row AF1b in [`../PLAN.md`](../PLAN.md) "Owner decisions" ("could the charge attack be the same as the original
+ball but it creates a circle in front of the player … moves the player back like a cadence weapon … like a lowkey
+haduoken"; "Pierces all", "A small step", "Grows with charge"), with the AF1 row (a full charge about 1.0× the orbs on
+one target). Branch `v090-af1b`, cut from `d4dd1e91`; the step's commit is the one that adds this section. Machine: the
+owner's PC (Windows 11, Git Bash, i7-10700K, RTX 3060), Godot 4.7.2; one Godot process at a time, own `APPDATA`.
+
+## What changed
+
+- **The ball** (`data/modifiers/gun_lance.tres`): the BEAM form, `reach_m` and `radius_m` ops are gone, so the Lance is
+  the Gun's own bolt (the orb's speed, life and look); `pierce` 999 (`Lance.PIERCE_ALL`: every enemy once, a wall
+  ends it); `hold_permille` 5000 → **11600** (+580 a level, 5 % of the full charge). The release (`PlayerKit._fire_bolt`)
+  sizes the ball × 1 on a tap → × 2 at full (`Lance.size_permille`; the hit radius is the projectile's radius). Twin:
+  the bolt runner's lanes (2 side by side, 3 fanned at Lv 5) at its share. Caps: ShotCap as for any shot.
+- **The recoil** (`Lance.on_release`, `Lance.recoil`): 0.5 m × the charge fraction against the aim over 6 ticks, added
+  to the walk in `World._move_and_collide` so walls resolve it. New state `World.mx.recoil_t`, `recoil_step`
+  (WorldSnapshot STATE_CLASSES; hashed only while it runs).
+- **The look** (`LanceView`): the dashed aim line and muzzle glow are replaced by a swirling circle in front of the hero
+  where the sim's ball sits (`WorldReader.lance_orb`): arcs turning both ways and motes spiralling inward in the
+  element's colours, growing with the ball, brighter and faster with the charge, pulsing full. A release is a ring
+  burst at the muzzle with sparks and a light, and a camera kick back along the aim (0.12 m at full, `IsoRig.kick`;
+  none with shake off). The ball in flight is the orb's bolt look scaled by its radius (× 2 at full).
+- **Sound** (placeholders, `scripts/audio/generate_sfx.py`): `lance_charge` (1.37 s rising hum, played once a charge
+  passes 10 %) and `lance_release` (0.52 s whoosh, zap and thump, on the LANCE event); the ball's spawn no longer plays
+  `bolt_fire`. Rendered with the numpy venv into a scratch copy; only the two wavs and their manifest rows taken
+  (the scratch render's other rows differ by the numpy version and were not taken); credits rebuilt (106 files).
+- **Card text**: "Hold to charge, release a piercing energy ball." / "Mantén para cargar, suelta una bola de energía
+  perforante." (`.translation` files re-imported).
+
+## Damage, size, recoil (`test_lance.gd`, raw `gut.p` lines)
+
+```
+    AF1b Lance ball radius: tap 0.203, half 0.300, full 0.400 (orb 0.200)
+    AF1b Lance recoil (aim +x, from 0,0): tap 0.0069 m, half 0.2500 m, full 0.5000 m
+    AF1b Lance recoil against a wall 0.5 m behind: hero x -0.1500 (radius 0.35)
+    AF1b Lance one target 4 m, full charge (72 ticks), 28 s: 928 dmg in 16 hits; orbs 930 in 186; ratio 0.998
+    AF1b Lance one target 4 m, half charge (36 ticks), 28 s: 837 dmg in 27 hits; orbs 930 in 186; ratio 0.900
+    AF1b Lance one target 4 m, tap charge (1 ticks), 28 s: 335 dmg in 67 hits; orbs 930 in 186; ratio 0.360
+    AF1b Lance five in a line 2-8 m, full charge, 10 s: lance 1740, orbs 335, ratio 5.194
+```
+
+Full 0.998× (asserted 0.9–1.1), full > half > tap; five in a line 5.19×. A first run at 11000 measured full 0.946× (55
+a hit); 11600 (58 a hit) is the value kept.
+
+## Tests (raw summary lines)
+
+`bash af1b_gt.sh <job> -gtest=<files>` = `APPDATA=<own> godot --headless --fixed-fps 60 --path . -s
+addons/gut/gut_cmdln.gd -gexit -gtest=<files>`. Lint: `gdformat --check src scripts tests` → "1172 files would be left
+unchanged"; `gdlint src scripts tests` → "Success: no problems found".
+
+test_lance, test_lance_view, test_attack_slots, test_wand_migration, test_shot_cap, test_scatter, test_scatter_view,
+test_modifier_smoke, test_modifier_smoke_mx4, test_old_saves, test_world_snapshot, test_state_hasher, test_layering,
+test_sim_purity, test_audio_director:
+```
+Tests               131
+Passing Tests       131
+Asserts           67892
+Time              1332.902s
+```
+`-gdir=res://tests/content -ginclude_subdirs`:
+```
+Tests               140
+Passing Tests       140
+Asserts           10452
+Time              41.052s
+```
+test_e2e_lance_scatter, test_e2e_gun_pool, test_e2e_old_save (re-run after the circle's final look):
+```
+    AF1b e2e Lance: charge 1.00 when let go; circle 1.64 m; damage to the row at 3 / 5 / 7 m [58, 58, 58]; pushed back 0.500 m
+Tests                 4
+Passing Tests         4
+Asserts              54
+Time              34.715s
+```
+test_lance_view after the circle's final look: `Tests 5, Passing Tests 5, Asserts 20`.
+
+## Shots
+
+`godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/lance_scatter.gd` (RTX 3060) →
+`build/shots/v0.8.0/af1/`, the two Lance shots copied by hand to [`af1b_shots/`](af1b_shots/):
+
+```
+lance_scatter: res://build/shots/v0.8.0/af1/1_lance_charged.jpg (tick 80, lance circle true size 1.64 charge 1.0 bursts 0 ball r 0.0 hero x 0.0, pellets 0 cones 0)
+lance_scatter: res://build/shots/v0.8.0/af1/2_lance_ball.jpg (tick 85, lance circle false size 1.64 charge 0.0 bursts 1 ball r 0.4 hero x -0.42, pellets 0 cones 0)
+```
+
+## Perf (one horde probe, headless: CPU side only)
+
+`godot --headless --fixed-fps 60 --path . -s scripts/checks/perf_probe.gd -- --horde=60 --cards=gun_lance,gun_twin
+--level=5 --seconds=10 --release=97` (avg / p95 / max):
+
+```
+sim_ms            2.208     3.770     5.921
+sync_ms           3.859     5.360     9.146
+frame_ms          2.145     2.670     4.603
+total_ms          8.212    10.757    15.988
+projectiles       1.282     3.000     3.000
+verdict: avg 8.21 ms per tick+frame against 12.0 ms -> within
+```
+
+One run. GPU frame time: NOT YET RUN (owner hardware).
+
+## Goldens
+
+None changed (no golden file touched; the recoil hashes only while it runs).
+
+## Not run here
+
+The full suite (GitHub runs it); the seams (the lead's). Owner feel of the circle, the push back and the sounds: OWNER
+ONLY.

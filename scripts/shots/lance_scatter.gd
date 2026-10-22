@@ -1,8 +1,8 @@
 extends SceneTree
 ## v0.9.0 AF1 (owner Q7; ATTACK_FORMS.md F5, F6; docs/roadmap/v0.9.0/evidence/LANCE_SCATTER.md): renders the Lance and
 ## the Scatter in the real game view (WorldViewRoot on the Ruins stage, the iso camera) of a real World with the data's
-## Gun and cards, among standing dummies: the Lance fully charged (its glow and aim line), then just released (its
-## flash along the line through the row); the Scatter's cone of pellets a few ticks after a volley. Needs a renderer
+## Gun and cards, among standing dummies: the Lance fully charged (v0.9.0 AF1b: its swirling circle), then its ball in
+## flight through the row (Fire); the Scatter's cone of pellets a few ticks after a volley. Needs a renderer
 ## (no --headless):
 ##   godot --path . --audio-driver Dummy --resolution 1280x720 -s scripts/shots/lance_scatter.gd
 ## Writes build/shots/<version>/af1/<n>_<label>.jpg and prints each path. Frames are grabbed in _process.
@@ -10,7 +10,7 @@ extends SceneTree
 ## [label, cards (wand order), camera size, ticks of Shoot held, ticks let go after, frames to settle].
 const PLAN := [
 	["lance_charged", [&"gun_lance"], 9.0, 80, 0, 3],
-	["lance_release", [&"gun_lance", &"ember_core"], 9.0, 80, 2, 2],
+	["lance_ball", [&"gun_lance", &"ember_core"], 9.0, 80, 5, 2],
 	["scatter_cone", [&"gun_scatter"], 7.0, 4, 0, 2],
 ]
 const SIZE := Vector2i(1280, 720)
@@ -112,12 +112,18 @@ func _process(_delta: float) -> bool:
 		path,
 		" (tick ",
 		_ticks,
-		", lance aims ",
-		_view.lances.aims,
+		", lance circle ",
+		_view.lances.circle,
+		" size ",
+		snappedf(_view.lances.circle_size, 0.01),
 		" charge ",
 		snappedf(_view.lances.charge, 0.01),
-		" flashes ",
-		_view.lances.flashes,
+		" bursts ",
+		_view.lances.bursts,
+		" ball r ",
+		snappedf(_view.lances.last_burst_radius, 0.01),
+		" hero x ",
+		snappedf(_world.player_pos().x, 0.01),
 		", pellets ",
 		_view.scatter.pellets,
 		" cones ",

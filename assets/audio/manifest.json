@@ -905,6 +905,26 @@
       "loop": false
     },
     {
+      "id": "lance_charge",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lance_charge.wav",
+      "sha256": "b3376f6fb4438536a6359e171e446cef01d99444565d53cb09b73eddf462702b",
+      "seconds": 1.37,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -12.28,
+      "loop": false
+    },
+    {
+      "id": "lance_release",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/lance_release.wav",
+      "sha256": "10f60502edadd2b3cf79cc4b01cdb47dcf5a3cb060d322ca4b79d7917ed8889b",
+      "seconds": 0.52,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -20.16,
+      "loop": false
+    },
+    {
       "id": "laser_loop",
       "kind": "sfx",
       "path": "assets/audio/sfx/laser_loop.wav",

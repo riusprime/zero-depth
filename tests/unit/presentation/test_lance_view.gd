@@ -1,8 +1,10 @@
 extends GutTest
-## v0.9.0 AF1 (owner Q7; ATTACK_FORMS.md F5): the Lance's view. While it charges, an aim line per Lance line (the sim's
-## own trace) and a muzzle glow that grows with the charge; nothing while nothing charges; each release flashes along
-## its line (as long as the line, wider for a bigger charge) and fades; Twin shows two lines; the element sets the look;
-## the Charge card's swelling orb is not drawn for the Lance.
+## v0.9.0 AF1 (owner Q7; ATTACK_FORMS.md F5) and AF1b (owner: "a circle in front of the player that circles like a
+## charging energy and then shoots"): the Lance's view. While it charges, a swirling circle in front of the hero (where
+## the sim's ball sits, Lance.orb) that grows with the ball and brightens with the charge; nothing while nothing
+## charges; each release bursts at the muzzle (bigger for a bigger ball) and fades; the ball in flight is the orb's
+## look, drawn twice as big at full; the element sets the look; the Charge card's swelling orb is not drawn for the
+## Lance.
 
 const W := preload("res://tests/support/mx4_world.gd")
 
@@ -19,43 +21,49 @@ func _world(items: Array = [], at: Array = [[Vector2(4.0, 0.0), 100000]]) -> Wor
 	return W.world(&"gun", ids, at)
 
 
-func test_charging_shows_the_aim_line_and_a_growing_glow() -> void:
+func test_charging_shows_a_growing_circle_in_front_of_the_hero() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	_view.sync(r)
-	assert_eq([_view.aims, _view.flashes], [0, 0], "nothing before the trigger")
+	assert_eq([_view.circle, _view.bursts], [false, 0], "nothing before the trigger")
 	W.run(w, 18, 0, W.S)
 	_view.sync(r)
-	assert_eq(_view.aims, 1, "one aim line while charging")
+	assert_true(_view.circle, "the circle while charging")
 	assert_almost_eq(_view.charge, 0.25, 1e-6)
-	var small := _view._muzzle.scale.x
+	var small := _view.circle_size
+	var at := _view._circle.position
+	assert_gt(at.x, w.player.radius_m, "in front of the hero, along the aim")
+	var energy := float(_view._circle_mat.get_shader_parameter(&"energy"))
 	W.run(w, 54, 0, W.S)
 	_view.sync(r)
 	assert_almost_eq(_view.charge, 1.0, 1e-6, "full")
-	assert_gt(_view._muzzle.scale.x, small, "the glow grew")
-	var l: Dictionary = r.lance_lines()[0]
+	assert_gt(_view.circle_size, small, "the circle grew")
+	assert_gt(float(_view._circle_mat.get_shader_parameter(&"energy")), energy, "and brightened")
+	assert_eq(float(_view._circle_mat.get_shader_parameter(&"full")), 1.0, "it pulses full")
+	var orb := r.lance_orb()
 	assert_almost_eq(
-		(l["to"] as Vector2).x, w.player.radius_m + 10.8, 0.05, "through the enemy, its whole reach"
+		_view.circle_size,
+		2.0 * (float(orb["radius"]) * LanceView.CIRCLE_RADII + LanceView.CIRCLE_PAD_M),
+		1e-4,
+		"sized from the sim's ball"
 	)
 
 
-func test_a_release_flashes_along_the_line_and_fades() -> void:
+func test_a_release_bursts_at_the_muzzle_and_fades() -> void:
 	var w := _world()
 	var r := WorldReader.new(w)
 	_view.sync(r)
 	W.run(w, 72, 0, W.S)
 	W.run(w, 1, 0, 0)
 	_view.sync(r)
-	assert_eq([_view.aims, _view.flashes], [0, 1], "released: the aim line goes, one flash")
-	assert_eq(_view.last_flash_charge, 5000, "a full charge's flash")
-	var f: Array = _view._live[0]
-	assert_almost_eq(
-		((f[1] as Vector2) - (f[0] as Vector2)).length(), 10.8, 0.05, "as long as the line"
-	)
-	assert_almost_eq(float(f[4]), LanceView.FLASH_W.y, 1e-4, "full charge: the widest flash")
-	W.run(w, 20, 0, 0)
+	assert_eq([_view.circle, _view.bursts], [false, 1], "released: the circle goes, one burst")
+	assert_eq(_view.last_burst_charge, 11600, "a full charge's burst")
+	var orb_r := Modifiers.bolt(W.world(&"gun")).radius_m
+	assert_almost_eq(_view.last_burst_radius, orb_r * 2.0, 0.002, "a full ball: twice the orb")
+	var big := _view._burst_nodes[0].scale.x
+	W.run(w, 14, 0, 0)
 	_view.sync(r)
-	assert_eq(_view.flashes, 0, "faded")
+	assert_eq(_view.bursts, 0, "faded")
 	var t := _world()
 	var tap_r := WorldReader.new(t)
 	_view = add_child_autofree(LanceView.new())
@@ -63,15 +71,27 @@ func test_a_release_flashes_along_the_line_and_fades() -> void:
 	W.run(t, 1, 0, W.S)
 	W.run(t, 1, 0, 0)
 	_view.sync(tap_r)
-	assert_lt(float(_view._live[0][4]), LanceView.FLASH_W.x + 0.02, "a tap: the thinnest flash")
+	assert_almost_eq(_view.last_burst_radius, orb_r, orb_r * 0.02, "a tap: orb-sized")
+	assert_lt(_view._burst_nodes[0].scale.x, big, "a smaller burst")
 
 
-func test_twin_shows_two_lines_and_the_element_sets_the_look() -> void:
+func test_the_ball_in_flight_is_the_orbs_look_twice_as_big_at_full() -> void:
+	var w := _world([], [])
+	var r := WorldReader.new(w)
+	var forms: AttackFormView = add_child_autofree(AttackFormView.new())
+	W.run(w, 72, 0, W.S)
+	W.run(w, 3, 0, 0)
+	forms._sync_bolts(r)
+	assert_eq(forms._live.size(), 1, "the ball drawn as a bolt")
+	assert_almost_eq(float(forms._live[0]["scale"]), 2.0, 0.01, "× 2 at full")
+
+
+func test_the_element_sets_the_look() -> void:
 	var w := _world([&"gun_twin", &"ember_core"])
 	var r := WorldReader.new(w)
 	W.run(w, 10, 0, W.S)
 	_view.sync(r)
-	assert_eq(_view.aims, 2)
+	assert_true(_view.circle)
 	assert_eq(_view.look, &"fire")
 
 

@@ -59,7 +59,7 @@ enum Kind {
 	REMNANT_ACTIVATE,
 	REMNANT_END,
 	BLAST,  # v0.9.0 BM: a bomb burst (Bomb.blast: pos, amount = radius in mm, effect_id = the bomb's spec key)
-	LANCE,  # v0.9.0 AF1: a Lance line released (Lance.fire: pos = its start, amount = length mm, amount_applied = angle)
+	LANCE,  # v0.9.0 AF1b: a Lance ball released (Lance.on_release: pos = muzzle, amount = radius mm, amount_applied = aim)
 }
 
 const TAG_MELEE := 1

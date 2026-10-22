@@ -1,8 +1,9 @@
 extends GutTest
 ## v0.9.0 AF1 (owner Q7; ATTACK_FORMS.md F5, F6) through the real game (main.tscn, input by Input.parse_input_event
 ## only): a Gun run walks to an altar and opens it with E; the card reads "Form"; Enter takes it.
-## - The Lance: holding the shoot button (right click) with the mouse on a row of enemies charges it (the glow and aim
-##   line drawn) and nothing fires; letting go fires one line that hurts every enemy in the row, its flash drawn.
+## - The Lance: holding the shoot button (right click) with the mouse on a row of enemies charges it (v0.9.0 AF1b: the
+##   swirling circle drawn in front of the hero) and nothing fires; letting go fires one energy ball that pierces and
+##   hurts every enemy in the row, its muzzle burst drawn, and pushes the hero back a small step.
 ## - The Scatter: holding the shoot button on an enemy close by fires cones of pellets (drawn as slugs and a muzzle
 ##   cone, heard) that hurt it, and one far past 5 m on the same line is never touched.
 ## The retired Charge card is never offered.
@@ -96,34 +97,45 @@ func test_the_lance_charges_while_held_and_its_release_pierces_the_row() -> void
 	var cam := main.view.rig.camera
 	await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
-	var aims := 0
+	var circle := false
+	var size := 0.0
 	for k in 90:  # the mouse kept on the row while the camera settles after the walk
 		await e.mouse_to(cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
-		aims = maxi(aims, main.view.lances.aims)
+		circle = circle or main.view.lances.circle
+		size = maxf(size, main.view.lances.circle_size)
 	var a := w.actors
 	var charge := main.view.reader.lance_charge()
 	for id in row:
 		assert_eq(a.hp[a.index_of(id)], a.max_hp[a.index_of(id)], "held: nothing fired yet")
+	var before := w.player_pos()
 	await _release_at(e, cam.unproject_position(SimPlane.to_3d(at, SimPlane.CORE_HEIGHT)))
-	var flashes := 0
-	for k in 6:
+	var bursts := 0
+	var balls := 0
+	for k in 60:  # the ball flies the row (7 m)
 		await e.frames(1)
-		flashes = maxi(flashes, main.view.lances.flashes)
+		bursts = maxi(bursts, main.view.lances.bursts)
+		balls = maxi(balls, w.projectiles.size())
+	var back := (before - w.player_pos()).dot(dir)
 	var hurt := []
 	for id in row:
 		var j := a.index_of(id)
 		hurt.append(a.max_hp[j] - a.hp[j])
-	gut.p(
-		(
-			"AF1 e2e Lance: charge %.2f when let go; damage to the row at 3 / 5 / 7 m %s"
-			% [charge, hurt]
+	(
+		gut
+		. p(
+			(
+				"AF1b e2e Lance: charge %.2f when let go; circle %.2f m; damage to the row at 3 / 5 / 7 m %s; pushed back %.3f m"
+				% [charge, size, hurt, back]
+			)
 		)
 	)
 	assert_gt(charge, 0.9, "it charged while held")
-	assert_gt(aims, 0, "the aim line is drawn while charging")
+	assert_true(circle, "the charging circle is drawn while held")
+	assert_eq(balls, 1, "the release fires one ball")
 	for h: int in hurt:
-		assert_gt(h, 0, "the release pierced every enemy in the row")
-	assert_gt(flashes, 0, "the release flash is drawn")
+		assert_gt(h, 0, "the ball pierced every enemy in the row")
+	assert_gt(bursts, 0, "the release burst is drawn")
+	assert_gt(back, 0.3, "the hero was pushed back, away from the aim")
 
 
 func test_the_scatter_shreds_up_close_and_never_reaches_far() -> void:

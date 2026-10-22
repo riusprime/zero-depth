@@ -44,6 +44,10 @@ var shell_tick := -1
 var trail_tick := -1
 ## v0.6.5 WN3 (GunForms, G13 Charge): the ticks the shot in the barrel has charged (0 = none).
 var hold_t := 0
+## v0.9.0 AF1b (Lance): the Lance release's push back still to come (ticks) and its step a tick (m). Hashed only
+## while one runs (older digests unchanged).
+var recoil_t := 0
+var recoil_step := Vector2.ZERO
 ## v0.6.5 WN5a (WandCasts): the small spells cast for the views (parallel arrays, oldest first): the tick, the child
 ## spec's book key, where from, which way, and 1 for a trigger's cast. View data only: not hashed, not in touched().
 var cast_tick := PackedInt32Array()
@@ -123,6 +127,7 @@ func touched() -> bool:
 		or shell_tick != -1
 		or trail_tick != -1
 		or hold_t != 0
+		or recoil_t != 0
 		or not void_shot.is_empty()
 		or ramp_n != 0
 		or burst_n != 0
@@ -179,6 +184,11 @@ func hash_into(h: StateHasher) -> void:
 		h.add_int(v)
 	if hold_t != 0:  # v0.6.5 WN3: only while a shot charges (older digests unchanged)
 		h.add_int(hold_t)
+	if recoil_t != 0:  # v0.9.0 AF1b: only while the Lance's push back runs
+		h.add_string("recoil")
+		h.add_int(recoil_t)
+		h.add_f32(recoil_step.x)
+		h.add_f32(recoil_step.y)
 	if not void_shot.is_empty():  # v0.9.0 VP: only while a Void shot's aura waits on an enemy
 		h.add_string("void")
 		h.add_ints(void_shot)
