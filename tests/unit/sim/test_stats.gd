@@ -28,10 +28,14 @@ func test_the_shipped_stat_cards() -> void:
 	assert_eq(tables.size(), Stats.COUNT)
 	for s in Stats.COUNT:
 		assert_not_null(tables[s], "stat %d has a card" % s)
+	# v0.9.0 LG (owner C73, Q12): the legendary is the epic x data/legendary/boss.tres' multiplier for the card (Power
+	# x1.3: +32.5 %), read from the data
+	var leg: LegendaryDefinition = _repo.get_def(&"legendary", &"boss")
+	var power := (250 * int(round(leg.multiplier_of(&"damage") * 1000.0)) + 500) / 1000
 	assert_eq(
 		tables[Stats.Stat.DAMAGE].amounts,
-		PackedInt32Array([80, 150, 250, 400]),
-		"+8/15/25 % (+40 legendary, AR)"
+		PackedInt32Array([80, 150, 250, power]),
+		"+8/15/25 % (legendary: the epic x the data's multiplier)"
 	)
 	assert_eq(
 		tables[Stats.Stat.CRIT_CHANCE].amounts,

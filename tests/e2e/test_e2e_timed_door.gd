@@ -7,8 +7,9 @@ extends GutTest
 ## sight; the hero walks through the doorway into it before the timer runs out, and the door stays open while the
 ## hero is inside.
 
-## Run seed SEED: floor 1 holds a timed door (found with the floor plan, asserted below).
-const SEED := 3
+## Run seed SEED: floor 1 holds a timed door (found with the floor plan, asserted below; v0.9.0 FV: 2 on the
+## five-floor run, seed 3 before).
+const SEED := 2
 
 
 func after_each() -> void:

@@ -27,8 +27,8 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	assert_eq(t.floors, 5)
 	assert_eq(t.enemy_hp_floor_permille, PackedInt32Array([1000, 1380, 1900, 2620, 3610]))
 	assert_eq(t.enemy_damage_floor_permille, PackedInt32Array([1000, 1180, 1400, 1660, 1960]))
-	assert_eq(t.boss_hp_per_floor_permille, 250, "boss +25 % HP a floor")
-	assert_eq(t.boss_damage_per_floor_permille, 120, "boss +12 % damage a floor")
+	assert_eq(t.boss_hp_per_floor_permille, 200, "boss +20 % HP a floor: 1.8 on floor 5")
+	assert_eq(t.boss_damage_per_floor_permille, 100, "boss +10 % damage a floor: 1.4 on 5")
 	assert_eq(t.rooms_min_by_floor, PackedInt32Array(ROOMS_MIN))
 	assert_eq(t.rooms_max_by_floor, PackedInt32Array(ROOMS_MAX))
 	assert_eq(t.heal_permille, 400)
@@ -40,7 +40,7 @@ func test_the_run_is_five_floors_with_the_stretched_curve() -> void:
 	assert_true(old.rooms_min_by_floor.is_empty(), "its floors keep data/map's 15-19 rooms")
 
 
-## Floor 5 ends where floor 3 ended: an enemy of 1000 HP and 1000 damage on floors 1-5; a boss +25 % HP and +12 %
+## Floor 5 ends where floor 3 ended: an enemy of 1000 HP and 1000 damage on floors 1-5; a boss +20 % HP and +10 %
 ## damage a floor, floor 1's boss eased to 800 per mille.
 func test_enemies_and_bosses_scale_per_floor() -> void:
 	var hp := [1000, 1380, 1900, 2620, 3610]
@@ -59,8 +59,8 @@ func test_enemies_and_bosses_scale_per_floor() -> void:
 		var base := ContentCompiler.compile_bosses(_repo)
 		r.scale_bosses(bosses)
 		var ease := 800 if f == 1 else 1000
-		var hp_pm := (1000 + 250 * (f - 1)) * ease / 1000
-		var dmg_pm := (1000 + 120 * (f - 1)) * ease / 1000
+		var hp_pm := (1000 + 200 * (f - 1)) * ease / 1000
+		var dmg_pm := (1000 + 100 * (f - 1)) * ease / 1000
 		for k in bosses.size():
 			if base[k].mimic:
 				continue

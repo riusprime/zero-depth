@@ -343,6 +343,37 @@ func test_a_save_at_the_arena_entry_resumes_the_arena() -> void:
 		_round_trip(w, _floor_with_arena(20, fl), "floor %d arena entry" % fl)
 
 
+## v0.9.0 FV regression (run 20's floor 1 on the five-floor run: the hero walks into an arena on the floor's first
+## tick, so its barriers and the boss door go up on the same tick): the restore finds the door among the walls play
+## added, swaps its prepared flow field in as play did and keeps the field from before the door, so once the door
+## opens both worlds swap the same field back and their flow fields (and so the enemies' paths) never part.
+func test_a_restore_with_barriers_keeps_the_field_from_before_the_boss_door() -> void:
+	var w := _floor_with_arena(20, 1)
+	var room := w.floor_layout.arena_rooms[0]
+	w.actors.hp[0] = 100000
+	w.actors.max_hp[0] = 100000
+	_enter(w, room)
+	assert_true(
+		w.arenas.sealed() and w.boss_flow.door == BossFlow.Door.SHUT, "barriers and the door are up"
+	)
+	assert_not_null(w.get(&"_nav_open"), "play keeps the field from before the door")
+	var snap := WorldSnapshot.take(w)
+	var restored := World.from_snapshot(bytes_to_var(var_to_bytes(snap)), _floor_with_arena(20, 1))
+	assert_not_null(restored)
+	if restored == null:
+		return
+	assert_not_null(restored.get(&"_nav_open"), "and so does the restore")
+	var b1 := FightBot.new(17)
+	var b2 := FightBot.new(17)
+	for i in STEPS_AFTER:
+		w.step(SaveLab.frame(w, b1))
+		restored.step(SaveLab.frame(restored, b2))
+		if restored.nav.dist != w.nav.dist:
+			fail_test("the flow fields parted on tick %d" % w.tick)
+			return
+	assert_eq(restored.state_hash(), w.state_hash())
+
+
 func test_a_save_mid_wave_and_after_the_clear_round_trips() -> void:
 	var w := _floor_with_arena(30)
 	var room := w.floor_layout.arena_rooms[0]
@@ -468,9 +499,12 @@ func test_killing_the_boss_leaves_a_legendary_altar_of_three() -> void:
 				assert_eq(Offers.rarity_of(code), Offers.LEGENDARY, "legendary stat cards only")
 				assert_true(w.legendary_table.stats.has(Offers.stat_of(code)), "from its pool")
 			Offers.MOD:  # v0.6.5 WN5b: or a wand card of the run's pool (its level-5 version)
+				# v0.8.0 FL (LegendaryDefinition.card_categories): or one card of the altar's categories
+				# (data: advanced, trigger), e.g. On Kill
+				var cat := w.legendary_table.card_categories.has(LootPacing.category(w, code))
 				assert_true(
-					w.legendary_table.mods.has(code) or CardLevels.is_card(w, code),
-					"pool mods only"
+					w.legendary_table.mods.has(code) or CardLevels.is_card(w, code) or cat,
+					"pool mods, a held card's level-up or one card of the altar's categories"
 				)
 			_:
 				fail_test("no other card types")

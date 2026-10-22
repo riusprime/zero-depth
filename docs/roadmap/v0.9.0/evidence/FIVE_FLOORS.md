@@ -85,3 +85,38 @@ A payload records `run.run_id`. One without it (every save made before this step
 (`three_floors`: 3 floors, its scaling, 15-19 rooms, the wand's 4 → 6 → 8, v0.8.0's altar and chest counts), so its
 floor rebuilds as saved and it ends on its floor 3 with the Ascension portal (test_old_saves
 `test_a_v080_run_resumes_and_ends_as_a_three_floor_run`).
+
+## Follow-up (after merging the session head 57c8a0c9)
+
+- Merge: only `locale/*.translation` conflicted; took the head's, touched `strings.csv`, re-imported. A check script
+  compared every row: `LOCALE| rows 1162 mismatches 0`.
+- Boss scaling: the code's rule is linear, HP × (1 + step × (f − 1)), so v0.8.0's floor 3 was ×1.8 HP and ×1.4
+  damage (not 1.96 / 1.44). Floor 5 now ends there exactly: `boss_hp_per_floor` 0.2 (200 ‰: 1000 + 4 × 200 = 1800)
+  and `boss_damage_per_floor` 0.1 (100 ‰: 1000 + 4 × 100 = 1400). Floor-1 ease 800 ‰ kept.
+- test_final_pace still fails, by 1.1 s: `N2 pace base blade: bodies (s) [112.8, 101.0, 146.7]`, `strong blade:
+  [71.0, 73.9, 148.8]` (assert: strong ≤ base + 1.0). On the session head (floor 3) it passes: `[133.1, 98.5,
+  130.2]` / `[86.4, 73.8, 127.9]`. Not loosened.
+- test_arenas' round trips: root cause in `WorldSnapshot.apply`. The boss door is shut on the floor's first tick;
+  play keeps the flow field from before it (`World._nav_open`) for when it opens. The restore re-adds the door the
+  way play did only when the saved walls are exactly the base's + the door (+ pillars) with the door first; a sealed
+  arena's barriers (here added on the same tick, before the door) failed that test, so the restored world kept no
+  field, and when the door opened it rebuilt one where play swapped its kept field back: the flow fields parted
+  (tick 595). Fix: the door is looked for among every wall play added (`plain.slice(walls_before).has(door.center)`,
+  size `>=`). Regression: `test_a_restore_with_barriers_keeps_the_field_from_before_the_boss_door` (run 20, floor 1).
+- test_arenas legendary altar: `data/legendary/boss.tres` has `card_categories` advanced and trigger (v0.8.0 FL:
+  one card of those categories is a choice); the test's MOD rule predates FL. It now also allows a card whose
+  `LootPacing.category` is one of the altar's categories.
+- test_stats: the legendary Power amount is read from the data (epic × `multiplier_of(&"damage")`).
+- test_e2e_timed_door: its seed (3) had a timed door on the old floor 1; of run seeds 1-79 only seed 2's five-floor
+  floor 1 holds one now (worth a look: small floors rarely fit TD's door). Seed 2.
+- test_attack_slots (AS, merged): its 8-slot world was floor 3; now floor 5.
+
+| Files | Raw summary |
+|---|---|
+| test_five_floors | `Tests 8 / Passing Tests 8` |
+| test_arenas + test_stats | `Tests 28 / Passing Tests 28` |
+| test_attack_slots | `Tests 16 / Passing Tests 16` |
+| sim folder, 6 shards | `287/286` (deep_bite: locale), `255/254` (final_pace), `241/241`, `194/192` (attack_slots, then fixed above), `272/271` (test_modifiers `test_a_second_form_layers_where_the_first_ends`), `201/200` (test_arrival `test_a_swap_opened_mid_arrival_waits_for_the_landing`) |
+| session head 57c8a0c9 alone: test_arrival, test_modifiers, test_final_pace | `Tests 35 / Passing 33 / Failing 2` (arrival and modifiers fail there too: not this step) |
+| golden + arch + content + application folders | `Tests 251 / Passing Tests 251` |
+| e2e run_flow, saves, old_save, ascension, final_approach, timed_door | `Tests 10 / Passing 9 / Failing 1` (timed_door's seed, then `Tests 1 / Passing Tests 1`) |

@@ -169,7 +169,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 	assert_eq(w2.boss_room_heal_permille, 0, "floor 2: no heal")
 	var t2 := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(t2, 2)
-	assert_eq(t2[0].hp, base[0].hp * 1250 / 1000, "floor 2 unchanged (v0.9.0 FV: +25 % a floor)")
+	assert_eq(t2[0].hp, base[0].hp * 1200 / 1000, "floor 2 unchanged (v0.9.0 FV: +20 % a floor)")
 
 
 func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:

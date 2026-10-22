@@ -11,8 +11,9 @@ const W := preload("res://tests/support/mx4_world.gd")
 const TRIGGERS: Array[StringName] = [&"trigger_on_hit_twice", &"trigger_on_hit", &"trigger_on_kill"]
 
 
-## A world of `weapon` with the shipped wand, its slot table and floor `f`'s slots (3: eight), holding nothing yet.
-func _world(weapon: StringName = &"gun", f: int = 3) -> World:
+## A world of `weapon` with the shipped wand, its slot table and floor `f`'s slots (v0.9.0 FV: 5: eight), holding
+## nothing yet.
+func _world(weapon: StringName = &"gun", f: int = 5) -> World:
 	var w := W.world(weapon)
 	var r := W.repo()
 	w.wand_table = WandCompiler.from_repo(r)

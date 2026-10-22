@@ -73,8 +73,8 @@ func test_the_run_data_compiles() -> void:
 	assert_eq(
 		t.enemy_damage_floor_permille, PackedInt32Array([1000, 1180, 1400, 1660, 1960]), "1.4^"
 	)
-	assert_eq(t.boss_hp_per_floor_permille, 250, "bosses keep their own scaling (FV: +25 %)")
-	assert_eq(t.boss_damage_per_floor_permille, 120)
+	assert_eq(t.boss_hp_per_floor_permille, 200, "bosses keep their own scaling (FV: +20 %)")
+	assert_eq(t.boss_damage_per_floor_permille, 100)
 	assert_eq(t.heal_permille, 400)
 	var def: RunDefinition = _repo().get_def(&"run", RunSaver.RUN_ID)
 	for id in def.biomes:
@@ -207,17 +207,17 @@ func test_each_floor_draws_its_boss_and_scales_it() -> void:
 		r.scale_bosses(t, f)
 		# v0.4.0 TU (owner D9): floor 1's bosses x0.8 in the same step.
 		var ease: int = 800 if f == 1 else 1000
-		# v0.9.0 FV (owner Q24): +25 % HP and +12 % damage a floor (was +40 % / +20 %)
-		var hp_pm: int = (1000 + 250 * (f - 1)) * ease / 1000
-		var dmg_pm: int = (1000 + 120 * (f - 1)) * ease / 1000
+		# v0.9.0 FV (owner Q24): +20 % HP and +10 % damage a floor (was +40 % / +20 %: floor 5 = old floor 3)
+		var hp_pm: int = (1000 + 200 * (f - 1)) * ease / 1000
+		var dmg_pm: int = (1000 + 100 * (f - 1)) * ease / 1000
 		assert_eq(
-			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.25 (f - 1)), x0.8 on floor 1"
+			t[k].hp, base[k].hp * hp_pm / 1000, "boss HP x (1 + 0.2 (f - 1)), x0.8 on floor 1"
 		)
 		for a in t[k].attacks.size():
 			assert_eq(
 				t[k].attacks[a].damage,
 				base[k].attacks[a].damage * dmg_pm / 1000,
-				"boss damage x (1 + 0.12 (f - 1)), x0.8 on floor 1"
+				"boss damage x (1 + 0.1 (f - 1)), x0.8 on floor 1"
 			)
 
 

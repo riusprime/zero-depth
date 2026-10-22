@@ -997,7 +997,7 @@ F10) the tables live with the run and the spawner (there is no `data/threat/scal
   `[1000, 1400, 1960]`); a floor past the end uses the last entry. v0.9.0 FV: `rooms_min_by_floor` /
   `rooms_max_by_floor` (shipped `[9, 12, 14, 16, 18]` / `[11, 14, 16, 18, 19]`; empty: `data/map`'s range; each
   2..19, paired) and `wand_slots_per_floor` (empty: `data/wand`'s; three_floors keeps `[4, 6, 8]`). Five floors ship
-  `boss_hp_per_floor` 0.25 and `boss_damage_per_floor` 0.12. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+  `boss_hp_per_floor` 0.2 and `boss_damage_per_floor` 0.1 (floor 5's ×1.8 / ×1.4 = v0.8.0's floor 3). `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
   `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
   enemies' tables. v0.5.0 RT: `deep_scale` (1.25, at least 1) multiplies both on a Deep floor, and
   `deep_extra_chests` (1, not negative) adds chests there ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11).

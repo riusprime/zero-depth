@@ -408,11 +408,14 @@ static func apply(base: World, snap: Dictionary) -> String:
 	# v0.9.0 TD: the timed door's slab is a barrier added in play (before or after the boss door): left out here.
 	var plain := _without_slab(base, saved_c, walls_before)
 	# The boss door sealed in play: add it the way play did (its prepared flow field swaps in, no rebuild).
+	# v0.9.0 FV: found among every wall play added, so a sealed arena's barriers (added on the same tick, before or
+	# after it) don't hide it. Missed, the restored world kept no field from before the door (World._nav_open) and,
+	# once the door opened, rebuilt one where play swapped its kept field back: the two flow fields parted.
 	var door: Obb = base.get(&"_wall_next")
 	if (
 		door != null
-		and plain.size() == walls_before + 1 + pillars
-		and plain[walls_before] == door.center
+		and plain.size() >= walls_before + 1 + pillars
+		and plain.slice(walls_before).has(door.center)
 		and not bool(data.get(&"_wall_next", true))
 	):
 		base.add_wall_now(door)
