@@ -887,7 +887,6 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 	var out: Array[StatTable] = []
 	out.resize(Stats.COUNT)
 	var ld: LegendaryDefinition = repo.get_def(&"legendary", &"boss")  # v0.5.5 AR
-	var legend := int(round(ld.stat_multiplier * 1000.0)) if ld != null else 1600
 	for def: StatCardDefinition in repo.all_of(&"stat_card"):
 		var s := StatCardDefinition.STATS.find(def.stat)
 		if s < 0:
@@ -908,7 +907,8 @@ static func compile_stat_cards(repo: ContentRepository) -> Array[StatTable]:
 			for k in StatCardDefinition.RARITIES:
 				t.side[k] = int(round(def.side[k] * 10.0))
 		t.limit_permille = int(round(def.limit * 1000.0))
-		# v0.5.5 AR (X1b): the legendary rarity, the epic numbers x the tier's stat multiplier.
+		# v0.5.5 AR (X1b): legendary = epic x the tier's stat multiplier (v0.9.0 LG: or the card's own, Power/Haste)
+		var legend := int(round(ld.multiplier_of(def.id) * 1000.0)) if ld != null else 1600
 		t.amounts.append((t.amounts[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		t.side.append((t.side[Stats.Rarity.EPIC] * legend + 500) / 1000)
 		out[s] = t

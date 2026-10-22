@@ -229,6 +229,23 @@ func test_the_gain_line_is_the_forecast_and_the_outcome() -> void:
 	assert_eq(CardLevels.level(w, pierce), int(f_lv["new"]), "the level as forecast")
 
 
+## v0.9.0 LG (owner Q12): the legendary Power and Haste cards say their new amounts (the data's %s) and their gain
+## line is the forecast, which is the outcome.
+func test_legendary_power_and_haste_say_their_nerfed_numbers() -> void:
+	var w := _world()
+	var power := _stat(w, &"damage", Stats.Rarity.LEGENDARY)
+	var haste := _stat(w, &"attack_speed", Stats.Rarity.LEGENDARY)
+	var r := WorldReader.new(w)
+	assert_eq(PickPanel.card_face(self, r, power)["sentence"], tr("STAT_DAMAGE_DESC") % "32.5")
+	assert_eq(
+		PickPanel.card_face(self, r, haste)["sentence"], tr("STAT_ATTACK_SPEED_DESC") % "23.4"
+	)
+	var f := r.card_forecast(power)
+	assert_eq([int(f["old"]), int(f["new"])], [1000, 1325], "the gain line: × 1.325 damage")
+	Offers.apply(w, power)
+	assert_eq(Stats.total(w, Offers.stat_of(power)), int(f["new"]), "as forecast")
+
+
 func test_numbers_count_up_from_the_old_value_on_focus() -> void:
 	var w := _world()
 	var dmg := _stat(w, &"damage", Stats.Rarity.EPIC)
