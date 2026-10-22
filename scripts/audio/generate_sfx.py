@@ -900,6 +900,36 @@ def s_arrival_altar(r):
     return mix(build, at(mix(thump, burst * 0.6, chime), rise))
 
 
+def s_pylon_lock(r):
+    """v0.9.0 FA (owner Q18: "it locks in with a sound"; the lead's placeholder): a rune pylon switching on. A heavy
+    stone clunk, then a violet glassy chord that rises and rings out."""
+    m = n_of(0.25)
+    clunk = osc(curve(120, 50, m), "sine") * env(m, 0.002, 0.06) + one_pole_lp(noise(r, m), 900) * env(m, 0.001, 0.03)
+    n = n_of(0.9)
+    chord = sum(fm(f * curve(0.97, 1.0, n), 2.0, 0.8, n) for f in (311.1, 392.0, 466.2, 622.3)) * 0.12
+    chord *= env(n, 0.06, 0.35)
+    shimmer = bandpass(noise(r, n), curve(2500, 6000, n), 9.0) * env(n, 0.08, 0.3) * 0.25
+    return echo(mix(clunk, at(mix(chord, shimmer), 0.06)), 150, 0.4, 0.35, 3500, 0.3)
+
+
+def s_final_altar(r):
+    """v0.9.0 FA (the lead's placeholder): the purple altar's buildup before the Colossus rises, darker than the
+    arrival's. A low detuned drone and a rising choir-like FM swell for 2.2 s, a pulse speeding up, then at 2.2 s
+    (AltarStage.final().cue_peak_s, the file's peak) a deep boom with a falling growl and a dark rumble."""
+    rise = 2.2
+    n = n_of(rise)
+    swell = np.linspace(0.0, 1.0, n) ** 2.0
+    drone = sum(fm(f * curve(1.0, 1.5, n), 1.5, 0.8 + 1.6 * swell, n) for f in (55.0, 55.6, 82.4, 110.0)) * 0.12
+    pulse = 0.7 + 0.3 * np.sin(phase(curve(2.0, 12.0, n)))
+    hiss = bandpass(noise(r, n), curve(800, 4000, n), 6.0) * 0.3
+    build = one_pole_lp(drone * pulse, 1400) * swell + hiss * swell
+    m = n_of(0.7)
+    boom = osc(curve(110, 30, m), "sine") * env(m, 0.002, 0.2)
+    growl = one_pole_lp(bitcrush(osc(curve(90, 40, m), "saw", m), 6, 3), 700) * env(m, 0.005, 0.25) * 0.4
+    rumble = one_pole_lp(noise(r, m), 300) * env(m, 0.001, 0.3) * 0.6
+    return mix(build, at(mix(boom, growl, rumble), rise))
+
+
 SFX = [
     ("blade_slash_1", s_blade_slash_1),
     ("blade_slash_2", s_blade_slash_2),
@@ -986,6 +1016,8 @@ SFX = [
     ("overrun_enter", s_overrun_enter),
     ("overrun_clear", s_overrun_clear),
     ("arrival_altar", s_arrival_altar),
+    ("pylon_lock", s_pylon_lock),
+    ("final_altar", s_final_altar),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

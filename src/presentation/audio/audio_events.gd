@@ -91,6 +91,10 @@ var _arena := [-1, 0]
 var _door_progress := -1.0
 ## v0.9.0 SA: the arrival's last progress (-1 when none plays), for the altar cue's edge.
 var _arrive_progress := -1.0
+## v0.9.0 FA: the final approach's last lit pylons (bits), buildup progress and state, for their cues' edges.
+var _pylons := 0
+var _buildup := -1.0
+var _approach := -1
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -112,6 +116,9 @@ func prime(reader: WorldReader) -> void:
 	_arena = [int(a["sealed"]), (a["cleared"] as PackedInt32Array).size()]
 	_door_progress = reader.boss_door_progress()
 	_arrive_progress = reader.arrival_progress()
+	_pylons = pylon_mask(reader)
+	_buildup = reader.approach_buildup_progress()
+	_approach = reader.approach_state()
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -138,7 +145,50 @@ func collect(reader: WorldReader) -> Array:
 	_overrun_edges(reader, out)
 	_door_impact(reader, out)
 	_arrival(reader, out)
+	_final_approach(reader, out)
 	return out
+
+
+## v0.9.0 FA (owner Q18: "it locks in with a sound"): a pylon switching on, the purple altar's buildup (its peak on the
+## buildup's end, as SA's arrival), the walls of light rising (the boss door's seal).
+func _final_approach(reader: WorldReader, out: Array) -> void:
+	if not reader.final_approach():
+		return
+	var lit := pylon_mask(reader)
+	for k in reader.approach_pylon_count():
+		if (lit & (1 << k)) != 0 and (_pylons & (1 << k)) == 0:
+			out.append([&"pylon_lock", reader.approach_pylon_pos(k), 1.0])
+	_pylons = lit
+	var b := reader.approach_buildup_progress()
+	var at := final_cue_at(reader)
+	if at >= 0.0 and b >= at and _buildup < at:
+		out.append([AltarStage.final().cue, null, 1.0])
+	_buildup = b
+	var st := reader.approach_state()
+	if (
+		st == WorldReader.APPROACH_FIGHT
+		and _approach != WorldReader.APPROACH_FIGHT
+		and _approach >= 0
+	):
+		out.append([&"boss_door_seal", null, 1.0])
+	_approach = st
+
+
+## The final approach's lit pylons as bits (pylon k: 1 << k).
+static func pylon_mask(reader: WorldReader) -> int:
+	var m := 0
+	for k in reader.approach_pylon_count():
+		if reader.approach_pylon_lit(k):
+			m |= 1 << k
+	return m
+
+
+## The share of the final approach's buildup at which the altar's cue starts, so its peak lands on the buildup's end
+## (-1: the buildup is shorter than the cue's lead).
+static func final_cue_at(reader: WorldReader) -> float:
+	var seconds := float(reader.approach_buildup_ticks()) / SimTick.TICKS_PER_SECOND
+	var lead := AltarStage.final().cue_peak_s / maxf(seconds, 0.001)
+	return 1.0 - lead if lead <= 1.0 else -1.0
 
 
 ## v0.9.0 SA (owner Q16: "Your model, my sound": the lead's placeholder, `arrival_altar`): floor 1's altar hum and pop

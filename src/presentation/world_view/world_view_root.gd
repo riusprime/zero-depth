@@ -93,6 +93,8 @@ var transit: PortalTransitView = _part(PortalTransitView)
 var receiver: FloorReceiver
 ## v0.9.0 SA (owner Q16): floor 1 of a run's arrival altar, there instead of the receiver (null elsewhere).
 var altar: AltarStage
+## v0.9.0 FA (owner C §3, Q18): the final approach's altar, pylons and walls of light (null elsewhere).
+var approach_view: FinalApproachView
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
@@ -362,6 +364,10 @@ func _setup_devices(palette: Dictionary) -> void:
 	transit.deep_gate = deep_gate
 	transit.ascension = ascension  # v0.7.5 AP
 	transit.loop_device = loop_device  # v0.8.0 P2
+	if reader.final_approach():  # v0.9.0 FA
+		approach_view = FinalApproachView.new()
+		add_child(approach_view)
+		approach_view.setup(reader, rig)
 	rig.camera.add_child(ink)
 	ink.position = Vector3(0, 0, -1)
 	hit_feel = HitFeel.new(actors, rig)
@@ -410,6 +416,8 @@ func sync() -> void:
 	_sync_view(&"status_fx", status_fx)
 	_sync_view(&"heat_fx", heat_fx)
 	_sync_view(&"transit", transit)  # after the actors: it poses the hero's model
+	if approach_view != null:
+		_sync_view(&"approach", approach_view)  # v0.9.0 FA
 	_sync_view(&"skill_fx", skill_fx)  # v0.3.5 K
 	_sync_view(&"ability_fx", ability_fx)  # v0.4.0 BS
 	_sync_view(&"element_fx", element_fx)  # v0.4.0 AB

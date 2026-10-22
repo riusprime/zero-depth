@@ -136,6 +136,7 @@ const STATE_CLASSES: Array[StringName] = [
 	&"FinalFight",  # v0.8.0 FB1: the final boss's fight (its bodies, the phase, the shatter)
 	&"NemesisCast",  # v0.8.0 FB3: the Nemesis's hostile copies of the player's shot and cards (FinalFight)
 	&"IntensityState",  # v0.8.0 N5: the intensity director's state
+	&"FinalApproach",  # v0.9.0 FA: the final approach (the pylons, the buildup, the walls of light)
 ]
 
 ## v0.6.0 MX2 (old saves): fields added since v0.5 that an older snapshot may lack, by class. A missing one keeps the
@@ -167,6 +168,7 @@ const ADDED_SINCE_V05 := {
 		&"loop_threat",
 		&"loop_cap_permille",
 		&"final_fight",  # v0.8.0 FB1: the final boss's fight (a save from before FB1 holds none: null, as the base's)
+		&"approach",  # v0.9.0 FA: the final approach (a save from before FA holds none: FloorPlan builds that one bare)
 		&"legendary_picks",  # v0.8.0 RR: a boss altar's extra picks (an older save has none: 0)
 		&"loot_guaranteed",  # v0.8.0 FL: an older save's floor used no guarantee (0) and holds no jackpot
 		&"loot_jackpots",

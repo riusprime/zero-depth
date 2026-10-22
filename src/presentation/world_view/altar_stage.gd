@@ -135,7 +135,7 @@ static func final() -> Look:
 	l.pop_at = 0.82
 	l.orbit_turns = 2.6
 	l.cue = &"final_altar"
-	l.cue_peak_s = 2.2
+	l.cue_peak_s = 2.23
 	return l
 
 

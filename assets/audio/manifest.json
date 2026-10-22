@@ -855,6 +855,26 @@
       "loop": false
     },
     {
+      "id": "pylon_lock",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/pylon_lock.wav",
+      "sha256": "3d19c2fe2e8b968398a17bd1952439cd78d0c51bcfa2d7ddc48ab6b45ae3beee",
+      "seconds": 1.26,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -19.53,
+      "loop": false
+    },
+    {
+      "id": "final_altar",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/final_altar.wav",
+      "sha256": "3feeca429656a58f4f7205d7c7c75083e9311386d995120330ea47f8d4d3c65c",
+      "seconds": 2.9,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -19.24,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

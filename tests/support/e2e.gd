@@ -291,6 +291,28 @@ func walk_to(target: Vector2, within: float) -> bool:
 
 ## v0.8.0 BD (owner O83): walks up to the shut boss door, presses interact (E) and waits until it is open. True when
 ## it is open (at once on a floor without the press, or once it already opened or the fight began).
+## v0.9.0 FA (owner Q18): on the final approach, walks (the stick) up the causeway to each rune pylon and presses E
+## by it, then waits (reading only) through the buildup until the fight has begun. True when the Colossus rose.
+## Returns at once (true) off the approach or once its fight began.
+func awaken_final_altar() -> bool:
+	var w := world()
+	if w == null or w.approach == null:
+		return true
+	await landed()
+	var f := w.floor_layout
+	for k in f.pylons.size():
+		if w.approach.lit[k] == 0:
+			await walk_to(f.pylons[k], 1.2)
+			stick_toward(Vector2.ZERO)
+			await tap(KEY_E)
+			await frames(2)
+	for k in FinalApproach.BUILDUP_TICKS + 60:
+		if w.final_fight != null:
+			break
+		await frames(1)
+	return w.final_fight != null
+
+
 func open_boss_door() -> bool:
 	var w := world()
 	var bf := w.boss_flow
