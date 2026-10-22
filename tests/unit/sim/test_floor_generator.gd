@@ -375,9 +375,12 @@ func _check_portal(f: FloorLayout, reach: FloorReach, tag: String) -> void:
 		reach.region_at(f.start_pos),
 		tag + ": gate reachable"
 	)
-	# The gate's back is against a wall face.
-	var back := f.portal_pos - f.portal_facing() * (FloorLayout.GATE_HALF_DEPTH + 0.05)
-	assert_eq(f.room_of(back), -1, tag + ": the gate is against a wall")
+	# v0.9.0 PT (owner: "there should be an space between the wall and the portals"): the gate stands
+	# GATE_WALL_CLEAR m out from the wall face behind it, with open floor between.
+	var back := f.portal_pos - f.portal_facing() * (FloorLayout.GATE_WALL_CLEAR + 0.05)
+	assert_eq(f.room_of(back), -1, tag + ": the gate backs onto a wall")
+	var gap := f.portal_pos - f.portal_facing() * (FloorLayout.GATE_WALL_CLEAR - 0.05)
+	assert_ne(f.room_of(gap), -1, tag + ": with space between the gate and the wall")
 	# No item or spawn spot under the gate or in front of it.
 	for q in f.item_spots:
 		assert_false(front.has_point(q), tag)

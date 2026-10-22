@@ -23,7 +23,7 @@ const GATE_GAP := 4.8
 ## Further candidates step this far (m) along a wall.
 const STEP := 0.5
 ## Side margin (m) of a gate's kept-clear zone, and its depth margin past the front square.
-const ZONE_SIDE := 1.0
+const ZONE_SIDE := FloorLayout.GATE_ZONE_HALF_W - FloorLayout.GATE_WIDTH * 0.5  # v0.9.0 PT: 1.1 (was 1.0)
 const ZONE_DEPTH := 1.0
 ## The Deep gate keeps this clear of where the boss appears (m), and of the boss door's passage.
 const SPAWN_CLEAR := 2.6
@@ -109,6 +109,8 @@ static func fits(
 	var box := collider_at(pos, angle)
 	if not room.encloses(box.bounds()) or not room.encloses(_front(pos, angle)):
 		return false
+	if not room.encloses(FloorLayout.oval_clear_rect(pos, angle)):  # v0.9.0 PT: clear of the room's walls
+		return false
 	var z := zone(pos, angle)
 	if z.intersects(zone(f.portal_pos, f.portal_angle)):
 		return false
@@ -154,9 +156,14 @@ static func deep_gate_collider(f: FloorLayout) -> Obb:
 static func zone(pos: Vector2, angle: int) -> Rect2:
 	var n := Kin.dir(angle)
 	var t := Vector2(-n.y, n.x)
-	var face := pos - n * FloorLayout.GATE_HALF_DEPTH
+	var face := pos - n * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: from the wall face, the gap behind included
 	var half_w := FloorLayout.GATE_WIDTH * 0.5 + ZONE_SIDE
-	var depth := FloorLayout.GATE_HALF_DEPTH * 2.0 + FloorLayout.GATE_FRONT + ZONE_DEPTH
+	var depth := (
+		FloorLayout.GATE_WALL_CLEAR
+		+ FloorLayout.GATE_HALF_DEPTH
+		+ FloorLayout.GATE_FRONT
+		+ ZONE_DEPTH
+	)
 	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
 
 
@@ -187,7 +194,7 @@ static func _face(r: Rect2, s: int) -> float:
 ## A gate's centre on side s of r at coordinate u along that side.
 static func _on_wall(r: Rect2, s: int, u: float) -> Vector2:
 	var face := Vector2(_face(r, s), u) if s % 2 == 0 else Vector2(u, _face(r, s))
-	return face + Kin.dir(_SIDE_ANGLES[s]) * FloorLayout.GATE_HALF_DEPTH
+	return face + Kin.dir(_SIDE_ANGLES[s]) * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: clear of the wall
 
 
 ## A Deep floor's extras (setup, after Rewards.place): the epic altar, then the extra chests, on the item spots the

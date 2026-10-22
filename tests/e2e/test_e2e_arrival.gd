@@ -5,7 +5,8 @@ extends GutTest
 ## cover fades, then the arrival plays (~1.6 s of ticks: the stick does nothing, the HUD and the hints wait, nothing
 ## spawns), the hero pops in on the receiver, the HUD shows, the stick moves the hero and only then do enemies come.
 ## Then the dev panel (God mode, Kill boss; as test_e2e_portal) stands in for the fight, the stick walks into the
-## gate and floor 2 opens on the shorter arrival: the hero rises out of floor 2's receiver (~0.8 s of ticks).
+## gate and floor 2 opens on the shorter arrival (~0.8 s of ticks): v0.9.0 PT (Q16), the hero steps out of the
+## portal it took (floor 2 has no receiver), and it collapses.
 ## v0.9.0 SA (owner Q16): floor 1 lands on the arrival altar instead of the receiver, over 4.0 s (240 ticks): its runes
 ## light, orbit and build up, the hero pops in on the sound's peak; the altar's cue plays once.
 
@@ -52,7 +53,7 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 ## Plays the arrival from its first tick: [ticks it took, the hero moved during it, enemies seen, hero shown before
 ## the end, HUD shown during it, the receiver's highest charge (v0.9.0 SA: floor 1's altar's buildup), the lowest the
-## hero stood].
+## hero stood, v0.9.0 PT: the arrival portal's fullest form, the hero's farthest offset from its spot].
 func _watch_arrival(e: E2e, main: Main) -> Array:
 	var w := e.world()
 	var reader := main.driver.reader
@@ -65,6 +66,8 @@ func _watch_arrival(e: E2e, main: Main) -> Array:
 	var hud_seen := false
 	var charge := 0.0
 	var lowest := 0.0
+	var grown := 0.0
+	var farthest := 0.0
 	var hud := main.get_node("UI/Hud") as Hud
 	e.stick_toward(Vector2(1, 0))  # pushed the whole time: it does nothing yet
 	for k in 400:
@@ -76,13 +79,16 @@ func _watch_arrival(e: E2e, main: Main) -> Array:
 			shown_at = w.tick - t0
 		if avatar.visible:
 			lowest = minf(lowest, avatar.position.y)
+			farthest = maxf(farthest, avatar.position.length())
 		hud_seen = hud_seen or hud.visible
 		if main.view.altar != null:
 			charge = maxf(charge, main.view.altar.energy)
-		else:
+		elif main.view.receiver != null:
 			charge = maxf(charge, main.view.receiver.charge)
+		if main.view.transit.arrival_gate != null:  # v0.9.0 PT (Q16): a later floor's portal
+			grown = maxf(grown, main.view.transit.arrival_gate.form())
 		await e.frames(1)
-	return [w.tick - t0, moved, enemies, shown_at, hud_seen, charge, lowest]
+	return [w.tick - t0, moved, enemies, shown_at, hud_seen, charge, lowest, grown, farthest]
 
 
 func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
@@ -150,7 +156,8 @@ func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 	assert_eq(get_errors().size(), 0, "no engine or script error")
 
 
-func test_through_the_gate_floor_two_steps_out_of_its_receiver() -> void:
+## v0.9.0 PT (owner Q16): floor 2 has no receiver: the hero steps out of the portal it took, which then collapses.
+func test_through_the_gate_floor_two_steps_out_of_the_portal() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu()
@@ -182,7 +189,9 @@ func test_through_the_gate_floor_two_steps_out_of_its_receiver() -> void:
 		return
 	var w2 := e.world()
 	assert_ne(w2, w)
-	assert_true(main.driver.reader.floor_receiver(), "floor 2 has its receiver")
+	assert_true(main.driver.reader.floor_receiver(), "floor 2 has an arrival")
+	assert_null(main.view.receiver, "v0.9.0 PT: no receiver on floor 2")
+	assert_not_null(main.view.transit.arrival_gate, "the portal it came through")
 	assert_true(main.driver.reader.arriving(), "floor 2 opens on its arrival")
 	assert_false(main.driver.reader.arrival_first(), "the short one")
 	var covered := 0
@@ -194,7 +203,9 @@ func test_through_the_gate_floor_two_steps_out_of_its_receiver() -> void:
 	assert_almost_eq(got[0], 48, 1, "floor 2's arrival: ~0.8 s of ticks (%d)" % got[0])
 	assert_false(got[1], "the stick did nothing")
 	assert_eq(got[2], 0, "nothing spawned")
-	assert_lt(got[6], -0.3, "the hero rose out of the receiver")
+	assert_gt(got[7], 0.99, "the portal grew whole")
+	assert_gt(got[8], 0.4, "the hero stepped out of it")
+	assert_false(main.view.transit.arrival_gate.visible, "it collapsed into a point")
 	await e.frames(20)
 	e.stick_toward(Vector2.ZERO)
 	assert_eq(main.view.transit.phase, PortalTransitView.Phase.NONE)

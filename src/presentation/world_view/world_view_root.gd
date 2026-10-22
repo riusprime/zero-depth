@@ -348,17 +348,25 @@ func _setup_devices(palette: Dictionary) -> void:
 		shop_terminal = ShopTerminalView.new()
 		add_child(shop_terminal)
 		shop_terminal.setup(reader.shop_pos(), reader.shop_angle())
+	# v0.8.0 N11: every run floor (not the final arena or the Playground) has an arrival. v0.9.0 SA/PT (owner Q16: "only
+	# floor 1 the rest of the floor spawn the same portal that you take at the end of the floor"): floor 1 of a run
+	# lands on the altar; a later floor's hero steps out of the portal taken (the Deep gate's violet on a Deep floor).
+	var arrival_gate: PortalGate = null
 	if reader.arrival_altar():  # v0.9.0 SA (Q16): floor 1 of a run lands on the altar
 		altar = AltarStage.new(AltarStage.arrival())
 		add_child(altar)
 		altar.setup(reader.floor_start_pos())
-	elif reader.floor_receiver():  # v0.8.0 N11: every run floor (not the final arena or the Playground)
-		receiver = FloorReceiver.new()
-		add_child(receiver)
-		receiver.setup(reader.floor_start_pos())
+	elif reader.floor_receiver():
+		arrival_gate = PortalGate.new()
+		arrival_gate.name = "ArrivalGate"
+		if reader.floor_is_deep():
+			arrival_gate.set_deep()
+		arrival_gate.set_arrival()
+		add_child(arrival_gate)
 	add_child(transit)
 	transit.setup(actors, gate)
 	transit.receiver = receiver
+	transit.arrival_gate = arrival_gate
 	transit.altar = altar
 	transit.rig = rig
 	transit.deep_gate = deep_gate
@@ -451,10 +459,13 @@ func sync() -> void:
 		shop_terminal.sync(reader)
 	if shop_stall != null:
 		shop_stall.sync(reader)
-	# v0.5.0 RT: each gate closes when the other one is taken.
+	# v0.5.0 RT: each gate closes when the other one is taken. v0.9.0 PT (C4, Q15): nothing stands before the boss
+	# dies; then each grows from a point as the sim forms it (portal_form_progress), and the one not taken collapses.
 	var open := reader.gate_open(WorldReader.ROUTE_NORMAL)
 	if gate != null and reader.has_boss_room() and gate.is_sealed() == open:
 		gate.set_sealed(not open)
+	if gate != null and open:
+		gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_NORMAL))
 	if ascension != null and ascension.is_sealed() == open:  # v0.7.5 AP: the column rises
 		ascension.set_sealed(not open)
 	if loop_device != null and loop_device.is_sealed() == open:  # v0.8.0 P2: and the Loop device lights
@@ -462,6 +473,8 @@ func sync() -> void:
 	var deep_open := reader.gate_open(WorldReader.ROUTE_DEEP)
 	if deep_gate != null and deep_gate.is_sealed() == deep_open:
 		deep_gate.set_sealed(not deep_open)
+	if deep_gate != null and deep_open:
+		deep_gate.set_growth(reader.portal_form_progress(WorldReader.ROUTE_DEEP))
 	rig.target = SimPlane.to_3d(reader.player_pos())
 	if occlusion_enabled:
 		var focus: Array[Vector2] = []

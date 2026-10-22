@@ -24,6 +24,11 @@ extends Node3D
 ## flash, the burst ring, dust) on the sound's peak with a thud; then the release (the runes slow, the energy fades, the
 ## view settles). No roll wobble (it read as a sideways pull). Reduced motion: the runes just light and the hero
 ## appears (no orbit, vibration or zoom).
+## v0.9.0 PT (owner Q15, Q16: "the rest of the floor spawn the same portal that you take at the end of the floor,
+## character comes out of it and then it vanishes"): the way in collapses the portal taken into a point at its end
+## (PortalGate.set_collapse). A later floor has no receiver: its arrival portal (`arrival_gate`, the portal taken:
+## blue, or the Deep gate's violet) grows from a point just behind the hero's spot, the hero steps out of it toward the
+## view with a thud, and it collapses into a point. Reduced motion: it fades in and out and the hero appears in front.
 
 ## The phase showing (tests read it): none, the way in, the arrival.
 enum Phase { NONE, ENTER, ARRIVE }
@@ -58,6 +63,16 @@ const STEP_RISE_FROM := 0.22
 const STEP_RISE_TO := 0.72
 const STEP_DEPTH := 1.1
 const STEP_THUD := 0.4
+## v0.9.0 PT (fractions of a later floor's arrival; starting values): the portal grows until STEP_GROW_TO, the hero
+## steps out over STEP_FROM..STEP_TO from STEP_BACK m behind its spot (the portal's plane), the portal collapses from
+## STEP_COLLAPSE_FROM; the way in collapses the portal taken over COLLAPSE_FROM..COLLAPSE_TO of its progress.
+const STEP_GROW_TO := 0.3
+const STEP_FROM := 0.26
+const STEP_TO := 0.66
+const STEP_BACK := 0.9
+const STEP_COLLAPSE_FROM := 0.66
+const COLLAPSE_FROM := 0.62
+const COLLAPSE_TO := 0.95
 ## v0.9.0 CV: the Ascension portal's pull vibrates up to this level (the final-boss travel).
 const ASCENSION_VIBRATE := 0.5
 ## Arrival: the hero grows over this part of the progress; the column fades out after COLUMN_FADE.
@@ -109,12 +124,16 @@ var receiver: FloorReceiver
 ## v0.9.0 SA: floor 1's arrival altar (null on other floors).
 var altar: AltarStage
 var rig: IsoRig
+## v0.9.0 PT (Q16): a later floor's arrival portal (null on floor 1 of a run and where there is no arrival).
+var arrival_gate: PortalGate
 ## v0.8.0 N11: this arrival is floor 1's (the big landing), and whether the hero has popped in (tests read both).
 var first := false
 var landed := false
 
 var _actors: ActorViews
 var _gate: PortalGate
+## v0.9.0 PT: the gate the way in collapses (the gate or the Deep gate; null for the Ascension floor's devices).
+var _taken: PortalGate
 var _blue := PortalGate.visor_blue()
 ## v0.7.5 AP: the way in's flash colour (the visor blue; the Ascension portal's gold through it).
 var _flash := PortalGate.visor_blue()
@@ -157,6 +176,7 @@ func sync(reader: WorldReader) -> void:
 		first = reader.arrival_first()
 		var deep := reader.route_taken() == WorldReader.ROUTE_DEEP and deep_gate != null
 		var taken := deep_gate if deep else _gate
+		_taken = taken if phase == Phase.ENTER else null
 		if phase == Phase.ENTER and taken != null:
 			taken.flare()
 		_flash = PortalGate.visor_blue()
@@ -177,7 +197,9 @@ func sync(reader: WorldReader) -> void:
 			_enter(reader, node, avatar)
 		Phase.ARRIVE:
 			_hide_extras(node, avatar)
-			if receiver != null or altar != null:
+			if arrival_gate != null and not first:  # v0.9.0 PT (Q16): a later floor's portal
+				_step_out(avatar, progress, node.position if node != null else Vector3.ZERO)
+			elif receiver != null or altar != null:
 				_land(avatar)
 			else:
 				_arrive(node, avatar)
@@ -196,6 +218,8 @@ func _player_node(reader: WorldReader) -> Node3D:
 func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 	var p := progress
 	column.visible = false
+	if _taken != null:  # v0.9.0 PT (Q15): the portal collapses into a point at the end of the way in
+		_taken.set_collapse(smoothstep(COLLAPSE_FROM, COLLAPSE_TO, p))
 	if calm:
 		_set_overlay(FADE_COLOR, smoothstep(0.0, 1.0, p))
 		_set_light(0.0)
@@ -337,25 +361,41 @@ func _land_first(avatar: Node3D, q: float) -> void:
 		_pose(avatar, Vector3.ZERO, _overshoot(u, POP_OVERSHOOT), true)
 
 
-## A later floor: the receiver flares and the hero rises out of it.
+## v0.9.0 PT (Q16): a later floor: the portal taken grows from a point behind the hero's spot `foot`, the hero steps
+## out of it toward the view (a thud as it comes through), and it collapses into a point. Reduced motion: it fades in
+## and out and the hero appears at its spot.
 func _step_out(avatar: Node3D, q: float, foot: Vector3) -> void:
 	if rig != null:
 		rig.set_flourish(0.0, 1.0)
-	receiver.set_charge(
-		smoothstep(0.0, STEP_FLARE_END, q) * (1.0 - smoothstep(STEP_FLARE_END, 1.0, q))
-	)
-	var rise := smoothstep(STEP_RISE_FROM, STEP_RISE_TO, q)
-	if q >= STEP_RISE_FROM and not landed:
+	if arrival_gate == null:
+		if avatar != null:
+			_pose(avatar, Vector3.ZERO, 1.0, true)
+		return
+	var yaw := deg_to_rad(IsoRig.YAW_DEG)
+	var out := Vector3(sin(yaw), 0.0, cos(yaw))  # toward the camera on the floor
+	arrival_gate.position = foot - out * STEP_BACK
+	arrival_gate.rotation = Vector3(0.0, atan2(-out.z, out.x), 0.0)
+	arrival_gate.set_sealed(false)
+	arrival_gate.set_growth(smoothstep(0.0, STEP_GROW_TO, q))
+	arrival_gate.set_collapse(smoothstep(STEP_COLLAPSE_FROM, 1.0, q))
+	var c := arrival_gate.portal_color()
+	if calm:
+		flash_ball.visible = false
+		_set_light(0.0)
+		_set_overlay(FADE_COLOR, 0.0)
+		landed = q >= STEP_FROM
+		if avatar != null:
+			_pose(avatar, Vector3.ZERO, 1.0, landed)
+		return
+	var step := smoothstep(STEP_FROM, STEP_TO, q)
+	if q >= STEP_FROM and not landed:
 		landed = true
-		receiver.puff()
 		if rig != null:
-			rig.thud(STEP_THUD)
-	receiver.set_burst((q - STEP_RISE_FROM) / BURST_SPAN if landed else -1.0)
-	var f := 1.0 - smoothstep(STEP_RISE_FROM, STEP_RISE_FROM + 0.2, q) if landed else 0.0
-	_flash_at(foot + Vector3(0, 0.6, 0), f, FloorReceiver.CORE, 0.2)
+			rig.thud(STEP_THUD)  # v0.9.0 CV: the vibration as the hero comes through
+	var f := 1.0 - smoothstep(STEP_FROM, STEP_FROM + 0.2, q) if landed else 0.0
+	_flash_at(arrival_gate.position + Vector3(0, PortalGate.OVAL_Y * 0.6, 0), f, c, 0.15)
 	if avatar != null:
-		var s := 0.6 + 0.4 * rise
-		_pose(avatar, Vector3(0, -STEP_DEPTH * (1.0 - rise), 0), s, landed)
+		_pose(avatar, -out * STEP_BACK * (1.0 - step), 0.85 + 0.15 * step, landed)
 
 
 ## The hero model's pose for the landing: offset, uniform size, shown.
@@ -402,6 +442,8 @@ func _rest(avatar: Node3D) -> void:
 	if receiver != null:  # v0.8.0 N11: the receiver back at rest, the view settled
 		receiver.set_charge(0.0)
 		receiver.set_burst(-1.0)
+	if arrival_gate != null:  # v0.9.0 PT: the arrival portal gone
+		arrival_gate.set_collapse(1.0)
 	if altar != null:  # v0.9.0 SA: the altar at rest, its runes dimly lit
 		altar.pose(-1.0)
 		altar.set_burst(-1.0)

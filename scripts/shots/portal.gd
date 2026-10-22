@@ -58,6 +58,7 @@ func _stage_for(facing: int, sealed: bool) -> Node3D:
 	var gate := PortalGate.new()
 	gate.setup(GATE_AT, facing)
 	gate.set_sealed(sealed)
+	gate.set_growth(0.0 if sealed else 1.0)  # v0.9.0 PT: a sealed gate is not shown at all
 	view.add_child(gate)
 	return holder
 

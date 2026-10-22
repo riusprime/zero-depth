@@ -3,8 +3,8 @@ extends GutTest
 ## dev panel (backtick, mouse clicks: God mode for the long walk, Kill boss) stands in for the fight as in
 ## test_e2e_run_flow; the left stick walks through the boss door and into the open portal. The way in plays (the
 ## world holds, the stick does nothing, the hero shrinks into light), then floor 2 loads exactly once and opens on
-## the arrival (held; v0.8.0 N11: the hero rises out of floor 2's receiver, after the portal's cover opened) before
-## the stick moves the hero again.
+## the arrival (held, after the portal's cover opened; v0.9.0 PT, Q16: the hero steps out of the portal it took,
+## floor 2 has no receiver) before the stick moves the hero again.
 ## v0.5.5 EC (owner Q-S4, "Keep half"): the portal carries half the unspent shards (rounded down) and floor 2's
 ## arrival card says how many it kept.
 
@@ -120,13 +120,14 @@ func test_into_the_portal_and_out_on_floor_two() -> void:
 	assert_true(main.driver.reader.transit_holds())
 	var start := w2.player_pos()
 	var arrive_frames := 0
-	var flare := 0.0
+	var grown := 0.0
+	assert_null(main.view.receiver, "v0.9.0 PT (Q16): no receiver on floor 2")
 	while main.driver.reader.transit_holds() and arrive_frames < 300:
 		assert_eq(w2.player_pos(), start, "no control while the hero materialises")
-		flare = maxf(flare, main.view.receiver.charge)
+		grown = maxf(grown, main.view.transit.arrival_gate.form())
 		arrive_frames += 1
 		await e.frames(1)
-	assert_gt(flare, 0.5, "v0.8.0 N11: the receiver flares")
+	assert_gt(grown, 0.99, "v0.9.0 PT: the hero comes out of the portal it took")
 	assert_almost_eq(
 		w2.tick, BossFlow.ARRIVE_TICKS, 1, "about ARRIVE_TICKS ticks (after the cover opened)"
 	)

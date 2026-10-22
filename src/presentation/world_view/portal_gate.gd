@@ -1,93 +1,72 @@
 class_name PortalGate
 extends Node3D
-## The gateway to the next floor (v0.2.0 PLAN L8, step D): two stacked-stone pillars and a lintel around a
-## 2.4 × 3.2 m rectangle of swirling light, like a cartoon portal in a door shape. v0.3.5 PT (owner, F19): the swirl,
-## its light and its floor glow are the hero visor's light blue (ThemePalette "player_core", the colour the visor
-## glows; it follows the colour-blind mode), a deep shade of it to near white.
-## Presentation only: it reads nothing from the sim and decides nothing (EI-07). Sealed (the default) slows and dims
-## the swirl under a dark veil; v0.3.0 B: the view unseals it when the sim's portal opens (the boss is dead), with a
-## brief flare, and the open swirl runs bright and fast.
+## The gateway to the next floor. v0.9.0 PT (owner C1-C5, Q15: "shape it into a vertical oval shaped portal like rick
+## and morty with a bit of random swirl at edges … and add some particles of the color portal"): no stone frame; the
+## swirl (v0.2.0 L8's shader: fbm noise, two counter-rotating layers, three arms, a bright rim) fills a tall, narrow
+## vertical oval OVAL_W × OVAL_H whose edge is never flat (noise round the rim, drifting with time), with a soft glow
+## round it, its light, its floor glow and motes in its colour drifting off the rim.
+## The swirl, its light and its floor glow are the hero visor's light blue (v0.3.5 PT, F19: ThemePalette
+## "player_core"); set_deep() makes it the Deep gate (v0.5.0 RT): violet with a red rim on the swirl.
 ##
-## v0.5.0 RT: set_deep() makes it the Deep gate: a violet swirl, light and glow, a red rim on the swirl and red-lit
-## strips framing the opening, so the two gates read apart at a glance (by hue, brightness and the frame).
+## Growth (Q15: "it should appear from a point and grow out of it in a circle that grows into the full oval … the
+## edges should have an effect while they grow from that point like the cards burning but reversed, same way to
+## dissapear, it collapses into a specific point"): form() runs 0 (nothing: hidden) .. 1 (the full oval). From a dot
+## of light it grows as a circle the oval's width (up to CIRCLE_AT), then stretches to its full height, its edge a
+## ragged glowing burn front (CardFx's BURN_SHADER, reversed) that calms once formed. Collapsing runs it backwards.
+## form() = min(growth, 1 - collapse): growth comes from the sim (WorldReader.portal_form_progress: the hero can walk
+## in once it is 1, EI-03); collapse from the way in (PortalTransitView) or, for the gate not taken, close() over
+## CLOSE_SECONDS (presentation time: by then the sim has already closed it).
+## Reduced motion (ViewPrefs): no growth or collapse of the shape: the full oval fades in and out, no motes.
+## Presentation only (EI-07): it reads nothing from the sim and decides nothing.
 ##
-## v0.6.1 SW2 (owner A1: "the portals could have some of them around matching the color of the portal"): crystal
-## shard clusters (ShardMesh) grow from both pillars' feet and from the lintel's ends, with a few floating fragments,
-## in the portal's own colour (the visor blue; DEEP_VIOLET once set_deep()). Lit by the scene, a little emission that
-## rises when the gate opens and with the flare (energies only, flash-safe). They stay outside the opening and the
-## walk-in path (|z| >= SHARD_CLEAR_Z below the lintel), in front of the wall line (x >= -GATE_HALF_DEPTH).
-##
-## Local frame: the opening spans local Z, the gate faces local +X; setup() turns +X to the sim facing angle.
+## Local frame: the oval spans local Z (across) and Y (up), the gate faces local +X; setup() turns +X to the sim facing.
 
-const OPENING_W := 2.4
-const OPENING_H := 3.2
-const PILLAR_W := 0.33
-const DEPTH := 0.72
-const STONE := Color("#6F6A66")
-const STONE_TOP := Color("#8A847E")
+## v0.9.0 PT (starting values): the oval's width and height (m), its centre's height, and the quad it is drawn on
+## (QUAD_MARGIN times the oval, room for the ragged edge and its glow).
+const OVAL_W := 1.6
+const OVAL_H := 3.4
+const OVAL_Y := OVAL_H * 0.5 + 0.06
+const QUAD_MARGIN := 1.4
+## The growth's shape: a circle the oval's width by CIRCLE_AT, then the stretch to its full height from STRETCH_FROM.
+const CIRCLE_AT := 0.45
+const STRETCH_FROM := 0.35
+## The burning edge fades out over the last part of the growth (from BURN_CALM_FROM).
+const BURN_CALM_FROM := 0.82
+## The burn's ember colour (CardFx's, mixed into the portal's own light shade by BURN_MIX).
+const BURN_ORANGE := Color("#FF8A3D")
+const BURN_MIX := 0.3
+## The gate not taken closes over this long (presentation time; the sim closed it already).
+const CLOSE_SECONDS := 0.6
 const LIGHT_ENERGY_OPEN := 2.2
-const LIGHT_ENERGY_SEALED := 0.7
-## The flare when the portal opens: extra light energy, fading over FLARE_SECONDS.
+## The arrival portal's light (a later floor's step-out: PortalTransitView).
+const LIGHT_ENERGY_ARRIVAL := 1.4
+## The flare when the hero goes in: extra light energy, fading over FLARE_SECONDS.
 const FLARE_ENERGY := 5.0
 const FLARE_SECONDS := 1.2
-## v0.5.0 RT, the Deep gate (starting values): violet swirl and light, a red rim and frame.
+## v0.5.0 RT, the Deep gate (starting values): violet swirl and light, a red rim.
 const DEEP_VIOLET := Color("#8B3DFF")
 const DEEP_RIM := Color("#FF2A3D")
-const RIM_STRIP := 0.09
-## v0.6.1 SW2: the portal shards. Nothing solid below the lintel comes closer to the centre line than SHARD_CLEAR_Z
-## (the 2.4 m opening, and the 3.0 m clear square the hero walks in from, plus a margin), nor behind the wall line.
-const SHARD_CLEAR_Z := 1.6
-const WALL_X := -0.4
-## Foot clusters, per side (z is mirrored, salts differ so the two sides are not twins):
-## [x, z, shard count, height, spread, salt].
-const FOOT_CLUSTERS := [
-	[0.12, 2.0, 7, 1.15, 0.4, 11],
-	[0.98, 1.92, 4, 0.5, 0.26, 23],
-]
-## Lintel clusters on its ends (on the cap slab's top): [x, y, z, shard count, height, spread, salt]. The -z end
-## gets the bigger one.
-const LINTEL_CLUSTERS := [
-	[0.0, 3.76, -1.36, 5, 0.62, 0.32, 31],
-	[0.05, 3.76, 1.48, 3, 0.36, 0.22, 37],
-]
-## Floating fragments: [x, y, z, radius]; each bobs on its own beat.
-const FRAGMENTS := [
-	[0.45, 1.55, -2.25, 0.085],
-	[0.2, 2.45, -1.98, 0.06],
-	[0.55, 1.85, 2.2, 0.075],
-	[0.15, 2.7, 1.95, 0.055],
-]
-const FRAGMENT_BOB := 0.08
-## The shards' emission: sealed, open, and the extra at the flare's peak.
-const SHARD_ENERGY_SEALED := 0.35
-const SHARD_ENERGY_OPEN := 0.8
-const SHARD_ENERGY_FLARE := 0.9
-## The soft glow at each foot cluster (additive sprite): size and strength sealed / open.
-const SHARD_GLOW_SIZE := 1.1
-const SHARD_GLOW_SEALED := 0.16
-const SHARD_GLOW_OPEN := 0.3
-
-## Stacked blocks of one pillar, bottom to top: [height, width, depth, z offset, y-rotation°, z-roll°].
-## Hand-picked (not random) so every gate looks the same and the opening stays clear.
-const PILLAR_BLOCKS := [
-	[0.36, 0.50, 0.90, 0.06, 2.0, 0.0],
-	[1.02, 0.35, 0.74, 0.01, -2.5, 1.2],
-	[0.94, 0.37, 0.70, 0.03, 3.0, -1.0],
-	[0.88, 0.34, 0.76, 0.00, -1.5, 0.8],
-]
+## The rim motes: how many live at once, how long each lives (s), the points round the oval they leave from.
+const MOTES := 28
+const MOTE_LIFE := 1.5
+const MOTE_POINTS := 40
+## The motes emit only once the portal is (nearly) whole.
+const MOTES_FROM := 0.97
 
 const SHADER := """
 shader_type spatial;
 render_mode unshaded, blend_mix, cull_disabled, depth_prepass_alpha, shadows_disabled, fog_disabled;
 
-uniform vec2 opening_size = vec2(2.4, 3.2);
+uniform vec2 quad_size = vec2(2.24, 4.76);
+uniform vec2 half_now = vec2(0.8, 1.7);
 uniform vec4 color_deep : source_color = vec4(0.03, 0.08, 0.52, 1.0);
 uniform vec4 color_mid : source_color = vec4(0.13, 0.36, 1.0, 1.0);
 uniform vec4 color_light : source_color = vec4(0.74, 0.9, 1.0, 1.0);
-uniform vec4 veil_color : source_color = vec4(0.02, 0.03, 0.08, 1.0);
+uniform vec4 edge_color : source_color = vec4(1.0, 0.8, 0.6, 1.0);
 uniform float swirl_speed = 1.0;
 uniform float energy = 1.6;
-uniform float sealed = 1.0;
+uniform float burn = 0.0;
+uniform float fade = 1.0;
 uniform vec4 rim_color : source_color = vec4(0.0, 0.0, 0.0, 0.0);
 
 float hash(vec2 p) {
@@ -120,39 +99,54 @@ vec2 rot(vec2 p, float a) {
 }
 
 void fragment() {
-	vec2 half_size = opening_size * 0.5;
-	vec2 p = (UV - 0.5) * opening_size;
-	// Distance to the frame (m): the portal keeps the door's rectangle.
-	float d_edge = min(half_size.x - abs(p.x), half_size.y - abs(p.y));
-	// Radius normalised so the swirl fills the rectangle rather than a circle.
-	vec2 q = p / half_size.x;
+	// Metres from the oval's centre (y up), then the oval's own frame: 1 on its edge.
+	vec2 p = (UV - 0.5) * quad_size * vec2(1.0, -1.0);
+	vec2 hs = max(half_now, vec2(0.002));
+	vec2 q = p / hs;
 	float r = length(q);
-	float speed = swirl_speed * mix(1.25, 0.15, sealed);
-	float t = TIME * speed;
+	float t = TIME * swirl_speed * 1.25;
+	// The edge swirls: noise round the rim (seamless round the angle) drifting with time, never a flat border.
+	float ang = atan(q.y, q.x);
+	vec2 ring = vec2(cos(ang), sin(ang));
+	float wob = (fbm(ring * 1.7 + vec2(t * 0.32, -t * 0.21)) - 0.5) * 0.2 + 0.03 * sin(ang * 7.0 - t * 2.4);
+	// CardFx's burn front, reversed: while forming the edge is ragged by a finer noise and glows like an ember.
+	float bn = vnoise(p * 5.0 + vec2(t * 0.6, -t * 0.4)) * 0.32 + vnoise(p * 13.0) * 0.14;
+	float edge = 1.0 + wob - burn * (bn - 0.12);
+	float d = edge - r;
+	// Outside the edge: a soft glow (metres: it keeps its width as the oval grows), else nothing.
+	float dm = -d * min(hs.x, hs.y);
+	float halo = d < 0.0 ? 1.0 - smoothstep(0.0, 0.16 + 0.22 * burn, dm) : 0.0;
+	if (d < 0.0 && halo <= 0.002) {
+		discard;
+	}
 	// Two noise layers twisted into a vortex that turns faster near the centre.
 	vec2 s1 = rot(q, t * 1.3 + 1.4 / (r + 0.45));
 	vec2 s2 = rot(q, -t * 0.7 + 0.9 / (r + 0.6));
 	float n1 = fbm(s1 * 2.2 + vec2(0.0, t * 0.15));
 	float n2 = fbm(s2 * 3.6 - vec2(t * 0.1, 0.0));
 	// Spiral arms: bands that wind round the centre.
-	float ang = atan(q.y, q.x);
 	float arms = 0.5 + 0.5 * sin(ang * 3.0 + log(r + 0.05) * 5.0 - t * 4.0 + n1 * 3.0);
 	float v = clamp(arms * 0.6 + n1 * 0.5 + n2 * 0.25 - 0.2, 0.0, 1.0);
 	vec3 col = mix(color_deep.rgb, color_mid.rgb, smoothstep(0.15, 0.6, v));
 	col = mix(col, color_light.rgb, smoothstep(0.62, 0.95, v));
-	// A lighter core and a bright rim close to the stone.
+	// A lighter core and a bright rim along the edge.
 	float core = 1.0 - smoothstep(0.0, 0.55, r);
 	col = mix(col, color_light.rgb, core * 0.75);
-	float rim = 1.0 - smoothstep(0.0, 0.3, d_edge + (n2 - 0.5) * 0.12);
+	float rim = 1.0 - smoothstep(0.0, 0.16, d + (n2 - 0.5) * 0.06);
 	vec3 rim_col = mix(color_light.rgb * 1.4, rim_color.rgb * 1.6, rim_color.a);
 	col = mix(col, rim_col, rim * 0.9);
-	float bright = energy * mix(1.15, 0.38, sealed);
-	col *= bright;
-	// Sealed: a faint dark veil that drifts over the swirl.
-	float veil = sealed * (0.45 + 0.2 * fbm(p * 1.4 + vec2(t * 0.2, -t * 0.1)));
-	col = mix(col, veil_color.rgb, veil * (1.0 - rim * 0.6));
-	ALBEDO = col;
-	ALPHA = mix(0.55, 1.0, smoothstep(0.0, 0.07, d_edge));
+	// The burning edge: a hot band just inside the front while it grows or collapses.
+	float ember = burn * (1.0 - smoothstep(0.0, 0.1 + 0.12 * burn, d));
+	col = mix(col, edge_color.rgb * 1.8, ember);
+	col *= energy * 1.15;
+	if (d < 0.0) {
+		vec3 glow = mix(rim_col, edge_color.rgb * 1.6, burn);
+		ALBEDO = glow * energy;
+		ALPHA = fade * halo * (0.5 + 0.3 * burn);
+	} else {
+		ALBEDO = col;
+		ALPHA = fade * mix(0.6, 1.0, smoothstep(0.0, 0.06, d));
+	}
 }
 """
 
@@ -173,21 +167,21 @@ void fragment() {
 var portal: MeshInstance3D
 var portal_material: ShaderMaterial
 var glow_material: ShaderMaterial
+var glow_disc: MeshInstance3D
 var light: OmniLight3D
-var stone_blocks: Array[MeshInstance3D] = []
-## v0.5.0 RT: the Deep gate's look is on, and its red frame strips (empty on the gate).
+## v0.9.0 PT: the motes drifting off the rim, in the portal's colour.
+var motes: CPUParticles3D
+## v0.5.0 RT: the Deep gate's look is on.
 var deep := false
-var rim_strips: Array[MeshInstance3D] = []
-## v0.6.1 SW2: the shard clusters, the floating fragments, their glows, and the one material they all share.
-var shard_clusters: Array[Node3D] = []
-var shard_fragments: Array[Node3D] = []
-var shard_glows: Array[MeshInstance3D] = []
-var shard_material: StandardMaterial3D
-var _bob_t := 0.0
+## v0.9.0 PT: a later floor's arrival portal (PortalTransitView): no floor glow or motes, a softer light.
+var arrival := false
+## v0.9.0 PT: the growth (0..1, the sim's forming) and the collapse (0 whole .. 1 gone to a point).
+var growth := 0.0
+var collapse := 0.0
 var _sealed := true
+var _closing := false
 var _flare := 0.0
-var _stone := StandardMaterial3D.new()
-var _stone_top := StandardMaterial3D.new()
+var _mote_ramp := Gradient.new()
 
 
 ## The visor's light blue (v0.3.5 PT), and the swirl's shades of it, dark to light.
@@ -200,16 +194,25 @@ static func swirl_colors() -> Array[Color]:
 	return [c.darkened(0.78), c, c.lightened(0.78)]
 
 
+static func deep_colors() -> Array[Color]:
+	return [DEEP_VIOLET.darkened(0.75), DEEP_VIOLET, DEEP_VIOLET.lightened(0.55)]
+
+
+## v0.9.0 PT: the oval's half extents (m: across, up) at form `f` (0..1): a point, a circle the oval's width by
+## CIRCLE_AT, then stretched to the full height. Reduced motion (`calm`) keeps the full oval (it fades instead).
+static func half_extents(f: float, calm: bool = false) -> Vector2:
+	if calm:
+		return Vector2(OVAL_W, OVAL_H) * 0.5
+	var a := smoothstep(0.0, CIRCLE_AT, f)
+	var b := smoothstep(STRETCH_FROM, 1.0, f)
+	return Vector2(OVAL_W * 0.5 * a, lerpf(OVAL_W * 0.5, OVAL_H * 0.5, b) * a)
+
+
 func _init() -> void:
-	_stone.albedo_color = STONE
-	_stone.roughness = 1.0
-	_stone_top.albedo_color = STONE_TOP
-	_stone_top.roughness = 1.0
-	_build_stone()
 	_build_portal()
 	_build_glow()
-	_build_shards()
-	set_sealed(true)
+	_build_motes()
+	_apply()
 
 
 ## Places the gate at `sim_pos` facing the sim direction `facing_angle` (1/4096 turn).
@@ -218,7 +221,7 @@ func setup(sim_pos: Vector2, facing_angle: int) -> void:
 	rotation = Vector3(0, SimPlane.yaw_of(facing_angle), 0)
 
 
-## v0.5.0 RT: the Deep gate's colours and frame (once, at setup).
+## v0.5.0 RT: the Deep gate's colours (once, at setup).
 func set_deep() -> void:
 	if deep:
 		return
@@ -228,53 +231,62 @@ func set_deep() -> void:
 	portal_material.set_shader_parameter("color_mid", shades[1])
 	portal_material.set_shader_parameter("color_light", shades[2])
 	portal_material.set_shader_parameter("rim_color", Color(DEEP_RIM, 1.0))
+	portal_material.set_shader_parameter("edge_color", DEEP_RIM.lerp(BURN_ORANGE, BURN_MIX))
 	light.light_color = DEEP_VIOLET
 	glow_material.set_shader_parameter("glow_color", DEEP_VIOLET)
-	_tint_shards(DEEP_VIOLET)
-	var red := StandardMaterial3D.new()
-	red.albedo_color = DEEP_RIM
-	red.emission_enabled = true
-	red.emission = DEEP_RIM
-	red.emission_energy_multiplier = 2.4
-	var inner := OPENING_W * 0.5
-	for z in [-(inner + RIM_STRIP * 0.5), inner + RIM_STRIP * 0.5]:
-		_rim(Vector3(0.1, OPENING_H, RIM_STRIP), Vector3(0.36, OPENING_H * 0.5, z), red)
-	_rim(Vector3(0.1, RIM_STRIP, OPENING_W + RIM_STRIP * 2.0), Vector3(0.36, OPENING_H, 0), red)
+	_tint_motes(DEEP_VIOLET)
 
 
-static func deep_colors() -> Array[Color]:
-	return [DEEP_VIOLET.darkened(0.75), DEEP_VIOLET, DEEP_VIOLET.lightened(0.55)]
+## v0.9.0 PT: a later floor's arrival portal (no floor glow, no motes, a softer light).
+func set_arrival() -> void:
+	arrival = true
+	glow_disc.visible = false
+	_apply()
 
 
-func _rim(size: Vector3, pos: Vector3, mat: Material) -> void:
-	var box := BoxMesh.new()
-	box.size = size
-	var node := MeshInstance3D.new()
-	node.mesh = box
-	node.material_override = mat
-	node.position = pos
-	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(node)
-	rim_strips.append(node)
-
-
-func set_sealed(sealed: bool) -> void:
-	if _sealed and not sealed and is_inside_tree():
-		_flare = FLARE_SECONDS
-	_sealed = sealed
-	portal_material.set_shader_parameter("sealed", 1.0 if sealed else 0.0)
-	light.light_energy = LIGHT_ENERGY_SEALED if sealed else LIGHT_ENERGY_OPEN
-	glow_material.set_shader_parameter("strength", 0.32 if sealed else 0.55)
-	_light_shards(0.0)
-
-
-## v0.6.1 SW2: the colour the portal's shards wear (the portal's own: its light's colour).
-func shard_color() -> Color:
+## The portal's own colour (its light's).
+func portal_color() -> Color:
 	return light.light_color
+
+
+## Sealed: the sim hasn't opened it (the boss lives), or it closed (the other gate was taken). Opening shows it at
+## its growth (set_growth); sealing an open gate collapses it into a point over CLOSE_SECONDS.
+func set_sealed(sealed: bool) -> void:
+	if sealed and not _sealed:
+		_closing = is_inside_tree() and form() > 0.0
+		if not _closing:
+			collapse = 1.0
+	elif not sealed:
+		_closing = false
+		collapse = 0.0
+	_sealed = sealed
+	_apply()
 
 
 func is_sealed() -> bool:
 	return _sealed
+
+
+## v0.9.0 PT: the growth from the sim (0..1; WorldReader.portal_form_progress).
+func set_growth(k: float) -> void:
+	growth = clampf(k, 0.0, 1.0)
+	_apply()
+
+
+## v0.9.0 PT: the collapse (0 whole .. 1 gone to a point): the way in (PortalTransitView), the arrival's end.
+func set_collapse(k: float) -> void:
+	collapse = clampf(k, 0.0, 1.0)
+	_apply()
+
+
+## v0.9.0 PT: how formed the portal is now (0 nothing .. 1 the full oval).
+func form() -> float:
+	return minf(growth, 1.0 - collapse)
+
+
+## Shown at all (a point of light or more).
+func is_shown() -> bool:
+	return visible
 
 
 ## A flare of light (the hero going in: PortalTransitView).
@@ -283,183 +295,124 @@ func flare() -> void:
 
 
 func _process(delta: float) -> void:
-	_bob(delta)
+	if _closing:
+		collapse = minf(1.0, collapse + delta / CLOSE_SECONDS)
+		_closing = collapse < 1.0
+		_apply()
 	if _flare <= 0.0:
 		return
 	_flare = maxf(0.0, _flare - delta)
+	_apply()
+
+
+## Shows the oval at form(): its shape and burning edge (or, with reduced motion, its fade), its light, its floor
+## glow and whether the motes emit.
+func _apply() -> void:
+	var calm := ViewPrefs.reduced_motion
+	var f := form()
+	visible = f > 0.0
+	var hs := half_extents(f, calm)
+	portal_material.set_shader_parameter("half_now", hs)
+	portal_material.set_shader_parameter(
+		"burn", 0.0 if calm else 1.0 - smoothstep(BURN_CALM_FROM, 1.0, f)
+	)
+	portal_material.set_shader_parameter("fade", smoothstep(0.0, 1.0, f) if calm else 1.0)
 	var k := _flare / FLARE_SECONDS
-	light.light_energy = LIGHT_ENERGY_OPEN + FLARE_ENERGY * k * k
-	glow_material.set_shader_parameter("strength", 0.55 + 0.6 * k)
-	_light_shards(k * k)
-
-
-func _block(size: Vector3, pos: Vector3, rot_deg: Vector3, mat: Material) -> void:
-	var box := BoxMesh.new()
-	box.size = size
-	var node := MeshInstance3D.new()
-	node.mesh = box
-	node.material_override = mat
-	node.position = pos
-	node.rotation_degrees = rot_deg
-	add_child(node)
-	stone_blocks.append(node)
-
-
-func _build_stone() -> void:
-	var inner := OPENING_W * 0.5
-	for side in [-1.0, 1.0]:
-		var y := 0.0
-		for i in PILLAR_BLOCKS.size():
-			var b: Array = PILLAR_BLOCKS[i]
-			var h: float = b[0]
-			var w: float = b[1]
-			# Blocks grow outward from the opening's edge, so the opening stays 2.4 m clear.
-			var z: float = side * (inner + w * 0.5 + b[3])
-			var mat := _stone_top if i == PILLAR_BLOCKS.size() - 1 else _stone
-			_block(
-				Vector3(b[2], h, w),
-				Vector3(0, y + h * 0.5, z),
-				Vector3(0, b[4] * side, b[5] * side),
-				mat
-			)
-			y += h
-	# Lintel: two long stones and a raised keystone, over the full width.
-	var outer := inner + PILLAR_W + 0.12
-	var top := OPENING_H
-	_block(
-		Vector3(0.78, 0.44, outer - 0.28),
-		Vector3(0, top + 0.22, -(outer + 0.28) * 0.5),
-		Vector3(0, 1.5, -1.2),
-		_stone
-	)
-	_block(
-		Vector3(0.80, 0.42, outer - 0.28),
-		Vector3(0, top + 0.21, (outer + 0.28) * 0.5),
-		Vector3(0, -2.0, 1.0),
-		_stone
-	)
-	_block(Vector3(0.86, 0.66, 0.58), Vector3(0, top + 0.31, 0), Vector3(0, 0, 0), _stone_top)
-	# A thin cap slab and two fallen stones at the foot.
-	_block(
-		Vector3(0.9, 0.16, outer * 2.0 + 0.1),
-		Vector3(0.02, top + 0.52, 0.04),
-		Vector3(0, 0.8, 0.6),
-		_stone_top
-	)
-	_block(
-		Vector3(0.34, 0.22, 0.3), Vector3(0.55, 0.11, -(inner + 0.62)), Vector3(0, 28, 0), _stone
-	)
-	_block(
-		Vector3(0.24, 0.16, 0.26), Vector3(-0.45, 0.08, inner + 0.66), Vector3(0, -17, 0), _stone
-	)
+	var base := LIGHT_ENERGY_ARRIVAL if arrival else LIGHT_ENERGY_OPEN
+	# The light grows with the oval, from the dot of light up.
+	light.light_energy = base * (0.35 + 0.65 * f) * (1.0 if f > 0.0 else 0.0) + FLARE_ENERGY * k * k
+	glow_material.set_shader_parameter("strength", 0.55 * f + 0.6 * k)
+	motes.emitting = visible and not arrival and not calm and f >= MOTES_FROM
 
 
 func _build_portal() -> void:
 	var quad := QuadMesh.new()
-	quad.size = Vector2(OPENING_W, OPENING_H)
+	quad.size = Vector2(OVAL_W, OVAL_H) * QUAD_MARGIN
 	portal_material = ShaderMaterial.new()
 	portal_material.shader = Shader.new()
 	portal_material.shader.code = SHADER
-	portal_material.set_shader_parameter("opening_size", Vector2(OPENING_W, OPENING_H))
+	portal_material.set_shader_parameter("quad_size", quad.size)
 	var shades := swirl_colors()
 	portal_material.set_shader_parameter("color_deep", shades[0])
 	portal_material.set_shader_parameter("color_mid", shades[1])
 	portal_material.set_shader_parameter("color_light", shades[2])
+	portal_material.set_shader_parameter("edge_color", shades[2].lerp(BURN_ORANGE, BURN_MIX))
 	portal = MeshInstance3D.new()
+	portal.name = "Oval"
 	portal.mesh = quad
 	portal.material_override = portal_material
 	portal.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# The quad faces +Z; a quarter turn makes it face the gate's +X, spanning local Z.
 	portal.rotation = Vector3(0, PI * 0.5, 0)
-	portal.position = Vector3(0, OPENING_H * 0.5, 0)
+	portal.position = Vector3(0, OVAL_Y, 0)
 	add_child(portal)
 	light = OmniLight3D.new()
 	light.light_color = visor_blue()
 	light.omni_range = 5.5
 	light.omni_attenuation = 1.4
 	light.shadow_enabled = false
-	light.position = Vector3(0.9, 1.3, 0)
+	light.position = Vector3(0.9, 1.5, 0)
 	add_child(light)
 
 
 func _build_glow() -> void:
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(4.4, 3.6)
+	plane.size = Vector2(3.6, 3.0)
 	glow_material = ShaderMaterial.new()
 	glow_material.shader = Shader.new()
 	glow_material.shader.code = GLOW_SHADER
 	glow_material.set_shader_parameter("glow_color", visor_blue())
-	var disc := MeshInstance3D.new()
-	disc.mesh = plane
-	disc.material_override = glow_material
-	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	glow_disc = MeshInstance3D.new()
+	glow_disc.mesh = plane
+	glow_disc.material_override = glow_material
+	glow_disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# Mostly in front of the gate (+X), a little behind it.
-	disc.position = Vector3(0.7, 0.02, 0)
-	add_child(disc)
+	glow_disc.position = Vector3(0.6, 0.02, 0)
+	add_child(glow_disc)
 
 
-## v0.6.1 SW2: the shard clusters and fragments round the gate (see the header), in the visor blue until set_deep().
-func _build_shards() -> void:
-	var c := visor_blue()
-	shard_material = ShardMesh.crystal_material(c, SHARD_ENERGY_SEALED)
-	for side in [-1.0, 1.0]:
-		for i in FOOT_CLUSTERS.size():
-			var f: Array = FOOT_CLUSTERS[i]
-			var salt: int = f[5] + (0 if side < 0.0 else 50)
-			var cl := ShardMesh.cluster(shard_material, f[2], f[3], f[4], salt)
-			cl.name = "PortalShards"
-			cl.position = Vector3(f[0], 0.0, side * f[1])
-			cl.rotation.y = fmod(salt * 0.77, TAU)
-			cl.set_meta(&"spread", f[4])
-			add_child(cl)
-			shard_clusters.append(cl)
-			if i == 0:
-				var g := ShardMesh.glow(c, SHARD_GLOW_SIZE, SHARD_GLOW_SEALED)
-				g.position = Vector3(f[0] + 0.15, f[3] * 0.45, side * (f[1] + 0.15))
-				add_child(g)
-				shard_glows.append(g)
-	for l: Array in LINTEL_CLUSTERS:
-		var cl := ShardMesh.cluster(shard_material, l[3], l[4], l[5], l[6])
-		cl.name = "PortalShards"
-		cl.position = Vector3(l[0], l[1], l[2])
-		cl.rotation.y = fmod(l[6] * 0.77, TAU)
-		cl.set_meta(&"spread", l[5])
-		add_child(cl)
-		shard_clusters.append(cl)
-	for k in FRAGMENTS.size():
-		var fr: Array = FRAGMENTS[k]
-		var piece := ShardMesh.fragment(shard_material, fr[3], 70 + k)
-		piece.name = "PortalFragment"
-		piece.position = Vector3(fr[0], fr[1], fr[2])
-		piece.rotation = Vector3(0.3, k * 1.3, 0.2)
-		piece.set_meta(&"base_y", fr[1])
-		add_child(piece)
-		shard_fragments.append(piece)
+## v0.9.0 PT (Q15: "add some particles of the color portal"): motes leave points round the oval and drift out and
+## up, fading, in the portal's colour; local to the gate (they stand with it).
+func _build_motes() -> void:
+	motes = CPUParticles3D.new()
+	motes.name = "RimMotes"
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	mat.vertex_color_use_as_albedo = true
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.09, 0.09)
+	quad.material = mat
+	motes.mesh = quad
+	motes.amount = MOTES
+	motes.lifetime = MOTE_LIFE
+	motes.local_coords = true
+	motes.emitting = false
+	var points := PackedVector3Array()
+	var normals := PackedVector3Array()
+	for i in MOTE_POINTS:
+		var a := TAU * float(i) / float(MOTE_POINTS)
+		var out := Vector2(cos(a), sin(a))
+		points.append(Vector3(0.04, OVAL_Y + out.y * OVAL_H * 0.5, out.x * OVAL_W * 0.5))
+		normals.append(Vector3(0.25, out.y, out.x).normalized())
+	motes.emission_shape = CPUParticles3D.EMISSION_SHAPE_DIRECTED_POINTS
+	motes.emission_points = points
+	motes.emission_normals = normals
+	motes.spread = 25.0
+	motes.initial_velocity_min = 0.12
+	motes.initial_velocity_max = 0.4
+	motes.gravity = Vector3(0, 0.22, 0)
+	motes.damping_min = 0.1
+	motes.damping_max = 0.3
+	motes.scale_amount_min = 0.6
+	motes.scale_amount_max = 1.5
+	motes.color_ramp = _mote_ramp
+	add_child(motes)
+	_tint_motes(visor_blue())
 
 
-func _tint_shards(c: Color) -> void:
-	shard_material.albedo_color = c
-	shard_material.emission = c
-	for g in shard_glows:
-		var m := g.material_override as StandardMaterial3D
-		m.albedo_color = Color(c.r, c.g, c.b, m.albedo_color.a)
-
-
-## The shards' emission and glow for the sealed state, plus `flare` (0..1, the flare's strength).
-func _light_shards(flare_k: float) -> void:
-	var base := SHARD_ENERGY_SEALED if _sealed else SHARD_ENERGY_OPEN
-	shard_material.emission_energy_multiplier = base + SHARD_ENERGY_FLARE * flare_k
-	var a := (SHARD_GLOW_SEALED if _sealed else SHARD_GLOW_OPEN) + 0.25 * flare_k
-	for g in shard_glows:
-		var m := g.material_override as StandardMaterial3D
-		m.albedo_color.a = a
-
-
-## The fragments float up and down, each on its own beat, and turn slowly (presentation clock only).
-func _bob(delta: float) -> void:
-	_bob_t += delta
-	for k in shard_fragments.size():
-		var piece := shard_fragments[k]
-		var y: float = piece.get_meta(&"base_y")
-		piece.position.y = y + FRAGMENT_BOB * sin(_bob_t * (1.6 + 0.3 * k) + k * 1.7)
-		piece.rotation.y += delta * (0.5 + 0.15 * k)
+func _tint_motes(c: Color) -> void:
+	_mote_ramp.set_color(0, Color(c.lightened(0.55), 0.95))
+	_mote_ramp.set_color(1, Color(c, 0.0))

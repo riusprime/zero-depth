@@ -30,6 +30,14 @@ const GATE_WIDTH := 2.4
 const GATE_HALF_DEPTH := 0.4
 ## Side of the square kept clear in front of the gate.
 const GATE_FRONT := 3.0
+## v0.9.0 PT (owner: "there should be an space between the wall and the portals"; starting value): the portal's oval
+## (OVAL_HALF_W either side of portal_pos, across its facing; the view's PortalGate.OVAL_W) keeps GATE_WALL_CLEAR m from
+## every wall: it stands that far out from the wall it backs onto (portal_pos = the wall face + facing ×
+## GATE_WALL_CLEAR), and its sides and the gap behind it are kept clear of the room's walls and interior pieces.
+const GATE_WALL_CLEAR := 1.5
+const OVAL_HALF_W := 0.8
+## How far the gate's zone reaches either side of its centre line (the oval's clearance; at least the old 2.2 m).
+const GATE_ZONE_HALF_W := OVAL_HALF_W + GATE_WALL_CLEAR
 
 ## How many templates there are, and their names (for tools and evidence).
 const TEMPLATE_COUNT := 13
@@ -244,10 +252,20 @@ func door_approaches(room: int, m: float = 1.0) -> PackedVector2Array:
 func gate_zone() -> Rect2:
 	var n := portal_facing()
 	var t := Vector2(-n.y, n.x)
-	var face := portal_pos - n * GATE_HALF_DEPTH
-	var half_w := GATE_WIDTH * 0.5 + 1.0
-	var depth := GATE_HALF_DEPTH * 2.0 + GATE_FRONT + 1.0
+	var face := portal_pos - n * GATE_WALL_CLEAR  # v0.9.0 PT: from the wall face, the gap behind the oval included
+	var half_w := GATE_ZONE_HALF_W
+	var depth := GATE_WALL_CLEAR + GATE_HALF_DEPTH + GATE_FRONT + 1.0
 	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+
+
+## v0.9.0 PT: the rectangle that must stay free of walls round a gate's oval at `pos` facing `angle` (the oval's
+## segment across the facing, grown by GATE_WALL_CLEAR; axis-aligned: gates face a grid axis).
+static func oval_clear_rect(pos: Vector2, angle: int) -> Rect2:
+	var n := Kin.dir(angle)
+	var t := Vector2(-n.y, n.x)
+	return Rect2(pos + t * OVAL_HALF_W, Vector2.ZERO).expand(pos - t * OVAL_HALF_W).grow(
+		GATE_WALL_CLEAR
+	)
 
 
 ## The open passage of doorway i through the wall, from one room's face to the other's.

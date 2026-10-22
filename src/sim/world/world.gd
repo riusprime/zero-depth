@@ -1275,13 +1275,13 @@ func state_hash() -> String:
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
-	if approach != null:  # v0.9.0 FA: only the final approach carries it
-		approach.hash_into(h)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before
 			for v in [loop, run_floor, loop_threat, loop_cap_permille]:
 				h.add_int(v)
+	if approach != null:  # v0.9.0 FA: only the final approach carries it
+		approach.hash_into(h)
 	if final_fight != null:  # v0.8.0 FB1: only the worlds that hold the final fight
 		final_fight.hash_into(h)
 	actors.hash_into(h)

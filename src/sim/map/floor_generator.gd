@@ -386,13 +386,14 @@ static func _place_portal(f: FloorLayout, rng: RngStream) -> void:
 						if absf(along[a] - (at.y if side % 2 == 0 else at.x)) < keep[a]:
 							ok = false
 					f.portal_angle = _SIDE_ANGLES[side]
-					f.portal_pos = at + f.portal_facing() * FloorLayout.GATE_HALF_DEPTH
+					f.portal_pos = at + f.portal_facing() * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT
 					if ok and _gate_fits(f):
 						return
 	assert(false, "no wall of the portal room fits the gate")
 
 
-## The gate's stone footprint and the clear square in front of it both lie inside the portal room.
+## The gate's stone footprint and the clear square in front of it both lie inside the portal room, and (v0.9.0 PT)
+## so does its oval's wall clearance.
 static func _gate_fits(f: FloorLayout) -> bool:
 	var r := f.rooms[f.portal_room].grow(0.001)
 	var n := f.portal_facing()
@@ -400,7 +401,11 @@ static func _gate_fits(f: FloorLayout) -> bool:
 		absf(n.x) * FloorLayout.GATE_HALF_DEPTH + absf(n.y) * _GATE_HALF_SPAN,
 		absf(n.y) * FloorLayout.GATE_HALF_DEPTH + absf(n.x) * _GATE_HALF_SPAN
 	)
-	return r.encloses(Rect2(f.portal_pos - half, half * 2.0)) and r.encloses(f.portal_front())
+	return (
+		r.encloses(Rect2(f.portal_pos - half, half * 2.0))
+		and r.encloses(f.portal_front())
+		and r.encloses(FloorLayout.oval_clear_rect(f.portal_pos, f.portal_angle))
+	)  # v0.9.0 PT
 
 
 # --- walls ---
