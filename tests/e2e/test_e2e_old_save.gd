@@ -38,16 +38,23 @@ func test_continue_a_v0_6_1_save_and_its_old_cards_are_wand_cards() -> void:
 	for c: Dictionary in main.driver.reader.wand()["cards"]:
 		ids.append(c["id"])
 		levels.append(int(c["level"]))
-	assert_eq(
-		ids,
-		[&"wide_arc", &"blade_orbit", &"ember_core", &"double_slash", &"echo_slash"],
-		"in pick order"
+	# v0.9.0 AS (owner Q3, Q6): Wide Arc and Double Slash are both Blade Patterns, one at a time, so AttackSlots.trim
+	# keeps the leftmost (Wide Arc) and refunds Double Slash at the salvage price.
+	assert_eq(ids, [&"wide_arc", &"blade_orbit", &"ember_core", &"echo_slash"], "in pick order")
+	assert_eq(levels, [1, 2, 1, 5], "Orbit Blades' level 2 carries; Echo Storm is Wave at level 5")
+	# The Drone (no row) at the ability salvage price; the trimmed Double Slash at its card's sell price (WandMigration
+	# .refund_of, as AttackSlots.trim pays it); Ember Core is S1.
+	var double_slash := -1
+	for i in w.item_tables.size():
+		if w.item_tables[i].id == &"double_slash":
+			double_slash = i
+	assert_gt(double_slash, -1)
+	var refund := (
+		w.shop_table.ability_refund_per_level * 1 + WandMigration.refund_of(w, double_slash)
 	)
 	assert_eq(
-		levels, [1, 2, 1, 1, 5], "Orbit Blades' level 2 carries; Echo Storm is Wave at level 5"
+		w.shards, saved_shards + refund, "the Drone and Double Slash refunded at the salvage price"
 	)
-	var refund := w.shop_table.ability_refund_per_level * 1  # the Drone (no row); Ember Core is S1
-	assert_eq(w.shards, saved_shards + refund, "the Drone refunded at the salvage price")
 	var t0 := w.tick
 	await e.frames(10)
 	assert_gt(w.tick, t0, "and the run goes on")

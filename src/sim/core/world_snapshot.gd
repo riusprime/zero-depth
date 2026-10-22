@@ -100,6 +100,7 @@ const LOADOUT_CLASSES: Array[StringName] = [
 	&"IceField",  # v0.7.5 NB1: a floor's ice, laid from the floor seed at setup and never written in play
 	&"IntensityTable",  # v0.8.0 N5: the intensity director's numbers (SpawnTable.intensity)
 	&"BulletPatternTable",  # v0.7.5 BF1: a boss attack's bullet pattern (BossAttackTable.pattern)
+	&"SlotTable",  # v0.9.0 AS: the wand's slot limits, caps and form × card table (content, read in play)
 ]
 ## State objects: every script variable is copied.
 const STATE_CLASSES: Array[StringName] = [
