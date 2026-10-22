@@ -151,6 +151,9 @@ const FIELD_STAGE := {
 	# v0.9.0 AF1 (owner Q7): the Lance form's line (Lance) and the Scatter form's pellets (Scatter)
 	&"lance": [0, &"lance", ""],
 	&"pellets": [0, &"pellets", ""],
+	# v0.9.0 AF2 (owner Q7): the Glaive form's disc (Glaive) and the Seekers form's darts (Seekers)
+	&"glaive": [0, &"glaive", ""],
+	&"seekers": [0, &"seekers", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

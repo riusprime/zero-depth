@@ -641,6 +641,16 @@ mm, amount_applied = angle, proc_pct = the charge ‰). The card `gun_charge` is
 **The Scatter form** (`Scatter`, v0.9.0 AF1, Q7 F6): a BOLT spec with `pellets` > 0 (the Gun's own bolt runner:
 `count` 6 over `spread` 25°, 5 m, `share_permille` 1000 so the pellets past the centre are secondary); `pellets` only
 marks them for the view. No new state.
+**The Glaive form** (`Glaive`, v0.9.0 AF2, Q7 F7): a BOLT spec with `glaive` > 0 and `returns` 1 (the retired
+Boomerang's rule, `ProjectileMoves`: it passes through every enemy, turns at half its life and ends at the hero; a
+disc's life never runs out on the way home, and going out a pierce's push spends the ticks its distance takes, so it
+turns 7 m out): one
+disc every 0.7 s at 14 m/s for 1.0 s (7 m out), `share_permille` 1600 (× 1.6 an orb hit a pass). `glaive` only marks it
+for the view. The card `boomerang` is retired into it (`migration.tres`). No new state.
+**The Seekers form** (`Seekers`, v0.9.0 AF2, Q7 F8): a BOLT spec with `seekers` > 0: `count` 3 over 40°, `homing`
+360 °/s, 10 m/s for 1 s, `share_permille` 450 (the darts past the centre are secondary). A dart's homing target is `Seekers.target`:
+the enemies within 10.8 m of the hero, nearest the hero first, taken at the dart's rank (its id modulo `count`), so one
+volley spreads over the three nearest; read from the world each tick. No new state.
 
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,

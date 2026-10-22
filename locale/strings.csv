@@ -785,6 +785,10 @@ ITEM_GUN_LANCE,Lance,Lanza
 ITEM_GUN_LANCE_DESC,"Hold to charge, release a piercing line.","Mantén para cargar, suelta una línea perforante."
 ITEM_GUN_SCATTER,Scatter,Metralla
 ITEM_GUN_SCATTER_DESC,"A cone of pellets, brutal up close.","Un cono de perdigones, brutal de cerca."
+ITEM_GUN_GLAIVE,Glaive,Disco
+ITEM_GUN_GLAIVE_DESC,A spinning disc that flies out and back.,Un disco giratorio que va y vuelve.
+ITEM_GUN_SEEKERS,Seekers,Buscadores
+ITEM_GUN_SEEKERS_DESC,Darts that curve to the nearest foes.,Dardos que se curvan hacia los enemigos cercanos.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación

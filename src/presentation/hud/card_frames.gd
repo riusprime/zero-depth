@@ -137,6 +137,8 @@ const FAMILY_OF := {
 	&"gun_void": &"dash",  # v0.9.0 VP: the Void form (the retired Void card's family)
 	&"gun_lance": &"crit",  # v0.9.0 AF1: the Lance form (the retired Charge card's family)
 	&"gun_scatter": &"projectile",  # v0.9.0 AF1: the Scatter form
+	&"gun_glaive": &"trinket",  # v0.9.0 AF2: the Glaive form (the retired Boomerang card's family)
+	&"gun_seekers": &"projectile",  # v0.9.0 AF2: the Seekers form (the Homing card's family)
 	&"gun_swirl": &"trinket",
 	# v0.6.5 WN4: the Blade pool's new cards (B3–B16; Wide Arc, Wave, Afterimage and Orbit Blades keep theirs above)
 	&"chain_cut": &"damage",

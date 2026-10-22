@@ -444,6 +444,30 @@ func scatter_active() -> bool:
 	return Scatter.active(_w)
 
 
+## v0.9.0 AF2 (owner Q7, F7): player projectile `i` is a Glaive disc (GlaiveView draws it, not the pulses), it is on
+## its way back, and the run's Gun shot is the Glaive (its throw's sound).
+func projectile_is_disc(i: int) -> bool:
+	return Glaive.is_disc(_w, i)
+
+
+func disc_coming_back(i: int) -> bool:
+	return Glaive.coming_back(_w, i)
+
+
+func glaive_active() -> bool:
+	return Glaive.active(_w)
+
+
+## v0.9.0 AF2 (owner Q7, F8): player projectile `i` is a Seekers dart (SeekersView draws it, not the pulses), and the
+## run's Gun shot is the Seekers (its volley's sound).
+func projectile_is_dart(i: int) -> bool:
+	return Seekers.is_dart(_w, i)
+
+
+func seekers_active() -> bool:
+	return Seekers.active(_w)
+
+
 ## v0.9.0 VP: player projectile `i` is a Void shot (VoidView draws it, not the pulses), and the run's Gun shot is the
 ## Void (its hum).
 func projectile_is_void(i: int) -> bool:

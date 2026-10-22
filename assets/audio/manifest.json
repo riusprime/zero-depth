@@ -975,6 +975,26 @@
       "loop": false
     },
     {
+      "id": "glaive_throw",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/glaive_throw.wav",
+      "sha256": "085432018c0afac3b19feaf3e421a02a81d2540c799064822b0f31eea5e871b0",
+      "seconds": 0.38,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -16.25,
+      "loop": false
+    },
+    {
+      "id": "seekers_fire",
+      "kind": "sfx",
+      "path": "assets/audio/sfx/seekers_fire.wav",
+      "sha256": "4f6633447d42e631fdacc397c7cf72080e163ecbcfd5952ce871a40bd23626ae",
+      "seconds": 0.2,
+      "peak_dbfs": -1.0,
+      "rms_dbfs": -11.44,
+      "loop": false
+    },
+    {
       "id": "ruins",
       "kind": "ambience",
       "path": "assets/audio/ambience/ruins.wav",

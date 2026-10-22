@@ -16,7 +16,7 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 	var repo := _repo()
 	assert_eq(
 		repo.count(&"modifiers"),
-		100,
+		102,
 		(
 			"MX1's 14, MX2's frost_nova and razor_orbit; MX4: the M-list's 29 new (Frost Core was one),"
 			+ " 3 legendary, and Cluster Payload, Overclocked Drone and Afterimage; v0.6.5 WN1: 4 triggers;"
@@ -25,6 +25,7 @@ func test_every_modifier_is_discovered_and_valid() -> void:
 			+ " triggers (On Hit, On Kill, On End ×2); v0.8.0 BL: Blade Storm and Riposte Chain; v0.8.0 RR: Chain Blast"
 			+ " + v0.8.0 RM: Threadline, Faultline, Gravity Stitch, Stress Mark and the two mutations"
 			+ " + v0.9.0 LZ, BM, VP, AF1: the Laser, the Bomb, the Void, the Lance, the Scatter"
+			+ " + v0.9.0 AF2: the Glaive, the Seekers"
 		)
 	)
 	assert_true(

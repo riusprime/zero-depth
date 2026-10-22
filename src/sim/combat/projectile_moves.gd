@@ -4,9 +4,11 @@ extends RefCounted
 ## flight, read once when it spawns (World._apply_spawns) into ProjectileStore's behaviour columns and run in its
 ## sweep (World._projectile_hits, tick phase 6):
 ## - pierce N (Edge Rounds): a hit passes through, N times (the Hot pierce and Pulse Gun's come first);
-## - return (Boomerang): at half its life it turns back toward the player, passing through every enemy (each sweep
-##   leaves it past the body it hit), and ends at the player;
-## - homing (Seeker): each tick it turns at most `homing` (1/4096 turns) toward the nearest enemy within HOME_M;
+## - return (Boomerang; v0.9.0 AF2: the Glaive's disc, the card retired into it): at half its life it turns back
+##   toward the player, passing through every enemy (each sweep leaves it past the body it hit), and ends at the
+##   player;
+## - homing (Seeker): each tick it turns at most `homing` (1/4096 turns) toward the nearest enemy within HOME_M (v0.9.0
+##   AF2: a Seekers dart toward its own one of the enemies nearest the hero, Seekers.target);
 ## - orbit first (Orbit Rounds): it circles the player at ORBIT_R_M for orbit_ticks, starting from its aim, then
 ##   leaves along the aim it came round to (its life waits for the orbit).
 ## No trig (Kin), no randomness; the columns are hashed only once a projectile had a behaviour.
@@ -83,13 +85,17 @@ static func _steer(w: World, pi: int) -> void:
 		var d := Kin.length(to)
 		if d <= w.player.radius_m + p.radius[pi] + p.speed[pi]:
 			p.life[pi] = 1
+		elif p.life[pi] <= 1 and Glaive.is_disc(w, pi):
+			p.life[pi] = 2  # v0.9.0 AF2: a Glaive disc's way home is not cut short (a pierce's push ate its life)
 		if d > 0.0:
 			var v := to * (p.speed[pi] / d)
 			p.vel_x[pi] = v.x
 			p.vel_y[pi] = v.y
 		return
 	if p.home[pi] > 0:
-		var best := _nearest(w, at, HOME_M)
+		var best := Seekers.target(w, pi)  # v0.9.0 AF2: a Seekers dart curves to its own enemy
+		if best < 0:
+			best = _nearest(w, at, HOME_M)
 		if best >= 0:
 			var want := Kin.angle_of(w.actors.pos(best) - at)
 			var cur := Kin.angle_of(Vector2(p.vel_x[pi], p.vel_y[pi]))
@@ -135,6 +141,8 @@ static func pierce(w: World, pi: int, k: int, from: Vector2) -> bool:
 	var out := from + dir * (along + sqrt(maxf(0.0, reach * reach - perp2)))
 	p.pos_x[pi] = out.x
 	p.pos_y[pi] = out.y
+	if p.ret[pi] == 1 and Glaive.is_disc(w, pi):  # v0.9.0 AF2: the push spends the disc's flight (it turns 7 m out)
+		p.life[pi] = maxi(1, p.life[pi] - roundi(Kin.length(out - from) / speed))
 	return true
 
 

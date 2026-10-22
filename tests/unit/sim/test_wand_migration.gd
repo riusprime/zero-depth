@@ -57,10 +57,10 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		abilities += 1 if t.retired else 0
 	assert_eq(
 		[items, abilities],
-		[41, 6],
+		[42, 6],
 		(
-			"47 rows: 41 items (v0.9.0: Spread, Explosive, the old Void, Charge) and the six old ability"
-			+ " modifiers"
+			"48 rows: 42 items (v0.9.0: Spread, Explosive, the old Void, Charge, Boomerang) and the six old"
+			+ " ability modifiers"
 		)
 	)
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
@@ -288,6 +288,35 @@ func test_charge_is_retired_and_becomes_the_lance_on_the_gun_and_shards_on_the_b
 	var t := g.wand_table
 	for id: StringName in t.migrate_blade + t.migrate_gun:
 		assert_ne(id, &"gun_charge", "no row lands on Charge")
+
+
+## v0.9.0 AF2 (owner Q7: "Lance replaces the Charge card and Glaive the Boomerang card (both retired through
+## migration.tres)"): the Boomerang card (G9, boomerang) is retired, never offered. A held one becomes the Glaive form
+## card in its place on a Gun run (Lv 1, as every retired card); on a Blade run (Gun only) it is refunded as shards. No
+## row lands on Boomerang.
+func test_boomerang_is_retired_and_becomes_the_glaive_on_the_gun_and_shards_on_the_blade() -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var old := _it(w, &"boomerang")
+		assert_true(w.item_tables[old].retired, "Boomerang is retired")
+		assert_does_not_have(ItemPool.available(w), old, "never offered on a %s run" % weapon)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"boomerang"])
+	CardLevels.set_level(g, _it(g, &"boomerang"), 4)
+	assert_eq(WandMigration.run(g), 0, "no refund on the Gun")
+	assert_eq(_ids(g), [&"gun_homing", &"gun_glaive"], "the Glaive in its place")
+	assert_eq(_levels(g), [1, 1])
+	assert_eq(AttackSlots.form_id(g), &"glaive")
+	assert_true(Glaive.is_glaive(Modifiers.bolt(g)))
+	var b := _floor(&"blade")
+	_take(b, [&"boomerang"])
+	var expect := WandMigration.refund_of(b, _it(b, &"boomerang"))
+	assert_gt(expect, 0)
+	assert_eq(WandMigration.run(b), expect, "refunded on the Blade")
+	assert_eq(_ids(b), [], "nothing in its place")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"boomerang", "no row lands on Boomerang")
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------
