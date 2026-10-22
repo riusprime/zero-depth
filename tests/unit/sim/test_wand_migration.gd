@@ -57,15 +57,13 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		abilities += 1 if t.retired else 0
 	assert_eq(
 		[items, abilities],
-		[39, 6],
-		"45 rows: 39 items (v0.9.0: Spread, Explosive) and the six old ability modifiers"
+		[40, 6],
+		"46 rows: 40 items (v0.9.0: Spread, Explosive, the old Void) and the six old ability modifiers"
 	)
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
 	for id: StringName in [&"echo_slash", &"split_shot", &"wide_arc", &"blade_orbit"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept its id as a wand card" % id)
-	for id: StringName in [
-		&"ember_core", &"storm_core", &"frost_core", &"venom_core", &"gravity_well"
-	]:
+	for id: StringName in [&"ember_core", &"storm_core", &"frost_core", &"venom_core"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept as a shared-pool card (WN5a)" % id)
 
 
@@ -234,6 +232,36 @@ func test_explosive_is_retired_never_offered_and_becomes_fire() -> void:
 	var t := _floor(&"gun").wand_table
 	for id: StringName in t.migrate_blade + t.migrate_gun:
 		assert_ne(id, &"shared_explosive", "no row lands on Explosive")
+
+
+## v0.9.0 VP (owner C §6.4: "That specific ground-spawning gravity modifier should be deleted from the item pool and
+## associated attack behavior"; C54): the old Void (gravity_well, the floor black hole) is retired, never offered on
+## either weapon. The table's rule for a held one: on a Gun run it becomes the Void form card in its place (Lv 1, as
+## every retired card; a Void already held levels up); on a Blade run (the form is Gun only) it is refunded as shards
+## at the shop's salvage price. No row lands on it.
+func test_the_old_void_is_retired_becomes_the_void_form_on_the_gun_and_shards_on_the_blade(
+) -> void:
+	for weapon: StringName in [&"gun", &"blade"]:
+		var w := _floor(weapon)
+		var old := _it(w, &"gravity_well")
+		assert_true(w.item_tables[old].retired, "the old Void is retired")
+		assert_does_not_have(ItemPool.available(w), old, "never offered on a %s run" % weapon)
+	var g := _floor(&"gun")
+	_take(g, [&"gun_homing", &"gravity_well"])
+	CardLevels.set_level(g, _it(g, &"gravity_well"), 3)
+	assert_eq(WandMigration.run(g), 0, "no refund on the Gun")
+	assert_eq(_ids(g), [&"gun_homing", &"gun_void"], "the Void form in its place")
+	assert_eq(_levels(g), [1, 1])
+	assert_eq(AttackSlots.form_id(g), &"void")
+	var b := _floor(&"blade")
+	_take(b, [&"gravity_well"])
+	var expect := WandMigration.refund_of(b, _it(b, &"gravity_well"))
+	assert_gt(expect, 0)
+	assert_eq(WandMigration.run(b), expect, "refunded on the Blade")
+	assert_eq(_ids(b), [], "nothing in its place")
+	var t := g.wand_table
+	for id: StringName in t.migrate_blade + t.migrate_gun:
+		assert_ne(id, &"gravity_well", "no row lands on the old Void")
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------

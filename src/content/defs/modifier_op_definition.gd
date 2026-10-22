@@ -120,9 +120,6 @@ const FIELD_STAGE := {
 	&"repeats": [1, &"repeats", ""],
 	# v0.8.0 PF2 (owner O9): a bolt hook's projectiles alive at once, at most (Blade Storm's blades)
 	&"alive_max": [1, &"alive_max", ""],
-	# v0.8.0 P2 (owner O24, Void): a shot's chance to leave a black hole (per mille) and its pulses' damage share
-	&"hole_chance_permille": [3, &"hole_permille", ""],
-	&"hole_damage_permille": [3, &"hole_damage_permille", ""],
 	# v0.8.0 AO (owner O37): a Ring's share of the damage when it is more than one ring or pulse, and Swirl's motion
 	&"ring_share_permille": [3, &"ring_share_permille", ""],
 	&"swirl": [2, &"swirl", ""],
@@ -146,6 +143,11 @@ const FIELD_STAGE := {
 	&"move_permille": [3, &"move_permille", ""],
 	# v0.9.0 BM (owner Q9): the Bomb form's blast radius (mm)
 	&"blast_radius_mm": [3, &"blast_mm", ""],
+	# v0.9.0 VP (owner Q10): the Void form's aura (mm), its damage ticks (s), its pull's reach (mm) and top speed (mm/s)
+	&"void_aura_mm": [3, &"void_mm", ""],
+	&"void_tick_seconds": [3, &"void_tick_ticks", "ticks"],
+	&"void_pull_mm": [3, &"void_pull_mm", ""],
+	&"void_pull_mmps": [3, &"void_pull_mmps", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

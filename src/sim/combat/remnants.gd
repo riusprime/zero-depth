@@ -41,7 +41,7 @@ const END_GONE := 4
 const EFFECT_LIMIT := &"remnant_cap"
 ## A stagger's STATUS_APPLY effect id (EnemyAi's recover, from a breaking mark).
 const EFFECT_STAGGER := &"remnant_stagger"
-## A pull stops this far (m) from the anchor (as BlackHoles.CORE_GAP_M).
+## A pull stops this far (m) from the anchor (as the retired v0.8.0 black hole's core gap).
 const CORE_GAP_M := 0.3
 ## A slash's path replays as this many chords along its arc (at PATH_REACH of its reach).
 const ARC_CHORDS := 3

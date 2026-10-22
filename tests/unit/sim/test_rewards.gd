@@ -105,6 +105,7 @@ func test_the_shipped_data() -> void:
 			"gun_ring",  # v0.8.0 AO: the order rule's Ring and Swirl, rare
 			"gun_swirl",
 			"gun_threadline",  # v0.8.0 RM: the remnant cards, rare
+			"gun_void",  # v0.9.0 VP: the Void form, rare
 			"meltdown",
 			"overclocked_drone",
 			"razor_orbit",

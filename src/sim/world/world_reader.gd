@@ -418,6 +418,16 @@ func bomb_active() -> bool:
 	return Bomb.active(_w)
 
 
+## v0.9.0 VP: player projectile `i` is a Void shot (VoidView draws it, not the pulses), and the run's Gun shot is the
+## Void (its hum).
+func projectile_is_void(i: int) -> bool:
+	return VoidShots.is_void_projectile(_w, i)
+
+
+func void_active() -> bool:
+	return VoidShots.active(_w)
+
+
 ## v0.9.0 LZ: the Laser fires now (its hum, the view).
 func beam_firing() -> bool:
 	return Laser.firing(_w)
@@ -1228,9 +1238,14 @@ func loop_device_radius() -> float:
 	return Ascension.LOOP_RADIUS_M
 
 
-## v0.8.0 P2 (owner O24): Void's black holes standing (BlackHoles.read: pos, from, age, life, radius, pull_radius).
-func black_holes() -> Array:
-	return BlackHoles.read(_w)
+## v0.9.0 VP (owner Q10): the Void shots in flight (VoidShots.read: id, pos, dir, aura, pull radius, root), and the
+## enemies their pull leans now (VoidShots.leans: actor id -> the way it is drawn, m a tick).
+func void_shots() -> Array[Dictionary]:
+	return VoidShots.read(_w)
+
+
+func void_leans() -> Dictionary:
+	return VoidShots.leans(_w)
 
 
 ## v0.8.0 RM (owner O91): the remnants alive and Dodge Imprint's standing point (Remnants.read: {remnants: [{uid,

@@ -135,7 +135,8 @@ func _sync_bolts(reader: WorldReader) -> void:
 			reader.projectile_team(i) != 0
 			or reader.projectile_is_shard(i)
 			or reader.projectile_is_bomb(i)
-		):
+			or reader.projectile_is_void(i)
+		):  # v0.9.0 VP: VoidView draws the Void shots
 			continue
 		var look := _projectile_look(reader, i)
 		# v0.8.0 (owner bug 2026-10-17): a shot still flying when Ring is picked has a spec whose look is now a ring;

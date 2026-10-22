@@ -24,14 +24,6 @@ var cast_free_lines: Array[StringName] = [&"blade_storm"]
 ## already set off that tick merges into it (it doesn't go off); one farther away still does. 0 = never merge.
 var blast_merge_after := 8
 var blast_merge_ids: Array[StringName] = [&"shared_explosive"]
-## v0.8.0 P2 (owner O24, Void's black holes; BlackHoles): a hole's life (ticks), how many stand at once, its pull's
-## reach (m) and step (m a tick), its core (m) and the ticks between its pulses.
-var hole_ticks := 120
-var hole_max := 3
-var hole_pull_radius_m := 3.5
-var hole_pull_step_m := 0.05
-var hole_radius_m := 1.4
-var hole_period_ticks := 12
 ## v0.8.0 MR (owner O91; SecondaryProc): a secondary attack's proc (per mille of its statuses, its hooks' statuses and
 ## its trigger casts' damage), and the cards that do nothing right of a trigger (Wand.flags).
 var secondary_proc_permille := 500

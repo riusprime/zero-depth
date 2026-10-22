@@ -25,7 +25,6 @@ static var parts: Array[GDScript] = [
 	RewardViews,
 	ShardViews,
 	HealOrbViews,
-	BlackHoleViews,
 	RemnantViews,  # v0.8.0 RM
 	PortalTransitView,
 	BossChallengeView,
@@ -41,6 +40,7 @@ static var parts: Array[GDScript] = [
 	AttackFormView,
 	LaserView,  # v0.9.0 LZ
 	BombView,  # v0.9.0 BM
+	VoidView,  # v0.9.0 VP
 	ModifierOverlays,
 	BladeFormView,
 	FireballViews,
@@ -84,8 +84,6 @@ var deep_gate: PortalGate
 var ascension: AscensionPortal
 ## v0.8.0 P2 (owner O28): the Loop device beside it (null on other floors).
 var loop_device: LoopDevice
-## v0.8.0 P2 (owner O24): Void's black holes.
-var black_holes: BlackHoleViews = _part(BlackHoleViews)
 ## v0.8.0 RM (owner O91): the remnants (threads, cracks, anchors, marks, fragments, replay paths), their flashes and
 ## Thermal Break's shatter.
 var remnants: RemnantViews = _part(RemnantViews)
@@ -135,6 +133,8 @@ var attack_forms: AttackFormView = _part(AttackFormView)
 var laser: LaserView = _part(LaserView)
 ## v0.9.0 BM (owner C §6.3): the bombs in flight and their blasts, per element.
 var bombs: BombView = _part(BombView)
+## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
+var voids: VoidView = _part(VoidView)
 ## v0.6.0 MX4: the shell, the charge, the phase, poison, queued attacks.
 var modifier_marks: ModifierOverlays = _part(ModifierOverlays)
 ## v0.6.5 WN4: crescents, ghost slashes, fissures, sparks, orbiting blades.
@@ -279,6 +279,7 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(attack_forms)  # v0.6.0 MX3
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
+	add_child(voids)  # v0.9.0 VP
 
 
 ## The effects layer (real fire, explosions, lightning) and the views drawn into it or after it.
@@ -318,7 +319,6 @@ func _setup_effects() -> void:
 	add_child(final_views)  # v0.8.0 FB1
 	add_child(prism_views)  # v0.8.0 FB2
 	add_child(nemesis_views)  # v0.8.0 FB3
-	add_child(black_holes)  # v0.8.0 P2
 	add_child(remnants)  # v0.8.0 RM
 
 
@@ -474,6 +474,7 @@ func sync() -> void:
 	_sync_view(&"attack_forms", attack_forms)  # v0.6.0 MX3
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
+	_sync_view(&"voids", voids)  # v0.9.0 VP
 	_sync_view(&"modifier_marks", modifier_marks)  # v0.6.0 MX4
 	_sync_view(&"blade_forms", blade_forms)  # v0.6.5 WN4
 	_sync_view(&"fireballs", fireballs)  # v0.7.5 BF1
@@ -485,7 +486,6 @@ func sync() -> void:
 	_sync_view(&"final_views", final_views)  # v0.8.0 FB1
 	_sync_view(&"prism_views", prism_views)  # v0.8.0 FB2
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
-	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
 	if rune_view != null:  # v0.9.0 RA
 		rune_view.sync(reader)
