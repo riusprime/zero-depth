@@ -11,10 +11,12 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
   Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
   Portal earned through a purple-rune room; the hub replaces most of the menu.
-- **Waiting on the owner:** the go to start Wave 1 (DS, CV, PT, SA, FA); the altar model (prompt in
+- **Wave 1 under way (owner's go, 2026-10-22):** DS and CV done; PT (agent, branch `v090-pt`) and SA then FA
+  (agent, branch `v090-safa`) building in worktrees.
+- **Waiting on the owner:** the altar model (prompt in
   `docs/art/requests/v0.9.0_altars_portals.md`); Swarmer, Mine Layer and Sniper models (EM). The G1s and G2s named in
   later steps come as those steps start.
-- **Next:** Wave 1.
+- **Next:** merge PT and SA/FA, seams, then Wave 2.
 
 ## Owner decisions (2026-10-22)
 - Q1–Q30, ATTACK_FORMS and UTILITY_CARDS, verbatim in the PLAN's "Owner decisions". LOCKED_DECISIONS change log: six
@@ -25,6 +27,8 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 | Step | What (player-facing) | Commit |
 |---|---|---|
 | — | `tests/MIN_TEST_COUNT` 1904 → 2676 | `78271656` |
+| DS | The boss door's boom lands with the slab: the impact sound starts 18 ticks (0.3 s) before the touchdown, so the file's peak meets it; sim and goldens unchanged | `15a1bac2` |
+| CV | The arrival and the boss door vibrate (a small fast buzz on both axes, averaging to nothing) instead of shaking and kicking the view; also walking into the Ascension portal; hit, finisher and Blade-kick shakes unchanged | `ce7ffad7` |
 | 0 | Plan, G1 lists, art request; the owner's answers | `54f40318`, `74fca543`, `1ae81240`, this commit |
 
 ## Goldens changed on purpose
@@ -58,3 +62,7 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
   cracked walls to the Skill, elites on floors 4–5 with a 30 % core, Marked and Ambush Cache deleted, the earned Purple
   Portal, the hub menu, two unlockable forms, shrines, fountains, robes and affinities). Steps rewritten in six waves.
   Next: the owner's go for Wave 1.
+- 2026-10-22 — Wave 1 started (owner: "Start the development phase with Wave 1"). Toolchain on this PC: Godot 4.7.2 from
+  Downloads and gdtoolkit 4.5.0 in a scratch venv (nothing installed system-wide). DS (`15a1bac2`): test_door_boom 2/2,
+  test_boss_door_view + test_audio_director + arch 26/26 total, e2e run_flow 3/3. CV (`ce7ffad7`): 43/43 presentation
+  and arch, e2e arrival + ascension 4/4, audio + portal 3/3. PT and SA/FA handed to two agents in worktrees.
