@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://husfe5qi0u1k"
-path="res://.godot/imported/timed_door.glb-3f52cc1a81bdf83d7810c0d084404fa0.scn"
+uid="uid://dq4kquqwfq7t4"
+path="res://.godot/imported/lockdown_seal.glb-9bd5959893566c4f6a0f14b43a2c7ed1.scn"
 
 [deps]
 
-source_file="res://assets/models/devices/timed_door.glb"
-dest_files=["res://.godot/imported/timed_door.glb-3f52cc1a81bdf83d7810c0d084404fa0.scn"]
+source_file="res://assets/models/devices/lockdown_seal.glb"
+dest_files=["res://.godot/imported/lockdown_seal.glb-9bd5959893566c4f6a0f14b43a2c7ed1.scn"]
 
 [params]
 

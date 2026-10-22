@@ -86,10 +86,11 @@ SPECS = {
     "elite_conduit": {"src": "new_assets_2/elite_conduit.glb", "role": "enemy", "folder": "enemies", "yaw": 90.0,
                       "height": 2.3, "parts": "elite_conduit"},
     # Puzzles and secrets (TD, RA, DX, HF), the shrines and the dais (SH, DP): front +Z kept (the views turn them).
-    # The timed door: the owner's file is a gate of iron bars with no frame, so it is the part that sinks whole (the
-    # view keeps its stone frame); its width (raw x) onto z, 3.0 x 3.0 m, 0.5 m thick (TimedDoorView's slab).
-    "timed_door": {"src": "new_assets_4/timed_door.glb", "role": "cover", "folder": "devices", "yaw": 90.0,
-                   "size": (0.5, 3.0, 3.0)},
+    # The owner's `timed_door` file is a gate of iron bars with no frame: installed as `lockdown_seal` (owner
+    # 2026-10-22: "Use it for Lockdowns"), its width (raw x) onto z. Prepared at 0.5 x 3.0 x 3.0 m; ShopModels fits it
+    # to the Lockdown doorway's box.
+    "lockdown_seal": {"src": "new_assets_4/timed_door.glb", "role": "cover", "folder": "devices", "yaw": 90.0,
+                      "size": (0.5, 3.0, 3.0)},
     "rune_switch": {"src": "new_assets_3/rune_switch.glb", "role": "cover", "folder": "devices", "yaw": 0.0,
                     "height": 1.3},
     "rune_pillar": {"src": "new_assets_3/rune_pillar.glb", "role": "cover", "folder": "devices", "yaw": 0.0,

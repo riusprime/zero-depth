@@ -5,7 +5,7 @@ extends Node3D
 ## accessibility"; Q23: the hidden room unseen until it opens; docs/art/requests/v0.9.0_ART_LIST.md §3.2): the floor's
 ## timed door and its two rune switches, reading only (WorldReader.timed_*, interactable_*).
 ## - The door: a heavy stone slab in a thick carved frame, a circular rune seal in its middle and rune notches round
-##   the frame (the owner's `timed_door` model through ShopModels when it is listed, else this code stand-in). Shut it
+##   the frame (an owner `timed_door` model through ShopModels when one is listed, else this code stand-in). Shut it
 ##   stands in the doorway; opened it sinks into the floor (SINK_S); on the shut it slams back up (SLAM_S) and `slammed`
 ##   asks the camera for the door's thud (the impact sound is AudioEvents').
 ## - The switches: short octagonal stone columns with a rune disc on a slanted top (`rune_switch`, the same way). A

@@ -382,8 +382,8 @@
       "sha256": "4e06f74fa7adfb68868ed0c67241cdf4c1261f8d8346ad94b5d158e9b3a1bc43"
     },
     {
-      "id": "timed_door",
-      "path": "assets/models/devices/timed_door.glb",
+      "id": "lockdown_seal",
+      "path": "assets/models/devices/lockdown_seal.glb",
       "sha256": "6aed74cf168c923a44e75a47e08f5530366a2f5e24222e91d381f7ee453541d2"
     },
     {

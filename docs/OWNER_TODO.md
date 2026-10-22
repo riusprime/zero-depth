@@ -136,7 +136,7 @@ Your 27 files (29 models: the two "(2models)" files split in two) and 3 textures
 | ☑ 2026-10-22 | `arrival_altar` | Floor 1's arrival altar (a code jewel in each of your six sockets, the floating runes in code) and, purple, the final approach's |
 | ☑ 2026-10-22 | `approach_stairs` | The final approach's causeway: your flights down its length |
 | ☑ 2026-10-22 | `arena_wall_segment`, `arena_pillar`, `arena_brazier`, `arena_gate`, `ground_arena` | The final arena and the approach's plateau (the walls still fade when they hide the hero) |
-| ☑ 2026-10-22 | `timed_door`, `rune_switch` | The timed door: your file is an iron-bar gate with no frame, so the whole gate sinks in the code stone frame; it looks like the `lockdown_seal` prompt — say if it was meant for the Lockdowns |
+| ☑ 2026-10-22 | `rune_switch`; your bar gate as `lockdown_seal` | You said "Use it for Lockdowns": your iron-bar gate (sent as `timed_door`) is now the Lockdowns' doorway bars; the timed door is the code stone slab until you send a stone door |
 | ☑ 2026-10-22 | `stone_spike` | The Gatekeeper's (and the Colossus's) stone spikes: the tallest of your three clusters |
 | ☑ 2026-10-22 | `ground_snow` | Frozen Shore's ground |
 | ☑ 2026-10-22 | `elite_breaker`, `elite_rift_hunter`, `elite_conduit` | Cut into parts for code animation; shown when the elites step (EL) is built |
@@ -145,7 +145,7 @@ Your 27 files (29 models: the two "(2models)" files split in two) and 3 textures
 
 **Still not sent from the v0.9.0 list** ([`art/requests/v0.9.0_ART_LIST.md`](art/requests/v0.9.0_ART_LIST.md)):
 `approach_pylon`; the containers `container_crate`, `container_urn`, `container_barrel`; `explosive_barrel`;
-`lockdown_seal`; the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
+`timed_door` (a stone door; your bar gate became `lockdown_seal`); the hazards `hazard_cable`, `hazard_rock`, `hazard_vent`, `hazard_ice`, `hazard_star`; the four
 floor 4-5 bosses and the 16 collectibles (after their G1 lists); all the sounds and the optional effect textures; and
 from v0.8.0 the `swarmer`, `mine_layer` and `sniper` enemies.
 

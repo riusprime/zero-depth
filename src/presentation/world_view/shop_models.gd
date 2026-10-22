@@ -47,9 +47,11 @@ const SPECS := {
 	# v0.9.0 TD (docs/art/requests/v0.9.0_ART_LIST.md §3.2; TimedDoorView): the timed door's slab, 3.0 m high and 3.0 m
 	# across (the view stretches it across the doorway's width), and the rune switch. v0.9.0 MI2 (delivered
 	# 2026-10-22; scripts/assets/mi2_prep.py prepared them in this frame, so no turn): the owner's door is a gate of
-	# iron bars with no frame (the whole of it sinks), 0.5 m thick; his switch keeps its own proportions, 1.3 m high,
-	# its slanted rune top toward +Z (the door).
-	&"timed_door": {"size": Vector3(0.5, 3.0, 3.0), "yaw": 0.0},
+	# iron bars with no frame; his switch keeps its own proportions, 1.3 m high, its slanted rune top toward +Z (the door).
+	# The owner (2026-10-22, PLAN "Owner decisions" FV, MI2: "Use it for Lockdowns"): the gate is `lockdown_seal`, the
+	# Lockdowns' doorway bars (LK), 0.4 m thick, 2.6 m high, 3.0 m across (its width on z, as prepared); `timed_door` is
+	# unlisted again, so the timed door is the code stone slab until the owner's stone door arrives.
+	&"lockdown_seal": {"size": Vector3(0.4, 2.6, 3.0), "yaw": 0.0},
 	&"rune_switch": {"height": 1.3, "yaw": 0.0},
 	# v0.9.0 RA (the same list; RuneAlignmentView): the turning pillar, 0.9 x 2.2 x 0.9 m, and the carving, 2.4 m
 	# across, 1.6 m high, 0.3 m deep (on the sealed doorway's slab). Code stand-ins until the owner's files arrive.

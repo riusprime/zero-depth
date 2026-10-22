@@ -100,7 +100,8 @@ func test_ring_swirl_throws_the_ring_and_moving_swirl_first_flies_it_along_the_a
 	assert_true(
 		texts.has("%s · %s" % [tr("UI_WAND_LEVEL") % 1, tr("UI_SLOT_SECONDARY")]), "Swirl's"
 	)
-	assert_string_contains(page.note_text(), "%s 1/1" % tr("UI_SLOT_PATTERN"), "the slot counts")
+	# v0.9.0 AS2 (G2 AS = B): the slot counts are the pips over the wand (the Pattern's one, lit).
+	assert_string_contains(page.pips.text(), "%s ●" % tr("UI_SLOT_PATTERN"), "the slot pips")
 	await e.tap(KEY_2)
 	for key: Key in [KEY_ENTER, KEY_LEFT, KEY_ENTER]:  # slot 2 → 1
 		await e.tap(key)

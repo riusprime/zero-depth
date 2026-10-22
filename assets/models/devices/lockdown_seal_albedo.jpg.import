@@ -2,19 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://no6kwy3fhcin"
-path="res://.godot/imported/timed_door_albedo.jpg-bfaffda0f406237f6bbaeb09d5a3e40a.ctex"
+uid="uid://lyb7ffv5bimu"
+path="res://.godot/imported/lockdown_seal_albedo.jpg-18f2dd8a14dc7f62ff6f138231c248b9.ctex"
 metadata={
 "vram_texture": false
-}
-generator_parameters={
-"md5": "6cb869faf9e6fbd3820d9e5a21063216"
 }
 
 [deps]
 
-source_file="res://assets/models/devices/timed_door_albedo.jpg"
-dest_files=["res://.godot/imported/timed_door_albedo.jpg-bfaffda0f406237f6bbaeb09d5a3e40a.ctex"]
+source_file="res://assets/models/devices/lockdown_seal_albedo.jpg"
+dest_files=["res://.godot/imported/lockdown_seal_albedo.jpg-18f2dd8a14dc7f62ff6f138231c248b9.ctex"]
 
 [params]
 
@@ -26,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

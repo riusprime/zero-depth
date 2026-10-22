@@ -205,6 +205,8 @@ func test_a_full_wand_takes_no_new_card() -> void:
 			BuildSlots.is_slot_item(w.item_tables[k])
 			and ItemPool.usable(w, k)
 			and not w.items_owned.has(k)
+			# v0.9.0 AS/AS2: a card of a full category replaces or asks; it never fills a new slot.
+			and AttackSlots.full_category(w, k) == AttackSlots.FREE
 		):
 			if BuildSlots.full(w):
 				assert_false(pg.grant_now(k), "no Swap in the Playground")

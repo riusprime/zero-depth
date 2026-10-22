@@ -17,7 +17,7 @@ const V090_BUDGETS := {
 	&"elite_breaker": 5000,
 	&"elite_rift_hunter": 5000,
 	&"elite_conduit": 5000,
-	&"timed_door": 3000,
+	&"lockdown_seal": 3000,
 	&"rune_switch": 3000,
 	&"rune_pillar": 3000,
 	&"rune_mural": 3000,
