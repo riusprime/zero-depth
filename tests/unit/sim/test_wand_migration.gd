@@ -55,7 +55,11 @@ func test_the_table_retires_43_cards_and_marks_them() -> void:
 		items += 1 if t.retired else 0
 	for t in w.ability_tables:
 		abilities += 1 if t.retired else 0
-	assert_eq([items, abilities], [37, 6], "43 rows: 37 items and the six old ability modifiers")
+	assert_eq(
+		[items, abilities],
+		[38, 6],
+		"44 rows: 38 items (v0.9.0 TW: Spread) and the six old ability modifiers"
+	)
 	assert_eq(w.wand_table.migrate_ids.size(), items + abilities)
 	for id: StringName in [&"echo_slash", &"split_shot", &"wide_arc", &"blade_orbit"]:
 		assert_false(w.item_tables[_it(w, id)].retired, "%s kept its id as a wand card" % id)
@@ -193,8 +197,27 @@ func test_a_carry_into_the_next_floor_migrates_at_its_start() -> void:
 	var w := _floor(&"gun")
 	RunCarry.apply(w, carry)
 	Abilities.start_floor(w)
-	assert_eq(_ids(w), [&"gun_spread", &"gun_rapid_fire", &"gun_mine"])
+	assert_eq(_ids(w), [&"gun_twin", &"gun_rapid_fire", &"gun_mine"], "v0.9.0 TW: Spread is Twin")
 	assert_eq(_levels(w), [1, 1, 2], "Bomb Lobber and its Cluster Payload: Mine at level 2")
+
+
+## v0.9.0 TW (owner Q8: Twin and Spread merged into one card): Spread is retired; a held Spread becomes Twin in its
+## place (the table's rule: a card already held levels up by 1), and Spread is never offered again.
+func test_a_held_spread_becomes_twin_and_is_never_offered() -> void:
+	var w := _floor(&"gun")
+	var spread := _it(w, &"gun_spread")
+	assert_true(w.item_tables[spread].retired, "Spread is retired")
+	assert_does_not_have(ItemPool.available(w), spread, "never offered")
+	_take(w, [&"gun_homing", &"gun_spread"])
+	CardLevels.set_level(w, spread, 3)
+	WandMigration.run(w)
+	assert_eq(_ids(w), [&"gun_homing", &"gun_twin"], "in Spread's place")
+	assert_eq(_levels(w), [1, 1], "a new Twin at level 1, as every retired card")
+	var both := _floor(&"gun")
+	_take(both, [&"gun_twin", &"gun_spread"])
+	WandMigration.run(both)
+	assert_eq(_ids(both), [&"gun_twin"])
+	assert_eq(_levels(both), [2], "a Twin already held levels up")
 
 
 # --- The legendary tier --------------------------------------------------------------------------------------------

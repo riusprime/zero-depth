@@ -294,6 +294,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var r := spec.radius_m * ctx.size_permille / 1000.0  # v0.6.5 WN3: a charged shot (G13)
 	var gap := t.radius_m + r + MUZZLE_GAP_M if ctx.muzzle_m < 0.0 else ctx.muzzle_m
 	var lanes := GunForms.lanes(spec, r)  # v0.6.5 WN3: G3 Twin, side by side
+	var turns := GunForms.lane_turns(spec)  # v0.9.0 TW: three copies fan
+	var lane_c := (lanes.size() - 1) / 2  # the primary lane: the first of two, the middle of three
 	var room := _alive_room(w, spec)  # v0.8.0 PF2
 	# v0.8.0 MR (O91; SecondaryProc): a secondary launch's bolts are all secondary (a repeat's carry that too); a
 	# sharing spec's bolts past its primary one (the centre bolt's first lane; a circle's first) are secondary.
@@ -304,8 +306,8 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 	var link := Remnants.link_of(spec) if not spec.hooks.is_empty() else null  # v0.8.0 RM: Threadline
 	for oi in offsets.size():
 		var off := offsets[oi]
-		var dir := Kin.dir(ctx.angle + off)
 		for li in lanes.size():
+			var dir := Kin.dir(ctx.angle + off + turns[li])
 			var side := lanes[li]
 			if room == 0:
 				_alive_capped(w, spec)
@@ -327,7 +329,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 				spec.key
 			)
 			var kind := kind0
-			if spec.share_permille > 0 and (oi != centre or li != 0):
+			if spec.share_permille > 0 and (oi != centre or li != lane_c):
 				kind |= ProjectileStore.SECONDARY
 			if kind != 0:
 				w.set_pending_second(kind)
