@@ -1520,6 +1520,7 @@ func _advance_actions() -> void:
 func _move_and_collide() -> void:
 	# Player.
 	var p := player_pos()
+	var kick := Lance.recoil(self)  # v0.9.0 AF1b: the Lance's push back, spent each tick (walls resolve it below)
 	if player_dead():
 		vel = Vector2.ZERO
 	elif dash_ticks_left > 0:
@@ -1552,6 +1553,7 @@ func _move_and_collide() -> void:
 		if Kin.length(vel - target) < 0.0001:
 			vel = target
 		p += vel + PlayerKit.lunge_offset(self)  # a combo step's forward step (v0.3.0 L11)
+		p += kick
 	actors.set_pos(0, p)
 	var pp := phase_probe  # v0.8.0 HS
 	if pp != null:

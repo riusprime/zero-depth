@@ -1030,6 +1030,34 @@ def s_void_hum(r):
     return mix(hum, growl, swirl)
 
 
+def s_lance_charge(r):
+    """v0.9.0 AF1b (owner: "a circle … that circles like a charging energy … like a lowkey haduoken"; the agent's
+    placeholder): 1.25 s, the Lance's charge-up: a hum rising 110 to 330 Hz with an FM shimmer an octave up, a
+    tremolo speeding up from 6 to 22 Hz as it fills, and a swirl of noise rising 400 to 2600 Hz, swelling in over the
+    1.2 s charge and held briefly at the top."""
+    m = n_of(1.25)
+    t = np.arange(m) / RATE
+    rise = curve(110.0, 330.0, m)
+    swell = np.minimum(1.0, np.linspace(0.15, 1.25, m)) * env(m, 0.01, 2.0)
+    trem_hz = curve(6.0, 22.0, m)
+    trem = 0.7 + 0.3 * np.sin(phase(trem_hz))
+    hum = osc(rise, "sine") * 0.8 + osc(rise * 2.0, "tri") * 0.2
+    shimmer = fm(rise * 2.0, 1.5, 1.2 + 1.5 * t / t[-1], m) * 0.3
+    swirl = bandpass(noise(r, m), curve(400.0, 2600.0, m), 4.0) * 0.4
+    return echo(mix(hum, shimmer, swirl) * trem * swell, 80, 0.25, 0.2, 3500, 0.12)
+
+
+def s_lance_release(r):
+    """v0.9.0 AF1b (the agent's placeholder for the Lance's release): 0.5 s, a whoosh of noise sweeping 3200 down to
+    500 Hz under a bright FM zap falling 880 to 140 Hz and a soft low thump (the push back), with a short echo."""
+    w = whoosh(r, 0.42, 3200, 500, 2.2, 0.16)
+    m = n_of(0.3)
+    zap = fm(curve(880.0, 140.0, m), 2.0, 2.5 * env(m, 0.001, 0.08), m) * env(m, 0.002, 0.1) * 0.6
+    k = n_of(0.2)
+    thump = osc(curve(120.0, 45.0, k), "sine", k) * env(k, 0.003, 0.07) * 0.8
+    return echo(mix(w, zap, thump), 75, 0.25, 0.22, 3000, 0.1)
+
+
 def s_purple_runes(r):
     """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
     rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
@@ -1178,6 +1206,8 @@ SFX = [
     ("purple_runes", s_purple_runes),
     ("lockdown_close", s_lockdown_close),
     ("lockdown_open", s_lockdown_open),
+    ("lance_charge", s_lance_charge),
+    ("lance_release", s_lance_release),
 ]
 
 # --- ambience (seamless loops) -----------------------------------------------------------------------------------

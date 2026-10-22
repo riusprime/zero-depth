@@ -3,7 +3,8 @@ extends GutTest
 ## through main.tscn and real input only. The dev panel (real clicks; TEST HELPER, as test_e2e_swap.gd) grants Twin
 ## and then the Lance (v0.9.0 AF1: the Charge card this test took is retired into the Lance); the wand holds them left
 ## to right; holding right click charges (nothing fires, the charge rises) and the release fires one Lance as Twin's
-## two lines. Granting the Lance again levels it to 2 (no new slot) and the shot's spec grows. No code names the pair.
+## two balls (v0.9.0 AF1b). Granting the Lance again levels it to 2 (no new slot) and the shot's spec grows. No code
+## names the pair.
 
 
 func after_each() -> void:
@@ -29,7 +30,7 @@ func _grant(e: E2e, main: Main, id: StringName) -> void:
 	await e.frames(3)
 
 
-## v0.9.0 AF1: the Lance lines released so far (LANCE events).
+## v0.9.0 AF1: the Lance releases so far (LANCE events; AF1b: one a release).
 func _lances(w: World) -> int:
 	var n := 0
 	for ev in w.events_since(0):
@@ -66,12 +67,12 @@ func test_twin_and_the_lance_change_the_gun_shot_in_play() -> void:
 	e.mouse_button(MOUSE_BUTTON_RIGHT, true)
 	await e.frames(30)
 	assert_eq(_player_bolts(w).size(), 0, "holding charges the shot")
-	assert_eq(_lances(w), 0, "no line yet")
+	assert_eq(_lances(w), 0, "no release yet")
 	assert_gt(reader.gun_charge(), 0.3, "the charge rises")
 	e.mouse_button(MOUSE_BUTTON_RIGHT, false)
 	await e.frames(3)
-	assert_eq(_lances(w), 2, "the release fires one Lance: Twin's two lines")
-	assert_eq(_player_bolts(w).size(), 0, "no projectile")
+	assert_eq(_lances(w), 1, "the release fires one Lance")
+	assert_eq(_player_bolts(w).size(), 2, "as Twin's two balls")
 	# The Lance again: a level-up, no new slot (the panel's choice starts over when it opens again).
 	await e.tap(KEY_QUOTELEFT)
 	await _grant(e, main, &"gun_lance")

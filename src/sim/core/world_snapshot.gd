@@ -297,6 +297,8 @@ const ADDED_SINCE_V05 := {
 	&"ModifierState":
 	[
 		&"hold_t",  # v0.6.5 WN3 (G13 Charge: an older save charges nothing)
+		&"recoil_t",  # v0.9.0 AF1b (the Lance's push back: an older save has none)
+		&"recoil_step",
 		&"cast_tick",  # v0.6.5 WN5a (WandCasts: view-only marks; an older save has none)
 		&"cast_key",
 		&"cast_pos",
