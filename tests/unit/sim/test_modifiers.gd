@@ -173,7 +173,9 @@ func test_a_target_filter_needs_every_tag() -> void:
 
 
 # --- The form-layering rule (design §2) -----------------------------------------------------------------------
-func test_a_second_form_layers_where_the_first_ends() -> void:
+## v0.9.0 AS (owner C63: "Different attack forms cannot coexist as simultaneous primary weapons"): the first form op
+## sets the form and a later one is skipped; it no longer layers an extra attack where the first ends.
+func test_a_second_form_never_layers() -> void:
 	var w := _world()
 	var bolt := _mod(&"shooting_sword", ["melee"], [_form(FORM.BOLT)])
 	var ring := _mod(&"shock_end", ["melee"], [_form(FORM.BURST)])
@@ -182,18 +184,10 @@ func test_a_second_form_layers_where_the_first_ends() -> void:
 		&"blade_step_0"
 	)
 	assert_eq(s.form, FORM.BOLT, "the first form op sets the form, the second never replaces it")
-	assert_eq(s.hooks.size(), 1)
-	var k := s.hooks[0]
-	assert_eq(
-		[k.id, k.trigger, k.child.form, k.child.depth],
-		[&"shock_end", TRIGGER.ON_END, FORM.BURST, 1]
-	)
-	assert_eq(s.damage, w.player.combo[0].damage + 5)
-	assert_eq(k.child.damage, w.player.combo[0].damage + 5, "later payload ops reach the layer too")
+	assert_eq(s.hooks.size(), 0, "and never layers a second attack")
+	assert_eq(s.damage, w.player.combo[0].damage + 5, "later payload ops still apply")
 	var r := Modifiers.compile_for(w, [ring, bolt] as Array[ModifierTable]).spec(&"blade_step_0")
-	assert_eq(
-		[r.form, r.hooks[0].child.form], [FORM.BURST, FORM.BOLT], "pick order is the layer order"
-	)
+	assert_eq([r.form, r.hooks.size()], [FORM.BURST, 0], "whichever comes first is the form")
 
 
 func test_an_ember_status_and_element_stack_without_repeats() -> void:
