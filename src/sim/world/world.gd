@@ -176,6 +176,8 @@ var killer_attack := -1
 var boss_id := -1
 ## v0.8.0 FB1 (owner O16-O17; FinalBoss): the final boss's fight (its three bodies), null in every other world.
 var final_fight: FinalFight
+## v0.9.0 FA (owner C §3, Q18; FinalApproach): the final approach's pylons, buildup and walls; null elsewhere.
+var approach: FinalApproach
 # --- end Bosses ---------------------------------------------------------------------------------------------
 # --- Rewards (v0.3.0 E; Rewards) ----------------------------------------------------------------------------
 ## The floor's reward rules (part of the loadout, like item_tables; not hashed).
@@ -614,6 +616,8 @@ func step(frame: InputFrame) -> void:
 	Gamble.interact(self)  # Gamble shrine (v0.3.0 L19): the press goes to an altar or chest in reach first.
 	if boss_flow != null:  # v0.8.0 BD (O83): the press by the shut boss door opens it
 		boss_flow.interact(self)
+	if approach != null:  # v0.9.0 FA (Q18): the press by a rune pylon switches it on
+		approach.interact(self)
 	# 3. AI (the flow field refreshes on fixed ticks).
 	var pp := phase_probe  # v0.8.0 HS: the perf probe's phase timer (null in play)
 	# v0.8.0 NF (owner O90): the flood starts on those ticks and is built over NavField.SLICES ticks, then swapped in.
@@ -673,6 +677,8 @@ func step(frame: InputFrame) -> void:
 		pp.end(&"statuses")
 		pp.begin(&"remove_dead")
 	# 9. Deaths and spawns (the wave director adds enemies here).
+	if approach != null:
+		approach.advance(self)  # v0.9.0 FA: the buildup's end: the walls of light, the Colossus rises
 	if final_fight != null:
 		FinalBoss.advance(self)  # v0.8.0 FB1: the shatter, the next body, the win (before the dead leave)
 	_remove_dead()
@@ -867,6 +873,19 @@ func _find_wall(o: Obb) -> int:
 		if x.center == o.center and x.half == o.half and x.angle == o.angle:
 			return k
 	return -1
+
+
+## v0.9.0 FA: adds several walls during play at once (the final approach's walls of light): the grid and the flow
+## field are rebuilt once, then flooded from the player.
+func add_walls_now(list: Array[Obb]) -> void:
+	if list.is_empty():
+		return
+	walls.append_array(list)
+	rebuild_wall_grid()
+	_wall_next = null
+	_nav_next = null
+	nav.build(walls)
+	flood_nav()
 
 
 ## The wall grid from the walls as they stand (WorldSnapshot.apply after a barrier came back with a save).
@@ -1256,6 +1275,8 @@ func state_hash() -> String:
 		h.add_ints(deep_elite_rooms)
 	if boss_flow != null:  # Run flow (v0.3.0 B): only floors with a boss room carry it.
 		boss_flow.hash_into(h)
+	if approach != null:  # v0.9.0 FA: only the final approach carries it
+		approach.hash_into(h)
 		for v in [floor_index, floor_count]:
 			h.add_int(v)
 		if loop > 1:  # v0.7.5 AP: only past the first loop, so every loop-1 floor hashes as before

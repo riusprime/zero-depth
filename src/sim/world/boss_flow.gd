@@ -53,8 +53,9 @@ const ENTER_TICKS := 60
 const ARRIVE_TICKS := 48
 const ENTER_TICKS_CALM := 24
 const ARRIVE_TICKS_CALM := 18
-## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival (~1.6 s), the big landing on the receiver.
-const ARRIVE_FIRST_TICKS := 96
+## v0.8.0 N11 (O69; starting value): floor 1 of a run's arrival, the big landing; v0.9.0 SA (owner Q16): 4.0 s on the
+## arrival altar.
+const ARRIVE_FIRST_TICKS := 240
 ## v0.8.0 BD (O83; starting values): the door's opening, press to open (~2.7 s, the owner's opening sound's
 ## length), and how near its outer face (m, in front of it and along it past its sides) the press reaches.
 const DOOR_OPEN_TICKS := 162

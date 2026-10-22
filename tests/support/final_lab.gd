@@ -18,8 +18,9 @@ static func run_state(run_seed: int, build: StringName = &"blade", loop: int = 1
 
 
 ## The final arena of `run` (its fight begun: the Colossus rising at the centre), fresh (tick 0). With `begin` false
-## the fight's bodies wait (a base for a snapshot that holds its own).
-static func arena(run: RunState, begin: bool = true) -> World:
+## the fight's bodies wait (a base for a snapshot that holds its own). v0.9.0 FA: with `approach` the run's way in,
+## the final approach (the causeway, the pylons; FloorPlan's build): no fight until its buildup ends.
+static func arena(run: RunState, begin: bool = true, approach: bool = false) -> World:
 	var repo := ContentRepository.load_all()
 	var table := ContentCompiler.compile_player(repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(table, repo.get_def(&"build", run.build_id))
@@ -38,7 +39,8 @@ static func arena(run: RunState, begin: bool = true) -> World:
 		ContentCompiler.compile_items(repo),
 		ContentCompiler.compile_combos(repo),
 		bosses,
-		finals
+		finals,
+		approach
 	)
 	w.wand_table = WandCompiler.from_repo(repo)
 	w.blade_table = BladeCompiler.from_repo(repo)
@@ -56,9 +58,14 @@ static func arena(run: RunState, begin: bool = true) -> World:
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)
 	w.tuning = RunContentCompiler.compile_sim_tuning(repo.get_def(&"tuning", &"sim"))
-	if begin:
+	if begin and not approach:
 		FinalArenaScenario.begin(w, run, finals.size())
 	return w
+
+
+## v0.9.0 FA: the final approach of `run`, fresh (tick 0), as the Ascension portal opens it.
+static func approach(run: RunState) -> World:
+	return arena(run, false, true)
 
 
 ## The body fighting now (its actor index), -1 without one.

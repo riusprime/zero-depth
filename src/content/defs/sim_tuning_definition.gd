@@ -30,7 +30,8 @@ extends ContentDef
 ## v0.8.0 PF (owner O9): the player's projectiles alive at once, at most (the frame budget's sim cap).
 @export var player_shots_max := 256
 ## v0.8.0 N11 (owner O69): the hero's arrival on the floor's receiver: floor 1 of a run, a later floor, reduced motion.
-@export var arrival_first_seconds := 1.6
+## v0.9.0 SA (owner Q16: "4.0 s"): floor 1's is the altar's six-stage sequence.
+@export var arrival_first_seconds := 4.0
 @export var arrival_seconds := 0.8
 @export var arrival_calm_seconds := 0.3
 ## v0.8.0 SG (owner O91): the attack-speed curve (AttackRate): a raw bonus counts in full up to the knee, then at

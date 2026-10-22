@@ -6,6 +6,8 @@ extends GutTest
 ## spawns), the hero pops in on the receiver, the HUD shows, the stick moves the hero and only then do enemies come.
 ## Then the dev panel (God mode, Kill boss; as test_e2e_portal) stands in for the fight, the stick walks into the
 ## gate and floor 2 opens on the shorter arrival: the hero rises out of floor 2's receiver (~0.8 s of ticks).
+## v0.9.0 SA (owner Q16): floor 1 lands on the arrival altar instead of the receiver, over 4.0 s (240 ticks): its runes
+## light, orbit and build up, the hero pops in on the sound's peak; the altar's cue plays once.
 
 const LEG_FRAMES := 7000
 
@@ -49,7 +51,8 @@ func _click(e: E2e, main: Main, button: String) -> void:
 
 
 ## Plays the arrival from its first tick: [ticks it took, the hero moved during it, enemies seen, hero shown before
-## the end, HUD shown during it, the receiver's highest charge, the lowest the hero stood].
+## the end, HUD shown during it, the receiver's highest charge (v0.9.0 SA: floor 1's altar's buildup), the lowest the
+## hero stood].
 func _watch_arrival(e: E2e, main: Main) -> Array:
 	var w := e.world()
 	var reader := main.driver.reader
@@ -74,12 +77,15 @@ func _watch_arrival(e: E2e, main: Main) -> Array:
 		if avatar.visible:
 			lowest = minf(lowest, avatar.position.y)
 		hud_seen = hud_seen or hud.visible
-		charge = maxf(charge, main.view.receiver.charge)
+		if main.view.altar != null:
+			charge = maxf(charge, main.view.altar.energy)
+		else:
+			charge = maxf(charge, main.view.receiver.charge)
 		await e.frames(1)
 	return [w.tick - t0, moved, enemies, shown_at, hud_seen, charge, lowest]
 
 
-func test_the_hero_lands_on_the_receiver_then_the_floor_starts() -> void:
+func test_the_hero_lands_on_the_altar_then_the_floor_starts() -> void:
 	var e := E2e.new(self)
 	var main: Main = await e.boot()
 	await e.start_from_menu(&"blade", false)
@@ -89,10 +95,11 @@ func test_the_hero_lands_on_the_receiver_then_the_floor_starts() -> void:
 		return
 	var reader := main.driver.reader
 	var view := main.view
-	assert_true(reader.floor_receiver(), "the floor has a receiver")
-	assert_not_null(view.receiver, "it is drawn")
+	assert_true(reader.arrival_altar(), "v0.9.0 SA: floor 1 has the arrival altar")
+	assert_not_null(view.altar, "it is drawn")
+	assert_null(view.receiver, "instead of the receiver")
 	assert_eq(
-		Vector2(view.receiver.position.x, view.receiver.position.z),
+		Vector2(view.altar.position.x, view.altar.position.z),
 		Vector2(
 			SimPlane.to_3d(reader.floor_start_pos()).x, SimPlane.to_3d(reader.floor_start_pos()).z
 		),
@@ -111,12 +118,18 @@ func test_the_hero_lands_on_the_receiver_then_the_floor_starts() -> void:
 	assert_gt(covered, 0, "the cover showed first")
 	assert_false(main.loads.cover.showing(), "the cover opened")
 	var got: Array = await _watch_arrival(e, main)
-	assert_almost_eq(got[0], 96, 1, "floor 1's arrival: ~1.6 s of ticks (%d)" % got[0])
+	assert_almost_eq(got[0], 240, 1, "floor 1's arrival: 4.0 s of ticks (%d)" % got[0])
 	assert_false(got[1], "the stick did nothing while the hero arrived")
 	assert_eq(got[2], 0, "nothing spawned")
-	assert_gt(got[3], 30, "the hero popped in late in it (tick %d)" % got[3])
+	assert_gt(got[3], 150, "the hero popped in late in it (tick %d)" % got[3])
 	assert_false(got[4], "the HUD waited")
-	assert_gt(got[5], 0.8, "the receiver charged")
+	assert_gt(got[5], 0.8, "the altar built up")
+	assert_gt(view.altar.angle, 0.0, "its runes orbited")
+	var cued := 0
+	for id in main.audio.played_log:
+		if id == &"arrival_altar":
+			cued += 1
+	assert_eq(cued, 1, "the altar's sound played once")
 	assert_eq(w.run_ticks, 0, "the run's clock waited")
 	var landed_tick := w.tick
 	# Play: the stick moves the hero, the HUD shows, and the horde comes after.

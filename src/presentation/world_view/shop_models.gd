@@ -35,6 +35,10 @@ const SPECS := {
 	# v0.8.0 N11 (owner O69): the floor's receiver (FloorReceiver; docs/OWNER_TODO.md §3.1 `floor_receiver`), round,
 	# so no turn: it fills its 2.2 x 1.2 x 2.2 m box on the hero's start.
 	&"floor_receiver": {"size": Vector3(2.2, 1.2, 2.2), "yaw": 0.0},
+	# v0.9.0 SA (owner Q16; docs/art/requests/v0.9.0_altars_portals.md `arrival_altar`): floor 1's altar (AltarStage),
+	# round, so no turn: its stone fills a 6.6 x 0.45 x 6.6 m box on the hero's start (low: the sim has no height, so
+	# the hero walks over its steps). The floating runes and the jewels stay code objects.
+	&"arrival_altar": {"size": Vector3(6.6, 0.45, 6.6), "yaw": 0.0},
 	# v0.8.0 N17 (owner O75): the curse room's altar (EventPedestalViews; docs/OWNER_TODO.md §3.1 `curse_altar`;
 	# delivered 2026-10-18, scripts/assets/curse_altar_prep.gd): scaled uniformly to 0.98 m high, which makes the
 	# owner's altar 1.40 m long and 0.98 m deep, inside its 1.4 x 1.4 x 1.0 m box under the crystal the game floats
