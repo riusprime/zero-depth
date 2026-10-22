@@ -51,7 +51,7 @@ func _initialize() -> void:
 ## The first run seed (from 2) whose floor 1 is `biome` (FloorPlan's draw: the run's biome order).
 static func _seed_for(biome: StringName) -> int:
 	var repo := ContentRepository.load_all()
-	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run_def: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	for s in range(2, 2000):  # not 1: the main menu's backdrop runs seed 1, and would pass for ours
 		var run := RunState.start(s, ContentCompiler.compile_run(run_def), &"blade")
 		if run_def.biomes[run.biome_of()] == biome:

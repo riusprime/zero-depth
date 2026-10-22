@@ -11,6 +11,15 @@ extends ContentDef
 ## v0.5.5 EC (owner S1, "max 2 per floor and the rest should be chests"): at most this many of the floor's placed
 ## altars (0 = no cap); the altars rolled past it become chests, so the floor keeps its reward spots.
 @export var altars_cap := 2
+## v0.9.0 FV (owner Q24, "Scale with floor size"): smaller floors place fewer. Band k holds the floors of at most
+## count_rooms[k] rooms (the start hall included, the boss room not; ascending) and draws altars and chests from its
+## own inclusive ranges; a floor with more rooms than the last band draws from altars_min..chests_max above. Empty:
+## every floor draws from those.
+@export var count_rooms := PackedInt32Array()
+@export var altars_min_by_rooms := PackedInt32Array()
+@export var altars_max_by_rooms := PackedInt32Array()
+@export var chests_min_by_rooms := PackedInt32Array()
+@export var chests_max_by_rooms := PackedInt32Array()
 ## Chest prices on floor 1, by chest order on the floor (the last price repeats for any further chest).
 @export var chest_prices := PackedInt32Array([40, 60, 80])
 ## Each floor after the first raises prices by this share of the floor-1 price (0.5: × 1.5, × 2).
@@ -99,6 +108,7 @@ func validate() -> Array[ValidationIssue]:
 	check_positive(issues, "interact_radius_m", interact_radius_m)
 	if altars_cap < 0:
 		issues.append(ValidationIssue.new(&"negative", resource_path, "altars_cap is negative"))
+	_check_bands(issues)
 	if shard_scale <= 0.0:
 		issues.append(ValidationIssue.new(&"range", resource_path, "shard_scale must be > 0"))
 	if shard_tier_bonus < 0.0:
@@ -129,3 +139,22 @@ func validate() -> Array[ValidationIssue]:
 		)
 	check_positive(issues, "heal_orb_reach_m", heal_orb_reach_m)
 	return issues
+
+
+## v0.9.0 FV: the room bands pair up, ascend, and each holds valid ranges.
+func _check_bands(issues: Array[ValidationIssue]) -> void:
+	var n := count_rooms.size()
+	for a in [altars_min_by_rooms, altars_max_by_rooms, chests_min_by_rooms, chests_max_by_rooms]:
+		if (a as PackedInt32Array).size() != n:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "the room bands' arrays pair up")
+			)
+			return
+	for k in n:
+		var bad := count_rooms[k] < 1 or (k > 0 and count_rooms[k] <= count_rooms[k - 1])
+		bad = bad or altars_min_by_rooms[k] < 0 or altars_max_by_rooms[k] < altars_min_by_rooms[k]
+		bad = bad or chests_min_by_rooms[k] < 0 or chests_max_by_rooms[k] < chests_min_by_rooms[k]
+		if bad:
+			issues.append(
+				ValidationIssue.new(&"range", resource_path, "room band %d is out of order" % k)
+			)

@@ -83,7 +83,7 @@ func _dist(a: Color, b: Color) -> float:
 
 
 func test_the_world_view_draws_the_ascension_portal_on_the_last_floor() -> void:
-	var w := SaveLab.floor_world(42, 3)
+	var w := SaveLab.floor_world(42, SaveLab.floors())  # v0.9.0 FV: the last floor is 5
 	var view := WorldViewRoot.new()
 	add_child_autofree(view)
 	view.setup(WorldReader.new(w), _palette(), 40.0)

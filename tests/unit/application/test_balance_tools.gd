@@ -11,16 +11,16 @@ func before_all() -> void:
 	_repo = AttackScenario.repo()
 
 
-func test_loot_sampler_walks_three_floors_and_repeats_itself() -> void:
+func test_loot_sampler_walks_five_floors_and_repeats_itself() -> void:
 	var s := LootSampler.new(_repo)
 	var run := s.run(1, &"gun", 1)
-	assert_eq(run.size(), 3, "floors 1-3 of loop 1")
+	assert_eq(run.size(), 5, "floors 1-5 of loop 1 (v0.9.0 FV)")
 	var opened := 0
 	for r in run:
 		for k: String in r["offers"]:
 			opened += int(r["offers"][k])
 	assert_gt(opened, 0, "the floors offered cards (altars, chests, the shop, the boss)")
-	assert_ne(String(run[2]["wand"]), "", "the run ends with a wand")
+	assert_ne(String(run[4]["wand"]), "", "the run ends with a wand")
 	var again := s.run(1, &"gun", 1)
 	for k in run.size():
 		assert_eq(
@@ -30,7 +30,7 @@ func test_loot_sampler_walks_three_floors_and_repeats_itself() -> void:
 
 func test_loot_sampler_blade_runs() -> void:
 	var run := LootSampler.new(_repo).run(2, &"blade", 1)
-	assert_eq(run.size(), 3)
+	assert_eq(run.size(), 5)
 	assert_gt(int(run[0]["p_entry"]), 0, "the catch-up read P")
 
 

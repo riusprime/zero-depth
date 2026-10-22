@@ -28,4 +28,5 @@ final_bosses = Array[StringName]([&"colossus", &"prism", &"nemesis"])
 final_name_key = &"BOSS_HOLLOW_CROWN"
 final_arena = &"hollow_arena"
 final_shatter_seconds = 1.5
+wand_slots_per_floor = PackedInt32Array(4, 6, 8)
 id = &"three_floors"

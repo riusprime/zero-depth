@@ -22,8 +22,15 @@ extends RefCounted
 ## v0.8.0 FB1 adds `run.final` (End the run took the hero to the final boss; RunState.final_fight) the same way: a
 ## payload without it is a run before the final arena. In the final arena a save is also taken at each body's start
 ## (FinalFight.phase_tick: after_tick), so Continue resumes the fight at the current body's beginning.
+## v0.9.0 FV (owner Q24, PD-03 changed: a run is 5 floors) adds `run.run_id` (the RunDefinition the run was started
+## with) the same way: a payload without it is a v0.8.0 run (or older) and resumes in its 3-floor shape
+## (LEGACY_RUN_ID: 3 floors, v0.8.0's scaling, 15-19 rooms a floor, the wand's 4 → 6 → 8), so its floor rebuilds as
+## it was saved and it ends on its floor 3.
 const PAYLOAD_VERSION := 4
 const PAYLOAD_VERSIONS_READ: Array[int] = [2, 3, 4]
+## v0.9.0 FV: today's run (Main) and the shape a payload without `run_id` resumes in.
+const RUN_ID := &"five_floors"
+const LEGACY_RUN_ID := &"three_floors"
 ## v0.8.0 RT2: the designed layouts of floor rules 4 (RT1: data/room_layouts as RT1 shipped them, unchanged since).
 const RT1_LAYOUTS: Array[StringName] = [&"room_2x2_1", &"room_3x2_1", &"room_3x3_1"]
 
@@ -152,7 +159,16 @@ static func boss_arena(run: RunState, bosses: Array[BossTable], boss: int) -> Bo
 	return BossArenaSpec.make(cells, t.arena_template, boss)
 
 
-## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's).
+## v0.9.0 FV: the RunDefinition id a payload's run was started with (LEGACY_RUN_ID for a payload without one: a
+## v0.8.0 run resumes in its 3-floor shape). Compile it for run_from.
+static func saved_run_id(payload: Dictionary) -> StringName:
+	var r: Variant = payload.get("run", {})
+	var id := String((r as Dictionary).get("run_id", "")) if r is Dictionary else ""
+	return LEGACY_RUN_ID if id.is_empty() else StringName(id)
+
+
+## Payload -> its run. `run_table` is the run's compiled RunTable (from content, like a new run's; v0.9.0 FV: the
+## definition saved_run_id names).
 static func run_from(payload: Dictionary, run_table: RunTable) -> RunState:
 	var r: Dictionary = payload.get("run", {})
 	var run := RunState.start(int(r["run_seed"]), run_table, StringName(r["build_id"]))
@@ -202,6 +218,7 @@ static func payload_of(
 			"loop": run.loop,  # v0.7.5 AP: the Ascension loop
 			"loop_floors": run.loop_floors,
 			"final": run.final_fight,  # v0.8.0 FB1: the final arena
+			"run_id": String(run.table.id),  # v0.9.0 FV: the run's shape (saved_run_id)
 		},
 		"rooms": p_rooms.duplicate(),
 		"tick": w.tick,

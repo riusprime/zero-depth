@@ -133,7 +133,7 @@ static func build(repo: ContentRepository) -> CodexCatalog:
 ## v0.8.0 FB1: the final boss's bodies in the run's order (RunDefinition.final_bosses), then any other by id.
 static func _final_bodies(repo: ContentRepository) -> Array:
 	var out := []
-	var run: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	if run != null:
 		for id: StringName in run.final_bosses:
 			var d := repo.get_def(&"final_bosses", id)

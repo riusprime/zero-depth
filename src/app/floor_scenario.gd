@@ -19,7 +19,8 @@ extends RefCounted
 ## rewards fill first.
 ## v0.7.5 MG: `map` (RunContentCompiler.compile_map, data/map) sets the generator's room counts and footprints (null:
 ## FloorParams' defaults, the same numbers); the shop stands only on the floors its table names (ShopTable.on_floor,
-## owner N12: every two floors).
+## owner N12: every two floors). v0.9.0 FV (owner Q24): on a run, the room range is the run's for the floor
+## (FloorShape.size_floor: about 10, 13, 15, 17 and 19 rooms), written over `map`.
 
 
 static func build(
@@ -37,7 +38,13 @@ static func build(
 	arenas: ArenaTable = null,
 	map: FloorParams = null
 ) -> World:
-	var layout := FloorGenerator.generate(seed_value, map)
+	var params := map
+	var sized := FloorShape.sized(run)  # v0.9.0 FV (Q24): the run's floor size (none in the 3-floor shape)
+	if sized:
+		params = FloorShape.size_floor(
+			run, map if map != null else FloorParams.defaults(), floor_index
+		)
+	var layout := FloorGenerator.generate(seed_value, params)
 	var spec := arena if arena != null else BossArenaSpec.new()
 	BossRoomBuilder.attach(layout, spec)
 	OverrunRooms.mark(layout)  # v0.4.0 AB: the floor's optional Overrun room (no wall or draw changes)
@@ -71,6 +78,8 @@ static func build(
 	w.boss_flow.routes = routes
 	if rewards != null:
 		w.reward_table = rewards
+		if not sized:  # v0.9.0 FV: counts by room band on sized floors only (the 3-floor shape keeps v0.8.0's)
+			rewards.count_rooms = PackedInt32Array()
 	w.floor_index = floor_index
 	if run != null:
 		run.prepare(w)

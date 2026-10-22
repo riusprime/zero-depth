@@ -11,9 +11,10 @@ func _run_table() -> RunTable:
 	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", SaveLab.RUN_ID))
 
 
-## A run moved into loop 2's floor 1 the way finish_floor moves it (the Loop device from floor 3; Ascend before P2).
+## A run moved into loop 2's floor 1 the way finish_floor moves it (the Loop device from the last floor, v0.9.0 FV:
+## floor 5; Ascend before P2).
 func _loop_two_run(run_seed: int) -> RunState:
-	var run := SaveLab.run_state(run_seed, 3)
+	var run := SaveLab.run_state(run_seed, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	w.boss_flow.ascend_choice = Ascension.Choice.LOOP
 	run.finish_floor(w)
@@ -33,9 +34,9 @@ func test_a_loop_two_run_round_trips_through_the_payload() -> void:
 	assert_eq(int(p["version"]), RunSaver.PAYLOAD_VERSION, "no version bump")
 	var back := RunSaver.run_from(p, _run_table())
 	assert_eq(back.loop, 2, "the loop comes back")
-	assert_eq(back.loop_floors, 3)
+	assert_eq(back.loop_floors, 5)
 	assert_eq(back.floor_index, 1)
-	assert_eq(back.run_floor(), 4)
+	assert_eq(back.run_floor(), 6)
 	assert_eq(back.biome_order, run.biome_order, "with the loop's biomes")
 	assert_eq(back.floor_seed(), run.floor_seed())
 	var w2 := SaveLab.build_floor(back)
@@ -49,7 +50,7 @@ func test_an_older_payload_is_loop_one() -> void:
 	assert_eq(r[1], "")
 	var p: Dictionary = (r[0] as Dictionary)["payload"]
 	assert_false((p["run"] as Dictionary).has("loop"), "recorded before AP")
-	var run := RunSaver.run_from(p, _run_table())
+	var run := SaveLab.run_from(p)  # v0.9.0 FV: no run_id, the 3-floor shape
 	assert_eq(run.loop, 1, "an older save is loop 1")
 	assert_eq(run.loop_floors, 0)
 	assert_eq(run.run_floor(), run.floor_index)
@@ -60,7 +61,7 @@ func test_an_older_payload_is_loop_one() -> void:
 
 
 func test_an_older_last_floor_save_resumes_with_the_ascension_portal() -> void:
-	var run := SaveLab.run_state(77, 3)
+	var run := SaveLab.run_state(77, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 20)
 	var p := RunSaver.payload_of(w, run, 77, PackedByteArray())
@@ -84,7 +85,7 @@ func test_an_older_last_floor_save_resumes_with_the_ascension_portal() -> void:
 ## device taken in the old numbers) restores onto the rebuilt floor, Loop device and all; Ascend's old number is the
 ## Loop device's.
 func test_p2_a_last_floor_save_from_before_p2_restores_with_the_two_devices() -> void:
-	var run := SaveLab.run_state(78, 3)
+	var run := SaveLab.run_state(78, SaveLab.floors())
 	var w := SaveLab.build_floor(run)
 	CombatLab.idle(w, 20)
 	var p := RunSaver.payload_of(w, run, 78, PackedByteArray())

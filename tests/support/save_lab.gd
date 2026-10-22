@@ -5,7 +5,20 @@ extends RefCounted
 ## and heat. The same call with the same arguments gives the same world: the base a snapshot is restored into.
 ## Test-side only.
 
-const RUN_ID := &"three_floors"
+const RUN_ID := RunSaver.RUN_ID
+
+
+## v0.9.0 FV: the run's floors (5).
+static func floors() -> int:
+	return ContentCompiler.compile_run(ContentRepository.load_all().get_def(&"run", RUN_ID)).floors
+
+
+## v0.9.0 FV: the run of a saved payload, compiled from the definition it names (RunSaver.saved_run_id; a v0.8.0 or
+## older payload: the 3-floor shape), as FloorPlan's Continue.
+static func run_from(payload: Dictionary) -> RunState:
+	var repo := ContentRepository.load_all()
+	var def := repo.get_def(&"run", RunSaver.saved_run_id(payload))
+	return RunSaver.run_from(payload, ContentCompiler.compile_run(def))
 
 
 ## `route` (v0.5.0 RT): the route taken into every floor after the first (Routes.Route; DEEP makes them Deep floors).
@@ -36,7 +49,9 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 	run.scale_enemies(enemies)
 	var bosses := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(bosses)
-	var boss := run.pick_boss(ContentCompiler.compile_boss_pool(repo, run.floor_index))
+	var boss := FloorShape.boss(
+		run, RunContentCompiler.compile_boss_pools(repo, run.table.floors), run.floor_index
+	)
 	var arena := RunSaver.boss_arena(run, bosses, boss)  # v0.7.5 BF1 (N18): an older save's room
 	var rules := RunSaver.floor_tables(run, repo)  # v0.7.5 MG, as Main
 	var w := FloorScenario.build(
@@ -55,13 +70,13 @@ static func build_floor(run: RunState, biome_id: StringName = &"") -> World:
 		rules[&"map"]  # v0.7.5 MG, as Main
 	)
 	var biome: BiomeDefinition = repo.get_def(
-		&"biomes", (repo.get_def(&"run", RUN_ID) as RunDefinition).biomes[run.biome_of()]
+		&"biomes", (repo.get_def(&"run", run.table.id) as RunDefinition).biomes[run.biome_of()]
 	)
 	var shop_biome := biome.id if biome_id == &"" else biome_id
 	FloorScenario.add_shop(w, rules[&"shop"], shop_biome, rules[&"map"])  # v0.5.0 SH, v0.8.0 SR, as Main
 	IcePatches.place(w, BiomeCompiler.compile_surface(biome))  # v0.7.5 NB1/NB2, as Main: ice or starglow
 	w.set_boss_tables(bosses)
-	w.wand_table = WandCompiler.from_repo(repo)  # v0.6.5 WN1, as Main
+	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1, v0.9.0 FV, as Main
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4, as Main
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)

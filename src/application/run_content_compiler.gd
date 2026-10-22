@@ -197,3 +197,49 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.max_span = def.max_span
 	p.place_attempts = def.place_attempts
 	return p
+
+
+## v0.9.0 FV (owner Q24): the run's id, its floors' room ranges and its wand slots onto `t`
+## (ContentCompiler.compile_run).
+static func add_run_shape(t: RunTable, def: RunDefinition) -> RunTable:
+	t.id = def.id
+	t.rooms_min_by_floor = def.rooms_min_by_floor.duplicate()
+	t.rooms_max_by_floor = def.rooms_max_by_floor.duplicate()
+	t.wand_slots_per_floor = def.wand_slots_per_floor.duplicate()
+	return t
+
+
+## v0.9.0 FV (owner Q24, "Scale with floor size"): the altar and chest counts by the floor's rooms onto `t`
+## (ContentCompiler.compile_rewards).
+static func add_reward_bands(t: RewardTable, def: RewardsDefinition) -> RewardTable:
+	t.count_rooms = def.count_rooms.duplicate()
+	t.band_counts.clear()
+	for k in def.count_rooms.size():
+		(
+			t
+			. band_counts
+			. append(
+				PackedInt32Array(
+					[
+						def.altars_min_by_rooms[k],
+						def.altars_max_by_rooms[k],
+						def.chests_min_by_rooms[k],
+						def.chests_max_by_rooms[k],
+					]
+				)
+			)
+		)
+	return t
+
+
+## v0.9.0 FV: every floor's boss pool (indices into ContentCompiler.compile_bosses), entry f − 1, for floors 1 to
+## `floors` (at least as many as the pools name): an empty entry for a floor without a pool (FloorShape.boss draws
+## it from the bosses not yet met).
+static func compile_boss_pools(repo: ContentRepository, floors: int) -> Array[PackedInt32Array]:
+	var n := floors
+	for pool: BossPoolDefinition in repo.all_of(&"boss_pools"):
+		n = maxi(n, pool.floor_index)
+	var out: Array[PackedInt32Array] = []
+	for f in range(1, n + 1):
+		out.append(ContentCompiler.compile_boss_pool(repo, f))
+	return out

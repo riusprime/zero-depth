@@ -44,6 +44,15 @@ static func from_repo(repo: ContentRepository) -> WandTable:
 	return t
 
 
+## v0.9.0 FV: from_repo, with the run's own slots per floor when it has them (RunTable.wand_slots_per_floor: the
+## v0.8.0 3-floor shape keeps 4 → 6 → 8; empty: data/wand's).
+static func for_run(repo: ContentRepository, run: RunTable) -> WandTable:
+	var t := from_repo(repo)
+	if t != null and run != null and not run.wand_slots_per_floor.is_empty():
+		t.slots_per_floor = run.wand_slots_per_floor.duplicate()
+	return t
+
+
 ## v0.6.5 WN5b: the old cards' map (null without one).
 static func migration(repo: ContentRepository) -> WandMigrationDefinition:
 	return repo.get_def(&"wand", &"migration") as WandMigrationDefinition

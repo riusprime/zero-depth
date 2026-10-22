@@ -7,7 +7,7 @@ extends GutTest
 
 func _run_table() -> RunTable:
 	return ContentCompiler.compile_run(
-		ContentRepository.load_all().get_def(&"run", &"three_floors")
+		ContentRepository.load_all().get_def(&"run", RunSaver.RUN_ID)
 	)
 
 

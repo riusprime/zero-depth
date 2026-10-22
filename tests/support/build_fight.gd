@@ -90,7 +90,7 @@ var _biome: BiomeDefinition
 
 func _init(repo: ContentRepository) -> void:
 	_repo = repo
-	var run_def: RunDefinition = repo.get_def(&"run", &"three_floors")
+	var run_def: RunDefinition = repo.get_def(&"run", RunSaver.RUN_ID)
 	_biome = repo.get_def(&"biomes", run_def.biomes[0])
 
 

@@ -15,10 +15,8 @@ func _resume(file: String) -> Array:
 	var p: Dictionary = (r[0] as Dictionary).get("payload", {})
 	assert_eq(int(p["version"]), 3, "a v0.6.1 payload")
 	assert_true(RunSaver.is_usable(p), "this game still reads it")
-	var repo := ContentRepository.load_all()
-	var run := RunSaver.run_from(
-		p, ContentCompiler.compile_run(repo.get_def(&"run", SaveLab.RUN_ID))
-	)
+	var run := SaveLab.run_from(p)  # v0.9.0 FV: no run_id, so the 3-floor shape
+	assert_eq(run.table.id, RunSaver.LEGACY_RUN_ID)
 	var w := SaveLab.build_floor(run)
 	assert_eq(WorldSnapshot.apply(w, p["world"]), "", "the v0.6.1 snapshot fits the floor")
 	return [p, w, w.shards]
@@ -126,7 +124,7 @@ func test_an_old_save_keeps_its_v070_floor_and_the_next_floor_is_new() -> void:
 	assert_false((p["run"] as Dictionary).has("floor_rules"), "recorded before v0.7.5")
 	var repo := ContentRepository.load_all()
 	var table := ContentCompiler.compile_run(repo.get_def(&"run", SaveLab.RUN_ID))
-	var run := RunSaver.run_from(p, table)
+	var run := SaveLab.run_from(p)  # v0.9.0 FV: in its 3-floor shape
 	assert_true(run.v070_floor(), "rebuilt with v0.7.0's rules")
 	var old := RunSaver.floor_tables(run, repo)
 	assert_eq((old[&"map"] as FloorParams).rooms_max, 12)
@@ -280,3 +278,41 @@ func test_a_save_from_before_the_shop_rooms_keeps_its_terminal() -> void:
 	assert_ne(WorldSnapshot.apply(fresh, saved["world"]), "", "and is not the floor that was saved")
 	old.finish_floor(w)
 	assert_true(RunSaver.shop_rooms(old), "the next floor: shop rooms")
+
+
+## v0.9.0 FV (owner Q24; PD-03 changed: a run is 5 floors): a payload without `run_id` is a v0.8.0 run and resumes in
+## its 3-floor shape (three_floors: 3 floors, v0.8.0's scaling, 15-19 rooms, the wand's 4 → 6 → 8), so its floor
+## rebuilds as saved and the run ends on its floor 3 (the Ascension portal there). A save made now names five_floors.
+func test_a_v080_run_resumes_and_ends_as_a_three_floor_run() -> void:
+	var repo := ContentRepository.load_all()
+	var old := RunState.start(
+		41, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.LEGACY_RUN_ID)), &"blade"
+	)
+	old.floor_index = 2
+	old.routes.append(Routes.Route.NORMAL)
+	var w := SaveLab.build_floor(old)
+	var saved := RunSaver.payload_of(w, old, 1, PackedByteArray())
+	(saved["run"] as Dictionary).erase("run_id")  # as v0.8.0 wrote it
+	assert_eq(RunSaver.saved_run_id(saved), RunSaver.LEGACY_RUN_ID)
+	var resumed := SaveLab.run_from(saved)
+	assert_eq(resumed.table.floors, 3, "still a 3-floor run")
+	assert_eq(resumed.floor_index, 2)
+	var again := SaveLab.build_floor(resumed)
+	assert_eq(WorldSnapshot.apply(again, saved["world"]), "", "the saved floor rebuilds the same")
+	assert_between(again.floor_layout.room_count() - 1, 15, 19, "v0.8.0's floor size")
+	assert_eq(Wand.slots(again), 6, "floor 2 of 3: six slots, as in v0.8.0")
+	assert_false(again.boss_flow.ascension)
+	resumed.finish_floor(again)
+	assert_eq(resumed.floor_index, 3)
+	var last := SaveLab.build_floor(resumed)
+	assert_true(last.boss_flow.ascension, "floor 3 is its last: the Ascension portal")
+	assert_eq(Wand.slots(last), 8)
+	assert_false(last.floor_layout.has_deep_portal, "no Deep gate on its last floor")
+	var now := SaveLab.run_state(41, 2)
+	var fresh := SaveLab.build_floor(now)
+	var p := RunSaver.payload_of(fresh, now, 1, PackedByteArray())
+	assert_eq(String(p["run"]["run_id"]), "five_floors", "today's saves name their shape")
+	var back := SaveLab.run_from(p)
+	assert_eq(back.table.floors, 5)
+	assert_eq(WorldSnapshot.apply(SaveLab.build_floor(back), p["world"]), "", "and resume in it")
+	assert_eq(Wand.slots(fresh), 5, "floor 2 of 5: five slots")

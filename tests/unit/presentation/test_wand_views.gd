@@ -49,7 +49,7 @@ func _world(ids: Array) -> World:
 	var t := ContentCompiler.compile_player(_repo.get_def(&"player", &"runner"))
 	ContentCompiler.apply_build(t, _repo.get_def(&"build", &"blade"))
 	var w := World.new(5, t)
-	w.floor_index = 3
+	w.floor_index = 5  # v0.9.0 FV: eight slots on floor 5 (was 3)
 	w.dummy_speed = 0.0
 	w.wand_table = WandCompiler.from_repo(_repo)
 	w.set_item_tables(ContentCompiler.compile_items(_repo))

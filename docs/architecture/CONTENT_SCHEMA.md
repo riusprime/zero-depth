@@ -325,7 +325,7 @@ enum When { ALWAYS, OVERCLOCK }                                         # MX4
   ```gdscript
   class_name WandDefinition extends ContentDef
   const MAX_SLOTS := 8
-  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats)
+  @export var slots_per_floor := PackedInt32Array([4, 6, 8])   # the wand's slots on floor f (entry f − 1; last repeats; data: 4, 5, 6, 7, 8 since v0.9.0 FV)
   @export var child_size_permille := 600                       # a trigger's child spell: the basic attack's size (a
   @export var child_range_permille := 600                      #   bolt's radius, a slash's reach), a bolt's flight
   @export var child_damage_permille := 500                     #   and the share of the hit that set it off
@@ -491,7 +491,13 @@ loot-stream roll), `heal_orb_heal` (0.25 of max HP) and `heal_orb_reach_m` (0.9 
 shares within 0..1 (`range`), the reach positive. v0.5.5 EC: `heal_orb_chance` is a base under the Lifesprout stat
 card and ships 0 (owner D9: orbs only with the card); `altars_cap` (2, owner S1: the floor's placed altars past it
 become chests, the same draws and spots; 0 = no cap; ≥ 0) and `shard_scale` (0.7, owner S4: every kill's shards ×
-this, rounded half up; > 0).
+this, rounded half up; > 0). v0.9.0 FV (owner Q24, "Scale with floor size"): `count_rooms` (ascending room counts,
+start hall in, boss room out) with `altars_min_by_rooms`, `altars_max_by_rooms`, `chests_min_by_rooms` and
+`chests_max_by_rooms` (one entry each per band): a floor of at most `count_rooms[k]` rooms draws band k's ranges, a
+bigger floor the plain `altars_min`..`chests_max`. Shipped `[11, 14]`: up to 11 rooms 2 altars and 1-2 chests, up
+to 14 rooms 2 and 2, more rooms 2-3 and 2-3 (v0.8.0's; `altars_cap` 2 still holds, so the chests carry the scaling). Only a five-floor run's floors use the bands (a v0.8.0
+3-floor run resumed from a save keeps the plain counts). Validation: the arrays pair up, the bands ascend, each range
+ordered and non-negative.
 
 **Overclock heat** (v0.3.0 L18, category `heat`, `data/heat/overclock.tres`; design in
 [`../design/SIGNATURE.md`](../design/SIGNATURE.md)): `HeatDefinition` holds `max_heat` (the overheat point), the
@@ -954,7 +960,7 @@ class_name BiomeDefinition extends Resource
   presentation test (`tests/unit/presentation/test_frozen_shore.gd`, `test_starfall.gd`). A biome without a look
   keeps its hand-written look (Ruins, Night Rocks, Red Canyon).
 - A new biome is: `data/biomes/<id>.tres` (palette, mood, optional surface and look), its id appended to
-  `data/run/three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
+  `data/run/five_floors.tres` and `three_floors.tres` `biomes` (last: saves store indices), an ambience cue `data/audio/cues/<id>.tres` and
   its loop (`scripts/audio/generate_sfx.py`), `BIOME_<ID>` and `BIOME_<ID>_DESC` locale keys (en and es), and
   optionally a `ShardCluster.TINTS` row and a `BiomeEdge` style. Shipped (v0.7.5): `ruins`, `night_rocks`,
   `red_canyon`, `frozen_shore` (NB1), `starfall` (NB2; a working name, the owner may rename it).
@@ -984,16 +990,21 @@ class_name ThreatModifier extends Resource
 No formula in content uses `pow` or `exp`: growth is authored as integer `‰` tables. Since v0.4.0 SC (owner F7,
 F10) the tables live with the run and the spawner (there is no `data/threat/scaling.tres`):
 
-- **`RunDefinition`** (`data/run/three_floors.tres`): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
-  one entry per floor (shipped `[1000, 1900, 3610]` and `[1000, 1400, 1960]`: 1.9^(f − 1), 1.4^(f − 1)); a floor
-  past the end uses the last entry. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
+- **`RunDefinition`** (`data/run/five_floors.tres`, the run since v0.9.0 FV; `three_floors.tres` stays as the v0.8.0
+  shape a save without `run_id` resumes in): `enemy_hp_floor_permille` and `enemy_damage_floor_permille`,
+  one entry per floor (shipped `[1000, 1380, 1900, 2620, 3610]` and `[1000, 1180, 1400, 1660, 1960]`: v0.8.0's
+  1.9^(f − 1), 1.4^(f − 1) over three floors stretched over five; three_floors keeps `[1000, 1900, 3610]` and
+  `[1000, 1400, 1960]`); a floor past the end uses the last entry. v0.9.0 FV: `rooms_min_by_floor` /
+  `rooms_max_by_floor` (shipped `[9, 12, 14, 16, 18]` / `[11, 14, 16, 18, 19]`; empty: `data/map`'s range; each
+  2..19, paired) and `wand_slots_per_floor` (empty: `data/wand`'s; three_floors keeps `[4, 6, 8]`). Five floors ship
+  `boss_hp_per_floor` 0.25 and `boss_damage_per_floor` 0.12. `boss_hp_per_floor` and `boss_damage_per_floor` (0.4, 0.2; they were
   `enemy_hp_per_floor`/`enemy_damage_per_floor`) scale bosses only: × (1 + value × (f − 1)), never with the
   enemies' tables. v0.5.0 RT: `deep_scale` (1.25, at least 1) multiplies both on a Deep floor, and
   `deep_extra_chests` (1, not negative) adds chests there ([`SIM_CONTRACTS.md`](SIM_CONTRACTS.md) §11).
 - **`SpawnDirectorDefinition`** (`data/spawning/floor_1.tres`, used on every floor): `tier_seconds` (30);
-  `cap_by_floor` (`[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
+  `cap_by_floor` (`[14, 22, 30, 40, 50]`, v0.9.0 FV; was `[14, 30, 50]`), `cap_per_tier` (6), `cap_max` (120); `interval_start_seconds` (2.5),
   `interval_min_seconds` (0.4), `interval_tier_permille` (0.9^tier); `hp_tier_permille` (1.10^tier),
-  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3]`), `pack_max_by_floor` (`[3, 4, 5]`);
+  `damage_tier_permille` (1.05^tier); `pack_min_by_floor` (`[2, 3, 3, 3, 3]`), `pack_max_by_floor` (`[3, 4, 4, 5, 5]`);
   `min_distance_m` (8), `edge_band_m` (3: a pack's anchor is a spawn point this close to its room's walls when the
   rooms offer one); `mix`. The three tier tables hold tiers 0-20 (ten minutes); a later tier uses the last entry.
 - **`SpawnMixEntry`**: `enemy_id`, `weight`, `unlock_tier` and `pack` — one rule since the v0.4.0 SC + EN merge:

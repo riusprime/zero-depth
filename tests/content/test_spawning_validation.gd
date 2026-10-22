@@ -22,10 +22,10 @@ func test_the_shipped_floor_is_valid_and_compiles() -> void:
 	assert_eq(t.tier_ticks, 1800)
 	assert_eq(t.interval_start_ticks, 150)
 	assert_eq(t.interval_min_ticks, 24)
-	assert_eq(t.cap_by_floor, PackedInt32Array([14, 30, 50]))
+	assert_eq(t.cap_by_floor, PackedInt32Array([14, 22, 30, 40, 50]))  # v0.9.0 FV: five floors
 	assert_eq([t.cap_per_tier, t.cap_max], [6, 120])
-	assert_eq(t.pack_min_by_floor, PackedInt32Array([2, 3, 3]))
-	assert_eq(t.pack_max_by_floor, PackedInt32Array([3, 4, 5]))
+	assert_eq(t.pack_min_by_floor, PackedInt32Array([2, 3, 3, 3, 3]))
+	assert_eq(t.pack_max_by_floor, PackedInt32Array([3, 4, 4, 5, 5]))
 	assert_eq(t.hp_tier_permille[1], 1100)
 	assert_eq(t.damage_tier_permille[1], 1050)
 	assert_eq(t.interval_tier_permille[1], 900)

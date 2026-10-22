@@ -8,9 +8,9 @@ extends RefCounted
 
 ## A run of `run_seed` at its last floor of loop `loop`, after End the run (final_fight set).
 static func run_state(run_seed: int, build: StringName = &"blade", loop: int = 1) -> RunState:
-	var run := SaveLab.run_state(run_seed, 3, build)
+	var run := SaveLab.run_state(run_seed, SaveLab.floors(), build)  # v0.9.0 FV: floor 5
 	run.loop = loop
-	run.loop_floors = 3 * (loop - 1)
+	run.loop_floors = run.table.floors * (loop - 1)
 	while run.routes.size() < run.run_floor():
 		run.routes.append(Routes.Route.NORMAL)
 	run.final_fight = true
@@ -42,7 +42,7 @@ static func arena(run: RunState, begin: bool = true, approach: bool = false) -> 
 		finals,
 		approach
 	)
-	w.wand_table = WandCompiler.from_repo(repo)
+	w.wand_table = WandCompiler.for_run(repo, run.table)
 	w.blade_table = BladeCompiler.from_repo(repo)
 	w.ability_tables = ContentCompiler.compile_abilities(repo)
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)

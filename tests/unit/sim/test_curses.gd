@@ -188,7 +188,7 @@ func test_threat_counts_curses_and_carries_to_the_next_floor() -> void:
 	assert_false(Curses.cleanse(w), "nothing left to lift")
 	Curses.add(w, 1)
 	var run := RunState.start(
-		SEED, ContentCompiler.compile_run(EventLab.repo().get_def(&"run", &"three_floors"))
+		SEED, ContentCompiler.compile_run(EventLab.repo().get_def(&"run", RunSaver.RUN_ID))
 	)
 	run.finish_floor(w)
 	assert_eq(run.threat_by_floor, PackedInt32Array([1]), "T recorded per floor (M-THREAT)")

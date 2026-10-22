@@ -7,6 +7,11 @@ var altars_min := 2
 var altars_max := 3
 var chests_min := 2
 var chests_max := 3
+## v0.9.0 FV (owner Q24, "Scale with floor size"): band k covers floors of at most count_rooms[k] rooms (start hall in,
+## boss room out) with its own ranges [altars_min, altars_max, chests_min, chests_max] (band_counts[k]); a floor with
+## more rooms than the last band uses the four above (counts_for). Empty: the four above on every floor.
+var count_rooms := PackedInt32Array()
+var band_counts: Array[PackedInt32Array] = []
 ## v0.5.5 EC (S1): the most placed altars per floor (0 = no cap); the data ships 2.
 var altars_cap := 0
 ## Floor-1 chest prices by chest order; the last repeats.
@@ -47,3 +52,12 @@ var heal_orb_reach_m := 0.9
 func chest_price(order: int, floor_index: int) -> int:
 	var base := chest_prices[mini(order, chest_prices.size() - 1)]
 	return base * (1000 + floor_price_step_permille * maxi(0, floor_index - 1)) / 1000
+
+
+## v0.9.0 FV: [altars_min, altars_max, chests_min, chests_max] for a floor of `rooms` rooms (start hall in, boss room
+## out): the first band that holds it, else the table's own four.
+func counts_for(rooms: int) -> PackedInt32Array:
+	for k in mini(count_rooms.size(), band_counts.size()):
+		if rooms <= count_rooms[k]:
+			return band_counts[k]
+	return PackedInt32Array([altars_min, altars_max, chests_min, chests_max])

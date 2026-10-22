@@ -149,7 +149,7 @@ func test_no_orb_no_hash_change() -> void:
 
 func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 	var repo := ContentRepository.load_all()
-	var run := RunState.start(5, ContentCompiler.compile_run(repo.get_def(&"run", &"three_floors")))
+	var run := RunState.start(5, ContentCompiler.compile_run(repo.get_def(&"run", RunSaver.RUN_ID)))
 	var base := ContentCompiler.compile_bosses(repo)
 	var t := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(t, 1)
@@ -169,7 +169,7 @@ func test_floor_1_bosses_are_eased_and_their_room_heals_you() -> void:
 	assert_eq(w2.boss_room_heal_permille, 0, "floor 2: no heal")
 	var t2 := ContentCompiler.compile_bosses(repo)
 	run.scale_bosses(t2, 2)
-	assert_eq(t2[0].hp, base[0].hp * 1400 / 1000, "floor 2 unchanged")
+	assert_eq(t2[0].hp, base[0].hp * 1250 / 1000, "floor 2 unchanged (v0.9.0 FV: +25 % a floor)")
 
 
 func test_shards_keep_growing_with_floor_time_after_the_peak() -> void:
