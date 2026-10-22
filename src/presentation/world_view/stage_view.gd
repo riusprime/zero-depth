@@ -76,6 +76,9 @@ var shards: ShardCluster
 ## v0.5.5 DS (owner S5, "Deep floors must feel different"): a Deep floor (WorldReader.floor_is_deep) keeps its biome's
 ## mood and gets a violet haze on top: violet-tinted fog (thicker), ambient, sun and void (_apply_deep).
 var deep := false
+## v0.9.0 TD (Q23; HiddenRoom): the hidden room's drawn pieces (its ground, own walls), out of sight until
+## reveal_hidden(); its loose decoration and wall lights are left out (the timed door's view lights it once open).
+var hidden_nodes: Array[Node3D] = []
 var wall_specs: Array = []
 ## v0.8.0 N10: how long the procedural walls took to build (ms; 0 without them): the probes read it.
 var wall_build_ms := 0.0
@@ -105,6 +108,9 @@ var _altar_at := Vector2.ZERO
 var _altar_r := 0.0
 var _proc_input := {}
 var _proc := {}
+var _hidden_ground: Array[Rect2] = []
+var _hidden_rect := Rect2()
+var _hidden_walls := {}
 
 
 func build(reader: WorldReader, p_palette: Dictionary, arena_half: float) -> void:
@@ -147,6 +153,10 @@ func _build_floor_ground(reader: WorldReader, arena_half: float) -> void:
 		for i in reader.wall_count():
 			if reader.wall_class(i) == 0:
 				_add_ground(reader.wall(i).bounds())
+		_hidden_ground = HiddenRoom.split(reader, _ground_rects)  # v0.9.0 TD (Q23)
+		_hidden_walls = HiddenRoom.walls(reader)
+		if reader.hidden_room() >= 0:
+			_hidden_rect = reader.floor_room(reader.hidden_room())
 	if _ground_rects.is_empty():
 		_build_ground(arena_half)
 	else:
@@ -432,6 +442,12 @@ func _build_room_ground() -> void:
 	if mats[0] == mats[1]:
 		cells = [cells[0] + cells[1], []]
 	_add_ground_tiles(cells, mats)
+	if not _hidden_ground.is_empty():  # v0.9.0 TD: the hidden room's ground, out of sight until it opens
+		var hid := room_ground_cells(_hidden_ground)
+		if mats[0] == mats[1]:
+			hid = [hid[0] + hid[1], []]
+		for node in _add_ground_tiles(hid, mats, "HiddenGround"):
+			_hide(node)
 
 
 ## The room ground's tiles: the global TILE_M grid clipped to each rect, as [even cells, odd cells] (the checker's two
@@ -459,7 +475,8 @@ static func room_ground_cells(rects: Array[Rect2]) -> Array:
 ## cell (was a PlaneMesh and a MeshInstance3D per tile). The same pixels: the checker is flat colour, the textured
 ## ground maps in world space (triplanar on the world position), and a plane scaled in x and z keeps its up normal.
 ## No shadow cast.
-func _add_ground_tiles(cells: Array, mats: Array) -> void:
+func _add_ground_tiles(cells: Array, mats: Array, prefix := "Ground") -> Array[Node3D]:
+	var made: Array[Node3D] = []
 	var plane := PlaneMesh.new()
 	plane.size = Vector2.ONE
 	for k in cells.size():
@@ -473,11 +490,38 @@ func _add_ground_tiles(cells: Array, mats: Array) -> void:
 		for n in list.size():
 			mm.set_instance_transform(n, list[n])
 		var node := MultiMeshInstance3D.new()
-		node.name = "Ground%d" % k
+		node.name = "%s%d" % [prefix, k]
 		node.multimesh = mm
 		node.material_override = mats[k]
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(node)
+		made.append(node)
+	return made
+
+
+## v0.9.0 TD: `node` out of sight until reveal_hidden().
+func _hide(node: Node3D) -> void:
+	node.visible = false
+	hidden_nodes.append(node)
+
+
+## v0.9.0 TD (Q23): the hidden room comes into sight (its door first opened). Idempotent.
+func reveal_hidden() -> void:
+	for n in hidden_nodes:
+		if is_instance_valid(n):
+			n.visible = true
+	hidden_nodes.clear()
+	_hidden_walls = {}
+
+
+## v0.9.0 TD: StageKit's pieces of the hidden room's own walls, out of sight (after the kit's nodes are built).
+func _hide_kit_walls() -> void:
+	if kit == null:
+		return
+	for i: int in _hidden_walls:
+		if i < kit.wall_pieces.size():
+			for n: Node3D in kit.wall_pieces[i]:
+				_hide(n)
 
 
 ## A ground tile's transform: the unit plane scaled to `size` (m, on x and z) at `at`.
@@ -538,6 +582,8 @@ func _build_walls(reader: WorldReader, draw := true) -> void:
 		node.rotation = Vector3(0, SimPlane.yaw_of(w.angle), 0)
 		add_child(node)
 		_wall_nodes.append(node)
+		if _hidden_walls.has(i):  # v0.9.0 TD
+			_hide(node)
 
 
 func _build_props(seed_value: int, arena_half: float) -> void:
@@ -660,6 +706,7 @@ func _build_kit(reader: WorldReader) -> void:
 
 func _dress() -> void:
 	_placements = CurseRoomView.strip(StageDresser.dress(_dressing), _curse_rect)
+	_placements = CurseRoomView.strip(_placements, _hidden_rect)  # v0.9.0 TD: no decor or light in the hidden room
 	_placements = AltarStage.clear_decor(_placements, _altar_at, _altar_r)  # v0.9.0 SA
 	_proc = {}
 	var t0 := Time.get_ticks_usec()  # v0.8.0 N10 (option A; N15, D53: the only wall style)
@@ -679,6 +726,7 @@ func _build_kit_nodes(
 	# v0.8.0 N12: in parts (StageKit.queue_build), then the shadows and the shards after them.
 	kit.queue_build(_queue, _placements, wall_specs.size(), palette["cover"], mood, _proc, tex)
 	_queue.add_next("kit_shadows", func() -> void: kit.set_shadows(lighting == "high"))
+	_queue.add_next("kit_hidden", _hide_kit_walls)  # v0.9.0 TD
 	_queue.add_next("atmosphere", _build_atmosphere)
 	_build_shards(reader, walls, rooms, doors, keep, _placements)
 
@@ -780,6 +828,10 @@ func _build_shards(
 	for k in reader.event_count():
 		clear.append(reader.event_pos(k))
 		special.append(reader.event_pos(k))
+	if reader.has_timed_door():  # v0.9.0 TD: no crystals in the secret room or round the switches
+		special.append(reader.floor_room(reader.timed_room()).get_center())
+		for k in reader.timed_switch_count():
+			clear.append(reader.interactable_pos(reader.timed_switch_entry(k)))
 	var blocked: Array = doors.duplicate()
 	blocked.append_array(reader.arena_barriers())
 	_shard_input = {

@@ -22,8 +22,7 @@ enum Route { NORMAL, DEEP }
 const GATE_GAP := 4.8
 ## Further candidates step this far (m) along a wall.
 const STEP := 0.5
-## Side margin (m) of a gate's kept-clear zone, and its depth margin past the front square.
-const ZONE_SIDE := FloorLayout.GATE_ZONE_HALF_W - FloorLayout.GATE_WIDTH * 0.5  # v0.9.0 PT: 1.1 (was 1.0)
+## The depth margin (m) of a gate's kept-clear zone past the front square (its side margin: GateClearance.zone_side).
 const ZONE_DEPTH := 1.0
 ## The Deep gate keeps this clear of where the boss appears (m), and of the boss door's passage.
 const SPAWN_CLEAR := 2.6
@@ -62,7 +61,7 @@ static func place_deep_gate(f: FloorLayout, params: FloorParams = null) -> bool:
 				f.deep_portal_angle = c[1]
 				f.has_deep_portal = true
 				if clearing:
-					_clear_zone(f, zone(c[0], c[1]))
+					_clear_zone(f, zone(f, c[0], c[1]))
 				return true
 	return false
 
@@ -86,16 +85,16 @@ static func candidates(f: FloorLayout) -> Array:
 	var off := GATE_GAP
 	while g - off > lo or g + off < hi:
 		for u in [g + off, g - off]:
-			out.append([_on_wall(r, back, u), _SIDE_ANGLES[back]])
+			out.append([_on_wall(f, r, back, u), _SIDE_ANGLES[back]])
 		off += STEP
 	# Side walls: from the back face toward the door.
 	var b := _face(r, back)
 	var toward := -1.0 if back < 2 else 1.0
 	var depth := r.size.x if along_y else r.size.y
-	var d := FloorLayout.GATE_WIDTH * 0.5 + ZONE_SIDE + 0.2
+	var d := FloorLayout.GATE_WIDTH * 0.5 + GateClearance.zone_side(f) + 0.2
 	while d < depth:
 		for s in [(back + 1) % 4, (back + 3) % 4]:
-			out.append([_on_wall(r, s, b + toward * d), _SIDE_ANGLES[s]])
+			out.append([_on_wall(f, r, s, b + toward * d), _SIDE_ANGLES[s]])
 		d += STEP
 	return out
 
@@ -109,10 +108,10 @@ static func fits(
 	var box := collider_at(pos, angle)
 	if not room.encloses(box.bounds()) or not room.encloses(_front(pos, angle)):
 		return false
-	if not room.encloses(FloorLayout.oval_clear_rect(pos, angle)):  # v0.9.0 PT: clear of the room's walls
+	if not GateClearance.oval_fits(f, room, pos, angle):  # v0.9.0 PT: clear of the room's walls
 		return false
-	var z := zone(pos, angle)
-	if z.intersects(zone(f.portal_pos, f.portal_angle)):
+	var z := zone(f, pos, angle)
+	if z.intersects(f.gate_zone()):
 		return false
 	if z.intersects(f.door_rect(f.boss_door_index).grow(DOOR_CLEAR)):
 		return false
@@ -153,18 +152,8 @@ static func deep_gate_collider(f: FloorLayout) -> Obb:
 
 
 ## A gate's footprint, its clear front and a margin (axis-aligned: gates face a grid axis).
-static func zone(pos: Vector2, angle: int) -> Rect2:
-	var n := Kin.dir(angle)
-	var t := Vector2(-n.y, n.x)
-	var face := pos - n * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: from the wall face, the gap behind included
-	var half_w := FloorLayout.GATE_WIDTH * 0.5 + ZONE_SIDE
-	var depth := (
-		FloorLayout.GATE_WALL_CLEAR
-		+ FloorLayout.GATE_HALF_DEPTH
-		+ FloorLayout.GATE_FRONT
-		+ ZONE_DEPTH
-	)
-	return Rect2(face + t * half_w, Vector2.ZERO).expand(face - t * half_w + n * depth)
+static func zone(f: FloorLayout, pos: Vector2, angle: int) -> Rect2:
+	return GateClearance.zone(f, pos, angle)
 
 
 ## The clear square in front of a gate (FloorLayout.portal_front's shape).
@@ -192,9 +181,9 @@ static func _face(r: Rect2, s: int) -> float:
 
 
 ## A gate's centre on side s of r at coordinate u along that side.
-static func _on_wall(r: Rect2, s: int, u: float) -> Vector2:
+static func _on_wall(f: FloorLayout, r: Rect2, s: int, u: float) -> Vector2:
 	var face := Vector2(_face(r, s), u) if s % 2 == 0 else Vector2(u, _face(r, s))
-	return face + Kin.dir(_SIDE_ANGLES[s]) * FloorLayout.GATE_WALL_CLEAR  # v0.9.0 PT: clear of the wall
+	return face + Kin.dir(_SIDE_ANGLES[s]) * GateClearance.wall_offset(f)  # v0.9.0 PT: clear of the wall
 
 
 ## A Deep floor's extras (setup, after Rewards.place): the epic altar, then the extra chests, on the item spots the

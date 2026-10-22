@@ -67,9 +67,12 @@ static func level_at(w: World, s: int) -> int:
 	return CardLevels.level(w, code)
 
 
-## Taking `code` now needs a swap: a modifier you don't hold, with every slot full.
+## Taking `code` now needs a swap: a modifier you don't hold, with every slot full. v0.9.0 AS: never when it replaces a
+## card of its own slot category (AttackSlots.replaces: that card's slot is the one it takes).
 static func needs_swap(w: World, code: int) -> bool:
-	return is_modifier(w, code) and not held(w, code) and full(w)
+	return (
+		is_modifier(w, code) and not held(w, code) and full(w) and AttackSlots.replaces(w, code) < 0
+	)
 
 
 # --- Keeping the slots ------------------------------------------------------------------------------------------
@@ -135,19 +138,29 @@ static func drop(w: World, s: int) -> void:
 ## slot full replaces slot `replace` (its card leaves; the new one takes its place in the order); without a valid
 ## `replace` nothing changes and false comes back. Everything else (a level-up, the weapon, the utility, an item
 ## without a slot, a stat card) applies as before.
+## v0.9.0 AS (owner Q5): a card of a slot category at its limit replaces that category's card (AttackSlots.replaces) in
+## its slot, whatever `replace` says (the pick card said so: Offers.info "replaces").
 static func take(w: World, code: int, replace: int = -1) -> bool:
+	var cat_slot := AttackSlots.replaces(w, code)
+	if cat_slot >= 0:
+		return _replace(w, code, cat_slot)
 	if needs_swap(w, code):
 		if replace < 0 or replace >= w.mod_slots.size():
 			return false
-		drop(w, replace)
-		_apply(w, code)
-		var n := w.mod_slots.find(code)
-		if n >= 0 and n != replace and replace <= w.mod_slots.size() - 1:
-			w.mod_slots.remove_at(n)
-			w.mod_slots.insert(replace, code)
-			Modifiers.invalidate(w)
-		return true
+		return _replace(w, code, replace)
 	_apply(w, code)
+	return true
+
+
+## Slot `replace`'s card leaves and `code` takes its place in the order.
+static func _replace(w: World, code: int, replace: int) -> bool:
+	drop(w, replace)
+	_apply(w, code)
+	var n := w.mod_slots.find(code)
+	if n >= 0 and n != replace and replace <= w.mod_slots.size() - 1:
+		w.mod_slots.remove_at(n)
+		w.mod_slots.insert(replace, code)
+		Modifiers.invalidate(w)
 	return true
 
 

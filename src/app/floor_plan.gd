@@ -123,6 +123,7 @@ func _build_world() -> void:
 		w.set_boss_tables(bosses)  # Bosses (v0.3.0 C), scaled for the floor like the enemies.
 	w.wand_table = WandCompiler.for_run(repo, run.table)  # v0.6.5 WN1; v0.9.0 FV: 4 → 8 over five floors
 	w.blade_table = BladeCompiler.from_repo(repo)  # v0.6.5 WN4: the Blade pool's runner numbers
+	w.slot_table = WandCompiler.slots(repo, w.item_tables)  # v0.9.0 AS: slot limits, caps, compatibility
 	w.ability_tables = ContentCompiler.compile_abilities(repo)  # v0.4.0 BS: the four slots,
 	w.stat_tables = ContentCompiler.compile_stat_cards(repo)  # the stat cards,
 	w.overrun_table = ContentCompiler.compile_overrun(repo.get_def(&"overrun", &"overrun"))  # v0.4.0 AB
@@ -136,6 +137,10 @@ func _build_world() -> void:
 	Heat.enable(w, ContentCompiler.compile_heat(repo.get_def(&"heat", &"overclock")))  # v0.3.0 L18
 	# v0.5.0 EV: event rooms and curses, after the carry and the heat; v0.8.0 N17, N19: an old save keeps its rooms
 	EventCompiler.setup(w, repo, FloorScenario.curse_room_rules_of(run))
+	# v0.9.0 TD: after every room kind; a floor saved before TD (floor rules 1-9) has none
+	if arena_def == null and run.floor_rules > RunState.FLOOR_RULES_V080_BD:
+		var map := RunContentCompiler.compile_map(repo.get_def(&"map", &"floor"))
+		TimedDoor.setup(w, map.timed_door_permille, map.timed_door_ticks, table.move_speed)
 	# v0.5.5 DS (D4): the hidden catch-up, read from the whole build once everything above is set up.
 	w.catch_up_table = ContentCompiler.compile_catch_up(repo.get_def(&"scaling", &"catch_up"))
 	CatchUp.start_floor(w)
@@ -151,6 +156,7 @@ func _build_world() -> void:
 		if err != "":
 			return
 		WandMigration.run(w)  # v0.6.5 WN5b: a save that still holds retired v0.6 cards
+		AttackSlots.trim(w)  # v0.9.0 AS: a save from before the slot categories (AttackSlots.trim)
 	world = w
 
 

@@ -37,7 +37,9 @@ extends RefCounted
 ## keeping its interior; FloorScenario.curse_room_rules_of).
 ## v0.8.0 BD (owner O83): 9 is today's: the boss door is shut and solid until the interact press opens it
 ## (BossFlow.Door, set in prepare). A floor saved under rules 1-8 keeps its open doorway, as it was saved.
-const FLOOR_RULES := 9
+## v0.9.0 TD (owner W §2, Q20): 10 is today's: on some floors a dead end is a secret room behind a timed door
+## (TimedDoor.setup). A floor saved under rules 1-9 is rebuilt without one, as it was saved (FloorPlan).
+const FLOOR_RULES := 10
 const FLOOR_RULES_V070 := 1
 const FLOOR_RULES_V075_MG := 2
 const FLOOR_RULES_V075_BF1 := 3
@@ -46,6 +48,7 @@ const FLOOR_RULES_V080_SR := 5
 const FLOOR_RULES_V080_N14 := 6
 const FLOOR_RULES_V080_N17 := 7
 const FLOOR_RULES_V080_N19 := 8
+const FLOOR_RULES_V080_BD := 9
 
 var run_seed := 0
 var table: RunTable

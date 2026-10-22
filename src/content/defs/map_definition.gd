@@ -21,6 +21,10 @@ const MAX_ROOMS := 19
 ## Random placements tried for each room after the hall before the floor settles for fewer rooms (never below
 ## rooms_min).
 @export var place_attempts := 600
+## v0.9.0 TD (owner W §2, Q20 "Allow local timers"): the share of floors (per mille) with a timed door to a secret room
+## (starting value 35 %), and the door's timer in ticks from the second switch (15 s at 60 Hz; owner W17 "12–18 s").
+@export var timed_door_permille := 350
+@export var timed_door_ticks := 900
 
 
 func category() -> StringName:
@@ -56,4 +60,10 @@ func validate() -> Array[ValidationIssue]:
 	if max_span < 5 or max_span > 16:
 		issues.append(ValidationIssue.new(&"range", resource_path, "max_span is 5..16 cells"))
 	check_positive(issues, "place_attempts", place_attempts)
+	if timed_door_permille < 0 or timed_door_permille > 1000:
+		issues.append(
+			ValidationIssue.new(&"range", resource_path, "timed_door_permille is 0..1000")
+		)
+	if timed_door_ticks < 12 * 60 or timed_door_ticks > 18 * 60:
+		issues.append(ValidationIssue.new(&"range", resource_path, "timed_door_ticks is 12..18 s"))
 	return issues

@@ -379,14 +379,16 @@ func test_the_deep_gate_fits_every_boss_room_property() -> void:
 		assert_true(r.grow(0.001).encloses(box.bounds()), "inside the boss room")
 		assert_true(r.grow(0.001).encloses(Routes.deep_front(f)), "its front too")
 		assert_false(
-			Routes.zone(f.deep_portal_pos, f.deep_portal_angle).intersects(
-				Routes.zone(f.portal_pos, f.portal_angle)
+			Routes.zone(f, f.deep_portal_pos, f.deep_portal_angle).intersects(
+				Routes.zone(f, f.portal_pos, f.portal_angle)
 			),
 			"apart from the gate"
 		)
 		for i in range(f.slab_first, f.walls.size()):
 			assert_false(
-				f.walls[i].bounds().intersects(Routes.zone(f.deep_portal_pos, f.deep_portal_angle)),
+				f.walls[i].bounds().intersects(
+					Routes.zone(f, f.deep_portal_pos, f.deep_portal_angle)
+				),
 				"seed %d: no cover in front of it" % (3000 + s)
 			)
 		assert_eq(

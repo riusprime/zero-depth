@@ -169,6 +169,7 @@ static func start_floor(w: World) -> void:
 	else:
 		BuildSlots.sync(w)
 	WandMigration.run(w)  # v0.6.5 WN5b: an old save's retired cards become their wand cards (or shards)
+	AttackSlots.trim(w)  # v0.9.0 AS: an old save's over-full slot categories (the leftmost stay, the rest shards)
 	Stats.migrate_rules(w)  # v0.8.0 SG: a carry from before SG (RunCarry.apply) rebuilds damage and attack speed
 	w.ab = AbilityState.new()
 	for s in w.ability_owned.size():

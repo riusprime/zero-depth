@@ -196,6 +196,8 @@ static func compile_map(def: MapDefinition) -> FloorParams:
 	p.footprint_weights = def.footprint_weights.duplicate()
 	p.max_span = def.max_span
 	p.place_attempts = def.place_attempts
+	p.timed_door_permille = def.timed_door_permille  # v0.9.0 TD
+	p.timed_door_ticks = def.timed_door_ticks
 	return p
 
 

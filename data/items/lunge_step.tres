@@ -11,4 +11,5 @@ requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"lunge_step"])
 loot_category = &"form"
+slot_category = &"free"
 id = &"lunge_step"

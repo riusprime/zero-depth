@@ -95,6 +95,10 @@ var _arrive_progress := -1.0
 var _pylons := 0
 var _buildup := -1.0
 var _approach := -1
+## v0.9.0 TD: the timed door's last state, beeps heard and switches on (bits), for their cues' edges.
+var _timed := -1
+var _timed_beeps := 0
+var _timed_switches := 0
 
 
 ## Starts from the reader's current state, so attaching mid-run plays nothing for what already happened.
@@ -119,6 +123,9 @@ func prime(reader: WorldReader) -> void:
 	_pylons = pylon_mask(reader)
 	_buildup = reader.approach_buildup_progress()
 	_approach = reader.approach_state()
+	_timed = reader.timed_door_state()
+	_timed_beeps = TimedDoorView.beeps_now(reader)
+	_timed_switches = switch_mask(reader)
 	_kinds.clear()
 	_states.clear()
 	_phases.clear()
@@ -146,7 +153,41 @@ func collect(reader: WorldReader) -> Array:
 	_door_impact(reader, out)
 	_arrival(reader, out)
 	_final_approach(reader, out)
+	_timed_door(reader, out)
 	return out
+
+
+## v0.9.0 TD (owner W §2, Q20: "the boss door's opening sound, accelerating beeps, the door's impact on the shut"): a
+## switch locking in (the pylons' lock-in), the door opening (`boss_door_opening`), each beep of the timer, faster as
+## it runs out (TimedDoorView.beep_ticks; `timer_beep`, captioned), and the slab's heavy shut (`boss_door_impact`).
+func _timed_door(reader: WorldReader, out: Array) -> void:
+	if not reader.has_timed_door():
+		return
+	var mask := switch_mask(reader)
+	for k in reader.timed_switch_count():
+		if (mask & (1 << k)) != 0 and (_timed_switches & (1 << k)) == 0:
+			out.append([&"pylon_lock", reader.interactable_pos(reader.timed_switch_entry(k)), 1.0])
+	_timed_switches = mask
+	var st := reader.timed_door_state()
+	var at := reader.timed_door_center()
+	if st == WorldReader.TIMED_OPEN and _timed == WorldReader.TIMED_SHUT:
+		out.append([&"boss_door_opening", at, 1.0])
+	elif st == WorldReader.TIMED_SHUT and _timed >= 0 and _timed != WorldReader.TIMED_SHUT:
+		out.append([&"boss_door_impact", at, 1.0])
+	var beeps := TimedDoorView.beeps_now(reader)
+	if st == WorldReader.TIMED_OPEN and beeps > _timed_beeps:
+		out.append([&"timer_beep", at, 1.0])
+	_timed_beeps = beeps
+	_timed = st
+
+
+## The timed door's switches that are on, as bits (switch k: 1 << k).
+static func switch_mask(reader: WorldReader) -> int:
+	var m := 0
+	for k in reader.timed_switch_count():
+		if reader.interactable_state(reader.timed_switch_entry(k)) == 1:
+			m |= 1 << k
+	return m
 
 
 ## v0.9.0 FA (owner Q18: "it locks in with a sound"): a pylon switching on, the purple altar's buildup (its peak on the

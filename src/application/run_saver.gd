@@ -124,8 +124,11 @@ static func floor_tables(run: RunState, repo: ContentRepository) -> Dictionary:
 			map.room_layouts = rt1_layouts(map.room_layouts)
 	if shop != null and (run == null or shop_rooms(run)):  # v0.8.0 SR: before SR, the terminal
 		shop.rooms = RunContentCompiler.compile_shop_rooms(repo)
+	# v0.9.0 PT: a floor saved before v0.9.0 (rules 1-9) keeps its gates against the wall, as it was built.
+	map.legacy_gate = run != null and run.floor_rules <= RunState.FLOOR_RULES_V080_BD
 	if run != null and run.v070_floor():
 		map = FloorParams.v070()
+		map.legacy_gate = true
 		if arena != null:
 			arena.share_permille = ArenaTable.V070_SHARE_PERMILLE
 		if shop != null:

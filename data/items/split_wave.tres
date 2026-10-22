@@ -11,4 +11,5 @@ requires_weapon = &"blade"
 tags = PackedStringArray("blade", "wand")
 modifiers = Array[StringName]([&"split_wave"])
 loot_category = &"advanced"
+slot_category = &"free"
 id = &"split_wave"

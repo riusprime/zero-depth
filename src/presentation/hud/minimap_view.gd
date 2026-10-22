@@ -160,6 +160,8 @@ func _place() -> Rect2:
 	var lo := Vector2.INF
 	var hi := -Vector2.INF
 	for r in reader.floor_room_count():
+		if r == state.hidden:  # v0.9.0 TD: fitted without the hidden room (its size gives nothing away)
+			continue
 		for c in _corners(reader.floor_room(r)):
 			var t := _turn(c)
 			lo = lo.min(t)
@@ -214,7 +216,7 @@ func _outline(room: int, col: Color, width: float) -> void:
 		var cuts: Array[Vector2] = []
 		for i in reader.floor_door_count():
 			var d := reader.floor_door_rooms(i)
-			if d.x != room and d.y != room:
+			if (d.x != room and d.y != room) or state.door_hidden(reader, i):  # v0.9.0 TD: a plain wall
 				continue
 			var dr := reader.floor_door_rect(i).grow(0.05)
 			if not _touches(dr, a, b):

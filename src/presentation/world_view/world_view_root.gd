@@ -97,6 +97,8 @@ var altar: AltarStage
 var approach_view: FinalApproachView
 ## Run flow (v0.3.0 B): the boss door (null without a boss room).
 var boss_door: BossDoorView
+## v0.9.0 TD: the timed door, its rune switches and the secret room's reveal (null on a floor without one).
+var timed_door: TimedDoorView
 ## The gamble shrine (v0.3.0 L19; null on a floor without one).
 var gamble_shrine: GambleShrineView
 ## The shop terminal (v0.5.0 SH; null on a floor without one, or whose shop is a stall).
@@ -335,6 +337,10 @@ func _setup_devices(palette: Dictionary) -> void:
 			palette["cover"],
 			stage.prop_style  # v0.8.0 BD (O82): the biome's own door
 		)
+	if reader.has_timed_door():  # v0.9.0 TD
+		timed_door = TimedDoorView.new()
+		add_child(timed_door)
+		timed_door.setup(reader, stage, palette["cover"])
 	if reader.has_gamble():
 		gamble_shrine = GambleShrineView.new()
 		gamble_shrine.kit_model = stage.mood != null  # v0.6.0 Step SR: the owner's shrine with the new look
@@ -449,6 +455,10 @@ func sync() -> void:
 	_sync_view(&"nemesis_views", nemesis_views)  # v0.8.0 FB3
 	_sync_view(&"black_holes", black_holes)  # v0.8.0 P2
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
+	if timed_door != null:  # v0.9.0 TD
+		timed_door.sync(reader)
+		if timed_door.slammed:
+			rig.thud(DOOR_LAND_THUD)
 	if boss_door != null:
 		boss_door.sync(reader)
 		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud (v0.9.0 CV: a vibration)

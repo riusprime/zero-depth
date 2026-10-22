@@ -96,7 +96,9 @@ func _ready() -> void:
 	add_child(ui)
 	ui.add_child(loads.cover)  # v0.8.0 N3
 	ui.add_child(toast)  # v0.7.5 AC
-	toast.hold = loads.cover.shut  # v0.8.0 N18: a toast waits while a load's cover is shut
+	# v0.8.0 N18: a toast waits while a load's cover is shut; v0.9.0 SA: and through the floor's arrival.
+	toast.hold = func() -> bool:
+		return loads.cover.shut() or (driver != null and driver.reader.arriving())
 	hint_store = HintStore.new(profile)  # v0.7.5 SM
 	hints.setup(hint_store)
 	ui.add_child(hints)

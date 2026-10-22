@@ -14,9 +14,10 @@ extends RefCounted
 ## - A hook (a card's own child attack, e.g. Split Shot's splits) is built where its card sits: its child is
 ##   compiled by its own card (never its own hook again: lineage) and the cards to its right, never the ones to its
 ##   left. So a later card reaches every child built so far, an earlier one only the attack itself.
-## - A second form op layers as before (an ON_END copy in the new form), and the copy carries the spell's shape and
-##   payload so far but not its hooks (they stay on the first form); it is then compiled by its card's other ops and
-##   the cards to its right. A third form op layers on the attack and on the first layer (the depth guard bounds it).
+## - v0.9.0 AS (owner C63: "Different attack forms cannot coexist as simultaneous primary weapons"): a spec takes one
+##   form op, the first; a later one is skipped (its card's other ops still run). Before AS a second form op layered
+##   an ON_END copy of the spell in its own form; that layering is gone (the slot rules hold one Form and one Pattern
+##   card, AttackSlots).
 ## - A trigger card (ModifierOp.Op.TRIGGER, WAND.md T1–T4) ends the spell: the cards to its right do not rewrite it;
 ##   they build a child spell, a small copy of the basic attack (WandTable: the Gun's bolt or the Blade's first slash,
 ##   its size and range scaled, child_damage_permille of the hit that set it off), cast on the trigger: ON_HIT where a
@@ -44,10 +45,11 @@ extends RefCounted
 ## - v0.8.0 AO (owner O37: "make the order of the attacks be more important"; evidence/ATTACK_ORDER.md): a SHAPE card
 ##   (ModifierTable.OrderKind; Ring) takes in what is left of it when it sets the form (take_in): a count becomes the
 ##   ring's pulses, a motion throws the whole ring group; COUNT and MOTION cards to its right then multiply and move
-##   the rings. v0.8.0 N3 (owner O47): the ring is the shot, flying the shot's flight (ring_flight); a motion left of
-##   it makes the group spin as it flies (WandRings). Stat-like cards stay order-free. A bolt child built on such a
-##   ring (a card to the Ring's right: Split's shards, a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX
-##   alive (WandRings.cap_child): every ring and pulse of a launch hits, and each hit would throw its own.
+##   the rings (v0.9.0 AS: a count beside the Ring is gone with the one-Pattern rule). v0.8.0 N3 (owner O47): the ring
+##   is the shot, flying the shot's flight (ring_flight); a motion left of it makes it wobble as it flies (WandRings).
+##   Stat-like cards stay order-free. A bolt child built on such a ring (a card to the Ring's right: Split's shards,
+##   a trigger's cast) keeps at most WandRings.RING_CHILD_ALIVE_MAX alive (WandRings.cap_child): every ring of a
+##   launch hits, and each hit would throw its own.
 ## - v0.8.0 RM (owner O91: "Build reusable remnants, connections and events"; WAND.md rule 12): a REMNANT op is a hook
 ##   (the same guards: depth, lineage, once per line) whose child is what its remnant's activation casts, built where
 ##   its card sits like a trigger's child: by its own card and the cards to its right, so a later card shapes every
@@ -75,6 +77,10 @@ var cast_gap_ticks := 6
 var once_per_line: Array[StringName] = [&"split_shot", &"shared_explosive"]
 ## v0.8.0 PF2: the hook cards whose children cast no trigger (WandTable.cast_free_lines).
 var cast_free_lines: Array[StringName] = [&"blade_storm"]
+## v0.9.0 AS (owner Q13; ShotCap): the most shots one attack launches (0: no cap: a lab, a Blade run), and a merged
+## shot's largest radius (per mille of its own).
+var shot_cap := 0
+var merge_radius_max_permille := 2000
 
 
 ## The compile for world `w`'s build `mods`: the run's weapon picks the child spell and T4's trigger.
@@ -93,6 +99,9 @@ static func for_world(w: World, p_mods: Array[ModifierTable]) -> WandCompile:
 	c.cast_gap_ticks = t.blade_cast_gap_ticks
 	c.once_per_line = t.once_per_line
 	c.cast_free_lines = t.cast_free_lines  # v0.8.0 PF2
+	c.shot_cap = ShotCap.per_attack(w)  # v0.9.0 AS (Q13)
+	if w.slot_table != null:
+		c.merge_radius_max_permille = w.slot_table.merge_radius_max_permille
 	return c
 
 
@@ -114,14 +123,16 @@ static func _small_copy(w: World, t: WandTable, bolt: bool) -> AttackSpec:
 	return s
 
 
-## `base` rewritten by every card (a fresh spec; `base` is not written).
+## `base` rewritten by every card (a fresh spec; `base` is not written). v0.9.0 AS: then within the per-attack shot
+## cap (ShotCap.tree; none without one).
 func spec(base: AttackSpec) -> AttackSpec:
-	return run(base.copy(), 0)
+	var s := run(base.copy(), 0)
+	ShotCap.tree(s, shot_cap, shot_cap, merge_radius_max_permille)
+	return s
 
 
-## `s` rewritten by the cards from slot `from` on, in slot order (in place; returned). `skip_form_at`: the slot whose
-## form op made this spec a layer (its other ops still run).
-func run(s: AttackSpec, from: int, skip_form_at: int = -1) -> AttackSpec:
+## `s` rewritten by the cards from slot `from` on, in slot order (in place; returned).
+func run(s: AttackSpec, from: int) -> AttackSpec:
 	var moment := s.has_tag(Modifiers.TAG_MOMENT)
 	for i in range(from, mods.size()):
 		var m := mods[i]
@@ -136,8 +147,6 @@ func run(s: AttackSpec, from: int, skip_form_at: int = -1) -> AttackSpec:
 			for op in m.ops:
 				if op.stage != stage or op.alt != alt:
 					continue
-				if i == skip_form_at and op.op == ModifierOp.Op.SET_FORM:
-					continue
 				apply(s, m, op, i)
 				applied = true
 		if applied and not s.modifier_ids.has(String(m.id)):
@@ -150,14 +159,11 @@ func run(s: AttackSpec, from: int, skip_form_at: int = -1) -> AttackSpec:
 func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 	match op.op:
 		ModifierOp.Op.SET_FORM:
-			if s.form_layers == 0:
+			if s.form_layers == 0:  # v0.9.0 AS (C63): one form a spec; a later form op is skipped
 				if m.order_kind == ModifierTable.OrderKind.SHAPE:
 					take_in(s, op.form)  # v0.8.0 AO: the shape takes in what is left of it
 				SpecForms.change_form(s, op.form)  # v0.6.0 MX4: keeps its range
 				s.form_layers = 1
-			elif s.depth < MAX_DEPTH:
-				s.hooks.append(_layer(s, m, op, i))
-				s.form_layers += 1
 		ModifierOp.Op.STATUS:
 			s.set_status(op.status, op.stacks, op.every)
 		ModifierOp.Op.ELEMENT:
@@ -179,23 +185,16 @@ func apply(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> void:
 
 
 ## v0.8.0 AO (owner O37; evidence/ATTACK_ORDER.md): a SHAPE card (Ring) turning `s` into `form` takes in what is left
-## of it: the count built so far becomes the ring's pulses (Spread · Ring: one bigger ring shot that pulses three
-## times as it flies) and its fan goes; a Swirl left of it makes the group fly as one, spinning (Swirl · Ring ·
-## Spread: three rings circling one travelling centre). Cards to its right then work on the ring: a count multiplies
-## the ring shots (Ring · Spread: a fan of three), a Swirl sends each its own random way (Ring · Spread · Swirl: the
-## storm). v0.8.0 N3: the bolt's flight becomes the ring's (ring_flight). Only a ring has a layout; another form keeps
-## the old meaning.
+## of it: v0.8.0 N3 the bolt's flight becomes the ring's (ring_flight), and a Swirl left of it makes the ring wobble
+## round its line as it flies (Swirl · Ring). v0.9.0 AS (owner Q3): a count can't stand beside the Ring any more (one
+## Pattern), so the count's pulses and the spinning group of several rings are gone. Only a ring has a layout; another
+## form keeps the old meaning.
 static func take_in(s: AttackSpec, form: int) -> void:
 	if form != AttackSpec.Form.RING:
 		return
 	s.ring_layout = 1
 	s.ring_flight = s.life_ticks if s.form == AttackSpec.Form.BOLT else 0  # v0.8.0 N3: the shot's flight
-	s.ring_pulses = maxi(1, s.count) if s.count > 1 else 0
 	s.swirl_group = 1 if s.swirl > 0 or s.swirl_group > 0 else 0
-	if s.count > 1:  # v0.8.0 MR: the count's share goes with it (the pulses take their own, ring_share_permille)
-		s.share_permille = 0
-	s.count = 1
-	s.spread = 0
 	s.swirl = 0
 
 
@@ -285,27 +284,6 @@ func section_of(i: int) -> int:
 		if mods[k].is_trigger():
 			n += 1
 	return n
-
-
-## The form-layering rule (design §2, owner B8): a second form op adds an attack in its own form that fires where the
-## spec ends (ON_END), a copy of the spell so far (not its hooks), compiled by its card's other ops and the cards to
-## its right.
-func _layer(s: AttackSpec, m: ModifierTable, op: ModifierOp, i: int) -> AttackHook:
-	var c := s.copy()
-	c.id = m.id
-	SpecForms.change_form(c, op.form)  # v0.6.0 MX4: keeps the range it ends at
-	c.form_layers = 1
-	c.depth = s.depth + 1
-	c.hooks = []
-	c.seek = false
-	if not c.tags.has(Modifiers.TAG_HOOK):
-		c.tags.append(Modifiers.TAG_HOOK)
-	var k := AttackHook.new()
-	k.id = m.id
-	k.trigger = AttackSpec.Trigger.ON_END
-	k.damage_permille = 1000
-	k.child = run(c, i, i)
-	return k
 
 
 ## Trigger card `m` at slot `i` ends `s` (class doc): the cards to its right build the child spell it casts.
