@@ -3,7 +3,7 @@
 Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` at `aeef604a` (v0.8.0).
 
 ## Where we are
-(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-22.)
+(The lead keeps this block current at every push; the SessionStart hook prints it. Updated 2026-10-23.)
 
 - **Phase 0 and the owner's answers are done.** Every line of both documents has a row (C1–C90, W1–W78, E1–E2); all
   30 design questions, the attack-forms G1 and the utility-cards G1 are answered (the PLAN's "Owner decisions"). The
@@ -11,14 +11,17 @@ Plan: [`PLAN.md`](PLAN.md). Branch `claude/world-combat-v090`, cut from `main` a
 - **Biggest changes decided:** a run is 5 floors (PD-03 changed); ten Gun forms with Form / Pattern / Secondary /
   Element limits; Twin and Spread merged; no death explosions; elites only as archetypes on floors 4–5; the Purple
   Portal earned through a purple-rune room; the hub replaces most of the menu.
-- **Merged and green (2026-10-22):** Wave 1 (DS, CV, PT, SA, FA), the card changes (TW, XP, LG), IX and TD (timed
-  doors), AS (attack slots, owner G2 = B to build next). Seams 486/486 on `57c8a0c9`.
-- **Agents working:** FV (five floors, fixing its four reds), RA then DX (rune pillars, destructibles), LZ then BM
-  (laser and bomb forms). Queued: MI2 (install the owner's 28 models and 3 textures, Godot-backed simplify), AS2 (G2
-  look B, the Swap panel for full Secondary/Element slots, straight UI edges).
-- **Waiting on the owner:** ELITES.md (G1); the pylon, containers, barrel, lockdown bars and hazard models (art list);
-  Swarmer, Mine Layer and Sniper (EM).
-- **Next:** merge FV, RA/DX, LZ/BM as they report; MI2 and AS2; then VP, the other forms, NB (new bosses G1), DP, LK, EL.
+- **Merged and green (seams, bar the owner's accepted red test_final_pace):** Wave 1 (DS, CV, PT, SA, FA), TW, XP,
+  LG, IX, TD, AS and AS2 (look B, the Swap panel, straight edges), RA, DX, LZ, BM, FV (five floors), MI2 (the owner's
+  29 models and 3 textures), VP (Void a Gun form; floor black hole retired), DP (the Purple Portal earned), AF1 (Lance
+  and Scatter; merged `7881d345`, seams running). Pushed: `31fd095f`.
+- **Owner answers since:** final pace stays red; the bar gate is `lockdown_seal`; secrets start on floor 2; the Lance's
+  full charge is tuned to about 1.0× the orbs on one target (to do on `7881d345`: `hold_permille` 5000 → ~11000).
+- **Agents working:** LK (Lockdowns; branch `v090-lk` from `31fd095f`), AF2 (Glaive + Seekers; `v090-af2` from
+  `7881d345`). Next free slot: AF3 (Wave + Wisps). Then BR, VX (G1), NB (G1), SH, HF, BV, TX, RG.
+- **Waiting on the owner:** ELITES.md (G1, blocks EL and the Elite Lockdown); the pylon, containers, barrel, hazard
+  models and a stone `timed_door` (art list); Swarmer, Mine Layer and Sniper (EM).
+- **Known:** Void with Twin Lv 5 averaged 13.5 ms (budget 12) on the horde probe; floor 1 never fits a secret (intended).
 
 ## Owner decisions (2026-10-22)
 - Q1–Q30, ATTACK_FORMS and UTILITY_CARDS, verbatim in the PLAN's "Owner decisions". LOCKED_DECISIONS change log: six
