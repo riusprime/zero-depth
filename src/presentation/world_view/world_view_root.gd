@@ -8,9 +8,9 @@ extends Node3D
 ## silhouettes still show the ones farther off).
 const OCCLUSION_RADIUS_M := 10.0
 const OCCLUSION_FOCUS_MAX := 24
-## v0.8.0 BD (O83): the camera shake as the boss door's slab lands (starting value; none with shake off or reduced
-## motion).
-const DOOR_LAND_SHAKE := 0.3
+## v0.8.0 BD (O83): the camera's thud as the boss door's slab lands (starting value; none with shake off or reduced
+## motion). v0.9.0 CV (owner Q17): a vibration, not a shake.
+const DOOR_LAND_THUD := 0.5
 ## v0.8.0 LD (owner O70: loads never freeze): the parts a view makes when it is made (about 16 ms of the main thread
 ## together, 23-55 ms on a busy machine, in one frame). A load behind the cover makes them ahead, a few a frame
 ## (prebuild()); the next WorldViewRoot takes them (_part()). Made the same way either way, so the view is the same.
@@ -428,8 +428,8 @@ func sync() -> void:
 	_sync_view(&"remnants", remnants)  # v0.8.0 RM
 	if boss_door != null:
 		boss_door.sync(reader)
-		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud
-			rig.shake(DOOR_LAND_SHAKE)
+		if boss_door.landed:  # v0.8.0 BD (O83): the slab lands with a thud (v0.9.0 CV: a vibration)
+			rig.thud(DOOR_LAND_THUD)
 	if gamble_shrine != null:
 		gamble_shrine.sync(reader)
 	if shop_terminal != null:

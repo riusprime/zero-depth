@@ -136,6 +136,7 @@ func test_floor_one_charges_trembles_zooms_then_pops_the_hero_in() -> void:
 	var peak := 0.0
 	var charge_peak := 0.0
 	var kicked := false
+	var thudded := false
 	while reader.arriving():
 		w.step(InputFrame.new())
 		_sync(reader, v)
@@ -145,20 +146,22 @@ func test_floor_one_charges_trembles_zooms_then_pops_the_hero_in() -> void:
 		if q < PortalTransitView.POP_AT:
 			assert_false(av.visible, "no hero before the pop (%.2f)" % q)
 			rolled = rolled or absf(rig.flourish_roll) > 0.001
-			shook = shook or rig.shake_level() > 0.05
+			shook = shook or rig.vibration_level() > 0.05
 			charge_peak = maxf(charge_peak, receiver.charge)
 		else:
 			assert_true(av.visible, "the hero is there after the pop (%.2f)" % q)
 			assert_true(transit.landed)
 			peak = maxf(peak, av.scale.x)
 			kicked = kicked or rig.kick_offset() != Vector2.ZERO
+			thudded = thudded or rig.vibration_level() > PortalTransitView.TREMBLE_PEAK
 		zoomed = maxf(zoomed, rig.flourish_zoom)
 	assert_true(rolled, "the view wobbles")
-	assert_true(shook, "the view trembles")
+	assert_true(shook, "the view vibrates while it charges (v0.9.0 CV)")
 	assert_gt(zoomed, 1.05, "a quick zoom in")
 	assert_gt(charge_peak, 0.8, "the receiver charged")
 	assert_gt(peak, 1.05, "the pop overshoots")
-	assert_true(kicked, "a kick on the landing")
+	assert_false(kicked, "no kick across the screen (v0.9.0 CV)")
+	assert_true(thudded, "a thud on the landing")
 	assert_eq(transit.phase, PortalTransitView.Phase.NONE, "play is on")
 	assert_eq(av.scale, Vector3.ONE, "the hero whole")
 	assert_true(av.visible)
@@ -209,6 +212,7 @@ func test_reduced_motion_has_no_shake_wobble_zoom_or_rise() -> void:
 		assert_eq(rig.flourish_roll, 0.0)
 		assert_eq(rig.flourish_zoom, 1.0)
 		assert_eq(rig.shake_level(), 0.0)
+		assert_eq(rig.vibration_level(), 0.0)
 		assert_eq(rig.kick_offset(), Vector2.ZERO)
 		if av.visible:
 			shown = true

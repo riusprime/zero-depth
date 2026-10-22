@@ -49,14 +49,16 @@ const TREMBLE := 0.12
 const TREMBLE_PEAK := 0.32
 const WOBBLE_ROLL := 0.03
 const WOBBLE_ZOOM := 0.02
-const POP_SHAKE := 0.6
-const POP_KICK_M := 0.5
+## v0.9.0 CV (owner Q17): the arrival vibrates instead of shaking and kicking: the build-up's level climbs from
+## TREMBLE to TREMBLE_PEAK, the pop and a later floor's step-out each land a thud.
+const POP_THUD := 0.9
 const STEP_FLARE_END := 0.3
 const STEP_RISE_FROM := 0.22
 const STEP_RISE_TO := 0.72
 const STEP_DEPTH := 1.1
-const STEP_SHAKE := 0.25
-const STEP_KICK_M := 0.22
+const STEP_THUD := 0.4
+## v0.9.0 CV: the Ascension portal's pull vibrates up to this level (the final-boss travel).
+const ASCENSION_VIBRATE := 0.5
 ## Arrival: the hero grows over this part of the progress; the column fades out after COLUMN_FADE.
 const GROW_FROM := 0.2
 const GROW_TO := 0.8
@@ -198,6 +200,8 @@ func _enter(reader: WorldReader, node: Node3D, avatar: Node3D) -> void:
 		if avatar != null:
 			avatar.visible = p < 1.0
 		return
+	if rig != null and ascension != null and reader.ascension_choice() != WorldReader.ASCEND_LOOP:
+		rig.vibrate_to(ASCENSION_VIBRATE * smoothstep(0.0, FLASH_AT, p))  # v0.9.0 CV: the final-boss travel
 	var centre := SimPlane.to_3d(
 		reader.entered_portal_pos() + Kin.dir(reader.entered_portal_angle()) * PULL_DEPTH
 	)
@@ -288,7 +292,7 @@ func _land_first(avatar: Node3D, q: float, foot: Vector3) -> void:
 		var roll := sin(q * TAU * 4.0) * WOBBLE_ROLL * env
 		rig.set_flourish(roll, zoom + sin(q * TAU * 6.0) * WOBBLE_ZOOM * env)
 		if q < POP_AT:
-			rig.shake_to(TREMBLE + (TREMBLE_PEAK - TREMBLE) * smoothstep(0.1, POP_AT, q))
+			rig.vibrate_to(TREMBLE + (TREMBLE_PEAK - TREMBLE) * smoothstep(0.1, POP_AT, q))
 	if q < POP_AT:
 		var c := smoothstep(0.0, POP_AT, q)
 		receiver.set_charge(c * c)
@@ -304,8 +308,7 @@ func _land_first(avatar: Node3D, q: float, foot: Vector3) -> void:
 		landed = true
 		receiver.puff()
 		if rig != null:
-			rig.shake(POP_SHAKE)  # the rumble
-			rig.kick(Vector3(1, 0, 1), POP_KICK_M)
+			rig.thud(POP_THUD)  # the rumble
 	receiver.set_charge(1.0 - smoothstep(POP_AT, 1.0, q))
 	receiver.set_burst((q - POP_AT) / BURST_SPAN)
 	var f := 1.0 - smoothstep(0.0, 0.5, u)
@@ -326,8 +329,7 @@ func _step_out(avatar: Node3D, q: float, foot: Vector3) -> void:
 		landed = true
 		receiver.puff()
 		if rig != null:
-			rig.shake(STEP_SHAKE)
-			rig.kick(Vector3(1, 0, 1), STEP_KICK_M)
+			rig.thud(STEP_THUD)
 	receiver.set_burst((q - STEP_RISE_FROM) / BURST_SPAN if landed else -1.0)
 	var f := 1.0 - smoothstep(STEP_RISE_FROM, STEP_RISE_FROM + 0.2, q) if landed else 0.0
 	_flash_at(foot + Vector3(0, 0.6, 0), f, FloorReceiver.CORE, 0.2)
