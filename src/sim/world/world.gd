@@ -1723,9 +1723,10 @@ func _projectile_hits() -> void:
 				best_t = t
 				best_wall = w
 		# v0.9.0 VP: a Void shot passes through bodies (its aura hurts them, VoidShots); only walls end it.
+		# v0.9.0 AF3: so does a Wave shot (its band hits them, WaveShots).
 		var bodies := (
 			PackedInt32Array()
-			if VoidShots.is_void_projectile(self, i)
+			if VoidShots.is_void_projectile(self, i) or WaveShots.is_wave_projectile(self, i)
 			else _actor_grid.query_rect(span)
 		)
 		for k in bodies:

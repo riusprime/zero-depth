@@ -655,6 +655,21 @@ for the view. The card `boomerang` is retired into it (`migration.tres`). No new
 the enemies within 10.8 m of the hero, nearest the hero first, taken at the dart's rank (its id modulo `count`), so one
 volley spreads over the three nearest; read from the world each tick. No new state.
 
+**The Wave form** (`WaveShots`, v0.9.0 AF3, Q7 F9): a BOLT spec with `wave_mm` > 0 (3000; the area stat scales it):
+one shot every 54 ticks (attack speed at half its bonus), 0.1 m a tick, 108 ticks (10.8 m), × 6 an orb hit (+5 % a
+level). World's projectile pass skips bodies for it (as the Void's); in tick phase 6 (`ModifierRuntime.advance`, after
+`VoidShots.advance`) each Wave shot's band (`wave_mm` wide square to its flight, `DEPTH_M` 0.5 deep) lands one hit
+(`Attacks.land`) on every enemy whose body it covers with no wall between, once per shot: the wait is kept in the Void's
+per-shot list (`ModifierState.void_shot / void_foe / void_next`, next = the shot's remaining life + 2), so no new state
+class and the hash and snapshot already cover it. Its card `gun_wave` is not the Blade's Wave (`echo_slash`) and has no
+`wave` tag.
+**The Wisps form** (`Wisps`, v0.9.0 AF3, Q7 F10): a bolt spec with `wisps` > 0 (3) keeps the orbs and adds wisps round
+the hero at `ORBIT_R_M` 1.1, a turn every 150 ticks, their places a function of `World.tick` (no state). In tick phase
+6 each wisp whose turn it is (every `wisp_ticks` 36, staggered evenly) launches the bolt spec from itself at the
+nearest enemy it can see within an orb's flight, at `wisp_permille` (400, +20 a level) of the shot's damage, as a
+repeat (`ctx.repeat`: no root moments, an extra under ShotCap's 40 a second; its projectile carries the REPEAT bit,
+which is how the view tells a wisp's orb), at 650 ‰ of the orb's size.
+
 **Venom** (`Venom`, M4): status `poison` (`ModifierOpDefinition.STATUSES`), stacks capped at `poison_max_stacks`, each
 new stack refreshing `poison_ticks`; every `poison_period_ticks` the DoT deals `poison_damage` × stacks (its own root,
 never a HIT); a poisoned enemy's death spreads its stacks to every enemy within `poison_spread_m`, once per enemy per

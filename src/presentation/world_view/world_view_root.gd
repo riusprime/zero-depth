@@ -41,6 +41,8 @@ static var parts: Array[GDScript] = [
 	LaserView,  # v0.9.0 LZ
 	BombView,  # v0.9.0 BM
 	VoidView,  # v0.9.0 VP
+	WaveView,  # v0.9.0 AF3
+	WispsView,  # v0.9.0 AF3
 	LanceView,  # v0.9.0 AF1
 	ScatterView,  # v0.9.0 AF1
 	GlaiveView,  # v0.9.0 AF2
@@ -143,6 +145,9 @@ var laser: LaserView = _part(LaserView)
 var bombs: BombView = _part(BombView)
 ## v0.9.0 VP (owner C §6.4): the Void shots in flight, travelling lensing spheres, and the enemies leaning into them.
 var voids: VoidView = _part(VoidView)
+## v0.9.0 AF3 (owner Q7): the Wave's rolling bands; the wisps circling the hero.
+var waves: WaveView = _part(WaveView)
+var wisps: WispsView = _part(WispsView)
 ## v0.9.0 AF1 (owner Q7): the Lance's charge glow and aim line, its release flash; the Scatter's pellets and cone.
 var lances: LanceView = _part(LanceView)
 var scatter: ScatterView = _part(ScatterView)
@@ -294,6 +299,8 @@ func _setup_views(palette: Dictionary) -> void:
 	add_child(laser)  # v0.9.0 LZ
 	add_child(bombs)  # v0.9.0 BM
 	add_child(voids)  # v0.9.0 VP
+	add_child(waves)  # v0.9.0 AF3
+	add_child(wisps)  # v0.9.0 AF3
 	add_child(lances)  # v0.9.0 AF1
 	add_child(scatter)  # v0.9.0 AF1
 	add_child(glaives)  # v0.9.0 AF2
@@ -503,6 +510,8 @@ func sync() -> void:
 	_sync_view(&"laser", laser)  # v0.9.0 LZ
 	_sync_view(&"bombs", bombs)  # v0.9.0 BM
 	_sync_view(&"voids", voids)  # v0.9.0 VP
+	_sync_view(&"waves", waves)  # v0.9.0 AF3
+	_sync_view(&"wisps", wisps)  # v0.9.0 AF3
 	_sync_view(&"lances", lances)  # v0.9.0 AF1
 	_sync_view(&"scatter", scatter)  # v0.9.0 AF1
 	_sync_view(&"glaives", glaives)  # v0.9.0 AF2

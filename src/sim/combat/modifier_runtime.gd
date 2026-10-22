@@ -141,6 +141,8 @@ static func advance(w: World) -> void:
 			w.hook_chain.remove_at(w.hook_chain.size() - 1)
 	Remnants.advance(w)  # v0.8.0 RM (O91): the remnants end, follow and activate
 	VoidShots.advance(w)  # v0.9.0 VP (Q10): the Void shots' aura and pull
+	WaveShots.advance(w)  # v0.9.0 AF3: the Wave shots' bands (after the Void clears the waits that are over)
+	Wisps.advance(w)  # v0.9.0 AF3: the wisps' own shots
 	_walk(w)
 	BladeForms.advance(w)  # v0.6.5 WN4: Heavy's push, Orbit Blades, Parry Edge through the swing
 

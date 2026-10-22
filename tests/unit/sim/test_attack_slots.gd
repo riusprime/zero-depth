@@ -56,7 +56,7 @@ func test_the_data_holds_the_owners_limits_caps_and_the_orbs_row() -> void:
 	assert_eq(
 		t.form_ids,
 		(
-			[&"orbs", &"laser", &"bomb", &"void", &"lance", &"scatter", &"glaive", &"seekers"]
+			[&"orbs", &"laser", &"bomb", &"void", &"lance", &"scatter", &"glaive", &"seekers", &"wave", &"wisps"]
 			as Array[StringName]
 		),
 		"Q7: Orbs, and the forms built so far (LZ)"

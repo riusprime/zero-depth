@@ -154,6 +154,11 @@ const FIELD_STAGE := {
 	# v0.9.0 AF2 (owner Q7): the Glaive form's disc (Glaive) and the Seekers form's darts (Seekers)
 	&"glaive": [0, &"glaive", ""],
 	&"seekers": [0, &"seekers", ""],
+	# v0.9.0 AF3 (owner Q7): the Wave form's width (mm; WaveShots) and the Wisps form's wisps, their period and share
+	&"wave_width_mm": [3, &"wave_mm", ""],
+	&"wisps": [0, &"wisps", ""],
+	&"wisp_seconds": [3, &"wisp_ticks", "ticks"],
+	&"wisp_permille": [3, &"wisp_permille", ""],
 }
 ## Engine statuses a STATUS op may feed (the v0.3.0 engines), and the elements an ELEMENT op may name: the design's
 ## five, plus bleed (the v0.3.0 bleed engine, drawn red until the element art of MX stage 3).

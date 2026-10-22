@@ -109,6 +109,11 @@ const LATE_INT_FIELDS: Array[StringName] = [
 	# v0.9.0 AF2 (owner Q7: the Glaive and Seekers forms; Glaive, Seekers)
 	&"glaive",
 	&"seekers",
+	# v0.9.0 AF3 (owner Q7: the Wave and Wisps forms; WaveShots, Wisps)
+	&"wave_mm",
+	&"wisps",
+	&"wisp_ticks",
+	&"wisp_permille",
 ]
 const FLOAT_FIELDS: Array[StringName] = [
 	&"reach_m",
@@ -227,6 +232,15 @@ var glaive := 0
 ## v0.9.0 AF2 (owner Q7, F8; Seekers): seekers, the bolts are the Seekers' darts: each homes on its own one of the
 ## nearest enemies (Seekers.target) at the homing rate; the rest are the plain bolt fields.
 var seekers := 0
+## v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; WaveShots): wave_mm, the bolt is the Wave: a band wave_mm wide (the area stat
+## scales it) that passes through enemies (only a wall or the end of its flight ends it), hitting each enemy it rolls
+## over once.
+var wave_mm := 0
+## v0.9.0 AF3 (owner Q7, F10; Wisps): wisps, that many wisps circle the hero; each fires one orb of the Gun's shot at
+## wisp_permille of its damage at the nearest enemy every wisp_ticks, on its own, while the hero shoots as before.
+var wisps := 0
+var wisp_ticks := 0
+var wisp_permille := 0
 
 # --- payload
 ## Damage per hit (a share `damage_permille` of it when the shot splits into count > 1 bolts, rounded down, at least
@@ -533,4 +547,6 @@ func read() -> Dictionary:
 		"pellets": pellets,
 		"glaive": glaive,  # v0.9.0 AF2
 		"seekers": seekers,
+		"wave_mm": wave_mm,  # v0.9.0 AF3
+		"wisps": wisps,
 	}

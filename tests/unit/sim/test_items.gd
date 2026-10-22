@@ -314,7 +314,7 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 	var all := ItemPool.draw(w, 100)
 	assert_eq(
 		all.size(),
-		63,
+		65,
 		(
 			"the v0.3.0 pool of 24 + the M-list's 24 usable here (v0.6.0 MX4: no heat, no ability, no legendary)"
 			+ " + the Gun pool's 12 new (v0.6.5 WN3) + v0.6.5 WN4: the Blade pool's 12 new cards and Blade"
@@ -324,12 +324,13 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 			+ "; v0.9.0 TW: − Spread (merged into Twin); v0.9.0 XP: − Explosive; v0.9.0 LZ, BM: + the Laser, the Bomb"
 			+ "; v0.9.0 AF1: + the Lance, the Scatter, − Charge (retired into the Lance)"
 			+ "; v0.9.0 AF2: + the Glaive, the Seekers, − Boomerang (retired into the Glaive)"
+			+ "; v0.9.0 AF3: + the Wave, the Wisps"
 		)
 	)
 	var seen := {}
 	for i in all:
 		seen[i] = true
-	assert_eq(seen.size(), 63, "no repeats")
+	assert_eq(seen.size(), 65, "no repeats")
 	var v := _world([], [])
 	v.player.utility = PlayerTable.Utility.GUARD
 	var first := ItemPool.available(v)  # v0.5.0 CP: index 0 may be an ability mod, never drawn here
@@ -342,7 +343,7 @@ func test_the_pool_never_repeats_and_skips_owned_and_placed() -> void:
 		assert_false(i in held)
 		v.add_pickup(i, Vector2(5, 5))
 	var rest := ItemPool.draw(v, 100)
-	assert_eq(rest.size(), 58, "63 - owned - 4 placed")
+	assert_eq(rest.size(), 60, "65 - owned - 4 placed")
 	for i in rest:
 		assert_false(i in some or i in held)
 

@@ -797,6 +797,10 @@ ITEM_GUN_GLAIVE,Glaive,Disco
 ITEM_GUN_GLAIVE_DESC,A spinning disc that flies out and back.,Un disco giratorio que va y vuelve.
 ITEM_GUN_SEEKERS,Seekers,Buscadores
 ITEM_GUN_SEEKERS_DESC,Darts that curve to the nearest foes.,Dardos que se curvan hacia los enemigos cercanos.
+ITEM_GUN_WAVE,Wave,Oleada
+ITEM_GUN_WAVE_DESC,A wide slow wave that rolls through everything.,Una ola ancha y lenta que lo atraviesa todo.
+ITEM_GUN_WISPS,Wisps,Fuegos fatuos
+ITEM_GUN_WISPS_DESC,Three wisps circle you and fire at the nearest foe.,Tres fuegos fatuos te rodean y disparan al más cercano.
 ITEM_GUN_SWIRL,Swirl,Remolino
 ITEM_GUN_SWIRL_DESC,Your shots swirl at random.,Tus disparos giran al azar.
 ITEM_GUN_PIERCE,Pierce,Perforación

@@ -273,6 +273,8 @@ func test_the_gun_cards_are_offered_only_in_gun_runs() -> void:
 		"gun_spiral",
 		"gun_mine",
 		"gun_lance",  # v0.9.0 AF1: the Lance (Charge retired into it)
+		"gun_wave",  # v0.9.0 AF3: the Wave
+		"gun_wisps",  # v0.9.0 AF3: the Wisps
 		"gun_echo",
 		"gun_backfire",
 		"halo_shot",

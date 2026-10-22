@@ -1058,6 +1058,26 @@ def s_lance_release(r):
     return echo(mix(w, zap, thump), 75, 0.25, 0.22, 3000, 0.1)
 
 
+def s_wave_fire(r):
+    """v0.9.0 AF3 (owner Q7, ATTACK_FORMS F9; the agent's placeholder for the Gun's Wave): 0.55 s (0.75 s with its
+    echo), a wide rolling whoosh: noise swept up 300 to 1400 Hz as it swells and washes out, over a soft low swell
+    rising 70 to 110 Hz and a short glassy shimmer on top, so the slow band reads as a wave leaving."""
+    n = n_of(0.55)
+    wash = bandpass(noise(r, n), curve(300.0, 1400.0, n, "lin"), 2.0) * env(n, 0.09, 0.35) * 0.8
+    swell = osc(curve(70.0, 110.0, n), "sine", n) * env(n, 0.06, 0.3) * 0.6
+    shimmer = bandpass(noise(r, n), 3800.0, 6.0) * env(n, 0.02, 0.12) * 0.25
+    return echo(mix(wash, swell, shimmer), delay_ms=90.0, feedback=0.25, mix=0.25, tail=0.2)
+
+
+def s_wisp_fire(r):
+    """v0.9.0 AF3 (owner Q7, ATTACK_FORMS F10; the agent's placeholder for a wisp's shot): 0.14 s, a small airy chirp:
+    a soft FM blip falling 1500 to 900 Hz with a breath of high noise, lighter than the Gun's own shot."""
+    n = n_of(0.14)
+    blip = fm(curve(1500.0, 900.0, n), 2.0, 0.8, n) * env(n, 0.002, 0.07) * 0.7
+    air = bandpass(noise(r, n), 5000.0, 4.0) * env(n, 0.002, 0.04) * 0.2
+    return mix(blip, air)
+
+
 def s_purple_runes(r):
     """v0.9.0 DP (owner Q26b; the lead's placeholder for the purple runes awakening): 1.7 s: six glassy FM chimes
     rising one every 0.15 s (as the ring of runes lights, PurpleRuneView.STEP_S) over a swelling violet drone, then a
@@ -1228,6 +1248,8 @@ SFX = [
     ("timer_beep", s_timer_beep),
     ("bomb_throw", s_bomb_throw),
     ("void_hum", s_void_hum),
+    ("wave_fire", s_wave_fire),  # v0.9.0 AF3
+    ("wisp_fire", s_wisp_fire),
     ("pillar_turn", s_pillar_turn),
     ("wall_break", s_wall_break),
     ("container_break", s_container_break),
