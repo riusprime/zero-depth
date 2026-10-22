@@ -35,6 +35,8 @@ const EFFECT_SHOT_CAP := &"player_shot_cap"
 ## most that many of its projectiles alive (Blade Storm's blades: 36, data/modifiers/blade_storm.tres). A launch it
 ## cuts short throws the bolts that fit (in pattern order) and leaves one LIMIT event (this effect id, amount: the cap).
 const EFFECT_ALIVE_CAP := &"attack_alive_cap"
+## v0.9.0 XP: the tag of Fire's burning patch (data/modifiers/ember_core.tres; _feed).
+const TAG_GROUND := &"ground"
 ## ProcLedger codes for a hook attack's own status feeds (Engines' codes end at 40; appended, never renumbered).
 const CODE_HOOK_FEED := 48
 ## The ledger code of each status a hook attack feeds: CODE_HOOK_FEED + its index here.
@@ -310,7 +312,7 @@ static func _bolts(w: World, spec: AttackSpec, ctx: AttackContext) -> void:
 			var dir := Kin.dir(ctx.angle + off + turns[li])
 			var side := lanes[li]
 			if room == 0:
-				_alive_capped(w, spec)
+				alive_capped(w, spec)
 				return
 			room -= 1
 			if not _shot_room(w):
@@ -345,7 +347,8 @@ static func _alive_room(w: World, spec: AttackSpec) -> int:
 
 
 ## v0.8.0 PF2: a launch of `spec` cut short by its alive_max: one LIMIT event (EFFECT_ALIVE_CAP, amount = the cap).
-static func _alive_capped(w: World, spec: AttackSpec) -> void:
+## v0.9.0 XP: also a patch of a capped zone not lit (ElementAbilities.add_zone).
+static func alive_capped(w: World, spec: AttackSpec) -> void:
 	var pid := w.actors.ids[0]
 	var lim := w.emit_event(SimEvent.Kind.LIMIT, pid, pid, pid, w.player_pos())
 	lim.effect_id = EFFECT_ALIVE_CAP
@@ -641,6 +644,8 @@ static func _landed(
 static func _feed(w: World, spec: AttackSpec, ctx: AttackContext, i: int) -> void:
 	var a := w.actors
 	var cast := spec.has_tag(WandCasts.TAG_CAST)  # v0.6.5 WN5a: a trigger's child spell is a spell of its own
+	# v0.9.0 XP: Fire's burning ground (tag ground) burns whole too: it hits once a period, lit by a hit already halved
+	cast = cast or spec.has_tag(TAG_GROUND)
 	for k in spec.status_ids.size():
 		# A trigger's cast feeds its cards' stacks whole (as a cast bolt does through Engines.on_hit): ON HIT · Fire
 		# burns; its proc coefficient still halves what its hits set off (HIT.proc_pct).

@@ -53,6 +53,8 @@ const TAGS: Array[StringName] = [
 	# last step (Finisher+).
 	&"wave",
 	&"finisher",
+	# v0.9.0 XP (owner Q11, "Burning ground on kill"): Fire's burning patch (its hits feed their statuses whole).
+	&"ground",
 ]
 ## The card families (CardFrames.FRAME's keys: the frame colour a card of this modifier wears).
 const FAMILIES: Array[StringName] = [
