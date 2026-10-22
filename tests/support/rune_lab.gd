@@ -7,10 +7,13 @@ extends RefCounted
 const LONG := 1 << 24
 
 
-static func world(first_seed: int = 1, with_timed: bool = false) -> World:
+## v0.9.0 FV: `floor` picks the run's floor; floor 1 is now 10-12 rooms and rarely holds two dead ends (a timed door
+## and a rune puzzle both), so the tests that want both use a deeper one.
+static func world(first_seed: int = 1, with_timed: bool = false, floor: int = 1) -> World:
 	var repo := ContentRepository.load_all()
 	for s in range(first_seed, first_seed + 80):
 		var lab := RunLab.new(repo, s, &"blade")
+		lab.run.floor_index = floor
 		var w := lab.floor_world()
 		if with_timed:
 			TimedDoor.setup(w, 1000, 900, w.player.move_speed)

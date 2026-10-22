@@ -121,7 +121,7 @@ func test_a_save_mid_puzzle_and_after_resumes_exactly() -> void:
 
 
 func test_beside_a_timed_door_when_both_fit() -> void:
-	var w := RuneLab.world(1, true)
+	var w := RuneLab.world(1, true, 3)  # v0.9.0 FV: floor 3 has room for both
 	assert_not_null(w, "a floor with both")
 	if w == null:
 		return

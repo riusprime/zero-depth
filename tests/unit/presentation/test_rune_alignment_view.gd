@@ -28,7 +28,7 @@ func test_the_pillars_the_carving_and_the_hidden_room() -> void:
 	var r := v.rune_view
 	assert_not_null(r, "the view is built")
 	assert_eq(r.pillar_count(), 3, "three pillars")
-	assert_false(r.uses_model, "the code stand-in until the owner's model is listed")
+	assert_true(r.uses_model, "the owner's rune_pillar (v0.9.0 MI2)")
 	assert_true(r.slab.visible, "the slab seals the doorway")
 	assert_not_null(r.slab.find_child("Mural", true, false), "the carving is on it")
 	for k in 3:
@@ -86,7 +86,7 @@ func test_the_pillars_the_carving_and_the_hidden_room() -> void:
 
 
 func test_beside_a_timed_door_each_room_shows_on_its_own() -> void:
-	var w := RuneLab.world(1, true)
+	var w := RuneLab.world(1, true, 3)  # v0.9.0 FV: floor 3 has room for both
 	if w == null:
 		return
 	w.step(InputFrame.new())
