@@ -2,10 +2,11 @@ extends GutTest
 ## v0.9.0 AS (owner Q2–Q7, Q13, Q14; PLAN C36–C67, C78, C87; docs/roadmap/v0.9.0/ATTACK_FORMS.md): the wand's slot
 ## categories (AttackSlots), the form × card table (SlotTable, data/wand/attack_slots.tres) and the projectile caps
 ## (ShotCap). Equip: a Pattern replaces the Pattern (Twin then Halo: Twin leaves), a full Secondary or Element slot
-## replaces its leftmost card, Ring + Swirl ride together, the Blade gets only the one-Pattern rule; compile: two forms
-## never coexist; offers: an incompatible card is never offered nor compiled; caps: at most 12 shots an attack (merged,
-## the damage kept) and at most 40 player projectiles a second for the worst legal builds at the top attack speed; an
-## old save over its limits is trimmed and plays on.
+## asks which of its cards goes (AS2: the Swap, limited to that slot; a skip keeps the card un-taken), Ring + Swirl
+## ride together, the Blade gets only the one-Pattern rule; compile: two forms never coexist; offers: an incompatible
+## card is never offered nor compiled; caps: at most 12 shots an attack (merged, the damage kept) and at most 40
+## player projectiles a second for the worst legal builds at the top attack speed; an old save over its limits is
+## trimmed and plays on.
 
 const W := preload("res://tests/support/mx4_world.gd")
 const TRIGGERS: Array[StringName] = [&"trigger_on_hit_twice", &"trigger_on_hit", &"trigger_on_kill"]
@@ -169,27 +170,63 @@ func test_ring_and_swirl_ride_together() -> void:
 	assert_eq(int(Offers.info(w, W.item(w, &"halo_shot"))["replaces"]), W.item(w, &"gun_ring"))
 
 
-func test_a_full_secondary_or_element_slot_replaces_its_leftmost_card() -> void:
+func test_a_full_secondary_or_element_slot_asks_which_card_goes() -> void:
 	var w := _world()
 	_take(w, [&"gun_pierce", &"ember_core", &"gun_homing", &"storm_core"])
 	var ric := W.item(w, &"gun_ricochet")
-	assert_eq(
-		int(Offers.info(w, ric)["replaces"]), W.item(w, &"gun_pierce"), "the leftmost Secondary"
-	)
-	_take(w, [&"gun_ricochet", &"venom_core"])
+	var info := Offers.info(w, ric)
+	assert_eq(int(info["replaces"]), -1, 'AS2 (owner "Let me choose"): it names no card')
+	assert_true(info["chooses"], "it asks which Secondary goes")
+	assert_eq(Array(AttackSlots.choices(w, ric)), [0, 2], "Pierce's and Homing's slots")
+	assert_true(BuildSlots.needs_swap(w, ric), "the Swap, with room in the wand")
+	assert_false(BuildSlots.take(w, ric), "no slot named: nothing changes")
+	assert_false(BuildSlots.take(w, ric, 1), "Ember Core's slot is not a Secondary's")
+	assert_false(w.items_owned.has(ric))
+	assert_true(BuildSlots.take(w, ric, 2))
 	assert_eq(
 		_ids(w),
-		[&"gun_ricochet", &"venom_core", &"gun_homing", &"storm_core"],
-		"each takes the leftmost card of its slot's place"
+		[&"gun_pierce", &"ember_core", &"gun_ricochet", &"storm_core"],
+		"Ricochet in Homing's slot; Homing left (it burns)"
 	)
-	var pierce := W.item(w, &"gun_pierce")
-	assert_eq(
-		int(Offers.info(w, pierce)["replaces"]),
-		W.item(w, &"gun_ricochet"),
-		"Ricochet is first in line"
-	)
-	Wand.move(w, 2, 0)  # the order decides: moving Homing to the front puts it first in line
-	assert_eq(int(Offers.info(w, pierce)["replaces"]), W.item(w, &"gun_homing"))
+	var venom := W.item(w, &"venom_core")
+	assert_eq(Array(AttackSlots.choices(w, venom)), [1, 3], "the Elements' slots")
+	assert_true(BuildSlots.take(w, venom, 3))
+	assert_eq(_ids(w), [&"gun_pierce", &"ember_core", &"gun_ricochet", &"venom_core"])
+	assert_false(BuildSlots.needs_swap(w, W.item(w, &"gun_pierce")), "a held card levels up")
+	assert_eq(Array(AttackSlots.choices(w, W.item(w, &"halo_shot"))), [], "a Pattern doesn't ask")
+
+
+func _pick(v: int) -> InputFrame:
+	var f := InputFrame.make(Vector2i.ZERO, 0, 300, 0, 0)
+	f.pick = v
+	return f
+
+
+func test_the_choice_arrives_as_the_swaps_input_and_a_skip_keeps_the_card_untaken() -> void:
+	var w := _world()
+	_take(w, [&"gun_pierce", &"ember_core", &"gun_homing"])
+	var ric := W.item(w, &"gun_ricochet")
+	var rid := w.add_reward(RewardStore.Kind.ALTAR, Vector2(1, 0), 0)
+	var i := w.rewards.index_of(rid)
+	w.rewards.set_offer(i, PackedInt32Array([ric, W.item(w, &"storm_core")]))
+	w.choosing = rid
+	w.step(_pick(1))
+	assert_true(BuildSlots.swapping(w), "a third Secondary opens the Swap")
+	assert_eq(w.swap_source, BuildSlots.Source.REWARD)
+	assert_eq(int(Wand.read(w)["swap_slot"]), AttackSlots.SECONDARY, "limited to the Secondaries")
+	w.step(_pick(InputFrame.PICK_SWAP_BASE + 1))
+	assert_true(BuildSlots.swapping(w), "Ember Core's slot is no answer: it still waits")
+	assert_true(w.items_owned.has(W.item(w, &"ember_core")))
+	w.step(_pick(InputFrame.PICK_SWAP_SKIP))
+	assert_false(BuildSlots.swapping(w), "skip")
+	assert_eq(w.choosing, rid, "back to the cards, the card un-taken")
+	assert_false(w.items_owned.has(ric))
+	assert_eq(_ids(w), [&"gun_pierce", &"ember_core", &"gun_homing"])
+	w.step(_pick(1))
+	w.step(_pick(InputFrame.PICK_SWAP_BASE + 0))
+	assert_eq(w.choosing, -1, "taken: the altar closes")
+	assert_eq(_ids(w), [&"gun_ricochet", &"ember_core", &"gun_homing"], "Pierce chosen: it left")
+	assert_eq(int(Wand.read(w)["swap_slot"]), 0)
 
 
 func test_a_full_wand_asks_for_the_swap_only_for_a_card_whose_slot_has_room() -> void:
@@ -197,10 +234,14 @@ func test_a_full_wand_asks_for_the_swap_only_for_a_card_whose_slot_has_room() ->
 	_take(w, [&"gun_twin", &"gun_pierce", &"gun_homing", &"ember_core", &"storm_core"])
 	_take(w, TRIGGERS)
 	assert_true(BuildSlots.full(w), "eight cards, eight slots")
-	for id: StringName in [&"halo_shot", &"gun_ricochet", &"frost_core"]:
-		assert_false(BuildSlots.needs_swap(w, W.item(w, id)), "%s replaces its slot's card" % id)
+	assert_false(BuildSlots.needs_swap(w, W.item(w, &"halo_shot")), "a Pattern replaces Twin")
+	for id: StringName in [&"gun_ricochet", &"frost_core"]:
+		assert_true(BuildSlots.needs_swap(w, W.item(w, id)), "%s: choose in its slot" % id)
+	var frost := W.item(w, &"frost_core")
+	assert_eq(Array(AttackSlots.choices(w, frost)), [3, 4], "only the Elements, not any slot")
 	assert_true(BuildSlots.needs_swap(w, W.item(w, &"trigger_on_end")), "a free card still swaps")
-	_take(w, [&"frost_core"])
+	assert_false(BuildSlots.take(w, frost, 0), "Twin's slot is not an Element's")
+	assert_true(BuildSlots.take(w, frost, 3))
 	assert_eq(w.mod_slots.size(), 8)
 	assert_false(w.items_owned.has(W.item(w, &"ember_core")), "Ember made room for Frost")
 

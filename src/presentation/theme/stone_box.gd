@@ -2,7 +2,8 @@ class_name StoneBox
 extends StyleBox
 ## v0.8.0 MU (owner O14, G2 "menu style B"): one carved slab of the Ember stone look (EmberStone) as a style box, so
 ## any Control can wear it (a menu's panel and focused row, a card, a plaque, a tile). Drawn in code from polygons:
-## - the shape: a box with its corners cut by `cut`, its edges chipped unevenly (a stable pattern per `pattern`);
+## - the shape: a box with its corners cut by `cut`; its edges straight (v0.9.0 AS2, EmberStone.STRAIGHT_EDGES; before
+##   that chipped unevenly, a stable pattern per `pattern`, by `chip`);
 ## - a soft drop shadow, and the ember glow rising under it (`under`, stronger with `focus`), mostly at the foot;
 ## - the face: the stone colour lit warm toward the foot, multiplied by the shared grain, with a few carved cracks;
 ## - the bevel: the lower edges lit by the embers (bright on focus), the upper edges faintly cool, a dark rim;
@@ -118,6 +119,8 @@ func outline(rect: Rect2) -> Array:
 		]
 	)
 	var depth := minf(chip, minf(rect.size.x, rect.size.y) * 0.06)
+	if EmberStone.STRAIGHT_EDGES:  # v0.9.0 AS2 (owner): straight edges, no zigzag
+		depth = 0.0
 	var pts := PackedVector2Array()
 	var nrm := PackedVector2Array()
 	var n := 0

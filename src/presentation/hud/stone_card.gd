@@ -28,6 +28,9 @@ const SOCKET_COMPACT := 44.0
 const TITLE_TOP_COMPACT := 30.0
 ## v0.8.0 N8: the gain line's type size.
 const GAIN_SIZE := 18
+## v0.9.0 AS2: the ribbon's height and how far it runs past the card's sides (px at scale 1).
+const RIBBON_H := 30.0
+const RIBBON_OVERHANG := 10.0
 ## The foot: the rarity gem's size and centre (px above the bottom), the rarity words' band.
 const GEM := 18.0
 const GEM_Y := 58.0
@@ -46,6 +49,8 @@ const FADE_S := 0.15
 ## Card px → screen px (the pick draws cards larger than the shop and the Codex).
 var scale_factor := 1.0
 var socket := InlaySocket.new()
+## v0.9.0 AS2 (G2 AS = B): the "Replaces <card>" / "Choose one to replace" ribbon (hidden without one, show_ribbon).
+var ribbon := SlotRibbon.new()
 var gem := CardMark.new(GEM)
 var family := &"economy"
 ## The family's colour id (CardFrames.frame_of: a cursed offer's violet, an epic or legendary card's gold).
@@ -141,6 +146,7 @@ func _init(p_scale: float = 1.0) -> void:
 	_gain.add_theme_constant_override("outline_size", 4)
 	_gain.visible = false
 	_root.add_child(_gain)
+	_root.add_child(ribbon)
 	remove_child(_root)
 	fx = CardFx.new(_root)  # v0.8.0 N8: the face hangs from the pivot (its shine is the face's last child)
 	add_child(fx)
@@ -214,6 +220,14 @@ func set_focused(on: bool) -> void:
 
 
 ## v0.8.0 N8: the gain line's numbers (WorldReader.card_forecast: kind, old, new; an empty one hides the line).
+## v0.9.0 AS2 (G2 AS = B): the ribbon across the card ("" hides it): it sits above the rarity gem and the sentence
+## keeps clear of it, so it never covers the name or the icon.
+func show_ribbon(text: String) -> void:
+	ribbon.text = text
+	ribbon.visible = text != ""
+	_layout()
+
+
 func show_gain(gain: Dictionary) -> void:
 	_gain_data = gain
 	_count = 1.0
@@ -391,6 +405,12 @@ func _place(socket_px: float, title_top: float) -> void:
 		y += gh + 6.0 * s
 	# The sentence: between the gain line and the gem, never into it.
 	var bottom := gem.position.y - 10.0 * s
+	if ribbon.visible:  # v0.9.0 AS2: the ribbon's band over the gem; the sentence ends above it
+		var rh := RIBBON_H * s
+		ribbon.scale_factor = s
+		ribbon.size = Vector2(full.x + 2.0 * RIBBON_OVERHANG * s, rh)
+		ribbon.position = Vector2(-RIBBON_OVERHANG * s, bottom - rh)
+		bottom -= rh + 8.0 * s
 	var desc_h := maxf(bottom - y, 0.0)
 	var dsizes := _scaled(DESC_SIZES)
 	desc_size = TextFit.fit_size(regular, _desc.text, w, desc_h, dsizes)
