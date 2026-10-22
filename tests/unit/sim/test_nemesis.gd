@@ -10,8 +10,10 @@ extends GutTest
 ## one-shot); every strike locks before it lands; deaths named; determinism; saves mid-phase-3 (an FB3 snapshot, and an
 ## FB2 save whose fight has no mimic state).
 
-const BLADE_CARDS := [[&"echo_slash", 3], [&"double_slash", 2], [&"whirl", 4], [&"ember_core", 1]]  # v0.9.0 XP: Fire in Explosive's place (Explosive is retired, never cast)
-const GUN_CARDS := [[&"gun_twin", 2], [&"split_shot", 5], [&"ember_core", 3], [&"halo_shot", 1]]  # v0.9.0 TW, XP: Twin and Fire in Spread's and Explosive's places (both retired, never cast)
+# v0.9.0 XP: Fire in Explosive's place (Explosive is retired, never cast).
+const BLADE_CARDS := [[&"echo_slash", 3], [&"double_slash", 2], [&"whirl", 4], [&"ember_core", 1]]
+# v0.9.0 TW, XP: Twin and Fire in Spread's and Explosive's places (both retired, never cast).
+const GUN_CARDS := [[&"gun_twin", 2], [&"split_shot", 5], [&"ember_core", 3], [&"halo_shot", 1]]
 
 
 func _body(w: World) -> int:
